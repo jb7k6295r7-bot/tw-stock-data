@@ -2,11 +2,13 @@ name: 每日台股資料
 
 on:
   schedule:
+    # UTC 09:30 = 台北 17:30，週一至週五。
+    # 台股 13:30 收盤，證交所的三大法人（T86）約 16:00 前後才齊，所以排 17:30。
     - cron: "30 9 * * 1-5"
-  workflow_dispatch:
+  workflow_dispatch:        # 也可以在 Actions 頁面手動按一次
 
 permissions:
-  contents: write
+  contents: write           # 要把抓到的檔案 commit 回 repo
 
 concurrency:
   group: daily-fetch
@@ -16,8 +18,13 @@ jobs:
   fetch:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          # rebase 需要完整歷史；預設的淺層 clone（depth 1）會讓 git pull --rebase 失敗
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -26,21 +33,42 @@ jobs:
         id: fetch
         run: python fetch.py
 
+      # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
+      #   那正是失敗時最需要看到的東西。原本失敗就整個 job 停掉，
+      #   結果 repo 裡什麼都沒有，只能去翻 Actions log（2026-08-31 實測）。
       - name: Commit 回 repo
         if: always()
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/latest
+          # ★ 要加整個 data/：v3 之後歷史在 data/history、日曆在 data/calendar.csv、
+          #   變更紀錄在 data/_changes.log，只 add data/latest 的話**歷史永遠不會被保存**。
+          git add data
           if git diff --staged --quiet; then
             echo "沒有變動，不 commit"
           else
             git commit -m "data: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
-            git push
+            # ★ push 前一定要先把遠端的變更 rebase 進來（2026-08-31 實測失敗）。
+            #   runner 是在 job 開始時 checkout 的，如果這段期間你在網頁上改了檔案，
+            #   遠端就比 runner 手上的新，push 會被拒（fetch first）。
+            #   資料是 append-only、每天不同檔名或不同列，rebase 不會有內容衝突。
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              echo "push 失敗（第 $i 次），5 秒後重試"
+              sleep 5
+            done
+            if [ "$ok" != "1" ]; then
+              echo "連續三次 push 失敗" >&2
+              exit 1
+            fi
           fi
 
+      # 抓取失敗時讓整個 run 標成紅色，但上面的 commit 已經做完了
       - name: 回報抓取結果
         if: always() && steps.fetch.outcome == 'failure'
         run: |
-          echo "抓資料失敗，原因看 data/latest/_manifest.json"
+          echo "抓資料失敗，詳細原因看 data/latest/_manifest.json 的 errors 欄位"
           exit 1
