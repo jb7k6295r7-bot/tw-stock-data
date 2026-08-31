@@ -200,7 +200,12 @@ def fetch_stock(code, today):
 # JSON 仍然保留（完整、可回頭查），但**下游一律讀 CSV**。
 # ────────────────────────────────────────────────────────────
 
-# FinMind 的 name 欄位 → 三大類。自營商含避險與自行買賣兩種，合併成一欄。
+# FinMind 的 name 欄位 → 三大類。
+#
+# 自營商有兩種寫法：上市櫃通常拆成 Dealer_self（自行買賣）＋ Dealer_Hedging（避險），
+# **興櫃則是單一的 Dealer**（2026-08-31 由 7879 的 inst_unknown_names 發現）。
+# ★ 兩種寫法**不可以同時累加**——那會把自營商算成兩倍。
+#   所以 Dealer 只在「當天沒有出現拆開的那兩種」時才採用，邏輯在 inst_lines()。
 _INST_MAP = {
     "Foreign_Investor": "foreign",
     "Foreign_Dealer_Self": "foreign",
@@ -208,6 +213,8 @@ _INST_MAP = {
     "Dealer_self": "dealer",
     "Dealer_Hedging": "dealer",
 }
+_DEALER_SPLIT = {"Dealer_self", "Dealer_Hedging"}
+_DEALER_TOTAL = "Dealer"
 
 PRICE_HEADER = ["date", "open", "high", "low", "close", "volume"]
 INST_HEADER = ["date", "foreign", "trust", "dealer", "total"]
@@ -297,14 +304,28 @@ def inst_lines(rows):
 
     回傳 (lines, unknown_names)。未知的 name 會被回報，**不會被默默丟掉**。
     """
+    # 先看每一天各自出現了哪些 name，才能決定自營商要用拆開的還是總計的
+    names_by_day = {}
+    for r in rows:
+        d = str(r.get("date", ""))
+        if d:
+            names_by_day.setdefault(d, set()).add(str(r.get("name", "")))
+
     by_day, unknown = {}, set()
     for r in rows:
         d = str(r.get("date", ""))
         if not d:
             continue
-        col = _INST_MAP.get(str(r.get("name", "")))
+        name = str(r.get("name", ""))
+        if name == _DEALER_TOTAL:
+            # 當天若已有拆開的自營商，總計那筆要跳過，否則自營商會被算兩次
+            if names_by_day.get(d, set()) & _DEALER_SPLIT:
+                continue
+            col = "dealer"
+        else:
+            col = _INST_MAP.get(name)
         if col is None:
-            unknown.add(str(r.get("name", "")))
+            unknown.add(name)
             continue
         try:
             net = int(r.get("buy", 0)) - int(r.get("sell", 0))
