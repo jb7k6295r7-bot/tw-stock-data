@@ -475,17 +475,26 @@ def main():
     }
     print(f"  market: ok={manifest['market']['ok']} err={market['errors'] or '-'}")
 
+    # ★ 統計歷史被改寫的列數。**價格與籌碼都要算**——原本只算 price，
+    #   籌碼被改寫時警示不會亮（2026-08-31 實測：7879 有 13 列籌碼被改寫，
+    #   history_rows_changed 卻是 null）。
+    # ★★ 而且這一段**必須在寫出 _manifest.json 之前**跑完。
+    #   先寫檔再算，log 裡的 ⚠ 會亮，但下游讀到的檔案裡沒有這個欄位——
+    #   **警示看得到卻傳不下去，等於沒有警示。**
+    changed_total = 0
+    for c in STOCKS:
+        h = manifest["stocks"][c].get("history") or {}
+        for kind in ("price", "inst"):
+            changed_total += ((h.get(kind) or {}).get("changed") or 0)
+    manifest["history_rows_changed"] = changed_total or None
+    if changed_total:
+        print(f"[tw-stock-data] ⚠ 有 {changed_total} 列歷史資料被改寫（價格＋籌碼合計），"
+              f"詳見 data/_changes.log")
+
     with open(os.path.join(OUT_DIR, "_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
     # 全軍覆沒才視為執行失敗；個別失敗照實記錄在 manifest 裡，不讓整批停擺
-    changed_total = sum((manifest["stocks"][c]["history"]["price"] or {}).get("changed") or 0
-                        for c in STOCKS if manifest["stocks"][c].get("history"))
-    manifest["history_rows_changed"] = changed_total or None
-    if changed_total:
-        print(f"[tw-stock-data] ⚠ 有 {changed_total} 列歷史資料被改寫，"
-              f"詳見 data/_changes.log")
-
     got = [c for c in STOCKS if manifest["stocks"][c]["price_date_max"]]
     if not got:
         # 全軍覆沒時把第一檔的完整錯誤再印一次，log 最下面就看得到，不必往上捲
