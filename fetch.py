@@ -46,7 +46,21 @@ INST_START = "2026-01-01"    # 三大法人起日
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data/1.0; +https://github.com/)"
-OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "latest")
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+OUT_DIR = os.path.join(_ROOT, "latest")      # 最近視窗的快照，報告讀這裡
+HIST_DIR = os.path.join(_ROOT, "history")    # 累積歷史，**只增不減**，這才是資料庫
+DIV_DIR = os.path.join(_ROOT, "dividend")    # 除權息事件（抓得到才有）
+CHANGES = os.path.join(_ROOT, "_changes.log")
+CALENDAR = os.path.join(_ROOT, "calendar.csv")
+
+# latest 只放最近這麼多個交易日。**目的是把檔案做小**——
+# 下游用 WebFetch 讀，大檔會被截斷而且會被憑空補齊（2026-08-31 實測）。
+LATEST_WINDOW = 300
+
+# 除權息事件的 dataset 名稱。**這是一個尚未在本環境驗證過的假設**，
+# 所以做成「抓不到就記錯誤、不影響其他項」——讓第一次執行自己回答可不可用，
+# 不要我在這裡猜完就當成事實。可用性確認後再寫進 tw-data-sources。
+DIVIDEND_DATASET = "TaiwanStockDividend"
 
 FINMIND = "https://api.finmindtrade.com/api/v4/data"
 TWSE = "https://www.twse.com.tw/rwd/zh"
@@ -57,17 +71,31 @@ def now_tpe():
 
 
 def get(url, retries=3, timeout=30):
-    """回傳 (bytes, error)。失敗不丟例外，讓呼叫端決定怎麼記錄。"""
+    """回傳 (bytes, error)。失敗不丟例外，讓呼叫端決定怎麼記錄。
+
+    ★ HTTPError 要把**狀態碼與回應內容的開頭**一起記下來（2026-08-31 加）。
+      只記 `HTTP Error 400: Bad Request` 這種字串，看不出是額度用完、要 token、
+      還是參數不合——那三種的處理方式完全不同。伺服器通常會在 body 裡講清楚。
+    """
     last = None
     for i in range(retries):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read(), None
+        except urllib.error.HTTPError as e:
+            try:
+                body = e.read().decode("utf-8", "replace")[:300]
+            except Exception:  # noqa: BLE001
+                body = "(讀不到 body)"
+            last = f"HTTP {e.code} {e.reason} | body: {body}"
+            # 4xx 重試沒有意義（額度、權限、參數錯），直接放棄
+            if 400 <= e.code < 500 and e.code not in (408, 429):
+                return None, last
         except Exception as e:  # noqa: BLE001 — 這裡就是要吞下所有錯並記錄
             last = f"{type(e).__name__}: {e}"
-            if i < retries - 1:
-                time.sleep(2 * (i + 1))
+        if i < retries - 1:
+            time.sleep(2 * (i + 1))
     return None, last
 
 
@@ -88,7 +116,8 @@ def finmind(dataset, data_id, start, end):
     if err:
         return None, url, err
     if not isinstance(d, dict) or d.get("msg") != "success":
-        return None, url, f"回傳非 success：{str(d)[:200]}"
+        # 把整個回應的開頭留下來——FinMind 會在 msg 裡寫明原因（額度、token、參數）
+        return None, url, f"回傳非 success：{str(d)[:300]}"
     rows = d.get("data") or []
     if not rows:
         return None, url, "回傳 0 筆"
@@ -115,6 +144,7 @@ def fetch_stock(code, today):
         "fetched_at": now_tpe().isoformat(timespec="seconds"),
         "price": None,
         "institutional": None,
+        "dividend": None,
         "errors": {},
     }
 
@@ -147,7 +177,161 @@ def fetch_stock(code, today):
                 "date_min": lo, "date_max": hi, "data": rows,
             }
 
+    # 除權息事件（可選）。**這個 dataset 名稱尚未在本環境驗證過**，
+    # 所以抓不到只記錯誤、不影響其他項——讓第一次執行自己回答可不可用。
+    rows, url, err = finmind(DIVIDEND_DATASET, code, PRICE_START, today)
+    if err:
+        out["errors"]["dividend"] = err
+    else:
+        out["dividend"] = {"source": url, "rows": len(rows), "data": rows}
+
     return out
+
+
+# ────────────────────────────────────────────────────────────
+# 精簡 CSV 輸出（2026-08-31 加）
+#
+# 為什麼要有這個：下游用 WebFetch 讀檔，而 **WebFetch 對大檔會靜默截斷，
+# 而且被要求「逐字輸出」時會憑空補齊到宣稱的筆數**（當日實測 77KB 的 3017.json：
+# 價格段完整、籌碼段只到 1/8，後面全是 1234567、987654 這種湊出來的假數字）。
+#
+# 解法不是叫它「不要編」——那管不住——而是**把檔案做小**。
+# 同一批資料，JSON 約 77KB，CSV 約 14KB，一次就讀得完，也就沒有補的餘地。
+# JSON 仍然保留（完整、可回頭查），但**下游一律讀 CSV**。
+# ────────────────────────────────────────────────────────────
+
+# FinMind 的 name 欄位 → 三大類。自營商含避險與自行買賣兩種，合併成一欄。
+_INST_MAP = {
+    "Foreign_Investor": "foreign",
+    "Foreign_Dealer_Self": "foreign",
+    "Investment_Trust": "trust",
+    "Dealer_self": "dealer",
+    "Dealer_Hedging": "dealer",
+}
+
+PRICE_HEADER = ["date", "open", "high", "low", "close", "volume"]
+INST_HEADER = ["date", "foreign", "trust", "dealer", "total"]
+
+
+def _read_csv(path):
+    """回傳 (header, {鍵: [欄位…]})。檔案不存在就回 (None, {})。"""
+    if not os.path.exists(path):
+        return None, {}
+    rows = {}
+    header = None
+    with open(path, "r", encoding="utf-8") as f:
+        for i, line in enumerate(f):
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            if i == 0:
+                header = line.split(",")
+                continue
+            parts = line.split(",")
+            rows[parts[0]] = parts
+    return header, rows
+
+
+def merge_history(path, header, new_lines, tag):
+    """把 new_lines（已是 CSV 欄位 list）併進 path。
+
+    回傳 (total, added, changed)，changed 是 [(date, 舊列, 新列), ...]。
+    **主鍵是第一欄（date）**，同一天重跑不會產生重複列——排程會重試，必須冪等。
+    """
+    old_header, old = _read_csv(path)
+    if old_header is not None and old_header != header:
+        # 欄位變了就不要硬併——那是結構改變，要人看過
+        raise ValueError(f"{path} 的欄位與現行不符：{old_header} vs {header}")
+    changed = []
+    added = 0
+    merged = dict(old)
+    for parts in new_lines:
+        k = parts[0]
+        if k not in merged:
+            merged[k] = parts
+            added += 1
+        elif merged[k] != parts:
+            changed.append((k, merged[k], parts))
+            merged[k] = parts
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(",".join(header) + "\n")
+        for k in sorted(merged):
+            f.write(",".join(str(x) for x in merged[k]) + "\n")
+    if changed:
+        with open(CHANGES, "a", encoding="utf-8") as f:
+            for k, oldrow, newrow in changed:
+                f.write("{}\t{}\t{}\t舊:{}\t新:{}\n".format(
+                    now_tpe().isoformat(timespec="seconds"), tag, k,
+                    ",".join(str(x) for x in oldrow),
+                    ",".join(str(x) for x in newrow)))
+    return len(merged), added, changed
+
+
+def write_window(src_path, dst_path, n=LATEST_WINDOW):
+    """把歷史檔的最後 n 列複製成 latest 的小檔。"""
+    header, rows = _read_csv(src_path)
+    if header is None:
+        return 0
+    keys = sorted(rows)[-n:]
+    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+    with open(dst_path, "w", encoding="utf-8") as f:
+        f.write(",".join(header) + "\n")
+        for k in keys:
+            f.write(",".join(str(x) for x in rows[k]) + "\n")
+    return len(keys)
+
+
+def price_lines(rows):
+    """FinMind 日K → CSV 欄位 list（已排序）。"""
+    out = []
+    for r in sorted(rows, key=lambda r: str(r.get("date", ""))):
+        out.append([str(r.get("date", "")), str(r.get("open", "")),
+                    str(r.get("max", "")), str(r.get("min", "")),
+                    str(r.get("close", "")), str(r.get("Trading_Volume", ""))])
+    return out
+
+
+def inst_lines(rows):
+    """FinMind 三大法人 → **一天一列**的 CSV 欄位 list。
+
+    回傳 (lines, unknown_names)。未知的 name 會被回報，**不會被默默丟掉**。
+    """
+    by_day, unknown = {}, set()
+    for r in rows:
+        d = str(r.get("date", ""))
+        if not d:
+            continue
+        col = _INST_MAP.get(str(r.get("name", "")))
+        if col is None:
+            unknown.add(str(r.get("name", "")))
+            continue
+        try:
+            net = int(r.get("buy", 0)) - int(r.get("sell", 0))
+        except (TypeError, ValueError):
+            continue
+        day = by_day.setdefault(d, {"foreign": 0, "trust": 0, "dealer": 0})
+        day[col] += net
+    lines = []
+    for d in sorted(by_day):
+        v = by_day[d]
+        lines.append([d, str(v["foreign"]), str(v["trust"]), str(v["dealer"]),
+                      str(v["foreign"] + v["trust"] + v["dealer"])])
+    return lines, sorted(unknown)
+
+
+def write_calendar(all_dates):
+    """交易日曆：各檔日期集合的聯集。
+
+    **用日期集合比對，不要用筆數。** 台股有颱風停市這類不規則缺口，
+    比筆數會漏掉——這個專案已經踩過（見規範第 8 條）。
+    """
+    os.makedirs(os.path.dirname(CALENDAR), exist_ok=True)
+    with open(CALENDAR, "w", encoding="utf-8") as f:
+        f.write("date\n")
+        for d in sorted(all_dates):
+            f.write(d + "\n")
+    return len(all_dates)
 
 
 def fetch_market(today):
@@ -206,24 +390,60 @@ def main():
         "target_trading_day": today,
         "stocks": {},
         "market": {},
-        "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。",
+        "note": ("date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。"
+                 "下游請讀 <代號>_price.csv 與 <代號>_inst.csv——"
+                 "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"),
     }
 
+    all_dates = set()
     for code in STOCKS:
         data = fetch_stock(code, today)
         path = os.path.join(OUT_DIR, f"{code}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+
+        # ── 併進歷史（append-only），再切出 latest 的小視窗 ──
+        st = {"price": None, "inst": None, "dividend_rows": None}
+        unknown = []
+        if data["price"]:
+            hp = os.path.join(HIST_DIR, f"{code}_price.csv")
+            total, added, changed = merge_history(
+                hp, PRICE_HEADER, price_lines(data["price"]["data"]),
+                f"{code}_price")
+            write_window(hp, os.path.join(OUT_DIR, f"{code}_price.csv"))
+            st["price"] = {"total": total, "added": added,
+                           "changed": len(changed) or None}
+            all_dates.update(r[0] for r in price_lines(data["price"]["data"]))
+        if data["institutional"]:
+            lines, unknown = inst_lines(data["institutional"]["data"])
+            hi_ = os.path.join(HIST_DIR, f"{code}_inst.csv")
+            total, added, changed = merge_history(
+                hi_, INST_HEADER, lines, f"{code}_inst")
+            write_window(hi_, os.path.join(OUT_DIR, f"{code}_inst.csv"))
+            st["inst"] = {"total": total, "added": added,
+                          "changed": len(changed) or None}
+        if data.get("dividend"):
+            dl = [[str(r.get("date", "")), json.dumps(r, ensure_ascii=False)]
+                  for r in data["dividend"]["data"]]
+            # 除權息一天可能有多筆，先原樣留著，欄位定案前不強行正規化
+            os.makedirs(DIV_DIR, exist_ok=True)
+            with open(os.path.join(DIV_DIR, f"{code}.json"), "w",
+                      encoding="utf-8") as f:
+                json.dump(data["dividend"]["data"], f, ensure_ascii=False)
+            st["dividend_rows"] = len(dl)
+
         manifest["stocks"][code] = {
-            "price_rows": (data["price"] or {}).get("rows"),
             "price_date_max": (data["price"] or {}).get("date_max"),
-            "inst_rows": (data["institutional"] or {}).get("rows"),
             "inst_date_max": (data["institutional"] or {}).get("date_max"),
+            "history": st,
+            "inst_unknown_names": unknown or None,
             "errors": data["errors"] or None,
         }
         print(f"  {code}: price={manifest['stocks'][code]['price_date_max']} "
               f"inst={manifest['stocks'][code]['inst_date_max']} "
-              f"err={data['errors'] or '-'}")
+              f"hist={st} err={data['errors'] or '-'}")
+
+    manifest["calendar_days"] = write_calendar(all_dates)
 
     market = fetch_market(today)
     with open(os.path.join(OUT_DIR, "market.json"), "w", encoding="utf-8") as f:
@@ -238,9 +458,19 @@ def main():
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
     # 全軍覆沒才視為執行失敗；個別失敗照實記錄在 manifest 裡，不讓整批停擺
+    changed_total = sum((manifest["stocks"][c]["history"]["price"] or {}).get("changed") or 0
+                        for c in STOCKS if manifest["stocks"][c].get("history"))
+    manifest["history_rows_changed"] = changed_total or None
+    if changed_total:
+        print(f"[tw-stock-data] ⚠ 有 {changed_total} 列歷史資料被改寫，"
+              f"詳見 data/_changes.log")
+
     got = [c for c in STOCKS if manifest["stocks"][c]["price_date_max"]]
     if not got:
+        # 全軍覆沒時把第一檔的完整錯誤再印一次，log 最下面就看得到，不必往上捲
+        first_err = manifest["stocks"][STOCKS[0]]["errors"]
         print("[tw-stock-data] 所有個股都沒抓到，視為失敗", file=sys.stderr)
+        print(f"[tw-stock-data] 第一檔的錯誤：{first_err}", file=sys.stderr)
         return 1
     print(f"[tw-stock-data] 完成：{len(got)}/{len(STOCKS)} 檔有日K")
     return 0
