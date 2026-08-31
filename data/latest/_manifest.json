@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T21:39:53+08:00",
+  "generated_at": "2026-08-31T21:50:26+08:00",
   "target_trading_day": "2026-08-31",
   "stocks": {
     "7879": {
@@ -14,7 +14,7 @@
         "inst": {
           "total": 68,
           "added": 0,
-          "changed": 13
+          "changed": null
         },
         "dividend_rows": 1
       },
@@ -127,5 +127,6 @@
     "errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游請讀 <代號>_price.csv 與 <代號>_inst.csv——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。",
-  "calendar_days": 402
+  "calendar_days": 402,
+  "history_rows_changed": null
 }
