@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-31T21:33:21+08:00",
+  "generated_at": "2026-08-31T21:39:53+08:00",
   "target_trading_day": "2026-08-31",
   "stocks": {
     "7879": {
@@ -8,19 +8,17 @@
       "history": {
         "price": {
           "total": 144,
-          "added": 144,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 68,
-          "added": 68,
-          "changed": null
+          "added": 0,
+          "changed": 13
         },
         "dividend_rows": 1
       },
-      "inst_unknown_names": [
-        "Dealer"
-      ],
+      "inst_unknown_names": null,
       "errors": null
     },
     "8289": {
@@ -29,12 +27,12 @@
       "history": {
         "price": {
           "total": 402,
-          "added": 402,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 159,
-          "added": 159,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -48,12 +46,12 @@
       "history": {
         "price": {
           "total": 402,
-          "added": 402,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 159,
-          "added": 159,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -67,12 +65,12 @@
       "history": {
         "price": {
           "total": 402,
-          "added": 402,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 159,
-          "added": 159,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 1
@@ -86,12 +84,12 @@
       "history": {
         "price": {
           "total": 402,
-          "added": 402,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 159,
-          "added": 159,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -105,12 +103,12 @@
       "history": {
         "price": {
           "total": 402,
-          "added": 402,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 159,
-          "added": 159,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
