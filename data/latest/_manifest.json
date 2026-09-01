@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-08-31T21:50:26+08:00",
-  "target_trading_day": "2026-08-31",
+  "generated_at": "2026-09-01T17:35:21+08:00",
+  "target_trading_day": "2026-09-01",
   "stocks": {
     "7879": {
-      "price_date_max": "2026-08-31",
+      "price_date_max": "2026-09-01",
       "inst_date_max": "2026-08-31",
       "history": {
         "price": {
-          "total": 144,
-          "added": 0,
+          "total": 145,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -22,17 +22,17 @@
       "errors": null
     },
     "8289": {
-      "price_date_max": "2026-08-31",
-      "inst_date_max": "2026-08-31",
+      "price_date_max": "2026-09-01",
+      "inst_date_max": "2026-09-01",
       "history": {
         "price": {
-          "total": 402,
-          "added": 0,
+          "total": 403,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 159,
-          "added": 0,
+          "total": 160,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -41,17 +41,17 @@
       "errors": null
     },
     "2609": {
-      "price_date_max": "2026-08-31",
-      "inst_date_max": "2026-08-31",
+      "price_date_max": "2026-09-01",
+      "inst_date_max": "2026-09-01",
       "history": {
         "price": {
-          "total": 402,
-          "added": 0,
+          "total": 403,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 159,
-          "added": 0,
+          "total": 160,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -60,17 +60,17 @@
       "errors": null
     },
     "6209": {
-      "price_date_max": "2026-08-31",
-      "inst_date_max": "2026-08-31",
+      "price_date_max": "2026-09-01",
+      "inst_date_max": "2026-09-01",
       "history": {
         "price": {
-          "total": 402,
-          "added": 0,
+          "total": 403,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 159,
-          "added": 0,
+          "total": 160,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 1
@@ -79,17 +79,17 @@
       "errors": null
     },
     "3017": {
-      "price_date_max": "2026-08-31",
-      "inst_date_max": "2026-08-31",
+      "price_date_max": "2026-09-01",
+      "inst_date_max": "2026-09-01",
       "history": {
         "price": {
-          "total": 402,
-          "added": 0,
+          "total": 403,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 159,
-          "added": 0,
+          "total": 160,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -98,17 +98,17 @@
       "errors": null
     },
     "8996": {
-      "price_date_max": "2026-08-31",
-      "inst_date_max": "2026-08-31",
+      "price_date_max": "2026-09-01",
+      "inst_date_max": "2026-09-01",
       "history": {
         "price": {
-          "total": 402,
-          "added": 0,
+          "total": 403,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 159,
-          "added": 0,
+          "total": 160,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -127,6 +127,6 @@
     "errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游請讀 <代號>_price.csv 與 <代號>_inst.csv——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。",
-  "calendar_days": 402,
+  "calendar_days": 403,
   "history_rows_changed": null
 }
