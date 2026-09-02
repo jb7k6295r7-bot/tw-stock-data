@@ -91,13 +91,22 @@ EXTRA_DATASETS = {
     "revenue": "TaiwanStockMonthRevenue",
     "margin":  "TaiwanStockMarginPurchaseShortSale",
     "fs":      "TaiwanStockFinancialStatements",
+    # ★ v6.1（2026-09-02 實測修正）：**股本不在損益表裡**。
+    #   v6 第一次跑完，六檔的 capital_not_found 全中，
+    #   `meta/<代號>_fs_types.txt` 顯示 TaiwanStockFinancialStatements 只有
+    #   Revenue／GrossProfit／EPS 這類損益項，**完全沒有股本**。
+    #   股本屬於資產負債表，所以改抓這一個。
+    "bs":      "TaiwanStockBalanceSheet",
 }
 
 # 財報裡「股本」可能的 type 名稱。**不確定 FinMind 用哪一個**，所以列一組候選，
 # 並且把當次看到的所有 type 另外寫成檔案（見 FS_TYPES_FILE）——
 # 對不上時不要靜默放棄，要留下證據讓下次能查（與 inst_unknown_names 同一個設計）。
-_CAPITAL_TYPES = {"CommonStocks", "CommonStock", "CapitalStock", "Capital",
-                  "股本", "普通股股本", "OrdinaryShare"}
+_CAPITAL_TYPES = ("OrdinaryShare", "CommonStock", "CommonStocks", "CapitalStock",
+                  "ShareCapital", "股本", "普通股股本")
+# 上面是**照優先順序**的候選；對不上時用這個較寬的樣式再撈一次當候選回報，
+# 把 type 與最新的值寫進 meta/<代號>_capital_candidates.txt，下次直接照著改就好。
+_CAPITAL_HINT = ("stock", "share", "capital", "股本")
 
 META_DIR = os.path.join(_ROOT, "meta")
 
@@ -228,7 +237,7 @@ def fetch_stock(code, today):
     # 起日各自不同：per 跟日K一樣長（要畫本益比河流圖也夠），
     # revenue 與 fs 要往前多拿一年才看得出年增與去年同期。
     starts = {"per": PRICE_START, "revenue": "2024-01-01",
-              "margin": INST_START, "fs": "2024-01-01"}
+              "margin": INST_START, "fs": "2024-01-01", "bs": "2024-01-01"}
     out["extra"] = {}
     for kind, dataset in EXTRA_DATASETS.items():
         rows, url, err = finmind(dataset, code, starts[kind], today)
@@ -448,22 +457,35 @@ def extra_lines(kind, rows):
 
 
 def fs_capital_lines(rows):
-    """財報 → 只抽「股本」那幾列，順便回報看到的所有 type。
+    """資產負債表 → 只抽「股本」那幾列，順便回報看到的所有 type 與候選。
 
-    回傳 (lines, types_seen)。**對不上候選名單時不要靜默放棄**——
-    types_seen 會被寫成檔案，下次照著改 _CAPITAL_TYPES 就好
-    （與 inst_unknown_names 同一個設計：未知的要講出來）。
+    回傳 (lines, types_seen, candidates)。
+    **對不上候選名單時不要靜默放棄**——types_seen 與 candidates 會被寫成檔案，
+    下次照著改 _CAPITAL_TYPES 就好（與 inst_unknown_names 同一個設計）。
     """
-    lines, types = [], set()
-    for r in sorted(rows, key=lambda r: str(r.get("date", ""))):
+    types, by_type = set(), {}
+    for r in rows:
         t = str(r.get("type", ""))
         types.add(t)
-        if t in _CAPITAL_TYPES:
-            d = str(r.get("date", ""))
-            v = _num(r.get("value"))
-            if d and v:
-                lines.append([d, t, v])
-    return lines, sorted(types)
+        d, v = str(r.get("date", "")), _num(r.get("value"))
+        if d and v:
+            by_type.setdefault(t, []).append((d, v))
+
+    pick = next((t for t in _CAPITAL_TYPES if t in by_type), None)
+    lines = []
+    if pick:
+        for d, v in sorted(by_type[pick]):
+            lines.append([d, pick, v])
+
+    # 沒中就把「看起來像股本」的都列出來當候選，附最新一筆的值
+    candidates = []
+    if not pick:
+        for t in sorted(by_type):
+            low = t.lower()
+            if any(h in low for h in _CAPITAL_HINT):
+                d, v = sorted(by_type[t])[-1]
+                candidates.append(f"{t}\t{d}\t{v}")
+    return lines, sorted(types), candidates
 
 
 # ────────────────────────────────────────────────────────────
@@ -507,6 +529,22 @@ def _dump_tables(market, path):
         f.write("（本檔只供對欄位，解析穩定後可以不必再看）\n")
 
 
+def _find_table(market, key, title_kws=(), field_kw=None):
+    """在某個區塊裡找出符合條件的表。title_kws 任一命中即可。"""
+    blk = market.get(key)
+    if not blk:
+        return None
+    for t in _twse_tables(blk.get("data")):
+        title = str(t.get("title", ""))
+        fields = [str(x) for x in (t.get("fields") or [])]
+        if title_kws and not any(k in title for k in title_kws):
+            continue
+        if field_kw and not any(field_kw in f for f in fields):
+            continue
+        return t
+    return None
+
+
 def _find_row(market, key, title_kw, row_kw):
     """在某個表裡找出第一欄含 row_kw 的那一列。找不到回 None。"""
     blk = market.get(key)
@@ -521,47 +559,134 @@ def _find_row(market, key, title_kw, row_kw):
     return None
 
 
+def _split_paren(v):
+    """『587(19)』→ ('587', '19')。沒有括號就回 (值, '')。"""
+    t = str(v).strip()
+    if "(" in t and t.endswith(")"):
+        main, _, rest = t.partition("(")
+        return _num(main), _num(rest[:-1])
+    return _num(t), ""
+
+
+# 三大法人買賣金額統計表的單位名稱 → 三大類。
+# ★ 與個股籌碼同一個雙重計算陷阱：自營商有「自行買賣」「避險」兩列，
+#   有些日期還會多一列合計。**拆開的兩列存在時，合計那列要跳過。**
+_BFI_MAP = [
+    ("外資及陸資(不含外資自營商)", "foreign"),
+    ("外資自營商", "foreign"),
+    ("外資及陸資", "foreign"),
+    ("投信", "trust"),
+    ("自營商(自行買賣)", "dealer"),
+    ("自營商(避險)", "dealer"),
+]
+_BFI_DEALER_TOTAL = "自營商"
+_BFI_SKIP = ("合計", "總計")
+
+
 def market_lines(market, day):
-    """回傳 ({名稱: CSV 欄位 list}, errors)。抽不到的那一項就不放進 dict。"""
+    """回傳 ({名稱: CSV 欄位 list}, errors)。抽不到的那一項就不放進 dict。
+
+    ★ 三張表的實際形狀已於 2026-09-02 由 market_tables_raw.txt 確認，
+      v6 的第一版三項有兩項解析失敗，就是因為當時是用猜的：
+      - 大盤統計資訊的標題是「115年09月01日 大盤統計資訊」，**不含「成交」兩字**
+      - 成交統計的欄位順序是 金額 → 股數 → 筆數，不是股數在前
+      - 漲跌證券數合計是 **欄位＝整體市場／股票，列＝上漲／下跌／持平**，
+        不是一列裡塞五個數字
+    """
     out, errs = {}, {}
 
-    r = _find_row(market, "index", "", "發行量加權股價指數")
+    # ── 加權指數 ──────────────────────────────────────────────
+    # fields: ['指數','收盤指數','漲跌(+/-)','漲跌點數','漲跌百分比(%)','特殊處理註記']
+    r = _find_row(market, "index", "價格指數(臺灣證券交易所)", "發行量加權股價指數") or \
+        _find_row(market, "index", "", "發行量加權股價指數")
     if r and len(r) >= 5:
-        # [名稱, 收盤指數, 漲跌(+/-), 漲跌點數, 漲跌百分比]
         sign = -1 if "-" in r[2] else 1
-        chg = _num(r[3])
-        pct = _num(r[4])
+        chg, pct = _num(r[3]), _num(r[4])
         out["index"] = [day, _num(r[1]),
                         (str(sign * float(chg)) if chg else ""),
                         (str(sign * float(pct)) if pct else "")]
     else:
-        errs["index"] = "找不到『發行量加權股價指數』那一列（欄位可能改了，看 market_tables_raw.txt）"
+        errs["index"] = "找不到『發行量加權股價指數』那一列"
 
-    # ★ 漲跌家數要取「股票」那一欄／那一列，**不是「整體市場」**——
-    #   整體市場含權證與 ETF，數字會大很多（2026-09-01 三源不一致就是這個原因）。
-    #   「股票」找不到才退而用整體市場，並且在 errs 裡講明用的是哪一個。
-    r = _find_row(market, "summary", "漲跌證券數", "股票")
-    if r is None:
-        r = _find_row(market, "summary", "漲跌證券數", "整體市場")
-        if r is not None:
-            errs["breadth_scope"] = "找不到『股票』列，改用『整體市場』（含權證，偏大）"
-    if r and len(r) >= 6:
-        out["breadth"] = [day] + [_num(x) for x in r[1:6]]
+    # ── 漲跌家數 ──────────────────────────────────────────────
+    # fields: ['類型','整體市場','股票'] ／ 列：上漲(漲停)、下跌(跌停)、持平…
+    # ★ 一律取「股票」那一欄，**不是整體市場**（後者含權證與 ETF）。
+    t = _find_table(market, "summary", ("漲跌證券數",), None)
+    if t:
+        fields = [str(x) for x in (t.get("fields") or [])]
+        col = fields.index("股票") if "股票" in fields else 2
+        if "股票" not in fields:
+            errs["breadth_scope"] = f"欄位沒有『股票』，改用第 {col} 欄：{fields}"
+        vals = {"up": "", "down": "", "flat": "", "lu": "", "ld": ""}
+        for row in (t.get("data") or []):
+            if not row or len(row) <= col:
+                continue
+            label = str(row[0])
+            main, paren = _split_paren(row[col])
+            if "上漲" in label:
+                vals["up"], vals["lu"] = main, paren
+            elif "下跌" in label:
+                vals["down"], vals["ld"] = main, paren
+            elif "持平" in label or "平盤" in label:
+                vals["flat"] = main
+        if vals["up"] and vals["down"]:
+            out["breadth"] = [day, vals["up"], vals["down"], vals["flat"],
+                              vals["lu"], vals["ld"]]
+        else:
+            errs["breadth"] = f"漲跌證券數表找到了但取不到值：{[r[:1] for r in (t.get('data') or [])][:6]}"
     else:
-        errs["breadth"] = "找不到漲跌證券數那一列"
+        errs["breadth"] = "找不到漲跌證券數合計那張表"
 
-    r = _find_row(market, "summary", "成交", "股票")
-    if r and len(r) >= 4:
-        # [項目, 成交股數, 成交筆數, 成交金額]
-        out["amount"] = [day, _num(r[3]), _num(r[1]), _num(r[2])]
+    # ── 成交統計 ──────────────────────────────────────────────
+    # fields: ['成交統計','成交金額(元)','成交股數(股)','成交筆數']
+    t = _find_table(market, "summary", ("大盤統計",), "成交金額")
+    if t:
+        row = next((r for r in (t.get("data") or [])
+                    if r and str(r[0]).strip().startswith("股票")), None)
+        if row and len(row) >= 4:
+            out["amount"] = [day, _num(row[1]), _num(row[2]), _num(row[3])]
+        else:
+            errs["amount"] = "大盤統計資訊裡沒有『股票』那一列"
     else:
-        errs["amount"] = "找不到成交統計的『股票』那一列"
+        errs["amount"] = "找不到大盤統計資訊那張表"
 
-    r = _find_row(market, "bfi82u", "", "外資")
-    if r:
-        errs.setdefault("inst", "BFI82U 有取得，但欄位對應尚未定案（看 market_tables_raw.txt）")
+    # ── 三大法人買賣金額（單位：元） ────────────────────────────
+    # fields: ['單位名稱','買進金額','賣出金額','買賣差額']
+    t = _find_table(market, "bfi82u", ("三大法人",), "買賣差額")
+    if t:
+        rows = [[str(x) for x in r] for r in (t.get("data") or []) if r]
+        names = {r[0].strip() for r in rows}
+        has_split = any("自營商(" in n for n in names)
+        agg = {"foreign": 0.0, "trust": 0.0, "dealer": 0.0}
+        unknown, got = [], False
+        for r in rows:
+            name = r[0].strip()
+            if any(k in name for k in _BFI_SKIP):
+                continue
+            if name == _BFI_DEALER_TOTAL and has_split:
+                continue          # 拆開的已經算過，合計要跳過，否則自營商算兩次
+            col = next((c for k, c in _BFI_MAP if name.startswith(k)), None)
+            if col is None:
+                col = "dealer" if name.startswith(_BFI_DEALER_TOTAL) else None
+            if col is None:
+                unknown.append(name)
+                continue
+            v = _num(r[3]) if len(r) >= 4 else ""
+            if v:
+                agg[col] += float(v)
+                got = True
+        if got:
+            tot = agg["foreign"] + agg["trust"] + agg["dealer"]
+            out["inst"] = [day, str(int(agg["foreign"])), str(int(agg["trust"])),
+                           str(int(agg["dealer"])), str(int(tot))]
+        else:
+            errs["inst"] = "三大法人表找到了但取不到買賣差額"
+        if unknown:
+            errs["inst_unknown_names"] = unknown
     elif "bfi82u" not in market:
         errs["inst"] = "BFI82U 未取得"
+    else:
+        errs["inst"] = "找不到三大法人買賣金額統計表"
 
     return out, errs
 
@@ -682,21 +807,33 @@ def main():
             st["dividend_rows"] = len(dl)
 
         # ── v6：四個新 dataset 各自併進歷史 ──
-        extra_stat, fs_types = {}, None
+        extra_stat, fs_types, cap_type = {}, None, None
         for kind, blk in (data.get("extra") or {}).items():
             try:
-                if kind == "fs":
-                    lines, fs_types = fs_capital_lines(blk["data"])
+                if kind in ("fs", "bs"):
+                    # fs（損益表）只留 type 清單供查；**股本在 bs（資產負債表）**
+                    os.makedirs(META_DIR, exist_ok=True)
+                    if kind == "fs":
+                        _, fs_types, _ = fs_capital_lines(blk["data"])
+                        with open(os.path.join(META_DIR, f"{code}_fs_types.txt"),
+                                  "w", encoding="utf-8") as f:
+                            f.write("\n".join(fs_types) + "\n")
+                        continue
+                    lines, bs_types, cands = fs_capital_lines(blk["data"])
+                    with open(os.path.join(META_DIR, f"{code}_bs_types.txt"),
+                              "w", encoding="utf-8") as f:
+                        f.write("\n".join(bs_types) + "\n")
+                    if cands:
+                        with open(os.path.join(
+                                META_DIR, f"{code}_capital_candidates.txt"),
+                                "w", encoding="utf-8") as f:
+                            f.write("type\tdate\tvalue\n" + "\n".join(cands) + "\n")
                     header, tag = CAPITAL_HEADER, f"{code}_capital"
                     hpath = os.path.join(HIST_DIR, f"{code}_capital.csv")
-                    # 看到的所有 type 都寫出來——對不上候選名單時才有東西可查
-                    os.makedirs(META_DIR, exist_ok=True)
-                    with open(os.path.join(META_DIR, f"{code}_fs_types.txt"),
-                              "w", encoding="utf-8") as f:
-                        f.write("\n".join(fs_types) + "\n")
                     if not lines:
                         manifest.setdefault("capital_not_found", []).append(code)
                         continue
+                    cap_type = lines[0][1]
                 else:
                     lines = extra_lines(kind, blk["data"])
                     header = {"per": PER_HEADER, "revenue": REVENUE_HEADER,
@@ -717,6 +854,7 @@ def main():
         manifest["stocks"][code] = {
             "extra": extra_stat or None,
             "fs_types_seen": (len(fs_types) if fs_types else None),
+            "capital_source": cap_type,
             "price_date_max": (data["price"] or {}).get("date_max"),
             "inst_date_max": (data["institutional"] or {}).get("date_max"),
             "history": st,
