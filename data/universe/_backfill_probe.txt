@@ -1,4 +1,4 @@
-# 回補端點偵察 2026-09-02T23:44:27+08:00  測試日 2026-08-28
+# 回補端點偵察 2026-09-02T23:51:28+08:00  測試日 2026-08-28
 
 == twse
   OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260828&type=ALLBUT0999&response=json
@@ -15,18 +15,13 @@
   → 採用：https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/08/28&type=EW&id=&response=json
 
 == emerging
-  BADJSON https://www.tpex.org.tw/www/zh-tw/esb/stockPricing?date=2026/08/28&id=&response=json
-        JSONDecodeError
-  BADJSON https://www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date=2026/08/28&response=json
-        JSONDecodeError
-  BADJSON https://www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/08/28&response=json
-        JSONDecodeError
-  BADJSON https://www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/08/28&response=json
-        JSONDecodeError
-  BADJSON https://www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/08/28&o=json
-        JSONDecodeError
-  OK   https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
-        bytes=142647
-        欄位=['Date', 'Time', 'SecuritiesCompanyCode', 'CompanyName', 'PreviousAveragePrice', 'BuyingPrice', 'BuyingQuantity', 'SellingPrice', 'SellingQuantity', 'Highest', 'Lowest', 'Average', 'LatestPrice', 'Buy/Sell', 'SuspendTime', 'TransactionVolume', 'ApplyingDate', 'ApplyingStatus']
-        解析出 364 列
-  → 採用：https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
+  OK   https://www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/08/28&id=&response=json
+        stat=請輸入資料日期及股票代碼查詢個股行情（休市／查無）
+  → 採用：（無可用端點）
+
+== emerging(逐檔逐月，7879)
+  OK   https://www.tpex.org.tw/www/zh-tw/emerging/historical?type=Monthly&date=2026/08/01&code=7879&id=&response=json
+        bytes=2407
+        頂層型別=dict
+        頂層鍵=['stat', 'tables', 'date']
+        tables: list[1]，首筆={"title": "興櫃個股歷史行情", "data": [["115/08/03", "28,863", "1,650,513", "57.70", "56.40", "57.18", "43", "0", "0", "0.00", "0.00", "0.00", "0"], ["115/08/04", "66,739", "3,924,575", "60.40", "56.90", "58.80", "94", "0", "0", "0.00", "0.00", "0.00", "0"], ["115/08/05", "85,455", "5,185,614", "61.90", "58.50", "60.68", "110", "0", "0", "0.00", "0.00", "0.00", "0"], ["115/08/06", "64,516", "3,941,614", "
