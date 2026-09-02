@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "先選 probe 驗端點，通了再選 run"
+        description: "先選 probe 驗端點，通了再選 run；esb = 興櫃逐檔逐月"
         type: choice
-        options: [probe, run]
+        options: [probe, run, esb]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -18,8 +18,11 @@ on:
         description: "迄日（run 用，YYYY-MM-DD）。建議一次一年"
         default: "2015-12-31"
       markets:
-        description: "要回補的市場，逗號分隔"
-        default: "twse,tpex,emerging"
+        description: "要回補的市場，逗號分隔（run 用；興櫃走 esb 模式，這裡不要填 emerging）"
+        default: "twse,tpex"
+      codes:
+        description: "興櫃代號，逗號分隔（esb 用）"
+        default: "7879,5267,6434"
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-08-28"
@@ -48,6 +51,14 @@ jobs:
       - name: 探路（只驗端點，不寫資料）
         if: inputs.mode == 'probe'
         run: python backfill.py --probe --date "${{ inputs.probe_date }}"
+
+      - name: 興櫃逐檔逐月回補
+        if: inputs.mode == 'esb'
+        run: |
+          python backfill.py --esb \
+            --codes "${{ inputs.codes }}" \
+            --start "${{ inputs.start }}" \
+            --end   "${{ inputs.end }}"
 
       - name: 回補
         if: inputs.mode == 'run'
