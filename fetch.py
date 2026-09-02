@@ -764,7 +764,9 @@ PROBE = "endpoint_probe.txt"
 
 UNIVERSE_HEADER = ["key", "date", "stock_id", "name", "market",
                    "open", "high", "low", "close", "volume", "amount",
-                   "change", "limit"]
+                   "change", "limit", "shares"]
+# shares＝發行股數。**只有上櫃那條端點有給**，上市與興櫃留空。
+# 有它才算得出市值與周轉率，所以拿得到就存——事後補要另外跑 2,000 個請求。
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
 
@@ -789,8 +791,11 @@ def _kind(code, name):
     return "stock"            # 四碼＝真正的股票
 
 
-def _candidates(ymd):
-    """每個市場的候選端點，依序試，第一個成功的就用。"""
+def _candidates(ymd, day_slash=""):
+    """每個市場的候選端點，依序試，第一個成功的就用。
+
+    ymd = 20260902（TWSE 用）；day_slash = 2026/09/02（TPEx 新站用）。
+    """
     return {
         "twse": [
             # 每日收盤行情（全部，**不含權證與債券**）
@@ -798,9 +803,13 @@ def _candidates(ymd):
             f"https://www.twse.com.tw/exchangeReport/MI_INDEX?date={ymd}&type=ALLBUT0999&response=json",
             f"{TWSE}/afterTrading/STOCK_DAY_ALL?response=json",
         ],
+        # ★ 2026-09-02 回補 probe 證實：`afterTrading/otc` 比 openapi 好很多，改為第一順位。
+        #   openapi 回 5,709 列（含 4,844 檔權證）；這一條回 998 列、**原生就不含權證**，
+        #   而且多了「發行股數」（＝在外流通股數，可直接算市值與周轉率）
+        #   與「次日漲停價／次日跌停價」。**回補與每日用同一條，形狀才會一致。**
         "tpex": [
+            f"https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={day_slash}&type=EW&id=&response=json",
             "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
-            f"https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={ymd}&type=EW&response=json",
         ],
         "emerging": [
             "https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics",
@@ -860,8 +869,11 @@ def parse_twse_daily(d, day):
     i_vol = _idx_any(fields, "成交股數")
     i_amt = _idx_any(fields, "成交金額")
     i_chg = _idx_any(fields, "漲跌價差")
-    # 漲跌方向另有一欄（內容是 HTML 的 + / -），與價差是兩欄
-    i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)")
+    # 漲跌有兩種寫法：TWSE 拆成「方向欄（HTML 的 +/-）＋ 漲跌價差」；
+    # TPEx 是單一「漲跌」欄、正負號直接寫在值裡。**兩種都要吃**
+    #（2026-09-02：只修了 backfill.py 沒同步這裡，TPEx 的漲跌整欄變空）。
+    i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
+    i_shares = _idx_any(fields, "發行股數")
     need = [i_code, i_open, i_high, i_low, i_close]
     if any(x is None for x in need):
         return [], f"欄位對不上：{fields}"
@@ -876,9 +888,15 @@ def parse_twse_daily(d, day):
                       _num(r[i_low]), _num(r[i_close]))
         if not c:
             continue                       # 無成交就沒有收盤價，跳過不補值
-        sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
-        chg = _num(r[i_chg]) if i_chg is not None else ""
-        chg = str(sign * float(chg)) if chg else ""
+        if i_chg is not None:
+            sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
+            chg = _num(r[i_chg])
+            chg = str(sign * float(chg)) if chg else ""
+        elif i_sign is not None:
+            # 正負號已在值裡，_num() 只清 "+"、保留 "-"——**不要再乘一次 -1**
+            chg = _num(r[i_sign])
+        else:
+            chg = ""
         # 漲跌停鎖死：開＝高＝低＝收且有量。**回測必須知道這一天買不到。**
         lim = ""
         if o and h and l and c and o == h == l == c:
@@ -888,7 +906,8 @@ def parse_twse_daily(d, day):
                     "twse", o, h, l, c,
                     _num(r[i_vol]) if i_vol is not None else "",
                     _num(r[i_amt]) if i_amt is not None else "",
-                    chg, lim])
+                    chg, lim,
+                    _num(r[i_shares]) if i_shares is not None else ""])
     return out, f"欄位={fields}"
 
 
@@ -935,7 +954,7 @@ def parse_openapi_daily(rows, day, market):
             lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
         out.append([f"{day}_{code}", day, code,
                     str(r.get(k_name, "")).strip(), market,
-                    o, h, l, c, _num(r.get(k_vol)), _num(r.get(k_amt)), chg, lim])
+                    o, h, l, c, _num(r.get(k_vol)), _num(r.get(k_amt)), chg, lim, ""])
     return out, f"欄位={keys}"
 
 
@@ -945,7 +964,7 @@ def fetch_universe(today):
     probe, all_lines, counts, errs = [], [], {}, {}
     probe.append(f"# 端點偵察 {now_tpe().isoformat(timespec='seconds')} 目標日 {today}")
 
-    for market, urls in _candidates(ymd).items():
+    for market, urls in _candidates(ymd, today.replace("-", "/")).items():
         got = False
         for u in urls:
             raw, err = get(u, retries=2, timeout=40)
@@ -1115,7 +1134,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.3 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v7.5 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
