@@ -857,7 +857,7 @@ def _idx_any(fields, *options):
     return None
 
 
-def parse_twse_daily(d, day):
+def parse_twse_daily(d, day, market="twse"):
     """→ (lines, note)。抓不到就回 ([], 原因)。"""
     t, fields = _rows_from_twse(d)
     if not t:
@@ -903,7 +903,7 @@ def parse_twse_daily(d, day):
             lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
         out.append([f"{day}_{code}", day, code,
                     str(r[i_name]).strip() if i_name is not None else "",
-                    "twse", o, h, l, c,
+                    market, o, h, l, c,
                     _num(r[i_vol]) if i_vol is not None else "",
                     _num(r[i_amt]) if i_amt is not None else "",
                     chg, lim,
@@ -986,7 +986,7 @@ def fetch_universe(today):
                     errs[market] = f"stat={stat}"
                     got = True          # 明確的「今天沒有」，不要再試下一條
                     break
-                lines, note = parse_twse_daily(d, today)
+                lines, note = parse_twse_daily(d, today, market)
             probe.append(f"    {note}")
             probe.append(f"    解析出 {len(lines)} 列")
             if lines:
@@ -1134,7 +1134,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.5 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v7.6 2026-09-03",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
