@@ -84,7 +84,11 @@ def candidates(day):
         "tpex": [
             f"https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={slash}&type=EW&id=&response=json",
             f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d={roc(day)}&o=json",
-            f"https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
+            # ★★ 這裡**絕對不可以**放 openapi/v1/tpex_mainboard_daily_close_quotes。
+            #   它沒有 date 參數、永遠回「今天」。2026-09-03 實測：2015 年回補時
+            #   前面兩條失敗就落到它，於是把 2026-09-02 的 980 檔當成 2015-01-01 寫進檔案
+            #   （2015 年上櫃其實只有 666～681 檔）。**元旦休市那天也有 980 列。**
+            #   靜默、每個數字都是真的、只是屬於另一個年代——回補最危險的一種錯。
         ],
         # 興櫃：openapi 只有 latest。以下候選是照**新版網站的路徑模式**推出來的——
         # 上櫃通的那條是 `www/zh-tw/afterTrading/otc?date=...&response=json`，
@@ -105,7 +109,7 @@ def candidates(day):
             f"https://www.tpex.org.tw/www/zh-tw/esb/pricing?date={slash}&response=json",
             f"https://www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date={slash}&response=json",
             f"https://www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d={roc(day)}&o=json",
-            f"https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics",
+            # 同上：tpex_esb_latest_statistics 也是「latest」，回補一律不可用
         ],
     }
 
@@ -177,7 +181,45 @@ def _tables(d):
         return [t for t in d["tables"] if isinstance(t, dict)]
     if d.get("fields") and d.get("data"):
         return [{"title": d.get("title", ""), "fields": d["fields"], "data": d["data"]}]
+    # ★ 第三種形狀：**編號鍵**（`fields1`/`data1` … `fields9`/`data9`）。
+    #   TWSE 舊版 MI_INDEX 就是這樣回的——一個回應裡塞好幾張表，
+    #   用序號區分而不是放進 tables 陣列。
+    #   2026-09-03 實測：2015 年整年回補時 twse 每一天都「失敗」，
+    #   而 2026-08-28 的同一條端點卻正常，差別只在日期 → 高度懷疑是這個。
+    #   不支援它的話，症狀是「連得上、stat=OK、解析出 0 列」，
+    #   看起來跟「那天沒有資料」一模一樣。
+    out = []
+    for k in sorted(d.keys()):
+        if not k.startswith("fields"):
+            continue
+        suffix = k[len("fields"):]
+        dk = "data" + suffix
+        if isinstance(d.get(k), list) and isinstance(d.get(dk), list):
+            out.append({"title": d.get("title" + suffix, d.get("title", "")),
+                        "fields": d[k], "data": d[dk]})
+    if out:
+        return out
     return []
+
+
+def _same_day(d, day):
+    """回應自己宣告的日期，是不是我們要的那一天。→ (是否相符, 它說的日期)
+
+    ★ 這是回補的最後一道防線。端點「不吃日期參數」或「查無就回最近一天」時，
+      HTTP 200、stat=OK、欄位全對、每個數字都是真的——**只是屬於別的日子**。
+      2026-09-03 就是這樣把 2026-09-02 的資料寫成 2015-01-01。
+      沒有這個檢查，錯誤在檔案裡完全看不出來。
+    """
+    want = day.replace("-", "")
+    if not isinstance(d, dict):
+        return True, ""            # 無從判斷就不擋，交給呼叫端的其他檢查
+    raw = d.get("date") or d.get("Date") or ""
+    got = "".join(ch for ch in str(raw) if ch.isdigit())
+    if not got:
+        return True, ""
+    if len(got) == 7:              # 民國 1040105
+        got = f"{int(got[:3]) + 1911}{got[3:]}"
+    return got[:8] == want, str(raw)
 
 
 def _idx(fields, *kws):
@@ -330,6 +372,12 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                 if probe_lines is not None:
                     probe_lines.append(f"  OK   {u}\n        stat={stat}（休市／查無）")
                 return [], "closed"
+            same, said = _same_day(d, day)
+            if not same:
+                last_err = f"回應的日期是 {said}，不是 {day}"
+                if probe_lines is not None:
+                    probe_lines.append(f"  OK   {u}\n        ✗ {last_err}")
+                continue           # 換下一條，絕不採用
             lines, note = parse_twse(d, day, market)
         if probe_lines is not None:
             probe_lines.append(f"  OK   {u}\n        bytes={len(raw)}\n"
@@ -585,6 +633,37 @@ def cmd_esb(args):
     return 0
 
 
+def cmd_purge(args):
+    """刪掉一個區間的日檔與 coverage 列。**確認資料被污染時用。**
+
+    為什麼需要它：回補寫出來的檔案在格式上完全正常，錯的是「內容屬於別的日子」。
+    這種檔案不能靠重跑覆蓋——只要 done_days() 認得它就會跳過。先刪乾淨再重跑。
+    """
+    lo, hi = args.start, args.end
+    killed = 0
+    if os.path.isdir(DAILY_DIR):
+        for n in sorted(os.listdir(DAILY_DIR)):
+            if n.endswith(".csv") and lo <= n[:-4] <= hi:
+                os.remove(os.path.join(DAILY_DIR, n))
+                killed += 1
+    cov = {}
+    if os.path.exists(COVERAGE):
+        with open(COVERAGE, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                q = ln.rstrip("\n").split(",")
+                if i and q and q[0][:1].isdigit():
+                    cov[q[0]] = q
+    dropped = [d for d in cov if lo <= d <= hi]
+    for d in dropped:
+        del cov[d]
+    with open(COVERAGE, "w", encoding="utf-8") as f:
+        f.write(",".join(COV_HEADER) + "\n")
+        for k in sorted(cov):
+            f.write(",".join(cov[k]) + "\n")
+    print(f"[purge] {lo} ~ {hi}：刪掉 {killed} 個日檔、{len(dropped)} 列 coverage")
+    return 0
+
+
 def cmd_audit(_args):
     """把 _coverage.csv 讀成一張表：哪一年幾天完整、幾天缺市場、缺哪個。
 
@@ -678,10 +757,18 @@ def cmd_run(args):
     print(f"[backfill] {args.start} ~ {args.end}｜市場 {markets}｜"
           f"待處理 {len(days)} 天（已存在 {len(skip)} 天，略過）")
     ok = closed = failed = 0
+    # ★ 連續失敗要真的退下來。245/261 天 twse 失敗（2026-09-03 實測）就是
+    #   固定間隔硬打的下場——交易所擋人之後，每 1.5 秒再敲一次只是延長封鎖。
+    streak = {m: 0 for m in markets}
     for i, day in enumerate(days, 1):
         per, notes, all_lines = {}, [], []
         for m in markets:
-            rows, src = fetch_day_market(day, m, candidates(day)[m])
+            urls = candidates(day)[m]
+            if streak[m] >= 3:
+                cool = min(30 * 2 ** (streak[m] - 3), 300)
+                print(f"    {m} 已連續失敗 {streak[m]} 次，冷卻 {cool}s", flush=True)
+                time.sleep(cool)
+            rows, src = fetch_day_market(day, m, urls)
             # ★ coverage 要記「真的寫進檔案的列數」——權證會被 write_day 濾掉，
             #   這裡若記過濾前的數字，coverage 就對不上檔案本身。
             rows = [r for r in rows if _kind(r[2]) != "warrant"]
@@ -692,6 +779,11 @@ def cmd_run(args):
                 why = str(src).split(":", 1)[1] if ":" in str(src) else ""
                 why = why.replace(",", "；").replace("\n", " ").strip()
                 notes.append(f"{m}:失敗({why})" if why else f"{m}:失敗")
+            elif src in urls and urls.index(src) > 0:
+                # 用到第 2、3 條候選要留痕跡：主力端點壞掉是要修的事，
+                # 不能因為備援剛好也能跑就永遠不知道。
+                notes.append(f"{m}#候選{urls.index(src) + 1}")
+            streak[m] = streak[m] + 1 if str(src).startswith("all_failed") else 0
             all_lines.extend(rows)
             # 某個市場整條失敗多半是被限流 → 多等一下再打下一個，
             # 否則接下來的日子會連鎖失敗（2026-09-03 2015 回補實測到 twse 失敗）
@@ -714,6 +806,8 @@ def cmd_run(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--probe", action="store_true", help="只測端點，不寫資料")
+    ap.add_argument("--purge", action="store_true",
+                    help="刪掉 --start~--end 的日檔與 coverage 列（資料被污染時用）")
     ap.add_argument("--audit", action="store_true",
                     help="讀 _coverage.csv，列出每年完整／休市／缺市場的天數")
     ap.add_argument("--run", action="store_true", help="逐日回補")
@@ -729,6 +823,8 @@ def main():
                     help="興櫃逐檔逐月回補（要配 --codes，start/end 用 YYYY-MM）")
     ap.add_argument("--codes", default="", help="興櫃代號，逗號分隔")
     a = ap.parse_args()
+    if a.purge:
+        return cmd_purge(a)
     if a.audit:
         return cmd_audit(a)
     if a.probe:
