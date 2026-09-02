@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "先選 probe 驗端點，通了再選 run；esb = 興櫃逐檔逐月"
+        description: "probe 驗端點｜run 逐日回補｜esb 興櫃逐檔逐月｜audit 看哪幾天缺市場"
         type: choice
-        options: [probe, run, esb]
+        options: [probe, run, esb, audit]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -23,6 +23,9 @@ on:
       codes:
         description: "興櫃代號，逗號分隔（esb 用）"
         default: "7879,5267,6434"
+      sleep:
+        description: "每個請求間隔秒數（run 用）。被交易所限流就調大，例如 3"
+        default: "1.5"
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-08-28"
@@ -48,6 +51,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: 覆蓋率盤點（只讀本地檔，不連外）
+        if: inputs.mode == 'audit'
+        run: python backfill.py --audit
+
       - name: 探路（只驗端點，不寫資料）
         if: inputs.mode == 'probe'
         run: python backfill.py --probe --date "${{ inputs.probe_date }}"
@@ -66,7 +73,8 @@ jobs:
           python backfill.py --run \
             --start "${{ inputs.start }}" \
             --end   "${{ inputs.end }}" \
-            --markets "${{ inputs.markets }}"
+            --markets "${{ inputs.markets }}" \
+            --sleep "${{ inputs.sleep || '1.5' }}"
 
       # 探路失敗也要 commit：偵察檔本身就是這一趟的產出
       - name: Commit 回 repo
