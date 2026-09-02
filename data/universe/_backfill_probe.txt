@@ -1,4 +1,4 @@
-# 回補端點偵察 2026-09-03T00:34:03+08:00  測試日 2026-08-28
+# 回補端點偵察 2026-09-03T00:34:42+08:00  測試日 2026-08-28
 
 == twse
   OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260828&type=ALLBUT0999&response=json
