@@ -58,6 +58,18 @@ def roc(d):
     return f"{int(y) - 1911}/{m}/{dd}"
 
 
+def esb_month_url(code, ym, fmt="json"):
+    """興櫃**逐檔逐月**歷史（使用者 2026-09-02 提供）。
+
+    `www/zh-tw/emerging/historical?type=Monthly&date=YYYY/MM/01&code=<代號>&response=json`
+
+    ★ 這是**逐檔**的，不是全市場——364 檔 × 132 個月 ≈ 48,000 個請求，不可能全跑。
+      所以只對「使用者在意的那幾檔興櫃股」補歷史，其餘從今天起累積。
+    """
+    return ("https://www.tpex.org.tw/www/zh-tw/emerging/historical"
+            f"?type=Monthly&date={ym}/01&code={code}&id=&response={fmt}")
+
+
 def candidates(day):
     """每個市場的候選端點，依序試。**這些是假設，--probe 就是用來驗證的。**"""
     ymd = day.replace("-", "")
@@ -360,6 +372,29 @@ def cmd_probe(args):
         rows, src = fetch_day_market(day, market, urls, probe_lines=lines)
         summary[market] = len(rows)
         lines.append(f"  → 採用：{src if rows else '（無可用端點）'}")
+    # 興櫃逐檔逐月（使用者提供的端點）——單獨測一次，用 7879 與測試日的月份
+    lines.append("\n== emerging(逐檔逐月，7879)")
+    u = esb_month_url("7879", day[:7].replace("-", "/"))
+    raw, err = get(u)
+    if err:
+        lines.append(f"  FAIL {u}\n        {err}")
+    else:
+        lines.append(f"  OK   {u}\n        bytes={len(raw)}")
+        try:
+            d = json.loads(raw.decode("utf-8"))
+            lines.append(f"        頂層型別={type(d).__name__}")
+            if isinstance(d, dict):
+                lines.append(f"        頂層鍵={list(d.keys())[:15]}")
+                for k, v in list(d.items())[:8]:
+                    if isinstance(v, list) and v:
+                        lines.append(f"        {k}: list[{len(v)}]，首筆="
+                                     f"{json.dumps(v[0], ensure_ascii=False)[:400]}")
+            elif isinstance(d, list) and d:
+                lines.append(f"        首筆={json.dumps(d[0], ensure_ascii=False)[:400]}")
+        except Exception as e:  # noqa: BLE001
+            lines.append(f"        JSON 解析失敗 {type(e).__name__}；前 300 字："
+                         f"{raw[:300].decode('utf-8', 'replace')!r}")
+
     os.makedirs(UNI_DIR, exist_ok=True)
     with open(PROBE, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
