@@ -1,0 +1,24 @@
+# 回補端點偵察 2026-09-02T23:29:14+08:00  測試日 2026-08-28
+
+== twse
+  OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260828&type=ALLBUT0999&response=json
+        bytes=247381
+        欄位=['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)', '漲跌價差', '最後揭示買價', '最後揭示買量', '最後揭示賣價', '最後揭示賣量', '本益比']
+        解析出 1366 列
+  → 採用：https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260828&type=ALLBUT0999&response=json
+
+== tpex
+  OK   https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/08/28&type=EW&id=&response=json
+        stat=ok（休市／查無）
+  → 採用：（無可用端點）
+
+== emerging
+  BADJSON https://www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/08/28&response=json
+        JSONDecodeError
+  BADJSON https://www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/08/28&o=json
+        JSONDecodeError
+  OK   https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
+        bytes=142647
+        欄位=['Date', 'Time', 'SecuritiesCompanyCode', 'CompanyName', 'PreviousAveragePrice', 'BuyingPrice', 'BuyingQuantity', 'SellingPrice', 'SellingQuantity', 'Highest', 'Lowest', 'Average', 'LatestPrice', 'Buy/Sell', 'SuspendTime', 'TransactionVolume', 'ApplyingDate', 'ApplyingStatus']
+        解析出 364 列
+  → 採用：https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
