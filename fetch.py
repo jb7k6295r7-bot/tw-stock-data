@@ -641,8 +641,12 @@ def market_lines(market, day):
     # fields: ['成交統計','成交金額(元)','成交股數(股)','成交筆數']
     t = _find_table(market, "summary", ("大盤統計",), "成交金額")
     if t:
-        row = next((r for r in (t.get("data") or [])
-                    if r and str(r[0]).strip().startswith("股票")), None)
+        # ★ 列名是「1.一般股票」，**不是「股票」**（2026-09-02 實測；
+        #   同一張表還有 2.台灣存託憑證、認購售權證等，不可誤取）。
+        def _is_stock_row(r):
+            lab = str(r[0]).strip()
+            return "一般股票" in lab or lab.split(".")[-1].strip() == "股票"
+        row = next((r for r in (t.get("data") or []) if r and _is_stock_row(r)), None)
         if row and len(row) >= 4:
             out["amount"] = [day, _num(row[1]), _num(row[2]), _num(row[3])]
         else:
