@@ -769,16 +769,24 @@ STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"
 
 
 def _kind(code, name):
-    """粗分類，只用代號規則，**不猜**。分不出來就寫 stock，篩選時再細看。
+    """粗分類，只用代號規則，**不猜**。
 
-    使用者要的是「納入但標記清楚」——收進來，用不用是篩選那一步的事。
+    2026-09-02 實測（v7.0 第一次全市場執行）：
+    - 上市走 `ALLBUT0999`，**本來就不含權證**；1,371 列 = 4碼 1,092 ＋ 5碼 134 ＋ 6碼 145。
+    - **上櫃的 openapi 沒有這個過濾**：5,709 列裡有 **4,844 是權證**
+      （`706985 原相永豐5B購02` 這種，代號 70～73 開頭）。
+    → 權證必須排除：它不是股票，而且佔了 70% 的體積。
     """
     c = str(code)
+    if len(c) == 6 and c[0] == "7":
+        return "warrant"      # 權證（上櫃 70～73 開頭），**不寫進 daily**
     if c.startswith("00"):
         return "etf"          # ETF／ETN／期信
-    if len(c) == 5 and c[:4].isdigit():
-        return "special"      # 特別股、TDR 等五碼
-    return "stock"
+    if len(c) == 5:
+        return "special"      # 特別股、TDR 等
+    if len(c) == 6:
+        return "other"        # 受益證券、REITs 等
+    return "stock"            # 四碼＝真正的股票
 
 
 def _candidates(ymd):
@@ -899,9 +907,15 @@ def parse_openapi_daily(rows, day, market):
 
     k_code = pick("SecuritiesCompanyCode", "Code", "證券代號", "股票代號")
     k_name = pick("CompanyName", "Name", "證券名稱")
-    k_close = pick("Close", "收盤")
-    k_open, k_high, k_low = pick("Open", "開盤"), pick("High", "最高"), pick("Low", "最低")
-    k_vol = pick("TradingShares", "成交股數")
+    # ★ 興櫃（tpex_esb_latest_statistics）沒有 Open/Close，只有 LatestPrice／Highest／
+    #   Lowest／TransactionVolume（2026-09-02 實測，v7.0 因此解析出 0 列）。
+    #   **開盤價刻意不映射**——興櫃的開盤是參考價，會落在當日高低之外，
+    #   依專案規範本來就不可拿來畫K棒實體。
+    k_close = pick("Close", "LatestPrice", "收盤")
+    k_open = pick("Open", "開盤")
+    k_high = pick("High", "Highest", "最高")
+    k_low = pick("Low", "Lowest", "最低")
+    k_vol = pick("TradingShares", "TransactionVolume", "成交股數")
     k_amt = pick("TransactionAmount", "成交金額")
     k_chg = pick("Change", "漲跌")
     if not (k_code and k_close):
@@ -964,9 +978,24 @@ def fetch_universe(today):
         if not got and market not in errs:
             errs[market] = "所有候選端點都失敗"
 
-    counts["total"] = len(all_lines)
+    # ★ 權證不寫進資料庫：不是股票，而且 2026-09-02 實測佔了上櫃回傳的 70%（4,844/5,709）。
+    #   **排除幾檔要回報**，不要靜靜地丟掉。
+    kept, dropped = [], 0
+    for r in all_lines:
+        if _kind(r[2], r[3]) == "warrant":
+            dropped += 1
+            continue
+        kept.append(r)
+    counts["warrants_excluded"] = dropped
+    counts["total"] = len(kept)
+    # 依類型細分，讓「到底幾檔股票」有明確答案
+    bykind = {}
+    for r in kept:
+        k = _kind(r[2], r[3])
+        bykind[k] = bykind.get(k, 0) + 1
+    counts["by_kind"] = bykind
     _probe_write(probe)
-    return {"counts": counts, "errors": errs or None}, all_lines
+    return {"counts": counts, "errors": errs or None}, kept
 
 
 def write_universe_day(day, lines):
@@ -1074,7 +1103,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.0 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v7.1 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
