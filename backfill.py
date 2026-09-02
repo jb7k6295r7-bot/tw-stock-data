@@ -71,8 +71,15 @@ def candidates(day):
             f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d={roc(day)}&o=json",
             f"https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
         ],
-        # 興櫃：同樣只有 latest，歷史端點未驗證
+        # 興櫃：openapi 只有 latest。以下候選是照**新版網站的路徑模式**推出來的——
+        # 上櫃通的那條是 `www/zh-tw/afterTrading/otc?date=...&response=json`，
+        # 而使用者提供的興櫃頁面是 `zh-tw/esb/trading/info/stock-pricing.html`
+        # （該頁本身是 JS，資料不在 HTML 裡，且對外直接讀會 403）。
+        # **這些全是假設，probe 就是用來淘汰它們的。**
         "emerging": [
+            f"https://www.tpex.org.tw/www/zh-tw/esb/stockPricing?date={slash}&id=&response=json",
+            f"https://www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date={slash}&response=json",
+            f"https://www.tpex.org.tw/www/zh-tw/esb/pricing?date={slash}&response=json",
             f"https://www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date={slash}&response=json",
             f"https://www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d={roc(day)}&o=json",
             f"https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics",
@@ -161,16 +168,17 @@ def _idx_any(fields, *options):
 def parse_twse(d, day):
     for t in _tables(d):
         fields = [str(x) for x in (t.get("fields") or [])]
-        if not (any("證券代號" in f or "股票代號" in f for f in fields)
-                and any("收盤" in f for f in fields)):
+        # 找表的條件放寬到「有代號欄 ＋ 有收盤欄」——TPEx 用「代號」，TWSE 用「證券代號」，
+        # 寫死其中一種會找不到另一種（2026-09-02 probe 診斷發現）。
+        if not (any("代號" in f for f in fields) and any("收盤" in f for f in fields)):
             continue
-        i_code = _idx_any(fields, "證券代號", "股票代號")
-        i_name = _idx_any(fields, "證券名稱", "股票名稱")
+        i_code = _idx_any(fields, "證券代號", "股票代號", "代號")
+        i_name = _idx_any(fields, "證券名稱", "股票名稱", "名稱")
         i_o, i_h = _idx_any(fields, "開盤"), _idx_any(fields, "最高")
         i_l, i_c = _idx_any(fields, "最低"), _idx_any(fields, "收盤")
         i_v, i_a = _idx_any(fields, "成交股數"), _idx_any(fields, "成交金額")
         i_chg = _idx_any(fields, "漲跌價差")
-        i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)")
+        i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
         if any(x is None for x in (i_code, i_o, i_h, i_l, i_c)):
             return [], f"欄位對不上：{fields}"
         out = []
@@ -183,9 +191,19 @@ def parse_twse(d, day):
             o, h, l, c = _num(r[i_o]), _num(r[i_h]), _num(r[i_l]), _num(r[i_c])
             if not c:
                 continue
-            sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
-            chg = _num(r[i_chg]) if i_chg is not None else ""
-            chg = str(sign * float(chg)) if chg else ""
+            # 漲跌有兩種寫法：TWSE 拆成「方向欄（HTML 的 +/-）＋ 漲跌價差」，
+            # TPEx 則是單一「漲跌」欄、正負號直接寫在值裡。兩種都要吃。
+            if i_chg is not None:
+                sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
+                chg = _num(r[i_chg])
+                chg = str(sign * float(chg)) if chg else ""
+            elif i_sign is not None:
+                # ★ 這一欄的正負號直接寫在值裡（"+10.00" / "-5.50"），
+                #   而 _num() 只清掉 "+"、**保留 "-"**——所以直接用就好。
+                #   先前多做一次 -1 造成負負得正，跌停被標成漲停（2026-09-02 測到）。
+                chg = _num(r[i_sign])
+            else:
+                chg = ""
             lim = ""
             if o and h and l and c and o == h == l == c:
                 lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
@@ -255,7 +273,9 @@ def fetch_day_market(day, market, urls, probe_lines=None):
             lines, note = parse_openapi(d, day, market)
         else:
             stat = d.get("stat")
-            if stat and stat != "OK":
+            # ★ 大小寫不敏感：TPEx 回的是小寫 "ok"，寫死 != "OK" 會把通的端點判成休市
+            #   （2026-09-02 實測，上櫃回補因此整批被跳過）。
+            if stat and str(stat).strip().lower() not in ("ok", "success"):
                 if probe_lines is not None:
                     probe_lines.append(f"  OK   {u}\n        stat={stat}（休市／查無）")
                 return [], "closed"
@@ -263,6 +283,20 @@ def fetch_day_market(day, market, urls, probe_lines=None):
         if probe_lines is not None:
             probe_lines.append(f"  OK   {u}\n        bytes={len(raw)}\n"
                                f"        {note}\n        解析出 {len(lines)} 列")
+            if not lines:
+                # ★ 「連得上但解析出 0 列」是最需要診斷的情況——
+                #   把實際結構印出來，下一輪才有東西可以照著改，不必用猜的。
+                probe_lines.append(f"        [診斷] 頂層型別={type(d).__name__}")
+                if isinstance(d, dict):
+                    probe_lines.append(f"        [診斷] 頂層鍵={list(d.keys())[:15]}")
+                    for k, v in list(d.items())[:8]:
+                        if isinstance(v, list) and v:
+                            probe_lines.append(
+                                f"        [診斷] {k}: list[{len(v)}]，首筆="
+                                f"{json.dumps(v[0], ensure_ascii=False)[:300]}")
+                elif isinstance(d, list) and d:
+                    probe_lines.append(
+                        f"        [診斷] 首筆={json.dumps(d[0], ensure_ascii=False)[:300]}")
         if lines:
             return lines, u
     return [], "all_failed"
