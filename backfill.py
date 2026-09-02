@@ -44,7 +44,7 @@ PROBE = os.path.join(UNI_DIR, "_backfill_probe.txt")
 
 HEADER = ["key", "date", "stock_id", "name", "market",
           "open", "high", "low", "close", "volume", "amount", "change", "limit",
-          "shares"]
+          "shares", "transactions", "price_basis"]
 # ★ 欄位必須與 fetch.py 的 UNIVERSE_HEADER 逐字一致——兩邊產出同一批檔案，
 #   格式一分岔，之後建 DB 就會有一半的日子欄位對不上。
 COV_HEADER = ["date", "twse", "tpex", "emerging", "total", "note"]
@@ -209,6 +209,7 @@ def parse_twse(d, day, market="twse"):
         i_l, i_c = _idx_any(fields, "最低"), _idx_any(fields, "收盤")
         i_v, i_a = _idx_any(fields, "成交股數"), _idx_any(fields, "成交金額")
         i_sh = _idx_any(fields, "發行股數")
+        i_tx = _idx_any(fields, "成交筆數")
         i_chg = _idx_any(fields, "漲跌價差")
         i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
         if any(x is None for x in (i_code, i_o, i_h, i_l, i_c)):
@@ -244,7 +245,9 @@ def parse_twse(d, day, market="twse"):
                         o, h, l, c,
                         _num(r[i_v]) if i_v is not None else "",
                         _num(r[i_a]) if i_a is not None else "", chg, lim,
-                        _num(r[i_sh]) if i_sh is not None else ""])
+                        _num(r[i_sh]) if i_sh is not None else "",
+                        _num(r[i_tx]) if i_tx is not None else "",
+                        ""])          # price_basis：上市／上櫃是收盤價，留空
         return out, f"欄位={fields}"
     return [], "找不到含『證券代號』與『收盤』的表"
 
@@ -268,6 +271,18 @@ def parse_openapi(rows, day, market):
     k_v = pick("TradingShares", "TransactionVolume", "成交股數")
     k_a = pick("TransactionAmount", "成交金額")
     k_chg = pick("Change", "漲跌")
+
+    def exact(*names):
+        """完全相等才算。pick() 是「包含」比對，`pick("Average")` 會先撞上
+        `PreviousAveragePrice`，把昨天的價格當成今天的收盤——靜默且每列都錯。"""
+        for n in names:
+            for k in keys:
+                if str(k).strip() == n:
+                    return k
+        return None
+
+    # 成交筆數不可用 pick("Transaction")，會撞上 TransactionVolume（成交量）
+    k_tx = exact("成交筆數", "NumberOfTransactions", "Transactions", "Transaction")
     if not (k_code and k_c):
         return [], f"欄位對不上：{keys}"
     out = []
@@ -284,7 +299,8 @@ def parse_openapi(rows, day, market):
         if o and h and l and c and o == h == l == c:
             lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
         out.append([f"{day}_{code}", day, code, str(r.get(k_name, "")).strip(), market,
-                    o, h, l, c, _num(r.get(k_v)), _num(r.get(k_a)), chg, lim, ""])
+                    o, h, l, c, _num(r.get(k_v)), _num(r.get(k_a)), chg, lim, "",
+                    _num(r.get(k_tx)) if k_tx else "", ""])
     return out, f"欄位={keys}"
 
 
@@ -365,9 +381,32 @@ def append_coverage(day, per_market, note):
 
 
 def done_days():
+    """已經抓過、**而且欄位是現行版本**的日期。
+
+    ★ 欄位版本要檢查（2026-09-03 加）：HEADER 加欄位時，舊檔的欄數會少一截。
+      如果只看「檔案存不存在」就跳過，那些舊檔會**永遠停在舊格式**，
+      而且建 DB 時才會發現有一半的日子欄位對不上——那時要重跑的是整整十年。
+      → 欄位不符就當成沒抓過，下一趟自動重抓覆蓋。
+    """
     if not os.path.isdir(DAILY_DIR):
         return set()
-    return {n[:-4] for n in os.listdir(DAILY_DIR) if n.endswith(".csv")}
+    ok, stale = set(), 0
+    want = ",".join(HEADER)
+    for n in os.listdir(DAILY_DIR):
+        if not n.endswith(".csv"):
+            continue
+        try:
+            with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
+                head = f.readline().rstrip("\n")
+        except OSError:
+            continue
+        if head == want:
+            ok.add(n[:-4])
+        else:
+            stale += 1
+    if stale:
+        print(f"[backfill] {stale} 個日檔是舊欄位版本，將重抓覆蓋")
+    return ok
 
 
 def daterange(start, end):
