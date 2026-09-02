@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe 驗端點｜run 逐日回補｜esb 興櫃逐檔逐月｜audit 看哪幾天缺市場"
+        description: "probe 驗端點｜run 逐日回補｜esb 興櫃逐檔逐月｜audit 看缺哪幾天｜purge 刪掉區間重來"
         type: choice
-        options: [probe, run, esb, audit]
+        options: [probe, run, esb, audit, purge]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -24,8 +24,8 @@ on:
         description: "興櫃代號，逗號分隔（esb 用）"
         default: "7879,5267,6434"
       sleep:
-        description: "每個請求間隔秒數（run 用）。被交易所限流就調大，例如 3"
-        default: "1.5"
+        description: "每個請求間隔秒數（run 用）。TWSE 會限流，2015 實測 1.5 秒有 94% 失敗 → 用 5"
+        default: "5"
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-08-28"
@@ -50,6 +50,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: 清除區間（刪 start~end 的日檔與 coverage 列）
+        if: inputs.mode == 'purge'
+        run: |
+          python backfill.py --purge \
+            --start "${{ inputs.start }}" --end "${{ inputs.end }}"
 
       - name: 覆蓋率盤點（只讀本地檔，不連外）
         if: inputs.mode == 'audit'
