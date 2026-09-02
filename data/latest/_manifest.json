@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T22:28:54+08:00",
+  "generated_at": "2026-09-02T22:38:05+08:00",
   "target_trading_day": "2026-09-02",
   "stocks": {
     "7879": {
@@ -12,7 +12,7 @@
         },
         "fs": {
           "total": 32,
-          "added": 32,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -62,13 +62,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -115,13 +115,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -168,13 +168,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -221,13 +221,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -274,13 +274,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -327,13 +327,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -380,13 +380,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -433,13 +433,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -486,13 +486,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -516,7 +516,7 @@
         "inst": {
           "total": 161,
           "added": 0,
-          "changed": 1
+          "changed": null
         },
         "dividend_rows": 4
       },
@@ -539,13 +539,13 @@
         },
         "margin": {
           "total": 161,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-02"
         },
         "fs": {
           "total": 80,
-          "added": 80,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         },
@@ -604,28 +604,34 @@
       "inst": {
         "total": 2,
         "added": 0,
-        "changed": 1
+        "changed": null
       }
     },
     "parse_errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
-  "version": "v7.0 2026-09-02",
+  "version": "v7.1 2026-09-02",
   "calendar_days": 404,
   "universe": {
     "counts": {
       "twse": 1371,
       "tpex": 5709,
-      "total": 7080
+      "emerging": 364,
+      "warrants_excluded": 4729,
+      "total": 2715,
+      "by_kind": {
+        "etf": 357,
+        "other": 26,
+        "stock": 2305,
+        "special": 27
+      }
     },
-    "errors": {
-      "emerging": "所有候選端點都失敗"
-    },
-    "rows_written": 7080,
+    "errors": null,
+    "rows_written": 2715,
     "stocks_meta": {
-      "total": 7080,
-      "added_today": 7080
+      "total": 7444,
+      "added_today": 364
     }
   },
-  "history_rows_changed": 2
+  "history_rows_changed": null
 }
