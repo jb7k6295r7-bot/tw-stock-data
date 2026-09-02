@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T09:49:23+08:00",
+  "generated_at": "2026-09-02T09:54:36+08:00",
   "target_trading_day": "2026-09-01",
   "stocks": {
     "7879": {
@@ -12,7 +12,7 @@
         },
         "bs": {
           "total": 4,
-          "added": 4,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -62,7 +62,7 @@
         },
         "bs": {
           "total": 9,
-          "added": 9,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -109,7 +109,7 @@
         },
         "bs": {
           "total": 10,
-          "added": 10,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -156,7 +156,7 @@
         },
         "bs": {
           "total": 10,
-          "added": 10,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -203,7 +203,7 @@
         },
         "bs": {
           "total": 10,
-          "added": 10,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -250,7 +250,7 @@
         },
         "bs": {
           "total": 10,
-          "added": 10,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -292,18 +292,21 @@
       },
       "breadth": {
         "total": 1,
+        "added": 0,
+        "changed": null
+      },
+      "amount": {
+        "total": 1,
         "added": 1,
         "changed": null
       },
       "inst": {
         "total": 1,
-        "added": 1,
+        "added": 0,
         "changed": null
       }
     },
-    "parse_errors": {
-      "amount": "大盤統計資訊裡沒有『股票』那一列"
-    }
+    "parse_errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
   "version": "v6 2026-09-02",
