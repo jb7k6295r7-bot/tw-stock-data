@@ -1,0 +1,391 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""全市場日K歷史回補（2015 起）—— 在使用者自己的 GitHub Actions 上執行。
+
+為什麼要有這一支：`fetch.py` 每天只抓「當天」。要做回測就需要長序列，
+而**回補是一次性、跑幾小時的工作**，不該塞進每日流程。
+
+★ 兩種模式，先探路再跑長工：
+
+    python3 backfill.py --probe --date 2026-08-28
+        對三個市場的每一條候選端點各試一次，把 HTTP 狀態、位元組數、
+        實際欄位名寫進 data/universe/_backfill_probe.txt。**先跑這個。**
+
+    python3 backfill.py --run --start 2015-01-01 --end 2015-12-31
+        逐日回放。已經有檔案的日期直接跳過，所以**可以分批續跑**。
+
+設計上刻意的幾件事
+────
+1. **一天一檔**（與 fetch.py 同格式）。git 存的是整個檔案的新版本，
+   2,700 檔各自加一列＝每天把整個資料庫重存一遍。
+2. **不完整的日子要標出來**：`_coverage.csv` 記每天三個市場各抓到幾列。
+   **回測時若不知道那天上櫃沒抓到，會誤以為上櫃股全部沒交易**——
+   那會讓任何「全市場排序」的策略靜默失真。
+3. **限速**：交易所會擋太快的連線。預設每個請求間隔 1.5 秒，
+   2,700 天 × 3 市場 ≈ 8,100 個請求 ≈ 3.4 小時，所以建議一次跑一年。
+4. **休市日不是錯誤**：TWSE 回 `stat != OK` 就當休市，記錄後往下一天，不重試。
+"""
+import argparse
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+from datetime import date, datetime, timedelta, timezone
+
+TPE = timezone(timedelta(hours=8))
+UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+UNI_DIR = os.path.join(_ROOT, "universe")
+DAILY_DIR = os.path.join(UNI_DIR, "daily")
+COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")
+PROBE = os.path.join(UNI_DIR, "_backfill_probe.txt")
+
+HEADER = ["key", "date", "stock_id", "name", "market",
+          "open", "high", "low", "close", "volume", "amount", "change", "limit"]
+COV_HEADER = ["date", "twse", "tpex", "emerging", "total", "note"]
+
+SLEEP = 1.5
+
+
+def roc(d):
+    """2026-09-02 -> 115/09/02（TPEx 舊端點用民國）"""
+    y, m, dd = d.split("-")
+    return f"{int(y) - 1911}/{m}/{dd}"
+
+
+def candidates(day):
+    """每個市場的候選端點，依序試。**這些是假設，--probe 就是用來驗證的。**"""
+    ymd = day.replace("-", "")
+    slash = day.replace("-", "/")
+    return {
+        # 上市：今天（2026-09-02）已實測可用，且 date= 參數有效 → 可逐日回放
+        "twse": [
+            f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={ymd}&type=ALLBUT0999&response=json",
+            f"https://www.twse.com.tw/exchangeReport/MI_INDEX?date={ymd}&type=ALLBUT0999&response=json",
+        ],
+        # 上櫃：每日用的 openapi **只給當日**，回補必須換帶日期的端點。全部未驗證。
+        "tpex": [
+            f"https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={slash}&type=EW&id=&response=json",
+            f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d={roc(day)}&o=json",
+            f"https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
+        ],
+        # 興櫃：同樣只有 latest，歷史端點未驗證
+        "emerging": [
+            f"https://www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date={slash}&response=json",
+            f"https://www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d={roc(day)}&o=json",
+            f"https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics",
+        ],
+    }
+
+
+def get(url, retries=2, timeout=45):
+    last = None
+    for i in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as e:
+            try:
+                body = e.read().decode("utf-8", "replace")[:200]
+            except Exception:  # noqa: BLE001
+                body = "(讀不到 body)"
+            last = f"HTTP {e.code} {e.reason} | {body}"
+            if 400 <= e.code < 500 and e.code not in (408, 429):
+                return None, last          # 4xx 重試沒有意義
+        except Exception as e:  # noqa: BLE001
+            last = f"{type(e).__name__}: {e}"
+        if i < retries - 1:
+            time.sleep(2 * (i + 1))
+    return None, last
+
+
+# ── 解析：與 fetch.py 用同一套規則，刻意複製而不 import ──
+# fetch.py 是每日腳本，這支是一次性工具；讓它們各自獨立，
+# 改一邊不會意外弄壞另一邊。**兩邊的欄位順序必須一致**（HEADER 就是契約）。
+
+def _num(v):
+    if v is None:
+        return ""
+    t = str(v).replace(",", "").replace("+", "").replace("%", "").strip()
+    if t in ("", "-", "--", "X", "N/A", "null", "None"):
+        return ""
+    try:
+        float(t)
+    except ValueError:
+        return ""
+    return t
+
+
+def _kind(code):
+    c = str(code)
+    if len(c) == 6 and c[0] == "7":
+        return "warrant"
+    if c.startswith("00"):
+        return "etf"
+    if len(c) == 5:
+        return "special"
+    if len(c) == 6:
+        return "other"
+    return "stock"
+
+
+def _tables(d):
+    if not isinstance(d, dict):
+        return []
+    if isinstance(d.get("tables"), list):
+        return [t for t in d["tables"] if isinstance(t, dict)]
+    if d.get("fields") and d.get("data"):
+        return [{"title": d.get("title", ""), "fields": d["fields"], "data": d["data"]}]
+    return []
+
+
+def _idx(fields, *kws):
+    for i, f in enumerate(fields):
+        if all(k in f for k in kws):
+            return i
+    return None
+
+
+def _idx_any(fields, *options):
+    """★ 不可寫成 `_idx(a) or _idx(b)`——第 0 欄是 falsy，證券代號正好在第 0 欄。"""
+    for kws in options:
+        i = _idx(fields, *(kws if isinstance(kws, tuple) else (kws,)))
+        if i is not None:
+            return i
+    return None
+
+
+def parse_twse(d, day):
+    for t in _tables(d):
+        fields = [str(x) for x in (t.get("fields") or [])]
+        if not (any("證券代號" in f or "股票代號" in f for f in fields)
+                and any("收盤" in f for f in fields)):
+            continue
+        i_code = _idx_any(fields, "證券代號", "股票代號")
+        i_name = _idx_any(fields, "證券名稱", "股票名稱")
+        i_o, i_h = _idx_any(fields, "開盤"), _idx_any(fields, "最高")
+        i_l, i_c = _idx_any(fields, "最低"), _idx_any(fields, "收盤")
+        i_v, i_a = _idx_any(fields, "成交股數"), _idx_any(fields, "成交金額")
+        i_chg = _idx_any(fields, "漲跌價差")
+        i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)")
+        if any(x is None for x in (i_code, i_o, i_h, i_l, i_c)):
+            return [], f"欄位對不上：{fields}"
+        out = []
+        for r in (t.get("data") or []):
+            if not r or len(r) <= i_c:
+                continue
+            code = str(r[i_code]).strip()
+            if not code or not code[0].isdigit():
+                continue
+            o, h, l, c = _num(r[i_o]), _num(r[i_h]), _num(r[i_l]), _num(r[i_c])
+            if not c:
+                continue
+            sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
+            chg = _num(r[i_chg]) if i_chg is not None else ""
+            chg = str(sign * float(chg)) if chg else ""
+            lim = ""
+            if o and h and l and c and o == h == l == c:
+                lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+            out.append([f"{day}_{code}", day, code,
+                        str(r[i_name]).strip() if i_name is not None else "", "twse",
+                        o, h, l, c,
+                        _num(r[i_v]) if i_v is not None else "",
+                        _num(r[i_a]) if i_a is not None else "", chg, lim])
+        return out, f"欄位={fields}"
+    return [], "找不到含『證券代號』與『收盤』的表"
+
+
+def parse_openapi(rows, day, market):
+    if not isinstance(rows, list) or not rows:
+        return [], "回傳不是非空 list"
+    keys = list(rows[0].keys())
+
+    def pick(*names):
+        for n in names:
+            for k in keys:
+                if n.lower() == k.lower() or n in k:
+                    return k
+        return None
+
+    k_code = pick("SecuritiesCompanyCode", "Code", "證券代號", "股票代號")
+    k_name = pick("CompanyName", "Name", "證券名稱")
+    k_c = pick("Close", "LatestPrice", "收盤")
+    k_o, k_h, k_l = pick("Open", "開盤"), pick("High", "Highest", "最高"), pick("Low", "Lowest", "最低")
+    k_v = pick("TradingShares", "TransactionVolume", "成交股數")
+    k_a = pick("TransactionAmount", "成交金額")
+    k_chg = pick("Change", "漲跌")
+    if not (k_code and k_c):
+        return [], f"欄位對不上：{keys}"
+    out = []
+    for r in rows:
+        code = str(r.get(k_code, "")).strip()
+        if not code or not code[0].isdigit():
+            continue
+        o, h, l, c = (_num(r.get(k_o)), _num(r.get(k_h)),
+                      _num(r.get(k_l)), _num(r.get(k_c)))
+        if not c:
+            continue
+        chg = _num(r.get(k_chg))
+        lim = ""
+        if o and h and l and c and o == h == l == c:
+            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+        out.append([f"{day}_{code}", day, code, str(r.get(k_name, "")).strip(), market,
+                    o, h, l, c, _num(r.get(k_v)), _num(r.get(k_a)), chg, lim])
+    return out, f"欄位={keys}"
+
+
+def fetch_day_market(day, market, urls, probe_lines=None):
+    """回傳 (lines, note)。休市或查無回 ([], 'closed')。"""
+    for u in urls:
+        raw, err = get(u)
+        if err:
+            if probe_lines is not None:
+                probe_lines.append(f"  FAIL {u}\n        {err}")
+            continue
+        try:
+            d = json.loads(raw.decode("utf-8"))
+        except Exception as e:  # noqa: BLE001
+            if probe_lines is not None:
+                probe_lines.append(f"  BADJSON {u}\n        {type(e).__name__}")
+            continue
+        if isinstance(d, list):
+            lines, note = parse_openapi(d, day, market)
+        else:
+            stat = d.get("stat")
+            if stat and stat != "OK":
+                if probe_lines is not None:
+                    probe_lines.append(f"  OK   {u}\n        stat={stat}（休市／查無）")
+                return [], "closed"
+            lines, note = parse_twse(d, day)
+        if probe_lines is not None:
+            probe_lines.append(f"  OK   {u}\n        bytes={len(raw)}\n"
+                               f"        {note}\n        解析出 {len(lines)} 列")
+        if lines:
+            return lines, u
+    return [], "all_failed"
+
+
+def write_day(day, lines):
+    kept = [r for r in lines if _kind(r[2]) != "warrant"]
+    if not kept:
+        return 0
+    os.makedirs(DAILY_DIR, exist_ok=True)
+    path = os.path.join(DAILY_DIR, f"{day}.csv")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(",".join(HEADER) + "\n")
+        for r in sorted(kept, key=lambda r: r[2]):
+            f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
+    return len(kept)
+
+
+def append_coverage(day, per_market, note):
+    """★ 不完整的日子一定要留紀錄。
+
+    某一天只抓到上市、沒抓到上櫃，如果不標，回測時會把「沒抓到」當成
+    「上櫃股當天全部沒交易」——那是**靜默失真**，比整天缺資料還糟。
+    """
+    os.makedirs(UNI_DIR, exist_ok=True)
+    exists = os.path.exists(COVERAGE)
+    with open(COVERAGE, "a", encoding="utf-8") as f:
+        if not exists:
+            f.write(",".join(COV_HEADER) + "\n")
+        f.write("{},{},{},{},{},{}\n".format(
+            day, per_market.get("twse", 0), per_market.get("tpex", 0),
+            per_market.get("emerging", 0), sum(per_market.values()), note))
+
+
+def done_days():
+    if not os.path.isdir(DAILY_DIR):
+        return set()
+    return {n[:-4] for n in os.listdir(DAILY_DIR) if n.endswith(".csv")}
+
+
+def daterange(start, end):
+    d0 = date.fromisoformat(start)
+    d1 = date.fromisoformat(end)
+    while d0 <= d1:
+        if d0.weekday() < 5:              # 週末直接跳過，不浪費請求
+            yield d0.isoformat()
+        d0 += timedelta(days=1)
+
+
+def cmd_probe(args):
+    day = args.date
+    lines = [f"# 回補端點偵察 {datetime.now(TPE).isoformat(timespec='seconds')}  測試日 {day}"]
+    summary = {}
+    for market, urls in candidates(day).items():
+        lines.append(f"\n== {market}")
+        rows, src = fetch_day_market(day, market, urls, probe_lines=lines)
+        summary[market] = len(rows)
+        lines.append(f"  → 採用：{src if rows else '（無可用端點）'}")
+    os.makedirs(UNI_DIR, exist_ok=True)
+    with open(PROBE, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print("\n".join(lines))
+    print(f"\n[probe] 結果：{summary}")
+    print(f"[probe] 已寫入 {PROBE}")
+    return 0 if any(summary.values()) else 1
+
+
+def cmd_run(args):
+    markets = [m.strip() for m in args.markets.split(",") if m.strip()]
+    skip = done_days() if not args.force else set()
+    days = [d for d in daterange(args.start, args.end) if d not in skip]
+    if args.limit:
+        days = days[:args.limit]
+    print(f"[backfill] {args.start} ~ {args.end}｜市場 {markets}｜"
+          f"待處理 {len(days)} 天（已存在 {len(skip)} 天，略過）")
+    ok = closed = failed = 0
+    for i, day in enumerate(days, 1):
+        per, notes, all_lines = {}, [], []
+        for m in markets:
+            rows, src = fetch_day_market(day, m, candidates(day)[m])
+            # ★ coverage 要記「真的寫進檔案的列數」——權證會被 write_day 濾掉，
+            #   這裡若記過濾前的數字，coverage 就對不上檔案本身。
+            rows = [r for r in rows if _kind(r[2]) != "warrant"]
+            per[m] = len(rows)
+            if src == "closed":
+                notes.append(f"{m}:休市")
+            elif src == "all_failed":
+                notes.append(f"{m}:失敗")
+            all_lines.extend(rows)
+            time.sleep(SLEEP)
+        n = write_day(day, all_lines)
+        note = ";".join(notes) or "ok"
+        append_coverage(day, per, note)
+        if n:
+            ok += 1
+        elif "休市" in note:
+            closed += 1
+        else:
+            failed += 1
+        if i % 20 == 0 or n == 0:
+            print(f"  [{i}/{len(days)}] {day} 寫入 {n} 列（{note}）", flush=True)
+    print(f"[backfill] 完成：有資料 {ok} 天、休市 {closed} 天、失敗 {failed} 天")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--probe", action="store_true", help="只測端點，不寫資料")
+    ap.add_argument("--run", action="store_true", help="逐日回補")
+    ap.add_argument("--date", default="2026-08-28", help="probe 用的測試日（要是交易日）")
+    ap.add_argument("--start", default="2015-01-01")
+    ap.add_argument("--end", default="2015-12-31")
+    ap.add_argument("--markets", default="twse,tpex,emerging")
+    ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
+    ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    a = ap.parse_args()
+    if a.probe:
+        return cmd_probe(a)
+    if a.run:
+        return cmd_run(a)
+    ap.print_help()
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
