@@ -27,6 +27,10 @@ Claude 的排程只讀這個 repo 產出的固定網址檔案。
   data/meta/<代號>_fs_types.txt    財報裡出現過的所有 type       ← v6
   data/latest/<代號>.json、market.json  原始回應，供回頭查
   data/latest/_manifest.json       這一輪的總表（誰成功誰失敗、基準日是哪天）
+  ── v7 全市場層（2026-09-02 起）──
+  data/universe/daily/YYYY-MM-DD.csv  **當日全市場**日K（一天一檔，不是一檔一股）
+  data/meta/stocks.csv                代號↔名稱↔市場別＋first_seen／last_seen
+  data/latest/endpoint_probe.txt      端點偵察：哪一條通、位元組數、實際欄位名
 
 v6（2026-09-02）補的是「報告一直缺、每天都寫查無」的那幾項：
 本益比／淨值比、月營收、融資融券、股本（→ 周轉率與法人佔股本比重），
@@ -63,15 +67,16 @@ CORE = [
 # ★ 這一批只是**候選來源**，不是正式追蹤清單；分數 <40 就從池子淘汰，
 #   淘汰後要把它從這個清單移除，免得每天白抓。
 FORUM = [
-    "2454",  # 聯發科        上市・半導體業      兩位作者都提到
-    "3008",  # 大立光        上市・光電業        兩位作者都提到
-    "3661",  # 世芯-KY       上市・半導體業      B 提 8 篇（最多）
-    "3443",  # 創意          上市・半導體業      B 提 3 篇
-    "3234",  # 光環          上櫃・通信網路業    A 提 3 篇
-    "3406",  # 玉晶光        上市・光電業        A 提 2 篇
-    "3711",  # 日月光投控    上市・半導體業      B 提 2 篇
-    "5267",  # 龍翩          興櫃・光電業        A 提 7 篇（最多）
+    "3406",  # 玉晶光        上市・光電業        觀察分 74（2026-09-02）
+    "3661",  # 世芯-KY       上市・半導體業      觀察分 64
+    "3234",  # 光環          上櫃・通信網路業    觀察分 61
+    "3008",  # 大立光        上市・光電業        觀察分 54（留池觀察）
+    "3443",  # 創意          上市・半導體業      觀察分 49（留池觀察）
 ]
+# 2026-09-02 首次評分後淘汰、已從清單移除（不要再加回來，除非規則改變）：
+#   2454 聯發科      觀察分 34（<40）
+#   3711 日月光投控  觀察分 17（<40）
+#   5267 龍翩        排除：20 日均額 0.03 億，未達 5,000 萬流動性門檻（興櫃）
 
 STOCKS = CORE + FORUM
 
@@ -126,6 +131,14 @@ _CAPITAL_TYPES = ("OrdinaryShare", "CommonStock", "CommonStocks", "CapitalStock"
 # 上面是**照優先順序**的候選；對不上時用這個較寬的樣式再撈一次當候選回報，
 # 把 type 與最新的值寫進 meta/<代號>_capital_candidates.txt，下次直接照著改就好。
 _CAPITAL_HINT = ("stock", "share", "capital", "股本")
+
+# 損益表要留下來的科目（v6.3，2026-09-02）。
+# 觀察分的「基本面」那一項要算**毛利率與營益率有沒有較上一季改善**，
+# 先前只把 type 清單 dump 出來、沒落成 CSV，那 5 分全體都拿不到。
+# 科目名稱來自 2026-09-02 實測的 meta/<代號>_fs_types.txt，**不是猜的**。
+_FS_KEEP = ("Revenue", "GrossProfit", "OperatingIncome", "OperatingExpenses",
+            "PreTaxIncome", "IncomeAfterTaxes", "EPS",
+            "TotalNonoperatingIncomeAndExpense")
 
 META_DIR = os.path.join(_ROOT, "meta")
 
@@ -309,6 +322,7 @@ REVENUE_HEADER = ["date", "revenue_year", "revenue_month", "revenue"]
 MARGIN_HEADER = ["date", "margin_balance", "short_balance",
                  "margin_limit", "offset"]
 CAPITAL_HEADER = ["date", "type", "value"]
+FS_HEADER = ["key", "date", "type", "value"]
 MKT_INDEX_HEADER = ["date", "close", "change", "change_pct"]
 MKT_BREADTH_HEADER = ["date", "up", "down", "flat", "limit_up", "limit_down"]
 MKT_AMOUNT_HEADER = ["date", "trade_value", "trade_volume", "transactions"]
@@ -728,6 +742,277 @@ def write_calendar(all_dates):
     return len(all_dates)
 
 
+# ══════════════════════════════════════════════════════════
+# 全市場層（v7，2026-09-02）
+#
+# 為什麼要有這一層：使用者要把資料庫擴到全市場（約 2,100 檔）。
+# **逐檔抓是錯的做法**——2,100 檔 × 每天 2 個 dataset = 4,200 個請求，
+# FinMind 免費版跑不完。交易所本來就有「當日全市場」端點，
+# **一天幾個請求就涵蓋整個市場，800 檔和 2,100 檔成本一樣**。
+#
+# ★ 檔案是「一天一檔」，不是「一檔一股」。
+#   git 存的是整個檔案的新版本，不是新增的那一列。2,100 個檔案每天各加一列，
+#   等於每天把整個資料庫重存一遍（約 300MB/天）。一天一檔則是 200KB/天。
+#
+# ★ 端點路徑都是**待驗證的假設**。所以每個都給候選清單、逐一試，
+#   並把實際的 HTTP 狀態、位元組數、欄位名寫進 endpoint_probe.txt。
+#   **第一次執行自己回答哪一條可用**，不要用猜的當結論。
+# ══════════════════════════════════════════════════════════
+
+UNI_DIR = os.path.join(_ROOT, "universe")
+PROBE = "endpoint_probe.txt"
+
+UNIVERSE_HEADER = ["key", "date", "stock_id", "name", "market",
+                   "open", "high", "low", "close", "volume", "amount",
+                   "change", "limit"]
+STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
+
+
+def _kind(code, name):
+    """粗分類，只用代號規則，**不猜**。分不出來就寫 stock，篩選時再細看。
+
+    使用者要的是「納入但標記清楚」——收進來，用不用是篩選那一步的事。
+    """
+    c = str(code)
+    if c.startswith("00"):
+        return "etf"          # ETF／ETN／期信
+    if len(c) == 5 and c[:4].isdigit():
+        return "special"      # 特別股、TDR 等五碼
+    return "stock"
+
+
+def _candidates(ymd):
+    """每個市場的候選端點，依序試，第一個成功的就用。"""
+    return {
+        "twse": [
+            # 每日收盤行情（全部，**不含權證與債券**）
+            f"{TWSE}/afterTrading/MI_INDEX?date={ymd}&type=ALLBUT0999&response=json",
+            f"https://www.twse.com.tw/exchangeReport/MI_INDEX?date={ymd}&type=ALLBUT0999&response=json",
+            f"{TWSE}/afterTrading/STOCK_DAY_ALL?response=json",
+        ],
+        "tpex": [
+            "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes",
+            f"https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={ymd}&type=EW&response=json",
+        ],
+        "emerging": [
+            "https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics",
+        ],
+    }
+
+
+def _probe_write(lines):
+    os.makedirs(OUT_DIR, exist_ok=True)
+    with open(os.path.join(OUT_DIR, PROBE), "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def _rows_from_twse(d):
+    """TWSE 的 tables 裡找出「有證券代號與收盤價」的那張表。
+
+    不寫死表名——TWSE 的表標題含民國日期，每天都不一樣（2026-09-02 踩過）。
+    改用**欄位名**辨識，那個才穩定。
+    """
+    for t in _twse_tables(d):
+        fields = [str(x) for x in (t.get("fields") or [])]
+        if any("證券代號" in f or "股票代號" in f for f in fields) and \
+           any("收盤" in f for f in fields):
+            return t, fields
+    return None, []
+
+
+def _idx(fields, *kws):
+    for i, f in enumerate(fields):
+        if all(k in f for k in kws):
+            return i
+    return None
+
+
+def _idx_any(fields, *options):
+    """依序試多組關鍵字，回第一個命中的欄位位置。
+
+    ★ 不可以寫成 `_idx(a) or _idx(b)`——**第一欄的索引是 0，在 Python 是 falsy**，
+      證券代號正好就在第 0 欄，寫 `or` 會讓整張表解析出 0 列（2026-09-02 實測踩到）。
+    """
+    for kws in options:
+        i = _idx(fields, *(kws if isinstance(kws, tuple) else (kws,)))
+        if i is not None:
+            return i
+    return None
+
+
+def parse_twse_daily(d, day):
+    """→ (lines, note)。抓不到就回 ([], 原因)。"""
+    t, fields = _rows_from_twse(d)
+    if not t:
+        return [], "找不到含『證券代號』與『收盤』欄位的表"
+    i_code = _idx_any(fields, "證券代號", "股票代號", "代號")
+    i_name = _idx_any(fields, "證券名稱", "股票名稱", "名稱")
+    i_open, i_high = _idx_any(fields, "開盤"), _idx_any(fields, "最高")
+    i_low, i_close = _idx_any(fields, "最低"), _idx_any(fields, "收盤")
+    i_vol = _idx_any(fields, "成交股數")
+    i_amt = _idx_any(fields, "成交金額")
+    i_chg = _idx_any(fields, "漲跌價差")
+    # 漲跌方向另有一欄（內容是 HTML 的 + / -），與價差是兩欄
+    i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)")
+    need = [i_code, i_open, i_high, i_low, i_close]
+    if any(x is None for x in need):
+        return [], f"欄位對不上：{fields}"
+    out = []
+    for r in (t.get("data") or []):
+        if not r or len(r) <= max(x for x in need if x is not None):
+            continue
+        code = str(r[i_code]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        o, h, l, c = (_num(r[i_open]), _num(r[i_high]),
+                      _num(r[i_low]), _num(r[i_close]))
+        if not c:
+            continue                       # 無成交就沒有收盤價，跳過不補值
+        sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
+        chg = _num(r[i_chg]) if i_chg is not None else ""
+        chg = str(sign * float(chg)) if chg else ""
+        # 漲跌停鎖死：開＝高＝低＝收且有量。**回測必須知道這一天買不到。**
+        lim = ""
+        if o and h and l and c and o == h == l == c:
+            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+        out.append([f"{day}_{code}", day, code,
+                    str(r[i_name]).strip() if i_name is not None else "",
+                    "twse", o, h, l, c,
+                    _num(r[i_vol]) if i_vol is not None else "",
+                    _num(r[i_amt]) if i_amt is not None else "",
+                    chg, lim])
+    return out, f"欄位={fields}"
+
+
+def parse_openapi_daily(rows, day, market):
+    """TPEx openapi 是一個 list of dict，欄位名為英文或中文，兩種都試。"""
+    if not isinstance(rows, list) or not rows:
+        return [], "回傳不是非空 list"
+    keys = list(rows[0].keys())
+
+    def pick(*names):
+        for n in names:
+            for k in keys:
+                if n.lower() == k.lower() or n in k:
+                    return k
+        return None
+
+    k_code = pick("SecuritiesCompanyCode", "Code", "證券代號", "股票代號")
+    k_name = pick("CompanyName", "Name", "證券名稱")
+    k_close = pick("Close", "收盤")
+    k_open, k_high, k_low = pick("Open", "開盤"), pick("High", "最高"), pick("Low", "最低")
+    k_vol = pick("TradingShares", "成交股數")
+    k_amt = pick("TransactionAmount", "成交金額")
+    k_chg = pick("Change", "漲跌")
+    if not (k_code and k_close):
+        return [], f"欄位對不上：{keys}"
+    out = []
+    for r in rows:
+        code = str(r.get(k_code, "")).strip()
+        if not code or not code[0].isdigit():
+            continue
+        o, h, l, c = (_num(r.get(k_open)), _num(r.get(k_high)),
+                      _num(r.get(k_low)), _num(r.get(k_close)))
+        if not c:
+            continue
+        chg = _num(r.get(k_chg))
+        lim = ""
+        if o and h and l and c and o == h == l == c:
+            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+        out.append([f"{day}_{code}", day, code,
+                    str(r.get(k_name, "")).strip(), market,
+                    o, h, l, c, _num(r.get(k_vol)), _num(r.get(k_amt)), chg, lim])
+    return out, f"欄位={keys}"
+
+
+def fetch_universe(today):
+    """全市場日K。回傳 (manifest 片段, 所有列)。任何一個市場失敗都不影響其他。"""
+    ymd = today.replace("-", "")
+    probe, all_lines, counts, errs = [], [], {}, {}
+    probe.append(f"# 端點偵察 {now_tpe().isoformat(timespec='seconds')} 目標日 {today}")
+
+    for market, urls in _candidates(ymd).items():
+        got = False
+        for u in urls:
+            raw, err = get(u, retries=2, timeout=40)
+            if err:
+                probe.append(f"{market} FAIL {u}\n    {err}")
+                continue
+            probe.append(f"{market} OK   {u}\n    bytes={len(raw)}")
+            try:
+                d = json.loads(raw.decode("utf-8"))
+            except Exception as e:  # noqa: BLE001
+                probe.append(f"    JSON 解析失敗 {type(e).__name__}")
+                continue
+            if isinstance(d, list):
+                lines, note = parse_openapi_daily(d, today, market)
+            else:
+                stat = d.get("stat")
+                if stat and stat != "OK":
+                    probe.append(f"    stat={stat}（休市或查無）")
+                    errs[market] = f"stat={stat}"
+                    got = True          # 明確的「今天沒有」，不要再試下一條
+                    break
+                lines, note = parse_twse_daily(d, today)
+            probe.append(f"    {note}")
+            probe.append(f"    解析出 {len(lines)} 列")
+            if lines:
+                all_lines.extend(lines)
+                counts[market] = len(lines)
+                got = True
+                break
+        if not got and market not in errs:
+            errs[market] = "所有候選端點都失敗"
+
+    counts["total"] = len(all_lines)
+    _probe_write(probe)
+    return {"counts": counts, "errors": errs or None}, all_lines
+
+
+def write_universe_day(day, lines):
+    """一天一檔。**同一天重跑會整份覆蓋**（當日資料以最後一次為準）。"""
+    if not lines:
+        return 0
+    path = os.path.join(UNI_DIR, "daily", f"{day}.csv")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(",".join(UNIVERSE_HEADER) + "\n")
+        for r in sorted(lines, key=lambda r: r[2]):
+            f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
+    return len(lines)
+
+
+def merge_stocks_meta(day, lines):
+    """代號↔名稱↔市場別，並記 first_seen／last_seen。
+
+    ★ first/last_seen 是回測的必需品：回測到 2018 年時，universe 必須是
+      **當時真的存在的那些股票**，不是今天還活著的這批（生存者偏差的另一半）。
+    """
+    path = os.path.join(META_DIR, "stocks.csv")
+    header, old = _read_csv(path)
+    if header is not None and header != STOCKS_HEADER:
+        raise ValueError(f"{path} 欄位不符：{header}")
+    merged = dict(old)
+    added = 0
+    for r in lines:
+        code, name, market = r[2], r[3], r[4]
+        if code in merged:
+            row = merged[code]
+            row[1] = name or row[1]
+            row[2] = market or row[2]
+            row[3] = _kind(code, name)
+            row[5] = day                      # last_seen
+        else:
+            merged[code] = [code, name, market, _kind(code, name), day, day]
+            added += 1
+    os.makedirs(META_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(",".join(STOCKS_HEADER) + "\n")
+        for k in sorted(merged):
+            f.write(",".join(str(x) for x in merged[k]) + "\n")
+    return len(merged), added
+
+
 def fetch_market(today):
     """大盤：指數、成交統計、全市場三大法人。
 
@@ -789,7 +1074,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v6 2026-09-02",
+        "version": "v7.0 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
@@ -841,6 +1126,25 @@ def main():
                         with open(os.path.join(META_DIR, f"{code}_fs_types.txt"),
                                   "w", encoding="utf-8") as f:
                             f.write("\n".join(fs_types) + "\n")
+                        # ★ 主鍵是 date+type（一天有多個科目），所以第一欄放合成鍵，
+                        #   否則 merge_history 只看第一欄會把同一天的科目互相覆蓋。
+                        lines = []
+                        for r in sorted(blk["data"],
+                                        key=lambda r: (str(r.get("date", "")),
+                                                       str(r.get("type", "")))):
+                            t, dt, v = (str(r.get("type", "")), str(r.get("date", "")),
+                                        _num(r.get("value")))
+                            if t in _FS_KEEP and dt and v:
+                                lines.append([f"{dt}_{t}", dt, t, v])
+                        if not lines:
+                            continue
+                        header, tag = FS_HEADER, f"{code}_fs"
+                        hpath = os.path.join(HIST_DIR, f"{code}_fs.csv")
+                        total, added, changed = merge_history(hpath, header, lines, tag)
+                        write_window(hpath, os.path.join(OUT_DIR, f"{code}_fs.csv"))
+                        extra_stat["fs"] = {"total": total, "added": added,
+                                            "changed": len(changed) or None,
+                                            "date_max": lines[-1][1]}
                         continue
                     lines, bs_types, cands = fs_capital_lines(blk["data"])
                     with open(os.path.join(META_DIR, f"{code}_bs_types.txt"),
@@ -889,6 +1193,23 @@ def main():
               f"hist={st} err={data['errors'] or '-'}")
 
     manifest["calendar_days"] = write_calendar(all_dates)
+
+    # ── v7：全市場層（一天一檔）。失敗不影響核心檔 ──
+    try:
+        uni, uni_lines = fetch_universe(today)
+        uni["rows_written"] = write_universe_day(today, uni_lines)
+        total, added = merge_stocks_meta(today, uni_lines)
+        uni["stocks_meta"] = {"total": total, "added_today": added}
+        manifest["universe"] = uni
+        c = uni["counts"]
+        print(f"  universe: 上市 {c.get('twse', 0)}｜上櫃 {c.get('tpex', 0)}｜"
+              f"興櫃 {c.get('emerging', 0)}｜合計 {c.get('total', 0)}｜"
+              f"stocks.csv 累計 {total}（今日新增 {added}）")
+        if uni.get("errors"):
+            print(f"  universe 失敗的市場：{uni['errors']}")
+    except Exception as ex:  # noqa: BLE001 — 新層不可以拖垮既有的
+        manifest["universe"] = {"fatal": f"{type(ex).__name__}: {ex}"}
+        print(f"  universe FATAL: {type(ex).__name__}: {ex}")
 
     market = fetch_market(today)
     with open(os.path.join(OUT_DIR, "market.json"), "w", encoding="utf-8") as f:
