@@ -14,10 +14,25 @@ Claude 的排程只讀這個 repo 產出的固定網址檔案。
   3. 缺的就寫缺。任何欄位都不推估、不內插。
   4. 每個檔案都帶 meta（來源網址、抓取時間、筆數、最新日期），讓下游能自己複查。
 
-輸出：
-  data/latest/<代號>.json   每檔的日K與三大法人
-  data/latest/market.json   大盤指數、成交統計、全市場三大法人
-  data/latest/_manifest.json 這一輪的總表（誰成功誰失敗、基準日是哪天）
+輸出（**下游一律讀 CSV，不要讀 JSON**）：
+  data/history/<代號>_price.csv    日K（append-only，這才是資料庫）
+  data/history/<代號>_inst.csv     三大法人，一天一列
+  data/history/<代號>_per.csv      本益比／股價淨值比／殖利率   ← v6
+  data/history/<代號>_revenue.csv  月營收                        ← v6
+  data/history/<代號>_margin.csv   融資融券餘額                  ← v6
+  data/history/<代號>_capital.csv  股本（找得到才有）            ← v6
+  data/history/market_*.csv        大盤指數／漲跌家數／成交統計  ← v6
+  data/latest/*.csv                以上各檔的最後 300 列（報告讀這裡）
+  data/latest/market_tables_raw.txt TWSE 各表的欄位偵察檔        ← v6
+  data/meta/<代號>_fs_types.txt    財報裡出現過的所有 type       ← v6
+  data/latest/<代號>.json、market.json  原始回應，供回頭查
+  data/latest/_manifest.json       這一輪的總表（誰成功誰失敗、基準日是哪天）
+
+v6（2026-09-02）補的是「報告一直缺、每天都寫查無」的那幾項：
+本益比／淨值比、月營收、融資融券、股本（→ 周轉率與法人佔股本比重），
+以及大盤的指數、漲跌家數與成交統計。
+**新項目全部做成「抓不到就記錯誤、不影響其他項」**——
+第一次執行的 _manifest.json 會自己回答哪幾個 dataset 真的可用。
 """
 
 import json
@@ -61,6 +76,30 @@ LATEST_WINDOW = 300
 # 所以做成「抓不到就記錯誤、不影響其他項」——讓第一次執行自己回答可不可用，
 # 不要我在這裡猜完就當成事實。可用性確認後再寫進 tw-data-sources。
 DIVIDEND_DATASET = "TaiwanStockDividend"
+
+# ── v6（2026-09-02）新增的 dataset：一次把「報告一直缺的那幾項」補起來 ──
+# 每一項都做成**抓不到就記錯誤、不影響其他項**，讓第一次執行自己回答可不可用，
+# 不要在這裡猜完就當成事實（專案工作方法第 3、4 條）。
+#
+#   per      每日本益比／股價淨值比／殖利率 → 報告的 pe_pb 與 data/valuation 不必再另外抓
+#   revenue  月營收 → C1 基本面
+#   margin   融資融券餘額 → 融資水位、券資比、槓桿風險
+#   fs       財務報表 → 財報警示三條，**同時用來找「股本」**（在外流通股數目前完全查無，
+#            導致周轉率與法人佔股本比重每天都寫「查無」）
+EXTRA_DATASETS = {
+    "per":     "TaiwanStockPER",
+    "revenue": "TaiwanStockMonthRevenue",
+    "margin":  "TaiwanStockMarginPurchaseShortSale",
+    "fs":      "TaiwanStockFinancialStatements",
+}
+
+# 財報裡「股本」可能的 type 名稱。**不確定 FinMind 用哪一個**，所以列一組候選，
+# 並且把當次看到的所有 type 另外寫成檔案（見 FS_TYPES_FILE）——
+# 對不上時不要靜默放棄，要留下證據讓下次能查（與 inst_unknown_names 同一個設計）。
+_CAPITAL_TYPES = {"CommonStocks", "CommonStock", "CapitalStock", "Capital",
+                  "股本", "普通股股本", "OrdinaryShare"}
+
+META_DIR = os.path.join(_ROOT, "meta")
 
 FINMIND = "https://api.finmindtrade.com/api/v4/data"
 TWSE = "https://www.twse.com.tw/rwd/zh"
@@ -185,6 +224,25 @@ def fetch_stock(code, today):
     else:
         out["dividend"] = {"source": url, "rows": len(rows), "data": rows}
 
+    # ── v6：本益比／月營收／融資融券／財報。每一項獨立，失敗只記錯誤 ──
+    # 起日各自不同：per 跟日K一樣長（要畫本益比河流圖也夠），
+    # revenue 與 fs 要往前多拿一年才看得出年增與去年同期。
+    starts = {"per": PRICE_START, "revenue": "2024-01-01",
+              "margin": INST_START, "fs": "2024-01-01"}
+    out["extra"] = {}
+    for kind, dataset in EXTRA_DATASETS.items():
+        rows, url, err = finmind(dataset, code, starts[kind], today)
+        if err:
+            out["errors"][kind] = err
+            continue
+        bad = check_stock_id(rows, code)
+        if bad:
+            out["errors"][kind] = bad          # 一樣是整批丟棄
+            continue
+        lo, hi = date_range(rows)
+        out["extra"][kind] = {"source": url, "rows": len(rows),
+                              "date_min": lo, "date_max": hi, "data": rows}
+
     return out
 
 
@@ -218,6 +276,15 @@ _DEALER_TOTAL = "Dealer"
 
 PRICE_HEADER = ["date", "open", "high", "low", "close", "volume"]
 INST_HEADER = ["date", "foreign", "trust", "dealer", "total"]
+PER_HEADER = ["date", "per", "pbr", "dividend_yield"]
+REVENUE_HEADER = ["date", "revenue_year", "revenue_month", "revenue"]
+MARGIN_HEADER = ["date", "margin_balance", "short_balance",
+                 "margin_limit", "offset"]
+CAPITAL_HEADER = ["date", "type", "value"]
+MKT_INDEX_HEADER = ["date", "close", "change", "change_pct"]
+MKT_BREADTH_HEADER = ["date", "up", "down", "flat", "limit_up", "limit_down"]
+MKT_AMOUNT_HEADER = ["date", "trade_value", "trade_volume", "transactions"]
+MKT_INST_HEADER = ["date", "foreign", "trust", "dealer", "total"]
 
 
 def _read_csv(path):
@@ -341,6 +408,164 @@ def inst_lines(rows):
     return lines, sorted(unknown)
 
 
+def _num(v):
+    """TWSE／FinMind 的數字字串 → 純數字字串。轉不了就回空字串（**不填 0**）。
+
+    填 0 會讓「沒有資料」看起來像「當天是 0」，那是靜默造假。
+    """
+    if v is None:
+        return ""
+    t = str(v).replace(",", "").replace("+", "").replace("%", "").strip()
+    if t in ("", "-", "--", "X", "N/A"):
+        return ""
+    try:
+        float(t)
+    except ValueError:
+        return ""
+    return t
+
+
+def extra_lines(kind, rows):
+    """v6 的四個新 dataset → CSV 欄位 list。欄位名照抄 FinMind 的原始欄位。"""
+    out = []
+    for r in sorted(rows, key=lambda r: str(r.get("date", ""))):
+        d = str(r.get("date", ""))
+        if not d:
+            continue
+        if kind == "per":
+            out.append([d, _num(r.get("PER")), _num(r.get("PBR")),
+                        _num(r.get("dividend_yield"))])
+        elif kind == "revenue":
+            out.append([d, str(r.get("revenue_year", "")),
+                        str(r.get("revenue_month", "")), _num(r.get("revenue"))])
+        elif kind == "margin":
+            out.append([d,
+                        _num(r.get("MarginPurchaseTodayBalance")),
+                        _num(r.get("ShortSaleTodayBalance")),
+                        _num(r.get("MarginPurchaseLimit")),
+                        _num(r.get("OffsetLoanAndShort"))])
+    return out
+
+
+def fs_capital_lines(rows):
+    """財報 → 只抽「股本」那幾列，順便回報看到的所有 type。
+
+    回傳 (lines, types_seen)。**對不上候選名單時不要靜默放棄**——
+    types_seen 會被寫成檔案，下次照著改 _CAPITAL_TYPES 就好
+    （與 inst_unknown_names 同一個設計：未知的要講出來）。
+    """
+    lines, types = [], set()
+    for r in sorted(rows, key=lambda r: str(r.get("date", ""))):
+        t = str(r.get("type", ""))
+        types.add(t)
+        if t in _CAPITAL_TYPES:
+            d = str(r.get("date", ""))
+            v = _num(r.get("value"))
+            if d and v:
+                lines.append([d, t, v])
+    return lines, sorted(types)
+
+
+# ────────────────────────────────────────────────────────────
+# 大盤：從 market.json 抽成小 CSV（v6，2026-09-02）
+#
+# 為什麼要抽：market.json 裡的 T86 是全市場約 1,000 檔，檔案很大，
+# **下游用 WebFetch 讀大檔會被截斷並憑空補齊**（規範第 14 條）。
+# 所以大盤也照個股的作法：JSON 留著回頭查，另外產出一天一列的小 CSV。
+#
+# ★ TWSE 這幾張表的實際欄位順序**尚未在本環境驗證過**，所以：
+#   1. 解析失敗只記錯誤，不影響其他項；
+#   2. 不論成功失敗，都把表名與前幾列原樣寫進 market_tables_raw.txt，
+#      讓下一次可以照著改，而不是靠猜。
+# ────────────────────────────────────────────────────────────
+
+def _twse_tables(d):
+    """TWSE 的 json 有兩種形狀：新的 {"tables":[…]}、舊的 {"fields":…,"data":…}。"""
+    if not isinstance(d, dict):
+        return []
+    if isinstance(d.get("tables"), list):
+        return [t for t in d["tables"] if isinstance(t, dict)]
+    if d.get("fields") and d.get("data"):
+        return [{"title": d.get("title", ""), "fields": d["fields"], "data": d["data"]}]
+    return []
+
+
+def _dump_tables(market, path):
+    """把所有表的標題、欄位名與前兩列寫成純文字。**這是給人看的偵察檔。**"""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        for key in ("index", "summary", "bfi82u"):
+            blk = market.get(key)
+            if not blk:
+                f.write(f"== {key}: （未取得）\n")
+                continue
+            for t in _twse_tables(blk.get("data")):
+                f.write(f"== {key} / {t.get('title', '')}\n")
+                f.write(f"   fields: {t.get('fields')}\n")
+                for row in (t.get("data") or [])[:2]:
+                    f.write(f"   row: {row}\n")
+        f.write("（本檔只供對欄位，解析穩定後可以不必再看）\n")
+
+
+def _find_row(market, key, title_kw, row_kw):
+    """在某個表裡找出第一欄含 row_kw 的那一列。找不到回 None。"""
+    blk = market.get(key)
+    if not blk:
+        return None
+    for t in _twse_tables(blk.get("data")):
+        if title_kw and title_kw not in str(t.get("title", "")):
+            continue
+        for row in (t.get("data") or []):
+            if row and row_kw in str(row[0]):
+                return [str(x) for x in row]
+    return None
+
+
+def market_lines(market, day):
+    """回傳 ({名稱: CSV 欄位 list}, errors)。抽不到的那一項就不放進 dict。"""
+    out, errs = {}, {}
+
+    r = _find_row(market, "index", "", "發行量加權股價指數")
+    if r and len(r) >= 5:
+        # [名稱, 收盤指數, 漲跌(+/-), 漲跌點數, 漲跌百分比]
+        sign = -1 if "-" in r[2] else 1
+        chg = _num(r[3])
+        pct = _num(r[4])
+        out["index"] = [day, _num(r[1]),
+                        (str(sign * float(chg)) if chg else ""),
+                        (str(sign * float(pct)) if pct else "")]
+    else:
+        errs["index"] = "找不到『發行量加權股價指數』那一列（欄位可能改了，看 market_tables_raw.txt）"
+
+    # ★ 漲跌家數要取「股票」那一欄／那一列，**不是「整體市場」**——
+    #   整體市場含權證與 ETF，數字會大很多（2026-09-01 三源不一致就是這個原因）。
+    #   「股票」找不到才退而用整體市場，並且在 errs 裡講明用的是哪一個。
+    r = _find_row(market, "summary", "漲跌證券數", "股票")
+    if r is None:
+        r = _find_row(market, "summary", "漲跌證券數", "整體市場")
+        if r is not None:
+            errs["breadth_scope"] = "找不到『股票』列，改用『整體市場』（含權證，偏大）"
+    if r and len(r) >= 6:
+        out["breadth"] = [day] + [_num(x) for x in r[1:6]]
+    else:
+        errs["breadth"] = "找不到漲跌證券數那一列"
+
+    r = _find_row(market, "summary", "成交", "股票")
+    if r and len(r) >= 4:
+        # [項目, 成交股數, 成交筆數, 成交金額]
+        out["amount"] = [day, _num(r[3]), _num(r[1]), _num(r[2])]
+    else:
+        errs["amount"] = "找不到成交統計的『股票』那一列"
+
+    r = _find_row(market, "bfi82u", "", "外資")
+    if r:
+        errs.setdefault("inst", "BFI82U 有取得，但欄位對應尚未定案（看 market_tables_raw.txt）")
+    elif "bfi82u" not in market:
+        errs["inst"] = "BFI82U 未取得"
+
+    return out, errs
+
+
 def write_calendar(all_dates):
     """交易日曆：各檔日期集合的聯集。
 
@@ -412,8 +637,11 @@ def main():
         "stocks": {},
         "market": {},
         "note": ("date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。"
-                 "下游請讀 <代號>_price.csv 與 <代號>_inst.csv——"
-                 "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"),
+                 "下游一律讀 data/latest 底下的 CSV，不要讀 JSON——"
+                 "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
+                 "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
+                 "以及 market_index／market_breadth／market_amount。"),
+        "version": "v6 2026-09-02",
     }
 
     all_dates = set()
@@ -453,7 +681,42 @@ def main():
                 json.dump(data["dividend"]["data"], f, ensure_ascii=False)
             st["dividend_rows"] = len(dl)
 
+        # ── v6：四個新 dataset 各自併進歷史 ──
+        extra_stat, fs_types = {}, None
+        for kind, blk in (data.get("extra") or {}).items():
+            try:
+                if kind == "fs":
+                    lines, fs_types = fs_capital_lines(blk["data"])
+                    header, tag = CAPITAL_HEADER, f"{code}_capital"
+                    hpath = os.path.join(HIST_DIR, f"{code}_capital.csv")
+                    # 看到的所有 type 都寫出來——對不上候選名單時才有東西可查
+                    os.makedirs(META_DIR, exist_ok=True)
+                    with open(os.path.join(META_DIR, f"{code}_fs_types.txt"),
+                              "w", encoding="utf-8") as f:
+                        f.write("\n".join(fs_types) + "\n")
+                    if not lines:
+                        manifest.setdefault("capital_not_found", []).append(code)
+                        continue
+                else:
+                    lines = extra_lines(kind, blk["data"])
+                    header = {"per": PER_HEADER, "revenue": REVENUE_HEADER,
+                              "margin": MARGIN_HEADER}[kind]
+                    tag = f"{code}_{kind}"
+                    hpath = os.path.join(HIST_DIR, f"{code}_{kind}.csv")
+                if not lines:
+                    continue
+                total, added, changed = merge_history(hpath, header, lines, tag)
+                write_window(hpath, os.path.join(
+                    OUT_DIR, os.path.basename(hpath)))
+                extra_stat[kind] = {"total": total, "added": added,
+                                    "changed": len(changed) or None,
+                                    "date_max": lines[-1][0]}
+            except Exception as ex:  # noqa: BLE001 — 新項目不可以拖垮既有的
+                data["errors"][kind] = f"寫檔失敗 {type(ex).__name__}: {ex}"
+
         manifest["stocks"][code] = {
+            "extra": extra_stat or None,
+            "fs_types_seen": (len(fs_types) if fs_types else None),
             "price_date_max": (data["price"] or {}).get("date_max"),
             "inst_date_max": (data["institutional"] or {}).get("date_max"),
             "history": st,
@@ -473,6 +736,27 @@ def main():
         "ok": [k for k in ("index", "summary", "t86", "bfi82u") if k in market],
         "errors": market["errors"] or None,
     }
+    # ── v6：大盤也抽成一天一列的小 CSV（market.json 含全市場 T86，太大） ──
+    _dump_tables(market, os.path.join(OUT_DIR, "market_tables_raw.txt"))
+    try:
+        mlines, merrs = market_lines(market, today)
+        hdrs = {"index": MKT_INDEX_HEADER, "breadth": MKT_BREADTH_HEADER,
+                "amount": MKT_AMOUNT_HEADER, "inst": MKT_INST_HEADER}
+        mstat = {}
+        for kind, line in mlines.items():
+            hpath = os.path.join(HIST_DIR, f"market_{kind}.csv")
+            total, added, changed = merge_history(
+                hpath, hdrs[kind], [line], f"market_{kind}")
+            write_window(hpath, os.path.join(OUT_DIR, f"market_{kind}.csv"))
+            mstat[kind] = {"total": total, "added": added,
+                           "changed": len(changed) or None}
+        manifest["market"]["csv"] = mstat or None
+        manifest["market"]["parse_errors"] = merrs or None
+    except Exception as ex:  # noqa: BLE001
+        manifest["market"]["parse_errors"] = {
+            "fatal": f"{type(ex).__name__}: {ex}"}
+    print(f"  market csv: {manifest['market'].get('csv')} "
+          f"parse_err={manifest['market'].get('parse_errors') or '-'}")
     print(f"  market: ok={manifest['market']['ok']} err={market['errors'] or '-'}")
 
     # ★ 統計歷史被改寫的列數。**價格與籌碼都要算**——原本只算 price，
@@ -481,11 +765,18 @@ def main():
     # ★★ 而且這一段**必須在寫出 _manifest.json 之前**跑完。
     #   先寫檔再算，log 裡的 ⚠ 會亮，但下游讀到的檔案裡沒有這個欄位——
     #   **警示看得到卻傳不下去，等於沒有警示。**
+    # ★ v6：新增的四項也要算進來。**統計要涵蓋所有會變動的資料種類**——
+    #   漏算哪一種，那一種被改寫時就不會亮燈（8/31 就是漏算籌碼才被抓到）。
     changed_total = 0
     for c in STOCKS:
         h = manifest["stocks"][c].get("history") or {}
         for kind in ("price", "inst"):
             changed_total += ((h.get(kind) or {}).get("changed") or 0)
+        x = manifest["stocks"][c].get("extra") or {}
+        for kind in x:
+            changed_total += ((x.get(kind) or {}).get("changed") or 0)
+    for kind in (manifest.get("market", {}).get("csv") or {}):
+        changed_total += ((manifest["market"]["csv"][kind] or {}).get("changed") or 0)
     manifest["history_rows_changed"] = changed_total or None
     if changed_total:
         print(f"[tw-stock-data] ⚠ 有 {changed_total} 列歷史資料被改寫（價格＋籌碼合計），"
