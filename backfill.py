@@ -149,6 +149,14 @@ def _num(v):
     return t
 
 
+def _isz(v):
+    """_num() 的輸出是字串，"0.00" 是 truthy——要判零一律走這支。"""
+    try:
+        return float(v) == 0.0
+    except (TypeError, ValueError):
+        return True
+
+
 def _kind(code):
     c = str(code)
     if len(c) == 6 and c[0] == "7":
@@ -188,7 +196,7 @@ def _idx_any(fields, *options):
     return None
 
 
-def parse_twse(d, day):
+def parse_twse(d, day, market="twse"):
     for t in _tables(d):
         fields = [str(x) for x in (t.get("fields") or [])]
         # 找表的條件放寬到「有代號欄 ＋ 有收盤欄」——TPEx 用「代號」，TWSE 用「證券代號」，
@@ -232,7 +240,7 @@ def parse_twse(d, day):
             if o and h and l and c and o == h == l == c:
                 lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
             out.append([f"{day}_{code}", day, code,
-                        str(r[i_name]).strip() if i_name is not None else "", "twse",
+                        str(r[i_name]).strip() if i_name is not None else "", market,
                         o, h, l, c,
                         _num(r[i_v]) if i_v is not None else "",
                         _num(r[i_a]) if i_a is not None else "", chg, lim,
@@ -304,7 +312,7 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                 if probe_lines is not None:
                     probe_lines.append(f"  OK   {u}\n        stat={stat}（休市／查無）")
                 return [], "closed"
-            lines, note = parse_twse(d, day)
+            lines, note = parse_twse(d, day, market)
         if probe_lines is not None:
             probe_lines.append(f"  OK   {u}\n        bytes={len(raw)}\n"
                                f"        {note}\n        解析出 {len(lines)} 列")
@@ -418,8 +426,16 @@ def parse_esb_month(d, code):
             continue
         vol, amt = _num(r[1]), _num(r[2])
         hi, lo, avg = _num(r[3]), _num(r[4]), _num(r[5])
-        if not avg:
-            continue                      # 沒有均價就沒有可用的價格，跳過不補值
+        # ★ 無成交日：交易所照樣給一列，價格與量全部填 0（2026-09-02 實測：
+        #   5267 有 753 列、6434 有 311 列是這種）。**不可以留成 0**——
+        #   回測讀到「均價 0」會算出 -100% 報酬，而且完全不會報錯。
+        #   也不整列丟掉：那一天市場有開、這檔沒成交，本身就是流動性訊號。
+        #   → 價格欄留空、price_basis 標「無成交」，讓下游只能明確處理、不能誤用。
+        # ★ 判空要用「轉成數字後是不是 0」，不能寫 `if not avg`——
+        #   _num() 回傳的是字串，"0.00" 是 truthy，這個坑踩過一次。
+        if _isz(avg):
+            out.append([day, code, "", "", "", "0", "0", _num(r[6]) or "0", "無成交"])
+            continue
         out.append([day, code, hi, lo, avg, vol, amt, _num(r[6]), "均價"])
     return out, f"{len(rows)} 列原始、{len(out)} 列可用"
 
@@ -486,7 +502,9 @@ def cmd_esb(args):
                 empty += 1               # 該月沒交易或還沒上興櫃，正常
             time.sleep(SLEEP)
         total, added = merge_esb(code, got)
-        print(f"  {code}: 抓到 {len(got)} 列（新增 {added}，累計 {total}）"
+        notrade = sum(1 for r in got if r[8] == "無成交")
+        print(f"  {code}: 抓到 {len(got)} 列（有成交 {len(got) - notrade}、"
+              f"無成交 {notrade}；新增 {added}，累計 {total}）"
               f"｜空月 {empty}｜失敗 {fail}", flush=True)
     return 0
 
