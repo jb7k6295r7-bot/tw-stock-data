@@ -1,0 +1,16 @@
+CostOfGoodsSold
+EPS
+EquityAttributableToOwnersOfParent
+GrossProfit
+IncomeAfterTaxes
+IncomeFromContinuingOperations
+IncomeLossFromDiscontinuedOperation
+OTHNOE
+OperatingExpenses
+OperatingIncome
+OtherComprehensiveIncome
+PreTaxIncome
+Revenue
+TAX
+TotalConsolidatedProfitForThePeriod
+TotalNonoperatingIncomeAndExpense

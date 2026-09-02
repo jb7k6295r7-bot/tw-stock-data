@@ -1,0 +1,14 @@
+CostOfGoodsSold
+EPS
+EquityAttributableToOwnersOfParent
+GrossProfit
+IncomeAfterTaxes
+IncomeFromContinuingOperations
+OperatingExpenses
+OperatingIncome
+OtherComprehensiveIncome
+PreTaxIncome
+Revenue
+TAX
+TotalConsolidatedProfitForThePeriod
+TotalNonoperatingIncomeAndExpense

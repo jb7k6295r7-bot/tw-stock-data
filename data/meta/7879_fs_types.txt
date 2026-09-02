@@ -1,0 +1,13 @@
+CostOfGoodsSold
+EPS
+GrossProfit
+IncomeAfterTaxes
+IncomeFromContinuingOperations
+OperatingExpenses
+OperatingIncome
+OtherComprehensiveIncome
+PreTaxIncome
+Revenue
+TAX
+TotalConsolidatedProfitForThePeriod
+TotalNonoperatingIncomeAndExpense

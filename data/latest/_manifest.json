@@ -1,14 +1,23 @@
 {
-  "generated_at": "2026-09-01T17:35:21+08:00",
+  "generated_at": "2026-09-02T09:37:10+08:00",
   "target_trading_day": "2026-09-01",
   "stocks": {
     "7879": {
+      "extra": {
+        "revenue": {
+          "total": 10,
+          "added": 10,
+          "changed": null,
+          "date_max": "2026-08-01"
+        }
+      },
+      "fs_types_seen": 13,
       "price_date_max": "2026-09-01",
       "inst_date_max": "2026-08-31",
       "history": {
         "price": {
           "total": 145,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
@@ -19,20 +28,44 @@
         "dividend_rows": 1
       },
       "inst_unknown_names": null,
-      "errors": null
+      "errors": {
+        "per": "回傳 0 筆",
+        "margin": "回傳 0 筆"
+      }
     },
     "8289": {
+      "extra": {
+        "per": {
+          "total": 403,
+          "added": 403,
+          "changed": null,
+          "date_max": "2026-09-01"
+        },
+        "revenue": {
+          "total": 32,
+          "added": 32,
+          "changed": null,
+          "date_max": "2026-08-01"
+        },
+        "margin": {
+          "total": 160,
+          "added": 160,
+          "changed": null,
+          "date_max": "2026-09-01"
+        }
+      },
+      "fs_types_seen": 16,
       "price_date_max": "2026-09-01",
       "inst_date_max": "2026-09-01",
       "history": {
         "price": {
           "total": 403,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 160,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -41,17 +74,38 @@
       "errors": null
     },
     "2609": {
+      "extra": {
+        "per": {
+          "total": 403,
+          "added": 403,
+          "changed": null,
+          "date_max": "2026-09-01"
+        },
+        "revenue": {
+          "total": 32,
+          "added": 32,
+          "changed": null,
+          "date_max": "2026-08-01"
+        },
+        "margin": {
+          "total": 160,
+          "added": 160,
+          "changed": null,
+          "date_max": "2026-09-01"
+        }
+      },
+      "fs_types_seen": 17,
       "price_date_max": "2026-09-01",
       "inst_date_max": "2026-09-01",
       "history": {
         "price": {
           "total": 403,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 160,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -60,17 +114,38 @@
       "errors": null
     },
     "6209": {
+      "extra": {
+        "per": {
+          "total": 403,
+          "added": 403,
+          "changed": null,
+          "date_max": "2026-09-01"
+        },
+        "revenue": {
+          "total": 32,
+          "added": 32,
+          "changed": null,
+          "date_max": "2026-08-01"
+        },
+        "margin": {
+          "total": 160,
+          "added": 160,
+          "changed": null,
+          "date_max": "2026-09-01"
+        }
+      },
+      "fs_types_seen": 16,
       "price_date_max": "2026-09-01",
       "inst_date_max": "2026-09-01",
       "history": {
         "price": {
           "total": 403,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 160,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 1
@@ -79,17 +154,38 @@
       "errors": null
     },
     "3017": {
+      "extra": {
+        "per": {
+          "total": 403,
+          "added": 403,
+          "changed": null,
+          "date_max": "2026-09-01"
+        },
+        "revenue": {
+          "total": 32,
+          "added": 32,
+          "changed": null,
+          "date_max": "2026-08-01"
+        },
+        "margin": {
+          "total": 160,
+          "added": 160,
+          "changed": null,
+          "date_max": "2026-09-01"
+        }
+      },
+      "fs_types_seen": 16,
       "price_date_max": "2026-09-01",
       "inst_date_max": "2026-09-01",
       "history": {
         "price": {
           "total": 403,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 160,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -98,17 +194,38 @@
       "errors": null
     },
     "8996": {
+      "extra": {
+        "per": {
+          "total": 403,
+          "added": 403,
+          "changed": null,
+          "date_max": "2026-09-01"
+        },
+        "revenue": {
+          "total": 32,
+          "added": 32,
+          "changed": null,
+          "date_max": "2026-08-01"
+        },
+        "margin": {
+          "total": 160,
+          "added": 160,
+          "changed": null,
+          "date_max": "2026-09-01"
+        }
+      },
+      "fs_types_seen": 14,
       "price_date_max": "2026-09-01",
       "inst_date_max": "2026-09-01",
       "history": {
         "price": {
           "total": 403,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 160,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -124,9 +241,30 @@
       "t86",
       "bfi82u"
     ],
-    "errors": null
+    "errors": null,
+    "csv": {
+      "index": {
+        "total": 1,
+        "added": 1,
+        "changed": null
+      }
+    },
+    "parse_errors": {
+      "breadth": "找不到漲跌證券數那一列",
+      "amount": "找不到成交統計的『股票』那一列",
+      "inst": "BFI82U 有取得，但欄位對應尚未定案（看 market_tables_raw.txt）"
+    }
   },
-  "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游請讀 <代號>_price.csv 與 <代號>_inst.csv——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。",
+  "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
+  "version": "v6 2026-09-02",
+  "capital_not_found": [
+    "7879",
+    "8289",
+    "2609",
+    "6209",
+    "3017",
+    "8996"
+  ],
   "calendar_days": 403,
   "history_rows_changed": null
 }
