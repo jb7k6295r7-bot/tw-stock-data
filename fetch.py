@@ -30,6 +30,7 @@ Claude 的排程只讀這個 repo 產出的固定網址檔案。
   ── v7 全市場層（2026-09-02 起）──
   data/universe/daily/YYYY-MM-DD.csv  **當日全市場**日K（一天一檔，不是一檔一股）
   data/meta/stocks.csv                代號↔名稱↔市場別＋first_seen／last_seen
+  data/universe/_coverage.csv         每天各市場抓到幾列（**回測分辨「沒交易」與「沒抓到」的唯一依據**）
   data/latest/endpoint_probe.txt      端點偵察：哪一條通、位元組數、實際欄位名
 
 v6（2026-09-02）補的是「報告一直缺、每天都寫查無」的那幾項：
@@ -764,9 +765,16 @@ PROBE = "endpoint_probe.txt"
 
 UNIVERSE_HEADER = ["key", "date", "stock_id", "name", "market",
                    "open", "high", "low", "close", "volume", "amount",
-                   "change", "limit", "shares"]
-# shares＝發行股數。**只有上櫃那條端點有給**，上市與興櫃留空。
-# 有它才算得出市值與周轉率，所以拿得到就存——事後補要另外跑 2,000 個請求。
+                   "change", "limit", "shares", "transactions", "price_basis"]
+# shares＝發行股數。**只有上櫃那條端點有給**，上市與興櫃留空
+#（上市與興櫃改由 capital.py 補進 data/meta/capital.csv，不寫回這裡）。
+# transactions＝成交筆數。上市與上櫃都有；興櫃端點沒有，留空。
+# ★ price_basis＝這一列的 close 是什麼價（v7.8，2026-09-03 加）。
+#   上市／上櫃留空＝收盤價。興櫃填「均價/額推算」——因為興櫃根本沒有收盤價，
+#   而 daily 與 esb 兩份檔如果一個存最後成交價、一個存加權均價，
+#   同一檔同一天會有兩個價，**而且看不出來哪個是哪個**。
+#   2026-09-02 實測差異：5267 差 4.8%、6434 差 2.1%、7879 差 0.9%。
+#   興櫃流動性極低，最後成交價可能由一筆 1 股的交易決定，所以一律採均價。
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
 
@@ -874,6 +882,7 @@ def parse_twse_daily(d, day, market="twse"):
     #（2026-09-02：只修了 backfill.py 沒同步這裡，TPEx 的漲跌整欄變空）。
     i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
     i_shares = _idx_any(fields, "發行股數")
+    i_txn = _idx_any(fields, "成交筆數")
     need = [i_code, i_open, i_high, i_low, i_close]
     if any(x is None for x in need):
         return [], f"欄位對不上：{fields}"
@@ -907,7 +916,9 @@ def parse_twse_daily(d, day, market="twse"):
                     _num(r[i_vol]) if i_vol is not None else "",
                     _num(r[i_amt]) if i_amt is not None else "",
                     chg, lim,
-                    _num(r[i_shares]) if i_shares is not None else ""])
+                    _num(r[i_shares]) if i_shares is not None else "",
+                    _num(r[i_txn]) if i_txn is not None else "",
+                    ""])           # price_basis：上市／上櫃是收盤價，留空
     return out, f"欄位={fields}"
 
 
@@ -930,13 +941,31 @@ def parse_openapi_daily(rows, day, market):
     #   Lowest／TransactionVolume（2026-09-02 實測，v7.0 因此解析出 0 列）。
     #   **開盤價刻意不映射**——興櫃的開盤是參考價，會落在當日高低之外，
     #   依專案規範本來就不可拿來畫K棒實體。
-    k_close = pick("Close", "LatestPrice", "收盤")
+    # ★ 興櫃的價格基準（v7.8，2026-09-03）：改採 **Average（加權均價）**，
+    #   不用 LatestPrice。理由見 UNIVERSE_HEADER 的註解——最後成交價可能由
+    #   一筆 1 股的交易決定，而 esb 逐月檔存的也是均價，兩邊要對得起來。
+    def exact(*names):
+        """完全相等才算。**不可用 pick()**：pick 是「包含」比對，
+        `pick("Average")` 會先撞上 `PreviousAveragePrice`（前一日均價），
+        把昨天的價格當成今天的收盤——靜默、而且每一列都錯。"""
+        for n in names:
+            for k in keys:
+                if str(k).strip() == n:
+                    return k
+        return None
+
+    k_avg = exact("Average") if "PreviousAveragePrice" in keys else None
+    k_close = k_avg or pick("Close", "LatestPrice", "收盤")
     k_open = pick("Open", "開盤")
     k_high = pick("High", "Highest", "最高")
     k_low = pick("Low", "Lowest", "最低")
     k_vol = pick("TradingShares", "TransactionVolume", "成交股數")
     k_amt = pick("TransactionAmount", "成交金額")
     k_chg = pick("Change", "漲跌")
+    # 成交筆數：**不可用 pick("Transaction")**，會撞上 TransactionVolume（成交量）
+    k_txn = exact("成交筆數", "NumberOfTransactions", "Transactions", "Transaction")
+    # 興櫃沒有漲跌欄，但有前一日均價 → 自己算。**這是相減，不是估計**。
+    k_prev = exact("PreviousAveragePrice") if k_avg else None
     if not (k_code and k_close):
         return [], f"欄位對不上：{keys}"
     out = []
@@ -949,12 +978,30 @@ def parse_openapi_daily(rows, day, market):
         if not c:
             continue
         chg = _num(r.get(k_chg))
+        vol = _num(r.get(k_vol))
+        amt = _num(r.get(k_amt))
+        basis = ""
+        if k_avg:
+            basis = "均價"
+            if not chg and k_prev:
+                prev = _num(r.get(k_prev))
+                if prev and float(prev):
+                    chg = f"{float(c) - float(prev):.2f}"
+            if not amt and vol:
+                # ★ 興櫃端點沒有成交金額（2026-09-03 實測欄位清單可證）。
+                #   加權均價的定義就是 金額÷股數，所以 均價×股數 是**恆等式**，
+                #   不是內插或估計——esb 逐月檔驗算過：1,650,513÷28,863＝57.1836
+                #   對上均價 57.18，只差四捨五入。
+                #   但它終究不是官方公告值，所以 price_basis 一定要標出來。
+                amt = str(int(round(float(c) * float(vol))))
+                basis = "均價/額推算"
         lim = ""
         if o and h and l and c and o == h == l == c:
             lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
         out.append([f"{day}_{code}", day, code,
                     str(r.get(k_name, "")).strip(), market,
-                    o, h, l, c, _num(r.get(k_vol)), _num(r.get(k_amt)), chg, lim, ""])
+                    o, h, l, c, vol, amt, chg, lim, "",
+                    _num(r.get(k_txn)) if k_txn else "", basis])
     return out, f"欄位={keys}"
 
 
@@ -1015,6 +1062,37 @@ def fetch_universe(today):
     counts["by_kind"] = bykind
     _probe_write(probe)
     return {"counts": counts, "errors": errs or None}, kept
+
+
+COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")
+COV_HEADER = ["date", "twse", "tpex", "emerging", "total", "note"]
+
+
+def append_coverage(day, counts, errs):
+    """每天各市場抓到幾列，**永久留存**。格式與 backfill.py 的 _coverage.csv 相同。
+
+    ★ 為什麼非有不可：`_manifest.json` 每天被覆蓋，只留最後一次。
+      假設某天上櫃端點掛掉，當天的 daily 檔就只有上市——
+      **半年後回測讀到那一天，會以為上櫃股全部沒有交易**，
+      而不是「這天沒抓到」。那會讓任何「全市場排序」的策略靜默失真，
+      且完全查不出來。這一列就是事後唯一能分辨這兩件事的證據。
+    """
+    os.makedirs(UNI_DIR, exist_ok=True)
+    old = {}
+    if os.path.exists(COVERAGE):
+        with open(COVERAGE, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                q = ln.rstrip("\n").split(",")
+                if i and q and q[0][:1].isdigit():
+                    old[q[0]] = q
+    note = ";".join(f"{k}={v}" for k, v in (errs or {}).items()) or "ok"
+    old[day] = [day, str(counts.get("twse", 0)), str(counts.get("tpex", 0)),
+                str(counts.get("emerging", 0)), str(counts.get("total", 0)), note]
+    with open(COVERAGE, "w", encoding="utf-8") as f:
+        f.write(",".join(COV_HEADER) + "\n")
+        for k in sorted(old):
+            f.write(",".join(old[k]) + "\n")
+    return len(old)
 
 
 def write_universe_day(day, lines):
@@ -1134,7 +1212,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.6 2026-09-03",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v7.8 2026-09-03",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
@@ -1258,6 +1336,7 @@ def main():
     try:
         uni, uni_lines = fetch_universe(today)
         uni["rows_written"] = write_universe_day(today, uni_lines)
+        uni["coverage_days"] = append_coverage(today, uni["counts"], uni.get("errors"))
         total, added, purged = merge_stocks_meta(today, uni_lines)
         uni["stocks_meta"] = {"total": total, "added_today": added,
                               "purged_warrants": purged or None}
