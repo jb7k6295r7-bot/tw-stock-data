@@ -1,0 +1,16 @@
+ComprehensiveIncomeConsolidatedNetIncomeAttributedNonControllingInterest
+CostOfGoodsSold
+EPS
+EquityAttributableToOwnersOfParent
+GrossProfit
+IncomeAfterTaxes
+IncomeFromContinuingOperations
+NoncontrollingInterests
+OperatingExpenses
+OperatingIncome
+OtherComprehensiveIncome
+PreTaxIncome
+Revenue
+TAX
+TotalConsolidatedProfitForThePeriod
+TotalNonoperatingIncomeAndExpense
