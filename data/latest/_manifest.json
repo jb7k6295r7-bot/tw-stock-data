@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T22:38:05+08:00",
+  "generated_at": "2026-09-03T00:10:25+08:00",
   "target_trading_day": "2026-09-02",
   "stocks": {
     "7879": {
@@ -610,14 +610,14 @@
     "parse_errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
-  "version": "v7.1 2026-09-02",
+  "version": "v7.5 2026-09-02",
   "calendar_days": 404,
   "universe": {
     "counts": {
       "twse": 1371,
-      "tpex": 5709,
+      "tpex": 980,
       "emerging": 364,
-      "warrants_excluded": 4729,
+      "warrants_excluded": 0,
       "total": 2715,
       "by_kind": {
         "etf": 357,
@@ -629,8 +629,9 @@
     "errors": null,
     "rows_written": 2715,
     "stocks_meta": {
-      "total": 7444,
-      "added_today": 364
+      "total": 2715,
+      "added_today": 0,
+      "purged_warrants": 4729
     }
   },
   "history_rows_changed": null
