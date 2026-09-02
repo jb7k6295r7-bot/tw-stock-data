@@ -543,6 +543,24 @@ def _twse_tables(d):
         return [t for t in d["tables"] if isinstance(t, dict)]
     if d.get("fields") and d.get("data"):
         return [{"title": d.get("title", ""), "fields": d["fields"], "data": d["data"]}]
+    # ★ 第三種形狀：**編號鍵**（`fields1`/`data1` … `fields9`/`data9`）。
+    #   TWSE 舊版 MI_INDEX 就是這樣回的——一個回應裡塞好幾張表，
+    #   用序號區分而不是放進 tables 陣列。
+    #   2026-09-03 實測：2015 年整年回補時 twse 每一天都「失敗」，
+    #   而 2026-08-28 的同一條端點卻正常，差別只在日期 → 高度懷疑是這個。
+    #   不支援它的話，症狀是「連得上、stat=OK、解析出 0 列」，
+    #   看起來跟「那天沒有資料」一模一樣。
+    out = []
+    for k in sorted(d.keys()):
+        if not k.startswith("fields"):
+            continue
+        suffix = k[len("fields"):]
+        dk = "data" + suffix
+        if isinstance(d.get(k), list) and isinstance(d.get(dk), list):
+            out.append({"title": d.get("title" + suffix, d.get("title", "")),
+                        "fields": d[k], "data": d[dk]})
+    if out:
+        return out
     return []
 
 
