@@ -822,8 +822,8 @@ def _rows_from_twse(d):
     """
     for t in _twse_tables(d):
         fields = [str(x) for x in (t.get("fields") or [])]
-        if any("證券代號" in f or "股票代號" in f for f in fields) and \
-           any("收盤" in f for f in fields):
+        # 條件放寬到「有代號欄 ＋ 有收盤欄」：TPEx 用「代號」、TWSE 用「證券代號」
+        if any("代號" in f for f in fields) and any("收盤" in f for f in fields):
             return t, fields
     return None, []
 
@@ -962,7 +962,7 @@ def fetch_universe(today):
                 lines, note = parse_openapi_daily(d, today, market)
             else:
                 stat = d.get("stat")
-                if stat and stat != "OK":
+                if stat and str(stat).strip().lower() not in ("ok", "success"):
                     probe.append(f"    stat={stat}（休市或查無）")
                     errs[market] = f"stat={stat}"
                     got = True          # 明確的「今天沒有」，不要再試下一條
@@ -1034,12 +1034,24 @@ def merge_stocks_meta(day, lines):
         else:
             merged[code] = [code, name, market, _kind(code, name), day, day]
             added += 1
+    # ★ 自我修復：每次都重算 kind，並把權證清掉。
+    #   「只進不出」是對的（避免生存者偏差），但它同時讓**錯誤也永久留下**——
+    #   v7.0 那次把 4,844 檔權證寫進 stocks.csv，靠只進不出永遠清不掉（2026-09-02 實測）。
+    #   所以規則要精確化：**股票只進不出，分類錯誤要能修正。**
+    purged = 0
+    for code in list(merged):
+        row = merged[code]
+        row[3] = _kind(code, row[1])          # 重算分類，修正舊資料
+        if row[3] == "warrant":
+            del merged[code]
+            purged += 1
+
     os.makedirs(META_DIR, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(",".join(STOCKS_HEADER) + "\n")
         for k in sorted(merged):
             f.write(",".join(str(x) for x in merged[k]) + "\n")
-    return len(merged), added
+    return len(merged), added, purged
 
 
 def fetch_market(today):
@@ -1066,7 +1078,7 @@ def fetch_market(today):
             out["errors"][key] = err
             continue
         stat = (d or {}).get("stat")
-        if stat and stat != "OK":
+        if stat and str(stat).strip().lower() not in ("ok", "success"):
             # TWSE 對休市日／查無資料會回一段中文，照抄不改寫
             out["errors"][key] = f"stat={stat}"
             continue
@@ -1103,7 +1115,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.1 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v7.3 2026-09-02",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
@@ -1227,8 +1239,9 @@ def main():
     try:
         uni, uni_lines = fetch_universe(today)
         uni["rows_written"] = write_universe_day(today, uni_lines)
-        total, added = merge_stocks_meta(today, uni_lines)
-        uni["stocks_meta"] = {"total": total, "added_today": added}
+        total, added, purged = merge_stocks_meta(today, uni_lines)
+        uni["stocks_meta"] = {"total": total, "added_today": added,
+                              "purged_warrants": purged or None}
         manifest["universe"] = uni
         c = uni["counts"]
         print(f"  universe: 上市 {c.get('twse', 0)}｜上櫃 {c.get('tpex', 0)}｜"
