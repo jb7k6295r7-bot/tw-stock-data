@@ -1,0 +1,78 @@
+name: 股本／發行股數（每月）
+
+# 為什麼獨立一支、而且不是每天跑：
+# 股本只有增資／減資才會動，**每天抓 1,700 次是浪費**。每月一號跑一次就夠。
+on:
+  schedule:
+    # UTC 01:00 = 台北 09:00，每月 1 號
+    - cron: "0 1 1 * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "probe = 只驗端點照抄欄位名；run = 市場層補；finmind = 逐檔補剩下的"
+        type: choice
+        options: [probe, run, finmind]
+        default: run
+      limit:
+        description: "finmind 這一趟最多處理幾檔（0 = 全部）"
+        default: "400"
+      sleep:
+        description: "finmind 每檔間隔秒數（FinMind 約 600 次/小時）"
+        default: "6"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capital
+  cancel-in-progress: false
+
+jobs:
+  capital:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 探路
+        if: inputs.mode == 'probe'
+        run: python capital.py --probe
+
+      # 排程觸發時 inputs.mode 是空的 → 跑 run，再自動接 finmind 補剩下的
+      - name: 市場層
+        if: inputs.mode == 'run' || inputs.mode == ''
+        run: python capital.py --run
+
+      - name: FinMind 逐檔補
+        if: inputs.mode == 'finmind' || inputs.mode == ''
+        run: |
+          python capital.py --finmind \
+            --limit "${{ inputs.limit || '400' }}" \
+            --sleep "${{ inputs.sleep || '6' }}"
+
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "沒有變動，不 commit"
+          else
+            git commit -m "capital: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
+          fi
