@@ -1,0 +1,79 @@
+name: 歷史回補（手動）
+
+# 一次性的長工，**不排程**——只能在 Actions 頁面手動按，並填要回補的區間。
+# 為什麼分開：每日流程要在兩分鐘內結束；回補一次要跑好幾小時，
+# 兩者混在一起，回補塞車就等於當天沒有資料。
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "先選 probe 驗端點，通了再選 run"
+        type: choice
+        options: [probe, run]
+        default: probe
+      start:
+        description: "起日（run 用，YYYY-MM-DD）"
+        default: "2015-01-01"
+      end:
+        description: "迄日（run 用，YYYY-MM-DD）。建議一次一年"
+        default: "2015-12-31"
+      markets:
+        description: "要回補的市場，逗號分隔"
+        default: "twse,tpex,emerging"
+      probe_date:
+        description: "probe 用的測試日，必須是交易日"
+        default: "2026-08-28"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backfill          # 不要兩趟回補同時跑，會互相蓋掉 coverage
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350    # 上限 6 小時；一年約 245 天 × 3 市場 × 1.5 秒 ≈ 20 分鐘
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 探路（只驗端點，不寫資料）
+        if: inputs.mode == 'probe'
+        run: python backfill.py --probe --date "${{ inputs.probe_date }}"
+
+      - name: 回補
+        if: inputs.mode == 'run'
+        run: |
+          python backfill.py --run \
+            --start "${{ inputs.start }}" \
+            --end   "${{ inputs.end }}" \
+            --markets "${{ inputs.markets }}"
+
+      # 探路失敗也要 commit：偵察檔本身就是這一趟的產出
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "沒有變動，不 commit"
+          else
+            git commit -m "backfill(${{ inputs.mode }}): ${{ inputs.start }}~${{ inputs.end }}"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
+          fi
