@@ -110,7 +110,7 @@ def candidates(day):
     }
 
 
-def get(url, retries=2, timeout=45):
+def get(url, retries=3, timeout=45):
     last = None
     for i in range(retries):
         try:
@@ -128,7 +128,7 @@ def get(url, retries=2, timeout=45):
         except Exception as e:  # noqa: BLE001
             last = f"{type(e).__name__}: {e}"
         if i < retries - 1:
-            time.sleep(2 * (i + 1))
+            time.sleep(3 * (i + 1))     # 3s、6s。交易所限流時退得太快等於白重試
     return None, last
 
 
@@ -305,10 +305,12 @@ def parse_openapi(rows, day, market):
 
 
 def fetch_day_market(day, market, urls, probe_lines=None):
-    """回傳 (lines, note)。休市或查無回 ([], 'closed')。"""
+    """回傳 (lines, note)。休市或查無回 ([], 'closed')；全失敗回 ([], 'all_failed:<原因>')。"""
+    last_err = ""
     for u in urls:
         raw, err = get(u)
         if err:
+            last_err = err
             if probe_lines is not None:
                 probe_lines.append(f"  FAIL {u}\n        {err}")
             continue
@@ -348,7 +350,10 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                         f"        [診斷] 首筆={json.dumps(d[0], ensure_ascii=False)[:300]}")
         if lines:
             return lines, u
-    return [], "all_failed"
+        last_err = last_err or f"解析出 0 列（{note[:60]}）"
+    # ★ 失敗原因一定要帶出去。只寫「失敗」的話，事後看 coverage 分不出是
+    #   被限流（重跑就好）、端點改版（要改程式）、還是那天真的沒有資料。
+    return [], f"all_failed:{last_err[:80]}"
 
 
 def write_day(day, lines):
@@ -380,32 +385,64 @@ def append_coverage(day, per_market, note):
             per_market.get("emerging", 0), sum(per_market.values()), note))
 
 
-def done_days():
-    """已經抓過、**而且欄位是現行版本**的日期。
+def read_coverage():
+    """→ {date: note}。沒有檔案就回空。"""
+    out = {}
+    if not os.path.exists(COVERAGE):
+        return out
+    with open(COVERAGE, encoding="utf-8") as f:
+        for i, ln in enumerate(f):
+            q = ln.rstrip("\n").split(",")
+            if i and q and q[0][:1].isdigit():
+                out[q[0]] = q[5] if len(q) > 5 else ""
+    return out
 
-    ★ 欄位版本要檢查（2026-09-03 加）：HEADER 加欄位時，舊檔的欄數會少一截。
-      如果只看「檔案存不存在」就跳過，那些舊檔會**永遠停在舊格式**，
-      而且建 DB 時才會發現有一半的日子欄位對不上——那時要重跑的是整整十年。
-      → 欄位不符就當成沒抓過，下一趟自動重抓覆蓋。
+
+def done_days():
+    """真的可以跳過的日期。**三個條件都要看，少一個就會留下靜默的洞。**
+
+    1. 檔案存在 —— 最基本的
+    2. **欄位是現行版本** —— HEADER 加欄位時舊檔會少一截。只看檔案在不在，
+       那些舊檔會永遠停在舊格式，等到建 DB 才發現有一半的日子對不上。
+    3. **coverage 的 note 裡沒有「失敗」** —— 這一條是 2026-09-03 補的。
+       某個市場失敗時，另一個市場的列**照樣會寫成檔案**（例：2015-07-15
+       只有上櫃 675 列、上市整批沒抓到）。只看檔案存不存在的話，
+       重跑會直接跳過它，**那一天的上市資料就永遠補不回來**，
+       而且回測讀起來像「那天上市股全部沒交易」，不像「沒抓到」。
+
+    全市場都休市的日子沒有檔案，但那是正常的，也要算跑過，否則每次重跑
+    都會再去敲一次那些國定假日。
     """
-    if not os.path.isdir(DAILY_DIR):
-        return set()
-    ok, stale = set(), 0
+    cov = read_coverage()
+    files, stale = set(), 0
     want = ",".join(HEADER)
-    for n in os.listdir(DAILY_DIR):
-        if not n.endswith(".csv"):
-            continue
-        try:
-            with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
-                head = f.readline().rstrip("\n")
-        except OSError:
-            continue
-        if head == want:
-            ok.add(n[:-4])
+    if os.path.isdir(DAILY_DIR):
+        for n in os.listdir(DAILY_DIR):
+            if not n.endswith(".csv"):
+                continue
+            try:
+                with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
+                    head = f.readline().rstrip("\n")
+            except OSError:
+                continue
+            if head == want:
+                files.add(n[:-4])
+            else:
+                stale += 1
+    ok, partial = set(), 0
+    for d in files:
+        note = cov.get(d, "")
+        if "失敗" in note:
+            partial += 1            # 有檔案，但缺了某個市場 → 要重抓
         else:
-            stale += 1
+            ok.add(d)
+    for d, note in cov.items():
+        if d not in files and "失敗" not in note and "休市" in note:
+            ok.add(d)               # 全市場休市，沒有檔案是正常的
     if stale:
         print(f"[backfill] {stale} 個日檔是舊欄位版本，將重抓覆蓋")
+    if partial:
+        print(f"[backfill] {partial} 天有市場抓失敗（檔案不完整），將重抓覆蓋")
     return ok
 
 
@@ -548,6 +585,46 @@ def cmd_esb(args):
     return 0
 
 
+def cmd_audit(_args):
+    """把 _coverage.csv 讀成一張表：哪一年幾天完整、幾天缺市場、缺哪個。
+
+    **回測前一定要看這張表。** 缺市場的日子在檔案裡長得跟「那天沒交易」一模一樣。
+    """
+    cov = read_coverage()
+    if not cov:
+        print("[audit] 還沒有 _coverage.csv")
+        return 1
+    rows = {}
+    if os.path.exists(COVERAGE):
+        with open(COVERAGE, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                q = ln.rstrip("\n").split(",")
+                if i and q and q[0][:1].isdigit():
+                    rows[q[0]] = q
+    years = {}
+    for d, note in sorted(cov.items()):
+        y = d[:4]
+        st = years.setdefault(y, {"ok": 0, "closed": 0, "fail": 0, "days": []})
+        if "失敗" in note:
+            st["fail"] += 1
+            st["days"].append(d)
+        elif "休市" in note and rows.get(d, ["", "0"])[4] in ("0", ""):
+            st["closed"] += 1
+        else:
+            st["ok"] += 1
+    print(f"{'年':<6}{'完整':>6}{'休市':>6}{'缺市場':>8}")
+    for y in sorted(years):
+        st = years[y]
+        print(f"{y:<6}{st['ok']:>6}{st['closed']:>6}{st['fail']:>8}")
+    bad = [d for y in sorted(years) for d in years[y]["days"]]
+    if bad:
+        print(f"\n缺市場的日子共 {len(bad)} 天，前 30 天：")
+        for d in bad[:30]:
+            print(f"  {d}  {cov[d]}")
+        print("\n→ 直接重跑同一條 run 指令即可，done_days() 會只挑這些天。")
+    return 0
+
+
 def cmd_probe(args):
     day = args.date
     lines = [f"# 回補端點偵察 {datetime.now(TPE).isoformat(timespec='seconds')}  測試日 {day}"]
@@ -590,6 +667,9 @@ def cmd_probe(args):
 
 
 def cmd_run(args):
+    global SLEEP
+    if args.sleep:
+        SLEEP = args.sleep
     markets = [m.strip() for m in args.markets.split(",") if m.strip()]
     skip = done_days() if not args.force else set()
     days = [d for d in daterange(args.start, args.end) if d not in skip]
@@ -608,10 +688,14 @@ def cmd_run(args):
             per[m] = len(rows)
             if src == "closed":
                 notes.append(f"{m}:休市")
-            elif src == "all_failed":
-                notes.append(f"{m}:失敗")
+            elif str(src).startswith("all_failed"):
+                why = str(src).split(":", 1)[1] if ":" in str(src) else ""
+                why = why.replace(",", "；").replace("\n", " ").strip()
+                notes.append(f"{m}:失敗({why})" if why else f"{m}:失敗")
             all_lines.extend(rows)
-            time.sleep(SLEEP)
+            # 某個市場整條失敗多半是被限流 → 多等一下再打下一個，
+            # 否則接下來的日子會連鎖失敗（2026-09-03 2015 回補實測到 twse 失敗）
+            time.sleep(SLEEP * 4 if str(src).startswith("all_failed") else SLEEP)
         n = write_day(day, all_lines)
         note = ";".join(notes) or "ok"
         append_coverage(day, per, note)
@@ -630,6 +714,8 @@ def cmd_run(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--probe", action="store_true", help="只測端點，不寫資料")
+    ap.add_argument("--audit", action="store_true",
+                    help="讀 _coverage.csv，列出每年完整／休市／缺市場的天數")
     ap.add_argument("--run", action="store_true", help="逐日回補")
     ap.add_argument("--date", default="2026-08-28", help="probe 用的測試日（要是交易日）")
     ap.add_argument("--start", default="2015-01-01")
@@ -637,10 +723,14 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    ap.add_argument("--sleep", type=float, default=0,
+                    help="每個請求間隔秒數（預設 1.5；被限流就調大，例如 3）")
     ap.add_argument("--esb", action="store_true",
                     help="興櫃逐檔逐月回補（要配 --codes，start/end 用 YYYY-MM）")
     ap.add_argument("--codes", default="", help="興櫃代號，逗號分隔")
     a = ap.parse_args()
+    if a.audit:
+        return cmd_audit(a)
     if a.probe:
         return cmd_probe(a)
     if a.esb:
