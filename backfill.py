@@ -92,6 +92,14 @@ def candidates(day):
         # （該頁本身是 JS，資料不在 HTML 裡，且對外直接讀會 403）。
         # **這些全是假設，probe 就是用來淘汰它們的。**
         "emerging": [
+            # ★ 最有希望的一條：`emerging/historical` 已證實存在（使用者提供的 Monthly 版可用），
+            #   所以 **type=Daily、不帶 code ＝ 全市場單日** 很可能也成立。
+            #   若成立，興櫃就能跟上市上櫃一樣全市場逐日回補，不必逐檔跑 48,000 次。
+            f"https://www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date={slash}&id=&response=json",
+            f"https://www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date={slash}&code=&id=&response=json",
+            # 由 `zh-tw/esb/trading/info/historical/day/com-pricing.html` 這個頁面路徑推出來的
+            f"https://www.tpex.org.tw/www/zh-tw/esb/comPricing?date={slash}&id=&response=json",
+            f"https://www.tpex.org.tw/www/zh-tw/esb/historical/day/com-pricing?date={slash}&response=json",
             f"https://www.tpex.org.tw/www/zh-tw/esb/stockPricing?date={slash}&id=&response=json",
             f"https://www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date={slash}&response=json",
             f"https://www.tpex.org.tw/www/zh-tw/esb/pricing?date={slash}&response=json",
