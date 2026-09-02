@@ -371,6 +371,126 @@ def daterange(start, end):
         d0 += timedelta(days=1)
 
 
+# ══════════════════════════════════════════════════════════
+# 興櫃逐檔逐月回補（2026-09-02 定案）
+#
+# `emerging/historical?type=Monthly&date=YYYY/MM/01&code=<代號>` 可用；
+# **`type=Daily` 不可用**——它強制要 code，沒有全市場模式
+# （回「請輸入資料日期及股票代碼查詢個股行情」）。
+# 所以興櫃只能挑幾檔補，364 檔全補要 48,000 個請求。
+#
+# ★★ 回傳的表**沒有欄位名**，欄位是靠算術反推的：
+#    ["115/08/03","28,863","1,650,513","57.70","56.40","57.18","43", …]
+#    1,650,513 ÷ 28,863 = 57.18 → 第 6 欄確定是**加權平均價**（另兩列也吻合）。
+#    → 日期／成交股數／成交金額／最高／最低／均價／成交筆數
+#
+# ★★★ **興櫃沒有開盤與收盤價**（非集合競價、無漲跌幅限制），
+#      所以 close 欄放的是**均價**，open 留空、limit 留空。
+#      這件事一定要標明——把均價當收盤跟上市股混算，那是兩種不同的東西。
+# ══════════════════════════════════════════════════════════
+
+ESB_DIR = os.path.join(UNI_DIR, "esb")
+ESB_HEADER = ["date", "stock_id", "high", "low", "avg_price",
+              "volume", "amount", "transactions", "price_basis"]
+
+
+def roc_to_ad(d):
+    """115/08/03 -> 2026-08-03。轉不了回 None（不要猜）。"""
+    try:
+        y, m, dd = str(d).strip().split("/")
+        return f"{int(y) + 1911:04d}-{int(m):02d}-{int(dd):02d}"
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def parse_esb_month(d, code):
+    """→ (lines, note)。欄位靠位置，因為回傳沒有 fields。"""
+    tabs = _tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={list(d.keys())[:10] if isinstance(d, dict) else type(d).__name__}"
+    rows = tabs[0].get("data") or []
+    out = []
+    for r in rows:
+        if not r or len(r) < 7:
+            continue
+        day = roc_to_ad(r[0])
+        if not day:
+            continue
+        vol, amt = _num(r[1]), _num(r[2])
+        hi, lo, avg = _num(r[3]), _num(r[4]), _num(r[5])
+        if not avg:
+            continue                      # 沒有均價就沒有可用的價格，跳過不補值
+        out.append([day, code, hi, lo, avg, vol, amt, _num(r[6]), "均價"])
+    return out, f"{len(rows)} 列原始、{len(out)} 列可用"
+
+
+def merge_esb(code, lines):
+    """一檔一檔存（興櫃只補少數幾檔，不會有 git 膨脹問題）。主鍵 date，冪等。"""
+    os.makedirs(ESB_DIR, exist_ok=True)
+    path = os.path.join(ESB_DIR, f"{code}.csv")
+    old = {}
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                q = ln.rstrip("\n").split(",")
+                if i and q and q[0][:1].isdigit():
+                    old[q[0]] = q
+    added = 0
+    for r in lines:
+        if r[0] not in old:
+            added += 1
+        old[r[0]] = [str(x) for x in r]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(",".join(ESB_HEADER) + "\n")
+        for k in sorted(old):
+            f.write(",".join(old[k]) + "\n")
+    return len(old), added
+
+
+def months(start, end):
+    """'2015-01' ~ '2026-09' -> ['2015/01', ...]"""
+    y, m = (int(x) for x in start.split("-")[:2])
+    ey, em = (int(x) for x in end.split("-")[:2])
+    while (y, m) <= (ey, em):
+        yield f"{y:04d}/{m:02d}"
+        m += 1
+        if m > 12:
+            y, m = y + 1, 1
+
+
+def cmd_esb(args):
+    codes = [c.strip() for c in args.codes.split(",") if c.strip()]
+    if not codes:
+        print("[esb] 沒有指定 --codes", file=sys.stderr)
+        return 1
+    ms = list(months(args.start, args.end))
+    print(f"[esb] {len(codes)} 檔 × {len(ms)} 個月 = {len(codes) * len(ms)} 個請求")
+    for code in codes:
+        got, empty, fail = [], 0, 0
+        for ym in ms:
+            raw, err = get(esb_month_url(code, ym))
+            if err:
+                fail += 1
+                time.sleep(SLEEP)
+                continue
+            try:
+                d = json.loads(raw.decode("utf-8"))
+            except Exception:  # noqa: BLE001
+                fail += 1
+                time.sleep(SLEEP)
+                continue
+            lines, _note = parse_esb_month(d, code)
+            if lines:
+                got.extend(lines)
+            else:
+                empty += 1               # 該月沒交易或還沒上興櫃，正常
+            time.sleep(SLEEP)
+        total, added = merge_esb(code, got)
+        print(f"  {code}: 抓到 {len(got)} 列（新增 {added}，累計 {total}）"
+              f"｜空月 {empty}｜失敗 {fail}", flush=True)
+    return 0
+
+
 def cmd_probe(args):
     day = args.date
     lines = [f"# 回補端點偵察 {datetime.now(TPE).isoformat(timespec='seconds')}  測試日 {day}"]
@@ -460,9 +580,14 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    ap.add_argument("--esb", action="store_true",
+                    help="興櫃逐檔逐月回補（要配 --codes，start/end 用 YYYY-MM）")
+    ap.add_argument("--codes", default="", help="興櫃代號，逗號分隔")
     a = ap.parse_args()
     if a.probe:
         return cmd_probe(a)
+    if a.esb:
+        return cmd_esb(a)
     if a.run:
         return cmd_run(a)
     ap.print_help()
