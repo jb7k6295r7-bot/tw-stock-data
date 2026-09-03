@@ -23,6 +23,9 @@ on:
       codes:
         description: "興櫃代號，逗號分隔（esb 用）"
         default: "7879,5267,6434"
+      saturdays:
+        description: "run 時連週六也掃（抓補行交易日）。填 yes 才開"
+        default: "no"
       sleep:
         description: "每個請求間隔秒數（run 用）。TWSE 會限流，2015 實測 1.5 秒有 94% 失敗 → 用 5"
         default: "5"
@@ -80,7 +83,8 @@ jobs:
             --start "${{ inputs.start }}" \
             --end   "${{ inputs.end }}" \
             --markets "${{ inputs.markets }}" \
-            --sleep "${{ inputs.sleep || '1.5' }}"
+            --sleep "${{ inputs.sleep || '5' }}" \
+            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
 
       # 探路失敗也要 commit：偵察檔本身就是這一趟的產出
       - name: Commit 回 repo
