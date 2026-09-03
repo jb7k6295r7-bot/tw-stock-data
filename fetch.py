@@ -904,8 +904,13 @@ def parse_twse_daily(d, day, market="twse"):
     need = [i_code, i_open, i_high, i_low, i_close]
     if any(x is None for x in need):
         return [], f"欄位對不上：{fields}"
+    raw = t.get("data") or []
+    # ★ 休市時 TPEx 回的是「欄位齊全但沒有資料列」的空表，不是 stat=休市。
+    #   要跟「有資料卻解析不出來」分開，否則休市會被記成端點故障。
+    if not raw:
+        return [], "no_rows:空表（休市或無成交）"
     out = []
-    for r in (t.get("data") or []):
+    for r in raw:
         if not r or len(r) <= max(x for x in need if x is not None):
             continue
         code = str(r[i_code]).strip()
@@ -1042,6 +1047,11 @@ def fetch_universe(today):
             except Exception as e:  # noqa: BLE001
                 probe.append(f"    JSON 解析失敗 {type(e).__name__}")
                 continue
+            if isinstance(d, list) and not d:
+                probe.append("    no_rows:空 list（休市或無成交）")
+                errs[market] = "休市或無成交"
+                got = True
+                break
             if isinstance(d, list):
                 lines, note = parse_openapi_daily(d, today, market)
             else:
@@ -1052,6 +1062,11 @@ def fetch_universe(today):
                     got = True          # 明確的「今天沒有」，不要再試下一條
                     break
                 lines, note = parse_twse_daily(d, today, market)
+                if not lines and str(note).startswith("no_rows"):
+                    probe.append(f"    {note}")
+                    errs[market] = "休市或無成交"
+                    got = True
+                    break
             probe.append(f"    {note}")
             probe.append(f"    解析出 {len(lines)} 列")
             if lines:
@@ -1230,7 +1245,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.8 2026-09-03",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v7.9 2026-09-03",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
