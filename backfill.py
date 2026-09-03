@@ -40,7 +40,16 @@ _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 UNI_DIR = os.path.join(_ROOT, "universe")
 DAILY_DIR = os.path.join(UNI_DIR, "daily")
 INST_DIR = os.path.join(UNI_DIR, "inst")
-COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")
+# ★ 2026-09-04：coverage 依「寫入者」拆檔。
+#   原本 fetch.py（每日）與 backfill.py（回補）**寫同一個 `_coverage.csv`**，
+#   而兩邊都是「整份重寫」，於是任何一次時間重疊就產生 git 內容衝突：
+#     CONFLICT (content): Merge conflict in data/universe/_coverage.csv
+#     → rebase 卡住 → push 三次全失敗 → **整趟 2026 回補的資料全部沒進 repo**。
+#   （2026-09-04 實測，白跑 35 分鐘。）
+#   依 `deliverable-delivery-channels` skill：**共用索引／記錄檔要按寫入者節奏拆分**。
+COVERAGE = os.path.join(UNI_DIR, "_coverage_backfill.csv")
+LEGACY_COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")     # 拆檔前的舊檔，只讀
+DAILY_COVERAGE = os.path.join(UNI_DIR, "_coverage_daily.csv")  # fetch.py 寫的，只讀
 PROBE = os.path.join(UNI_DIR, "_backfill_probe.txt")
 
 HEADER = ["key", "date", "stock_id", "name", "market",
@@ -465,12 +474,7 @@ def append_coverage(day, per_market, note):
     #   而且檔案不是排序的。read_coverage() 取最後一筆所以判斷還是對的，
     #   但檔案本身會越長越髒，任何直接讀它的人（例如之後建 DB）都會重複計算。
     old = {}
-    if os.path.exists(COVERAGE):
-        with open(COVERAGE, encoding="utf-8") as f:
-            for i, ln in enumerate(f):
-                q = ln.rstrip("\n").split(",")
-                if i and q and q[0][:1].isdigit():
-                    old[q[0]] = q
+    _read_cov_file(COVERAGE, old)      # ★ 只讀自己那一份，不要把別人的列吸進來
     old[day] = [day, str(per_market.get("twse", 0)), str(per_market.get("tpex", 0)),
                 str(per_market.get("emerging", 0)), str(sum(per_market.values())),
                 str(note)]
@@ -480,17 +484,32 @@ def append_coverage(day, per_market, note):
             f.write(",".join(old[k]) + "\n")
 
 
-def read_coverage():
-    """→ {date: note}。沒有檔案就回空。"""
-    out = {}
-    if not os.path.exists(COVERAGE):
-        return out
-    with open(COVERAGE, encoding="utf-8") as f:
+def _read_cov_file(path, into):
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
         for i, ln in enumerate(f):
             q = ln.rstrip("\n").split(",")
             if i and q and q[0][:1].isdigit():
-                out[q[0]] = q[5] if len(q) > 5 else ""
+                into[q[0]] = q
+
+
+def coverage_rows():
+    """三個來源合併：舊檔 → 每日檔 → 回補檔（後者覆蓋前者）。→ {date: 整列}
+
+    **只有 `COVERAGE`（回補檔）是本程式會寫的**，另外兩個一律唯讀——
+    寫別人的檔就等於把剛拆掉的衝突又接回去。
+    """
+    out = {}
+    _read_cov_file(LEGACY_COVERAGE, out)
+    _read_cov_file(DAILY_COVERAGE, out)
+    _read_cov_file(COVERAGE, out)
     return out
+
+
+def read_coverage():
+    """→ {date: note}。"""
+    return {d: (r[5] if len(r) > 5 else "") for d, r in coverage_rows().items()}
 
 
 def done_days():
@@ -935,12 +954,7 @@ def cmd_purge(args):
                 os.remove(os.path.join(DAILY_DIR, n))
                 killed += 1
     cov = {}
-    if os.path.exists(COVERAGE):
-        with open(COVERAGE, encoding="utf-8") as f:
-            for i, ln in enumerate(f):
-                q = ln.rstrip("\n").split(",")
-                if i and q and q[0][:1].isdigit():
-                    cov[q[0]] = q
+    _read_cov_file(COVERAGE, cov)     # purge 只刪自己寫的那一份
     dropped = [d for d in cov if lo <= d <= hi]
     for d in dropped:
         del cov[d]
@@ -961,13 +975,7 @@ def cmd_audit(_args):
     if not cov:
         print("[audit] 還沒有 _coverage.csv")
         return 1
-    rows = {}
-    if os.path.exists(COVERAGE):
-        with open(COVERAGE, encoding="utf-8") as f:
-            for i, ln in enumerate(f):
-                q = ln.rstrip("\n").split(",")
-                if i and q and q[0][:1].isdigit():
-                    rows[q[0]] = q
+    rows = coverage_rows()
     years = {}
     for d, note in sorted(cov.items()):
         y = d[:4]
