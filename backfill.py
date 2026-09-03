@@ -454,13 +454,24 @@ def append_coverage(day, per_market, note):
     「上櫃股當天全部沒交易」——那是**靜默失真**，比整天缺資料還糟。
     """
     os.makedirs(UNI_DIR, exist_ok=True)
-    exists = os.path.exists(COVERAGE)
-    with open(COVERAGE, "a", encoding="utf-8") as f:
-        if not exists:
-            f.write(",".join(COV_HEADER) + "\n")
-        f.write("{},{},{},{},{},{}\n".format(
-            day, per_market.get("twse", 0), per_market.get("tpex", 0),
-            per_market.get("emerging", 0), sum(per_market.values()), note))
+    # ★ 以日期為主鍵合併後整份重寫，**不可以用 "a" 純追加**。
+    #   2026-09-03 實測：同一天重跑三次就留下三列（2015-01-01 出現 3 次），
+    #   而且檔案不是排序的。read_coverage() 取最後一筆所以判斷還是對的，
+    #   但檔案本身會越長越髒，任何直接讀它的人（例如之後建 DB）都會重複計算。
+    old = {}
+    if os.path.exists(COVERAGE):
+        with open(COVERAGE, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                q = ln.rstrip("\n").split(",")
+                if i and q and q[0][:1].isdigit():
+                    old[q[0]] = q
+    old[day] = [day, str(per_market.get("twse", 0)), str(per_market.get("tpex", 0)),
+                str(per_market.get("emerging", 0)), str(sum(per_market.values())),
+                str(note)]
+    with open(COVERAGE, "w", encoding="utf-8") as f:
+        f.write(",".join(COV_HEADER) + "\n")
+        for k in sorted(old):
+            f.write(",".join(old[k]) + "\n")
 
 
 def read_coverage():
@@ -673,6 +684,74 @@ def cmd_esb(args):
     return 0
 
 
+META_DIR = os.path.join(_ROOT, "meta")
+STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
+
+
+def cmd_rebuild_meta(_args):
+    """掃過所有日檔，重建 data/meta/stocks.csv 的 first_seen／last_seen。
+
+    ★ 為什麼非做不可：`fetch.py` 只在每日流程裡更新 stocks.csv，
+      **回補寫進來的十年資料它一列都沒看過**。所以回補完之後，
+      stocks.csv 裡每一檔的 first_seen 都還是資料庫開張那天。
+
+      而 first_seen／last_seen 正是**生存者偏差**的解藥：回測到 2018 年時，
+      universe 必須是「當時真的存在的那些股票」，不是今天還活著的這批。
+      欄位在、值卻是假的，比沒有這個欄位更危險。
+
+    只讀本地檔，不連外。
+    """
+    if not os.path.isdir(DAILY_DIR):
+        print("[meta] 沒有 daily 目錄")
+        return 1
+    files = sorted(n for n in os.listdir(DAILY_DIR) if n.endswith(".csv"))
+    seen = {}
+    for n in files:
+        day = n[:-4]
+        with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
+            head = f.readline().rstrip("\n").split(",")
+            try:
+                i_id, i_nm, i_mk = (head.index("stock_id"), head.index("name"),
+                                    head.index("market"))
+            except ValueError:
+                print(f"  ⚠ {n} 欄位不符，跳過")
+                continue
+            for ln in f:
+                q = ln.rstrip("\n").split(",")
+                if len(q) <= i_mk or not q[i_id]:
+                    continue
+                code = q[i_id]
+                if code in seen:
+                    r = seen[code]
+                    r[1] = q[i_nm] or r[1]      # 名稱以最新的為準
+                    r[2] = q[i_mk] or r[2]      # 市場別同理（會轉板）
+                    r[5] = day if day > r[5] else r[5]
+                    r[4] = day if day < r[4] else r[4]
+                else:
+                    seen[code] = [code, q[i_nm], q[i_mk], _kind(code), day, day]
+    # 權證不進資料庫（與 fetch.py 同一條規則）
+    purged = [c for c in seen if seen[c][3] == "warrant"]
+    for c in purged:
+        del seen[c]
+    os.makedirs(META_DIR, exist_ok=True)
+    path = os.path.join(META_DIR, "stocks.csv")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(",".join(STOCKS_HEADER) + "\n")
+        for k in sorted(seen):
+            f.write(",".join(seen[k]) + "\n")
+    firsts = {}
+    for r in seen.values():
+        firsts[r[4][:4]] = firsts.get(r[4][:4], 0) + 1
+    print(f"[meta] 掃了 {len(files)} 個日檔，寫出 {len(seen)} 檔（權證排除 {len(purged)}）")
+    print("  first_seen 年份分布:", dict(sorted(firsts.items())))
+    lasts = {}
+    for r in seen.values():
+        lasts[r[5][:4]] = lasts.get(r[5][:4], 0) + 1
+    print("  last_seen  年份分布:", dict(sorted(lasts.items())),
+          "← 最後一年以外的，就是**已下市／已轉板**的股票")
+    return 0
+
+
 def cmd_purge(args):
     """刪掉一個區間的日檔與 coverage 列。**確認資料被污染時用。**
 
@@ -849,6 +928,8 @@ def cmd_run(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--probe", action="store_true", help="只測端點，不寫資料")
+    ap.add_argument("--rebuild-meta", dest="rebuild_meta", action="store_true",
+                    help="用所有日檔重建 stocks.csv 的 first_seen／last_seen（只讀本地）")
     ap.add_argument("--purge", action="store_true",
                     help="刪掉 --start~--end 的日檔與 coverage 列（資料被污染時用）")
     ap.add_argument("--audit", action="store_true",
@@ -868,6 +949,8 @@ def main():
                     help="興櫃逐檔逐月回補（要配 --codes，start/end 用 YYYY-MM）")
     ap.add_argument("--codes", default="", help="興櫃代號，逗號分隔")
     a = ap.parse_args()
+    if a.rebuild_meta:
+        return cmd_rebuild_meta(a)
     if a.purge:
         return cmd_purge(a)
     if a.audit:
