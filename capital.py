@@ -95,6 +95,13 @@ _K_SHR = ("發行股數", "已發行股數", "IssuedShares", "OutstandingShares"
 #   假設面額一律 10 會讓這 19 檔的股本算錯，而錯的方向與幅度各不相同——
 #   直接影響「三大法人佔股本比重」，那正是 skill 的必檢項。
 _K_PAR = ("ParValueOfCommonStock", "普通股每股面額", "每股面額", "面額", "ParValue")
+# ★ 特別股要一起抓。2026-09-03 實測 40 筆「對不起來」，其中金控股一整排
+#   （富邦金 11.142、國泰金 11.045、凱基金 10.932、台新新光金 11.788…）比值都在
+#   10～12 之間——因為**實收資本額含特別股，已發行普通股數不含**。
+#   驗算：富邦金 156,073,549,520 −(14,007,364,952×10) = 15,999,900,000
+#   ÷10 = 1,599,990,000 股，正是它的特別股股數。
+#   不抓這一欄的話，這些公司會被誤標成資料異常，而它們其實完全正常。
+_K_PREF = ("PreferredStock.shares", "特別股", "PreferredShares")
 
 
 def now_tpe():
@@ -148,7 +155,7 @@ def _pick(keys, wanted):
     return None
 
 
-def reconcile(capital, shares, par):
+def reconcile(capital, shares, par, pref=""):
     """股數 × 面額 應該等於實收資本額。→ (par_used, note)
 
     ★ 對不起來就要標出來，不要挑一個好看的用。2026-09-03 實測興櫃有兩檔
@@ -159,6 +166,7 @@ def reconcile(capital, shares, par):
         cap = float(capital) if capital else 0.0
         shr = float(shares) if shares else 0.0
         pv = float(par) if par else 0.0
+        pf = float(pref) if pref else 0.0
     except ValueError:
         return (par or ""), "unparsable"
     if shr <= 0:
@@ -166,8 +174,18 @@ def reconcile(capital, shares, par):
     if cap <= 0:
         return (par or ""), "no-capital"
     if pv > 0:
-        return (par, "ok" if abs(shr * pv - cap) / cap <= 0.05
-                else f"mismatch:{cap / shr:.3f}")
+        if abs(shr * pv - cap) / cap <= 0.05:
+            return par, "ok"
+        # 加上特別股再試一次
+        if pf > 0 and abs((shr + pf) * pv - cap) / cap <= 0.05:
+            return par, "ok(含特別股)"
+        # ★ 這裡本來還有一段「差額若是面額的整數倍就推測為特別股」——**已刪除**。
+        #   數字一大，任何差額除以 10 都會接近整數，那個檢定等於恆真：
+        #   實測連 6876 朗齊（比值 16.86、真的有問題的那一檔）都會被判成正常，
+        #   還附上一個看起來很合理的「特別股 48,413,091 股」。
+        #   **憑空生出一個聽起來合理的解釋，比直接說「對不起來」危險得多。**
+        #   兩個端點本來就有特別股欄位，拿不到就老實標 mismatch。
+        return par, f"mismatch:{cap / shr:.3f}"
     # 端點沒給面額 → 回推一個，看看像不像常見面額
     implied = cap / shr
     for cand in (10, 5, 1, 0.1):
@@ -223,7 +241,7 @@ def load_universe():
 # ────────────────────────────────────────────── 市場層端點
 
 def parse_market(raw, tag):
-    """→ (dict{code: (name, capital, shares, par)}, note)。看不懂就回空並照抄欄位名。"""
+    """→ (dict{code: (name, capital, shares, par, pref)}, note)。看不懂就回空並照抄欄位名。"""
     try:
         d = json.loads(raw.decode("utf-8"))
     except Exception as e:  # noqa: BLE001
@@ -241,8 +259,9 @@ def parse_market(raw, tag):
     k_cap = _pick(keys, _K_CAP)
     k_shr = _pick(keys, _K_SHR)
     k_par = _pick(keys, _K_PAR)
+    k_pref = _pick(keys, _K_PREF)
     note = (f"欄位={keys}\n    對應 code={k_code} name={k_name} "
-            f"cap={k_cap} shares={k_shr} par={k_par}")
+            f"cap={k_cap} shares={k_shr} par={k_par} pref={k_pref}")
     if not k_code or not (k_cap or k_shr):
         # ★ 對不上不要靜默放棄：把真正的欄位名留下來，下次照著改 _K_* 就好
         return {}, note + "\n    ✗ 找不到代號或（資本額／股數），本條不採用"
@@ -254,7 +273,8 @@ def parse_market(raw, tag):
         out[code] = (str(r.get(k_name, "")).strip(),
                      _num(r.get(k_cap)) if k_cap else "",
                      _num(r.get(k_shr)) if k_shr else "",
-                     _num(r.get(k_par)) if k_par else "")
+                     _num(r.get(k_par)) if k_par else "",
+                     _num(r.get(k_pref)) if k_pref else "")
     return out, note + f"\n    解析出 {len(out)} 檔"
 
 
@@ -311,12 +331,12 @@ def cmd_run(_args):
         for code in need:
             if code not in got:
                 continue
-            _legal, cap, shr, par = got[code]
+            _legal, cap, shr, par, pref = got[code]
             # 名稱一律用 universe 的簡稱，不用端點的公司全名——
             # 報告與其他檔案都是簡稱，混用會讓 join 對不上。
             name = uni[code][0] or _legal
             if shr:
-                par_used, nt = reconcile(cap, shr, par)
+                par_used, nt = reconcile(cap, shr, par, pref)
                 rows[code] = [code, name, uni[code][1], cap, shr, par_used,
                               tag, today, nt]
             elif cap:
