@@ -1,13 +1,13 @@
-# 端點偵察 2026-09-03T00:11:32+08:00 目標日 2026-09-02
-twse OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260902&type=ALLBUT0999&response=json
-    bytes=247998
+# 端點偵察 2026-09-03T19:08:21+08:00 目標日 2026-09-03
+twse OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260903&type=ALLBUT0999&response=json
+    bytes=248788
     欄位=['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)', '漲跌價差', '最後揭示買價', '最後揭示買量', '最後揭示賣價', '最後揭示賣量', '本益比']
-    解析出 1371 列
-tpex OK   https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/09/02&type=EW&id=&response=json
-    bytes=145873
+    解析出 1360 列
+tpex OK   https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/09/03&type=EW&id=&response=json
+    bytes=146231
     欄位=['代號', '名稱', '收盤 ', '漲跌', '開盤 ', '最高 ', '最低', '成交股數  ', ' 成交金額(元)', ' 成交筆數 ', '最後買價', '最後買量<br>(張數)', '最後賣價', '最後賣量<br>(張數)', '發行股數 ', '次日漲停價 ', '次日跌停價']
-    解析出 980 列
+    解析出 986 列
 emerging OK   https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
-    bytes=142647
+    bytes=142364
     欄位=['Date', 'Time', 'SecuritiesCompanyCode', 'CompanyName', 'PreviousAveragePrice', 'BuyingPrice', 'BuyingQuantity', 'SellingPrice', 'SellingQuantity', 'Highest', 'Lowest', 'Average', 'LatestPrice', 'Buy/Sell', 'SuspendTime', 'TransactionVolume', 'ApplyingDate', 'ApplyingStatus']
-    解析出 364 列
+    解析出 363 列
