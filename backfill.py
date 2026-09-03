@@ -120,7 +120,12 @@ def get(url, retries=3, timeout=45):
     last = None
     for i in range(retries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            # ★ Accept 一定要帶。fetch.py 的 get() 有帶、backfill 原本沒帶，
+            #   而 fetch.py 每天抓 T86 都成功、backfill 抓同一條卻每天 JSONDecodeError
+            #   （2026-09-03 實測 699 天全失敗）——兩者唯一的差別就是這個標頭。
+            req = urllib.request.Request(url, headers={
+                "User-Agent": UA,
+                "Accept": "application/json,text/plain,*/*"})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read(), None
         except urllib.error.HTTPError as e:
@@ -817,7 +822,11 @@ def cmd_inst(args):
             try:
                 d = json.loads(raw.decode("utf-8"))
             except Exception as ex:          # noqa: BLE001
-                failed += 1; streak += 1; note = f"JSON {type(ex).__name__}"
+                # ★ 不要只印 JSONDecodeError——那句話不帶任何可以往下查的資訊。
+                #   把原始回應的開頭照抄出來，才看得出是 HTML 錯誤頁、被擋、還是空回應。
+                head = raw[:160].decode("utf-8", "replace").replace("\n", " ")
+                failed += 1; streak += 1
+                note = f"JSON {type(ex).__name__}｜{len(raw)}B｜開頭：{head}"
                 d = None
             if d is not None:
                 stat = d.get("stat") if isinstance(d, dict) else None
