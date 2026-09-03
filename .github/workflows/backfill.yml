@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe 驗端點｜run 逐日回補｜esb 興櫃逐檔逐月｜audit 看缺哪幾天｜purge 刪掉區間重來"
+        description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, esb, audit, purge]
+        options: [probe, run, inst, esb, audit, purge, meta]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -53,6 +53,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: 全市場三大法人（上市 T86）
+        if: inputs.mode == 'inst'
+        run: |
+          python backfill.py --inst \
+            --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
+            --sleep "${{ inputs.sleep || '5' }}" \
+            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
+
+      - name: 重建 stocks.csv 的 first_seen／last_seen（只讀本地檔）
+        if: inputs.mode == 'meta'
+        run: python backfill.py --rebuild-meta
 
       - name: 清除區間（刪 start~end 的日檔與 coverage 列）
         if: inputs.mode == 'purge'
