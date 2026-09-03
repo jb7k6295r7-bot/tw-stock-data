@@ -257,8 +257,15 @@ def parse_twse(d, day, market="twse"):
         i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
         if any(x is None for x in (i_code, i_o, i_h, i_l, i_c)):
             return [], f"欄位對不上：{fields}"
+        raw = t.get("data") or []
+        # ★ 非交易日 TPEx 回的是「欄位齊全但一列資料都沒有」的空表，
+        #   **不是** stat=休市。原本一律當成失敗，結果每個假日都觸發退避，
+        #   冷卻一路爬到 300 秒（2026-09-03 掃 2015 週六時實測）。
+        #   → 原始資料列數為 0 ＝ 休市；有資料卻解析不出來才是真的故障。
+        if not raw:
+            return [], "no_rows:空表（休市或無成交）"
         out = []
-        for r in (t.get("data") or []):
+        for r in raw:
             if not r or len(r) <= i_c:
                 continue
             code = str(r[i_code]).strip()
@@ -296,8 +303,10 @@ def parse_twse(d, day, market="twse"):
 
 
 def parse_openapi(rows, day, market):
-    if not isinstance(rows, list) or not rows:
-        return [], "回傳不是非空 list"
+    if isinstance(rows, list) and not rows:
+        return [], "no_rows:空 list（休市或無成交）"
+    if not isinstance(rows, list):
+        return [], "回傳不是 list"
     keys = list(rows[0].keys())
 
     def pick(*names):
@@ -374,6 +383,10 @@ def fetch_day_market(day, market, urls, probe_lines=None):
             continue
         if isinstance(d, list):
             lines, note = parse_openapi(d, day, market)
+            if not lines and str(note).startswith("no_rows"):
+                if probe_lines is not None:
+                    probe_lines.append(f"  OK   {u}\n        {note}")
+                return [], "closed"
         else:
             stat = d.get("stat")
             # ★ 大小寫不敏感：TPEx 回的是小寫 "ok"，寫死 != "OK" 會把通的端點判成休市
@@ -390,6 +403,10 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                     probe_lines.append(f"  OK   {u}\n        ✗ {last_err}")
                 continue           # 換下一條，絕不採用
             lines, note = parse_twse(d, day, market)
+            if not lines and str(note).startswith("no_rows"):
+                if probe_lines is not None:
+                    probe_lines.append(f"  OK   {u}\n        {note}")
+                return [], "closed"
         if probe_lines is not None:
             probe_lines.append(f"  OK   {u}\n        bytes={len(raw)}\n"
                                f"        {note}\n        解析出 {len(lines)} 列")
