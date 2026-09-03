@@ -30,7 +30,7 @@ Claude 的排程只讀這個 repo 產出的固定網址檔案。
   ── v7 全市場層（2026-09-02 起）──
   data/universe/daily/YYYY-MM-DD.csv  **當日全市場**日K（一天一檔，不是一檔一股）
   data/meta/stocks.csv                代號↔名稱↔市場別＋first_seen／last_seen
-  data/universe/_coverage.csv         每天各市場抓到幾列（**回測分辨「沒交易」與「沒抓到」的唯一依據**）
+  data/universe/_coverage_daily.csv   每天各市場抓到幾列（回補寫 _coverage_backfill.csv）（**回測分辨「沒交易」與「沒抓到」的唯一依據**）
   data/latest/endpoint_probe.txt      端點偵察：哪一條通、位元組數、實際欄位名
 
 v6（2026-09-02）補的是「報告一直缺、每天都寫查無」的那幾項：
@@ -1097,7 +1097,10 @@ def fetch_universe(today):
     return {"counts": counts, "errors": errs or None}, kept
 
 
-COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")
+# ★ 2026-09-04：coverage 依「寫入者」拆檔（見 backfill.py 同一處註解）。
+#   每日與回補原本寫同一份、又都是整份重寫，git 撞在一起就是內容衝突，
+#   結果整趟回補 push 不上去、資料全丟。**兩邊各寫各的，audit 讀取時再合併。**
+COVERAGE = os.path.join(UNI_DIR, "_coverage_daily.csv")
 COV_HEADER = ["date", "twse", "tpex", "emerging", "total", "note"]
 
 
@@ -1245,7 +1248,7 @@ def main():
                  "JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。"
                  "可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，"
                  "以及 market_index／market_breadth／market_amount。"),
-        "version": "v7.9 2026-09-03",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
+        "version": "v8.0 2026-09-04",   # ★ 改程式就要改這一行，否則從 manifest 看不出跑的是哪一版
     }
 
     all_dates = set()
