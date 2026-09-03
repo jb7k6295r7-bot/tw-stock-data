@@ -39,6 +39,7 @@ UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 UNI_DIR = os.path.join(_ROOT, "universe")
 DAILY_DIR = os.path.join(UNI_DIR, "daily")
+INST_DIR = os.path.join(UNI_DIR, "inst")
 COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")
 PROBE = os.path.join(UNI_DIR, "_backfill_probe.txt")
 
@@ -688,6 +689,157 @@ META_DIR = os.path.join(_ROOT, "meta")
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
 
+INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total"]
+
+
+def inst_url(day):
+    """上市全市場三大法人（T86）。**吃 date 參數，所以可以逐日回補。**
+
+    2026-09-03 實測 date=20260903：16,833 列、19 欄，`stat=OK`。
+    列數遠多於上市檔數是因為**含權證**，用 `_kind()` 濾掉即可。
+    驗算：外陸資 ＋ 外資自營 ＋ 投信 ＋ 自營商 ＝ 三大法人合計，前 500 列 0 筆不符。
+    """
+    return ("https://www.twse.com.tw/rwd/zh/fund/T86"
+            f"?date={day.replace('-', '')}&selectType=ALL&response=json")
+
+
+def _known_codes():
+    """`data/meta/stocks.csv` 裡的代號集合。拿來當 T86 的白名單。
+
+    ★ 不能用 `_kind()` 濾權證：那條規則認的是「6 碼開頭 7」（上櫃權證），
+      **上市權證是 03xxxx／04xxxx 之類**，濾不掉。2026-09-03 實測 T86 回 16,833 列，
+      其中只有約 1,360 檔是我們要的上市證券，其餘全是權證。
+      用 universe 已經整理好的清單當白名單，比再猜一次代號規則可靠。
+    """
+    path = os.path.join(_ROOT, "meta", "stocks.csv")
+    out = set()
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                if i:
+                    q = ln.split(",")
+                    if q and q[0]:
+                        out.add(q[0].strip())
+    return out
+
+
+def parse_inst(d, day, known=None):
+    """→ (lines, note)。欄位靠名稱找，**不寫死位置**——欄名改過版就會整批錯位。"""
+    tabs = _tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={list(d.keys())[:10] if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    fields = [str(x) for x in (t.get("fields") or [])]
+    def ex(*names):
+        """★ 這裡一定要**完全相等**比對，不可以用「包含」。
+        T86 的欄名互相包含，用 `_idx()`（all(k in f)）會全部撞在一起：
+          「外資自營商」 命中『外陸資買賣超股數(**不含外資自營商**)』→ 外資被算兩次
+          「自營商買賣超股數」 命中『**外資自營商買賣超股數**』→ 自營商取到外資自營商
+        2026-09-03 實測：16,833 列裡有 16,394 列因此驗算不符被丟掉，只剩 439 列。
+        """
+        for n in names:
+            for i, f in enumerate(fields):
+                if f.strip() == n:
+                    return i
+        return None
+
+    i_code = ex("證券代號", "股票代號", "代號")
+    # 外資分兩欄（外陸資、外資自營商），要相加才是完整外資
+    i_f1 = ex("外陸資買賣超股數(不含外資自營商)", "外資買賣超股數")
+    i_f2 = ex("外資自營商買賣超股數")
+    i_tr = ex("投信買賣超股數")
+    # ★ 自營商取「合計」那一欄，不是自行買賣或避險的分項
+    i_dl = ex("自營商買賣超股數")
+    i_tt = ex("三大法人買賣超股數")
+    if any(x is None for x in (i_code, i_tr, i_tt)):
+        return [], f"欄位對不上：{fields}"
+    out, bad = [], 0
+    for r in (t.get("data") or []):
+        if not r or len(r) <= i_tt:
+            continue
+        code = str(r[i_code]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue                      # 權證與非 universe 標的
+        g = lambda i: float(_num(r[i]) or 0) if i is not None else 0.0
+        fo = g(i_f1) + g(i_f2)
+        tr, dl, tt = g(i_tr), g(i_dl), g(i_tt)
+        if abs(fo + tr + dl - tt) > 1:      # 恆等式，不符就丟掉那一列並回報
+            bad += 1
+            continue
+        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}"])
+    return out, f"{len(out)} 列可用（驗算不符丟棄 {bad} 列）"
+
+
+def write_inst(day, lines):
+    if not lines:
+        return 0
+    os.makedirs(INST_DIR, exist_ok=True)
+    with open(os.path.join(INST_DIR, f"{day}.csv"), "w", encoding="utf-8") as f:
+        f.write(",".join(INST_HEADER) + "\n")
+        for r in sorted(lines, key=lambda r: r[1]):
+            f.write(",".join(r) + "\n")
+    return len(lines)
+
+
+def cmd_inst(args):
+    """全市場三大法人逐日回補（上市）。上櫃另有端點，本模式尚未涵蓋。"""
+    global SLEEP
+    if args.sleep:
+        SLEEP = args.sleep
+    done = set()
+    if os.path.isdir(INST_DIR):
+        done = {n[:-4] for n in os.listdir(INST_DIR) if n.endswith(".csv")}
+    days = [d for d in daterange(args.start, args.end, args.saturdays) if d not in done]
+    if args.limit:
+        days = days[:args.limit]
+    print(f"[inst] {args.start} ~ {args.end}｜待處理 {len(days)} 天"
+          f"（已存在 {len(done)} 天，略過）")
+    known = _known_codes()
+    if not known:
+        print("[inst] 找不到 data/meta/stocks.csv，先跑 fetch.py 或 --rebuild-meta",
+              file=sys.stderr)
+        return 1
+    print(f"[inst] universe 白名單 {len(known)} 檔")
+    ok = closed = failed = 0
+    streak = 0
+    for i, day in enumerate(days, 1):
+        if streak >= 3:
+            cool = min(30 * 2 ** (streak - 3), 300)
+            print(f"    連續失敗 {streak} 次，冷卻 {cool}s", flush=True)
+            time.sleep(cool)
+        raw, err = get(inst_url(day))
+        note = ""
+        if err:
+            failed += 1; streak += 1; note = f"失敗({err[:60]})"
+        else:
+            try:
+                d = json.loads(raw.decode("utf-8"))
+            except Exception as ex:          # noqa: BLE001
+                failed += 1; streak += 1; note = f"JSON {type(ex).__name__}"
+                d = None
+            if d is not None:
+                stat = d.get("stat") if isinstance(d, dict) else None
+                same, said = _same_day(d, day)
+                if stat and str(stat).strip().lower() not in ("ok", "success"):
+                    closed += 1; streak = 0; note = "休市"
+                elif not same:
+                    closed += 1; streak = 0; note = f"日期不符({said})"
+                else:
+                    lines, nt = parse_inst(d, day, known)
+                    n = write_inst(day, lines)
+                    if n:
+                        ok += 1; streak = 0; note = f"{n} 列"
+                    else:
+                        closed += 1; streak = 0; note = f"0 列（{nt}）"
+        if i % 20 == 0 or not note.endswith("列"):
+            print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
+        time.sleep(SLEEP)
+    print(f"[inst] 完成：有資料 {ok} 天、休市 {closed} 天、失敗 {failed} 天")
+    return 0
+
+
 def cmd_rebuild_meta(_args):
     """掃過所有日檔，重建 data/meta/stocks.csv 的 first_seen／last_seen。
 
@@ -928,6 +1080,8 @@ def cmd_run(args):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--probe", action="store_true", help="只測端點，不寫資料")
+    ap.add_argument("--inst", action="store_true",
+                    help="全市場三大法人逐日回補（上市 T86），配 --start／--end")
     ap.add_argument("--rebuild-meta", dest="rebuild_meta", action="store_true",
                     help="用所有日檔重建 stocks.csv 的 first_seen／last_seen（只讀本地）")
     ap.add_argument("--purge", action="store_true",
@@ -949,6 +1103,8 @@ def main():
                     help="興櫃逐檔逐月回補（要配 --codes，start/end 用 YYYY-MM）")
     ap.add_argument("--codes", default="", help="興櫃代號，逗號分隔")
     a = ap.parse_args()
+    if a.inst:
+        return cmd_inst(a)
     if a.rebuild_meta:
         return cmd_rebuild_meta(a)
     if a.purge:
