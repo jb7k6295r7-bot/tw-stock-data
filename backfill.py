@@ -83,7 +83,8 @@ def candidates(day):
         # 上櫃：每日用的 openapi **只給當日**，回補必須換帶日期的端點。全部未驗證。
         "tpex": [
             f"https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date={slash}&type=EW&id=&response=json",
-            f"https://www.tpex.org.tw/web/stock/aftertrading/daily_close_quotes/stk_quote_result.php?l=zh-tw&d={roc(day)}&o=json",
+            # 舊版 PHP 端點拿掉了：2015 實測，非交易日它會回「今天」的資料
+            # （被 _same_day 擋下，但留著只是每個假日多敲一次無用請求）。
             # ★★ 這裡**絕對不可以**放 openapi/v1/tpex_mainboard_daily_close_quotes。
             #   它沒有 date 參數、永遠回「今天」。2026-09-03 實測：2015 年回補時
             #   前面兩條失敗就落到它，於是把 2026-09-02 的 980 檔當成 2015-01-01 寫進檔案
@@ -347,8 +348,17 @@ def parse_openapi(rows, day, market):
 
 
 def fetch_day_market(day, market, urls, probe_lines=None):
-    """回傳 (lines, note)。休市或查無回 ([], 'closed')；全失敗回 ([], 'all_failed:<原因>')。"""
+    """回傳 (lines, note)。休市或查無回 ([], 'closed')；全失敗回 ([], 'all_failed:<原因>')。
+
+    ★ 「日期不符」與「失敗」要分開回報（wrong_day vs all_failed）。
+      2015 實測：17 個國定假日與颱風停市日，TWSE 乾脆回 stat=休市，
+      但 TPEx 的端點會回「今天」的資料。日期核對擋下來了，**但那不是故障**，
+      而是非交易日的正常表現。混在一起記成「失敗」，這 17 天會被永遠當成
+      待補、每次重跑都再敲一次，而且 audit 的休市計數會是 0——
+      **而「休市 0」正是這次抓到污染的那個訊號，不能讓它被雜訊淹掉。**
+    """
     last_err = ""
+    wrong_day = ""
     for u in urls:
         raw, err = get(u)
         if err:
@@ -375,6 +385,7 @@ def fetch_day_market(day, market, urls, probe_lines=None):
             same, said = _same_day(d, day)
             if not same:
                 last_err = f"回應的日期是 {said}，不是 {day}"
+                wrong_day = said
                 if probe_lines is not None:
                     probe_lines.append(f"  OK   {u}\n        ✗ {last_err}")
                 continue           # 換下一條，絕不採用
@@ -401,6 +412,8 @@ def fetch_day_market(day, market, urls, probe_lines=None):
         last_err = last_err or f"解析出 0 列（{note[:60]}）"
     # ★ 失敗原因一定要帶出去。只寫「失敗」的話，事後看 coverage 分不出是
     #   被限流（重跑就好）、端點改版（要改程式）、還是那天真的沒有資料。
+    if wrong_day:
+        return [], f"wrong_day:{wrong_day}"
     return [], f"all_failed:{last_err[:80]}"
 
 
@@ -494,11 +507,21 @@ def done_days():
     return ok
 
 
-def daterange(start, end):
+def daterange(start, end, saturdays=False):
+    """交易日候選。週日一定跳過；週六預設也跳過。
+
+    ★ 已知風險（2026-09-03 記，**尚未驗證**）：台股偶有**補行交易日**落在週六。
+      預設跳過週六的話，那一天會整天沒有資料，而且在檔案裡看起來就像
+      「那天沒開盤」——與真正的休市無法分辨。
+      → 每一年回補完之後，用 `--saturdays` 單獨掃一次該年的週六（約 52 天、
+        多數會回休市），或拿一檔已驗證的長序列做交易日曆核對
+        （見 `tw-technical-analysis` 回測方法論第四條）。
+    """
     d0 = date.fromisoformat(start)
     d1 = date.fromisoformat(end)
     while d0 <= d1:
-        if d0.weekday() < 5:              # 週末直接跳過，不浪費請求
+        wd = d0.weekday()
+        if wd < 5 or (saturdays and wd == 5):
             yield d0.isoformat()
         d0 += timedelta(days=1)
 
@@ -687,7 +710,7 @@ def cmd_audit(_args):
         if "失敗" in note:
             st["fail"] += 1
             st["days"].append(d)
-        elif "休市" in note and rows.get(d, ["", "0"])[4] in ("0", ""):
+        elif "休市" in note and str(rows.get(d, ["", "", "", "", "0"])[4]) in ("0", ""):
             st["closed"] += 1
         else:
             st["ok"] += 1
@@ -751,7 +774,7 @@ def cmd_run(args):
         SLEEP = args.sleep
     markets = [m.strip() for m in args.markets.split(",") if m.strip()]
     skip = done_days() if not args.force else set()
-    days = [d for d in daterange(args.start, args.end) if d not in skip]
+    days = [d for d in daterange(args.start, args.end, args.saturdays) if d not in skip]
     if args.limit:
         days = days[:args.limit]
     print(f"[backfill] {args.start} ~ {args.end}｜市場 {markets}｜"
@@ -775,6 +798,8 @@ def cmd_run(args):
             per[m] = len(rows)
             if src == "closed":
                 notes.append(f"{m}:休市")
+            elif str(src).startswith("wrong_day"):
+                notes.append(f"{m}:日期不符({str(src).split(':', 1)[1]})")
             elif str(src).startswith("all_failed"):
                 why = str(src).split(":", 1)[1] if ":" in str(src) else ""
                 why = why.replace(",", "；").replace("\n", " ").strip()
@@ -783,6 +808,7 @@ def cmd_run(args):
                 # 用到第 2、3 條候選要留痕跡：主力端點壞掉是要修的事，
                 # 不能因為備援剛好也能跑就永遠不知道。
                 notes.append(f"{m}#候選{urls.index(src) + 1}")
+            # 日期不符不算連續失敗——那是非交易日，不是被限流
             streak[m] = streak[m] + 1 if str(src).startswith("all_failed") else 0
             all_lines.extend(rows)
             # 某個市場整條失敗多半是被限流 → 多等一下再打下一個，
@@ -817,6 +843,8 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    ap.add_argument("--saturdays", action="store_true",
+                    help="連週六也掃（抓補行交易日；多數會回休市）")
     ap.add_argument("--sleep", type=float, default=0,
                     help="每個請求間隔秒數（預設 1.5；被限流就調大，例如 3）")
     ap.add_argument("--esb", action="store_true",
