@@ -844,6 +844,14 @@ def cmd_inst(args):
                         closed += 1; streak = 0; note = f"0 列（{nt}）"
         if i % 20 == 0 or not note.endswith("列"):
             print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
+        # ★ 一開始就連續失敗代表端點或參數不對，不是隨機故障——繼續跑只是燒時間。
+        #   一天失敗最壞要 3 次重試 ×45s 逾時 ＋ 退避 ≈ 144 秒，再加上冷卻最多 300 秒，
+        #   等於**每天 7 分鐘**。放著跑一小時也只會前進十幾天，而且全是錯的。
+        #   （2026-09-03 實測：699 天全 JSONDecodeError，使用者 8 分鐘後才發現。）
+        if failed >= 5 and ok == 0:
+            print(f"[inst] 前 {i} 天全部失敗且無一成功，收手——先確認端點與參數，"
+                  f"不要放著跑。最後一則：{note}", file=sys.stderr)
+            break
         time.sleep(SLEEP)
     print(f"[inst] 完成：有資料 {ok} 天、休市 {closed} 天、失敗 {failed} 天")
     return 0
