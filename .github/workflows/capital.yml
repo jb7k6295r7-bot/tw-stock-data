@@ -72,6 +72,10 @@ jobs:
               if git pull --rebase --autostash origin main && git push origin HEAD:main; then
                 ok=1; break
               fi
+              # ★ rebase 卡在衝突時，工作區會留在 unmerged 狀態，
+              #   下一輪的 git pull 會直接說 "Pulling is not possible"，三次全白重試。
+              #   先 abort 回到乾淨狀態，重試才有意義（2026-09-04 實測整趟回補因此全丟）。
+              git rebase --abort 2>/dev/null || true
               echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
             done
             [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
