@@ -95,7 +95,11 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
+          # ★ 用 -A：`git add <路徑>` 在舊版 git 不會把「檔案被刪掉」記進暫存區。
+          #   purge 模式產出的**就是刪除**，漏掉的話會 commit 不到任何東西、
+          #   印出「沒有變動」，而那批錯的日檔原封不動留在 repo 裡——
+          #   看起來成功、其實什麼都沒清掉。
+          git add -A data
           if git diff --staged --quiet; then
             echo "沒有變動，不 commit"
           else
