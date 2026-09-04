@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe 只驗端點（不寫資料）｜run 逐日回補｜adjust 由除權息事件算還原因子（只讀本地檔）"
+        description: "diag 診斷 TWSE 被擋原因｜probe 只驗端點｜run 逐日回補｜adjust 算還原因子"
         type: choice
-        options: [probe, run, adjust]
+        options: [diag, probe, run, adjust]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all"
@@ -55,6 +55,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      # ★ 2026-09-04：--inst 回補 2015 第一個請求就 307（無 Location、body 是 meta-refresh）。
+      #   同一條 URL 在別的網路環境回得到正常 JSON，所以被擋的是 runner 的請求。
+      #   六種標頭／cookie 組合一次測完，不要用猜的改一個跑一趟。
+      - name: 診斷 TWSE 被擋原因（只讀，不寫資料）
+        if: inputs.mode == 'diag'
+        run: python netdiag.py
+
       - name: 探路（只驗端點，不寫資料）
         if: inputs.mode == 'probe'
         run: python feeds.py --probe --feed "${{ inputs.feed }}" --date "${{ inputs.probe_date }}"
@@ -77,7 +84,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && inputs.mode != 'probe'
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
