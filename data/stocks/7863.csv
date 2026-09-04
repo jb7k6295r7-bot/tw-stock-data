@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,7863,中科物流,emerging,,50,47.5,48.52,32,1553,-0.60,,,,均價/額推算
+2026-09-04,7863,中科物流,emerging,,52.3,49.5,49.89,31772,1585105,1.37,,,,均價/額推算

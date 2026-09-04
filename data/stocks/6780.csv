@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6780,學習王,emerging,,41.75,41.75,41.75,1,42,1.82,,,,均價/額推算
+2026-09-04,6780,學習王,emerging,,0,0,0,0,0,-41.75,,,,均價/額推算

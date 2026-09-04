@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6621,華宇藥,emerging,,11.45,11,11.05,2012,22233,-0.13,,,,均價/額推算
+2026-09-04,6621,華宇藥,emerging,,11.45,10.95,11.22,50806,570043,0.17,,,,均價/額推算

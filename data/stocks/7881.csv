@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,7881,科明,emerging,,87,87,87,2253,196011,1.86,,,,均價/額推算
+2026-09-04,7881,科明,emerging,,86.8,86,86.4,2000,172800,-0.60,,,,均價/額推算

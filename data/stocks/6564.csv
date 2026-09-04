@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6564,安特羅,emerging,,16.45,15.85,15.96,30467,486253,-0.39,,,,均價/額推算
+2026-09-04,6564,安特羅,emerging,,16.45,15.5,15.82,93310,1476164,-0.14,,,,均價/額推算

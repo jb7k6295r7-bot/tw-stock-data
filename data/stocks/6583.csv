@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6583,友松,emerging,,11.6,11.25,11.47,15000,172050,-0.13,,,,均價/額推算
+2026-09-04,6583,友松,emerging,,0,0,0,0,0,-11.47,,,,均價/額推算

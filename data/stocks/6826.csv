@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6826,和淞,emerging,,451.5,442,448.13,49483,22174817,0.33,,,,均價/額推算
+2026-09-04,6826,和淞,emerging,,451,441.5,445.28,66667,29685482,-2.85,,,,均價/額推算

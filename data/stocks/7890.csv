@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,7890,明曜科技,emerging,,81.9,81.9,81.9,5800,475020,0.16,,,,均價/額推算
+2026-09-04,7890,明曜科技,emerging,,80,80,80,1000,80000,-1.90,,,,均價/額推算

@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,7847,豊漁,emerging,,20.1,19.1,19.54,15046,293999,-0.23,,,,均價/額推算
+2026-09-04,7847,豊漁,emerging,,20.05,20.05,20.05,10,200,0.51,,,,均價/額推算
