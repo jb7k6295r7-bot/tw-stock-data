@@ -38,6 +38,19 @@ jobs:
         id: fetch
         run: python fetch.py
 
+      # 個股庫轉置：把今天寫進 daily/ 的那一天一併轉成按股票切的檔。
+      #
+      # ★ 為什麼併在這一支、不另開每日排程：兩支各自 push 同一個 repo，
+      #   就是 2026-09-04 白跑兩趟（各 35 分鐘）的那個 git 衝突。
+      #   併進來之後是一支工作、一次 commit，race 不存在。
+      # ★ 位置在抓資料之後、commit 之前：早一步就會漏掉今天這一天。
+      # ★ `continue-on-error`：轉置是**衍生檔**，它失敗不該讓當天的原始資料無法落檔。
+      #   失敗會在 Actions 顯示為該步驟紅字，但 commit 照常進行。
+      - name: 個股庫轉置
+        if: always()
+        continue-on-error: true
+        run: python transpose.py --kind both
+
       # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
       #   那正是失敗時最需要看到的東西。原本失敗就整個 job 停掉，
       #   結果 repo 裡什麼都沒有，只能去翻 Actions log（2026-08-31 實測）。
