@@ -450,6 +450,21 @@ def cmd_feed(args):
     if FEEDS[name]["known"] and not known:
         print(f"[{name}] 找不到 data/meta/stocks.csv，先跑 --rebuild-meta", file=sys.stderr)
         return 1
+    # ★ 先打一發，但**只有「被限流」才收手**。
+    #   未驗證的 feed 第一個候選本來就可能 404／欄位不符——
+    #   那是候選清單該由 run 淘汰的正常結果，不是中止理由。
+    #   （backfill 的 preflight 兩種都擋，因為它的端點是已驗證的，
+    #     第一發失敗就一定有鬼；這裡的前提不同，所以判斷也不同。）
+    if days:
+        cands = FEEDS[name]["urls"](days[0])
+        if cands:
+            _raw, _err = B.get(cands[0], retries=1, timeout=30)
+            if _err and _err.startswith("LIMITED"):
+                print(f"[{name}] **被交易所限流擋下**，不是端點或參數的問題。\n"
+                      f"        {_err[:160]}\n"
+                      f"        等一段時間再跑，或錯開同日其他回補工作。"
+                      f"**不要改標頭、不要加大重試。**", file=sys.stderr)
+                return 2
     ok = closed = failed = 0
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
