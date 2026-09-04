@@ -72,6 +72,22 @@ ADJ_DIR = os.path.join(_ROOT, "adj")
 
 EVENT_DIRS = [("twse", os.path.join(UNI_DIR, "exright")),
               ("tpex", os.path.join(UNI_DIR, "otcexright"))]
+DAILY_DIR = os.path.join(UNI_DIR, "daily")
+
+
+def trading_days():
+    """全市場交易日曆＝`data/universe/daily/` 的檔名集合。
+
+    ★ 為什麼需要它：核對「除權息前收盤價」要拿**前一個交易日**的收盤來比。
+      但冷門股在那一天可能**根本沒有成交**，序列裡就沒有那一列。
+      沒有日曆時只能退而取「前一個有資料的日子」——那可能是一個半月前，
+      於是價格當然對不上，**被報成「對不上」，其實是「無法核對」**。
+      實測 2026-09-04：6 筆「不符」全部是這個原因，真正的不符是 0 筆。
+      把兩者混在一起，真的錯誤就會被雜訊蓋掉。
+    """
+    if not os.path.isdir(DAILY_DIR):
+        return []
+    return sorted(n[:-4] for n in os.listdir(DAILY_DIR) if n.endswith(".csv"))
 
 ADJ_HEADER = ["date", "factor", "cum_factor", "pre_close", "ref_price", "kind"]
 IDX_HEADER = ["stock_id", "market", "events", "date_min", "date_max",
@@ -167,7 +183,7 @@ def read_close(code):
     return out
 
 
-def build(code, rows, verify=True):
+def build(code, rows, cal, verify=True):
     """→ (lines, checked, mismatch)。
 
     `cum_factor` 適用於**該列日期之前**（不含當日）的價格。
@@ -176,19 +192,23 @@ def build(code, rows, verify=True):
     最後一次事件之後沒有列，查不到就是 1.0，所以現價不動。
     """
     closes = read_close(code) if verify else {}
-    dates = sorted(closes) if closes else []
 
-    checked = mismatch = 0
+    checked = mismatch = skipped = 0
     if closes:
         for (d, f, pre, ref, kind, mk) in rows:
-            # 除權息前收盤價應該等於我們資料裡「前一個交易日」的收盤。
-            # ★ 這是免費的交叉驗證：對不上就代表兩邊有一邊錯，要看見它。
+            # 除權息前收盤價應該等於**前一個交易日**的收盤。
+            # ★ 「前一個交易日」由日曆決定，**不是「前一個有資料的日子」**。
+            #   冷門股那天可能無成交，序列裡沒有那一列——那是無法核對，
+            #   不是對不上。退而取更早的收盤去比，只會製造假警報。
             prev = None
-            for x in reversed(dates):
+            for x in reversed(cal):
                 if x < d:
                     prev = x
                     break
             if prev is None:
+                continue
+            if prev not in closes:
+                skipped += 1          # 前一交易日該檔無成交 → 無法核對
                 continue
             checked += 1
             if abs(closes[prev] - pre) > max(0.02, pre * 0.005):
@@ -202,7 +222,7 @@ def build(code, rows, verify=True):
         cum *= f
         lines.append([d, f"{f:.8f}", f"{cum:.8f}", f"{pre:g}", f"{ref:g}", kind])
     lines.reverse()
-    return lines, checked, mismatch
+    return lines, checked, mismatch, skipped
 
 
 def main():
@@ -222,21 +242,26 @@ def main():
     codes = sorted(c for c in ev if not want or c in want)
 
     os.makedirs(ADJ_DIR, exist_ok=True)
-    idx, tot_ev, tot_chk, tot_mis, no_price = [], 0, 0, 0, 0
+    cal = trading_days()
+    if a.verify and not cal:
+        print("[adj] 找不到 data/universe/daily/，無法取得交易日曆——"
+              "**核對會退化成「拿前一個有資料的日子比」並產生假警報**，"
+              "本次改為不核對。", file=sys.stderr)
+    idx, tot_ev, tot_chk, tot_mis, tot_skip, no_price = [], 0, 0, 0, 0, 0
     for code in codes:
         rows = ev[code]
-        lines, chk, mis = build(code, rows, a.verify)
+        lines, chk, mis, skp = build(code, rows, cal, a.verify and bool(cal))
         if not lines:
             continue
         with open(os.path.join(ADJ_DIR, f"{code}.csv"), "w", encoding="utf-8") as fh:
             fh.write(",".join(ADJ_HEADER) + "\n")
             for r in lines:
                 fh.write(",".join(r) + "\n")
-        if a.verify and chk == 0:
+        if a.verify and chk == 0 and skp == 0:
             no_price += 1
         idx.append([code, rows[0][5], str(len(lines)), lines[0][0], lines[-1][0],
                     lines[0][2], str(chk), str(mis)])
-        tot_ev += len(lines); tot_chk += chk; tot_mis += mis
+        tot_ev += len(lines); tot_chk += chk; tot_mis += mis; tot_skip += skp
 
     with open(os.path.join(ADJ_DIR, "_index.csv"), "w", encoding="utf-8") as fh:
         fh.write(",".join(IDX_HEADER) + "\n")
@@ -246,9 +271,12 @@ def main():
     print(f"[adj] {len(idx)} 檔、{tot_ev} 個事件")
     if a.verify:
         rate = (tot_mis / tot_chk * 100) if tot_chk else 0.0
-        print(f"[adj] 前收盤交叉核對：查了 {tot_chk} 個事件、對不上 {tot_mis} 個（{rate:.2f}%）")
+        print(f"[adj] 前收盤交叉核對：查了 {tot_chk} 個事件、對不上 {tot_mis} 個（{rate:.3f}%）")
+        if tot_skip:
+            print(f"[adj] 另有 {tot_skip} 個事件**無法核對**：前一交易日該檔無成交，"
+                  f"序列裡沒有那一列。這不是不符，不要算進去。")
         if no_price:
-            print(f"[adj] 其中 {no_price} 檔在 data/stocks 查無價格，無法核對")
+            print(f"[adj] 另有 {no_price} 檔在 data/stocks 查無價格")
         # ★ 不設「自動通過」門檻。對不上就是要有人看，不是四捨五入掉。
         if tot_mis:
             print("[adj] ↑ 上面每一筆都印出來了，逐筆看過再決定要不要用", file=sys.stderr)
