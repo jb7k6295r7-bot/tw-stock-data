@@ -22,7 +22,7 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25    # 15 → 25：多了轉置那一步，留餘裕給 commit
 
     steps:
       - uses: actions/checkout@v4
@@ -46,9 +46,16 @@ jobs:
       # ★ 位置在抓資料之後、commit 之前：早一步就會漏掉今天這一天。
       # ★ `continue-on-error`：轉置是**衍生檔**，它失敗不該讓當天的原始資料無法落檔。
       #   失敗會在 Actions 顯示為該步驟紅字，但 commit 照常進行。
+      # ★ 步驟層級也要設 timeout。`continue-on-error` 只讓「步驟失敗」不中斷流程，
+      #   **擋不住 job 層級的逾時**——job 被砍時後面的 Commit 步驟會一起死，
+      #   那天的原始資料就沒落檔。這一步吃掉的時間必須有上限。
+      # ★ 第一次全新建立（約 4,600 個檔、0.55 GB）**不要走這裡**，
+      #   請先手動跑一次「個股庫轉置（手動重建）」（那支 timeout 60 分）。
+      #   之後每天只是 append 約 240 KB，8 分鐘綽綽有餘。
       - name: 個股庫轉置
         if: always()
         continue-on-error: true
+        timeout-minutes: 8
         run: python transpose.py --kind both
 
       # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
