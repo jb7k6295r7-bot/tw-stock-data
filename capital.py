@@ -333,9 +333,20 @@ def cmd_run(_args):
     print(f"  ① 從 daily 搬進來的官方發行股數：{moved} 檔")
 
     # ② 市場層端點
+    #
+    # ★ 2026-09-04 修：`need` 原本是「capital.csv 裡股數還空著的」，
+    #   於是**第一次抓到之後就永遠不再重算**——這造成兩個問題：
+    #     1. reconcile() 的邏輯改了也沒用（改完重跑，note 一個字都不會變；
+    #        實測 2026-09-04：連台泥都還是舊的 ok，新的 ok(含特別股) 一檔都沒出現）。
+    #     2. **增資／減資永遠不會被更新**。這支是每月排程，本來就是為了追股本變化，
+    #        卻在第一次抓到之後把那 1,400 多檔凍住，等於白跑。
+    #   改成「① 沒填到的都要重抓」，每月一趟就是 6 個大檔下載，成本可以忽略。
+    #   `done` 保留原本的語意：先命中的端點優先，後面的端點不覆蓋。
+    fed = {c for c, (_n, _m, sh) in uni.items() if sh}   # ① 已用官方發行股數填過的
+    done = set()
     filled, notes = 0, []
     for tag, url in CANDIDATES:
-        need = [c for c in uni if not (rows.get(c, [""] * len(HEADER))[4])]
+        need = [c for c in uni if c not in fed and c not in done]
         if not need:
             break
         raw, err = get(url, retries=1)
@@ -364,6 +375,7 @@ def cmd_run(_args):
                               f"derived:par={pv:g}"]
             else:
                 continue
+            done.add(code)
             hit += 1
             if rows[code][8].startswith("mismatch"):
                 bad += 1
