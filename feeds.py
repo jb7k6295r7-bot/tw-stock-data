@@ -170,93 +170,162 @@ def parse_exright(d, day, known=None):
     return out, f"{len(out)} 列"
 
 
-def parse_margin(d, day, known=None):
-    """TWSE 融資融券。**欄位尚未實測**，先照名稱找，對不上就回報整串欄名。
-
-    不猜位置：端點一旦通了，probe 會把真實欄名印出來，再照抄進來。
-    """
-    tabs = B._tables(d)
-    if not tabs:
-        return [], "沒有 tables"
-    # 融資融券的回應通常有多張表（彙總在前、個股在後），取欄數最多且有代號欄的那張
+def _pick_stock_table(tabs, *codenames):
+    """多張表時挑「有代號欄且欄數最多」那張。融資融券與三大法人的回應
+    第一張多半是全市場彙總（3 列），個股在第二張。"""
     best, bf = None, None
     for t in tabs:
         f = _fieldmap(t)
-        if _exact(f, "股票代號", "證券代號", "代號") is not None:
-            if best is None or len(f) > len(bf):
-                best, bf = t, f
-    if best is None:
-        return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(t) for t in tabs]}"
-    f = bf
-    i_code = _exact(f, "股票代號", "證券代號", "代號")
-    i_mb = _exact(f, "融資買進")
-    i_ms = _exact(f, "融資賣出")
-    i_mnow = _exact(f, "融資今日餘額", "融資餘額")
-    i_mlim = _exact(f, "融資限額")
-    i_sb = _exact(f, "融券買進")
-    i_ss = _exact(f, "融券賣出")
-    i_snow = _exact(f, "融券今日餘額", "融券餘額")
-    if i_mnow is None or i_snow is None:
-        return [], f"欄位對不上：{f}"
-    out = []
-    for r in (best.get("data") or []):
-        if not r or len(r) <= i_code:
+        if _exact(f, *codenames) is not None and (bf is None or len(f) > len(bf)):
+            best, bf = t, f
+    return best, bf
+
+
+def _margin_rows(t, day, known, idx, tag):
+    """共用的融資融券輸出與驗算。
+
+    ★ 這裡有一條**免費的恆等式**，一定要驗：
+      `今日餘額 = 前日餘額 + 買進 − 賣出 − 現償`（融券的買賣方向相反）。
+      位置定位一旦錯位，這條會整片不符——**它就是位置對不對的檢驗**。
+      不符的列丟掉並計數，不要靜默寫進去。
+    """
+    out, bad = [], 0
+    g = lambda r, i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
+    n = lambda v: float(str(v).replace(",", "")) if str(v).strip() not in ("", "-") else 0.0
+    for r in (t.get("data") or []):
+        if not r or len(r) <= idx["code"]:
             continue
-        code = str(r[i_code]).strip()
+        code = str(r[idx["code"]]).strip()
         if not code or not code[0].isdigit():
             continue
         if known and code not in known:
             continue
-        g = lambda i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
-        out.append([day, code, g(i_mb), g(i_ms), g(i_mnow), g(i_mlim),
-                    g(i_sb), g(i_ss), g(i_snow)])
-    return out, f"{len(out)} 列"
+        vals = {k: g(r, i) for k, i in idx.items() if k != "code"}
+        try:
+            # 融資：今日 = 前日 + 買 − 賣 − 現償
+            okm = abs(n(vals["m_prev"]) + n(vals["m_buy"]) - n(vals["m_sell"])
+                      - n(vals["m_ret"]) - n(vals["m_balance"])) <= 1
+            # 融券：今日 = 前日 + 賣 − 買 − 券償
+            oks = abs(n(vals["s_prev"]) + n(vals["s_sell"]) - n(vals["s_buy"])
+                      - n(vals["s_ret"]) - n(vals["s_balance"])) <= 1
+        except (ValueError, KeyError):
+            bad += 1
+            continue
+        if not (okm and oks):
+            bad += 1
+            continue
+        out.append([day, code, vals["m_buy"], vals["m_sell"], vals["m_balance"],
+                    vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"]])
+    return out, f"{len(out)} 列可用（{tag}；餘額恆等式不符丟棄 {bad} 列）"
+
+
+def parse_margin(d, day, known=None):
+    """TWSE MI_MARGN 個股融資融券。
+
+    ★★ **欄名重複，只能用位置。** 2026-09-04 Actions 實測的個股表欄位：
+
+        代號,名稱,買進,賣出,現金償還,前日餘額,今日餘額,次一營業日限額,
+                 買進,賣出,現券償還,前日餘額,今日餘額,次一營業日限額,資券互抵,註記
+
+    融資與融券**用同一組欄名**，`_exact()` 只會回第一個命中——
+    融券會整片取到融資的值。這是 T86 那次「16,394 列驗算不符」的同一種病
+    （那次是互相包含，這次是完全重複），**名字定位在這裡救不了**。
+
+    用位置就必須有守衛，否則官方改版會靜默錯位：
+      ① 欄數必須剛好 16 ② 第 2 欄與第 8 欄都必須是「買進」
+      ③ 第 4 欄「現金償還」、第 10 欄「現券償還」
+      ④ 最後靠餘額恆等式逐列驗算
+    任何一條不符就整張表拒收並回報欄名，**不要猜著往下走**。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t, f = _pick_stock_table(tabs, "代號", "股票代號", "證券代號")
+    if t is None:
+        return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(x) for x in tabs]}"
+    if len(f) != 16 or f[2] != "買進" or f[8] != "買進" \
+            or f[4] != "現金償還" or f[10] != "現券償還":
+        return [], (f"欄位結構與 2026-09-04 實測不符，拒收（避免位置錯位）：{f}")
+    idx = {"code": 0,
+           "m_buy": 2, "m_sell": 3, "m_ret": 4, "m_prev": 5, "m_balance": 6, "m_limit": 7,
+           "s_buy": 8, "s_sell": 9, "s_ret": 10, "s_prev": 11, "s_balance": 12}
+    return _margin_rows(t, day, known, idx, "TWSE 位置定位")
+
+
+def parse_otcmargin(d, day, known=None):
+    """TPEx 融資融券。**欄名不重複，可以用名字**（與 TWSE 不同，所以分開寫）。
+
+    2026-09-04 Actions 實測欄位：
+        代號,名稱,前資餘額(張),資買,資賣,現償,資餘額,資屬證金,資使用率(%),資限額,
+                 前券餘額(張),券賣,券買,券償,券餘額,券屬證金,券使用率(%),券限額,
+                 資券相抵(張),備註
+
+    ★ 注意券的欄序是「**券賣在券買之前**」——照名字取就不會受影響，
+      但這也是為什麼這裡不沿用 TWSE 那套位置。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t, f = _pick_stock_table(tabs, "代號", "股票代號", "證券代號")
+    if t is None:
+        return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(x) for x in tabs]}"
+    need = {"code": ("代號", "股票代號", "證券代號"),
+            "m_prev": ("前資餘額(張)",), "m_buy": ("資買",), "m_sell": ("資賣",),
+            "m_ret": ("現償",), "m_balance": ("資餘額",), "m_limit": ("資限額",),
+            "s_prev": ("前券餘額(張)",), "s_sell": ("券賣",), "s_buy": ("券買",),
+            "s_ret": ("券償",), "s_balance": ("券餘額",)}
+    idx = {k: _exact(f, *names) for k, names in need.items()}
+    missing = [k for k, v in idx.items() if v is None]
+    if missing:
+        return [], f"欄位對不上，缺 {missing}：{f}"
+    return _margin_rows(t, day, known, idx, "TPEx 名稱定位")
 
 
 def parse_otcinst(d, day, known=None):
-    """上櫃三大法人。**欄位尚未實測。**
+    """TPEx 上櫃三大法人。
 
-    上櫃的欄名與 T86 不同（自營商分「自行買賣」與「避險」，外資也可能分兩欄），
-    所以外資與自營商都採「先找合計欄、找不到再把分項相加」。
-    ★ 驗算恆等式照做：外資 ＋ 投信 ＋ 自營 ＝ 三大法人，不符就丟該列並計數。
+    ★★ **欄名重複七次，只能用位置。** 2026-09-04 Actions 實測（900 列、24 欄）：
+
+        代號, 名稱,
+        ①買進股數,賣出股數,買賣超股數   ②買進股數,賣出股數,買賣超股數
+        ③買進股數,賣出股數,買賣超股數   ④買進股數,賣出股數,買賣超股數
+        ⑤買進股數,賣出股數,買賣超股數   ⑥買進股數,賣出股數,買賣超股數
+        ⑦買進股數,賣出股數,買賣超股數   三大法人買賣超股數合計
+
+    七組依 TPEx 的欄位順序為：
+      ①外資及陸資(不含外資自營商) ②外資自營商 ③**外資及陸資合計**
+      ④投信 ⑤自營商(自行買賣) ⑥自營商(避險) ⑦**自營商合計**
+
+    所以要取的是 **③、④、⑦**（合計欄），不是分項——
+    T86 那次就是把自營商取成避險分項，2018 實測合計 224,000、避險只有 104,000，
+    **取錯少一半**。
+
+    ★ 這個對應是**推定的**，靠恆等式驗：③ ＋ ④ ＋ ⑦ ＝ 合計。
+      推錯就會整片不符、整批被丟掉並回報——**不會靜默寫進錯的數字**。
     """
     tabs = B._tables(d)
     if not tabs:
         return [], "沒有 tables"
-    best, bf = None, None
-    for t in tabs:
-        f = _fieldmap(t)
-        if _exact(f, "代號", "證券代號", "股票代號") is not None and len(f) >= 6:
-            if best is None or len(f) > len(bf):
-                best, bf = t, f
-    if best is None:
-        return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(t) for t in tabs]}"
-    f = bf
-    i_code = _exact(f, "代號", "證券代號", "股票代號")
-    i_fo = _exact(f, "外資及陸資買賣超股數", "外資買賣超股數",
-                  "外資及陸資(不含外資自營商)買賣超股數")
-    i_fo2 = _exact(f, "外資自營商買賣超股數")
-    i_tr = _exact(f, "投信買賣超股數")
-    i_dl = _exact(f, "自營商買賣超股數")
-    i_dl1 = _exact(f, "自營商買賣超股數(自行買賣)")
-    i_dl2 = _exact(f, "自營商買賣超股數(避險)")
-    i_tt = _exact(f, "三大法人買賣超股數")
-    if i_code is None or i_tt is None:
-        return [], f"欄位對不上：{f}"
+    t, f = _pick_stock_table(tabs, "代號", "股票代號", "證券代號")
+    if t is None:
+        return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(x) for x in tabs]}"
+    # 守衛：欄數與尾欄必須符合實測，否則拒收
+    if len(f) != 24 or "三大法人" not in f[-1]:
+        return [], f"欄位結構與 2026-09-04 實測不符，拒收（避免位置錯位）：{f}"
+    if not all(f[i] == "買賣超股數" for i in (4, 10, 22)):
+        return [], f"買賣超欄不在預期位置，拒收：{f}"
+    I_FO, I_TR, I_DL, I_TT = 10, 13, 22, 23      # ③外資合計 ④投信 ⑦自營合計 合計
     out, bad = [], 0
-    for r in (best.get("data") or []):
-        if not r or len(r) <= i_code:
+    g = lambda r, i: float(B._num(r[i]) or 0) if i < len(r) else 0.0
+    for r in (t.get("data") or []):
+        if not r or len(r) <= I_TT:
             continue
-        code = str(r[i_code]).strip()
+        code = str(r[0]).strip()
         if not code or not code[0].isdigit():
             continue
         if known and code not in known:
             continue
-        g = lambda i: float(B._num(r[i]) or 0) if (i is not None and i < len(r)) else 0.0
-        fo = g(i_fo) + g(i_fo2)
-        tr = g(i_tr)
-        dl = g(i_dl) if i_dl is not None else (g(i_dl1) + g(i_dl2))
-        tt = g(i_tt)
+        fo, tr, dl, tt = g(r, I_FO), g(r, I_TR), g(r, I_DL), g(r, I_TT)
         if abs(fo + tr + dl - tt) > 1:
             bad += 1
             continue
@@ -304,33 +373,18 @@ FEEDS = {
                    "s_buy", "s_sell", "s_balance"],
         "parse": parse_margin,
         "known": True,
-        "urls": lambda day: [
-            _twse("marginTrading/MI_MARGN", day, "&selectType=ALL"),
-            _twse("marginTrading/MI_MARGN", day, "&selectType=ALLBUT0999"),
-            _twse("marginTrading/MI_MARGN", day, "&selectType=STOCK"),
-            _twse("marginTrading/MI_MARGN", day, "&selectType=0999"),
-            _twse("marginTrading/MI_MARGN", day),
-            _twse("marginTrading/TWT93U", day),
-            f"https://www.twse.com.tw/exchangeReport/MI_MARGN"
-            f"?date={day.replace('-', '')}&selectType=ALL&response=json",
-        ],
-        "status": "未驗證。ALL／ALLBUT0999／MS 三種 2026-09-04 實測皆回「沒有符合條件的資料」",
+        "urls": lambda day: [_twse("marginTrading/MI_MARGN", day, "&selectType=ALL")],
+        "status": ("已驗證 2026-09-04（Actions）：stat=OK、2 表，個股在第二張、16 欄。"
+                   "★ 開發環境打同一條回「沒有符合條件的資料」，Actions 上正常——"
+                   "**端點可用性要在 Actions 上判定**"),
     },
     "otcinst": {
         "dir": "otcinst",
         "header": ["date", "stock_id", "foreign", "trust", "dealer", "total"],
         "parse": parse_otcinst,
         "known": True,
-        "urls": lambda day: [
-            _tpex("insti/dailyTrade", day, "&type=Daily&sect=EW&id="),
-            _tpex("insti/dailyTrade", day, "&type=Daily&sect=AL&id="),
-            _tpex("insti/summary", day, "&type=Daily&sect=EW"),
-            _tpex("afterTrading/insti", day, "&type=EW&id="),
-            _tpex("insti/institutional_trading", day, "&type=Daily&sect=EW"),
-            f"https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php"
-            f"?l=zh-tw&se=EW&t=D&d={B.roc(day)}&o=json",
-        ],
-        "status": "未驗證。TPEx 從開發環境讀一律 403，只能在 Actions 上 probe",
+        "urls": lambda day: [_tpex("insti/dailyTrade", day, "&type=Daily&sect=EW&id=")],
+        "status": "已驗證 2026-09-04（Actions）：stat=ok、900 列、24 欄（七組買賣超＋合計）",
     },
     "otcper": {
         "dir": "otcper",
@@ -338,29 +392,18 @@ FEEDS = {
                    "per", "pbr", "fs_quarter"],
         "parse": parse_per,
         "known": True,
-        "urls": lambda day: [
-            _tpex("afterTrading/peRatioAnalysis", day, "&id="),
-            _tpex("afterTrading/peQryDate", day, "&id="),
-            _tpex("afterTrading/pe", day, "&id="),
-            f"https://www.tpex.org.tw/web/stock/aftertrading/peratio_analysis/pera_result.php"
-            f"?l=zh-tw&d={B.roc(day)}&c=&o=json",
-        ],
-        "status": "未驗證",
+        "urls": lambda day: [_tpex("afterTrading/peQryDate", day, "&id=")],
+        "status": ("已驗證 2026-09-04（Actions）：stat=ok、886 列。"
+                   "★ **沒有收盤價欄**，close 一律留空（不是 0）"),
     },
     "otcmargin": {
         "dir": "otcmargin",
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
                    "s_buy", "s_sell", "s_balance"],
-        "parse": parse_margin,
+        "parse": parse_otcmargin,
         "known": True,
-        "urls": lambda day: [
-            _tpex("margin/balance", day, "&id="),
-            _tpex("margin/marginTrading", day, "&id="),
-            _tpex("afterTrading/margin", day, "&id="),
-            f"https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php"
-            f"?l=zh-tw&d={B.roc(day)}&o=json",
-        ],
-        "status": "未驗證",
+        "urls": lambda day: [_tpex("margin/balance", day, "&id=")],
+        "status": "已驗證 2026-09-04（Actions）：stat=ok、920 列、20 欄（欄名不重複，用名稱定位）",
     },
     "otcexright": {
         "dir": "otcexright",
@@ -368,14 +411,19 @@ FEEDS = {
                    "kind", "open_base"],
         "parse": parse_exright,
         "known": False,
+        # ★ 2026-09-04 第一批四條**全部 404**（同一張 TPEx 404 頁）。
+        #   已知可用的 TPEx 區段名是 afterTrading／insti／margin，
+        #   所以第二批集中在 afterTrading，並沿用舊 PHP 的葉名 revivt。
+        #   **這批仍是猜的，由 probe 淘汰。**
         "urls": lambda day: [
-            _tpex("exRight/exRightResult", day, "&id="),
-            _tpex("exRight/dailyResult", day, "&id="),
-            _tpex("afterTrading/exRight", day, "&id="),
-            f"https://www.tpex.org.tw/web/stock/exright/revivt/revivt_result.php"
-            f"?l=zh-tw&d={B.roc(day)}&o=json",
+            _tpex("afterTrading/revivt", day, "&id="),
+            _tpex("afterTrading/exRightResult", day, "&id="),
+            _tpex("afterTrading/exDividend", day, "&id="),
+            _tpex("afterTrading/exRightDividend", day, "&id="),
+            _tpex("bulletin/revivt", day, "&id="),
+            _tpex("exright/revivt", day, "&id="),
         ],
-        "status": "未驗證",
+        "status": "**未驗證**。2026-09-04 第一批 4 條全 404，這是第二批候選",
     },
 }
 
