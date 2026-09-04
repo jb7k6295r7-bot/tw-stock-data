@@ -711,21 +711,31 @@ def cmd_feed(args):
     ok = closed = failed = 0
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
+        # ★★ 成敗**看 `url` 有沒有拿到，不要比對訊息字串**。
+        #   `fetch_one` 只有在「請求成功 ＋ stat 正常 ＋ 日期核對通過」時才回傳 url，
+        #   所以 url 就是「這一天確實問到了、只是可能沒有資料」的信號。
+        #
+        #   原本寫 `note.endswith("0 列")`，而 parser 後來改成回
+        #   「0 列可用（名稱定位；驗算不符丟棄 0 列）」——結尾是全形括號，對不到，
+        #   於是**休市日被算成失敗**。區間開頭若撞上農曆年（連休 5～9 天），
+        #   `failed >= 5 且 ok == 0` 就會收手，並印一句「端點或參數不對」，
+        #   而端點根本沒問題。**訊息字串是給人看的，不是狀態機的輸入。**
         if lines:
             n = write_day(name, day, lines)
             ok += 1
             note = f"{n} 列"
-        elif note.startswith(("stat=", "日期不符")) or note.endswith("0 列"):
-            closed += 1
+        elif url is not None:
+            closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
-            failed += 1
-        if i % 20 == 0 or not note.endswith("列"):
+            failed += 1               # 根本沒問到
+        if i % 20 == 0 or url is None:
             print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
         # ★ 與 cmd_inst 同一條收手規則：一開始就全失敗代表端點或參數不對，
         #   不是隨機故障。放著跑只是燒時間，而且跑出來的全是錯的。
+        # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
-            print(f"[{name}] 前 {i} 天全部失敗且無一成功，收手。最後一則：{note}",
-                  file=sys.stderr)
+            print(f"[{name}] 前 {i} 天有 {failed} 天連問都問不到且無一成功，收手。"
+                  f"最後一則：{note}", file=sys.stderr)
             break
         time.sleep(B.SLEEP)
     print(f"[{name}] 完成：有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
