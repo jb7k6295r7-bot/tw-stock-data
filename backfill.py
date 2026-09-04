@@ -143,6 +143,21 @@ def get(url, retries=3, timeout=45):
             except Exception:  # noqa: BLE001
                 body = "(讀不到 body)"
             last = f"HTTP {e.code} {e.reason} | {body}"
+            # ★★ 2026-09-04：**沒有 Location 的 3xx 不是轉址，是擋機器人的中介頁。**
+            #   urllib 支援 307（3.11 實測 http_error_307 存在），會拋出來只有這一種可能。
+            #   當天 --inst 回補 2015 第一個請求就 307，body 是 `<meta http-equiv=refresh>`；
+            #   十幾分鐘後用**完全相同的標頭**跑 netdiag，18 種組合全部 stat=OK。
+            #   → 標頭不是原因，是那個時間點的 IP 被限流（同日稍早跑過 2,209 天的價格回補）。
+            #   限流要用**分鐘級**退避，3s/6s 等於白重試；而且要讓呼叫端分得出來，
+            #   否則「被擋」會被當成「端點壞了」，然後去改根本沒錯的參數。
+            loc = e.headers.get("Location") if e.headers else None
+            throttled = (e.code in (301, 302, 303, 307, 308) and not loc) or e.code == 429
+            if throttled:
+                last = (f"LIMITED|HTTP {e.code} "
+                        f"{'無 Location（擋機器人中介頁）' if e.code != 429 else '限流'} | {body}")
+                if i < retries - 1:
+                    time.sleep(60 * (i + 1))    # 60s、120s
+                continue
             if 400 <= e.code < 500 and e.code not in (408, 429):
                 return None, last          # 4xx 重試沒有意義
         except Exception as e:  # noqa: BLE001
@@ -150,6 +165,29 @@ def get(url, retries=3, timeout=45):
         if i < retries - 1:
             time.sleep(3 * (i + 1))     # 3s、6s。交易所限流時退得太快等於白重試
     return None, last
+
+
+def preflight(url, what):
+    """跑迴圈前先打一發。**被擋就當場收手，不要用失敗次數去換取教訓。**
+
+    2026-09-04 的教訓：--inst 靠「連續 5 天失敗且無一成功」才收手，
+    那 5 天含重試與冷卻花了十幾分鐘，而且結論還是錯的（去查端點與參數，
+    但端點與參數都是對的）。**先打一發、認出限流、直接講清楚**，
+    比讓它跑一段再猜有用得多。
+    """
+    raw, err = get(url, retries=1, timeout=30)
+    if not err:
+        return True
+    if err.startswith("LIMITED"):
+        print(f"[preflight] {what}：**被交易所限流擋下**，不是端點或參數的問題。\n"
+              f"           {err[:160]}\n"
+              f"           同一支程式在沒被擋的時候是通的（netdiag 18/18 全過）。\n"
+              f"           做法：等一段時間再跑，或錯開同日其他回補工作。"
+              f"**不要改標頭、不要加大重試。**", file=sys.stderr)
+    else:
+        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {err[:200]}",
+              file=sys.stderr)
+    return False
 
 
 # ── 解析：與 fetch.py 用同一套規則，刻意複製而不 import ──
@@ -826,6 +864,8 @@ def cmd_inst(args):
               file=sys.stderr)
         return 1
     print(f"[inst] universe 白名單 {len(known)} 檔")
+    if days and not preflight(inst_url(days[0]), "T86 三大法人"):
+        return 2
     ok = closed = failed = 0
     streak = 0
     for i, day in enumerate(days, 1):
@@ -868,8 +908,10 @@ def cmd_inst(args):
         #   等於**每天 7 分鐘**。放著跑一小時也只會前進十幾天，而且全是錯的。
         #   （2026-09-03 實測：699 天全 JSONDecodeError，使用者 8 分鐘後才發現。）
         if failed >= 5 and ok == 0:
-            print(f"[inst] 前 {i} 天全部失敗且無一成功，收手——先確認端點與參數，"
-                  f"不要放著跑。最後一則：{note}", file=sys.stderr)
+            hint = ("**被限流**——端點與參數沒問題，等一段時間再跑"
+                    if "LIMITED" in note else "先確認端點與參數，不要放著跑")
+            print(f"[inst] 前 {i} 天全部失敗且無一成功，收手——{hint}。"
+                  f"最後一則：{note}", file=sys.stderr)
             break
         time.sleep(SLEEP)
     print(f"[inst] 完成：有資料 {ok} 天、休市 {closed} 天、失敗 {failed} 天")
