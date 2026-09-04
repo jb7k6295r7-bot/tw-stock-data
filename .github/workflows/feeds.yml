@@ -1,0 +1,98 @@
+name: 全市場 feed 回補（手動）
+
+# 價格與三大法人走 backfill.yml，**這支只跑新增的 feed**：
+# 本益比／殖利率／股價淨值比、除權息計算結果、融資融券、上櫃三大法人。
+#
+# ★ 先跑 probe。TPEx 那幾條在開發環境一律 403，只有在 Actions 上才驗得到，
+#   probe 沒過就跑 run，只會累積一堆失敗紀錄。
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "probe 只驗端點（不寫資料）｜run 逐日回補｜adjust 由除權息事件算還原因子（只讀本地檔）"
+        type: choice
+        options: [probe, run, adjust]
+        default: probe
+      feed:
+        description: "要跑哪一種。probe 可選 all"
+        type: choice
+        options: [all, per, exright, margin, otcinst, otcper, otcmargin, otcexright]
+        default: all
+      start:
+        description: "起日（run 用）。**建議一次一年**，一年約 245 天 × 5 秒 ≈ 20 分鐘"
+        default: "2026-01-01"
+      end:
+        description: "迄日（run 用）"
+        default: "2026-09-03"
+      saturdays:
+        description: "連週六也掃（抓補行交易日）。填 yes 才開"
+        default: "no"
+      sleep:
+        description: "每個請求間隔秒數。**TWSE 會限流**——2015 實測 1.5 秒有 94% 失敗，不要調低於 5"
+        default: "5"
+      probe_date:
+        description: "probe 用的測試日，必須是交易日"
+        default: "2026-09-03"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: feeds
+  cancel-in-progress: false
+
+jobs:
+  feeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 探路（只驗端點，不寫資料）
+        if: inputs.mode == 'probe'
+        run: python feeds.py --probe --feed "${{ inputs.feed }}" --date "${{ inputs.probe_date }}"
+
+      - name: 逐日回補
+        if: inputs.mode == 'run'
+        run: |
+          if [ "${{ inputs.feed }}" = "all" ]; then
+            echo "run 模式不接受 feed=all，請指定單一 feed" >&2; exit 1
+          fi
+          python feeds.py --run --feed "${{ inputs.feed }}" \
+            --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
+            --sleep "${{ inputs.sleep || '5' }}" \
+            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
+
+      # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
+      - name: 算還原因子
+        if: inputs.mode == 'adjust'
+        run: python adjust.py
+
+      # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
+      - name: Commit 回 repo
+        if: always() && inputs.mode != 'probe'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --staged --quiet; then
+            echo "沒有變動，不 commit"
+          else
+            git commit -m "feeds(${{ inputs.mode }}/${{ inputs.feed }}): ${{ inputs.start }}~${{ inputs.end }}"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              git rebase --abort 2>/dev/null || true
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
+          fi
