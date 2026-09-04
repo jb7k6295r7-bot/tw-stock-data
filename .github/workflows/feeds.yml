@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷 TWSE 被擋原因｜probe 只驗端點｜run 逐日回補｜adjust 算還原因子"
+        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪掉某 feed 的全部日檔"
         type: choice
-        options: [diag, probe, run, adjust]
+        options: [diag, probe, run, adjust, purge]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all"
@@ -19,7 +19,7 @@ on:
         options: [all, per, exright, margin, otcinst, otcper, otcmargin, otcexright]
         default: all
       start:
-        description: "起日（run 用）。**建議一次一年**，一年約 245 天 × 5 秒 ≈ 20 分鐘"
+        description: "起日（run 用）。逐日型 feed 建議一次 5 年；exright 是逐月型，一次跑滿也只要十幾分鐘"
         default: "2026-01-01"
       end:
         description: "迄日（run 用）"
@@ -66,7 +66,14 @@ jobs:
         if: inputs.mode == 'probe'
         run: python feeds.py --probe --feed "${{ inputs.feed }}" --date "${{ inputs.probe_date }}"
 
-      - name: 逐日回補
+      # ★ 內容寫錯時用。2026-09-04 的 exright 事故：每個日檔都被寫進
+      #   2026-09-07 的四列，長得跟正常檔一模一樣，**覆蓋救不回來**
+      #   （改成逐月模式後檔名集合不同，覆蓋不到的舊檔會留在原地）。
+      - name: 刪掉該 feed 的全部日檔
+        if: inputs.mode == 'purge'
+        run: python feeds.py --purge --feed "${{ inputs.feed }}"
+
+      - name: 回補
         if: inputs.mode == 'run'
         run: |
           if [ "${{ inputs.feed }}" = "all" ]; then
@@ -84,7 +91,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust')
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
