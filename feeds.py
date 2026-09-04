@@ -48,6 +48,7 @@
 import argparse
 import json
 import os
+import re
 import sys
 import time
 
@@ -130,18 +131,31 @@ def parse_per(d, day, known=None):
     return out, f"{len(out)} 列"
 
 
+def _roc_date(v):
+    """民國「104年07月16日」→ 2015-07-16；抽不到回空字串。"""
+    m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", str(v))
+    if not m:
+        return ""
+    return f"{int(m.group(1)) + 1911:04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+
+
 def parse_exright(d, day, known=None):
     """TWSE TWT49U → 除權除息計算結果。
 
     這是還原價的**事件來源**：還原因子 = 除權息參考價 ÷ 除權息前收盤價。
     ★ 因子在這裡**不算**，只存原始兩個價格。理由是還原要整段回推，
       屬於 `adjust.py` 的工作；在抓取端先算一半，日後改公式就得重抓。
+
+    ★★ **日期取每一列自己的「資料日期」欄，不用傳進來的 `day`。**
+      這支端點吃的是 startDate/endDate **區間**，一次可以回一整個月，
+      所以同一份回應裡的列分屬不同日子。用 `day` 會把整個月都標成同一天。
     """
     tabs = B._tables(d)
     if not tabs:
         return [], "沒有 tables"
     t = tabs[0]
     f = _fieldmap(t)
+    i_date = _exact(f, "資料日期")
     i_code = _exact(f, "股票代號", "證券代號", "代號")
     i_pre = _exact(f, "除權息前收盤價")
     i_ref = _exact(f, "除權息參考價")
@@ -150,7 +164,7 @@ def parse_exright(d, day, known=None):
     i_open = _exact(f, "開盤競價基準")
     if i_code is None or i_pre is None or i_ref is None:
         return [], f"欄位對不上：{f}"
-    out = []
+    out, nodate = [], 0
     for r in (t.get("data") or []):
         if not r or len(r) <= i_code:
             continue
@@ -164,10 +178,17 @@ def parse_exright(d, day, known=None):
         # 兩個價格缺一就不寫。**寧可少一列，不要寫一列算不出因子的**。
         if not pre or not ref:
             continue
-        out.append([day, code, pre, ref, g(i_val),
+        dt = _roc_date(r[i_date]) if (i_date is not None and i_date < len(r)) else ""
+        if not dt:
+            nodate += 1
+            continue          # ★ 沒有自述日期就不收——寧可少一列，不要標錯日子
+        out.append([dt, code, pre, ref, g(i_val),
                     (str(r[i_kind]).strip() if i_kind is not None and i_kind < len(r) else ""),
                     g(i_open)])
-    return out, f"{len(out)} 列"
+    note = f"{len(out)} 列"
+    if nodate:
+        note += f"（{nodate} 列無資料日期，已丟棄）"
+    return out, note
 
 
 def _pick_stock_table(tabs, *codenames):
@@ -362,8 +383,22 @@ FEEDS = {
                    "kind", "open_base"],
         "parse": parse_exright,
         "known": False,   # 除權息表會有已下市或非 universe 的標的，先全收
-        "urls": lambda day: [_twse("exRight/TWT49U", day)],
-        "status": "已驗證 2026-09-04：20260903 → stat=OK、4 列（含 3661 除息 32.551656）",
+        # ★★ 2026-09-04 事故：原本用 `date=` 參數——**這支端點根本不吃 `date`**，
+        #   但會把收到的 `date` 原樣放回 response，於是 `_same_day()` 被參數回音騙過，
+        #   把 2026-09-07 的四列寫進 2015 年的每一個日期檔。
+        #   實測 `date=20150123` 與 `date=20150716` 回的是同一批資料，
+        #   標題都是「115年09月07日 至 115年09月07日」。
+        #   正確參數是 **startDate / endDate**：
+        #   `startDate=20150716&endDate=20150716` → stat=OK、標題「104年07月16日…」、30 列。
+        #
+        #   ★ 意外的好處：**它吃區間**，所以逐月抓一次即可，
+        #     不必一天打一發。3,656 發 → 約 140 發。
+        "range": True,
+        "urls_range": lambda a, b: [
+            "https://www.twse.com.tw/rwd/zh/exRight/TWT49U"
+            f"?startDate={a}&endDate={b}&response=json"],
+        "status": ("已驗證 2026-09-04：startDate=20150716&endDate=20150716 → "
+                   "stat=OK、30 列。**逐月抓**，日期取每列自己的「資料日期」欄"),
     },
 
     # ── 未驗證，候選清單 ────────────────────────────────────
@@ -411,19 +446,30 @@ FEEDS = {
                    "kind", "open_base"],
         "parse": parse_exright,
         "known": False,
-        # ★ 2026-09-04 第一批四條**全部 404**（同一張 TPEx 404 頁）。
-        #   已知可用的 TPEx 區段名是 afterTrading／insti／margin，
-        #   所以第二批集中在 afterTrading，並沿用舊 PHP 的葉名 revivt。
-        #   **這批仍是猜的，由 probe 淘汰。**
+        # ★ 2026-09-04 兩批共 10 條候選的結果：
+        #   afterTrading/* 與 exright/* 全部 404（同一張 TPEx 404 頁）。
+        #   **唯一有回應的是 `bulletin/revivt`**——stat=ok，但那是
+        #   「減資恢復買賣參考價」不是除權息，而且回的是**未來十天**
+        #   （20260905~20260914），被 `_same_day` 擋下。
+        #
+        #   兩個推論：
+        #   ① **`bulletin` 才是公司行動類的區段名**，前兩批猜錯方向。
+        #   ② TPEx 這類表可能是**前瞻式公告表**，不是 TWSE `TWT49U` 那種逐日結果表。
+        #      若是如此，**逐日 feed 的框架對它是錯的**——要改成
+        #      「定期抓一次、依事件自身日期累積」，不能用 `_same_day` 核對。
+        #      所以下面這批若有一條回 stat=ok 但日期不符，**那多半就是它**，
+        #      要改框架而不是繼續換網址。
         "urls": lambda day: [
-            _tpex("afterTrading/revivt", day, "&id="),
-            _tpex("afterTrading/exRightResult", day, "&id="),
-            _tpex("afterTrading/exDividend", day, "&id="),
-            _tpex("afterTrading/exRightDividend", day, "&id="),
-            _tpex("bulletin/revivt", day, "&id="),
-            _tpex("exright/revivt", day, "&id="),
+            _tpex("bulletin/exRight", day, "&id="),
+            _tpex("bulletin/exRightResult", day, "&id="),
+            _tpex("bulletin/exDividend", day, "&id="),
+            _tpex("bulletin/exRightDividend", day, "&id="),
+            _tpex("bulletin/exRightAndDividend", day, "&id="),
+            _tpex("bulletin/exRightCalc", day, "&id="),
         ],
-        "status": "**未驗證**。2026-09-04 第一批 4 條全 404，這是第二批候選",
+        "status": ("**未驗證**。第一、二批共 10 條：afterTrading/* 與 exright/* 全 404，"
+                   "只有 bulletin/revivt 有回應但那是減資表且為前瞻式。"
+                   "第三批集中在 bulletin/*"),
     },
 }
 
@@ -451,6 +497,8 @@ def write_day(name, day, lines):
 def fetch_one(name, day, known):
     """回 (lines, note, used_url)。候選依序試，第一個通過 _same_day 的就用。"""
     spec = FEEDS[name]
+    if spec.get("range"):
+        return [], "這是區間型 feed，應走 cmd_feed_range", None
     last = "沒有候選"
     for url in spec["urls"](day):
         raw, err = B.get(url)
@@ -477,6 +525,132 @@ def fetch_one(name, day, known):
     return [], last, None
 
 
+def _months(start, end):
+    """→ [(該月起日, 該月迄日)]，兩端都夾在 [start, end] 內。"""
+    import calendar
+    y, m = int(start[:4]), int(start[5:7])
+    out = []
+    while True:
+        last = calendar.monthrange(y, m)[1]
+        a = max(f"{y:04d}-{m:02d}-01", start)
+        b = min(f"{y:04d}-{m:02d}-{last:02d}", end)
+        if a > end:
+            break
+        if a <= b:
+            out.append((a, b))
+        m += 1
+        if m == 13:
+            y, m = y + 1, 1
+    return out
+
+
+def cmd_feed_range(args, name):
+    """區間型 feed：逐月抓一次，再依**每列自己的日期**拆成日檔。
+
+    為什麼不逐日：`TWT49U` 吃 startDate/endDate，一次可以回一整個月。
+    逐日要 3,656 發（含休市日也得打一發才知道休市），逐月只要約 140 發。
+
+    ★ 防呆：回應自述的日期區間必須與請求的相符（`_same_day` 已強化為
+      同時檢查 title／strDate／endDate，不再只看會被回音的 `date`），
+      而且**每一列的日期都必須落在請求區間內**——
+      有一列落在區間外就整個月拒收並回報，不寫任何檔案。
+      這是 2026-09-04 那次「2026 資料寫進 2015」之後補的第二道閘。
+    """
+    spec = FEEDS[name]
+    known = B._known_codes()
+    d = feed_dir(name)
+    rng = _months(args.start, args.end)
+    print(f"[{name}] {spec['status']}")
+    print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，共 {len(rng)} 個月")
+    ok = empty = failed = 0
+    total_rows = 0
+    for i, (a, b) in enumerate(rng, 1):
+        aa, bb = a.replace("-", ""), b.replace("-", "")
+        got, note = None, "沒有候選"
+        for url in spec["urls_range"](aa, bb):
+            raw, err = B.get(url)
+            if err:
+                note = f"失敗({err[:60]})"
+                continue
+            try:
+                doc = json.loads(raw.decode("utf-8"))
+            except Exception as ex:                    # noqa: BLE001
+                head = raw[:120].decode("utf-8", "replace").replace("\n", " ")
+                note = f"JSON {type(ex).__name__}｜{len(raw)}B｜開頭：{head}"
+                continue
+            stat = doc.get("stat") if isinstance(doc, dict) else None
+            if stat and str(stat).strip().lower() not in ("ok", "success"):
+                note = f"stat={stat}"
+                continue
+            # 自述區間核對：起日看 strDate/title，迄日看 endDate
+            s_ok, s_said = B._same_day(
+                {k: doc.get(k) for k in ("strDate", "title") if doc.get(k)}, a)
+            if not s_ok:
+                note = f"回應自述的起日不符（要 {a}）：{s_said}"
+                continue
+            got = doc
+            break
+        if got is None:
+            failed += 1
+            print(f"  [{i}/{len(rng)}] {a[:7]} {note}", flush=True)
+            if failed >= 3 and ok == 0:
+                print(f"[{name}] 前 {i} 個月全部失敗且無一成功，收手。最後一則：{note}",
+                      file=sys.stderr)
+                break
+            time.sleep(B.SLEEP)
+            continue
+
+        lines, nt = spec["parse"](got, a, known if spec["known"] else None)
+        stray = [r[0] for r in lines if not (a <= r[0] <= b)]
+        if stray:
+            print(f"[{name}] ★ {a[:7]} 有 {len(stray)} 列日期落在請求區間外"
+                  f"（例：{stray[:3]}），整月拒收，不寫檔。", file=sys.stderr)
+            failed += 1
+            time.sleep(B.SLEEP)
+            continue
+
+        byday = {}
+        for r in lines:
+            byday.setdefault(r[0], []).append(r)
+        for day, rs in byday.items():
+            write_day(name, day, rs)
+        if byday:
+            ok += 1
+            total_rows += len(lines)
+        else:
+            empty += 1
+        if i % 12 == 0 or not byday:
+            print(f"  [{i}/{len(rng)}] {a[:7]} {len(byday)} 天 / {len(lines)} 列"
+                  f"（{nt}）", flush=True)
+        time.sleep(B.SLEEP)
+    print(f"[{name}] 完成：有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
+          f"合計 {total_rows} 列")
+    return 0 if (ok or not rng) else 1
+
+
+def cmd_purge(args):
+    """刪掉某個 feed 已寫出的所有日檔。
+
+    ★ 存在的理由：2026-09-04 的 exright 事故寫出了一批**內容是錯的**日檔
+      （每個檔都是 2026-09-07 的四列）。這種錯不能靠 `--force` 覆蓋修掉——
+      改用區間模式後檔名的集合會不一樣，覆蓋不到的舊檔會留在原地，
+      而且它們長得跟正常檔一模一樣。**必須整個刪掉重來。**
+    """
+    name = args.feed
+    if name not in FEEDS:
+        print(f"未知的 feed：{name}", file=sys.stderr)
+        return 1
+    d = feed_dir(name)
+    if not os.path.isdir(d):
+        print(f"[{name}] {d} 不存在，沒有東西要刪")
+        return 0
+    files = [n for n in os.listdir(d) if n.endswith(".csv")]
+    for n in files:
+        os.remove(os.path.join(d, n))
+    print(f"[{name}] 已刪除 {len(files)} 個日檔（{d}）")
+    return 0
+
+
 def cmd_feed(args):
     name = args.feed
     if name not in FEEDS:
@@ -484,6 +658,8 @@ def cmd_feed(args):
         return 1
     if args.sleep:
         B.SLEEP = args.sleep
+    if FEEDS[name].get("range"):
+        return cmd_feed_range(args, name)
     d = feed_dir(name)
     done = set()
     if os.path.isdir(d):
@@ -552,7 +728,13 @@ def cmd_probe(args):
         spec = FEEDS[name]
         print(f"── {name}｜{spec['status']}")
         hit = False
-        for url in spec["urls"](day):
+        # 區間型 feed 用「該日到該日」的單日區間探測
+        if spec.get("range"):
+            ymd = day.replace("-", "")
+            cands = spec["urls_range"](ymd, ymd)
+        else:
+            cands = spec["urls"](day)
+        for url in cands:
             raw, err = B.get(url, retries=1, timeout=30)
             short = url.replace("https://www.", "")
             if err:
@@ -593,7 +775,9 @@ def main():
     ap = argparse.ArgumentParser(description="全市場每日 feed 回補")
     ap.add_argument("--feed", default="", help=f"{', '.join(FEEDS)}；probe 可用 all")
     ap.add_argument("--probe", action="store_true", help="只測端點，不寫資料")
-    ap.add_argument("--run", action="store_true", help="逐日回補")
+    ap.add_argument("--run", action="store_true", help="逐日（或逐月）回補")
+    ap.add_argument("--purge", action="store_true",
+                    help="刪掉該 feed 已寫出的所有日檔（內容錯掉時用，覆蓋救不回來）")
     ap.add_argument("--date", default="2026-09-03", help="probe 用的測試日（要是交易日）")
     ap.add_argument("--start", default="2026-01-01")
     ap.add_argument("--end", default="2026-09-03")
@@ -604,6 +788,11 @@ def main():
     a = ap.parse_args()
     if a.probe:
         return cmd_probe(a)
+    if a.purge:
+        if not a.feed:
+            print("--purge 要指定 --feed", file=sys.stderr)
+            return 1
+        return cmd_purge(a)
     if a.run:
         if not a.feed:
             print("--run 要指定 --feed", file=sys.stderr)
