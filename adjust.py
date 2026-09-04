@@ -88,6 +88,7 @@ def _f(s):
 def read_events():
     """→ {code: [(date, factor, pre, ref, kind, market)]}，日期升冪。"""
     ev = defaultdict(list)
+    up = 0                      # 參考價高於前收盤（現金增資認股價 > 市價）的筆數
     for market, d in EVENT_DIRS:
         if not os.path.isdir(d):
             continue
@@ -99,7 +100,7 @@ def read_events():
                 try:
                     i_d = head.index("date"); i_c = head.index("stock_id")
                     i_p = head.index("pre_close"); i_r = head.index("ref_price")
-                    i_k = head.index("kind")
+                    i_k = head.index("kind"); i_v = head.index("value")
                 except ValueError:
                     print(f"[adj] {name} 欄位不符，跳過：{head}", file=sys.stderr)
                     continue
@@ -108,19 +109,40 @@ def read_events():
                     if len(q) <= max(i_d, i_c, i_p, i_r, i_k):
                         continue
                     pre, ref = _f(q[i_p]), _f(q[i_r])
-                    # ★ 因子必須算得出來且在合理範圍。
-                    #   f > 1 代表參考價高於前收盤——除權息不會這樣，
-                    #   那是資料錯或欄位對錯，**丟掉並回報，不要硬用**。
                     if not pre or not ref or pre <= 0 or ref <= 0:
                         continue
                     f = ref / pre
-                    if not (0.05 < f <= 1.0001):
+                    val = _f(q[i_v]) if i_v < len(q) else None
+
+                    # ★★ 2026-09-04 修正：原本寫死 `f <= 1.0001`，理由是
+                    #   「除權息不會讓參考價高於前收盤」——**那個假設是錯的**。
+                    #   實例：3312 弘憶股 2016-04-14，前收 5.88 → 參考 5.89（f=1.0017），
+                    #   `權值+息值` 是 **−0.018676**（負值）。
+                    #   成因是**現金增資的認股價高於市價**，理論除權參考價因此上調。
+                    #   少見但合法（240 個交易日抽樣的 1,144 筆裡有 1 筆，約 0.09%）。
+                    #
+                    #   所以判準改成兩層：
+                    #   ① 明顯壞掉的（f ≤ 0.05 或 f > 1.5）一律丟棄
+                    #   ② f > 1 但「權值+息值」是負的 → **合理，收下**
+                    #   ③ f > 1 而權值是正的 → 方向矛盾，丟棄並回報
+                    if not (0.05 < f <= 1.5):
                         print(f"[adj] 因子超出合理範圍，丟棄：{q[i_c]} {q[i_d]} "
                               f"前收={pre} 參考={ref} f={f:.4f}", file=sys.stderr)
                         continue
+                    if f > 1.0001:
+                        if val is not None and val < 0:
+                            up += 1          # 合理的上調，計數但不吵
+                        else:
+                            print(f"[adj] 參考價高於前收盤但權值非負，方向矛盾，丟棄："
+                                  f"{q[i_c]} {q[i_d]} 前收={pre} 參考={ref} "
+                                  f"f={f:.4f} 權值+息值={val}", file=sys.stderr)
+                            continue
                     ev[q[i_c]].append((q[i_d], f, pre, ref, q[i_k], market))
     for c in ev:
         ev[c].sort()
+    if up:
+        print(f"[adj] 其中 {up} 筆的參考價高於前收盤（權值為負＝現金增資認股價高於市價），"
+              f"已照實收下，不是錯誤")
     return ev
 
 
