@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別對照表"
+        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測 MOPS 完整性"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all"
@@ -95,6 +95,15 @@ jobs:
       - name: 產業別對照表
         if: inputs.mode == 'industry'
         run: python industry.py --run --date "${{ inputs.probe_date }}" --sleep "${{ inputs.sleep || '3' }}"
+
+      # ★ 用 urllib 重測 MOPS 的全市場端點。2026-08-30 把它們判為
+      #   「靜默截斷、不可用」，但 2026-09-05 證實 t187ap03_L 那次是
+      #   **WebFetch 的限制**（50 筆 vs 實際 1,094 筆），不是端點的性質。
+      #   月營收與財報很可能是同一種誤判——這一步就是來驗的。
+      #   **只探測、不寫任何資料。**
+      - name: 重測 MOPS 全市場端點的完整性
+        if: inputs.mode == 'mops-probe'
+        run: python mops_probe.py --sleep "${{ inputs.sleep || '2' }}"
 
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
       - name: 算還原因子
