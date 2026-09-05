@@ -541,6 +541,9 @@ def fetch_one(name, day, known):
             continue
         lines, nt = spec["parse"](d, day, known if spec["known"] else None)
         return lines, nt, url
+    # NODATA 代表「端點答了、只是那天沒有資料」——回傳 url 讓呼叫端歸到「休市」。
+    if last.startswith("NODATA"):
+        return [], last[7:], (spec["urls"](day) or [None])[0]
     return [], last, None
 
 
@@ -732,6 +735,15 @@ def cmd_feed(args):
             print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
         # ★ 與 cmd_inst 同一條收手規則：一開始就全失敗代表端點或參數不對，
         #   不是隨機故障。放著跑只是燒時間，而且跑出來的全是錯的。
+        # ★ 端點一直回「沒有符合條件的資料」也要收手。
+        #   這種情況 failed 恆為 0（它有回應），舊的閘門擋不住——
+        #   若端點有**日期下限**（例如只回得到近幾年），整趟會安靜跑滿
+        #   5.8 小時、一列都沒寫，最後才發現。30 天足以跨過任何連假。
+        if closed >= 30 and ok == 0:
+            print(f"[{name}] 前 {i} 天全部回「沒有資料」且無一有列，收手。"
+                  f"端點是通的，但這個區間查不到東西——**很可能有日期下限**，"
+                  f"不是連假。最後一則：{note}", file=sys.stderr)
+            break
         # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
             print(f"[{name}] 前 {i} 天有 {failed} 天連問都問不到且無一成功，收手。"
@@ -739,7 +751,13 @@ def cmd_feed(args):
             break
         time.sleep(B.SLEEP)
     print(f"[{name}] 完成：有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
-    return 0 if (ok or not days) else 1
+    # ★ 只有「真的失敗」才回非零。**「一天資料都沒有」不等於出錯**——
+    #   補單一缺日時，區間內其餘天數可能全是週六或連假，
+    #   那時 ok=0、failed=0，是正常結果。
+    #   原本寫 `return 0 if (ok or not days) else 1`，這種情況會回 exit code 1，
+    #   Actions 上顯示紅叉。**讓成功的跑印出紅叉，會訓練人忽略紅叉**，
+    #   下次真的失敗就看不見了。
+    return 1 if failed else 0
 
 
 def cmd_probe(args):
