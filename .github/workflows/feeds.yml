@@ -19,14 +19,11 @@ on:
         options: [all, per, exright, margin, otcinst, otcper, otcmargin, otcexright]
         default: all
       start:
-        description: "起日（run 用）。逐日型 feed 建議一次 5 年；exright 是逐月型，一次跑滿也只要十幾分鐘"
+        description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
         default: "2026-01-01"
       end:
         description: "迄日（run 用）"
         default: "2026-09-03"
-      saturdays:
-        description: "連週六也掃（抓補行交易日）。填 yes 才開"
-        default: "no"
       sleep:
         description: "每個請求間隔秒數。**TWSE 會限流**——2015 實測 1.5 秒有 94% 失敗，不要調低於 5"
         default: "5"
@@ -79,10 +76,11 @@ jobs:
           if [ "${{ inputs.feed }}" = "all" ]; then
             echo "run 模式不接受 feed=all，請指定單一 feed" >&2; exit 1
           fi
+          # ★ 不需要 --saturdays：改照 data/universe/daily 的交易日曆走，
+          #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
           python feeds.py --run --feed "${{ inputs.feed }}" \
             --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
-            --sleep "${{ inputs.sleep || '5' }}" \
-            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
+            --sleep "${{ inputs.sleep || '5' }}"
 
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
       - name: 算還原因子
