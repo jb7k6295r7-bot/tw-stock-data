@@ -221,24 +221,54 @@ def cmd_run(args):
     print(f"[industry] 掃類股成員（測試日 {args.date}）")
     names, members = fetch_sectors(args.date, 1, args.hi)
 
-    # ★ 驗算：MI_INDEX 說屬於類股 NN 的，t187ap03_L 的產業別也必須是 NN
-    bad = miss = 0
+    # ★★ 類股是**有層級的**，不是互斥的分類。2026-09-04 實測：
+    #     13 電子工業 458 檔 ＝ 24(96)＋25(64)＋26(68)＋27(46)＋28(104)＋29(23)＋30(11)＋31(46)
+    #     07 化學生技醫療 88 檔 ＝ 21 化學工業(28)＋22 生技醫療業(60)
+    #   所以 1,655 檔次 > 1,094 檔——同一檔會同時出現在母類股與子類股。
+    #
+    #   母子關係**用集合包含關係推出來，不寫死**：官方增刪類股時不必改程式。
+    parents = {}
+    for a, ma in members.items():
+        kids = [b for b, mb in members.items() if b != a and mb and mb <= ma]
+        if kids and sum(len(members[b]) for b in kids) == len(ma):
+            parents[a] = sorted(kids)
+    for a, kids in parents.items():
+        print(f"[industry] 母類股 {a} {names[a]}（{len(members[a])} 檔）"
+              f"＝ {' ＋ '.join(f'{k} {names[k]}({len(members[k])})' for k in kids)}")
+
+    # 驗算：基本資料給的產業別，必須是「MI_INDEX 說這檔待過的類股」之一。
+    # ★ 不能寫成「必須等於 NN」——那會把母類股的成員全部判成不符（實測會多出 546 筆假警報）。
+    where = {}
     for code, mem in members.items():
         for c in mem:
-            r = rows.get(c)
-            if r is None:
-                miss += 1
-                continue
-            if r["industry"] and r["industry"] != code:
-                bad += 1
-                if bad <= 20:
-                    print(f"  ✗ {c} {r['name']}：MI_INDEX 說 {code}({names[code]})，"
-                          f"基本資料說 {r['industry']}", file=sys.stderr)
-    tot = sum(len(v) for v in members.values())
-    print(f"[industry] 交叉驗證：{tot} 檔次｜產業別不符 {bad}｜基本資料查無 {miss}")
+            where.setdefault(c, set()).add(code)
+    bad = miss = 0
+    for c, codes in where.items():
+        r = rows.get(c)
+        if r is None:
+            miss += 1
+            continue
+        if r["industry"] and r["industry"] not in codes:
+            bad += 1
+            if bad <= 20:
+                print(f"  ✗ {c} {r['name']}：MI_INDEX 說它在 "
+                      f"{sorted(codes)}，基本資料說 {r['industry']}", file=sys.stderr)
+    print(f"[industry] 交叉驗證：{len(where)} 檔（{sum(len(v) for v in members.values())} 檔次）"
+          f"｜產業別對不上 {bad}｜基本資料查無 {miss}")
     if bad:
-        print("[industry] ⚠ 不符不是零就要看過——**兩條來源對同一檔給了不同的類股**，"
+        print("[industry] ⚠ 對不上不是零就要看過——**兩條來源對同一檔給了不同的類股**，"
               "不可挑一個用。", file=sys.stderr)
+
+    # 類股對照表另存一份，含母子關係
+    with open(os.path.join(META_DIR, "sectors.csv"), "w", encoding="utf-8",
+              newline="") as f:
+        f.write("code,name,members,is_parent,children\n")
+        for code in sorted(names):
+            kids = parents.get(code, [])
+            f.write(f"{code},{names[code]},{len(members[code])},"
+                    f"{'Y' if kids else ''},{'|'.join(kids)}\n")
+    print(f"[industry] 類股對照表 → {os.path.join(META_DIR, 'sectors.csv')}"
+          f"（{len(names)} 個，其中 {len(parents)} 個是母類股）")
 
     # ── 寫檔 ──
     os.makedirs(META_DIR, exist_ok=True)
