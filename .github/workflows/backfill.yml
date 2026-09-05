@@ -24,8 +24,8 @@ on:
         description: "興櫃代號，逗號分隔（esb 用）"
         default: "7879,5267,6434"
       saturdays:
-        description: "run 時連週六也掃（抓補行交易日）。填 yes 才開"
-        default: "no"
+        description: "**只對 run 有效**（inst 已改照 data/universe/daily 的交易日曆走）。run 一定要填 yes，否則會漏掉補行交易的週六"
+        default: "yes"
       sleep:
         description: "每個請求間隔秒數（run 用）。TWSE 會限流，2015 實測 1.5 秒有 94% 失敗 → 用 5"
         default: "5"
@@ -54,13 +54,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
+      #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
+      #   （run 不能這樣做——它產生的正是那份日曆。）
       - name: 全市場三大法人（上市 T86）
         if: inputs.mode == 'inst'
         run: |
           python backfill.py --inst \
             --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
-            --sleep "${{ inputs.sleep || '5' }}" \
-            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
+            --sleep "${{ inputs.sleep || '5' }}"
 
       - name: 重建 stocks.csv 的 first_seen／last_seen（只讀本地檔）
         if: inputs.mode == 'meta'
