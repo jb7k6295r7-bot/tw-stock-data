@@ -886,6 +886,42 @@ def write_inst(day, lines):
     return len(lines)
 
 
+def trading_calendar():
+    """交易日曆＝`data/universe/daily/` 的檔名集合。→ 升冪日期字串 list。
+
+    ★★ **只有 `--inst` 能用這個，`--run` 絕對不行。**
+      `--run` 正是產生 `data/universe/daily/` 的那支——
+      拿它自己的產出當「要抓哪幾天」的依據是循環論證：
+      **沒抓過的日子永遠不在日曆裡，也就永遠不會被抓。**
+      價格回補一定要維持逐日掃描。
+
+    `--inst` 不同：價格已經完整涵蓋 2015–2026（2,844 個交易日、缺市場 0），
+    所以那份日曆就是事實。照它走比掃「週一到週六」少 812 個請求（22%）、
+    74 分鐘，而且**補行交易的週六本來就在日曆裡**，比「記得勾 --saturdays」可靠。
+    """
+    d = os.path.join(UNI_DIR, "daily")
+    if not os.path.isdir(d):
+        return []
+    return sorted(n[:-4] for n in os.listdir(d)
+                  if n.endswith(".csv") and n[0].isdigit())
+
+
+def _inst_days(args):
+    """→ (日期 list, 來源說明)。"""
+    cal = trading_calendar()
+    if cal:
+        days = [x for x in cal if args.start <= x <= args.end]
+        # ★ 單日請求即使不在日曆裡也照打。
+        #   `daily.yml` 會在抓完資料後立刻補當天的 T86；若 fetch 那一步
+        #   部分失敗、當天的 daily 檔沒寫成，日曆就沒有今天——
+        #   這時**安靜跳過**等於當天籌碼永遠缺一塊。明確指定的單日一律尊重。
+        if args.start == args.end and not days:
+            return [args.start], "單日指定（不在日曆裡，仍照打）"
+        return days, f"交易日曆（{len(cal)} 天）"
+    return (list(daterange(args.start, args.end, True)),
+            "逐日掃描（找不到交易日曆，退回含週六的全掃）")
+
+
 def cmd_inst(args):
     """全市場三大法人逐日回補（上市）。上櫃另有端點，本模式尚未涵蓋。"""
     global SLEEP
@@ -894,10 +930,11 @@ def cmd_inst(args):
     done = set()
     if os.path.isdir(INST_DIR):
         done = {n[:-4] for n in os.listdir(INST_DIR) if n.endswith(".csv")}
-    days = [d for d in daterange(args.start, args.end, args.saturdays) if d not in done]
+    days, how = _inst_days(args)
+    days = [d for d in days if d not in done]
     if args.limit:
         days = days[:args.limit]
-    print(f"[inst] {args.start} ~ {args.end}｜待處理 {len(days)} 天"
+    print(f"[inst] {args.start} ~ {args.end}｜{how}｜待處理 {len(days)} 天"
           f"（已存在 {len(done)} 天，略過）")
     known = _known_codes()
     if not known:
@@ -1203,6 +1240,8 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    # ★ --inst 已改照交易日曆走，不看這個旗標；--run 仍然需要它
+    #   （--run 產生的正是那份日曆，不能拿日曆當自己的輸入）。
     ap.add_argument("--saturdays", action="store_true",
                     help="連週六也掃（抓補行交易日；多數會回休市）")
     ap.add_argument("--sleep", type=float, default=0,
