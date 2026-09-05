@@ -126,19 +126,25 @@ def fetch_sectors(day, lo=1, hi=40):
         if not same:
             print(f"  [類股 {code}] 日期不符（{said}），略過", file=sys.stderr)
             continue
-        tabs = B._tables(d)
-        if not tabs:
+        # ★★ **不可以假設資料在第一張表。**
+        #   2026-09-05 實測：`MI_INDEX?type=01` 回 **9 張表，個股在第 9 張（index 8）**，
+        #   前 8 張是空物件。原本寫 `tabs[0]` → 每個類股都被跳過，掃出 0 個，
+        #   而且**不會報錯**（欄位對不上就 continue），只是安靜地什麼都沒有。
+        #   `margin` 那次也是同一種錯（個股在第二張）。
+        #   → 掃過所有表，挑「有 證券代號 欄 且 標題結尾有括號類股名」那張。
+        t = f = m = None
+        for cand in B._tables(d):
+            cf = [str(x).strip() for x in (cand.get("fields") or [])]
+            if "證券代號" not in cf:
+                continue
+            title = str(cand.get("title") or d.get("title") or "")
+            cm = re.search(r"[(（]([^)）]+)[)）]\s*$", title.strip())
+            if cm:
+                t, f, m = cand, cf, cm
+                break
+        if t is None:
             continue
-        t = tabs[0]
-        title = str(t.get("title") or d.get("title") or "")
-        m = re.search(r"[(（]([^)）]+)[)）]\s*$", title.strip())
-        if not m:
-            continue
-        f = [str(x).strip() for x in (t.get("fields") or [])]
-        try:
-            i_code = f.index("證券代號")
-        except ValueError:
-            continue
+        i_code = f.index("證券代號")
         s = set()
         for r in (t.get("data") or []):
             if r and len(r) > i_code:
