@@ -38,6 +38,41 @@ jobs:
         id: fetch
         run: python fetch.py
 
+      # ★★ 全市場三大法人日檔：**轉置的上游，2026-09-05 才補上**。
+      #
+      #   踩過的坑：`fetch.py` 每天有抓 T86 全市場，但只把原始回應存進
+      #   `data/latest/market.json`，再抽出**大盤合計**四個數字寫成 `market_inst.csv`。
+      #   它**從來沒有寫 `data/universe/inst/<日期>.csv`**——而那正是
+      #   `transpose.py` 產生個股法人庫的來源。
+      #
+      #   後果是**每天落後一天，而且看不出來**：檔案都在、數字都對，
+      #   只有「最後一天」永遠停在上次手動回補那天。
+      #   2026-09-05 實測：上櫃到 09-04、上市只到 09-03，就是這樣來的。
+      #
+      #   兩支都是「已存在就略過」，所以指定當天等於只抓一天、一個請求。
+      #   `continue-on-error`：這是衍生資料，失敗不該讓當天的原始資料無法落檔。
+      #   ⚠ **日期用 `fetch.py` 算好的 `target_trading_day`，不要自己 `date +%F`。**
+      #     這支排程在台北時間凌晨跑，`date` 給的是**隔天**——
+      #     用它會去抓一個還沒收盤的日子，然後把真正該抓的那天永遠跳過。
+      #     `fetch.py` 已經算過目標交易日並寫進 manifest，沿用即可。
+      - name: 全市場三大法人（上市 T86）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          echo "目標交易日：$DAY"
+          python backfill.py --inst --start "$DAY" --end "$DAY" --saturdays --sleep 0
+
+      - name: 全市場三大法人（上櫃 TPEx）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          echo "目標交易日：$DAY"
+          python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --saturdays --sleep 0
+
       # 個股庫轉置：把今天寫進 daily/ 的那一天一併轉成按股票切的檔。
       #
       # ★ 為什麼併在這一支、不另開每日排程：兩支各自 push 同一個 repo，
