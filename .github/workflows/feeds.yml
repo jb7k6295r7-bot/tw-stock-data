@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪掉某 feed 的全部日檔"
+        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別對照表"
         type: choice
-        options: [diag, probe, run, adjust, purge]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all"
@@ -82,6 +82,20 @@ jobs:
             --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
             --sleep "${{ inputs.sleep || '5' }}"
 
+      # ★ 產業別對照表。選股規則的「排除金融保險與生技醫療」與
+      #   「同一類股當日最多 2 檔」都靠它，而 meta/stocks.csv 沒有這欄。
+      #   ⚠ 2026-08-29 曾判定 t187ap03_L 不可用（「查 7 個代號只回 1101」）——
+      #   那是 **WebFetch 讀大 JSON 被截斷**，不是端點的問題。
+      #   2026-09-05 複測：WebFetch 只回 50 筆、最後一筆 1432，確認是截斷。
+      #   用 urllib 從這裡讀是完整的。**端點結論要標明是用什麼工具測的。**
+      - name: 產業別對照表（只探測）
+        if: inputs.mode == 'industry-probe'
+        run: python industry.py --probe --date "${{ inputs.probe_date }}"
+
+      - name: 產業別對照表
+        if: inputs.mode == 'industry'
+        run: python industry.py --run --date "${{ inputs.probe_date }}" --sleep "${{ inputs.sleep || '3' }}"
+
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
       - name: 算還原因子
         if: inputs.mode == 'adjust'
@@ -89,7 +103,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge')
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
