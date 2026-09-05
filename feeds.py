@@ -673,6 +673,56 @@ def cmd_purge(args):
     return 0
 
 
+DAILY_DIR = os.path.join(UNI_DIR, "daily")
+
+
+def trading_calendar():
+    """交易日曆＝`data/universe/daily/` 的檔名集合。→ 升冪日期字串 list。
+
+    ★★ 為什麼不再掃「週一到週六」（2026-09-05 改）：
+
+    | 做法 | 天數 | 5.5s/天 |
+    |---|---|---|
+    | 週一～五 | 3,047 | 279 分 ← **會漏掉補行交易的週六** |
+    | 週一～六 | 3,656 | 335 分 ← 舊做法，**超過 job 上限 350 分** |
+    | **照交易日曆** | **2,844** | **261 分** ← 一趟跑得完 |
+
+    掃非交易日是純粹的浪費：812 個請求（22%）、74 分鐘，換來的只有
+    一整排「沒有符合條件的資料」。而且那些雜訊還害過一次——
+    `margin` 續跑時前五天剛好全是休市，觸發「連續失敗」收手，
+    訊息還寫成「連問都問不到」，完全誤導。
+
+    **補行交易的週六本來就在日曆裡**（價格資料是逐日抓的，那幾天有檔），
+    所以照日曆走比 `--saturdays` 更準，不是更省而已。
+
+    ★ 上市與上櫃共用同一份交易日曆（`tw-technical-analysis` 實測
+      8096、5274 對 3042 皆 728/728 完全相同），所以 TPEx 的 feed
+      也適用這份日曆。
+
+    拿不到日曆時回空 list，呼叫端會退回原本的掃描法——
+    **不要在拿不到日曆時安靜地少抓**。
+    """
+    if not os.path.isdir(DAILY_DIR):
+        return []
+    return sorted(n[:-4] for n in os.listdir(DAILY_DIR)
+                  if n.endswith(".csv") and n[0].isdigit())
+
+
+def _target_days(args):
+    """→ (日期 list, 用了哪種來源)。"""
+    cal = trading_calendar()
+    if cal:
+        return [d for d in cal if args.start <= d <= args.end], f"交易日曆（{len(cal)} 天）"
+    # ★ 退路一律**含週六**，不看 --saturdays。
+    #   兩種錯的代價不對稱：多掃週六只是浪費時間，
+    #   漏掉補行交易日是**安靜的資料缺口**——事後從檔案上看不出來。
+    #   （`--saturdays` 保留只為相容既有指令，實際不影響結果。）
+    # ★ daterange 回的是 generator，這裡一定要 list() ——
+    #   否則呼叫端第二次用到它時已經耗盡，會安靜地變成 0 天。
+    return (list(B.daterange(args.start, args.end, True)),
+            "逐日掃描（找不到交易日曆，退回含週六的全掃）")
+
+
 def cmd_feed(args):
     name = args.feed
     if name not in FEEDS:
@@ -686,12 +736,13 @@ def cmd_feed(args):
     done = set()
     if os.path.isdir(d):
         done = {n[:-4] for n in os.listdir(d) if n.endswith(".csv")}
-    days = [x for x in B.daterange(args.start, args.end, args.saturdays)
-            if args.force or x not in done]
+    days, how = _target_days(args)
+    days = [x for x in days if args.force or x not in done]
     if args.limit:
         days = days[:args.limit]
     print(f"[{name}] {FEEDS[name]['status']}")
-    print(f"[{name}] {args.start} ~ {args.end}｜待處理 {len(days)} 天（已存在 {len(done)} 天）")
+    print(f"[{name}] {args.start} ~ {args.end}｜{how}｜"
+          f"待處理 {len(days)} 天（已存在 {len(done)} 天）")
     known = B._known_codes()
     if FEEDS[name]["known"] and not known:
         print(f"[{name}] 找不到 data/meta/stocks.csv，先跑 --rebuild-meta", file=sys.stderr)
@@ -838,7 +889,9 @@ def main():
     ap.add_argument("--end", default="2026-09-03")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
-    ap.add_argument("--saturdays", action="store_true", help="納入補行交易的週六")
+    ap.add_argument("--saturdays", action="store_true",
+                    help="（已無作用）改照 data/universe/daily 的交易日曆走；"
+                         "拿不到日曆時的退路一律含週六。保留只為相容既有指令。")
     ap.add_argument("--sleep", type=float, default=0)
     a = ap.parse_args()
     if a.probe:
