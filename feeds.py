@@ -711,7 +711,7 @@ def cmd_feed(args):
                       f"        等一段時間再跑，或錯開同日其他回補工作。"
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
-    ok = closed = failed = 0
+    ok = closed = failed = dropped_days = 0
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
         # ★★ 成敗**看 `url` 有沒有拿到，不要比對訊息字串**。
@@ -726,7 +726,12 @@ def cmd_feed(args):
         if lines:
             n = write_day(name, day, lines)
             ok += 1
-            note = f"{n} 列"
+            # ★ **不要把 parser 的訊息蓋掉。** 它帶著「恆等式不符丟棄 N 列」，
+            #   蓋掉之後每天默默丟幾十列也看不出來——正是這個專案一路在防的靜默。
+            #   丟棄數為 0 時才簡化成「N 列」，避免每行都拖一串括號。
+            note = f"{n} 列" if "丟棄 0 列" in note or "丟棄" not in note else f"{n} 列｜{note}"
+            if "丟棄" in note and "丟棄 0 列" not in note:
+                dropped_days += 1
         elif url is not None:
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
@@ -751,6 +756,9 @@ def cmd_feed(args):
             break
         time.sleep(B.SLEEP)
     print(f"[{name}] 完成：有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
+    if dropped_days:
+        print(f"[{name}] ⚠ 有 {dropped_days} 天出現驗算不符而丟棄的列（詳見上面各該日）。"
+              f"**丟棄不是零就要看過**——可能是欄位對應在某個年代變了。", file=sys.stderr)
     # ★ 只有「真的失敗」才回非零。**「一天資料都沒有」不等於出錯**——
     #   補單一缺日時，區間內其餘天數可能全是週六或連假，
     #   那時 ok=0、failed=0，是正常結果。
