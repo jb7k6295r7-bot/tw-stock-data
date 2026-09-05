@@ -62,7 +62,7 @@ jobs:
         run: |
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
-          python backfill.py --inst --start "$DAY" --end "$DAY" --saturdays --sleep 0
+          python backfill.py --inst --start "$DAY" --end "$DAY" --sleep 0
 
       - name: 全市場三大法人（上櫃 TPEx）
         if: always()
@@ -71,7 +71,7 @@ jobs:
         run: |
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
-          python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --saturdays --sleep 0
+          python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
 
       # 個股庫轉置：把今天寫進 daily/ 的那一天一併轉成按股票切的檔。
       #
