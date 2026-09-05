@@ -68,7 +68,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # ★ 要加整個 data/：v3 之後歷史在 data/history、日曆在 data/calendar.csv、
           #   變更紀錄在 data/_changes.log，只 add data/latest 的話**歷史永遠不會被保存**。
-          git add data
+          # 用 -A，刪除也要進暫存區（全量重建可能刪檔）
+          git add -A data
           if git diff --staged --quiet; then
             echo "沒有變動，不 commit"
           else
