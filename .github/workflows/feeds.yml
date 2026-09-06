@@ -166,9 +166,14 @@ jobs:
       # ★ 月營收與財報的歷史回補。**一定要先跑 mops-history-dry**：
       #   parser 是在看不到 HTML 的情況下照 MOPS 慣例寫的（那些頁面 robots 擋 WebFetch），
       #   欄位對不對只有跑過才知道。**470 發的回補不該建立在猜出來的 parser 上。**
+      # ★ `probe_date` 這個欄位在這裡當「要看哪一期」用（例如 2018Q1 或 2018-03），
+      #   留空就跑預設的 104/7 與 104Q1。撞名這種問題要看**整張表的欄位**才知道，
+      #   猜三次已經夠了。
       - name: 基本面歷史（乾跑，只印解析結果）
         if: inputs.mode == 'mops-history-dry'
-        run: python mops_history.py --sleep 3         # 同上
+        run: |
+          python mops_history.py --sleep 3 \
+            --period "${{ inputs.probe_date }}" --market sii
 
       - name: 基本面歷史（回補）
         if: inputs.mode == 'mops-history'
