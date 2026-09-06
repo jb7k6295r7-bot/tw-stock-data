@@ -124,9 +124,17 @@ jobs:
       #   8299 群聯 17 筆除權息）。但**有資料不等於可信**——這支最重要的是第 C 節：
       #   拿**上市**那一半（我方有 TWSE 官方的 11,729＋302 筆）去驗 FinMind 對不對。
       #   **只探測、不寫資料。**
+      #   ⚠⚠ **這一步刻意不吃 `inputs.sleep`。** 兩個理由：
+      #   ① 打的是 **FinMind**，跟 TWSE 的限流機制無關，5 秒是浪費。
+      #   ② GitHub Actions 的 `||` **只有左邊是空字串才取右邊**，而 `sleep` 這個
+      #      input 有預設值 "5"、永遠不是空的——所以
+      #      `${{ inputs.sleep || '0.4' }}` **等於 `inputs.sleep`，0.4 從來不會生效**。
+      #      2026-09-06 實測：480 發 × 5 秒 = **40 分鐘**，跑到一半才發現。
+      #      ※ 同樣的寫法在 industry('3')／mops('2')／舊 reduce-probe('1') 都有，
+      #        那些 fallback 也都沒生效過，一律吃到 5。要改的話是另一趟。
       - name: 上櫃除權息與減資的來源
         if: inputs.mode == 'otc-adj-probe'
-        run: python otc_adj_probe.py --sleep "${{ inputs.sleep || '0.4' }}" --limit 120
+        run: python otc_adj_probe.py --sleep 0.4 --limit 60
 
       # ★ 月營收與財報的**歷史**要從哪裡來。現況是 `data/mops/` 每一項都只有一期
       #   （OpenAPI 沒有年度／季別參數，只給最新一期），所以 2015 以來補不回來。
@@ -135,20 +143,20 @@ jobs:
       #   **只探測、不寫資料。**
       - name: 找基本面歷史的來源
         if: inputs.mode == 'mops-history-probe'
-        run: python mops_history_probe.py --sleep "${{ inputs.sleep || '2' }}"
+        run: python mops_history_probe.py --sleep 2   # 同上：打 MOPS，不吃 inputs.sleep
 
       # ★ 月營收與財報的歷史回補。**一定要先跑 mops-history-dry**：
       #   parser 是在看不到 HTML 的情況下照 MOPS 慣例寫的（那些頁面 robots 擋 WebFetch），
       #   欄位對不對只有跑過才知道。**470 發的回補不該建立在猜出來的 parser 上。**
       - name: 基本面歷史（乾跑，只印解析結果）
         if: inputs.mode == 'mops-history-dry'
-        run: python mops_history.py --sleep "${{ inputs.sleep || '3' }}"
+        run: python mops_history.py --sleep 3         # 同上
 
       - name: 基本面歷史（回補）
         if: inputs.mode == 'mops-history'
         run: |
           python mops_history.py --run --kind revenue \
-            --start "${{ inputs.start }}" --sleep "${{ inputs.sleep || '3' }}"
+            --start "${{ inputs.start }}" --sleep 3      # 同上
 
       # ★★ 拿**獨立來源**核對交易日曆。目前的日曆＝`data/universe/daily/` 的檔名，
       #   那是用自己的產出當自己的判準：某天整批漏抓的話，七個 feed 會
