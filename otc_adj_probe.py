@@ -33,7 +33,13 @@
 |---|---|
 | `TaiwanStockCapitalReductionReferencePrice` data_id=**3536**（上市）| 2 筆，含 **2015-03-20 前收 6.58 → 參考 13.33**，與 TWSE **一字不差** |
 | 同上 data_id=**8043 蜜望實（上櫃）** | 1 筆，**2014-10-06 前收 17.4 → 參考 18.51**「現金減資」→ **上櫃有涵蓋，而且有歷史** |
-| `TaiwanStockDividendResult` data_id=**8299 群聯（上櫃）** | **17 筆**，2015-06-29 起，欄位有 `before_price` 與 `reference_price` → **算得出因子** |
+| `TaiwanStockDividendResult` data_id=**8299 群聯（上櫃）** | **17 筆**，2015-06-29 起 → **算得出因子** |
+
+★★ **除權息的參考價欄是 `after_price`，不是 `reference_price`。**
+`reference_price` 在「息」的紀錄裡與 `after_price` 相同，但在「權」（股票股利）的
+紀錄裡**等於前收盤**——用它算出來的因子會是 1.0，等於**股票股利完全不還原**。
+這是 2026-09-06 交叉驗證抓出來的（第一版 5.41% 不符，八筆全是同一檔的「權」）。
+**不是 FinMind 錯，是欄位挑錯**——而這種錯只有拿官方資料對才看得出來。
 
 兩個 dataset 都**必須帶 `data_id`**（不帶回 400），所以是逐檔抓。
 
@@ -218,8 +224,18 @@ def sec_crosscheck(codes, limit, sleep):
             fmset = {}
             for r in (data or []):
                 d = str(r.get("date", ""))
+                # ★★ 2026-09-06 交叉驗證抓到的：**除權息要用 `after_price`，
+                #   不是 `reference_price`。** 兩者在「息」的紀錄裡相同，
+                #   但在「權」（股票股利）的紀錄裡 `reference_price` **等於前收盤**：
+                #     2867 2022-02-23 before 9.38｜after **9.21**｜reference 9.38
+                #     （TWSE 官方的除權息參考價是 9.21）
+                #   挑錯欄位的後果是 f = 9.38/9.38 = 1.0——**股票股利完全不還原**，
+                #   而且不會報錯，只是那幾檔的歷史價位悄悄少扣一次配股。
+                #   第一版就是這樣跑出 5.41% 不符，八筆全是同一檔的「權」。
                 pre = r.get("before_price", r.get("ClosingPriceonTheLastTradingDay"))
-                ref = r.get("reference_price", r.get("PostReductionReferencePrice"))
+                ref = r.get("after_price",
+                            r.get("PostReductionReferencePrice",
+                                  r.get("reference_price")))
                 if d and pre and ref:
                     fmset[d] = (float(pre), float(ref))
             usset = {d: v for (cc, d), v in mine.items() if cc == c}
