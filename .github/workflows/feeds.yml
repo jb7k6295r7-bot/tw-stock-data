@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜reduce-probe 找上櫃減資來源"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜reduce-probe 找上櫃減資來源｜mops-history-probe 找基本面歷史來源｜calendar-audit 用獨立來源核對交易日曆"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, reduce-probe]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, reduce-probe, mops-history-probe, calendar-audit]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -123,6 +123,25 @@ jobs:
         if: inputs.mode == 'reduce-probe'
         run: python reduce_probe.py --sleep "${{ inputs.sleep || '1' }}"
 
+      # ★ 月營收與財報的**歷史**要從哪裡來。現況是 `data/mops/` 每一項都只有一期
+      #   （OpenAPI 沒有年度／季別參數，只給最新一期），所以 2015 以來補不回來。
+      #   四批候選：OpenAPI 加參數／MOPS 靜態頁／MOPS 查詢表單(POST)／FinMind。
+      #   ⚠ FinMind 已確認有歷史，要量的是「幾發、多久、會不會被擋」。
+      #   **只探測、不寫資料。**
+      - name: 找基本面歷史的來源
+        if: inputs.mode == 'mops-history-probe'
+        run: python mops_history_probe.py --sleep "${{ inputs.sleep || '2' }}"
+
+      # ★★ 拿**獨立來源**核對交易日曆。目前的日曆＝`data/universe/daily/` 的檔名，
+      #   那是用自己的產出當自己的判準：某天整批漏抓的話，七個 feed 會
+      #   **一致地缺同一天**，覆蓋率算出來反而是 100%。
+      #   獨立來源是 TWSE `FMTQIK`（大盤成交資訊），與建 daily 的個股端點不同條路。
+      #   ⚠ 它會回音 `date`、沒有 strDate/endDate，**只能看標題核對**。
+      #   加 --write 才會寫出 data/meta/calendar_twse.csv；有月份沒問到就不寫。
+      - name: 核對交易日曆
+        if: inputs.mode == 'calendar-audit'
+        run: python calendar_audit.py --start 2015-01 --sleep "${{ inputs.sleep || '5' }}" --write
+
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright **與 feed=reduce** 才有事件可算。
       #   只跑 exright 的話 data/adj/ 會少掉全部減資，而那**看起來完全正常**——
       #   摘要不會抱怨，只是每一檔跨過減資日的還原都是錯的。
@@ -132,7 +151,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops')
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

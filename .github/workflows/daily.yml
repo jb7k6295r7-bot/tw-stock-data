@@ -92,6 +92,34 @@ jobs:
       #   就是 2026-09-04 白跑兩趟（各 35 分鐘）的那個 git 衝突。
       #   併進來之後是一支工作、一次 commit，race 不存在。
       # ★ 位置在抓資料之後、commit 之前：早一步就會漏掉今天這一天。
+      # ★★ 事件型 feed：除權息與減資。**原本完全不在每日排程裡**（2026-09-06 發現），
+      #   也就是說新的除權息／減資事件只有手動跑才會進 `data/adj/`——
+      #   而漏掉**看起來完全正常**：沒有錯誤、沒有缺檔，只是還原因子少了幾筆，
+      #   跨過那些日子的長期報酬率、均線與扣抵值全部悄悄變錯。
+      #
+      #   只抓**當月**：兩支都是區間型，一個月一發，成本近乎零。
+      #   已存在的日檔會被覆蓋，所以每天重抓當月也不會重複累積。
+      #   ★ 減資是事前公告表，未來日期的列不會寫入（見 feeds.py 的 announce_ahead）。
+      #   `continue-on-error`：它們是衍生資料，失敗不該讓當天的價格無法落檔。
+      - name: 除權息與減資（當月）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          M0=$(TZ=Asia/Taipei date '+%Y-%m-01')
+          M1=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          echo "當月區間 $M0 ~ $M1（台北時間）"
+          python feeds.py --run --feed exright --start "$M0" --end "$M1" --sleep 5
+          python feeds.py --run --feed reduce  --start "$M0" --end "$M1" --sleep 5
+
+      # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
+      #   全量重建，資料沒變就不會 commit。
+      - name: 算還原因子
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python adjust.py
+
       # ★ `continue-on-error`：轉置是**衍生檔**，它失敗不該讓當天的原始資料無法落檔。
       #   失敗會在 Actions 顯示為該步驟紅字，但 commit 照常進行。
       # ★ 步驟層級也要設 timeout。`continue-on-error` 只讓「步驟失敗」不中斷流程，
