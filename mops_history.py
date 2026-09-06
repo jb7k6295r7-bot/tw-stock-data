@@ -81,6 +81,8 @@ class _Tables(HTMLParser):
         self._cell = []
         self._depth = 0           # 目前在幾層 td/th 裡
         self._text = []           # 不在儲存格內的文字
+        self.sector = ""          # 最近看到的「產業別：X」
+        self._secs = {}           # 表序 → 開表當下的產業別
 
     def handle_starttag(self, tag, attrs):
         if tag == "table":
@@ -88,8 +90,18 @@ class _Tables(HTMLParser):
             #   所以「表格外的文字」幾乎不存在——產業別是寫在**外層表格的儲存格內**，
             #   後面才接一張巢狀的資料表。只收 `_depth == 0` 的文字等於什麼都收不到。
             #   → 改成收「最近看到的一段文字」，不管它在不在儲存格裡。
+            # ★★★ 第三次才看到真相（前兩次都是猜的）。原始 HTML 長這樣：
+            #   <table><tr><td><br>
+            #     <table><tr><th>產業別：水泥工業</th><th>單位：千元</th></tr>
+            #             <tr><td colspan=2>   ← 資料表在這裡面
+            #   產業別是**上一層表格另一列的 `<th>`**，既不在資料表裡、
+            #   也不在它前面的文字裡。前兩版一個收「表外文字」、一個收
+            #   「當前儲存格」，都收不到那一格。
+            #   → 改成：**任何一格長得像「產業別：X」就記下來**，之後開的表
+            #     都掛這個產業別。文件順序保證它先出現。
             cap = _clean(" ".join(self._text) + " " + "".join(self._cell))[-60:]
             self._text = []
+            self._secs[len(self.tables) + len(self._stack)] = self.sector
             self._stack.append((cap, []))
         elif tag == "tr" and self._stack:
             self._row = []
@@ -100,14 +112,20 @@ class _Tables(HTMLParser):
         if tag in ("td", "th") and self._depth:
             self._depth -= 1
             if self._row is not None:
-                self._row.append(_clean("".join(self._cell)))
+                cell = _clean("".join(self._cell))
+                m = re.match(r"^產業別\s*[:：]\s*(.+)$", cell)
+                if m:
+                    self.sector = _clean(m.group(1))
+                self._row.append(cell)
             self._cell = []
         elif tag == "tr" and self._row is not None:
             if self._stack and self._row:
                 self._stack[-1][1].append(self._row)
             self._row = None
         elif tag == "table" and self._stack:
-            self.tables.append(self._stack.pop())
+            cap, rows = self._stack.pop()
+            key = len(self.tables) + len(self._stack)
+            self.tables.append((self._secs.get(key, "") or cap, rows))
             self._text = []       # 表結束後重新累積，抬頭不要跨表沿用
 
     def handle_data(self, d):
@@ -182,7 +200,9 @@ def parse_revenue(raw, year, month, market):
             continue
         if header is None:
             header = [_clean(c) for c in hd]
-        sector = _sector_of(cap)
+        # cap 現在多半就是產業別本身（`_Tables` 已認過「產業別：X」），
+        # 抽不到才退回舊的猜法。
+        sector = cap if (cap and "：" not in cap and len(cap) <= 12) else _sector_of(cap)
         for r in rows[hi + 1:]:
             if len(r) < 3:
                 skipped.append(r)
@@ -292,10 +312,23 @@ def fs_kind(header, codes=(), kmap=None):
                 votes[k] = votes.get(k, 0) + 1
         if votes:
             best = max(votes, key=votes.get)
-            n, tot = votes[best], sum(votes.values())
-            if n / tot >= 0.7:
-                return best, f"代號多數決 {n}/{tot}（{len(codes)} 家）"
-            return best, f"★ 代號多數決只有 {n}/{tot}，**要人看**"
+            nv, tot, all_n = votes[best], sum(votes.values()), max(len(codes), 1)
+            # ★ 乾跑實測的坑：異業那張表 4 家、只有 1 家查得到，
+            #   1/1 = 100% 看起來很篤定，實際上**只認得四分之一**，
+            #   而那一家在 2026 被歸到 ci → 整張表被判成 ci，與一般業撞名。
+            #   → 涵蓋率（查得到的 ÷ 全部）也要過關，否則退回欄位特徵。
+            if nv / tot >= 0.7 and tot / all_n >= 0.5:
+                return best, f"代號多數決 {nv}/{tot}（{all_n} 家）"
+            why = (f"★ 只認得 {tot}/{all_n} 家、涵蓋不足" if tot / all_n < 0.5
+                   else f"★ 多數決只有 {nv}/{tot}")
+            h2 = [_clean(x) for x in header]
+            for tag, f in FS_KINDS:
+                try:
+                    if f(h2):
+                        return tag, f"{why}，退回欄位特徵 → {tag}"
+                except Exception:                         # noqa: BLE001
+                    continue
+            return best, why + "，欄位特徵也判不出，暫用多數決"
     h = [_clean(x) for x in header]
     for tag, f in FS_KINDS:
         try:
