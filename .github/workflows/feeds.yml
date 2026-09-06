@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測 MOPS 完整性"
+        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all"
@@ -105,6 +105,14 @@ jobs:
         if: inputs.mode == 'mops-probe'
         run: python mops_probe.py --sleep "${{ inputs.sleep || '2' }}"
 
+      # ★ 全市場月營收與財報。2026-09-06 用 urllib 重測證實四條主力端點完整
+      #   （上市月營收涵蓋 99.1%、財報 95.8%；上櫃 99.9%／99.1%），
+      #   2026-08-30 判它「靜默截斷」是 WebFetch 的限制不是端點的性質。
+      #   ⚠ 這些端點**沒有日期參數，只給最新一期**——歷史只能逐期累積。
+      - name: 全市場月營收與財報
+        if: inputs.mode == 'mops'
+        run: python mops.py --run --sleep "${{ inputs.sleep || '2' }}"
+
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
       - name: 算還原因子
         if: inputs.mode == 'adjust'
@@ -112,7 +120,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry')
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
