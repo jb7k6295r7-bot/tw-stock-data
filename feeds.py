@@ -528,6 +528,13 @@ FEEDS = {
         "parse": parse_reduce,
         "known": False,   # 減資表會有已下市或非 universe 的標的，先全收
         "range": True,
+        # ★ **這是前瞻式公告表**：恢復買賣參考價在停止買賣期間就先公告，
+        #   所以當月的回應會帶**未來日期**的列（實測 2026-09-06 那天回 115/09/07）。
+        #   舊的 stray 檢查是 `a <= 日期 <= b`，b 取 min(月底, --end)，
+        #   於是當月**整月被拒收**——2026-09 就這樣一列都沒寫進來。
+        #   `forward` 讓區間模式改以**月底**當上界，並把未來日期的列照收。
+        #   （下次跑同一個月會覆蓋同一個日檔，公告若有更動會自動修正。）
+        "forward": True,
         # ★ 2026-09-06 用 WebFetch 實測（工具要標明——見 READ_CONTRACT 的教訓）：
         #   `startDate=20150101&endDate=20151231` → stat=OK、
         #   title「104年01月01日 至 104年12月31日 股票減資恢復買賣參考價格」、**26 列**，
@@ -723,8 +730,14 @@ def cmd_feed_range(args, name):
     print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，共 {len(rng)} 個月")
     ok = empty = failed = 0
     total_rows = 0
+    fwd = bool(spec.get("forward"))
+    n_future = 0
     for i, (a, b) in enumerate(rng, 1):
-        aa, bb = a.replace("-", ""), b.replace("-", "")
+        # 前瞻式公告表：請求與檢查都用**月底**當上界，否則當月的未來日期列
+        # 會落在區間外，整月被拒收（見 FEEDS["reduce"] 的 forward 註解）。
+        b_lim = (f"{a[:7]}-{calendar.monthrange(int(a[:4]), int(a[5:7]))[1]:02d}"
+                 if fwd else b)
+        aa, bb = a.replace("-", ""), b_lim.replace("-", "")
         got, note = None, "沒有候選"
         for url in spec["urls_range"](aa, bb):
             raw, err = B.get(url)
@@ -773,7 +786,12 @@ def cmd_feed_range(args, name):
             continue
 
         lines, nt = spec["parse"](got, a, known if spec["known"] else None)
-        stray = [r[0] for r in lines if not (a <= r[0] <= b)]
+        stray = [r[0] for r in lines if not (a <= r[0] <= b_lim)]
+        if fwd:
+            fut = [r[0] for r in lines if r[0] > b]
+            if fut:
+                n_future += len(fut)
+                nt += f"（含 {len(fut)} 列**尚未到期的公告**：{sorted(set(fut))[:3]}）"
         if stray:
             print(f"[{name}] ★ {a[:7]} 有 {len(stray)} 列日期落在請求區間外"
                   f"（例：{stray[:3]}），整月拒收，不寫檔。", file=sys.stderr)
@@ -796,7 +814,8 @@ def cmd_feed_range(args, name):
                   f"（{nt}）", flush=True)
         time.sleep(B.SLEEP)
     print(f"[{name}] 完成：有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
-          f"合計 {total_rows} 列")
+          f"合計 {total_rows} 列"
+          + (f"（其中 {n_future} 列是尚未到期的公告）" if n_future else ""))
     return 0 if (ok or not rng) else 1
 
 
