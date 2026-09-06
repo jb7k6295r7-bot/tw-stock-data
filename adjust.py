@@ -101,7 +101,12 @@ ADJ_DIR = os.path.join(_ROOT, "adj")
 # （市場, 事件種類, 目錄）。**種類會決定因子的合理範圍與核對方式**，不只是標籤。
 EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
               ("tpex", "exright", os.path.join(UNI_DIR, "otcexright")),
-              ("twse", "reduce", os.path.join(UNI_DIR, "reduce"))]
+              ("twse", "reduce", os.path.join(UNI_DIR, "reduce")),
+              # ★ 上櫃這兩個目錄的來源是 **FinMind，不是官方**（TPEx 沒有歷史）。
+              #   憑據是拿上市那一半交叉驗證過：除權息 555/555、減資 24/24，
+              #   不符 0.00%，且「只有我方有」= 0（沒漏事件）。
+              #   `_index.csv` 的 market 欄會是 tpex——**契約裡要寫明來源不同**。
+              ("tpex", "reduce", os.path.join(UNI_DIR, "otcreduce"))]
 
 # 每種事件的因子合理範圍**必須分開**，用同一組會兩頭錯：
 #   除權息：參考價幾乎一定 ≤ 前收盤，> 1 是罕見的現金增資折價案例（約 0.09%）。
