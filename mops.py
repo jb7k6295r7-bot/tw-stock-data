@@ -78,7 +78,15 @@ SOURCES = {
     ],
 }
 
+# ★★ **上市與上櫃的欄名不同**，2026-09-06 實測：
+#     上市 t187ap06_L_ci  → 公司代號／公司名稱／年度／季別
+#     上櫃 mopsfin_..._O_ci → SecuritiesCompanyCode／CompanyName／Year／Season
+#   直接把欄位聯集起來寫檔，會產出「1,930 列但 `公司代號` 有 882 列是空的」——
+#   讀的人用 `公司代號` 查只拿到上市那一半，**而檔案看起來是完整的**。
+#   → 一律正規化出 `stock_id`／`name`／`period` 三個欄位放最前面，
+#     原始欄位保留在後面。這也與資料庫其他地方的 `stock_id` 命名一致。
 CODE_KEYS = ("公司代號", "SecuritiesCompanyCode")
+NAME_KEYS = ("公司名稱", "CompanyName")
 YM_KEYS = ("資料年月",)
 Y_KEYS = ("年度", "Year")
 Q_KEYS = ("季別", "Season")
@@ -151,18 +159,26 @@ def write_period(kind, tag, period, recs, market_of):
     name = f"{period}.csv" if tag == "all" else f"{period}_{tag}.csv"
     path = os.path.join(d, name)
 
-    # 欄位：以第一筆的鍵為準，再併入後續出現的新鍵（上市上櫃欄名可能不同）
-    cols = []
+    # 原始欄位（兩市場的聯集），正規化欄放最前面
+    raw_cols = []
     for r in recs:
         for k in r:
-            if k not in cols:
-                cols.append(k)
-    cols = ["market"] + cols
-    rows = []
+            if k not in raw_cols:
+                raw_cols.append(k)
+    cols = ["stock_id", "name", "period", "market"] + raw_cols
+
+    rows, nocode = [], 0
     for r in recs:
         code = _pick(r, CODE_KEYS)
-        rows.append([market_of.get(id(r), "")] + [str(r.get(c, "")).strip() for c in cols[1:]])
-    rows.sort(key=lambda x: (x[0], x[1] if len(x) > 1 else ""))
+        if not code:
+            nocode += 1
+            continue
+        rows.append([code, _pick(r, NAME_KEYS), period, market_of.get(id(r), "")]
+                    + [str(r.get(c, "")).strip() for c in raw_cols])
+    # ★ 取不到代號的列**不寫**，並回報。寧可少一列，不要寫一列查不到是誰的。
+    if nocode:
+        print(f"  ⚠ {kind}/{tag} 有 {nocode} 列取不到代號，已丟棄", file=sys.stderr)
+    rows.sort(key=lambda x: (x[3], x[0]))
 
     new = [",".join('"' + c.replace('"', '""') + '"' if ("," in c or '"' in c) else c
                     for c in row) for row in [cols] + rows]
