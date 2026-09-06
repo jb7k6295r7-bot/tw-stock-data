@@ -323,15 +323,41 @@ def load_learned(per, market):
     return got
 
 
-def has_output(sub, per, market):
-    """該期別＋市場**是否已經有產出**。`--fill` 用來只補缺的，不重跑全部。"""
+def _kinds_on_disk(sub, per, market):
+    """該期別＋市場**已經寫出哪些業別**。"""
     d = os.path.join(OUT, f"{sub}_hist")
     if not os.path.isdir(d):
-        return False
+        return set()
+    pre, suf = f"{per}_", f"_{market}.csv"
+    return {x[len(pre):-len(suf)] for x in os.listdir(d)
+            if x.startswith(pre) and x.endswith(suf)}
+
+
+def has_output(sub, per, market):
+    """該期別＋市場**是否已經完整**。`--fill` 用來只補缺的，不重跑全部。
+
+    ★★ 2026-09-06 踩到：第一版問的是「有沒有**任何**檔案」。
+      但實際的缺口是**六張表裡缺一張**——`bs 2025Q2 sii` 因為 ci 撞名沒寫，
+      另外五張都在，於是被判成已完成、`--fill` 直接跳過。
+      那一趟印出「月營收 0 期檔、財報 0 個業別檔、0 個失敗」，
+      **看起來像都做完了，其實 5 個洞原封不動。**
+
+      判準改成**業別齊不齊**：資產負債表應該有的業別＝同期損益表有的那些。
+      這是資料自己給的答案，不是猜的——兩張表本來就對應同一批公司。
+      損益表沒有可比對的對象，只能沿用「有沒有檔案」（它的失敗是整期抓不到，
+      不會只缺一張）。
+    """
     if sub == "revenue":
-        return os.path.exists(os.path.join(d, f"{per}_{market}.csv"))
-    return any(x.startswith(f"{per}_") and x.endswith(f"_{market}.csv")
-               for x in os.listdir(d))
+        return os.path.exists(os.path.join(OUT, "revenue_hist",
+                                           f"{per}_{market}.csv"))
+    got = _kinds_on_disk(sub, per, market)
+    if not got:
+        return False
+    if sub == "bs":
+        want = _kinds_on_disk("fs", per, market)
+        if want and not want.issubset(got):
+            return False          # 缺業別 → 要補
+    return True
 
 
 def load_kind_map():
@@ -793,6 +819,22 @@ def main():
             if q == 5:
                 y, q = y + 1, 1
         print(f"[hist] 財報完成 {ok} 個業別檔")
+
+    # ★ 把每一期的結果寫成帳本。只靠「檔案在不在」推斷完整性遲早會再錯一次
+    #   （這一輪就錯過），有帳本才查得到「哪一期為什麼沒有」。
+    try:
+        os.makedirs(OUT, exist_ok=True)
+        with open(os.path.join(OUT, "_hist_status.csv"), "w",
+                  encoding="utf-8") as fh:
+            fh.write("kind,period,market,status,note\n")
+            for k, per, mkt, msg in sorted(fails):
+                fh.write(f"{k},{per},{mkt},fail,{str(msg).replace(',', '；')}\n")
+            for k, per, mkt, msg in sorted(pending):
+                fh.write(f"{k},{per},{mkt},pending,{str(msg).replace(',', '；')}\n")
+        print(f"[hist] 狀態帳本：data/mops/_hist_status.csv"
+              f"（fail {len(fails)}、pending {len(pending)}）")
+    except OSError as ex:                                   # noqa: BLE001
+        print(f"[hist] 寫狀態帳本失敗：{ex}", file=sys.stderr)
 
     if pending:
         print(f"[hist] {len(pending)} 個期別**尚未公告**（正常，不是失敗）："
