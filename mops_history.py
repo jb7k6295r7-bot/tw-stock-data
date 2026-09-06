@@ -45,6 +45,7 @@ import os
 import re
 import sys
 import time
+import urllib.error          # ★ _fetch 的重試要判 HTTPError.code，不可靠隱式匯入
 import urllib.parse
 import urllib.request
 from html.parser import HTMLParser
@@ -153,17 +154,31 @@ def _decode(raw):
     return raw.decode("big5", "replace"), "big5(replace)"
 
 
-def _fetch(url, form=None, timeout=90):
+def _fetch(url, form=None, timeout=90, retries=3, backoff=5):
+    """★ 一定要重試。乾跑時 `t163sb05` 就吃到一發 **502 Bad Gateway**——
+    單發失敗在 188 發的回補裡一定會再遇到，不重試等於每次都要人工補洞。
+    只重試「暫時性」的（5xx、逾時、連線中斷）；4xx 是請求本身錯了，重試沒意義。
+    """
     data = urllib.parse.urlencode(form, encoding="utf-8").encode() if form else None
-    req = urllib.request.Request(
-        url, data=data,
-        headers={"User-Agent": "Mozilla/5.0", "Referer": MOPSOV,
-                 **({"Content-Type": "application/x-www-form-urlencoded"} if form else {})})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.read(), None
-    except Exception as ex:                                # noqa: BLE001
-        return b"", f"{type(ex).__name__}: {ex}"
+    last = ""
+    for i in range(retries):
+        req = urllib.request.Request(
+            url, data=data,
+            headers={"User-Agent": "Mozilla/5.0", "Referer": MOPSOV,
+                     **({"Content-Type": "application/x-www-form-urlencoded"}
+                        if form else {})})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as ex:
+            last = f"HTTP {ex.code}"
+            if ex.code < 500:
+                return b"", last          # 4xx：重試沒意義
+        except Exception as ex:                            # noqa: BLE001
+            last = f"{type(ex).__name__}: {ex}"
+        if i < retries - 1:
+            time.sleep(backoff * (i + 1))
+    return b"", f"{last}（重試 {retries} 次仍失敗）"
 
 
 def _is_data_table(rows):
@@ -472,41 +487,104 @@ def main():
         print("  ③ 跳過的列是不是合計／備註，不是真資料")
         return 0
 
-    print("[hist] 回補模式。**確認過 --dry 的欄位了嗎？**")
-    print("[hist] （這一版只做月營收；財報的業別分表命名要等 --dry 的結果才敢寫死）")
-    y, m = int(a.start[:4]) - 1911, int(a.start[5:7])
+    print("[hist] 回補模式。**確認過 --dry 的三項了嗎？**"
+          "（產業別空白 0／六張分表不重複／跳過的是合計）")
     end = a.end or time.strftime("%Y-%m")
-    ey, em = int(end[:4]) - 1911, int(end[5:7])
-    ok = fail = 0
-    while (y, m) <= (ey, em):
-        for mkt, market in MARKETS:
-            raw, err = _fetch(rev_url(mkt, y, m))
-            if err:
-                print(f"  ✗ {y}/{m} {mkt}｜{err[:60]}")
-                fail += 1
+    fails = []
+
+    if a.kind in ("revenue", "both"):
+        y, m = int(a.start[:4]) - 1911, int(a.start[5:7])
+        ey, em = int(end[:4]) - 1911, int(end[5:7])
+        ok = 0
+        while (y, m) <= (ey, em):
+            for mkt, market in MARKETS:
+                per = f"{y + 1911:04d}-{m:02d}"
+                raw, err = _fetch(rev_url(mkt, y, m))
+                if err:
+                    fails.append(("revenue", per, mkt, err[:50]))
+                    time.sleep(a.sleep)
+                    continue
+                rows, header, note, _sk = parse_revenue(raw, y, m, mkt)
+                if not rows or not header:
+                    fails.append(("revenue", per, mkt, f"0 列（{note}）"))
+                    time.sleep(a.sleep)
+                    continue
+                blank = sum(1 for r in rows if not r[2])
+                if blank:
+                    # 產業別是這張表唯一拿得到的來源，缺了就要吵，不可靜默寫出去
+                    fails.append(("revenue", per, mkt, f"★ {blank} 列沒有產業別"))
+                full = (["stock_id", "name", "period", "market", "產業別"]
+                        + header[2:])
+                out = [[r[0], r[1], per, market, r[2]] + r[3:] for r in rows]
+                write_csv(os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv"),
+                          full, out)
+                ok += 1
+                if ok % 24 == 0:
+                    print(f"  [月營收 {ok}] {per} {mkt} {note}", flush=True)
                 time.sleep(a.sleep)
-                continue
-            rows, header, note = parse_revenue(raw, y, m, mkt)
-            if not rows:
-                print(f"  △ {y}/{m} {mkt}｜0 列（{note}）")
-                fail += 1
-                time.sleep(a.sleep)
-                continue
-            per = f"{y + 1911:04d}-{m:02d}"
-            full = ["stock_id", "name", "產業別"] + header[2:]
-            write_csv(os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv"),
-                      full, rows)
-            ok += 1
-            if ok % 24 == 0:
-                print(f"  [{ok}] {per} {mkt} {note}", flush=True)
-            time.sleep(a.sleep)
-        m += 1
-        if m == 13:
-            y, m = y + 1, 1
-    print(f"[hist] 完成：成功 {ok} 期、失敗 {fail} 期")
-    print("[hist] ★ 寫在 data/mops/revenue_hist/，**與 mops.py 的 revenue/ 分開**——"
-          "兩者欄位可能不同，先分開存，對照過再決定要不要合併。")
-    return 0 if ok else 1
+            m += 1
+            if m == 13:
+                y, m = y + 1, 1
+        print(f"[hist] 月營收完成 {ok} 期檔")
+
+    if a.kind in ("fs", "both"):
+        kmap = load_kind_map()
+        print(f"[hist] 業別對照表 {len(kmap)} 檔")
+        y, q = int(a.start[:4]) - 1911, (int(a.start[5:7]) - 1) // 3 + 1
+        ey, eq = int(end[:4]) - 1911, (int(end[5:7]) - 1) // 3 + 1
+        ok = 0
+        while (y, q) <= (ey, eq):
+            per = f"{y + 1911:04d}Q{q}"
+            for form, sub in FS_FORMS:
+                for mkt, market in MARKETS:
+                    raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
+                                      fs_form(mkt, y, q))
+                    if err:
+                        fails.append((sub, per, mkt, err[:50]))
+                        time.sleep(a.sleep)
+                        continue
+                    got, _enc = parse_fs(raw, kmap)
+                    if not got:
+                        # 未來的季別本來就沒有——**那不是失敗**，只記不吵
+                        time.sleep(a.sleep)
+                        continue
+                    seen = {}
+                    for kind, how, _cap, hdr, body in got:
+                        if not kind:
+                            fails.append((sub, per, mkt, f"★ 一張表判不出業別（{how}）"))
+                            continue
+                        if kind in seen:
+                            # ★ 撞名就是**不寫**。覆蓋掉會少一整張表且看不出來。
+                            fails.append((sub, per, mkt,
+                                          f"★ 業別 {kind} 重複，兩張都不寫"))
+                            continue
+                        seen[kind] = True
+                        full = (["stock_id", "name", "period", "market"] + hdr[2:])
+                        out = [[r[0], r[1] if len(r) > 1 else "", per, market]
+                               + r[2:] for r in body]
+                        write_csv(os.path.join(
+                            OUT, f"{sub}_hist", f"{per}_{kind}_{market}.csv"),
+                            full, out)
+                        ok += 1
+                    time.sleep(a.sleep)
+            if ok and ok % 20 == 0:
+                print(f"  [財報 {ok}] {per}", flush=True)
+            q += 1
+            if q == 5:
+                y, q = y + 1, 1
+        print(f"[hist] 財報完成 {ok} 個業別檔")
+
+    if fails:
+        print(f"[hist] ★ {len(fails)} 個期別有問題（**不要當成沒發生**）：")
+        for f in fails[:30]:
+            print(f"        {f[0]} {f[1]} {f[2]}｜{f[3]}")
+        if len(fails) > 30:
+            print(f"        …另外 {len(fails) - 30} 個")
+        print("[hist] 這些期別重跑一次即可（已成功的會被覆蓋、不會重複累積）")
+    print("[hist] 寫在 data/mops/revenue_hist、fs_hist、bs_hist，"
+          "**與 mops.py 的 revenue/、fs/、bs/ 分開**——"
+          "欄位不同期不一樣，先分開存，對照過再決定要不要合併。")
+    return 1 if fails else 0
 
 
 if __name__ == "__main__":
