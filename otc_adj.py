@@ -142,16 +142,40 @@ def save_done(done):
 
 
 def write_days(subdir, header, byday):
-    """一天一檔。**同一天多檔股票要一起寫**，所以先收集完再分組。"""
+    """一天一檔，**與既有檔案合併**（鍵＝日期＋代號，新的蓋舊的）。
+
+    ★★ 2026-09-06 踩到的資料流失：第一版是整檔覆寫。
+      配上 `--resume` 就變成——這一趟只抓剩下的 97 檔，
+      卻把 363 個日檔改寫成「只含這 97 檔的事件」，
+      **前一趟同一天的其他個股全被蓋掉**。
+      實測 `2015-06-29` 從幾十檔被壓成只剩 8923 一檔，
+      而且**沒有任何錯誤訊息**：檔案在、格式對、內容少了九成。
+
+      逐檔抓 ＋ 一天一檔 ＝ 每一趟都只有全體的一部分。
+      所以寫入**必須是合併，不是覆寫**——這樣續跑與重跑才都是冪等的。
+    """
     d = os.path.join(UNI, subdir)
     os.makedirs(d, exist_ok=True)
     n = 0
     for day, rows in sorted(byday.items()):
-        with open(os.path.join(d, f"{day}.csv"), "w", encoding="utf-8") as fh:
+        path = os.path.join(d, f"{day}.csv")
+        merged = {}
+        if os.path.exists(path):                    # 先讀既有的
+            with open(path, encoding="utf-8") as fh:
+                old = fh.readline().rstrip("\n").split(",")
+                for ln in fh:
+                    q = ln.rstrip("\n").split(",")
+                    if len(q) >= 2:
+                        # 舊檔若欄位不同，照欄名對位補齊，缺的留空
+                        merged[q[1]] = [dict(zip(old, q)).get(k, "") for k in header]
+        for r in rows:
+            merged[str(r[1])] = r                   # 新的蓋舊的
+        with open(path, "w", encoding="utf-8") as fh:
             fh.write(",".join(header) + "\n")
-            for r in sorted(rows, key=lambda x: x[1]):
-                fh.write(",".join(str(x).replace(",", "；") for x in r) + "\n")
-        n += len(rows)
+            for k in sorted(merged):
+                fh.write(",".join(str(x).replace(",", "；")
+                                  for x in merged[k]) + "\n")
+        n += len(merged)
     return len(byday), n
 
 
@@ -163,6 +187,8 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="只做前 N 檔（試跑）")
     ap.add_argument("--resume", action="store_true",
                     help="沿用 data/meta/_otcadj_done.csv，跳過做過的")
+    ap.add_argument("--fresh", action="store_true",
+                    help="清掉進度檔，全部重抓。**寫入是合併的，重跑安全**")
     a = ap.parse_args()
     B.SLEEP = a.sleep
     token = os.environ.get("FINMIND_TOKEN", "").strip()
@@ -174,7 +200,10 @@ def main():
         return 1
     if a.limit:
         codes = codes[:a.limit]
-    done = load_done() if a.resume else set()
+    if a.fresh and os.path.exists(DONE):
+        os.remove(DONE)
+        print(f"[otc] --fresh：已清掉進度檔，全部重抓")
+    done = load_done() if (a.resume and not a.fresh) else set()
     print(f"[otc] 上櫃 {len(codes)} 檔｜區間 {a.start} ~ {hi}"
           f"｜token {'有' if token else '**無**（免費額度較低，被擋就會停下來續跑）'}")
     if done:
@@ -242,8 +271,12 @@ def main():
     d1, n1 = write_days("otcexright", EX_HEADER, ex)
     d2, n2 = write_days("otcreduce", RD_HEADER, rd)
     save_done(done)
-    print(f"[otc] 除權息：{stats[DS_DIV][0]} 檔有事件、{n1:,} 列、{d1} 個日檔")
-    print(f"[otc] 減資　：{stats[DS_RED][0]} 檔有事件、{n2:,} 列、{d2} 個日檔")
+    # ★ 印的是**合併後檔案裡的總列數**，不是這一趟抓到的——
+    #   續跑時那兩個數字差很多，只報後者會讓人以為資料只有這麼點。
+    print(f"[otc] 除權息：本趟 {stats[DS_DIV][0]} 檔有事件；"
+          f"合併後 {d1} 個日檔、共 {n1:,} 列")
+    print(f"[otc] 減資　：本趟 {stats[DS_RED][0]} 檔有事件；"
+          f"合併後 {d2} 個日檔、共 {n2:,} 列")
     if drop_up:
         # 不在這裡丟——丟不丟是 adjust.py 的事。這裡只是先讓人知道有幾筆。
         print(f"[otc] ⚠ {len(drop_up)} 筆參考價高於前收盤。"
