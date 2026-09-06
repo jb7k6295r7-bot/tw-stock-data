@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
+2019-12-30,6276,19.05,20.13,現金減資,20.15,0.0,finmind

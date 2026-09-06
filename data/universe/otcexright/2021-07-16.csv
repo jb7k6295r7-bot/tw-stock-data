@@ -1,2 +1,4 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2021-07-16,5878,49.8,46.6,3.2,除息,,finmind
+2021-07-16,6612,62.2,62.1,0.1,除息,,finmind
+2021-07-16,6679,379,374.01,4.994495,除息,,finmind
+2021-07-16,6751,64.4,62.3,2.1,除息,,finmind
