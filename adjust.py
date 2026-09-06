@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""adjust.py — 由除權息事件算出**還原因子**。
+"""adjust.py — 由**除權息與減資**事件算出**還原因子**。
 
 ## 為什麼存因子不存還原價
 
@@ -47,6 +47,33 @@ worked example（3661，兩次除息 2025-08-01 f=0.9750、2026-09-03 f=0.9922�
 報告上寫的價位要跟看盤軟體對得起來，被還原過的現價會讓人對不上。
 被調整的是**歷史**，所以長期報酬率才不會被除息吃掉。
 
+## ★ 減資（2026-09-06 併入）
+
+原本只還原除權息，**減資完全沒處理**——那是資料庫當時錯得最嚴重的一塊。
+減資讓股數變少、每股價格跳上去，跳幅動輒 30～50%，甚至翻倍：
+
+| 實例 | 停止買賣前收盤 | 恢復買賣參考價 | f | 減資原因 |
+|---|---|---|---|---|
+| 3536 誠創 2015-03-20 | 6.58 | 13.33 | **2.026** | 彌補虧損 |
+| 3040 遠見 2015-01-23 | 31.90 | 41.28 | 1.294 | 退還股款 |
+| 1563 巧新 2026-09-07 | 66.00 | 84.66 | 1.283 | 退還股款 |
+
+沒有這一塊，跨過減資日的長期報酬率、均線、扣抵值全部是錯的。
+事件來源 `data/universe/reduce/`（TWSE `reducation/TWTAUU`，2015 起有歷史）。
+
+**因子的定義完全一樣**：`f = 恢復買賣參考價 ÷ 停止買賣前收盤價`，
+適用於「該列日期之前」。差別只有三個，**每一個都會靜默出錯**：
+
+1. **合理範圍不同。** 除權息是 `0.05 < f ≤ 1.5`；減資的 f 幾乎一定 > 1，
+   減資九成的話接近 10。**沿用除權息的上限會把真事件整批丟掉**，
+   而丟棄只印在 stderr，摘要上看起來就像「這檔沒有減資」。
+2. **核對的比較對象不同。** 除權息的「前收盤」是**前一個交易日**的收盤；
+   減資的「停止買賣前收盤價」是停牌前最後一個有成交的日子——中間隔了好幾天。
+   拿日曆的前一交易日去比會整片假警報。
+3. **同一天可能兩邊都有，只能算一次。** 官方公式寫明
+   「退還股款：恢復買賣參考價＝（停止買賣前收盤價−**息值**−每股退還股款）／減資換股率」，
+   **息值已經含在裡面**。同日的 `TWT49U` 那一列要丟掉，否則除息被扣兩次。
+
 ## 三件不做的事
 
 1. **不還原成交量。** 配股會讓股數變多、量自然放大，
@@ -54,9 +81,10 @@ worked example（3661，兩次除息 2025-08-01 f=0.9750、2026-09-03 f=0.9922�
    在同時配股又配息時是混合的。**沒把握就不動**，量一律維持原始值。
 2. **不推估缺漏的事件。** 沒有事件檔的日期就是沒有事件，
    不用「股價當天跳空所以應該有除息」去補——那是把結論當資料。
-3. **上櫃目前不還原。** TWT49U 只涵蓋上市；上櫃事件在 `otcexright` feed，
-   端點尚未驗證。**`_index.csv` 會標明每一檔的來源市場**，
-   不可把「沒有因子」讀成「沒有除權息」。
+3. **上櫃目前不還原。** TWT49U 與 TWTAUU 都只涵蓋上市；上櫃的除權息在
+   `otcexright`、減資在 TPEx `bulletin/revivt`，兩者的歷史來源都還沒驗到。
+   **`_index.csv` 會標明每一檔的來源市場**，
+   不可把「沒有因子」讀成「沒有除權息也沒有減資」。
 """
 
 import argparse
@@ -70,8 +98,16 @@ STOCK_DIR = os.path.join(_ROOT, "stocks")
 META_DIR = os.path.join(_ROOT, "meta")
 ADJ_DIR = os.path.join(_ROOT, "adj")
 
-EVENT_DIRS = [("twse", os.path.join(UNI_DIR, "exright")),
-              ("tpex", os.path.join(UNI_DIR, "otcexright"))]
+# （市場, 事件種類, 目錄）。**種類會決定因子的合理範圍與核對方式**，不只是標籤。
+EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
+              ("tpex", "exright", os.path.join(UNI_DIR, "otcexright")),
+              ("twse", "reduce", os.path.join(UNI_DIR, "reduce"))]
+
+# 每種事件的因子合理範圍**必須分開**，用同一組會兩頭錯：
+#   除權息：參考價幾乎一定 ≤ 前收盤，> 1 是罕見的現金增資折價案例（約 0.09%）。
+#   減資　：參考價幾乎一定 > 前收盤（股數變少）。3536 誠創 2015-03-20 是 2.026，
+#           減資九成的話接近 10。**沿用 1.5 的上限會把真事件整批丟掉。**
+BOUNDS = {"exright": (0.05, 1.5), "reduce": (0.20, 12.0)}
 DAILY_DIR = os.path.join(UNI_DIR, "daily")
 
 
@@ -89,9 +125,13 @@ def trading_days():
         return []
     return sorted(n[:-4] for n in os.listdir(DAILY_DIR) if n.endswith(".csv"))
 
-ADJ_HEADER = ["date", "factor", "cum_factor", "pre_close", "ref_price", "kind"]
-IDX_HEADER = ["stock_id", "market", "events", "date_min", "date_max",
-              "cum_factor_first", "checked", "mismatch"]
+# ★ `event` 是 2026-09-06 新增的**最後一欄**（exright／reduce）。
+#   加在最後是刻意的：用欄名定位的讀取端不受影響，
+#   而要區分「這個因子是除息還是減資」的人查得到——兩者的意義完全不同。
+ADJ_HEADER = ["date", "factor", "cum_factor", "pre_close", "ref_price",
+              "kind", "event"]
+IDX_HEADER = ["stock_id", "market", "events", "reduce_events",
+              "date_min", "date_max", "cum_factor_first", "checked", "mismatch"]
 
 
 def _f(s):
@@ -102,33 +142,49 @@ def _f(s):
 
 
 def read_events():
-    """→ {code: [(date, factor, pre, ref, kind, market)]}，日期升冪。"""
+    """→ {code: [(date, factor, pre, ref, kind, market, src)]}，日期升冪。
+
+    `src` 是 `exright` 或 `reduce`。**它決定因子的合理範圍與核對方式**，
+    不是拿來裝飾的欄位。
+    """
     ev = defaultdict(list)
     up = 0                      # 參考價高於前收盤（現金增資認股價 > 市價）的筆數
-    for market, d in EVENT_DIRS:
+    n_src = defaultdict(int)
+    for market, srck, d in EVENT_DIRS:
         if not os.path.isdir(d):
             continue
+        lo, hi = BOUNDS[srck]
         for name in sorted(os.listdir(d)):
             if not name.endswith(".csv"):
                 continue
             with open(os.path.join(d, name), encoding="utf-8") as fh:
                 head = fh.readline().rstrip("\n").split(",")
-                try:
-                    i_d = head.index("date"); i_c = head.index("stock_id")
-                    i_p = head.index("pre_close"); i_r = head.index("ref_price")
-                    i_k = head.index("kind"); i_v = head.index("value")
-                except ValueError:
+                # ★ 兩種來源的表頭不一樣：除權息有 `kind`／`value`，
+                #   減資有 `reason` 而**沒有** `value`。用「找得到就用」而不是
+                #   寫死索引——寫死的話減資檔會整批被判成欄位不符而跳過。
+                ix = {k: (head.index(k) if k in head else None) for k in
+                      ("date", "stock_id", "pre_close", "ref_price",
+                       "kind", "value", "reason")}
+                if any(ix[k] is None for k in
+                       ("date", "stock_id", "pre_close", "ref_price")):
                     print(f"[adj] {name} 欄位不符，跳過：{head}", file=sys.stderr)
                     continue
                 for ln in fh:
                     q = ln.rstrip("\n").split(",")
-                    if len(q) <= max(i_d, i_c, i_p, i_r, i_k):
+
+                    def g(k, q=q):
+                        i = ix[k]
+                        return q[i] if (i is not None and i < len(q)) else ""
+
+                    pre, ref = _f(g("pre_close")), _f(g("ref_price"))
+                    code = g("stock_id").strip()
+                    date = g("date").strip()
+                    if not code or not date:
                         continue
-                    pre, ref = _f(q[i_p]), _f(q[i_r])
                     if not pre or not ref or pre <= 0 or ref <= 0:
                         continue
                     f = ref / pre
-                    val = _f(q[i_v]) if i_v < len(q) else None
+                    val = _f(g("value"))
 
                     # ★★ 2026-09-04 修正：原本寫死 `f <= 1.0001`，理由是
                     #   「除權息不會讓參考價高於前收盤」——**那個假設是錯的**。
@@ -137,28 +193,52 @@ def read_events():
                     #   成因是**現金增資的認股價高於市價**，理論除權參考價因此上調。
                     #   少見但合法（240 個交易日抽樣的 1,144 筆裡有 1 筆，約 0.09%）。
                     #
-                    #   所以判準改成兩層：
-                    #   ① 明顯壞掉的（f ≤ 0.05 或 f > 1.5）一律丟棄
-                    #   ② f > 1 但「權值+息值」是負的 → **合理，收下**
-                    #   ③ f > 1 而權值是正的 → 方向矛盾，丟棄並回報
-                    if not (0.05 < f <= 1.5):
-                        print(f"[adj] 因子超出合理範圍，丟棄：{q[i_c]} {q[i_d]} "
-                              f"前收={pre} 參考={ref} f={f:.4f}", file=sys.stderr)
+                    #   ★ 2026-09-06：這整段方向性檢查**只適用除權息**。
+                    #     減資的 f 本來就 > 1（股數變少），套上去會全部丟掉。
+                    if not (lo < f <= hi):
+                        print(f"[adj] 因子超出 {srck} 的合理範圍 ({lo}, {hi}]，丟棄："
+                              f"{code} {date} 前收={pre} 參考={ref} f={f:.4f}",
+                              file=sys.stderr)
                         continue
-                    if f > 1.0001:
+                    if srck == "exright" and f > 1.0001:
                         if val is not None and val < 0:
                             up += 1          # 合理的上調，計數但不吵
                         else:
                             print(f"[adj] 參考價高於前收盤但權值非負，方向矛盾，丟棄："
-                                  f"{q[i_c]} {q[i_d]} 前收={pre} 參考={ref} "
+                                  f"{code} {date} 前收={pre} 參考={ref} "
                                   f"f={f:.4f} 權值+息值={val}", file=sys.stderr)
                             continue
-                    ev[q[i_c]].append((q[i_d], f, pre, ref, q[i_k], market))
+                    kind = (g("kind") or g("reason")).strip()
+                    ev[code].append((date, f, pre, ref, kind, market, srck))
+                    n_src[srck] += 1
+
+    # ★ 同一天既有減資又有除權息 → **只能算一次**。
+    #   官方公式：恢復買賣參考價＝（停止買賣前收盤價 − **息值** − 每股退還股款）／減資換股率。
+    #   息值已經含在減資的參考價裡，兩邊都收就會把除息扣兩次。
+    #   留減資那一列（它涵蓋兩者），丟同日的除權息列。
+    dup = 0
     for c in ev:
         ev[c].sort()
+        red_days = {r[0] for r in ev[c] if r[6] == "reduce"}
+        if not red_days:
+            continue
+        keep = [r for r in ev[c] if not (r[6] == "exright" and r[0] in red_days)]
+        if len(keep) != len(ev[c]):
+            for r in ev[c]:
+                if r[6] == "exright" and r[0] in red_days:
+                    print(f"[adj] 同日既有減資又有除權息，丟除權息列（減資參考價已含息值）："
+                          f"{c} {r[0]} f={r[1]:.4f}", file=sys.stderr)
+            dup += len(ev[c]) - len(keep)
+            ev[c] = keep
     if up:
         print(f"[adj] 其中 {up} 筆的參考價高於前收盤（權值為負＝現金增資認股價高於市價），"
               f"已照實收下，不是錯誤")
+    print(f"[adj] 事件來源：除權息 {n_src['exright']:,} 筆、減資 {n_src['reduce']:,} 筆"
+          + (f"；同日重疊丟棄 {dup} 筆除權息" if dup else ""))
+    if not n_src["reduce"]:
+        print("[adj] ⚠ **一筆減資事件都沒讀到**。若 data/universe/reduce/ 是空的，"
+              "先跑 feeds.py --run --feed reduce。"
+              "**不要把「沒有減資因子」讀成「這段期間沒有減資」。**", file=sys.stderr)
     return ev
 
 
@@ -184,49 +264,66 @@ def read_close(code):
 
 
 def build(code, rows, cal, verify=True):
-    """→ (lines, checked, mismatch)。
+    """→ (lines, checked, mismatch, skipped)。
 
     `cum_factor` 適用於**該列日期之前**（不含當日）的價格。
-    除權息當日的收盤已經是除權後的價，再乘一次就重複扣——
+    事件當日的收盤已經是事件後的價，再乘一次就重複扣——
     查法見檔頭的 `factor_at()`，照抄不要自己推。
     最後一次事件之後沒有列，查不到就是 1.0，所以現價不動。
     """
     closes = read_close(code) if verify else {}
+    have = sorted(closes) if closes else []
 
     checked = mismatch = skipped = 0
     if closes:
-        for (d, f, pre, ref, kind, mk) in rows:
-            # 除權息前收盤價應該等於**前一個交易日**的收盤。
-            # ★ 「前一個交易日」由日曆決定，**不是「前一個有資料的日子」**。
-            #   冷門股那天可能無成交，序列裡沒有那一列——那是無法核對，
-            #   不是對不上。退而取更早的收盤去比，只會製造假警報。
-            prev = None
-            for x in reversed(cal):
-                if x < d:
-                    prev = x
-                    break
-            if prev is None:
-                continue
-            if prev not in closes:
-                skipped += 1          # 前一交易日該檔無成交 → 無法核對
-                continue
+        for (d, f, pre, ref, kind, mk, srck) in rows:
+            if srck == "reduce":
+                # ★ 減資會**停止買賣數個交易日**，「停止買賣前收盤價」是停牌前
+                #   最後一個有成交的日子——不是恢復買賣日的前一個交易日。
+                #   拿日曆的前一交易日去比，比到的是停牌期間（該檔根本沒有那一列），
+                #   於是全部變成「無法核對」；真要比就會比錯對象。
+                #   正確做法：拿**該檔自己在 d 之前的最後一筆收盤**。
+                prev = None
+                for x in reversed(have):
+                    if x < d:
+                        prev = x
+                        break
+                if prev is None:
+                    skipped += 1          # 事件早於我們的資料起點
+                    continue
+            else:
+                # 除權息前收盤價應該等於**前一個交易日**的收盤。
+                # ★ 「前一個交易日」由日曆決定，**不是「前一個有資料的日子」**。
+                #   冷門股那天可能無成交，序列裡沒有那一列——那是無法核對，
+                #   不是對不上。退而取更早的收盤去比，只會製造假警報。
+                prev = None
+                for x in reversed(cal):
+                    if x < d:
+                        prev = x
+                        break
+                if prev is None:
+                    continue
+                if prev not in closes:
+                    skipped += 1          # 前一交易日該檔無成交 → 無法核對
+                    continue
             checked += 1
             if abs(closes[prev] - pre) > max(0.02, pre * 0.005):
                 mismatch += 1
-                print(f"[adj] 前收盤對不上：{code} 除權息日={d} "
+                print(f"[adj] 前收盤對不上（{srck}）：{code} 事件日={d} "
                       f"官方前收={pre} 我方 {prev} 收盤={closes[prev]}", file=sys.stderr)
 
     # 累積因子由後往前連乘
     lines, cum = [], 1.0
-    for (d, f, pre, ref, kind, mk) in reversed(rows):
+    for (d, f, pre, ref, kind, mk, srck) in reversed(rows):
         cum *= f
-        lines.append([d, f"{f:.8f}", f"{cum:.8f}", f"{pre:g}", f"{ref:g}", kind])
+        lines.append([d, f"{f:.8f}", f"{cum:.8f}", f"{pre:g}", f"{ref:g}",
+                      kind, srck])
     lines.reverse()
     return lines, checked, mismatch, skipped
 
 
 def main():
-    ap = argparse.ArgumentParser(description="由除權息事件算還原因子")
+    ap = argparse.ArgumentParser(description="由除權息與減資事件算還原因子")
     ap.add_argument("--verify", action="store_true", default=True,
                     help="與 data/stocks 的前一交易日收盤交叉核對（預設開）")
     ap.add_argument("--no-verify", dest="verify", action="store_false")
@@ -235,8 +332,8 @@ def main():
 
     ev = read_events()
     if not ev:
-        print("[adj] 找不到任何除權息事件——先跑 feeds.py --run --feed exright",
-              file=sys.stderr)
+        print("[adj] 找不到任何事件——先跑 feeds.py --run --feed exright"
+              "，減資再跑一次 --feed reduce", file=sys.stderr)
         return 1
     want = {c.strip() for c in a.codes.split(",") if c.strip()}
     codes = sorted(c for c in ev if not want or c in want)
@@ -259,8 +356,9 @@ def main():
                 fh.write(",".join(r) + "\n")
         if a.verify and chk == 0 and skp == 0:
             no_price += 1
-        idx.append([code, rows[0][5], str(len(lines)), lines[0][0], lines[-1][0],
-                    lines[0][2], str(chk), str(mis)])
+        n_red = sum(1 for r in lines if r[6] == "reduce")
+        idx.append([code, rows[0][5], str(len(lines)), str(n_red),
+                    lines[0][0], lines[-1][0], lines[0][2], str(chk), str(mis)])
         tot_ev += len(lines); tot_chk += chk; tot_mis += mis; tot_skip += skp
 
     with open(os.path.join(ADJ_DIR, "_index.csv"), "w", encoding="utf-8") as fh:
@@ -268,7 +366,9 @@ def main():
         for r in idx:
             fh.write(",".join(r) + "\n")
 
-    print(f"[adj] {len(idx)} 檔、{tot_ev} 個事件")
+    tot_red = sum(int(r[3]) for r in idx)
+    print(f"[adj] {len(idx)} 檔、{tot_ev} 個事件"
+          f"（其中減資 {tot_red} 個，分布在 {sum(1 for r in idx if r[3] != '0')} 檔）")
     if a.verify:
         rate = (tot_mis / tot_chk * 100) if tot_chk else 0.0
         print(f"[adj] 前收盤交叉核對：查了 {tot_chk} 個事件、對不上 {tot_mis} 個（{rate:.3f}%）")

@@ -132,8 +132,20 @@ def parse_per(d, day, known=None):
 
 
 def _roc_date(v):
-    """民國「104年07月16日」→ 2015-07-16；抽不到回空字串。"""
-    m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", str(v))
+    """民國「104年07月16日」**或**「115/09/07」→ 西元 YYYY-MM-DD；抽不到回空字串。
+
+    ★ 兩種寫法都要吃。`TWT49U` 的「資料日期」長「104年07月16日」，
+      `TWTAUU`（減資恢復買賣參考價）的「恢復買賣日期」長 `115/09/07`。
+      只認前者的話，減資那張表**每一列都會因為抽不到日期被丟掉**——
+      而丟棄是靜默的，看起來就跟「那個月沒有減資」一模一樣。
+
+    斜線那條刻意用 `(?<!\d)(\d{2,3})/`：西元 `2026/09/07` 不會誤中
+    （四位數被前後不接數字的條件擋掉），所以不會把民國與西元搞混。
+    """
+    t = str(v)
+    m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", t)
+    if not m:
+        m = re.search(r"(?<!\d)(\d{2,3})/(\d{1,2})/(\d{1,2})(?!\d)", t)
     if not m:
         return ""
     return f"{int(m.group(1)) + 1911:04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
@@ -188,6 +200,88 @@ def parse_exright(d, day, known=None):
     note = f"{len(out)} 列"
     if nodate:
         note += f"（{nodate} 列無資料日期，已丟棄）"
+    return out, note
+
+
+def parse_reduce(d, day, known=None):
+    """TWSE `reducation/TWTAUU` → 股票減資恢復買賣參考價格。
+
+    ## 為什麼一定要有這張表
+
+    `data/adj/` 原本只還原除權息。**減資的價格跳動動輒 30～50%**：
+    3536 誠創 2015-03-20 前收 6.58 → 參考 13.33（＋103%）、
+    1563 巧新 2026-09-07 前收 66.00 → 參考 84.66（＋28%）。
+    那是股數變少造成的，**不是真的漲**。沒有這張表，任何跨過減資日的
+    回測、長期報酬率、均線與扣抵值全都是錯的。
+
+    ## 欄位（11 欄）
+
+    `恢復買賣日期／股票代號／名稱／停止買賣前收盤價格／恢復買賣參考價／
+      漲停價格／跌停價格／開盤競價基準／除權參考價／減資原因／詳細資料`
+
+    因子 = 恢復買賣參考價 ÷ 停止買賣前收盤價格，**在這裡不算**——
+    理由同 `parse_exright`：還原要整段回推，是 `adjust.py` 的事，
+    在抓取端先算一半，日後改公式就得重抓。
+
+    ## ★ 三個跟除權息不一樣的地方
+
+    1. **日期格式是 `115/09/07`（斜線）**，不是「115年09月07日」。
+       `_roc_date()` 已同時吃兩種。
+    2. **`pre_close` 不是「前一個交易日」的收盤。** 減資會停止買賣數個交易日，
+       它是**停止買賣前**最後一個有成交的日子的收盤。核對要拿「該檔在恢復
+       買賣日之前最後一筆收盤」比，拿日曆的前一交易日比會整片假警報
+       （做法見 `adjust.py` 的 `_verify_reduce`）。
+    3. **因子會 > 1，而且可以很大。** 減資九成的話接近 10。
+       `adjust.py` 那組 `0.05 < f ≤ 1.5` 的除權息界線套上來會把真事件全丟掉，
+       所以界線改成**按事件種類分開**。
+
+    ## ★ 減資與除權息同一天時只能算一次
+
+    官方公式明寫「退還股款：恢復買賣參考價＝（停止買賣前收盤價−息值−每股退還
+    股款）／（減資換股率）」——**息值已經含在裡面了**。同一天 `TWT49U` 也會有
+    一列，兩邊都收就會把除息扣兩次。去重在 `adjust.py`，這裡照實全收。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = tabs[0]
+    f = _fieldmap(t)
+    i_date = _exact(f, "恢復買賣日期")
+    i_code = _exact(f, "股票代號", "證券代號", "代號")
+    i_pre = _exact(f, "停止買賣前收盤價格", "停止買賣前收盤價")
+    i_ref = _exact(f, "恢復買賣參考價", "恢復買賣參考價格")
+    i_reason = _exact(f, "減資原因")
+    i_open = _exact(f, "開盤競價基準")
+    i_exref = _exact(f, "除權參考價")
+    if i_code is None or i_pre is None or i_ref is None or i_date is None:
+        return [], f"欄位對不上：{f}"
+    out, nodate, noprice = [], 0, 0
+    for r in (t.get("data") or []):
+        if not r or len(r) <= i_code:
+            continue
+        code = str(r[i_code]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        g = lambda i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
+        pre, ref = g(i_pre), g(i_ref)
+        if not pre or not ref:
+            noprice += 1
+            continue          # 兩個價格缺一就算不出因子，寧可少一列
+        dt = _roc_date(r[i_date]) if i_date < len(r) else ""
+        if not dt:
+            nodate += 1
+            continue          # ★ 沒有自述日期就不收——寧可少一列，不要標錯日子
+        reason = (str(r[i_reason]).strip()
+                  if i_reason is not None and i_reason < len(r) else "")
+        out.append([dt, code, pre, ref, reason.replace(",", "；"),
+                    g(i_open), g(i_exref)])
+    note = f"{len(out)} 列"
+    if nodate:
+        note += f"（{nodate} 列無日期，已丟棄）"
+    if noprice:
+        note += f"（{noprice} 列缺價格，已丟棄）"
     return out, note
 
 
@@ -420,6 +514,33 @@ FEEDS = {
                    "stat=OK、30 列。**逐月抓**，日期取每列自己的「資料日期」欄"),
     },
 
+    "reduce": {
+        "dir": "reduce",
+        "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
+                   "open_base", "ex_ref_price"],
+        "parse": parse_reduce,
+        "known": False,   # 減資表會有已下市或非 universe 的標的，先全收
+        "range": True,
+        # ★ 2026-09-06 用 WebFetch 實測（工具要標明——見 READ_CONTRACT 的教訓）：
+        #   `startDate=20150101&endDate=20151231` → stat=OK、
+        #   title「104年01月01日 至 104年12月31日 股票減資恢復買賣參考價格」、**26 列**，
+        #   首列 104/01/23 3040 遠見 31.90 → 41.28「退還股款」。
+        #   **有歷史，2015 年以來補得回來**，不是只有前瞻十日的公告表。
+        #   回應是平的（沒有 tables），有 strDate／endDate，`_same_day` 擋得住參數回音。
+        #
+        #   ⚠ **沒有事件的月份回 `{"stat":"很抱歉，沒有符合條件的資料!"}`**——
+        #   沒有 title、沒有 data。減資本來就少（一年 20~30 件），
+        #   多數月份都是這個回應。`cmd_feed_range` 已把它認成「無事件」而不是失敗，
+        #   否則會報成七成的月份都失敗，真的失敗就被雜訊蓋掉。
+        #
+        #   ※ TWTB8U 是**變更股票面額**恢復買賣參考價，是另一種公司行動，不要混用。
+        "urls_range": lambda a, b: [
+            "https://www.twse.com.tw/rwd/zh/reducation/TWTAUU"
+            f"?startDate={a}&endDate={b}&response=json"],
+        "status": ("已驗證 2026-09-06（WebFetch）：2015 全年 26 列、2026 上半年 2 列。"
+                   "**逐月抓**，日期取每列自己的「恢復買賣日期」欄（格式 115/09/07）"),
+    },
+
     # ── 未驗證，候選清單 ────────────────────────────────────
     "margin": {
         "dir": "margin",
@@ -566,6 +687,11 @@ def _months(start, end):
     return out
 
 
+# 端點自己說「查無資料」時的字樣。**這代表那段期間沒有事件，不是抓取失敗。**
+_EMPTY_STAT_RE = re.compile(r"沒有符合條件的資料|查無資料|無符合條件|沒有資料")
+_EMPTY = object()          # cmd_feed_range 內部用的哨符：這個月沒有事件
+
+
 def cmd_feed_range(args, name):
     """區間型 feed：逐月抓一次，再依**每列自己的日期**拆成日檔。
 
@@ -602,6 +728,14 @@ def cmd_feed_range(args, name):
                 continue
             stat = doc.get("stat") if isinstance(doc, dict) else None
             if stat and str(stat).strip().lower() not in ("ok", "success"):
+                # ★ 「查無資料」與「失敗」是兩件事，不可混為一談。
+                #   除權息每個月都有事件，所以踩不到；**減資一年只有 20~30 件**，
+                #   七成以上的月份會回「很抱歉，沒有符合條件的資料!」。
+                #   把它算成失敗的話：①摘要會寫「失敗 100 個月」，真的失敗被蓋掉
+                #   ②前三個月剛好都沒事件就會觸發「全部失敗」的提早收手。
+                if _EMPTY_STAT_RE.search(str(stat)):
+                    got, note = _EMPTY, f"stat={stat}"
+                    break
                 note = f"stat={stat}"
                 continue
             # 自述區間核對：起日看 strDate/title，迄日看 endDate
@@ -612,6 +746,11 @@ def cmd_feed_range(args, name):
                 continue
             got = doc
             break
+        if got is _EMPTY:
+            empty += 1
+            time.sleep(B.SLEEP)
+            continue
+
         if got is None:
             failed += 1
             print(f"  [{i}/{len(rng)}] {a[:7]} {note}", flush=True)

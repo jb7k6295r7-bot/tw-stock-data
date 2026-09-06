@@ -1,73 +1,107 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""reduce_probe.py — 找「減資恢復買賣參考價」的來源。
+"""reduce_probe.py — 上櫃的減資與除權息歷史來源，還沒找到。這支專門找那個。
 
-## 為什麼需要
+## 上市的部分**已經解決了，不用再探**（2026-09-06）
 
-`data/adj/` 的還原因子目前**只處理除權息**。
-**減資的價格跳動動輒 30～50%**，現在會被當成真實漲跌——
-任何跨過減資日的回測或長期報酬率都錯得離譜。這是資料庫目前最嚴重的錯法。
+| 來源 | 結論 |
+|---|---|
+| TWSE `reducation/TWTAUU` | ✓ **就是它**。吃 `startDate`/`endDate`，2015 全年回 26 列、\
+2026 上半年回 2 列。**有歷史**，不是前瞻十日的公告表 |
+| TWSE `change/TWTB8U` | ✗ 那是**變更股票面額**恢復買賣參考價，不同的公司行動，不要混用 |
 
-## 已知的兩條（2026-09-06 從開發環境實測）
+已接成 `feeds.py` 的 `reduce` feed，跑法：`python feeds.py --run --feed reduce
+--start 2015-01-01 --end <今天>`。**上市不必再探測。**
 
-| 來源 | 狀態 | 標題 | 欄位 |
-|---|---|---|---|
-| TPEx `bulletin/revivt` | ✓ 有回應 | 減資恢復買賣參考價 | 恢復買賣日期／股票代號／名稱／**最後交易日之收盤價格**／**減資恢復買賣開始日參考價格**／…／減資原因 |
-| TWSE `change/TWTB8U` | ✓ stat=OK | **變更股票面額**恢復買賣參考價格 | 恢復買賣日期／股票代號／名稱／**停止買賣前收盤價格**／**恢復買賣參考價**／… |
+★ 那次的教訓值得記：`TWTAUU` 不在 `change/` 也不在 `exRight/`，
+  而在自己的 `reducation/` 區段（是的，官方就是拼成 reducation）。
+  前一輪掃 `change/TWTB[1-9]U`、`change/TWTA[S-Z]U` 掃不到它，
+  **不是因為端點不存在，是因為區段名猜錯了。**
 
-**TWTB8U 是「變更面額」不是「減資」**，兩者是不同的公司行動。上市的減資表還沒找到。
+## 還沒解決的：上櫃
 
-## ★ 兩個結構問題，探測時要一起回答
+`data/adj/` 目前 100% 是上市。上櫃佔母體將近一半，代表**上櫃股的長期報酬率、
+均線、扣抵值目前全部沒有還原**——除權息沒有、減資也沒有。
 
-1. **這些是前瞻式公告表**（TPEx 那張實測回未來十天），**不是逐日結果表**。
-   若全部都是這種形狀，`feeds.py` 的逐日框架對它是錯的——
-   要改成「定期抓一次、依事件自身日期累積」。
-2. **有沒有歷史？** 公告表通常只有未來與近期。若拿不到歷史，
-   **2015 年以來的減資事件就補不回來**，只能從現在起累積——
-   那要在契約裡寫清楚，不能讓人以為 `data/adj/` 是完整的。
-   FinMind 的資料集若能用，它吃 start_date/end_date，**是唯一可能有歷史的路**。
+已知：TPEx `bulletin/revivt` 有回應（stat=ok），標題「減資恢復買賣參考價」，
+欄位有「最後交易日之收盤價格」與「減資恢復買賣開始日參考價格」——形狀是對的，
+**但它回的是未來十天**。所以問題只剩一個：**它吃不吃日期參數。**
 
-## 判準
+## 判準（每個候選都要回報這四項，缺一不可）
 
-每個候選都要回報：stat／標題／**完整欄位**／列數／**日期欄的最小與最大值**。
-最後那一項最重要——**它直接回答「有沒有歷史」**，而不是靠猜。
+1. `stat` 與標題
+2. **完整欄位**
+3. 列數
+4. **日期欄的最小與最大值** ← 最重要，它直接回答「有沒有歷史」
+
+★ 只有第 4 項能分辨「端點可用」與「端點有我要的歷史」。
+  前三項全對但日期全是未來十天，這條就是不能用——那正是 `bulletin/revivt` 的現況。
+
+## ⚠ TPEx 只有在 Actions 上驗得到
+
+開發環境與 WebFetch 打 TPEx 一律 403（2026-09-06 再次確認）。
+**「TPEx 這條不通」這種結論，只有 Actions 上跑出來的才算數。**
 """
 
 import argparse
 import json
-import re
 import sys
 import time
 
 import backfill as B
 
-TWSE = "https://www.twse.com.tw/rwd/zh/"
 TPEX = "https://www.tpex.org.tw/www/zh-tw/"
-FINMIND = "https://api.finmindtrade.com/api/v4/data?dataset="
+TPEX_OLD = "https://www.tpex.org.tw/web/stock/"
+OPENAPI = "https://www.tpex.org.tw/openapi/v1/"
 
-# TWSE：`change/` 區段已證實存在（TWTB8U 通）。同區段的其他報表代碼逐一試。
-TWSE_CODES = [f"TWTB{i}U" for i in range(1, 10)] + \
-             [f"TWTA{c}U" for c in "STUVWXYZ"] + ["TWT88U", "TWT89U", "TWT90U"]
-TWSE_SECTIONS = ["change", "exRight"]
+DATE_HINT = ("日期", "date", "Date", "Date")
 
-TPEX_PATHS = ["bulletin/revivt", "bulletin/capitalReduction", "bulletin/reduction",
-              "bulletin/resumeTrading", "afterTrading/revivt"]
+# ── 候選 A：新站 bulletin/revivt ＋ 各種日期參數寫法 ──────────────────
+#   已知它本身有回應。**這一批在測的是「它吃不吃日期」**，不是它存不存在。
+#   TPEx 新站的日期慣例是 `date=115/03/01`（民國、斜線），但區間型參數
+#   在別的 TPEx 端點看過 `startDate`/`endDate` 與 `d`，三種都試。
+REVIVT_PARAMS = [
+    "",                                   # 對照組：不帶參數（已知回未來十天）
+    "&date=115/03/20",
+    "&date=115/03",
+    "&d=115/03",
+    "&startDate=104/01/01&endDate=104/12/31",
+    "&startDate=20150101&endDate=20151231",
+    "&year=104",
+    "&year=104&month=03",
+]
 
-FINMIND_SETS = ["TaiwanStockCapitalReductionReferencePrice",
-                "TaiwanStockCapitalReduction",
-                "TaiwanStockDividendResult"]
+# ── 候選 B：舊站 .php（新站上線後多半還活著，且舊站本來就是逐月查詢）──
+#   舊站的減資恢復買賣在 `exright/revivt/revivt_result.php`，
+#   除權息在 `exright/preAnnouncement/`。**舊站吃 `d=民國年/月`。**
+OLD_PATHS = [
+    "exright/revivt/revivt_result.php?l=zh-tw&d=104/03",
+    "exright/revivt/revivt_result.php?l=zh-tw&d=115/09",
+    "exright/preAnnouncement/prepost_result.php?l=zh-tw&d=104/03",
+    "exright/exright_result.php?l=zh-tw&d=104/03",
+]
 
-DATE_HINT = ("日期", "date", "Date")
+# ── 候選 C：新站 bulletin 區段的其他表（找上櫃除權息）──────────────────
+BULLETIN_PATHS = [
+    "bulletin/exright", "bulletin/exRight", "bulletin/preExright",
+    "bulletin/prepost", "bulletin/exDividend", "bulletin/revivtHist",
+]
+
+# ── 候選 D：TPEx OpenAPI（有些表只在這裡，而且不吃日期＝只有當期）──────
+OPENAPI_PATHS = [
+    "tpex_capital_reduction", "tpex_revivt", "tpex_exright_result",
+    "tpex_ex_dividend",
+]
 
 
-def _get(url, retries=1):
-    raw, err = B.get(url, retries=retries, timeout=45)
+def _get(url):
+    raw, err = B.get(url, retries=1, timeout=45)
     if err:
         return None, err
     try:
         return json.loads(raw.decode("utf-8")), None
-    except Exception as ex:                                   # noqa: BLE001
-        head = raw[:100].decode("utf-8", "replace").replace("\n", " ")
+    except Exception:                                     # noqa: BLE001
+        head = raw[:120].decode("utf-8", "replace").replace("\n", " ")
         return None, f"非 JSON（{len(raw)}B）：{head}"
 
 
@@ -81,98 +115,108 @@ def _dates(fields, rows):
     return "", "", ""
 
 
-def show_twse(sec, code):
-    url = f"{TWSE}{sec}/{code}?response=json"
-    d, err = _get(url)
-    if err or not isinstance(d, dict):
+def _show(label, d):
+    """把一個回應攤開來印。回 True 代表這條至少有欄位可看。"""
+    if isinstance(d, list):                     # OpenAPI 是純陣列
+        if not d:
+            print(f"   △ {label}｜空陣列")
+            return False
+        keys = list(d[0]) if isinstance(d[0], dict) else []
+        dv = [str(r.get(k, "")) for r in d for k in keys
+              if any(h in k for h in DATE_HINT)]
+        print(f"   ✓ {label}｜{len(d):,} 筆｜欄位={keys}")
+        if dv:
+            print(f"       日期範圍 {min(dv)} ~ {max(dv)}")
+        print(f"       首筆={d[0]}")
+        return True
+
+    if not isinstance(d, dict):
+        print(f"   ✗ {label}｜回的不是 dict 也不是 list：{type(d).__name__}")
         return False
+
     stat = str(d.get("stat", "")).strip()
-    if stat.lower() not in ("ok", "success"):
+    tabs = B._tables(d)
+    if not tabs:
+        print(f"   △ {label}｜stat={stat or '(無)'}｜沒有 fields/data，"
+              f"top-level keys={sorted(d)[:12]}")
         return False
-    for t in (B._tables(d) or [d]):
+    seen = False
+    for t in tabs:
         f = [str(x) for x in (t.get("fields") or [])]
         rows = t.get("data") or []
         if not f:
             continue
-        title = str(t.get("title") or d.get("title") or "")
+        seen = True
         dk, lo, hi = _dates(f, rows)
-        print(f"   ✓ change/{code}｜{title}")
+        print(f"   ✓ {label}｜stat={stat}｜{t.get('title') or d.get('title') or ''}")
         print(f"       {len(rows)} 列｜欄位={f}")
         if dk:
+            # ★ 判斷「是不是只有未來十天」：民國年 <= 114 或西元 <= 2025 就是有歷史。
+            hist = (lo < "1150000" and lo[:3].isdigit()) or (lo < "2026" and lo[:4].isdigit())
             print(f"       日期欄「{dk}」範圍 {lo} ~ {hi}"
-                  f"{'  ← **可能有歷史**' if lo < '11400' and lo < '2025' else '  ← 只有近期／未來'}")
+                  f"{'  ← ★ 有歷史' if hist else '  ← 只有近期／未來，不能用'}")
+        else:
+            print("       ⚠ 找不到日期欄——**無法判斷有沒有歷史**，不要當成可用")
         if rows:
             print(f"       首列={rows[0]}")
-    return True
+    return seen
 
 
 def main():
-    ap = argparse.ArgumentParser(description="找減資恢復買賣參考價的來源")
+    ap = argparse.ArgumentParser(
+        description="找上櫃的減資／除權息歷史來源（上市已解決，見檔頭）")
     ap.add_argument("--sleep", type=float, default=1)
     a = ap.parse_args()
     B.SLEEP = a.sleep
-
-    print("── TWSE：掃 change／exRight 區段的報表代碼 ──")
     hit = 0
-    for sec in TWSE_SECTIONS:
-        for code in TWSE_CODES:
-            if show_twse(sec, code):
-                hit += 1
-            time.sleep(a.sleep)
-    print(f"   → {hit} 個代碼有回應\n")
 
-    print("── TPEx：減資恢復買賣（開發環境 403，只有這裡驗得到）──")
-    for p in TPEX_PATHS:
-        for extra in ("", "&date=2026/09/06"):
-            url = f"{TPEX}{p}?response=json{extra}"
-            d, err = _get(url)
-            short = p + (extra or "")
-            if err:
-                print(f"   ✗ {short}｜{err[:80]}")
-                time.sleep(a.sleep)
-                continue
-            tabs = B._tables(d) if isinstance(d, dict) else []
-            for t in (tabs or ([d] if isinstance(d, dict) else [])):
-                f = [str(x) for x in (t.get("fields") or [])]
-                rows = t.get("data") or []
-                if not f:
-                    continue
-                dk, lo, hi = _dates(f, rows)
-                print(f"   ✓ {short}｜{t.get('title') or ''}")
-                print(f"       {len(rows)} 列｜欄位={f}")
-                if dk:
-                    print(f"       日期欄「{dk}」範圍 {lo} ~ {hi}")
-                if rows:
-                    print(f"       首列={rows[0]}")
-            time.sleep(a.sleep)
+    print("── A. 新站 bulletin/revivt：它吃不吃日期參數 ──")
+    print("   （不帶參數那條是對照組，已知回未來十天。**要看的是有沒有哪條回到過去。**）")
+    for p in REVIVT_PARAMS:
+        url = f"{TPEX}bulletin/revivt?response=json{p}"
+        d, err = _get(url)
+        label = "revivt" + (p or "（無參數）")
+        if err:
+            print(f"   ✗ {label}｜{err[:90]}")
+        elif _show(label, d):
+            hit += 1
+        time.sleep(a.sleep)
     print()
 
-    print("── FinMind：唯一可能有歷史的路（吃 start_date/end_date）──")
-    for ds in FINMIND_SETS:
-        for q in (f"{ds}&start_date=2015-01-01&end_date=2026-09-06",
-                  f"{ds}&data_id=2330&start_date=2015-01-01&end_date=2026-09-06"):
-            d, err = _get(FINMIND + q)
-            short = q.split("&")[0] + ("（帶 data_id）" if "data_id" in q else "")
-            if err:
-                print(f"   ✗ {short}｜{err[:90]}")
-                time.sleep(a.sleep)
-                continue
-            msg = d.get("msg") if isinstance(d, dict) else None
-            data = d.get("data") if isinstance(d, dict) else None
-            if not isinstance(data, list) or not data:
-                print(f"   △ {short}｜msg={msg}｜data 空")
-                time.sleep(a.sleep)
-                continue
-            ds_dates = [str(r.get("date", "")) for r in data if r.get("date")]
-            print(f"   ✓ {short}｜msg={msg}｜{len(data):,} 筆")
-            print(f"       欄位={list(data[0])}")
-            if ds_dates:
-                print(f"       date 範圍 {min(ds_dates)} ~ {max(ds_dates)}"
-                      f"{'  ← **有歷史**' if min(ds_dates) < '2020' else ''}")
-            print(f"       首筆={data[0]}")
-            time.sleep(a.sleep)
-    print("\n[probe] 重點不是「有沒有回應」，是**日期範圍**——"
-          "那決定 2015 年以來的減資能不能補回來，還是只能從現在累積。")
+    print("── B. 舊站 .php（舊站本來就是逐月查詢，最可能有歷史）──")
+    for p in OLD_PATHS:
+        d, err = _get(TPEX_OLD + p)
+        if err:
+            print(f"   ✗ {p.split('?')[0]}｜{err[:90]}")
+        elif _show(p, d):
+            hit += 1
+        time.sleep(a.sleep)
+    print()
+
+    print("── C. 新站 bulletin 區段的其他表（找上櫃除權息）──")
+    for p in BULLETIN_PATHS:
+        d, err = _get(f"{TPEX}{p}?response=json&date=115/09/01")
+        if err:
+            print(f"   ✗ {p}｜{err[:90]}")
+        elif _show(p, d):
+            hit += 1
+        time.sleep(a.sleep)
+    print()
+
+    print("── D. TPEx OpenAPI ──")
+    for p in OPENAPI_PATHS:
+        d, err = _get(OPENAPI + p)
+        if err:
+            print(f"   ✗ openapi/{p}｜{err[:90]}")
+        elif _show(f"openapi/{p}", d):
+            hit += 1
+        time.sleep(a.sleep)
+
+    print(f"\n[probe] 有回應的候選：{hit} 條")
+    print("[probe] ★ 重點不是「有沒有回應」，是**日期欄的最小值**——"
+          "那決定 2015 年以來的上櫃減資能不能補回來，還是只能從現在累積。")
+    print("[probe] 若全部只有未來十天：那就**在契約裡寫死「上櫃只能從啟用日往後累積」**，"
+          "不要讓人以為 data/adj/ 是完整的。")
     return 0
 
 
