@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報"
+        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜reduce-probe 找減資來源"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, reduce-probe]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all"
@@ -112,6 +112,14 @@ jobs:
       - name: 全市場月營收與財報
         if: inputs.mode == 'mops'
         run: python mops.py --run --sleep "${{ inputs.sleep || '2' }}"
+
+      # ★ 找減資恢復買賣參考價的來源。減資的價格跳動動輒 30～50%，
+      #   現在會被當成真實漲跌——這是資料庫目前最嚴重的錯法。
+      #   ⚠ 重點不是「有沒有回應」，是**日期範圍**：決定 2015 年以來能不能補回來。
+      #   **只探測、不寫資料。**
+      - name: 找減資恢復買賣參考價的來源
+        if: inputs.mode == 'reduce-probe'
+        run: python reduce_probe.py --sleep "${{ inputs.sleep || '1' }}"
 
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
       - name: 算還原因子
