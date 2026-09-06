@@ -1,0 +1,2 @@
+date,factor,cum_factor,pre_close,ref_price,kind,event
+2020-12-21,1.66648352,1.66648352,18.2,30.33,彌補虧損,reduce
