@@ -475,7 +475,54 @@ def main():
     ap.add_argument("--sleep", type=float, default=3)
     ap.add_argument("--run", action="store_true",
                     help="真的回補並寫檔。**沒有這個旗標就是 --dry**")
+    ap.add_argument("--period", default="",
+                    help="乾跑指定期別，例如 2018Q1（財報）或 2018-03（月營收）")
+    ap.add_argument("--market", default="sii", choices=["sii", "otc"])
+    ap.add_argument("--form", default="", help="t163sb04 或 t163sb05")
     a = ap.parse_args()
+
+    if not a.run and a.period:
+        # ★ 指定期別的乾跑：把**整張表的每一欄**印出來。
+        #   撞名這種問題不能靠猜，要看欄位本身長什麼樣。
+        kmap = load_kind_map()
+        print(f"[hist] 指定期別乾跑：{a.period} {a.market}"
+              f"｜對照表 {len(kmap)} 檔\n")
+        if "Q" in a.period:
+            y, q = int(a.period.split("Q")[0]) - 1911, int(a.period.split("Q")[1])
+            forms = [a.form] if a.form else [f for f, _ in FS_FORMS]
+            for form in forms:
+                raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
+                                  fs_form(a.market, y, q))
+                if err:
+                    print(f"── {form} ── 失敗：{err}")
+                    continue
+                got, enc = parse_fs(raw, kmap)
+                print(f"── {form} {a.market} {a.period}｜編碼 {enc}"
+                      f"｜{len(got)} 張表 ──")
+                for kind, how, cap, hdr, body in got:
+                    print(f"  [{kind or '★判不出'}] {len(hdr)} 欄 / {len(body)} 列"
+                          f"｜依據：{how}")
+                    print(f"      代號前 6：{[r[0] for r in body[:6]]}")
+                    print(f"      **完整欄位**：{hdr}")
+                ks = {}
+                for kind, *_ in got:
+                    ks[kind] = ks.get(kind, 0) + 1
+                dup = [k for k, v in ks.items() if v > 1]
+                print(f"  → 業別分布 {ks}"
+                      + (f"｜★★ 撞名 {dup}" if dup else "｜無撞名"))
+                time.sleep(a.sleep)
+                print()
+        else:
+            y, m = int(a.period[:4]) - 1911, int(a.period[5:7])
+            raw, err = _fetch(rev_url(a.market, y, m))
+            if err:
+                print(f"失敗：{err}")
+            else:
+                rows, header, note, sk = parse_revenue(raw, y, m, a.market)
+                print(f"{note}\n表頭={header}")
+                for r in rows[:5]:
+                    print("  ", r[:6])
+        return 0
 
     if not a.run:
         print("[hist] **乾跑模式**：只抓一期、印解析結果、不寫任何檔。\n")
@@ -551,11 +598,26 @@ def main():
     now = time.strftime("%Y-%m")          # 只當「有沒有公告」的參考，不當資料日期
     fails, pending = [], []
 
+    def _pending(per):
+        """這個期別是不是**還沒公告**（而不是失敗）。
+
+        ★★ 2026-09-06 踩到：第一版寫 `per >= now[:len(per)]`，
+          季別長 `2026Q1`、now 長 `2026-09`，`now[:6]` 是 `2026-0`，
+          而 `"2026Q1" >= "2026-0"` 因為 `Q`(0x51) > `-`(0x2D) **永遠成立**——
+          於是 2026Q1／Q2 被歸成「尚未公告」，**把真正的失敗藏起來了**。
+          （那兩期明明早就公告，我們自己的 `fs/2026Q2_ci.csv` 就在 repo 裡。）
+          跨格式的字串比較不能當日期比。季別要換算成季末月再比。
+        """
+        if "Q" in per:
+            y, q = per.split("Q")
+            last = f"{int(y):04d}-{int(q) * 3:02d}"       # 季末月
+            # 財報約季末後 45 天才公告，寬鬆抓「季末月的次月」還沒到就算未公告
+            return last >= now
+        return per >= now
+
     def _note(kind, per, mkt, msg):
-        """★ 尚未公告的期別**不是失敗**。月營收要次月才公告、財報要季後才公告，
-        把它們算成失敗會讓摘要每次都紅字，真的失敗就被雜訊蓋掉——
-        這跟先前『查無資料被讀成端點不可用』是同一種錯。"""
-        (pending if per >= now[:len(per)] else fails).append((kind, per, mkt, msg))
+        """★ 尚未公告的期別**不是失敗**——但判準要對，否則會反過來把失敗藏起來。"""
+        (pending if _pending(per) else fails).append((kind, per, mkt, msg))
 
     if a.kind in ("revenue", "both"):
         y, m = int(a.start[:4]) - 1911, int(a.start[5:7])
