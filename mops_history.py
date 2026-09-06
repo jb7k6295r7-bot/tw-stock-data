@@ -690,6 +690,11 @@ def main():
     end = a.end or time.strftime("%Y-%m")
     now = time.strftime("%Y-%m")          # 只當「有沒有公告」的參考，不當資料日期
     fails, pending = [], []
+    # ★ 帳本要記「**資料庫的狀態**」，不是「這一趟做了什麼」。
+    #   `--fill` 跳過的期別也要記成 ok，否則一個只補兩個洞的 --fill
+    #   會寫出一份 `fail 0` 的帳本，讀的人以為整體沒問題——
+    #   這正是這一輪反覆出現的形狀：摘要講的是這一趟，讀的人以為是整體。
+    state = {}
 
     def _pending(per):
         """這個期別是不是**還沒公告**（而不是失敗）。
@@ -710,7 +715,9 @@ def main():
 
     def _note(kind, per, mkt, msg):
         """★ 尚未公告的期別**不是失敗**——但判準要對，否則會反過來把失敗藏起來。"""
-        (pending if _pending(per) else fails).append((kind, per, mkt, msg))
+        st = "pending" if _pending(per) else "fail"
+        state[(kind, per, mkt)] = (st, msg)
+        (pending if st == "pending" else fails).append((kind, per, mkt, msg))
 
     if a.kind in ("revenue", "both"):
         y, m = int(a.start[:4]) - 1911, int(a.start[5:7])
@@ -720,6 +727,7 @@ def main():
             for mkt, market in MARKETS:
                 per = f"{y + 1911:04d}-{m:02d}"
                 if a.fill and has_output("revenue", per, market):
+                    state[("revenue", per, mkt)] = ("ok", "已存在，--fill 跳過")
                     continue
                 raw, err = _fetch(rev_url(mkt, y, m))
                 if err:
@@ -749,6 +757,7 @@ def main():
                 out = [[r[0], r[1], per, market, r[2]] + r[3:] for r in rows]
                 write_csv(os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv"),
                           full, out)
+                state.setdefault(("revenue", per, mkt), ("ok", note))
                 ok += 1
                 if ok % 24 == 0:
                     print(f"  [月營收 {ok}] {per} {mkt} {note}", flush=True)
@@ -774,6 +783,7 @@ def main():
             for form, sub in FS_FORMS:
                 for mkt, market in MARKETS:
                     if a.fill and has_output(sub, per, market):
+                        state[(sub, per, mkt)] = ("ok", "已存在，--fill 跳過")
                         continue
                     raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
                                       fs_form(mkt, y, q))
@@ -811,6 +821,7 @@ def main():
                         write_csv(os.path.join(
                             OUT, f"{sub}_hist", f"{per}_{kind}_{market}.csv"),
                             full, out)
+                        state.setdefault((sub, per, mkt), ("ok", ""))
                         ok += 1
                     time.sleep(a.sleep)
             if ok and ok % 60 == 0:
@@ -827,12 +838,12 @@ def main():
         with open(os.path.join(OUT, "_hist_status.csv"), "w",
                   encoding="utf-8") as fh:
             fh.write("kind,period,market,status,note\n")
-            for k, per, mkt, msg in sorted(fails):
-                fh.write(f"{k},{per},{mkt},fail,{str(msg).replace(',', '；')}\n")
-            for k, per, mkt, msg in sorted(pending):
-                fh.write(f"{k},{per},{mkt},pending,{str(msg).replace(',', '；')}\n")
+            for (k, per, mkt), (st, msg) in sorted(state.items()):
+                fh.write(f"{k},{per},{mkt},{st},{str(msg).replace(',', '；')}\n")
+        nok = sum(1 for v in state.values() if v[0] == "ok")
         print(f"[hist] 狀態帳本：data/mops/_hist_status.csv"
-              f"（fail {len(fails)}、pending {len(pending)}）")
+              f"｜ok {nok}、fail {len(fails)}、pending {len(pending)}"
+              f"（**這是資料庫的狀態，不只是這一趟**）")
     except OSError as ex:                                   # noqa: BLE001
         print(f"[hist] 寫狀態帳本失敗：{ex}", file=sys.stderr)
 
