@@ -1,3 +1,2 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2018-08-21,3227,128,123.53,4.47,除息,,finmind
-2018-08-21,3317,40.2,39.7,0.5,除息,,finmind
+2018-08-21,3580,38.35,35.35,3.0,除息,,finmind

@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2023-02-22,3484,48.5,47.62,0.883016,除權,,finmind

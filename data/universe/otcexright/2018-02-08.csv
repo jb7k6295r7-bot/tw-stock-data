@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2018-02-08,3512,38.6,36.98,1.62,除權,,finmind

@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
+2015-11-17,3434,9.01,13.02,彌補虧損,13.0,0.0,finmind

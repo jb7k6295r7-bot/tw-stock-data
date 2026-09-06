@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
+2017-10-06,4303,37.3,109.4,現金減資,109.5,0.0,finmind
