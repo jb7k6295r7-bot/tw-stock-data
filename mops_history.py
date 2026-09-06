@@ -282,6 +282,19 @@ FS_KINDS = [
     # 那是 MOPS 的**異業**（子公司跨業別者）。現有 data/mops/fs/ 只有五種，
     # 是因為 OpenAPI 那一期剛好沒有這張——**不要因此假設它不存在**。
     ("other", lambda h: "收入" in h and "支出" in h),
+    # ── 以下是**資產負債表**（t163sb05）的規則 ──
+    #   2026-09-06 回補實測：bs 的六張表用上面那些規則**一張都判不出**——
+    #   上面全是損益表的欄位（營業收入、利息淨收益…），資產負債表沒有那些字。
+    #   幸好三種「資產總額」的用詞剛好不一樣，可以當判別式：
+    #     證券 `資產合計`／一般業 `資產總計`／異業 `資產總額`
+    #   金融三類則看資產科目本身。★ 金控與銀行只差一個字（金融／銀行），別看漏。
+    ("fh",   lambda h: any("存放央行及拆借金融同業" in x for x in h)),
+    ("basi", lambda h: any("存放央行及拆借銀行同業" in x for x in h)),
+    ("ins",  lambda h: any("待出售資產" in x for x in h)
+                       and any("應收款項" in x for x in h)),
+    ("bd",   lambda h: any(x == "資產合計" for x in h)),
+    ("ci",   lambda h: any(x == "資產總計" for x in h)),
+    ("other", lambda h: any(x == "資產總額" for x in h)),
 ]
 
 
@@ -490,7 +503,14 @@ def main():
     print("[hist] 回補模式。**確認過 --dry 的三項了嗎？**"
           "（產業別空白 0／六張分表不重複／跳過的是合計）")
     end = a.end or time.strftime("%Y-%m")
-    fails = []
+    now = time.strftime("%Y-%m")          # 只當「有沒有公告」的參考，不當資料日期
+    fails, pending = [], []
+
+    def _note(kind, per, mkt, msg):
+        """★ 尚未公告的期別**不是失敗**。月營收要次月才公告、財報要季後才公告，
+        把它們算成失敗會讓摘要每次都紅字，真的失敗就被雜訊蓋掉——
+        這跟先前『查無資料被讀成端點不可用』是同一種錯。"""
+        (pending if per >= now[:len(per)] else fails).append((kind, per, mkt, msg))
 
     if a.kind in ("revenue", "both"):
         y, m = int(a.start[:4]) - 1911, int(a.start[5:7])
@@ -501,12 +521,21 @@ def main():
                 per = f"{y + 1911:04d}-{m:02d}"
                 raw, err = _fetch(rev_url(mkt, y, m))
                 if err:
-                    fails.append(("revenue", per, mkt, err[:50]))
+                    _note("revenue", per, mkt, err[:50])
                     time.sleep(a.sleep)
                     continue
                 rows, header, note, _sk = parse_revenue(raw, y, m, mkt)
                 if not rows or not header:
-                    fails.append(("revenue", per, mkt, f"0 列（{note}）"))
+                    # ★ HTTP 200 但解析出 0 張表 → 多半是一次壞回應，重抓一次再判。
+                    #   2026-09-06 實測 2026-03 sii 就中過（編碼 big5(replace)、0 張表），
+                    #   同一個網址後來是好的。
+                    time.sleep(a.sleep)
+                    raw, err = _fetch(rev_url(mkt, y, m))
+                    rows, header, note, _sk = (
+                        parse_revenue(raw, y, m, mkt) if not err
+                        else ([], None, err[:50], []))
+                if not rows or not header:
+                    _note("revenue", per, mkt, f"0 列（{note}）")
                     time.sleep(a.sleep)
                     continue
                 blank = sum(1 for r in rows if not r[2])
@@ -540,24 +569,28 @@ def main():
                     raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
                                       fs_form(mkt, y, q))
                     if err:
-                        fails.append((sub, per, mkt, err[:50]))
+                        _note(sub, per, mkt, err[:50])
                         time.sleep(a.sleep)
                         continue
                     got, _enc = parse_fs(raw, kmap)
                     if not got:
-                        # 未來的季別本來就沒有——**那不是失敗**，只記不吵
+                        _note(sub, per, mkt, "0 張表")
                         time.sleep(a.sleep)
                         continue
                     seen = {}
                     for kind, how, _cap, hdr, body in got:
                         if not kind:
-                            fails.append((sub, per, mkt, f"★ 一張表判不出業別（{how}）"))
+                            _note(sub, per, mkt, f"★ 一張表判不出業別（{how}）")
                             continue
                         if kind in seen:
                             # ★ 撞名就是**不寫**。覆蓋掉會少一整張表且看不出來。
-                            fails.append((sub, per, mkt,
-                                          f"★ 業別 {kind} 重複，兩張都不寫"))
+                            _note(sub, per, mkt, f"★ 業別 {kind} 重複，兩張都不寫")
                             continue
+                        # ★ 自我增補：損益表先跑（FS_FORMS 順序），它認得出異業，
+                        #   把那些代號補進對照表，後面的資產負債表就判得出來了。
+                        #   對照表原本只來自 OpenAPI 的五種，**沒有異業**。
+                        for cc in [r[0] for r in body]:
+                            kmap.setdefault(cc, kind)
                         seen[kind] = True
                         full = (["stock_id", "name", "period", "market"] + hdr[2:])
                         out = [[r[0], r[1] if len(r) > 1 else "", per, market]
@@ -574,6 +607,9 @@ def main():
                 y, q = y + 1, 1
         print(f"[hist] 財報完成 {ok} 個業別檔")
 
+    if pending:
+        print(f"[hist] {len(pending)} 個期別**尚未公告**（正常，不是失敗）："
+              f"{sorted({x[1] for x in pending})}")
     if fails:
         print(f"[hist] ★ {len(fails)} 個期別有問題（**不要當成沒發生**）：")
         for f in fails[:30]:
