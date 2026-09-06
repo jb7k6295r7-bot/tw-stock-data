@@ -73,6 +73,19 @@ jobs:
           echo "目標交易日：$DAY"
           python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
 
+      # ★ 全市場月營收與財報（MOPS）。
+      #   ⚠ 這些端點**沒有日期參數，只給最新一期**——所以不是「每天抓一天」，
+      #     而是「每天看有沒有換期」。月營收每月約 10 號公告一次、財報一季一次，
+      #     絕大多數日子會印 unchanged、不產生任何 commit。
+      #   ⚠ 已存在的期別若內容變了＝**財報更正**，逐欄差異寫進
+      #     `data/mops/_changes.log`。**那是要看的東西，不是雜訊。**
+      #   成本：每天約 22 個請求（11 個表 × 2 個市場）。
+      - name: 全市場月營收與財報
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: python mops.py --run --sleep 2
+
       # 個股庫轉置：把今天寫進 daily/ 的那一天一併轉成按股票切的檔。
       #
       # ★ 為什麼併在這一支、不另開每日排程：兩支各自 push 同一個 repo，
