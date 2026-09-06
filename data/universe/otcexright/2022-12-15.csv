@@ -1,3 +1,4 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
 2022-12-15,2063,39.85,38.35,1.5,除息,,finmind
+2022-12-15,6548,31.95,31.25,0.7,除息,,finmind
 2022-12-15,8121,27.95,26.83,1.119751,除權,,finmind
