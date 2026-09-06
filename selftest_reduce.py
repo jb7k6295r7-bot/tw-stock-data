@@ -143,7 +143,42 @@ for ln in idx.rstrip().split("\n"):
 check(idx.split("\n")[0].split(",")[3] == "reduce_events", "_index 有 reduce_events 欄")
 check(idx.split("\n")[1].split(",")[3] == "1", "_index 記到 1 個減資事件")
 
-print("── 5. 舊界線會發生什麼（回歸測試的反面）──")
+print("── 5. cmd_probe：查無資料不可以被讀成「端點不可用」──")
+# 2026-09-06 實測踩到的：--probe --feed reduce --date 2026-09-03 回「沒有可用候選」
+# 並 exit 1，但端點是好的，只是那天沒有減資事件。
+# 這裡用假的 B.get 重現當時的兩個回應，驗證新的兩段探測會走到有事件的區間。
+import json as _json, types as _types
+
+_seen = []
+
+
+def _fake_get(url, retries=1, timeout=30):
+    _seen.append(url)
+    doc = DOC_2015 if "startDate=2015" in url else DOC_EMPTY
+    return _json.dumps(doc).encode("utf-8"), None
+
+
+_real_get, _real_known = feeds.B.get, feeds.B._known_codes
+feeds.B.get = _fake_get
+feeds.B._known_codes = lambda: set()
+_buf = io.StringIO()
+_stdout, sys.stdout = sys.stdout, _buf
+try:
+    rc = feeds.cmd_probe(_types.SimpleNamespace(
+        feed="reduce", date="2026-09-03", sleep=0))
+finally:
+    sys.stdout = _stdout
+    feeds.B.get, feeds.B._known_codes = _real_get, _real_known
+log = _buf.getvalue()
+for ln in log.rstrip().split("\n"):
+    print("    " + ln)
+check(rc == 0, f"exit code 0（舊版在這個情境是 1，實得 {rc}）")
+check("端點通、這個區間沒有事件" in log, "空月份被標成「沒有事件」而不是失敗")
+check("沒有可用候選" not in log, "不再印「沒有可用候選」")
+check(any("startDate=20150101" in u for u in _seen), "空月份後有退到已知有事件的區間")
+check("解析結果：3 列" in log, "在有事件的區間驗到解析")
+
+print("── 6. 舊界線會發生什麼（回歸測試的反面）──")
 print("    若沿用除權息的上限 1.5：13.33/6.58 = 2.026 > 1.5 → **整批被丟掉**，")
 print("    摘要上看起來就像「這檔沒有減資」。這就是分開設界線的理由。")
 

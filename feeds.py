@@ -46,6 +46,8 @@
 """
 
 import argparse
+import calendar          # ★ cmd_probe 與 _months 都要用；原本只在 _months 內 import，
+                         #   cmd_probe 改成逐月探測後會 NameError
 import json
 import os
 import re
@@ -132,7 +134,10 @@ def parse_per(d, day, known=None):
 
 
 def _roc_date(v):
-    """民國「104年07月16日」**或**「115/09/07」→ 西元 YYYY-MM-DD；抽不到回空字串。
+    # ★ docstring 裡有正則（`\d`），**一定要用 r"""**。
+    #   普通字串會在 Python 3.12 觸發 `SyntaxWarning: invalid escape sequence '\d'`，
+    #   每次跑都印一行雜訊——而雜訊多了就會有人不看 log。
+    r"""民國「104年07月16日」**或**「115/09/07」→ 西元 YYYY-MM-DD；抽不到回空字串。
 
     ★ 兩種寫法都要吃。`TWT49U` 的「資料日期」長「104年07月16日」，
       `TWTAUU`（減資恢復買賣參考價）的「恢復買賣日期」長 `115/09/07`。
@@ -510,6 +515,8 @@ FEEDS = {
         "urls_range": lambda a, b: [
             "https://www.twse.com.tw/rwd/zh/exRight/TWT49U"
             f"?startDate={a}&endDate={b}&response=json"],
+        # 探測用的「已知有事件」區間：2015-07 是除權息旺季，一定回得到列。
+        "probe_range": ("20150701", "20150731"),
         "status": ("已驗證 2026-09-04：startDate=20150716&endDate=20150716 → "
                    "stat=OK、30 列。**逐月抓**，日期取每列自己的「資料日期」欄"),
     },
@@ -537,6 +544,10 @@ FEEDS = {
         "urls_range": lambda a, b: [
             "https://www.twse.com.tw/rwd/zh/reducation/TWTAUU"
             f"?startDate={a}&endDate={b}&response=json"],
+        # ★ 探測用的「已知有事件」區間。**減資一年只有 20~30 件**，
+        #   隨便挑一天去探幾乎一定回「查無資料」——那不是端點壞掉。
+        #   2015 全年實測 26 列，拿它當探測基準才驗得到「解析得出來」。
+        "probe_range": ("20150101", "20151231"),
         "status": ("已驗證 2026-09-06（WebFetch）：2015 全年 26 列、2026 上半年 2 列。"
                    "**逐月抓**，日期取每列自己的「恢復買賣日期」欄（格式 115/09/07）"),
     },
@@ -959,10 +970,28 @@ def cmd_feed(args):
 
 
 def cmd_probe(args):
-    """只測端點、不寫任何檔案。把每個候選的結果照實印出來。
+    r"""只測端點、不寫任何檔案。把每個候選的結果照實印出來。
 
     **這是 TPEx 那幾個 feed 唯一的驗證途徑**——開發環境對 tpex.org.tw
     一律 403，只有在 Actions 上跑得到。
+
+    ★★ **事件型的區間 feed 不能用單日探測。**（2026-09-06 踩到）
+
+      `--probe --feed reduce --date 2026-09-03` 回報「沒有可用候選」並 exit 1，
+      看起來像端點壞掉。實際上端點是好的、參數是對的、日期核對也過了，
+      只是**那天沒有減資事件**，所以 TWSE 回
+      `{"stat":"很抱歉，沒有符合條件的資料!"}`。
+      減資一年只有 20~30 件，**隨便挑一天去探幾乎一定是空的**。
+
+      這正是這個專案一路在防的那種錯：把「查無資料」讀成「端點不可用」。
+      判準錯了會讓人去修一個根本沒壞的東西，或反過來把壞掉的當成正常。
+
+      → 改成兩段探測：
+        ① 先試**該日所在的整月**（貼近實際使用形狀——本來就是逐月抓）
+        ② 仍為空就試 spec 的 `probe_range`，那是**已知有事件**的區間
+
+      **探測要驗的是「解析得出來」，不是「那天剛好有事」。**
+      兩段都空才算失敗，而且會明說是空、不是不通。
     """
     names = list(FEEDS) if args.feed in ("", "all") else [args.feed]
     day = args.date
@@ -972,46 +1001,92 @@ def cmd_probe(args):
     for name in names:
         spec = FEEDS[name]
         print(f"── {name}｜{spec['status']}")
-        hit = False
-        # 區間型 feed 用「該日到該日」的單日區間探測
+
+        # 探測窗：非區間型就是那一天；區間型是「該月」→「已知有事件的區間」
         if spec.get("range"):
-            ymd = day.replace("-", "")
-            cands = spec["urls_range"](ymd, ymd)
+            y, m = int(day[:4]), int(day[5:7])
+            last = calendar.monthrange(y, m)[1]
+            wins = [(f"{y:04d}-{m:02d}-01",
+                     f"{y:04d}{m:02d}01", f"{y:04d}{m:02d}{last:02d}", "該月")]
+            pr = spec.get("probe_range")
+            if pr:
+                wins.append((f"{pr[0][:4]}-{pr[0][4:6]}-{pr[0][6:8]}",
+                             pr[0], pr[1], "已知有事件的區間"))
         else:
-            cands = spec["urls"](day)
-        for url in cands:
-            raw, err = B.get(url, retries=1, timeout=30)
-            short = url.replace("https://www.", "")
-            if err:
-                print(f"   ✗ {short}\n       {err[:100]}")
-                continue
-            try:
-                d = json.loads(raw.decode("utf-8"))
-            except Exception as ex:                   # noqa: BLE001
-                head = raw[:100].decode("utf-8", "replace").replace("\n", " ")
-                print(f"   ✗ {short}\n       非 JSON（{len(raw)}B）{type(ex).__name__}：{head}")
-                continue
-            stat = d.get("stat") if isinstance(d, dict) else None
-            same, said = B._same_day(d, day)
-            tabs = B._tables(d)
-            fields = _fieldmap(tabs[0]) if tabs else []
-            rows = len(tabs[0].get("data") or []) if tabs else 0
-            flag = "✓" if (str(stat or "").lower() in ("ok", "success") and same) else "△"
-            print(f"   {flag} {short}")
-            print(f"       stat={stat}｜日期核對={'通過' if same else f'不符({said})'}"
-                  f"｜表數={len(tabs)}｜首表 {rows} 列")
-            if fields:
-                print(f"       欄位={fields}")
-            if flag == "✓":
-                lines, nt = spec["parse"](d, day, known if spec["known"] else None)
-                print(f"       解析結果：{nt}")
-                if lines:
-                    print(f"       首列={lines[0]}")
-                    hit = True
+            wins = [(day, None, None, "")]
+
+        hit = emptied = False
+        for cmp_day, aa, bb, tag in wins:
+            if spec.get("range"):
+                cands = spec["urls_range"](aa, bb)
+                print(f"   [{tag} {aa}~{bb}]")
+            else:
+                cands = spec["urls"](day)
+            for url in cands:
+                raw, err = B.get(url, retries=1, timeout=30)
+                short = url.replace("https://www.", "")
+                if err:
+                    print(f"   ✗ {short}\n       {err[:100]}")
+                    continue
+                try:
+                    d = json.loads(raw.decode("utf-8"))
+                except Exception as ex:               # noqa: BLE001
+                    head = raw[:100].decode("utf-8", "replace").replace("\n", " ")
+                    print(f"   ✗ {short}\n       非 JSON（{len(raw)}B）"
+                          f"{type(ex).__name__}：{head}")
+                    continue
+                stat = d.get("stat") if isinstance(d, dict) else None
+
+                # ★ 「查無資料」先攔下來，**不要落進「沒有可用候選」**。
+                #   端點通、參數對，只是那個區間沒有事件——這是結論，不是失敗。
+                if stat and _EMPTY_STAT_RE.search(str(stat)):
+                    print(f"   ○ {short}")
+                    print(f"       stat={stat}")
+                    print("       → **端點通、這個區間沒有事件**（不是端點不可用）")
+                    emptied = True
+                    continue
+
+                # ★ 區間型不能整包丟給 `_same_day`：它會拿 `endDate` 去比起日，
+                #   多日區間**一定不符**（20151231 ≠ 20150101），
+                #   於是好端端的回應被標成 △、解析根本不會跑。
+                #   `cmd_feed_range` 早就只挑 strDate／title 比，這裡照做。
+                if spec.get("range"):
+                    same, said = B._same_day(
+                        {k: d.get(k) for k in ("strDate", "title") if d.get(k)},
+                        cmp_day)
+                else:
+                    same, said = B._same_day(d, cmp_day)
+                tabs = B._tables(d)
+                fields = _fieldmap(tabs[0]) if tabs else []
+                rows = len(tabs[0].get("data") or []) if tabs else 0
+                flag = "✓" if (str(stat or "").lower() in ("ok", "success") and same) \
+                    else "△"
+                print(f"   {flag} {short}")
+                print(f"       stat={stat}｜日期核對="
+                      f"{'通過' if same else f'不符({said})'}"
+                      f"｜表數={len(tabs)}｜首表 {rows} 列")
+                if fields:
+                    print(f"       欄位={fields}")
+                if flag == "✓":
+                    lines, nt = spec["parse"](
+                        d, cmp_day, known if spec["known"] else None)
+                    print(f"       解析結果：{nt}")
+                    if lines:
+                        print(f"       首列={lines[0]}")
+                        hit = True
+                    break
+            if hit:
                 break
+
         if not hit:
-            print("   → 沒有可用候選")
-            rc = 1
+            if emptied:
+                # 端點是通的，只是探到的區間沒有事件。這**不是**端點問題，
+                # 但也還沒驗到解析——照實說，不要含糊成「可用」或「不可用」。
+                print("   → **端點通但探測區間內沒有事件，解析未驗到。**"
+                      "換一個確定有事件的區間再探（改 probe_range 或 --date）")
+            else:
+                print("   → 沒有可用候選")
+                rc = 1
         print()
     return rc
 
