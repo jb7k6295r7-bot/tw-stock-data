@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
+2016-09-10,2496,16.30,101.15,彌補虧損,101.00,
+2016-09-10,8070,114.50,126.11,退還股款,126.00,
