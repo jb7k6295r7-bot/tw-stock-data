@@ -154,7 +154,7 @@ def _decode(raw):
     return raw.decode("big5", "replace"), "big5(replace)"
 
 
-def _fetch(url, form=None, timeout=90, retries=3, backoff=5):
+def _fetch(url, form=None, timeout=90, retries=4, backoff=8):
     """★ 一定要重試。乾跑時 `t163sb05` 就吃到一發 **502 Bad Gateway**——
     單發失敗在 188 發的回補裡一定會再遇到，不重試等於每次都要人工補洞。
     只重試「暫時性」的（5xx、逾時、連線中斷）；4xx 是請求本身錯了，重試沒意義。
@@ -296,6 +296,42 @@ FS_KINDS = [
     ("ci",   lambda h: any(x == "資產總計" for x in h)),
     ("other", lambda h: any(x == "資產總額" for x in h)),
 ]
+
+
+def load_learned(per, market):
+    """從**已經寫出來的** `fs_hist/<期別>_<業別>_<市場>.csv` 讀回該期的業別歸屬。
+
+    ★ 2026-09-06 實測到的連鎖反應：`fs 2025Q2 sii` 連線中斷 → 同期沒有損益表
+      可參考 → `bs 2025Q2 sii` 退回脆弱的欄名規則 → **ci 撞名，整期不寫**。
+      一個網路抖動變成兩個期別的資料缺口。
+      只要損益表**曾經**成功過（檔案在），就不必再靠當下那一發。
+    """
+    got, d = {}, os.path.join(OUT, "fs_hist")
+    if not os.path.isdir(d):
+        return got
+    suffix = f"_{market}.csv"
+    for n in os.listdir(d):
+        if not (n.startswith(f"{per}_") and n.endswith(suffix)):
+            continue
+        kind = n[len(per) + 1:-len(suffix)]
+        with open(os.path.join(d, n), encoding="utf-8") as fh:
+            fh.readline()
+            for ln in fh:
+                c = ln.split(",", 1)[0].strip()
+                if c and c[0].isdigit():
+                    got[c] = kind
+    return got
+
+
+def has_output(sub, per, market):
+    """該期別＋市場**是否已經有產出**。`--fill` 用來只補缺的，不重跑全部。"""
+    d = os.path.join(OUT, f"{sub}_hist")
+    if not os.path.isdir(d):
+        return False
+    if sub == "revenue":
+        return os.path.exists(os.path.join(d, f"{per}_{market}.csv"))
+    return any(x.startswith(f"{per}_") and x.endswith(f"_{market}.csv")
+               for x in os.listdir(d))
 
 
 def load_kind_map():
@@ -502,6 +538,8 @@ def main():
                     help="乾跑指定期別，例如 2018Q1（財報）或 2018-03（月營收）")
     ap.add_argument("--market", default="sii", choices=["sii", "otc"])
     ap.add_argument("--form", default="", help="t163sb04 或 t163sb05")
+    ap.add_argument("--fill", action="store_true",
+                    help="只補**還沒有產出**的期別。修完失敗清單後用它，不用整批重跑")
     a = ap.parse_args()
 
     if not a.run and a.period:
@@ -655,6 +693,8 @@ def main():
         while (y, m) <= (ey, em):
             for mkt, market in MARKETS:
                 per = f"{y + 1911:04d}-{m:02d}"
+                if a.fill and has_output("revenue", per, market):
+                    continue
                 raw, err = _fetch(rev_url(mkt, y, m))
                 if err:
                     _note("revenue", per, mkt, err[:50])
@@ -702,13 +742,22 @@ def main():
             per = f"{y + 1911:04d}Q{q}"
             # ★ 每一期、每個市場各自一份「同期損益表認出的業別」。
             #   損益表先跑（FS_FORMS 的順序），資產負債表才有得參考。
-            learned = {"sii": {}, "otc": {}}
+            # ★ 先從**已寫出的檔案**讀回該期的業別歸屬。這樣即使這一趟的損益表
+            #   抓失敗（或 --fill 跳過了它），資產負債表照樣判得出來。
+            learned = {mk: load_learned(per, mrk) for mk, mrk in MARKETS}
             for form, sub in FS_FORMS:
                 for mkt, market in MARKETS:
+                    if a.fill and has_output(sub, per, market):
+                        continue
                     raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
                                       fs_form(mkt, y, q))
                     if err:
                         _note(sub, per, mkt, err[:50])
+                        if sub == "fs":
+                            # ★ 損益表失敗會讓同期的資產負債表失去依據，
+                            #   下游那個「ci 重複」不是獨立的錯，是這個的後果。
+                            print(f"  ⚠ {per} {mkt} 損益表失敗，"
+                                  f"同期資產負債表可能跟著判不準", flush=True)
                         time.sleep(a.sleep)
                         continue
                     got, _enc = parse_fs(raw, kmap, learned[mkt])
