@@ -190,7 +190,10 @@ jobs:
           #   這種事不該靠「記得改欄位」。** 要補特定區間就改這一行。
           # kind=both：月營收 282 發 ＋ 財報 188 發，sleep 3 ≈ 25 分鐘。
           # 重跑是冪等的（同名檔覆蓋），失敗的期別直接整段重跑即可。
-          python mops_history.py --run --kind both --start 2015-01 --sleep 3
+          # ★ `--fill`：只補**還沒有產出**的期別。修完失敗清單後用它，
+          #   470 發整批重跑要 25 分鐘，補幾個洞只要幾十秒。
+          #   要整批重來就把 --fill 拿掉。
+          python mops_history.py --run --kind both --start 2015-01 --sleep 3 --fill
 
       # ★★ 拿**獨立來源**核對交易日曆。目前的日曆＝`data/universe/daily/` 的檔名，
       #   那是用自己的產出當自己的判準：某天整批漏抓的話，七個 feed 會
