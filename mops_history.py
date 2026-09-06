@@ -344,11 +344,34 @@ def _is_other(h):
             or any(x == "資產總額" for x in h))
 
 
-def fs_kind(header, codes=(), kmap=None):
+def fs_kind(header, codes=(), kmap=None, learned=None):
     """→ (業別, 依據)。判不出來回 ("", 理由)——**不要瞎猜一個**。
 
     先用已知代號多數決（依據＝`代號`），不行才退回欄位特徵（依據＝`欄位`）。
     """
+    # ★★★ 最可靠的一層：**同一期損益表已經認出來的業別。**
+    #   2026-09-06 第三次踩到撞名：2018 的**異業資產負債表用「資產總計」**，
+    #   跟一般業一模一樣（我那條規則是照 2015 的「資產總額」寫的），
+    #   兩張表只差最後一個權益欄（權益總計 vs 權益總額）。
+    #   **欄名本身會隨年份漂移**，靠單一字眼判遲早再中一次。
+    #
+    #   但同一期的**損益表**分得開——異業是「收入／支出」，那是結構差異不是用詞差異。
+    #   損益表（t163sb04）在 FS_FORMS 裡排在資產負債表前面，所以跑到 bs 時
+    #   同期的業別歸屬已經知道了。用它，比任何欄名規則都準。
+    #
+    #   ⚠ 上一版寫成 `kmap.setdefault(code, kind)` 是**沒有作用的**——
+    #     那些代號早就被 OpenAPI 標成 ci，setdefault 什麼都不會做。
+    #     所以要用獨立的 `learned`，而且**優先於** kmap。
+    if learned and codes:
+        v = {}
+        for c in codes:
+            k = learned.get(c)
+            if k:
+                v[k] = v.get(k, 0) + 1
+        if v:
+            best = max(v, key=v.get)
+            if v[best] / max(len(codes), 1) >= 0.5:
+                return best, f"同期損益表 {v[best]}/{len(codes)} 家"
     h0 = [_clean(x) for x in header]
     if _is_other(h0):
         return "other", "異業欄位（硬證據，不看多數決）"
@@ -387,7 +410,7 @@ def fs_kind(header, codes=(), kmap=None):
     return "", "判不出"
 
 
-def parse_fs(raw, kmap=None):
+def parse_fs(raw, kmap=None, learned=None):
     """t163sb04／sb05 → ([(kind, caption, 表頭, 列)], 編碼)。
 
     ★ 不合併不同業別。銀行的損益表有「利息淨收益」，一般業有「營業收入」，
@@ -412,7 +435,7 @@ def parse_fs(raw, kmap=None):
                 continue
             body.append([code] + [_num(x) for x in r[1:len(header)]])
         if body:
-            kind, how = fs_kind(header, [r[0] for r in body], kmap)
+            kind, how = fs_kind(header, [r[0] for r in body], kmap, learned)
             got.append((kind, how, _clean(cap)[-40:], header, body))
 
     # ★ 最後一道：同一頁若還有兩張表判成同一個業別，**那一定有一張是錯的**。
@@ -490,13 +513,19 @@ def main():
         if "Q" in a.period:
             y, q = int(a.period.split("Q")[0]) - 1911, int(a.period.split("Q")[1])
             forms = [a.form] if a.form else [f for f, _ in FS_FORMS]
+            learned = {}          # 與 --run 同樣的做法，乾跑才驗得到真行為
             for form in forms:
                 raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
                                   fs_form(a.market, y, q))
                 if err:
                     print(f"── {form} ── 失敗：{err}")
                     continue
-                got, enc = parse_fs(raw, kmap)
+                got, enc = parse_fs(raw, kmap, learned)
+                if form == "t163sb04":
+                    for kind, _how, _cap, _hdr, body in got:
+                        if kind:
+                            for r in body:
+                                learned[r[0]] = kind
                 print(f"── {form} {a.market} {a.period}｜編碼 {enc}"
                       f"｜{len(got)} 張表 ──")
                 for kind, how, cap, hdr, body in got:
@@ -671,6 +700,9 @@ def main():
         ok = 0
         while (y, q) <= (ey, eq):
             per = f"{y + 1911:04d}Q{q}"
+            # ★ 每一期、每個市場各自一份「同期損益表認出的業別」。
+            #   損益表先跑（FS_FORMS 的順序），資產負債表才有得參考。
+            learned = {"sii": {}, "otc": {}}
             for form, sub in FS_FORMS:
                 for mkt, market in MARKETS:
                     raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
@@ -679,7 +711,7 @@ def main():
                         _note(sub, per, mkt, err[:50])
                         time.sleep(a.sleep)
                         continue
-                    got, _enc = parse_fs(raw, kmap)
+                    got, _enc = parse_fs(raw, kmap, learned[mkt])
                     if not got:
                         _note(sub, per, mkt, "0 張表")
                         time.sleep(a.sleep)
@@ -693,12 +725,11 @@ def main():
                             # ★ 撞名就是**不寫**。覆蓋掉會少一整張表且看不出來。
                             _note(sub, per, mkt, f"★ 業別 {kind} 重複，兩張都不寫")
                             continue
-                        # ★ 自我增補：損益表先跑（FS_FORMS 順序），它認得出異業，
-                        #   把那些代號補進對照表，後面的資產負債表就判得出來了。
-                        #   對照表原本只來自 OpenAPI 的五種，**沒有異業**。
-                        for cc in [r[0] for r in body]:
-                            kmap.setdefault(cc, kind)
                         seen[kind] = True
+                        if sub == "fs":
+                            # 損益表分得開，把結果記下來給同期的資產負債表用
+                            for cc in [r[0] for r in body]:
+                                learned[mkt][cc] = kind
                         full = (["stock_id", "name", "period", "market"] + hdr[2:])
                         out = [[r[0], r[1] if len(r) > 1 else "", per, market]
                                + r[2:] for r in body]
@@ -707,7 +738,7 @@ def main():
                             full, out)
                         ok += 1
                     time.sleep(a.sleep)
-            if ok and ok % 20 == 0:
+            if ok and ok % 60 == 0:
                 print(f"  [財報 {ok}] {per}", flush=True)
             q += 1
             if q == 5:
