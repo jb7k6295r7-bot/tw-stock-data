@@ -1,0 +1,3 @@
+date,factor,cum_factor,pre_close,ref_price,kind,event
+2015-07-08,0.95614035,1.38475499,22.8,21.8,除息,exright
+2024-09-02,1.44827586,1.44827586,14.5,21,彌補虧損,reduce

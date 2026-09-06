@@ -1,0 +1,2 @@
+date,factor,cum_factor,pre_close,ref_price,kind,event
+2025-12-29,2.54634146,2.54634146,12.3,31.32,彌補虧損,reduce
