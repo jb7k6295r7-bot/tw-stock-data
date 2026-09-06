@@ -9,14 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜reduce-probe 找減資來源"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜reduce-probe 找上櫃減資來源"
         type: choice
         options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, reduce-probe]
         default: probe
       feed:
-        description: "要跑哪一種。probe 可選 all"
+        description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
         type: choice
-        options: [all, per, exright, margin, otcinst, otcper, otcmargin, otcexright]
+        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
@@ -113,15 +113,19 @@ jobs:
         if: inputs.mode == 'mops'
         run: python mops.py --run --sleep "${{ inputs.sleep || '2' }}"
 
-      # ★ 找減資恢復買賣參考價的來源。減資的價格跳動動輒 30～50%，
-      #   現在會被當成真實漲跌——這是資料庫目前最嚴重的錯法。
-      #   ⚠ 重點不是「有沒有回應」，是**日期範圍**：決定 2015 年以來能不能補回來。
-      #   **只探測、不寫資料。**
-      - name: 找減資恢復買賣參考價的來源
+      # ★ 2026-09-06：**上市的減資來源已經找到並接上了**
+      #   （TWSE `reducation/TWTAUU`，吃 startDate/endDate、2015 起有歷史），
+      #   走 mode=run + feed=reduce 即可，不必再探測。
+      #   這支現在只剩**上櫃**沒解決：TPEx `bulletin/revivt` 形狀對但只回未來十天，
+      #   要驗的是「它吃不吃日期參數」。⚠ TPEx 在開發環境與 WebFetch 一律 403，
+      #   **只有 Actions 上跑出來的結論才算數。只探測、不寫資料。**
+      - name: 找上櫃減資／除權息的歷史來源
         if: inputs.mode == 'reduce-probe'
         run: python reduce_probe.py --sleep "${{ inputs.sleep || '1' }}"
 
-      # ★ 只讀本地檔、不連外。要先跑過 feed=exright 才有事件可算。
+      # ★ 只讀本地檔、不連外。要先跑過 feed=exright **與 feed=reduce** 才有事件可算。
+      #   只跑 exright 的話 data/adj/ 會少掉全部減資，而那**看起來完全正常**——
+      #   摘要不會抱怨，只是每一檔跨過減資日的還原都是錯的。
       - name: 算還原因子
         if: inputs.mode == 'adjust'
         run: python adjust.py
