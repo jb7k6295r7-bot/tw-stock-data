@@ -83,6 +83,17 @@ RD_HEADER = ["date", "stock_id", "pre_close", "ref_price", "reason",
              "open_base", "ex_ref_price", "source"]
 
 
+# FinMind 撞到額度時的字樣。**要寬鬆比對**——它可能來自 HTTP 402/429，
+# 也可能是 msg 裡的一句話；漏認的話會被當成一般錯誤，整批安靜跳過。
+_RATE_HINTS = ("429", "402", "upper limit", "too many", "rate limit",
+               "limit", "quota", "額度")
+
+
+def _is_rate(err):
+    low = str(err).lower()
+    return any(h in low for h in _RATE_HINTS)
+
+
 def _f(v):
     try:
         x = float(str(v).replace(",", "").strip())
@@ -189,6 +200,12 @@ def main():
                     help="沿用 data/meta/_otcadj_done.csv，跳過做過的")
     ap.add_argument("--fresh", action="store_true",
                     help="清掉進度檔，全部重抓。**寫入是合併的，重跑安全**")
+    ap.add_argument("--limit-wait", type=float, default=900,
+                    help="撞到額度上限時等幾秒再續（0＝不等、直接收工）")
+    ap.add_argument("--max-waits", type=int, default=6,
+                    help="最多等幾次。預設 6×15 分＝1.5 小時")
+    ap.add_argument("--budget-min", type=float, default=0,
+                    help="跑滿幾分鐘就收工並存進度（0＝不限）。留給 job timeout 的餘裕")
     a = ap.parse_args()
     B.SLEEP = a.sleep
     token = os.environ.get("FINMIND_TOKEN", "").strip()
@@ -209,6 +226,7 @@ def main():
     if done:
         print(f"[otc] 續跑：已完成 {len(done)} 個（代號,dataset）組合")
 
+    t_start = time.time()
     ex, rd = {}, {}
     drop_up = []                 # 參考價高於前收盤、無法證明合法的
     limited = False
@@ -217,14 +235,29 @@ def main():
         for ds in (DS_DIV, DS_RED):
             if (c, ds) in done:
                 continue
-            data, err = fm(ds, c, a.start, hi, token)
-            time.sleep(a.sleep)
-            if err:
-                low = err.lower()
-                if "429" in err or "limit" in low or "too many" in low:
-                    print(f"[otc] ★ 第 {i} 檔（{c}）被限流：{err[:80]}", file=sys.stderr)
+            # ★★ 撞到額度**不要直接收工**。FinMind 免費層是「每小時」上限，
+            #   等一段時間就會回復；1,942 發本來就跨得過一個小時。
+            #   直接收工的話每一趟只跑得到額度用完為止，而且要人一直手動重跑。
+            #   等 → 續 → 再撞就再等，等滿次數才收工並存進度。
+            waits = 0
+            while True:
+                data, err = fm(ds, c, a.start, hi, token)
+                time.sleep(a.sleep)
+                if not (err and _is_rate(err)):
+                    break
+                if a.limit_wait <= 0 or waits >= a.max_waits:
+                    print(f"[otc] ★ 第 {i} 檔（{c}）額度用完，等過 {waits} 次仍未回復："
+                          f"{err[:70]}", file=sys.stderr)
                     limited = True
                     break
+                waits += 1
+                print(f"[otc] 額度用完（第 {i}/{len(codes)} 檔），"
+                      f"等 {a.limit_wait / 60:.0f} 分鐘後續跑（第 {waits}/{a.max_waits} 次）"
+                      f"｜{err[:60]}", flush=True)
+                time.sleep(a.limit_wait)
+            if limited:
+                break
+            if err:
                 print(f"[otc] ✗ {c} {ds}｜{err[:70]}", file=sys.stderr)
                 continue
             done.add((c, ds))
@@ -262,6 +295,12 @@ def main():
                     stats[ds][1] += 1
         if limited:
             break
+        # ★ 預算到了就收工。Actions 的 job 有硬性 timeout，被砍的話
+        #   **這一趟抓到的全部消失、進度也沒存**——寧可自己先收。
+        if a.budget_min and (time.time() - t_start) / 60 >= a.budget_min:
+            print(f"[otc] 跑滿 {a.budget_min:.0f} 分鐘，先收工存進度（第 {i} 檔）")
+            limited = True
+            break
         if i % 100 == 0:
             print(f"  [{i}/{len(codes)}] 除權息 {stats[DS_DIV][1]:,} 列、"
                   f"減資 {stats[DS_RED][1]:,} 列", flush=True)
@@ -283,8 +322,11 @@ def main():
               f"FinMind 沒有帶正負號的權值欄，**adjust.py 會把它們丟棄並逐筆印出**。"
               f"前 5 筆：{drop_up[:5]}")
     if limited:
-        print(f"[otc] ★ 被限流中斷，已寫出拿到的部分並存進度到 {DONE}。")
-        print(f"[otc]   等額度回復後加 --resume 續跑；或設 FINMIND_TOKEN 提高額度。")
+        left = len(codes) * 2 - len(done)
+        print(f"[otc] ★ 中斷收工。已寫出拿到的部分並存進度到 {DONE}。")
+        print(f"[otc]   已完成 {len(done)}／{len(codes) * 2} 個組合，**還剩 {left} 個**。")
+        print(f"[otc]   直接**再跑一次同一個 mode 即可**（--resume 會接著做，"
+              f"寫入是合併的，重跑安全）。設 FINMIND_TOKEN 可提高額度。")
         return 2
     print("[otc] 接下來跑 adjust.py 才會產生上櫃的還原因子。")
     return 0
