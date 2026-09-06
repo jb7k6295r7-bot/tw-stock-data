@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
+2023-03-13,1512,5.80,16.09,彌補虧損,16.10,
+2023-03-13,6541,37.20,111.51,彌補虧損,111.50,

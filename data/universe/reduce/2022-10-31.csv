@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
+2022-10-31,1316,11.60,12.57,彌補虧損,12.55,
+2022-10-31,2327,268.00,334.15,退還股款,334.00,
