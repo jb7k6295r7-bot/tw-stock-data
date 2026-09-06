@@ -529,12 +529,21 @@ FEEDS = {
         "known": False,   # 減資表會有已下市或非 universe 的標的，先全收
         "range": True,
         # ★ **這是前瞻式公告表**：恢復買賣參考價在停止買賣期間就先公告，
-        #   所以當月的回應會帶**未來日期**的列（實測 2026-09-06 那天回 115/09/07）。
+        #   所以當月的回應會帶**未來日期**的列（2026-09-06 實測回到 115/09/29）。
         #   舊的 stray 檢查是 `a <= 日期 <= b`，b 取 min(月底, --end)，
-        #   於是當月**整月被拒收**——2026-09 就這樣一列都沒寫進來。
-        #   `forward` 讓區間模式改以**月底**當上界，並把未來日期的列照收。
-        #   （下次跑同一個月會覆蓋同一個日檔，公告若有更動會自動修正。）
-        "forward": True,
+        #   於是當月**整月被拒收**——2026-09 一列都沒寫進來。
+        #
+        #   ★★ 2026-09-06 二修：第一版讓它「照收未來列」，**那是錯的**。
+        #     `data/universe/<feed>/<日期>.csv` 的意思是「那一天發生了什麼」，
+        #     而還原因子的不變量是「**最新價的 F = 1，現價不動**」。
+        #     收下 09/07 的減資，今天 1563 的收盤 66.00 會被一個**還沒發生**的
+        #     事件還原成 84.66——報告上的價位就跟看盤軟體對不起來了。
+        #     而且公告可能延期或取消，日檔會留在原地變成幽靈。
+        #
+        #   → `announce_ahead` 的正確語意是：**未來日期的列丟掉，但不因此拒收整月**，
+        #     並在摘要把它們列出來（知道有減資要來是有用的，只是不進因子）。
+        #     等事件日過了，下次跑同一個月自然就收進來。
+        "announce_ahead": True,
         # ★ 2026-09-06 用 WebFetch 實測（工具要標明——見 READ_CONTRACT 的教訓）：
         #   `startDate=20150101&endDate=20151231` → stat=OK、
         #   title「104年01月01日 至 104年12月31日 股票減資恢復買賣參考價格」、**26 列**，
@@ -730,11 +739,12 @@ def cmd_feed_range(args, name):
     print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，共 {len(rng)} 個月")
     ok = empty = failed = 0
     total_rows = 0
-    fwd = bool(spec.get("forward"))
-    n_future = 0
+    fwd = bool(spec.get("announce_ahead"))
+    n_future, future_rows = 0, []
     for i, (a, b) in enumerate(rng, 1):
-        # 前瞻式公告表：請求與檢查都用**月底**當上界，否則當月的未來日期列
-        # 會落在區間外，整月被拒收（見 FEEDS["reduce"] 的 forward 註解）。
+        # 前瞻式公告表：請求與 stray 檢查都用**月底**當上界，否則當月的未來日期列
+        # 會落在區間外，整月被拒收（見 FEEDS["reduce"] 的 announce_ahead 註解）。
+        # ★ 上界放寬只是為了「不要整月拒收」，**未來的列照樣不寫**，見下方。
         b_lim = (f"{a[:7]}-{calendar.monthrange(int(a[:4]), int(a[5:7]))[1]:02d}"
                  if fwd else b)
         aa, bb = a.replace("-", ""), b_lim.replace("-", "")
@@ -788,10 +798,15 @@ def cmd_feed_range(args, name):
         lines, nt = spec["parse"](got, a, known if spec["known"] else None)
         stray = [r[0] for r in lines if not (a <= r[0] <= b_lim)]
         if fwd:
-            fut = [r[0] for r in lines if r[0] > b]
+            # ★ 未來日期的列**不寫檔**。它們是公告、不是已發生的事件，
+            #   寫進去會讓還原因子由尚未發生的事件產生（見上方註解）。
+            fut = [r for r in lines if r[0] > b]
             if fut:
                 n_future += len(fut)
-                nt += f"（含 {len(fut)} 列**尚未到期的公告**：{sorted(set(fut))[:3]}）"
+                future_rows.extend(fut)
+                lines = [r for r in lines if r[0] <= b]
+                nt += (f"（另有 {len(fut)} 列**尚未到期的公告，未寫入**："
+                       f"{sorted({r[0] for r in fut})[:4]}）")
         if stray:
             print(f"[{name}] ★ {a[:7]} 有 {len(stray)} 列日期落在請求區間外"
                   f"（例：{stray[:3]}），整月拒收，不寫檔。", file=sys.stderr)
@@ -815,7 +830,13 @@ def cmd_feed_range(args, name):
         time.sleep(B.SLEEP)
     print(f"[{name}] 完成：有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
           f"合計 {total_rows} 列"
-          + (f"（其中 {n_future} 列是尚未到期的公告）" if n_future else ""))
+          + (f"；另有 {n_future} 列**尚未到期的公告，未寫入**" if n_future else ""))
+    if future_rows:
+        # 印出來是刻意的：知道有減資要來很有用（那幾天會停止買賣），
+        # 只是它不該進還原因子。等事件日過了再跑一次同一個月就會收進來。
+        print(f"[{name}] 尚未到期的公告（**不在資料庫裡**，僅供知悉）：")
+        for r in sorted(future_rows)[:20]:
+            print(f"        {r[0]}  {r[1]}  {'  '.join(str(x) for x in r[2:5])}")
     return 0 if (ok or not rng) else 1
 
 

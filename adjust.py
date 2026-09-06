@@ -375,11 +375,43 @@ def main():
         print("[adj] 找不到任何事件——先跑 feeds.py --run --feed exright"
               "，減資再跑一次 --feed reduce", file=sys.stderr)
         return 1
-    want = {c.strip() for c in a.codes.split(",") if c.strip()}
-    codes = sorted(c for c in ev if not want or c in want)
-
     os.makedirs(ADJ_DIR, exist_ok=True)
     cal = trading_days()
+
+    # ★★ **尚未發生的事件不得產生還原因子。**（2026-09-06 補的閘門）
+    #   還原因子的不變量是「最新價的 F = 1，現價不動」——報告上的價位要跟
+    #   看盤軟體對得起來。若事件目錄裡混進一筆日期在**資料最後一天之後**的事件，
+    #   `factor_at()` 會對今天的收盤回傳那個因子：1563 今天的 66.00 會被
+    #   一個還沒發生的減資還原成 84.66，而且**沒有任何地方會報錯**。
+    #
+    #   抓取端已經不寫未來的列了（`announce_ahead`），這裡是第二道——
+    #   閘門放在算因子的地方，才不會依賴「上游有沒有記得擋」。
+    #   基準是**交易日曆的最後一天**（＝資料到哪一天），不是系統時鐘：
+    #   容器的時鐘曾經差過一天，不能拿它當判準。
+    if cal:
+        last = cal[-1]
+        pending = []
+        for c in list(ev):
+            fut = [r for r in ev[c] if r[0] > last]
+            if not fut:
+                continue
+            pending.extend((c,) + r for r in fut)
+            ev[c] = [r for r in ev[c] if r[0] <= last]
+            if not ev[c]:
+                del ev[c]
+        if pending:
+            print(f"[adj] **尚未發生的事件 {len(pending)} 筆，不採用**"
+                  f"（資料最後一天 {last}）：")
+            for p in sorted(pending)[:20]:
+                print(f"        {p[1]}  {p[0]}  {p[5]}  f={p[2]:.4f}  {p[6]}")
+            print("[adj] 它們會在事件日過後自然進來。"
+                  "**不擋的話今天的收盤會被還沒發生的事件還原。**")
+    else:
+        print("[adj] ⚠ 沒有交易日曆，**無法擋掉尚未發生的事件**。"
+              "若事件目錄裡有未來日期的列，今天的還原價會是錯的。", file=sys.stderr)
+
+    want = {c.strip() for c in a.codes.split(",") if c.strip()}
+    codes = sorted(c for c in ev if not want or c in want)
     if a.verify and not cal:
         print("[adj] 找不到 data/universe/daily/，無法取得交易日曆——"
               "**核對會退化成「拿前一個有資料的日子比」並產生假警報**，"
