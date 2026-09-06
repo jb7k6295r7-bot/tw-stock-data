@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃除權息與減資的來源＋交叉驗證｜mops-history-probe 找基本面歷史來源｜calendar-audit 用獨立來源核對交易日曆"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃除權息與減資的來源＋交叉驗證｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, mops-history-probe, calendar-audit]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, mops-history-probe, mops-history-dry, mops-history, calendar-audit]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -137,6 +137,19 @@ jobs:
         if: inputs.mode == 'mops-history-probe'
         run: python mops_history_probe.py --sleep "${{ inputs.sleep || '2' }}"
 
+      # ★ 月營收與財報的歷史回補。**一定要先跑 mops-history-dry**：
+      #   parser 是在看不到 HTML 的情況下照 MOPS 慣例寫的（那些頁面 robots 擋 WebFetch），
+      #   欄位對不對只有跑過才知道。**470 發的回補不該建立在猜出來的 parser 上。**
+      - name: 基本面歷史（乾跑，只印解析結果）
+        if: inputs.mode == 'mops-history-dry'
+        run: python mops_history.py --sleep "${{ inputs.sleep || '3' }}"
+
+      - name: 基本面歷史（回補）
+        if: inputs.mode == 'mops-history'
+        run: |
+          python mops_history.py --run --kind revenue \
+            --start "${{ inputs.start }}" --sleep "${{ inputs.sleep || '3' }}"
+
       # ★★ 拿**獨立來源**核對交易日曆。目前的日曆＝`data/universe/daily/` 的檔名，
       #   那是用自己的產出當自己的判準：某天整批漏抓的話，七個 feed 會
       #   **一致地缺同一天**，覆蓋率算出來反而是 100%。
@@ -156,7 +169,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit')
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit' || inputs.mode == 'mops-history')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
