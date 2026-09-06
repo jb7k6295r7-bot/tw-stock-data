@@ -327,11 +327,31 @@ def load_kind_map():
     return out
 
 
+# ★★ 異業的欄位是**硬證據**，要在代號多數決之前判。
+#   2026-09-06 回補實測：2015 全年**上櫃**的 fs 與 bs 都出現「ci 重複」，
+#   八個期別因此整張不寫。根因是——
+#   **對照表來自 OpenAPI，而 OpenAPI 只有五類、沒有異業**。
+#   所以任何異業公司在對照表裡一定被標成別的類（多半 ci），
+#   代號多數決對這一類是**系統性錯誤**，涵蓋率再高也一樣錯
+#   （上一版加的涵蓋率門檻擋不住這種：它涵蓋率高、答案錯）。
+#
+#   幸好異業的欄位跟誰都不一樣，而且是精確欄名比對、不會誤中：
+#     損益表　　異業「收入」「支出」 vs 一般業「營業收入」「營業成本」
+#     資產負債表 異業「資產總額」 vs 一般業「資產總計」 vs 證券「資產合計」
+#   → 欄位命中異業就直接判 other，不讓多數決覆蓋。
+def _is_other(h):
+    return (("收入" in h and "支出" in h)
+            or any(x == "資產總額" for x in h))
+
+
 def fs_kind(header, codes=(), kmap=None):
     """→ (業別, 依據)。判不出來回 ("", 理由)——**不要瞎猜一個**。
 
     先用已知代號多數決（依據＝`代號`），不行才退回欄位特徵（依據＝`欄位`）。
     """
+    h0 = [_clean(x) for x in header]
+    if _is_other(h0):
+        return "other", "異業欄位（硬證據，不看多數決）"
     if kmap and codes:
         votes = {}
         for c in codes:
@@ -394,7 +414,32 @@ def parse_fs(raw, kmap=None):
         if body:
             kind, how = fs_kind(header, [r[0] for r in body], kmap)
             got.append((kind, how, _clean(cap)[-40:], header, body))
+
+    # ★ 最後一道：同一頁若還有兩張表判成同一個業別，**那一定有一張是錯的**。
+    #   對撞名的那幾張改用純欄位特徵重判一次（不看代號）。
+    #   欄位是內容本身，代號多數決是統計推論——衝突時信前者。
+    seen = {}
+    for i, (k, _how, _c, _h, _b) in enumerate(got):
+        seen.setdefault(k, []).append(i)
+    for k, idxs in seen.items():
+        if k and len(idxs) > 1:
+            for i in idxs:
+                kk, hh = _kind_by_header(got[i][3])
+                if kk:
+                    got[i] = (kk, f"撞名重判：{hh}") + got[i][2:]
     return got, enc
+
+
+def _kind_by_header(header):
+    """只看欄位、不看代號。撞名時用它拆。"""
+    h = [_clean(x) for x in header]
+    for tag, f in FS_KINDS:
+        try:
+            if f(h):
+                return tag, "欄位特徵"
+        except Exception:                                 # noqa: BLE001
+            continue
+    return "", "判不出"
 
 
 # ── 輸出 ──────────────────────────────────────────────────────────
