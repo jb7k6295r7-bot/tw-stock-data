@@ -167,10 +167,14 @@ jobs:
       - name: 基本面歷史（回補）
         if: inputs.mode == 'mops-history'
         run: |
-          # kind=both：月營收 282 發 ＋ 財報 188 發。sleep 3 ≈ 25 分鐘。
-          # ★ 失敗的期別會在最後列出來，重跑同一段即可（已成功的會被覆蓋）。
-          python mops_history.py --run --kind both \
-            --start "${{ inputs.start }}" --sleep 3
+          # ★★ `--start` **寫死 2015-01，不吃 inputs.start**。
+          #   2026-09-06 實測：接 inputs.start 的結果是它拿到那個欄位的預設值
+          #   `2026-01-01`，於是「歷史回補」只補了 2026 年——月營收 15 期、
+          #   財報 30 檔，看起來還跑得好好的。**歷史回補的整個重點是 2015，
+          #   這種事不該靠「記得改欄位」。** 要補特定區間就改這一行。
+          # kind=both：月營收 282 發 ＋ 財報 188 發，sleep 3 ≈ 25 分鐘。
+          # 重跑是冪等的（同名檔覆蓋），失敗的期別直接整段重跑即可。
+          python mops_history.py --run --kind both --start 2015-01 --sleep 3
 
       # ★★ 拿**獨立來源**核對交易日曆。目前的日曆＝`data/universe/daily/` 的檔名，
       #   那是用自己的產出當自己的判準：某天整批漏抓的話，七個 feed 會
