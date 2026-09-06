@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
+2018-12-24,3219,11,17.34,彌補虧損,17.35,0.0,finmind
+2018-12-24,3288,4.4,11,彌補虧損,11.0,0.0,finmind

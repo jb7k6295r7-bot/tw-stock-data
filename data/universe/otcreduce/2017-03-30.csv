@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
+2017-03-30,3086,7.06,14.25,彌補虧損,14.25,0.0,finmind

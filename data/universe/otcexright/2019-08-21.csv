@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2019-08-21,2064,14.5,13.5,1.0,除息,,finmind
