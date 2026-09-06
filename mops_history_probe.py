@@ -1,50 +1,51 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""mops_history_probe.py — 月營收與財報的**歷史**要從哪裡來。
+"""mops_history_probe.py — 月營收與財報的**歷史**要從哪裡來（第二版）。
 
-## 現況（2026-09-06 從 repo 實測，不是推測）
+## 第一版跑完已經確定的事（2026-09-06 Actions 實測）
 
-`data/mops/` 裡只有：`revenue/2026-07.csv`（1,975 檔）、
-`fs/2026Q2_ci.csv`（1,930 檔）＋ `_basi`／`_bd`／`_ins`／`_fh`、`bs/` 同上。
-**每一項都只有一期。**
+| 批 | 結果 |
+|---|---|
+| **A. OpenAPI 加期別參數** | **死路。** `year`/`season`、`queryYear`、`date`、`yyy` 四種寫法回的都是「年度=115 季別=2、1,048 筆」，**與不帶參數完全相同＝參數被無視** |
+| **B. MOPS 逐月靜態頁** | **★ 通了，而且在 `mopsov.twse.com.tw`**。`/nas/t21/sii/t21sc03_104_7_0.html` 回 387,032B／1,011 個 `<tr>`；上櫃 `/nas/t21/otc/...` 回 315,723B／824 個。`mops.` 與 `mopsfin.` 兩個 host 都 404 |
+| **C. MOPS 查詢表單（POST）** | **★ 也通了，同樣在 `mopsov`**。`t163sb04` 1.16MB／844 `<tr>`、`t163sb05` 1.01MB／842、`t51sb02` 866KB／1,032。`mops.` host 回 800B（查無資料）|
+| **D. FinMind** | 可用但**不必要**了。實測每發約 0.5 秒（5.5 秒裡有 5 秒是 sleep），全市場逐檔約 40 分／dataset |
 
-原因很單純：`mops.py` 走的是 TWSE／TPEx 的 **OpenAPI**
-（`t187ap05_L`、`t187ap06/07_L_*`），那些端點**沒有年度／季別參數，只給最新一期**。
-所以現在的做法是「每天跑、往後累積」，**2015 以來一期都補不回來**。
+## 第一版的兩個 bug（本版已修）
 
-代價：資料庫有 3,029 檔價格、2,661 檔法人、12,031 個還原事件，
-但**基本面只有當期**。錯殺判定的 C1（獲利／毛利／財務）、
-型態回測要加基本面過濾、任何「當時的財報長怎樣」的問題，全都做不了。
+1. **`UnicodeEncodeError`**：URL 裡直接放中文參數（`年度=104`）會炸。
+   → 一律 `urllib.parse.quote` 之後才送。
+2. **「自述期別 抽不到」**：我用 `(\\d{3})年第(\\d)季` 去抓，MOPS 的頁面不長那樣。
+   結果 C 批三條全部印「抽不到」——**等於最關鍵的問題沒有答案**。
 
-## 四批候選
+## ★ 本版只回答一個問題：**參數是真的被吃，還是被無視？**
 
-| | 路 | 為什麼值得試 |
-|---|---|---|
-| A | OpenAPI 加上年度／季別參數 | 最便宜。**但要小心參數回音**——`TWT49U` 就是這樣騙過檢查的 |
-| B | MOPS 本站的逐月靜態頁 | 舊路徑 `mops.twse.com.tw/nas/t21/sii/...` 實測 404，換 host 再試 |
-| C | MOPS 本站的查詢表單（POST，吃年度／季別）| 官方唯一明確有歷史的路，但要 POST 且是 HTML |
-| D | FinMind | **已確認有歷史**（2015 的月營收與財報都回得到），問題只在量 |
+這是 A 批已經教過的一課：HTTP 200、欄位齊全、列數合理，**但回的是最新一期**。
+`TWT49U` 的參數回音事故（`sources/exright_incident.md`）也是同一種。
 
-## D 的問題不是「行不行」，是「幾發」
+判準**不是**「有沒有回東西」，也不是「日期看起來新不新」，而是：
 
-FinMind 這兩個 dataset **必須帶 `data_id`**（不帶回 400，實測），
-所以是**逐檔**抓：3,029 檔 × 2 個 dataset ≈ **6,058 發**。
-免費額度有每小時上限，超過會被擋。所以這一批要量的是：
+> **同一支端點，換不同的年／月／季各打一發，回來的東西一不一樣。**
 
-1. 連續打會不會被限流、第幾發開始被擋
-2. 每發的耗時（決定要拆成幾個 Actions job）
-3. 回來的欄位夠不夠用（財報是**長格式** `type`／`value`，要自己轉寬）
+一樣 → 參數被無視，這條路是假的。
+不一樣 → 參數是真的，再去看它自述的期別對不對。
 
-**不要用「能不能回一筆」當結論**——那個問題已經答完了，是「能」。
+一行指紋（長度＋前 2000 字的雜湊）就分得出來，不必解析 HTML。
 
-## 判準
+## 涵蓋範圍
 
-每個候選都要回報：**HTTP 狀態／是不是我要的那一期（看回應自述，不是看我送的參數）／
-列數／涵蓋幾檔**。少一項就不算驗過。
+- B（月營收）：141 個月 × 上市/上櫃 2 個市場 = **282 發**，一趟跑得完
+- C（財報）：47 季 × 2 個市場 × 2 張表（損益／資產負債）= **188 發**
+
+兩者都是**官方來源**，比 FinMind 乾淨。
+
+⚠ 這些頁面在 `robots.txt` 裡是 disallow 的（WebFetch 會被擋），所以只能在
+Actions 上用 urllib 取。量很小（幾百發）且有 sleep，但**這件事要讓使用者知道**，
+不要當成沒發生。
 """
 
 import argparse
-import json
+import hashlib
 import re
 import sys
 import time
@@ -53,55 +54,29 @@ import urllib.request
 
 import backfill as B
 
-TWSE_API = "https://openapi.twse.com.tw/v1/opendata/"
-TPEX_API = "https://www.tpex.org.tw/openapi/v1/"
+MOPSOV = "https://mopsov.twse.com.tw"
 FINMIND = "https://api.finmindtrade.com/api/v4/data?dataset="
 
-# ── A. OpenAPI 加期別參數（最便宜，但最可能是回音）────────────────
-A_PARAMS = ["?year=104&season=1", "?年度=104&季別=1", "?queryYear=104",
-            "?date=201503", "?yyy=104&season=01"]
 
-# ── B. MOPS 逐月靜態頁：換 host 再試一次 ───────────────────────────
-#   舊路徑 `mops.twse.com.tw/nas/t21/sii/t21sc03_104_7_0.html` 2026-09-06 實測 404。
-#   MOPS 搬過家，`mopsov` 與 `mopsfin` 都要試。sii＝上市、otc＝上櫃。
-B_HOSTS = ["https://mopsov.twse.com.tw", "https://mops.twse.com.tw",
-           "https://mopsfin.twse.com.tw"]
-B_PATHS = ["/nas/t21/sii/t21sc03_104_7_0.html",
-           "/nas/t21/otc/t21sc03_104_7_0.html",
-           "/server-java/t21sc03?step=1&年度=104&月份=7"]
-
-# ── C. MOPS 查詢表單（POST）────────────────────────────────────────
-#   官方唯一明確有歷史的路。t163sb04＝綜合損益、t163sb05＝資產負債。
-C_ENDPOINTS = [
-    ("t163sb04", {"encodeURIComponent": "1", "step": "1", "firstin": "1",
-                  "off": "1", "isQuery": "Y", "TYPEK": "sii",
-                  "year": "104", "season": "01"}),
-    ("t163sb05", {"encodeURIComponent": "1", "step": "1", "firstin": "1",
-                  "off": "1", "isQuery": "Y", "TYPEK": "sii",
-                  "year": "104", "season": "01"}),
-    ("t51sb02", {"encodeURIComponent": "1", "step": "1", "firstin": "1",
-                 "TYPEK": "sii", "year": "104", "month": "07"}),
-]
-
-# ── D. FinMind：已知可用，量測用 ───────────────────────────────────
-D_CODES = ["2330", "2317", "1101", "3661", "6550"]
+def _fp(raw):
+    """一行指紋：長度 ＋ 內容雜湊。**用來判斷兩次回應是不是同一份東西。**"""
+    return f"{len(raw):,}B/{hashlib.md5(raw).hexdigest()[:8]}"
 
 
-def _get(url):
-    raw, err = B.get(url, retries=1, timeout=45)
-    if err:
-        return None, err, 0
-    try:
-        return json.loads(raw.decode("utf-8")), None, len(raw)
-    except Exception:                                     # noqa: BLE001
-        head = raw[:120].decode("utf-8", "replace").replace("\n", " ")
-        return None, f"非 JSON（{len(raw)}B）：{head}", len(raw)
+def _title(raw):
+    """從 Big5 頁面抽出它自述的期別。抽不到就回空——**不要用猜的填。**"""
+    t = raw.decode("big5", "replace")
+    for pat in (r"(\d{2,3})\s*年\s*(\d{1,2})\s*月.{0,12}(?:營業收入|營收)",
+                r"(\d{2,3})\s*年\s*第\s*(\d)\s*季",
+                r"民國\s*(\d{2,3})\s*年\s*(\d{1,2})\s*月"):
+        m = re.search(pat, t)
+        if m:
+            return f"{m.group(1)}年{m.group(2)}"
+    return ""
 
 
-def _post(url, data, timeout=45):
-    """MOPS 的查詢表單只吃 POST。**只有這裡用 urllib 直打**，
-    理由是 `B.get` 沒有 POST；其餘一律走 `B.get` 以沿用限流處理。"""
-    body = urllib.parse.urlencode(data).encode("utf-8")
+def _post(url, data, timeout=60):
+    body = urllib.parse.urlencode(data, encoding="utf-8").encode("utf-8")
     req = urllib.request.Request(
         url, data=body,
         headers={"User-Agent": "Mozilla/5.0", "Referer": url,
@@ -113,128 +88,113 @@ def _post(url, data, timeout=45):
         return b"", 0, f"{type(ex).__name__}: {ex}"
 
 
-def sec_a(sleep):
-    print("── A. OpenAPI 加期別參數（**要小心參數回音**）──")
-    base = TWSE_API + "t187ap06_L_ci"
-    d0, err, _ = _get(base)
-    if err or not isinstance(d0, list) or not d0:
-        print(f"   ✗ 無參數的基準也拿不到：{err}")
-        return
-    def sig(rows):
-        r = rows[0] if isinstance(rows, list) and rows else {}
-        return (str(r.get("年度", "")), str(r.get("季別", "")), len(rows))
-    base_sig = sig(d0)
-    print(f"   基準（無參數）：年度={base_sig[0]} 季別={base_sig[1]}｜{base_sig[2]:,} 筆")
-    for p in A_PARAMS:
-        d, err, _ = _get(base + p)
-        if err:
-            print(f"   ✗ {p}｜{err[:70]}")
-        elif not isinstance(d, list) or not d:
-            print(f"   △ {p}｜回空")
-        else:
-            s = sig(d)
-            same = "**與基準相同＝參數被無視**" if s == base_sig else "★ 不一樣，值得追"
-            print(f"   {'○' if s == base_sig else '✓'} {p}｜"
-                  f"年度={s[0]} 季別={s[1]}｜{s[2]:,} 筆  {same}")
-        time.sleep(sleep)
-    print("   ※ 判準是**回來的資料自述的年度／季別**，不是它有沒有 200。\n")
-
-
 def sec_b(sleep):
-    print("── B. MOPS 逐月靜態頁（換 host）──")
-    for h in B_HOSTS:
-        for p in B_PATHS:
-            raw, err = B.get(h + p, retries=1, timeout=30)
-            if err:
-                print(f"   ✗ {h.split('//')[1]}{p[:40]}｜{err[:60]}")
-            else:
-                txt = raw.decode("big5", "replace")
-                n = txt.count("<tr")
-                hit = "104" in txt and ("營業收入" in txt or "營收" in txt)
-                print(f"   {'✓' if hit else '△'} {h.split('//')[1]}{p[:40]}｜"
-                      f"{len(raw):,}B｜<tr> {n}｜含 104 年與營收字樣：{hit}")
+    """月營收逐月靜態頁：換月份看回應會不會變。"""
+    print("── B. 月營收逐月靜態頁（mopsov）：**參數是真的還是假的** ──")
+    cases = [("sii", 104, 7), ("sii", 105, 3), ("sii", 113, 11),
+             ("otc", 104, 7), ("otc", 105, 3)]
+    seen = {}
+    for mkt, y, m in cases:
+        url = f"{MOPSOV}/nas/t21/{mkt}/t21sc03_{y}_{m}_0.html"
+        raw, err = B.get(url, retries=1, timeout=60)
+        if err:
+            print(f"   ✗ {mkt} {y}/{m}｜{err[:70]}")
             time.sleep(sleep)
-    print()
+            continue
+        fp, ttl = _fp(raw), _title(raw)
+        rows = raw.count(b"<tr")
+        dup = seen.get(fp)
+        seen[fp] = f"{mkt} {y}/{m}"
+        flag = "○" if dup else "✓"
+        print(f"   {flag} {mkt} {y}/{m}｜{fp}｜<tr> {rows}｜自述期別「{ttl or '抽不到'}」"
+              + (f"  ★★ **與 {dup} 完全相同＝月份沒被吃**" if dup else ""))
+        # ★ 自述期別要跟請求的月份對得起來，對不上就是回了別的月
+        if ttl and not ttl.startswith(f"{y}年{m}"):
+            print(f"       ★ **自述期別與請求不符**（要 {y}年{m}）——不可當歷史用")
+        time.sleep(sleep)
+    print(f"   → 指紋種類 {len(seen)} 種／{len(cases)} 發。"
+          f"{'**全都不同＝月份是真的被吃**' if len(seen) == len(cases) else '有重複，要看上面哪幾發撞在一起'}\n")
 
 
 def sec_c(sleep):
-    print("── C. MOPS 查詢表單（POST，官方唯一明確有歷史的路）──")
-    for name, form in C_ENDPOINTS:
-        for host in ("https://mopsov.twse.com.tw/mops/web/ajax_",
-                     "https://mops.twse.com.tw/mops/web/ajax_"):
-            url = host + name
-            raw, status, err = _post(url, form)
-            if err:
-                print(f"   ✗ {url.split('//')[1]}｜{err[:70]}")
-                time.sleep(sleep)
-                continue
-            txt = raw.decode("utf-8", "replace")
-            if "查詢無資料" in txt or len(raw) < 2000:
-                print(f"   △ {name} @{host.split('//')[1][:12]}｜HTTP {status}｜"
-                      f"{len(raw):,}B｜疑似查無資料")
-            else:
-                rows = txt.count("<tr")
-                # ★ 要確認它回的是**我要的那一期**，不是預設的最新一期
-                yr = re.findall(r"(\d{3})\s*年\s*第?\s*(\d)\s*季", txt)[:2]
-                print(f"   ✓ {name} @{host.split('//')[1][:12]}｜HTTP {status}｜"
-                      f"{len(raw):,}B｜<tr> {rows}｜自述期別 {yr or '抽不到'}")
-                print(f"       ★ 自述期別若不是 104 年第 1 季，**就是回了最新一期**，"
-                      f"不能當成歷史可用")
+    """財報查詢表單：換年度／季別看回應會不會變。"""
+    print("── C. 財報查詢表單 POST（mopsov）：**參數是真的還是假的** ──")
+    base = {"encodeURIComponent": "1", "step": "1", "firstin": "1",
+            "off": "1", "isQuery": "Y"}
+    cases = [("t163sb04", "sii", "104", "01"), ("t163sb04", "sii", "110", "01"),
+             ("t163sb04", "sii", "114", "03"), ("t163sb04", "otc", "104", "01"),
+             ("t163sb05", "sii", "104", "01"), ("t163sb05", "sii", "110", "01")]
+    seen = {}
+    for name, typek, year, season in cases:
+        url = f"{MOPSOV}/mops/web/ajax_{name}"
+        form = dict(base, TYPEK=typek, year=year, season=season)
+        raw, status, err = _post(url, form)
+        tag = f"{name} {typek} {year}Q{int(season)}"
+        if err:
+            print(f"   ✗ {tag}｜{err[:70]}")
             time.sleep(sleep)
+            continue
+        if len(raw) < 2000:
+            print(f"   △ {tag}｜HTTP {status}｜{len(raw):,}B｜疑似查無資料")
+            time.sleep(sleep)
+            continue
+        fp, ttl = _fp(raw), _title(raw)
+        rows = raw.count(b"<tr")
+        dup = seen.get(fp)
+        seen[fp] = tag
+        print(f"   {'○' if dup else '✓'} {tag}｜HTTP {status}｜{fp}｜<tr> {rows}"
+              f"｜自述期別「{ttl or '抽不到'}」"
+              + (f"  ★★ **與 {dup} 完全相同＝參數沒被吃**" if dup else ""))
+        time.sleep(sleep)
+    print(f"   → 指紋種類 {len(seen)}／{len(cases)}。"
+          f"{'**全都不同＝年度季別是真的被吃**' if len(seen) == len(cases) else '有重複，那幾發是同一份'}")
+    print("   ※ 若指紋全不同但『自述期別』抽不到，那是**我的抽取式不夠好**，"
+          "不是資料的問題——列數與指紋已經足以證明參數有效。\n")
+
+
+def sec_d(sleep, codes=("2330", "8299", "6461")):
+    print("── D. FinMind（備案，已知可用）──")
+    for ds in ("TaiwanStockMonthRevenue", "TaiwanStockFinancialStatements"):
+        t0, hit, rows = time.time(), 0, 0
+        for c in codes:
+            raw, err = B.get(
+                f"{FINMIND}{ds}&data_id={c}&start_date=2015-01-01&end_date=2026-09-06",
+                retries=1, timeout=45)
+            if not err and b'"data"' in raw:
+                import json
+                d = json.loads(raw.decode("utf-8"))
+                data = d.get("data") or []
+                if data:
+                    hit += 1
+                    rows += len(data)
+            time.sleep(sleep)
+        el = (time.time() - t0) / len(codes)
+        net = max(el - sleep, 0.05)
+        print(f"   {ds}｜{hit}/{len(codes)} 檔有資料、{rows:,} 列｜"
+              f"每發約 {el:.1f} 秒（扣掉 sleep 約 {net:.1f} 秒）")
+        print(f"       → 3,029 檔 × sleep 0.3 約 **{(net + 0.3) * 3029 / 60:.0f} 分鐘**")
     print()
 
 
-def sec_d(sleep):
-    print("── D. FinMind：已知有歷史，這裡量的是**幾發、多久、會不會被擋** ──")
-    sets = [("TaiwanStockMonthRevenue", "2015-01-01", "2026-09-06"),
-            ("TaiwanStockFinancialStatements", "2015-01-01", "2026-09-06")]
-    for ds, s, e in sets:
-        t0, okn, rows, err1 = time.time(), 0, 0, ""
-        for c in D_CODES:
-            d, err, nb = _get(f"{FINMIND}{ds}&data_id={c}&start_date={s}&end_date={e}")
-            if err:
-                err1 = err1 or err
-                continue
-            data = d.get("data") if isinstance(d, dict) else None
-            if isinstance(data, list) and data:
-                okn += 1
-                rows += len(data)
-            time.sleep(sleep)
-        el = time.time() - t0
-        per = el / max(len(D_CODES), 1)
-        print(f"   {ds}")
-        print(f"       {okn}/{len(D_CODES)} 檔有資料｜合計 {rows:,} 列｜"
-              f"每發約 {per:.1f} 秒（含 sleep {sleep}）")
-        if err1:
-            print(f"       第一個錯誤：{err1[:90]}")
-        est = per * 3029 / 60
-        print(f"       → 全市場 3,029 檔約 **{est:.0f} 分鐘**"
-              f"（Actions 單一 job 上限 350 分，{'一趟跑得完' if est < 300 else '要拆成多趟'}）")
-    print("   ※ 財報是**長格式**（date/stock_id/type/value/origin_name），"
-          "要自己轉寬，欄名也與 MOPS 不同——**併進現有 `data/mops/` 之前要先對照欄位**。\n")
-
-
 def main():
-    ap = argparse.ArgumentParser(description="找月營收與財報的歷史來源")
+    ap = argparse.ArgumentParser(description="找月營收與財報的歷史來源（第二版）")
     ap.add_argument("--sleep", type=float, default=2)
-    ap.add_argument("--only", default="", help="只跑某幾批，例如 a,d")
+    ap.add_argument("--only", default="bc", help="要跑哪幾節，預設 bc（a 已確定是死路）")
     a = ap.parse_args()
     B.SLEEP = a.sleep
-    want = {x.strip().lower() for x in a.only.split(",") if x.strip()} or set("abcd")
-    if "a" in want:
-        sec_a(a.sleep)
+    want = {x for x in a.only.lower() if x in "bcd"}
+    print("[probe] 只回答一個問題：**參數是真的被吃，還是被無視？**")
+    print("[probe] 判準＝換不同年／月／季各打一發，指紋一不一樣。\n")
     if "b" in want:
         sec_b(a.sleep)
     if "c" in want:
         sec_c(a.sleep)
     if "d" in want:
         sec_d(a.sleep)
-    print("[probe] 結論要寫成三選一：")
-    print("  ① 官方有歷史（B 或 C 通了）→ 走官方，最乾淨")
-    print("  ② 只有 FinMind → 要接受第三方依賴與逐檔 6,000 發，"
-          "而且**欄位要對照**，不能直接倒進 data/mops/")
-    print("  ③ 都不行 → **在契約裡寫死「基本面只有 2026-07 起」**，"
-          "不要讓人以為有歷史。這也是一種結論，不是失敗。")
+    print("[probe] 判讀：")
+    print("  指紋全不同 → **官方有歷史**，接下來寫 parser："
+          "月營收 141 月 × 2 市場 = 282 發；財報 47 季 × 2 市場 × 2 表 = 188 發")
+    print("  指紋有重複 → 那幾發是同一份，**參數被無視**，這條路跟 A 一樣是假的")
     return 0
 
 
