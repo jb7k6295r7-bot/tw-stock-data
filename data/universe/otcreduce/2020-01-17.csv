@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
+2020-01-17,6222,10.7,15.09,彌補虧損,15.1,0.0,finmind
