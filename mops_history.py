@@ -84,7 +84,11 @@ class _Tables(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag == "table":
-            cap = _clean(" ".join(self._text))[-60:]
+            # ★★ 第二次踩到：抬頭還是空的。原因是 MOPS 把整頁包在一張大 table 裡，
+            #   所以「表格外的文字」幾乎不存在——產業別是寫在**外層表格的儲存格內**，
+            #   後面才接一張巢狀的資料表。只收 `_depth == 0` 的文字等於什麼都收不到。
+            #   → 改成收「最近看到的一段文字」，不管它在不在儲存格裡。
+            cap = _clean(" ".join(self._text) + " " + "".join(self._cell))[-60:]
             self._text = []
             self._stack.append((cap, []))
         elif tag == "tr" and self._stack:
@@ -239,22 +243,70 @@ FS_KINDS = [
     ("basi", lambda h: "利息淨收益" in h),
     ("bd",   lambda h: "收益" in h and any("支出及費用" in x for x in h)),
     ("ci",   lambda h: "營業收入" in h and "營業成本" in h),
+    # 乾跑實測還有第六張：18 欄 4 列、欄位是「收入／支出」、首列 1409 新纖。
+    # 那是 MOPS 的**異業**（子公司跨業別者）。現有 data/mops/fs/ 只有五種，
+    # 是因為 OpenAPI 那一期剛好沒有這張——**不要因此假設它不存在**。
+    ("other", lambda h: "收入" in h and "支出" in h),
 ]
 
 
-def fs_kind(header):
-    """→ ci／basi／bd／ins／fh，判不出來回空字串。**不要瞎猜一個。**"""
+def load_kind_map():
+    """從**現有的** `data/mops/fs/*_<業別>.csv` 建 {代號: 業別}。
+
+    ★★ 這比欄位特徵可靠得多，而且用的是我們手上已經有的資料。
+      乾跑實測欄位特徵有兩個死穴：
+        ① 保險（2816 旺旺保）的損益表欄位是「營業收入／營業成本／營業費用」，
+           **跟一般業長得一樣**，被判成 ci → 同一個 kind 兩張表會互相覆蓋
+        ② 資產負債表（t163sb05）的欄位跟損益表完全不同，六張全部判不出
+      公司的業別**極少變**，所以拿 2026 那一期的分類回推 2015 幾乎一定對。
+      判不出的是已下市公司，用同表其他成員的多數決補。
+    """
+    out = {}
+    for sub in ("fs", "bs"):
+        d = os.path.join(OUT, sub)
+        if not os.path.isdir(d):
+            continue
+        for n in sorted(os.listdir(d)):
+            if not n.endswith(".csv") or "_" not in n:
+                continue
+            kind = n[:-4].split("_")[-1]
+            with open(os.path.join(d, n), encoding="utf-8") as fh:
+                fh.readline()
+                for ln in fh:
+                    c = ln.split(",", 1)[0].strip()
+                    if c and c[0].isdigit():
+                        out.setdefault(c, kind)
+    return out
+
+
+def fs_kind(header, codes=(), kmap=None):
+    """→ (業別, 依據)。判不出來回 ("", 理由)——**不要瞎猜一個**。
+
+    先用已知代號多數決（依據＝`代號`），不行才退回欄位特徵（依據＝`欄位`）。
+    """
+    if kmap and codes:
+        votes = {}
+        for c in codes:
+            k = kmap.get(c)
+            if k:
+                votes[k] = votes.get(k, 0) + 1
+        if votes:
+            best = max(votes, key=votes.get)
+            n, tot = votes[best], sum(votes.values())
+            if n / tot >= 0.7:
+                return best, f"代號多數決 {n}/{tot}（{len(codes)} 家）"
+            return best, f"★ 代號多數決只有 {n}/{tot}，**要人看**"
     h = [_clean(x) for x in header]
     for tag, f in FS_KINDS:
         try:
             if f(h):
-                return tag
+                return tag, "欄位特徵"
         except Exception:                                 # noqa: BLE001
             continue
-    return ""
+    return "", "判不出"
 
 
-def parse_fs(raw):
+def parse_fs(raw, kmap=None):
     """t163sb04／sb05 → ([(kind, caption, 表頭, 列)], 編碼)。
 
     ★ 不合併不同業別。銀行的損益表有「利息淨收益」，一般業有「營業收入」，
@@ -279,7 +331,8 @@ def parse_fs(raw):
                 continue
             body.append([code] + [_num(x) for x in r[1:len(header)]])
         if body:
-            got.append((fs_kind(header), _clean(cap)[-40:], header, body))
+            kind, how = fs_kind(header, [r[0] for r in body], kmap)
+            got.append((kind, how, _clean(cap)[-40:], header, body))
     return got, enc
 
 
@@ -327,6 +380,13 @@ def main():
                     print(f"── 月營收 {mkt} 104/7 ── 抓取失敗：{err}\n")
                     continue
                 rows, header, note, skipped = parse_revenue(raw, 104, 7, mkt)
+                # ★ 抬頭已經猜錯兩次。這次直接把資料表前面的原始 HTML 印出來看。
+                txt, _e = _decode(raw)
+                hits = [m.start() for m in re.finditer(r"<table", txt, re.I)]
+                print(f"   ── 原始 HTML：前 3 張 <table> 之前的 260 字 ──")
+                for k, pos in enumerate(hits[:3], 1):
+                    ctx = txt[max(0, pos - 260):pos].replace("\n", " ")
+                    print(f"       [{k}] …{ctx[-260:]}")
                 print(f"── 月營收 {mkt} 104/7 ──\n   {note}")
                 print(f"   表頭（{len(header or [])} 欄）：{header}")
                 for r in rows[:3]:
@@ -347,20 +407,23 @@ def main():
                 time.sleep(a.sleep)
                 print()
         if a.kind in ("fs", "both"):
+            kmap = load_kind_map()
+            print(f"[hist] 已知業別對照表：{len(kmap)} 檔"
+                  f"（取自現有的 data/mops/fs、bs）\n")
             for form, _ in FS_FORMS:
                 raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
                                   fs_form("sii", 104, 1))
                 if err:
                     print(f"── 財報 {form} sii 104Q1 ── 抓取失敗：{err}\n")
                     continue
-                got, enc = parse_fs(raw)
+                got, enc = parse_fs(raw, kmap)
                 print(f"── 財報 {form} sii 104Q1 ──")
                 print(f"   編碼 {enc}｜認出 {len(got)} 張業別分表（**全部列出**）")
                 seen = {}
-                for kind, cap, hdr, body in got:
+                for kind, how, cap, hdr, body in got:
                     seen[kind] = seen.get(kind, 0) + 1
                     print(f"   [{kind or '★判不出'}] {len(hdr)} 欄 / {len(body)} 列"
-                          f"｜抬頭「{cap}」")
+                          f"｜依據：{how}｜抬頭「{cap}」")
                     print(f"       前 6 欄={hdr[:6]}")
                     print(f"       首列={body[0][:4]}")
                 dupes = [k for k, v in seen.items() if v > 1 and k]
