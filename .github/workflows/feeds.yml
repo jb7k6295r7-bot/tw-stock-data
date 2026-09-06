@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜reduce-probe 找上櫃減資來源｜mops-history-probe 找基本面歷史來源｜calendar-audit 用獨立來源核對交易日曆"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃除權息與減資的來源＋交叉驗證｜mops-history-probe 找基本面歷史來源｜calendar-audit 用獨立來源核對交易日曆"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, reduce-probe, mops-history-probe, calendar-audit]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, mops-history-probe, calendar-audit]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -113,15 +113,20 @@ jobs:
         if: inputs.mode == 'mops'
         run: python mops.py --run --sleep "${{ inputs.sleep || '2' }}"
 
-      # ★ 2026-09-06：**上市的減資來源已經找到並接上了**
-      #   （TWSE `reducation/TWTAUU`，吃 startDate/endDate、2015 起有歷史），
-      #   走 mode=run + feed=reduce 即可，不必再探測。
-      #   這支現在只剩**上櫃**沒解決：TPEx `bulletin/revivt` 形狀對但只回未來十天，
-      #   要驗的是「它吃不吃日期參數」。⚠ TPEx 在開發環境與 WebFetch 一律 403，
-      #   **只有 Actions 上跑出來的結論才算數。只探測、不寫資料。**
-      - name: 找上櫃減資／除權息的歷史來源
-        if: inputs.mode == 'reduce-probe'
-        run: python reduce_probe.py --sleep "${{ inputs.sleep || '1' }}"
+      # ★★ 上櫃的除權息與減資：**TPEx 官方沒有歷史來源**（2026-09-06 Actions 實測）。
+      #   `bulletin/revivt` 是純前瞻公告表，帶任何日期參數回的列都與不帶參數時
+      #   **一模一樣**（＝參數被無視），`startDate/endDate` 直接回「參數錯誤」；
+      #   舊站 `.php` 四條與 `bulletin/*` 另外六個名字全 404。
+      #   ⚠ 舊的 `reduce_probe.py` 對每一條都印「★ 有歷史」——**那是判斷式壞掉**
+      #     （民國七碼拿去跟 "2026" 做字串比較，永遠成立）。已由這支取代，舊檔可刪。
+      #
+      #   走得通的是 FinMind（含上櫃、有歷史，已驗到 8043 蜜望實 2014-10-06 減資、
+      #   8299 群聯 17 筆除權息）。但**有資料不等於可信**——這支最重要的是第 C 節：
+      #   拿**上市**那一半（我方有 TWSE 官方的 11,729＋302 筆）去驗 FinMind 對不對。
+      #   **只探測、不寫資料。**
+      - name: 上櫃除權息與減資的來源
+        if: inputs.mode == 'otc-adj-probe'
+        run: python otc_adj_probe.py --sleep "${{ inputs.sleep || '0.4' }}" --limit 120
 
       # ★ 月營收與財報的**歷史**要從哪裡來。現況是 `data/mops/` 每一項都只有一期
       #   （OpenAPI 沒有年度／季別參數，只給最新一期），所以 2015 以來補不回來。
