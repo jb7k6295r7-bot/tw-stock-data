@@ -1,0 +1,2 @@
+date,factor,cum_factor,pre_close,ref_price,kind,event
+2017-11-27,1.18843683,1.18843683,4.67,5.55,彌補虧損,reduce
