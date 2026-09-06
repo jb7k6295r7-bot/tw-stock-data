@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T00:10:29+08:00",
+  "generated_at": "2026-09-06T11:53:03+08:00",
   "target_trading_day": "2026-09-04",
   "stocks": {
     "7879": {
@@ -62,7 +62,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -115,7 +115,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -168,7 +168,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -221,7 +221,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -274,7 +274,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -327,7 +327,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -380,7 +380,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -426,14 +426,14 @@
           "date_max": "2026-09-04"
         },
         "revenue": {
-          "total": 32,
-          "added": 0,
+          "total": 33,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-08-01"
+          "date_max": "2026-09-01"
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -486,7 +486,7 @@
         },
         "margin": {
           "total": 163,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-04"
         },
@@ -551,7 +551,7 @@
       "inst": {
         "total": 4,
         "added": 0,
-        "changed": 1
+        "changed": null
       }
     },
     "parse_errors": null
@@ -582,5 +582,5 @@
       "purged_warrants": null
     }
   },
-  "history_rows_changed": 1
+  "history_rows_changed": null
 }
