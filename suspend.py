@@ -106,8 +106,18 @@ def get(url, body=None, ctype=None, retries=2, timeout=45):
 # ────────────────────────────────────────────── 小工具
 
 def roc_to_iso(v):
-    """民國 115/08/13 → 2026-08-13。認不出來回空字串，**不要自己補**。"""
-    m = re.match(r"^\s*(\d{2,3})/(\d{1,2})/(\d{1,2})\s*$", str(v or ""))
+    """民國 115/08/13 → 2026-08-13。認不出來回空字串，**不要自己補**。
+
+    ⛔ 分隔符號有三種，全部出自實測，不是防呆寫爽的：
+        `announcement/punish`  → `115/08/21`（斜線）
+        `announcement/notice`  → `115.09.01`（**點**）
+        `afterTrading/TWTAWU`  → `115/08/13`（斜線）
+      標題那邊還有第四種 `115年08月08日`（由 `_check_echo` 只留數字處理）。
+      **同一個交易所的同一個網站，四種寫法。**
+      2026-09-07 首跑時只認斜線，134 列上市注意股的日期全部變空白——
+      而且不報錯，因為「認不出來就留空」本身是對的設計。
+    """
+    m = re.match(r"^\s*(\d{2,3})[/.\-](\d{1,2})[/.\-](\d{1,2})\s*$", str(v or ""))
     if not m:
         return ""
     y, mo, d = int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3))
@@ -221,7 +231,15 @@ def _load(path, header):
                 #   兩邊的鍵不一樣，重跑同一段就會長出重複列——
                 #   而且 CSV 看起來完全正常，只是變胖。**讀寫要用同一支鑰匙。**
                 row = (q + [""] * len(header))[:len(header)]
-                rows[_key(path, row, header)] = row
+                k = _key(path, row, header)
+                # ⛔ 鍵有一段是空的就丟掉。理由有兩個：
+                #   ① 沒有日期的列本來就沒用——不知道哪一天發生的事等於沒有資料。
+                #   ② 同一檔的多列會全部撞成同一個鍵，**互相蓋掉而不報錯**。
+                #   2026-09-07 首跑就寫進 134 列這種（notice 的日期用點分隔，
+                #   當時的解析認不出來）。這一行同時負責把舊的爛列清掉。
+                if any(not x for x in k):
+                    continue
+                rows[k] = row
     return rows
 
 
@@ -298,7 +316,7 @@ def tpex_halt_today():
         return [], ""
     # ★ 防護③：這一條的無資料是空陣列 + totalCount，不是假資料列
     stat = str(d.get("stat") or "")
-    m = re.search(r"(\d{2,3}/\d{1,2}/\d{1,2})", stat)
+    m = re.search(r"(\d{2,3}[/.\-]\d{1,2}[/.\-]\d{1,2})", stat)
     return _rows_of(d), roc_to_iso(m.group(1)) if m else ""
 
 
@@ -348,7 +366,7 @@ def norm_disp_twse(rows, today):
         if not code:
             continue
         span = str(r[6] or "")
-        pair = re.findall(r"(\d{2,3}/\d{1,2}/\d{1,2})", span)
+        pair = re.findall(r"(\d{2,3}[/.\-]\d{1,2}[/.\-]\d{1,2})", span)
         out.append([code, _clean_name(r[3]), "twse", sec_kind(code),
                     roc_to_iso(r[1]),
                     roc_to_iso(pair[0]) if pair else "",
@@ -367,7 +385,7 @@ def norm_disp_tpex(rows, today):
         code = str(r[2] or "").strip()
         if not code:
             continue
-        pair = re.findall(r"(\d{2,3}/\d{1,2}/\d{1,2})", str(r[5] or ""))
+        pair = re.findall(r"(\d{2,3}[/.\-]\d{1,2}[/.\-]\d{1,2})", str(r[5] or ""))
         out.append([code, _clean_name(r[3]), "tpex", sec_kind(code),
                     roc_to_iso(r[1]),
                     roc_to_iso(pair[0]) if pair else "",
@@ -426,9 +444,18 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
     attn = _load(OUT_ATTN, H_ATTN)
     n0 = (len(halt), len(disp), len(attn))
 
+    dropped = {"n": 0}
+
     def put(store, path, header, newrows):
         for row in newrows:
-            store[_key(path, row, header)] = row
+            k = _key(path, row, header)
+            if any(not x for x in k):
+                # 日期解析不出來的列不落檔。**寧可少一列，不要一列沒有日期的資料**。
+                dropped["n"] += 1
+                _SKIP_LOG.append(f"{os.path.basename(path)}\t{row[0]} {row[1]}\t"
+                                 f"鍵有空值 {k}\t→ 不落檔")
+                continue
+            store[k] = row
 
     # 上市：整段一發就好，端點吃得下整年
     for y in range(int(s_iso[:4]), int(e_iso[:4]) + 1):
@@ -469,8 +496,10 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
 
     print(f"\n[suspend] 停牌 {n0[0]}→{n1[0]}／處置 {n0[1]}→{n1[1]}／"
           f"注意 {n0[2]}→{n1[2]}　列")
+    if dropped["n"]:
+        print(f"[suspend] ★ 有 {dropped['n']} 列因為鍵有空值沒有落檔", file=sys.stderr)
     if _SKIP_LOG:
-        print(f"[suspend] ★ 有 {len(_SKIP_LOG)} 發被擋下來 → {SKIPPED}", file=sys.stderr)
+        print(f"[suspend] ★ 有 {len(_SKIP_LOG)} 筆被擋下來 → {SKIPPED}", file=sys.stderr)
     return 0
 
 

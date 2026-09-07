@@ -63,6 +63,11 @@ def main():
     ck(S.roc_to_iso("") == "" and S.roc_to_iso("2026-08-13") == "",
        "★ 認不出來回空字串，不自己補一個日期")
     ck(S.roc_to_iso("115/02/30") == "", "★ 不存在的日期回空，不是硬湊")
+    # ★ 2026-09-07 首跑：notice 的日期用「點」，134 列上市注意股全變空白
+    ck(S.roc_to_iso("115.09.01") == "2026-09-01", "★ 點分隔（notice 用這種）")
+    ck(S.roc_to_iso("115-09-01") == "2026-09-01", "橫線分隔")
+    ck(S.roc_to_iso("115090") == "" and S.roc_to_iso("115/09") == "",
+       "★ 沒有分隔符或缺一段的仍然回空，不是把規則放寬到什麼都收")
     ck(S._clean_name("雙鴻(../../mainboard/listed/company-detail.html?code=3324)")
        == "雙鴻", "★ 名稱夾的連結有剝掉")
     ck(S.sec_kind("3324") == "普通股" and S.sec_kind("087319") == "其他"
@@ -154,6 +159,11 @@ def main():
            "停牌欄位對得上")
         ck(out[1][3] == "其他", "★ 權證標成其他")
 
+        a = S.norm_attn_twse([[1, "047757", "南電中信5C購02", "1", "理由",
+                               "115.09.01", "25.50", "-----"]], "2026-09-07")
+        ck(a[0][4] == "2026-09-01", "★ 注意股的點分隔日期有轉出來")
+        ck(a[0][8] == "", "★ 本益比的 '-----' 不會被當成數字")
+
         d = S.norm_disp_twse([[1, "115/08/21", "3324", "雙鴻", 6,
                                "連續三次", "115/08/24～115/08/28", "第一次處置",
                                "內容", "備註"]], "2026-09-07")
@@ -188,7 +198,40 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    print("\n[7] 沒有動到 repo 的 data/")
+    # ── 鍵有空值
+    print("\n[7] 鍵有空值的列不可以落檔，舊的也要清掉")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        os.makedirs(S.META)
+        with open(S.OUT_ATTN, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(S.H_ATTN)
+            w.writerow(["2330", "台積電", "twse", "普通股", "", "1", "理由",
+                        "1000", "20", "twse-notice", "2026-09-07"])
+            w.writerow(["2317", "鴻海", "twse", "普通股", "2026-09-01", "1", "理由",
+                        "200", "15", "twse-notice", "2026-09-07"])
+        kept = S._load(S.OUT_ATTN, S.H_ATTN)
+        ck(len(kept) == 1 and ("2317", "2026-09-01") in kept,
+           "★ 讀檔時就把日期空白的舊列清掉（那 134 列會自己消失）")
+
+        payload = {"stat": "OK", "title": "期間 115年09月01日 至 115年09月07日",
+                   "fields": [], "data": [
+                       [1, "9999", "壞資料", "1", "理由", "看不懂的日期", "10", "5"]]}
+        S.get = lambda *a, **k: (json.dumps(payload, ensure_ascii=False).encode(), None)
+        S.collect("2026-09-01", "2026-09-07", 0, with_tpex_halt=False)
+        # ⚠ 這裡不能斷言「檔案是空的」——上面那列合法的 2317 本來就該留著。
+        #   要斷言的是「壞的那一列沒有進去」。
+        got = read(S.OUT_ATTN)
+        ck(all(x["stock_id"] != "9999" for x in got),
+           "★ 日期解析不出來的新列不落檔")
+        ck([x["stock_id"] for x in got] == ["2317"],
+           "★ 而且合法的舊列還在（不是連好的一起清掉）")
+        ck(any("不落檔" in x for x in S._SKIP_LOG), "★ 而且有記下來，不是默默丟掉")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    print("\n[8] 沒有動到 repo 的 data/")
     ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "★ repo 的 data/ 存在與否沒有改變")
 
