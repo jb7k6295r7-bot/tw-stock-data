@@ -83,6 +83,18 @@ def main():
         ck(rows == [], "★ 回報的是今天 → 這一發整個丟掉，一列都不收")
         ck(any("丟棄這一發" in x for x in S._SKIP_LOG), "有記進 skipped 清單")
 
+        # ★ 2026-09-07 首跑誤殺的那一發：notice 的標題用「115年08月08日」，
+        #   不是斜線。同一個交易所三種日期寫法，比對前一律只留數字。
+        cn = {"stat": "OK",
+              "title": "公布注意有價證券資訊 (115年08月08日 至 115年09月07日 全部上市有價證券)",
+              "fields": [], "data": [
+                  [1, "2221", "大甲", 21, "理由", "115/09/07", "86.70", "28.61"]]}
+        S.get = lambda *a, **k: (json.dumps(cn, ensure_ascii=False).encode(), None)
+        ck(len(S.twse_pull("attention", "2026-08-08", "2026-09-07")) == 1,
+           "★ 「115年08月08日」這種寫法不可以被誤殺")
+        ck(S.twse_pull("attention", "2015-01-01", "2015-12-31") == [],
+           "★ 但真的對不上時仍然要擋（不是把檢查放水）")
+
         right = dict(wrong, date="20150105~20150131")
         S.get = lambda *a, **k: (json.dumps(right, ensure_ascii=False).encode(), None)
         ck(len(S.tpex_pull("disposal", "2015-01-05", "2015-01-31")) == 1,

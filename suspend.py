@@ -154,10 +154,17 @@ def _check_echo(tag, want_iso, payload):
                 break
     if not echo:
         return True, "（回應沒有回報日期，無法核對）"
+    # ⛔ 2026-09-07 首跑就誤殺了一發：原本只把 `/` 與 `-` 拿掉，
+    #   而 `announcement/notice` 的標題寫的是「115年08月08日 至 115年09月07日」，
+    #   `年月日` 沒被拿掉就比不到，整條上市注意股資料被丟光（attention.csv 上市 0 列）。
+    #   **交易所同一個網站的日期寫法就有三種**（`115/08/01`、`115年08月08日`、
+    #   `20150105`），所以這裡一律**只留數字**再比。
+    #   ⚠ 防護誤殺跟防護失效一樣糟：它會安靜地少收一整塊，而且外表看起來成功。
+    #   `_suspend_skipped.txt` 就是為了讓這種事被看見。
     ymd = want_iso.replace("-", "")
-    roc = f"{int(want_iso[:4]) - 1911}"
-    flat = echo.replace("/", "").replace("-", "")
-    ok = ymd in flat or (roc + want_iso[5:7] + want_iso[8:10]) in flat
+    roc = f"{int(want_iso[:4]) - 1911}{want_iso[5:7]}{want_iso[8:10]}"
+    flat = re.sub(r"\D", "", echo)
+    ok = ymd in flat or roc in flat
     if not ok:
         _SKIP_LOG.append(f"{tag}\t要 {want_iso}\t它回報 {echo!r}\t→ 丟棄這一發")
     return ok, echo
