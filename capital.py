@@ -24,8 +24,15 @@
 
     python3 capital.py --run
         ① 先從最新的 daily 檔把上櫃的發行股數**原地搬過來**（已經是官方值，不必再抓）
-        ② 再試市場層端點補上市／興櫃
+        ② 再試市場層端點補**每一檔**的股本／面額
         ③ 還缺的寫進 data/meta/_capital_missing.txt，交給下一步
+
+        ⛔ 2026-09-07 修掉的坑：② 原本把「① 已經拿到股數」的整列跳過，
+           於是**上櫃 1,000 檔的 `capital` 從頭到尾是空的**（股數有、股本沒有），
+           而 `tpex-mopsfin-O` 明明給得出股本。
+           **「有股數」不等於「這一列補好了」——股本是另一個欄位，要分開判斷。**
+           同一批還修掉：① 會把上一趟抓到的 capital 洗成空白，
+           ② 一失敗就整欄消失且不報錯。
 
     python3 capital.py --finmind --limit 300
         用 FinMind 資產負債表的 OrdinaryShare 逐檔補齊剩下的。
@@ -324,12 +331,24 @@ def cmd_run(_args):
     print(f"[capital] universe={len(uni)} 檔（{day}）｜既有 capital.csv {len(rows)} 列")
 
     # ① 上櫃：daily 檔裡已經有官方發行股數，直接搬，不要再抓
+    #
+    # ★ 2026-09-07 修：原本這裡**無條件把 capital 與 par 寫成空字串**。
+    #   等於每跑一趟都先把上一趟抓到的股本清掉，再指望 ② 補回來；
+    #   ② 只要失敗一次（端點掛掉、被擋、解析不到），**capital 就整欄消失而且不報錯**。
+    #   改成：已經有股本的列只更新股數與日期，`capital`／`par`／`source`／`note` 照舊。
     moved = 0
     for code, (name, market, shares) in uni.items():
-        if shares:
+        if not shares:
+            continue
+        old = rows.get(code) or [""] * len(HEADER)
+        keep_cap = (old[3] or "").strip()
+        if keep_cap:
+            rows[code] = [code, name, market, keep_cap, shares, old[5],
+                          old[6], today, old[8]]
+        else:
             rows[code] = [code, name, market, "", shares, "",
-                           f"universe:{day}", today, "feed-shares"]
-            moved += 1
+                          f"universe:{day}", today, "feed-shares"]
+        moved += 1
     print(f"  ① 從 daily 搬進來的官方發行股數：{moved} 檔")
 
     # ② 市場層端點
@@ -342,11 +361,16 @@ def cmd_run(_args):
     #        卻在第一次抓到之後把那 1,400 多檔凍住，等於白跑。
     #   改成「① 沒填到的都要重抓」，每月一趟就是 6 個大檔下載，成本可以忽略。
     #   `done` 保留原本的語意：先命中的端點優先，後面的端點不覆蓋。
-    fed = {c for c, (_n, _m, sh) in uni.items() if sh}   # ① 已用官方發行股數填過的
+    #   ★★ 2026-09-07 再修：`fed`（① 已用官方發行股數填過的）整列排除，是**錯的**。
+    #   股數有了 ≠ 這一列補好了——**股本是另一個欄位**。實測後果：
+    #   `capital.csv` 上櫃 1,000 檔的 `capital` **全部空白**，而 `tpex-mopsfin-O`
+    #   明明給得出來（2026-09-04 探針：解析 890 檔、cap=Paidin.Capital.NTDollars）。
+    #   又是「拿間接證據代替直接證據」——用「有 shares」推論「不必再問端點」。
+    #   `fed` 整個拿掉：每一檔都送進 ② 問一輪，端點有 capital 就補上。
     done = set()
     filled, notes = 0, []
     for tag, url in CANDIDATES:
-        need = [c for c in uni if c not in fed and c not in done]
+        need = [c for c in uni if c not in done]
         if not need:
             break
         raw, err = get(url, retries=1)
@@ -363,7 +387,18 @@ def cmd_run(_args):
             # 名稱一律用 universe 的簡稱，不用端點的公司全名——
             # 報告與其他檔案都是簡稱，混用會讓 join 對不上。
             name = uni[code][0] or _legal
-            if shr:
+            official = uni[code][2]          # ① 搬進來的官方發行股數（可能是空的）
+            if official and cap:
+                # ★ 這一列已經有 daily 的官方發行股數 → 端點只補 capital／par，
+                #   股數仍以 daily 為準（那是每日更新的官方值）。
+                #   兩邊的股數要互相核對：**不一致是資訊，不是雜訊**，寫進 note，
+                #   否則會出現「股數是這個月的、股本是上個月的」而沒有人看得出來。
+                par_used, nt = reconcile(cap, official, par, pref)
+                if shr and shr != official:
+                    nt += f"|股數兩源不一致 daily={official} {tag}={shr}"
+                rows[code] = [code, name, uni[code][1], cap, official, par_used,
+                              f"universe:{day}+{tag}", today, nt]
+            elif shr:
                 par_used, nt = reconcile(cap, shr, par, pref)
                 rows[code] = [code, name, uni[code][1], cap, shr, par_used,
                               tag, today, nt]
