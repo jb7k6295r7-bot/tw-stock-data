@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, mops-history-probe, mops-history-dry, mops-history, calendar-audit]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -205,6 +205,21 @@ jobs:
         if: inputs.mode == 'calendar-audit'
         run: python calendar_audit.py --start 2015-01 --sleep 5 --write
 
+      # ★★ 每一天的**內容**齊不齊。`calendar-audit` 只證明「那一天有檔案」，
+      #   沒有證明「那一天該有的股票都在檔案裡」。上櫃端點掛掉的那天，
+      #   日檔照樣產生、照樣進 git、檔名集合照樣完整——只是裡面少了 983 檔，
+      #   而半年後回測會把它讀成「上櫃股全部沒交易」。
+      #   ⚠ 判準**不可以**用 `_coverage_*.csv`：那是抓取程式自己記的「我抓到幾列」，
+      #     漏抓時它就記漏抓後的數字，永遠是對的。證據取自**時間軸上的鄰居**。
+      #   ★ 這一步會先跑 selftest：稽核程式算錯時不會報錯，只會給一份很合理的報告，
+      #     所以 2,845 天跑下去之前，先在**知道正確答案**的假資料上跑一次。
+      #   只讀本地檔、不連外，幾分鐘就跑完。
+      - name: 核對每一天的內容
+        if: inputs.mode == 'content-audit'
+        run: |
+          python selftest_content.py
+          python content_audit.py --write
+
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright **與 feed=reduce** 才有事件可算。
       #   只跑 exright 的話 data/adj/ 會少掉全部減資，而那**看起來完全正常**——
       #   摘要不會抱怨，只是每一檔跨過減資日的還原都是錯的。
@@ -214,7 +229,7 @@ jobs:
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit' || inputs.mode == 'mops-history' || inputs.mode == 'otc-adj')
+        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit' || inputs.mode == 'content-audit' || inputs.mode == 'mops-history' || inputs.mode == 'otc-adj')
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
