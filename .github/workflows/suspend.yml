@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
     inputs:
       set:
-        description: "suspend2 = 上櫃停牌（第四輪）｜round1 = 端點在不在｜params = 換參數名｜names = 抓官方頁名"
+        description: "halt = 上櫃停牌的 POST 參數（第五輪）｜params = 換參數名｜round1 = 端點在不在｜names = 抓官方頁名｜suspend2 = 舊站（已證實 DNS 不存在）"
         type: choice
-        options: [suspend2, params, names, round1]
-        default: suspend2
+        options: [halt, params, round1, names, suspend2]
+        default: halt
       market:
         description: "只探哪個市場（留空 = 全部；params／names 本來就只有上櫃）"
         type: choice
@@ -49,7 +49,7 @@ jobs:
       - name: 探針
         run: |
           python suspend_probe.py \
-            --set "${{ inputs.set || 'suspend2' }}" \
+            --set "${{ inputs.set || 'halt' }}" \
             --sleep "${{ inputs.sleep || '3' }}" \
             ${{ inputs.market && format('--only {0}', inputs.market) || '' }}
 
