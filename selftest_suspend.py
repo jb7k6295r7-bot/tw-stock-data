@@ -231,7 +231,64 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    print("\n[8] 沒有動到 repo 的 data/")
+    # ── 限流
+    print("\n[8] TWSE 限流回 307，要退避重試不是放棄")
+    S = fresh(tempfile.mkdtemp())
+    S.BACKOFF = [0, 0, 0]
+    import urllib.error
+    calls = {"n": 0}
+
+    def flaky(url, data=None, headers=None, **kw):
+        raise AssertionError("不該走到這裡")
+
+    def opener(req, timeout=45):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise urllib.error.HTTPError(req.full_url, 307, "Temporary Redirect",
+                                         {}, None)
+
+        class R:
+            def read(self):
+                return b'{"stat":"OK"}'
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+        return R()
+
+    import urllib.request as UR
+    old_open = UR.urlopen
+    UR.urlopen = opener
+    try:
+        raw, err = S.get("http://x")
+        ck(err is None and raw == b'{"stat":"OK"}', "★ 307 之後重試成功")
+        ck(calls["n"] == 3, f"★ 真的重試了（打了 {calls['n']} 次）")
+        calls["n"] = 0
+
+        def always307(req, timeout=45):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(req.full_url, 307, "x", {}, None)
+
+        UR.urlopen = always307
+        raw, err = S.get("http://x")
+        ck(raw is None and "307" in err and "重試" in err,
+           "★ 一直 307 時要回報「重試都失敗」，不是假裝成別的錯")
+
+        calls["n"] = 0
+
+        def always404(req, timeout=45):
+            calls["n"] += 1
+            raise urllib.error.HTTPError(req.full_url, 404, "x", {}, None)
+
+        UR.urlopen = always404
+        S.get("http://x")
+        ck(calls["n"] == 1, "★ 404 不重試（那不是限流，重試只是浪費）")
+    finally:
+        UR.urlopen = old_open
+
+    print("\n[9] 沒有動到 repo 的 data/")
     ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "★ repo 的 data/ 存在與否沒有改變")
 

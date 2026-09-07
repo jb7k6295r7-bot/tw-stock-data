@@ -84,7 +84,17 @@ def now_tpe():
     return datetime.now(TPE)
 
 
-def get(url, body=None, ctype=None, retries=2, timeout=45):
+# ⛔ TWSE 限流時回的是 **307**，不是 429。
+#   2026-09-07 連續跑三趟之後，`punish` 與 `notice` 兩條整段回 307，
+#   上市的處置與注意當趟一列都沒收到——而 workflow 是綠的，
+#   因為那兩發被防護正常擋下並記錄了。**沒有 skipped 清單就會完全看不出來。**
+#   307 是暫時性的，要退避重試，不可以當成「這個端點不存在」。
+RETRYABLE = {307, 403, 408, 429, 500, 502, 503, 504}
+BACKOFF = [5, 15, 40]      # 秒。TWSE 的限流窗口實測要等到十秒以上才會放行
+
+
+def get(url, body=None, ctype=None, retries=3, timeout=45):
+    last = ""
     for i in range(retries + 1):
         try:
             hdr = {"User-Agent": UA, "Accept": "application/json,text/plain,*/*"}
@@ -94,13 +104,18 @@ def get(url, body=None, ctype=None, retries=2, timeout=45):
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.read(), None
         except urllib.error.HTTPError as e:
-            if e.code < 500 or i == retries:
-                return None, f"HTTP {e.code}"
-        except Exception as e:                               # noqa: BLE001
+            last = f"HTTP {e.code}"
+            if e.code not in RETRYABLE:
+                return None, last          # 404／400 這種重試也沒用，直接回
             if i == retries:
-                return None, f"{type(e).__name__}: {e}"
-        time.sleep(2 * (i + 1))
-    return None, "重試用完"
+                return None, f"{last}（重試 {retries} 次都失敗）"
+        except Exception as e:                               # noqa: BLE001
+            last = f"{type(e).__name__}: {e}"
+            if i == retries:
+                return None, f"{last}（重試 {retries} 次都失敗）"
+        if i < len(BACKOFF):
+            time.sleep(BACKOFF[i])
+    return None, f"{last}（重試 {retries} 次都失敗）"
 
 
 # ────────────────────────────────────────────── 小工具
@@ -509,7 +524,7 @@ def main():
     ap.add_argument("--daily", action="store_true")
     ap.add_argument("--start", default="", help="回補起年（YYYY）或起日（YYYY-MM-DD）")
     ap.add_argument("--end", default="", help="回補迄年／迄日")
-    ap.add_argument("--sleep", type=float, default=3.0)
+    ap.add_argument("--sleep", type=float, default=5.0)
     a = ap.parse_args()
 
     today = now_tpe()
