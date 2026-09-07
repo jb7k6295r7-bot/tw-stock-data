@@ -1,22 +1,46 @@
-# 停牌／處置／注意 端點探針 2026-09-07T20:15:22+08:00
+# 停牌／處置／注意 端點探針 2026-09-07T20:34:51+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
-# 這一趟的選集：--set names
+# 這一趟的選集：--set suspend2
 
 ======================================================================
-== 頁名探勘-bulletin根
-   https://www.tpex.org.tw/www/zh-tw/bulletin/disposal
-       bytes=24370
-       （這一頁裡找不到任何 bulletin/xxx 字串——多半是 SPA 外殼，選單是 JS 產的。**不要據此推論頁名不存在**）
-
-======================================================================
-== 頁名探勘-attention頁
-   https://www.tpex.org.tw/www/zh-tw/bulletin/attention.html
+== 新站-afterTrading-spendi  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/afterTrading/spendi?startDate=104/01/05&endDate=104/12/31&response=json
        bytes=10892
-       （這一頁裡找不到任何 bulletin/xxx 字串——多半是 SPA 外殼，選單是 JS 產的。**不要據此推論頁名不存在**）
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   判定：（這條沒有日期參數，指紋測試不適用）
 
 ======================================================================
-== 頁名探勘-網站地圖
-   https://www.tpex.org.tw/www/zh-tw/sitemap
+== 新站-bulletin-spendi  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/bulletin/spendi?startDate=104/01/05&endDate=104/12/31&response=json
        bytes=10892
-       （這一頁裡找不到任何 bulletin/xxx 字串——多半是 SPA 外殼，選單是 JS 產的。**不要據此推論頁名不存在**）
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== 新站-afterTrading-sprc  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/afterTrading/sprc?startDate=104/01/05&endDate=104/12/31&response=json
+       bytes=10892
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== 舊站-spendi-sprc  [tpex]
+   [1] https://wwwov.tpex.org.tw/web/stock/aftertrading/spendi/sprc_result.php?l=zh-tw&d=104/01/05
+       ✗ URLError: <urlopen error [Errno -2] Name or service not known>
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== 舊站-spendi-首頁  [tpex]
+   [1] https://wwwov.tpex.org.tw/web/stock/aftertrading/spendi/sprc.php?l=zh-tw
+       ✗ URLError: <urlopen error [Errno -2] Name or service not known>
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== 舊站-除權息-revivt  [tpex]
+   [1] https://wwwov.tpex.org.tw/web/stock/exright/revivt/revivt_result.php?l=zh-tw&d=104/01/05
+       ✗ URLError: <urlopen error [Errno -2] Name or service not known>
+   判定：（這條沒有日期參數，指紋測試不適用）
