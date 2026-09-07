@@ -1,0 +1,172 @@
+# 停牌／處置／注意 端點探針 2026-09-07T19:50:16+08:00
+# 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
+# 欄位名一律照抄，**不可照猜的寫死**
+
+======================================================================
+== twse-suspend  [twse]
+   [1] https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU?startDate=20150101&endDate=20151231&response=json
+       bytes=934
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'params']
+         stat = 'OK'
+         title = '暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 104/12/31'
+         欄位名（頂層）照抄：['編號', '證券代號', '證券名稱', '暫停交易日期', '暫停交易時間', '恢復交易日期', '恢復交易時間']
+         資料 9 列
+         首列照抄：[1, '087319', '凱基DM', '104/04/27', '8:00', '104/04/30', '8:00']
+   [2] https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU?startDate=20200101&endDate=20201231&response=json
+       bytes=36234
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'params']
+         stat = 'OK'
+         title = '暫停交易證券 查詢範圍：全部上市證券 期間：109/01/01 到 109/12/31'
+         欄位名（頂層）照抄：['編號', '證券代號', '證券名稱', '暫停交易日期', '暫停交易時間', '恢復交易日期', '恢復交易時間']
+         資料 485 列
+         首列照抄：[1, '03033X', '元展30', '109/08/18', '8:00', '109/08/19', '8:00']
+   判定：✓ 指紋不同 → 參數真的有作用，可以拿來回補歷史
+
+======================================================================
+== twse-punish  [twse]
+   [1] https://www.twse.com.tw/rwd/zh/announcement/punish?startDate=20150101&endDate=20151231&response=json
+       bytes=225988
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'count', 'total']
+         stat = 'OK'
+         title = '公布處置有價證券資訊 (104/01/01 至 104/12/31)\n資訊更新日期：115/09/07'
+         欄位名（頂層）照抄：['編號', '公布日期', '證券代號', '證券名稱', '累計', '處置條件', '處置起迄時間', '處置措施', '處置內容', '備註']
+         資料 179 列
+         首列照抄：[1, '104/09/24', '0080', '恒中國', 2, '監視業務督導會報決議', '104/09/25～104/10/12', '督導會報決議', '１處置原因：「公布或通知注意交易資訊暨處置作業要點」第六條第四項經「監視業務督導會報」決議。\n２處置期間：自民國一百零四年九月二十五日起至一百零四年十月十二日﹝十個營業日，如遇休市、有價證券停止買賣、全日暫停交易則順延執行〕。\n３處置措施：\nａ以人工管制之撮合終端機執行撮合作業（約每五分鐘撮合一次）。\nｂ對所有投資人每日委託買賣該有價證券時，應就其當日已委託之買賣，向該投資人收取全部之買進價金或賣出證券。但信用交易了結及違約專戶委託買賣該有價證券者，不在此限。\nｃ暫停融資融券交易。但信用交易了結，不在此限。\n', "\n提供處置有價證券連結資訊<br>\n1.<a href='notice.html?querytype=2&startDate=20150824&endDate=20150924&stockNo=0080' target='_blank'>處置原因</a>：提供公布日期近一個月之「公布注意交易資訊」數據標準<br>\n2.<a href='https://mopsov.twse.com.tw/mops/web/t146sb05?step=1&firstin=Y&co_id=0080' target='_blank'>公開資訊觀測站</a>：提供財務業務與重大訊息之精華版資訊\n"]
+   [2] https://www.twse.com.tw/rwd/zh/announcement/punish?startDate=20200101&endDate=20201231&response=json
+       bytes=555561
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'count', 'total']
+         stat = 'OK'
+         title = '公布處置有價證券資訊 (109/01/01 至 109/12/31)\n資訊更新日期：115/09/07'
+         欄位名（頂層）照抄：['編號', '公布日期', '證券代號', '證券名稱', '累計', '處置條件', '處置起迄時間', '處置措施', '處置內容', '備註']
+         資料 383 列
+         首列照抄：[1, '109/06/17', '00642U', '元大S&P石油', 12, '監視業務督導會報決議', '109/06/18～109/07/03', '督導會報決議', '１處置原因：「公布或通知注意交易資訊暨處置作業要點」第六條第四項經「監視業務督導會報」決議。\n２處置期間：自民國一百零九年六月十八日起至一百零九年七月三日﹝十個營業日，如遇：ａ有價證券最後交易日在處置期間，僅處置至最後交易日，ｂ有價證券停止買賣、全日暫停交易則順延執行，ｃ開休市日變動則調整處置迄日〕。\n３處置措施：\nａ以人工管制之撮合終端機執行撮合作業（約每五分鐘撮合一次）。\nｂ投資人每日委託買賣該有價證券數量單筆達十交易單位或多筆累積達三十交易單位時，應就其當日已委託之買賣，向該投資人收取全部的買進價金或賣出證券。但信用交易了結或違約專戶、認購（售）權證流動量提供者專戶或認購（售）權證避險專戶（不含帳號編碼前三碼為「九二九」帳戶）委託買賣該有價證券者，不在此限。\nｃ信用交易部分，應收足融資自備款或融券保證金。有關信用交易了結部分，則依相關規定辦理。\n', "\n提供處置有價證券連結資訊<br>\n1.<a href='notice.html?querytype=2&startDate=20200517&endDate=20200617&stockNo=00642U' target='_blank'>處置原因</a>：提供公布日期近一個月之「公布注意交易資訊」數據標準<br>\n2.<a href='https://mopsov.twse.com.tw/mops/web/t146sb05?step=1&firstin=Y&co_id=00642U' target='_blank'>公開資訊觀測站</a>：提供財務業務與重大訊息之精華版資訊\n"]
+   判定：✓ 指紋不同 → 參數真的有作用，可以拿來回補歷史
+
+======================================================================
+== twse-notice  [twse]
+   [1] https://www.twse.com.tw/rwd/zh/announcement/notice?startDate=20150101&endDate=20151231&response=json
+       bytes=320797
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'params', 'count', 'total']
+         stat = 'OK'
+         title = '公布注意有價證券資訊 (104年01月01日 至 104年12月31日 全部上市有價證券)'
+         欄位名（頂層）照抄：['編號', '證券代號', '證券名稱', '累計次數', '注意交易資訊', '日期', '收盤價', '本益比']
+         資料 1501 列
+         首列照抄：[1, '0061', '寶滬深', '1', "本公司監視業務督導會報決議<font color='#FF0000'>﹝第十二款﹞</font>", '104.07.09', '17.90', '-----']
+   [2] https://www.twse.com.tw/rwd/zh/announcement/notice?startDate=20200101&endDate=20201231&response=json
+       bytes=941830
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'params', 'count', 'total']
+         stat = 'OK'
+         title = '公布注意有價證券資訊 (109年01月01日 至 109年12月31日 全部上市有價證券)'
+         欄位名（頂層）照抄：['編號', '證券代號', '證券名稱', '累計次數', '注意交易資訊', '日期', '收盤價', '本益比']
+         資料 4262 列
+         首列照抄：[1, '00642U', '元大S&P石油', '62', "本公司監視業務督導會報決議<font color='#FF0000'>﹝第十三款﹞</font>", '109.06.29', '8.66', '-----']
+   判定：✓ 指紋不同 → 參數真的有作用，可以拿來回補歷史
+
+======================================================================
+== twse-suspend-BAD-date  [twse]
+   [1] https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU?date=20150101&response=json
+       bytes=459
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'params']
+         stat = 'OK'
+         title = '暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'
+         欄位名（頂層）照抄：['編號', '證券代號', '證券名稱', '暫停交易日期', '暫停交易時間', '恢復交易日期', '恢復交易時間']
+         資料 1 列
+         首列照抄：[1, '1218', '泰山', '115/08/13', '8:00', '115/08/14', '8:00']
+   [2] https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU?date=20200101&response=json
+       bytes=459
+       頂層鍵照抄：['stat', 'title', 'fields', 'data', 'params']
+         stat = 'OK'
+         title = '暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'
+         欄位名（頂層）照抄：['編號', '證券代號', '證券名稱', '暫停交易日期', '暫停交易時間', '恢復交易日期', '恢復交易時間']
+         資料 1 列
+         首列照抄：[1, '1218', '泰山', '115/08/13', '8:00', '115/08/14', '8:00']
+   判定：★✗ **兩個相隔五年的區間回一模一樣的東西 → 這個參數是假的**。用它回補歷史會拿到整片重複資料，而且不報錯。
+
+======================================================================
+== tpex-openapi-disposal  [tpex]
+   [1] https://www.tpex.org.tw/openapi/v1/tpex_disposal_information
+       bytes=14952
+       回傳是 list，15 筆
+         欄位名照抄：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'DispositionPeriod', 'DispositionReasons', 'DisposalCondition']
+         首筆照抄：{'Date': '1150904', 'SecuritiesCompanyCode': '24552', 'CompanyName': '全新二', 'DispositionPeriod': '1150907~1150915', 'DispositionReasons': '轉(交)換公司債之標的證券經本中心或臺灣證券交易所發布處置', 'DisposalCondition': '上市公司全新光電科技股份有限公司股票(代號：2455)經臺灣證券交易所股份有限公司發布第二次處置，依本中心「櫃檯買賣公布或通知注意交易資訊暨處置作業要點」第六條規定，爰自115年9月7日起7個營業日(115年9月7日至115年9月15日，如遇休市、有價證券停止買賣、全日暫停交易則順延執行)對全新光電科技股份有限公司國內第二次無擔保轉換公司債（代號：24552）改以人工管制之撮合終端機執行撮合作業(約每2分鐘撮合一次)，各證券商於投資人每日委託買賣該有價證券，應就其當日已委託之買賣，向該投資人收取全部之買進價金或賣出證券。但違約專戶委託買賣該有價證券時，不在此限。'}
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== tpex-openapi-attention  [tpex]
+   [1] https://www.tpex.org.tw/openapi/v1/tpex_attention_information
+       bytes=23902
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-sc
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== tpex-openapi-suspend  [tpex]
+   [1] https://www.tpex.org.tw/openapi/v1/tpex_suspension_information
+       bytes=23902
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-sc
+   判定：（這條沒有日期參數，指紋測試不適用）
+
+======================================================================
+== tpex-www-disposal  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/bulletin/disposal?startDate=20150101&endDate=20151231&response=json
+       bytes=24370
+       頂層鍵照抄：['tables', 'date', 'stat']
+         stat = 'ok'
+         date = '20260907~20260907'
+         欄位名（tables[0]）照抄：['編號', '公布日期', '證券代號', '證券名稱', '累計', '處置起訖時間', '處置原因', '處置內容', '收盤價', '本益比', ' ']
+         資料 21 列
+         首列照抄：[1, '115/09/07', '3324', '雙鴻(../../mainboard/listed/company-detail.html?code=3324)', 6, '115/09/08~115/09/14', '因連續3個營業日達本中心作業要點第四條第一項第一款(./attention.html)', '雙鴻科技股份有限公司股票(代號：3324)最近30個營業日內曾發布處置，又因連續3個營業日達本中心作業要點第四條第一項第一款經本中心公布注意交易資訊，爰自115年9月8日起5個營業日(115年9月8日至115年9月14日，如遇休市、有價證券停止買賣、全日暫停交易則順延執行)改以人工管制之撮合終端機執行撮合作業(約每2分鐘撮合一次)，各證券商於投資人每日委託買賣該有價證券，應就其當日已委託之買賣，向該投資人收取全部之買進價金或賣出證券。信用交易部分，則收足融資自備款或融券保證金。但信用交易了結及違約專戶委託買賣該有價證券時，不在此限。', '1,440.00', '33.21', '公布注意情形(./attention.html?code=3324&startDate=20260807&endDate=20260907&type=code)\n財務業務資訊及股權異動(https://mops.twse.com.tw/mops/#/web/t146sb05?companyId=3324)\n']
+   [2] https://www.tpex.org.tw/www/zh-tw/bulletin/disposal?startDate=20200101&endDate=20201231&response=json
+       bytes=24370
+       頂層鍵照抄：['tables', 'date', 'stat']
+         stat = 'ok'
+         date = '20260907~20260907'
+         欄位名（tables[0]）照抄：['編號', '公布日期', '證券代號', '證券名稱', '累計', '處置起訖時間', '處置原因', '處置內容', '收盤價', '本益比', ' ']
+         資料 21 列
+         首列照抄：[1, '115/09/07', '3324', '雙鴻(../../mainboard/listed/company-detail.html?code=3324)', 6, '115/09/08~115/09/14', '因連續3個營業日達本中心作業要點第四條第一項第一款(./attention.html)', '雙鴻科技股份有限公司股票(代號：3324)最近30個營業日內曾發布處置，又因連續3個營業日達本中心作業要點第四條第一項第一款經本中心公布注意交易資訊，爰自115年9月8日起5個營業日(115年9月8日至115年9月14日，如遇休市、有價證券停止買賣、全日暫停交易則順延執行)改以人工管制之撮合終端機執行撮合作業(約每2分鐘撮合一次)，各證券商於投資人每日委託買賣該有價證券，應就其當日已委託之買賣，向該投資人收取全部之買進價金或賣出證券。信用交易部分，則收足融資自備款或融券保證金。但信用交易了結及違約專戶委託買賣該有價證券時，不在此限。', '1,440.00', '33.21', '公布注意情形(./attention.html?code=3324&startDate=20260807&endDate=20260907&type=code)\n財務業務資訊及股權異動(https://mops.twse.com.tw/mops/#/web/t146sb05?companyId=3324)\n']
+   判定：★✗ **兩個相隔五年的區間回一模一樣的東西 → 這個參數是假的**。用它回補歷史會拿到整片重複資料，而且不報錯。
+
+======================================================================
+== tpex-www-attention  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate=20150101&endDate=20151231&response=json
+       bytes=13690
+       頂層鍵照抄：['tables', 'date', 'stat']
+         stat = 'ok'
+         date = '20260904~20260907'
+         欄位名（tables[0]）照抄：['編號', '證券代號', '證券名稱', '累計', '注意交易資訊', '公告日期', '收盤價', '本益比', 'link']
+         資料 42 列
+         首列照抄：[1, '2221', '大甲', 21, '最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達66.65%，當日之前一個營業日當日沖銷成交量占總成交量達79.86%（第十三款)', '115/09/07', '86.70', '28.61', '../../mainboard/listed/company-detail.html?code=2221']
+   [2] https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate=20200101&endDate=20201231&response=json
+       bytes=13690
+       頂層鍵照抄：['tables', 'date', 'stat']
+         stat = 'ok'
+         date = '20260904~20260907'
+         欄位名（tables[0]）照抄：['編號', '證券代號', '證券名稱', '累計', '注意交易資訊', '公告日期', '收盤價', '本益比', 'link']
+         資料 42 列
+         首列照抄：[1, '2221', '大甲', 21, '最近六個營業日(自當日之前一個營業日起)之當日沖銷成交量占總成交量比率達66.65%，當日之前一個營業日當日沖銷成交量占總成交量達79.86%（第十三款)', '115/09/07', '86.70', '28.61', '../../mainboard/listed/company-detail.html?code=2221']
+   判定：★✗ **兩個相隔五年的區間回一模一樣的東西 → 這個參數是假的**。用它回補歷史會拿到整片重複資料，而且不報錯。
+
+======================================================================
+== tpex-www-suspend  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/bulletin/suspend?startDate=20150101&endDate=20151231&response=json
+       bytes=10892
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   [2] https://www.tpex.org.tw/www/zh-tw/bulletin/suspend?startDate=20200101&endDate=20201231&response=json
+       bytes=10892
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   判定：★✗ **兩個相隔五年的區間回一模一樣的東西 → 這個參數是假的**。用它回補歷史會拿到整片重複資料，而且不報錯。
+
+======================================================================
+== tpex-www-halt  [tpex]
+   [1] https://www.tpex.org.tw/www/zh-tw/bulletin/haltTrading?startDate=20150101&endDate=20151231&response=json
+       bytes=10892
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   [2] https://www.tpex.org.tw/www/zh-tw/bulletin/haltTrading?startDate=20200101&endDate=20201231&response=json
+       bytes=10892
+       不是 JSON（JSONDecodeError）
+       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
+   判定：★✗ **兩個相隔五年的區間回一模一樣的東西 → 這個參數是假的**。用它回補歷史會拿到整片重複資料，而且不報錯。
