@@ -164,6 +164,46 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
+    # [8] 第五輪：POST 與「資料日期」判準
+    print("\n[8] 上櫃停牌的 POST 探針")
+    import importlib
+    import suspend_probe as P
+    importlib.reload(P)
+    seen = {}
+
+    def fake_post(url, timeout=40, body=None, ctype=None):
+        seen["body"] = body
+        seen["ctype"] = ctype
+        # 模擬 bulletin/sprc：無資料時把日期寫在 stat 裡，不是放一列假資料
+        day = "104/01/05" if body and b"104" in body else "115/09/07"
+        return json.dumps({
+            "message": f"資料日期:{day}，本日無暫停/恢復交易股票資訊",
+            "stat": f"資料日期:{day}，本日無暫停/恢復交易股票資訊",
+            "tables": [{"title": "公布暫停/恢復交易有價證券", "totalCount": 0,
+                        "fields": ["有價證券類別", "有價證券代號", "有價證券名稱",
+                                   "暫停交易", "恢復交易"], "data": []}]},
+            ensure_ascii=False).encode(), None
+
+    P.get = fake_post
+    want = ["104", "20150105", "1040105"]
+    out = "\n".join(P.probe_halt("t", "POST", "http://x",
+                                  b'{"date":"104/01/05"}', "application/json", want))
+    ck("參數生效" in out, "★ 日期寫在 stat 裡也認得（不是只看 date 鍵）")
+    ck(seen["body"] == b'{"date":"104/01/05"}', "★ body 真的送出去了（POST 不是假的）")
+    ck(seen["ctype"] == "application/json", "Content-Type 有帶")
+    ck("有價證券類別" in out, "欄位名有照抄")
+
+    out = "\n".join(P.probe_halt("t", "POST", "http://x", b"{}",
+                                  "application/json", want))
+    ck("沒換到日期" in out, "★ 空 body 的對照組要判 ✗（回的是今天）")
+
+    # ⚠ stat='ok' 不可以被當成「回報的日期」——那是狀態不是日期
+    P.get = lambda u, timeout=40, body=None, ctype=None: (
+        json.dumps({"stat": "ok", "tables": [{"fields": ["a"], "data": []}]}).encode(),
+        None)
+    out = "\n".join(P.probe_halt("t", "GET", "http://x", None, None, want))
+    ck("無法判定" in out, "★ stat='ok' 不算日期，要說無法判定而不是硬判")
+
     # [4] 沒動到真資料
     print("\n[7] 沒有動到 repo 的 data/")
     ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),

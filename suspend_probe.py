@@ -89,10 +89,13 @@ def now_tpe():
     return datetime.now(TPE)
 
 
-def get(url, timeout=40):
+def get(url, timeout=40, body=None, ctype=None):
+    """body 不是 None 就變成 POST。TPEx 的暫停交易那條只吃 POST。"""
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": UA, "Accept": "application/json,text/plain,*/*"})
+        hdr = {"User-Agent": UA, "Accept": "application/json,text/plain,*/*"}
+        if ctype:
+            hdr["Content-Type"] = ctype
+        req = urllib.request.Request(url, data=body, headers=hdr)
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.read(), None
     except urllib.error.HTTPError as e:
@@ -108,9 +111,11 @@ def echoed_range(raw):
     except Exception:                                        # noqa: BLE001
         return ""
     if isinstance(d, dict):
-        for k in ("date", "title"):
-            if d.get(k):
-                return str(d[k])
+        # `stat`／`message` 也算——`bulletin/sprc` 的無資料訊息裡就寫著「資料日期:115/09/07」
+        for k in ("date", "title", "stat", "message"):
+            v = d.get(k)
+            if v and not (k == "stat" and str(v).lower() in ("ok", "okay")):
+                return str(v)
     return ""
 
 
@@ -243,6 +248,60 @@ SUSPEND2 = [
 ]
 
 
+# ══════════════════════════════════════════════ 第五輪：上櫃停牌的 POST 參數
+#
+# 2026-09-07 用瀏覽器打開官方頁面 /zh-tw/announce/market/halt.html，
+# 看它自己發了什麼請求，**不是猜的**：
+#
+#     POST https://www.tpex.org.tw/www/zh-tw/bulletin/sprc
+#     回傳 fields：['有價證券類別','有價證券代號','有價證券名稱','暫停交易','恢復交易']
+#     無資料時：stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'，totalCount = 0
+#
+# 前四輪全部 404 的原因就在這裡：**它是 POST，不是 GET**，而且掛在 bulletin 底下、
+# 不是頁面網址上的 announce/market。**頁面路徑和 API 路徑對不起來**，
+# 所以從頁名回推 API 名這條路本來就不會通。
+#
+# 還缺的只有一件：日期參數叫什麼、放 query 還是 body。下面把六種一次打完，
+# 判準用它自己回報的「資料日期」——跟第二輪同一招。
+_HS = "104/01/05"
+_SPRC = "https://www.tpex.org.tw/www/zh-tw/bulletin/sprc"
+_JSON = "application/json"
+_FORM = "application/x-www-form-urlencoded"
+HALT = [
+    ("sprc-GET-startEnd", "GET", f"{_SPRC}?startDate={_HS}&endDate={_HS}&response=json",
+     None, None),
+    ("sprc-GET-date", "GET", f"{_SPRC}?date={_HS}&response=json", None, None),
+    ("sprc-POST-json-date", "POST", _SPRC,
+     json.dumps({"date": _HS}).encode(), _JSON),
+    ("sprc-POST-json-startEnd", "POST", _SPRC,
+     json.dumps({"startDate": _HS, "endDate": _HS}).encode(), _JSON),
+    ("sprc-POST-form-date", "POST", _SPRC, f"date={_HS}".encode(), _FORM),
+    ("sprc-POST-form-startEnd", "POST", _SPRC,
+     f"startDate={_HS}&endDate={_HS}".encode(), _FORM),
+    # 對照組：不帶任何日期。它會回「今天」，用來確認上面哪幾個真的有換到日期
+    ("sprc-POST-空body-對照組", "POST", _SPRC, b"{}", _JSON),
+]
+
+
+def probe_halt(tag, method, url, body, ctype, want):
+    out = [f"\n{'=' * 70}", f"== {tag}", f"   {method} {url}"]
+    if body:
+        out.append(f"   body: {body.decode('utf-8')}  ({ctype})")
+    raw, err = get(url, body=body, ctype=ctype)
+    if err:
+        return out + [f"       ✗ {err}", "   判定：✗ 打不通"]
+    _fp, lines = describe(raw)
+    out += ["       " + x for x in lines]
+    e = echoed_range(raw)
+    if not e:
+        return out + ["   判定：（回應沒有講它給了哪一天，無法判定）"]
+    out.append(f"   ★ 回應自己回報的日期：{e!r}")
+    hit = any(w in e.replace("/", "") or w in e for w in want)
+    return out + ["   判定：" + ("✓ **參數生效**（它自己回報的日期就是我要的）"
+                              if hit else
+                              "✗ 這個寫法沒換到日期（回報的不是我要的那天）")]
+
+
 # ══════════════════════════════════════════════ 第三輪：頁名探勘
 # 上櫃停牌的頁名猜了兩個都 404。**不要再猜第三個**——去把官方頁面自己列的
 # bulletin/* 連結抄回來。SPA 外殼可能沒有選單，那就照實說沒有，不要腦補。
@@ -324,9 +383,10 @@ def _finish(head, body):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", default="round1",
-                    choices=["round1", "params", "names", "suspend2"],
+                    choices=["round1", "params", "names", "suspend2", "halt"],
                     help="round1 = 端點在不在｜params = 換參數名｜names = 抓官方頁名｜"
-                         "suspend2 = 上櫃停牌（從官方舊站網址回推）")
+                         "suspend2 = 上櫃停牌（舊站，已證實 DNS 不存在）｜"
+                         "halt = 上櫃停牌的 POST 參數（第五輪）")
     ap.add_argument("--only", default="", help="只探這個市場（twse／tpex）")
     ap.add_argument("--sleep", type=float, default=3.0)
     a = ap.parse_args()
@@ -338,6 +398,15 @@ def main():
             "names": NAME_HUNT, "suspend2": SUSPEND2}
     head.append(f"# 這一趟的選集：--set {a.set}")
     body = []
+    if a.set == "halt":
+        want = ["104", "20150105", "1040105"]
+        hbody = []
+        for tag, method, url, hb, ctype in HALT:
+            print(f"[probe] {tag} …", file=sys.stderr)
+            hbody += probe_halt(tag, method, url, hb, ctype, want)
+            time.sleep(a.sleep)
+        _finish(head, hbody)
+        return 0
     if a.set == "names":
         for tag, _m, url in NAME_HUNT:
             print(f"[probe] {tag} …", file=sys.stderr)
