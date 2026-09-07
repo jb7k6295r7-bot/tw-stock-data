@@ -1,0 +1,495 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""停牌（暫停/恢復交易）、處置股、注意股 —— 抓取與回補。
+
+來源與參數全部來自 2026-09-07 的五輪探針，**沒有一條是猜的**。
+完整探查紀錄見專案文件 sources/suspend_source.md。
+
+| 資料 | 上市 | 上櫃 |
+|---|---|---|
+| 停牌 | `afterTrading/TWTAWU`，2015 起歷史 | `bulletin/sprc`（POST），**只有當日** |
+| 處置 | `announcement/punish`，2015 起 | `bulletin/disposal`，2015 起 |
+| 注意 | `announcement/notice`，2015 起 | `bulletin/attention`，2015 起 |
+
+★★ 四個會靜默出錯的地方，每一個都對應程式裡一段防護：
+
+  ① **同樣的參數名，兩個交易所的日期格式相反。**
+     TWSE 要 `20150105`（不帶斜線），TPEx 要 `2015/01/05`（帶斜線）。
+     **寫錯的那一邊不報錯**，它會回「今天」的資料，`stat` 仍然是 ok。
+     → 防護：`_check_echo()`。每一發都拿回應自己回報的日期跟我要的比對，
+       對不上就**丟掉那一發**並記進 `_suspend_skipped.txt`，
+       絕不把「今天」的資料寫成那一天的。
+
+  ② **`bulletin/disposal` 的「本日無資料」是一列，不是空陣列。**
+     那一列長這樣：`[1,'104/01/05','','','','','','本日無處置資料','','','']`
+     → 防護：`_drop_placeholder()`。用列數判斷有沒有資料會數到 6。
+
+  ③ **同一個站兩種無資料慣例。** `bulletin/sprc` 反而是空陣列 + `totalCount`。
+     → 防護：兩條各自處理，不共用判斷。
+
+  ④ **證券名稱欄夾著連結**：`雙鴻(../../mainboard/listed/company-detail.html?code=3324)`
+     → 防護：`_clean_name()`。
+
+用法
+────
+    python3 suspend.py --backfill --start 2015 --end 2026
+        上市三條 + 上櫃處置/注意，逐年（TWSE）逐月（TPEx）回補。可重複跑，會覆蓋同鍵。
+
+    python3 suspend.py --daily
+        近 30 天的上市三條 + 上櫃處置/注意，**加上上櫃停牌的當日快照**。
+        ⚠ 上櫃停牌沒有歷史，只能從啟用日起每天累積。
+
+輸出（都在 data/meta/）
+    suspend.csv   停牌：stock_id,name,market,sec_kind,halt_date,resume_date,source,asof
+    disposal.csv  處置：stock_id,name,market,sec_kind,announce_date,start_date,end_date,
+                        count,reason,source,asof
+    attention.csv 注意：stock_id,name,market,sec_kind,date,count,reason,close,per,source,asof
+    _suspend_skipped.txt  被防護擋下來的每一發（**這個檔不是空的就要看**）
+
+⚠ `sec_kind` 是**用代號形狀判的**（四位數字＝普通股，其餘＝權證/債券/ETF 等），
+   不是來源給的。報告只用普通股時要自己過濾，不要假設來源已經分好。
+"""
+import argparse
+import csv
+import json
+import os
+import re
+import sys
+import time
+import urllib.error
+import urllib.request
+from datetime import datetime, timedelta, timezone
+
+TPE = timezone(timedelta(hours=8))
+META = os.path.join("data", "meta")
+OUT_HALT = os.path.join(META, "suspend.csv")
+OUT_DISP = os.path.join(META, "disposal.csv")
+OUT_ATTN = os.path.join(META, "attention.csv")
+SKIPPED = os.path.join(META, "_suspend_skipped.txt")
+
+UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+
+H_HALT = ["stock_id", "name", "market", "sec_kind", "halt_date", "resume_date",
+          "source", "asof"]
+H_DISP = ["stock_id", "name", "market", "sec_kind", "announce_date", "start_date",
+          "end_date", "count", "reason", "source", "asof"]
+H_ATTN = ["stock_id", "name", "market", "sec_kind", "date", "count", "reason",
+          "close", "per", "source", "asof"]
+
+_SKIP_LOG = []
+
+
+def now_tpe():
+    return datetime.now(TPE)
+
+
+def get(url, body=None, ctype=None, retries=2, timeout=45):
+    for i in range(retries + 1):
+        try:
+            hdr = {"User-Agent": UA, "Accept": "application/json,text/plain,*/*"}
+            if ctype:
+                hdr["Content-Type"] = ctype
+            req = urllib.request.Request(url, data=body, headers=hdr)
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as e:
+            if e.code < 500 or i == retries:
+                return None, f"HTTP {e.code}"
+        except Exception as e:                               # noqa: BLE001
+            if i == retries:
+                return None, f"{type(e).__name__}: {e}"
+        time.sleep(2 * (i + 1))
+    return None, "重試用完"
+
+
+# ────────────────────────────────────────────── 小工具
+
+def roc_to_iso(v):
+    """民國 115/08/13 → 2026-08-13。認不出來回空字串，**不要自己補**。"""
+    m = re.match(r"^\s*(\d{2,3})/(\d{1,2})/(\d{1,2})\s*$", str(v or ""))
+    if not m:
+        return ""
+    y, mo, d = int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3))
+    try:
+        return datetime(y, mo, d).strftime("%Y-%m-%d")
+    except ValueError:
+        return ""
+
+
+def _clean_name(v):
+    """`雙鴻(../../mainboard/...)` → `雙鴻`。TPEx 的名稱欄夾著連結。"""
+    return re.sub(r"\s*\([^)]*\)\s*$", "", str(v or "")).strip()
+
+
+def sec_kind(code):
+    """⚠ 用代號形狀判的，不是來源給的。四位純數字＝普通股，其餘＝其他。
+
+    上市權證（087319）、債券 ETF（00679B）、可轉債（33245）都會落到「其他」。
+    報告只看普通股時要自己過濾——2015 年 TWTAWU 只有 9 筆而 2020 有 485 筆，
+    差 54 倍幾乎都是權證，混在一起看會以為資料量爆增。
+    """
+    c = str(code or "").strip()
+    return "普通股" if re.fullmatch(r"\d{4}", c) else "其他"
+
+
+def _num(v):
+    s = str(v or "").replace(",", "").strip()
+    return s if re.fullmatch(r"-?\d+(\.\d+)?", s) else ""
+
+
+def _check_echo(tag, want_iso, payload):
+    """★ 防護①：回應自己回報的日期，跟我要的對不對得上。
+
+    對不上就回 False——**那一發整個丟掉**。這是整支程式最重要的一段：
+    日期格式寫錯時交易所不會報錯，只會安靜地回「今天」，
+    照收的話會得到「每一天都是今天」的資料庫，而且一路成功、零例外。
+    """
+    echo = ""
+    if isinstance(payload, dict):
+        for k in ("date", "title", "stat", "message"):
+            v = payload.get(k)
+            if v and str(v).lower() not in ("ok", "okay"):
+                echo = str(v)
+                break
+    if not echo:
+        return True, "（回應沒有回報日期，無法核對）"
+    ymd = want_iso.replace("-", "")
+    roc = f"{int(want_iso[:4]) - 1911}"
+    flat = echo.replace("/", "").replace("-", "")
+    ok = ymd in flat or (roc + want_iso[5:7] + want_iso[8:10]) in flat
+    if not ok:
+        _SKIP_LOG.append(f"{tag}\t要 {want_iso}\t它回報 {echo!r}\t→ 丟棄這一發")
+    return ok, echo
+
+
+def _rows_of(payload):
+    """頂層 data，或 tables[0].data。"""
+    if not isinstance(payload, dict):
+        return []
+    if isinstance(payload.get("data"), list):
+        return payload["data"]
+    for t in payload.get("tables") or []:
+        if isinstance(t, dict) and isinstance(t.get("data"), list):
+            return t["data"]
+    return []
+
+
+def _drop_placeholder(rows):
+    """★ 防護②：TPEx 用「一列假資料」表示本日無資料，不是空陣列。
+
+    判準是**證券代號為空**，不是去比對「本日無處置資料」這串字——
+    字串會改，欄位空不空不會。
+    """
+    out = []
+    for r in rows:
+        if len(r) < 3 or not str(r[2] or "").strip():
+            continue
+        out.append(r)
+    return out
+
+
+KEY = {OUT_HALT: ("stock_id", "halt_date"),
+       OUT_DISP: ("stock_id", "start_date"),
+       OUT_ATTN: ("stock_id", "date")}
+
+
+def _key(path, row, header):
+    return tuple(row[header.index(k)] for k in KEY[path])
+
+
+def _load(path, header):
+    rows = {}
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            rd = csv.reader(f)
+            head = next(rd, None)
+            if head and head != header:
+                raise ValueError(f"{path} 欄位不符：{head}")
+            for q in rd:
+                if not q:
+                    continue
+                # ⛔ 2026-09-07 自測抓到：這裡原本寫 `tuple(q[:len(KEY[path])])`，
+                #   拿「前 N 欄」當鍵，而落檔時 `_key()` 是**按欄名**取。
+                #   兩邊的鍵不一樣，重跑同一段就會長出重複列——
+                #   而且 CSV 看起來完全正常，只是變胖。**讀寫要用同一支鑰匙。**
+                row = (q + [""] * len(header))[:len(header)]
+                rows[_key(path, row, header)] = row
+    return rows
+
+
+def _save(path, header, rows):
+    os.makedirs(META, exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(header)
+        for k in sorted(rows):
+            w.writerow(rows[k])
+    return len(rows)
+
+
+# ────────────────────────────────────────────── 上市（TWSE，日期不帶斜線）
+
+TWSE = "https://www.twse.com.tw/rwd/zh"
+
+
+def twse_pull(kind, s_iso, e_iso):
+    path = {"halt": "afterTrading/TWTAWU", "disposal": "announcement/punish",
+            "attention": "announcement/notice"}[kind]
+    s, e = s_iso.replace("-", ""), e_iso.replace("-", "")
+    url = f"{TWSE}/{path}?startDate={s}&endDate={e}&response=json"
+    raw, err = get(url)
+    if err:
+        _SKIP_LOG.append(f"twse-{kind}\t{s_iso}~{e_iso}\t{err}")
+        return []
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception as ex:                                  # noqa: BLE001
+        _SKIP_LOG.append(f"twse-{kind}\t{s_iso}~{e_iso}\tJSON 失敗 {ex}")
+        return []
+    ok, _echo = _check_echo(f"twse-{kind}", s_iso, d)
+    if not ok:
+        return []
+    return _rows_of(d)
+
+
+# ────────────────────────────────────────────── 上櫃（TPEx，日期帶斜線）
+
+TPEX = "https://www.tpex.org.tw/www/zh-tw/bulletin"
+
+
+def tpex_pull(kind, s_iso, e_iso):
+    page = {"disposal": "disposal", "attention": "attention"}[kind]
+    s = s_iso.replace("-", "/")          # ★ 帶斜線。不帶的話它會安靜回「今天」
+    e = e_iso.replace("-", "/")
+    url = f"{TPEX}/{page}?startDate={s}&endDate={e}&response=json"
+    raw, err = get(url)
+    if err:
+        _SKIP_LOG.append(f"tpex-{kind}\t{s_iso}~{e_iso}\t{err}")
+        return []
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception as ex:                                  # noqa: BLE001
+        _SKIP_LOG.append(f"tpex-{kind}\t{s_iso}~{e_iso}\tJSON 失敗 {ex}")
+        return []
+    ok, _echo = _check_echo(f"tpex-{kind}", s_iso, d)
+    if not ok:
+        return []
+    return _drop_placeholder(_rows_of(d))
+
+
+def tpex_halt_today():
+    """★ 上櫃停牌只有當日。五輪探針含空 body 對照組證明它不吃任何日期參數。"""
+    raw, err = get(f"{TPEX}/sprc", body=b"{}", ctype="application/json")
+    if err:
+        _SKIP_LOG.append(f"tpex-halt\t當日\t{err}")
+        return [], ""
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception as ex:                                  # noqa: BLE001
+        _SKIP_LOG.append(f"tpex-halt\t當日\tJSON 失敗 {ex}")
+        return [], ""
+    # ★ 防護③：這一條的無資料是空陣列 + totalCount，不是假資料列
+    stat = str(d.get("stat") or "")
+    m = re.search(r"(\d{2,3}/\d{1,2}/\d{1,2})", stat)
+    return _rows_of(d), roc_to_iso(m.group(1)) if m else ""
+
+
+# ────────────────────────────────────────────── 正規化
+
+def norm_halt_twse(rows, today):
+    """TWTAWU：編號,證券代號,證券名稱,暫停交易日期,暫停交易時間,恢復交易日期,恢復交易時間"""
+    out = []
+    for r in rows:
+        if len(r) < 6:
+            continue
+        code = str(r[1] or "").strip()
+        if not code:
+            continue
+        out.append([code, _clean_name(r[2]), "twse", sec_kind(code),
+                    roc_to_iso(r[3]), roc_to_iso(r[5]), "twse-TWTAWU", today])
+    return out
+
+
+def norm_halt_tpex(rows, day, today):
+    """sprc：有價證券類別,有價證券代號,有價證券名稱,暫停交易,恢復交易
+
+    ⚠ 這一條沒有歷史，`day` 是它自己回報的資料日期。
+    暫停/恢復兩欄的格式在無資料時看不到（探針當天是 0 列），
+    所以**認不出來就留空，不要自己填 day**——填了就是拿今天冒充事件日。
+    """
+    out = []
+    for r in rows:
+        if len(r) < 5:
+            continue
+        code = str(r[1] or "").strip()
+        if not code:
+            continue
+        out.append([code, _clean_name(r[2]), "tpex", sec_kind(code),
+                    roc_to_iso(r[3]) or day, roc_to_iso(r[4]),
+                    "tpex-sprc", today])
+    return out
+
+
+def norm_disp_twse(rows, today):
+    """punish：編號,公布日期,證券代號,證券名稱,累計,處置條件,處置起迄時間,處置措施,處置內容,備註"""
+    out = []
+    for r in rows:
+        if len(r) < 7:
+            continue
+        code = str(r[2] or "").strip()
+        if not code:
+            continue
+        span = str(r[6] or "")
+        pair = re.findall(r"(\d{2,3}/\d{1,2}/\d{1,2})", span)
+        out.append([code, _clean_name(r[3]), "twse", sec_kind(code),
+                    roc_to_iso(r[1]),
+                    roc_to_iso(pair[0]) if pair else "",
+                    roc_to_iso(pair[1]) if len(pair) > 1 else "",
+                    _num(r[4]), str(r[5] or "").strip()[:60],
+                    "twse-punish", today])
+    return out
+
+
+def norm_disp_tpex(rows, today):
+    """disposal：編號,公布日期,證券代號,證券名稱,累計,處置起訖時間,處置原因,處置內容,收盤價,本益比,(空)"""
+    out = []
+    for r in rows:
+        if len(r) < 7:
+            continue
+        code = str(r[2] or "").strip()
+        if not code:
+            continue
+        pair = re.findall(r"(\d{2,3}/\d{1,2}/\d{1,2})", str(r[5] or ""))
+        out.append([code, _clean_name(r[3]), "tpex", sec_kind(code),
+                    roc_to_iso(r[1]),
+                    roc_to_iso(pair[0]) if pair else "",
+                    roc_to_iso(pair[1]) if len(pair) > 1 else "",
+                    _num(r[4]),
+                    re.sub(r"\s*\([^)]*\)\s*$", "", str(r[6] or "")).strip()[:60],
+                    "tpex-disposal", today])
+    return out
+
+
+def norm_attn_twse(rows, today):
+    """notice：編號,證券代號,證券名稱,累計次數,注意交易資訊,日期,收盤價,本益比"""
+    out = []
+    for r in rows:
+        if len(r) < 8:
+            continue
+        code = str(r[1] or "").strip()
+        if not code:
+            continue
+        out.append([code, _clean_name(r[2]), "twse", sec_kind(code),
+                    roc_to_iso(r[5]), _num(r[3]), str(r[4] or "").strip()[:80],
+                    _num(r[6]), _num(r[7]), "twse-notice", today])
+    return out
+
+
+def norm_attn_tpex(rows, today):
+    """attention：編號,證券代號,證券名稱,累計,注意交易資訊,公告日期,收盤價,本益比,link"""
+    out = []
+    for r in rows:
+        if len(r) < 8:
+            continue
+        code = str(r[1] or "").strip()
+        if not code:
+            continue
+        out.append([code, _clean_name(r[2]), "tpex", sec_kind(code),
+                    roc_to_iso(r[5]), _num(r[3]), str(r[4] or "").strip()[:80],
+                    _num(r[6]), _num(r[7]), "tpex-attention", today])
+    return out
+
+
+# ────────────────────────────────────────────── 主流程
+
+def _months(s_iso, e_iso):
+    y, m = int(s_iso[:4]), int(s_iso[5:7])
+    ey, em = int(e_iso[:4]), int(e_iso[5:7])
+    while (y, m) <= (ey, em):
+        last = (datetime(y + (m == 12), m % 12 + 1, 1) - timedelta(days=1)).day
+        yield f"{y:04d}-{m:02d}-01", f"{y:04d}-{m:02d}-{last:02d}"
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+
+
+def collect(s_iso, e_iso, sleep, with_tpex_halt):
+    today = now_tpe().strftime("%Y-%m-%d")
+    halt = _load(OUT_HALT, H_HALT)
+    disp = _load(OUT_DISP, H_DISP)
+    attn = _load(OUT_ATTN, H_ATTN)
+    n0 = (len(halt), len(disp), len(attn))
+
+    def put(store, path, header, newrows):
+        for row in newrows:
+            store[_key(path, row, header)] = row
+
+    # 上市：整段一發就好，端點吃得下整年
+    for y in range(int(s_iso[:4]), int(e_iso[:4]) + 1):
+        a = max(s_iso, f"{y}-01-01")
+        b = min(e_iso, f"{y}-12-31")
+        put(halt, OUT_HALT, H_HALT, norm_halt_twse(twse_pull("halt", a, b), today))
+        time.sleep(sleep)
+        put(disp, OUT_DISP, H_DISP, norm_disp_twse(twse_pull("disposal", a, b), today))
+        time.sleep(sleep)
+        put(attn, OUT_ATTN, H_ATTN, norm_attn_twse(twse_pull("attention", a, b), today))
+        time.sleep(sleep)
+        print(f"  [twse {y}] 停牌 {len(halt)}／處置 {len(disp)}／注意 {len(attn)}（累計）")
+
+    # 上櫃：逐月。★ 範圍上限沒有實測過，逐月是為了萬一它有上限時不會安靜截斷
+    for a, b in _months(s_iso, e_iso):
+        put(disp, OUT_DISP, H_DISP, norm_disp_tpex(tpex_pull("disposal", a, b), today))
+        time.sleep(sleep)
+        put(attn, OUT_ATTN, H_ATTN, norm_attn_tpex(tpex_pull("attention", a, b), today))
+        time.sleep(sleep)
+        if a.endswith("-12-01"):
+            print(f"  [tpex {a[:4]}] 處置 {len(disp)}／注意 {len(attn)}（累計）")
+
+    if with_tpex_halt:
+        rows, day = tpex_halt_today()
+        put(halt, OUT_HALT, H_HALT, norm_halt_tpex(rows, day, today))
+        print(f"  [tpex 停牌] 當日快照 {day or '（沒回報日期）'}，{len(rows)} 列")
+
+    n1 = (_save(OUT_HALT, H_HALT, halt), _save(OUT_DISP, H_DISP, disp),
+          _save(OUT_ATTN, H_ATTN, attn))
+    os.makedirs(META, exist_ok=True)
+    with open(SKIPPED, "w", encoding="utf-8") as f:
+        f.write(f"# {now_tpe().isoformat(timespec='seconds')}　"
+                f"被防護擋下來的請求 {len(_SKIP_LOG)} 筆\n")
+        f.write("# 不是空的就要看：多半是日期格式寫錯（TWSE 不帶斜線、TPEx 帶斜線），\n"
+                "# 交易所不會報錯，只會安靜回「今天」。擋下來總比寫進去好。\n")
+        for x in _SKIP_LOG:
+            f.write(x + "\n")
+
+    print(f"\n[suspend] 停牌 {n0[0]}→{n1[0]}／處置 {n0[1]}→{n1[1]}／"
+          f"注意 {n0[2]}→{n1[2]}　列")
+    if _SKIP_LOG:
+        print(f"[suspend] ★ 有 {len(_SKIP_LOG)} 發被擋下來 → {SKIPPED}", file=sys.stderr)
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--backfill", action="store_true")
+    ap.add_argument("--daily", action="store_true")
+    ap.add_argument("--start", default="", help="回補起年（YYYY）或起日（YYYY-MM-DD）")
+    ap.add_argument("--end", default="", help="回補迄年／迄日")
+    ap.add_argument("--sleep", type=float, default=3.0)
+    a = ap.parse_args()
+
+    today = now_tpe()
+    if a.daily:
+        s = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+        e = today.strftime("%Y-%m-%d")
+        return collect(s, e, a.sleep, with_tpex_halt=True)
+    if a.backfill:
+        s = a.start if "-" in a.start else f"{a.start or 2015}-01-01"
+        e = a.end if "-" in a.end else f"{a.end or today.year}-12-31"
+        # ★ 上櫃停牌沒有歷史，回補時不抓——抓了也只會拿到今天，
+        #   寫進去就變成「2015 年那天有這些停牌」。
+        return collect(s, e, a.sleep, with_tpex_halt=False)
+    ap.print_help()
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

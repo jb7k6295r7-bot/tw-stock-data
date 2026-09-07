@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""suspend.py 的自測。**不連網**：把 get() 換成罐頭回應。
+
+釘的是四個「跑起來完全正常」的失效模式，每一個都在真實探針裡看過：
+  ① 日期格式寫錯 → 交易所回「今天」而不報錯 → 絕不可以寫進資料庫
+  ② TPEx 用「一列假資料」表示本日無資料 → 不可以被當成一筆處置
+  ③ sprc 沒有歷史 → 回補時絕不可以抓它
+  ④ 名稱夾連結、民國年、權證混在普通股裡
+"""
+import csv
+import json
+import os
+import shutil
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+FAILED = []
+DATA_BEFORE = os.path.exists(os.path.join(HERE, "data"))
+
+
+def ck(cond, msg):
+    print(("  ok   " if cond else "  ✗ 失敗 ") + msg)
+    if not cond:
+        FAILED.append(msg)
+
+
+def fresh(tmp):
+    import importlib
+    import suspend as S
+    importlib.reload(S)
+    S.META = os.path.join(tmp, "data", "meta")
+    S.OUT_HALT = os.path.join(S.META, "suspend.csv")
+    S.OUT_DISP = os.path.join(S.META, "disposal.csv")
+    S.OUT_ATTN = os.path.join(S.META, "attention.csv")
+    S.SKIPPED = os.path.join(S.META, "_suspend_skipped.txt")
+    S.KEY = {S.OUT_HALT: ("stock_id", "halt_date"),
+             S.OUT_DISP: ("stock_id", "start_date"),
+             S.OUT_ATTN: ("stock_id", "date")}
+    S._SKIP_LOG.clear()
+    return S
+
+
+def read(p):
+    if not os.path.exists(p):
+        return []
+    with open(p, encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def main():
+    print("=" * 66)
+    print("suspend.py 自測（不連網）")
+    print("=" * 66)
+
+    # ── 小工具
+    print("\n[1] 民國年、名稱夾連結、代號形狀")
+    S = fresh(tempfile.mkdtemp())
+    ck(S.roc_to_iso("115/08/13") == "2026-08-13", "民國轉西元")
+    ck(S.roc_to_iso("104/1/5") == "2015-01-05", "個位數月日也認得")
+    ck(S.roc_to_iso("") == "" and S.roc_to_iso("2026-08-13") == "",
+       "★ 認不出來回空字串，不自己補一個日期")
+    ck(S.roc_to_iso("115/02/30") == "", "★ 不存在的日期回空，不是硬湊")
+    ck(S._clean_name("雙鴻(../../mainboard/listed/company-detail.html?code=3324)")
+       == "雙鴻", "★ 名稱夾的連結有剝掉")
+    ck(S.sec_kind("3324") == "普通股" and S.sec_kind("087319") == "其他"
+       and S.sec_kind("33245") == "其他" and S.sec_kind("00679B") == "其他",
+       "★ 權證／可轉債／債券ETF 不會被當成普通股")
+
+    # ── ① 日期格式寫錯 → 回「今天」
+    print("\n[2] ★ 交易所回「今天」時必須整發丟掉")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        wrong = {"stat": "ok", "date": "20260907~20260907",
+                 "tables": [{"fields": ["編號"], "data": [
+                     [1, "115/09/07", "3324", "雙鴻", 6, "115/09/08~115/09/14",
+                      "因連續3個營業日", "內容", "1,440.00", "33.21", ""]]}]}
+        S.get = lambda *a, **k: (json.dumps(wrong, ensure_ascii=False).encode(), None)
+        rows = S.tpex_pull("disposal", "2015-01-05", "2015-01-31")
+        ck(rows == [], "★ 回報的是今天 → 這一發整個丟掉，一列都不收")
+        ck(any("丟棄這一發" in x for x in S._SKIP_LOG), "有記進 skipped 清單")
+
+        right = dict(wrong, date="20150105~20150131")
+        S.get = lambda *a, **k: (json.dumps(right, ensure_ascii=False).encode(), None)
+        ck(len(S.tpex_pull("disposal", "2015-01-05", "2015-01-31")) == 1,
+           "回報的區間對 → 正常收")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # ── ② 「本日無資料」是一列
+    print("\n[3] ★ TPEx 的「本日無處置資料」不可以變成一筆處置")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        empty = {"stat": "ok", "date": "20150105~20150105",
+                 "tables": [{"fields": ["編號"], "data": [
+                     [1, "104/01/05", "", "", "", "", "", "本日無處置資料", "", "", ""]]}]}
+        S.get = lambda *a, **k: (json.dumps(empty, ensure_ascii=False).encode(), None)
+        rows = S.tpex_pull("disposal", "2015-01-05", "2015-01-05")
+        ck(rows == [], "★ 佔位列被剔掉（列數不是 0，但真資料是 0）")
+        ck(S.norm_disp_tpex(rows, "2026-09-07") == [], "正規化之後也是空的")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # ── ③ 回補時不可以抓上櫃停牌
+    print("\n[4] ★ 回補不可以碰上櫃停牌（它只有今天）")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        called = {"sprc": 0}
+
+        def fake(url, body=None, ctype=None, retries=2, timeout=45):
+            if url.endswith("/sprc"):
+                called["sprc"] += 1
+                return json.dumps({"stat": "資料日期:115/09/07，本日無暫停/恢復交易股票資訊",
+                                   "tables": [{"totalCount": 0, "fields": [], "data": []}]},
+                                  ensure_ascii=False).encode(), None
+            return json.dumps({"stat": "ok", "date": "20150101~20151231",
+                               "title": "期間 104/01/01 到 104/12/31",
+                               "fields": [], "data": []}).encode(), None
+
+        S.get = fake
+        S.collect("2015-01-01", "2015-12-31", 0, with_tpex_halt=False)
+        ck(called["sprc"] == 0, "★ 回補時一次都沒打 sprc")
+        S.collect("2026-09-07", "2026-09-07", 0, with_tpex_halt=True)
+        ck(called["sprc"] == 1, "每日模式才打，而且只打一次")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # ── ④ 正規化與落檔
+    print("\n[5] 正規化與落檔")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        halt = [[1, "1218", "泰山", "115/08/13", "8:00", "115/08/14", "8:00"],
+                [2, "087319", "凱基DM", "104/04/27", "8:00", "104/04/30", "8:00"]]
+        out = S.norm_halt_twse(halt, "2026-09-07")
+        ck(out[0][:6] == ["1218", "泰山", "twse", "普通股", "2026-08-13", "2026-08-14"],
+           "停牌欄位對得上")
+        ck(out[1][3] == "其他", "★ 權證標成其他")
+
+        d = S.norm_disp_twse([[1, "115/08/21", "3324", "雙鴻", 6,
+                               "連續三次", "115/08/24～115/08/28", "第一次處置",
+                               "內容", "備註"]], "2026-09-07")
+        ck(d[0][5] == "2026-08-24" and d[0][6] == "2026-08-28",
+           "★ 處置起迄的全形波浪號拆得開")
+
+        S.get = lambda *a, **k: (json.dumps(
+            {"stat": "ok", "date": "20150101~20151231", "fields": [],
+             "data": []}).encode(), None)
+        S.collect("2015-01-01", "2015-01-31", 0, with_tpex_halt=False)
+        ck(os.path.exists(S.OUT_HALT) and os.path.exists(S.OUT_DISP)
+           and os.path.exists(S.OUT_ATTN), "三個檔都建出來")
+        ck(read(S.OUT_HALT) == [], "沒有資料時是空表，不是塞假列")
+        ck(os.path.exists(S.SKIPPED), "★ skipped 清單一定會寫（空的也要寫）")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # ── 重複跑要收斂
+    print("\n[6] 重複跑同一段不可以長出重複列")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        payload = {"stat": "ok", "date": "20150101~20151231",
+                   "title": "期間 104/01/01 到 104/12/31", "fields": [],
+                   "data": [[1, "1218", "泰山", "104/04/27", "8:00", "104/04/30", "8:00"]]}
+        S.get = lambda *a, **k: (json.dumps(payload, ensure_ascii=False).encode(), None)
+        S.collect("2015-01-01", "2015-01-31", 0, with_tpex_halt=False)
+        n1 = len(read(S.OUT_HALT))
+        S.collect("2015-01-01", "2015-01-31", 0, with_tpex_halt=False)
+        n2 = len(read(S.OUT_HALT))
+        ck(n1 == n2 and n1 > 0, f"★ 兩趟之後列數不變（{n1} → {n2}）")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    print("\n[7] 沒有動到 repo 的 data/")
+    ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
+       "★ repo 的 data/ 存在與否沒有改變")
+
+    print("\n" + "=" * 66)
+    if FAILED:
+        print(f"✗ {len(FAILED)} 項失敗：")
+        for m in FAILED:
+            print("   -", m)
+        return 1
+    print("全部通過")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
