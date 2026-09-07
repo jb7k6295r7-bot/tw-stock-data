@@ -8,8 +8,13 @@ name: 停牌／處置／注意（探針）
 on:
   workflow_dispatch:
     inputs:
+      set:
+        description: "round1 = 端點在不在｜params = 換參數名試打（第二輪）｜names = 抓官方自己列的頁名"
+        type: choice
+        options: [params, names, round1]
+        default: params
       market:
-        description: "只探哪個市場（留空 = 全部）"
+        description: "只探哪個市場（留空 = 全部；params／names 本來就只有上櫃）"
         type: choice
         options: ["", twse, tpex]
         default: ""
@@ -44,6 +49,7 @@ jobs:
       - name: 探針
         run: |
           python suspend_probe.py \
+            --set "${{ inputs.set || 'params' }}" \
             --sleep "${{ inputs.sleep || '3' }}" \
             ${{ inputs.market && format('--only {0}', inputs.market) || '' }}
 
