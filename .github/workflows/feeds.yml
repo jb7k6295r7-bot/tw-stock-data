@@ -203,7 +203,7 @@ jobs:
       #   加 --write 才會寫出 data/meta/calendar_twse.csv；有月份沒問到就不寫。
       - name: 核對交易日曆
         if: inputs.mode == 'calendar-audit'
-        run: python calendar_audit.py --start 2015-01 --sleep "${{ inputs.sleep || '5' }}" --write
+        run: python calendar_audit.py --start 2015-01 --sleep 5 --write
 
       # ★ 只讀本地檔、不連外。要先跑過 feed=exright **與 feed=reduce** 才有事件可算。
       #   只跑 exright 的話 data/adj/ 會少掉全部減資，而那**看起來完全正常**——
