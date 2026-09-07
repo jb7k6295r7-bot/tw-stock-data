@@ -68,7 +68,7 @@ def main():
                              [[1, "1218", "泰山", "109/08/13", "109/08/14"]], F), None
 
         r = run([("t", "twse", "http://x?startDate={s}&endDate={e}")], fake, tmp=tmp)
-        ck("指紋不同" in r, "指紋不同 → 判 ✓")
+        ck("判定：✓" in r, "判成可用")
         ck("'暫停交易日期'" in r or "暫停交易日期" in r, "★ 欄位名有照抄")
         ck("力特" in r, "首列有照抄（不是只給筆數）")
     finally:
@@ -82,8 +82,17 @@ def main():
                          [[1, "1218", "泰山", "115/08/13", "115/08/14"]], F)
         r = run([("t", "twse", "http://x?date={s}&e={e}")],
                 lambda u: (same, None), tmp=tmp)
-        ck("這個參數是假的" in r, "★ 抓到參數被無視（TWTAWU date= 的真實形狀）")
-        ck("✓ 指紋不同" not in r, "沒有誤判成可用")
+        ck("判定：✗" in r, "★ 抓到參數被無視（TWTAWU date= 的真實形狀）")
+        ck("判定：✓" not in r, "沒有誤判成可用")
+
+        # ★ 純指紋那條路徑不可以變成死碼：回傳沒有 title 也沒有 date 的端點，
+        #   仍然只能靠兩發比對。這一項是為了讓那段程式碼有人測。
+        nodate = json.dumps({"stat": "OK", "fields": F,
+                             "data": [[1, "1218", "泰山", "x", "y"]]},
+                            ensure_ascii=False).encode()
+        r = run([("t2", "twse", "http://x?date={s}&e={e}")],
+                lambda u: (nodate, None), tmp=tmp)
+        ck("這個參數是假的" in r, "★ 沒有 title／date 時仍靠指紋抓到參數被無視")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -105,8 +114,58 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
+    # [5] ★ 第二輪：判準改成「回應自己回報的區間」，比指紋更硬
+    print("\n[5] 參數名試打：用回應自己回報的區間判定")
+    tmp = tempfile.mkdtemp()
+    try:
+        def echo(rng):
+            return json.dumps({"stat": "ok", "date": rng,
+                               "tables": [{"fields": ["編號"], "data": [[1]]}]},
+                              ensure_ascii=False).encode()
+
+        # 假的參數名：回應回報「今天～今天」
+        r = run([("bad", "tpex", "http://x?startDate={s}&endDate={e}")],
+                lambda u: (echo("20260907~20260907"), None), tmp=tmp)
+        ck("這個參數名是假的" in r, "★ 回報的區間不是我要的 → 判 ✗")
+        ck("20260907~20260907" in r, "把它回報的區間照抄出來")
+
+        # 真的參數名：回應回報我要的那一段
+        r = run([("good", "tpex", "http://x?startDate={s}&endDate={e}")],
+                lambda u: (echo("20150101~20151231"), None), tmp=tmp)
+        ck("參數生效" in r, "★ 回報的區間含我要的日期 → 判 ✓")
+
+        # ⚠ 兩發內容一樣但回報的是對的區間 → 仍然要判 ✓
+        #   （只查一天的端點本來就會兩發一樣，不可以被指紋測試誤殺）
+        ck("這個參數是假的" not in r, "★ 指紋一樣但區間對，不可以誤判成假參數")
+
+        # 民國格式也要認得（104 = 2015）
+        r = run([("roc", "tpex", "http://x?startDate={s}&endDate={e}")],
+                lambda u: (echo("104/01/05~104/01/05"), None), tmp=tmp)
+        ck("參數生效" in r, "★ 民國格式的回報也認得")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # [6] 頁名探勘：只抄頁面上真的出現過的名字
+    print("\n[6] 頁名探勘")
+    tmp = tempfile.mkdtemp()
+    try:
+        import importlib
+        import suspend_probe as P
+        importlib.reload(P)
+        P.get = lambda u, timeout=40: (
+            b"<a href='bulletin/attention.html'>x</a><a href='bulletin/stopTrading'>y</a>",
+            None)
+        out = "\n".join(P.probe_names("t", "http://x"))
+        ck("attention" in out and "stopTrading" in out, "★ 頁面出現過的名字有抄回來")
+        P.get = lambda u, timeout=40: (b"<!DOCTYPE html><div id=app></div>", None)
+        out = "\n".join(P.probe_names("t", "http://x"))
+        ck("不要據此推論頁名不存在" in out,
+           "★ 找不到時明講是 SPA 外殼，不腦補")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
     # [4] 沒動到真資料
-    print("\n[4] 沒有動到 repo 的 data/")
+    print("\n[7] 沒有動到 repo 的 data/")
     ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "★ repo 的 data/ 存在與否沒有改變")
 
