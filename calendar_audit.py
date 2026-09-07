@@ -64,17 +64,30 @@ def _roc(v):
     return f"{int(m.group(1)) + 1911:04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
 
 
-def _month_ok(doc, y, m):
+def _month_ok(titles, y, m):
     """標題是不是**我們要的那個月**。→ (是否相符, 它說的)
 
-    ★ 只看 `title`。`date` 是原樣回音，看它等於沒檢查。
+    ★ 只看標題。`date` 是原樣回音，看它等於沒檢查。
+
+    ★ 2026-09-07 補：標題可能在**頂層**，也可能在 `tables[i].title` 裡
+      （TWSE 兩種回應形狀都有）。只讀頂層的話，遇到多表形狀會變成
+      「標題抽不到年月」而**整年 140 個月全部拒收**——看起來像端點壞了，
+      其實是我少讀一個地方。所以把所有候選標題都傳進來，任一個對上就算。
     """
-    t = str(doc.get("title") or "")
-    mm = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月", t)
-    if not mm:
-        return False, f"標題抽不到年月：{t[:40]}"
-    got = (int(mm.group(1)) + 1911, int(mm.group(2)))
-    return got == (y, m), f"{got[0]}-{got[1]:02d}"
+    said = []
+    for t in titles:
+        t = str(t or "")
+        mm = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月", t)
+        if not mm:
+            continue
+        got = (int(mm.group(1)) + 1911, int(mm.group(2)))
+        if got == (y, m):
+            return True, f"{got[0]}-{got[1]:02d}"
+        said.append(f"{got[0]}-{got[1]:02d}")
+    if said:
+        return False, "／".join(sorted(set(said)))
+    joined = "｜".join(str(t or "")[:30] for t in titles if t)
+    return False, f"標題抽不到年月：{joined[:60] or '（沒有標題）'}"
 
 
 def fetch_month(y, m, sleep):
@@ -90,15 +103,28 @@ def fetch_month(y, m, sleep):
     stat = str(doc.get("stat", "")).strip()
     if stat.lower() not in ("ok", "success"):
         return None, f"stat={stat}"
-    ok, said = _month_ok(doc, y, m)
-    if not ok:
-        # ★ 這一條就是 exright 事故的防線。標題不符＝它回的是別的月份。
-        return None, f"標題不符（要 {y}-{m:02d}，它說 {said}）"
     tabs = B._tables(doc)
     if not tabs:
         return None, "沒有 fields/data"
+    ok, said = _month_ok([doc.get("title")] + [t.get("title") for t in tabs], y, m)
+    if not ok:
+        # ★ 這一條就是 exright 事故的防線。標題不符＝它回的是別的月份。
+        return None, f"標題不符（要 {y}-{m:02d}，它說 {said}）"
+
+    # ★ 不要盲抓 tabs[0]。TWSE 有些端點一個回應塞好幾張表（見 backfill._tables
+    #   的註解），日期表不見得排第一張。抓錯表的症狀是「解析出 0 天」，
+    #   跟「那個月沒開市」長得一模一樣——後者根本不存在，但沒人會發現。
+    tab = None
+    for t in tabs:
+        rows = t.get("data") or []
+        if rows and rows[0] and _roc(rows[0][0]):
+            tab = t
+            break
+    if tab is None:
+        return None, f"{len(tabs)} 張表，沒有一張的首欄是民國日期"
+
     days, bad = set(), 0
-    for r in (tabs[0].get("data") or []):
+    for r in (tab.get("data") or []):
         if not r:
             continue
         d = _roc(r[0])
@@ -164,12 +190,25 @@ def main():
             print(f"        {k} {v}")
         print("[cal] 先把這些月份補問到，再看下面的差異。")
 
-    lo, hi = f"{a.start}-01", max(official) if official else ""
+    # ★ 比對窗口要**兩邊都收斂**。只用 max(official) 當上界的話，
+    #   今天已經開市、但我方的每日排程還沒跑到，那幾天會被算成「漏抓」——
+    #   那不是漏抓，是還沒排到。差一天就足以讓整份稽核的頭條數字說錯話。
+    lo = f"{a.start}-01"
+    hi = min(max(official), max(mine)) if official else ""
     scope = {d for d in mine if official and lo <= d <= hi}
-    miss = sorted(official - scope)          # 官方有、我方無 → 漏抓
-    extra = sorted(scope - official)         # 我方有、官方無 → 要人看
+    off_scope = {d for d in official if lo <= d <= hi}
+    ahead = sorted(d for d in official if hi and d > hi)
+    miss = sorted(off_scope - scope)         # 官方有、我方無 → 漏抓
+    extra = sorted(scope - off_scope)        # 我方有、官方無 → 要人看
 
-    print(f"\n[cal] 官方交易日 {len(official)} 天｜我方同區間 {len(scope)} 天")
+    print(f"\n[cal] 比對窗口 {lo} ~ {hi}"
+          f"（上界＝官方最後一天與我方最後一天取小）")
+    if ahead:
+        print(f"[cal] 官方已開市、但超出我方日曆的 {len(ahead)} 天："
+              f"{'、'.join(ahead[:8])}"
+              f"{' …' if len(ahead) > 8 else ''}"
+              "（**不算漏抓**，是每日排程還沒跑到）")
+    print(f"[cal] 官方交易日 {len(off_scope)} 天｜我方同區間 {len(scope)} 天")
     print(f"[cal] **官方有、我方無（疑似漏抓）：{len(miss)} 天**")
     for d in miss[:40]:
         print(f"        {d}")
