@@ -6,6 +6,21 @@
 **整批 0.55 GB**。分析環境是用完就丟的，每次都要重付一次下載成本。
 轉置之後看一檔股票只要抓 `data/stocks/<代號>.csv`，約 230 KB、一個請求。
 
+★ **四層**（2026-09-07 起）：
+
+| kind | 來源日檔 | 輸出 | 量級 |
+|---|---|---|---|
+| `price` | `universe/daily` | `data/stocks/` | 約 0.55 GB |
+| `inst` | `universe/inst` ＋ `otcinst` | `data/stocks_inst/` | — |
+| `margin` | `universe/margin` ＋ `otcmargin` | `data/stocks_margin/` | **約 240 MB** |
+| `per` | `universe/per` ＋ `otcper` | `data/stocks_per/` | **約 250 MB** |
+
+⚠ **`margin` 與 `per` 是 2026-09-07 新增的，加進去 repo 大約翻倍**（0.55 GB → 約 1 GB）。
+這是使用者攤開成本之後選的：換到的是「一檔的融資／本益比長序列」從
+**掃 2,845 個日檔、數百 MB** 變成**一個請求、約 170 KB**。
+⚠ **第一次建立這兩層一定要走手動的 `transpose.yml`**（timeout 60 分），
+不要讓 `daily.yml` 那 15 分鐘的步驟去扛第一次的 490 MB commit。
+
 ★ **一律全量重建，不寫增量。**
   實測全量只要 1～3 分鐘，即使每天跑兩次也划算，沒必要為了省這幾分鐘去養增量邏輯。
   增量的 bug 是靜默的：2026-09-04 實測 `capital.py` 的 `cmd_run` 只補「還沒有的」、
@@ -44,10 +59,22 @@ UNI = os.path.join(ROOT, "data", "universe")
 #   ⚠ 2026-09-05 踩過：`otcinst` 補完 2,844 天之後跑 transpose，
 #   個股庫仍然是 1,515 檔、列數一模一樣——因為這支程式**只讀 `inst`**，
 #   剛補的上櫃資料躺在日檔裡沒進去。**加了新的日檔來源就要改這裡。**
-SRC = {"price": [os.path.join(UNI, "daily")],
-       "inst": [os.path.join(UNI, "inst"), os.path.join(UNI, "otcinst")]}
-OUT = {"price": os.path.join(ROOT, "data", "stocks"),
-       "inst": os.path.join(ROOT, "data", "stocks_inst")}
+SRC = {"price":  [os.path.join(UNI, "daily")],
+       "inst":   [os.path.join(UNI, "inst"),   os.path.join(UNI, "otcinst")],
+       # ★ 2026-09-07 新增。融資融券與本益比原本**只有日期軸**，
+       #   要一檔的長序列得掃 2,845 個日檔、數百 MB——而融資使用率、券資比、
+       #   本益比換季斷層都是每天在用的判讀項目。
+       #   合併前實測過三件事（不要只看 feeds.py 宣告的 header，要看實際寫出來的檔）：
+       #     ① 上市與上櫃的表頭**逐字相同**（margin/otcmargin、per/otcper 各自）
+       #     ② 同一天的代號集合**交集 0**（2026-09-04：margin 1,297 vs 920、per 1,081 vs 886）
+       #     ③ 兩者都有 `date` 與 `stock_id`
+       #   三件都成立才敢合併成同一個輸出目錄。任一條不成立就要分開存。
+       "margin": [os.path.join(UNI, "margin"), os.path.join(UNI, "otcmargin")],
+       "per":    [os.path.join(UNI, "per"),    os.path.join(UNI, "otcper")]}
+OUT = {"price":  os.path.join(ROOT, "data", "stocks"),
+       "inst":   os.path.join(ROOT, "data", "stocks_inst"),
+       "margin": os.path.join(ROOT, "data", "stocks_margin"),
+       "per":    os.path.join(ROOT, "data", "stocks_per")}
 # key 是「日期+代號」的複合鍵，轉置後沒有用途；其餘欄位全留。
 DROP = {"key"}
 CHUNK = 200          # 一次處理幾個日檔再落盤。限制記憶體用量，不影響結果。
@@ -169,13 +196,33 @@ def build(kind):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kind", default="price", choices=["price", "inst", "both"])
+    ap.add_argument("--kind", default="price",
+                    choices=["price", "inst", "margin", "per", "both", "all"],
+                    help="both＝price+inst（舊行為，保留不動）；all＝四層全做")
     a = ap.parse_args()
-    kinds = ["price", "inst"] if a.kind == "both" else [a.kind]
-    rc = 0
+    # ⚠ `both` 的意思**維持原樣**（price+inst），不要偷偷擴成四層——
+    #   舊的 workflow 與別人的腳本都還寫著 `--kind both`，
+    #   改掉它的意思會讓那些呼叫端在不知情的狀況下多做兩層、多寫 490 MB。
+    #   要四層就明寫 `all`。
+    kinds = {"both": ["price", "inst"],
+             "all": ["price", "inst", "margin", "per"]}.get(a.kind, [a.kind])
+    # ★ 2026-09-07：一次跑多層時**要逐層報結果**，不要只把回傳碼 OR 起來。
+    #   `--kind all` 有四層，舊寫法只給一個 exit code——
+    #   四層裡有一層沒有來源目錄時，另外三層明明成功，讀 log 的人卻只看到「失敗」，
+    #   而「哪一層失敗、為什麼」要自己往上翻。**摘要要說現況，不是說有沒有出事。**
+    res = {}
     for k in kinds:
-        rc |= build(k)
-    return rc
+        res[k] = build(k)
+    if len(kinds) > 1:
+        print("\n[transpose] 逐層結果：")
+        for k in kinds:
+            tag = "ok" if res[k] == 0 else "★ 失敗"
+            print(f"        {k:8} {tag}")
+    bad = [k for k in kinds if res[k]]
+    if bad:
+        print(f"[transpose] ✗ 這幾層沒有完成：{'、'.join(bad)}"
+              f"（**其餘幾層的輸出仍然是新的，不要整批當成沒跑**）", file=sys.stderr)
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":
