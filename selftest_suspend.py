@@ -288,7 +288,35 @@ def main():
     finally:
         UR.urlopen = old_open
 
-    print("\n[9] 沒有動到 repo 的 data/")
+    # ── 迄日與累加
+    print("\n[9] 迄日不可超過今天；skipped 清單要累加")
+    tmp = tempfile.mkdtemp()
+    try:
+        S = fresh(tmp)
+        asked = []
+
+        def spy(url, body=None, ctype=None, retries=3, timeout=45):
+            asked.append(url)
+            return json.dumps({"stat": "OK", "date": "20260101~20260907",
+                               "title": "期間 115年01月01日 至 115年09月07日",
+                               "fields": [], "data": []}).encode(), None
+
+        S.get = spy
+        S.collect("2026-01-01", "2030-12-31", 0, with_tpex_halt=False)
+        ck(all("2030" not in u for u in asked), "★ 未來日期沒被送出去")
+        ck(not any("endDate=20261231" in u for u in asked),
+           "★ 今年的迄日被砍到今天（TWTAWU 對未來日期整發拒收）")
+
+        n1 = open(S.SKIPPED, encoding="utf-8").read()
+        S._SKIP_LOG.append("測試\t假的一筆")
+        S.collect("2026-01-01", "2026-01-31", 0, with_tpex_halt=False)
+        n2 = open(S.SKIPPED, encoding="utf-8").read()
+        ck(n2.startswith(n1[:60]) and len(n2) > len(n1),
+           "★ skipped 清單是累加，前一趟的紀錄還在")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    print("\n[10] 沒有動到 repo 的 data/")
     ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "★ repo 的 data/ 存在與否沒有改變")
 

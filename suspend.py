@@ -472,6 +472,11 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
                 continue
             store[k] = row
 
+    # ⛔ 迄日不可以超過今天。TWTAWU 對未來日期**整發拒收**
+    #   （回「查詢日期大於今日，請重新查詢!」），2026 全年那一發因此整年沒抓到。
+    cap = now_tpe().strftime("%Y-%m-%d")
+    e_iso = min(e_iso, cap)
+
     # 上市：整段一發就好，端點吃得下整年
     for y in range(int(s_iso[:4]), int(e_iso[:4]) + 1):
         a = max(s_iso, f"{y}-01-01")
@@ -501,11 +506,19 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
     n1 = (_save(OUT_HALT, H_HALT, halt), _save(OUT_DISP, H_DISP, disp),
           _save(OUT_ATTN, H_ATTN, attn))
     os.makedirs(META, exist_ok=True)
-    with open(SKIPPED, "w", encoding="utf-8") as f:
-        f.write(f"# {now_tpe().isoformat(timespec='seconds')}　"
-                f"被防護擋下來的請求 {len(_SKIP_LOG)} 筆\n")
-        f.write("# 不是空的就要看：多半是日期格式寫錯（TWSE 不帶斜線、TPEx 帶斜線），\n"
-                "# 交易所不會報錯，只會安靜回「今天」。擋下來總比寫進去好。\n")
+    # ⛔ 這個檔原本是每趟覆蓋。回補要分很多趟跑（一次一兩年），
+    #   覆蓋等於**只看得到最後一趟**，前面幾趟被擋掉什麼永遠不知道。
+    #   2026-09-07 的 2015 年資料就是這樣消失的：查不出當時被擋的原因。
+    #   改成累加，每趟一個標頭。
+    new_file = not os.path.exists(SKIPPED)
+    with open(SKIPPED, "a", encoding="utf-8") as f:
+        if new_file:
+            f.write("# 被防護擋下來的請求（**累加**，不會被下一趟蓋掉）\n"
+                    "# 不是空的就要看：多半是日期格式寫錯"
+                    "（TWSE 不帶斜線、TPEx 帶斜線），\n"
+                    "# 交易所不會報錯，只會安靜回「今天」。擋下來總比寫進去好。\n")
+        f.write(f"\n# ── {now_tpe().isoformat(timespec='seconds')}　"
+                f"{s_iso}~{e_iso}　擋下 {len(_SKIP_LOG)} 筆\n")
         for x in _SKIP_LOG:
             f.write(x + "\n")
 
