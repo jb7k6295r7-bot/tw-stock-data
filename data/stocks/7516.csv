@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,7516,清淨海,emerging,,8.15,7.91,8.07,18010,145341,0.01,,,,均價/額推算
 2026-09-04,7516,清淨海,emerging,,8.31,8.06,8.19,86357,707264,0.12,,,,均價/額推算
+2026-09-07,7516,清淨海,emerging,,8.35,8,8.18,41016,335511,-0.01,,,,均價/額推算

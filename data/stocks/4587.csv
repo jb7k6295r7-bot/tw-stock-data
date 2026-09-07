@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,4587,寶元數控,emerging,,42.5,41.9,42.24,34828,1471135,-0.14,,,,均價/額推算
 2026-09-04,4587,寶元數控,emerging,,42.4,42.2,42.3,18099,765588,0.06,,,,均價/額推算
+2026-09-07,4587,寶元數控,emerging,,42.4,40.9,41.82,34614,1447557,-0.48,,,,均價/額推算

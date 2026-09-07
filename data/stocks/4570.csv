@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,4570,傑生,emerging,,70,68.6,69.53,3001,208660,0.75,,,,均價/額推算
 2026-09-04,4570,傑生,emerging,,69.9,69,69.71,8001,557750,0.18,,,,均價/額推算
+2026-09-07,4570,傑生,emerging,,70.3,69,69.65,2002,139439,-0.06,,,,均價/額推算

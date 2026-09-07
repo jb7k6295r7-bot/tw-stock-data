@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6659,天明製藥,emerging,,20.1,19.3,19.47,38003,739918,-0.24,,,,均價/額推算
 2026-09-04,6659,天明製藥,emerging,,20.1,19.35,19.48,35305,687741,0.01,,,,均價/額推算
+2026-09-07,6659,天明製藥,emerging,,21.05,19.8,20.07,293973,5900038,0.59,,,,均價/額推算

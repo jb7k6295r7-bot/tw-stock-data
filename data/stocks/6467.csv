@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
 2026-09-03,6467,泰合,emerging,,190,173,178.46,1994142,355874581,7.69,,,,均價/額推算
 2026-09-04,6467,泰合,emerging,,197.5,176,189.56,2296776,435376859,11.10,,,,均價/額推算
+2026-09-07,6467,泰合,emerging,,229,192.5,217.95,3648966,795292140,28.39,,,,均價/額推算
