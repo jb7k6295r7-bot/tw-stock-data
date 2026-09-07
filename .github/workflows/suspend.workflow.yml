@@ -1,0 +1,69 @@
+name: 停牌／處置／注意（探針）
+
+# 為什麼先只有探針、沒有回補：
+# 上市那三條 2026-09-07 已經驗過（sources/suspend_source.md），
+# **上櫃一條都還沒看到欄位名**——tpex.org.tw/openapi/ 對外部抓取回 403。
+# 在看到欄位名之前寫解析式就是照猜的寫死，這個專案被咬過一次。
+# 這一趟只讀不寫資料，輸出 data/meta/_suspend_probe.txt，看完再決定怎麼寫回補。
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "只探哪個市場（留空 = 全部）"
+        type: choice
+        options: ["", twse, tpex]
+        default: ""
+      sleep:
+        description: "每一發之間隔幾秒（交易所會限流）"
+        default: "3"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: suspend
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 自測擋在探針前面。探針的失效模式是「照抄變成照猜」與
+      # 「參數被無視卻判成可用」，兩個都不會報錯，只有自測抓得到。
+      - name: 自測（不連網）
+        run: python selftest_suspend_probe.py
+
+      - name: 探針
+        run: |
+          python suspend_probe.py \
+            --sleep "${{ inputs.sleep || '3' }}" \
+            ${{ inputs.market && format('--only {0}', inputs.market) || '' }}
+
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/meta/_suspend_probe.txt
+          if git diff --staged --quiet; then
+            echo "沒有變動，不 commit"
+          else
+            git commit -m "suspend probe: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              git rebase --abort 2>/dev/null || true
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
+          fi
