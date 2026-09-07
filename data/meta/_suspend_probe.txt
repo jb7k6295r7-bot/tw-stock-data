@@ -1,46 +1,86 @@
-# 停牌／處置／注意 端點探針 2026-09-07T20:34:51+08:00
+# 停牌／處置／注意 端點探針 2026-09-07T20:43:45+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
-# 這一趟的選集：--set suspend2
+# 這一趟的選集：--set halt
 
 ======================================================================
-== 新站-afterTrading-spendi  [tpex]
-   [1] https://www.tpex.org.tw/www/zh-tw/afterTrading/spendi?startDate=104/01/05&endDate=104/12/31&response=json
-       bytes=10892
-       不是 JSON（JSONDecodeError）
-       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
-   判定：（這條沒有日期參數，指紋測試不適用）
+== sprc-GET-startEnd
+   GET https://www.tpex.org.tw/www/zh-tw/bulletin/sprc?startDate=104/01/05&endDate=104/01/05&response=json
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
 
 ======================================================================
-== 新站-bulletin-spendi  [tpex]
-   [1] https://www.tpex.org.tw/www/zh-tw/bulletin/spendi?startDate=104/01/05&endDate=104/12/31&response=json
-       bytes=10892
-       不是 JSON（JSONDecodeError）
-       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
-   判定：（這條沒有日期參數，指紋測試不適用）
+== sprc-GET-date
+   GET https://www.tpex.org.tw/www/zh-tw/bulletin/sprc?date=104/01/05&response=json
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
 
 ======================================================================
-== 新站-afterTrading-sprc  [tpex]
-   [1] https://www.tpex.org.tw/www/zh-tw/afterTrading/sprc?startDate=104/01/05&endDate=104/12/31&response=json
-       bytes=10892
-       不是 JSON（JSONDecodeError）
-       前 200 位元組照抄：<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u
-   判定：（這條沒有日期參數，指紋測試不適用）
+== sprc-POST-json-date
+   POST https://www.tpex.org.tw/www/zh-tw/bulletin/sprc
+   body: {"date": "104/01/05"}  (application/json)
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
 
 ======================================================================
-== 舊站-spendi-sprc  [tpex]
-   [1] https://wwwov.tpex.org.tw/web/stock/aftertrading/spendi/sprc_result.php?l=zh-tw&d=104/01/05
-       ✗ URLError: <urlopen error [Errno -2] Name or service not known>
-   判定：（這條沒有日期參數，指紋測試不適用）
+== sprc-POST-json-startEnd
+   POST https://www.tpex.org.tw/www/zh-tw/bulletin/sprc
+   body: {"startDate": "104/01/05", "endDate": "104/01/05"}  (application/json)
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
 
 ======================================================================
-== 舊站-spendi-首頁  [tpex]
-   [1] https://wwwov.tpex.org.tw/web/stock/aftertrading/spendi/sprc.php?l=zh-tw
-       ✗ URLError: <urlopen error [Errno -2] Name or service not known>
-   判定：（這條沒有日期參數，指紋測試不適用）
+== sprc-POST-form-date
+   POST https://www.tpex.org.tw/www/zh-tw/bulletin/sprc
+   body: date=104/01/05  (application/x-www-form-urlencoded)
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
 
 ======================================================================
-== 舊站-除權息-revivt  [tpex]
-   [1] https://wwwov.tpex.org.tw/web/stock/exright/revivt/revivt_result.php?l=zh-tw&d=104/01/05
-       ✗ URLError: <urlopen error [Errno -2] Name or service not known>
-   判定：（這條沒有日期參數，指紋測試不適用）
+== sprc-POST-form-startEnd
+   POST https://www.tpex.org.tw/www/zh-tw/bulletin/sprc
+   body: startDate=104/01/05&endDate=104/01/05  (application/x-www-form-urlencoded)
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
+
+======================================================================
+== sprc-POST-空body-對照組
+   POST https://www.tpex.org.tw/www/zh-tw/bulletin/sprc
+   body: {}  (application/json)
+       bytes=355
+       頂層鍵照抄：['message', 'tables', 'stat']
+         stat = '資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+         欄位名（tables[0]）照抄：['有價證券類別', '有價證券代號', '有價證券名稱', '暫停交易', '恢復交易']
+         資料 0 列
+   ★ 回應自己回報的日期：'資料日期:115/09/07，本日無暫停/恢復交易股票資訊'
+   判定：✗ 這個寫法沒換到日期（回報的不是我要的那天）
