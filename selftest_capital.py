@@ -149,15 +149,42 @@ def main():
             return None, "HTTP 404"
 
         rc, out = run_once(tmp, daily, fake2)
-        ck("股數兩源不一致" in out["8299"]["note"], "★ 不一致有寫進 note")
+        ck("股數以 daily 為準" in out["8299"]["note"], "★ 不一致有寫進 note")
         ck(out["8299"]["shares"] == "199000000", "股數仍以 daily 為準")
+        # ★★ 這一項是 2026-09-07 當天釘上去的：
+        #    端點自己那一對（1990000000 ÷ 198000000）不是整數 10，但那是端點的快照較舊，
+        #    不是資料壞掉。面額要用端點自己那一對驗，**不可以拿端點的資本額 ÷ daily 的股數**
+        #    ——那樣會把 37 檔乾淨的資料標成 mismatch，而 mismatch 的意思是
+        #    「這一檔的股數不要拿來算佔股本比重」。
+        ck(not out["8299"]["note"].startswith("mismatch"),
+           "★ 兩源日期不同不可以被誤判成 mismatch")
+
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    # ── 情境四：真的沒動到 repo 的 data/
+    # ── 情境四：端點自己那一對真的對不起來，才可以標 mismatch
+    print("\n[4] 端點自己的資本額與股數對不起來 → 這才是真的 mismatch")
+    tmp = tempfile.mkdtemp()
+    try:
+        build_sandbox(tmp, daily)
+        O3 = json.dumps([_row("8299", "群聯電子", "1990000000",
+                              "398000000")]).encode()   # 比值 5，不是 10
+
+        def fake3(url):
+            if "mopsfin_t187ap03_O" in url:
+                return O3, None
+            return None, "HTTP 404"
+
+        rc, out = run_once(tmp, daily, fake3)
+        ck(out["8299"]["note"].startswith("mismatch"),
+           "★ 端點自己對不起來時仍然要標 mismatch（不可以連真警報一起關掉）")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # ── 情境五：真的沒動到 repo 的 data/
     #   ⚠ 這一節不可以寫成 ck(True, ...)。斷言自己成立＝循環自證，
     #   本專案 2026-09-07 才因為同一件事重跑過整套稽核。
-    print("\n[4] 沙箱隔離（真的去看檔案系統，不是宣告自己沒事）")
+    print("\n[5] 沙箱隔離（真的去看檔案系統，不是宣告自己沒事）")
     ck(REPO_DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "跑完之後 repo 的 data/ 存在與否沒有改變")
     if not REPO_DATA_BEFORE:

@@ -391,11 +391,18 @@ def cmd_run(_args):
             if official and cap:
                 # ★ 這一列已經有 daily 的官方發行股數 → 端點只補 capital／par，
                 #   股數仍以 daily 為準（那是每日更新的官方值）。
-                #   兩邊的股數要互相核對：**不一致是資訊，不是雜訊**，寫進 note，
-                #   否則會出現「股數是這個月的、股本是上個月的」而沒有人看得出來。
-                par_used, nt = reconcile(cap, official, par, pref)
+                #
+                # ⛔ 2026-09-07 當天就修掉的坑：reconcile 一開始是拿
+                #   「端點的資本額 ÷ daily 的股數」去驗面額——**兩個來源、兩個日期**。
+                #   實測後果：37 檔被標成 `mismatch`，而 `mismatch` 在本檔的定義是
+                #   「這一檔的股數不要拿來算佔股本比重」。等於叫下游別用好資料。
+                #   它們其實全都乾淨：端點自己那一對 資本額÷股數 剛好是 10.000，
+                #   差別只是 daily 比端點新（可轉債轉換、員工認股，股數會慢慢長）。
+                #   **面額只能用端點自己那一對驗**；跨來源的差異另外記，不要混進判定。
+                par_used, nt = reconcile(cap, shr or official, par, pref)
                 if shr and shr != official:
-                    nt += f"|股數兩源不一致 daily={official} {tag}={shr}"
+                    nt += (f"|股數以 daily 為準={official}；"
+                           f"股本取自 {tag} 的較舊快照（該快照股數={shr}）")
                 rows[code] = [code, name, uni[code][1], cap, official, par_used,
                               f"universe:{day}+{tag}", today, nt]
             elif shr:
