@@ -16,10 +16,11 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: "price 價格｜inst 三大法人｜both 兩個都做"
+        description: "all 四層全做（建議）｜price 價格｜inst 三大法人｜margin 融資融券｜per 本益比｜both 只做 price+inst"
         type: choice
-        options: [both, price, inst]
-        default: both
+        # all＝四層全做；both＝price+inst（舊行為，保留給既有呼叫端）
+        options: [all, both, price, inst, margin, per]
+        default: all
 
 permissions:
   contents: write
@@ -43,7 +44,9 @@ jobs:
           python-version: "3.12"
 
       - name: 轉置
-        run: python transpose.py --kind "${{ inputs.kind || 'both' }}"
+        # ⚠ 不要寫 `${{ inputs.kind || 'all' }}`：這個 input 有預設值、永遠不是空字串，
+        #   `||` 的右邊從來不會生效（2026-09-06 在 feeds.yml 上實測過同樣的寫法）。
+        run: python transpose.py --kind "${{ inputs.kind }}"
 
       - name: Commit 回 repo
         if: always()

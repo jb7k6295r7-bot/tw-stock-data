@@ -125,14 +125,18 @@ jobs:
       # ★ 步驟層級也要設 timeout。`continue-on-error` 只讓「步驟失敗」不中斷流程，
       #   **擋不住 job 層級的逾時**——job 被砍時後面的 Commit 步驟會一起死，
       #   那天的原始資料就沒落檔。這一步吃掉的時間必須有上限。
-      # ★ 第一次全新建立（約 4,600 個檔、0.55 GB）**不要走這裡**，
-      #   請先手動跑一次「個股庫轉置（手動重建）」（那支 timeout 60 分）。
-      #   之後每天只是 append 約 240 KB，8 分鐘綽綽有餘。
+      # ★ 第一次全新建立**不要走這裡**，請先手動跑一次「個股庫轉置（手動重建）」
+      #   （那支 timeout 60 分）。之後每天只是把有變動的檔重寫，時間很短。
+      # ★★ 2026-09-07：`--kind both` 改成 `--kind all`（多了 margin 與 per 兩層）。
+      #   融資融券與本益比原本只有日期軸，要一檔的長序列得掃 2,845 個日檔、數百 MB。
+      #   ⚠ **這兩層第一次建立會 commit 約 490 MB，一定要先用手動那支跑**，
+      #     不要讓這個 15 分鐘的步驟去扛。之後每天只有變動的檔會進 commit。
+      #   ⚠ transpose 是**全量重建**，四層一起跑比兩層久，timeout 由 8 分提到 15 分。
       - name: 個股庫轉置
         if: always()
         continue-on-error: true
-        timeout-minutes: 8
-        run: python transpose.py --kind both
+        timeout-minutes: 15
+        run: python transpose.py --kind all
 
       # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
       #   那正是失敗時最需要看到的東西。原本失敗就整個 job 停掉，
