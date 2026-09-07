@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe = 只驗端點照抄欄位名；run = 市場層補；finmind = 逐檔補剩下的"
+        description: "selftest = 只跑自測不碰資料；probe = 只驗端點照抄欄位名；run = 自測通過後做市場層補；finmind = 逐檔補剩下的"
         type: choice
-        options: [probe, run, finmind]
+        options: [selftest, probe, run, finmind]
         default: run
       limit:
         description: "finmind 這一趟最多處理幾檔（0 = 全部）"
@@ -40,6 +40,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      # ★ 自測擋在 --run 前面，**不是可選項**。
+      #   2026-09-07 修掉的 bug（上櫃有股數、股本全空）跑起來完全正常：
+      #   沒有例外、沒有錯誤訊息、_capital_missing.txt 也不會列它。
+      #   這種只有自測抓得到，所以讓它失敗就把整個 job 擋下來，不要 continue-on-error。
+      - name: 自測（不連網）
+        if: inputs.mode == 'selftest' || inputs.mode == 'run' || inputs.mode == ''
+        run: python selftest_capital.py
 
       - name: 探路
         if: inputs.mode == 'probe'
