@@ -132,6 +132,31 @@ jobs:
       #   ⚠ **這兩層第一次建立會 commit 約 490 MB，一定要先用手動那支跑**，
       #     不要讓這個 15 分鐘的步驟去扛。之後每天只有變動的檔會進 commit。
       #   ⚠ transpose 是**全量重建**，四層一起跑比兩層久，timeout 由 8 分提到 15 分。
+      # ★★ 2026-09-07 新增。放在轉置**之前**，因為它跟個股庫無關而且很快。
+      #   ⚠ **上櫃停牌（bulletin/sprc）沒有歷史，只有當日。**
+      #     這一步每晚一天上線，就永久少掉那一天的上櫃停牌——回補補不回來。
+      #     上市那三條與上櫃的處置、注意都有 2015 起的歷史，可以事後回補；
+      #     只有這一項不行。
+      #   ⚠ TWSE 限流回的是 **307**（不是 429），`suspend.py` 內部會退避重試。
+      #     sleep 給 8：這一步只打十幾發，慢一點無所謂，被擋掉才麻煩。
+      - name: 停牌／處置／注意
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 20
+        run: python suspend.py --daily --sleep 8
+
+      # ★ 被防護擋下來的請求要印出來。這一支所有的失效模式都是「跑起來完全正常」，
+      #   log 裡沒印、又沒人去讀 data/meta/_suspend_skipped.txt 的話，
+      #   少收一整塊資料跟「今天真的沒有」長得一模一樣（2026-09-07 實際發生過兩次）。
+      - name: 停牌抓取有沒有被擋下來
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ -s data/meta/_suspend_skipped.txt ]; then
+            n=$(grep -vc '^#' data/meta/_suspend_skipped.txt || true)
+            [ "$n" -gt 0 ] && { echo "★ 被擋下來 $n 筆："; grep -v '^#' data/meta/_suspend_skipped.txt | head -20; }
+          fi
+
       - name: 個股庫轉置
         if: always()
         continue-on-error: true
