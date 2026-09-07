@@ -203,6 +203,46 @@ for _page in ("disposal", "attention"):
          _b + f".html?startDate={_D1P}&endDate={_D1P}&type=date&response=json"),
     ]
 
+# ══════════════════════════════════════════════ 第四輪：上櫃停牌
+#
+# 頁名探勘（--set names）**失敗了**：`bulletin/disposal` 這個網址不管帶不帶
+# `response=json` 都回 JSON（24,370 位元組），根本沒有 HTML 選單可抄；
+# `attention.html` 與 `sitemap` 都是 404 外殼（10,892 位元組）。
+#
+# 改從官方自己的舊站網址回推。搜尋找到官方頁面
+#     https://www.tpex.org.tw/web/stock/aftertrading/spendi/sprc.php?l=zh-tw
+#     （標題：公布暫停/恢復交易有價證券）
+# 所以那一頁的代號是 **spendi**，而且它歸在 **aftertrading** 底下，不是 bulletin。
+# 這不是猜的第四個名字，是官方網址上寫的。
+#
+# 另外舊站已搬到 wwwov.tpex.org.tw（跟 MOPS 搬到 mopsov.twse.com.tw 同一套做法）。
+# 舊站如果還活著，順便解掉「上櫃除權息只能靠 FinMind」那條——所以一起打。
+#
+# 日期一律帶斜線（第二輪已證明不帶斜線會被無視而且不報錯）。
+_S, _E = "104/01/05", "104/12/31"
+SUSPEND2 = [
+    ("新站-afterTrading-spendi", "tpex",
+     f"https://www.tpex.org.tw/www/zh-tw/afterTrading/spendi"
+     f"?startDate={_S}&endDate={_E}&response=json"),
+    ("新站-bulletin-spendi", "tpex",
+     f"https://www.tpex.org.tw/www/zh-tw/bulletin/spendi"
+     f"?startDate={_S}&endDate={_E}&response=json"),
+    ("新站-afterTrading-sprc", "tpex",
+     f"https://www.tpex.org.tw/www/zh-tw/afterTrading/sprc"
+     f"?startDate={_S}&endDate={_E}&response=json"),
+    ("舊站-spendi-sprc", "tpex",
+     "https://wwwov.tpex.org.tw/web/stock/aftertrading/spendi/sprc_result.php"
+     f"?l=zh-tw&d={_S}"),
+    ("舊站-spendi-首頁", "tpex",
+     "https://wwwov.tpex.org.tw/web/stock/aftertrading/spendi/sprc.php?l=zh-tw"),
+    # ★ 順便：上櫃除權息的舊站端點。新站 bulletin/revivt 無視所有日期參數，
+    #   目前只能靠 FinMind。舊站若還活著就能換回官方。
+    ("舊站-除權息-revivt", "tpex",
+     "https://wwwov.tpex.org.tw/web/stock/exright/revivt/revivt_result.php"
+     f"?l=zh-tw&d={_S}"),
+]
+
+
 # ══════════════════════════════════════════════ 第三輪：頁名探勘
 # 上櫃停牌的頁名猜了兩個都 404。**不要再猜第三個**——去把官方頁面自己列的
 # bulletin/* 連結抄回來。SPA 外殼可能沒有選單，那就照實說沒有，不要腦補。
@@ -284,8 +324,9 @@ def _finish(head, body):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", default="round1",
-                    choices=["round1", "params", "names"],
-                    help="round1 = 端點是否存在｜params = 換參數名試打｜names = 抓官方頁名")
+                    choices=["round1", "params", "names", "suspend2"],
+                    help="round1 = 端點在不在｜params = 換參數名｜names = 抓官方頁名｜"
+                         "suspend2 = 上櫃停牌（從官方舊站網址回推）")
     ap.add_argument("--only", default="", help="只探這個市場（twse／tpex）")
     ap.add_argument("--sleep", type=float, default=3.0)
     a = ap.parse_args()
@@ -293,7 +334,8 @@ def main():
     head = [f"# 停牌／處置／注意 端點探針 {now_tpe().isoformat(timespec='seconds')}",
             f"# 指紋比對用的兩個區間：{R1[0]}~{R1[1]} 與 {R2[0]}~{R2[1]}",
             "# 欄位名一律照抄，**不可照猜的寫死**"]
-    sets = {"round1": CANDIDATES, "params": PARAM_SWEEP, "names": NAME_HUNT}
+    sets = {"round1": CANDIDATES, "params": PARAM_SWEEP,
+            "names": NAME_HUNT, "suspend2": SUSPEND2}
     head.append(f"# 這一趟的選集：--set {a.set}")
     body = []
     if a.set == "names":
