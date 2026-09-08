@@ -45,6 +45,23 @@ OUT = os.path.join(_ROOT, "meta", "_tpex_probe.txt")
 
 SWAGGER = "https://www.tpex.org.tw/openapi/swagger.json"
 
+# ★ openapi 那一層**沒有任何端點吃日期參數**（2026-09-08 實測 225 個）。
+#   但現行的上櫃日檔走的是**另一層**，而且吃日期：
+#       https://www.tpex.org.tw/www/zh-tw/<path>?date=YYYY/MM/DD&response=json
+#   otcinst（insti/dailyTrade）、otcper（afterTrading/peQryDate）、
+#   otcmargin（margin/balance）三個都是這樣抓的。swagger 完全不涵蓋這一層。
+#
+#   ⛔ 但**頁面路徑不等於 API 路徑**——專案踩過：官方頁面
+#   `announce/market/halt.html` 對應的 API 是 `bulletin/sprcHis`。
+#   所以不從頁名回推，而是**把官方頁面抓下來，看它自己呼叫哪個網址**。
+#   下面兩個頁面的報表名稱來自 WebSearch，不是自行生成：
+PAGES = [
+    ("日成交量值指數（上櫃大盤層級統計，交易日曆的候選）",
+     "https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_index/st41.php?l=zh-tw"),
+    ("上櫃股價指數收盤行情（類股指數，類股名稱的候選）",
+     "https://www.tpex.org.tw/web/stock/aftertrading/index_summary/summary.php?l=zh-tw"),
+]
+
 # 兩個缺口各自的關鍵字。**只用來排序、不用來過濾**——
 # 全部端點都要列出來，不然就變成「用我猜的關鍵字去決定看得到什麼」。
 WANT = {
@@ -125,6 +142,32 @@ def main():
     say(f"\n[4] 完整端點清單（{len(rows)} 個）")
     for p, d, q in rows:
         say(f"    {p}｜{d}｜參數 {q or '無'}")
+
+    # ── 第 5 節：從官方頁面挖出它自己呼叫的 API 路徑 ──
+    say("\n[5] ★ 官方頁面自己呼叫的 API（openapi 之外那一層，吃日期）")
+    for label, url in PAGES:
+        say(f"\n  ── {label}")
+        say(f"     {url}")
+        raw2, err2 = B.get(url, retries=2, timeout=60)
+        if err2:
+            say(f"     ✗ 抓不到：{err2[:120]}")
+            continue
+        html = raw2.decode("utf-8", "replace")
+        say(f"     ✓ {len(raw2):,} bytes")
+        # 只抓 www/zh-tw 那一層與相對路徑寫法，兩種都收
+        hits = set(re.findall(r"[\"'\(]([a-zA-Z0-9_/-]*www/zh-tw/[a-zA-Z0-9_/-]+)", html))
+        hits |= set(re.findall(r"url\s*[:=]\s*[\"'\`]([^\"'\`]{4,120})", html))
+        hits = {h for h in hits if "/" in h and not h.startswith("http")
+                or "tpex.org.tw" in h}
+        if hits:
+            for h in sorted(hits)[:20]:
+                say(f"       {h}")
+        else:
+            say("       （抓不到 API 路徑——頁面可能是 JS 動態組的，"
+                "那就要看它載入的 .js）")
+        js = set(re.findall(r"[\"'\(]([^\"'\(\)]+\.js)[\"'\)]", html))
+        if js:
+            say(f"     載入的 js（下一輪要看的）：{sorted(js)[:8]}")
 
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
