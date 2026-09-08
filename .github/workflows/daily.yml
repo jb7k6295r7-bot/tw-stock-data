@@ -243,18 +243,24 @@ jobs:
       #   ⚠ 條件是「檔不存在**或**上次結果有 ✗」——只看存不存在的話，
       #     一次暫時性失敗會讓它永遠不再重試，而那個失敗結果會一直留著。
       #   ⚠ 端點結論一律以 Actions 為準：開發容器對外 403 是環境差異，不是端點狀態。
-      - name: 集保股權分散探針（沒跑過或上次失敗才跑）
+      - name: 端點探針（沒跑過或上次失敗才跑）
         if: always()
         continue-on-error: true
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
-          F=data/meta/_tdcc_probe.txt
-          if [ ! -f "$F" ] || grep -q '✗' "$F"; then
-            echo "→ 跑探針"
-            python tdcc_probe.py || true
-          else
-            echo "→ 已經探過而且沒有 ✗，跳過"
-          fi
+          # 兩支都是「只測不寫資料」，輸出進 data/meta/_*_probe.txt 並 commit，
+          # 這樣結論會進 repo，不必有人去翻 Actions log。
+          # ⚠ 條件是「檔不存在**或**上次結果有 ✗」——只看存不存在的話，
+          #   一次暫時性失敗會讓它永遠不再重試，而那個失敗結果會一直留著。
+          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt"; do
+            SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
+            if [ ! -f "$F" ] || grep -q '✗' "$F"; then
+              echo "→ 跑 $SCRIPT"
+              python "$SCRIPT" || true
+            else
+              echo "→ $SCRIPT 已經探過而且沒有 ✗，跳過"
+            fi
+          done
 
       # ★ 拿大盤漲跌家數（MI_INDEX）當日檔的外部判準。離線、只讀。
       #   日曆只證明「那一天存不存在」，不證明「那天收到幾檔」；
