@@ -48,6 +48,7 @@
 import argparse
 import calendar          # ★ cmd_probe 與 _months 都要用；原本只在 _months 內 import，
                          #   cmd_probe 改成逐月探測後會 NameError
+import io
 import json
 import os
 import re
@@ -55,6 +56,7 @@ import sys
 import time
 
 import backfill as B
+import runlog
 
 _ROOT = B._ROOT
 UNI_DIR = B.UNI_DIR
@@ -290,6 +292,60 @@ def parse_reduce(d, day, known=None):
     return out, note
 
 
+def parse_parvalue(d, day, known=None):
+    """TWSE `change/TWTB8U` → 變更股票面額恢復買賣參考價格。
+
+    ## 為什麼不直接用 `parse_reduce`
+
+    欄位是 `TWTAUU` 的子集，解析邏輯一模一樣，所以**本函式就是呼叫它**——
+    多一份幾乎相同的解析程式，等於多一處會各自飄移的地方。
+
+    但 `parse_reduce` **把第 9 欄「詳細資料」丟掉了**，而那一欄是
+    `代號,停止買賣起日,恢復買賣日`：
+
+        8070,20200806,20200817
+        7780,20260109,20260119
+
+    ★ **那正是「停止買賣區間」，而且它是官方直接宣告的。** 2026-09-09 核對：
+      8070 官方停止買賣起日 2020-08-06、恢復買賣日 2020-08-17；
+      `parvalue_scan.py` 掃到的最後有成交日是 2020-08-05、復牌首成交日 2020-08-17。
+      **恢復買賣日完全一致，停止買賣起日正好是最後有成交日的下一天。** 7780 同。
+
+    ⚠ 為什麼非留不可：`data/meta/suspend.csv` **收的是暫停交易，不含換發新股票的
+      停止買賣**——24 筆面額變更拿去對它，`resume_date` 命中 **0 筆**。
+      丟掉這一欄，那段停止買賣區間就**整個資料庫都沒有第二個地方查得到**。
+
+    所以本函式在 `parse_reduce` 的七欄之後補一欄 `halt_date`（停止買賣起日）。
+    恢復買賣日不另存——它就是第一欄 `date`，存兩份會飄移。
+    """
+    rows, note = parse_reduce(d, day, known)
+    if not rows:
+        return rows, note
+    tabs = B._tables(d)
+    t = tabs[0] if tabs else {}
+    f = _fieldmap(t)
+    i_det = _exact(f, "詳細資料")
+    i_code = _exact(f, "股票代號", "證券代號", "代號")
+    # 「代號 → 停止買賣起日」對照。**用代號配對，不用列序**——
+    # parse_reduce 會丟掉缺價格／缺日期的列，列序早就對不上了
+    # （這正是 mops 那個「用位置對欄位」踩過的同一種坑）。
+    halt = {}
+    if i_det is not None and i_code is not None:
+        for r in (t.get("data") or []):
+            if not r or len(r) <= max(i_det, i_code):
+                continue
+            parts = [x.strip() for x in str(r[i_det]).split(",")]
+            digits = [x for x in parts if x.isdigit() and len(x) == 8]
+            if digits:
+                halt[str(r[i_code]).strip()] = (
+                    f"{digits[0][:4]}-{digits[0][4:6]}-{digits[0][6:]}")
+    out = [row + [halt.get(row[1], "")] for row in rows]
+    miss = sum(1 for row in out if not row[-1])
+    if miss:
+        note += f"（{miss} 列抽不到停止買賣起日）"
+    return out, note
+
+
 def _pick_stock_table(tabs, *codenames):
     """多張表時挑「有代號欄且欄數最多」那張。融資融券與三大法人的回應
     第一張多半是全市場彙總（3 列），個股在第二張。"""
@@ -476,6 +532,61 @@ def parse_otcinst(d, day, known=None):
 # feed 定義
 # ────────────────────────────────────────────────────────────
 
+def _paren(v):
+    """『587(19)』→ ('587', '19')。沒有括號就回 (值, '')。"""
+    t = str(v).strip()
+    if "(" in t and t.endswith(")"):
+        main, _, rest = t.partition("(")
+        return _blank_num(main), _blank_num(rest[:-1])
+    return _blank_num(t), ""
+
+
+def parse_breadth(d, day, known=None):
+    """TWSE MI_INDEX → 當天上市的漲跌證券數（大盤層級彙總）。
+
+    ★ 這是**日檔的外部判準**：日檔由個股端點建，這張表由大盤端點來，
+      兩條不同的路。整批漏抓時日檔家數會掉、這裡不會。
+      判讀方式見 `breadth_audit.py`。
+
+    ⛔ **一律取「股票」那一欄，不是「整體市場」**——後者含權證與 ETF，
+      拿它跟日檔的普通股比會多出好幾千，差值整個沒有意義。
+      （這一條與 `fetch.py` 的當日版本同一個判準，不可分岔。）
+
+    ⚠ MI_INDEX 一個回應塞好幾張表（`B._tables()` 已處理三種形狀），
+      **不可以假設資料在第一張**——第二條坑就是這樣來的。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = None
+    for x in tabs:
+        f = [str(y) for y in (x.get("fields") or [])]
+        labels = " ".join(str(r[0]) for r in (x.get("data") or []) if r)
+        if "股票" in f and ("上漲" in labels or "漲跌證券數" in str(x.get("title", ""))):
+            t = x
+            break
+    if t is None:
+        return [], f"找不到漲跌證券數那張表（共 {len(tabs)} 張）"
+    f = [str(y) for y in (t.get("fields") or [])]
+    col = f.index("股票")
+    v = {"up": "", "down": "", "flat": "", "lu": "", "ld": ""}
+    for r in (t.get("data") or []):
+        if not r or len(r) <= col:
+            continue
+        lab = str(r[0])
+        main, paren = _paren(r[col])
+        if "上漲" in lab:
+            v["up"], v["lu"] = main, paren
+        elif "下跌" in lab:
+            v["down"], v["ld"] = main, paren
+        elif "持平" in lab or "平盤" in lab:
+            v["flat"] = main
+    if not (v["up"] and v["down"]):
+        return [], f"表找到了但取不到值：{[str(r[0]) for r in (t.get('data') or [])][:6]}"
+    return ([[day, v["up"], v["down"], v["flat"], v["lu"], v["ld"]]],
+            f"漲 {v['up']}／跌 {v['down']}／平 {v['flat']}")
+
+
 def _twse(path, day, extra=""):
     return f"https://www.twse.com.tw/rwd/zh/{path}?date={day.replace('-', '')}{extra}&response=json"
 
@@ -486,6 +597,17 @@ def _tpex(path, day, extra=""):
 
 FEEDS = {
     # ── 已驗證 ──────────────────────────────────────────────
+    "breadth": {
+        "dir": "breadth",
+        "header": ["date", "up", "down", "flat", "limit_up", "limit_down"],
+        "parse": parse_breadth,
+        "known": False,          # 這是大盤合計，沒有個股代號要過濾
+        "urls": lambda day: [_twse("afterTrading/MI_INDEX", day,
+                                   "&type=ALLBUT0999")],
+        "status": ("大盤漲跌證券數，**日檔的外部判準**。MI_INDEX 吃 date 參數，"
+                   "所以 2015 起可以回補——`market_breadth.csv` 只有 2026-09-01 起，"
+                   "是 v6 才開始存的，不是端點沒有歷史"),
+    },
     "per": {
         "dir": "per",
         "header": ["date", "stock_id", "close", "yield_pct", "dividend_year",
@@ -566,6 +688,88 @@ FEEDS = {
         "probe_range": ("20150101", "20151231"),
         "status": ("已驗證 2026-09-06（WebFetch）：2015 全年 26 列、2026 上半年 2 列。"
                    "**逐月抓**，日期取每列自己的「恢復買賣日期」欄（格式 115/09/07）"),
+    },
+
+    # ★★ 變更股票面額恢復買賣參考價。2026-09-09 00:30 於 Actions 驗到，
+    #   四項判準全過（`parvalue_probe.py` → `data/meta/_parvalue_probe.txt`）：
+    #     [1] stat=OK、title「變更股票面額恢復買賣參考價格」
+    #     [2] 9 欄完整
+    #     [3] 三個區間列數不同（0／1／2）
+    #     [4] 日期欄 109/08/17、115/01/19 ~ 115/09/07 → **有歷史**
+    #   而且**參數確定有生效**（三個區間回不同內容，不是 TWT49U 那種參數回音）。
+    #
+    #   ★ 官方回的數字與 `parvalue_scan.py` 的全庫掃描**逐格對上**：
+    #     109/08/17 8070 長華 停止買賣前收盤 190.00 → 恢復買賣參考價 19.00
+    #       掃描：8070 T=2020-08-17，前一次有成交收 190 → 復牌收 20.90
+    #     115/01/19 7780 大研生醫 185.00 → 18.50
+    #       掃描：7780 T=2026-01-19，185 → 20.35
+    #   **前收盤兩邊一模一樣**，官方因子 19/190 ＝ 18.5/185 ＝ 0.10（面額 10→1）。
+    #   掃描的比值 0.110 略高，差的是停止買賣那 7~8 天的漲跌——
+    #   所以**因子要用官方的 ref/pre，不是用價格比值**。
+    #
+    #   ⚠ 這張表**只涵蓋上市**。上櫃 14 筆（6548、5314、5904…）還沒有來源，
+    #     TPEx 的對應端點尚未找到——`db_status` 那條缺口只收掉一半。
+    #
+    #   欄位是 TWTAUU 的子集（少了「減資原因」與「除權參考價」），
+    #   `parse_reduce` 的 `_exact` 找不到就給空字串，所以**沿用它、不另寫解析**：
+    #   多一份幾乎一樣的解析程式＝多一處會各自飄移的地方。
+    "parvalue": {
+        "dir": "parvalue",
+        # ★ 比減資多一欄 `halt_date`＝**停止買賣起日**（取自官方「詳細資料」欄）。
+        #   `suspend.csv` 收的是暫停交易、不含換發新股票的停止買賣，
+        #   24 筆面額變更拿去對它 `resume_date` 命中 0 筆——
+        #   **丟掉這一欄，那段區間整個資料庫就沒有第二個地方查得到。**
+        #   恢復買賣日不另存：它就是第一欄 `date`。
+        "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
+                   "open_base", "ex_ref_price", "halt_date"],
+        "parse": parse_parvalue,
+        "known": False,
+        "range": True,
+        "announce_ahead": True,     # 與減資同一張形態的前瞻公告表
+        "urls_range": lambda a, b: [
+            "https://www.twse.com.tw/rwd/zh/change/TWTB8U"
+            f"?startDate={a}&endDate={b}&response=json"],
+        # 面額變更比減資更少（全庫 2015 起上市只有 10 筆），
+        # 隨便挑一個月去探幾乎一定空手——拿 2020 全年當基準（實測 1 列）。
+        "probe_range": ("20200101", "20201231"),
+        "status": ("已驗證 2026-09-09（Actions probe）：2015 全年 0 列、"
+                   "2020 全年 1 列（8070 長華）、2026 至今 2 列（7780、6949）。"
+                   "**只有上市**，上櫃無對應端點"),
+    },
+
+    # ★★ ETF 分割／反分割恢復買賣參考價。端點由使用者 2026-09-09 查到並提供，
+    #   **非自行生成**。與 TWTAUU／TWTB8U 是同一張形態（恢復買賣參考價表）。
+    #
+    #   ★ 資料庫線獨立重算過（規矩一：數字有爭議由這邊重算）——**11/11 全中**：
+    #     對方點名 00632R、00676R、00663L、0050、0052、00674R、00673R、
+    #     00706L、00685L、00631L、00715L；
+    #     `parvalue_scan.py` 掃到「無事件可解釋且在 industry.csv 母體外」的
+    #     19 筆命中裡，這 11 檔一檔不差，**沒有對方有我沒有的**。
+    #
+    #   ★★ 而且「隔幾個交易日」把三群分得乾乾淨淨，互不重疊：
+    #         分割／反分割（本表）        隔 5~6 天   11 筆
+    #         境外成分 ETF（無漲跌幅限制）  隔 1 天      4 筆  ← 真實交易，不是事件
+    #         長期停牌後復牌（成因未查）    隔 38~687 天  4 筆
+    #     ⛔ 中間那一群**不可以**當成事件去還原：00672L、00887 那幾筆是
+    #       追蹤國外標的的 ETF 沒有漲跌幅限制，單日真的可以跳 ±85%。
+    #
+    #   ⚠ 欄位尚未實測（我方容器對 twse 是 403）。沿用 `parse_parvalue`：
+    #     它用**欄名**查（`_exact`），對不上會回「欄位對不上：{實際欄名}」
+    #     而不是寫進錯的數字——**失敗形態是自己說出來，不是靜默寫錯**。
+    "etfsplit": {
+        "dir": "etfsplit",
+        "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
+                   "open_base", "ex_ref_price", "halt_date"],
+        "parse": parse_parvalue,
+        "known": False,           # ETF 不在 industry.csv 母體裡，一定要全收
+        "range": True,
+        "announce_ahead": True,
+        "urls_range": lambda a, b: [
+            "https://www.twse.com.tw/rwd/zh/split/TWTCAU"
+            f"?startDate={a}&endDate={b}&response=json"],
+        "probe_range": ("20250101", "20251231"),   # 實測那年有 5 筆
+        "status": ("端點由使用者 2026-09-09 提供；資料庫線以全庫掃描交叉核對 11/11 全中。"
+                   "**欄位待第一趟 Actions 實測**"),
     },
 
     # ── 未驗證，候選清單 ────────────────────────────────────
@@ -735,10 +939,46 @@ def cmd_feed_range(args, name):
     known = B._known_codes()
     d = feed_dir(name)
     rng = _months(args.start, args.end)
+
+    # ── ★ 台帳：哪幾個月**真的問過** ──
+    #
+    # ⛔ 這類 feed（減資、面額變更、ETF 分割）**沒有事件的月份不寫檔**，
+    #   所以「`data/universe/<feed>/` 裡沒有那個月的檔」**分不出**
+    #   「那個月沒有事件」與「那個月從來沒問過」。
+    #   拿檔案存在與否當進度，就是本專案一路在防的
+    #   「拿間接證據代替直接證據」——`mops_history.py` 已經為同一件事吃過虧。
+    #
+    # → 所以另外記一份台帳，只記「問過、結果是什麼」。
+    #   有了它，`--limit` 才能挑出**還沒問過**的月份分批補，
+    #   而不是每趟都把 141 個月重打一遍（減資／面額那三支各要十幾分鐘）。
+    led_path = os.path.join(d, "_fetched.json")
+    ledger = {}
+    if os.path.exists(led_path):
+        try:
+            ledger = json.load(io.open(led_path, encoding="utf-8")) or {}
+        except (ValueError, OSError):
+            ledger = {}          # 壞掉就當空的重問，不要因為台帳壞掉就停擺
+    if not args.force:
+        todo = [m for m in rng if m[0][:7] not in ledger]
+    else:
+        todo = list(rng)
+    if args.limit:
+        todo = todo[:args.limit]
+    skipped = len(rng) - len(todo)
+    rng = todo
+
     print(f"[{name}] {spec['status']}")
-    print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，共 {len(rng)} 個月")
+    print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，本趟 {len(rng)} 個月"
+          f"（台帳已問過 {skipped} 個月，--force 可重問）")
+    if not rng:
+        rl = runlog.Run(f"feeds:{name}")
+        rl.info("區間", f"{args.start} ~ {args.end}")
+        rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的")
+        rl.check("跑完整個區間，沒有提前收手", True, "沒有待處理的月份")
+        return rl.finish()
     ok = empty = failed = 0
     total_rows = 0
+    fetched_now = {}
     fwd = bool(spec.get("announce_ahead"))
     n_future, future_rows = 0, []
     for i, (a, b) in enumerate(rng, 1):
@@ -782,10 +1022,13 @@ def cmd_feed_range(args, name):
             break
         if got is _EMPTY:
             empty += 1
+            fetched_now[a[:7]] = "empty"      # ★ 問過了、那個月真的沒事件
             time.sleep(B.SLEEP)
             continue
 
         if got is None:
+            # ⛔ 失敗**不記台帳**——記了就永遠不會再問，
+            #   而失敗多半是限流那種會自己好的事。
             failed += 1
             print(f"  [{i}/{len(rng)}] {a[:7]} {note}", flush=True)
             if failed >= 3 and ok == 0:
@@ -822,12 +1065,29 @@ def cmd_feed_range(args, name):
         if byday:
             ok += 1
             total_rows += len(lines)
+            fetched_now[a[:7]] = f"ok:{len(lines)}"
         else:
             empty += 1
+            # ★ 端點回了 stat=OK 但解析後 0 列——也算問過了
+            fetched_now[a[:7]] = "empty"
         if i % 12 == 0 or not byday:
             print(f"  [{i}/{len(rng)}] {a[:7]} {len(byday)} 天 / {len(lines)} 列"
                   f"（{nt}）", flush=True)
         time.sleep(B.SLEEP)
+    # ── 台帳寫回。⛔ 只**合併**，不整份取代：--limit 分批補時，
+    #    整份取代會把前幾趟的紀錄洗掉，於是永遠補不完。
+    #    （`calendar_audit.py --write` 2026-09-08 踩過同一個坑：
+    #      全量取代把 2,845 天砍成 5 天，而且沒有任何錯誤。）
+    if fetched_now:
+        ledger.update(fetched_now)
+        try:
+            os.makedirs(d, exist_ok=True)
+            io.open(led_path, "w", encoding="utf-8").write(
+                json.dumps(ledger, ensure_ascii=False, indent=0, sort_keys=True))
+            print(f"[{name}] 台帳 {led_path}：本趟 +{len(fetched_now)}，"
+                  f"累計 {len(ledger)} 個月")
+        except OSError as ex:                                    # noqa: BLE001
+            print(f"[{name}] 台帳寫檔失敗：{ex}", file=sys.stderr)
     print(f"[{name}] 完成：有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
           f"合計 {total_rows} 列"
           + (f"；另有 {n_future} 列**尚未到期的公告，未寫入**" if n_future else ""))
@@ -837,7 +1097,28 @@ def cmd_feed_range(args, name):
         print(f"[{name}] 尚未到期的公告（**不在資料庫裡**，僅供知悉）：")
         for r in sorted(future_rows)[:20]:
             print(f"        {r[0]}  {r[1]}  {'  '.join(str(x) for x in r[2:5])}")
-    return 0 if (ok or not rng) else 1
+
+    # ★ 寫進 data/meta/_last_run.md。⛔ 區塊名帶 feed 名——`daily.yml` 一趟裡
+    #   exright 與 reduce 都走這條路徑，共用名字會互相蓋掉。
+    #   ⚠ **不檢查「ok > 0」**：exright／reduce 抓的是當月區間，
+    #     整個月沒有任何除權息或減資事件是**正常**的（尤其月初）。
+    #     拿它當失敗會讓這一頁每個月初都紅（防護誤殺跟防護失效一樣糟）。
+    rl = runlog.Run(f"feeds:{name}")
+    rl.info("區間", f"{args.start} ~ {args.end}｜{len(rng)} 個月")
+    rl.info("結果", f"有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
+                    f"合計 {total_rows} 列")
+    # ⚠ 尚未到期的公告做成 info 不做成 check：減資與除權息本來就提前公告，
+    #   擋下來是正常運作。要抓的是「擋漏了」，那一條在 adjust 那邊
+    #   （寫出去的因子有沒有晚於資料最後一天）。
+    if n_future:
+        rl.info("尚未到期的公告", f"{n_future} 列（正常，事件日到了會自然進來）")
+    rl.check("每個月都問到了", failed == 0,
+             f"失敗 {failed} / {len(rng)} 個月" if failed else f"{len(rng)} 個月全問到")
+    # ⛔ finish() 一定要無條件呼叫——寫在三元運算的其中一支，
+    #    「這一趟成功」時區塊就不會寫出去，而那正是最常見的情況。
+    rc = rl.finish()
+    base = 0 if (ok or not rng) else 1
+    return 1 if (base or rc) else 0
 
 
 def cmd_purge(args):
@@ -953,6 +1234,7 @@ def cmd_feed(args):
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
     ok = closed = failed = dropped_days = 0
+    bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
         # ★★ 成敗**看 `url` 有沒有拿到，不要比對訊息字串**。
@@ -986,12 +1268,14 @@ def cmd_feed(args):
         #   若端點有**日期下限**（例如只回得到近幾年），整趟會安靜跑滿
         #   5.8 小時、一列都沒寫，最後才發現。30 天足以跨過任何連假。
         if closed >= 30 and ok == 0:
+            bailed = f"連續 {i} 天回「沒有資料」且無一有列（很可能有日期下限）"
             print(f"[{name}] 前 {i} 天全部回「沒有資料」且無一有列，收手。"
                   f"端點是通的，但這個區間查不到東西——**很可能有日期下限**，"
                   f"不是連假。最後一則：{note}", file=sys.stderr)
             break
         # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
+            bailed = f"前 {i} 天有 {failed} 天連問都問不到且無一成功"
             print(f"[{name}] 前 {i} 天有 {failed} 天連問都問不到且無一成功，收手。"
                   f"最後一則：{note}", file=sys.stderr)
             break
@@ -1006,7 +1290,28 @@ def cmd_feed(args):
     #   原本寫 `return 0 if (ok or not days) else 1`，這種情況會回 exit code 1，
     #   Actions 上顯示紅叉。**讓成功的跑印出紅叉，會訓練人忽略紅叉**，
     #   下次真的失敗就看不見了。
-    return 1 if failed else 0
+
+    # ★ 寫進 data/meta/_last_run.md。
+    #   ⛔ 區塊名一定要帶 feed 名。`daily.yml` 一趟裡呼叫本支三次
+    #      （otcinst／exright／reduce），共用一個名字的話後面兩次會蓋掉前面，
+    #      那一頁只剩最後跑的 reduce——**正是 runlog 存在要防的那件事**。
+    #   ⚠ 每條檢查都先問「今天有沒有收到東西」才驗內容：exright／reduce 抓的是
+    #     當月區間，沒有事件的月份 ok=0 是**正常**的，不可以拿它當失敗
+    #     （防護誤殺跟防護失效一樣糟）。
+    rl = runlog.Run(f"feeds:{name}")
+    rl.info("區間", f"{args.start} ~ {args.end}｜待處理 {len(days)} 天")
+    rl.info("結果", f"有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
+    # ⛔ 提前收手在 Actions 上是看不見的（這幾步都是 continue-on-error），
+    #    而收手代表整趟根本沒跑完——這是要紅的，不是資訊。
+    rl.check("跑完整個區間，沒有提前收手", not bailed, bailed or "跑完")
+    rl.check("沒有「連問都問不到」的日子", failed == 0,
+             f"失敗 {failed} 天" if failed else "0 天")
+    # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
+    #    而每天默默丟幾十列外表完全正常。
+    rl.check("沒有因驗算不符而丟棄列的日子", dropped_days == 0,
+             f"{dropped_days} 天有丟棄" if dropped_days else "0 天")
+    rc = rl.finish()
+    return 1 if (failed or rc) else 0
 
 
 def cmd_probe(args):

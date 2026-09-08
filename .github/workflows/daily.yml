@@ -43,6 +43,18 @@ jobs:
         continue-on-error: true
         run: python selftest_runlog.py
 
+      # ★ 順便驗 mops 的差異紀錄（離線、約 1 秒）。
+      #   `data/mops/_changes.log` 存在的唯一理由是「財報更正不可以被靜默覆蓋」，
+      #   它壞掉的方式不是不寫而是**寫太多**：按位置比對時欄序改一次就產生
+      #   上百筆鬼影，真的更正被淹掉。**比沒有還糟，因為它看起來在運作。**
+      - name: 驗 mops 差異紀錄（離線）
+        continue-on-error: true
+        run: python selftest_mops.py
+
+      - name: 驗交易日曆的寫檔（離線）
+        continue-on-error: true
+        run: python selftest_calendar.py
+
       - name: 抓資料
         id: fetch
         run: python fetch.py
@@ -82,6 +94,37 @@ jobs:
           echo "目標交易日：$DAY"
           python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
 
+      # ★★ 融資融券與本益比日檔。**2026-09-08 之前完全不在每日排程裡**——
+      #   transpose 的跨層檢查第一次跑就抓到：price 到 09-08，而 margin 與 per
+      #   還停在 09-04。`data/stocks_margin/`（2,426 檔）與 `data/stocks_per/`
+      #   （2,121 檔）是從這兩層轉出來的，等於跟著凍結四天。
+      #   ⚠ **漏掉的樣子跟正常一模一樣**：檔案都在、數字都對，只有最後一天不動。
+      #     2026-09-05 的 otcinst 就是同一個形狀。
+      #   四個都是單日型 feed，已存在就跳過，所以指定當天等於四個請求。
+      - name: 融資融券與本益比（上市＋上櫃）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          echo "目標交易日：$DAY"
+          for f in margin per otcmargin otcper; do
+            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+          done
+
+      # ★ 集保戶股權分散（大戶持股的來源）。每週一份，週六 09:00 後產生。
+      #   ⛔ **端點不吃日期參數，只回最新一週——漏掉一週就永久少一週**
+      #     （與上櫃停牌同一種性質）。所以每天都跑：已經有那一週的檔就跳過，
+      #     等於一週只真的寫一次，但任何一天跑成功都補得到，不會因為某一天
+      #     失敗就整週消失。
+      #   ⛔ 三道恆等式任一沒過就**整批不寫**——抓錯期別或欄位錯位時，
+      #     寫進去的數字看起來完全正常。
+      - name: 集保股權分散（每週一份）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: python tdcc.py --run
+
       # ★ 全市場月營收與財報（MOPS）。
       #   ⚠ 這些端點**沒有日期參數，只給最新一期**——所以不是「每天抓一天」，
       #     而是「每天看有沒有換期」。月營收每月約 10 號公告一次、財報一季一次，
@@ -120,6 +163,32 @@ jobs:
           echo "當月區間 $M0 ~ $M1（台北時間）"
           python feeds.py --run --feed exright --start "$M0" --end "$M1" --sleep 5
           python feeds.py --run --feed reduce  --start "$M0" --end "$M1" --sleep 5
+          # ★★ 變更股票面額（TWSE change/TWTB8U）。2026-09-09 驗到來源才接上。
+          #   ⚠ **只有上市**：全庫 24 筆裡 14 筆是上櫃，TPEx 沒有對應端點，
+          #     那 14 筆到今天為止仍然沒有還原。見 adjust.py 的 BOUNDS 旁註。
+          #   一年通常 0~2 件，多數月份回「查無資料」＝無事件，不是失敗。
+          python feeds.py --run --feed parvalue --start "$M0" --end "$M1" --sleep 5
+          # ★ ETF 分割／反分割（TWSE split/TWTCAU）。端點由使用者 2026-09-09 提供，
+          #   資料庫線以全庫掃描交叉核對 11/11 全中才接。欄位待首趟實測。
+          python feeds.py --run --feed etfsplit --start "$M0" --end "$M1" --sleep 5
+
+      # ★★ 面額變更與 ETF 分割的**歷史回補**，分批做。
+      #   2015-01 ~ 今天是 141 個月 × 2 支 ≈ 282 發，配 --sleep 5 要 24 分鐘，
+      #   塞不進上面那一步（整個 job 上限 25 分鐘）。所以每趟只補 30 個月，
+      #   靠台帳 `data/universe/<feed>/_fetched.json` 記住問到哪，
+      #   幾趟之後自然補完，補完之後這一步就變成 no-op。
+      #   ⛔ 台帳記的是「**問過、結果是什麼**」，不是「有沒有檔案」——
+      #     這三支沒有事件的月份不寫檔，拿檔案存在與否當進度會永遠補不完。
+      #   ⚠ 失敗的月份**不記台帳**，下一趟會再問（限流那種會自己好）。
+      - name: 面額變更與 ETF 分割（歷史回補，每趟 30 個月）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          for f in parvalue etfsplit; do
+            python feeds.py --run --feed "$f" --start 2015-01 --end 2026-09 \
+              --limit 30 --sleep 5
+          done
 
       # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
       #   全量重建，資料沒變就不會 commit。
@@ -182,6 +251,115 @@ jobs:
         if: always()
         continue-on-error: true
         run: python db_status.py --write
+
+      # ★ 交易日曆（只補當月，一個請求）。
+      #   `data/meta/calendar_twse.csv` 是「哪一天該有資料」的**唯一外部判準**——
+      #   來自 TWSE FMTQIK（大盤層級），與建日檔的個股端點不同條路，
+      #   所以它不是循環自證。但它**自己會落後**：2026-09-08 之前只有手動跑過，
+      #   當時就落後一天，而任何拿它當閘門的檢查都會把最新那天判成非交易日。
+      #   ⛔ 一定要用預設的「併入」，**不可以加 --replace**——
+      #      只跑當月又整份覆蓋的話，2,845 天會被截成那個月的幾天，
+      #      而且不會報錯（selftest_calendar.py 第 1 節就是釘這件事）。
+      - name: 交易日曆（當月）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          M=$(TZ=Asia/Taipei date '+%Y-%m')
+          echo "當月 $M（台北時間）"
+          python calendar_audit.py --start "$M" --end "$M" --sleep 5 --write
+
+      # ★ 產業別（約每月一次，自癒式）。
+      #   類股集中度是選股的硬條件，而新上市的公司在對照表更新之前查不到類股——
+      #   查不到就等於那條規則對它沒生效，**而且不會報錯**。
+      #   ⛔ 判斷「多久沒更新」一定要用 **git 的 commit 時間**，不可以用檔案 mtime：
+      #      Actions 每次都是全新 checkout，mtime 永遠是「剛剛」，
+      #      用它的話這一步**永遠不會跑**，而且看起來完全正常。
+      - name: 產業別（超過 28 天沒更新才跑）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          TS=$(git log -1 --format=%ct -- data/meta/industry.csv || true)
+          TS=${TS:-0}
+          AGE=$(( ( $(date +%s) - TS ) / 86400 ))
+          echo "industry.csv 上次更新：$AGE 天前（commit 時間）"
+          if [ "$TS" = "0" ] || [ "$AGE" -ge 28 ]; then
+            DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+            echo "→ 重建（掃類股成員用 $DAY）"
+            python industry.py --run --date "$DAY" --sleep 3
+          else
+            echo "→ 還新，跳過（未滿 28 天）"
+          fi
+
+      # ★ 集保股權分散的端點探針（一次性、自癒）。
+      #   籌碼集中度目前沒有歷史序列（db_status 把它列在「沒有來源」那一節），
+      #   FinMind 的 HoldingSharesPer 回 400，所以要走集保官方。
+      #   端點來自 WebSearch 結果、不是自行生成（tw-data-sources 3-4 的規矩）。
+      #   ⚠ **只測不寫資料**，輸出進 data/meta/_tdcc_probe.txt。
+      #   ⚠ 條件是「檔不存在**或**上次結果有 ✗」——只看存不存在的話，
+      #     一次暫時性失敗會讓它永遠不再重試，而那個失敗結果會一直留著。
+      #   ⚠ 端點結論一律以 Actions 為準：開發容器對外 403 是環境差異，不是端點狀態。
+      - name: 端點探針（沒跑過／上次失敗／探針程式改過才跑）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          # 兩支都是「只測不寫資料」，輸出進 data/meta/_*_probe.txt 並 commit，
+          # 這樣結論會進 repo，不必有人去翻 Actions log。
+          # 重跑條件三選一：
+          #   ① 檔不存在
+          #   ② 上次結果有 ✗——只看①的話，一次暫時性失敗會讓它永遠不再重試，
+          #      而那個失敗結果會一直留著
+          #   ③ **探針程式比輸出新**——改了探針卻不重跑，等於改了個寂寞，
+          #      而且外表完全正常（2026-09-08 加第 5 節時就差點這樣）
+          # ⚠ 比的是 git commit 時間，不是 mtime：Actions 每次都是全新 checkout，
+          #   mtime 永遠是「剛剛」，用它永遠比不出新舊。
+          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt" \
+                      "parvalue_probe.py:_parvalue_probe.txt" \
+                      "twsthr_probe.py:_twsthr_probe.txt"; do
+            SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
+            TS_S=$(git log -1 --format=%ct -- "$SCRIPT" || echo 0)
+            TS_F=$(git log -1 --format=%ct -- "$F" || echo 0)
+            if [ ! -f "$F" ] || grep -q '✗' "$F" || [ "${TS_S:-0}" -gt "${TS_F:-0}" ]; then
+              echo "→ 跑 $SCRIPT（程式 ${TS_S:-0} / 輸出 ${TS_F:-0}）"
+              python "$SCRIPT" || true
+            else
+              echo "→ $SCRIPT 已探過、無 ✗、程式沒改，跳過"
+            fi
+          done
+
+      # ★ 漲跌家數：先抓當天，再分批回補歷史。
+      #   `MI_INDEX` **吃 date 參數**，所以 2015 起都抓得到——
+      #   `market_breadth.csv` 只有 2026-09-01 起是因為那是 v6 才開始存的，
+      #   **不是端點沒有歷史**。有了歷史才訂得出差值帶寬（事後看資料再訂門檻
+      #   等於沒有門檻）。
+      #   ⚠ 兩段分開跑：feeds 的日期順序是由舊到新，只跑一段的話今天會排在
+      #     最後面，等回補跑完才輪到——那要好幾天。所以先單獨抓當天。
+      #   ⚠ `--limit 200`：一趟只補 200 天（sleep 1 約 4 分鐘），
+      #     已存在的日檔會自動跳過，跑十幾趟就補完，不必有人按按鈕。
+      - name: 漲跌家數（當天 ＋ 分批回補）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          python feeds.py --run --feed breadth --start "$DAY" --end "$DAY" --sleep 0
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed breadth --start 2015-01-01 --end "$TODAY" \
+                          --limit 200 --sleep 1
+
+      # ★ 拿大盤漲跌家數（MI_INDEX）當日檔的外部判準。離線、只讀。
+      #   日曆只證明「那一天存不存在」，不證明「那天收到幾檔」；
+      #   content_audit 的家數檢查是拿前後交易日比，那是同一條管線不同趟次。
+      #   MI_INDEX 是大盤層級彙總表，與建日檔的個股端點不同條路——整批漏抓時
+      #   日檔家數會掉、它不會，差值就會翻負。
+      #   ⚠ 目前**只驗方向不驗大小**：樣本只有五天，事後看資料再訂帶寬
+      #     等於沒有門檻。等 ≥30 天再把數字寫死。
+      - name: 漲跌家數對日檔（離線）
+        if: always()
+        continue-on-error: true
+        run: python breadth_audit.py
 
       # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻。
       #   ⚠ **一定要排在最後一支會寫 `_last_run.md` 的腳本後面。**

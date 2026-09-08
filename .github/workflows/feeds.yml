@@ -203,7 +203,7 @@ jobs:
       #   加 --write 才會寫出 data/meta/calendar_twse.csv；有月份沒問到就不寫。
       - name: 核對交易日曆
         if: inputs.mode == 'calendar-audit'
-        run: python calendar_audit.py --start 2015-01 --sleep 5 --write
+        run: python calendar_audit.py --start 2015-01 --sleep 5 --write --replace
 
       # ★★ 每一天的**內容**齊不齊。`calendar-audit` 只證明「那一天有檔案」，
       #   沒有證明「那一天該有的股票都在檔案裡」。上櫃端點掛掉的那天，

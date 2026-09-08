@@ -92,6 +92,12 @@ NAME_KEYS = ("公司名稱", "CompanyName")
 YM_KEYS = ("資料年月",)
 Y_KEYS = ("年度", "Year")
 Q_KEYS = ("季別", "Season")
+# ★ 出表日期兩種欄名都要收。**來源端每一張表、每個市場用哪一組是不固定的**：
+#   2026-09-08 實測 fs/2026Q2_ci.csv 上櫃全用英文、上市全用中文；
+#   fs/2026Q2_bd.csv 上櫃**同一列混用**（Date 英文 ＋ 年度／季別／公司代號中文
+#   ＋ CompanyName 英文）；bs/2026Q2_bd.csv 兩個市場又都用中文。
+#   規則不存在，所以不能靠「哪個市場用哪一組」去讀——**只能兩種都收**。
+DATE_KEYS = ("出表日期", "Date")
 
 
 def _pick(rec, keys):
@@ -167,7 +173,12 @@ def write_period(kind, tag, period, recs, market_of):
         for k in r:
             if k not in raw_cols:
                 raw_cols.append(k)
-    cols = ["stock_id", "name", "period", "market"] + raw_cols
+    # ★ 正規化欄放最前面。原始欄位原樣保留在後面，供逐欄對來源用。
+    #   `報表日期` 是第五個正規化欄（2026-09-08 新增）：年度／季別已經被 `period`
+    #   涵蓋、公司代號與名稱被 `stock_id`／`name` 涵蓋，只有出表日期沒有對應，
+    #   而它的原始欄名在來源端是浮動的（見 DATE_KEYS）。
+    #   ⚠ 下游一律讀正規化欄；原始欄有沒有值取決於來源那天給哪一組欄名。
+    cols = ["stock_id", "name", "period", "market", "報表日期"] + raw_cols
 
     rows, nocode = [], 0
     for r in recs:
@@ -175,7 +186,8 @@ def write_period(kind, tag, period, recs, market_of):
         if not code:
             nocode += 1
             continue
-        rows.append([code, _pick(r, NAME_KEYS), period, market_of.get(id(r), "")]
+        rows.append([code, _pick(r, NAME_KEYS), period,
+                     market_of.get(id(r), ""), _pick(r, DATE_KEYS)]
                     + [str(r.get(c, "")).strip() for c in raw_cols])
     # ★ 取不到代號的列**不寫**，並回報。寧可少一列，不要寫一列查不到是誰的。
     if nocode:
@@ -199,32 +211,69 @@ def write_period(kind, tag, period, recs, market_of):
 
 
 def _log_changes(kind, name, old, new):
+    """逐欄比對並記錄差異。
+
+    ⛔ **一律按欄名比對，不可按位置。**
+    舊版是 `zip(舊列, 新列)` 按位置配、欄名卻取自舊表頭——**欄序改一次，
+    每一格都對到別人的值**：2026-09-06 一次塞進上百筆「market: twse→2816」
+    這種鬼影，而實際檔案是對齊的、一個數字都沒變。
+
+    財報本來就會更正，這個 log 存在的唯一理由就是「更正不可以被靜默覆蓋」。
+    真的更正被鬼影淹掉，這個機制等於不存在——**比沒有還糟，因為它看起來在運作。**
+
+    表頭變動（新增欄／移除欄／換順序）記成**一行檔案層級的紀錄**，
+    不讓它變成每一列都在變。值的比對只取兩邊都有的欄。
+    """
     def index(txt):
         rd = list(csv.reader(txt.splitlines()))
         if not rd:
             return {}, []
         h = rd[0]
         ic = next((i for i, c in enumerate(h) if c in CODE_KEYS), 1)
-        return {r[ic]: r for r in rd[1:] if len(r) > ic}, h
+        # 每一列存成 {欄名: 值}，之後一律用欄名取值
+        return {r[ic]: dict(zip(h, r)) for r in rd[1:] if len(r) > ic}, h
     o, oh = index(old)
     n, nh = index(new)
     os.makedirs(OUT_DIR, exist_ok=True)
     ts = datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds")
-    lines = []
+    lines, nrow = [], 0
+    if oh != nh:
+        added = [c for c in nh if c not in oh]
+        removed = [c for c in oh if c not in nh]
+        what = []
+        if added:
+            what.append("新增欄 " + "、".join(added))
+        if removed:
+            what.append("移除欄 " + "、".join(removed))
+        if not what:
+            what.append("欄序改變（欄名集合相同，值不受影響）")
+        lines.append(f"{ts}\t{kind}/{name}\t(表頭)\t{'；'.join(what)}")
+    common = [c for c in nh if c in oh]
     for code in sorted(set(o) | set(n)):
         if code not in o:
             lines.append(f"{ts}\t{kind}/{name}\t{code}\t新增")
+            nrow += 1
         elif code not in n:
             lines.append(f"{ts}\t{kind}/{name}\t{code}\t消失")
-        elif o[code] != n[code]:
-            diff = [f"{oh[i] if i < len(oh) else i}: {a}→{b}"
-                    for i, (a, b) in enumerate(zip(o[code], n[code])) if a != b][:6]
-            lines.append(f"{ts}\t{kind}/{name}\t{code}\t{'; '.join(diff)}")
+            nrow += 1
+        else:
+            diff = [f"{c}: {o[code].get(c, '')}→{n[code].get(c, '')}"
+                    for c in common if o[code].get(c, "") != n[code].get(c, "")]
+            if diff:
+                # ★ 截斷要說出來。舊版直接 [:6]，看起來就像「只差 6 欄」。
+                more = f"（另有 {len(diff) - 6} 欄）" if len(diff) > 6 else ""
+                lines.append(f"{ts}\t{kind}/{name}\t{code}\t"
+                             f"{'; '.join(diff[:6])}{more}")
+                nrow += 1
     if lines:
         with open(CHANGES, "a", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        print(f"  ⚠ {name} 有 {len(lines)} 檔內容變動（**財報更正**），已記入 _changes.log",
-              file=sys.stderr)
+        parts = []
+        if oh != nh:
+            parts.append("表頭變動")
+        if nrow:
+            parts.append(f"{nrow} 檔內容變動（**財報更正**）")
+        print(f"  ⚠ {name} {'＋'.join(parts)}，已記入 _changes.log", file=sys.stderr)
 
 
 def listed_codes():
@@ -297,10 +346,19 @@ def cmd_run(args):
     dead = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if not c[3]]
     rl.check("每一個表×市場都有回應", not dead,
              ("沒回應：" + "、".join(dead)) if dead else f"{len(calls)} 個全有")
-    zero = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[5] == 0]
-    rl.check("有回應的都對得上我方母體（涵蓋 > 0%）", not zero,
+    # ⚠ **回 0 列不算失敗。** 2026-09-08 第一次上線就誤殺六張表：
+    #   fs/bs 的 basi（銀行）／ins（保險）／fh（金控）在**上櫃根本沒有公司**——
+    #   上櫃的 9 檔金融全是證券商、期貨與保經。那三張表回 0 列是事實，不是抓不到。
+    #   要抓的是「**回了列、卻一列都對不上我方母體**」——那才代表代號格式變了。
+    #   （防護誤殺跟防護失效一樣糟：天天紅的紅字沒有人會看。）
+    empty = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[4] == 0]
+    if empty:
+        rl.info("回 0 列的表", "、".join(empty) + "（該市場沒有這個業別的公司）")
+    zero = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[4] > 0 and c[5] == 0]
+    live = [c[5] for c in calls if c[3] and c[4] > 0]
+    rl.check("有列的表都對得上我方母體（涵蓋 > 0%）", not zero,
              ("涵蓋 0%：" + "、".join(zero)) if zero
-             else (f"最低 {min((c[5] for c in calls if c[3]), default=0):.1f}%"))
+             else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%")
     rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
              f"略過 {total['skip']} 張")
     return rl.finish()

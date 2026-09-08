@@ -55,6 +55,57 @@ _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "mops")
 
 MARKETS = [("sii", "twse"), ("otc", "tpex")]
+
+
+def ledger_from_disk(state):
+    """用**真的寫出來的檔案**補齊帳本，回傳補了幾筆。
+
+    ⛔ 為什麼需要這一步：上面的 `state` 只裝得下這一趟真的去問過的期別。
+      `--fill`／`--resume` 會先跳過已經有檔的期別，那些**永遠不會進 state**。
+      2026-09-08 實測：資料庫 2015-01 起全數回補完成（revenue_hist 280 檔、
+      fs_hist 與 bs_hist 各 372 檔），帳本卻只有 6 列而且全是 pending。
+      而寫帳本那段的註解寫著「這是資料庫的狀態，不只是這一趟」——
+      **註解說的是意圖，程式做的是另一件事**。一份宣稱是整體、實際只有這一趟
+      的帳本，比沒有帳本更糟。
+
+    規則：
+      - 有檔 → ok。檔案存在是**直接證據**，勝過這一趟有沒有去問它。
+      - 有檔但這一趟抓取失敗 → 仍記 ok，但把失敗原文留在 note 裡，不藏起來。
+      - 沒檔 → 維持這一趟判定的 fail／pending；沒碰過的就不寫（答不出來就別答）。
+
+    ⚠ 「檔案在」只證明那一期有寫出來，**不證明內容完整**。note 記的是張數，
+      這是檔案層級的證據，不是內容層級的。
+    """
+    m2mkt = {m: k for k, m in MARKETS}
+    seen = {}
+    for sub, kind in (("revenue_hist", "revenue"), ("fs_hist", "fs"),
+                      ("bs_hist", "bs")):
+        d = os.path.join(OUT, f"{sub}")
+        if not os.path.isdir(d):
+            continue
+        for fn in os.listdir(d):
+            if not fn.endswith(".csv"):
+                continue
+            # revenue_hist: <期別>_<市場>.csv／fs_hist、bs_hist: <期別>_<業別>_<市場>.csv
+            parts = fn[:-4].rsplit("_", 1 if kind == "revenue" else 2)
+            if len(parts) < 2:
+                continue
+            mkt = m2mkt.get(parts[-1])
+            if not mkt:
+                continue
+            key = (kind, parts[0], mkt)
+            seen[key] = seen.get(key, 0) + 1
+    added = 0
+    for key, n in seen.items():
+        prev = state.get(key)
+        note = f"{n} 張表（檔案實測；只證明有寫出來，不證明內容完整）"
+        if prev is None:
+            state[key] = ("ok", note)
+            added += 1
+        elif prev[0] != "ok":
+            # 有檔但這一趟失敗／未公告：資料庫的狀態是「有」，失敗原文不丟掉
+            state[key] = ("ok", f"{note}｜⚠ 這一趟：{prev[0]} {prev[1]}")
+    return added
 # 財報的兩張表；業別分表由頁面自己切（見 `_split_by_kind`）
 FS_FORMS = [("t163sb04", "fs"), ("t163sb05", "bs")]
 
@@ -833,6 +884,10 @@ def main():
 
     # ★ 把每一期的結果寫成帳本。只靠「檔案在不在」推斷完整性遲早會再錯一次
     #   （這一輪就錯過），有帳本才查得到「哪一期為什麼沒有」。
+    _added = ledger_from_disk(state)
+    if _added:
+        print(f"[hist] 帳本補進 {_added} 個這一趟沒碰到、但檔案已經在的期別"
+              f"（`--fill` 會跳過已完成的期別，那些不會進這一趟的 state）")
     try:
         os.makedirs(OUT, exist_ok=True)
         with open(os.path.join(OUT, "_hist_status.csv"), "w",

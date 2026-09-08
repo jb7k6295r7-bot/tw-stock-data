@@ -1,0 +1,308 @@
+# tpex_probe.py 的輸出。這是端點目錄，不是資料。
+# 來源：https://www.tpex.org.tw/openapi/swagger.json
+
+── 櫃買 OpenAPI 端點目錄 ──
+來源（WebSearch 結果，非自行生成）：https://www.tpex.org.tw/openapi/swagger.json
+✓ 取得 476,923 bytes
+
+[1] 端點總數 225
+
+[2] ★ 吃日期參數的端點（能回補歷史的前提）
+    （一個都沒有——那就代表 openapi 這一層只給當日，歷史要走別的路，不要硬湊）
+
+[3] 「日曆／大盤統計」的候選
+    /bond_cb_daily｜轉(交)換公司債買賣斷券商買賣日報表｜參數 無
+    /mopsfin_t187ap05_OA｜二十九大類股營收變化統計表｜參數 無
+    /mopsfin_t187ap14_O｜上櫃公司各產業EPS統計資訊｜參數 無
+    /mopsfin_t187ap19_O｜電子式交易統計資訊(上櫃)｜參數 無
+    /mopsfin_t187ap36_O｜上櫃認購(售)權證年度發行量概況統計表｜參數 無
+    /mopsfin_t187ap42_O｜上櫃認購(售)權證每日成交資料檔｜參數 無
+    /tpcgi_change｜上櫃公司治理指數當日收盤指數｜參數 無
+    /tpcgi_constituents｜上櫃公司治理指數當日成分股資訊｜參數 無
+    /tpcgi_reward_index｜上櫃公司治理指數歷史收盤指數｜參數 無
+    /tpci_change｜櫃買「薪酬指數」當日收盤指數｜參數 無
+    /tpci_constituents｜櫃買「薪酬指數」當日成分股｜參數 無
+    /tpci_reward_index｜櫃買「薪酬指數」歷史收盤指數｜參數 無
+    /tpex200_change｜櫃買「富櫃200指數」當日收盤指數｜參數 無
+    /tpex200_constituents｜櫃買「富櫃200指數」當日成分股｜參數 無
+    /tpex50_change｜櫃買「富櫃50指數」當日收盤指數｜參數 無
+    /tpex50_constituents｜櫃買「富櫃50指數」當日成分股｜參數 無
+    /tpex50_index｜富櫃50指數歷史收盤指數｜參數 無
+    /tpex_3insti_daily_trading｜上櫃股票三大法人買賣明細資訊｜參數 無
+    /tpex_3insti_dealer_trading｜上櫃股票自營商買賣超彙總表｜參數 無
+    /tpex_3insti_qfii_trading｜上櫃股票外資及陸資買賣超彙總表｜參數 無
+    /tpex_3insti_summary｜上櫃股票三大法人買賣金額彙總表｜參數 無
+    /tpex_3insti_trading｜上櫃股票投信買賣超彙總表｜參數 無
+    /tpex_active_dollar_volume｜上櫃盤中個股成交金額排行｜參數 無
+    /tpex_amount_rank｜上櫃歷史個股成交值排行｜參數 無
+    /tpex_ceil_non_trading｜上櫃漲跌停未成交資訊｜參數 無
+
+[3] 「類股名稱」的候選
+    /mopsfin_t187ap05_OA｜二十九大類股營收變化統計表｜參數 無
+    /mopsfin_t187ap14_O｜上櫃公司各產業EPS統計資訊｜參數 無
+    /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表｜參數 無
+    /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重｜參數 無
+
+[4] 完整端點清單（225 個）
+    /BDdos209UTF｜美元零息可贖回國際債券理論價格｜參數 無
+    /BDdos215UTF｜美元附息固定利率可贖回國際債券理論價格｜參數 無
+    /BDdos216UTF｜美元固定利率不可贖回國際債券理論價格｜參數 無
+    /bond_ISSBD10_data｜國際債券(寶島債券)-本國發行人及第一、二上市(櫃)公司之外國發行人發行資料下載｜參數 無
+    /bond_ISSBD11_data｜國際債券(寶島債券)-外國發行人(在我國未公開發行股權商品者)發行資料下載｜參數 無
+    /bond_ISSBD1_data｜公債發行資料下載｜參數 無
+    /bond_ISSBD2_data｜外國金融債發行資料下載｜參數 無
+    /bond_ISSBD3_data｜金融債發行資料下載｜參數 無
+    /bond_ISSBD4_data｜普通債發行資料下載｜參數 無
+    /bond_ISSBD5_data｜轉(交)換債發行資料下載｜參數 無
+    /bond_ISSBD6_data｜海外轉換債發行資料下載｜參數 無
+    /bond_ISSBD7_data｜附認股權公司債發行資料下載｜參數 無
+    /bond_ISSBD8_data｜海外附認股權公司債發行資料下載｜參數 無
+    /bond_ISSBD9_data｜海外普通債發行資料下載｜參數 無
+    /bond_cb_daily｜轉(交)換公司債買賣斷券商買賣日報表｜參數 無
+    /mopsfin_187ap17_O｜上櫃公司營益分析查詢彙總表(全體公司彙總報表)｜參數 無
+    /mopsfin_t187ap01｜券商業務別人員數｜參數 無
+    /mopsfin_t187ap02_O｜上櫃公司持股逾 10% 大股東名單｜參數 無
+    /mopsfin_t187ap03_O｜上櫃股票基本資料｜參數 無
+    /mopsfin_t187ap03_R｜興櫃公司基本資料｜參數 無
+    /mopsfin_t187ap04_O｜上櫃公司每日重大訊息｜參數 無
+    /mopsfin_t187ap05_O｜上櫃公司每月營業收入彙總表｜參數 無
+    /mopsfin_t187ap05_OA｜二十九大類股營收變化統計表｜參數 無
+    /mopsfin_t187ap05_OB｜發行公司營收創新高一覽表(上櫃)｜參數 無
+    /mopsfin_t187ap06_O_basi｜上櫃公司綜合損益表(金融業)｜參數 無
+    /mopsfin_t187ap06_O_basiA｜上櫃公司財報資訊(金融業)｜參數 無
+    /mopsfin_t187ap06_O_bd｜上櫃公司綜合損益表(證券期貨業)｜參數 無
+    /mopsfin_t187ap06_O_bdA｜上櫃公司財報資訊(證券期貨業)｜參數 無
+    /mopsfin_t187ap06_O_ci｜上櫃公司綜合損益表(一般業)｜參數 無
+    /mopsfin_t187ap06_O_ciA｜上櫃公司財報資訊( 一般業)｜參數 無
+    /mopsfin_t187ap06_O_fh｜上櫃公司綜合損益表(金控業)｜參數 無
+    /mopsfin_t187ap06_O_fhA｜上櫃公司財報資訊(金控業)｜參數 無
+    /mopsfin_t187ap06_O_ins｜上櫃公司綜合損益表(保險業)｜參數 無
+    /mopsfin_t187ap06_O_insA｜上櫃公司財報資訊(保險業)｜參數 無
+    /mopsfin_t187ap06_O_mim｜上櫃公司綜合損益表(異業)｜參數 無
+    /mopsfin_t187ap06_O_mimA｜上櫃公司財報資訊(異業)｜參數 無
+    /mopsfin_t187ap06_U_basi｜興櫃公司綜合損益表-金融業｜參數 無
+    /mopsfin_t187ap06_U_bd｜興櫃公司綜合損益表-證券期貨業｜參數 無
+    /mopsfin_t187ap06_U_ci｜興櫃公司綜合損益表-一般業｜參數 無
+    /mopsfin_t187ap06_U_fh｜興櫃公司綜合損益表-金控業｜參數 無
+    /mopsfin_t187ap06_U_ins｜興櫃公司綜合損益表-保險業｜參數 無
+    /mopsfin_t187ap06_U_mim｜興櫃公司綜合損益表-異業｜參數 無
+    /mopsfin_t187ap07_O_basi｜上櫃公司資產負債表(金融業)｜參數 無
+    /mopsfin_t187ap07_O_bd｜上櫃公司資產負債表(證券期貨業)｜參數 無
+    /mopsfin_t187ap07_O_ci｜上櫃公司資產負債表(一般業)｜參數 無
+    /mopsfin_t187ap07_O_fh｜上櫃公司資產負債表(金控業)｜參數 無
+    /mopsfin_t187ap07_O_ins｜上櫃公司資產負債表(保險業)｜參數 無
+    /mopsfin_t187ap07_O_mim｜上櫃公司資產負債表(異業)｜參數 無
+    /mopsfin_t187ap07_U_basi｜興櫃公司資產負債表-金融業｜參數 無
+    /mopsfin_t187ap07_U_bd｜興櫃公司資產負債表-證券期貨業｜參數 無
+    /mopsfin_t187ap07_U_ci｜興櫃公司資產負債表-一般業｜參數 無
+    /mopsfin_t187ap07_U_fh｜興櫃公司資產負債表-金控業｜參數 無
+    /mopsfin_t187ap07_U_ins｜興櫃公司資產負債表-保險業｜參數 無
+    /mopsfin_t187ap07_U_mim｜興櫃公司資產負債表-異業｜參數 無
+    /mopsfin_t187ap08_O｜上櫃公司董事、監察人持股不足法定成數彙總表｜參數 無
+    /mopsfin_t187ap09_O｜上櫃公司董事、監察人質權設定占董事及監察人實際持有股數彙總表｜參數 無
+    /mopsfin_t187ap10_O｜上櫃公司董事、監察人持股不足法定成數連續達3個月以上彙總表｜參數 無
+    /mopsfin_t187ap11_O｜上櫃公司董監事持股餘額明細資料｜參數 無
+    /mopsfin_t187ap11_R｜興櫃公司董監事持股餘額明細資料｜參數 無
+    /mopsfin_t187ap12_O｜上櫃公司每日內部人持股轉讓事前申報表-持股轉讓日報表｜參數 無
+    /mopsfin_t187ap13_O｜上櫃公司每日內部人持股轉讓事前申報表-持股未轉讓日報表｜參數 無
+    /mopsfin_t187ap14_O｜上櫃公司各產業EPS統計資訊｜參數 無
+    /mopsfin_t187ap15_O｜上櫃公司截至各季綜合損益財測達成情形(簡式)｜參數 無
+    /mopsfin_t187ap16_O｜上櫃公司當季綜合損益經會計師查核(核閱)數與當季預測數差異達百分之十以上者，或截至當季累計差異達百分之二十以上者(簡式)｜參數 無
+    /mopsfin_t187ap19_O｜電子式交易統計資訊(上櫃)｜參數 無
+    /mopsfin_t187ap22_O｜上櫃公司金管會證券期貨局裁罰案件專區｜參數 無
+    /mopsfin_t187ap23_O｜上櫃公司違反資訊申報、重大訊息及說明記者會規定專區｜參數 無
+    /mopsfin_t187ap24_O｜上櫃公司經營權及營業範圍異(變)動專區-經營權異動公司｜參數 無
+    /mopsfin_t187ap25_O｜上櫃公司經營權及營業範圍異(變)動專區-營業範圍重大變更公司｜參數 無
+    /mopsfin_t187ap26_O｜上櫃公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更停止買賣公司｜參數 無
+    /mopsfin_t187ap27_O｜上櫃公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更列為變更交易公司｜參數 無
+    /mopsfin_t187ap29_A_O｜上櫃公司董事酬金相關資訊｜參數 無
+    /mopsfin_t187ap29_B_O｜上櫃公司監察人酬金相關資訊｜參數 無
+    /mopsfin_t187ap29_C_O｜上櫃公司合併報表董事酬金相關資訊｜參數 無
+    /mopsfin_t187ap29_D_O｜上櫃公司合併報表監察人酬金相關資訊｜參數 無
+    /mopsfin_t187ap30_O｜上櫃公司獨立董監事兼任情形彙總表｜參數 無
+    /mopsfin_t187ap31_O｜上櫃公司財務報告經監察人承認情形｜參數 無
+    /mopsfin_t187ap32_O｜上櫃公司公司治理之相關規程規則｜參數 無
+    /mopsfin_t187ap33_O｜上櫃公司董事長是否兼任總經理｜參數 無
+    /mopsfin_t187ap34_O｜上櫃公司採累積投票制、全額連記法、候選人提名制選任董監事及當選資料彙總表｜參數 無
+    /mopsfin_t187ap35_O｜上櫃公司股東行使提案權情形彙總表｜參數 無
+    /mopsfin_t187ap36_O｜上櫃認購(售)權證年度發行量概況統計表｜參數 無
+    /mopsfin_t187ap37_O｜上櫃權證基本資料彙總表｜參數 無
+    /mopsfin_t187ap39_O｜上櫃股利分派情形-董事會通過｜參數 無
+    /mopsfin_t187ap42_O｜上櫃認購(售)權證每日成交資料檔｜參數 無
+    /t187ap05_R｜興櫃公司每月營業收入彙總表｜參數 無
+    /t187ap41_O｜上櫃公司召開股東常 (臨時) 會日期、地點及採用電子投票情形等資料彙總表｜參數 無
+    /t187ap46_O_1｜上櫃公司企業ESG資訊揭露彙總資料-溫室氣體排放｜參數 無
+    /t187ap46_O_12｜上櫃公司企業ESG資訊揭露彙總資料-食品安全｜參數 無
+    /t187ap46_O_13｜上櫃公司企業ESG資訊揭露彙總資料-供應鏈管理｜參數 無
+    /t187ap46_O_14｜上櫃公司企業ESG資訊揭露彙總資料-產品品質與安全｜參數 無
+    /t187ap46_O_15｜上櫃公司企業ESG資訊揭露彙總資料-社區關係｜參數 無
+    /t187ap46_O_19｜上櫃公司企業ESG資訊揭露彙總資料-風險管理政策｜參數 無
+    /t187ap46_O_2｜上櫃公司企業ESG資訊揭露彙總資料-能源管理｜參數 無
+    /t187ap46_O_20｜上櫃公司企業ESG資訊揭露彙總資料-反競爭行為法律訴訟｜參數 無
+    /t187ap46_O_21｜上櫃公司企業ESG資訊揭露彙總資料-職業安全衛生｜參數 無
+    /t187ap46_O_3｜上櫃公司企業ESG資訊揭露彙總資料-水資源管理｜參數 無
+    /t187ap46_O_4｜上櫃公司企業ESG資訊揭露彙總資料-廢棄物管理｜參數 無
+    /t187ap46_O_5｜上櫃公司企業ESG資訊揭露彙總資料-人力發展｜參數 無
+    /t187ap46_O_6｜上櫃公司企業ESG資訊揭露彙總資料-董事會｜參數 無
+    /t187ap46_O_7｜上櫃公司企業ESG資訊揭露彙總資料-投資人溝通｜參數 無
+    /t187ap46_O_8｜上櫃公司企業ESG資訊揭露彙總資料-氣候相關議題管理｜參數 無
+    /t187ap46_O_9｜上櫃公司企業ESG資訊揭露彙總資料-功能性委員會｜參數 無
+    /tpcgi_change｜上櫃公司治理指數當日收盤指數｜參數 無
+    /tpcgi_constituents｜上櫃公司治理指數當日成分股資訊｜參數 無
+    /tpcgi_reward_index｜上櫃公司治理指數歷史收盤指數｜參數 無
+    /tpci_change｜櫃買「薪酬指數」當日收盤指數｜參數 無
+    /tpci_constituents｜櫃買「薪酬指數」當日成分股｜參數 無
+    /tpci_reward_index｜櫃買「薪酬指數」歷史收盤指數｜參數 無
+    /tpex200_change｜櫃買「富櫃200指數」當日收盤指數｜參數 無
+    /tpex200_constituents｜櫃買「富櫃200指數」當日成分股｜參數 無
+    /tpex50_change｜櫃買「富櫃50指數」當日收盤指數｜參數 無
+    /tpex50_constituents｜櫃買「富櫃50指數」當日成分股｜參數 無
+    /tpex50_index｜富櫃50指數歷史收盤指數｜參數 無
+    /tpex_3insti_daily_trading｜上櫃股票三大法人買賣明細資訊｜參數 無
+    /tpex_3insti_dealer_trading｜上櫃股票自營商買賣超彙總表｜參數 無
+    /tpex_3insti_qfii｜上櫃僑外資及陸資持股比例排行表｜參數 無
+    /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表｜參數 無
+    /tpex_3insti_qfii_trading｜上櫃股票外資及陸資買賣超彙總表｜參數 無
+    /tpex_3insti_summary｜上櫃股票三大法人買賣金額彙總表｜參數 無
+    /tpex_3insti_trading｜上櫃股票投信買賣超彙總表｜參數 無
+    /tpex_active_advanced｜上櫃盤中個股漲幅排行｜參數 無
+    /tpex_active_broker_volume｜上櫃股票熱門股證券商進出排行｜參數 無
+    /tpex_active_declined｜上櫃盤中個股跌幅排行｜參數 無
+    /tpex_active_dollar_volume｜上櫃盤中個股成交金額排行｜參數 無
+    /tpex_amount_rank｜上櫃歷史個股成交值排行｜參數 無
+    /tpex_ceil_non_trading｜上櫃漲跌停未成交資訊｜參數 無
+    /tpex_cmode｜上櫃股票變更交易、分盤交易、管理股票與停止交易資訊｜參數 無
+    /tpex_daily_broker1｜上櫃各券商當日營業金額統計表｜參數 無
+    /tpex_daily_broker2｜上櫃股票各券商總公司當日營業金額統計表｜參數 無
+    /tpex_daily_market_value｜上櫃歷史個股市值排行｜參數 無
+    /tpex_daily_qutoes_block｜上櫃鉅額交易日成交資訊｜參數 無
+    /tpex_daily_trade_block_day｜鉅額交易歷史成交資訊｜參數 無
+    /tpex_daily_trading_block｜上櫃個股單一證券鉅額交易日成交資訊｜參數 無
+    /tpex_daily_trading_index｜上櫃日成交量值指數｜參數 無
+    /tpex_daily_trading_summary_odd｜上櫃鉅額交易日成交量值統計｜參數 無
+    /tpex_daily_turnover｜上櫃歷史個股週轉率排行｜參數 無
+    /tpex_delayed_stock_close｜上櫃每日暫緩收盤股票｜參數 無
+    /tpex_delayed_stock_open｜上櫃每日暫緩開盤股票｜參數 無
+    /tpex_disposal_information｜上櫃處置有價證券資訊｜參數 無
+    /tpex_dpsp_monthly_CBmcs007｜可轉債資產交換ASO及ASW銀行承作餘額｜參數 無
+    /tpex_emp88_change｜櫃買「勞工就業88指數」當日收盤指數｜參數 無
+    /tpex_emp88_constituents｜櫃買「勞工就業88指數」當日成分股｜參數 無
+    /tpex_emp88_reward_index｜櫃買「勞工就業88指數」歷史收盤指數｜參數 無
+    /tpex_esb_applicant_companies｜申請上櫃公司｜參數 無
+    /tpex_esb_capitals_rank｜興櫃公司資本額排名｜參數 無
+    /tpex_esb_disposal_information｜興櫃處置有價證券資訊｜參數 無
+    /tpex_esb_eps_rank｜本國興櫃公司EPS排名｜參數 無
+    /tpex_esb_highlight｜興櫃股票市場現況｜參數 無
+    /tpex_esb_latest_statistics｜興櫃股票當日行情表｜參數 無
+    /tpex_esb_recommended_dealer｜興櫃推薦證券商與推薦之股票｜參數 無
+    /tpex_esb_warning_information｜興櫃公布注意有價證券資訊｜參數 無
+    /tpex_exright_daily｜上櫃股票除權除息計算結果表｜參數 無
+    /tpex_exright_prepost｜上櫃股票除權除息預告表｜參數 無
+    /tpex_gisa_company｜創櫃板公司資訊｜參數 無
+    /tpex_gisa_financing_before｜於登錄創櫃板前辦理籌資資訊｜參數 無
+    /tpex_gisa_financing_history｜創櫃板公司透過籌資系統辦理籌資資訊｜參數 無
+    /tpex_gisa_financing_in_process｜創櫃板辦理中籌資資訊｜參數 無
+    /tpex_gisa_highlight｜創櫃板公司市場現況｜參數 無
+    /tpex_gold_latest｜黃金現貨當日行情表｜參數 無
+    /tpex_gold_market_highlight｜黃金現貨市場現況｜參數 無
+    /tpex_gold_recommended_dealer｜造市商與造市之黃金現貨｜參數 無
+    /tpex_index｜櫃買指數歷史資料｜參數 無
+    /tpex_index_consti｜櫃買指數成分股｜參數 無
+    /tpex_international_bond_issue_investor｜國際債券(一般投資人)｜參數 無
+    /tpex_international_bond_issue_org｜國際債券(僅售予專業投資人者)｜參數 無
+    /tpex_international_bond_quotes｜國際債券當日盤中報價行情表(含寶島債)｜參數 無
+    /tpex_international_bond_trade｜國際債券當日盤中成交行情表(含寶島債)｜參數 無
+    /tpex_intraday_fee｜上櫃應付現股當日沖銷券差借券費率｜參數 無
+    /tpex_intraday_trading_his｜上櫃暫停先賣後買當日沖銷交易歷史查詢｜參數 無
+    /tpex_intraday_trading_pre｜上櫃暫停先賣後買當日沖銷交易標的預告表｜參數 無
+    /tpex_intraday_trading_statistics｜上櫃股票現股當沖交易統計資訊｜參數 無
+    /tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊｜參數 無
+    /tpex_mainboard_daily_close_quotes｜上櫃股票行情｜參數 無
+    /tpex_mainboard_margin_balance｜上櫃股票融資融券餘額｜參數 無
+    /tpex_mainboard_peratio_analysis｜上櫃股票個股本益比、殖利率、股價淨值比｜參數 無
+    /tpex_mainboard_quotes｜上櫃股票收盤行情｜參數 無
+    /tpex_mainborad_highlight｜上櫃股票市場現況｜參數 無
+    /tpex_margin_sbl｜上櫃股票融券借券賣出餘額｜參數 無
+    /tpex_margin_trading_adjust｜上櫃融資融券調整成數｜參數 無
+    /tpex_margin_trading_lend｜上櫃融資融券標借｜參數 無
+    /tpex_margin_trading_margin_mark｜上櫃平盤下得融(借)券賣出之證券名單｜參數 無
+    /tpex_margin_trading_margin_used｜上櫃融資融券使用率報表｜參數 無
+    /tpex_margin_trading_marginspot｜上櫃信用交易餘額概況表｜參數 無
+    /tpex_margin_trading_short_sell｜上櫃融資融券增減排行表｜參數 無
+    /tpex_margin_trading_term｜上櫃融資融券暫停融券賣出預告表｜參數 無
+    /tpex_monthly_trading_summary_block｜上櫃鉅額交易月成交量值統計｜參數 無
+    /tpex_odd_stock｜上櫃股票零股交易資訊｜參數 無
+    /tpex_off_market｜上櫃股票盤後定價行情｜參數 無
+    /tpex_opfund_latest｜開放式基金當日行情表｜參數 無
+    /tpex_opfund_market_highlight｜開放式基金市場現況｜參數 無
+    /tpex_opfund_recommended_dealer｜開放式基金受益憑證造市商與造市之基金｜參數 無
+    /tpex_pe_ratio_top10｜上櫃歷史個股本益比排行｜參數 無
+    /tpex_prvol｜上櫃股票等價系統成交分價表｜參數 無
+    /tpex_reward_index｜櫃買指數與報酬指數之收市指數｜參數 無
+    /tpex_securities｜上櫃股票現股當沖交易標的資訊｜參數 無
+    /tpex_short_sell｜上櫃當日融券賣出與借券賣出成交量值｜參數 無
+    /tpex_spendi_history｜上櫃歷史公布暫停/恢復交易股票｜參數 無
+    /tpex_spendi_today｜上櫃當日公布暫停/恢復交易股票｜參數 無
+    /tpex_trading_amount_avg｜上櫃歷史個股日均值排行｜參數 無
+    /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重｜參數 無
+    /tpex_trading_volumes_avg｜上櫃歷史個股日均量排行｜參數 無
+    /tpex_trading_warning_information｜上櫃公布注意股票資訊｜參數 無
+    /tpex_trading_warning_note｜上櫃公布注意累計次數異常資訊｜參數 無
+    /tpex_volume_rank｜上櫃歷史個股成交量排行｜參數 無
+    /tpex_warrant｜上櫃股票權證資訊｜參數 無
+    /tpex_warrant_daily_quts｜上櫃權證收盤行情日報表｜參數 無
+    /tpex_warrant_gold｜黃金現貨權證發行基本資料｜參數 無
+    /tpex_warrant_gold_quts｜黃金現貨權證收盤行情｜參數 無
+    /tpex_warrant_issue｜上櫃權證發行基本資料｜參數 無
+    /tpex_warrant_monthly_quts｜上櫃權證收盤行情月報表｜參數 無
+    /tpex_warrant_quts｜單筆權證成交資料｜參數 無
+    /tpex_warrant_statistics｜每日權證交易人數(上櫃)｜參數 無
+    /tpex_warrant_suspend_history｜上櫃權證歷史暫停/恢復交易資訊｜參數 無
+    /tpex_warrant_suspend_today｜上櫃權證當日暫停/恢復交易資訊｜參數 無
+    /tpex_warrant_wcb_daily_quts｜上櫃牛熊證收盤行情(不含展延型牛熊證)日報表｜參數 無
+    /tpex_warrant_wcb_issue｜上櫃牛熊證發行基本資料(不含展延型牛熊證)｜參數 無
+    /tpex_warrant_wcb_monthly_quts｜上櫃牛熊證收盤行情(不含展延型牛熊證)月報表｜參數 無
+    /tpex_warrant_wxy_daily_quts｜上櫃展延型牛熊證收盤行情日報表｜參數 無
+    /tpex_warrant_wxy_issue｜上櫃展延型牛熊證發行基本資料｜參數 無
+    /tpex_warrant_wxy_monthly_quts｜上櫃展延型牛熊證收盤行情月報表｜參數 無
+    /tpex_yearly_trading_summary_block｜上櫃鉅額交易年成交量值統計｜參數 無
+    /tphd_change｜櫃買「高殖利率指數」當日收盤指數｜參數 無
+    /tphd_constituents｜櫃買「高殖利率指數」當日成分股｜參數 無
+    /tphd_index｜高殖利率指數歷史收盤指數｜參數 無
+
+[5] ★ 官方頁面自己呼叫的 API（openapi 之外那一層，吃日期）
+
+  ── 日成交量值指數（上櫃大盤層級統計，交易日曆的候選）
+     https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_index/st41.php?l=zh-tw
+     ✓ 11,229 bytes
+       （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+
+  ── 上櫃股價指數收盤行情（類股指數，類股名稱的候選）
+     https://www.tpex.org.tw/web/stock/aftertrading/index_summary/summary.php?l=zh-tw
+     ✓ 11,474 bytes
+       （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+
+[6] ★ 上櫃類股名稱的候選端點（欄位與樣本列）
+
+  ── /mopsfin_t187ap05_OA｜二十九大類股營收變化統計表
+     ✓ 494,726 bytes｜890 筆
+     欄位：['出表日期', '資料年月', '公司代號', '公司名稱', '產業別', '營業收入-當月營收', '營業收入-上月營收', '營業收入-去年當月營收', '營業收入-上月比較增減(%)', '營業收入-去年同月增減(%)', '累計營業收入-當月累計營收', '累計營業收入-去年累計營收', '累計營業收入-前期比較增減(%)', '備註']
+     首列：{'出表日期': '1150817', '資料年月': '11507', '公司代號': '1240', '公司名稱': '茂生農經', '產業別': '農業科技', '營業收入-當月營收': '242511', '營業收入-上月營收': '270176', '營業收入-去年當月營收': '214130', '營業收入-上月比較增減(%)': '-10.239621580007107', '營業收入-去年同月增減(%)': '13.254097977863914', '累計營業收入-當月累計營收': '1683183', '累計營業收入-去年累計營收': '1564493', '累計營業收入-前期比較增減(%)': '7.586483288835424', '備註': '-'}
+     類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
+
+  ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
+     ✓ 3,530 bytes｜28 筆
+     欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
+     首列：{'Date': '1150908', 'Sector': '光電業', 'TradeAmount': '6247485988', 'TradeWeight': '7.12', ' NumberOfSharesTraded': '62050048'}
+
+  ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
+     ✓ 5,181 bytes｜28 筆
+     欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
+     首列：{'Date': '1150908', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5214433202', 'CurrentlySharesOC/FIHeld': '835176827', 'PercentageOfSharesOC/FMIHeld': '16.02%'}
+     類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
+
+── 下一步 ──
+從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
+**沒有命中不等於不存在**——先看清單，不要回頭去猜網址。

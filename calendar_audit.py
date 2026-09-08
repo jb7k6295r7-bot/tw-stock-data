@@ -48,6 +48,7 @@ import sys
 import time
 
 import backfill as B
+import runlog
 
 URL = "https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date={}&response=json"
 
@@ -150,7 +151,9 @@ def main():
     ap.add_argument("--end", default="", help="迄月 YYYY-MM，空＝我方日曆的最後一個月")
     ap.add_argument("--sleep", type=float, default=5)
     ap.add_argument("--write", action="store_true",
-                    help="把獨立日曆寫成 data/meta/calendar_twse.csv（預設只報告）")
+                    help="把獨立日曆併進 data/meta/calendar_twse.csv（預設只報告）")
+    ap.add_argument("--replace", action="store_true",
+                    help="⛔ 整份重建，不保留既有的日子。只有在跑完整區間時才可以用")
     a = ap.parse_args()
     B.SLEEP = a.sleep
 
@@ -221,19 +224,46 @@ def main():
     if len(extra) > 40:
         print(f"        …另外 {len(extra) - 40} 天")
 
+    added = kept = 0
     if a.write and official and not failed:
+        # ⛔ **預設是「併進去」，不是整份覆蓋。**
+        #   舊版直接把 official 寫成整個檔。跑當月一個月就會把 2,845 天的日曆
+        #   截成那個月的幾天——**而且不會報錯，檔案看起來完全正常**。
+        #   交易日不會事後被取消，所以「只增不減」是安全的預設；
+        #   真要重建整份請明講 --replace。
+        prev = set()
+        if os.path.exists(OUT) and not a.replace:
+            for ln in open(OUT, encoding="utf-8").read().splitlines()[1:]:
+                if ln.strip():
+                    prev.add(ln.split(",")[0])
+        merged = prev | official
+        added, kept = len(merged - prev), len(prev)
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with open(OUT, "w", encoding="utf-8") as fh:
             fh.write("date,source\n")
-            for d in sorted(official):
+            for d in sorted(merged):
                 fh.write(f"{d},FMTQIK\n")
-        print(f"[cal] 已寫出 {OUT}（{len(official)} 天）")
+        how = "整份重建" if a.replace else f"併入（原有 {kept} 天、新增 {added} 天）"
+        print(f"[cal] 已寫出 {OUT}（{len(merged)} 天，{how}）")
+        official = merged
     elif a.write and failed:
         # 半套日曆比沒有日曆更危險——它看起來像一份完整的獨立來源。
         print("[cal] ★ 有月份沒問到，**不寫檔**。半套的獨立日曆比沒有更糟："
               "它看起來像完整的，之後沒人會記得它缺了幾個月。", file=sys.stderr)
 
-    return 1 if (failed or miss) else 0
+    # ★ 寫進 data/meta/_last_run.md。日曆是「哪一天該有資料」的唯一外部判準，
+    #   它自己落後的話，任何拿它當閘門的檢查都會把最新那天判成非交易日。
+    rl = runlog.Run("calendar")
+    rl.info("區間", f"{a.start} ~ {end}｜問了 {n} 個月")
+    if a.write:
+        rl.info("日曆", f"{len(official)} 天"
+                        + (f"，本趟新增 {added} 天" if not a.replace else "（整份重建）"))
+    rl.check("每個月都問到了", not failed,
+             ("沒問到：" + "、".join(k for k, _ in failed[:6])) if failed else f"{n} 個月")
+    rl.check("官方有、我方沒有的日子為 0（疑似漏抓）", not miss,
+             f"{len(miss)} 天：{'、'.join(miss[:5])}" if miss else "0 天")
+    rc = rl.finish()
+    return 1 if (failed or miss or rc) else 0
 
 
 if __name__ == "__main__":

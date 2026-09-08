@@ -188,7 +188,11 @@ def sec_kind(code):
 
 
 def _num(v):
-    s = str(v or "").replace(",", "").strip()
+    # ⛔ 不可以寫 `str(v or "")`：**整數 0 是 falsy**，會被換成空字串，
+    #   於是「這一格是 0」與「這一格沒有值」變得分不出來。
+    #   TWSE/TPEx 的 JSON 多半回字串（"0" 是 truthy）所以一直沒中，
+    #   但真的回數字 0 的那天就會靜默變成空白。（2026-09-08 寫集保驗算時抓到同一個寫法）
+    s = "" if v is None else str(v).replace(",", "").strip()
     return s if re.fullmatch(r"-?\d+(\.\d+)?", s) else ""
 
 
