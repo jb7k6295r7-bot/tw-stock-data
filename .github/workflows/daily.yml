@@ -172,6 +172,14 @@ jobs:
       # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
       #   那正是失敗時最需要看到的東西。原本失敗就整個 job 停掉，
       #   結果 repo 裡什麼都沒有，只能去翻 Actions log（2026-08-31 實測）。
+      # ★ 資料庫現況總表。放在轉置之後，這樣各層檔數是最新的。
+      #   它不抓網路、不改資料，只讀 data/ 然後寫一頁 _db_status.md。
+      #   有了它，「資料庫還缺啥」是跑一支腳本、讀一頁，不是臨時拼十幾次查詢。
+      - name: 資料庫現況
+        if: always()
+        continue-on-error: true
+        run: python db_status.py --write
+
       - name: Commit 回 repo
         if: always()
         run: |
