@@ -8,16 +8,40 @@
 
 ── 大戶持股查詢頁
    https://norway.twsthr.info/StockHolders.aspx
-   ✗ URLError: <urlopen error Tunnel connection failed: 403 Forbidden>
+   ✓ 35,757 bytes
+   [1] 抓不到級距文字（可能在 JS 或另一頁）
+   [2] ★ 八碼日期 1 個：['20170103'] … ['20170103']
+   [3] form input（6）：{'__EVENTTARGET': '', '__EVENTARGUMENT': '', '__VIEWSTATE': '/wEPDwUJNDg4NDI0NjIwZGQ082dhNjJtKHCMOCKI…', '__VIEWSTATEGENERATOR': 'B22D0476', '__EVENTVALIDATION': '/wEdAARcm5d18CQYQ07sV/YOf9OVprT8jKN33hsB…', 'txtStock': ''}
+       select：[]
+       __VIEWSTATE 有沒有：有
+   [4] 疑似下載連結：（沒有）
+   [5] 「更新」附近：['若依本資料投資發生損失須自行負責，本網站對資料內容錯誤、更新延誤不負任何責任']
+   [5] 「資料來源」附近：['- 原始資料來源為 台灣集保所 及 Google Finance ，']
+   [5] 「集保」附近：['集保戶股權分散表 走勢圖', '- 原始資料來源為 台灣集保所 及 Google Finance ，']
 
 ── 站台首頁（看它自己怎麼介紹資料範圍）
    https://norway.twsthr.info/
-   ✗ URLError: <urlopen error Tunnel connection failed: 403 Forbidden>
+   ✓ 14,854 bytes
+   [1] ★ 疑似級距文字（1）：['24494339-1']
+       ⚠ **這是線索不是出處**——要寫進文件得回官方查證。
+   [2] 頁面上抓不到日期——**不能據此說它沒有歷史**，可能要送出查詢才會出現
+   [3] form input（2）：{'__VIEWSTATE': '/wEPDwUKLTE1MDg3ODA1Mg9kFgICAQ9kFgoCAQ8W…', '__VIEWSTATEGENERATOR': '90059987'}
+       select：[]
+       __VIEWSTATE 有沒有：有
+   [4] 疑似下載連結：（沒有）
+   [5] 「更新」附近：['若依本資料投資發生損失須自行負責，本網站對資料內容錯誤、更新延誤不負任何責任']
+   [5] 「資料來源」附近：['- 原始資料來源為 台灣集保所 及 Google Finance ，']
+   [5] 「集保」附近：['神秘金字塔 - 集保戶股權走勢圖', '集保戶股權分散表 走勢圖']
 
 [6] ★★ 跟官方交叉核對（本檔最重要的一段）
     官方基準（tdcc_probe 2026-09-08 於 Actions 實測 getOD.ashx?id=1-5）：
       資料日期 20260904｜4,051 檔｜68,867 列｜每檔 17 級
-    （查詢頁沒抓到，這一步做不了——先解決上面的失敗）
+    送出：txtStock=2330（其餘欄位照抄頁面原值）
+    ✓ 回 36,137 bytes
+    回應裡的大數字（前 12）：[]
+    回應裡的日期 1 個：['20170103'] … ['20170103']
+    ★ 官方那一週 20260904 **不在**回應裡
+    ⚠ **人數／股數要逐格比對才算核對過**，上面只是把回應的形狀印出來給人看。
 
 ── 下一步 ──
 ① 級距文字抓到了 → **回官方查證**，不可以拿第三方當出處
