@@ -153,6 +153,59 @@ def main():
                 elif g == "LIMITED":
                     say(f"     {a}~{b}：被限流擋下，這一格沒有答案")
 
+    # ── ★★ 涵蓋範圍：它到底收不收上櫃 ──
+    #   2026-09-09 有人回報「主來源就是 TWTB8U」。TWTB8U 確實是對的來源，
+    #   但**只對上市那一半**——這一節把它變成每趟都量的數字，不要再靠推論。
+    #   靶子取自 `parvalue_scan.py` 的全庫掃描：同一個區間內已知存在的
+    #   上市與上櫃事件各列一組，看回應裡有沒有。
+    #   ⛔ 「回了東西」不算涵蓋，**要點名的那幾檔真的出現**才算。
+    say("\n── ★★ 涵蓋範圍：TWTB8U 收不收上櫃 ──")
+    EXPECT = ("20260101", "20260908", [
+        ("7780", "大研生醫", "twse", "115/01/19"),
+        ("6949", "沛爾生醫", "twse", "115/09/07"),
+        ("8932", "智通", "tpex", "115/03/09"),
+        ("8937", "合騏", "tpex", "115/04/13"),
+        ("3086", "華義", "tpex", "115/04/20"),
+        ("5904", "寶雅", "tpex", "115/08/10"),
+        ("4747", "強生", "tpex", "115/08/31")])
+    a, b, want = EXPECT
+    g = next((x for x, (aa, bb) in zip(got, RANGES)
+              if (aa, bb) == (a, b) and isinstance(x, dict)), None)
+    if not g:
+        say(f"  （{a}~{b} 那一發沒成功，這一節量不了）")
+    else:
+        url = f"{BASE}?startDate={a}&endDate={b}&response=json"
+        raw, err = B.get(url, retries=2, timeout=60)
+        codes = set()
+        if not err:
+            try:
+                dd = json.loads(raw.decode("utf-8", "replace"))
+                for t in (B._tables(dd) or []):
+                    for r in (t.get("data") or []):
+                        for v in (r or [])[:3]:
+                            v = str(v).strip()
+                            if v.isdigit() and len(v) == 4:
+                                codes.add(v)
+            except Exception:                                    # noqa: BLE001
+                pass
+        hit = {"twse": 0, "tpex": 0}
+        tot = {"twse": 0, "tpex": 0}
+        for sid, nm, mk, dt in want:
+            tot[mk] += 1
+            ok = sid in codes
+            hit[mk] += 1 if ok else 0
+            say(f"  {'✓' if ok else '✗'} {sid} {nm}（{mk}，{dt}）"
+                f"{'' if ok else '  ← 沒有回來'}")
+        say(f"  → 上市 {hit['twse']}/{tot['twse']}｜上櫃 {hit['tpex']}/{tot['tpex']}")
+        if tot["tpex"] and hit["tpex"] == 0:
+            say("  ⛔ **同一發請求裡上市全中、上櫃全不中——TWTB8U 不涵蓋上櫃。**")
+            say("     上櫃那 14 筆面額變更仍然沒有來源，`data/adj/` 也就仍然沒有還原它們。")
+            say("     要找的是 **TPEx 對應的「變更股票面額恢復買賣參考價」端點**，")
+            say("     不是再確認一次 TWTB8U。")
+        elif hit["tpex"]:
+            say("  ★ 上櫃也回得出來——**那推翻了先前的結論**，"
+                "去把 EVENT_DIRS 的 market 標記與 db_status 一起改掉。")
+
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
     say("`adjust.py` 的 EVENT_DIRS 與 BOUNDS。")
