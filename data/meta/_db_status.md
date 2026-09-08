@@ -1,4 +1,4 @@
-# 資料庫現況　2026-09-09T03:04:19+08:00（台北）
+# 資料庫現況　2026-09-09T03:40:12+08:00（台北）
 
 **這一頁報的是資料庫現況，不是某一趟做了什麼。**
 
@@ -44,7 +44,7 @@
 - fetch　✓ 正常
 - backfill:inst　✓ 正常
 - feeds:otcinst　✓ 正常
-- mops　✗ 有問題
+- mops　✓ 正常
 - feeds:exright　✓ 正常
 - feeds:reduce　✓ 正常
 - adjust　✓ 正常
@@ -59,9 +59,6 @@
 - tdcc　✓ 正常
 - feeds:parvalue　✓ 正常
 - feeds:etfsplit　✓ 正常
-
-**沒過的檢查：**
-  - **✗**　有列的表都對得上我方母體（涵蓋 > 0%）　（涵蓋 0%：fs/basi/tpex、fs/ins/tpex、fs/fh/tpex、bs/basi/tpex、bs/ins/tpex、bs/fh/tpex）
 
 ## ④ 完全沒有來源（人維護的清單，不是算出來的）
 
