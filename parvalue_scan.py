@@ -82,6 +82,32 @@ BRK_HEADER = ["stock_id", "name", "market", "event_date", "prev_trade_date",
               "prev_close", "close", "ratio", "gap_trading_days",
               "adj_events_in_range", "cause", "in_universe"]
 BRK_MIN_GAP = 20
+# ★ TWSE `change/TWTB8U` 的官方事件（`parvalue` feed 回補後的產出）。
+#   上市那批沒有 `shares` 欄，本來只能靠「收盤比＋名稱 `*`＋停止買賣天數」；
+#   官方表直接給「停止買賣前收盤價格 ÷ 恢復買賣參考價」＝**官方倍率**。
+#   2026-09-09 回補完成後逐筆核對：**10/10 相符、零不符、官方沒有多出來的筆**，
+#   官方因子全是乾淨的 1/k（0.05／0.10／0.25／0.50）。
+#   ⇒ evidence 從 `price_name_gap` 升級成 `twse_twtb8u`。
+#   ⛔ 兩級是**來源不同，不是強弱不同**（情報分析線 2026-09-09 裁定），
+#      讀取端的閘門不必對上市打折。
+PARVALUE_FEED = os.path.join(_ROOT, "universe", "parvalue")
+
+
+def load_official():
+    """→ {(stock_id, date): (pre_close, ref_price)}。沒有 feed 目錄就是空的。"""
+    out = {}
+    if not os.path.isdir(PARVALUE_FEED):
+        return out
+    for fn in sorted(os.listdir(PARVALUE_FEED)):
+        if not fn.endswith(".csv"):
+            continue
+        with io.open(os.path.join(PARVALUE_FEED, fn), encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                pre, ref = fnum(r.get("pre_close")), fnum(r.get("ref_price"))
+                if pre and ref:
+                    out[(r.get("stock_id", "").strip(),
+                         r.get("date", "").strip())] = (pre, ref)
+    return out
 # TWTCAU（ETF 分割／反分割）已知涵蓋的代號，2026-09-09 探針 2025 年命中 5/5 驗過。
 ETF_SPLIT_KNOWN = {"00632R", "00676R", "00663L", "0050", "0052", "00674R",
                    "00673R", "00706L", "00685L", "00631L", "00715L"}
@@ -507,15 +533,23 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
         with io.open(CSV_OUT, "w", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
             w.writerow(CSV_HEADER)
+            official = load_official()
             for h in sorted(both, key=lambda x: (x["d1"], x["sid"])):
+                off = official.get((h["sid"], h["d1"]))
+                if h["shr"]:
+                    ev, mult = "shares_int_mult", h["shr"]
+                elif off:
+                    # 官方倍率 ＝ 停止買賣前收盤 ÷ 恢復買賣參考價
+                    ev, mult = "twse_twtb8u", off[0] / off[1]
+                else:
+                    ev, mult = "price_name_gap", None
                 w.writerow([
                     h["sid"], h["d1"], h["d0"],
                     f"{h['c0']:g}", f"{h['c1']:g}", f"{h['ratio']:.6f}",
                     f"{h['sh0']:.0f}" if h["sh0"] else "",
                     f"{h['sh1']:.0f}" if h["sh1"] else "",
-                    f"{h['shr']:.4f}" if h["shr"] else "",
-                    "shares_int_mult" if h["shr"] else "price_name_gap",
-                    "1" if h["in_pop"] else "0"])
+                    f"{mult:.4f}" if mult else "",
+                    ev, "1" if h["in_pop"] else "0"])
         print(f"[scan] 寫出 {CSV_OUT}（{len(both)} 列）")
     except OSError as ex:                                        # noqa: BLE001
         print(f"[scan] CSV 寫檔失敗：{ex}", file=sys.stderr)
