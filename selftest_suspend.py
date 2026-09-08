@@ -323,6 +323,40 @@ def main():
     ck(S.sec_kind("7752") == "普通股",
        "★ 對照：形狀規則會把興櫃判成普通股——這就是官方類別欄要優先的理由")
 
+    # ★ sprcHis 的參數：form `date=<西元年>`。2026-09-08 第一版寫成 JSON year=，
+    #   結果每一年都回 2026 而且不報錯。
+    seen2 = {}
+
+    def spy_body(url, body=None, ctype=None, retries=3, timeout=45):
+        seen2["body"], seen2["ctype"] = body, ctype
+        return json.dumps({"date": "2015", "tables": [{"data": []}]}).encode(), None
+
+    S.get = spy_body
+    S.tpex_halt_hist(2015)
+    ck(seen2["body"] == b"date=2015", f"★ body 是 date=2015（實際 {seen2['body']}）")
+    ck(seen2["ctype"] == "application/x-www-form-urlencoded",
+       "★ 是 form-encoded，不是 JSON")
+
+    # TWTAWU 的資料起點：早於 2011-10-03 不要送出去
+    asked2 = []
+
+    def spy_url(url, body=None, ctype=None, retries=3, timeout=45):
+        asked2.append(url)
+        return json.dumps({"stat": "OK", "title": "期間 100/10/03 到 100/12/31",
+                           "fields": [], "data": []}).encode(), None
+
+    S.get = spy_url
+    S.twse_pull("halt", "2011-01-01", "2011-12-31")
+    ck(asked2 and "startDate=20111003" in asked2[0],
+       f"★ 起日被夾到 2011-10-03（實際 {asked2[0] if asked2 else '沒送出'}）")
+    asked2.clear()
+    ck(S.twse_pull("halt", "2010-01-01", "2010-12-31") == [] and not asked2,
+       "★ 整段都早於起點就不送出去（不浪費一發也不留假警報）")
+
+    # 522 要重試
+    ck(522 in S.RETRYABLE and 404 not in S.RETRYABLE,
+       "★ Cloudflare 522 可重試、404 不重試")
+
     # 回應年份對不上 → 整年丟掉
     S.get = lambda *a, **k: (json.dumps(
         {"date": "2026", "tables": [{"data": [[1, "上櫃股票", "1", "x",
