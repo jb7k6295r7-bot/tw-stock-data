@@ -289,7 +289,8 @@ jobs:
           #      而且外表完全正常（2026-09-08 加第 5 節時就差點這樣）
           # ⚠ 比的是 git commit 時間，不是 mtime：Actions 每次都是全新 checkout，
           #   mtime 永遠是「剛剛」，用它永遠比不出新舊。
-          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt"; do
+          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt" \
+                      "parvalue_probe.py:_parvalue_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             TS_S=$(git log -1 --format=%ct -- "$SCRIPT" || echo 0)
             TS_F=$(git log -1 --format=%ct -- "$F" || echo 0)
