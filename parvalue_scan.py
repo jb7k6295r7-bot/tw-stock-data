@@ -58,6 +58,15 @@ ADJ = os.path.join(_ROOT, "adj")
 CAL = os.path.join(_ROOT, "meta", "calendar_twse.csv")
 IND = os.path.join(_ROOT, "meta", "industry.csv")
 OUT = os.path.join(_ROOT, "meta", "_parvalue_scan.md")
+# ★ 機器可讀版。規格由市場情報分析線 2026-09-09 00:55 指定（欄位與 evidence 兩級都照抄）。
+#   為什麼要有它：每日選股的前置閘門**每天**都要拿這批去比對推薦母體，
+#   只有 markdown 表格的話等於每天從表格裡把代號抄一次——
+#   **逐次人工抄寫就是逐次重打的機會，而重打出的錯是靜默的。**
+#   ⚠ markdown 那份要留著：它的推理過程比清單本身有價值。
+CSV_OUT = os.path.join(_ROOT, "meta", "par_change.csv")
+CSV_HEADER = ["stock_id", "event_date", "prev_trade_date", "prev_close",
+              "close", "ratio", "shares_before", "shares_after",
+              "share_mult", "evidence", "in_universe"]
 
 LO, HI = 0.55, 1.8            # ★ 移交來的門檻，本檔要複核它，不是假設它對
 
@@ -439,6 +448,30 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
           "面額變更在本庫全部是「面額變小、股數變多、股價變低」的方向。")
         w("上緣不是沒用，是**還沒有樣本**：面額由小改大（例如 5→10）會落在那一側，"
           "本庫 2015 起沒發生過。**不要因為沒樣本就把它拿掉。**")
+    # ── 機器可讀版 ──
+    #   ⛔ evidence 的兩級是**來源不同，不是強弱不同**（情報分析線 2026-09-09 裁定）：
+    #     `shares_int_mult`  上櫃日檔的 shares 是乾淨整數倍
+    #     `price_name_gap`   上市沒有 shares 欄，靠收盤比＋名稱 `*`＋停止買賣天數
+    #   上市那 10 筆另有 TWSE 官方 `change/TWTB8U` 的「停止買賣前收盤 ÷ 恢復買賣參考價」，
+    #   接進管線後這一欄可升級成官方來源——**在 feed 真的抓到之前不要先寫上去**。
+    try:
+        os.makedirs(os.path.dirname(CSV_OUT), exist_ok=True)
+        with io.open(CSV_OUT, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(CSV_HEADER)
+            for h in sorted(both, key=lambda x: (x["d1"], x["sid"])):
+                w.writerow([
+                    h["sid"], h["d1"], h["d0"],
+                    f"{h['c0']:g}", f"{h['c1']:g}", f"{h['ratio']:.6f}",
+                    f"{h['sh0']:.0f}" if h["sh0"] else "",
+                    f"{h['sh1']:.0f}" if h["sh1"] else "",
+                    f"{h['shr']:.4f}" if h["shr"] else "",
+                    "shares_int_mult" if h["shr"] else "price_name_gap",
+                    "1" if h["in_pop"] else "0"])
+        print(f"[scan] 寫出 {CSV_OUT}（{len(both)} 列）")
+    except OSError as ex:                                        # noqa: BLE001
+        print(f"[scan] CSV 寫檔失敗：{ex}", file=sys.stderr)
+
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         io.open(OUT, "w", encoding="utf-8").write("\n".join(L) + "\n")
