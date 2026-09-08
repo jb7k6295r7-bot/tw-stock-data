@@ -233,7 +233,7 @@ def decile_spread(panel: pd.DataFrame, feat: pd.Series, hold: int, low_is_good: 
     for p, g in d.groupby("period"):
         if len(g) < 50:
             continue
-        q = g["_f"].rank(pct=True)
+        q = g["_f"].rank(pct=True, method="first")   # 同值（例：殖利率 0）用序號打散，否則最低十分位會整月空掉
         top, bot = g[q > 0.9], g[q <= 0.1]
         tops.append(top); bots.append(bot)
         diff = (bot[col].mean() - top[col].mean()) if low_is_good else (top[col].mean() - bot[col].mean())
@@ -317,9 +317,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stocks", nargs="*"); ap.add_argument("--limit", type=int)
     ap.add_argument("--procs", type=int, default=4); ap.add_argument("--out", default=RESULTS)
+    ap.add_argument("--report-only", action="store_true", help="只用既有 panel.csv.gz 重做報表")
     a = ap.parse_args()
     t0 = time.time()
     cal = D.load_calendar(); uni = D.load_universe()
+    if a.report_only:
+        _, _, ind = load_revenue()
+        panel = pd.read_csv(os.path.join(a.out, "panel.csv.gz"))
+        for c in ("rev_hi12", "rev_hi24", "rev_hi36", "bull"):
+            panel[c] = panel[c].astype("boolean")
+        write_report(a.out, panel, cal, int(cal.searchsorted(pd.Timestamp(SPLIT))), ind)
+        return
     if a.stocks:
         uni = uni[uni["stock_id"].isin(a.stocks)]
     if a.limit:
