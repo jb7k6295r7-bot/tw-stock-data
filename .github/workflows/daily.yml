@@ -212,6 +212,29 @@ jobs:
           echo "當月 $M（台北時間）"
           python calendar_audit.py --start "$M" --end "$M" --sleep 5 --write
 
+      # ★ 產業別（約每月一次，自癒式）。
+      #   類股集中度是選股的硬條件，而新上市的公司在對照表更新之前查不到類股——
+      #   查不到就等於那條規則對它沒生效，**而且不會報錯**。
+      #   ⛔ 判斷「多久沒更新」一定要用 **git 的 commit 時間**，不可以用檔案 mtime：
+      #      Actions 每次都是全新 checkout，mtime 永遠是「剛剛」，
+      #      用它的話這一步**永遠不會跑**，而且看起來完全正常。
+      - name: 產業別（超過 28 天沒更新才跑）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          TS=$(git log -1 --format=%ct -- data/meta/industry.csv || true)
+          TS=${TS:-0}
+          AGE=$(( ( $(date +%s) - TS ) / 86400 ))
+          echo "industry.csv 上次更新：$AGE 天前（commit 時間）"
+          if [ "$TS" = "0" ] || [ "$AGE" -ge 28 ]; then
+            DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+            echo "→ 重建（掃類股成員用 $DAY）"
+            python industry.py --run --date "$DAY" --sleep 3
+          else
+            echo "→ 還新，跳過（未滿 28 天）"
+          fi
+
       # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻。
       #   ⚠ **一定要排在最後一支會寫 `_last_run.md` 的腳本後面。**
       #     2026-09-08 之前它排在轉置與還原因子前面，印出來的永遠是上一輪的內容——

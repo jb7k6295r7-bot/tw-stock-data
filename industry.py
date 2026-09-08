@@ -50,6 +50,7 @@ import sys
 import time
 
 import backfill as B
+import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 META_DIR = os.path.join(_ROOT, "meta")
@@ -299,7 +300,26 @@ def cmd_run(args):
         have = sum(1 for r in uni if rows.get(r["stock_id"], {}).get("industry"))
         print(f"[industry] 覆蓋率：universe 的 {len(uni)} 檔 stock 中，"
               f"{have} 檔有產業別（{have/len(uni)*100:.1f}%）")
-    return 0
+        cover = have / len(uni) * 100 if uni else 0.0
+    else:
+        cover = None
+
+    # ★ 寫進 data/meta/_last_run.md。這一支不是每天跑（約每月一次），
+    #   區塊上的時間戳就是「產業別多久沒更新了」的答案——
+    #   新上市的公司在更新之前查不到類股，而類股集中度是選股的硬條件。
+    rl = runlog.Run("industry")
+    rl.info("對照表", f"{len(rows)} 檔（{n_named} 檔查得到類股名稱）")
+    rl.info("類股", f"{len(names)} 個，其中 {len(parents)} 個是母類股")
+    if cover is not None:
+        rl.info("覆蓋率", f"universe 的 {len(uni)} 檔 stock 中 {have} 檔有產業別"
+                          f"（{cover:.1f}%）")
+    # ⛔ 對不上不是零就要看過——兩條來源對同一檔給了不同的類股，不可挑一個用。
+    rl.check("兩條來源的產業別沒有互相矛盾", bad == 0, f"對不上 {bad} 檔")
+    # ⚠ 只驗「有沒有整批掉光」，不設高門檻：DR、興櫃與名稱表沒涵蓋的代碼
+    #   本來就查不到，訂太高會天天誤殺。
+    if cover is not None:
+        rl.check("覆蓋率沒有整批掉光（> 80%）", cover > 80, f"{cover:.1f}%")
+    return rl.finish()
 
 
 def main():
