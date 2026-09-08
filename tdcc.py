@@ -75,7 +75,11 @@ def pick(row, keys):
 
 
 def num(v):
-    s = str(v or "").replace(",", "").strip()
+    # ⛔ 不可以寫 `str(v or "")`：**整數 0 是 falsy**，會被換成空字串然後回 None，
+    #   於是「這一格是 0」與「這一格沒有值」變得分不出來。CSV 來源全是字串
+    #   （"0" 是 truthy）所以看不出問題，JSON 來源就會中——這種錯不會報錯，
+    #   只會讓恆等式莫名其妙對不上。（2026-09-08 寫集保驗算時抓到）
+    s = "" if v is None else str(v).replace(",", "").strip()
     try:
         return int(float(s))
     except ValueError:
@@ -209,6 +213,13 @@ def main():
     if fatal:
         print("[tdcc] ★ 驗算沒過，**整批不寫**。對不上就是抓錯期別或欄位錯位，"
               "不要只修那一列。", file=sys.stderr)
+        # ★ 讓看 runlog 的人知道「這一週是不是就此永久缺了」——
+        #   2026-09-08 的 tdcc_probe 第 5 節在查詢頁看到 51 個資料日期選項
+        #   （20250912 ~ 20260904），所以**擋下來不等於永久失去**，補得回來。
+        #   ⚠ 但那還只是「頁面上有下拉選單」這種間接證據；探針第 7 節才真的
+        #     去打舊週別驗它。在第 7 節答出來之前，這句話只能這樣寫。
+        rl.note("擋下來的這一週不必然永久缺：查詢頁列了 51 個歷史週別"
+                "（待 tdcc_probe 第 7 節實測確認真的抓得到）")
         return rl.finish()
 
     path = os.path.join(OUT_DIR, f"{day}.csv")

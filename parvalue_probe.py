@@ -75,6 +75,13 @@ def one(a, b):
     raw, err = B.get(url, retries=2, timeout=60)
     if err:
         say(f"     ✗ {err[:140]}")
+        # ★ 「被限流擋下」與「端點沒有這個東西」是兩件事。
+        #   backfill.get() 已經幫我們分好了：3xx 無 Location 或 429 → `LIMITED|`。
+        #   2026-09-08 21:29 那趟三個區間全是 LIMITED——同一趟裡 feeds:reduce、
+        #   mops 的 11 張 twse 表、suspend 的 2 個請求也一起被擋，
+        #   **那是 IP 被限流，不是 TWTB8U 壞了**。混為一談就會去改根本沒錯的參數。
+        if str(err).startswith("LIMITED"):
+            return "LIMITED"
         return None
     try:
         d = json.loads(raw.decode("utf-8", "replace"))
@@ -122,8 +129,16 @@ def main():
     say("\n── ★ 參數有沒有被無視 ──")
     say("TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，"
         "把當天的四列寫進 2015 年的每一個日期檔。")
-    ok = [g for g in got if g]
-    if len(ok) < 2:
+    limited = [g for g in got if g == "LIMITED"]
+    ok = [g for g in got if isinstance(g, dict)]
+    if limited and not ok:
+        say(f"  ⚠ **本趟 {len(limited)}/{len(RANGES)} 個區間全部被限流擋下（LIMITED），"
+            "四項判準一項都沒答出。**")
+        say("     這**不是**「端點不存在」，也**不是**「參數無效」——是這個時間點的 IP 被擋。")
+        say("     限流要用分鐘級退避；同一趟裡 TWSE 其他抓取也一起失敗就是旁證。")
+        say("     → 下一趟排程會自己再測一次（探針的重跑條件已含輸出含 ✗）。")
+        say("     ⛔ 在真的答出四項之前，`adjust.py` 對面額變更仍然是**完全沒有還原**。")
+    elif len(ok) < 2:
         say("  （成功的區間不足兩個，無法對打——先解決上面的失敗）")
     else:
         sig = {(g["title"], g["n"], g["lo"], g["hi"]) for g in ok}
@@ -133,8 +148,10 @@ def main():
         else:
             say("  ✓ 不同區間回不同內容，參數有生效。")
             for (a, b), g in zip(RANGES, got):
-                if g:
+                if isinstance(g, dict):
                     say(f"     {a}~{b}：{g['n']} 列｜日期 {g['lo']} ~ {g['hi']}")
+                elif g == "LIMITED":
+                    say(f"     {a}~{b}：被限流擋下，這一格沒有答案")
 
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
@@ -151,7 +168,7 @@ def main():
         print(f"\n[parvalue] 寫出 {OUT}")
     except OSError as ex:                                        # noqa: BLE001
         print(f"[parvalue] 寫檔失敗：{ex}", file=sys.stderr)
-    return 0 if any(got) else 1
+    return 0 if any(isinstance(g, dict) for g in got) else 1
 
 
 if __name__ == "__main__":
