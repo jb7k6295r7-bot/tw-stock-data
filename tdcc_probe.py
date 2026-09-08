@@ -41,6 +41,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 
 import backfill as B
@@ -50,6 +51,19 @@ IND = os.path.join(_ROOT, "meta", "industry.csv")
 OUT = os.path.join(_ROOT, "meta", "_tdcc_probe.txt")
 
 URL = "https://opendata.tdcc.com.tw/getOD.ashx?id=1-5"
+
+# ★ 兩個還沒解決的問題，兩個都不猜、都去看官方頁面自己怎麼說（網址來自 WebSearch）：
+#   ① `getOD.ashx?id=1-5` 只回最新一週。但**查詢頁有「資料日期」下拉選單**，
+#      代表歷史查得到——要找出那個清單與它背後的請求長什麼樣。
+#   ② 開放資料專區列出所有 dataset id（1-5 只是其中一個），
+#      其他 id 可能就是歷史或別的切面。
+#   ③ 分級代碼 1~17 各自對應多少股，**CSV 沒有給文字**，查詢頁上有。
+PAGES = [
+    ("開放資料專區（所有 dataset id）",
+     "https://www.tdcc.com.tw/portal/zh/stats/openData"),
+    ("集保戶股權分散表查詢頁（資料日期清單＋級距文字）",
+     "https://www.tdcc.com.tw/portal/zh/smWeb/qryStock"),
+]
 
 # 欄名不確定，兩種寫法都收（民國／英文都可能）。找不到就把實際表頭印出來。
 CODE_KEYS = ("證券代號", "股票代號", "代號", "SecuritiesCompanyCode", "StockNo")
@@ -204,6 +218,40 @@ def main():
                 continue
             h = len(seg & got)
             say(f"      {lo}-{lo + 999}：{h}/{len(seg)}（{h / len(seg) * 100:.0f}%）")
+
+    # ── [5] 歷史與級距：去看官方頁面自己怎麼說 ──
+    say("\n[5] ★ 歷史與級距對照（官方頁面）")
+    for label, url in PAGES:
+        say(f"\n  ── {label}")
+        say(f"     {url}")
+        raw2, err2 = B.get(url, retries=2, timeout=60)
+        if err2:
+            say(f"     ✗ 抓不到：{err2[:120]}")
+            continue
+        html = raw2.decode("utf-8", "replace")
+        say(f"     ✓ {len(raw2):,} bytes")
+        # 資料日期清單：頁面上的 <option> 值，多半就是可查的週別
+        opts = re.findall(r"<option[^>]*value=[\"']?(\d{8})[\"']?", html)
+        if opts:
+            say(f"     ★ 資料日期選項 {len(opts)} 個：{opts[:5]} … {opts[-3:]}")
+            say("       → **歷史查得到**，不是只有最新一週")
+        # 級距文字：像「1-999」「1,000-5,000」這種
+        lv = re.findall(r"([0-9,]{1,12}\s*[-~至]\s*[0-9,]{1,12})", html)
+        lv = [x for x in dict.fromkeys(lv) if "," in x or len(x) > 5][:20]
+        if lv:
+            say(f"     ★ 疑似級距文字：{lv}")
+        # dataset id：開放資料專區列的 getOD.ashx?id=N-M
+        ids = sorted(set(re.findall(r"getOD\.ashx\?id=([0-9]+-[0-9]+)", html)))
+        if ids:
+            say(f"     ★ dataset id：{ids}")
+        # 這一頁背後的 API
+        api = sorted(set(re.findall(r"[\"'\(](/?[a-zA-Z0-9_/-]*(?:smWeb|opendata|api)[a-zA-Z0-9_/-]*)", html)))
+        if api:
+            say(f"     疑似 API 路徑：{api[:10]}")
+        if not (opts or lv or ids or api):
+            say("       （什麼都沒抓到——頁面可能是 JS 動態組的）")
+            js = sorted(set(re.findall(r"[\"'\(]([^\"'\(\)]+\.js)[\"'\)]", html)))
+            say(f"       載入的 js：{js[:8]}")
 
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")

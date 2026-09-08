@@ -169,6 +169,40 @@ def main():
         if js:
             say(f"     載入的 js（下一輪要看的）：{sorted(js)[:8]}")
 
+    # ── [6] 上櫃類股 32、33 的中文名 ──
+    #   端點名稱**取自上面第 4 節的官方目錄**，不是自己拼的。
+    say("\n[6] ★ 上櫃類股名稱的候選端點（欄位與樣本列）")
+    OPEN = "https://www.tpex.org.tw/openapi/v1/"
+    for name, why in (
+            ("mopsfin_t187ap05_OA", "二十九大類股營收變化統計表"),
+            ("tpex_trading_volume_ratio", "上櫃歷史類股成交價量比重"),
+            ("tpex_3insti_qfii_industry", "上櫃各類股僑外資及陸資持股比例表")):
+        say(f"\n  ── /{name}｜{why}")
+        r2, e2 = B.get(OPEN + name, retries=2, timeout=60)
+        if e2:
+            say(f"     ✗ {e2[:120]}")
+            continue
+        try:
+            d2 = json.loads(r2.decode("utf-8-sig", "replace"))
+        except Exception as ex:                                  # noqa: BLE001
+            say(f"     ✗ 不是 JSON：{type(ex).__name__}｜開頭 "
+                f"{r2[:80].decode('utf-8', 'replace')}")
+            continue
+        if isinstance(d2, dict):
+            d2 = next((v for v in d2.values() if isinstance(v, list)), [])
+        say(f"     ✓ {len(r2):,} bytes｜{len(d2)} 筆")
+        if d2 and isinstance(d2[0], dict):
+            say(f"     欄位：{list(d2[0])}")
+            say(f"     首列：{d2[0]}")
+            # 這些表的「類股」欄若同時有代碼與名稱，32/33 就解得開
+            vals = set()
+            for r3 in d2[:80]:
+                for k, v in r3.items():
+                    if any(w in k for w in ("類股", "產業", "業別", "Industry")):
+                        vals.add(f"{k}={v}")
+            if vals:
+                say(f"     類股相關欄的值（前 12）：{sorted(vals)[:12]}")
+
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
     say("**沒有命中不等於不存在**——先看清單，不要回頭去猜網址。")
