@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,halt_date,derived_from
+2025-03-31,5314,1390,69.5,面額變更（股數推導）,,,,shares_ratio

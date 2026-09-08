@@ -171,6 +171,10 @@ jobs:
           # ★ ETF 分割／反分割（TWSE split/TWTCAU）。端點由使用者 2026-09-09 提供，
           #   資料庫線以全庫掃描交叉核對 11/11 全中才接。欄位待首趟實測。
           python feeds.py --run --feed etfsplit --start "$M0" --end "$M1" --sleep 5
+          # ★ 上櫃面額變更：**只讀 repo、不連外**，用股數倍率推因子。
+          #   TWTB8U 只涵蓋上市、TPEx 沒有對應端點，這 14 筆只能這樣算。
+          #   四道閘門任一沒過就整批不寫（與 tdcc 同一個規矩）。
+          python otcparvalue.py --run
 
       # ★★ 面額變更與 ETF 分割的**歷史回補**，分批做。
       #   2015-01 ~ 今天是 141 個月 × 2 支 ≈ 282 發，配 --sleep 5 要 24 分鐘，
