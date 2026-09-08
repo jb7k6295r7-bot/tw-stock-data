@@ -1,0 +1,97 @@
+name: 停牌／處置／注意（抓取）
+
+# 來源與參數全部出自 2026-09-07 的五輪探針，紀錄在 sources/suspend_source.md。
+# ⚠ 上櫃停牌（bulletin/sprc）**沒有歷史**，只有當日 —— 所以它只在 daily 模式抓，
+#    回補模式一次都不會碰它。抓了也只會拿到今天，寫進去就變成「2015 年那天停牌」。
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "daily = 近 30 天＋上櫃停牌當日快照｜backfill = 歷史回補"
+        type: choice
+        options: [daily, backfill]
+        default: daily
+      start:
+        description: "回補起年（backfill 用，例如 2015）"
+        default: "2015"
+      end:
+        description: "回補迄年（backfill 用）。建議一次一到兩年"
+        default: "2016"
+      sleep:
+        description: "每個請求間隔秒數。交易所會限流，回補建議 3 以上"
+        default: "3"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: suspend-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 自測擋在抓取前面。這一支的失效模式全部是「跑起來完全正常」：
+      # 日期格式寫錯時交易所回今天而不報錯、TPEx 用假資料列表示無資料、
+      # 讀寫用不同的鍵造成重複列。三個都只有自測抓得到。
+      - name: 自測（不連網）
+        run: python selftest_suspend.py
+
+      - name: 每日
+        if: inputs.mode == 'daily' || inputs.mode == ''
+        run: python suspend.py --daily --sleep "${{ inputs.sleep || '3' }}"
+
+      - name: 回補
+        if: inputs.mode == 'backfill'
+        run: |
+          python suspend.py --backfill \
+            --start "${{ inputs.start }}" \
+            --end "${{ inputs.end }}" \
+            --sleep "${{ inputs.sleep || '3' }}"
+
+      # ★ 被擋下來的請求要讓人看見，不要只寫進檔案就算了
+      - name: 有沒有被擋下來的請求
+        if: always()
+        run: |
+          if [ -s data/meta/_suspend_skipped.txt ]; then
+            n=$(grep -vc '^#' data/meta/_suspend_skipped.txt || true)
+            echo "被防護擋下來 $n 發："
+            grep -v '^#' data/meta/_suspend_skipped.txt | head -40
+          fi
+
+      # ★ 摘要印在 log 裡，不要只寫進檔案。2026-09-07 四次「跑完了」其實都有問題，
+      #   全部是人工去 repo 比對才發現的。
+      - name: 這一趟的摘要
+        if: always()
+        continue-on-error: true
+        run: cat data/meta/_last_run.md || true
+
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/meta
+          if git diff --staged --quiet; then
+            echo "沒有變動，不 commit"
+          else
+            git commit -m "suspend: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              git rebase --abort 2>/dev/null || true
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
+          fi
