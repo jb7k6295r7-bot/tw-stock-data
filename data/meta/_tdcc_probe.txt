@@ -47,7 +47,7 @@
      ✓ 69,367 bytes
      ★ 資料日期選項 51 個：['20260904', '20260828', '20260821', '20260814', '20260807'] … ['20250926', '20250919', '20250912']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['02-2719']
+     ★ 疑似級距文字：['9-4111', '02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -118,12 +118,15 @@
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
 [7] ★ 歷史週別：照抄查詢頁的 form，只改日期，真的打一發
-    form 的 input 欄位：{'SYNCHRONIZER_TOKEN': '46711afd-fd91-4d62-b5a3-7e56518aed90', 'SYNCHRONIZER_URI': '/portal/zh/smWeb/qryStock', 'method': 'submit', 'firDate': '20260904', 'sqlMethod': 'StockName', 'stockNo': '', 'stockName': ''}
+    form 的 input 欄位：{'SYNCHRONIZER_TOKEN': 'c6e814e0-5985-4888-8055-858db1f3c1c2', 'SYNCHRONIZER_URI': '/portal/zh/smWeb/qryStock', 'method': 'submit', 'firDate': '20260904', 'sqlMethod': 'StockName', 'stockNo': '', 'stockName': ''}
     select 欄位：['scaDate']
     日期選項 51 個｜最新 20260904｜最舊 20250912
     最新 20260904：✓ 2 bytes｜回應裡的日期 []
     較舊 20260313：✓ 2 bytes｜回應裡的日期 []
-    ⛔ **兩個週別回的長度與日期完全一樣——參數被無視**，跟 TWT49U 同一種坑，不能拿來回補歷史。
+    ⚠ **兩發都只回 2 bytes——那是空回應，不是「參數被無視」。**
+       多半是 SYNCHRONIZER_TOKEN 一次性：照抄頁面那顆送第二次就失效。
+       → 下一輪改成**每一發都先重抓查詢頁、拿新的 token**再送。
+       ⛔ 在那之前**不可以**下「沒有歷史」的結論。
 
 ── 結論要人看過再決定 ──
 上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，
