@@ -235,6 +235,27 @@ jobs:
             echo "→ 還新，跳過（未滿 28 天）"
           fi
 
+      # ★ 集保股權分散的端點探針（一次性、自癒）。
+      #   籌碼集中度目前沒有歷史序列（db_status 把它列在「沒有來源」那一節），
+      #   FinMind 的 HoldingSharesPer 回 400，所以要走集保官方。
+      #   端點來自 WebSearch 結果、不是自行生成（tw-data-sources 3-4 的規矩）。
+      #   ⚠ **只測不寫資料**，輸出進 data/meta/_tdcc_probe.txt。
+      #   ⚠ 條件是「檔不存在**或**上次結果有 ✗」——只看存不存在的話，
+      #     一次暫時性失敗會讓它永遠不再重試，而那個失敗結果會一直留著。
+      #   ⚠ 端點結論一律以 Actions 為準：開發容器對外 403 是環境差異，不是端點狀態。
+      - name: 集保股權分散探針（沒跑過或上次失敗才跑）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          F=data/meta/_tdcc_probe.txt
+          if [ ! -f "$F" ] || grep -q '✗' "$F"; then
+            echo "→ 跑探針"
+            python tdcc_probe.py || true
+          else
+            echo "→ 已經探過而且沒有 ✗，跳過"
+          fi
+
       # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻。
       #   ⚠ **一定要排在最後一支會寫 `_last_run.md` 的腳本後面。**
       #     2026-09-08 之前它排在轉置與還原因子前面，印出來的永遠是上一輪的內容——
