@@ -291,6 +291,60 @@ def parse_reduce(d, day, known=None):
     return out, note
 
 
+def parse_parvalue(d, day, known=None):
+    """TWSE `change/TWTB8U` → 變更股票面額恢復買賣參考價格。
+
+    ## 為什麼不直接用 `parse_reduce`
+
+    欄位是 `TWTAUU` 的子集，解析邏輯一模一樣，所以**本函式就是呼叫它**——
+    多一份幾乎相同的解析程式，等於多一處會各自飄移的地方。
+
+    但 `parse_reduce` **把第 9 欄「詳細資料」丟掉了**，而那一欄是
+    `代號,停止買賣起日,恢復買賣日`：
+
+        8070,20200806,20200817
+        7780,20260109,20260119
+
+    ★ **那正是「停止買賣區間」，而且它是官方直接宣告的。** 2026-09-09 核對：
+      8070 官方停止買賣起日 2020-08-06、恢復買賣日 2020-08-17；
+      `parvalue_scan.py` 掃到的最後有成交日是 2020-08-05、復牌首成交日 2020-08-17。
+      **恢復買賣日完全一致，停止買賣起日正好是最後有成交日的下一天。** 7780 同。
+
+    ⚠ 為什麼非留不可：`data/meta/suspend.csv` **收的是暫停交易，不含換發新股票的
+      停止買賣**——24 筆面額變更拿去對它，`resume_date` 命中 **0 筆**。
+      丟掉這一欄，那段停止買賣區間就**整個資料庫都沒有第二個地方查得到**。
+
+    所以本函式在 `parse_reduce` 的七欄之後補一欄 `halt_date`（停止買賣起日）。
+    恢復買賣日不另存——它就是第一欄 `date`，存兩份會飄移。
+    """
+    rows, note = parse_reduce(d, day, known)
+    if not rows:
+        return rows, note
+    tabs = B._tables(d)
+    t = tabs[0] if tabs else {}
+    f = _fieldmap(t)
+    i_det = _exact(f, "詳細資料")
+    i_code = _exact(f, "股票代號", "證券代號", "代號")
+    # 「代號 → 停止買賣起日」對照。**用代號配對，不用列序**——
+    # parse_reduce 會丟掉缺價格／缺日期的列，列序早就對不上了
+    # （這正是 mops 那個「用位置對欄位」踩過的同一種坑）。
+    halt = {}
+    if i_det is not None and i_code is not None:
+        for r in (t.get("data") or []):
+            if not r or len(r) <= max(i_det, i_code):
+                continue
+            parts = [x.strip() for x in str(r[i_det]).split(",")]
+            digits = [x for x in parts if x.isdigit() and len(x) == 8]
+            if digits:
+                halt[str(r[i_code]).strip()] = (
+                    f"{digits[0][:4]}-{digits[0][4:6]}-{digits[0][6:]}")
+    out = [row + [halt.get(row[1], "")] for row in rows]
+    miss = sum(1 for row in out if not row[-1])
+    if miss:
+        note += f"（{miss} 列抽不到停止買賣起日）"
+    return out, note
+
+
 def _pick_stock_table(tabs, *codenames):
     """多張表時挑「有代號欄且欄數最多」那張。融資融券與三大法人的回應
     第一張多半是全市場彙總（3 列），個股在第二張。"""
@@ -660,9 +714,14 @@ FEEDS = {
     #   多一份幾乎一樣的解析程式＝多一處會各自飄移的地方。
     "parvalue": {
         "dir": "parvalue",
+        # ★ 比減資多一欄 `halt_date`＝**停止買賣起日**（取自官方「詳細資料」欄）。
+        #   `suspend.csv` 收的是暫停交易、不含換發新股票的停止買賣，
+        #   24 筆面額變更拿去對它 `resume_date` 命中 0 筆——
+        #   **丟掉這一欄，那段區間整個資料庫就沒有第二個地方查得到。**
+        #   恢復買賣日不另存：它就是第一欄 `date`。
         "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
-                   "open_base", "ex_ref_price"],
-        "parse": parse_reduce,
+                   "open_base", "ex_ref_price", "halt_date"],
+        "parse": parse_parvalue,
         "known": False,
         "range": True,
         "announce_ahead": True,     # 與減資同一張形態的前瞻公告表
