@@ -65,6 +65,11 @@ jobs:
             --limit "${{ inputs.limit || '400' }}" \
             --sleep "${{ inputs.sleep || '6' }}"
 
+      - name: 這一趟的摘要
+        if: always()
+        continue-on-error: true
+        run: cat data/meta/_last_run.md || true
+
       - name: Commit 回 repo
         if: always()
         run: |

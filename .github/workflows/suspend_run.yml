@@ -68,6 +68,13 @@ jobs:
             grep -v '^#' data/meta/_suspend_skipped.txt | head -40
           fi
 
+      # ★ 摘要印在 log 裡，不要只寫進檔案。2026-09-07 四次「跑完了」其實都有問題，
+      #   全部是人工去 repo 比對才發現的。
+      - name: 這一趟的摘要
+        if: always()
+        continue-on-error: true
+        run: cat data/meta/_last_run.md || true
+
       - name: Commit 回 repo
         if: always()
         run: |

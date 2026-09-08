@@ -157,6 +157,12 @@ jobs:
             [ "$n" -gt 0 ] && { echo "★ 被擋下來 $n 筆："; grep -v '^#' data/meta/_suspend_skipped.txt | head -20; }
           fi
 
+      # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻
+      - name: 這一輪的摘要
+        if: always()
+        continue-on-error: true
+        run: cat data/meta/_last_run.md || true
+
       - name: 個股庫轉置
         if: always()
         continue-on-error: true
