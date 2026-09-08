@@ -12,6 +12,8 @@
 
 跑法：python3 selftest_runlog.py（不連網、不需要資料）
 """
+import importlib
+import io
 import os
 import shutil
 import subprocess
@@ -19,7 +21,13 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 ok = fail = 0
+
+# 守備目標：這支測試跑完，repo 的 _last_run.md 必須逐位元不變。
+# ⛔ 只比 `os.listdir(data)` 不夠——那看得到目錄項目的增刪，
+#    **看不到既有檔案被覆寫**，而「被覆寫」正是要防的那件事。
+REPO_LOG = os.path.join(HERE, "data", "meta", "_last_run.md")
 
 
 def chk(label, cond, detail=""):
@@ -48,8 +56,27 @@ def main():
     root = tempfile.mkdtemp(prefix="runlogtest_")
     before = sorted(os.listdir(os.path.join(HERE, "data"))) \
         if os.path.isdir(os.path.join(HERE, "data")) else None
+    log_before = io.open(REPO_LOG, "rb").read() if os.path.isfile(REPO_LOG) else None
     try:
         shutil.copy(os.path.join(HERE, "runlog.py"), root)
+
+        print("── 0. 路徑錨定（直接驗屬性）──")
+        # 第 5 節從行為面驗（檔案落在哪裡），這一節從屬性面驗（PATH 是什麼）。
+        # 兩邊都要：屬性對而行為錯，或反過來，都是可能的。
+        import runlog as _rl
+        importlib.reload(_rl)
+        chk("PATH 是絕對路徑", os.path.isabs(_rl.PATH), _rl.PATH)
+        chk("PATH 錨定在 runlog.py 同一層的 data/meta/",
+            os.path.dirname(os.path.dirname(os.path.dirname(_rl.PATH))) == HERE)
+        cwd0 = os.getcwd()
+        os.chdir(root)
+        try:
+            importlib.reload(_rl)
+            chk("換到別的 CWD 再載入，PATH 仍指向 runlog.py 旁邊",
+                os.path.dirname(os.path.dirname(os.path.dirname(_rl.PATH))) == HERE)
+        finally:
+            os.chdir(cwd0)
+            importlib.reload(_rl)
 
         print("── 1. 第一次寫 ──")
         rc, t = run(root, "r=runlog.Run('甲')\n"
@@ -69,6 +96,7 @@ def main():
         chk("甲還在", "## 甲　✓ 正常" in t)
         chk("乙標成 ✗", "## 乙　✗ 有問題" in t)
         chk("表頭只有一份", t.count("# 各支腳本最近一次執行") == 1)
+        beta_block = t[t.index("## 乙"):]
 
         print("── 3. 同一支重跑只換自己那一塊 ──")
         rc, t = run(root, "r=runlog.Run('甲')\n"
@@ -76,6 +104,9 @@ def main():
                           "sys.exit(r.finish())\n")
         chk("甲換成新內容", "**列數**：20" in t and "**列數**：10" not in t)
         chk("乙的 ✗ 沒有被清掉", "## 乙　✗ 有問題" in t)
+        # ★ 比「字串還在」更強：別支那一塊要**逐字**沒變。
+        #   只驗標頭還在的話，區塊內容被改寫（時間戳、檢查明細掉了）看不出來。
+        chk("★ 乙的區塊逐字沒變", t[t.index("## 乙"):] == beta_block)
         chk("甲仍排在乙前面（順序穩定）",
             t.index("## 甲") < t.index("## 乙"))
         chk("沒有變成兩塊甲", t.count("## 甲") == 1)
@@ -105,6 +136,9 @@ def main():
         after = sorted(os.listdir(os.path.join(HERE, "data"))) \
             if os.path.isdir(os.path.join(HERE, "data")) else None
         chk("真的 repo 的 data/ 沒有被建立或改動", before == after)
+        log_after = io.open(REPO_LOG, "rb").read() if os.path.isfile(REPO_LOG) else None
+        chk("★ 真的 repo 的 _last_run.md 逐位元沒變", log_before == log_after,
+            "目錄清單看不到既有檔案被覆寫，所以要另外比內容")
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
