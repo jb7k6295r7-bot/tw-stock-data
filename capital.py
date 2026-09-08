@@ -56,6 +56,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+
+import runlog
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
@@ -328,6 +330,9 @@ def cmd_run(_args):
         print("[capital] 找不到 data/universe/daily/*.csv，先跑 fetch.py", file=sys.stderr)
         return 1
     rows = _read_out()
+    # 這一趟開始前的上櫃股本空白數，用來檢查有沒有回升
+    prev_tpex = [r for r in rows.values() if r[2] == "tpex"]
+    prev_blank_tpex = sum(1 for r in prev_tpex if not (r[3] or "").strip())
     print(f"[capital] universe={len(uni)} 檔（{day}）｜既有 capital.csv {len(rows)} 列")
 
     # ① 上櫃：daily 檔裡已經有官方發行股數，直接搬，不要再抓
@@ -434,7 +439,38 @@ def cmd_run(_args):
     print(f"[capital] 落檔 {total} 列｜仍缺 {len(miss)} 檔 → {MISSING}")
     for n in notes:
         print("   ", n)
-    return 0
+
+    # ★ 把「跑完要人工比對的事」變成程式自己檢查（2026-09-08）
+    import collections
+    rl = runlog.Run("capital", os.path.join(META_DIR, "_last_run.md"))
+    by = collections.Counter(r[2] for r in rows.values())
+    blank = collections.Counter(r[2] for r in rows.values()
+                                if not (r[3] or "").strip())
+    rl.info("總列數", total)
+    for m in sorted(by):
+        rl.info(f"{m} 股本空白", f"{blank.get(m, 0)} / {by[m]}")
+    rl.info("仍缺股數", len(miss))
+
+    # ① mismatch 只該出現在 DR 與名稱帶 `*` 的非 10 元面額股。
+    #    出現在別的地方就是**新的成因**，不是已知限制——要有人去看。
+    #    （2026-09-07 曾因為拿端點的資本額除以 daily 的股數，多出 37 個假 mismatch。）
+    bad = [r for r in rows.values()
+           if (r[8] or "").startswith("mismatch")
+           and "*" not in r[1] and "DR" not in r[1]]
+    rl.check("mismatch 只出現在帶 * 或 DR 的標的", not bad,
+             "例外：" + "、".join(f"{r[0]} {r[1]}" for r in bad[:6]) if bad else "")
+
+    # ② 上櫃股本空白數不該回升。回升代表 ① 又把已抓到的洗掉了。
+    #    ⚠ 第一次建檔沒有「上一趟」可比，那時候空白數本來就會從 0 長上去
+    #    （ETF 與債券 ETF 端點本來就查不到），所以只有在上一趟已經有上櫃列時才檢查。
+    rl.check("上櫃股本空白沒有變多",
+             not prev_tpex or blank.get("tpex", 0) <= prev_blank_tpex,
+             f"{prev_blank_tpex} → {blank.get('tpex', 0)}"
+             if prev_tpex else "第一次建檔，不適用")
+
+    # ③ 落檔列數不可少於這一趟看到的 universe（少了代表整批沒寫進去）
+    rl.check("落檔列數沒有異常縮水", total >= len(rows), f"{total} vs {len(rows)}")
+    return rl.finish()
 
 
 # ────────────────────────────────────────────── FinMind 逐檔補

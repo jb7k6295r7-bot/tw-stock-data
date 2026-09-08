@@ -7,7 +7,7 @@
 
 | 資料 | 上市 | 上櫃 |
 |---|---|---|
-| 停牌 | `afterTrading/TWTAWU`，2015 起歷史 | `bulletin/sprc`（POST），**只有當日** |
+| 停牌 | `afterTrading/TWTAWU`，2015 起歷史 | `bulletin/sprcHis`（POST，逐年）**2011 起有歷史**；當日用 `bulletin/sprc` |
 | 處置 | `announcement/punish`，2015 起 | `bulletin/disposal`，2015 起 |
 | 注意 | `announcement/notice`，2015 起 | `bulletin/attention`，2015 起 |
 
@@ -50,6 +50,7 @@
    不是來源給的。報告只用普通股時要自己過濾，不要假設來源已經分好。
 """
 import argparse
+import collections
 import csv
 import json
 import os
@@ -58,6 +59,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+
+import runlog
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
@@ -140,6 +143,23 @@ def roc_to_iso(v):
         return datetime(y, mo, d).strftime("%Y-%m-%d")
     except ValueError:
         return ""
+
+
+def roc_any(v):
+    """民國日期 → ISO。吃 `115/06/25`、`115.06.25`、`115-06-25` 與 `1000929` 七碼。
+
+    `-` 或空字串一律回空（那是「這一列沒有這個日期」，不是錯誤）。
+    """
+    t = str(v or "").strip()
+    if not t or t == "-":
+        return ""
+    iso = roc_to_iso(t)
+    if iso:
+        return iso
+    m = re.fullmatch(r"(\d{3})(\d{2})(\d{2})", t)
+    if m:
+        return roc_to_iso(f"{m.group(1)}/{m.group(2)}/{m.group(3)}")
+    return ""
 
 
 def _clean_name(v):
@@ -318,8 +338,42 @@ def tpex_pull(kind, s_iso, e_iso):
     return _drop_placeholder(_rows_of(d))
 
 
+def tpex_halt_hist(year):
+    """★ 上櫃停牌的歷史：`bulletin/sprcHis`，**POST，逐年**。
+
+    ⛔ 2026-09-07 我一度寫下「上櫃停牌沒有歷史、永久補不回來」——**那是錯的**。
+      前五輪猜了 `bulletin/suspend`／`haltTrading`／`afterTrading/spendi`／
+      `bulletin/spendi`／`afterTrading/sprc` 全部 404，原因不是端點不存在，是
+      ① 它是 **POST**，② 名字是當日那條 `sprc` 加 **His**。
+      最後是打開官方頁面 /zh-tw/announce/market/halt/historical.html
+      看它自己發什麼請求才拿到的。
+      **教訓：猜第 N 個名字之前，先去看官方頁面自己怎麼叫它。**
+
+    回傳的 `date` 是年份（例 "2026"），`tables[0].totalCount` 是筆數。
+    ★ 這一條**有官方自己給的「有價證券類別」欄**（權證／上櫃股票／轉(交)換公司債／
+      興櫃-一般板），比用代號形狀猜準——`5314 世紀*` 帶星號、`19094 榮成四` 是可轉債，
+      形狀規則都會判錯。**有這一欄就用它，`sec_kind` 的啟發式只當退路。**
+    """
+    body = json.dumps({"year": str(year)}).encode()
+    raw, err = get(f"{TPEX}/sprcHis", body=body, ctype="application/json")
+    if err:
+        _SKIP_LOG.append(f"tpex-halt-hist\t{year}\t{err}")
+        return []
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception as ex:                                  # noqa: BLE001
+        _SKIP_LOG.append(f"tpex-halt-hist\t{year}\tJSON 失敗 {ex}")
+        return []
+    # ★ 直接證據：回應的 `date` 就是它給的年份。對不上整年丟掉。
+    got = str(d.get("date") or "")
+    if got and got != str(year):
+        _SKIP_LOG.append(f"tpex-halt-hist\t要 {year}\t它回報 {got!r}\t→ 丟棄這一發")
+        return []
+    return _rows_of(d)
+
+
 def tpex_halt_today():
-    """★ 上櫃停牌只有當日。五輪探針含空 body 對照組證明它不吃任何日期參數。"""
+    """上櫃停牌的當日快照。`bulletin/sprc` 不吃任何日期參數（空 body 對照組實測）。"""
     raw, err = get(f"{TPEX}/sprc", body=b"{}", ctype="application/json")
     if err:
         _SKIP_LOG.append(f"tpex-halt\t當日\t{err}")
@@ -349,6 +403,45 @@ def norm_halt_twse(rows, today):
         out.append([code, _clean_name(r[2]), "twse", sec_kind(code),
                     roc_to_iso(r[3]), roc_to_iso(r[5]), "twse-TWTAWU", today])
     return out
+
+
+# 官方「有價證券類別」→ 我方 sec_kind。**這是來源給的，優先於代號形狀。**
+_TPEX_KIND = {"上櫃股票": "普通股", "興櫃-一般板": "興櫃", "興櫃": "興櫃",
+              "權證": "其他", "轉(交)換公司債": "其他"}
+
+
+def norm_halt_tpex_hist(rows, today):
+    """sprcHis：編號,有價證券類別,有價證券代號,有價證券名稱,暫停交易日期,暫停交易時間,
+                恢復交易日期,恢復交易時間
+
+    ⛔ 兩個坑，都是實測看到的：
+      ① **一個事件拆成兩列**：一列只填暫停、另一列只填恢復，另一半是 `-`。
+         照收會得到一半 halt_date 空白、一半 resume_date 空白的資料。
+         → 用（代號＋停牌日）與（代號＋恢復日）配對合併。
+      ② **檔內兩種日期格式**：早期 `1000929`（七碼民國）＋ `80000`（時分秒），
+         近期 `115/06/25` ＋ `09:00`。只認一種會漏掉整段早期資料。
+    """
+    halts, resumes = {}, []
+    for r in rows:
+        if len(r) < 7:
+            continue
+        code = str(r[2] or "").strip()
+        if not code:
+            continue
+        kind = _TPEX_KIND.get(str(r[1] or "").strip()) or sec_kind(code)
+        h, rs = roc_any(r[4]), roc_any(r[6])
+        name = _clean_name(r[3])
+        if h:
+            halts.setdefault(code, []).append([code, name, "tpex", kind, h, "",
+                                               "tpex-sprcHis", today])
+        elif rs:
+            resumes.append((code, rs))
+    # 恢復日配給同一檔「最近一次還沒配到恢復日」的停牌
+    for code, rs in sorted(resumes, key=lambda x: x[1]):
+        cand = [x for x in halts.get(code, []) if not x[5] and x[4] <= rs]
+        if cand:
+            max(cand, key=lambda x: x[4])[5] = rs
+    return [x for v in halts.values() for x in v]
 
 
 def norm_halt_tpex(rows, day, today):
@@ -498,6 +591,14 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
         if a.endswith("-12-01"):
             print(f"  [tpex {a[:4]}] 處置 {len(disp)}／注意 {len(attn)}（累計）")
 
+    # ★ 上櫃停牌的歷史（2026-09-08 補上，`sprcHis` 逐年）
+    for y in range(int(s_iso[:4]), int(e_iso[:4]) + 1):
+        got = norm_halt_tpex_hist(tpex_halt_hist(y), today)
+        put(halt, OUT_HALT, H_HALT, got)
+        if got:
+            print(f"  [tpex 停牌 {y}] {len(got)} 個事件")
+        time.sleep(sleep)
+
     if with_tpex_halt:
         rows, day = tpex_halt_today()
         put(halt, OUT_HALT, H_HALT, norm_halt_tpex(rows, day, today))
@@ -524,11 +625,46 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
 
     print(f"\n[suspend] 停牌 {n0[0]}→{n1[0]}／處置 {n0[1]}→{n1[1]}／"
           f"注意 {n0[2]}→{n1[2]}　列")
+
+    # ★ 把「跑完要人工比對的事」變成程式自己檢查（2026-09-08）
+    rl = runlog.Run("suspend", os.path.join(META, "_last_run.md"))
+    rl.info("區間", f"{s_iso} ~ {e_iso}")
+    kinds = collections.Counter(v[3] for v in halt.values())
+    rl.info("停牌", f"{n1[0]} 列（{dict(kinds)}）")
+    rl.info("處置", f"{n1[1]} 列")
+    rl.info("注意", f"{n1[2]} 列")
+
+    # ① 鍵有空值的列一列都不該落檔（2026-09-07 曾寫進 134 列）
+    empty = sum(1 for st, path, hd in ((halt, OUT_HALT, H_HALT),
+                                       (disp, OUT_DISP, H_DISP),
+                                       (attn, OUT_ATTN, H_ATTN))
+                for row in st.values() if any(not x for x in _key(path, row, hd)))
+    rl.check("沒有鍵含空值的列", empty == 0, f"實際 {empty} 列")
+
+    # ② 這一趟不該有被擋下來的請求。有就是日期格式或限流出事，
+    #    而那兩種**都不會讓程式失敗**——2026-09-07 兩次都是這樣漏掉一整塊。
+    rl.check("這一趟沒有被擋下來的請求", not _SKIP_LOG,
+             f"{len(_SKIP_LOG)} 筆，見 {os.path.basename(SKIPPED)}")
+
+    # ③ 列數只能增不能減。回補是可重複跑的，變少代表讀寫的鍵對不上或誤刪
+    rl.check("列數沒有變少",
+             n1[0] >= n0[0] and n1[1] >= n0[1] and n1[2] >= n0[2],
+             f"{n0} → {n1}")
+
+    # ④ 涵蓋 30 天以上時，上市與上櫃都該有注意股。整邊掛零就是那一邊被擋掉了
+    span = (datetime.strptime(e_iso, "%Y-%m-%d")
+            - datetime.strptime(s_iso, "%Y-%m-%d")).days
+    mk = collections.Counter(v[2] for v in attn.values())
+    rl.check("注意股兩個市場都有資料",
+             span < 30 or (mk.get("twse", 0) > 0 and mk.get("tpex", 0) > 0),
+             f"上市 {mk.get('twse', 0)}／上櫃 {mk.get('tpex', 0)}")
+
+    rc = rl.finish()
     if dropped["n"]:
         print(f"[suspend] ★ 有 {dropped['n']} 列因為鍵有空值沒有落檔", file=sys.stderr)
     if _SKIP_LOG:
         print(f"[suspend] ★ 有 {len(_SKIP_LOG)} 筆被擋下來 → {SKIPPED}", file=sys.stderr)
-    return 0
+    return rc
 
 
 def main():
