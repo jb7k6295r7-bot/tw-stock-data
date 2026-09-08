@@ -46,9 +46,10 @@ def hold_exit(arr: dict, entry: int):
     return j, c[j]
 
 
-def atr_trail_exit(arr: dict, entry: int):
-    """2×ATR 追蹤停損：停損線 ＝ 進場後最高收盤 − 2×ATR14（逐日更新），只升不降；收盤跌破 → 次日開盤出場；最長 120 日。"""
-    o, c, atr = arr["o"], arr["c"], arr["atr14"]
+def atr_trail_exit(arr: dict, entry: int, direction: int = 1):
+    """2×ATR 追蹤停損：停損線 ＝ 進場後最高收盤 − 2×ATR14（逐日更新），只升不降；收盤跌破 → 次日開盤出場；最長 120 日。
+    空方（direction=−1）鏡像：進場後最低收盤 ＋ 2×ATR，只降不升；收盤突破 → 出場。"""
+    o, c, atr = arr["o"], arr["c"] * direction, arr["atr14"]
     n = len(c)
     hi = -np.inf
     stop = -np.inf
@@ -64,14 +65,14 @@ def atr_trail_exit(arr: dict, entry: int):
         if c[i] < stop:
             j = _next_tradable_open(o, i + 1, n)
             if j is None:
-                return i, c[i], True, i - entry + 1
+                return i, c[i] * direction, True, i - entry + 1
             return j, o[j], True, j - entry + 1
     # 到期：最後一個有收盤的日子
     seg = c[entry:last + 1]
     if np.isnan(seg).all():
         return None
     j = entry + int(np.flatnonzero(~np.isnan(seg))[-1])
-    return j, c[j], False, j - entry + 1
+    return j, c[j] * direction, False, j - entry + 1
 
 
 def level_stop_exit(arr: dict, entry: int, stop_level: float):
@@ -122,7 +123,7 @@ def evaluate_signal(arr: dict, bench: dict, sig: dict) -> dict | None:
         r["bench_hold"] = bc[he[0]] / bo[entry] - 1
     else:
         r["bench_hold"] = np.nan
-    ae = atr_trail_exit(arr, entry)
+    ae = atr_trail_exit(arr, entry, d)
     if ae is not None:
         r["ret_atr_net"] = ae[1] / ep - 1 - COST
         r["ret_atr_signed"] = d * (ae[1] / ep - 1) - COST
@@ -180,12 +181,15 @@ def stats(df: pd.DataFrame, col: str, baseline: float = 0.0) -> dict:
     }
 
 
-def baseline_returns(arr: dict, gate: np.ndarray, lo: int, hi: int) -> np.ndarray:
-    """母體基準：每個通過閘門的股票日 d，次日開盤進、第 20 日收盤出，扣成本。位置 lo..hi 為訊號日範圍。"""
+def baseline_returns(arr: dict, gate: np.ndarray, lo: int, hi: int, cond: np.ndarray | None = None) -> np.ndarray:
+    """母體基準：每個通過閘門的股票日 d，次日開盤進、第 20 日收盤出，扣成本。位置 lo..hi 為訊號日範圍。
+    cond：額外的條件（例：前 10 日跌 ≥ 5%），給條件式控制組用。"""
     o, c = arr["o"], arr["c"]
     n = len(c)
     idx = np.arange(max(lo, 0), min(hi, n - HOLD - 1) + 1)
     idx = idx[gate[idx]]
+    if cond is not None:
+        idx = idx[cond[idx]]
     if len(idx) == 0:
         return np.empty(0)
     ep = o[idx + 1]

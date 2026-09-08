@@ -39,13 +39,13 @@ def pattern_block(name: str, g: pd.DataFrame, base: dict, split_pos: int) -> str
         L.append("- **沒有訊號。**")
         return "\n".join(L) + "\n"
     L.append("")
-    L.append("| 出場 | 期間 | n | 平均淨報酬 | 95% CI | 母體基準 | 超額 | 超額 CI | 勝率 | 平均賺 | 平均賠 | 最差 | 最好 |")
-    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    L.append("| 出場 | 期間 | n | 平均淨報酬 | 中位數 | 95% CI | 母體基準 | 超額 | 超額 CI | 勝率 | 平均賺 | 平均賠 | 最差 | 最好 |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 
     def row(label, per, s, b):
         if s.get("n", 0) == 0:
-            return f"| {label} | {per} | 0 | | | | | | | | | | |"
-        return (f"| {label} | {per} | {s['n']:,} | {_pct(s['mean'])} | {_pct(s['ci_lo'])} ~ {_pct(s['ci_hi'])} | {_pct(b)} | "
+            return f"| {label} | {per} | 0 | | | | | | | | | | | |"
+        return (f"| {label} | {per} | {s['n']:,} | {_pct(s['mean'])} | {_pct(s['median'])} | {_pct(s['ci_lo'])} ~ {_pct(s['ci_hi'])} | {_pct(b)} | "
                 f"**{_pct(s['excess'])}** | {_pct(s['excess_ci_lo'])} ~ {_pct(s['excess_ci_hi'])} | {s['win_rate'] * 100:.1f}% | "
                 f"{_pct(s['avg_win'])} | {_pct(s['avg_loss'])} | {_pct(s['worst'])} | {_pct(s['best'])} |")
 
@@ -58,6 +58,21 @@ def pattern_block(name: str, g: pd.DataFrame, base: dict, split_pos: int) -> str
         L.append(f"- 2×ATR 追蹤：停損觸發率 {g['atr_stopped'].mean() * 100:.1f}%，平均持有 {g['atr_days'].mean():.1f} 日；最差單筆 固定 {_pct(s_all['worst'])} → 追蹤 {_pct(s_atr.get('worst', np.nan))}")
     if "bench_hold" in g and g["bench_hold"].notna().any():
         L.append(f"- 0050 同窗平均 {_pct(float(g['bench_hold'].mean()))}（型態多方毛報酬 {_pct(float(g['ret_hold_gross'].mean()))}）")
+    x = g["ret_hold_gross"].dropna()
+    L.append(f"- |毛報酬| > 50% 的筆數：{int((x.abs() > 0.5).sum())}（{(x.abs() > 0.5).mean() * 100:.2f}%）")
+    # 追加分析（事後）：影線型態對「同樣前段趨勢、不限 K 棒形狀」的控制組
+    ckey = {"P4_hammer": ("down5_", "前 10 日跌 ≥ 5% 的所有股票日"), "P4_shooting_star": ("up5_", "前 10 日漲 ≥ 5% 的所有股票日")}.get(name)
+    if ckey and f"{ckey[0]}all" in base:
+        L.append("")
+        L.append(f"**追加分析（事後，不影響上面的判定）**：控制組 ＝ {ckey[1]}。")
+        L.append("")
+        L.append("| 期間 | 控制組 n | 控制組平均淨報酬（方向修正後） | 型態 − 控制組 | 型態 − 控制組 CI |")
+        L.append("|---|---|---|---|---|")
+        for per, sp_, lab in (("all", s_all, "全期"), ("pre", s_pre, "前段"), ("post", s_post, "後段")):
+            cb = base[f"{ckey[0]}{per}"]
+            cbs = d * cb["mean_gross"] - E.COST
+            if sp_.get("n", 0):
+                L.append(f"| {lab} | {cb['n']:,} | {_pct(cbs)} | **{_pct(sp_['mean'] - cbs)}** | {_pct(sp_['mean'] - cbs - 1.96 * sp_['se'])} ~ {_pct(sp_['mean'] - cbs + 1.96 * sp_['se'])} |")
 
     # 判定
     verdict = []
@@ -156,6 +171,8 @@ def write_report(out_dir: str, sigs: pd.DataFrame, var: pd.DataFrame, base: dict
         L.append(f"| {lab} | {b['n']:,} | {_pct(b['mean_gross'])} | {_pct(b['mean_gross'] - E.COST)} |")
     L.append("")
     L.append("空方型態的基準是「−毛報酬 − 成本」，表裡已換算。")
+    L.append("")
+    L.append(f"因面額變更等未還原跳價而整筆剔除的訊號：{base.get('excluded_jump_signals', 0):,} 筆（跳價清單見 `par_change_candidates.csv`）。")
     L.append("")
     L.append("## 各型態")
     L.append("")

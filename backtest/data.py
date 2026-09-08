@@ -88,6 +88,22 @@ def load_stock(stock_id: str, market: str, cal: pd.DatetimeIndex) -> Stock | Non
     return Stock(stock_id, market, df, ev)
 
 
+JUMP_LO, JUMP_HI = 0.55, 1.8
+
+
+def jump_days(df: pd.DataFrame, event_dates: set) -> np.ndarray:
+    """對「上一個有成交日」的收盤比 < 0.55 或 > 1.8、且不是還原事件日的日子 → True。
+    實測全庫 26 筆、24 檔，全部是停牌約 8 天後的面額變更換發新股（10→1 之類），data/adj/ 沒有這種事件。"""
+    c = df["close"]
+    prev = c.ffill().shift(1).to_numpy(float)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        r = c.to_numpy(float) / prev
+    m = (r < JUMP_LO) | (r > JUMP_HI)
+    if event_dates:
+        m &= ~np.isin(df.index.values, np.array(sorted(event_dates), dtype="datetime64[ns]"))
+    return m
+
+
 def load_disposal_intervals() -> dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]]:
     """處置區間（含權證以外的普通股），鍵＝代號。"""
     d = pd.read_csv(os.path.join(DATA, "meta", "disposal.csv"), dtype=str)

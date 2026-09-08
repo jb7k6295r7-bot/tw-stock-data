@@ -77,6 +77,16 @@ def process_stock(args):
     f.gate = f.gate & in_life & ~dmask
     arr = _arrays(df, f)
     attn_set = attn.get(sid, set())
+    # 面額變更等未還原的跳價：訊號日前 20 日 ~ 進場後 120 日內有跳價的訊號整筆剔除（PREREG 更正二）
+    jumps = D.jump_days(df, st.event_dates)
+    jump_pos = np.flatnonzero(jumps)
+    jump_rows = [{"stock_id": sid, "market": market, "date": cal[i].strftime("%Y-%m-%d"),
+                  "ratio": float(df["close"].iloc[i] / df["close"].ffill().shift(1).iloc[i])} for i in jump_pos]
+    ncal = len(cal)
+    jump_window = np.zeros(ncal, bool)          # True ＝ 以該日為訊號日的訊號要剔除
+    for i in jump_pos:
+        jump_window[max(0, i - E.ATR_CAP - 1):min(ncal, i + 21)] = True
+    excluded = {"jump": 0}
 
     def run_detectors(frame, keys, tag=None):
         sigs = []
@@ -89,6 +99,9 @@ def process_stock(args):
         out = []
         for s in sigs:
             if not (lo <= s["signal_pos"] <= hi):
+                continue
+            if jump_window[s["signal_pos"]]:
+                excluded["jump"] += 1
                 continue
             r = E.evaluate_signal(arr, bench, s)
             if r is None:
@@ -116,7 +129,7 @@ def process_stock(args):
             if sp < 0 or not (lo <= sp <= hi):
                 continue
             ep = sp + 1
-            if ep >= len(cal) or dmask[sp] or not in_life[sp]:
+            if ep >= len(cal) or dmask[sp] or not in_life[sp] or jump_window[sp]:
                 continue
             s["pattern"] = "P6w_cup_handle_weekly"
             s["signal_pos"], s["entry_pos"] = int(sp), int(ep)
@@ -140,17 +153,24 @@ def process_stock(args):
         for s in run_detectors(f2, keys, tag=f"{name}={val}"):
             variants.append({k: s.get(k) for k in ("variant", "pattern", "stock_id", "signal_pos", "entry_pos", "signal_date", "ret_hold_signed")})
 
-    # 母體基準（毛報酬，未扣成本），分子期間
+    # 母體基準（毛報酬，未扣成本），分子期間；跳價視窗內的股票日也排除
     split = _G["split"]
-    b1 = E.baseline_returns(arr, f.gate, lo, split - 1) + E.COST
-    b2 = E.baseline_returns(arr, f.gate, split, hi) + E.COST
-    # 240 日報酬（給杯柄 RS 替代值用）
+    bgate = f.gate & ~jump_window
     c = pd.Series(f.c)
+    trend = (c.shift(1) / c.shift(1 + P.PARAMS["trend_days"]) - 1).to_numpy(float)
+    with np.errstate(invalid="ignore"):
+        down5 = trend <= -P.PARAMS["trend_pct"]
+        up5 = trend >= P.PARAMS["trend_pct"]
+    base = {}
+    for key, cond in (("", None), ("down5_", down5), ("up5_", up5)):
+        b1 = E.baseline_returns(arr, bgate, lo, split - 1, cond) + E.COST
+        b2 = E.baseline_returns(arr, bgate, split, hi, cond) + E.COST
+        base.update({f"{key}pre_sum": float(b1.sum()), f"{key}pre_n": int(len(b1)), f"{key}pre_sq": float((b1 ** 2).sum()),
+                     f"{key}post_sum": float(b2.sum()), f"{key}post_n": int(len(b2)), f"{key}post_sq": float((b2 ** 2).sum())})
+    # 240 日報酬（給杯柄 RS 替代值用）
     r240 = (c / c.shift(240) - 1).to_numpy(np.float32)
-    return {"sid": sid, "signals": signals, "variants": variants,
-            "base": {"pre_sum": float(b1.sum()), "pre_n": int(len(b1)), "post_sum": float(b2.sum()), "post_n": int(len(b2)),
-                     "pre_sq": float((b1 ** 2).sum()), "post_sq": float((b2 ** 2).sum())},
-            "r240": r240}
+    return {"sid": sid, "signals": signals, "variants": variants, "base": base, "r240": r240,
+            "jumps": jump_rows, "excluded": excluded}
 
 
 def main():
@@ -194,14 +214,18 @@ def main():
 
     sigs = pd.DataFrame([s for r in results for s in r["signals"]])
     var = pd.DataFrame([s for r in results for s in r["variants"]])
-    base = {"pre": {"n": sum(r["base"]["pre_n"] for r in results), "sum": sum(r["base"]["pre_sum"] for r in results), "sq": sum(r["base"]["pre_sq"] for r in results)},
-            "post": {"n": sum(r["base"]["post_n"] for r in results), "sum": sum(r["base"]["post_sum"] for r in results), "sq": sum(r["base"]["post_sq"] for r in results)}}
-    for k in ("pre", "post"):
-        b = base[k]
-        b["mean_gross"] = b["sum"] / b["n"] if b["n"] else float("nan")
-        b["sd"] = float(np.sqrt(max(0.0, b["sq"] / b["n"] - b["mean_gross"] ** 2))) if b["n"] else float("nan")
-    ntot = base["pre"]["n"] + base["post"]["n"]
-    base["all"] = {"n": ntot, "mean_gross": (base["pre"]["sum"] + base["post"]["sum"]) / ntot if ntot else float("nan")}
+    base = {}
+    for key in ("", "down5_", "up5_"):
+        for per in ("pre", "post"):
+            n = sum(r["base"][f"{key}{per}_n"] for r in results); sm = sum(r["base"][f"{key}{per}_sum"] for r in results)
+            sq = sum(r["base"][f"{key}{per}_sq"] for r in results)
+            mg = sm / n if n else float("nan")
+            base[f"{key}{per}"] = {"n": n, "sum": sm, "sq": sq, "mean_gross": mg,
+                                   "sd": float(np.sqrt(max(0.0, sq / n - mg ** 2))) if n else float("nan")}
+        ntot = base[f"{key}pre"]["n"] + base[f"{key}post"]["n"]
+        base[f"{key}all"] = {"n": ntot, "mean_gross": (base[f"{key}pre"]["sum"] + base[f"{key}post"]["sum"]) / ntot if ntot else float("nan")}
+    base["excluded_jump_signals"] = int(sum(r["excluded"]["jump"] for r in results))
+    jumps = pd.DataFrame([j for r in results for j in r["jumps"]])
 
     # 杯柄 RS 替代值：訊號日前 240 日報酬在母體的百分位
     if len(sigs) and "signal_pos" in sigs:
@@ -221,6 +245,7 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     sigs.to_csv(os.path.join(a.out, "signals.csv"), index=False)
     var.to_csv(os.path.join(a.out, "variants.csv"), index=False)
+    jumps.to_csv(os.path.join(a.out, "par_change_candidates.csv"), index=False)
     with open(os.path.join(a.out, "baseline.json"), "w") as fh:
         json.dump(base, fh, indent=1, ensure_ascii=False)
     print(f"訊號 {len(sigs)} 筆，敏感度 {len(var)} 筆，{time.time() - t0:.0f}s", file=sys.stderr)
