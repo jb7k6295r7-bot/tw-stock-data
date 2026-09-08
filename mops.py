@@ -326,7 +326,12 @@ def cmd_run(args):
                             for r in d[:3]],
                         "我方母體的鍵樣本": sorted(want)[:5],
                         "母體檔數": len(want),
-                        "回應列數": len(d)}
+                        # ⚠ 情報分析線 2026-09-09 指出：**只吐鍵樣本會漏掉
+                        #   「回了 0 列」與「回了 500 列但全對不上」的差別**，
+                        #   而那兩種的處置不一樣。所以列數三個都要吐。
+                        "回應列數": len(d),
+                        "回應裡的相異代號數": len(got),
+                        "對得上母體的列數": len(got & want)}
                 print(f"  [{kind}/{tag}/{mk}] {note}｜涵蓋 {cov:.1f}%")
                 for r in d:
                     market_of[id(r)] = mk

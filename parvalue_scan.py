@@ -68,6 +68,24 @@ CSV_HEADER = ["stock_id", "event_date", "prev_trade_date", "prev_close",
               "close", "ratio", "shares_before", "shares_after",
               "share_mult", "evidence", "in_universe"]
 
+# ★ 「無法用還原因子解釋的跳價」。規格由市場情報分析線 2026-09-09 02:30 指定。
+#   ⛔ 與 `par_change.csv` **嚴格分開**：那份的語意是「面額變更」，這份不是。
+#   ⛔ `cause` 一律先寫 `unknown`——**不要猜減資／合併／重整**，猜錯是另一種靜默錯誤。
+#   判準寫成可自我排除的形狀，否則已知成因的會混進來：
+#     ① 區間內沒有任何 `data/adj/` 事件
+#     ② 不在 `par_change.csv`（面額變更已另有歸屬）
+#     ③ 不是 TWTCAU 已知的 ETF 分割（`etfsplit` feed 已接、待回補）
+#     ④ 停 ≥ 20 個交易日——**這一條把「無漲跌幅 ETF 的真實交易」擋掉**
+#        （00672L、00887 那幾筆隔 1 天就跳 ±85%，那是交易不是公司行動）
+BRK_OUT = os.path.join(_ROOT, "meta", "breakpoints_unexplained.csv")
+BRK_HEADER = ["stock_id", "name", "market", "event_date", "prev_trade_date",
+              "prev_close", "close", "ratio", "gap_trading_days",
+              "adj_events_in_range", "cause", "in_universe"]
+BRK_MIN_GAP = 20
+# TWTCAU（ETF 分割／反分割）已知涵蓋的代號，2026-09-09 探針 2025 年命中 5/5 驗過。
+ETF_SPLIT_KNOWN = {"00632R", "00676R", "00663L", "0050", "0052", "00674R",
+                   "00673R", "00706L", "00685L", "00631L", "00715L"}
+
 LO, HI = 0.55, 1.8            # ★ 移交來的門檻，本檔要複核它，不是假設它對
 
 
@@ -163,7 +181,17 @@ def main():
             #   事件日落在 (d0, d1] 之內就足以解釋這個跳躍。
             #   ⛔ 不可以沿著交易日曆去數容錯天數：`data/adj/` 的事件日
             #      **不保證是交易日**（2024-07-24 鈊象除權息當天颱風停市）。
-            inside = [e for e in ev if d0 < e[0] <= d1]
+            # ⛔⛔ **只有除權息與減資算「可解釋」**，parvalue／etfsplit 不算。
+            #   2026-09-09 踩到：parvalue feed 抓到 6949 之後，`data/adj/` 有了
+            #   那一筆事件，於是掃描判它「已解釋」、把它踢出名單——
+            #   **par_change.csv 從 24 列變成 23 列**。
+            #   回補繼續跑下去，這份會**一天天縮小、最後歸零**，
+            #   而情報分析的選股閘門正是讀它當「面額變更全集」。
+            #   ⚠ 失敗的樣子：檔案在、格式對、欄位對，只是列數安靜地變少。
+            #   → 這份的語意是「**哪些是面額變更**」，不是「哪些還沒被還原」。
+            #     我們自己補進去的面額變更因子，不可以拿來把自己從名單上刪掉。
+            inside = [e for e in ev
+                      if d0 < e[0] <= d1 and e[2] in ("exright", "reduce")]
             hits.append({
                 "sid": sid, "name": nm, "market": mk,
                 "d0": d0, "d1": d1, "c0": c0, "c1": c1,
@@ -454,6 +482,26 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
     #     `price_name_gap`   上市沒有 shares 欄，靠收盤比＋名稱 `*`＋停止買賣天數
     #   上市那 10 筆另有 TWSE 官方 `change/TWTB8U` 的「停止買賣前收盤 ÷ 恢復買賣參考價」，
     #   接進管線後這一欄可升級成官方來源——**在 feed 真的抓到之前不要先寫上去**。
+    # ── 無法解釋的斷點（與面額變更嚴格分開）──
+    par_ids = {h["sid"] for h in both}
+    brk = [h for h in no
+           if h["sid"] not in par_ids
+           and h["sid"] not in ETF_SPLIT_KNOWN
+           and h["gap"] >= BRK_MIN_GAP]
+    try:
+        os.makedirs(os.path.dirname(BRK_OUT), exist_ok=True)
+        with io.open(BRK_OUT, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(BRK_HEADER)
+            for h in sorted(brk, key=lambda x: (x["d1"], x["sid"])):
+                w.writerow([h["sid"], h["name1"], h["market"], h["d1"], h["d0"],
+                            f"{h['c0']:g}", f"{h['c1']:g}", f"{h['ratio']:.6f}",
+                            h["gap"], 0, "unknown",
+                            "1" if h["in_pop"] else "0"])
+        print(f"[scan] 寫出 {BRK_OUT}（{len(brk)} 列）")
+    except OSError as ex:                                        # noqa: BLE001
+        print(f"[scan] 斷點 CSV 寫檔失敗：{ex}", file=sys.stderr)
+
     try:
         os.makedirs(os.path.dirname(CSV_OUT), exist_ok=True)
         with io.open(CSV_OUT, "w", encoding="utf-8", newline="") as fh:
