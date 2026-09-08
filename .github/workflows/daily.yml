@@ -180,15 +180,27 @@ jobs:
       #   ⛔ 台帳記的是「**問過、結果是什麼**」，不是「有沒有檔案」——
       #     這三支沒有事件的月份不寫檔，拿檔案存在與否當進度會永遠補不完。
       #   ⚠ 失敗的月份**不記台帳**，下一趟會再問（限流那種會自己好）。
-      - name: 面額變更與 ETF 分割（歷史回補，每趟 30 個月）
+      # ⛔ 這兩支**必須拆成兩步**，不可以放在同一個 for 迴圈裡。
+      #   2026-09-09 01:47 實測：兩支共用一個 timeout-minutes: 12，
+      #   parvalue 跑完 30 個月就把預算用光，**etfsplit 一個月都沒輪到**
+      #   （台帳 parvalue 31 個月 vs etfsplit 1 個月，而那 1 個月是當月那一步寫的）。
+      #   ⚠ 失敗的樣子是「看起來成功」：兩支的 runlog 都是 ✓，因為 etfsplit
+      #     那一步根本沒跑、不會留下失敗紀錄。分開才看得出誰沒跑完。
+      - name: 面額變更（歷史回補，每趟 30 個月）
         if: always()
         continue-on-error: true
-        timeout-minutes: 12
+        timeout-minutes: 10
         run: |
-          for f in parvalue etfsplit; do
-            python feeds.py --run --feed "$f" --start 2015-01 --end 2026-09 \
-              --limit 30 --sleep 5
-          done
+          python feeds.py --run --feed parvalue --start 2015-01 --end 2026-09 \
+            --limit 30 --sleep 5
+
+      - name: ETF 分割（歷史回補，每趟 30 個月）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python feeds.py --run --feed etfsplit --start 2015-01 --end 2026-09 \
+            --limit 30 --sleep 5
 
       # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
       #   全量重建，資料沒變就不會 commit。
