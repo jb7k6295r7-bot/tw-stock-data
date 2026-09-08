@@ -294,6 +294,13 @@ def cmd_run(args):
     #   22 個請求裡少收一個，總數看起來還是很像正常的一天
     #   （限流回 307、端點改名，兩種都不會讓程式失敗）。
     calls = []          # (kind, tag, market, 有沒有回應, 列數, 涵蓋率)
+    # ★ 涵蓋 0% 時要留下**證據**，不是只留一個數字。
+    #   「有回應但一列都對不上母體」有兩種完全不同的成因，處置相反：
+    #     ① 鍵對不起來（代號格式變了、期別 parser 不吃上櫃格式）→ 改解析
+    #     ② 端點根本回了另一個市場的表（市場參數被無視）→ 這條路不能用
+    #   ⛔ **光看涵蓋率分不出是哪一種**，而先改 parser 會把 0% 變成
+    #     看起來正常的假值。所以這裡把原始列**原樣**留下來，讓人下一趟直接看。
+    zero_raw = {}
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -309,6 +316,17 @@ def cmd_run(args):
                 got = {_pick(r, CODE_KEYS) for r in d}
                 cov = len(got & want) / len(want) * 100 if want else 0
                 calls.append((kind, tag, mk, True, len(d), cov))
+                if d and cov == 0:
+                    # 原樣留前 3 列的鍵欄位，不整理、不轉型
+                    zero_raw[f"{kind}/{tag}/{mk}"] = {
+                        "回應前3列的鍵": [
+                            {k: r.get(k) for k in list(r)
+                             if any(w in k for w in ("代號", "Code", "年度", "季別",
+                                                     "Year", "Season", "Date", "日期"))}
+                            for r in d[:3]],
+                        "我方母體的鍵樣本": sorted(want)[:5],
+                        "母體檔數": len(want),
+                        "回應列數": len(d)}
                 print(f"  [{kind}/{tag}/{mk}] {note}｜涵蓋 {cov:.1f}%")
                 for r in d:
                     market_of[id(r)] = mk
@@ -359,6 +377,12 @@ def cmd_run(args):
     rl.check("有列的表都對得上我方母體（涵蓋 > 0%）", not zero,
              ("涵蓋 0%：" + "、".join(zero)) if zero
              else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%")
+    if zero_raw:
+        # ⛔ 這一段是**證據**不是摘要：兩邊的鍵擺在一起才判得出是
+        #   「鍵對不起來」還是「端點回了另一個市場的表」。
+        rl.note("涵蓋 0% 的原始證據（未整理）：\n```\n"
+                + json.dumps(zero_raw, ensure_ascii=False, indent=1)[:2500]
+                + "\n```")
     rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
              f"略過 {total['skip']} 張")
     return rl.finish()
