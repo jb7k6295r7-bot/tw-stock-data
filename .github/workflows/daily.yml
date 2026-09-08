@@ -172,6 +172,24 @@ jobs:
           #   資料庫線以全庫掃描交叉核對 11/11 全中才接。欄位待首趟實測。
           python feeds.py --run --feed etfsplit --start "$M0" --end "$M1" --sleep 5
 
+      # ★★ 面額變更與 ETF 分割的**歷史回補**，分批做。
+      #   2015-01 ~ 今天是 141 個月 × 2 支 ≈ 282 發，配 --sleep 5 要 24 分鐘，
+      #   塞不進上面那一步（整個 job 上限 25 分鐘）。所以每趟只補 30 個月，
+      #   靠台帳 `data/universe/<feed>/_fetched.json` 記住問到哪，
+      #   幾趟之後自然補完，補完之後這一步就變成 no-op。
+      #   ⛔ 台帳記的是「**問過、結果是什麼**」，不是「有沒有檔案」——
+      #     這三支沒有事件的月份不寫檔，拿檔案存在與否當進度會永遠補不完。
+      #   ⚠ 失敗的月份**不記台帳**，下一趟會再問（限流那種會自己好）。
+      - name: 面額變更與 ETF 分割（歷史回補，每趟 30 個月）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          for f in parvalue etfsplit; do
+            python feeds.py --run --feed "$f" --start 2015-01 --end 2026-09 \
+              --limit 30 --sleep 5
+          done
+
       # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
       #   全量重建，資料沒變就不會 commit。
       - name: 算還原因子

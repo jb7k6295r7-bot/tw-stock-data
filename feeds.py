@@ -48,6 +48,7 @@
 import argparse
 import calendar          # ★ cmd_probe 與 _months 都要用；原本只在 _months 內 import，
                          #   cmd_probe 改成逐月探測後會 NameError
+import io
 import json
 import os
 import re
@@ -938,10 +939,46 @@ def cmd_feed_range(args, name):
     known = B._known_codes()
     d = feed_dir(name)
     rng = _months(args.start, args.end)
+
+    # ── ★ 台帳：哪幾個月**真的問過** ──
+    #
+    # ⛔ 這類 feed（減資、面額變更、ETF 分割）**沒有事件的月份不寫檔**，
+    #   所以「`data/universe/<feed>/` 裡沒有那個月的檔」**分不出**
+    #   「那個月沒有事件」與「那個月從來沒問過」。
+    #   拿檔案存在與否當進度，就是本專案一路在防的
+    #   「拿間接證據代替直接證據」——`mops_history.py` 已經為同一件事吃過虧。
+    #
+    # → 所以另外記一份台帳，只記「問過、結果是什麼」。
+    #   有了它，`--limit` 才能挑出**還沒問過**的月份分批補，
+    #   而不是每趟都把 141 個月重打一遍（減資／面額那三支各要十幾分鐘）。
+    led_path = os.path.join(d, "_fetched.json")
+    ledger = {}
+    if os.path.exists(led_path):
+        try:
+            ledger = json.load(io.open(led_path, encoding="utf-8")) or {}
+        except (ValueError, OSError):
+            ledger = {}          # 壞掉就當空的重問，不要因為台帳壞掉就停擺
+    if not args.force:
+        todo = [m for m in rng if m[0][:7] not in ledger]
+    else:
+        todo = list(rng)
+    if args.limit:
+        todo = todo[:args.limit]
+    skipped = len(rng) - len(todo)
+    rng = todo
+
     print(f"[{name}] {spec['status']}")
-    print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，共 {len(rng)} 個月")
+    print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，本趟 {len(rng)} 個月"
+          f"（台帳已問過 {skipped} 個月，--force 可重問）")
+    if not rng:
+        rl = runlog.Run(f"feeds:{name}")
+        rl.info("區間", f"{args.start} ~ {args.end}")
+        rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的")
+        rl.check("跑完整個區間，沒有提前收手", True, "沒有待處理的月份")
+        return rl.finish()
     ok = empty = failed = 0
     total_rows = 0
+    fetched_now = {}
     fwd = bool(spec.get("announce_ahead"))
     n_future, future_rows = 0, []
     for i, (a, b) in enumerate(rng, 1):
@@ -985,10 +1022,13 @@ def cmd_feed_range(args, name):
             break
         if got is _EMPTY:
             empty += 1
+            fetched_now[a[:7]] = "empty"      # ★ 問過了、那個月真的沒事件
             time.sleep(B.SLEEP)
             continue
 
         if got is None:
+            # ⛔ 失敗**不記台帳**——記了就永遠不會再問，
+            #   而失敗多半是限流那種會自己好的事。
             failed += 1
             print(f"  [{i}/{len(rng)}] {a[:7]} {note}", flush=True)
             if failed >= 3 and ok == 0:
@@ -1025,12 +1065,29 @@ def cmd_feed_range(args, name):
         if byday:
             ok += 1
             total_rows += len(lines)
+            fetched_now[a[:7]] = f"ok:{len(lines)}"
         else:
             empty += 1
+            # ★ 端點回了 stat=OK 但解析後 0 列——也算問過了
+            fetched_now[a[:7]] = "empty"
         if i % 12 == 0 or not byday:
             print(f"  [{i}/{len(rng)}] {a[:7]} {len(byday)} 天 / {len(lines)} 列"
                   f"（{nt}）", flush=True)
         time.sleep(B.SLEEP)
+    # ── 台帳寫回。⛔ 只**合併**，不整份取代：--limit 分批補時，
+    #    整份取代會把前幾趟的紀錄洗掉，於是永遠補不完。
+    #    （`calendar_audit.py --write` 2026-09-08 踩過同一個坑：
+    #      全量取代把 2,845 天砍成 5 天，而且沒有任何錯誤。）
+    if fetched_now:
+        ledger.update(fetched_now)
+        try:
+            os.makedirs(d, exist_ok=True)
+            io.open(led_path, "w", encoding="utf-8").write(
+                json.dumps(ledger, ensure_ascii=False, indent=0, sort_keys=True))
+            print(f"[{name}] 台帳 {led_path}：本趟 +{len(fetched_now)}，"
+                  f"累計 {len(ledger)} 個月")
+        except OSError as ex:                                    # noqa: BLE001
+            print(f"[{name}] 台帳寫檔失敗：{ex}", file=sys.stderr)
     print(f"[{name}] 完成：有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
           f"合計 {total_rows} 列"
           + (f"；另有 {n_future} 列**尚未到期的公告，未寫入**" if n_future else ""))
