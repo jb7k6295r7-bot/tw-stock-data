@@ -1,0 +1,26 @@
+# twsthr_probe.py 的輸出。這是探針結果，不是資料。
+# 網址（使用者提供）：https://norway.twsthr.info/StockHolders.aspx
+# ⛔ 第三方彙整站，不是官方——級距文字只是線索，歷史要跟官方交叉核對過才算數。
+
+── 集保大戶持股彙整站 探針 ──
+網址由使用者提供（2026-09-08），非自行生成：https://norway.twsthr.info/StockHolders.aspx
+⛔ **這是第三方彙整站，不是官方。** 級距文字只能當線索，歷史序列要跟官方交叉核對過才算數。
+
+── 大戶持股查詢頁
+   https://norway.twsthr.info/StockHolders.aspx
+   ✗ URLError: <urlopen error Tunnel connection failed: 403 Forbidden>
+
+── 站台首頁（看它自己怎麼介紹資料範圍）
+   https://norway.twsthr.info/
+   ✗ URLError: <urlopen error Tunnel connection failed: 403 Forbidden>
+
+[6] ★★ 跟官方交叉核對（本檔最重要的一段）
+    官方基準（tdcc_probe 2026-09-08 於 Actions 實測 getOD.ashx?id=1-5）：
+      資料日期 20260904｜4,051 檔｜68,867 列｜每檔 17 級
+    （查詢頁沒抓到，這一步做不了——先解決上面的失敗）
+
+── 下一步 ──
+① 級距文字抓到了 → **回官方查證**，不可以拿第三方當出處
+② 歷史比官方的 51 週深 → 先做 [6] 的逐格比對，**對得上才用**
+③ 有下載連結 → 那條比爬頁面穩，優先
+⛔ 三項都沒答出來之前，`db_status.py` 那兩條缺口維持原狀，不要先寫上去。
