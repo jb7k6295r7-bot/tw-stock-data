@@ -51,6 +51,10 @@ jobs:
         continue-on-error: true
         run: python selftest_mops.py
 
+      - name: 驗交易日曆的寫檔（離線）
+        continue-on-error: true
+        run: python selftest_calendar.py
+
       - name: 抓資料
         id: fetch
         run: python fetch.py
@@ -190,6 +194,23 @@ jobs:
         if: always()
         continue-on-error: true
         run: python db_status.py --write
+
+      # ★ 交易日曆（只補當月，一個請求）。
+      #   `data/meta/calendar_twse.csv` 是「哪一天該有資料」的**唯一外部判準**——
+      #   來自 TWSE FMTQIK（大盤層級），與建日檔的個股端點不同條路，
+      #   所以它不是循環自證。但它**自己會落後**：2026-09-08 之前只有手動跑過，
+      #   當時就落後一天，而任何拿它當閘門的檢查都會把最新那天判成非交易日。
+      #   ⛔ 一定要用預設的「併入」，**不可以加 --replace**——
+      #      只跑當月又整份覆蓋的話，2,845 天會被截成那個月的幾天，
+      #      而且不會報錯（selftest_calendar.py 第 1 節就是釘這件事）。
+      - name: 交易日曆（當月）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          M=$(TZ=Asia/Taipei date '+%Y-%m')
+          echo "當月 $M（台北時間）"
+          python calendar_audit.py --start "$M" --end "$M" --sleep 5 --write
 
       # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻。
       #   ⚠ **一定要排在最後一支會寫 `_last_run.md` 的腳本後面。**
