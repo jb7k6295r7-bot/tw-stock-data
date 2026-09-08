@@ -33,7 +33,13 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
-PATH = os.path.join("data", "meta", "_last_run.md")
+# ⛔ 用 __file__ 錨定，不可以改回相對路徑。
+#    相對路徑相對的是 CWD 不是這支程式：selftest_reduce.py 把 adjust.py 複製到
+#    暫存目錄再跑，但 CWD 還留在 repo，於是「全程碰不到 repo」那句保證會失效，
+#    測試把 _last_run.md 的別支區塊洗掉，而且看起來完全成功。
+#    要寫到別的地方請傳 Run(name, path=...)，不要動這個預設值。
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
 
 
 class Run:
