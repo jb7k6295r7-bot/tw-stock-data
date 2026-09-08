@@ -11,6 +11,35 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import feeds
 
+
+# ★ 「這支測試有沒有碰到真的 data/」要用**測試前後的指紋比對**來證明。
+#   ⛔ 不可以寫成 `assert not os.path.exists(HERE/data/adj)`——
+#      `data/adj/` 是 repo 的正式目錄（2,200 個檔），那個斷言在任何完整 clone 上
+#      都必定失敗，而在沒有 clone 的沙盒裡又必定通過。它分不出
+#      「測試建的」與「本來就有的」，是拿間接證據（存不存在）代替直接證據（有沒有變）。
+#   兩個守備目標：
+#     data/adj/            —— adjust.py 的輸出，測試跑的就是它
+#     data/meta/_last_run.md —— adjust.py 會 import runlog 寫這一份；
+#                              相對路徑那個 bug 就是從這裡把 suspend 的區塊洗掉的
+_GUARD_DIR = os.path.join(HERE, "data", "adj")
+_GUARD_FILE = os.path.join(HERE, "data", "meta", "_last_run.md")
+
+
+def _fingerprint():
+    """回傳可比對的指紋。目錄取（檔名, 大小, mtime），檔案取內容。"""
+    d = None
+    if os.path.isdir(_GUARD_DIR):
+        d = sorted((n, os.path.getsize(os.path.join(_GUARD_DIR, n)),
+                    os.stat(os.path.join(_GUARD_DIR, n)).st_mtime_ns)
+                   for n in os.listdir(_GUARD_DIR))
+    f = None
+    if os.path.isfile(_GUARD_FILE):
+        f = io.open(_GUARD_FILE, "rb").read()
+    return d, f
+
+
+_BEFORE = _fingerprint()
+
 FIELDS = ["恢復買賣日期", "股票代號", "名稱", "停止買賣前收盤價格", "恢復買賣參考價",
           "漲停價格", "跌停價格", "開盤競價基準", "除權參考價", "減資原因", "詳細資料"]
 
@@ -204,8 +233,13 @@ print("    若沿用除權息的上限 1.5：13.33/6.58 = 2.026 > 1.5 → **整�
 print("    摘要上看起來就像「這檔沒有減資」。這就是分開設界線的理由。")
 
 shutil.rmtree(TMP, ignore_errors=True)     # 只刪暫存目錄，repo 的 data/ 沒被碰過
-assert not os.path.exists(os.path.join(HERE, "data", "adj")), \
-    "★ 測試不該在 repo 裡產生 data/adj"
+_d0, _f0 = _BEFORE
+_d1, _f1 = _fingerprint()
+check(_d0 == _d1, "★ repo 的 data/adj/ 沒有被建立、刪除或改動"
+      + ("" if _d0 == _d1 else
+         f"（{'不存在' if _d0 is None else str(len(_d0)) + ' 檔'}"
+         f" → {'不存在' if _d1 is None else str(len(_d1)) + ' 檔'}）"))
+check(_f0 == _f1, "★ repo 的 data/meta/_last_run.md 逐位元沒有被改動")
 print()
 print("全部通過" if not fail else f"★ {len(fail)} 項不通過：{fail}")
 sys.exit(1 if fail else 0)
