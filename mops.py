@@ -346,10 +346,19 @@ def cmd_run(args):
     dead = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if not c[3]]
     rl.check("每一個表×市場都有回應", not dead,
              ("沒回應：" + "、".join(dead)) if dead else f"{len(calls)} 個全有")
-    zero = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[5] == 0]
-    rl.check("有回應的都對得上我方母體（涵蓋 > 0%）", not zero,
+    # ⚠ **回 0 列不算失敗。** 2026-09-08 第一次上線就誤殺六張表：
+    #   fs/bs 的 basi（銀行）／ins（保險）／fh（金控）在**上櫃根本沒有公司**——
+    #   上櫃的 9 檔金融全是證券商、期貨與保經。那三張表回 0 列是事實，不是抓不到。
+    #   要抓的是「**回了列、卻一列都對不上我方母體**」——那才代表代號格式變了。
+    #   （防護誤殺跟防護失效一樣糟：天天紅的紅字沒有人會看。）
+    empty = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[4] == 0]
+    if empty:
+        rl.info("回 0 列的表", "、".join(empty) + "（該市場沒有這個業別的公司）")
+    zero = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[4] > 0 and c[5] == 0]
+    live = [c[5] for c in calls if c[3] and c[4] > 0]
+    rl.check("有列的表都對得上我方母體（涵蓋 > 0%）", not zero,
              ("涵蓋 0%：" + "、".join(zero)) if zero
-             else (f"最低 {min((c[5] for c in calls if c[3]), default=0):.1f}%"))
+             else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%")
     rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
              f"略過 {total['skip']} 張")
     return rl.finish()

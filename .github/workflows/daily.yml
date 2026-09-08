@@ -94,6 +94,24 @@ jobs:
           echo "目標交易日：$DAY"
           python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
 
+      # ★★ 融資融券與本益比日檔。**2026-09-08 之前完全不在每日排程裡**——
+      #   transpose 的跨層檢查第一次跑就抓到：price 到 09-08，而 margin 與 per
+      #   還停在 09-04。`data/stocks_margin/`（2,426 檔）與 `data/stocks_per/`
+      #   （2,121 檔）是從這兩層轉出來的，等於跟著凍結四天。
+      #   ⚠ **漏掉的樣子跟正常一模一樣**：檔案都在、數字都對，只有最後一天不動。
+      #     2026-09-05 的 otcinst 就是同一個形狀。
+      #   四個都是單日型 feed，已存在就跳過，所以指定當天等於四個請求。
+      - name: 融資融券與本益比（上市＋上櫃）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          echo "目標交易日：$DAY"
+          for f in margin per otcmargin otcper; do
+            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+          done
+
       # ★ 全市場月營收與財報（MOPS）。
       #   ⚠ 這些端點**沒有日期參數，只給最新一期**——所以不是「每天抓一天」，
       #     而是「每天看有沒有換期」。月營收每月約 10 號公告一次、財報一季一次，
