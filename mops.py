@@ -313,10 +313,26 @@ def cmd_run(args):
                     calls.append((kind, tag, mk, False, 0, 0.0))
                     print(f"  [{kind}/{tag}/{mk}] 略過：{note[:70]}")
                     continue
-                got = {_pick(r, CODE_KEYS) for r in d}
+                # ⛔ **一列沒有公司代號的列，不是一列資料。**
+                #   2026-09-09 實測：上櫃的 fs/bs × basi／ins／fh 六張表
+                #   **各回 1 列，而那一列的「公司代號」是空的**、年度季別也是空的，
+                #   只有一個出表日期（bs/ins 甚至是 1100616，2021 年的舊日期）。
+                #   那是 TPEx 表示「這個業別在上櫃沒有公司」的方式——
+                #   上櫃的 9 檔金融全是證券商、期貨與保經，銀行／保險／金控真的是 0 家。
+                #
+                #   原本用 `len(d)` 當列數，於是「1 列佔位列」被當成「有 1 列資料」，
+                #   涵蓋率算成 0% → 六張表天天報 ✗。**天天紅的紅字沒有人會看。**
+                #   → 只有**帶得出代號**的列才算資料列。
+                #   ⚠ 這樣做**沒有削弱防護**：真正要抓的是「代號有值、但格式變了對不上母體」，
+                #     那種情形代號不空，照樣會被抓到。這一改只是不再把空列當資料列。
+                real = [r for r in d if _pick(r, CODE_KEYS)]
+                got = {_pick(r, CODE_KEYS) for r in real}
                 cov = len(got & want) / len(want) * 100 if want else 0
-                calls.append((kind, tag, mk, True, len(d), cov))
-                if d and cov == 0:
+                calls.append((kind, tag, mk, True, len(real), cov))
+                if len(real) != len(d):
+                    print(f"  [{kind}/{tag}/{mk}] 回 {len(d)} 列，其中 "
+                          f"{len(d) - len(real)} 列沒有公司代號（佔位列，不計）")
+                if real and cov == 0:
                     # 原樣留前 3 列的鍵欄位，不整理、不轉型
                     zero_raw[f"{kind}/{tag}/{mk}"] = {
                         "回應前3列的鍵": [
@@ -329,7 +345,8 @@ def cmd_run(args):
                         # ⚠ 情報分析線 2026-09-09 指出：**只吐鍵樣本會漏掉
                         #   「回了 0 列」與「回了 500 列但全對不上」的差別**，
                         #   而那兩種的處置不一樣。所以列數三個都要吐。
-                        "回應列數": len(d),
+                        "回應列數（原始）": len(d),
+                        "回應列數（帶得出代號的）": len(real),
                         "回應裡的相異代號數": len(got),
                         "對得上母體的列數": len(got & want)}
                 print(f"  [{kind}/{tag}/{mk}] {note}｜涵蓋 {cov:.1f}%")
