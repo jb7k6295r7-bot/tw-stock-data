@@ -92,9 +92,16 @@ def now_tpe():
 #   上市的處置與注意當趟一列都沒收到——而 workflow 是綠的，
 #   因為那兩發被防護正常擋下並記錄了。**沒有 skipped 清單就會完全看不出來。**
 #   307 是暫時性的，要退避重試，不可以當成「這個端點不存在」。
-#   520~524 是 Cloudflare 自己的錯誤（522＝連到源站逾時），也是暫時性的。
-#   2026-09-08 回補時 tpex-disposal 2014 就吃到一次 522，整年沒收到。
-RETRYABLE = {307, 403, 408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524}
+#   ⚠ Cloudflare 的自訂錯誤碼**不只 522**：兩趟回補分別吃到 522（連源站逾時）
+#   與 525（SSL 交握失敗），各害一整年沒收到。第一次我只補到 524，
+#   下一趟就冒出 525——**逐一列舉追不完**。
+#   改成「**5xx 一律可重試**」：伺服器端的錯本來就都是暫時性的，
+#   而 4xx 只挑真正值得重試的那幾個（限流與被擋），404／400 重試沒有意義。
+RETRYABLE_4XX = {307, 403, 408, 429}
+
+
+def _retryable(code):
+    return code >= 500 or code in RETRYABLE_4XX
 BACKOFF = [5, 15, 40]      # 秒。TWSE 的限流窗口實測要等到十秒以上才會放行
 
 
@@ -110,7 +117,7 @@ def get(url, body=None, ctype=None, retries=3, timeout=45):
                 return r.read(), None
         except urllib.error.HTTPError as e:
             last = f"HTTP {e.code}"
-            if e.code not in RETRYABLE:
+            if not _retryable(e.code):
                 return None, last          # 404／400 這種重試也沒用，直接回
             if i == retries:
                 return None, f"{last}（重試 {retries} 次都失敗）"

@@ -354,8 +354,13 @@ def main():
        "★ 整段都早於起點就不送出去（不浪費一發也不留假警報）")
 
     # 522 要重試
-    ck(522 in S.RETRYABLE and 404 not in S.RETRYABLE,
-       "★ Cloudflare 522 可重試、404 不重試")
+    # ★ Cloudflare 的自訂碼不只 522（實際還吃到 525），所以改成 5xx 一律可重試
+    ck(all(S._retryable(c) for c in (500, 502, 503, 504, 520, 522, 525, 530, 599)),
+       "★ 所有 5xx 都可重試（不再逐一列舉，追不完）")
+    ck(S._retryable(429) and S._retryable(307),
+       "限流與 307 可重試")
+    ck(not S._retryable(404) and not S._retryable(400),
+       "★ 404／400 不重試（重試沒有意義）")
 
     # 回應年份對不上 → 整年丟掉
     S.get = lambda *a, **k: (json.dumps(
