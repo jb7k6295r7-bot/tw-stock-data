@@ -206,6 +206,56 @@ def main():
             say("  ★ 上櫃也回得出來——**那推翻了先前的結論**，"
                 "去把 EVENT_DIRS 的 market 標記與 db_status 一起改掉。")
 
+    # ── ★ 順帶把同一族的另外兩支也量一次 ──
+    #   三支是同一張形態（恢復買賣參考價表），但**是三種不同的公司行動**：
+    #     reducation/TWTAUU  減資（多一欄「減資原因」）
+    #     change/TWTB8U      變更股票面額            ← 本檔主角
+    #     split/TWTCAU       ETF 分割／反分割
+    #   ⛔ 三支不可以混用，混了會把不同性質的事件算成同一種。
+    #   ⚠ `reducation` 是證交所自己拼錯的（不是 reduction），**照抄，不要「訂正」**。
+    #
+    #   ⛔⛔ 一條要避開的錯路（2026-09-09 使用者查證）：
+    #     `www.twse.com.tw/zh/listed/violations/stop.html`（「停止買賣」）
+    #     **不是**這一族。它頁面自己寫明只收「因財務業務發生異常」，
+    #     **明文排除組織變更、重整、減資**。名字最像、內容完全不對。
+    say("\n── ★ 同一族的另外兩支（順帶量欄位，三支不可混用）──")
+    say("  ⚠ `reducation` 是證交所自己拼錯的，照抄不要訂正。")
+    say("  ⛔ `zh/listed/violations/stop.html` 不是這一族——它只收財務業務異常，"
+        "明文排除組織變更、重整、減資。名字最像、內容完全不對。")
+    for label, path, a2, b2 in (
+            ("減資 reducation/TWTAUU", "reducation/TWTAUU", "20150101", "20151231"),
+            ("ETF 分割 split/TWTCAU", "split/TWTCAU", "20250101", "20251231")):
+        say(f"\n  ── {label}｜{a2}~{b2}")
+        r3, e3 = B.get(f"https://www.twse.com.tw/rwd/zh/{path}"
+                       f"?startDate={a2}&endDate={b2}&response=json",
+                       retries=2, timeout=60)
+        if e3:
+            say(f"     ✗ {str(e3)[:120]}")
+            continue
+        try:
+            d3 = json.loads(r3.decode("utf-8", "replace"))
+        except Exception as ex:                                  # noqa: BLE001
+            say(f"     ✗ 非 JSON：{type(ex).__name__}")
+            continue
+        t3 = (B._tables(d3) or [{}])[0]
+        fl = [str(x) for x in (t3.get("fields") or [])]
+        dt3 = t3.get("data") or []
+        say(f"     stat={d3.get('stat')!r}｜title={d3.get('title')!r}")
+        say(f"     欄位（{len(fl)}）：{fl}")
+        say(f"     列數：{len(dt3)}")
+        if dt3:
+            say(f"     首列：{dt3[0]}")
+        # TWTCAU 專屬：對方點名的 11 檔，這一年應該中到 5 檔
+        if "TWTCAU" in path:
+            want = {"00663L": "2025-06-11", "0050": "2025-06-18",
+                    "00673R": "2025-10-22", "00706L": "2025-10-22",
+                    "0052": "2025-11-26"}
+            codes = {str(v).strip() for r in dt3 for v in (r or [])[:3]}
+            for c, dd in sorted(want.items()):
+                say(f"     {'✓' if c in codes else '✗'} {c}（掃描實測 {dd}）")
+            say(f"     → 2025 這年命中 {len(set(want) & codes)}/{len(want)}"
+                "（靶子取自 parvalue_scan.py，不是從回應反推）")
+
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
     say("`adjust.py` 的 EVENT_DIRS 與 BOUNDS。")

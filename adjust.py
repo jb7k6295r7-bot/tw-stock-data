@@ -111,7 +111,11 @@ EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
               ("tpex", "reduce", os.path.join(UNI_DIR, "otcreduce")),
               # ★ 2026-09-09 接上。**只有上市**——TWSE `change/TWTB8U`。
               #   上櫃的 14 筆面額變更還沒有來源，見下方 BOUNDS 旁的說明。
-              ("twse", "parvalue", os.path.join(UNI_DIR, "parvalue"))]
+              ("twse", "parvalue", os.path.join(UNI_DIR, "parvalue")),
+              # ★ ETF 分割／反分割（TWSE `split/TWTCAU`）。2026-09-09 接上。
+              #   ⚠ 這一類**不在 `industry.csv` 母體裡**，但它們在 `data/stocks/`，
+              #     所以照樣要還原——否則算 ETF 長期報酬會踩到同一種靜默錯誤。
+              ("twse", "etfsplit", os.path.join(UNI_DIR, "etfsplit"))]
 
 # 每種事件的因子合理範圍**必須分開**，用同一組會兩頭錯：
 #   除權息：參考價幾乎一定 ≤ 前收盤，> 1 是罕見的現金增資折價案例（約 0.09%）。
@@ -125,7 +129,12 @@ BOUNDS = {"exright": (0.05, 1.5), "reduce": (0.20, 12.0),
           #     除權息那組 0.05~1.5 套上來會把「面額變大」那一半全丟掉。
           #   界線取 0.03 ~ 25：比理論範圍（0.05 ~ 20）寬一點點，
           #   留給罕見倍率，但仍然擋得住欄位錯位那種離譜值。
-          "parvalue": (0.03, 25.0)}
+          "parvalue": (0.03, 25.0),
+          # ★ ETF 分割／反分割：與面額變更同一個道理，**兩個方向都有**。
+          #   實測價格比 0.040 ~ 7.049（00685L ÷25、00632R ×7）——
+          #   那是含 5~6 天停止買賣期間漲跌的比值；官方 ref/pre 會更乾淨。
+          #   界線取 0.02 ~ 30，比實測寬一點，仍擋得住欄位錯位那種離譜值。
+          "etfsplit": (0.02, 30.0)}
 
 # ── 面額變更：2026-09-09 已接上，但**只有上市那一半** ──
 #

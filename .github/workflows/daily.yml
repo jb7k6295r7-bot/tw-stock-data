@@ -168,6 +168,9 @@ jobs:
           #     那 14 筆到今天為止仍然沒有還原。見 adjust.py 的 BOUNDS 旁註。
           #   一年通常 0~2 件，多數月份回「查無資料」＝無事件，不是失敗。
           python feeds.py --run --feed parvalue --start "$M0" --end "$M1" --sleep 5
+          # ★ ETF 分割／反分割（TWSE split/TWTCAU）。端點由使用者 2026-09-09 提供，
+          #   資料庫線以全庫掃描交叉核對 11/11 全中才接。欄位待首趟實測。
+          python feeds.py --run --feed etfsplit --start "$M0" --end "$M1" --sleep 5
 
       # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
       #   全量重建，資料沒變就不會 commit。
