@@ -1,0 +1,44 @@
+# parvalue_probe.py 的輸出。這是探針結果，不是資料。
+# 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
+
+── 變更股票面額恢復買賣參考價 探針 ──
+端點（取自 reduce_probe.py 的實測紀錄）：https://www.twse.com.tw/rwd/zh/change/TWTB8U
+⚠ 參數 startDate/endDate 是**沿用同站減資端點的假設**，本檔要驗它成不成立。
+
+  ── 20150101 ~ 20151231
+     https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20150101&endDate=20151231&response=json
+     ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body> 
+因為安
+
+  ── 20200101 ~ 20201231
+     https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20200101&endDate=20201231&response=json
+     ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body> 
+因為安
+
+  ── 20260101 ~ 20260908
+     https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20260101&endDate=20260908&response=json
+     ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body> 
+因為安
+
+── ★ 參數有沒有被無視 ──
+TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
+  （成功的區間不足兩個，無法對打——先解決上面的失敗）
+
+── 下一步 ──
+四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進
+`adjust.py` 的 EVENT_DIRS 與 BOUNDS。
+⚠ 面額變更的因子可能 <1（10→5，f≈0.5）也可能 >1（5→10，f≈2），
+  **除權息那組 0.05~1.5 的界線套上來會把一半的真事件丟掉**——
+  界線要按事件種類分開訂，這是減資那次已經學過的。

@@ -1,4 +1,4 @@
-# 資料庫現況　2026-09-08T19:16:12+08:00（台北）
+# 資料庫現況　2026-09-08T21:41:19+08:00（台北）
 
 **這一頁報的是資料庫現況，不是某一趟做了什麼。**
 
@@ -13,7 +13,7 @@
 | 還原因子 `data/adj/` | 2200 檔 | — | 2100+ |
 | 興櫃 `data/universe/esb/` | 3 檔 | — | 300+ ★ 少於預期 300 |
 | 日檔 `data/universe/daily/` | 2847 天 | 2015-01-05 ~ 2026-09-08 | 2800+ |
-| 交易日曆 `calendar_twse.csv` | 2845 天 | — | 日曆有而日檔沒有：**0 天** |
+| 交易日曆 `calendar_twse.csv` | 2847 天 | — | 日曆有而日檔沒有：**0 天** |
 
 ## ② 事件類與基本面
 
@@ -40,25 +40,38 @@
 
 ## ③ 最近一輪各支腳本
 
-- suspend　✓ 正常
+- suspend　✗ 有問題
 - fetch　✓ 正常
 - backfill:inst　✓ 正常
 - feeds:otcinst　✓ 正常
 - mops　✗ 有問題
 - feeds:exright　✓ 正常
-- feeds:reduce　✓ 正常
+- feeds:reduce　✗ 有問題
 - adjust　✓ 正常
-- transpose　✗ 有問題
+- transpose　✓ 正常
+- calendar　✓ 正常
+- feeds:breadth　✓ 正常
+- breadth　✓ 正常
+- feeds:margin　✓ 正常
+- feeds:per　✓ 正常
+- feeds:otcmargin　✓ 正常
+- feeds:otcper　✓ 正常
+- tdcc　✗ 有問題
 
 **沒過的檢查：**
-  - **✗**　有回應的都對得上我方母體（涵蓋 > 0%）　（涵蓋 0%：fs/basi/tpex、fs/ins/tpex、fs/fh/tpex、bs/basi/tpex、bs/ins/tpex、bs/fh/tpex）
-  - **✗**　各層的來源日檔都跟上 price　（price 2026-09-08；inst 2026-09-08、margin 2026-09-04、per 2026-09-04）
+  - **✗**　這一趟沒有被擋下來的請求　（2 筆，見 _suspend_skipped.txt）
+  - **✗**　每一個表×市場都有回應　（沒回應：revenue/all/twse、fs/ci/twse、fs/basi/twse、fs/bd/twse、fs/ins/twse、fs/fh/twse、bs/ci/twse、bs/basi/twse、bs/bd/twse、bs/ins/twse、bs/fh/twse）
+  - **✗**　有列的表都對得上我方母體（涵蓋 > 0%）　（涵蓋 0%：fs/basi/tpex、fs/ins/tpex、fs/fh/tpex、bs/basi/tpex、bs/ins/tpex、bs/fh/tpex）
+  - **✗**　沒有表因為取不到期別而不寫檔　（略過 6 張）
+  - **✗**　每個月都問到了　（失敗 1 / 1 個月）
+  - **✗**　恆等式（人數）合計 ＝ Σ(1~15) − 差異數調整　（66 檔不符：['00406A', '0050', '00642U', '00646', '00662']）
 
 ## ④ 完全沒有來源（人維護的清單，不是算出來的）
 
-- 集保流通股數（`data/tdcc/` 從未建立，探針沒跑過）
-- 籌碼集中度的歷史序列（只有當前值，回測用不了）
-- 上櫃類股名稱 32、33 與上市 DR 91 的中文名（代碼都在，名稱沒有）
+- ⛔ **變更股票面額的還原因子**（2026-09-08 查明缺口）。台股 2014 年起開放彈性面額，10 元改 5 元會讓股數加倍、股價腰斬，未還原價跨過那天是約 50% 的假跌——與 2026-09-06 之前的減資同一種病。來源 TWSE `change/TWTB8U` 早在 09-06 就被辨識出來，但**只寫成註解、從來沒去抓**；`data/adj/` 實測只有除權息與減資兩種事件。端點參數與欄位待驗（`parvalue_probe.py`）
+- 籌碼集中度／大戶持股的**歷史**（2026-09-08 起每週累積：`data/tdcc/`，集保 17 級分級，四道驗算全過。⛔ 端點只回最新一週、不吃日期，**過去的補不回來**，跟上櫃停牌同一種性質）
+- 集保 17 級**各級距對應多少股**（來源只給代碼 1~17、沒給級距文字，官方對照表尚未查證。所以「400 張以上」這種定義還寫不出來）
+- 上櫃類股名稱 32、33 的中文名（代碼都在，名稱沒有。2026-09-08：候選端點在探——`mopsfin_t187ap05_OA` 二十九大類股、`tpex_trading_volume_ratio` 類股成交價量比重）
 - 「某一天到底有幾檔股票成交」的**帶寬**（判準本身 2026-09-08 有了：`MI_INDEX` 漲跌家數 vs 日檔，見 `_breadth_audit.csv`；但只累積了五天，還不足以訂差值帶寬，目前只驗方向）
 - 上櫃的交易日曆從未被獨立驗證（FMTQIK 只有上市）
 

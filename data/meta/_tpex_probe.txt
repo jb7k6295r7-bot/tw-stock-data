@@ -270,6 +270,39 @@
     /tphd_constituents｜櫃買「高殖利率指數」當日成分股｜參數 無
     /tphd_index｜高殖利率指數歷史收盤指數｜參數 無
 
+[5] ★ 官方頁面自己呼叫的 API（openapi 之外那一層，吃日期）
+
+  ── 日成交量值指數（上櫃大盤層級統計，交易日曆的候選）
+     https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_index/st41.php?l=zh-tw
+     ✓ 11,229 bytes
+       （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+
+  ── 上櫃股價指數收盤行情（類股指數，類股名稱的候選）
+     https://www.tpex.org.tw/web/stock/aftertrading/index_summary/summary.php?l=zh-tw
+     ✓ 11,474 bytes
+       （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+
+[6] ★ 上櫃類股名稱的候選端點（欄位與樣本列）
+
+  ── /mopsfin_t187ap05_OA｜二十九大類股營收變化統計表
+     ✓ 494,726 bytes｜890 筆
+     欄位：['出表日期', '資料年月', '公司代號', '公司名稱', '產業別', '營業收入-當月營收', '營業收入-上月營收', '營業收入-去年當月營收', '營業收入-上月比較增減(%)', '營業收入-去年同月增減(%)', '累計營業收入-當月累計營收', '累計營業收入-去年累計營收', '累計營業收入-前期比較增減(%)', '備註']
+     首列：{'出表日期': '1150817', '資料年月': '11507', '公司代號': '1240', '公司名稱': '茂生農經', '產業別': '農業科技', '營業收入-當月營收': '242511', '營業收入-上月營收': '270176', '營業收入-去年當月營收': '214130', '營業收入-上月比較增減(%)': '-10.239621580007107', '營業收入-去年同月增減(%)': '13.254097977863914', '累計營業收入-當月累計營收': '1683183', '累計營業收入-去年累計營收': '1564493', '累計營業收入-前期比較增減(%)': '7.586483288835424', '備註': '-'}
+     類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
+
+  ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
+     ✓ 3,530 bytes｜28 筆
+     欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
+     首列：{'Date': '1150908', 'Sector': '光電業', 'TradeAmount': '6247485988', 'TradeWeight': '7.12', ' NumberOfSharesTraded': '62050048'}
+
+  ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
+     ✓ 5,181 bytes｜28 筆
+     欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
+     首列：{'Date': '1150908', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5214433202', 'CurrentlySharesOC/FIHeld': '835176827', 'PercentageOfSharesOC/FMIHeld': '16.02%'}
+     類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
+
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
 **沒有命中不等於不存在**——先看清單，不要回頭去猜網址。
