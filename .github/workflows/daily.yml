@@ -262,6 +262,26 @@ jobs:
             fi
           done
 
+      # ★ 漲跌家數：先抓當天，再分批回補歷史。
+      #   `MI_INDEX` **吃 date 參數**，所以 2015 起都抓得到——
+      #   `market_breadth.csv` 只有 2026-09-01 起是因為那是 v6 才開始存的，
+      #   **不是端點沒有歷史**。有了歷史才訂得出差值帶寬（事後看資料再訂門檻
+      #   等於沒有門檻）。
+      #   ⚠ 兩段分開跑：feeds 的日期順序是由舊到新，只跑一段的話今天會排在
+      #     最後面，等回補跑完才輪到——那要好幾天。所以先單獨抓當天。
+      #   ⚠ `--limit 200`：一趟只補 200 天（sleep 1 約 4 分鐘），
+      #     已存在的日檔會自動跳過，跑十幾趟就補完，不必有人按按鈕。
+      - name: 漲跌家數（當天 ＋ 分批回補）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          python feeds.py --run --feed breadth --start "$DAY" --end "$DAY" --sleep 0
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed breadth --start 2015-01-01 --end "$TODAY" \
+                          --limit 200 --sleep 1
+
       # ★ 拿大盤漲跌家數（MI_INDEX）當日檔的外部判準。離線、只讀。
       #   日曆只證明「那一天存不存在」，不證明「那天收到幾檔」；
       #   content_audit 的家數檢查是拿前後交易日比，那是同一條管線不同趟次。

@@ -477,6 +477,61 @@ def parse_otcinst(d, day, known=None):
 # feed 定義
 # ────────────────────────────────────────────────────────────
 
+def _paren(v):
+    """『587(19)』→ ('587', '19')。沒有括號就回 (值, '')。"""
+    t = str(v).strip()
+    if "(" in t and t.endswith(")"):
+        main, _, rest = t.partition("(")
+        return _blank_num(main), _blank_num(rest[:-1])
+    return _blank_num(t), ""
+
+
+def parse_breadth(d, day, known=None):
+    """TWSE MI_INDEX → 當天上市的漲跌證券數（大盤層級彙總）。
+
+    ★ 這是**日檔的外部判準**：日檔由個股端點建，這張表由大盤端點來，
+      兩條不同的路。整批漏抓時日檔家數會掉、這裡不會。
+      判讀方式見 `breadth_audit.py`。
+
+    ⛔ **一律取「股票」那一欄，不是「整體市場」**——後者含權證與 ETF，
+      拿它跟日檔的普通股比會多出好幾千，差值整個沒有意義。
+      （這一條與 `fetch.py` 的當日版本同一個判準，不可分岔。）
+
+    ⚠ MI_INDEX 一個回應塞好幾張表（`B._tables()` 已處理三種形狀），
+      **不可以假設資料在第一張**——第二條坑就是這樣來的。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = None
+    for x in tabs:
+        f = [str(y) for y in (x.get("fields") or [])]
+        labels = " ".join(str(r[0]) for r in (x.get("data") or []) if r)
+        if "股票" in f and ("上漲" in labels or "漲跌證券數" in str(x.get("title", ""))):
+            t = x
+            break
+    if t is None:
+        return [], f"找不到漲跌證券數那張表（共 {len(tabs)} 張）"
+    f = [str(y) for y in (t.get("fields") or [])]
+    col = f.index("股票")
+    v = {"up": "", "down": "", "flat": "", "lu": "", "ld": ""}
+    for r in (t.get("data") or []):
+        if not r or len(r) <= col:
+            continue
+        lab = str(r[0])
+        main, paren = _paren(r[col])
+        if "上漲" in lab:
+            v["up"], v["lu"] = main, paren
+        elif "下跌" in lab:
+            v["down"], v["ld"] = main, paren
+        elif "持平" in lab or "平盤" in lab:
+            v["flat"] = main
+    if not (v["up"] and v["down"]):
+        return [], f"表找到了但取不到值：{[str(r[0]) for r in (t.get('data') or [])][:6]}"
+    return ([[day, v["up"], v["down"], v["flat"], v["lu"], v["ld"]]],
+            f"漲 {v['up']}／跌 {v['down']}／平 {v['flat']}")
+
+
 def _twse(path, day, extra=""):
     return f"https://www.twse.com.tw/rwd/zh/{path}?date={day.replace('-', '')}{extra}&response=json"
 
@@ -487,6 +542,17 @@ def _tpex(path, day, extra=""):
 
 FEEDS = {
     # ── 已驗證 ──────────────────────────────────────────────
+    "breadth": {
+        "dir": "breadth",
+        "header": ["date", "up", "down", "flat", "limit_up", "limit_down"],
+        "parse": parse_breadth,
+        "known": False,          # 這是大盤合計，沒有個股代號要過濾
+        "urls": lambda day: [_twse("afterTrading/MI_INDEX", day,
+                                   "&type=ALLBUT0999")],
+        "status": ("大盤漲跌證券數，**日檔的外部判準**。MI_INDEX 吃 date 參數，"
+                   "所以 2015 起可以回補——`market_breadth.csv` 只有 2026-09-01 起，"
+                   "是 v6 才開始存的，不是端點沒有歷史"),
+    },
     "per": {
         "dir": "per",
         "header": ["date", "stock_id", "close", "yield_pct", "dividend_year",

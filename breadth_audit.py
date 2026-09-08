@@ -45,6 +45,7 @@ import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 BREADTH = os.path.join(_ROOT, "history", "market_breadth.csv")
+FEED = os.path.join(_ROOT, "universe", "breadth")   # feeds.py 回補的逐日檔
 DAILY = os.path.join(_ROOT, "universe", "daily")
 OUT = os.path.join(_ROOT, "meta", "_breadth_audit.csv")
 MIN_SAMPLE = 30          # 帶寬要訂死之前至少要這麼多個交易日
@@ -68,9 +69,24 @@ def main():
     if not os.path.exists(BREADTH):
         print(f"[breadth] 找不到 {BREADTH}", file=sys.stderr)
         return 1
-    rows = []
+    # ★ 兩個來源併集：`universe/breadth/`（feeds.py 回補，2015 起）
+    #   與 `history/market_breadth.csv`（fetch.py 當日寫，2026-09-01 起）。
+    #   同一天兩邊都有時以 feed 為準——它是逐日檔，不會被視窗截斷。
+    src = {}
+    if os.path.isdir(FEED):
+        for fn in sorted(os.listdir(FEED)):
+            if not fn.endswith(".csv"):
+                continue
+            with io.open(os.path.join(FEED, fn), encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    if r.get("date"):
+                        src[r["date"]] = r
     with io.open(BREADTH, encoding="utf-8") as f:
         for r in csv.DictReader(f):
+            src.setdefault(r.get("date", ""), r)
+    rows = []
+    if True:
+        for r in [src[k] for k in sorted(src) if k]:
             tot = 0
             for k in ("up", "down", "flat"):
                 v = (r.get(k) or "").replace(",", "").strip()
@@ -86,7 +102,7 @@ def main():
             rows.append((r["date"], tot, n, n - tot))
 
     print(f"[breadth] 可比對 {len(rows)} 個交易日"
-          f"（breadth 自 2026-09-01 起累積）")
+          f"（來源：universe/breadth/ 回補 ＋ history/market_breadth.csv）")
     for d, b, n, gap in rows[-10:]:
         print(f"  {d}  MI_INDEX 股票 {b:,}｜日檔普通股 {n:,}｜差 {gap:+,}")
 
@@ -117,7 +133,7 @@ def main():
             rl.note(f"⚠ 樣本只有 {len(rows)} 天，**還不足以訂差值帶寬**。"
                     f"目前只驗方向，不驗大小。")
     else:
-        rl.note("還沒有可比對的日子（breadth 自 2026-09-01 起才累積）")
+        rl.note("還沒有可比對的日子")
     return rl.finish()
 
 
