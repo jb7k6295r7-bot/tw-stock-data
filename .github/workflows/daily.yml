@@ -163,6 +163,11 @@ jobs:
           echo "當月區間 $M0 ~ $M1（台北時間）"
           python feeds.py --run --feed exright --start "$M0" --end "$M1" --sleep 5
           python feeds.py --run --feed reduce  --start "$M0" --end "$M1" --sleep 5
+          # ★★ 變更股票面額（TWSE change/TWTB8U）。2026-09-09 驗到來源才接上。
+          #   ⚠ **只有上市**：全庫 24 筆裡 14 筆是上櫃，TPEx 沒有對應端點，
+          #     那 14 筆到今天為止仍然沒有還原。見 adjust.py 的 BOUNDS 旁註。
+          #   一年通常 0~2 件，多數月份回「查無資料」＝無事件，不是失敗。
+          python feeds.py --run --feed parvalue --start "$M0" --end "$M1" --sleep 5
 
       # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
       #   全量重建，資料沒變就不會 commit。
