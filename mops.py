@@ -310,7 +310,7 @@ def cmd_run(args):
                 d, note = fetch(url)
                 time.sleep(B.SLEEP)
                 if d is None:
-                    calls.append((kind, tag, mk, False, 0, 0.0))
+                    calls.append((kind, tag, mk, False, 0, 0.0, 0.0))
                     print(f"  [{kind}/{tag}/{mk}] 略過：{note[:70]}")
                     continue
                 # ⛔ **一列沒有公司代號的列，不是一列資料。**
@@ -328,7 +328,20 @@ def cmd_run(args):
                 real = [r for r in d if _pick(r, CODE_KEYS)]
                 got = {_pick(r, CODE_KEYS) for r in real}
                 cov = len(got & want) / len(want) * 100 if want else 0
-                calls.append((kind, tag, mk, True, len(real), cov))
+                # ★★ `cov` 的分母是**整個市場母體**，對「業別表」幾乎沒有意義：
+                #   證券商（bd）全市場只有 10 家，就算一家不漏，
+                #   1,094 檔當分母也只有 **0.3%**。所以「涵蓋 > 0%」這道檢查
+                #   對業別表**只擋得住全滅**，任何一列對得上就過關——
+                #   而它本來要抓的「代號格式變了」剛好會留下少數幾列對得上。
+                #   ⛔ 這是**分母選錯**，不是門檻訂太鬆；調門檻救不了。
+                #
+                #   → 另外算一個分母正確的：**回來的列裡有幾列是母體認得的**。
+                #     格式一變，這個數字會直接掉到接近 0，不受業別大小影響。
+                #   2026-09-09 實測：11 張表全部 100%（revenue 99.9%，
+                #   差的 2 列是已下市或尚未進母體的，屬正常）。
+                known = sum(1 for r in real if _pick(r, CODE_KEYS) in want)
+                recog = known / len(real) * 100 if real else 100.0
+                calls.append((kind, tag, mk, True, len(real), cov, recog))
                 if len(real) != len(d):
                     print(f"  [{kind}/{tag}/{mk}] 回 {len(d)} 列，其中 "
                           f"{len(d) - len(real)} 列沒有公司代號（佔位列，不計）")
@@ -398,7 +411,16 @@ def cmd_run(args):
     live = [c[5] for c in calls if c[3] and c[4] > 0]
     rl.check("有列的表都對得上我方母體（涵蓋 > 0%）", not zero,
              ("涵蓋 0%：" + "、".join(zero)) if zero
-             else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%")
+             else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%"
+                  "（⚠ 分母是整個市場，業別表本來就低，見下一項）")
+    # ★ 這一項才是真的在抓「代號格式變了」：分母是**回來的列數**，
+    #   與業別大小無關。低於 90% 就是回來的東西我方大半不認得。
+    poor = [f"{c[0]}/{c[1]}/{c[2]}（{c[6]:.0f}%）"
+            for c in calls if c[3] and c[4] > 0 and c[6] < 90]
+    rec = [c[6] for c in calls if c[3] and c[4] > 0]
+    rl.check("回來的列有 ≥ 90% 是母體認得的代號", not poor,
+             ("不足 90%：" + "、".join(poor)) if poor
+             else f"{len(rec)} 張有列的表，最低 {min(rec, default=100):.1f}%")
     if zero_raw:
         # ⛔ 這一段是**證據**不是摘要：兩邊的鍵擺在一起才判得出是
         #   「鍵對不起來」還是「端點回了另一個市場的表」。
