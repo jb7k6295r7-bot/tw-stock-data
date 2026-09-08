@@ -1,0 +1,5 @@
+# Python 編譯快取。跑 selftest 就會產生，不該進版控。
+# ⚠ 各 workflow 的 commit 都是 `git add -A data`（只加 data/），
+#   所以它從來不會被 Actions commit 進來；這一份是給本機與雲端 session 用的。
+__pycache__/
+*.py[cod]
