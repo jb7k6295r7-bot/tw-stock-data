@@ -254,10 +254,16 @@ def parse_reduce(d, day, known=None):
     t = tabs[0]
     f = _fieldmap(t)
     i_date = _exact(f, "恢復買賣日期")
-    i_code = _exact(f, "股票代號", "證券代號", "代號")
+    # ⚠ `ETF代號` 是 2026-09-09 探針實測 TWTCAU 的欄名。
+    #   `_exact` 是**完全相等**比對（T86 踩過子字串互相包含的坑），
+    #   所以少列一個候選字就會 `i_code is None` → **整批不寫、回「欄位對不上」**。
+    #   探針在第一個有事件的月份到來之前就抓到了，沒有真的漏過資料。
+    i_code = _exact(f, "股票代號", "證券代號", "代號", "ETF代號")
     i_pre = _exact(f, "停止買賣前收盤價格", "停止買賣前收盤價")
     i_ref = _exact(f, "恢復買賣參考價", "恢復買賣參考價格")
-    i_reason = _exact(f, "減資原因")
+    # TWTAUU 是「減資原因」、TWTCAU 是「分割(反分割)」——兩者都放進 reason 欄，
+    # 因為它們回答的是同一個問題：**這一筆是哪一種公司行動**。
+    i_reason = _exact(f, "減資原因", "分割(反分割)")
     i_open = _exact(f, "開盤競價基準")
     i_exref = _exact(f, "除權參考價")
     if i_code is None or i_pre is None or i_ref is None or i_date is None:
@@ -336,7 +342,12 @@ def parse_parvalue(d, day, known=None):
                 continue
             parts = [x.strip() for x in str(r[i_det]).split(",")]
             digits = [x for x in parts if x.isdigit() and len(x) == 8]
-            if digits:
+            # ⛔ **要兩個以上日期才認**。TWTB8U 的詳細資料是
+            #   `代號,停止買賣起日,恢復買賣日`（兩個日期），第一個才是起日；
+            #   但 TWTAUU 只給 `代號,恢復買賣日`（一個日期，2026-09-09 探針實測
+            #   `'3040  ,20150204'`）。只取 digits[0] 的話，單日期那種會把
+            #   **恢復買賣日誤標成停止買賣起日**——欄位名對、數字合法、不會報錯。
+            if len(digits) >= 2:
                 halt[str(r[i_code]).strip()] = (
                     f"{digits[0][:4]}-{digits[0][4:6]}-{digits[0][6:]}")
     out = [row + [halt.get(row[1], "")] for row in rows]
