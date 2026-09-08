@@ -199,32 +199,69 @@ def write_period(kind, tag, period, recs, market_of):
 
 
 def _log_changes(kind, name, old, new):
+    """逐欄比對並記錄差異。
+
+    ⛔ **一律按欄名比對，不可按位置。**
+    舊版是 `zip(舊列, 新列)` 按位置配、欄名卻取自舊表頭——**欄序改一次，
+    每一格都對到別人的值**：2026-09-06 一次塞進上百筆「market: twse→2816」
+    這種鬼影，而實際檔案是對齊的、一個數字都沒變。
+
+    財報本來就會更正，這個 log 存在的唯一理由就是「更正不可以被靜默覆蓋」。
+    真的更正被鬼影淹掉，這個機制等於不存在——**比沒有還糟，因為它看起來在運作。**
+
+    表頭變動（新增欄／移除欄／換順序）記成**一行檔案層級的紀錄**，
+    不讓它變成每一列都在變。值的比對只取兩邊都有的欄。
+    """
     def index(txt):
         rd = list(csv.reader(txt.splitlines()))
         if not rd:
             return {}, []
         h = rd[0]
         ic = next((i for i, c in enumerate(h) if c in CODE_KEYS), 1)
-        return {r[ic]: r for r in rd[1:] if len(r) > ic}, h
+        # 每一列存成 {欄名: 值}，之後一律用欄名取值
+        return {r[ic]: dict(zip(h, r)) for r in rd[1:] if len(r) > ic}, h
     o, oh = index(old)
     n, nh = index(new)
     os.makedirs(OUT_DIR, exist_ok=True)
     ts = datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds")
-    lines = []
+    lines, nrow = [], 0
+    if oh != nh:
+        added = [c for c in nh if c not in oh]
+        removed = [c for c in oh if c not in nh]
+        what = []
+        if added:
+            what.append("新增欄 " + "、".join(added))
+        if removed:
+            what.append("移除欄 " + "、".join(removed))
+        if not what:
+            what.append("欄序改變（欄名集合相同，值不受影響）")
+        lines.append(f"{ts}\t{kind}/{name}\t(表頭)\t{'；'.join(what)}")
+    common = [c for c in nh if c in oh]
     for code in sorted(set(o) | set(n)):
         if code not in o:
             lines.append(f"{ts}\t{kind}/{name}\t{code}\t新增")
+            nrow += 1
         elif code not in n:
             lines.append(f"{ts}\t{kind}/{name}\t{code}\t消失")
-        elif o[code] != n[code]:
-            diff = [f"{oh[i] if i < len(oh) else i}: {a}→{b}"
-                    for i, (a, b) in enumerate(zip(o[code], n[code])) if a != b][:6]
-            lines.append(f"{ts}\t{kind}/{name}\t{code}\t{'; '.join(diff)}")
+            nrow += 1
+        else:
+            diff = [f"{c}: {o[code].get(c, '')}→{n[code].get(c, '')}"
+                    for c in common if o[code].get(c, "") != n[code].get(c, "")]
+            if diff:
+                # ★ 截斷要說出來。舊版直接 [:6]，看起來就像「只差 6 欄」。
+                more = f"（另有 {len(diff) - 6} 欄）" if len(diff) > 6 else ""
+                lines.append(f"{ts}\t{kind}/{name}\t{code}\t"
+                             f"{'; '.join(diff[:6])}{more}")
+                nrow += 1
     if lines:
         with open(CHANGES, "a", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        print(f"  ⚠ {name} 有 {len(lines)} 檔內容變動（**財報更正**），已記入 _changes.log",
-              file=sys.stderr)
+        parts = []
+        if oh != nh:
+            parts.append("表頭變動")
+        if nrow:
+            parts.append(f"{nrow} 檔內容變動（**財報更正**）")
+        print(f"  ⚠ {name} {'＋'.join(parts)}，已記入 _changes.log", file=sys.stderr)
 
 
 def listed_codes():

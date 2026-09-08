@@ -43,6 +43,14 @@ jobs:
         continue-on-error: true
         run: python selftest_runlog.py
 
+      # ★ 順便驗 mops 的差異紀錄（離線、約 1 秒）。
+      #   `data/mops/_changes.log` 存在的唯一理由是「財報更正不可以被靜默覆蓋」，
+      #   它壞掉的方式不是不寫而是**寫太多**：按位置比對時欄序改一次就產生
+      #   上百筆鬼影，真的更正被淹掉。**比沒有還糟，因為它看起來在運作。**
+      - name: 驗 mops 差異紀錄（離線）
+        continue-on-error: true
+        run: python selftest_mops.py
+
       - name: 抓資料
         id: fetch
         run: python fetch.py
