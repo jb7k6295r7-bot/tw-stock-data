@@ -25,6 +25,9 @@ from . import patterns as P
 RESULTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results3")
 SIG_START, SIG_END, SPLIT = "2016-01-04", "2026-07-31", "2021-01-04"
 HOLDS = (20, 60)
+LOOKBACK_DAYS = 60                                    # 技術特徵最長回看：ma60、mom60（估值 ffill 25 日比它短）
+H_FORWARD = 1 + max(HOLDS) + E.DEFER_MAX              # 斷點視窗 H（PREREG3 更正一）：次日進場 ＋ 最長持有 ＋ 跌停順延
+L_LOOKBACK = LOOKBACK_DAYS                            # 斷點視窗 L
 _G: dict = {}
 
 
@@ -94,10 +97,8 @@ def process_stock(args):
     f = P.Frame(df, st.event_dates)
     in_life = (cal >= first_seen) & (cal <= last_seen)
     dmask = D.disposal_mask(sid, cal, disp)
-    jumps = np.flatnonzero(D.jump_days(df, st.event_dates))
-    jw = np.zeros(len(cal), bool)
-    for i in jumps:
-        jw[max(0, i - 61):min(len(cal), i + 21)] = True
+    # 斷點：換股日 s ∈ [T−H, T+L−1] 不進面板（PREREG3 更正一；規則見 data.breakpoints）
+    jw = D.breakpoint_window(D.breakpoints(df, st.event_dates), len(cal), H_FORWARD, L_LOOKBACK)
     gate = f.gate & in_life & ~dmask & ~jw
     arr = {"o": f.o, "h": f.h, "l": f.l, "c": f.c, "prev_c": f.prev_c, "atr14": f.atr14}
     c = pd.Series(f.c)

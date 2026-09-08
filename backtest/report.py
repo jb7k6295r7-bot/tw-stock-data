@@ -172,7 +172,9 @@ def write_report(out_dir: str, sigs: pd.DataFrame, var: pd.DataFrame, base: dict
     L.append("")
     L.append("空方型態的基準是「−毛報酬 − 成本」，表裡已換算。")
     L.append("")
-    L.append(f"因面額變更等未還原跳價而整筆剔除的訊號：{base.get('excluded_jump_signals', 0):,} 筆（跳價清單見 `par_change_candidates.csv`）。")
+    bp = base.get("breakpoints", {})
+    L.append(f"因斷點（面額變更等還原因子接不起來的地方；規則見 PREREG 更正三）而整筆剔除的訊號：{base.get('excluded_jump_signals', 0):,} 筆。"
+             f"斷點 {bp.get('n', 0):,} 個、{bp.get('stocks', 0):,} 檔（依規則 {bp.get('by_rule', {})}），視窗 [T−{bp.get('H')}, T+{bp.get('L', 0) - 1}]，清單見 `breakpoints.csv`。")
     L.append("")
     L.append("## 各型態")
     L.append("")

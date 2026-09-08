@@ -88,20 +88,57 @@ def load_stock(stock_id: str, market: str, cal: pd.DatetimeIndex) -> Stock | Non
     return Stock(stock_id, market, df, ev)
 
 
+# ── 斷點：序列無法被還原因子接起來（K線線 2026-09-09 三訂，必守第 7 條） ──
+# 門檻是**非嚴格**不等式（≤ 0.55、≥ 1.8）：復牌首日常常直接漲停／跌停，比值會剛好貼在門檻上
+# （4946 剛好 1.800、6613 是 0.544）；寫成嚴格不等式會把最常見的那種情形排除掉。
+# 相鄰兩個有成交日之間，有漲跌幅限制的證券單日跌不到 0.55、漲不到 1.8，所以不會增加誤判。
 JUMP_LO, JUMP_HI = 0.55, 1.8
+GAP_MIN = 5   # ② 時間：連續缺 ≥ 5 個交易日（面額變更實測停 6～8 個；8101 停 59 個）
 
 
-def jump_days(df: pd.DataFrame, event_dates: set) -> np.ndarray:
-    """對「上一個有成交日」的收盤比 < 0.55 或 > 1.8、且不是還原事件日的日子 → True。
-    實測全庫 26 筆、24 檔，全部是停牌約 8 天後的面額變更換發新股（10→1 之類），data/adj/ 沒有這種事件。"""
-    c = df["close"]
-    prev = c.ffill().shift(1).to_numpy(float)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        r = c.to_numpy(float) / prev
-    m = (r < JUMP_LO) | (r > JUMP_HI)
-    if event_dates:
-        m &= ~np.isin(df.index.values, np.array(sorted(event_dates), dtype="datetime64[ns]"))
-    return m
+def breakpoints(df: pd.DataFrame, event_dates: set) -> list[dict]:
+    """找斷點。對每個有成交日 t 與它的上一個有成交日 p：
+       ① 價格：close(t)/close(p) ≤ 0.55 或 ≥ 1.8
+       ② 時間：p 與 t 之間連續缺 ≥ 5 個交易日
+    任一成立、且區間 (p, t] 內沒有 data/adj/ 的事件 → t 是斷點（T ＝ 復牌後第一個有成交日）。
+    區間內有可還原事件 → 不是斷點，走缺漏處理。
+    ⚠ 事件用**日期區間**判，不用「±N 個交易日」容錯：data/adj/ 的事件日不保證是交易日
+    （3293 2024-07-24 除權息當天颱風停市，沿交易日曆數容錯永遠數不到它）。
+    ⚠ 一定要對「上一個有成交日」：換發新股前停牌 6～8 日，日曆對齊序列裡 t−1 是空的，相鄰日比會一筆都抓不到。
+    回傳每個斷點 {pos, prev_pos, ratio, gap, rule}；rule ∈ {price, gap, price+gap}。"""
+    c = df["close"].to_numpy(float)
+    traded = np.flatnonzero(~np.isnan(c))
+    if len(traded) < 2:
+        return []
+    p, t = traded[:-1], traded[1:]
+    ratio = c[t] / c[p]
+    gap = t - p - 1
+    price = (ratio <= JUMP_LO) | (ratio >= JUMP_HI)
+    long_gap = gap >= GAP_MIN
+    cand = price | long_gap
+    if event_dates and cand.any():
+        ev = np.array(sorted(pd.Timestamp(x) for x in event_dates), dtype="datetime64[ns]")
+        idx = df.index.values.astype("datetime64[ns]")
+        n_upto_p = np.searchsorted(ev, idx[p], side="right")   # 事件日 ≤ p 的個數
+        n_upto_t = np.searchsorted(ev, idx[t], side="right")   # 事件日 ≤ t 的個數
+        cand &= ~(n_upto_t > n_upto_p)                          # (p, t] 內有事件 → 可解釋
+    out = []
+    for k in np.flatnonzero(cand):
+        rule = "price+gap" if (price[k] and long_gap[k]) else ("price" if price[k] else "gap")
+        out.append({"pos": int(t[k]), "prev_pos": int(p[k]), "ratio": float(ratio[k]), "gap": int(gap[k]), "rule": rule})
+    return out
+
+
+def breakpoint_window(bps: list[dict], n: int, H: int, L: int) -> np.ndarray:
+    """以訊號日 s 為單位的剔除遮罩：s ∈ [T−H, T+L−1] → True。
+    方向不要寫反：前瞻報酬的污染在 T **之前**（s ∈ [T−H, T−1]，斷點落在持有期內）；
+    回看指標的污染在 T **之後**（s ∈ [T, T+L−1]，回看窗跨過斷點）。
+    H ＝ 該研究最長的前瞻天數、L ＝ 最長回看天數，由呼叫端從自己的參數算，不要寫死。"""
+    w = np.zeros(n, bool)
+    for b in bps:
+        T = b["pos"]
+        w[max(0, T - H):min(n, T + L)] = True
+    return w
 
 
 def load_disposal_intervals() -> dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]]:

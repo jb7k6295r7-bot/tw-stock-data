@@ -39,6 +39,14 @@ PARAMS = {
 }
 
 
+def max_lookback(p: dict = PARAMS) -> int:
+    """訊號日往回看最遠幾個交易日（給斷點視窗的 L 用，不要寫死）。
+    最長的是杯柄：杯身 ≤ max(cup_lookbacks) ＋ 左杯緣之前的 prior_lookback ＋ 柄 ≤ handle_len[1] ＋ 樞紐確認 pivot_k；
+    其餘偵測器（箱型 20、均量 50、趨勢 10）與研究二的 240 日 RS 都比它短。"""
+    cup = max(p["cup_lookbacks"]) + p["prior_lookback"] + p["handle_len"][1] + p["pivot_k"]
+    return max(cup, p["box_window"] + p["confirm_days"], 50, 240)
+
+
 class Frame:
     """一檔的日曆對齊陣列與共用指標。序列有洞（NaN）時，rolling 以 min_periods=window 讓洞傳染。"""
 

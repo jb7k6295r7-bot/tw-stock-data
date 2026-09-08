@@ -27,6 +27,12 @@ RESULTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
 SIG_START, SIG_END = "2016-01-04", "2026-07-31"
 SPLIT = "2021-01-04"
 
+# 斷點視窗（PREREG 更正三）：H ＝ 本研究最長前瞻天數、L ＝ 最長回看天數，從參數算、不寫死。
+#   H：進場在訊號次日（+1）、ATR 追蹤與目標價最長 120 日、跌停順延最多 10 日。
+#   L：杯柄 325＋120＋30＋5 ＝ 480（見 patterns.max_lookback）。
+H_FORWARD = 1 + max(E.HOLD, E.ATR_CAP, E.TARGET_WINDOW) + E.DEFER_MAX
+L_LOOKBACK = P.max_lookback()
+
 # ［本研究補］參數的敏感度：(參數, 替代值, 受影響的偵測器)
 VARIANTS = [
     ("box_range_max", 0.15, ["P1", "P2", "P3"]), ("box_range_max", 0.25, ["P1", "P2", "P3"]),
@@ -77,15 +83,13 @@ def process_stock(args):
     f.gate = f.gate & in_life & ~dmask
     arr = _arrays(df, f)
     attn_set = attn.get(sid, set())
-    # 面額變更等未還原的跳價：訊號日前 20 日 ~ 進場後 120 日內有跳價的訊號整筆剔除（PREREG 更正二）
-    jumps = D.jump_days(df, st.event_dates)
-    jump_pos = np.flatnonzero(jumps)
-    jump_rows = [{"stock_id": sid, "market": market, "date": cal[i].strftime("%Y-%m-%d"),
-                  "ratio": float(df["close"].iloc[i] / df["close"].ffill().shift(1).iloc[i])} for i in jump_pos]
+    # 斷點（面額變更等還原因子接不起來的地方）：訊號日 s ∈ [T−H, T+L−1] 的訊號整筆剔除（PREREG 更正二、更正三）
+    bps = D.breakpoints(df, st.event_dates)
+    jump_rows = [{"stock_id": sid, "market": market, "date": cal[b["pos"]].strftime("%Y-%m-%d"),
+                  "prev_date": cal[b["prev_pos"]].strftime("%Y-%m-%d"), "ratio": b["ratio"], "gap": b["gap"], "rule": b["rule"]}
+                 for b in bps]
     ncal = len(cal)
-    jump_window = np.zeros(ncal, bool)          # True ＝ 以該日為訊號日的訊號要剔除
-    for i in jump_pos:
-        jump_window[max(0, i - E.ATR_CAP - 1):min(ncal, i + 21)] = True
+    jump_window = D.breakpoint_window(bps, ncal, H_FORWARD, L_LOOKBACK)   # True ＝ 以該日為訊號日的訊號要剔除
     excluded = {"jump": 0}
 
     def run_detectors(frame, keys, tag=None):
@@ -245,7 +249,10 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     sigs.to_csv(os.path.join(a.out, "signals.csv"), index=False)
     var.to_csv(os.path.join(a.out, "variants.csv"), index=False)
-    jumps.to_csv(os.path.join(a.out, "par_change_candidates.csv"), index=False)
+    jumps.to_csv(os.path.join(a.out, "breakpoints.csv"), index=False)
+    base["breakpoints"] = {"n": int(len(jumps)), "stocks": int(jumps["stock_id"].nunique()) if len(jumps) else 0,
+                           "by_rule": {k: int(v) for k, v in jumps["rule"].value_counts().items()} if len(jumps) else {},
+                           "H": H_FORWARD, "L": L_LOOKBACK}
     with open(os.path.join(a.out, "baseline.json"), "w") as fh:
         json.dump(base, fh, indent=1, ensure_ascii=False)
     print(f"訊號 {len(sigs)} 筆，敏感度 {len(var)} 筆，{time.time() - t0:.0f}s", file=sys.stderr)
