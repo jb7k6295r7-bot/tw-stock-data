@@ -547,6 +547,12 @@ def _months(s_iso, e_iso):
 
 def collect(s_iso, e_iso, sleep, with_tpex_halt):
     today = now_tpe().strftime("%Y-%m-%d")
+    # ★ 開跑前先報預估。2026-09-08 有一趟跑了一個多小時才被發現設計太慢——
+    #   **要等多久應該在第一行就講，不是讓人盯著 log 猜。**
+    nyr = int(min(e_iso, now_tpe().strftime("%Y-%m-%d"))[:4]) - int(s_iso[:4]) + 1
+    nreq = nyr * 3 + nyr * 2 + nyr          # TWSE 三條 ＋ TPEx 兩條 ＋ 停牌歷史
+    print(f"[suspend] {s_iso} ~ {e_iso}：約 {nreq} 發請求、間隔 {sleep} 秒，"
+          f"預估 {int(nreq * (sleep + 1) / 60) + 1} 分鐘（不含重試）")
     halt = _load(OUT_HALT, H_HALT)
     disp = _load(OUT_DISP, H_DISP)
     attn = _load(OUT_ATTN, H_ATTN)
@@ -582,14 +588,23 @@ def collect(s_iso, e_iso, sleep, with_tpex_halt):
         time.sleep(sleep)
         print(f"  [twse {y}] 停牌 {len(halt)}／處置 {len(disp)}／注意 {len(attn)}（累計）")
 
-    # 上櫃：逐月。★ 範圍上限沒有實測過，逐月是為了萬一它有上限時不會安靜截斷
-    for a, b in _months(s_iso, e_iso):
+    # 上櫃：逐年。
+    # ⛔ 原本是逐月，因為「範圍上限沒實測過」——**那個保守做法本身是個錯誤**：
+    #   2011~2026 逐月＝189 個月 × 2 條 = 378 發，光 sleep 8 秒就要睡 50 分鐘，
+    #   整趟跑一個多小時（2026-09-08 實際卡住）。
+    #   2026-09-08 用瀏覽器實測整年：
+    #       ?startDate=2015/01/01&endDate=2015/12/31
+    #       → title2「處置期間為 104/01/01 ~ 104/12/31」、證券個數 104、累計 204
+    #   **整年是吃的**，改逐年之後這一段從 378 發降到 32 發。
+    #   ⚠ 沒實測就選保守做法沒有錯，錯在**沒回頭把它測掉**——保守的代價這裡是 12 倍時間。
+    for y in range(int(s_iso[:4]), int(e_iso[:4]) + 1):
+        a = max(s_iso, f"{y}-01-01")
+        b = min(e_iso, f"{y}-12-31")
         put(disp, OUT_DISP, H_DISP, norm_disp_tpex(tpex_pull("disposal", a, b), today))
         time.sleep(sleep)
         put(attn, OUT_ATTN, H_ATTN, norm_attn_tpex(tpex_pull("attention", a, b), today))
         time.sleep(sleep)
-        if a.endswith("-12-01"):
-            print(f"  [tpex {a[:4]}] 處置 {len(disp)}／注意 {len(attn)}（累計）")
+        print(f"  [tpex {y}] 處置 {len(disp)}／注意 {len(attn)}（累計）")
 
     # ★ 上櫃停牌的歷史（2026-09-08 補上，`sprcHis` 逐年）
     for y in range(int(s_iso[:4]), int(e_iso[:4]) + 1):
