@@ -71,6 +71,8 @@ print("── 4. adjust.py 端到端 ──")
 #   做法：把 adjust.py 複製到暫存目錄，資料也建在那裡，全程碰不到 repo。
 TMP = tempfile.mkdtemp(prefix="adjtest_")
 shutil.copy(os.path.join(HERE, "adjust.py"), TMP)
+# adjust.py 會 import runlog 寫 _last_run.md，沙盒裡也要有它。
+shutil.copy(os.path.join(HERE, "runlog.py"), TMP)
 D = os.path.join(TMP, "data")
 for p in ("universe/reduce", "universe/exright", "universe/daily", "stocks"):
     os.makedirs(os.path.join(D, p), exist_ok=True)

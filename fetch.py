@@ -48,6 +48,8 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+import runlog
+
 # ────────────────────────────────────────────────────────────
 # 設定：要抓哪些股票
 # 只放代號。這裡不放持股成本、張數或任何個人資料——repo 是公開的。
@@ -1454,7 +1456,38 @@ def main():
         print(f"[tw-stock-data] 第一檔的錯誤：{first_err}", file=sys.stderr)
         return 1
     print(f"[tw-stock-data] 完成：{len(got)}/{len(STOCKS)} 檔有日K")
-    return 0
+
+    # ★ 寫進 data/meta/_last_run.md 的「fetch」區塊。
+    #   ⚠ 這裡只放**不會在休市日誤殺**的檢查：台股有連假，而排程是週一到週五跑。
+    #     休市日 universe 本來就 0 列，所以每一條都先問「今天有沒有收到東西」，
+    #     有才驗內容。**寧可少驗一天，也不要天天紅**——
+    #     天天紅的紅字沒有人會看（防護誤殺跟防護失效一樣糟）。
+    uni = manifest.get("universe") or {}
+    cnt = uni.get("counts") or {}
+    rl = runlog.Run("fetch")
+    rl.info("目標交易日", str(manifest.get("target_trading_day") or "—"))
+    rl.info("核心個股", f"{len(got)}/{len(STOCKS)} 檔有日K")
+    rl.info("全市場家數", f"上市 {cnt.get('twse', 0)}｜上櫃 {cnt.get('tpex', 0)}｜"
+                          f"興櫃 {cnt.get('emerging', 0)}｜合計 {cnt.get('total', 0)}")
+    rl.info("大盤表", "、".join(manifest.get("market", {}).get("ok") or []) or "—")
+    if changed_total:
+        rl.note(f"⚠ 有 {changed_total} 列歷史資料被改寫，見 data/_changes.log")
+    rl.check("universe 這一層沒有 fatal", "fatal" not in uni,
+             uni.get("fatal") or "沒有")
+    _tot = cnt.get("total", 0)
+    if _tot:
+        # 有收到東西才驗「兩個市場都在」。少收一整個市場跟休市長得一模一樣，
+        # 差別只在「另一個市場有沒有資料」——這才是能分辨兩者的直接證據。
+        _miss = [m for m in ("twse", "tpex") if not cnt.get(m)]
+        rl.check("有資料的日子上市與上櫃都收到了", not _miss,
+                 ("整個市場沒收到：" + "、".join(_miss)) if _miss
+                 else f"上市 {cnt['twse']}／上櫃 {cnt['tpex']}")
+        rl.check("universe 當天有寫出列", bool(uni.get("rows_written")),
+                 f"{uni.get('rows_written')} 列")
+    else:
+        rl.note("這一天 universe 0 列（休市，或整層失敗——看上面的 fatal 那條）")
+    rl.check("核心個股不是全軍覆沒", bool(got), f"{len(got)}/{len(STOCKS)}")
+    return rl.finish()
 
 
 if __name__ == "__main__":

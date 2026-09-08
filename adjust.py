@@ -90,6 +90,8 @@ worked example（3661，兩次除息 2025-08-01 f=0.9750、2026-09-03 f=0.9922�
 import argparse
 import os
 import sys
+
+import runlog
 from collections import defaultdict
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -393,9 +395,9 @@ def main():
     #   閘門放在算因子的地方，才不會依賴「上游有沒有記得擋」。
     #   基準是**交易日曆的最後一天**（＝資料到哪一天），不是系統時鐘：
     #   容器的時鐘曾經差過一天，不能拿它當判準。
+    pending = []
     if cal:
         last = cal[-1]
-        pending = []
         for c in list(ev):
             fut = [r for r in ev[c] if r[0] > last]
             if not fut:
@@ -421,6 +423,14 @@ def main():
         print("[adj] 找不到 data/universe/daily/，無法取得交易日曆——"
               "**核對會退化成「拿前一個有資料的日子比」並產生假警報**，"
               "本次改為不核對。", file=sys.stderr)
+    # ★ 全量重建。舊的檔數與事件數只有**現在**問得到，寫完就沒了。
+    prev_codes, prev_events = None, None
+    _pidx = os.path.join(ADJ_DIR, "_index.csv")
+    if os.path.exists(_pidx) and not want:
+        _pl = [l for l in open(_pidx, encoding="utf-8").read().splitlines()[1:] if l]
+        prev_codes = len(_pl)
+        prev_events = sum(int(l.split(",")[2]) for l in _pl if l.split(",")[2].isdigit())
+
     idx, tot_ev, tot_chk, tot_mis, tot_skip, no_price = [], 0, 0, 0, 0, 0
     for code in codes:
         rows = ev[code]
@@ -457,7 +467,40 @@ def main():
         # ★ 不設「自動通過」門檻。對不上就是要有人看，不是四捨五入掉。
         if tot_mis:
             print("[adj] ↑ 上面每一筆都印出來了，逐筆看過再決定要不要用", file=sys.stderr)
-    return 0
+
+    # ★ 寫進 data/meta/_last_run.md 的「adjust」區塊。
+    #   還原因子壞掉的兩種形狀都**不會讓程式失敗**：
+    #     ① 混進尚未發生的事件 → 今天的收盤被還原，報價跟看盤軟體對不起來
+    #     ② 沒有交易日曆 → 上面那道閘門整個關掉，而 log 只印一行 warning
+    #   所以兩者都要變成 check，不是印一行了事。
+    rl = runlog.Run("adjust")
+    rl.info("還原因子", f"{len(idx)} 檔、{tot_ev} 個事件（其中減資 {tot_red} 個）")
+    if a.verify:
+        rl.info("前收盤交叉核對", f"查 {tot_chk} 筆、不符 {tot_mis} 筆"
+                                  f"（另有 {tot_skip} 筆前一交易日無成交、無法核對）")
+    else:
+        rl.note("這一趟沒有核對（--no-verify）")
+    rl.check("有交易日曆可用（未來事件閘門才有作用）", bool(cal),
+             f"交易日曆 {len(cal)} 天，最後一天 {cal[-1]}" if cal
+             else "**沒有 data/universe/daily/，閘門等於關閉**")
+    # ⚠ **擋下未來事件是正常運作，不是異常。** 除權息本來就會提前公告，
+    #   天天都可能擋到幾筆；把它做成 check 會讓這一頁長年掛 ✗、紅字失去意義
+    #   （「防護誤殺跟防護失效一樣糟」）。要驗的是**閘門有沒有漏掉**——
+    #   直接去看真的寫出去的因子裡，有沒有哪一筆的日期晚於資料最後一天。
+    rl.info("擋下的未來事件", f"{len(pending)} 筆（正常，事件日到了會自然進來）")
+    if cal and idx:
+        _late = [r[0] for r in idx if r[5] > cal[-1]]
+        rl.check("寫出去的因子沒有一筆晚於資料最後一天", not _late,
+                 f"最晚 {max(r[5] for r in idx)}，資料最後一天 {cal[-1]}"
+                 + (f"；越線 {len(_late)} 檔：{'、'.join(_late[:5])}" if _late else ""))
+    if a.verify and tot_chk:
+        rl.check("前收盤交叉核對 0 不符", tot_mis == 0, f"不符 {tot_mis} / 查 {tot_chk}")
+    rl.check("檔數與事件數沒有變少", not (
+        (prev_codes is not None and len(idx) < prev_codes) or
+        (prev_events is not None and tot_ev < prev_events)),
+        (f"{prev_codes} 檔／{prev_events} 事件 → {len(idx)} 檔／{tot_ev} 事件"
+         if prev_codes is not None else "沒有可比的前一版（或這趟只做部分代號）"))
+    return rl.finish()
 
 
 if __name__ == "__main__":

@@ -40,6 +40,8 @@
 """
 
 import argparse
+
+import runlog
 import csv
 import json
 import os
@@ -239,6 +241,10 @@ def cmd_run(args):
     tw, tp = listed_codes()
     print(f"[mops] 對照基準：上市 {len(tw):,} 檔、上櫃 {len(tp):,} 檔\n")
     total = {"new": 0, "changed": 0, "unchanged": 0, "skip": 0}
+    # ★ 逐「表×市場」記下實際結果。**不要只留一個總數**——
+    #   22 個請求裡少收一個，總數看起來還是很像正常的一天
+    #   （限流回 307、端點改名，兩種都不會讓程式失敗）。
+    calls = []          # (kind, tag, market, 有沒有回應, 列數, 涵蓋率)
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -248,10 +254,12 @@ def cmd_run(args):
                 d, note = fetch(url)
                 time.sleep(B.SLEEP)
                 if d is None:
+                    calls.append((kind, tag, mk, False, 0, 0.0))
                     print(f"  [{kind}/{tag}/{mk}] 略過：{note[:70]}")
                     continue
                 got = {_pick(r, CODE_KEYS) for r in d}
                 cov = len(got & want) / len(want) * 100 if want else 0
+                calls.append((kind, tag, mk, True, len(d), cov))
                 print(f"  [{kind}/{tag}/{mk}] {note}｜涵蓋 {cov:.1f}%")
                 for r in d:
                     market_of[id(r)] = mk
@@ -274,7 +282,28 @@ def cmd_run(args):
     print(f"\n[mops] 完成：新增 {total['new']}、更新 {total['changed']}、"
           f"無變動 {total['unchanged']}、略過 {total['skip']}")
     print("[mops] ★ 這些端點只給最新一期，**沒有歷史**。回測要等逐期累積。")
-    return 0
+
+    # ★ 寫進 data/meta/_last_run.md 的「mops」區塊。
+    #   這支的壞法都是**安靜的**，而且長得跟「今天沒換期」一模一樣：
+    #     ① 限流／端點改名 → 那一張表整個沒收到，總數看起來仍正常
+    #     ② 有回應但代號對不上我方母體（格式變了）→ 涵蓋 0% 卻照樣寫檔
+    #     ③ 取不到期別 → 不寫檔（對的），但只印一行 stderr
+    #   三個都要變成 check。
+    rl = runlog.Run("mops")
+    rl.info("這一趟", f"新增 {total['new']}、更新 {total['changed']}、"
+                      f"無變動 {total['unchanged']}、略過 {total['skip']}")
+    rl.info("請求", f"{len(calls)} 個（表 × 市場），"
+                    f"有回應 {sum(1 for c in calls if c[3])} 個")
+    dead = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if not c[3]]
+    rl.check("每一個表×市場都有回應", not dead,
+             ("沒回應：" + "、".join(dead)) if dead else f"{len(calls)} 個全有")
+    zero = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if c[3] and c[5] == 0]
+    rl.check("有回應的都對得上我方母體（涵蓋 > 0%）", not zero,
+             ("涵蓋 0%：" + "、".join(zero)) if zero
+             else (f"最低 {min((c[5] for c in calls if c[3]), default=0):.1f}%"))
+    rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
+             f"略過 {total['skip']} 張")
+    return rl.finish()
 
 
 def main():

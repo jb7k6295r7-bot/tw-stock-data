@@ -47,6 +47,8 @@
 """
 import csv, os, sys, argparse, time, collections
 
+import runlog
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 UNI = os.path.join(ROOT, "data", "universe")
 # ★★ 一種 kind 可以有**多個來源目錄**。
@@ -101,10 +103,23 @@ def _days(kind):
 
 
 def build(kind):
+    # ★ info 是給 runlog 用的**實際值**，不是「有沒有出事」。
+    #   每一項都必須是這一趟真的量到的東西，不可以填預設值假裝有量。
+    info = {"days": 0, "src_files": 0, "codes": 0, "rows": 0, "written": 0,
+            "dup": 0, "prev_codes": None, "src_last": "", "out_last": ""}
     days = _days(kind)
     if not days:
-        return 1
+        return 1, info
+    info["days"] = len(days)
+    info["src_files"] = sum(len(v) for _d, v in days)
+    info["src_last"] = days[-1][0]
     out_dir = OUT[kind]
+    # ★ 重建前先數一次舊的檔數。全量重建會先清空，清完就再也問不到了——
+    #   而「來源目錄整個消失」正好長成「重建成功、只是檔變少了」的樣子
+    #   （2026-09-05 `otcinst` 那次就是這個形狀）。**清空前量，才是直接證據。**
+    if os.path.isdir(out_dir):
+        info["prev_codes"] = len([n for n in os.listdir(out_dir)
+                                  if n.endswith(".csv") and n != "_index.csv"])
     # 全量重建：先清空，避免留下已經不該存在的檔（例如代號改過）
     if os.path.isdir(out_dir):
         for n in os.listdir(out_dir):
@@ -136,7 +151,7 @@ def build(kind):
                         #   前後段的欄意義不同，而且**看不出來**。整支中止。
                         print(f"[transpose] ✗ {path} 欄位與先前不同\n"
                               f"    先前={header}\n    本檔={cols}", file=sys.stderr)
-                        return 1
+                        return 1, info
                     for r in rd:
                         code = (r.get("stock_id") or "").strip()
                         if not code:
@@ -187,11 +202,16 @@ def build(kind):
               file=sys.stderr)
     print(f"            輸出 {out_dir}／_index.csv")
     # 一致性自檢：寫出去的列數必須等於讀進來的列數
+    info["codes"] = len(stat)
+    info["rows"] = rows_total
+    info["written"] = sum(stat.values())
+    info["dup"] = dup
+    info["out_last"] = max((v[1] for v in span.values()), default="")
     if sum(stat.values()) != rows_total:
         print(f"[transpose] ✗ 列數對不起來：讀 {rows_total} 寫 {sum(stat.values())}",
               file=sys.stderr)
-        return 1
-    return 0
+        return 1, info
+    return 0, info
 
 
 def main():
@@ -210,9 +230,9 @@ def main():
     #   `--kind all` 有四層，舊寫法只給一個 exit code——
     #   四層裡有一層沒有來源目錄時，另外三層明明成功，讀 log 的人卻只看到「失敗」，
     #   而「哪一層失敗、為什麼」要自己往上翻。**摘要要說現況，不是說有沒有出事。**
-    res = {}
+    res, info = {}, {}
     for k in kinds:
-        res[k] = build(k)
+        res[k], info[k] = build(k)
     if len(kinds) > 1:
         print("\n[transpose] 逐層結果：")
         for k in kinds:
@@ -222,7 +242,52 @@ def main():
     if bad:
         print(f"[transpose] ✗ 這幾層沒有完成：{'、'.join(bad)}"
               f"（**其餘幾層的輸出仍然是新的，不要整批當成沒跑**）", file=sys.stderr)
-    return 1 if bad else 0
+
+    # ★ 寫進 data/meta/_last_run.md 的「transpose」區塊。
+    #   四個檢查全部來自實際踩過的坑，而且每一個都拿**直接證據**：
+    #     ① 有沒有哪一層沒完成      ← 逐層的回傳碼，不是一個 OR 起來的碼
+    #     ② 讀進來幾列 vs 寫出去幾列 ← 兩邊各自數過的數字
+    #     ③ 檔數有沒有變少          ← 清空**之前**量到的舊檔數（清完就問不到了）
+    #     ④ 最後一天有沒有落後來源  ← 來源日檔的最後一天 vs 索引裡的最後一天。
+    #        「每天落後一天而且看不出來」是這條管線最貴的一種壞法。
+    rl = runlog.Run("transpose")
+    rl.info("這一趟做的層", "、".join(kinds))
+    for k in kinds:
+        d = info[k]
+        rl.info(k, f"{d['days']} 天／{d['src_files']} 個日檔 → "
+                   f"{d['codes']} 檔、{d['rows']:,} 列"
+                   f"（涵蓋到 {d['out_last'] or '—'}）")
+    rl.check("每一層都完成", not bad,
+             ("沒完成：" + "、".join(bad)) if bad else f"{len(kinds)} 層全過")
+    okrows = all(info[k]["rows"] == info[k]["written"] for k in kinds if res[k] == 0)
+    rl.check("讀進來的列數＝寫出去的列數", okrows,
+             "；".join(f"{k} 讀 {info[k]['rows']:,} 寫 {info[k]['written']:,}"
+                       for k in kinds if res[k] == 0))
+    shrank = [k for k in kinds if res[k] == 0 and info[k]["prev_codes"]
+              and info[k]["codes"] < info[k]["prev_codes"]]
+    rl.check("檔數沒有變少", not shrank,
+             "；".join(f"{k} {info[k]['prev_codes']} → {info[k]['codes']}"
+                       for k in kinds if res[k] == 0 and info[k]["prev_codes"] is not None)
+             or "沒有可比的前一版")
+    lag = [k for k in kinds if res[k] == 0 and info[k]["src_last"]
+           and info[k]["out_last"] != info[k]["src_last"]]
+    rl.check("輸出的最後一天＝來源日檔的最後一天", not lag,
+             "；".join(f"{k} 來源 {info[k]['src_last']} / 輸出 {info[k]['out_last'] or '—'}"
+                       for k in kinds if res[k] == 0))
+    # ⑤ 跨層比對：`price` 的日檔是 fetch.py 每天必寫的，拿它當基準。
+    #    某一層的**來源**比 price 舊，代表上游那一步（法人／融資融券／本益比日檔）
+    #    當天沒寫進去——2026-09-05 「每天落後一天而且看不出來」就是這個形狀：
+    #    轉置本身完全成功，錯的是它讀到的日檔少了一天。
+    #    ⚠ 只在同一趟有跑 price 時才驗，否則沒有基準（不可拿舊值當基準）。
+    if "price" in kinds and res.get("price") == 0 and len(kinds) > 1:
+        base = info["price"]["src_last"]
+        behind = [k for k in kinds if k != "price" and res[k] == 0
+                  and info[k]["src_last"] and info[k]["src_last"] < base]
+        rl.check("各層的來源日檔都跟上 price", not behind,
+                 f"price {base}；" + "、".join(
+                     f"{k} {info[k]['src_last']}" for k in kinds if k != "price"))
+    rc = rl.finish()
+    return 1 if (bad or rc) else 0
 
 
 if __name__ == "__main__":

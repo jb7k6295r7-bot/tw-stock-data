@@ -70,6 +70,9 @@ def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False
             write(os.path.join(uni, "otcinst", f"{d}.csv"), INST,
                   [[d, c, 1, 2, 3, 6] for c in OT])
     shutil.copy(os.path.join(HERE, "transpose.py"), root)
+    # transpose.py 會 import runlog 寫 _last_run.md，沙盒裡也要有它，
+    # 否則整支在 import 就死掉，而失敗訊息看起來像轉置本身壞了。
+    shutil.copy(os.path.join(HERE, "runlog.py"), root)
 
 
 def run(root, kind):

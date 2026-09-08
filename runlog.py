@@ -33,7 +33,14 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
-PATH = os.path.join("data", "meta", "_last_run.md")
+# ★ 一定要用 `__file__` 錨定，不可以用相對路徑。
+#   相對路徑是相對 **CWD**，不是相對這支程式——GitHub Actions 的 CWD 剛好是 repo 根目錄，
+#   所以看起來一直是對的；但只要有人從別的地方叫（selftest 把腳本複製到暫存目錄再跑，
+#   CWD 仍然是 repo），就會**寫進真的 repo**，把別支的區塊蓋掉。
+#   2026-09-08 實測：跑一次 `selftest_reduce.py` 就把 suspend 那一塊洗成 adjust。
+#   ⚠ 這正是「不碰真的 data/」那句保證失效的方式，而且**看起來完全成功**。
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
 
 
 class Run:

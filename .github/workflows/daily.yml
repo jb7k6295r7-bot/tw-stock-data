@@ -34,6 +34,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      # ★ 先驗 runlog 本身（離線、約 1 秒）。
+      #   fetch／mops／adjust／transpose／suspend／capital 六支都靠它寫
+      #   `data/meta/_last_run.md`，它壞掉最貴的形狀是**某一支蓋掉別支的區塊**——
+      #   那一頁會看起來完整、其實只剩最後跑的那一支。
+      #   `continue-on-error`：驗不過也不能擋住當天的資料落檔。
+      - name: 驗 runlog（離線）
+        continue-on-error: true
+        run: python selftest_runlog.py
+
       - name: 抓資料
         id: fetch
         run: python fetch.py
@@ -157,12 +166,6 @@ jobs:
             [ "$n" -gt 0 ] && { echo "★ 被擋下來 $n 筆："; grep -v '^#' data/meta/_suspend_skipped.txt | head -20; }
           fi
 
-      # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻
-      - name: 這一輪的摘要
-        if: always()
-        continue-on-error: true
-        run: cat data/meta/_last_run.md || true
-
       - name: 個股庫轉置
         if: always()
         continue-on-error: true
@@ -179,6 +182,21 @@ jobs:
         if: always()
         continue-on-error: true
         run: python db_status.py --write
+
+      # ★ 一次讀完整個資料庫最近一輪的狀況，不必逐檔去翻。
+      #   ⚠ **一定要排在最後一支會寫 `_last_run.md` 的腳本後面。**
+      #     2026-09-08 之前它排在轉置與還原因子前面，印出來的永遠是上一輪的內容——
+      #     一份**看起來完整、其實過期**的摘要，比沒有摘要更糟。
+      #   任何一塊是 ✗ 就去看該支腳本那一步的 log；步驟本身照樣綠的，
+      #   因為 `continue-on-error`，紅字在檔案裡不在 job 狀態上。
+      - name: 這一輪的摘要
+        if: always()
+        continue-on-error: true
+        run: |
+          cat data/meta/_last_run.md || true
+          if grep -q '✗' data/meta/_last_run.md 2>/dev/null; then
+            echo "::warning::_last_run.md 有 ✗ 的區塊，見上面內容"
+          fi
 
       - name: Commit 回 repo
         if: always()
