@@ -92,7 +92,9 @@ def now_tpe():
 #   上市的處置與注意當趟一列都沒收到——而 workflow 是綠的，
 #   因為那兩發被防護正常擋下並記錄了。**沒有 skipped 清單就會完全看不出來。**
 #   307 是暫時性的，要退避重試，不可以當成「這個端點不存在」。
-RETRYABLE = {307, 403, 408, 429, 500, 502, 503, 504}
+#   520~524 是 Cloudflare 自己的錯誤（522＝連到源站逾時），也是暫時性的。
+#   2026-09-08 回補時 tpex-disposal 2014 就吃到一次 522，整年沒收到。
+RETRYABLE = {307, 403, 408, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524}
 BACKOFF = [5, 15, 40]      # 秒。TWSE 的限流窗口實測要等到十秒以上才會放行
 
 
@@ -293,9 +295,19 @@ def _save(path, header, rows):
 TWSE = "https://www.twse.com.tw/rwd/zh"
 
 
+# ★ TWTAWU 的資料起點：民國 100/10/03。早於這一天整發被拒
+#   （回「查詢日期小於100年10月3日，請重新查詢!」）。這是來源的界線，不是錯誤，
+#   所以直接把起日夾住，不要每次回補都白丟一發又在 skipped 清單裡留一筆假警報。
+TWSE_HALT_FROM = "2011-10-03"
+
+
 def twse_pull(kind, s_iso, e_iso):
     path = {"halt": "afterTrading/TWTAWU", "disposal": "announcement/punish",
             "attention": "announcement/notice"}[kind]
+    if kind == "halt":
+        s_iso = max(s_iso, TWSE_HALT_FROM)
+        if s_iso > e_iso:
+            return []
     s, e = s_iso.replace("-", ""), e_iso.replace("-", "")
     url = f"{TWSE}/{path}?startDate={s}&endDate={e}&response=json"
     raw, err = get(url)
@@ -354,8 +366,14 @@ def tpex_halt_hist(year):
       興櫃-一般板），比用代號形狀猜準——`5314 世紀*` 帶星號、`19094 榮成四` 是可轉債，
       形狀規則都會判錯。**有這一欄就用它，`sec_kind` 的啟發式只當退路。**
     """
-    body = json.dumps({"year": str(year)}).encode()
-    raw, err = get(f"{TPEX}/sprcHis", body=body, ctype="application/json")
+    # ⛔ 參數是 **form-encoded 的 `date=<西元年>`**，不是 JSON 的 `year`。
+    #   2026-09-08 第一版寫成 {"year": "2011"}，結果**每一年都回 2026**——
+    #   它不認得那個鍵就退回今年，`stat` 正常、不報錯。
+    #   七種寫法在瀏覽器裡實測，只有 form `date=` 會換年（`year=`／`yy=`／JSON 全部回 2026）。
+    #   擋下來的是 `_check_echo` 那種「回應自己回報了什麼」的判準——
+    #   **沒有那道防護，這裡會安靜地把 2026 的 364 筆重複寫成 2011~2025 每一年。**
+    raw, err = get(f"{TPEX}/sprcHis", body=f"date={year}".encode(),
+                   ctype="application/x-www-form-urlencoded")
     if err:
         _SKIP_LOG.append(f"tpex-halt-hist\t{year}\t{err}")
         return []
