@@ -35,6 +35,8 @@ import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
+import runlog
+
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -943,8 +945,16 @@ def cmd_inst(args):
         return 1
     print(f"[inst] universe 白名單 {len(known)} 檔")
     if days and not preflight(inst_url(days[0]), "T86 三大法人"):
+        # ⛔ 這條路徑原本直接 return，什麼都沒留下。daily.yml 這一步是
+        #    continue-on-error，於是「整趟根本沒開始」在 Actions 上完全看不見。
+        rl = runlog.Run("backfill:inst")
+        rl.info("區間", f"{args.start} ~ {args.end}｜待處理 {len(days)} 天")
+        rl.check("端點的第一發就通過（preflight）", False,
+                 "第一發就失敗，整趟沒有開始——先查端點與參數")
+        rl.finish()
         return 2
     ok = closed = failed = 0
+    bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
     streak = 0
     for i, day in enumerate(days, 1):
         if streak >= 3:
@@ -986,6 +996,7 @@ def cmd_inst(args):
         #   等於**每天 7 分鐘**。放著跑一小時也只會前進十幾天，而且全是錯的。
         #   （2026-09-03 實測：699 天全 JSONDecodeError，使用者 8 分鐘後才發現。）
         if failed >= 5 and ok == 0:
+            bailed = f"前 {i} 天全部失敗且無一成功"
             hint = ("**被限流**——端點與參數沒問題，等一段時間再跑"
                     if "LIMITED" in note else "先確認端點與參數，不要放著跑")
             print(f"[inst] 前 {i} 天全部失敗且無一成功，收手——{hint}。"
@@ -993,7 +1004,20 @@ def cmd_inst(args):
             break
         time.sleep(SLEEP)
     print(f"[inst] 完成：有資料 {ok} 天、休市 {closed} 天、失敗 {failed} 天")
-    return 0
+
+    # ★ 寫進 data/meta/_last_run.md。區塊名帶命令名——本支還有 --esb／--run 等
+    #   別的子命令，共用一個名字會互相蓋掉。
+    #   ⚠ 不檢查「ok > 0」：補單一缺日時區間內其餘天數可能全是休假，
+    #     那時 ok=0、failed=0 是正常結果（防護誤殺跟防護失效一樣糟）。
+    rl = runlog.Run("backfill:inst")
+    rl.info("區間", f"{args.start} ~ {args.end}｜待處理 {len(days)} 天")
+    rl.info("結果", f"有資料 {ok} 天、休市 {closed} 天、失敗 {failed} 天")
+    # ⛔ daily.yml 這一步是 continue-on-error，提前收手在 Actions 上看不見，
+    #    而收手代表整趟根本沒跑完。
+    rl.check("跑完整個區間，沒有提前收手", not bailed, bailed or "跑完")
+    rl.check("沒有「連問都問不到」的日子", failed == 0,
+             f"失敗 {failed} 天" if failed else "0 天")
+    return rl.finish()
 
 
 def cmd_rebuild_meta(_args):

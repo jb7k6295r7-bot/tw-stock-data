@@ -55,6 +55,7 @@ import sys
 import time
 
 import backfill as B
+import runlog
 
 _ROOT = B._ROOT
 UNI_DIR = B.UNI_DIR
@@ -837,7 +838,28 @@ def cmd_feed_range(args, name):
         print(f"[{name}] 尚未到期的公告（**不在資料庫裡**，僅供知悉）：")
         for r in sorted(future_rows)[:20]:
             print(f"        {r[0]}  {r[1]}  {'  '.join(str(x) for x in r[2:5])}")
-    return 0 if (ok or not rng) else 1
+
+    # ★ 寫進 data/meta/_last_run.md。⛔ 區塊名帶 feed 名——`daily.yml` 一趟裡
+    #   exright 與 reduce 都走這條路徑，共用名字會互相蓋掉。
+    #   ⚠ **不檢查「ok > 0」**：exright／reduce 抓的是當月區間，
+    #     整個月沒有任何除權息或減資事件是**正常**的（尤其月初）。
+    #     拿它當失敗會讓這一頁每個月初都紅（防護誤殺跟防護失效一樣糟）。
+    rl = runlog.Run(f"feeds:{name}")
+    rl.info("區間", f"{args.start} ~ {args.end}｜{len(rng)} 個月")
+    rl.info("結果", f"有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
+                    f"合計 {total_rows} 列")
+    # ⚠ 尚未到期的公告做成 info 不做成 check：減資與除權息本來就提前公告，
+    #   擋下來是正常運作。要抓的是「擋漏了」，那一條在 adjust 那邊
+    #   （寫出去的因子有沒有晚於資料最後一天）。
+    if n_future:
+        rl.info("尚未到期的公告", f"{n_future} 列（正常，事件日到了會自然進來）")
+    rl.check("每個月都問到了", failed == 0,
+             f"失敗 {failed} / {len(rng)} 個月" if failed else f"{len(rng)} 個月全問到")
+    # ⛔ finish() 一定要無條件呼叫——寫在三元運算的其中一支，
+    #    「這一趟成功」時區塊就不會寫出去，而那正是最常見的情況。
+    rc = rl.finish()
+    base = 0 if (ok or not rng) else 1
+    return 1 if (base or rc) else 0
 
 
 def cmd_purge(args):
@@ -953,6 +975,7 @@ def cmd_feed(args):
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
     ok = closed = failed = dropped_days = 0
+    bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
         # ★★ 成敗**看 `url` 有沒有拿到，不要比對訊息字串**。
@@ -986,12 +1009,14 @@ def cmd_feed(args):
         #   若端點有**日期下限**（例如只回得到近幾年），整趟會安靜跑滿
         #   5.8 小時、一列都沒寫，最後才發現。30 天足以跨過任何連假。
         if closed >= 30 and ok == 0:
+            bailed = f"連續 {i} 天回「沒有資料」且無一有列（很可能有日期下限）"
             print(f"[{name}] 前 {i} 天全部回「沒有資料」且無一有列，收手。"
                   f"端點是通的，但這個區間查不到東西——**很可能有日期下限**，"
                   f"不是連假。最後一則：{note}", file=sys.stderr)
             break
         # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
+            bailed = f"前 {i} 天有 {failed} 天連問都問不到且無一成功"
             print(f"[{name}] 前 {i} 天有 {failed} 天連問都問不到且無一成功，收手。"
                   f"最後一則：{note}", file=sys.stderr)
             break
@@ -1006,7 +1031,28 @@ def cmd_feed(args):
     #   原本寫 `return 0 if (ok or not days) else 1`，這種情況會回 exit code 1，
     #   Actions 上顯示紅叉。**讓成功的跑印出紅叉，會訓練人忽略紅叉**，
     #   下次真的失敗就看不見了。
-    return 1 if failed else 0
+
+    # ★ 寫進 data/meta/_last_run.md。
+    #   ⛔ 區塊名一定要帶 feed 名。`daily.yml` 一趟裡呼叫本支三次
+    #      （otcinst／exright／reduce），共用一個名字的話後面兩次會蓋掉前面，
+    #      那一頁只剩最後跑的 reduce——**正是 runlog 存在要防的那件事**。
+    #   ⚠ 每條檢查都先問「今天有沒有收到東西」才驗內容：exright／reduce 抓的是
+    #     當月區間，沒有事件的月份 ok=0 是**正常**的，不可以拿它當失敗
+    #     （防護誤殺跟防護失效一樣糟）。
+    rl = runlog.Run(f"feeds:{name}")
+    rl.info("區間", f"{args.start} ~ {args.end}｜待處理 {len(days)} 天")
+    rl.info("結果", f"有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
+    # ⛔ 提前收手在 Actions 上是看不見的（這幾步都是 continue-on-error），
+    #    而收手代表整趟根本沒跑完——這是要紅的，不是資訊。
+    rl.check("跑完整個區間，沒有提前收手", not bailed, bailed or "跑完")
+    rl.check("沒有「連問都問不到」的日子", failed == 0,
+             f"失敗 {failed} 天" if failed else "0 天")
+    # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
+    #    而每天默默丟幾十列外表完全正常。
+    rl.check("沒有因驗算不符而丟棄列的日子", dropped_days == 0,
+             f"{dropped_days} 天有丟棄" if dropped_days else "0 天")
+    rc = rl.finish()
+    return 1 if (failed or rc) else 0
 
 
 def cmd_probe(args):
