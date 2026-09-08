@@ -92,6 +92,12 @@ NAME_KEYS = ("公司名稱", "CompanyName")
 YM_KEYS = ("資料年月",)
 Y_KEYS = ("年度", "Year")
 Q_KEYS = ("季別", "Season")
+# ★ 出表日期兩種欄名都要收。**來源端每一張表、每個市場用哪一組是不固定的**：
+#   2026-09-08 實測 fs/2026Q2_ci.csv 上櫃全用英文、上市全用中文；
+#   fs/2026Q2_bd.csv 上櫃**同一列混用**（Date 英文 ＋ 年度／季別／公司代號中文
+#   ＋ CompanyName 英文）；bs/2026Q2_bd.csv 兩個市場又都用中文。
+#   規則不存在，所以不能靠「哪個市場用哪一組」去讀——**只能兩種都收**。
+DATE_KEYS = ("出表日期", "Date")
 
 
 def _pick(rec, keys):
@@ -167,7 +173,12 @@ def write_period(kind, tag, period, recs, market_of):
         for k in r:
             if k not in raw_cols:
                 raw_cols.append(k)
-    cols = ["stock_id", "name", "period", "market"] + raw_cols
+    # ★ 正規化欄放最前面。原始欄位原樣保留在後面，供逐欄對來源用。
+    #   `報表日期` 是第五個正規化欄（2026-09-08 新增）：年度／季別已經被 `period`
+    #   涵蓋、公司代號與名稱被 `stock_id`／`name` 涵蓋，只有出表日期沒有對應，
+    #   而它的原始欄名在來源端是浮動的（見 DATE_KEYS）。
+    #   ⚠ 下游一律讀正規化欄；原始欄有沒有值取決於來源那天給哪一組欄名。
+    cols = ["stock_id", "name", "period", "market", "報表日期"] + raw_cols
 
     rows, nocode = [], 0
     for r in recs:
@@ -175,7 +186,8 @@ def write_period(kind, tag, period, recs, market_of):
         if not code:
             nocode += 1
             continue
-        rows.append([code, _pick(r, NAME_KEYS), period, market_of.get(id(r), "")]
+        rows.append([code, _pick(r, NAME_KEYS), period,
+                     market_of.get(id(r), ""), _pick(r, DATE_KEYS)]
                     + [str(r.get(c, "")).strip() for c in raw_cols])
     # ★ 取不到代號的列**不寫**，並回報。寧可少一列，不要寫一列查不到是誰的。
     if nocode:

@@ -16,6 +16,7 @@
 
 跑法：python3 selftest_mops.py（不連網、不需要資料）
 """
+import csv
 import io
 import os
 import shutil
@@ -122,7 +123,38 @@ def main():
         got = run(csvtext(H1, R1), csvtext(H1, R1))
         chk("完全相同時不寫任何一行", not got, f"{len(got)} 行")
 
-        print("\n── 7. 沒有碰到 repo ──")
+        print("\n── 7. ★ 出表日期兩種欄名都要收（正規化欄 報表日期）──")
+        # 來源端每一張表、每個市場用中文還是英文欄名是**不固定的**，
+        # 2026-09-08 實測連同一列都會混用。讀原始欄一定會踩到空白。
+        M.OUT_DIR = tmp
+        recs = [
+            {"公司代號": "2330", "公司名稱": "台積電", "出表日期": "1150908"},   # 全中文
+            {"SecuritiesCompanyCode": "8299", "CompanyName": "群聯",
+             "Date": "1150908"},                                              # 全英文
+            {"SecuritiesCompanyCode": "6488", "公司名稱": "環球晶",
+             "Date": "1150908"},                                              # 混用
+        ]
+        mk = {id(recs[0]): "twse", id(recs[1]): "tpex", id(recs[2]): "tpex"}
+        M.write_period("fs", "ci", "2026Q2", recs, mk)
+        out = list(csv.DictReader(io.open(
+            os.path.join(tmp, "fs", "2026Q2_ci.csv"), encoding="utf-8")))
+        chk("三列都寫出來了", len(out) == 3, f"{len(out)} 列")
+        chk("★ 每一列的 報表日期 都有值（含混用那一列）",
+            all(r["報表日期"] == "1150908" for r in out),
+            str([r["報表日期"] for r in out]))
+        chk("stock_id 兩種欄名都取得到",
+            sorted(r["stock_id"] for r in out) == ["2330", "6488", "8299"])
+        chk("name 兩種欄名都取得到",
+            all(r["name"] for r in out), str([r["name"] for r in out]))
+        # ⚠ 這裡要按 stock_id 查，不可以用 out[0]——write_period 會依
+        #   (market, 代號) 排序，位置不是寫進去的順序。**位置定位就是本檔在講的那個坑。**
+        by = {r["stock_id"]: r for r in out}
+        chk("原始欄位仍原樣保留（沒有被回填）",
+            by["2330"]["Date"] == "" and by["2330"]["出表日期"] == "1150908"
+            and by["8299"]["出表日期"] == "" and by["8299"]["Date"] == "1150908",
+            "正規化欄補齊，raw 欄照來源原樣")
+
+        print("\n── 8. 沒有碰到 repo ──")
         log_after = io.open(REPO_LOG, "rb").read() if os.path.isfile(REPO_LOG) else None
         chk("★ repo 的 data/mops/_changes.log 逐位元沒變", log_before == log_after)
     finally:
