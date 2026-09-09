@@ -352,75 +352,106 @@ def main():
             say("\n    → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**"
                 "（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。")
 
-    # ── [7] ★ 歷史週別到底抓不抓得到 ──
-    #   [5] 已經看到查詢頁有 51 個資料日期選項（20250912 ~ 20260904），
-    #   但**「頁面上有下拉選單」不等於「我抓得到那一週」**——這正是本專案
-    #   一路踩的「拿間接證據代替直接證據」。所以這一節真的去打一發舊的週別。
-    #   ⛔ 參數名不用猜：**把查詢頁的 form 欄位抓下來照抄**，只改日期那一格。
-    say("\n[7] ★ 歷史週別：照抄查詢頁的 form，只改日期，真的打一發")
-    qs, err3 = B.get(QRY_PAGE, retries=2, timeout=60)
-    if err3:
-        say(f"    ✗ 查詢頁抓不到：{err3[:140]}")
-        if str(err3).startswith("LIMITED"):
-            say("    ⚠ 這是**被限流擋下**，不是端點沒有——換個時間再測，"
-                "不要據此下「沒有歷史」的結論。")
-    else:
-        html = qs.decode("utf-8", "replace")
-        form = {}
+    # ── [7] ★ 歷史週別到底抓不抓得到（第二版）──
+    #
+    #   ⛔ 第一版兩發都只回 **2 bytes**。那不是「參數被無視」，是**空回應**：
+    #     `SYNCHRONIZER_TOKEN` 多半是一次性的，照抄頁面那一顆送第二次就失效。
+    #   本版改三件事：
+    #     ① **每一發都先重抓查詢頁、拿新的 token**（這是上一版的結論）
+    #     ② 日期欄名**兩個都試**：form 裡是 `firDate`、select 是 `scaDate`，
+    #        上一版的挑法會先撞到 `firDate`，可能挑錯那一個
+    #     ③ 查詢多半要指定標的，所以帶 `stockNo=2330`、`sqlMethod=StockNo`
+    #   ⚠ 為什麼這件事值得多花一輪：集保端點**只回最新一週、不吃日期**，
+    #     **漏掉一週就永久少一週**。查詢頁列了 51 週（20250912~20260904），
+    #     那是目前唯一看得到的歷史來源。
+    say("\n[7] ★ 歷史週別（第二版：每發重抓 token、兩個日期欄名都試）")
+
+    def _form_and_dates():
+        """每次都重抓查詢頁 → (form, 日期選項)。token 一次性，不可重用。"""
+        raw, err = B.get(QRY_PAGE, retries=2, timeout=60)
+        if err:
+            return None, [], err
+        html = raw.decode("utf-8", "replace")
+        f = {}
         for m in re.finditer(r"<input[^>]*>", html, re.I):
             tag = m.group(0)
             n = re.search(r"name=[\"']([^\"']+)", tag)
             v = re.search(r"value=[\"']([^\"']*)", tag)
             t = re.search(r"type=[\"']([^\"']+)", tag)
             if n and (not t or t.group(1).lower() not in ("submit", "button", "reset")):
-                form[n.group(1)] = v.group(1) if v else ""
-        sels = re.findall(r"<select[^>]*name=[\"']([^\"']+)", html, re.I)
+                f[n.group(1)] = v.group(1) if v else ""
         opts = re.findall(r"<option[^>]*value=[\"']?(\d{8})[\"']?", html)
-        say(f"    form 的 input 欄位：{form}")
-        say(f"    select 欄位：{sels}")
-        say(f"    日期選項 {len(opts)} 個｜最新 {opts[0] if opts else '—'}｜"
-            f"最舊 {opts[-1] if opts else '—'}")
-        date_field = next((k for k in list(form) + sels
-                           if re.search(r"date|scaDate|ym", k, re.I)), None)
-        if not date_field:
-            say("    ⚠ 找不到日期欄位名——**不要猜一個塞進去**，先把上面兩行看懂")
-        elif len(opts) < 2:
-            say("    ⚠ 選項不足兩個，沒得比對新舊")
-        else:
-            newest, older = opts[0], opts[len(opts) // 2]
-            got = {}
-            for tag, d in (("最新", newest), ("較舊", older)):
-                body = dict(form)
-                body[date_field] = d
-                body.setdefault("SqlMethod", "StockNo")
-                body.setdefault("StockNo", "2330")
-                r4, e4 = _post(AJAX, body)
-                if e4:
-                    say(f"    {tag} {d}：✗ {e4[:120]}")
+        return f, opts, None
+
+    form0, opts, err7 = _form_and_dates()
+    if err7:
+        say(f"    ✗ 查詢頁抓不到：{str(err7)[:140]}")
+        if str(err7).startswith("LIMITED"):
+            say("    ⚠ 被限流擋下，不是端點沒有——換個時間再測。")
+    elif len(opts) < 2:
+        say(f"    ⚠ 日期選項只有 {len(opts)} 個，沒得比對新舊")
+    else:
+        newest, older = opts[0], opts[len(opts) // 2]
+        say(f"    日期選項 {len(opts)} 個｜最新 {newest}｜較舊 {older}｜"
+            f"最舊 {opts[-1]}")
+        seen = {}
+        for field in ("scaDate", "firDate"):
+            say(f"\n    ── 日期欄名試 `{field}`")
+            for tag, day in (("最新", newest), ("較舊", older)):
+                f, _, e = _form_and_dates()          # ★ 每一發都重抓，拿新 token
+                if e:
+                    say(f"       {tag} {day}：✗ 查詢頁重抓失敗 {str(e)[:80]}")
                     continue
-                txt = r4.decode("utf-8", "replace")
-                # 回應裡自己宣告的日期——**用回應的內容判斷，不是用我送出去的參數**
+                f[field] = day
+                f["sqlMethod"] = "StockNo"
+                f["stockNo"] = SAMPLE
+                f["stockName"] = ""
+                raw2, e2 = _post(AJAX, f, referer=QRY_PAGE)
+                if e2:
+                    say(f"       {tag} {day}：✗ {str(e2)[:110]}")
+                    continue
+                txt = raw2.decode("utf-8", "replace")
+                # ⛔ 用**回應自己宣告的日期**判斷，不是用我送出去的參數
                 echoed = sorted(set(re.findall(r"\b(20\d{6})\b", txt)))
-                say(f"    {tag} {d}：✓ {len(r4):,} bytes｜回應裡的日期 {echoed[:6]}")
-                got[d] = (len(r4), tuple(echoed[:6]))
-            if len(got) == 2:
-                a, b = list(got.values())
-                if a == b and a[0] < 200:
-                    # ⛔ 2026-09-09 實測：兩發都只回 **2 bytes**。
-                    #   第一版把「兩發一樣」一律判成「參數被無視」——**那會誤導**。
-                    #   2 bytes 是**空回應**，代表這一發根本沒成功
-                    #   （SYNCHRONIZER_TOKEN 多半是一次性的，照抄頁面那顆送第二次就失效），
-                    #   跟「參數被無視、回了同一批資料」是完全不同的兩件事。
-                    #   前者要換做法（每發重抓 token），後者是這條路不能用。
-                    say(f"    ⚠ **兩發都只回 {a[0]} bytes——那是空回應，不是「參數被無視」。**")
-                    say("       多半是 SYNCHRONIZER_TOKEN 一次性：照抄頁面那顆送第二次就失效。")
-                    say("       → 下一輪改成**每一發都先重抓查詢頁、拿新的 token**再送。")
-                    say("       ⛔ 在那之前**不可以**下「沒有歷史」的結論。")
-                elif a == b:
-                    say("    ⛔ **兩個週別回的長度與日期完全一樣——參數被無視**，"
-                        "跟 TWT49U 同一種坑，不能拿來回補歷史。")
-                else:
-                    say("    ✓ 不同週別回不同內容，**歷史真的抓得到**。")
+                nums = len(re.findall(r"\b\d{1,3}(?:,\d{3}){2,}\b", txt))
+                say(f"       {tag} {day}：{len(raw2):,} bytes｜"
+                    f"回應裡的日期 {echoed[:4]}｜大數字 {nums} 個")
+                seen[(field, tag)] = (len(raw2), tuple(echoed[:4]))
+        say("")
+        tiny = [k for k, v in seen.items() if v[0] < 200]
+        if tiny and len(tiny) == len(seen):
+            say("    ⛔ **每一發都還是空回應（< 200 bytes）。**")
+            say("       重抓 token 沒有解決，代表擋點不在 token——")
+            say("       可能還要 Cookie／Session，或這條 ajax 不接受直接呼叫。")
+            say("       ⛔ 仍然**不可以**下「沒有歷史」的結論：查詢頁確實列了"
+                f" {len(opts)} 個週別，只是我方取不到。")
+        elif len(seen) >= 2:
+            vals = set(seen.values())
+            if len(vals) == 1:
+                say("    ⛔ **所有組合回的長度與日期完全一樣——參數被無視。**")
+            else:
+                say("    ✓ **不同週別回不同內容——歷史真的抓得到。**")
+                for k, v in sorted(seen.items()):
+                    say(f"       {k[0]}／{k[1]}：{v[0]:,} bytes｜日期 {list(v[1])}")
+
+    # ── [8] 另一條路：開放資料專區還有哪些 dataset id ──
+    #   [5] 抓到 1-1 ~ 1-16 等一整排 id，我方只用了 1-5。
+    #   ⚠ **不是去猜哪個是歷史**，是把每個的形狀量出來讓人看：
+    #     回幾列、有幾個相異的資料日期。**有多個日期的才可能是歷史檔。**
+    say("\n[8] 開放資料專區其他 dataset id 的形狀（只量，不猜用途）")
+    for did in ("1-1", "1-2", "1-3", "1-4", "1-6", "1-7"):
+        r9, e9 = B.get(f"https://opendata.tdcc.com.tw/getOD.ashx?id={did}",
+                       retries=1, timeout=60)
+        if e9:
+            say(f"    id={did}: ✗ {str(e9)[:80]}")
+            continue
+        rows, note = parse(r9)
+        dates = sorted({pick(x, DATE_KEYS) for x in rows} - {""})
+        say(f"    id={did}: {len(r9):,} bytes｜{note}｜"
+            f"相異資料日期 {len(dates)} 個 {dates[:3]}"
+            f"{' ← ★ 多個日期' if len(dates) > 1 else ''}")
+        if rows:
+            say(f"             欄位：{list(rows[0])[:8]}")
 
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")
