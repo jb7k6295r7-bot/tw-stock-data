@@ -40,6 +40,7 @@ import io
 import os
 import re
 import sys
+import time
 import traceback
 import urllib.parse
 
@@ -323,7 +324,19 @@ def main():
     if ddr:
         t0 = ddr[0]
         hits = []
+        # ⚠ 這一節最多打 32×4=128 個請求，而整支 workflow 七支探針共用 15 分鐘。
+        #   ⇒ 給它一個**牆鐘預算**，超過就停。
+        #   ⛔ 但停下來要**明講是預算用完**——不可以讓沒跑到的年份看起來像「沒有資料」。
+        #     這正是今天反覆出現的形狀：把「我沒查」讀成「它沒有」。
+        # ⛔ 預算從環境變數讀，是為了讓 selftest 能把它設成 0 去**證明**
+        #   下面那條「預算用完」的分支真的會觸發。沒被執行過的分支不算測過。
+        t_start = time.time()
+        BUDGET = float(os.environ.get("HIST_BUDGET_SEC", "420"))
+        stopped = None
         for roc in range(85, 117):
+            if time.time() - t_start > BUDGET:
+                stopped = roc
+                break
             got = None
             for mmdd in ("1229", "1228", "0630", "0331"):
                 u = ROOT + f"Hist/EMERGINGSTOCK/HISTORICAL/DAILY/{t0}{roc:03d}{mmdd}.txt"
@@ -335,10 +348,15 @@ def main():
             say(f"     民國 {roc:>3}（{roc + 1911}）｜"
                 + (f"✓ {got[0]} 有檔 {got[1]:,} bytes" if got
                    else "✗ 試了 1229/1228/0630/0331 四天都沒有"))
+        if stopped is not None:
+            say(f"     ⛔ **預算（{BUDGET:.0f} 秒）用完，民國 {stopped}~116 這 "
+                f"{117 - stopped} 年根本沒去試**——"
+                "⚠ 它們是「沒查」，不是「沒有」，⛔ 不要當成範圍的上界。")
         ys = [r for r, g in hits if g]
         if ys:
             say(f"     ⭐ **實測命中的民國年：{ys[0]}~{ys[-1]}"
-                f"（{ys[0] + 1911}~{ys[-1] + 1911}），共 {len(ys)} 年**")
+                f"（{ys[0] + 1911}~{ys[-1] + 1911}），共 {len(ys)} 年**"
+                + ("　⚠ 上界只是「我試到這裡」" if stopped is not None else ""))
             gap = [r for r in range(ys[0], ys[-1] + 1) if r not in ys]
             if gap:
                 say(f"     ⚠ 中間有 {len(gap)} 年沒命中：{gap}"

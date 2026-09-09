@@ -316,6 +316,20 @@ def main():
     if not bad:
         print(f"✓ parse/pick 對 {len(shapes)} 種回應形狀都不會炸，且非物件不會通過")
 
+    # ── ⛔ 反向驗：hist_probe [6.5] 的「預算用完」分支要**真的會觸發** ──
+    #   那條分支的用途是防「把『我沒查』讀成『它沒有』」，
+    #   而它平常不會被走到（假回應是瞬間回來的）⇒ 不逼一次就等於沒有。
+    os.environ["HIST_BUDGET_SEC"] = "0"
+    try:
+        _e, o2 = run("hist_probe")
+    finally:
+        os.environ.pop("HIST_BUDGET_SEC", None)
+    if "預算" in o2 and "沒查" in o2:
+        print("✓ hist_probe [6.5] 的「預算用完 ⇒ 是沒查不是沒有」分支證實會觸發")
+    else:
+        print("✗ hist_probe [6.5] 把預算設成 0 也沒印出「預算用完」——那條分支是死的")
+        bad += 1
+
     # 反向驗這支自己有效：故意注入一個 NameError，必須被抓到
     import tdcc_probe as T
     src_ok = "SAMPLE" in dir(T)
