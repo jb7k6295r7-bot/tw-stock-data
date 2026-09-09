@@ -478,6 +478,20 @@ jobs:
         timeout-minutes: 10
         run: python n1_history.py
 
+      # ★★ `shares`（發行股數）的**第一條外部判準**。市場情報分析線 2026-09-10 00:20
+      #   找到櫃買「個股市值排行」`afterTrading/dailyMarktVal`，欄位含發行股數與收盤價，
+      #   他們比 2026-09-09 是 868/868 零誤差。
+      #   ⚠ 涵蓋範圍**只有上櫃**——上市那一半仍然是 C 級，
+      #     ⛔ 不可以在任何文件裡寫成「shares 已有外部判準」。
+      #   ⛔ 這一支只寫判準檔，不碰 stocks.csv 也不碰 universe/daily（單一寫入者）。
+      - name: 發行股數對帳（上櫃，官方個股市值排行）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_shares.py
+          python shares_check.py
+
       # ★★ 母體日檔**整列漏掉**的規模。市場情報分析線 2026-09-10 00:20
       #   拿到官方直接證據（6904 伯鑫 9 月官方 7 天、我方 3 天，而且成交張數 0 的
       #   日子還有零股成交金額）⇒ 官方確實發布那一列，是我方不寫。
