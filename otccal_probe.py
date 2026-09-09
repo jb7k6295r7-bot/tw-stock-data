@@ -365,6 +365,31 @@ def main():
             say(f"       ・{j}｜{len(jr):,} bytes｜路徑 {len(paths)} 個"
                 + (f"：{paths[:8]}" if paths else "")
                 + (f"｜關鍵字 {kw}" if kw else "｜（沒有關鍵字）"))
+            # ★★ 第三輪（2026-09-09 20:3x）。上一輪在 `tables.js` 裡量到
+            #   `calendar` 56 次、`Calendar` 86 次，**而路徑抓到 0 個**。
+            #   ⇒ 那不代表沒有端點，代表**網址是字串拼出來的**，
+            #     而我的正則只認寫死的絕對路徑。
+            #   ⛔ 所以這裡改成「把那些字附近的原文印出來」——
+            #     ⛔ 不是再拼一次網址，是去看它自己怎麼拼。
+            if kw.get("calendar") or kw.get("Calendar") or kw.get("holiday"):
+                say(f"         ★★ 這一支有關鍵字，印出附近的原文（最多 12 段）：")
+                seen, shown = set(), 0
+                for m in re.finditer(r"[Cc]alendar|[Hh]oliday", jt):
+                    seg = jt[max(0, m.start() - 150):m.start() + 150]
+                    seg = re.sub(r"\s+", " ", seg).strip()
+                    key = seg[100:200]
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    say(f"           …{seg}…")
+                    shown += 1
+                    if shown >= 12:
+                        break
+                # ★ 另外把這一支裡**所有像端點的字串**撈出來，不限開頭
+                eps = sorted(set(re.findall(
+                    r'["\']((?:https?://[^"\']{6,90}|/[A-Za-z0-9_\-/.]{6,60}'
+                    r'(?:\.(?:php|json|html|do|ashx)|/[a-z\-]{3,30})))["\']', jt)))
+                say(f"         ★ 這一支裡像端點的字串 {len(eps)} 個：{eps[:25]}")
 
     say("\n     ⚠⚠ 下面這一組**是我猜的路徑**（依據：櫃買新站端點的命名慣例）。")
     say("       ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，"

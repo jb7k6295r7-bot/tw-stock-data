@@ -77,8 +77,20 @@ DATAGOV = {"success": True, "result": {
                       "https://opendata.tdcc.com.tw/getOD.ashx?id=1-9"}]}}
 
 
+# ⚠ 2026-09-09 第三次補同一族的洞：otccal_probe 新加的「把 js 裡 calendar
+#   附近的原文印出來」那條分支，**只有在假 js 裡真的有 calendar 才會被走到**。
+#   前兩次（holiday_probe 的 `<script src>`、urllib 沒 import）都是同一個原因：
+#   ⛔ **假的比真的簡單，就等於沒測。**
+FAKE_JS = (b"var t={};function initCalendar(o){"
+           b"$.ajax({url:'/www/zh-tw/announce/holiday',data:{yy:o.year},"
+           b"dataType:'json'});}"
+           b"t.Calendar=initCalendar;// calendar table\n")
+
+
 def fake_get(url, **kw):
     u = str(url)
+    if u.endswith(".js") or "/rsrc/" in u:
+        return FAKE_JS, None
     if "swagger" in u:
         return json.dumps(SWAGGER).encode(), None
     if "data.gov.tw" in u:
