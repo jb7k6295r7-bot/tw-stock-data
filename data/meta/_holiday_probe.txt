@@ -39,18 +39,8 @@
        2017-06-03／2017-09-30／2018-03-31／2018-12-22
      ⇒ 照「剔除補班日」做會**刪掉 8 個真的交易日**，而且刪掉之後那幾天的資料還在、只是日曆說它不存在——**最難查的那種錯**。
      ⛔ 所以辦公日曆表只能當**基底**，不可以拿它的補班規則直接套。
-
-  ── ① TWSE 開休市日（政府資料開放平臺 dataset 頁）
-     https://data.gov.tw/dataset/25980
-     ✓ 510,928 bytes｜中文 3,377 字
-       「休市」0 次
-       「開休市」0 次
-       「補班」0 次
-       「補行上班」0 次
-       「行事曆」0 次
-       「csv」12 次
-       「json」7 次
-       頁面給的資料檔連結 0 個：（沒有）
+  ⚠ 上一版這裡的 `data.gov.tw/dataset/25980` **是我自己猜的 id**——實測「休市」0 次，
+     ⇒ 那不是證交所開休市那份，是我編了一個編號。⛔ 已拿掉，改成從 TWSE 官網那頁自己找。
 
   ── ② 中華民國政府行政機關辦公日曆表（dataset 頁）
      https://data.gov.tw/dataset/14718
@@ -62,10 +52,28 @@
        「行事曆」16 次
        「csv」282 次
        「json」64 次
-       頁面給的資料檔連結 38 個：['https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/06b25c90-d7a6-4d8f-9a49-e69ce32488b7.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf-73b2279666c2.csv&amp;nfix=&amp;name=114年中華民國政府行政機關辦公日曆表.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf-73b2279666c2.csv&nfix=&name=114年中華民國政府行政機關辦公日曆表.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/4d215402-15c7-4ad9-ab90-a33f34a63f5b.csv&amp;nfix=&amp;name=109%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/4d215402-15c7-4ad9-ab90-a33f34a63f5b.csv&nfix=&name=109%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8.csv']
+       頁面給的資料檔連結 20 個：['https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/06b25c90-d7a6-4d8f-9a49-e69ce32488b7.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf-73b2279666c2.csv&nfix=&name=114年中華民國政府行政機關辦公日曆表.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/4d215402-15c7-4ad9-ab90-a33f34a63f5b.csv&nfix=&name=109%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/541450de-69ad-4649-9d9d-13453a58de71.csv&nfix=&name=110%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8_Google%e8%a1%8c%e4%ba%8b%e6%9b%86%e5%b0%88%e7%94%a8.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/5f2ff9c5-a235-4819-8c62-f064fc5bffb8.csv&nfix=&name=108%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8.csv']
          ✓ https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/06b25c90-d7a6-4d8f-9a49-｜5,791 bytes｜出現的年份 ['2025']
-         ✗ https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf- → UnicodeEncodeError: 'ascii' codec can't encode characters in position 
-         ✗ https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf- → UnicodeEncodeError: 'ascii' codec can't encode characters in position 
+           表頭逐字：Subject,Start Date,Start Time,End Date,End Time,All Day Event,Description,Location
+           「是否放假」0 次
+           「備註」0 次
+           「上班」1 次
+           「放假」1 次
+           「補行」1 次
+         ✓ https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf-｜6,396 bytes｜出現的年份 ['2025']
+           表頭逐字：西元日期,星期,是否放假,備註
+           「是否放假」1 次
+           「備註」1 次
+           「上班」1 次
+           「放假」1 次
+           「補行」1 次
+         ✓ https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/4d215402-15c7-4ad9-ab90-｜6,482 bytes｜出現的年份 ['2020']
+           表頭逐字：西元日期,星期,是否放假,備註
+           「是否放假」1 次
+           「備註」1 次
+           「上班」3 次
+           「放假」5 次
+           「補行」0 次
 
   ── ③ TWSE 官網「市場開休市」頁
      https://www.twse.com.tw/zh/holidaySchedule/holidaySchedule
@@ -78,10 +86,20 @@
        「csv」2 次
        「json」1 次
        頁面給的資料檔連結 0 個：（沒有）
-  ⇒ 判準：拿到的東西要能回答「**某一個未來日期開不開盤**」才算數。
-    ⛔ 只列國定假日不夠——**補班的週六台股照開**（上面 8 天是實測）。
 
-── 下一步 ──
-[2] 有內容、[3] 找得到台北市、[4] 分辨得出「全列」還是「只列放假的」、
-[6] 有日期——**四項全過**才可以寫偵測器並接進交易日曆的前瞻那一半。
-⛔ 任一項沒過就停在這裡：**會把正常交易日誤標成休市的偵測器，比沒有偵測器更貴。**
+  ── ④ 從 TWSE 那頁的 js 裡找它自己的端點（⛔ 不自己拼網址）
+     那頁載入 4 支 js
+
+✗ 這一趟在下面這裡炸掉了，以下是 traceback 原文（沒有整理）：
+Traceback (most recent call last):
+  File "/home/runner/work/tw-stock-data/tw-stock-data/holiday_probe.py", line 242, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/runner/work/tw-stock-data/tw-stock-data/holiday_probe.py", line 201, in main
+    uj = urllib.parse.urljoin(hs, j)
+         ^^^^^^
+NameError: name 'urllib' is not defined. Did you forget to import 'urllib'
+
+
+✗ 2026-09-09T07:53:05Z holiday_probe.py 非 0 結束（rc=1），
+  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。
