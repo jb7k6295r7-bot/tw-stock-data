@@ -298,10 +298,29 @@
      首列：{'Date': '1150908', 'Sector': '光電業', 'TradeAmount': '6247485988', 'TradeWeight': '7.12', ' NumberOfSharesTraded': '62050048'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,181 bytes｜28 筆
+     ✓ 5,178 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1150908', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5214433202', 'CurrentlySharesOC/FIHeld': '835176827', 'PercentageOfSharesOC/FMIHeld': '16.02%'}
+     首列：{'Date': '1150908', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5214433202', 'CurrentlySharesOC/FIHeld': '837492827', 'PercentageOfSharesOC/FMIHeld': '16.06%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
+
+[7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
+  industry.csv 的 tpex：890 檔／28 個代碼；名稱空白的代碼 ['32', '33']（[26, 4] 檔）
+  官方 mopsfin_t187ap05_OA：890 筆，帶得出代號＋產業別的 890 檔，相異產業別 28 個
+
+  ── 先驗方法：有中文名的代碼，官方產業別對不對得上 ──
+     對得上 25／對不上 1／官方沒收到成員 0（共 26 個有名稱的代碼）
+       ✗ 17 本庫「金融保險」／官方多數「金融業」（9/9）
+     ⚠ 方法在已知答案上就有不合——下面的推定**一律不可採用**，即使某個代碼看起來 1:1。
+
+  ── 空白代碼的對照結果 ──
+     代碼 32：26 檔，官方對到 26 檔
+       文化創意業：26/26
+       ⇒ 26/26 全對到「文化創意業」，且沒有別的代碼在用 ⇒ 看起來是 1:1，但**方法先驗沒過，仍不可採用**
+     代碼 33：4 檔，官方對到 4 檔
+       農業科技：4/4
+       ⇒ 4/4 全對到「農業科技」，且沒有別的代碼在用 ⇒ 看起來是 1:1，但**方法先驗沒過，仍不可採用**
+
+  ⛔ 以上一律**不寫進 industry.csv**：這是實測推定，不是官方對照表。要不要採用是市場情報分析的決定。
 
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
