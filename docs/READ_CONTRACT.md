@@ -11,6 +11,23 @@
 
 ---
 
+## ⛔⛔ 讀本文之前：**要知道「有什麼檔」，先讀 `data/meta/_db_status.md`**
+
+**本文回答「怎麼讀」，`_db_status.md` 回答「有什麼」。⛔ 不要把前者當後者用。**
+
+`_db_status.md` 由 `db_status.py` **每趟自動產生**（檔頭有 `generated` 時戳），
+所以它一定是當下的現況；而本文是人寫的，**會過期**。
+
+⚠ 2026-09-09 實測代價：K線線據本文的路徑清單去找檔，
+grep 不到某個欄位就推論「**資料庫沒有處置資料**」，一口氣報了三個錯誤結論
+（處置、注意、交易日曆）——**而那三份檔案都存在**。
+他自己的結案是：「**我用一個檔的欄位推論了整個資料庫**，
+而只要先讀 `_db_status.md`，這三個錯一個都不會發生。」
+
+⇒ **要斷言「資料庫沒有 X」，看現況清單，不是看本文、更不是看某一個檔有沒有那個欄位。**
+
+---
+
 ## 零、界線：資料庫取代數字，不取代消息
 
 - **量化欄位**（價格、量、籌碼、財報、股本）→ 讀資料庫
@@ -446,8 +463,33 @@ def factor_at(rows, d):        # rows 已按日期升冪
 三個十秒內做得完、但能抓到真問題的檢查：
 
 1. **列數**對照 `data/stocks/_index.csv`（欄位：`stock_id, rows, first, last`）
-2. **日期集合**對照交易日曆
-   （`data/universe/_coverage_backfill.csv` 與 `_coverage.csv` 裡 twse 或 tpex > 0 的日子）
+2. **日期集合**對照交易日曆 —— ⛔ **用 `data/meta/calendar_twse.csv`**
+   ```python
+   import csv, io
+   with io.open("data/meta/calendar_twse.csv", encoding="utf-8") as f:
+       cal = sorted(r["date"] for r in csv.DictReader(f) if r.get("date"))
+   ```
+   ⛔⛔ **這一條 2026-09-09 改過，舊版是錯的。**
+   舊版教人讀 `data/universe/_coverage_backfill.csv` 與 `_coverage.csv`。
+   **那兩個不是交易日曆，是「抓取覆蓋紀錄」**，而且：
+
+   - 交易日曆的紀錄**分在三個檔**（`_coverage.csv`／`_coverage_backfill.csv`／
+     `_coverage_daily.csv`），**要三個都 union 才完整**；
+   - 每日管線現在只寫 **`_coverage_daily.csv`** ⇒ 只讀舊版那兩個的人，
+     窗口會**停在 2026-09-03 而且愈差愈遠**。
+
+   ⚠ 實測代價（2026-09-09，兩條線各踩一次）：
+   K線線照舊版讀，算出「日曆缺最近 4 天」，於是他的
+   「近 20／60 個交易日不可有缺漏」閘門**靜默往前平移**，
+   **最近幾天完全不在檢查範圍內，而閘門仍然回報通過**。
+   回測線沒踩到，因為它一直只讀 `calendar_twse.csv`。
+
+   ⇒ **`calendar_twse.csv` 才是日曆**（來自 TWSE `FMTQIK` 大盤月報，
+     與建日檔的個股端點不同條路，所以不是循環自證）。
+     `_coverage*` 請只當「抓取覆蓋紀錄」用，⛔ 不要當日曆。
+   ⇒ 自己那一側加一條斷言：**日曆最後一天 ≥ 你手上價格的最後一天**。
+     少讀一個檔的時候它會當場紅，而不是安靜地平移。
+     （我方同名斷言在 `calendar_audit.calendar_lag()`，每天進 `_last_run.md`。）
 3. **價格合理性**：`low ≤ open,close ≤ high`、零價與負價、單日漲跌超出 ±11%
    （超出的多半是除權息或資料錯，要點名不要略過）
 
