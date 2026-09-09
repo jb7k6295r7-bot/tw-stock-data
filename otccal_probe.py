@@ -51,6 +51,11 @@ import os
 import re
 import sys
 import traceback
+# ⚠ 2026-09-09：第 [3] 節第二輪用了 `urllib.parse.urljoin` 卻沒 import。
+#   `selftest_probes.py` 當場炸出 NameError——**這一次是在推之前**。
+#   今早 holiday_probe 犯同一個錯時假頁面沒有 `<script src>`，那條分支
+#   從沒被走到，於是一路過關到 Actions。⇒ 假回應的形狀對，測試才有用。
+import urllib.parse
 
 import backfill as B
 
@@ -322,6 +327,45 @@ def main():
         # ★ 從頁面自己的字串裡撈路徑，⛔ 不是從我腦袋裡撈
         paths = sorted(set(re.findall(r'["\'](/www/[a-zA-Z0-9_\-/]+)["\']', t)))
         say(f"     頁面字串裡的 /www/ 路徑 {len(paths)} 個：{paths[:10]}")
+        # ★★ 2026-09-09 第二輪（使用者再次給了這一頁）。上一輪只**數**了
+        #   中文字數與 <tr> 個數，⛔ **沒有印出這一頁到底寫了什麼**——
+        #   而「頁面是空殼」與「頁面說『請見公告專區』」是兩種完全不同的結論，
+        #   前者要去翻 js，後者要去翻它指過去的地方。**數字分不出這兩者。**
+        txt = re.sub(r"<script[^>]*>.*?</script>", " ", t, flags=re.S)
+        txt = re.sub(r"<style[^>]*>.*?</style>", " ", txt, flags=re.S)
+        txt = re.sub(r"<[^>]+>", " ", txt)
+        txt = re.sub(r"\s+", " ", txt).strip()
+        say(f"     ★ 這一頁**看得見的字**（{len(txt)} 字，全部印出來）：")
+        for i in range(0, min(len(txt), 2000), 160):
+            say("       " + txt[i:i + 160])
+        # ★ 頁面裡的連結：空殼頁常常只是把人導去別的地方
+        hrefs = sorted(set(re.findall(r'href=["\']([^"\'#]+)', t)))
+        hrefs = [h for h in hrefs if not h.endswith((".css", ".ico", ".png", ".jpg"))]
+        say(f"     頁面裡的連結 {len(hrefs)} 個：{hrefs[:20]}")
+
+        # ★★ 翻它載入的**每一支** js。上一輪只翻過 global.js。
+        #   ⛔ 這裡找的是**它自己寫的路徑**，不是我拼的——差別在於
+        #     前者是證據，後者是猜測。
+        say("     ★ 逐支 js 裡的路徑與關鍵字（⛔ 只回報找到的，不拼網址）")
+        for j in js:
+            if j.startswith("http") and "tpex.org.tw" not in j:
+                say(f"       ・{j}｜（外部網域，跳過）")
+                continue
+            ju = urllib.parse.urljoin(HOLIDAY_PAGE, j)
+            jr, je = B.get(ju, retries=1, timeout=45)
+            if je:
+                say(f"       ✗ {j}｜{str(je)[:70]}")
+                continue
+            jt = jr.decode("utf-8", "replace")
+            paths = sorted(set(re.findall(
+                r'["\'](/(?:www|openapi|web)/[A-Za-z0-9_\-/.]{3,80})["\']', jt)))
+            kw = {w: jt.count(w) for w in ("holiday", "Holiday", "休市", "calendar",
+                                           "Calendar", "announce")}
+            kw = {k: v for k, v in kw.items() if v}
+            say(f"       ・{j}｜{len(jr):,} bytes｜路徑 {len(paths)} 個"
+                + (f"：{paths[:8]}" if paths else "")
+                + (f"｜關鍵字 {kw}" if kw else "｜（沒有關鍵字）"))
+
     say("\n     ⚠⚠ 下面這一組**是我猜的路徑**（依據：櫃買新站端點的命名慣例）。")
     say("       ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，"
         "⛔ 而且不論結果如何，猜的網址**不會**被寫成結論。")
