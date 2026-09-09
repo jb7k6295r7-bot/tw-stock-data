@@ -63,6 +63,10 @@ HTML = ("<html><body><form>"
         #   於是一個 `NameError: urllib` 一路過關到 Actions 才炸。
         #   ⛔ **假的比真的簡單，就等於沒測。**
         "<script src='/static/app.js'></script>"
+        # ⚠ 第五次補同一族：otccal 第四輪要讀 **inline script** 與 **data-\***，
+        #   假頁面兩樣都沒有 ⇒ 那兩條分支又不會被走到。
+        "<script>var opt={url:'/www/zh-tw/announce/holidayList',yy:115};</script>"
+        "<div data-format='json' data-start='115' data-api='/www/zh-tw/x'></div>"
         "</form></body></html>")
 # ⚠ 2026-09-09：otccal_probe 的重點是「日期欄 min/max ＋ 與我方日曆雙向比對」。
 # 若假回應照 OPENAPI_ROWS（沒有日期欄）回，它會在「沒有日期欄」那一行就 return，

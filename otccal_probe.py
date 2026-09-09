@@ -343,6 +343,32 @@ def main():
         hrefs = [h for h in hrefs if not h.endswith((".css", ".ico", ".png", ".jpg"))]
         say(f"     頁面裡的連結 {len(hrefs)} 個：{hrefs[:20]}")
 
+        # ★★★ 第四輪（2026-09-09 20:2x）。第三輪的結論是**否定的**：
+        #   `tables.js` 那 142 處 `calendar` 全是 **moment.js 的語系表與
+        #   daterangepicker**，唯一像端點的字串是 Google reCAPTCHA。
+        #   ⇒ **關鍵字次數多≠有端點**。11 支 js 裡一條寫死的路徑都沒有。
+        #   而 js 裡夾帶一個真線索：`isROC`／`yearOnly`／`monthOnly`
+        #   ——那是**民國年**的日期選擇器，和頁面上「歷年開休市日期：民國 ___」
+        #   對得起來 ⇒ 資料是**選了年份之後才去要**的。
+        #   ⇒ 網址只剩兩個地方可能：**頁面自己的 inline `<script>`**，
+        #     或 **`data-*` 屬性**（`_tpex_probe.txt` [10] 就記過 TPEx 用 data-）。
+        inline = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", t, re.S)
+        say(f"     ★★ 頁面自己的 inline <script> {len(inline)} 段"
+            f"（共 {sum(len(x) for x in inline):,} 字）：")
+        for i, blk in enumerate(inline):
+            b = re.sub(r"\s+", " ", blk).strip()
+            if not b:
+                continue
+            say(f"       ── 第 {i + 1} 段（{len(b)} 字）")
+            for k in range(0, min(len(b), 1200), 160):
+                say(f"         {b[k:k + 160]}")
+        # ★ data-* 屬性：TPEx 新站把參數放在這裡（見 _tpex_probe.txt [10]）
+        das = sorted(set(re.findall(r'(data-[a-zA-Z0-9_\-]+)\s*=\s*["\']([^"\']*)',
+                                    t)))
+        say(f"     ★ `data-*` 屬性 {len(das)} 種：")
+        for k, v in das[:40]:
+            say(f"       {k} = {v[:90]!r}")
+
         # ★★ 翻它載入的**每一支** js。上一輪只翻過 global.js。
         #   ⛔ 這裡找的是**它自己寫的路徑**，不是我拼的——差別在於
         #     前者是證據，後者是猜測。
