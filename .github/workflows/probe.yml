@@ -28,6 +28,14 @@ name: 端點探針（只跑探針，約 1 分鐘）
 
 on:
   workflow_dispatch:
+  # ★ 2026-09-09 補回「自癒」：這一支變成唯一寫入者之後，
+  #   「改了探針會自動重跑」那個條件就沒了——**改了探針沒人按，等於沒改**，
+  #   而且外表完全正常（檔案在、格式對，只是內容是上一版的）。
+  #   ⇒ 每天排一趟，但**只在需要時才真的打對方的伺服器**（條件見下面那一步）。
+  #     不需要時整趟不寫檔、不 commit，所以不會製造每天一筆沒人看的 commit。
+  # ⚠ 08:30 台北 ＝ 00:30 UTC：避開 daily.yml（11:00／15:59 UTC）。
+  schedule:
+    - cron: "30 0 * * 1-5"
 
 permissions:
   contents: write
@@ -80,9 +88,30 @@ jobs:
                       "twsthr_probe.py:_twsthr_probe.txt" \
                       "holiday_probe.py:_holiday_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
-            # ⚠ 這支**不套** daily 的「程式比輸出新才跑」條件：
-            #   手動按下去就是要跑，條件會讓「我剛按了卻沒跑」變成可能。
-            if true; then
+            # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
+            #   排程觸發時才套三選一的重跑條件：
+            #     ① 檔不存在
+            #     ② 上一趟非 0 結束（輸出檔裡有那行「非 0 結束」的痕跡）
+            #     ③ **探針程式比輸出新**——這一條就是自癒的本體
+            #   ⛔ ② 比對的是 workflow 自己寫進去的那句話，**不是 grep '✗'**：
+            #     探針的正常輸出裡本來就有一堆 ✗（那是「這條路試過了、不通」的記錄），
+            #     用 ✗ 當條件會變成每天都重跑，等於沒有條件。
+            #   ⚠ ③ 比的是 **git commit 時間**不是 mtime：Actions 每次都是全新 checkout，
+            #     mtime 永遠是「剛剛」，用它永遠比不出新舊。
+            NEED=1
+            if [ "${{ github.event_name }}" = "schedule" ]; then
+              NEED=0
+              [ -f "$F" ] || NEED=1
+              grep -q "非 0 結束" "$F" 2>/dev/null && NEED=1
+              SC=$(git log -1 --format=%ct -- "$SCRIPT" 2>/dev/null || echo 0)
+              OT=$(git log -1 --format=%ct -- "$F" 2>/dev/null || echo 0)
+              if [ "${SC:-0}" -gt "${OT:-0}" ]; then
+                NEED=1
+                echo "→ $SCRIPT 比 $F 新（$SC > $OT）⇒ 要重跑"
+              fi
+              [ "$NEED" = "0" ] && echo "→ 跳過 $SCRIPT（輸出是最新的）"
+            fi
+            if [ "$NEED" = "1" ]; then
               echo "→ 跑 $SCRIPT"
               # ⚠ 2026-09-09：這裡本來是 `python "$SCRIPT" || true`。
               #   tdcc_probe.py 炸在 NameError、`_write` 一次都沒跑到、輸出檔原封不動，
@@ -130,8 +159,7 @@ jobs:
             exit 1
           fi
           git add -- data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt \
-                     data/meta/_parvalue_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt \
-                     data/meta/_holiday_probe.txt
+                     data/meta/_parvalue_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt
           if git diff --staged --quiet; then
             echo "沒有變動，不 commit"
           else
