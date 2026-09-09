@@ -76,7 +76,10 @@ NO_SOURCE = [
     #   是證券種類，見 READ_CONTRACT 產業別那一節。問錯問題不算缺資料。
     "「某一天到底有幾檔股票成交」的**帶寬**（判準本身 2026-09-08 有了："
     "`MI_INDEX` 漲跌家數 vs 日檔，見 `_breadth_audit.csv`。"
-    "⚠ **2026-09-09 已回補 1,401/2,847 天（49%）**，不再是「只有五天」；"
+    # ⚠ 這個數字**每天都在動**。寫死的話它會安靜地過期，而引用它的人不會知道它舊了
+    #   （2026-09-09 實測：這裡曾寫 1,401，當天下午已經是 2,001）。
+    #   ⇒ 用佔位符，寫檔時現算。算不出來就寫「算不出來」，⛔ 不留上一次的值。
+    "⚠ **回補進度 {BREADTH}**，不再是「只有五天」；"
     "但帶寬要等回補完成才訂——**事後看資料再訂門檻等於沒有門檻**，"
     "所以目前仍然只驗方向：日檔的普通股家數 ≥ MI_INDEX 的股票家數）",
     "上櫃的交易日曆**沒有獨立的外部來源**（FMTQIK 只有上市）。"
@@ -225,9 +228,31 @@ def section_lastrun(out):
     out.append("")
 
 
+def _breadth_progress():
+    """回補進度現算。⛔ 算不出來就說算不出來，不可以回一個舊的數字。"""
+    try:
+        # ⚠ 用 `__file__` 錨定，不用模組裡那個 `DATA = "data"`——那是**相對 CWD** 的，
+        #   從別的目錄叫這支就會指到不存在的地方（runlog.py 有同一條註記）。
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+        done = len(glob.glob(os.path.join(root, "universe", "breadth", "*.csv")))
+        with io.open(os.path.join(root, "meta", "calendar_twse.csv"),
+                     encoding="utf-8") as f:
+            tot = max(0, sum(1 for _ in f) - 1)
+        if not tot:
+            return "算不出來（日曆是空的）"
+        return f"{done:,}/{tot:,} 天（{done / tot:.0%}）"
+    except OSError as ex:                                        # noqa: BLE001
+        return f"算不出來（{type(ex).__name__}）"
+
+
 def section_nosource(out):
     out.append("## ④ 完全沒有來源（人維護的清單，不是算出來的）\n")
+    ctx = {"BREADTH": _breadth_progress()}
     for x in NO_SOURCE:
+        # ⚠ 只有帶佔位符的那幾條會被代入；其餘原文照抄。
+        #   `format` 會把 `{` 當語法，所以只對真的含 `{X}` 的字串做。
+        for k, v in ctx.items():
+            x = x.replace("{" + k + "}", v)
         out.append(f"- {x}")
     out.append("")
 
