@@ -278,6 +278,32 @@ def main():
                 f"（共 {len(named)} 個有名稱的代碼）")
             for b in bad[:10]:
                 say(f"       ✗ {b}")
+            # ★ 第二道，比對標籤字串更該問的：**分群一不一致**。
+            #   ⚠ 本庫的 tpex 名稱是拿代碼去查**上市** MI_INDEX 的類股標題填的
+            #     （`industry.py` 裡就一份 `names`，不分市場），所以上市與上櫃
+            #     用字不同時，「標籤對不上」量到的是**用字**，不是分群錯。
+            #   真正要問的是：官方的產業別欄，有沒有把同一個代碼的成員
+            #   **全部**歸到同一格（不管那一格叫什麼），而且不同代碼不共用同一格。
+            pure = mixed = 0
+            share = {}
+            for c in sorted(named):
+                got = [off[r["stock_id"]] for r in by_code[c]
+                       if r["stock_id"] in off]
+                if not got:
+                    continue
+                if len(set(got)) == 1:
+                    pure += 1
+                    share.setdefault(got[0], []).append(c)
+                else:
+                    mixed += 1
+            dup = {n: cs for n, cs in share.items() if len(cs) > 1}
+            say(f"     ── 分群一致性（不看名稱，只看分組）──")
+            say(f"        成員全歸到同一格的代碼 {pure}／被拆成多格的 {mixed}"
+                f"／多個代碼共用同一格 {len(dup)}"
+                + (f"：{dup}" if dup else ""))
+            if mixed == 0 and not dup:
+                say("        ⇒ 官方的分群與本庫的代碼**一一對應**。"
+                    "此時標籤對不上只代表兩邊用字不同，不代表 join 錯。")
             trust = (dis == 0 and agree >= 10)
             if trust:
                 say("     ⇒ 方法在已知答案上全中，下面對空白代碼的推定可信度較高。")
