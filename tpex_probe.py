@@ -600,11 +600,25 @@ def main():
         say(f"     ② 與我方標成 {code} 的交集：{len(inter)}／我方 {len(mine[code])}"
             + ("　← ✓ 對得上" if inter else "　← ⛔ **一個都對不上，參數可能沒生效**"))
         # ③ 名稱：頁面上有沒有寫這個代碼叫什麼
-        plain = re.sub(r"<[^>]+>", " ", t11)
-        plain = re.sub(r"\s+", " ", plain)
-        near = [plain[max(0, m.start() - 60):m.start() + 60]
-                for m in re.finditer(r"產業別|類別|industry", plain)][:4]
-        say(f"     ③ 「產業別／類別」附近逐字：{near or '（沒有）'}")
+        # ⛔ 上一版只印「產業別」三個字附近的上下文，抓到的是**表頭**不是值。
+        #   ⇒ 改成逐列拆 <td>，取「產業別」那一欄的**實際值**，並印相異值。
+        #   這樣才回答得了「32 叫什麼名字」，而不是「頁面上有產業別這一欄」。
+        rowsx = re.findall(r"<tr[^>]*>(.*?)</tr>", t11, re.S | re.I)
+        head, vals = None, []
+        for tr in rowsx:
+            cells = [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", c)).strip()
+                     for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, re.S | re.I)]
+            if head is None and "產業別" in cells:
+                head = cells
+                continue
+            if head and len(cells) == len(head):
+                vals.append(cells[head.index("產業別")])
+        uniq = sorted({v for v in vals if v})
+        say(f"     ③ 表頭：{head}")
+        say(f"     ③ ★ 「產業別」欄的相異值（{len(uniq)} 種）：{uniq[:6]}"
+            + ("　← ⛔ 不只一種，不能當成這個代碼的名字" if len(uniq) > 1 else
+               ("　← ✓ 只有一種 ⇒ **這就是代碼 " + code + " 的中文名**"
+                if len(uniq) == 1 else "　← ⛔ 讀不到值")))
     if "32" in got and "33" in got:
         same = got["32"] == got["33"]
         say(f"\n  ① 32 與 33 的清單{'**完全一樣 ⇒ 參數沒生效**' if same else '不同 ⇒ 參數有生效'}"
