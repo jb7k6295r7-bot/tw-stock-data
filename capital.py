@@ -142,6 +142,36 @@ def get(url, retries=2, timeout=40):
     return None, last
 
 
+def _num_par(v):
+    """面額專用的數字清洗。⛔ 不要拿 `_num` 直接用。
+
+    ⭐ 2026-09-09 才發現的靜默失血：端點**一直都給面額**，而我方一直把它丟掉。
+
+        twse `普通股每股面額` = '新台幣                  0.5000元'
+        tpex `ParValueOfCommonStock` = '新台幣                 10.0000元'
+
+    `_num()` 對這種字串 `float()` 會 ValueError ⇒ 回空字串 ⇒
+    `reconcile()` 走進「端點沒給面額」那條回推路徑 ⇒
+    回推的候選清單又只有 (10, 5, 1, 0.1) ⇒ **彈性面額股全部被標 mismatch**。
+    ⇒ 兩個獨立的缺陷剛好疊在一起，而外表完全正常。
+
+    ⛔ 清洗只脫**固定的**字首字尾（新台幣／NT$／元），
+      **不做「從字串裡撈第一個數字」**——那種寫法會把
+      「無面額」「每股面額 10 元（特別股 5 元）」這種東西也讀出一個數來，
+      而錯誤的面額比沒有面額危險得多。
+    """
+    if v is None:
+        return ""
+    t = str(v).strip()
+    for pre in ("新台幣", "NT$", "NTD", "NT"):
+        if t.startswith(pre):
+            t = t[len(pre):]
+    t = t.strip()
+    if t.endswith("元"):
+        t = t[:-1].strip()
+    return _num(t)
+
+
 def _num(v):
     if v is None:
         return ""
@@ -444,7 +474,7 @@ def parse_market(raw, tag):
         out[code] = (str(r.get(k_name, "")).strip(),
                      _num(r.get(k_cap)) if k_cap else "",
                      _num(r.get(k_shr)) if k_shr else "",
-                     _num(r.get(k_par)) if k_par else "",
+                     _num_par(r.get(k_par)) if k_par else "",
                      _num(r.get(k_pref)) if k_pref else "")
     return out, note + f"\n    解析出 {len(out)} 檔"
 

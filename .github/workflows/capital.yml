@@ -72,6 +72,12 @@ jobs:
       # ⛔ 不加 continue-on-error：它的 `rl.check` 裡有「上櫃代碼與 industry.csv
       #   完全一致」，那是**名稱表可不可以共用**的前提。前提破了還繼續，
       #   等於安靜地掛上錯的產業名。
+      # ★ 面額時間軸。**一定要排在 capital.py 之後**（讀它剛存的原始快照），
+      #   而且**在 industry_esb 之前或之後都可以**（兩者不相干）。
+      - name: 面額時間軸
+        if: inputs.mode == 'run' || inputs.mode == ''
+        run: python par_timeline.py
+
       - name: 興櫃產業別
         if: inputs.mode == 'run' || inputs.mode == ''
         run: python industry_esb.py
