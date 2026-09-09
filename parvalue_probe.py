@@ -517,6 +517,67 @@ def main():
         say("       ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**"
             "（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。")
 
+    # ── [T10] 使用者 2026-09-09 20:4x 給的 TWTAWU ───────────────────────
+    #   ⛔ **我不知道 TWTAWU 是什麼**，也不去猜。TWSE 的報表代號沒有規律
+    #     （TWTAUU 是減資、TWTB7U 是面額變更預告、TWTB8U 是面額變更參考價，
+    #      三個長得像卻是三件事）——**猜錯代號會讓後面每一步都建在錯的前提上**。
+    #   ⇒ 這一節只做一件事：**讓它自己說它是什麼**（title），然後量四項判準。
+    T10 = "https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU"
+    say("\n[T10] ★ 使用者給的 `afterTrading/TWTAWU`（⛔ 我不知道它是什麼，讓它自己說）")
+    say(f"     {T10}?response=html")
+    say("     判準四項（跟這一支其他節一致）：① stat 與**標題** ② 完整欄位"
+        " ③ 列數 ④ **日期欄的最小與最大值**")
+    say("  ── ① 使用者給的形式（response=html）")
+    _t7("html 無參數", f"{T10}?response=html")
+    say("  ── ② 同一個網址要 json")
+    d10 = _t7("json 無參數", f"{T10}?response=json")
+    # ★ 欄位要**整份印出來**。只印「有沒有股數」會變成我先假設它是股數表，
+    #   然後只看得到我假設的東西。
+    r10, e10 = B.get(f"{T10}?response=json", retries=2, timeout=60)
+    if not e10:
+        try:
+            j10 = json.loads(r10.decode("utf-8", "replace"))
+        except Exception:                                        # noqa: BLE001
+            j10 = {}
+        for _ti, _t in enumerate(B._tables(j10) or []):
+            _f = [str(x) for x in (_t.get("fields") or [])]
+            _d = _t.get("data") or []
+            say(f"     表 {_ti + 1}：列數 {len(_d)}｜欄位逐字 {_f}")
+            if _d:
+                say(f"       首列：{_d[0]}")
+                if len(_d) > 1:
+                    say(f"       末列：{_d[-1]}")
+    say("  ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）")
+    #   ⛔ 這裡**先算再判**，不可以把兩個結論都印出來。
+    #     2026-09-09 稍早犯過一次：同時印「三發都一樣 ⇒ …」與「任一發不同 ⇒ …」，
+    #     那等於沒有結論，而讀的人會挑一個自己相信的。
+    _today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y%m%d")
+    _seen = []
+    for _q in ("?date=20150701&response=json", f"?date={_today}&response=json",
+               f"?startDate=20150101&endDate={_today}&response=json"):
+        _r, _e = B.get(T10 + _q, retries=1, timeout=60)
+        if _e:
+            say(f"     ✗ {_q}：{str(_e)[:90]}")
+            continue
+        try:
+            _j = json.loads(_r.decode("utf-8", "replace"))
+        except Exception:                                        # noqa: BLE001
+            say(f"     ? {_q}：不是 JSON｜{len(_r):,} bytes")
+            continue
+        _tb = (B._tables(_j) or [{}])[0]
+        _n = len(_tb.get("data") or [])
+        say(f"     ✓ {_q}｜stat={_j.get('stat')!r}｜title={_j.get('title')!r}"
+            f"｜列數 {_n}｜{len(_r):,} bytes")
+        _seen.append((str(_j.get("title")), _n, len(_r)))
+    if len(_seen) < 2:
+        say("     ⇒ 成功的發數不足 2，**這一輪判不出參數有沒有生效**（不是判成沒生效）")
+    elif len({x for x in _seen}) == 1:
+        say(f"     ⇒ ⛔ {len(_seen)} 發的 **title、列數、位元組數全部相同** "
+            "⇒ **參數沒生效**。⛔ 不要因為「有回東西」就當成它吃日期。")
+    else:
+        say(f"     ⇒ ⭐ {len(_seen)} 發**回應不同** ⇒ 參數有生效，"
+            "下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）")
+
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
     say("`adjust.py` 的 EVENT_DIRS 與 BOUNDS。")
