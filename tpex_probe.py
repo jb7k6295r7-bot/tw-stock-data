@@ -537,6 +537,81 @@ def main():
     else:
         say(f"\n  ★ 有 {hit_any['n']} 處命中 ⇒ 照上面的上下文找端點，⛔ 仍然不要猜參數名。")
 
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[11] ★★★ 32／33 的中文名：ISIN 證券編碼查詢（使用者 2026-09-09 提供）")
+    # ⛔ 網址由使用者提供，**不是自行生成**。它吃 `industry_code` 參數，
+    #   而那正是我方一直缺名稱的那個欄位。
+    # ★ 這個缺口今天變大了：上櫃 30 檔 ＋ 興櫃 11 檔，**兩邊是同一個缺口**。
+    # ⚠ 判準寫在前面，⛔ 不是「有回東西就算找到」：
+    #   ① 32 與 33 要回**不同**的公司清單（一樣就代表參數沒生效）
+    #   ② 回來的代號要**真的落在我方標為 32／33 的那批裡**
+    #   ③ 名稱要能從頁面上讀到，⛔ 讀不到就寫「查詢頁沒有寫名稱」，不要從清單去猜
+    ISIN = ("https://isin.twse.com.tw/isin/class_main.jsp"
+            "?owncode=&stockname=&isincode=&market=&issuetype="
+            "&industry_code={}&Page=1&chklike=Y")
+    # 我方標成 32／33 的代號，拿來做 ② 的比對靶
+    mine = {"32": set(), "33": set()}
+    # ⚠ `IND` 是第 7 節裡的區域變數，這裡不能用 ⇒ 重新組一次路徑。
+    IND2 = os.path.join(_ROOT, "meta", "industry.csv")
+    try:
+        with io.open(IND2, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                c = (r.get("industry_code") or "").strip()
+                if c in mine:
+                    mine[c].add(r["stock_id"])
+    except OSError:
+        pass
+    try:
+        with io.open(os.path.join(_ROOT, "meta", "industry_esb.csv"),
+                     encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                c = (r.get("industry_code") or "").strip()
+                if c in mine:
+                    mine[c].add(r["stock_id"])
+    except OSError:
+        pass
+    say(f"  我方標成 32 的 {len(mine['32'])} 檔｜33 的 {len(mine['33'])} 檔"
+        "（上市櫃＋興櫃合計）")
+    got = {}
+    for code in ("32", "33"):
+        u = ISIN.format(code)
+        say(f"\n  ── industry_code={code}")
+        r11, e11 = B.get(u, retries=2, timeout=60)
+        if e11:
+            say(f"     ✗ {str(e11)[:140]}")
+            continue
+        # ⚠ 這個站是 Big5 系列的老頁面，⛔ 不要預設 utf-8
+        t11 = None
+        for enc in ("big5", "cp950", "utf-8"):
+            try:
+                t11 = r11.decode(enc)
+                say(f"     ✓ {len(r11):,} bytes｜編碼 {enc}")
+                break
+            except UnicodeDecodeError:
+                continue
+        if t11 is None:
+            t11 = r11.decode("utf-8", "replace")
+            say(f"     ✓ {len(r11):,} bytes｜⚠ 三種編碼都不乾淨，用 replace")
+        # 代號：四碼數字（可能帶英文字尾）
+        ids = sorted(set(re.findall(r"<td[^>]*>\s*([0-9]{4}[A-Z]?)\s*</td>", t11)))
+        got[code] = set(ids)
+        say(f"     抓到證券代號 {len(ids)} 個：{ids[:12]}")
+        inter = got[code] & mine[code]
+        say(f"     ② 與我方標成 {code} 的交集：{len(inter)}／我方 {len(mine[code])}"
+            + ("　← ✓ 對得上" if inter else "　← ⛔ **一個都對不上，參數可能沒生效**"))
+        # ③ 名稱：頁面上有沒有寫這個代碼叫什麼
+        plain = re.sub(r"<[^>]+>", " ", t11)
+        plain = re.sub(r"\s+", " ", plain)
+        near = [plain[max(0, m.start() - 60):m.start() + 60]
+                for m in re.finditer(r"產業別|類別|industry", plain)][:4]
+        say(f"     ③ 「產業別／類別」附近逐字：{near or '（沒有）'}")
+    if "32" in got and "33" in got:
+        same = got["32"] == got["33"]
+        say(f"\n  ① 32 與 33 的清單{'**完全一樣 ⇒ 參數沒生效**' if same else '不同 ⇒ 參數有生效'}"
+            f"（32 有 {len(got['32'])} 檔、33 有 {len(got['33'])} 檔、"
+            f"交集 {len(got['32'] & got['33'])} 檔）")
+    say("  ⇒ ⛔ 三項判準沒有全過，就不要把任何名稱寫進 `sectors.csv`。")
+
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
     say("**沒有命中不等於不存在**——先看清單，不要回頭去猜網址。")

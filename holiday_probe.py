@@ -35,6 +35,7 @@
   一個會把正常交易日誤標成休市的偵測器，比沒有偵測器更貴。
 """
 import io
+import json
 import os
 import re
 import sys
@@ -225,6 +226,47 @@ def main():
         if not found:
             say("     ⇒ js 裡沒有可辨識的路徑 ⇒ **這條也要能執行 js**，"
                 "跟櫃買那三頁同一種。⛔ 不要再繞。")
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[9] ★★★ 開休市行事曆的 rwd 端點（使用者 2026-09-09 16:5x 提供）")
+    # ⛔ 網址由使用者提供。`/rwd/` 是證交所放資料端點的那一層
+    #   （我方每天在用的 T86／MI_INDEX／TWTB8U 全在這一層），
+    #   所以它跟第 ③ 節那個 `/zh/holidaySchedule/` 網頁**不是同一個東西**。
+    # ★ 判準（⛔ 不是「有回東西」）：
+    #   ① 要拿得到**未來**的日期——只有過去等於還是沒有前瞻
+    #   ② 要分得出「休市」與「補行上班日開市」——我方 8 個週六是實測有成交的
+    HS = "https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule"
+    for label, u in (("使用者給的（html）", HS + "?response=html"),
+                     ("同一支要 json", HS + "?response=json"),
+                     ("帶年份 2026", HS + "?queryYear=2026&response=json"),
+                     ("帶年份 民國 115", HS + "?queryYear=115&response=json")):
+        r9, e9 = B.get(u, retries=1, timeout=60)
+        if e9:
+            say(f"     ✗ {label}：{str(e9)[:110]}")
+            continue
+        t9 = r9.decode("utf-8", "replace")
+        dts = sorted(set(re.findall(r"1[0-9]{2}/[0-9]{2}/[0-9]{2}", t9)))
+        dts += sorted(set(re.findall(r"20[0-9]{2}-[0-9]{2}-[0-9]{2}", t9)))
+        say(f"     ✓ {label}：{len(r9):,} bytes"
+            f"｜「休市」{t9.count('休市')} 次｜「開始交易」{t9.count('開始交易')} 次"
+            f"｜日期 {len(dts)} 個 {dts[:3]}…{dts[-3:] if dts else ''}")
+        for kw in ("補行上班", "補班", "星期六", "照常"):
+            n = t9.count(kw)
+            if n:
+                say(f"       「{kw}」{n} 次")
+        if t9.lstrip()[:1] in "{[":
+            try:
+                d9 = json.loads(t9)
+                if isinstance(d9, dict):
+                    say(f"       stat={d9.get('stat')!r}｜title={d9.get('title')!r}")
+                    tb = (B._tables(d9) or [{}])[0]
+                    say(f"       欄位：{[str(x) for x in (tb.get('fields') or [])]}")
+                    dd = tb.get("data") or []
+                    say(f"       列數 {len(dd)}｜首列 {dd[0] if dd else '（空）'}")
+            except Exception as ex:                              # noqa: BLE001
+                say(f"       （JSON 解析失敗 {type(ex).__name__}）")
+    say("     ⇒ ① 有未來日期、② 分得出補行上班日 ⇒ 才可以接成前瞻日曆。")
+    say("     ⛔ 只有國定假日清單不夠：我方 8 個週六是**實測有成交的補班日**。")
 
     say("  ⇒ 判準：拿到的東西要能回答「**某一個未來日期開不開盤**」才算數。")
     say("    ⛔ 只列國定假日不夠——**補班的週六台股照開**（上面 8 天是實測）。")
