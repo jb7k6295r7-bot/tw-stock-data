@@ -416,6 +416,38 @@ def main():
                                        h9, re.I)))[:10]:
             say(f"       {m}")
 
+    # ── [10] ★★★ 那三個頁面呼叫的**同一個** API：`/zh-tw/service/data` ──
+    #   ⭐ 2026-09-09 第 8 節量到的最重要一件事：三個頁面（恢復買賣參考價／預告表／
+    #     彈性面額名冊）**呼叫的是同一條路徑** `/zh-tw/service/data`。
+    #     ⇒ 櫃買新站是「一條通用資料端點 ＋ 參數指定報表」的設計。
+    #       這正是專案早就記過的那條——**頁面路徑不等於 API 路徑**。
+    #   ⇒ 現在缺的只剩「參數怎麼帶」。那寫在他們自己的 js 裡。
+    #   ⛔ 不猜參數名。把 js 抓下來，**把提到 `service/data` 的地方逐字印出來**。
+    #   ⚠ 三個頁面都載入 `/cdn-cgi/challenge-platform/...` ＝ Cloudflare 挑戰，
+    #     所以就算找到參數，端點本身仍可能需要 Cookie；那要下一輪才知道。
+    say("\n[10] ★★★ `/zh-tw/service/data` 的參數怎麼帶（看他們自己的 js）")
+    BASEW = "https://www.tpex.org.tw"
+    JS = ["/rsrc/asset/js/global.js"]
+    for jp in JS:
+        say(f"\n  ── {BASEW}{jp}")
+        rj, ej = B.get(BASEW + jp, retries=2, timeout=60)
+        if ej:
+            say(f"     ✗ {str(ej)[:130]}　⛔ 抓不到不等於不存在")
+            continue
+        t = rj.decode("utf-8", "replace")
+        say(f"     ✓ {len(rj):,} bytes｜出現 `service/data` {t.count('service/data')} 次")
+        # 逐字印出上下文——⛔ 不整理、不摘要，參數名要原樣看到
+        for m in list(re.finditer(r"service/data", t))[:6]:
+            a, b = max(0, m.start() - 260), min(len(t), m.end() + 260)
+            say("     ── 上下文 ──")
+            say("       " + t[a:b].replace("\n", " ")[:520])
+        # 常見的參數名長相：`tables`、`response`、`date`、`type`…
+        keys = sorted(set(re.findall(r"[\"'\{,]\s*([a-zA-Z_][a-zA-Z0-9_]{2,20})\s*:", t)))
+        hit = [k for k in keys if re.search(
+            r"date|type|table|resp|name|param|id|market|year|month", k, re.I)]
+        if hit:
+            say(f"     js 裡像參數名的鍵（{len(hit)} 個）：{hit[:30]}")
+
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
     say("**沒有命中不等於不存在**——先看清單，不要回頭去猜網址。")

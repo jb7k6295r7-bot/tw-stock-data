@@ -615,7 +615,17 @@ def main():
         cands = _cands(txt)
         chain = _chain(cands)
         ups = _upper(txt)
-        say(f"     ✓ {len(r11):,} bytes｜「小-大」數字對 {len(cands)} 個"
+        # ⚠ 2026-09-09 差點漏掉：`smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5`
+        #   回了 **2,361,524 bytes**，而我上一版只在它身上量級距、**沒量資料日期**。
+        #   ⇒ 這裡順手量。**有多個資料日期的才可能是歷史檔**——
+        #     集保歷史是唯一「不做就永久失去」的缺口，不可以因為
+        #     「這一節是來找級距的」就不看眼前的另一個訊號。
+        rows11, note11 = parse(r11)
+        dates11 = sorted({pick(x, DATE_KEYS) for x in rows11} - {""})
+        say(f"     ✓ {len(r11):,} bytes｜{note11}"
+            f"｜**相異資料日期 {len(dates11)} 個** {dates11[:4]}"
+            f"{'  ← ★★ 多個日期＝可能是歷史檔' if len(dates11) > 1 else ''}")
+        say(f"       「小-大」數字對 {len(cands)} 個"
             f"｜**最長連續鏈 {len(chain)} 段**｜「N 以上」{len(ups)} 個")
         if len(chain) >= 3:
             for _, _, t in chain:
@@ -658,12 +668,33 @@ def main():
         for m in re.finditer(r'"url"\s*:\s*"([^"]{4,300})"', t12):
             specs.append(m.group(1))
         for m in re.finditer(r'https?://[^\s"\'<>\\)]{10,200}', t12):
-            if "tdcc" in m.group(0):
-                specs.append(m.group(0))
-        specs = [x for x in dict.fromkeys(specs)][:8]
+            specs.append(m.group(0))
+        # ★ Swagger 的規格常是**相對路徑**（`/v3/api-docs/...`），不是絕對網址。
+        #   上一版只收含 `tdcc` 的絕對網址 ⇒ 只撈到 1 個、而且是別的欄位裡的字串。
+        for m in re.finditer(r'"(/[a-zA-Z0-9_/.\-]{6,120})"', t12):
+            if re.search(r"api-?docs|swagger|openapi|v\d/", m.group(1), re.I):
+                specs.append(m.group(1))
+        specs = [x for x in dict.fromkeys(specs)][:12]
         say(f"  索引裡的網址（{len(specs)} 個，逐字）：")
         for x in specs:
             say(f"    {x}")
+        # ⛔ 撈不到東西的時候**一定要把身體長什麼樣印出來**。
+        #   上一版只印「撈到 1 個」，於是完全不知道那 66,918 bytes 是什麼——
+        #   而「不知道長什麼樣」正是下一輪又白跑一趟的原因。
+        head = t12[:400].replace("\n", " ")
+        say(f"  開頭 400 字（逐字）：{head}")
+        try:
+            j12 = json.loads(t12)
+            if isinstance(j12, dict):
+                say(f"  頂層鍵：{list(j12)[:20]}")
+                if isinstance(j12.get("paths"), dict):
+                    say(f"  ★★ 這一份自己就是規格：端點 {len(j12['paths'])} 個")
+            elif isinstance(j12, list):
+                say(f"  頂層是 list，{len(j12)} 筆；第一筆："
+                    f"{str(j12[0])[:200] if j12 else '（空）'}")
+        except Exception:                                        # noqa: BLE001
+            say("  （不是 JSON——多半是 Swagger UI 的 HTML 外殼，"
+                "規格在它載入的 js／相對路徑裡）")
 
     def _abs(u):
         if u.startswith("http"):
