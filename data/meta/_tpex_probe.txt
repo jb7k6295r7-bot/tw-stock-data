@@ -330,11 +330,8 @@
   ── ⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
      ✓ 11,776 bytes
-     它自己呼叫的候選網址（1 個，逐字）：
-       /zh-tw/service/data
-     ── `service/data` 的上下文（逐字，不整理）──
-       tw/mainboard/trading/info/daily-pe.html">個股本益比、殖利率、股價淨值比</a></li><li><a href="/zh-tw/mainboard/listed/month/fundamentals.html">獲利及股利分派情形</a></li><li><a href="/zh-tw/mainboard/trading/statistics/highlight.html">櫃買市場統計報表</a></li></ul></div><div class="col"><strong>常用資訊</strong><ul><li><a href="/zh-tw/service/data/overview.html">資訊購買</a></li><li><a href="/zh-tw/announce/market/holiday.html">開休市日期表</a></li><li><a href="/zh-tw/service/investor/info/personal.html">投資人個人資料查詢</a></li><li><a href="/zh-tw/mainboard/applying/status/company.html">向本中心申請上櫃公司</a></li></ul></div></div><div class="row"><div c
-     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
+     inline script 3 段
+     （inline script 裡沒有像在組請求的片段）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「恢復買賣」5 次
        出現「參考價」4 次
@@ -344,22 +341,16 @@
   ── 變更股票面額**預告表**
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
      ✓ 11,276 bytes
-     它自己呼叫的候選網址（1 個，逐字）：
-       /zh-tw/service/data
-     ── `service/data` 的上下文（逐字，不整理）──
-       tw/mainboard/trading/info/daily-pe.html">個股本益比、殖利率、股價淨值比</a></li><li><a href="/zh-tw/mainboard/listed/month/fundamentals.html">獲利及股利分派情形</a></li><li><a href="/zh-tw/mainboard/trading/statistics/highlight.html">櫃買市場統計報表</a></li></ul></div><div class="col"><strong>常用資訊</strong><ul><li><a href="/zh-tw/service/data/overview.html">資訊購買</a></li><li><a href="/zh-tw/announce/market/holiday.html">開休市日期表</a></li><li><a href="/zh-tw/service/investor/info/personal.html">投資人個人資料查詢</a></li><li><a href="/zh-tw/mainboard/applying/status/company.html">向本中心申請上櫃公司</a></li></ul></div></div><div class="row"><div c
-     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
+     inline script 3 段
+     （inline script 裡沒有像在組請求的片段）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」8 次
 
   ── 採**彈性面額**之上（興）櫃公司名冊
      https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html
      ✓ 19,945 bytes
-     它自己呼叫的候選網址（1 個，逐字）：
-       /zh-tw/service/data
-     ── `service/data` 的上下文（逐字，不整理）──
-       tw/mainboard/trading/info/daily-pe.html">個股本益比、殖利率、股價淨值比</a></li><li><a href="/zh-tw/mainboard/listed/month/fundamentals.html">獲利及股利分派情形</a></li><li><a href="/zh-tw/mainboard/trading/statistics/highlight.html">櫃買市場統計報表</a></li></ul></div><div class="col"><strong>常用資訊</strong><ul><li><a href="/zh-tw/service/data/overview.html">資訊購買</a></li><li><a href="/zh-tw/announce/market/holiday.html">開休市日期表</a></li><li><a href="/zh-tw/service/investor/info/personal.html">投資人個人資料查詢</a></li><li><a href="/zh-tw/mainboard/applying/status/company.html">向本中心申請上櫃公司</a></li></ul></div></div><div class="row"><div c
-     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
+     inline script 2 段
+     （inline script 裡沒有像在組請求的片段）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」13 次
 
@@ -378,7 +369,9 @@
 [10] ★★★ `/zh-tw/service/data` 的參數怎麼帶（看他們自己的 js）
 
   ── https://www.tpex.org.tw/rsrc/asset/js/global.js
-     ✓ 103,202 bytes｜出現 `service/data` 0 次
+     ✓ 103,202 bytes｜`ajax(` 1 處｜`url:` 1 處
+     ── 組請求的地方（逐字，不整理）──
+       set(name, input); } else { return localStorage.setItem(name, input); } } function _s_clear() { if(_checkapp()) { $.session.clear(); } else { localStorage.clear(); }} function _get_json(func, url, input1, input2) {     $.ajax({         url:            url,         type:           'GET',         dataType:       'json',          data: {},         error: function(xhr) {},         success: function(response) {},         complete: function(response) {             var data = JSON.parse(response.responseText);             //console.log('complete: ', data);      
      js 裡像參數名的鍵（6 個）：['dataType', 'grid', 'hideEmptySeries', 'name', 'type', 'width']
 
 ── 下一步 ──

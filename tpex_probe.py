@@ -411,6 +411,31 @@ def main():
                 break
         if not shown:
             say("     （inline script 裡沒有像在組請求的片段）")
+        # ⚠ 2026-09-09 實測到這裡為止的三個否定：
+        #     ① `service/data` 是頁尾連結，不是 API（我自己的假命中）
+        #     ② 三頁載入的 8 支 js **全是共用的**，沒有頁面專屬的
+        #     ③ inline script 裡**沒有**在組請求
+        #   而 `global.js` 只有一個 `_get_json(func, url, input1, input2)` ——
+        #   **url 是傳進去的參數**，端點由呼叫端決定，而呼叫端不在上面任何一處。
+        #   ⇒ 剩下最可能的地方：**HTML 的 `data-*` 屬性**（SPA 常把端點放在那裡）。
+        #   ⛔ 一樣不猜，全部逐字印出來。這一頁才 11 KB，`data-*` 不會多。
+        das = sorted(set(re.findall(r'(data-[a-z0-9-]{2,30})\s*=\s*"([^"]{0,120})"',
+                                    html)))
+        say(f"     `data-*` 屬性 {len(das)} 種：")
+        for k, v in das[:24]:
+            say(f"       {k}={v!r}")
+        # 任何看起來像「路徑＋查詢字串」的字串
+        qs = sorted(set(re.findall(r'["\'(]([/a-zA-Z0-9_.-]{4,90}\?[a-zA-Z0-9_=&%.-]{2,90})',
+                                   html)))
+        if qs:
+            say(f"     像「路徑＋查詢字串」的（{len(qs)} 個，逐字）：")
+            for x in qs[:15]:
+                say(f"       {x}")
+        else:
+            say("     （沒有任何帶查詢字串的路徑）")
+        mods = re.findall(r'<script[^>]*type=["\']module["\'][^>]*>', html, re.I)
+        if mods:
+            say(f"     ⚠ 有 {len(mods)} 個 `<script type=module>`：{mods[:3]}")
         else:
             say("     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）")
         js = sorted(set(re.findall(r"[\"'\(]([^\"'\(\)]+\.js)[\"'\)]", html)))

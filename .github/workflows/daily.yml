@@ -343,60 +343,20 @@ jobs:
             echo "→ 還新，跳過（未滿 28 天）"
           fi
 
-      # ★ 集保股權分散的端點探針（一次性、自癒）。
-      #   籌碼集中度目前沒有歷史序列（db_status 把它列在「沒有來源」那一節），
-      #   FinMind 的 HoldingSharesPer 回 400，所以要走集保官方。
-      #   端點來自 WebSearch 結果、不是自行生成（tw-data-sources 3-4 的規矩）。
-      #   ⚠ **只測不寫資料**，輸出進 data/meta/_tdcc_probe.txt。
-      #   ⚠ 條件是「檔不存在**或**上次結果有 ✗」——只看存不存在的話，
-      #     一次暫時性失敗會讓它永遠不再重試，而那個失敗結果會一直留著。
-      #   ⚠ 端點結論一律以 Actions 為準：開發容器對外 403 是環境差異，不是端點狀態。
-      - name: 端點探針（沒跑過／上次失敗／探針程式改過才跑）
-        if: always()
-        continue-on-error: true
-        timeout-minutes: 15
-        run: |
-          # 兩支都是「只測不寫資料」，輸出進 data/meta/_*_probe.txt 並 commit，
-          # 這樣結論會進 repo，不必有人去翻 Actions log。
-          # 重跑條件三選一：
-          #   ① 檔不存在
-          #   ② 上次結果有 ✗——只看①的話，一次暫時性失敗會讓它永遠不再重試，
-          #      而那個失敗結果會一直留著
-          #   ③ **探針程式比輸出新**——改了探針卻不重跑，等於改了個寂寞，
-          #      而且外表完全正常（2026-09-08 加第 5 節時就差點這樣）
-          # ⚠ 比的是 git commit 時間，不是 mtime：Actions 每次都是全新 checkout，
-          #   mtime 永遠是「剛剛」，用它永遠比不出新舊。
-          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt" \
-                      "parvalue_probe.py:_parvalue_probe.txt" \
-                      "twsthr_probe.py:_twsthr_probe.txt"; do
-            SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
-            TS_S=$(git log -1 --format=%ct -- "$SCRIPT" || echo 0)
-            TS_F=$(git log -1 --format=%ct -- "$F" || echo 0)
-            if [ ! -f "$F" ] || grep -q '✗' "$F" || [ "${TS_S:-0}" -gt "${TS_F:-0}" ]; then
-              echo "→ 跑 $SCRIPT（程式 ${TS_S:-0} / 輸出 ${TS_F:-0}）"
-              # ⚠ 2026-09-09：這裡本來是 `python "$SCRIPT" || true`。
-              #   tdcc_probe.py 炸在 NameError、`_write` 一次都沒跑到、輸出檔原封不動，
-              #   而 `|| true` 把它吞掉 ⇒ **步驟是綠的、探針改了兩趟一個字都沒寫出來**。
-              #   ⇒ 非 0 結束要留痕：把 ✗ 寫進輸出檔。
-              #   這樣做有兩個效果——結論進 repo 看得見，而且下一趟的 `grep ✗`
-              #   條件會自動重試，不必有人記得。
-              # ⚠ shell 是 `bash -e`：`python …; RC=$?` 會直接中斷整個步驟，
-              #   而 `if ! python …; then RC=$?` 拿到的 $? 是**被 `!` 反轉後的 0**。
-              #   兩種寫法都不對。用 `|| RC=$?`：既被 `-e` 放行，又拿得到真的碼。
-              RC=0
-              python "$SCRIPT" || RC=$?
-              if [ "$RC" -ne 0 ]; then
-                echo "⛔ $SCRIPT 非 0 結束（rc=$RC）——見上面的 traceback"
-                {
-                  echo ""
-                  echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') $SCRIPT 非 0 結束（rc=$RC），"
-                  echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
-                } >> "$F"
-              fi
-            else
-              echo "→ $SCRIPT 已探過、無 ✗、程式沒改，跳過"
-            fi
-          done
+      # ⛔ 端點探針**已移出這一支**，改由 `.github/workflows/probe.yml` 單獨跑。
+      #
+      # ⚠ 2026-09-09 實測到的問題（**兩支寫同一批檔，後推的贏，跟程式新舊無關**）：
+      #     04:13  probe.yml 用**修好的** tpex_probe.py 寫出 `_tpex_probe.txt`（ee717791）
+      #     04:15  daily.yml 用**舊的**（它 checkout 的是更早的 commit）
+      #            寫出同一個檔並推上去（421ba137）⇒ **把新的蓋掉了**
+      #   而 `_*probe.txt` 在 commit 那段的 REGEN 白名單裡（衝突時取本趟版本），
+      #   所以這件事**完全不會報錯**：檔案在、格式對，只是內容退回舊版。
+      #   ⇒ 這正是這個專案一直在防的形狀，而我自己在 40 分鐘前造了一個。
+      #
+      # → 探針改成**單一寫入者**：只有 `probe.yml` 寫 `data/meta/_*probe.txt`。
+      #   代價是「探針程式改了會自動重跑」這個自癒條件沒有了——
+      #   ⚠ **改探針的人要自己按一次 probe.yml**（一趟約 1 分鐘）。
+      #   寫在這裡，不要靠記得。
 
       # ★ 漲跌家數：先抓當天，再分批回補歷史。
       #   `MI_INDEX` **吃 date 參數**，所以 2015 起都抓得到——
