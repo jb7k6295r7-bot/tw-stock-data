@@ -441,8 +441,15 @@ jobs:
         continue-on-error: true
         run: |
           cat data/meta/_last_run.md || true
-          if grep -q '✗' data/meta/_last_run.md 2>/dev/null; then
+          # ⚠ 2026-09-09：這裡本來是 `grep -q '✗'`，掃整份檔。
+          #   而檔頭的說明文字就有一句「任何一塊標成 ✗ 就要去看該支的 log」
+          #   ⇒ **這道警告從第一天起每一趟都亮，一次都沒有正確過**。
+          #   天天亮的紅字沒有人會看——它想抓的東西反而被自己蓋掉了。
+          #   （另外各區塊的說明文字也可能提到 ✗，例如「⛔ 不設 ✗」。）
+          #   ⇒ 只認**區塊標題那一行**的狀態：runlog 寫的是 `## <名字>　✗ 有問題`。
+          if grep -qE '^## .*✗' data/meta/_last_run.md 2>/dev/null; then
             echo "::warning::_last_run.md 有 ✗ 的區塊，見上面內容"
+            grep -nE '^## .*✗' data/meta/_last_run.md
           fi
 
       - name: Commit 回 repo
