@@ -44,7 +44,7 @@
 
   ── ② 中華民國政府行政機關辦公日曆表（dataset 頁）
      https://data.gov.tw/dataset/14718
-     ✓ 623,412 bytes｜中文 4,562 字
+     ✓ 623,422 bytes｜中文 4,562 字
        「休市」0 次
        「開休市」0 次
        「補班」0 次
@@ -92,14 +92,14 @@
 
 ✗ 這一趟在下面這裡炸掉了，以下是 traceback 原文（沒有整理）：
 Traceback (most recent call last):
-  File "/home/runner/work/tw-stock-data/tw-stock-data/holiday_probe.py", line 242, in <module>
+  File "/home/runner/work/tw-stock-data/tw-stock-data/holiday_probe.py", line 284, in <module>
     sys.exit(main())
              ^^^^^^
-  File "/home/runner/work/tw-stock-data/tw-stock-data/holiday_probe.py", line 201, in main
+  File "/home/runner/work/tw-stock-data/tw-stock-data/holiday_probe.py", line 202, in main
     uj = urllib.parse.urljoin(hs, j)
          ^^^^^^
 NameError: name 'urllib' is not defined. Did you forget to import 'urllib'
 
 
-✗ 2026-09-09T07:53:05Z holiday_probe.py 非 0 結束（rc=1），
+✗ 2026-09-09T09:06:01Z holiday_probe.py 非 0 結束（rc=1），
   這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。
