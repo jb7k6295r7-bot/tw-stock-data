@@ -497,6 +497,36 @@ def _probe_history():
         L.append(f"  {'✗' if same else '★'} {label}：{len(raw):,} bytes｜"
                  f"與基準{'**完全一樣 ⇒ 參數被無視**' if same else '不同 ⇒ 值得再看'}"
                  f"｜出表日期 {ym[:4] or '（抓不到）'}")
+    # ── ★ 使用者 2026-09-09 15:40 給的替代路：BWIBBU_d 反推股數
+    #   來源說「該端點含有每日市值與收盤價，可精準計算出每日歷史股數」。
+    #   ⛔ 我方**每天都在抓這支**（feeds 的 `per`），而我方解析出來的 8 欄裡
+    #     **沒有市值**。但那是**我方的解析結果**，不是端點的原始欄位——
+    #     ⇒ 這裡直接把**原始回應的欄位名逐字印出來**，用端點自己說的算。
+    L += ["", "  ── ★ BWIBBU_d 到底有沒有「市值」（使用者提供的反推路）"]
+    for label, day in (("近期", "20260908"), ("2015 年", "20150105")):
+        u = ("https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d"
+             f"?date={day}&selectType=ALL&response=json")
+        rb, eb = get(u, retries=1)
+        if eb:
+            L.append(f"     ✗ {label} {day}：{str(eb)[:110]}")
+            continue
+        try:
+            db = json.loads(rb.decode("utf-8", "replace"))
+        except Exception as ex:                                  # noqa: BLE001
+            L.append(f"     ✗ {label} {day}：不是 JSON（{type(ex).__name__}）")
+            continue
+        fl = [str(x) for x in (db.get("fields") or [])]
+        dt = db.get("data") or []
+        L.append(f"     {label} {day}：stat={db.get('stat')!r}｜列數 {len(dt)}")
+        L.append(f"       欄位逐字：{fl}")
+        hit = [x for x in fl if ("市值" in x or "總市值" in x)]
+        L.append(f"       有沒有「市值」欄：{hit or '**沒有**'}")
+        if dt:
+            L.append(f"       首列照抄：{dt[0]}")
+    L.append("     ⇒ 沒有市值欄 ⇒ 「市值 ÷ 收盤價」這條在**這個端點**上走不通，")
+    L.append("       ⛔ 但那只否證這一條路徑，**不否證反推這個想法**——")
+    L.append("       其他端點若給市值，同樣的算法仍然成立。")
+
     # ⛔ 上一版把兩種結論都印出來，等於沒有結論。判定要**算出來**再寫。
     sent = [x for x in res if x[1] != "error"]
     changed = [x for x in res if x[1] == "diff"]
