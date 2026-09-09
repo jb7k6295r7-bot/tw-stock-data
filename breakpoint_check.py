@@ -42,6 +42,53 @@ HOLES_SRC = os.path.join(_HERE, "backtest", "results", "holes_scan.csv")
 HOLES_OUT = os.path.join(_HERE, "data", "meta", "_holes_scan.csv")
 
 
+def _long_hole_tiers():
+    """把 long_hole 分成三層。→ (各層筆數, 要查的清單)。
+
+    ⛔ 流動性資料來自 `_holes_scan.csv`（回測線那支的附表），
+      而它的母體是普通股＋上市櫃 ⇒ **對不到的那些本身就代表「非普通股」**，
+      不是資料缺失。這一點寫在這裡，免得下一個人去「修」那個對不到。
+    """
+    import math
+    meta = os.path.join(_HERE, "data", "meta")
+    holes = {}
+    with io.open(os.path.join(meta, "_holes_scan.csv"), encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            holes[(r["stock_id"], r["date"])] = r
+    mk = {}
+    with io.open(os.path.join(meta, "stocks.csv"), encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            mk[r["stock_id"]] = r
+    t = {"nonstock": 0, "thin": 0, "liquid": 0, "noinfo": 0}
+    watch = []
+    with io.open(os.path.join(meta, "breakpoints_unexplained.csv"),
+                 encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r.get("kind") != "long_hole":
+                continue
+            sid = r["stock_id"]
+            if mk.get(sid, {}).get("kind") != "stock":
+                t["nonstock"] += 1
+                continue
+            h = holes.get((sid, r["event_date"]))
+            if not h:
+                t["noinfo"] += 1
+                continue
+            if str(h.get("liq_ok")).lower() == "true":
+                t["liquid"] += 1
+                try:
+                    v = float(h.get("median_vol_60d") or "nan")
+                except ValueError:
+                    v = float("nan")
+                watch.append((sid, r.get("name", ""), r["event_date"],
+                              r.get("missing_trading_days", "?"),
+                              0.0 if math.isnan(v) else v))
+            else:
+                t["thin"] += 1
+    watch.sort(key=lambda x: -x[4])
+    return t, watch
+
+
 def _coverage():
     """→ (N₁ 集合, 斷點掃描母體, 差集[(代號, kind, market)])。
 
@@ -144,6 +191,24 @@ def main():
     lh = _long_hole_impact()
     if lh:
         rl.info("long_hole 對推薦母體的影響（每日更新）", lh)
+    # ★ long_hole 分層。227 筆全部 `cause=unknown` 掛在那裡沒人查，
+    #   但它們**不是同一種東西**——2026-09-09 分層之後只剩 6 筆需要人看：
+    #     ① 非普通股（ETF／DR／其他）⇒ 不在回測母體，而且比值帶對 ETF 本來就不適用
+    #     ② 普通股但**冷門到沒成交**（中位量 3,000 股）⇒ 這不是資料缺口，
+    #        是「**日檔只收當天有成交的證券**」這個已知性質的必然結果
+    #     ③ 流動性足夠卻停了幾十上百個交易日 ⇒ **這才是要查的**
+    #   ⛔ 把三層合成一個「227」報出去，等於把 6 筆真的藏在 221 筆雜訊裡。
+    try:
+        tiers, watch = _long_hole_tiers()
+        rl.info("long_hole 分層",
+                f"非普通股 {tiers['nonstock']}｜冷門無成交 {tiers['thin']}｜"
+                f"**流動性足夠要查 {tiers['liquid']}**｜對不到流動性資料 {tiers['noinfo']}")
+        for w in watch:
+            rl.info(f"  ★ 要查 {w[0]} {w[1]}",
+                    f"{w[2]}｜缺 {w[3]} 個交易日｜前 60 日中位量 {w[4]:,.0f}")
+    except Exception as ex:                                      # noqa: BLE001
+        rl.info("long_hole 分層", f"算不出來：{type(ex).__name__}: {ex}")
+
     # ★ 母體覆蓋率：掃描的母體有沒有蓋住情報分析線的 N₁ 母體
     #   （市場情報分析線 2026-09-09 16:25 的要求，理由是他們今天在同一個形狀上摔過：
     #    「以為閘門跑的是母體，實際跑的是 11 檔」）。
