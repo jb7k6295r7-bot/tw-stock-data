@@ -40,6 +40,10 @@ import os
 import re
 import sys
 import traceback
+# ⚠ 2026-09-09：第 8 節用了 `urllib.parse.urljoin` 卻沒 import，
+#   而 selftest **沒抓到**——因為它的假頁面裡沒有 `<script src=…>`，
+#   那條分支根本沒被走到。⇒ 假的比真的簡單，就等於沒測。已一併補假頁面。
+import urllib.parse
 
 import backfill as B
 

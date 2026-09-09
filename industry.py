@@ -68,6 +68,21 @@ TPEX_BASIC = [
 ]
 
 
+
+# ★ `MI_INDEX` 拿不到名稱的代碼，另外從**官方 ISIN 證券編碼查詢**取得。
+#   來源網址由使用者 2026-09-09 提供，探針在 `tpex_probe.py` 第 11 節，
+#   三項判準全過才落地（`_tpex_probe.txt` 有實測輸出）：
+#     ① 32 與 33 回**不同**的清單（交集 0）⇒ 參數確實生效
+#     ② 我方標成 32 的 34 檔、33 的 7 檔 **全部**落在對應清單裡（34/34、7/7）
+#     ③ 該頁「產業別」欄的相異值**各只有一種** ⇒ 那就是代碼的名稱
+#   ⛔ 只在 `MI_INDEX` 沒有名稱時才用，**永遠不覆蓋官方指數表的用字**——
+#     兩邊用字可能不同（櫃買把 17 叫「金融業」、上市表寫「金融保險」），
+#     而「代碼對、名稱錯」是安靜的錯。
+EXTRA_NAMES = {
+    "32": "文化創意業",
+    "33": "農業科技業",
+}
+
 def _mi_index(day, code):
     return ("https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
             f"?date={day.replace('-', '')}&type={code}&response=json")
@@ -289,7 +304,7 @@ def cmd_run(args):
             #    ⛔ 這代表一個沒有被驗證過的假設：**兩個市場的代碼含意相同**。
             #      若哪天不同，每一列上櫃的名稱都會**安靜地錯**（代碼對、名稱錯）。
             #      `tpex_probe.py` 第 7 節的「分群一致性」就是在量這件事。
-            nm = names.get(r["industry"], "")
+            nm = names.get(r["industry"], "") or EXTRA_NAMES.get(r["industry"], "")
             if nm:
                 n_named += 1
             # 名稱可能含逗號，用引號包起來

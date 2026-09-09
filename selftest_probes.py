@@ -58,6 +58,11 @@ HTML = ("<html><body><form>"
         "<option value='20250912'>20250912</option></select>"
         "<a href=\"https://opendata.tdcc.com.tw/getOD.ashx?id=1-7\">下載</a>"
         "<a href='https://data.gov.tw/api/v2/rest/dataset/11452'>API</a>"
+        # ⚠ 2026-09-09 補：holiday_probe 第 8 節有一條「頁面沒寫 /api/ 就去撈 js」的分支，
+        #   而假頁面裡沒有 `<script src=…>` ⇒ 那條分支從來沒被走到，
+        #   於是一個 `NameError: urllib` 一路過關到 Actions 才炸。
+        #   ⛔ **假的比真的簡單，就等於沒測。**
+        "<script src='/static/app.js'></script>"
         "</form></body></html>")
 DATAGOV = {"success": True, "result": {
     "title": "集保戶股權分散表", "description": "每週",
@@ -76,7 +81,12 @@ def fake_get(url, **kw):
         return json.dumps(FAKE_ROWS).encode(), None
     if "openapi/v1/" in u or "mopsfin" in u:
         return json.dumps(OPENAPI_ROWS).encode(), None
-    if u.endswith(".html") or "qryStock" in u or "/www/" in u or "/web/" in u:
+    # ⚠ 2026-09-09：這一行原本讓 `…/zh/holidaySchedule/holidaySchedule`
+    #   落到下面的「twse ⇒ 回 JSON」，於是 holiday_probe 那條「去頁面撈 js」的分支
+    #   **從來沒被走到**，一個 NameError 一路過關到 Actions 才炸。
+    #   ⇒ **是網頁的就要回網頁**。假回應的形狀錯，等於那段沒測。
+    if (u.endswith(".html") or "qryStock" in u or "/www/" in u or "/web/" in u
+            or "holidaySchedule" in u or "class_main.jsp" in u):
         return HTML.encode(), None
     if "twse.com.tw" in u or "tpex.org.tw" in u:
         return json.dumps({"stat": "OK", "fields": ["證券代號"],
