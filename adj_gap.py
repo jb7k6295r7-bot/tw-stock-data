@@ -7,6 +7,20 @@
     ① change ∈ {'', '0.0', '0.00', '0'}
     ② close(t) ≠ close(t−1)          ← 把「真平盤」擋掉
     ③ 前一列必須是**緊鄰的前一個交易日**（對 calendar_twse.csv）
+    ④ **前一列的 `market` 必須與本列相同**   ← K線線 2026-09-09 22:50 加的
+
+### ⭐ ④ 是怎麼被找出來的——一句邏輯，不是靠掃更多資料
+
+我算出 twse 83 筆、K線線算出 88 筆，我寫「差 8 筆多半是母體差異，不打算對齊」。
+他們一句話駁掉：**「我的母體比你小（2,363 檔），卻數出比你多的筆數
+⇒ 母體變小不可能讓筆數變多 ⇒ 差的不是母體，是判準。」**
+
+⇒ 逐筆回看那 88 列的**前一列 `market`**：**16 筆是 `tpex → twse`，全部是轉上市首日。**
+  官方在「無前一日可比收盤」時寫 `X0.00`，我方存 `0.0`；
+  而轉上市首日的前一日在**另一個市場** ⇒ `change='0.0'` 成立、
+  `close ≠ 前收` 也成立（換市場當然換價位）⇒ **三條件全中，但它不是除權息。**
+
+⚠ ④ 的成本是零（`market` 就在 `data/stocks/` 的欄位裡），效果是**砍掉整整一類偽陽性**。
 
 ### ⭐ ① 為什麼要收兩種寫法：**兩市在除權息日寫 `change` 的方式不一樣**
 
@@ -50,6 +64,9 @@ import io
 import os
 import sys
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
+
+TPE = timezone(timedelta(hours=8))
 
 import runlog
 
@@ -60,6 +77,8 @@ DAILY = os.path.join(_ROOT, "universe", "daily")
 ADJ = os.path.join(_ROOT, "adj")
 META = os.path.join(_ROOT, "meta", "stocks.csv")
 OUT = os.path.join(_ROOT, "meta", "_adj_gap.csv")
+# ⭐ 歷史最低值：斷言的基準。⛔ 用「上一趟」當基準會讓門檻停在補完後的低點。
+LOW = os.path.join(_ROOT, "meta", "_adj_gap_low.txt")
 
 ZERO = {"", "0.0", "0.00", "0", "0.000"}
 HEADER = ["stock_id", "name", "date", "market_then", "market_now",
@@ -101,11 +120,11 @@ def scan(cal, adj, meta):
         with io.open(os.path.join(STOCKS, fn), encoding="utf-8") as f:
             for r in csv.DictReader(f):
                 rows.append((r.get("date", ""), (r.get("change") or "").strip(),
-                             r.get("close", "")))
+                             r.get("close", ""), r.get("market", "")))
         rows.sort()
         for i in range(1, len(rows)):
-            d, ch, cl = rows[i]
-            pd, _, pcl = rows[i - 1]
+            d, ch, cl, mkt = rows[i]
+            pd, _, pcl, pmkt = rows[i - 1]
             if d < SINCE or ch not in ZERO:              # ①
                 continue
             try:
@@ -115,6 +134,10 @@ def scan(cal, adj, meta):
             if c == p or p <= 0:                          # ②（＋前收 0 的興櫃跳過）
                 continue
             if cidx.get(d, -1) - cidx.get(pd, -99) != 1:  # ③
+                continue
+            # ④ ⛔ 換市場的那一天，基準本來就不可比（官方寫 X0.00）——
+            #   它不是除權息。這一條砍掉「轉上市首日」整整一類偽陽性。
+            if mkt and pmkt and mkt != pmkt:
                 continue
             if d not in adj.get(sid, ()):
                 out.append((sid, d, p, c))
@@ -172,12 +195,27 @@ def main():
     then = market_then(hits)
     ft = first_twse()
 
+    # ⭐ 「事件掛在休市日」的判法：事件日**不是這一天**，而是落在
+    #   「前一個交易日」與「這一天」之間的某個**非交易日**上。
+    #   ⛔ 用 `d not in calset` 判是錯的——`d` 一定是交易日（它是日檔的日期）。
+    #   實例：2024-07-26（凱米颱風後第一個交易日）有三檔中，
+    #        而它們的 adj 事件掛在休市的 07-24／07-25。
+    #   ⇒ 那不是缺漏：`cum_factor` 是 `date <` 查找，休市日沒有價格，邊界一樣。
+    cpos = {d: i for i, d in enumerate(cal)}
+
+    def _on_closed_day(sid, d):
+        i = cpos.get(d)
+        if i is None or i == 0:
+            return False
+        prev = cal[i - 1]
+        return any(prev < x < d for x in adj.get(sid, ()))
+
     rows, why_n = [], defaultdict(int)
     for sid, d, p, c in sorted(hits):
         if ft.get(sid) == d:
             why = "轉上市首日"          # 官方 X0.00＝無前一日收盤可比
-        elif d not in calset:
-            why = "事件在休市日"        # 理論上掃不到（掃的是日檔），留著當守門
+        elif _on_closed_day(sid, d):
+            why = "事件掛在休市日"      # 因子存在，只是日期落在颱風休市日
         else:
             why = "未歸因"
         why_n[why] += 1
@@ -190,6 +228,13 @@ def main():
     if os.path.exists(OUT):
         with io.open(OUT, encoding="utf-8") as f:
             old_un = sum(1 for r in csv.DictReader(f) if r.get("why") == "未歸因")
+    # ⭐ 歷史最低值（K線線 2026-09-09 22:50 加的，理由見下）
+    low = None
+    if os.path.exists(LOW):
+        try:
+            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0].strip())
+        except (ValueError, IndexError, OSError):
+            low = None
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
@@ -198,7 +243,8 @@ def main():
 
     un = [r for r in rows if r[8] == "未歸因"]
     rl.info("判準", "① change ∈ {'', '0.0'}（**兩市寫法不同**）"
-                    " ② close ≠ 前收（擋真平盤） ③ 前一列是緊鄰交易日（擋薄量股的洞）")
+                    " ② close ≠ 前收（擋真平盤） ③ 前一列是緊鄰交易日（擋薄量股的洞）"
+                    " ④ **前一列 market 相同**（擋轉上市首日：換市場基準本來就不可比）")
     rl.info("偵測到的公司行動日", f"{len(hits):,} 筆（{SINCE} 起，普通股，含下市檔）")
     rl.info("歸因", "｜".join(f"{k} {v}" for k, v in sorted(why_n.items()))
             + "　⛔ 只有『未歸因』是缺陷")
@@ -218,9 +264,22 @@ def main():
 
     # ⛔ 不設絕對門檻（歷史欠帳會讓它天天紅，而天天紅的檢查會被學會忽略）。
     #   ⇒ 用「有沒有變多」當判準——那才回答得了「今天有沒有變壞」。
-    rl.check("未歸因的筆數沒有比上一趟多",
-             old_un is None or len(un) <= old_un,
-             f"{old_un} → {len(un)}" if old_un is not None else "第一趟，只記錄不判定")
+    # ⭐ 判準是「不得高於**歷史最低值**」，不是「不得比上一趟多」。
+    #   ⛔ 用「比上一趟多」的話：那 27 檔補回來時它會變少（好事），
+    #     但補完之後基準就停在那個低點——**下一次新的漏抓要累積到超過舊基準才會紅**。
+    #   ⇒ 用歷史最低值 ⇒ **單調收斂**：每補好一次，門檻自動變嚴一次。
+    base = len(un) if low is None else min(low, len(un))
+    rl.info("歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}"
+            "　⭐ 斷言用這個，不是用上一趟——否則補完之後門檻會停在低點")
+    rl.check("未歸因的筆數沒有高於歷史最低值",
+             low is None or len(un) <= low,
+             f"歷史最低 {low}｜本輪 {len(un)}" if low is not None
+             else "第一趟，只記錄不判定")
+    try:
+        io.open(LOW, "w", encoding="utf-8").write(
+            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
+    except OSError:
+        pass
     return rl.finish()
 
 
