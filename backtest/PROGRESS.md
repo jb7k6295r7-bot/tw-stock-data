@@ -112,3 +112,7 @@
 - [ ] `audit_db.py` 加 FMNPTK 年均價、FMSRFK 月量值、因子事件日三條（等 CODE 抓官方統計進 `data/meta/`）。
 - [ ] 若 K線線裁 ATR 用 Wilder：研究五／六／八 A 系列跑一版敏感度。
 - [x] 上櫃 14 筆面額變更接上 `data/adj/`（09-09 已落地，第三版已含）。
+
+## 2026-09-09 20:45：使用者問「資料庫還有問題嗎」→ 併 main、重跑稽核
+
+- 併入 origin/main f1b5eed17（CODE 晚間：TWTAWU 短期暫停交易、興櫃 close 是均價、上櫃日曆第二來源）。`audit_db.py` 重跑 33 秒，A～E 不變量零違反；F1～F3 未修（`data/adj/`、2022-02 營收檔都沒動）；新增融資／本益比缺 09-07、09-09 兩天（CODE 已知、待回補）。結果在 `DB_AUDIT.md` G 節。
