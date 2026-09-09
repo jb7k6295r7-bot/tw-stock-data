@@ -384,13 +384,38 @@
      ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
-[10] ★★★ `/zh-tw/service/data` 的參數怎麼帶（看他們自己的 js）
+[10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
 
   ── https://www.tpex.org.tw/rsrc/asset/js/global.js
-     ✓ 103,202 bytes｜`ajax(` 1 處｜`url:` 1 處
-     ── 組請求的地方（逐字，不整理）──
-       set(name, input); } else { return localStorage.setItem(name, input); } } function _s_clear() { if(_checkapp()) { $.session.clear(); } else { localStorage.clear(); }} function _get_json(func, url, input1, input2) {     $.ajax({         url:            url,         type:           'GET',         dataType:       'json',          data: {},         error: function(xhr) {},         success: function(response) {},         complete: function(response) {             var data = JSON.parse(response.responseText);             //console.log('complete: ', data);      
+     ✓ 103,202 bytes｜`ajax(` 1 處｜命中的參數名：（一個都沒有）
      js 裡像參數名的鍵（6 個）：['dataType', 'grid', 'hideEmptySeries', 'name', 'type', 'width']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
+     ✓ 15,354 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（2 個）：['updateItems', 'updateItemsOnPage']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js
+     ✓ 3,702 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（1 個）：['_id']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js
+     ✓ 1,300 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js
+     ✓ 2,771 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js
+     ✓ 72,214 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（7 個）：['getById', 'grid', 'name', 'onCompleteParams', 'onUpdate', 'updateRoot', 'width']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js
+     ✓ 87,533 bytes｜`ajax(` 4 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（29 個）：['Width', 'bindType', 'contentType', 'dataType', 'delegateType', 'getAllResponseHeaders', 'getResponseHeader', 'gridArea', 'gridColumn', 'gridColumnEnd', 'gridColumnStart', 'gridRow', 'gridRowEnd', 'gridRowStart', 'guid', 'hide', 'name', 'namespace', 'origType', 'overrideMimeType', 'pointerId', 'pointerType', 'responseFields', 'slideDown', 'slideToggle', 'slideUp', 'type', 'widows', 'writable']
+
+  ⛔ **八支 js 沒有一支提到 `data-format`／`data-start`。**
+     ⇒ 處理那些屬性的程式**不在頁面載入的 js 清單裡**（可能是打包進別的檔、或執行時才注入）。
+     ⇒ **在不執行 js 的前提下，這條路走不通。** 到這裡停，不再找。
+     ⚠ 這是「我方取不到」，⛔ **不是「櫃買沒有這個端點」**——三個官方頁面都在、關鍵字也對得上。
 
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
