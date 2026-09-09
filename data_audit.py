@@ -161,6 +161,89 @@ def main():
     L.append("| 集保 `data/tdcc/` | 四道驗算全過（恆等式）＝ B；"
              "⛔ 但**只有一週**，序列本身還不存在 | 時間 |")
 
+    # ── 四點五、⚠ 興櫃：欄位名一樣、語意不一樣（2026-09-09 新增）
+    #   K線線 19:22 報「興櫃 363 檔 open 全空白」。我方重算屬實，
+    #   而且往下量之後發現**比那更值得寫下來**：`close` 欄裝的不是收盤價。
+    #   ⛔ 這一節必須是**每趟重算**的，不可以寫死數字——興櫃是 09-03 才進母體的，
+    #     欄位供給隨時可能改變，而寫死的數字會在改變之後繼續看起來正確。
+    L += ["", "## 四點五、⚠ **興櫃的欄位名跟上市上櫃一樣，但語意不一樣**", ""]
+    _DAILY = os.path.join(_ROOT, "universe", "daily")
+    _em_first, _em_last = "", ""
+    for _d in cal:
+        try:
+            with io.open(os.path.join(_DAILY, _d + ".csv"), "rb") as _f:
+                if b",emerging," in _f.read():
+                    _em_first = _em_first or _d
+                    _em_last = _d
+        except OSError:
+            pass
+    if not _em_first:
+        L.append("（本輪日檔裡沒有 `market == 'emerging'` 的列）")
+    else:
+        _n = 0
+        _blank = {}
+        _rat = []
+        _same = 0
+        with io.open(os.path.join(_DAILY, _em_last + ".csv"), encoding="utf-8") as _f:
+            _rd = csv.DictReader(_f)
+            _cols = _rd.fieldnames or []
+            for _r in _rd:
+                if _r.get("market") != "emerging":
+                    continue
+                _n += 1
+                for _c in _cols:
+                    if not (_r.get(_c) or "").strip():
+                        _blank[_c] = _blank.get(_c, 0) + 1
+                if _r.get("high") == _r.get("low") == _r.get("close"):
+                    _same += 1
+                try:
+                    _v, _a, _c2 = (float(_r["volume"]), float(_r["amount"]),
+                                   float(_r["close"]))
+                    if _v > 0 and _c2 > 0:
+                        _rat.append((_a / _v) / _c2)
+                except (ValueError, KeyError, ZeroDivisionError):
+                    pass
+        _rat.sort()
+        # ★ 對照組：**同一天的上市股**。沒有對照組的話「p5=p95=1.0000」
+        #   說不出任何事——要有一個「本來就會差」的樣本，那個 1.0000 才有意義。
+        _tw = []
+        with io.open(os.path.join(_DAILY, _em_last + ".csv"), encoding="utf-8") as _f:
+            for _r in csv.DictReader(_f):
+                if _r.get("market") != "twse":
+                    continue
+                try:
+                    _v, _a, _c2 = (float(_r["volume"]), float(_r["amount"]),
+                                   float(_r["close"]))
+                    if _v > 0 and _c2 > 0:
+                        _tw.append((_a / _v) / _c2)
+                except (ValueError, KeyError, ZeroDivisionError):
+                    pass
+        _tw.sort()
+        _tw_p5 = _tw[len(_tw) // 20] if _tw else float("nan")
+        _tw_p95 = _tw[len(_tw) * 19 // 20] if _tw else float("nan")
+        _allblank = sorted(k for k, v in _blank.items() if v == _n)
+        L.append(f"- **進母體的第一天是 {_em_first}**（在那之前 `emerging` = 0 列）"
+                 f"。⛔ 任何跨越這一天的序列，母體是**中途換過**的——"
+                 "統計上的跳動可能是定義變化，不是市場變化。")
+        L.append(f"- {_em_last}：**{_n} 檔**｜**整欄空白**的欄位："
+                 + ("、".join(f"`{k}`" for k in _allblank) if _allblank else "（沒有）"))
+        if _rat:
+            L.append(f"- ⛔ **`close` 欄裝的不是收盤價，是均價**："
+                     f"`(amount÷volume) ÷ close` 在 {len(_rat)} 檔上"
+                     f"**p5 = {_rat[len(_rat)//20]:.4f}、p95 = "
+                     f"{_rat[len(_rat)*19//20]:.4f}**——"
+                     "整個分布壓在 1.0000，代表它是算出來的，不是撮合出來的。")
+            L.append(f"  （對照：同一天上市股的同一個比值 p5/p95 分別是 "
+                     f"{_tw_p5:.4f}／{_tw_p95:.4f}，**真的收盤價跟均價本來就會差**。）")
+        L.append(f"- `high` 與 `low` **是真的**（{_em_last} 只有 {_same}/{_n} 檔"
+                 f" high=low=close）")
+        L.append("- ⛔ **`meta/stocks.csv` 的 `kind` 分不出興櫃**（是 `stock`）。"
+                 "**唯一分得出來的是 `market` 欄。**"
+                 "⇒ 只用 `kind == 'stock'` 篩母體的人會**靜默收進興櫃**。")
+        L.append("- ⚠ 使用者 2026-09-06 已裁定：**興櫃不進推薦母體**。"
+                 "⛔ 本資料庫**不執行**那條裁定——它是消費端的事，"
+                 "這裡只負責把「分得出來的只有 `market`」這件事講清楚。")
+
     # ── 五、今天這一輪查出來、還開著的
     L += ["", "## 五、這一輪查出來、**還開著**的", ""]
     miss_b = sorted(calset - _days("breadth"))
