@@ -85,6 +85,30 @@ def load_quarter_capital(q):
     return out
 
 
+def _exright_season():
+    """逐年 7／8／9 月「含股票股利」的除權件數。→ [markdown 列]。"""
+    import collections
+    cnt = collections.Counter()
+    for f in glob.glob(os.path.join(_ROOT, "adj", "*.csv")):
+        try:
+            with io.open(f, encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    if r.get("event") == "exright" and "權" in (r.get("kind") or ""):
+                        d = r.get("date") or ""
+                        if len(d) >= 7:
+                            cnt[(d[:4], d[5:7])] += 1
+        except OSError:
+            continue
+    ys = sorted({k[0] for k in cnt})
+    out = []
+    for y in ys:
+        a, b, c = cnt[(y, "07")], cnt[(y, "08")], cnt[(y, "09")]
+        mark = "**" if y == "2021" else ""
+        out.append(f"| {mark}{y}{mark} | {mark}{a}{mark} | {b} | {mark}{c}{mark} "
+                   f"| {mark}{a + b}{mark} |")
+    return out
+
+
 def _by_quarter_table():
     """逐季的『誤差 ≥0.5% 比例』，排成年 × 季的表。→ [markdown 列]。"""
     import collections
@@ -322,7 +346,28 @@ def main():
         L.append("那 Q2 的股本已經含了股票股利、而 6/30 的股數還沒有")
         L.append("⇒ **Q2 系統性偏高**。實測那些離群檔的差額確實**大多為正**，方向一致。")
         L.append("")
-        L.append("⚠ 例外：2021Q2 只有 7.6%（那年減資／股票股利特別少？**未查證**）。")
+        L.append("### ⭐⭐⭐ 2021Q2 那個例外，反而是最強的證據")
+        L.append("")
+        L.append("2021Q2 只有 **7.6%**，是唯一不符合「Q2 特別差」的一年。"
+                 "去數我方 `data/adj/` 裡**含股票股利**的除權事件：")
+        L.append("")
+        L.append("| 年 | 7月 | 8月 | 9月 | **7–8 月合計** |")
+        L.append("|---|---|---|---|---|")
+        for row in _exright_season():
+            L.append(row)
+        L.append("")
+        L.append("⇒ **2021 年 7 月只有 21 件**（其他年 45~69），而 **9 月有 76 件**"
+                 "（其他年 19~47）；7–8 月合計 **87 件是全期最低**。")
+        L.append("")
+        L.append("2021 年因疫情三級警戒、股東會延後 ⇒ 除權息從 7–8 月推到 9–10 月")
+        L.append("⇒ Q2 財報公布時（8 月中）**大部分股票股利還沒除權**")
+        L.append("⇒ 股本與 6/30 的股數差距小 ⇒ **2021Q2 的誤差率跟著掉下來**。")
+        L.append("")
+        L.append("⭐ **這是兩個獨立證據**：")
+        L.append("① 季節指紋（Q2 年年最差）；"
+                 "② **反例年份的誤差率隨除權息延後而下降**。")
+        L.append("⇒ 機制從「很可能」升級成「**有反例支持**」——"
+                 "⛔ 但它仍然是推論，不是官方對這個欄位的定義說明。")
         L.append("")
         L.append("⇒ **結論改寫**：這不是「還有 12% 不知道為什麼」，")
         L.append("是**已知的時點錯位，而且知道它什麼時候最嚴重**。")
