@@ -69,3 +69,25 @@ python3 -m backtest.selftest_patterns
 
 ⚠ 併入的是**當時分支上的快照**。分支仍在，後續回測工作在那邊繼續；
 main 這一份不會自動跟上。**要更新請再併一次，不要在 main 上就地改。**
+
+
+## 怎麼跑這兩支 selftest
+
+⚠ `selftest_patterns.py` 與 `selftest_exits.py` 都用**相對匯入**（`from . import ...`），
+所以**必須從 repo 根當模組跑**：
+
+```
+python3 -m backtest.selftest_patterns
+python3 -m backtest.selftest_exits
+```
+
+⛔ `python3 backtest/selftest_exits.py` 會直接
+
+```
+ImportError: attempted relative import with no known parent package
+```
+
+**2026-09-09 CODE 就是這樣叫的**，看到 ImportError 卻已經在 commit 訊息裡寫了
+「本地實測 11/11 通過」——結論後來確認是對的（改用 `-m` 跑確實 11/11），
+但**當下手上的證據是 ImportError，不是通過**。
+⇒ 這兩支不排 daily（回測線建議，與 `selftest_patterns` 同級），手動跑時記得加 `-m`。
