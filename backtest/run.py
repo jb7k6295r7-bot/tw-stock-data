@@ -86,7 +86,7 @@ def process_stock(args):
     # 斷點（面額變更等還原因子接不起來的地方）：訊號日 s ∈ [T−H, T+L−1] 的訊號整筆剔除（PREREG 更正二、更正三）
     bps = D.breakpoints(df, st.event_dates)
     jump_rows = [{"stock_id": sid, "market": market, "date": cal[b["pos"]].strftime("%Y-%m-%d"),
-                  "prev_date": cal[b["prev_pos"]].strftime("%Y-%m-%d"), "ratio": b["ratio"], "gap": b["gap"], "rule": b["rule"]}
+                  "prev_date": cal[b["prev_pos"]].strftime("%Y-%m-%d"), "ratio": b["ratio"], "missing_trading_days": b["gap"], "rule": b["rule"]}
                  for b in bps]
     ncal = len(cal)
     jump_window = D.breakpoint_window(bps, ncal, H_FORWARD, L_LOOKBACK)   # True ＝ 以該日為訊號日的訊號要剔除
