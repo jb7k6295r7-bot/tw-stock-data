@@ -19,7 +19,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a387466ffdb52efb\',t:\'MTc4ODk2ODI1NQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a38787ab7bc0fbef\',t:\'MTc4ODk3MDkyNw==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -34,8 +34,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3874675e9c1c9f5\','
-     't:\'MTc4ODk2ODI1Ng==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a38787b29a1dc983\','
+     't:\'MTc4ODk3MDkyOQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -70,16 +70,154 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a38746848
-         990cdb0',t:'MTc4ODk2ODI1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a38787ca1
+         be6f278',t:'MTc4ODk3MDkzMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate
      ★ <form> 標籤原文：<form name="report" onSubmit="ChkInput();return false;">
      ★ 表單欄位名：['Ddr', 'Dwmm', 'Dwr', 'Dww', 'Dwyy', 'input_date', 'mdtype']
 
-[4] 這一輪要回答的三句話
-  ⛔ 以下三句，**只有在第 [1]~[3] 節真的看到日期範圍時才可以改**：
+[4] ⭐ 這個站有沒有**上櫃**？
+     第四輪跟了站根自己給的 `http://hist.gretai.org.tw/en/index.php`，
+     結果是 **`Name or service not known`——那個主機名根本不存在**（DNS 就死了）。
+     ⇒ 那條線是死的，⛔ 不可以改用猜路徑補上（`Hist/STOCK/…` 之類）。
+     ★ 還剩一條**不用猜**的：使用者給的網址是
+       `/Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORY.HTML`，
+       它的**上層目錄**是這個網址自己的一部分，不是我發明的名字。
+       ⇒ 逐層往上要目錄索引；⚠ 多數站台會關掉目錄列表，那就是「問過了、沒有」。
+     ★ 另外 `NSHISTORYQRY.HTML` 自己連到 `/Hist/nodata.htm`——那是它的「查無資料」頁，⭐ **[6.5] 需要知道那一頁長什麼樣子**（見下）。
+  ── /Hist/EMERGINGSTOCK/HISTORICAL/
+     https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/
+     ✓ 4,449 bytes｜中文 156 字｜<tr> 0 個
+     ★ 看得見的字（前 400）：證券櫃檯買賣中心 證券櫃檯買賣中心 &nbsp; 您好: 很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。 Sorry, the page you requested was not found. Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below. &nbsp; 回證券櫃檯買賣中心首頁 ::: 常見問題 | 聯絡我們 | 相關網站 | 使用條款 | 隱私權保護說明 | 個人資料管理政策聲明 | 資訊安全政策 | 營運持續政策 證券櫃檯買賣中心 版權所有&copy; 10084台北市中正區羅斯福路二段100號15樓 (02)2369-9555&nbsp;投資人服務專線:(0
+     ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
+     連結／frame／路徑字串 12 個：['/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/web/about/contact/contact.php?l=zh-tw', '/web/inc/gtsm_disclaimer.php?l=zh-tw', '/web/inc/gtsm_privacy_rights.php?l=zh-tw', '/web/inc/gtsm_related_links.php?l=zh-tw', '/web/service/faq/index.php?l=zh-tw', 'https://www.tpex.org.tw/', 'https://www.tpex.org.tw/zh-tw/index.html', 'https://wwwov.tpex.org.tw/css/gtsm_aa.css', 'https://wwwov.tpex.org.tw/web/images/favicon.ico']
+  ── /Hist/EMERGINGSTOCK/
+     https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/
+     ✓ 4,449 bytes｜中文 156 字｜<tr> 0 個
+     ★ 看得見的字（前 400）：證券櫃檯買賣中心 證券櫃檯買賣中心 &nbsp; 您好: 很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。 Sorry, the page you requested was not found. Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below. &nbsp; 回證券櫃檯買賣中心首頁 ::: 常見問題 | 聯絡我們 | 相關網站 | 使用條款 | 隱私權保護說明 | 個人資料管理政策聲明 | 資訊安全政策 | 營運持續政策 證券櫃檯買賣中心 版權所有&copy; 10084台北市中正區羅斯福路二段100號15樓 (02)2369-9555&nbsp;投資人服務專線:(0
+     ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
+     連結／frame／路徑字串 12 個：['/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/web/about/contact/contact.php?l=zh-tw', '/web/inc/gtsm_disclaimer.php?l=zh-tw', '/web/inc/gtsm_privacy_rights.php?l=zh-tw', '/web/inc/gtsm_related_links.php?l=zh-tw', '/web/service/faq/index.php?l=zh-tw', 'https://www.tpex.org.tw/', 'https://www.tpex.org.tw/zh-tw/index.html', 'https://wwwov.tpex.org.tw/css/gtsm_aa.css', 'https://wwwov.tpex.org.tw/web/images/favicon.ico']
+  ── /Hist/
+     https://hist.tpex.org.tw/Hist/
+     ✓ 4,449 bytes｜中文 156 字｜<tr> 0 個
+     ★ 看得見的字（前 400）：證券櫃檯買賣中心 證券櫃檯買賣中心 &nbsp; 您好: 很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。 Sorry, the page you requested was not found. Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below. &nbsp; 回證券櫃檯買賣中心首頁 ::: 常見問題 | 聯絡我們 | 相關網站 | 使用條款 | 隱私權保護說明 | 個人資料管理政策聲明 | 資訊安全政策 | 營運持續政策 證券櫃檯買賣中心 版權所有&copy; 10084台北市中正區羅斯福路二段100號15樓 (02)2369-9555&nbsp;投資人服務專線:(0
+     ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
+     連結／frame／路徑字串 12 個：['/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/web/about/contact/contact.php?l=zh-tw', '/web/inc/gtsm_disclaimer.php?l=zh-tw', '/web/inc/gtsm_privacy_rights.php?l=zh-tw', '/web/inc/gtsm_related_links.php?l=zh-tw', '/web/service/faq/index.php?l=zh-tw', 'https://www.tpex.org.tw/', 'https://www.tpex.org.tw/zh-tw/index.html', 'https://wwwov.tpex.org.tw/css/gtsm_aa.css', 'https://wwwov.tpex.org.tw/web/images/favicon.ico']
+  ── /Hist/nodata.htm
+     https://hist.tpex.org.tw/Hist/nodata.htm
+     ⚠ 編碼不是 utf-8：取亂碼最少的 **big5hkscs**（[('big5hkscs', 0), ('cp950', 0), ('utf-8', 14)]）
+     ✓ 1,516 bytes｜中文 11 字｜<tr> 2 個  ← ⚠ 中文太少，可能是 js 空殼
+     ★ 看得見的字（前 400）：訊息 查無資料,請重新查詢
+     ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
+     連結／frame／路徑字串 2 個：['/css/gretai.css', '/css/report.css']
+
+[5] ⭐ 那 9 種日檔各是什麼？——⛔ 讓**下拉選單的文字**自己講
+     第 [3.5] 節印的 37 個 value 是**整頁混在一起**的（報表別、年、月、週都有），
+     ⛔ 我不可以自己把它們分類——那就是用猜的。
+     ⇒ 改成把每一個 `<select>` **各自**切出來，連 option 的**顯示文字**一起印。
+       js 說 `StrUrl="DAILY/"+Ddr.value+日期+".txt"`，所以 `Ddr` 那一格的文字就是「這個檔是什麼」的官方說法。
+     ── <select name=Ddr>　9 個
+        'AA'     = 嚙踝蕭瘙∴蕭嚙�
+        'BA'     = 嚙磋嚙踝蕭嚙踝蕭嚙踝蕭
+        'CA'     = 嚙課剁蕭茼U嚙踝蕭嚙踝蕭嚙踝蕭I嚙踝蕭~嚙畿嚙諄計嚙踝蕭
+        'CB'     = 嚙課剁蕭嚙踝蕭嚙羯嚙畿嚙窯嚙諄計嚙踝蕭
+        'CC'     = 嚙踝蕭嚙誼剁蕭嚙踝蕭嚙羯嚙畿嚙諄計嚙踝蕭
+        'DA'     = 嚙諍對蕭嚙諄外嚙踝蕭H嚙磋嚙踝蕭嚙踝蕭J嚙窯嚙踝蕭
+        'DB'     = 嚙瘩嚙緯嚙踝蕭嚙箱嚙糊嚙瘡嚙磋嚙踝蕭嚙皚嚙窯嚙踝蕭
+        'EA'     = 嚙踝蕭嚙踝蕭嚙諸剁蕭荈i嚙碼嚙複佗蕭
+        'FA'     = 嚙磊嚙踝蕭嚙誼剁蕭荓嚙踝蕭邞挐嚙踝蕭@嚙踝蕭嚙踝蕭
+     ── <select name=Dwyy>　5 個
+        '91'     = 91
+        '92'     = 92
+        '93'     = 93
+        '94'     = 94
+        '95'     = 95
+     ── <select name=Dwmm>　12 個
+        '01'     = 01
+        '02'     = 02
+        '03'     = 03
+        '04'     = 04
+        '05'     = 05
+        '06'     = 06
+        '07'     = 07
+        '08'     = 08
+        '09'     = 09
+        '10'     = 10
+        '11'     = 11
+        '12'     = 12
+     ── <select name=Dww>　5 個
+        '1'      = 1
+        '2'      = 2
+        '3'      = 3
+        '4'      = 4
+        '5'      = 5
+     ── <select name=Dwr>　6 個
+        'WAA'    = 嚙篇嚙賣情嚙踝蕭
+        'WDB'    = 嚙瘩嚙緯嚙踝蕭嚙箱嚙糊嚙瘡嚙踝蕭篹喉蕭d嚙諸莎蕭嚙篇嚙皚嚙窯嚙踝蕭
+        'WCB'    = 嚙踝蕭嚙踝蕭嚙課剁蕭嚙踝蕭嚙羯嚙畿嚙篇嚙諄計嚙踝蕭
+        'WCC'    = 嚙踝蕭嚙誼堆蕭嚙踝蕭~嚙畿嚙篇嚙諄計嚙踝蕭
+        'WEA'    = 嚙踝蕭嚙範嚙諸莎蕭嚙篇嚙踝蕭嚙踝蕭q嚙箴20嚙磕嚙踝蕭嚙複佗蕭
+        'WEB'    = 嚙踝蕭嚙範嚙諸莎蕭嚙篇嚙踝蕭嚙踝蕭�前20嚙磕嚙踝蕭嚙複佗蕭
+
+[6] ⭐ 逐一抓那些日檔，看**內容不一樣在哪**
+     ⛔ 這不是拼路徑：檔名的組法是 [3.5] 節**頁面自己的 js** 給的，
+       型別碼是 [5] 節**它自己的 select** 給的，日期用 [1] 節 frameset **它自己預設**的 951229。
+     AA  ｜  46,651 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票日行情表(電腦議價點選成交)>>                                                           頁次:    1 ⏎ 日期: 95年12月29日<< 報 價 資 訊 >> <<          今          日          成          交          相          關          資    
+     BA  ｜ 200,900 bytes｜中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票買賣日報表>>                                               頁 次:   1 ⏎ 證券代號:1336  證券名稱:台翰精密                                                                       資料日期: 95年12月29日
+     CA  ｜  56,273 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票證券商總分支機構營業額統計表>> ⏎ 日期: 95年12月29日                                                   單位: 元
+     CB  ｜   5,549 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票證券商營業額統計表>> ⏎ 日期: 06年12月29日                                                   單位: 元
+     CC  ｜   2,786 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票推薦券商營業額統計表>> ⏎ 日期: 95年12月29日                                                   單位: 元
+     DA  ｜  28,980 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票華僑及外國人櫃檯買賣投資彙總表>>                                      頁次:    1 ⏎ 日期: 95年12月29日                                                                                                 
+     DB  ｜   2,767 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<主要機構法人買賣日彙總表>> ⏎ 日期: 95年12月29日                                                       頁次:  1
+     EA  ｜  60,111 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票熱門股排行(依成交張數由大而小排列)>> ⏎ 日期: 95年12月29日
+     FA  ｜  72,443 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票推薦券商推薦興櫃股票一覽表>>    頁次:    1 ⏎ 日期: 95年12月29日
+
+[6.5] ⭐ 日期範圍是**實測**出來的，不是頁面宣告的
+     ⚠ 日檔的日期來自 `input_date` 這個**自由輸入框**，⇒ 頁面**沒有**宣告日檔的範圍。
+       （[5] 節那組 91~95 是 `Dwyy`，那是**週報**的年份選單，⛔ 不可以拿來當日檔的範圍。）
+     ⇒ 所以只能實測：每個民國年試幾個日期，命中就停。
+     ⛔⛔ 判準是「**這個檔自己講出我要的那一天**」，不是「檔案夠大」：
+       第四輪用 `>2000 bytes` 當判準 ⇒ 民國 85~116 **全部命中、而且每年都剛好 4,449 bytes**（1996 年興櫃還不存在、2027 年還沒到）
+       ⇒ 那 4,449 bytes 是**查無資料頁**。⚠ 自己挑的門檻不是事實。
+     ⛔ 下面每一行都是「我打了這個網址、得到這個結果」，**不是**「櫃買宣告有這些年」。
+     民國  85（1996）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國  86（1997）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  87（1998）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  88（1999）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  89（2000）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
+     民國  90（2001）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國  91（2002）｜✓ 1227 有檔 30,276 bytes
+     民國  92（2003）｜✓ 1229 有檔 49,912 bytes
+     民國  93（2004）｜✓ 1229 有檔 71,803 bytes
+     民國  94（2005）｜✓ 1229 有檔 52,346 bytes
+     民國  95（2006）｜✓ 1229 有檔 46,651 bytes
+     民國  96（2007）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國  97（2008）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  98（2009）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  99（2010）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 100（2011）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 101（2012）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國 102（2013）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國 103（2014）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 104（2015）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 105（2016）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 106（2017）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
+     民國 107（2018）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國 108（2019）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國 109（2020）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 110（2021）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 111（2022）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 112（2023）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
+     民國 113（2024）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國 114（2025）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 115（2026）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 116（2027）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     ⭐ **實測命中的民國年：91~95（2002~2006），共 5 年**
+
+[7] 這一輪要回答的三句話
+  ⛔ 以下三句，**只有在前面幾節真的看到「上櫃」而且看到日期範圍時才可以改**：
      ① 上櫃交易日曆 2015-01-05~2026-08-31 那 2,841 天永遠拿不到判準
      ② 上櫃除權息的**歷史**官方來源：仍然沒有
      ③ `otc_adj.py` 走 FinMind 是因為「TPEx 官方沒有歷史」
