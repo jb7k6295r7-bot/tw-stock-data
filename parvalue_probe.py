@@ -517,6 +517,181 @@ def main():
         say("       ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**"
             "（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。")
 
+    # ── [T11] 使用者 2026-09-09 20:4x 給的 TWTAWU
+    #   ⚠ 本來寫成 [T10]，而第 412 行已經有一個 [T10]（上市面額變更）。
+    #   ⛔ 同一份報告裡標籤撞號，會讓「T10 說了什麼」變成沒有答案的一句話。 ───────────────────────
+    #   ⛔ **我不知道 TWTAWU 是什麼**，也不去猜。TWSE 的報表代號沒有規律
+    #     （TWTAUU 是減資、TWTB7U 是面額變更預告、TWTB8U 是面額變更參考價，
+    #      三個長得像卻是三件事）——**猜錯代號會讓後面每一步都建在錯的前提上**。
+    #   ⇒ 這一節只做一件事：**讓它自己說它是什麼**（title），然後量四項判準。
+    T10 = "https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU"
+    say("\n[T11] ★ 使用者給的 `afterTrading/TWTAWU`（⛔ 我不知道它是什麼，讓它自己說）")
+    say(f"     {T10}?response=html")
+    say("     判準四項（跟這一支其他節一致）：① stat 與**標題** ② 完整欄位"
+        " ③ 列數 ④ **日期欄的最小與最大值**")
+    say("  ── ① 使用者給的形式（response=html）")
+    _t7("html 無參數", f"{T10}?response=html")
+    say("  ── ② 同一個網址要 json")
+    d10 = _t7("json 無參數", f"{T10}?response=json")
+    # ★ 欄位要**整份印出來**。只印「有沒有股數」會變成我先假設它是股數表，
+    #   然後只看得到我假設的東西。
+    r10, e10 = B.get(f"{T10}?response=json", retries=2, timeout=60)
+    if not e10:
+        try:
+            j10 = json.loads(r10.decode("utf-8", "replace"))
+        except Exception:                                        # noqa: BLE001
+            j10 = {}
+        for _ti, _t in enumerate(B._tables(j10) or []):
+            _f = [str(x) for x in (_t.get("fields") or [])]
+            _d = _t.get("data") or []
+            say(f"     表 {_ti + 1}：列數 {len(_d)}｜欄位逐字 {_f}")
+            if _d:
+                say(f"       首列：{_d[0]}")
+                if len(_d) > 1:
+                    say(f"       末列：{_d[-1]}")
+    say("  ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）")
+    #   ⛔ 這裡**先算再判**，不可以把兩個結論都印出來。
+    #     2026-09-09 稍早犯過一次：同時印「三發都一樣 ⇒ …」與「任一發不同 ⇒ …」，
+    #     那等於沒有結論，而讀的人會挑一個自己相信的。
+    _today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y%m%d")
+    _seen = []
+    for _q in ("?date=20150701&response=json", f"?date={_today}&response=json",
+               f"?startDate=20150101&endDate={_today}&response=json"):
+        _r, _e = B.get(T10 + _q, retries=1, timeout=60)
+        if _e:
+            say(f"     ✗ {_q}：{str(_e)[:90]}")
+            continue
+        try:
+            _j = json.loads(_r.decode("utf-8", "replace"))
+        except Exception:                                        # noqa: BLE001
+            say(f"     ? {_q}：不是 JSON｜{len(_r):,} bytes")
+            continue
+        _tb = (B._tables(_j) or [{}])[0]
+        _n = len(_tb.get("data") or [])
+        say(f"     ✓ {_q}｜stat={_j.get('stat')!r}｜title={_j.get('title')!r}"
+            f"｜列數 {_n}｜{len(_r):,} bytes")
+        _seen.append((str(_j.get("title")), _n, len(_r)))
+    if len(_seen) < 2:
+        say("     ⇒ 成功的發數不足 2，**這一輪判不出參數有沒有生效**（不是判成沒生效）")
+    elif len({x for x in _seen}) == 1:
+        say(f"     ⇒ ⛔ {len(_seen)} 發的 **title、列數、位元組數全部相同** "
+            "⇒ **參數沒生效**。⛔ 不要因為「有回東西」就當成它吃日期。")
+    else:
+        say(f"     ⇒ ⭐ {len(_seen)} 發**回應不同** ⇒ 參數有生效，"
+            "下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）")
+
+    # ── [T11] ④ ⭐ **這一節的重點**：它解不解釋得掉我方的長洞 ────────────
+    #   端點可用不等於對我方有用。`_holes_scan.csv` 裡有 1,402 個
+    #   「缺 ≥ 5 個交易日且無事件」的洞，其中「流動性足夠、要查」的
+    #   在 `breakpoint_check` 分層裡是 6 個。**TWTAWU 只收上市**，
+    #   所以可驗的是那 6 個裡的上市那幾個。
+    #   ⭐ 這是**可否證的預測**：若它解釋不掉，那這個端點對長洞就沒有用，
+    #     ⛔ 而我不可以因為「找到一個新端點」就把它記成進度。
+    say("\n  ── ④ ⭐ 它解不解釋得掉我方的長洞（⛔ 端點可用 ≠ 對我方有用）")
+    _w, _we = B.get(f"{T10}?startDate=20150101&endDate={_today}&response=json",
+                    retries=2, timeout=90)
+    if _we:
+        say(f"     ✗ 取不到長區間：{str(_we)[:110]} ⇒ 這一項這一輪判不出來")
+    else:
+        try:
+            _wj = json.loads(_w.decode("utf-8", "replace"))
+        except Exception as _ex:                                 # noqa: BLE001
+            _wj = {}
+            say(f"     ✗ 不是 JSON：{type(_ex).__name__}")
+        _wt = (B._tables(_wj) or [{}])[0]
+        _wd = _wt.get("data") or []
+        _wf = [str(x) for x in (_wt.get("fields") or [])]
+        say(f"     ✓ 長區間 {len(_wd)} 列｜title={_wj.get('title')!r}")
+        say(f"       ⚠ **回音要對得上我要的區間**（TWT49U 那次就是回音沒對上，"
+            "把 2026 的資料寫進 2015 的每一天）")
+
+        def _ad(v):
+            m = re.fullmatch(r"(\d{2,3})/(\d{2})/(\d{2})", str(v).strip())
+            return (f"{int(m.group(1)) + 1911}-{m.group(2)}-{m.group(3)}"
+                    if m else None)
+
+        _iS = _wf.index("暫停交易日期") if "暫停交易日期" in _wf else -1
+        _iR = _wf.index("恢復交易日期") if "恢復交易日期" in _wf else -1
+        _iC = _wf.index("證券代號") if "證券代號" in _wf else -1
+        if min(_iS, _iC) < 0:
+            say(f"     ✗ 欄位對不上（{_wf}）⇒ 不硬解析")
+        else:
+            _by = {}
+            for _r2 in _wd:
+                _r2 = list(_r2)
+                _sid = str(_r2[_iC]).strip()
+                _s1 = _ad(_r2[_iS]) if _iS < len(_r2) else None
+                _s2 = _ad(_r2[_iR]) if 0 <= _iR < len(_r2) else None
+                if _sid and _s1:
+                    _by.setdefault(_sid, []).append((_s1, _s2 or ""))
+            _ds = sorted(x[0] for v in _by.values() for x in v)
+            say(f"       解析出 {sum(len(v) for v in _by.values()):,} 筆／"
+                f"{len(_by):,} 檔｜暫停日 {_ds[0]} ~ {_ds[-1]}")
+            # 對帳 _holes_scan.csv 的上市長洞
+            _hp = os.path.join(_ROOT, "meta", "_holes_scan.csv")
+            _rows = []
+            if os.path.exists(_hp):
+                with io.open(_hp, encoding="utf-8") as _f:
+                    _rows = [r for r in csv.DictReader(_f)
+                             if r.get("market") == "twse"]
+            _liq = [r for r in _rows if (r.get("liq_ok") or "") == "True"]
+            def _cover(r):
+                for _s1, _s2 in _by.get(r["stock_id"], []):
+                    if r["prev_date"] <= _s1 <= r["date"]:
+                        return (_s1, _s2)
+                return None
+            for _label, _set in (("流動性足夠（要查的那幾檔）", _liq),
+                                 ("全部上市長洞", _rows)):
+                _hit = [(r, _cover(r)) for r in _set]
+                _ok = [x for x in _hit if x[1]]
+                say(f"     ★ {_label}：{len(_set)} 個｜"
+                    f"**TWTAWU 解釋得掉 {len(_ok)}｜解釋不掉 {len(_set) - len(_ok)}**")
+                if _set is _liq:
+                    for r, c in _hit:
+                        say(f"       {r['stock_id']}｜洞 {r['prev_date']} ~ "
+                            f"{r['date']}（缺 {r['missing_trading_days']} 日）｜"
+                            + (f"✓ 暫停 {c[0]} → 恢復 {c[1] or '（無）'}"
+                               if c else "✗ TWTAWU 裡找不到對應的暫停紀錄"))
+                        # ⭐⭐ 沒中的時候，**要分辨兩種完全不同的原因**：
+                        #   ① 這檔根本不在 TWTAWU 裡 ⇒ **端點不收這種事件**
+                        #   ② 這檔在裡面、但日期兜不攏 ⇒ **我的比對窗開錯**
+                        #   ⛔ 兩者的處置相反：① 要換來源，② 要改我的程式。
+                        #     只報「找不到」的話，這兩件事看起來一模一樣。
+                        if not c:
+                            _mine = _by.get(r["stock_id"], [])
+                            say(f"         ⇒ 這檔在 TWTAWU 裡共 {len(_mine)} 筆"
+                                + (f"：{sorted(_mine)[:6]}" if _mine else
+                                   "　← **整檔不在** ⇒ 端點不收這種事件，"
+                                   "⛔ 不是我的比對窗開錯"))
+
+            # ── ⭐ 這一份到底是什麼性質的資料：**看停牌長度的分佈**
+            #   ⛔ 「它是短期暫停還是長期停止買賣」不可以從一個樣本推
+            #     （1218 泰山那筆是一天，但一筆說明不了 7,215 筆）。
+            import datetime as _dt
+            _dur = []
+            for _sid, _lst in _by.items():
+                for _s1, _s2 in _lst:
+                    if not _s2:
+                        continue
+                    try:
+                        _a = _dt.date(*map(int, _s1.split("-")))
+                        _b2 = _dt.date(*map(int, _s2.split("-")))
+                        _dur.append((_b2 - _a).days)
+                    except ValueError:
+                        pass
+            _dur.sort()
+            if _dur:
+                def _q(p):
+                    return _dur[min(len(_dur) - 1, int(len(_dur) * p))]
+                say(f"     ★ 停牌長度（恢復日 − 暫停日）分佈，n={len(_dur):,}："
+                    f"最短 {_dur[0]}｜p50 {_q(.5)}｜p90 {_q(.9)}｜p99 {_q(.99)}"
+                    f"｜最長 {_dur[-1]} 天")
+                _long = sum(1 for x in _dur if x >= 30)
+                say(f"       其中 **≥ 30 天的有 {_long} 筆（{_long / len(_dur) * 100:.1f}%）**")
+                say("       ⇒ 這一行決定它是不是「長期停止買賣」的來源。"
+                    "⛔ 若幾乎全是 1 天，那它是**短期暫停**，"
+                    "我方那個缺口沒被關掉。")
+
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
     say("`adjust.py` 的 EVENT_DIRS 與 BOUNDS。")

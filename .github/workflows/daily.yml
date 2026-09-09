@@ -73,6 +73,14 @@ jobs:
         continue-on-error: true
         run: python selftest_holiday.py
 
+      - name: 驗上櫃日曆判準的累積（離線）
+        continue-on-error: true
+        run: python selftest_otccal.py
+
+      - name: 驗上市短期暫停交易的守門（離線）
+        continue-on-error: true
+        run: python selftest_suspend_twse.py
+
       # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
       #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
       #   （理由見 holiday.py 檔頭：兩種錯的代價不對稱）。
@@ -122,6 +130,12 @@ jobs:
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
           python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
+          # ★ 同「融資融券與本益比」那一步的理由：只問當天 ⇒ 漏掉的日子永遠不重試。
+          #   目前 otcinst 剛好 0 個洞，⛔ 但「現在沒有洞」不是「不會有洞」。
+          #   已存在就跳過，所以沒洞時這一段是 0 個請求。
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed otcinst --start 2015-01-01 --end "$TODAY" \
+                          --limit 20 --sleep 1
 
       # ★★ 融資融券與本益比日檔。**2026-09-08 之前完全不在每日排程裡**——
       #   transpose 的跨層檢查第一次跑就抓到：price 到 09-08，而 margin 與 per
@@ -139,6 +153,21 @@ jobs:
           echo "目標交易日：$DAY"
           for f in margin per otcmargin otcper; do
             python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+          done
+          # ★★ 2026-09-09 新增第二段：**回頭補漏掉的日子**。
+          #   在這之前這一步**只問當天** ⇒ 某一天失敗，那一天就**永遠不會被重試**，
+          #   而且外表完全正常：檔案都在、數字都對、只有那一天不存在。
+          #   實測代價：四個 feed 全部缺 **2026-09-07**（星期一，真的交易日），
+          #   而 `_last_run.md` 那幾塊當時都是「待處理 0 天 ✓ 正常」——
+          #   因為它們被問的是「今天」，而今天已經有了。
+          #   ⇒ 抄 breadth 那一步的兩段式寫法：先當天，再分批回補。
+          #   ⚠ `--limit` 是**過濾掉已存在之後**才套用的（feeds.py `cmd_feed`），
+          #     所以沒有洞的時候這一段是 0 個請求，不會每天多打 TWSE 幾千發。
+          #   ⚠ 上限 20 天 × 4 個 feed × sleep 2 ＝ 最壞約 3 分鐘。
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          for f in margin per otcmargin otcper; do
+            python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
+                            --limit 20 --sleep 2
           done
 
       # ★ 集保戶股權分散（大戶持股的來源）。每週一份，週六 09:00 後產生。
@@ -254,6 +283,40 @@ jobs:
       #   ⚠ 這一步**不加 continue-on-error 的理由**：這幾份的共同點是
       #     「壞掉時整條管線是綠的」，而且**補不回來**——
       #     集保官方只留一年、行事曆只給當年。紅了要當天處理。
+      # ★ 資料稽核：報「憑什麼說它是對的」，⛔ 不報「對不對」。
+      #   刻意**不設 check**——它報的是證據等級，硬要它紅會逼人把等級寫高，
+      #   那正好毀掉這份報告的用處。
+      # ★ 三份原本只有自我一致的資料，各自的第二判準。
+      #   ⚠ 融資那條的相等率崩掉，最常見的原因是**前一個交易日的檔案不存在**
+      #   ⇒ 它同時在驗數字與涵蓋率。
+      - name: 交叉判準（三大法人／融資融券／本益比）
+        if: always()
+        continue-on-error: true
+        run: python crosscheck.py
+
+      - name: 資料稽核（憑什麼說它是對的）
+        if: always()
+        continue-on-error: true
+        run: python data_audit.py
+
+      # ★★ 上櫃交易日曆的**外部判準**（2026-09-09 新增）。
+      #   上櫃日曆一直是 `_data_audit.md` 裡唯一一列 C 級：只有自我一致
+      #   （日曆＝日檔裡有上櫃成交的日期集合，拿自己的產出當自己的判準）。
+      #   上市那半有 FMTQIK，⛔ 但 FMTQIK 只有上市。
+      #   `otccal_probe.py` 在 Actions 上量到櫃買 openapi 的
+      #   `tpex_daily_trading_index`（大盤層級，跟我方逐檔行情不同條路）。
+      #   ⛔ **它只給最近 7 個交易日**——swagger 標題寫「歷史」是誤導，
+      #     8 個「歷史指數」端點實測每一個都只回 7 列。
+      #   ⇒ 跟集保同一族：**不累積就永久失去**，所以每天跑，
+      #     而且下面的 freshness_check 有一條在盯它。
+      #   ⚠ 一定要排在 `fetch.py` 之後（它要讀當天的日檔）
+      #     與 `freshness_check.py` 之前（否則第一趟會誤報檔案不存在）。
+      - name: 上櫃交易日曆判準（櫃買大盤，只給 7 天 ⇒ 每天累積）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python otc_calendar.py
+
       - name: 累積型資料的新舊檢查
         if: always()
         run: python freshness_check.py
@@ -312,6 +375,21 @@ jobs:
       # ★ 被防護擋下來的請求要印出來。這一支所有的失效模式都是「跑起來完全正常」，
       #   log 裡沒印、又沒人去讀 data/meta/_suspend_skipped.txt 的話，
       #   少收一整塊資料跟「今天真的沒有」長得一模一樣（2026-09-07 實際發生過兩次）。
+      # ★★ 上市**短期**暫停交易的完整歷史（TWSE TWTAWU，使用者 2026-09-09 提供）。
+      #   我方原有的 `suspend.csv` 10,034 列裡 **9,594 列是權證**，普通股只有 409 列
+      #   ⇒ **上市普通股的暫停交易，我方幾乎沒有紀錄**。這一支補那一塊，
+      #     而且 `startDate`/`endDate` 一次拿得到 11 年（7,215 筆／6,656 檔）。
+      #   ⛔ **它不是「長期停止買賣」的來源**，這是實測不是推測：
+      #     停牌長度 p50 = 1 天、≥30 天只有 1 筆（0.0%）；
+      #     4414 如興那段 203 個交易日不在裡面，而它在這個端點裡有 3 筆全是一天
+      #     ⇒ 不是「這檔沒收錄」，是**收錄範圍就是短期**。
+      #   ⚠ `date=` 單日**完全沒生效**（兩個不同日期回同一份），只有區間有效。
+      - name: 上市短期暫停交易（TWTAWU，一次一個請求拿 11 年）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python suspend_twse.py
+
       - name: 停牌抓取有沒有被擋下來
         if: always()
         continue-on-error: true
@@ -479,7 +557,7 @@ jobs:
             #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
             #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
             LASTRUN="data/meta/_last_run.md"
-            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv "
+            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md "
             ok=0
             for i in 1 2 3; do
               if git pull --rebase --autostash origin main && git push origin HEAD:main; then

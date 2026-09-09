@@ -48,7 +48,9 @@
     存到一份不知道是哪天的 HTML，比沒存更糟。
 """
 import argparse
+import csv
 import io
+import json
 import os
 import re
 import sys
@@ -176,10 +178,17 @@ def _schedule(rl, today):
     if err or not raw:
         rl.info("開休市行事曆", f"✗ 抓不到：{str(err)[:100]}")
         return
+    # ⛔ 這裡**只接 ValueError**（＝真的不是 JSON）。
+    #   2026-09-09 這一行原本是 `except Exception`，而 `json` 根本沒 import ⇒
+    #   NameError 被接住、印成「✗ 不是 JSON：NameError」。
+    #   **那句話是假的**：對方回的是好好的 JSON，壞的是我方的程式，
+    #   而報告上看起來像對方的問題 ⇒ 去查對方，永遠查不到。
+    #   ⇒ 我方自己的例外**不要接**，讓它炸出 traceback。
     try:
         d = json.loads(raw.decode("utf-8", "replace"))
-    except Exception as ex:                                      # noqa: BLE001
-        rl.info("開休市行事曆", f"✗ 不是 JSON：{type(ex).__name__}")
+    except ValueError as ex:                                     # noqa: BLE001
+        rl.info("開休市行事曆",
+                f"✗ 對方回的**不是 JSON**：{type(ex).__name__}: {str(ex)[:80]}")
         return
     tb = (B._tables(d) or [{}])[0]
     fields = [str(x) for x in (tb.get("fields") or [])]

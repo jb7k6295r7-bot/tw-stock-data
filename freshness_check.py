@@ -55,6 +55,13 @@ TARGETS = [
      "每個交易日一份；5 天 ＝ 連假 ＋ 一次失敗"),
     ("開休市行事曆", os.path.join(_ROOT, "meta", "holiday_schedule.csv"),
      "asof_column", 5, "每天併入；看 `asof` 欄最新值"),
+    # ★ 2026-09-09 新增。櫃買那 8 個「歷史指數」端點**每一個都只回 7 列**
+    #   （swagger 寫「歷史」是誤導）⇒ 這是上櫃交易日曆的唯一外部判準，
+    #   而且**不累積就永久失去**，跟集保同一族。
+    #   5 天 ＝ 連假 ＋ 一次失敗；⛔ 拖到第 8 天就會有一天永遠拿不到判準。
+    ("上櫃交易日曆判準", os.path.join(_ROOT, "meta", "calendar_tpex.csv"),
+     "asof_column", 5,
+     "每天併入；端點只給最近 7 個交易日 ⇒ 斷超過 7 天就有日子永遠補不回來"),
 ]
 
 
@@ -63,9 +70,18 @@ def _newest(path, how):
     if how in ("filename", "filename_roc"):
         if not os.path.isdir(path):
             return None, "目錄不存在"
-        fs = [x for x in os.listdir(path) if x.endswith(".csv")]
+        # ⛔ 2026-09-09 抓到的第二句假診斷：這裡本來只收 `.csv`，
+        #   而 `data/holiday/` 存的是 **`.html`**（每天一份原始公告頁）
+        #   ⇒ 報告寫「天然災害停班原始頁：目錄是空的」，**那句是假的**：
+        #     目錄裡有 `2026-09-09.html`，是這支不認得它的副檔名。
+        #   照著報告去查，會去查 holiday.py 為什麼沒存檔——而它存了。
+        #   ⇒ 認**檔名**（日期），不認副檔名。
+        fs = [x for x in os.listdir(path)
+              if re.match(r"^(20[0-9]{2}-[0-9]{2}-[0-9]{2}|1[0-9]{6})\.", x)]
         if not fs:
-            return None, "目錄是空的"
+            n_any = len(os.listdir(path))
+            return None, ("目錄是空的" if n_any == 0
+                          else f"目錄有 {n_any} 個檔，但沒有一個的檔名是日期")
         stems = sorted(x.rsplit(".", 1)[0] for x in fs)
         s = stems[-1]
         if how == "filename_roc" and re.fullmatch(r"1[0-9]{6}", s):

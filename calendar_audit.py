@@ -41,6 +41,7 @@ FMTQIK **只有上市**。上櫃的開休市在實務上與上市相同（同一
 
 import argparse
 import calendar as _cal
+import io
 import json
 import os
 import re
@@ -143,6 +144,36 @@ def ours():
     if not os.path.isdir(DAILY_DIR):
         return set()
     return {n[:-4] for n in os.listdir(DAILY_DIR) if n.endswith(".csv")}
+
+
+def calendar_lag(root=None):
+    """→ (三個 coverage 檔各自的最後一天 dict, union 最後一天, 日檔最後一天)。
+
+    ⛔ **只讀不寫**，任何一個檔不存在都不可以丟例外——這是附加的能見度，
+      不是資料管線。抽成函式是因為 **inline 在 main() 裡的東西測不到**，
+      而測不到的檢查等於不存在。
+    """
+    uni = os.path.join(root or _ROOT, "universe")
+    cov, last = {}, ""
+    for f in ("_coverage.csv", "_coverage_backfill.csv", "_coverage_daily.csv"):
+        d = ""
+        try:
+            with io.open(os.path.join(uni, f), encoding="utf-8") as fh:
+                for i, ln in enumerate(fh):
+                    q = ln.split(",", 1)[0].strip()
+                    if i and q[:1].isdigit() and q > d:
+                        d = q
+        except OSError:
+            d = ""
+        cov[f] = d or "（不存在）"
+        if d > last:
+            last = d
+    daily = os.path.join(uni, "daily")
+    pd = ""
+    if os.path.isdir(daily):
+        ns = sorted(x[:-4] for x in os.listdir(daily) if x.endswith(".csv"))
+        pd = ns[-1] if ns else ""
+    return cov, last, pd
 
 
 def main():
@@ -262,6 +293,41 @@ def main():
              ("沒問到：" + "、".join(k for k, _ in failed[:6])) if failed else f"{n} 個月")
     rl.check("官方有、我方沒有的日子為 0（疑似漏抓）", not miss,
              f"{len(miss)} 天：{'、'.join(miss[:5])}" if miss else "0 天")
+
+    # ★★ 2026-09-09 補：**把日曆自己的最後一天印出來**（K線線 19:22 要的）。
+    #
+    #   為什麼：K線線那一側算出「日曆缺 09-04、09-07、09-08」而回報通過——
+    #   **他們的日曆是舊的，而舊得看不出來**。原因是「交易日曆」在我方
+    #   **分成三個檔**，他們只 union 了兩個：
+    #     `_coverage.csv`（回補檔）／`_coverage_backfill.csv`／`_coverage_daily.csv`
+    #   ⛔ 而「三個都要 union」這件事**只寫在 backfill.coverage_rows() 裡，
+    #     沒有寫在任何一個檔的檔頭** ⇒ 少讀一個的人會拿到一個**看起來完全正常的舊窗口**。
+    #
+    #   ⇒ 所以這裡把**三個檔各自的最後一天**都印出來，讓「它們不一樣」這件事
+    #     在 `_last_run.md` 上一眼看得到，而不是要去讀程式才知道。
+    #   ⚠ 這一段**只讀不寫**，任何一個檔不存在都不可以讓這一步炸掉——
+    #     它是附加的能見度，不是資料管線。
+    # ★★ 2026-09-09 補：**把日曆自己的最後一天印出來**（K線線 19:22 要的）。
+    #
+    #   為什麼：K線線那一側算出「日曆缺 09-04、09-07、09-08」而回報通過——
+    #   **他們的日曆是舊的，而舊得看不出來**。原因是「交易日曆」在我方
+    #   **分成三個檔**，他們只 union 了兩個。
+    #   ⛔ 而「三個都要 union」這件事**只寫在 backfill.coverage_rows() 裡，
+    #     沒有寫在任何一個檔的檔頭** ⇒ 少讀一個的人會拿到一個
+    #     **看起來完全正常的舊窗口**。
+    _cov, _last, _pd = calendar_lag()
+    rl.info("交易日曆三個檔各自的最後一天",
+            "｜".join(f"{k} {v}" for k, v in _cov.items())
+            + f"｜**union {_last or '（都讀不到）'}**"
+            + "　⛔ 三個都要 union，少讀一個會拿到看起來正常的舊窗口")
+    rl.info("日檔最後一天", _pd or "（讀不到 data/universe/daily/）")
+    # ⛔ 這一條就是 K線線那一側缺的那個斷言。日曆落後於價格 ⇒ 任何拿它當閘門的
+    #   檢查都會**靜默往前平移**，而且照樣回報通過。
+    rl.check("交易日曆（三檔 union）沒有落後於日檔", bool(_pd) and _last >= _pd,
+             f"日曆 {_last or '?'}｜日檔 {_pd or '?'}"
+             + ("　⇒ 落後的話，以日曆為基準的近 20／60 日窗會靜默往前平移"
+                if not (_pd and _last >= _pd) else ""))
+
     rc = rl.finish()
     return 1 if (failed or miss or rc) else 0
 

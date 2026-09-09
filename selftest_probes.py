@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""把五支探針的 `main()` **整條走一遍**（網路全部換成假回應），只驗「跑不跑得完」。
+"""把六支探針的 `main()` **整條走一遍**（網路全部換成假回應），只驗「跑不跑得完」。
 
     python3 selftest_probes.py
 
@@ -63,7 +63,17 @@ HTML = ("<html><body><form>"
         #   於是一個 `NameError: urllib` 一路過關到 Actions 才炸。
         #   ⛔ **假的比真的簡單，就等於沒測。**
         "<script src='/static/app.js'></script>"
+        # ⚠ 第五次補同一族：otccal 第四輪要讀 **inline script** 與 **data-\***，
+        #   假頁面兩樣都沒有 ⇒ 那兩條分支又不會被走到。
+        "<script>var opt={url:'/www/zh-tw/announce/holidayList',yy:115};</script>"
+        "<div data-format='json' data-start='115' data-api='/www/zh-tw/x'></div>"
         "</form></body></html>")
+# ⚠ 2026-09-09：otccal_probe 的重點是「日期欄 min/max ＋ 與我方日曆雙向比對」。
+# 若假回應照 OPENAPI_ROWS（沒有日期欄）回，它會在「沒有日期欄」那一行就 return，
+# **_date_cols／_gaps／_compare 三個函式一行都不會跑到**。⛔ 假的比真的簡單＝沒測。
+INDEX_ROWS = [{"Date": "1150907", "ClosingIndex": "250.11"},
+              {"Date": "1150908", "ClosingIndex": "251.22"},
+              {"Date": "1150909", "ClosingIndex": "252.33"}]
 DATAGOV = {"success": True, "result": {
     "title": "集保戶股權分散表", "description": "每週",
     "distribution": [{"resourceDescription": "csv",
@@ -71,14 +81,28 @@ DATAGOV = {"success": True, "result": {
                       "https://opendata.tdcc.com.tw/getOD.ashx?id=1-9"}]}}
 
 
+# ⚠ 2026-09-09 第三次補同一族的洞：otccal_probe 新加的「把 js 裡 calendar
+#   附近的原文印出來」那條分支，**只有在假 js 裡真的有 calendar 才會被走到**。
+#   前兩次（holiday_probe 的 `<script src>`、urllib 沒 import）都是同一個原因：
+#   ⛔ **假的比真的簡單，就等於沒測。**
+FAKE_JS = (b"var t={};function initCalendar(o){"
+           b"$.ajax({url:'/www/zh-tw/announce/holiday',data:{yy:o.year},"
+           b"dataType:'json'});}"
+           b"t.Calendar=initCalendar;// calendar table\n")
+
+
 def fake_get(url, **kw):
     u = str(url)
+    if u.endswith(".js") or "/rsrc/" in u:
+        return FAKE_JS, None
     if "swagger" in u:
         return json.dumps(SWAGGER).encode(), None
     if "data.gov.tw" in u:
         return json.dumps(DATAGOV).encode(), None
     if "getOD.ashx" in u:
         return json.dumps(FAKE_ROWS).encode(), None
+    if "openapi/v1/" in u and ("_index" in u or "index" in u.rsplit("/", 1)[-1]):
+        return json.dumps(INDEX_ROWS).encode(), None
     if "openapi/v1/" in u or "mopsfin" in u:
         return json.dumps(OPENAPI_ROWS).encode(), None
     # ⚠ 2026-09-09：這一行原本讓 `…/zh/holidaySchedule/holidaySchedule`
@@ -88,6 +112,17 @@ def fake_get(url, **kw):
     if (u.endswith(".html") or "qryStock" in u or "/www/" in u or "/web/" in u
             or "holidaySchedule" in u or "class_main.jsp" in u):
         return HTML.encode(), None
+    # ⚠ 第六次補同一族：parvalue_probe 的 [T11] ④（TWTAWU 對長洞）要一份
+    #   **有「暫停交易日期」欄**的表才走得完，泛用的 {fields:[證券代號]} 會讓它
+    #   在「欄位對不上」那一行就 return ⇒ 解析與對帳一行都不會跑。
+    if "TWTAWU" in u:
+        return json.dumps({
+            "stat": "OK", "title": "暫停交易證券 期間：104/01/01 到 115/09/09",
+            "fields": ["編號", "證券代號", "證券名稱", "暫停交易日期",
+                       "暫停交易時間", "恢復交易日期", "恢復交易時間"],
+            "data": [[1, "1218", "泰山", "115/08/13", "8:00", "115/08/14", "8:00"],
+                     [2, "4414", "如興", "111/08/18", "8:00", "112/06/26", "8:00"]],
+        }, ensure_ascii=False).encode(), None
     if "twse.com.tw" in u or "tpex.org.tw" in u:
         return json.dumps({"stat": "OK", "fields": ["證券代號"],
                            "data": [["2330"]]}).encode(), None
@@ -119,6 +154,9 @@ SECTIONS = {
     # ⛔ 這一支的每一節都是判讀前提（見 holiday_probe 的檔頭四項），
     #   少掉任何一節都會讓「颱風休市偵測」建立在沒問過的假設上。
     "holiday_probe": ["[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]"],
+    # ⛔ [2] 與 [5] 是這一支的本體：[2] 是候選端點的日期 min/max，
+    #   [5] 是「找到／沒找到」的結論。少任何一節都代表它中途 return 了。
+    "otccal_probe": ["[1]", "[2]", "[3]", "[4]", "[5]"],
 }
 
 

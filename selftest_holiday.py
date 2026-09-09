@@ -20,6 +20,7 @@
   下面那份 `TYPHOON` 是**我編的**，只用來驗「同一列比對」這個機制走不走得通。
 """
 import io
+import json
 import os
 import sys
 import tempfile
@@ -104,7 +105,27 @@ def main():
     H.SCHED_CSV = os.path.join(d, "holiday_schedule.csv")
     import backfill as _B
     old_get = _B.get
-    _B.get = lambda *a, **k: (None, "selftest：不連外")   # ⛔ 一律不連外
+    # ⛔⛔ 這裡**不可以**寫成「一律回錯誤」。2026-09-09 實測代價：
+    #   上一版是 `lambda *a, **k: (None, "selftest：不連外")`，
+    #   於是 `_schedule()` 在第一個 `if err` 就 return，
+    #   **`json.loads` 那一行一次都沒跑到** ⇒ `holiday.py` 少 import 了
+    #   `json` 與 `csv` 兩個模組，本檔全綠、Actions 上整段丟 NameError，
+    #   而且被印成「✗ 不是 JSON」——看起來像對方的問題。
+    #   ⇒ 假回應要**回真的形狀**（逐字照 `_holiday_probe.txt` [9] 實測到的），
+    #     這樣 `_schedule()` 會從頭走到尾，寫檔那一段也會被執行。
+    SCHED_JSON = json.dumps({
+        "stat": "ok", "title": "115 年市場開休市日期",
+        "fields": ["日期", "名稱", "說明"],
+        "data": [["2026-01-01", "中華民國開國紀念日", "依規定放假1日。"],
+                 ["2026-02-11", "農曆除夕前一日", "依規定放假1日。"],
+                 ["2026-12-25", "行憲紀念日", "依規定放假1日。"]],
+    }, ensure_ascii=False).encode()
+
+    def _fake_get(url, *a, **k):
+        if "holidaySchedule" in str(url):
+            return SCHED_JSON, None
+        return None, "selftest：不連外"          # ⛔ 其餘一律不連外
+    _B.get = _fake_get
     # ⚠ 這一段是本檔第一版**漏掉的**：`H.main()` 裡有 `runlog.Run("holiday")`，
     #   而 runlog 的路徑是用 `__file__` 錨定的 ⇒ 它會寫進 **repo 真的**
     #   `data/meta/_last_run.md`。runlog.py 的檔頭早就寫過這個坑
@@ -132,6 +153,18 @@ def main():
         ck("寫得出 holiday_status.csv", "date,verdict" in txt)
         ck("同一天重跑不會疊列", len(txt.strip().splitlines()) == 2,
            f"實際 {len(txt.strip().splitlines())} 行（含表頭）")
+        # ★★ 這三項是這一版新加的，因為上一版**根本沒走到 `_schedule()` 的本體**。
+        #   ⛔ 只驗「沒炸」不夠：要驗它**真的把列寫進去了**。
+        sched = io.open(H.SCHED_CSV, encoding="utf-8").read()
+        ck("_schedule() 寫得出 holiday_schedule.csv",
+           os.path.exists(H.SCHED_CSV))
+        ck("表頭是 date,name,note,asof",
+           sched.splitlines()[0] == "date,name,note,asof",
+           sched.splitlines()[0] if sched else "(空的)")
+        ck("三列假資料都併進去了", len(sched.strip().splitlines()) == 4,
+           f"實際 {len(sched.strip().splitlines())} 行（含表頭）")
+        ck("同一天跑兩趟不會疊列（第二趟是覆蓋）",
+           sched.count("2026-01-01") == 1, f"出現 {sched.count('2026-01-01')} 次")
     finally:
         H.OUT, H.ARCH = old_out, old_arch
         H.SCHED_CSV = old_sched
