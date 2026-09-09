@@ -277,6 +277,14 @@ def main():
     #     （這個專案被靜默截斷騙過兩次）。
     T7 = "https://www.twse.com.tw/rwd/zh/change/TWTB7U"
 
+    def _cell(row, i):
+        # ⛔ 不可以寫成 `(row or [""]*n)[i]`：row 非空但比 n 短時
+        #   `or` 不會補齊，照樣 IndexError（2026-09-09 被 selftest 擋下）。
+        # ⚠ 定義位置故意放在最外層：上一版寫在巢狀 try 裡，
+        #   `wide is None` 時它根本不會被定義，而 [T8] 節照樣要用 ⇒ NameError。
+        row = row if isinstance(row, (list, tuple)) else []
+        return str(row[i]).strip() if i < len(row) else ""
+
     def _t7(label, url):
         r, e = B.get(url, retries=2, timeout=60)
         if e:
@@ -326,12 +334,6 @@ def main():
                 for row in csv.DictReader(fh):
                     mine[row["stock_id"]] = row
             hit = miss = 0
-            def _cell(row, i):
-                # ⛔ 不可以寫成 `(row or [""]*n)[i]`：row 非空但比 n 短時
-                #   `or` 不會補齊，照樣 IndexError（2026-09-09 被 selftest 擋下）。
-                row = row if isinstance(row, (list, tuple)) else []
-                return str(row[i]).strip() if i < len(row) else ""
-
             for r in wide:
                 sid = _cell(r, 1)
                 rate = _cell(r, 4)
@@ -349,6 +351,61 @@ def main():
             say(f"     ⇒ 對上 {hit} 筆｜不符 {miss} 筆")
         except OSError as ex:                                    # noqa: BLE001
             say(f"     （對帳跳過：{ex}）")
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[T8] ★★ TWTB8U 一次要七年（使用者 2026-09-09 13:50 提供的形式）")
+    # 使用者給的是 `?startDate=20190101&endDate=20260909&response=html`。
+    # 我方先前**只按年查**，從來沒有一次要過長區間。
+    # ★ 這一節要答的不是「能不能回」，是**兩件我方還沒證明過的事**：
+    #   ① 長區間會不會被截斷（TWTB7U 就是回 1 列、區間根本沒生效）；
+    #   ② **我方上市那批面額變更是不是完整的**——
+    #      今天下午上櫃那 14 筆是靠官方表對完才確定完整的，
+    #      上市這批**從來沒有做過同樣的事**，一直是「掃出來幾筆就是幾筆」。
+    # ⛔ ② 才是重點：漏一筆的後果是那一檔跨事件的長期報酬永遠是錯的，而且不會報錯。
+    say("  ── 一次 2019-01-01 ~ 今天")
+    wide8 = _t7("2019~今天",
+                f"{BASE}?startDate=20190101&endDate={today}&response=json")
+    if wide8 is not None:
+        say(f"     ⇒ 一次拿到 **{len(wide8)} 列**"
+            + ("（比按年查的任何一次多 ⇒ **長區間有生效、沒有被截斷**）"
+               if len(wide8) > 2 else
+               "⛔ **≤2 列，跟按年查一樣少 ⇒ 長區間沒生效**，維持按年迴圈"))
+        got8 = {}
+        for r in wide8:
+            sid = _cell(r, 1)
+            if sid:
+                got8[sid] = _cell(r, 0)
+        # ★ 完整性：我方 par_change.csv 裡**上市**那批，官方是不是每一筆都有
+        try:
+            mine8 = []
+            with io.open(os.path.join(_ROOT, "meta", "par_change.csv"),
+                         encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    if row.get("evidence", "").startswith("twse"):
+                        mine8.append((row["stock_id"], row["event_date"]))
+            miss8 = [k for k in mine8 if k[0] not in got8]
+            say(f"     ── 完整性（雙向，⛔ 只驗一邊等於沒驗）")
+            say(f"       我方上市 {len(mine8)} 筆｜官方這次回 {len(got8)} 檔")
+            say(f"       ① 我方有、官方沒有：{len(miss8)} 筆"
+                + (f" ⚠ {miss8}" if miss8 else "（✓ 我方沒有多編）"))
+            extra8 = [c for c in got8 if c not in {k[0] for k in mine8}]
+            say(f"       ② 官方有、我方沒有：{len(extra8)} 檔"
+                + (f" ⛔ **這才是漏抓** {[(c, got8[c]) for c in extra8]}"
+                   if extra8 else "（✓ 我方沒有漏抓）"))
+            # ⚠ 2019 起才查得到，而我方母體從 2015 起——
+            #   ⛔ 所以「② 是 0」只證明 2019 之後沒漏，**不涵蓋 2015~2018**。
+            say("       ⚠ 這一輪的區間從 2019 開始，我方母體從 2015 開始 ⇒ "
+                "②＝0 只證明 **2019 之後**沒漏，⛔ 2015~2018 仍然沒驗過。")
+        except OSError as ex:                                    # noqa: BLE001
+            say(f"     （完整性跳過：{ex}）")
+    say("  ── 再要一次 2015-01-01 ~ 今天（把 2015~2018 那段也蓋進去）")
+    w15 = _t7("2015~今天",
+              f"{BASE}?startDate=20150101&endDate={today}&response=json")
+    if w15 is not None:
+        say(f"     ⇒ {len(w15)} 列"
+            + ("（比 2019 起那次多 ⇒ 2015~2018 也有事件，**我方要補**）"
+               if wide8 is not None and len(w15) > len(wide8) else
+               "（沒有比 2019 起那次多 ⇒ 2015~2018 沒有上市面額變更）"))
 
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
