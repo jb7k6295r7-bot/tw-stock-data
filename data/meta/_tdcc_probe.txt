@@ -47,7 +47,7 @@
      ✓ 69,367 bytes
      ★ 資料日期選項 51 個：['20260904', '20260828', '20260821', '20260814', '20260807'] … ['20250926', '20250919', '20250912']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['02-2719']
+     ★ 疑似級距文字：['664-97', '02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -120,7 +120,7 @@
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
   ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = 'e3bea993-ff0f-4977-9dff-a2bb9979a004'
+    SYNCHRONIZER_TOKEN = 'a19772c3-1aae-40f3-9339-e27c07073899'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260904'
     method = 'submit'
@@ -169,10 +169,10 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 540,960 bytes
-     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":562,"code_name":563},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
+     ✓ 540,970 bytes
+     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
-     檔案格式：['_value":553,"code_name":554},"6","建議提供其他檔案格式",{"code_type":531,"code_value":556,"code_name']
+     檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
      授權：['><a href="/licenses" class="" title="前往 授權條款" data-v-5c04cf44>授權條款</a></li><li class="menu', 'data-v-8377536e><strong data-v-8377536e>授權方式</strong></div><div class="table-cell" data-v-']
 
   ── 公開 API：https://data.gov.tw/api/v2/rest/dataset/11452
@@ -191,8 +191,8 @@
 [11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
-     ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+     ✓ 69,363 bytes｜CSV 559 列｜**相異資料日期 0 個** []
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
@@ -206,7 +206,7 @@
        （一個都沒有）
 
   ── 開放資料專區：https://www.tdcc.com.tw/portal/zh/stats/openData
-     ✓ 64,287 bytes｜CSV 407 列｜**相異資料日期 0 個** []
+     ✓ 64,291 bytes｜CSV 407 列｜**相異資料日期 0 個** []
        「小-大」數字對 118 個｜**最長連續鏈 2 段**｜「N 以上」0 個
        （接不成鏈，最長只有 2 段——這些多半是電話或代碼，不是級距）
 
@@ -276,6 +276,31 @@
        /v1/opendata/2-30｜固定收益類 統計資訊｜票券保管結算交割系統各類短期票券流通餘額表｜參數 []
        /v1/opendata/2-31｜固定收益類 統計資訊｜票券保管結算交割系統結算交割時間統計｜參數 []
        …（其餘 94 個略）
+
+[14] ★★ 政府資料標準平臺 schema.gov.tw（使用者 2026-09-09 提供）
+  ── 清單頁：https://schema.gov.tw/lists/75
+     ✓ 106,709 bytes
+     HTML 裡的中文字數 1,473
+     「集保」出現 20 次
+     「股權分散」出現 14 次
+     「持股分級」出現 22 次
+     「級距」出現 0 次
+     「保管結算」出現 0 次
+     「證券」出現 32 次
+     級距鏈最長 2 段｜「N 以上」0 個
+       0-7
+       8-29
+     href 38 個｜疑似下載檔 0 個：（沒有）
+     HTML 裡的 /api/… 0 個：（沒有）
+     ── HTML 沒寫 /api/…，改撈 js（8 個，最多看 6 個）
+       ✓ 21f6722.js 225,227 bytes｜/api/… 0 個：（沒有）
+       ✓ 2ebe024.js 2,758 bytes｜/api/… 0 個：（沒有）
+       ✓ 523c526.js 851,894 bytes｜/api/… 0 個：（沒有）
+       ✓ 6a8462d.js 13,916 bytes｜/api/… 0 個：（沒有）
+       ✓ 88f29d3.js 264,116 bytes｜/api/… 0 個：（沒有）
+       ✓ cec6cfa.js 30,638 bytes｜/api/… 0 個：（沒有）
+  ⇒ 判準：**級距鏈 ≥ 3 段**才算找到（電話號碼接不成鏈，第 11 節已實測）。
+  ⇒ ⛔ 不要把「頁面有回 bytes」寫成「有這個標準」。
 
 ── 結論要人看過再決定 ──
 上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，
