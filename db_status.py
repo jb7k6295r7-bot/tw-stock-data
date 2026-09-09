@@ -55,7 +55,15 @@ EXPECT = {
 }
 
 # ④ 這一段是人維護的。**算不出來的東西不要假裝算得出來。**
-NO_SOURCE = [
+PROVEN_DEAD = [
+    # ⛔ 這一節每一列都**必須附證據**：試過哪些端點、官方頁面怎麼說。
+    #   沒有證據的一律歸下面那一節。
+    #   ⚠ 2026-09-09 逐條複查後**這一節是空的**——那不是漏寫，是照規矩來的結果：
+    #     現有每一條都還有沒試過的路（探針正在量），所以一條都不夠格宣告死路。
+]
+
+# 尚未取得（還可以找）——每一列要附**下一步**：還沒試過什麼。
+NOT_YET = [
     # ⚠ 面額變更那兩條 2026-09-09 已經收掉，移出本清單（本清單只列「還沒有來源的」）。
     #   沿革留在 docs/READ_CONTRACT.md 與 adjust.py 的 BOUNDS 旁，不在這裡重複。
     "⚠ **上櫃面額變更的官方端點**（不是資料缺口，是來源性質要揭露）。"
@@ -250,10 +258,51 @@ def _breadth_progress():
         return f"算不出來（{type(ex).__name__}）"
 
 
+def _brk_counts():
+    """`breakpoints_unexplained.csv` 的兩節各幾列。
+
+    ⛔ **分開報，不合計**（情報分析線 2026-09-09 10:45 的要求）：
+      合成一個總數的話，其中一節歸零只會讓總數「變小一點」——
+      看起來像正常波動，而那正是要防的失效形狀。
+    """
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "data", "meta", "breakpoints_unexplained.csv")
+    try:
+        with io.open(p, encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+    except OSError:
+        return None
+    c = collections.Counter(r.get("kind", "") or "(沒有 kind 欄)" for r in rows)
+    return c
+
+
 def section_nosource(out):
-    out.append("## ④ 完全沒有來源（人維護的清單，不是算出來的）\n")
+    # ★ 市場情報分析線 2026-09-09 10:45 裁定：這一節要分兩節，而且**命名用行動語態**。
+    #   理由是我自己踩過的坑：上櫃停牌我猜了五個端點名全 404，就寫成
+    #   「沒有來源、永遠補不回來」——**實際上它在 `bulletin/sprcHis`，是 POST**。
+    #   那一次的傷害不是寫錯一行字，是**後面的人不再去找**。
+    out.append("## ④ 來源狀態（人維護的清單，不是算出來的）\n")
+    out.append("> ⛔ **「已證實無來源」這一節，每一列都必須附上證據；"
+               "沒有證據的一律歸「尚未取得」。**")
+    out.append("> **舉證責任在「宣告死路」的那一方，不在「還想找」的那一方。**\n")
     ctx = {"BREADTH": _breadth_progress()}
-    for x in NO_SOURCE:
+    c = _brk_counts()
+    if c is None:
+        out.append("- ⚠ `breakpoints_unexplained.csv` 讀不到")
+    else:
+        out.append("- `breakpoints_unexplained`："
+                   + "｜".join(f"**{k} {v}**" for k, v in sorted(c.items()))
+                   + "（⛔ 兩節分開報，不合計）")
+    out.append("")
+    out.append("### ④-1 已證實無來源（不要再花時間找）\n")
+    if not PROVEN_DEAD:
+        out.append("- （目前 0 列。⚠ **空的是正確狀態，不是漏寫**——"
+                   "現有每一條都還有沒試過的路，所以一條都不夠格宣告死路。）")
+    for x in PROVEN_DEAD:
+        out.append(f"- {x}")
+    out.append("")
+    out.append("### ④-2 尚未取得（還可以找）\n")
+    for x in NOT_YET:
         # ⚠ 只有帶佔位符的那幾條會被代入；其餘原文照抄。
         #   `format` 會把 `{` 當語法，所以只對真的含 `{X}` 的字串做。
         for k, v in ctx.items():

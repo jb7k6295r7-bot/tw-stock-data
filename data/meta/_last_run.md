@@ -241,15 +241,17 @@
 
 ## otcparvalue　✓ 正常
 
-最後執行：2026-09-09T10:35:14+08:00（台北）
+最後執行：2026-09-09T11:09:46+08:00（台北）
 
-- **來源**：/home/runner/work/tw-stock-data/tw-stock-data/data/meta/par_change.csv 共 24 列，其中 shares 推導 14 列
+- **來源**：/home/user/tw-stock-data/data/meta/par_change.csv 共 24 列，其中 shares 推導 14 列
 - **寫出**：13 個日檔、14 筆
+- **restored=0**：0 筆（全部已還原）
 
 檢查：
 - ok　(a) 倍率都是精確整數比（分母 ≤ 4）　（14 筆全過）
 - ok　(d) 復牌首日相對推得參考價落在 ±10%　（14 筆全過）
 - ok　(c) 與官方值沒有衝突　（官方涵蓋 0 筆）
+- ok　沒有 restored=0 卡超過 3 個交易日　（最舊的一筆已經 0 個交易日——排程每天跑，撐這麼久代表因子產不出來，不是過渡）
 - ok　寫出的筆數＝來源筆數　（14 / 14）
 
 ## breakpoint_scan　✓ 正常

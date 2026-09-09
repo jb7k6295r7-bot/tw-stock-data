@@ -100,9 +100,27 @@ BRK_OUT = os.path.join(_ROOT, "meta", "breakpoints_unexplained.csv")
 #   ⛔ 兩個都對，只是量的不是同一件事，而舊欄名兩種都讀得通，**那就是會出錯的地方**。
 #   K線分析的條件②寫的是「連續缺 ≥ 5 個交易日」，閘門讀的就是「缺了幾天」；
 #   **欄名與判準用同一個詞，才不會有人拿索引差去比 5。**
-BRK_HEADER = ["stock_id", "name", "market", "event_date", "prev_trade_date",
-              "prev_close", "close", "ratio", "missing_trading_days",
-              "adj_events_in_range", "cause", "in_universe"]
+BRK_HEADER = ["stock_id", "name", "market", "kind", "event_date",
+              "prev_trade_date", "prev_close", "close", "ratio",
+              "missing_trading_days", "adj_events_in_range", "cause",
+              "limit_on_reopen", "source_note", "in_universe"]
+# ★ 情報分析 2026-09-09 10:45 三項裁定落地：
+#   ① `kind` 兩節同檔：`price_jump`（比值帶外）／`long_hole`（比值帶內但停 ≥ 20 日）
+#      ⛔ 不拆成兩份檔——「查的人只會查一份」，拆了遲早出現
+#        「查了跳價那份、沒查長洞那份，於是回報沒事」，而那個回報看起來跟真的沒事一樣。
+#   ② `limit_on_reopen`＝復牌那天 `limit` 欄的**實際值**（空就空）。
+#      ⛔ 這是**事實欄**不是判語欄：不寫「疑似漲跌停」。
+#        判語一進清單，下游就會拿它當篩選條件，而「疑似」與「確認」在使用端分不出來。
+#      ⚠ 必須等 `fix_limit.py` 修完才產（否則會把剛修好的欄位的舊值凍進這裡）
+#        ——2026-09-09 已修完 50,382 列，確認後才加這一欄。
+#   ③ `source_note`＝「我們問過、對方沒有」的紀錄，**不是成因結論**。
+# ⛔ `cause` 一律 `unknown`：不猜合併換股、不猜股份轉換、不猜重整。
+SOURCE_NOTE = {
+    # 3073 天方能源：`_otcadj_done.csv` 有問過 FinMind 的減資表，
+    # 而它只回了 2020-01-13 那一筆 ⇒ 2021-02 這一筆**來源沒有**，不是我方漏抓。
+    # ⚠ 這是事實紀錄，不代表「這不是減資」。
+    ("3073", "2021-02-19"): "finmind_no_record",
+}
 # 門檻維持 20（情報分析線 2026-09-09 裁定，理由是**失效方向**）：
 #   20 的偽陽性代價 ＝ 多列一筆待查（無害，人看得到）
 #   30 的偽陰性代價 ＝ **短停牌的真斷點漏掉**（污染留在資料裡，沒有人看得到）
@@ -200,6 +218,7 @@ def main():
         files = files[:a.limit]
 
     hits = []
+    holes = []          # 長洞型：比值溫和、但停很久（裁定一新增）
     n_rows = n_pairs = 0
     no_cal = 0
     for fn in files:
@@ -210,9 +229,14 @@ def main():
                 c = fnum(r.get("close"))
                 d = (r.get("date") or "").strip()
                 if c and d:
+                    # ★ `limit` 一起帶出來：情報分析 2026-09-09 10:45 裁定
+                    #   斷點清單要加**事實欄** `limit_on_reopen`（那天的實際值），
+                    #   ⛔ 不加「疑似漲跌停」這種判語欄——判語一旦進清單，
+                    #     下游就會拿它當篩選條件，而「疑似」與「確認」在使用端分不出來。
                     rows.append((d, c, (r.get("name") or "").strip(),
                                  (r.get("market") or "").strip(),
-                                 fnum(r.get("shares"))))
+                                 fnum(r.get("shares")),
+                                 (r.get("limit") or "").strip()))
         rows.sort(key=lambda x: x[0])
         n_rows += len(rows)
         if len(rows) < 2:
@@ -220,17 +244,29 @@ def main():
         ev = load_events(sid)
         for i in range(1, len(rows)):
             n_pairs += 1
-            (d0, c0, nm0, _, sh0), (d1, c1, nm, mk, sh1) = rows[i - 1], rows[i]
+            (d0, c0, nm0, _, sh0, _l0), (d1, c1, nm, mk, sh1, lim1) = \
+                rows[i - 1], rows[i]
             ratio = c1 / c0
-            if a.lo <= ratio <= a.hi:
-                continue
             # ── 隔了幾個交易日：用日曆數，不是日曆天相減 ──
+            # ⚠ 這一段移到比值判斷**之前**：長洞型斷點的比值是溫和的
+            #   （3073 是 1.59），先用比值篩掉就永遠看不到它們。
+            #   兩次 dict 查詢很便宜，事件比對才貴，所以只有真的要收的才往下做。
             if d0 in cal and d1 in cal:
                 # ★ 缺掉的交易日數 ＝ 索引差 − 1（兩端都是有成交日，不算在內）
                 gap = cal[d1] - cal[d0] - 1
             else:
                 gap = -1
                 no_cal += 1
+            # ★ 情報分析 2026-09-09 10:45 裁定一：同一份、分兩節。
+            #     price_jump：比值在帶外（原本就有的）
+            #     long_hole ：比值在帶內、但**停 ≥ BRK_MIN_GAP 個交易日**
+            #   ⚠ 門檻沿用 20，⛔ 不可以順手改成 5——
+            #     5 是「選股閘門」的門檻、20 是「這份清單」的門檻，
+            #     兩個門檻服務不同用途，合併會讓其中一邊失去意義。
+            kind = "price_jump" if not (a.lo <= ratio <= a.hi) else (
+                "long_hole" if gap >= BRK_MIN_GAP else None)
+            if kind is None:
+                continue
             # ── ★ 事件用「區間」對，不是用「同一天」對 ──
             #   事件日落在 (d0, d1] 之內就足以解釋這個跳躍。
             #   ⛔ 不可以沿著交易日曆去數容錯天數：`data/adj/` 的事件日
@@ -246,7 +282,8 @@ def main():
             #     我們自己補進去的面額變更因子，不可以拿來把自己從名單上刪掉。
             inside = [e for e in ev
                       if d0 < e[0] <= d1 and e[2] in ("exright", "reduce")]
-            hits.append({
+            rec = {
+                "kind": kind, "limit1": lim1,
                 "sid": sid, "name": nm, "market": mk,
                 "d0": d0, "d1": d1, "c0": c0, "c1": c1,
                 "ratio": ratio, "gap": gap,
@@ -267,18 +304,23 @@ def main():
                 "sh0": sh0, "sh1": sh1,
                 "shr": (sh1 / sh0) if (sh0 and sh1) else None,
                 "in_pop": sid in pop,
-            })
+            }
+            # ⛔ `hits` 的語意**不變**：它一路被下游當成「比值在帶外」的那一批
+            #   （面額變更判定、門檻複核、各種表格全部讀它）。
+            #   長洞型另外收，混進 hits 會讓那些表全部多出不該有的列。
+            (hits if kind == "price_jump" else holes).append(rec)
 
     print(f"[scan] 掃了 {len(files):,} 檔、{n_rows:,} 列、{n_pairs:,} 個相鄰對")
-    print(f"[scan] 比值在 [{a.lo}, {a.hi}] 之外：{len(hits):,} 筆")
+    print(f"[scan] 比值在 [{a.lo}, {a.hi}] 之外：{len(hits):,} 筆"
+          f"｜比值在帶內但停 ≥ {BRK_MIN_GAP} 個交易日：{len(holes):,} 筆")
 
     unexplained = [h for h in hits if not h["ev"]]
     print(f"[scan] 其中當天沒有除權息／減資事件可解釋：{len(unexplained):,} 筆")
-    report(a, days, files, n_rows, n_pairs, hits, no_cal)
+    report(a, days, files, n_rows, n_pairs, hits, no_cal, holes)
     return 0
 
 
-def report(a, days, files, n_rows, n_pairs, hits, no_cal):
+def report(a, days, files, n_rows, n_pairs, hits, no_cal, holes):
     L = []
 
     def w(s=""):
@@ -541,21 +583,38 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
     #   接進管線後這一欄可升級成官方來源——**在 feed 真的抓到之前不要先寫上去**。
     # ── 無法解釋的斷點（與面額變更嚴格分開）──
     par_ids = {h["sid"] for h in both}
-    brk = [h for h in no
-           if h["sid"] not in par_ids
-           and h["sid"] not in ETF_SPLIT_KNOWN
-           and h["gap"] >= BRK_MIN_GAP]
+    par_keys = {(h["sid"], h["d1"]) for h in both}
+
+    def _keep(h):
+        return (h["sid"] not in ETF_SPLIT_KNOWN
+                and h["gap"] >= BRK_MIN_GAP)
+
+    jump = [h for h in no if h["sid"] not in par_ids and _keep(h)]
+    # ⚠ 長洞型只排除「這一筆本身就是面額變更」，不整檔排除：
+    #   同一檔可能既有面額變更、又另外有一個無法解釋的洞（3073 就有兩個洞）。
+    hole = [h for h in holes
+            if not [e for e in load_events(h["sid"])
+                    if h["d0"] < e[0] <= h["d1"] and e[2] in ("exright", "reduce")]
+            and (h["sid"], h["d1"]) not in par_keys
+            and _keep(h)]
+    brk = jump + hole
     try:
         os.makedirs(os.path.dirname(BRK_OUT), exist_ok=True)
         with io.open(BRK_OUT, "w", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
             w.writerow(BRK_HEADER)
-            for h in sorted(brk, key=lambda x: (x["d1"], x["sid"])):
-                w.writerow([h["sid"], h["name1"], h["market"], h["d1"], h["d0"],
+            for h in sorted(brk, key=lambda x: (x["kind"], x["d1"], x["sid"])):
+                w.writerow([h["sid"], h["name1"], h["market"], h["kind"],
+                            h["d1"], h["d0"],
                             f"{h['c0']:g}", f"{h['c1']:g}", f"{h['ratio']:.6f}",
                             h["gap"], 0, "unknown",
+                            h.get("limit1", ""),
+                            SOURCE_NOTE.get((h["sid"], h["d1"]), ""),
                             "1" if h["in_pop"] else "0"])
-        print(f"[scan] 寫出 {BRK_OUT}（{len(brk)} 列）")
+        # ⛔ 兩節分開報數。合成一個總數的話，其中一節歸零只會讓總數「變小一點」，
+        #   看起來像正常波動（情報分析 10:45 的要求）。
+        print(f"[scan] 寫出 {BRK_OUT}"
+              f"（price_jump {len(jump)}｜long_hole {len(hole)}）")
     except OSError as ex:                                        # noqa: BLE001
         print(f"[scan] 斷點 CSV 寫檔失敗：{ex}", file=sys.stderr)
 
