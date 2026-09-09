@@ -122,14 +122,69 @@ def fm(ds, code, lo, hi, token=""):
 
 
 def otc_codes():
-    out = []
-    if not os.path.exists(META):
-        return out
-    with open(META, encoding="utf-8") as fh:
-        for r in csv.DictReader(fh):
-            if r.get("market") == "tpex" and r.get("kind") == "stock":
-                out.append(r["stock_id"])
-    return sorted(set(out))
+    """→ **曾經**是上櫃的普通股代號。⛔ 不是「現在是上櫃」。
+
+    ## ⛔ 2026-09-09 抓到的根因：這裡本來寫 `market == "tpex"`
+
+    `stocks.csv` 的 `market` 是**當下**的市場。一檔股票**轉上市**之後，
+    它的 `market` 就變成 `twse` ⇒ **它從此不在這份清單裡**，
+    於是它**上櫃時期的除權息永遠不會被抓**。
+
+    而 TWSE 的 `TWT49U`（`exright` feed 的來源）**只收上市**
+    ⇒ 那段歷史**兩個 feed 都沒有**，而且不會有任何錯誤訊息。
+
+    **實證（10 檔，每一檔的 `data/adj/` 最早事件都緊接在轉上市之後）**：
+
+    | 代號 | 最後一次是 tpex | 第一次是 twse | `adj` 最早事件 |
+    |---|---|---|---|
+    | 6472 保瑞 | 2023-12-18 | 2023-12-19 | **2024-08-12** |
+    | 4736 泰博 | 2023-12-21 | 2023-12-22 | **2024-09-09** |
+    | 8476 台境 | 2023-10-30 | 2023-10-31 | **2024-07-09** |
+    | 2233 宇隆 | 2019-09-16 | 2019-09-17 | **2020-08-21** |
+    | 1597 直得 | 2020-12-22 | 2020-12-23 | **2021-06-07** |
+
+    ⇒ 後果是**還原線上的假跌幅**：6472 保瑞 2021-09-07 從 303.00 掉到 226.00
+      （**−25.41%**），而那是除權息，不是真跌。
+    ⚠ `_otcadj_done.csv` 佐證：這 10 檔**一筆續跑紀錄都沒有**，從沒被跑過。
+
+    ## ⇒ 改成「曾經是上櫃」
+
+    判準來源是**日檔本身**（`data/universe/daily/*.csv` 的 `market` 欄），
+    那是「那一天它在哪個市場」的第一手紀錄，⛔ 不是事後的狀態欄。
+
+    ⚠ 要掃 2,800+ 個日檔（約十秒）。這一支跑在 `feeds.yml` 不是每日管線，
+      成本可以接受；⛔ 而**用抽樣代替全掃會漏掉短期上櫃的個股**，不值得省。
+    """
+    out = set()
+    # ① 現在就是上櫃的
+    if os.path.exists(META):
+        with open(META, encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                if r.get("market") == "tpex" and r.get("kind") == "stock":
+                    out.add(r["stock_id"])
+    now = len(out)
+    # ② ⭐ 曾經是上櫃的（含已轉上市、已下市）
+    kind = {}
+    if os.path.exists(META):
+        with open(META, encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                kind[r["stock_id"]] = r.get("kind", "")
+    daily = os.path.join(UNI, "daily")
+    if os.path.isdir(daily):
+        for fn in sorted(os.listdir(daily)):
+            if not fn.endswith(".csv"):
+                continue
+            try:
+                with open(os.path.join(daily, fn), encoding="utf-8") as fh:
+                    for r in csv.DictReader(fh):
+                        if (r.get("market") == "tpex"
+                                and kind.get(r.get("stock_id", "")) == "stock"):
+                            out.add(r["stock_id"])
+            except OSError:
+                pass
+    print(f"[otc] 上櫃普通股清單：現在是上櫃 {now} 檔"
+          f"｜**曾經是上櫃** {len(out)} 檔（多 {len(out) - now} 檔＝轉上市或已下市）")
+    return sorted(out)
 
 
 def load_done():
