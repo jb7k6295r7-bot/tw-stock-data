@@ -113,6 +113,29 @@
        心申請上櫃公司 回首頁 常見問題 聯絡我們 相關網站 使用條款 隱私權保護說明 個人資料管理政策聲明 資訊安全政策 營運持續政策 FB粉絲頁 IG YouTube Linkedin 證券櫃檯買賣中心 版權所有©1994- 2024 10084台北市中正區羅斯福路二段100號15樓 總機:(02)2369-9555 投資
        人服務及投資詐騙檢舉專線:(02)2796-3788
      頁面裡的連結 42 個：['//fonts.googleapis.com', '//fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&family=Noto+Serif+TC:wght@600;700&display=swap', '//fonts.gstatic.com', '/ja-jp/about/publication/overview.html', '/rsrc/', '/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/zh-tw/', '/zh-tw/about/company/contact/contact.html', '/zh-tw/about/company/faq.html', '/zh-tw/announce/market/holiday.html', '/zh-tw/esb/trading/info/stock-pricing.html', '/zh-tw/gtsm_disclaimer.html', '/zh-tw/index.html', '/zh-tw/indices/stock-index/industrial/inxh.html', '/zh-tw/mainboard/applying/status/company.html', '/zh-tw/mainboard/listed/month/fundamentals.html', '/zh-tw/mainboard/trading/info/daily-pe.html', '/zh-tw/mainboard/trading/info/stock-pricing.html']
+     ★★ 頁面自己的 inline <script> 3 段（共 2,234 字）：
+       ── 第 1 段（130 字）
+         function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
+       ── 第 2 段（1183 字）
+         "use strict";function parseTable(e){let t=[];for(let a of e.match(/<tr>.*?<\/tr>/gis))t.push([...a.matchAll(/<t[dh][^>]*>(.*?)<\/t[dh]>/gis)].map((e=>e[1].trim(
+         ))));return t}function clean(e){return e.replace(/&nbsp;/g," ").trim().replace(/(?:[\r\n\t]|<[^>]+?\x3e)/g,"")}function convertHtmlTableToJson(e){if(e?.endDate&
+         &/^(\d{4})/.test(e.endDate)){let e=new Date,t=RegExp.$1,a=$('#tables-form [name="date"]').next();e.getFullYear!=t&&0===$(`[value="${t}"]`,a).length&&$('#tables-
+         form [name="date"]').next().safePrepend(`<option value="${t}">${"zh"===lan?t-1911+"年":t}</option>`)}let t=e.data.html.replace(/(<table[^>]+>.+?<\/table>)/s,""),
+         a="";if(RegExp.$1){a=parseTable(RegExp.$1)[0]}t=t.replace(/(<tr[^>]*>.+?<\/tr>)/s,"");let l=[];if(RegExp.$1){l=parseTable(RegExp.$1)[0]}t=t.replace(/<\/?table[^
+         >]*>/gs,"").replace(/ class="[^"]+"/gs,"").replace(/ nowrap/gs,"").replace(/^ +/gm,""),delete e.data.html,e.tables=[{title:a,fields:l,data:t}]}tables.init({patt
+         ern:API_PATTERN,action:"bulletin/tradingDate",autoLoad:!0,autoChange:!0,beforeRender:convertHtmlTableToJson,afterRender:(e,t,a)=>{$("#tables-content .rwd-table 
+         tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
+       ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a38629729caddb5c',t:'MTc4ODk1NjU4Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+     ★ `data-*` 屬性 3 種：
+       data-format = 'Y'
+       data-initial = ''
+       data-start = '20060101'
      ★ 逐支 js 裡的路徑與關鍵字（⛔ 只回報找到的，不拼網址）
        ・/rsrc/asset/js/jquery-3.7.1.min.js｜87,533 bytes｜路徑 0 個｜（沒有關鍵字）
        ・/rsrc/asset/js/jquery.mousewheel.min.js｜2,771 bytes｜路徑 0 個｜（沒有關鍵字）
