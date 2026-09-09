@@ -243,6 +243,16 @@ jobs:
         timeout-minutes: 10
         run: python adjust.py
 
+      # ★ 上櫃減資：拿官方參考價逐筆對我方因子。**只讀 repo，不連外。**
+      #   ⛔ 一定要排在 `adjust.py` **之後**——它比的是 `data/adj/` 的內容，
+      #     排前面就是拿上一趟的因子去對這一趟的表。
+      #   ⚠ 對照表是**人工匯出**的，所以「官方有我方沒有」那一項同時會在
+      #     ① 我方漏抓 ② 匯出檔過期 兩種情況下吵。兩種都需要人處理，故不分開。
+      - name: 上櫃減資對帳
+        if: always()
+        continue-on-error: true
+        run: python reduce_check.py
+
       # ★ 全母體斷點掃描＋與 par_change.csv 對帳（市場情報分析線 2026-09-09 08:45 裁定要排）。
       #   規則屬回測線／K線線（backtest/breakpoint_scan.py），這裡只是薄殼接進管線——
       #   ⛔ 不在這邊複製一份規則，兩份會各自演化而且不會有人發現。

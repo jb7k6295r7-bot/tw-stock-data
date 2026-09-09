@@ -133,6 +133,50 @@ def main():
     js = sorted(set(re.findall(r'src=["\']([^"\']+\.js[^"\']*)["\']', t)))
     say(f"     js {len(js)} 支：{[x.rsplit('/', 1)[-1] for x in js][:6]}")
 
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[8] ★★ 兩條「上櫃休市日」的替代路（使用者 2026-09-09 15:40 提供）")
+    say("  ⛔ 先講一件已經**用我方資料否證**的事，免得照著做會刪掉真的交易日：")
+    say("     來源說「台股補班日不交易」——**這在 2016~2018 是錯的**。")
+    say("     我方日曆裡有 8 個週六，每一天日檔都有 1,618 ~ 1,772 檔**真的成交**：")
+    say("       2016-01-30／2016-06-04／2016-09-10／2017-02-18／")
+    say("       2017-06-03／2017-09-30／2018-03-31／2018-12-22")
+    say("     ⇒ 照「剔除補班日」做會**刪掉 8 個真的交易日**，"
+        "而且刪掉之後那幾天的資料還在、只是日曆說它不存在——**最難查的那種錯**。")
+    say("     ⛔ 所以辦公日曆表只能當**基底**，不可以拿它的補班規則直接套。")
+    for label, url in (
+            ("① TWSE 開休市日（政府資料開放平臺 dataset 頁）",
+             "https://data.gov.tw/dataset/25980"),
+            ("② 中華民國政府行政機關辦公日曆表（dataset 頁）",
+             "https://data.gov.tw/dataset/14718"),
+            ("③ TWSE 官網「市場開休市」頁",
+             "https://www.twse.com.tw/zh/holidaySchedule/holidaySchedule"),
+    ):
+        say(f"\n  ── {label}")
+        say(f"     {url}")
+        r8, e8 = B.get(url, retries=1, timeout=60)
+        if e8:
+            say(f"     ✗ {str(e8)[:130]}")
+            continue
+        t8 = r8.decode("utf-8", "replace")
+        han8 = len(re.findall("[一-龥]", t8))
+        say(f"     ✓ {len(r8):,} bytes｜中文 {han8:,} 字")
+        for kw in ("休市", "開休市", "補班", "補行上班", "行事曆", "csv", "json"):
+            say(f"       「{kw}」{t8.lower().count(kw.lower())} 次")
+        # ⛔ 只收頁面自己寫出來的檔案連結，不自己拼
+        dl = sorted(set(re.findall(
+            r'https?://[^"\'<>\s]+\.(?:csv|json|xml)(?:\?[^"\'<>\s]*)?', t8)))
+        say(f"       頁面給的資料檔連結 {len(dl)} 個：{dl[:5] or '（沒有）'}")
+        for u in dl[:3]:
+            rr, ee = B.get(u, retries=1, timeout=60)
+            if ee:
+                say(f"         ✗ {u[:90]} → {str(ee)[:70]}")
+                continue
+            tt = rr.decode("utf-8", "replace")
+            yrs = sorted(set(re.findall(r"\b(20[0-9]{2})[-/]?[01][0-9]", tt)))
+            say(f"         ✓ {u[:90]}｜{len(rr):,} bytes｜出現的年份 {yrs[:8]}")
+    say("  ⇒ 判準：拿到的東西要能回答「**某一個未來日期開不開盤**」才算數。")
+    say("    ⛔ 只列國定假日不夠——**補班的週六台股照開**（上面 8 天是實測）。")
+
     say("\n── 下一步 ──")
     say("[2] 有內容、[3] 找得到台北市、[4] 分辨得出「全列」還是「只列放假的」、")
     say("[6] 有日期——**四項全過**才可以寫偵測器並接進交易日曆的前瞻那一半。")
