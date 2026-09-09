@@ -185,8 +185,19 @@ def main():
         if a.sleep:
             time.sleep(a.sleep)
 
-    _save(YEARLY, Y_HEADER, Y)
-    _save(MONTHLY, M_HEADER, M)
+    # ⛔ 一筆都沒抓到、而且檔案本來就不存在 ⇒ **不要建立空檔**。
+    #   2026-09-09 本機 smoke test（403 全失敗）就留下兩個只有表頭、零列的殘骸——
+    #   **一個存在但空的判準檔，讀起來像是「有這份判準」**，
+    #   而那正是今晚一路在抓的形狀（孤兒檔、恆真的 0 筆、留著不標的停更檔）。
+    #   ⇒ 有舊內容就照常寫回（不能因為本趟失敗就讓舊的消失）；
+    #     完全沒有內容就不落地。
+    if Y or os.path.exists(YEARLY):
+        _save(YEARLY, Y_HEADER, Y)
+    if M or os.path.exists(MONTHLY):
+        _save(MONTHLY, M_HEADER, M)
+    if not Y and not M:
+        rl.info("處置", "⛔ 一筆都沒抓到且檔案不存在 ⇒ **不建立空檔**"
+                        "（空的判準檔讀起來像是有這份判準）")
     if ok:
         new = not os.path.exists(DONE)
         with io.open(DONE, "a", encoding="utf-8") as f:
