@@ -64,6 +64,15 @@ OUT = os.path.join(_ROOT, "meta", "_parvalue_scan.md")
 #   **逐次人工抄寫就是逐次重打的機會，而重打出的錯是靜默的。**
 #   ⚠ markdown 那份要留著：它的推理過程比清單本身有價值。
 CSV_OUT = os.path.join(_ROOT, "meta", "par_change.csv")
+# ★ 上櫃官方「變更股票面額恢復買賣參考價」。
+#   ⚠ **這份不是我方程式抓的**——櫃買那頁要執行 js，我方環境只有 `urllib`
+#   （`_tpex_probe.txt` 有六條否定紀錄）。2026-09-09 由使用者用瀏覽器匯出提供，
+#   原始 Big5 檔逐字保存在 `data/meta/sources/`，出處與限制寫在同目錄 README。
+#   ⛔ 它只涵蓋 **2019-09-09 起**；更早的事件這份答不了，**不要當成全集**。
+OTC_REF = os.path.join(_ROOT, "meta", "otc_par_reference.csv")
+# 官方參考價是**四捨五入到分**印出來的，所以比對要在**價格空間**用半分容差，
+# ⛔ 不可以在比值空間用固定容差——同樣的一分差，價格越低比值差越大。
+REF_TOL = 0.005 + 1e-9
 CSV_HEADER = ["stock_id", "event_date", "prev_trade_date", "prev_close",
               "close", "ratio", "shares_before", "shares_after",
               "share_mult", "evidence", "in_universe", "restored"]
@@ -153,6 +162,25 @@ def load_official():
                     out[(r.get("stock_id", "").strip(),
                          r.get("date", "").strip())] = (pre, ref)
     return out
+def load_official_otc():
+    """→ {(stock_id, date): (last_close, ref_price)}。沒有這份檔案就是空的。
+
+    ⛔ 回傳形狀刻意跟 `load_official()` 一樣（上市那份 TWSE feed），
+      這樣兩邊在寫檔那段可以走同一條路——**不要為上櫃另開一條分支**，
+      分支會讓「上市驗過、上櫃沒驗」這種事再次靜默發生。
+    """
+    out = {}
+    if not os.path.exists(OTC_REF):
+        return out
+    with io.open(OTC_REF, encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            pre, ref = fnum(r.get("last_close")), fnum(r.get("ref_price"))
+            if pre and ref:
+                out[(r.get("stock_id", "").strip(),
+                     r.get("event_date", "").strip())] = (pre, ref)
+    return out
+
+
 # TWTCAU（ETF 分割／反分割）已知涵蓋的代號，2026-09-09 探針 2025 年命中 5/5 驗過。
 ETF_SPLIT_KNOWN = {"00632R", "00676R", "00663L", "0050", "0052", "00674R",
                    "00673R", "00706L", "00685L", "00631L", "00715L"}
@@ -618,16 +646,31 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal, holes):
     except OSError as ex:                                        # noqa: BLE001
         print(f"[scan] 斷點 CSV 寫檔失敗：{ex}", file=sys.stderr)
 
+    # 閘門 (c) 的對帳結果。⛔ 分成兩籃：**「對得上幾筆」與「有沒有對不上」是兩件事**，
+    #   合成一個數字的話，對不上那一筆只會讓「相符數」少一，看起來像正常波動。
+    xok, xbad = [], []
     try:
         os.makedirs(os.path.dirname(CSV_OUT), exist_ok=True)
         with io.open(CSV_OUT, "w", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh)
             w.writerow(CSV_HEADER)
             official = load_official()
+            official.update(load_official_otc())
             for h in sorted(both, key=lambda x: (x["d1"], x["sid"])):
                 off = official.get((h["sid"], h["d1"]))
                 if h["shr"]:
                     ev, mult = "shares_int_mult", h["shr"]
+                    # ★ 閘門 (c)：官方值出現時要**逐筆對**，不符要吵（情報分析 2026-09-09）。
+                    #   ⚠ 對法在**價格空間**：官方參考價印到分為止，
+                    #     直接比比值會把「四捨五入」誤判成「不符」。
+                    if off:
+                        want = off[0] / mult
+                        if abs(off[1] - want) <= REF_TOL:
+                            ev = "shares_int_mult+official_ref"
+                            xok.append(h["sid"])
+                        else:
+                            ev = "CONFLICT_shares_vs_official"
+                            xbad.append((h["sid"], h["d1"], off[1], want, mult))
                 elif off:
                     # 官方倍率 ＝ 停止買賣前收盤 ÷ 恢復買賣參考價
                     ev, mult = "twse_twtb8u", off[0] / off[1]
@@ -645,6 +688,16 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal, holes):
                     ev, "1" if h["in_pop"] else "0",
                     "1" if adj_has else "0"])
         print(f"[scan] 寫出 {CSV_OUT}（{len(both)} 列）")
+        # ── 閘門 (c) 對帳：官方參考價 vs shares 推導倍率 ──
+        if xbad:
+            print(f"[scan] ✗ 官方參考價與 shares 倍率**不符 {len(xbad)} 筆**"
+                  f"——這些列的 evidence 已標成 CONFLICT，⛔ 不要靜默取一邊：",
+                  file=sys.stderr)
+            for sid, d, got, want, m in xbad:
+                print(f"        {sid} {d}｜官方參考價 {got}｜"
+                      f"倍率 {m:g} 推得 {want:.4f}", file=sys.stderr)
+        if xok or xbad:
+            print(f"[scan] 閘門 (c) 對帳：相符 {len(xok)} 筆｜不符 {len(xbad)} 筆")
     except OSError as ex:                                        # noqa: BLE001
         print(f"[scan] CSV 寫檔失敗：{ex}", file=sys.stderr)
 
