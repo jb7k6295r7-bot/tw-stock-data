@@ -89,6 +89,22 @@ jobs:
         continue-on-error: true
         run: python selftest_adj_gap.py
 
+      # ⛔ 這三支是 2026-09-09 清理時發現的**孤兒測試**：程式在 repo 裡、
+      #   一支 workflow 都沒有在跑。⇒ **有測試但沒人跑，比沒有測試更糟**——
+      #   它讓人以為那三塊有防護，而它從來沒有執行過。
+      #   ⚠ 接進來之前先在本機跑過，三支都通過（接一支會紅的進管線比不接更糟）。
+      - name: 驗資料庫現況頁（離線）
+        continue-on-error: true
+        run: python selftest_db_status.py
+
+      - name: 驗基本面歷史的解析（離線）
+        continue-on-error: true
+        run: python selftest_mops_history.py
+
+      - name: 驗個股庫轉置（離線）
+        continue-on-error: true
+        run: python selftest_transpose.py
+
       # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
       #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
       #   （理由見 holiday.py 檔頭：兩種錯的代價不對稱）。
@@ -411,6 +427,17 @@ jobs:
       #     而天天紅的檢查會被學會忽略。⇒ 判準是「**未歸因的筆數有沒有比上一趟多**」。
       #   ⚠ 並且同時印總數與本輪變化量：只印總數的話，
       #     「補了 100 筆」與「新增 100 筆」會互相抵銷成 0。
+      # ⛔ 2026-09-09 清理時發現：`n1_history.py` **沒有排進任何 workflow**，
+      #   最後一次執行是當天 17:26 我手動跑的。
+      #   而 `_n1_history.csv` 是市場情報分析線訂 N₁ 門檻的依據，他們每天在引用
+      #   ⇒ **一份每天被引用、卻只在有人想到時才更新的檔**，是最容易悄悄過期的那種。
+      #   ⚠ 它是純本地計算（讀 data/stocks/），不打任何端點，成本只有幾十秒。
+      - name: N₁ 歷史序列（情報分析線訂門檻的依據）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python n1_history.py
+
       - name: 缺還原因子清單（只看有沒有變多）
         if: always()
         continue-on-error: true
