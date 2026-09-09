@@ -481,9 +481,24 @@ def main():
     #   ⛔ 不猜參數名。把 js 抓下來，**把提到 `service/data` 的地方逐字印出來**。
     #   ⚠ 三個頁面都載入 `/cdn-cgi/challenge-platform/...` ＝ Cloudflare 挑戰，
     #     所以就算找到參數，端點本身仍可能需要 Cookie；那要下一輪才知道。
-    say("\n[10] ★★★ `/zh-tw/service/data` 的參數怎麼帶（看他們自己的 js）")
+    say("\n[10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）")
+    hit_any = {"n": 0}
+    # ⭐ 2026-09-09 第 8 節量到的**真線索**：頁面的 `data-*` 帶的是**參數**，不是端點——
+    #     data-format='D' / 'csv' / 'print'　　data-start='20190909'
+    #   `data-start` 是個**日期**（2019-09-09，看起來是查詢區間的預設起點）。
+    #   ⇒ 端點不在 HTML 裡，但**讀這些屬性的那段 js 一定知道端點**。
+    #   所以這一節改成：把三頁載入的 **8 支 js 全部**掃一遍，找誰在讀 `data-format`／`data-start`。
+    #   ⛔ 這不是「再繞一圈」——是照剛量到的參數名去找它的使用者，範圍是封閉的 8 支。
+    #   ⚠ 若 8 支**沒有一支**提到它們 ⇒ 處理那些屬性的 js 不在載入清單裡
+    #     ⇒ **不執行 js 就走不通**，到那裡就停，不再找。
     BASEW = "https://www.tpex.org.tw"
-    JS = ["/rsrc/asset/js/global.js"]
+    JS = ["/rsrc/asset/js/global.js",
+          "/rsrc/asset/js/jquery.simplePagination.js",
+          "/rsrc/asset/js/jquery.session.js",
+          "/rsrc/asset/js/jquery.cookie.min.js",
+          "/rsrc/asset/js/jquery.mousewheel.min.js",
+          "/rsrc/asset/js/gsap.min.js",
+          "/rsrc/asset/js/jquery-3.7.1.min.js"]
     for jp in JS:
         say(f"\n  ── {BASEW}{jp}")
         rj, ej = B.get(BASEW + jp, retries=2, timeout=60)
@@ -493,18 +508,34 @@ def main():
         t = rj.decode("utf-8", "replace")
         # ⛔ 上一版在這裡找 `service/data`，出現 **0 次**——因為那根本不是 API 路徑
         #   （見第 8 節的更正：那是頁尾連結）。改成找**它怎麼組請求**。
+        # ★ 判準：誰讀 `data-format`／`data-start`，誰就知道端點。
+        keys = ["data-format", "data-start", "'format'", '"format"',
+                "'start'", '"start"']
+        found = {k: t.count(k) for k in keys if t.count(k)}
         say(f"     ✓ {len(rj):,} bytes｜`ajax(` {len(re.findall(r'ajax *[(:]', t))} 處"
-            f"｜`url:` {len(re.findall(r'url *:', t))} 處")
-        for m in list(re.finditer(r"ajax *[(:]|\$\.(?:get|post)\s*\(", t))[:6]:
-            a, b = max(0, m.start() - 220), min(len(t), m.end() + 340)
-            say("     ── 組請求的地方（逐字，不整理）──")
-            say("       " + t[a:b].replace("\n", " ")[:560])
+            f"｜命中的參數名：{found or '（一個都沒有）'}")
+        hit_any["n"] += sum(found.values())
+        for k in ("data-format", "data-start"):
+            for m in list(re.finditer(re.escape(k), t))[:2]:
+                a, b = max(0, m.start() - 260), min(len(t), m.end() + 360)
+                say(f"     ── `{k}` 的上下文（逐字，不整理）──")
+                say("       " + t[a:b].replace("\n", " ")[:600])
         # 常見的參數名長相：`tables`、`response`、`date`、`type`…
         keys = sorted(set(re.findall(r"[\"'\{,]\s*([a-zA-Z_][a-zA-Z0-9_]{2,20})\s*:", t)))
         hit = [k for k in keys if re.search(
             r"date|type|table|resp|name|param|id|market|year|month", k, re.I)]
         if hit:
             say(f"     js 裡像參數名的鍵（{len(hit)} 個）：{hit[:30]}")
+
+    if hit_any["n"] == 0:
+        say("\n  ⛔ **八支 js 沒有一支提到 `data-format`／`data-start`。**")
+        say("     ⇒ 處理那些屬性的程式**不在頁面載入的 js 清單裡**"
+            "（可能是打包進別的檔、或執行時才注入）。")
+        say("     ⇒ **在不執行 js 的前提下，這條路走不通。** 到這裡停，不再找。")
+        say("     ⚠ 這是「我方取不到」，⛔ **不是「櫃買沒有這個端點」**——"
+            "三個官方頁面都在、關鍵字也對得上。")
+    else:
+        say(f"\n  ★ 有 {hit_any['n']} 處命中 ⇒ 照上面的上下文找端點，⛔ 仍然不要猜參數名。")
 
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
