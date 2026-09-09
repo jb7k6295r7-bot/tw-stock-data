@@ -635,6 +635,86 @@ def main():
     say("\n  ⛔ 以上任何一條都**不可以**拿去填 `data/tdcc/` 的級距欄位——"
         "要先有人看過、確認那是官方定義而不是頁面上剛好長得像的字串。")
 
+    # ── [12] ★★★ 集保自己的 OpenAPI 文件 ──
+    #   第 10 節從 data.gov.tw 的資料集頁撈到一個我方**完全不知道**的網址：
+    #       https://openapi.tdcc.com.tw/tdcc-opendata-api-docs
+    #   66,918 bytes、JSON、頂層只有一個 `url` 欄 ⇒ 那是**文件索引**，
+    #   真正的規格在它指的地方。
+    #
+    #   ⭐ 這一條同時可能解掉兩個缺口，所以優先度最高：
+    #     ① **集保歷史**——規格裡若有吃日期／期別的端點，那就是找了三輪的東西
+    #     ② **17 級的級距文字**——規格通常會寫欄位定義與 enum
+    #   ⛔ 但一樣：**量到才算數**，不從欄名猜用途。
+    say("\n[12] ★★★ 集保自己的 OpenAPI 文件（第 10 節撈到的新網址）")
+    DOCS = "https://openapi.tdcc.com.tw/tdcc-opendata-api-docs"
+    specs, seen12 = [], set()
+    r12, e12 = B.get(DOCS, retries=2, timeout=90)
+    if e12:
+        say(f"  ✗ 抓不到索引：{str(e12)[:130]}　⛔ 抓不到不等於不存在")
+    else:
+        t12 = r12.decode("utf-8", "replace")
+        say(f"  ✓ 索引 {len(r12):,} bytes")
+        # 索引裡的 url 欄；同時把整份文字裡的絕對網址也撈出來（不整理）
+        for m in re.finditer(r'"url"\s*:\s*"([^"]{4,300})"', t12):
+            specs.append(m.group(1))
+        for m in re.finditer(r'https?://[^\s"\'<>\\)]{10,200}', t12):
+            if "tdcc" in m.group(0):
+                specs.append(m.group(0))
+        specs = [x for x in dict.fromkeys(specs)][:8]
+        say(f"  索引裡的網址（{len(specs)} 個，逐字）：")
+        for x in specs:
+            say(f"    {x}")
+
+    def _abs(u):
+        if u.startswith("http"):
+            return u
+        return "https://openapi.tdcc.com.tw" + ("" if u.startswith("/") else "/") + u
+
+    for u in specs:
+        au = _abs(u)
+        if au in seen12 or au == DOCS:
+            continue
+        seen12.add(au)
+        say(f"\n  ── 規格：{au}")
+        r13, e13 = B.get(au, retries=1, timeout=90)
+        if e13:
+            say(f"     ✗ {str(e13)[:120]}")
+            continue
+        t13 = r13.decode("utf-8", "replace")
+        say(f"     ✓ {len(r13):,} bytes")
+        try:
+            d13 = json.loads(t13)
+        except Exception:                                        # noqa: BLE001
+            say("     （不是 JSON——照實記，下一輪再看要怎麼讀）")
+            d13 = None
+        if isinstance(d13, dict) and isinstance(d13.get("paths"), dict):
+            ps = sorted(d13["paths"])
+            say(f"     端點 {len(ps)} 個：")
+            for pth in ps[:25]:
+                ops = d13["paths"][pth] or {}
+                pars = []
+                for op in ops.values():
+                    if isinstance(op, dict):
+                        for q in (op.get("parameters") or []):
+                            if isinstance(q, dict) and q.get("name"):
+                                pars.append(q["name"])
+                pars = sorted(set(pars))
+                # ★ 吃日期的端點＝回補歷史的前提。這是這一節最想找的東西。
+                datey = any(re.search(r"date|day|ym|year|month|期別|週|week",
+                                      x, re.I) for x in pars)
+                say(f"       {pth}｜參數 {pars}{'  ← ★★ 吃日期！' if datey else ''}")
+        # ★ 級距：規格裡若寫了欄位定義，鏈就接得起來
+        ch12 = _chain(_cands(t13))
+        up12 = _upper(t13)
+        if len(ch12) >= 3:
+            say(f"     ★ 規格裡找到連續鏈 {len(ch12)} 段（＋「以上」{len(up12)} 個）：")
+            for _, _, t in ch12:
+                say(f"       {t}")
+            for x in up12[:3]:
+                say(f"       {x}")
+        else:
+            say(f"     （沒有可辨識的級距鏈，最長 {len(ch12)} 段）")
+
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")
     say("**不要因為「有幾萬列」就當它完整**。")
