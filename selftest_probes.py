@@ -111,7 +111,17 @@ def fake_get(url, **kw):
             #   這兩條分支永遠不會被走到，等於沒測。
             if m and (int(m.group(2)) < 90 or int(m.group(2)) == 100):
                 return None, "HTTP 404 Not Found"
-            return HIST_TXT.encode(), None
+            # ⛔⛔ 假檔的日期必須**跟著請求走**。寫死 95/12/29 的話，
+            #   第五輪那條「檔案要自己講出我要的那一天」的判準會全部落空，
+            #   於是那條新判準等於沒測（而它正是這一輪修掉的那個 bug 的解藥）。
+            # ★ 另外再造一個**查無資料頁**：長度夠大、但日期不是我要的那天——
+            #   第四輪就是被這種東西騙了 32 年份。
+            if m and int(m.group(2)) == 99:
+                return (HIST_TXT_HEAD.format(roc=95, mm=12, dd=29)
+                        + HIST_BODY).encode(), None
+            roc, mmdd = (int(m.group(2)), m.group(3)) if m else (95, "1229")
+            return (HIST_TXT_HEAD.format(roc=roc, mm=int(mmdd[:2]),
+                                         dd=int(mmdd[2:])) + HIST_BODY).encode(), None
         return HIST_QRY.encode(), None
     if "data.gov.tw" in u:
         return json.dumps(DATAGOV).encode(), None
@@ -167,9 +177,11 @@ HIST_QRY = ("<html><body><form name='report' onSubmit='ChkInput();return false;'
             "</form><script>function ChkInput(){ StrUrl=\"DAILY/\"+dType+dQDATE+\".txt\"; }"
             "</script></body></html>")
 # ★ >2000 bytes 才算命中（[6.5] 的判準），所以真的要撐到那個長度。
-HIST_TXT = ("財團法人中華民國證券櫃檯買賣中心\n頁次: 1 日期: 95年12月29日\n"
-            "代 號 證券名稱 最高買價 最低賣價 本日均價\n"
-            + "1336 台翰 70.00 73.00 71.69 1,000 71,690 1 438\n" * 60)
+HIST_TXT_HEAD = ("財團法人中華民國證券櫃檯買賣中心\n"
+                 "頁次: 1 日期: {roc}年{mm}月{dd}日\n")
+HIST_BODY = ("代 號 證券名稱 最高買價 最低賣價 本日均價\n"
+             + "1336 台翰 70.00 73.00 71.69 1,000 71,690 1 438\n" * 60)
+HIST_TXT = HIST_TXT_HEAD.format(roc=95, mm=12, dd=29) + HIST_BODY
 
 
 def strict_stub(real, ret):

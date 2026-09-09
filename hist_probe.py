@@ -237,30 +237,22 @@ def main():
                                       h, re.I)))
         say(f"     ★ 表單欄位名：{names}")
 
-    say("\n[4] ⭐ 這個站有沒有**上櫃**？——跟站根自己給的那個目的地")
-    say("     第 [2] 節站根只有一行 js：`window.location.replace("
-        "'http://hist.gretai.org.tw/en/index.php')`。")
-    say("     ⛔ 那是**它自己寫的目的地**，不是我拼的路徑 ⇒ 跟過去是合法的。")
-    say("     ⚠ `gretai` 是櫃買的舊名（GreTai Securities Market），"
-        "所以這是**同一個機構的另一個主機名**。")
-    say("     判準：要看到 `EMERGINGSTOCK` **以外**的區段，而且那個區段要**真的抓得到日期**；")
-    say("     ⛔ 只看到路徑裡有 `STOCK` 之類的字**不算**。")
-    idx = "http://hist.gretai.org.tw/en/index.php"
-    ihrefs, _ = _look(idx, "hist.gretai.org.tw/en/index.php", depth=1)
-    HOSTS = ("hist.tpex.org.tw", "hist.gretai.org.tw")
-    walked = 0
-    for h in ihrefs:
-        if walked >= 10:
-            break
-        if urllib.parse.urlparse(h).hostname not in HOSTS:
-            continue
-        if h in seen:
-            continue
-        seen.add(h)
-        walked += 1
-        _look(h, h, depth=2)
-    if walked == 0:
-        say("     （這一頁沒有任何站內連結可跟 ⇒ 到此為止，⛔ 不要改用猜路徑補上）")
+    say("\n[4] ⭐ 這個站有沒有**上櫃**？")
+    say("     第四輪跟了站根自己給的 `http://hist.gretai.org.tw/en/index.php`，")
+    say("     結果是 **`Name or service not known`——那個主機名根本不存在**（DNS 就死了）。")
+    say("     ⇒ 那條線是死的，⛔ 不可以改用猜路徑補上（`Hist/STOCK/…` 之類）。")
+    say("     ★ 還剩一條**不用猜**的：使用者給的網址是")
+    say("       `/Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORY.HTML`，")
+    say("       它的**上層目錄**是這個網址自己的一部分，不是我發明的名字。")
+    say("       ⇒ 逐層往上要目錄索引；⚠ 多數站台會關掉目錄列表，那就是「問過了、沒有」。")
+    say("     ★ 另外 `NSHISTORYQRY.HTML` 自己連到 `/Hist/nodata.htm`——那是它的"
+        "「查無資料」頁，⭐ **[6.5] 需要知道那一頁長什麼樣子**（見下）。")
+    for u in (ROOT + "Hist/EMERGINGSTOCK/HISTORICAL/",
+              ROOT + "Hist/EMERGINGSTOCK/",
+              ROOT + "Hist/",
+              ROOT + "Hist/nodata.htm"):
+        seen.add(u)
+        _look(u, u.replace(ROOT, "/"), depth=1)
 
     say("\n[5] ⭐ 那 9 種日檔各是什麼？——⛔ 讓**下拉選單的文字**自己講")
     say("     第 [3.5] 節印的 37 個 value 是**整頁混在一起**的（報表別、年、月、週都有），")
@@ -319,6 +311,10 @@ def main():
     say("       （[5] 節那組 91~95 是 `Dwyy`，那是**週報**的年份選單，"
         "⛔ 不可以拿來當日檔的範圍。）")
     say("     ⇒ 所以只能實測：每個民國年試幾個日期，命中就停。")
+    say("     ⛔⛔ 判準是「**這個檔自己講出我要的那一天**」，不是「檔案夠大」：")
+    say("       第四輪用 `>2000 bytes` 當判準 ⇒ 民國 85~116 **全部命中、"
+        "而且每年都剛好 4,449 bytes**（1996 年興櫃還不存在、2027 年還沒到）")
+    say("       ⇒ 那 4,449 bytes 是**查無資料頁**。⚠ 自己挑的門檻不是事實。")
     say("     ⛔ 下面每一行都是「我打了這個網址、得到這個結果」，"
         "**不是**「櫃買宣告有這些年」。")
     if ddr:
@@ -341,9 +337,26 @@ def main():
             for mmdd in ("1229", "1228", "0630", "0331"):
                 u = ROOT + f"Hist/EMERGINGSTOCK/HISTORICAL/DAILY/{t0}{roc:03d}{mmdd}.txt"
                 rb, er = B.get(u, retries=1, timeout=30)
-                if er is None and len(rb) > 2000:
+                if er is not None:
+                    continue
+                # ⛔⛔ 第五輪修的就是這一行。上一輪的判準是 `len(rb) > 2000`，
+                #   結果**民國 85~116 全部命中，而且每一年都剛好 4,449 bytes**——
+                #   1996 年興櫃還不存在、2027 年還沒到。
+                #   ⇒ 4,449 bytes 是**查無資料頁**，我把「有回應」讀成「有資料」。
+                #   ⚠ 同一族又一次：**自己挑一個門檻，然後把門檻當成事實。**
+                #   ⭐ 正確的判準只有一個：**這個檔要自己講出我要的那一天**。
+                txt = min((rb.decode(e, "replace").count("\ufffd"),
+                           rb.decode(e, "replace"))
+                          for e in ("big5hkscs", "cp950", "utf-8"))[1]
+                #   ⇒ 用**已經測過的** `_dates()` 去解這個檔自己寫的日期，
+                #     要求裡面**真的有我請求的那一天**。
+                want = f"{roc + 1911:04d}-{mmdd[:2]}-{mmdd[2:]}"
+                if want in _dates(txt):
                     got = (mmdd, len(rb))
                     break
+                if _dates(txt):
+                    say(f"       ⚠ {t0}{roc:03d}{mmdd}.txt 抓得到日期卻**不是我要的那天**"
+                        f"（{_dates(txt)[:3]}）⇒ 不算命中")
             hits.append((roc, got))
             say(f"     民國 {roc:>3}（{roc + 1911}）｜"
                 + (f"✓ {got[0]} 有檔 {got[1]:,} bytes" if got
