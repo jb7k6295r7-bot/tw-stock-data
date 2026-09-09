@@ -6,7 +6,7 @@ name: 端點探針（只跑探針，約 1 分鐘）
 #   而在探針還在收斂的這段期間，每改一行探針就要等 22 分鐘才看得到結果——
 #   **等的是資料管線，不是探針。**
 #
-#   ⇒ 拆出來單獨跑：只跑四支探針、只寫 `data/meta/_*probe.txt`，約 1 分鐘。
+#   ⇒ 拆出來單獨跑：只跑五支探針、只寫 `data/meta/_*probe.txt`，約 1 分鐘。
 #     改一版、按一次、兩三分鐘就知道結果。
 #
 # ⛔ **只測不寫資料**：這支不碰 `data/universe/`、不碰 `data/stocks/`、
@@ -34,7 +34,7 @@ permissions:
 
 # ⚠ **不要**跟 daily.yml 同一個 concurrency group：
 #   同組的話這支會排在 20 分鐘的 daily 後面，那就完全失去意義。
-#   四支探針寫的 `_*probe.txt` 都在 commit 那段的 REGEN 白名單裡，
+#   五支探針寫的 `_*probe.txt` 都在 commit 那段的 REGEN 白名單裡，
 #   撞在一起會自動取本趟版本，不需要靠排隊避開。
 concurrency:
   group: probe-only
@@ -57,10 +57,10 @@ jobs:
       # ★ 先離線驗四支跑不跑得完（假回應整條走一遍）。
       #   ⚠ 這一步**不加 continue-on-error**：這支的唯一產出就是探針輸出，
       #     連跑都跑不完就沒有必要往下打對方的伺服器。
-      - name: 驗四支探針跑得完（離線）
+      - name: 驗五支探針跑得完（離線）
         run: python selftest_probes.py
 
-      - name: 跑四支探針（這支一律全跑）
+      - name: 跑五支探針（這支一律全跑）
         if: always()
         continue-on-error: true
         timeout-minutes: 15
@@ -77,7 +77,8 @@ jobs:
           #   mtime 永遠是「剛剛」，用它永遠比不出新舊。
           for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt" \
                       "parvalue_probe.py:_parvalue_probe.txt" \
-                      "twsthr_probe.py:_twsthr_probe.txt"; do
+                      "twsthr_probe.py:_twsthr_probe.txt" \
+                      "holiday_probe.py:_holiday_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ⚠ 這支**不套** daily 的「程式比輸出新才跑」條件：
             #   手動按下去就是要跑，條件會讓「我剛按了卻沒跑」變成可能。
@@ -121,14 +122,16 @@ jobs:
                   | grep -v 'data/meta/_tdcc_probe.txt' \
                   | grep -v 'data/meta/_tpex_probe.txt' \
                   | grep -v 'data/meta/_parvalue_probe.txt' \
-                  | grep -v 'data/meta/_twsthr_probe.txt' || true)
+                  | grep -v 'data/meta/_twsthr_probe.txt' \
+                  | grep -v 'data/meta/_holiday_probe.txt' || true)
           if [ -n "$OTHER" ]; then
             echo "⛔ 探針動到了探針輸出以外的檔案——這支說好只測不寫資料：" >&2
             echo "$OTHER" >&2
             exit 1
           fi
           git add -- data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt \
-                     data/meta/_parvalue_probe.txt data/meta/_twsthr_probe.txt
+                     data/meta/_parvalue_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt \
+                     data/meta/_holiday_probe.txt
           if git diff --staged --quiet; then
             echo "沒有變動，不 commit"
           else
@@ -152,7 +155,7 @@ jobs:
             #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
             #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
             LASTRUN="data/meta/_last_run.md"
-            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv "
+            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv "
             ok=0
             for i in 1 2 3; do
               if git pull --rebase --autostash origin main && git push origin HEAD:main; then
