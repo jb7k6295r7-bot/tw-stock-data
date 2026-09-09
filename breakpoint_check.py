@@ -22,6 +22,7 @@
 那代表規則寫錯了。規則另外抓到的長停牌**不算錯**，那是「洞算不算斷點」的
 語意問題，歸情報分析裁；這裡只把數字列出來。
 """
+import csv
 import io
 import os
 import re
@@ -39,6 +40,46 @@ OUT = os.path.join(_HERE, "data", "meta", "_breakpoint_scan.md")
 #     對它設門檻等於替情報分析裁「洞算不算斷點」，那不是我的權限。
 HOLES_SRC = os.path.join(_HERE, "backtest", "results", "holes_scan.csv")
 HOLES_OUT = os.path.join(_HERE, "data", "meta", "_holes_scan.csv")
+
+
+def _coverage():
+    """→ (N₁ 集合, 斷點掃描母體, 差集[(代號, kind, market)])。
+
+    ⛔ N₁ 的定義照抄情報分析線的逐字版（金額、T−20~T−1、算術平均、
+      無成交當 0、`>= 50_000_000` 含等於、不含當日），
+      **不是我這邊另外訂一個**——兩邊算出不同的母體才是最糟的情況。
+    """
+    import collections
+    import glob
+    dayp = sorted(glob.glob(os.path.join(_HERE, "data", "universe", "daily", "*.csv")))
+    days = [os.path.basename(x)[:-4] for x in dayp]
+    win = days[-21:-1]
+    amt = collections.defaultdict(float)
+    seen = set()
+    for d in win:
+        with io.open(os.path.join(_HERE, "data", "universe", "daily", d + ".csv"),
+                     encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                sid = (r.get("stock_id") or "").strip()
+                if not sid:
+                    continue
+                seen.add(sid)
+                try:
+                    amt[sid] += float((r.get("amount") or "0").replace(",", ""))
+                except ValueError:
+                    pass
+    n1 = {s for s in seen if win and amt[s] / len(win) >= 50_000_000}
+    mk = {}
+    with io.open(os.path.join(_HERE, "data", "meta", "stocks.csv"), encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            mk[r["stock_id"]] = r
+    # ⛔ 條件照抄 backtest/data.py 的 load_universe()：kind==stock 且 twse/tpex。
+    #   興櫃與 ETF 被排除**是那邊刻意的**，不是漏掉。
+    uni = {s for s, r in mk.items()
+           if r.get("kind") == "stock" and r.get("market") in ("twse", "tpex")}
+    dd = [(s, mk.get(s, {}).get("kind", "?"), mk.get(s, {}).get("market", "?"))
+          for s in sorted(n1 - uni)]
+    return n1, uni, dd
 
 
 def main():
@@ -97,6 +138,26 @@ def main():
     lh = _long_hole_impact()
     if lh:
         rl.info("long_hole 對推薦母體的影響（每日更新）", lh)
+    # ★ 母體覆蓋率：掃描的母體有沒有蓋住情報分析線的 N₁ 母體
+    #   （市場情報分析線 2026-09-09 16:25 的要求，理由是他們今天在同一個形狀上摔過：
+    #    「以為閘門跑的是母體，實際跑的是 11 檔」）。
+    #   ⛔ 差集是 0 也要印。**只有異常時才輸出的東西，沒有基準可以比。**
+    try:
+        n1, uni, dd = _coverage()
+        rl.info("母體覆蓋（vs N₁）",
+                f"斷點掃描母體 {len(uni)} 檔｜N₁ {len(n1)} 檔｜"
+                f"**N₁ 有而掃描母體沒有：{len(dd)} 檔**")
+        if dd:
+            from collections import Counter
+            c = Counter(f"{k}/{m}" for _, k, m in dd)
+            rl.info("  差集組成", "｜".join(f"{k} {v}" for k, v in c.most_common()))
+            other = [x[0] for x in dd if x[1] != "etf"]
+            rl.info("  其中非 ETF", f"{len(other)} 檔：{other[:12]}")
+        # ⛔ 不寫成 check：差集不為 0 **不是錯**（掃描母體本來就排除 ETF 與興櫃），
+        #   它是「這些檔由誰在看」的分工問題，要人決定，不是程式判對錯。
+    except Exception as ex:                                      # noqa: BLE001
+        rl.info("母體覆蓋（vs N₁）", f"算不出來：{type(ex).__name__}: {ex}")
+
     rl.info("完整輸出", "data/meta/_breakpoint_scan.md")
 
     rl.check("par_change.csv 沒有一筆漏抓", rc == 0,
