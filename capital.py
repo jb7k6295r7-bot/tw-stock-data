@@ -56,6 +56,9 @@ import re
 import sys
 import time
 import urllib.error
+# ⚠ `urllib.parse` 要**明講**。它剛好會被 `urllib.request` 帶進來，
+#   所以不寫也能跑——那種「碰巧可用」的相依哪天就會斷，而且斷得莫名其妙。
+import urllib.parse
 import urllib.request
 
 import runlog
