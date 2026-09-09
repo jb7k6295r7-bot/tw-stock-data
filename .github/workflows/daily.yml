@@ -69,6 +69,21 @@ jobs:
         continue-on-error: true
         run: python selftest_calendar.py
 
+      - name: 驗颱風休市判讀（離線）
+        continue-on-error: true
+        run: python selftest_holiday.py
+
+      # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
+      #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
+      #   （理由見 holiday.py 檔頭：兩種錯的代價不對稱）。
+      #   ⚠ 排在 fetch 之前，是因為它同時**每天存一份原始頁面**——
+      #     第一個颱風天才會有真正的樣本，而那一天沒存就永遠沒有。
+      #   continue-on-error：抓不到公告頁會寫成 unknown 並報 ✗，
+      #   但那不該讓整條資料管線停下來。
+      - name: 颱風休市（前瞻）
+        continue-on-error: true
+        run: python holiday.py
+
       - name: 抓資料
         id: fetch
         run: python fetch.py
