@@ -293,15 +293,149 @@
      類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
 
   ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
-     ✓ 3,530 bytes｜28 筆
+     ✓ 3,531 bytes｜28 筆
      欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
-     首列：{'Date': '1150908', 'Sector': '光電業', 'TradeAmount': '6247485988', 'TradeWeight': '7.12', ' NumberOfSharesTraded': '62050048'}
+     首列：{'Date': '1150909', 'Sector': '光電業', 'TradeAmount': '10762229606', 'TradeWeight': '10.95', ' NumberOfSharesTraded': '91154971'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,181 bytes｜28 筆
+     ✓ 5,179 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1150908', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5214433202', 'CurrentlySharesOC/FIHeld': '835176827', 'PercentageOfSharesOC/FMIHeld': '16.02%'}
+     首列：{'Date': '1150909', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5214433202', 'CurrentlySharesOC/FIHeld': '836177068', 'PercentageOfSharesOC/FMIHeld': '16.04%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
+
+[7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
+  industry.csv 的 tpex：890 檔／28 個代碼；名稱空白的代碼 ['32', '33']（[26, 4] 檔）
+  官方 mopsfin_t187ap05_OA：890 筆，帶得出代號＋產業別的 890 檔，相異產業別 28 個
+
+  ── 先驗方法：有中文名的代碼，官方產業別對不對得上 ──
+     對得上 25／對不上 1／官方沒收到成員 0（共 26 個有名稱的代碼）
+       ✗ 17 本庫「金融保險」／官方多數「金融業」（9/9）
+     ── 分群一致性（不看名稱，只看分組）──
+        成員全歸到同一格的代碼 26／被拆成多格的 0／多個代碼共用同一格 0
+        ⇒ 官方的分群與本庫的代碼**一一對應**。此時標籤對不上只代表兩邊用字不同，不代表 join 錯。
+     ⚠ 方法在已知答案上就有不合——下面的推定**一律不可採用**，即使某個代碼看起來 1:1。
+
+  ── 空白代碼的對照結果 ──
+     代碼 32：26 檔，官方對到 26 檔
+       文化創意業：26/26
+       ⇒ 26/26 全對到「文化創意業」，且沒有別的代碼在用 ⇒ 看起來是 1:1，但**方法先驗沒過，仍不可採用**
+     代碼 33：4 檔，官方對到 4 檔
+       農業科技：4/4
+       ⇒ 4/4 全對到「農業科技」，且沒有別的代碼在用 ⇒ 看起來是 1:1，但**方法先驗沒過，仍不可採用**
+
+  ⛔ 以上一律**不寫進 industry.csv**：這是實測推定，不是官方對照表。要不要採用是市場情報分析的決定。
+
+[8] ★★ 面額變更／休市日：使用者提供的頁面（看它們自己呼叫什麼）
+
+  ── ⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）
+     https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
+     ✓ 11,776 bytes
+     inline script 3 段
+     （inline script 裡沒有像在組請求的片段）
+     `data-*` 屬性 4 種：
+       data-format='D'
+       data-format='csv'
+       data-format='print'
+       data-start='20190909'
+     像「路徑＋查詢字串」的（1 個，逐字）：
+       //fonts.googleapis.com/css2?family=Noto
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+       出現「恢復買賣」5 次
+       出現「參考價」4 次
+       出現「停止買賣」1 次
+       出現「面額」4 次
+
+  ── 變更股票面額**預告表**
+     https://www.tpex.org.tw/zh-tw/announce/market/change.html
+     ✓ 11,276 bytes
+     inline script 3 段
+     （inline script 裡沒有像在組請求的片段）
+     `data-*` 屬性 2 種：
+       data-format='csv'
+       data-format='print'
+     像「路徑＋查詢字串」的（1 個，逐字）：
+       //fonts.googleapis.com/css2?family=Noto
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+       出現「面額」8 次
+
+  ── 採**彈性面額**之上（興）櫃公司名冊
+     https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html
+     ✓ 19,945 bytes
+     inline script 2 段
+     （inline script 裡沒有像在組請求的片段）
+     `data-*` 屬性 0 種：
+     像「路徑＋查詢字串」的（1 個，逐字）：
+       //fonts.googleapis.com/css2?family=Noto
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+       出現「面額」13 次
+
+[9] 上櫃休市日公告（前瞻用；事後靠日檔就看得出來）
+
+  ── 櫃買中心 休市日／交易日曆
+     https://www.tpex.org.tw/zh-tw/announce/market/holiday.html
+     ✓ 12,007 bytes｜出現「休市」5 次｜「開市」0 次
+       /zh-tw/announce/market/holiday.html
+
+  ── 櫃買中心 公告專區（找得到休市日的入口就好）
+     https://www.tpex.org.tw/zh-tw/announce/market.html
+     ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
+       /zh-tw/announce/market/holiday.html
+
+[10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/global.js
+     ✓ 103,202 bytes｜`ajax(` 1 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（6 個）：['dataType', 'grid', 'hideEmptySeries', 'name', 'type', 'width']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
+     ✓ 15,354 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（2 個）：['updateItems', 'updateItemsOnPage']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js
+     ✓ 3,702 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（1 個）：['_id']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js
+     ✓ 1,300 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js
+     ✓ 2,771 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js
+     ✓ 72,214 bytes｜`ajax(` 0 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（7 個）：['getById', 'grid', 'name', 'onCompleteParams', 'onUpdate', 'updateRoot', 'width']
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js
+     ✓ 87,533 bytes｜`ajax(` 4 處｜命中的參數名：（一個都沒有）
+     js 裡像參數名的鍵（29 個）：['Width', 'bindType', 'contentType', 'dataType', 'delegateType', 'getAllResponseHeaders', 'getResponseHeader', 'gridArea', 'gridColumn', 'gridColumnEnd', 'gridColumnStart', 'gridRow', 'gridRowEnd', 'gridRowStart', 'guid', 'hide', 'name', 'namespace', 'origType', 'overrideMimeType', 'pointerId', 'pointerType', 'responseFields', 'slideDown', 'slideToggle', 'slideUp', 'type', 'widows', 'writable']
+
+  ⛔ **八支 js 沒有一支提到 `data-format`／`data-start`。**
+     ⇒ 處理那些屬性的程式**不在頁面載入的 js 清單裡**（可能是打包進別的檔、或執行時才注入）。
+     ⇒ **在不執行 js 的前提下，這條路走不通。** 到這裡停，不再找。
+     ⚠ 這是「我方取不到」，⛔ **不是「櫃買沒有這個端點」**——三個官方頁面都在、關鍵字也對得上。
+
+[11] ★★★ 32／33 的中文名：ISIN 證券編碼查詢（使用者 2026-09-09 提供）
+  我方標成 32 的 34 檔｜33 的 7 檔（上市櫃＋興櫃合計）
+
+  ── industry_code=32
+     ✓ 22,790 bytes｜編碼 big5
+     抓到證券代號 46 個：['2926', '3064', '3083', '3086', '3293', '3546', '3629', '4803', '4806', '4946', '5263', '5478']
+     ② 與我方標成 32 的交集：34／我方 34　← ✓ 對得上
+     ③ 表頭：['頁面編號', '國際證券編碼', '有價證券代號', '有價證券名稱', '市場別', '有價證券別', '產業別', '公開發行/上市(櫃)/發行日', 'CFICode', '備註']
+     ③ ★ 「產業別」欄的相異值（1 種）：['文化創意業']　← ✓ 只有一種 ⇒ **這就是代碼 32 的中文名**
+
+  ── industry_code=33
+     ✓ 4,704 bytes｜編碼 big5
+     抓到證券代號 8 個：['1240', '4171', '6479', '6508', '6578', '7840', '7895', '8345']
+     ② 與我方標成 33 的交集：7／我方 7　← ✓ 對得上
+     ③ 表頭：['頁面編號', '國際證券編碼', '有價證券代號', '有價證券名稱', '市場別', '有價證券別', '產業別', '公開發行/上市(櫃)/發行日', 'CFICode', '備註']
+     ③ ★ 「產業別」欄的相異值（1 種）：['農業科技業']　← ✓ 只有一種 ⇒ **這就是代碼 33 的中文名**
+
+  ① 32 與 33 的清單不同 ⇒ 參數有生效（32 有 46 檔、33 有 8 檔、交集 0 檔）
+  ⇒ ⛔ 三項判準沒有全過，就不要把任何名稱寫進 `sectors.csv`。
 
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。

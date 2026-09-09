@@ -43,6 +43,7 @@ import json
 import os
 import re
 import sys
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -57,6 +58,11 @@ IND = os.path.join(_ROOT, "meta", "industry.csv")
 QRY_PAGE = "https://www.tdcc.com.tw/portal/zh/smWeb/qryStock"
 AJAX = "https://www.tdcc.com.tw/portal/smWeb/qryStockAjax"
 OUT = os.path.join(_ROOT, "meta", "_tdcc_probe.txt")
+
+# 查詢頁多半要指定標的才肯回東西，所以每一發都帶一檔。
+# ⛔ 這個值只是「隨便一檔活著的上市股」，不是判定的一部分——
+#   判定一律看**回應自己宣告的日期**，不是看我送出去的參數。
+SAMPLE = "2330"
 
 URL = "https://opendata.tdcc.com.tw/getOD.ashx?id=1-5"
 
@@ -83,17 +89,26 @@ SHARE_KEYS = ("股數", "持股股數", "Shares", "shares")
 LINES = []
 
 
-def _post(url, form):
+def _post(url, form, referer=None):
     """POST 一發表單。`B.get` 只有 GET，而查詢頁那條是 POST。
 
     ⚠ 回傳與 `B.get` 同形狀 `(bytes, err)`，而且**保留 `LIMITED|` 前綴**——
       「被限流」與「端點沒有這個東西」必須分得出來，否則會去改根本沒錯的參數。
+
+    `referer`：查詢頁那條 AJAX 多半會檢查來源頁；帶上它才像是從頁面送出的。
+    ⚠ 2026-09-09：第 7 節呼叫時傳了 `referer=`，而這裡當時**沒有這個參數**，
+      於是 `TypeError: _post() got an unexpected keyword argument 'referer'`。
+      本地 403 走不到那一行，而 selftest 的假 `_post` 寫成 `(url, form, **kw)`
+      ——**假的比真的寬鬆，就把簽章不符藏起來了**。已一併修 selftest。
     """
     data = urllib.parse.urlencode(form).encode()
-    req = urllib.request.Request(url, data=data, headers={
+    headers = {
         "User-Agent": B.UA,
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "text/html,application/xhtml+xml,*/*"})
+        "Accept": "text/html,application/xhtml+xml,*/*"}
+    if referer:
+        headers["Referer"] = referer
+    req = urllib.request.Request(url, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             return r.read(), None
@@ -157,9 +172,65 @@ def parse(raw):
                 if isinstance(v, list):
                     d = v
                     break
-        return (d, f"JSON {len(d):,} 筆") if isinstance(d, list) else ([], "JSON 頂層不是 list")
+        if not isinstance(d, list):
+            return [], "JSON 頂層不是 list"
+        # ⚠ 這個函式的契約是 `list[dict]`，而 JSON 的 list 裡**什麼都可能有**
+        #   （字串、數字、又一層 list）。放行的話下游 `pick()` 的 `k in row`
+        #   會對 int 丟 `TypeError: argument of type 'int' is not iterable`——
+        #   而那是在**探針的後段**才會踩到，本地 403 永遠碰不到。
+        #   ⇒ 在這裡就把契約守住，並且**把丟掉幾筆講出來**（不是安靜過濾）。
+        rows = [x for x in d if isinstance(x, dict)]
+        drop = len(d) - len(rows)
+        note = f"JSON {len(rows):,} 筆"
+        if drop:
+            note += f"（⚠ 另有 {drop:,} 筆不是物件，已排除——這個端點的形狀和其他的不一樣）"
+        return rows, note
     rows = list(csv.DictReader(io.StringIO(txt)))
     return rows, f"CSV {len(rows):,} 列"
+
+
+def _dump_spec(spec, say):
+    """列出規格裡的端點與參數，**吃日期的標星**。
+
+    ⭐ 吃日期的端點＝回補歷史的前提。集保歷史是唯一「不做就永久失去」的缺口，
+      所以這一件要一眼看得到，不能埋在一大串路徑裡。
+    ⚠ 沒有參數的端點也要列——「沒有參數」本身就是結論（只給當期）。
+    """
+    paths = spec.get("paths") or {}
+    datey, plain = [], []
+    for pth in sorted(paths):
+        ops = paths[pth] or {}
+        pars, tags, summ = [], [], ""
+        for op in ops.values():
+            if not isinstance(op, dict):
+                continue
+            summ = summ or str(op.get("summary") or "")[:40]
+            for t in (op.get("tags") or []):
+                tags.append(str(t))
+            for q in (op.get("parameters") or []):
+                if isinstance(q, dict) and q.get("name"):
+                    pars.append(q["name"])
+        pars = sorted(set(pars))
+        row = (f"       {pth}｜{'/'.join(sorted(set(tags)))[:18]}"
+               f"｜{summ}｜參數 {pars}")
+        if any(re.search(r"date|day|ym|year|month|期別|週|week|seq|no$",
+                         x, re.I) for x in pars):
+            datey.append(row)
+        else:
+            plain.append(row)
+    say(f"     端點 {len(paths)} 個｜**吃日期／期別的 {len(datey)} 個**")
+    if datey:
+        say("     ── ★★ 吃日期／期別的（回補歷史的前提）──")
+        for r in datey:
+            say(r + "  ← ★★")
+    else:
+        say("     ⚠ **一個吃日期的都沒有** ⇒ 這一份規格裡的端點只給當期。"
+            "⛔ 但那只說明**這一份**，不等於集保沒有歷史。")
+    say("     ── 其餘（只給當期）──")
+    for r in plain[:40]:
+        say(r)
+    if len(plain) > 40:
+        say(f"       …（其餘 {len(plain) - 40} 個略）")
 
 
 def main():
@@ -364,6 +435,71 @@ def main():
     #   ⚠ 為什麼這件事值得多花一輪：集保端點**只回最新一週、不吃日期**，
     #     **漏掉一週就永久少一週**。查詢頁列了 51 週（20250912~20260904），
     #     那是目前唯一看得到的歷史來源。
+    # ── [13] ★★★ 同一條路，這次**帶 Cookie**（前四發全是新連線、不帶 session）──
+    #   ⚠ 第 7 節四發全回 2 bytes，而那一版已經做到：每發重抓 token、兩個欄名都試、
+    #     帶 Referer、帶 stockNo。**唯一沒試過的是 Cookie。**
+    #   這類「先 GET 頁面、再 POST」的流程幾乎都靠 Cookie 綁 session ——
+    #   ⛔ token 對、Referer 對，但 session 不認得你，回空是合理的。
+    #   ⇒ 用 `backfill.new_session()`（同一個 opener、CookieJar 全程保留）重跑一次。
+    #   ⛔ **在這一節跑過之前，不可以說「查詢頁那條路走不通」**——那會是拿沒試過當試過。
+    say("\n[13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）")
+    try:
+        jar, sget, spost = B.new_session()
+        raw13, e13 = sget(QRY_PAGE)
+        if e13:
+            say(f"  ✗ 連查詢頁都抓不到：{str(e13)[:120]}")
+        else:
+            h13 = raw13.decode("utf-8", "replace")
+            say(f"  ✓ 查詢頁 {len(raw13):,} bytes｜**拿到 {len(jar)} 個 Cookie**"
+                f"：{[c.name for c in jar][:6]}")
+            f13 = {}
+            for m in re.finditer(
+                    r'<input[^>]*name=["\']([^"\']+)["\'][^>]*value=["\']([^"\']*)["\']',
+                    h13):
+                f13[m.group(1)] = m.group(2)
+            opts13 = sorted(set(re.findall(r'value="(20\d{6})"', h13)), reverse=True)
+            # ⛔ 上一版只印**欄位名**，沒印**值**——而這一趟就卡在這裡：
+            #   我看到 form 有個 `method` 欄，卻不知道它的值是什麼，
+            #   而我送出去的是「照抄頁面原值」⇒ **若它原本是空的，我就送了個空的**。
+            #   ⚠ 印名字不印值，等於知道有這個問題卻拿不到判斷它的資訊。
+            say(f"  form 欄位 {len(f13)} 個（**逐字連值**）：")
+            for k in sorted(f13):
+                v = f13[k]
+                say(f"    {k} = {v[:60]!r}{'…' if len(v) > 60 else ''}"
+                    f"{'   ← ⚠ 空值' if v == '' else ''}")
+            say(f"  日期選項 {len(opts13)} 個")
+            # ★ 頁面自己的 js/HTML 裡有沒有寫 `method` 要送什麼？⛔ 不猜，只撈頁面上出現的
+            mv = sorted(set(re.findall(r'method["\']?\s*[:=]\s*["\']([A-Za-z0-9_]{2,30})', h13)))
+            say(f"  頁面裡出現的 `method=…` 候選值（逐字，⛔ 沒有就是沒有）：{mv[:10] or '（沒有）'}")
+            if not opts13:
+                say("  ⚠ 沒有日期選項，下面那幾發沒有意義")
+            for tag, day in (("最新", opts13[0] if opts13 else ""),
+                             ("較舊", opts13[len(opts13) // 2] if opts13 else "")):
+                if not day:
+                    continue
+                for field in ("scaDate", "firDate"):
+                    fm = dict(f13)
+                    fm[field] = day
+                    fm["sqlMethod"] = "StockNo"
+                    fm["stockNo"] = SAMPLE
+                    fm["stockName"] = ""
+                    r14, e14 = spost(AJAX, fm, referer=QRY_PAGE)
+                    if e14:
+                        say(f"    {field} {tag} {day}：✗ {str(e14)[:90]}")
+                        continue
+                    t14 = r14.decode("utf-8", "replace")
+                    # ⛔ 判定用**回應自己宣告的日期**，不是用我送出去的參數
+                    ech = sorted(set(re.findall(r"\b(20\d{6})\b", t14)))
+                    big = re.findall(r"\b\d{5,}\b", t14)
+                    say(f"    {field} {tag} {day}：{len(r14):,} bytes"
+                        f"｜回應裡的日期 {ech[:4]}｜大數字 {len(big)} 個"
+                        f"{'  ← ★★ 有內容了' if len(r14) > 2000 else ''}")
+            say("  ⇒ 仍然全是空回應 ⇒ 擋點也不是 Cookie，"
+                "那就要到「這條路在不執行 js 的前提下走不通」為止。")
+            say("  ⇒ 有內容 ⇒ **集保歷史抓得到**，寫回補（51 週）。")
+    except Exception as ex:                                      # noqa: BLE001
+        say(f"  ✗ 這一節自己炸了：{type(ex).__name__}: {ex}")
+
     say("\n[7] ★ 歷史週別（第二版：每發重抓 token、兩個日期欄名都試）")
 
     def _form_and_dates():
@@ -453,6 +589,355 @@ def main():
         if rows:
             say(f"             欄位：{list(rows[0])[:8]}")
 
+    # ── [9] ★★ 政府資料開放平臺 dataset 11452 ──
+    #   網址由使用者 2026-09-09 提供，**非自行生成**。
+    #   為什麼值得試：集保官方端點只回最新一週，而 data.gov.tw 是**中介目錄**——
+    #   它會列出資料集的**實際下載網址**與更新頻率。若那裡登的是另一個網址
+    #   （或帶期別參數的網址），就是我們一直找不到的歷史來源。
+    #
+    #   ⛔ 兩條路都試、都印出來，**不猜哪條對**：
+    #     ① 網頁本身（人看的頁面）
+    #     ② `api/v2/rest/dataset/<id>`（該站的公開 API，回 JSON）
+    #   哪一條成功、哪一條失敗，都照實記——這樣下一個人不必重猜。
+    say("\n[9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）")
+    DGT = [("網頁", "https://data.gov.tw/dataset/11452"),
+           ("公開 API", "https://data.gov.tw/api/v2/rest/dataset/11452")]
+    dl = set()
+    for label, url in DGT:
+        say(f"\n  ── {label}：{url}")
+        r10, e10 = B.get(url, retries=2, timeout=60)
+        if e10:
+            say(f"     ✗ {str(e10)[:140]}")
+            continue
+        txt = r10.decode("utf-8", "replace")
+        say(f"     ✓ {len(r10):,} bytes")
+        # 資料集自己宣告的欄位：名稱、更新頻率、時間範圍、提供機關
+        for kw in ("資料集名稱", "更新頻率", "資料時間", "起始時間", "結束時間",
+                   "提供機關", "檔案格式", "授權"):
+            hit = [x.strip()[:90] for x in
+                   re.findall(r"[^\n\r]{0,40}" + kw + r"[^\n\r]{0,70}", txt)][:2]
+            if hit:
+                say(f"     {kw}：{hit}")
+        # ★ 下載網址：全部撈出來，**逐字印**，不整理
+        for m in re.findall(r'https?://[^\s"\'<>\\)]{10,200}', txt):
+            if any(k in m.lower() for k in ("getod", "download", ".csv", ".zip",
+                                            "tdcc", "opendata", "ashx")):
+                dl.add(m)
+    if dl:
+        say(f"\n  ★ 撈到的下載網址（{len(dl)} 個，逐字）：")
+        for u in sorted(dl)[:15]:
+            say(f"     {u}")
+    else:
+        say("\n  （沒撈到下載網址——上面兩條都失敗，或頁面是 JS 動態組的）")
+
+    # ── [10] 撈到的網址逐一量形狀：**有多個資料日期的才可能是歷史** ──
+    say("\n[10] ★ 撈到的網址逐一量形狀（只量，不猜用途）")
+    known = {URL}
+    todo = [u for u in sorted(dl) if u not in known][:4]
+    if not todo:
+        say("    （沒有新的網址可量，或撈到的就是我方已在用的那一條）")
+    for u in todo:
+        r11, e11 = B.get(u, retries=1, timeout=90)
+        if e11:
+            say(f"    {u[:80]}\n       ✗ {str(e11)[:90]}")
+            continue
+        rows, note = parse(r11)
+        dates = sorted({pick(x, DATE_KEYS) for x in rows} - {""})
+        say(f"    {u[:80]}")
+        say(f"       {len(r11):,} bytes｜{note}｜相異資料日期 {len(dates)} 個 {dates[:4]}"
+            f"{'  ← ★★ 多個日期＝可能是歷史檔' if len(dates) > 1 else ''}")
+        if rows:
+            say(f"       欄位：{list(rows[0])[:8]}")
+
+    # ── [11] ★ 17 級的「級距文字」到底在哪一頁 ──
+    #   目前 `data/tdcc/` 只有代碼 1~17，沒有「1-999」「1,000-5,000」這種文字，
+    #   所以「400 張以上算大戶」這種定義**寫不出來**。
+    #   ⛔ 我知道坊間流傳的對照表，但那是**間接證據**——級距寫錯會讓
+    #     大戶持股的定義整個偏掉，而且不會有任何地方報錯。**只抄官方頁面上的字。**
+    #
+    #   ⚠ 第 5 節在查詢頁只撈到 `['11-7410', '02-2719']`——那是**電話號碼**，
+    #     不是級距。原因很可能是：級距文字只出現在**查詢結果**的表格裡，
+    #     不在查詢頁本身。所以這一節多試幾個地方，並且換一個嚴一點的判準。
+    say("\n[11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁")
+
+    def _cands(txt):
+        """撈出所有「小-大」的數字對。⚠ 這一步**不做判斷**，電話號碼也會進來。"""
+        out = []
+        for m in re.finditer(r"([0-9][0-9,]{0,14})\s*[-~至]\s*([0-9][0-9,]{0,14})", txt):
+            a, b = m.group(1), m.group(2)
+            try:
+                ia, ib = int(a.replace(",", "")), int(b.replace(",", ""))
+            except ValueError:
+                continue
+            if ia < ib:
+                out.append((ia, ib, f"{a}-{b}"))
+        return list(dict.fromkeys(out))
+
+    def _chain(cands):
+        """找最長的「接得起來」的鏈：下一段的下界 ＝ 上一段的上界 ＋ 1。
+
+        ⛔ **這才是級距與電話號碼的差別。**
+          第 5 節只用 `\d+-\d+`，於是撈到 `02-2719`（集保客服電話）與 `11-7410`，
+          而且它們也符合「小-大」——用大小關係濾不掉。
+          但級距是**連續分段**：1-999 → 1,000-5,000 → 5,001-10,000 …
+          電話號碼接不上任何東西。
+
+        實測（假文字）：只有電話 → 最長鏈 1 段；真的級距表＋電話 → 14 段。
+        """
+        byl = {}
+        for lo, hi, t in cands:
+            byl.setdefault(lo, (hi, t))
+        best = []
+        for lo, hi, t in sorted(cands):
+            cur, nxt = [(lo, hi, t)], hi + 1
+            while nxt in byl:
+                h2, t2 = byl[nxt]
+                cur.append((nxt, h2, t2))
+                nxt = h2 + 1
+            if len(cur) > len(best):
+                best = cur
+        return best
+
+    def _upper(txt):
+        """最後一級那種「N 以上」單獨收。"""
+        return list(dict.fromkeys(
+            f"{m.group(1)} 以上"
+            for m in re.finditer(r"([0-9][0-9,]{2,14})\s*(?:股|單位)?以上", txt)))
+
+    #   ⚠ 這幾個網址的來源：第 5 節從官方頁面自己撈到的「疑似 API 路徑」，
+    #     以及 2026-09-09 WebSearch 的結果（`/investor/` 那個變體、`smart.` 那台主機）。
+    #     ⛔ 都不是我自己拼的。
+    CAND = [
+        ("查詢頁（本體）", QRY_PAGE),
+        ("查詢頁 /investor/ 變體",
+         "https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock"),
+        ("另一台主機的開放資料", "https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5"),
+        ("開放資料專區", "https://www.tdcc.com.tw/portal/zh/stats/openData"),
+    ]
+    for label, url in CAND:
+        say(f"\n  ── {label}：{url}")
+        r11, e11 = B.get(url, retries=1, timeout=60)
+        if e11:
+            say(f"     ✗ {str(e11)[:120]}")
+            continue
+        txt = r11.decode("utf-8", "replace")
+        cands = _cands(txt)
+        chain = _chain(cands)
+        ups = _upper(txt)
+        # ⚠ 2026-09-09 差點漏掉：`smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5`
+        #   回了 **2,361,524 bytes**，而我上一版只在它身上量級距、**沒量資料日期**。
+        #   ⇒ 這裡順手量。**有多個資料日期的才可能是歷史檔**——
+        #     集保歷史是唯一「不做就永久失去」的缺口，不可以因為
+        #     「這一節是來找級距的」就不看眼前的另一個訊號。
+        rows11, note11 = parse(r11)
+        dates11 = sorted({pick(x, DATE_KEYS) for x in rows11} - {""})
+        say(f"     ✓ {len(r11):,} bytes｜{note11}"
+            f"｜**相異資料日期 {len(dates11)} 個** {dates11[:4]}"
+            f"{'  ← ★★ 多個日期＝可能是歷史檔' if len(dates11) > 1 else ''}")
+        say(f"       「小-大」數字對 {len(cands)} 個"
+            f"｜**最長連續鏈 {len(chain)} 段**｜「N 以上」{len(ups)} 個")
+        if len(chain) >= 3:
+            for _, _, t in chain:
+                say(f"       {t}")
+            for u in ups[:3]:
+                say(f"       {u}（上界那一格）")
+            # ★ 官方是 17 級 ⇒ 16 段區間 ＋ 1 段「以上」。
+            #   ⛔ 不是這個數也照實記，**不要湊**。
+            tot = len(chain) + (1 if ups else 0)
+            say(f"     {'★★ 鏈長 ＋ 上界 ＝ 17，與官方級數相符' if tot == 17 else f'（合計 {tot} 段，不是 17，⛔ 不可以當成那張表）'}")
+        elif cands:
+            say(f"       （接不成鏈，最長只有 {len(chain)} 段——"
+                f"這些多半是電話或代碼，不是級距）")
+        else:
+            say("       （一個都沒有）")
+
+    say("\n  ⛔ 以上任何一條都**不可以**拿去填 `data/tdcc/` 的級距欄位——"
+        "要先有人看過、確認那是官方定義而不是頁面上剛好長得像的字串。")
+
+    # ── [12] ★★★ 集保自己的 OpenAPI 文件 ──
+    #   第 10 節從 data.gov.tw 的資料集頁撈到一個我方**完全不知道**的網址：
+    #       https://openapi.tdcc.com.tw/tdcc-opendata-api-docs
+    #   66,918 bytes、JSON、頂層只有一個 `url` 欄 ⇒ 那是**文件索引**，
+    #   真正的規格在它指的地方。
+    #
+    #   ⭐ 這一條同時可能解掉兩個缺口，所以優先度最高：
+    #     ① **集保歷史**——規格裡若有吃日期／期別的端點，那就是找了三輪的東西
+    #     ② **17 級的級距文字**——規格通常會寫欄位定義與 enum
+    #   ⛔ 但一樣：**量到才算數**，不從欄名猜用途。
+    say("\n[12] ★★★ 集保自己的 OpenAPI 文件（第 10 節撈到的新網址）")
+    DOCS = "https://openapi.tdcc.com.tw/tdcc-opendata-api-docs"
+    specs, seen12 = [], set()
+    r12, e12 = B.get(DOCS, retries=2, timeout=90)
+    if e12:
+        say(f"  ✗ 抓不到索引：{str(e12)[:130]}　⛔ 抓不到不等於不存在")
+    else:
+        t12 = r12.decode("utf-8", "replace")
+        say(f"  ✓ 索引 {len(r12):,} bytes")
+        # 索引裡的 url 欄；同時把整份文字裡的絕對網址也撈出來（不整理）
+        for m in re.finditer(r'"url"\s*:\s*"([^"]{4,300})"', t12):
+            specs.append(m.group(1))
+        for m in re.finditer(r'https?://[^\s"\'<>\\)]{10,200}', t12):
+            specs.append(m.group(0))
+        # ★ Swagger 的規格常是**相對路徑**（`/v3/api-docs/...`），不是絕對網址。
+        #   上一版只收含 `tdcc` 的絕對網址 ⇒ 只撈到 1 個、而且是別的欄位裡的字串。
+        for m in re.finditer(r'"(/[a-zA-Z0-9_/.\-]{6,120})"', t12):
+            if re.search(r"api-?docs|swagger|openapi|v\d/", m.group(1), re.I):
+                specs.append(m.group(1))
+        specs = [x for x in dict.fromkeys(specs)][:12]
+        say(f"  索引裡的網址（{len(specs)} 個，逐字）：")
+        for x in specs:
+            say(f"    {x}")
+        # ⛔ 撈不到東西的時候**一定要把身體長什麼樣印出來**。
+        #   上一版只印「撈到 1 個」，於是完全不知道那 66,918 bytes 是什麼——
+        #   而「不知道長什麼樣」正是下一輪又白跑一趟的原因。
+        head = t12[:400].replace("\n", " ")
+        say(f"  開頭 400 字（逐字）：{head}")
+        try:
+            j12 = json.loads(t12)
+            if isinstance(j12, dict):
+                say(f"  頂層鍵：{list(j12)[:20]}")
+                if isinstance(j12.get("paths"), dict):
+                    say(f"  ★★ 這一份自己就是規格：端點 {len(j12['paths'])} 個")
+            elif isinstance(j12, list):
+                say(f"  頂層是 list，{len(j12)} 筆；第一筆："
+                    f"{str(j12[0])[:200] if j12 else '（空）'}")
+        except Exception:                                        # noqa: BLE001
+            j12 = None
+            say("  （不是 JSON——多半是 Swagger UI 的 HTML 外殼，"
+                "規格在它載入的 js／相對路徑裡）")
+
+        # ⛔⛔ 2026-09-09 抓到我自己的邏輯漏洞：
+        #   這一份**自己就是規格**（`openapi: 3.0.1`、134 個端點），
+        #   而我上一版只把它當「索引」，去 fetch 它裡面的網址（全 404），
+        #   **從來沒有列過它自己的 paths**。
+        #   ⇒ 只要頂層有 `paths`，就直接在它身上列端點與參數。
+        if isinstance(j12, dict) and isinstance(j12.get("paths"), dict):
+            base = ""
+            for sv in (j12.get("servers") or []):
+                if isinstance(sv, dict) and sv.get("url"):
+                    base = sv["url"]
+                    break
+            say(f"\n  ★★ 直接讀這一份的規格（servers.url = {base!r}）")
+            _dump_spec(j12, say)
+            specs = []          # 不必再去 fetch 那些相對路徑
+
+    def _abs(u):
+        if u.startswith("http"):
+            return u
+        return "https://openapi.tdcc.com.tw" + ("" if u.startswith("/") else "/") + u
+
+    for u in specs:
+        au = _abs(u)
+        if au in seen12 or au == DOCS:
+            continue
+        seen12.add(au)
+        say(f"\n  ── 規格：{au}")
+        r13, e13 = B.get(au, retries=1, timeout=90)
+        if e13:
+            say(f"     ✗ {str(e13)[:120]}")
+            continue
+        t13 = r13.decode("utf-8", "replace")
+        say(f"     ✓ {len(r13):,} bytes")
+        try:
+            d13 = json.loads(t13)
+        except Exception:                                        # noqa: BLE001
+            say("     （不是 JSON——照實記，下一輪再看要怎麼讀）")
+            d13 = None
+        if isinstance(d13, dict) and isinstance(d13.get("paths"), dict):
+            _dump_spec(d13, say)
+        # ★ 級距：規格裡若寫了欄位定義，鏈就接得起來
+        ch12 = _chain(_cands(t13))
+        up12 = _upper(t13)
+        if len(ch12) >= 3:
+            say(f"     ★ 規格裡找到連續鏈 {len(ch12)} 段（＋「以上」{len(up12)} 個）：")
+            for _, _, t in ch12:
+                say(f"       {t}")
+            for x in up12[:3]:
+                say(f"       {x}")
+        else:
+            say(f"     （沒有可辨識的級距鏈，最長 {len(ch12)} 段）")
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[14] ★★ 政府資料標準平臺 schema.gov.tw（使用者 2026-09-09 提供）")
+    # ⛔ 使用者只給網址、沒說 75 是什麼——**我不猜**，先量形狀，再看它自己給什麼連結。
+    # ★ 這條跟前面十二條性質不同：前面全是「去資料端點撈值」，
+    #   這裡是**標準／欄位定義文件**。
+    # ⚠ 2026-09-09 下午更新：級距文字那個缺口**已經由官方 PDF 補上了**
+    #   （data/meta/tdcc_level.csv），所以這一節**不再是為了找級距**。
+    #   它現在要答的是另一個問題：**還有沒有別的欄位定義是我方在猜的**。
+    SCHEMA = "https://schema.gov.tw/lists/75"
+    say(f"  ── 清單頁：{SCHEMA}")
+    r14, e14 = B.get(SCHEMA, retries=1, timeout=60)
+    if e14:
+        say(f"     ✗ {str(e14)[:160]}")
+    else:
+        t14 = r14.decode("utf-8", "replace")
+        say(f"     ✓ {len(r14):,} bytes")
+        # ⚠ 「有回東西」不算數：js 空殼也會回好幾萬 bytes。空殼的特徵是幾乎沒有中文。
+        han = len(re.findall("[一-龥]", t14))
+        say(f"     HTML 裡的中文字數 {han:,}"
+            + ("  ← ⚠ 太少，多半是 js 空殼，內容不在 HTML 裡" if han < 200 else ""))
+        for kw in ("集保", "股權分散", "持股分級", "級距", "保管結算", "證券"):
+            say(f"     「{kw}」出現 {t14.count(kw)} 次")
+        ch14 = _chain(_cands(t14))
+        say(f"     級距鏈最長 {len(ch14)} 段｜「N 以上」{len(_upper(t14))} 個")
+        for _, _, tt in ch14[:20]:
+            say(f"       {tt}")
+
+        # ★ 只收頁面／js 自己寫出來的路徑。⛔ 不自己拼網址。
+        hrefs = sorted(set(re.findall(r'href=["\']([^"\']+)["\']', t14)))
+        apis = sorted(set(re.findall(r'["\'](/api/[A-Za-z0-9_/.\-]{2,80})["\']', t14)))
+        dls = [h for h in hrefs
+               if re.search(r"\.(json|xml|csv|xlsx?|pdf)(\?|$)", h, re.I)]
+        say(f"     href {len(hrefs)} 個｜疑似下載檔 {len(dls)} 個：{dls[:8] or '（沒有）'}")
+        say(f"     HTML 裡的 /api/… {len(apis)} 個：{apis[:8] or '（沒有）'}")
+
+        if not apis:
+            js = sorted(set(re.findall(r'src=["\']([^"\']+\.js[^"\']*)["\']', t14)))
+            say(f"     ── HTML 沒寫 /api/…，改撈 js（{len(js)} 個，最多看 6 個）")
+            for j in js[:6]:
+                uj = urllib.parse.urljoin(SCHEMA, j)
+                rj, ej = B.get(uj, retries=1, timeout=60)
+                if ej:
+                    say(f"       ✗ {j.rsplit('/', 1)[-1]} → {str(ej)[:80]}")
+                    continue
+                sj = rj.decode("utf-8", "replace")
+                got = sorted(set(re.findall(
+                    r'["\'](/api/[A-Za-z0-9_/.\-]{2,80})["\']', sj)))
+                say(f"       ✓ {j.rsplit('/', 1)[-1]} {len(rj):,} bytes"
+                    f"｜/api/… {len(got)} 個：{got[:6] or '（沒有）'}")
+                apis += got
+            apis = sorted(set(apis))
+
+        TRY = [(x, "頁面給的") for x in (dls + apis)[:8]]
+        # ⚠ 下面這一組是**我自己把 75 接上去的**，不是頁面給的——標明，
+        #   因為「頁面上有」與「我拼的」在下一輪的證據份量完全不同。
+        for x in apis:
+            if re.search(r"/lists?$", x):
+                TRY.append((x.rstrip("/") + "/75", "⚠ 我自己接 75 上去的"))
+        seen14 = set()
+        for x, how in TRY:
+            u = urllib.parse.urljoin(SCHEMA, x)
+            if u in seen14:
+                continue
+            seen14.add(u)
+            rr, ee = B.get(u, retries=1, timeout=60)
+            if ee:
+                say(f"     ✗ [{how}] {u} → {str(ee)[:90]}")
+                continue
+            t2 = rr.decode("utf-8", "replace")
+            c2 = _chain(_cands(t2))
+            say(f"     ✓ [{how}] {u}")
+            say(f"       {len(rr):,} bytes｜中文 {len(re.findall('[一-龥]', t2)):,} 字"
+                f"｜「集保」{t2.count('集保')} 次｜級距鏈 {len(c2)} 段")
+            if len(c2) >= 3:
+                say("       ★★ 這裡有連續級距鏈：")
+                for _, _, t3 in c2[:20]:
+                    say(f"         {t3}")
+
+    say("  ⇒ 判準：**級距鏈 ≥ 3 段**才算找到（電話號碼接不成鏈，第 11 節已實測）。")
+    say("  ⇒ ⛔ 不要把「頁面有回 bytes」寫成「有這個標準」。")
+
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")
     say("**不要因為「有幾萬列」就當它完整**。")
@@ -473,4 +958,20 @@ def _write(rc):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # ⚠ 探針炸掉時，traceback 只留在 Actions log 裡——而 log 要翻好幾百行才找得到，
+    #   （2026-09-09 實測：tail 900 行都還沒回到那一步）。
+    #   ⇒ **把 traceback 寫進輸出檔**，它會跟著 commit 進 repo。
+    #   這樣「哪一節炸的」下一趟就是既成事實，不必再去考古。
+    #   ⛔ 覆蓋掉上一次成功的內容是**故意的**：這一份的語意是「這一趟看到什麼」，
+    #     上一次的內容在 git 歷史裡找得到，而「看起來是完整結果、其實是上一趟的」
+    #     比缺一份更貴。開頭那個 ✗ 也讓下一趟的重跑條件自動成立。
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except BaseException:                                        # noqa: BLE001
+        say("")
+        say("✗ 這一趟在下面這裡炸掉了，以下是 traceback 原文（沒有整理）：")
+        say(traceback.format_exc())
+        _write(1)
+        raise

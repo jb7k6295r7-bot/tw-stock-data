@@ -51,9 +51,38 @@ jobs:
         continue-on-error: true
         run: python selftest_mops.py
 
+      # ★ 把四支探針的 main() 整條走一遍（網路換成假回應）。
+      #   ⚠ 開發容器對 tdcc／tpex 是 403 ⇒ main() 在第 30 行就 return，
+      #     後面幾百行**本地永遠跑不到**；compileall 與 ast.parse 只抓語法、
+      #     抓不到 NameError。2026-09-09 就是這樣讓 `SAMPLE` 未定義上了線。
+      - name: 驗四支探針跑得完（離線）
+        continue-on-error: true
+        run: python selftest_probes.py
+
+      # ★ 釘住漲跌停方向：`"0.0"` 是 truthy，寫成 `if chg` 會把平盤鎖死判成跌停。
+      #   2026-09-09 全庫 50,382 列中招（佔所有 down 的 47.7%）。
+      - name: 驗漲跌停方向（離線）
+        continue-on-error: true
+        run: python selftest_lock_dir.py
+
       - name: 驗交易日曆的寫檔（離線）
         continue-on-error: true
         run: python selftest_calendar.py
+
+      - name: 驗颱風休市判讀（離線）
+        continue-on-error: true
+        run: python selftest_holiday.py
+
+      # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
+      #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
+      #   （理由見 holiday.py 檔頭：兩種錯的代價不對稱）。
+      #   ⚠ 排在 fetch 之前，是因為它同時**每天存一份原始頁面**——
+      #     第一個颱風天才會有真正的樣本，而那一天沒存就永遠沒有。
+      #   continue-on-error：抓不到公告頁會寫成 unknown 並報 ✗，
+      #   但那不該讓整條資料管線停下來。
+      - name: 颱風休市（前瞻）
+        continue-on-error: true
+        run: python holiday.py
 
       - name: 抓資料
         id: fetch
@@ -214,6 +243,47 @@ jobs:
         timeout-minutes: 10
         run: python adjust.py
 
+      # ★ 上櫃減資：拿官方參考價逐筆對我方因子。**只讀 repo，不連外。**
+      #   ⛔ 一定要排在 `adjust.py` **之後**——它比的是 `data/adj/` 的內容，
+      #     排前面就是拿上一趟的因子去對這一趟的表。
+      #   ⚠ 對照表是**人工匯出**的，所以「官方有我方沒有」那一項同時會在
+      #     ① 我方漏抓 ② 匯出檔過期 兩種情況下吵。兩種都需要人處理，故不分開。
+      # ★ 「不累積就永久失去」的那幾份，有沒有真的在累積。
+      #   ⛔ **一定要排在 `holiday.py` 之後**：它檢查的 `data/holiday/` 與
+      #     `holiday_schedule.csv` 就是那一步產生的，排前面會在第一趟誤報。
+      #   ⚠ 這一步**不加 continue-on-error 的理由**：這幾份的共同點是
+      #     「壞掉時整條管線是綠的」，而且**補不回來**——
+      #     集保官方只留一年、行事曆只給當年。紅了要當天處理。
+      - name: 累積型資料的新舊檢查
+        if: always()
+        run: python freshness_check.py
+
+      - name: 上櫃減資對帳
+        if: always()
+        continue-on-error: true
+        run: python reduce_check.py
+
+      # ★ 全母體斷點掃描＋與 par_change.csv 對帳（市場情報分析線 2026-09-09 08:45 裁定要排）。
+      #   規則屬回測線／K線線（backtest/breakpoint_scan.py），這裡只是薄殼接進管線——
+      #   ⛔ 不在這邊複製一份規則，兩份會各自演化而且不會有人發現。
+      #   位置在 adjust 之後：它讀 data/adj/ 的事件，早跑會對到舊的因子。
+      #   實測 2,129 檔約 21 秒，加上 pandas 安裝約 30 秒，不會排擠別支。
+      #
+      # ⚠ 這是整條管線**第一個**需要第三方套件的步驟（其餘全是標準庫）。
+      #   所以裝不起來時 breakpoint_check.py 會報 ✗，**不是安靜跳過**——
+      #   安靜跳過就會天天回報「沒問題」，那正是這道檢查要防的失敗形狀。
+      - name: 裝 pandas（只有斷點掃描要用）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python -m pip install --quiet --disable-pip-version-check pandas
+
+      - name: 斷點掃描與面額變更對帳
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python breakpoint_check.py
+
       # ★ `continue-on-error`：轉置是**衍生檔**，它失敗不該讓當天的原始資料無法落檔。
       #   失敗會在 Actions 顯示為該步驟紅字，但 commit 照常進行。
       # ★ 步驟層級也要設 timeout。`continue-on-error` 只讓「步驟失敗」不中斷流程，
@@ -308,42 +378,20 @@ jobs:
             echo "→ 還新，跳過（未滿 28 天）"
           fi
 
-      # ★ 集保股權分散的端點探針（一次性、自癒）。
-      #   籌碼集中度目前沒有歷史序列（db_status 把它列在「沒有來源」那一節），
-      #   FinMind 的 HoldingSharesPer 回 400，所以要走集保官方。
-      #   端點來自 WebSearch 結果、不是自行生成（tw-data-sources 3-4 的規矩）。
-      #   ⚠ **只測不寫資料**，輸出進 data/meta/_tdcc_probe.txt。
-      #   ⚠ 條件是「檔不存在**或**上次結果有 ✗」——只看存不存在的話，
-      #     一次暫時性失敗會讓它永遠不再重試，而那個失敗結果會一直留著。
-      #   ⚠ 端點結論一律以 Actions 為準：開發容器對外 403 是環境差異，不是端點狀態。
-      - name: 端點探針（沒跑過／上次失敗／探針程式改過才跑）
-        if: always()
-        continue-on-error: true
-        timeout-minutes: 15
-        run: |
-          # 兩支都是「只測不寫資料」，輸出進 data/meta/_*_probe.txt 並 commit，
-          # 這樣結論會進 repo，不必有人去翻 Actions log。
-          # 重跑條件三選一：
-          #   ① 檔不存在
-          #   ② 上次結果有 ✗——只看①的話，一次暫時性失敗會讓它永遠不再重試，
-          #      而那個失敗結果會一直留著
-          #   ③ **探針程式比輸出新**——改了探針卻不重跑，等於改了個寂寞，
-          #      而且外表完全正常（2026-09-08 加第 5 節時就差點這樣）
-          # ⚠ 比的是 git commit 時間，不是 mtime：Actions 每次都是全新 checkout，
-          #   mtime 永遠是「剛剛」，用它永遠比不出新舊。
-          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt" \
-                      "parvalue_probe.py:_parvalue_probe.txt" \
-                      "twsthr_probe.py:_twsthr_probe.txt"; do
-            SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
-            TS_S=$(git log -1 --format=%ct -- "$SCRIPT" || echo 0)
-            TS_F=$(git log -1 --format=%ct -- "$F" || echo 0)
-            if [ ! -f "$F" ] || grep -q '✗' "$F" || [ "${TS_S:-0}" -gt "${TS_F:-0}" ]; then
-              echo "→ 跑 $SCRIPT（程式 ${TS_S:-0} / 輸出 ${TS_F:-0}）"
-              python "$SCRIPT" || true
-            else
-              echo "→ $SCRIPT 已探過、無 ✗、程式沒改，跳過"
-            fi
-          done
+      # ⛔ 端點探針**已移出這一支**，改由 `.github/workflows/probe.yml` 單獨跑。
+      #
+      # ⚠ 2026-09-09 實測到的問題（**兩支寫同一批檔，後推的贏，跟程式新舊無關**）：
+      #     04:13  probe.yml 用**修好的** tpex_probe.py 寫出 `_tpex_probe.txt`（ee717791）
+      #     04:15  daily.yml 用**舊的**（它 checkout 的是更早的 commit）
+      #            寫出同一個檔並推上去（421ba137）⇒ **把新的蓋掉了**
+      #   而 `_*probe.txt` 在 commit 那段的 REGEN 白名單裡（衝突時取本趟版本），
+      #   所以這件事**完全不會報錯**：檔案在、格式對，只是內容退回舊版。
+      #   ⇒ 這正是這個專案一直在防的形狀，而我自己在 40 分鐘前造了一個。
+      #
+      # → 探針改成**單一寫入者**：只有 `probe.yml` 寫 `data/meta/_*probe.txt`。
+      #   代價是「探針程式改了會自動重跑」這個自癒條件沒有了——
+      #   ⚠ **改探針的人要自己按一次 probe.yml**（一趟約 1 分鐘）。
+      #   寫在這裡，不要靠記得。
 
       # ★ 漲跌家數：先抓當天，再分批回補歷史。
       #   `MI_INDEX` **吃 date 參數**，所以 2015 起都抓得到——
@@ -388,8 +436,15 @@ jobs:
         continue-on-error: true
         run: |
           cat data/meta/_last_run.md || true
-          if grep -q '✗' data/meta/_last_run.md 2>/dev/null; then
+          # ⚠ 2026-09-09：這裡本來是 `grep -q '✗'`，掃整份檔。
+          #   而檔頭的說明文字就有一句「任何一塊標成 ✗ 就要去看該支的 log」
+          #   ⇒ **這道警告從第一天起每一趟都亮，一次都沒有正確過**。
+          #   天天亮的紅字沒有人會看——它想抓的東西反而被自己蓋掉了。
+          #   （另外各區塊的說明文字也可能提到 ✗，例如「⛔ 不設 ✗」。）
+          #   ⇒ 只認**區塊標題那一行**的狀態：runlog 寫的是 `## <名字>　✗ 有問題`。
+          if grep -qE '^## .*✗' data/meta/_last_run.md 2>/dev/null; then
             echo "::warning::_last_run.md 有 ✗ 的區塊，見上面內容"
+            grep -nE '^## .*✗' data/meta/_last_run.md
           fi
 
       - name: Commit 回 repo
@@ -408,22 +463,72 @@ jobs:
             # ★ push 前一定要先把遠端的變更 rebase 進來（2026-08-31 實測失敗）。
             #   runner 是在 job 開始時 checkout 的，如果這段期間你在網頁上改了檔案，
             #   遠端就比 runner 手上的新，push 會被拒（fetch first）。
-            #   資料是 append-only、每天不同檔名或不同列，rebase 不會有內容衝突。
+            # ⚠ 2026-09-09 實測：原本這裡假設「資料是 append-only，rebase 不會有內容衝突」，
+            #   **那句是錯的**。data/meta/ 底下 `_` 開頭的報告檔是每一趟**整份重寫**的，
+            #   七支 workflow 都會 push 同一個 repo，加上人手動改，同一份就會逐字衝突。
+            #   而重試同一個 rebase 只會一模一樣地再撞一次——三次全白費。
+            #   ⚠ 失敗的樣子：log 印「push 失敗」，看起來像網路問題，其實一次都不可能成功。
+            #   run 34296206882 就是這樣掛的，那一趟抓到的資料一列都沒推上去。
+            #
+            # → 衝突時分兩種處置：
+            #   ① 衝突的檔案**全部**在 REGEN 裡 → 取本趟的版本續做（rebase 裡 --theirs
+            #      才是「正在重放的那個 commit」，也就是本趟；--ours 是遠端，別挑錯邊）。
+            #      那些檔完全由當下的 repo 資料重新推導，誰贏都一樣，下一趟會再寫一次。
+            #   ② 只要有**一個**不在 REGEN 裡 → **不自作主張**：abort、印出檔名、整趟紅掉。
+            #      真資料的衝突要人來看，不可以自動挑一邊。
+            #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
+            #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
+            LASTRUN="data/meta/_last_run.md"
+            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv "
             ok=0
             for i in 1 2 3; do
               if git pull --rebase --autostash origin main && git push origin HEAD:main; then
                 ok=1; break
               fi
+              CONF=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+              if [ -n "$CONF" ]; then
+                BAD=""
+                for f in $CONF; do
+                  [ "$f" = "$LASTRUN" ] && continue
+                  case "$REGEN" in *" $f "*) ;; *) BAD="$BAD $f";; esac
+                done
+                if [ -n "$BAD" ]; then
+                  echo "⛔ rebase 衝突，而且不只是可自動處理的報告檔：$BAD" >&2
+                  echo "   真資料的衝突不自動挑一邊，請人工處理。" >&2
+                  git rebase --abort 2>/dev/null || true
+                  break
+                fi
+                echo "rebase 衝突，可自動處理：$CONF"
+                MERGED=1
+                for f in $CONF; do
+                  if [ "$f" = "$LASTRUN" ]; then
+                    # ⛔ _last_run.md **不可以整份取一邊**：runlog 只覆蓋自己那一個區塊，
+                    #   所以這一份是跨 workflow 累積的。整份取一邊 ⇒ 另一支剛報的 ✗
+                    #   會被安靜換回上一輪的 ✓——檔案在、格式對、只有狀態悄悄變綠。
+                    #   逐區塊合併，每塊留「最後執行」較新的那一份。
+                    git show :3:"$f" > /tmp/lr_ours.md \
+                      && git show :2:"$f" > /tmp/lr_theirs.md \
+                      && python3 merge_last_run.py /tmp/lr_ours.md /tmp/lr_theirs.md > "$f" \
+                      && git add -- "$f" || MERGED=0
+                  else
+                    git checkout --theirs -- "$f" && git add -- "$f" || MERGED=0
+                  fi
+                done
+                if [ "$MERGED" != "1" ]; then
+                  echo "⛔ 自動處理失敗，不硬推" >&2
+                  git rebase --abort 2>/dev/null || true
+                  break
+                fi
+                if GIT_EDITOR=true git rebase --continue && git push origin HEAD:main; then
+                  ok=1; break
+                fi
+              fi
               # ★ rebase 卡在衝突時工作區會留在 unmerged 狀態，下一輪 git pull 會直接
               #   說 "Pulling is not possible"，三次全白重試。先 abort 回到乾淨狀態。
               git rebase --abort 2>/dev/null || true
-              echo "push 失敗（第 $i 次），5 秒後重試"
-              sleep 5
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
             done
-            if [ "$ok" != "1" ]; then
-              echo "連續三次 push 失敗" >&2
-              exit 1
-            fi
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
           fi
 
       # 抓取失敗時讓整個 run 標成紅色，但上面的 commit 已經做完了

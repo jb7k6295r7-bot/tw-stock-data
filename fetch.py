@@ -797,6 +797,29 @@ UNIVERSE_HEADER = ["key", "date", "stock_id", "name", "market",
 #   同一檔同一天會有兩個價，**而且看不出來哪個是哪個**。
 #   2026-09-02 實測差異：5267 差 4.8%、6434 差 2.1%、7879 差 0.9%。
 #   興櫃流動性極低，最後成交價可能由一筆 1 股的交易決定，所以一律採均價。
+def _lock_dir(chg):
+    """鎖死（開＝高＝低＝收）那一天的方向：`up` / `down` / `flat`。
+
+    ⛔ **不可以寫 `"down" if chg else "flat"`**——`chg` 是**字串**，
+       而 `"0.0"` 是 truthy，於是「整天鎖死在平盤」會被判成**跌停**。
+       2026-09-09 全庫實測：`limit=down` 但 `change` 恰為 0 的有 **50,382 列**，
+       佔所有 `down` 的 **47.7%**；而 `flat` 只在 `change` 是空字串時出現過（5,379 列）
+       ——也就是說「平盤鎖死」這個值**結構上根本走不到**。
+       例：2015-01-05 1516 開＝高＝低＝收＝14.00、change 0.0，被標成跌停。
+
+    ⚠ 這與 2026-09-08 抓到的 `str(v or "")` 是**同一族**：
+       0 在兩種寫法裡都被當成「沒有值」。差別只在一個是數字 0、一個是字串 "0.0"。
+
+    ⚠ 解析不出來的（空字串、非數字）維持原行為回 `flat`，不在這次一起改——
+       那是另一個語意問題（「不知道」不等於「平盤」），要改要先講。
+    """
+    try:
+        v = float(str(chg).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return "flat"
+    return "up" if v > 0 else ("down" if v < 0 else "flat")
+
+
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
 
@@ -936,7 +959,7 @@ def parse_twse_daily(d, day, market="twse"):
         # 漲跌停鎖死：開＝高＝低＝收且有量。**回測必須知道這一天買不到。**
         lim = ""
         if o and h and l and c and o == h == l == c:
-            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+            lim = _lock_dir(chg)
         out.append([f"{day}_{code}", day, code,
                     str(r[i_name]).strip() if i_name is not None else "",
                     market, o, h, l, c,
@@ -1024,7 +1047,7 @@ def parse_openapi_daily(rows, day, market):
                 basis = "均價/額推算"
         lim = ""
         if o and h and l and c and o == h == l == c:
-            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+            lim = _lock_dir(chg)
         out.append([f"{day}_{code}", day, code,
                     str(r.get(k_name, "")).strip(), market,
                     o, h, l, c, vol, amt, chg, lim, "",

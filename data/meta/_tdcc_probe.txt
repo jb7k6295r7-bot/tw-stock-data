@@ -47,7 +47,7 @@
      ✓ 69,367 bytes
      ★ 資料日期選項 51 個：['20260904', '20260828', '20260821', '20260814', '20260807'] … ['20250926', '20250919', '20250912']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['9-4111', '02-2719']
+     ★ 疑似級距文字：['87-4133', '94-8260', '02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -117,16 +117,190 @@
 
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
-[7] ★ 歷史週別：照抄查詢頁的 form，只改日期，真的打一發
-    form 的 input 欄位：{'SYNCHRONIZER_TOKEN': 'c6e814e0-5985-4888-8055-858db1f3c1c2', 'SYNCHRONIZER_URI': '/portal/zh/smWeb/qryStock', 'method': 'submit', 'firDate': '20260904', 'sqlMethod': 'StockName', 'stockNo': '', 'stockName': ''}
-    select 欄位：['scaDate']
-    日期選項 51 個｜最新 20260904｜最舊 20250912
-    最新 20260904：✓ 2 bytes｜回應裡的日期 []
-    較舊 20260313：✓ 2 bytes｜回應裡的日期 []
-    ⚠ **兩發都只回 2 bytes——那是空回應，不是「參數被無視」。**
-       多半是 SYNCHRONIZER_TOKEN 一次性：照抄頁面那顆送第二次就失效。
-       → 下一輪改成**每一發都先重抓查詢頁、拿新的 token**再送。
-       ⛔ 在那之前**不可以**下「沒有歷史」的結論。
+[13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
+  ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
+  form 欄位 7 個（**逐字連值**）：
+    SYNCHRONIZER_TOKEN = 'dd7777ad-c678-4292-b581-3e538e4ddaee'
+    SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
+    firDate = '20260904'
+    method = 'submit'
+    sqlMethod = 'StockName'
+    stockName = ''   ← ⚠ 空值
+    stockNo = ''   ← ⚠ 空值
+  日期選項 51 個
+  頁面裡出現的 `method=…` 候選值（逐字，⛔ 沒有就是沒有）：['post']
+    scaDate 最新 20260904：2 bytes｜回應裡的日期 []｜大數字 0 個
+    firDate 最新 20260904：2 bytes｜回應裡的日期 []｜大數字 0 個
+    scaDate 較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+    firDate 較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+  ⇒ 仍然全是空回應 ⇒ 擋點也不是 Cookie，那就要到「這條路在不執行 js 的前提下走不通」為止。
+  ⇒ 有內容 ⇒ **集保歷史抓得到**，寫回補（51 週）。
+
+[7] ★ 歷史週別（第二版：每發重抓 token、兩個日期欄名都試）
+    日期選項 51 個｜最新 20260904｜較舊 20260313｜最舊 20250912
+
+    ── 日期欄名試 `scaDate`
+       最新 20260904：2 bytes｜回應裡的日期 []｜大數字 0 個
+       較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+
+    ── 日期欄名試 `firDate`
+       最新 20260904：2 bytes｜回應裡的日期 []｜大數字 0 個
+       較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+
+    ⛔ **每一發都還是空回應（< 200 bytes）。**
+       重抓 token 沒有解決，代表擋點不在 token——
+       可能還要 Cookie／Session，或這條 ajax 不接受直接呼叫。
+       ⛔ 仍然**不可以**下「沒有歷史」的結論：查詢頁確實列了 51 個週別，只是我方取不到。
+
+[8] 開放資料專區其他 dataset id 的形狀（只量，不猜用途）
+    id=1-1: 14,460,631 bytes｜CSV 144,746 列｜相異資料日期 0 個 []
+             欄位：['證券代號', '證券名稱', '市場別', '股務單位', '停止過戶領回', '證券狀態', '無面無實體', '歸戶領回']
+    id=1-2: 22,816,453 bytes｜CSV 142,446 列｜相異資料日期 1 個 ['20260909']
+             欄位：['資料日期', '證券代號', '證券名稱', '市場別', '股務單位', '股務單位地址', '電話', '備 註(終止日期)']
+    id=1-3: 1,037,774 bytes｜CSV 5,080 列｜相異資料日期 1 個 ['20260909']
+             欄位：['資料日期', '發行機構名稱', '發行機構名稱(英文)', '發行辦法名稱', '發行辦法檔案網址(http://www.tdcc.com.tw/tcdata/tc11/)', '債券代號', '債券簡稱']
+    id=1-4: 5,294 bytes｜CSV 97 列｜相異資料日期 1 個 ['20260908']
+             欄位：['資料日期', '證券代號', '證券名稱', '分戶保管股數', '特定保管股數', '強制集保總股數', '發行仟股數']
+    id=1-6: 407,142 bytes｜CSV 2,987 列｜相異資料日期 0 個 []
+             欄位：['資料年月', '債券代號', '債券名稱', '債券類別', '債券餘額', '個人戶持有比率', '法人戶持有比率', '自營商持有比率']
+    id=1-7: 33,408 bytes｜CSV 769 列｜相異資料日期 0 個 []
+             欄位：['證券代號', '證券名稱', '交付日期', '交付原因']
+
+[9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
+
+  ── 網頁：https://data.gov.tw/dataset/11452
+     ✓ 540,897 bytes
+     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
+     提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
+     檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
+     授權：['><a href="/licenses" class="" title="前往 授權條款" data-v-5c04cf44>授權條款</a></li><li class="menu', 'data-v-8377536e><strong data-v-8377536e>授權方式</strong></div><div class="table-cell" data-v-']
+
+  ── 公開 API：https://data.gov.tw/api/v2/rest/dataset/11452
+     ✓ 2,621 bytes
+     授權：['language":"zh","relatedUrl":"","notes":"授權說明網址: http:\\/\\/data.gov.tw\\/license\\nOAS標準之API說明']
+
+  ★ 撈到的下載網址（2 個，逐字）：
+     https://openapi.tdcc.com.tw/tdcc-opendata-api-docs
+     https://opendata.tdcc.com.tw/getOD.ashx?id=1-5
+
+[10] ★ 撈到的網址逐一量形狀（只量，不猜用途）
+    https://openapi.tdcc.com.tw/tdcc-opendata-api-docs
+       66,918 bytes｜JSON 1 筆｜相異資料日期 0 個 []
+       欄位：['url']
+
+[11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁
+
+  ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
+     ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
+       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
+
+  ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
+     ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
+       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
+
+  ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
+     ✓ 2,361,524 bytes｜CSV 68,867 列｜**相異資料日期 1 個** ['20260904']
+       「小-大」數字對 0 個｜**最長連續鏈 0 段**｜「N 以上」0 個
+       （一個都沒有）
+
+  ── 開放資料專區：https://www.tdcc.com.tw/portal/zh/stats/openData
+     ✓ 64,291 bytes｜CSV 407 列｜**相異資料日期 0 個** []
+       「小-大」數字對 118 個｜**最長連續鏈 2 段**｜「N 以上」0 個
+       （接不成鏈，最長只有 2 段——這些多半是電話或代碼，不是級距）
+
+  ⛔ 以上任何一條都**不可以**拿去填 `data/tdcc/` 的級距欄位——要先有人看過、確認那是官方定義而不是頁面上剛好長得像的字串。
+
+[12] ★★★ 集保自己的 OpenAPI 文件（第 10 節撈到的新網址）
+  ✓ 索引 66,918 bytes
+  索引裡的網址（12 個，逐字）：
+    http://www.tdcc.com.tw/tcdata/tc11/
+    /v1/opendata/6-3
+    /v1/opendata/6-2
+    /v1/opendata/6-1
+    /v1/opendata/5-9
+    /v1/opendata/5-8
+    /v1/opendata/5-7
+    /v1/opendata/5-6
+    /v1/opendata/5-5
+    /v1/opendata/5-4
+    /v1/opendata/5-3
+    /v1/opendata/5-2
+  開頭 400 字（逐字）：{"openapi":"3.0.1","info":{"title":"臺灣集中保管結算所 OpenAPI","description":" 本平臺提供集保結算所相關網站資料服務API，包含期信基金 、權益證券、境外基金、固定收益、境外結構型商品、TAIBIR、股東e票通及股務等相關資訊，歡迎各位介接使用。 ","version":"0.0.3"},"servers":[{"url":"/"}],"paths":{"/v1/opendata/6-3":{"get":{"tags":["股東e票通"],"summary":"發行公司電子投票比率統計資訊","description":"發行公司電子投票比率統計資訊","operationId":"getData63","responses":{"200":{"description":"OK","content":{"application/
+  頂層鍵：['openapi', 'info', 'servers', 'paths', 'components']
+  ★★ 這一份自己就是規格：端點 134 個
+
+  ★★ 直接讀這一份的規格（servers.url = '/'）
+     端點 134 個｜**吃日期／期別的 0 個**
+     ⚠ **一個吃日期的都沒有** ⇒ 這一份規格裡的端點只給當期。⛔ 但那只說明**這一份**，不等於集保沒有歷史。
+     ── 其餘（只給當期）──
+       /v1/opendata/1-1｜股務資訊｜證券基本資料｜參數 []
+       /v1/opendata/1-10｜股務資訊｜私募有價證券無實體登錄資料查詢：特別股｜參數 []
+       /v1/opendata/1-11｜股務資訊｜私募有價證券無實體登錄資料查詢：公司債｜參數 []
+       /v1/opendata/1-12｜股務資訊｜私募有價證券無實體登錄資料查詢：轉換公司債｜參數 []
+       /v1/opendata/1-13｜股務資訊｜有價證券轉(交)換/認股價格變更資料查詢｜參數 []
+       /v1/opendata/1-14｜股務資訊｜有價證券董事收購相關資訊｜參數 []
+       /v1/opendata/1-2｜股務資訊｜公司股務單位資料｜參數 []
+       /v1/opendata/1-3｜股務資訊｜固定收益證券發行資料｜參數 []
+       /v1/opendata/1-4｜股務資訊｜發行人董監分戶保管｜參數 []
+       /v1/opendata/1-5｜股務資訊｜集保戶股權分散表｜參數 []
+       /v1/opendata/1-6｜股務資訊｜債券持有對象分析｜參數 []
+       /v1/opendata/1-7｜股務資訊｜有價證券帳簿劃撥配發交付日期一覽表｜參數 []
+       /v1/opendata/1-8-1｜股務資訊｜債券基本資料｜參數 []
+       /v1/opendata/1-8-2｜股務資訊｜債券還本付息明細資料｜參數 []
+       /v1/opendata/1-9｜股務資訊｜私募有價證券無實體登錄資料查詢：普通股｜參數 []
+       /v1/opendata/2-1｜權益證券類 統計資訊｜集中保管有價證券業務概況表｜參數 []
+       /v1/opendata/2-10｜權益證券類 統計資訊｜票券保管結算交割統計表｜參數 []
+       /v1/opendata/2-11｜固定收益類 統計資訊｜次級市場ABCP｜參數 []
+       /v1/opendata/2-12｜固定收益類 統計資訊｜ABCP成交資訊｜參數 []
+       /v1/opendata/2-13｜固定收益類 統計資訊｜國庫券成交資訊｜參數 []
+       /v1/opendata/2-14｜固定收益類 統計資訊｜國庫券買賣斷成交行情資訊｜參數 []
+       /v1/opendata/2-15｜TAIBIR 資訊｜TAIBIR當日最近初級發行利率報價｜參數 []
+       /v1/opendata/2-16｜TAIBIR 資訊｜TAIBIR當日最近次級買賣利率報價｜參數 []
+       /v1/opendata/2-17｜TAIBIR 資訊｜TAIBIR 01當日初級發行利率報價定盤利率｜參數 []
+       /v1/opendata/2-18｜TAIBIR 資訊｜TAIBIR 02當日次級買賣利率報價定盤利率｜參數 []
+       /v1/opendata/2-19｜TAIBIR 資訊｜TAIBIR 01歷史初級發行利率報價定盤利率｜參數 []
+       /v1/opendata/2-2｜權益證券類 統計資訊｜集中保管債券收付統計表｜參數 []
+       /v1/opendata/2-20｜TAIBIR 資訊｜TAIBIR 02歷史次級買賣利率報價定盤利率｜參數 []
+       /v1/opendata/2-21｜TAIBIR 資訊｜TAIBIR 02上線前歷史次級買賣利率報價定盤利率｜參數 []
+       /v1/opendata/2-22｜權益證券類 統計資訊｜有價證券集中保管個別股票異動月分析表－上市證券｜參數 []
+       /v1/opendata/2-23｜權益證券類 統計資訊｜有價證券集中保管個別股票異動月分析表－上櫃證券｜參數 []
+       /v1/opendata/2-24｜權益證券類 統計資訊｜有價證券集中保管個別股票異動月分析表－興櫃證券｜參數 []
+       /v1/opendata/2-25｜權益證券類 統計資訊｜上市保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-26｜權益證券類 統計資訊｜上櫃保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-27｜權益證券類 統計資訊｜上櫃保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-28｜權益證券類 統計資訊｜上市櫃檯合併保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-29｜權益證券類 統計資訊｜上市櫃檯合併保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-3｜權益證券類 統計資訊｜集中保管債券收付統計表｜參數 []
+       /v1/opendata/2-30｜固定收益類 統計資訊｜票券保管結算交割系統各類短期票券流通餘額表｜參數 []
+       /v1/opendata/2-31｜固定收益類 統計資訊｜票券保管結算交割系統結算交割時間統計｜參數 []
+       …（其餘 94 個略）
+
+[14] ★★ 政府資料標準平臺 schema.gov.tw（使用者 2026-09-09 提供）
+  ── 清單頁：https://schema.gov.tw/lists/75
+     ✓ 106,709 bytes
+     HTML 裡的中文字數 1,473
+     「集保」出現 20 次
+     「股權分散」出現 14 次
+     「持股分級」出現 22 次
+     「級距」出現 0 次
+     「保管結算」出現 0 次
+     「證券」出現 32 次
+     級距鏈最長 2 段｜「N 以上」0 個
+       0-7
+       8-29
+     href 38 個｜疑似下載檔 0 個：（沒有）
+     HTML 裡的 /api/… 0 個：（沒有）
+     ── HTML 沒寫 /api/…，改撈 js（8 個，最多看 6 個）
+       ✓ 21f6722.js 225,227 bytes｜/api/… 0 個：（沒有）
+       ✓ 2ebe024.js 2,758 bytes｜/api/… 0 個：（沒有）
+       ✓ 523c526.js 851,894 bytes｜/api/… 0 個：（沒有）
+       ✓ 6a8462d.js 13,916 bytes｜/api/… 0 個：（沒有）
+       ✓ 88f29d3.js 264,116 bytes｜/api/… 0 個：（沒有）
+       ✓ cec6cfa.js 30,638 bytes｜/api/… 0 個：（沒有）
+  ⇒ 判準：**級距鏈 ≥ 3 段**才算找到（電話號碼接不成鏈，第 11 節已實測）。
+  ⇒ ⛔ 不要把「頁面有回 bytes」寫成「有這個標準」。
 
 ── 結論要人看過再決定 ──
 上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，

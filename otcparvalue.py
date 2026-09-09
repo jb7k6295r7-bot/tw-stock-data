@@ -39,6 +39,7 @@ TPEx 沒有對應端點（swagger 225 個端點裡沒有減資／面額／參考
 實測 14/14 都乾淨，所以目前沒有這種案例——**閘門 (a) 就是為它設的**。
 """
 import argparse
+import bisect
 import csv
 import io
 import os
@@ -49,6 +50,29 @@ import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 SRC = os.path.join(_ROOT, "meta", "par_change.csv")
+CAL = os.path.join(_ROOT, "meta", "calendar_twse.csv")
+# ★ restored=0 撐過幾個交易日就報 ✗（情報分析線 2026-09-09 10:45 裁定）
+STUCK_TDAYS = 3
+
+
+def _tdays_since(day, today=None):
+    """事件日到今天之間**有幾個交易日**。日曆讀不到就回 0（⛔ 不猜）。
+
+    ⚠ 用交易日不是日曆天：連假四天不代表卡了四天。
+    ⚠ 事件日在未來（事前公告）回 0——那不是卡住。
+    """
+    try:
+        with io.open(CAL, encoding="utf-8") as f:
+            days = sorted(r.split(",")[0].strip()
+                          for i, r in enumerate(f) if i and r.strip())
+    except OSError:
+        return 0
+    if not days or not day:
+        return 0
+    today = today or days[-1]
+    lo = bisect.bisect_left(days, day)
+    hi = bisect.bisect_right(days, today)
+    return max(0, hi - lo - 1)
 OFFICIAL_DIR = os.path.join(_ROOT, "universe", "parvalue")     # 上市官方，用來做閘門 (c)
 OUT_DIR = os.path.join(_ROOT, "universe", "otcparvalue")
 HEADER = ["date", "stock_id", "pre_close", "ref_price", "reason",
@@ -161,6 +185,36 @@ def main():
             w.writerow(HEADER)
             w.writerows(rs)
     rl.info("寫出", f"{len(byday)} 個日檔、{len(out)} 筆")
+    # ── ★ restored=0 卡太久要報 ✗（市場情報分析線 2026-09-09 10:45 裁定 N=3 個交易日）──
+    #   ⚠ 他們把先前說的 10 改成 3，並且**把理由換掉**：
+    #     「容忍正常過渡」是錯的理由——公告到我方抓到之間，那一筆**根本還沒進 par_change.csv**。
+    #     一筆**已經在檔裡、但 restored=0**，意思是「我們知道有這件事、但因子沒進去」，
+    #     **那不是過渡，那就是卡住了**。排程每天跑，撐過 3 個交易日沒有良性解釋。
+    #
+    #   ⛔ 用**事件日到今天之間的交易日數**當時鐘，不另外養一份台帳：
+    #     台帳是新的狀態，而新的狀態就是新的失效點。事件日已經在檔裡了。
+    #   ⚠ 事件日在未來的（事前公告）算 0 天，不算卡住。
+    stuck = []
+    for r in rows:
+        if str(r.get("restored", "")).strip() == "1":
+            continue
+        d = (r.get("event_date") or "").strip()
+        n = _tdays_since(d)
+        stuck.append((r.get("stock_id", ""), d, n))
+    worst = max((n for _, _, n in stuck), default=0)
+    if stuck:
+        # ⛔ 只印「有沒有」的話，1 天與 30 天長得一模一樣，
+        #   而報 ✗ 之前那 29 天**完全沒有訊號**（情報分析的要求）。
+        rl.info("restored=0",
+                f"{len(stuck)} 筆，最舊的已經 **{worst} 個交易日**："
+                + "、".join(f"{a}({b}, {c}d)" for a, b, c in
+                            sorted(stuck, key=lambda x: -x[2])[:5]))
+    else:
+        rl.info("restored=0", "0 筆（全部已還原）")
+    rl.check(f"沒有 restored=0 卡超過 {STUCK_TDAYS} 個交易日", worst < STUCK_TDAYS,
+             f"最舊的一筆已經 {worst} 個交易日——排程每天跑，"
+             "撐這麼久代表因子產不出來，不是過渡")
+
     rl.check("寫出的筆數＝來源筆數", len(out) == len(src),
              f"{len(out)} / {len(src)}")
     print(f"[otcparvalue] 寫出 {len(byday)} 個日檔、{len(out)} 筆到 {OUT_DIR}")

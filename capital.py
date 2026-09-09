@@ -52,9 +52,13 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
+# ⚠ `urllib.parse` 要**明講**。它剛好會被 `urllib.request` 帶進來，
+#   所以不寫也能跑——那種「碰巧可用」的相依哪天就會斷，而且斷得莫名其妙。
+import urllib.parse
 import urllib.request
 
 import runlog
@@ -138,6 +142,62 @@ def get(url, retries=2, timeout=40):
     return None, last
 
 
+# ★ 端點面額欄的**原值**，key 是證券代號。
+#   ⚠ 為什麼要留原值：那一欄有三個家族，而**清洗成數字之後就分不出來了**
+#   （2026-09-09 實測全庫相異值）：
+#       '新台幣  10.0000元' × 2,292 …  正常新台幣面額
+#       '無面額'            × 8      …  **無面額股**：資本額÷股數是「平均發行價」不是面額
+#       '美元 0.0010元'／'美金0.05元' … **外幣面額**：資本額是新台幣，⛔ 兩者不可相除
+#   ⇒ 後兩種被標成 `mismatch` 是**錯的**——它們不是資料異常，是**問錯問題**
+#     （同 DR 代碼 91、同 ETF 沒有股本）。
+PAR_RAW = {}
+# 證券簡稱，同樣 key 是代號。⛔ 只用來認 DR，不作他用。
+NAME_RAW = {}
+
+
+def par_kind(v):
+    """→ 'no_par'／'foreign'／'ntd'／''。⛔ 只認固定字樣，不做模糊比對。"""
+    t = (v or "").strip()
+    if not t:
+        return ""
+    if "無面額" in t:
+        return "no_par"
+    for cur in ("美元", "美金", "港幣", "人民幣", "日圓", "歐元", "USD", "HKD", "RMB"):
+        if t.startswith(cur) or cur in t:
+            return "foreign"
+    return "ntd"
+
+
+def _num_par(v):
+    """面額專用的數字清洗。⛔ 不要拿 `_num` 直接用。
+
+    ⭐ 2026-09-09 才發現的靜默失血：端點**一直都給面額**，而我方一直把它丟掉。
+
+        twse `普通股每股面額` = '新台幣                  0.5000元'
+        tpex `ParValueOfCommonStock` = '新台幣                 10.0000元'
+
+    `_num()` 對這種字串 `float()` 會 ValueError ⇒ 回空字串 ⇒
+    `reconcile()` 走進「端點沒給面額」那條回推路徑 ⇒
+    回推的候選清單又只有 (10, 5, 1, 0.1) ⇒ **彈性面額股全部被標 mismatch**。
+    ⇒ 兩個獨立的缺陷剛好疊在一起，而外表完全正常。
+
+    ⛔ 清洗只脫**固定的**字首字尾（新台幣／NT$／元），
+      **不做「從字串裡撈第一個數字」**——那種寫法會把
+      「無面額」「每股面額 10 元（特別股 5 元）」這種東西也讀出一個數來，
+      而錯誤的面額比沒有面額危險得多。
+    """
+    if v is None:
+        return ""
+    t = str(v).strip()
+    for pre in ("新台幣", "NT$", "NTD", "NT"):
+        if t.startswith(pre):
+            t = t[len(pre):]
+    t = t.strip()
+    if t.endswith("元"):
+        t = t[:-1].strip()
+    return _num(t)
+
+
 def _num(v):
     if v is None:
         return ""
@@ -164,7 +224,47 @@ def _pick(keys, wanted):
     return None
 
 
-def reconcile(capital, shares, par, pref=""):
+# ★ 面額變更後的**預期面額**，從 `par_change.csv` 的倍率鏈推出來：
+#   面額 ＝ 10 ÷ Π(share_mult)。⛔ 這不是猜的候選值，是**事件推出來的**。
+#
+# ⚠ 為什麼需要它（2026-09-09 查出來的）：
+#   下面回推面額的候選清單原本只有 `(10, 5, 1, 0.1)`——那是**彈性面額以前**的世界。
+#   台股 2014 起開放彈性面額，於是 2.5／0.5／0.4 這些值一個都不在清單裡，
+#   結果 **9 檔面額變更股的 `par` 全部空白、而且被標成 `mismatch`**。
+#   `mismatch` 在本檔的語意是「這一檔的股數不要拿來算佔股本比重」
+#   ⇒ **我方等於在叫下游別用一批完全正常的資料**，
+#     跟 2026-09-07 那次「37 檔被誤標 mismatch」是同一種錯。
+#   ⛔ 修法不是往清單裡塞更多數字（那是猜），是**拿我方已經有的事件去算**。
+_PAR_EXPECT = None
+
+
+def par_expect():
+    """→ {stock_id: 面額}。讀 `par_change.csv` 的 `share_mult` 連乘。"""
+    global _PAR_EXPECT
+    if _PAR_EXPECT is not None:
+        return _PAR_EXPECT
+    out = {}
+    p = os.path.join(META_DIR, "par_change.csv")
+    if os.path.exists(p):
+        mult = {}
+        try:
+            with open(p, encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    try:
+                        m = float(r.get("share_mult") or 0)
+                    except ValueError:
+                        continue
+                    if m > 0:
+                        mult[r["stock_id"]] = mult.get(r["stock_id"], 1.0) * m
+        except OSError:
+            pass
+        for k, m in mult.items():
+            out[k] = PAR_DEFAULT / m
+    _PAR_EXPECT = out
+    return out
+
+
+def reconcile(capital, shares, par, pref="", code=""):
     """股數 × 面額 應該等於實收資本額。→ (par_used, note)
 
     ★ 對不起來就要標出來，不要挑一個好看的用。2026-09-03 實測興櫃有兩檔
@@ -182,6 +282,23 @@ def reconcile(capital, shares, par, pref=""):
         return (par or ""), "no-shares"
     if cap <= 0:
         return (par or ""), "no-capital"
+    # ★ 先處理「這一檔根本沒有面額可言」的兩種，⛔ 它們不是 mismatch。
+    pk = par_kind(PAR_RAW.get(str(code), ""))
+    if pk == "no_par":
+        return "", f"no_par:資本額÷股數={cap / shr:.3f} 是平均發行價，不是面額"
+    # ★ DR（存託憑證）：**「股本 ＝ 股數 × 面額」對它整條不成立。**
+    #   實收資本額是新台幣、面額是原股的外幣（0.01／0.1／甚至空白）⇒ 兩者不可比。
+    #   ⚠ 2026-09-09 實測：處理完無面額與外幣之後，**剩下的 6 檔 mismatch 全部是 DR**
+    #     （9105 泰金寶、9110 越南控、911608 明輝、911622 泰聚亨、912000 晨訊科、9136 巨騰）。
+    #   ⛔ 這是「問錯問題」，比照 READ_CONTRACT 產業別代碼 91 那一條，不是資料異常。
+    #   ★ 用**名稱的 `-DR` 後綴**認，不用代號前綴——READ_CONTRACT 記載 10/10 命中，
+    #     而代號前綴（91 開頭）會誤傷 9110 以外的一般上市股。
+    if NAME_RAW.get(str(code), "").rstrip().endswith("-DR"):
+        return "", (f"dr:存託憑證，資本額(新台幣)÷單位數={cap / shr:.3f} 沒有意義"
+                    f"（面額是原股外幣）")
+    if pk == "foreign":
+        return "", (f"foreign_par:面額是外幣（{PAR_RAW.get(str(code), '').strip()}）"
+                    f"，⛔ 不可與新台幣資本額相除")
     if pv > 0:
         if abs(shr * pv - cap) / cap <= 0.05:
             return par, "ok"
@@ -214,6 +331,11 @@ def reconcile(capital, shares, par, pref=""):
             if abs(implied_pf - cand) / cand <= 0.01:
                 return str(cand), "ok(含特別股)"
     implied = cap / shr
+    # ★ 先看事件推出來的預期面額。⛔ 容忍要**嚴**（1%）：
+    #   它是很specific的解釋，要幾乎完全吻合才採用——這一點跟上面含特別股那段同理。
+    exp = par_expect().get(str(code))
+    if exp and abs(implied - exp) / exp <= 0.01:
+        return f"{exp:g}", "ok(面額變更後)"
     for cand in (10, 5, 1, 0.1):
         if abs(implied - cand) / cand <= 0.05:
             return str(cand), "ok"
@@ -251,20 +373,116 @@ def _latest_daily():
     return os.path.join(UNI_DAILY, fs[-1]) if fs else None
 
 
+# ★ 母體要往回看幾個交易日。⛔ 不是 1。
+#   2026-09-09 查出來的因果（不是猜的，是逐日比對日檔查到的）：
+#     `data/universe/daily/*.csv` **只收當天有成交的證券**（這是本庫已知的陷阱），
+#     而舊版 `load_universe()` 只讀**最新那一個**日檔 ⇒
+#     **成交稀疏的股票在任何一趟都可能不在母體裡，它那一列就永遠不會被重問。**
+#   實測：4154 樂威科-KY 等 6 檔的 `capital` 空著，
+#   而 `tpex-mopsfin-O` 的快照裡**這 8 檔全部都有股本**（連 par 都有）。
+#   ⇒ 先前寫成「那份快照沒涵蓋到」是**錯的診斷**——涵蓋得好好的，
+#     是我方根本沒把它們送進去問。
+#   同一天 4950、7757 補上了，正因為它們 09-08 剛好有成交。
+#   ⇒ 20 個交易日：足以蓋過一般的停牌與冷門股空窗，
+#     又不會把早就下市的代號一直撈回來。
+UNI_LOOKBACK = 20
+# 每一檔在這 20 天裡**最後一次出現**的日期。
+# ⚠ 用途不是查詢，是**解釋空白**：往回看 20 天必然會撈進「已經離開市場」的代號
+#   （2026-09-09 實測撈到 5371 中光電，最後成交 08-21、已不在上櫃名冊裡）。
+#   那種列的 `capital` 永遠補不上，看起來卻跟真的缺口一模一樣。
+#   ⇒ 把「最後成交日不是最新那天」講出來，⛔ 但不要自己宣告它下市——
+#     我方沒有下市的獨立來源，只知道「名冊裡沒有它了」。
+LAST_SEEN = {}
+
+
 def load_universe():
-    """→ {code: (name, market, shares_from_feed)}。以最新 daily 檔為準。"""
-    p = _latest_daily()
+    """→ {code: (name, market, shares_from_feed)}。取最近 UNI_LOOKBACK 個日檔的**聯集**。
+
+    同一檔出現在多天時取**最新那一天**的值（股數會長，舊的不可以蓋新的）。
+    回傳的 `day` 仍然是最新那一個日檔的日期——它的語意是「這批資料的基準日」。
+    """
     out = {}
-    if not p:
+    if not os.path.isdir(UNI_DAILY):
         return out, None
-    with open(p, encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            out[r["stock_id"]] = (r.get("name", ""), r.get("market", ""),
-                                  (r.get("shares") or "").strip())
-    return out, os.path.basename(p)[:-4]
+    fs = sorted(x for x in os.listdir(UNI_DAILY) if x.endswith(".csv"))
+    if not fs:
+        return out, None
+    # 由舊往新讀，後讀到的自然覆蓋先讀到的 ⇒ 同一檔留下最新的一筆。
+    LAST_SEEN.clear()
+    for fn in fs[-UNI_LOOKBACK:]:
+        try:
+            with open(os.path.join(UNI_DAILY, fn), encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = (r.get("stock_id") or "").strip()
+                    if not sid:
+                        continue
+                    out[sid] = (r.get("name", ""), r.get("market", ""),
+                                (r.get("shares") or "").strip())
+                    LAST_SEEN[sid] = fn[:-4]
+        except OSError:
+            continue
+    return out, fs[-1][:-4]
 
 
 # ────────────────────────────────────────────── 市場層端點
+
+ARCH = os.path.join(_ROOT, "universe", "capital")
+# ★ 來源自己宣告的日期欄。⛔ 用它當檔名，**不用今天的日期**——
+#   來源沒更新時我們會寫出同一個檔名（於是跳過），而不是每天多一份一模一樣的。
+_K_ASOF = ("出表日期", "Date", "資料日期", "asof")
+
+
+def archive_snapshot(raw, tag):
+    """把這一趟端點回的**原始快照**存成 `data/universe/capital/<tag>/<出表日期>.csv`。
+
+    ★ 為什麼要有這個（2026-09-09）：
+      `capital.py` 只寫一份 `data/meta/capital.csv`，**每跑一趟覆蓋一次**
+      ⇒ 上市的「已發行普通股數」**每天都被丟掉**。
+
+      而面額變更的偵測器裡，**只有 `shares` 能定量**，上市那半偏偏沒有序列
+      （日檔的 `shares` 欄上市是空的，端點只給當期快照、不吃日期）。
+
+    ⛔ 這與集保是**同一種**「不做就永久失去」：
+      拿不到過去，但**可以從今天起不再丟掉**。做了，序列就會自己長出來。
+
+    ⚠ 檔名用**來源自己宣告的日期**（`出表日期`／`Date`），⛔ 不用今天：
+      來源沒更新時檔名相同 ⇒ 跳過，不會每天堆一份一樣的。
+    ⚠ 已存在就**不覆寫**——同一個出表日期的內容應該是同一份；
+      若哪天不同，那是來源改了，覆寫會把原本那份靜默換掉。
+    """
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception:                                            # noqa: BLE001
+        return None
+    if isinstance(d, dict):
+        for k in ("data", "aaData", "result"):
+            if isinstance(d.get(k), list):
+                d = d[k]
+                break
+    if not isinstance(d, list) or not d or not isinstance(d[0], dict):
+        return None
+    keys = list(d[0].keys())
+    k_asof = _pick(keys, _K_ASOF)
+    if not k_asof:
+        return None                      # ⛔ 沒有日期就不存：存了也不知道那是哪一天的
+    asof = str(d[0].get(k_asof) or "").strip()
+    if not asof:
+        return None
+    dirp = os.path.join(ARCH, tag)
+    fp = os.path.join(dirp, f"{asof}.csv")
+    if os.path.exists(fp):
+        return ("skip", asof, len(d))
+    try:
+        os.makedirs(dirp, exist_ok=True)
+        with open(fp, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(keys)
+            for r in d:
+                w.writerow([str(r.get(k, "")).replace("\n", " ") for k in keys])
+    except OSError:                                              # noqa: BLE001
+        return None
+    return ("write", asof, len(d))
+
 
 def parse_market(raw, tag):
     """→ (dict{code: (name, capital, shares, par, pref)}, note)。看不懂就回空並照抄欄位名。"""
@@ -296,10 +514,14 @@ def parse_market(raw, tag):
         code = str(r.get(k_code, "")).strip()
         if not code or not code[0].isdigit():
             continue
+        if k_par:
+            PAR_RAW[code] = str(r.get(k_par) or "")
+        if k_name:
+            NAME_RAW[code] = str(r.get(k_name) or "")
         out[code] = (str(r.get(k_name, "")).strip(),
                      _num(r.get(k_cap)) if k_cap else "",
                      _num(r.get(k_shr)) if k_shr else "",
-                     _num(r.get(k_par)) if k_par else "",
+                     _num_par(r.get(k_par)) if k_par else "",
                      _num(r.get(k_pref)) if k_pref else "")
     return out, note + f"\n    解析出 {len(out)} 檔"
 
@@ -316,11 +538,132 @@ def cmd_probe(_args):
         if got:
             k = sorted(got)[0]
             lines.append(f"    首筆照抄：{k} {got[k]}")
+    lines += _probe_history()
     os.makedirs(META_DIR, exist_ok=True)
     with open(PROBE, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     print("\n".join(lines))
     return 0
+
+
+# ★ 上市 shares 的**歷史**能不能按月回補（使用者 2026-09-09 的待辦 B-3）
+#   背景：上櫃的 `shares` 每天都在日檔裡，所以上櫃有逐日序列；
+#   上市沒有，只能靠 `mopsfin_t187ap03_L` 這種**快照**端點。
+#   今天起我方會把快照存下來（`archive_snapshot`），但那只解決「從今天起」。
+#   ⇒ 這一節問的是：**過去的拿不拿得到。**
+# ⚠ 2026-09-09 第一版把網址寫成 `mopsfin_t187ap03_L`——那條**回 404**，
+#   於是整節在「連不帶參數的都抓不到」就結束，一個問題都沒答到。
+#   ⛔ 我是從 `CANDIDATES` 裡挑了一條長得像的，沒去看**哪一條真的通**。
+#   真正在用的是 `opendata/t187ap03_L`（同一趟探針裡它 OK、解析出 1,094 檔）。
+#   ⇒ 順帶記一筆：`CANDIDATES` 裡的 `twse-mopsfin-L` 是**死條目**，
+#     它 404 已久而不會有人發現——因為後面的端點補上了，結果看起來正常。
+HIST_BASE = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
+
+
+def _q(k, v):
+    """中文參數名要 percent-encode，⛔ 不可以直接塞進網址。"""
+    return urllib.parse.urlencode({k: v})
+HIST_PROBE = [
+    # ⛔ 參數名一律取自**這個端點自己回應裡的欄位名**，不是我自己想的。
+    #   它的期別欄位叫「出表日期」（民國 YYYMMDD），不是「資料年月」。
+    # ⚠ 參數名是中文 ⇒ **一定要 percent-encode**。
+    #   2026-09-09 第二版直接把中文放進網址，urllib 丟
+    #   `UnicodeEncodeError: 'ascii' codec can't encode…` ⇒ 三發裡有兩發根本沒送出去，
+    #   而輸出看起來只是「✗ 失敗」，很容易被讀成「端點拒絕」——**那是兩回事**。
+    ("加 出表日期=1140630", HIST_BASE + "?" + _q("出表日期", "1140630")),
+    ("加 date=20250630", HIST_BASE + "?date=20250630"),
+    # 「資料年月」是**上櫃**那兩支的欄位名，放這裡當**對照組**：
+    # 它本來就不該生效，若它反而讓回應變了，那代表變化不是期別造成的。
+    ("加 資料年月=11406（對照組）", HIST_BASE + "?" + _q("資料年月", "11406")),
+]
+
+
+def _probe_history():
+    """→ list[str]。⛔ 判準是**內容有沒有變**，不是「有沒有回東西」。
+
+    這個專案被同一個坑咬過：`TWT49U` 不吃 `date` 卻把它原樣回傳，
+    日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
+    ⇒ 帶參數與不帶參數的回應要**逐位元組比**，一樣就是參數沒生效。
+    """
+    L = ["", "", "═══ ★ 上市 shares 的歷史能不能按月回補（B-3）═══",
+         "⛔ 判準：帶參數與不帶參數**回應不一樣**才算參數有生效。",
+         "  一樣 ⇒ 參數被無視（TWT49U 那個坑），"
+         "**不可以**因為「有回東西」就當它可用。"]
+    base, err = get(HIST_BASE, retries=1)
+    if err:
+        L.append(f"  ✗ 連不帶參數的都抓不到：{str(err)[:120]}")
+        return L
+    L.append(f"  基準（不帶參數）：{len(base):,} bytes")
+    # 基準自己宣告的期別——之後用來判斷「回來的是不是我要的那一期」
+    got0, _ = parse_market(base, "base")
+
+    def _ym(b):
+        """回應裡出現的「資料年月」有哪些。⛔ 解成文字再找，不要對 bytes 硬幹。"""
+        t = b.decode("utf-8", "replace")
+        return sorted(set(re.findall(r'"(?:出表日期|資料年月)"\s*:\s*"?([0-9]{5,7})', t)))
+
+    ym0 = _ym(base)
+    L.append(f"  基準解析出 {len(got0)} 檔｜回應裡的出表日期 {ym0[:4] or '（抓不到）'}")
+    res = []
+    for label, url in HIST_PROBE:
+        raw, e = get(url, retries=1)
+        if e:
+            # ⚠ 這裡要分兩種：**我方送不出去**（編碼、拼錯）vs **端點拒絕**。
+            #   兩者長得一樣都是「✗」，但前者不構成任何關於端點的結論。
+            L.append(f"  ✗ {label}：{str(e)[:110]}")
+            res.append((label, "error"))
+            continue
+        same = (raw == base)
+        res.append((label, "same" if same else "diff"))
+        ym = _ym(raw)
+        L.append(f"  {'✗' if same else '★'} {label}：{len(raw):,} bytes｜"
+                 f"與基準{'**完全一樣 ⇒ 參數被無視**' if same else '不同 ⇒ 值得再看'}"
+                 f"｜出表日期 {ym[:4] or '（抓不到）'}")
+    # ── ★ 使用者 2026-09-09 15:40 給的替代路：BWIBBU_d 反推股數
+    #   來源說「該端點含有每日市值與收盤價，可精準計算出每日歷史股數」。
+    #   ⛔ 我方**每天都在抓這支**（feeds 的 `per`），而我方解析出來的 8 欄裡
+    #     **沒有市值**。但那是**我方的解析結果**，不是端點的原始欄位——
+    #     ⇒ 這裡直接把**原始回應的欄位名逐字印出來**，用端點自己說的算。
+    L += ["", "  ── ★ BWIBBU_d 到底有沒有「市值」（使用者提供的反推路）"]
+    for label, day in (("近期", "20260908"), ("2015 年", "20150105")):
+        u = ("https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d"
+             f"?date={day}&selectType=ALL&response=json")
+        rb, eb = get(u, retries=1)
+        if eb:
+            L.append(f"     ✗ {label} {day}：{str(eb)[:110]}")
+            continue
+        try:
+            db = json.loads(rb.decode("utf-8", "replace"))
+        except Exception as ex:                                  # noqa: BLE001
+            L.append(f"     ✗ {label} {day}：不是 JSON（{type(ex).__name__}）")
+            continue
+        fl = [str(x) for x in (db.get("fields") or [])]
+        dt = db.get("data") or []
+        L.append(f"     {label} {day}：stat={db.get('stat')!r}｜列數 {len(dt)}")
+        L.append(f"       欄位逐字：{fl}")
+        hit = [x for x in fl if ("市值" in x or "總市值" in x)]
+        L.append(f"       有沒有「市值」欄：{hit or '**沒有**'}")
+        if dt:
+            L.append(f"       首列照抄：{dt[0]}")
+    L.append("     ⇒ 沒有市值欄 ⇒ 「市值 ÷ 收盤價」這條在**這個端點**上走不通，")
+    L.append("       ⛔ 但那只否證這一條路徑，**不否證反推這個想法**——")
+    L.append("       其他端點若給市值，同樣的算法仍然成立。")
+
+    # ⛔ 上一版把兩種結論都印出來，等於沒有結論。判定要**算出來**再寫。
+    sent = [x for x in res if x[1] != "error"]
+    changed = [x for x in res if x[1] == "diff"]
+    if not sent:
+        L.append("  ⇒ ⚠ **一發都沒有真的送出去**（全是我方的錯誤）"
+                 "⇒ 這一節**什麼都沒問到**，⛔ 不可以當成否定結論。")
+    elif not changed:
+        L.append(f"  ⇒ 真的送出去的 {len(sent)} 發**回應完全一樣** ⇒ "
+                 "這個端點**只給當期**，上市的歷史 shares **我方取不到**。")
+        L.append("    ⛔ 但那不等於「不存在」——MOPS 的股本形成表是另一條還沒試過的路。")
+    else:
+        L.append(f"  ⇒ ★ 有 {len(changed)} 發回應不同：{[x[0] for x in changed]}")
+        L.append("    ⛔ **先別高興**：要再確認回來的出表日期真的是我要的那一期"
+                 "（TWT49U 就是回了東西但期別是當天的）。")
+    return L
 
 
 def cmd_run(_args):
@@ -384,6 +727,10 @@ def cmd_run(_args):
             continue
         got, note = parse_market(raw, tag)
         notes.append(f"{tag} {note.splitlines()[0]}")
+        # ★ 原始快照存檔（見 archive_snapshot 的說明）：拿不到過去，但從今天起不再丟掉
+        arc = archive_snapshot(raw, tag)
+        if arc:
+            notes.append(f"{tag} 快照 {arc[0]} {arc[1]}（{arc[2]} 列）")
         hit, bad = 0, 0
         for code in need:
             if code not in got:
@@ -404,14 +751,14 @@ def cmd_run(_args):
                 #   它們其實全都乾淨：端點自己那一對 資本額÷股數 剛好是 10.000，
                 #   差別只是 daily 比端點新（可轉債轉換、員工認股，股數會慢慢長）。
                 #   **面額只能用端點自己那一對驗**；跨來源的差異另外記，不要混進判定。
-                par_used, nt = reconcile(cap, shr or official, par, pref)
+                par_used, nt = reconcile(cap, shr or official, par, pref, code)
                 if shr and shr != official:
                     nt += (f"|股數以 daily 為準={official}；"
                            f"股本取自 {tag} 的較舊快照（該快照股數={shr}）")
                 rows[code] = [code, name, uni[code][1], cap, official, par_used,
                               f"universe:{day}+{tag}", today, nt]
             elif shr:
-                par_used, nt = reconcile(cap, shr, par, pref)
+                par_used, nt = reconcile(cap, shr, par, pref, code)
                 rows[code] = [code, name, uni[code][1], cap, shr, par_used,
                               tag, today, nt]
             elif cap:
@@ -428,6 +775,21 @@ def cmd_run(_args):
                 bad += 1
         filled += hit
         print(f"  ② {tag}: 補到 {hit} 檔（其中 {bad} 檔股數與資本額對不起來）")
+
+    # ── 空白但「最後成交日不是最新那天」的，另外講
+    stale = []
+    for c in uni:
+        r = rows.get(c)
+        if not r or (r[3] or "").strip():
+            continue
+        if LAST_SEEN.get(c) and LAST_SEEN[c] != day:
+            stale.append((c, uni[c][0], LAST_SEEN[c]))
+    if stale:
+        print(f"  ⚠ 股本空白且最後成交日不是 {day} 的有 {len(stale)} 檔"
+              f"（往回看 {UNI_LOOKBACK} 天撈進來的，可能已離開市場，"
+              f"⛔ 我方沒有下市的獨立來源，不下結論）：")
+        for c, nm, d in sorted(stale)[:10]:
+            print(f"      {c} {nm}｜最後成交 {d}")
 
     total = _write_out(rows)
     miss = sorted(c for c in uni if not rows.get(c, [""] * len(HEADER))[4])

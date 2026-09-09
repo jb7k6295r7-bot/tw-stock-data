@@ -380,10 +380,76 @@ def _finish(head, body):
     print(f"\n[probe] 寫出 {OUT}")
 
 
+# ★★ 第六輪：**長期停止買賣**（2026-09-09 傍晚新增）
+#
+# 為什麼要有這一輪：`breakpoints_unexplained.csv` 的 227 個長洞分層之後，
+# 剩下 6 筆「流動性足夠卻停了 27~203 個交易日」的（4414 如興、1785 光洋科、
+# 5481 新華、6131 鈞泰、1225 福懋油、1591 駿吉-KY），**一筆都不在 `suspend.csv` 裡**。
+#
+# 去看 `suspend.csv` 本身：來源是 `TWTAWU`／`sprcHis`，兩個都是**暫停交易**，
+# 10,034 列裡 **9,594 列是權證**，普通股只有 409 列
+# ⇒ **我方沒有「長期停止買賣」的來源。**
+#
+# ⭐ 而線索早就在我們自己的紀錄裡：`parvalue_probe` 為了找面額變更時量過
+#   `zh/listed/violations/stop.html`，當時的結論是——
+#       「⛔ 不是這一族——它只收**財務業務異常**，明文排除組織變更、重整、減資。」
+#   那句話對**面額變更**是正確的排除理由，但**對這一輪剛好是命中理由**：
+#   長期停止買賣最典型的成因就是財務業務異常。
+#   ⇒ **同一個發現，在另一個問題上是相反的答案。**
+#
+# ⛔ 這一輪只量、不寫資料，判準寫在前面：
+#   ① 頁面／端點裡要**出現我方那 6 檔中的任何一檔**——出現才算對到路
+#   ② 要有**起訖日期**，只有代號清單無法對上洞的區間
+#   ③ ⛔ 「有回東西」不算：`stop.html` 是網頁，可能要 js
+LONGHALT = [
+    # 這一條的網址取自 parvalue_probe 的實測紀錄，⛔ 非自行生成。
+    ("twse-violations-stop", "twse",
+     "https://www.twse.com.tw/zh/listed/violations/stop.html"),
+    # `/rwd/` 是證交所放資料端點的那一層；同名路徑先量一發看有沒有。
+    # ⚠ 這一條**是我依站台慣例拼的**，標明出來——量得到才算，量不到就是量不到。
+    ("twse-rwd-stop（⚠ 我拼的）", "twse",
+     "https://www.twse.com.tw/rwd/zh/listed/violations/stop?response=json"),
+]
+
+
+def probe_longhalt(say, sleep):
+    """→ None。只印，不判。"""
+    TARGET = {"4414": "如興", "1785": "光洋科", "5481": "新華",
+              "6131": "鈞泰", "1225": "福懋油", "1591": "駿吉-KY"}
+    say("\n═══ 第六輪：長期停止買賣（我方目前完全沒有來源）═══")
+    say("判準：① 出現我方那 6 檔中的任何一檔 ② 有起訖日期 ③ ⛔ 有回東西不算")
+    say(f"靶子：{TARGET}")
+    for tag, _mkt, url in LONGHALT:
+        say(f"\n── {tag}\n   {url}")
+        raw, err = get(url)
+        if err:
+            say(f"   ✗ {str(err)[:140]}")
+            continue
+        t = raw.decode("utf-8", "replace")
+        han = len(re.findall("[一-龥]", t))
+        say(f"   ✓ {len(raw):,} bytes｜中文 {han:,} 字"
+            + ("　← ⚠ 太少，多半是 js 空殼" if han < 200 else ""))
+        hit = [k for k in TARGET if k in t]
+        say(f"   ① 靶子命中：{len(hit)}／6 {[(k, TARGET[k]) for k in hit] or '（一檔都沒有）'}")
+        ds = sorted(set(re.findall(r"1[0-9]{2}/[0-9]{2}/[0-9]{2}", t)))
+        ds += sorted(set(re.findall(r"20[0-9]{2}-[0-9]{2}-[0-9]{2}", t)))
+        say(f"   ② 日期 {len(ds)} 個{('｜' + ds[0] + ' ~ ' + ds[-1]) if ds else ''}")
+        for kw in ("停止買賣", "終止上市", "恢復買賣", "財務業務"):
+            say(f"      「{kw}」{t.count(kw)} 次")
+        n_tr = len(re.findall(r"<tr[ >]", t, re.I))
+        n_js = len(re.findall(r"\.js[\"'?]", t))
+        say(f"   ③ <tr> {n_tr} 個｜js {n_js} 支")
+        time.sleep(sleep)
+    say("\n⇒ ① 沒有命中 ⇒ 這條路不對，⛔ **不要**因為名字像就接上去。")
+    say("⇒ ① 有命中但 ③ 是 js 空殼 ⇒ 記成「我方取不到」，"
+        "跟櫃買那三頁同一種，⛔ 不是「證交所沒有」。")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--set", default="round1",
-                    choices=["round1", "params", "names", "suspend2", "halt"],
+                    choices=["round1", "params", "names", "suspend2", "halt",
+                             "longhalt"],
                     help="round1 = 端點在不在｜params = 換參數名｜names = 抓官方頁名｜"
                          "suspend2 = 上櫃停牌（舊站，已證實 DNS 不存在）｜"
                          "halt = 上櫃停牌的 POST 參數（第五輪）")
@@ -395,9 +461,14 @@ def main():
             f"# 指紋比對用的兩個區間：{R1[0]}~{R1[1]} 與 {R2[0]}~{R2[1]}",
             "# 欄位名一律照抄，**不可照猜的寫死**"]
     sets = {"round1": CANDIDATES, "params": PARAM_SWEEP,
-            "names": NAME_HUNT, "suspend2": SUSPEND2}
+            "names": NAME_HUNT, "suspend2": SUSPEND2, "longhalt": LONGHALT}
     head.append(f"# 這一趟的選集：--set {a.set}")
     body = []
+    if a.set == "longhalt":
+        out = []
+        probe_longhalt(out.append, a.sleep)
+        _finish(head, out)
+        return 0
     if a.set == "halt":
         want = ["104", "20150105", "1040105"]
         hbody = []

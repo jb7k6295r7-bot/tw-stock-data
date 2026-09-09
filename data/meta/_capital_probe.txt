@@ -1,7 +1,7 @@
-# 股本端點偵察 2026-09-04T11:17:55+08:00
+# 股本端點偵察 2026-09-09T15:46:24+08:00
 
 == twse-opendata-L OK   https://openapi.twse.com.tw/v1/opendata/t187ap03_L
-    bytes=1326250
+    bytes=1326256
     欄位=['出表日期', '公司代號', '公司名稱', '公司簡稱', '外國企業註冊地國', '產業別', '住址', '營利事業統一編號', '董事長', '總經理', '發言人', '發言人職稱', '代理發言人', '總機電話', '成立日期', '上市日期', '普通股每股面額', '實收資本額', '私募股數', '特別股', '編制財務報表類型', '股票過戶機構', '過戶電話', '過戶地址', '簽證會計師事務所', '簽證會計師1', '簽證會計師2', '英文簡稱', '英文通訊地址', '傳真機號碼', '電子郵件信箱', '網址', '已發行普通股數或TDR原股發行股數']
     對應 code=公司代號 name=公司名稱 cap=實收資本額 shares=已發行普通股數或TDR原股發行股數 par=普通股每股面額 pref=特別股
     解析出 1094 檔
@@ -17,12 +17,8 @@
 </html>
 
 
-== tpex-mopsfin-O OK   https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O
-    bytes=1070806
-    欄位=['Date', 'SecuritiesCompanyCode', 'CompanyName', 'CompanyAbbreviation', 'Registration', 'SecuritiesIndustryCode', 'Address', 'UnifiedBusinessNo.', 'Chairman', 'GeneralManager', 'Spokesman', 'TitleOfSpokesman', 'DeputySpokesperson', 'Telephone', 'DateOfIncorporation', 'DateOfListing', 'ParValueOfCommonStock', 'Paidin.Capital.NTDollars', 'PrivateStock.shares', 'PreferredStock.shares', 'PreparationOfFinancialReportType', 'StockTransferAgent', 'StockTransferAgentTelephone', 'StockTransferAgentAddress', 'AccountingFirm', 'CPA.CharteredPublicAccountant.First', 'CPA.CharteredPublicAccountant.Second', 'Symbol', 'Fax', 'EmailAddress', 'WebAddress', 'IssueShares']
-    對應 code=SecuritiesCompanyCode name=CompanyName cap=Paidin.Capital.NTDollars shares=IssueShares par=ParValueOfCommonStock pref=PreferredStock.shares
-    解析出 890 檔
-    首筆照抄：1240 ('茂生農經股份有限公司', '442323730', '44232373', '', '0')
+== tpex-mopsfin-O FAIL https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O
+    IncompleteRead: IncompleteRead(441976 bytes read, 628833 more expected)
 
 == tpex-opendata-O OK   https://www.tpex.org.tw/openapi/v1/tpex_mainboard_basic_info
     bytes=23902
@@ -38,3 +34,28 @@
 == tpex-esb-basic OK   https://www.tpex.org.tw/openapi/v1/tpex_esb_basic_info
     bytes=23902
     JSON 解析失敗 JSONDecodeError
+
+
+═══ ★ 上市 shares 的歷史能不能按月回補（B-3）═══
+⛔ 判準：帶參數與不帶參數**回應不一樣**才算參數有生效。
+  一樣 ⇒ 參數被無視（TWT49U 那個坑），**不可以**因為「有回東西」就當它可用。
+  基準（不帶參數）：1,326,256 bytes
+  基準解析出 1094 檔｜回應裡的出表日期 ['1150908']
+  ✗ 加 出表日期=1140630：1,326,256 bytes｜與基準**完全一樣 ⇒ 參數被無視**｜出表日期 ['1150908']
+  ✗ 加 date=20250630：1,326,256 bytes｜與基準**完全一樣 ⇒ 參數被無視**｜出表日期 ['1150908']
+  ✗ 加 資料年月=11406（對照組）：1,326,256 bytes｜與基準**完全一樣 ⇒ 參數被無視**｜出表日期 ['1150908']
+
+  ── ★ BWIBBU_d 到底有沒有「市值」（使用者提供的反推路）
+     近期 20260908：stat='OK'｜列數 1083
+       欄位逐字：['證券代號', '證券名稱', '收盤價', '殖利率(%)', '股利年度', '本益比', '股價淨值比', '財報年/季']
+       有沒有「市值」欄：**沒有**
+       首列照抄：['1101', '台泥', '24.30', '3.29', 114, '-', '0.79', '115/2']
+     2015 年 20150105：stat='OK'｜列數 852
+       欄位逐字：['證券代號', '證券名稱', '本益比', '殖利率(%)', '股價淨值比']
+       有沒有「市值」欄：**沒有**
+       首列照抄：['1101', '台泥', '14.88', '5.35', '1.42']
+     ⇒ 沒有市值欄 ⇒ 「市值 ÷ 收盤價」這條在**這個端點**上走不通，
+       ⛔ 但那只否證這一條路徑，**不否證反推這個想法**——
+       其他端點若給市值，同樣的算法仍然成立。
+  ⇒ 真的送出去的 3 發**回應完全一樣** ⇒ 這個端點**只給當期**，上市的歷史 shares **我方取不到**。
+    ⛔ 但那不等於「不存在」——MOPS 的股本形成表是另一條還沒試過的路。

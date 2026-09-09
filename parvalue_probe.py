@@ -43,10 +43,14 @@ TWSE 踩過：`TWT49U` **不吃 `date` 卻把它原樣回傳**，於是日期核
 把當天的四列寫進 2015 年的每一個日期檔。所以本檔**換兩個不同區間各打一發，
 比對回應的標題與列數**——一樣就是參數被無視，不是有歷史。
 """
+import csv
 import io
 import json
 import os
+import re
 import sys
+import traceback
+from datetime import datetime, timedelta, timezone
 
 import backfill as B
 
@@ -222,9 +226,16 @@ def main():
     say("  ⚠ `reducation` 是證交所自己拼錯的，照抄不要訂正。")
     say("  ⛔ `zh/listed/violations/stop.html` 不是這一族——它只收財務業務異常，"
         "明文排除組織變更、重整、減資。名字最像、內容完全不對。")
+    #   ⭐ 2026-09-09 使用者又提供了一支：`change/TWTB7U`。
+    #     TWTB8U 是**恢復買賣參考價**（事後、換完之後的價）；
+    #     TWTB7U 從頁名看是同一族的另一半（很可能是**停止買賣／預告**那一張）。
+    #     ⛔ 但那是從頁名猜的——**量到欄位才算數**，所以放進來一起量，不先寫用途。
+    #     若它帶得出「停止買賣日／換發比例」，上市那半就多一個獨立欄位可以交叉驗。
     for label, path, a2, b2 in (
             ("減資 reducation/TWTAUU", "reducation/TWTAUU", "20150101", "20151231"),
-            ("ETF 分割 split/TWTCAU", "split/TWTCAU", "20250101", "20251231")):
+            ("ETF 分割 split/TWTCAU", "split/TWTCAU", "20250101", "20251231"),
+            ("⭐ change/TWTB7U（使用者提供，用途待量）",
+             "change/TWTB7U", "20250101", "20251231")):
         say(f"\n  ── {label}｜{a2}~{b2}")
         r3, e3 = B.get(f"https://www.twse.com.tw/rwd/zh/{path}"
                        f"?startDate={a2}&endDate={b2}&response=json",
@@ -256,6 +267,256 @@ def main():
             say(f"     → 2025 這年命中 {len(set(want) & codes)}/{len(want)}"
                 "（靶子取自 parvalue_scan.py，不是從回應反推）")
 
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[T7] ★★ change/TWTB7U 把它問到底（使用者 2026-09-09 13:45 又給了一個形式）")
+    # 上一趟已經量出來：stat=OK、title=**變更股票面額預告表**、10 欄，
+    # 其中 `變更股票面額換股率`／`變更前面額`／`變更後面額` 是 TWTB8U **沒有**的。
+    # ⇒ 若它吃得下長區間，上市那半就有**精確換股率**可用，
+    #   跟上櫃用股數倍率同一個等級——而不是只能拿參考價比值。
+    # ★ 使用者給的形式是 `?response=html`、**不帶日期**——那是我沒試過的第三種。
+    #   ⛔ 三種都量，⛔ 不要因為「上一趟有回東西」就假設參數有生效
+    #     （這個專案被靜默截斷騙過兩次）。
+    T7 = "https://www.twse.com.tw/rwd/zh/change/TWTB7U"
+
+    def _cell(row, i):
+        # ⛔ 不可以寫成 `(row or [""]*n)[i]`：row 非空但比 n 短時
+        #   `or` 不會補齊，照樣 IndexError（2026-09-09 被 selftest 擋下）。
+        # ⚠ 定義位置故意放在最外層：上一版寫在巢狀 try 裡，
+        #   `wide is None` 時它根本不會被定義，而 [T8] 節照樣要用 ⇒ NameError。
+        row = row if isinstance(row, (list, tuple)) else []
+        return str(row[i]).strip() if i < len(row) else ""
+
+    def _t7(label, url):
+        r, e = B.get(url, retries=2, timeout=60)
+        if e:
+            say(f"     ✗ {label}：{str(e)[:110]}")
+            return None
+        txt = r.decode("utf-8", "replace")
+        if "response=html" in url:
+            # html 版只量形狀：有幾個 <tr>、抓不抓得到民國日期
+            import re as _re
+            tr = len(_re.findall(r"<tr[ >]", txt, _re.I))
+            dts = sorted(set(_re.findall(r"\b1[0-9]{2}/[0-9]{2}/[0-9]{2}\b", txt)))
+            say(f"     ✓ {label}：{len(r):,} bytes｜<tr> {tr} 個｜"
+                f"民國日期 {len(dts)} 個{('｜' + dts[0] + ' ~ ' + dts[-1]) if dts else ''}")
+            return None
+        try:
+            d = json.loads(txt)
+        except Exception as ex:                                  # noqa: BLE001
+            say(f"     ✗ {label}：不是 JSON（{type(ex).__name__}）｜{len(r):,} bytes")
+            return None
+        t = (B._tables(d) or [{}])[0]
+        dt = t.get("data") or []
+        say(f"     ✓ {label}：stat={d.get('stat')!r}｜title={d.get('title')!r}"
+            f"｜列數 {len(dt)}")
+        return dt
+
+    say("  ── ① 使用者給的形式（不帶日期、response=html）")
+    _t7("html 無日期", f"{T7}?response=html")
+    say("  ── ② 同一個網址但要 json、仍然不帶日期")
+    _t7("json 無日期", f"{T7}?response=json")
+    say("  ── ③ 長區間：2015-01-01 ~ 今天（**這一項是重點**）")
+    #   ⚠ 判準不是「有沒有回東西」，是**列數有沒有比一年那次多**。
+    #     只回 1 列就代表區間沒生效，跟上一趟一樣——那要改成逐年迴圈。
+    today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y%m%d")
+    wide = _t7("2015~今天", f"{T7}?startDate=20150101&endDate={today}&response=json")
+    if wide is not None:
+        say(f"     ⇒ 長區間拿到 **{len(wide)} 列**。"
+            + ("**區間有生效**（比 2025 那次的 1 列多）。"
+               if len(wide) > 1 else
+               "⛔ **和一年那次一樣少 ⇒ 區間多半沒生效**，下一步要逐年迴圈。"))
+        # ★ 逐筆對我方 par_change.csv 的上市那 10 筆。
+        #   ⛔ 這一段的價值在於：換股率是**官方寫出來的數字**，
+        #     不是我方從價格或股數推的——是真正的第三個獨立來源。
+        try:
+            mine = {}
+            with io.open(os.path.join(_ROOT, "meta", "par_change.csv"),
+                         encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    mine[row["stock_id"]] = row
+            hit = miss = 0
+            for r in wide:
+                sid = _cell(r, 1)
+                rate = _cell(r, 4)
+                q = mine.get(sid)
+                if not q:
+                    continue
+                try:
+                    ok = abs(float(rate) - float(q["share_mult"] or 0)) < 1e-6
+                except ValueError:
+                    ok = False
+                hit += ok
+                miss += (not ok)
+                say(f"       {sid}｜官方換股率 {rate}｜我方 share_mult "
+                    f"{q['share_mult'] or '（空）'}｜{'✓' if ok else '✗ 不符'}")
+            say(f"     ⇒ 對上 {hit} 筆｜不符 {miss} 筆")
+        except OSError as ex:                                    # noqa: BLE001
+            say(f"     （對帳跳過：{ex}）")
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[T8] ★★ TWTB8U 一次要七年（使用者 2026-09-09 13:50 提供的形式）")
+    # 使用者給的是 `?startDate=20190101&endDate=20260909&response=html`。
+    # 我方先前**只按年查**，從來沒有一次要過長區間。
+    # ★ 這一節要答的不是「能不能回」，是**兩件我方還沒證明過的事**：
+    #   ① 長區間會不會被截斷（TWTB7U 就是回 1 列、區間根本沒生效）；
+    #   ② **我方上市那批面額變更是不是完整的**——
+    #      今天下午上櫃那 14 筆是靠官方表對完才確定完整的，
+    #      上市這批**從來沒有做過同樣的事**，一直是「掃出來幾筆就是幾筆」。
+    # ⛔ ② 才是重點：漏一筆的後果是那一檔跨事件的長期報酬永遠是錯的，而且不會報錯。
+    say("  ── 一次 2019-01-01 ~ 今天")
+    wide8 = _t7("2019~今天",
+                f"{BASE}?startDate=20190101&endDate={today}&response=json")
+    if wide8 is not None:
+        say(f"     ⇒ 一次拿到 **{len(wide8)} 列**"
+            + ("（比按年查的任何一次多 ⇒ **長區間有生效、沒有被截斷**）"
+               if len(wide8) > 2 else
+               "⛔ **≤2 列，跟按年查一樣少 ⇒ 長區間沒生效**，維持按年迴圈"))
+        got8 = {}
+        for r in wide8:
+            sid = _cell(r, 1)
+            if sid:
+                got8[sid] = _cell(r, 0)
+        # ★ 完整性：我方 par_change.csv 裡**上市**那批，官方是不是每一筆都有
+        try:
+            mine8 = []
+            with io.open(os.path.join(_ROOT, "meta", "par_change.csv"),
+                         encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    if row.get("evidence", "").startswith("twse"):
+                        mine8.append((row["stock_id"], row["event_date"]))
+            miss8 = [k for k in mine8 if k[0] not in got8]
+            say(f"     ── 完整性（雙向，⛔ 只驗一邊等於沒驗）")
+            say(f"       我方上市 {len(mine8)} 筆｜官方這次回 {len(got8)} 檔")
+            say(f"       ① 我方有、官方沒有：{len(miss8)} 筆"
+                + (f" ⚠ {miss8}" if miss8 else "（✓ 我方沒有多編）"))
+            extra8 = [c for c in got8 if c not in {k[0] for k in mine8}]
+            say(f"       ② 官方有、我方沒有：{len(extra8)} 檔"
+                + (f" ⛔ **這才是漏抓** {[(c, got8[c]) for c in extra8]}"
+                   if extra8 else "（✓ 我方沒有漏抓）"))
+            # ⚠ 2019 起才查得到，而我方母體從 2015 起——
+            #   ⛔ 所以「② 是 0」只證明 2019 之後沒漏，**不涵蓋 2015~2018**。
+            say("       ⚠ 這一輪的區間從 2019 開始，我方母體從 2015 開始 ⇒ "
+                "②＝0 只證明 **2019 之後**沒漏，⛔ 2015~2018 仍然沒驗過。")
+        except OSError as ex:                                    # noqa: BLE001
+            say(f"     （完整性跳過：{ex}）")
+    say("  ── 再要一次 2015-01-01 ~ 今天（把 2015~2018 那段也蓋進去）")
+    w15 = _t7("2015~今天",
+              f"{BASE}?startDate=20150101&endDate={today}&response=json")
+    if w15 is not None:
+        say(f"     ⇒ {len(w15)} 列"
+            + ("（比 2019 起那次多 ⇒ 2015~2018 也有事件，**我方要補**）"
+               if wide8 is not None and len(w15) > len(wide8) else
+               "（沒有比 2019 起那次多 ⇒ 2015~2018 沒有上市面額變更）"))
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[T10] ★ 上市面額變更：2015 以前有沒有")
+    # ⚠ 為什麼問這個：要把**面額隨時間**重建出來，就得有完整的事件鏈。
+    #   TWTAUU 實測吃得下 2011 起的區間，所以 TWTB8U 多半也可以——量一下。
+    #   ⛔ 這一節只問「有沒有」，不寫任何序列。
+    w10 = _t7("2000-01-01 ~ 2014-12-31",
+              f"{BASE}?startDate=20000101&endDate=20141231&response=json")
+    if w10 is not None:
+        say(f"     ⇒ 2015 以前 **{len(w10)} 筆**"
+            + ("（⇒ 我方 par_change.csv 從 2015 起是完整的）" if not w10 else
+               "　← ⚠ **有**，那我方的事件鏈在 2015 以前是斷的"))
+        for r in w10[:10]:
+            say(f"       {_cell(r, 0)} {_cell(r, 1)} {_cell(r, 2)}"
+                f"｜{_cell(r, 3)} → {_cell(r, 4)}")
+
+    say("\n[T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆"
+        "（使用者 2026-09-09 15:20 提供）")
+    # 使用者給的形式：`/rwd/reducation/TWTAUU?response=html&startDate=20110101&endDate=…`
+    # ⚠ 注意它**沒有 `/zh/`**，而我方在用的是有 `/zh/` 的。兩個都量，
+    #   ⛔ 不要假設它們是同一條——同站不同路徑回不同東西的事已經遇過。
+    # ★ 但這一節真正的重點跟 [T8] 一樣，而且更重要：
+    #   減資我方有 **535 筆**（2015-01-23 ~ 2026-09-07），
+    #   是面額變更 24 筆的 22 倍，**而且從來沒有跟官方雙向對過**。
+    #   漏一筆的後果是那一檔跨事件的長期報酬永遠錯，而且不會報錯。
+    RED = "https://www.twse.com.tw/rwd/zh/reducation/TWTAUU"
+    RED_NOZH = "https://www.twse.com.tw/rwd/reducation/TWTAUU"
+    say(f"  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ {today}")
+    w9 = _t7("帶 /zh/", f"{RED}?startDate=20110101&endDate={today}&response=json")
+    say("  ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西")
+    w9b = _t7("不帶 /zh/",
+              f"{RED_NOZH}?startDate=20110101&endDate={today}&response=json")
+    if w9 is not None and w9b is not None:
+        say(f"     ⇒ 兩條列數 {len(w9)} vs {len(w9b)}"
+            + ("（一樣 ⇒ 同一個東西，`/zh/` 可有可無）" if len(w9) == len(w9b)
+               else "　← ⚠ **不一樣，要當成兩個端點看**"))
+
+    if w9:
+        # 官方那邊：(代號, 恢復買賣日期)
+        off9 = set()
+        for r in w9:
+            d, sid = _cell(r, 0), _cell(r, 1)
+            if not (d and sid):
+                continue
+            # 民國 104/01/23 → 2015-01-23
+            m = re.match(r"^(1[0-9]{2})/([0-9]{2})/([0-9]{2})$", d)
+            if m:
+                off9.add((sid, f"{int(m.group(1)) + 1911}-{m.group(2)}-{m.group(3)}"))
+        ds = sorted(d for _, d in off9)
+        say(f"     官方 {len(w9)} 列｜解析出 {len(off9)} 筆"
+            f"｜日期 {ds[0] if ds else '?'} ~ {ds[-1] if ds else '?'}")
+
+        # 我方那邊：data/adj/*.csv 裡 event=reduce
+        mine9 = set()
+        adj = os.path.join(_ROOT, "adj")
+        if os.path.isdir(adj):
+            for fn in os.listdir(adj):
+                if not fn.endswith(".csv") or fn.startswith("_"):
+                    continue
+                sid = fn[:-4]
+                try:
+                    with io.open(os.path.join(adj, fn), encoding="utf-8") as fh:
+                        for r in csv.DictReader(fh):
+                            if r.get("event") == "reduce":
+                                mine9.add((sid, (r.get("date") or "").strip()))
+                except OSError:
+                    continue
+        # ⛔ 只比**兩邊都涵蓋的區間**。我方價格從 2015 起，
+        #   官方這一發從 2011 起 ⇒ 拿 2011~2014 的官方事件說我方漏抓是**錯的比法**。
+        lo = min((d for _, d in mine9), default="2015-01-01")
+        off_cmp = {x for x in off9 if x[1] >= lo}
+        miss = sorted(off_cmp - mine9)
+        extra = sorted(mine9 - off9)
+        say(f"     ── 雙向對帳（只比 {lo} 之後，⛔ 我方價格從 2015 起，"
+            "拿更早的官方事件說我方漏抓是錯的比法）")
+        say(f"       我方 {len(mine9)} 筆｜官方（同區間）{len(off_cmp)} 筆")
+        say(f"       ① 官方有、我方沒有：{len(miss)} 筆"
+            + (f"　← ⛔ **這才是漏抓** {miss[:10]}" if miss else "（✓ 沒有漏抓）"))
+        say(f"       ② 我方有、官方沒有：{len(extra)} 筆"
+            + (f"　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）{extra[:10]}"
+               if extra else "（✓ 沒有多編）"))
+        say("       ⚠ ② 不為 0 **不一定是錯**：上櫃減資不在 TWTAUU 裡。"
+            "⛔ 但要逐筆看過才可以這樣說，不要先假設。")
+        # ★ 所以就在這裡看。把 ② 按市場拆開——
+        #   全是 tpex ⇒ 假設成立；**有 twse 混在裡面 ⇒ 那才是真問題**，
+        #   代表我方在上市那半編出了官方沒有的事件。
+        mkt = {}
+        indp = os.path.join(_ROOT, "meta", "industry.csv")
+        if os.path.exists(indp):
+            with io.open(indp, encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    mkt[r["stock_id"]] = r.get("market", "")
+        cnt = {}
+        twse_extra = []
+        for sid, d in extra:
+            m = mkt.get(sid, "（不在 industry.csv）")
+            cnt[m] = cnt.get(m, 0) + 1
+            if m == "twse":
+                twse_extra.append((sid, d))
+        say(f"       ② 按市場拆：{cnt}")
+        if twse_extra:
+            say(f"       ⛔ **其中 {len(twse_extra)} 筆是上市**——"
+                "那不能用「TWTAUU 只收上市」解釋，要逐筆查：")
+            for sid, d in sorted(twse_extra)[:15]:
+                say(f"          {sid} {d}")
+        else:
+            say("       ✓ 沒有一筆是上市 ⇒ 「② 全是上櫃」這個解釋站得住。")
+        say("       ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**"
+            "（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。")
+
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
     say("`adjust.py` 的 EVENT_DIRS 與 BOUNDS。")
@@ -275,4 +536,20 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # ⚠ 探針炸掉時，traceback 只留在 Actions log 裡——而 log 要翻好幾百行才找得到，
+    #   （2026-09-09 實測：tail 900 行都還沒回到那一步）。
+    #   ⇒ **把 traceback 寫進輸出檔**，它會跟著 commit 進 repo。
+    #   這樣「哪一節炸的」下一趟就是既成事實，不必再去考古。
+    #   ⛔ 覆蓋掉上一次成功的內容是**故意的**：這一份的語意是「這一趟看到什麼」，
+    #     上一次的內容在 git 歷史裡找得到，而「看起來是完整結果、其實是上一趟的」
+    #     比缺一份更貴。開頭那個 ✗ 也讓下一趟的重跑條件自動成立。
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except BaseException:                                        # noqa: BLE001
+        say("")
+        say("✗ 這一趟在下面這裡炸掉了，以下是 traceback 原文（沒有整理）：")
+        say(traceback.format_exc())
+        _write(1)
+        raise
