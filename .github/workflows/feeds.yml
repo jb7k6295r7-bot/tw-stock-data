@@ -30,6 +30,18 @@ on:
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-09-03"
+      # ★ 2026-09-09 新增。融資融券補存 `m_prev/m_ret/s_prev/s_ret` 四欄之後，
+      #   **舊日檔要整批重抓**才會有那四欄——而 `run` 預設會跳過已存在的日期。
+      #   ⛔ 不用 `--force`（全部重抓）：2,846 天 × 5 秒 ≈ 4 小時，
+      #     job 上限 350 分鐘，被砍在半路的話下一趟又從第一天重來
+      #     ⇒ **永遠補不完，而且每趟看起來都很正常**。
+      #   ⇒ 填欄名（例如 `m_prev`），只重抓「表頭缺這一欄」的日期。
+      #     ⭐ 進度就是資料本身，不需要另一本台帳，也就不會有台帳與資料不一致。
+      #   ⚠ 重抓是安全的：`write_day` 只在真的拿到列時才寫，
+      #     那一天抓失敗**不會**把既有的好資料清掉。
+      need_col:
+        description: "只重抓「表頭缺這一欄」的既有日期（補欄位用，可續跑；平常留空）"
+        default: ""
 
 permissions:
   contents: write
@@ -80,7 +92,8 @@ jobs:
           #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
           python feeds.py --run --feed "${{ inputs.feed }}" \
             --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
-            --sleep "${{ inputs.sleep || '5' }}"
+            --sleep "${{ inputs.sleep || '5' }}" \
+            ${{ inputs.need_col && format('--need-col {0}', inputs.need_col) || '' }}
 
       # ★ 產業別對照表。選股規則的「排除金融保險與生技醫療」與
       #   「同一類股當日最多 2 檔」都靠它，而 meta/stocks.csv 沒有這欄。

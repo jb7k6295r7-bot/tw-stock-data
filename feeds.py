@@ -1236,7 +1236,24 @@ def cmd_feed(args):
     if os.path.isdir(d):
         done = {n[:-4] for n in os.listdir(d) if n.endswith(".csv")}
     days, how = _target_days(args)
-    days = [x for x in days if args.force or x not in done]
+    need = getattr(args, "need_col", "")
+    stale = set()
+    if need:
+        # ⛔ 只讀第一行。2,846 個檔全部讀完是幾百 MB，而我只要表頭。
+        for x in sorted(done):
+            p_ = os.path.join(d, x + ".csv")
+            try:
+                with open(p_, encoding="utf-8") as f_:
+                    head = f_.readline()
+            except OSError:
+                continue
+            if need not in [c.strip() for c in head.rstrip("\n").split(",")]:
+                stale.add(x)
+        print(f"[{name}] --need-col {need}：已存在的 {len(done)} 天裡，"
+              f"**{len(stale)} 天的表頭缺這一欄**，要重抓")
+        if not stale:
+            print(f"[{name}] ⇒ 這個區間已經全部有 `{need}` 欄了，沒有要重抓的")
+    days = [x for x in days if args.force or x not in done or x in stale]
     if args.limit:
         days = days[:args.limit]
     print(f"[{name}] {FEEDS[name]['status']}")
@@ -1476,6 +1493,13 @@ def main():
     ap.add_argument("--end", default="2026-09-03")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    # ★★ 2026-09-09。加新欄位之後**舊日檔要重抓**，而 `--force` 是「全部重抓」：
+    #   一趟跑不完（2,846 天 × 5 秒 ≈ 4 小時，job 上限 350 分鐘）就會被砍在半路，
+    #   而下一趟又從第一天重來 ⇒ **永遠補不完，而且每趟看起來都很正常**。
+    #   ⇒ `--need-col` 用「檔案自己的表頭」當進度：有這一欄就跳過。
+    #   ⭐ 不需要另外開一個進度台帳——**資料本身就是進度**，也就不會有台帳與資料不一致。
+    ap.add_argument("--need-col", default="",
+                    help="重抓「表頭缺這一欄」的既有日期（補欄位用，可續跑）")
     ap.add_argument("--saturdays", action="store_true",
                     help="（已無作用）改照 data/universe/daily 的交易日曆走；"
                          "拿不到日曆時的退路一律含週六。保留只為相容既有指令。")
