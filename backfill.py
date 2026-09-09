@@ -442,8 +442,25 @@ def parse_twse(d, day, market="twse"):
             if not code or not code[0].isdigit():
                 continue
             o, h, l, c = _num(r[i_o]), _num(r[i_h]), _num(r[i_l]), _num(r[i_c])
-            if not c:
-                continue
+            # ⛔⛔ 2026-09-10 使用者裁定「甲」之後拿掉的那一行 `if not c: continue`。
+            #
+            #   那一行丟掉的是**官方確實發布、但當天沒有成交價**的列。
+            #   市場情報分析線 00:20 的官方直接證據（tpex `afterTrading/tradingStock`）：
+            #     6904 伯鑫 2026 年 9 月，官方 7 個交易日、我方只有 3 天。
+            #   全庫規模（`missing_rows.py` 用六張官方清單差集量的）：
+            #     **至少 67,446 筆／1,191 檔**，2015 起十一年一致。
+            #
+            #   ⛔ 而「成交張數 0」**不等於「沒有交易」**：那三天的成交仟元是 2／8／2
+            #     ——那是**零股成交**。所以這些列的 `volume`／`amount` 不一定是 0，
+            #     ⇒ **照官方原文寫，不要自己填 0，也不要自己補價格。**
+            #
+            #   ⚠ 代價講清楚：`close` 從此**可能是空字串**。
+            #     這是把一個**靜默的偏誤**（序列有洞 ⇒「取最後 N 列」跨的天數比 N 多）
+            #     換成一個**會叫的失敗**（`float('')` 會炸）。⭐ 後者才修得掉。
+            #   ⇒ 為了讓下游**不必靠「空不空」去猜**，這種列在 `price_basis` 標成
+            #     `無成交`（那一欄本來就是講「close 是怎麼來的」，興櫃標 `均價/額推算`）。
+            no_close = not c
+            basis = "無成交" if no_close else ""
             # 漲跌有兩種寫法：TWSE 拆成「方向欄（HTML 的 +/-）＋ 漲跌價差」，
             # TPEx 則是單一「漲跌」欄、正負號直接寫在值裡。兩種都要吃。
             if i_chg is not None:
@@ -460,6 +477,8 @@ def parse_twse(d, day, market="twse"):
             lim = ""
             if o and h and l and c and o == h == l == c:
                 lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
+            # ⛔ 沒有成交價的列不判漲跌停：沒有價格就沒有「停」可言。
+            #   （上面那個條件本來就過不了，這一行是把意圖寫出來，不是修 bug。）
             out.append([f"{day}_{code}", day, code,
                         str(r[i_name]).strip() if i_name is not None else "", market,
                         o, h, l, c,
@@ -467,7 +486,8 @@ def parse_twse(d, day, market="twse"):
                         _num(r[i_a]) if i_a is not None else "", chg, lim,
                         _num(r[i_sh]) if i_sh is not None else "",
                         _num(r[i_tx]) if i_tx is not None else "",
-                        ""])          # price_basis：上市／上櫃是收盤價，留空
+                        basis])       # price_basis：有成交價時留空；
+                                      # ⭐ 沒有成交價時是 `無成交`（見上面那段）
         return out, f"欄位={fields}"
     return [], "找不到含『證券代號』與『收盤』的表"
 
@@ -617,12 +637,37 @@ def write_day(day, lines):
     return len(kept)
 
 
+def _gateway_blocked(note):
+    """這一趟的失敗是不是**我方閘道**擋的（不是交易所擋的）？
+
+    ⛔ 2026-09-10 實測代價：我在開發容器裡跑了一次 `--run` 當測試，
+      容器對交易所是 `Tunnel connection failed: 403 Forbidden`——
+      那是**我方 proxy 對 CONNECT 回的 403**，不是交易所回的。
+      結果它把一列 `2026-09-08,0,0,0,0,twse:失敗(...)` 寫進
+      `_coverage_backfill.csv`，而 `done_days()` 會讀那個 note ⇒
+      那一天從此被標成「失敗過」。**假資料，而且會影響之後要不要重抓。**
+
+    ⭐ 這兩種 403 的意思完全相反：
+      對方擋 ⇒ Actions 上也會擋；**我方閘道擋 ⇒ Actions 上是通的**。
+    ⇒ 我方閘道擋下的那一趟**什麼都不知道**，⛔ 不可以寫成「那天抓失敗」。
+    """
+    t = str(note)
+    return ("Tunnel connection failed" in t) or ("connect_rejected" in t)
+
+
 def append_coverage(day, per_market, note):
     """★ 不完整的日子一定要留紀錄。
 
     某一天只抓到上市、沒抓到上櫃，如果不標，回測時會把「沒抓到」當成
     「上櫃股當天全部沒交易」——那是**靜默失真**，比整天缺資料還糟。
+
+    ⛔ 但**我方閘道擋下來的那一趟不寫**（見 `_gateway_blocked`）：
+      那一趟對「那天有沒有資料」一無所知，寫進去就是假紀錄。
     """
+    if sum(per_market.values()) == 0 and _gateway_blocked(note):
+        print(f"[backfill] ⚠ {day}：**我方閘道擋下 CONNECT**（不是交易所擋的）"
+              "⇒ 這一趟什麼都沒問到，⛔ 不寫 coverage。要在 Actions 上跑。")
+        return
     os.makedirs(UNI_DIR, exist_ok=True)
     # ★ 以日期為主鍵合併後整份重寫，**不可以用 "a" 純追加**。
     #   2026-09-03 實測：同一天重跑三次就留下三列（2015-01-01 出現 3 次），
@@ -1272,6 +1317,31 @@ def cmd_run(args):
         SLEEP = args.sleep
     markets = [m.strip() for m in args.markets.split(",") if m.strip()]
     skip = done_days() if not args.force else set()
+    # ★★ 2026-09-10「甲」的回補要能**續跑**。
+    #   `--force` 是「全部重抓」：2,848 天 × 2 市場 × 5 秒 ≈ 7.9 小時，
+    #   而 job 上限 350 分鐘 ⇒ 被砍在半路的話**下一趟又從第一天重來**，
+    #   永遠補不完，而且每一趟的 log 都很正常。
+    #
+    #   ⭐ 續跑的判準用**資料自己**：「這一天的日檔裡有沒有任何一列
+    #     `price_basis == '無成交'`」——那正是這次回補要補進去的東西
+    #     ⇒ **續跑判準就是成功判準**，不需要另一本台帳，也就不會台帳與資料不一致。
+    #   ⚠ 這個判準成立的前提是「每一天至少漏一列」，而那是量過的：
+    #     `_missing_rows_by_day.csv` 2,848 天裡 **missing=0 的有 0 天**。
+    #     ⛔ 如果哪天這個前提不成立，那一天會被每趟重抓——白費，但不會出錯。
+    if getattr(args, "need_notrade", False):
+        has = set()
+        if os.path.isdir(DAILY_DIR):
+            for n in os.listdir(DAILY_DIR):
+                if not n.endswith(".csv"):
+                    continue
+                try:
+                    with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
+                        if any("無成交" in ln for ln in f):
+                            has.add(n[:-4])
+                except OSError:
+                    pass
+        skip = has
+        print(f"[backfill] --need-notrade：已經有『無成交』列的 {len(has)} 天跳過")
     days = [d for d in daterange(args.start, args.end, args.saturdays) if d not in skip]
     if args.limit:
         days = days[:args.limit]
@@ -1345,6 +1415,9 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    ap.add_argument("--need-notrade", action="store_true",
+                    help="只重抓「檔案裡還沒有任何『無成交』列」的日期"
+                         "（2026-09-10「甲」的回補用，可續跑）")
     # ★ --inst 已改照交易日曆走，不看這個旗標；--run 仍然需要它
     #   （--run 產生的正是那份日曆，不能拿日曆當自己的輸入）。
     ap.add_argument("--saturdays", action="store_true",

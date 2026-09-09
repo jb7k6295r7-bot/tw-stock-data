@@ -32,6 +32,21 @@ on:
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-08-28"
+      # ★★ 2026-09-10 使用者裁定「甲」：母體日檔要**補回官方有、我方沒有的那些列**
+      #   （`parse_twse()` 的 `if not c: continue` 丟掉的，全庫至少 67,446 筆／1,191 檔）。
+      #   ⛔ 不要用 force 跑全期：2,848 天 × 2 市場 × 5 秒 ≈ 7.9 小時，
+      #     job 上限 350 分鐘 ⇒ 被砍在半路的話下一趟又從第一天重來。
+      #   ⇒ 用 need_notrade：只重抓「檔案裡還沒有任何『無成交』列」的日期。
+      #     ⭐ 續跑判準就是成功判準，不需要另一本台帳。
+      #     （前提量過：`_missing_rows_by_day.csv` 2,848 天裡 missing=0 的有 **0 天**。）
+      need_notrade:
+        description: "只重抓「還沒有無成交列」的日期（甲的回補用，可續跑）"
+        type: boolean
+        default: false
+      force:
+        description: "已存在的日期也重抓（⛔ 全期會跑 7.9 小時，補欄位請用 need_notrade）"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -98,7 +113,9 @@ jobs:
             --end   "${{ inputs.end }}" \
             --markets "${{ inputs.markets }}" \
             --sleep "${{ inputs.sleep || '5' }}" \
-            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
+            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }} \
+            ${{ inputs.need_notrade && '--need-notrade' || '' }} \
+            ${{ inputs.force && '--force' || '' }}
 
       # 探路失敗也要 commit：偵察檔本身就是這一趟的產出
       - name: Commit 回 repo
