@@ -1,4 +1,4 @@
-# 股本端點偵察 2026-09-09T14:57:59+08:00
+# 股本端點偵察 2026-09-09T15:00:51+08:00
 
 == twse-opendata-L OK   https://openapi.twse.com.tw/v1/opendata/t187ap03_L
     bytes=1326256
@@ -43,8 +43,11 @@
 ═══ ★ 上市 shares 的歷史能不能按月回補（B-3）═══
 ⛔ 判準：帶參數與不帶參數**回應不一樣**才算參數有生效。
   一樣 ⇒ 參數被無視（TWT49U 那個坑），**不可以**因為「有回東西」就當它可用。
-  ✗ 連不帶參數的都抓不到：HTTP 404 <html>
-<head><title>404 Not Found</title></head>
-<body>
-<center><h1>404 Not Found</h1></center>
-<hr><center
+  基準（不帶參數）：1,326,256 bytes
+  基準解析出 1094 檔｜回應裡的出表日期 ['1150908']
+  ✗ 加 出表日期=1140630：UnicodeEncodeError: 'ascii' codec can't encode characters in position 28-31: ordinal not in range(128)
+  ✗ 加 date=20250630：1,326,256 bytes｜與基準**完全一樣 ⇒ 參數被無視**｜出表日期 ['1150908']
+  ✗ 加 資料年月=11406（對照組）：UnicodeEncodeError: 'ascii' codec can't encode characters in position 28-31: ordinal not in range(128)
+  ⇒ 三發都「完全一樣」⇒ 這個端點**只給當期**，上市的歷史 shares **我方取不到**，
+    ⛔ 但那不等於「不存在」——MOPS 的股本形成表是另一條還沒試過的路。
+  ⇒ 任何一發不同 ⇒ **先別高興**，要再確認回來的期別真的是我要的那一期（TWT49U 就是回了東西但期別是當天的）。
