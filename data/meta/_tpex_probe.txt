@@ -332,6 +332,14 @@
      ✓ 11,776 bytes
      inline script 3 段
      （inline script 裡沒有像在組請求的片段）
+     `data-*` 屬性 4 種：
+       data-format='D'
+       data-format='csv'
+       data-format='print'
+       data-start='20190909'
+     像「路徑＋查詢字串」的（1 個，逐字）：
+       //fonts.googleapis.com/css2?family=Noto
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「恢復買賣」5 次
        出現「參考價」4 次
@@ -343,6 +351,12 @@
      ✓ 11,276 bytes
      inline script 3 段
      （inline script 裡沒有像在組請求的片段）
+     `data-*` 屬性 2 種：
+       data-format='csv'
+       data-format='print'
+     像「路徑＋查詢字串」的（1 個，逐字）：
+       //fonts.googleapis.com/css2?family=Noto
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」8 次
 
@@ -351,6 +365,10 @@
      ✓ 19,945 bytes
      inline script 2 段
      （inline script 裡沒有像在組請求的片段）
+     `data-*` 屬性 0 種：
+     像「路徑＋查詢字串」的（1 個，逐字）：
+       //fonts.googleapis.com/css2?family=Noto
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」13 次
 
