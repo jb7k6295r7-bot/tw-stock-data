@@ -135,6 +135,26 @@ jobs:
             fi
           done
 
+      # ★ 長期停止買賣（第六輪）。⛔ 不放進上面那個迴圈：它要帶 `--set`，
+      #   而那個迴圈的契約是「腳本:輸出檔」對、不帶參數。
+      #   ⚠ 它寫的 `_suspend_probe.txt` 也是「只測不寫資料」，
+      #     所以下面的白名單要一起加，否則整趟會被那個守門的檢查擋掉。
+      - name: 長期停止買賣探針
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          RC=0
+          python suspend_probe.py --set longhalt --sleep 2 || RC=$?
+          if [ "$RC" -ne 0 ]; then
+            echo "⛔ suspend_probe --set longhalt 非 0 結束（rc=$RC）"
+            {
+              echo ""
+              echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') suspend_probe.py --set longhalt 非 0 結束（rc=$RC），"
+              echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
+            } >> data/meta/_suspend_probe.txt
+          fi
+
       - name: Commit 回 repo
         if: always()
         run: |
@@ -152,7 +172,8 @@ jobs:
                   | grep -v 'data/meta/_tpex_probe.txt' \
                   | grep -v 'data/meta/_parvalue_probe.txt' \
                   | grep -v 'data/meta/_twsthr_probe.txt' \
-                  | grep -v 'data/meta/_holiday_probe.txt' || true)
+                  | grep -v 'data/meta/_holiday_probe.txt' \
+                  | grep -v 'data/meta/_suspend_probe.txt' || true)
           if [ -n "$OTHER" ]; then
             echo "⛔ 探針動到了探針輸出以外的檔案——這支說好只測不寫資料：" >&2
             echo "$OTHER" >&2
