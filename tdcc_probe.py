@@ -458,7 +458,19 @@ def main():
                     h13):
                 f13[m.group(1)] = m.group(2)
             opts13 = sorted(set(re.findall(r'value="(20\d{6})"', h13)), reverse=True)
-            say(f"  form 欄位 {len(f13)} 個：{sorted(f13)[:10]}｜日期選項 {len(opts13)} 個")
+            # ⛔ 上一版只印**欄位名**，沒印**值**——而這一趟就卡在這裡：
+            #   我看到 form 有個 `method` 欄，卻不知道它的值是什麼，
+            #   而我送出去的是「照抄頁面原值」⇒ **若它原本是空的，我就送了個空的**。
+            #   ⚠ 印名字不印值，等於知道有這個問題卻拿不到判斷它的資訊。
+            say(f"  form 欄位 {len(f13)} 個（**逐字連值**）：")
+            for k in sorted(f13):
+                v = f13[k]
+                say(f"    {k} = {v[:60]!r}{'…' if len(v) > 60 else ''}"
+                    f"{'   ← ⚠ 空值' if v == '' else ''}")
+            say(f"  日期選項 {len(opts13)} 個")
+            # ★ 頁面自己的 js/HTML 裡有沒有寫 `method` 要送什麼？⛔ 不猜，只撈頁面上出現的
+            mv = sorted(set(re.findall(r'method["\']?\s*[:=]\s*["\']([A-Za-z0-9_]{2,30})', h13)))
+            say(f"  頁面裡出現的 `method=…` 候選值（逐字，⛔ 沒有就是沒有）：{mv[:10] or '（沒有）'}")
             if not opts13:
                 say("  ⚠ 沒有日期選項，下面那幾發沒有意義")
             for tag, day in (("最新", opts13[0] if opts13 else ""),
