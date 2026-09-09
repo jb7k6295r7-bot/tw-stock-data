@@ -38,17 +38,29 @@ def write(path, header, rows):
             f.write(",".join(str(x) for x in r) + "\n")
 
 
-def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False):
+# ★ 2026-09-09：融資融券補存四欄，**接在舊表頭後面**。
+#   ⇒ 回補進行到一半時，同一個 kind 底下會同時有 9 欄與 13 欄的日檔。
+MG13 = MG + ",m_prev,m_ret,s_prev,s_ret"
+# ⛔ 而「表頭不一致要中止」那條原本的測試，fixture 是「多一欄 extra」——
+#   那在新規則下**是合法的加欄**。⇒ 那個 fixture 不再測得到它要測的東西，
+#   改成**換欄序**（欄名一樣、位置不同），那才是真的錯位。
+MGX = "date,stock_id,m_sell,m_buy,m_balance,m_limit,s_buy,s_sell,s_balance"
+
+
+def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False,
+                  grow_header=False):
     uni = os.path.join(root, "data", "universe")
     for i, d in enumerate(DAYS):
         # margin：上市 / 上櫃 各一檔
         write(os.path.join(uni, "margin", f"{d}.csv"), MG,
               [[d, c, 1, 2, 100 + i, 999, 0, 0, 5] for c in TW])
-        h = MG + ",extra" if break_header else MG
+        h = MGX if break_header else (MG13 if grow_header else MG)
         ot = OT + (["2330"] if overlap else [])
+        # ⭐ grow_header：只有**上櫃**那半邊有新四欄，上市那半邊還是舊 9 欄
+        #   ——這正是回補跑到一半的樣子。
         write(os.path.join(uni, "otcmargin", f"{d}.csv"), h,
-              [[d, c, 1, 2, 200 + i, 999, 0, 0, 5] + ([9] if break_header else [])
-               for c in ot])
+              [[d, c, 1, 2, 200 + i, 999, 0, 0, 5]
+               + ([11, 12, 13, 14] if grow_header else []) for c in ot])
         # per
         write(os.path.join(uni, "per", f"{d}.csv"), PR,
               [[d, c, 100 + i, 2.5, 114, 15.0, 3.0, "114/2"] for c in TW])
@@ -150,8 +162,33 @@ def main():
         build_fixture(root, break_header=True)
         rc, out = run(root, "margin")
         print("── 判定：表頭不一致 ──")
-        chk("上櫃多一欄時整支中止（回傳碼非 0）", rc != 0, f"rc={rc}")
-        chk("而且說得出是哪個檔、差在哪", "欄位與先前不同" in out)
+        chk("上櫃**換欄序**時整支中止（回傳碼非 0）", rc != 0, f"rc={rc}")
+        chk("而且說得出是哪個檔、差在哪",
+            "不是前綴關係" in out, out[-400:])
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    # ── ⭐ 表頭「加欄」：這一種要**放行**，而且舊檔缺的欄要補空字串（⛔ 不是 0）──
+    #   ⚠ 沒有這個案例的話，2026-09-09 融資融券回補跑到一半時個股庫會整個壞掉，
+    #     而那會壞好幾個小時、甚至好幾趟——**而且是靜默的**（transpose 直接 return 1）。
+    root = tempfile.mkdtemp(prefix="tposetest_")
+    try:
+        build_fixture(root, grow_header=True)
+        rc, out = run(root, "margin")
+        print("── 判定：表頭加欄（回補進行中）──")
+        chk("新舊欄數混在一起時**不中止**", rc == 0, f"rc={rc}｜{out[-500:]}")
+        chk("而且有講出欄數不一致與「補空字串不是 0」",
+            "欄數不一致" in out and "空字串" in out, out[-500:])
+        d = os.path.join(root, "data", "stocks_margin")
+        new_rows = rows_of(os.path.join(d, "8299.csv"))     # 上櫃＝有新欄
+        old_rows = rows_of(os.path.join(d, "2330.csv"))     # 上市＝沒有新欄
+        chk("新欄有進到個股檔（8299 的 m_prev=11）",
+            new_rows and new_rows[0].get("m_prev") == "11", str(new_rows[:1]))
+        chk("⛔ 舊檔那半邊的新欄是**空字串**，不是 0",
+            old_rows and old_rows[0].get("m_prev") == "", str(old_rows[:1]))
+        chk("舊欄沒有錯位（2330 的 m_buy 還是 1、m_balance 還是 100）",
+            old_rows and old_rows[0].get("m_buy") == "1"
+            and old_rows[0].get("m_balance") == "100", str(old_rows[:1]))
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

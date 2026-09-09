@@ -401,8 +401,21 @@ def _margin_rows(t, day, known, idx, tag):
         if not (okm and oks):
             bad += 1
             continue
+        # ★★ 2026-09-09 補存 `m_prev/m_ret/s_prev/s_ret`（前日餘額與現／券償）。
+        #   ⚠ 這四欄**本來就已經解析出來了**，只是沒寫出去——上面那條恆等式就在用它們。
+        #   ⛔ 為什麼不能用「昨天的今日餘額」回推、非補不可？**因為量過了**：
+        #     `現償 = 昨日餘額 + 買 − 賣 − 今日餘額` 這樣代換，
+        #     margin 有 4,574 列、otcmargin 有 3,205 列會算出**負的現償**
+        #     ⇒ 代換一定錯（這還只是下限：算出非負的不代表對）。
+        #   ⚠ 我原本的假說是「那些是除權息調整日」——**假說被自己的資料推翻了**：
+        #     落在該檔 adj 事件日的只有 2.95%／2.78%（負控 0.37%／0.41%）。
+        #     ⇒ 有統計上真的關聯，但**只解釋得了 3%**，其餘 97% 原因不明。
+        #   ⭐ 結論：這兩組數字是**真的遺失資訊**，不是可推導的冗餘欄。
+        #   ★ 新欄一律**接在舊表頭後面**，讓舊檔的表頭是新表頭的前綴——
+        #     transpose 才有辦法在回補進行到一半時仍然合併得起來（見那支的說明）。
         out.append([day, code, vals["m_buy"], vals["m_sell"], vals["m_balance"],
-                    vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"]])
+                    vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"],
+                    vals["m_prev"], vals["m_ret"], vals["s_prev"], vals["s_ret"]])
     return out, f"{len(out)} 列可用（{tag}；餘額恆等式不符丟棄 {bad} 列）"
 
 
@@ -786,8 +799,10 @@ FEEDS = {
     # ── 未驗證，候選清單 ────────────────────────────────────
     "margin": {
         "dir": "margin",
+        # ★ 後四欄 2026-09-09 新增，⛔ **一定要接在最後**（見 `_margin_rows`）。
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
-                   "s_buy", "s_sell", "s_balance"],
+                   "s_buy", "s_sell", "s_balance",
+                   "m_prev", "m_ret", "s_prev", "s_ret"],
         "parse": parse_margin,
         "known": True,
         "urls": lambda day: [_twse("marginTrading/MI_MARGN", day, "&selectType=ALL")],
@@ -815,8 +830,10 @@ FEEDS = {
     },
     "otcmargin": {
         "dir": "otcmargin",
+        # ★ 後四欄 2026-09-09 新增，⛔ **一定要接在最後**（見 `_margin_rows`）。
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
-                   "s_buy", "s_sell", "s_balance"],
+                   "s_buy", "s_sell", "s_balance",
+                   "m_prev", "m_ret", "s_prev", "s_ret"],
         "parse": parse_otcmargin,
         "known": True,
         "urls": lambda day: [_tpex("margin/balance", day, "&id=")],
