@@ -58,6 +58,11 @@ QRY_PAGE = "https://www.tdcc.com.tw/portal/zh/smWeb/qryStock"
 AJAX = "https://www.tdcc.com.tw/portal/smWeb/qryStockAjax"
 OUT = os.path.join(_ROOT, "meta", "_tdcc_probe.txt")
 
+# 查詢頁多半要指定標的才肯回東西，所以每一發都帶一檔。
+# ⛔ 這個值只是「隨便一檔活著的上市股」，不是判定的一部分——
+#   判定一律看**回應自己宣告的日期**，不是看我送出去的參數。
+SAMPLE = "2330"
+
 URL = "https://opendata.tdcc.com.tw/getOD.ashx?id=1-5"
 
 # ★ 兩個還沒解決的問題，兩個都不猜、都去看官方頁面自己怎麼說（網址來自 WebSearch）：
