@@ -47,7 +47,7 @@
      ✓ 69,367 bytes
      ★ 資料日期選項 51 個：['20260904', '20260828', '20260821', '20260814', '20260807'] … ['20250926', '20250919', '20250912']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['792-4311', '02-2719']
+     ★ 疑似級距文字：['7-2514', '02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -117,6 +117,16 @@
 
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
+[13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
+  ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
+  form 欄位 7 個：['SYNCHRONIZER_TOKEN', 'SYNCHRONIZER_URI', 'firDate', 'method', 'sqlMethod', 'stockName', 'stockNo']｜日期選項 51 個
+    scaDate 最新 20260904：2 bytes｜回應裡的日期 []｜大數字 0 個
+    firDate 最新 20260904：2 bytes｜回應裡的日期 []｜大數字 0 個
+    scaDate 較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+    firDate 較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+  ⇒ 仍然全是空回應 ⇒ 擋點也不是 Cookie，那就要到「這條路在不執行 js 的前提下走不通」為止。
+  ⇒ 有內容 ⇒ **集保歷史抓得到**，寫回補（51 週）。
+
 [7] ★ 歷史週別（第二版：每發重抓 token、兩個日期欄名都試）
     日期選項 51 個｜最新 20260904｜較舊 20260313｜最舊 20250912
 
@@ -150,7 +160,7 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 540,539 bytes
+     ✓ 540,735 bytes
      更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
      檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
@@ -187,7 +197,7 @@
        （一個都沒有）
 
   ── 開放資料專區：https://www.tdcc.com.tw/portal/zh/stats/openData
-     ✓ 64,291 bytes｜CSV 407 列｜**相異資料日期 0 個** []
+     ✓ 64,287 bytes｜CSV 407 列｜**相異資料日期 0 個** []
        「小-大」數字對 118 個｜**最長連續鏈 2 段**｜「N 以上」0 個
        （接不成鏈，最長只有 2 段——這些多半是電話或代碼，不是級距）
 
