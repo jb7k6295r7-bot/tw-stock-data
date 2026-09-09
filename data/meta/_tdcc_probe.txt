@@ -150,7 +150,7 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 541,089 bytes
+     ✓ 540,960 bytes
      更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
      檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
@@ -178,7 +178,7 @@
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 4 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
@@ -212,55 +212,51 @@
   頂層鍵：['openapi', 'info', 'servers', 'paths', 'components']
   ★★ 這一份自己就是規格：端點 134 個
 
-  ── 規格：http://www.tdcc.com.tw/tcdata/tc11/
-     ✗ HTTP 404 Not Found | <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>404 Not Found</title>
-</head
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/6-3
-     ✓ 3 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/6-2
-     ✓ 3 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/6-1
-     ✓ 3 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-9
-     ✓ 343,478 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-8
-     ✓ 46,040 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-7
-     ✓ 353,022 bytes
-     （沒有可辨識的級距鏈，最長 1 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-6
-     ✓ 92,885 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-5
-     ✓ 3 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-4
-     ✓ 74,714 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-3
-     ✓ 11,899 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
-
-  ── 規格：https://openapi.tdcc.com.tw/v1/opendata/5-2
-     ✓ 13,550 bytes
-     （沒有可辨識的級距鏈，最長 0 段）
+  ★★ 直接讀這一份的規格（servers.url = '/'）
+     端點 134 個｜**吃日期／期別的 0 個**
+     ⚠ **一個吃日期的都沒有** ⇒ 這一份規格裡的端點只給當期。⛔ 但那只說明**這一份**，不等於集保沒有歷史。
+     ── 其餘（只給當期）──
+       /v1/opendata/1-1｜股務資訊｜證券基本資料｜參數 []
+       /v1/opendata/1-10｜股務資訊｜私募有價證券無實體登錄資料查詢：特別股｜參數 []
+       /v1/opendata/1-11｜股務資訊｜私募有價證券無實體登錄資料查詢：公司債｜參數 []
+       /v1/opendata/1-12｜股務資訊｜私募有價證券無實體登錄資料查詢：轉換公司債｜參數 []
+       /v1/opendata/1-13｜股務資訊｜有價證券轉(交)換/認股價格變更資料查詢｜參數 []
+       /v1/opendata/1-14｜股務資訊｜有價證券董事收購相關資訊｜參數 []
+       /v1/opendata/1-2｜股務資訊｜公司股務單位資料｜參數 []
+       /v1/opendata/1-3｜股務資訊｜固定收益證券發行資料｜參數 []
+       /v1/opendata/1-4｜股務資訊｜發行人董監分戶保管｜參數 []
+       /v1/opendata/1-5｜股務資訊｜集保戶股權分散表｜參數 []
+       /v1/opendata/1-6｜股務資訊｜債券持有對象分析｜參數 []
+       /v1/opendata/1-7｜股務資訊｜有價證券帳簿劃撥配發交付日期一覽表｜參數 []
+       /v1/opendata/1-8-1｜股務資訊｜債券基本資料｜參數 []
+       /v1/opendata/1-8-2｜股務資訊｜債券還本付息明細資料｜參數 []
+       /v1/opendata/1-9｜股務資訊｜私募有價證券無實體登錄資料查詢：普通股｜參數 []
+       /v1/opendata/2-1｜權益證券類 統計資訊｜集中保管有價證券業務概況表｜參數 []
+       /v1/opendata/2-10｜權益證券類 統計資訊｜票券保管結算交割統計表｜參數 []
+       /v1/opendata/2-11｜固定收益類 統計資訊｜次級市場ABCP｜參數 []
+       /v1/opendata/2-12｜固定收益類 統計資訊｜ABCP成交資訊｜參數 []
+       /v1/opendata/2-13｜固定收益類 統計資訊｜國庫券成交資訊｜參數 []
+       /v1/opendata/2-14｜固定收益類 統計資訊｜國庫券買賣斷成交行情資訊｜參數 []
+       /v1/opendata/2-15｜TAIBIR 資訊｜TAIBIR當日最近初級發行利率報價｜參數 []
+       /v1/opendata/2-16｜TAIBIR 資訊｜TAIBIR當日最近次級買賣利率報價｜參數 []
+       /v1/opendata/2-17｜TAIBIR 資訊｜TAIBIR 01當日初級發行利率報價定盤利率｜參數 []
+       /v1/opendata/2-18｜TAIBIR 資訊｜TAIBIR 02當日次級買賣利率報價定盤利率｜參數 []
+       /v1/opendata/2-19｜TAIBIR 資訊｜TAIBIR 01歷史初級發行利率報價定盤利率｜參數 []
+       /v1/opendata/2-2｜權益證券類 統計資訊｜集中保管債券收付統計表｜參數 []
+       /v1/opendata/2-20｜TAIBIR 資訊｜TAIBIR 02歷史次級買賣利率報價定盤利率｜參數 []
+       /v1/opendata/2-21｜TAIBIR 資訊｜TAIBIR 02上線前歷史次級買賣利率報價定盤利率｜參數 []
+       /v1/opendata/2-22｜權益證券類 統計資訊｜有價證券集中保管個別股票異動月分析表－上市證券｜參數 []
+       /v1/opendata/2-23｜權益證券類 統計資訊｜有價證券集中保管個別股票異動月分析表－上櫃證券｜參數 []
+       /v1/opendata/2-24｜權益證券類 統計資訊｜有價證券集中保管個別股票異動月分析表－興櫃證券｜參數 []
+       /v1/opendata/2-25｜權益證券類 統計資訊｜上市保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-26｜權益證券類 統計資訊｜上櫃保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-27｜權益證券類 統計資訊｜上櫃保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-28｜權益證券類 統計資訊｜上市櫃檯合併保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-29｜權益證券類 統計資訊｜上市櫃檯合併保管有價證券週餘額表｜參數 []
+       /v1/opendata/2-3｜權益證券類 統計資訊｜集中保管債券收付統計表｜參數 []
+       /v1/opendata/2-30｜固定收益類 統計資訊｜票券保管結算交割系統各類短期票券流通餘額表｜參數 []
+       /v1/opendata/2-31｜固定收益類 統計資訊｜票券保管結算交割系統結算交割時間統計｜參數 []
+       …（其餘 94 個略）
 
 ── 結論要人看過再決定 ──
 上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，

@@ -332,6 +332,9 @@
      ✓ 11,776 bytes
      它自己呼叫的候選網址（1 個，逐字）：
        /zh-tw/service/data
+     ── `service/data` 的上下文（逐字，不整理）──
+       tw/mainboard/trading/info/daily-pe.html">個股本益比、殖利率、股價淨值比</a></li><li><a href="/zh-tw/mainboard/listed/month/fundamentals.html">獲利及股利分派情形</a></li><li><a href="/zh-tw/mainboard/trading/statistics/highlight.html">櫃買市場統計報表</a></li></ul></div><div class="col"><strong>常用資訊</strong><ul><li><a href="/zh-tw/service/data/overview.html">資訊購買</a></li><li><a href="/zh-tw/announce/market/holiday.html">開休市日期表</a></li><li><a href="/zh-tw/service/investor/info/personal.html">投資人個人資料查詢</a></li><li><a href="/zh-tw/mainboard/applying/status/company.html">向本中心申請上櫃公司</a></li></ul></div></div><div class="row"><div c
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「恢復買賣」5 次
        出現「參考價」4 次
@@ -343,6 +346,9 @@
      ✓ 11,276 bytes
      它自己呼叫的候選網址（1 個，逐字）：
        /zh-tw/service/data
+     ── `service/data` 的上下文（逐字，不整理）──
+       tw/mainboard/trading/info/daily-pe.html">個股本益比、殖利率、股價淨值比</a></li><li><a href="/zh-tw/mainboard/listed/month/fundamentals.html">獲利及股利分派情形</a></li><li><a href="/zh-tw/mainboard/trading/statistics/highlight.html">櫃買市場統計報表</a></li></ul></div><div class="col"><strong>常用資訊</strong><ul><li><a href="/zh-tw/service/data/overview.html">資訊購買</a></li><li><a href="/zh-tw/announce/market/holiday.html">開休市日期表</a></li><li><a href="/zh-tw/service/investor/info/personal.html">投資人個人資料查詢</a></li><li><a href="/zh-tw/mainboard/applying/status/company.html">向本中心申請上櫃公司</a></li></ul></div></div><div class="row"><div c
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」8 次
 
@@ -351,6 +357,9 @@
      ✓ 19,945 bytes
      它自己呼叫的候選網址（1 個，逐字）：
        /zh-tw/service/data
+     ── `service/data` 的上下文（逐字，不整理）──
+       tw/mainboard/trading/info/daily-pe.html">個股本益比、殖利率、股價淨值比</a></li><li><a href="/zh-tw/mainboard/listed/month/fundamentals.html">獲利及股利分派情形</a></li><li><a href="/zh-tw/mainboard/trading/statistics/highlight.html">櫃買市場統計報表</a></li></ul></div><div class="col"><strong>常用資訊</strong><ul><li><a href="/zh-tw/service/data/overview.html">資訊購買</a></li><li><a href="/zh-tw/announce/market/holiday.html">開休市日期表</a></li><li><a href="/zh-tw/service/investor/info/personal.html">投資人個人資料查詢</a></li><li><a href="/zh-tw/mainboard/applying/status/company.html">向本中心申請上櫃公司</a></li></ul></div></div><div class="row"><div c
+     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」13 次
 
