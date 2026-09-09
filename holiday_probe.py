@@ -143,9 +143,11 @@ def main():
     say("     ⇒ 照「剔除補班日」做會**刪掉 8 個真的交易日**，"
         "而且刪掉之後那幾天的資料還在、只是日曆說它不存在——**最難查的那種錯**。")
     say("     ⛔ 所以辦公日曆表只能當**基底**，不可以拿它的補班規則直接套。")
+    say("  ⚠ 上一版這裡的 `data.gov.tw/dataset/25980` **是我自己猜的 id**——"
+        "實測「休市」0 次，")
+    say("     ⇒ 那不是證交所開休市那份，是我編了一個編號。⛔ 已拿掉，"
+        "改成從 TWSE 官網那頁自己找。")
     for label, url in (
-            ("① TWSE 開休市日（政府資料開放平臺 dataset 頁）",
-             "https://data.gov.tw/dataset/25980"),
             ("② 中華民國政府行政機關辦公日曆表（dataset 頁）",
              "https://data.gov.tw/dataset/14718"),
             ("③ TWSE 官網「市場開休市」頁",
@@ -163,8 +165,10 @@ def main():
         for kw in ("休市", "開休市", "補班", "補行上班", "行事曆", "csv", "json"):
             say(f"       「{kw}」{t8.lower().count(kw.lower())} 次")
         # ⛔ 只收頁面自己寫出來的檔案連結，不自己拼
+        # ⚠ HTML 裡是 `&amp;`，直接拿去請求會多送一個字面上的 "amp;" 參數。
+        t8u = t8.replace("&amp;", "&")
         dl = sorted(set(re.findall(
-            r'https?://[^"\'<>\s]+\.(?:csv|json|xml)(?:\?[^"\'<>\s]*)?', t8)))
+            r'https?://[^"\'<>\s]+\.(?:csv|json|xml)(?:\?[^"\'<>\s]*)?', t8u)))
         say(f"       頁面給的資料檔連結 {len(dl)} 個：{dl[:5] or '（沒有）'}")
         for u in dl[:3]:
             rr, ee = B.get(u, retries=1, timeout=60)
@@ -172,8 +176,56 @@ def main():
                 say(f"         ✗ {u[:90]} → {str(ee)[:70]}")
                 continue
             tt = rr.decode("utf-8", "replace")
+            if tt[:1] == "\ufeff":
+                tt = tt[1:]
             yrs = sorted(set(re.findall(r"\b(20[0-9]{2})[-/]?[01][0-9]", tt)))
+            head = tt.splitlines()[0] if tt.strip() else ""
             say(f"         ✓ {u[:90]}｜{len(rr):,} bytes｜出現的年份 {yrs[:8]}")
+            say(f"           表頭逐字：{head[:160]}")
+            # ★ 這一項才是重點：辦公日曆表能不能分辨「補班的週六」。
+            #   ⛔ 只有假日清單是不夠的——補班的週六台股照開（上面 8 天實測）。
+            for kw in ("是否放假", "備註", "上班", "放假", "補行"):
+                say(f"           「{kw}」{tt.count(kw)} 次")
+    # ★ ③ 那頁沒有直接的資料檔連結 ⇒ 照 tpex_probe 第 8 節的做法去 js 裡找。
+    say("\n  ── ④ 從 TWSE 那頁的 js 裡找它自己的端點（⛔ 不自己拼網址）")
+    hs = "https://www.twse.com.tw/zh/holidaySchedule/holidaySchedule"
+    r4, e4 = B.get(hs, retries=1, timeout=60)
+    if e4:
+        say(f"     ✗ 抓不到那頁：{str(e4)[:110]}")
+    else:
+        h4 = r4.decode("utf-8", "replace")
+        js4 = sorted(set(re.findall(r'src=["\']([^"\']+\.js[^"\']*)["\']', h4)))
+        say(f"     那頁載入 {len(js4)} 支 js")
+        found = []
+        for j in js4[:8]:
+            uj = urllib.parse.urljoin(hs, j)
+            rj, ej = B.get(uj, retries=1, timeout=60)
+            if ej:
+                say(f"       ✗ {j.rsplit('/', 1)[-1]} → {str(ej)[:70]}")
+                continue
+            sj = rj.decode("utf-8", "replace")
+            got = sorted(set(re.findall(
+                r'["\'](/(?:rwd|exchangeReport|holidaySchedule)[A-Za-z0-9_/.\-]{2,70})["\']',
+                sj)))
+            if got:
+                say(f"       ★ {j.rsplit('/', 1)[-1]}｜路徑 {len(got)} 個：{got[:6]}")
+                found += got
+            else:
+                say(f"       ・{j.rsplit('/', 1)[-1]} {len(rj):,} bytes｜沒有路徑")
+        for pth in sorted(set(found))[:4]:
+            u4 = urllib.parse.urljoin(hs, pth)
+            rr, ee = B.get(u4, retries=1, timeout=60)
+            if ee:
+                say(f"       ✗ {u4} → {str(ee)[:80]}")
+                continue
+            tt = rr.decode("utf-8", "replace")
+            say(f"       ✓ {u4}｜{len(rr):,} bytes"
+                f"｜「休市」{tt.count('休市')} 次｜日期 "
+                f"{sorted(set(re.findall(r'1[0-9]{2}/[0-9]{2}/[0-9]{2}', tt)))[:4]}")
+        if not found:
+            say("     ⇒ js 裡沒有可辨識的路徑 ⇒ **這條也要能執行 js**，"
+                "跟櫃買那三頁同一種。⛔ 不要再繞。")
+
     say("  ⇒ 判準：拿到的東西要能回答「**某一個未來日期開不開盤**」才算數。")
     say("    ⛔ 只列國定假日不夠——**補班的週六台股照開**（上面 8 天是實測）。")
 

@@ -182,7 +182,27 @@ def new_session():
     return jar, sget, spost
 
 
+def _safe_url(url):
+    """把網址裡的非 ASCII 逐字元 percent-encode。
+
+    ⚠ 為什麼要有這一步（2026-09-09 同一天被咬**兩次**）：
+      ① `capital.py` 的期別探針把中文參數名直接放進網址
+      ② `holiday_probe.py` 撈到的政府檔案連結帶 `name=114年…辦公日曆表.csv`
+      兩次都是 `UnicodeEncodeError: 'ascii' codec can't encode…`，
+      而輸出看起來只是「✗ 失敗」——**很容易被讀成「端點拒絕」，但那是兩回事**：
+      前者是我方連請求都沒送出去，不構成任何關於端點的結論。
+    ⇒ 集中在這裡處理。非 ASCII 在網址裡本來就不合法，編碼是無條件正確的，
+      ⛔ 已經是 %XX 的部分不會被二次編碼（`safe` 帶了 `%`）。
+    """
+    try:
+        url.encode("ascii")
+        return url
+    except UnicodeEncodeError:
+        return urllib.parse.quote(url, safe="%:/?#[]@!$&'()*+,;=~-._")
+
+
 def get(url, retries=3, timeout=45):
+    url = _safe_url(url)
     last = None
     for i in range(retries):
         try:
