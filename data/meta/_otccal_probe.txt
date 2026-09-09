@@ -107,6 +107,24 @@
      ✓ 12,007 bytes｜中文 684 字｜<tr> 2 個
      載入的 js 11 支：['/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js', '/rsrc/js/main.js', '/rsrc/asset/js/global.js', 'https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z']
      頁面字串裡的 /www/ 路徑 0 個：[]
+     ★ 這一頁**看得見的字**（506 字，全部印出來）：
+       開休市日期表 - 證券櫃檯買賣中心 跳至主要內容 ::: EN 日本語 網站導覽 搜尋 證券櫃檯買賣中心 EN 日本語 網站導覽 搜尋 開休市日期表 歷年開休市日期：民國 ::: 常用交易資訊 櫃買指數歷史資料 上櫃個股歷史行情 興櫃個股歷史行情 融資融券餘額表 融券借券賣出餘額 平盤下得融(借)券賣出之證券名單 三大
+       法人買賣金額彙總表 投信買賣超彙總表 外資及陸資買賣超彙總表 當日可借券賣出股數 有價證券借貸 有價證券借貸交易查詢 統計資料 上櫃股票統計 上櫃公司市值、本益比、殖利率、投資報酬率一覽表 個股本益比、殖利率、股價淨值比 獲利及股利分派情形 櫃買市場統計報表 常用資訊 資訊購買 開休市日期表 投資人個人資料查詢 向本中
+       心申請上櫃公司 回首頁 常見問題 聯絡我們 相關網站 使用條款 隱私權保護說明 個人資料管理政策聲明 資訊安全政策 營運持續政策 FB粉絲頁 IG YouTube Linkedin 證券櫃檯買賣中心 版權所有©1994- 2024 10084台北市中正區羅斯福路二段100號15樓 總機:(02)2369-9555 投資
+       人服務及投資詐騙檢舉專線:(02)2796-3788
+     頁面裡的連結 42 個：['//fonts.googleapis.com', '//fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&family=Noto+Serif+TC:wght@600;700&display=swap', '//fonts.gstatic.com', '/ja-jp/about/publication/overview.html', '/rsrc/', '/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/zh-tw/', '/zh-tw/about/company/contact/contact.html', '/zh-tw/about/company/faq.html', '/zh-tw/announce/market/holiday.html', '/zh-tw/esb/trading/info/stock-pricing.html', '/zh-tw/gtsm_disclaimer.html', '/zh-tw/index.html', '/zh-tw/indices/stock-index/industrial/inxh.html', '/zh-tw/mainboard/applying/status/company.html', '/zh-tw/mainboard/listed/month/fundamentals.html', '/zh-tw/mainboard/trading/info/daily-pe.html', '/zh-tw/mainboard/trading/info/stock-pricing.html']
+     ★ 逐支 js 裡的路徑與關鍵字（⛔ 只回報找到的，不拼網址）
+       ・/rsrc/asset/js/jquery-3.7.1.min.js｜87,533 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/asset/js/jquery.mousewheel.min.js｜2,771 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/asset/js/jquery.cookie.min.js｜1,300 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/asset/js/gsap.min.js｜72,214 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/asset/js/jquery.session.js｜3,702 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/asset/js/jquery.simplePagination.js｜15,354 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/js/ie.js｜727 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/js/main.js｜45,227 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・/rsrc/asset/js/global.js｜103,202 bytes｜路徑 0 個｜（沒有關鍵字）
+       ・https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z｜（外部網域，跳過）
+       ・/rsrc/js/tables.js｜168,139 bytes｜路徑 0 個｜關鍵字 {'calendar': 56, 'Calendar': 86}
 
      ⚠⚠ 下面這一組**是我猜的路徑**（依據：櫃買新站端點的命名慣例）。
        ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，⛔ 而且不論結果如何，猜的網址**不會**被寫成結論。
