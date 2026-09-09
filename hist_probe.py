@@ -236,8 +236,120 @@ def main():
                                       h, re.I)))
         say(f"     ★ 表單欄位名：{names}")
 
-    say("\n[4] 這一輪要回答的三句話")
-    say("  ⛔ 以下三句，**只有在第 [1]~[3] 節真的看到日期範圍時才可以改**：")
+    say("\n[4] ⭐ 這個站有沒有**上櫃**？——跟站根自己給的那個目的地")
+    say("     第 [2] 節站根只有一行 js：`window.location.replace("
+        "'http://hist.gretai.org.tw/en/index.php')`。")
+    say("     ⛔ 那是**它自己寫的目的地**，不是我拼的路徑 ⇒ 跟過去是合法的。")
+    say("     ⚠ `gretai` 是櫃買的舊名（GreTai Securities Market），"
+        "所以這是**同一個機構的另一個主機名**。")
+    say("     判準：要看到 `EMERGINGSTOCK` **以外**的區段，而且那個區段要**真的抓得到日期**；")
+    say("     ⛔ 只看到路徑裡有 `STOCK` 之類的字**不算**。")
+    idx = "http://hist.gretai.org.tw/en/index.php"
+    ihrefs, _ = _look(idx, "hist.gretai.org.tw/en/index.php", depth=1)
+    HOSTS = ("hist.tpex.org.tw", "hist.gretai.org.tw")
+    walked = 0
+    for h in ihrefs:
+        if walked >= 10:
+            break
+        if urllib.parse.urlparse(h).hostname not in HOSTS:
+            continue
+        if h in seen:
+            continue
+        seen.add(h)
+        walked += 1
+        _look(h, h, depth=2)
+    if walked == 0:
+        say("     （這一頁沒有任何站內連結可跟 ⇒ 到此為止，⛔ 不要改用猜路徑補上）")
+
+    say("\n[5] ⭐ 那 9 種日檔各是什麼？——⛔ 讓**下拉選單的文字**自己講")
+    say("     第 [3.5] 節印的 37 個 value 是**整頁混在一起**的（報表別、年、月、週都有），")
+    say("     ⛔ 我不可以自己把它們分類——那就是用猜的。")
+    say("     ⇒ 改成把每一個 `<select>` **各自**切出來，連 option 的**顯示文字**一起印。")
+    say("       js 說 `StrUrl=\"DAILY/\"+Ddr.value+日期+\".txt\"`，"
+        "所以 `Ddr` 那一格的文字就是「這個檔是什麼」的官方說法。")
+    ddr = []
+    raw2, err2 = B.get(qry, retries=2, timeout=60)
+    if err2:
+        say(f"     ✗ 查詢頁抓不到：{str(err2)[:120]}")
+    else:
+        cs = []
+        for enc in ("big5hkscs", "cp950", "utf-8"):
+            try:
+                cs.append((raw2.decode(enc, "replace").count("\ufffd"), enc,
+                           raw2.decode(enc, "replace")))
+            except LookupError:
+                continue
+        cs.sort()
+        h2 = cs[0][2]
+        for m in re.finditer(r"<select[^>]*name=[\"\']?([A-Za-z0-9_]+)[^>]*>(.*?)</select>",
+                             h2, re.S | re.I):
+            nm, body = m.group(1), m.group(2)
+            pairs = re.findall(r"<option[^>]*value=[\"\']?([^\"\'> ]*)[^>]*>([^<]*)",
+                               body, re.I)
+            say(f"     ── <select name={nm}>　{len(pairs)} 個")
+            for v, txt in pairs:
+                say(f"        {v!r:8} = {' '.join(txt.split())}")
+            if nm == "Ddr":
+                ddr = [v for v, _ in pairs if v]
+
+    say("\n[6] ⭐ 逐一抓那些日檔，看**內容不一樣在哪**")
+    say("     ⛔ 這不是拼路徑：檔名的組法是 [3.5] 節**頁面自己的 js** 給的，")
+    say("       型別碼是 [5] 節**它自己的 select** 給的，日期用 [1] 節 frameset "
+        "**它自己預設**的 951229。")
+    if not ddr:
+        say("     ⚠ `Ddr` 的 option 沒切出來 ⇒ 這一節跳過。"
+            "⛔ 不要改用第 [3.5] 節那份混在一起的清單硬跑。")
+    for v in ddr[:12]:
+        u = ROOT + f"Hist/EMERGINGSTOCK/HISTORICAL/DAILY/{v}951229.txt"
+        rb, er = B.get(u, retries=1, timeout=45)
+        if er:
+            say(f"     {v:4}｜✗ {str(er)[:80]}")
+            continue
+        cs = sorted((rb.decode(e, "replace").count("\ufffd"), e,
+                     rb.decode(e, "replace"))
+                    for e in ("big5hkscs", "cp950", "utf-8"))
+        tx = cs[0][2]
+        head = [ln.strip() for ln in tx.splitlines() if ln.strip()][:3]
+        say(f"     {v:4}｜{len(rb):>8,} bytes｜{' ⏎ '.join(x[:110] for x in head)}")
+
+    say("\n[6.5] ⭐ 日期範圍是**實測**出來的，不是頁面宣告的")
+    say("     ⚠ 日檔的日期來自 `input_date` 這個**自由輸入框**，"
+        "⇒ 頁面**沒有**宣告日檔的範圍。")
+    say("       （[5] 節那組 91~95 是 `Dwyy`，那是**週報**的年份選單，"
+        "⛔ 不可以拿來當日檔的範圍。）")
+    say("     ⇒ 所以只能實測：每個民國年試幾個日期，命中就停。")
+    say("     ⛔ 下面每一行都是「我打了這個網址、得到這個結果」，"
+        "**不是**「櫃買宣告有這些年」。")
+    if ddr:
+        t0 = ddr[0]
+        hits = []
+        for roc in range(85, 117):
+            got = None
+            for mmdd in ("1229", "1228", "0630", "0331"):
+                u = ROOT + f"Hist/EMERGINGSTOCK/HISTORICAL/DAILY/{t0}{roc:03d}{mmdd}.txt"
+                rb, er = B.get(u, retries=1, timeout=30)
+                if er is None and len(rb) > 2000:
+                    got = (mmdd, len(rb))
+                    break
+            hits.append((roc, got))
+            say(f"     民國 {roc:>3}（{roc + 1911}）｜"
+                + (f"✓ {got[0]} 有檔 {got[1]:,} bytes" if got
+                   else "✗ 試了 1229/1228/0630/0331 四天都沒有"))
+        ys = [r for r, g in hits if g]
+        if ys:
+            say(f"     ⭐ **實測命中的民國年：{ys[0]}~{ys[-1]}"
+                f"（{ys[0] + 1911}~{ys[-1] + 1911}），共 {len(ys)} 年**")
+            gap = [r for r in range(ys[0], ys[-1] + 1) if r not in ys]
+            if gap:
+                say(f"     ⚠ 中間有 {len(gap)} 年沒命中：{gap}"
+                    "　⛔ 這可能是「那年沒資料」，也可能是「我試的四天剛好都休市」，"
+                    "**分不出來就不要當成沒有**。")
+        else:
+            say("     ⛔ 一年都沒命中 ⇒ 檔名組法或型別碼有一個是錯的，"
+                "**不要宣稱這個站沒有歷史**。")
+
+    say("\n[7] 這一輪要回答的三句話")
+    say("  ⛔ 以下三句，**只有在前面幾節真的看到「上櫃」而且看到日期範圍時才可以改**：")
     say("     ① 上櫃交易日曆 2015-01-05~2026-08-31 那 2,841 天永遠拿不到判準")
     say("     ② 上櫃除權息的**歷史**官方來源：仍然沒有")
     say("     ③ `otc_adj.py` 走 FinMind 是因為「TPEx 官方沒有歷史」")

@@ -36,6 +36,7 @@ import inspect
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -97,6 +98,21 @@ def fake_get(url, **kw):
         return FAKE_JS, None
     if "swagger" in u:
         return json.dumps(SWAGGER).encode(), None
+    # ★ hist.tpex.org.tw / hist.gretai.org.tw（hist_probe 專用，見上面三份 fixture）
+    if "hist.tpex.org.tw" in u or "hist.gretai.org.tw" in u:
+        if u.rstrip("/").endswith("hist.tpex.org.tw"):
+            return ("<script>window.location.replace("
+                    "'http://hist.gretai.org.tw/en/index.php');</script>").encode(), None
+        if "index.php" in u:
+            return HIST_IDX.encode(), None
+        if u.upper().endswith(".TXT"):
+            m = re.search(r"/([A-Z]+)(\d{3})(\d{4})\.txt$", u, re.I)
+            # ⛔ 故意讓一部分年份**沒有檔**：不這樣的話「四天都沒有」與「中間有洞」
+            #   這兩條分支永遠不會被走到，等於沒測。
+            if m and (int(m.group(2)) < 90 or int(m.group(2)) == 100):
+                return None, "HTTP 404 Not Found"
+            return HIST_TXT.encode(), None
+        return HIST_QRY.encode(), None
     if "data.gov.tw" in u:
         return json.dumps(DATAGOV).encode(), None
     if "getOD.ashx" in u:
@@ -129,6 +145,33 @@ def fake_get(url, **kw):
     return HTML.encode(), None
 
 
+# ⚠ 2026-09-09 第七次補同一族：hist_probe 新增的 [4][5][6][6.5] 四節，
+#   在泛用假頁面下**一行都走不到**——[4] 走不到站內連結、[5] 切不出 <select>、
+#   [6]/[6.5] 抓不到 .txt。⛔ 假的比真的簡單，就等於沒測。
+#   ⇒ 下面三份 fixture 是照**真頁面的形狀**做的（frameset／查詢表單／靜態日檔）。
+HIST_IDX = ("<html><body>"
+            "<a href='http://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/"
+            "NSHISTORY.HTML'>興櫃</a>"
+            "<a href='/Hist/STOCK/HISTORICAL/HQRY.HTML'>股票</a>"
+            "<a href='http://www.tpex.org.tw/'>外站</a>"
+            "</body></html>")
+HIST_QRY = ("<html><body><form name='report' onSubmit='ChkInput();return false;'>"
+            "<input name='input_date' value='95/12/29'>"
+            "<input type=radio name='mdtype'>"
+            "<select name='Ddr'>"
+            "<option value='AA'>興櫃股票每日成交資訊</option>"
+            "<option value='BA'>興櫃股票每日基本資料</option></select>"
+            "<select name='Dwyy'><option value='91'>91</option>"
+            "<option value='95'>95</option></select>"
+            "<select name='Dwr'><option value='WAA'>興櫃股票每週成交資訊</option></select>"
+            "</form><script>function ChkInput(){ StrUrl=\"DAILY/\"+dType+dQDATE+\".txt\"; }"
+            "</script></body></html>")
+# ★ >2000 bytes 才算命中（[6.5] 的判準），所以真的要撐到那個長度。
+HIST_TXT = ("財團法人中華民國證券櫃檯買賣中心\n頁次: 1 日期: 95年12月29日\n"
+            "代 號 證券名稱 最高買價 最低賣價 本日均價\n"
+            + "1336 台翰 70.00 73.00 71.69 1,000 71,690 1 438\n" * 60)
+
+
 def strict_stub(real, ret):
     """做一個**與真函式簽章相同**的替身。
 
@@ -159,7 +202,8 @@ SECTIONS = {
     "otccal_probe": ["[1]", "[2]", "[3]", "[4]", "[5]"],
     # ⛔ [3] 是「跟著頁面自己的連結走」那一節，[4] 是三句待改的話——少了任一節
     #   代表它中途 return 了。
-    "hist_probe": ["[1]", "[2]", "[3]", "[3.5]", "[4]"],
+    "hist_probe": ["[1]", "[2]", "[3]", "[3.5]", "[4]", "[5]",
+                  "[6]", "[6.5]", "[7]"],
 }
 
 
