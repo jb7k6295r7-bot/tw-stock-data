@@ -435,6 +435,59 @@ def main():
     #   ⚠ 為什麼這件事值得多花一輪：集保端點**只回最新一週、不吃日期**，
     #     **漏掉一週就永久少一週**。查詢頁列了 51 週（20250912~20260904），
     #     那是目前唯一看得到的歷史來源。
+    # ── [13] ★★★ 同一條路，這次**帶 Cookie**（前四發全是新連線、不帶 session）──
+    #   ⚠ 第 7 節四發全回 2 bytes，而那一版已經做到：每發重抓 token、兩個欄名都試、
+    #     帶 Referer、帶 stockNo。**唯一沒試過的是 Cookie。**
+    #   這類「先 GET 頁面、再 POST」的流程幾乎都靠 Cookie 綁 session ——
+    #   ⛔ token 對、Referer 對，但 session 不認得你，回空是合理的。
+    #   ⇒ 用 `backfill.new_session()`（同一個 opener、CookieJar 全程保留）重跑一次。
+    #   ⛔ **在這一節跑過之前，不可以說「查詢頁那條路走不通」**——那會是拿沒試過當試過。
+    say("\n[13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）")
+    try:
+        jar, sget, spost = B.new_session()
+        raw13, e13 = sget(QRY_PAGE)
+        if e13:
+            say(f"  ✗ 連查詢頁都抓不到：{str(e13)[:120]}")
+        else:
+            h13 = raw13.decode("utf-8", "replace")
+            say(f"  ✓ 查詢頁 {len(raw13):,} bytes｜**拿到 {len(jar)} 個 Cookie**"
+                f"：{[c.name for c in jar][:6]}")
+            f13 = {}
+            for m in re.finditer(
+                    r'<input[^>]*name=["\']([^"\']+)["\'][^>]*value=["\']([^"\']*)["\']',
+                    h13):
+                f13[m.group(1)] = m.group(2)
+            opts13 = sorted(set(re.findall(r'value="(20\d{6})"', h13)), reverse=True)
+            say(f"  form 欄位 {len(f13)} 個：{sorted(f13)[:10]}｜日期選項 {len(opts13)} 個")
+            if not opts13:
+                say("  ⚠ 沒有日期選項，下面那幾發沒有意義")
+            for tag, day in (("最新", opts13[0] if opts13 else ""),
+                             ("較舊", opts13[len(opts13) // 2] if opts13 else "")):
+                if not day:
+                    continue
+                for field in ("scaDate", "firDate"):
+                    fm = dict(f13)
+                    fm[field] = day
+                    fm["sqlMethod"] = "StockNo"
+                    fm["stockNo"] = SAMPLE
+                    fm["stockName"] = ""
+                    r14, e14 = spost(AJAX, fm, referer=QRY_PAGE)
+                    if e14:
+                        say(f"    {field} {tag} {day}：✗ {str(e14)[:90]}")
+                        continue
+                    t14 = r14.decode("utf-8", "replace")
+                    # ⛔ 判定用**回應自己宣告的日期**，不是用我送出去的參數
+                    ech = sorted(set(re.findall(r"\b(20\d{6})\b", t14)))
+                    big = re.findall(r"\b\d{5,}\b", t14)
+                    say(f"    {field} {tag} {day}：{len(r14):,} bytes"
+                        f"｜回應裡的日期 {ech[:4]}｜大數字 {len(big)} 個"
+                        f"{'  ← ★★ 有內容了' if len(r14) > 2000 else ''}")
+            say("  ⇒ 仍然全是空回應 ⇒ 擋點也不是 Cookie，"
+                "那就要到「這條路在不執行 js 的前提下走不通」為止。")
+            say("  ⇒ 有內容 ⇒ **集保歷史抓得到**，寫回補（51 週）。")
+    except Exception as ex:                                      # noqa: BLE001
+        say(f"  ✗ 這一節自己炸了：{type(ex).__name__}: {ex}")
+
     say("\n[7] ★ 歷史週別（第二版：每發重抓 token、兩個日期欄名都試）")
 
     def _form_and_dates():

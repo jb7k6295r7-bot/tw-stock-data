@@ -32,6 +32,7 @@ import re
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
@@ -126,6 +127,59 @@ def candidates(day):
             # 同上：tpex_esb_latest_statistics 也是「latest」，回補一律不可用
         ],
     }
+
+
+def new_session():
+    """開一個**會保留 Cookie** 的 opener，回傳 `(opener, get, post)` 三件。
+
+    ★ 為什麼要這個（2026-09-09）：兩條卡住的路**症狀一模一樣**——
+      ① 集保查詢頁那條 ajax：每發重抓 token、兩個欄名都試、帶 Referer，**四發全回 2 bytes**
+      ② 第三方彙整站那條 ASP.NET：帶了 `__VIEWSTATE`／`__EVENTVALIDATION` 送出去，
+         回 36 KB **但裡面沒有查詢結果**
+      兩邊都是「先 GET 一個頁面、再 POST」的流程，而我方的 `_post` **每一發都是新連線、
+      不帶任何 Cookie**。
+
+    ⚠ 這類流程幾乎都靠 Cookie 綁 session：**token 對、Referer 對，但 session 不認得你**。
+      ⛔ 而這件事**從來沒有被試過**——不是試過不行，是根本沒帶 Cookie 試。
+      所以在說「這條路走不通」之前，得先把它試掉。
+
+    ⛔ 只做「保留 Cookie」這一件事，其餘（重試、限流判定）維持呼叫端自己處理，
+      避免這裡變成第二套 HTTP 層。
+    """
+    import http.cookiejar
+    jar = http.cookiejar.CookieJar()
+    op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+    def _do(url, data=None, referer=None, timeout=60):
+        hdrs = {"User-Agent": UA,
+                "Accept": "text/html,application/xhtml+xml,application/json,*/*"}
+        if data is not None:
+            hdrs["Content-Type"] = "application/x-www-form-urlencoded"
+        if referer:
+            hdrs["Referer"] = referer
+        req = urllib.request.Request(url, data=data, headers=hdrs)
+        try:
+            with op.open(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as e:
+            try:
+                body = e.read().decode("utf-8", "replace")[:200]
+            except Exception:                                    # noqa: BLE001
+                body = "(讀不到 body)"
+            loc = e.headers.get("Location") if e.headers else None
+            if (e.code in (301, 302, 303, 307, 308) and not loc) or e.code == 429:
+                return None, f"LIMITED|HTTP {e.code}（被擋／限流）| {body}"
+            return None, f"HTTP {e.code} {e.reason} | {body}"
+        except Exception as ex:                                  # noqa: BLE001
+            return None, f"{type(ex).__name__}: {ex}"
+
+    def sget(url, referer=None, timeout=60):
+        return _do(url, None, referer, timeout)
+
+    def spost(url, form, referer=None, timeout=60):
+        return _do(url, urllib.parse.urlencode(form).encode(), referer, timeout)
+
+    return jar, sget, spost
 
 
 def get(url, retries=3, timeout=45):

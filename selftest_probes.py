@@ -102,7 +102,7 @@ def strict_stub(real, ret):
 
 SECTIONS = {
     "tdcc_probe": ["[1]", "[3]", "[5]", "[6]", "[7]", "[8]", "[9]", "[10]",
-                   "[11]", "[12]"],
+                   "[11]", "[12]", "[13]"],
     "tpex_probe": ["[1]", "[2]", "[4]", "[6]", "[7]", "[8]", "[9]", "[10]"],
     "parvalue_probe": [],
     "twsthr_probe": [],
@@ -123,6 +123,24 @@ def run(name):
         _sig_get.bind(*a, **k)                  # ⛔ 簽章不符照樣炸
         return fake_get(*a, **k)
     B.get = _get
+    # ⛔ `new_session()` 也要換掉：不換的話這支「離線」自測會**真的連外**
+    #   （開發容器 403，看起來還是過，但它已經不是離線測試了）。
+    #   假 session 一樣用簽章綁定，⛔ 不比真的寬鬆。
+    _real_ns = B.new_session
+    _sig_ns = inspect.signature(_real_ns)
+
+    class _FakeJar(list):
+        pass
+
+    def _fake_ns(*a, **k):
+        _sig_ns.bind(*a, **k)
+        jar = _FakeJar()
+        def _g(url, referer=None, timeout=60):
+            return fake_get(url)
+        def _p(url, form, referer=None, timeout=60):
+            return HTML.encode(), None
+        return jar, _g, _p
+    B.new_session = _fake_ns
     olds = {}
     for fn in ("_post",):
         if hasattr(mod, fn):
@@ -144,6 +162,7 @@ def run(name):
     finally:
         sys.stdout = old_stdout
         mod.OUT, B.get = old_out, old_get
+        B.new_session = _real_ns
         for fn, v in olds.items():
             setattr(mod, fn, v)
     out = buf.getvalue()

@@ -94,12 +94,62 @@ def main():
     n_h = _copy_holes()
     if n_h is not None:
         rl.info("_holes_scan.csv", f"{n_h} 列")
+    lh = _long_hole_impact()
+    if lh:
+        rl.info("long_hole 對推薦母體的影響（每日更新）", lh)
     rl.info("完整輸出", "data/meta/_breakpoint_scan.md")
 
     rl.check("par_change.csv 沒有一筆漏抓", rc == 0,
              "漏抓＝既無還原因子、規則也沒抓到 ⇒ 規則寫錯了，"
              "清單在 data/meta/_breakpoint_scan.md")
     return rl.finish()
+
+
+def _long_hole_impact():
+    """`long_hole` 裡有幾筆**近 240 個交易日內**、其中幾筆**近 20 日均額 ≥ 5,000 萬**。
+
+    ★ 市場情報分析線 2026-09-09 12:35 問的兩個數字。
+    ⛔ 但**不做成一次性的回答**——他們自己說「別把『我沒看到影響』當成『沒有影響』」，
+      而一次性的答案明天就過期。⇒ 放進每日輸出，哪天從 0 變成 1 會被看到。
+    ⚠ 這兩個數字**是快照**：今天不流動的股票明天可能變流動。
+    """
+    import csv as _csv
+    try:
+        cal_p = os.path.join(_HERE, "data", "meta", "calendar_twse.csv")
+        with io.open(cal_p, encoding="utf-8") as f:
+            cal = sorted(r.split(",")[0].strip()
+                         for i, r in enumerate(f) if i and r.strip())
+        pos = {d: i for i, d in enumerate(cal)}
+        last = len(cal) - 1
+        brk_p = os.path.join(_HERE, "data", "meta", "breakpoints_unexplained.csv")
+        with io.open(brk_p, encoding="utf-8") as f:
+            rows = [r for r in _csv.DictReader(f)
+                    if (r.get("kind") or "") == "long_hole"]
+        recent = [r for r in rows
+                  if r.get("event_date") in pos
+                  and last - pos[r["event_date"]] <= 240]
+        liq = 0
+        for r in recent:
+            sp = os.path.join(_HERE, "data", "stocks", r["stock_id"] + ".csv")
+            if not os.path.exists(sp):
+                continue
+            amt = {}
+            with io.open(sp, encoding="utf-8") as f:
+                for x in _csv.DictReader(f):
+                    try:
+                        amt[x["date"]] = float(
+                            (x.get("amount") or "0").replace(",", "") or 0)
+                    except ValueError:
+                        pass
+            # ⚠ 沒成交那天記 0（與情報分析的 N₁ 定義同一條），⛔ 不跳過
+            if sum(amt.get(d, 0.0) for d in cal[last - 19:last + 1]) / 20 >= 5e7:
+                liq += 1
+        return (f"共 {len(rows)} 筆｜斷點日在**近 240 個交易日內** {len(recent)} 筆／"
+                f"{len({r['stock_id'] for r in recent})} 檔｜"
+                f"其中**近 20 日均額 ≥ 5,000 萬** **{liq} 筆**"
+                "（⚠ 是今天的快照，不流動的明天可能變流動）")
+    except (OSError, KeyError, ValueError) as ex:                # noqa: BLE001
+        return f"算不出來（{type(ex).__name__}）"
 
 
 def _copy_holes():
