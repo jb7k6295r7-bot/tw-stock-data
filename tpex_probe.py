@@ -380,6 +380,15 @@ def main():
             say(f"     它自己呼叫的候選網址（{len(hits)} 個，逐字）：")
             for h in sorted(hits)[:20]:
                 say(f"       {h}")
+        # ⛔ 2026-09-09 第 10 節白跑一趟的教訓：我去 `global.js` 找 `service/data`，
+        #   結果那支 103 KB 的 js **一次都沒提到它**（出現 0 次）。
+        #   而 `service/data` 是從**這個頁面的 HTML** 撈到的——
+        #   ⇒ 參數多半就寫在頁面自己的 inline script 裡，我卻跑去別的檔找。
+        #   **命中在哪就在哪裡看上下文**，不要跑去別的地方找。
+        for m in list(re.finditer(r"service/data", html))[:5]:
+            a, b = max(0, m.start() - 300), min(len(html), m.end() + 300)
+            say("     ── `service/data` 的上下文（逐字，不整理）──")
+            say("       " + html[a:b].replace("\n", " ")[:600])
         else:
             say("     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）")
         js = sorted(set(re.findall(r"[\"'\(]([^\"'\(\)]+\.js)[\"'\)]", html)))

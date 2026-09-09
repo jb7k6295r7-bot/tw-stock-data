@@ -189,6 +189,50 @@ def parse(raw):
     return rows, f"CSV {len(rows):,} 列"
 
 
+def _dump_spec(spec, say):
+    """列出規格裡的端點與參數，**吃日期的標星**。
+
+    ⭐ 吃日期的端點＝回補歷史的前提。集保歷史是唯一「不做就永久失去」的缺口，
+      所以這一件要一眼看得到，不能埋在一大串路徑裡。
+    ⚠ 沒有參數的端點也要列——「沒有參數」本身就是結論（只給當期）。
+    """
+    paths = spec.get("paths") or {}
+    datey, plain = [], []
+    for pth in sorted(paths):
+        ops = paths[pth] or {}
+        pars, tags, summ = [], [], ""
+        for op in ops.values():
+            if not isinstance(op, dict):
+                continue
+            summ = summ or str(op.get("summary") or "")[:40]
+            for t in (op.get("tags") or []):
+                tags.append(str(t))
+            for q in (op.get("parameters") or []):
+                if isinstance(q, dict) and q.get("name"):
+                    pars.append(q["name"])
+        pars = sorted(set(pars))
+        row = (f"       {pth}｜{'/'.join(sorted(set(tags)))[:18]}"
+               f"｜{summ}｜參數 {pars}")
+        if any(re.search(r"date|day|ym|year|month|期別|週|week|seq|no$",
+                         x, re.I) for x in pars):
+            datey.append(row)
+        else:
+            plain.append(row)
+    say(f"     端點 {len(paths)} 個｜**吃日期／期別的 {len(datey)} 個**")
+    if datey:
+        say("     ── ★★ 吃日期／期別的（回補歷史的前提）──")
+        for r in datey:
+            say(r + "  ← ★★")
+    else:
+        say("     ⚠ **一個吃日期的都沒有** ⇒ 這一份規格裡的端點只給當期。"
+            "⛔ 但那只說明**這一份**，不等於集保沒有歷史。")
+    say("     ── 其餘（只給當期）──")
+    for r in plain[:40]:
+        say(r)
+    if len(plain) > 40:
+        say(f"       …（其餘 {len(plain) - 40} 個略）")
+
+
 def main():
     say("── 集保戶股權分散表探針 ──")
     say(f"端點（WebSearch 結果，非自行生成）：{URL}")
@@ -693,8 +737,24 @@ def main():
                 say(f"  頂層是 list，{len(j12)} 筆；第一筆："
                     f"{str(j12[0])[:200] if j12 else '（空）'}")
         except Exception:                                        # noqa: BLE001
+            j12 = None
             say("  （不是 JSON——多半是 Swagger UI 的 HTML 外殼，"
                 "規格在它載入的 js／相對路徑裡）")
+
+        # ⛔⛔ 2026-09-09 抓到我自己的邏輯漏洞：
+        #   這一份**自己就是規格**（`openapi: 3.0.1`、134 個端點），
+        #   而我上一版只把它當「索引」，去 fetch 它裡面的網址（全 404），
+        #   **從來沒有列過它自己的 paths**。
+        #   ⇒ 只要頂層有 `paths`，就直接在它身上列端點與參數。
+        if isinstance(j12, dict) and isinstance(j12.get("paths"), dict):
+            base = ""
+            for sv in (j12.get("servers") or []):
+                if isinstance(sv, dict) and sv.get("url"):
+                    base = sv["url"]
+                    break
+            say(f"\n  ★★ 直接讀這一份的規格（servers.url = {base!r}）")
+            _dump_spec(j12, say)
+            specs = []          # 不必再去 fetch 那些相對路徑
 
     def _abs(u):
         if u.startswith("http"):
@@ -719,21 +779,7 @@ def main():
             say("     （不是 JSON——照實記，下一輪再看要怎麼讀）")
             d13 = None
         if isinstance(d13, dict) and isinstance(d13.get("paths"), dict):
-            ps = sorted(d13["paths"])
-            say(f"     端點 {len(ps)} 個：")
-            for pth in ps[:25]:
-                ops = d13["paths"][pth] or {}
-                pars = []
-                for op in ops.values():
-                    if isinstance(op, dict):
-                        for q in (op.get("parameters") or []):
-                            if isinstance(q, dict) and q.get("name"):
-                                pars.append(q["name"])
-                pars = sorted(set(pars))
-                # ★ 吃日期的端點＝回補歷史的前提。這是這一節最想找的東西。
-                datey = any(re.search(r"date|day|ym|year|month|期別|週|week",
-                                      x, re.I) for x in pars)
-                say(f"       {pth}｜參數 {pars}{'  ← ★★ 吃日期！' if datey else ''}")
+            _dump_spec(d13, say)
         # ★ 級距：規格裡若寫了欄位定義，鏈就接得起來
         ch12 = _chain(_cands(t13))
         up12 = _upper(t13)
