@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -164,6 +164,17 @@ jobs:
       #   四批候選：OpenAPI 加參數／MOPS 靜態頁／MOPS 查詢表單(POST)／FinMind。
       #   ⚠ FinMind 已確認有歷史，要量的是「幾發、多久、會不會被擋」。
       #   **只探測、不寫資料。**
+      # ★★ 官方年度／月統計，當**價格層的外部判準**（回測線 2026-09-09 20:14 要的）。
+      #   FMNPTK 逐檔逐年的「收盤平均價」＝ 日收盤價的**簡單平均**
+      #   （⛔ 不是成交金額÷股數：2330 的 114 年前者 1,163.06、後者 1,144.0）
+      #   ⇒ **一列驗一整年**：收盤價對不對、有沒有缺日、有沒有多出非交易日。
+      #   FMSRFK 逐檔逐月的成交金額／股數 ⇒ 驗 `amount`／`volume`。
+      #   ⚠ 逐檔一個請求、2,000+ 檔 ⇒ 一趟跑不完，用 `--limit` 分批 ＋ 進度檔續跑。
+      #   ⛔ 排這裡不排 daily：它是判準不是每日資料，而且它會打 4,000+ 發。
+      - name: 官方年度／月統計（外部判準，續跑）
+        if: inputs.mode == 'official-stats'
+        run: python official_stats.py --limit 400 --sleep 1
+
       - name: 找基本面歷史的來源
         if: inputs.mode == 'mops-history-probe'
         run: python mops_history_probe.py --sleep 2   # 同上：打 MOPS，不吃 inputs.sleep
