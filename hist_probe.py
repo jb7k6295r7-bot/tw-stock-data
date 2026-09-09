@@ -102,10 +102,23 @@ def _look(url, label, depth=0):
     if err:
         say(f"{pad}   ✗ 抓不到：{str(err)[:140]}")
         return [], ""
-    html = raw.decode("utf-8", "replace")
-    if html.count("�") > len(html) * 0.02:      # ⚠ 可能是 big5
-        html = raw.decode("cp950", "replace")
-        say(f"{pad}   ⚠ utf-8 解不開，改用 cp950（櫃買舊站常見）")
+    # ⛔ 2026-09-09 第一輪的教訓：這裡本來是「亂碼率 > 2% 就改 cp950」，
+    #   而實際那一頁的亂碼率是 **1.7%**（1,181 bytes 裡約 20 個 U+FFFD）
+    #   ⇒ 門檻沒過、整頁維持亂碼，我看到的是 `���v��Ƭd��>`。
+    #   ⚠ **寫死的門檻是在猜**。改成**比較法**：兩種都解，取亂碼少的那一個。
+    #   ⭐ 這不需要知道對方用什麼編碼，也不需要挑一個數字。
+    cands = []
+    for enc in ("utf-8", "cp950", "big5hkscs"):
+        try:
+            d = raw.decode(enc, "replace")
+        except LookupError:
+            continue
+        cands.append((d.count("\ufffd"), enc, d))
+    cands.sort()
+    bad, enc, html = cands[0]
+    if enc != "utf-8":
+        say(f"{pad}   ⚠ 編碼不是 utf-8：取亂碼最少的 **{enc}**"
+            f"（{[(e, n) for n, e, _ in cands]}）")
     t = _text(html)
     han = len(re.findall("[一-龥]", t))
     tr = len(re.findall(r"<tr[ >]", html, re.I))
@@ -118,14 +131,30 @@ def _look(url, label, depth=0):
             "　← 這一行決定它算不算「有歷史」")
     else:
         say(f"{pad}   ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身")
+    # ⛔ 第一輪只抓 `href`，於是「連結 0 個」——**而那是我量錯，不是真的沒有**。
+    #   1KB 的頁面 ＋ 0 個 <tr> ＋ 0 個 href ⇒ 典型的 **frameset**，
+    #   而 frame 的目標寫在 `src=` 不是 `href=`。
+    #   ⭐ 同一個形狀今天第 N 次：**只查我想到的那一種寫法，然後把 0 讀成沒有。**
+    #   ⇒ 三種都收：`href=`、`src=`（frame／iframe／script）、以及原始碼裡任何
+    #     像頁面路徑的字串（`.html`／`.php`／`.htm`）。
+    links = []
+    for pat in (r'href=["\']([^"\']+)', r'<i?frame[^>]+src=["\']([^"\']+)',
+                r'src=["\']([^"\']+\.(?:html?|php))["\']'):
+        links += re.findall(pat, html, re.I)
+    loose = re.findall(r'["\'>\s]([A-Za-z0-9_./-]+\.(?:html?|php))["\'<\s]', html, re.I)
     hrefs = []
-    for h in re.findall(r'href=["\']([^"\']+)', html):
+    for h in links + loose:
         if h.startswith(("javascript:", "mailto:", "#")):
             continue
         hrefs.append(urllib.parse.urljoin(url, h))
     hrefs = sorted(set(hrefs))
-    say(f"{pad}   連結 {len(hrefs)} 個" + (f"：{[h.replace(ROOT,'/') for h in hrefs[:15]]}"
-                                          if hrefs else "（沒有）"))
+    say(f"{pad}   連結／frame／路徑字串 {len(hrefs)} 個"
+        + (f"：{[h.replace(ROOT,'/') for h in hrefs[:15]]}" if hrefs else "（真的沒有）"))
+    # ★ frameset 的話，原始碼本身要印出來看——1KB 全部印得完
+    if len(raw) < 4000 and tr == 0:
+        say(f"{pad}   ★ 這一頁只有 {len(raw):,} bytes 且沒有表格，**原始碼全印**：")
+        for i in range(0, min(len(html), 1600), 200):
+            say(f"{pad}     {html[i:i+200]!r}")
     return hrefs, t
 
 
