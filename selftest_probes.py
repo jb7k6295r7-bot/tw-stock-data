@@ -106,7 +106,9 @@ def fake_get(url, **kw):
         if "index.php" in u:
             return HIST_IDX.encode(), None
         if u.upper().endswith(".TXT"):
-            m = re.search(r"/([A-Z]+)(\d{3})(\d{4})\.txt$", u, re.I)
+            # ⛔ 民國年是 **2 碼或 3 碼**（95 vs 115），不是固定 3 碼——
+            #   假回應的 regex 若只認 3 碼，真正的檔名格式就測不到。
+            m = re.search(r"/([A-Z]+)(\d{2,3})(\d{4})\.txt$", u, re.I)
             # ⛔ 故意讓一部分年份**沒有檔**：不這樣的話「四天都沒有」與「中間有洞」
             #   這兩條分支永遠不會被走到，等於沒測。
             if m and (int(m.group(2)) < 90 or int(m.group(2)) == 100):
