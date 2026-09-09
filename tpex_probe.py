@@ -33,6 +33,8 @@
 輸出寫進 `data/meta/_tpex_probe.txt` 進 repo，不必有人去翻 Actions log。
 """
 import io
+import csv
+import io
 import json
 import os
 import re
@@ -202,6 +204,113 @@ def main():
                         vals.add(f"{k}={v}")
             if vals:
                 say(f"     類股相關欄的值（前 12）：{sorted(vals)[:12]}")
+
+    # ── [7] 上櫃「沒有中文名」的類股代碼，能不能靠官方的產業別欄對出來 ──
+    #   ⚠ 這一節**只量、只報，不寫進 industry.csv**。
+    #   交接清單有一條「不要用成員名單去猜名稱」——用成員反推名稱是**實測推定**，
+    #   不是官方對照表。比照先前 DR 91 的處理：記錄下來，採不採用是情報分析的決定。
+    say("\n[7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）")
+    IND = os.path.join(_ROOT, "meta", "industry.csv")
+    rows = []
+    try:
+        with io.open(IND, encoding="utf-8") as f:
+            rows = [r for r in csv.DictReader(f) if r.get("market") == "tpex"]
+    except OSError as ex:                                        # noqa: BLE001
+        say(f"  ✗ 讀不到 {IND}：{ex}")
+        rows = []
+    if rows:
+        by_code = {}
+        for r in rows:
+            by_code.setdefault(r.get("industry_code", ""), []).append(r)
+        # ⛔ 不寫死 32／33——從資料裡找「名稱是空的」那些代碼，
+        #    以後多一個少一個都不必回來改這支。
+        blank = sorted(c for c, rs in by_code.items()
+                       if c and all(not r.get("industry_name") for r in rs))
+        named = {c: rs[0]["industry_name"] for c, rs in by_code.items()
+                 if c and rs[0].get("industry_name")}
+        say(f"  industry.csv 的 tpex：{len(rows)} 檔／{len(by_code)} 個代碼；"
+            f"名稱空白的代碼 {blank}（{[len(by_code[c]) for c in blank]} 檔）")
+
+        r7, e7 = B.get(OPEN + "mopsfin_t187ap05_OA", retries=2, timeout=60)
+        off = {}
+        if e7:
+            say(f"  ✗ 抓不到 mopsfin_t187ap05_OA：{e7[:120]}")
+        else:
+            try:
+                d7 = json.loads(r7.decode("utf-8-sig", "replace"))
+            except Exception as ex:                              # noqa: BLE001
+                say(f"  ✗ 不是 JSON：{type(ex).__name__}")
+                d7 = []
+            if isinstance(d7, dict):
+                d7 = next((v for v in d7.values() if isinstance(v, list)), [])
+            for r3 in d7:
+                if isinstance(r3, dict):
+                    cid = str(r3.get("公司代號") or "").strip()
+                    nm = str(r3.get("產業別") or "").strip()
+                    if cid and nm:
+                        off[cid] = nm
+            say(f"  官方 mopsfin_t187ap05_OA：{len(d7)} 筆，"
+                f"帶得出代號＋產業別的 {len(off)} 檔，"
+                f"相異產業別 {len(set(off.values()))} 個")
+
+        if off:
+            # ★ 先在**已知答案**上驗這個方法對不對。
+            #   若連有名稱的代碼都對不起來，32／33 的推定就不可信——
+            #   這是唯一能讓推定站得住的非循環檢查。
+            say("\n  ── 先驗方法：有中文名的代碼，官方產業別對不對得上 ──")
+            agree = dis = nohit = 0
+            bad = []
+            for c in sorted(named):
+                got = [off[r["stock_id"]] for r in by_code[c]
+                       if r["stock_id"] in off]
+                if not got:
+                    nohit += 1
+                    continue
+                top = max(set(got), key=got.count)
+                if top == named[c]:
+                    agree += 1
+                else:
+                    dis += 1
+                    bad.append(f"{c} 本庫「{named[c]}」／官方多數「{top}」"
+                               f"（{got.count(top)}/{len(got)}）")
+            say(f"     對得上 {agree}／對不上 {dis}／官方沒收到成員 {nohit}"
+                f"（共 {len(named)} 個有名稱的代碼）")
+            for b in bad[:10]:
+                say(f"       ✗ {b}")
+            trust = (dis == 0 and agree >= 10)
+            if trust:
+                say("     ⇒ 方法在已知答案上全中，下面對空白代碼的推定可信度較高。")
+            else:
+                say("     ⚠ 方法在已知答案上就有不合——下面的推定**一律不可採用**，"
+                    "即使某個代碼看起來 1:1。")
+
+            say("\n  ── 空白代碼的對照結果 ──")
+            for c in blank:
+                mem = by_code[c]
+                got = [(r["stock_id"], off.get(r["stock_id"], "")) for r in mem]
+                hit = [n for _, n in got if n]
+                say(f"     代碼 {c}：{len(mem)} 檔，官方對到 {len(hit)} 檔")
+                if not hit:
+                    say("       （官方一檔都沒收到——這條路對這個代碼無效）")
+                    continue
+                cnt = {n: hit.count(n) for n in set(hit)}
+                for n, k in sorted(cnt.items(), key=lambda x: -x[1]):
+                    clash = [c2 for c2, n2 in named.items() if n2 == n]
+                    tag = f"  ⚠ 這個名稱已經是代碼 {clash} 的" if clash else ""
+                    say(f"       {n}：{k}/{len(hit)}{tag}")
+                if len(cnt) == 1 and len(hit) == len(mem):
+                    n = next(iter(cnt))
+                    if any(n2 == n for n2 in named.values()):
+                        say(f"       ⇒ 全部對到同一個名稱，但該名稱**已被別的代碼用掉**，"
+                            f"不是 1:1，不可採用")
+                    else:
+                        say(f"       ⇒ {len(mem)}/{len(mem)} 全對到「{n}」，"
+                            f"且沒有別的代碼在用 ⇒ 看起來是 1:1"
+                            + ("" if trust else "，但**方法先驗沒過，仍不可採用**"))
+                else:
+                    say("       ⇒ 不是 1:1（有多個名稱或有成員對不到），不可採用")
+            say("\n  ⛔ 以上一律**不寫進 industry.csv**：這是實測推定，不是官方對照表。"
+                "要不要採用是市場情報分析的決定。")
 
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
