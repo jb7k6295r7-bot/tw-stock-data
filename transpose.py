@@ -102,6 +102,37 @@ def _days(kind):
     return sorted(by_day.items())
 
 
+def _header(kind, days):
+    """先掃過**每一個來源日檔的第一行**，決定全庫共用的表頭。
+
+    ⭐ 為什麼要先掃一遍：2026-09-09 融資融券補存 `m_prev/m_ret/s_prev/s_ret`，
+      新欄接在舊表頭後面 ⇒ 回補進行到一半時，同一個 kind 底下會同時有
+      9 欄的舊檔與 13 欄的新檔。⛔ 照舊「不一致就中止」的話，
+      個股庫在回補的那幾小時（其實是好幾趟）**整個是壞的**。
+
+    ⛔ 但放行的只有**前綴**這一種：所有檔的表頭排序之後，
+      短的必須逐字等於長的前 n 欄。欄序一變、欄名一改就中止——那是真的錯位。
+    → (表頭, 說明字串) 或 (None, 錯誤字串)
+    """
+    seen = {}
+    for _d, paths in days:
+        for path in paths:
+            with open(path, encoding="utf-8") as f:
+                line = f.readline()
+            cols = tuple(c for c in next(csv.reader([line])) if c not in DROP)
+            seen.setdefault(cols, []).append(path)
+    if not seen:
+        return None, "一個來源檔都沒有"
+    ordered = sorted(seen, key=len)
+    longest = ordered[-1]
+    for c in ordered:
+        if longest[:len(c)] != c:
+            return None, ("表頭彼此**不是前綴關係**（＝真的錯位，不是加欄）："
+                          f"{list(c)}（例：{seen[c][0]}） vs {list(longest)}")
+    note = "｜".join(f"{len(c)} 欄 × {len(seen[c])} 檔" for c in ordered)
+    return list(longest), note
+
+
 def build(kind):
     # ★ info 是給 runlog 用的**實際值**，不是「有沒有出事」。
     #   每一項都必須是這一趟真的量到的東西，不可以填預設值假裝有量。
@@ -128,7 +159,17 @@ def build(kind):
     os.makedirs(out_dir, exist_ok=True)
 
     t0 = time.time()
-    header = None
+    header, note = _header(kind, days)
+    if header is None:
+        print(f"[transpose] ✗ {kind} {note}", file=sys.stderr)
+        return 1, info
+    info["header_cols"] = len(header)
+    info["header_note"] = note
+    if len(set(note.split("｜"))) > 1:
+        # ⚠ 混欄數是**回補進行中**的正常狀態，但要講出來：
+        #   不講的話「舊檔那幾欄是空的」會被當成「那天的值是 0」。
+        print(f"[transpose] ⚠ {kind} 來源檔欄數不一致（{note}）"
+              "⇒ 取最長的當表頭，舊檔缺的欄補**空字串**（⛔ 不是 0）")
     seen = set()                       # 已經寫過表頭的代號
     stat = collections.Counter()
     span = {}                          # code -> [first, last]
@@ -144,13 +185,16 @@ def build(kind):
                     if rd.fieldnames is None:
                         continue
                     cols = [c for c in rd.fieldnames if c not in DROP]
-                    if header is None:
-                        header = cols
-                    elif cols != header:
-                        # ★ 多來源合併時，欄位不一致就是災難：同一個 CSV 裡
-                        #   前後段的欄意義不同，而且**看不出來**。整支中止。
-                        print(f"[transpose] ✗ {path} 欄位與先前不同\n"
-                              f"    先前={header}\n    本檔={cols}", file=sys.stderr)
+                    # ⛔ 表頭在進迴圈**之前**就算好了（見 `_header()`）。
+                    #   這裡只驗「本檔是不是它的前綴」——不再就地改 header：
+                    #   ⚠ 就地改會壞掉，而且壞得看不出來：
+                    #     ① 前面幾個 chunk 已經用**短表頭**建好列了，
+                    #     ② 已經寫出去的個股檔開頭是**短表頭**，
+                    #     ⇒ 後面接上長列 ⇒ 同一個 CSV 前後段欄數不同。
+                    if header[:len(cols)] != cols:
+                        print(f"[transpose] ✗ {path} 欄位不是全庫表頭的前綴"
+                              "（＝真的錯位，不是加欄）\n"
+                              f"    全庫={header}\n    本檔={cols}", file=sys.stderr)
                         return 1, info
                     for r in rd:
                         code = (r.get("stock_id") or "").strip()
