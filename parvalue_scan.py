@@ -66,7 +66,14 @@ OUT = os.path.join(_ROOT, "meta", "_parvalue_scan.md")
 CSV_OUT = os.path.join(_ROOT, "meta", "par_change.csv")
 CSV_HEADER = ["stock_id", "event_date", "prev_trade_date", "prev_close",
               "close", "ratio", "shares_before", "shares_after",
-              "share_mult", "evidence", "in_universe"]
+              "share_mult", "evidence", "in_universe", "restored"]
+# ★ `restored`：`data/adj/` 裡有沒有對應的還原因子。
+#   ⛔ 為什麼要有這一欄（情報分析線 2026-09-09 裁定，理由是**語意**不是方便）：
+#     這份的語意是「**哪些是面額變更**」。2026-09-09 這 24 筆剛好全部已還原，
+#     於是「是面額變更」與「已還原」完全重疊——
+#     **重疊的時候最容易被寫成同一件事，然後在它們分開的那一天靜默出錯**
+#     （日後有新事件、因子落地前的那段空窗）。
+#     分成兩欄之後，讀取端的閘門只讀「是不是面額變更」，還原狀態另外看。
 
 # ★ 「無法用還原因子解釋的跳價」。規格由市場情報分析線 2026-09-09 02:30 指定。
 #   ⛔ 與 `par_change.csv` **嚴格分開**：那份的語意是「面額變更」，這份不是。
@@ -78,9 +85,20 @@ CSV_HEADER = ["stock_id", "event_date", "prev_trade_date", "prev_close",
 #     ④ 停 ≥ 20 個交易日——**這一條把「無漲跌幅 ETF 的真實交易」擋掉**
 #        （00672L、00887 那幾筆隔 1 天就跳 ±85%，那是交易不是公司行動）
 BRK_OUT = os.path.join(_ROOT, "meta", "breakpoints_unexplained.csv")
+# ⚠ 欄名 2026-09-09 由 `gap_trading_days` 改成 `missing_trading_days`，
+#   定義也跟著統一成「**前一有成交日與這一次有成交日之間，交易日曆上缺掉的交易日數**」。
+#   原本用的是**日曆索引差**（157），回測線用的是**停牌天數**（156），差 1——
+#   ⛔ 兩個都對，只是量的不是同一件事，而舊欄名兩種都讀得通，**那就是會出錯的地方**。
+#   K線分析的條件②寫的是「連續缺 ≥ 5 個交易日」，閘門讀的就是「缺了幾天」；
+#   **欄名與判準用同一個詞，才不會有人拿索引差去比 5。**
 BRK_HEADER = ["stock_id", "name", "market", "event_date", "prev_trade_date",
-              "prev_close", "close", "ratio", "gap_trading_days",
+              "prev_close", "close", "ratio", "missing_trading_days",
               "adj_events_in_range", "cause", "in_universe"]
+# 門檻維持 20（情報分析線 2026-09-09 裁定，理由是**失效方向**）：
+#   20 的偽陽性代價 ＝ 多列一筆待查（無害，人看得到）
+#   30 的偽陰性代價 ＝ **短停牌的真斷點漏掉**（污染留在資料裡，沒有人看得到）
+# ⚠ 現有 5 筆落在 38~687 天，**20~37 之間目前無樣本**。
+#   ⛔ 不要拿「沒樣本」當「可以拉高」的理由——**沒有樣本是因為沒發生過，不是因為不會發生。**
 BRK_MIN_GAP = 20
 # ★ TWSE `change/TWTB8U` 的官方事件（`parvalue` feed 回補後的產出）。
 #   上市那批沒有 `shares` 欄，本來只能靠「收盤比＋名稱 `*`＋停止買賣天數」；
@@ -199,7 +217,8 @@ def main():
                 continue
             # ── 隔了幾個交易日：用日曆數，不是日曆天相減 ──
             if d0 in cal and d1 in cal:
-                gap = cal[d1] - cal[d0]
+                # ★ 缺掉的交易日數 ＝ 索引差 − 1（兩端都是有成交日，不算在內）
+                gap = cal[d1] - cal[d0] - 1
             else:
                 gap = -1
                 no_cal += 1
@@ -301,10 +320,13 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
     w()
     w("| 隔幾個交易日 | 有事件 | 無事件 | 其中在母體內 | 合計 |")
     w("|---|---:|---:|---:|---:|")
-    buckets = [("1（相鄰交易日）", lambda g: g == 1),
-               ("2~5", lambda g: 2 <= g <= 5),
-               ("6~20", lambda g: 6 <= g <= 20),
-               ("21 以上", lambda g: g > 20),
+    # ⚠ 2026-09-09 起 gap ＝ **中間缺掉的交易日數**（不是索引差），
+    #   所以「相鄰交易日」是 **0**，不是 1。改定義時每一個比較都要跟著改，
+    #   漏掉任何一個就會造出正要消除的那種混淆。
+    buckets = [("0（相鄰交易日，中間沒缺）", lambda g: g == 0),
+               ("1~4", lambda g: 1 <= g <= 4),
+               ("5~19", lambda g: 5 <= g <= 19),
+               ("20 以上", lambda g: g >= 20),
                ("不在日曆裡", lambda g: g < 0)]
     for label, f in buckets:
         sub = [h for h in hits if f(h["gap"])]
@@ -345,7 +367,7 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
 
     # ── ⚠ `*` 沒出現 ≠ 沒有面額變更（但原因不是我第一次寫的那個）──
     pat = [h for h in no if not h["star"] and "*" in h["name1"]
-           and h["in_pop"] and 2 <= h["gap"] <= 20 and h["ratio"] < 1]
+           and h["in_pop"] and 1 <= h["gap"] <= 19 and h["ratio"] < 1]
     both = star + pat
     w("## ⚠ `*` 沒有出現，**不等於**沒有面額變更")
     w()
@@ -416,8 +438,8 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
 
     _pat = {id(h) for h in pat}
     rest = [h for h in no if not h["star"] and id(h) not in _pat]
-    strong = [h for h in rest if h["gap"] == 1]
-    weak = [h for h in rest if h["gap"] != 1]
+    strong = [h for h in rest if h["gap"] == 0]
+    weak = [h for h in rest if h["gap"] != 0]
     w("## 其餘（**不要當成面額變更**）")
     w()
     inpop_rest = [h for h in rest if h["in_pop"]]
@@ -435,7 +457,7 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
         w("  ⚠ **成因未查明**——長期停牌後倍數復牌，減資、合併、重整都可能，")
         w("  **不要因為它符合「無事件」就歸進面額變更**。這一筆單獨留著待查。")
         w()
-    w(f"### A. 隔 1 個交易日 — **{len(strong)} 筆**")
+    w(f"### A. 中間一天都沒缺（相鄰交易日）— **{len(strong)} 筆**")
     w()
     if strong:
         w("| 代號 | 名稱 | 市場 | 前一交易日 | 收盤 | 當日 | 收盤 | 比值 | 在母體 |")
@@ -447,7 +469,7 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
     else:
         w("（沒有）")
     w()
-    w(f"### B. 隔 2 個交易日以上 — **{len(weak)} 筆**"
+    w(f"### B. 中間有缺 — **{len(weak)} 筆**"
       f"（其中在母體內 {len([h for h in weak if h['in_pop']])} 筆）")
     w()
     w("⚠ 這一類**不能直接當成面額變更**：中間停牌期間的累積漲跌本來就可以超過門檻。")
@@ -543,13 +565,17 @@ def report(a, days, files, n_rows, n_pairs, hits, no_cal):
                     ev, mult = "twse_twtb8u", off[0] / off[1]
                 else:
                     ev, mult = "price_name_gap", None
+                # restored：data/adj/ 有沒有對應日期的 parvalue 因子
+                adj_has = any(e[0] == h["d1"] and e[2] == "parvalue"
+                              for e in load_events(h["sid"]))
                 w.writerow([
                     h["sid"], h["d1"], h["d0"],
                     f"{h['c0']:g}", f"{h['c1']:g}", f"{h['ratio']:.6f}",
                     f"{h['sh0']:.0f}" if h["sh0"] else "",
                     f"{h['sh1']:.0f}" if h["sh1"] else "",
                     f"{mult:.4f}" if mult else "",
-                    ev, "1" if h["in_pop"] else "0"])
+                    ev, "1" if h["in_pop"] else "0",
+                    "1" if adj_has else "0"])
         print(f"[scan] 寫出 {CSV_OUT}（{len(both)} 列）")
     except OSError as ex:                                        # noqa: BLE001
         print(f"[scan] CSV 寫檔失敗：{ex}", file=sys.stderr)

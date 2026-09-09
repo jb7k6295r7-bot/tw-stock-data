@@ -1,6 +1,6 @@
-stock_id,name,market,event_date,prev_trade_date,prev_close,close,ratio,gap_trading_days,adj_events_in_range,cause,in_universe
-911613,特藝,tpex,2016-03-02,2015-12-29,6.86,2.69,0.392128,38,0,unknown,0
-4415,台原藥,tpex,2017-11-22,2017-04-11,5.95,14.75,2.478992,157,0,unknown,0
-6131,鈞泰,twse,2019-04-10,2018-05-17,13.35,3.42,0.256180,219,0,unknown,0
-00643K,群益深証中小+R,twse,2024-09-23,2021-11-23,4.49,2.32,0.516704,687,0,unknown,0
-8101,華冠,twse,2024-11-19,2024-08-21,1.9,10.45,5.500000,59,0,unknown,1
+stock_id,name,market,event_date,prev_trade_date,prev_close,close,ratio,missing_trading_days,adj_events_in_range,cause,in_universe
+911613,特藝,tpex,2016-03-02,2015-12-29,6.86,2.69,0.392128,37,0,unknown,0
+4415,台原藥,tpex,2017-11-22,2017-04-11,5.95,14.75,2.478992,156,0,unknown,0
+6131,鈞泰,twse,2019-04-10,2018-05-17,13.35,3.42,0.256180,218,0,unknown,0
+00643K,群益深証中小+R,twse,2024-09-23,2021-11-23,4.49,2.32,0.516704,686,0,unknown,0
+8101,華冠,twse,2024-11-19,2024-08-21,1.9,10.45,5.500000,58,0,unknown,1
