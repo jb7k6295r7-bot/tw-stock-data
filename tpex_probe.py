@@ -373,8 +373,16 @@ def main():
         hits = set(re.findall(r"[\"'\(]([a-zA-Z0-9_/.-]*(?:www|web)/zh-tw/[a-zA-Z0-9_/.-]+)",
                               html))
         hits |= set(re.findall(r"url\s*[:=]\s*[\"'`]([^\"'`]{4,140})", html))
-        hits |= set(re.findall(r"[\"'\(](/[a-zA-Z0-9_/.-]{6,120}(?:\.php|\.json|Ajax|/data))",
-                               html))
+        # ⛔ 2026-09-09 這一行製造了一個假命中，而我把它當成結論報出去了：
+        #   原本結尾寫 `(?:\.php|\.json|Ajax|/data)`，其中 **`/data` 太鬆**——
+        #   它把頁尾導覽列的 `/zh-tw/service/data/overview.html`（「資訊購買」，
+        #   **每一頁都有的頁尾連結**）截成 `/zh-tw/service/data`，
+        #   於是三個頁面「都命中同一條路徑」⇒ 我推論成「它們呼叫同一條 API」。
+        #   **那不是 API，是頁尾連結。** 三頁都有，只因為那是共用頁尾。
+        #   ⇒ 收緊：要嘛是明確的資料副檔名，要嘛帶查詢字串，⛔ 不再用 `/data` 結尾。
+        hits |= set(re.findall(
+            r"[\"'\(](/[a-zA-Z0-9_/.-]{6,120}(?:\.php|\.json|Ajax)\b[^\"'\)]{0,80})",
+            html))
         hits = {h for h in hits if "/" in h}
         if hits:
             say(f"     它自己呼叫的候選網址（{len(hits)} 個，逐字）：")
@@ -385,10 +393,24 @@ def main():
         #   而 `service/data` 是從**這個頁面的 HTML** 撈到的——
         #   ⇒ 參數多半就寫在頁面自己的 inline script 裡，我卻跑去別的檔找。
         #   **命中在哪就在哪裡看上下文**，不要跑去別的地方找。
-        for m in list(re.finditer(r"service/data", html))[:5]:
-            a, b = max(0, m.start() - 300), min(len(html), m.end() + 300)
-            say("     ── `service/data` 的上下文（逐字，不整理）──")
-            say("       " + html[a:b].replace("\n", " ")[:600])
+        # ★ 這三頁**載入的 js 全是共用的**（jquery、gsap、global.js…），
+        #   沒有頁面專屬的 js ⇒ 取資料那一段若不在 global.js，就在**inline script** 裡。
+        #   ⛔ 不猜，把 inline script 裡像在組請求的片段**逐字**印出來。
+        inline = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>",
+                            html, re.S | re.I)
+        say(f"     inline script {len(inline)} 段")
+        shown = 0
+        for blk in inline:
+            for m in re.finditer(r"ajax|\$\.get|\$\.post|fetch\s*\(|url\s*:", blk):
+                a, b = max(0, m.start() - 200), min(len(blk), m.end() + 300)
+                say("     ── inline script 裡像在組請求的地方（逐字）──")
+                say("       " + blk[a:b].replace("\n", " ")[:520])
+                shown += 1
+                break
+            if shown >= 4:
+                break
+        if not shown:
+            say("     （inline script 裡沒有像在組請求的片段）")
         else:
             say("     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）")
         js = sorted(set(re.findall(r"[\"'\(]([^\"'\(\)]+\.js)[\"'\)]", html)))
@@ -444,12 +466,14 @@ def main():
             say(f"     ✗ {str(ej)[:130]}　⛔ 抓不到不等於不存在")
             continue
         t = rj.decode("utf-8", "replace")
-        say(f"     ✓ {len(rj):,} bytes｜出現 `service/data` {t.count('service/data')} 次")
-        # 逐字印出上下文——⛔ 不整理、不摘要，參數名要原樣看到
-        for m in list(re.finditer(r"service/data", t))[:6]:
-            a, b = max(0, m.start() - 260), min(len(t), m.end() + 260)
-            say("     ── 上下文 ──")
-            say("       " + t[a:b].replace("\n", " ")[:520])
+        # ⛔ 上一版在這裡找 `service/data`，出現 **0 次**——因為那根本不是 API 路徑
+        #   （見第 8 節的更正：那是頁尾連結）。改成找**它怎麼組請求**。
+        say(f"     ✓ {len(rj):,} bytes｜`ajax(` {len(re.findall(r'ajax *[(:]', t))} 處"
+            f"｜`url:` {len(re.findall(r'url *:', t))} 處")
+        for m in list(re.finditer(r"ajax *[(:]|\$\.(?:get|post)\s*\(", t))[:6]:
+            a, b = max(0, m.start() - 220), min(len(t), m.end() + 340)
+            say("     ── 組請求的地方（逐字，不整理）──")
+            say("       " + t[a:b].replace("\n", " ")[:560])
         # 常見的參數名長相：`tables`、`response`、`date`、`type`…
         keys = sorted(set(re.findall(r"[\"'\{,]\s*([a-zA-Z_][a-zA-Z0-9_]{2,20})\s*:", t)))
         hit = [k for k in keys if re.search(
