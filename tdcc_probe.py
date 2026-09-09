@@ -453,6 +453,66 @@ def main():
         if rows:
             say(f"             欄位：{list(rows[0])[:8]}")
 
+    # ── [9] ★★ 政府資料開放平臺 dataset 11452 ──
+    #   網址由使用者 2026-09-09 提供，**非自行生成**。
+    #   為什麼值得試：集保官方端點只回最新一週，而 data.gov.tw 是**中介目錄**——
+    #   它會列出資料集的**實際下載網址**與更新頻率。若那裡登的是另一個網址
+    #   （或帶期別參數的網址），就是我們一直找不到的歷史來源。
+    #
+    #   ⛔ 兩條路都試、都印出來，**不猜哪條對**：
+    #     ① 網頁本身（人看的頁面）
+    #     ② `api/v2/rest/dataset/<id>`（該站的公開 API，回 JSON）
+    #   哪一條成功、哪一條失敗，都照實記——這樣下一個人不必重猜。
+    say("\n[9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）")
+    DGT = [("網頁", "https://data.gov.tw/dataset/11452"),
+           ("公開 API", "https://data.gov.tw/api/v2/rest/dataset/11452")]
+    dl = set()
+    for label, url in DGT:
+        say(f"\n  ── {label}：{url}")
+        r10, e10 = B.get(url, retries=2, timeout=60)
+        if e10:
+            say(f"     ✗ {str(e10)[:140]}")
+            continue
+        txt = r10.decode("utf-8", "replace")
+        say(f"     ✓ {len(r10):,} bytes")
+        # 資料集自己宣告的欄位：名稱、更新頻率、時間範圍、提供機關
+        for kw in ("資料集名稱", "更新頻率", "資料時間", "起始時間", "結束時間",
+                   "提供機關", "檔案格式", "授權"):
+            hit = [x.strip()[:90] for x in
+                   re.findall(r"[^\n\r]{0,40}" + kw + r"[^\n\r]{0,70}", txt)][:2]
+            if hit:
+                say(f"     {kw}：{hit}")
+        # ★ 下載網址：全部撈出來，**逐字印**，不整理
+        for m in re.findall(r'https?://[^\s"\'<>\\)]{10,200}', txt):
+            if any(k in m.lower() for k in ("getod", "download", ".csv", ".zip",
+                                            "tdcc", "opendata", "ashx")):
+                dl.add(m)
+    if dl:
+        say(f"\n  ★ 撈到的下載網址（{len(dl)} 個，逐字）：")
+        for u in sorted(dl)[:15]:
+            say(f"     {u}")
+    else:
+        say("\n  （沒撈到下載網址——上面兩條都失敗，或頁面是 JS 動態組的）")
+
+    # ── [10] 撈到的網址逐一量形狀：**有多個資料日期的才可能是歷史** ──
+    say("\n[10] ★ 撈到的網址逐一量形狀（只量，不猜用途）")
+    known = {URL}
+    todo = [u for u in sorted(dl) if u not in known][:4]
+    if not todo:
+        say("    （沒有新的網址可量，或撈到的就是我方已在用的那一條）")
+    for u in todo:
+        r11, e11 = B.get(u, retries=1, timeout=90)
+        if e11:
+            say(f"    {u[:80]}\n       ✗ {str(e11)[:90]}")
+            continue
+        rows, note = parse(r11)
+        dates = sorted({pick(x, DATE_KEYS) for x in rows} - {""})
+        say(f"    {u[:80]}")
+        say(f"       {len(r11):,} bytes｜{note}｜相異資料日期 {len(dates)} 個 {dates[:4]}"
+            f"{'  ← ★★ 多個日期＝可能是歷史檔' if len(dates) > 1 else ''}")
+        if rows:
+            say(f"       欄位：{list(rows[0])[:8]}")
+
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")
     say("**不要因為「有幾萬列」就當它完整**。")
