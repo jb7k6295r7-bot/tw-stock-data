@@ -335,7 +335,16 @@ def main():
                 break
             got = None
             for mmdd in ("1229", "1228", "0630", "0331"):
-                u = ROOT + f"Hist/EMERGINGSTOCK/HISTORICAL/DAILY/{t0}{roc:03d}{mmdd}.txt"
+                # ⛔⛔ 第五輪的 bug 就在這一行：本來寫 `{roc:03d}`，
+                #   於是民國 95 被補成 `AA0951229.txt` ⇒ **32 年全部落空**，
+                #   而同一趟的 [6] 節用 `AA951229.txt` 明明抓到 46,651 bytes。
+                #   ⭐ 而正確寫法**頁面自己的 js 早就講了**：
+                #     `inputDATE[0] + leftPad(月,2) + leftPad(日,2)`
+                #     ——**只有月與日補零，年不補**。是我抄錯，不是站台的問題。
+                #   ⚠ 這一輪的教訓跟上一輪同一族：上一輪是判準自己編，
+                #     這一輪是**證據就在手上卻沒照著做**。
+                u = (ROOT + "Hist/EMERGINGSTOCK/HISTORICAL/DAILY/"
+                     f"{t0}{roc}{mmdd}.txt")
                 rb, er = B.get(u, retries=1, timeout=30)
                 if er is not None:
                     continue
@@ -355,7 +364,7 @@ def main():
                     got = (mmdd, len(rb))
                     break
                 if _dates(txt):
-                    say(f"       ⚠ {t0}{roc:03d}{mmdd}.txt 抓得到日期卻**不是我要的那天**"
+                    say(f"       ⚠ {t0}{roc}{mmdd}.txt 抓得到日期卻**不是我要的那天**"
                         f"（{_dates(txt)[:3]}）⇒ 不算命中")
             hits.append((roc, got))
             say(f"     民國 {roc:>3}（{roc + 1911}）｜"
