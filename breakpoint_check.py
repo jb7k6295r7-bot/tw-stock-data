@@ -29,8 +29,16 @@ import sys
 
 import runlog
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                   "data", "meta", "_breakpoint_scan.md")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(_HERE, "data", "meta", "_breakpoint_scan.md")
+# ★ 附表：**所有**缺 ≥ 5 日且區間內無事件的洞，不論流動性（回測線 2026-09-09 09:50 加）。
+#   ⚠ 為什麼要另存一份到 data/meta/：`backtest/results/` 是回測線的產出目錄，
+#     由他們的分支決定內容；資料庫這一側要引用的東西不可以指到別人的工作區——
+#     那是「拿間接證據代替直接證據」的另一種形狀（我引的版本不一定是他們現在的版本）。
+#   ⛔ 這一份**不設任何 ✗**：1,402 列是「拿去查的表」，不是閘門。
+#     對它設門檻等於替情報分析裁「洞算不算斷點」，那不是我的權限。
+HOLES_SRC = os.path.join(_HERE, "backtest", "results", "holes_scan.csv")
+HOLES_OUT = os.path.join(_HERE, "data", "meta", "_holes_scan.csv")
 
 
 def main():
@@ -78,12 +86,36 @@ def main():
         rl.info("規則另外抓到（長停牌，成因未定）",
                 f"{m.group(1)} 個／{m.group(2)} 檔——"
                 "「洞算不算斷點」歸情報分析裁，這裡只列數")
+    m = re.search(r"洞 (\d+) 個、(\d+) 檔；其中 liq_ok (\d+) 個", txt)
+    if m:
+        rl.info("附表：所有無事件的長洞（不論流動性）",
+                f"{m.group(1)} 個／{m.group(2)} 檔，其中流動性夠的 {m.group(3)} 個"
+                "——完整表在 data/meta/_holes_scan.csv，⛔ 不設 ✗")
+    n_h = _copy_holes()
+    if n_h is not None:
+        rl.info("_holes_scan.csv", f"{n_h} 列")
     rl.info("完整輸出", "data/meta/_breakpoint_scan.md")
 
     rl.check("par_change.csv 沒有一筆漏抓", rc == 0,
              "漏抓＝既無還原因子、規則也沒抓到 ⇒ 規則寫錯了，"
              "清單在 data/meta/_breakpoint_scan.md")
     return rl.finish()
+
+
+def _copy_holes():
+    """把附表從回測線的產出目錄複製到 data/meta/。回傳列數；來源不在就回 None。"""
+    if not os.path.exists(HOLES_SRC):
+        return None
+    try:
+        with io.open(HOLES_SRC, encoding="utf-8") as f:
+            body = f.read()
+        os.makedirs(os.path.dirname(HOLES_OUT), exist_ok=True)
+        with io.open(HOLES_OUT, "w", encoding="utf-8") as f:
+            f.write(body)
+        return max(0, body.count("\n") - 1)          # 扣掉表頭
+    except OSError as ex:                                        # noqa: BLE001
+        print(f"[breakpoint] 附表複製失敗：{ex}", file=sys.stderr)
+        return None
 
 
 def _write(txt):

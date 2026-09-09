@@ -3,6 +3,7 @@
 # 產生方式：python3 breakpoint_check.py
 
 ```
+附表 holes_scan.csv：缺 ≥ 5 日且無事件的洞 1402 個、173 檔；其中 liq_ok 10 個（＝ 進斷點清單的 gap 規則）
 母體 2129 檔，斷點 12 個、11 檔
 rule
 gap          9

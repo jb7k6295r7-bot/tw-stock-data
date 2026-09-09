@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import sys
 
+import numpy as np
 import pandas as pd
 
 from . import data as D
@@ -23,6 +24,7 @@ def main():
     cal = D.load_calendar()
     uni = D.load_universe()
     rows = []
+    all_holes: list[dict] = []
     adj_dates: dict[str, set] = {}
     for sid, market in zip(uni["stock_id"], uni["market"]):
         st = D.load_stock(sid, market, cal)
@@ -33,9 +35,30 @@ def main():
                          "prev_date": cal[b["prev_pos"]].strftime("%Y-%m-%d"), "ratio": round(b["ratio"], 4),
                          "missing_trading_days": b["gap"], "rule": b["rule"]})
         adj_dates[sid] = st.event_dates
+        # 附表：所有 ≥ GAP_MIN 且無事件的洞（不論流動性）
+        c = st.df["close"].to_numpy(float); v = st.df["volume"].to_numpy(float)
+        tr = np.flatnonzero(~np.isnan(c))
+        if len(tr) >= 2:
+            p_, t_ = tr[:-1], tr[1:]
+            ev = np.array(sorted(pd.Timestamp(x) for x in st.event_dates), dtype="datetime64[ns]")
+            idx = st.df.index.values.astype("datetime64[ns]")
+            for k in np.flatnonzero((t_ - p_ - 1) >= D.GAP_MIN):
+                if len(ev) and np.searchsorted(ev, idx[t_[k]], side="right") > np.searchsorted(ev, idx[p_[k]], side="right"):
+                    continue
+                w = v[max(0, p_[k] - D.GAP_LIQ_WINDOW + 1):p_[k] + 1]; w = w[~np.isnan(w)]
+                med = float(np.median(w)) if len(w) else float("nan")
+                all_holes.append({"stock_id": sid, "market": market, "date": cal[t_[k]].strftime("%Y-%m-%d"),
+                                  "prev_date": cal[p_[k]].strftime("%Y-%m-%d"), "ratio": round(float(c[t_[k]] / c[p_[k]]), 4),
+                                  "missing_trading_days": int(t_[k] - p_[k] - 1), "median_vol_60d": med,
+                                  "liq_ok": bool(len(w) and med >= D.GAP_LIQ_SHARES)})
     bp = pd.DataFrame(rows, columns=["stock_id", "market", "date", "prev_date", "ratio", "missing_trading_days", "rule"])
     os.makedirs(RESULTS, exist_ok=True)
     bp.to_csv(os.path.join(RESULTS, "breakpoints_scan.csv"), index=False)
+    # 附表（給資料層看，不進回測判準）：所有「缺 ≥ 5 日且區間內無事件」的洞，不論流動性，另加 liq_ok 欄。
+    # 條件②的流動性前提是 K線線裁的回測／判讀判準；資料層要列「有沒有公司行動缺口」時不該被它濾掉（CODE 09:40 Q1，3073 那種）。
+    holes = pd.DataFrame(all_holes, columns=["stock_id", "market", "date", "prev_date", "ratio", "missing_trading_days", "median_vol_60d", "liq_ok"])
+    holes.to_csv(os.path.join(RESULTS, "holes_scan.csv"), index=False)
+    print(f"附表 holes_scan.csv：缺 ≥ {D.GAP_MIN} 日且無事件的洞 {len(holes)} 個、{holes['stock_id'].nunique()} 檔；其中 liq_ok {int(holes['liq_ok'].sum())} 個（＝ 進斷點清單的 gap 規則）")
     print(f"母體 {len(uni)} 檔，斷點 {len(bp)} 個、{bp['stock_id'].nunique()} 檔")
     print(bp["rule"].value_counts().to_string())
     if len(bp):
