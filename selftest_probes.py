@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""把五支探針的 `main()` **整條走一遍**（網路全部換成假回應），只驗「跑不跑得完」。
+"""把六支探針的 `main()` **整條走一遍**（網路全部換成假回應），只驗「跑不跑得完」。
 
     python3 selftest_probes.py
 
@@ -64,6 +64,12 @@ HTML = ("<html><body><form>"
         #   ⛔ **假的比真的簡單，就等於沒測。**
         "<script src='/static/app.js'></script>"
         "</form></body></html>")
+# ⚠ 2026-09-09：otccal_probe 的重點是「日期欄 min/max ＋ 與我方日曆雙向比對」。
+# 若假回應照 OPENAPI_ROWS（沒有日期欄）回，它會在「沒有日期欄」那一行就 return，
+# **_date_cols／_gaps／_compare 三個函式一行都不會跑到**。⛔ 假的比真的簡單＝沒測。
+INDEX_ROWS = [{"Date": "1150907", "ClosingIndex": "250.11"},
+              {"Date": "1150908", "ClosingIndex": "251.22"},
+              {"Date": "1150909", "ClosingIndex": "252.33"}]
 DATAGOV = {"success": True, "result": {
     "title": "集保戶股權分散表", "description": "每週",
     "distribution": [{"resourceDescription": "csv",
@@ -79,6 +85,8 @@ def fake_get(url, **kw):
         return json.dumps(DATAGOV).encode(), None
     if "getOD.ashx" in u:
         return json.dumps(FAKE_ROWS).encode(), None
+    if "openapi/v1/" in u and ("_index" in u or "index" in u.rsplit("/", 1)[-1]):
+        return json.dumps(INDEX_ROWS).encode(), None
     if "openapi/v1/" in u or "mopsfin" in u:
         return json.dumps(OPENAPI_ROWS).encode(), None
     # ⚠ 2026-09-09：這一行原本讓 `…/zh/holidaySchedule/holidaySchedule`
@@ -119,6 +127,9 @@ SECTIONS = {
     # ⛔ 這一支的每一節都是判讀前提（見 holiday_probe 的檔頭四項），
     #   少掉任何一節都會讓「颱風休市偵測」建立在沒問過的假設上。
     "holiday_probe": ["[1]", "[2]", "[3]", "[4]", "[5]", "[6]", "[7]", "[8]", "[9]"],
+    # ⛔ [2] 與 [5] 是這一支的本體：[2] 是候選端點的日期 min/max，
+    #   [5] 是「找到／沒找到」的結論。少任何一節都代表它中途 return 了。
+    "otccal_probe": ["[1]", "[2]", "[3]", "[4]", "[5]"],
 }
 
 
