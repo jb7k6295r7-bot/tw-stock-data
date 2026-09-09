@@ -47,6 +47,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -406,6 +407,75 @@ def main():
             + ("（比 2019 起那次多 ⇒ 2015~2018 也有事件，**我方要補**）"
                if wide8 is not None and len(w15) > len(wide8) else
                "（沒有比 2019 起那次多 ⇒ 2015~2018 沒有上市面額變更）"))
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆"
+        "（使用者 2026-09-09 15:20 提供）")
+    # 使用者給的形式：`/rwd/reducation/TWTAUU?response=html&startDate=20110101&endDate=…`
+    # ⚠ 注意它**沒有 `/zh/`**，而我方在用的是有 `/zh/` 的。兩個都量，
+    #   ⛔ 不要假設它們是同一條——同站不同路徑回不同東西的事已經遇過。
+    # ★ 但這一節真正的重點跟 [T8] 一樣，而且更重要：
+    #   減資我方有 **535 筆**（2015-01-23 ~ 2026-09-07），
+    #   是面額變更 24 筆的 22 倍，**而且從來沒有跟官方雙向對過**。
+    #   漏一筆的後果是那一檔跨事件的長期報酬永遠錯，而且不會報錯。
+    RED = "https://www.twse.com.tw/rwd/zh/reducation/TWTAUU"
+    RED_NOZH = "https://www.twse.com.tw/rwd/reducation/TWTAUU"
+    say(f"  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ {today}")
+    w9 = _t7("帶 /zh/", f"{RED}?startDate=20110101&endDate={today}&response=json")
+    say("  ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西")
+    w9b = _t7("不帶 /zh/",
+              f"{RED_NOZH}?startDate=20110101&endDate={today}&response=json")
+    if w9 is not None and w9b is not None:
+        say(f"     ⇒ 兩條列數 {len(w9)} vs {len(w9b)}"
+            + ("（一樣 ⇒ 同一個東西，`/zh/` 可有可無）" if len(w9) == len(w9b)
+               else "　← ⚠ **不一樣，要當成兩個端點看**"))
+
+    if w9:
+        # 官方那邊：(代號, 恢復買賣日期)
+        off9 = set()
+        for r in w9:
+            d, sid = _cell(r, 0), _cell(r, 1)
+            if not (d and sid):
+                continue
+            # 民國 104/01/23 → 2015-01-23
+            m = re.match(r"^(1[0-9]{2})/([0-9]{2})/([0-9]{2})$", d)
+            if m:
+                off9.add((sid, f"{int(m.group(1)) + 1911}-{m.group(2)}-{m.group(3)}"))
+        ds = sorted(d for _, d in off9)
+        say(f"     官方 {len(w9)} 列｜解析出 {len(off9)} 筆"
+            f"｜日期 {ds[0] if ds else '?'} ~ {ds[-1] if ds else '?'}")
+
+        # 我方那邊：data/adj/*.csv 裡 event=reduce
+        mine9 = set()
+        adj = os.path.join(_ROOT, "adj")
+        if os.path.isdir(adj):
+            for fn in os.listdir(adj):
+                if not fn.endswith(".csv") or fn.startswith("_"):
+                    continue
+                sid = fn[:-4]
+                try:
+                    with io.open(os.path.join(adj, fn), encoding="utf-8") as fh:
+                        for r in csv.DictReader(fh):
+                            if r.get("event") == "reduce":
+                                mine9.add((sid, (r.get("date") or "").strip()))
+                except OSError:
+                    continue
+        # ⛔ 只比**兩邊都涵蓋的區間**。我方價格從 2015 起，
+        #   官方這一發從 2011 起 ⇒ 拿 2011~2014 的官方事件說我方漏抓是**錯的比法**。
+        lo = min((d for _, d in mine9), default="2015-01-01")
+        off_cmp = {x for x in off9 if x[1] >= lo}
+        miss = sorted(off_cmp - mine9)
+        extra = sorted(mine9 - off9)
+        say(f"     ── 雙向對帳（只比 {lo} 之後，⛔ 我方價格從 2015 起，"
+            "拿更早的官方事件說我方漏抓是錯的比法）")
+        say(f"       我方 {len(mine9)} 筆｜官方（同區間）{len(off_cmp)} 筆")
+        say(f"       ① 官方有、我方沒有：{len(miss)} 筆"
+            + (f"　← ⛔ **這才是漏抓** {miss[:10]}" if miss else "（✓ 沒有漏抓）"))
+        say(f"       ② 我方有、官方沒有：{len(extra)} 筆"
+            + (f"　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）{extra[:10]}"
+               if extra else "（✓ 沒有多編）"))
+        say("       ⚠ ② 不為 0 **不一定是錯**：上櫃減資不在 TWTAUU 裡。"
+            "⛔ 但要逐筆看過才可以這樣說，不要先假設。")
 
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
