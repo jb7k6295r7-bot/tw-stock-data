@@ -1007,11 +1007,18 @@ def cmd_inst(args):
     if os.path.isdir(INST_DIR):
         done = {n[:-4] for n in os.listdir(INST_DIR) if n.endswith(".csv")}
     days, how = _inst_days(args)
-    days = [d for d in days if d not in done]
+    # ⛔⛔ 2026-09-09 修：這一行本來是 `if d not in done`，**完全沒看 `args.force`**，
+    #   而 `--force` 這個參數是有定義的（argparse 收得下、help 寫著「已存在的日期也重抓」）
+    #   ⇒ 打了 `--inst --force` 會**安靜地什麼都不做**，log 還印「待處理 0 天」，
+    #     看起來像「本來就沒事要做」。
+    #   ⚠ 這正是今天一直在抓的那一族：**參數存在不等於它有作用。**
+    #   ★ 為什麼現在需要它：官方會事後修訂三大法人的投信欄（實測 29 筆／3 天），
+    #     不重抓的話那些錯值永久留著，而且列數、內部 total 都自洽 ⇒ 看不出來。
+    days = [d for d in days if args.force or d not in done]
     if args.limit:
         days = days[:args.limit]
     print(f"[inst] {args.start} ~ {args.end}｜{how}｜待處理 {len(days)} 天"
-          f"（已存在 {len(done)} 天，略過）")
+          f"（已存在 {len(done)} 天，{'照樣重抓（--force）' if args.force else '略過'}）")
     known = _known_codes()
     if not known:
         print("[inst] 找不到 data/meta/stocks.csv，先跑 fetch.py 或 --rebuild-meta",
