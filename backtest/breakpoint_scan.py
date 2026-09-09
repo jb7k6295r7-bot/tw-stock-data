@@ -31,6 +31,8 @@ def main():
         if st is None:
             continue
         for b in D.breakpoints(st.df, st.event_dates):
+            if not D.applies(b):
+                continue          # 資料層全表（不論流動性）在下面的 holes_scan.csv；這裡是判讀層有套窗的清單
             rows.append({"stock_id": sid, "market": market, "date": cal[b["pos"]].strftime("%Y-%m-%d"),
                          "prev_date": cal[b["prev_pos"]].strftime("%Y-%m-%d"), "ratio": round(b["ratio"], 4),
                          "missing_trading_days": b["gap"], "rule": b["rule"]})

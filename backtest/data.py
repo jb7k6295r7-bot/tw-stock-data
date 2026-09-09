@@ -121,14 +121,15 @@ def breakpoints(df: pd.DataFrame, event_dates: set) -> list[dict]:
     gap = t - p - 1
     price = (ratio <= JUMP_LO) | (ratio >= JUMP_HI)
     long_gap = gap >= GAP_MIN
+    # 資料層不帶流動性條件（K線線 12:00：過濾放在「使用」時，不放在「記錄」時）；liq_ok 只是附註，
+    # 由 breakpoint_window 在判讀層決定要不要套污染窗。
+    liq = np.ones(len(p), bool)
     if long_gap.any():
         v = df["volume"].to_numpy(float) if "volume" in df else np.full(len(c), np.nan)
-        liq = np.zeros(len(p), bool)
         for k in np.flatnonzero(long_gap):
             w = v[max(0, p[k] - GAP_LIQ_WINDOW + 1):p[k] + 1]
             w = w[~np.isnan(w)]
             liq[k] = len(w) > 0 and np.median(w) >= GAP_LIQ_SHARES
-        long_gap &= liq
     cand = price | long_gap
     if event_dates and cand.any():
         ev = np.array(sorted(pd.Timestamp(x) for x in event_dates), dtype="datetime64[ns]")
@@ -139,17 +140,25 @@ def breakpoints(df: pd.DataFrame, event_dates: set) -> list[dict]:
     out = []
     for k in np.flatnonzero(cand):
         rule = "price+gap" if (price[k] and long_gap[k]) else ("price" if price[k] else "gap")
-        out.append({"pos": int(t[k]), "prev_pos": int(p[k]), "ratio": float(ratio[k]), "gap": int(gap[k]), "rule": rule})
+        out.append({"pos": int(t[k]), "prev_pos": int(p[k]), "ratio": float(ratio[k]), "gap": int(gap[k]), "rule": rule,
+                    "liq_ok": bool(liq[k])})
     return out
 
 
+def applies(b: dict) -> bool:
+    """判讀層：這個斷點要不要套污染窗。價格規則一律套；純 gap 規則只在流動性前提成立時套（K線線 05:00／12:00）。"""
+    return b["rule"] != "gap" or b["liq_ok"]
+
+
 def breakpoint_window(bps: list[dict], n: int, H: int, L: int) -> np.ndarray:
-    """以訊號日 s 為單位的剔除遮罩：s ∈ [T−H, T+L−1] → True。
+    """以訊號日 s 為單位的剔除遮罩：s ∈ [T−H, T+L−1] → True。只套 applies() 為真的斷點。
     方向不要寫反：前瞻報酬的污染在 T **之前**（s ∈ [T−H, T−1]，斷點落在持有期內）；
     回看指標的污染在 T **之後**（s ∈ [T, T+L−1]，回看窗跨過斷點）。
     H ＝ 該研究最長的前瞻天數、L ＝ 最長回看天數，由呼叫端從自己的參數算，不要寫死。"""
     w = np.zeros(n, bool)
     for b in bps:
+        if not applies(b):
+            continue
         T = b["pos"]
         w[max(0, T - H):min(n, T + L)] = True
     return w
