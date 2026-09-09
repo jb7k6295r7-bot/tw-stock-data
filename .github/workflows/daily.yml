@@ -77,6 +77,10 @@ jobs:
         continue-on-error: true
         run: python selftest_otccal.py
 
+      - name: 驗上市短期暫停交易的守門（離線）
+        continue-on-error: true
+        run: python selftest_suspend_twse.py
+
       # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
       #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
       #   （理由見 holiday.py 檔頭：兩種錯的代價不對稱）。
@@ -371,6 +375,21 @@ jobs:
       # ★ 被防護擋下來的請求要印出來。這一支所有的失效模式都是「跑起來完全正常」，
       #   log 裡沒印、又沒人去讀 data/meta/_suspend_skipped.txt 的話，
       #   少收一整塊資料跟「今天真的沒有」長得一模一樣（2026-09-07 實際發生過兩次）。
+      # ★★ 上市**短期**暫停交易的完整歷史（TWSE TWTAWU，使用者 2026-09-09 提供）。
+      #   我方原有的 `suspend.csv` 10,034 列裡 **9,594 列是權證**，普通股只有 409 列
+      #   ⇒ **上市普通股的暫停交易，我方幾乎沒有紀錄**。這一支補那一塊，
+      #     而且 `startDate`/`endDate` 一次拿得到 11 年（7,215 筆／6,656 檔）。
+      #   ⛔ **它不是「長期停止買賣」的來源**，這是實測不是推測：
+      #     停牌長度 p50 = 1 天、≥30 天只有 1 筆（0.0%）；
+      #     4414 如興那段 203 個交易日不在裡面，而它在這個端點裡有 3 筆全是一天
+      #     ⇒ 不是「這檔沒收錄」，是**收錄範圍就是短期**。
+      #   ⚠ `date=` 單日**完全沒生效**（兩個不同日期回同一份），只有區間有效。
+      - name: 上市短期暫停交易（TWTAWU，一次一個請求拿 11 年）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python suspend_twse.py
+
       - name: 停牌抓取有沒有被擋下來
         if: always()
         continue-on-error: true
