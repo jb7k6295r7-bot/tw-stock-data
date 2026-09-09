@@ -478,6 +478,20 @@ jobs:
         timeout-minutes: 10
         run: python n1_history.py
 
+      # ★★ 母體日檔**整列漏掉**的規模。市場情報分析線 2026-09-10 00:20
+      #   拿到官方直接證據（6904 伯鑫 9 月官方 7 天、我方 3 天，而且成交張數 0 的
+      #   日子還有零股成交金額）⇒ 官方確實發布那一列，是我方不寫。
+      #   ⭐ 這一支不連外：拿**我方自己已經存著的六張官方清單**做差集，
+      #     所以它每天都算得起，修好之後數字會自己降下來。
+      #   ⛔ 排在所有 feed 之後：早跑會拿到今天還沒抓的清單，算出假的漏列。
+      - name: 母體漏列規模（六張官方清單差集，不連外）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_missing_rows.py
+          python missing_rows.py
+
       - name: 缺還原因子清單（只看有沒有變多）
         if: always()
         continue-on-error: true
@@ -663,7 +677,7 @@ jobs:
             #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
             #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
             LASTRUN="data/meta/_last_run.md"
-            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md "
+            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md data/meta/_missing_rows.csv data/meta/_missing_rows_by_day.csv "
             ok=0
             for i in 1 2 3; do
               if git pull --rebase --autostash origin main && git push origin HEAD:main; then
