@@ -237,9 +237,26 @@ def main():
                      f"{_tw_p5:.4f}／{_tw_p95:.4f}，**真的收盤價跟均價本來就會差**。）")
         L.append(f"- `high` 與 `low` **是真的**（{_em_last} 只有 {_same}/{_n} 檔"
                  f" high=low=close）")
-        L.append("- ⛔ **`meta/stocks.csv` 的 `kind` 分不出興櫃**（是 `stock`）。"
-                 "**唯一分得出來的是 `market` 欄。**"
+        L.append("- ⛔ **`meta/stocks.csv` 的 `kind` 分不出興櫃**（是 `stock`）"
                  "⇒ 只用 `kind == 'stock'` 篩母體的人會**靜默收進興櫃**。")
+        # ⛔ 2026-09-09 21:5x 更正我自己：上一版這裡寫「唯一分得出來的是 market 欄」。
+        #   **那句是錯的。** 日檔有 `price_basis` 欄，興櫃 363/363 都標著
+        #   「均價/額推算」——**我方其實早就標了 close 是推算的**，
+        #   是我沒去看那個欄位就寫了「唯一」。
+        #   ⚠ 這正是我今天一直在抓的形狀：**只查了我想到的那幾欄，就說「只有」。**
+        _pb = {}
+        try:
+            with io.open(os.path.join(_DAILY, _em_last + ".csv"),
+                         encoding="utf-8") as _f:
+                for _r in csv.DictReader(_f):
+                    if _r.get("market") == "emerging":
+                        _k = (_r.get("price_basis") or "").strip() or "（空白）"
+                        _pb[_k] = _pb.get(_k, 0) + 1
+        except OSError:
+            pass
+        L.append(f"- ⭐ **但 `price_basis` 欄有標**：興櫃那一天的值是 {_pb}"
+                 "　⇒ 分得出來的有**兩個**欄位（`market` 與 `price_basis`），"
+                 "而 `price_basis` 更直接——它說的正是「close 是推算的」。")
         L.append("- ⚠ 使用者 2026-09-06 已裁定：**興櫃不進推薦母體**。"
                  "⛔ 本資料庫**不執行**那條裁定——它是消費端的事，"
                  "這裡只負責把「分得出來的只有 `market`」這件事講清楚。")
