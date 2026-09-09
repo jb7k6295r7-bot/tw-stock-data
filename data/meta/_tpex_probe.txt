@@ -325,6 +325,47 @@
 
   ⛔ 以上一律**不寫進 industry.csv**：這是實測推定，不是官方對照表。要不要採用是市場情報分析的決定。
 
+[8] ★★ 面額變更／休市日：使用者提供的頁面（看它們自己呼叫什麼）
+
+  ── ⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）
+     https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
+     ✓ 11,776 bytes
+     它自己呼叫的候選網址（1 個，逐字）：
+       /zh-tw/service/data
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+       出現「恢復買賣」5 次
+       出現「參考價」4 次
+       出現「停止買賣」1 次
+       出現「面額」4 次
+
+  ── 變更股票面額**預告表**
+     https://www.tpex.org.tw/zh-tw/announce/market/change.html
+     ✓ 11,276 bytes
+     它自己呼叫的候選網址（1 個，逐字）：
+       /zh-tw/service/data
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+       出現「面額」8 次
+
+  ── 採**彈性面額**之上（興）櫃公司名冊
+     https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html
+     ✓ 19,945 bytes
+     它自己呼叫的候選網址（1 個，逐字）：
+       /zh-tw/service/data
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
+       出現「面額」13 次
+
+[9] 上櫃休市日公告（前瞻用；事後靠日檔就看得出來）
+
+  ── 櫃買中心 休市日／交易日曆
+     https://www.tpex.org.tw/zh-tw/announce/market/holiday.html
+     ✓ 12,007 bytes｜出現「休市」5 次｜「開市」0 次
+       /zh-tw/announce/market/holiday.html
+
+  ── 櫃買中心 公告專區（找得到休市日的入口就好）
+     https://www.tpex.org.tw/zh-tw/announce/market.html
+     ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
+       /zh-tw/announce/market/holiday.html
+
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
 **沒有命中不等於不存在**——先看清單，不要回頭去猜網址。
