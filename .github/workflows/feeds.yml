@@ -42,6 +42,18 @@ on:
       need_col:
         description: "只重抓「表頭缺這一欄」的既有日期（補欄位用，可續跑；平常留空）"
         default: ""
+      # ★ 2026-09-09 加回。市場情報分析線 23:55 量到：上櫃三大法人的**投信欄**
+      #   在最近三個交易日與官方對不上（09-07 918→908、09-08 895→881、09-09 899→894），
+      #   而 09-04 以前六天全上櫃逐檔零誤差。⇒ 假說是「官方事後修訂投信欄，我方不回補」。
+      #   ⛔ 那是**假說**，要用鑑別實驗分辨：把那三天重抓，
+      #     ① 值變了 ⇒ 是修訂（我方該定期回補最近幾天）
+      #     ② 值沒變 ⇒ 是我方 09-07 起壞掉（要去找 09-07 改了什麼）
+      #   ⭐ 重抓的 diff 就是實驗結果——**repo 自己就是 before/after**。
+      #   ⛔ 預設 false：整段區間開下去會重抓好幾小時。要配小的 start/end 用。
+      force:
+        description: "重抓已存在的日期（⛔ 要配小的區間；補欄位請改用 need_col）"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -93,7 +105,8 @@ jobs:
           python feeds.py --run --feed "${{ inputs.feed }}" \
             --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
             --sleep "${{ inputs.sleep || '5' }}" \
-            ${{ inputs.need_col && format('--need-col {0}', inputs.need_col) || '' }}
+            ${{ inputs.need_col && format('--need-col {0}', inputs.need_col) || '' }} \
+            ${{ inputs.force && '--force' || '' }}
 
       # ★ 產業別對照表。選股規則的「排除金融保險與生技醫療」與
       #   「同一類股當日最多 2 檔」都靠它，而 meta/stocks.csv 沒有這欄。
