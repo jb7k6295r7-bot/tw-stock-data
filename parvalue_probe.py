@@ -43,11 +43,13 @@ TWSE 踩過：`TWT49U` **不吃 `date` 卻把它原樣回傳**，於是日期核
 把當天的四列寫進 2015 年的每一個日期檔。所以本檔**換兩個不同區間各打一發，
 比對回應的標題與列數**——一樣就是參數被無視，不是有歷史。
 """
+import csv
 import io
 import json
 import os
 import sys
 import traceback
+from datetime import datetime, timedelta, timezone
 
 import backfill as B
 
@@ -263,6 +265,90 @@ def main():
                 say(f"     {'✓' if c in codes else '✗'} {c}（掃描實測 {dd}）")
             say(f"     → 2025 這年命中 {len(set(want) & codes)}/{len(want)}"
                 "（靶子取自 parvalue_scan.py，不是從回應反推）")
+
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[T7] ★★ change/TWTB7U 把它問到底（使用者 2026-09-09 13:45 又給了一個形式）")
+    # 上一趟已經量出來：stat=OK、title=**變更股票面額預告表**、10 欄，
+    # 其中 `變更股票面額換股率`／`變更前面額`／`變更後面額` 是 TWTB8U **沒有**的。
+    # ⇒ 若它吃得下長區間，上市那半就有**精確換股率**可用，
+    #   跟上櫃用股數倍率同一個等級——而不是只能拿參考價比值。
+    # ★ 使用者給的形式是 `?response=html`、**不帶日期**——那是我沒試過的第三種。
+    #   ⛔ 三種都量，⛔ 不要因為「上一趟有回東西」就假設參數有生效
+    #     （這個專案被靜默截斷騙過兩次）。
+    T7 = "https://www.twse.com.tw/rwd/zh/change/TWTB7U"
+
+    def _t7(label, url):
+        r, e = B.get(url, retries=2, timeout=60)
+        if e:
+            say(f"     ✗ {label}：{str(e)[:110]}")
+            return None
+        txt = r.decode("utf-8", "replace")
+        if "response=html" in url:
+            # html 版只量形狀：有幾個 <tr>、抓不抓得到民國日期
+            import re as _re
+            tr = len(_re.findall(r"<tr[ >]", txt, _re.I))
+            dts = sorted(set(_re.findall(r"\b1[0-9]{2}/[0-9]{2}/[0-9]{2}\b", txt)))
+            say(f"     ✓ {label}：{len(r):,} bytes｜<tr> {tr} 個｜"
+                f"民國日期 {len(dts)} 個{('｜' + dts[0] + ' ~ ' + dts[-1]) if dts else ''}")
+            return None
+        try:
+            d = json.loads(txt)
+        except Exception as ex:                                  # noqa: BLE001
+            say(f"     ✗ {label}：不是 JSON（{type(ex).__name__}）｜{len(r):,} bytes")
+            return None
+        t = (B._tables(d) or [{}])[0]
+        dt = t.get("data") or []
+        say(f"     ✓ {label}：stat={d.get('stat')!r}｜title={d.get('title')!r}"
+            f"｜列數 {len(dt)}")
+        return dt
+
+    say("  ── ① 使用者給的形式（不帶日期、response=html）")
+    _t7("html 無日期", f"{T7}?response=html")
+    say("  ── ② 同一個網址但要 json、仍然不帶日期")
+    _t7("json 無日期", f"{T7}?response=json")
+    say("  ── ③ 長區間：2015-01-01 ~ 今天（**這一項是重點**）")
+    #   ⚠ 判準不是「有沒有回東西」，是**列數有沒有比一年那次多**。
+    #     只回 1 列就代表區間沒生效，跟上一趟一樣——那要改成逐年迴圈。
+    today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y%m%d")
+    wide = _t7("2015~今天", f"{T7}?startDate=20150101&endDate={today}&response=json")
+    if wide is not None:
+        say(f"     ⇒ 長區間拿到 **{len(wide)} 列**。"
+            + ("**區間有生效**（比 2025 那次的 1 列多）。"
+               if len(wide) > 1 else
+               "⛔ **和一年那次一樣少 ⇒ 區間多半沒生效**，下一步要逐年迴圈。"))
+        # ★ 逐筆對我方 par_change.csv 的上市那 10 筆。
+        #   ⛔ 這一段的價值在於：換股率是**官方寫出來的數字**，
+        #     不是我方從價格或股數推的——是真正的第三個獨立來源。
+        try:
+            mine = {}
+            with io.open(os.path.join(_ROOT, "meta", "par_change.csv"),
+                         encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    mine[row["stock_id"]] = row
+            hit = miss = 0
+            def _cell(row, i):
+                # ⛔ 不可以寫成 `(row or [""]*n)[i]`：row 非空但比 n 短時
+                #   `or` 不會補齊，照樣 IndexError（2026-09-09 被 selftest 擋下）。
+                row = row if isinstance(row, (list, tuple)) else []
+                return str(row[i]).strip() if i < len(row) else ""
+
+            for r in wide:
+                sid = _cell(r, 1)
+                rate = _cell(r, 4)
+                q = mine.get(sid)
+                if not q:
+                    continue
+                try:
+                    ok = abs(float(rate) - float(q["share_mult"] or 0)) < 1e-6
+                except ValueError:
+                    ok = False
+                hit += ok
+                miss += (not ok)
+                say(f"       {sid}｜官方換股率 {rate}｜我方 share_mult "
+                    f"{q['share_mult'] or '（空）'}｜{'✓' if ok else '✗ 不符'}")
+            say(f"     ⇒ 對上 {hit} 筆｜不符 {miss} 筆")
+        except OSError as ex:                                    # noqa: BLE001
+            say(f"     （對帳跳過：{ex}）")
 
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
