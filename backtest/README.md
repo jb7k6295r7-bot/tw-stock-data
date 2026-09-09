@@ -7,6 +7,7 @@
 | `breakpoint_scan.py` | 全母體掃斷點並與資料庫線的 `data/meta/par_change.csv` 對帳（改斷點規則後先跑這個）。 |
 | `research34.py` | 研究三（月營收動能）、研究四（價值型）月度面板；判準在 `PREREG3.md`，結果在 `results3/`。 |
 | `research5.py` | 研究五（出場規則比較：固定百分比停損／百分比追蹤／ATR 追蹤 vs 固定持有）；判準在 `PREREG4.md`，結果在 `results5/`。進場集合取自 `results/`、`results3/`，要先跑前兩個。 |
+| `research6.py` | 研究六（研究五的等風險版：每筆風險 2% ÷ 停損距離、部位上限 20%）；判準在 `PREREG5.md`，只做 `results5/exits.csv.gz` 的後處理，結果在 `results6/`。`python3 -m backtest.research6 --wmax 0.2` |
 | `patterns.py` | 六種偵測器：P1 箱型突破、P2 突破缺口、P3 假突破、P4 錘子／射擊之星、P5 底穿上、P6 杯柄（日線柄高／杯蓋、週線）。 |
 | `evaluate.py` | 出場（固定 20 日、2×ATR 追蹤、固定停損）、成本、目標價達成、統計（非重疊筆數、CI）。 |
 | `report.py` | 產出 `results/summary.md`。 |
