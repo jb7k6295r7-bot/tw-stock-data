@@ -239,8 +239,22 @@ jobs:
         run: python adjust.py
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
+      # ⛔⛔ 2026-09-09：這裡本來是一份**寫死的「會寫資料的 mode」白名單**。
+      #   我加了新 mode `official-stats`、卻沒加進這份清單
+      #   ⇒ 腳本跑了 **22 分鐘、抓了 400 檔**，然後 commit 那一步 `skipped`，
+      #     **資料全部丟掉，而整趟是綠的**（run 34364668441）。
+      #   ⚠ `probe.yml` 檔頭記過一模一樣的坑（守門清單加了、`git add` 忘了加），
+      #     我今天還讀過那段——**兩份清單分開維護就會這樣**。
+      #
+      # ⇒ 結構性修法：**把條件反過來**。
+      #   列的不再是「會寫的」，而是**「唯讀的」**（探針、診斷、乾跑）。
+      #   ⭐ 這樣新增一個會寫資料的 mode 時，**預設就會被 commit**；
+      #     忘了改這裡的代價從「資料靜默消失」變成「commit 了一個沒有變動的空 diff」
+      #     ——後者會印「沒有變動，不 commit」，**無害**。
+      #   ⛔ 失敗的方向要選會吵的那一邊，不是安靜的那一邊。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit' || inputs.mode == 'content-audit' || inputs.mode == 'mops-history' || inputs.mode == 'otc-adj')
+        if: >-
+          always() && !contains(fromJSON('["diag","probe","industry-probe","mops-probe","otc-adj-probe","mops-history-probe","mops-history-dry"]'), inputs.mode)
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
