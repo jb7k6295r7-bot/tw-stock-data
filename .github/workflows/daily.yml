@@ -126,6 +126,12 @@ jobs:
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
           python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
+          # ★ 同「融資融券與本益比」那一步的理由：只問當天 ⇒ 漏掉的日子永遠不重試。
+          #   目前 otcinst 剛好 0 個洞，⛔ 但「現在沒有洞」不是「不會有洞」。
+          #   已存在就跳過，所以沒洞時這一段是 0 個請求。
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed otcinst --start 2015-01-01 --end "$TODAY" \
+                          --limit 20 --sleep 1
 
       # ★★ 融資融券與本益比日檔。**2026-09-08 之前完全不在每日排程裡**——
       #   transpose 的跨層檢查第一次跑就抓到：price 到 09-08，而 margin 與 per
@@ -143,6 +149,21 @@ jobs:
           echo "目標交易日：$DAY"
           for f in margin per otcmargin otcper; do
             python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+          done
+          # ★★ 2026-09-09 新增第二段：**回頭補漏掉的日子**。
+          #   在這之前這一步**只問當天** ⇒ 某一天失敗，那一天就**永遠不會被重試**，
+          #   而且外表完全正常：檔案都在、數字都對、只有那一天不存在。
+          #   實測代價：四個 feed 全部缺 **2026-09-07**（星期一，真的交易日），
+          #   而 `_last_run.md` 那幾塊當時都是「待處理 0 天 ✓ 正常」——
+          #   因為它們被問的是「今天」，而今天已經有了。
+          #   ⇒ 抄 breadth 那一步的兩段式寫法：先當天，再分批回補。
+          #   ⚠ `--limit` 是**過濾掉已存在之後**才套用的（feeds.py `cmd_feed`），
+          #     所以沒有洞的時候這一段是 0 個請求，不會每天多打 TWSE 幾千發。
+          #   ⚠ 上限 20 天 × 4 個 feed × sleep 2 ＝ 最壞約 3 分鐘。
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          for f in margin per otcmargin otcper; do
+            python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
+                            --limit 20 --sleep 2
           done
 
       # ★ 集保戶股權分散（大戶持股的來源）。每週一份，週六 09:00 後產生。
