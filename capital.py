@@ -268,6 +268,13 @@ def _latest_daily():
 #   ⇒ 20 個交易日：足以蓋過一般的停牌與冷門股空窗，
 #     又不會把早就下市的代號一直撈回來。
 UNI_LOOKBACK = 20
+# 每一檔在這 20 天裡**最後一次出現**的日期。
+# ⚠ 用途不是查詢，是**解釋空白**：往回看 20 天必然會撈進「已經離開市場」的代號
+#   （2026-09-09 實測撈到 5371 中光電，最後成交 08-21、已不在上櫃名冊裡）。
+#   那種列的 `capital` 永遠補不上，看起來卻跟真的缺口一模一樣。
+#   ⇒ 把「最後成交日不是最新那天」講出來，⛔ 但不要自己宣告它下市——
+#     我方沒有下市的獨立來源，只知道「名冊裡沒有它了」。
+LAST_SEEN = {}
 
 
 def load_universe():
@@ -283,6 +290,7 @@ def load_universe():
     if not fs:
         return out, None
     # 由舊往新讀，後讀到的自然覆蓋先讀到的 ⇒ 同一檔留下最新的一筆。
+    LAST_SEEN.clear()
     for fn in fs[-UNI_LOOKBACK:]:
         try:
             with open(os.path.join(UNI_DAILY, fn), encoding="utf-8") as f:
@@ -292,6 +300,7 @@ def load_universe():
                         continue
                     out[sid] = (r.get("name", ""), r.get("market", ""),
                                 (r.get("shares") or "").strip())
+                    LAST_SEEN[sid] = fn[:-4]
         except OSError:
             continue
     return out, fs[-1][:-4]
@@ -614,6 +623,21 @@ def cmd_run(_args):
                 bad += 1
         filled += hit
         print(f"  ② {tag}: 補到 {hit} 檔（其中 {bad} 檔股數與資本額對不起來）")
+
+    # ── 空白但「最後成交日不是最新那天」的，另外講
+    stale = []
+    for c in uni:
+        r = rows.get(c)
+        if not r or (r[3] or "").strip():
+            continue
+        if LAST_SEEN.get(c) and LAST_SEEN[c] != day:
+            stale.append((c, uni[c][0], LAST_SEEN[c]))
+    if stale:
+        print(f"  ⚠ 股本空白且最後成交日不是 {day} 的有 {len(stale)} 檔"
+              f"（往回看 {UNI_LOOKBACK} 天撈進來的，可能已離開市場，"
+              f"⛔ 我方沒有下市的獨立來源，不下結論）：")
+        for c, nm, d in sorted(stale)[:10]:
+            print(f"      {c} {nm}｜最後成交 {d}")
 
     total = _write_out(rows)
     miss = sorted(c for c in uni if not rows.get(c, [""] * len(HEADER))[4])
