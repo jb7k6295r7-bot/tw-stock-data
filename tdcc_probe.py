@@ -43,6 +43,7 @@ import json
 import os
 import re
 import sys
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -162,7 +163,19 @@ def parse(raw):
                 if isinstance(v, list):
                     d = v
                     break
-        return (d, f"JSON {len(d):,} 筆") if isinstance(d, list) else ([], "JSON 頂層不是 list")
+        if not isinstance(d, list):
+            return [], "JSON 頂層不是 list"
+        # ⚠ 這個函式的契約是 `list[dict]`，而 JSON 的 list 裡**什麼都可能有**
+        #   （字串、數字、又一層 list）。放行的話下游 `pick()` 的 `k in row`
+        #   會對 int 丟 `TypeError: argument of type 'int' is not iterable`——
+        #   而那是在**探針的後段**才會踩到，本地 403 永遠碰不到。
+        #   ⇒ 在這裡就把契約守住，並且**把丟掉幾筆講出來**（不是安靜過濾）。
+        rows = [x for x in d if isinstance(x, dict)]
+        drop = len(d) - len(rows)
+        note = f"JSON {len(rows):,} 筆"
+        if drop:
+            note += f"（⚠ 另有 {drop:,} 筆不是物件，已排除——這個端點的形狀和其他的不一樣）"
+        return rows, note
     rows = list(csv.DictReader(io.StringIO(txt)))
     return rows, f"CSV {len(rows):,} 列"
 
@@ -538,4 +551,20 @@ def _write(rc):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # ⚠ 探針炸掉時，traceback 只留在 Actions log 裡——而 log 要翻好幾百行才找得到，
+    #   （2026-09-09 實測：tail 900 行都還沒回到那一步）。
+    #   ⇒ **把 traceback 寫進輸出檔**，它會跟著 commit 進 repo。
+    #   這樣「哪一節炸的」下一趟就是既成事實，不必再去考古。
+    #   ⛔ 覆蓋掉上一次成功的內容是**故意的**：這一份的語意是「這一趟看到什麼」，
+    #     上一次的內容在 git 歷史裡找得到，而「看起來是完整結果、其實是上一趟的」
+    #     比缺一份更貴。開頭那個 ✗ 也讓下一趟的重跑條件自動成立。
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except BaseException:                                        # noqa: BLE001
+        say("")
+        say("✗ 這一趟在下面這裡炸掉了，以下是 traceback 原文（沒有整理）：")
+        say(traceback.format_exc())
+        _write(1)
+        raise

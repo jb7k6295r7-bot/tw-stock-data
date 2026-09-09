@@ -149,6 +149,35 @@ def main():
         else:
             print(f"✓ {name} 走完全程"
                   + (f"，{len(want)} 節都出現" if want else ""))
+    # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
+    #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
+    #     下游 `pick()` 的 `k in row` 會對 int 丟
+    #     `TypeError: argument of type 'int' is not iterable`，
+    #     而那要走到探針**後段**（第 8、10 節）才踩得到——本地 403 永遠碰不到。
+    import tdcc_probe as TP
+    shapes = {
+        "list[dict]": '[{"資料日期":"20260904"}]',
+        "list[str]": '["a","b"]',
+        "list[int]": '[1,2,3]',
+        "list[list]": '[[1,2],[3,4]]',
+        "混合": '[{"資料日期":"20260904"},1,"x"]',
+        "dict{list}": '{"data":[{"Date":"20260904"}]}',
+        "CSV": "資料日期,x\n20260904,1\n",
+    }
+    for k, v in shapes.items():
+        try:
+            rows, _ = TP.parse(v.encode())
+            sorted({TP.pick(x, TP.DATE_KEYS) for x in rows} - {""})
+        except Exception as ex:                                  # noqa: BLE001
+            print(f"✗ parse/pick 對「{k}」丟例外：{type(ex).__name__}: {ex}")
+            bad += 1
+    else_ = [x for x in TP.parse(b'[1,2,3]')[0]]
+    if else_:
+        print("✗ parse 讓非物件通過了——契約沒守住")
+        bad += 1
+    if not bad:
+        print(f"✓ parse/pick 對 {len(shapes)} 種回應形狀都不會炸，且非物件不會通過")
+
     # 反向驗這支自己有效：故意注入一個 NameError，必須被抓到
     import tdcc_probe as T
     src_ok = "SAMPLE" in dir(T)
