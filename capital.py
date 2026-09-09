@@ -266,6 +266,64 @@ def load_universe():
 
 # ────────────────────────────────────────────── 市場層端點
 
+ARCH = os.path.join(_ROOT, "universe", "capital")
+# ★ 來源自己宣告的日期欄。⛔ 用它當檔名，**不用今天的日期**——
+#   來源沒更新時我們會寫出同一個檔名（於是跳過），而不是每天多一份一模一樣的。
+_K_ASOF = ("出表日期", "Date", "資料日期", "asof")
+
+
+def archive_snapshot(raw, tag):
+    """把這一趟端點回的**原始快照**存成 `data/universe/capital/<tag>/<出表日期>.csv`。
+
+    ★ 為什麼要有這個（2026-09-09）：
+      `capital.py` 只寫一份 `data/meta/capital.csv`，**每跑一趟覆蓋一次**
+      ⇒ 上市的「已發行普通股數」**每天都被丟掉**。
+
+      而面額變更的偵測器裡，**只有 `shares` 能定量**，上市那半偏偏沒有序列
+      （日檔的 `shares` 欄上市是空的，端點只給當期快照、不吃日期）。
+
+    ⛔ 這與集保是**同一種**「不做就永久失去」：
+      拿不到過去，但**可以從今天起不再丟掉**。做了，序列就會自己長出來。
+
+    ⚠ 檔名用**來源自己宣告的日期**（`出表日期`／`Date`），⛔ 不用今天：
+      來源沒更新時檔名相同 ⇒ 跳過，不會每天堆一份一樣的。
+    ⚠ 已存在就**不覆寫**——同一個出表日期的內容應該是同一份；
+      若哪天不同，那是來源改了，覆寫會把原本那份靜默換掉。
+    """
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception:                                            # noqa: BLE001
+        return None
+    if isinstance(d, dict):
+        for k in ("data", "aaData", "result"):
+            if isinstance(d.get(k), list):
+                d = d[k]
+                break
+    if not isinstance(d, list) or not d or not isinstance(d[0], dict):
+        return None
+    keys = list(d[0].keys())
+    k_asof = _pick(keys, _K_ASOF)
+    if not k_asof:
+        return None                      # ⛔ 沒有日期就不存：存了也不知道那是哪一天的
+    asof = str(d[0].get(k_asof) or "").strip()
+    if not asof:
+        return None
+    dirp = os.path.join(ARCH, tag)
+    fp = os.path.join(dirp, f"{asof}.csv")
+    if os.path.exists(fp):
+        return ("skip", asof, len(d))
+    try:
+        os.makedirs(dirp, exist_ok=True)
+        with open(fp, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(keys)
+            for r in d:
+                w.writerow([str(r.get(k, "")).replace("\n", " ") for k in keys])
+    except OSError:                                              # noqa: BLE001
+        return None
+    return ("write", asof, len(d))
+
+
 def parse_market(raw, tag):
     """→ (dict{code: (name, capital, shares, par, pref)}, note)。看不懂就回空並照抄欄位名。"""
     try:
@@ -384,6 +442,10 @@ def cmd_run(_args):
             continue
         got, note = parse_market(raw, tag)
         notes.append(f"{tag} {note.splitlines()[0]}")
+        # ★ 原始快照存檔（見 archive_snapshot 的說明）：拿不到過去，但從今天起不再丟掉
+        arc = archive_snapshot(raw, tag)
+        if arc:
+            notes.append(f"{tag} 快照 {arc[0]} {arc[1]}（{arc[2]} 列）")
         hit, bad = 0, 0
         for code in need:
             if code not in got:
