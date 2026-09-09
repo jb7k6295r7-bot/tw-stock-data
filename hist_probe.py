@@ -90,6 +90,18 @@ def _dates(t):
         out.add(f"{int(m[0]):04d}-{int(m[1]):02d}-{int(m[2]):02d}")
     for m in re.findall(r"\b(1[0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])\b", t):
         out.add(f"{int(m[0]) + 1911:04d}-{m[1]}-{m[2]}")
+    # ⛔ 2026-09-09 第二輪的教訓：上面三種都沒認出「**95年12月29日**」，
+    #   於是我報「抓不到任何日期」——**而那個檔的表頭第一行就寫著日期**。
+    #   ⚠ 同一個形狀今天第 N 次：**只查我想到的那幾種寫法，然後把 0 讀成沒有。**
+    for m in re.findall(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", t):
+        y = int(m[0])
+        out.add(f"{(y + 1911) if y < 200 else y:04d}-{int(m[1]):02d}-{int(m[2]):02d}")
+    # ★ 檔名型的民國日期（AA951229.TXT）——這個站就是這樣命名的。
+    #   ⛔ 不可以用 `\b`：`AA951229` 的 `A` 與 `9` 都是 word char，**中間沒有邊界**，
+    #     所以 `\b` 在那裡不成立 ⇒ 整個 pattern 不會命中。
+    #   ⇒ 改成「前面不是數字、後面不是數字」，這樣 `AA951229` 與 `_951229` 都認得。
+    for m in re.findall(r"(?<!\d)([89]\d|1[0-2]\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)", t):
+        out.add(f"{int(m[0]) + 1911:04d}-{m[1]}-{m[2]}")
     return sorted(out)
 
 
@@ -184,6 +196,45 @@ def main():
     for h in cand[:8]:
         seen.add(h)
         _look(h, h.replace(ROOT, "/"), depth=1)
+
+    say("\n[3.5] ⭐⭐ 查詢表單**自己**怎麼組檔名（⛔ 這是證據，不是我拼路徑）")
+    say("     第二輪拆開 frameset 之後看到 `DAILY/AA951229.TXT`＝民國 95/12/29 的靜態日檔。")
+    say("     ⇒ 剩下唯一的問題是：**它怎麼從「年＋月」算出檔名**，")
+    say("       以及 **`EMERGINGSTOCK` 以外還有沒有別的區段**（上櫃在不在）。")
+    say("     ⛔ 這兩件都不可以用猜的。查詢頁 `NSHISTORYQRY.HTML` 裡有下拉選單與 js，")
+    say("       **它自己就會講**——所以把它的 `option` 與 js 原文印出來。")
+    qry = ROOT + "Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORYQRY.HTML"
+    raw, err = B.get(qry, retries=2, timeout=60)
+    if err:
+        say(f"     ✗ 抓不到：{str(err)[:120]}")
+    else:
+        cands = []
+        for enc in ("big5hkscs", "cp950", "utf-8"):
+            try:
+                d = raw.decode(enc, "replace")
+            except LookupError:
+                continue
+            cands.append((d.count("\ufffd"), enc, d))
+        cands.sort()
+        h = cands[0][2]
+        opts = re.findall(r"<option[^>]*value=[\"']?([^\"'> ]+)", h, re.I)
+        say(f"     ★ `option` 的 value 共 {len(opts)} 個：{opts[:40]}")
+        # ⭐ js 裡組檔名的那一段——找出現 'AA' 或 '.TXT' 或 location 的行
+        js = re.findall(r"<script[^>]*>(.*?)</script>", h, re.S | re.I)
+        say(f"     ★ inline <script> {len(js)} 段，逐段印（去空白，每段最多 900 字）：")
+        for i, blk in enumerate(js):
+            b = re.sub(r"\s+", " ", blk).strip()
+            if not b:
+                continue
+            say(f"       ── 第 {i + 1} 段（{len(b)} 字）")
+            for k in range(0, min(len(b), 900), 180):
+                say(f"         {b[k:k + 180]}")
+        # ★ 表單本身
+        for m in re.finditer(r"<form[^>]*>", h, re.I):
+            say(f"     ★ <form> 標籤原文：{m.group(0)}")
+        names = sorted(set(re.findall(r"<(?:input|select)[^>]*name=[\"']?([A-Za-z0-9_]+)",
+                                      h, re.I)))
+        say(f"     ★ 表單欄位名：{names}")
 
     say("\n[4] 這一輪要回答的三句話")
     say("  ⛔ 以下三句，**只有在第 [1]~[3] 節真的看到日期範圍時才可以改**：")
