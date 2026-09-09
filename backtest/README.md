@@ -8,6 +8,10 @@
 | `research34.py` | 研究三（月營收動能）、研究四（價值型）月度面板；判準在 `PREREG3.md`，結果在 `results3/`。 |
 | `research5.py` | 研究五（出場規則比較：固定百分比停損／百分比追蹤／ATR 追蹤 vs 固定持有）；判準在 `PREREG4.md`，結果在 `results5/`。進場集合取自 `results/`、`results3/`，要先跑前兩個。 |
 | `research6.py` | 研究六（研究五的等風險版：每筆風險 2% ÷ 停損距離、部位上限 20%）；判準在 `PREREG5.md`，只做 `results5/exits.csv.gz` 的後處理，結果在 `results6/`。`python3 -m backtest.research6 --wmax 0.2` |
+| `research8.py` | 研究八（組合層：N 個等權槽、訊號到了隨機補位、200 種子）；判準 `PREREG7.md`，結果 `results8/`。 |
+| `selftest_exits.py` | 出場規則合成序列自我測試（固定持有／順延／鎖跌停／固定、追蹤、ATR 停損），11 段。 |
+| `DAILY_LOG_FORMAT.md` | 給情報分析線的每日選股逐日留檔格式提案（回測線用它對答案）。 |
+| `results_amt/`、`results3_amt/` | 研究二／三在「成交金額 ≥ 5,000 萬」母體上的並列版（PREREG 更正五、PREREG3 更正三）。 |
 | `research7.py` | 研究七（六型態 × 持有 20／60 日並列，不設主表；印非重疊 n、獨立區段數、月分群 CI）；判準在 `PREREG6.md`，結果在 `results7/`。 |
 | `patterns.py` | 六種偵測器：P1 箱型突破、P2 突破缺口、P3 假突破、P4 錘子／射擊之星、P5 底穿上、P6 杯柄（日線柄高／杯蓋、週線）。 |
 | `evaluate.py` | 出場（固定 20 日、2×ATR 追蹤、固定停損）、成本、目標價達成、統計（非重疊筆數、CI）。 |
@@ -20,6 +24,7 @@
 
 ```
 python3 -m backtest.selftest_patterns          # 先跑這個
+python3 -m backtest.selftest_exits             # 出場規則自我測試
 python3 -m backtest.breakpoint_scan            # 斷點對帳（par_change.csv 24 筆要全部說得清楚）
 python3 -m backtest.run                        # 全市場，約 10 分鐘（4 核）
 python3 -m backtest.research34                 # 研究三／四，結果在 results3/
