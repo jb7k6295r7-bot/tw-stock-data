@@ -37,7 +37,7 @@
 
   ── 開放資料專區（所有 dataset id）
      https://www.tdcc.com.tw/portal/zh/stats/openData
-     ✓ 64,279 bytes
+     ✓ 64,291 bytes
      ★ 疑似級距文字：['02-2719']
      ★ dataset id：['1-1', '1-10', '1-11', '1-12', '1-13', '1-14', '1-16', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '2-1', '2-10', '2-11', '2-12', '2-13', '2-14', '2-15', '2-16', '2-17', '2-18', '2-19', '2-2', '2-20', '2-21', '2-22', '2-23', '2-24', '2-25', '2-26', '2-27', '2-28', '2-29', '2-3', '2-30', '2-31', '2-32', '2-33', '2-34', '2-35', '2-36', '2-37', '2-38', '2-39', '2-4', '2-41', '2-42', '2-43', '2-44', '2-5', '2-6', '2-7', '2-8', '2-9', '3-1', '3-10', '3-11', '3-12', '3-13', '3-14', '3-15', '3-16', '3-17', '3-18', '3-19', '3-2', '3-20', '3-21', '3-22', '3-23', '3-25', '3-26', '3-27', '3-28', '3-29', '3-3', '3-30', '3-31', '3-32', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '4-1', '4-10', '4-11', '4-12', '4-13', '4-14', '4-15', '4-16', '4-17', '4-18', '4-19', '4-2', '4-20', '4-21', '4-22', '4-23', '4-24', '4-25', '4-26', '4-27', '4-28', '4-29', '4-3', '4-4', '4-5', '4-6', '4-7', '4-8', '4-9', '5-1', '5-10', '5-11', '5-12', '5-13', '5-16', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8', '5-9', '6-1', '6-2', '6-3']
      疑似 API 路徑：['/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS', '/portal/zh/smWeb/bookEntry']
@@ -47,7 +47,7 @@
      ✓ 69,367 bytes
      ★ 資料日期選項 51 個：['20260904', '20260828', '20260821', '20260814', '20260807'] … ['20250926', '20250919', '20250912']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['55-2263', '02-2719']
+     ★ 疑似級距文字：['02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -120,7 +120,7 @@
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
   ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = 'e395dcc7-7630-47e8-bd0d-d9d984d366db'
+    SYNCHRONIZER_TOKEN = '1d2d2777-a9fa-4e12-83ed-749128495592'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260904'
     method = 'submit'
@@ -169,7 +169,7 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 541,089 bytes
+     ✓ 540,190 bytes
      更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
      檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
@@ -192,12 +192,12 @@
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 4 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
@@ -206,7 +206,7 @@
        （一個都沒有）
 
   ── 開放資料專區：https://www.tdcc.com.tw/portal/zh/stats/openData
-     ✓ 64,291 bytes｜CSV 407 列｜**相異資料日期 0 個** []
+     ✓ 64,287 bytes｜CSV 407 列｜**相異資料日期 0 個** []
        「小-大」數字對 118 個｜**最長連續鏈 2 段**｜「N 以上」0 個
        （接不成鏈，最長只有 2 段——這些多半是電話或代碼，不是級距）
 
