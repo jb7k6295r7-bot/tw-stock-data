@@ -94,18 +94,24 @@ def load_stock(stock_id: str, market: str, cal: pd.DatetimeIndex) -> Stock | Non
 # 相鄰兩個有成交日之間，有漲跌幅限制的證券單日跌不到 0.55、漲不到 1.8，所以不會增加誤判。
 JUMP_LO, JUMP_HI = 0.55, 1.8
 GAP_MIN = 5   # ② 時間：連續缺 ≥ 5 個交易日（面額變更實測停 6～8 個；8101 停 59 個）
+# ② 的流動性前提（K線線 2026-09-09 05:00 裁定）：只在「洞之前 60 個交易日的中位數日量 ≥ 500 張」時成立；
+#   沒通過的洞不是斷點，退回缺漏處理（rolling min_periods 讓洞傳染），不套污染窗。
+#   500 張是**實測分界，非推導**：全庫 2,129 檔量到 N≥5 無事件的洞 99% 在中位數日量 < 500 張的冷門股，
+#   ≥ 500 張那一組 11 檔全是真停牌、零偽陽性。不要讀成「499 張就一定是無成交」。
+GAP_LIQ_SHARES = 500_000
+GAP_LIQ_WINDOW = 60
 
 
 def breakpoints(df: pd.DataFrame, event_dates: set) -> list[dict]:
     """找斷點。對每個有成交日 t 與它的上一個有成交日 p：
        ① 價格：close(t)/close(p) ≤ 0.55 或 ≥ 1.8
-       ② 時間：p 與 t 之間連續缺 ≥ 5 個交易日
+       ② 時間：p 與 t 之間連續缺 ≥ 5 個交易日，且 p 之前 60 個交易日的中位數成交量 ≥ 500 張（流動性前提）
     任一成立、且區間 (p, t] 內沒有 data/adj/ 的事件 → t 是斷點（T ＝ 復牌後第一個有成交日）。
-    區間內有可還原事件 → 不是斷點，走缺漏處理。
+    區間內有可還原事件（含 parvalue、etfsplit）→ 不是斷點，走缺漏處理。
     ⚠ 事件用**日期區間**判，不用「±N 個交易日」容錯：data/adj/ 的事件日不保證是交易日
     （3293 2024-07-24 除權息當天颱風停市，沿交易日曆數容錯永遠數不到它）。
     ⚠ 一定要對「上一個有成交日」：換發新股前停牌 6～8 日，日曆對齊序列裡 t−1 是空的，相鄰日比會一筆都抓不到。
-    回傳每個斷點 {pos, prev_pos, ratio, gap, rule}；rule ∈ {price, gap, price+gap}。"""
+    回傳每個斷點 {pos, prev_pos, ratio, gap, rule}；gap ＝ 缺掉的交易日數（missing_trading_days）；rule ∈ {price, gap, price+gap}。"""
     c = df["close"].to_numpy(float)
     traded = np.flatnonzero(~np.isnan(c))
     if len(traded) < 2:
@@ -115,6 +121,14 @@ def breakpoints(df: pd.DataFrame, event_dates: set) -> list[dict]:
     gap = t - p - 1
     price = (ratio <= JUMP_LO) | (ratio >= JUMP_HI)
     long_gap = gap >= GAP_MIN
+    if long_gap.any():
+        v = df["volume"].to_numpy(float) if "volume" in df else np.full(len(c), np.nan)
+        liq = np.zeros(len(p), bool)
+        for k in np.flatnonzero(long_gap):
+            w = v[max(0, p[k] - GAP_LIQ_WINDOW + 1):p[k] + 1]
+            w = w[~np.isnan(w)]
+            liq[k] = len(w) > 0 and np.median(w) >= GAP_LIQ_SHARES
+        long_gap &= liq
     cand = price | long_gap
     if event_dates and cand.any():
         ev = np.array(sorted(pd.Timestamp(x) for x in event_dates), dtype="datetime64[ns]")

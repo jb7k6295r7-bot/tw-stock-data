@@ -205,6 +205,10 @@ def write_report(ex: pd.DataFrame, cal: pd.DatetimeIndex, split_pos: int):
                 continue
             pa, pp, po = _paired(d, code), _paired(pre, code), _paired(post, code)
             v = "基準" if code == "H60" else _verdict(pa, pp, po, s, base)
+            if s["n_no"] < 30:            # PREREG4 更正一：非重疊 n < 30 只報筆數
+                v = "樣本不足（不報）"
+            elif s["n_no"] < 100:
+                v += "（樣本不足）"
             L.append(f"| {code} | {s['n']:,} | {s['n_no']:,} | **{_pct(s['mean'])}** | {_pct(s['lo'])} ~ {_pct(s['hi'])} | {_pct(s['median'])} | {s['win'] * 100:.1f}% | {_pct(s['p5'])} | {_pct(s['worst'])} | {s['days']:.1f} | {s['trig'] * 100:.0f}% | {s['per_day'] * 10000:+.1f} bp | "
                      f"{_pct(pa['mean']) if pa else '—'} | {(_pct(pa['lo']) + ' ~ ' + _pct(pa['hi'])) if pa else '—'} | {_pct(pp['mean']) if pp else '—'} | {_pct(po['mean']) if po else '—'} | {v} |")
         L.append("")
