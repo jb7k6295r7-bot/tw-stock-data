@@ -540,6 +540,101 @@ def main():
         if rows:
             say(f"       欄位：{list(rows[0])[:8]}")
 
+    # ── [11] ★ 17 級的「級距文字」到底在哪一頁 ──
+    #   目前 `data/tdcc/` 只有代碼 1~17，沒有「1-999」「1,000-5,000」這種文字，
+    #   所以「400 張以上算大戶」這種定義**寫不出來**。
+    #   ⛔ 我知道坊間流傳的對照表，但那是**間接證據**——級距寫錯會讓
+    #     大戶持股的定義整個偏掉，而且不會有任何地方報錯。**只抄官方頁面上的字。**
+    #
+    #   ⚠ 第 5 節在查詢頁只撈到 `['11-7410', '02-2719']`——那是**電話號碼**，
+    #     不是級距。原因很可能是：級距文字只出現在**查詢結果**的表格裡，
+    #     不在查詢頁本身。所以這一節多試幾個地方，並且換一個嚴一點的判準。
+    say("\n[11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁")
+
+    def _cands(txt):
+        """撈出所有「小-大」的數字對。⚠ 這一步**不做判斷**，電話號碼也會進來。"""
+        out = []
+        for m in re.finditer(r"([0-9][0-9,]{0,14})\s*[-~至]\s*([0-9][0-9,]{0,14})", txt):
+            a, b = m.group(1), m.group(2)
+            try:
+                ia, ib = int(a.replace(",", "")), int(b.replace(",", ""))
+            except ValueError:
+                continue
+            if ia < ib:
+                out.append((ia, ib, f"{a}-{b}"))
+        return list(dict.fromkeys(out))
+
+    def _chain(cands):
+        """找最長的「接得起來」的鏈：下一段的下界 ＝ 上一段的上界 ＋ 1。
+
+        ⛔ **這才是級距與電話號碼的差別。**
+          第 5 節只用 `\d+-\d+`，於是撈到 `02-2719`（集保客服電話）與 `11-7410`，
+          而且它們也符合「小-大」——用大小關係濾不掉。
+          但級距是**連續分段**：1-999 → 1,000-5,000 → 5,001-10,000 …
+          電話號碼接不上任何東西。
+
+        實測（假文字）：只有電話 → 最長鏈 1 段；真的級距表＋電話 → 14 段。
+        """
+        byl = {}
+        for lo, hi, t in cands:
+            byl.setdefault(lo, (hi, t))
+        best = []
+        for lo, hi, t in sorted(cands):
+            cur, nxt = [(lo, hi, t)], hi + 1
+            while nxt in byl:
+                h2, t2 = byl[nxt]
+                cur.append((nxt, h2, t2))
+                nxt = h2 + 1
+            if len(cur) > len(best):
+                best = cur
+        return best
+
+    def _upper(txt):
+        """最後一級那種「N 以上」單獨收。"""
+        return list(dict.fromkeys(
+            f"{m.group(1)} 以上"
+            for m in re.finditer(r"([0-9][0-9,]{2,14})\s*(?:股|單位)?以上", txt)))
+
+    #   ⚠ 這幾個網址的來源：第 5 節從官方頁面自己撈到的「疑似 API 路徑」，
+    #     以及 2026-09-09 WebSearch 的結果（`/investor/` 那個變體、`smart.` 那台主機）。
+    #     ⛔ 都不是我自己拼的。
+    CAND = [
+        ("查詢頁（本體）", QRY_PAGE),
+        ("查詢頁 /investor/ 變體",
+         "https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock"),
+        ("另一台主機的開放資料", "https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5"),
+        ("開放資料專區", "https://www.tdcc.com.tw/portal/zh/stats/openData"),
+    ]
+    for label, url in CAND:
+        say(f"\n  ── {label}：{url}")
+        r11, e11 = B.get(url, retries=1, timeout=60)
+        if e11:
+            say(f"     ✗ {str(e11)[:120]}")
+            continue
+        txt = r11.decode("utf-8", "replace")
+        cands = _cands(txt)
+        chain = _chain(cands)
+        ups = _upper(txt)
+        say(f"     ✓ {len(r11):,} bytes｜「小-大」數字對 {len(cands)} 個"
+            f"｜**最長連續鏈 {len(chain)} 段**｜「N 以上」{len(ups)} 個")
+        if len(chain) >= 3:
+            for _, _, t in chain:
+                say(f"       {t}")
+            for u in ups[:3]:
+                say(f"       {u}（上界那一格）")
+            # ★ 官方是 17 級 ⇒ 16 段區間 ＋ 1 段「以上」。
+            #   ⛔ 不是這個數也照實記，**不要湊**。
+            tot = len(chain) + (1 if ups else 0)
+            say(f"     {'★★ 鏈長 ＋ 上界 ＝ 17，與官方級數相符' if tot == 17 else f'（合計 {tot} 段，不是 17，⛔ 不可以當成那張表）'}")
+        elif cands:
+            say(f"       （接不成鏈，最長只有 {len(chain)} 段——"
+                f"這些多半是電話或代碼，不是級距）")
+        else:
+            say("       （一個都沒有）")
+
+    say("\n  ⛔ 以上任何一條都**不可以**拿去填 `data/tdcc/` 的級距欄位——"
+        "要先有人看過、確認那是官方定義而不是頁面上剛好長得像的字串。")
+
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")
     say("**不要因為「有幾萬列」就當它完整**。")

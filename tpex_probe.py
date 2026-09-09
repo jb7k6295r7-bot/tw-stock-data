@@ -339,6 +339,83 @@ def main():
             say("\n  ⛔ 以上一律**不寫進 industry.csv**：這是實測推定，不是官方對照表。"
                 "要不要採用是市場情報分析的決定。")
 
+    # ── [8] ★★ 使用者 2026-09-09 提供的四個頁面：面額變更那條路可能一直找錯層 ──
+    #   ⚠ **先講一個我自己的敘述要更正的地方。**
+    #     `_db_status.md` 寫著「TPEx swagger 225 個端點裡沒有減資／面額／參考價」。
+    #     那句**是真的**，但它**證明不了「TPEx 沒有這個來源」**——
+    #     因為我方每天在用的 `otcinst`／`otcper`／`otcmargin` 三條，
+    #     **也一個都不在 swagger 裡**（它們住在 `www/zh-tw/<path>?date=…` 那一層）。
+    #     ⇒ 「swagger 裡沒有」只說明**那一層**沒有。拿它當「不存在」，
+    #       就是拿一層的缺席去推論全部——與「猜不到名字 ≠ 不存在」同一個形狀。
+    #
+    #   網址由使用者提供（**非自行生成**），照第 5 節的做法：
+    #   ⛔ **不從頁名回推 API**，而是把頁面抓下來、看它自己呼叫哪個網址。
+    say("\n[8] ★★ 面額變更／休市日：使用者提供的頁面（看它們自己呼叫什麼）")
+    PAGES8 = [
+        ("⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）",
+         "https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html"),
+        ("變更股票面額**預告表**",
+         "https://www.tpex.org.tw/zh-tw/announce/market/change.html"),
+        ("採**彈性面額**之上（興）櫃公司名冊",
+         "https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html"),
+    ]
+    for why, url in PAGES8:
+        say(f"\n  ── {why}")
+        say(f"     {url}")
+        r8, e8 = B.get(url, retries=2, timeout=60)
+        if e8:
+            say(f"     ✗ 抓不到：{str(e8)[:130]}")
+            say("     ⛔ 抓不到**不等於不存在**——照實記，下一輪再試。")
+            continue
+        html = r8.decode("utf-8", "replace")
+        say(f"     ✓ {len(r8):,} bytes")
+        # 它自己呼叫哪些網址：相對路徑與絕對路徑都收
+        hits = set(re.findall(r"[\"'\(]([a-zA-Z0-9_/.-]*(?:www|web)/zh-tw/[a-zA-Z0-9_/.-]+)",
+                              html))
+        hits |= set(re.findall(r"url\s*[:=]\s*[\"'`]([^\"'`]{4,140})", html))
+        hits |= set(re.findall(r"[\"'\(](/[a-zA-Z0-9_/.-]{6,120}(?:\.php|\.json|Ajax|/data))",
+                               html))
+        hits = {h for h in hits if "/" in h}
+        if hits:
+            say(f"     它自己呼叫的候選網址（{len(hits)} 個，逐字）：")
+            for h in sorted(hits)[:20]:
+                say(f"       {h}")
+        else:
+            say("     （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）")
+        js = sorted(set(re.findall(r"[\"'\(]([^\"'\(\)]+\.js)[\"'\)]", html)))
+        if js:
+            say(f"     載入的 js（下一輪要看的）：{js[:8]}")
+        # 頁面上有沒有「日期」或「參考價」這種欄名，判斷值不值得接
+        for kw in ("恢復買賣", "參考價", "停止買賣", "面額", "換發", "生效日"):
+            n = html.count(kw)
+            if n:
+                say(f"       出現「{kw}」{n} 次")
+
+    # ── [9] 上櫃交易日曆：官方休市日公告在哪 ──
+    #   ⚠ 現況：上櫃日曆**沒有獨立外部判準**，是用我方日檔自我一致性驗的（0 天差異），
+    #     但那只證明自洽。使用者 2026-09-09 指出正解是**對接官方休市日公告**。
+    #   ⚠ 另外一件要講清楚的：颱風臨時休市**事後**在我方是抓得到的
+    #     （日檔那天全市場沒有成交），真正缺的是**事前**——
+    #     也就是「明天開不開盤」這種前瞻問題。⇒ 官方公告解的是前瞻那一半。
+    #   ⛔ swagger 那 225 個端點裡沒有休市日（已查），所以要看頁面那一層。
+    say("\n[9] 上櫃休市日公告（前瞻用；事後靠日檔就看得出來）")
+    for why, url in (
+            ("櫃買中心 休市日／交易日曆",
+             "https://www.tpex.org.tw/zh-tw/announce/market/holiday.html"),
+            ("櫃買中心 公告專區（找得到休市日的入口就好）",
+             "https://www.tpex.org.tw/zh-tw/announce/market.html")):
+        say(f"\n  ── {why}\n     {url}")
+        r9, e9 = B.get(url, retries=1, timeout=60)
+        if e9:
+            say(f"     ✗ {str(e9)[:120]}　⛔ 抓不到不等於不存在")
+            continue
+        h9 = r9.decode("utf-8", "replace")
+        say(f"     ✓ {len(r9):,} bytes｜出現「休市」{h9.count('休市')} 次"
+            f"｜「開市」{h9.count('開市')} 次")
+        for m in sorted(set(re.findall(r"[\"'\(]([a-zA-Z0-9_/.-]*holiday[a-zA-Z0-9_/.-]*)",
+                                       h9, re.I)))[:10]:
+            say(f"       {m}")
+
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
     say("**沒有命中不等於不存在**——先看清單，不要回頭去猜網址。")

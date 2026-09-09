@@ -223,9 +223,16 @@ def main():
     say("  ⚠ `reducation` 是證交所自己拼錯的，照抄不要訂正。")
     say("  ⛔ `zh/listed/violations/stop.html` 不是這一族——它只收財務業務異常，"
         "明文排除組織變更、重整、減資。名字最像、內容完全不對。")
+    #   ⭐ 2026-09-09 使用者又提供了一支：`change/TWTB7U`。
+    #     TWTB8U 是**恢復買賣參考價**（事後、換完之後的價）；
+    #     TWTB7U 從頁名看是同一族的另一半（很可能是**停止買賣／預告**那一張）。
+    #     ⛔ 但那是從頁名猜的——**量到欄位才算數**，所以放進來一起量，不先寫用途。
+    #     若它帶得出「停止買賣日／換發比例」，上市那半就多一個獨立欄位可以交叉驗。
     for label, path, a2, b2 in (
             ("減資 reducation/TWTAUU", "reducation/TWTAUU", "20150101", "20151231"),
-            ("ETF 分割 split/TWTCAU", "split/TWTCAU", "20250101", "20251231")):
+            ("ETF 分割 split/TWTCAU", "split/TWTCAU", "20250101", "20251231"),
+            ("⭐ change/TWTB7U（使用者提供，用途待量）",
+             "change/TWTB7U", "20250101", "20251231")):
         say(f"\n  ── {label}｜{a2}~{b2}")
         r3, e3 = B.get(f"https://www.twse.com.tw/rwd/zh/{path}"
                        f"?startDate={a2}&endDate={b2}&response=json",
