@@ -652,6 +652,45 @@ def main():
                             f"{r['date']}（缺 {r['missing_trading_days']} 日）｜"
                             + (f"✓ 暫停 {c[0]} → 恢復 {c[1] or '（無）'}"
                                if c else "✗ TWTAWU 裡找不到對應的暫停紀錄"))
+                        # ⭐⭐ 沒中的時候，**要分辨兩種完全不同的原因**：
+                        #   ① 這檔根本不在 TWTAWU 裡 ⇒ **端點不收這種事件**
+                        #   ② 這檔在裡面、但日期兜不攏 ⇒ **我的比對窗開錯**
+                        #   ⛔ 兩者的處置相反：① 要換來源，② 要改我的程式。
+                        #     只報「找不到」的話，這兩件事看起來一模一樣。
+                        if not c:
+                            _mine = _by.get(r["stock_id"], [])
+                            say(f"         ⇒ 這檔在 TWTAWU 裡共 {len(_mine)} 筆"
+                                + (f"：{sorted(_mine)[:6]}" if _mine else
+                                   "　← **整檔不在** ⇒ 端點不收這種事件，"
+                                   "⛔ 不是我的比對窗開錯"))
+
+            # ── ⭐ 這一份到底是什麼性質的資料：**看停牌長度的分佈**
+            #   ⛔ 「它是短期暫停還是長期停止買賣」不可以從一個樣本推
+            #     （1218 泰山那筆是一天，但一筆說明不了 7,215 筆）。
+            import datetime as _dt
+            _dur = []
+            for _sid, _lst in _by.items():
+                for _s1, _s2 in _lst:
+                    if not _s2:
+                        continue
+                    try:
+                        _a = _dt.date(*map(int, _s1.split("-")))
+                        _b2 = _dt.date(*map(int, _s2.split("-")))
+                        _dur.append((_b2 - _a).days)
+                    except ValueError:
+                        pass
+            _dur.sort()
+            if _dur:
+                def _q(p):
+                    return _dur[min(len(_dur) - 1, int(len(_dur) * p))]
+                say(f"     ★ 停牌長度（恢復日 − 暫停日）分佈，n={len(_dur):,}："
+                    f"最短 {_dur[0]}｜p50 {_q(.5)}｜p90 {_q(.9)}｜p99 {_q(.99)}"
+                    f"｜最長 {_dur[-1]} 天")
+                _long = sum(1 for x in _dur if x >= 30)
+                say(f"       其中 **≥ 30 天的有 {_long} 筆（{_long / len(_dur) * 100:.1f}%）**")
+                say("       ⇒ 這一行決定它是不是「長期停止買賣」的來源。"
+                    "⛔ 若幾乎全是 1 天，那它是**短期暫停**，"
+                    "我方那個缺口沒被關掉。")
 
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
