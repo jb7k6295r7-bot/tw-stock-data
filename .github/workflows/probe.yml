@@ -126,6 +126,11 @@ jobs:
               python "$SCRIPT" || RC=$?
               if [ "$RC" -ne 0 ]; then
                 echo "⛔ $SCRIPT 非 0 結束（rc=$RC）——見上面的 traceback"
+                # ⛔ **先把上一版還原回來。** 2026-09-09 實測：tpex 探針在第一節就
+                #   403，`_write()` 照樣覆蓋，**458 行的好結果被 13 行的殘骸換掉**，
+                #   而附加的那句話寫著「這一份是上一次成功的內容」——**那句是假的**。
+                #   ⇒ 還原之後那句話才成立，而且不會因為一次限流就失去整份結果。
+                git checkout -- "$F" 2>/dev/null || true
                 {
                   echo ""
                   echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') $SCRIPT 非 0 結束（rc=$RC），"
@@ -167,20 +172,26 @@ jobs:
           #   只 add 四個探針輸出；若 `data/` 底下**還有別的**變動，
           #   代表某支探針動了不該動的東西 ⇒ **整趟紅掉並印出來**，
           #   而不是安靜地把它一起 commit（那就等於契約不存在）。
-          OTHER=$(git status --porcelain data \
-                  | grep -v 'data/meta/_tdcc_probe.txt' \
-                  | grep -v 'data/meta/_tpex_probe.txt' \
-                  | grep -v 'data/meta/_parvalue_probe.txt' \
-                  | grep -v 'data/meta/_twsthr_probe.txt' \
-                  | grep -v 'data/meta/_holiday_probe.txt' \
-                  | grep -v 'data/meta/_suspend_probe.txt' || true)
+          # ⛔ **這裡只能有一份清單。** 2026-09-09 實測：守門的排除清單加了
+          #   `_suspend_probe.txt`，但下面的 `git add` **忘了加** ⇒
+          #   探針寫了檔、守門放行、然後**沒有被 commit**——
+          #   整趟綠燈、輸出憑空消失。兩份清單分開維護就會這樣。
+          PROBE_OUTS="data/meta/_tdcc_probe.txt"
+          PROBE_OUTS="$PROBE_OUTS data/meta/_tpex_probe.txt"
+          PROBE_OUTS="$PROBE_OUTS data/meta/_parvalue_probe.txt"
+          PROBE_OUTS="$PROBE_OUTS data/meta/_twsthr_probe.txt"
+          PROBE_OUTS="$PROBE_OUTS data/meta/_holiday_probe.txt"
+          PROBE_OUTS="$PROBE_OUTS data/meta/_suspend_probe.txt"
+          OTHER=$(git status --porcelain data | awk '{print $NF}')
+          for f in $PROBE_OUTS; do
+            OTHER=$(printf '%s\n' "$OTHER" | grep -vx "$f" || true)
+          done
           if [ -n "$OTHER" ]; then
             echo "⛔ 探針動到了探針輸出以外的檔案——這支說好只測不寫資料：" >&2
             echo "$OTHER" >&2
             exit 1
           fi
-          git add -- data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt \
-                     data/meta/_parvalue_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt
+          git add -- $PROBE_OUTS
           if git diff --staged --quiet; then
             echo "沒有變動，不 commit"
           else
