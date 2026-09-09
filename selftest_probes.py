@@ -112,6 +112,17 @@ def fake_get(url, **kw):
     if (u.endswith(".html") or "qryStock" in u or "/www/" in u or "/web/" in u
             or "holidaySchedule" in u or "class_main.jsp" in u):
         return HTML.encode(), None
+    # ⚠ 第六次補同一族：parvalue_probe 的 [T11] ④（TWTAWU 對長洞）要一份
+    #   **有「暫停交易日期」欄**的表才走得完，泛用的 {fields:[證券代號]} 會讓它
+    #   在「欄位對不上」那一行就 return ⇒ 解析與對帳一行都不會跑。
+    if "TWTAWU" in u:
+        return json.dumps({
+            "stat": "OK", "title": "暫停交易證券 期間：104/01/01 到 115/09/09",
+            "fields": ["編號", "證券代號", "證券名稱", "暫停交易日期",
+                       "暫停交易時間", "恢復交易日期", "恢復交易時間"],
+            "data": [[1, "1218", "泰山", "115/08/13", "8:00", "115/08/14", "8:00"],
+                     [2, "4414", "如興", "111/08/18", "8:00", "112/06/26", "8:00"]],
+        }, ensure_ascii=False).encode(), None
     if "twse.com.tw" in u or "tpex.org.tw" in u:
         return json.dumps({"stat": "OK", "fields": ["證券代號"],
                            "data": [["2330"]]}).encode(), None
