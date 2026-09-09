@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,halt_date,derived_from
+2022-09-05,6548,90.6,36.24,面額變更（股數推導）,,,,shares_ratio

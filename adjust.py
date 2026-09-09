@@ -115,7 +115,14 @@ EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
               # ★ ETF 分割／反分割（TWSE `split/TWTCAU`）。2026-09-09 接上。
               #   ⚠ 這一類**不在 `industry.csv` 母體裡**，但它們在 `data/stocks/`，
               #     所以照樣要還原——否則算 ETF 長期報酬會踩到同一種靜默錯誤。
-              ("twse", "etfsplit", os.path.join(UNI_DIR, "etfsplit"))]
+              ("twse", "etfsplit", os.path.join(UNI_DIR, "etfsplit")),
+              # ★★ 上櫃面額變更（2026-09-09 接上）。**來源不是官方公告，是股數倍率推導**
+              #   （`otcparvalue.py`，四道閘門）。TWSE TWTB8U 只涵蓋上市、
+              #   TPEx 沒有對應端點，所以這 14 筆只能這樣算。
+              #   因子 ＝ 股數前 ÷ 股數後，是精確值（實測 14/14 是分母 ≤4 的整數比）。
+              #   ⚠ 日後 TPEx 官方端點出現時**官方優先**，衝突要報 ✗ 不可靜默取一邊
+              #     ——那道閘門寫在 `otcparvalue.py` 裡。
+              ("tpex", "parvalue", os.path.join(UNI_DIR, "otcparvalue"))]
 
 # 每種事件的因子合理範圍**必須分開**，用同一組會兩頭錯：
 #   除權息：參考價幾乎一定 ≤ 前收盤，> 1 是罕見的現金增資折價案例（約 0.09%）。

@@ -14,7 +14,7 @@
 | `selftest_patterns.py` | 合成資料自我測試：每種型態一段教科書序列，確認在預期那天發訊號、不該發時不發。 |
 | `results/` | `signals.csv`（逐筆，含所有出場模式的報酬）、`variants.csv`（敏感度）、`baseline.json`、`summary.md`、`breakpoints.csv`（本次剔除用的斷點清單）、`CONCLUSIONS.md`。 |
 | `PROGRESS.md` | 回測線的進度、版本識別與跨線信箱讀取水位。 |
-| `skill_patch/` | **已封存**：2026-09-08 的 skill 更新包與 diff。分工重訂後 skill 一律由各線自己改，本線只寄信；裡面的數字（26 筆／24 檔、前 121／後 20）已被更正三取代，別再引用。 |
+| ~~`skill_patch/`~~ | ⛔ **併入 main 時刻意排除，不在這裡。** 見下方「出處」。 |
 
 ```
 python3 -m backtest.selftest_patterns          # 先跑這個
@@ -27,3 +27,38 @@ python3 -m backtest.run --stocks 2330 2454 --print --out /tmp/x   # 幾檔，印
 需要 `pandas`、`numpy`。
 
 **改門檻的規矩**：`patterns.PARAMS` 裡的值要與 `PREREG.md` 一致；要改就先在 PREREG 追加「更正 N」寫明理由與時點（是在看結果之前還是之後），再改程式。
+
+---
+
+## 出處：這個目錄是怎麼進 main 的（2026-09-09）
+
+原本只在分支 `claude/stock-analysis-backtest-iv9xji`，**從未併入 main**。
+於是兩支 skill 引用的 `backtest/results3/CONCLUSIONS.md` 在 main 上是 404——
+結論有出處，但出處在一條隨時可能被刪的分支上。
+
+使用者 2026-09-09 裁示併入，**但排除 `skill_patch/`**（12 個檔、137 KB）。
+
+**為什麼排除**：那是回測線掛「資料庫線」名義寄出的 skill 更新包 v1~v3，
+回測線自己已宣告**全部作廢**（數字是 26 筆／24 檔、前 121／後 20，都已被更正取代）。
+併進 main 等於在 repo 裡放三份過期的 skill 副本——
+**那正是這個專案一路在防的「第二份權威，它會跟原版飄移」。**
+skill 的權威在各線自己手上，不在這裡。
+
+**為什麼連 `.gz` 一起帶**：`CONCLUSIONS.md` 的內文引用 `panel.csv.gz` 與 `summary.md`。
+只併結論、不併資料，等於把斷掉的引用往下移一層——與原本的毛病同一種。
+三個 `.gz` 合計約 14.5 MB，對 `data/` 已有的 2.3 GB 是 0.6%，不是成本問題。
+
+**為什麼 `PREREG*.md` 一定要在**：本專案的紀律是「判準事前寫死、跑完只追加不修改」。
+事前判準留在分支、結論進 main，等於**把「說好的門檻」與「宣稱的結果」分開存放**，
+日後無法證明結論沒有事後調參。兩者必須同進退。
+
+⚠ **`selftest_patterns.py` 刻意不排進 `daily.yml`。**
+它是好的（6/6 通過，2026-09-09 於 main 實測），但 `daily.yml` 是**資料管線**：
+回測邏輯壞掉不應該讓當天的資料收集變紅。要跑就手動：
+
+```
+python3 -m backtest.selftest_patterns
+```
+
+⚠ 併入的是**當時分支上的快照**。分支仍在，後續回測工作在那邊繼續；
+main 這一份不會自動跟上。**要更新請再併一次，不要在 main 上就地改。**

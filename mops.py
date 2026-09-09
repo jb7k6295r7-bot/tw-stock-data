@@ -294,6 +294,13 @@ def cmd_run(args):
     #   22 個請求裡少收一個，總數看起來還是很像正常的一天
     #   （限流回 307、端點改名，兩種都不會讓程式失敗）。
     calls = []          # (kind, tag, market, 有沒有回應, 列數, 涵蓋率)
+    # ★ 涵蓋 0% 時要留下**證據**，不是只留一個數字。
+    #   「有回應但一列都對不上母體」有兩種完全不同的成因，處置相反：
+    #     ① 鍵對不起來（代號格式變了、期別 parser 不吃上櫃格式）→ 改解析
+    #     ② 端點根本回了另一個市場的表（市場參數被無視）→ 這條路不能用
+    #   ⛔ **光看涵蓋率分不出是哪一種**，而先改 parser 會把 0% 變成
+    #     看起來正常的假值。所以這裡把原始列**原樣**留下來，讓人下一趟直接看。
+    zero_raw = {}
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -303,12 +310,58 @@ def cmd_run(args):
                 d, note = fetch(url)
                 time.sleep(B.SLEEP)
                 if d is None:
-                    calls.append((kind, tag, mk, False, 0, 0.0))
+                    calls.append((kind, tag, mk, False, 0, 0.0, 0.0))
                     print(f"  [{kind}/{tag}/{mk}] 略過：{note[:70]}")
                     continue
-                got = {_pick(r, CODE_KEYS) for r in d}
+                # ⛔ **一列沒有公司代號的列，不是一列資料。**
+                #   2026-09-09 實測：上櫃的 fs/bs × basi／ins／fh 六張表
+                #   **各回 1 列，而那一列的「公司代號」是空的**、年度季別也是空的，
+                #   只有一個出表日期（bs/ins 甚至是 1100616，2021 年的舊日期）。
+                #   那是 TPEx 表示「這個業別在上櫃沒有公司」的方式——
+                #   上櫃的 9 檔金融全是證券商、期貨與保經，銀行／保險／金控真的是 0 家。
+                #
+                #   原本用 `len(d)` 當列數，於是「1 列佔位列」被當成「有 1 列資料」，
+                #   涵蓋率算成 0% → 六張表天天報 ✗。**天天紅的紅字沒有人會看。**
+                #   → 只有**帶得出代號**的列才算資料列。
+                #   ⚠ 這樣做**沒有削弱防護**：真正要抓的是「代號有值、但格式變了對不上母體」，
+                #     那種情形代號不空，照樣會被抓到。這一改只是不再把空列當資料列。
+                real = [r for r in d if _pick(r, CODE_KEYS)]
+                got = {_pick(r, CODE_KEYS) for r in real}
                 cov = len(got & want) / len(want) * 100 if want else 0
-                calls.append((kind, tag, mk, True, len(d), cov))
+                # ★★ `cov` 的分母是**整個市場母體**，對「業別表」幾乎沒有意義：
+                #   證券商（bd）全市場只有 10 家，就算一家不漏，
+                #   1,094 檔當分母也只有 **0.3%**。所以「涵蓋 > 0%」這道檢查
+                #   對業別表**只擋得住全滅**，任何一列對得上就過關——
+                #   而它本來要抓的「代號格式變了」剛好會留下少數幾列對得上。
+                #   ⛔ 這是**分母選錯**，不是門檻訂太鬆；調門檻救不了。
+                #
+                #   → 另外算一個分母正確的：**回來的列裡有幾列是母體認得的**。
+                #     格式一變，這個數字會直接掉到接近 0，不受業別大小影響。
+                #   2026-09-09 實測：11 張表全部 100%（revenue 99.9%，
+                #   差的 2 列是已下市或尚未進母體的，屬正常）。
+                known = sum(1 for r in real if _pick(r, CODE_KEYS) in want)
+                recog = known / len(real) * 100 if real else 100.0
+                calls.append((kind, tag, mk, True, len(real), cov, recog))
+                if len(real) != len(d):
+                    print(f"  [{kind}/{tag}/{mk}] 回 {len(d)} 列，其中 "
+                          f"{len(d) - len(real)} 列沒有公司代號（佔位列，不計）")
+                if real and cov == 0:
+                    # 原樣留前 3 列的鍵欄位，不整理、不轉型
+                    zero_raw[f"{kind}/{tag}/{mk}"] = {
+                        "回應前3列的鍵": [
+                            {k: r.get(k) for k in list(r)
+                             if any(w in k for w in ("代號", "Code", "年度", "季別",
+                                                     "Year", "Season", "Date", "日期"))}
+                            for r in d[:3]],
+                        "我方母體的鍵樣本": sorted(want)[:5],
+                        "母體檔數": len(want),
+                        # ⚠ 情報分析線 2026-09-09 指出：**只吐鍵樣本會漏掉
+                        #   「回了 0 列」與「回了 500 列但全對不上」的差別**，
+                        #   而那兩種的處置不一樣。所以列數三個都要吐。
+                        "回應列數（原始）": len(d),
+                        "回應列數（帶得出代號的）": len(real),
+                        "回應裡的相異代號數": len(got),
+                        "對得上母體的列數": len(got & want)}
                 print(f"  [{kind}/{tag}/{mk}] {note}｜涵蓋 {cov:.1f}%")
                 for r in d:
                     market_of[id(r)] = mk
@@ -358,7 +411,22 @@ def cmd_run(args):
     live = [c[5] for c in calls if c[3] and c[4] > 0]
     rl.check("有列的表都對得上我方母體（涵蓋 > 0%）", not zero,
              ("涵蓋 0%：" + "、".join(zero)) if zero
-             else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%")
+             else f"{len(live)} 張有列的表，最低 {min(live, default=0):.1f}%"
+                  "（⚠ 分母是整個市場，業別表本來就低，見下一項）")
+    # ★ 這一項才是真的在抓「代號格式變了」：分母是**回來的列數**，
+    #   與業別大小無關。低於 90% 就是回來的東西我方大半不認得。
+    poor = [f"{c[0]}/{c[1]}/{c[2]}（{c[6]:.0f}%）"
+            for c in calls if c[3] and c[4] > 0 and c[6] < 90]
+    rec = [c[6] for c in calls if c[3] and c[4] > 0]
+    rl.check("回來的列有 ≥ 90% 是母體認得的代號", not poor,
+             ("不足 90%：" + "、".join(poor)) if poor
+             else f"{len(rec)} 張有列的表，最低 {min(rec, default=100):.1f}%")
+    if zero_raw:
+        # ⛔ 這一段是**證據**不是摘要：兩邊的鍵擺在一起才判得出是
+        #   「鍵對不起來」還是「端點回了另一個市場的表」。
+        rl.note("涵蓋 0% 的原始證據（未整理）：\n```\n"
+                + json.dumps(zero_raw, ensure_ascii=False, indent=1)[:2500]
+                + "\n```")
     rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
              f"略過 {total['skip']} 張")
     return rl.finish()
