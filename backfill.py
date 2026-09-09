@@ -26,6 +26,7 @@
 4. **休市日不是錯誤**：TWSE 回 `stat != OK` 就當休市，記錄後往下一天，不重試。
 """
 import argparse
+import csv
 import json
 import os
 import re
@@ -37,6 +38,10 @@ import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 import runlog
+# ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
+#   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
+#   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
+from fetch import _lock_dir
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -474,11 +479,20 @@ def parse_twse(d, day, market="twse"):
                 chg = _num(r[i_sign])
             else:
                 chg = ""
+            # ⛔⛔ 這裡原本是
+            #     `lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")`
+            #   `chg` 是**字串**，而 `"0.0"` 是 truthy ⇒ **整天鎖死在平盤被判成跌停**。
+            #   ⚠ `fetch.py` 2026-09-08 已經修好（`_lock_dir`），
+            #     **但 `backfill.py` 這一份沒有跟著修** ⇒ 同一個 bug 留了兩份，
+            #     修好的那份天天跑、沒修的那份只有回補才跑，所以一直沒被發現。
+            #   ⭐ 是 2026-09-10 那趟**單日試跑**照出來的：
+            #     重抓 2026-09-08 之後，23 列的 `limit` 從 `flat` 變回 `down`
+            #     ——`fix_limit.py` 修好的 50,382 列會被回補**整批打回原形**。
+            #   ⇒ 直接用 `fetch._lock_dir`，⛔ 不要在這裡再抄一份邏輯出來。
             lim = ""
             if o and h and l and c and o == h == l == c:
-                lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
-            # ⛔ 沒有成交價的列不判漲跌停：沒有價格就沒有「停」可言。
-            #   （上面那個條件本來就過不了，這一行是把意圖寫出來，不是修 bug。）
+                lim = _lock_dir(chg)
+            # ⛔ 沒有成交價的列不判漲跌停（上面的條件本來就過不了，這行是寫出意圖）。
             out.append([f"{day}_{code}", day, code,
                         str(r[i_name]).strip() if i_name is not None else "", market,
                         o, h, l, c,
@@ -625,14 +639,34 @@ def fetch_day_market(day, market, urls, probe_lines=None):
 
 
 def write_day(day, lines):
+    """寫一天的日檔。⛔ **只覆蓋這一趟真的抓了的那些市場。**
+
+    ⚠ 2026-09-10 實測的代價：`--run --markets twse,tpex --force` 重抓 2026-09-08，
+      結果那一天的 **363 列興櫃（`emerging`）整批消失**——因為這裡是整檔覆蓋，
+      而興櫃不是走這條路寫的（`fetch.py` 寫的）。
+      ⛔ 而且它看起來完全正常：檔案在、列數還有兩千多、二市的資料都對。
+    ⇒ 以「這一趟抓了哪些市場」為界：**沒抓的市場，原檔那些列原封不動留著。**
+    """
     kept = [r for r in lines if _kind(r[2]) != "warrant"]
     if not kept:
         return 0
     os.makedirs(DAILY_DIR, exist_ok=True)
     path = os.path.join(DAILY_DIR, f"{day}.csv")
+    mine = {str(r[4]) for r in kept}          # 這一趟寫的市場（HEADER 第 5 欄是 market）
+    keep_old = []
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            rd = csv.DictReader(f)
+            for r in rd:
+                if (r.get("market") or "") not in mine:
+                    keep_old.append([r.get(h, "") for h in HEADER])
+    if keep_old:
+        print(f"[backfill] {day}：保留其他市場的 {len(keep_old)} 列"
+              f"（這一趟只寫 {sorted(mine)}）")
+    rows = kept + keep_old
     with open(path, "w", encoding="utf-8") as f:
         f.write(",".join(HEADER) + "\n")
-        for r in sorted(kept, key=lambda r: r[2]):
+        for r in sorted(rows, key=lambda r: str(r[2])):
             f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
     return len(kept)
 
