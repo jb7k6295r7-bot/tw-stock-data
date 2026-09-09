@@ -116,6 +116,35 @@
 
 **不要用成員名單去猜名稱。**（91 的 10 檔 DR 與 `capital.py` 的 9 檔 DR mismatch 是同一批標的。）
 
+**4. 興櫃不在 `industry.csv` 裡，另外一個檔。**（2026-09-09 新增）
+
+`industry.csv` 的類股名單取自 TWSE `MI_INDEX`，**只涵蓋上市與上櫃**。
+興櫃 364 檔在裡面**一列都沒有**——這不是漏填。
+
+→ 興櫃的產業別在 **`data/meta/industry_esb.csv`**
+（`stock_id, name, market, industry_code, industry_name, source, asof`），
+來源是櫃買 `mopsfin_t187ap03_R` 公司名冊的 `SecuritiesIndustryCode`，
+由 `industry_esb.py` 每趟 `capital.yml` 重建。
+
+> ⛔ **為什麼不併進 `industry.csv`**：那個檔在多處被當成**母體**用
+> （`parvalue_scan.py` 的 `in_universe`、`feeds.py` 的 `known`、
+> 「ETF 不在母體裡所以要全收」）。併進去會讓母體突然多 363 檔，
+> **而那些判斷不會報錯，只會安靜地改變**。
+> ⇒ 要用興櫃產業別的人**明確去讀那個檔**。
+
+> ★ **代碼是同一套編碼，這件事驗過**：拿上櫃那份名冊的
+> `SecuritiesIndustryCode` 去對 `industry.csv` 的 `industry_code`，
+> 2026-09-09 實測 **890 檔相同、0 檔不同**。
+> 這個檢查每趟都重跑，掉下 100% 會報 ✗——所以名稱表才敢共用。
+
+> ⚠ 363 檔裡有 **11 檔的 `industry_name` 是空的**，它們的代碼是 **32／33**
+> ——**正是上表那兩個沒有中文名的代碼**。兩個缺口是同一個缺口。
+> ⛔ 空著是對的，**不要填「其他」**。
+
+> ⚠ 名冊比我方少一檔（4150 優你康）。缺席的正常解釋是
+> **已轉上市櫃或終止興櫃**，⛔ 不用多天聯集去補——
+> 那會讓退場的公司永遠留在名單裡。差異會列在 `_last_run.md`。
+
 **4. 興櫃完全沒有產業別。** 兩個基本資料端點只涵蓋現存的上市櫃公司。
 下市股同理——那不是漏抓。
 

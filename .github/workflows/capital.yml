@@ -65,6 +65,17 @@ jobs:
             --limit "${{ inputs.limit || '400' }}" \
             --sleep "${{ inputs.sleep || '6' }}"
 
+      # ★ 興櫃產業別。**一定要排在 capital.py 後面**——
+      #   它讀的是 capital.py 剛存下來的原始快照
+      #   （`data/universe/capital/tpex-mopsfin-R/<出表日期>.csv`），
+      #   排前面的話它讀到的是上一趟的名冊。
+      # ⛔ 不加 continue-on-error：它的 `rl.check` 裡有「上櫃代碼與 industry.csv
+      #   完全一致」，那是**名稱表可不可以共用**的前提。前提破了還繼續，
+      #   等於安靜地掛上錯的產業名。
+      - name: 興櫃產業別
+        if: inputs.mode == 'run' || inputs.mode == ''
+        run: python industry_esb.py
+
       - name: 這一趟的摘要
         if: always()
         continue-on-error: true
