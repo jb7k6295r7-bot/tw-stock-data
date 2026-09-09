@@ -87,7 +87,7 @@ def process_stock(args):
     bps = D.breakpoints(df, st.event_dates)
     jump_rows = [{"stock_id": sid, "market": market, "date": cal[b["pos"]].strftime("%Y-%m-%d"),
                   "prev_date": cal[b["prev_pos"]].strftime("%Y-%m-%d"), "ratio": b["ratio"], "missing_trading_days": b["gap"], "rule": b["rule"]}
-                 for b in bps]
+                 for b in bps if D.applies(b)]   # 清單只留判讀層有套窗的（資料層全表見 breakpoint_scan 的 holes_scan.csv）
     ncal = len(cal)
     jump_window = D.breakpoint_window(bps, ncal, H_FORWARD, L_LOOKBACK)   # True ＝ 以該日為訊號日的訊號要剔除
     excluded = {"jump": 0}
@@ -184,7 +184,9 @@ def main():
     ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--print", action="store_true")
     ap.add_argument("--out", default=RESULTS)
+    ap.add_argument("--liq", choices=["shares", "amount"], default="shares", help="流動性閘門：shares＝20 日均量 ≥ 500 張（主表）；amount＝近 20 日成交金額均值 ≥ 5,000 萬（並列母體）")
     a = ap.parse_args()
+    P.PARAMS["liq_mode"] = a.liq          # 在建 Pool 之前改，fork 出去的 worker 才會帶到
 
     t0 = time.time()
     cal = D.load_calendar()

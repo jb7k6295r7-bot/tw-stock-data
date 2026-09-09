@@ -34,9 +34,12 @@ def stop_distance(ex: pd.DataFrame, code: str, kind: str, p) -> pd.Series:
 
 
 def main():
+    global RESULTS
     ap = argparse.ArgumentParser()
     ap.add_argument("--wmax", type=float, required=True, help="單筆部位上限（占資金比例），PREREG5 第五節問題 1 的答案")
+    ap.add_argument("--out", default=RESULTS, help="輸出目錄（敏感度用，主表固定 results6/）")
     a = ap.parse_args()
+    RESULTS = a.out
     ex = pd.read_csv(os.path.join(HERE, "results5", "exits.csv.gz"), dtype={"stock_id": str})
     cal_split = pd.Timestamp(R5.SPLIT)
     ex["pre"] = pd.to_datetime(ex["entry_date"]) < cal_split
