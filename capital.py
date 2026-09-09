@@ -52,6 +52,7 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -403,11 +404,74 @@ def cmd_probe(_args):
         if got:
             k = sorted(got)[0]
             lines.append(f"    首筆照抄：{k} {got[k]}")
+    lines += _probe_history()
     os.makedirs(META_DIR, exist_ok=True)
     with open(PROBE, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     print("\n".join(lines))
     return 0
+
+
+# ★ 上市 shares 的**歷史**能不能按月回補（使用者 2026-09-09 的待辦 B-3）
+#   背景：上櫃的 `shares` 每天都在日檔裡，所以上櫃有逐日序列；
+#   上市沒有，只能靠 `mopsfin_t187ap03_L` 這種**快照**端點。
+#   今天起我方會把快照存下來（`archive_snapshot`），但那只解決「從今天起」。
+#   ⇒ 這一節問的是：**過去的拿不拿得到。**
+HIST_PROBE = [
+    # 端點自己有沒有吃期別參數。⛔ 參數名一律用**端點回應裡出現過的欄位名**，
+    #   不是我自己想的（`資料年月` 就是 t187ap03 回應裡的欄位）。
+    ("t187ap03_L 加 資料年月", "https://openapi.twse.com.tw/v1/mopsfin_t187ap03_L"
+     "?資料年月=11406"),
+    ("t187ap03_L 加 date", "https://openapi.twse.com.tw/v1/mopsfin_t187ap03_L"
+     "?date=20250630"),
+    ("t187ap03_L 加 出表日期", "https://openapi.twse.com.tw/v1/mopsfin_t187ap03_L"
+     "?出表日期=1140630"),
+]
+
+
+def _probe_history():
+    """→ list[str]。⛔ 判準是**內容有沒有變**，不是「有沒有回東西」。
+
+    這個專案被同一個坑咬過：`TWT49U` 不吃 `date` 卻把它原樣回傳，
+    日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
+    ⇒ 帶參數與不帶參數的回應要**逐位元組比**，一樣就是參數沒生效。
+    """
+    L = ["", "", "═══ ★ 上市 shares 的歷史能不能按月回補（B-3）═══",
+         "⛔ 判準：帶參數與不帶參數**回應不一樣**才算參數有生效。",
+         "  一樣 ⇒ 參數被無視（TWT49U 那個坑），"
+         "**不可以**因為「有回東西」就當它可用。"]
+    base_url = "https://openapi.twse.com.tw/v1/mopsfin_t187ap03_L"
+    base, err = get(base_url, retries=1)
+    if err:
+        L.append(f"  ✗ 連不帶參數的都抓不到：{str(err)[:120]}")
+        return L
+    L.append(f"  基準（不帶參數）：{len(base):,} bytes")
+    # 基準自己宣告的期別——之後用來判斷「回來的是不是我要的那一期」
+    got0, _ = parse_market(base, "base")
+
+    def _ym(b):
+        """回應裡出現的「資料年月」有哪些。⛔ 解成文字再找，不要對 bytes 硬幹。"""
+        t = b.decode("utf-8", "replace")
+        return sorted(set(re.findall(r'"資料年月"\s*:\s*"?([0-9]{5,7})', t)))
+
+    ym0 = _ym(base)
+    L.append(f"  基準解析出 {len(got0)} 檔｜回應裡的資料年月 {ym0[:4] or '（抓不到）'}")
+    for label, url in HIST_PROBE:
+        raw, e = get(url, retries=1)
+        if e:
+            L.append(f"  ✗ {label}：{str(e)[:110]}")
+            continue
+        same = (raw == base)
+        ym = _ym(raw)
+        L.append(f"  {'✗' if same else '★'} {label}：{len(raw):,} bytes｜"
+                 f"與基準{'**完全一樣 ⇒ 參數被無視**' if same else '不同 ⇒ 值得再看'}"
+                 f"｜資料年月 {ym[:4] or '（抓不到）'}")
+    L.append("  ⇒ 三發都「完全一樣」⇒ 這個端點**只給當期**，"
+             "上市的歷史 shares **我方取不到**，")
+    L.append("    ⛔ 但那不等於「不存在」——MOPS 的股本形成表是另一條還沒試過的路。")
+    L.append("  ⇒ 任何一發不同 ⇒ **先別高興**，要再確認回來的期別真的是我要的那一期"
+             "（TWT49U 就是回了東西但期別是當天的）。")
+    return L
 
 
 def cmd_run(_args):
