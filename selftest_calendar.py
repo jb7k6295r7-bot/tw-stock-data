@@ -106,6 +106,37 @@ def main():
         chk("★ 半套日曆不寫檔（原檔不動）", read(out) == {"2015-01-05"},
             "半套的獨立日曆比沒有更糟——它看起來像完整的")
 
+        print("\n── 3.5 日曆落後於日檔要看得出來（K線線 2026-09-09 踩到的那個）──")
+        # ⛔ 這一節在測的是**「三個 coverage 檔要 union」這件事有沒有被執行**。
+        #   K線線只 union 了兩個，於是他們的窗口停在 09-03、而價格到 09-08，
+        #   **閘門照跑、照回報通過**，只是看的窗裡沒有最近那幾天。
+        #   ⇒ 假資料刻意做成「兩個舊、一個新」，只讀兩個就會得到舊答案。
+        fake = os.path.join(tmp, "fakeroot")
+        os.makedirs(os.path.join(fake, "universe", "daily"))
+        _u = os.path.join(fake, "universe")
+        for fn, last in (("_coverage.csv", "2026-09-03"),
+                         ("_coverage_backfill.csv", "2026-09-01"),
+                         ("_coverage_daily.csv", "2026-09-08")):
+            with io.open(os.path.join(_u, fn), "w", encoding="utf-8") as f:
+                f.write("date,twse,tpex,emerging,total,note\n")
+                f.write(f"2026-09-01,1,1,0,2,\n{last},1,1,0,2,\n")
+        for d in ("2026-09-01", "2026-09-08"):
+            io.open(os.path.join(_u, "daily", d + ".csv"), "w").write("key\n")
+        cov, last, pd = C.calendar_lag(fake)
+        chk("三個檔各自的最後一天都讀得到", len(cov) == 3 and "（不存在）" not in cov.values(),
+            str(cov))
+        chk("★ union 取的是最新那一個（＝只讀兩個會拿到 09-03，是錯的）",
+            last == "2026-09-08", f"union {last}")
+        chk("日檔最後一天讀得到", pd == "2026-09-08", pd)
+        chk("★ 沒落後時斷言成立", last >= pd, f"日曆 {last}｜日檔 {pd}")
+        # ⛔ **證明它會失敗**：把最新那個 coverage 檔拿掉（＝模擬「只讀兩個」），
+        #   斷言就該當場不成立。沒證明過會失敗的測試不算測試。
+        os.remove(os.path.join(_u, "_coverage_daily.csv"))
+        cov2, last2, pd2 = C.calendar_lag(fake)
+        chk("★★ 少讀一個檔時斷言**真的會不成立**（否則這一節是裝飾）",
+            last2 == "2026-09-03" and not (last2 >= pd2),
+            f"union {last2}｜日檔 {pd2} ⇒ 落後 ⇒ 斷言為假")
+
         print("\n── 4. 沒有碰到 repo ──")
         cal_after = io.open(REPO_CAL, "rb").read() if os.path.isfile(REPO_CAL) else None
         chk("★ repo 的 calendar_twse.csv 逐位元沒變", cal_before == cal_after)
