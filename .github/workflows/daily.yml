@@ -161,6 +161,46 @@ jobs:
           python feeds.py --run --feed otcinst --start 2015-01-01 --end "$TODAY" \
                           --limit 20 --sleep 1
 
+      # ★★ 2026-09-09 新增：**官方會事後修訂三大法人的投信欄，而我方 T 日抓完就定版。**
+      #   市場情報分析線 23:55 用櫃買個股層端點逐檔比對，量到 09-07/08/09 投信對不上；
+      #   我把那三天重抓，⭐ **git diff 就是實驗結果**：
+      #     29 筆改動，逐欄看 → trust 29、total 29（total 是導出的），
+      #     foreign 與 dealer **一筆都沒動**。例：1815 投信 7,190,000 → 4,741,000。
+      #   ⇒ 「官方事後修訂投信欄」不再是假說。
+      #   ⚠ 而我方原本永遠不會發現：`--run` 已存在就跳過，那三天的錯值會**永久留著**，
+      #     而且檔案在、列數對、內部 total 也自洽——**看起來完全正常**。
+      #
+      #   ⛔ N=5 個交易日是**選的**，不是量出來的：已知 T~T-2 會改、T-3 那天當時是乾淨的。
+      #     ⇒ 下面印出「這一趟哪幾天變了」：**如果最舊的那一天也變了，代表 5 天不夠**，
+      #       要把 N 調大。⚠ 沒有這一行的話，N 太小會安靜地留下錯值。
+      - name: 三大法人回補最近 5 個交易日（官方會事後修訂投信欄）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          # ⛔ 用**交易日曆**回推 5 天，不是日曆天：連假時日曆天會少算好幾天。
+          # ⛔ 不用 heredoc：YAML 縮排下的 `PY` 不在行首，heredoc 收不掉。
+          FROM=$(python -c "import csv,io,os;p='data/meta/calendar_twse.csv';ds=sorted(r['date'] for r in csv.DictReader(io.open(p,encoding='utf-8')) if r.get('date')) if os.path.exists(p) else [];print(ds[-5] if len(ds)>=5 else '')")
+          if [ -z "$FROM" ]; then
+            echo "⛔ 讀不到交易日曆，這一步跳過（⚠ 不要拿日曆天硬算）" >&2
+            exit 0
+          fi
+          echo "回補區間：$FROM ~ $TODAY（5 個交易日）"
+          python backfill.py --inst --start "$FROM" --end "$TODAY" --sleep 1 --force || true
+          python feeds.py --run --feed otcinst --start "$FROM" --end "$TODAY" \
+                          --sleep 1 --force || true
+          CH=$(git diff --name-only -- data/universe/inst data/universe/otcinst \
+               | sed 's|.*/||;s|\.csv$||' | sort -u)
+          if [ -z "$CH" ]; then
+            echo "這一趟沒有任何一天被修訂"
+          else
+            echo "⚠ 這一趟被修訂的日期：$CH"
+            if echo "$CH" | grep -q "^$FROM$"; then
+              echo "⛔⛔ **最舊的那一天（$FROM）也被改了 ⇒ 5 天不夠，要把 N 調大**" >&2
+            fi
+          fi
+
       # ★★ 融資融券與本益比日檔。**2026-09-08 之前完全不在每日排程裡**——
       #   transpose 的跨層檢查第一次跑就抓到：price 到 09-08，而 margin 與 per
       #   還停在 09-04。`data/stocks_margin/`（2,426 檔）與 `data/stocks_per/`
