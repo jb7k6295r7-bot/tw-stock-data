@@ -251,17 +251,46 @@ def _latest_daily():
     return os.path.join(UNI_DAILY, fs[-1]) if fs else None
 
 
+# ★ 母體要往回看幾個交易日。⛔ 不是 1。
+#   2026-09-09 查出來的因果（不是猜的，是逐日比對日檔查到的）：
+#     `data/universe/daily/*.csv` **只收當天有成交的證券**（這是本庫已知的陷阱），
+#     而舊版 `load_universe()` 只讀**最新那一個**日檔 ⇒
+#     **成交稀疏的股票在任何一趟都可能不在母體裡，它那一列就永遠不會被重問。**
+#   實測：4154 樂威科-KY 等 6 檔的 `capital` 空著，
+#   而 `tpex-mopsfin-O` 的快照裡**這 8 檔全部都有股本**（連 par 都有）。
+#   ⇒ 先前寫成「那份快照沒涵蓋到」是**錯的診斷**——涵蓋得好好的，
+#     是我方根本沒把它們送進去問。
+#   同一天 4950、7757 補上了，正因為它們 09-08 剛好有成交。
+#   ⇒ 20 個交易日：足以蓋過一般的停牌與冷門股空窗，
+#     又不會把早就下市的代號一直撈回來。
+UNI_LOOKBACK = 20
+
+
 def load_universe():
-    """→ {code: (name, market, shares_from_feed)}。以最新 daily 檔為準。"""
-    p = _latest_daily()
+    """→ {code: (name, market, shares_from_feed)}。取最近 UNI_LOOKBACK 個日檔的**聯集**。
+
+    同一檔出現在多天時取**最新那一天**的值（股數會長，舊的不可以蓋新的）。
+    回傳的 `day` 仍然是最新那一個日檔的日期——它的語意是「這批資料的基準日」。
+    """
     out = {}
-    if not p:
+    if not os.path.isdir(UNI_DAILY):
         return out, None
-    with open(p, encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            out[r["stock_id"]] = (r.get("name", ""), r.get("market", ""),
-                                  (r.get("shares") or "").strip())
-    return out, os.path.basename(p)[:-4]
+    fs = sorted(x for x in os.listdir(UNI_DAILY) if x.endswith(".csv"))
+    if not fs:
+        return out, None
+    # 由舊往新讀，後讀到的自然覆蓋先讀到的 ⇒ 同一檔留下最新的一筆。
+    for fn in fs[-UNI_LOOKBACK:]:
+        try:
+            with open(os.path.join(UNI_DAILY, fn), encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = (r.get("stock_id") or "").strip()
+                    if not sid:
+                        continue
+                    out[sid] = (r.get("name", ""), r.get("market", ""),
+                                (r.get("shares") or "").strip())
+        except OSError:
+            continue
+    return out, fs[-1][:-4]
 
 
 # ────────────────────────────────────────────── 市場層端點
