@@ -453,7 +453,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 2321,東訊,twse,165550600,16555060,10,twse-opendata-L,2026-09-09,ok
 2323,中環,twse,9804134950,980413495,10,twse-opendata-L,2026-09-09,ok
 2324,仁寶,twse,44071466250,4407146625,10,twse-opendata-L,2026-09-09,ok
-2327,國巨*,twse,5146826720,2058730688,,twse-opendata-L,2026-09-09,mismatch:2.500
+2327,國巨*,twse,5146826720,2058730688,2.5,twse-opendata-L,2026-09-09,ok(面額變更後)
 2328,廣宇,twse,5183462820,518346282,10,twse-opendata-L,2026-09-09,ok
 2329,華泰,twse,6589483330,658948333,10,twse-opendata-L,2026-09-09,ok
 2330,台積電,twse,259323700670,25932370067,10,twse-opendata-L,2026-09-09,ok
@@ -785,11 +785,11 @@ stock_id,name,market,capital,shares,par,source,asof,note
 3081,聯亞,tpex,1017690040,101769004,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 3083,網龍,tpex,864868580,86486858,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 3085,新零售,tpex,535815700,69019288,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=69019288；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=53581570）
-3086,華義*,tpex,272710510,272710510,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+3086,華義*,tpex,272710510,272710510,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 3088,艾訊,tpex,1086490170,111071218,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=111071218；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=108649017）
 3090,日電貿,twse,2875671500,287567150,10,twse-opendata-L,2026-09-09,ok
 3092,鴻碩,twse,1066492500,106649250,10,twse-opendata-L,2026-09-09,ok
-3093,港建*,tpex,362888940,145155576,,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,mismatch:2.500
+3093,港建*,tpex,362888940,145155576,2.5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 3094,聯傑,twse,831170890,83117089,10,twse-opendata-L,2026-09-09,ok
 3095,及成,tpex,161800000,10000000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(含特別股)
 3097,拍檔,emerging,750856050,75085605,10,tpex-mopsfin-R,2026-09-09,ok
@@ -1214,12 +1214,12 @@ stock_id,name,market,capital,shares,par,source,asof,note
 4744,皇將,tpex,569484500,56948450,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 4745,合富-KY,tpex,662205470,69705547,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=69705547；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=66220547）
 4746,台耀,twse,1202559630,120255963,10,twse-opendata-L,2026-09-09,ok
-4747,強生*,tpex,454610320,90922064,5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+4747,強生*,tpex,454610320,90922064,5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 4749,新應材,tpex,947328650,94732865,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 4754,國碳科,tpex,302832150,30283215,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 4755,三福化,twse,1007060000,100706000,10,twse-opendata-L,2026-09-09,ok
 4760,勤凱,tpex,321459230,32778289,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=32778289；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=32145923）
-4763,材料*-KY,twse,989146670,989146670,1,twse-opendata-L,2026-09-09,ok
+4763,材料*-KY,twse,989146670,989146670,1,twse-opendata-L,2026-09-09,ok(面額變更後)
 4764,雙鍵,twse,855420620,85542062,10,twse-opendata-L,2026-09-09,ok
 4765,磐采,emerging,321334940,32133494,10,tpex-mopsfin-R,2026-09-09,ok
 4766,南寶,twse,1205707800,120570780,10,twse-opendata-L,2026-09-09,ok
@@ -1325,7 +1325,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 5272,笙科,tpex,552761180,55276118,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5274,信驊,tpex,415829530,41582953,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5276,達輝-KY,tpex,395000000,39500000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-5278,尚凡*,tpex,300000000,300000000,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+5278,尚凡*,tpex,300000000,300000000,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 5283,禾聯碩,twse,876005100,87600510,10,twse-opendata-L,2026-09-09,ok
 5284,jpp-KY,twse,528926830,52892683,10,twse-opendata-L,2026-09-09,ok
 5285,界霖,twse,1020409260,102040926,10,twse-opendata-L,2026-09-09,ok
@@ -1342,7 +1342,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 5309,系統電,tpex,2303660630,231653594,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=231653594；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=230366063）
 5310,天剛,tpex,289435170,28943517,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5312,寶島科,tpex,600598980,60059898,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-5314,世紀*,tpex,146000000,1205960000,,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,mismatch:0.500|股數以 daily 為準=1205960000；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=292000000）
+5314,世紀*,tpex,146000000,1205960000,0.5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)|股數以 daily 為準=1205960000；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=292000000）
 5315,光聯,tpex,1063518320,106351832,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5321,美而快,tpex,595431490,59543149,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5324,士開,tpex,2263790900,226379090,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
@@ -1411,7 +1411,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 5531,鄉林,twse,10775892450,977589245,10,twse-opendata-L,2026-09-09,ok(含特別股)
 5533,皇鼎,twse,2852449440,285244944,10,twse-opendata-L,2026-09-09,ok
 5534,長虹,twse,3153259600,315325960,10,twse-opendata-L,2026-09-09,ok
-5536,聖暉*,tpex,620404650,124080930,5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+5536,聖暉*,tpex,620404650,124080930,5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 5538,東明-KY,twse,2012033330,201203333,10,twse-opendata-L,2026-09-09,ok
 5543,桓鼎-KY,tpex,467035930,46703593,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5546,永固-KY,twse,823534020,82353402,10,twse-opendata-L,2026-09-09,ok
@@ -1436,7 +1436,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 5880,合庫金,twse,156809369140,15680936914,10,twse-opendata-L,2026-09-09,ok
 5902,德記,tpex,945000000,94500000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5903,全家,tpex,2232200000,223220000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-5904,寶雅*,tpex,1064438260,1064438260,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+5904,寶雅*,tpex,1064438260,1064438260,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 5905,南仁湖,tpex,2816232350,281623235,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 5906,台南-KY,twse,357414120,35741412,10,twse-opendata-L,2026-09-09,ok
 5907,大洋-KY,twse,1955310000,195531000,10,twse-opendata-L,2026-09-09,ok
@@ -1607,7 +1607,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 6411,晶焱,tpex,995080310,99508031,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6412,群電,twse,4007691260,400769126,10,twse-opendata-L,2026-09-09,ok
 6414,樺漢,twse,1458863970,145886397,10,twse-opendata-L,2026-09-09,ok
-6415,矽力*-KY,twse,973632132,389452853,,twse-opendata-L,2026-09-09,mismatch:2.500
+6415,矽力*-KY,twse,973632132,389452853,2.5,twse-opendata-L,2026-09-09,ok(面額變更後)
 6416,瑞祺電通,twse,733484600,73348460,10,twse-opendata-L,2026-09-09,ok
 6417,韋僑,tpex,422740000,42274000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6418,詠昇,tpex,345220000,34522000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
@@ -1667,7 +1667,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 6526,達發,twse,1675055540,167505554,10,twse-opendata-L,2026-09-09,ok
 6527,明達醫,tpex,254585500,25458550,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6530,創威,tpex,337500000,33750000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-6531,愛普*,twse,814232700,162846540,5,twse-opendata-L,2026-09-09,ok
+6531,愛普*,twse,814232700,162846540,5,twse-opendata-L,2026-09-09,ok(面額變更後)
 6532,瑞耘,tpex,374451470,37445147,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6533,晶心科,twse,506509110,50650911,10,twse-opendata-L,2026-09-09,ok
 6534,正瀚-創,twse,1028000000,102800000,10,twse-opendata-L,2026-09-09,ok
@@ -1680,7 +1680,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 6543,普惠醫工,emerging,618547000,61854700,10,tpex-mopsfin-R,2026-09-09,ok
 6546,正基,tpex,668484490,66848449,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6547,高端疫苗,tpex,3289436440,329459855,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=329459855；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=328943644）
-6548,長科*,tpex,380185880,950464700,,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,mismatch:0.400
+6548,長科*,tpex,380185880,950464700,0.4,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 6549,景凱,emerging,801220000,80122000,10,tpex-mopsfin-R,2026-09-09,ok
 6550,北極星藥業-KY,twse,8947926880,894792688,10,twse-opendata-L,2026-09-09,ok
 6552,易華電,twse,830000000,83000000,10,twse-opendata-L,2026-09-09,ok
@@ -1728,7 +1728,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 6609,瀧澤科,tpex,724562460,72456246,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6610,安成生技,emerging,2055793950,205579395,10,tpex-mopsfin-R,2026-09-09,ok
 6612,奈米醫材,tpex,475145840,52266043,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=52266043；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=47514584）
-6613,朋億*,tpex,389007425,77801485,5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+6613,朋億*,tpex,389007425,77801485,5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 6614,資拓宏宇,twse,806605210,80660521,10,twse-opendata-L,2026-09-09,ok
 6615,慧智,tpex,215934000,21593400,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6616,特昇-KY,tpex,354284730,35478473,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=35478473；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=35428473）
@@ -1830,7 +1830,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 6758,冠亞,emerging,134710400,13471040,10,tpex-mopsfin-R,2026-09-09,ok
 6761,穩得,tpex,349558670,34955867,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6762,達亞,tpex,369302880,36930288,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-6763,綠界科技*,tpex,184039130,184039130,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
+6763,綠界科技*,tpex,184039130,184039130,1,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 6767,台微醫,tpex,391836300,39183630,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6768,志強-KY,twse,2000950610,200095061,10,twse-opendata-L,2026-09-09,ok
 6770,力積電,twse,47120808560,4712080856,10,twse-opendata-L,2026-09-09,ok
@@ -1972,7 +1972,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 6945,圓祥生技,tpex,975311600,97531160,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 6946,三地能源,emerging,3238000000,323800000,10,tpex-mopsfin-R,2026-09-09,ok
 6947,台鎔科技,twse,1061263340,106126334,10,twse-opendata-L,2026-09-09,ok
-6949,沛爾生醫*-創,twse,655800500,1311601000,,twse-opendata-L,2026-09-09,mismatch:0.500
+6949,沛爾生醫*-創,twse,655800500,1311601000,0.5,twse-opendata-L,2026-09-09,ok(面額變更後)
 6950,科科科技-KY,emerging,1729258670,172925867,10,tpex-mopsfin-R,2026-09-09,ok
 6951,青新-創,twse,520000000,52000000,10,twse-opendata-L,2026-09-09,ok
 6952,大武山,twse,683450000,68345000,10,twse-opendata-L,2026-09-09,ok
@@ -2105,7 +2105,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 7776,奧孟亞,emerging,491015200,49101520,10,tpex-mopsfin-R,2026-09-09,ok
 7777,能率亞洲,tpex,1866062500,202606250,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=202606250；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=186606250）
 7779,鍇睿國際,emerging,161050000,16105000,10,tpex-mopsfin-R,2026-09-09,ok
-7780,大研生醫*,twse,810024170,810024170,1,twse-opendata-L,2026-09-09,ok
+7780,大研生醫*,twse,810024170,810024170,1,twse-opendata-L,2026-09-09,ok(面額變更後)
 7781,昕力資*,emerging,324840430,649680860,,tpex-mopsfin-R,2026-09-09,mismatch:0.500
 7782,光速火箭,tpex,232130000,23213000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 7783,佳運,emerging,624448000,62444800,10,tpex-mopsfin-R,2026-09-09,ok
@@ -2269,7 +2269,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 8067,志旭,tpex,207000000,20700000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8068,全達,tpex,807659490,80765949,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8069,元太,tpex,11546783800,1154695380,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=1154695380；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=1154678380）
-8070,長華*,twse,725648455,725648455,1,twse-opendata-L,2026-09-09,ok
+8070,長華*,twse,725648455,725648455,1,twse-opendata-L,2026-09-09,ok(面額變更後)
 8071,能率網通,tpex,600842830,60084283,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8072,陞泰,twse,800000000,80000000,10,twse-opendata-L,2026-09-09,ok
 8074,鉅橡,tpex,869744660,86974466,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
@@ -2356,7 +2356,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 8415,大國鋼,tpex,10315000000,1031500000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8416,實威,tpex,282107100,28210710,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8421,旭源,tpex,548171400,63817140,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok|股數以 daily 為準=63817140；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=54817140）
-8422,可寧衛*,twse,1358762544,1358762544,1,twse-opendata-L,2026-09-09,ok
+8422,可寧衛*,twse,1358762544,1358762544,1,twse-opendata-L,2026-09-09,ok(面額變更後)
 8423,保綠-KY,tpex,417140300,41714030,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8424,惠普,tpex,360543680,36054368,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8426,紅木-KY,tpex,502425000,50242500,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
@@ -2384,7 +2384,7 @@ stock_id,name,market,capital,shares,par,source,asof,note
 8467,波力-KY,twse,483735750,48373575,10,twse-opendata-L,2026-09-09,ok
 8472,夠麻吉,tpex,177358000,17735800,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8473,山林水,twse,1823069220,182306922,10,twse-opendata-L,2026-09-09,ok
-8476,台境*,twse,831131790,166226358,5,twse-opendata-L,2026-09-09,ok
+8476,台境*,twse,831131790,166226358,5,twse-opendata-L,2026-09-09,ok(面額變更後)
 8477,創業家,tpex,841706160,84170616,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8478,東哥遊艇,twse,939722760,93972276,10,twse-opendata-L,2026-09-09,ok
 8481,政伸,twse,666018660,66601866,10,twse-opendata-L,2026-09-09,ok
@@ -2407,11 +2407,11 @@ stock_id,name,market,capital,shares,par,source,asof,note
 8929,富堡,tpex,505808620,50580862,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8930,青鋼,tpex,818094060,81809406,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8931,大汽電,tpex,1222548620,122254862,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-8932,智通*,tpex,894908210,426013152,,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,mismatch:2.500|股數以 daily 為準=426013152；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=357963284）
+8932,智通*,tpex,894908210,426013152,2.5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)|股數以 daily 為準=426013152；股本取自 tpex-mopsfin-O 的較舊快照（該快照股數=357963284）
 8933,愛地雅,tpex,3267243050,326724305,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8935,邦泰,tpex,1134950000,113495000,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8936,國統,tpex,2480781570,248078157,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
-8937,合騏*,tpex,1079200680,431680272,,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,mismatch:2.500
+8937,合騏*,tpex,1079200680,431680272,2.5,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok(面額變更後)
 8938,明安,tpex,1569864900,156986490,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
 8940,新天地,twse,674910320,67491032,10,twse-opendata-L,2026-09-09,ok
 8941,關中,tpex,349720710,34972071,10,universe:2026-09-08+tpex-mopsfin-O,2026-09-09,ok
