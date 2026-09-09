@@ -105,7 +105,12 @@ def process_stock(job):
             continue
         price = arr["o"][ep]
         row = {"set": set_code, "stock_id": sid, "market": market, "signal_pos": int(sp), "entry_pos": int(ep),
-               "entry_date": cal[ep].strftime("%Y-%m-%d"), "atr_nan": bool(np.isnan(arr["atr14"][ep]))}
+               "entry_date": cal[ep].strftime("%Y-%m-%d"), "atr_nan": bool(np.isnan(arr["atr14"][ep])),
+               # 給研究六（等風險版）用：進場日 ATR 占進場價比例、20／60 日內最大不利偏移（收盤基準）
+               "atr_pct": float(arr["atr14"][ep] / price) if not np.isnan(arr["atr14"][ep]) else np.nan}
+        for hh in (20, 60):
+            seg = arr["c"][ep:ep + hh]
+            row[f"mae{hh}"] = float(np.nanmin(seg) / price - 1) if len(seg) and not np.isnan(seg).all() else np.nan
         for code, kind, p in RULES:
             r = _hold(arr, ep, p) if kind == "hold" else _stop(arr, ep, kind, p)
             if r is None:
