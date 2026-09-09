@@ -476,6 +476,32 @@ def main():
                if extra else "（✓ 沒有多編）"))
         say("       ⚠ ② 不為 0 **不一定是錯**：上櫃減資不在 TWTAUU 裡。"
             "⛔ 但要逐筆看過才可以這樣說，不要先假設。")
+        # ★ 所以就在這裡看。把 ② 按市場拆開——
+        #   全是 tpex ⇒ 假設成立；**有 twse 混在裡面 ⇒ 那才是真問題**，
+        #   代表我方在上市那半編出了官方沒有的事件。
+        mkt = {}
+        indp = os.path.join(_ROOT, "meta", "industry.csv")
+        if os.path.exists(indp):
+            with io.open(indp, encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    mkt[r["stock_id"]] = r.get("market", "")
+        cnt = {}
+        twse_extra = []
+        for sid, d in extra:
+            m = mkt.get(sid, "（不在 industry.csv）")
+            cnt[m] = cnt.get(m, 0) + 1
+            if m == "twse":
+                twse_extra.append((sid, d))
+        say(f"       ② 按市場拆：{cnt}")
+        if twse_extra:
+            say(f"       ⛔ **其中 {len(twse_extra)} 筆是上市**——"
+                "那不能用「TWTAUU 只收上市」解釋，要逐筆查：")
+            for sid, d in sorted(twse_extra)[:15]:
+                say(f"          {sid} {d}")
+        else:
+            say("       ✓ 沒有一筆是上市 ⇒ 「② 全是上櫃」這個解釋站得住。")
+        say("       ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**"
+            "（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。")
 
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
