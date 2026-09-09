@@ -1,0 +1,196 @@
+name: 端點探針（只跑探針，約 1 分鐘）
+
+# ★ 為什麼要把探針從 daily.yml 拆出來（2026-09-09）
+#
+#   daily.yml 一趟要 **20 分鐘**，其中漲跌家數回補就佔約 10 分鐘。
+#   而在探針還在收斂的這段期間，每改一行探針就要等 22 分鐘才看得到結果——
+#   **等的是資料管線，不是探針。**
+#
+#   ⇒ 拆出來單獨跑：只跑四支探針、只寫 `data/meta/_*probe.txt`，約 1 分鐘。
+#     改一版、按一次、兩三分鐘就知道結果。
+#
+# ⛔ **只測不寫資料**：這支不碰 `data/universe/`、不碰 `data/stocks/`、
+#   不碰任何真資料。探針的規矩本來就是「只測不寫」。
+#
+# ⚠ 不排 cron，只手動觸發。探針是「改了才要跑」的東西，
+#   排成每天跑只會製造每天一筆沒人看的 commit。
+#   daily.yml 裡那一步**保留不動**（它有「程式比輸出新才跑」的自癒條件），
+#   兩邊跑同一批腳本、寫同一批檔，衝突由 REGEN 白名單自動處理。
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# ⚠ **不要**跟 daily.yml 同一個 concurrency group：
+#   同組的話這支會排在 20 分鐘的 daily 後面，那就完全失去意義。
+#   四支探針寫的 `_*probe.txt` 都在 commit 那段的 REGEN 白名單裡，
+#   撞在一起會自動取本趟版本，不需要靠排隊避開。
+concurrency:
+  group: probe-only
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ★ 先離線驗四支跑不跑得完（假回應整條走一遍）。
+      #   ⚠ 這一步**不加 continue-on-error**：這支的唯一產出就是探針輸出，
+      #     連跑都跑不完就沒有必要往下打對方的伺服器。
+      - name: 驗四支探針跑得完（離線）
+        run: python selftest_probes.py
+
+      - name: 跑四支探針（這支一律全跑）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          # 兩支都是「只測不寫資料」，輸出進 data/meta/_*_probe.txt 並 commit，
+          # 這樣結論會進 repo，不必有人去翻 Actions log。
+          # 重跑條件三選一：
+          #   ① 檔不存在
+          #   ② 上次結果有 ✗——只看①的話，一次暫時性失敗會讓它永遠不再重試，
+          #      而那個失敗結果會一直留著
+          #   ③ **探針程式比輸出新**——改了探針卻不重跑，等於改了個寂寞，
+          #      而且外表完全正常（2026-09-08 加第 5 節時就差點這樣）
+          # ⚠ 比的是 git commit 時間，不是 mtime：Actions 每次都是全新 checkout，
+          #   mtime 永遠是「剛剛」，用它永遠比不出新舊。
+          for pair in "tdcc_probe.py:_tdcc_probe.txt" "tpex_probe.py:_tpex_probe.txt" \
+                      "parvalue_probe.py:_parvalue_probe.txt" \
+                      "twsthr_probe.py:_twsthr_probe.txt"; do
+            SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
+            # ⚠ 這支**不套** daily 的「程式比輸出新才跑」條件：
+            #   手動按下去就是要跑，條件會讓「我剛按了卻沒跑」變成可能。
+            if true; then
+              echo "→ 跑 $SCRIPT"
+              # ⚠ 2026-09-09：這裡本來是 `python "$SCRIPT" || true`。
+              #   tdcc_probe.py 炸在 NameError、`_write` 一次都沒跑到、輸出檔原封不動，
+              #   而 `|| true` 把它吞掉 ⇒ **步驟是綠的、探針改了兩趟一個字都沒寫出來**。
+              #   ⇒ 非 0 結束要留痕：把 ✗ 寫進輸出檔。
+              #   這樣做有兩個效果——結論進 repo 看得見，而且下一趟的 `grep ✗`
+              #   條件會自動重試，不必有人記得。
+              # ⚠ shell 是 `bash -e`：`python …; RC=$?` 會直接中斷整個步驟，
+              #   而 `if ! python …; then RC=$?` 拿到的 $? 是**被 `!` 反轉後的 0**。
+              #   兩種寫法都不對。用 `|| RC=$?`：既被 `-e` 放行，又拿得到真的碼。
+              RC=0
+              python "$SCRIPT" || RC=$?
+              if [ "$RC" -ne 0 ]; then
+                echo "⛔ $SCRIPT 非 0 結束（rc=$RC）——見上面的 traceback"
+                {
+                  echo ""
+                  echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') $SCRIPT 非 0 結束（rc=$RC），"
+                  echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
+                } >> "$F"
+              fi
+            fi
+          done
+
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # ★ 要加整個 data/：v3 之後歷史在 data/history、日曆在 data/calendar.csv、
+          #   變更紀錄在 data/_changes.log，只 add data/latest 的話**歷史永遠不會被保存**。
+          # 用 -A，刪除也要進暫存區（全量重建可能刪檔）
+          # ⛔ 這支的契約是「只測不寫資料」。與其相信它，不如**讓它被檢查**：
+          #   只 add 四個探針輸出；若 `data/` 底下**還有別的**變動，
+          #   代表某支探針動了不該動的東西 ⇒ **整趟紅掉並印出來**，
+          #   而不是安靜地把它一起 commit（那就等於契約不存在）。
+          OTHER=$(git status --porcelain data \
+                  | grep -v 'data/meta/_tdcc_probe.txt' \
+                  | grep -v 'data/meta/_tpex_probe.txt' \
+                  | grep -v 'data/meta/_parvalue_probe.txt' \
+                  | grep -v 'data/meta/_twsthr_probe.txt' || true)
+          if [ -n "$OTHER" ]; then
+            echo "⛔ 探針動到了探針輸出以外的檔案——這支說好只測不寫資料：" >&2
+            echo "$OTHER" >&2
+            exit 1
+          fi
+          git add -- data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt \
+                     data/meta/_parvalue_probe.txt data/meta/_twsthr_probe.txt
+          if git diff --staged --quiet; then
+            echo "沒有變動，不 commit"
+          else
+            git commit -m "data: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
+            # ★ push 前一定要先把遠端的變更 rebase 進來（2026-08-31 實測失敗）。
+            #   runner 是在 job 開始時 checkout 的，如果這段期間你在網頁上改了檔案，
+            #   遠端就比 runner 手上的新，push 會被拒（fetch first）。
+            # ⚠ 2026-09-09 實測：原本這裡假設「資料是 append-only，rebase 不會有內容衝突」，
+            #   **那句是錯的**。data/meta/ 底下 `_` 開頭的報告檔是每一趟**整份重寫**的，
+            #   七支 workflow 都會 push 同一個 repo，加上人手動改，同一份就會逐字衝突。
+            #   而重試同一個 rebase 只會一模一樣地再撞一次——三次全白費。
+            #   ⚠ 失敗的樣子：log 印「push 失敗」，看起來像網路問題，其實一次都不可能成功。
+            #   run 34296206882 就是這樣掛的，那一趟抓到的資料一列都沒推上去。
+            #
+            # → 衝突時分兩種處置：
+            #   ① 衝突的檔案**全部**在 REGEN 裡 → 取本趟的版本續做（rebase 裡 --theirs
+            #      才是「正在重放的那個 commit」，也就是本趟；--ours 是遠端，別挑錯邊）。
+            #      那些檔完全由當下的 repo 資料重新推導，誰贏都一樣，下一趟會再寫一次。
+            #   ② 只要有**一個**不在 REGEN 裡 → **不自作主張**：abort、印出檔名、整趟紅掉。
+            #      真資料的衝突要人來看，不可以自動挑一邊。
+            #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
+            #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
+            LASTRUN="data/meta/_last_run.md"
+            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv "
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                ok=1; break
+              fi
+              CONF=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
+              if [ -n "$CONF" ]; then
+                BAD=""
+                for f in $CONF; do
+                  [ "$f" = "$LASTRUN" ] && continue
+                  case "$REGEN" in *" $f "*) ;; *) BAD="$BAD $f";; esac
+                done
+                if [ -n "$BAD" ]; then
+                  echo "⛔ rebase 衝突，而且不只是可自動處理的報告檔：$BAD" >&2
+                  echo "   真資料的衝突不自動挑一邊，請人工處理。" >&2
+                  git rebase --abort 2>/dev/null || true
+                  break
+                fi
+                echo "rebase 衝突，可自動處理：$CONF"
+                MERGED=1
+                for f in $CONF; do
+                  if [ "$f" = "$LASTRUN" ]; then
+                    # ⛔ _last_run.md **不可以整份取一邊**：runlog 只覆蓋自己那一個區塊，
+                    #   所以這一份是跨 workflow 累積的。整份取一邊 ⇒ 另一支剛報的 ✗
+                    #   會被安靜換回上一輪的 ✓——檔案在、格式對、只有狀態悄悄變綠。
+                    #   逐區塊合併，每塊留「最後執行」較新的那一份。
+                    git show :3:"$f" > /tmp/lr_ours.md \
+                      && git show :2:"$f" > /tmp/lr_theirs.md \
+                      && python3 merge_last_run.py /tmp/lr_ours.md /tmp/lr_theirs.md > "$f" \
+                      && git add -- "$f" || MERGED=0
+                  else
+                    git checkout --theirs -- "$f" && git add -- "$f" || MERGED=0
+                  fi
+                done
+                if [ "$MERGED" != "1" ]; then
+                  echo "⛔ 自動處理失敗，不硬推" >&2
+                  git rebase --abort 2>/dev/null || true
+                  break
+                fi
+                if GIT_EDITOR=true git rebase --continue && git push origin HEAD:main; then
+                  ok=1; break
+                fi
+              fi
+              # ★ rebase 卡在衝突時工作區會留在 unmerged 狀態，下一輪 git pull 會直接
+              #   說 "Pulling is not possible"，三次全白重試。先 abort 回到乾淨狀態。
+              git rebase --abort 2>/dev/null || true
+              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+            done
+            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
+          fi
