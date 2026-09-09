@@ -73,6 +73,10 @@ jobs:
         continue-on-error: true
         run: python selftest_holiday.py
 
+      - name: 驗上櫃日曆判準的累積（離線）
+        continue-on-error: true
+        run: python selftest_otccal.py
+
       # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
       #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
       #   （理由見 holiday.py 檔頭：兩種錯的代價不對稱）。
@@ -269,6 +273,24 @@ jobs:
         if: always()
         continue-on-error: true
         run: python data_audit.py
+
+      # ★★ 上櫃交易日曆的**外部判準**（2026-09-09 新增）。
+      #   上櫃日曆一直是 `_data_audit.md` 裡唯一一列 C 級：只有自我一致
+      #   （日曆＝日檔裡有上櫃成交的日期集合，拿自己的產出當自己的判準）。
+      #   上市那半有 FMTQIK，⛔ 但 FMTQIK 只有上市。
+      #   `otccal_probe.py` 在 Actions 上量到櫃買 openapi 的
+      #   `tpex_daily_trading_index`（大盤層級，跟我方逐檔行情不同條路）。
+      #   ⛔ **它只給最近 7 個交易日**——swagger 標題寫「歷史」是誤導，
+      #     8 個「歷史指數」端點實測每一個都只回 7 列。
+      #   ⇒ 跟集保同一族：**不累積就永久失去**，所以每天跑，
+      #     而且下面的 freshness_check 有一條在盯它。
+      #   ⚠ 一定要排在 `fetch.py` 之後（它要讀當天的日檔）
+      #     與 `freshness_check.py` 之前（否則第一趟會誤報檔案不存在）。
+      - name: 上櫃交易日曆判準（櫃買大盤，只給 7 天 ⇒ 每天累積）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python otc_calendar.py
 
       - name: 累積型資料的新舊檢查
         if: always()

@@ -136,8 +136,28 @@ def main():
               "（`crosscheck.py`） | — |")
     L.append("| ⚠ 本益比的歷史段 | 2015 年那版 `BWIBBU_d` **連收盤價欄都沒有** "
              "⇒ 近期可比、歷史段的可比性未查 | 逐年量欄位 |")
-    L.append("| 上櫃交易日曆 | **自我一致 0 天差異，但那只證明自洽** | "
-             "櫃買官方休市公告（端點我方取不到） |")
+    # ★ 2026-09-09：上櫃日曆終於有了外部判準，⛔ 但**只涵蓋開始累積之後**。
+    #   櫃買 openapi 那 8 個「歷史指數」端點實測**每一個都只回 7 列**
+    #   （swagger 寫「歷史」是誤導）⇒ 舊的那段沒有人留過紀錄，**補不回來**。
+    #   ⛔ 所以這一列**不可以整列寫成「已升 B」**——那會把 2015~2026-08
+    #     那 2,840 天沒有判準的事實蓋掉，而且看起來像好消息。
+    _ct = os.path.join(_ROOT, "meta", "calendar_tpex.csv")
+    _cd = []
+    if os.path.exists(_ct):
+        with io.open(_ct, encoding="utf-8") as _f:
+            _cd = sorted(r["date"] for r in csv.DictReader(_f) if r.get("date"))
+    if _cd:
+        _older = [d for d in calset if d < _cd[0]] if calset else []
+        L.append(f"| 上櫃交易日曆（{_cd[0]} 之前） | ⛔ **仍然只有自我一致**"
+                 f"，共 {len(_older):,} 天。櫃買端點只給最近 7 個交易日 ⇒ "
+                 "那段**永遠補不回來** | 沒有辦法（除非找到帶歷史的來源） |")
+        L.append(f"| ~~上櫃交易日曆（{_cd[0]} 起）~~ | **已升 B**："
+                 f"`otc_calendar.py` 每天併入櫃買大盤日成交量值指數"
+                 f"（{len(_cd):,} 天，跟我方逐檔行情不同端點） | — |")
+    else:
+        L.append("| 上櫃交易日曆 | **自我一致 0 天差異，但那只證明自洽**"
+                 "｜⚠ `calendar_tpex.csv` 還不存在（otc_calendar.py 還沒跑過"
+                 "或連續失敗）| 讓 `otc_calendar.py` 跑起來 |")
     L.append("| 集保 `data/tdcc/` | 四道驗算全過（恆等式）＝ B；"
              "⛔ 但**只有一週**，序列本身還不存在 | 時間 |")
 
