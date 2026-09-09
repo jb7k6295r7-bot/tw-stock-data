@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-09T19:35:31+08:00",
+  "generated_at": "2026-09-10T00:13:16+08:00",
   "target_trading_day": "2026-09-09",
   "stocks": {
     "7879": {
@@ -61,10 +61,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -114,10 +114,10 @@
           "date_max": "2026-08-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -167,10 +167,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -220,10 +220,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -273,10 +273,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -326,10 +326,10 @@
           "date_max": "2026-08-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -379,10 +379,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -432,10 +432,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -485,10 +485,10 @@
           "date_max": "2026-09-01"
         },
         "margin": {
-          "total": 165,
-          "added": 0,
+          "total": 166,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-08"
+          "date_max": "2026-09-09"
         },
         "fs": {
           "total": 80,
@@ -551,7 +551,7 @@
       "inst": {
         "total": 7,
         "added": 0,
-        "changed": null
+        "changed": 1
       }
     },
     "parse_errors": null
@@ -582,5 +582,5 @@
       "purged_warrants": null
     }
   },
-  "history_rows_changed": null
+  "history_rows_changed": 1
 }
