@@ -184,6 +184,41 @@ def main():
     # ── 情境五：真的沒動到 repo 的 data/
     #   ⚠ 這一節不可以寫成 ck(True, ...)。斷言自己成立＝循環自證，
     #   本專案 2026-09-07 才因為同一件事重跑過整套稽核。
+    print("\n[6] ★ 彈性面額：面額變更後的 par 不可以再被判成 mismatch")
+    # ⛔ 2026-09-09 的實錯：回推面額的候選清單只有 (10, 5, 1, 0.1)——
+    #   那是**彈性面額以前**的世界。台股 2014 起開放彈性面額，
+    #   於是 2.5／0.5／0.4 一個都不在清單裡，**9 檔面額變更股的 par 全部空白
+    #   而且被標 mismatch**，等於叫下游別用一批完全正常的資料。
+    # ⇒ 改成拿 `par_change.csv` 的倍率鏈算出預期面額。這一節釘住那個行為。
+    import capital as _C
+    # ⚠ 前面幾節把 `META_DIR` 指到沙箱去了（那是對的，沙箱本來就該隔離），
+    #   但這一節要驗的是**repo 真的 `par_change.csv`** 推不推得出面額
+    #   ⇒ 暫時指回真的目錄，跑完立刻還原。
+    #   ⛔ 第一版忘了這件事，`par_expect()` 回 0 筆而五項全紅——
+    #     那不是程式錯，是**測試自己站錯地方**。
+    _real_meta = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data", "meta")
+    _saved_meta = _C.META_DIR
+    _C.META_DIR = _real_meta
+    _C._PAR_EXPECT = None                      # 用 repo 真的 par_change.csv
+    exp = _C.par_expect()
+    ck(len(exp) >= 20, f"par_change.csv 推得出面額的檔數 {len(exp)}（≥20）")
+    # 四個真實案例（數字取自 2026-09-09 的官方快照）
+    for code, cap, shr, want in (("2327", "5146826720", "2058730688", "2.5"),
+                                 ("6548", "380185880", "950464700", "0.4"),
+                                 ("5314", "146000000", "292000000", "0.5"),
+                                 ("8932", "1065032880", "426013152", "2.5")):
+        pv, note = _C.reconcile(cap, shr, "", "", code)
+        ck(pv == want and note.startswith("ok"),
+           f"{code} 面額回推 {pv!r}／{note}（預期 {want}）")
+    # ⛔ 負向：沒有面額變更事件的股票，對不起來就該**照樣** mismatch，
+    #   不可以因為新增了一條路就變寬鬆。
+    pv, note = _C.reconcile("1000000", "123457", "", "", "9999")
+    ck(note.startswith("mismatch"),
+       f"沒有事件的怪比值仍然是 mismatch（得到 {note}）")
+    _C.META_DIR = _saved_meta
+    _C._PAR_EXPECT = None
+
     print("\n[5] 沙箱隔離（真的去看檔案系統，不是宣告自己沒事）")
     ck(REPO_DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "跑完之後 repo 的 data/ 存在與否沒有改變")

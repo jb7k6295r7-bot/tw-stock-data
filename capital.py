@@ -168,7 +168,47 @@ def _pick(keys, wanted):
     return None
 
 
-def reconcile(capital, shares, par, pref=""):
+# ★ 面額變更後的**預期面額**，從 `par_change.csv` 的倍率鏈推出來：
+#   面額 ＝ 10 ÷ Π(share_mult)。⛔ 這不是猜的候選值，是**事件推出來的**。
+#
+# ⚠ 為什麼需要它（2026-09-09 查出來的）：
+#   下面回推面額的候選清單原本只有 `(10, 5, 1, 0.1)`——那是**彈性面額以前**的世界。
+#   台股 2014 起開放彈性面額，於是 2.5／0.5／0.4 這些值一個都不在清單裡，
+#   結果 **9 檔面額變更股的 `par` 全部空白、而且被標成 `mismatch`**。
+#   `mismatch` 在本檔的語意是「這一檔的股數不要拿來算佔股本比重」
+#   ⇒ **我方等於在叫下游別用一批完全正常的資料**，
+#     跟 2026-09-07 那次「37 檔被誤標 mismatch」是同一種錯。
+#   ⛔ 修法不是往清單裡塞更多數字（那是猜），是**拿我方已經有的事件去算**。
+_PAR_EXPECT = None
+
+
+def par_expect():
+    """→ {stock_id: 面額}。讀 `par_change.csv` 的 `share_mult` 連乘。"""
+    global _PAR_EXPECT
+    if _PAR_EXPECT is not None:
+        return _PAR_EXPECT
+    out = {}
+    p = os.path.join(META_DIR, "par_change.csv")
+    if os.path.exists(p):
+        mult = {}
+        try:
+            with open(p, encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    try:
+                        m = float(r.get("share_mult") or 0)
+                    except ValueError:
+                        continue
+                    if m > 0:
+                        mult[r["stock_id"]] = mult.get(r["stock_id"], 1.0) * m
+        except OSError:
+            pass
+        for k, m in mult.items():
+            out[k] = PAR_DEFAULT / m
+    _PAR_EXPECT = out
+    return out
+
+
+def reconcile(capital, shares, par, pref="", code=""):
     """股數 × 面額 應該等於實收資本額。→ (par_used, note)
 
     ★ 對不起來就要標出來，不要挑一個好看的用。2026-09-03 實測興櫃有兩檔
@@ -218,6 +258,11 @@ def reconcile(capital, shares, par, pref=""):
             if abs(implied_pf - cand) / cand <= 0.01:
                 return str(cand), "ok(含特別股)"
     implied = cap / shr
+    # ★ 先看事件推出來的預期面額。⛔ 容忍要**嚴**（1%）：
+    #   它是很specific的解釋，要幾乎完全吻合才採用——這一點跟上面含特別股那段同理。
+    exp = par_expect().get(str(code))
+    if exp and abs(implied - exp) / exp <= 0.01:
+        return f"{exp:g}", "ok(面額變更後)"
     for cand in (10, 5, 1, 0.1):
         if abs(implied - cand) / cand <= 0.05:
             return str(cand), "ok"
@@ -629,14 +674,14 @@ def cmd_run(_args):
                 #   它們其實全都乾淨：端點自己那一對 資本額÷股數 剛好是 10.000，
                 #   差別只是 daily 比端點新（可轉債轉換、員工認股，股數會慢慢長）。
                 #   **面額只能用端點自己那一對驗**；跨來源的差異另外記，不要混進判定。
-                par_used, nt = reconcile(cap, shr or official, par, pref)
+                par_used, nt = reconcile(cap, shr or official, par, pref, code)
                 if shr and shr != official:
                     nt += (f"|股數以 daily 為準={official}；"
                            f"股本取自 {tag} 的較舊快照（該快照股數={shr}）")
                 rows[code] = [code, name, uni[code][1], cap, official, par_used,
                               f"universe:{day}+{tag}", today, nt]
             elif shr:
-                par_used, nt = reconcile(cap, shr, par, pref)
+                par_used, nt = reconcile(cap, shr, par, pref, code)
                 rows[code] = [code, name, uni[code][1], cap, shr, par_used,
                               tag, today, nt]
             elif cap:
