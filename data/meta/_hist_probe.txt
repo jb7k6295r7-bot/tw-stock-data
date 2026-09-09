@@ -19,7 +19,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a3877cd6be5fb091\',t:\'MTc4ODk3MDQ4NA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a38787ab7bc0fbef\',t:\'MTc4ODk3MDkyNw==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -34,8 +34,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3877cdb7b204759\','
-     't:\'MTc4ODk3MDQ4NQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a38787b29a1dc983\','
+     't:\'MTc4ODk3MDkyOQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -70,8 +70,8 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3877ce8f
-         8b3086d',t:'MTc4ODk3MDQ4Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a38787ca1
+         be6f278',t:'MTc4ODk3MDkzMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate
@@ -182,39 +182,39 @@
        第四輪用 `>2000 bytes` 當判準 ⇒ 民國 85~116 **全部命中、而且每年都剛好 4,449 bytes**（1996 年興櫃還不存在、2027 年還沒到）
        ⇒ 那 4,449 bytes 是**查無資料頁**。⚠ 自己挑的門檻不是事實。
      ⛔ 下面每一行都是「我打了這個網址、得到這個結果」，**不是**「櫃買宣告有這些年」。
-     民國  85（1996）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  86（1997）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  87（1998）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  88（1999）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  89（2000）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  90（2001）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  91（2002）｜✗ 試了 1229/1228/0630/0331 四天都沒有
+     民國  85（1996）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國  86（1997）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  87（1998）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  88（1999）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  89（2000）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
+     民國  90（2001）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國  91（2002）｜✓ 1227 有檔 30,276 bytes
      民國  92（2003）｜✓ 1229 有檔 49,912 bytes
      民國  93（2004）｜✓ 1229 有檔 71,803 bytes
      民國  94（2005）｜✓ 1229 有檔 52,346 bytes
      民國  95（2006）｜✓ 1229 有檔 46,651 bytes
-     民國  96（2007）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  97（2008）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  98（2009）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國  99（2010）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 100（2011）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 101（2012）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 102（2013）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 103（2014）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 104（2015）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 105（2016）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 106（2017）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 107（2018）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 108（2019）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 109（2020）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 110（2021）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 111（2022）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 112（2023）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 113（2024）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 114（2025）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 115（2026）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     民國 116（2027）｜✗ 試了 1229/1228/0630/0331 四天都沒有
-     ⭐ **實測命中的民國年：92~95（2003~2006），共 4 年**
+     民國  96（2007）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國  97（2008）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  98（2009）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國  99（2010）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 100（2011）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 101（2012）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國 102（2013）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國 103（2014）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 104（2015）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 105（2016）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 106（2017）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
+     民國 107（2018）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
+     民國 108（2019）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國 109（2020）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 110（2021）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 111（2022）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 112（2023）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
+     民國 113（2024）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
+     民國 114（2025）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 115（2026）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     民國 116（2027）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+     ⭐ **實測命中的民國年：91~95（2002~2006），共 5 年**
 
 [7] 這一輪要回答的三句話
   ⛔ 以下三句，**只有在前面幾節真的看到「上櫃」而且看到日期範圍時才可以改**：
