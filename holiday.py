@@ -162,7 +162,57 @@ def main():
 
 SCHED_URL = ("https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule"
              "?response=json")
+# ★★ 2026-09-09 市場情報分析線 23:40 回報：這一條**吃 `date=YYYYMMDD`**（年份取自它）。
+#   ⚠ 我這邊之前試的是 `queryYear=` 與不帶參數，三種回應相同 ⇒ 我判「拿不到別年」。
+#     **我只試了我想到的那兩種寫法。** 同一族今天第 N 次。
+#   ⛔ 但「它吃 date=」是**別人的實測**，不是我的。所以下面不假設它會生效：
+#     每一年都**只收日期真的落在那一年的列**。端點若忽略 date=（回的還是今年），
+#     那些列會被濾光 ⇒ 報「端點忽略了 date」，⛔ 不會變成「那年沒有休市日」。
+SCHED_YEAR_URL = ("https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule"
+                  "?date={y}0101&response=json")
+# ⛔ 對方只回到 2021（2020 以前回 stat=ok、data=[]、total=0 ⇒ **靜默失敗**）。
+#   ⭐ 正常年份的列數在 20~27 之間 ⇒ **拿到 0 列一律當失敗**，
+#     不可以當成「那一年沒有休市日」——那會讓春節整段被判成資料缺漏。
+SCHED_MIN_ROWS, SCHED_MAX_ROWS = 20, 27
 SCHED_CSV = os.path.join(_ROOT, "meta", "holiday_schedule.csv")
+
+
+def _sched_rows():
+    """讀回 holiday_schedule.csv → {日期: [日期, 名稱, 說明, asof]}。
+
+    ⛔ 抽成函式是因為逐年回補與原本那段都要用它；
+      inline 兩份的話總有一天只改到一份。
+    """
+    rows = {}
+    if os.path.exists(SCHED_CSV):
+        with io.open(SCHED_CSV, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("date"):
+                    rows[r["date"]] = [r["date"], r.get("name", ""),
+                                       r.get("note", ""), r.get("asof", "")]
+    return rows
+
+
+def _sched_merge(data, today):
+    """把一批列併進 holiday_schedule.csv，回**新增**幾列。"""
+    rows = _sched_rows()
+    added = 0
+    for r in data:
+        r = list(r) + [""] * 3
+        dt = str(r[0]).strip()
+        if not re.match(r"^20[0-9]{2}-[0-9]{2}-[0-9]{2}$", dt):
+            continue
+        if dt not in rows:
+            added += 1
+        # ⛔ 同一天重抓要覆蓋（公告會更正），但 asof 記下來，看得出是哪天抓的
+        rows[dt] = [dt, str(r[1]).strip(), str(r[2]).strip(), today]
+    os.makedirs(os.path.dirname(SCHED_CSV), exist_ok=True)
+    with io.open(SCHED_CSV, "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["date", "name", "note", "asof"])
+        for k in sorted(rows):
+            w.writerow(rows[k])
+    return added
 
 
 def _schedule(rl, today):
@@ -174,6 +224,53 @@ def _schedule(rl, today):
     ⇒ 所以每天抓、逐年存檔：今年的存下來，明年一月它換年之後就接得上。
       ⛔ 這跟集保只留一年是同一種「不存就永久失去」，只是週期是一年。
     """
+    # ── 逐年回補（2026-09-09 新增）───────────────────────────────
+    #   ⭐ 已經存在且列數正常的年份**不重抓**：那幾年是過去式，不會再變。
+    #     ⇒ 穩定之後每天只剩今年與明年兩發。
+    have = _sched_rows()
+    by_year = {}
+    for dt in have:
+        by_year[dt[:4]] = by_year.get(dt[:4], 0) + 1
+    this_year = int(today[:4])
+    added_total = 0
+    for y in range(2015, this_year + 2):
+        n = by_year.get(str(y), 0)
+        if y < this_year and SCHED_MIN_ROWS <= n <= SCHED_MAX_ROWS:
+            continue                      # 過去的年份已經齊了
+        raw_y, err_y = B.get(SCHED_YEAR_URL.format(y=y), retries=2, timeout=60)
+        if err_y or not raw_y:
+            rl.info(f"  {y} 年", f"✗ 抓不到：{str(err_y)[:80]}")
+            continue
+        try:
+            dy = json.loads(raw_y.decode("utf-8", "replace"))
+        except ValueError as ex:                                 # noqa: BLE001
+            rl.info(f"  {y} 年", f"✗ 不是 JSON：{str(ex)[:60]}")
+            continue
+        tby = (B._tables(dy) or [{}])[0]
+        rows_y = tby.get("data") or []
+        # ⛔ 只收**日期真的落在那一年**的列。端點若忽略 date=，這裡會濾到 0，
+        #   於是報成「端點忽略了 date」，⛔ 不會變成「那年沒有休市日」。
+        mine = [r for r in rows_y
+                if str((list(r) + [""])[0]).strip().startswith(f"{y}-")]
+        if not rows_y:
+            rl.info(f"  {y} 年",
+                    f"✗ **回了 0 列**（title={dy.get('title')!r}）"
+                    "⇒ 當失敗，⛔ 不是「那年沒有休市日」")
+            continue
+        if not mine:
+            got = sorted({str((list(r) + [""])[0])[:4] for r in rows_y})
+            rl.info(f"  {y} 年",
+                    f"✗ 回了 {len(rows_y)} 列但**沒有一列是 {y} 年的**（是 {got}）"
+                    "⇒ 端點忽略了 date 參數")
+            continue
+        n_add = _sched_merge(mine, today)
+        added_total += n_add
+        flag = "" if SCHED_MIN_ROWS <= len(mine) <= SCHED_MAX_ROWS else \
+            f"　⚠ 列數 {len(mine)} 不在 {SCHED_MIN_ROWS}~{SCHED_MAX_ROWS}，要看一下"
+        rl.info(f"  {y} 年", f"{len(mine)} 列（新增 {n_add}）{flag}")
+    if added_total:
+        rl.info("開休市行事曆（逐年）", f"本趟共新增 {added_total} 列")
+
     raw, err = B.get(SCHED_URL, retries=2, timeout=60)
     if err or not raw:
         rl.info("開休市行事曆", f"✗ 抓不到：{str(err)[:100]}")
@@ -196,33 +293,12 @@ def _schedule(rl, today):
     if not data:
         rl.info("開休市行事曆", f"✗ 回應沒有列（title={d.get('title')!r}）")
         return
-    rows = {}
-    if os.path.exists(SCHED_CSV):
-        with io.open(SCHED_CSV, encoding="utf-8") as f:
-            for r in csv.DictReader(f):
-                if r.get("date"):
-                    rows[r["date"]] = [r["date"], r.get("name", ""),
-                                       r.get("note", ""), r.get("asof", "")]
-    added = 0
-    for r in data:
-        r = list(r) + [""] * 3
-        dt = str(r[0]).strip()
-        if not re.match(r"^20[0-9]{2}-[0-9]{2}-[0-9]{2}$", dt):
-            continue
-        if dt not in rows:
-            added += 1
-        # ⛔ 同一天重抓要覆蓋（公告會更正），但 asof 記下來，看得出是哪天抓的
-        rows[dt] = [dt, str(r[1]).strip(), str(r[2]).strip(), today]
     try:
-        os.makedirs(os.path.dirname(SCHED_CSV), exist_ok=True)
-        with io.open(SCHED_CSV, "w", encoding="utf-8", newline="") as f:
-            w = csv.writer(f)
-            w.writerow(["date", "name", "note", "asof"])
-            for k in sorted(rows):
-                w.writerow(rows[k])
+        added = _sched_merge(data, today)
     except OSError as ex:                                        # noqa: BLE001
         rl.info("開休市行事曆", f"✗ 寫檔失敗：{ex}")
         return
+    rows = _sched_rows()
     ds = sorted(rows)
     ahead = [x for x in ds if x > today]
     rl.info("開休市行事曆",

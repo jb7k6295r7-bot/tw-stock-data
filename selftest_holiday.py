@@ -121,8 +121,28 @@ def main():
                  ["2026-12-25", "行憲紀念日", "依規定放假1日。"]],
     }, ensure_ascii=False).encode()
 
+    # ⛔⛔ 2026-09-09 加逐年回補之後，這個假回應**不夠**：
+    #   它對每一年都回同一份 2026 的資料，於是只走得到「端點忽略了 date」那一條。
+    #   ⇒ 再造一個「回 0 列」的年份（2019），把
+    #     「拿到 0 列一律當失敗，⛔ 不是『那年沒有休市日』」那條分支也逼出來。
+    #   ⚠ 這兩條正是這一版要防的東西；沒被執行過的分支不算測過。
+    SCHED_EMPTY = json.dumps({"stat": "ok", "title": "108 年市場開休市日期",
+                              "fields": ["日期", "名稱", "說明"], "data": [],
+                              "total": 0}, ensure_ascii=False).encode()
+    SCHED_2021 = json.dumps({
+        "stat": "ok", "title": "110 年市場開休市日期",
+        "fields": ["日期", "名稱", "說明"],
+        "data": [[f"2021-{m:02d}-01", "測試", "依規定放假1日。"]
+                 for m in range(1, 13)],
+    }, ensure_ascii=False).encode()
+
     def _fake_get(url, *a, **k):
-        if "holidaySchedule" in str(url):
+        u = str(url)
+        if "holidaySchedule" in u:
+            if "date=20190101" in u:
+                return SCHED_EMPTY, None      # ⇒ 逼出「0 列＝失敗」那一條
+            if "date=20210101" in u:
+                return SCHED_2021, None       # ⇒ 逼出「列數不在 20~27」那一條
             return SCHED_JSON, None
         return None, "selftest：不連外"          # ⛔ 其餘一律不連外
     _B.get = _fake_get
@@ -161,10 +181,23 @@ def main():
         ck("表頭是 date,name,note,asof",
            sched.splitlines()[0] == "date,name,note,asof",
            sched.splitlines()[0] if sched else "(空的)")
-        ck("三列假資料都併進去了", len(sched.strip().splitlines()) == 4,
+        # ⚠ 逐年回補上線後這裡不再是 3 列：2026 的 3 列 ＋ 2021 的 12 列 ＝ 15 列。
+        #   ⛔ 舊的 `== 4` 沒改的話會紅，而**紅得像程式壞了**，其實是測試過期。
+        ck("假資料都併進去了（2026 三列 ＋ 2021 十二列）",
+           len(sched.strip().splitlines()) == 16,
            f"實際 {len(sched.strip().splitlines())} 行（含表頭）")
         ck("同一天跑兩趟不會疊列（第二趟是覆蓋）",
            sched.count("2026-01-01") == 1, f"出現 {sched.count('2026-01-01')} 次")
+        # ── ⛔ 逐年回補那三條「不可以把沒查到讀成沒有」的分支，要**真的印得出來** ──
+        lr = io.open(_RL.PATH, encoding="utf-8").read()
+        ck("⛔ 回 0 列的年份被判成失敗，不是「那年沒有休市日」",
+           "回了 0 列" in lr and "不是「那年沒有休市日」" in lr, lr[-400:])
+        ck("⛔ 端點忽略 date 參數時講得出來（而不是當成那年沒資料）",
+           "端點忽略了 date 參數" in lr, lr[-400:])
+        ck("⚠ 列數不在 20~27 時有標出來",
+           "不在 20~27" in lr, lr[-400:])
+        ck("★ 2021 那一年的列真的併進檔案了（不是只印訊息）",
+           sched.count("2021-") == 12, f"實際 {sched.count('2021-')} 列")
     finally:
         H.OUT, H.ARCH = old_out, old_arch
         H.SCHED_CSV = old_sched
