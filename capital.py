@@ -142,6 +142,32 @@ def get(url, retries=2, timeout=40):
     return None, last
 
 
+# ★ 端點面額欄的**原值**，key 是證券代號。
+#   ⚠ 為什麼要留原值：那一欄有三個家族，而**清洗成數字之後就分不出來了**
+#   （2026-09-09 實測全庫相異值）：
+#       '新台幣  10.0000元' × 2,292 …  正常新台幣面額
+#       '無面額'            × 8      …  **無面額股**：資本額÷股數是「平均發行價」不是面額
+#       '美元 0.0010元'／'美金0.05元' … **外幣面額**：資本額是新台幣，⛔ 兩者不可相除
+#   ⇒ 後兩種被標成 `mismatch` 是**錯的**——它們不是資料異常，是**問錯問題**
+#     （同 DR 代碼 91、同 ETF 沒有股本）。
+PAR_RAW = {}
+# 證券簡稱，同樣 key 是代號。⛔ 只用來認 DR，不作他用。
+NAME_RAW = {}
+
+
+def par_kind(v):
+    """→ 'no_par'／'foreign'／'ntd'／''。⛔ 只認固定字樣，不做模糊比對。"""
+    t = (v or "").strip()
+    if not t:
+        return ""
+    if "無面額" in t:
+        return "no_par"
+    for cur in ("美元", "美金", "港幣", "人民幣", "日圓", "歐元", "USD", "HKD", "RMB"):
+        if t.startswith(cur) or cur in t:
+            return "foreign"
+    return "ntd"
+
+
 def _num_par(v):
     """面額專用的數字清洗。⛔ 不要拿 `_num` 直接用。
 
@@ -256,6 +282,23 @@ def reconcile(capital, shares, par, pref="", code=""):
         return (par or ""), "no-shares"
     if cap <= 0:
         return (par or ""), "no-capital"
+    # ★ 先處理「這一檔根本沒有面額可言」的兩種，⛔ 它們不是 mismatch。
+    pk = par_kind(PAR_RAW.get(str(code), ""))
+    if pk == "no_par":
+        return "", f"no_par:資本額÷股數={cap / shr:.3f} 是平均發行價，不是面額"
+    # ★ DR（存託憑證）：**「股本 ＝ 股數 × 面額」對它整條不成立。**
+    #   實收資本額是新台幣、面額是原股的外幣（0.01／0.1／甚至空白）⇒ 兩者不可比。
+    #   ⚠ 2026-09-09 實測：處理完無面額與外幣之後，**剩下的 6 檔 mismatch 全部是 DR**
+    #     （9105 泰金寶、9110 越南控、911608 明輝、911622 泰聚亨、912000 晨訊科、9136 巨騰）。
+    #   ⛔ 這是「問錯問題」，比照 READ_CONTRACT 產業別代碼 91 那一條，不是資料異常。
+    #   ★ 用**名稱的 `-DR` 後綴**認，不用代號前綴——READ_CONTRACT 記載 10/10 命中，
+    #     而代號前綴（91 開頭）會誤傷 9110 以外的一般上市股。
+    if NAME_RAW.get(str(code), "").rstrip().endswith("-DR"):
+        return "", (f"dr:存託憑證，資本額(新台幣)÷單位數={cap / shr:.3f} 沒有意義"
+                    f"（面額是原股外幣）")
+    if pk == "foreign":
+        return "", (f"foreign_par:面額是外幣（{PAR_RAW.get(str(code), '').strip()}）"
+                    f"，⛔ 不可與新台幣資本額相除")
     if pv > 0:
         if abs(shr * pv - cap) / cap <= 0.05:
             return par, "ok"
@@ -471,6 +514,10 @@ def parse_market(raw, tag):
         code = str(r.get(k_code, "")).strip()
         if not code or not code[0].isdigit():
             continue
+        if k_par:
+            PAR_RAW[code] = str(r.get(k_par) or "")
+        if k_name:
+            NAME_RAW[code] = str(r.get(k_name) or "")
         out[code] = (str(r.get(k_name, "")).strip(),
                      _num(r.get(k_cap)) if k_cap else "",
                      _num(r.get(k_shr)) if k_shr else "",

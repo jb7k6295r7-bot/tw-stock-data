@@ -219,6 +219,35 @@ def main():
     _C.META_DIR = _saved_meta
     _C._PAR_EXPECT = None
 
+    print("\n[7] ★ 三種「本來就不該用 股數×面額 去驗」的標的")
+    # ⛔ 2026-09-09：處理之前它們全被標 mismatch，而 mismatch 的語意是
+    #   「這一檔的股數不要拿去算佔股本比重」⇒ **等於叫下游別用一批正常資料**。
+    #   三種各自的理由不同，所以 note 也要不同——⛔ 不可以合成一個「不驗」。
+    _C.PAR_RAW.clear()
+    _C.NAME_RAW.clear()
+    # ① 無面額股：資本額÷股數是平均發行價
+    _C.PAR_RAW["7812"] = "無面額"
+    pv, note = _C.reconcile("1511525594", "60418521", "", "", "7812")
+    ck(note.startswith("no_par"), f"無面額股標成 no_par（得到 {note[:40]}）")
+    # ② 外幣面額：資本額是新台幣，兩者不可相除
+    _C.PAR_RAW["4157"] = "美元                  0.0010元"
+    pv, note = _C.reconcile("20766551", "711833575", "", "", "4157")
+    ck(note.startswith("foreign_par"), f"外幣面額標成 foreign_par（得到 {note[:40]}）")
+    # ③ DR：面額是原股外幣，常常還是空的
+    _C.PAR_RAW["9105"] = ""
+    _C.NAME_RAW["9105"] = "泰金寶-DR"
+    pv, note = _C.reconcile("9383139832", "10450002831", "", "", "9105")
+    ck(note.startswith("dr:"), f"DR 標成 dr（得到 {note[:40]}）")
+    # ⛔ **負向**：一般新台幣面額、數字真的對不起來 ⇒ **必須照樣 mismatch**。
+    #   沒有這一項的話，上面三條等於把 mismatch 這個訊號整個關掉。
+    _C.PAR_RAW["1234"] = "新台幣                 10.0000元"
+    _C.NAME_RAW["1234"] = "測試股"
+    pv, note = _C.reconcile("161800000", "10000000", "10", "", "1234")
+    ck(note.startswith("mismatch"),
+       f"★ 一般股票對不起來仍然是 mismatch（得到 {note[:40]}）")
+    _C.PAR_RAW.clear()
+    _C.NAME_RAW.clear()
+
     print("\n[5] 沙箱隔離（真的去看檔案系統，不是宣告自己沒事）")
     ck(REPO_DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "跑完之後 repo 的 data/ 存在與否沒有改變")
