@@ -11,21 +11,50 @@
 [1] 使用者給的那一頁
 ── EMERGINGSTOCK/HISTORICAL/NSHISTORY.HTML
    https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORY.HTML
-   ✓ 1,181 bytes｜中文 1 字｜<tr> 0 個  ← ⚠ 中文太少，可能是 js 空殼
-   ★ 看得見的字（前 400）：���v��Ƭd��> ���d�Ѳ����v�污
+   ⚠ 編碼不是 utf-8：取亂碼最少的 **big5hkscs**（[('big5hkscs', 0), ('cp950', 0), ('utf-8', 16)]）
+   ✓ 1,181 bytes｜中文 14 字｜<tr> 0 個  ← ⚠ 中文太少，可能是 js 空殼
+   ★ 看得見的字（前 400）：歷史資料查詢> 興櫃股票歷史行情
    ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
-   連結 0 個（沒有）
+   連結／frame／路徑字串 2 個：['/Hist/EMERGINGSTOCK/HISTORICAL/DAILY/AA951229.TXT', '/Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORYQRY.HTML']
+   ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
+     '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
+     'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
+     'ams={r:\'a3873d848ac022de\',t:\'MTc4ODk2Nzg5MA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
+     "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
+     "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
 
 [2] 站台根目錄（看這個主機上還有什麼）
 ── hist.tpex.org.tw/
    https://hist.tpex.org.tw/
+   ⚠ 編碼不是 utf-8：取亂碼最少的 **big5hkscs**（[('big5hkscs', 0), ('cp950', 0), ('utf-8', 0)]）
    ✓ 1,141 bytes｜中文 0 字｜<tr> 0 個  ← ⚠ 中文太少，可能是 js 空殼
    ★ 看得見的字（前 400）：GreTai Securities Market
    ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
-   連結 1 個：['http://hist.gretai.org.tw/en/index.php']
+   連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
+   ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
+     '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3873d89e927ef9b\','
+     't:\'MTc4ODk2Nzg5MQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
+     "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
+     "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
 
 [3] ★ 從上面兩頁**自己的連結**往下走一層（⛔ 只跟連結，不拼路徑）
-     （兩頁都沒有可跟的站內連結——那本身就是結論：要嘛是 js 空殼，要嘛這一頁是終點）
+  ── /Hist/EMERGINGSTOCK/HISTORICAL/DAILY/AA951229.TXT
+     https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/DAILY/AA951229.TXT
+     ⚠ 編碼不是 utf-8：取亂碼最少的 **big5hkscs**（[('big5hkscs', 0), ('cp950', 0), ('utf-8', 1702)]）
+     ✓ 46,651 bytes｜中文 1,033 字｜<tr> 0 個
+     ★ 看得見的字（前 400）：財團法人中華民國證券櫃檯買賣中心 > 頁次: 1 日期: 95年12月29日 > > (百萬元) > 代 號 證券名稱 最高買價 最低賣價 本日均價 前日均價 漲 跌 漲跌幅(%) 最 高 最 低 最 後 成 交 量 (股) 成 交 金 額 (元) 筆 數 股 本 日期 進度 ======-==========-========-========-========-========-========-==========-=======-=======-=======-==================-======================-======-===========-========-======== 1336 台翰 70.00 73.00 71.69 70.89 + 0.80 + 1.13% 71.69 71.69 71.69 1,000 71,690 1 438 
+     ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
+     連結／frame／路徑字串 0 個（真的沒有）
+  ── /Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORYQRY.HTML
+     https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/NSHISTORYQRY.HTML
+     ⚠ 編碼不是 utf-8：取亂碼最少的 **big5hkscs**（[('big5hkscs', 2), ('cp950', 2), ('utf-8', 238)]）
+     ✓ 6,495 bytes｜中文 419 字｜<tr> 5 個
+     ★ 看得見的字（前 400）：History Report 嚙踝蕭嚙範嚙諸莎蕭嚙踝蕭嚙緞嚙賣情 嚙請選蕭隉G 嚙踝蕭嚙踝蕭嚙踝蕭G &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 嚙踝蕭瘙∴蕭嚙� 嚙磋嚙踝蕭嚙踝蕭嚙踝蕭 嚙課剁蕭茼U嚙踝蕭嚙踝蕭嚙踝蕭I嚙踝蕭~嚙畿嚙諄計嚙踝蕭 嚙課剁蕭嚙踝蕭嚙羯嚙畿嚙窯嚙諄計嚙踝蕭 嚙踝蕭嚙誼剁蕭嚙踝蕭嚙羯嚙畿嚙諄計嚙踝蕭 嚙諍對蕭嚙諄外嚙踝蕭H嚙磋嚙踝蕭嚙踝蕭J嚙窯嚙踝蕭 嚙瘩嚙緯嚙踝蕭嚙箱嚙糊嚙瘡嚙磋嚙踝蕭嚙皚嚙窯嚙踝蕭 嚙踝蕭嚙踝蕭嚙諸剁蕭荈i嚙碼嚙複佗蕭 嚙磊嚙踝蕭嚙誼剁蕭荓嚙踝蕭邞挐嚙踝蕭@嚙踝蕭嚙踝蕭 &nbsp; 嚙瞑嚙踝蕭嚙踝蕭嚙瘦 91 92 93 94 95 嚙羯 01 02 03 04 05 06 07 08 09 10 11 12 嚙踝蕭A嚙踝蕭 1 2 3 4 5 嚙篇 嚙篇嚙賣情嚙踝蕭 嚙瘩嚙緯嚙踝蕭嚙箱嚙糊嚙瘡嚙踝蕭
+     ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
+     連結／frame／路徑字串 3 個：['/Hist/nodata.htm', '/css/gretai.css', '/css/report.css']
 
 [4] 這一輪要回答的三句話
   ⛔ 以下三句，**只有在第 [1]~[3] 節真的看到日期範圍時才可以改**：
