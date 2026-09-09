@@ -424,14 +424,23 @@ def cmd_probe(_args):
 #   ⇒ 順帶記一筆：`CANDIDATES` 裡的 `twse-mopsfin-L` 是**死條目**，
 #     它 404 已久而不會有人發現——因為後面的端點補上了，結果看起來正常。
 HIST_BASE = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
+
+
+def _q(k, v):
+    """中文參數名要 percent-encode，⛔ 不可以直接塞進網址。"""
+    return urllib.parse.urlencode({k: v})
 HIST_PROBE = [
     # ⛔ 參數名一律取自**這個端點自己回應裡的欄位名**，不是我自己想的。
     #   它的期別欄位叫「出表日期」（民國 YYYMMDD），不是「資料年月」。
-    ("加 出表日期=1140630", HIST_BASE + "?出表日期=1140630"),
+    # ⚠ 參數名是中文 ⇒ **一定要 percent-encode**。
+    #   2026-09-09 第二版直接把中文放進網址，urllib 丟
+    #   `UnicodeEncodeError: 'ascii' codec can't encode…` ⇒ 三發裡有兩發根本沒送出去，
+    #   而輸出看起來只是「✗ 失敗」，很容易被讀成「端點拒絕」——**那是兩回事**。
+    ("加 出表日期=1140630", HIST_BASE + "?" + _q("出表日期", "1140630")),
     ("加 date=20250630", HIST_BASE + "?date=20250630"),
     # 「資料年月」是**上櫃**那兩支的欄位名，放這裡當**對照組**：
     # 它本來就不該生效，若它反而讓回應變了，那代表變化不是期別造成的。
-    ("加 資料年月=11406（對照組）", HIST_BASE + "?資料年月=11406"),
+    ("加 資料年月=11406（對照組）", HIST_BASE + "?" + _q("資料年月", "11406")),
 ]
 
 
@@ -461,21 +470,35 @@ def _probe_history():
 
     ym0 = _ym(base)
     L.append(f"  基準解析出 {len(got0)} 檔｜回應裡的出表日期 {ym0[:4] or '（抓不到）'}")
+    res = []
     for label, url in HIST_PROBE:
         raw, e = get(url, retries=1)
         if e:
+            # ⚠ 這裡要分兩種：**我方送不出去**（編碼、拼錯）vs **端點拒絕**。
+            #   兩者長得一樣都是「✗」，但前者不構成任何關於端點的結論。
             L.append(f"  ✗ {label}：{str(e)[:110]}")
+            res.append((label, "error"))
             continue
         same = (raw == base)
+        res.append((label, "same" if same else "diff"))
         ym = _ym(raw)
         L.append(f"  {'✗' if same else '★'} {label}：{len(raw):,} bytes｜"
                  f"與基準{'**完全一樣 ⇒ 參數被無視**' if same else '不同 ⇒ 值得再看'}"
                  f"｜出表日期 {ym[:4] or '（抓不到）'}")
-    L.append("  ⇒ 三發都「完全一樣」⇒ 這個端點**只給當期**，"
-             "上市的歷史 shares **我方取不到**，")
-    L.append("    ⛔ 但那不等於「不存在」——MOPS 的股本形成表是另一條還沒試過的路。")
-    L.append("  ⇒ 任何一發不同 ⇒ **先別高興**，要再確認回來的期別真的是我要的那一期"
-             "（TWT49U 就是回了東西但期別是當天的）。")
+    # ⛔ 上一版把兩種結論都印出來，等於沒有結論。判定要**算出來**再寫。
+    sent = [x for x in res if x[1] != "error"]
+    changed = [x for x in res if x[1] == "diff"]
+    if not sent:
+        L.append("  ⇒ ⚠ **一發都沒有真的送出去**（全是我方的錯誤）"
+                 "⇒ 這一節**什麼都沒問到**，⛔ 不可以當成否定結論。")
+    elif not changed:
+        L.append(f"  ⇒ 真的送出去的 {len(sent)} 發**回應完全一樣** ⇒ "
+                 "這個端點**只給當期**，上市的歷史 shares **我方取不到**。")
+        L.append("    ⛔ 但那不等於「不存在」——MOPS 的股本形成表是另一條還沒試過的路。")
+    else:
+        L.append(f"  ⇒ ★ 有 {len(changed)} 發回應不同：{[x[0] for x in changed]}")
+        L.append("    ⛔ **先別高興**：要再確認回來的出表日期真的是我要的那一期"
+                 "（TWT49U 就是回了東西但期別是當天的）。")
     return L
 
 
