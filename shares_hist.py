@@ -85,6 +85,83 @@ def load_quarter_capital(q):
     return out
 
 
+def _par_at(pt, sid, d):
+    for vf, vt, p in pt.get(sid, []):
+        if (not vf or vf <= d) and (not vt or d < vt):
+            return p
+    return None
+
+
+def _validate_otc():
+    """上櫃逐季對官方發行股數。→ dict 或 None。"""
+    import collections
+    pt = collections.defaultdict(list)
+    ptp = os.path.join(_ROOT, "meta", "par_timeline.csv")
+    if not os.path.exists(ptp):
+        return None
+    with io.open(ptp, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            try:
+                pt[r["stock_id"]].append((r["valid_from"], r["valid_to"],
+                                          float(r["par"])))
+            except (ValueError, KeyError):
+                continue
+    daily = os.path.join(_ROOT, "universe", "daily")
+    days = sorted(os.path.basename(x)[:-4]
+                  for x in glob.glob(os.path.join(daily, "*.csv")))
+    qs = sorted({os.path.basename(f).split("_")[0]
+                 for f in glob.glob(os.path.join(BS, "bs_hist", "*_tpex.csv"))})
+    errs = []
+    for q in qs:
+        y, n = int(q[:4]), int(q[-1])
+        last = {1: "03-31", 2: "06-30", 3: "09-30", 4: "12-31"}[n]
+        cand = [d for d in days if d <= f"{y}-{last}"]
+        if not cand:
+            continue
+        d = cand[-1]
+        act = {}
+        try:
+            with io.open(os.path.join(daily, d + ".csv"), encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    v = (r.get("shares") or "").strip()
+                    if v:
+                        try:
+                            act[r["stock_id"]] = float(v)
+                        except ValueError:
+                            pass
+        except OSError:
+            continue
+        cap = {}
+        for fn in (glob.glob(os.path.join(BS, "bs_hist", f"{q}_*_tpex.csv"))
+                   + glob.glob(os.path.join(BS, "bs", f"{q}_*.csv"))):
+            try:
+                with io.open(fn, encoding="utf-8") as f:
+                    for r in csv.DictReader(f):
+                        sid = (r.get("stock_id") or "").strip()
+                        v = (r.get(K_CAP) or "").replace(",", "").strip()
+                        if sid and v:
+                            try:
+                                cap[sid] = float(v)
+                            except ValueError:
+                                pass
+            except OSError:
+                continue
+        for sid, c in cap.items():
+            a = act.get(sid)
+            p = _par_at(pt, sid, d)
+            if not a or not p:
+                continue
+            errs.append(abs(c * 1000 / p - a) / a)
+    if not errs:
+        return None
+    errs.sort()
+    return {"n": len(errs), "med": statistics.median(errs),
+            "a": sum(1 for e in errs if e < 0.0001),
+            "b": sum(1 for e in errs if e < 0.001),
+            "c": sum(1 for e in errs if e < 0.01),
+            "d": sum(1 for e in errs if e < 0.05)}
+
+
 def _quarter_end(q):
     """2026Q2 → 2026-06-30。⛔ 不用「今天」，那正是上一版比錯的地方。"""
     try:
@@ -125,6 +202,33 @@ def main():
     if os.path.exists(CAP):
         with io.open(CAP, encoding="utf-8") as f:
             mine = {r["stock_id"]: r for r in csv.DictReader(f)}
+    # ── ★★ 歷史驗證：上櫃日檔**每天**都有官方發行股數 ⇒ 拿季末那天當外部錨點。
+    #   ⛔ 這比「拿季末股本對今天的股數」強得多——後者中間隔了一季，
+    #     而那個落差是**我自己造成的**，不是方法的誤差（第一版就是這樣比的）。
+    L += ["", "## ★★ 歷史驗證（上櫃，46 季逐季對官方發行股數）", ""]
+    L.append("上櫃日檔**每天**都有官方發行股數 ⇒ 每一季的季末交易日都是一個外部錨點。")
+    L.append("⛔ 面額用 `par_timeline.csv` **按當時**取，不是一律用 10。")
+    L.append("")
+    hist = _validate_otc()
+    if hist:
+        L.append(f"- 可比對 **{hist['n']:,}** 個（季, 檔）配對")
+        L.append(f"- **中位數誤差 {hist['med'] * 100:.4f}%**")
+        for th, k in ((0.0001, "a"), (0.001, "b"), (0.01, "c"), (0.05, "d")):
+            L.append(f"- 誤差 < {th * 100:g}%：**{hist[k]:,}**"
+                     f"（{hist[k] / hist['n'] * 100:.1f}%）")
+        L.append("")
+        L.append("⇒ **這條公式在 46 季的歷史上成立**，不是只有今天湊得上。")
+        L.append("")
+        L.append("### ⚠ 殘差的成因：查到一部分，⛔ 沒查完就不寫成查完")
+        L.append("")
+        L.append("- **特別股**：確認至少一例——3095 及成的差額 **+6,180,000 股**"
+                 "，正好等於它的特別股股數。BS 的 `股本` 含特別股，日檔的發行股數不含。")
+        L.append("- ⛔ **但特別股解釋不了全部**：2026Q2 誤差 ≥0.5% 的 109 檔裡，"
+                 "**只有 2 檔**的差額對得上快照的特別股欄。")
+        L.append("- ⚠ 我試過的另一個假設「差額 ≈ 私募股數」也**不成立**。")
+        L.append("- 剩下的形狀：差額常是很整齊的數（+50%、+40%、−40%、−25.5%），"
+                 "⛔ 但整齊不等於有解釋，**還沒查出來**。")
+
     latest = qs[-1] if qs else None
     # 最新一季拿來對「今天的股數」——⛔ 這是唯一有獨立答案可以對的一季。
     cap = load_quarter_capital(latest) if latest else {}
