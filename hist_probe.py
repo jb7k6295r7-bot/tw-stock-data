@@ -36,6 +36,7 @@
 「有歷史」要能指出**最早與最晚的日期**。
 ⛔ 只看到 `HISTORICAL` 這個字不算——那是路徑，不是資料。
 """
+import datetime
 import io
 import os
 import re
@@ -169,6 +170,23 @@ def _look(url, label, depth=0):
         for i in range(0, min(len(html), 1600), 200):
             say(f"{pad}     {html[i:i+200]!r}")
     return hrefs, t
+
+
+def _weekdays(year):
+    """回四個**平日**的 MMDD。⛔ 不可以寫死月日。
+
+    2026-09-09 第六輪實測：寫死 1229/1228/0630/0331 時，
+    **2002 年那四天全是週六或週日** ⇒ 民國 91 被報成「沒有」，
+    而那其實是「我抽的四天都休市」。⚠ 把「沒查到」讀成「沒有」。
+    ⇒ 從四個錨點各自往前退到平日為止。
+    """
+    out = []
+    for mm, dd in ((12, 29), (9, 30), (6, 30), (3, 31)):
+        d = datetime.date(year, mm, dd)
+        while d.weekday() >= 5:            # 5=六 6=日
+            d -= datetime.timedelta(days=1)
+        out.append(f"{d.month:02d}{d.day:02d}")
+    return out
 
 
 def main():
@@ -334,7 +352,14 @@ def main():
                 stopped = roc
                 break
             got = None
-            for mmdd in ("1229", "1228", "0630", "0331"):
+            # ⛔⛔ 第六輪的教訓：候選日期本來寫死 1229/1228/0630/0331 四個「月日」，
+            #   而 **2002 年這四天全部是週六或週日**（12/29 日、12/28 六、
+            #   6/30 日、3/31 日）⇒ 民國 91 報「四天都沒有」，
+            #   **但那是「我抽的四天都休市」，不是「那年沒有資料」**。
+            #   ⚠ 又是同一族：把「我沒查到」讀成「它沒有」。
+            #   ⇒ 改成從錨點往前退到**平日**為止（休市日還是可能撞上，
+            #     所以放四個錨點；⛔ 但仍然只能說「這四天沒有」）。
+            for mmdd in _weekdays(roc + 1911):
                 # ⛔⛔ 第五輪的 bug 就在這一行：本來寫 `{roc:03d}`，
                 #   於是民國 95 被補成 `AA0951229.txt` ⇒ **32 年全部落空**，
                 #   而同一趟的 [6] 節用 `AA951229.txt` 明明抓到 46,651 bytes。
@@ -367,9 +392,10 @@ def main():
                     say(f"       ⚠ {t0}{roc}{mmdd}.txt 抓得到日期卻**不是我要的那天**"
                         f"（{_dates(txt)[:3]}）⇒ 不算命中")
             hits.append((roc, got))
+            cand = "/".join(_weekdays(roc + 1911))
             say(f"     民國 {roc:>3}（{roc + 1911}）｜"
                 + (f"✓ {got[0]} 有檔 {got[1]:,} bytes" if got
-                   else "✗ 試了 1229/1228/0630/0331 四天都沒有"))
+                   else f"✗ 試了 {cand} 四天都沒有（都是平日）"))
         if stopped is not None:
             say(f"     ⛔ **預算（{BUDGET:.0f} 秒）用完，民國 {stopped}~116 這 "
                 f"{117 - stopped} 年根本沒去試**——"
