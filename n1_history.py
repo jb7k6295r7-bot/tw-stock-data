@@ -57,10 +57,31 @@ def main():
     #   ⚠ 但一檔要「存在」才算得上：用它自己的第一筆與最後一筆有成交日當存續區間，
     #     否則上市前與下市後也會被算成「均額 0、不通過」，那不影響計數，
     #     可是會讓「母體有幾檔」失去意義。這裡只數通過的，所以不受影響。
+    # ★ 母體條件（市場情報分析線 2026-09-09 17:15 補上，取代 09:55 那版）
+    #   ⛔ 09:55 那版只寫了「**怎麼算**」沒寫「**算誰**」，
+    #     逐字執行的結果把興櫃與 ETF 都收了進來（實測 765 檔裡有 118 檔 ETF、8 檔興櫃）。
+    #   ⚠ 這個缺口不是被寫規格的人發現的，是被「回一個沒人問的差集組成」抓到的
+    #     ⇒ **規格的完整性缺口，在被別人用之前不會顯現。**
+    KIND_OK, MARKET_OK = "stock", ("twse", "tpex")
+    meta = {}
+    sp = os.path.join(_ROOT, "meta", "stocks.csv")
+    try:
+        with io.open(sp, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                meta[r["stock_id"]] = (r.get("kind", ""), r.get("market", ""))
+    except OSError as ex:                                        # noqa: BLE001
+        rl.check("讀得到 stocks.csv（母體條件要用）", False, str(ex))
+        return rl.finish()
+
     cnt = np.zeros(n, dtype=np.int32)
     files = sorted(glob.glob(os.path.join(STOCKS, "*.csv")))
-    n_files = n_rows = 0
+    n_files = n_rows = n_skip = 0
     for fn in files:
+        sid = os.path.basename(fn)[:-4]
+        k, m = meta.get(sid, ("", ""))
+        if k != KIND_OK or m not in MARKET_OK:
+            n_skip += 1
+            continue
         amt = np.zeros(n, dtype=np.float64)
         got = False
         with io.open(fn, encoding="utf-8") as f:
@@ -87,8 +108,10 @@ def main():
         ok = mean_prev >= THRESH
         cnt[WIN:] += ok.astype(np.int32)
 
-    rl.info("母體", f"{n_files:,} 檔（{n_rows:,} 列）｜交易日 {n:,} 天")
-    rl.info("定義", f"amount 欄｜T−{WIN}~T−1｜算術平均｜沒成交記 0｜"
+    rl.info("母體", f"{n_files:,} 檔（{n_rows:,} 列）｜交易日 {n:,} 天"
+                    f"｜⛔ 因母體條件排除 {n_skip:,} 檔（非普通股或非上市櫃）")
+    rl.info("定義", f"kind=={KIND_OK} 且 market∈{MARKET_OK}｜amount 欄｜"
+                    f"T−{WIN}~T−1｜算術平均｜沒成交記 0｜"
                     f"≥ {THRESH:,.0f} 等號通過｜不含當日")
 
     try:

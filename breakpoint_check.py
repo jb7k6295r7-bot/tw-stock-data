@@ -69,6 +69,9 @@ def _coverage():
                 except ValueError:
                     pass
     n1 = {s for s in seen if win and amt[s] / len(win) >= 50_000_000}
+    # ⛔ 母體條件（情報分析線 2026-09-09 17:15 補上）：kind==stock 且 twse/tpex。
+    #   ⚠ 09:55 那版定義只寫「怎麼算」沒寫「算誰」，所以我第一版照字面做，
+    #     算出來的 765 檔裡含 118 檔 ETF 與 8 檔興櫃。**照做是對的，缺的是規格。**
     mk = {}
     with io.open(os.path.join(_HERE, "data", "meta", "stocks.csv"), encoding="utf-8") as f:
         for r in csv.DictReader(f):
@@ -77,6 +80,9 @@ def _coverage():
     #   興櫃與 ETF 被排除**是那邊刻意的**，不是漏掉。
     uni = {s for s, r in mk.items()
            if r.get("kind") == "stock" and r.get("market") in ("twse", "tpex")}
+    n1 = {s for s in n1
+          if mk.get(s, {}).get("kind") == "stock"
+          and mk.get(s, {}).get("market") in ("twse", "tpex")}
     dd = [(s, mk.get(s, {}).get("kind", "?"), mk.get(s, {}).get("market", "?"))
           for s in sorted(n1 - uni)]
     return n1, uni, dd
