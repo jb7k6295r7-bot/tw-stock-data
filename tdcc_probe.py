@@ -857,6 +857,87 @@ def main():
         else:
             say(f"     （沒有可辨識的級距鏈，最長 {len(ch12)} 段）")
 
+    # ─────────────────────────────────────────────────────────────────
+    say("\n[14] ★★ 政府資料標準平臺 schema.gov.tw（使用者 2026-09-09 提供）")
+    # ⛔ 使用者只給網址、沒說 75 是什麼——**我不猜**，先量形狀，再看它自己給什麼連結。
+    # ★ 這條跟前面十二條性質不同：前面全是「去資料端點撈值」，
+    #   這裡是**標準／欄位定義文件**。
+    # ⚠ 2026-09-09 下午更新：級距文字那個缺口**已經由官方 PDF 補上了**
+    #   （data/meta/tdcc_level.csv），所以這一節**不再是為了找級距**。
+    #   它現在要答的是另一個問題：**還有沒有別的欄位定義是我方在猜的**。
+    SCHEMA = "https://schema.gov.tw/lists/75"
+    say(f"  ── 清單頁：{SCHEMA}")
+    r14, e14 = B.get(SCHEMA, retries=1, timeout=60)
+    if e14:
+        say(f"     ✗ {str(e14)[:160]}")
+    else:
+        t14 = r14.decode("utf-8", "replace")
+        say(f"     ✓ {len(r14):,} bytes")
+        # ⚠ 「有回東西」不算數：js 空殼也會回好幾萬 bytes。空殼的特徵是幾乎沒有中文。
+        han = len(re.findall("[一-龥]", t14))
+        say(f"     HTML 裡的中文字數 {han:,}"
+            + ("  ← ⚠ 太少，多半是 js 空殼，內容不在 HTML 裡" if han < 200 else ""))
+        for kw in ("集保", "股權分散", "持股分級", "級距", "保管結算", "證券"):
+            say(f"     「{kw}」出現 {t14.count(kw)} 次")
+        ch14 = _chain(_cands(t14))
+        say(f"     級距鏈最長 {len(ch14)} 段｜「N 以上」{len(_upper(t14))} 個")
+        for _, _, tt in ch14[:20]:
+            say(f"       {tt}")
+
+        # ★ 只收頁面／js 自己寫出來的路徑。⛔ 不自己拼網址。
+        hrefs = sorted(set(re.findall(r'href=["\']([^"\']+)["\']', t14)))
+        apis = sorted(set(re.findall(r'["\'](/api/[A-Za-z0-9_/.\-]{2,80})["\']', t14)))
+        dls = [h for h in hrefs
+               if re.search(r"\.(json|xml|csv|xlsx?|pdf)(\?|$)", h, re.I)]
+        say(f"     href {len(hrefs)} 個｜疑似下載檔 {len(dls)} 個：{dls[:8] or '（沒有）'}")
+        say(f"     HTML 裡的 /api/… {len(apis)} 個：{apis[:8] or '（沒有）'}")
+
+        if not apis:
+            js = sorted(set(re.findall(r'src=["\']([^"\']+\.js[^"\']*)["\']', t14)))
+            say(f"     ── HTML 沒寫 /api/…，改撈 js（{len(js)} 個，最多看 6 個）")
+            for j in js[:6]:
+                uj = urllib.parse.urljoin(SCHEMA, j)
+                rj, ej = B.get(uj, retries=1, timeout=60)
+                if ej:
+                    say(f"       ✗ {j.rsplit('/', 1)[-1]} → {str(ej)[:80]}")
+                    continue
+                sj = rj.decode("utf-8", "replace")
+                got = sorted(set(re.findall(
+                    r'["\'](/api/[A-Za-z0-9_/.\-]{2,80})["\']', sj)))
+                say(f"       ✓ {j.rsplit('/', 1)[-1]} {len(rj):,} bytes"
+                    f"｜/api/… {len(got)} 個：{got[:6] or '（沒有）'}")
+                apis += got
+            apis = sorted(set(apis))
+
+        TRY = [(x, "頁面給的") for x in (dls + apis)[:8]]
+        # ⚠ 下面這一組是**我自己把 75 接上去的**，不是頁面給的——標明，
+        #   因為「頁面上有」與「我拼的」在下一輪的證據份量完全不同。
+        for x in apis:
+            if re.search(r"/lists?$", x):
+                TRY.append((x.rstrip("/") + "/75", "⚠ 我自己接 75 上去的"))
+        seen14 = set()
+        for x, how in TRY:
+            u = urllib.parse.urljoin(SCHEMA, x)
+            if u in seen14:
+                continue
+            seen14.add(u)
+            rr, ee = B.get(u, retries=1, timeout=60)
+            if ee:
+                say(f"     ✗ [{how}] {u} → {str(ee)[:90]}")
+                continue
+            t2 = rr.decode("utf-8", "replace")
+            c2 = _chain(_cands(t2))
+            say(f"     ✓ [{how}] {u}")
+            say(f"       {len(rr):,} bytes｜中文 {len(re.findall('[一-龥]', t2)):,} 字"
+                f"｜「集保」{t2.count('集保')} 次｜級距鏈 {len(c2)} 段")
+            if len(c2) >= 3:
+                say("       ★★ 這裡有連續級距鏈：")
+                for _, _, t3 in c2[:20]:
+                    say(f"         {t3}")
+
+    say("  ⇒ 判準：**級距鏈 ≥ 3 段**才算找到（電話號碼接不成鏈，第 11 節已實測）。")
+    say("  ⇒ ⛔ 不要把「頁面有回 bytes」寫成「有這個標準」。")
+
     say("\n── 結論要人看過再決定 ──")
     say("上面四項全過才可以寫正式抓取。任一項不過，先解決那一項，")
     say("**不要因為「有幾萬列」就當它完整**。")
