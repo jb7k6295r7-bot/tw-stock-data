@@ -366,6 +366,12 @@
      ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
+[10] ★★★ `/zh-tw/service/data` 的參數怎麼帶（看他們自己的 js）
+
+  ── https://www.tpex.org.tw/rsrc/asset/js/global.js
+     ✓ 103,202 bytes｜出現 `service/data` 0 次
+     js 裡像參數名的鍵（6 個）：['dataType', 'grid', 'hideEmptySeries', 'name', 'type', 'width']
+
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
 **沒有命中不等於不存在**——先看清單，不要回頭去猜網址。
