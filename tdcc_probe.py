@@ -89,17 +89,26 @@ SHARE_KEYS = ("股數", "持股股數", "Shares", "shares")
 LINES = []
 
 
-def _post(url, form):
+def _post(url, form, referer=None):
     """POST 一發表單。`B.get` 只有 GET，而查詢頁那條是 POST。
 
     ⚠ 回傳與 `B.get` 同形狀 `(bytes, err)`，而且**保留 `LIMITED|` 前綴**——
       「被限流」與「端點沒有這個東西」必須分得出來，否則會去改根本沒錯的參數。
+
+    `referer`：查詢頁那條 AJAX 多半會檢查來源頁；帶上它才像是從頁面送出的。
+    ⚠ 2026-09-09：第 7 節呼叫時傳了 `referer=`，而這裡當時**沒有這個參數**，
+      於是 `TypeError: _post() got an unexpected keyword argument 'referer'`。
+      本地 403 走不到那一行，而 selftest 的假 `_post` 寫成 `(url, form, **kw)`
+      ——**假的比真的寬鬆，就把簽章不符藏起來了**。已一併修 selftest。
     """
     data = urllib.parse.urlencode(form).encode()
-    req = urllib.request.Request(url, data=data, headers={
+    headers = {
         "User-Agent": B.UA,
         "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "text/html,application/xhtml+xml,*/*"})
+        "Accept": "text/html,application/xhtml+xml,*/*"}
+    if referer:
+        headers["Referer"] = referer
+    req = urllib.request.Request(url, data=data, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             return r.read(), None

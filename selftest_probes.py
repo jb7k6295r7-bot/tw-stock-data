@@ -32,6 +32,7 @@
 假回應刻意做成「格式對、內容夠讓每一節都走進去」，目的是**執行到每一行**，
 不是模擬真實資料。
 """
+import inspect
 import io
 import json
 import os
@@ -83,8 +84,20 @@ def fake_get(url, **kw):
     return HTML.encode(), None
 
 
-def fake_post(url, form, **kw):
-    return HTML.encode(), None
+def strict_stub(real, ret):
+    """做一個**與真函式簽章相同**的替身。
+
+    ⛔ 假的不可以比真的寬鬆。2026-09-09 實測：這裡本來寫 `def fake_post(url, form, **kw)`，
+      而真的 `_post(url, form)` 沒有 `**kw` ⇒ 程式裡寫 `_post(..., referer=...)` 時，
+      **真的會 TypeError，假的照樣過**，於是 selftest 全綠、Actions 上炸掉。
+      改成用 `inspect.signature(real).bind(...)`：**簽章不符就照樣炸**。
+    """
+    sig = inspect.signature(real)
+
+    def stub(*a, **k):
+        sig.bind(*a, **k)          # ← 簽章不符在這裡就丟 TypeError
+        return ret
+    return stub
 
 
 SECTIONS = {
@@ -102,17 +115,24 @@ def run(name):
     # ⚠ 一定要把 OUT 改到暫存檔。不改的話這支 selftest 會把 repo 裡真的探針輸出
     #   蓋成假資料——而且看起來完全正常，那正是這支要防的失敗形狀。
     mod.OUT = tmp
-    B.get = fake_get
+    B.get = strict_stub(old_get, None)          # 佔位，下面立刻換成會回內容的版本
+    _sig_get = inspect.signature(old_get)
+
+    def _get(*a, **k):
+        _sig_get.bind(*a, **k)                  # ⛔ 簽章不符照樣炸
+        return fake_get(*a, **k)
+    B.get = _get
     olds = {}
     for fn in ("_post",):
         if hasattr(mod, fn):
-            olds[fn] = getattr(mod, fn)
-            setattr(mod, fn, fake_post)
+            real = getattr(mod, fn)
+            olds[fn] = real
+            setattr(mod, fn, strict_stub(real, (HTML.encode(), None)))
     # ★ 有些模組是 `import backfill as B`，改 B.get 就夠；
     #   若它 `from backfill import get`，這裡也一併換掉。
     if hasattr(mod, "get") and callable(getattr(mod, "get")):
         olds["get"] = mod.get
-        mod.get = fake_get
+        mod.get = _get
     buf, old_stdout = io.StringIO(), sys.stdout
     sys.stdout = buf
     try:
