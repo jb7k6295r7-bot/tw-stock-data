@@ -8,7 +8,7 @@
 | 項目 | 值 |
 |---|---|
 | 分支 | `claude/stock-analysis-backtest-iv9xji`（已併入 origin/main 2d2c505f） |
-| 跨線信箱已讀到 | **createdTime 2026-09-09T11:55:35Z**（件-K線線-1955 情報分析）。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
+| 跨線信箱已讀到 | **createdTime 2026-09-09T12:58:07Z**（件-全體-2056 K線線）。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
 | 分支與 main | main 已於 09-09 併入 `backtest/` 快照（4d8d7ef0，排除 skill_patch）；分支已併回 main 8d39c227 之後版本並刪除 skill_patch；**只在分支改，更新 main 再併一次** |
 | 研究二 判準 | `PREREG.md`（更正一～三、追加分析） |
 | 研究三／四 判準 | `PREREG3.md`（更正一） |
@@ -116,3 +116,10 @@
 ## 2026-09-09 20:45：使用者問「資料庫還有問題嗎」→ 併 main、重跑稽核
 
 - 併入 origin/main f1b5eed17（CODE 晚間：TWTAWU 短期暫停交易、興櫃 close 是均價、上櫃日曆第二來源）。`audit_db.py` 重跑 33 秒，A～E 不變量零違反；F1～F3 未修（`data/adj/`、2022-02 營收檔都沒動）；新增融資／本益比缺 09-07、09-09 兩天（CODE 已知、待回補）。結果在 `DB_AUDIT.md` G 節。
+
+## 2026-09-09 21:41：情報分析 20:55 急件（上櫃除權息 3,034 筆未進 adj）→ 量化後不成立於普通股
+
+- 讀到 createdTime 12:58:07Z（20 封新信：情報分析↔CODE 稽核往返、K線線 ATR 三裁 Wilder n＝14、全體 2056 K線線重大更正、情報分析→回測 2055 急件）。
+- `backtest/exright_gap.py` → `results_audit/exright_gap_exposure.md`：CODE 的 3,034 筆逐筆對上 ＝ **上櫃 ETF 配息 2,942 ＋ other 15 ＋ 轉上市 27 檔的上櫃期間 64（＝F1）＋ 最近三天抓取落後 13**。上櫃普通股 2018 起 `change` 空白日 5,559／5,572 當天就有 adj 事件。面板曝險 ≤ 0.13%，G1 超額四格不變（+1.87／+4.78、+1.91／+4.93）。**不重跑、不等。**
+- 已寄情報分析（副知 CODE、K線線）`件-情報分析-20260909-2141-…`：拆法、三個數字、CODE 普通股不必找歷史端點、Q1 投 A＋拆 kind、面板端第二訊號（開盤跳空）、問 skill 要不要明文「不含 ETF」。
+- 待辦新增：`audit_db.py` A 節加「`change` 空白且當天無 adj 事件（按 kind 拆）」；ATR Wilder n＝14（K線線 19:55 裁定）→ 研究五／六／八 A 系列跑敏感度。
