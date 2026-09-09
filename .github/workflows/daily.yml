@@ -59,6 +59,12 @@ jobs:
         continue-on-error: true
         run: python selftest_probes.py
 
+      # ★ 釘住漲跌停方向：`"0.0"` 是 truthy，寫成 `if chg` 會把平盤鎖死判成跌停。
+      #   2026-09-09 全庫 50,382 列中招（佔所有 down 的 47.7%）。
+      - name: 驗漲跌停方向（離線）
+        continue-on-error: true
+        run: python selftest_lock_dir.py
+
       - name: 驗交易日曆的寫檔（離線）
         continue-on-error: true
         run: python selftest_calendar.py
