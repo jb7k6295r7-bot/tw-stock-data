@@ -319,7 +319,9 @@ def main():
     ap.add_argument("--stocks", nargs="*"); ap.add_argument("--limit", type=int)
     ap.add_argument("--procs", type=int, default=4); ap.add_argument("--out", default=RESULTS)
     ap.add_argument("--report-only", action="store_true", help="只用既有 panel.csv.gz 重做報表")
+    ap.add_argument("--liq", choices=["shares", "amount"], default="shares", help="流動性閘門：shares＝500 張（主表）；amount＝近 20 日成交金額均值 ≥ 5,000 萬（PREREG3 更正三）")
     a = ap.parse_args()
+    P.PARAMS["liq_mode"] = a.liq          # 在建 Pool 之前改，fork 出去的 worker 才會帶到
     t0 = time.time()
     cal = D.load_calendar(); uni = D.load_universe()
     if a.report_only:

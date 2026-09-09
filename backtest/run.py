@@ -184,7 +184,9 @@ def main():
     ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--print", action="store_true")
     ap.add_argument("--out", default=RESULTS)
+    ap.add_argument("--liq", choices=["shares", "amount"], default="shares", help="流動性閘門：shares＝20 日均量 ≥ 500 張（主表）；amount＝近 20 日成交金額均值 ≥ 5,000 萬（並列母體）")
     a = ap.parse_args()
+    P.PARAMS["liq_mode"] = a.liq          # 在建 Pool 之前改，fork 出去的 worker 才會帶到
 
     t0 = time.time()
     cal = D.load_calendar()

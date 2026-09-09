@@ -23,6 +23,8 @@ PARAMS = {
     "ma_conv_max": 0.03,     # 底穿上：三條均線平均張口上限
     "ma_vol_x": 1.5,         # 底穿上：放量門檻
     "liq_min_shares": 500_000,  # 流動性：20 日均量 ≥ 500 張
+    "liq_mode": "shares",       # "shares"（主表）｜"amount"（並列母體：近 20 日成交金額均值 ≥ 5,000 萬，PREREG 更正五）
+    "liq_min_amount": 50_000_000,
     # 杯柄
     "cup_prior_rise": 1.30,
     "cup_len": (35, 325),
@@ -87,7 +89,14 @@ class Frame:
         self.prev_h = s["high"].shift(1).to_numpy(float)
         # 閘門：前 20 日（含當日）皆有成交
         self.full20 = s["traded"].astype(int).rolling(20, min_periods=20).sum().to_numpy(float) == 20
-        self.liquid = self.vol_ma20 >= p["liq_min_shares"]
+        if p.get("liq_mode", "shares") == "amount":
+            # 情報分析 09:55 的定義：近 20 個交易日（T−20～T−1，不含當日）成交金額算術平均 ≥ 5,000 萬元，
+            # 交易日以日曆為準、沒成交的日子記 0 一起平均（不跳過）。
+            amt = s["amount"].fillna(0.0) if "amount" in s else pd.Series(np.nan, index=s.index)
+            self.amt_ma20 = amt.rolling(20, min_periods=20).mean().shift(1).to_numpy(float)
+            self.liquid = self.amt_ma20 >= p["liq_min_amount"]
+        else:
+            self.liquid = self.vol_ma20 >= p["liq_min_shares"]
         self.gate = self.full20 & self.liquid
         # ATR14（用還原開高低收）
         tr = np.maximum(self.h - self.l, np.maximum(np.abs(self.h - self.prev_c), np.abs(self.l - self.prev_c)))

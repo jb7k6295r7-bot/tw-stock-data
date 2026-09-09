@@ -70,11 +70,11 @@ def load_stock(stock_id: str, market: str, cal: pd.DatetimeIndex) -> Stock | Non
     if not os.path.exists(p):
         return None
     raw = pd.read_csv(p, dtype={"stock_id": str, "date": str},
-                      usecols=["date", "open", "high", "low", "close", "volume"])
+                      usecols=["date", "open", "high", "low", "close", "volume", "amount"])
     raw["date"] = pd.to_datetime(raw["date"])
     raw = raw.drop_duplicates("date").set_index("date").sort_index()
-    for c in PRICE_COLS + ["volume"]:
-        raw[c] = pd.to_numeric(raw[c], errors="coerce")
+    for c in PRICE_COLS + ["volume", "amount"]:
+        raw[c] = pd.to_numeric(raw[c], errors="coerce")   # amount ＝ 日成交金額（元），給「5,000 萬」母體用，不用 volume×close 反推
     # 零價視為缺（極少數列來源是空值填 0）
     bad = (raw[PRICE_COLS] <= 0).any(axis=1)
     raw.loc[bad, PRICE_COLS] = np.nan
