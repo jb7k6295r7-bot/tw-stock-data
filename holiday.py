@@ -148,6 +148,7 @@ def main():
         except OSError as ex:                                    # noqa: BLE001
             rl.info("原始頁面", f"✗ 存不了：{ex}")
 
+    _schedule(rl, today)
     _append(today, verdict, "1" if hit else "0", pd or "", URL, now)
     # ⛔ 這裡**只檢查日期對不對得上**，不檢查「今天是不是休市」——
     #   後者沒有獨立判準可以驗，硬要驗就變成拿自己的產出驗自己。
@@ -155,6 +156,77 @@ def main():
              f"頁面 {pd}｜今天 {today}｜⇒ 判定寫成 unknown，"
              "⛔ 不可以當成照常開盤")
     return rl.finish()
+
+
+SCHED_URL = ("https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedule"
+             "?response=json")
+SCHED_CSV = os.path.join(_ROOT, "meta", "holiday_schedule.csv")
+
+
+def _schedule(rl, today):
+    """開休市行事曆：**前瞻那一半**，每年一份、逐年累積。
+
+    ⚠ 端點只給**當年**：實測 `queryYear=2026`／`queryYear=115`／不帶參數
+      三種回應**完全相同**（title 永遠是「115 年市場開休市日期」）
+      ⇒ **拿不到明年的**。年底時最需要前瞻，而那正是它給不了的時候。
+    ⇒ 所以每天抓、逐年存檔：今年的存下來，明年一月它換年之後就接得上。
+      ⛔ 這跟集保只留一年是同一種「不存就永久失去」，只是週期是一年。
+    """
+    raw, err = B.get(SCHED_URL, retries=2, timeout=60)
+    if err or not raw:
+        rl.info("開休市行事曆", f"✗ 抓不到：{str(err)[:100]}")
+        return
+    try:
+        d = json.loads(raw.decode("utf-8", "replace"))
+    except Exception as ex:                                      # noqa: BLE001
+        rl.info("開休市行事曆", f"✗ 不是 JSON：{type(ex).__name__}")
+        return
+    tb = (B._tables(d) or [{}])[0]
+    fields = [str(x) for x in (tb.get("fields") or [])]
+    data = tb.get("data") or []
+    if not data:
+        rl.info("開休市行事曆", f"✗ 回應沒有列（title={d.get('title')!r}）")
+        return
+    rows = {}
+    if os.path.exists(SCHED_CSV):
+        with io.open(SCHED_CSV, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("date"):
+                    rows[r["date"]] = [r["date"], r.get("name", ""),
+                                       r.get("note", ""), r.get("asof", "")]
+    added = 0
+    for r in data:
+        r = list(r) + [""] * 3
+        dt = str(r[0]).strip()
+        if not re.match(r"^20[0-9]{2}-[0-9]{2}-[0-9]{2}$", dt):
+            continue
+        if dt not in rows:
+            added += 1
+        # ⛔ 同一天重抓要覆蓋（公告會更正），但 asof 記下來，看得出是哪天抓的
+        rows[dt] = [dt, str(r[1]).strip(), str(r[2]).strip(), today]
+    try:
+        os.makedirs(os.path.dirname(SCHED_CSV), exist_ok=True)
+        with io.open(SCHED_CSV, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["date", "name", "note", "asof"])
+            for k in sorted(rows):
+                w.writerow(rows[k])
+    except OSError as ex:                                        # noqa: BLE001
+        rl.info("開休市行事曆", f"✗ 寫檔失敗：{ex}")
+        return
+    ds = sorted(rows)
+    ahead = [x for x in ds if x > today]
+    rl.info("開休市行事曆",
+            f"{d.get('title')!r}｜本趟 {len(data)} 列（新增 {added}）"
+            f"｜累積 {len(rows)} 列 {ds[0]} ~ {ds[-1]}"
+            f"｜**今天之後還有 {len(ahead)} 天**")
+    rl.info("  欄位", str(fields))
+    # ⛔ 不寫成 check：年底時「今天之後 0 天」是**正常**的（端點只給當年），
+    #   拿它當錯誤會在每年 12 月底固定紅一次，然後大家學會忽略它。
+    if not ahead:
+        rl.info("  ⚠ 前瞻用盡",
+                "今天之後沒有已知的休市日 ⇒ 端點多半還沒換年，"
+                "⛔ 此時**不可以**把「不在清單裡」當成「開盤」")
 
 
 def _append(date, verdict, hit, pd, src, now):

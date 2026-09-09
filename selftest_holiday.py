@@ -62,6 +62,11 @@ STALE = CALM.replace("2026/09/09", "2026/09/08").replace("9月\n            9日
 FAIL = []
 
 
+def _stat(p):
+    """檔案的 mtime，不存在回 None。"""
+    return os.path.getmtime(p) if os.path.exists(p) else None
+
+
 def ck(name, cond, note=""):
     print(f"  {'ok  ' if cond else '✗   '} {name}" + (f"　（{note}）" if note else ""))
     if not cond:
@@ -92,6 +97,14 @@ def main():
     old_out, old_arch = H.OUT, H.ARCH
     H.OUT = os.path.join(d, "holiday_status.csv")
     H.ARCH = os.path.join(d, "holiday")
+    # ⚠ `main()` 裡的 `_schedule()` 會**真的連外**並寫 `holiday_schedule.csv`
+    #   ⇒ 不導走的話，這支「離線」自測會在 Actions 上寫進真的 repo。
+    #   ⛔ 同一個坑今天已經踩過一次（runlog 的路徑）。這次是同一族的第二個。
+    old_sched = H.SCHED_CSV
+    H.SCHED_CSV = os.path.join(d, "holiday_schedule.csv")
+    import backfill as _B
+    old_get = _B.get
+    _B.get = lambda *a, **k: (None, "selftest：不連外")   # ⛔ 一律不連外
     # ⚠ 這一段是本檔第一版**漏掉的**：`H.main()` 裡有 `runlog.Run("holiday")`，
     #   而 runlog 的路徑是用 `__file__` 錨定的 ⇒ 它會寫進 **repo 真的**
     #   `data/meta/_last_run.md`。runlog.py 的檔頭早就寫過這個坑
@@ -102,7 +115,13 @@ def main():
     _RL.PATH = os.path.join(d, "_last_run.md")
     real_lastrun = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "data", "meta", "_last_run.md")
-    before = os.path.getmtime(real_lastrun) if os.path.exists(real_lastrun) else None
+    before = _stat(real_lastrun)
+    real_sched = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data", "meta",
+        "holiday_schedule.csv")
+    # ⛔ 「跑之前」就要記下來，⛔ 不可以在跑完之後才取兩次——
+    #   那會拿同一個值跟自己比，**永遠通過**（今天已經寫過一次 `… or True`）。
+    sched_before = _stat(real_sched)
     try:
         for label, html in (("calm", CALM), ("typhoon", TYPHOON)):
             p = os.path.join(d, label + ".html")
@@ -115,12 +134,16 @@ def main():
            f"實際 {len(txt.strip().splitlines())} 行（含表頭）")
     finally:
         H.OUT, H.ARCH = old_out, old_arch
+        H.SCHED_CSV = old_sched
+        _B.get = old_get
         _RL.PATH = old_rl
     # ⛔ 這一項要**真的去看檔案系統**，不是宣告自己沒事
     #   （上一版寫成 `… or True`，那等於永遠通過——比沒有這一項更糟）。
-    after = os.path.getmtime(real_lastrun) if os.path.exists(real_lastrun) else None
+    after = _stat(real_lastrun)
     ck("★ 沒有動到 repo 真的 _last_run.md", before == after,
        f"mtime {before} → {after}")
+    ck("★ 沒有動到 repo 真的 holiday_schedule.csv",
+       sched_before == _stat(real_sched), f"{sched_before} → {_stat(real_sched)}")
 
     print()
     if FAIL:

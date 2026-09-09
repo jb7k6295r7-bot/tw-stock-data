@@ -51,7 +51,8 @@ _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 ARCH = os.path.join(_ROOT, "universe", "capital")
 PC = os.path.join(_ROOT, "meta", "par_change.csv")
 OUT = os.path.join(_ROOT, "meta", "par_timeline.csv")
-HEADER = ["stock_id", "name", "market", "valid_from", "valid_to", "par", "source"]
+HEADER = ["stock_id", "name", "market", "valid_from", "valid_to", "par",
+          "source", "note"]
 
 SRC = (("twse-opendata-L", "公司代號", "公司簡稱", "普通股每股面額", "twse"),
        ("tpex-mopsfin-O", "SecuritiesCompanyCode", "CompanyAbbreviation",
@@ -61,9 +62,16 @@ SRC = (("twse-opendata-L", "公司代號", "公司簡稱", "普通股每股面�
 
 
 def today_par():
-    """→ {code: (面額, 簡稱, 市場, 出表日期)}。⛔ 只收端點自己寫的面額欄。"""
+    """→ ({code: (面額, 簡稱, 市場, 出表日期)}, {code: (簡稱, 市場, 種類)})。
+
+    第二個回傳是**沒有面額可言**的標的。⛔ 它們不是「缺資料」：
+      `no_par`      無面額股（面額欄逐字寫「無面額」）⇒ 資本額÷股數是平均發行價
+      `foreign_par` 外幣面額（美元／港幣…）⇒ 與新台幣資本額不可相除
+    ⚠ 上一版直接把它們**跳過**，於是它們安靜地不在時間軸裡——
+      「不在」與「沒有面額」在檔案上長得一樣，而那是兩件事。
+    """
     import capital as C
-    out = {}
+    out, none_par = {}, {}
     for tag, ck, nk, pk, mkt in SRC:
         fs = sorted(glob.glob(os.path.join(ARCH, tag, "*.csv")))
         if not fs:
@@ -72,10 +80,18 @@ def today_par():
         with io.open(fs[-1], encoding="utf-8") as f:
             for r in csv.DictReader(f):
                 code = (r.get(ck) or "").strip()
-                pv = C._num_par(r.get(pk))
-                if code and pv:
+                if not code:
+                    continue
+                raw = str(r.get(pk) or "")
+                kind = C.par_kind(raw)
+                if kind in ("no_par", "foreign"):
+                    none_par[code] = ((r.get(nk) or "").strip(), mkt,
+                                      "no_par" if kind == "no_par" else "foreign_par")
+                    continue
+                pv = C._num_par(raw)
+                if pv:
                     out[code] = (float(pv), (r.get(nk) or "").strip(), mkt, asof)
-    return out
+    return out, none_par
 
 
 def events():
@@ -98,7 +114,7 @@ def events():
 
 def main():
     rl = runlog.Run("par_timeline")
-    cur = today_par()
+    cur, none_par = today_par()
     ev = events()
     rl.info("今天的面額", f"{len(cur)} 檔（來自端點自己的面額欄）")
     rl.info("面額變更事件", f"{len(ev)} 檔／{sum(len(v) for v in ev.values())} 筆")
@@ -119,14 +135,23 @@ def main():
         for i, (vf, val) in enumerate(segs):
             vt = segs[i + 1][0] if i + 1 < len(segs) else ""
             rows.append([code, name, mkt, vf, vt, f"{val:g}",
-                         "endpoint+par_change" if evs else "endpoint"])
+                         "endpoint+par_change" if evs else "endpoint", ""])
         if not ev.get(code):
             noev += 1
+
+    # ★ 沒有面額可言的，也要有一列——⛔ 不可以只是「不在檔案裡」。
+    #   「不在」與「沒有面額」在檔案上長得一樣，而那是兩件事。
+    for code, (name, mkt, kind) in sorted(none_par.items()):
+        rows.append([code, name, mkt, "", "", "", "endpoint", kind])
+    import collections as _c
+    rl.info("沒有面額可言",
+            f"{len(none_par)} 檔：{dict(_c.Counter(v[2] for v in none_par.values()))}"
+            "（⛔ 這不是缺資料，是這個欄位對它們沒有意義）")
 
     # ★ 自我檢查一：最後一段的面額必須等於端點今天給的值（⛔ 不然是我算錯）
     bad = []
     for code, (pv, *_x) in cur.items():
-        last = [r for r in rows if r[0] == code and r[4] == ""]
+        last = [r for r in rows if r[0] == code and r[4] == "" and r[5]]
         if last and abs(float(last[0][5]) - pv) > 1e-9:
             bad.append((code, last[0][5], pv))
     rl.check("最後一段面額＝端點今天的值", not bad, f"{len(bad)} 檔不符：{bad[:5]}")
@@ -135,7 +160,8 @@ def main():
     #   ⛔ 這不是錯——54 檔一上市就不是 10。列出來是要讓人看見，不是要修它。
     first = {}
     for r in rows:
-        if r[3] == "":
+        # ⚠ `par` 是空的那幾列是「沒有面額可言」的標的，⛔ 不可以 float()。
+        if r[3] == "" and r[5]:
             first[r[0]] = float(r[5])
     odd = sorted((k, v) for k, v in first.items()
                  if ev.get(k) and abs(v - 10) > 1e-9)
