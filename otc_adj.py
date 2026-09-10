@@ -200,11 +200,30 @@ def load_done():
 
 
 def save_done(done):
+    """⛔⛔ **與磁碟上那一份合併**，絕不整份取代（2026-09-10 實跑抓到）。
+
+    ## 這一支自己就吃過同一種虧，而且檔頭寫著
+
+    `write_days()` 的註記：「第一版是整檔覆寫…前一趟同一天的其他個股全被蓋掉，
+    **而且沒有任何錯誤訊息**」。⚠ 這裡是**同一個病的第二個位置**：
+
+        不帶 `--resume` 跑 ⇒ `done` 是空集合
+        ⇒ 這一支把 **1,996 列的續跑台帳整份洗成一列表頭**
+
+    ⚠ 而它看起來完全正常：檔案在、格式對、程式回 0。
+    下一趟帶 `--resume` 時「已完成 0 個」⇒ **從頭重跑 1,942 發**，
+    ⛔ 而那正是免費額度撐不過的那種跑法 ⇒ 它會永遠跑不完，每趟都像有在跑。
+
+    ⭐ 這也是 CLAUDE.md 第四點六（累積型的檔不可以整份覆蓋）的同一條道理，
+    ⛔ 那一條原本只做在 `push_data.sh` 的 CSV 上。
+    """
     os.makedirs(os.path.dirname(DONE), exist_ok=True)
+    merged = load_done() | set(done)          # ← ⭐ 併集，⛔ 不是取代
     with open(DONE, "w", encoding="utf-8") as fh:
         fh.write("stock_id,dataset\n")
-        for c, d in sorted(done):
+        for c, d in sorted(merged):
             fh.write(f"{c},{d}\n")
+    return len(merged)
 
 
 def write_days(subdir, header, byday):
@@ -251,6 +270,13 @@ def main():
     ap.add_argument("--end", default="")
     ap.add_argument("--sleep", type=float, default=0.4)
     ap.add_argument("--limit", type=int, default=0, help="只做前 N 檔（試跑）")
+    # ⭐ 2026-09-10：補**已知的單一缺口**用。
+    #   `reduce_check` 抓到 6461 益得 2026-09-09 我方漏抓
+    #   （官方 16.65 → 26.92，⇒ 沒有那個因子，序列上就是 **+54.7% 的假報酬**），
+    #   ⛔ 而在這之前唯一的補法是重跑整個 FinMind 全掃（幾個小時、1,942 發）。
+    #   ⚠ 一個「要補一檔就得跑幾小時」的補法，實際上等於不會被補。
+    ap.add_argument("--codes", default="",
+                    help="⭐ 只做這幾檔（逗號分隔）。補已知單一缺口用")
     ap.add_argument("--resume", action="store_true",
                     help="沿用 data/meta/_otcadj_done.csv，跳過做過的")
     ap.add_argument("--fresh", action="store_true",
@@ -270,6 +296,18 @@ def main():
     if not codes:
         print("[otc] 找不到上櫃代號——先確認 data/meta/stocks.csv", file=sys.stderr)
         return 1
+    if a.codes:
+        want = [c.strip() for c in a.codes.split(",") if c.strip()]
+        codes = [c for c in codes if c in want]
+        # ⛔ 指名了卻一檔都不在母體裡 ⇒ **大聲失敗**。
+        #   ⚠ 靜靜跑 0 檔會讓「補過了」與「代號打錯」長得一模一樣。
+        if not codes:
+            print(f"[otc] ⛔ --codes 指名 {want}，但一檔都不在上櫃母體裡"
+                  "（打錯代號？或那幾檔不是上櫃？）", file=sys.stderr)
+            return 1
+        miss = [c for c in want if c not in codes]
+        print(f"[otc] --codes：只做 {codes}"
+              + (f"　⚠ 不在上櫃母體裡而跳過的：{miss}" if miss else ""))
     if a.limit:
         codes = codes[:a.limit]
     if a.fresh and os.path.exists(DONE):

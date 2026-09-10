@@ -87,9 +87,9 @@ def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False
     shutil.copy(os.path.join(HERE, "runlog.py"), root)
 
 
-def run(root, kind):
-    p = subprocess.run([sys.executable, "transpose.py", "--kind", kind],
-                       cwd=root, capture_output=True, text=True)
+def run(root, kind, *extra):
+    p = subprocess.run([sys.executable, "transpose.py", "--kind", kind,
+                        *extra], cwd=root, capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr
 
 
@@ -218,6 +218,47 @@ def main():
         chk("★ 但成功的 margin／per 有寫出來，沒有被整批當成沒跑",
             os.path.isdir(os.path.join(root, "data", "stocks_margin"))
             and os.path.isdir(os.path.join(root, "data", "stocks_per")))
+        # ══════════════════════════════════════════════════════
+        # ⭐⭐ 跨層落後：**19:00 那一趟一定會落後一天，而那不是缺陷**
+        #
+        #   台股 13:30 收盤 ⇒ price 19:00 就有；
+        #   ⚠ 融資融券／本益比是**當天晚間**才發布 ⇒ 19:00 那趟必然停在前一交易日。
+        #   ⛔ 而「每天紅」的代價是**會被學會忽略**，然後真的落後兩天那次沒人看。
+        #
+        # ⛔ 但「一律容忍一天」會把 2026-09-05 那個洞原封不動打開回去
+        #   ——那次的形狀正是「**每天**落後一天而且看不出來」。
+        # ⇒ 這一節要證明的是：容忍度**真的在起作用**，而且**只容忍到你說的那一格**。
+        # ══════════════════════════════════════════════════════
+        print("── 判定：跨層落後與容忍度 ──")
+        root = tempfile.mkdtemp(prefix="tposelag_")
+        build_fixture(root)
+        # 讓 margin／per 少掉最後一天 ⇒ 落後 **1 個交易日**
+        for k in ("margin", "otcmargin", "per", "otcper"):
+            os.remove(os.path.join(root, "data", "universe", k,
+                                   f"{DAYS[-1]}.csv"))
+        rc0, out0 = run(root, "all")
+        chk("⛔ 預設（容忍 0）：落後一個交易日就要紅",
+            "✗" in out0 and "各層的來源日檔都跟上 price" in out0, out0[-400:])
+        chk("⚠ 而且訊息要講出「19:00 那趟要帶 --lag-tolerance 1」"
+            "（⛔ 不然看的人只知道紅、不知道該怎麼辦）",
+            "--lag-tolerance 1" in out0, out0[-400:])
+        chk("  落後量是用**交易日**數講的", "落後 1 個交易日" in out0, out0[-400:])
+        rc1, out1 = run(root, "all", "--lag-tolerance", "1")
+        # ⚠ runlog 只印**沒過**的檢查 ⇒ 判準是「那條完全不出現」
+        chk("⭐ 帶 --lag-tolerance 1：同一份資料**不紅了**",
+            "各層的來源日檔都跟上 price" not in out1, out1[-400:])
+        chk("  ⚠ 而其他檢查照樣有跑（⛔ 不是整支中途 return 了）",
+            "逐層結果" in out1 and out1.count("ok") >= 4, out1[-300:])
+        # 再少一天 ⇒ 落後 **2 個交易日**：⛔ 容忍 1 也必須紅
+        for k in ("margin", "otcmargin", "per", "otcper"):
+            os.remove(os.path.join(root, "data", "universe", k,
+                                   f"{DAYS[-2]}.csv"))
+        rc2, out2 = run(root, "all", "--lag-tolerance", "1")
+        chk("⭐⭐ 落後**兩個**交易日時，容忍 1 照樣紅"
+            "（⛔ 這條才是 2026-09-05 那個洞的守門）",
+            "✗" in out2 and "各層的來源日檔都跟上 price" in out2, out2[-400:])
+        chk("  講得出落後 2 個交易日", "落後 2 個交易日" in out2, out2[-400:])
+        shutil.rmtree(root, ignore_errors=True)
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

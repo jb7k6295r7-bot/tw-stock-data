@@ -263,6 +263,22 @@ def main():
     ap.add_argument("--kind", default="price",
                     choices=["price", "inst", "margin", "per", "both", "all"],
                     help="both＝price+inst（舊行為，保留不動）；all＝四層全做")
+    # ⛔⛔ 2026-09-10：下面那條「各層的來源日檔都跟上 price」在
+    #   **每天 19:00 那一趟一定是紅的**，而那不是缺陷：
+    #     台股 13:30 收盤，price 19:00 就有；⚠ 而融資融券／本益比／借券
+    #     是**當天晚間才發布**（TWT93U 官方是 20:30 與 22:30 兩次）
+    #     ⇒ 19:00 那趟 margin／per 必然停在前一個交易日。
+    #   ⚠ 而「每天紅」的代價我們已經寫在 CLAUDE.md 裡：**會被學會忽略**，
+    #     然後真的落後兩天那次沒有人看。
+    #
+    # ⛔ 但「一律容忍一天」會把 2026-09-05 那個洞原封不動打開回去
+    #   ——那次的形狀正是「**每天**落後一天，而且看不出來」。
+    # ⇒ 容忍度**由呼叫端給**，不由這支猜：
+    #     19:00 那一趟   --lag-tolerance 1   （晚間資料還沒發布，容忍一個交易日）
+    #     23:59 那一趟   （預設 0）           ⭐ 那一趟必須完全跟上
+    #   ⚠ workflow 知道自己是哪一趟，這支不知道 ⇒ ⛔ 不要在這裡讀時鐘猜排程。
+    ap.add_argument("--lag-tolerance", type=int, default=0,
+                    help="容忍非 price 層落後幾個**交易日**（19:00 那趟填 1）")
     a = ap.parse_args()
     # ⚠ `both` 的意思**維持原樣**（price+inst），不要偷偷擴成四層——
     #   舊的 workflow 與別人的腳本都還寫著 `--kind both`，
@@ -325,11 +341,28 @@ def main():
     #    ⚠ 只在同一趟有跑 price 時才驗，否則沒有基準（不可拿舊值當基準）。
     if "price" in kinds and res.get("price") == 0 and len(kinds) > 1:
         base = info["price"]["src_last"]
-        behind = [k for k in kinds if k != "price" and res[k] == 0
-                  and info[k]["src_last"] and info[k]["src_last"] < base]
-        rl.check("各層的來源日檔都跟上 price", not behind,
+        # ⭐ 用**交易日**數，⛔ 不是日曆天：連假四天不代表落後四天。
+        #   日曆就是 price 的來源目錄本身（⚠ 不另外開一份，那會跟資料不一致）。
+        # ⚠ `_days()` 回的是 [(日期, [檔案…])]，⛔ 只取日期那一欄
+        cal = [d for d, _ in _days("price")]
+        def _lag(d):
+            try:
+                return cal.index(base) - cal.index(d)
+            except ValueError:
+                return None          # ⛔ 算不出來就不要猜，交給下面當「未知」
+        lags = {k: _lag(info[k]["src_last"]) for k in kinds
+                if k != "price" and res[k] == 0 and info[k]["src_last"]}
+        behind = [k for k, n in lags.items()
+                  if n is None or n > a.lag_tolerance]
+        rl.check(f"各層的來源日檔都跟上 price（容忍 {a.lag_tolerance} 個交易日）",
+                 not behind,
                  f"price {base}；" + "、".join(
-                     f"{k} {info[k]['src_last']}" for k in kinds if k != "price"))
+                     f"{k} {info[k]['src_last']}"
+                     + (f"（落後 {lags[k]} 個交易日）" if lags.get(k) else "")
+                     for k in kinds if k != "price")
+                 + ("　⚠ 19:00 那一趟 margin／per 落後一個交易日是正常的"
+                    "（晚間才發布）⇒ 那一趟要帶 --lag-tolerance 1"
+                    if behind and a.lag_tolerance == 0 else ""))
     rc = rl.finish()
     return 1 if (bad or rc) else 0
 

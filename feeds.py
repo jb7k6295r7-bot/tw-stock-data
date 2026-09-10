@@ -353,6 +353,96 @@ def parse_fulldelivery(d, day, known=None):
     return out, f"{len(out)} 檔｜其中併採分盤集合競價 {n_split} 檔"
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 上櫃「變更交易／分盤／管理股票／停止交易」——`afterTrading/chtm`
+#
+# 上市只有 `TWT85U` 一欄 `**`（要自己從「變更交易」推「有沒有分盤」）；
+# ⭐ 上櫃這一支**四個狀態各一欄**，而且**直接給撮合循環時間**。
+#
+# ── 我方實測（`chtm_probe.py`，Actions 2026-09-10）───────────────
+#   頂層鍵 `date`／`stat`／`tables`；`date` 回顯**我請求的那一天**（20150105）
+#   欄位 **10 個**，逐字：
+#     ['證券代號','證券名稱','變更交易','分盤交易','屬管理股票',
+#      '分盤或管理股票撮合循環時間(分鐘)','停止交易','財務資訊重點專區',
+#      '公告連結','財務重點專區連結']
+#
+# ⛔⛔ 兩處把情報分析線 18:00 那封**推翻**了（我方自己量的）：
+#   ① 他們說 8 欄——**實際 10 欄**（漏了兩個連結欄）。
+#      ⚠ 照 8 欄寫死位置，後面兩欄會被當成不存在；⛔ 而我方一律用欄名定位，
+#        所以這裡的代價只是「少存兩欄」，不是錯位。
+#   ② 他們說 `98/06/01` **靜靜回今天**——**不是**。
+#      實測回 `date: 20090601`、38 列，與今天那一份**逐位元組不同**
+#      ⇒ ⭐ 這支的歷史至少回到 **2009**，比他們說的 2015 更早。
+#      ⚠ 那是「越界」與「參數不吃」被混為一談；⛔ 兩者的處置完全不同。
+#
+# ⛔⛔ 而有一個會讓整欄靜默變空的坑（情報分析線這一條是對的，我方實測證實）：
+#   **那個 `Ｙ` 是全形（U+FF39），不是半形 `Y`。**
+#   ⇒ 寫 `== "Y"` 會**一筆都不匹配**，而且不報錯——整欄變成「沒有任何一檔被標記」。
+# ⚠ 而撮合時間是**零填三位的字串**（`"030"`／`"045"`），不是整數也不是 `30`。
+#   ⇒ 我方**原樣存字串**，⛔ 不轉成整數：轉了就分不出「沒有值」與「0 分鐘」。
+#
+# ⭐ 五個旗標欄實測都只有兩種值（`""` 與 `Ｙ`）⇒ **不是複合值**，可以當布林讀。
+#   ⚠ ⛔ 但「實測是兩種」不等於「永遠是兩種」——所以我方存的是
+#     「有沒有被標記」而**不是**原文字元，並且**任何非空值都算被標記**
+#     （含 `*` 那條同一個道理：⛔ 不用等號比對）。
+# ══════════════════════════════════════════════════════════════════
+CHTM_FIELDS = ["證券代號", "證券名稱", "變更交易", "分盤交易", "屬管理股票",
+               "分盤或管理股票撮合循環時間(分鐘)", "停止交易",
+               "財務資訊重點專區", "公告連結", "財務重點專區連結"]
+# ⭐ 全形 Ｙ。⛔ 這一行是這支解析器最容易被下一個人「順手改成 'Y'」的地方。
+CHTM_YES = "\uff39"
+
+
+def _chtm_flag(v):
+    """→ "1"／"0"。⛔ 判準是「**非空**」，不是 `== 'Ｙ'`。
+
+    ⚠ 兩個理由，都不是理論：
+    ① 那個 `Ｙ` 是**全形**（U+FF39）⇒ 寫成半形會一筆都不匹配、而且不報錯。
+    ② ⭐ 分類欄要當「集合」讀不要當「值」讀（K線線 20:20 抽的通則）：
+       一格裡可以同時裝 `OX!`、`XV`、`**`、`*ABCD`。
+       ⛔ `==` 的偏誤不是隨機的，它**系統性地放行狀態最多、最該被擋的那一批**。
+    """
+    return "1" if str(v).strip() else "0"
+
+
+def parse_chtm(d, day, known=None):
+    """TPEx `afterTrading/chtm` → 上櫃變更交易／分盤／管理股票／停止交易。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], (f"沒有 tables；頂層鍵="
+                    f"{sorted(d) if isinstance(d, dict) else type(d).__name__}")
+    t = tabs[0]
+    f = _fieldmap(t)
+    # ⛔ 欄名逐字比對：這一支的欄名**自己就是欄位語意**
+    #   （「分盤或管理股票撮合循環時間(分鐘)」講明了單位是分鐘）
+    #   ⇒ 官方改欄名就代表語意可能也改了。
+    if f != CHTM_FIELDS:
+        return [], f"欄位結構與 2026-09-10 實測不符，拒收：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not isinstance(r, list) or len(r) < 8:
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        out.append([day, code, str(r[1]).strip(),
+                    _chtm_flag(r[2]),          # 變更交易
+                    _chtm_flag(r[3]),          # 分盤交易
+                    _chtm_flag(r[4]),          # 屬管理股票
+                    # ⭐ 原樣存字串（"030"／"045"），⛔ 不轉整數
+                    str(r[5]).strip(),
+                    _chtm_flag(r[6]),          # 停止交易
+                    _chtm_flag(r[7])])         # 財務資訊重點專區
+    n = {k: sum(1 for r in out if r[i] == "1")
+         for i, k in ((3, "變更交易"), (4, "分盤"), (5, "管理股票"),
+                      (7, "停止交易"))}
+    cyc = sorted({r[6] for r in out if r[6]})
+    return out, (f"{len(out)} 檔｜" + "／".join(f"{k} {v}" for k, v in n.items())
+                 + f"｜撮合循環時間出現的值 {cyc or '（都沒有）'}")
+
+
 def parse_per(d, day, known=None):
     """TWSE BWIBBU_d → 本益比／殖利率／股價淨值比。
 
@@ -901,8 +991,18 @@ def _twse(path, day, extra=""):
     return f"https://www.twse.com.tw/rwd/zh/{path}?date={day.replace('-', '')}{extra}&response=json"
 
 
-def _tpex(path, day, extra=""):
-    return f"https://www.tpex.org.tw/www/zh-tw/{path}?date={day.replace('-', '/')}{extra}&response=json"
+def _tpex(path, day, extra="", roc=False):
+    """TPEx 端點。⚠ `roc=True` 送**民國**斜線（`115/09/10`）。
+
+    ⛔ 同一站的日期格式**不是一致的**：`margin/balance` 這幾支吃西元斜線，
+    而 `afterTrading/chtm` 我方實測用的是民國斜線。
+    ⚠ 送錯格式在這一站是**靜默**的（第二條規矩的第①種），
+      ⇒ ⛔ 不要「推論它應該也吃西元」——實測過哪一種就送哪一種。
+      （真的送錯時 `fetch_one` 的 `_same_day` 還會擋一層，但那是第二道，不是第一道。）
+    """
+    d = (f"{int(day[:4]) - 1911:03d}/{day[5:7]}/{day[8:10]}" if roc
+         else day.replace("-", "/"))
+    return f"https://www.tpex.org.tw/www/zh-tw/{path}?date={d}{extra}&response=json"
 
 
 FEEDS = {
@@ -986,6 +1086,25 @@ FEEDS = {
         "status": ("實測 2026-09-09（Actions）：stat=OK、total 與列數一致、3 欄。"
                    "⭐ `date=` **是真的吃的**（2015-01-05 → 23 列、2020-01-03 → 21）"
                    "⇒ 可逐日回補；頁面年份選單最早到 2004"),
+    },
+    # ⭐⭐ 上櫃分盤／變更交易／管理股票／停止交易。K線線 20:20 指名要「逐檔讀撮合週期」。
+    #   ⚠ 上市**沒有**同等來源：只有 `TWT85U` 的 `**`（狀態）與 notes 那句
+    #     「每 30 分鐘為原則、得公告調整」⇒ ⛔ 只知原則值，不知該檔實際值。
+    #   ⚠ `known: False`——變更交易／管理股票的個股**可能不在我方母體裡**，
+    #     ⛔ 用母體濾掉等於把最該被擋的那些濾掉。
+    "chtm": {
+        "dir": "chtm",
+        "header": ["date", "stock_id", "name", "changed", "split_auction",
+                   "managed", "match_cycle_min", "halted", "fin_watch"],
+        "parse": parse_chtm,
+        "known": False,
+        # ⛔ 民國斜線（實測用的就是這個）。⚠ 送西元在這一站是**靜默**失敗。
+        "urls": lambda day: [_tpex("afterTrading/chtm", day, roc=True)],
+        "status": ("我方實測 2026-09-10（Actions）：`date` 回顯我請求的那一天、"
+                   "10 欄、stat=ok。⭐ 歷史至少到 **2009**"
+                   "（098/06/01 回 38 列、與今天逐位元組不同）"
+                   "⇒ ⛔ 情報分析線說的「98/06/01 靜默回今天」不成立。"
+                   "⚠ 旗標值是**全形 Ｙ**（U+FF39）；撮合時間是零填三位字串"),
     },
     "exright": {
         "dir": "exright",

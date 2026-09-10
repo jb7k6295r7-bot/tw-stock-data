@@ -16,7 +16,23 @@
 #   ③ 完全沒有 rebase ⇒ 沒有「衝突要挑哪一邊」的問題
 #   離線 git 模擬三項都驗過（scratchpad/gitsim3）。
 set -u
-MSG="${1:?用法: push_data.sh \"<commit 訊息>\"}"
+MSG="${1:?用法: push_data.sh \"<commit 訊息>\" [要強制搬的路徑…]}"
+shift || true
+# ⛔⛔ 2026-09-10 實際踩到的「綠燈但什麼都沒搬」：
+#   `esb-repair` 那一趟把 2026-09-08 的興櫃列補回去，**檔案內容是對的**，
+#   ⚠ 但那個結果與**分支上已經有的那一版逐位元組相同**
+#   ⇒ 下面 `CHANGED` 是「本趟改到的檔」⇒ 它不在裡面 ⇒ **沒有被搬到 main**。
+#   ⚠ 而整趟是綠的、log 也印著「保留其他市場的 2395 列」——看起來完全成功。
+#
+# ⭐ 根因：`CHANGED` 問的是「這一趟改了什麼」，
+#   ⛔ 但有一種真實情形是「**分支與 main 本來就不同，而本趟不必改它**」。
+#   ⇒ 呼叫端可以在第一個參數之後列出**一定要搬**的路徑。
+#
+# ⚠ 這個開關**會用分支的內容覆蓋 main 的**，所以：
+#   ⛔ 只准用在「呼叫端剛剛才把 main 的那一份取下來當底稿」的步驟
+#     （`esb-repair` 就是先 `git checkout origin/main -- <該日日檔>` 才跑的）。
+#   ⛔ 不可以拿它來搬「分支上放了很久沒動」的檔——那正是第四點六那條的災情。
+FORCE="$*"
 
 git config user.name  "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -56,6 +72,16 @@ data/meta/calendar_tpex.csv:date
 data/meta/holiday_schedule.csv:date
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- data)
+if [ -n "$FORCE" ]; then
+  for fp in $FORCE; do
+    if printf '%s\n' "$CHANGED" | grep -qx "$fp"; then
+      echo "[push_data] （$fp 本趟本來就改到了，不必強制）"
+    else
+      echo "[push_data] ⭐ 強制搬：$fp（本趟沒改到它，但分支與 main 不同）"
+      CHANGED=$(printf '%s\n%s\n' "$CHANGED" "$fp")
+    fi
+  done
+fi
 DELETED=$(git diff --diff-filter=D --name-only "$BASE" "$DC" -- data)
 echo "[push_data] 本趟改到 $(printf '%s\n' "$CHANGED" | grep -cv '^$') 個 data 檔"
 
