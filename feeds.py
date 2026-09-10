@@ -292,6 +292,67 @@ def parse_otcsbl(d, day, known=None):
     return _sbl_rows(t, day, known, 8, "TPEx 位置定位（⛔ 沒有 groups）")
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 變更交易（全額交割）—— K線線 2026-09-10 15:45 的 Q5
+#
+#   他們的前置閘門有「全額交割股」一列，而我方全文查「全額交割」**0 次**
+#   ⇒ 那一列**目前不可執行**。⚠ 而他們自己說過：
+#     **「假裝有在擋」比沒有擋更危險**，因為下游會以為過了關。
+#
+# ── 實測（`delist_probe.py`，Actions）─────────────────────────────
+#   `date=` **是真的吃的**：2015-01-05 → 23 列、2020-01-03 → 21、2026-09-09 → 23
+#   `stat=OK`、`total` 與列數一致、欄位 3 個、⚠ 值是 `["1213","大飲","  "]` 這種
+#
+# ⭐ 官方 `notes` 的符號說明**逐字**（K線線 §8 指名要的，⛔ 不是轉述）：
+#
+#     `**` 代表上市證券除應預先收足款券外，其交易採**分盤集合競價**方式，
+#     該方式係採每 30 分鐘以人工管制之撮合終端機執行撮合作業一次為原則，
+#     並得視交易情形因應公告調整撮合時間。
+#
+#   ⇒ 他們「閘門第一列拆成【狀態＝分盤集合競價】＋【成因 A 處置／成因 B 變更交易】」
+#     那條裁定**成立**，不必作廢。
+#
+# ⚠ 而另一支 `BFIHBU` 的 notes 講的是這一群**還被禁掉什麼**：
+#     「變更交易有價證券**不得進行當日沖銷交易、融資融券交易、借券交易、
+#       平盤以下借券賣出**」
+#   ⇒ ⛔ 「融資融券欄位是 0」至少有**兩個**成因：
+#     ① 主管機關個別公告停止融資融券（`MI_MARGN` 備註欄，且那是**次一營業日**）
+#     ② 被列為變更交易 ⇒ 連當沖與借券一起禁掉，**比 ① 嚴**
+#   ⚠ 只查其中一個名單會誤判。
+# ══════════════════════════════════════════════════════════════════
+FULLDEL_FIELDS = ["證券代號", "證券名稱", "分盤集合競價(以**表示)"]
+
+
+def parse_fulldelivery(d, day, known=None):
+    """TWSE `fullDelivery/TWT85U` 變更交易（全額交割）名單。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={sorted(d) if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    f = _fieldmap(t)
+    # ⛔ 欄名逐字比對：只有 3 欄、而且第 3 欄的欄名本身帶著符號說明
+    #   ⇒ 官方哪天改欄名（例如拿掉「(以**表示)」）就代表符號可能也改了。
+    if f != FULLDEL_FIELDS:
+        return [], f"欄位結構與 2026-09-09 實測不符，拒收：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not r or len(r) < 3:
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        # ⭐ 第 3 欄是 `**` 或**兩個空白**（實測：`["1213","大飲","  "]`）
+        #   ⛔ 存成 1/0，不存原文：原文是空白時 CSV 讀回來分不出「空白」與「沒有值」。
+        #   ⚠ 判準用「含 `*`」而不是 `== "**"`：⭐ 借券那件才學到的
+        #     ——分類欄可能是複合的，等號比對會漏掉。
+        raw = str(r[2])
+        out.append([day, code, str(r[1]).strip(), "1" if "*" in raw else "0"])
+    n_split = sum(1 for r in out if r[3] == "1")
+    return out, f"{len(out)} 檔｜其中併採分盤集合競價 {n_split} 檔"
+
+
 def parse_per(d, day, known=None):
     """TWSE BWIBBU_d → 本益比／殖利率／股價淨值比。
 
@@ -912,6 +973,19 @@ FEEDS = {
         "status": ("實測 2026-09-09（Actions）：stat=ok、932 列、15 欄。"
                    "⛔ **沒有 `groups`、沒有 `total`、沒有 `notes`** ⇒ "
                    "只能靠位置，欄名逐字比對是唯一的守衛"),
+    },
+    # ⭐ 變更交易（全額交割）。K線線 Q5——他們的閘門那一列從【不可執行】改回【可執行】靠這個。
+    #   ⚠ `split_auction` = 官方 `**` 標示 ⇒ **併採分盤集合競價**（官方 notes 逐字，見上）
+    #   ⛔ 那是「狀態」不是「成因」：處置股也會分盤，**兩個名單都要查**。
+    "fulldelivery": {
+        "dir": "fulldelivery",
+        "header": ["date", "stock_id", "name", "split_auction"],
+        "parse": parse_fulldelivery,
+        "known": False,
+        "urls": lambda day: [_twse("fullDelivery/TWT85U", day)],
+        "status": ("實測 2026-09-09（Actions）：stat=OK、total 與列數一致、3 欄。"
+                   "⭐ `date=` **是真的吃的**（2015-01-05 → 23 列、2020-01-03 → 21）"
+                   "⇒ 可逐日回補；頁面年份選單最早到 2004"),
     },
     "exright": {
         "dir": "exright",
