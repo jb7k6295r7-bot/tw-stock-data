@@ -253,6 +253,36 @@ def main():
         ck("  ⛔ `factor_official` 是空的那一列**不進表**（⚠ 不可以猜）",
            ("9999", "2020-01-02") not in m, str(m))
 
+        print("⑨ ⛔⛔ 判準檔用不了時要**大聲失敗**，⛔ 不是靜靜寫空欄")
+        # ⚠ run 101 實測：欄位錯位修好之後 `official_factor` **還是空的**——
+        #   workflow checkout 的是**分支**，而判準檔只在 **main** 上。
+        #   ⭐ 第四點六的鏡像：那一條是「分支比 main 舊」，這裡是「分支沒有那個檔」。
+        O.OFF_RD = os.path.join(d, "不存在.csv")
+        ok, m, why = O.check_official_table()
+        ck("  ⭐⭐ 判準檔**不在** ⇒ 判成不可繼續", ok is False, why[:60])
+        ck("  ⚠ 而說明要講得出**怎麼補**（⛔ 只說「失敗」等於再來一個來回）",
+           "otc_reduce_history.csv" in why and "origin/main" in why, why[:120])
+        # ⛔ 「檔在、但一列都沒有 factor_official」跟檔不在**等價**
+        # ⚠ 檔名刻意用 ASCII：第一版叫「空殼.csv」，而下面那條斷言寫的是
+        #   「說明裡不可以出現『空殼』」⇒ ⛔ **路徑本身**讓它紅了。
+        #   ⭐ 斷言比對的字串裡混進了受測資料的名字，就測不到判準本身。
+        O.OFF_RD = os.path.join(d, "hollow.csv")
+        io.open(O.OFF_RD, "w", encoding="utf-8").write(
+            "date,stock_id,name,last_close,ref_price,factor,reason,"
+            "shares_per_1000,cash_return,factor_official,asof\n"
+            "2026-09-09,6461,益得,16.65,26.92,1.61681682,彌補虧損,,,,2026-09-11\n")
+        ok2, _m2, why2 = O.check_official_table()
+        ck("  ⭐ 檔在、但一列都沒有 `factor_official` ⇒ **也**判成不可繼續"
+           "（⛔ 只判 `os.path.exists` 會讓空殼檔靜靜放行）", ok2 is False, why2[:60])
+        ck("  ⚠ 而說明要分得出是哪一種（檔不在／有檔但沒值）",
+           "一列都沒有" in why2 and "檔不在" not in why2, why2[:80])
+        # ⭐ 正例：有值就要放行（⛔ 一個永遠擋的守門會被直接拿掉）
+        O.OFF_RD = os.path.join(d, "rdh8.csv")
+        ok3, m3, why3 = O.check_official_table()
+        ck("  ⭐ 有值 ⇒ **放行**，並回得出筆數（⛔ 門檻不可以卡到正常的）",
+           ok3 is True and m3.get(("6461", "2026-09-09")) == "1.61661100",
+           f"{ok3}｜{why3}")
+
     finally:
         (O.UNI, O.OFF_EX, O.OFF_RD, O._ROOT) = keep
         shutil.rmtree(d, ignore_errors=True)

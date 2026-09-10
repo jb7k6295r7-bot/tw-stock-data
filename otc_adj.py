@@ -366,6 +366,36 @@ def official_factor_map():
     return out
 
 
+def check_official_table():
+    """→ (可以繼續嗎, 對照表, 說明)。⛔ 抽成函式是為了讓呼叫點測得到。
+
+    ## ⛔⛔ 2026-09-10 run 101 實測：修好欄位錯位之後，`official_factor`
+    **還是空的**
+
+    成因是 workflow checkout 的是**分支**，而 `data/meta/otc_reduce_history.csv`
+    只在 **main** 上。⚠ 這是 CLAUDE.md 第四點六的**鏡像**：
+    那一條講「分支比 main 舊 ⇒ 別整份覆蓋」，這裡是「分支**根本沒有**那個檔」。
+
+    ⚠ 而它壞得非常安靜：那一趟會成功、`data/adj/` 會更新、數字全對，
+    只有 K線線裁定要用的那一欄靜靜空著 ⇒ **還原仍然用帶捨入殘差的因子**。
+
+    ⇒ ⭐ 大聲失敗，而且**在抓之前**——⛔ 不要跑完幾小時才說。
+    ⚠ 而「檔在、但一列都沒有 `factor_official`」也要擋：那跟檔不在**等價**，
+      ⛔ 只判 `os.path.exists` 會讓一個空殼檔靜靜放行。
+    """
+    m = official_factor_map()
+    if m:
+        return True, m, f"官方換股比例對照表 {len(m):,} 筆"
+    why = "檔不在" if not os.path.exists(OFF_RD) else "檔在、但一列都沒有 factor_official"
+    return False, m, (
+        f"⛔ 官方減資判準檔用不了（{why}）：{OFF_RD}\n"
+        "     ⚠ 這一趟寫出去的 `official_factor` 會**全部是空的**，"
+        "而 K線線裁定「還原用官方換股比例」對這些列就不生效。\n"
+        "     ⇒ 先把它取下來（workflow 裡是 "
+        "`git checkout origin/main -- data/meta/otc_reduce_history.csv`），"
+        "或跑 `otc_reduce_history.py`。")
+
+
 def load_done():
     got = set()
     if os.path.exists(DONE):
@@ -544,10 +574,10 @@ def main():
         print(f"[otc] 續跑：已完成 {len(done)} 個（代號,dataset）組合")
 
     # ⭐ 官方換股比例：FinMind 那條路也要接得到（見 `official_factor_map`）
-    off_fac = official_factor_map()
-    print(f"[otc] 官方換股比例對照表 {len(off_fac):,} 筆"
-          + ("" if off_fac else "　⚠ **空的** ⇒ 這一趟的 `official_factor` 會全空"
-                                "（判準檔還沒抓？）"))
+    ok_off, off_fac, why = check_official_table()
+    print(f"[otc] {why}", file=None if ok_off else sys.stderr)
+    if not ok_off:
+        return 1
 
     t_start = time.time()
     ex, rd = {}, {}

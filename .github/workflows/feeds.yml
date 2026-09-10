@@ -326,6 +326,15 @@ jobs:
         timeout-minutes: 60
         run: |
           python selftest_otc_adj.py
+          # ⛔⛔ 判準檔在 **main** 上，而這裡 checkout 的是**分支**
+          #   ⇒ 不取下來的話 `official_factor` 會**全部是空的**，
+          #     而這一趟仍然會成功、`data/adj/` 仍然會更新、數字仍然全對
+          #     ——只有 K線線裁定要用的那一欄靜靜空著（2026-09-10 run 101 實測）。
+          #   ⚠ 這是第四點六的**鏡像**：那一條講「分支比 main 舊」，
+          #     這裡是「分支**根本沒有**那個檔」。
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/meta/otc_reduce_history.csv \
+                                      data/meta/otc_exright_history.csv
           python otc_adj.py --start 2015-01-01 --sleep 0.4 \
             --codes "${{ inputs.codes }}"
           # ⭐ 補完要**立刻**重算還原因子並重跑那道檢查，
