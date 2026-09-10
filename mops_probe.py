@@ -109,7 +109,13 @@ def one(api, year, out, **kw):
         out.append(f"    ⛔ 回應裡沒有 result.url ⇒ 這條橋在這個 apiName 上不成立")
         return None
     out.append(f"    → {url[:150]}…（blob 長 {len(url)}）")
-    raw2, err2 = B.get(url, retries=2, timeout=60)
+    # ⚠ 2026-09-10 兩趟都斷在**這一段**（不是 POST）：
+    #   `RemoteDisconnected: Remote end closed connection without response`。
+    #   ⭐ 而同一段對 `ajax_t163sb04` 拿得回 **1,628,079 bytes** ⇒ 路是通的。
+    #   ⇒ 差別可能是月營收那份更大／更慢，也可能是 mopsov 對那一支比較嚴。
+    #   ⛔ 我不猜是哪一個：先把耐受度加大（3 次、120 秒），
+    #     若還是斷，那就**不是暫時性的**，而那本身是有用的資訊。
+    raw2, err2 = B.get(url, retries=3, timeout=120)
     if err2:
         out.append(f"    ⛔ 取舊站失敗：{err2[:200]}")
         return None
