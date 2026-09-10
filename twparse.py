@@ -19,6 +19,8 @@
 ⛔ 仍然「認不出就回 None」——⚠ 猜一個日期比認不出更糟。
 """
 import re
+import urllib.parse
+import urllib.request
 
 # 民國↔西元的分界：官方民國年一律 < 1000（例：115），西元 > 1990。
 _ROC_ADD = 1911
@@ -76,3 +78,25 @@ def pick_field(fields, *words):
         if any(w in str(f) for w in words):
             return i
     return None
+
+
+def post_form(url, form, timeout=120):
+    """`application/x-www-form-urlencoded` 的 POST。→ (bytes, err)。
+
+    ⛔ 這一份原本在 `otc_exright_history.py` 與 `otc_reduce_history.py` 各一份
+      （逐字相同）——同一族的第九、第十份。2026-09-10 收成一份。
+
+    ⚠ `Referer` 帶的是 url 自己：TPEx 的 `bulletin/*` 沒有它會被擋。
+    ⚠ 例外一律吃掉並回成 `err` 字串（⛔ 不 raise）——呼叫端要能分辨
+      「取不到」與「取到但內容不對」，那是兩種完全不同的處置。
+    """
+    body = urllib.parse.urlencode(form, encoding="utf-8").encode("utf-8")
+    req = urllib.request.Request(
+        url, data=body,
+        headers={"User-Agent": "Mozilla/5.0", "Referer": url,
+                 "Content-Type": "application/x-www-form-urlencoded"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read(), None
+    except Exception as ex:                                      # noqa: BLE001
+        return b"", f"{type(ex).__name__}: {str(ex)[:120]}"
