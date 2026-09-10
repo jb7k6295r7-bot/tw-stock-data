@@ -277,6 +277,7 @@ jobs:
       - name: 上櫃除權息歷史（官方公告區，只寫判準檔）
         if: inputs.mode == 'otc-exright-history'
         run: |
+          python selftest_twparse.py
           python selftest_otc_exright_history.py
           python otc_exright_history.py --start "2008/01/01"
 
@@ -288,6 +289,7 @@ jobs:
       - name: 上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些
         if: inputs.mode == 'otc-reduce-history'
         run: |
+          python selftest_twparse.py
           python selftest_otc_reduce_history.py
           python otc_reduce_history.py --start "2013/01/01"
 
