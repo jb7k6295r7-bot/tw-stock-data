@@ -40,6 +40,7 @@ v6（2026-09-02）補的是「報告一直缺、每天都寫查無」的那幾�
 第一次執行的 _manifest.json 會自己回答哪幾個 dataset 真的可用。
 """
 
+import csv
 import json
 import os
 import sys
@@ -817,7 +818,23 @@ PROBE = "endpoint_probe.txt"
 
 UNIVERSE_HEADER = ["key", "date", "stock_id", "name", "market",
                    "open", "high", "low", "close", "volume", "amount",
-                   "change", "limit", "shares", "transactions", "price_basis"]
+                   "change", "limit", "shares", "transactions", "price_basis",
+                   "last_price"]
+# ⭐ last_price（2026-09-10 加，**接在最後**）＝官方的「最後成交價」。
+#   ⛔ 只有興櫃會有值：上市／上櫃的 `close` 本來就是最後撮合價，不必再存一次。
+#
+#   ⚠ 為什麼不直接把興櫃的 `close` 換成它（K線線 13:10 背書、我方同裁）：
+#     換掉的話 `close` 這一欄在**時間軸上會斷成兩段**（補之前是均價、補之後是收盤價），
+#     ⇒ **任何跨那個時點的長區間統計都會靜默錯掉，而且沒有任何欄位標記它。**
+#   ⇒ `close` 維持均價（`price_basis` 標著），最後成交價另存這一欄。
+#
+#   ⚠ 兩者**真的不同**：K線線 09-09 量到 363 檔裡有 **318 檔**兩者不一樣。
+#     興櫃流動性極低，最後成交價可能由**一筆 1 股**的交易決定 ⇒
+#     ⛔ 拿它算報酬序列要自己知道在做什麼；均價才是這個市場比較有代表性的那個數。
+#
+#   ⚠ 範圍：**2026-09-10 之前的日檔沒有這一欄**（空字串），
+#     而且這一欄**不會回補**——興櫃的歷史逐日檔我方本來就沒有全市場來源
+#     （`data/universe/esb/` 是逐檔逐月，另一條路）。
 # shares＝發行股數。**只有上櫃那條端點有給**，上市與興櫃留空
 #（上市與興櫃改由 capital.py 補進 data/meta/capital.csv，不寫回這裡）。
 # transactions＝成交筆數。上市與上櫃都有；興櫃端點沒有，留空。
@@ -853,8 +870,12 @@ def _lock_dir(chg):
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
 
-def _kind(code, name):
+def _kind(code, name=None):
     """粗分類，只用代號規則，**不猜**。
+
+    ⚠ `name` 保留只是為了舊呼叫端（它從來沒被用到——⭐ 這一支的重點就是
+      「只看代號、不看名稱」）。`backfill._kind` 原本是另一份一模一樣的實作，
+      2026-09-10 收成這一份。
 
     2026-09-02 實測（v7.0 第一次全市場執行）：
     - 上市走 `ALLBUT0999`，**本來就不含權證**；1,371 列 = 4碼 1,092 ＋ 5碼 134 ＋ 6碼 145。
@@ -1113,14 +1134,26 @@ def parse_twse_daily(d, day, market="twse"):
                     chg, lim,
                     _num(r[i_shares]) if i_shares is not None else "",
                     _num(r[i_txn]) if i_txn is not None else "",
-                    basis])        # price_basis：有成交＝收盤價（留空）／無成交＝`無成交`
+                    basis,         # price_basis：有成交＝收盤價（留空）／無成交＝`無成交`
+                    # ⛔ last_price 只有興櫃有意義：上市／上櫃的 close 就是最後撮合價，
+                    #   在這裡填一份等於同一個數字存兩欄，⚠ 而兩欄以後會走岔。
+                    ""])
     return out, f"欄位={fields}"
 
 
 def parse_openapi_daily(rows, day, market):
-    """TPEx openapi 是一個 list of dict，欄位名為英文或中文，兩種都試。"""
-    if not isinstance(rows, list) or not rows:
-        return [], "回傳不是非空 list"
+    """TPEx openapi 是一個 list of dict，欄位名為英文或中文，兩種都試。
+
+    ⭐ 2026-09-10 起這一支是**唯一一份**：`backfill.parse_openapi` 改成指到它。
+      理由見 `backfill.py` 那兩行別名旁邊的說明（同一族的錯已經第四次）。
+    """
+    if not isinstance(rows, list):
+        return [], "回傳不是 list"
+    # ⛔ 空 list 與「不是 list」要**分開回**：呼叫端靠 `note.startswith("no_rows")`
+    #   判「這一天休市」。混在一起的話，休市會被當成端點故障，
+    #   於是換下一條候選端點、退避、重試——⚠ 而那三件事在假日**每天**都會發生。
+    if not rows:
+        return [], "no_rows:空 list（休市或無成交）"
     keys = list(rows[0].keys())
 
     def pick(*names):
@@ -1161,6 +1194,11 @@ def parse_openapi_daily(rows, day, market):
     k_txn = exact("成交筆數", "NumberOfTransactions", "Transactions", "Transaction")
     # 興櫃沒有漲跌欄，但有前一日均價 → 自己算。**這是相減，不是估計**。
     k_prev = exact("PreviousAveragePrice") if k_avg else None
+    # ⭐ 官方的「最後成交價」。⛔ 用 `exact()` 不用 `pick()`——`pick` 是包含比對，
+    #   會撞上 `PreviousLatestPrice` 之類的鄰居，把昨天的價寫成今天的，
+    #   ⚠ 而那種錯每一列都會發生、每一列看起來都正常。
+    #   ⛔ 而且只在「close 存的是均價」時才有意義：上市／上櫃的 close 就是它。
+    k_last = exact("LatestPrice") if k_avg else None
     if not (k_code and k_close):
         return [], f"欄位對不上：{keys}"
     out = []
@@ -1195,7 +1233,11 @@ def parse_openapi_daily(rows, day, market):
             out.append([f"{day}_{code}", day, code,
                         str(r.get(k_name, "")).strip(), market,
                         o, h, l, c, vol, amt, "", "", "",
-                        _num(r.get(k_txn)) if k_txn else "", basis])
+                        _num(r.get(k_txn)) if k_txn else "", basis,
+                        # ⛔ 無成交日連最後成交價都不該有值——**照官方原文**，
+                        #   而官方在那種列給的是 0 ⇒ 用 `_isz` 擋掉，留空。
+                        "" if (k_last is None or _isz(_num(r.get(k_last))))
+                        else _num(r.get(k_last))])
             continue
         basis = ""
         if k_avg:
@@ -1218,7 +1260,8 @@ def parse_openapi_daily(rows, day, market):
         out.append([f"{day}_{code}", day, code,
                     str(r.get(k_name, "")).strip(), market,
                     o, h, l, c, vol, amt, chg, lim, "",
-                    _num(r.get(k_txn)) if k_txn else "", basis])
+                    _num(r.get(k_txn)) if k_txn else "", basis,
+                    _num(r.get(k_last)) if k_last else ""])
     return out, f"欄位={keys}"
 
 
@@ -1333,16 +1376,49 @@ def append_coverage(day, counts, errs):
 
 
 def write_universe_day(day, lines):
-    """一天一檔。**同一天重跑會整份覆蓋**（當日資料以最後一次為準）。"""
-    if not lines:
+    """寫一天的日檔。⛔ **只覆蓋這一趟真的抓了的那些市場。**
+
+    ⛔⛔ 2026-09-10：這一支原本是「**整份覆蓋**」，而 `backfill.write_day`
+      早就改成「保留沒抓的市場」了——**同一族的第五份拷貝，而且這一份在每日那條路上。**
+
+      ⚠ 回補那邊的代價已經量過：`--markets twse,tpex --force` 重抓 2026-09-08，
+        那一天的 **363 列興櫃整批消失**，而且看起來完全正常
+        （檔案在、列數還有兩千多、二市的數字都對）。
+      ⇒ 每日這一支會在**同一天跑第二次而某個市場失敗**時複製同一個災情：
+        第一趟寫好三個市場，第二趟興櫃失敗 ⇒ 興櫃那些列被無聲刪掉。
+        ⚠ 而 daily.yml 本來就會在同一天多次執行。
+
+    ⛔ 另外一件原本只有回補那份有的：**濾掉權證**。
+      上櫃的 openapi 一天回 5,709 列、其中 **4,844 是權證**；
+      候選端點只要退到那一條，權證就會整批寫進日檔。
+      ⚠ `merge_stocks_meta` 會把權證清出 `stocks.csv`，
+        **但清不掉已經寫進日檔的那幾千列**——兩邊看起來都正常。
+
+    ⇒ 現在只有這一份實作，`backfill.write_day` 是它的別名。
+      `selftest_parse_daily.py` ⑥ 逐項驗它的行為。
+    """
+    kept = [r for r in lines if _kind(r[2]) != "warrant"]
+    if not kept:
         return 0
-    path = os.path.join(UNI_DIR, "daily", f"{day}.csv")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    ddir = os.path.join(UNI_DIR, "daily")
+    os.makedirs(ddir, exist_ok=True)
+    path = os.path.join(ddir, f"{day}.csv")
+    mine = {str(r[4]) for r in kept}      # 這一趟寫的市場（HEADER 第 5 欄是 market）
+    keep_old = []
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if (r.get("market") or "") not in mine:
+                    keep_old.append([r.get(h, "") for h in UNIVERSE_HEADER])
+    if keep_old:
+        print(f"[fetch] {day}：保留其他市場的 {len(keep_old)} 列"
+              f"（這一趟只寫 {sorted(mine)}）")
+    rows = kept + keep_old
     with open(path, "w", encoding="utf-8") as f:
         f.write(",".join(UNIVERSE_HEADER) + "\n")
-        for r in sorted(lines, key=lambda r: r[2]):
+        for r in sorted(rows, key=lambda r: str(r[2])):
             f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
-    return len(lines)
+    return len(kept)
 
 
 def merge_stocks_meta(day, lines):

@@ -41,7 +41,12 @@ import runlog
 # ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
 #   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
 #   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
-from fetch import _isz, _lock_dir, fill_twse_shares
+from fetch import (_isz, _lock_dir, fill_twse_shares,
+                   parse_openapi_daily as _parse_openapi_daily,
+                   parse_twse_daily as _parse_twse_daily,
+                   _twse_tables as _fetch_tables,
+                   write_universe_day as _write_universe_day,
+                   _kind as _fetch_kind)
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -306,17 +311,9 @@ def _num(v):
     return t
 
 
-def _kind(code):
-    c = str(code)
-    if len(c) == 6 and c[0] == "7":
-        return "warrant"
-    if c.startswith("00"):
-        return "etf"
-    if len(c) == 5:
-        return "special"
-    if len(c) == 6:
-        return "other"
-    return "stock"
+# ⛔ 第六份：`_kind` 兩邊逐字相同（差別只有 fetch 那份多一個從來沒用到的 `name`）。
+#   ⚠ 這一對還沒走岔——⛔ 但「還沒」不是判準。
+_kind = _fetch_kind
 
 
 def describe_response(d, want=None):
@@ -382,32 +379,10 @@ def describe_response(d, want=None):
     return out
 
 
-def _tables(d):
-    if not isinstance(d, dict):
-        return []
-    if isinstance(d.get("tables"), list):
-        return [t for t in d["tables"] if isinstance(t, dict)]
-    if d.get("fields") and d.get("data"):
-        return [{"title": d.get("title", ""), "fields": d["fields"], "data": d["data"]}]
-    # ★ 第三種形狀：**編號鍵**（`fields1`/`data1` … `fields9`/`data9`）。
-    #   TWSE 舊版 MI_INDEX 就是這樣回的——一個回應裡塞好幾張表，
-    #   用序號區分而不是放進 tables 陣列。
-    #   2026-09-03 實測：2015 年整年回補時 twse 每一天都「失敗」，
-    #   而 2026-08-28 的同一條端點卻正常，差別只在日期 → 高度懷疑是這個。
-    #   不支援它的話，症狀是「連得上、stat=OK、解析出 0 列」，
-    #   看起來跟「那天沒有資料」一模一樣。
-    out = []
-    for k in sorted(d.keys()):
-        if not k.startswith("fields"):
-            continue
-        suffix = k[len("fields"):]
-        dk = "data" + suffix
-        if isinstance(d.get(k), list) and isinstance(d.get(dk), list):
-            out.append({"title": d.get("title" + suffix, d.get("title", "")),
-                        "fields": d[k], "data": d[dk]})
-    if out:
-        return out
-    return []
+# ⛔ 同上：`_tables` 與 `fetch._twse_tables` 原本是**逐字相同的兩份**。
+#   這一對還沒走岔，⚠ 但「還沒」不是判準——上面那四次也都有「還沒」的時候。
+#   ⇒ 一併收成一份。（`feeds.py` 用的是 `B._tables`，這個名字要留著。）
+_tables = _fetch_tables
 
 
 def _same_day(d, day):
@@ -486,150 +461,36 @@ def _idx_any(fields, *options):
     return None
 
 
-def parse_twse(d, day, market="twse"):
-    for t in _tables(d):
-        fields = [str(x) for x in (t.get("fields") or [])]
-        # 找表的條件放寬到「有代號欄 ＋ 有收盤欄」——TPEx 用「代號」，TWSE 用「證券代號」，
-        # 寫死其中一種會找不到另一種（2026-09-02 probe 診斷發現）。
-        if not (any("代號" in f for f in fields) and any("收盤" in f for f in fields)):
-            continue
-        i_code = _idx_any(fields, "證券代號", "股票代號", "代號")
-        i_name = _idx_any(fields, "證券名稱", "股票名稱", "名稱")
-        i_o, i_h = _idx_any(fields, "開盤"), _idx_any(fields, "最高")
-        i_l, i_c = _idx_any(fields, "最低"), _idx_any(fields, "收盤")
-        i_v, i_a = _idx_any(fields, "成交股數"), _idx_any(fields, "成交金額")
-        i_sh = _idx_any(fields, "發行股數")
-        i_tx = _idx_any(fields, "成交筆數")
-        i_chg = _idx_any(fields, "漲跌價差")
-        i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
-        if any(x is None for x in (i_code, i_o, i_h, i_l, i_c)):
-            return [], f"欄位對不上：{fields}"
-        raw = t.get("data") or []
-        # ★ 非交易日 TPEx 回的是「欄位齊全但一列資料都沒有」的空表，
-        #   **不是** stat=休市。原本一律當成失敗，結果每個假日都觸發退避，
-        #   冷卻一路爬到 300 秒（2026-09-03 掃 2015 週六時實測）。
-        #   → 原始資料列數為 0 ＝ 休市；有資料卻解析不出來才是真的故障。
-        if not raw:
-            return [], "no_rows:空表（休市或無成交）"
-        out = []
-        for r in raw:
-            if not r or len(r) <= i_c:
-                continue
-            code = str(r[i_code]).strip()
-            if not code or not code[0].isdigit():
-                continue
-            o, h, l, c = _num(r[i_o]), _num(r[i_h]), _num(r[i_l]), _num(r[i_c])
-            # ⛔⛔ 2026-09-10 使用者裁定「甲」之後拿掉的那一行 `if not c: continue`。
-            #
-            #   那一行丟掉的是**官方確實發布、但當天沒有成交價**的列。
-            #   市場情報分析線 00:20 的官方直接證據（tpex `afterTrading/tradingStock`）：
-            #     6904 伯鑫 2026 年 9 月，官方 7 個交易日、我方只有 3 天。
-            #   全庫規模（`missing_rows.py` 用六張官方清單差集量的）：
-            #     **至少 67,446 筆／1,191 檔**，2015 起十一年一致。
-            #
-            #   ⛔ 而「成交張數 0」**不等於「沒有交易」**：那三天的成交仟元是 2／8／2
-            #     ——那是**零股成交**。所以這些列的 `volume`／`amount` 不一定是 0，
-            #     ⇒ **照官方原文寫，不要自己填 0，也不要自己補價格。**
-            #
-            #   ⚠ 代價講清楚：`close` 從此**可能是空字串**。
-            #     這是把一個**靜默的偏誤**（序列有洞 ⇒「取最後 N 列」跨的天數比 N 多）
-            #     換成一個**會叫的失敗**（`float('')` 會炸）。⭐ 後者才修得掉。
-            #   ⇒ 為了讓下游**不必靠「空不空」去猜**，這種列在 `price_basis` 標成
-            #     `無成交`（那一欄本來就是講「close 是怎麼來的」，興櫃標 `均價/額推算`）。
-            no_close = not c
-            basis = "無成交" if no_close else ""
-            # 漲跌有兩種寫法：TWSE 拆成「方向欄（HTML 的 +/-）＋ 漲跌價差」，
-            # TPEx 則是單一「漲跌」欄、正負號直接寫在值裡。兩種都要吃。
-            if i_chg is not None:
-                sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
-                chg = _num(r[i_chg])
-                chg = str(sign * float(chg)) if chg else ""
-            elif i_sign is not None:
-                # ★ 這一欄的正負號直接寫在值裡（"+10.00" / "-5.50"），
-                #   而 _num() 只清掉 "+"、**保留 "-"**——所以直接用就好。
-                #   先前多做一次 -1 造成負負得正，跌停被標成漲停（2026-09-02 測到）。
-                chg = _num(r[i_sign])
-            else:
-                chg = ""
-            # ⛔⛔ 這裡原本是
-            #     `lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")`
-            #   `chg` 是**字串**，而 `"0.0"` 是 truthy ⇒ **整天鎖死在平盤被判成跌停**。
-            #   ⚠ `fetch.py` 2026-09-08 已經修好（`_lock_dir`），
-            #     **但 `backfill.py` 這一份沒有跟著修** ⇒ 同一個 bug 留了兩份，
-            #     修好的那份天天跑、沒修的那份只有回補才跑，所以一直沒被發現。
-            #   ⭐ 是 2026-09-10 那趟**單日試跑**照出來的：
-            #     重抓 2026-09-08 之後，23 列的 `limit` 從 `flat` 變回 `down`
-            #     ——`fix_limit.py` 修好的 50,382 列會被回補**整批打回原形**。
-            #   ⇒ 直接用 `fetch._lock_dir`，⛔ 不要在這裡再抄一份邏輯出來。
-            lim = ""
-            if o and h and l and c and o == h == l == c:
-                lim = _lock_dir(chg)
-            # ⛔ 沒有成交價的列不判漲跌停（上面的條件本來就過不了，這行是寫出意圖）。
-            out.append([f"{day}_{code}", day, code,
-                        str(r[i_name]).strip() if i_name is not None else "", market,
-                        o, h, l, c,
-                        _num(r[i_v]) if i_v is not None else "",
-                        _num(r[i_a]) if i_a is not None else "", chg, lim,
-                        _num(r[i_sh]) if i_sh is not None else "",
-                        _num(r[i_tx]) if i_tx is not None else "",
-                        basis])       # price_basis：有成交價時留空；
-                                      # ⭐ 沒有成交價時是 `無成交`（見上面那段）
-        return out, f"欄位={fields}"
-    return [], "找不到含『證券代號』與『收盤』的表"
-
-
-def parse_openapi(rows, day, market):
-    if isinstance(rows, list) and not rows:
-        return [], "no_rows:空 list（休市或無成交）"
-    if not isinstance(rows, list):
-        return [], "回傳不是 list"
-    keys = list(rows[0].keys())
-
-    def pick(*names):
-        for n in names:
-            for k in keys:
-                if n.lower() == k.lower() or n in k:
-                    return k
-        return None
-
-    k_code = pick("SecuritiesCompanyCode", "Code", "證券代號", "股票代號")
-    k_name = pick("CompanyName", "Name", "證券名稱")
-    k_c = pick("Close", "LatestPrice", "收盤")
-    k_o, k_h, k_l = pick("Open", "開盤"), pick("High", "Highest", "最高"), pick("Low", "Lowest", "最低")
-    k_v = pick("TradingShares", "TransactionVolume", "成交股數")
-    k_a = pick("TransactionAmount", "成交金額")
-    k_chg = pick("Change", "漲跌")
-
-    def exact(*names):
-        """完全相等才算。pick() 是「包含」比對，`pick("Average")` 會先撞上
-        `PreviousAveragePrice`，把昨天的價格當成今天的收盤——靜默且每列都錯。"""
-        for n in names:
-            for k in keys:
-                if str(k).strip() == n:
-                    return k
-        return None
-
-    # 成交筆數不可用 pick("Transaction")，會撞上 TransactionVolume（成交量）
-    k_tx = exact("成交筆數", "NumberOfTransactions", "Transactions", "Transaction")
-    if not (k_code and k_c):
-        return [], f"欄位對不上：{keys}"
-    out = []
-    for r in rows:
-        code = str(r.get(k_code, "")).strip()
-        if not code or not code[0].isdigit():
-            continue
-        o, h, l, c = (_num(r.get(k_o)), _num(r.get(k_h)),
-                      _num(r.get(k_l)), _num(r.get(k_c)))
-        if not c:
-            continue
-        chg = _num(r.get(k_chg))
-        lim = ""
-        if o and h and l and c and o == h == l == c:
-            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
-        out.append([f"{day}_{code}", day, code, str(r.get(k_name, "")).strip(), market,
-                    o, h, l, c, _num(r.get(k_v)), _num(r.get(k_a)), chg, lim, "",
-                    _num(r.get(k_tx)) if k_tx else "", ""])
-    return out, f"欄位={keys}"
+# ══════════════════════════════════════════════════════════════════
+# ⛔⛔⛔ 2026-09-10：這裡本來有**兩份自己的 parser**，現在改成指向 `fetch.py`。
+#
+# 原本的理由寫在檔頭：「刻意複製而不 import，讓它們各自獨立，
+# 改一邊不會意外弄壞另一邊。」
+# ⚠ **那個理由被現實推翻了四次，而且四次都是同一個方向。**
+#   真正發生的從來不是「改一邊弄壞另一邊」，而是
+#   **「改一邊，另一邊沒跟上，而且沒有人會發現」**：
+#
+#     ① `limit` 平盤被判跌停   fetch 修了、backfill.parse_twse 沒修
+#                              ⇒ 修好的那份天天跑、沒修的只有回補才跑
+#     ② 「甲」保留無成交列      backfill.parse_twse 修了、fetch 沒修
+#                              ⇒ 回補補回十一年、每日繼續挖新洞
+#     ③ 興櫃 0 價的 `_isz`      esb 逐月檔有、fetch 的日檔沒有
+#                              ⇒ 52 列 `close=0` 被寫進去
+#     ⭐ ④ `backfill.parse_openapi`（就是這裡）——**三個都中**：
+#          `limit` 是最原始的壞版本（`"0.0"` 是 truthy ⇒ 平盤判跌停）、
+#          還在 `if not c: continue`、也沒有 `_isz`。
+#          ⚠ 而它是**興櫃回補**與任何回 JSON list 的端點會走的那一條。
+#
+# ⇒ 判準改成：**同一件事只准有一份實作。**
+#   ⛔ 「兩邊各留一份、記得同步」已經證明做不到——四次全敗。
+#   ⚠ 而兩份長得幾乎一樣的程式，肉眼 review 看不出誰少了哪一行。
+#
+# ★ 欄位順序（`HEADER`）仍然是契約，兩邊共用同一份輸出 ⇒ 天生一致。
+# ★ `selftest_parse_daily.py` ⑨ 會拿一整批不同形狀的回應餵兩邊、**逐格比對**，
+#   ⛔ 那才是這條規矩的守門——別名本身可以被下一個人拆掉。
+# ══════════════════════════════════════════════════════════════════
+parse_twse = _parse_twse_daily
+parse_openapi = _parse_openapi_daily
 
 
 def fetch_day_market(day, market, urls, probe_lines=None):
@@ -710,37 +571,11 @@ def fetch_day_market(day, market, urls, probe_lines=None):
     return [], f"all_failed:{last_err[:80]}"
 
 
-def write_day(day, lines):
-    """寫一天的日檔。⛔ **只覆蓋這一趟真的抓了的那些市場。**
-
-    ⚠ 2026-09-10 實測的代價：`--run --markets twse,tpex --force` 重抓 2026-09-08，
-      結果那一天的 **363 列興櫃（`emerging`）整批消失**——因為這裡是整檔覆蓋，
-      而興櫃不是走這條路寫的（`fetch.py` 寫的）。
-      ⛔ 而且它看起來完全正常：檔案在、列數還有兩千多、二市的資料都對。
-    ⇒ 以「這一趟抓了哪些市場」為界：**沒抓的市場，原檔那些列原封不動留著。**
-    """
-    kept = [r for r in lines if _kind(r[2]) != "warrant"]
-    if not kept:
-        return 0
-    os.makedirs(DAILY_DIR, exist_ok=True)
-    path = os.path.join(DAILY_DIR, f"{day}.csv")
-    mine = {str(r[4]) for r in kept}          # 這一趟寫的市場（HEADER 第 5 欄是 market）
-    keep_old = []
-    if os.path.exists(path):
-        with open(path, encoding="utf-8") as f:
-            rd = csv.DictReader(f)
-            for r in rd:
-                if (r.get("market") or "") not in mine:
-                    keep_old.append([r.get(h, "") for h in HEADER])
-    if keep_old:
-        print(f"[backfill] {day}：保留其他市場的 {len(keep_old)} 列"
-              f"（這一趟只寫 {sorted(mine)}）")
-    rows = kept + keep_old
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(",".join(HEADER) + "\n")
-        for r in sorted(rows, key=lambda r: str(r[2])):
-            f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
-    return len(kept)
+# ⛔ 第五份拷貝也收掉了：`write_day` 與 `fetch.write_universe_day` 是同一件事，
+#   而 2026-09-10 的實情是**只有這一份有「保留沒抓的市場」與「濾掉權證」**，
+#   每日那一份是整份覆蓋 ⇒ 同一天跑第二次而某個市場失敗，那個市場的列會無聲消失。
+#   ⇒ 實作留在 `fetch.py`（每日那條路天天跑，放那裡比較不會被忘記），這裡指過去。
+write_day = _write_universe_day
 
 
 def _gateway_blocked(note):
