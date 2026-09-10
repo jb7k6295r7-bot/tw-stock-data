@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-10T00:13:16+08:00",
-  "target_trading_day": "2026-09-09",
+  "generated_at": "2026-09-10T15:22:26+08:00",
+  "target_trading_day": "2026-09-10",
   "stocks": {
     "7879": {
       "extra": {
@@ -62,7 +62,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -81,17 +81,17 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
-      "inst_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
+      "inst_date_max": "2026-09-10",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 166,
-          "added": 0,
+          "total": 167,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -108,14 +108,14 @@
           "date_max": "2026-09-09"
         },
         "revenue": {
-          "total": 32,
-          "added": 0,
+          "total": 33,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-08-01"
+          "date_max": "2026-09-01"
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -134,12 +134,12 @@
       },
       "fs_types_seen": 17,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -168,7 +168,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -187,12 +187,12 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -221,7 +221,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -240,12 +240,12 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -274,7 +274,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -293,12 +293,12 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -327,7 +327,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -346,12 +346,12 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -380,7 +380,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -399,17 +399,17 @@
       },
       "fs_types_seen": 18,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
-      "inst_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
+      "inst_date_max": "2026-09-10",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 166,
-          "added": 0,
+          "total": 167,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 1
@@ -433,7 +433,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -452,12 +452,12 @@
       },
       "fs_types_seen": 18,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -486,7 +486,7 @@
         },
         "margin": {
           "total": 166,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-09"
         },
@@ -505,12 +505,12 @@
       },
       "fs_types_seen": 14,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-09",
+      "price_date_max": "2026-09-10",
       "inst_date_max": "2026-09-09",
       "history": {
         "price": {
-          "total": 409,
-          "added": 0,
+          "total": 410,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -528,59 +528,60 @@
     "ok": [
       "index",
       "summary",
-      "t86",
       "bfi82u"
     ],
-    "errors": null,
+    "errors": {
+      "t86": "stat=很抱歉，沒有符合條件的資料!"
+    },
     "csv": {
       "index": {
-        "total": 7,
-        "added": 0,
+        "total": 8,
+        "added": 1,
         "changed": null
       },
       "breadth": {
-        "total": 7,
-        "added": 0,
+        "total": 8,
+        "added": 1,
         "changed": null
       },
       "amount": {
-        "total": 7,
-        "added": 0,
+        "total": 8,
+        "added": 1,
         "changed": null
       },
       "inst": {
-        "total": 7,
-        "added": 0,
-        "changed": 1
+        "total": 8,
+        "added": 1,
+        "changed": null
       }
     },
     "parse_errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
   "version": "v8.0 2026-09-04",
-  "calendar_days": 409,
+  "calendar_days": 410,
   "universe": {
     "counts": {
-      "twse": 1374,
-      "tpex": 989,
+      "twse": 1379,
+      "tpex": 1012,
       "emerging": 363,
       "warrants_excluded": 0,
-      "total": 2726,
+      "total": 2754,
       "by_kind": {
-        "etf": 355,
-        "other": 27,
-        "stock": 2317,
-        "special": 27
+        "etf": 359,
+        "other": 34,
+        "stock": 2333,
+        "special": 28
       }
     },
     "errors": null,
-    "rows_written": 2726,
-    "coverage_days": 4,
+    "rows_written": 2754,
+    "coverage_days": 5,
     "stocks_meta": {
-      "total": 3029,
-      "added_today": 0,
+      "total": 3030,
+      "added_today": 1,
       "purged_warrants": null
     }
   },
-  "history_rows_changed": 1
+  "history_rows_changed": null
 }
