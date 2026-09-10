@@ -630,6 +630,15 @@ jobs:
           python otc_reduce_history.py
           python selftest_otc_exright_history.py
           python otc_exright_history.py
+          # ⭐⭐ 換供料的**第 1 步**（市場情報分析線 2026-09-10 20:00 裁）：
+          #   官方三支聯集 vs 我方 `data/adj/`，**雙向**逐筆比對、分四類，
+          #   ⛔ 一列都不寫進 `data/adj/`。
+          # ⚠ 一定要排在上面兩支**之後**：它讀的就是它們剛寫出來的判準檔，
+          #   ⛔ 早跑會拿到昨天的官方清單，而那看起來完全正常。
+          # ⚠ 而它自己不判成敗（差異清單本來就不是「過或不過」）——
+          #   ⛔ 硬設一個「差異要小於幾筆」的門檻沒有依據，只會每天紅然後被忽略。
+          python selftest_otc_adj_compare.py
+          python otc_adj_compare.py
 
       - name: 上櫃減資對帳
         if: always()
