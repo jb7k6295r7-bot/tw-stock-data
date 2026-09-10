@@ -154,6 +154,19 @@ def main():
        f"⛔ 沒有任何 workflow 跑：{orphan}"
        "　⇒ 它紅了也不會有人知道（`selftest_reduce.py` 就是這樣紅著的）")
 
+    # ⭐ 而**反方向**也要驗：workflow 叫得出來的 selftest 必須**存在**。
+    #   ⚠ 上面那道只擋「自測沒人跑」，⛔ 擋不住「workflow 叫了一個不存在的檔」
+    #     ——而後者會讓那一步在 Actions 上**跑起來才失敗**，
+    #     ⭐ 而失敗的位置往往在一大段抓取之後（第六點五那條 1h50m 的同一族）。
+    #   ⚠ 2026-09-10 差點發生：`stophalt` 那一步先寫進 daily.yml，
+    #     `selftest_stophalt.py` 還沒寫——⛔ 而孤兒那一道**是綠的**。
+    called = sorted(set(re.findall(r"(selftest_[A-Za-z0-9_]+\.py)", wf_text)))
+    missing = [n for n in called if not os.path.exists(os.path.join(here, n))]
+    ck("⭐⭐ workflow 叫到的每一支 selftest 都**存在**",
+       not missing,
+       f"⛔ 叫得到但檔不在：{missing}"
+       "　⇒ 那一步會在 Actions 上跑起來才失敗，⚠ 而且往往在抓完之後")
+
     # ── ⛔ 反向驗：這支檢查自己有沒有效 ──
     #   ⚠ 沒有這一段的話，一支「永遠說 ok」的檢查跟真的一模一樣。
     broken = subprocess.run(["bash", "-n"], input="if true; then echo x",
@@ -164,6 +177,9 @@ def main():
     ck("★ 反向驗：一個不存在於任何 workflow 的檔名**確實**會被判成孤兒",
        "selftest_這支不存在_zzz.py" not in wf_text,
        "⛔ 判準是子字串比對，而它連假名字都說有 ⇒ 這一道是死的")
+    ck("★ 反向驗：兩道方向**相反**——孤兒看「檔在、沒人叫」，"
+       "這一道看「有人叫、檔不在」",
+       bool(called) and len(called) >= 5, f"workflow 裡叫到 {len(called)} 支")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
