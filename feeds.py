@@ -98,6 +98,59 @@ def _blank_num(v):
     return s
 
 
+def parse_tib(d, day, known=None):
+    """TWSE `STOCK_TIB` → **官方創新板成分清單**（逐日）。
+
+    ## 為什麼要存它
+
+    ⛔ 我方原本靠**名稱後綴**（`/(?:-|KY)創$/`）認創新板。
+    市場情報分析線 2026-09-10 10:44 找到官方清單，並比對 **2026-09-09 零差異**
+    （官方 30 檔 vs 字串法 30 檔，兩個方向都 0）。
+    ⇒ 字串法在那一天是對的，⭐ **但它是猜的**：改名就會失效，而且不會有人發現。
+
+    ## ⚠ 為什麼存成**逐日**，不是一份現況清單
+
+    K線線的判準一句話：「問的是『它**現在**是什麼』還是『它**那時候**是什麼』。」
+    ⇒ 圈選歷史區間時要的是那一天的成分 ⇒ **逐日**。
+    （這也是 `stocks.csv` 的 `market` 欄不可以拿來圈歷史那條的同一個理由。）
+
+    ## ⛔ 兩個邊界
+
+    ① **歷史下限 2021-06-28**（創新板 2021-07-20 開板，所以夠用）。
+       越界時官方**明說**：`stat:"查詢日期小於110年6月28日，請重新查詢!"`
+       ⇒ 這一支是**大聲失敗**，不是靜默回最新——這件事本身要記著。
+    ② ⛔ **最後一列是「合計」，代號欄是空字串**，要丟掉。
+       ⚠ 而它不是垃圾：情報分析線驗過那一列的成交金額
+       ＝ `MI_INDEX` 大盤統計「14.創新板股票」，**差 0**。
+       ⇒ 丟掉是因為它不是一檔股票，⛔ 不是因為它不可信。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = tabs[0]
+    f = _fieldmap(t)
+    i_code = _exact(f, "證券代號", "股票代號", "代號")
+    i_name = _exact(f, "證券名稱", "股票名稱", "名稱")
+    if i_code is None:
+        return [], f"欄位對不上：{f}"
+    out, skipped = [], 0
+    for r in (t.get("data") or []):
+        if not r or len(r) <= i_code:
+            continue
+        code = str(r[i_code]).strip()
+        # ⛔ 「合計」那一列的代號欄是空字串 ⇒ 這一條就是在丟它。
+        #   ⚠ 用 `code[0].isdigit()` 而不是 `code != "合計"`：
+        #     名稱欄才寫「合計」，代號欄是空的——照名稱擋會擋不到。
+        if not code or not code[0].isdigit():
+            skipped += 1
+            continue
+        if known and code not in known:
+            continue
+        out.append([day, code,
+                    str(r[i_name]).strip() if i_name is not None else ""])
+    return out, f"{len(out)} 檔（丟掉 {skipped} 列沒有代號的，含「合計」）"
+
+
 def parse_per(d, day, known=None):
     """TWSE BWIBBU_d → 本益比／殖利率／股價淨值比。
 
@@ -671,6 +724,22 @@ FEEDS = {
         "known": True,
         "urls": lambda day: [_twse("afterTrading/BWIBBU_d", day, "&selectType=ALL")],
         "status": "已驗證 2026-09-04：20260903 → stat=OK、1,580 列",
+    },
+    # ⭐ 2026-09-10 新增。它取代的是一條**猜的**判準（名稱後綴 `-創`／`KY創`）。
+    #   ⛔ 存逐日不存現況：K線線的判準是「問的是它**現在**是什麼、
+    #     還是它**那時候**是什麼」——圈歷史區間要的是那一天的成分。
+    "tib": {
+        "dir": "tib",
+        "header": ["date", "stock_id", "name"],
+        "parse": parse_tib,
+        # ⛔ known=False：創新板有下市／轉板的，先全收，篩母體是讀取端的事。
+        "known": False,
+        "urls": lambda day: [_twse("afterTrading/STOCK_TIB", day)],
+        "status": ("市場情報分析線 2026-09-10 實測：2026-09-09 回 31 列"
+                   "＝ 30 檔 ＋ 1 列「合計」，與名稱後綴法**兩個方向都 0 差異**。"
+                   "⛔ 歷史下限 **2021-06-28**，越界時官方明說"
+                   "（`stat:\"查詢日期小於110年6月28日，請重新查詢!\"`）"
+                   "——**大聲失敗，不是靜默回最新**"),
     },
     "exright": {
         "dir": "exright",

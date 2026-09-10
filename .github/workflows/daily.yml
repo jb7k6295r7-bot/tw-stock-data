@@ -308,6 +308,25 @@ jobs:
                             --limit 20 --sleep 2
           done
 
+      # ⭐ 官方創新板成分清單（`STOCK_TIB`）。它取代的是一條**猜的**判準
+      #   （名稱後綴 `-創`／`KY創`）——2026-09-09 兩者零差異，⚠ 但字串法是猜的：
+      #   改名就失效，而且不會有人發現。
+      # ⛔ 單獨一步、⛔ `--start 2021-06-28`：官方歷史下限就在那一天
+      #   （越界時 `stat` 會**明說**下限，是大聲失敗）。
+      #   ⚠ 混進上面那個 `--start 2015-01-01` 的迴圈的話，
+      #     會每天對 1,600 個必定失敗的日子各打一發，然後那些失敗變成雜訊。
+      - name: 官方創新板成分清單（逐日，回到 2021-06-28）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          python selftest_tib.py
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          python feeds.py --run --feed tib --start "$DAY" --end "$DAY" --sleep 2
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed tib --start 2021-06-28 --end "$TODAY" \
+                          --limit 40 --sleep 2
+
       # ★ 集保戶股權分散（大戶持股的來源）。每週一份，週六 09:00 後產生。
       #   ⛔ **端點不吃日期參數，只回最新一週——漏掉一週就永久少一週**
       #     （與上櫃停牌同一種性質）。所以每天都跑：已經有那一週的檔就跳過，
