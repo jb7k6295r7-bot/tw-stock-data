@@ -56,6 +56,7 @@ import sys
 import time
 
 import backfill as B
+import fetch as _F
 import runlog
 
 _ROOT = B._ROOT
@@ -553,6 +554,117 @@ def parse_chtm(d, day, known=None):
     cyc = sorted({r[6] for r in out if r[6]})
     return out, (f"{len(out)} 檔｜" + "／".join(f"{k} {v}" for k, v in n.items())
                  + f"｜撮合循環時間出現的值 {cyc or '（都沒有）'}")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 個股融資成數的**調整幅度**——`marginTrading/BFIB9U`（上市）
+#
+# K線線那條 166.67 的基準值：官方明文「最高融資比率 60%、最低融券保證金成數 90%」
+# ⚠ 而那是**上櫃頁面**的字，上市那一半還沒有逐字 ⇒ ⛔ 先不要套過去。
+#
+# ── 我方實測（`chtm_probe.py`，Actions 2026-09-10）───────────────
+#   欄位（8）：編號／證券代號／證券名稱／調整成數原因／調整成數起日／恢復日
+#              ／降低融資比率／提高融券保證金成數
+#   不帶日期 → 471 列；`startDate=endDate=20150105` → 126 列 ⇒ **有逐日歷史**
+#
+# ⛔⛔ 三件會讓人讀錯的事，每一件都在實測值裡看得到：
+#
+# ① **同一檔會有很多列**：471 列裡只有 **94 個相異代號**
+#    ⇒ 一檔 × 每個「調整成數原因」一列（實測 6 種原因）
+#    ⇒ ⛔ 主鍵是（日期, 代號, **原因**），不是（日期, 代號）。
+#
+# ② **值不是純數字**：`降低融資比率` 的相異值是
+#    `''`／`'1'`／`'6'`／`'累計：1'`／`'累計：6'`
+#    ⇒ ⭐ `累計：N` 與 `N` 是**兩件事**（累計降低 vs 這一次降低）
+#      ⛔ 直接 `int()` 會炸，`replace("累計：","")` 會把兩者混成一個數字。
+#
+# ③ 空值有**兩種寫法**：空字串與**單一半形空白**
+#    （實測 `["1203","味王","監視第二次處置","","",  " ", " "]`）
+#    ⇒ ⛔ 只判 `== ""` 會把那些讀成「有值」。
+#
+# ⚠ 而 ⛔ **這支不算「現行成數」**：官方給的是**調整幅度**，
+#   要逐檔彙總再用「基準 − 累計調整」推——⭐ 而那是**判準**，屬 K線線。
+#   ⇒ 我方只把原始欄位存下來，⛔ 不在這裡算，也不寫進契約當成「成數」。
+#
+# ⛔⛔ 而它有一種**沒有東西擋得住**的靜默失敗：
+#   回應**沒有 `date`、`title` 也不帶日期** ⇒ `fetch_one` 的 `_same_day` 找不到
+#   自述日期 ⇒ **一律放行**。⚠ 而不帶日期參數時它回的是**前一個營業日**
+#   （實測 09-10 問，`hints` 說「期間：115年09月09日到115年09月09日」）。
+#   ⇒ ⭐ 日期只寫在 `hints` 裡 ⇒ **這一支自己驗 `hints`**。
+#   ⛔ 不把 `hints` 加進 `_same_day` 的通用鍵：別的端點的 `hints` 常寫著
+#     「資料自 104 年起提供」這種**與本次查詢無關**的日期
+#     ⇒ 那會變成大規模誤擋（`feeds:tib` 剛剛才因為誤擋掉了 1,050 天）。
+# ══════════════════════════════════════════════════════════════════
+MRATIO_FIELDS = ["編號", "證券代號", "證券名稱", "調整成數原因", "調整成數起日",
+                 "恢復日", "降低融資比率", "提高融券保證金成數"]
+
+
+def _mratio_val(v):
+    """`降低融資比率`／`提高融券保證金成數` → (數字字串, 是否累計)。
+
+    ⭐ 實測相異值：`''`／`'1'`／`'6'`／`'累計：1'`／`'累計：6'`／`' '`（單一空白）
+    ⛔ `累計：N` 與 `N` 是兩件事，不可以混成一個數字。
+    ⚠ 認不出來一律回 `("", "")`——⛔ 不要猜成 0（0 是「不調整」的真值）。
+    """
+    t = str(v).replace("：", ":").strip()
+    cum = "1" if t.startswith("累計") else "0"
+    if cum == "1":
+        t = t.split(":", 1)[-1].strip() if ":" in t else t[2:].strip()
+    if not t:
+        return "", ""
+    try:
+        float(t)
+    except ValueError:
+        return "", ""
+    return t, cum
+
+
+def parse_marginratio(d, day, known=None):
+    """TWSE `BFIB9U` 調整融資融券成數。⛔ 主鍵含**原因**，一檔多列。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], (f"沒有 tables；頂層鍵="
+                    f"{sorted(d) if isinstance(d, dict) else type(d).__name__}")
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != MRATIO_FIELDS:
+        return [], f"欄位結構與 2026-09-10 實測不符，拒收：{f}"
+    # ⭐⭐ 這一支的日期**只寫在 `hints` 裡** ⇒ 自己驗，⛔ 不靠 `_same_day`
+    hints = str((d or {}).get("hints", "")) if isinstance(d, dict) else ""
+    said = _F.first_date_compact(hints)
+    if not said:
+        return [], (f"⛔ `hints` 裡讀不出日期 ⇒ **無從確認這批是哪一天**"
+                    f"（hints={hints[:80]!r}）"
+                    "　⚠ 這一支沒有 `date`／`title` 可比，hints 是唯一的自述")
+    if said != day.replace("-", ""):
+        return [], (f"⛔ 回的是**別天**：hints 說 {said}，我要 {day}"
+                    "　⚠ 不帶日期參數時它回的是前一個營業日")
+    out = []
+    for r in (t.get("data") or []):
+        if not isinstance(r, list) or len(r) < 8:
+            continue
+        code = str(r[1]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        m_v, m_c = _mratio_val(r[6])
+        s_v, s_c = _mratio_val(r[7])
+        out.append([day, code, str(r[2]).strip(), str(r[3]).strip(),
+                    _F.first_date_compact(r[4]) and
+                    _iso_dash(_F.first_date_compact(r[4])),
+                    _F.first_date_compact(r[5]) and
+                    _iso_dash(_F.first_date_compact(r[5])),
+                    m_v, m_c, s_v, s_c])
+    codes = {r[1] for r in out}
+    cum = sum(1 for r in out if r[7] == "1" or r[9] == "1")
+    return out, (f"{len(out)} 列／**{len(codes)} 檔**（⚠ 一檔多列：一個原因一列）"
+                 f"｜其中標「累計」的 {cum} 列")
+
+
+def _iso_dash(compact):
+    """`20210924` → `2021-09-24`。⛔ 空字串照樣回空字串。"""
+    return f"{compact[:4]}-{compact[4:6]}-{compact[6:8]}" if compact else ""
 
 
 def parse_per(d, day, known=None):
@@ -1229,6 +1341,29 @@ FEEDS = {
                    "（098/06/01 回 38 列、與今天逐位元組不同）"
                    "⇒ ⛔ 情報分析線說的「98/06/01 靜默回今天」不成立。"
                    "⚠ 旗標值是**全形 Ｙ**（U+FF39）；撮合時間是零填三位字串"),
+    },
+    # ⭐⭐ 個股融資融券成數的**調整幅度**（上市）。K線線那條 166.67 的個股面。
+    #   ⛔ 它給的**不是現行成數**，是調整幅度 ⇒ 要逐檔彙總再用「基準 − 累計」推，
+    #     ⚠ 而那是**判準**，屬 K線線 ⇒ 我方只存原始欄位，⛔ 不在這裡算。
+    #   ⚠ `known: False`——被調成數的往往是**波動最大的飆股**，
+    #     ⛔ 用母體濾掉等於把最該看的那些濾掉。
+    "marginratio": {
+        "dir": "marginratio",
+        "header": ["date", "stock_id", "name", "reason", "adjust_from",
+                   "restore_date", "margin_cut", "margin_cum",
+                   "short_raise", "short_cum"],
+        "parse": parse_marginratio,
+        "known": False,
+        "urls": lambda day: [
+            _twse("marginTrading/BFIB9U", day,
+                  extra=("&startDate={d}&endDate={d}&sortType=ALL&stockNo="
+                         "&selectType=%E5%85%A8%E9%83%A8").format(
+                             d=day.replace("-", "")))],
+        "status": ("我方實測 2026-09-10（Actions）：不帶日期 471 列、"
+                   "`20150105` 126 列 ⇒ **有逐日歷史**。"
+                   "⛔ 一檔多列（471 列只有 94 個相異代號，一個原因一列）；"
+                   "值有 `累計：N` 前綴；空值有『空字串』與『單一空白』兩種。"
+                   "⭐ 日期**只寫在 `hints` 裡** ⇒ 本 parser 自己驗"),
     },
     "exright": {
         "dir": "exright",

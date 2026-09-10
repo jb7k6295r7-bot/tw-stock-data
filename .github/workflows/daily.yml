@@ -438,6 +438,26 @@ jobs:
           python feeds.py --run --feed chtm --start 2015-01-01 --end "$TODAY" \
                           --limit 40 --sleep 2
 
+      # ⭐ 個股融資融券成數的**調整幅度**（`BFIB9U`，上市）。
+      #   K線線那條 166.67 的個股面：基準 60%，個股實際成數要用「基準 − 累計調整」推。
+      # ⛔ 而這一支給的**不是現行成數**，是調整幅度 ⇒ ⚠ 彙總規則是**判準**，屬 K線線
+      #   ⇒ 我方只落地原始欄位，⛔ 不在管線裡算成數。
+      # ⛔⛔ 三個會讀錯的地方（都在實測值裡）：一檔多列（一個原因一列）、
+      #   值有 `累計：N` 前綴、空值有「空字串」與「單一空白」兩種。
+      # ⭐ 而它的日期**只寫在 `hints` 裡**（沒有 `date`、`title` 不帶日期）
+      #   ⇒ `_same_day` 擋不住它 ⇒ parser 自己驗 hints。
+      - name: 個股融資融券成數調整（逐日）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          python selftest_marginratio.py
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          python feeds.py --run --feed marginratio --start "$DAY" --end "$DAY" --sleep 2
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed marginratio --start 2015-01-01 --end "$TODAY" \
+                          --limit 40 --sleep 2
+
       # ⭐⭐ 終止上市（下市）清單。⛔ 它解的是**生存者偏誤**：
       #   下市公司會從母體消失 ⇒ 「2015 買、後來下市」那一段整段不見
       #   ⇒ 回測績效**系統性偏樂觀**，⚠ 而且不會有任何一格數字出錯。
