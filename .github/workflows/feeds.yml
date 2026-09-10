@@ -16,7 +16,7 @@ on:
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
         type: choice
-        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery]
+        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
