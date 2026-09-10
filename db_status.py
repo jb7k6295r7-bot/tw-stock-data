@@ -320,6 +320,51 @@ def _count_dir(d, pat="*.csv"):
     return len(glob.glob(os.path.join(d, pat))) if os.path.isdir(d) else 0
 
 
+def universe_dirs(uni):
+    """→ [(目錄名, 檔數, 最早, 最晚, 是否逐日)]，⛔ **自動列舉，不是寫死清單**。
+
+    ## ⛔⛔ 為什麼一定要自動列舉（2026-09-10）
+
+    `_db_status.md` 是契約第一句指定的「**回答『有什麼』**」的那份文件。
+    ⚠ 而它原本只列**寫死的 6 層** ⇒ 實測 `data/universe/` 有 **21 個目錄**，
+      而文件裡只提到 **3 個**。
+    ⇒ ⭐ `margin`／`per`／`inst`／`exright`／`reduce`／`breadth`／`sbl`／`tib`…
+      **全部不在裡面**——讀的人照契約去查「有什麼」，會查不到它們。
+
+    ⛔ 而這是**第三次**同一個形狀：寫死一份清單、新增東西時要記得同步。
+      前兩次是 `push_data.sh` 的 mode 白名單（22 分鐘的資料靜靜丟掉）
+      與 `feeds.yml` 的 feed 選單（新 feed 選不到）。
+    ⭐ 那兩次的修法都是**把清單反過來或拿掉**——這裡拿掉。
+    """
+    out = []
+    if not os.path.isdir(uni):
+        return out
+    for name in sorted(os.listdir(uni)):
+        d = os.path.join(uni, name)
+        if not os.path.isdir(d):
+            continue
+        names = [os.path.basename(x)[:-4]
+                 for x in glob.glob(os.path.join(d, "*.csv"))]
+        # ⚠ 第三種形狀：**巢狀**（`capital/` 底下是一層子目錄才是 CSV）
+        #   ⛔ 只看第一層會報「0 檔」——而 0 在這份文件裡會被讀成「這一層是空的」，
+        #     ⭐ 那正好是這份文件最不該產生的誤解。
+        nested = False
+        if not names:
+            deep = glob.glob(os.path.join(d, "*", "*.csv"))
+            if deep:
+                nested = True
+                names = [os.path.basename(x)[:-4] for x in deep]
+        # ⚠ 兩種形狀：**逐日**（檔名是日期）與**逐檔**（檔名是代號，如 esb）
+        #   ⛔ 混在一起報「區間」會把代號當成日期排序。
+        days = sorted(x for x in names if len(x) == 10 and x[4] == "-")
+        out.append((name, len(names),
+                    days[0] if days else "—", days[-1] if days else "—",
+                    "逐日" if days else ("⚠ 巢狀（子目錄底下才是 CSV）"
+                                        if nested else
+                                        "⚠ 逐檔（檔名是代號，⛔ 不是日期）")))
+    return out
+
+
 def _span(rows, key):
     ds = sorted({r[key] for r in rows if r.get(key)})
     return (ds[0], ds[-1], len(ds)) if ds else ("—", "—", 0)
@@ -343,6 +388,27 @@ def section_layers(out):
         exp = EXPECT.get(key, 0)
         mark = "" if n >= exp else f" ★ 少於預期 {exp}"
         out.append(f"| {label} | {n} 檔 | — | {exp}+{mark} |")
+
+    # ══════════════════════════════════════════════════════════
+    # ⭐⭐ `data/universe/` **全部**目錄——⛔ 自動列舉，不是寫死清單
+    #   （理由見 `universe_dirs()`：這份文件是契約指定用來回答「有什麼」的，
+    #     而它原本只提到 21 個目錄裡的 3 個。）
+    # ══════════════════════════════════════════════════════════
+    uds = universe_dirs(uni)
+    out.append("")
+    out.append("### `data/universe/` 全部目錄"
+               "（⛔ 自動列舉——新增 feed 會自己出現，不必有人記得改這裡）")
+    out.append("")
+    out.append("| 目錄 | 檔數 | 區間 | 形狀 |")
+    out.append("|---|---|---|---|")
+    for name, n, lo, hi, shape in uds:
+        out.append(f"| `{name}/` | {n:,} | {lo} ~ {hi} | {shape} |")
+    out.append("")
+    out.append(f"⚠ 共 **{len(uds)}** 個目錄。"
+               "⛔ 覆蓋率低不一定是缺口：`exright`／`reduce`／`otcexright`／"
+               "`otcreduce`／`parvalue`／`etfsplit` 是**事件型**"
+               "（只有發生事件那幾天有檔）。")
+    out.append("")
 
     days = sorted(os.path.basename(p)[:-4]
                   for p in glob.glob(os.path.join(uni, "daily", "*.csv")))

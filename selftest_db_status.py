@@ -97,6 +97,11 @@ def main():
     ck(DATA_BEFORE == os.path.exists(os.path.join(HERE, "data")),
        "★ repo 的 data/ 存在與否沒有改變")
 
+    print("\n── `data/universe/` 自動列舉 ──")
+    _ok, _fail = _universe_dirs_section()
+    if _fail:
+        FAILED.append(f"universe_dirs 有 {_fail} 項失敗")
+
     print("\n" + "=" * 60)
     if FAILED:
         print(f"✗ {len(FAILED)} 項失敗：")
@@ -105,6 +110,85 @@ def main():
         return 1
     print("全部通過")
     return 0
+
+
+
+
+def _universe_dirs_section():
+    """⭐ `data/universe/` 要**自動列舉**，⛔ 不是寫死清單。
+
+    ⛔⛔ 這一節的理由（2026-09-10 實測）：
+      `_db_status.md` 是契約第一句指定用來回答「**有什麼**」的那份文件，
+      ⚠ 而它原本只提到 **3** 個目錄——實際有 **21** 個。
+      ⇒ `margin`／`per`／`inst`／`exright`／`sbl`／`tib`… 全部不在裡面。
+    ⭐ 而這是第三次同一個形狀（前兩次：`push_data.sh` 的 mode 白名單、
+      `feeds.yml` 的 feed 選單）⇒ 修法一律是**把清單拿掉**。
+    """
+    import glob as _g
+    import os as _o
+    import shutil as _sh
+    import tempfile as _tf
+    import db_status as D
+
+    ok = fail = 0
+
+    def ck(name, cond, hint=""):
+        nonlocal ok, fail
+        if cond:
+            ok += 1
+            print(f"  ok   {name}")
+        else:
+            fail += 1
+            print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
+
+    d = _tf.mkdtemp(prefix="dbstat_")
+    try:
+        uni = _o.path.join(d, "universe")
+        # ① 逐日
+        _o.makedirs(_o.path.join(uni, "margin"))
+        for x in ("2015-01-05", "2026-09-09"):
+            io.open(_o.path.join(uni, "margin", x + ".csv"), "w").write("a\n")
+        # ② 逐檔（檔名是代號）
+        _o.makedirs(_o.path.join(uni, "esb"))
+        for x in ("5267", "6434"):
+            io.open(_o.path.join(uni, "esb", x + ".csv"), "w").write("a\n")
+        # ③ 巢狀
+        _o.makedirs(_o.path.join(uni, "capital", "tpex"))
+        io.open(_o.path.join(uni, "capital", "tpex", "1150908.csv"),
+                "w").write("a\n")
+        # ④ 空目錄
+        _o.makedirs(_o.path.join(uni, "empty"))
+        # ⚠ 非目錄的東西不可以被當成一層
+        io.open(_o.path.join(uni, "_coverage.csv"), "w").write("a\n")
+
+        got = {r[0]: r for r in D.universe_dirs(uni)}
+        ck("⭐ **四個目錄都列出來**（⛔ 不是只列寫死的那幾個）",
+           set(got) == {"margin", "esb", "capital", "empty"}, str(sorted(got)))
+        ck("⛔ 非目錄的 `_coverage.csv` 不會被當成一層",
+           "_coverage.csv" not in got, str(sorted(got)))
+        ck("逐日的算得出區間",
+           got["margin"][2:4] == ("2015-01-05", "2026-09-09"),
+           str(got["margin"]))
+        ck("  形狀標「逐日」", got["margin"][4] == "逐日", str(got["margin"]))
+        ck("⚠ 逐檔的**不報區間**（⛔ 代號排序不是日期）",
+           got["esb"][2] == "—" and "逐檔" in got["esb"][4], str(got["esb"]))
+        ck("⭐ 巢狀的數得到子目錄底下的檔（⛔ 不是報 0）",
+           got["capital"][1] == 1 and "巢狀" in got["capital"][4],
+           str(got["capital"]))
+        ck("⚠ 空目錄照樣列出來、檔數 0（⛔ 不是整個消失）",
+           got["empty"][1] == 0, str(got["empty"]))
+        ck("⛔ 目錄不存在時回空清單，不是丟例外",
+           D.universe_dirs(_o.path.join(d, "nope")) == [])
+
+        # ⭐ 反向：新增一個目錄 ⇒ **不必改任何清單**就會出現
+        _o.makedirs(_o.path.join(uni, "brandnew"))
+        io.open(_o.path.join(uni, "brandnew", "2026-09-10.csv"), "w").write("a\n")
+        got2 = {r[0] for r in D.universe_dirs(uni)}
+        ck("⭐⭐ 新開一個目錄 ⇒ **自己出現**（⛔ 這就是不寫死清單的重點）",
+           "brandnew" in got2, str(sorted(got2)))
+    finally:
+        _sh.rmtree(d, ignore_errors=True)
+    return ok, fail
 
 
 if __name__ == "__main__":
