@@ -207,6 +207,83 @@ def main():
            "（月表少 change／last_price ⇒ 覆蓋＝用較差的換較好的）",
            len(after2) == len(after), f"{len(after2)} vs {len(after)}")
 
+        print("⑧ ⭐⭐ `--from-git`：那些列根本還在另一個 ref 上（⛔ 一個請求都不打）")
+        # ⚠ 照 2026-09-10 的真形狀做：舊副本是 **16 欄**（沒有 last_price），
+        #   ⛔ 按位置搬會整排錯位，而錯位之後每一格都還是「看起來正常的數字」。
+        import subprocess
+        g = tempfile.mkdtemp(prefix="esbgit_")
+        cwd = os.getcwd()
+        try:
+            os.chdir(g)
+            subprocess.run(["git", "init", "-q", "-b", "old"], check=True)
+            subprocess.run(["git", "config", "user.email", "t@t"], check=True)
+            subprocess.run(["git", "config", "user.name", "t"], check=True)
+            os.makedirs("data/universe/daily")
+            H16 = [h for h in H if h != "last_price"]
+            with io.open(f"data/universe/daily/{DAY}.csv", "w",
+                         encoding="utf-8") as f:
+                f.write(",".join(H16) + "\n")
+                # 舊副本：興櫃 2 列（真的那一天）＋ 上市 1 列（那趟只寫了一列）
+                f.write(f"{DAY}_1260,{DAY},1260,富味鄉,emerging,,30.8,30.3,"
+                        "30.52,13015,397218,0.12,,,,均價/額推算\n")
+                f.write(f"{DAY}_1269,{DAY},1269,乾杯,emerging,,56.4,53.7,"
+                        "55.68,8239,458748,-2.40,,,,均價/額推算\n")
+                f.write(f"{DAY}_2330,{DAY},2330,台積電,twse,1,1,1,1,1,1,"
+                        "0,,,,收盤價\n")
+                # ⛔ 別天的一列：必須被擋掉
+                f.write(f"2026-09-09_1271,2026-09-09,1271,晨暉,emerging,,1,1,"
+                        "1,1,1,0,,,,均價/額推算\n")
+            subprocess.run(["git", "add", "-A"], check=True)
+            subprocess.run(["git", "commit", "-qm", "old"], check=True)
+            rows_g, note_g = R.rows_from_git("old", DAY)
+            ck("  ⭐ 讀出 2 列興櫃（⛔ 上市那列不算、別天那列不算）",
+               len(rows_g) == 2, f"{len(rows_g)}｜{note_g}")
+            m = dict(zip(H, rows_g[0])) if rows_g else {}
+            ck("  ⭐⭐ 欄位**按欄名**對應：`close` 是 30.52，⛔ 不是被 last_price 擠掉的值",
+               m.get("close") == "30.52", str(m)[:160])
+            ck("  ⛔ 舊副本沒有的 `last_price` 補成空字串，⚠ 不是把別欄搬過來",
+               m.get("last_price") == "", repr(m.get("last_price")))
+            ck("  ⭐ `change` 原封不動（⚠ 這條路的列**就是當初正常抓的那一批**）",
+               m.get("change") == "0.12", str(m.get("change")))
+            ck("  ⚠ `price_basis` 也原封不動（⛔ 不改寫成「月表補回」）",
+               m.get("price_basis") == "均價/額推算", str(m.get("price_basis")))
+            ck("  說明講得出三個數字",
+               "共 4 列" in note_g and "emerging 3 列" in note_g
+               and "日期對得上 2 列" in note_g, note_g)
+            ck("  ⛔ ref 上沒有那一天 ⇒ 回 0 列並說明，不是丟例外",
+               R.rows_from_git("old", "2026-01-02")[0] == []
+               and "取不到" in R.rows_from_git("old", "2026-01-02")[1],
+               str(R.rows_from_git("old", "2026-01-02")))
+            ck("  ⛔ ref 不存在也一樣",
+               R.rows_from_git("沒有這個ref", DAY)[0] == [])
+            # ⛔⛔ 上面那個舊副本剛好只是「末尾少一欄」⇒ 按位置搬**也會對**
+            #   ⚠ 那等於這一節沒測到「按欄名」這件事。
+            #   ⇒ 再做一份**欄序不同**的：這是我方自己踩過的失敗族
+            #     （「欄名改過版就會整批錯位」——而錯位之後每一格都還是數字）。
+            H2 = ["date", "stock_id", "market", "close", "high", "low",
+                  "volume", "amount", "name", "key", "price_basis"]
+            with io.open(f"data/universe/daily/{DAY}.csv", "w",
+                         encoding="utf-8") as f:
+                f.write(",".join(H2) + "\n")
+                f.write(f"{DAY},1260,emerging,30.52,30.8,30.3,13015,397218,"
+                        f"富味鄉,{DAY}_1260,均價/額推算\n")
+            subprocess.run(["git", "add", "-A"], check=True)
+            subprocess.run(["git", "commit", "-qm", "reordered"], check=True)
+            rr, _ = R.rows_from_git("HEAD", DAY)
+            mm = dict(zip(H, rr[0])) if rr else {}
+            ck("  ⭐⭐ 欄序完全不同時仍然對得上：`close`=30.52、`name`=富味鄉",
+               mm.get("close") == "30.52" and mm.get("name") == "富味鄉",
+               str(mm)[:200])
+            ck("  ⛔ 而按位置搬的話 `close` 會拿到 'emerging' 那一格"
+               "（⇒ 這一條就是在擋那種錯位）",
+               mm.get("close") != "emerging", str(mm.get("close")))
+            ck("  ⚠ 舊副本沒有的欄位一律空字串",
+               mm.get("change") == "" and mm.get("transactions") == "",
+               str((mm.get("change"), mm.get("transactions"))))
+        finally:
+            os.chdir(cwd)
+            shutil.rmtree(g, ignore_errors=True)
+
         print("⑦ ⛔ 沒有日檔時：說「這不是少了興櫃的問題」，不是憑空造一天")
         sys.argv = ["x", "--date", "2026-09-30", "--sleep", "0"]
         ck("  拒絕", R.main() != 0)

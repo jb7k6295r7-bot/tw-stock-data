@@ -193,7 +193,18 @@ jobs:
         timeout-minutes: 90
         run: |
           python selftest_esb_day_repair.py
-          python esb_day_repair.py --date "${{ inputs.start }}" \
+          D="${{ inputs.start }}"
+          # ⛔⛔ 先把那一天的日檔換成 **main 上的那一份**（CLAUDE.md 第四點六）：
+          #   分支的 `data/` 比 main 舊，⚠ 而這一次「舊」正好是兩邊互補——
+          #   main 有 twse 1382／tpex 1013／emerging **0**，
+          #   分支有 emerging **363**／twse 只有 1（那趟只寫了一列就被砍）。
+          #   ⇒ 底稿一定要取 main 的，⛔ 拿分支的當底稿會把 1,381 列上市推回去刪掉。
+          git fetch origin main --depth=1 || true
+          git checkout origin/main -- "data/universe/daily/$D.csv" || \
+            echo "⚠ main 上沒有 $D 的日檔，用 checkout 帶下來的那一份"
+          # ⭐ 來源優先走 `--from-git HEAD`（一個請求都不打）；
+          #   ⚠ 那個 ref 上沒有的話它會自己講出來，再改用月表那條。
+          python esb_day_repair.py --date "$D" --from-git HEAD \
                                    --sleep "${{ inputs.sleep || '5' }}"
 
       - name: 回補

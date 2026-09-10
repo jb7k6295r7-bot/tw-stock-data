@@ -28,6 +28,21 @@
   而某一檔的九月月表裡就有 09-08 那一列。
 ⇒ **補得回來，只是要打 363 次**（一檔一發，約 30 分鐘）。
 
+## ⭐⭐ 但**先問一件事**：那些列是不是根本還在別的 ref 上？
+
+2026-09-10 實測，`data/universe/daily/2026-09-08.csv` 的兩份副本是**互補**的：
+
+    main   ： twse 1382｜tpex 1013｜emerging **0**
+    分支    ： twse **1**｜tpex 1013｜emerging **363**   ← 那 363 列一直在這裡
+
+⚠ 那正是 CLAUDE.md 第四點六（「分支上的 `data/` 比 main 舊」）的**反面**：
+這一次**舊的那一份反而是唯一還留著的**。
+⭐ 而分支那 363 列與 09-07／09-09 的興櫃列**逐字不同** ⇒ 是真的那一天的資料，
+⛔ 不是「上一個交易日被寫進今天」那種。
+
+⇒ `--from-git <ref>` 就走這條：**一個請求都不打**，把那個 ref 的興櫃列讀出來合併。
+⚠ 網路那條（`--from-esb`）留著，因為下一次未必這麼幸運。
+
 ## ⚠ 補回來的列與正常抓的列**不完全一樣**——這件事要說出來
 
 月表給的是：`high／low／均價／volume／amount／transactions`。
@@ -122,6 +137,46 @@ def fetch_one(code, day, sleep=5.0):
     return hit[0], note
 
 
+def rows_from_git(ref, day, market="emerging"):
+    """→ (那個 ref 上這一天的該市場列, 說明)。⛔ 一個請求都不打。
+
+    ⚠ 用 `git show`，⛔ 不是 checkout：checkout 會動到工作區的其他檔。
+    ⭐ 欄位**按欄名對應**，不按位置——那份舊副本少了 `last_price`（16 欄），
+      按位置搬會整排錯位，⚠ 而錯位之後每一格都還是「看起來正常的數字」。
+    """
+    import subprocess
+    try:
+        raw = subprocess.run(
+            ["git", "show", f"{ref}:data/universe/daily/{day}.csv"],
+            capture_output=True, check=True).stdout.decode("utf-8", "replace")
+    except (OSError, subprocess.CalledProcessError) as ex:       # noqa: BLE001
+        return [], f"{ref} 上取不到 {day} 的日檔：{str(ex)[:80]}"
+    rd = list(csv.DictReader(io.StringIO(raw)))
+    hit = [r for r in rd if (r.get("market") or "") == market]
+    out = []
+    for r in hit:
+        # ⭐ 這一批要自己講出它是哪一天（跟網路那條同一道守門）
+        if (r.get("date") or "") != day:
+            continue
+        out.append([r.get(h, "") for h in H])
+    return out, (f"{ref} 上 {day} 共 {len(rd)} 列｜其中 {market} {len(hit)} 列"
+                 f"｜日期對得上 {len(out)} 列")
+
+
+def fetch_all(todo, codes, day, sleep):
+    """逐檔打月表。→ (universe 列, 缺的)。⛔ 抽成函式是為了讓 main 只挑來源。"""
+    rows, miss = [], []
+    for i, c in enumerate(todo, 1):
+        r, note = fetch_one(c, day, sleep)
+        if r is None:
+            miss.append((c, note))
+        else:
+            rows.append(to_universe(r, codes[c]))
+        if i % 50 == 0:
+            print(f"  [{i}/{len(todo)}] 取得 {len(rows)}、缺 {len(miss)}", flush=True)
+    return rows, miss
+
+
 def to_universe(esb_row, name):
     """月表列（ESB_HEADER）→ 日檔列（UNIVERSE_HEADER）。
 
@@ -148,6 +203,8 @@ def to_universe(esb_row, name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", required=True)
+    ap.add_argument("--from-git", default="",
+                    help="⭐ 先試這個：從另一個 git ref 讀那一天的興櫃列（不連外）")
     ap.add_argument("--sleep", type=float, default=5.0)
     ap.add_argument("--dry-run", action="store_true")
     # ⚠ `--limit` 是**試跑**用的，⛔ 一律不寫檔（見下面那道）。
@@ -183,23 +240,25 @@ def main():
     if not codes:
         return rl.finish()
 
-    todo = sorted(codes)[:a.limit] if a.limit else sorted(codes)
-    # ⛔ `--limit` 只能試跑：抓 1 檔就寫進去，日檔會從「明顯缺一整個市場」
-    #   變成「看起來齊了」——⚠ 那正是這一支要修的那種**看不出來的**壞法。
-    dry = a.dry_run or bool(a.limit)
-    if a.limit:
-        rl.info("⚠ --limit 試跑", f"只打 {len(todo)} 檔，⛔ 這一趟一律不寫檔")
-    rows, miss = [], []
-    for i, c in enumerate(todo, 1):
-        r, note = fetch_one(c, day, a.sleep)
-        if r is None:
-            miss.append((c, note))
-        else:
-            rows.append(to_universe(r, codes[c]))
-        if i % 50 == 0:
-            print(f"  [{i}/{len(todo)}] 取得 {len(rows)}、缺 {len(miss)}", flush=True)
+    # ── 兩條來源，⭐ 先試不必連外的那一條 ─────────────────────
+    dry = a.dry_run
+    if a.from_git:
+        rows, gnote = rows_from_git(a.from_git, day)
+        got = {r[H.index("stock_id")] for r in rows}
+        miss = [(c, "那個 ref 上也沒有") for c in sorted(codes) if c not in got]
+        todo = sorted(codes)
+        rl.info("⭐ 來源：另一個 git ref（⛔ 一個請求都不打）",
+                f"{a.from_git}　{gnote}")
+    else:
+        # ⛔ `--limit` 只能試跑：抓 1 檔就寫進去，日檔會從「明顯缺一整個市場」
+        #   變成「看起來齊了」——⚠ 那正是這一支要修的那種**看不出來的**壞法。
+        dry = dry or bool(a.limit)
+        todo = sorted(codes)[:a.limit] if a.limit else sorted(codes)
+        if a.limit:
+            rl.info("⚠ --limit 試跑", f"只打 {len(todo)} 檔，⛔ 這一趟一律不寫檔")
+        rows, miss = fetch_all(todo, codes, day, a.sleep)
 
-    rl.info("抓回來的", f"**{len(rows)}** 列／目標 {len(todo)} 檔"
+    rl.info("取回來的", f"**{len(rows)}** 列／母體 {len(codes)} 檔"
                         + (f"｜⚠ 缺 {len(miss)}：{miss[:5]}" if miss else ""))
     # ⛔ 只補一半比不補更糟：日檔會從「明顯缺一整個市場」變成「看起來齊了」。
     # ⛔ 分母是**母體**（len(codes)），不是這一趟打了幾檔（len(todo)）。
@@ -235,6 +294,8 @@ def main():
     rl.check("⭐ 其他市場的列數**一列都沒少**（⛔ 這一支修的就是這件事）",
              n_other == other, f"補之前 {other}｜補之後 {n_other}")
     rl.info("⚠ 與正常抓的列的差別",
+            f"{a.from_git} 上的列**就是當初正常抓的那一批**，逐欄原封不動"
+            if a.from_git else
             "月表**多** `transactions`、**少** `change` 與 `last_price`；"
             "`price_basis` 寫「均價（月表補回）」⇒ ⭐ 讀的人看得出這一批是補回來的")
     return rl.finish()
