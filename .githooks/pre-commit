@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ⛔ 這個 hook 存在的理由：1 小時 50 分鐘。
+#
+#   2026-09-10 run 34426373917：「回補」跑了 1h50m 是綠的，
+#   「Commit」1 秒失敗——`syntax error: unexpected end of file`，
+#   我批次改 workflow 時把 `if/else` 的 closing `fi` 切掉了。
+#
+#   ⚠ 我當時「驗過」，驗的是 `yaml.safe_load()`——**YAML 合法 ≠ 裡面的 shell 合法**。
+#   ⇒ 後來加了 `selftest_workflows.py`，但它排在 **workflow 裡**
+#     ——也就是**推出去、按下去、跑起來之後**才會叫。
+#   ⛔ 而壞掉的那一刻是在**本機 commit** 的時候。
+#
+# ⭐ 所以檢查要往前挪到這裡：改到 workflow／`.sh` 就驗，驗不過就不讓 commit。
+set -e
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+echo "$STAGED" | grep -qE '^\.github/workflows/.*\.ya?ml$|\.sh$' || exit 0
+echo "[pre-commit] 動到 workflow／shell ⇒ 驗語法"
+python3 selftest_workflows.py >/tmp/_wf.log 2>&1 || {
+  echo "⛔ workflow／shell 語法沒過，**不讓 commit**："
+  # ⛔ 印 tail 是錯的：後面全是 ok，真正的 ✗ 會被埋掉。
+  #   ⚠ 一個「擋得下來但看不出為什麼」的守門，跟沒有守門差不多——
+  #     人會直接 --no-verify 繞過去。⇒ 只印 ✗ 那幾行。
+  grep -E "^  ✗|失敗" /tmp/_wf.log | head -20
+  echo "   （要跳過：git commit --no-verify，⚠ 但那正是 1h50m 的來源）"
+  exit 1
+}
+tail -1 /tmp/_wf.log
