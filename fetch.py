@@ -51,6 +51,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 import runlog
+from twparse import roc_iso as _roc_iso
 
 # ────────────────────────────────────────────────────────────
 # 設定：要抓哪些股票
@@ -1070,6 +1071,18 @@ def _same_day(d, day):
         if m:
             g = m.group(1)
             return f"{int(g[:3]) + 1911}{g[3:]}"
+        # ⛔⛔ 2026-09-10 補：**斜線與連字號的日期原本抽不出來**
+        #   （`115/09/09`、`2026/09/09` 都回空字串）。
+        #   ⚠ 而抽不出來的後果不是報錯，是 `said` 留空 ⇒ 這道守門
+        #     **靜靜地放行**——⛔ 一道「看起來有、實際上沒在擋」的防線，
+        #     比沒有防線更糟：它會讓人以為這件事已經被守住了。
+        #   ⚠ 目前 TPEx 實際回的是 8 碼（`20260909`），所以還沒出事
+        #     ——⛔ 但「還沒」不是判準。
+        #   ⇒ 交給 `twparse.roc_iso`（那一支的格式與反例都測過了），
+        #     ⛔ 不要在這裡再長出第 11 份日期解析。
+        iso = _roc_iso(t.strip())
+        if iso:
+            return iso.replace("-", "")
         return ""
 
     # ★★ 2026-09-04：**只看 `date` 會被參數回音打穿。**
