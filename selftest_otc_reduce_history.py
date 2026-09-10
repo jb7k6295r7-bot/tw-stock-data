@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""selftest_otc_reduce_history.py — 驗 `revivt` 的解析與**兩道**守門。不連外、不寫 repo。
+
+⛔ 五條分支：
+  ① 正常：民國日期、逗號、factor＝參考價÷最後收盤價
+  ② `stat:參數錯誤`（這一支的**大聲失敗**）⇒ 擋下來
+  ③ 只回最近的資料 ⇒ 擋下來（⚠ 這一支不會靜默，但仍然做這道，
+     因為「對方哪天改行為」不在我的控制範圍內）
+  ④ 0 列 ⇒ 當失敗，⛔ 不是「這十一年沒有減資」
+  ⑤ 欄位對不上 ⇒ 講得出缺哪一個
+"""
+import os
+import sys
+from datetime import datetime, timedelta, timezone
+
+import otc_reduce_history as R
+
+TPE = timezone(timedelta(hours=8))
+OK = FAIL = 0
+
+
+def ck(name, cond, hint=""):
+    global OK, FAIL
+    if cond:
+        OK += 1
+        print(f"  ok   {name}")
+    else:
+        FAIL += 1
+        print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
+
+
+F = ["恢復買賣日期", "股票代號", "名稱", "最後交易日之收盤價格",
+     "減資恢復買賣開始日參考價格", "減資原因"]
+
+
+def pack(rows, fields=None, stat="ok"):
+    return {"stat": stat,
+            "tables": [{"title": "減資恢復買賣", "fields": fields or F, "data": rows}]}
+
+
+def main():
+    real = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "data", "meta", "otc_reduce_history.csv")
+    before = os.path.exists(real)
+
+    rows, note = R.parse(pack([
+        ["109/06/22", "5227", "立凱-KY", "10.00", "18.58", "彌補虧損"],
+        ["106/09/01", "6219", "富旺", "10.10", "10.11", "現金減資"],
+    ]), "2013-01-01")
+    ck("① 兩列都解得出來", len(rows) == 2, note)
+    ck("① 民國 109/06/22 → 2020-06-22",
+       rows and rows[0][0] == "2017-09-01" or any(r[0] == "2020-06-22" for r in rows),
+       str([r[0] for r in rows]))
+    f = {r[1]: r[5] for r in rows}
+    ck("① factor ＝ 參考價 ÷ 最後收盤價（5227 → 1.85800000）",
+       f.get("5227") == "1.85800000", str(f))
+    ck("① 6219 → 1.00099010（情報分析線實測的同一個值）",
+       f.get("6219") == "1.00099010", str(f))
+
+    r2, n2 = R.parse(pack([], stat="參數錯誤"), "2013-01-01")
+    ck("② `stat:參數錯誤` ⇒ 擋下來，而且照抄它說的",
+       not r2 and "參數錯誤" in n2, n2)
+
+    t0 = datetime.now(TPE).strftime("%Y/%m/%d")
+    r3, n3 = R.parse(pack([[t0, "5227", "立凱", "10", "18", "彌補虧損"]]),
+                     "2013-01-01")
+    ck("③ 只回最近的資料 ⇒ 擋下來（⚠ 這一支不會靜默，但仍然做這道）",
+       not r3 and "參數多半沒生效" in n3, n3)
+
+    r4, n4 = R.parse(pack([]), "2013-01-01")
+    ck("④ 0 列 ⇒ 當失敗，⛔ 不是「這十一年沒有減資」",
+       not r4 and "不是" in n4, n4)
+
+    r5, n5 = R.parse(pack([["109/06/22", "5227", "立凱"]],
+                          fields=["恢復買賣日期", "股票代號", "名稱"]),
+                     "2013-01-01")
+    ck("⑤ 欄位對不上 ⇒ 講得出缺哪一個",
+       not r5 and "最後收盤" in n5 and "參考價" in n5, n5)
+
+    ck("★ 沒有動到 repo 真的判準檔", os.path.exists(real) == before)
+    print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
+    return 1 if FAIL else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

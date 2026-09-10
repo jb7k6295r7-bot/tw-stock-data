@@ -876,6 +876,113 @@ def _probe_write(lines):
         f.write("\n".join(lines) + "\n")
 
 
+# ── ⭐ 上市的「發行股數」：`data/universe/daily/` 的 `shares` 欄十一年來全期是空的 ──
+#
+#   實測（2026-09-10，我方本地檔）：
+#       2026-09-08 twse 1,382 列｜shares 空 1,382（100.0%）
+#       2020-06-30 twse 1,100 列｜shares 空 1,100（100.0%）
+#       2015-01-05 twse   903 列｜shares 空   903（100.0%）
+#       上櫃同期：0.0%
+#   ⇒ 上市那一半**從來沒有過**。根因：`MI_INDEX?type=ALLBUT0999` 沒有那一欄，
+#     而上櫃的 `afterTrading/otc` 有 ⇒ 同一支解析器、兩種結果，看不出來。
+#   ⚠ `_data_audit.md` 也沒點名這件事（它只說「上櫃股數」是 B 級）。
+#
+#   市場情報分析線 2026-09-10 01:45 找到 `fund/MI_QFIIS` 有「發行股數」，
+#   實測 1,362 檔、涵蓋我方 1,374 檔裡的 1,357 檔。
+#
+# ⛔ 三道守門（每一道都對應今晚踩過的一個坑）：
+#   ① **回應日期必須是我請求的那一天**——TWSE 這一族端點對錯的日期參數
+#      **不報錯、靜靜回今天**（`dailyMarktVal` 今晚才踩過）。
+#   ② 欄位用**名稱**定位，對不上就整批拒收並回欄名，⛔ 不猜位置。
+#   ③ **0 列一律當失敗**，不是「那天沒有股票」。
+QFIIS_URL = (TWSE + "/fund/MI_QFIIS?date={ymd}&selectType=ALLBUT0999&response=json")
+
+
+def twse_shares(day, getter=None):
+    """→ ({代號: 發行股數字串}, note)。⛔ 拿不到回 ({}, 原因)，不丟例外、不擋當天其他資料。"""
+    ymd = day.replace("-", "")
+    raw, err = (getter or get)(QFIIS_URL.format(ymd=ymd))
+    if err or not raw:
+        return {}, f"抓不到：{str(err)[:90]}"
+    try:
+        d = json.loads(raw.decode("utf-8", "replace"))
+    except ValueError as ex:                                     # noqa: BLE001
+        # ⛔ 這裡**不可以**只當成「解析失敗」：TWSE 會被 CDN 擋成 HTTP 428 並回 HTML，
+        #   看起來就像 JSON 壞掉。市場情報分析線 2026-09-10 01:15 實測到的。
+        head = raw[:80].decode("utf-8", "replace").replace("\n", " ")
+        return {}, (f"回的不是 JSON（{str(ex)[:40]}）｜開頭={head!r}"
+                    "　⚠ 若開頭是 HTML，多半是**被 CDN 擋**，不是端點壞了")
+    tabs = _twse_tables(d)
+    if not tabs:
+        return {}, f"回應裡沒有表（stat={d.get('stat')!r}）"
+    t = tabs[0]
+    fields = [str(x) for x in (t.get("fields") or [])]
+    said = f"{t.get('title', '')} {d.get('date', '')}"
+    roc = f"{int(day[:4]) - 1911}年{int(day[5:7])}月{int(day[8:10])}日"
+    if ymd not in said and roc not in said.replace(" ", ""):
+        return {}, (f"⛔ 回應沒有講出我請求的日期（要 {ymd} 或 {roc}）"
+                    f"｜它說的是 {said[:70]!r}"
+                    "　⚠ 這一族端點日期參數寫錯會**靜靜回今天**")
+    # ⚠ 2026-09-10 市場情報分析線實測：這張表**四個年代欄位不同**——
+    #   2005 版 11 欄、2010 起 12 欄；2009 以後欄名從「外資…」全部改成「外資**及陸資**…」。
+    #   ⭐ 但 `發行股數` 那一欄名**四個年代完全相同**（都在索引 3）⇒ 我要的那一欄不受影響。
+    #   ⇒ 這裡只定位「代號」與「發行股數」兩欄，其餘一概不碰 ⇒ 改名不影響本支。
+    #   ⛔ 代號欄用「結尾是代號」比對，不要用 `"代號" in f`——
+    #     那會先撞上 `ISIN代號`（同一張表裡就有），把 ISIN 當成股票代號，
+    #     然後**每一列都對不上**，而且看起來像「官方那張表沒有這幾檔」。
+    i_code = i_sh = None
+    for i, f in enumerate(fields):
+        g = str(f).strip()
+        if i_code is None and g.endswith("代號") and "ISIN" not in g.upper():
+            i_code = i
+        if i_sh is None and "發行股數" in g:
+            i_sh = i
+    if i_code is None or i_sh is None:
+        return {}, f"欄位對不上（缺 {'代號' if i_code is None else '發行股數'}）：{fields}"
+    rows = t.get("data") or []
+    if not rows:
+        # ⚠ 2026-09-10 情報分析線實測：2015-01-01／01-02（非交易日）也是
+        #   `stat:OK`＋日期正確＋**0 列** ⇒ 那時候 0 列是**正確答案**不是失敗。
+        #   ⭐ 本支只在「那一天已經解析出行情列」之後才被呼叫（見 `fill_twse_shares`
+        #     的呼叫端 `if all_lines:`），所以走到這裡就一定是交易日 ⇒ 0 列是真的失敗。
+        return {}, (f"回了 0 列（{said[:50]!r}）⛔ 當失敗——"
+                    "本支只在有行情列的日子才會被呼叫，所以這天一定是交易日")
+    out = {}
+    for r in rows:
+        if not isinstance(r, list) or len(r) <= max(i_code, i_sh):
+            continue
+        code = str(r[i_code]).strip()
+        sh = str(r[i_sh]).replace(",", "").strip()
+        if code and sh and sh not in ("-", "--"):
+            out[code] = sh
+    return out, f"{len(rows)} 列｜取得 {len(out)} 檔的發行股數"
+
+
+def fill_twse_shares(lines, day, getter=None):
+    """把上市列的空 `shares` 補上。→ (補了幾列, note)
+
+    ⛔ **只補空的**：已經有值的不動（那是端點自己給的，優先）。
+    ⛔ 補不到不是錯誤——這一天照樣寫出去，只是那一欄仍然空。
+      ⚠ 但 note 一定要帶出去，否則「補不到」會被讀成「本來就沒有上市股」。
+    """
+    need = [r for r in lines
+            if str(r[4]) == "twse" and not str(r[13] or "").strip()]
+    if not need:
+        return 0, "上市列的 shares 都已經有值（或今天沒有上市列）"
+    m, note = twse_shares(day, getter=getter)
+    if not m:
+        return 0, f"✗ {note}"
+    n = 0
+    for r in need:
+        v = m.get(str(r[2]).strip())
+        if v:
+            r[13] = v
+            n += 1
+    return n, (f"{note}｜補上 {n}／{len(need)} 列"
+               + ("" if n == len(need) else
+                  f"　⚠ 有 {len(need) - n} 檔官方那張表沒有"))
+
+
 def _rows_from_twse(d):
     """TWSE 的 tables 裡找出「有證券代號與收盤價」的那張表。
 
@@ -1103,6 +1210,13 @@ def fetch_universe(today):
                 break
         if not got and market not in errs:
             errs[market] = "所有候選端點都失敗"
+
+    # ⭐ 上市的發行股數要另外補一發（`MI_INDEX` 沒有那一欄，見 `twse_shares` 的說明）。
+    #   ⛔ 補不到不擋當天的資料，但 note 一定要印出來——
+    #     否則「補不到」會被讀成「本來就沒有上市股」。
+    _n_sh, _note_sh = fill_twse_shares(all_lines, today)
+    probe.append(f"  發行股數（上市，MI_QFIIS）：{_note_sh}")
+    print(f"[fetch] 上市發行股數：{_note_sh}")
 
     # ★ 權證不寫進資料庫：不是股票，而且 2026-09-02 實測佔了上櫃回傳的 70%（4,844/5,709）。
     #   **排除幾檔要回報**，不要靜靜地丟掉。

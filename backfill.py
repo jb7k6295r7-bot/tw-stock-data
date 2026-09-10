@@ -26,6 +26,7 @@
 4. **休市日不是錯誤**：TWSE 回 `stat != OK` 就當休市，記錄後往下一天，不重試。
 """
 import argparse
+import csv
 import json
 import os
 import re
@@ -37,6 +38,10 @@ import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 import runlog
+# ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
+#   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
+#   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
+from fetch import _lock_dir, fill_twse_shares
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -305,6 +310,69 @@ def _kind(code):
     return "stock"
 
 
+def describe_response(d, want=None):
+    """把官方回應裡**我方平常丟掉的那些鍵**攤開來講。→ list[str]
+
+    ## ⛔ 為什麼這個要有一個共用函式
+
+    使用者 2026-09-10：「官方回應裡有 `notes` 欄，我一直沒讀。」
+    查完發現**我方完全沒讀**：`_tables()` 只取 `title`／`fields`／`data`，
+    其餘（`stat`／`date`／`notes`／`hints`／`params`／`total`…）
+    **全部丟掉，而且丟的時候沒有任何紀錄**——連「有這些鍵」都不知道。
+
+    ⭐ 而那些鍵至少有三個用處，每一個都對應一件我方**手工做過**的事：
+
+        total   官方自己說有幾列 ⇒ **免費的、每次請求的完整性斷言**
+                （我方為此另外造過 N₁、Σamount÷大盤、六張清單差集…）
+        params  端點把收到的參數**回顯** ⇒ 「參數有沒有生效」的直接檢查
+                （我方為此在三支程式裡各寫了一道「回應要講出我請求的那一天」）
+        notes   符號說明、涵蓋起始年、單位 ⇒ 可能是我方某些**推論的權威出處**
+
+    ⚠ 使用者同時定了一條規矩：
+    **「以後新端點第一件事就是把 `notes`／`hints`／`title` 印出來，再開始比對。」**
+    ⇒ 這個函式就是那條規矩的執行者。新端點的探針一律先呼叫它。
+      ⛔ 不要各自抄一份——同一段邏輯抄兩份今晚已經害過一次。
+
+    `want`：我送出去的參數 dict。給了就順便對 `params` 有沒有被換掉。
+    """
+    if not isinstance(d, dict):
+        return [f"⚠ 頂層不是 dict，是 {type(d).__name__}"]
+    tabs = _tables(d)
+    used = {"tables", "fields", "data", "title"}
+    used |= {k for k in d if k.startswith(("fields", "data", "title"))}
+    dropped = [k for k in sorted(d) if k not in used]
+    out = [f"頂層鍵 {sorted(d)}",
+           f"⭐ 平常被丟掉的鍵：{dropped}" if dropped else "（沒有被丟掉的鍵）"]
+    for k in ("title", "notes", "hints"):
+        if k in d:
+            v = d[k]
+            if isinstance(v, (list, tuple)):
+                out.append(f"  ── {k}（{len(v)} 項）")
+                out += [f"     {str(x)[:220]}" for x in v[:8]]
+            else:
+                out.append(f"  ── {k}：{str(v)[:300]}")
+    for k in dropped:
+        if k in ("title", "notes", "hints"):
+            continue
+        v = d[k]
+        out.append(f"  ── {k}：{json.dumps(v, ensure_ascii=False)[:260]}"
+                   if isinstance(v, (dict, list)) else f"  ── {k}：{str(v)[:260]}")
+    n_data = sum(len(t.get("data") or []) for t in tabs)
+    if d.get("total") is not None:
+        same = str(d["total"]).strip() == str(n_data)
+        out.append(f"⭐ total={d['total']}｜解析出的列數={n_data}　"
+                   + ("✓ 一致" if same else "⚠ **對不上** ⇒ 這一趟少收了東西"))
+    if want and isinstance(d.get("params"), dict):
+        bad = {k: (v, d["params"].get(k)) for k, v in want.items()
+               if k in d["params"] and str(d["params"][k]) != str(v)}
+        miss = [k for k in want if k not in d["params"]]
+        out.append("⭐ params 對帳："
+                   + ("✓ 我送的參數都被原樣回顯" if not bad and not miss else
+                      f"⚠ **被換掉的 {bad}**｜沒回顯的 {miss}"
+                      "　⇒ 被換掉＝那個參數是假的（TWTAWU 的 `date=` 就是這樣）"))
+    return out
+
+
 def _tables(d):
     if not isinstance(d, dict):
         return []
@@ -474,11 +542,20 @@ def parse_twse(d, day, market="twse"):
                 chg = _num(r[i_sign])
             else:
                 chg = ""
+            # ⛔⛔ 這裡原本是
+            #     `lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")`
+            #   `chg` 是**字串**，而 `"0.0"` 是 truthy ⇒ **整天鎖死在平盤被判成跌停**。
+            #   ⚠ `fetch.py` 2026-09-08 已經修好（`_lock_dir`），
+            #     **但 `backfill.py` 這一份沒有跟著修** ⇒ 同一個 bug 留了兩份，
+            #     修好的那份天天跑、沒修的那份只有回補才跑，所以一直沒被發現。
+            #   ⭐ 是 2026-09-10 那趟**單日試跑**照出來的：
+            #     重抓 2026-09-08 之後，23 列的 `limit` 從 `flat` 變回 `down`
+            #     ——`fix_limit.py` 修好的 50,382 列會被回補**整批打回原形**。
+            #   ⇒ 直接用 `fetch._lock_dir`，⛔ 不要在這裡再抄一份邏輯出來。
             lim = ""
             if o and h and l and c and o == h == l == c:
-                lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
-            # ⛔ 沒有成交價的列不判漲跌停：沒有價格就沒有「停」可言。
-            #   （上面那個條件本來就過不了，這一行是把意圖寫出來，不是修 bug。）
+                lim = _lock_dir(chg)
+            # ⛔ 沒有成交價的列不判漲跌停（上面的條件本來就過不了，這行是寫出意圖）。
             out.append([f"{day}_{code}", day, code,
                         str(r[i_name]).strip() if i_name is not None else "", market,
                         o, h, l, c,
@@ -625,14 +702,34 @@ def fetch_day_market(day, market, urls, probe_lines=None):
 
 
 def write_day(day, lines):
+    """寫一天的日檔。⛔ **只覆蓋這一趟真的抓了的那些市場。**
+
+    ⚠ 2026-09-10 實測的代價：`--run --markets twse,tpex --force` 重抓 2026-09-08，
+      結果那一天的 **363 列興櫃（`emerging`）整批消失**——因為這裡是整檔覆蓋，
+      而興櫃不是走這條路寫的（`fetch.py` 寫的）。
+      ⛔ 而且它看起來完全正常：檔案在、列數還有兩千多、二市的資料都對。
+    ⇒ 以「這一趟抓了哪些市場」為界：**沒抓的市場，原檔那些列原封不動留著。**
+    """
     kept = [r for r in lines if _kind(r[2]) != "warrant"]
     if not kept:
         return 0
     os.makedirs(DAILY_DIR, exist_ok=True)
     path = os.path.join(DAILY_DIR, f"{day}.csv")
+    mine = {str(r[4]) for r in kept}          # 這一趟寫的市場（HEADER 第 5 欄是 market）
+    keep_old = []
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            rd = csv.DictReader(f)
+            for r in rd:
+                if (r.get("market") or "") not in mine:
+                    keep_old.append([r.get(h, "") for h in HEADER])
+    if keep_old:
+        print(f"[backfill] {day}：保留其他市場的 {len(keep_old)} 列"
+              f"（這一趟只寫 {sorted(mine)}）")
+    rows = kept + keep_old
     with open(path, "w", encoding="utf-8") as f:
         f.write(",".join(HEADER) + "\n")
-        for r in sorted(kept, key=lambda r: r[2]):
+        for r in sorted(rows, key=lambda r: str(r[2])):
             f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
     return len(kept)
 
@@ -1329,6 +1426,11 @@ def cmd_run(args):
     #     `_missing_rows_by_day.csv` 2,848 天裡 **missing=0 的有 0 天**。
     #     ⛔ 如果哪天這個前提不成立，那一天會被每趟重抓——白費，但不會出錯。
     if getattr(args, "need_notrade", False):
+        # ⚠ 判準要**同時**涵蓋這一趟要補的兩件事，少一件就會留下靜默的洞：
+        #     ① 無成交的列（`price_basis == '無成交'`）
+        #     ② 上市的發行股數（十一年來全期是空的）
+        #   ⛔ 只看 ① 的話：某天補到了無成交列、但 MI_QFIIS 那一發失敗
+        #     ⇒ 那天從此被跳過，`shares` 永遠是空的，而且看不出來。
         has = set()
         if os.path.isdir(DAILY_DIR):
             for n in os.listdir(DAILY_DIR):
@@ -1336,7 +1438,18 @@ def cmd_run(args):
                     continue
                 try:
                     with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
-                        if any("無成交" in ln for ln in f):
+                        rd = csv.DictReader(f)
+                        notrade = False
+                        tw = tw_sh = 0
+                        for r in rd:
+                            if r.get("price_basis") == "無成交":
+                                notrade = True
+                            if r.get("market") == "twse":
+                                tw += 1
+                                if (r.get("shares") or "").strip():
+                                    tw_sh += 1
+                        # 沒有上市列的日子（例如只有上櫃資料的舊檔）不要求 ②
+                        if notrade and (tw == 0 or tw_sh > 0):
                             has.add(n[:-4])
                 except OSError:
                     pass
@@ -1382,6 +1495,16 @@ def cmd_run(args):
             # 某個市場整條失敗多半是被限流 → 多等一下再打下一個，
             # 否則接下來的日子會連鎖失敗（2026-09-03 2015 回補實測到 twse 失敗）
             time.sleep(SLEEP * 4 if str(src).startswith("all_failed") else SLEEP)
+        # ⭐ 上市的發行股數要另外補一發：`MI_INDEX` 沒有那一欄，
+        #   ⇒ `data/universe/daily/` 的 twse 列 `shares` **十一年來全期是空的**
+        #   （2026-09-10 實測：2015／2020／2026 三個抽樣日都是 100.0% 空）。
+        #   ⛔ 補不到不擋這一天，但 note 一定要帶出去，
+        #     否則「補不到」會被讀成「本來就沒有上市股」。
+        if all_lines:
+            n_sh, note_sh = fill_twse_shares(all_lines, day)
+            if n_sh or str(note_sh).startswith("✗"):
+                notes.append(f"股數:{note_sh}")
+            time.sleep(SLEEP)
         n = write_day(day, all_lines)
         note = ";".join(notes) or "ok"
         append_coverage(day, per, note)
