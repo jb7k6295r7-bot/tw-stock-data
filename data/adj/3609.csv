@@ -1,4 +1,4 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2018-08-17,0.98630137,0.92627815,14.6,14.4,除息,exright
-2019-08-19,0.97101449,0.93914312,17.25,16.75,除息,exright
-2021-08-27,0.96717724,0.96717724,45.7,44.2,除息,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2018-08-17,0.98630137,,0.92627815,14.6,14.4,除息,exright
+2019-08-19,0.97101449,,0.93914312,17.25,16.75,除息,exright
+2021-08-27,0.96717724,,0.96717724,45.7,44.2,除息,exright

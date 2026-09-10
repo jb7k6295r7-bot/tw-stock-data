@@ -1,4 +1,4 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2016-10-17,4.00000000,3.10235359,3.1,12.4,彌補虧損,reduce
-2017-03-16,0.77857143,0.77558840,14,10.9,除權,exright
-2018-09-03,0.99616858,0.99616858,13.05,13,除權,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2016-10-17,4.00000000,,3.10235359,3.1,12.4,彌補虧損,reduce
+2017-03-16,0.77857143,,0.77558840,14,10.9,除權,exright
+2018-09-03,0.99616858,,0.99616858,13.05,13,除權,exright

@@ -1,2 +1,2 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2018-03-12,2.34034417,2.34034417,5.23,12.24,彌補虧損,reduce
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2018-03-12,2.34034417,,2.34034417,5.23,12.24,彌補虧損,reduce

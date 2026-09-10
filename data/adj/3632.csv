@@ -1,4 +1,4 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2017-08-23,0.88109756,1.21254228,16.4,14.45,除權,exright
-2018-10-24,0.96833333,1.37617255,12,11.62,除權,exright
-2020-10-19,1.42117647,1.42117647,8.5,12.08,彌補虧損,reduce
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2017-08-23,0.88109756,,1.21254228,16.4,14.45,除權,exright
+2018-10-24,0.96833333,,1.37617255,12,11.62,除權,exright
+2020-10-19,1.42117647,,1.42117647,8.5,12.08,彌補虧損,reduce

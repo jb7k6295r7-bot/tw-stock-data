@@ -1,3 +1,3 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2015-08-13,0.96672213,0.95240032,6.01,5.81,除息,exright
-2017-07-25,0.98518519,0.98518519,13.5,13.3,除息,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2015-08-13,0.96672213,,0.95240032,6.01,5.81,除息,exright
+2017-07-25,0.98518519,,0.98518519,13.5,13.3,除息,exright

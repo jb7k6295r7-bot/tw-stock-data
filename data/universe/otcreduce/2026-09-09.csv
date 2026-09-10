@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2026-09-09,6461,16.65,26.92,彌補虧損,26.9,0.0,finmind
