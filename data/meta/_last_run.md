@@ -560,16 +560,17 @@
 - ok　寫完之後**一列都不剩**　（還有 0 列）
 
 
-## feeds:tib　✓ 正常
+## feeds:tib　✗ 有問題
 
-最後執行：2026-09-11T03:04:49+08:00（台北）
+最後執行：2026-09-11T03:42:09+08:00（台北）
 
-- **區間**：2023-01-01 ~ 2026-09-10｜待處理 1 天
-- **結果**：有資料 1 天、無資料/休市 0 天、失敗 0 天
+- **區間**：2023-01-01 ~ 2023-12-31｜待處理 238 天
+- **結果**：有資料 237 天、無資料/休市 0 天、失敗 1 天
+- **⛔ 最後一則「沒問到」的原因**：JSON JSONDecodeError｜611B｜開頭：<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"｜URL=www.twse.com.tw/rwd/zh/afterTrading/STOCK_TIB?date=20231214&response=json
 
 檢查：
 - ok　跑完整個區間，沒有提前收手　（跑完）
-- ok　沒有「連問都問不到」的日子　（0 天）
+- **✗**　沒有「連問都問不到」的日子　（失敗 1 天）
 - ok　沒有**未歸因**的驗算不符列　（0 天）
 
 ## esb_day_repair　✓ 正常
