@@ -1041,7 +1041,7 @@ def fill_twse_shares(lines, day, getter=None):
 
 
 def first_date_compact(v):
-    """抽出字串裡**第一個**日期，正規化成西元 YYYYMMDD；抽不到回空字串。
+    r"""抽出字串裡**第一個**日期，正規化成西元 YYYYMMDD；抽不到回空字串。
 
     ★ 不可以用「把所有數字串起來再取前 8 碼」——
       `title` 長成「104年07月16日 至 104年07月16日」，
