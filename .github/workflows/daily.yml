@@ -96,6 +96,7 @@ jobs:
           python selftest_reduce.py
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py
+          python selftest_schema_audit.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
@@ -884,6 +885,20 @@ jobs:
         if: always()
         continue-on-error: true
         run: python db_status.py --write
+
+      # ⭐⭐ 表頭版本 ＋ 每欄填值率（2026-09-10 加）。⛔ 只讀，不連外，約 1 秒。
+      #   ⚠ 它擋的是**同一天出現的兩種相反誤判**：
+      #     `margin.note`      欄位不在、但歷史抓得回來   ⇒ **低估**了自己有的
+      #     `daily.last_price` 欄位在、那兩天卻沒有值      ⇒ **高估**了自己有的
+      #   ⛔ 而「看填值率」只做對了一半：`last_price` 全庫 0.05% 是**設計**
+      #     （只有興櫃該有值）⇒ 報告一律逐 `market` 列出分子分母，
+      #     ⭐ 讓「只有某一群該有值」自己顯形，而不是替它下結論。
+      #   ⚠ 順帶：多個表頭版本的**日期區間**每天重跑 ⇒ 前緣會動、疤痕不會動，
+      #     **看兩天就分得出來**是回補進度還是一次事故。
+      - name: 表頭版本與每欄填值率
+        if: always()
+        continue-on-error: true
+        run: python schema_audit.py
 
       # ★ 交易日曆（只補當月，一個請求）。
       #   `data/meta/calendar_twse.csv` 是「哪一天該有資料」的**唯一外部判準**——
