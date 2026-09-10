@@ -27,10 +27,10 @@
 
   ── /tpex_index｜櫃買指數歷史資料  ★ 櫃買指數＝上櫃大盤，名字就寫著歷史
      https://www.tpex.org.tw/openapi/v1/tpex_index
-     ✓ 713 bytes｜list[dict]｜列數 7
+     ✓ 815 bytes｜list[dict]｜列數 8
      欄位：['Date', 'Open', 'High', 'Low', 'Close', 'Change']
      首列：{"Date": "20260901", "Open": "402.12", "High": "412.90", "Low": "402.12", "Close": "410.77", "Change": "9.07"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -38,10 +38,10 @@
 
   ── /tpex_reward_index｜櫃買指數與報酬指數之收市指數
      https://www.tpex.org.tw/openapi/v1/tpex_reward_index
-     ✓ 513 bytes｜list[dict]｜列數 7
+     ✓ 586 bytes｜list[dict]｜列數 8
      欄位：['Date', 'TPExIndex', 'TPExTotalReturnIndex']
      首列：{"Date": "1150901", "TPExIndex": "410.77", "TPExTotalReturnIndex": "763.21"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -127,7 +127,7 @@
          tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
        ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3878763ebd05f67',t:'MTc4ODk3MDkxNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a38c5b6b0d59acf3',t:'MTc4OTAyMTU0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -189,8 +189,8 @@
 [5] 這一輪的結論
      ✓ 有 8 個候選端點回了帶日期序列的資料：
        /tpex_daily_trading_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpex_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpex_reward_index：7 天｜2026-09-01 ~ 2026-09-09
+       /tpex_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpex_reward_index：8 天｜2026-09-01 ~ 2026-09-10
        /tpex50_index：7 天｜2026-09-01 ~ 2026-09-09
        /tpcgi_reward_index：7 天｜2026-09-01 ~ 2026-09-09
        /tpci_reward_index：7 天｜2026-09-01 ~ 2026-09-09

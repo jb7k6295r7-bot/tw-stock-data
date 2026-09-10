@@ -1,0 +1,47 @@
+# MOPS／OpenAPI 探針（丁級 11 終點驗證）
+# ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果
+
+── OpenAPI https://openapi.twse.com.tw/v1/opendata/t187ap05_L
+  ✓ 1,085 筆；第一筆的鍵 = ['備註', '公司代號', '公司名稱', '出表日期', '營業收入-上月比較增減(%)', '營業收入-上月營收', '營業收入-去年同月增減(%)', '營業收入-去年當月營收', '營業收入-當月營收', '產業別', '累計營業收入-前期比較增減(%)', '累計營業收入-去年累計營收', '累計營業收入-當月累計營收', '資料年月']
+  ── `出表日期` 有 1 個相異值：['1150817']
+  ── `資料年月` 有 1 個相異值：['11507']
+  ⇒ ⛔ 期別欄只有一個值 ⇒ **只給最新一期**，沒有歷史。
+
+── OpenAPI https://openapi.twse.com.tw/v1/opendata/t187ap05_O
+  ⛔ 不是 JSON（JSONDecodeError）；前 200 bytes：b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml">\n<head>\n<meta http-equiv="Content-T'
+
+── 橋接 ajax_t21sc03（{'month': '01'}）
+  POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t21sc03 year=114 {'month': '01'}
+    ⛔ URLError: <urlopen error _ssl.c:993: The handshake operation timed out>
+  POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t21sc03 year=110 {'month': '01'}
+    頂層鍵 ['code', 'datetime', 'message', 'result']
+    ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
+      ── code：200
+      ── datetime：115/09/10 14:31:26
+      ── message：查詢成功
+      ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
+    → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018…（blob 長 316）
+    ⛔ 取舊站失敗：RemoteDisconnected: Remote end closed connection without response
+  ⇒ **未驗**：至少一邊沒取回來 ⇒ ⛔ 不可以說這條路通了
+
+── 橋接 ajax_t163sb04（{'season': '02'}）
+  POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=114 {'season': '02'}
+    頂層鍵 ['code', 'datetime', 'message', 'result']
+    ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
+      ── code：200
+      ── datetime：115/09/10 14:31:35
+      ── message：查詢成功
+      ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
+    → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa8…（blob 長 317）
+    ✓ 取回 1,628,079 bytes
+  POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=110 {'season': '02'}
+    頂層鍵 ['code', 'datetime', 'message', 'result']
+    ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
+      ── code：200
+      ── datetime：115/09/10 14:32:29
+      ── message：查詢成功
+      ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
+    → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa8…（blob 長 317）
+    ✓ 取回 1,505,457 bytes
+  ⇒ year=114 取回 1,628,079 bytes；year=110 取回 1,505,457 bytes
+  ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
