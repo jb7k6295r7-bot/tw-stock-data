@@ -130,12 +130,40 @@ def main():
         ck(f"{os.path.basename(sh)} 語法", p.returncode == 0,
            p.stderr.strip()[:200])
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 每一支自測都要**有人跑它**（2026-09-10 加）
+    #
+    # ⛔ 這條的代價當場就看得到：`selftest_reduce.py` **紅了不知道多久**，
+    #   而沒有任何地方會叫——因為八支 workflow 的自測是**逐支列名**的，
+    #   ⚠ 新增一支自測時，沒有任何東西提醒你去列它。
+    #   （它紅的原因也很典型：`ADJ_HEADER` 插了一欄，測試裡寫死的位置就錯位了。）
+    #
+    # ⚠ 這跟 CLAUDE.md 第四點二同一個形狀：**「自測存在」≠「自測會被跑」**。
+    #   ⛔ 一支沒有人跑的自測，跟沒有那支自測**完全等價**，
+    #     ⭐ 而它更糟：它會讓人以為那一塊有守門。
+    #
+    # ⚠ 判準是「**有沒有任何一支 workflow 提到它的檔名**」，
+    #   ⛔ 不是「跑起來會不會過」——那是各支自測自己的事。
+    # ══════════════════════════════════════════════════════════════
+    wf_text = "".join(io.open(f, encoding="utf-8").read() for f in files)
+    orphan = [os.path.basename(t)
+              for t in sorted(glob.glob(os.path.join(here, "selftest_*.py")))
+              if os.path.basename(t) not in wf_text]
+    ck("⭐⭐ 每一支 selftest_*.py 都至少有一支 workflow 會跑它",
+       not orphan,
+       f"⛔ 沒有任何 workflow 跑：{orphan}"
+       "　⇒ 它紅了也不會有人知道（`selftest_reduce.py` 就是這樣紅著的）")
+
     # ── ⛔ 反向驗：這支檢查自己有沒有效 ──
     #   ⚠ 沒有這一段的話，一支「永遠說 ok」的檢查跟真的一模一樣。
     broken = subprocess.run(["bash", "-n"], input="if true; then echo x",
                             capture_output=True, text=True)
     ck("★ 反向驗：故意少一個 `fi` 時 `bash -n` 真的會抓到",
        broken.returncode != 0, "⛔ 連壞的都說好 ⇒ 這支檢查是死的")
+    # ⭐ 孤兒那一道也要反向驗：⛔ 沒證明過會失敗的檢查不算檢查。
+    ck("★ 反向驗：一個不存在於任何 workflow 的檔名**確實**會被判成孤兒",
+       "selftest_這支不存在_zzz.py" not in wf_text,
+       "⛔ 判準是子字串比對，而它連假名字都說有 ⇒ 這一道是死的")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")

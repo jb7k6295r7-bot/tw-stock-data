@@ -33,8 +33,12 @@ if echo "$STAGED" | grep -qE '\.py$'; then
   tail -2 /tmp/_dup.log | head -1
 fi
 
-echo "$STAGED" | grep -qE '^\.github/workflows/.*\.ya?ml$|\.sh$' || exit 0
-echo "[pre-commit] 動到 workflow／shell ⇒ 驗語法"
+# ⛔ 第三道（2026-09-10 加）：**新增一支自測，也要驗 workflow。**
+#   `selftest_workflows.py` 現在多一條「每一支 selftest_*.py 都要有人跑它」——
+#   ⚠ 而觸發它的時機正是**新增自測的那一刻**，⛔ 不是改 workflow 的那一刻。
+#   （`selftest_reduce.py` 就是這樣紅著沒人知道：它從來沒被列進任何 workflow。）
+echo "$STAGED" | grep -qE '^\.github/workflows/.*\.ya?ml$|\.sh$|(^|/)selftest_[^/]*\.py$' || exit 0
+echo "[pre-commit] 動到 workflow／shell／自測 ⇒ 驗語法＋驗每支自測都有人跑"
 python3 selftest_workflows.py >/tmp/_wf.log 2>&1 || {
   echo "⛔ workflow／shell 語法沒過，**不讓 commit**："
   # ⛔ 印 tail 是錯的：後面全是 ok，真正的 ✗ 會被埋掉。

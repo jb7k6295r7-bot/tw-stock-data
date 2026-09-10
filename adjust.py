@@ -197,8 +197,15 @@ def trading_days():
 # ★ `event` 是 2026-09-06 新增的**最後一欄**（exright／reduce）。
 #   加在最後是刻意的：用欄名定位的讀取端不受影響，
 #   而要區分「這個因子是除息還是減資」的人查得到——兩者的意義完全不同。
-ADJ_HEADER = ["date", "factor", "cum_factor", "pre_close", "ref_price",
-              "kind", "event"]
+# ⭐⭐ 2026-09-10 新增 `factor_official`（K線線 20:20 裁定）。
+#   **同一個公司行動有兩個正確的數字，因為它們回答兩個不同的問題：**
+#     還原（持有人的財富怎麼變）→ 官方**換股比例**，無捨入殘差
+#     斷點門檻（當天開盤從哪裡開始）→ 官方**參考價**回推的那一個
+#   ⛔ 所以 `factor` **原封不動**（硬斷點偵測的 0.55／1.8 是從參考價推出來的，
+#     換掉會讓邊界情形翻面——K線線實測 4946 剛好 1.800、6613 剛好 0.544），
+#   ⭐ 而 `cum_factor`（**還原用的那一個**）改用 `factor_official`（有的話）。
+ADJ_HEADER = ["date", "factor", "factor_official", "cum_factor",
+              "pre_close", "ref_price", "kind", "event"]
 IDX_HEADER = ["stock_id", "market", "events", "reduce_events",
               "date_min", "date_max", "cum_factor_first", "checked", "mismatch"]
 
@@ -233,7 +240,7 @@ def read_events():
                 #   寫死索引——寫死的話減資檔會整批被判成欄位不符而跳過。
                 ix = {k: (head.index(k) if k in head else None) for k in
                       ("date", "stock_id", "pre_close", "ref_price",
-                       "kind", "value", "reason")}
+                       "kind", "value", "reason", "official_factor")}
                 if any(ix[k] is None for k in
                        ("date", "stock_id", "pre_close", "ref_price")):
                     print(f"[adj] {name} 欄位不符，跳過：{head}", file=sys.stderr)
@@ -253,6 +260,10 @@ def read_events():
                     if not pre or not ref or pre <= 0 or ref <= 0:
                         continue
                     f = ref / pre
+                    # ⭐ 官方換股比例回推的因子。⚠ 只有上櫃減資（`revivt`）有；
+                    #   ⛔ 沒有就留 None——**不要用 `f` 頂替**，
+                    #   那會讓「有官方值」與「沒有」在檔案裡長得一模一樣。
+                    fo = _f(g("official_factor"))
                     val = _f(g("value"))
 
                     # ★★ 2026-09-04 修正：原本寫死 `f <= 1.0001`，理由是
@@ -278,7 +289,7 @@ def read_events():
                                   f"f={f:.4f} 權值+息值={val}", file=sys.stderr)
                             continue
                     kind = (g("kind") or g("reason")).strip()
-                    ev[code].append((date, f, pre, ref, kind, market, srck))
+                    ev[code].append((date, f, pre, ref, kind, market, srck, fo))
                     n_src[srck] += 1
 
     # ★★ **同一（代號,日期）在減資表裡會重複出現。** 2026-09-06 實測：
@@ -385,7 +396,7 @@ def build(code, rows, cal, verify=True):
 
     checked = mismatch = skipped = 0
     if closes:
-        for (d, f, pre, ref, kind, mk, srck) in rows:
+        for (d, f, pre, ref, kind, mk, srck, _fo) in rows:
             # ⛔ 判準是「**這種事件會不會停止買賣**」，不是「是不是減資」。
             #   2026-09-09 接上 parvalue 與 etfsplit 時抓到：原本寫死
             #   `srck == "reduce"`，於是那兩種會掉進下面的除權息分支，
@@ -431,10 +442,17 @@ def build(code, rows, cal, verify=True):
 
     # 累積因子由後往前連乘
     lines, cum = [], 1.0
-    for (d, f, pre, ref, kind, mk, srck) in reversed(rows):
-        cum *= f
-        lines.append([d, f"{f:.8f}", f"{cum:.8f}", f"{pre:g}", f"{ref:g}",
-                      kind, srck])
+    for (d, f, pre, ref, kind, mk, srck, fo) in reversed(rows):
+        # ⭐⭐ 還原用官方比例（有的話），⛔ 不是參考價回推的那一個。
+        #   ⚠ 殘差是**系統性**的（一律往「印到分」那一格捨入）
+        #   ⇒ 在長序列**連乘**的還原價上不會互相抵銷（K線線 20:20）。
+        # ⛔ 一定要 `> 0`，⚠ 不是 `if fo`：**負值是 truthy**
+        #   ⇒ 一個負的因子會讓整段還原價**變號**，而 `cum_factor` 欄位看起來
+        #     只是「有個負數」——⭐ 這一條是 selftest ⑤ 當場抓到的，不是我 review 出來的。
+        use_off = fo is not None and fo > 0
+        cum *= (fo if use_off else f)
+        lines.append([d, f"{f:.8f}", f"{fo:.8f}" if use_off else "",
+                      f"{cum:.8f}", f"{pre:g}", f"{ref:g}", kind, srck])
     lines.reverse()
     return lines, checked, mismatch, skipped
 
@@ -513,9 +531,17 @@ def main():
                 fh.write(",".join(r) + "\n")
         if a.verify and chk == 0 and skp == 0:
             no_price += 1
-        n_red = sum(1 for r in lines if r[6] == "reduce")
+        # ⛔⛔ 這裡原本寫死 `r[6]`（event 欄）。2026-09-10 在 `ADJ_HEADER`
+        #   中間插入 `factor_official` 之後，那個索引就指到 `kind` 了
+        #   ——⚠ 而它不會炸：`kind` 是「息／權／除權」這種字，
+        #     比對 `== "reduce"` 永遠是 False ⇒ **減資事件數靜靜變成 0**。
+        #   ⇒ 一律用欄名定位（`_index.csv` 的 `cum_factor_first` 同理）。
+        _i = {k: ADJ_HEADER.index(k) for k in
+              ("event", "cum_factor")}
+        n_red = sum(1 for r in lines if r[_i["event"]] == "reduce")
         idx.append([code, rows[0][5], str(len(lines)), str(n_red),
-                    lines[0][0], lines[-1][0], lines[0][2], str(chk), str(mis)])
+                    lines[0][0], lines[-1][0], lines[0][_i["cum_factor"]],
+                    str(chk), str(mis)])
         tot_ev += len(lines); tot_chk += chk; tot_mis += mis; tot_skip += skp
 
     with open(os.path.join(ADJ_DIR, "_index.csv"), "w", encoding="utf-8") as fh:

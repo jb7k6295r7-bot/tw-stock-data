@@ -164,17 +164,30 @@ out = io.open(os.path.join(D, "adj/3536.csv"), encoding="utf-8").read()
 print("  data/adj/3536.csv:")
 for ln in out.rstrip().split("\n"):
     print("    " + ln)
-body = [l.split(",") for l in out.rstrip().split("\n")[1:]]
+# ⛔⛔ 2026-09-10：這裡原本用**寫死的位置**取欄（`body[0][2]` ＝ cum_factor）。
+#   K線線裁定的 `factor_official` 插進 `ADJ_HEADER` 之後，第 2 欄變成
+#   `factor_official`（減資才有值、除權息是空的）
+#   ⇒ `float("")` ⇒ **這支自測直接爆掉**。
+#   ⚠ 而 `adjust.py` 那邊的同一個病更陰：`r[6] == "reduce"` 取到的變成 `kind`
+#     ⇒ ⛔ 不爆、只是**減資事件數靜靜變成 0**。
+#   ⇒ 一律**按欄名取**，欄名從檔案自己的表頭讀（⛔ 不從 `ADJ_HEADER` 抄，
+#     那樣程式與測試會一起錯、一起綠）。
+_ADJ_LINES = out.rstrip().split("\n")
+_AI = {k: i for i, k in enumerate(_ADJ_LINES[0].split(","))}
+body = [l.split(",") for l in _ADJ_LINES[1:]]
+check({"date", "factor", "cum_factor", "event"} <= set(_AI),
+      f"data/adj 的表頭認得出這四欄（實得 {sorted(_AI)}）")
 check(len(body) == 2,
       f"只剩兩個事件（三列重複的減資去重＋同日除權息去重），實得 {len(body)}")
 check("重複列丟棄 2 列" in r.stdout, "重複列有被算出來並報告")
-check(body[0][6] == "reduce" and body[1][6] == "exright", "event 欄標對來源")
-f_red, f_ex = float(body[0][1]), float(body[1][1])
+check(body[0][_AI["event"]] == "reduce" and body[1][_AI["event"]] == "exright", "event 欄標對來源")
+f_red, f_ex = (float(body[0][_AI["factor"]]),
+               float(body[1][_AI["factor"]]))
 check(abs(f_red - 13.33 / 6.58) < 1e-8,
       f"減資因子 = 13.33/6.58 = {f_red:.6f}（**不是連乘後的 8.32**）")
 check(f_red < 3, "因子沒有被重複列連乘")
-check(abs(float(body[0][2]) - f_red * f_ex) < 1e-7, "累積因子由後往前連乘")
-check(abs(float(body[1][2]) - f_ex) < 1e-8, "最後一個事件的累積因子 = 自己")
+check(abs(float(body[0][_AI["cum_factor"]]) - f_red * f_ex) < 1e-7, "累積因子由後往前連乘")
+check(abs(float(body[1][_AI["cum_factor"]]) - f_ex) < 1e-8, "最後一個事件的累積因子 = 自己")
 # 6.58 是 2015-03-16 的收盤（停牌前最後一筆），不是 03-19（日曆前一交易日、該檔無列）
 check("前收盤對不上（reduce）" not in r.stderr,
       "減資核對用「停牌前最後一筆收盤」（03-16 的 6.58）→ 0 不符")
@@ -190,7 +203,7 @@ check(idx.split("\n")[1].split(",")[3] == "1", "_index 記到 1 個減資事件"
 check("尚未發生的事件 1 筆，不採用" in r.stdout, "未來日期的事件被擋下並報告")
 check(all(l.split(",")[0] != "2015-09-01" for l in out.rstrip().split("\n")[1:]),
       "未來事件沒有進 data/adj")
-check(abs(float(body[1][2]) - f_ex) < 1e-8,
+check(abs(float(body[1][_AI["cum_factor"]]) - f_ex) < 1e-8,
       "最新事件的累積因子仍是 1 個因子（未被未來事件汙染）")
 
 print("── 5. cmd_probe：查無資料不可以被讀成「端點不可用」──")

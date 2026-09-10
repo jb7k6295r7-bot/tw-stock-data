@@ -44,10 +44,10 @@
 **靜默、每個數字都是真的、只是屬於另一個年代。**
 本檔所有候選都必須帶日期參數，且一律經過 `_same_day()` 核對。
 """
-
 import argparse
 import calendar          # ★ cmd_probe 與 _months 都要用；原本只在 _months 內 import，
                          #   cmd_probe 改成逐月探測後會 NameError
+import csv
 import io
 import json
 import os
@@ -56,6 +56,7 @@ import sys
 import time
 
 import backfill as B
+import fetch as _F
 import runlog
 
 _ROOT = B._ROOT
@@ -219,6 +220,19 @@ def _sbl_seg_from_groups(d):
     return None
 
 
+_DROP_WHO_RE = re.compile(r"\('(\d[\dA-Za-z]*)',\s*'([^']*)'\)")
+
+
+def _drop_codes(note):
+    """從說明的樣本裡撈出 (代號, 原因)。→ list。⛔ 撈不到回空清單。
+
+    ⚠ 這是**從給人看的字串反向取值**，本來就是這個檔案警告過的做法
+    ⇒ 之所以可以，是因為那串樣本是我方自己在 `_drop_note()` 裡格式化的，
+      ⛔ 不是官方回應的原文；⚠ 而且撈不到只會讓歸因少一筆，不會誤判成瑕疵。
+    """
+    return _DROP_WHO_RE.findall(str(note))
+
+
 def _tally_drop(n_written, day, note):
     """→ (這一天丟了幾列, 要印出來的說明)。⛔ 抽成函式是為了讓 selftest 測得到。
 
@@ -231,6 +245,49 @@ def _tally_drop(n_written, day, note):
     n_drop = _dropped_in(note)
     return n_drop, (f"{n_written} 列" if not n_drop
                     else f"{n_written} 列｜{note}")
+
+
+def _explain_drops(name, dropped_who, days):
+    """→ (已歸因, 未歸因)。⛔ 判準用**資料自己**，不另開台帳。
+
+    ## ⭐ 情報分析線 2026-09-10 23:00 查出來的那一筆
+
+        2015-01-22　3416 融程電
+        前日餘額 1,000　賣出 0　還券 0　調整 0　當日餘額 **0**　⇒ 差 1,000 股
+        備註欄：**空的**
+
+    成因：**那天是它在上櫃的最後一個交易日**（01-23 轉上市）。
+    ⇒ 官方在它離開上櫃時把借券餘額**直接歸零**，
+      ⛔ 沒有走「還券」也沒有走「調整」欄 ⇒ 恆等式當然不成立。
+
+    ⚠ 所以這不是資料瑕疵，**是恆等式的定義邊界**——
+    ⭐ 而它跟 `exDailyQ`「不含該檔轉上市之後」是**同一個形狀，第二次出現**。
+
+    ⇒ 判準：不符時看該檔**次一交易日還在不在這張表上**
+      不在 ⇒ 離開本市場（轉上市／終止櫃買）⇒ ⛔ 不是瑕疵
+      還在 ⇒ 才是真的要查
+
+    ⛔ **不可以靠備註欄判斷**——那一筆的備註是空的。
+    """
+    idx = {d: i for i, d in enumerate(days)}
+    left, unexplained = [], []
+    for day, code in dropped_who:
+        i = idx.get(day)
+        nxt = days[i + 1] if i is not None and i + 1 < len(days) else None
+        if nxt is None:
+            # ⚠ 區間最後一天沒有「次一日」可看 ⇒ ⛔ 不可判定，一律當未歸因
+            #   （寧可多查一筆，不要把真的瑕疵歸成「它離開了」）
+            unexplained.append((day, code, "區間最後一天，無次一日可比"))
+            continue
+        path = os.path.join(UNI_DIR, name, f"{nxt}.csv")
+        if not os.path.exists(path):
+            unexplained.append((day, code, f"次一日 {nxt} 沒有檔可比"))
+            continue
+        with io.open(path, encoding="utf-8") as f:
+            codes = {r.get("stock_id", "") for r in csv.DictReader(f)}
+        (left if code not in codes else unexplained).append(
+            (day, code, f"次一日 {nxt} {'已不在表上' if code not in codes else '仍在表上'}"))
+    return left, unexplained
 
 
 def _drop_note(kept, tag, bad, samples):
@@ -497,6 +554,117 @@ def parse_chtm(d, day, known=None):
     cyc = sorted({r[6] for r in out if r[6]})
     return out, (f"{len(out)} 檔｜" + "／".join(f"{k} {v}" for k, v in n.items())
                  + f"｜撮合循環時間出現的值 {cyc or '（都沒有）'}")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 個股融資成數的**調整幅度**——`marginTrading/BFIB9U`（上市）
+#
+# K線線那條 166.67 的基準值：官方明文「最高融資比率 60%、最低融券保證金成數 90%」
+# ⚠ 而那是**上櫃頁面**的字，上市那一半還沒有逐字 ⇒ ⛔ 先不要套過去。
+#
+# ── 我方實測（`chtm_probe.py`，Actions 2026-09-10）───────────────
+#   欄位（8）：編號／證券代號／證券名稱／調整成數原因／調整成數起日／恢復日
+#              ／降低融資比率／提高融券保證金成數
+#   不帶日期 → 471 列；`startDate=endDate=20150105` → 126 列 ⇒ **有逐日歷史**
+#
+# ⛔⛔ 三件會讓人讀錯的事，每一件都在實測值裡看得到：
+#
+# ① **同一檔會有很多列**：471 列裡只有 **94 個相異代號**
+#    ⇒ 一檔 × 每個「調整成數原因」一列（實測 6 種原因）
+#    ⇒ ⛔ 主鍵是（日期, 代號, **原因**），不是（日期, 代號）。
+#
+# ② **值不是純數字**：`降低融資比率` 的相異值是
+#    `''`／`'1'`／`'6'`／`'累計：1'`／`'累計：6'`
+#    ⇒ ⭐ `累計：N` 與 `N` 是**兩件事**（累計降低 vs 這一次降低）
+#      ⛔ 直接 `int()` 會炸，`replace("累計：","")` 會把兩者混成一個數字。
+#
+# ③ 空值有**兩種寫法**：空字串與**單一半形空白**
+#    （實測 `["1203","味王","監視第二次處置","","",  " ", " "]`）
+#    ⇒ ⛔ 只判 `== ""` 會把那些讀成「有值」。
+#
+# ⚠ 而 ⛔ **這支不算「現行成數」**：官方給的是**調整幅度**，
+#   要逐檔彙總再用「基準 − 累計調整」推——⭐ 而那是**判準**，屬 K線線。
+#   ⇒ 我方只把原始欄位存下來，⛔ 不在這裡算，也不寫進契約當成「成數」。
+#
+# ⛔⛔ 而它有一種**沒有東西擋得住**的靜默失敗：
+#   回應**沒有 `date`、`title` 也不帶日期** ⇒ `fetch_one` 的 `_same_day` 找不到
+#   自述日期 ⇒ **一律放行**。⚠ 而不帶日期參數時它回的是**前一個營業日**
+#   （實測 09-10 問，`hints` 說「期間：115年09月09日到115年09月09日」）。
+#   ⇒ ⭐ 日期只寫在 `hints` 裡 ⇒ **這一支自己驗 `hints`**。
+#   ⛔ 不把 `hints` 加進 `_same_day` 的通用鍵：別的端點的 `hints` 常寫著
+#     「資料自 104 年起提供」這種**與本次查詢無關**的日期
+#     ⇒ 那會變成大規模誤擋（`feeds:tib` 剛剛才因為誤擋掉了 1,050 天）。
+# ══════════════════════════════════════════════════════════════════
+MRATIO_FIELDS = ["編號", "證券代號", "證券名稱", "調整成數原因", "調整成數起日",
+                 "恢復日", "降低融資比率", "提高融券保證金成數"]
+
+
+def _mratio_val(v):
+    """`降低融資比率`／`提高融券保證金成數` → (數字字串, 是否累計)。
+
+    ⭐ 實測相異值：`''`／`'1'`／`'6'`／`'累計：1'`／`'累計：6'`／`' '`（單一空白）
+    ⛔ `累計：N` 與 `N` 是兩件事，不可以混成一個數字。
+    ⚠ 認不出來一律回 `("", "")`——⛔ 不要猜成 0（0 是「不調整」的真值）。
+    """
+    t = str(v).replace("：", ":").strip()
+    cum = "1" if t.startswith("累計") else "0"
+    if cum == "1":
+        t = t.split(":", 1)[-1].strip() if ":" in t else t[2:].strip()
+    if not t:
+        return "", ""
+    try:
+        float(t)
+    except ValueError:
+        return "", ""
+    return t, cum
+
+
+def parse_marginratio(d, day, known=None):
+    """TWSE `BFIB9U` 調整融資融券成數。⛔ 主鍵含**原因**，一檔多列。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], (f"沒有 tables；頂層鍵="
+                    f"{sorted(d) if isinstance(d, dict) else type(d).__name__}")
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != MRATIO_FIELDS:
+        return [], f"欄位結構與 2026-09-10 實測不符，拒收：{f}"
+    # ⭐⭐ 這一支的日期**只寫在 `hints` 裡** ⇒ 自己驗，⛔ 不靠 `_same_day`
+    hints = str((d or {}).get("hints", "")) if isinstance(d, dict) else ""
+    said = _F.first_date_compact(hints)
+    if not said:
+        return [], (f"⛔ `hints` 裡讀不出日期 ⇒ **無從確認這批是哪一天**"
+                    f"（hints={hints[:80]!r}）"
+                    "　⚠ 這一支沒有 `date`／`title` 可比，hints 是唯一的自述")
+    if said != day.replace("-", ""):
+        return [], (f"⛔ 回的是**別天**：hints 說 {said}，我要 {day}"
+                    "　⚠ 不帶日期參數時它回的是前一個營業日")
+    out = []
+    for r in (t.get("data") or []):
+        if not isinstance(r, list) or len(r) < 8:
+            continue
+        code = str(r[1]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        m_v, m_c = _mratio_val(r[6])
+        s_v, s_c = _mratio_val(r[7])
+        out.append([day, code, str(r[2]).strip(), str(r[3]).strip(),
+                    _F.first_date_compact(r[4]) and
+                    _iso_dash(_F.first_date_compact(r[4])),
+                    _F.first_date_compact(r[5]) and
+                    _iso_dash(_F.first_date_compact(r[5])),
+                    m_v, m_c, s_v, s_c])
+    codes = {r[1] for r in out}
+    cum = sum(1 for r in out if r[7] == "1" or r[9] == "1")
+    return out, (f"{len(out)} 列／**{len(codes)} 檔**（⚠ 一檔多列：一個原因一列）"
+                 f"｜其中標「累計」的 {cum} 列")
+
+
+def _iso_dash(compact):
+    """`20210924` → `2021-09-24`。⛔ 空字串照樣回空字串。"""
+    return f"{compact[:4]}-{compact[4:6]}-{compact[6:8]}" if compact else ""
 
 
 def parse_per(d, day, known=None):
@@ -1174,6 +1342,29 @@ FEEDS = {
                    "⇒ ⛔ 情報分析線說的「98/06/01 靜默回今天」不成立。"
                    "⚠ 旗標值是**全形 Ｙ**（U+FF39）；撮合時間是零填三位字串"),
     },
+    # ⭐⭐ 個股融資融券成數的**調整幅度**（上市）。K線線那條 166.67 的個股面。
+    #   ⛔ 它給的**不是現行成數**，是調整幅度 ⇒ 要逐檔彙總再用「基準 − 累計」推，
+    #     ⚠ 而那是**判準**，屬 K線線 ⇒ 我方只存原始欄位，⛔ 不在這裡算。
+    #   ⚠ `known: False`——被調成數的往往是**波動最大的飆股**，
+    #     ⛔ 用母體濾掉等於把最該看的那些濾掉。
+    "marginratio": {
+        "dir": "marginratio",
+        "header": ["date", "stock_id", "name", "reason", "adjust_from",
+                   "restore_date", "margin_cut", "margin_cum",
+                   "short_raise", "short_cum"],
+        "parse": parse_marginratio,
+        "known": False,
+        "urls": lambda day: [
+            _twse("marginTrading/BFIB9U", day,
+                  extra=("&startDate={d}&endDate={d}&sortType=ALL&stockNo="
+                         "&selectType=%E5%85%A8%E9%83%A8").format(
+                             d=day.replace("-", "")))],
+        "status": ("我方實測 2026-09-10（Actions）：不帶日期 471 列、"
+                   "`20150105` 126 列 ⇒ **有逐日歷史**。"
+                   "⛔ 一檔多列（471 列只有 94 個相異代號，一個原因一列）；"
+                   "值有 `累計：N` 前綴；空值有『空字串』與『單一空白』兩種。"
+                   "⭐ 日期**只寫在 `hints` 裡** ⇒ 本 parser 自己驗"),
+    },
     "exright": {
         "dir": "exright",
         "header": ["date", "stock_id", "pre_close", "ref_price", "value",
@@ -1820,6 +2011,7 @@ def cmd_feed(args):
                 return 2
     ok = closed = failed = dropped_days = dropped_rows = 0
     dropped_at = []          # ⭐ 哪幾天丟了幾列（⛔ 不是只給天數）
+    dropped_who = []         # ⭐ (日期, 代號)——歸因那一步要用
     bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
     # ⛔⛔ 2026-09-10：`feeds:tib` 紅了，而 `_last_run.md` 只寫
     #   「前 5 天有 5 天連問都問不到」——**沒有寫為什麼**。
@@ -1851,6 +2043,7 @@ def cmd_feed(args):
                 dropped_days += 1
                 dropped_rows += n_drop
                 dropped_at.append(f"{day}（{n_drop} 列）")
+                dropped_who += [(day, c) for c, _why in _drop_codes(note)]
         elif url is not None:
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
@@ -1910,13 +2103,25 @@ def cmd_feed(args):
              f"失敗 {failed} 天" if failed else "0 天")
     # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
     #    而每天默默丟幾十列外表完全正常。
-    rl.check("沒有因驗算不符而丟棄列的日子", dropped_days == 0,
-             (f"**{dropped_days} 天、共 {dropped_rows} 列**有丟棄"
-              f"｜{'、'.join(dropped_at[:8])}"
-              + ("…" if len(dropped_at) > 8 else "")
-              + "　⇒ ⛔ 那幾天的說明裡有**是哪幾檔、差多少**"
-                "（差 1~2 股是進位、差一個量級是欄位對錯位）")
-             if dropped_days else "0 天")
+    # ⭐ 歸因：不符的列裡，哪些是「該檔離開了本市場」（⛔ 不是瑕疵）
+    left, unexplained = _explain_drops(name, dropped_who, days)
+    if left:
+        rl.info("⭐ 已歸因：**離開本市場**（轉上市／終止櫃買）⇒ ⛔ 不是瑕疵",
+                f"{len(left)} 筆：{[(d, c) for d, c, _ in left[:6]]}"
+                "　⚠ 官方在該檔離開時把餘額**直接歸零**，"
+                "⛔ 沒有走「還券」也沒有走「調整」欄 ⇒ 恆等式當然不成立")
+    # ⛔ 判準只看**未歸因**的。⚠ 而「已歸因」不可以自動長大：
+    #   歸因靠的是「次一交易日不在表上」——那是**資料自己**講的，
+    #   ⛔ 不是靠備註欄（情報分析線查到的那一筆備註是空的）。
+    rl.check("沒有**未歸因**的驗算不符列", not unexplained,
+             (f"⛔ **{len(unexplained)} 筆未歸因**："
+              f"{[(d, c, w) for d, c, w in unexplained[:6]]}"
+              "　⇒ 差 1~2 股是進位、差一個量級是**欄位對錯位**"
+              "（那兩種的處置完全不同）")
+             if unexplained else
+             (f"0 筆（⚠ 另有 {len(left)} 筆已歸因為離開本市場）"
+              if left else f"0 筆｜丟棄 {dropped_rows} 列"
+              if dropped_rows else "0 天"))
     rc = rl.finish()
     return 1 if (failed or rc) else 0
 

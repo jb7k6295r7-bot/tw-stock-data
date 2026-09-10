@@ -9,14 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-exright-history, otc-reduce-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
         type: choice
-        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm]
+        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
@@ -139,6 +139,21 @@ jobs:
       #   ⚠ 而 `git diff` 看起來只是「這一趟重算過」。
       - name: 驗累積型 CSV 的逐鍵合併（零相依）
         run: python selftest_merge_ledger.py
+
+      # ⛔⛔ 這三支 2026-09-10 之前**沒有任何 workflow 在跑**
+      #   ⇒ `selftest_reduce.py` 紅著不知道多久，而沒有任何地方會叫。
+      #   （成因是 `ADJ_HEADER` 插了一欄，測試裡寫死的欄位位置就錯位了。）
+      #   ⚠ 「自測存在」≠「自測會被跑」——⭐ 而一支沒人跑的自測比沒有更糟：
+      #     它讓人以為那一塊有守門。
+      #   ⇒ `selftest_workflows.py` 現在會擋下**任何**沒被列進來的 selftest_*.py。
+      - name: 驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）
+        run: |
+          python selftest_reduce.py
+          python selftest_fix_emerging_zero.py
+          python selftest_done_days.py
+          python selftest_schema_audit.py
+          python selftest_margin_universe.py
+          python selftest_syntax_warnings.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
@@ -319,6 +334,39 @@ jobs:
           python adjust.py || true
           python reduce_check.py || true
 
+      # ⭐⭐ 換供料第 2 步（市場情報分析線 2026-09-10 23:00 裁定）。
+      #   依據是雙向比對：`B=0`、`D` 只有 15 筆而且全是面額變更
+      #   ⇒ 換源在「數字對不對」這一面沒有風險。
+      # ⛔ 這一步**不連外**：官方那兩份判準檔是
+      #   `otc_reduce_history.py`／`otc_exright_history.py` 抓的
+      #   ⇒ ⛔ 這裡不重抓，避免同一份官方資料有**兩條解析路徑**（第四點五）。
+      # ⚠ 順序是有意義的，⛔ 不可以調換：
+      #   ① 先抓官方判準檔（它們才是這一步的輸入）
+      #   ② **快照**——裁定裡指名要的，⛔ 一定要在寫入之前
+      #   ③ 官方寫入 `otcexright/`／`otcreduce/`
+      #   ④ `adjust.py` 重算 `data/adj/`（⛔ 不跑它，前面三步等於沒發生）
+      #   ⑤ 再跑一次雙向比對 ⇒ ⭐ **換完之後 C 類應該掉下來**
+      - name: 上櫃還原因子換成官方來源（第 2 步）
+        if: inputs.mode == 'otc-adj-official'
+        timeout-minutes: 60
+        run: |
+          python selftest_otc_adj_official.py
+          python selftest_otc_adj_compare.py
+          # ① 官方判準檔（這兩支各一發請求）
+          python selftest_otc_reduce_history.py
+          python otc_reduce_history.py
+          python selftest_otc_exright_history.py
+          python otc_exright_history.py
+          # ② ⚠ 快照一定要在寫入**之前**
+          python otc_adj.py --snapshot data/meta/_adj_snapshot_pre_official.csv
+          # ③ 官方寫入（⛔ 不連外）
+          python otc_adj.py --official
+          # ④ 重算還原因子
+          python adjust.py
+          # ⑤ ⭐ 換完再比一次：C 類要掉下來，⛔ 而 D 類不可以變大
+          python otc_adj_compare.py
+          python reduce_check.py || true
+
       # ★ 月營收與財報的**歷史**要從哪裡來。現況是 `data/mops/` 每一項都只有一期
       #   （OpenAPI 沒有年度／季別參數，只給最新一期），所以 2015 以來補不回來。
       #   四批候選：OpenAPI 加參數／MOPS 靜態頁／MOPS 查詢表單(POST)／FinMind。
@@ -420,7 +468,9 @@ jobs:
       #   摘要不會抱怨，只是每一檔跨過減資日的還原都是錯的。
       - name: 算還原因子
         if: inputs.mode == 'adjust'
-        run: python adjust.py
+        run: |
+          python selftest_adjust_official.py
+          python adjust.py
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       # ⛔⛔ 2026-09-09：這裡本來是一份**寫死的「會寫資料的 mode」白名單**。

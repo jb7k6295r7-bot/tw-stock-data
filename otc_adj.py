@@ -79,8 +79,13 @@ DONE = os.path.join(_ROOT, "meta", "_otcadj_done.csv")
 
 EX_HEADER = ["date", "stock_id", "pre_close", "ref_price", "value",
              "kind", "open_base", "source"]
+# ⭐⭐ 2026-09-10 新增 `official_factor`（K線線 20:20 裁定要用的那一個）。
+#   ⛔ 沒有這一欄的話，官方換股比例**根本搬不進 `data/adj/` 的來源目錄**
+#   ⇒ 「還原用 `factor_official`」那條裁定**跑再多趟也不會生效**，
+#   ⚠ 而它壞得很安靜：換源會成功、`data/adj/` 會長大、數字全是官方的，
+#     只是因子仍然是**帶捨入殘差**的那一個。
 RD_HEADER = ["date", "stock_id", "pre_close", "ref_price", "reason",
-             "open_base", "ex_ref_price", "source"]
+             "open_base", "ex_ref_price", "official_factor", "source"]
 
 
 # FinMind 撞到額度時的字樣。**要寬鬆比對**——它可能來自 HTTP 402/429，
@@ -121,7 +126,7 @@ def fm(ds, code, lo, hi, token=""):
     return (data if isinstance(data, list) else []), None
 
 
-def otc_codes():
+def otc_codes(kinds=("stock",)):
     """→ **曾經**是上櫃的普通股代號。⛔ 不是「現在是上櫃」。
 
     ## ⛔ 2026-09-09 抓到的根因：這裡本來寫 `market == "tpex"`
@@ -154,13 +159,28 @@ def otc_codes():
 
     ⚠ 要掃 2,800+ 個日檔（約十秒）。這一支跑在 `feeds.yml` 不是每日管線，
       成本可以接受；⛔ 而**用抽樣代替全掃會漏掉短期上櫃的個股**，不值得省。
+
+    ## ⛔⛔ `kinds` 為什麼要參數化（2026-09-10 換供料時當場抓到）
+
+    預設 `("stock",)` ＝ **只有普通股**。⚠ 那對 FinMind 那條路是對的：
+    它是**逐檔打 API**（971 檔 × 2 ≈ 30 分鐘），多收 424 檔 ETF 等於多打 850 發。
+
+    ⛔ **但官方模式沒有那個成本**（它讀的是本地判準檔），
+      而 ETF 正是那邊最大的缺口：官方除權息 13,105 筆裡
+      **2,967 筆是 `00` 開頭的 ETF／ETN**，
+      ⚠ 而契約裡早就寫著「**上櫃 ETF 完全沒有還原因子**」。
+    ⇒ ⭐ 我第一版的官方模式直接沿用預設值 ⇒ **那 2,967 筆一筆都不會進來**，
+      ⛔ 而整趟會是綠的、`data/adj/` 也照樣長大（長的是普通股那一半）。
+    ⚠ `kinds=None` ＝ 不限（權證不必另外濾：日檔本來就沒有權證）。
     """
+
     out = set()
     # ① 現在就是上櫃的
     if os.path.exists(META):
         with open(META, encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
-                if r.get("market") == "tpex" and r.get("kind") == "stock":
+                if (r.get("market") == "tpex"
+                        and (kinds is None or r.get("kind") in kinds)):
                     out.add(r["stock_id"])
     now = len(out)
     # ② ⭐ 曾經是上櫃的（含已轉上市、已下市）
@@ -178,13 +198,127 @@ def otc_codes():
                 with open(os.path.join(daily, fn), encoding="utf-8") as fh:
                     for r in csv.DictReader(fh):
                         if (r.get("market") == "tpex"
-                                and kind.get(r.get("stock_id", "")) == "stock"):
+                                and (kinds is None
+                                     or kind.get(r.get("stock_id", "")) in kinds)):
                             out.add(r["stock_id"])
             except OSError:
                 pass
-    print(f"[otc] 上櫃普通股清單：現在是上櫃 {now} 檔"
+    print(f"[otc] 上櫃清單（kind={kinds or '不限'}）：現在是上櫃 {now} 檔"
           f"｜**曾經是上櫃** {len(out)} 檔（多 {len(out) - now} 檔＝轉上市或已下市）")
     return sorted(out)
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 官方模式（2026-09-10，市場情報分析線 23:00 裁定「進第 2 步」）
+#
+#   ✅ 官方三支聯集為主：`exDailyQ`（除權息）＋ `revivt`（減資）
+#      ＋ `TWT49U`（該檔轉上市之後——那一批本來就由 `exright` feed 落地）
+#   ✅ `otcparvalue.py` 保留為**第四支來源**，面額變更由它負責
+#   ✅ FinMind 退為**備援**，每一列標 `source`
+#
+# ## ⛔ 為什麼是 `--official` 而不是新開一支程式
+#
+# `data/universe/otcexright/`／`otcreduce/` 的**唯一寫入者**是這一支
+# （CLAUDE.md 第五點）。⚠ 換供料是換維護者的決定，⛔ 不是多一個寫入者
+#   ——兩支寫同一批檔＝後寫的贏、跟新舊無關，而且四個地方都顯示正常。
+#
+# ## ⭐ 雙向比對的結果（`otc_adj_compare.py`，換源的依據）
+#
+#     A 兩邊都有、factor 逐位相同   7,717 筆
+#     B 兩邊都有、factor 不同      **0 筆**   ← 沒有分歧
+#     C 官方有、我方沒有            2,998 筆（多數是上櫃 ETF）
+#     D 我方有、官方沒有           **15 筆，全部是面額變更**
+#
+# ⚠ D 類**不必**去官方三支找——情報分析線把它講成一條可重用的規則：
+#   **「一個來源的『沒有』，要先分成『它不該有』與『它漏了』。」**
+#   面額變更不在那三支的定義裡 ⇒ ⭐ 它們沒有是**正確**的，去那裡找等於問錯對象。
+# ══════════════════════════════════════════════════════════════════
+OFF_EX = os.path.join(_ROOT, "meta", "otc_exright_history.csv")
+OFF_RD = os.path.join(_ROOT, "meta", "otc_reduce_history.csv")
+
+
+def _csv_rows(path):
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def snapshot_adj(path):
+    """把 `data/adj/` 的現況寫成一張 CSV。→ 列數。
+
+    ⚠ 情報分析線 2026-09-10 23:00 裁定裡指名的：**換源前留一份快照**。
+    ⭐ 做成一張表而不是複製整棵目錄：快照的用途是**事後比對**，
+      ⛔ 2,212 個檔進 git 既難 diff 也難查。
+    """
+    adj = os.path.join(_ROOT, "adj")
+    rows = []
+    if os.path.isdir(adj):
+        for fn_ in sorted(os.listdir(adj)):
+            if not fn_.endswith(".csv") or fn_.startswith("_"):
+                continue
+            for r in _csv_rows(os.path.join(adj, fn_)):
+                if r.get("date"):
+                    rows.append([fn_[:-4], r["date"], r.get("factor", ""),
+                                 r.get("cum_factor", ""), r.get("kind", ""),
+                                 r.get("event", "")])
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["stock_id", "date", "factor", "cum_factor", "kind", "event"])
+        w.writerows(sorted(rows))
+    return len(rows)
+
+
+def official_codes():
+    """官方模式的母體：**曾經在上櫃出現過的全部代號**（⛔ 不限 kind）。
+
+    ⛔ 抽成具名函式是因為突變測試抓到：
+      直接在 `main()` 裡寫 `otc_codes(kinds=None)` 的話，
+      **把它改回預設值（只收普通股）一條斷言都不會紅**
+      ——⚠ 測了判準、沒測呼叫點（CLAUDE.md 第四點二）。
+
+    ⭐ 為什麼不限 kind：官方除權息 13,105 筆裡 **2,967 筆是 ETF／ETN**，
+      而契約裡早就寫著「**上櫃 ETF 完全沒有還原因子**」——正是這一批。
+    ⚠ 而官方模式讀的是本地判準檔 ⇒ 多收它們**沒有任何抓取成本**
+      （FinMind 那條路才有：逐檔打 API，多 424 檔＝多 850 發）。
+    """
+    return set(otc_codes(kinds=None))
+
+
+def official_rows(codes=None):
+    """→ (除權息 byday, 減資 byday, 說明)。⛔ 只讀本地判準檔，不連外。
+
+    ⚠ 那兩個判準檔是 `otc_exright_history.py`／`otc_reduce_history.py` 寫的
+      ⇒ ⛔ 這裡**不重抓**，避免同一份官方資料有兩條解析路徑（第四點五）。
+    """
+    ex, rd, skip = {}, {}, {"ex": 0, "rd": 0}
+    for r in _csv_rows(OFF_EX):
+        c, day = r.get("stock_id", ""), r.get("date", "")
+        pre, ref = _f(r.get("pre_close")), _f(r.get("ref_price"))
+        if not (c and day and pre and ref) or (codes and c not in codes):
+            skip["ex"] += 1
+            continue
+        ex.setdefault(day, []).append(
+            [day, c, f"{pre:g}", f"{ref:g}", r.get("value", ""),
+             r.get("kind", ""), "", "exDailyQ"])
+    for r in _csv_rows(OFF_RD):
+        c, day = r.get("stock_id", ""), r.get("date", "")
+        pre, ref = _f(r.get("last_close")), _f(r.get("ref_price"))
+        if not (c and day and pre and ref) or (codes and c not in codes):
+            skip["rd"] += 1
+            continue
+        rd.setdefault(day, []).append(
+            [day, c, f"{pre:g}", f"{ref:g}", r.get("reason", ""), "", "",
+             # ⭐ 官方換股比例回推的因子（`otc_reduce_history.py` 算好的）
+             #   ⚠ 舊版判準檔沒有這一欄 ⇒ 留空，⛔ 不要猜
+             r.get("factor_official", ""), "revivt"])
+    n_ex = sum(len(v) for v in ex.values())
+    n_rd = sum(len(v) for v in rd.values())
+    return ex, rd, (f"官方除權息 {n_ex:,} 筆／{len(ex)} 天"
+                    f"｜官方減資 {n_rd:,} 筆／{len(rd)} 天"
+                    f"｜⚠ 跳過（缺價格或不在母體）除權息 {skip['ex']}"
+                    f"、減資 {skip['rd']}")
 
 
 def load_done():
@@ -241,7 +375,7 @@ def write_days(subdir, header, byday):
     """
     d = os.path.join(UNI, subdir)
     os.makedirs(d, exist_ok=True)
-    n = 0
+    n = kept_official = 0
     for day, rows in sorted(byday.items()):
         path = os.path.join(d, f"{day}.csv")
         merged = {}
@@ -254,13 +388,28 @@ def write_days(subdir, header, byday):
                         # 舊檔若欄位不同，照欄名對位補齊，缺的留空
                         merged[q[1]] = [dict(zip(old, q)).get(k, "") for k in header]
         for r in rows:
-            merged[str(r[1])] = r                   # 新的蓋舊的
+            code = str(r[1])
+            # ⭐⭐ 2026-09-10 換供料（情報分析線 23:00 裁定）：
+            #   **官方三支為主、FinMind 退為備援**
+            #   ⇒ ⛔ `finmind` 的列**不可以蓋掉**已經是官方來源的那一列。
+            #   ⚠ 而反過來可以：官方的列蓋得掉 FinMind 的（那正是「換源」）。
+            #   ⛔ 沒有這一條的話，兩支的執行**順序**就決定了資料內容
+            #     ——而順序是排程的細節，不該決定資料。
+            old_src = (merged.get(code) or [""] * len(header))[-1]
+            if (str(r[-1]) == "finmind" and old_src
+                    and old_src != "finmind"):
+                kept_official += 1
+                continue
+            merged[code] = r                        # 新的蓋舊的
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(",".join(header) + "\n")
             for k in sorted(merged):
                 fh.write(",".join(str(x).replace(",", "；")
                                   for x in merged[k]) + "\n")
         n += len(merged)
+    if kept_official:
+        print(f"[otc] ⭐ {kept_official} 列保留**官方**版本"
+              f"（FinMind 沒有蓋過去）｜{subdir}", flush=True)
     return len(byday), n
 
 
@@ -277,6 +426,11 @@ def main():
     #   ⚠ 一個「要補一檔就得跑幾小時」的補法，實際上等於不會被補。
     ap.add_argument("--codes", default="",
                     help="⭐ 只做這幾檔（逗號分隔）。補已知單一缺口用")
+    # ⭐⭐ 換供料第 2 步：官方三支為主、FinMind 退備援（見上面那一節）
+    ap.add_argument("--official", action="store_true",
+                    help="⭐ 從官方判準檔寫入（⛔ 不連外、不跑 FinMind）")
+    ap.add_argument("--snapshot", default="",
+                    help="換源**之前**先把 data/adj 的現況寫成一份快照 CSV")
     ap.add_argument("--resume", action="store_true",
                     help="沿用 data/meta/_otcadj_done.csv，跳過做過的")
     ap.add_argument("--fresh", action="store_true",
@@ -288,6 +442,28 @@ def main():
     ap.add_argument("--budget-min", type=float, default=0,
                     help="跑滿幾分鐘就收工並存進度（0＝不限）。留給 job timeout 的餘裕")
     a = ap.parse_args()
+
+    # ⚠ 情報分析線裁定裡指名的一件事：**換源前留一份 `data/adj/` 快照**，
+    #   至少留到下一輪稽核過了為止。
+    # ⭐ 快照做成**一張 CSV**（代號＋日期＋因子），⛔ 不是複製 2,212 個檔：
+    #   快照的用途是**事後比對**，一張表比一整棵目錄好比、也好 diff。
+    if a.snapshot:
+        n = snapshot_adj(a.snapshot)
+        print(f"[otc] ⭐ 換源前快照：{a.snapshot}｜{n:,} 列")
+        if not a.official and not a.codes:
+            return 0
+
+    if a.official:
+        codes = official_codes()
+        ex, rd, note = official_rows(codes)
+        print(f"[otc] ⭐ 官方模式（⛔ 不連外）：{note}")
+        d1, n1 = write_days("otcexright", EX_HEADER, ex)
+        d2, n2 = write_days("otcreduce", RD_HEADER, rd)
+        print(f"[otc] 除權息 {d1} 天／累計 {n1:,} 列"
+              f"｜減資 {d2} 天／累計 {n2:,} 列")
+        print("[otc] ⚠ 接下來要跑 `adjust.py` 才會反映到 `data/adj/`")
+        return 0
+
     B.SLEEP = a.sleep
     token = os.environ.get("FINMIND_TOKEN", "").strip()
     hi = a.end or time.strftime("%Y-%m-%d")
