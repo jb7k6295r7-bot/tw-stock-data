@@ -1170,26 +1170,33 @@ def fetch_one(name, day, known):
     spec = FEEDS[name]
     if spec.get("range"):
         return [], "這是區間型 feed，應走 cmd_feed_range", None
+    # ⛔⛔ 情報分析線 2026-09-10 要了兩次的東西：**失敗時要附上實際打出去的 URL**。
+    #   `feeds:tib` 那條的狀態檔只寫「回了 0 列」，沒說打的是哪一支端點
+    #   ⇒ 他們得自己去驗 `STOCK_TIB` 才敢說是接線問題。
+    #   ⚠ 而候選是**一串**，「哪一支失敗了」跟「失敗成什麼樣」一樣重要。
+    #   ⭐ 同一族的第三次：會叫、但叫不出**哪裡**，代價一樣是一整個來回。
     last = "沒有候選"
     for url in spec["urls"](day):
         raw, err = B.get(url)
+        # 只留路徑與參數，⛔ 不印整串（`_last_run.md` 是給人看的）
+        u_ = url.split("//", 1)[-1][:140]
         if err:
-            last = f"失敗({err[:50]})"
+            last = f"失敗({err[:50]})｜URL={u_}"
             continue
         try:
             d = json.loads(raw.decode("utf-8"))
         except Exception as ex:                       # noqa: BLE001
             head = raw[:120].decode("utf-8", "replace").replace("\n", " ")
-            last = f"JSON {type(ex).__name__}｜{len(raw)}B｜開頭：{head}"
+            last = f"JSON {type(ex).__name__}｜{len(raw)}B｜開頭：{head}｜URL={u_}"
             continue
         stat = d.get("stat") if isinstance(d, dict) else None
         if stat and str(stat).strip().lower() not in ("ok", "success"):
-            last = f"stat={stat}"
+            last = f"stat={stat}｜URL={u_}"
             continue
         # ★ 日期核對是防「只回今天」的最後一道閘。不可為了讓某個候選通過而拿掉。
         same, said = B._same_day(d, day)
         if not same:
-            last = f"日期不符({said})"
+            last = f"日期不符({said})｜URL={u_}"
             continue
         lines, nt = spec["parse"](d, day, known if spec["known"] else None)
         return lines, nt, url

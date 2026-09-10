@@ -14,7 +14,12 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
+import datetime as _dt0
 import otc_reduce_history as R
+
+# ⚠ 用「今天」而不是寫死日期：這一組要測的正是「今天算、明天不算」的邊界，
+#   ⛔ 寫死的話這支測試明天就開始測別的東西了。
+_TODAY = _dt0.datetime.now(_dt0.timezone(_dt0.timedelta(hours=8))).strftime('%Y-%m-%d')
 
 TPE = timezone(timedelta(hours=8))
 OK = FAIL = 0
@@ -87,7 +92,7 @@ def main():
         # 涵蓋期內、已歸因（官方自己重複的列）
         ["2020-09-25", "6109", "亞元", "10.50", "10.63", "1.01238095", "現金減資", "a"],
         # ⭐ 涵蓋期內、未歸因 ⇒ **現在就錯的還原因子**
-        ["2026-09-09", "6461", "益得", "16.65", "26.92", "1.61681682", "彌補虧損", "a"],
+        [_TODAY, "6461", "益得", "16.65", "26.92", "1.61681682", "彌補虧損", "a"],
     ]
     inside, named, live = R.classify_gaps(M, "2015-01-05")
     ck("  涵蓋期外的兩筆不算進來", len(inside) == 2, str([r[0] for r in inside]))
@@ -96,7 +101,20 @@ def main():
     ck("  ⭐ 6461 益得留在**未歸因** ⇒ 這一條要會紅",
        len(live) == 1 and live[0][1] == "6461", str(live))
 
-    print("⑦ ⛔ 反向：三種會讓這條判準失效的情形")
+    print("⑦ ⭐ 恢復買賣日在**未來**的預告列一律排除（⛔ 否則每天假紅）")
+    import datetime as _dt
+    _tw = _dt.timezone(_dt.timedelta(hours=8))
+    _tomorrow = (_dt.datetime.now(_tw) + _dt.timedelta(days=9)).strftime("%Y-%m-%d")
+    _M2 = M + [[_tomorrow, "8277", "商丞", "10.00", "23.20", "2.32000000",
+                "彌補虧損", "a"]]
+    _in, _named, _live = R.classify_gaps(_M2, "2015-01-05")
+    ck("  未來那一筆不進「涵蓋期內」", len(_in) == 2, str([r[0] for r in _in]))
+    ck("  ⭐ 也不進「未歸因」（⛔ 它每天都會出現，會把這條斷言弄成每天紅）",
+       all(r[0] != _tomorrow for r in _live), str(_live))
+    ck("  ⚠ 而**今天**那一筆仍然算（邊界是 <= today，不是 < today）",
+       any(r[1] == "6461" for r in _live), str(_live))
+
+    print("⑧ ⛔ 反向：三種會讓這條判準失效的情形")
     ck("  ★ 具名排除清單**是空的**時，6109 也要留在未歸因"
        "（證明 ⑥ 不是靠寫死通過的）",
        len(R.classify_gaps(M, "2015-01-05", known={})[2]) == 2,

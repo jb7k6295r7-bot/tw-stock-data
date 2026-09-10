@@ -32,6 +32,8 @@ import runlog
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(_HERE, "data", "meta", "_breakpoint_scan.md")
+# ⛔ 門檻從寫入端 import，不要在這裡抄一份數字（CLAUDE.md 第四點五）
+from parvalue_scan import BRK_MIN_GAP as _BRK_MIN_GAP
 # ★ 附表：**所有**缺 ≥ 5 日且區間內無事件的洞，不論流動性（回測線 2026-09-09 09:50 加）。
 #   ⚠ 為什麼要另存一份到 data/meta/：`backtest/results/` 是回測線的產出目錄，
 #     由他們的分支決定內容；資料庫這一側要引用的東西不可以指到別人的工作區——
@@ -64,7 +66,28 @@ def _long_hole_tiers():
     with io.open(os.path.join(meta, "breakpoints_unexplained.csv"),
                  encoding="utf-8") as f:
         for r in csv.DictReader(f):
-            if r.get("kind") != "long_hole":
+            # ⛔⛔ 2026-09-10：這裡原本寫 `kind != "long_hole"` ⇒ **少算 5 筆**。
+            #   情報分析線 17:05 問「6131 的 218 日缺口為什麼不在清單裡」，
+            #   他們猜是「掃描每檔只取一個缺口」——⛔ **不是**（227 列／78 檔，
+            #   一檔最多 20 列）。真正的原因是：
+            #
+            #   ⭐ **一個缺口可以同時中兩條規則，而 `kind` 只裝得下一個。**
+            #     `parvalue_scan.py` 第 294 行：價格規則優先
+            #     ⇒ 6131 那個 218 日缺口 ratio=0.2562（帶外）⇒ 被歸成 `price_jump`。
+            #
+            #   ⚠ 而被藏起來的正好是**最嚴重的那一群**：停很久、而且復牌價差很大。
+            #     實測 5 筆：00643K 686 日、6131 218 日、4415 156 日、
+            #     8101 華冠 58 日（⛔ **in_universe=1，在母體內**）、911613 37 日。
+            #
+            #   ⇒ 判準改用**數字欄位**：`missing_trading_days >= BRK_MIN_GAP`。
+            #     ⭐ 那個欄位本來就在檔案裡，⛔ 是我用分類欄去問一個數量問題。
+            #   ⚠ 這跟同一天借券那件是同一個形狀：
+            #     **一個只裝得下一個值的分類欄，被拿來回答「有沒有」的問題。**
+            try:
+                _gap = int(r.get("missing_trading_days") or 0)
+            except ValueError:
+                _gap = 0
+            if _gap < _BRK_MIN_GAP:
                 continue
             sid = r["stock_id"]
             if mk.get(sid, {}).get("kind") != "stock":
