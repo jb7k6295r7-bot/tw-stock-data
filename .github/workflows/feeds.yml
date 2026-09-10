@@ -16,7 +16,7 @@ on:
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
         type: choice
-        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio]
+        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio, stophalt]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
@@ -229,14 +229,23 @@ jobs:
           # ⛔ 逐年分批：任何一種失敗最多賠一年，而且 --need-col 會自己接著跑。
           Y0=$(echo "${{ inputs.start }}" | cut -d- -f1)
           Y1=$(echo "${{ inputs.end }}"   | cut -d- -f1)
+          # ⛔⛔ 2026-09-10 run 104：`tib` 的 2023 那批有**一天**回 HTML 不是 JSON
+          #   （CDN 擋人，第二點④）⇒ 那一批的 runlog 判成 ✗ ⇒ 程式 exit 1
+          #   ⇒ `set -e` 當場結束整個 step ⇒ ⛔ **2024／2025／2026 三年一天都沒跑**。
+          #   ⚠ 而 CLAUDE.md 第四點寫的是「逐年分批 ⇒ **任何失敗最多賠一年**」
+          #     ——⛔ 這個迴圈**沒有兌現那句話**：它賠掉的是後面全部。
+          #   ⇒ 記下失敗、**繼續跑下一年**，⭐ 而最後仍然 exit 1
+          #     （⛔ 不可以吞掉失敗：紅燈是要留著的，只是不該連坐）。
+          RC=0
           for Y in $(seq "$Y0" "$Y1"); do
             A="$Y-01-01"; B="$Y-12-31"
             [ "$Y" = "$Y0" ] && A="${{ inputs.start }}"
             [ "$Y" = "$Y1" ] && B="${{ inputs.end }}"
             echo "── $Y 年（$A ~ $B）──"
-            python feeds.py --run $COMMON --start "$A" --end "$B"
+            python feeds.py --run $COMMON --start "$A" --end "$B" || RC=1
             bash push_data.sh "feeds(run/${{ inputs.feed }}): $A~$B"
           done
+          [ "$RC" = 0 ] || { echo "⛔ 有批次失敗（見上面各該年）" >&2; exit 1; }
 
       # ★ 產業別對照表。選股規則的「排除金融保險與生技醫療」與
       #   「同一類股當日最多 2 檔」都靠它，而 meta/stocks.csv 沒有這欄。

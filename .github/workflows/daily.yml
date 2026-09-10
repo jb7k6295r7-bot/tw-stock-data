@@ -433,6 +433,25 @@ jobs:
           python feeds.py --run --feed fulldelivery --start 2015-01-01 --end "$TODAY" \
                           --limit 40 --sleep 2
 
+      # ⭐⭐ 上市「**停止買賣中**」的即時名單（`violation/stop`）。
+      #   K線分析線 2026-09-11 01:40（端點是使用者給的）。
+      # ⛔⛔ 這一支**沒有歷史**：`date=` 官方會忽略 ⇒ 只有「今天仍在停止買賣中」。
+      #   ⚠ 補抓成本是**無限大**（拿不回來）⇒ 它的優先度比任何回補都高，
+      #   ⛔ 而它壞掉的樣子是「那一天沒有檔」，不是錯誤 ⇒ 一定要每天跑。
+      # ⭐ 每一列附「停止買賣開始日期」⇒ 第一次抓到就能把當下那一段的起點補回去。
+      # ⚠ 它解掉的是「停止買賣中」與「已下市」在資料庫裡分不開的問題：
+      #   已下市     ⇒ 不會回來，不進母體
+      #   停止買賣中 ⇒ **會復牌**，⛔ 復牌後前後兩段不可以接起來算均線／ATR
+      # ⛔ 這一支**不做區間回補**（沒有歷史可補），只抓今天那一份。
+      - name: 停止買賣中的名單（上市，⛔ 沒有歷史、漏一天永久少一天）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          python selftest_stophalt.py
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          python feeds.py --run --feed stophalt --start "$TODAY" --end "$TODAY" --sleep 2
+
       # ⭐⭐ 上櫃分盤／變更交易／管理股票／停止交易（`afterTrading/chtm`）。
       #   上市只有 `TWT85U` 一欄 `**`；⭐ 上櫃四個狀態各一欄，
       #   而且**直接給撮合循環時間**（實測 `030`／`045`）
