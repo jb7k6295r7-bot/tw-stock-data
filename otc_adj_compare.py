@@ -44,6 +44,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import runlog
+from otc_reduce_history import KNOWN_OFFICIAL_DUP as _KNOWN_DUP
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -90,6 +91,16 @@ def official(codes):
             src["exDailyQ"] += 1
     for r in _rows(RDH):                       # ② 上櫃減資
         pre, ref = _f(r.get("last_close")), _f(r.get("ref_price"))
+        # ⛔⛔ 官方自己重複的列要**先扣掉**，否則它會永遠停在 C 類（官方有、
+        #   我方沒有）——⚠ 而 C 類是拿來做換源決定的，一筆永遠補不掉的
+        #   「缺口」會讓人以為我方漏抓，⛔ 方向剛好相反：漏的是官方打錯字。
+        #   ⭐ 清單**只有一份**（`otc_reduce_history.KNOWN_OFFICIAL_DUP`），
+        #   ⛔ 不在這裡抄（第四點五）。實例：6109 亞元 1070925 誤打成 1090925
+        #   ——同一組數字（10.50→10.63）在表裡出現兩次，而 2020-09-25 那天
+        #   我方日檔的價格是連續的（前收 14.45），⇒ 那天沒有減資。
+        if (r["stock_id"], r["date"]) in _KNOWN_DUP:
+            src["revivt(官方重複，已扣)"] += 1
+            continue
         if pre and ref and r["stock_id"] in codes:
             out[(r["stock_id"], r["date"])] = (ref / pre, "revivt", pre, ref)
             src["revivt"] += 1
@@ -220,11 +231,15 @@ def main():
     #     而那個門檻沒有任何依據 ⇒ 只會變成每天紅然後被忽略。
     #   ⭐ 唯一該紅的是「三支官方來源少了一支」——那會讓 D 類假性變大，
     #     而**假性變大的 D 類會讓人以為官方來源不能用**，方向剛好相反。
+    # ⛔ 判準是**三個名字都在**，⚠ 不是 `len(src) == 3`：
+    #   `src` 現在還會多一個「官方重複，已扣」的計數鍵
+    #   ⇒ 數個數會在「三支都在、但多了一個統計鍵」時假紅，
+    #     也會在「少一支、卻多一個別的鍵」時**假綠**——⛔ 後者才是致命的那一種。
+    _want = {"exDailyQ", "revivt", "TWT49U"}
     rl.check("⭐ 官方三支來源都讀到了（⛔ 少一支會讓 D 類假性變大）",
-             len(src) == 3,
-             f"讀到 {sorted(src)}｜⚠ 缺 "
-             f"{sorted({'exDailyQ', 'revivt', 'TWT49U'} - set(src))}"
-             if len(src) != 3 else str(src))
+             _want <= set(src),
+             f"讀到 {sorted(src)}｜⚠ 缺 {sorted(_want - set(src))}"
+             if not _want <= set(src) else str(src))
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:

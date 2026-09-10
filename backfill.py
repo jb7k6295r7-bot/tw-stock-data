@@ -48,7 +48,10 @@ from fetch import (_isz, _lock_dir, fill_twse_shares,
                    write_universe_day as _write_universe_day,
                    _kind as _fetch_kind,
                    _same_day as _fetch_same_day,
-                   _num as _fetch_num, _is_dash as _fetch_is_dash)
+                   _num as _fetch_num, _is_dash as _fetch_is_dash,
+                   UNIVERSE_HEADER as _UNIVERSE_HEADER,
+                   COV_HEADER as _COV_HEADER,
+                   STOCKS_HEADER as _STOCKS_HEADER)
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -68,12 +71,29 @@ LEGACY_COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")     # 拆檔前的舊�
 DAILY_COVERAGE = os.path.join(UNI_DIR, "_coverage_daily.csv")  # fetch.py 寫的，只讀
 PROBE = os.path.join(UNI_DIR, "_backfill_probe.txt")
 
-HEADER = ["key", "date", "stock_id", "name", "market",
-          "open", "high", "low", "close", "volume", "amount", "change", "limit",
-          "shares", "transactions", "price_basis"]
-# ★ 欄位必須與 fetch.py 的 UNIVERSE_HEADER 逐字一致——兩邊產出同一批檔案，
-#   格式一分岔，之後建 DB 就會有一半的日子欄位對不上。
-COV_HEADER = ["date", "twse", "tpex", "emerging", "total", "note"]
+# ⛔⛔ 2026-09-10：這裡原本是**抄一份**的欄位清單，旁邊寫著
+#   「必須與 fetch.py 的 UNIVERSE_HEADER 逐字一致」——⚠ 而它已經不一致了。
+#   `fetch.py` 09-10 加了 `last_price`（第 17 欄），這一份停在 16 欄。
+#
+#   ⭐ 而後果**不是少寫一欄**（列是 `parse_*` 產的，那兩支早就 alias 過去了，
+#   寫檔的 `write_day` 也是 fetch 那一份）——後果在 `done_days()`：
+#
+#       want = ",".join(HEADER)   ⇒ 16 欄的字串
+#       檔案表頭 17 欄 ⇒ head != want ⇒ 判成「舊版欄位」
+#
+#   ⛔ **判準整個反過來了**：09-10 之後寫的（正確的）每一天被判成要重補，
+#   而 09-10 之前的（真正的舊格式）反而被判成「現行版本、可以跳過」。
+#   ⚠ 它不會報錯、不會少資料，只會讓長工去重跑一批不必跑的日子，
+#   同時把真正該重跑的那些**永遠跳過**。
+#
+#   ⇒ CLAUDE.md 第四點五：**同一件事只准有一份實作。**
+#   ⚠ 而這一份是**常數**不是函式 ⇒ `selftest_no_dup.py`（比函式本體的 AST）
+#   看不到它。⇒ 另立 `selftest_header_sync.py` 釘住每一份「欄位契約」。
+HEADER = _UNIVERSE_HEADER
+# ⛔ 第十二份（`selftest_no_dup.scan_consts` 抓到）：與 `fetch.COV_HEADER`
+#   逐字相同。⚠ **兩支都在寫同一個 `_coverage_daily.csv`** ⇒ 走岔的那天，
+#   同一個檔會出現兩種表頭，⛔ 而先寫的那一份不會有人回頭看。
+COV_HEADER = _COV_HEADER
 
 SLEEP = 1.5
 
@@ -788,7 +808,9 @@ def cmd_esb(args):
 
 
 META_DIR = os.path.join(_ROOT, "meta")
-STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
+# ⛔ 第十三份：與 `fetch.STOCKS_HEADER` 逐字相同，而且兩支都在寫
+#   `data/meta/stocks.csv`（第五點：誰是這個目錄的唯一寫入者）。
+STOCKS_HEADER = _STOCKS_HEADER
 
 
 INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total"]

@@ -125,6 +125,18 @@ jobs:
       - name: 驗累積型 CSV 的逐鍵合併（零相依）
         run: python selftest_merge_ledger.py
 
+      # ⛔⛔ 這三支 2026-09-10 之前**沒有任何 workflow 在跑**
+      #   ⇒ `selftest_reduce.py` 紅著不知道多久，而沒有任何地方會叫。
+      #   （成因是 `ADJ_HEADER` 插了一欄，測試裡寫死的欄位位置就錯位了。）
+      #   ⚠ 「自測存在」≠「自測會被跑」——⭐ 而一支沒人跑的自測比沒有更糟：
+      #     它讓人以為那一塊有守門。
+      #   ⇒ `selftest_workflows.py` 現在會擋下**任何**沒被列進來的 selftest_*.py。
+      - name: 驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）
+        run: |
+          python selftest_reduce.py
+          python selftest_fix_emerging_zero.py
+          python selftest_done_days.py
+
       # ⛔ 這一支跑的是好幾個小時的 parse——解析規則錯掉的代價是整趟重來。
       #   `--`／`----`（TWSE 與 TPEx 各寫各的）一定要在抓之前先驗過。
       - name: 驗解析規則（空值寫法＋無成交列，離線）

@@ -30,6 +30,32 @@
 ⛔ 把門檻設太低會讓這支變成每天都紅，然後大家學會忽略它。
 
 ⛔ **不掃 `selftest_*.py`**：測試本來就會為了「照真回應的形狀」重複造資料。
+
+## ⭐⭐ 第二種重複：**欄位契約的常數**（2026-09-10 加）
+
+⚠ 上面那道只比**函式本體的 AST** ⇒ ⛔ 它看不到 `HEADER = [...]` 這種**常數**。
+而第十一份就是這種：
+
+    fetch.UNIVERSE_HEADER   17 欄（09-10 加了 `last_price`）
+    backfill.HEADER         16 欄　← 抄的那一份，旁邊還寫著「必須逐字一致」
+
+⭐ 而它的後果**不是少寫一欄**（列與寫檔那兩支早就 alias 過去了），
+是 `backfill.done_days()` 拿 `",".join(HEADER)` 去比檔案的表頭：
+
+    17 欄的檔（09-10 之後寫的、正確的）  ⇒ 判成「舊版欄位」⇒ 重補
+    16 欄的檔（真正的舊格式）            ⇒ 判成「現行版本」⇒ **永遠跳過**
+
+⛔ **判準整個反過來，而且不報錯。**
+
+⇒ 這裡加**兩個**偵測器，⚠ 兩個都要有：
+
+    (a) 值逐位相同、來源不同  ⇒ 剛抄好、**還沒走岔**
+    (b) 一份是另一份的**前綴** ⇒ 抄了而且**已經走岔**
+
+⭐ (b) 之所以判得準，是因為本庫自己的規矩是**新欄一律接在舊表頭後面**
+（`feeds.py`／`fetch.py` 都寫著，為的是讓舊檔的表頭是新表頭的前綴）
+⇒ ⛔ 一份走岔的拷貝，形狀**必然**是前綴。
+⚠ 只做 (a) 等於「只在抄好的那一刻擋得住」——而今天這一份早就過了那一刻。
 """
 import ast
 import collections
@@ -86,8 +112,78 @@ def scan(root="."):
     return sorted(out)
 
 
+# ⚠ 太短的清單不算：三五個字串的小清單各寫一份是正常的，
+#   ⛔ 門檻太低 ⇒ 每天紅 ⇒ 被學會忽略（跟 MIN_STMTS 同一個道理）。
+MIN_COLS = 6
+
+# ⚠ 白名單同上：**空的**，要加之前先回答「為什麼這兩份不能收成一份」。
+ALLOW_CONST = {
+    # (("a.py:A", "b.py:B"), "prefix"): "理由",
+}
+
+
+def scan_consts(root="."):
+    """→ [(組員清單, 種類)]。種類是 `same`（逐字相同）或 `prefix`（已經走岔）。
+
+    ⛔ 抽成函式跟 `scan()` 同一個理由：呼叫點測不到的判準等於沒測。
+    """
+    vals = {}
+    for fn in sorted(os.listdir(root)):
+        if not fn.endswith(".py") or fn.startswith(SKIP_PREFIX):
+            continue
+        try:
+            src = io.open(os.path.join(root, fn), encoding="utf-8").read()
+            tree = ast.parse(src)
+        except (OSError, SyntaxError):
+            continue
+        for node in tree.body:                     # ⛔ 只看**模組層級**的賦值
+            if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+                continue
+            tgt = node.targets[0]
+            if not isinstance(tgt, ast.Name) or not tgt.id.isupper():
+                continue
+            v = node.value
+            if not isinstance(v, (ast.List, ast.Tuple)):
+                continue
+            items = [e.value for e in v.elts
+                     if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+            if len(items) != len(v.elts) or len(items) < MIN_COLS:
+                continue
+            vals[f"{fn}:{tgt.id}"] = tuple(items)
+    out, names = [], sorted(vals)
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            if a.split(":")[0] == b.split(":")[0]:
+                continue                           # 同一個檔裡的另當別論
+            va, vb = vals[a], vals[b]
+            if va == vb:
+                kind = "same"
+            elif va == vb[:len(va)] or vb == va[:len(vb)]:
+                kind = "prefix"
+            else:
+                continue
+            if ((a, b), kind) in ALLOW_CONST:
+                continue
+            out.append(([a, b], kind))
+    return sorted(out)
+
+
 def main():
-    dups = scan(os.path.dirname(os.path.abspath(__file__)) or ".")
+    here = os.path.dirname(os.path.abspath(__file__)) or "."
+    cdups = scan_consts(here)
+    if cdups:
+        print("⛔ 有**欄位契約的常數**在不同檔案裡重複——"
+              "⚠ 走岔的那一天，兩支會對同一批檔案用不同的表頭：\n")
+        for members, kind in cdups:
+            why = ("逐字相同（剛抄好、**還沒**走岔）" if kind == "same"
+                   else "⛔ **一份是另一份的前綴 ⇒ 已經走岔**")
+            print("   " + "  ＝  ".join(members) + f"　{why}")
+        print("\n⇒ 收成一份，另一邊 import 過去（CLAUDE.md 第四點五）。")
+        print("⛔ 旁邊寫「必須逐字一致」不算守門——`backfill.HEADER` "
+              "旁邊就寫著那句，而它還是走岔了。")
+        return 1
+
+    dups = scan(here)
     if dups:
         print("⛔ 有函式本體在**不同檔案**裡逐字相同——"
               "同一件事有兩份實作，改一邊另一邊不會跟上：\n")
@@ -126,11 +222,44 @@ def main():
         print(f"  ok   反向驗：兩個檔放同一個本體時**確實**抓得到"
               f"（抓到 {len(got)} 組）")
         print("  ok   反向驗：少於 3 個 statement 的不算（門檻不會低到每天紅）")
+
+        # ★★ 常數那一道的反向驗，**兩種都要驗**。
+        #   ⛔ 只驗 (a) 的話，`backfill.HEADER` 那個（已經走岔的）躲得掉——
+        #     而那正是今天真的發生的那一份。
+        io.open(os.path.join(sand, "hh1.py"), "w", encoding="utf-8").write(
+            'H = ["a", "b", "c", "d", "e", "f"]\n')
+        io.open(os.path.join(sand, "hh2.py"), "w", encoding="utf-8").write(
+            'H = ["a", "b", "c", "d", "e", "f"]\n')
+        io.open(os.path.join(sand, "hh3.py"), "w", encoding="utf-8").write(
+            'H = ["a", "b", "c", "d", "e", "f", "g"]\n')
+        cg = scan_consts(sand)
+        kinds = {k for _, k in cg}
+        if "same" not in kinds:
+            print("✗ 反向驗失敗：兩個檔放了**逐字相同**的欄位清單，"
+                  "`scan_consts` 沒抓到 ⇒ (a) 那一道等於沒有")
+            return 1
+        if "prefix" not in kinds:
+            print("✗ 反向驗失敗：一份是另一份的**前綴**（＝已經走岔的拷貝，"
+                  "`backfill.HEADER` 那個形狀），`scan_consts` 沒抓到 "
+                  "⇒ (b) 那一道等於沒有")
+            return 1
+        # ⚠ 而短清單不可以被抓（門檻太低 ⇒ 每天紅 ⇒ 被學會忽略）
+        io.open(os.path.join(sand, "hs1.py"), "w", encoding="utf-8").write(
+            'S = ["a", "b", "c"]\n')
+        io.open(os.path.join(sand, "hs2.py"), "w", encoding="utf-8").write(
+            'S = ["a", "b", "c"]\n')
+        if any("hs1.py:S" in m for m, _ in scan_consts(sand)):
+            print("✗ 反向驗失敗：三個元素的小清單也被當成重複 ⇒ 門檻太低")
+            return 1
+        print("  ok   反向驗：逐字相同的欄位清單**確實**抓得到（same）")
+        print("  ok   反向驗：⭐ 前綴（已經走岔的拷貝）**確實**抓得到（prefix）")
+        print(f"  ok   反向驗：少於 {MIN_COLS} 個元素的清單不算")
     finally:
         shutil.rmtree(sand, ignore_errors=True)
 
     print("  ok   ⭐ 跨檔案逐字相同的函式：**0 組**")
-    print("\n[selftest] 通過 3｜失敗 0")
+    print("  ok   ⭐ 跨檔案的欄位契約常數（相同／前綴）：**0 組**")
+    print("\n[selftest] 通過 7｜失敗 0")
     return 0
 
 
