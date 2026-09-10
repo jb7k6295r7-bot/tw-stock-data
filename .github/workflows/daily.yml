@@ -280,6 +280,13 @@ jobs:
         continue-on-error: true
         timeout-minutes: 8
         run: |
+          # ⛔ 自測擋在抓取前面。`note`（官方註記欄）2026-09-10 才加，
+          #   而它的失效方式全部是安靜的：TWSE 靠位置取 ⇒ 取錯會存成
+          #   「資券互抵」的數字，看起來只是「這一欄大部分是空的」。
+          #   ⚠ 而那一欄錯掉的後果不是少一欄——K線線 13:10：
+          #     `O`＝停止融資買進 ⇒ 那些股的「餘額低且下降」現在被讀成
+          #     「槓桿已出清」（正面），實際上是負面。**方向相反。**
+          python selftest_margin_note.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
           for f in margin per otcmargin otcper; do

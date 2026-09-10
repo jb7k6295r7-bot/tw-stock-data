@@ -378,6 +378,9 @@ def _margin_rows(t, day, known, idx, tag):
     """
     out, bad = [], 0
     g = lambda r, i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
+    # ⛔ `note` 是**文字**（`O`／`X`／`@`／`%`／`!`），不可以走 `_blank_num`
+    #   ——那支是給數字用的，會把整欄清成空字串，而且不會有人發現。
+    gt = lambda r, i: (str(r[i]).strip() if (i is not None and i < len(r)) else "")
     n = lambda v: float(str(v).replace(",", "")) if str(v).strip() not in ("", "-") else 0.0
     for r in (t.get("data") or []):
         if not r or len(r) <= idx["code"]:
@@ -387,7 +390,8 @@ def _margin_rows(t, day, known, idx, tag):
             continue
         if known and code not in known:
             continue
-        vals = {k: g(r, i) for k, i in idx.items() if k != "code"}
+        vals = {k: g(r, i) for k, i in idx.items() if k not in ("code", "note")}
+        vals["note"] = gt(r, idx.get("note"))
         try:
             # 融資：今日 = 前日 + 買 − 賣 − 現償
             okm = abs(n(vals["m_prev"]) + n(vals["m_buy"]) - n(vals["m_sell"])
@@ -413,9 +417,25 @@ def _margin_rows(t, day, known, idx, tag):
         #   ⭐ 結論：這兩組數字是**真的遺失資訊**，不是可推導的冗餘欄。
         #   ★ 新欄一律**接在舊表頭後面**，讓舊檔的表頭是新表頭的前綴——
         #     transpose 才有辦法在回補進行到一半時仍然合併得起來（見那支的說明）。
+        # ⭐⭐ 2026-09-10 新增 `note`（官方註記欄），K線線排最高優先。
+        #   ⛔ 它不是清潔工作——**它會讓一批負面訊號被讀成正面訊號**：
+        #     官方 `O` ＝ **停止融資買進**（停的是新增，既有餘額還在）
+        #     ⇒ 那一檔的「融資餘額低、且持續下降」不是槓桿出清，
+        #       是**被官方掐住信用交易**（波動過劇／股權過度集中）。
+        #     兩者在數字上長得一模一樣，方向完全相反。
+        #   ⚠ 而它專打**飆股**——被停止融資的往往正是波動最大、
+        #     也最需要看融資水位的那一群。
+        #   ⛔ 這一欄**照官方原文存**，不解析、不翻譯、不補空白：
+        #     兩張表的符號集不同（`X` 在 `MI_MARGN` 是停止融券、
+        #     在 `TWT93U` 是停券），在這裡翻譯就等於把某一天的解讀寫死。
+        #   ⛔⛔ 而且 TWSE 的這一欄講的是**次一營業日**（官方明文，
+        #     見 `docs/READ_CONTRACT.md`）——⚠ 那是**讀取端**要處理的偏移，
+        #     ⛔ 不可以在這裡先移一天：移了就分不出「官方那天說的」
+        #     與「我方推的」，而官方若改口，也追不回來。
         out.append([day, code, vals["m_buy"], vals["m_sell"], vals["m_balance"],
                     vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"],
-                    vals["m_prev"], vals["m_ret"], vals["s_prev"], vals["s_ret"]])
+                    vals["m_prev"], vals["m_ret"], vals["s_prev"], vals["s_ret"],
+                    vals.get("note", "")])
     return out, f"{len(out)} 列可用（{tag}；餘額恆等式不符丟棄 {bad} 列）"
 
 
@@ -443,12 +463,16 @@ def parse_margin(d, day, known=None):
     t, f = _pick_stock_table(tabs, "代號", "股票代號", "證券代號")
     if t is None:
         return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(x) for x in tabs]}"
+    # ⛔ `f[15] != "註記"` 是 2026-09-10 加的第五條守衛：`note` 一樣靠位置取，
+    #   而它取錯的失敗方式最安靜——存進去的是「資券互抵」的數字，
+    #   看起來就只是「這一欄大部分是空的」。
     if len(f) != 16 or f[2] != "買進" or f[8] != "買進" \
-            or f[4] != "現金償還" or f[10] != "現券償還":
+            or f[4] != "現金償還" or f[10] != "現券償還" or f[15] != "註記":
         return [], (f"欄位結構與 2026-09-04 實測不符，拒收（避免位置錯位）：{f}")
     idx = {"code": 0,
            "m_buy": 2, "m_sell": 3, "m_ret": 4, "m_prev": 5, "m_balance": 6, "m_limit": 7,
-           "s_buy": 8, "s_sell": 9, "s_ret": 10, "s_prev": 11, "s_balance": 12}
+           "s_buy": 8, "s_sell": 9, "s_ret": 10, "s_prev": 11, "s_balance": 12,
+           "note": 15}
     return _margin_rows(t, day, known, idx, "TWSE 位置定位")
 
 
@@ -476,9 +500,16 @@ def parse_otcmargin(d, day, known=None):
             "s_ret": ("券償",), "s_balance": ("券餘額",)}
     idx = {k: _exact(f, *names) for k, names in need.items()}
     missing = [k for k, v in idx.items() if v is None]
+    # ⛔ `備註` 單獨處理、**不放進 `need`**：need 缺一個就整張表拒收，
+    #   而這一欄是新加的 ⇒ 官方哪天改欄名就會讓一整條 feed 停掉。
+    #   ⚠ 反過來也要看得見：取不到時留空，並在 note 訊息裡講出來，
+    #     ⛔ 不可以靜靜地整欄空白（那跟「今天大家都沒有註記」長得一樣）。
+    idx["note"] = _exact(f, "備註", "註記")
     if missing:
         return [], f"欄位對不上，缺 {missing}：{f}"
-    return _margin_rows(t, day, known, idx, "TPEx 名稱定位")
+    tag = "TPEx 名稱定位" + ("" if idx["note"] is not None
+                          else "；⚠ **找不到「備註」欄，note 整欄留空**")
+    return _margin_rows(t, day, known, idx, tag)
 
 
 def parse_otcinst(d, day, known=None):
@@ -802,7 +833,7 @@ FEEDS = {
         # ★ 後四欄 2026-09-09 新增，⛔ **一定要接在最後**（見 `_margin_rows`）。
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
                    "s_buy", "s_sell", "s_balance",
-                   "m_prev", "m_ret", "s_prev", "s_ret"],
+                   "m_prev", "m_ret", "s_prev", "s_ret", "note"],
         "parse": parse_margin,
         "known": True,
         "urls": lambda day: [_twse("marginTrading/MI_MARGN", day, "&selectType=ALL")],
@@ -833,7 +864,7 @@ FEEDS = {
         # ★ 後四欄 2026-09-09 新增，⛔ **一定要接在最後**（見 `_margin_rows`）。
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
                    "s_buy", "s_sell", "s_balance",
-                   "m_prev", "m_ret", "s_prev", "s_ret"],
+                   "m_prev", "m_ret", "s_prev", "s_ret", "note"],
         "parse": parse_otcmargin,
         "known": True,
         "urls": lambda day: [_tpex("margin/balance", day, "&id=")],
