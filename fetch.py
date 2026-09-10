@@ -489,6 +489,19 @@ def _num(v):
     return t
 
 
+def _isz(v):
+    """`_num()` 的輸出是**字串**，`"0.00"` 是 truthy ⇒ 要判零一律走這支。
+
+    ⛔ 這一支原本只有 `backfill.py` 有，於是 `fetch.py` 的興櫃那段用 `if not c`
+      判零，`"0"` 判不掉——2026-09-10 才由 K線線量到 52 列 `close=0` 寫進去了。
+    ⇒ 只留這一份，`backfill.py` 從這裡 import。
+    """
+    try:
+        return float(v) == 0.0
+    except (TypeError, ValueError):
+        return True
+
+
 def extra_lines(kind, rows):
     """v6 的四個新 dataset → CSV 欄位 list。欄位名照抄 FinMind 的原始欄位。"""
     out = []
@@ -1069,8 +1082,16 @@ def parse_twse_daily(d, day, market="twse"):
             continue
         o, h, l, c = (_num(r[i_open]), _num(r[i_high]),
                       _num(r[i_low]), _num(r[i_close]))
-        if not c:
-            continue                       # 無成交就沒有收盤價，跳過不補值
+        # ⛔⛔ 2026-09-10：這裡原本是 `if not c: continue`，
+        #   而 `backfill.py` 那一份**已經照使用者裁定的「甲」拿掉了**。
+        #   ⇒ 只修一份的話：回補把十一年的漏列補回來，
+        #     **而每日這一支從明天開始繼續製造新的洞**——
+        #     補到哪一天為止會變成一條看不出來的分界線。
+        #   ⚠ 這正是 `limit` 那個 bug 的病（同一段邏輯抄兩份、只修了天天跑的那份），
+        #     這次方向相反：只修了回補那份。⇒ 兩份一起改，並且用 selftest 釘住。
+        #   理由與代價全文寫在 `backfill.parse_twse` 同一段，⛔ 不在這裡再抄一次。
+        no_close = not c
+        basis = "無成交" if no_close else ""
         if i_chg is not None:
             sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
             chg = _num(r[i_chg])
@@ -1092,7 +1113,7 @@ def parse_twse_daily(d, day, market="twse"):
                     chg, lim,
                     _num(r[i_shares]) if i_shares is not None else "",
                     _num(r[i_txn]) if i_txn is not None else "",
-                    ""])           # price_basis：上市／上櫃是收盤價，留空
+                    basis])        # price_basis：有成交＝收盤價（留空）／無成交＝`無成交`
     return out, f"欄位={fields}"
 
 
@@ -1149,11 +1170,33 @@ def parse_openapi_daily(rows, day, market):
             continue
         o, h, l, c = (_num(r.get(k_open)), _num(r.get(k_high)),
                       _num(r.get(k_low)), _num(r.get(k_close)))
-        if not c:
-            continue
         chg = _num(r.get(k_chg))
         vol = _num(r.get(k_vol))
         amt = _num(r.get(k_amt))
+        # ⛔⛔ 2026-09-10：興櫃的無成交日**不是空字串，是 0**。
+        #   K線線 09-09 稽核量到：4 個交易日內 34 檔／52 列的價格是 `0`。
+        #   ⚠ 舊的 `if not c: continue` 擋不掉它——`_num()` 回的是**字串**，
+        #     `"0.00"` 是 truthy ⇒ 那 52 列是帶著 `close=0` **寫進去的**，
+        #     而下游讀到「均價 0」會算出 -100% 報酬且完全不報錯。
+        #   ⚠ `data/universe/esb/`（逐月檔）那一份**早就用 `_isz()` 擋掉了**——
+        #     又是同一段判斷抄兩份、只修了一份。⇒ 這裡改成同一套。
+        #
+        # ⭐ 回 K線線 13:00 的 Q2：「一列同時是興櫃又無成交，`price_basis` 裝得下嗎？」
+        #   ⇒ **裝得下，因為那兩件事根本不在同一個問題上。**
+        #     `price_basis` 回答的是「**`close` 這一格是怎麼來的**」；
+        #     無成交 ⇒ 根本沒有 `close` ⇒ 答案就是「沒有」＝ `無成交`。
+        #     「這一列是興櫃」由 `market` 欄回答，⛔ 一直都不該由 `price_basis` 回答。
+        #   ⇒ 三個值互斥且窮盡：`無成交` ／ `均價`（含 `均價/額推算`） ／ 空（收盤價）。
+        #   ⛔ 所以下游要挑興櫃列**必須看 `market`**，不可以看 `price_basis == '均價%'`
+        #     ——那樣會漏掉興櫃的無成交日。這一條寫進 `docs/READ_CONTRACT.md`。
+        if _isz(c):
+            o = h = l = c = ""
+            basis = "無成交"
+            out.append([f"{day}_{code}", day, code,
+                        str(r.get(k_name, "")).strip(), market,
+                        o, h, l, c, vol, amt, "", "", "",
+                        _num(r.get(k_txn)) if k_txn else "", basis])
+            continue
         basis = ""
         if k_avg:
             basis = "均價"

@@ -573,6 +573,20 @@ jobs:
           python selftest_missing_rows.py
           python missing_rows.py
 
+      # ⭐ K線線 2026-09-10 13:00 要的那個判準：回補期間，「沒有那一列」有兩個意思
+      #   （A 真的沒成交／B 還沒補到），⛔ 而它們在檔案上長得一模一樣。
+      #   ⇒ 這一支從資料自己算出「哪幾天已經是新語意」，讓他們的閘門
+      #     對還沒補到的日子標**不可判定**，而不是**不通過**。
+      #   ⚠ 誤擋不會有人抱怨（少推薦幾檔而已）⇒ 沒有這支就會安靜地錯整段回補期。
+      #   ⛔ 排在漏列之後：兩支都是量測，要看同一批檔。
+      - name: 無成交列水位（哪幾天已是新語意，不連外）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_notrade_watermark.py
+          python notrade_watermark.py
+
       - name: 缺還原因子清單（只看有沒有變多）
         if: always()
         continue-on-error: true

@@ -149,6 +149,62 @@ def main():
         _B.DAILY_DIR = old_dir
         shutil.rmtree(sand, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════
+    # ⑦ ⛔⛔ `fetch.py`（**每日**那一支）必須跟 `backfill.py` 走同一套。
+    #   2026-09-10 發現時，`backfill.parse_twse` 已經照「甲」保留無成交列，
+    #   而 `fetch.parse_twse_daily` **還在 `if not c: continue`**
+    #   ⇒ 回補把十一年補回來，每日從明天起繼續挖新的洞。
+    #   ⚠ 這是 `limit` 那個 bug 的病，方向相反：只修了回補那一份。
+    # ══════════════════════════════════════════════════════════
+    import fetch as _F
+    fpay = {"tables": [{"title": "上櫃股票行情", "fields": FIELDS,
+                        "data": [ROW_OK, ROW_NOTRADE]}]}
+    frows, _ = _F.parse_twse_daily(fpay, "2026-09-03", market="tpex")
+    fgot = [dict(zip(H, r)) for r in frows]
+    ck("⑦ fetch.parse_twse_daily **保留**無成交列（2 列不是 1 列）",
+       len(fgot) == 2, f"只有 {len(fgot)} 列")
+    fnt = [r for r in fgot if r["stock_id"] == "6904"]
+    ck("⑦ 那一列 close 是空的、price_basis='無成交'",
+       bool(fnt) and fnt[0]["close"] == "" and fnt[0]["price_basis"] == "無成交",
+       str(fnt))
+    ck("⑦ ⛔ volume／amount 照官方原文（0 與 2000，不是自己填的 0）",
+       bool(fnt) and (fnt[0]["volume"], fnt[0]["amount"]) == ("0", "2000"),
+       str(fnt))
+    ck("⑦ 無成交列不判漲跌停", bool(fnt) and fnt[0]["limit"] == "", str(fnt))
+
+    # ⭐ 兩支的輸出要**逐格相同**——這才是「只修一份」真正的守門
+    brows, _ = B.parse_twse(fpay, "2026-09-03", market="tpex")
+    diff = [(i, a, b) for i, (a, b) in enumerate(zip(brows, frows)) if a != b]
+    ck("⑦ ⭐ backfill.parse_twse 與 fetch.parse_twse_daily **逐格相同**",
+       len(brows) == len(frows) and not diff, f"{len(brows)}/{len(frows)} 列；差 {diff[:2]}")
+
+    # ══════════════════════════════════════════════════════════
+    # ⑧ ⛔ 興櫃的無成交日**不是空字串，是 0**（K線線 09-09 量到 52 列 close=0）。
+    #   `_num()` 回的是字串，`"0.00"` 是 truthy ⇒ `if not c` 判不掉。
+    # ══════════════════════════════════════════════════════════
+    ESB = [{"SecuritiesCompanyCode": "6740", "CompanyName": "天御", "Average": "57.18",
+            "PreviousAveragePrice": "57.00", "Highest": "57.70", "Lowest": "56.40",
+            "TransactionVolume": "28863", "TransactionAmount": "",
+            "TransactionNumber": "43"},
+           {"SecuritiesCompanyCode": "6741", "CompanyName": "無人買", "Average": "0.00",
+            "PreviousAveragePrice": "12.00", "Highest": "0.00", "Lowest": "0.00",
+            "TransactionVolume": "0", "TransactionAmount": "",
+            "TransactionNumber": "0"}]
+    erows, _ = _F.parse_openapi_daily(ESB, "2026-09-03", "emerging")
+    egot = {r[2]: dict(zip(H, r)) for r in erows}
+    ck("⑧ 無成交的興櫃列**保留**（2 列）", len(erows) == 2, f"{len(erows)} 列")
+    ck("⑧ ⛔ close **不是 0** 而是空字串（0 會被下游算成 -100%）",
+       egot.get("6741", {}).get("close") == "", str(egot.get("6741")))
+    ck("⑧ ⭐ price_basis='無成交'（回 K線線 Q2：`market` 才是講興櫃的那一欄）",
+       egot.get("6741", {}).get("price_basis") == "無成交", str(egot.get("6741")))
+    ck("⑧ ⚠ 有成交的興櫃列**不受影響**，仍然是均價系",
+       egot.get("6740", {}).get("price_basis") in ("均價", "均價/額推算")
+       and egot.get("6740", {}).get("close") == "57.18", str(egot.get("6740")))
+    ck("⑧ 無成交的興櫃列 market 仍然是 emerging（身分不會消失）",
+       egot.get("6741", {}).get("market") == "emerging", str(egot.get("6741")))
+    ck("⑧ ⚠ 反向：`_isz` 兩邊同一支（不是各抄一份）",
+       B._isz is _F._isz)
+
     real = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "data", "universe", "daily")
     ck("★ 沒有寫任何檔（這支只呼叫 parse，不落地）",

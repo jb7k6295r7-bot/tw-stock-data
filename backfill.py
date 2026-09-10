@@ -41,7 +41,7 @@ import runlog
 # ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
 #   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
 #   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
-from fetch import _lock_dir, fill_twse_shares
+from fetch import _isz, _lock_dir, fill_twse_shares
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -304,14 +304,6 @@ def _num(v):
     except ValueError:
         return ""
     return t
-
-
-def _isz(v):
-    """_num() 的輸出是字串，"0.00" 是 truthy——要判零一律走這支。"""
-    try:
-        return float(v) == 0.0
-    except (TypeError, ValueError):
-        return True
 
 
 def _kind(code):
