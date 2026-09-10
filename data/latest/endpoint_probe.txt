@@ -1,4 +1,4 @@
-# 端點偵察 2026-09-10T19:10:46+08:00 目標日 2026-09-10
+# 端點偵察 2026-09-11T00:12:47+08:00 目標日 2026-09-10
 twse OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260910&type=ALLBUT0999&response=json
     bytes=248361
     欄位=['證券代號', '證券名稱', '成交股數', '成交筆數', '成交金額', '開盤價', '最高價', '最低價', '收盤價', '漲跌(+/-)', '漲跌價差', '最後揭示買價', '最後揭示買量', '最後揭示賣價', '最後揭示賣量', '本益比']
@@ -11,4 +11,4 @@ emerging OK   https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
     bytes=142309
     欄位=['Date', 'Time', 'SecuritiesCompanyCode', 'CompanyName', 'PreviousAveragePrice', 'BuyingPrice', 'BuyingQuantity', 'SellingPrice', 'SellingQuantity', 'Highest', 'Lowest', 'Average', 'LatestPrice', 'Buy/Sell', 'SuspendTime', 'TransactionVolume', 'ApplyingDate', 'ApplyingStatus']
     解析出 363 列
-  發行股數（上市，MI_QFIIS）：✗ 回應裡沒有表（stat='查詢日期大於可查詢最大日期，請重新查詢!'）
+  發行股數（上市，MI_QFIIS）：1362 列｜取得 1362 檔的發行股數｜補上 1358／1379 列　⚠ 有 21 檔官方那張表沒有
