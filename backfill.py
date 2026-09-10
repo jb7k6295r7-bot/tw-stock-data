@@ -46,7 +46,8 @@ from fetch import (_isz, _lock_dir, fill_twse_shares,
                    parse_twse_daily as _parse_twse_daily,
                    _twse_tables as _fetch_tables,
                    write_universe_day as _write_universe_day,
-                   _kind as _fetch_kind)
+                   _kind as _fetch_kind,
+                   _same_day as _fetch_same_day)
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -385,64 +386,8 @@ def describe_response(d, want=None):
 _tables = _fetch_tables
 
 
-def _same_day(d, day):
-    """回應自己宣告的日期，是不是我們要的那一天。→ (是否相符, 它說的日期)
-
-    ★ 這是回補的最後一道防線。端點「不吃日期參數」或「查無就回最近一天」時，
-      HTTP 200、stat=OK、欄位全對、每個數字都是真的——**只是屬於別的日子**。
-      2026-09-03 就是這樣把 2026-09-02 的資料寫成 2015-01-01。
-      沒有這個檢查，錯誤在檔案裡完全看不出來。
-    """
-    want = day.replace("-", "")
-    if not isinstance(d, dict):
-        return True, ""            # 無從判斷就不擋，交給呼叫端的其他檢查
-
-    def _norm(v):
-        """抽出字串裡**第一個**日期，正規化成西元 YYYYMMDD；抽不到回空字串。
-
-        ★ 不可以用「把所有數字串起來再取前 8 碼」——
-          `title` 長成「104年07月16日 至 104年07月16日」，
-          串起來會變成 `10407161040716`，取前 8 碼得到 `10407161`，是垃圾。
-        """
-        t = str(v)
-        m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", t)
-        if m:
-            y, mo, dd = int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3))
-            return f"{y:04d}{mo:02d}{dd:02d}"
-        m = re.search(r"(?<!\d)(\d{8})(?!\d)", t)          # 西元 20150716
-        if m:
-            return m.group(1)
-        m = re.search(r"(?<!\d)(\d{7})(?!\d)", t)          # 民國 1040716
-        if m:
-            g = m.group(1)
-            return f"{int(g[:3]) + 1911}{g[3:]}"
-        return ""
-
-    # ★★ 2026-09-04：**只看 `date` 會被參數回音打穿。**
-    #   TWSE `TWT49U` 不吃 `date`（它要的是 startDate/endDate），
-    #   但會把收到的 `date` **原樣放回 response**——於是 `date=20150123` 通過檢查，
-    #   實際回的卻是 `strDate:20260907` 那天的四列。
-    #   結果是 2026-09-07 的資料被寫進 2015 年的每一個日期檔，
-    #   HTTP 200、stat=OK、欄位全對、數字全是真的，**只是屬於別的年代**。
-    #   → 所以要**看它自己宣告服務了哪一天**（title／strDate／endDate），
-    #     而不是只看它把我們的參數抄回來的那一欄。
-    #     任何一個自述欄位與 want 矛盾，就判定不符。
-    said, mism = [], []
-    for k in ("strDate", "endDate", "title", "date", "Date"):
-        v = d.get(k)
-        if v in (None, ""):
-            continue
-        n = _norm(v)
-        if not n:
-            continue
-        said.append(f"{k}={v}")
-        if n != want:
-            mism.append(f"{k}={v}")
-    if mism:
-        return False, "；".join(mism)
-    if not said:
-        return True, ""
-    return True, "；".join(said)
+# ⛔ 第九份：`_same_day` 搬到 `fetch.py`（每日那條路更需要它，見那邊的說明）。
+_same_day = _fetch_same_day
 
 
 def _idx(fields, *kws):
