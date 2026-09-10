@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
+        description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, audit, purge, meta]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -179,6 +179,33 @@ jobs:
             --codes "${{ inputs.codes }}" \
             --start "${{ inputs.start }}" \
             --end   "${{ inputs.end }}"
+
+      # ⭐⭐ 把**某一天**被刪掉的興櫃列補回去。日期填在 `start`。
+      #   ⛔ 這一支修的是我自己造成的遺失（2026-09-08 的 363 列：
+      #     那趟 `--markets twse,tpex --force` 走到當時還是「整檔覆蓋」的 write_day）。
+      #   ⭐ `esb_day_probe.py` 在 Actions 上回答了「補不補得回來」：
+      #     九條「帶日期、回全市場」的候選**兩天都 0 條可用**，
+      #     ⚠ 而失敗訊息本身就是答案——`stat：請輸入資料日期及股票代碼查詢個股行情`
+      #     ⇒ `type=Daily` 強制要 code，**但逐檔的月表可用** ⇒ 打 363 次補得回來。
+      #   ⚠ 363 檔 × 5 秒 ≈ 30 分鐘。
+      - name: 興櫃單日修補（把被刪掉的那一天補回去）
+        if: inputs.mode == 'esb-repair'
+        timeout-minutes: 90
+        run: |
+          python selftest_esb_day_repair.py
+          D="${{ inputs.start }}"
+          # ⛔⛔ 先把那一天的日檔換成 **main 上的那一份**（CLAUDE.md 第四點六）：
+          #   分支的 `data/` 比 main 舊，⚠ 而這一次「舊」正好是兩邊互補——
+          #   main 有 twse 1382／tpex 1013／emerging **0**，
+          #   分支有 emerging **363**／twse 只有 1（那趟只寫了一列就被砍）。
+          #   ⇒ 底稿一定要取 main 的，⛔ 拿分支的當底稿會把 1,381 列上市推回去刪掉。
+          git fetch origin main || true      # checkout 用 fetch-depth: 0，不要再淺化
+          git checkout origin/main -- "data/universe/daily/$D.csv" || \
+            echo "⚠ main 上沒有 $D 的日檔，用 checkout 帶下來的那一份"
+          # ⭐ 來源優先走 `--from-git HEAD`（一個請求都不打）；
+          #   ⚠ 那個 ref 上沒有的話它會自己講出來，再改用月表那條。
+          python esb_day_repair.py --date "$D" --from-git HEAD \
+                                   --sleep "${{ inputs.sleep || '5' }}"
 
       - name: 回補
         if: inputs.mode == 'run'

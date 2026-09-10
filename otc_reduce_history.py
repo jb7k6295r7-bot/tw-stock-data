@@ -44,6 +44,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -61,8 +62,11 @@ ADJ = os.path.join(_ROOT, "adj")
 LOW = os.path.join(_ROOT, "meta", "_otc_reduce_gap_low.txt")
 
 URL = "https://www.tpex.org.tw/www/zh-tw/bulletin/revivt"
+# ⭐ 2026-09-10 新增末三欄：官方**自己給的**換股比例（第 11 欄 `詳細資料`）。
+#   ⛔ 原有的 `factor`（＝參考價 ÷ 最後收盤）**留著不動**——
+#     改判準是 K線線的事，這裡只把兩個都存下來並且逐筆比。
 HEADER = ["date", "stock_id", "name", "last_close", "ref_price", "factor",
-          "reason", "asof"]
+          "reason", "shares_per_1000", "cash_return", "factor_official", "asof"]
 
 
 # ⛔ 第九／第十份：`_post` 也收進 `twparse.py`。
@@ -83,6 +87,65 @@ def _num(v):
         return float(s)
     except ValueError:
         return None
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 第 11 欄 `詳細資料`：官方**自己給的**減資換股比例
+#
+#   情報分析線 2026-09-10 16:15 實測（`startDate=2011/01/01`）：
+#     287/287 解析成功、零 null，內容長這樣——
+#
+#       每壹仟股換發新股票: 618.578 股
+#       每股退還股款: 0.00000000 元/股
+#
+#   ⭐ 而且它**自帶驗算**（他們逐筆跑過，287 筆全過、不符 0、缺值 0）：
+#
+#       恢復買賣參考價 ＝（最後交易日收盤價 − 每股退還股款）÷（每壹仟股換發新股 ÷ 1000）
+#
+#   ⇒ 「每壹仟股換發新股票」**就是**減資因子的分母，
+#     ⛔ 而我方原本的 `factor` 是從**印到分為止**的參考價回推的 ⇒ 帶著四捨五入殘差。
+#
+# ⛔ 但這裡**只存不換**：`factor` 用哪一個是判準問題 ⇒ K線線裁定。
+#   ⚠ 我方 `data/adj/` 的單一寫入者也不是這一支。
+#
+# ⚠ 這一欄是 HTML ⇒ ⛔ 不可以只認一種寫法：
+#   全形冒號、標籤、`&nbsp;`、千分位、「每仟股」少一個「壹」，都得吃得下。
+#   ⭐ 而認不出來時**要把原文印出來**——`bulletin/revivt` 那次 283 列全部認不出，
+#     失敗訊息只給了一個數字，代價是再打對方一趟才知道為什麼。
+# ══════════════════════════════════════════════════════════════════
+_TAG = re.compile(r"<[^>]*>")
+_NUM_AFTER = r"[^0-9]{0,12}([0-9][0-9,]*(?:\.[0-9]+)?)"
+_RE_RATIO = re.compile(r"每\s*[壹一]?\s*仟\s*股\s*換\s*發\s*新\s*股\s*票?" + _NUM_AFTER)
+_RE_CASH = re.compile(r"每\s*股\s*退\s*還\s*股\s*款" + _NUM_AFTER)
+
+
+def parse_detail(raw):
+    """第 11 欄 → (每壹仟股換發新股, 每股退還股款)。認不出來一律回 None。
+
+    ⛔ 認不出來**不可以回 0**：`每股退還股款 = 0` 是真的會發生的值
+    （彌補虧損那一類就是 0）⇒ 用 0 當「沒讀到」會讓恆等式**看起來過了**。
+    """
+    if raw is None:
+        return None, None
+    txt = _TAG.sub(" ", str(raw))
+    for a, b in (("&nbsp;", " "), ("&amp;", "&"), ("\u3000", " ")):
+        txt = txt.replace(a, b)
+    def _one(rx):
+        m = rx.search(txt)
+        if not m:
+            return None
+        try:
+            return float(m.group(1).replace(",", ""))
+        except ValueError:
+            return None
+    return _one(_RE_RATIO), _one(_RE_CASH)
+
+
+def official_ref(last_close, ratio, cash):
+    """官方恆等式：參考價 ＝（最後收盤 − 退還股款）÷（每壹仟股換發新股 ÷ 1000）。"""
+    if not last_close or not ratio:
+        return None
+    return (last_close - (cash or 0.0)) * 1000.0 / ratio
 
 
 def parse(payload, want_from):
@@ -109,6 +172,9 @@ def parse(payload, want_from):
     i_lc = _pick(fields, "最後交易日之收盤價", "最後交易日")
     i_rp = _pick(fields, "恢復買賣開始日參考價", "參考價格", "參考價")
     i_rs = _pick(fields, "減資原因", "原因")
+    # ⚠ 第 11 欄。⛔ 不設成必要欄位：官方哪天拿掉它，我方不該整批停擺——
+    #   那一欄是**加值**，`factor` 沒有它照樣算得出來。
+    i_dt = _pick(fields, "詳細資料", "詳細資料說明", "備註")
     miss = [n for n, i in (("日期", i_d), ("代號", i_c),
                            ("最後收盤", i_lc), ("參考價", i_rp)) if i is None]
     if miss:
@@ -119,8 +185,11 @@ def parse(payload, want_from):
     #   我必須再跑一趟（再打對方一次）才知道是日期格式、還是列的形狀、還是代號空的。
     #   ⚠ 一個會叫、但叫不出原因的斷言，代價是一整個來回。
     #   ⇒ 分開數每一種原因，並附**第一列原文**。
-    why = {"不是 list": 0, "欄數不足": 0, "日期認不出": 0, "代號是空的": 0}
-    sample = None
+    why = {"不是 list": 0, "欄數不足": 0, "日期認不出": 0, "代號是空的": 0,
+           # ⚠ 這一種**不會讓那一列被丟掉**（第 11 欄是加值，不是必要欄）
+           #   ⇒ 它只影響 `shares_per_1000`／`factor_official`，所以不加進 `bad`。
+           "第11欄認不出": 0}
+    sample = detail_sample = None
     for r in data:
         if sample is None:
             sample = r
@@ -144,10 +213,22 @@ def parse(payload, want_from):
             continue
         # ⭐ factor ＝ 參考價 ÷ 最後交易日收盤價（與 `data/adj` 同定義）
         f = f"{rp / lc:.8f}" if (lc and rp) else ""
+        # ⭐ 官方自己給的換股比例（第 11 欄）。⛔ 認不出來就留空，不要猜。
+        ratio = cash = None
+        if i_dt is not None and len(r) > i_dt:
+            ratio, cash = parse_detail(r[i_dt])
+            if ratio is None:
+                why["第11欄認不出"] += 1
+                if detail_sample is None:
+                    detail_sample = str(r[i_dt])[:300]
+        ref_o = official_ref(lc, ratio, cash)
         rows.append([dt, code, str(r[i_n]).strip() if i_n is not None else "",
                      str(r[i_lc]).replace(",", "").strip(),
                      str(r[i_rp]).replace(",", "").strip(), f,
-                     str(r[i_rs]).strip() if i_rs is not None else ""])
+                     str(r[i_rs]).strip() if i_rs is not None else "",
+                     "" if ratio is None else f"{ratio:.6f}",
+                     "" if cash is None else f"{cash:.8f}",
+                     f"{ref_o / lc:.8f}" if (ref_o and lc) else ""])
     if not rows:
         # ⭐ 把「為什麼」講出來，⛔ 不要只給一個數字。
         detail = "｜".join(f"{k} {v}" for k, v in why.items() if v)
@@ -159,8 +240,12 @@ def parse(payload, want_from):
     if ds[0] > want_from and ds[0] >= recent:
         return [], (f"⛔ 回的只有最近的資料（{ds[0]} ~ {ds[-1]}，{len(rows)} 筆），"
                     f"我要的是 {want_from} 起　⚠ 參數多半沒生效")
+    n_ratio = sum(1 for r in rows if r[7])
     return rows, (f"{len(data)} 列｜認得出 {len(rows)}"
                   + (f"｜⚠ 認不出 {bad}" if bad else "")
+                  + f"｜⭐ 第 11 欄換股比例 {n_ratio}/{len(rows)}"
+                  + (f"　⛔ 認不出 {why['第11欄認不出']} 列，第一列原文={detail_sample!r}"
+                     if why["第11欄認不出"] else "")
                   + f"｜涵蓋 {ds[0]} ~ {ds[-1]}｜欄位 {fields}")
 
 
@@ -280,6 +365,55 @@ def main():
             w.writerow(r + [today])
     rl.info("判準檔", f"data/meta/otc_reduce_history.csv｜{len(rows):,} 筆")
     rl.info("  原因分布", dict(Counter(r[6] for r in rows).most_common(6)))
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 官方**自帶的**驗算（情報分析線 16:15：287 筆全過、不符 0、缺值 0）
+    #
+    #     恢復買賣參考價 ＝（最後收盤 − 每股退還股款）÷（每壹仟股換發新股 ÷ 1000）
+    #
+    # ⚠ 這條恆等式的價值不是「多一個數字」，是**它把兩個獨立欄位綁在一起**：
+    #   換股比例讀錯、參考價欄位錯位、我方欄位對應搞反——任一種都會讓它不符。
+    #   ⛔ 而那三種失敗**單看任何一欄都完全正常**。
+    # ══════════════════════════════════════════════════════════════
+    n_ratio = sum(1 for r in rows if r[7])
+    rl.check("⭐ 第 11 欄（官方換股比例）每一列都解得出來",
+             n_ratio == len(rows),
+             f"{n_ratio}/{len(rows)}　⛔ 缺 {len(rows) - n_ratio} 列"
+             "（說明欄有第一列原文，⇒ 不必再打對方一趟才知道為什麼）"
+             if n_ratio != len(rows) else f"{n_ratio}/{len(rows)}")
+    ident_ok, ident_bad = [], []
+    for r in rows:
+        lc, rp = _num(r[3]), _num(r[4])
+        if not r[7] or not lc or not rp:
+            continue
+        ref_o = official_ref(lc, float(r[7]), float(r[8] or 0))
+        # ⚠ 容差照情報分析線量到的：絕對 0.005（官方參考價印到分為止）＋相對 1e-4
+        (ident_ok if abs(ref_o - rp) <= max(0.005, rp * 1e-4)
+         else ident_bad).append((r[1], r[0], round(ref_o, 4), rp))
+    rl.check("⭐ 官方自洽恆等式（參考價 ＝（收盤−退款）÷（換股數÷1000））逐筆成立",
+             not ident_bad,
+             f"⛔ {len(ident_bad)} 筆不符：{ident_bad[:6]}" if ident_bad
+             else f"{len(ident_ok)} 筆全過（容差 0.005 ＋ 相對 1e-4）")
+
+    # ⛔ 只 info 不 check：**用哪一個當 factor 是判準問題 ⇒ K線線裁定。**
+    #   ⚠ 我方原本的 `factor` 是從「印到分為止」的參考價回推的 ⇒ 帶四捨五入殘差；
+    #     官方比例是原始值。兩者差多少要先量出來，⛔ 不是先改掉。
+    diffs = []
+    for r in rows:
+        if r[5] and r[9]:
+            try:
+                diffs.append((abs(float(r[5]) - float(r[9])), r[1], r[0],
+                              r[5], r[9]))
+            except ValueError:
+                pass
+    diffs.sort(reverse=True)
+    if diffs:
+        big = [d for d in diffs if d[0] > 1e-4]
+        rl.info("⚠ 兩種 factor 的差（參考價回推 vs 官方比例）",
+                f"{len(diffs)} 筆可比｜最大 {diffs[0][0]:.8f}"
+                f"（{diffs[0][1]} {diffs[0][2]}：{diffs[0][3]} vs {diffs[0][4]}）"
+                f"｜差 > 1e-4 的有 **{len(big)}** 筆"
+                "　⇒ ⛔ 換不換由 K線線裁定，這一支只把兩個都存下來")
 
     # ── ⭐ 情報分析線 10:00 指名要我做的那一掃 ──────────────────────
     #   他驗過的是「我方已有的那些對得上」（12/12 逐位相符），
