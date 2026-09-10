@@ -1,0 +1,147 @@
+# 上櫃 chtm（變更交易／分盤／管理股票）與 BFIB9U（融資成數調整）探針
+# ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
+# ⛔ 在看到真回應之前不寫 parser。
+
+── 上櫃 chtm｜date=104/01/05　⭐ 情報分析線實測回 36 列 ⇒ **有歷史**的證據
+   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=104/01/05&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：20150105
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（10）：['證券代號', '證券名稱', '變更交易', '分盤交易', '屬管理股票', '分盤或管理股票撮合循環時間(分鐘)', '停止交易', '財務資訊重點專區', '公告連結', '財務重點專區連結']
+     列數：36
+       樣本：["3066", "李洲", "Ｙ", "", "", "", "", "Ｙ", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3085", "久大", "", "", "", "", "Ｙ", "Ｙ", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3095", "及成", "Ｙ", "", "", "", "", "Ｙ", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3126", "信億", "Ｙ", "Ｙ", "", "030", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+     欄 0「證券代號」：36 種相異值，前 8：['3066', '3085', '3095', '3126', '3465', '3562', '3629', '4131']
+     欄 1「證券名稱」：36 種相異值，前 8：['中日新', '久大', '久正', '信億', '元隆', '全達', '冠華', '卓韋']
+     ⭐ 欄 2「變更交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 3「分盤交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 4「屬管理股票」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（3）：['', '030', '045']
+     ⭐ 欄 6「停止交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 7「財務資訊重點專區」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 8「公告連結」的相異值（10）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTAwMDAxMTIyNw==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDAxNTAxOTI=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMDI5MA==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMDYwMTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMDgwNw==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMTA5OA==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAzMDIwMDQwOTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAzMDIwMDczMzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAzMDIwMTAzMzE=&content_file=XX']
+     ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
+
+── 上櫃 chtm｜date=098/06/01　⛔ 越界：情報分析線說它**靜靜回今天** ⇒ 本探針要逐位元組證實
+   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=098/06/01&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：20090601
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（10）：['證券代號', '證券名稱', '變更交易', '分盤交易', '屬管理股票', '分盤或管理股票撮合循環時間(分鐘)', '停止交易', '財務資訊重點專區', '公告連結', '財務重點專區連結']
+     列數：38
+       樣本：["1107", "建台", "", "", "Ｙ", "045", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["2396", "精碟", "", "", "Ｙ", "045", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3099", "頂倫", "Ｙ", "", "", "", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3144", "新揚科", "Ｙ", "", "", "", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+     欄 0「證券代號」：38 種相異值，前 8：['1107', '2396', '3099', '3144', '3205', '3252', '4413', '4801']
+     欄 1「證券名稱」：38 種相異值，前 8：['世一旦', '久陽', '亞全', '佳鼎', '元隆', '凌越', '合邦', '商丞']
+     ⭐ 欄 2「變更交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 3「分盤交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 4「屬管理股票」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（3）：['', '030', '045']
+     ⭐ 欄 6「停止交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 7「財務資訊重點專區」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 8「公告連結」的相異值（2）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTA0MDIwMTE3NDE=&content_file=XX']
+     ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
+
+── 上櫃 chtm｜date=115/09/10　對照組：今天（⚠ 越界那一份要跟這一份比）
+   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/10&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：20260910
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（10）：['證券代號', '證券名稱', '變更交易', '分盤交易', '屬管理股票', '分盤或管理股票撮合循環時間(分鐘)', '停止交易', '財務資訊重點專區', '公告連結', '財務重點專區連結']
+     列數：21
+       樣本：["2067", "嘉鋼", "Ｙ", "", "", "", "", "Ｙ", "/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjI5NTE=&content_file=XX", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3064", "泰偉", "Ｙ", "", "", "", "", "Ｙ", "/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMDcxNzE=&content_file=XX", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3259", "鑫創", "Ｙ", "", "", "", "", "Ｙ", "/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjI5NTE=&content_file=XX", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+       樣本：["3625", "西勝", "Ｙ", "", "", "", "", "Ｙ", "/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjI5NTE=&content_file=XX", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
+     欄 0「證券代號」：21 種相異值，前 8：['2067', '3064', '3259', '3625', '3629', '3632', '3664', '3710']
+     欄 1「證券名稱」：21 種相異值，前 8：['中湛', '佳總', '凱碩', '劍湖山', '唐鋒', '商丞', '嘉鋼', '地心引力']
+     ⭐ 欄 2「變更交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 3「分盤交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 4「屬管理股票」的相異值（1）：['']
+     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（3）：['', '030', '045']
+     ⭐ 欄 6「停止交易」的相異值（2）：['', 'Ｙ']
+     ⭐ 欄 7「財務資訊重點專區」的相異值（1）：['Ｙ']
+     ⭐ 欄 8「公告連結」的相異值（9）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTE0MDIwMjgzNzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDAwMDczMzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMDcxNzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMTIwNzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjI5NTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjQzNTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTEyMDIwMTA0NzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTEzMDIwMTEyNzE=&content_file=XX']
+     ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
+
+── ⭐⭐ 越界那一天 vs 今天：逐位元組比
+   ✅ 不同（越界 4591B vs 今天 4408B）　⇒ 越界**不是**靜默回今天，可以靠回應本身分辨
+
+── 上市 融資成數調整 BFIB9U（不帶日期，看它回什麼）
+   https://www.twse.com.tw/rwd/zh/marginTrading/BFIB9U?startDate=&endDate=&sortType=ALL&stockNo=&selectType=%E5%85%A8%E9%83%A8&response=json
+   頂層鍵 ['data', 'fields', 'hints', 'selectList', 'stat', 'title']
+   ⭐ 平常被丟掉的鍵：['hints', 'selectList', 'stat']
+     ── title：調整融資融券成數股票資訊
+     ── hints：查詢範圍：全部上市 
+期間：115年09月09日到115年09月09日
+     ── selectList：["全部", "股價波動過度劇烈", "成交量過度異常", "股權過度集中", "監視第二次處置", "TDR兌回異常", "監視業務督導會報決議處置增加調整成數"]
+     ── stat：OK
+   頂層 `fields`：['編號', '證券代號', '證券名稱', '調整成數原因', '調整成數起日', '恢復日', '降低融資比率', '提高融券保證金成數']
+   `_tables()` 認出 1 張表
+     欄位（8）：['編號', '證券代號', '證券名稱', '調整成數原因', '調整成數起日', '恢復日', '降低融資比率', '提高融券保證金成數']
+     列數：471
+       樣本：[1, "1203", "味王            ", "股價波動過度劇烈", "", "", "1", "1"]
+       樣本：[1, "1203", "味王            ", "成交量過度異常", "115.09.03", "", "1", "1"]
+       樣本：[1, "1203", "味王            ", "股權過度集中", "", "", "1", "1"]
+       樣本：[1, "1203", "味王            ", "監視第二次處置", "", "", " ", " "]
+     欄 0「編號」：94 種相異值，前 8：['1', '10', '11', '12', '13', '14', '15', '16']
+     欄 1「證券代號」：94 種相異值，前 8：['1203', '1233', '1235', '1303', '1324', '1418', '1423', '1443']
+     欄 2「證券名稱」：94 種相異值，前 8：['AMAX-KY', '中傑-KY', '互盛電', '佐登-KY', '倚天酷碁-創', '健策', '傳奇', '光寶科']
+     ⭐ 欄 3「調整成數原因」的相異值（6）：['', 'TDR兌回異常', '成交量過度異常', '監視第二次處置', '股價波動過度劇烈', '股權過度集中']
+     欄 4「調整成數起日」：48 種相異值，前 8：['', '110.09.24', '112.09.07', '113.11.11', '114.04.30', '114.06.03', '114.06.24', '114.07.17']
+     ⭐ 欄 5「恢復日」的相異值（3）：['', '115.09.14', '115.09.16']
+     ⭐ 欄 6「降低融資比率」的相異值（5）：['', '1', '6', '累計：1', '累計：6']
+     ⭐ 欄 7「提高融券保證金成數」的相異值（4）：['', '1', '累計：1', '累計：2']
+
+── 上市 融資成數調整 BFIB9U｜2015-01-05（⚠ 情報分析線說回 126 列）
+   https://www.twse.com.tw/rwd/zh/marginTrading/BFIB9U?startDate=20150105&endDate=20150105&sortType=ALL&stockNo=&selectType=%E5%85%A8%E9%83%A8&response=json
+   頂層鍵 ['data', 'fields', 'hints', 'selectList', 'stat', 'title']
+   ⭐ 平常被丟掉的鍵：['hints', 'selectList', 'stat']
+     ── title：調整融資融券成數股票資訊
+     ── hints：查詢範圍：全部上市 
+期間：104年01月05日到104年01月05日
+     ── selectList：["全部", "股價波動過度劇烈", "成交量過度異常", "股權過度集中", "監視第二次處置", "TDR兌回異常", "監視業務督導會報決議處置增加調整成數"]
+     ── stat：OK
+   頂層 `fields`：['編號', '證券代號', '證券名稱', '調整成數原因', '調整成數起日', '恢復日', '降低融資比率', '提高融券保證金成數']
+   `_tables()` 認出 1 張表
+     欄位（8）：['編號', '證券代號', '證券名稱', '調整成數原因', '調整成數起日', '恢復日', '降低融資比率', '提高融券保證金成數']
+     列數：126
+       樣本：[1, "1236", "宏亞            ", "股價波動過度劇烈", "", "", "1", "1"]
+       樣本：[1, "1236", "宏亞            ", "成交量過度異常", "103.11.04", "", "1", "1"]
+       樣本：[1, "1236", "宏亞            ", "股權過度集中", "", "", "1", "1"]
+       樣本：[1, "1236", "宏亞            ", "監視第二次處置", "", "", " ", " "]
+     欄 0「編號」：25 種相異值，前 8：['1', '10', '11', '12', '13', '14', '15', '16']
+     欄 1「證券代號」：25 種相異值，前 8：['1236', '1470', '1725', '1735', '2368', '2390', '2539', '2540']
+     欄 2「證券名稱」：25 種相異值，前 8：['一零四', '三福化', '云辰', '亞弘電', '元禎', '台端', '同開', '夏都']
+     ⭐ 欄 3「調整成數原因」的相異值（6）：['', 'TDR兌回異常', '成交量過度異常', '監視第二次處置', '股價波動過度劇烈', '股權過度集中']
+     欄 4「調整成數起日」：26 種相異值，前 8：['', '100.05.11', '100.05.24', '102.05.20', '103.01.14', '103.08.12', '103.09.01', '103.09.19']
+     ⭐ 欄 5「恢復日」的相異值（3）：['', '104.01.06', '104.01.12']
+     ⭐ 欄 6「降低融資比率」的相異值（5）：['', '1', '6', '累計：1', '累計：6']
+     ⭐ 欄 7「提高融券保證金成數」的相異值（3）：['', '1', '累計：1']
+
+## ⇒ 拿到結果之後要回答的
+  Q1 `chtm` 的欄名**逐字**是什麼（我方要拿它當唯一的守衛）？
+  ⭐ Q2 「分盤交易」欄的值長什麼樣（V／●／1／空白）？
+     ⚠ 而且要看**相異值清單**——⛔ 借券那件的教訓：
+       分類欄可能是**複合的**（`XV` 比單獨的 `X` 還多），
+       只看第一列會以為它是單一值，寫成 `== 'V'` 會漏掉一整群。
+  ⭐ Q3 「撮合循環時間」的相異值有幾種（情報分析線看到 030／045）？
+     ⇒ 只要**不只一種**，判讀裡就不可以寫死 30 分鐘。
+  ⛔ Q4 越界那一天是不是靜默回今天（上面那一節逐位元組回答）？
+  Q5 `BFIB9U` 的值形狀（`1`／`6`／`累計：2`）與**同一檔是否多列**？
+     ⛔ 它給的是**調整幅度**不是現行成數 ⇒ 落地前要先確定彙總規則。
+  ⚠ Q6 `BFIB9U` 不帶日期時回的是「今天」還是「全部」？
+     ⛔ 若是靜默回今天，逐日回補要自己驗日期（跟 Q4 同一族）。
