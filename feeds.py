@@ -1552,6 +1552,14 @@ def cmd_feed(args):
                 return 2
     ok = closed = failed = dropped_days = 0
     bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
+    # ⛔⛔ 2026-09-10：`feeds:tib` 紅了，而 `_last_run.md` 只寫
+    #   「前 5 天有 5 天連問都問不到」——**沒有寫為什麼**。
+    #   ⚠ 是 HTTP 428（CDN 限流）？403？逾時？路徑錯？
+    #     四種的下一步完全不同，而我必須**再跑一趟**才知道是哪一種。
+    #   ⭐ 這跟今天早上 `revivt` 那件是同一族：
+    #     **一個會叫、但叫不出原因的斷言，代價是一整個來回。**
+    #   ⇒ 把 parser／抓取回的最後一則訊息帶進 runlog。
+    last_fail = ""
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
         # ★★ 成敗**看 `url` 有沒有拿到，不要比對訊息字串**。
@@ -1576,6 +1584,7 @@ def cmd_feed(args):
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
             failed += 1               # 根本沒問到
+            last_fail = str(note)[:260]
         if i % 20 == 0 or url is None:
             print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
         # ★ 與 cmd_inst 同一條收手規則：一開始就全失敗代表端點或參數不對，
@@ -1592,7 +1601,8 @@ def cmd_feed(args):
             break
         # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
-            bailed = f"前 {i} 天有 {failed} 天連問都問不到且無一成功"
+            bailed = (f"前 {i} 天有 {failed} 天連問都問不到且無一成功"
+                      + (f"｜最後一則：{last_fail}" if last_fail else ""))
             print(f"[{name}] 前 {i} 天有 {failed} 天連問都問不到且無一成功，收手。"
                   f"最後一則：{note}", file=sys.stderr)
             break
@@ -1621,6 +1631,10 @@ def cmd_feed(args):
     # ⛔ 提前收手在 Actions 上是看不見的（這幾步都是 continue-on-error），
     #    而收手代表整趟根本沒跑完——這是要紅的，不是資訊。
     rl.check("跑完整個區間，沒有提前收手", not bailed, bailed or "跑完")
+    if last_fail:
+        # ⭐ 這一行就是「為什麼」。⛔ 不要只留在 Actions log 裡——
+        #   `_last_run.md` 才是進 repo、下一個人會看到的那一份。
+        rl.info("⛔ 最後一則「沒問到」的原因", last_fail)
     rl.check("沒有「連問都問不到」的日子", failed == 0,
              f"失敗 {failed} 天" if failed else "0 天")
     # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
