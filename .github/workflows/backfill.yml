@@ -199,7 +199,7 @@ jobs:
           #   main 有 twse 1382／tpex 1013／emerging **0**，
           #   分支有 emerging **363**／twse 只有 1（那趟只寫了一列就被砍）。
           #   ⇒ 底稿一定要取 main 的，⛔ 拿分支的當底稿會把 1,381 列上市推回去刪掉。
-          git fetch origin main --depth=1 || true
+          git fetch origin main || true      # checkout 用 fetch-depth: 0，不要再淺化
           git checkout origin/main -- "data/universe/daily/$D.csv" || \
             echo "⚠ main 上沒有 $D 的日檔，用 checkout 帶下來的那一份"
           # ⭐ 來源優先走 `--from-git HEAD`（一個請求都不打）；
