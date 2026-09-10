@@ -56,6 +56,7 @@ _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_delist_probe.txt")
 
 TW = "https://www.twse.com.tw/rwd/zh"
+TPX = "https://www.tpex.org.tw"
 DAYS = ("20150105", "20200103", "20260909")
 
 TARGETS = [
@@ -84,6 +85,36 @@ TARGETS = [
     ("信用交易標的？ marginTrading/MI_MARGN?selectType=MS（推的）",
      f"{TW}/marginTrading/MI_MARGN?date={DAYS[-1]}&selectType=MS&response=json",
      {"date": DAYS[-1], "selectType": "MS"}),
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 上櫃那半邊（K線分析線 2026-09-11 01:40 的三分類卡在這裡）
+    #
+    # ⚠ 這兩條**不是推的**：它們逐字寫在我方自己的
+    #   `data/meta/_tpex_probe.txt`（TPEx openapi 225 個端點的快照）裡：
+    #     /tpex_spendi_history｜上櫃歷史公布暫停/恢復交易股票｜參數 無
+    #     /tpex_spendi_today  ｜上櫃當日公布暫停/恢復交易股票｜參數 無
+    #   ⭐ 它是 TWSE `TWTAWU`（我方 `data/meta/suspend`）的**上櫃對應**，
+    #   而我方那一半**完全沒有**。
+    #
+    # ⛔ 而「暫停／恢復交易」**不等於**「終止上櫃」——今天已經因為
+    #   「名字很像就當成同一件事」摔過一次（`meta/suspend` 那張表叫
+    #   「停止買賣」，實際上是短暫停牌後復牌，10,034 列裡 9,594 列是權證）。
+    #   ⇒ 這支探針要回答的是「它到底是哪一種」，⛔ 不是「它就是我要的那個」。
+    #
+    # ⚠ `參數 無` ⇒ 很可能**沒有日期參數**（回全部或回今天）
+    #   ⇒ ⭐ 要看它自己講不講得出涵蓋期間（第二點的判準）。
+    ("⭐ 上櫃歷史暫停/恢復交易 openapi tpex_spendi_history",
+     f"{TPX}/openapi/v1/tpex_spendi_history", {}),
+    ("上櫃當日暫停/恢復交易 openapi tpex_spendi_today",
+     f"{TPX}/openapi/v1/tpex_spendi_today", {}),
+    # ⚠ 「終止上櫃」在 openapi 那 225 條裡**一條都沒有**（我方已掃過）。
+    #   ⛔ 而那只證明**那一層**沒有——上櫃的減資、除權息歷史也都不在 swagger 裡，
+    #   它們住在 `www/zh-tw/<path>` 那一層。⇒ 這裡放**兩條明示是猜的**候選，
+    #   ⭐ 這支探針的用途就是**淘汰它們**；淘汰掉就把「請情報分析線掃 TPEx 選單」
+    #   當成下一步，⛔ 不要再自己編路徑。
+    ("終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）",
+     f"{TPX}/www/zh-tw/bulletin/delist?response=json", {}),
+    ("終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）",
+     f"{TPX}/www/zh-tw/company/suspendListing?response=json", {}),
 ]
 
 
@@ -154,6 +185,16 @@ def main():
         "     ⚠ 他們整條「分盤撮合有兩個來源」的裁定建在這個符號上，",
         "     ⛔ 而目前的依據是一句**轉述**，不是官方 `notes` 的逐字。",
         "     ⇒ 若 `**` 其實是別的意思（例如「本日新增」），那條裁定要整條作廢。",
+        "  ⭐⭐ Q7 `tpex_spendi_history` 到底是哪一種？（K線分析線 01:40 卡在這裡）",
+        "     ⚠ 要分清楚：**短暫停牌後復牌**（＝TWSE 的 TWTAWU，我方 meta/suspend）",
+        "     還是**長期停止買賣中**。⛔ 名字很像不算證據——今天已經摔過一次。",
+        "     判準：① 權證佔幾成？② 有沒有『恢復日』欄？③ 未恢復的那些起日落在哪幾年？",
+        "     （TWSE 那張：9,594/10,034 是權證、未復牌的 21 檔普通股全停在 2013~2014）",
+        "  ⭐ Q8 它涵蓋到哪一年？`參數 無` ⇒ 它必須**自己講得出**涵蓋期間，",
+        "     ⛔ 否則「回了很多列」不能當成「有歷史」（第二點）。",
+        "  ⛔ Q9 那兩條「終止上櫃」是**明示推的**——這一趟就是要淘汰它們。",
+        "     ⇒ 兩條都不通的話，下一步是**請情報分析線掃 TPEx 選單**",
+        "     （他們掃 TWSE 280 條那次撿到四支新端點），⛔ 不要再自己編路徑。",
         "  ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）",
         "     ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，",
         "     ⛔ 三者在資料上都長成「融資餘額 0」。",
