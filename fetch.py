@@ -923,17 +923,30 @@ def twse_shares(day, getter=None):
         return {}, (f"⛔ 回應沒有講出我請求的日期（要 {ymd} 或 {roc}）"
                     f"｜它說的是 {said[:70]!r}"
                     "　⚠ 這一族端點日期參數寫錯會**靜靜回今天**")
+    # ⚠ 2026-09-10 市場情報分析線實測：這張表**四個年代欄位不同**——
+    #   2005 版 11 欄、2010 起 12 欄；2009 以後欄名從「外資…」全部改成「外資**及陸資**…」。
+    #   ⭐ 但 `發行股數` 那一欄名**四個年代完全相同**（都在索引 3）⇒ 我要的那一欄不受影響。
+    #   ⇒ 這裡只定位「代號」與「發行股數」兩欄，其餘一概不碰 ⇒ 改名不影響本支。
+    #   ⛔ 代號欄用「結尾是代號」比對，不要用 `"代號" in f`——
+    #     那會先撞上 `ISIN代號`（同一張表裡就有），把 ISIN 當成股票代號，
+    #     然後**每一列都對不上**，而且看起來像「官方那張表沒有這幾檔」。
     i_code = i_sh = None
     for i, f in enumerate(fields):
-        if i_code is None and ("證券代號" in f or "股票代號" in f or f.strip() == "代號"):
+        g = str(f).strip()
+        if i_code is None and g.endswith("代號") and "ISIN" not in g.upper():
             i_code = i
-        if i_sh is None and "發行股數" in f:
+        if i_sh is None and "發行股數" in g:
             i_sh = i
     if i_code is None or i_sh is None:
         return {}, f"欄位對不上（缺 {'代號' if i_code is None else '發行股數'}）：{fields}"
     rows = t.get("data") or []
     if not rows:
-        return {}, f"回了 0 列（{said[:50]!r}）⛔ 當失敗，不是「那天沒有股票」"
+        # ⚠ 2026-09-10 情報分析線實測：2015-01-01／01-02（非交易日）也是
+        #   `stat:OK`＋日期正確＋**0 列** ⇒ 那時候 0 列是**正確答案**不是失敗。
+        #   ⭐ 本支只在「那一天已經解析出行情列」之後才被呼叫（見 `fill_twse_shares`
+        #     的呼叫端 `if all_lines:`），所以走到這裡就一定是交易日 ⇒ 0 列是真的失敗。
+        return {}, (f"回了 0 列（{said[:50]!r}）⛔ 當失敗——"
+                    "本支只在有行情列的日子才會被呼叫，所以這天一定是交易日")
     out = {}
     for r in rows:
         if not isinstance(r, list) or len(r) <= max(i_code, i_sh):
