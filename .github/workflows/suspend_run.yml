@@ -52,6 +52,15 @@ jobs:
       #   而 main 上的程式一個字都沒更新——**綠燈，但什麼都沒做**。
       #   ⭐ 現在的做法不 rebase ⇒ 不可能衝突 ⇒ 走到 push 還失敗就是**真的有問題**，
       #     該紅。可以跳過的情形（本來就在 main、fetch 不到）自己 `exit 0`。
+      # ⛔ 1 小時 50 分鐘換來的一步（run 34426373917）：
+      #   「回補」那一步 success 跑了 1h50m，「Commit」1 秒失敗——
+      #   `syntax error: unexpected end of file`，**我的 shell 少了一個 `fi`**。
+      #   ⚠ 我當時「驗過」了，但我驗的是 `yaml.safe_load()`——
+      #     **YAML 合法不代表裡面的 shell 合法**（對 YAML 來說 run: 只是字串）。
+      #   ⇒ 那一步從寫出來就是壞的，任何一趟都會失敗，而我讓它帶著 1h50m 去撞。
+      - name: 驗 workflow 自己（YAML ＋ 每一段 shell 的語法）
+        run: python selftest_workflows.py
+
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
           BR="${GITHUB_REF_NAME:-main}"
