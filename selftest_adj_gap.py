@@ -9,7 +9,7 @@
 ⇒ 所以這裡直接**偽造一個「上一趟只有 1 筆未歸因」的舊檔**，
   再跑一次真的掃描（現在是 80 筆）⇒ 斷言必須紅。
 """
-import io, os, sys, tempfile, csv
+import io, os, shutil, sys, tempfile, csv
 import runlog as _RL
 import adj_gap as G
 
