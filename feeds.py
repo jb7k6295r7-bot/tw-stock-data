@@ -151,6 +151,147 @@ def parse_tib(d, day, known=None):
     return out, f"{len(out)} 檔（丟掉 {skipped} 列沒有代號的，含「合計」）"
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 借券賣出（SBL）—— K線線 2026-09-10 15:45 列為**第一優先**
+#
+#   借券賣出是融券的 **77.5 倍**（2002 中鋼差 3,225 倍），
+#   缺口逐年惡化（2015 是 9.2 倍 → 2026 是 72.7 倍）
+#   ⇒ **融券現在只佔空方的 1.4%**。
+#   ⇒ K線線的 `券資比 = 融券餘額 ÷ 融資餘額` **分子只涵蓋空方的 1.4%**，
+#     而「券資比低 ＝ 空方壓力小」是拿那 1.4% 對整體下結論。
+#   ⚠ 偏誤方向**單一**：借券賣出越集中的股票（大型權值股、外資愛用），
+#     判讀就越樂觀。⭐ 而它**不會炸、不會缺值、不會有人抱怨**。
+#
+# ── 實測（`sbl_probe.py`，2026-09-09，Actions）────────────────────
+#   兩市場的 title 都是「信用額度總量管制餘額表」，**15 欄、兩段併在一起**：
+#
+#     欄 0-1   股票（代號、名稱）
+#     欄 2-7   **融券**：前日餘額／賣出／買進／現券／今日餘額／限額
+#     欄 8-13  **借券賣出**：前日餘額／當日賣出／當日還券／當日調整／當日餘額／次一營業日可限額
+#     欄 14    備註
+#
+#   ⛔ **兩段的「前日餘額」「當日餘額」欄名重複** ⇒ 只看欄名一定取錯。
+#
+# ⭐ 而上市那一側**官方自己講出了邊界**——一個我方從來沒讀過的鍵：
+#     groups: [{"title":"股票","span":2},{"title":"融券","span":6},
+#              {"title":"借券賣出","span":6},{"title":"","span":1}]
+#   ⇒ 借券那一段從哪一欄開始，**不必猜也不必寫死**：照 `groups` 累加就好。
+#   ⚠ 上櫃**沒有** `groups`（頂層鍵只有 date／stat／tables）
+#     ⇒ 只能靠位置，⛔ 所以守衛要更嚴：欄名結構逐字比對實測。
+#
+# ⚠ 官方 notes 明文（上市那側才有）：
+#     「借券賣出當日餘額＝前日餘額＋當日賣出−當日還券＋當日調整」
+#   ⇒ ⭐ **免費的逐列驗算**，位置取錯時它會整片不符。
+#     「借券賣出股數含鉅額交易股數。」⇒ 引用倍數時要標。
+#   ⛔ 上櫃那側**沒有 notes 也沒有 total** ⇒ 完整性只能靠恆等式。
+#
+# ⚠ `TWT93U` 每日晚間**二次更新**（約 20:30 與 22:30）
+#   ⇒ 排程落在兩次之間會拿到**不完整**的版本，而它看起來完全正常。
+# ══════════════════════════════════════════════════════════════════
+# 實測欄名（2026-09-09）。⛔ 這是**契約**：對不上就整張表拒收。
+SBL_TWSE_FIELDS = ["代號", "名稱", "前日餘額", "賣出", "買進", "現券", "今日餘額",
+                   "次一營業日限額", "前日餘額", "當日賣出", "當日還券",
+                   "當日調整", "當日餘額", "次一營業日可限額", "備註"]
+SBL_TPEX_FIELDS = ["股票代號", "股票名稱", "前日餘額", "賣出", "買進", "現券",
+                   "當日餘額", "限額", "前日餘額", "當日賣出", "當日還券",
+                   "當日調整數額", "當日餘額", "次一營業日可借券賣出限額", "備註"]
+
+
+def _sbl_seg_from_groups(d):
+    """→ 借券那一段的起始欄位（照官方 `groups` 累加）。取不到回 None。
+
+    ⭐ `groups` 是我方一路丟掉的鍵之一，⚠ 而它正好解掉「兩段欄名重複」——
+      ⛔ 不必猜、不必寫死位置，**官方自己講**。
+    """
+    g = d.get("groups") if isinstance(d, dict) else None
+    if not isinstance(g, list):
+        return None
+    at = 0
+    for seg in g:
+        if not isinstance(seg, dict):
+            return None
+        if "借券" in str(seg.get("title", "")):
+            return at
+        try:
+            at += int(seg.get("span", 0))
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _sbl_rows(t, day, known, i0, tag):
+    """共用的借券輸出與驗算。`i0` ＝ 借券那一段的起始欄。
+
+    ⭐ 官方恆等式（notes 明文）：**當日餘額 ＝ 前日餘額＋當日賣出−當日還券＋當日調整**
+      ⇒ 位置取錯時它會**整片不符** ⇒ 它就是「位置對不對」的檢驗。
+      ⛔ 不符的列丟掉並計數，⚠ 不要靜默寫進去。
+    """
+    out, bad = [], 0
+    n = lambda v: (float(str(v).replace(",", "").strip())
+                   if str(v).strip() not in ("", "-", "--") else 0.0)
+    for r in (t.get("data") or []):
+        if not r or len(r) < i0 + 6:
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        vals = [_blank_num(r[i]) for i in range(i0, i0 + 6)]
+        try:
+            ok = abs(n(vals[0]) + n(vals[1]) - n(vals[2]) + n(vals[3])
+                     - n(vals[4])) <= 1
+        except ValueError:
+            bad += 1
+            continue
+        if not ok:
+            bad += 1
+            continue
+        # ⛔ 備註是**文字**（X／Y／V／%／Z／!），不可以走 `_blank_num`
+        note = str(r[14]).strip() if len(r) > 14 else ""
+        # 融券那一段（欄 2~7）照官方原文一起存：⚠ 這張表的融券是**總量管制**視角，
+        #   跟 `margin` feed 那一份不是同一個口徑，⛔ 不可以互相取代。
+        s_seg = [_blank_num(r[i]) for i in range(2, 8)] if len(r) > 7 else [""] * 6
+        out.append([day, code] + s_seg + vals + [note])
+    return out, f"{len(out)} 列可用（{tag}；恆等式不符丟棄 {bad} 列）"
+
+
+def parse_sbl(d, day, known=None):
+    """TWSE `TWT93U` 借券賣出餘額。⭐ **段落邊界照官方 `groups`**，不寫死。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={sorted(d) if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != SBL_TWSE_FIELDS:
+        return [], f"欄位結構與 2026-09-09 實測不符，拒收：{f}"
+    i0 = _sbl_seg_from_groups(d)
+    # ⛔ `groups` 取不到就**拒收**，不要退回寫死的 8：
+    #   官方哪天調整段落而 `groups` 跟著變，寫死那條會靜靜取錯欄。
+    #   ⚠ 而欄名比對已經擋住「欄變了」的情形 ⇒ 這裡拒收只會在 groups 消失時發生，
+    #     那本身就是要有人看一眼的事。
+    if i0 is None:
+        return [], ("拒收：`groups` 裡找不到「借券」那一段 "
+                    f"⇒ 段落邊界無從得知（groups={d.get('groups')!r}）")
+    if i0 != 8:
+        return [], f"⚠ `groups` 說借券從第 {i0} 欄開始，與實測的 8 不同 ⇒ 先拒收，要有人看"
+    return _sbl_rows(t, day, known, i0, "TWSE groups 定位")
+
+
+def parse_otcsbl(d, day, known=None):
+    """TPEx `margin/sbl`。⛔ **沒有 `groups`、沒有 `total`、沒有 `notes`** ⇒ 守衛更嚴。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={sorted(d) if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != SBL_TPEX_FIELDS:
+        return [], f"欄位結構與 2026-09-09 實測不符，拒收：{f}"
+    # ⚠ 這一側只能靠位置（欄名重複、又沒有 groups）
+    #   ⇒ 上面那條「欄名逐字相同」就是唯一的守衛，⛔ 不可以放寬成「包含」比對。
+    return _sbl_rows(t, day, known, 8, "TPEx 位置定位（⛔ 沒有 groups）")
+
+
 def parse_per(d, day, known=None):
     """TWSE BWIBBU_d → 本益比／殖利率／股價淨值比。
 
@@ -740,6 +881,37 @@ FEEDS = {
                    "⛔ 歷史下限 **2021-06-28**，越界時官方明說"
                    "（`stat:\"查詢日期小於110年6月28日，請重新查詢!\"`）"
                    "——**大聲失敗，不是靜默回最新**"),
+    },
+    # ⭐ 借券賣出。K線線 15:45 的第一優先——融券只佔空方 1.4%。
+    #   ⚠ 欄名前綴：`s_*` 是這張表的**融券**段（總量管制視角，⛔ 與 `margin` feed 不同口徑），
+    #     `sbl_*` 是**借券賣出**段。`sbl_balance` 才是 K線線要的那一個。
+    #   ⛔ `sbl_limit`（次一營業日可借券賣出限額）**不是餘額**，兩者不可互換（K線線 Q2）。
+    "sbl": {
+        "dir": "sbl",
+        "header": ["date", "stock_id",
+                   "s_prev", "s_sell", "s_buy", "s_ret", "s_balance", "s_limit",
+                   "sbl_prev", "sbl_sell", "sbl_return", "sbl_adj",
+                   "sbl_balance", "sbl_limit", "note"],
+        "parse": parse_sbl,
+        "known": False,
+        "urls": lambda day: [_twse("marginTrading/TWT93U", day)],
+        "status": ("實測 2026-09-09（Actions）：stat=OK、**total=1302 與解析列數一致**、"
+                   "15 欄兩段。⭐ 段落邊界照官方 `groups` 取，不寫死。"
+                   "⚠ 每日晚間**二次更新**（約 20:30／22:30）"
+                   "⇒ 排程落在兩次之間會拿到不完整的版本，而它看起來完全正常"),
+    },
+    "otcsbl": {
+        "dir": "otcsbl",
+        "header": ["date", "stock_id",
+                   "s_prev", "s_sell", "s_buy", "s_ret", "s_balance", "s_limit",
+                   "sbl_prev", "sbl_sell", "sbl_return", "sbl_adj",
+                   "sbl_balance", "sbl_limit", "note"],
+        "parse": parse_otcsbl,
+        "known": False,
+        "urls": lambda day: [_tpex("margin/sbl", day, "&id=")],
+        "status": ("實測 2026-09-09（Actions）：stat=ok、932 列、15 欄。"
+                   "⛔ **沒有 `groups`、沒有 `total`、沒有 `notes`** ⇒ "
+                   "只能靠位置，欄名逐字比對是唯一的守衛"),
     },
     "exright": {
         "dir": "exright",
