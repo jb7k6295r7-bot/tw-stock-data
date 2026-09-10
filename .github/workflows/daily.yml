@@ -773,11 +773,31 @@ jobs:
             [ "$n" -gt 0 ] && { echo "★ 被擋下來 $n 筆："; grep -v '^#' data/meta/_suspend_skipped.txt | head -20; }
           fi
 
+      # ⛔⛔ `--lag-tolerance` 為什麼要分兩趟（2026-09-10）：
+      #   那條「各層的來源日檔都跟上 price」在 **19:00 那一趟一定是紅的**，
+      #   而那不是缺陷——台股 13:30 收盤，price 19:00 就有；
+      #   ⚠ 融資融券／本益比是**當天晚間**才發布（借券 TWT93U 官方是 20:30 與 22:30）
+      #   ⇒ 19:00 那趟 margin／per 必然停在前一個交易日。
+      #   ⚠ 而「每天紅」的代價 CLAUDE.md 已經寫過：**會被學會忽略**，
+      #     然後真的落後兩天那一次沒有人看。
+      #   ⛔ 但「一律容忍一天」會把 2026-09-05 那個洞原封不動打開回去
+      #     ——那次的形狀正是「**每天**落後一天而且看不出來」。
+      #   ⇒ 容忍度由**這裡**給（workflow 知道自己是哪一趟，transpose.py 不知道）：
+      #     19:00 容忍 1 個交易日｜⭐ 23:59 那趟 **0**，必須完全跟上。
+      #   ⚠ 手動 dispatch 一律走嚴格那一邊（⛔ 寧可多紅一次，不要放過真的落後）。
       - name: 個股庫轉置
         if: always()
         continue-on-error: true
         timeout-minutes: 15
-        run: python transpose.py --kind all
+        run: |
+          TOL=0
+          if [ "${{ github.event.schedule }}" = "0 11 * * 1-5" ]; then
+            TOL=1
+            echo "⚠ 這是 19:00 那一趟 ⇒ 容忍 margin／per 落後 1 個交易日（晚間才發布）"
+          else
+            echo "⭐ 這一趟用嚴格判準（容忍 0）：各層必須完全跟上 price"
+          fi
+          python transpose.py --kind all --lag-tolerance "$TOL"
 
       # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
       #   那正是失敗時最需要看到的東西。原本失敗就整個 job 停掉，
