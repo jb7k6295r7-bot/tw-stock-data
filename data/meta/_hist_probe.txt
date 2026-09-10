@@ -19,7 +19,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a38c5bc32ce0acff\',t:\'MTc4OTAyMTU1OA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a38cc7d33c3e9807\',t:\'MTc4OTAyNTk4NA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -34,8 +34,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a38c5bca58e128fe\','
-     't:\'MTc4OTAyMTU1OQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a38cc7dacd0e598c\','
+     't:\'MTc4OTAyNTk4NQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -70,8 +70,8 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a38c5bd2d
-         d5a4ca6',t:'MTc4OTAyMTU2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a38cc7f7d
+         e7c9c82',t:'MTc4OTAyNTk5MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate
