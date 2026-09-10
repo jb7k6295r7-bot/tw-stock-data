@@ -91,7 +91,13 @@ LOW = os.path.join(_ROOT, "meta", "_otc_exright_adjgap_low.txt")
 OURS = os.path.join(_ROOT, "universe", "otcexright")
 
 URL = "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ"
-HEADER = ["date", "stock_id", "name", "pre_close", "ref_price", "kind", "asof"]
+# ⭐ 2026-09-10 換供料時補 `value`（官方「權值+息值」）：
+#   ⚠ `adjust.py` 靠**負的權值**認定「參考價高於前收盤」那一類**合法**事件
+#     （現金增資認股價高於市價，上市那邊有 9 筆）。
+#   ⛔ 沒有這一欄的話，那一類會被丟掉——而 FinMind 也沒有這一欄，
+#     ⇒ ⭐ **換成官方之後才第一次拿得到**，這是換源附帶的實質好處。
+HEADER = ["date", "stock_id", "name", "pre_close", "ref_price", "kind",
+          "value", "asof"]
 
 
 # ⛔ 第九／第十份：`_post` 也收進 `twparse.py`。
@@ -133,6 +139,9 @@ def parse(payload, want_from, want_to):
     #       ⚠ 這裡是**太短撞上了自己那一族的另一欄**——同一個坑的另一面。
     #   ⇒ 實測欄名是 `權/息`（第 8 欄），拿它比對；⛔ 拿掉 `"除權息"` 這個關鍵字。
     i_k = _pick(fields, "權/息", "類別")
+    # ⚠ 逐字比對「權值+息值」，⛔ 不可以只寫「權值」——那會先命中第 5 欄「權值」。
+    #   （跟 `kind` 那個坑同一族：`_pick` 是包含比對、依欄位順序取第一個命中。）
+    i_v = _pick(fields, "權值+息值")
     miss = [n for n, i in (("日期", i_d), ("代號", i_c), ("前收盤", i_p),
                            ("參考價", i_r)) if i is None]
     if miss:
@@ -151,7 +160,9 @@ def parse(payload, want_from, want_to):
                      str(r[i_n]).strip() if i_n is not None else "",
                      str(r[i_p]).replace(",", "").strip(),
                      str(r[i_r]).replace(",", "").strip(),
-                     str(r[i_k]).strip() if i_k is not None else ""])
+                     str(r[i_k]).strip() if i_k is not None else "",
+                     (str(r[i_v]).replace(",", "").strip()
+                      if i_v is not None and len(r) > i_v else "")])
     if not rows:
         return [], f"一列都認不出來（bad={bad}）：{fields}"
     ds = sorted(r[0] for r in rows)
