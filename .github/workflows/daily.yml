@@ -124,6 +124,9 @@ jobs:
         continue-on-error: true
         run: python selftest_mops_history.py
 
+      - name: 驗上市發行股數的補值（離線）
+        run: python selftest_shares_twse.py
+
       - name: 驗個股庫轉置（離線）
         continue-on-error: true
         run: python selftest_transpose.py

@@ -41,7 +41,7 @@ import runlog
 # ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
 #   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
 #   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
-from fetch import _lock_dir
+from fetch import _lock_dir, fill_twse_shares
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -1363,6 +1363,11 @@ def cmd_run(args):
     #     `_missing_rows_by_day.csv` 2,848 天裡 **missing=0 的有 0 天**。
     #     ⛔ 如果哪天這個前提不成立，那一天會被每趟重抓——白費，但不會出錯。
     if getattr(args, "need_notrade", False):
+        # ⚠ 判準要**同時**涵蓋這一趟要補的兩件事，少一件就會留下靜默的洞：
+        #     ① 無成交的列（`price_basis == '無成交'`）
+        #     ② 上市的發行股數（十一年來全期是空的）
+        #   ⛔ 只看 ① 的話：某天補到了無成交列、但 MI_QFIIS 那一發失敗
+        #     ⇒ 那天從此被跳過，`shares` 永遠是空的，而且看不出來。
         has = set()
         if os.path.isdir(DAILY_DIR):
             for n in os.listdir(DAILY_DIR):
@@ -1370,7 +1375,18 @@ def cmd_run(args):
                     continue
                 try:
                     with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
-                        if any("無成交" in ln for ln in f):
+                        rd = csv.DictReader(f)
+                        notrade = False
+                        tw = tw_sh = 0
+                        for r in rd:
+                            if r.get("price_basis") == "無成交":
+                                notrade = True
+                            if r.get("market") == "twse":
+                                tw += 1
+                                if (r.get("shares") or "").strip():
+                                    tw_sh += 1
+                        # 沒有上市列的日子（例如只有上櫃資料的舊檔）不要求 ②
+                        if notrade and (tw == 0 or tw_sh > 0):
                             has.add(n[:-4])
                 except OSError:
                     pass
@@ -1416,6 +1432,16 @@ def cmd_run(args):
             # 某個市場整條失敗多半是被限流 → 多等一下再打下一個，
             # 否則接下來的日子會連鎖失敗（2026-09-03 2015 回補實測到 twse 失敗）
             time.sleep(SLEEP * 4 if str(src).startswith("all_failed") else SLEEP)
+        # ⭐ 上市的發行股數要另外補一發：`MI_INDEX` 沒有那一欄，
+        #   ⇒ `data/universe/daily/` 的 twse 列 `shares` **十一年來全期是空的**
+        #   （2026-09-10 實測：2015／2020／2026 三個抽樣日都是 100.0% 空）。
+        #   ⛔ 補不到不擋這一天，但 note 一定要帶出去，
+        #     否則「補不到」會被讀成「本來就沒有上市股」。
+        if all_lines:
+            n_sh, note_sh = fill_twse_shares(all_lines, day)
+            if n_sh or str(note_sh).startswith("✗"):
+                notes.append(f"股數:{note_sh}")
+            time.sleep(SLEEP)
         n = write_day(day, all_lines)
         note = ";".join(notes) or "ok"
         append_coverage(day, per, note)
