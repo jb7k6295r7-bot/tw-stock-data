@@ -121,7 +121,7 @@ def fm(ds, code, lo, hi, token=""):
     return (data if isinstance(data, list) else []), None
 
 
-def otc_codes():
+def otc_codes(kinds=("stock",)):
     """→ **曾經**是上櫃的普通股代號。⛔ 不是「現在是上櫃」。
 
     ## ⛔ 2026-09-09 抓到的根因：這裡本來寫 `market == "tpex"`
@@ -154,13 +154,28 @@ def otc_codes():
 
     ⚠ 要掃 2,800+ 個日檔（約十秒）。這一支跑在 `feeds.yml` 不是每日管線，
       成本可以接受；⛔ 而**用抽樣代替全掃會漏掉短期上櫃的個股**，不值得省。
+
+    ## ⛔⛔ `kinds` 為什麼要參數化（2026-09-10 換供料時當場抓到）
+
+    預設 `("stock",)` ＝ **只有普通股**。⚠ 那對 FinMind 那條路是對的：
+    它是**逐檔打 API**（971 檔 × 2 ≈ 30 分鐘），多收 424 檔 ETF 等於多打 850 發。
+
+    ⛔ **但官方模式沒有那個成本**（它讀的是本地判準檔），
+      而 ETF 正是那邊最大的缺口：官方除權息 13,105 筆裡
+      **2,967 筆是 `00` 開頭的 ETF／ETN**，
+      ⚠ 而契約裡早就寫著「**上櫃 ETF 完全沒有還原因子**」。
+    ⇒ ⭐ 我第一版的官方模式直接沿用預設值 ⇒ **那 2,967 筆一筆都不會進來**，
+      ⛔ 而整趟會是綠的、`data/adj/` 也照樣長大（長的是普通股那一半）。
+    ⚠ `kinds=None` ＝ 不限（權證不必另外濾：日檔本來就沒有權證）。
     """
+
     out = set()
     # ① 現在就是上櫃的
     if os.path.exists(META):
         with open(META, encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
-                if r.get("market") == "tpex" and r.get("kind") == "stock":
+                if (r.get("market") == "tpex"
+                        and (kinds is None or r.get("kind") in kinds)):
                     out.add(r["stock_id"])
     now = len(out)
     # ② ⭐ 曾經是上櫃的（含已轉上市、已下市）
@@ -178,11 +193,12 @@ def otc_codes():
                 with open(os.path.join(daily, fn), encoding="utf-8") as fh:
                     for r in csv.DictReader(fh):
                         if (r.get("market") == "tpex"
-                                and kind.get(r.get("stock_id", "")) == "stock"):
+                                and (kinds is None
+                                     or kind.get(r.get("stock_id", "")) in kinds)):
                             out.add(r["stock_id"])
             except OSError:
                 pass
-    print(f"[otc] 上櫃普通股清單：現在是上櫃 {now} 檔"
+    print(f"[otc] 上櫃清單（kind={kinds or '不限'}）：現在是上櫃 {now} 檔"
           f"｜**曾經是上櫃** {len(out)} 檔（多 {len(out) - now} 檔＝轉上市或已下市）")
     return sorted(out)
 
@@ -247,6 +263,22 @@ def snapshot_adj(path):
         w.writerow(["stock_id", "date", "factor", "cum_factor", "kind", "event"])
         w.writerows(sorted(rows))
     return len(rows)
+
+
+def official_codes():
+    """官方模式的母體：**曾經在上櫃出現過的全部代號**（⛔ 不限 kind）。
+
+    ⛔ 抽成具名函式是因為突變測試抓到：
+      直接在 `main()` 裡寫 `otc_codes(kinds=None)` 的話，
+      **把它改回預設值（只收普通股）一條斷言都不會紅**
+      ——⚠ 測了判準、沒測呼叫點（CLAUDE.md 第四點二）。
+
+    ⭐ 為什麼不限 kind：官方除權息 13,105 筆裡 **2,967 筆是 ETF／ETN**，
+      而契約裡早就寫著「**上櫃 ETF 完全沒有還原因子**」——正是這一批。
+    ⚠ 而官方模式讀的是本地判準檔 ⇒ 多收它們**沒有任何抓取成本**
+      （FinMind 那條路才有：逐檔打 API，多 424 檔＝多 850 發）。
+    """
+    return set(otc_codes(kinds=None))
 
 
 def official_rows(codes=None):
@@ -415,7 +447,7 @@ def main():
             return 0
 
     if a.official:
-        codes = set(otc_codes())
+        codes = official_codes()
         ex, rd, note = official_rows(codes)
         print(f"[otc] ⭐ 官方模式（⛔ 不連外）：{note}")
         d1, n1 = write_days("otcexright", EX_HEADER, ex)

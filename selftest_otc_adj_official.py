@@ -128,7 +128,59 @@ def main():
            and "官方減資 1 筆" in note, note)
         ck("  ⚠ 跳過的也數得出來", "跳過" in note and "除權息 2" in note, note)
 
-        print("④ ⚠ 換源前的快照（裁定裡指名要的）")
+        print("④ ⭐⭐ 母體的 `kinds`：官方模式**不可以只收普通股**")
+        # ⛔ 這是換源當場抓到的：`otc_codes()` 預設 `("stock",)`，
+        #   而官方除權息 13,105 筆裡 **2,967 筆是 00 開頭的 ETF／ETN**
+        #   ⇒ 沿用預設值的話那批**一筆都不會進來**，
+        #   ⚠ 而整趟會是綠的、`data/adj/` 也照樣長大（長的是普通股那一半）。
+        #   ⭐ 而契約裡早就寫著「上櫃 ETF 完全沒有還原因子」——正是這一批。
+        dd = os.path.join(d, "u")
+        os.makedirs(os.path.join(dd, "daily"))
+        io.open(os.path.join(dd, "daily", "2020-01-02.csv"), "w",
+                encoding="utf-8").write(
+            "key,date,stock_id,name,market\n"
+            "a,2020-01-02,1111,甲,tpex\n"
+            "b,2020-01-02,006201,寶富櫃,tpex\n"
+            "c,2020-01-02,2330,台積電,twse\n")
+        meta = os.path.join(d, "stocks.csv")
+        io.open(meta, "w", encoding="utf-8").write(
+            "stock_id,name,market,kind,first_seen,last_seen\n"
+            "1111,甲,tpex,stock,,\n"
+            "006201,寶富櫃,tpex,etf,,\n"
+            "2330,台積電,twse,stock,,\n")
+        k2 = (O.UNI, O.META)
+        try:
+            O.UNI, O.META = dd, meta
+            only = set(O.otc_codes())
+            allk = set(O.otc_codes(kinds=None))
+            ck("  預設只收普通股 ⇒ ETF 不在裡面",
+               only == {"1111"}, str(sorted(only)))
+            ck("  ⭐ `kinds=None` ⇒ ETF 進得來",
+               allk == {"1111", "006201"}, str(sorted(allk)))
+            ck("  ⛔ 上市的 2330 兩邊都不會進來",
+               "2330" not in allk, str(sorted(allk)))
+            # ⭐ 反向：拿只收普通股的母體去跑官方模式 ⇒ ETF 那一列會被丟掉
+            io.open(O.OFF_EX, "w", encoding="utf-8").write(
+                "date,stock_id,name,pre_close,ref_price,kind,value,asof\n"
+                "2020-02-02,1111,甲,10,9.8,息,0.2,x\n"
+                "2020-02-02,006201,寶富櫃,20,19.5,息,0.5,x\n")
+            ex_only, _, _ = O.official_rows(only)
+            ex_all, _, _ = O.official_rows(allk)
+            ck("  ⭐⭐ 只收普通股 ⇒ ETF 那一列**不見了**（1 筆）",
+               sum(len(v) for v in ex_only.values()) == 1,
+               str(ex_only))
+            ck("  ⭐ 不限 kind ⇒ 兩筆都在（⇒ 這就是那 2,967 筆的差別）",
+               sum(len(v) for v in ex_all.values()) == 2, str(ex_all))
+            # ⭐⭐ 呼叫點也要測：`--official` 用的**就是**不限 kind 的那個母體
+            #   ⛔ 只測 `otc_codes(kinds=None)` 的話，把 main 裡改回預設值
+            #     一條斷言都不會紅（突變 Z1 當場證明）。
+            ck("  ⭐⭐ `official_codes()`（`--official` 實際用的）**含 ETF**",
+               O.official_codes() == {"1111", "006201"},
+               str(sorted(O.official_codes())))
+        finally:
+            O.UNI, O.META = k2
+
+        print("⑤ ⚠ 換源前的快照（裁定裡指名要的）")
         O._ROOT = d
         os.makedirs(os.path.join(d, "adj"))
         io.open(os.path.join(d, "adj", "1111.csv"), "w",
