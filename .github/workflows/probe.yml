@@ -120,10 +120,10 @@ jobs:
       # ★ 先離線驗四支跑不跑得完（假回應整條走一遍）。
       #   ⚠ 這一步**不加 continue-on-error**：這支的唯一產出就是探針輸出，
       #     連跑都跑不完就沒有必要往下打對方的伺服器。
-      - name: 驗九支探針跑得完（離線）
+      - name: 驗十支探針跑得完（離線）
         run: python selftest_probes.py
 
-      - name: 跑九支探針（這支一律全跑）
+      - name: 跑十支探針（這支一律全跑）
         if: always()
         continue-on-error: true
         timeout-minutes: 15
@@ -145,7 +145,8 @@ jobs:
                       "otccal_probe.py:_otccal_probe.txt" \
                       "hist_probe.py:_hist_probe.txt" \
                       "keys_probe.py:_keys_probe.txt" \
-                      "site_inventory.py:_site_inventory.txt"; do
+                      "site_inventory.py:_site_inventory.txt" \
+                      "mops_probe.py:_mops_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
             #   排程觸發時才套三選一的重跑條件：
