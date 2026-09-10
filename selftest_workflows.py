@@ -21,8 +21,21 @@
 
 ## ⇒ 這一支做兩件事
 
-1. 每一支 workflow 的 YAML 解得開
-2. ⭐ **每一個 `run:` 區塊都通得過 `bash -n`**（只檢查語法，不執行）
+1. ⭐ **每一個 `run:` 區塊都通得過 `bash -n`**（只檢查語法，不執行）
+2. 共用 `.sh` 也驗
+
+## ⛔ 為什麼不用 PyYAML
+
+第一版 `import yaml`。⚠ 本機有、**runner 上沒有**：
+
+    ModuleNotFoundError: No module named 'yaml'
+
+⇒ **我加的守門自己把管線弄壞了**（run 34434697153）。
+⭐ 但它在 **90 秒**失敗，不是 1 小時 50 分——分批＋前置實測的設計是對的。
+
+⇒ 改成**零相依**：自己按縮排掃出 `run:` 區塊。
+⛔ 這一支的用途是驗 shell，不是驗 YAML；
+  而 YAML 壞掉 GitHub 自己會拒收（那是**大聲**失敗），不需要我攔。
 
 ⚠ `${{ ... }}` 在 shell 眼裡不是語法 ⇒ 驗之前先換成佔位字串，
 ⛔ 不換的話它會誤報，然後這支檢查就會被學會忽略。
@@ -33,8 +46,6 @@ import os
 import re
 import subprocess
 import sys
-
-import yaml
 
 EXPR = re.compile(r"\$\{\{[^}]*\}\}")
 OK = FAIL = 0
@@ -50,6 +61,52 @@ def ck(name, cond, hint=""):
         print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
 
 
+def run_blocks(path):
+    """→ [(步驟名, shell 原文)]。⛔ 零相依：按縮排掃，不 import yaml。
+
+    要處理的兩種寫法：
+
+        - name: X          - name: Y
+          run: |             run: python foo.py
+            line1
+            line2
+    """
+    out, name = [], "(無名)"
+    lines = io.open(path, encoding="utf-8").read().splitlines()
+    i, steps_indent = 0, None
+    while i < len(lines):
+        ln = lines[i]
+        # ⛔ 只認「`steps:` 底下」的 `run:`。
+        #   實測代價：`suspend_run.yml` 的 **job 名字就叫 `run`**
+        #   （`jobs:` → `  run:`）⇒ 第一版把整個 job 當成一段 shell 吞下去，
+        #   然後報「syntax error near unexpected token `('」——
+        #   ⚠ **一個假的失敗，而它長得跟真的一模一樣。**
+        #   ⭐ 而這正是這支要防的那一族：判準太寬 ⇒ 抓到不該抓的。
+        m = re.match(r"^(\s*)steps:\s*$", ln)
+        if m:
+            steps_indent = len(m.group(1))
+        m = re.match(r"^\s*-?\s*name:\s*(.+?)\s*$", ln)
+        if m:
+            name = m.group(1).strip().strip('"\'')
+        m = re.match(r"^(\s*)-?\s*run:\s*(.*)$", ln)
+        if m and steps_indent is not None and len(m.group(1)) > steps_indent:
+            indent, rest = len(m.group(1)), m.group(2).strip()
+            if rest and rest not in ("|", ">", "|-", ">-"):
+                out.append((name, rest))           # 單行寫法
+            else:
+                body, i = [], i + 1
+                while i < len(lines):
+                    cur = lines[i]
+                    if cur.strip() and (len(cur) - len(cur.lstrip())) <= indent:
+                        break
+                    body.append(cur)
+                    i += 1
+                out.append((name, "\n".join(body)))
+                continue
+        i += 1
+    return out
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     files = sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml")))
@@ -57,23 +114,16 @@ def main():
     n_run = 0
     for f in files:
         short = os.path.basename(f)
-        try:
-            d = yaml.safe_load(io.open(f, encoding="utf-8"))
-        except Exception as ex:                                  # noqa: BLE001
-            ck(f"{short} YAML 解得開", False, f"{type(ex).__name__}: {ex}")
-            continue
-        ck(f"{short} YAML 解得開", True)
-        for job in (d.get("jobs") or {}).values():
-            for st in (job.get("steps") or []):
-                run = st.get("run")
-                if not run:
-                    continue
-                n_run += 1
-                src = EXPR.sub("X", run)
-                p = subprocess.run(["bash", "-n"], input=src,
-                                   capture_output=True, text=True)
-                ck(f"{short}｜「{st.get('name', '(無名)')}」的 shell 語法",
-                   p.returncode == 0, p.stderr.strip()[:200])
+        blocks = run_blocks(f)
+        ck(f"{short} 掃得出 run 區塊", bool(blocks), "一個都沒掃到")
+        for name, body in blocks:
+            n_run += 1
+            src = EXPR.sub("X", body)
+            p = subprocess.run(["bash", "-n"], input=src,
+                               capture_output=True, text=True)
+            ck(f"{short}｜「{name}」的 shell 語法",
+               p.returncode == 0, p.stderr.strip()[:200])
+
     # ⭐ 共用腳本也要驗——push_data.sh 是八支 workflow 的最後一步，它壞掉＝全壞
     for sh in sorted(glob.glob(os.path.join(here, "*.sh"))):
         p = subprocess.run(["bash", "-n", sh], capture_output=True, text=True)

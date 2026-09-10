@@ -80,7 +80,7 @@ jobs:
       #   ⚠ 我當時「驗過」了，但我驗的是 `yaml.safe_load()`——
       #     **YAML 合法不代表裡面的 shell 合法**（對 YAML 來說 run: 只是字串）。
       #   ⇒ 那一步從寫出來就是壞的，任何一趟都會失敗，而我讓它帶著 1h50m 去撞。
-      - name: 驗 workflow 自己（YAML ＋ 每一段 shell 的語法）
+      - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
         run: python selftest_workflows.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
