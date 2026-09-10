@@ -159,6 +159,15 @@ jobs:
       - name: 驗上市發行股數的補值（離線）
         run: python selftest_shares_twse.py
 
+      # ⭐ 2026-09-10：官方的空值不是一種寫法是一族——TWSE `--`、TPEx `----`。
+      #   兩份 `_num()` 原本是靠 `float()` 失敗**順便**擋掉的，沒有人測過。
+      #   ⇒ 規則寫成明示的，並且**每天驗一次兩份有沒有走岔**（`limit` 就是抄兩份只修一份）。
+      - name: 驗空值寫法（破折號族，離線）
+        run: python selftest_num.py
+
+      - name: 驗無成交列的解析（離線）
+        run: python selftest_parse_daily.py
+
       - name: 驗個股庫轉置（離線）
         continue-on-error: true
         run: python selftest_transpose.py
@@ -271,6 +280,13 @@ jobs:
         continue-on-error: true
         timeout-minutes: 8
         run: |
+          # ⛔ 自測擋在抓取前面。`note`（官方註記欄）2026-09-10 才加，
+          #   而它的失效方式全部是安靜的：TWSE 靠位置取 ⇒ 取錯會存成
+          #   「資券互抵」的數字，看起來只是「這一欄大部分是空的」。
+          #   ⚠ 而那一欄錯掉的後果不是少一欄——K線線 13:10：
+          #     `O`＝停止融資買進 ⇒ 那些股的「餘額低且下降」現在被讀成
+          #     「槓桿已出清」（正面），實際上是負面。**方向相反。**
+          python selftest_margin_note.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
           for f in margin per otcmargin otcper; do
@@ -563,6 +579,20 @@ jobs:
         run: |
           python selftest_missing_rows.py
           python missing_rows.py
+
+      # ⭐ K線線 2026-09-10 13:00 要的那個判準：回補期間，「沒有那一列」有兩個意思
+      #   （A 真的沒成交／B 還沒補到），⛔ 而它們在檔案上長得一模一樣。
+      #   ⇒ 這一支從資料自己算出「哪幾天已經是新語意」，讓他們的閘門
+      #     對還沒補到的日子標**不可判定**，而不是**不通過**。
+      #   ⚠ 誤擋不會有人抱怨（少推薦幾檔而已）⇒ 沒有這支就會安靜地錯整段回補期。
+      #   ⛔ 排在漏列之後：兩支都是量測，要看同一批檔。
+      - name: 無成交列水位（哪幾天已是新語意，不連外）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_notrade_watermark.py
+          python notrade_watermark.py
 
       - name: 缺還原因子清單（只看有沒有變多）
         if: always()

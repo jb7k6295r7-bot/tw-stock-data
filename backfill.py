@@ -41,7 +41,7 @@ import runlog
 # ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
 #   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
 #   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
-from fetch import _lock_dir, fill_twse_shares
+from fetch import _isz, _lock_dir, fill_twse_shares
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -276,25 +276,34 @@ def preflight(url, what):
 # fetch.py 是每日腳本，這支是一次性工具；讓它們各自獨立，
 # 改一邊不會意外弄壞另一邊。**兩邊的欄位順序必須一致**（HEADER 就是契約）。
 
+# ⭐ 2026-09-10：官方的「這格沒有值」不是一種寫法，是**一族**。
+#   TWSE 寫 `--`、TPEx 同一件事寫 `----`（情報分析線 2026-09-10 實測回報）。
+#   ⛔ 舊版只列舉了 `"-"`／`"--"`，`----` 是靠底下 `float()` 失敗**順便**被擋掉的
+#     ——擋得住，但沒有人知道它在擋這個，也沒有人測過它。
+#   ⚠ 這種「意外免疫」的代價已經看得到：情報分析線自己那一版把 `----` 轉成 NaN，
+#     `JSON.stringify(NaN)` 印出來是 `null`，於是「我方 null、官方 null」
+#     長得一模一樣卻被判成不符，差一點被回報成資料瑕疵。
+#   ⇒ 改成明示規則：**整串都是破折號就是空值**，而且測它（selftest_num.py）。
+# ⚠ 只認「整串」——`-3.40` 的負號不在此列（它不是整串破折號）。
+_DASHES = "-\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uff0d\u2500\u30fc"
+
+
+def _is_dash(t):
+    """整串（>=1 個字元）都是破折號／連字號 ⇒ 官方的「無資料」寫法。"""
+    return bool(t) and all(ch in _DASHES for ch in t)
+
+
 def _num(v):
     if v is None:
         return ""
     t = str(v).replace(",", "").replace("+", "").replace("%", "").strip()
-    if t in ("", "-", "--", "X", "N/A", "null", "None"):
+    if t in ("", "X", "N/A", "null", "None") or _is_dash(t):
         return ""
     try:
         float(t)
     except ValueError:
         return ""
     return t
-
-
-def _isz(v):
-    """_num() 的輸出是字串，"0.00" 是 truthy——要判零一律走這支。"""
-    try:
-        return float(v) == 0.0
-    except (TypeError, ValueError):
-        return True
 
 
 def _kind(code):
