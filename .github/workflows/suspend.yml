@@ -80,6 +80,25 @@ jobs:
             #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
             LASTRUN="data/meta/_last_run.md"
             REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md "
+            # ⛔⛔ 2026-09-09 付了 **5 小時**的學費才補上的一步。
+            #   那一趟融資融券回補（2,846 天）跑完、資料 commit 也做好了，
+            #   結果 `git pull --rebase origin main` 撞在 `.github/workflows/daily.yml`：
+            #   runner 是 16:34 checkout 的，而我在那 5 小時裡改過那個檔。
+            #   ⇒ 衝突的是**舊的程式 commit 被重放**，跟本趟抓到的資料一點關係都沒有；
+            #     守門條款（非 REGEN 檔不自動挑邊）正確地拒絕自動處理 ⇒ **整趟丟掉**。
+            #   ⚠ 失敗的樣子：回補那一步是**綠的**，只有最後一步紅——
+            #     很容易被讀成「只是 push 失敗」，而其實是資料全沒了。
+            #
+            # ⇒ 先把本趟的資料 commit 搬到**分支現在的頭**上，再談 main。
+            #   那些「跑之間被推上去的程式 commit」就不會再被重放。
+            #   ⛔ 這一步失敗要 abort 後照舊往下走，不可以讓它變成新的失敗來源。
+            BR="${GITHUB_REF_NAME:-main}"
+            if git fetch origin "$BR" 2>/dev/null; then
+              if ! git rebase "origin/$BR"; then
+                echo "⚠ 搬到 origin/$BR 失敗（多半是資料檔自己衝突），abort 後照舊流程處理" >&2
+                git rebase --abort 2>/dev/null || true
+              fi
+            fi
             ok=0
             for i in 1 2 3; do
               if git pull --rebase --autostash origin main && git push origin HEAD:main; then
