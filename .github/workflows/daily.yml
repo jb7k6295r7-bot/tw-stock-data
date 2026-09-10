@@ -22,7 +22,15 @@ concurrency:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 25    # 15 → 25：多了轉置那一步，留餘裕給 commit
+    # ⛔⛔ 25 → 45（2026-09-10）。25 那個數字是**在資料庫比較小的時候**訂的，
+    #   而 job 裡有幾步的成本**跟著資料庫一起長**：
+    #   `selftest_adj_gap.py` 會掃全部 `data/adj/`（2,212 檔）＋ 全部 `data/stocks/`
+    #   ——本機 75 秒、Actions 上超過 11 分鐘，⚠ 而它只是第 16 步（全部 57 步）。
+    #   ⇒ 那一趟會在跑到「Commit 回 repo」之前就被砍掉，**整趟白跑**，
+    #     而外表是「job 逾時」，看不出是哪一步把時間吃光的。
+    #   ⭐ 同一輪也把那支自測的重複掃描拿掉了（4 次 → 2 次），
+    #     ⛔ 但**時間上限本身也要有餘裕**：只做其中一件，下個月還是會撞。
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -103,6 +111,7 @@ jobs:
       #   `continue-on-error`：驗不過也不能擋住當天的資料落檔。
       - name: 驗 runlog（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_runlog.py
 
       # ★ 順便驗 mops 的差異紀錄（離線、約 1 秒）。
@@ -111,6 +120,7 @@ jobs:
       #   上百筆鬼影，真的更正被淹掉。**比沒有還糟，因為它看起來在運作。**
       - name: 驗 mops 差異紀錄（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_mops.py
 
       # ★ 把四支探針的 main() 整條走一遍（網路換成假回應）。
@@ -119,36 +129,44 @@ jobs:
       #     抓不到 NameError。2026-09-09 就是這樣讓 `SAMPLE` 未定義上了線。
       - name: 驗四支探針跑得完（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_probes.py
 
       # ★ 釘住漲跌停方向：`"0.0"` 是 truthy，寫成 `if chg` 會把平盤鎖死判成跌停。
       #   2026-09-09 全庫 50,382 列中招（佔所有 down 的 47.7%）。
       - name: 驗漲跌停方向（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_lock_dir.py
 
       - name: 驗交易日曆的寫檔（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_calendar.py
 
       - name: 驗颱風休市判讀（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_holiday.py
 
       - name: 驗上櫃日曆判準的累積（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_otccal.py
 
       - name: 驗上市短期暫停交易的守門（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_suspend_twse.py
 
       - name: 驗上櫃除權息判準會紅也會綠（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_otcexright.py
 
       - name: 驗缺還原因子的斷言會紅也會綠（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_adj_gap.py
 
       # ⛔ 這三支是 2026-09-09 清理時發現的**孤兒測試**：程式在 repo 裡、
@@ -157,13 +175,16 @@ jobs:
       #   ⚠ 接進來之前先在本機跑過，三支都通過（接一支會紅的進管線比不接更糟）。
       - name: 驗資料庫現況頁（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_db_status.py
 
       - name: 驗基本面歷史的解析（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_mops_history.py
 
       - name: 驗上市發行股數的補值（離線）
+        timeout-minutes: 10
         run: python selftest_shares_twse.py
 
       # ⭐ 2026-09-10：官方的空值不是一種寫法是一族——TWSE `--`、TPEx `----`。
@@ -173,10 +194,12 @@ jobs:
         run: python selftest_num.py
 
       - name: 驗無成交列的解析（離線）
+        timeout-minutes: 10
         run: python selftest_parse_daily.py
 
       - name: 驗個股庫轉置（離線）
         continue-on-error: true
+        timeout-minutes: 10
         run: python selftest_transpose.py
 
       # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**

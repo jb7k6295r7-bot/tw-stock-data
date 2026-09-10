@@ -22,21 +22,49 @@ def ck(n, c, note=""):
         FAIL.append(n)
 
 
-def run(out, lr, low=None):
+# ⛔⛔ 2026-09-10：這支「離線」自測**跑了 4 次全庫掃描**（2,212 個 `data/adj/` 檔
+#   ＋ 全部 `data/stocks/`）——本機 75 秒，Actions 上超過 11 分鐘。
+#   ⚠ 而 `daily.yml` 的 job 上限是 25 分鐘 ⇒ **它正在把每日那趟吃掉**，
+#     而且這個成本**會跟著資料庫一起長**：今天勉強過，下個月就過不了。
+#   ⭐ 而後兩趟（[2][3]）根本不需要真的掃：它們驗的是「斷言的算術」，
+#     掃出來的結果每一趟都一樣。
+#   ⇒ `cached=True` 時把 `G.scan` 換成「回第一趟的結果」。
+#   ⛔ [1] 仍然是真的掃（`n_un` 要真的）；[3.5] 也不快取（它換了 STOCKS 目錄）。
+_SCAN_CACHE = []
+
+
+def run(out, lr, low=None, cached=False):
     # ⛔ 2026-09-09：`LOW`（歷史最低值）是後來加的，而這支一開始**沒有導走它**
     #   ⇒ 這支「離線」自測會寫到 repo 真的 `_adj_gap_low.txt`，
     #     而那個檔是斷言的基準——寫壞它等於把門檻改掉，**而且看起來完全正常**。
     #   ⚠ 同一族的坑今天第 N 次（runlog.PATH、holiday_schedule.csv…）。
     #   ⇒ 新增一個輸出路徑就要問一次：**這支自測有沒有把它導走？**
     old = (G.OUT, _RL.PATH, G.LOW)
+    real_scan = G.scan
     G.OUT, _RL.PATH = out, lr
     G.LOW = low or (out + ".low")
+    if cached and _SCAN_CACHE:
+        # ⚠ 簽章照綁：⛔ 不可以比真的寬鬆，否則 `scan()` 改參數時這裡不會紅。
+        import inspect
+        _sig = inspect.signature(real_scan)
+
+        def _stub(*a, **k):
+            _sig.bind(*a, **k)
+            return _SCAN_CACHE[0]
+        G.scan = _stub
     try:
         sys.argv = ["adj_gap.py"]
+        if not _SCAN_CACHE:
+            def _rec(*a, **k):
+                r = real_scan(*a, **k)
+                _SCAN_CACHE.append(r)
+                return r
+            G.scan = _rec
         G.main()
         return io.open(lr, encoding="utf-8").read()
     finally:
         G.OUT, _RL.PATH, G.LOW = old
+        G.scan = real_scan
 
 
 def main():
@@ -72,7 +100,7 @@ def main():
                     "10.00", "9.00", "-10.00%", "未歸因"])
     low2 = os.path.join(d, "b.low")
     io.open(low2, "w").write("1,2026-09-09\n")     # ⭐ 偽造「歷史最低值 = 1」
-    t2 = run(out2, lr2, low2)
+    t2 = run(out2, lr2, low2, cached=True)
     ck("★ 未歸因高於歷史最低值 ⇒ 斷言變 ✗", "**✗**　未歸因的筆數沒有高於歷史最低值" in t2)
     ck("★ ✗ 的細節寫得出前後值", f"歷史最低 1｜本輪 {n_un}" in t2,
        [l for l in t2.splitlines() if "歷史最低" in l])
@@ -87,7 +115,7 @@ def main():
                         "10.00", "9.00", "-10.00%", "未歸因"])
     low3 = os.path.join(d, "c.low")
     io.open(low3, "w").write(f"{n_un + 50},2026-09-09\n")   # 歷史最低值很高
-    t3 = run(out3, lr3, low3)
+    t3 = run(out3, lr3, low3, cached=True)
     ck("★ 未歸因低於歷史最低值 ⇒ 斷言是 ok（不是永遠紅）", "**✗**　未歸因的筆數沒有高於歷史最低值" not in t3)
     ck("★ 變化量印得出來且是正號（＝變少）", "本輪變化量 +50" in t3,
        [l for l in t3.splitlines() if "本輪變化量" in l])
