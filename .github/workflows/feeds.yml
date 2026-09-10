@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-exright-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-exright-history, otc-reduce-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -270,6 +270,17 @@ jobs:
         run: |
           python selftest_otc_exright_history.py
           python otc_exright_history.py --start "2008/01/01"
+
+      # ⭐⭐ 上櫃**減資**的官方歷史。這一支是**必要的**不是錦上添花：
+      #   `exDailyQ`（除權息表）**不含減資**——59 檔的抽驗裡就少了 17 筆。
+      #   拿除權息表當上櫃 adj 的完整來源會**刪掉減資因子**，那幾檔還原價整段錯。
+      #   ⭐ 它同時做情報分析線 10:00 指名要我做的那一掃：
+      #     他驗過「我方已有的那些對得上」（12/12），**沒驗「我方缺哪些」**。
+      - name: 上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些
+        if: inputs.mode == 'otc-reduce-history'
+        run: |
+          python selftest_otc_reduce_history.py
+          python otc_reduce_history.py --start "2013/01/01"
 
       - name: 官方年度／月統計（外部判準，續跑）
         if: inputs.mode == 'official-stats'
