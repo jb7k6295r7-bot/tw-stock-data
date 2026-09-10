@@ -175,27 +175,55 @@ def main():
             rl.check("data/universe/daily 有日檔", False, "目錄是空的")
             return rl.finish()
         day = ds[-1]
+
+    def _fetch(d):
+        if a.json:
+            return io.open(a.json, "rb").read(), None
+        return B.get(URL.format(roc=roc_slash(d)), retries=3, timeout=60)
+
+    # ⛔⛔ 2026-09-10 這一支紅了，而**成因不是端點壞掉，是問錯日子**：
+    #   `ds[-1]` 取的是「我方最新的日檔」＝當天（行情 15:2x 就寫好了），
+    #   而櫃買的「個股市值排行」**當天下午還沒出** ⇒ 回 0 列。
+    #   ⚠ 同一天，兩份官方資料的**發布時間不同**——而我方拿其中一份的存在
+    #     當成另一份也該有了。
+    # ⛔ 判準不放寬：**0 列仍然是失敗**（那條規矩是對的）。
+    #   ⇒ 改的是「問哪一天」：當天回 0 列時**退到前一個有日檔的交易日**再問一次。
+    #   ⚠ 而且只有「那一天就是今天」才准退——⛔ 更早的日子回 0 列是真的失敗，
+    #     退下去只會把失敗藏起來，然後每天都綠。
+    tried = []
+    payload = None
+    for cand in (day, ds[-2] if len(ds) > 1 else None):
+        if cand is None:
+            break
+        raw, err = _fetch(cand)
+        if err or not raw:
+            rl.check("抓得到 dailyMarktVal", False,
+                     f"{str(err)[:100]}｜⛔ 抓不到不等於那天沒有資料"
+                     "（本機對 tpex 一律 403，這一支要在 Actions 上跑）")
+            return rl.finish()
+        try:
+            p_ = json.loads(raw.decode("utf-8", "replace"))
+        except ValueError as ex:                                 # noqa: BLE001
+            rl.check("回應是 JSON", False, str(ex)[:80])
+            return rl.finish()
+        rows, note = parse(p_, cand)
+        tried.append((cand, note))
+        if rows:
+            day, payload = cand, p_
+            break
+        # ⛔ 只有「當天的還沒出」這一種情形准退一天
+        if cand != today:
+            break
+        rl.info("⚠ 當天的還沒出", f"{cand} 回 0 列 ⇒ 退到前一個交易日再問一次"
+                "　（櫃買的個股市值排行與行情**發布時間不同**）")
+
     rl.info("對帳日", f"{day}　⚠ 涵蓋範圍**只有上櫃**，上市那一半仍然沒有外部判準")
-
-    if a.json:
-        raw, err = io.open(a.json, "rb").read(), None
-    else:
-        raw, err = B.get(URL.format(roc=roc_slash(day)), retries=3, timeout=60)
-    if err or not raw:
-        rl.check("抓得到 dailyMarktVal", False,
-                 f"{str(err)[:100]}｜⛔ 抓不到不等於那天沒有資料"
-                 "（本機對 tpex 一律 403，這一支要在 Actions 上跑）")
-        return rl.finish()
-    try:
-        payload = json.loads(raw.decode("utf-8", "replace"))
-    except ValueError as ex:                                     # noqa: BLE001
-        rl.check("回應是 JSON", False, str(ex)[:80])
-        return rl.finish()
-
-    rows, note = parse(payload, day)
-    rl.info("官方回的", note)
+    for d_, n_ in tried:
+        rl.info(f"  問過 {d_}", n_)
+    rows = [] if payload is None else parse(payload, day)[0]
     rl.check("回應講出的日期就是我請求的那一天，而且有列",
-             bool(rows), note)
+             bool(rows),
+             "｜".join(f"{d_}: {n_}" for d_, n_ in tried) or "一次都沒問成")
     if not rows:
         return rl.finish()
 

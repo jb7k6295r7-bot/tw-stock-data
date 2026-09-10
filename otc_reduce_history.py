@@ -191,6 +191,10 @@ def classify_gaps(miss, cover, known=None):
       ⚠ 上櫃的 adj 只有人手動跑那個幾小時的 FinMind 全掃才會更新
         ⇒ 這種「新鮮的缺口」本來沒有任何東西會叫。
 
+    ⚠ **恢復買賣日在未來的列一律排除**：那是官方的預告，事件還沒發生，
+      我方當然沒有 ⇒ ⛔ 不排除的話這道檢查**每天假紅**。
+      ⭐ 但那些列本身有用（可以提前備妥因子），所以只在「缺口」這道檢查裡排除。
+
     ⛔ `cover`（涵蓋起點）由呼叫端**從資料自己算**，不寫死——
       寫死的話資料庫往前長之後就對不上。
       ⚠ 算不出來（沒有日檔）時 `cover` 是空字串 ⇒ **一律當涵蓋期外**，
@@ -199,7 +203,16 @@ def classify_gaps(miss, cover, known=None):
     known = KNOWN_OFFICIAL_DUP if known is None else known
     if not cover:
         return [], [], []
-    inside = [r for r in miss if r[0] >= cover]
+    # ⛔⛔ 2026-09-10 情報分析線 16:15 點出、⚠ 而我今早才把這支接進每日：
+    #   `revivt` **會回恢復買賣日在未來的預告列**（當天可見四筆：
+    #   09-14 6129、09-21 3710／8059／8277）。
+    #   ⭐ 那是好事——**可以提前備妥因子**，不必等當天才發現漏抓。
+    #   ⛔ 但「官方有、我方沒有」這道檢查**必須排除它們**，否則**每天假紅**：
+    #     那些事件根本還沒發生，我方當然沒有。
+    #   ⚠ 而一條每天紅的斷言，三天之後就沒有人看了——
+    #     它會連旁邊真正的 ✗ 一起帶走。
+    today = datetime.now(TPE).strftime("%Y-%m-%d")
+    inside = [r for r in miss if cover <= r[0] <= today]
     named = [r for r in inside if (r[1], r[0]) in known]
     live = [r for r in inside if (r[1], r[0]) not in known]
     return inside, named, live

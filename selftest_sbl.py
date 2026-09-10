@@ -84,6 +84,19 @@ def main():
     ck("  ⚠ 沒有註記的是空字串", a.get("note") == "", repr(a.get("note")))
     ck("  ★ 反向：`_blank_num('X')` 確實會把它清掉（證明這條防護不多餘）",
        F._blank_num("X") == "", repr(F._blank_num("X")))
+    # ⛔⛔ 落地當天照出來的：**註記是複合的**。2026-09-09 實測 117 列有註記，
+    #   其中 `XV` 有 **55 列，比單獨的 `X`（50）還多**。
+    #   ⇒ 寫 `note == 'X'` 會漏掉限制最嚴的那一群。
+    rowc = list(ROW_A)
+    rowc[14] = "XV! "
+    oc, _ = F.parse_sbl(tw(data=[rowc]), "2026-09-09")
+    ck("  ⭐ 複合註記 `XV!` 原封不動存下來（⛔ 不拆、不取第一個字）",
+       oc and dict(zip(H, oc[0]))["note"] == "XV!",
+       str(dict(zip(H, oc[0]))["note"]) if oc else "0 列")
+    ck("  ⚠ ⇒ 判準要用「包含」：`'X' in note` 是 True",
+       bool(oc) and "X" in dict(zip(H, oc[0]))["note"])
+    ck("  ★ 反向：`note == 'X'` 會漏掉它（這就是為什麼契約寫「包含」）",
+       bool(oc) and dict(zip(H, oc[0]))["note"] != "X")
 
     print("④ ⭐ 段落邊界照官方 `groups`，⛔ 不寫死")
     ck("  `_sbl_seg_from_groups` 算出 8", F._sbl_seg_from_groups(tw()) == 8,
