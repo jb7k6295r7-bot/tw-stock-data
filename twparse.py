@@ -18,6 +18,8 @@
 ⇒ 這裡把官方會出現的寫法列齊，並且**逐一測過**。
 ⛔ 仍然「認不出就回 None」——⚠ 猜一個日期比認不出更糟。
 """
+import csv
+import io
 import re
 import time
 import urllib.error
@@ -127,3 +129,21 @@ def post_form(url, form, timeout=120, retries=3, sleep=None):
         if i < retries - 1:
             _sleep(2 * (i + 1))
     return b"", last + (f"（重試 {retries} 次都失敗）" if retries > 1 else "")
+
+
+def render_csv(header, rows):
+    """→ CSV 文字（`\n` 結尾符，跟 repo 裡的日檔一致）。
+
+    ⛔ 這一份原本在 `fix_limit.py` 與 `fix_emerging_zero.py` 各一份——
+      ⭐ 而且是 `.githooks/pre-commit` 的「同一件事只准一份」**當場擋下來的**
+      （2026-09-10，第十二份）。⚠ 那個守門是同一天才裝上去的。
+
+    ⚠ 這一支的用途很特定：**修復腳本的「空跑往返」**——
+      把讀進來的列原封不動寫回去，位元組要跟原檔相同；
+      不同就代表 csv 模組的引號規則跟原檔不一致 ⇒ ⛔ 那一檔不敢改。
+    """
+    buf = io.StringIO(newline="")
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(header)
+    w.writerows(rows)
+    return buf.getvalue()
