@@ -90,6 +90,13 @@ jobs:
       - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
         run: python selftest_workflows.py
 
+      # ⛔ 這一支跑的是好幾個小時的 parse——解析規則錯掉的代價是整趟重來。
+      #   `--`／`----`（TWSE 與 TPEx 各寫各的）一定要在抓之前先驗過。
+      - name: 驗解析規則（空值寫法＋無成交列，離線）
+        run: |
+          python selftest_num.py
+          python selftest_parse_daily.py
+
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
           BR="${GITHUB_REF_NAME:-main}"

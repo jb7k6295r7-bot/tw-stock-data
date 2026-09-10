@@ -159,6 +159,15 @@ jobs:
       - name: 驗上市發行股數的補值（離線）
         run: python selftest_shares_twse.py
 
+      # ⭐ 2026-09-10：官方的空值不是一種寫法是一族——TWSE `--`、TPEx `----`。
+      #   兩份 `_num()` 原本是靠 `float()` 失敗**順便**擋掉的，沒有人測過。
+      #   ⇒ 規則寫成明示的，並且**每天驗一次兩份有沒有走岔**（`limit` 就是抄兩份只修一份）。
+      - name: 驗空值寫法（破折號族，離線）
+        run: python selftest_num.py
+
+      - name: 驗無成交列的解析（離線）
+        run: python selftest_parse_daily.py
+
       - name: 驗個股庫轉置（離線）
         continue-on-error: true
         run: python selftest_transpose.py
