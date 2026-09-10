@@ -1425,6 +1425,19 @@ def cmd_probe(args):
                     print(f"   ✗ {short}\n       非 JSON（{len(raw)}B）"
                           f"{type(ex).__name__}：{head}")
                     continue
+                # ⭐⭐ 使用者 2026-09-10 定的規矩，做在**探路模式的第一行**：
+                #   「以後新端點第一件事，就是把 `notes`／`hints`／`title` 印出來，
+                #     再開始比對。」
+                #   ⇒ 接新 feed 一定會先跑 `--probe`，所以放在這裡＝**跳不過去**。
+                #   ⛔ 寫成文件會被忘記；寫在這裡不會。
+                # ⚠ `params` 那一項最有用：端點會把收到的參數**回顯**，
+                #   ⇒ 被換掉就代表**那個參數是假的**（TWTAWU 的 `date=` 就是這樣）。
+                print(f"   ── {short}")
+                for _ln in B.describe_response(
+                        d, want=({"date": aa, "startDate": aa, "endDate": bb}
+                                 if aa else {"date": day.replace("-", "")})):
+                    print(f"       {_ln}")
+
                 stat = d.get("stat") if isinstance(d, dict) else None
 
                 # ★ 「查無資料」先攔下來，**不要落進「沒有可用候選」**。
