@@ -353,6 +353,32 @@ jobs:
                             --limit 20 --sleep 2
           done
 
+      # ⭐⭐ 借券賣出（SBL）。K線線 2026-09-10 15:45 列**第一優先**：
+      #   借券賣出是融券的 **77.5 倍**，而融券只佔空方的 **1.4%**
+      #   ⇒ 「券資比低 ＝ 空方壓力小」是拿那 1.4% 對整體下結論，
+      #     ⚠ 而偏誤方向**單一**（借券越集中的股票判讀越樂觀）。
+      # ⚠ `TWT93U` 每日晚間**二次更新**（約 20:30 與 22:30，台北）
+      #   ⇒ ⛔ 排程落在兩次之間會拿到**不完整**的版本，而它看起來完全正常。
+      #   ⭐ 本 workflow 的兩個排程是 19:00 與 23:59（台北）
+      #     ⇒ 19:00 那趟拿到的是**前一交易日**的完整版，23:59 那趟拿到當日第二次更新後的
+      #     ⇒ 兩趟都不落在 20:30～22:30 之間。⛔ 改排程時要重新確認這件事。
+      - name: 借券賣出餘額（上市＋上櫃）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          python selftest_sbl.py
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          for f in sbl otcsbl; do
+            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+          done
+          # 回頭補漏掉的日子（跟融資融券那一步同一個兩段式寫法）
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          for f in sbl otcsbl; do
+            python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
+                            --limit 20 --sleep 2
+          done
+
       # ⭐ 官方創新板成分清單（`STOCK_TIB`）。它取代的是一條**猜的**判準
       #   （名稱後綴 `-創`／`KY創`）——2026-09-09 兩者零差異，⚠ 但字串法是猜的：
       #   改名就失效，而且不會有人發現。
