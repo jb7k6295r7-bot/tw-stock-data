@@ -310,6 +310,69 @@ def _kind(code):
     return "stock"
 
 
+def describe_response(d, want=None):
+    """把官方回應裡**我方平常丟掉的那些鍵**攤開來講。→ list[str]
+
+    ## ⛔ 為什麼這個要有一個共用函式
+
+    使用者 2026-09-10：「官方回應裡有 `notes` 欄，我一直沒讀。」
+    查完發現**我方完全沒讀**：`_tables()` 只取 `title`／`fields`／`data`，
+    其餘（`stat`／`date`／`notes`／`hints`／`params`／`total`…）
+    **全部丟掉，而且丟的時候沒有任何紀錄**——連「有這些鍵」都不知道。
+
+    ⭐ 而那些鍵至少有三個用處，每一個都對應一件我方**手工做過**的事：
+
+        total   官方自己說有幾列 ⇒ **免費的、每次請求的完整性斷言**
+                （我方為此另外造過 N₁、Σamount÷大盤、六張清單差集…）
+        params  端點把收到的參數**回顯** ⇒ 「參數有沒有生效」的直接檢查
+                （我方為此在三支程式裡各寫了一道「回應要講出我請求的那一天」）
+        notes   符號說明、涵蓋起始年、單位 ⇒ 可能是我方某些**推論的權威出處**
+
+    ⚠ 使用者同時定了一條規矩：
+    **「以後新端點第一件事就是把 `notes`／`hints`／`title` 印出來，再開始比對。」**
+    ⇒ 這個函式就是那條規矩的執行者。新端點的探針一律先呼叫它。
+      ⛔ 不要各自抄一份——同一段邏輯抄兩份今晚已經害過一次。
+
+    `want`：我送出去的參數 dict。給了就順便對 `params` 有沒有被換掉。
+    """
+    if not isinstance(d, dict):
+        return [f"⚠ 頂層不是 dict，是 {type(d).__name__}"]
+    tabs = _tables(d)
+    used = {"tables", "fields", "data", "title"}
+    used |= {k for k in d if k.startswith(("fields", "data", "title"))}
+    dropped = [k for k in sorted(d) if k not in used]
+    out = [f"頂層鍵 {sorted(d)}",
+           f"⭐ 平常被丟掉的鍵：{dropped}" if dropped else "（沒有被丟掉的鍵）"]
+    for k in ("title", "notes", "hints"):
+        if k in d:
+            v = d[k]
+            if isinstance(v, (list, tuple)):
+                out.append(f"  ── {k}（{len(v)} 項）")
+                out += [f"     {str(x)[:220]}" for x in v[:8]]
+            else:
+                out.append(f"  ── {k}：{str(v)[:300]}")
+    for k in dropped:
+        if k in ("title", "notes", "hints"):
+            continue
+        v = d[k]
+        out.append(f"  ── {k}：{json.dumps(v, ensure_ascii=False)[:260]}"
+                   if isinstance(v, (dict, list)) else f"  ── {k}：{str(v)[:260]}")
+    n_data = sum(len(t.get("data") or []) for t in tabs)
+    if d.get("total") is not None:
+        same = str(d["total"]).strip() == str(n_data)
+        out.append(f"⭐ total={d['total']}｜解析出的列數={n_data}　"
+                   + ("✓ 一致" if same else "⚠ **對不上** ⇒ 這一趟少收了東西"))
+    if want and isinstance(d.get("params"), dict):
+        bad = {k: (v, d["params"].get(k)) for k, v in want.items()
+               if k in d["params"] and str(d["params"][k]) != str(v)}
+        miss = [k for k in want if k not in d["params"]]
+        out.append("⭐ params 對帳："
+                   + ("✓ 我送的參數都被原樣回顯" if not bad and not miss else
+                      f"⚠ **被換掉的 {bad}**｜沒回顯的 {miss}"
+                      "　⇒ 被換掉＝那個參數是假的（TWTAWU 的 `date=` 就是這樣）"))
+    return out
+
+
 def _tables(d):
     if not isinstance(d, dict):
         return []
