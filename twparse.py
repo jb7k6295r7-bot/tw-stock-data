@@ -18,7 +18,11 @@
 ⇒ 這裡把官方會出現的寫法列齊，並且**逐一測過**。
 ⛔ 仍然「認不出就回 None」——⚠ 猜一個日期比認不出更糟。
 """
+import csv
+import io
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -80,7 +84,7 @@ def pick_field(fields, *words):
     return None
 
 
-def post_form(url, form, timeout=120):
+def post_form(url, form, timeout=120, retries=3, sleep=None):
     """`application/x-www-form-urlencoded` 的 POST。→ (bytes, err)。
 
     ⛔ 這一份原本在 `otc_exright_history.py` 與 `otc_reduce_history.py` 各一份
@@ -89,14 +93,57 @@ def post_form(url, form, timeout=120):
     ⚠ `Referer` 帶的是 url 自己：TPEx 的 `bulletin/*` 沒有它會被擋。
     ⚠ 例外一律吃掉並回成 `err` 字串（⛔ 不 raise）——呼叫端要能分辨
       「取不到」與「取到但內容不對」，那是兩種完全不同的處置。
+
+    ## ⭐ 重試（2026-09-10 加）
+
+    `mops_probe.py` 連兩趟都是**暫時性**網路錯誤斷掉：
+
+        _ssl.c:993: The handshake operation timed out
+        RemoteDisconnected: Remote end closed connection without response
+
+    ⚠ 而那兩趟的結論都寫成「**未驗**」——⭐ 結論是對的（沒取到就是沒驗到），
+      ⛔ 但代價是**要有人再按一次**。
+    ⇒ 退避重試 3 次（2s、4s）。⚠ **只重試連線層的失敗**：
+      ⛔ HTTP 4xx 不重試（那是參數錯，重試幾次都一樣，只是多打對方幾發）。
+
+    ⚠ `sleep` 可注入 ⇒ 自測不必真的等（⛔ 會等好幾秒的測試沒有人會跑）。
     """
+    _sleep = time.sleep if sleep is None else sleep
     body = urllib.parse.urlencode(form, encoding="utf-8").encode("utf-8")
-    req = urllib.request.Request(
-        url, data=body,
-        headers={"User-Agent": "Mozilla/5.0", "Referer": url,
-                 "Content-Type": "application/x-www-form-urlencoded"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.read(), None
-    except Exception as ex:                                      # noqa: BLE001
-        return b"", f"{type(ex).__name__}: {str(ex)[:120]}"
+    last = ""
+    for i in range(max(1, retries)):
+        req = urllib.request.Request(
+            url, data=body,
+            headers={"User-Agent": "Mozilla/5.0", "Referer": url,
+                     "Content-Type": "application/x-www-form-urlencoded"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as ex:
+            last = f"HTTPError: HTTP {ex.code} {ex.reason}"
+            # ⛔ 4xx 是「我送錯了」，重試沒有意義（408／429 例外：那是時間問題）
+            if 400 <= ex.code < 500 and ex.code not in (408, 429):
+                return b"", last
+        except Exception as ex:                                  # noqa: BLE001
+            last = f"{type(ex).__name__}: {str(ex)[:120]}"
+        if i < retries - 1:
+            _sleep(2 * (i + 1))
+    return b"", last + (f"（重試 {retries} 次都失敗）" if retries > 1 else "")
+
+
+def render_csv(header, rows):
+    """→ CSV 文字（`\n` 結尾符，跟 repo 裡的日檔一致）。
+
+    ⛔ 這一份原本在 `fix_limit.py` 與 `fix_emerging_zero.py` 各一份——
+      ⭐ 而且是 `.githooks/pre-commit` 的「同一件事只准一份」**當場擋下來的**
+      （2026-09-10，第十二份）。⚠ 那個守門是同一天才裝上去的。
+
+    ⚠ 這一支的用途很特定：**修復腳本的「空跑往返」**——
+      把讀進來的列原封不動寫回去，位元組要跟原檔相同；
+      不同就代表 csv 模組的引號規則跟原檔不一致 ⇒ ⛔ 那一檔不敢改。
+    """
+    buf = io.StringIO(newline="")
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(header)
+    w.writerows(rows)
+    return buf.getvalue()

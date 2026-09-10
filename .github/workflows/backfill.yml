@@ -97,6 +97,12 @@ jobs:
       - name: 掃有沒有第二份實作（零相依）
         run: python selftest_no_dup.py
 
+      # ⛔ `push_data.sh` 的累積型 CSV 逐鍵合併。這一支擋的是**已經發生過**的
+      #   資料遺失：分支上的 `data/` 比 main 舊，整檔搬過去會刪掉別人剛寫的列，
+      #   ⚠ 而 `git diff` 看起來只是「這一趟重算過」。
+      - name: 驗累積型 CSV 的逐鍵合併（零相依）
+        run: python selftest_merge_ledger.py
+
       # ⛔ 這一支跑的是好幾個小時的 parse——解析規則錯掉的代價是整趟重來。
       #   `--`／`----`（TWSE 與 TPEx 各寫各的）一定要在抓之前先驗過。
       - name: 驗解析規則（空值寫法＋無成交列，離線）

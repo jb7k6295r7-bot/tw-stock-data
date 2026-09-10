@@ -77,6 +77,67 @@ def main():
     ck("  兩支的 _pick 也是同一支",
        E._pick is T.pick_field and R._pick is T.pick_field)
 
+    print("⑥ ⭐ POST 的重試：只重試**連線層**的失敗")
+    import urllib.error
+    import urllib.request
+    real = urllib.request.urlopen
+    slept = []
+
+    class _Fake:
+        def __init__(self, b):
+            self.b = b
+
+        def read(self):
+            return self.b
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    try:
+        # ⚠ 這兩個正是 `mops_probe.py` 連兩趟斷掉的錯（SSL handshake／對方掛斷）
+        n = {"i": 0}
+
+        def _flaky(req, timeout=None):
+            n["i"] += 1
+            if n["i"] < 3:
+                raise TimeoutError("_ssl.c:993: The handshake operation timed out")
+            return _Fake(b"OK")
+        urllib.request.urlopen = _flaky
+        got = T.post_form("http://x", {"a": 1}, sleep=slept.append)
+        ck("  暫時性錯誤 ⇒ 重試之後成功", got == (b"OK", None), str(got))
+        ck("  打了 3 次、退避 2s→4s", n["i"] == 3 and slept == [2, 4],
+           f"{n['i']} 次｜{slept}")
+
+        n["i"] = 0
+
+        def _bad(req, timeout=None):
+            n["i"] += 1
+            raise urllib.error.HTTPError("http://x", 400, "Bad Request", None, None)
+        urllib.request.urlopen = _bad
+        r = T.post_form("http://x", {"a": 1}, sleep=slept.append)
+        ck("  ⛔ HTTP 400 **不重試**（參數錯，重試只是多打對方幾發）",
+           n["i"] == 1 and "400" in r[1], f"{n['i']} 次｜{r[1]}")
+
+        n["i"] = 0
+
+        def _429(req, timeout=None):
+            n["i"] += 1
+            raise urllib.error.HTTPError("http://x", 429, "Too Many", None, None)
+        urllib.request.urlopen = _429
+        T.post_form("http://x", {"a": 1}, sleep=slept.append)
+        ck("  ⚠ 但 429（限流）要重試——那是時間問題不是參數問題", n["i"] == 3,
+           f"{n['i']} 次")
+
+        n["i"] = 0
+        urllib.request.urlopen = _bad
+        r = T.post_form("http://x", {"a": 1}, retries=1, sleep=slept.append)
+        ck("  retries=1 ⇒ 只打一次（呼叫端關得掉）", n["i"] == 1, f"{n['i']} 次")
+    finally:
+        urllib.request.urlopen = real
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

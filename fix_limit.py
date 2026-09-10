@@ -36,17 +36,16 @@ import sys
 
 import fetch
 import runlog
+from twparse import render_csv as _render_csv
 
 DAILY = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                      "data", "universe", "daily")
 
 
-def _render(header, rows):
-    buf = io.StringIO(newline="")
-    w = csv.writer(buf, lineterminator="\n")
-    w.writerow(header)
-    w.writerows(rows)
-    return buf.getvalue()
+# ⛔ 第十二份：`_render` 兩支修復腳本各一份。
+#   ⭐ 是 pre-commit 的「同一件事只准一份」**當場擋下來的**——
+#     ⚠ 而那個守門是同一天才裝上去的，這是它抓到的第一件。
+_render = _render_csv
 
 
 def main():

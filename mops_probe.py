@@ -47,22 +47,37 @@ BRIDGE = "https://mops.twse.com.tw/mops/api/redirectToOld"
 OPENAPI = "https://openapi.twse.com.tw/v1/opendata/"
 
 
-def _post(url, payload, timeout=45):
+def _post(url, payload, timeout=45, retries=3, sleep=None):
     """→ (bytes, err)。⛔ 自己寫是因為 `B.get()` 只有 GET。"""
+    # ⭐ 2026-09-10：這一支連兩趟都斷在**暫時性**網路錯誤
+    #   （`_ssl.c:993: handshake operation timed out`／`RemoteDisconnected`）。
+    #   ⚠ 兩趟的結論都寫成「未驗」——⭐ 結論是對的（沒取到就是沒驗到），
+    #     ⛔ 但代價是**要有人再按一次**。
+    #   ⇒ 退避重試。⚠ 規則與 `twparse.post_form` 同一套：
+    #     ⛔ 4xx 不重試（參數錯，重試只是多打對方幾發），408／429 例外。
+    import time as _t
+    _sleep = _t.sleep if sleep is None else sleep
     body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(url, data=body, headers={
-        "User-Agent": UA, "Content-Type": "application/json",
-        "Accept": "application/json,text/plain,*/*"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.read(), None
-    except urllib.error.HTTPError as e:
+    last = None
+    for i in range(max(1, retries)):
+        req = urllib.request.Request(url, data=body, headers={
+            "User-Agent": UA, "Content-Type": "application/json",
+            "Accept": "application/json,text/plain,*/*"})
         try:
-            return None, f"HTTP {e.code} {e.reason} | {e.read()[:200]!r}"
-        except Exception:  # noqa: BLE001
-            return None, f"HTTP {e.code} {e.reason}"
-    except Exception as e:  # noqa: BLE001
-        return None, f"{type(e).__name__}: {e}"
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as e:
+            try:
+                last = f"HTTP {e.code} {e.reason} | {e.read()[:200]!r}"
+            except Exception:  # noqa: BLE001
+                last = f"HTTP {e.code} {e.reason}"
+            if 400 <= e.code < 500 and e.code not in (408, 429):
+                return None, last
+        except Exception as e:  # noqa: BLE001
+            last = f"{type(e).__name__}: {e}"
+        if i < retries - 1:
+            _sleep(2 * (i + 1))
+    return None, (last or "") + (f"（重試 {retries} 次都失敗）" if retries > 1 else "")
 
 
 def _params(api, year, **kw):

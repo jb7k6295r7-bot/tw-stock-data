@@ -33,6 +33,28 @@ git commit -q -m "$MSG"
 DC=$(git rev-parse HEAD)
 BASE=$(git rev-parse HEAD~1)
 LASTRUN="data/meta/_last_run.md"
+
+# ⛔⛔ 累積型 CSV：**逐鍵合併，不可以整檔取本趟的**（2026-09-10 加）。
+#
+#   實際發生過的遺失：
+#     07:15  一天實測（2026-09-09）推上 main ⇒ `_coverage_backfill.csv` 多一列
+#     07:20  2015 那批開跑。它的 checkout 是**分支**，而分支上的 `data/`
+#            **沒有**那一列（那一列是推到 main 的，不是推到分支）
+#     07:22  它把整個檔搬到 main ⇒ ⛔ **五分鐘前那一列被刪掉**
+#   ⚠ 而 `git diff` 看起來完全正常：一加一減，像是「這一趟重算過」。
+#
+# ⭐ 這跟下面 `_last_run.md` 那段是同一件事，只是它先被想到——
+#   同一個道理原本只做了一半。
+#
+# ⚠ 這裡是**具名清單**，⛔ 不是「所有 CSV 都合併」：
+#   `_missing_rows.csv`／`_notrade_days.csv` 那些是**每趟全量重算**的，
+#   合併它們會把已經修好的舊列**復活**。
+#   ⇒ 只有「這一趟只 append 自己那幾列」的檔才進這張清單。
+LEDGERS="
+data/universe/_coverage_backfill.csv:date
+data/meta/calendar_tpex.csv:date
+data/meta/holiday_schedule.csv:date
+"
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- data)
 DELETED=$(git diff --diff-filter=D --name-only "$BASE" "$DC" -- data)
 echo "[push_data] 本趟改到 $(printf '%s\n' "$CHANGED" | grep -cv '^$') 個 data 檔"
@@ -40,8 +62,13 @@ echo "[push_data] 本趟改到 $(printf '%s\n' "$CHANGED" | grep -cv '^$') 個 d
 for i in 1 2 3; do
   git fetch origin main || { sleep $((i * 5)); continue; }
   git checkout -q -B _push origin/main || break
-  printf '%s\n' "$CHANGED" | grep -v '^$' | grep -vx "$LASTRUN" \
-    | xargs -r git checkout "$DC" --
+  # 累積型的先排除，下面單獨逐鍵合併
+  LEDGER_PATHS=$(printf '%s\n' "$LEDGERS" | grep -v '^$' | cut -d: -f1)
+  KEEP=$(printf '%s\n' "$CHANGED" | grep -v '^$' | grep -vx "$LASTRUN")
+  for lp in $LEDGER_PATHS; do
+    KEEP=$(printf '%s\n' "$KEEP" | grep -vx "$lp" || true)
+  done
+  printf '%s\n' "$KEEP" | grep -v '^$' | xargs -r git checkout "$DC" --
   printf '%s\n' "$DELETED" | grep -v '^$' \
     | xargs -r git rm -q -f --ignore-unmatch
   # ⚠ `_last_run.md` 是**跨 workflow 累積**的（runlog 只覆蓋自己那一區塊）
@@ -56,6 +83,22 @@ for i in 1 2 3; do
       git checkout "$DC" -- "$LASTRUN" && git add -- "$LASTRUN"
     fi
   fi
+  # ⭐ 累積型 CSV：逐鍵合併（本趟的鍵覆蓋、main 的其餘列原封不動保留）
+  for ent in $(printf '%s\n' "$LEDGERS" | grep -v '^$'); do
+    LP=${ent%%:*}; LK=${ent#*:}
+    printf '%s\n' "$CHANGED" | grep -qx "$LP" || continue
+    git show "$DC:$LP" > /tmp/lg_mine.csv 2>/dev/null || continue
+    git show "origin/main:$LP" > /tmp/lg_main.csv 2>/dev/null || : > /tmp/lg_main.csv
+    if python3 merge_ledger.py /tmp/lg_mine.csv /tmp/lg_main.csv "$LK" > /tmp/lg_out.csv; then
+      cp /tmp/lg_out.csv "$LP"
+      git add -- "$LP"
+    else
+      # ⛔ 合併不成就**整檔取本趟的**，⚠ 但一定要吼出來：
+      #   那正是會靜靜刪掉別人剛寫的列的那條路。
+      echo "[push_data] ⛔ $LP 逐鍵合併失敗，退回整檔取本趟的（⚠ main 上較新的列可能被回退）" >&2
+      git checkout "$DC" -- "$LP" && git add -- "$LP"
+    fi
+  done
   git add -A data
   if git diff --staged --quiet; then
     echo "[push_data] 搬到 main 之後沒有差異（多半是別的 workflow 已推過同樣內容）"
