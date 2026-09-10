@@ -6,7 +6,7 @@ name: 端點探針（只跑探針，約 1 分鐘）
 #   而在探針還在收斂的這段期間，每改一行探針就要等 22 分鐘才看得到結果——
 #   **等的是資料管線，不是探針。**
 #
-#   ⇒ 拆出來單獨跑：只跑八支探針、只寫 `data/meta/_*probe.txt`，約 1 分鐘。
+#   ⇒ 拆出來單獨跑：只跑九支探針、只寫 `data/meta/_*probe.txt`，約 1 分鐘。
 #     改一版、按一次、兩三分鐘就知道結果。
 #
 # ⛔ **只測不寫資料**：這支不碰 `data/universe/`、不碰 `data/stocks/`、
@@ -111,10 +111,10 @@ jobs:
       # ★ 先離線驗四支跑不跑得完（假回應整條走一遍）。
       #   ⚠ 這一步**不加 continue-on-error**：這支的唯一產出就是探針輸出，
       #     連跑都跑不完就沒有必要往下打對方的伺服器。
-      - name: 驗八支探針跑得完（離線）
+      - name: 驗九支探針跑得完（離線）
         run: python selftest_probes.py
 
-      - name: 跑八支探針（這支一律全跑）
+      - name: 跑九支探針（這支一律全跑）
         if: always()
         continue-on-error: true
         timeout-minutes: 15
@@ -135,7 +135,8 @@ jobs:
                       "holiday_probe.py:_holiday_probe.txt" \
                       "otccal_probe.py:_otccal_probe.txt" \
                       "hist_probe.py:_hist_probe.txt" \
-                      "keys_probe.py:_keys_probe.txt"; do
+                      "keys_probe.py:_keys_probe.txt" \
+                      "site_inventory.py:_site_inventory.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
             #   排程觸發時才套三選一的重跑條件：
