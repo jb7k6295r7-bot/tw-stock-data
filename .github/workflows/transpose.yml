@@ -43,6 +43,29 @@ jobs:
         with:
           python-version: "3.12"
 
+      # ⭐ 2026-09-10：Commit 那一步改成「只搬 data」之後，
+      #   **程式就不會再經由它進 main**——而排程跑的是 main 上的程式
+      #   ⇒ 不同步的話 main 會永遠停在舊版，而且完全看不出來。
+      #   ⇒ 在這裡同步：此刻 checkout 還是新的，rebase 幾乎不可能撞
+      #     （分支上多的是程式 commit，main 上多的是資料 commit，兩邊不重疊）。
+      #   ⭐ 順帶好處：rebase 之後這一趟手上的 `data/` 也是 main 的最新版。
+      #   ⛔ 失敗不擋後面：撞到就跳過，資料照抓，程式下一趟再同步。
+      - name: 把程式同步到 main（趁 checkout 還新）
+        continue-on-error: true
+        run: |
+          BR="${GITHUB_REF_NAME:-main}"
+          if [ "$BR" = "main" ]; then echo "本來就在 main，不必同步"; exit 0; fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if git rebase origin/main; then
+            git push origin HEAD:main && echo "✓ 程式已同步到 main"
+          else
+            git rebase --abort || true
+            echo "⚠ 跟 main rebase 不起來 ⇒ 跳過同步。這一趟照樣抓資料。" >&2
+          fi
+
+
       - name: 轉置
         # ⚠ 不要寫 `${{ inputs.kind || 'all' }}`：這個 input 有預設值、永遠不是空字串，
         #   `||` 的右邊從來不會生效（2026-09-06 在 feeds.yml 上實測過同樣的寫法）。
@@ -77,74 +100,61 @@ jobs:
             #      真資料的衝突要人來看，不可以自動挑一邊。
             #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
             #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
-            LASTRUN="data/meta/_last_run.md"
-            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md "
-            # ⛔⛔ 2026-09-09 付了 **5 小時**的學費才補上的一步。
-            #   那一趟融資融券回補（2,846 天）跑完、資料 commit 也做好了，
-            #   結果 `git pull --rebase origin main` 撞在 `.github/workflows/daily.yml`：
-            #   runner 是 16:34 checkout 的，而我在那 5 小時裡改過那個檔。
-            #   ⇒ 衝突的是**舊的程式 commit 被重放**，跟本趟抓到的資料一點關係都沒有；
-            #     守門條款（非 REGEN 檔不自動挑邊）正確地拒絕自動處理 ⇒ **整趟丟掉**。
-            #   ⚠ 失敗的樣子：回補那一步是**綠的**，只有最後一步紅——
-            #     很容易被讀成「只是 push 失敗」，而其實是資料全沒了。
+            # ⛔⛔ 2026-09-09 花了 **5 小時**的學費，2026-09-10 又用離線 git 模擬
+            #   證明「先 rebase 到分支頭」那個補丁**擋不住**，才換成現在這個做法。
             #
-            # ⇒ 先把本趟的資料 commit 搬到**分支現在的頭**上，再談 main。
-            #   那些「跑之間被推上去的程式 commit」就不會再被重放。
-            #   ⛔ 這一步失敗要 abort 後照舊往下走，不可以讓它變成新的失敗來源。
-            BR="${GITHUB_REF_NAME:-main}"
-            if git fetch origin "$BR" 2>/dev/null; then
-              if ! git rebase "origin/$BR"; then
-                echo "⚠ 搬到 origin/$BR 失敗（多半是資料檔自己衝突），abort 後照舊流程處理" >&2
-                git rebase --abort 2>/dev/null || true
-              fi
-            fi
+            #   原本：`git pull --rebase origin main && git push origin HEAD:main`
+            #   ⇒ 它會把**分支上還沒進 main 的 commit 全部重放**，包括**程式 commit**。
+            #     那趟融資融券回補跑完了、資料 commit 也做好了，最後撞在
+            #     `.github/workflows/daily.yml`——衝突的是程式，跟抓到的資料無關，
+            #     但整趟 2,846 天的資料就這樣丟掉。
+            #   ⚠ 失敗的樣子最毒：回補那一步是**綠的**，只有最後一步紅。
+            #
+            # ⭐ 現在的做法：**只把「本趟真的改到的 data 路徑」搬到 main 的頭上。**
+            #   ① 程式 commit 一個都不重放 ⇒ workflow／程式檔**永遠不會衝突**
+            #   ② 別的 workflow 在這幾小時裡寫的資料**原封不動**（我們只碰自己改的檔）
+            #   ③ 沒有 rebase ⇒ 沒有「衝突要挑哪一邊」的問題
+            #   離線模擬三項都驗過（scratchpad/gitsim3）。
+            #
+            # ⚠ 唯一的例外是 `_last_run.md`：它是**跨 workflow 累積**的，
+            #   `runlog` 只覆蓋自己那一區塊 ⇒ ⛔ **不可以整份取本趟的**，
+            #   否則另一支剛報的 ✗ 會被安靜換回上一輪的 ✓。⇒ 逐區塊合併。
+            DC=$(git rev-parse HEAD)
+            BASE=$(git rev-parse HEAD~1)
+            LASTRUN="data/meta/_last_run.md"
+            CHANGED=$(git diff --name-only "$BASE" "$DC" -- data)
+            DELETED=$(git diff --diff-filter=D --name-only "$BASE" "$DC" -- data)
+            echo "本趟改到 $(printf '%s\n' "$CHANGED" | grep -cv '^$') 個 data 檔"
             ok=0
             for i in 1 2 3; do
-              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              git fetch origin main || { sleep $((i * 5)); continue; }
+              git checkout -q -B _push origin/main || break
+              printf '%s\n' "$CHANGED" | grep -v '^$' | grep -vx "$LASTRUN" \
+                | xargs -r git checkout "$DC" --
+              printf '%s\n' "$DELETED" | grep -v '^$' \
+                | xargs -r git rm -q -f --ignore-unmatch
+              if printf '%s\n' "$CHANGED" | grep -qx "$LASTRUN"; then
+                git show "$DC:$LASTRUN" > /tmp/lr_mine.md
+                git show "origin/main:$LASTRUN" > /tmp/lr_main.md 2>/dev/null \
+                  || : > /tmp/lr_main.md
+                if python3 merge_last_run.py /tmp/lr_mine.md /tmp/lr_main.md > "$LASTRUN"; then
+                  git add -- "$LASTRUN"
+                else
+                  echo "⛔ _last_run.md 逐區塊合併失敗，取本趟的（⚠ 另一支的區塊可能被回退）" >&2
+                  git checkout "$DC" -- "$LASTRUN" && git add -- "$LASTRUN"
+                fi
+              fi
+              git add -A data
+              if git diff --staged --quiet; then
+                echo "搬到 main 之後沒有差異（多半是別的 workflow 已經推過同樣的內容）"
                 ok=1; break
               fi
-              CONF=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-              if [ -n "$CONF" ]; then
-                BAD=""
-                for f in $CONF; do
-                  [ "$f" = "$LASTRUN" ] && continue
-                  case "$REGEN" in *" $f "*) ;; *) BAD="$BAD $f";; esac
-                done
-                if [ -n "$BAD" ]; then
-                  echo "⛔ rebase 衝突，而且不只是可自動處理的報告檔：$BAD" >&2
-                  echo "   真資料的衝突不自動挑一邊，請人工處理。" >&2
-                  git rebase --abort 2>/dev/null || true
-                  break
-                fi
-                echo "rebase 衝突，可自動處理：$CONF"
-                MERGED=1
-                for f in $CONF; do
-                  if [ "$f" = "$LASTRUN" ]; then
-                    # ⛔ _last_run.md **不可以整份取一邊**：runlog 只覆蓋自己那一個區塊，
-                    #   所以這一份是跨 workflow 累積的。整份取一邊 ⇒ 另一支剛報的 ✗
-                    #   會被安靜換回上一輪的 ✓——檔案在、格式對、只有狀態悄悄變綠。
-                    #   逐區塊合併，每塊留「最後執行」較新的那一份。
-                    git show :3:"$f" > /tmp/lr_ours.md \
-                      && git show :2:"$f" > /tmp/lr_theirs.md \
-                      && python3 merge_last_run.py /tmp/lr_ours.md /tmp/lr_theirs.md > "$f" \
-                      && git add -- "$f" || MERGED=0
-                  else
-                    git checkout --theirs -- "$f" && git add -- "$f" || MERGED=0
-                  fi
-                done
-                if [ "$MERGED" != "1" ]; then
-                  echo "⛔ 自動處理失敗，不硬推" >&2
-                  git rebase --abort 2>/dev/null || true
-                  break
-                fi
-                if GIT_EDITOR=true git rebase --continue && git push origin HEAD:main; then
-                  ok=1; break
-                fi
-              fi
-              # ★ rebase 卡在衝突時工作區會留在 unmerged 狀態，下一輪 git pull 會直接
-              #   說 "Pulling is not possible"，三次全白重試。先 abort 回到乾淨狀態。
-              git rebase --abort 2>/dev/null || true
-              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
+              git commit -q -m "transpose: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
+              if git push origin HEAD:main; then ok=1; break; fi
+              echo "push 失敗（第 $i 次），多半是這幾秒又有人推了 main，重來" >&2
+              sleep $((i * 5))
             done
-            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
-          fi
+            if [ "$ok" != "1" ]; then
+              echo "連續三次 push 失敗" >&2
+              exit 1
+            fi
