@@ -279,14 +279,23 @@ jobs:
           #   會自己接著跑（進度就是資料本身，不需要台帳）。
           Y0=$(echo "${{ inputs.start }}" | cut -d- -f1)
           Y1=$(echo "${{ inputs.end }}"   | cut -d- -f1)
+          # ⛔⛔ 2026-09-10 run 104：`tib` 的 2023 那批有**一天**回 HTML 不是 JSON
+          #   （CDN 擋人，第二點④）⇒ 那一批的 runlog 判成 ✗ ⇒ 程式 exit 1
+          #   ⇒ `set -e` 當場結束整個 step ⇒ ⛔ **2024／2025／2026 三年一天都沒跑**。
+          #   ⚠ 而 CLAUDE.md 第四點寫的是「逐年分批 ⇒ **任何失敗最多賠一年**」
+          #     ——⛔ 這個迴圈**沒有兌現那句話**：它賠掉的是後面全部。
+          #   ⇒ 記下失敗、**繼續跑下一年**，⭐ 而最後仍然 exit 1
+          #     （⛔ 不可以吞掉失敗：紅燈是要留著的，只是不該連坐）。
+          RC=0
           for Y in $(seq "$Y0" "$Y1"); do
             A="$Y-01-01"; B="$Y-12-31"
             [ "$Y" = "$Y0" ] && A="${{ inputs.start }}"
             [ "$Y" = "$Y1" ] && B="${{ inputs.end }}"
             echo "── $Y 年（$A ~ $B）──"
-            python backfill.py --run --start "$A" --end "$B" $COMMON
+            python backfill.py --run --start "$A" --end "$B" $COMMON || RC=1
             bash push_data.sh "backfill(run): $A~$B"
           done
+          [ "$RC" = 0 ] || { echo "⛔ 有批次失敗（見上面各該年）" >&2; exit 1; }
 
       # 探路失敗也要 commit：偵察檔本身就是這一趟的產出
       - name: Commit 回 repo

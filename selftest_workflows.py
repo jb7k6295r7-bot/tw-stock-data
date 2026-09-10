@@ -167,6 +167,33 @@ def main():
        f"⛔ 叫得到但檔不在：{missing}"
        "　⇒ 那一步會在 Actions 上跑起來才失敗，⚠ 而且往往在抓完之後")
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 逐年分批的迴圈：**一批失敗不可以賠掉後面的批次**（2026-09-10 加）
+    #
+    # ⛔ run 104：`tib` 的 2023 那批有**一天**回 HTML 不是 JSON ⇒ 程式 exit 1
+    #   ⇒ `set -e` 當場結束整個 step ⇒ **2024／2025／2026 三年一天都沒跑**。
+    # ⚠ 而 CLAUDE.md 第四點寫的是「逐年分批 ⇒ **任何失敗最多賠一年**」
+    #   ——⛔ 那句話當時**沒有被程式兌現**，而且沒有任何東西會說。
+    #
+    # ⇒ 判準：迴圈裡呼叫 `python` 的那一行必須帶 `|| RC=`，
+    #   ⭐ 而且迴圈**之後**必須有一個「RC 不是 0 就 exit 1」
+    #   （⛔ 只做前半 ＝ 把失敗吞掉，那比連坐更糟）。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        short = os.path.basename(f)
+        src = io.open(f, encoding="utf-8").read()
+        for m in re.finditer(r"for Y in \$\(seq.*?\n(.*?)\n\s*done\n(.*?)\n",
+                             src, re.S):
+            body, after = m.group(1), m.group(2)
+            calls = [ln for ln in body.split("\n")
+                     if re.search(r"^\s*python\s", ln)]
+            ck(f"{short}｜逐年迴圈裡的 python 呼叫都帶 `|| RC=`"
+               "（⛔ 一批失敗不可以賠掉後面幾年）",
+               bool(calls) and all("|| RC=" in ln for ln in calls),
+               f"⛔ 沒帶的：{[ln.strip()[:60] for ln in calls if '|| RC=' not in ln]}")
+            ck(f"{short}｜而迴圈**之後**要 `exit 1`（⛔ 不可以把失敗吞掉）",
+               "RC" in after and "exit 1" in after, f"迴圈後那一行：{after.strip()[:80]}")
+
     # ── ⛔ 反向驗：這支檢查自己有沒有效 ──
     #   ⚠ 沒有這一段的話，一支「永遠說 ok」的檢查跟真的一模一樣。
     broken = subprocess.run(["bash", "-n"], input="if true; then echo x",
@@ -180,6 +207,14 @@ def main():
     ck("★ 反向驗：兩道方向**相反**——孤兒看「檔在、沒人叫」，"
        "這一道看「有人叫、檔不在」",
        bool(called) and len(called) >= 5, f"workflow 裡叫到 {len(called)} 支")
+    # ⭐ 逐年迴圈那一道的反向驗：⛔ 沒證明過會失敗的檢查不算檢查。
+    _bad = ('for Y in $(seq 1 3); do\n  python x.py\n  done\n  echo done\n')
+    _calls = [ln for ln in re.search(r"for Y in \$\(seq.*?\n(.*?)\n\s*done",
+                                     _bad, re.S).group(1).split("\n")
+              if re.search(r"^\s*python\s", ln)]
+    ck("★ 反向驗：一個**沒帶** `|| RC=` 的逐年迴圈確實會被判成不合格",
+       _calls and not all("|| RC=" in ln for ln in _calls),
+       f"⛔ 連沒帶的都說有 ⇒ 這一道是死的（掃到 {_calls}）")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
