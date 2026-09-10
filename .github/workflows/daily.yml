@@ -775,17 +775,13 @@ jobs:
           python selftest_notrade_watermark.py
           python notrade_watermark.py
 
-      - name: 缺還原因子清單（只看有沒有變多）
-        if: always()
-        continue-on-error: true
-        timeout-minutes: 10
-        run: python adj_gap.py
-
       - name: 上櫃除權息判準（官方當日，逐日累積）
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        run: python otc_exright_check.py
+        run: |
+          python selftest_otc_exright_check.py
+          python otc_exright_check.py
 
       - name: 上市短期暫停交易（TWTAWU，一次一個請求拿 11 年）
         if: always()
@@ -827,6 +823,22 @@ jobs:
             echo "⭐ 這一趟用嚴格判準（容忍 0）：各層必須完全跟上 price"
           fi
           python transpose.py --kind all --lag-tolerance "$TOL"
+
+      # ⛔⛔ 2026-09-10：這一步本來排在 `transpose.py` **之前**，
+      #   而它讀的正是 `data/stocks/`（transpose 的產出）
+      #   ⇒ 它每天看到的是**上一趟**轉置的結果。
+      #   ⚠ 實測代價：19:21 那一趟報「未歸因 22（歷史最低 12）」，
+      #     其中 `2330 台積電 2460.00 → 2.00 −99.92%`——
+      #     ⭐ 而 2330 那幾天的收盤是 2410／2460／2470／2465／2450，**一格都沒錯**。
+      #   ⇒ 那 10 筆是**讀到半途的轉置結果**，不是缺口。
+      #   ⛔ 一個會報「台積電跌 99.92%」的斷言，下一次真的有事時沒有人會信它。
+      # ⚠ 這一支的檔頭本來就寫著「一定要排在 `adjust.py` 之後」
+      #   ——⛔ 同一個道理對 `transpose.py` 也成立，只是沒寫下來。
+      - name: 缺還原因子清單（只看有沒有變多）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python adj_gap.py
 
       # ★ 就算抓失敗也要 commit：_manifest.json 裡有每一項的失敗原因，
       #   那正是失敗時最需要看到的東西。原本失敗就整個 job 停掉，

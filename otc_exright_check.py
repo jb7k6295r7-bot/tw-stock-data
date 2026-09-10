@@ -90,6 +90,35 @@ def adj_events():
     return out
 
 
+def classify(rows, have, today):
+    """→ ({(代號,日期): 標記}, 缺口的鍵, 未來預告的鍵)。
+
+    ⛔ 抽成函式有兩個理由，兩個都是付過代價的：
+
+    ① **顯示與結論必須用同一段判準。**
+       2026-09-10 19:21 那份 runlog 裡，明細每一列都印「✓ 已落地」，
+       ⚠ 而同一份裡的 check 說「**4／4 筆沒落地**」。
+       成因：`mark` 那一行寫 `(r[1], r[0]) not in miss`，
+       而 `miss` 裝的是**列**（list）⇒ 拿 tuple 去 `in` 它**永遠是 True**。
+       ⭐ 一個「明細說沒事、結論說有事」的報告，會讓人去懷疑結論。
+
+    ② ⛔ 抽出來才測得到（selftest 自己抄一份就是第四點五）。
+
+    ⚠ 官方會回**除權息日在未來**的預告列 ⇒ ⛔ 把預告當缺口會每天假紅；
+      ⭐ 而它們確實還不該落地：那一天還沒到，前收盤價根本還不存在。
+    """
+    miss_keys = {(r[1], r[0]) for r in rows if (r[1], r[0]) not in have}
+    future = {k for k in miss_keys if k[1] > today}
+    miss_keys -= future
+    marks = {}
+    for r in rows:
+        k = (r[1], r[0])
+        marks[k] = ("⏳ 未來事件（預告，還不該落地）" if k in future
+                    else "⛔ **data/adj 沒有**" if k in miss_keys
+                    else "✓ 已落地")
+    return marks, miss_keys, future
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", help="離線用：讀一個檔當回應")
@@ -164,17 +193,29 @@ def main():
 
     # ── ⭐ 十一年來第一條「官方有、我方無」的斷言 ─────────────────────
     have = adj_events()
-    miss = [r for r in rows if (r[1], r[0]) not in have]
+    # ⛔⛔ 2026-09-10：這裡本來是 `(r[1], r[0]) not in miss`，
+    #   而 `miss` 裝的是**列**（list），拿一個 tuple 去 `in` 它**永遠是 True**
+    #   ⇒ 每一列都印「✓ 已落地」，⚠ **而下面那道 check 同時說「4／4 筆沒落地」**。
+    #   ⭐ 同一份 runlog 裡兩句話互相矛盾，而矛盾的那一半（顯示）是騙人的那一半。
+    #   （CLAUDE.md 第四點二：⛔ 顯示說落地了 ≠ 真的落地了。）
+    #   ⇒ 用**鍵的集合**比，⛔ 不是拿鍵去比對一串列。
+    today = datetime.now(TPE).strftime("%Y-%m-%d")
+    marks, miss_keys, future = classify(rows, have, today)
     for r in rows:
-        mark = "✓ 已落地" if (r[1], r[0]) not in miss else "⛔ **data/adj 沒有**"
         rl.note(f"  {r[0]} {r[1]} {r[2]}｜前收 {r[3]}／參考價 {r[4]}"
-                f"｜{r[5]}｜{mark}")
-    rl.check("官方有、我方 data/adj 沒有 ⇒ 0 筆",
-             not miss,
-             f"{len(miss)}／{len(rows)} 筆沒落地："
-             f"{[(r[1], r[0]) for r in miss][:10]}"
+                f"｜{r[5]}｜{marks[(r[1], r[0])]}")
+    if future:
+        rl.info("⏳ 除權息日在未來的預告列（⛔ 不算缺口）",
+                f"{len(future)} 筆：{sorted(future)}"
+                "　⭐ 好處是可以提前備妥因子；⛔ 但拿它當缺口會每天假紅")
+    rl.check("官方有、我方 data/adj 沒有 ⇒ 0 筆（⚠ 不含未來的預告列）",
+             not miss_keys,
+             f"{len(miss_keys)}／{len(rows)} 筆沒落地："
+             f"{sorted(miss_keys)[:10]}"
              "｜⛔ 沒落地那幾檔**今天的漲跌算出來是錯的**"
-             if miss else f"{len(rows)} 筆全部落地")
+             if miss_keys else
+             f"{len(rows) - len(future)} 筆全部落地"
+             + (f"（⚠ 另有 {len(future)} 筆是未來預告）" if future else ""))
     return rl.finish()
 
 

@@ -269,6 +269,57 @@ def main():
         w.writerow(HEADER)
         w.writerows(rows)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ 2026-09-10：這一支讀的是 `data/stocks/`（`transpose.py` 的產出），
+    #   而它在 daily.yml 裡**排在 transpose 之前** ⇒ 每天看到的是上一趟的結果。
+    #
+    #   實測代價：19:21 那趟報「未歸因 22（歷史最低 12）」，其中
+    #   **`2330 台積電 2460.00 → 2.00　−99.92%`**
+    #   ——⭐ 而 2330 那幾天的收盤是 2410／2460／2470／2465／2450，**一格都沒錯**。
+    #
+    # ⛔ 一個會報「台積電跌 99.92%」的斷言，**下一次真的有事時沒有人會信它**。
+    # ⇒ 步驟順序已經調到 transpose 之後；⚠ 但順序**會被下一個人改回去**
+    #   ⇒ 這裡自己驗一次終點：**個股庫的最後一天必須跟得上日檔的最後一天。**
+    #   （⭐ CLAUDE.md 第四點二：斷言要驗終點，不是驗中間。）
+    # ══════════════════════════════════════════════════════════════
+    def _last(d, suf=".csv"):
+        try:
+            xs = [n[:-4] for n in os.listdir(d) if n.endswith(suf)
+                  and n[0].isdigit()]
+            return max(xs) if xs else ""
+        except OSError:
+            return ""
+
+    def _last_row_date(d):
+        """個股庫是按股票切的 ⇒ 最後一天要從**列**看，不是從檔名看。"""
+        best = ""
+        try:
+            names = [n for n in sorted(os.listdir(d))
+                     if n.endswith(".csv") and not n.startswith("_")]
+        except OSError:
+            return ""
+        for n in names[:80]:                 # ⚠ 抽前 80 檔就夠：要的是「最新那天」
+            try:
+                with io.open(os.path.join(d, n), encoding="utf-8") as f:
+                    last = ""
+                    for ln in f:
+                        if ln[:1].isdigit():
+                            last = ln.split(",", 1)[0]
+                    best = max(best, last)
+            except OSError:
+                pass
+        return best
+
+    day_last = _last(os.path.join(_ROOT, "universe", "daily"))
+    stk_last = _last_row_date(STOCKS)
+    rl.check("⭐ 個股庫跟得上日檔（⛔ 這一支讀的是 transpose 的產出，"
+             "排在它前面就會拿到上一趟的結果）",
+             bool(day_last) and stk_last >= day_last,
+             f"日檔到 {day_last or '—'}｜個股庫到 {stk_last or '—'}"
+             + ("　⛔ 個股庫比較舊 ⇒ 這一趟的結果**不可信**："
+                "本步驟必須排在 `transpose.py` 之後"
+                if stk_last < day_last else ""))
+
     un = [r for r in rows if r[8] == "未歸因"]
     rl.info("判準", "① change ∈ {'', '0.0'}（**兩市寫法不同**）"
                     " ② close ≠ 前收（擋真平盤） ③ 前一列是緊鄰交易日（擋薄量股的洞）"

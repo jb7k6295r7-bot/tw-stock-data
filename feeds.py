@@ -219,6 +219,55 @@ def _sbl_seg_from_groups(d):
     return None
 
 
+def _tally_drop(n_written, day, note):
+    """→ (這一天丟了幾列, 要印出來的說明)。⛔ 抽成函式是為了讓 selftest 測得到。
+
+    ⚠ 這裡有兩件事**必須一起做**，分開就會走岔：
+    ① 丟棄數要取**數字**（`_dropped_in`），⛔ 不是「有沒有出現『丟棄』兩個字」
+       ——那樣一天丟 40 列會被記成 1。
+    ② 丟棄不是 0 時，**parser 的原始說明要保留**（它帶著是哪幾檔、差多少）
+       ⛔ 蓋掉之後每天默默丟幾十列也看不出來。
+    """
+    n_drop = _dropped_in(note)
+    return n_drop, (f"{n_written} 列" if not n_drop
+                    else f"{n_written} 列｜{note}")
+
+
+def _drop_note(kept, tag, bad, samples):
+    """驗算不符時的說明。⛔ **要講得出是哪幾列**，不是只給一個數字。
+
+    ⚠ 這是 `bulletin/revivt` 那次的教訓（283 列全部認不出，訊息只說「bad=283」
+      ＋欄位名 ⇒ **不足以診斷**，我得再打對方一趟才知道為什麼）。
+    ⭐ 而丟棄這一族更難：它一次只掉幾列，數量小到不會有人想去追，
+      ⛔ 於是「1 天有丟棄」這種紅燈會一直紅著沒有人動它——
+      `feeds:otcsbl` 就是這樣紅著的，而 runlog 連**哪一天**都沒寫。
+    """
+    # ⚠ `丟棄 {bad} 列` 這幾個字**是有人在比對的**（`cmd_feed` 用它算 `dropped_days`）
+    #   ⇒ ⛔ 格式不可以亂改。⭐ 而那本身就是這個檔自己警告過的事
+    #     （「訊息字串是給人看的，不是狀態機的輸入」）——
+    #     ⇒ 那一邊已經改成用 `_dropped_in()` 明確取數，這裡維持相容格式。
+    if not bad:
+        return f"{kept} 列可用（{tag}；驗算不符丟棄 0 列）"
+    return (f"{kept} 列可用（{tag}；⛔ 驗算不符丟棄 {bad} 列"
+            f"｜前 {len(samples[:3])} 筆：{samples[:3]}）")
+
+
+_DROP_RE = re.compile(r"丟棄\s*(\d+)\s*列")
+
+
+def _dropped_in(note):
+    """從 parser 的說明取出丟棄列數。→ int（取不到回 0）。
+
+    ⛔ 這一支存在的理由寫在 `cmd_feed` 裡：那裡原本用
+    `"丟棄" in note and "丟棄 0 列" not in note` 判斷有沒有丟棄
+    ——⚠ 而同一個檔案裡就記著「**訊息字串是給人看的，不是狀態機的輸入**」
+    （休市日被算成失敗那次，就是因為結尾是全形括號對不到）。
+    ⇒ 收成一條具名的規則，⛔ 而且它取得出**數字**，不只是有無。
+    """
+    m = _DROP_RE.search(str(note))
+    return int(m.group(1)) if m else 0
+
+
 def _sbl_rows(t, day, known, i0, tag):
     """共用的借券輸出與驗算。`i0` ＝ 借券那一段的起始欄。
 
@@ -226,7 +275,7 @@ def _sbl_rows(t, day, known, i0, tag):
       ⇒ 位置取錯時它會**整片不符** ⇒ 它就是「位置對不對」的檢驗。
       ⛔ 不符的列丟掉並計數，⚠ 不要靜默寫進去。
     """
-    out, bad = [], 0
+    out, bad, samples = [], 0, []
     n = lambda v: (float(str(v).replace(",", "").strip())
                    if str(v).strip() not in ("", "-", "--") else 0.0)
     for r in (t.get("data") or []):
@@ -243,9 +292,16 @@ def _sbl_rows(t, day, known, i0, tag):
                      - n(vals[4])) <= 1
         except ValueError:
             bad += 1
+            samples.append((code, "數字轉不動", vals))
             continue
         if not ok:
             bad += 1
+            # ⭐ 把**差多少**也記下來：差 1~2 股是進位、差一個量級是欄位對錯位。
+            #   ⚠ 那兩種的處置完全不同，⛔ 只給「不符」分不出來。
+            gap = (n(vals[0]) + n(vals[1]) - n(vals[2])
+                   + n(vals[3]) - n(vals[4]))
+            samples.append((code, f"前{vals[0]}+賣{vals[1]}-還{vals[2]}"
+                                  f"+調{vals[3]}≠餘{vals[4]}（差 {gap:+.0f}）"))
             continue
         # ⛔ 備註是**文字**（X／Y／V／%／Z／!），不可以走 `_blank_num`
         note = str(r[14]).strip() if len(r) > 14 else ""
@@ -253,7 +309,7 @@ def _sbl_rows(t, day, known, i0, tag):
         #   跟 `margin` feed 那一份不是同一個口徑，⛔ 不可以互相取代。
         s_seg = [_blank_num(r[i]) for i in range(2, 8)] if len(r) > 7 else [""] * 6
         out.append([day, code] + s_seg + vals + [note])
-    return out, f"{len(out)} 列可用（{tag}；恆等式不符丟棄 {bad} 列）"
+    return out, _drop_note(len(out), tag, bad, samples)
 
 
 def parse_sbl(d, day, known=None):
@@ -721,7 +777,7 @@ def _margin_rows(t, day, known, idx, tag):
       位置定位一旦錯位，這條會整片不符——**它就是位置對不對的檢驗**。
       不符的列丟掉並計數，不要靜默寫進去。
     """
-    out, bad = [], 0
+    out, bad, samples = [], 0, []
     g = lambda r, i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
     # ⛔ `note` 是**文字**（`O`／`X`／`@`／`%`／`!`），不可以走 `_blank_num`
     #   ——那支是給數字用的，會把整欄清成空字串，而且不會有人發現。
@@ -746,9 +802,19 @@ def _margin_rows(t, day, known, idx, tag):
                       - n(vals["s_ret"]) - n(vals["s_balance"])) <= 1
         except (ValueError, KeyError):
             bad += 1
+            samples.append((code, "數字轉不動或缺欄"))
             continue
         if not (okm and oks):
             bad += 1
+            # ⭐ 講清楚**是融資那條還是融券那條**不符：兩者的成因不一樣。
+            which = ("融資" if not okm else "") + ("融券" if not oks else "")
+            samples.append((code, f"{which}恆等式不符"
+                                  f"｜資 前{vals['m_prev']}+買{vals['m_buy']}"
+                                  f"-賣{vals['m_sell']}-償{vals['m_ret']}"
+                                  f"≠{vals['m_balance']}"
+                                  f"｜券 前{vals['s_prev']}+賣{vals['s_sell']}"
+                                  f"-買{vals['s_buy']}-償{vals['s_ret']}"
+                                  f"≠{vals['s_balance']}"))
             continue
         # ★★ 2026-09-09 補存 `m_prev/m_ret/s_prev/s_ret`（前日餘額與現／券償）。
         #   ⚠ 這四欄**本來就已經解析出來了**，只是沒寫出去——上面那條恆等式就在用它們。
@@ -781,7 +847,7 @@ def _margin_rows(t, day, known, idx, tag):
                     vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"],
                     vals["m_prev"], vals["m_ret"], vals["s_prev"], vals["s_ret"],
                     vals.get("note", "")])
-    return out, f"{len(out)} 列可用（{tag}；餘額恆等式不符丟棄 {bad} 列）"
+    return out, _drop_note(len(out), tag, bad, samples)
 
 
 def parse_margin(d, day, known=None):
@@ -910,7 +976,7 @@ def parse_otcinst(d, day, known=None):
         i_code, i_fo, i_tr, i_dl, i_tt = 0, 10, 13, 22, 23
         how = "位置定位（24 欄新版）"
 
-    out, bad = [], 0
+    out, bad, samples = [], 0, []
     g = lambda r, i: float(B._num(r[i]) or 0) if i < len(r) else 0.0
     for r in (t.get("data") or []):
         if not r or len(r) <= max(i_code, i_tt):
@@ -923,9 +989,11 @@ def parse_otcinst(d, day, known=None):
         fo, tr, dl, tt = g(r, i_fo), g(r, i_tr), g(r, i_dl), g(r, i_tt)
         if abs(fo + tr + dl - tt) > 1:
             bad += 1
+            samples.append((code, f"外{fo:.0f}+投{tr:.0f}+自{dl:.0f}"
+                                  f"≠合計{tt:.0f}（差 {fo + tr + dl - tt:+.0f}）"))
             continue
         out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}"])
-    return out, f"{len(out)} 列可用（{how}；驗算不符丟棄 {bad} 列）"
+    return out, _drop_note(len(out), how, bad, samples)
 
 
 # ────────────────────────────────────────────────────────────
@@ -1750,7 +1818,8 @@ def cmd_feed(args):
                       f"        等一段時間再跑，或錯開同日其他回補工作。"
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
-    ok = closed = failed = dropped_days = 0
+    ok = closed = failed = dropped_days = dropped_rows = 0
+    dropped_at = []          # ⭐ 哪幾天丟了幾列（⛔ 不是只給天數）
     bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
     # ⛔⛔ 2026-09-10：`feeds:tib` 紅了，而 `_last_run.md` 只寫
     #   「前 5 天有 5 天連問都問不到」——**沒有寫為什麼**。
@@ -1777,9 +1846,11 @@ def cmd_feed(args):
             # ★ **不要把 parser 的訊息蓋掉。** 它帶著「恆等式不符丟棄 N 列」，
             #   蓋掉之後每天默默丟幾十列也看不出來——正是這個專案一路在防的靜默。
             #   丟棄數為 0 時才簡化成「N 列」，避免每行都拖一串括號。
-            note = f"{n} 列" if "丟棄 0 列" in note or "丟棄" not in note else f"{n} 列｜{note}"
-            if "丟棄" in note and "丟棄 0 列" not in note:
+            n_drop, note = _tally_drop(n, day, note)
+            if n_drop:
                 dropped_days += 1
+                dropped_rows += n_drop
+                dropped_at.append(f"{day}（{n_drop} 列）")
         elif url is not None:
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
@@ -1840,7 +1911,12 @@ def cmd_feed(args):
     # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
     #    而每天默默丟幾十列外表完全正常。
     rl.check("沒有因驗算不符而丟棄列的日子", dropped_days == 0,
-             f"{dropped_days} 天有丟棄" if dropped_days else "0 天")
+             (f"**{dropped_days} 天、共 {dropped_rows} 列**有丟棄"
+              f"｜{'、'.join(dropped_at[:8])}"
+              + ("…" if len(dropped_at) > 8 else "")
+              + "　⇒ ⛔ 那幾天的說明裡有**是哪幾檔、差多少**"
+                "（差 1~2 股是進位、差一個量級是欄位對錯位）")
+             if dropped_days else "0 天")
     rc = rl.finish()
     return 1 if (failed or rc) else 0
 

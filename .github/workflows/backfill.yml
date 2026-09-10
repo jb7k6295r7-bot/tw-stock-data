@@ -51,6 +51,28 @@ on:
 permissions:
   contents: write
 
+# ⛔⛔ `cancel-in-progress: false` **不代表「後來的會排隊等」**（2026-09-10 實測）
+#
+#   GitHub 的規則是：同一個 group **只排得下一個 pending**。
+#   ⇒ 再送一趟，**前一個還在等的那趟會被直接 cancelled**。
+#
+#   實際發生（feeds group，同一天）：
+#     run 96  margin 全庫        11:13 開始跑 ────────────────► 一直在跑
+#     run 97  otc-adj-codes 6461 11:47 pending … 13:47 **cancelled**（被 98 擠掉）
+#     run 98  tib 全段回補       13:47 pending … 13:56 **cancelled**（被 99 擠掉）
+#     run 99  otcsbl 20 天       13:56 pending
+#   ⇒ 中間那兩趟**從來沒有跑過**，而**沒有任何地方會說**。
+#
+# ⚠ 而 dispatch API 四次都回 `queued`／`204` ⇒ 看起來四趟都送出去了。
+#   ⭐ 這正是 CLAUDE.md 第四點二：**「排進去了」不等於「會跑」**
+#     ——拿 API 的回覆當結果，就是驗到中間、沒驗到終點。
+#
+# ⇒ 派工規矩：**一趟跑完再送下一趟**。⛔ 不可以連續送。
+#   ⚠ 送出去之後要**回頭確認它真的變成 in_progress**，
+#     ⛔ 「dispatch 回 204」不算數。
+#
+# ⚠ 那為什麼不乾脆讓它們平行跑？因為兩趟同時 push 會互相蓋掉
+#   （`_coverage_*.csv` 那一族）——⇒ **序列化是對的，要修的是派工方式。**
 concurrency:
   group: backfill          # 不要兩趟回補同時跑，會互相蓋掉 coverage
   cancel-in-progress: false
