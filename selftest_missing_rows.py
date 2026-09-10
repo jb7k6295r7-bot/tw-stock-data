@@ -47,6 +47,10 @@ def build(root):
        ["6904", "伯鑫", "tpex", "stock", "2018-01-02", "2026-09-08"],
        ["8921", "沈氏", "tpex", "stock", "2015-01-05", "2026-09-08"],
        ["0050", "元大台灣50", "twse", "etf", "2015-01-05", "2026-09-08"]])
+    # ⭐ 8921 在 09-01 官方公告暫停交易 ⇒ 那一筆漏列要被歸因；6904 沒有 ⇒ 要留空
+    w(os.path.join(root, "data", "meta", "suspend_twse.csv"),
+      "stock_id,name,susp_date,susp_time,resume_date,resume_time,days",
+      [["8921", "沈氏", "2026-09-01", "8:00", "2026-09-02", "8:00", "1"]])
     DH = ("key,date,stock_id,name,market,open,high,low,close,volume,amount,"
           "change,limit,shares,transactions,price_basis")
     # D1：2330 與 0050 有成交；6904／8921 沒有 ⇒ 日檔裡沒有它們
@@ -85,6 +89,7 @@ def main():
         build(root)
         rows, byday, bysrc, n_cmp = M.scan(root=root)
         got = {(r[0], r[1]): r[4] for r in rows}
+        got_why = {(r[0], r[1]): r[5] for r in rows}
         print("  scan →", rows, "｜byday", byday, "｜bysrc", bysrc, "｜可比", n_cmp)
         ck("① 官方有、日檔沒有 ⇒ 09-01 抓到 6904 與 8921",
            ("2026-09-01", "6904") in got and ("2026-09-01", "8921") in got,
@@ -95,6 +100,13 @@ def main():
            "2026-09-03" not in byday and n_cmp == 2, f"byday={byday} n_cmp={n_cmp}")
         ck("③ 0050 是 etf ⇒ 不算（否則數字虛胖）",
            not any(r[1] == "0050" for r in rows), str(rows))
+        # ⭐ 歸因欄：官方那天公告暫停交易的，要標出來；沒有的要留空。
+        #   ⛔ 這一項要**兩個方向都驗**——只驗「標得出來」的話，
+        #     一個「全部都標成暫停交易」的 bug 也會通過。
+        ck("⑤ 官方暫停交易那一筆有標出來",
+           got_why.get(("2026-09-01", "8921")) == "官方暫停交易", str(got_why))
+        ck("⑤ ⛔ 沒有暫停紀錄的那一筆**留空**（不是全部都標）",
+           got_why.get(("2026-09-01", "6904")) == "", str(got_why))
         ck("④ sources 講得出是哪一張清單指認的",
            got.get(("2026-09-01", "8921")) == "otcper+otcinst"
            and got.get(("2026-09-01", "6904")) == "otcper",

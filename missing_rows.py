@@ -65,7 +65,8 @@ LOW = os.path.join(_ROOT, "meta", "_missing_rows_low.txt")
 #   `inst`／`otcinst` 排最後是因為它們是**最強的證據**（法人有交易 ⇒ 一定有成交），
 #   在 `sources` 欄裡出現時要特別看得見。
 SRCS = ("per", "margin", "otcper", "otcmargin", "inst", "otcinst")
-HEADER = ["date", "stock_id", "name", "market", "sources"]
+SUSP = os.path.join(_ROOT, "meta", "suspend_twse.csv")
+HEADER = ["date", "stock_id", "name", "market", "sources", "why"]
 
 
 def _codes(path):
@@ -75,6 +76,28 @@ def _codes(path):
         return None
     with io.open(path, encoding="utf-8") as f:
         return {r["stock_id"] for r in csv.DictReader(f) if r.get("stock_id")}
+
+
+def _susp(base=None):
+    """→ {(代號, 日期)}，官方公告**暫停交易**的那一天。
+
+    ⭐ 市場情報分析線 2026-09-10 09:47 指出：那些漏列裡有一部分**有官方正當理由**
+      （那天根本不准交易），跟「冷門股當天沒人買賣」意義完全不同——
+      對 MA／ATR／均額的影響也不同。
+    ⛔ 但範圍要寫死：他們量到的是 212／214，**只佔全部漏列的 0.3%**，
+      其餘仍然是 `parse_twse()` 跳過 `--` 那一條。
+      ⇒ 這一欄是**歸因**，不是「漏列已解決」。
+    """
+    p = os.path.join(base, "meta", "suspend_twse.csv") if base else SUSP
+    out = set()
+    if not os.path.exists(p):
+        return out
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            d, c = (r.get("susp_date") or "").strip(), (r.get("stock_id") or "").strip()
+            if d and c:
+                out.add((c, d))
+    return out
 
 
 def _meta():
@@ -103,6 +126,7 @@ def scan(root=None):
     if not os.path.isdir(dd):
         return [], {}, {}, 0
     days = sorted(n[:-4] for n in os.listdir(dd) if n.endswith(".csv"))
+    susp = _susp(base if root else None)
     rows, byday, bysrc, n_cmp = [], {}, Counter(), 0
     for d in days:
         have = _codes(os.path.join(dd, d + ".csv"))
@@ -135,7 +159,8 @@ def scan(root=None):
                 bysrc[s] += 1
             rows.append([d, code, meta.get(code, {}).get("name", nm.get(code, "")),
                          meta.get(code, {}).get("market", mk.get(code, "")),
-                         "+".join(srcs)])
+                         "+".join(srcs),
+                         "官方暫停交易" if (code, d) in susp else ""])
     return rows, byday, dict(bysrc), n_cmp
 
 
@@ -184,6 +209,12 @@ def main():
                                                      key=lambda x: -x[1])))
     strong = sum(v for k, v in bysrc.items() if k in ("inst", "otcinst"))
     rl.info("  ⭐ 其中鐵證（法人有交易 ⇒ 一定有成交）", f"{strong:,} 筆")
+    # ⭐ 歸因：其中有多少是**官方那天公告暫停交易**（＝有正當理由，不是抓取端漏抓）
+    n_susp = sum(1 for r in rows if r[5])
+    rl.info("  歸因",
+            f"官方暫停交易 **{n_susp:,} 筆**（{n_susp / max(1, len(rows)) * 100:.2f}%）"
+            f"｜未歸因 {len(rows) - n_susp:,} 筆"
+            "　⛔ 暫停交易只解釋千分之三，其餘仍是 `parse_twse()` 跳過 `--` 那一條")
     top = Counter(r[1] for r in rows).most_common(8)
     rl.info("  最常被漏的 8 檔", "｜".join(f"{c} {n}天" for c, n in top))
     recent = sorted(byday)[-5:]
