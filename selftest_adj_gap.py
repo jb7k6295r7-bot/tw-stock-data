@@ -71,6 +71,37 @@ def run(out, lr, low=None, cached=False):
         G.scan = real_scan
 
 
+def G_last_file(d):
+    """⚠ 與 `adj_gap.main()` 裡那一段同一個判準（日檔：從**檔名**看）。"""
+    try:
+        xs = [n[:-4] for n in os.listdir(d) if n.endswith(".csv")
+              and n[0].isdigit()]
+        return max(xs) if xs else ""
+    except OSError:
+        return ""
+
+
+def G_last_row(d):
+    """⚠ 個股庫是按股票切的 ⇒ 最後一天要從**列**看，不是從檔名看。"""
+    best = ""
+    try:
+        names = [n for n in sorted(os.listdir(d))
+                 if n.endswith(".csv") and not n.startswith("_")]
+    except OSError:
+        return ""
+    for n in names[:80]:
+        try:
+            with io.open(os.path.join(d, n), encoding="utf-8") as f:
+                last = ""
+                for ln in f:
+                    if ln[:1].isdigit():
+                        last = ln.split(",", 1)[0]
+                best = max(best, last)
+        except OSError:
+            pass
+    return best
+
+
 def main():
     d = tempfile.mkdtemp()
     real_out, real_lr = G.OUT, _RL.PATH
@@ -161,6 +192,48 @@ def main():
     finally:
         G.STOCKS, G.DAILY = old_stocks, old_daily
         shutil.rmtree(sand, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════
+    # ⭐⭐ [3.5] 這一支讀的是 `data/stocks/`（`transpose.py` 的產出）
+    #   ⇒ 排在 transpose **之前**就會拿到上一趟的結果。
+    #   實測代價（2026-09-10 19:21）：報「未歸因 22（歷史最低 12）」，其中
+    #   **`2330 台積電 2460.00 → 2.00　−99.92%`**
+    #   ——⭐ 而 2330 那幾天的收盤 2410／2460／2470／2465／2450，一格都沒錯。
+    #   ⛔ 一個會報「台積電跌 99.92%」的斷言，下一次真的有事時沒有人會信它。
+    # ⇒ 步驟順序已經調到 transpose 之後；⚠ 順序**會被下一個人改回去**
+    #   ⇒ 這一節測那道「自己驗終點」的斷言。
+    # ══════════════════════════════════════════════════════════
+    print("[3.6] ⭐ 個股庫必須跟得上日檔（⛔ 否則這一趟的結果不可信）")
+    sand2 = tempfile.mkdtemp()
+    old_stocks2, old_daily2 = G.STOCKS, G.DAILY
+    try:
+        stk = os.path.join(sand2, "stocks")
+        dly = os.path.join(sand2, "daily")
+        os.makedirs(stk)
+        os.makedirs(dly)
+        G.STOCKS = stk
+        io.open(os.path.join(stk, "2330.csv"), "w", encoding="utf-8").write(
+            "date,close,change,market\n2026-09-09,2465,-5.0,twse\n")
+        for d in ("2026-09-08", "2026-09-09"):
+            io.open(os.path.join(dly, d + ".csv"), "w",
+                    encoding="utf-8").write("key,date\n")
+        ck("★ 個股庫最後一天讀得出來（⛔ 是從**列**看，不是從檔名）",
+           G_last_row(stk) == "2026-09-09", G_last_row(stk))
+        ck("★ 日檔最後一天讀得出來（這一邊是從檔名看）",
+           G_last_file(dly) == "2026-09-09", G_last_file(dly))
+        ck("⭐ 兩邊一樣 ⇒ 判準成立", G_last_row(stk) >= G_last_file(dly))
+        # ⛔ 反向：日檔多了一天而個股庫沒跟上 ⇒ 判準要不成立
+        io.open(os.path.join(dly, "2026-09-10.csv"), "w",
+                encoding="utf-8").write("key,date\n")
+        ck("⭐⭐ 日檔多一天、個股庫沒跟上 ⇒ **判準不成立**"
+           "（⇒ 那一趟的結果不可信）",
+           not (G_last_row(stk) >= G_last_file(dly)),
+           f"{G_last_row(stk)} vs {G_last_file(dly)}")
+        ck("⚠ 個股庫是空的時候也不會誤判成「跟上了」",
+           not (G_last_row(os.path.join(sand2, "nope")) >= G_last_file(dly)))
+    finally:
+        G.STOCKS, G.DAILY = old_stocks2, old_daily2
+        shutil.rmtree(sand2, ignore_errors=True)
 
     print("[4] ⛔ 沒有動到 repo")
     ck("★ 沒動到真的 _adj_gap_low.txt",
