@@ -83,8 +83,12 @@ jobs:
       #     （分支上多的是程式 commit，main 上多的是資料 commit，兩邊不重疊）。
       #   ⭐ 順帶好處：rebase 之後這一趟手上的 `data/` 也是 main 的最新版。
       #   ⛔ 失敗不擋後面：撞到就跳過，資料照抓，程式下一趟再同步。
+      # ⛔ 這一步**不設 `continue-on-error`**。
+      #   2026-09-10 的第一版設了，於是它 abort 之後顯示成 **success**，
+      #   而 main 上的程式一個字都沒更新——**綠燈，但什麼都沒做**。
+      #   ⭐ 現在的做法不 rebase ⇒ 不可能衝突 ⇒ 走到 push 還失敗就是**真的有問題**，
+      #     該紅。可以跳過的情形（本來就在 main、fetch 不到）自己 `exit 0`。
       - name: 把程式同步到 main（趁 checkout 還新）
-        continue-on-error: true
         run: |
           BR="${GITHUB_REF_NAME:-main}"
           if [ "$BR" = "main" ]; then echo "本來就在 main，不必同步"; exit 0; fi

@@ -67,7 +67,18 @@ class Run:
         t = datetime.now(TPE).isoformat(timespec="seconds")
         bad = [c for c in self.checks if not c[1]]
         head = "✗ 有問題" if bad else "✓ 正常"
-        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）", ""]
+        # ⛔⛔ 2026-09-10 的教訓，做成程式而不是「我會記得」：
+        #   我在**開發容器**裡跑了一次 `feeds.py --run` 當測試，
+        #   而這個容器對交易所一律 403（是**我方閘道**擋的，不是交易所）。
+        #   ⇒ 它把一塊 `feeds:margin ✗ 失敗 3 天` 寫進這份**跨 workflow 共用**的報告，
+        #     還跟著我的 commit 上去。⚠ 那一塊看起來跟真的失敗一模一樣。
+        #   ⭐ 這裡不擋寫入（本地跑 `missing_rows.py` 之類算本地資料的是正當的），
+        #     但**一定要標出來**：讀的人要分得出「這是 Actions 跑的」還是
+        #     「某人在容器裡跑的」——後者的網路結果一律不可信。
+        where = ("" if os.environ.get("GITHUB_ACTIONS") == "true"
+                 else "　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；"
+                      "⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）")
+        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）{where}", ""]
         out += self.lines
         if self.checks:
             out += ["", "檢查："]
