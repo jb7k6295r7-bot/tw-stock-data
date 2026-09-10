@@ -90,6 +90,13 @@ jobs:
       - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
         run: python selftest_workflows.py
 
+      # ⛔ 同一件事只准有一份實作。這一族 2026-09-10 掃出**十份**，
+      #   其中 `_same_day` 那一份會讓每日抓取憑空造出一個交易日。
+      #   ⚠ 本機 pre-commit 也有同一道——⛔ 兩個地方都要有：
+      #     hook 可以被 `--no-verify` 跳過，而這裡跳不掉。
+      - name: 掃有沒有第二份實作（零相依）
+        run: python selftest_no_dup.py
+
       # ⛔ 這一支跑的是好幾個小時的 parse——解析規則錯掉的代價是整趟重來。
       #   `--`／`----`（TWSE 與 TPEx 各寫各的）一定要在抓之前先驗過。
       - name: 驗解析規則（空值寫法＋無成交列，離線）

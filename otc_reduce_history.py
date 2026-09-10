@@ -51,7 +51,8 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import runlog
-from twparse import pick_field as _pick_field, roc_iso as _roc_iso
+from twparse import (pick_field as _pick_field, post_form as _post_form,
+                     roc_iso as _roc_iso)
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -63,17 +64,9 @@ HEADER = ["date", "stock_id", "name", "last_close", "ref_price", "factor",
           "reason", "asof"]
 
 
-def _post(url, form, timeout=120):
-    body = urllib.parse.urlencode(form, encoding="utf-8").encode("utf-8")
-    req = urllib.request.Request(
-        url, data=body,
-        headers={"User-Agent": "Mozilla/5.0", "Referer": url,
-                 "Content-Type": "application/x-www-form-urlencoded"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.read(), None
-    except Exception as ex:                                      # noqa: BLE001
-        return b"", f"{type(ex).__name__}: {str(ex)[:120]}"
+# ⛔ 第九／第十份：`_post` 也收進 `twparse.py`。
+_post = _post_form
+
 
 
 # ⛔ `_iso` 與 `_pick` 原本在這兩支各有一份（逐字相同）——同一族的第七、第八份。

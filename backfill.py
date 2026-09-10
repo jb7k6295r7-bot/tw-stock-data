@@ -47,7 +47,8 @@ from fetch import (_isz, _lock_dir, fill_twse_shares,
                    _twse_tables as _fetch_tables,
                    write_universe_day as _write_universe_day,
                    _kind as _fetch_kind,
-                   _same_day as _fetch_same_day)
+                   _same_day as _fetch_same_day,
+                   _num as _fetch_num, _is_dash as _fetch_is_dash)
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -294,22 +295,13 @@ def preflight(url, what):
 _DASHES = "-\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uff0d\u2500\u30fc"
 
 
-def _is_dash(t):
-    """整串（>=1 個字元）都是破折號／連字號 ⇒ 官方的「無資料」寫法。"""
-    return bool(t) and all(ch in _DASHES for ch in t)
+_is_dash = _fetch_is_dash
 
 
-def _num(v):
-    if v is None:
-        return ""
-    t = str(v).replace(",", "").replace("+", "").replace("%", "").strip()
-    if t in ("", "X", "N/A", "null", "None") or _is_dash(t):
-        return ""
-    try:
-        float(t)
-    except ValueError:
-        return ""
-    return t
+# ⛔ 最後一份：`_num` 與 `fetch._num` 逐字相同。
+#   ⚠ 破折號那條規則 2026-09-10 才改成明示的（`--` 與 `----`），
+#     ⭐ 改的時候兩邊都改了——但那是因為當時剛好想起來，⛔ 不是因為有東西擋著。
+_num = _fetch_num
 
 
 # ⛔ 第六份：`_kind` 兩邊逐字相同（差別只有 fetch 那份多一個從來沒用到的 `name`）。

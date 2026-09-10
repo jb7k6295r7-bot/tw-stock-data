@@ -13,6 +13,26 @@
 # ⭐ 所以檢查要往前挪到這裡：改到 workflow／`.sh` 就驗，驗不過就不讓 commit。
 set -e
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+# ⛔⛔ 第二道（2026-09-10 加）：**同一件事只准有一份實作**。
+#   使用者說「同一段邏輯抄兩份、只修一份」已經第三次——往下掃是**十份**，
+#   其中一份會讓每日抓取憑空造出一個交易日。
+#   ⚠ 這一族**每一次都是在 commit 的當下就已經壞了**，
+#     而它要等到「某一天某個市場失敗」才看得出來——所以檢查要在這裡。
+#   ⇒ 動到任何 .py 就掃（掃全庫，不只掃改到的那幾支：
+#     新增一份拷貝時，改的是新檔，舊檔一個字都沒動）。
+if echo "$STAGED" | grep -qE '\.py$'; then
+  echo "[pre-commit] 動到 .py ⇒ 掃有沒有第二份實作"
+  python3 selftest_no_dup.py >/tmp/_dup.log 2>&1 || {
+    echo "⛔ 有函式在不同檔案裡逐字相同，**不讓 commit**："
+    grep -E "＝|✗" /tmp/_dup.log | head -20
+    echo "   ⇒ 收成一份，另一邊用別名指過去（CLAUDE.md 第四點五）"
+    echo "   （要跳過：git commit --no-verify）"
+    exit 1
+  }
+  tail -2 /tmp/_dup.log | head -1
+fi
+
 echo "$STAGED" | grep -qE '^\.github/workflows/.*\.ya?ml$|\.sh$' || exit 0
 echo "[pre-commit] 動到 workflow／shell ⇒ 驗語法"
 python3 selftest_workflows.py >/tmp/_wf.log 2>&1 || {
