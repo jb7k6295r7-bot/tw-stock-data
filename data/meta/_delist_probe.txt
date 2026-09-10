@@ -157,8 +157,39 @@
    ⛔ **值裡有 `<span class="hide">`**（排序用的隱藏 HTML）⇒ 直接吃會把代號混進日期，⚠ **而且不報錯**
      附近原文：…title":"變更交易"},{"span":3,"title":"併採行分盤"}],"data":[["1213","大飲","第49條第1項第19款<span class=\"hide\">1213<\u002fspan>","該公司未依規定時限檢送相關資料，核有本公司營業細則第49條第1 項第…
 
+── 信用交易標的？ marginTrading/MI_MARGN_MSTOCK（推的）
+   https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN_MSTOCK?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=747；前 200：b'<!DOCTYPE html>\n<html lang="zh-Hant-tw">\n<head>\n\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>404</title>\n<meta name="layout" content="blank"/>\n'
+
+── 信用交易標的？ marginTrading/TWT78U（推的）
+   https://www.twse.com.tw/rwd/zh/marginTrading/TWT78U?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=747；前 200：b'<!DOCTYPE html>\n<html lang="zh-Hant-tw">\n<head>\n\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>404</title>\n<meta name="layout" content="blank"/>\n'
+
+── 信用交易標的？ marginTrading/MI_MARGN?selectType=MS（推的）
+   https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN?date=20260909&selectType=MS&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：20260909
+     ── stat：OK
+   頂層 `fields`：None
+   `_tables()` 認出 2 張表
+     欄位（6）：['項目', '買進', '賣出', '現金(券)償還', '前日餘額', '今日餘額']
+     列數：3
+       樣本：["融資(交易單位)", "301,443", "273,367", "6,023", "9,048,661", "9,070,714"]
+       樣本：["融券(交易單位)", "16,116", "15,532", "4,420", "208,614", "203,610"]
+       樣本：["融資金額(仟元)", "26,925,829", "25,728,750", "297,244", "586,266,976", "587,166,811"]
+     欄位（0）：[]
+     列數：0
+
 ## ⇒ 拿到結果之後要回答的
   Q1 `suspendListing` 的列是 list 還是 dict？欄位順序／鍵名是什麼？
   Q2 `TWT85U` 的 `date` 真的吃嗎（三個日期的 title 與筆數要不同）？
   Q3 `violation/change` 的隱藏 span 長什麼樣（剝法要照真形狀寫）？
   ⚠ Q4 `suspendListing` 的 `yy` 是不是真的被無視（兩趟筆數要一樣）？
+  ⭐ Q5 **K線線 16:40 §8 指名要的**：`TWT85U` 的 `**` 符號說明逐字是什麼？
+     ⚠ 他們整條「分盤撮合有兩個來源」的裁定建在這個符號上，
+     ⛔ 而目前的依據是一句**轉述**，不是官方 `notes` 的逐字。
+     ⇒ 若 `**` 其實是別的意思（例如「本日新增」），那條裁定要整條作廢。
+  ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）
+     ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，
+     ⛔ 三者在資料上都長成「融資餘額 0」。

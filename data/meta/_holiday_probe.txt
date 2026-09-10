@@ -44,14 +44,14 @@
 
   ── ② 中華民國政府行政機關辦公日曆表（dataset 頁）
      https://data.gov.tw/dataset/14718
-     ✓ 623,377 bytes｜中文 4,555 字
+     ✓ 600,381 bytes｜中文 4,555 字
        「休市」0 次
        「開休市」0 次
        「補班」0 次
        「補行上班」0 次
        「行事曆」16 次
-       「csv」282 次
-       「json」64 次
+       「csv」242 次
+       「json」44 次
        頁面給的資料檔連結 20 個：['https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/06b25c90-d7a6-4d8f-9a49-e69ce32488b7.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/22f9fcbc-fbb2-4387-8bcf-73b2279666c2.csv&nfix=&name=114年中華民國政府行政機關辦公日曆表.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/4d215402-15c7-4ad9-ab90-a33f34a63f5b.csv&nfix=&name=109%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/541450de-69ad-4649-9d9d-13453a58de71.csv&nfix=&name=110%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8_Google%e8%a1%8c%e4%ba%8b%e6%9b%86%e5%b0%88%e7%94%a8.csv', 'https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/5f2ff9c5-a235-4819-8c62-f064fc5bffb8.csv&nfix=&name=108%e5%b9%b4%e4%b8%ad%e8%8f%af%e6%b0%91%e5%9c%8b%e6%94%bf%e5%ba%9c%e8%a1%8c%e6%94%bf%e6%a9%9f%e9%97%9c%e8%be%a6%e5%85%ac%e6%97%a5%e6%9b%86%e8%a1%a8.csv']
          ✓ https://www.dgpa.gov.tw/FileConversion?filename=dgpa/files/202407/06b25c90-d7a6-4d8f-9a49-｜5,791 bytes｜出現的年份 ['2025']
            表頭逐字：Subject,Start Date,Start Time,End Date,End Time,All Day Event,Description,Location

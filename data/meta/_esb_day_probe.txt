@@ -1,0 +1,67 @@
+# 興櫃「指定某一天」的來源探針
+# ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
+# ⚠ 要補的是 2026-09-08 那 363 列（見檔頭）；2026-09-09 是**對照組**
+#   ⛔ 只測一天的話，「全部失敗」分不出「端點不行」與「那天真的沒有」。
+
+══ 目標日 2026-09-08
+  候選 9 條（來自 `backfill.candidates()`，⚠ 全是未驗證的假設）
+  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/08&id=&response=json
+      頂層鍵 ['stat']
+      ⭐ 平常被丟掉的鍵：['stat']
+        ── stat：請輸入資料日期及股票代碼查詢個股行情
+      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
+  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/08&code=&id=&response=json
+      頂層鍵 ['stat']
+      ⭐ 平常被丟掉的鍵：['stat']
+        ── stat：請輸入資料日期及股票代碼查詢個股行情
+      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
+  ✗ www.tpex.org.tw/www/zh-tw/esb/comPricing?date=2026/09/08&id=&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/historical/day/com-pricing?date=2026/09/08&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/stockPricing?date=2026/09/08&id=&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date=2026/09/08&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/09/08&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/08&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/08&o=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ⇒ 2026-09-08 可用的候選：0 條
+
+══ 目標日 2026-09-09
+  候選 9 條（來自 `backfill.candidates()`，⚠ 全是未驗證的假設）
+  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/09&id=&response=json
+      頂層鍵 ['stat']
+      ⭐ 平常被丟掉的鍵：['stat']
+        ── stat：請輸入資料日期及股票代碼查詢個股行情
+      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
+  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/09&code=&id=&response=json
+      頂層鍵 ['stat']
+      ⭐ 平常被丟掉的鍵：['stat']
+        ── stat：請輸入資料日期及股票代碼查詢個股行情
+      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
+  ✗ www.tpex.org.tw/www/zh-tw/esb/comPricing?date=2026/09/09&id=&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/historical/day/com-pricing?date=2026/09/09&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/stockPricing?date=2026/09/09&id=&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date=2026/09/09&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/09/09&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/09&response=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/09&o=json
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+  ⇒ 2026-09-09 可用的候選：0 條
+
+## ⇒ 結論
+⛔ **兩天都沒有可用候選** ⇒ 分不出是端點不行還是那天沒有。　⚠ 若是我方閘道 403，這一份不算數，要看 Actions 上的結果。
+
+⚠ 不論結論是哪一個，都要寫進 `docs/READ_CONTRACT.md`：
+  補得回來 ⇒ 排回補；補不回來 ⇒ **那一天要標成已知缺口**，
+  ⛔ 不可以讓讀的人以為 2026-09-08 的興櫃是「那天沒有交易」。

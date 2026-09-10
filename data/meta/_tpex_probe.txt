@@ -298,9 +298,9 @@
      首列：{'Date': '1150910', 'Sector': '光電業', 'TradeAmount': '8451777196', 'TradeWeight': '9.17', ' NumberOfSharesTraded': '73710313'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,178 bytes｜28 筆
+     ✓ 5,179 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1150909', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '838871068', 'PercentageOfSharesOC/FMIHeld': '16.08%'}
+     首列：{'Date': '1150910', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '833227940', 'PercentageOfSharesOC/FMIHeld': '15.98%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
 
 [7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
