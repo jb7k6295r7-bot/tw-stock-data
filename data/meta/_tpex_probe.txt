@@ -293,9 +293,9 @@
      類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
 
   ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
-     ✓ 3,531 bytes｜28 筆
+     ✓ 3,528 bytes｜28 筆
      欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
-     首列：{'Date': '1150909', 'Sector': '光電業', 'TradeAmount': '10762229606', 'TradeWeight': '10.95', ' NumberOfSharesTraded': '91154971'}
+     首列：{'Date': '1150910', 'Sector': '光電業', 'TradeAmount': '8451777196', 'TradeWeight': '9.17', ' NumberOfSharesTraded': '73710313'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
      ✓ 5,178 bytes｜28 筆
