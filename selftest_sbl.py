@@ -196,6 +196,69 @@ def main():
     ck("  0 列 ⇒ 0，且說明簡化成「600 列」（⛔ 不要每行拖一串括號）",
        n0_ == 0 and disp0_ == "600 列", f"{n0_}｜{disp0_}")
 
+    print("⑫ ⭐⭐ 恆等式不符的**歸因**：該檔是不是離開了本市場")
+    # ⭐ 情報分析線 2026-09-10 23:00 實測查到的那一筆：
+    #     2015-01-22　3416 融程電｜前 1,000 賣 0 還 0 調 0 ⇒ 餘額 **0**｜備註**空的**
+    #   成因：那天是它在**上櫃的最後一個交易日**（01-23 轉上市），
+    #   官方在它離開時把餘額**直接歸零**，⛔ 沒走「還券」也沒走「調整」欄。
+    # ⇒ 不是瑕疵，是**恆等式的定義邊界**（與 `exDailyQ` 不含轉上市後同形狀）。
+    import io
+    import os
+    import shutil
+    import tempfile
+    d = tempfile.mkdtemp(prefix="sbldrop_")
+    keep = F.UNI_DIR
+    try:
+        F.UNI_DIR = d
+        os.makedirs(os.path.join(d, "otcsbl"))
+        def day(fn, codes):
+            with io.open(os.path.join(d, "otcsbl", fn), "w",
+                         encoding="utf-8") as f:
+                f.write("date,stock_id\n")
+                for c in codes:
+                    f.write(f"{fn[:-4]},{c}\n")
+        DAYS = ["2015-01-21", "2015-01-22", "2015-01-23"]
+        day("2015-01-21.csv", ["3416", "1111"])
+        day("2015-01-22.csv", ["1111"])          # 3416 那天被丟掉
+        day("2015-01-23.csv", ["1111"])          # ⭐ 3416 已經不在表上（轉上市）
+        left, un = F._explain_drops("otcsbl", [("2015-01-22", "3416")], DAYS)
+        ck("  ⭐ 3416 歸因為**離開本市場**", len(left) == 1 and left[0][1] == "3416",
+           str(left))
+        ck("  ⛔ 而且**不進**未歸因（⇒ 那條紅燈會轉綠）", not un, str(un))
+        ck("  ⚠ 說明講得出是看哪一天",
+           left and "2015-01-23" in left[0][2], str(left))
+
+        # ⛔ 反向：同樣不符，但那一檔**次一日還在** ⇒ 必須留在未歸因
+        left2, un2 = F._explain_drops("otcsbl", [("2015-01-22", "1111")], DAYS)
+        ck("  ⭐⭐ 次一日**仍在表上**的那一檔 ⇒ **未歸因**（⛔ 才是真的要查）",
+           not left2 and len(un2) == 1 and un2[0][1] == "1111", f"{left2}｜{un2}")
+
+        # ⚠ 區間最後一天沒有次一日可比 ⇒ ⛔ 一律當未歸因（寧可多查一筆）
+        left3, un3 = F._explain_drops("otcsbl", [("2015-01-23", "1111")], DAYS)
+        ck("  ⚠ 區間最後一天 ⇒ **不可判定**，當未歸因"
+           "（⛔ 不要把真的瑕疵歸成「它離開了」）",
+           not left3 and len(un3) == 1 and "無次一日" in un3[0][2], str(un3))
+        # ⚠ 次一日**的檔根本不存在**（那天還沒抓到）⇒ ⛔ 不可判定，當未歸因
+        left4, un4 = F._explain_drops("otcsbl", [("2015-01-23", "1111")],
+                                      DAYS + ["2015-01-26"])
+        ck("  ⚠ 次一日的**檔不存在**時當未歸因，⛔ 不是當成離開",
+           not left4 and len(un4) == 1 and "沒有檔可比" in un4[0][2],
+           f"{left4}｜{un4}")
+    finally:
+        F.UNI_DIR = keep
+        shutil.rmtree(d, ignore_errors=True)
+
+    print("⑬ ⭐ 從說明裡把代號撈回來（歸因那一步的輸入）")
+    _n = ("600 列可用（x；⛔ 驗算不符丟棄 1 列｜前 1 筆："
+          "[('3416', '前1000+賣0-還0+調0≠餘0（差 +1000）')]）")
+    ck("  撈得到 3416", F._drop_codes(_n) and F._drop_codes(_n)[0][0] == "3416",
+       str(F._drop_codes(_n)))
+    ck("  ⚠ 撈不到時回空清單（⛔ 不是丟例外）", F._drop_codes("600 列") == [])
+    ck("  ⚠ 非字串也不炸", F._drop_codes(None) == [])
+    ck("  ⭐ 帶英文的代號（`00400A`）也撈得到",
+       F._drop_codes("x[('00400A', 'y')]") == [("00400A", "y")],
+       str(F._drop_codes("x[('00400A', 'y')]")))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

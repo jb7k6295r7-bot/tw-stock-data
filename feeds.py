@@ -44,10 +44,10 @@
 **靜默、每個數字都是真的、只是屬於另一個年代。**
 本檔所有候選都必須帶日期參數，且一律經過 `_same_day()` 核對。
 """
-
 import argparse
 import calendar          # ★ cmd_probe 與 _months 都要用；原本只在 _months 內 import，
                          #   cmd_probe 改成逐月探測後會 NameError
+import csv
 import io
 import json
 import os
@@ -219,6 +219,19 @@ def _sbl_seg_from_groups(d):
     return None
 
 
+_DROP_WHO_RE = re.compile(r"\('(\d[\dA-Za-z]*)',\s*'([^']*)'\)")
+
+
+def _drop_codes(note):
+    """從說明的樣本裡撈出 (代號, 原因)。→ list。⛔ 撈不到回空清單。
+
+    ⚠ 這是**從給人看的字串反向取值**，本來就是這個檔案警告過的做法
+    ⇒ 之所以可以，是因為那串樣本是我方自己在 `_drop_note()` 裡格式化的，
+      ⛔ 不是官方回應的原文；⚠ 而且撈不到只會讓歸因少一筆，不會誤判成瑕疵。
+    """
+    return _DROP_WHO_RE.findall(str(note))
+
+
 def _tally_drop(n_written, day, note):
     """→ (這一天丟了幾列, 要印出來的說明)。⛔ 抽成函式是為了讓 selftest 測得到。
 
@@ -231,6 +244,49 @@ def _tally_drop(n_written, day, note):
     n_drop = _dropped_in(note)
     return n_drop, (f"{n_written} 列" if not n_drop
                     else f"{n_written} 列｜{note}")
+
+
+def _explain_drops(name, dropped_who, days):
+    """→ (已歸因, 未歸因)。⛔ 判準用**資料自己**，不另開台帳。
+
+    ## ⭐ 情報分析線 2026-09-10 23:00 查出來的那一筆
+
+        2015-01-22　3416 融程電
+        前日餘額 1,000　賣出 0　還券 0　調整 0　當日餘額 **0**　⇒ 差 1,000 股
+        備註欄：**空的**
+
+    成因：**那天是它在上櫃的最後一個交易日**（01-23 轉上市）。
+    ⇒ 官方在它離開上櫃時把借券餘額**直接歸零**，
+      ⛔ 沒有走「還券」也沒有走「調整」欄 ⇒ 恆等式當然不成立。
+
+    ⚠ 所以這不是資料瑕疵，**是恆等式的定義邊界**——
+    ⭐ 而它跟 `exDailyQ`「不含該檔轉上市之後」是**同一個形狀，第二次出現**。
+
+    ⇒ 判準：不符時看該檔**次一交易日還在不在這張表上**
+      不在 ⇒ 離開本市場（轉上市／終止櫃買）⇒ ⛔ 不是瑕疵
+      還在 ⇒ 才是真的要查
+
+    ⛔ **不可以靠備註欄判斷**——那一筆的備註是空的。
+    """
+    idx = {d: i for i, d in enumerate(days)}
+    left, unexplained = [], []
+    for day, code in dropped_who:
+        i = idx.get(day)
+        nxt = days[i + 1] if i is not None and i + 1 < len(days) else None
+        if nxt is None:
+            # ⚠ 區間最後一天沒有「次一日」可看 ⇒ ⛔ 不可判定，一律當未歸因
+            #   （寧可多查一筆，不要把真的瑕疵歸成「它離開了」）
+            unexplained.append((day, code, "區間最後一天，無次一日可比"))
+            continue
+        path = os.path.join(UNI_DIR, name, f"{nxt}.csv")
+        if not os.path.exists(path):
+            unexplained.append((day, code, f"次一日 {nxt} 沒有檔可比"))
+            continue
+        with io.open(path, encoding="utf-8") as f:
+            codes = {r.get("stock_id", "") for r in csv.DictReader(f)}
+        (left if code not in codes else unexplained).append(
+            (day, code, f"次一日 {nxt} {'已不在表上' if code not in codes else '仍在表上'}"))
+    return left, unexplained
 
 
 def _drop_note(kept, tag, bad, samples):
@@ -1820,6 +1876,7 @@ def cmd_feed(args):
                 return 2
     ok = closed = failed = dropped_days = dropped_rows = 0
     dropped_at = []          # ⭐ 哪幾天丟了幾列（⛔ 不是只給天數）
+    dropped_who = []         # ⭐ (日期, 代號)——歸因那一步要用
     bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
     # ⛔⛔ 2026-09-10：`feeds:tib` 紅了，而 `_last_run.md` 只寫
     #   「前 5 天有 5 天連問都問不到」——**沒有寫為什麼**。
@@ -1851,6 +1908,7 @@ def cmd_feed(args):
                 dropped_days += 1
                 dropped_rows += n_drop
                 dropped_at.append(f"{day}（{n_drop} 列）")
+                dropped_who += [(day, c) for c, _why in _drop_codes(note)]
         elif url is not None:
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
@@ -1910,13 +1968,25 @@ def cmd_feed(args):
              f"失敗 {failed} 天" if failed else "0 天")
     # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
     #    而每天默默丟幾十列外表完全正常。
-    rl.check("沒有因驗算不符而丟棄列的日子", dropped_days == 0,
-             (f"**{dropped_days} 天、共 {dropped_rows} 列**有丟棄"
-              f"｜{'、'.join(dropped_at[:8])}"
-              + ("…" if len(dropped_at) > 8 else "")
-              + "　⇒ ⛔ 那幾天的說明裡有**是哪幾檔、差多少**"
-                "（差 1~2 股是進位、差一個量級是欄位對錯位）")
-             if dropped_days else "0 天")
+    # ⭐ 歸因：不符的列裡，哪些是「該檔離開了本市場」（⛔ 不是瑕疵）
+    left, unexplained = _explain_drops(name, dropped_who, days)
+    if left:
+        rl.info("⭐ 已歸因：**離開本市場**（轉上市／終止櫃買）⇒ ⛔ 不是瑕疵",
+                f"{len(left)} 筆：{[(d, c) for d, c, _ in left[:6]]}"
+                "　⚠ 官方在該檔離開時把餘額**直接歸零**，"
+                "⛔ 沒有走「還券」也沒有走「調整」欄 ⇒ 恆等式當然不成立")
+    # ⛔ 判準只看**未歸因**的。⚠ 而「已歸因」不可以自動長大：
+    #   歸因靠的是「次一交易日不在表上」——那是**資料自己**講的，
+    #   ⛔ 不是靠備註欄（情報分析線查到的那一筆備註是空的）。
+    rl.check("沒有**未歸因**的驗算不符列", not unexplained,
+             (f"⛔ **{len(unexplained)} 筆未歸因**："
+              f"{[(d, c, w) for d, c, w in unexplained[:6]]}"
+              "　⇒ 差 1~2 股是進位、差一個量級是**欄位對錯位**"
+              "（那兩種的處置完全不同）")
+             if unexplained else
+             (f"0 筆（⚠ 另有 {len(left)} 筆已歸因為離開本市場）"
+              if left else f"0 筆｜丟棄 {dropped_rows} 列"
+              if dropped_rows else "0 天"))
     rc = rl.finish()
     return 1 if (failed or rc) else 0
 
