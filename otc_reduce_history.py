@@ -58,6 +58,7 @@ TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "otc_reduce_history.csv")
 ADJ = os.path.join(_ROOT, "adj")
+LOW = os.path.join(_ROOT, "meta", "_otc_reduce_gap_low.txt")
 
 URL = "https://www.tpex.org.tw/www/zh-tw/bulletin/revivt"
 HEADER = ["date", "stock_id", "name", "last_close", "ref_price", "factor",
@@ -163,6 +164,47 @@ def parse(payload, want_from):
                   + f"｜涵蓋 {ds[0]} ~ {ds[-1]}｜欄位 {fields}")
 
 
+# ⚠ 已歸因的偽陽性：官方自己重複的那一列。
+#   證據：6109 把 `1070925` 重打成 `1090925`（六個數字完全相同），
+#   而我方 2020-09-25 **無跳價、無停牌** ⇒ 那天沒有減資。
+#   （`reduce_check.py` 2026-09-09 對 284 筆匯出檔時就查出同一件事。）
+#   ⛔ 具名排除只准放**已經查證過**的，⚠ 而且要寫得出證據。
+KNOWN_OFFICIAL_DUP = {
+    ("6109", "2020-09-25"): "官方自己重複的列（1070925 誤打成 1090925）",
+}
+
+
+def classify_gaps(miss, cover, known=None):
+    """「官方有、我方沒有」分成三堆。→ (涵蓋期內, 已歸因, 未歸因)
+
+    ⭐⭐ 2026-09-10：**「涵蓋期內」與「涵蓋期外」是兩件事，不可以混在一起數。**
+
+    ⛔ 原本一律不設 check，理由是「那是歷史欠帳，天天紅會被學會忽略」
+      ——⚠ 對**涵蓋期外**（我方日檔還沒開始的年份）成立，
+        ⛔ 對**涵蓋期內**完全不成立：那是**現在就錯的還原因子**。
+
+    ⚠ 而這個區分不是理論：本支第一次跑完，51 筆裡涵蓋期內只有 2 筆，
+      其中 **1 筆是昨天發生的**（6461 益得 2026-09-09）——
+      ⭐ 用我方自己的價格證實：09-01 收 16.65（＝官方 `last_close`，一分不差）、
+      09-02~09-08 停牌無列、09-09 收 25.75。
+      **沒有那個因子，序列上就是 +54.7% 的假報酬。**
+      ⚠ 上櫃的 adj 只有人手動跑那個幾小時的 FinMind 全掃才會更新
+        ⇒ 這種「新鮮的缺口」本來沒有任何東西會叫。
+
+    ⛔ `cover`（涵蓋起點）由呼叫端**從資料自己算**，不寫死——
+      寫死的話資料庫往前長之後就對不上。
+      ⚠ 算不出來（沒有日檔）時 `cover` 是空字串 ⇒ **一律當涵蓋期外**，
+        ⛔ 不可以反過來當成「全部都在涵蓋期內」，那會憑空生出一堆假警報。
+    """
+    known = KNOWN_OFFICIAL_DUP if known is None else known
+    if not cover:
+        return [], [], []
+    inside = [r for r in miss if r[0] >= cover]
+    named = [r for r in inside if (r[1], r[0]) in known]
+    live = [r for r in inside if (r[1], r[0]) not in known]
+    return inside, named, live
+
+
 def adj_rows():
     """→ {(代號, 日期): factor 字串}，我方 `data/adj/` 的全部事件。"""
     out = {}
@@ -247,7 +289,59 @@ def main():
     rl.check("兩邊都有的那些 factor 逐位相符",
              not bad_f, f"{len(bad_f)} 筆不符：{bad_f[:6]}"
              if bad_f else f"{len(rows) - len(miss)} 筆全中")
-    # ⛔ 「官方有我方沒有」不設 check：那是**歷史欠帳**，天天紅會被學會忽略。
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 2026-09-10：**「涵蓋期內」與「涵蓋期外」是兩件事，不可以混在一起數。**
+    #
+    # ⛔ 原本這裡一律不設 check，理由寫著「那是歷史欠帳，天天紅會被學會忽略」
+    #   ——⚠ 對**涵蓋期外**（我方日檔還沒開始的年份）成立，
+    #     ⛔ 對**涵蓋期內**完全不成立：那是**現在就錯的還原因子**。
+    #
+    # ⚠ 而這個區分不是理論：本支 2026-09-10 第一次跑完，51 筆裡
+    #   涵蓋期內只有 2 筆，其中 **1 筆是昨天發生的**（6461 益得 2026-09-09）
+    #   ——⭐ 用我方自己的價格證實：09-01 收 16.65（＝官方 last_close，一分不差）、
+    #   09-02~09-08 停牌無列、09-09 收 25.75。**沒有那個因子，序列上就是 +54.7% 的假報酬。**
+    #   ⚠ 上櫃的 adj 只有人手動跑那個幾小時的 FinMind 全掃才會更新
+    #     ⇒ 這種「新鮮的缺口」本來沒有任何東西會叫。
+    #
+    # ⛔ 涵蓋起點**從資料自己算**，不寫死：寫死的話資料庫往前長之後就對不上。
+    # ══════════════════════════════════════════════════════════════
+    dd = os.path.join(_ROOT, "universe", "daily")
+    days = sorted(n[:-4] for n in os.listdir(dd)) if os.path.isdir(dd) else []
+    cover = days[0] if days else ""
+
+    inside, named, live = classify_gaps(miss, cover)
+
+    rl.info("  ⭐ 其中**落在我方涵蓋期內**（≥ 首個日檔 " + (cover or "—") + "）",
+            f"**{len(inside)} 筆**"
+            + (f"｜已歸因 {len(named)}｜⛔ **未歸因 {len(live)}**" if inside else ""))
+    for r in named:
+        rl.info(f"    已歸因 {r[1]} {r[0]}", KNOWN_OFFICIAL_DUP[(r[1], r[0])])
+    for r in live:
+        rl.info(f"    ⛔ 未歸因 {r[1]} {r[2]} {r[0]}",
+                f"{r[6]}｜官方 前收 {r[3]} → 參考價 {r[4]}｜factor {r[5]}"
+                "　⇒ 沒有這個因子，那一檔的還原序列在這一天是**假報酬**")
+    # ⛔ 判準用**歷史最低值**，不是「比上一趟多」——跟 `missing_rows.py`／`adj_gap.py`
+    #   同一條理由：用「比上一趟」的話，補好一次基準就停在低點，
+    #   下一個新缺口要累積到超過舊基準才會紅。用歷史最低 ⇒ **單調收斂**。
+    low = None
+    if os.path.exists(LOW):
+        try:
+            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0])
+        except (ValueError, IndexError):
+            low = None
+    base = len(live) if low is None else min(low, len(live))
+    rl.info("  歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}")
+    rl.check("涵蓋期內未歸因的缺口沒有高於歷史最低值",
+             low is None or len(live) <= low,
+             f"歷史最低 {low}｜本輪 {len(live)}" if low is not None
+             else f"第一趟，只記錄不判定（本輪 {len(live)}）")
+    try:
+        io.open(LOW, "w", encoding="utf-8").write(
+            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
+    except OSError:
+        pass
+    # ⛔ 涵蓋期**外**那些仍然不設 check：那才是真的歷史欠帳，天天紅會被學會忽略。
     rl.info("⛔ 這一支不寫 data/adj/",
             "單一寫入者是 `adjust.py`／`otc_adj.py`。這裡只提供證據。")
     return rl.finish()

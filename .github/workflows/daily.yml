@@ -508,6 +508,30 @@ jobs:
         if: always()
         run: python freshness_check.py
 
+      # ⛔⛔ 2026-09-10 才發現的結構性缺口：**上櫃的除權息／減資事件，
+      #   在每日排程裡根本不會更新**——只有人手動跑那個幾小時的 FinMind
+      #   全掃（`feeds.yml mode=otc-adj`，971 檔 × 2）才會動。
+      #   ⇒ 一筆新的上櫃減資發生之後，`data/adj/` 可能好幾天甚至更久沒有它，
+      #     ⚠ 而那段期間那一檔的還原序列就是**假報酬**，沒有任何東西會叫。
+      #
+      # ⭐ 而官方那條 `bulletin/revivt` **一發請求就回 283 列、回到 2013**。
+      #   ⇒ 每天打一發，讓「官方有、我方 data/adj 沒有」變成**每天會叫的斷言**。
+      #   ⛔ 這兩支**不寫 `data/adj/`**（單一寫入者是 `adjust.py`／`otc_adj.py`），
+      #     它們只出判準——⚠ 這正是要的：**大聲報缺口**，而不是偷偷補上去。
+      #
+      # ⚠ 判準只對**涵蓋期內**（≥ 首個日檔）的缺口設 check：
+      #   涵蓋期外那些是真的歷史欠帳，天天紅會被學會忽略。
+      - name: 上櫃減資／除權息的官方判準（各一發請求）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_twparse.py
+          python selftest_otc_reduce_history.py
+          python otc_reduce_history.py
+          python selftest_otc_exright_history.py
+          python otc_exright_history.py
+
       - name: 上櫃減資對帳
         if: always()
         continue-on-error: true
