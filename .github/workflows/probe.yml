@@ -123,7 +123,7 @@ jobs:
       - name: 驗十支探針跑得完（離線）
         run: python selftest_probes.py
 
-      - name: 跑十支探針（這支一律全跑）
+      - name: 跑九支探針（這支一律全跑）
         if: always()
         continue-on-error: true
         timeout-minutes: 15
@@ -145,8 +145,7 @@ jobs:
                       "otccal_probe.py:_otccal_probe.txt" \
                       "hist_probe.py:_hist_probe.txt" \
                       "keys_probe.py:_keys_probe.txt" \
-                      "site_inventory.py:_site_inventory.txt" \
-                      "mops_probe.py:_mops_probe.txt"; do
+                      "site_inventory.py:_site_inventory.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
             #   排程觸發時才套三選一的重跑條件：
@@ -199,6 +198,29 @@ jobs:
               fi
             fi
           done
+
+      # ⭐ 丁級 11 的終點驗證。⛔ **不放進上面那個迴圈**，理由是時間預算：
+      #   那個迴圈九支共用 15 分鐘，而 `hist_probe` 一支就會吃掉大半
+      #   ⇒ 排在最後的一定被砍，⚠ **而且被砍的樣子是「這一支沒有輸出」**，
+      #     跟「它跑了但什麼都沒找到」長得一樣。
+      #   ⚠ 我第一版就是這樣寫的，run 34444805963 當場示範了一次。
+      #   ⇒ 有待答問題的探針要有自己的時間預算。
+      - name: MOPS 橋接與 OpenAPI（丁級 11 終點驗證）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: |
+          RC=0
+          python mops_probe.py || RC=$?
+          if [ "$RC" -ne 0 ]; then
+            echo "⛔ mops_probe.py 非 0 結束（rc=$RC）"
+            git checkout -- data/meta/_mops_probe.txt 2>/dev/null || true
+            {
+              echo ""
+              echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') mops_probe.py 非 0 結束（rc=$RC），"
+              echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
+            } >> data/meta/_mops_probe.txt
+          fi
 
       # ★ 長期停止買賣（第六輪）。⛔ 不放進上面那個迴圈：它要帶 `--set`，
       #   而那個迴圈的契約是「腳本:輸出檔」對、不帶參數。

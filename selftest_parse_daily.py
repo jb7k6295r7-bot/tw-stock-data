@@ -45,8 +45,12 @@ ROW_OK = ["6104", "創惟", "92.50", "-3.40", "96.30", "96.50", "92.40",
 ROW_NOTRADE = ["6904", "伯鑫", "--", "--", "--", "--", "--",
                "0", "2,000", "0", "50,000,000"]
 
-H = ("key,date,stock_id,name,market,open,high,low,close,volume,amount,"
-     "change,limit,shares,transactions,price_basis").split(",")
+import fetch as _F
+
+# ⛔ 表頭**從契約本身取**，不要在測試裡再抄一份字串。
+#   ⚠ 2026-09-10 加 `last_price` 時，抄的那一份沒跟著改 ⇒ ⑥ 整段錯位
+#     ——而這支測試存在的理由正好就是「同一件事不要有兩份」。
+H = list(_F.UNIVERSE_HEADER)
 
 
 def rows_of(payload, day="2026-09-03"):
@@ -121,11 +125,16 @@ def main():
     #   那天的 **363 列興櫃整批消失**，而且看起來完全正常。
     import backfill as _B
     sand = tempfile.mkdtemp(prefix="wday_")
-    old_dir = _B.DAILY_DIR
+    # ⛔ 要換掉的是 `fetch.UNI_DIR`：`write_day` 已經收成 `fetch.write_universe_day`
+    #   的別名（2026-09-10），改 `backfill.DAILY_DIR` **不會有任何效果**
+    #   ——⚠ 而那樣的測試會照樣通過，只是它測的是 repo 裡的真檔案。
+    old_dir = _F.UNI_DIR
     try:
-        _B.DAILY_DIR = sand
-        H2 = _B.HEADER
-        with io.open(os.path.join(sand, "2026-09-08.csv"), "w",
+        _F.UNI_DIR = sand
+        os.makedirs(os.path.join(sand, "daily"), exist_ok=True)
+        sand_daily = os.path.join(sand, "daily")
+        H2 = _F.UNIVERSE_HEADER
+        with io.open(os.path.join(sand_daily, "2026-09-08.csv"), "w",
                      encoding="utf-8") as f:
             f.write(",".join(H2) + "\n")
             for code, mk in (("2330", "twse"), ("7879", "emerging")):
@@ -134,10 +143,14 @@ def main():
                             "stock_id": code, "name": "N", "market": mk,
                             "close": "1"})
                 f.write(",".join(row[h] for h in H2) + "\n")
-        n = _B.write_day("2026-09-08", [[
-            "2026-09-08_2330", "2026-09-08", "2330", "台積電", "twse",
-            "1", "1", "1", "2", "1", "1", "", "", "", "", ""]])
-        with io.open(os.path.join(sand, "2026-09-08.csv"), encoding="utf-8") as f:
+        # ⛔ 用表頭長度生成，不要寫死格數（寫死的話加一欄就整列錯位）
+        _new = dict(zip(H2, [""] * len(H2)))
+        _new.update({"key": "2026-09-08_2330", "date": "2026-09-08",
+                     "stock_id": "2330", "name": "台積電", "market": "twse",
+                     "open": "1", "high": "1", "low": "1", "close": "2",
+                     "volume": "1", "amount": "1"})
+        n = _B.write_day("2026-09-08", [[_new[h] for h in H2]])
+        with io.open(os.path.join(sand_daily, "2026-09-08.csv"), encoding="utf-8") as f:
             got = {r["stock_id"]: r for r in csv.DictReader(f)}
         ck("⑥ 這一趟寫的市場（twse）有被更新",
            got.get("2330", {}).get("close") == "2", str(got.get("2330")))
@@ -146,7 +159,7 @@ def main():
            f"檔案裡只剩 {sorted(got)}")
         ck("⑥ write_day 回的是「這一趟寫了幾列」不是總列數", n == 1, str(n))
     finally:
-        _B.DAILY_DIR = old_dir
+        _F.UNI_DIR = old_dir
         shutil.rmtree(sand, ignore_errors=True)
 
     # ══════════════════════════════════════════════════════════
@@ -156,7 +169,6 @@ def main():
     #   ⇒ 回補把十一年補回來，每日從明天起繼續挖新的洞。
     #   ⚠ 這是 `limit` 那個 bug 的病，方向相反：只修了回補那一份。
     # ══════════════════════════════════════════════════════════
-    import fetch as _F
     fpay = {"tables": [{"title": "上櫃股票行情", "fields": FIELDS,
                         "data": [ROW_OK, ROW_NOTRADE]}]}
     frows, _ = _F.parse_twse_daily(fpay, "2026-09-03", market="tpex")
@@ -204,6 +216,109 @@ def main():
        egot.get("6741", {}).get("market") == "emerging", str(egot.get("6741")))
     ck("⑧ ⚠ 反向：`_isz` 兩邊同一支（不是各抄一份）",
        B._isz is _F._isz)
+    # ⭐ last_price（2026-09-10 加）：⛔ 只有興櫃有值，且無成交日要空
+    ESB2 = [dict(ESB[0], LatestPrice="58.00"), dict(ESB[1], LatestPrice="0.00")]
+    e2, _ = _F.parse_openapi_daily(ESB2, "2026-09-03", "emerging")
+    g2 = {r[2]: dict(zip(H, r)) for r in e2}
+    ck("⑧ ⭐ 興櫃有成交那一列存得到 last_price=58.00（⛔ 而 close 仍然是均價 57.18）",
+       g2.get("6740", {}).get("last_price") == "58.00"
+       and g2.get("6740", {}).get("close") == "57.18", str(g2.get("6740")))
+    ck("⑧ ⛔ 無成交那一列 last_price 是空的（官方給 0，不可以照抄）",
+       g2.get("6741", {}).get("last_price") == "", str(g2.get("6741")))
+    ck("⑧ ⛔ 上市／上櫃的 last_price 一律空（close 本來就是最後撮合價）",
+       all(dict(zip(H, r))["last_price"] == "" for r in frows), str(fgot))
+
+    # ══════════════════════════════════════════════════════════
+    # ⑨ ⛔⛔ 這一節才是那條規矩的守門：**同一件事只准有一份實作**。
+    #   2026-09-10 之前 `backfill` 與 `fetch` 各有一份 parser，
+    #   同一族的錯犯了**四次**，四次都是「改一邊、另一邊沒跟上，沒有人發現」。
+    #   ⇒ 現在 `backfill.parse_twse` 是 `fetch.parse_twse_daily` 的別名。
+    #   ⚠ 但**別名可以被下一個人拆掉**（而且拆掉的當下一切正常）
+    #     ⇒ 這一節拿一整批不同形狀的回應餵兩邊，**逐格比對**。
+    #   ⛔ 不是只比「是不是同一個函式物件」——那樣的話，
+    #     有人重新複製一份貼回去、內容還一樣時也會紅，而真正走岔時
+    #     只要他記得改別名就不會紅。⇒ **要比輸出。**
+    # ══════════════════════════════════════════════════════════
+    SHAPES = [
+        ("新形狀 tables，含無成交列",
+         {"stat": "ok", "tables": [{"title": "t", "fields": FIELDS,
+                                    "data": [ROW_OK, ROW_NOTRADE]}]}),
+        ("舊形狀 fields/data（沒有 tables）",
+         {"stat": "ok", "fields": FIELDS, "data": [ROW_OK]}),
+        # ⛔ TWSE 舊版 MI_INDEX 的**編號鍵**形狀：一個回應塞好幾張表。
+        #   不支援它的症狀是「連得上、stat=OK、解析出 0 列」——跟休市一樣。
+        ("編號鍵 fields1/data1 … 多張表",
+         {"stat": "ok",
+          "fields1": ["指數", "收盤指數"], "data1": [["發行量加權", "1"]],
+          "fields2": FIELDS, "data2": [ROW_OK, ROW_NOTRADE]}),
+        ("空表（休市）", {"stat": "ok", "tables": [{"title": "t",
+                                                "fields": FIELDS, "data": []}]}),
+        ("欄位對不上", {"stat": "ok", "tables": [{"title": "t",
+                                              "fields": ["甲", "乙"],
+                                              "data": [["1", "2"]]}]}),
+        ("整張表都是無成交列",
+         {"stat": "ok", "tables": [{"title": "t", "fields": FIELDS,
+                                    "data": [ROW_NOTRADE]}]}),
+        ("代號欄不是數字開頭（合計列那一族）",
+         {"stat": "ok", "tables": [{"title": "t", "fields": FIELDS,
+                                    "data": [["", "合計"] + ["0"] * 9, ROW_OK]}]}),
+        ("列長度不足（官方少給幾欄）",
+         {"stat": "ok", "tables": [{"title": "t", "fields": FIELDS,
+                                    "data": [["6104", "創惟", "92.50"], ROW_OK]}]}),
+        ("不是 dict", ["不是", "dict"]),
+    ]
+    for label, payload in SHAPES:
+        for mk in ("twse", "tpex"):
+            try:
+                a = B.parse_twse(payload, "2026-09-03", market=mk)
+            except Exception as ex:                              # noqa: BLE001
+                a = ("EXC", type(ex).__name__, str(ex))
+            try:
+                b = _F.parse_twse_daily(payload, "2026-09-03", market=mk)
+            except Exception as ex:                              # noqa: BLE001
+                b = ("EXC", type(ex).__name__, str(ex))
+            ck(f"⑨ 兩邊逐格相同｜{label}｜{mk}", a == b, f"{a}\n            vs {b}")
+
+    OA_SHAPES = [
+        ("興櫃（有 Average ⇒ 均價系）", ESB),
+        ("上櫃 openapi（有 Close）",
+         [{"SecuritiesCompanyCode": "6104", "CompanyName": "創惟",
+           "Close": "92.50", "Open": "96.30", "High": "96.50", "Low": "92.40",
+           "TradingShares": "706000", "TransactionAmount": "66055100",
+           "Change": "-3.40", "成交筆數": "513"}]),
+        # ⛔ 這一個就是四號拷貝最原始的那個 bug：開＝高＝低＝收且漲跌是 "0.00"
+        #   ⇒ 舊碼的 `"down" if chg else "flat"` 會判成 **down**（`"0.00"` 是 truthy）
+        ("⭐ 平盤鎖死（開＝高＝低＝收、漲跌 0.00）",
+         [{"Code": "1234", "Name": "平盤", "Close": "10.00", "Open": "10.00",
+           "High": "10.00", "Low": "10.00", "TradingShares": "1000",
+           "TransactionAmount": "10000", "Change": "0.00"}]),
+        ("空 list（休市）", []),
+        ("不是 list", {"stat": "ok"}),
+    ]
+    for label, payload in OA_SHAPES:
+        for mk in ("emerging", "tpex"):
+            try:
+                a = B.parse_openapi(payload, "2026-09-03", mk)
+            except Exception as ex:                              # noqa: BLE001
+                a = ("EXC", type(ex).__name__, str(ex))
+            try:
+                b = _F.parse_openapi_daily(payload, "2026-09-03", mk)
+            except Exception as ex:                              # noqa: BLE001
+                b = ("EXC", type(ex).__name__, str(ex))
+            ck(f"⑨ openapi 逐格相同｜{label}｜{mk}", a == b, f"{a}\n            vs {b}")
+
+    # ⭐ 而那個平盤鎖死的答案本身要是對的（⛔ 兩邊一致但兩邊都錯也會通過 ⑨）
+    flat, _ = B.parse_openapi(OA_SHAPES[2][1], "2026-09-03", "tpex")
+    ck("⑨ ⭐ 平盤鎖死判成 flat（⛔ 舊碼判 down——`\"0.00\"` 是 truthy）",
+       bool(flat) and dict(zip(H, flat[0]))["limit"] == "flat",
+       str(dict(zip(H, flat[0]))) if flat else "0 列")
+    # ⭐ 休市要講得出「休市」，⛔ 不可以跟「端點壞了」混在一起
+    _, n_empty = B.parse_openapi([], "2026-09-03", "tpex")
+    _, n_bad = B.parse_openapi({"stat": "ok"}, "2026-09-03", "tpex")
+    ck("⑨ 空 list 回 `no_rows:`（呼叫端靠這個字判休市）",
+       n_empty.startswith("no_rows"), n_empty)
+    ck("⑨ ⛔ 不是 list **不可以**回 no_rows（那會把故障讀成休市）",
+       not n_bad.startswith("no_rows"), n_bad)
 
     real = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "data", "universe", "daily")

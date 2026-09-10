@@ -79,6 +79,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import runlog
+from twparse import pick_field as _pick_field, roc_iso as _roc_iso
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -102,25 +103,11 @@ def _post(url, form, timeout=120):
         return b"", f"{type(ex).__name__}: {str(ex)[:120]}"
 
 
-def _iso(v):
-    """民國 `115/09/09` 或西元 `2026/09/09` → `2026-09-09`。⛔ 認不出回 None。"""
-    s = str(v).strip().replace("-", "/")
-    p = s.split("/")
-    if len(p) != 3 or not all(x.strip().isdigit() for x in p):
-        return None
-    y, m, d = (int(x) for x in p)
-    if y < 1000:
-        y += 1911
-    if not (1990 < y < 2100 and 1 <= m <= 12 and 1 <= d <= 31):
-        return None
-    return f"{y:04d}-{m:02d}-{d:02d}"
-
-
-def _pick(fields, *words):
-    for i, f in enumerate(fields):
-        if any(w in str(f) for w in words):
-            return i
-    return None
+# ⛔ `_iso` 與 `_pick` 原本在這兩支各有一份（逐字相同）——同一族的第七、第八份。
+#   2026-09-10 收進 `twparse.py`，⭐ 而且順便把日期格式做寬並測它：
+#   `bulletin/revivt` 那天回了 283 列、我方**一列都認不出來**。
+_iso = _roc_iso
+_pick = _pick_field
 
 
 def parse(payload, want_from, want_to):

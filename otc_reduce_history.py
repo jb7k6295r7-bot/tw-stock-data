@@ -51,6 +51,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import runlog
+from twparse import pick_field as _pick_field, roc_iso as _roc_iso
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -75,17 +76,11 @@ def _post(url, form, timeout=120):
         return b"", f"{type(ex).__name__}: {str(ex)[:120]}"
 
 
-def _iso(v):
-    s = str(v).strip().replace("-", "/")
-    p = s.split("/")
-    if len(p) != 3 or not all(x.strip().isdigit() for x in p):
-        return None
-    y, m, d = (int(x) for x in p)
-    if y < 1000:
-        y += 1911
-    if not (1990 < y < 2100 and 1 <= m <= 12 and 1 <= d <= 31):
-        return None
-    return f"{y:04d}-{m:02d}-{d:02d}"
+# ⛔ `_iso` 與 `_pick` 原本在這兩支各有一份（逐字相同）——同一族的第七、第八份。
+#   2026-09-10 收進 `twparse.py`，⭐ 而且順便把日期格式做寬並測它：
+#   `bulletin/revivt` 那天回了 283 列、我方**一列都認不出來**。
+_iso = _roc_iso
+_pick = _pick_field
 
 
 def _num(v):
@@ -94,13 +89,6 @@ def _num(v):
         return float(s)
     except ValueError:
         return None
-
-
-def _pick(fields, *words):
-    for i, f in enumerate(fields):
-        if any(w in str(f) for w in words):
-            return i
-    return None
 
 
 def parse(payload, want_from):
@@ -132,13 +120,32 @@ def parse(payload, want_from):
     if miss:
         return [], f"欄位對不上，缺 {miss}：{fields}"
     rows, bad = [], 0
+    # ⛔⛔ 2026-09-10 的教訓：這裡原本只數 `bad`，於是 Actions 上的失敗訊息是
+    #   「一列都認不出來（bad=283）」＋欄位名——**那不足以診斷**，
+    #   我必須再跑一趟（再打對方一次）才知道是日期格式、還是列的形狀、還是代號空的。
+    #   ⚠ 一個會叫、但叫不出原因的斷言，代價是一整個來回。
+    #   ⇒ 分開數每一種原因，並附**第一列原文**。
+    why = {"不是 list": 0, "欄數不足": 0, "日期認不出": 0, "代號是空的": 0}
+    sample = None
     for r in data:
-        if not isinstance(r, list) or len(r) <= max(i_d, i_c, i_lc, i_rp):
+        if sample is None:
+            sample = r
+        if not isinstance(r, list):
+            why["不是 list"] += 1
+            bad += 1
+            continue
+        if len(r) <= max(i_d, i_c, i_lc, i_rp):
+            why["欄數不足"] += 1
             bad += 1
             continue
         dt, code = _iso(r[i_d]), str(r[i_c]).strip()
         lc, rp = _num(r[i_lc]), _num(r[i_rp])
-        if not dt or not code:
+        if not dt:
+            why["日期認不出"] += 1
+            bad += 1
+            continue
+        if not code:
+            why["代號是空的"] += 1
             bad += 1
             continue
         # ⭐ factor ＝ 參考價 ÷ 最後交易日收盤價（與 `data/adj` 同定義）
@@ -148,7 +155,11 @@ def parse(payload, want_from):
                      str(r[i_rp]).replace(",", "").strip(), f,
                      str(r[i_rs]).strip() if i_rs is not None else ""])
     if not rows:
-        return [], f"一列都認不出來（bad={bad}）：{fields}"
+        # ⭐ 把「為什麼」講出來，⛔ 不要只給一個數字。
+        detail = "｜".join(f"{k} {v}" for k, v in why.items() if v)
+        return [], (f"一列都認不出來（{len(data)} 列；{detail}）"
+                    f"　欄位={fields}"
+                    f"　第一列原文={str(sample)[:300]}")
     ds = sorted(r[0] for r in rows)
     recent = (datetime.now(TPE) - timedelta(days=30)).strftime("%Y-%m-%d")
     if ds[0] > want_from and ds[0] >= recent:
