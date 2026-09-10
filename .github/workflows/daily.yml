@@ -97,6 +97,7 @@ jobs:
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py
           python selftest_schema_audit.py
+          python selftest_margin_universe.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
@@ -899,6 +900,18 @@ jobs:
         if: always()
         continue-on-error: true
         run: python schema_audit.py
+
+      # ⭐⭐ 融資融券**標的**的歷史（2026-09-10 加）。⛔ 只讀，不連外，約 18 秒。
+      #   市場情報分析線的結論：K線線要的「信用交易標的歷史」不必去找端點——
+      #   `margin/`／`otcmargin/` 的**逐日成員**就是那份歷史，已經十一年半。
+      #   ⛔ 而「今天不在表上」有兩種意思（真的不是標的／那天整批沒抓到），
+      #     ⚠ 後者一天就能生出幾百筆假的移除 ⇒ 低於鄰近中位數 70% 的日子
+      #     標成不可判定，區間**跨過**它（⛔ 不是在那裡斷開）。
+      #   ⚠ 與 `note`（停止融資買進）是**兩件事**：被停的那一檔仍然是標的。
+      - name: 融資融券標的的歷史區間
+        if: always()
+        continue-on-error: true
+        run: python margin_universe.py
 
       # ★ 交易日曆（只補當月，一個請求）。
       #   `data/meta/calendar_twse.csv` 是「哪一天該有資料」的**唯一外部判準**——

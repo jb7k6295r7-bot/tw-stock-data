@@ -137,6 +137,7 @@ jobs:
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py
           python selftest_schema_audit.py
+          python selftest_margin_universe.py
 
       # ⛔ 這一支跑的是好幾個小時的 parse——解析規則錯掉的代價是整趟重來。
       #   `--`／`----`（TWSE 與 TPEx 各寫各的）一定要在抓之前先驗過。

@@ -152,6 +152,7 @@ jobs:
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py
           python selftest_schema_audit.py
+          python selftest_margin_universe.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
