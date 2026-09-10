@@ -1610,6 +1610,9 @@ def write_day(name, day, lines):
         return 0
     d = feed_dir(name)
     os.makedirs(d, exist_ok=True)
+    # ⛔ 寫之前先驗寬度：少一格會讓後面每一欄**整片左移**，⚠ 而且不報錯。
+    #   ⭐ 判準只有一份（`fetch.assert_row_width`），15 個 feed 共用它。
+    _F.assert_row_width(FEEDS[name]["header"], lines, f"{name}/{day}")
     with open(os.path.join(d, f"{day}.csv"), "w", encoding="utf-8") as f:
         f.write(",".join(FEEDS[name]["header"]) + "\n")
         for r in sorted(lines, key=lambda r: r[1]):

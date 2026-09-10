@@ -16,6 +16,7 @@
        ——而順序是排程的細節，**不該決定資料**
     ③ 官方判準檔 → 我方欄位的對應（含新補的 `value`）
     ④ 快照真的把現況記下來（⚠ 裁定裡指名要的）
+    ⑥ ⛔⛔ **列的長度 ＝ 表頭的長度**，而且欄位要**照欄名**擺
 """
 import csv
 import io
@@ -198,6 +199,60 @@ def main():
            str(snap))
         ck("  ⚠ 快照是**一張表**不是複製整棵目錄（⇒ 好 diff、好查）",
            os.path.isfile(os.path.join(d, "snap.csv")))
+        print("⑥ ⛔⛔ 欄位錯位：`official_factor` 插進中間之後的那個 bug")
+        # ⚠ 2026-09-10 實際發生：FinMind 那條路的列是**照位置**堆的 8 個值，
+        #   而 `RD_HEADER` 有 9 欄 ⇒ `"finmind"` 落到 `official_factor`、
+        #   `source` 變成空的。⛔ 而 `data/adj/6461.csv` 照樣長出來、數字全對。
+        ck("  ⭐ `_row()` 照欄名擺位，長度 ＝ 表頭長度",
+           len(O._row(O.RD_HEADER, date="2026-09-09", stock_id="6461",
+                      source="finmind")) == len(O.RD_HEADER))
+        r = O._row(O.RD_HEADER, date="2026-09-09", stock_id="6461",
+                   pre_close="16.65", ref_price="26.92", reason="彌補虧損",
+                   open_base="26.9", ex_ref_price="0.0",
+                   official_factor="1.61661100", source="finmind")
+        got = dict(zip(O.RD_HEADER, r))
+        ck("  ⭐ `official_factor` 真的在 `official_factor` 那一格",
+           got["official_factor"] == "1.61661100", str(got))
+        ck("  ⭐ `source` 真的在 `source` 那一格（⛔ 不是空的）",
+           got["source"] == "finmind", str(got))
+        bad_name = False
+        try:
+            O._row(O.RD_HEADER, offical_factor="1.0")   # ⚠ 故意拼錯
+        except KeyError:
+            bad_name = True
+        ck("  ⛔ 欄名拼錯要**大聲失敗**（⚠ 靜靜留空 ＝ 那條裁定不生效）",
+           bad_name)
+
+        print("⑦ ⛔ 反向：短一格的列要被 `write_days` 擋下來")
+        O.UNI = os.path.join(d, "uni7")
+        short = ["2026-09-09", "6461", "16.65", "26.92", "彌補虧損",
+                 "26.9", "0.0", "finmind"]              # ← 舊寫法，8 格
+        ck("  （前提）舊寫法真的少一格",
+           len(short) == len(O.RD_HEADER) - 1, str(len(short)))
+        blocked = False
+        try:
+            O.write_days("otcreduce", O.RD_HEADER, {"2026-09-09": [short]})
+        except ValueError:
+            blocked = True
+        ck("  ⭐⭐ 少一格 ⇒ **擋下來**（⛔ 不是靜靜寫成整片左移）", blocked)
+        ck("  ⛔ 而且擋下來時**沒有寫出半個檔**",
+           not os.path.exists(os.path.join(O.UNI, "otcreduce",
+                                           "2026-09-09.csv")))
+
+        print("⑧ ⭐ FinMind 那條路也要拿得到官方換股比例")
+        O.OFF_RD = os.path.join(d, "rdh8.csv")
+        io.open(O.OFF_RD, "w", encoding="utf-8").write(
+            "date,stock_id,name,last_close,ref_price,factor,reason,"
+            "shares_per_1000,cash_return,factor_official,asof\n"
+            "2026-09-09,6461,益得,16.65,26.92,1.61681682,彌補虧損,"
+            "618.578000,0.00000000,1.61661100,2026-09-11\n"
+            "2020-01-02,9999,無比例,10,9.8,0.98,現金減資,,,,2026-09-11\n")
+        m = O.official_factor_map()
+        ck("  ⭐ 對照表取得到（6461 ⇒ 1.61661100）",
+           m.get(("6461", "2026-09-09")) == "1.61661100", str(m))
+        ck("  ⛔ `factor_official` 是空的那一列**不進表**（⚠ 不可以猜）",
+           ("9999", "2020-01-02") not in m, str(m))
+
     finally:
         (O.UNI, O.OFF_EX, O.OFF_RD, O._ROOT) = keep
         shutil.rmtree(d, ignore_errors=True)

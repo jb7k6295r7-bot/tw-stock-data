@@ -1485,6 +1485,34 @@ def append_coverage(day, counts, errs):
     return len(old)
 
 
+def assert_row_width(header, rows, where):
+    """⛔ 列的長度必須等於表頭。不等就**大聲失敗**，⚠ 不寫半個檔。
+
+    ## ⛔⛔ 2026-09-10 的實例：少一格 ⇒ 後面每一欄整片左移，而且不報錯
+
+    `otc_adj.RD_HEADER` 加了 `official_factor`（第 8 欄），
+    而 FinMind 那條路的列是**照位置**堆的 8 個值 ⇒ 表頭 9 欄、列 8 格：
+
+        date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+        2026-09-09,6461,16.65,26.92,彌補虧損,26.9,0.0,finmind          ← 少一格
+
+    ⇒ `"finmind"` 落到 `official_factor`、`source` 變成**空的**。
+    ⚠ 而 `data/adj/6461.csv` 照樣長出來、數字全對——
+    只有 K線線裁定的「還原用官方換股比例」對那一檔**靜靜沒有生效**，
+    ⭐ 而 `source` 空掉更遠：「FinMind 不可以蓋掉官方」那條靠的就是它。
+
+    ⚠ 同一族第三次（`adjust.py` 的 `r[6]`、`selftest_reduce.py` 的 `body[0][2]`）
+    ——⛔ 每一次都是「新欄插進中間、取值寫死位置」。
+    ⇒ ⭐ **一份**實作，寫檔的每一支都在寫之前叫它（CLAUDE.md 第四點五）。
+    """
+    for r in rows:
+        if len(r) != len(header):
+            raise ValueError(
+                f"⛔ {where}：有一列 {len(r)} 格、表頭 {len(header)} 欄"
+                f"（⚠ 欄位會整片錯位，而且不會報錯）：{list(r)[:12]}")
+    return len(rows)
+
+
 def write_universe_day(day, lines):
     """寫一天的日檔。⛔ **只覆蓋這一趟真的抓了的那些市場。**
 
@@ -1524,6 +1552,7 @@ def write_universe_day(day, lines):
         print(f"[fetch] {day}：保留其他市場的 {len(keep_old)} 列"
               f"（這一趟只寫 {sorted(mine)}）")
     rows = kept + keep_old
+    assert_row_width(UNIVERSE_HEADER, rows, f"universe/daily/{day}")
     with open(path, "w", encoding="utf-8") as f:
         f.write(",".join(UNIVERSE_HEADER) + "\n")
         for r in sorted(rows, key=lambda r: str(r[2])):
