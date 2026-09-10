@@ -79,8 +79,13 @@ DONE = os.path.join(_ROOT, "meta", "_otcadj_done.csv")
 
 EX_HEADER = ["date", "stock_id", "pre_close", "ref_price", "value",
              "kind", "open_base", "source"]
+# ⭐⭐ 2026-09-10 新增 `official_factor`（K線線 20:20 裁定要用的那一個）。
+#   ⛔ 沒有這一欄的話，官方換股比例**根本搬不進 `data/adj/` 的來源目錄**
+#   ⇒ 「還原用 `factor_official`」那條裁定**跑再多趟也不會生效**，
+#   ⚠ 而它壞得很安靜：換源會成功、`data/adj/` 會長大、數字全是官方的，
+#     只是因子仍然是**帶捨入殘差**的那一個。
 RD_HEADER = ["date", "stock_id", "pre_close", "ref_price", "reason",
-             "open_base", "ex_ref_price", "source"]
+             "open_base", "ex_ref_price", "official_factor", "source"]
 
 
 # FinMind 撞到額度時的字樣。**要寬鬆比對**——它可能來自 HTTP 402/429，
@@ -305,7 +310,9 @@ def official_rows(codes=None):
             continue
         rd.setdefault(day, []).append(
             [day, c, f"{pre:g}", f"{ref:g}", r.get("reason", ""), "", "",
-             "revivt"])
+             # ⭐ 官方換股比例回推的因子（`otc_reduce_history.py` 算好的）
+             #   ⚠ 舊版判準檔沒有這一欄 ⇒ 留空，⛔ 不要猜
+             r.get("factor_official", ""), "revivt"])
     n_ex = sum(len(v) for v in ex.values())
     n_rd = sum(len(v) for v in rd.values())
     return ex, rd, (f"官方除權息 {n_ex:,} 筆／{len(ex)} 天"

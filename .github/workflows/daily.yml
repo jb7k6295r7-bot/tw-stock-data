@@ -576,7 +576,9 @@ jobs:
         if: always()
         continue-on-error: true
         timeout-minutes: 10
-        run: python adjust.py
+        run: |
+          python selftest_adjust_official.py
+          python adjust.py
 
       # ★ 上櫃減資：拿官方參考價逐筆對我方因子。**只讀 repo，不連外。**
       #   ⛔ 一定要排在 `adjust.py` **之後**——它比的是 `data/adj/` 的內容，

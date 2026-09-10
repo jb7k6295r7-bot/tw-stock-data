@@ -453,7 +453,9 @@ jobs:
       #   摘要不會抱怨，只是每一檔跨過減資日的還原都是錯的。
       - name: 算還原因子
         if: inputs.mode == 'adjust'
-        run: python adjust.py
+        run: |
+          python selftest_adjust_official.py
+          python adjust.py
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
       # ⛔⛔ 2026-09-09：這裡本來是一份**寫死的「會寫資料的 mode」白名單**。
