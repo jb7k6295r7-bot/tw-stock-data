@@ -72,6 +72,18 @@ TARGETS = [
      f"{TW}/fullDelivery/BFIHBU?response=json", {}),
     ("⛔ 隱藏 span 的陷阱 violation/change",
      f"{TW}/violation/change?response=json", {}),
+    # ⭐ K線線 16:40 §3 的第三個成因（他們自己標【未查證】，⛔ 沒有寫進 skill）：
+    #   「該檔**本來就不是信用交易標的**——不是被停掉的，是從來就沒有。」
+    #   ⚠ ①② 是**負面訊號**（被主管機關盯上），③ 是**中性的**（新股、制度性），
+    #   ⛔ 而三者在資料上**都長成「融資餘額 0」**。
+    #   ⇒ 先問「有沒有這種名單」。⛔ 路徑是**照同站模式推的**，這裡就是要淘汰它們。
+    ("信用交易標的？ marginTrading/MI_MARGN_MSTOCK（推的）",
+     f"{TW}/marginTrading/MI_MARGN_MSTOCK?response=json", {}),
+    ("信用交易標的？ marginTrading/TWT78U（推的）",
+     f"{TW}/marginTrading/TWT78U?response=json", {}),
+    ("信用交易標的？ marginTrading/MI_MARGN?selectType=MS（推的）",
+     f"{TW}/marginTrading/MI_MARGN?date={DAYS[-1]}&selectType=MS&response=json",
+     {"date": DAYS[-1], "selectType": "MS"}),
 ]
 
 
@@ -138,6 +150,13 @@ def main():
         "  Q2 `TWT85U` 的 `date` 真的吃嗎（三個日期的 title 與筆數要不同）？",
         "  Q3 `violation/change` 的隱藏 span 長什麼樣（剝法要照真形狀寫）？",
         "  ⚠ Q4 `suspendListing` 的 `yy` 是不是真的被無視（兩趟筆數要一樣）？",
+        "  ⭐ Q5 **K線線 16:40 §8 指名要的**：`TWT85U` 的 `**` 符號說明逐字是什麼？",
+        "     ⚠ 他們整條「分盤撮合有兩個來源」的裁定建在這個符號上，",
+        "     ⛔ 而目前的依據是一句**轉述**，不是官方 `notes` 的逐字。",
+        "     ⇒ 若 `**` 其實是別的意思（例如「本日新增」），那條裁定要整條作廢。",
+        "  ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）",
+        "     ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，",
+        "     ⛔ 三者在資料上都長成「融資餘額 0」。",
     ]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
