@@ -79,12 +79,15 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import runlog
+# ⛔ 用**同一支** classify_gaps 與 adj_rows，不再抄一份（CLAUDE.md 第四點五）
+from otc_reduce_history import adj_rows as _adj_rows, classify_gaps as _classify_gaps
 from twparse import (pick_field as _pick_field, post_form as _post_form,
                      roc_iso as _roc_iso)
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "otc_exright_history.csv")
+LOW = os.path.join(_ROOT, "meta", "_otc_exright_adjgap_low.txt")
 OURS = os.path.join(_ROOT, "universe", "otcexright")
 
 URL = "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ"
@@ -227,9 +230,54 @@ def main():
             f"**{len(miss):,} 筆／{len({r[1] for r in miss})} 檔**"
             f"（其中代號 00 開頭的 ETF／ETN {len(etf):,} 筆）")
     rl.info("  分年", "｜".join(f"{y} {n:,}" for y, n in sorted(by_year.items())))
-    # ⛔ 不設 check：這是**歷史欠帳**，天天紅的檢查會被學會忽略。
-    #   ⇒ 這一支的用途是給「要不要把供料換成官方端點」那個決定提供**全期規模**，
-    #     不是每天叫。
+    # ⛔ 上面那個比的是「我方的**判準目錄**」⇒ 不設 check：
+    #   `data/universe/otcexright/` 是逐日累積的，早年本來就是空的，
+    #   那是**歷史欠帳**，天天紅的檢查會被學會忽略。
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 但還有一個**完全不同**的方向要比：官方有、而我方 `data/adj/` 沒有。
+    #   那不是「判準還沒累積到」，那是**還原因子真的缺了** ⇒ 假報酬。
+    #
+    # ⚠ 這一段是 2026-09-10 補的，因為**姊妹那一支（減資）當天就靠它抓到一筆**：
+    #   6461 益得 2026-09-09 減資，我方 `data/adj/` 沒有
+    #   ⇒ 用我方自己的價格證實：09-01 收 16.65（＝官方前收，一分不差）、
+    #     09-02～09-08 停牌無列、09-09 收 25.75 ⇒ **+54.7% 的假報酬**。
+    #   ⚠ 上櫃的 adj 只有人手動跑那個幾小時的 FinMind 全掃才會更新
+    #     ⇒ 這種「新鮮的缺口」本來沒有任何東西會叫。
+    #
+    # ⛔ 涵蓋期內／外要分開數，判準與那一支共用**同一支** `classify_gaps`
+    #   （⚠ 不可以再抄一份——今天同一族已經十二次）。
+    # ══════════════════════════════════════════════════════════════
+    adj = _adj_rows()
+    adj_miss = [r for r in rows if (r[1], r[0]) not in adj]
+    dd = os.path.join(_ROOT, "universe", "daily")
+    days = sorted(n[:-4] for n in os.listdir(dd)) if os.path.isdir(dd) else []
+    cover = days[0] if days else ""
+    inside, named, live = _classify_gaps(adj_miss, cover, known={})
+    rl.info("⭐ 官方有、我方 **data/adj/** 沒有",
+            f"{len(adj_miss):,} 筆｜其中**落在涵蓋期內**（≥ {cover or '—'}）"
+            f"**{len(inside)} 筆**")
+    for r in live[:10]:
+        rl.info(f"  ⛔ 涵蓋期內 {r[1]} {r[0]}",
+                f"{r[2] if len(r) > 2 else ''}"
+                "　⇒ 沒有這個因子，那一檔的還原序列在這一天是**假報酬**")
+    low = None
+    if os.path.exists(LOW):
+        try:
+            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0])
+        except (ValueError, IndexError):
+            low = None
+    base = len(live) if low is None else min(low, len(live))
+    rl.info("  歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}")
+    rl.check("涵蓋期內、我方 data/adj 缺的除權息沒有高於歷史最低值",
+             low is None or len(live) <= low,
+             f"歷史最低 {low}｜本輪 {len(live)}" if low is not None
+             else f"第一趟，只記錄不判定（本輪 {len(live)}）")
+    try:
+        io.open(LOW, "w", encoding="utf-8").write(
+            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
+    except OSError:
+        pass
     rl.info("⛔ 這一支不寫 data/universe/otcexright/",
             "那個目錄的唯一寫入者是 `otc_adj.py`（走 FinMind）。"
             "換供料是**換維護者**的決定，不是順手加一行。")
