@@ -102,6 +102,26 @@ kind: connect_rejected｜gateway answered 403 to CONNECT
 
 ---
 
+## ⭐ 六點五、動到 workflow／`.sh` 之後，**commit 之前**一定要驗 shell 語法
+
+    git config core.hooksPath .githooks     ← 新 session 進來第一件事
+
+`.githooks/pre-commit` 會在動到 `.github/workflows/*.yml` 或 `.sh` 時
+跑 `selftest_workflows.py`（8 支、117 個 `run` 區塊逐個 `bash -n`），不過就擋下 commit。
+
+### ⛔ 這一條的價格是 1 小時 50 分鐘
+
+run 34426373917：「回補」跑了 1h50m 是綠的，「Commit」1 秒失敗——
+`syntax error: unexpected end of file`，我批次改 workflow 時把 closing `fi` 切掉了。
+
+⚠ 而我當時「驗過」，驗的是 `yaml.safe_load()`。
+⛔ **YAML 合法 ≠ 裡面的 shell 合法**——對 YAML 來說 `run:` 只是一個字串。
+
+⚠ 而檢查排在 workflow 裡是**不夠的**：那是推出去、按下去、跑起來之後才叫，
+壞掉的那一刻是在**本機 commit**。⇒ 兩個地方都要有。
+
+---
+
 ## 七、測試：**沒證明過會失敗的測試，不算測試**
 
 - 每一條新斷言都要證明它**會紅也會綠**。
