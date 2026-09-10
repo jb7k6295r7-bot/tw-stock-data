@@ -83,13 +83,32 @@ jobs:
           if [ "$BR" = "main" ]; then echo "本來就在 main，不必同步"; exit 0; fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          if git rebase origin/main; then
-            git push origin HEAD:main && echo "✓ 程式已同步到 main"
+          # ⛔⛔ 2026-09-10：這一步的第一版寫成 `git rebase origin/main`，
+          #   而它**跟那個丟掉 5 小時的 bug 是同一個病**：rebase 會重放分支上
+          #   所有還沒進 main 的 commit，包括**很舊的那幾個**，撞上 main 現在的內容。
+          #   ⇒ 實測（run 34426373917）：它 abort 了、`continue-on-error` 讓它顯示成功，
+          #     而 **main 上的程式一個字都沒更新**——而排程跑的正是 main 上的程式。
+          #   ⚠ 失敗的樣子：這一步是**綠的**，只是什麼都沒做。
+          #
+          # ⇒ 改成跟「Commit 回 repo」**對稱**的做法：
+          #   把**程式路徑**（`data/` 以外的一切）搬到 main 的頭上，不 rebase。
+          #   ① 不重放任何 commit ⇒ 永遠不會衝突
+          #   ② `data/` 完全不碰 ⇒ 別人剛寫的資料原封不動
+          #   離線模擬（scratchpad/gitsim4）三項都驗過。
+          SRC=$(git rev-parse HEAD)
+          git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
+          git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
+          git checkout "$SRC" -- . ':(exclude)data' || {
+            echo "⚠ 取程式路徑失敗，跳過同步" >&2; exit 0; }
+          git add -A
+          if git diff --staged --quiet; then
+            echo "程式已經跟 main 一致，沒有要同步的"
           else
-            git rebase --abort || true
-            echo "⚠ 跟 main rebase 不起來 ⇒ 跳過同步。這一趟照樣抓資料。" >&2
+            git commit -q -m "sync: 把分支的程式同步到 main"
+            git push origin HEAD:main && echo "✓ 程式已同步到 main"
           fi
+          # ⛔ 一定要切回原本的分支：後面的步驟（回補、Commit）都靠它。
+          git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
 
 
       # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
