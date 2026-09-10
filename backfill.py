@@ -50,6 +50,7 @@ from fetch import (_isz, _lock_dir, fill_twse_shares,
                    _same_day as _fetch_same_day,
                    _num as _fetch_num, _is_dash as _fetch_is_dash,
                    UNIVERSE_HEADER as _UNIVERSE_HEADER,
+                   assert_row_width,           # ⭐ 唯一一份，見 fetch.py
                    COV_HEADER as _COV_HEADER,
                    STOCKS_HEADER as _STOCKS_HEADER)
 

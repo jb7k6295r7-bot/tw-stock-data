@@ -88,6 +88,31 @@ RD_HEADER = ["date", "stock_id", "pre_close", "ref_price", "reason",
              "open_base", "ex_ref_price", "official_factor", "source"]
 
 
+def _row(header, **vals):
+    """→ 一列，**照欄名擺位**。⛔ 不接受不在表頭裡的欄名。
+
+    ## ⛔⛔ 2026-09-10：`official_factor` 插進 `RD_HEADER` 中間，而 FinMind
+    那條路的列是**照位置**堆出來的 8 個值 ⇒ 表頭 9 欄、列 8 個值
+    ⇒ `"finmind"` 落到 **`official_factor`** 那一格，`source` 變成**空的**。
+
+        date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+        2026-09-09,6461,16.65,26.92,彌補虧損,26.9,0.0,finmind          ← 少一格
+
+    ⚠ 而它**不會報錯**：`data/adj/6461.csv` 照樣長出來、數字全對，
+    只有 `factor_official` 是空的 ⇒ ⛔ K線線裁定的「還原用官方比例」
+    對這一檔**靜靜沒有生效**。⭐ 而 `source` 空掉更遠：
+    `write_days` 的「FinMind 不可以蓋掉官方」那條靠的就是 `source`。
+
+    ⚠ 這是同一族的第三次（`adjust.py` 的 `r[6]`、`selftest_reduce.py` 的
+    `body[0][2]`，現在是這裡）——⛔ 每一次都是「新欄插進中間、取值寫死位置」。
+    ⇒ 收成這一支：**寫入端一律給欄名**，位置由表頭決定。
+    """
+    bad = [k for k in vals if k not in header]
+    if bad:                       # ⛔ 大聲失敗：打錯欄名不可以靜靜留空
+        raise KeyError(f"{bad} 不在表頭 {header} 裡")
+    return [str(vals.get(k, "")) for k in header]
+
+
 # FinMind 撞到額度時的字樣。**要寬鬆比對**——它可能來自 HTTP 402/429，
 # 也可能是 msg 裡的一句話；漏認的話會被當成一般錯誤，整批安靜跳過。
 _RATE_HINTS = ("429", "402", "upper limit", "too many", "rate limit",
@@ -299,26 +324,46 @@ def official_rows(codes=None):
         if not (c and day and pre and ref) or (codes and c not in codes):
             skip["ex"] += 1
             continue
-        ex.setdefault(day, []).append(
-            [day, c, f"{pre:g}", f"{ref:g}", r.get("value", ""),
-             r.get("kind", ""), "", "exDailyQ"])
+        ex.setdefault(day, []).append(_row(
+            EX_HEADER, date=day, stock_id=c, pre_close=f"{pre:g}",
+            ref_price=f"{ref:g}", value=r.get("value", ""),
+            kind=r.get("kind", ""), source="exDailyQ"))
     for r in _csv_rows(OFF_RD):
         c, day = r.get("stock_id", ""), r.get("date", "")
         pre, ref = _f(r.get("last_close")), _f(r.get("ref_price"))
         if not (c and day and pre and ref) or (codes and c not in codes):
             skip["rd"] += 1
             continue
-        rd.setdefault(day, []).append(
-            [day, c, f"{pre:g}", f"{ref:g}", r.get("reason", ""), "", "",
-             # ⭐ 官方換股比例回推的因子（`otc_reduce_history.py` 算好的）
-             #   ⚠ 舊版判準檔沒有這一欄 ⇒ 留空，⛔ 不要猜
-             r.get("factor_official", ""), "revivt"])
+        rd.setdefault(day, []).append(_row(
+            RD_HEADER, date=day, stock_id=c, pre_close=f"{pre:g}",
+            ref_price=f"{ref:g}", reason=r.get("reason", ""),
+            # ⭐ 官方換股比例回推的因子（`otc_reduce_history.py` 算好的）
+            #   ⚠ 舊版判準檔沒有這一欄 ⇒ 留空，⛔ 不要猜
+            official_factor=r.get("factor_official", ""), source="revivt"))
     n_ex = sum(len(v) for v in ex.values())
     n_rd = sum(len(v) for v in rd.values())
     return ex, rd, (f"官方除權息 {n_ex:,} 筆／{len(ex)} 天"
                     f"｜官方減資 {n_rd:,} 筆／{len(rd)} 天"
                     f"｜⚠ 跳過（缺價格或不在母體）除權息 {skip['ex']}"
                     f"、減資 {skip['rd']}")
+
+
+def official_factor_map():
+    """→ {(代號, 日期): 官方換股比例回推的因子}。⛔ 讀不到就是空的，不猜。
+
+    ⭐ 這一份**兩條路都要用**：`--official` 直接帶著它，
+    而 FinMind 那條路以前**完全拿不到** ⇒ ⛔ 補一檔（`--codes`）補出來的
+    那一列 `official_factor` 永遠是空的，K線線裁定的「還原用官方比例」
+    對那一檔**靜靜不生效**（2026-09-10 的 6461 益得就是這樣）。
+    ⚠ 官方減資表本來就是全期的，⛔ 沒有理由只有一條路讀得到它。
+    """
+    out = {}
+    for r in _csv_rows(OFF_RD):
+        c, day, fo = (r.get("stock_id", ""), r.get("date", ""),
+                      (r.get("factor_official") or "").strip())
+        if c and day and fo:
+            out[(c, day)] = fo
+    return out
 
 
 def load_done():
@@ -387,6 +432,9 @@ def write_days(subdir, header, byday):
                     if len(q) >= 2:
                         # 舊檔若欄位不同，照欄名對位補齊，缺的留空
                         merged[q[1]] = [dict(zip(old, q)).get(k, "") for k in header]
+        # ⛔ 終點斷言：列的長度必須等於表頭（⚠ 少一格 ⇒ 後面整片左移、不報錯）。
+        #   ⭐ 判準只有一份：`fetch.assert_row_width`（CLAUDE.md 第四點五）。
+        B.assert_row_width(header, rows, f"{subdir}/{day}")
         for r in rows:
             code = str(r[1])
             # ⭐⭐ 2026-09-10 換供料（情報分析線 23:00 裁定）：
@@ -495,6 +543,12 @@ def main():
     if done:
         print(f"[otc] 續跑：已完成 {len(done)} 個（代號,dataset）組合")
 
+    # ⭐ 官方換股比例：FinMind 那條路也要接得到（見 `official_factor_map`）
+    off_fac = official_factor_map()
+    print(f"[otc] 官方換股比例對照表 {len(off_fac):,} 筆"
+          + ("" if off_fac else "　⚠ **空的** ⇒ 這一趟的 `official_factor` 會全空"
+                                "（判準檔還沒抓？）"))
+
     t_start = time.time()
     ex, rd = {}, {}
     drop_up = []                 # 參考價高於前收盤、無法證明合法的
@@ -545,22 +599,32 @@ def main():
                         continue
                     if ref > pre * 1.0001:
                         drop_up.append((c, day, pre, ref))
-                    ex.setdefault(day, []).append(
-                        [day, c, f"{pre:g}", f"{ref:g}",
-                         str(r.get("stock_and_cache_dividend", "")),
-                         str(r.get("stock_or_cache_dividend", "")).strip(),
-                         "", "finmind"])
+                    ex.setdefault(day, []).append(_row(
+                        EX_HEADER, date=day, stock_id=c,
+                        pre_close=f"{pre:g}", ref_price=f"{ref:g}",
+                        value=r.get("stock_and_cache_dividend", ""),
+                        kind=str(r.get("stock_or_cache_dividend", "")).strip(),
+                        source="finmind"))
                     stats[ds][1] += 1
                 else:
                     pre = _f(r.get("ClosingPriceonTheLastTradingDay"))
                     ref = _f(r.get("PostReductionReferencePrice"))
                     if not pre or not ref:
                         continue
-                    rd.setdefault(day, []).append(
-                        [day, c, f"{pre:g}", f"{ref:g}",
-                         str(r.get("ReasonforCapitalReduction", "")).strip(),
-                         str(r.get("OpeningReferencePrice", "")),
-                         str(r.get("ExrightReferencePrice", "")), "finmind"])
+                    # ⛔ 這裡原本是**照位置**的 8 個值，而表頭有 9 欄
+                    #   ⇒ `"finmind"` 落到 `official_factor`、`source` 空掉。
+                    #   ⭐ 順帶把**官方換股比例**接上：判準檔裡有就用，
+                    #     ⛔ 不是只有 `--official` 那條路才拿得到
+                    #     ——否則補一檔（`--codes`）補出來的那一列，
+                    #     K線線裁定的「還原用官方比例」永遠不生效。
+                    rd.setdefault(day, []).append(_row(
+                        RD_HEADER, date=day, stock_id=c,
+                        pre_close=f"{pre:g}", ref_price=f"{ref:g}",
+                        reason=str(r.get("ReasonforCapitalReduction", "")).strip(),
+                        open_base=r.get("OpeningReferencePrice", ""),
+                        ex_ref_price=r.get("ExrightReferencePrice", ""),
+                        official_factor=off_fac.get((c, day), ""),
+                        source="finmind"))
                     stats[ds][1] += 1
         if limited:
             break

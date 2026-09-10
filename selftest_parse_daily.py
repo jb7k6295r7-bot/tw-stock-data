@@ -158,6 +158,29 @@ def main():
            "7879" in got and got["7879"]["market"] == "emerging",
            f"檔案裡只剩 {sorted(got)}")
         ck("⑥ write_day 回的是「這一趟寫了幾列」不是總列數", n == 1, str(n))
+
+        # ── ⑥之二 ⛔ 少一格的列要被擋下來（2026-09-10 的欄位錯位）──
+        #   ⚠ `otc_adj.RD_HEADER` 加了 `official_factor` 之後，FinMind 那條路
+        #     照位置堆的 8 個值撞上 9 欄的表頭 ⇒ `"finmind"` 落到
+        #     `official_factor`、`source` 空掉，⛔ **而且不報錯**。
+        #   ⭐ 判準收成一份（`fetch.assert_row_width`），寫檔的每一支都叫它。
+        short = [_new[h] for h in H2][:-1]          # ← 少最後一格
+        blocked = False
+        try:
+            _B.write_day("2026-09-08", [short])
+        except ValueError:
+            blocked = True
+        ck("⑥之二 ⭐⭐ 少一格的列 ⇒ **擋下來**"
+           "（⛔ 不是靜靜寫成後面每一欄整片左移）", blocked)
+        with io.open(os.path.join(sand_daily, "2026-09-08.csv"),
+                     encoding="utf-8") as f:
+            still = {r["stock_id"]: r for r in csv.DictReader(f)}
+        ck("⑥之二 ⛔ 而且擋下來時**沒有動到既有的檔**"
+           "（⚠ 寫一半比不寫更糟）",
+           still.get("7879", {}).get("market") == "emerging"
+           and still.get("2330", {}).get("close") == "2", str(sorted(still)))
+        ck("⑥之二 ⚠ 而長度**對**的列照樣寫得進去（⛔ 門檻不可以卡到正常的）",
+           _B.write_day("2026-09-08", [[_new[h] for h in H2]]) == 1)
     finally:
         _F.UNI_DIR = old_dir
         shutil.rmtree(sand, ignore_errors=True)
