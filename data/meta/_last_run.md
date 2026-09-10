@@ -368,14 +368,14 @@
 
 ## data_audit　✓ 正常
 
-最後執行：2026-09-10T00:16:14+08:00（台北）
+最後執行：2026-09-10T14:25:44+08:00（台北）　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）
 
 - **涵蓋 日檔 daily**：2,848 檔｜缺 0 天
 - **涵蓋 三大法人 inst**：2,848 檔｜缺 0 天
 - **涵蓋 融資融券 margin**：2,848 檔｜缺 0 天
 - **涵蓋 本益比 per**：2,848 檔｜缺 0 天
 - **涵蓋 漲跌家數 breadth**：2,848 檔｜缺 0 天
-- **寫出**：/home/runner/work/tw-stock-data/tw-stock-data/data/meta/_data_audit.md
+- **寫出**：/home/user/tw-stock-data/data/meta/_data_audit.md
 - **⚠ 這一支不設 check**：它報的是憑什麼、不是對不對；硬要它紅會逼人把等級寫高
 
 ## holiday　✗ 有問題
