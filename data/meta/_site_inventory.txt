@@ -140,6 +140,18 @@
       公告與法規 / 市場公告 / 興櫃交易時間內股價異常波動達暫停交易標準之股票查詢
         → /zh-tw/esb/trading/halt/today.html
 
+★ ⭐ 終止上市／上櫃（下市下櫃名單）
+   TWSE：⭐ **2 條**
+      停止買賣
+        → ${root}/zh/listed/violations/stop.html
+      終止上市公司
+        → ${root}/zh/listed/suspend-listing.html
+   TPEx：⭐ **2 條**
+      債券 / 發行資訊 / 轉(交)換公司債 / 最近下櫃轉(交)換公司債
+        → /zh-tw/bond/issue/cbond/delisted.html
+      衍生性金融商品 / 認購(售)權證 / 權證資訊 / 已下櫃權證基本資料彙總
+        → https://mopsov.twse.com.tw/mops/web/t90sb01
+
 ★ 處置／注意股（歷史）
    TWSE：⭐ **3 條**
       公布注意有價證券

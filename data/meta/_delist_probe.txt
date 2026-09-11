@@ -138,7 +138,7 @@
    https://www.twse.com.tw/rwd/zh/violation/change?response=json
    頂層鍵 ['data', 'fields', 'groups', 'stat', 'title', 'total']
    ⭐ 平常被丟掉的鍵：['groups', 'stat', 'total']
-     ── title：115年09月10日 變更交易及併採行分盤集合競價交易
+     ── title：115年09月11日 變更交易及併採行分盤集合競價交易
      ── groups：[{"span": 2, "title": ""}, {"span": 3, "title": "變更交易"}, {"span": 3, "title": "併採行分盤"}]
      ── stat：ok
      ── total：15
@@ -181,6 +181,24 @@
      欄位（0）：[]
      列數：0
 
+── ⭐ 上櫃歷史暫停/恢復交易 openapi tpex_spendi_history
+   https://www.tpex.org.tw/openapi/v1/tpex_spendi_history
+   ⚠ 頂層不是 dict，是 list
+   `_tables()` 認出 0 張表
+
+── 上櫃當日暫停/恢復交易 openapi tpex_spendi_today
+   https://www.tpex.org.tw/openapi/v1/tpex_spendi_today
+   ⚠ 頂層不是 dict，是 list
+   `_tables()` 認出 0 張表
+
+── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
+   https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+
+── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
+   https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+
 ## ⇒ 拿到結果之後要回答的
   Q1 `suspendListing` 的列是 list 還是 dict？欄位順序／鍵名是什麼？
   Q2 `TWT85U` 的 `date` 真的吃嗎（三個日期的 title 與筆數要不同）？
@@ -190,6 +208,16 @@
      ⚠ 他們整條「分盤撮合有兩個來源」的裁定建在這個符號上，
      ⛔ 而目前的依據是一句**轉述**，不是官方 `notes` 的逐字。
      ⇒ 若 `**` 其實是別的意思（例如「本日新增」），那條裁定要整條作廢。
+  ⭐⭐ Q7 `tpex_spendi_history` 到底是哪一種？（K線分析線 01:40 卡在這裡）
+     ⚠ 要分清楚：**短暫停牌後復牌**（＝TWSE 的 TWTAWU，我方 meta/suspend）
+     還是**長期停止買賣中**。⛔ 名字很像不算證據——今天已經摔過一次。
+     判準：① 權證佔幾成？② 有沒有『恢復日』欄？③ 未恢復的那些起日落在哪幾年？
+     （TWSE 那張：9,594/10,034 是權證、未復牌的 21 檔普通股全停在 2013~2014）
+  ⭐ Q8 它涵蓋到哪一年？`參數 無` ⇒ 它必須**自己講得出**涵蓋期間，
+     ⛔ 否則「回了很多列」不能當成「有歷史」（第二點）。
+  ⛔ Q9 那兩條「終止上櫃」是**明示推的**——這一趟就是要淘汰它們。
+     ⇒ 兩條都不通的話，下一步是**請情報分析線掃 TPEx 選單**
+     （他們掃 TWSE 280 條那次撿到四支新端點），⛔ 不要再自己編路徑。
   ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）
      ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，
      ⛔ 三者在資料上都長成「融資餘額 0」。
