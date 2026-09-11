@@ -1,0 +1,45 @@
+# finmind_probe.py 的輸出。⛔ 這是探針結果，不是資料。
+# 產生時間：2026-09-12T01:31:37+08:00（台北）
+
+⭐ 我方 `FINMIND_TOKEN`：**無**　⇒ ⛔ 下面的權限結論只代表**免費層**
+
+==============================================================
+Q1 ⭐⭐ `TaiwanStockTradingDailyReport` 的**涵蓋起始年**
+==============================================================
+
+── TradingDailyReport 2010-01-01~2010-01-31 ──
+  URL：https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=2330&start_date=2010-01-01&end_date=2010-01-31
+  ⭐ 我請求的：2010-01-01 ~ 2010-01-31｜⭐ 要 2010，看它回什麼
+  回應：⛔ HTTP 400 Bad Request | {"msg":"Your level is free. Please update your user level. Detail information:https://finmindtrade.com/analysis/#/Sponsor/sponsor","status":400,"token_tail":""}
+
+── TradingDailyReport 2015-01-05~2015-01-09 ──
+  URL：https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=2330&start_date=2015-01-05&end_date=2015-01-09
+  ⭐ 我請求的：2015-01-05 ~ 2015-01-09｜2015
+  回應：⛔ HTTP 400 Bad Request | {"msg":"Your level is free. Please update your user level. Detail information:https://finmindtrade.com/analysis/#/Sponsor/sponsor","status":400,"token_tail":""}
+
+── TradingDailyReport 2026-09-01~2026-09-05 ──
+  URL：https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=2330&start_date=2026-09-01&end_date=2026-09-05
+  ⭐ 我請求的：2026-09-01 ~ 2026-09-05｜近期（對照組）
+  回應：⛔ HTTP 400 Bad Request | {"msg":"Your level is free. Please update your user level. Detail information:https://finmindtrade.com/analysis/#/Sponsor/sponsor","status":400,"token_tail":""}
+
+==============================================================
+Q2 `TaiwanStockHoldingSharesPer`（集保分級）：⛔ 沒權限 vs 沒資料
+==============================================================
+⚠ 我方 `tdcc_probe.py` 檔頭記著它「回 HTTP 400」，⛔ 而那一句**沒寫當時有沒有帶 token** ⇒ 這裡兩種都問一次。
+
+── HoldingSharesPer（不帶 token） ──
+  URL：https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockHoldingSharesPer&data_id=2330&start_date=2010-01-01&end_date=2010-12-31
+  ⭐ 我請求的：2010 全年（K線分析線說它 2010-01-29 起）
+  回應：⛔ HTTP 400 Bad Request | {"msg":"Your level is free. Please update your user level. Detail information:https://finmindtrade.com/analysis/#/Sponsor/sponsor","status":400,"token_tail":""}
+
+── 帶 token ── ⛔ 跳過：我方沒有 token
+
+==============================================================
+Q3 資料集總表（⛔ 不猜端點名，照官方清單）
+==============================================================
+  回應：84B
+    頂層鍵：['data', 'msg', 'status']
+    msg 原文：'success'
+    status 原文：200
+    共 6 個資料集
+    ⭐ 籌碼面相關 0 個：
