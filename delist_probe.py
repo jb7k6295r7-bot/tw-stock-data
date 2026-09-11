@@ -45,12 +45,15 @@
 （日期解析失敗變 null，或字串比對永遠不相等）。
 ⇒ 這支探針把原始字串**原樣**印出來，讓人看得到那段 HTML 在不在。
 """
+import csv
 import io
 import json
 import os
+import re
 import sys
 
 import backfill as B
+from twparse import roc_iso as _roc_iso
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_delist_probe.txt")
@@ -115,7 +118,92 @@ TARGETS = [
      f"{TPX}/www/zh-tw/bulletin/delist?response=json", {}),
     ("終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）",
      f"{TPX}/www/zh-tw/company/suspendListing?response=json", {}),
+    # ⭐⭐ K線分析線 2026-09-11 02:10 報的**第二支終止上市名單**，⛔ 不同網域家族
+    #   我方 `delisted.py` 用的是 www.twse.com.tw/rwd/zh/company/suspendListing（265 筆）
+    #   他們用的是 openapi.twse.com.tw/v1/...（他們說「約 400 筆」）
+    #   ⚠ 兩個數字不一致，⛔ 而在看到真回應之前**不可以宣稱哪一份完整**（第三點）。
+    #   ⭐ 而他們自己也說那個數字不可信：同一份快取問三次回 397／400／155。
+    #     ⇒ 他們的取得方式（WebFetch 摘要）**會靜默截斷**，
+    #     ⛔ 而漏掉的正好是最新那一筆（2867 三商壽 2026-09-01，我方有、他們沒有）。
+    #   ⇒ 這支探針要做的是**拿到原始陣列**，然後**雙向**跟我方 265 筆比（見 §compare）。
+    ("⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml",
+     "https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml", {}),
 ]
+
+
+OURS = os.path.join(_ROOT, "meta", "delisted.csv")
+_ROC = re.compile(r"^\d{2,3}[/-]\d{1,2}[/-]\d{1,2}$")
+_CODE = re.compile(r"^[0-9A-Z]{4,6}$")
+
+
+def _guess_keys(rows):
+    """→ (date_key, code_key, why)。⛔ **看值的形狀**，不是看鍵名。
+
+    ⚠ K線分析線給的鍵名（`Code`／`Company`／`DelistingDate`）是**WebFetch 轉述**的，
+    ⛔ 而他們同一份快取問三次回三個不同的數字 ⇒ 那個轉述不算實測。
+    ⇒ 這裡照值認：民國斜線日期認 date、四到六碼認 code。
+    ⚠ 認不出來就**大聲說認不出來並且把鍵名印出來**，
+    ⛔ 不是挑一個最像的硬上——挑錯的那一欄會整批靜靜錯位（今天已經摔過一次）。
+    """
+    d = [x for x in rows if isinstance(x, dict)]
+    if not d:
+        return None, None, "一列 dict 都沒有"
+    keys = sorted({k for x in d for k in x})
+    hit = {k: [0, 0] for k in keys}
+    for x in d:
+        for k in keys:
+            v = str(x.get(k, "")).strip()
+            if _ROC.match(v):
+                hit[k][0] += 1
+            if _CODE.match(v):
+                hit[k][1] += 1
+    n = len(d)
+    dk = [k for k in keys if hit[k][0] >= n * 0.9]
+    ck = [k for k in keys if hit[k][1] >= n * 0.9 and k not in dk]
+    why = "｜".join(f"{k}: 像日期 {hit[k][0]}/{n}、像代號 {hit[k][1]}/{n}" for k in keys)
+    if len(dk) != 1 or len(ck) != 1:
+        return None, None, f"⛔ 認不出（日期候選 {dk}、代號候選 {ck}）｜{why}"
+    return dk[0], ck[0], why
+
+
+def _compare_with_ours(rows, out):
+    """⭐ **雙向**跟我方 `delisted.csv` 比。⛔ 只比一個方向不算一致（第三點）。"""
+    out.append("")
+    out.append("   ══ 與我方 data/meta/delisted.csv 雙向比對 ══")
+    if not os.path.exists(OURS):
+        out.append(f"   ⚠ 我方那份不在這個 ref 上（{OURS}）"
+                   "　⇒ ⛔ 這不是「我方沒有」，是 checkout 的問題（第四點六鏡像）")
+        return
+    ours = {}
+    with io.open(OURS, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            ours[str(r.get("stock_id", "")).strip()] = str(r.get("delist_date", "")).strip()
+    dk, ck, why = _guess_keys(rows)
+    out.append(f"   鍵的形狀：{why}")
+    if not dk:
+        out.append("   ⛔ 認不出日期／代號欄 ⇒ **不比**（⚠ 硬挑一欄會整批錯位）")
+        return
+    out.append(f"   ⇒ 日期欄＝{dk!r}、代號欄＝{ck!r}（⭐ 照值認出來的，不是照鍵名）")
+    theirs = {}
+    for x in rows:
+        if not isinstance(x, dict):
+            continue
+        c = str(x.get(ck, "")).strip()
+        iso = _roc_iso(str(x.get(dk, "")).strip())
+        if c:
+            theirs[c] = iso or ""
+    only_a = sorted(set(theirs) - set(ours))
+    only_b = sorted(set(ours) - set(theirs))
+    both = sorted(set(ours) & set(theirs))
+    diff = [(c, ours[c], theirs[c]) for c in both if theirs[c] and ours[c] != theirs[c]]
+    out.append(f"   我方 {len(ours)} 筆｜openapi {len(theirs)} 筆｜重疊 {len(both)}")
+    out.append(f"   A 官方 openapi 有、我方**沒有**：{len(only_a)} 檔　{only_a[:20]}")
+    out.append(f"   B 我方有、openapi **沒有**：{len(only_b)} 檔　{only_b[:20]}")
+    # ⭐ 第七點：報「0 筆」要附該判準在該群抓到的正例數 ⇒ 重疊數就是它
+    out.append(f"   ⭐ 重疊處日期**不一致**的：{len(diff)} 檔"
+               f"（正例 {len(both)} 檔重疊）　{diff[:10]}")
+    out.append("   ⇒ 判讀：A、B 兩邊都不是 0 ⇒ **這是兩張不同母體的表**，"
+               "⛔ 不是誰漏了誰；只有一邊不是 0 才是「那一邊比較完整」")
 
 
 def probe(label, url, want, out):
@@ -136,7 +224,22 @@ def probe(label, url, want, out):
         return
     # ⭐ 規矩第一條：先把**全部頂層鍵**攤開
     out += ["   " + s for s in B.describe_response(d, want=want)]
-    # ⛔ 這幾支可能**沒有 `tables`、也沒有 `fields`** ⇒ 三種形狀都要看得到
+    # ⛔ 這幾支可能**沒有 `tables`、也沒有 `fields`** ⇒ 四種形狀都要看得到
+    # ⭐ 第四種：**頂層就是一個陣列**（openapi.twse.com.tw 那一族）
+    #   ⚠ 它沒有 `stat`／`total`／`notes` 可以問 ⇒ ⛔ 第二點的「自己講出它是哪一期」
+    #   這一支**做不到** ⇒ 完整性只能靠**跟另一份比**，不能靠它自己。
+    if isinstance(d, list):
+        out.append(f"   ⭐ 頂層就是**陣列**：{len(d)} 列"
+                   f"（第一列型別 {type(d[0]).__name__ if d else '—'}）")
+        if d and isinstance(d[0], dict):
+            out.append(f"   ⭐ 鍵名（照真回應，⛔ 不是轉述）：{sorted(d[0])}")
+            ks = {frozenset(x) for x in d if isinstance(x, dict)}
+            out.append(f"   ⚠ 不同鍵組合的種類：{len(ks)}"
+                       + ("　⛔ 超過 1 種 ⇒ 逐列取值不可以寫死鍵名" if len(ks) > 1 else ""))
+        for r in d[:3]:
+            out.append(f"     樣本：{json.dumps(r, ensure_ascii=False)[:220]}")
+        _compare_with_ours(d, out)
+        return
     if isinstance(d, dict):
         out.append(f"   頂層 `fields`：{d.get('fields')}")
         top_data = d.get("data")
@@ -195,6 +298,16 @@ def main():
         "  ⛔ Q9 那兩條「終止上櫃」是**明示推的**——這一趟就是要淘汰它們。",
         "     ⇒ 兩條都不通的話，下一步是**請情報分析線掃 TPEx 選單**",
         "     （他們掃 TWSE 280 條那次撿到四支新端點），⛔ 不要再自己編路徑。",
+        "  ⭐⭐ Q10 **終止上市有兩支官方端點，數字不一樣**——哪一支是哪一張表？",
+        "     我方 rwd/company/suspendListing：官方自己說 `total:265`，回到民國 090",
+        "     K線分析線 openapi/v1/…CsvAndHtml：他們說「約 400」",
+        "     ⚠ 而他們自己也說那個數字不可信（同一份快取問三次回 397／400／155）",
+        "     ⇒ 這支探針的 §雙向比對 直接給 A／B 兩個方向的數字：",
+        "       ⛔ **兩邊都不是 0 ⇒ 是兩張不同母體的表**（例如一張含終止興櫃／",
+        "       終止公開發行），⛔ 不是誰漏了誰；只有一邊不是 0 才叫「那邊比較完整」",
+        "     ⭐ 已知事實一枚：2867 三商壽（2026-09-01）**我方有**，",
+        "       而他們的逐列輸出**沒有** ⇒ 他們的取得方式會靜默截斷尾巴，",
+        "       ⚠ 而尾巴正是「最近下市的公司」＝最需要的那一段。",
         "  ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）",
         "     ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，",
         "     ⛔ 三者在資料上都長成「融資餘額 0」。",
