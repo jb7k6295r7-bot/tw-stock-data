@@ -125,6 +125,33 @@ def main():
            not H.covered_by("2022-12-30", "tpex", "2024-09-05"))
     finally:
         shutil.rmtree(sand, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════
+    print("\n── ⭐⭐ 個股庫的新鮮度閘門**真的被叫到了**嗎 ──")
+    # ⛔ 這一節測的是**呼叫點**，⛔ 不是判準本身
+    #   （判準在 `selftest_transpose_stamp.py`，14 條＋突變 6 次）。
+    # ⚠ 「測了判準、沒測呼叫點」今天已經兩次 ⇒ 這一節只問一句：
+    #   **`hole_kinds` 有沒有真的把那道接上去？**
+    src = io.open(os.path.abspath(H.__file__), encoding="utf-8").read()
+    ck("⭐ `hole_kinds` 有呼叫 `stale_vs_source`（⛔ 不是只有 import）",
+       "stale_vs_source(" in src)
+    ck("  而且拿的是 `price` 這一層與 `PERSTOCK`",
+       'stale_vs_source("price", PERSTOCK)' in src, "")
+    ck("⭐ 它是 `rl.check`（⛔ 不可以只是 `rl.info`——資訊列不會讓那一趟變紅）",
+       any("stale" in ln or "_fresh" in ln
+           for ln in src.split("rl.check(")[1].splitlines()[:4])
+       or 'rl.check("⭐⭐ 個股庫是用' in src)
+    # ⛔ 原本這裡比的是標題字串「輸入指紋」——⚠ 而那四個字**在註解裡也有一份**
+    #   ⇒ 把標題改掉的突變（M3）**沒紅**。⭐ 比字串等於沒測。
+    #   ⇒ 改成比**機制**：真的有去算指紋，而且算完有交給 `rl.info`。
+    ck("⭐ 指紋是**真的算出來的**（⛔ 不是標題有那四個字就算）",
+       "source_fingerprint(" in src)
+    _info_blocks = [b for b in src.split("rl.info(")[1:]
+                    if "source_fingerprint(" in b.split("rl.")[0]]
+    ck("⭐ 而且它交給了 `rl.info`（⇒ 會進 `_last_run.md`，"
+       "⛔ 不是只印在 stdout）", bool(_info_blocks),
+       "算了指紋卻沒有寫進 runlog")
+
     print(f"\n[selftest] 通過 {_ok}｜失敗 {_bad}")
     return 1 if _bad else 0
 

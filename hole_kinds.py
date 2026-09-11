@@ -56,6 +56,7 @@ import sys
 from collections import Counter, defaultdict
 
 import runlog
+import transpose as _T
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 HOLES = os.path.join(_ROOT, "meta", "_holes_scan.csv")
@@ -141,9 +142,44 @@ def covered_by(spans_days, market, end_day):
     return market == "tpex" and bool(spans_days) and end_day <= spans_days
 
 
+def _holes_fp():
+    """洞掃描表的指紋。⛔ 它不是這一支產的（回測線那支的附表）⇒ 蓋不了章，
+    ⭐ 只能把**內容的短雜湊與列數**印出來，讓引用數字的人指認得出是哪一版。
+    ⚠ 用內容雜湊，⛔ 不是 mtime——git checkout 出來的 mtime 是 checkout 當下。
+    """
+    import hashlib
+    raw = io.open(HOLES, "rb").read()
+    return (f"{{'sha1': '{hashlib.sha1(raw).hexdigest()[:12]}', "
+            f"'rows': {max(0, raw.count(chr(10).encode()[0]) - 1)}}}")
+
+
 def main():
     ap_cov = None
     rl = runlog.Run("hole_kinds")
+    # ══════════════════════════════════════════════════════════
+    # ⭐⭐ 輸入指紋 —— ⛔ 這一節的價格是一封寄出去的錯信（2026-09-11）
+    #
+    # 「甲」把 2022~2024 三整年的**無成交列**補進日檔之後，個股庫還沒重建，
+    # ⇒ 我拿那份算了洞的分類寄給 K線分析線
+    # ⇒ ⛔ 17 段「未解釋」裡 **12 段其實是零成交**（日檔裡整段都有列）。
+    #
+    # ⚠ 而當時 `adj_gap` 那道「個股庫跟得上日檔」**是綠的**——它比**最後一天**，
+    #   而少掉的是**中間幾萬列**。
+    #
+    # ⇒ 兩件：① 個股庫不是用現在這份日檔建的 ⇒ **這一趟的分類不可信**，要大聲說
+    #        ② 把指紋印進 runlog ⇒ ⭐ 讀的人自己看得出來這批數字用的是哪一份輸入
+    #          （我已經答應 K線分析線每次附上）
+    # ══════════════════════════════════════════════════════════
+    _fresh, _why = _T.stale_vs_source("price", PERSTOCK)
+    rl.check("⭐⭐ 個股庫是用**現在這份**日檔建的"
+             "（⛔ 不是只比最後一天——那道在 2026-09-11 是綠的，而中間少了幾萬列）",
+             _fresh, _why + ("　⇒ ⛔ **這一趟的分類不可信**：`rows_in_hole` 會少算，"
+                             "⚠ 而少算的方向是把 `notrade` 說成 `unexplained`"
+                             if not _fresh else ""))
+    rl.info("⭐ 這一批數字的輸入指紋（⛔ 引用數字時請一起帶上）",
+            f"日檔 {_T.source_fingerprint('price')}"
+            + (f"｜洞掃描表 {_holes_fp()}" if os.path.exists(HOLES) else
+               "｜⛔ 洞掃描表不在"))
     rl.info("⛔ 這一支只讀不連外、不設門檻",
             "只回答「這個洞是哪一種」，⛔ 「算不算斷點」是 K線分析線的裁定")
     spans, note = load_spans()
