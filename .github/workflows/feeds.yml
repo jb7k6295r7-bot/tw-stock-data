@@ -372,14 +372,25 @@ jobs:
       #   「未來事件」擋下 ⇒ ⛔ 4541／5328／8234 的因子沒寫進去，
       #   ⚠ 而那一趟的每一個訊息都正常（它「正確地」擋下了它以為的未來事件）。
       #   ⇒ CLAUDE.md 第四點六落地條①：讀 main 才有的判準檔就先取下來。
-      - name: 取 main 的交易日曆（⛔ 分支那份比 main 舊）
+      # ⛔⛔ 2026-09-11 第二次修這一步——**第一次我修錯對象了**。
+      #   我取了 main 的 `calendar_twse.csv`，⚠ 而 `adjust.py` 的「交易日曆」
+      #   根本不是那個檔：`adjust.trading_days()` 讀的是
+      #   **`data/universe/daily/` 的檔名集合**。
+      #   ⇒ run 109 照樣報「交易日曆最後一天 2026-09-09」，三筆照樣被擋。
+      # ⭐ 教訓：要取的是**程式真的讀的那個路徑**，⛔ 不是名字看起來像的那個。
+      #   ⚠ 判準：去 grep 那支程式讀哪裡，⛔ 不要照檔名猜。
+      # ⚠ `git checkout` 只會寫出**有差異**的檔（分支只缺最近一兩天）⇒ 成本很低。
+      - name: 取 main 的日檔與判準檔（⛔ 分支那份比 main 舊）
         if: inputs.mode == 'otc-adj-official'
         run: |
           git fetch origin main --depth=1
+          # ⭐ 這個才是 `adjust.trading_days()` 真正讀的東西
+          git checkout origin/main -- data/universe/daily || \
+            echo "⚠ 取不到 main 的日檔目錄" >&2
           git checkout origin/main -- data/meta/calendar_twse.csv \
-                                      data/meta/calendar_tpex.csv || \
-            echo "⚠ main 上也沒有交易日曆（⛔ 那才是真的沒有）" >&2
-          echo "交易日曆最後一天：$(tail -1 data/meta/calendar_twse.csv)"
+                                      data/meta/calendar_tpex.csv || true
+          echo "⭐ 日檔最後一天：$(ls data/universe/daily | sort | tail -1)"
+          echo "   交易日曆最後一天：$(tail -1 data/meta/calendar_twse.csv)"
 
       - name: 上櫃還原因子換成官方來源（第 2 步）
         if: inputs.mode == 'otc-adj-official'
@@ -412,6 +423,10 @@ jobs:
           python adjust.py || RC=1
           # ⑤ ⭐ 換完再比一次：C 類要掉下來，⛔ 而 D 類不可以變大
           python otc_adj_compare.py || RC=1
+          # ⭐ 這一步的**驗收判準**：官方有、我方 data/adj 沒有 ⇒ 應該是 0
+          #   ⚠ 它原本只在 `daily.yml` 跑 ⇒ ⛔ 這個 mode **驗不到自己做完了沒**，
+          #   而我因此連續兩趟都在讀**昨晚**那一塊舊 runlog（時戳 00:27）當結果。
+          python otc_exright_check.py || RC=1
           python reduce_check.py || true
           [ "$RC" = 0 ] || { echo "⛔ 有步驟失敗（見上面各該支的 runlog）" >&2; exit 1; }
 
