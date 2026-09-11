@@ -127,7 +127,7 @@
          tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
        ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a38e292a0a4a2b4f',t:'MTc4OTA0MDQ1Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3932200bb003efe',t:'MTc4OTA5MjU5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -166,7 +166,9 @@
      ⚠⚠ 下面這一組**是我猜的路徑**（依據：櫃買新站端點的命名慣例）。
        ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，⛔ 而且不論結果如何，猜的網址**不會**被寫成結論。
      ? announce/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
-     ? announce/market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ✗ announce/market/holiday?response=json：HTTP 404 Not Found | 
+<html>
+<head><meta http-equiv="refresh" content="0; url=https://www.
      ? bulletin/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
      ? market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
 

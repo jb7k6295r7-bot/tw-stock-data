@@ -52,11 +52,11 @@
      ⭐ 欄 8「公告連結」的相異值（2）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTA0MDIwMTE3NDE=&content_file=XX']
      ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
 
-── 上櫃 chtm｜date=115/09/10　對照組：今天（⚠ 越界那一份要跟這一份比）
-   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/10&response=json
+── 上櫃 chtm｜date=115/09/11　對照組：今天（⚠ 越界那一份要跟這一份比）
+   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/11&response=json
    頂層鍵 ['date', 'stat', 'tables']
    ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20260910
+     ── date：20260911
      ── stat：ok
    頂層 `fields`：None
    `_tables()` 認出 1 張表
@@ -71,7 +71,7 @@
      ⭐ 欄 2「變更交易」的相異值（2）：['', 'Ｙ']
      ⭐ 欄 3「分盤交易」的相異值（2）：['', 'Ｙ']
      ⭐ 欄 4「屬管理股票」的相異值（1）：['']
-     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（3）：['', '030', '045']
+     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（2）：['', '030']
      ⭐ 欄 6「停止交易」的相異值（2）：['', 'Ｙ']
      ⭐ 欄 7「財務資訊重點專區」的相異值（1）：['Ｙ']
      ⭐ 欄 8「公告連結」的相異值（9）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTE0MDIwMjgzNzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDAwMDczMzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMDcxNzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMTIwNzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjI5NTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTE1MDIwMjQzNTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTEyMDIwMTA0NzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTEzMDIwMTEyNzE=&content_file=XX']
@@ -86,22 +86,22 @@
    ⭐ 平常被丟掉的鍵：['hints', 'selectList', 'stat']
      ── title：調整融資融券成數股票資訊
      ── hints：查詢範圍：全部上市 
-期間：115年09月09日到115年09月09日
+期間：115年09月10日到115年09月10日
      ── selectList：["全部", "股價波動過度劇烈", "成交量過度異常", "股權過度集中", "監視第二次處置", "TDR兌回異常", "監視業務督導會報決議處置增加調整成數"]
      ── stat：OK
    頂層 `fields`：['編號', '證券代號', '證券名稱', '調整成數原因', '調整成數起日', '恢復日', '降低融資比率', '提高融券保證金成數']
    `_tables()` 認出 1 張表
      欄位（8）：['編號', '證券代號', '證券名稱', '調整成數原因', '調整成數起日', '恢復日', '降低融資比率', '提高融券保證金成數']
-     列數：471
+     列數：481
        樣本：[1, "1203", "味王            ", "股價波動過度劇烈", "", "", "1", "1"]
        樣本：[1, "1203", "味王            ", "成交量過度異常", "115.09.03", "", "1", "1"]
        樣本：[1, "1203", "味王            ", "股權過度集中", "", "", "1", "1"]
        樣本：[1, "1203", "味王            ", "監視第二次處置", "", "", " ", " "]
-     欄 0「編號」：94 種相異值，前 8：['1', '10', '11', '12', '13', '14', '15', '16']
-     欄 1「證券代號」：94 種相異值，前 8：['1203', '1233', '1235', '1303', '1324', '1418', '1423', '1443']
-     欄 2「證券名稱」：94 種相異值，前 8：['AMAX-KY', '中傑-KY', '互盛電', '佐登-KY', '倚天酷碁-創', '健策', '傳奇', '光寶科']
+     欄 0「編號」：96 種相異值，前 8：['1', '10', '11', '12', '13', '14', '15', '16']
+     欄 1「證券代號」：96 種相異值，前 8：['1203', '1233', '1235', '1303', '1324', '1418', '1423', '1443']
+     欄 2「證券名稱」：96 種相異值，前 8：['AMAX-KY', '中傑-KY', '互盛電', '佐登-KY', '倚天酷碁-創', '健策', '傳奇', '光寶科']
      ⭐ 欄 3「調整成數原因」的相異值（6）：['', 'TDR兌回異常', '成交量過度異常', '監視第二次處置', '股價波動過度劇烈', '股權過度集中']
-     欄 4「調整成數起日」：48 種相異值，前 8：['', '110.09.24', '112.09.07', '113.11.11', '114.04.30', '114.06.03', '114.06.24', '114.07.17']
+     欄 4「調整成數起日」：49 種相異值，前 8：['', '110.09.24', '112.09.07', '113.11.11', '114.04.30', '114.06.03', '114.06.24', '114.07.17']
      ⭐ 欄 5「恢復日」的相異值（3）：['', '115.09.14', '115.09.16']
      ⭐ 欄 6「降低融資比率」的相異值（5）：['', '1', '6', '累計：1', '累計：6']
      ⭐ 欄 7「提高融券保證金成數」的相異值（4）：['', '1', '累計：1', '累計：2']

@@ -184,12 +184,26 @@
 ── ⭐ 上櫃歷史暫停/恢復交易 openapi tpex_spendi_history
    https://www.tpex.org.tw/openapi/v1/tpex_spendi_history
    ⚠ 頂層不是 dict，是 list
-   `_tables()` 認出 0 張表
+   ⭐ 頂層就是**陣列**：362 列（第一列型別 dict）
+   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'DateOfResumedTrading', 'DateOfSuspendedTrading', 'SecuritiesCompanyCode', 'Serial', 'TimeOfResumedTrading', 'TimeOfSuspendedTrading']
+   ⚠ 不同鍵組合的種類：1
+     樣本：{"Date": "115", "Serial": "1", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "1150618", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
+     樣本：{"Date": "115", "Serial": "2", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "", "TimeOfSuspendedTrading": "", "DateOfResumedTrading": "1150622", "TimeOfResumedTrading": "080000"}
+     樣本：{"Date": "115", "Serial": "3", "SecuritiesCompanyCode": "1799", "CompanyName": "易威", "DateOfSuspendedTrading": "1150312", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
+
+   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
+   ⚠ 我方那份不在這個 ref 上（/home/runner/work/tw-stock-data/tw-stock-data/data/meta/delisted.csv）　⇒ ⛔ 這不是「我方沒有」，是 checkout 的問題（第四點六鏡像）
 
 ── 上櫃當日暫停/恢復交易 openapi tpex_spendi_today
    https://www.tpex.org.tw/openapi/v1/tpex_spendi_today
    ⚠ 頂層不是 dict，是 list
-   `_tables()` 認出 0 張表
+   ⭐ 頂層就是**陣列**：1 列（第一列型別 dict）
+   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'SecuritiesCompanyCode', '恢復交易', '暫停交易']
+   ⚠ 不同鍵組合的種類：1
+     樣本：{"Date": "20260910", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
+
+   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
+   ⚠ 我方那份不在這個 ref 上（/home/runner/work/tw-stock-data/tw-stock-data/data/meta/delisted.csv）　⇒ ⛔ 這不是「我方沒有」，是 checkout 的問題（第四點六鏡像）
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
@@ -198,6 +212,19 @@
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
    ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+
+── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
+   https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
+   ⚠ 頂層不是 dict，是 list
+   ⭐ 頂層就是**陣列**：265 列（第一列型別 dict）
+   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['Code', 'Company', 'DelistingDate']
+   ⚠ 不同鍵組合的種類：1
+     樣本：{"DelistingDate": "115/09/01", "Company": "三商壽", "Code": "2867"}
+     樣本：{"DelistingDate": "115/06/23", "Company": "森崴能源", "Code": "6806"}
+     樣本：{"DelistingDate": "115/03/27", "Company": "晶睿", "Code": "3454"}
+
+   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
+   ⚠ 我方那份不在這個 ref 上（/home/runner/work/tw-stock-data/tw-stock-data/data/meta/delisted.csv）　⇒ ⛔ 這不是「我方沒有」，是 checkout 的問題（第四點六鏡像）
 
 ## ⇒ 拿到結果之後要回答的
   Q1 `suspendListing` 的列是 list 還是 dict？欄位順序／鍵名是什麼？
@@ -218,6 +245,16 @@
   ⛔ Q9 那兩條「終止上櫃」是**明示推的**——這一趟就是要淘汰它們。
      ⇒ 兩條都不通的話，下一步是**請情報分析線掃 TPEx 選單**
      （他們掃 TWSE 280 條那次撿到四支新端點），⛔ 不要再自己編路徑。
+  ⭐⭐ Q10 **終止上市有兩支官方端點，數字不一樣**——哪一支是哪一張表？
+     我方 rwd/company/suspendListing：官方自己說 `total:265`，回到民國 090
+     K線分析線 openapi/v1/…CsvAndHtml：他們說「約 400」
+     ⚠ 而他們自己也說那個數字不可信（同一份快取問三次回 397／400／155）
+     ⇒ 這支探針的 §雙向比對 直接給 A／B 兩個方向的數字：
+       ⛔ **兩邊都不是 0 ⇒ 是兩張不同母體的表**（例如一張含終止興櫃／
+       終止公開發行），⛔ 不是誰漏了誰；只有一邊不是 0 才叫「那邊比較完整」
+     ⭐ 已知事實一枚：2867 三商壽（2026-09-01）**我方有**，
+       而他們的逐列輸出**沒有** ⇒ 他們的取得方式會靜默截斷尾巴，
+       ⚠ 而尾巴正是「最近下市的公司」＝最需要的那一段。
   ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）
      ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，
      ⛔ 三者在資料上都長成「融資餘額 0」。
