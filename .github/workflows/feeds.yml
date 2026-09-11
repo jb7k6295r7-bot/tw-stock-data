@@ -153,6 +153,7 @@ jobs:
           python selftest_done_days.py
           python selftest_schema_audit.py
           python selftest_margin_universe.py
+          python selftest_hole_kinds.py
           python selftest_syntax_warnings.py
 
       - name: 把程式同步到 main（趁 checkout 還新）

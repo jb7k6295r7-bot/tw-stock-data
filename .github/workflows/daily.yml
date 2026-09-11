@@ -98,6 +98,7 @@ jobs:
           python selftest_done_days.py
           python selftest_schema_audit.py
           python selftest_margin_universe.py
+          python selftest_hole_kinds.py
           python selftest_syntax_warnings.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
@@ -946,6 +947,20 @@ jobs:
         if: always()
         continue-on-error: true
         run: python halt_spans.py
+
+      # ⭐⭐ 「這個洞是哪一種」（2026-09-11 加）。⛔ 只讀、不連外、**不設任何門檻**。
+      #   K線分析線 0210 寫「洞就是洞，不需要官方告訴我為什麼」——
+      #   ⭐ 前半對、⛔ 後半錯：同一個「洞」在資料上有兩種完全不同的成因，
+      #   而分辨**確實不需要官方名單**，只需要看日檔那幾天有沒有那一檔的列：
+      #     ① 一列都沒有            ⇒ 真的停止交易
+      #     ⭐ ② 每天都有列、`price_basis=無成交` ⇒ **市場一直開著，只是沒人買賣**
+      #   實例：4413 飛寶那 259 天全部是②（chtm 同期 halted=0、分盤 30 分鐘）
+      #   ⇒ ⛔ 把「時間不連續」當硬斷點會把整整一類流動性事件當成斷點。
+      #   ⚠ 「算不算斷點」「N 訂多少」是 K線分析線的裁定 ⇒ 這支**每段都分類、不過濾**。
+      - name: 洞的成因分類
+        if: always()
+        continue-on-error: true
+        run: python hole_kinds.py
 
       # ★ 交易日曆（只補當月，一個請求）。
       #   `data/meta/calendar_twse.csv` 是「哪一天該有資料」的**唯一外部判準**——
