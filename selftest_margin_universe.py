@@ -205,6 +205,32 @@ def main():
         ck("⛔ c003 以上從來沒停過 ⇒ 一段都不該有",
                not [r for r in got if r["stock_id"] >= "c003"],
                str([r["stock_id"] for r in got if r["stock_id"] >= "c003"][:5]))
+
+        print("── ⑩ ⛔ 鄰居要**日曆上也相鄰**：尾巴孤零零那天不可以被判成壞掉 ──")
+        # ⚠ 2026-09-11 實跑撞到的：`chtm` 只回補到 2017、尾巴剩 2026 一天
+        #   ⇒ 它的 ±10 個索引鄰居全是九年前的日子（列數比較多）
+        #   ⇒ ⛔ 最新那天被判成「抓壞了」而整天跳過
+        #   ⇒ 「⭐ 目前仍停止交易中」變成 **0 檔**，⚠ 而那是最重要的一格。
+        d3 = os.path.join(sand, "sparse")
+        os.makedirs(d3, exist_ok=True)
+        for i, day in enumerate(days):          # 30 天連續，每天 30 列
+            io.open(os.path.join(d3, day + ".csv"), "w", encoding="utf-8").write(
+                "date,stock_id\n" + "".join(f"{day},c{k:03d}\n" for k in range(30)))
+        # ⭐ 九年後孤零零一天，列數只有 20（＝正常，只是那個年代規模不同）
+        far = "2035-06-01"
+        io.open(os.path.join(d3, far + ".csv"), "w", encoding="utf-8").write(
+            "date,stock_id\n" + "".join(f"{far},c{k:03d}\n" for k in range(20)))
+        sp3 = M.day_sets(d3)
+        bad3 = M.suspect_days(sp3, 0.7)
+        ck("⭐⭐ 尾巴那天**沒有**被判成不可判定（鄰居在日曆上差九年 ⇒ 不算鄰居）",
+           far not in bad3, f"抓到 {sorted(bad3)}")
+        ck("　⚠ 正例還在：同一批資料裡真的崩塌的那天照樣抓得到",
+           set(M.suspect_days(M.day_sets(d2, keep=lambda r: True), 0.7))
+           == {days[15]},
+           str(sorted(M.suspect_days(M.day_sets(d2, keep=lambda r: True), 0.7))))
+        ck("　⛔ 而 `_near_days` 對認不出來的日期要放行（不擋），"
+           "⚠ 否則格式一變整份區間表就啞掉",
+           M._near_days("不是日期", "2026-01-01", 10))
     finally:
         shutil.rmtree(sand, ignore_errors=True)
 

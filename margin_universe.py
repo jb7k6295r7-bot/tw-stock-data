@@ -39,6 +39,7 @@
 """
 import argparse
 import csv
+import datetime
 import io
 import os
 import statistics
@@ -93,6 +94,17 @@ def day_sets(d, keep=None):
     return out
 
 
+def _near_days(a, b, win):
+    """兩個 `YYYY-MM-DD` 在日曆上相不相鄰。⚠ 上限放寬到 `win` 的四倍曆日，
+    ⛔ 因為 `win` 數的是**交易日**（10 個交易日 ≈ 14 曆日，遇到年假更長）。"""
+    try:
+        da = datetime.date(*(int(x) for x in a.split("-")))
+        db = datetime.date(*(int(x) for x in b.split("-")))
+    except (ValueError, TypeError):
+        return True                       # ⛔ 認不出日期就別擋，交給原本的索引判準
+    return abs((da - db).days) <= win * 4
+
+
 def suspect_days(sets, floor=0.7, win=WIN):
     """→ {日期: (該天**總列數**, 鄰近中位數)}，⛔ 這些天**不參與**成員比對。
 
@@ -105,8 +117,15 @@ def suspect_days(sets, floor=0.7, win=WIN):
     bad = {}
     for i, row in enumerate(sets):
         day, tot = row[0], row[2]
+        # ⛔ 鄰居要「索引相鄰」**而且**「日曆上真的相鄰」。
+        #   ⚠ 只看索引的話，資料有大洞時鄰居會來自**九年前**：
+        #   2026-09-11 實跑撞到——`chtm` 回補到 2017 就停住、尾巴只剩
+        #   2026-09-10 一天 ⇒ 它的 ±10 個鄰居全是 2017 年的日子（每日 30+ 列），
+        #   而 2026 每日只有 21 列 ⇒ ⛔ **最新那一天被判成「抓壞了」而整天跳過**
+        #   ⇒ 「現在誰在停止交易」變成 **0 檔**，⚠ 而那正是最重要的一格。
+        # ⭐ 判不出來（鄰居全在日曆上太遠）就**不判它壞**，⛔ 不是判它壞。
         near = [x[2] for j, x in enumerate(sets)
-                if j != i and abs(j - i) <= win]
+                if j != i and abs(j - i) <= win and _near_days(x[0], day, win)]
         if not near:
             continue
         med = statistics.median(near)
