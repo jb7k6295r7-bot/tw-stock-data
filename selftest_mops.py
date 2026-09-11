@@ -45,6 +45,89 @@ def csvtext(header, rows):
     return "\n".join([",".join(header)] + [",".join(r) for r in rows]) + "\n"
 
 
+
+def _retry_section():
+    """⭐ 「第一次失敗、隔久再試一次」——⛔ 而且**重試成功不可以是靜悄悄的**。
+
+    ## 為什麼（2026-09-11）
+
+    `_last_run.md` 的 `mops` 區塊常駐紅：22 個請求裡 `fs/ci/tpex` **沒回應**。
+    ⚠ 而 `B.get` 的 `retries=2` 是**同一個時間窗**內連打三發
+    ⇒ 被限流時三發一起掛，跟「這張表不存在」長得一模一樣。
+
+    ⇒ 隔久一點再試**一次**。⛔ 而「靜靜重試成功」是這裡最容易犯的錯：
+      一張**天天要重試才活**的表跟一張一次就過的表不是同一件事，
+      ⚠ 抹掉那個訊號，等於把「它在惡化」這件事藏起來。
+    """
+    import io as _io
+    import os as _o
+    import shutil as _sh
+    import tempfile as _tf
+    import mops as M
+    import backfill as B
+    import runlog
+
+    calls = {"n": 0}
+
+    def make_get(fail_first_on):
+        """→ 假的 `B.get`。`fail_first_on` 裡的網址**第一次**失敗、第二次成功。"""
+        seen = {}
+
+        def _get(url, retries=2, timeout=60):
+            calls["n"] += 1
+            if url in fail_first_on and not seen.get(url):
+                seen[url] = True
+                return b"", "429 Too Many Requests"
+            return (b'[{"\u516c\u53f8\u4ee3\u865f":"2330",'
+                    b'"\u5e74\u5ea6":"115","\u5b63\u5225":"2"}]'), ""
+        return _get
+
+    class _A:
+        run = True
+        kind = "fs"
+        sleep = 0
+
+    bad_url = M.TPEX + "mopsfin_t187ap06_O_ci"
+    out = {}
+    for label, failing in (("重試才成功", {bad_url}), ("一次就過", set())):
+        d = _tf.mkdtemp(prefix="mopsretry_")
+        _oget, _oout, _ochg, _opath, _olisted = (
+            B.get, M.OUT_DIR, M.CHANGES, runlog.PATH, M.listed_codes)
+        try:
+            B.get = make_get(failing)
+            M.OUT_DIR = d
+            M.CHANGES = _o.path.join(d, "_changes.log")
+            runlog.PATH = _o.path.join(d, "_last_run.md")
+            M.listed_codes = lambda: ({"2330"}, {"6488"})
+            _sleep = M.time.sleep
+            M.time.sleep = lambda *_a, **_k: None
+            try:
+                M.cmd_run(_A())
+            finally:
+                M.time.sleep = _sleep
+            out[label] = _io.open(runlog.PATH, encoding="utf-8").read()
+        finally:
+            (B.get, M.OUT_DIR, M.CHANGES, runlog.PATH, M.listed_codes) = (
+                _oget, _oout, _ochg, _opath, _olisted)
+            _sh.rmtree(d, ignore_errors=True)
+
+    t = out["重試才成功"]
+    chk("⭐ 第一次 429、隔久再試成功 ⇒ 那一格**不算沒回應**",
+        "- ok　每一個表×市場都有回應" in t,
+        [x for x in t.splitlines() if "都有回應" in x])
+    chk("⭐⭐ ⛔ 而且**不可以靜悄悄**：runlog 要點名是哪一格重試才活的",
+        "fs/ci/tpex" in t and "隔久再試才成功的**：1 個" in t,
+        [x for x in t.splitlines() if "隔久再試" in x])
+
+    t2 = out["一次就過"]
+    chk("  ⚠ 反向：沒有重試時那一列是 **0 個**（⛔ 不是整列消失）",
+        "隔久再試才成功的**：0 個" in t2,
+        [x for x in t2.splitlines() if "隔久再試" in x])
+    chk("  ⛔ 而 0 個的那一趟不可以把任何一格報成沒回應",
+        "- ok　每一個表×市場都有回應" in t2)
+
+
+
 def main():
     import mops as M
 
@@ -153,6 +236,9 @@ def main():
             by["2330"]["Date"] == "" and by["2330"]["出表日期"] == "1150908"
             and by["8299"]["出表日期"] == "" and by["8299"]["Date"] == "1150908",
             "正規化欄補齊，raw 欄照來源原樣")
+
+        print("\n── 7之二. ⭐ 隔久重試（⛔ 重試成功不可以靜悄悄）──")
+        _retry_section()
 
         print("\n── 8. 沒有碰到 repo ──")
         log_after = io.open(REPO_LOG, "rb").read() if os.path.isfile(REPO_LOG) else None
