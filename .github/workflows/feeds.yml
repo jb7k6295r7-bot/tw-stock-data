@@ -154,6 +154,8 @@ jobs:
           python selftest_schema_audit.py
           python selftest_margin_universe.py
           python selftest_hole_kinds.py
+          python selftest_mutate.py
+          python selftest_freshness.py
           python selftest_transpose_stamp.py
           python selftest_feed_months.py
           python selftest_syntax_warnings.py

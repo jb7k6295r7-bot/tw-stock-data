@@ -142,8 +142,6 @@ def main():
     #   所以只有這裡會吵——info 不夠，必須是 check。
     rl.check("「不累積就永久失去」的那幾份都還在累積", not bad,
              "；".join(bad) + "｜⛔ 這類資料補不回來，紅了要當天處理")
-    for _n, _p, _h, tol, why in TARGETS:
-        pass
     rl.info("容忍天數的理由", "；".join(f"{n} {tol} 天（{why}）"
                                     for n, _p, _h, tol, why in TARGETS))
     return rl.finish()

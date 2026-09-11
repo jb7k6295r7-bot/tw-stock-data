@@ -310,6 +310,67 @@ def main():
            str(G.GRID_WAIVED))
         ck("  ⛔ 理由裡不可以只寫「暫時」就了事",
            all("暫時" not in v for v in G.GRID_WAIVED.values()))
+
+        # ══════════════════════════════════════════════════════
+        print("  ⭐⭐ 裁定要帶**裁定者／日期／重審觸發條件**"
+              "（情報分析線 2026-09-11 指定）")
+        # ⚠ 原話：「否則三個月後沒人知道這是裁過的還是漏掉的
+        #   ——**那正是『消失』的另一種形式**。」
+        for _k, _v in G.GRID_WAIVED.items():
+            ck(f"  {_k}：寫得出**裁定者與日期**",
+               "裁定者" in _v and "2026-" in _v, _v[:60])
+            # ⚠ ⛔ 比 `"重審" in _v` 是假的：那兩個字在理由裡也會出現
+            #   ⇒ 把標籤改掉的突變（M5）**沒紅**。⭐ 比字串等於沒測。
+            #   ⇒ 比**那個欄位標籤**，而且要比得出「觸發條件是什麼」。
+            ck(f"  {_k}：寫得出**重審觸發條件**這個欄位（⛔ 不是文中出現「重審」）",
+               "重審觸發條件" in _v, _v[:60])
+            ck(f"  {_k}：而且觸發條件講得出**要看資料的哪一欄**",
+               "`open`" in _v or "open" in _v, _v[:60])
+
+        print("  ⭐ 而重審觸發條件要**真的被測**，⛔ 不是寫在字串裡就算")
+        d2 = tempfile.mkdtemp(prefix="emo_")
+        try:
+            H = "date,stock_id,market,open,close\n"
+            # ① 興櫃有列、open 全空 ⇒ 裁定成立
+            for day in ("2026-09-10", "2026-09-11"):
+                io.open(os.path.join(d2, day + ".csv"), "w",
+                        encoding="utf-8").write(
+                            H + f"{day},6666,emerging,,12.5\n"
+                                f"{day},2330,twse,900,905\n")
+            got, why = G.emerging_has_open(d2)
+            ck("  ⛔ 興櫃 open 全空 ⇒ False（裁定仍成立）", got is False, why)
+            ck("  ⭐ 而且**講得出母體**（⛔ 0 不附正例數就是第七點那個坑）",
+               "2 列" in why or "興櫃列 2" in why, why)
+
+            # ② ⭐ 出現非空 open ⇒ 立刻 True
+            io.open(os.path.join(d2, "2026-12-07.csv"), "w",
+                    encoding="utf-8").write(
+                        H + "2026-12-07,6666,emerging,12.0,12.5\n")
+            got2, why2 = G.emerging_has_open(d2)
+            ck("  ⭐⭐ 興櫃出現非空 `open` ⇒ True（⛔ 裁定失效，要重審）",
+               got2 is True, why2)
+            ck("    而且點名是哪一天", "2026-12-07" in why2, why2)
+
+            # ③ ⛔ 上市的 open 有值**不算**（⚠ 它一直都有值）
+            d3 = tempfile.mkdtemp(prefix="emo2_")
+            try:
+                io.open(os.path.join(d3, "2026-09-11.csv"), "w",
+                        encoding="utf-8").write(
+                            H + "2026-09-11,2330,twse,900,905\n")
+                got3, why3 = G.emerging_has_open(d3)
+                ck("  ⛔⛔ 上市的 `open` 有值**不算**"
+                   "（⚠ 它一直都有值，算進去這道永遠是紅的）",
+                   got3 is False, why3)
+                ck("    而且明說「一列興櫃都沒有」這個 0 不能當判準",
+                   "不能當判準" in why3, why3)
+            finally:
+                shutil.rmtree(d3, ignore_errors=True)
+
+            ck("  ⛔ 目錄不存在 ⇒ 說**測不出來**，⚠ 不是說「沒有」",
+               G.emerging_has_open(os.path.join(d2, "nope"))[1]
+               .find("測不出來") >= 0)
+        finally:
+            shutil.rmtree(d2, ignore_errors=True)
     finally:
         shutil.rmtree(sand, ignore_errors=True)
 
