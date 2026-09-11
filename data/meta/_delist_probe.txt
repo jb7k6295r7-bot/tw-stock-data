@@ -224,11 +224,11 @@
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
@@ -253,6 +253,76 @@
    ⭐ 重疊處日期**不一致**的：0 檔（正例 265 檔重疊）　[]
    ⇒ 判讀：A、B 兩邊都不是 0 ⇒ **這是兩張不同母體的表**，⛔ 不是誰漏了誰；只有一邊不是 0 才是「那一邊比較完整」
 
+── ⭐⭐ 終止上櫃 company/deListed｜date=ALL（⛔ 這個是陷阱，要跟逐年加總比）
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=ALL&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：ALL
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：10
+       樣本：["5371", "中強光電股份有限公司", "115-09-03", "依本中心證券商營業處所買賣有價證券業務規則第15條之12、14、15及16規定", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4130", "健亞生物科技股份有限公司", "115-07-28", "本中心證券商營業處所買賣有價證券業務規則第15條之12", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5236", "凌陽創新科技股份有限公司", "115-07-16", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2015
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2015&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2015
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：7
+       樣本：["5506", "長鴻營造股份有限公司", "104-11-26", "依本中心業務規則第12條之2第1項第5款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4927", "泰鼎國際股份有限公司", "104-09-08", "依本中心業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5505", "和旺聯合實業股份有限公司", "104-07-16", "本中心業務規則第12條之2第1項第5款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2020
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2020&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2020
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：10
+       樣本：["1597", "直得科技股份有限公司", "109-12-23", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5304", "鼎創達股份有限公司", "109-11-20", "本中心證券商營業處所買賣有價證券管理辦法第10條", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["8934", "衡平股份有限公司", "109-11-18", "本中心證券商營業處所買賣有價證券業務規則第12條之2及第15條之11", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2025
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2025&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2025
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：6
+       樣本：["6747", "亨泰光學股份有限公司", "114-12-04", "本中心證券商營業處所買賣有價證券業務規則第15條之18", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4945", "陞達科技股份有限公司", "114-09-08", "本中心證券商營業處所買賣有價證券業務規則第15條之18", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["3202", "樺晟電子股份有限公司", "114-07-21", "本中心證券商營業處所買賣有價證券業務規則第12條之2及第15條之11", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2026
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2026&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2026
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：5
+       樣本：["5371", "中強光電股份有限公司", "115-09-03", "依本中心證券商營業處所買賣有價證券業務規則第15條之12、14、15及16規定", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4130", "健亞生物科技股份有限公司", "115-07-28", "本中心證券商營業處所買賣有價證券業務規則第15條之12", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5236", "凌陽創新科技股份有限公司", "115-07-16", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
 ## ⇒ 拿到結果之後要回答的
   Q1 `suspendListing` 的列是 list 還是 dict？欄位順序／鍵名是什麼？
   Q2 `TWT85U` 的 `date` 真的吃嗎（三個日期的 title 與筆數要不同）？
@@ -262,13 +332,26 @@
      ⚠ 他們整條「分盤撮合有兩個來源」的裁定建在這個符號上，
      ⛔ 而目前的依據是一句**轉述**，不是官方 `notes` 的逐字。
      ⇒ 若 `**` 其實是別的意思（例如「本日新增」），那條裁定要整條作廢。
-  ⭐⭐ Q7 `tpex_spendi_history` 到底是哪一種？（K線分析線 01:40 卡在這裡）
-     ⚠ 要分清楚：**短暫停牌後復牌**（＝TWSE 的 TWTAWU，我方 meta/suspend）
-     還是**長期停止買賣中**。⛔ 名字很像不算證據——今天已經摔過一次。
-     判準：① 權證佔幾成？② 有沒有『恢復日』欄？③ 未恢復的那些起日落在哪幾年？
-     （TWSE 那張：9,594/10,034 是權證、未復牌的 21 檔普通股全停在 2013~2014）
-  ⭐ Q8 它涵蓋到哪一年？`參數 無` ⇒ 它必須**自己講得出**涵蓋期間，
-     ⛔ 否則「回了很多列」不能當成「有歷史」（第二點）。
+  ✅ Q7／Q8 **已答（2026-09-11 run 43 實測）**：`tpex_spendi_history`
+     ⛔⛔ **名字裡的 `history` 是騙人的——它只有今年。**
+       Date：**1 種**　115×362　⇒ 整份都是民國 115（＝2026）
+       DateOfSuspendedTrading：11 種（1150731×64、1150513×43、1150428×31…）
+       ⇒ ⭐ 一次幾十檔同時停、幾天後同時復，`Time` 全是 080000
+       ⇒ 那是**盤中暫停交易後當週復牌**，⛔ 不是長期停止買賣
+     ⚠ 而 181 檔裡**混著權證**（`CompanyName` 有「元大57購01」）
+       ⇒ 跟 TWSE 的 TWTAWU（我方 meta/suspend，9,594/10,034 是權證）同一種
+     ⇒ ⛔ 它**不是**上櫃長期停止買賣的來源；我方 `chtm.halted`（逐日、回到 2015）
+       比它好。⚠ 這條的教訓寫進第二點：**端點的名字不是證據**，
+       ⭐ 判準是「每個鍵的相異值分佈」——只有一種值的鍵當場把答案講出來。
+  ⭐⭐ Q11 **終止上櫃**（情報分析線 12:40 給的端點，我方自己實測）：
+     ① `date=ALL` 到底回幾筆？逐年（2015／2020／2025／2026）各幾筆？
+     ⛔ **逐年加總 > ALL 就坐實「參數說全部、只回一部分」** ⇒ 一律逐年抓。
+     ② 每一年的列，`終止上櫃日期` 是不是真的落在**那一年**？
+       ⚠ 不是的話就是「靜靜回最新一期」那一族（第二點②）。
+     ③ 歷史下限在哪？2015 回得出東西 ⇒ 往前試；回 0 或 404 就是底。
+     ⭐ ④ 5371 中光電在不在（情報分析線說 115-09-03）——
+       ⚠ 這是**定點探針**：指定一個已知該在名單上的代號問它在不在，
+       ⛔ 不是拿總數當判準（總數已經騙過我們三次）。
   ⛔ Q9 那兩條「終止上櫃」是**明示推的**——這一趟就是要淘汰它們。
      ⇒ 兩條都不通的話，下一步是**請情報分析線掃 TPEx 選單**
      （他們掃 TWSE 280 條那次撿到四支新端點），⛔ 不要再自己編路徑。
