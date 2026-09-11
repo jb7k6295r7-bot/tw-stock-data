@@ -45,7 +45,7 @@
 ★ 含已下市的股票。`rebuild-meta` 做出來的 last_seen 顯示有 256 檔已下市；
   回測若只用今天還活著的那批就是生存者偏差。
 """
-import csv, os, sys, argparse, time, collections
+import csv, io, json, os, sys, argparse, time, collections
 
 import runlog
 
@@ -80,6 +80,93 @@ OUT = {"price":  os.path.join(ROOT, "data", "stocks"),
 # key 是「日期+代號」的複合鍵，轉置後沒有用途；其餘欄位全留。
 DROP = {"key"}
 CHUNK = 200          # 一次處理幾個日檔再落盤。限制記憶體用量，不影響結果。
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 輸入指紋 —— ⛔ 為了讓下游問得出「我讀的這份，是用現在的日檔做的嗎」
+#
+# ## 這一節的價格：一封寄出去的錯信（2026-09-11）
+#
+#     09-10 16:25  breakpoint_scan 跑完（_holes_scan.csv）
+#     09-10 16:29  transpose 跑完（data/stocks/）
+#     09-11 01:22  「甲」回補 2022 全年落地　← ⬇ 三整年的**無成交列**
+#     09-11 03:46  「甲」回補 2023 全年落地
+#     09-11 05:44  「甲」回補 2024 全年落地
+#
+# ⇒ 我拿那份**過期的個股庫**算了洞的分類、寄給 K線分析線
+#   ⇒ ⛔ 17 段「未解釋」裡 **12 段其實是零成交**（日檔裡整段都有列、
+#     而且 100% `price_basis=無成交`）。
+#
+# ## ⛔⛔ 而當時有一道閘門，它是**綠的**
+#
+#     ok　⭐ 個股庫跟得上日檔　（日檔到 2026-09-10｜個股庫到 2026-09-10）
+#
+# ⚠ 它比的是**最後一天**。而這次少掉的是**中間幾萬列**
+#   ⇒ 最後一天一模一樣 ⇒ 閘門照樣綠。**CLAUDE.md 四點二那一族。**
+#
+# ## ⇒ 判準：比**輸入的指紋**，不是比最後一天
+#
+# 指紋 ＝ 每個來源目錄的（檔數、總位元組、最後一天）。
+# ⚠ 用「總位元組」而不是列數：`os.stat` 掃一遍是毫秒級，
+#   ⛔ 而數列數要讀 0.5 GB。⭐ 而它一樣抓得到「同一天的檔裡多了幾列」。
+# ⚠ git checkout 寫出來的位元組是決定性的 ⇒ 在 Actions 上可比。
+# ══════════════════════════════════════════════════════════════════
+STAMP = "_built.json"
+
+
+def source_fingerprint(kind):
+    """→ `{"files": n, "bytes": n, "last": "YYYY-MM-DD"}`。⛔ 只 stat，不讀內容。"""
+    files = total = 0
+    last = ""
+    for d in SRC[kind]:
+        if not os.path.isdir(d):
+            continue
+        for n in sorted(os.listdir(d)):
+            if not (n.endswith(".csv") and n[0].isdigit()):
+                continue
+            files += 1
+            total += os.stat(os.path.join(d, n)).st_size
+            day = n[:-4]
+            if day > last:
+                last = day
+    return {"files": files, "bytes": total, "last": last}
+
+
+def write_stamp(kind, rows_total):
+    """建完就把指紋寫進 `<輸出目錄>/_built.json`。"""
+    p = os.path.join(OUT[kind], STAMP)
+    os.makedirs(OUT[kind], exist_ok=True)
+    body = {"kind": kind, "rows": rows_total, "src": source_fingerprint(kind)}
+    with open(p, "w", encoding="utf-8") as f:
+        json.dump(body, f, ensure_ascii=False, sort_keys=True)
+        f.write("\n")
+    return body
+
+
+def stale_vs_source(kind, out_dir=None):
+    """→ `(是不是新的, 說明)`。⛔ 讀不到指紋一律回「不是新的」。
+
+    ⚠ 讀不到 ≠ 沒問題：**舊版建的個股庫就是沒有指紋的那一種**，
+      ⛔ 而那正是要抓的情形。
+    """
+    p = os.path.join(out_dir or OUT[kind], STAMP)
+    now = source_fingerprint(kind)
+    if not os.path.exists(p):
+        return False, (f"⛔ 沒有 `{STAMP}` ⇒ **無法證明它是用現在的日檔建的**"
+                       f"（現在的來源：{now['files']} 檔／{now['bytes']:,} 位元組"
+                       f"／最後一天 {now['last']}）")
+    try:
+        old = (json.load(io.open(p, encoding="utf-8")) or {}).get("src") or {}
+    except (ValueError, OSError) as ex:                       # noqa: BLE001
+        return False, f"⛔ `{STAMP}` 讀不動（{type(ex).__name__}）"
+    diff = [k for k in ("files", "bytes", "last") if old.get(k) != now.get(k)]
+    if diff:
+        return False, ("⛔ **輸入在它建好之後變過**："
+                       + "、".join(f"{k} {old.get(k)!r} → {now.get(k)!r}"
+                                   for k in diff)
+                       + "　⇒ ⚠ 只比『最後一天』看不出來（中間多幾萬列也一樣）")
+    return True, (f"建好之後輸入沒變過（{now['files']} 檔／"
+                  f"{now['bytes']:,} 位元組／最後一天 {now['last']}）")
 
 
 def _days(kind):
@@ -255,6 +342,10 @@ def build(kind):
         print(f"[transpose] ✗ 列數對不起來：讀 {rows_total} 寫 {sum(stat.values())}",
               file=sys.stderr)
         return 1, info
+    # ⭐ **通過之後才蓋章**：⛔ 失敗的那一趟絕不可以留下「我是新的」這個說法
+    #   ——⚠ 那會讓下游把一份壞掉的個股庫當成最新的來用，
+    #   比「沒有指紋」更糟（沒有指紋至少會被判成不新）。
+    info["stamp"] = write_stamp(kind, rows_total)
     return 0, info
 
 

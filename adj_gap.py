@@ -82,6 +82,7 @@ from datetime import datetime, timedelta, timezone
 TPE = timezone(timedelta(hours=8))
 
 import runlog
+import transpose as _T
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 CAL = os.path.join(_ROOT, "meta", "calendar_twse.csv")
@@ -386,6 +387,15 @@ def main():
              + ("　⛔ 個股庫比較舊 ⇒ 這一趟的結果**不可信**："
                 "本步驟必須排在 `transpose.py` 之後"
                 if stk_last < day_last else ""))
+    # ⛔⛔ 上面那條**只比最後一天**，⚠ 而那是中間點（CLAUDE.md 四點二）。
+    #   2026-09-11 付過代價：「甲」把 2022~2024 三整年的無成交列補進日檔之後，
+    #   個股庫**還沒重建**——⭐ 而最後一天一模一樣 ⇒ 上面那條**是綠的**，
+    #   ⛔ 而中間少了幾萬列 ⇒ 17 段「未解釋」裡 12 段其實是零成交，
+    #   ⚠ 而我已經把那批數字寄給 K線分析線了。
+    # ⇒ 判準改成比**輸入的指紋**（檔數／總位元組／最後一天），⛔ 不是比最後一天。
+    _fresh, _why = _T.stale_vs_source("price", STOCKS)
+    rl.check("⭐⭐ 個股庫是用**現在這份**日檔建的（⛔ 不是只比最後一天）",
+             _fresh, _why)
 
     un = [r for r in rows if r[8] == "未歸因"]
     rl.info("判準", "① change ∈ {'', '0.0'}（**兩市寫法不同**）"

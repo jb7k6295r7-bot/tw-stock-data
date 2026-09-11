@@ -154,6 +154,7 @@ jobs:
           python selftest_schema_audit.py
           python selftest_margin_universe.py
           python selftest_hole_kinds.py
+          python selftest_transpose_stamp.py
           python selftest_feed_months.py
           python selftest_syntax_warnings.py
 
@@ -382,12 +383,33 @@ jobs:
       #   ⚠ 判準：去 grep 那支程式讀哪裡，⛔ 不要照檔名猜。
       # ⚠ `git checkout` 只會寫出**有差異**的檔（分支只缺最近一兩天）⇒ 成本很低。
       - name: 取 main 的日檔與判準檔（⛔ 分支那份比 main 舊）
-        if: inputs.mode == 'otc-adj-official'
+        # ⛔⛔ 條件要涵蓋**每一個會跑 `adjust.py` 的 mode**，⚠ 不只 otc-adj-official。
+        #   2026-09-11 差點踩下去：`mode=run --feed exright` 把 09-10 的除權息
+        #   推上 main 之後，我正要派 `mode=adjust` 算因子——
+        #   ⚠ 而分支上**根本沒有**那個檔（它在 main），日檔也舊一天
+        #   ⇒ adjust 會拿**沒有那些事件**的輸入重算，
+        #   ⛔ 而輸出 `data/adj/` 會**整份覆蓋 main 上剛換好的官方供料**（3,000 筆）。
+        #   ⇒ CLAUDE.md 四點六那個「會刪資料的例外」。
+        if: inputs.mode == 'otc-adj-official' || inputs.mode == 'adjust'
         run: |
           git fetch origin main --depth=1
-          # ⭐ 這個才是 `adjust.trading_days()` 真正讀的東西
-          git checkout origin/main -- data/universe/daily || \
-            echo "⚠ 取不到 main 的日檔目錄" >&2
+          # ⭐⭐ 這一份清單要對照 `adjust.py` **真的讀哪裡**（⛔ 不要照檔名猜）：
+          #     trading_days()  → data/universe/daily 的**檔名**
+          #     EVENT_DIRS      → universe/{exright,otcexright,reduce,otcreduce,
+          #                                 parvalue,otcparvalue,etfsplit}
+          #     read_close()    → data/stocks
+          #     「沒有變少」那道 → data/adj/_index.csv
+          for P in data/universe/daily \
+                   data/universe/exright data/universe/otcexright \
+                   data/universe/reduce data/universe/otcreduce \
+                   data/universe/parvalue data/universe/otcparvalue \
+                   data/universe/etfsplit \
+                   data/stocks data/adj; do
+            git checkout origin/main -- "$P" || echo "⚠ 取不到 main 的 $P" >&2
+          done
+          # ⭐ 把「這一步有沒有生效」印出來——⛔ 不是印「取過了」
+          echo "[checkout] 日檔最後一天：$(ls data/universe/daily | tail -1)"
+          echo "[checkout] exright 最後一天：$(ls data/universe/exright | grep '^2' | tail -1)"
           git checkout origin/main -- data/meta/calendar_twse.csv \
                                       data/meta/calendar_tpex.csv || true
           echo "⭐ 日檔最後一天：$(ls data/universe/daily | sort | tail -1)"
