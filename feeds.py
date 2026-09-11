@@ -1771,6 +1771,54 @@ def _months(start, end):
     return out
 
 
+def month_is_open(ym, today=None):
+    """`ym` ＝ `"YYYY-MM"`。→ 這個月**還沒結束**（含今天所在的那個月）。
+
+    ## ⛔⛔ 為什麼需要它（2026-09-11，付出的代價是 6 檔的還原因子）
+
+    `cmd_feed_range` 的台帳記的是「這個月問過了」⇒ 問過就**永遠不再問**。
+    ⚠ 而公告型的表（除權息／減資／面額變更／ETF 分割）**當月還在長**：
+
+        2026-09 月初問過一次 ⇒ 台帳記上
+        ⇒ 09-10 才公告的那幾檔，**這個月再也不會被問到**
+        ⇒ `data/universe/exright/2026-09-10.csv` 根本不存在
+        ⇒ `adj_gap` 報 5906／4912／9802／2062／9906／6504 **未歸因**
+        ⚠ 而 `feeds:exright` 那一趟是 **✓ 正常**：
+          「這個區間的 1 個月台帳裡都問過了，本趟沒有要問的」
+
+    ⭐ 這正是 CLAUDE.md 第四點那句：**續跑判準要用資料自己，⛔ 不要另開台帳**
+      ——台帳會跟資料不一致，⚠ 而不一致的方向是「看起來比實際好」。
+
+    ⇒ ⭐ 台帳只對**已經結束的月份**有效。還沒結束的月份一律重問
+      （一趟只多一發，⛔ 而漏掉的是整批公司行動）。
+
+    ## ⛔ 判準是**日曆上的月底**，不是 `--end` 夾出來的那一天
+
+    `_months()` 回的迄日被 `args.end` 夾過 ⇒ 拿它去判，
+    「我只查到 9/5」會被誤判成「9 月已經結束」。
+    """
+    import calendar
+    y, m = int(ym[:4]), int(ym[5:7])
+    last = f"{y:04d}-{m:02d}-{calendar.monthrange(y, m)[1]:02d}"
+    return last >= (today or runlog.now_tpe().strftime("%Y-%m-%d"))
+
+
+def months_to_ask(rng, ledger, force=False, today=None):
+    """→ `(這一趟要問的 [(起,迄)], 台帳有但因為當月而重問的 ["YYYY-MM"])`。
+
+    ⭐ 抽成純函式的理由：這段判準壞掉時**整趟是綠的**
+      （「台帳裡都問過了，本趟沒有要問的」），⛔ 只有下游的 `adj_gap`
+      會在幾天後間接叫一聲。⇒ 要能餵假台帳直接驗它。
+    """
+    if force:
+        return list(rng), []
+    todo = [m for m in rng
+            if m[0][:7] not in ledger or month_is_open(m[0][:7], today)]
+    reask = [m[0][:7] for m in todo
+             if m[0][:7] in ledger and month_is_open(m[0][:7], today)]
+    return todo, reask
+
+
 # 端點自己說「查無資料」時的字樣。**這代表那段期間沒有事件，不是抓取失敗。**
 _EMPTY_STAT_RE = re.compile(r"沒有符合條件的資料|查無資料|無符合條件|沒有資料")
 _EMPTY = object()          # cmd_feed_range 內部用的哨符：這個月沒有事件
@@ -1811,10 +1859,8 @@ def cmd_feed_range(args, name):
             ledger = json.load(io.open(led_path, encoding="utf-8")) or {}
         except (ValueError, OSError):
             ledger = {}          # 壞掉就當空的重問，不要因為台帳壞掉就停擺
-    if not args.force:
-        todo = [m for m in rng if m[0][:7] not in ledger]
-    else:
-        todo = list(rng)
+    # ⭐ 台帳只對**已經結束的月份**有效（理由見 `month_is_open()`）。
+    todo, reask = months_to_ask(rng, ledger, args.force)
     if args.limit:
         todo = todo[:args.limit]
     skipped = len(rng) - len(todo)
@@ -1822,11 +1868,15 @@ def cmd_feed_range(args, name):
 
     print(f"[{name}] {spec['status']}")
     print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，本趟 {len(rng)} 個月"
-          f"（台帳已問過 {skipped} 個月，--force 可重問）")
+          f"（台帳已問過 {skipped} 個月，--force 可重問）"
+          + (f"｜⭐ 其中 {len(reask)} 個月是**還沒結束的月份，台帳有也照樣重問**"
+             f"：{reask}" if reask else ""))
     if not rng:
         rl = runlog.Run(f"feeds:{name}")
         rl.info("區間", f"{args.start} ~ {args.end}")
-        rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的")
+        rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的"
+                "　⚠ 而**還沒結束的月份一律重問** ⇒ 這裡是 0 就代表"
+                "這個區間裡沒有任何一個月是當月")
         rl.check("跑完整個區間，沒有提前收手", True, "沒有待處理的月份")
         return rl.finish()
     ok = empty = failed = 0
@@ -1958,6 +2008,12 @@ def cmd_feed_range(args, name):
     #     拿它當失敗會讓這一頁每個月初都紅（防護誤殺跟防護失效一樣糟）。
     rl = runlog.Run(f"feeds:{name}")
     rl.info("區間", f"{args.start} ~ {args.end}｜{len(rng)} 個月")
+    # ⛔ 這一列即使是 0 也要在：⚠ 0 跟「這道根本沒做」在紙上看起來一樣。
+    rl.info("⭐ 台帳有、但**還沒結束所以照樣重問**的月份",
+            (f"{len(reask)} 個：{reask}"
+             "　⇒ ⛔ 公告型的表當月還在長，問過一次就不再問 ＝ "
+             "當月後半的公司行動永遠抓不到（2026-09 漏掉 6 檔）")
+            if reask else "0 個（這個區間裡沒有當月）")
     rl.info("結果", f"有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
                     f"合計 {total_rows} 列")
     # ⚠ 尚未到期的公告做成 info 不做成 check：減資與除權息本來就提前公告，
