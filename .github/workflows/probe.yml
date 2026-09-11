@@ -25,6 +25,14 @@ name: 端點探針（只跑探針，約 1 分鐘）
 #
 # ⚠ 代價：「探針程式改了會自動重跑」的自癒條件沒有了。
 #   **改探針的人要自己按一次這支**（約 1 分鐘）。
+#
+# ⛔⛔ 2026-09-11：下面那個「自癒」**只看 `main`**。
+#   `schedule` 觸發的 run 一律跑 `main`（GitHub 的規則）⇒ 在**分支**上改好的探針，
+#   排程**永遠不會跑到**，⚠ 而它照樣成功、照樣寫出檔、照樣推上 main
+#   ⇒ 輸出裡**少了新那一節**，而「少了那一節」跟「那一節查無結果」長得一模一樣。
+#   實例：00:25 在分支上給 `delist_probe.py` 加了雙向比對，00:41 排程跑的是舊的。
+#   ⇒ ⭐ 分支上剛改的探針，要自己 `workflow_dispatch` **指定分支**跑一趟，
+#     ⛔ 判準是「輸出裡有沒有那一節」，不是「這一趟成功了沒」。
 
 on:
   workflow_dispatch:
@@ -135,6 +143,22 @@ jobs:
       #     連跑都跑不完就沒有必要往下打對方的伺服器。
       - name: 驗十四支探針跑得完（離線）
         run: python selftest_probes.py
+
+      # ⛔⛔ `delist_probe.py` 的雙向比對要讀 `data/meta/delisted.csv`，
+      #   而那個檔**只在 main 上**（`delisted.py` 是 daily 跑的、推到 main）。
+      #   ⇒ 這支 checkout 的是分支 ⇒ 讀到「檔不存在」⇒ 那一節整節不做。
+      #   ⚠ 2026-09-11 run 42 實測就是這樣：探針**成功**、輸出裡那一節
+      #     只寫著「我方那份不在這個 ref 上」——⭐ 幸好程式端有那句，
+      #     ⛔ 沒有那句的話它會靜靜比出「A 265 筆、B 0 筆」那種假結論。
+      #   ⇒ CLAUDE.md 第四點六鏡像的落地條①：讀 main 才有的檔就先取下來。
+      - name: 取 main 上的判準檔（雙向比對要用）
+        if: always()
+        continue-on-error: true
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/meta/delisted.csv || \
+            echo "⚠ main 上也沒有 delisted.csv（⛔ 那才是真的沒有）"
+          ls -l data/meta/delisted.csv || true
 
       - name: 跑十三支探針（這支一律全跑）
         if: always()
