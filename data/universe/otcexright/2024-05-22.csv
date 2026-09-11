@@ -1,0 +1,4 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2024-05-22,00758B,53.4,52.81,0.590000,除息,,exDailyQ
+2024-05-22,00759B,57.2,56.59,0.610000,除息,,exDailyQ
+2024-05-22,00760B,55.55,54.84,0.710000,除息,,exDailyQ

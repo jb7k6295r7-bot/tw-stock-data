@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
-2023-08-28,3259,21.05,31.59,彌補虧損,31.6,0.0,finmind
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2023-08-28,3259,21.05,31.59,彌補虧損,,,1.50077847,revivt

@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2013-12-09,8066,19.25,37.02,彌補虧損,,,1.92307692,revivt

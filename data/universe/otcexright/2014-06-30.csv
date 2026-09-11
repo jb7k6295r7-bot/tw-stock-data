@@ -1,0 +1,5 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2014-06-30,3527,80.5,76.5,4.00,除息,,exDailyQ
+2014-06-30,5353,13.8,13.28,0.52,除息,,exDailyQ
+2014-06-30,5604,38.65,36.85,1.80,除息,,exDailyQ
+2014-06-30,6021,16.4,15.7,0.70,除息,,exDailyQ

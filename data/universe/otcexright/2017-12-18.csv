@@ -1,2 +1,2 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2017-12-18,6246,27.15,22.99,4.16,除權,,finmind
+2017-12-18,6246,27.15,22.99,4.16,除權,,exDailyQ
