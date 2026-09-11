@@ -48,7 +48,7 @@ def candidates() -> pd.DataFrame:
             rows.append(dict(stock_id=sid, date=r["date"], market=r["market"], prev_close=r["prev_close"], open=r["open"], close=r["close"],
                              gap_open=r["open"] / r["prev_close"] - 1 if r["prev_close"] else np.nan,
                              ret_close=r["close"] / r["prev_close"] - 1 if r["prev_close"] else np.nan))
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["stock_id", "date", "market", "prev_close", "open", "close", "gap_open", "ret_close"])
 
 
 def exposure(panel: pd.DataFrame, cand: pd.DataFrame, cal: pd.DatetimeIndex, hold: int) -> np.ndarray:
