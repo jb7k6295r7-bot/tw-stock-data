@@ -78,8 +78,12 @@ def _retry_section():
             if url in fail_first_on and not seen.get(url):
                 seen[url] = True
                 return b"", "429 Too Many Requests"
-            return (b'[{"\u516c\u53f8\u4ee3\u865f":"2330",'
-                    b'"\u5e74\u5ea6":"115","\u5b63\u5225":"2"}]'), ""
+            # ⛔ 這裡**不可以**寫成 bytes literal 加 `\\u` 跳脫：
+            #   `\\u` 在 bytes literal 裡不是跳脫序列 ⇒ SyntaxWarning，
+            #   ⚠ 而 `selftest_syntax_warnings.py` 會擋下整趟（run 112 就是它掛的）。
+            #   ⇒ 照真回應的形狀：str 寫中文，再 `.encode("utf-8")`。
+            return ('[{"公司代號":"2330","年度":"115","季別":"2"}]'
+                    .encode("utf-8")), ""
         return _get
 
     class _A:
