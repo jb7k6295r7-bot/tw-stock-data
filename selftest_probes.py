@@ -72,6 +72,18 @@ HTML = ("<html><body><form>"
 # ⚠ 2026-09-09：otccal_probe 的重點是「日期欄 min/max ＋ 與我方日曆雙向比對」。
 # 若假回應照 OPENAPI_ROWS（沒有日期欄）回，它會在「沒有日期欄」那一行就 return，
 # **_date_cols／_gaps／_compare 三個函式一行都不會跑到**。⛔ 假的比真的簡單＝沒測。
+# ⭐ 終止上市第二來源（openapi.twse.com.tw）：**頂層就是陣列**的第四種形狀。
+#   ⚠ 鍵名照 K線分析線 2026-09-11 02:10 的回報做，⛔ 而那是 WebFetch 的**轉述**
+#   ⇒ 受測的 `_guess_keys` 刻意**不看鍵名、只看值的形狀**，
+#     所以這裡故意再塞一個**名字也像代號**的鍵（`ISIN`），
+#     ⛔ 不塞的話「代號候選只能有一個」那條判準等於沒測。
+DELIST_OPENAPI = [
+    {"Code": "2867", "Company": "三商壽", "DelistingDate": "115/09/01"},
+    {"Code": "6131", "Company": "鈞泰", "DelistingDate": "110/07/05"},
+    {"Code": "1505", "Company": "楊鐵工廠", "DelistingDate": "090/01/20"},
+    {"Code": "9999", "Company": "只有官方有的那一檔", "DelistingDate": "112/03/04"},
+]
+
 INDEX_ROWS = [{"Date": "1150907", "ClosingIndex": "250.11"},
               {"Date": "1150908", "ClosingIndex": "251.22"},
               {"Date": "1150909", "ClosingIndex": "252.33"}]
@@ -129,6 +141,11 @@ def fake_get(url, **kw):
         return json.dumps(DATAGOV).encode(), None
     if "getOD.ashx" in u:
         return json.dumps(FAKE_ROWS).encode(), None
+    # ⛔ 這一支的路徑是 `openapi.twse.com.tw/v1/…`，**沒有** `/openapi/v1/`
+    #   ⇒ 少了這一條它會落到下面的「twse ⇒ 回 dict」，
+    #   ⚠ 而「頂層是陣列」那條分支就**永遠走不到**（假回應形狀錯＝那段沒測）。
+    if "suspendListingCsvAndHtml" in u:
+        return json.dumps(DELIST_OPENAPI).encode(), None
     if "openapi/v1/" in u and ("_index" in u or "index" in u.rsplit("/", 1)[-1]):
         return json.dumps(INDEX_ROWS).encode(), None
     if "openapi/v1/" in u or "mopsfin" in u:
@@ -233,7 +250,10 @@ SECTIONS = {
     # ⛔ 同理：內容取決於官方回什麼。⚠ 但「頂層 fields」那一行一定要出現——
     #   ⭐ 這兩支的重點就是「沒有 fields 時欄位怎麼對」，
     #     少了那一行代表它沒有真的去看第三種形狀。
-    "delist_probe": ["頂層 `fields`"],
+    #   ⭐ 再釘兩節：第四種形狀（頂層陣列）與雙向比對——
+    #     ⚠ 少了它們代表 openapi 那支的假回應沒有被送到，那段等於沒測。
+    "delist_probe": ["頂層 `fields`", "頂層就是**陣列**",
+                     "與我方 data/meta/delisted.csv 雙向比對"],
     # ⛔ 這一支的結論有三種（補得回來／補不回來但端點好／分不出來），
     #   ⚠ 每一種的下一步都不同 ⇒ 釘住「⇒ 結論」那一節一定要出現。
     "esb_day_probe": ["## ⇒ 結論"],
@@ -310,6 +330,75 @@ def run(name):
     return err, out
 
 
+def check_delist_cross():
+    """⭐ `delist_probe` 的雙向比對：⛔ 只比一個方向不算一致（CLAUDE.md 第三點）。
+
+    ⚠ 這一段是 2026-09-11 才長出來的：K線分析線拿 openapi 那支說「約 400 筆」，
+    我方 rwd 那支官方自己說 `total:265`。⛔ 在看到真回應之前不可以宣稱哪一份完整，
+    ⇒ 這裡驗的是「**兩個方向的數字都報得出來**」，不是「數字對不對」。
+    """
+    import delist_probe as DP
+    bad = 0
+    tmp = tempfile.mkstemp(prefix="ours_", suffix=".csv")[1]
+    io.open(tmp, "w", encoding="utf-8").write(
+        "delist_date,stock_id,name,asof\n"
+        "2001-01-20,1505,楊鐵工廠,2026-09-11\n"
+        "2021-07-05,6131,鈞泰,2026-09-11\n"
+        "2026-09-01,2867,三商壽,2026-09-11\n"
+        # ⛔ 只有我方有的那一檔 ⇒ B 方向必須不是 0，否則「雙向」是假的
+        "2024-05-06,8888,只有我方有的那一檔,2026-09-11\n")
+    old = DP.OURS
+    DP.OURS = tmp
+    try:
+        out = []
+        DP._compare_with_ours(DELIST_OPENAPI, out)
+        txt = "\n".join(out)
+        for name, want in (
+                ("A 方向（官方有我方沒有）報得出 9999", "A 官方 openapi 有、我方**沒有**：1 檔"),
+                ("B 方向（我方有官方沒有）報得出 8888", "B 我方有、openapi **沒有**：1 檔"),
+                ("重疊數（＝第七點要的正例數）", "正例 3 檔重疊"),
+                ("⭐ 日期欄／代號欄是**照值**認出來的", "照值認出來的")):
+            ok = want in txt
+            print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：{name}")
+            if not ok:
+                print("    實際輸出：\n      " + txt.replace("\n", "\n      "))
+                bad += 1
+
+        # ⭐ 重疊處日期不一致要抓得出來（⛔ 不然兩份都有的那些等於沒比）
+        m = [dict(x) for x in DELIST_OPENAPI]
+        m[1]["DelistingDate"] = "110/07/06"          # 差一天
+        out2 = []
+        DP._compare_with_ours(m, out2)
+        ok = "不一致**的：1 檔" in "\n".join(out2)
+        print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：重疊處差一天會被抓到"
+              "（⛔ 反向驗：不差就該是 0）")
+        bad += 0 if ok else 1
+
+        # ⭐⭐ 反向驗判準本身：鍵名對、值的形狀不對 ⇒ **必須拒收**，
+        #   ⛔ 不可以硬挑一欄（挑錯那一欄會整批靜靜錯位，今天已經摔過一次）
+        junk = [{"Code": "x", "Company": "y", "DelistingDate": "z"}] * 4
+        out3 = []
+        DP._compare_with_ours(junk, out3)
+        ok = "⛔ 認不出日期" in "\n".join(out3)
+        print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：值的形狀不對就**不比**"
+              "（⚠ 鍵名一模一樣，靠鍵名認的話這裡會靜靜錯位）")
+        bad += 0 if ok else 1
+
+        # ⚠ 我方那份不在這個 ref 上 ⇒ 要說「是 checkout 的問題」，
+        #   ⛔ 不可以講成「我方沒有」（第四點六的鏡像）
+        DP.OURS = tmp + ".notexist"
+        out4 = []
+        DP._compare_with_ours(DELIST_OPENAPI, out4)
+        ok = "checkout" in "\n".join(out4)
+        print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：檔不在時講的是 checkout"
+              "，⛔ 不是「我方沒有」")
+        bad += 0 if ok else 1
+    finally:
+        DP.OURS = old
+        os.unlink(tmp)
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -326,6 +415,7 @@ def main():
         else:
             print(f"✓ {name} 走完全程"
                   + (f"，{len(want)} 節都出現" if want else ""))
+    bad += check_delist_cross()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

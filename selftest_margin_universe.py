@@ -12,6 +12,7 @@
 
 假資料照真資料的形狀做：檔名是日期、有 `stock_id` 欄、成員逐日緩慢增加。
 """
+import csv
 import io
 import os
 import shutil
@@ -97,7 +98,7 @@ def main():
         print("── ④ 天數總和 ＝ 真的出現的天數（終點斷言）──")
         from collections import Counter
         seen, got = Counter(), Counter()
-        for day, ids in sets:
+        for day, ids, _tot in sets:
             if day in bad:
                 continue
             for c in ids:
@@ -123,6 +124,113 @@ def main():
         ck("⛔ 只有表頭的檔**不列入**（否則它會生出一整批假的移除）",
            len(sets2) == 30 and sets2[-1][0] == days[-1],
            f"{len(sets2)} 天，最後 {sets2[-1][0] if sets2 else '—'}")
+
+        print("── ⑦ ⭐ 成員是**子集**時（`chtm.halted`）：判準看的是總列數 ──")
+        # ⚠ 這一節是 2026-09-11 加的：同一組函式要壓 `chtm` 的 `halted` 欄，
+        #   ⛔ 而那裡的成員只是整檔的一小撮（每天約 20 列裡 3~6 檔停止交易）
+        #   ⇒ 「成員數少」是**正常**的，⛔ 拿它當故障判準會天天誤判。
+        d2 = os.path.join(sand, "chtm")
+        os.makedirs(d2, exist_ok=True)
+        for i, day in enumerate(days):
+            # 每天 20 列（⛔ 第 15 天故意只剩 4 列 ＝ 真的抓壞了）
+            n = 4 if i == 15 else 20
+            lines = ["date,stock_id,name,halted"]
+            for k in range(n):
+                # ⭐ 停止交易的只有 c000~c002，而**第 7 天一檔都沒有**
+                h = 1 if (k < 3 and i != 7) else 0
+                lines.append(f"{day},c{k:03d},n{k},{h}")
+            io.open(os.path.join(d2, day + ".csv"), "w",
+                    encoding="utf-8").write("\n".join(lines) + "\n")
+        hs = M.day_sets(d2, keep=lambda r: r.get("halted") == "1")
+        ck("⭐ 成員**空的**那一天照樣收進來（⛔ 丟掉就會開一個假的洞）",
+           len(hs) == 30, f"{len(hs)} 天（應該 30）")
+        empt = [x for x in hs if not x[1]]
+        ck("　⚠ 而它確實是空的（正例 1 天：第 7 天沒有人停牌）",
+           len(empt) == 1 and empt[0][0] == days[7], str([x[0] for x in empt]))
+        hbad = M.suspect_days(hs, 0.7)
+        ck("⭐⭐ 不可判定只抓到**第 15 天**（總列數 4／20），"
+           "⛔ 沒有把「沒人停牌」的第 7 天判成故障",
+           set(hbad) == {days[15]}, f"抓到 {sorted(hbad)}")
+        hsp = M.spans(hs, skip=set(hbad))
+        c0 = [x for x in hsp if x[0] == "c000"]
+        ck("⛔ 而 c000 在第 7 天**真的**不在 ⇒ 停牌區間要斷成兩段"
+           "（⚠ 那是真的成員變動，不是故障）",
+           len(c0) == 2, str(c0))
+
+        print("── ⑧ `halt_spans.py` 整條走一遍（⛔ 它不可以有第二份壓縮實作）──")
+        import halt_spans as H
+        # ⛔ `"0"` 是**真值** ⇒ 用 truthy 判會把整批當成停牌中
+        ck("⛔ `halted=\"0\"` 不是停牌（truthy 判法會整批誤判）",
+           not H.is_halted({"halted": "0"}), "0 被判成停牌")
+        ck("　`halted=\"1\"` 是停牌（⚠ 正例，⛔ 一個永遠回 False 的判準沒有用）",
+           H.is_halted({"halted": "1"}), "1 沒被判成停牌")
+        ck("　空字串不是停牌", not H.is_halted({"halted": ""}))
+        # ⛔ runlog 也要指到暫存檔。⚠ 不指的話這支自測會把 repo 裡真的
+        #   `_last_run.md` 寫進假資料——2026-09-08 已經發生過一次，
+        #   ⭐ 現在 `runlog.finish()` 有守門會直接丟例外（見那邊的註解）。
+        import runlog as RL
+        old_uni, old_out, old_p = M.UNI, H.OUT, RL.PATH
+        H.OUT = os.path.join(sand, "halt_spans.csv")
+        M.UNI = sand                      # ⇒ compress 會去讀 sand/chtm/
+        RL.PATH = os.path.join(sand, "_last_run.md")
+        try:
+            rc = H.main()
+        finally:
+            M.UNI, H.OUT, RL.PATH = old_uni, old_out, old_p
+        ck("⭐ `halt_spans.main()` 從頭走到尾、runlog 全過", rc == 0, f"rc={rc}")
+        out = os.path.join(sand, "halt_spans.csv")
+        ck("　寫出了區間檔", os.path.exists(out))
+        if os.path.exists(out):
+            got = list(csv.DictReader(io.open(out, encoding="utf-8")))
+            c0 = [r for r in got if r["stock_id"] == "c000"]
+            ck("⭐⭐ c000 是**兩段**（第 7 天復牌 ⇒ ⛔ 不可以連成一段）",
+               len(c0) == 2, str([(r["start"], r["end"]) for r in c0]))
+            ck("　⚠ 而第 15 天（抓壞的那天）沒有把區間切開",
+               all(r["market"] == "tpex" for r in got) and len(c0) == 2,
+               str([(r["start"], r["end"], r["days"]) for r in c0]))
+            print("── ⑨ ⛔ 反向驗：自測不改 `runlog.PATH` 必須被擋下來 ──")
+        H.OUT = os.path.join(sand, "halt_spans2.csv")
+        M.UNI = sand
+        blocked = False
+        try:
+            H.main()
+        except RuntimeError as ex:
+            blocked = "想寫進真的 runlog" in str(ex)
+        finally:
+            M.UNI, H.OUT = old_uni, old_out
+        ck("⭐⭐ 自測想寫進真的 `_last_run.md` ⇒ **丟例外**"
+           "（⛔ 2026-09-08 那次只留註解沒守門，2026-09-11 就又發生一次）",
+           blocked, "沒有被擋——真的 runlog 會被寫進假資料")
+
+        ck("⛔ c003 以上從來沒停過 ⇒ 一段都不該有",
+               not [r for r in got if r["stock_id"] >= "c003"],
+               str([r["stock_id"] for r in got if r["stock_id"] >= "c003"][:5]))
+
+        print("── ⑩ ⛔ 鄰居要**日曆上也相鄰**：尾巴孤零零那天不可以被判成壞掉 ──")
+        # ⚠ 2026-09-11 實跑撞到的：`chtm` 只回補到 2017、尾巴剩 2026 一天
+        #   ⇒ 它的 ±10 個索引鄰居全是九年前的日子（列數比較多）
+        #   ⇒ ⛔ 最新那天被判成「抓壞了」而整天跳過
+        #   ⇒ 「⭐ 目前仍停止交易中」變成 **0 檔**，⚠ 而那是最重要的一格。
+        d3 = os.path.join(sand, "sparse")
+        os.makedirs(d3, exist_ok=True)
+        for i, day in enumerate(days):          # 30 天連續，每天 30 列
+            io.open(os.path.join(d3, day + ".csv"), "w", encoding="utf-8").write(
+                "date,stock_id\n" + "".join(f"{day},c{k:03d}\n" for k in range(30)))
+        # ⭐ 九年後孤零零一天，列數只有 20（＝正常，只是那個年代規模不同）
+        far = "2035-06-01"
+        io.open(os.path.join(d3, far + ".csv"), "w", encoding="utf-8").write(
+            "date,stock_id\n" + "".join(f"{far},c{k:03d}\n" for k in range(20)))
+        sp3 = M.day_sets(d3)
+        bad3 = M.suspect_days(sp3, 0.7)
+        ck("⭐⭐ 尾巴那天**沒有**被判成不可判定（鄰居在日曆上差九年 ⇒ 不算鄰居）",
+           far not in bad3, f"抓到 {sorted(bad3)}")
+        ck("　⚠ 正例還在：同一批資料裡真的崩塌的那天照樣抓得到",
+           set(M.suspect_days(M.day_sets(d2, keep=lambda r: True), 0.7))
+           == {days[15]},
+           str(sorted(M.suspect_days(M.day_sets(d2, keep=lambda r: True), 0.7))))
+        ck("　⛔ 而 `_near_days` 對認不出來的日期要放行（不擋），"
+           "⚠ 否則格式一變整份區間表就啞掉",
+           M._near_days("不是日期", "2026-01-01", 10))
     finally:
         shutil.rmtree(sand, ignore_errors=True)
 
