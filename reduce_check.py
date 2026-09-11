@@ -136,11 +136,17 @@ def main():
             start = ds[0] if ds else ""
     rl.info("比對區間", f"{start or '（日曆讀不到）'} 起"
                        "（我方價格的第一天；更早的官方事件不算漏抓）")
-    ref = {k: v for k, v in ref.items() if not start or k[1] >= start}
-    ahead = sorted(k for k in ref if k not in mine and k[1] >= today)
-    known = sorted(k for k in ref if k not in mine and k[1] < today
+    # ⛔⛔ **不可以就地換掉 `ref`**（2026-09-11 付過代價）。
+    #   `same` 是上面用**完整的** `ref` 算出來的 ⇒ 把 `ref` 縮窄之後，
+    #   下面 ④ 的 `ref[k][2]` 就會踩到一個已經被濾掉的鍵
+    #   ⇒ `KeyError: ('6291', '2013-09-14')`，⚠ 而它炸在**最後一行**，
+    #     `set -e` 連坐把同一個 step 後面的步驟全掐死（四點二 ④ 那一族）。
+    #   ⇒ 窄的那一份**另外命名**，⛔ 原本那份原封不動。
+    ref_win = {k: v for k, v in ref.items() if not start or k[1] >= start}
+    ahead = sorted(k for k in ref_win if k not in mine and k[1] >= today)
+    known = sorted(k for k in ref_win if k not in mine and k[1] < today
                    and k in KNOWN_BAD)
-    miss = sorted(k for k in ref if k not in mine and k[1] < today
+    miss = sorted(k for k in ref_win if k not in mine and k[1] < today
                   and k not in KNOWN_BAD)
     rl.info("官方有我方沒有", f"未來／今天 {len(ahead)} 筆（預告，不算漏抓）"
                             f"｜已知官方自己重複 {len(known)} 筆"
@@ -152,8 +158,18 @@ def main():
              + "｜⚠ 也可能是那份人工匯出檔過期了，兩種都要人看")
 
     # ── ③ 我方有、官方沒有（只看上櫃）
+    # ⛔⛔ 這一邊要拿**完整的** `ref` 比，⛔ 不是 ② 用的那個窄版。
+    #   ⚠ 兩個方向的「區間」不是同一個：
+    #     ② 問「我方漏抓嗎」⇒ 早於**我方價格**的官方事件不算漏抓
+    #     ③ 問「我方編造嗎」⇒ 官方表裡**有**就不算編造，跟我方價格從哪天開始無關
+    #   ⇒ 用窄版比 ③ 會把「兩邊都有、只是早於我方日曆」那幾筆
+    #     誤報成「我方編出官方沒有的減資」（自測 [1] 當場抓到）。
+    # ⚠ 而另一邊要擋的是**官方表自己的起點**：早於官方表第一天的我方事件
+    #   不算編造（官方那份從 2013-09 起）。
+    _ref_from = min((k[1] for k in ref), default="")
     extra = sorted(k for k in mine
-                   if mkt.get(k[0]) == "tpex" and k not in ref)
+                   if mkt.get(k[0]) == "tpex" and k not in ref
+                   and (not _ref_from or k[1] >= _ref_from))
     rl.info("我方上櫃有、官方沒有", f"{len(extra)} 筆"
                                   + (f"：{extra[:6]}" if extra else "（沒有）"))
     rl.check("我方沒有編出官方沒有的上櫃減資", not extra,

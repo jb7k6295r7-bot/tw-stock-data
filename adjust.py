@@ -383,6 +383,60 @@ def read_close(code):
     return out
 
 
+def halting_event_is_real(d, pre, cal, closes, tol=None):
+    """停止買賣型事件（`HALTING_KINDS`）**到底有沒有發生**。
+
+    → `(True, "")` 成立；`(False, 理由)` 不成立。
+
+    ## ⛔ 為什麼要有這一條（2026-09-11，6109 亞元）
+
+    官方 `bulletin/revivt` 那份把 **1070925 那一列重打成 1090925**：
+    同一檔、`last_close`／`ref_price`／原因／換股率／退還股款**六個數字逐位相同**，
+    只有日期差兩年（283 列裡就這麼一組）。
+
+    ⇒ 我方照收 ⇒ `data/adj/6109.csv` 多一列 `2020-09-25 f=1.01238095`
+    ⇒ ⛔ 2020-09-25 **之前每一列的 `cum_factor` 全部被連乘進去**
+      （2018-09-25 那列 0.96668147 → 0.96486184），⚠ 而檔案看起來完全正常。
+
+    ## 判準：**停止買賣型事件一定有停牌缺口**
+
+        我方在 `d` 之前最後一筆收盤 `prev`
+        ① `prev` 就是 `d` 的**前一個交易日**（⇒ 中間**沒有**停牌缺口）
+        ② 而且官方的「停止買賣前收盤」跟我方 `prev` 的收盤**對不上**
+        ⇒ 兩條同時成立 ⇒ 這一筆**不成立**
+
+    ⚠ **兩條都要**，⛔ 不可以只用②：
+      只有②時（有缺口、但價格對不上）多半是我方價格或來源的問題，
+      那要報出來給人看，⛔ 不是自己把事件丟掉。
+    ⚠ 而只有①時（沒缺口、但價格對得上）也不丟：
+      那多半是官方把「不停牌的那種」也放進同一張表。
+
+    ⛔ 這條是**算出來的**，不是一份寫死的黑名單——
+      黑名單只認得已經發生過的那一筆，⚠ 而官方下次重打的會是別的代號。
+    """
+    if tol is None:
+        tol = max(0.02, (pre or 0) * 0.005)
+    prev = None
+    for x in reversed(sorted(closes)):
+        if x < d:
+            prev = x
+            break
+    if prev is None:
+        return True, ""                       # 事件早於我方資料 ⇒ 不判
+    cprev = None
+    for x in reversed(cal):
+        if x < d:
+            cprev = x
+            break
+    if cprev is None or prev != cprev:
+        return True, ""                       # ① 不成立：真的有停牌缺口
+    if abs(closes[prev] - pre) <= tol:
+        return True, ""                       # ② 不成立：價格對得上
+    return False, (f"停止買賣型事件卻**沒有停牌缺口**"
+                   f"（{prev} 就是前一個交易日），"
+                   f"而且官方前收 {pre} ≠ 我方 {closes[prev]}")
+
+
 def build(code, rows, cal, verify=True):
     """→ (lines, checked, mismatch, skipped)。
 
@@ -393,6 +447,30 @@ def build(code, rows, cal, verify=True):
     """
     closes = read_close(code) if verify else {}
     have = sorted(closes) if closes else []
+
+    # ══════════════════════════════════════════════════════════
+    # ⛔⛔ 先把**不成立的停止買賣型事件**擋在因子外面（6109 亞元那一筆）
+    #   ⚠ 一定要在下面的連乘**之前**做：連乘一旦做下去，
+    #     受害的不只是那一列，是它**之前每一列的 `cum_factor`**。
+    #   ⭐ 而它丟掉的東西一律**印出來**，⛔ 不是靜靜地少一列
+    #     （靜靜少一列跟「官方本來就沒有」長得一模一樣）。
+    # ══════════════════════════════════════════════════════════
+    phantom = []
+    if closes:
+        keep = []
+        for r in rows:
+            d, _f, pre, _ref, _kind, _mk, srck, _fo = r
+            if srck in HALTING_KINDS:
+                real, why = halting_event_is_real(d, pre, cal, closes)
+                if not real:
+                    phantom.append((d, srck, why))
+                    continue
+            keep.append(r)
+        if phantom:
+            rows = keep
+            for d, srck, why in phantom:
+                print(f"[adj] ⛔ 不成立的{srck}事件，**不採用**：{code} {d}｜{why}",
+                      file=sys.stderr)
 
     checked = mismatch = skipped = 0
     if closes:
@@ -454,7 +532,7 @@ def build(code, rows, cal, verify=True):
         lines.append([d, f"{f:.8f}", f"{fo:.8f}" if use_off else "",
                       f"{cum:.8f}", f"{pre:g}", f"{ref:g}", kind, srck])
     lines.reverse()
-    return lines, checked, mismatch, skipped
+    return lines, checked, mismatch, skipped, len(phantom)
 
 
 def main():
@@ -520,9 +598,11 @@ def main():
         prev_events = sum(int(l.split(",")[2]) for l in _pl if l.split(",")[2].isdigit())
 
     idx, tot_ev, tot_chk, tot_mis, tot_skip, no_price = [], 0, 0, 0, 0, 0
+    tot_ph = 0
     for code in codes:
         rows = ev[code]
-        lines, chk, mis, skp = build(code, rows, cal, a.verify and bool(cal))
+        lines, chk, mis, skp, ph = build(code, rows, cal, a.verify and bool(cal))
+        tot_ph += ph
         if not lines:
             continue
         with open(os.path.join(ADJ_DIR, f"{code}.csv"), "w", encoding="utf-8") as fh:
@@ -574,6 +654,10 @@ def main():
     if a.verify:
         rl.info("前收盤交叉核對", f"查 {tot_chk} 筆、不符 {tot_mis} 筆"
                                   f"（另有 {tot_skip} 筆前一交易日無成交、無法核對）")
+        # ⛔ 這一列**一定要在**，即使是 0：0 跟「這道閘門沒跑」看起來一樣。
+        rl.info("不成立的停止買賣型事件（沒停牌又對不上前收）",
+                f"{tot_ph} 筆，已從因子裡拿掉"
+                + ("（⇒ 逐筆理由印在 stderr）" if tot_ph else "（沒有）"))
     else:
         rl.note("這一趟沒有核對（--no-verify）")
     rl.check("有交易日曆可用（未來事件閘門才有作用）", bool(cal),

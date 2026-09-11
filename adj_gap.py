@@ -119,6 +119,73 @@ def _adj_dates():
     return out
 
 
+# ⭐⭐ 分格覆蓋率的最小格數（2026-09-11）。⚠ 低於它的格不報——
+#   ⛔ 一格只有三檔而剛好都沒有事件，是**正常**的，報它只會製造假紅。
+GRID_MIN = 20
+# ⛔⛔ 明示白名單 ＋ **理由**。⚠ 空的格子不是自動豁免——
+#   要進這張表必須回答「為什麼這一格可以是空的」，⛔ 不可以寫「暫時」。
+#   ⭐ 而白名單裡的格子仍然會**逐筆印進 runlog**：
+#     只把它從 ✗ 降成 ⚠，⛔ 不是讓它消失（消失的那一刻就再也沒有人會想起它）。
+GRID_WAIVED = {
+    ("emerging", "stock"):
+        "⏳ **待裁定**（2026-09-11 送問，未回）：興櫃 363 檔一個還原因子都沒有。"
+        "⚠ 而興櫃只有最高／最低／加權均價／最後成交價，⛔ 沒有開盤價"
+        "（契約 5.v）⇒ 「還原後的報酬率」在興櫃上是什麼意思，"
+        "⛔ 那是**換維護者等級**的問題，不是我這一側可以自己決定的。",
+}
+
+
+def coverage_grid(meta, adj_dir=None):
+    """→ {(market, kind): (有因子檔的檔數, 該格總檔數)}。⛔ 抽成函式才測得到。
+
+    ⚠ 母體是 `stocks.csv`（曾經進過我方母體的），⛔ 不是「今天還在的」。
+    """
+    d = adj_dir or ADJ
+    have = ({fn[:-4] for fn in os.listdir(d) if fn.endswith(".csv")}
+            if os.path.isdir(d) else set())
+    grid = defaultdict(lambda: [0, 0])
+    for sid, r in meta.items():
+        k = ((r or {}).get("market", ""), (r or {}).get("kind", ""))
+        grid[k][1] += 1
+        if sid in have:
+            grid[k][0] += 1
+    return {k: tuple(v) for k, v in grid.items()}
+
+
+def grid_gap(grid, min_n=GRID_MIN):
+    """→ (要報的, **已豁免但仍要列出來的**)，每筆是
+    `(kind, 空的那個 market, 檔數, 有覆蓋的那個 market, 覆蓋率)`。
+
+    ⭐⭐ 市場情報分析線 2026-09-11 13:05 報的形狀：`data/adj/` 有一個 **2×2 的交叉格
+    整格是空的**——上櫃 × ETF 那 119 檔，而**上市 ETF 有**（00929 38 列）。
+
+    ⛔ 而看總數的檢查永遠抓不到它：`data/adj/` 有 2,374 檔、填值率很高，
+    ⚠ 「某一格整格空」被那個高填值率蓋掉了——跟 `shares_check` 那次是同一個盲點。
+
+    ⇒ 判準刻意做成**有對照組**的，⛔ 不是憑空設門檻：
+    **同一個 `kind` 在另一個市場有覆蓋，而這一格是 0 ⇒ 管線漏接那一格。**
+    ⚠ 反過來，兩個市場都是 0 的 `kind`（例如受益證券）**不報**——
+    那多半是「那種證券本來就沒有還原因子」，⛔ 是問錯問題，不是缺資料。
+    """
+    by_kind = defaultdict(dict)
+    for (mk, kind), (n_have, n_all) in grid.items():
+        if kind:
+            by_kind[kind][mk] = (n_have, n_all)
+    out = []
+    waived = []
+    for kind, per in by_kind.items():
+        covered = [(mk, h, a) for mk, (h, a) in per.items() if h]
+        if not covered:
+            continue                     # ⚠ 沒有任何對照組 ⇒ 不報（見說明）
+        for mk, (h, a) in per.items():
+            if h == 0 and a >= min_n:
+                ref = max(covered, key=lambda x: x[1])
+                row = (kind, mk, a, ref[0], f"{ref[1]}/{ref[2]}")
+                (waived if (mk, kind) in GRID_WAIVED else out).append(row)
+    return (sorted(out, key=lambda x: -x[2]),
+            sorted(waived, key=lambda x: -x[2]))
+
+
 def scan(cal, adj, meta):
     """→ [(sid, date, prev_close, close)]，符合三條件且不在 adj 的普通股。"""
     cidx = {d: i for i, d in enumerate(cal)}
@@ -340,6 +407,33 @@ def main():
         rl.note(f"  {r[0]} {r[1]}｜{r[2]}｜{r[5]} → {r[6]}｜**{r[7]}**"
                 f"｜當時 {r[3] or '?'}／現在 {r[4]}")
     rl.info("完整清單", "data/meta/_adj_gap.csv")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 分格覆蓋率（市場 × 證券種類）——2026-09-11 市場情報分析線要的
+    #   ⛔ 上面那些檢查看的是**總數**，而「某一格整格是空的」會被高填值率蓋掉。
+    #   實例：`data/adj/` 上櫃 × ETF **119 檔全空**，而上市 ETF 有（00929 38 列）
+    #   ⇒ 那 119 檔幾乎全是**配息型債券 ETF** ⇒ 有配息就有除息就該有因子
+    #   ⇒ ⚠ 沒有因子的後果是**靜默的**：跨除息日的報酬率會被系統性高估，
+    #     而價格序列看起來完全正常。
+    # ══════════════════════════════════════════════════════════════
+    grid = coverage_grid(meta)
+    rl.info("⭐ `data/adj/` 分格覆蓋率（市場 × 種類）",
+            "｜".join(f"{mk}×{kd or '（無）'} {h}/{a}"
+                      for (mk, kd), (h, a) in sorted(grid.items()) if a >= GRID_MIN))
+    gaps, waived = grid_gap(grid)
+    # ⭐ 豁免的**逐筆列出來**：⛔ 只把它從 ✗ 降成 ⚠，不是讓它消失
+    for kd, mk, a, ref, rate in waived:
+        rl.note(f"  ⏳ {kd}×{mk} {a} 檔全空（對照：{ref} {rate}）"
+                f"　⇒ {GRID_WAIVED[(mk, kd)]}")
+    # ⭐ 第七點：判準要有正例才算活著 ⇒ 附上「有覆蓋的格有幾個」
+    n_cov = sum(1 for (h, a) in grid.values() if h and a >= GRID_MIN)
+    rl.check("⭐⭐ 沒有「同一種證券在一個市場有因子、另一個市場整格是空的」"
+             "（⛔ 看總數的檢查抓不到這個）",
+             not gaps,
+             (f"⛔ {len(gaps)} 格：" + "｜".join(
+                 f"{kd}×{mk} **{a} 檔全空**（對照：{ref} {rate}）"
+                 for kd, mk, a, ref, rate in gaps[:4]))
+             if gaps else f"0 格　⚠ 而有覆蓋的格有 {n_cov} 個 ⇒ 判準活著")
 
     # ⛔ 不設絕對門檻（歷史欠帳會讓它天天紅，而天天紅的檢查會被學會忽略）。
     #   ⇒ 用「有沒有變多」當判準——那才回答得了「今天有沒有變壞」。

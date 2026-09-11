@@ -248,8 +248,73 @@ def main():
     if FAIL:
         print(f"⛔ {len(FAIL)} 項沒過：{FAIL}")
         return 1
-    print("全過")
-    return 0
+    # ══════════════════════════════════════════════════════════════
+    print("⑧ ⭐⭐ 分格覆蓋率：**同一種證券在一個市場有、另一個市場整格空**")
+    # ⚠ 這一節不碰真資料（⛔ 這支已經因為掃全庫吃掉過 11 分鐘）——純函式，毫秒級。
+    #   照市場情報分析線 2026-09-11 13:05 的實測形狀做：
+    #     twse × etf  有（00929 38 列）　⛔ tpex × etf  119 檔全空
+    sand = tempfile.mkdtemp(prefix="grid_")
+    try:
+        adjd = os.path.join(sand, "adj")
+        os.makedirs(adjd)
+        meta = {}
+        for i in range(30):                      # twse × etf：有一半有因子
+            meta[f"t{i:03d}"] = {"market": "twse", "kind": "etf"}
+            if i < 15:
+                io.open(os.path.join(adjd, f"t{i:03d}.csv"), "w").write("date\n")
+        for i in range(119):                     # ⛔ tpex × etf：整格空
+            meta[f"p{i:03d}"] = {"market": "tpex", "kind": "etf"}
+        for i in range(40):                      # tpex × stock：有 ⇒ 不該被報
+            meta[f"s{i:03d}"] = {"market": "tpex", "kind": "stock"}
+            io.open(os.path.join(adjd, f"s{i:03d}.csv"), "w").write("date\n")
+        for i in range(50):                      # ⚠ 兩邊都空的 kind ⇒ **不報**
+            meta[f"b{i:03d}"] = {"market": "tpex", "kind": "beneficiary"}
+            meta[f"c{i:03d}"] = {"market": "twse", "kind": "beneficiary"}
+        grid = G.coverage_grid(meta, adjd)
+        ck("⭐ 分格算得對（tpex×etf 是 0/119）",
+           grid.get(("tpex", "etf")) == (0, 119), str(grid.get(("tpex", "etf"))))
+        ck("  twse×etf 是 15/30", grid.get(("twse", "etf")) == (15, 30),
+           str(grid.get(("twse", "etf"))))
+        gaps, waived = G.grid_gap(grid)
+        ck("⭐⭐ 抓到 tpex×etf 整格空（⛔ 而它的總填值率很高，看總數抓不到）",
+           [(k, m) for k, m, *_ in gaps] == [("etf", "tpex")], str(gaps))
+        ck("  ⚠ 報出來時附**對照組**（另一個市場有多少）",
+           gaps and gaps[0][3] == "twse" and gaps[0][4] == "15/30", str(gaps))
+        ck("⛔ 兩邊都空的 kind **不報**（⚠ 那是問錯問題，不是缺資料）",
+           not [g for g in gaps if g[0] == "beneficiary"], str(gaps))
+        # ⛔ 上面那條用的是**混著別的 kind** 的 grid ⇒ 拿掉對照組那一行時
+        #   它會炸在 `max()` 而不是被斷言抓到——⚠ **紅在錯的地方等於指錯兇手**。
+        #   ⇒ 再加一個**只有兩邊都空**的 grid，讓它紅在該紅的那一條上。
+        only_empty = {("tpex", "beneficiary"): (0, 50),
+                      ("twse", "beneficiary"): (0, 50)}
+        _o, _w = (G.grid_gap(only_empty) if True else ([], []))
+        ck("  ⭐ 而且**整張 grid 都沒有對照組**時回空，⛔ 不是炸掉",
+           _o == [] and _w == [], f"{_o}｜{_w}")
+        ck("  ⛔ 有覆蓋的格不報（tpex×stock）",
+           not [g for g in gaps if g[0] == "stock"], str(gaps))
+        # ⚠ 正例的反面：格子太小就不報（⛔ 三檔剛好都沒事件是正常的）
+        small = {("tpex", "reit"): (0, 3), ("twse", "reit"): (2, 5)}
+        ck("⚠ 檔數低於 GRID_MIN 的格**不報**（⛔ 否則會每天假紅）",
+           not G.grid_gap(small)[0], str(G.grid_gap(small)))
+        ck("  ⭐ 而把門檻調低它就報得出來 ⇒ 證明那一格確實是 0",
+           len(G.grid_gap(small, min_n=2)[0]) == 1, str(G.grid_gap(small, min_n=2)))
+
+        print("  ⭐⭐ 白名單：降成 ⚠、⛔ 但不可以消失")
+        wg = {("emerging", "stock"): (0, 363), ("twse", "stock"): (9, 10)}
+        out2, wv2 = G.grid_gap(wg)
+        ck("  ⭐ 白名單裡的格**不進 ✗**", not out2, str(out2))
+        ck("  ⛔ 但它**還在 waived 裡**（⚠ 消失的那一刻就再也沒人想起它）",
+           [(k, m) for k, m, *_ in wv2] == [("stock", "emerging")], str(wv2))
+        ck("  ⚠ 而白名單每一格都要有**理由字串**（⛔ 不可以是空的）",
+           all(isinstance(v, str) and len(v) > 20 for v in G.GRID_WAIVED.values()),
+           str(G.GRID_WAIVED))
+        ck("  ⛔ 理由裡不可以只寫「暫時」就了事",
+           all("暫時" not in v for v in G.GRID_WAIVED.values()))
+    finally:
+        shutil.rmtree(sand, ignore_errors=True)
+
+    print("全過" if not FAIL else f"⛔ {len(FAIL)} 條沒過")
+    return 1 if FAIL else 0
 
 
 if __name__ == "__main__":

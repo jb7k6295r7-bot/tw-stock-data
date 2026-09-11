@@ -190,18 +190,81 @@ def parse(payload):
     return rows, note
 
 
-def cross_check(rows, meta):
-    """→ (兩邊都有的, 我方 last_seen **晚於**官方終止上市日的)。
+PERSTOCK = os.path.join(_ROOT, "stocks")
+
+
+def market_around(code, day, root=None):
+    """→ (下市日**之前**的市場集合, **之後**的市場集合)。⛔ 讀不到就回 (None, None)。
+
+    ⭐ 這是分辨「轉板」與「真的寫錯」的**直接證據**：
+    轉板的那一檔，下市日之後的 `market` 會**換一個**（實測 6423 億而得：
+    2026-01-22 之前 413 列全是 `twse`「億而得-創」＝創新板，
+    之後 152 列全是 `tpex`「億而得」＝上櫃）。
+    """
+    p = os.path.join(root or PERSTOCK, f"{code}.csv")
+    if not os.path.exists(p):
+        return None, None
+    before, after = set(), set()
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            d, mk = (r.get("date") or "").strip(), (r.get("market") or "").strip()
+            if not d or not mk:
+                continue
+            (before if d < day else after if d > day else before).add(mk)
+    return before, after
+
+
+def explain_late(code, delist_day, last_seen, cover_from, root=None):
+    """下市日之後我方還有列——**這是為什麼**。→ 說明字串，或 `None`（真的違規）。
+
+    ⛔ 2026-09-11 之前這條斷言把三種完全不同的東西一起判成違規，
+    ⚠ 而 K線分析線與市場情報分析線**各自獨立**撞到同一件事（代號重用）。
+    三檔三種語意，⭐ 而且全部從資料自己看得出來：
+
+        2301 光寶電子  下市 2002-11-04 ⇒ 早於我方涵蓋期 ⇒ **代號回收**
+                       （現在的 2301 是光寶科，first_seen 2015-01-05）
+        2432 倚天資訊  下市 2008-09-01 ⇒ 同上（現在是倚天酷碁-創）
+        6423 億而得-創 下市 2026-01-22 ⇒ **轉板**：twse（創新板）→ tpex（上櫃）
+
+    ⛔ 把 2301 當成「下市後還寫進列」⇒ 擋掉的是**光寶科**。
+    ⚠ 而那正是這條斷言最危險的失敗方向：它擋的是一檔天天有量的大公司。
+    """
+    if delist_day < cover_from:
+        return (f"代號回收（下市 {delist_day} 早於我方涵蓋期 {cover_from}）"
+                "　⇒ 現在這個代號是**另一家公司**")
+    before, after = market_around(code, delist_day, root)
+    if before is None:
+        return None                      # ⛔ 讀不到逐檔檔 ≠ 沒事，交給下游當違規
+    if before and after and before != after:
+        return (f"轉板（{'／'.join(sorted(before))} → {'／'.join(sorted(after))}）"
+                "　⇒ 同一家公司換板，不是下市")
+    return None
+
+
+def cross_check(rows, meta, cover_from=None, root=None):
+    """→ (兩邊都有的, **真的**違規的, 已解釋的)。
 
     ⛔ 抽成函式是為了讓 selftest 測得到——這一段是這支程式真正的產出，
     ⚠ 而它埋在 main() 裡就只有「跑一趟正式抓取」才驗得到，
       而這個開發容器對交易所一律 403 ⇒ 等於永遠沒驗過。
+
+    ⚠ `cover_from` 不寫死：⛔ 用 `stocks.csv` 裡最小的 `first_seen` 算
+      （寫死的那一天會在涵蓋期往前補的那一刻悄悄變成錯的）。
     """
     both = [(r[1], r[0], (meta.get(r[1]) or {}).get("last_seen", "")) for r in rows
             if r[1] in meta]
+    if cover_from is None:
+        firsts = [str((v or {}).get("first_seen") or "") for v in meta.values()]
+        firsts = [x for x in firsts if x]
+        cover_from = min(firsts) if firsts else "0000-00-00"
     # ⚠ 我方 `last_seen` 應該 ≤ 官方終止上市日。
-    #   ⛔ 反過來（我方晚於官方）代表我方寫進了**不該有的列**。
-    return both, [x for x in both if x[2] and x[2] > x[1]]
+    #   ⛔ 反過來（我方晚於官方）**大部分不是錯**——見 `explain_late()`。
+    late = [x for x in both if x[2] and x[2] > x[1]]
+    bad, explained = [], []
+    for code, day, seen in late:
+        why = explain_late(code, day, seen, cover_from, root)
+        (explained if why else bad).append((code, day, seen, why))
+    return both, bad, explained
 
 
 def main():
@@ -288,14 +351,20 @@ def main():
     if os.path.exists(STOCKS):
         with io.open(STOCKS, encoding="utf-8") as f:
             meta = {r["stock_id"]: r for r in csv.DictReader(f)}
-    both, after = cross_check(rows, meta)
+    both, bad, explained = cross_check(rows, meta)
     rl.info("⭐ 與 stocks.csv 對得起來的",
             f"{len(both)} 檔（官方 {len(rows)} 筆裡，我方 meta 也有的）")
-    rl.check("⛔ 沒有任何一檔的 last_seen **晚於**官方終止上市日",
-             not after,
-             f"{len(after)} 檔：{[(c, o, l) for c, o, l in after[:5]]}"
-             "　⇒ 那代表我方在下市之後還寫進了列" if after
-             else f"{len(both)} 檔全部 last_seen ≤ 官方終止上市日")
+    # ⭐ 已解釋的要**逐筆列出來**：⛔ 只講「有 N 檔已解釋」等於把它們藏起來，
+    #   而下一個人會重新懷疑同一批（K線分析線與情報分析線今天就各查了一次）。
+    for code, day, seen, why in explained:
+        rl.note(f"  {code}｜官方下市 {day}、我方 last_seen {seen} ⇒ {why}")
+    rl.info("⚠ 下市日之後仍有列、但**解釋得出來**的",
+            f"{len(explained)} 檔　⇒ ⛔ 這些不是錯，見上面逐筆")
+    rl.check("⛔ 沒有任何一檔的 last_seen 晚於官方終止上市日**而且解釋不出來**",
+             not bad,
+             f"{len(bad)} 檔：{[(c, o, l) for c, o, l, _ in bad[:5]]}"
+             "　⇒ 那才代表我方在下市之後還寫進了列" if bad
+             else f"{len(both)} 檔（其中 {len(explained)} 檔已解釋）")
     # ⚠ 只 info 不 check：母體本來就只收「進過母體的」，
     #   2015 之前就下市的當然不在 `stocks.csv` 裡——⛔ 那不是缺陷。
     rl.info("⚠ 官方有、我方 meta 沒有",
