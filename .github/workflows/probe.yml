@@ -144,6 +144,22 @@ jobs:
       - name: 驗十四支探針跑得完（離線）
         run: python selftest_probes.py
 
+      # ⛔⛔ `delist_probe.py` 的雙向比對要讀 `data/meta/delisted.csv`，
+      #   而那個檔**只在 main 上**（`delisted.py` 是 daily 跑的、推到 main）。
+      #   ⇒ 這支 checkout 的是分支 ⇒ 讀到「檔不存在」⇒ 那一節整節不做。
+      #   ⚠ 2026-09-11 run 42 實測就是這樣：探針**成功**、輸出裡那一節
+      #     只寫著「我方那份不在這個 ref 上」——⭐ 幸好程式端有那句，
+      #     ⛔ 沒有那句的話它會靜靜比出「A 265 筆、B 0 筆」那種假結論。
+      #   ⇒ CLAUDE.md 第四點六鏡像的落地條①：讀 main 才有的檔就先取下來。
+      - name: 取 main 上的判準檔（雙向比對要用）
+        if: always()
+        continue-on-error: true
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/meta/delisted.csv || \
+            echo "⚠ main 上也沒有 delisted.csv（⛔ 那才是真的沒有）"
+          ls -l data/meta/delisted.csv || true
+
       - name: 跑十三支探針（這支一律全跑）
         if: always()
         continue-on-error: true

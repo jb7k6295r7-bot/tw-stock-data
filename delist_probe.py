@@ -51,6 +51,7 @@ import json
 import os
 import re
 import sys
+from collections import Counter
 
 import backfill as B
 from twparse import roc_iso as _roc_iso
@@ -134,6 +135,32 @@ TARGETS = [
 OURS = os.path.join(_ROOT, "meta", "delisted.csv")
 _ROC = re.compile(r"^\d{2,3}[/-]\d{1,2}[/-]\d{1,2}$")
 _CODE = re.compile(r"^[0-9A-Z]{4,6}$")
+
+
+def _spread(rows, top=12):
+    """每個鍵的**相異值分佈**。→ list[str]
+
+    ⭐ 這一段回答的是 CLAUDE.md 第二點的判準：**這一批要自己講出它涵蓋哪一段**。
+    ⚠ 頂層是陣列的那一族**沒有** `stat`／`total`／`notes` 可以問
+    ⇒ ⛔ 「回了 362 列」不能當成「有歷史」——那 362 列可能全是同一年。
+    ⇒ 相異值少的鍵（年份、市場、旗標）直接把值與筆數印出來，
+    ⚠ 相異值多的（代號、日期）只印**幾個相異值與最小最大**，⛔ 不要洗版。
+    """
+    d = [x for x in rows if isinstance(x, dict)]
+    out = ["⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）："]
+    for k in sorted({k for x in d for k in x}):
+        vals = [str(x.get(k, "")).strip() for x in d]
+        uniq = sorted({v for v in vals if v})
+        blank = sum(1 for v in vals if not v)
+        tail = f"｜⚠ 空的 {blank}" if blank else ""
+        if len(uniq) <= top:
+            cnt = Counter(v for v in vals if v)
+            out.append(f"  {k}：{len(uniq)} 種 " +
+                       "、".join(f"{v}×{n}" for v, n in cnt.most_common(top)) + tail)
+        else:
+            out.append(f"  {k}：{len(uniq)} 種｜最小 {uniq[0]}｜最大 {uniq[-1]}"
+                       f"｜例 {uniq[:3]}{tail}")
+    return out
 
 
 def _guess_keys(rows):
@@ -236,6 +263,7 @@ def probe(label, url, want, out):
             ks = {frozenset(x) for x in d if isinstance(x, dict)}
             out.append(f"   ⚠ 不同鍵組合的種類：{len(ks)}"
                        + ("　⛔ 超過 1 種 ⇒ 逐列取值不可以寫死鍵名" if len(ks) > 1 else ""))
+            out += ["   " + t for t in _spread(d)]
         for r in d[:3]:
             out.append(f"     樣本：{json.dumps(r, ensure_ascii=False)[:220]}")
         _compare_with_ours(d, out)

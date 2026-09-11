@@ -253,7 +253,10 @@ SECTIONS = {
     #   ⭐ 再釘兩節：第四種形狀（頂層陣列）與雙向比對——
     #     ⚠ 少了它們代表 openapi 那支的假回應沒有被送到，那段等於沒測。
     "delist_probe": ["頂層 `fields`", "頂層就是**陣列**",
-                     "與我方 data/meta/delisted.csv 雙向比對"],
+                     "與我方 data/meta/delisted.csv 雙向比對",
+                     # ⭐ 第二點的判準：陣列那一族沒有 total／notes 可以問
+                     #   ⇒ 涵蓋期間只能從**相異值分佈**看出來
+                     "每個鍵的相異值"],
     # ⛔ 這一支的結論有三種（補得回來／補不回來但端點好／分不出來），
     #   ⚠ 每一種的下一步都不同 ⇒ 釘住「⇒ 結論」那一節一定要出現。
     "esb_day_probe": ["## ⇒ 結論"],
@@ -383,6 +386,23 @@ def check_delist_cross():
         print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：值的形狀不對就**不比**"
               "（⚠ 鍵名一模一樣，靠鍵名認的話這裡會靜靜錯位）")
         bad += 0 if ok else 1
+
+        # ⭐ `_spread`：相異值少的要把**值與筆數**印出來（那就是涵蓋期間的答案），
+        #   ⚠ 相異值多的只印最小最大 ⛔ 不可以洗版。
+        sp = "\n".join(DP._spread(
+            [{"Date": "115", "Code": f"{i:04d}"} for i in range(30)]))
+        for nm, cond in (
+                ("⭐ 只有一種值的鍵要印出「值×筆數」"
+                 "（⇒ 「362 列」不等於「有歷史」，第二點）", "115×30" in sp),
+                ("　⚠ 相異值多的鍵只印最小最大，⛔ 不洗版",
+                 "最小 0000" in sp and "最大 0029" in sp and "0015" not in sp),
+                ("　⛔ 空值要單獨講（⚠ 空欄位與沒有那個欄位是兩件事）",
+                 "⚠ 空的 2" in "\n".join(
+                     DP._spread([{"a": "x"}, {"a": ""}, {"a": ""}])))):
+            print(f"{'✓' if cond else '✗'} delist_probe `_spread`：{nm}")
+            if not cond:
+                print("    實際：\n      " + sp.replace("\n", "\n      "))
+                bad += 1
 
         # ⚠ 我方那份不在這個 ref 上 ⇒ 要說「是 checkout 的問題」，
         #   ⛔ 不可以講成「我方沒有」（第四點六的鏡像）
