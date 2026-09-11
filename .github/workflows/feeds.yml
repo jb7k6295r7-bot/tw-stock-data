@@ -369,22 +369,35 @@ jobs:
         if: inputs.mode == 'otc-adj-official'
         timeout-minutes: 60
         run: |
-          python selftest_otc_adj_official.py
-          python selftest_otc_adj_compare.py
+          # ⛔⛔ RC-GUARD（2026-09-11）：這一步**一行掛掉不可以賠掉後面幾行**。
+          #   實測 run 107：第 4 行 `otc_reduce_history.py` 因為兩條**常駐假紅**
+          #   `exit 1` ⇒ `set -e` ⇒ ⛔ 後面六行（含換供料本體 `--official`
+          #   與 `adjust.py`）**一行都沒跑**，而那一趟只花了 10 秒。
+          #   ⇒ 結果：4541／5328／8234／3141 四檔的除息事件沒進 `data/adj/`，
+          #     ⚠ 而那代表**那四檔今天的漲跌算出來是錯的**——
+          #     ⛔ 一個「判準檔的自檢」把整條資料寫入鏈掐死了。
+          # ⚠ 這跟 run 104 賠掉三年是**同一族**（`set -e` 連坐）：
+          #   ⛔ 當時只修了逐年迴圈，而「同一個 step 裡的多行」沒被修到。
+          # ⛔ 而**只做前半（全部 `|| true`）＝把失敗吞掉，那比連坐更糟**
+          #   ⇒ 記下來、繼續跑、⭐ 最後仍然 exit 1。
+          RC=0
+          python selftest_otc_adj_official.py || RC=1
+          python selftest_otc_adj_compare.py || RC=1
           # ① 官方判準檔（這兩支各一發請求）
-          python selftest_otc_reduce_history.py
-          python otc_reduce_history.py
-          python selftest_otc_exright_history.py
-          python otc_exright_history.py
+          python selftest_otc_reduce_history.py || RC=1
+          python otc_reduce_history.py || RC=1
+          python selftest_otc_exright_history.py || RC=1
+          python otc_exright_history.py || RC=1
           # ② ⚠ 快照一定要在寫入**之前**
-          python otc_adj.py --snapshot data/meta/_adj_snapshot_pre_official.csv
+          python otc_adj.py --snapshot data/meta/_adj_snapshot_pre_official.csv || RC=1
           # ③ 官方寫入（⛔ 不連外）
-          python otc_adj.py --official
+          python otc_adj.py --official || RC=1
           # ④ 重算還原因子
-          python adjust.py
+          python adjust.py || RC=1
           # ⑤ ⭐ 換完再比一次：C 類要掉下來，⛔ 而 D 類不可以變大
-          python otc_adj_compare.py
+          python otc_adj_compare.py || RC=1
           python reduce_check.py || true
+          [ "$RC" = 0 ] || { echo "⛔ 有步驟失敗（見上面各該支的 runlog）" >&2; exit 1; }
 
       # ★ 月營收與財報的**歷史**要從哪裡來。現況是 `data/mops/` 每一項都只有一期
       #   （OpenAPI 沒有年度／季別參數，只給最新一期），所以 2015 以來補不回來。

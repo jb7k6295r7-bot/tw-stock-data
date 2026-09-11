@@ -179,20 +179,58 @@ def main():
     #   ⭐ 而且迴圈**之後**必須有一個「RC 不是 0 就 exit 1」
     #   （⛔ 只做前半 ＝ 把失敗吞掉，那比連坐更糟）。
     # ══════════════════════════════════════════════════════════════
+    # ⭐ 判準抽成**一份**（第四點五）：逐年迴圈與 `RC-GUARD` 區塊共用它。
+    def _rc_calls(body):
+        """→ 該段裡呼叫 `python` 的行。⚠ 明示 `|| true` 的不算（那是刻意容錯）。"""
+        return [ln for ln in body.split("\n")
+                if re.search(r"^\s*python\s", ln) and "|| true" not in ln]
+
+    def _rc_check(label, body, after):
+        calls = _rc_calls(body)
+        ck(f"{label}｜每個 python 呼叫都帶 `|| RC=`（⛔ 一行失敗不可以賠掉後面的）",
+           bool(calls) and all("|| RC=" in ln for ln in calls),
+           f"⛔ 沒帶的：{[ln.strip()[:60] for ln in calls if '|| RC=' not in ln]}")
+        ck(f"{label}｜而**之後**要 `exit 1`（⛔ 不可以把失敗吞掉）",
+           "RC" in after and "exit 1" in after, f"後面那一段：{after.strip()[:80]}")
+
     for f in files:
         short = os.path.basename(f)
         src = io.open(f, encoding="utf-8").read()
         for m in re.finditer(r"for Y in \$\(seq.*?\n(.*?)\n\s*done\n(.*?)\n",
                              src, re.S):
-            body, after = m.group(1), m.group(2)
-            calls = [ln for ln in body.split("\n")
-                     if re.search(r"^\s*python\s", ln)]
-            ck(f"{short}｜逐年迴圈裡的 python 呼叫都帶 `|| RC=`"
-               "（⛔ 一批失敗不可以賠掉後面幾年）",
-               bool(calls) and all("|| RC=" in ln for ln in calls),
-               f"⛔ 沒帶的：{[ln.strip()[:60] for ln in calls if '|| RC=' not in ln]}")
-            ck(f"{short}｜而迴圈**之後**要 `exit 1`（⛔ 不可以把失敗吞掉）",
-               "RC" in after and "exit 1" in after, f"迴圈後那一行：{after.strip()[:80]}")
+            _rc_check(f"{short}｜逐年迴圈", m.group(1), m.group(2))
+
+        # ══════════════════════════════════════════════════════════════
+        # ⭐⭐ `RC-GUARD`：**同一個 step 裡的多行**也會連坐（2026-09-11 加）
+        #
+        # ⛔ run 107：`otc-adj-official` 那一步的第 4 行 `otc_reduce_history.py`
+        #   因為兩條**常駐假紅** exit 1 ⇒ `set -e` ⇒ 後面六行（含換供料本體
+        #   `otc_adj.py --official` 與 `adjust.py`）**一行都沒跑**，全程 10 秒。
+        #   ⇒ 四檔的除息事件沒進 `data/adj/` ⇒ ⚠ **那四檔今天的漲跌是錯的**。
+        # ⚠ 跟 run 104（賠掉三年）是同一族，⛔ 只是當時只修了逐年迴圈。
+        #
+        # ⇒ 凡是標了 `RC-GUARD` 的 run 區塊，套用同一組判準。
+        #   ⚠ 判準是**有沒有標記**，⛔ 不是「看起來像不像」——
+        #     後者會對整個 repo 的每一個多行 step 誤判，然後被學會忽略。
+        # ══════════════════════════════════════════════════════════════
+        # ⚠ ⛔ 第一版用 regex 加 lookahead 抓區塊邊界——**它貪吃了整個檔**
+        #   （run 區塊裡每一行都有縮排，`\n\S` 永遠等不到）⇒ 一次噴 12 條假違規。
+        #   ⇒ 改成**照縮排切**：從 `run: |` 往下收，遇到縮排 ≤ 它自己的非空行就停。
+        lines = src.split("\n")
+        for i, ln in enumerate(lines):
+            m = re.match(r"^( *)run: \|\s*$", ln)
+            if not m:
+                continue
+            ind = len(m.group(1))
+            body = []
+            for nxt in lines[i + 1:]:
+                if nxt.strip() and len(nxt) - len(nxt.lstrip()) <= ind:
+                    break
+                body.append(nxt)
+            if not any("RC-GUARD" in b for b in body):
+                continue
+            _rc_check(f"{short}｜RC-GUARD 區塊（第 {i + 1} 行起）",
+                      "\n".join(body), "\n".join(body[-3:]))
 
     # ── ⛔ 反向驗：這支檢查自己有沒有效 ──
     #   ⚠ 沒有這一段的話，一支「永遠說 ok」的檢查跟真的一模一樣。
@@ -215,6 +253,19 @@ def main():
     ck("★ 反向驗：一個**沒帶** `|| RC=` 的逐年迴圈確實會被判成不合格",
        _calls and not all("|| RC=" in ln for ln in _calls),
        f"⛔ 連沒帶的都說有 ⇒ 這一道是死的（掃到 {_calls}）")
+    # ⭐ RC-GUARD 那一道的反向驗，⚠ 而且要**兩個方向**：
+    _g_bad = "          # RC-GUARD\n          python a.py\n          python b.py\n"
+    ck("★ 反向驗：`RC-GUARD` 區塊裡沒帶 `|| RC=` 的行**確實**掃得出來",
+       len(_rc_calls(_g_bad)) == 2
+       and not all("|| RC=" in ln for ln in _rc_calls(_g_bad)),
+       f"⛔ 掃到 {_rc_calls(_g_bad)}")
+    _g_ok = ("          # RC-GUARD\n          RC=0\n          python a.py || RC=1\n"
+             "          python z.py || true\n")
+    ck("★ 反向驗（另一方向）：明示 `|| true` 的行**不算**"
+       "（⚠ 那是刻意容錯，⛔ 把它也判成違規會讓這道被學會忽略）",
+       len(_rc_calls(_g_ok)) == 1
+       and all("|| RC=" in ln for ln in _rc_calls(_g_ok)),
+       f"⛔ 掃到 {_rc_calls(_g_ok)}")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
