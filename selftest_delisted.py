@@ -18,7 +18,11 @@
     ③ ⭐ `cross_check`：我方 `last_seen` **晚於**官方終止上市日 ⇒ 抓得出來。
        這是這支程式真正的產出，⚠ 而它只在 Actions 上跑得到 ⇒ 得在這裡驗。
 """
+import io
 import json
+import tempfile
+import shutil
+import os
 import sys
 
 import delisted as D
@@ -110,25 +114,64 @@ def main():
     ck("  沒有表 ⇒ 0 列，且說明列出頂層鍵", not r6 and "status" in n6, n6)
 
     print("⑤ ⭐ cross_check：我方 last_seen 晚於官方終止上市日 ⇒ 抓得出來")
-    good = {"2867": {"last_seen": "2026-08-29"},
-            "3682": {"last_seen": "2024-07-31"}}      # ⚠ 等於當天 ⇒ 合法
-    both, after = D.cross_check(rows, good)
+    # ⚠ `first_seen` 是 `cover_from` 的來源 ⇒ 每一筆 meta 都要帶（⛔ 不然涵蓋期算不出來）
+    good = {"2867": {"last_seen": "2026-08-29", "first_seen": "2015-01-05"},
+            "3682": {"last_seen": "2024-07-31", "first_seen": "2015-01-05"}}
+    both, bad, expl = D.cross_check(rows, good)
     ck("  兩檔對得起來", len(both) == 2, str(both))
-    ck("  ⛔ 沒有一檔晚於官方 ⇒ after 是空的", not after, str(after))
+    ck("  ⛔ 沒有一檔晚於官方 ⇒ bad 是空的", not bad, str(bad))
     ck("  ⚠ 「等於終止上市日」不算違規（那天還在交易）",
-       not any(c == "3682" for c, _, _ in after), str(after))
-    bad_meta = {"2867": {"last_seen": "2026-09-05"}}   # 下市後 4 天還有列
-    both2, after2 = D.cross_check(rows, bad_meta)
-    ck("  ⭐ 晚 4 天的那一檔被抓出來", [x[0] for x in after2] == ["2867"], str(after2))
+       not any(c == "3682" for c, _, _, _ in bad), str(bad))
+    bad_meta = {"2867": {"last_seen": "2026-09-05", "first_seen": "2015-01-05"}}
+    both2, bad2, expl2 = D.cross_check(rows, bad_meta)
+    ck("  ⭐ 晚 4 天的那一檔被抓出來", [x[0] for x in bad2] == ["2867"], str(bad2))
     ck("  抓出來的內容含官方日與我方日",
-       after2 and after2[0][1] == "2026-09-01" and after2[0][2] == "2026-09-05",
-       str(after2))
+       bad2 and bad2[0][1] == "2026-09-01" and bad2[0][2] == "2026-09-05",
+       str(bad2))
     ck("  ⚠ 我方 meta 沒有的（2001 那檔）不算違規、也不進 both",
        "1111" not in [c for c, _, _ in both2], str(both2))
     ck("  ⛔ last_seen 是空字串時不算違規（沒有資訊 ≠ 違規）",
-       not D.cross_check(rows, {"2867": {"last_seen": ""}})[1])
+       not D.cross_check(rows, {"2867": {"last_seen": "",
+                                         "first_seen": "2015-01-05"}})[1])
     ck("  ⛔ meta 值是 None 也不炸",
        D.cross_check(rows, {"2867": None})[1] == [])
+
+    print("⑤之二 ⭐⭐ 三種「下市後還有列」，⛔ 只有第三種才是錯（2026-09-11）")
+    # ⚠ 三檔三種語意，⭐ 全部是實測：
+    #   2301 光寶電子 下市 2002-11-04 ⇒ 代號回收（現在是光寶科）
+    #   6423 億而得-創 下市 2026-01-22 ⇒ 轉板 twse(創新板) → tpex(上櫃)
+    #   ⛔ 而第三種（同市場、涵蓋期內）才是真的寫錯
+    sand2 = tempfile.mkdtemp(prefix="dl_")
+    try:
+        def _ps(code, rows_):
+            io.open(os.path.join(sand2, code + ".csv"), "w",
+                    encoding="utf-8").write(
+                "date,stock_id,name,market\n"
+                + "".join(f"{d},{code},n,{m}\n" for d, m in rows_))
+        _ps("6423", [("2025-06-02", "twse"), ("2026-03-02", "tpex")])
+        _ps("9999", [("2025-06-02", "twse"), ("2026-03-02", "twse")])
+        COVER = "2015-01-05"
+        why1 = D.explain_late("2301", "2002-11-04", "2026-09-10", COVER, sand2)
+        ck("  ⭐ 下市日**早於**我方涵蓋期 ⇒ 代號回收，不是違規"
+           "（⛔ 判成違規會擋掉光寶科）",
+           why1 and "代號回收" in why1, str(why1))
+        why2 = D.explain_late("6423", "2026-01-22", "2026-09-10", COVER, sand2)
+        ck("  ⭐⭐ 下市日之後 market 換了 ⇒ **轉板**，不是違規",
+           why2 and "轉板" in why2 and "twse" in why2 and "tpex" in why2, str(why2))
+        why3 = D.explain_late("9999", "2026-01-22", "2026-09-10", COVER, sand2)
+        ck("  ⛔ 正例：同市場、涵蓋期內 ⇒ **解釋不出來 ⇒ 真的違規**"
+           "（⚠ 證明這不是把紅燈關掉）", why3 is None, str(why3))
+        why4 = D.explain_late("8888", "2026-01-22", "2026-09-10", COVER, sand2)
+        ck("  ⛔ 讀不到逐檔檔 ⇒ **不當成已解釋**（⚠ 查不到 ≠ 沒事）",
+           why4 is None, str(why4))
+        ck("  ⚠ `cover_from` 不寫死：從 meta 的最小 first_seen 算",
+           D.cross_check([["2002-11-04", "2301", "光寶電子", "x", "twse"]],
+                         {"2301": {"last_seen": "2026-09-10",
+                                   "first_seen": "2015-01-05"}},
+                         root=sand2)[1] == [],
+           "⛔ 用最小 first_seen 算不出 2015-01-05")
+    finally:
+        shutil.rmtree(sand2, ignore_errors=True)
 
     print("⑥ ⛔ 這一支不碰 stocks.csv（唯一寫入者是 fetch.merge_stocks_meta）")
     ck("  只寫 data/meta/delisted.csv", D.OUT.endswith("meta/delisted.csv"), D.OUT)
