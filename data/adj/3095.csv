@@ -1,2 +1,4 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2022-10-31,10.92779783,10.92779783,2.77,30.27,彌補虧損,reduce
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2008-10-31,0.83220339,,18.93023633,11.8,9.82,除權息,exright
+2014-09-22,2.08196721,2.08161531,22.74712716,3.05,6.35,彌補虧損,reduce
+2022-10-31,10.92779783,10.92763252,10.92763252,2.77,30.27,彌補虧損,reduce

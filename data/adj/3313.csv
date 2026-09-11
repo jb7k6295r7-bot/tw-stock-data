@@ -1,2 +1,2 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2025-02-13,0.95065789,0.95065789,15.2,14.45,除權,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2025-02-13,0.95065789,,0.95065789,15.2,14.45,除權,exright

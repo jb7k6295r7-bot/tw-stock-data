@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
+        description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, audit, purge, meta]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -32,10 +32,47 @@ on:
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-08-28"
+      # ★★ 2026-09-10 使用者裁定「甲」：母體日檔要**補回官方有、我方沒有的那些列**
+      #   （`parse_twse()` 的 `if not c: continue` 丟掉的，全庫至少 67,446 筆／1,191 檔）。
+      #   ⛔ 不要用 force 跑全期：2,848 天 × 2 市場 × 5 秒 ≈ 7.9 小時，
+      #     job 上限 350 分鐘 ⇒ 被砍在半路的話下一趟又從第一天重來。
+      #   ⇒ 用 need_notrade：只重抓「檔案裡還沒有任何『無成交』列」的日期。
+      #     ⭐ 續跑判準就是成功判準，不需要另一本台帳。
+      #     （前提量過：`_missing_rows_by_day.csv` 2,848 天裡 missing=0 的有 **0 天**。）
+      need_notrade:
+        description: "只重抓「還沒有無成交列」的日期（甲的回補用，可續跑）"
+        type: boolean
+        default: false
+      force:
+        description: "已存在的日期也重抓（⛔ 全期會跑 7.9 小時，補欄位請用 need_notrade）"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+# ⛔⛔ `cancel-in-progress: false` **不代表「後來的會排隊等」**（2026-09-10 實測）
+#
+#   GitHub 的規則是：同一個 group **只排得下一個 pending**。
+#   ⇒ 再送一趟，**前一個還在等的那趟會被直接 cancelled**。
+#
+#   實際發生（feeds group，同一天）：
+#     run 96  margin 全庫        11:13 開始跑 ────────────────► 一直在跑
+#     run 97  otc-adj-codes 6461 11:47 pending … 13:47 **cancelled**（被 98 擠掉）
+#     run 98  tib 全段回補       13:47 pending … 13:56 **cancelled**（被 99 擠掉）
+#     run 99  otcsbl 20 天       13:56 pending
+#   ⇒ 中間那兩趟**從來沒有跑過**，而**沒有任何地方會說**。
+#
+# ⚠ 而 dispatch API 四次都回 `queued`／`204` ⇒ 看起來四趟都送出去了。
+#   ⭐ 這正是 CLAUDE.md 第四點二：**「排進去了」不等於「會跑」**
+#     ——拿 API 的回覆當結果，就是驗到中間、沒驗到終點。
+#
+# ⇒ 派工規矩：**一趟跑完再送下一趟**。⛔ 不可以連續送。
+#   ⚠ 送出去之後要**回頭確認它真的變成 in_progress**，
+#     ⛔ 「dispatch 回 204」不算數。
+#
+# ⚠ 那為什麼不乾脆讓它們平行跑？因為兩趟同時 push 會互相蓋掉
+#   （`_coverage_*.csv` 那一族）——⇒ **序列化是對的，要修的是派工方式。**
 concurrency:
   group: backfill          # 不要兩趟回補同時跑，會互相蓋掉 coverage
   cancel-in-progress: false
@@ -53,6 +90,99 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      # ⭐ 2026-09-10：Commit 那一步改成「只搬 data」之後，
+      #   **程式就不會再經由它進 main**——而排程跑的是 main 上的程式
+      #   ⇒ 不同步的話 main 會永遠停在舊版，而且完全看不出來。
+      #   ⇒ 在這裡同步：此刻 checkout 還是新的，rebase 幾乎不可能撞
+      #     （分支上多的是程式 commit，main 上多的是資料 commit，兩邊不重疊）。
+      #   ⭐ 順帶好處：rebase 之後這一趟手上的 `data/` 也是 main 的最新版。
+      #   ⛔ 失敗不擋後面：撞到就跳過，資料照抓，程式下一趟再同步。
+      # ⛔ 這一步**不設 `continue-on-error`**。
+      #   2026-09-10 的第一版設了，於是它 abort 之後顯示成 **success**，
+      #   而 main 上的程式一個字都沒更新——**綠燈，但什麼都沒做**。
+      #   ⭐ 現在的做法不 rebase ⇒ 不可能衝突 ⇒ 走到 push 還失敗就是**真的有問題**，
+      #     該紅。可以跳過的情形（本來就在 main、fetch 不到）自己 `exit 0`。
+      # ⛔ 1 小時 50 分鐘換來的一步（run 34426373917）：
+      #   「回補」那一步 success 跑了 1h50m，「Commit」1 秒失敗——
+      #   `syntax error: unexpected end of file`，**我的 shell 少了一個 `fi`**。
+      #   ⚠ 我當時「驗過」了，但我驗的是 `yaml.safe_load()`——
+      #     **YAML 合法不代表裡面的 shell 合法**（對 YAML 來說 run: 只是字串）。
+      #   ⇒ 那一步從寫出來就是壞的，任何一趟都會失敗，而我讓它帶著 1h50m 去撞。
+      - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
+        run: python selftest_workflows.py
+
+      # ⛔ 同一件事只准有一份實作。這一族 2026-09-10 掃出**十份**，
+      #   其中 `_same_day` 那一份會讓每日抓取憑空造出一個交易日。
+      #   ⚠ 本機 pre-commit 也有同一道——⛔ 兩個地方都要有：
+      #     hook 可以被 `--no-verify` 跳過，而這裡跳不掉。
+      - name: 掃有沒有第二份實作（零相依）
+        run: python selftest_no_dup.py
+
+      # ⛔ `push_data.sh` 的累積型 CSV 逐鍵合併。這一支擋的是**已經發生過**的
+      #   資料遺失：分支上的 `data/` 比 main 舊，整檔搬過去會刪掉別人剛寫的列，
+      #   ⚠ 而 `git diff` 看起來只是「這一趟重算過」。
+      - name: 驗累積型 CSV 的逐鍵合併（零相依）
+        run: python selftest_merge_ledger.py
+
+      # ⛔⛔ 這三支 2026-09-10 之前**沒有任何 workflow 在跑**
+      #   ⇒ `selftest_reduce.py` 紅著不知道多久，而沒有任何地方會叫。
+      #   （成因是 `ADJ_HEADER` 插了一欄，測試裡寫死的欄位位置就錯位了。）
+      #   ⚠ 「自測存在」≠「自測會被跑」——⭐ 而一支沒人跑的自測比沒有更糟：
+      #     它讓人以為那一塊有守門。
+      #   ⇒ `selftest_workflows.py` 現在會擋下**任何**沒被列進來的 selftest_*.py。
+      - name: 驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）
+        run: |
+          python selftest_reduce.py
+          python selftest_fix_emerging_zero.py
+          python selftest_done_days.py
+          python selftest_schema_audit.py
+          python selftest_margin_universe.py
+          python selftest_hole_kinds.py
+          python selftest_transpose_stamp.py
+          python selftest_feed_months.py
+          python selftest_syntax_warnings.py
+
+      # ⛔ 這一支跑的是好幾個小時的 parse——解析規則錯掉的代價是整趟重來。
+      #   `--`／`----`（TWSE 與 TPEx 各寫各的）一定要在抓之前先驗過。
+      - name: 驗解析規則（空值寫法＋無成交列，離線）
+        run: |
+          python selftest_num.py
+          python selftest_parse_daily.py
+
+      - name: 把程式同步到 main（趁 checkout 還新）
+        run: |
+          BR="${GITHUB_REF_NAME:-main}"
+          if [ "$BR" = "main" ]; then echo "本來就在 main，不必同步"; exit 0; fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # ⛔⛔ 2026-09-10：這一步的第一版寫成 `git rebase origin/main`，
+          #   而它**跟那個丟掉 5 小時的 bug 是同一個病**：rebase 會重放分支上
+          #   所有還沒進 main 的 commit，包括**很舊的那幾個**，撞上 main 現在的內容。
+          #   ⇒ 實測（run 34426373917）：它 abort 了、`continue-on-error` 讓它顯示成功，
+          #     而 **main 上的程式一個字都沒更新**——而排程跑的正是 main 上的程式。
+          #   ⚠ 失敗的樣子：這一步是**綠的**，只是什麼都沒做。
+          #
+          # ⇒ 改成跟「Commit 回 repo」**對稱**的做法：
+          #   把**程式路徑**（`data/` 以外的一切）搬到 main 的頭上，不 rebase。
+          #   ① 不重放任何 commit ⇒ 永遠不會衝突
+          #   ② `data/` 完全不碰 ⇒ 別人剛寫的資料原封不動
+          #   離線模擬（scratchpad/gitsim4）三項都驗過。
+          SRC=$(git rev-parse HEAD)
+          git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
+          git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
+          git checkout "$SRC" -- . ':(exclude)data' || {
+            echo "⚠ 取程式路徑失敗，跳過同步" >&2; exit 0; }
+          git add -A
+          if git diff --staged --quiet; then
+            echo "程式已經跟 main 一致，沒有要同步的"
+          else
+            git commit -q -m "sync: 把分支的程式同步到 main"
+            git push origin HEAD:main && echo "✓ 程式已同步到 main"
+          fi
+          # ⛔ 一定要切回原本的分支：後面的步驟（回補、Commit）都靠它。
+          git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
+
 
       # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
       #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
@@ -90,92 +220,94 @@ jobs:
             --start "${{ inputs.start }}" \
             --end   "${{ inputs.end }}"
 
+      # ⭐⭐ 把**某一天**被刪掉的興櫃列補回去。日期填在 `start`。
+      #   ⛔ 這一支修的是我自己造成的遺失（2026-09-08 的 363 列：
+      #     那趟 `--markets twse,tpex --force` 走到當時還是「整檔覆蓋」的 write_day）。
+      #   ⭐ `esb_day_probe.py` 在 Actions 上回答了「補不補得回來」：
+      #     九條「帶日期、回全市場」的候選**兩天都 0 條可用**，
+      #     ⚠ 而失敗訊息本身就是答案——`stat：請輸入資料日期及股票代碼查詢個股行情`
+      #     ⇒ `type=Daily` 強制要 code，**但逐檔的月表可用** ⇒ 打 363 次補得回來。
+      #   ⚠ 363 檔 × 5 秒 ≈ 30 分鐘。
+      - name: 興櫃單日修補（把被刪掉的那一天補回去）
+        if: inputs.mode == 'esb-repair'
+        timeout-minutes: 90
+        run: |
+          python selftest_esb_day_repair.py
+          D="${{ inputs.start }}"
+          # ⛔⛔ 先把那一天的日檔換成 **main 上的那一份**（CLAUDE.md 第四點六）：
+          #   分支的 `data/` 比 main 舊，⚠ 而這一次「舊」正好是兩邊互補——
+          #   main 有 twse 1382／tpex 1013／emerging **0**，
+          #   分支有 emerging **363**／twse 只有 1（那趟只寫了一列就被砍）。
+          #   ⇒ 底稿一定要取 main 的，⛔ 拿分支的當底稿會把 1,381 列上市推回去刪掉。
+          git fetch origin main || true      # checkout 用 fetch-depth: 0，不要再淺化
+          git checkout origin/main -- "data/universe/daily/$D.csv" || \
+            echo "⚠ main 上沒有 $D 的日檔，用 checkout 帶下來的那一份"
+          # ⭐ 來源優先走 `--from-git HEAD`（一個請求都不打）；
+          #   ⚠ 那個 ref 上沒有的話它會自己講出來，再改用月表那條。
+          python esb_day_repair.py --date "$D" --from-git HEAD \
+                                   --sleep "${{ inputs.sleep || '5' }}"
+          # ⛔⛔ 一定要把那一天的日檔列進**強制搬**：
+          #   合併結果可能與**分支上已經有的那一版逐位元組相同**
+          #   ⇒ `push_data.sh` 的「本趟改到的檔」不含它 ⇒ **不會被搬到 main**。
+          #   ⚠ 而整趟是綠的（2026-09-10 run 34471777603 就是這樣白跑一趟）。
+          #   ⭐ 這裡用它是安全的：上面才剛 `git checkout origin/main -- $D`，
+          #     ⇒ 搬過去的內容就是「main 的那一份 ＋ 補回來的興櫃列」。
+          echo "ESB_REPAIR_FORCE=data/universe/daily/$D.csv" >> "$GITHUB_ENV"
+
       - name: 回補
         if: inputs.mode == 'run'
         run: |
-          python backfill.py --run \
-            --start "${{ inputs.start }}" \
-            --end   "${{ inputs.end }}" \
-            --markets "${{ inputs.markets }}" \
-            --sleep "${{ inputs.sleep || '5' }}" \
-            ${{ inputs.saturdays == 'yes' && '--saturdays' || '' }}
+          FLAGS="${{ inputs.saturdays == 'yes' && '--saturdays' || '' }} ${{ inputs.need_notrade && '--need-notrade' || '' }} ${{ inputs.force && '--force' || '' }}"
+          COMMON="--markets ${{ inputs.markets }} --sleep ${{ inputs.sleep || '5' }} $FLAGS"
+
+          # ══════════════════════════════════════════════════════════════
+          # ⭐ 第一段：**長工之前先實測一天，而且連 push 那條路一起測**
+          # ══════════════════════════════════════════════════════════════
+          # ⛔ 2026-09-09 的教訓：那一趟 2,846 天跑了 5 小時，「回補」那一步是**綠的**，
+          #   資料 commit 也做好了，掛在**最後一步的 push**。
+          #   ⇒ 只測「抓不抓得到」是不夠的——**要測的是整條路，包含推得上去**。
+          # ⚠ 所以這一段刻意做完整流程：抓一天 → 推一次。推不上去就整趟紅掉，
+          #   代價是 5 秒，不是 5 小時。
+          echo "══ 長工前實測：先做一天，並且真的推一次 ══"
+          python backfill.py --run --start "${{ inputs.start }}" \
+            --end "${{ inputs.end }}" $COMMON --limit 1
+          bash push_data.sh "backfill(smoke): 長工前的一天實測 ${{ inputs.start }}"
+          echo "══ 實測通過（抓得到、也推得上去）⇒ 開始長工 ══"
+
+          # ══════════════════════════════════════════════════════════════
+          # ⭐ 第二段：**逐年分批，每批推一次**
+          # ══════════════════════════════════════════════════════════════
+          # ⛔ 不要一口氣跑完再推：那等於把整趟的成果押在最後一次 push 上。
+          #   分批之後，任何一種失敗最多賠**一年**，而且下一趟靠 --need-notrade
+          #   會自己接著跑（進度就是資料本身，不需要台帳）。
+          Y0=$(echo "${{ inputs.start }}" | cut -d- -f1)
+          Y1=$(echo "${{ inputs.end }}"   | cut -d- -f1)
+          # ⛔⛔ 2026-09-10 run 104：`tib` 的 2023 那批有**一天**回 HTML 不是 JSON
+          #   （CDN 擋人，第二點④）⇒ 那一批的 runlog 判成 ✗ ⇒ 程式 exit 1
+          #   ⇒ `set -e` 當場結束整個 step ⇒ ⛔ **2024／2025／2026 三年一天都沒跑**。
+          #   ⚠ 而 CLAUDE.md 第四點寫的是「逐年分批 ⇒ **任何失敗最多賠一年**」
+          #     ——⛔ 這個迴圈**沒有兌現那句話**：它賠掉的是後面全部。
+          #   ⇒ 記下失敗、**繼續跑下一年**，⭐ 而最後仍然 exit 1
+          #     （⛔ 不可以吞掉失敗：紅燈是要留著的，只是不該連坐）。
+          RC=0
+          for Y in $(seq "$Y0" "$Y1"); do
+            A="$Y-01-01"; B="$Y-12-31"
+            [ "$Y" = "$Y0" ] && A="${{ inputs.start }}"
+            [ "$Y" = "$Y1" ] && B="${{ inputs.end }}"
+            echo "── $Y 年（$A ~ $B）──"
+            python backfill.py --run --start "$A" --end "$B" $COMMON || RC=1
+            bash push_data.sh "backfill(run): $A~$B"
+          done
+          [ "$RC" = 0 ] || { echo "⛔ 有批次失敗（見上面各該年）" >&2; exit 1; }
 
       # 探路失敗也要 commit：偵察檔本身就是這一趟的產出
       - name: Commit 回 repo
         if: always()
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # 用 -A，刪除也要進暫存區（全量重建可能刪檔）
-          git add -A data
-          if git diff --staged --quiet; then
-            echo "沒有變動，不 commit"
-          else
-            git commit -m "backfill(${{ inputs.mode }}): ${{ inputs.start }}~${{ inputs.end }}"
-            # ⚠ 2026-09-09 實測：原本這裡假設「資料是 append-only，rebase 不會有內容衝突」，
-            #   **那句是錯的**。data/meta/ 底下 `_` 開頭的報告檔是每一趟**整份重寫**的，
-            #   七支 workflow 都會 push 同一個 repo，加上人手動改，同一份就會逐字衝突。
-            #   而重試同一個 rebase 只會一模一樣地再撞一次——三次全白費。
-            #   ⚠ 失敗的樣子：log 印「push 失敗」，看起來像網路問題，其實一次都不可能成功。
-            #   run 34296206882 就是這樣掛的，那一趟抓到的資料一列都沒推上去。
-            #
-            # → 衝突時分兩種處置：
-            #   ① 衝突的檔案**全部**在 REGEN 裡 → 取本趟的版本續做（rebase 裡 --theirs
-            #      才是「正在重放的那個 commit」，也就是本趟；--ours 是遠端，別挑錯邊）。
-            #      那些檔完全由當下的 repo 資料重新推導，誰贏都一樣，下一趟會再寫一次。
-            #   ② 只要有**一個**不在 REGEN 裡 → **不自作主張**：abort、印出檔名、整趟紅掉。
-            #      真資料的衝突要人來看，不可以自動挑一邊。
-            #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
-            #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
-            LASTRUN="data/meta/_last_run.md"
-            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md "
-            ok=0
-            for i in 1 2 3; do
-              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
-                ok=1; break
-              fi
-              CONF=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-              if [ -n "$CONF" ]; then
-                BAD=""
-                for f in $CONF; do
-                  [ "$f" = "$LASTRUN" ] && continue
-                  case "$REGEN" in *" $f "*) ;; *) BAD="$BAD $f";; esac
-                done
-                if [ -n "$BAD" ]; then
-                  echo "⛔ rebase 衝突，而且不只是可自動處理的報告檔：$BAD" >&2
-                  echo "   真資料的衝突不自動挑一邊，請人工處理。" >&2
-                  git rebase --abort 2>/dev/null || true
-                  break
-                fi
-                echo "rebase 衝突，可自動處理：$CONF"
-                MERGED=1
-                for f in $CONF; do
-                  if [ "$f" = "$LASTRUN" ]; then
-                    # ⛔ _last_run.md **不可以整份取一邊**：runlog 只覆蓋自己那一個區塊，
-                    #   所以這一份是跨 workflow 累積的。整份取一邊 ⇒ 另一支剛報的 ✗
-                    #   會被安靜換回上一輪的 ✓——檔案在、格式對、只有狀態悄悄變綠。
-                    #   逐區塊合併，每塊留「最後執行」較新的那一份。
-                    git show :3:"$f" > /tmp/lr_ours.md \
-                      && git show :2:"$f" > /tmp/lr_theirs.md \
-                      && python3 merge_last_run.py /tmp/lr_ours.md /tmp/lr_theirs.md > "$f" \
-                      && git add -- "$f" || MERGED=0
-                  else
-                    git checkout --theirs -- "$f" && git add -- "$f" || MERGED=0
-                  fi
-                done
-                if [ "$MERGED" != "1" ]; then
-                  echo "⛔ 自動處理失敗，不硬推" >&2
-                  git rebase --abort 2>/dev/null || true
-                  break
-                fi
-                if GIT_EDITOR=true git rebase --continue && git push origin HEAD:main; then
-                  ok=1; break
-                fi
-              fi
-              # ★ rebase 卡在衝突時工作區會留在 unmerged 狀態，下一輪 git pull 會直接
-              #   說 "Pulling is not possible"，三次全白重試。先 abort 回到乾淨狀態。
-              git rebase --abort 2>/dev/null || true
-              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
-            done
-            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
-          fi
+          # ⛔ 這一段本來在**八支 workflow 各抄一份**。同一段邏輯抄兩份，
+          #   今晚已經害過一次（`limit` 的 bug 在 fetch/backfill 各一份，
+          #   修好的那份天天跑、沒修的那份只有回補才跑）。⇒ 只留一份。
+          # ⚠ `ESB_REPAIR_FORCE` 只有 `esb-repair` 那一步會設（見上面的理由）；
+          #   其餘 mode 這裡是空字串 ⇒ 行為與原本完全相同。
+          bash push_data.sh "backfill(${{ inputs.mode }}): ${{ inputs.start }}~${{ inputs.end }}" \
+               ${ESB_REPAIR_FORCE:-}

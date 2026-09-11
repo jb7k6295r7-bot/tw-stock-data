@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2019-09-24,00831B,40.64,40.61,0.03,除息,,exDailyQ

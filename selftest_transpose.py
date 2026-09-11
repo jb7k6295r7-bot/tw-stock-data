@@ -38,17 +38,29 @@ def write(path, header, rows):
             f.write(",".join(str(x) for x in r) + "\n")
 
 
-def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False):
+# ★ 2026-09-09：融資融券補存四欄，**接在舊表頭後面**。
+#   ⇒ 回補進行到一半時，同一個 kind 底下會同時有 9 欄與 13 欄的日檔。
+MG13 = MG + ",m_prev,m_ret,s_prev,s_ret"
+# ⛔ 而「表頭不一致要中止」那條原本的測試，fixture 是「多一欄 extra」——
+#   那在新規則下**是合法的加欄**。⇒ 那個 fixture 不再測得到它要測的東西，
+#   改成**換欄序**（欄名一樣、位置不同），那才是真的錯位。
+MGX = "date,stock_id,m_sell,m_buy,m_balance,m_limit,s_buy,s_sell,s_balance"
+
+
+def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False,
+                  grow_header=False):
     uni = os.path.join(root, "data", "universe")
     for i, d in enumerate(DAYS):
         # margin：上市 / 上櫃 各一檔
         write(os.path.join(uni, "margin", f"{d}.csv"), MG,
               [[d, c, 1, 2, 100 + i, 999, 0, 0, 5] for c in TW])
-        h = MG + ",extra" if break_header else MG
+        h = MGX if break_header else (MG13 if grow_header else MG)
         ot = OT + (["2330"] if overlap else [])
+        # ⭐ grow_header：只有**上櫃**那半邊有新四欄，上市那半邊還是舊 9 欄
+        #   ——這正是回補跑到一半的樣子。
         write(os.path.join(uni, "otcmargin", f"{d}.csv"), h,
-              [[d, c, 1, 2, 200 + i, 999, 0, 0, 5] + ([9] if break_header else [])
-               for c in ot])
+              [[d, c, 1, 2, 200 + i, 999, 0, 0, 5]
+               + ([11, 12, 13, 14] if grow_header else []) for c in ot])
         # per
         write(os.path.join(uni, "per", f"{d}.csv"), PR,
               [[d, c, 100 + i, 2.5, 114, 15.0, 3.0, "114/2"] for c in TW])
@@ -75,9 +87,9 @@ def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False
     shutil.copy(os.path.join(HERE, "runlog.py"), root)
 
 
-def run(root, kind):
-    p = subprocess.run([sys.executable, "transpose.py", "--kind", kind],
-                       cwd=root, capture_output=True, text=True)
+def run(root, kind, *extra):
+    p = subprocess.run([sys.executable, "transpose.py", "--kind", kind,
+                        *extra], cwd=root, capture_output=True, text=True)
     return p.returncode, p.stdout + p.stderr
 
 
@@ -150,8 +162,33 @@ def main():
         build_fixture(root, break_header=True)
         rc, out = run(root, "margin")
         print("── 判定：表頭不一致 ──")
-        chk("上櫃多一欄時整支中止（回傳碼非 0）", rc != 0, f"rc={rc}")
-        chk("而且說得出是哪個檔、差在哪", "欄位與先前不同" in out)
+        chk("上櫃**換欄序**時整支中止（回傳碼非 0）", rc != 0, f"rc={rc}")
+        chk("而且說得出是哪個檔、差在哪",
+            "不是前綴關係" in out, out[-400:])
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+    # ── ⭐ 表頭「加欄」：這一種要**放行**，而且舊檔缺的欄要補空字串（⛔ 不是 0）──
+    #   ⚠ 沒有這個案例的話，2026-09-09 融資融券回補跑到一半時個股庫會整個壞掉，
+    #     而那會壞好幾個小時、甚至好幾趟——**而且是靜默的**（transpose 直接 return 1）。
+    root = tempfile.mkdtemp(prefix="tposetest_")
+    try:
+        build_fixture(root, grow_header=True)
+        rc, out = run(root, "margin")
+        print("── 判定：表頭加欄（回補進行中）──")
+        chk("新舊欄數混在一起時**不中止**", rc == 0, f"rc={rc}｜{out[-500:]}")
+        chk("而且有講出欄數不一致與「補空字串不是 0」",
+            "欄數不一致" in out and "空字串" in out, out[-500:])
+        d = os.path.join(root, "data", "stocks_margin")
+        new_rows = rows_of(os.path.join(d, "8299.csv"))     # 上櫃＝有新欄
+        old_rows = rows_of(os.path.join(d, "2330.csv"))     # 上市＝沒有新欄
+        chk("新欄有進到個股檔（8299 的 m_prev=11）",
+            new_rows and new_rows[0].get("m_prev") == "11", str(new_rows[:1]))
+        chk("⛔ 舊檔那半邊的新欄是**空字串**，不是 0",
+            old_rows and old_rows[0].get("m_prev") == "", str(old_rows[:1]))
+        chk("舊欄沒有錯位（2330 的 m_buy 還是 1、m_balance 還是 100）",
+            old_rows and old_rows[0].get("m_buy") == "1"
+            and old_rows[0].get("m_balance") == "100", str(old_rows[:1]))
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
@@ -181,6 +218,47 @@ def main():
         chk("★ 但成功的 margin／per 有寫出來，沒有被整批當成沒跑",
             os.path.isdir(os.path.join(root, "data", "stocks_margin"))
             and os.path.isdir(os.path.join(root, "data", "stocks_per")))
+        # ══════════════════════════════════════════════════════
+        # ⭐⭐ 跨層落後：**19:00 那一趟一定會落後一天，而那不是缺陷**
+        #
+        #   台股 13:30 收盤 ⇒ price 19:00 就有；
+        #   ⚠ 融資融券／本益比是**當天晚間**才發布 ⇒ 19:00 那趟必然停在前一交易日。
+        #   ⛔ 而「每天紅」的代價是**會被學會忽略**，然後真的落後兩天那次沒人看。
+        #
+        # ⛔ 但「一律容忍一天」會把 2026-09-05 那個洞原封不動打開回去
+        #   ——那次的形狀正是「**每天**落後一天而且看不出來」。
+        # ⇒ 這一節要證明的是：容忍度**真的在起作用**，而且**只容忍到你說的那一格**。
+        # ══════════════════════════════════════════════════════
+        print("── 判定：跨層落後與容忍度 ──")
+        root = tempfile.mkdtemp(prefix="tposelag_")
+        build_fixture(root)
+        # 讓 margin／per 少掉最後一天 ⇒ 落後 **1 個交易日**
+        for k in ("margin", "otcmargin", "per", "otcper"):
+            os.remove(os.path.join(root, "data", "universe", k,
+                                   f"{DAYS[-1]}.csv"))
+        rc0, out0 = run(root, "all")
+        chk("⛔ 預設（容忍 0）：落後一個交易日就要紅",
+            "✗" in out0 and "各層的來源日檔都跟上 price" in out0, out0[-400:])
+        chk("⚠ 而且訊息要講出「19:00 那趟要帶 --lag-tolerance 1」"
+            "（⛔ 不然看的人只知道紅、不知道該怎麼辦）",
+            "--lag-tolerance 1" in out0, out0[-400:])
+        chk("  落後量是用**交易日**數講的", "落後 1 個交易日" in out0, out0[-400:])
+        rc1, out1 = run(root, "all", "--lag-tolerance", "1")
+        # ⚠ runlog 只印**沒過**的檢查 ⇒ 判準是「那條完全不出現」
+        chk("⭐ 帶 --lag-tolerance 1：同一份資料**不紅了**",
+            "各層的來源日檔都跟上 price" not in out1, out1[-400:])
+        chk("  ⚠ 而其他檢查照樣有跑（⛔ 不是整支中途 return 了）",
+            "逐層結果" in out1 and out1.count("ok") >= 4, out1[-300:])
+        # 再少一天 ⇒ 落後 **2 個交易日**：⛔ 容忍 1 也必須紅
+        for k in ("margin", "otcmargin", "per", "otcper"):
+            os.remove(os.path.join(root, "data", "universe", k,
+                                   f"{DAYS[-2]}.csv"))
+        rc2, out2 = run(root, "all", "--lag-tolerance", "1")
+        chk("⭐⭐ 落後**兩個**交易日時，容忍 1 照樣紅"
+            "（⛔ 這條才是 2026-09-05 那個洞的守門）",
+            "✗" in out2 and "各層的來源日檔都跟上 price" in out2, out2[-400:])
+        chk("  講得出落後 2 個交易日", "落後 2 個交易日" in out2, out2[-400:])
+        shutil.rmtree(root, ignore_errors=True)
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

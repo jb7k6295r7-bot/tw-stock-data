@@ -1,3 +1,3 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2016-11-15,1.93720930,3.85232762,8.6,16.66,彌補虧損,reduce
-2023-10-11,1.98859649,1.98859649,11.4,22.67,彌補虧損,reduce
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2016-11-15,1.93720930,1.93725457,3.85224317,8.6,16.66,彌補虧損,reduce
+2023-10-11,1.98859649,1.98850643,1.98850643,11.4,22.67,彌補虧損,reduce

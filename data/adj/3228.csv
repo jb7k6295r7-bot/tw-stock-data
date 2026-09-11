@@ -1,3 +1,4 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2017-02-24,0.99382716,0.96401235,16.2,16.1,除權,exright
-2023-08-17,0.97000000,0.97000000,110,106.7,除權息,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2008-09-18,0.85370844,,0.82298548,78.2,66.76,除權息,exright
+2017-02-24,0.99382716,,0.96401235,16.2,16.1,除權,exright
+2023-08-17,0.97000000,,0.97000000,110,106.7,除權息,exright

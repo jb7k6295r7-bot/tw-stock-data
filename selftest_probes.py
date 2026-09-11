@@ -36,6 +36,7 @@ import inspect
 import io
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -71,6 +72,18 @@ HTML = ("<html><body><form>"
 # ⚠ 2026-09-09：otccal_probe 的重點是「日期欄 min/max ＋ 與我方日曆雙向比對」。
 # 若假回應照 OPENAPI_ROWS（沒有日期欄）回，它會在「沒有日期欄」那一行就 return，
 # **_date_cols／_gaps／_compare 三個函式一行都不會跑到**。⛔ 假的比真的簡單＝沒測。
+# ⭐ 終止上市第二來源（openapi.twse.com.tw）：**頂層就是陣列**的第四種形狀。
+#   ⚠ 鍵名照 K線分析線 2026-09-11 02:10 的回報做，⛔ 而那是 WebFetch 的**轉述**
+#   ⇒ 受測的 `_guess_keys` 刻意**不看鍵名、只看值的形狀**，
+#     所以這裡故意再塞一個**名字也像代號**的鍵（`ISIN`），
+#     ⛔ 不塞的話「代號候選只能有一個」那條判準等於沒測。
+DELIST_OPENAPI = [
+    {"Code": "2867", "Company": "三商壽", "DelistingDate": "115/09/01"},
+    {"Code": "6131", "Company": "鈞泰", "DelistingDate": "110/07/05"},
+    {"Code": "1505", "Company": "楊鐵工廠", "DelistingDate": "090/01/20"},
+    {"Code": "9999", "Company": "只有官方有的那一檔", "DelistingDate": "112/03/04"},
+]
+
 INDEX_ROWS = [{"Date": "1150907", "ClosingIndex": "250.11"},
               {"Date": "1150908", "ClosingIndex": "251.22"},
               {"Date": "1150909", "ClosingIndex": "252.33"}]
@@ -97,10 +110,42 @@ def fake_get(url, **kw):
         return FAKE_JS, None
     if "swagger" in u:
         return json.dumps(SWAGGER).encode(), None
+    # ★ hist.tpex.org.tw / hist.gretai.org.tw（hist_probe 專用，見上面三份 fixture）
+    if "hist.tpex.org.tw" in u or "hist.gretai.org.tw" in u:
+        if u.rstrip("/").endswith("hist.tpex.org.tw"):
+            return ("<script>window.location.replace("
+                    "'http://hist.gretai.org.tw/en/index.php');</script>").encode(), None
+        if "index.php" in u:
+            return HIST_IDX.encode(), None
+        if u.upper().endswith(".TXT"):
+            # ⛔ 民國年是 **2 碼或 3 碼**（95 vs 115），不是固定 3 碼——
+            #   假回應的 regex 若只認 3 碼，真正的檔名格式就測不到。
+            m = re.search(r"/([A-Z]+)(\d{2,3})(\d{4})\.txt$", u, re.I)
+            # ⛔ 故意讓一部分年份**沒有檔**：不這樣的話「四天都沒有」與「中間有洞」
+            #   這兩條分支永遠不會被走到，等於沒測。
+            if m and (int(m.group(2)) < 90 or int(m.group(2)) == 100):
+                return None, "HTTP 404 Not Found"
+            # ⛔⛔ 假檔的日期必須**跟著請求走**。寫死 95/12/29 的話，
+            #   第五輪那條「檔案要自己講出我要的那一天」的判準會全部落空，
+            #   於是那條新判準等於沒測（而它正是這一輪修掉的那個 bug 的解藥）。
+            # ★ 另外再造一個**查無資料頁**：長度夠大、但日期不是我要的那天——
+            #   第四輪就是被這種東西騙了 32 年份。
+            if m and int(m.group(2)) == 99:
+                return (HIST_TXT_HEAD.format(roc=95, mm=12, dd=29)
+                        + HIST_BODY).encode(), None
+            roc, mmdd = (int(m.group(2)), m.group(3)) if m else (95, "1229")
+            return (HIST_TXT_HEAD.format(roc=roc, mm=int(mmdd[:2]),
+                                         dd=int(mmdd[2:])) + HIST_BODY).encode(), None
+        return HIST_QRY.encode(), None
     if "data.gov.tw" in u:
         return json.dumps(DATAGOV).encode(), None
     if "getOD.ashx" in u:
         return json.dumps(FAKE_ROWS).encode(), None
+    # ⛔ 這一支的路徑是 `openapi.twse.com.tw/v1/…`，**沒有** `/openapi/v1/`
+    #   ⇒ 少了這一條它會落到下面的「twse ⇒ 回 dict」，
+    #   ⚠ 而「頂層是陣列」那條分支就**永遠走不到**（假回應形狀錯＝那段沒測）。
+    if "suspendListingCsvAndHtml" in u:
+        return json.dumps(DELIST_OPENAPI).encode(), None
     if "openapi/v1/" in u and ("_index" in u or "index" in u.rsplit("/", 1)[-1]):
         return json.dumps(INDEX_ROWS).encode(), None
     if "openapi/v1/" in u or "mopsfin" in u:
@@ -127,6 +172,35 @@ def fake_get(url, **kw):
         return json.dumps({"stat": "OK", "fields": ["證券代號"],
                            "data": [["2330"]]}).encode(), None
     return HTML.encode(), None
+
+
+# ⚠ 2026-09-09 第七次補同一族：hist_probe 新增的 [4][5][6][6.5] 四節，
+#   在泛用假頁面下**一行都走不到**——[4] 走不到站內連結、[5] 切不出 <select>、
+#   [6]/[6.5] 抓不到 .txt。⛔ 假的比真的簡單，就等於沒測。
+#   ⇒ 下面三份 fixture 是照**真頁面的形狀**做的（frameset／查詢表單／靜態日檔）。
+HIST_IDX = ("<html><body>"
+            "<a href='http://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/"
+            "NSHISTORY.HTML'>興櫃</a>"
+            "<a href='/Hist/STOCK/HISTORICAL/HQRY.HTML'>股票</a>"
+            "<a href='http://www.tpex.org.tw/'>外站</a>"
+            "</body></html>")
+HIST_QRY = ("<html><body><form name='report' onSubmit='ChkInput();return false;'>"
+            "<input name='input_date' value='95/12/29'>"
+            "<input type=radio name='mdtype'>"
+            "<select name='Ddr'>"
+            "<option value='AA'>興櫃股票每日成交資訊</option>"
+            "<option value='BA'>興櫃股票每日基本資料</option></select>"
+            "<select name='Dwyy'><option value='91'>91</option>"
+            "<option value='95'>95</option></select>"
+            "<select name='Dwr'><option value='WAA'>興櫃股票每週成交資訊</option></select>"
+            "</form><script>function ChkInput(){ StrUrl=\"DAILY/\"+dType+dQDATE+\".txt\"; }"
+            "</script></body></html>")
+# ★ >2000 bytes 才算命中（[6.5] 的判準），所以真的要撐到那個長度。
+HIST_TXT_HEAD = ("財團法人中華民國證券櫃檯買賣中心\n"
+                 "頁次: 1 日期: {roc}年{mm}月{dd}日\n")
+HIST_BODY = ("代 號 證券名稱 最高買價 最低賣價 本日均價\n"
+             + "1336 台翰 70.00 73.00 71.69 1,000 71,690 1 438\n" * 60)
+HIST_TXT = HIST_TXT_HEAD.format(roc=95, mm=12, dd=29) + HIST_BODY
 
 
 def strict_stub(real, ret):
@@ -157,6 +231,41 @@ SECTIONS = {
     # ⛔ [2] 與 [5] 是這一支的本體：[2] 是候選端點的日期 min/max，
     #   [5] 是「找到／沒找到」的結論。少任何一節都代表它中途 return 了。
     "otccal_probe": ["[1]", "[2]", "[3]", "[4]", "[5]"],
+    # ⛔ [3] 是「跟著頁面自己的連結走」那一節，[4] 是三句待改的話——少了任一節
+    #   代表它中途 return 了。
+    # ⛔ 這一支只要走完全程就好：它的內容**取決於官方回什麼**，
+    #   不該由 selftest 規定該出現哪幾節。
+    "keys_probe": [],
+    # ⛔ 同理：它的內容取決於官方選單長什麼樣，不該由 selftest 規定。
+    "site_inventory": [],
+    # ⛔ 這一支的結論**只能由官方回什麼決定**（丁級 11 的成敗判準是
+    #   「year=114 與 year=110 的內容是不是真的不同」）⇒ 這裡只驗它走得完全程。
+    #   ⚠ 離線替身會回 HTML，所以它會走「回應不是 JSON ⇒ 未驗」那一條——
+    #     ⭐ 那正是要驗的：**取不回來時它必須說「未驗」，不可以說「這條路通了」**。
+    "mops_probe": ["未驗"],
+    # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
+    #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
+    #     而把限額當成餘額用，是這一支最可能造成的傷害。
+    "sbl_probe": ["限額 ≠ 餘額"],
+    # ⛔ 同理：內容取決於官方回什麼。⚠ 但「頂層 fields」那一行一定要出現——
+    #   ⭐ 這兩支的重點就是「沒有 fields 時欄位怎麼對」，
+    #     少了那一行代表它沒有真的去看第三種形狀。
+    #   ⭐ 再釘兩節：第四種形狀（頂層陣列）與雙向比對——
+    #     ⚠ 少了它們代表 openapi 那支的假回應沒有被送到，那段等於沒測。
+    "delist_probe": ["頂層 `fields`", "頂層就是**陣列**",
+                     "與我方 data/meta/delisted.csv 雙向比對",
+                     # ⭐ 第二點的判準：陣列那一族沒有 total／notes 可以問
+                     #   ⇒ 涵蓋期間只能從**相異值分佈**看出來
+                     "每個鍵的相異值"],
+    # ⛔ 這一支的結論有三種（補得回來／補不回來但端點好／分不出來），
+    #   ⚠ 每一種的下一步都不同 ⇒ 釘住「⇒ 結論」那一節一定要出現。
+    "esb_day_probe": ["## ⇒ 結論"],
+    # ⛔ 這一支的內容取決於官方回什麼。⚠ 但那一節逐位元組比對一定要出現——
+    #   ⭐ `chtm` 已知會在越界時**靜靜回今天**，而「越界」與「那天沒有資料」
+    #     單看回應是分不出來的；少了那一節，這支探針就只是在印欄位。
+    "chtm_probe": ["越界那一天 vs 今天：逐位元組比"],
+    "hist_probe": ["[1]", "[2]", "[3]", "[3.5]", "[4]", "[5]",
+                  "[6]", "[6.5]", "[7]"],
 }
 
 
@@ -224,6 +333,92 @@ def run(name):
     return err, out
 
 
+def check_delist_cross():
+    """⭐ `delist_probe` 的雙向比對：⛔ 只比一個方向不算一致（CLAUDE.md 第三點）。
+
+    ⚠ 這一段是 2026-09-11 才長出來的：K線分析線拿 openapi 那支說「約 400 筆」，
+    我方 rwd 那支官方自己說 `total:265`。⛔ 在看到真回應之前不可以宣稱哪一份完整，
+    ⇒ 這裡驗的是「**兩個方向的數字都報得出來**」，不是「數字對不對」。
+    """
+    import delist_probe as DP
+    bad = 0
+    tmp = tempfile.mkstemp(prefix="ours_", suffix=".csv")[1]
+    io.open(tmp, "w", encoding="utf-8").write(
+        "delist_date,stock_id,name,asof\n"
+        "2001-01-20,1505,楊鐵工廠,2026-09-11\n"
+        "2021-07-05,6131,鈞泰,2026-09-11\n"
+        "2026-09-01,2867,三商壽,2026-09-11\n"
+        # ⛔ 只有我方有的那一檔 ⇒ B 方向必須不是 0，否則「雙向」是假的
+        "2024-05-06,8888,只有我方有的那一檔,2026-09-11\n")
+    old = DP.OURS
+    DP.OURS = tmp
+    try:
+        out = []
+        DP._compare_with_ours(DELIST_OPENAPI, out)
+        txt = "\n".join(out)
+        for name, want in (
+                ("A 方向（官方有我方沒有）報得出 9999", "A 官方 openapi 有、我方**沒有**：1 檔"),
+                ("B 方向（我方有官方沒有）報得出 8888", "B 我方有、openapi **沒有**：1 檔"),
+                ("重疊數（＝第七點要的正例數）", "正例 3 檔重疊"),
+                ("⭐ 日期欄／代號欄是**照值**認出來的", "照值認出來的")):
+            ok = want in txt
+            print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：{name}")
+            if not ok:
+                print("    實際輸出：\n      " + txt.replace("\n", "\n      "))
+                bad += 1
+
+        # ⭐ 重疊處日期不一致要抓得出來（⛔ 不然兩份都有的那些等於沒比）
+        m = [dict(x) for x in DELIST_OPENAPI]
+        m[1]["DelistingDate"] = "110/07/06"          # 差一天
+        out2 = []
+        DP._compare_with_ours(m, out2)
+        ok = "不一致**的：1 檔" in "\n".join(out2)
+        print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：重疊處差一天會被抓到"
+              "（⛔ 反向驗：不差就該是 0）")
+        bad += 0 if ok else 1
+
+        # ⭐⭐ 反向驗判準本身：鍵名對、值的形狀不對 ⇒ **必須拒收**，
+        #   ⛔ 不可以硬挑一欄（挑錯那一欄會整批靜靜錯位，今天已經摔過一次）
+        junk = [{"Code": "x", "Company": "y", "DelistingDate": "z"}] * 4
+        out3 = []
+        DP._compare_with_ours(junk, out3)
+        ok = "⛔ 認不出日期" in "\n".join(out3)
+        print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：值的形狀不對就**不比**"
+              "（⚠ 鍵名一模一樣，靠鍵名認的話這裡會靜靜錯位）")
+        bad += 0 if ok else 1
+
+        # ⭐ `_spread`：相異值少的要把**值與筆數**印出來（那就是涵蓋期間的答案），
+        #   ⚠ 相異值多的只印最小最大 ⛔ 不可以洗版。
+        sp = "\n".join(DP._spread(
+            [{"Date": "115", "Code": f"{i:04d}"} for i in range(30)]))
+        for nm, cond in (
+                ("⭐ 只有一種值的鍵要印出「值×筆數」"
+                 "（⇒ 「362 列」不等於「有歷史」，第二點）", "115×30" in sp),
+                ("　⚠ 相異值多的鍵只印最小最大，⛔ 不洗版",
+                 "最小 0000" in sp and "最大 0029" in sp and "0015" not in sp),
+                ("　⛔ 空值要單獨講（⚠ 空欄位與沒有那個欄位是兩件事）",
+                 "⚠ 空的 2" in "\n".join(
+                     DP._spread([{"a": "x"}, {"a": ""}, {"a": ""}])))):
+            print(f"{'✓' if cond else '✗'} delist_probe `_spread`：{nm}")
+            if not cond:
+                print("    實際：\n      " + sp.replace("\n", "\n      "))
+                bad += 1
+
+        # ⚠ 我方那份不在這個 ref 上 ⇒ 要說「是 checkout 的問題」，
+        #   ⛔ 不可以講成「我方沒有」（第四點六的鏡像）
+        DP.OURS = tmp + ".notexist"
+        out4 = []
+        DP._compare_with_ours(DELIST_OPENAPI, out4)
+        ok = "checkout" in "\n".join(out4)
+        print(f"{'✓' if ok else '✗'} delist_probe 雙向比對：檔不在時講的是 checkout"
+              "，⛔ 不是「我方沒有」")
+        bad += 0 if ok else 1
+    finally:
+        DP.OURS = old
+        os.unlink(tmp)
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -240,6 +435,7 @@ def main():
         else:
             print(f"✓ {name} 走完全程"
                   + (f"，{len(want)} 節都出現" if want else ""))
+    bad += check_delist_cross()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟
@@ -268,6 +464,20 @@ def main():
         bad += 1
     if not bad:
         print(f"✓ parse/pick 對 {len(shapes)} 種回應形狀都不會炸，且非物件不會通過")
+
+    # ── ⛔ 反向驗：hist_probe [6.5] 的「預算用完」分支要**真的會觸發** ──
+    #   那條分支的用途是防「把『我沒查』讀成『它沒有』」，
+    #   而它平常不會被走到（假回應是瞬間回來的）⇒ 不逼一次就等於沒有。
+    os.environ["HIST_BUDGET_SEC"] = "0"
+    try:
+        _e, o2 = run("hist_probe")
+    finally:
+        os.environ.pop("HIST_BUDGET_SEC", None)
+    if "預算" in o2 and "沒查" in o2:
+        print("✓ hist_probe [6.5] 的「預算用完 ⇒ 是沒查不是沒有」分支證實會觸發")
+    else:
+        print("✗ hist_probe [6.5] 把預算設成 0 也沒印出「預算用完」——那條分支是死的")
+        bad += 1
 
     # 反向驗這支自己有效：故意注入一個 NameError，必須被抓到
     import tdcc_probe as T

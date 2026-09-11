@@ -1,168 +1,194 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""mops_probe.py — 用 urllib 重測 MOPS 全市場端點，判斷「不可用」是不是誤判。
+"""mops_probe.py — 丁級 11（財報／月營收「能指定期別」）的**終點驗證**。
 
-## 起因
+## 這一支在驗什麼
 
-2026-08-30 專案停用了 `t187ap06_L_ci`／`t187ap07_L_ci`，理由是
-「大型全市場 JSON **靜默截斷**」；`t187ap03_L` 也被記成「查 7 個代號只回 1101」。
+市場情報分析線 2026-09-10 10:51 找到一條橋，但**明講「路徑找到、終點未驗」**：
 
-2026-09-05 複測 `t187ap03_L`：
-- **WebFetch** → 50 筆，最後一筆 1432
-- **urllib（管線）** → **1,094 筆，完整**
+    POST https://mops.twse.com.tw/mops/api/redirectToOld
+    {"apiName":"ajax_t21sc03","parameters":{"year":"114","month":"01","TYPEK":"sii", …}}
+    → {"result":{"url":"https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=<加密 blob>"}}
 
-**所以那次是 WebFetch 的限制，不是端點的性質。**
-`docs/READ_CONTRACT.md` 第四節本來就寫著「不要用 WebFetch 讀大 JSON，
-會被截斷**而且被憑空補齊**，看起來像完整的」。
+他們四條路全斷（CORS／站台授權／blob 綁 host），⇒ 由我方 Python 驗。
 
-→ 月營收與財報那幾個端點**很可能是同一種誤判**。本檔就是來驗這件事。
+## ⛔⛔ 這一支唯一真正要回答的問題
 
-## ★ 怎麼證明「沒有被截斷」
+**`year=114` 與 `year=110` 各抓一次，回傳內容是不是真的不同。**
 
-截斷是無聲的：HTTP 200、JSON 合法、每一筆都是真的，只是少了後面。
-所以**不能只看「有沒有回東西」**，要有獨立的完整性判準：
+⚠ **blob 不同 ≠ 資料不同。** `t164sb03` 就是「參數收下、`code:200 查詢成功`、
+資料完全不變」——若 `redirectToOld` 也只是把參數收下、舊站那端再忽略掉，
+我方會拿到 2,700 檔 × N 期**一模一樣**的資料，⛔ **而且完全不會報錯**。
+⇒ 排除掉這一種，丁級 11 才算解決。
 
-1. **最後一筆的代號**。截斷保留的是前 N 筆，所以尾巴會停在很小的代號
-   （WebFetch 那次停在 1432）。完整的應該一路到 9xxx。
-2. **對照 `data/meta/industry.csv` 的上市公司清單**（1,094 檔，已交叉驗證過）。
-   算涵蓋率，並**依代號分段**看——截斷的特徵是「前段 100%、後段 0%」，
-   而不是均勻地少。**這一項是最有力的**：均勻缺少可能是端點本來就不含某類公司，
-   前後段斷崖式差異則一定是截斷。
-3. **抽固定幾檔高代號**（9xxx）確認在不在。
+⭐ 順帶優先試一條更乾淨的：`openapi.twse.com.tw/v1/opendata/t187ap05_L`（月營收）。
+⚠ 情報分析線標明「一般認知只給最新一期，**但這是印象不是實測**」⇒ 這裡實測。
 
-三項任一不過就標「疑似截斷」，**不要因為「有一千多筆」就當它完整**。
+## ⛔ 本支只讀不寫資料
+
+輸出 `data/meta/_mops_probe.txt`。⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403），
+**要在 Actions 上跑**。
 """
-
-import argparse
-import csv
+import io
 import json
 import os
 import sys
+import urllib.error
+import urllib.request
 
 import backfill as B
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-IND = os.path.join(_ROOT, "meta", "industry.csv")
+OUT = os.path.join(_ROOT, "meta", "_mops_probe.txt")
 
-TWSE = "https://openapi.twse.com.tw/v1/opendata/"
-TPEX = "https://www.tpex.org.tw/openapi/v1/"
-
-TARGETS = [
-    # (標籤, 網址)
-    ("上市 公司基本資料（對照組，已知完整）", TWSE + "t187ap03_L"),
-    ("上市 月營收",                          TWSE + "t187ap05_L"),
-    ("上市 綜合損益表-一般業",                TWSE + "t187ap06_L_ci"),
-    ("上市 資產負債表-一般業",                TWSE + "t187ap07_L_ci"),
-    ("上市 綜合損益表-金控",                  TWSE + "t187ap06_L_basi"),
-    ("上市 資產負債表-金控",                  TWSE + "t187ap07_L_basi"),
-    ("上市 綜合損益表-證券",                  TWSE + "t187ap06_L_bd"),
-    ("上市 綜合損益表-保險",                  TWSE + "t187ap06_L_ins"),
-    ("上櫃 公司基本資料（對照組）",           TPEX + "mopsfin_t187ap03_O"),
-    ("上櫃 月營收",                          TPEX + "mopsfin_t187ap05_O"),
-    ("上櫃 綜合損益表-一般業",                TPEX + "mopsfin_t187ap06_O_ci"),
-    ("上櫃 資產負債表-一般業",                TPEX + "mopsfin_t187ap07_O_ci"),
-]
-
-CODE_KEYS = ("公司代號", "SecuritiesCompanyCode", "Code", "股票代號")
+UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+BRIDGE = "https://mops.twse.com.tw/mops/api/redirectToOld"
+OPENAPI = "https://openapi.twse.com.tw/v1/opendata/"
 
 
-def listed_codes():
-    """→ ({上市代號}, {上櫃代號})，取自已交叉驗證過的 industry.csv。"""
-    tw, tp = set(), set()
-    if not os.path.exists(IND):
-        return tw, tp
-    with open(IND, encoding="utf-8") as f:
-        for r in csv.DictReader(f):
-            (tw if r["market"] == "twse" else tp).add(r["stock_id"])
-    return tw, tp
+def _post(url, payload, timeout=45, retries=3, sleep=None):
+    """→ (bytes, err)。⛔ 自己寫是因為 `B.get()` 只有 GET。"""
+    # ⭐ 2026-09-10：這一支連兩趟都斷在**暫時性**網路錯誤
+    #   （`_ssl.c:993: handshake operation timed out`／`RemoteDisconnected`）。
+    #   ⚠ 兩趟的結論都寫成「未驗」——⭐ 結論是對的（沒取到就是沒驗到），
+    #     ⛔ 但代價是**要有人再按一次**。
+    #   ⇒ 退避重試。⚠ 規則與 `twparse.post_form` 同一套：
+    #     ⛔ 4xx 不重試（參數錯，重試只是多打對方幾發），408／429 例外。
+    import time as _t
+    _sleep = _t.sleep if sleep is None else sleep
+    body = json.dumps(payload).encode("utf-8")
+    last = None
+    for i in range(max(1, retries)):
+        req = urllib.request.Request(url, data=body, headers={
+            "User-Agent": UA, "Content-Type": "application/json",
+            "Accept": "application/json,text/plain,*/*"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read(), None
+        except urllib.error.HTTPError as e:
+            try:
+                last = f"HTTP {e.code} {e.reason} | {e.read()[:200]!r}"
+            except Exception:  # noqa: BLE001
+                last = f"HTTP {e.code} {e.reason}"
+            if 400 <= e.code < 500 and e.code not in (408, 429):
+                return None, last
+        except Exception as e:  # noqa: BLE001
+            last = f"{type(e).__name__}: {e}"
+        if i < retries - 1:
+            _sleep(2 * (i + 1))
+    return None, (last or "") + (f"（重試 {retries} 次都失敗）" if retries > 1 else "")
 
 
-def _code(rec):
-    for k in CODE_KEYS:
-        v = rec.get(k)
-        if v:
-            return str(v).strip()
-    return ""
+def _params(api, year, **kw):
+    p = {"year": year, "TYPEK": "sii", "encodeURIComponent": 1,
+         "firstin": 1, "off": 1, "step": 1, "isQuery": "Y"}
+    p.update(kw)
+    return {"apiName": api, "parameters": p}
 
 
-def probe(tag, url, want):
-    print(f"── {tag}")
-    print(f"   {url}")
+def one(api, year, out, **kw):
+    """走一次完整的橋：POST 拿 URL → GET 那個 URL。→ (內容 bytes 或 None)"""
+    sent = _params(api, year, **kw)
+    out.append(f"  POST {BRIDGE}  apiName={api} year={year} {kw}")
+    raw, err = _post(BRIDGE, sent)
+    if err:
+        out.append(f"    ⛔ {err}")
+        return None
+    try:
+        d = json.loads(raw.decode("utf-8"))
+    except Exception as e:  # noqa: BLE001
+        out.append(f"    ⛔ 回應不是 JSON（{type(e).__name__}）；前 200 bytes："
+                   f"{raw[:200]!r}")
+        return None
+    # ⭐ 規矩第一條：先把**全部頂層鍵**攤開，再看資料本身。
+    out += ["    " + s for s in B.describe_response(d, want=sent["parameters"])]
+    url = ((d.get("result") or {}).get("url") if isinstance(d.get("result"), dict)
+           else None)
+    if not url:
+        out.append(f"    ⛔ 回應裡沒有 result.url ⇒ 這條橋在這個 apiName 上不成立")
+        return None
+    out.append(f"    → {url[:150]}…（blob 長 {len(url)}）")
+    # ⚠ 2026-09-10 兩趟都斷在**這一段**（不是 POST）：
+    #   `RemoteDisconnected: Remote end closed connection without response`。
+    #   ⭐ 而同一段對 `ajax_t163sb04` 拿得回 **1,628,079 bytes** ⇒ 路是通的。
+    #   ⇒ 差別可能是月營收那份更大／更慢，也可能是 mopsov 對那一支比較嚴。
+    #   ⛔ 我不猜是哪一個：先把耐受度加大（3 次、120 秒），
+    #     若還是斷，那就**不是暫時性的**，而那本身是有用的資訊。
+    raw2, err2 = B.get(url, retries=3, timeout=120)
+    if err2:
+        out.append(f"    ⛔ 取舊站失敗：{err2[:200]}")
+        return None
+    out.append(f"    ✓ 取回 {len(raw2):,} bytes")
+    return raw2
+
+
+def bridge_case(api, y1, y2, out, **kw):
+    """⭐ 這一支的核心：兩個期別各抓一次，**比內容**。"""
+    out.append(f"── 橋接 {api}（{kw or '無額外參數'}）")
+    a = one(api, y1, out, **kw)
+    b = one(api, y2, out, **kw)
+    if a is None or b is None:
+        out.append(f"  ⇒ **未驗**：至少一邊沒取回來 ⇒ ⛔ 不可以說這條路通了")
+        return
+    same = a == b
+    out.append(f"  ⇒ year={y1} 取回 {len(a):,} bytes；year={y2} 取回 {len(b):,} bytes")
+    if same:
+        out.append("  ⇒ ⛔⛔ **兩期內容逐位元組完全相同** ⇒ 期別參數被忽略，"
+                   "跟 `t164sb03` 同一種靜默失敗。**這條路不可用。**")
+    else:
+        out.append("  ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。"
+                   "⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。")
+
+
+def openapi_case(name, out):
+    """⚠ 情報分析線標「一般認知只給最新一期，但那是印象不是實測」⇒ 這裡實測。"""
+    url = OPENAPI + name
+    out.append(f"── OpenAPI {url}")
     raw, err = B.get(url, retries=2, timeout=60)
     if err:
-        print(f"   ✗ {err[:140]}\n")
+        out.append(f"  ⛔ {err[:200]}")
         return
     try:
         d = json.loads(raw.decode("utf-8"))
-    except Exception as ex:                                   # noqa: BLE001
-        head = raw[:120].decode("utf-8", "replace").replace("\n", " ")
-        print(f"   ✗ 非 JSON（{len(raw):,}B）{type(ex).__name__}：{head}\n")
+    except Exception as e:  # noqa: BLE001
+        out.append(f"  ⛔ 不是 JSON（{type(e).__name__}）；前 200 bytes：{raw[:200]!r}")
         return
     if not isinstance(d, list):
-        print(f"   △ 不是 list，頂層是 {type(d).__name__}；鍵={list(d)[:8]}\n")
+        out += ["  " + s for s in B.describe_response(d)]
         return
-    codes = [c for c in (_code(r) for r in d if isinstance(r, dict)) if c]
-    if not codes:
-        keys = list(d[0])[:12] if d else []
-        print(f"   △ {len(d):,} 筆，但找不到代號欄。欄位={keys}\n")
-        return
-
-    got = set(codes)
-    print(f"   ✓ {len(raw):,} bytes、{len(d):,} 筆")
-    print(f"     欄位（前 12）={list(d[0])[:12]}")
-    print(f"     代號 首={codes[0]} 末={codes[-1]} 最大={max(got)}")
-
-    # ── 完整性三項 ──
-    verdict = []
-    # ① 尾巴代號
-    if max(got) < "5000":
-        verdict.append(f"最大代號只到 {max(got)}（**疑似截斷**）")
-    # ② 依代號分段的涵蓋率
-    if want:
-        buckets = {}
-        for c in sorted(want):
-            b = c[0] if c and c[0].isdigit() else "?"
-            buckets.setdefault(b, [0, 0])
-            buckets[b][0] += 1
-            if c in got:
-                buckets[b][1] += 1
-        line = "  ".join(f"{b}xxx {h}/{t}" for b, (t, h) in sorted(buckets.items()))
-        cov = sum(v[1] for v in buckets.values()) / max(1, sum(v[0] for v in buckets.values()))
-        print(f"     對照 industry.csv：涵蓋 {cov*100:.1f}%")
-        print(f"     分段  {line}")
-        rates = [h / t for t, h in buckets.values() if t >= 20]
-        if rates and (max(rates) - min(rates)) > 0.5:
-            verdict.append("**分段涵蓋率斷崖式差異 → 幾乎確定是截斷**")
-        elif cov < 0.5:
-            verdict.append(f"涵蓋率僅 {cov*100:.0f}%（可能是端點不含某類公司，也可能截斷）")
-    # ③ 高代號抽樣
-    hi = [c for c in sorted(want) if c >= "8000"][:6] if want else []
-    if hi:
-        miss = [c for c in hi if c not in got]
-        print(f"     高代號抽樣 {hi}｜缺 {miss if miss else '無'}")
-        if len(miss) == len(hi):
-            verdict.append("高代號全缺（**疑似截斷**）")
-
-    print(f"     → {'；'.join(verdict) if verdict else '**看起來完整**'}\n")
+    out.append(f"  ✓ {len(d):,} 筆；第一筆的鍵 = {sorted(d[0]) if d else '（空）'}")
+    # ⭐ 判準：**這一批要自己講出它是哪一期**。找出期別欄，看它有幾個相異值。
+    keys = [k for k in (d[0] if d else {})
+            if any(t in k for t in ("年月", "出表", "年度", "月別", "Date", "date"))]
+    for k in keys:
+        vals = sorted({str(r.get(k, "")) for r in d})
+        out.append(f"  ── `{k}` 有 {len(vals)} 個相異值：{vals[:8]}"
+                   + ("…" if len(vals) > 8 else ""))
+    if not keys:
+        out.append("  ⚠ 找不到期別欄 ⇒ ⛔ **不可判定它是不是只給最新一期**")
+    elif all(len({str(r.get(k, "")) for r in d}) <= 1 for k in keys):
+        out.append("  ⇒ ⛔ 期別欄只有一個值 ⇒ **只給最新一期**，沒有歷史。")
+    else:
+        out.append("  ⇒ ⭐ 期別欄不只一個值 ⇒ **含多期**，值得當來源評估。")
 
 
 def main():
-    ap = argparse.ArgumentParser(description="MOPS 全市場端點完整性探測")
-    ap.add_argument("--sleep", type=float, default=2)
-    a = ap.parse_args()
-    B.SLEEP = a.sleep
-    tw, tp = listed_codes()
-    if not tw:
-        print("[mops] 找不到 data/meta/industry.csv——**完整性判準會少一項**，"
-              "先跑 industry 再來。", file=sys.stderr)
-    print(f"[mops] 對照基準：上市 {len(tw):,} 檔、上櫃 {len(tp):,} 檔"
-          f"（來自已交叉驗證的 industry.csv）\n")
-    import time
-    for tag, url in TARGETS:
-        probe(tag, url, tw if "上市" in tag else tp)
-        time.sleep(a.sleep)
-    print("[mops] 判準提醒：**「有一千多筆」不等於完整**。"
-          "分段涵蓋率出現斷崖，就是截斷。")
+    out = [f"# MOPS／OpenAPI 探針（丁級 11 終點驗證）",
+           f"# ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果",
+           ""]
+    # ⭐ 先試乾淨的那條：不必經過 MOPS，也不必解 blob。
+    for n in ("t187ap05_L", "t187ap05_O"):
+        openapi_case(n, out)
+        out.append("")
+    # ⛔ 再驗橋接，而且**只驗那個唯一還沒排除的失敗模式**。
+    bridge_case("ajax_t21sc03", "114", "110", out, month="01")
+    out.append("")
+    bridge_case("ajax_t163sb04", "114", "110", out, season="02")
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    print("\n".join(out))
+    print(f"\n[mops_probe] 寫出 {OUT}")
     return 0
 
 

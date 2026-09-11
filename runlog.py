@@ -33,6 +33,20 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
+
+
+def now_tpe():
+    """→ 台北時間的 `datetime`。**全庫唯一一份**（CLAUDE.md 四點五）。
+
+    ⛔ 這裡原本沒有，而 `db_status.py` 自己寫了一份、`reduce_check.py` 用
+      `hasattr(runlog, "now_tpe")` 探它在不在（探不到就自己 import 一次 datetime）
+      ——⚠ 三個地方各自為政，⇒ 2026-09-11 `feeds.month_is_open()` 照著
+      `reduce_check` 的樣子寫 `runlog.now_tpe()`，**AttributeError 掛在 Actions 上**。
+    ⚠ 而它掛的位置很典型：自測一律傳 `today=`，⛔ **預設值那條路一次都沒被走過**。
+    """
+    return datetime.now(TPE)
+
+
 # ★ 一定要用 `__file__` 錨定，不可以用相對路徑。
 #   相對路徑是相對 **CWD**，不是相對這支程式——GitHub Actions 的 CWD 剛好是 repo 根目錄，
 #   所以看起來一直是對的；但只要有人從別的地方叫（selftest 把腳本複製到暫存目錄再跑，
@@ -41,6 +55,10 @@ TPE = timezone(timedelta(hours=8))
 #   ⚠ 這正是「不碰真的 data/」那句保證失效的方式，而且**看起來完全成功**。
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
+# ⛔ 守門要比的是**repo 裡那個真的檔**，⚠ 不是 `PATH` 這個變數——
+#   自測就是靠改 `PATH` 把輸出導到暫存檔的，
+#   拿 `PATH` 來比等於「改了也照樣被擋」（第一版就是這樣，反向驗當場抓到）。
+_REAL = PATH
 
 
 class Run:
@@ -67,7 +85,18 @@ class Run:
         t = datetime.now(TPE).isoformat(timespec="seconds")
         bad = [c for c in self.checks if not c[1]]
         head = "✗ 有問題" if bad else "✓ 正常"
-        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）", ""]
+        # ⛔⛔ 2026-09-10 的教訓，做成程式而不是「我會記得」：
+        #   我在**開發容器**裡跑了一次 `feeds.py --run` 當測試，
+        #   而這個容器對交易所一律 403（是**我方閘道**擋的，不是交易所）。
+        #   ⇒ 它把一塊 `feeds:margin ✗ 失敗 3 天` 寫進這份**跨 workflow 共用**的報告，
+        #     還跟著我的 commit 上去。⚠ 那一塊看起來跟真的失敗一模一樣。
+        #   ⭐ 這裡不擋寫入（本地跑 `missing_rows.py` 之類算本地資料的是正當的），
+        #     但**一定要標出來**：讀的人要分得出「這是 Actions 跑的」還是
+        #     「某人在容器裡跑的」——後者的網路結果一律不可信。
+        where = ("" if os.environ.get("GITHUB_ACTIONS") == "true"
+                 else "　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；"
+                      "⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）")
+        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）{where}", ""]
         out += self.lines
         if self.checks:
             out += ["", "檢查："]
@@ -77,6 +106,22 @@ class Run:
         return "\n".join(out) + "\n\n"
 
     def finish(self):
+        # ⛔⛔ 自測**永遠不可以**寫進真的 `_last_run.md`。
+        #   ⚠ 上面 2026-09-08 那段註解講的就是這件事（`selftest_reduce.py` 把
+        #   suspend 那一塊洗成 adjust），⭐ 而那之後只留了註解、**沒有守門**
+        #   ⇒ 2026-09-11 又發生一次（`selftest_margin_universe.py` ⑧ 直接呼叫
+        #   `halt_spans.main()`，把假資料的區塊寫進 repo 裡那個檔）。
+        #   ⛔ 而它**看起來完全成功**：檔在、格式對、程式回 0。
+        # ⇒ 判準是「跑的人是誰」，⚠ 不是「path 對不對」——
+        #   自測正是**沒有**改 path 的那一個，所以只有這個方向擋得住。
+        if (os.path.abspath(self.path) == _REAL
+                and os.path.basename(sys.argv[0] or "").startswith("selftest_")):
+            raise RuntimeError(
+                f"⛔ `{os.path.basename(sys.argv[0])}` 想寫進真的 runlog "
+                f"（{_REAL}）——⚠ 那會把 repo 裡的紀錄洗成假資料，"
+                "而且不會有任何地方報錯。\n"
+                "⇒ 改法：呼叫受測的 `main()` 之前先把 `runlog.PATH` 指到暫存檔"
+                "（或給 `runlog.Run(name, path=...)`）。")
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         old = ""
         if os.path.exists(self.path):

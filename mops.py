@@ -301,6 +301,7 @@ def cmd_run(args):
     #   ⛔ **光看涵蓋率分不出是哪一種**，而先改 parser 會把 0% 變成
     #     看起來正常的假值。所以這裡把原始列**原樣**留下來，讓人下一趟直接看。
     zero_raw = {}
+    retried = []          # ⭐ 第一次失敗、重試才成功的：**要留在 runlog 裡**
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -310,9 +311,24 @@ def cmd_run(args):
                 d, note = fetch(url)
                 time.sleep(B.SLEEP)
                 if d is None:
-                    calls.append((kind, tag, mk, False, 0, 0.0, 0.0))
-                    print(f"  [{kind}/{tag}/{mk}] 略過：{note[:70]}")
-                    continue
+                    # ⛔ 22 個請求裡掛 1 個（2026-09-11 是 `fs/ci/tpex`），
+                    #   而 `B.get` 的 retries=2 是**同一個時間窗**內連打三發
+                    #   ⇒ 被限流時三發一起掛，跟「這張表不存在」長得一模一樣。
+                    # ⇒ ⭐ 隔久一點再試**一次**，⛔ 而且要把「是重試才活的」講出來：
+                    #   一張天天要重試才活的表，跟一張一次就過的表**不是同一件事**，
+                    #   ⚠ 靜靜重試成功會把那個訊號抹掉。
+                    time.sleep(B.SLEEP * 4)
+                    d2, note2 = fetch(url)
+                    time.sleep(B.SLEEP)
+                    if d2 is None:
+                        calls.append((kind, tag, mk, False, 0, 0.0, 0.0))
+                        print(f"  [{kind}/{tag}/{mk}] 略過（**隔久再試一次也不行**）："
+                              f"{note[:70]}｜重試：{note2[:70]}")
+                        continue
+                    retried.append((f"{kind}/{tag}/{mk}", note[:60]))
+                    print(f"  [{kind}/{tag}/{mk}] ⚠ 第一次失敗（{note[:60]}），"
+                          f"**隔久再試一次成功**：{note2}")
+                    d, note = d2, note2
                 # ⛔ **一列沒有公司代號的列，不是一列資料。**
                 #   2026-09-09 實測：上櫃的 fs/bs × basi／ins／fh 六張表
                 #   **各回 1 列，而那一列的「公司代號」是空的**、年度季別也是空的，
@@ -398,7 +414,14 @@ def cmd_run(args):
                     f"有回應 {sum(1 for c in calls if c[3])} 個")
     dead = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if not c[3]]
     rl.check("每一個表×市場都有回應", not dead,
-             ("沒回應：" + "、".join(dead)) if dead else f"{len(calls)} 個全有")
+             ("沒回應（**隔久再試一次也不行**）：" + "、".join(dead))
+             if dead else f"{len(calls)} 個全有")
+    # ⛔ 這一列即使是 0 也要在：⚠ 靜靜重試成功 ＝ 把「這張表在惡化」的訊號抹掉。
+    rl.info("⚠ 第一次失敗、隔久再試才成功的",
+            (f"{len(retried)} 個："
+             + "、".join(f"{k}（{w}）" for k, w in retried[:5])
+             + "　⇒ ⛔ 連續幾趟都出現同一個 ⇒ 那不是限流，是那張表在惡化")
+            if retried else "0 個")
     # ⚠ **回 0 列不算失敗。** 2026-09-08 第一次上線就誤殺六張表：
     #   fs/bs 的 basi（銀行）／ins（保險）／fh（金控）在**上櫃根本沒有公司**——
     #   上櫃的 9 檔金融全是證券商、期貨與保經。那三張表回 0 列是事實，不是抓不到。

@@ -44,10 +44,10 @@
 **靜默、每個數字都是真的、只是屬於另一個年代。**
 本檔所有候選都必須帶日期參數，且一律經過 `_same_day()` 核對。
 """
-
 import argparse
 import calendar          # ★ cmd_probe 與 _months 都要用；原本只在 _months 內 import，
                          #   cmd_probe 改成逐月探測後會 NameError
+import csv
 import io
 import json
 import os
@@ -56,6 +56,7 @@ import sys
 import time
 
 import backfill as B
+import fetch as _F
 import runlog
 
 _ROOT = B._ROOT
@@ -96,6 +97,648 @@ def _blank_num(v):
     if s in ("", "-", "--", "N/A", "不適用", "除權息"):
         return ""
     return s
+
+
+def parse_tib(d, day, known=None):
+    """TWSE `STOCK_TIB` → **官方創新板成分清單**（逐日）。
+
+    ## 為什麼要存它
+
+    ⛔ 我方原本靠**名稱後綴**（`/(?:-|KY)創$/`）認創新板。
+    市場情報分析線 2026-09-10 10:44 找到官方清單，並比對 **2026-09-09 零差異**
+    （官方 30 檔 vs 字串法 30 檔，兩個方向都 0）。
+    ⇒ 字串法在那一天是對的，⭐ **但它是猜的**：改名就會失效，而且不會有人發現。
+
+    ## ⚠ 為什麼存成**逐日**，不是一份現況清單
+
+    K線線的判準一句話：「問的是『它**現在**是什麼』還是『它**那時候**是什麼』。」
+    ⇒ 圈選歷史區間時要的是那一天的成分 ⇒ **逐日**。
+    （這也是 `stocks.csv` 的 `market` 欄不可以拿來圈歷史那條的同一個理由。）
+
+    ## ⛔ 兩個邊界
+
+    ① **歷史下限 2021-06-28**（創新板 2021-07-20 開板，所以夠用）。
+       越界時官方**明說**：`stat:"查詢日期小於110年6月28日，請重新查詢!"`
+       ⇒ 這一支是**大聲失敗**，不是靜默回最新——這件事本身要記著。
+    ② ⛔ **最後一列是「合計」，代號欄是空字串**，要丟掉。
+       ⚠ 而它不是垃圾：情報分析線驗過那一列的成交金額
+       ＝ `MI_INDEX` 大盤統計「14.創新板股票」，**差 0**。
+       ⇒ 丟掉是因為它不是一檔股票，⛔ 不是因為它不可信。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = tabs[0]
+    f = _fieldmap(t)
+    i_code = _exact(f, "證券代號", "股票代號", "代號")
+    i_name = _exact(f, "證券名稱", "股票名稱", "名稱")
+    if i_code is None:
+        return [], f"欄位對不上：{f}"
+    out, skipped = [], 0
+    for r in (t.get("data") or []):
+        if not r or len(r) <= i_code:
+            continue
+        code = str(r[i_code]).strip()
+        # ⛔ 「合計」那一列的代號欄是空字串 ⇒ 這一條就是在丟它。
+        #   ⚠ 用 `code[0].isdigit()` 而不是 `code != "合計"`：
+        #     名稱欄才寫「合計」，代號欄是空的——照名稱擋會擋不到。
+        if not code or not code[0].isdigit():
+            skipped += 1
+            continue
+        if known and code not in known:
+            continue
+        out.append([day, code,
+                    str(r[i_name]).strip() if i_name is not None else ""])
+    return out, f"{len(out)} 檔（丟掉 {skipped} 列沒有代號的，含「合計」）"
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 借券賣出（SBL）—— K線線 2026-09-10 15:45 列為**第一優先**
+#
+#   借券賣出是融券的 **77.5 倍**（2002 中鋼差 3,225 倍），
+#   缺口逐年惡化（2015 是 9.2 倍 → 2026 是 72.7 倍）
+#   ⇒ **融券現在只佔空方的 1.4%**。
+#   ⇒ K線線的 `券資比 = 融券餘額 ÷ 融資餘額` **分子只涵蓋空方的 1.4%**，
+#     而「券資比低 ＝ 空方壓力小」是拿那 1.4% 對整體下結論。
+#   ⚠ 偏誤方向**單一**：借券賣出越集中的股票（大型權值股、外資愛用），
+#     判讀就越樂觀。⭐ 而它**不會炸、不會缺值、不會有人抱怨**。
+#
+# ── 實測（`sbl_probe.py`，2026-09-09，Actions）────────────────────
+#   兩市場的 title 都是「信用額度總量管制餘額表」，**15 欄、兩段併在一起**：
+#
+#     欄 0-1   股票（代號、名稱）
+#     欄 2-7   **融券**：前日餘額／賣出／買進／現券／今日餘額／限額
+#     欄 8-13  **借券賣出**：前日餘額／當日賣出／當日還券／當日調整／當日餘額／次一營業日可限額
+#     欄 14    備註
+#
+#   ⛔ **兩段的「前日餘額」「當日餘額」欄名重複** ⇒ 只看欄名一定取錯。
+#
+# ⭐ 而上市那一側**官方自己講出了邊界**——一個我方從來沒讀過的鍵：
+#     groups: [{"title":"股票","span":2},{"title":"融券","span":6},
+#              {"title":"借券賣出","span":6},{"title":"","span":1}]
+#   ⇒ 借券那一段從哪一欄開始，**不必猜也不必寫死**：照 `groups` 累加就好。
+#   ⚠ 上櫃**沒有** `groups`（頂層鍵只有 date／stat／tables）
+#     ⇒ 只能靠位置，⛔ 所以守衛要更嚴：欄名結構逐字比對實測。
+#
+# ⚠ 官方 notes 明文（上市那側才有）：
+#     「借券賣出當日餘額＝前日餘額＋當日賣出−當日還券＋當日調整」
+#   ⇒ ⭐ **免費的逐列驗算**，位置取錯時它會整片不符。
+#     「借券賣出股數含鉅額交易股數。」⇒ 引用倍數時要標。
+#   ⛔ 上櫃那側**沒有 notes 也沒有 total** ⇒ 完整性只能靠恆等式。
+#
+# ⚠ `TWT93U` 每日晚間**二次更新**（約 20:30 與 22:30）
+#   ⇒ 排程落在兩次之間會拿到**不完整**的版本，而它看起來完全正常。
+# ══════════════════════════════════════════════════════════════════
+# 實測欄名（2026-09-09）。⛔ 這是**契約**：對不上就整張表拒收。
+SBL_TWSE_FIELDS = ["代號", "名稱", "前日餘額", "賣出", "買進", "現券", "今日餘額",
+                   "次一營業日限額", "前日餘額", "當日賣出", "當日還券",
+                   "當日調整", "當日餘額", "次一營業日可限額", "備註"]
+SBL_TPEX_FIELDS = ["股票代號", "股票名稱", "前日餘額", "賣出", "買進", "現券",
+                   "當日餘額", "限額", "前日餘額", "當日賣出", "當日還券",
+                   "當日調整數額", "當日餘額", "次一營業日可借券賣出限額", "備註"]
+
+
+def _sbl_seg_from_groups(d):
+    """→ 借券那一段的起始欄位（照官方 `groups` 累加）。取不到回 None。
+
+    ⭐ `groups` 是我方一路丟掉的鍵之一，⚠ 而它正好解掉「兩段欄名重複」——
+      ⛔ 不必猜、不必寫死位置，**官方自己講**。
+    """
+    g = d.get("groups") if isinstance(d, dict) else None
+    if not isinstance(g, list):
+        return None
+    at = 0
+    for seg in g:
+        if not isinstance(seg, dict):
+            return None
+        if "借券" in str(seg.get("title", "")):
+            return at
+        try:
+            at += int(seg.get("span", 0))
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+_DROP_WHO_RE = re.compile(r"\('(\d[\dA-Za-z]*)',\s*'([^']*)'\)")
+
+
+def _drop_codes(note):
+    """從說明的樣本裡撈出 (代號, 原因)。→ list。⛔ 撈不到回空清單。
+
+    ⚠ 這是**從給人看的字串反向取值**，本來就是這個檔案警告過的做法
+    ⇒ 之所以可以，是因為那串樣本是我方自己在 `_drop_note()` 裡格式化的，
+      ⛔ 不是官方回應的原文；⚠ 而且撈不到只會讓歸因少一筆，不會誤判成瑕疵。
+    """
+    return _DROP_WHO_RE.findall(str(note))
+
+
+def _tally_drop(n_written, day, note):
+    """→ (這一天丟了幾列, 要印出來的說明)。⛔ 抽成函式是為了讓 selftest 測得到。
+
+    ⚠ 這裡有兩件事**必須一起做**，分開就會走岔：
+    ① 丟棄數要取**數字**（`_dropped_in`），⛔ 不是「有沒有出現『丟棄』兩個字」
+       ——那樣一天丟 40 列會被記成 1。
+    ② 丟棄不是 0 時，**parser 的原始說明要保留**（它帶著是哪幾檔、差多少）
+       ⛔ 蓋掉之後每天默默丟幾十列也看不出來。
+    """
+    n_drop = _dropped_in(note)
+    return n_drop, (f"{n_written} 列" if not n_drop
+                    else f"{n_written} 列｜{note}")
+
+
+def _explain_drops(name, dropped_who, days):
+    """→ (已歸因, 未歸因)。⛔ 判準用**資料自己**，不另開台帳。
+
+    ## ⭐ 情報分析線 2026-09-10 23:00 查出來的那一筆
+
+        2015-01-22　3416 融程電
+        前日餘額 1,000　賣出 0　還券 0　調整 0　當日餘額 **0**　⇒ 差 1,000 股
+        備註欄：**空的**
+
+    成因：**那天是它在上櫃的最後一個交易日**（01-23 轉上市）。
+    ⇒ 官方在它離開上櫃時把借券餘額**直接歸零**，
+      ⛔ 沒有走「還券」也沒有走「調整」欄 ⇒ 恆等式當然不成立。
+
+    ⚠ 所以這不是資料瑕疵，**是恆等式的定義邊界**——
+    ⭐ 而它跟 `exDailyQ`「不含該檔轉上市之後」是**同一個形狀，第二次出現**。
+
+    ⇒ 判準：不符時看該檔**次一交易日還在不在這張表上**
+      不在 ⇒ 離開本市場（轉上市／終止櫃買）⇒ ⛔ 不是瑕疵
+      還在 ⇒ 才是真的要查
+
+    ⛔ **不可以靠備註欄判斷**——那一筆的備註是空的。
+    """
+    idx = {d: i for i, d in enumerate(days)}
+    left, unexplained = [], []
+    for day, code in dropped_who:
+        i = idx.get(day)
+        nxt = days[i + 1] if i is not None and i + 1 < len(days) else None
+        if nxt is None:
+            # ⚠ 區間最後一天沒有「次一日」可看 ⇒ ⛔ 不可判定，一律當未歸因
+            #   （寧可多查一筆，不要把真的瑕疵歸成「它離開了」）
+            unexplained.append((day, code, "區間最後一天，無次一日可比"))
+            continue
+        path = os.path.join(UNI_DIR, name, f"{nxt}.csv")
+        if not os.path.exists(path):
+            unexplained.append((day, code, f"次一日 {nxt} 沒有檔可比"))
+            continue
+        with io.open(path, encoding="utf-8") as f:
+            codes = {r.get("stock_id", "") for r in csv.DictReader(f)}
+        (left if code not in codes else unexplained).append(
+            (day, code, f"次一日 {nxt} {'已不在表上' if code not in codes else '仍在表上'}"))
+    return left, unexplained
+
+
+def _drop_note(kept, tag, bad, samples):
+    """驗算不符時的說明。⛔ **要講得出是哪幾列**，不是只給一個數字。
+
+    ⚠ 這是 `bulletin/revivt` 那次的教訓（283 列全部認不出，訊息只說「bad=283」
+      ＋欄位名 ⇒ **不足以診斷**，我得再打對方一趟才知道為什麼）。
+    ⭐ 而丟棄這一族更難：它一次只掉幾列，數量小到不會有人想去追，
+      ⛔ 於是「1 天有丟棄」這種紅燈會一直紅著沒有人動它——
+      `feeds:otcsbl` 就是這樣紅著的，而 runlog 連**哪一天**都沒寫。
+    """
+    # ⚠ `丟棄 {bad} 列` 這幾個字**是有人在比對的**（`cmd_feed` 用它算 `dropped_days`）
+    #   ⇒ ⛔ 格式不可以亂改。⭐ 而那本身就是這個檔自己警告過的事
+    #     （「訊息字串是給人看的，不是狀態機的輸入」）——
+    #     ⇒ 那一邊已經改成用 `_dropped_in()` 明確取數，這裡維持相容格式。
+    if not bad:
+        return f"{kept} 列可用（{tag}；驗算不符丟棄 0 列）"
+    return (f"{kept} 列可用（{tag}；⛔ 驗算不符丟棄 {bad} 列"
+            f"｜前 {len(samples[:3])} 筆：{samples[:3]}）")
+
+
+_DROP_RE = re.compile(r"丟棄\s*(\d+)\s*列")
+
+
+def _dropped_in(note):
+    """從 parser 的說明取出丟棄列數。→ int（取不到回 0）。
+
+    ⛔ 這一支存在的理由寫在 `cmd_feed` 裡：那裡原本用
+    `"丟棄" in note and "丟棄 0 列" not in note` 判斷有沒有丟棄
+    ——⚠ 而同一個檔案裡就記著「**訊息字串是給人看的，不是狀態機的輸入**」
+    （休市日被算成失敗那次，就是因為結尾是全形括號對不到）。
+    ⇒ 收成一條具名的規則，⛔ 而且它取得出**數字**，不只是有無。
+    """
+    m = _DROP_RE.search(str(note))
+    return int(m.group(1)) if m else 0
+
+
+def _sbl_rows(t, day, known, i0, tag):
+    """共用的借券輸出與驗算。`i0` ＝ 借券那一段的起始欄。
+
+    ⭐ 官方恆等式（notes 明文）：**當日餘額 ＝ 前日餘額＋當日賣出−當日還券＋當日調整**
+      ⇒ 位置取錯時它會**整片不符** ⇒ 它就是「位置對不對」的檢驗。
+      ⛔ 不符的列丟掉並計數，⚠ 不要靜默寫進去。
+    """
+    out, bad, samples = [], 0, []
+    n = lambda v: (float(str(v).replace(",", "").strip())
+                   if str(v).strip() not in ("", "-", "--") else 0.0)
+    for r in (t.get("data") or []):
+        if not r or len(r) < i0 + 6:
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        vals = [_blank_num(r[i]) for i in range(i0, i0 + 6)]
+        try:
+            ok = abs(n(vals[0]) + n(vals[1]) - n(vals[2]) + n(vals[3])
+                     - n(vals[4])) <= 1
+        except ValueError:
+            bad += 1
+            samples.append((code, "數字轉不動", vals))
+            continue
+        if not ok:
+            bad += 1
+            # ⭐ 把**差多少**也記下來：差 1~2 股是進位、差一個量級是欄位對錯位。
+            #   ⚠ 那兩種的處置完全不同，⛔ 只給「不符」分不出來。
+            gap = (n(vals[0]) + n(vals[1]) - n(vals[2])
+                   + n(vals[3]) - n(vals[4]))
+            samples.append((code, f"前{vals[0]}+賣{vals[1]}-還{vals[2]}"
+                                  f"+調{vals[3]}≠餘{vals[4]}（差 {gap:+.0f}）"))
+            continue
+        # ⛔ 備註是**文字**（X／Y／V／%／Z／!），不可以走 `_blank_num`
+        note = str(r[14]).strip() if len(r) > 14 else ""
+        # 融券那一段（欄 2~7）照官方原文一起存：⚠ 這張表的融券是**總量管制**視角，
+        #   跟 `margin` feed 那一份不是同一個口徑，⛔ 不可以互相取代。
+        s_seg = [_blank_num(r[i]) for i in range(2, 8)] if len(r) > 7 else [""] * 6
+        out.append([day, code] + s_seg + vals + [note])
+    return out, _drop_note(len(out), tag, bad, samples)
+
+
+def parse_sbl(d, day, known=None):
+    """TWSE `TWT93U` 借券賣出餘額。⭐ **段落邊界照官方 `groups`**，不寫死。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={sorted(d) if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != SBL_TWSE_FIELDS:
+        return [], f"欄位結構與 2026-09-09 實測不符，拒收：{f}"
+    i0 = _sbl_seg_from_groups(d)
+    # ⛔ `groups` 取不到就**拒收**，不要退回寫死的 8：
+    #   官方哪天調整段落而 `groups` 跟著變，寫死那條會靜靜取錯欄。
+    #   ⚠ 而欄名比對已經擋住「欄變了」的情形 ⇒ 這裡拒收只會在 groups 消失時發生，
+    #     那本身就是要有人看一眼的事。
+    if i0 is None:
+        return [], ("拒收：`groups` 裡找不到「借券」那一段 "
+                    f"⇒ 段落邊界無從得知（groups={d.get('groups')!r}）")
+    if i0 != 8:
+        return [], f"⚠ `groups` 說借券從第 {i0} 欄開始，與實測的 8 不同 ⇒ 先拒收，要有人看"
+    return _sbl_rows(t, day, known, i0, "TWSE groups 定位")
+
+
+def parse_otcsbl(d, day, known=None):
+    """TPEx `margin/sbl`。⛔ **沒有 `groups`、沒有 `total`、沒有 `notes`** ⇒ 守衛更嚴。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={sorted(d) if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != SBL_TPEX_FIELDS:
+        return [], f"欄位結構與 2026-09-09 實測不符，拒收：{f}"
+    # ⚠ 這一側只能靠位置（欄名重複、又沒有 groups）
+    #   ⇒ 上面那條「欄名逐字相同」就是唯一的守衛，⛔ 不可以放寬成「包含」比對。
+    return _sbl_rows(t, day, known, 8, "TPEx 位置定位（⛔ 沒有 groups）")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 變更交易（全額交割）—— K線線 2026-09-10 15:45 的 Q5
+#
+#   他們的前置閘門有「全額交割股」一列，而我方全文查「全額交割」**0 次**
+#   ⇒ 那一列**目前不可執行**。⚠ 而他們自己說過：
+#     **「假裝有在擋」比沒有擋更危險**，因為下游會以為過了關。
+#
+# ── 實測（`delist_probe.py`，Actions）─────────────────────────────
+#   `date=` **是真的吃的**：2015-01-05 → 23 列、2020-01-03 → 21、2026-09-09 → 23
+#   `stat=OK`、`total` 與列數一致、欄位 3 個、⚠ 值是 `["1213","大飲","  "]` 這種
+#
+# ⭐ 官方 `notes` 的符號說明**逐字**（K線線 §8 指名要的，⛔ 不是轉述）：
+#
+#     `**` 代表上市證券除應預先收足款券外，其交易採**分盤集合競價**方式，
+#     該方式係採每 30 分鐘以人工管制之撮合終端機執行撮合作業一次為原則，
+#     並得視交易情形因應公告調整撮合時間。
+#
+#   ⇒ 他們「閘門第一列拆成【狀態＝分盤集合競價】＋【成因 A 處置／成因 B 變更交易】」
+#     那條裁定**成立**，不必作廢。
+#
+# ⚠ 而另一支 `BFIHBU` 的 notes 講的是這一群**還被禁掉什麼**：
+#     「變更交易有價證券**不得進行當日沖銷交易、融資融券交易、借券交易、
+#       平盤以下借券賣出**」
+#   ⇒ ⛔ 「融資融券欄位是 0」至少有**兩個**成因：
+#     ① 主管機關個別公告停止融資融券（`MI_MARGN` 備註欄，且那是**次一營業日**）
+#     ② 被列為變更交易 ⇒ 連當沖與借券一起禁掉，**比 ① 嚴**
+#   ⚠ 只查其中一個名單會誤判。
+# ══════════════════════════════════════════════════════════════════
+FULLDEL_FIELDS = ["證券代號", "證券名稱", "分盤集合競價(以**表示)"]
+
+
+def parse_fulldelivery(d, day, known=None):
+    """TWSE `fullDelivery/TWT85U` 變更交易（全額交割）名單。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], f"沒有 tables；頂層鍵={sorted(d) if isinstance(d, dict) else type(d).__name__}"
+    t = tabs[0]
+    f = _fieldmap(t)
+    # ⛔ 欄名逐字比對：只有 3 欄、而且第 3 欄的欄名本身帶著符號說明
+    #   ⇒ 官方哪天改欄名（例如拿掉「(以**表示)」）就代表符號可能也改了。
+    if f != FULLDEL_FIELDS:
+        return [], f"欄位結構與 2026-09-09 實測不符，拒收：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not r or len(r) < 3:
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        # ⭐ 第 3 欄是 `**` 或**兩個空白**（實測：`["1213","大飲","  "]`）
+        #   ⛔ 存成 1/0，不存原文：原文是空白時 CSV 讀回來分不出「空白」與「沒有值」。
+        #   ⚠ 判準用「含 `*`」而不是 `== "**"`：⭐ 借券那件才學到的
+        #     ——分類欄可能是複合的，等號比對會漏掉。
+        raw = str(r[2])
+        out.append([day, code, str(r[1]).strip(), "1" if "*" in raw else "0"])
+    n_split = sum(1 for r in out if r[3] == "1")
+    return out, f"{len(out)} 檔｜其中併採分盤集合競價 {n_split} 檔"
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 上市「**停止買賣中**」——`violation/stop`
+#
+# K線分析線 2026-09-11 01:40（端點是使用者給的）。⚠ 他們同時訂正了自己
+# 「這一頁抓不到」那句：他們**只試了給人看的那個網址**
+# （`/zh/listed/violations/stop.html`，那個確實是 JS 殼），
+# ⛔ 沒試 `/rwd/` 的資料端點就下了結論。
+# ⇒ ⭐ 可執行化的規矩：**寫「抓不到」時要附試過的網址清單**，只試一個不算。
+#
+# ## ⛔⛔ 這一支**沒有歷史**——漏抓一天就永久少一天
+#
+# K線線實測 `?date=20240401` ⇒ **參數被忽略**，`title` 仍是當天。
+# ⇒ 它是「**今天仍在停止買賣中**」的即時名單。
+# ⚠ 補抓成本是**無限大**（拿不回來）⇒ 這一支的優先度比一般回補高，
+#   ⛔ 而它壞掉的樣子是「那一天沒有檔」，不是錯誤。
+#
+# ⭐ 但每一列都附**停止買賣開始日期** ⇒ 第一次抓到的那天，
+#   就能把「當下這一段」的**起點**整段補回去，不必等它累積。
+#
+# ## ⭐ 它解掉的是「停止買賣中」與「已下市」分不開的問題
+#
+# K線線的〈硬斷點〉閘門要走兩條不同分支：
+#   已下市     ⇒ 永遠不會回來，不進母體
+#   停止買賣中 ⇒ ⚠ **它會復牌**，而復牌後前後兩段中間隔了好幾個月
+#              ⛔ 接起來算均線／扣抵／ATR ＝ 把一段不存在的時間當成交易日
+# ⚠ 而在資料庫裡這兩者**現在長得一模一樣**（都只是「日線沒有列了」）。
+#
+# ⛔ 而 `meta/suspend`（TWTAWU）**不是**這張表：那一支是「短暫停牌後復牌」，
+#   9,594/10,034 列是權證，未復牌的 21 檔普通股 `halt_date` 全停在 2013~2014。
+#
+# ⚠ 上櫃的對應來源**還沒找到** ⇒ ⛔ 這裡不猜，`stophalt_tpex` 由探針決定。
+STOPHALT_FIELDS = ["證券代號", "證券名稱", "違反營業細則條款",
+                   "停止買賣原因", "停止買賣開始日期"]
+
+
+def parse_stophalt(d, day, known=None):
+    """TWSE `violation/stop` 停止買賣中的名單。→ (lines, note)。
+
+    ⛔ `day` 是**快照日**，不是查詢日：這一支的 `date=` 參數官方會忽略
+    （K線線實測）⇒ ⚠ 寫進檔名的那一天必須是「我方抓它的那一天」。
+    ⭐ 而 `fetch_one` 的 `_same_day` 仍然會擋一層：`title` 講的日子
+    要對得上，⛔ 對不上代表那份名單不是今天的。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], (f"沒有 tables；頂層鍵="
+                    f"{sorted(d) if isinstance(d, dict) else type(d).__name__}")
+    t = tabs[0]
+    f = _fieldmap(t)
+    # ⛔ 欄名逐字比對：⚠ 這一支只有五欄，而「停止買賣開始日期」那一欄
+    #   是本支**唯一**能回推歷史的東西——欄名一變就代表它可能不在了。
+    if f != STOPHALT_FIELDS:
+        return [], f"欄位結構與 K線線 2026-09-11 實測不符，拒收：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not r or len(r) < len(STOPHALT_FIELDS):
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        # ⛔ **不用 `known` 濾**：停止買賣中的個股很可能已經不在我方母體裡
+        #   （它就是因為停了才不再出現在日檔）⇒ 濾掉等於把最該記的那些丟掉。
+        # ⭐ 「115年04月07日」⇒ `2026-04-07`。⛔ 這裡不自己算民國年——
+        #   `first_date_compact` 是**唯一**那一份（`_same_day` 把 2021 讀成
+        #   1932 那個 bug 就是自己算年份算出來的），⚠ 認不出來就留空、不猜。
+        since = _iso_dash(_F.first_date_compact(r[4]))
+        out.append([day, code, str(r[1]).strip(), "twse",
+                    since, str(r[2]).strip(), str(r[3]).strip()])
+    # ⭐ 說明要講得出**最早的那一段從哪天開始**：那一格就是可回推的歷史。
+    starts = sorted(x[4] for x in out if x[4])
+    return out, (f"{len(out)} 檔停止買賣中"
+                 + (f"｜最早自 {starts[0]}" if starts else "｜⚠ 一列都沒有開始日期"))
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 上櫃「變更交易／分盤／管理股票／停止交易」——`afterTrading/chtm`
+#
+# 上市只有 `TWT85U` 一欄 `**`（要自己從「變更交易」推「有沒有分盤」）；
+# ⭐ 上櫃這一支**四個狀態各一欄**，而且**直接給撮合循環時間**。
+#
+# ── 我方實測（`chtm_probe.py`，Actions 2026-09-10）───────────────
+#   頂層鍵 `date`／`stat`／`tables`；`date` 回顯**我請求的那一天**（20150105）
+#   欄位 **10 個**，逐字：
+#     ['證券代號','證券名稱','變更交易','分盤交易','屬管理股票',
+#      '分盤或管理股票撮合循環時間(分鐘)','停止交易','財務資訊重點專區',
+#      '公告連結','財務重點專區連結']
+#
+# ⛔⛔ 兩處把情報分析線 18:00 那封**推翻**了（我方自己量的）：
+#   ① 他們說 8 欄——**實際 10 欄**（漏了兩個連結欄）。
+#      ⚠ 照 8 欄寫死位置，後面兩欄會被當成不存在；⛔ 而我方一律用欄名定位，
+#        所以這裡的代價只是「少存兩欄」，不是錯位。
+#   ② 他們說 `98/06/01` **靜靜回今天**——**不是**。
+#      實測回 `date: 20090601`、38 列，與今天那一份**逐位元組不同**
+#      ⇒ ⭐ 這支的歷史至少回到 **2009**，比他們說的 2015 更早。
+#      ⚠ 那是「越界」與「參數不吃」被混為一談；⛔ 兩者的處置完全不同。
+#
+# ⛔⛔ 而有一個會讓整欄靜默變空的坑（情報分析線這一條是對的，我方實測證實）：
+#   **那個 `Ｙ` 是全形（U+FF39），不是半形 `Y`。**
+#   ⇒ 寫 `== "Y"` 會**一筆都不匹配**，而且不報錯——整欄變成「沒有任何一檔被標記」。
+# ⚠ 而撮合時間是**零填三位的字串**（`"030"`／`"045"`），不是整數也不是 `30`。
+#   ⇒ 我方**原樣存字串**，⛔ 不轉成整數：轉了就分不出「沒有值」與「0 分鐘」。
+#
+# ⭐ 五個旗標欄實測都只有兩種值（`""` 與 `Ｙ`）⇒ **不是複合值**，可以當布林讀。
+#   ⚠ ⛔ 但「實測是兩種」不等於「永遠是兩種」——所以我方存的是
+#     「有沒有被標記」而**不是**原文字元，並且**任何非空值都算被標記**
+#     （含 `*` 那條同一個道理：⛔ 不用等號比對）。
+# ══════════════════════════════════════════════════════════════════
+CHTM_FIELDS = ["證券代號", "證券名稱", "變更交易", "分盤交易", "屬管理股票",
+               "分盤或管理股票撮合循環時間(分鐘)", "停止交易",
+               "財務資訊重點專區", "公告連結", "財務重點專區連結"]
+# ⭐ 全形 Ｙ。⛔ 這一行是這支解析器最容易被下一個人「順手改成 'Y'」的地方。
+CHTM_YES = "\uff39"
+
+
+def _chtm_flag(v):
+    """→ "1"／"0"。⛔ 判準是「**非空**」，不是 `== 'Ｙ'`。
+
+    ⚠ 兩個理由，都不是理論：
+    ① 那個 `Ｙ` 是**全形**（U+FF39）⇒ 寫成半形會一筆都不匹配、而且不報錯。
+    ② ⭐ 分類欄要當「集合」讀不要當「值」讀（K線線 20:20 抽的通則）：
+       一格裡可以同時裝 `OX!`、`XV`、`**`、`*ABCD`。
+       ⛔ `==` 的偏誤不是隨機的，它**系統性地放行狀態最多、最該被擋的那一批**。
+    """
+    return "1" if str(v).strip() else "0"
+
+
+def parse_chtm(d, day, known=None):
+    """TPEx `afterTrading/chtm` → 上櫃變更交易／分盤／管理股票／停止交易。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], (f"沒有 tables；頂層鍵="
+                    f"{sorted(d) if isinstance(d, dict) else type(d).__name__}")
+    t = tabs[0]
+    f = _fieldmap(t)
+    # ⛔ 欄名逐字比對：這一支的欄名**自己就是欄位語意**
+    #   （「分盤或管理股票撮合循環時間(分鐘)」講明了單位是分鐘）
+    #   ⇒ 官方改欄名就代表語意可能也改了。
+    if f != CHTM_FIELDS:
+        return [], f"欄位結構與 2026-09-10 實測不符，拒收：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not isinstance(r, list) or len(r) < 8:
+            continue
+        code = str(r[0]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        out.append([day, code, str(r[1]).strip(),
+                    _chtm_flag(r[2]),          # 變更交易
+                    _chtm_flag(r[3]),          # 分盤交易
+                    _chtm_flag(r[4]),          # 屬管理股票
+                    # ⭐ 原樣存字串（"030"／"045"），⛔ 不轉整數
+                    str(r[5]).strip(),
+                    _chtm_flag(r[6]),          # 停止交易
+                    _chtm_flag(r[7])])         # 財務資訊重點專區
+    n = {k: sum(1 for r in out if r[i] == "1")
+         for i, k in ((3, "變更交易"), (4, "分盤"), (5, "管理股票"),
+                      (7, "停止交易"))}
+    cyc = sorted({r[6] for r in out if r[6]})
+    return out, (f"{len(out)} 檔｜" + "／".join(f"{k} {v}" for k, v in n.items())
+                 + f"｜撮合循環時間出現的值 {cyc or '（都沒有）'}")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 個股融資成數的**調整幅度**——`marginTrading/BFIB9U`（上市）
+#
+# K線線那條 166.67 的基準值：官方明文「最高融資比率 60%、最低融券保證金成數 90%」
+# ⚠ 而那是**上櫃頁面**的字，上市那一半還沒有逐字 ⇒ ⛔ 先不要套過去。
+#
+# ── 我方實測（`chtm_probe.py`，Actions 2026-09-10）───────────────
+#   欄位（8）：編號／證券代號／證券名稱／調整成數原因／調整成數起日／恢復日
+#              ／降低融資比率／提高融券保證金成數
+#   不帶日期 → 471 列；`startDate=endDate=20150105` → 126 列 ⇒ **有逐日歷史**
+#
+# ⛔⛔ 三件會讓人讀錯的事，每一件都在實測值裡看得到：
+#
+# ① **同一檔會有很多列**：471 列裡只有 **94 個相異代號**
+#    ⇒ 一檔 × 每個「調整成數原因」一列（實測 6 種原因）
+#    ⇒ ⛔ 主鍵是（日期, 代號, **原因**），不是（日期, 代號）。
+#
+# ② **值不是純數字**：`降低融資比率` 的相異值是
+#    `''`／`'1'`／`'6'`／`'累計：1'`／`'累計：6'`
+#    ⇒ ⭐ `累計：N` 與 `N` 是**兩件事**（累計降低 vs 這一次降低）
+#      ⛔ 直接 `int()` 會炸，`replace("累計：","")` 會把兩者混成一個數字。
+#
+# ③ 空值有**兩種寫法**：空字串與**單一半形空白**
+#    （實測 `["1203","味王","監視第二次處置","","",  " ", " "]`）
+#    ⇒ ⛔ 只判 `== ""` 會把那些讀成「有值」。
+#
+# ⚠ 而 ⛔ **這支不算「現行成數」**：官方給的是**調整幅度**，
+#   要逐檔彙總再用「基準 − 累計調整」推——⭐ 而那是**判準**，屬 K線線。
+#   ⇒ 我方只把原始欄位存下來，⛔ 不在這裡算，也不寫進契約當成「成數」。
+#
+# ⛔⛔ 而它有一種**沒有東西擋得住**的靜默失敗：
+#   回應**沒有 `date`、`title` 也不帶日期** ⇒ `fetch_one` 的 `_same_day` 找不到
+#   自述日期 ⇒ **一律放行**。⚠ 而不帶日期參數時它回的是**前一個營業日**
+#   （實測 09-10 問，`hints` 說「期間：115年09月09日到115年09月09日」）。
+#   ⇒ ⭐ 日期只寫在 `hints` 裡 ⇒ **這一支自己驗 `hints`**。
+#   ⛔ 不把 `hints` 加進 `_same_day` 的通用鍵：別的端點的 `hints` 常寫著
+#     「資料自 104 年起提供」這種**與本次查詢無關**的日期
+#     ⇒ 那會變成大規模誤擋（`feeds:tib` 剛剛才因為誤擋掉了 1,050 天）。
+# ══════════════════════════════════════════════════════════════════
+MRATIO_FIELDS = ["編號", "證券代號", "證券名稱", "調整成數原因", "調整成數起日",
+                 "恢復日", "降低融資比率", "提高融券保證金成數"]
+
+
+def _mratio_val(v):
+    """`降低融資比率`／`提高融券保證金成數` → (數字字串, 是否累計)。
+
+    ⭐ 實測相異值：`''`／`'1'`／`'6'`／`'累計：1'`／`'累計：6'`／`' '`（單一空白）
+    ⛔ `累計：N` 與 `N` 是兩件事，不可以混成一個數字。
+    ⚠ 認不出來一律回 `("", "")`——⛔ 不要猜成 0（0 是「不調整」的真值）。
+    """
+    t = str(v).replace("：", ":").strip()
+    cum = "1" if t.startswith("累計") else "0"
+    if cum == "1":
+        t = t.split(":", 1)[-1].strip() if ":" in t else t[2:].strip()
+    if not t:
+        return "", ""
+    try:
+        float(t)
+    except ValueError:
+        return "", ""
+    return t, cum
+
+
+def parse_marginratio(d, day, known=None):
+    """TWSE `BFIB9U` 調整融資融券成數。⛔ 主鍵含**原因**，一檔多列。"""
+    tabs = B._tables(d)
+    if not tabs:
+        return [], (f"沒有 tables；頂層鍵="
+                    f"{sorted(d) if isinstance(d, dict) else type(d).__name__}")
+    t = tabs[0]
+    f = _fieldmap(t)
+    if f != MRATIO_FIELDS:
+        return [], f"欄位結構與 2026-09-10 實測不符，拒收：{f}"
+    # ⭐⭐ 這一支的日期**只寫在 `hints` 裡** ⇒ 自己驗，⛔ 不靠 `_same_day`
+    hints = str((d or {}).get("hints", "")) if isinstance(d, dict) else ""
+    said = _F.first_date_compact(hints)
+    if not said:
+        return [], (f"⛔ `hints` 裡讀不出日期 ⇒ **無從確認這批是哪一天**"
+                    f"（hints={hints[:80]!r}）"
+                    "　⚠ 這一支沒有 `date`／`title` 可比，hints 是唯一的自述")
+    if said != day.replace("-", ""):
+        return [], (f"⛔ 回的是**別天**：hints 說 {said}，我要 {day}"
+                    "　⚠ 不帶日期參數時它回的是前一個營業日")
+    out = []
+    for r in (t.get("data") or []):
+        if not isinstance(r, list) or len(r) < 8:
+            continue
+        code = str(r[1]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            continue
+        m_v, m_c = _mratio_val(r[6])
+        s_v, s_c = _mratio_val(r[7])
+        out.append([day, code, str(r[2]).strip(), str(r[3]).strip(),
+                    _F.first_date_compact(r[4]) and
+                    _iso_dash(_F.first_date_compact(r[4])),
+                    _F.first_date_compact(r[5]) and
+                    _iso_dash(_F.first_date_compact(r[5])),
+                    m_v, m_c, s_v, s_c])
+    codes = {r[1] for r in out}
+    cum = sum(1 for r in out if r[7] == "1" or r[9] == "1")
+    return out, (f"{len(out)} 列／**{len(codes)} 檔**（⚠ 一檔多列：一個原因一列）"
+                 f"｜其中標「累計」的 {cum} 列")
+
+
+def _iso_dash(compact):
+    """`20210924` → `2021-09-24`。⛔ 空字串照樣回空字串。"""
+    return f"{compact[:4]}-{compact[4:6]}-{compact[6:8]}" if compact else ""
 
 
 def parse_per(d, day, known=None):
@@ -376,8 +1019,11 @@ def _margin_rows(t, day, known, idx, tag):
       位置定位一旦錯位，這條會整片不符——**它就是位置對不對的檢驗**。
       不符的列丟掉並計數，不要靜默寫進去。
     """
-    out, bad = [], 0
+    out, bad, samples = [], 0, []
     g = lambda r, i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
+    # ⛔ `note` 是**文字**（`O`／`X`／`@`／`%`／`!`），不可以走 `_blank_num`
+    #   ——那支是給數字用的，會把整欄清成空字串，而且不會有人發現。
+    gt = lambda r, i: (str(r[i]).strip() if (i is not None and i < len(r)) else "")
     n = lambda v: float(str(v).replace(",", "")) if str(v).strip() not in ("", "-") else 0.0
     for r in (t.get("data") or []):
         if not r or len(r) <= idx["code"]:
@@ -387,7 +1033,8 @@ def _margin_rows(t, day, known, idx, tag):
             continue
         if known and code not in known:
             continue
-        vals = {k: g(r, i) for k, i in idx.items() if k != "code"}
+        vals = {k: g(r, i) for k, i in idx.items() if k not in ("code", "note")}
+        vals["note"] = gt(r, idx.get("note"))
         try:
             # 融資：今日 = 前日 + 買 − 賣 − 現償
             okm = abs(n(vals["m_prev"]) + n(vals["m_buy"]) - n(vals["m_sell"])
@@ -397,13 +1044,52 @@ def _margin_rows(t, day, known, idx, tag):
                       - n(vals["s_ret"]) - n(vals["s_balance"])) <= 1
         except (ValueError, KeyError):
             bad += 1
+            samples.append((code, "數字轉不動或缺欄"))
             continue
         if not (okm and oks):
             bad += 1
+            # ⭐ 講清楚**是融資那條還是融券那條**不符：兩者的成因不一樣。
+            which = ("融資" if not okm else "") + ("融券" if not oks else "")
+            samples.append((code, f"{which}恆等式不符"
+                                  f"｜資 前{vals['m_prev']}+買{vals['m_buy']}"
+                                  f"-賣{vals['m_sell']}-償{vals['m_ret']}"
+                                  f"≠{vals['m_balance']}"
+                                  f"｜券 前{vals['s_prev']}+賣{vals['s_sell']}"
+                                  f"-買{vals['s_buy']}-償{vals['s_ret']}"
+                                  f"≠{vals['s_balance']}"))
             continue
+        # ★★ 2026-09-09 補存 `m_prev/m_ret/s_prev/s_ret`（前日餘額與現／券償）。
+        #   ⚠ 這四欄**本來就已經解析出來了**，只是沒寫出去——上面那條恆等式就在用它們。
+        #   ⛔ 為什麼不能用「昨天的今日餘額」回推、非補不可？**因為量過了**：
+        #     `現償 = 昨日餘額 + 買 − 賣 − 今日餘額` 這樣代換，
+        #     margin 有 4,574 列、otcmargin 有 3,205 列會算出**負的現償**
+        #     ⇒ 代換一定錯（這還只是下限：算出非負的不代表對）。
+        #   ⚠ 我原本的假說是「那些是除權息調整日」——**假說被自己的資料推翻了**：
+        #     落在該檔 adj 事件日的只有 2.95%／2.78%（負控 0.37%／0.41%）。
+        #     ⇒ 有統計上真的關聯，但**只解釋得了 3%**，其餘 97% 原因不明。
+        #   ⭐ 結論：這兩組數字是**真的遺失資訊**，不是可推導的冗餘欄。
+        #   ★ 新欄一律**接在舊表頭後面**，讓舊檔的表頭是新表頭的前綴——
+        #     transpose 才有辦法在回補進行到一半時仍然合併得起來（見那支的說明）。
+        # ⭐⭐ 2026-09-10 新增 `note`（官方註記欄），K線線排最高優先。
+        #   ⛔ 它不是清潔工作——**它會讓一批負面訊號被讀成正面訊號**：
+        #     官方 `O` ＝ **停止融資買進**（停的是新增，既有餘額還在）
+        #     ⇒ 那一檔的「融資餘額低、且持續下降」不是槓桿出清，
+        #       是**被官方掐住信用交易**（波動過劇／股權過度集中）。
+        #     兩者在數字上長得一模一樣，方向完全相反。
+        #   ⚠ 而它專打**飆股**——被停止融資的往往正是波動最大、
+        #     也最需要看融資水位的那一群。
+        #   ⛔ 這一欄**照官方原文存**，不解析、不翻譯、不補空白：
+        #     兩張表的符號集不同（`X` 在 `MI_MARGN` 是停止融券、
+        #     在 `TWT93U` 是停券），在這裡翻譯就等於把某一天的解讀寫死。
+        #   ⛔⛔ 而且 TWSE 的這一欄講的是**次一營業日**（官方明文，
+        #     見 `docs/READ_CONTRACT.md`）——⚠ 那是**讀取端**要處理的偏移，
+        #     ⛔ 不可以在這裡先移一天：移了就分不出「官方那天說的」
+        #     與「我方推的」，而官方若改口，也追不回來。
         out.append([day, code, vals["m_buy"], vals["m_sell"], vals["m_balance"],
-                    vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"]])
-    return out, f"{len(out)} 列可用（{tag}；餘額恆等式不符丟棄 {bad} 列）"
+                    vals["m_limit"], vals["s_buy"], vals["s_sell"], vals["s_balance"],
+                    vals["m_prev"], vals["m_ret"], vals["s_prev"], vals["s_ret"],
+                    vals.get("note", "")])
+    return out, _drop_note(len(out), tag, bad, samples)
 
 
 def parse_margin(d, day, known=None):
@@ -430,12 +1116,16 @@ def parse_margin(d, day, known=None):
     t, f = _pick_stock_table(tabs, "代號", "股票代號", "證券代號")
     if t is None:
         return [], f"找不到含代號欄的表；各表欄名={[_fieldmap(x) for x in tabs]}"
+    # ⛔ `f[15] != "註記"` 是 2026-09-10 加的第五條守衛：`note` 一樣靠位置取，
+    #   而它取錯的失敗方式最安靜——存進去的是「資券互抵」的數字，
+    #   看起來就只是「這一欄大部分是空的」。
     if len(f) != 16 or f[2] != "買進" or f[8] != "買進" \
-            or f[4] != "現金償還" or f[10] != "現券償還":
+            or f[4] != "現金償還" or f[10] != "現券償還" or f[15] != "註記":
         return [], (f"欄位結構與 2026-09-04 實測不符，拒收（避免位置錯位）：{f}")
     idx = {"code": 0,
            "m_buy": 2, "m_sell": 3, "m_ret": 4, "m_prev": 5, "m_balance": 6, "m_limit": 7,
-           "s_buy": 8, "s_sell": 9, "s_ret": 10, "s_prev": 11, "s_balance": 12}
+           "s_buy": 8, "s_sell": 9, "s_ret": 10, "s_prev": 11, "s_balance": 12,
+           "note": 15}
     return _margin_rows(t, day, known, idx, "TWSE 位置定位")
 
 
@@ -463,9 +1153,16 @@ def parse_otcmargin(d, day, known=None):
             "s_ret": ("券償",), "s_balance": ("券餘額",)}
     idx = {k: _exact(f, *names) for k, names in need.items()}
     missing = [k for k, v in idx.items() if v is None]
+    # ⛔ `備註` 單獨處理、**不放進 `need`**：need 缺一個就整張表拒收，
+    #   而這一欄是新加的 ⇒ 官方哪天改欄名就會讓一整條 feed 停掉。
+    #   ⚠ 反過來也要看得見：取不到時留空，並在 note 訊息裡講出來，
+    #     ⛔ 不可以靜靜地整欄空白（那跟「今天大家都沒有註記」長得一樣）。
+    idx["note"] = _exact(f, "備註", "註記")
     if missing:
         return [], f"欄位對不上，缺 {missing}：{f}"
-    return _margin_rows(t, day, known, idx, "TPEx 名稱定位")
+    tag = "TPEx 名稱定位" + ("" if idx["note"] is not None
+                          else "；⚠ **找不到「備註」欄，note 整欄留空**")
+    return _margin_rows(t, day, known, idx, tag)
 
 
 def parse_otcinst(d, day, known=None):
@@ -521,7 +1218,7 @@ def parse_otcinst(d, day, known=None):
         i_code, i_fo, i_tr, i_dl, i_tt = 0, 10, 13, 22, 23
         how = "位置定位（24 欄新版）"
 
-    out, bad = [], 0
+    out, bad, samples = [], 0, []
     g = lambda r, i: float(B._num(r[i]) or 0) if i < len(r) else 0.0
     for r in (t.get("data") or []):
         if not r or len(r) <= max(i_code, i_tt):
@@ -534,9 +1231,11 @@ def parse_otcinst(d, day, known=None):
         fo, tr, dl, tt = g(r, i_fo), g(r, i_tr), g(r, i_dl), g(r, i_tt)
         if abs(fo + tr + dl - tt) > 1:
             bad += 1
+            samples.append((code, f"外{fo:.0f}+投{tr:.0f}+自{dl:.0f}"
+                                  f"≠合計{tt:.0f}（差 {fo + tr + dl - tt:+.0f}）"))
             continue
         out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}"])
-    return out, f"{len(out)} 列可用（{how}；驗算不符丟棄 {bad} 列）"
+    return out, _drop_note(len(out), how, bad, samples)
 
 
 # ────────────────────────────────────────────────────────────
@@ -602,8 +1301,18 @@ def _twse(path, day, extra=""):
     return f"https://www.twse.com.tw/rwd/zh/{path}?date={day.replace('-', '')}{extra}&response=json"
 
 
-def _tpex(path, day, extra=""):
-    return f"https://www.tpex.org.tw/www/zh-tw/{path}?date={day.replace('-', '/')}{extra}&response=json"
+def _tpex(path, day, extra="", roc=False):
+    """TPEx 端點。⚠ `roc=True` 送**民國**斜線（`115/09/10`）。
+
+    ⛔ 同一站的日期格式**不是一致的**：`margin/balance` 這幾支吃西元斜線，
+    而 `afterTrading/chtm` 我方實測用的是民國斜線。
+    ⚠ 送錯格式在這一站是**靜默**的（第二條規矩的第①種），
+      ⇒ ⛔ 不要「推論它應該也吃西元」——實測過哪一種就送哪一種。
+      （真的送錯時 `fetch_one` 的 `_same_day` 還會擋一層，但那是第二道，不是第一道。）
+    """
+    d = (f"{int(day[:4]) - 1911:03d}/{day[5:7]}/{day[8:10]}" if roc
+         else day.replace("-", "/"))
+    return f"https://www.tpex.org.tw/www/zh-tw/{path}?date={d}{extra}&response=json"
 
 
 FEEDS = {
@@ -627,6 +1336,125 @@ FEEDS = {
         "known": True,
         "urls": lambda day: [_twse("afterTrading/BWIBBU_d", day, "&selectType=ALL")],
         "status": "已驗證 2026-09-04：20260903 → stat=OK、1,580 列",
+    },
+    # ⭐ 2026-09-10 新增。它取代的是一條**猜的**判準（名稱後綴 `-創`／`KY創`）。
+    #   ⛔ 存逐日不存現況：K線線的判準是「問的是它**現在**是什麼、
+    #     還是它**那時候**是什麼」——圈歷史區間要的是那一天的成分。
+    "tib": {
+        "dir": "tib",
+        "header": ["date", "stock_id", "name"],
+        "parse": parse_tib,
+        # ⛔ known=False：創新板有下市／轉板的，先全收，篩母體是讀取端的事。
+        "known": False,
+        "urls": lambda day: [_twse("afterTrading/STOCK_TIB", day)],
+        "status": ("市場情報分析線 2026-09-10 實測：2026-09-09 回 31 列"
+                   "＝ 30 檔 ＋ 1 列「合計」，與名稱後綴法**兩個方向都 0 差異**。"
+                   "⛔ 歷史下限 **2021-06-28**，越界時官方明說"
+                   "（`stat:\"查詢日期小於110年6月28日，請重新查詢!\"`）"
+                   "——**大聲失敗，不是靜默回最新**"),
+    },
+    # ⭐ 借券賣出。K線線 15:45 的第一優先——融券只佔空方 1.4%。
+    #   ⚠ 欄名前綴：`s_*` 是這張表的**融券**段（總量管制視角，⛔ 與 `margin` feed 不同口徑），
+    #     `sbl_*` 是**借券賣出**段。`sbl_balance` 才是 K線線要的那一個。
+    #   ⛔ `sbl_limit`（次一營業日可借券賣出限額）**不是餘額**，兩者不可互換（K線線 Q2）。
+    "sbl": {
+        "dir": "sbl",
+        "header": ["date", "stock_id",
+                   "s_prev", "s_sell", "s_buy", "s_ret", "s_balance", "s_limit",
+                   "sbl_prev", "sbl_sell", "sbl_return", "sbl_adj",
+                   "sbl_balance", "sbl_limit", "note"],
+        "parse": parse_sbl,
+        "known": False,
+        "urls": lambda day: [_twse("marginTrading/TWT93U", day)],
+        "status": ("實測 2026-09-09（Actions）：stat=OK、**total=1302 與解析列數一致**、"
+                   "15 欄兩段。⭐ 段落邊界照官方 `groups` 取，不寫死。"
+                   "⚠ 每日晚間**二次更新**（約 20:30／22:30）"
+                   "⇒ 排程落在兩次之間會拿到不完整的版本，而它看起來完全正常"),
+    },
+    "otcsbl": {
+        "dir": "otcsbl",
+        "header": ["date", "stock_id",
+                   "s_prev", "s_sell", "s_buy", "s_ret", "s_balance", "s_limit",
+                   "sbl_prev", "sbl_sell", "sbl_return", "sbl_adj",
+                   "sbl_balance", "sbl_limit", "note"],
+        "parse": parse_otcsbl,
+        "known": False,
+        "urls": lambda day: [_tpex("margin/sbl", day, "&id=")],
+        "status": ("實測 2026-09-09（Actions）：stat=ok、932 列、15 欄。"
+                   "⛔ **沒有 `groups`、沒有 `total`、沒有 `notes`** ⇒ "
+                   "只能靠位置，欄名逐字比對是唯一的守衛"),
+    },
+    # ⭐ 變更交易（全額交割）。K線線 Q5——他們的閘門那一列從【不可執行】改回【可執行】靠這個。
+    #   ⚠ `split_auction` = 官方 `**` 標示 ⇒ **併採分盤集合競價**（官方 notes 逐字，見上）
+    #   ⛔ 那是「狀態」不是「成因」：處置股也會分盤，**兩個名單都要查**。
+    "fulldelivery": {
+        "dir": "fulldelivery",
+        "header": ["date", "stock_id", "name", "split_auction"],
+        "parse": parse_fulldelivery,
+        "known": False,
+        "urls": lambda day: [_twse("fullDelivery/TWT85U", day)],
+        "status": ("實測 2026-09-09（Actions）：stat=OK、total 與列數一致、3 欄。"
+                   "⭐ `date=` **是真的吃的**（2015-01-05 → 23 列、2020-01-03 → 21）"
+                   "⇒ 可逐日回補；頁面年份選單最早到 2004"),
+    },
+    # ⭐⭐ 上市「停止買賣中」的即時名單。⛔ **沒有歷史**，漏抓一天永久少一天。
+    #   ⚠ `known: False` 是**必要**的，不是省事：停止買賣中的個股正是
+    #     「日檔已經沒有它」的那些 ⇒ 用母體濾會把它們全部濾掉。
+    #   ⛔ `date=` 官方會忽略（K線線實測）⇒ 這一支**不可以**走區間回補，
+    #     `cmd_feed` 只抓「今天」那一份；⚠ 而 `_same_day` 仍會擋一層。
+    "stophalt": {
+        "dir": "stophalt",
+        "header": ["date", "stock_id", "name", "market",
+                   "halt_since", "rule", "reason"],
+        "parse": parse_stophalt,
+        "known": False,
+        "urls": lambda day: [_twse("violation/stop", day)],
+        "status": ("⚠ **未經我方實測**（開發容器對交易所一律 403）。"
+                   "K線分析線 2026-09-11 01:40 實測：`stat=ok`、5 欄、"
+                   "`title=115年09月11日 停止買賣`；⛔ `date=` 被忽略 ⇒ 只有即時狀態。"
+                   "⭐ 每一列附「停止買賣開始日期」⇒ 第一次抓到就能回推當下那一段。"),
+    },
+    # ⭐⭐ 上櫃分盤／變更交易／管理股票／停止交易。K線線 20:20 指名要「逐檔讀撮合週期」。
+    #   ⚠ 上市**沒有**同等來源：只有 `TWT85U` 的 `**`（狀態）與 notes 那句
+    #     「每 30 分鐘為原則、得公告調整」⇒ ⛔ 只知原則值，不知該檔實際值。
+    #   ⚠ `known: False`——變更交易／管理股票的個股**可能不在我方母體裡**，
+    #     ⛔ 用母體濾掉等於把最該被擋的那些濾掉。
+    "chtm": {
+        "dir": "chtm",
+        "header": ["date", "stock_id", "name", "changed", "split_auction",
+                   "managed", "match_cycle_min", "halted", "fin_watch"],
+        "parse": parse_chtm,
+        "known": False,
+        # ⛔ 民國斜線（實測用的就是這個）。⚠ 送西元在這一站是**靜默**失敗。
+        "urls": lambda day: [_tpex("afterTrading/chtm", day, roc=True)],
+        "status": ("我方實測 2026-09-10（Actions）：`date` 回顯我請求的那一天、"
+                   "10 欄、stat=ok。⭐ 歷史至少到 **2009**"
+                   "（098/06/01 回 38 列、與今天逐位元組不同）"
+                   "⇒ ⛔ 情報分析線說的「98/06/01 靜默回今天」不成立。"
+                   "⚠ 旗標值是**全形 Ｙ**（U+FF39）；撮合時間是零填三位字串"),
+    },
+    # ⭐⭐ 個股融資融券成數的**調整幅度**（上市）。K線線那條 166.67 的個股面。
+    #   ⛔ 它給的**不是現行成數**，是調整幅度 ⇒ 要逐檔彙總再用「基準 − 累計」推，
+    #     ⚠ 而那是**判準**，屬 K線線 ⇒ 我方只存原始欄位，⛔ 不在這裡算。
+    #   ⚠ `known: False`——被調成數的往往是**波動最大的飆股**，
+    #     ⛔ 用母體濾掉等於把最該看的那些濾掉。
+    "marginratio": {
+        "dir": "marginratio",
+        "header": ["date", "stock_id", "name", "reason", "adjust_from",
+                   "restore_date", "margin_cut", "margin_cum",
+                   "short_raise", "short_cum"],
+        "parse": parse_marginratio,
+        "known": False,
+        "urls": lambda day: [
+            _twse("marginTrading/BFIB9U", day,
+                  extra=("&startDate={d}&endDate={d}&sortType=ALL&stockNo="
+                         "&selectType=%E5%85%A8%E9%83%A8").format(
+                             d=day.replace("-", "")))],
+        "status": ("我方實測 2026-09-10（Actions）：不帶日期 471 列、"
+                   "`20150105` 126 列 ⇒ **有逐日歷史**。"
+                   "⛔ 一檔多列（471 列只有 94 個相異代號，一個原因一列）；"
+                   "值有 `累計：N` 前綴；空值有『空字串』與『單一空白』兩種。"
+                   "⭐ 日期**只寫在 `hints` 裡** ⇒ 本 parser 自己驗"),
     },
     "exright": {
         "dir": "exright",
@@ -786,8 +1614,10 @@ FEEDS = {
     # ── 未驗證，候選清單 ────────────────────────────────────
     "margin": {
         "dir": "margin",
+        # ★ 後四欄 2026-09-09 新增，⛔ **一定要接在最後**（見 `_margin_rows`）。
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
-                   "s_buy", "s_sell", "s_balance"],
+                   "s_buy", "s_sell", "s_balance",
+                   "m_prev", "m_ret", "s_prev", "s_ret", "note"],
         "parse": parse_margin,
         "known": True,
         "urls": lambda day: [_twse("marginTrading/MI_MARGN", day, "&selectType=ALL")],
@@ -815,8 +1645,10 @@ FEEDS = {
     },
     "otcmargin": {
         "dir": "otcmargin",
+        # ★ 後四欄 2026-09-09 新增，⛔ **一定要接在最後**（見 `_margin_rows`）。
         "header": ["date", "stock_id", "m_buy", "m_sell", "m_balance", "m_limit",
-                   "s_buy", "s_sell", "s_balance"],
+                   "s_buy", "s_sell", "s_balance",
+                   "m_prev", "m_ret", "s_prev", "s_ret", "note"],
         "parse": parse_otcmargin,
         "known": True,
         "urls": lambda day: [_tpex("margin/balance", day, "&id=")],
@@ -869,6 +1701,9 @@ def write_day(name, day, lines):
         return 0
     d = feed_dir(name)
     os.makedirs(d, exist_ok=True)
+    # ⛔ 寫之前先驗寬度：少一格會讓後面每一欄**整片左移**，⚠ 而且不報錯。
+    #   ⭐ 判準只有一份（`fetch.assert_row_width`），15 個 feed 共用它。
+    _F.assert_row_width(FEEDS[name]["header"], lines, f"{name}/{day}")
     with open(os.path.join(d, f"{day}.csv"), "w", encoding="utf-8") as f:
         f.write(",".join(FEEDS[name]["header"]) + "\n")
         for r in sorted(lines, key=lambda r: r[1]):
@@ -881,26 +1716,33 @@ def fetch_one(name, day, known):
     spec = FEEDS[name]
     if spec.get("range"):
         return [], "這是區間型 feed，應走 cmd_feed_range", None
+    # ⛔⛔ 情報分析線 2026-09-10 要了兩次的東西：**失敗時要附上實際打出去的 URL**。
+    #   `feeds:tib` 那條的狀態檔只寫「回了 0 列」，沒說打的是哪一支端點
+    #   ⇒ 他們得自己去驗 `STOCK_TIB` 才敢說是接線問題。
+    #   ⚠ 而候選是**一串**，「哪一支失敗了」跟「失敗成什麼樣」一樣重要。
+    #   ⭐ 同一族的第三次：會叫、但叫不出**哪裡**，代價一樣是一整個來回。
     last = "沒有候選"
     for url in spec["urls"](day):
         raw, err = B.get(url)
+        # 只留路徑與參數，⛔ 不印整串（`_last_run.md` 是給人看的）
+        u_ = url.split("//", 1)[-1][:140]
         if err:
-            last = f"失敗({err[:50]})"
+            last = f"失敗({err[:50]})｜URL={u_}"
             continue
         try:
             d = json.loads(raw.decode("utf-8"))
         except Exception as ex:                       # noqa: BLE001
             head = raw[:120].decode("utf-8", "replace").replace("\n", " ")
-            last = f"JSON {type(ex).__name__}｜{len(raw)}B｜開頭：{head}"
+            last = f"JSON {type(ex).__name__}｜{len(raw)}B｜開頭：{head}｜URL={u_}"
             continue
         stat = d.get("stat") if isinstance(d, dict) else None
         if stat and str(stat).strip().lower() not in ("ok", "success"):
-            last = f"stat={stat}"
+            last = f"stat={stat}｜URL={u_}"
             continue
         # ★ 日期核對是防「只回今天」的最後一道閘。不可為了讓某個候選通過而拿掉。
         same, said = B._same_day(d, day)
         if not same:
-            last = f"日期不符({said})"
+            last = f"日期不符({said})｜URL={u_}"
             continue
         lines, nt = spec["parse"](d, day, known if spec["known"] else None)
         return lines, nt, url
@@ -927,6 +1769,54 @@ def _months(start, end):
         if m == 13:
             y, m = y + 1, 1
     return out
+
+
+def month_is_open(ym, today=None):
+    """`ym` ＝ `"YYYY-MM"`。→ 這個月**還沒結束**（含今天所在的那個月）。
+
+    ## ⛔⛔ 為什麼需要它（2026-09-11，付出的代價是 6 檔的還原因子）
+
+    `cmd_feed_range` 的台帳記的是「這個月問過了」⇒ 問過就**永遠不再問**。
+    ⚠ 而公告型的表（除權息／減資／面額變更／ETF 分割）**當月還在長**：
+
+        2026-09 月初問過一次 ⇒ 台帳記上
+        ⇒ 09-10 才公告的那幾檔，**這個月再也不會被問到**
+        ⇒ `data/universe/exright/2026-09-10.csv` 根本不存在
+        ⇒ `adj_gap` 報 5906／4912／9802／2062／9906／6504 **未歸因**
+        ⚠ 而 `feeds:exright` 那一趟是 **✓ 正常**：
+          「這個區間的 1 個月台帳裡都問過了，本趟沒有要問的」
+
+    ⭐ 這正是 CLAUDE.md 第四點那句：**續跑判準要用資料自己，⛔ 不要另開台帳**
+      ——台帳會跟資料不一致，⚠ 而不一致的方向是「看起來比實際好」。
+
+    ⇒ ⭐ 台帳只對**已經結束的月份**有效。還沒結束的月份一律重問
+      （一趟只多一發，⛔ 而漏掉的是整批公司行動）。
+
+    ## ⛔ 判準是**日曆上的月底**，不是 `--end` 夾出來的那一天
+
+    `_months()` 回的迄日被 `args.end` 夾過 ⇒ 拿它去判，
+    「我只查到 9/5」會被誤判成「9 月已經結束」。
+    """
+    import calendar
+    y, m = int(ym[:4]), int(ym[5:7])
+    last = f"{y:04d}-{m:02d}-{calendar.monthrange(y, m)[1]:02d}"
+    return last >= (today or runlog.now_tpe().strftime("%Y-%m-%d"))
+
+
+def months_to_ask(rng, ledger, force=False, today=None):
+    """→ `(這一趟要問的 [(起,迄)], 台帳有但因為當月而重問的 ["YYYY-MM"])`。
+
+    ⭐ 抽成純函式的理由：這段判準壞掉時**整趟是綠的**
+      （「台帳裡都問過了，本趟沒有要問的」），⛔ 只有下游的 `adj_gap`
+      會在幾天後間接叫一聲。⇒ 要能餵假台帳直接驗它。
+    """
+    if force:
+        return list(rng), []
+    todo = [m for m in rng
+            if m[0][:7] not in ledger or month_is_open(m[0][:7], today)]
+    reask = [m[0][:7] for m in todo
+             if m[0][:7] in ledger and month_is_open(m[0][:7], today)]
+    return todo, reask
 
 
 # 端點自己說「查無資料」時的字樣。**這代表那段期間沒有事件，不是抓取失敗。**
@@ -969,10 +1859,8 @@ def cmd_feed_range(args, name):
             ledger = json.load(io.open(led_path, encoding="utf-8")) or {}
         except (ValueError, OSError):
             ledger = {}          # 壞掉就當空的重問，不要因為台帳壞掉就停擺
-    if not args.force:
-        todo = [m for m in rng if m[0][:7] not in ledger]
-    else:
-        todo = list(rng)
+    # ⭐ 台帳只對**已經結束的月份**有效（理由見 `month_is_open()`）。
+    todo, reask = months_to_ask(rng, ledger, args.force)
     if args.limit:
         todo = todo[:args.limit]
     skipped = len(rng) - len(todo)
@@ -980,11 +1868,15 @@ def cmd_feed_range(args, name):
 
     print(f"[{name}] {spec['status']}")
     print(f"[{name}] {args.start} ~ {args.end}｜逐月抓，本趟 {len(rng)} 個月"
-          f"（台帳已問過 {skipped} 個月，--force 可重問）")
+          f"（台帳已問過 {skipped} 個月，--force 可重問）"
+          + (f"｜⭐ 其中 {len(reask)} 個月是**還沒結束的月份，台帳有也照樣重問**"
+             f"：{reask}" if reask else ""))
     if not rng:
         rl = runlog.Run(f"feeds:{name}")
         rl.info("區間", f"{args.start} ~ {args.end}")
-        rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的")
+        rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的"
+                "　⚠ 而**還沒結束的月份一律重問** ⇒ 這裡是 0 就代表"
+                "這個區間裡沒有任何一個月是當月")
         rl.check("跑完整個區間，沒有提前收手", True, "沒有待處理的月份")
         return rl.finish()
     ok = empty = failed = 0
@@ -1116,6 +2008,12 @@ def cmd_feed_range(args, name):
     #     拿它當失敗會讓這一頁每個月初都紅（防護誤殺跟防護失效一樣糟）。
     rl = runlog.Run(f"feeds:{name}")
     rl.info("區間", f"{args.start} ~ {args.end}｜{len(rng)} 個月")
+    # ⛔ 這一列即使是 0 也要在：⚠ 0 跟「這道根本沒做」在紙上看起來一樣。
+    rl.info("⭐ 台帳有、但**還沒結束所以照樣重問**的月份",
+            (f"{len(reask)} 個：{reask}"
+             "　⇒ ⛔ 公告型的表當月還在長，問過一次就不再問 ＝ "
+             "當月後半的公司行動永遠抓不到（2026-09 漏掉 6 檔）")
+            if reask else "0 個（這個區間裡沒有當月）")
     rl.info("結果", f"有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
                     f"合計 {total_rows} 列")
     # ⚠ 尚未到期的公告做成 info 不做成 check：減資與除權息本來就提前公告，
@@ -1219,7 +2117,24 @@ def cmd_feed(args):
     if os.path.isdir(d):
         done = {n[:-4] for n in os.listdir(d) if n.endswith(".csv")}
     days, how = _target_days(args)
-    days = [x for x in days if args.force or x not in done]
+    need = getattr(args, "need_col", "")
+    stale = set()
+    if need:
+        # ⛔ 只讀第一行。2,846 個檔全部讀完是幾百 MB，而我只要表頭。
+        for x in sorted(done):
+            p_ = os.path.join(d, x + ".csv")
+            try:
+                with open(p_, encoding="utf-8") as f_:
+                    head = f_.readline()
+            except OSError:
+                continue
+            if need not in [c.strip() for c in head.rstrip("\n").split(",")]:
+                stale.add(x)
+        print(f"[{name}] --need-col {need}：已存在的 {len(done)} 天裡，"
+              f"**{len(stale)} 天的表頭缺這一欄**，要重抓")
+        if not stale:
+            print(f"[{name}] ⇒ 這個區間已經全部有 `{need}` 欄了，沒有要重抓的")
+    days = [x for x in days if args.force or x not in done or x in stale]
     if args.limit:
         days = days[:args.limit]
     print(f"[{name}] {FEEDS[name]['status']}")
@@ -1244,8 +2159,18 @@ def cmd_feed(args):
                       f"        等一段時間再跑，或錯開同日其他回補工作。"
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
-    ok = closed = failed = dropped_days = 0
+    ok = closed = failed = dropped_days = dropped_rows = 0
+    dropped_at = []          # ⭐ 哪幾天丟了幾列（⛔ 不是只給天數）
+    dropped_who = []         # ⭐ (日期, 代號)——歸因那一步要用
     bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
+    # ⛔⛔ 2026-09-10：`feeds:tib` 紅了，而 `_last_run.md` 只寫
+    #   「前 5 天有 5 天連問都問不到」——**沒有寫為什麼**。
+    #   ⚠ 是 HTTP 428（CDN 限流）？403？逾時？路徑錯？
+    #     四種的下一步完全不同，而我必須**再跑一趟**才知道是哪一種。
+    #   ⭐ 這跟今天早上 `revivt` 那件是同一族：
+    #     **一個會叫、但叫不出原因的斷言，代價是一整個來回。**
+    #   ⇒ 把 parser／抓取回的最後一則訊息帶進 runlog。
+    last_fail = ""
     for i, day in enumerate(days, 1):
         lines, note, url = fetch_one(name, day, known)
         # ★★ 成敗**看 `url` 有沒有拿到，不要比對訊息字串**。
@@ -1263,13 +2188,17 @@ def cmd_feed(args):
             # ★ **不要把 parser 的訊息蓋掉。** 它帶著「恆等式不符丟棄 N 列」，
             #   蓋掉之後每天默默丟幾十列也看不出來——正是這個專案一路在防的靜默。
             #   丟棄數為 0 時才簡化成「N 列」，避免每行都拖一串括號。
-            note = f"{n} 列" if "丟棄 0 列" in note or "丟棄" not in note else f"{n} 列｜{note}"
-            if "丟棄" in note and "丟棄 0 列" not in note:
+            n_drop, note = _tally_drop(n, day, note)
+            if n_drop:
                 dropped_days += 1
+                dropped_rows += n_drop
+                dropped_at.append(f"{day}（{n_drop} 列）")
+                dropped_who += [(day, c) for c, _why in _drop_codes(note)]
         elif url is not None:
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
         else:
             failed += 1               # 根本沒問到
+            last_fail = str(note)[:260]
         if i % 20 == 0 or url is None:
             print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
         # ★ 與 cmd_inst 同一條收手規則：一開始就全失敗代表端點或參數不對，
@@ -1286,7 +2215,8 @@ def cmd_feed(args):
             break
         # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
-            bailed = f"前 {i} 天有 {failed} 天連問都問不到且無一成功"
+            bailed = (f"前 {i} 天有 {failed} 天連問都問不到且無一成功"
+                      + (f"｜最後一則：{last_fail}" if last_fail else ""))
             print(f"[{name}] 前 {i} 天有 {failed} 天連問都問不到且無一成功，收手。"
                   f"最後一則：{note}", file=sys.stderr)
             break
@@ -1315,12 +2245,33 @@ def cmd_feed(args):
     # ⛔ 提前收手在 Actions 上是看不見的（這幾步都是 continue-on-error），
     #    而收手代表整趟根本沒跑完——這是要紅的，不是資訊。
     rl.check("跑完整個區間，沒有提前收手", not bailed, bailed or "跑完")
+    if last_fail:
+        # ⭐ 這一行就是「為什麼」。⛔ 不要只留在 Actions log 裡——
+        #   `_last_run.md` 才是進 repo、下一個人會看到的那一份。
+        rl.info("⛔ 最後一則「沒問到」的原因", last_fail)
     rl.check("沒有「連問都問不到」的日子", failed == 0,
              f"失敗 {failed} 天" if failed else "0 天")
     # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
     #    而每天默默丟幾十列外表完全正常。
-    rl.check("沒有因驗算不符而丟棄列的日子", dropped_days == 0,
-             f"{dropped_days} 天有丟棄" if dropped_days else "0 天")
+    # ⭐ 歸因：不符的列裡，哪些是「該檔離開了本市場」（⛔ 不是瑕疵）
+    left, unexplained = _explain_drops(name, dropped_who, days)
+    if left:
+        rl.info("⭐ 已歸因：**離開本市場**（轉上市／終止櫃買）⇒ ⛔ 不是瑕疵",
+                f"{len(left)} 筆：{[(d, c) for d, c, _ in left[:6]]}"
+                "　⚠ 官方在該檔離開時把餘額**直接歸零**，"
+                "⛔ 沒有走「還券」也沒有走「調整」欄 ⇒ 恆等式當然不成立")
+    # ⛔ 判準只看**未歸因**的。⚠ 而「已歸因」不可以自動長大：
+    #   歸因靠的是「次一交易日不在表上」——那是**資料自己**講的，
+    #   ⛔ 不是靠備註欄（情報分析線查到的那一筆備註是空的）。
+    rl.check("沒有**未歸因**的驗算不符列", not unexplained,
+             (f"⛔ **{len(unexplained)} 筆未歸因**："
+              f"{[(d, c, w) for d, c, w in unexplained[:6]]}"
+              "　⇒ 差 1~2 股是進位、差一個量級是**欄位對錯位**"
+              "（那兩種的處置完全不同）")
+             if unexplained else
+             (f"0 筆（⚠ 另有 {len(left)} 筆已歸因為離開本市場）"
+              if left else f"0 筆｜丟棄 {dropped_rows} 列"
+              if dropped_rows else "0 天"))
     rc = rl.finish()
     return 1 if (failed or rc) else 0
 
@@ -1391,6 +2342,19 @@ def cmd_probe(args):
                     print(f"   ✗ {short}\n       非 JSON（{len(raw)}B）"
                           f"{type(ex).__name__}：{head}")
                     continue
+                # ⭐⭐ 使用者 2026-09-10 定的規矩，做在**探路模式的第一行**：
+                #   「以後新端點第一件事，就是把 `notes`／`hints`／`title` 印出來，
+                #     再開始比對。」
+                #   ⇒ 接新 feed 一定會先跑 `--probe`，所以放在這裡＝**跳不過去**。
+                #   ⛔ 寫成文件會被忘記；寫在這裡不會。
+                # ⚠ `params` 那一項最有用：端點會把收到的參數**回顯**，
+                #   ⇒ 被換掉就代表**那個參數是假的**（TWTAWU 的 `date=` 就是這樣）。
+                print(f"   ── {short}")
+                for _ln in B.describe_response(
+                        d, want=({"date": aa, "startDate": aa, "endDate": bb}
+                                 if aa else {"date": day.replace("-", "")})):
+                    print(f"       {_ln}")
+
                 stat = d.get("stat") if isinstance(d, dict) else None
 
                 # ★ 「查無資料」先攔下來，**不要落進「沒有可用候選」**。
@@ -1459,6 +2423,13 @@ def main():
     ap.add_argument("--end", default="2026-09-03")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    # ★★ 2026-09-09。加新欄位之後**舊日檔要重抓**，而 `--force` 是「全部重抓」：
+    #   一趟跑不完（2,846 天 × 5 秒 ≈ 4 小時，job 上限 350 分鐘）就會被砍在半路，
+    #   而下一趟又從第一天重來 ⇒ **永遠補不完，而且每趟看起來都很正常**。
+    #   ⇒ `--need-col` 用「檔案自己的表頭」當進度：有這一欄就跳過。
+    #   ⭐ 不需要另外開一個進度台帳——**資料本身就是進度**，也就不會有台帳與資料不一致。
+    ap.add_argument("--need-col", default="",
+                    help="重抓「表頭缺這一欄」的既有日期（補欄位用，可續跑）")
     ap.add_argument("--saturdays", action="store_true",
                     help="（已無作用）改照 data/universe/daily 的交易日曆走；"
                          "拿不到日曆時的退路一律含週六。保留只為相容既有指令。")

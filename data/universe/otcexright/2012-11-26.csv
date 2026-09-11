@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2012-11-26,3325,14.45,14.05,0.40,除權,,exDailyQ

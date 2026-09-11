@@ -9,14 +9,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
         type: choice
-        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright]
+        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio, stophalt]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
@@ -30,10 +30,64 @@ on:
       probe_date:
         description: "probe 用的測試日，必須是交易日"
         default: "2026-09-03"
+      # ★ 2026-09-09 新增。融資融券補存 `m_prev/m_ret/s_prev/s_ret` 四欄之後，
+      #   **舊日檔要整批重抓**才會有那四欄——而 `run` 預設會跳過已存在的日期。
+      #   ⛔ 不用 `--force`（全部重抓）：2,846 天 × 5 秒 ≈ 4 小時，
+      #     job 上限 350 分鐘，被砍在半路的話下一趟又從第一天重來
+      #     ⇒ **永遠補不完，而且每趟看起來都很正常**。
+      #   ⇒ 填欄名（例如 `m_prev`），只重抓「表頭缺這一欄」的日期。
+      #     ⭐ 進度就是資料本身，不需要另一本台帳，也就不會有台帳與資料不一致。
+      #   ⚠ 重抓是安全的：`write_day` 只在真的拿到列時才寫，
+      #     那一天抓失敗**不會**把既有的好資料清掉。
+      # ⭐ 2026-09-10：補**已知的單一缺口**用。`reduce_check` 抓到
+      #   6461 益得 2026-09-09 我方漏抓（官方 16.65 → 26.92，換股比例 618.578）
+      #   ⇒ 沒有那個因子，那一檔的還原序列在那一天是 **+54.7% 的假報酬**。
+      #   ⛔ 而在這之前唯一的補法是重跑整個 FinMind 全掃（1,942 發、幾個小時）
+      #   ⚠ 一個「要補一檔就得跑幾小時」的補法，實際上等於不會被補。
+      codes:
+        description: "只補這幾檔（otc-adj-codes 用，逗號分隔）"
+        default: "6461"
+      need_col:
+        description: "只重抓「表頭缺這一欄」的既有日期（補欄位用，可續跑；平常留空）"
+        default: ""
+      # ★ 2026-09-09 加回。市場情報分析線 23:55 量到：上櫃三大法人的**投信欄**
+      #   在最近三個交易日與官方對不上（09-07 918→908、09-08 895→881、09-09 899→894），
+      #   而 09-04 以前六天全上櫃逐檔零誤差。⇒ 假說是「官方事後修訂投信欄，我方不回補」。
+      #   ⛔ 那是**假說**，要用鑑別實驗分辨：把那三天重抓，
+      #     ① 值變了 ⇒ 是修訂（我方該定期回補最近幾天）
+      #     ② 值沒變 ⇒ 是我方 09-07 起壞掉（要去找 09-07 改了什麼）
+      #   ⭐ 重抓的 diff 就是實驗結果——**repo 自己就是 before/after**。
+      #   ⛔ 預設 false：整段區間開下去會重抓好幾小時。要配小的 start/end 用。
+      force:
+        description: "重抓已存在的日期（⛔ 要配小的區間；補欄位請改用 need_col）"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+# ⛔⛔ `cancel-in-progress: false` **不代表「後來的會排隊等」**（2026-09-10 實測）
+#
+#   GitHub 的規則是：同一個 group **只排得下一個 pending**。
+#   ⇒ 再送一趟，**前一個還在等的那趟會被直接 cancelled**。
+#
+#   實際發生（feeds group，同一天）：
+#     run 96  margin 全庫        11:13 開始跑 ────────────────► 一直在跑
+#     run 97  otc-adj-codes 6461 11:47 pending … 13:47 **cancelled**（被 98 擠掉）
+#     run 98  tib 全段回補       13:47 pending … 13:56 **cancelled**（被 99 擠掉）
+#     run 99  otcsbl 20 天       13:56 pending
+#   ⇒ 中間那兩趟**從來沒有跑過**，而**沒有任何地方會說**。
+#
+# ⚠ 而 dispatch API 四次都回 `queued`／`204` ⇒ 看起來四趟都送出去了。
+#   ⭐ 這正是 CLAUDE.md 第四點二：**「排進去了」不等於「會跑」**
+#     ——拿 API 的回覆當結果，就是驗到中間、沒驗到終點。
+#
+# ⇒ 派工規矩：**一趟跑完再送下一趟**。⛔ 不可以連續送。
+#   ⚠ 送出去之後要**回頭確認它真的變成 in_progress**，
+#     ⛔ 「dispatch 回 204」不算數。
+#
+# ⚠ 那為什麼不乾脆讓它們平行跑？因為兩趟同時 push 會互相蓋掉
+#   （`_coverage_*.csv` 那一族）——⇒ **序列化是對的，要修的是派工方式。**
 concurrency:
   group: feeds
   cancel-in-progress: false
@@ -51,6 +105,92 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      # ⭐ 2026-09-10：Commit 那一步改成「只搬 data」之後，
+      #   **程式就不會再經由它進 main**——而排程跑的是 main 上的程式
+      #   ⇒ 不同步的話 main 會永遠停在舊版，而且完全看不出來。
+      #   ⇒ 在這裡同步：此刻 checkout 還是新的，rebase 幾乎不可能撞
+      #     （分支上多的是程式 commit，main 上多的是資料 commit，兩邊不重疊）。
+      #   ⭐ 順帶好處：rebase 之後這一趟手上的 `data/` 也是 main 的最新版。
+      #   ⛔ 失敗不擋後面：撞到就跳過，資料照抓，程式下一趟再同步。
+      # ⛔ 這一步**不設 `continue-on-error`**。
+      #   2026-09-10 的第一版設了，於是它 abort 之後顯示成 **success**，
+      #   而 main 上的程式一個字都沒更新——**綠燈，但什麼都沒做**。
+      #   ⭐ 現在的做法不 rebase ⇒ 不可能衝突 ⇒ 走到 push 還失敗就是**真的有問題**，
+      #     該紅。可以跳過的情形（本來就在 main、fetch 不到）自己 `exit 0`。
+      # ⛔ 1 小時 50 分鐘換來的一步（run 34426373917）：
+      #   「回補」那一步 success 跑了 1h50m，「Commit」1 秒失敗——
+      #   `syntax error: unexpected end of file`，**我的 shell 少了一個 `fi`**。
+      #   ⚠ 我當時「驗過」了，但我驗的是 `yaml.safe_load()`——
+      #     **YAML 合法不代表裡面的 shell 合法**（對 YAML 來說 run: 只是字串）。
+      #   ⇒ 那一步從寫出來就是壞的，任何一趟都會失敗，而我讓它帶著 1h50m 去撞。
+      - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
+        run: python selftest_workflows.py
+
+      # ⛔ 同一件事只准有一份實作。這一族 2026-09-10 掃出**十份**，
+      #   其中 `_same_day` 那一份會讓每日抓取憑空造出一個交易日。
+      #   ⚠ 本機 pre-commit 也有同一道——⛔ 兩個地方都要有：
+      #     hook 可以被 `--no-verify` 跳過，而這裡跳不掉。
+      - name: 掃有沒有第二份實作（零相依）
+        run: python selftest_no_dup.py
+
+      # ⛔ `push_data.sh` 的累積型 CSV 逐鍵合併。這一支擋的是**已經發生過**的
+      #   資料遺失：分支上的 `data/` 比 main 舊，整檔搬過去會刪掉別人剛寫的列，
+      #   ⚠ 而 `git diff` 看起來只是「這一趟重算過」。
+      - name: 驗累積型 CSV 的逐鍵合併（零相依）
+        run: python selftest_merge_ledger.py
+
+      # ⛔⛔ 這三支 2026-09-10 之前**沒有任何 workflow 在跑**
+      #   ⇒ `selftest_reduce.py` 紅著不知道多久，而沒有任何地方會叫。
+      #   （成因是 `ADJ_HEADER` 插了一欄，測試裡寫死的欄位位置就錯位了。）
+      #   ⚠ 「自測存在」≠「自測會被跑」——⭐ 而一支沒人跑的自測比沒有更糟：
+      #     它讓人以為那一塊有守門。
+      #   ⇒ `selftest_workflows.py` 現在會擋下**任何**沒被列進來的 selftest_*.py。
+      - name: 驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）
+        run: |
+          python selftest_reduce.py
+          python selftest_fix_emerging_zero.py
+          python selftest_done_days.py
+          python selftest_schema_audit.py
+          python selftest_margin_universe.py
+          python selftest_hole_kinds.py
+          python selftest_transpose_stamp.py
+          python selftest_feed_months.py
+          python selftest_syntax_warnings.py
+
+      - name: 把程式同步到 main（趁 checkout 還新）
+        run: |
+          BR="${GITHUB_REF_NAME:-main}"
+          if [ "$BR" = "main" ]; then echo "本來就在 main，不必同步"; exit 0; fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # ⛔⛔ 2026-09-10：這一步的第一版寫成 `git rebase origin/main`，
+          #   而它**跟那個丟掉 5 小時的 bug 是同一個病**：rebase 會重放分支上
+          #   所有還沒進 main 的 commit，包括**很舊的那幾個**，撞上 main 現在的內容。
+          #   ⇒ 實測（run 34426373917）：它 abort 了、`continue-on-error` 讓它顯示成功，
+          #     而 **main 上的程式一個字都沒更新**——而排程跑的正是 main 上的程式。
+          #   ⚠ 失敗的樣子：這一步是**綠的**，只是什麼都沒做。
+          #
+          # ⇒ 改成跟「Commit 回 repo」**對稱**的做法：
+          #   把**程式路徑**（`data/` 以外的一切）搬到 main 的頭上，不 rebase。
+          #   ① 不重放任何 commit ⇒ 永遠不會衝突
+          #   ② `data/` 完全不碰 ⇒ 別人剛寫的資料原封不動
+          #   離線模擬（scratchpad/gitsim4）三項都驗過。
+          SRC=$(git rev-parse HEAD)
+          git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
+          git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
+          git checkout "$SRC" -- . ':(exclude)data' || {
+            echo "⚠ 取程式路徑失敗，跳過同步" >&2; exit 0; }
+          git add -A
+          if git diff --staged --quiet; then
+            echo "程式已經跟 main 一致，沒有要同步的"
+          else
+            git commit -q -m "sync: 把分支的程式同步到 main"
+            git push origin HEAD:main && echo "✓ 程式已同步到 main"
+          fi
+          # ⛔ 一定要切回原本的分支：後面的步驟（回補、Commit）都靠它。
+          git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
+
 
       # ★ 2026-09-04：--inst 回補 2015 第一個請求就 307（無 Location、body 是 meta-refresh）。
       #   同一條 URL 在別的網路環境回得到正常 JSON，所以被擋的是 runner 的請求。
@@ -78,9 +218,37 @@ jobs:
           fi
           # ★ 不需要 --saturdays：改照 data/universe/daily 的交易日曆走，
           #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
-          python feeds.py --run --feed "${{ inputs.feed }}" \
-            --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
-            --sleep "${{ inputs.sleep || '5' }}"
+          COMMON="--feed ${{ inputs.feed }} --sleep ${{ inputs.sleep || '5' }} ${{ inputs.need_col && format('--need-col {0}', inputs.need_col) || '' }} ${{ inputs.force && '--force' || '' }}"
+
+          # ⭐ 長工前先實測一天，**而且連 push 那條路一起測**。
+          #   ⛔ 2026-09-09：融資融券 2,846 天跑了 5 小時，「回補」那一步是綠的，
+          #     掛在最後一步的 push ⇒ 整趟丟掉。只測「抓不抓得到」不夠。
+          echo "══ 長工前實測：先做一天，並且真的推一次 ══"
+          python feeds.py --run $COMMON --start "${{ inputs.start }}" \
+            --end "${{ inputs.end }}" --limit 1
+          bash push_data.sh "feeds(smoke): 長工前的一天實測 ${{ inputs.feed }}"
+          echo "══ 實測通過 ⇒ 開始長工（逐年分批，每批推一次）══"
+
+          # ⛔ 逐年分批：任何一種失敗最多賠一年，而且 --need-col 會自己接著跑。
+          Y0=$(echo "${{ inputs.start }}" | cut -d- -f1)
+          Y1=$(echo "${{ inputs.end }}"   | cut -d- -f1)
+          # ⛔⛔ 2026-09-10 run 104：`tib` 的 2023 那批有**一天**回 HTML 不是 JSON
+          #   （CDN 擋人，第二點④）⇒ 那一批的 runlog 判成 ✗ ⇒ 程式 exit 1
+          #   ⇒ `set -e` 當場結束整個 step ⇒ ⛔ **2024／2025／2026 三年一天都沒跑**。
+          #   ⚠ 而 CLAUDE.md 第四點寫的是「逐年分批 ⇒ **任何失敗最多賠一年**」
+          #     ——⛔ 這個迴圈**沒有兌現那句話**：它賠掉的是後面全部。
+          #   ⇒ 記下失敗、**繼續跑下一年**，⭐ 而最後仍然 exit 1
+          #     （⛔ 不可以吞掉失敗：紅燈是要留著的，只是不該連坐）。
+          RC=0
+          for Y in $(seq "$Y0" "$Y1"); do
+            A="$Y-01-01"; B="$Y-12-31"
+            [ "$Y" = "$Y0" ] && A="${{ inputs.start }}"
+            [ "$Y" = "$Y1" ] && B="${{ inputs.end }}"
+            echo "── $Y 年（$A ~ $B）──"
+            python feeds.py --run $COMMON --start "$A" --end "$B" || RC=1
+            bash push_data.sh "feeds(run/${{ inputs.feed }}): $A~$B"
+          done
+          [ "$RC" = 0 ] || { echo "⛔ 有批次失敗（見上面各該年）" >&2; exit 1; }
 
       # ★ 產業別對照表。選股規則的「排除金融保險與生技醫療」與
       #   「同一類股當日最多 2 檔」都靠它，而 meta/stocks.csv 沒有這欄。
@@ -156,14 +324,175 @@ jobs:
           # ★ 撞到額度會**等 15 分鐘再續**，最多等 6 次；跑滿 300 分鐘自己收工存進度。
           #   Actions 的 job timeout 砍下去的話這一趟抓到的全部消失、進度也沒存。
           # ★ 寫入是合併的（鍵＝日期＋代號），所以**直接再跑一次同一個 mode 就好**。
+          python selftest_otc_adj.py
           python otc_adj.py --start 2015-01-01 --sleep 0.4 --resume \
             --limit-wait 900 --max-waits 6 --budget-min 300
+
+      # ⭐ 只補指定的幾檔。⛔ 這一步**不帶 `--resume`**：
+      #   進度檔可能已經把那一檔記成「做過了」，而我們正是因為它做得不對才要重補
+      #   ——帶 `--resume` 會讓這一步安靜地什麼都不做，⚠ 而且看起來完全成功。
+      - name: 上櫃除權息與減資（只補指定的幾檔）
+        if: inputs.mode == 'otc-adj-codes'
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        timeout-minutes: 60
+        run: |
+          python selftest_otc_adj.py
+          # ⛔⛔ 判準檔在 **main** 上，而這裡 checkout 的是**分支**
+          #   ⇒ 不取下來的話 `official_factor` 會**全部是空的**，
+          #     而這一趟仍然會成功、`data/adj/` 仍然會更新、數字仍然全對
+          #     ——只有 K線線裁定要用的那一欄靜靜空著（2026-09-10 run 101 實測）。
+          #   ⚠ 這是第四點六的**鏡像**：那一條講「分支比 main 舊」，
+          #     這裡是「分支**根本沒有**那個檔」。
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/meta/otc_reduce_history.csv \
+                                      data/meta/otc_exright_history.csv
+          python otc_adj.py --start 2015-01-01 --sleep 0.4 \
+            --codes "${{ inputs.codes }}"
+          # ⭐ 補完要**立刻**重算還原因子並重跑那道檢查，
+          #   ⛔ 否則 `data/universe/otcreduce/` 有了、`data/adj/` 還是舊的，
+          #     而 `reduce_check` 照樣紅——那會讓人以為這一趟沒用。
+          python adjust.py || true
+          python reduce_check.py || true
+
+      # ⭐⭐ 換供料第 2 步（市場情報分析線 2026-09-10 23:00 裁定）。
+      #   依據是雙向比對：`B=0`、`D` 只有 15 筆而且全是面額變更
+      #   ⇒ 換源在「數字對不對」這一面沒有風險。
+      # ⛔ 這一步**不連外**：官方那兩份判準檔是
+      #   `otc_reduce_history.py`／`otc_exright_history.py` 抓的
+      #   ⇒ ⛔ 這裡不重抓，避免同一份官方資料有**兩條解析路徑**（第四點五）。
+      # ⚠ 順序是有意義的，⛔ 不可以調換：
+      #   ① 先抓官方判準檔（它們才是這一步的輸入）
+      #   ② **快照**——裁定裡指名要的，⛔ 一定要在寫入之前
+      #   ③ 官方寫入 `otcexright/`／`otcreduce/`
+      #   ④ `adjust.py` 重算 `data/adj/`（⛔ 不跑它，前面三步等於沒發生）
+      #   ⑤ 再跑一次雙向比對 ⇒ ⭐ **換完之後 C 類應該掉下來**
+      # ⛔⛔ 2026-09-11：這一步**讀 `data/`**（交易日曆、日檔、既有 `data/adj/`），
+      #   而在分支上 dispatch 拿到的是**分支那份，永遠比 main 舊**。
+      #   實測 run 108：分支的 `calendar_twse.csv` 最後一天是 **2026-09-09**、
+      #   main 是 **2026-09-10** ⇒ `adjust.py` 把 09-10 的三筆除權息判成
+      #   「未來事件」擋下 ⇒ ⛔ 4541／5328／8234 的因子沒寫進去，
+      #   ⚠ 而那一趟的每一個訊息都正常（它「正確地」擋下了它以為的未來事件）。
+      #   ⇒ CLAUDE.md 第四點六落地條①：讀 main 才有的判準檔就先取下來。
+      # ⛔⛔ 2026-09-11 第二次修這一步——**第一次我修錯對象了**。
+      #   我取了 main 的 `calendar_twse.csv`，⚠ 而 `adjust.py` 的「交易日曆」
+      #   根本不是那個檔：`adjust.trading_days()` 讀的是
+      #   **`data/universe/daily/` 的檔名集合**。
+      #   ⇒ run 109 照樣報「交易日曆最後一天 2026-09-09」，三筆照樣被擋。
+      # ⭐ 教訓：要取的是**程式真的讀的那個路徑**，⛔ 不是名字看起來像的那個。
+      #   ⚠ 判準：去 grep 那支程式讀哪裡，⛔ 不要照檔名猜。
+      # ⚠ `git checkout` 只會寫出**有差異**的檔（分支只缺最近一兩天）⇒ 成本很低。
+      - name: 取 main 的日檔與判準檔（⛔ 分支那份比 main 舊）
+        # ⛔⛔ 條件要涵蓋**每一個會跑 `adjust.py` 的 mode**，⚠ 不只 otc-adj-official。
+        #   2026-09-11 差點踩下去：`mode=run --feed exright` 把 09-10 的除權息
+        #   推上 main 之後，我正要派 `mode=adjust` 算因子——
+        #   ⚠ 而分支上**根本沒有**那個檔（它在 main），日檔也舊一天
+        #   ⇒ adjust 會拿**沒有那些事件**的輸入重算，
+        #   ⛔ 而輸出 `data/adj/` 會**整份覆蓋 main 上剛換好的官方供料**（3,000 筆）。
+        #   ⇒ CLAUDE.md 四點六那個「會刪資料的例外」。
+        if: inputs.mode == 'otc-adj-official' || inputs.mode == 'adjust'
+        run: |
+          git fetch origin main --depth=1
+          # ⭐⭐ 這一份清單要對照 `adjust.py` **真的讀哪裡**（⛔ 不要照檔名猜）：
+          #     trading_days()  → data/universe/daily 的**檔名**
+          #     EVENT_DIRS      → universe/{exright,otcexright,reduce,otcreduce,
+          #                                 parvalue,otcparvalue,etfsplit}
+          #     read_close()    → data/stocks
+          #     「沒有變少」那道 → data/adj/_index.csv
+          for P in data/universe/daily \
+                   data/universe/exright data/universe/otcexright \
+                   data/universe/reduce data/universe/otcreduce \
+                   data/universe/parvalue data/universe/otcparvalue \
+                   data/universe/etfsplit \
+                   data/stocks data/adj; do
+            git checkout origin/main -- "$P" || echo "⚠ 取不到 main 的 $P" >&2
+          done
+          # ⭐ 把「這一步有沒有生效」印出來——⛔ 不是印「取過了」
+          echo "[checkout] 日檔最後一天：$(ls data/universe/daily | tail -1)"
+          echo "[checkout] exright 最後一天：$(ls data/universe/exright | grep '^2' | tail -1)"
+          git checkout origin/main -- data/meta/calendar_twse.csv \
+                                      data/meta/calendar_tpex.csv || true
+          echo "⭐ 日檔最後一天：$(ls data/universe/daily | sort | tail -1)"
+          echo "   交易日曆最後一天：$(tail -1 data/meta/calendar_twse.csv)"
+
+      - name: 上櫃還原因子換成官方來源（第 2 步）
+        if: inputs.mode == 'otc-adj-official'
+        timeout-minutes: 60
+        run: |
+          # ⛔⛔ RC-GUARD（2026-09-11）：這一步**一行掛掉不可以賠掉後面幾行**。
+          #   實測 run 107：第 4 行 `otc_reduce_history.py` 因為兩條**常駐假紅**
+          #   `exit 1` ⇒ `set -e` ⇒ ⛔ 後面六行（含換供料本體 `--official`
+          #   與 `adjust.py`）**一行都沒跑**，而那一趟只花了 10 秒。
+          #   ⇒ 結果：4541／5328／8234／3141 四檔的除息事件沒進 `data/adj/`，
+          #     ⚠ 而那代表**那四檔今天的漲跌算出來是錯的**——
+          #     ⛔ 一個「判準檔的自檢」把整條資料寫入鏈掐死了。
+          # ⚠ 這跟 run 104 賠掉三年是**同一族**（`set -e` 連坐）：
+          #   ⛔ 當時只修了逐年迴圈，而「同一個 step 裡的多行」沒被修到。
+          # ⛔ 而**只做前半（全部 `|| true`）＝把失敗吞掉，那比連坐更糟**
+          #   ⇒ 記下來、繼續跑、⭐ 最後仍然 exit 1。
+          RC=0
+          python selftest_otc_adj_official.py || RC=1
+          python selftest_otc_adj_compare.py || RC=1
+          # ① 官方判準檔（這兩支各一發請求）
+          python selftest_otc_reduce_history.py || RC=1
+          python otc_reduce_history.py || RC=1
+          python selftest_otc_exright_history.py || RC=1
+          python otc_exright_history.py || RC=1
+          # ② ⚠ 快照一定要在寫入**之前**
+          python otc_adj.py --snapshot data/meta/_adj_snapshot_pre_official.csv || RC=1
+          # ③ 官方寫入（⛔ 不連外）
+          python otc_adj.py --official || RC=1
+          # ④ 重算還原因子
+          python adjust.py || RC=1
+          # ⑤ ⭐ 換完再比一次：C 類要掉下來，⛔ 而 D 類不可以變大
+          python otc_adj_compare.py || RC=1
+          # ⭐ 這一步的**驗收判準**：官方有、我方 data/adj 沒有 ⇒ 應該是 0
+          #   ⚠ 它原本只在 `daily.yml` 跑 ⇒ ⛔ 這個 mode **驗不到自己做完了沒**，
+          #   而我因此連續兩趟都在讀**昨晚**那一塊舊 runlog（時戳 00:27）當結果。
+          python otc_exright_check.py || RC=1
+          python reduce_check.py || true
+          [ "$RC" = 0 ] || { echo "⛔ 有步驟失敗（見上面各該支的 runlog）" >&2; exit 1; }
 
       # ★ 月營收與財報的**歷史**要從哪裡來。現況是 `data/mops/` 每一項都只有一期
       #   （OpenAPI 沒有年度／季別參數，只給最新一期），所以 2015 以來補不回來。
       #   四批候選：OpenAPI 加參數／MOPS 靜態頁／MOPS 查詢表單(POST)／FinMind。
       #   ⚠ FinMind 已確認有歷史，要量的是「幾發、多久、會不會被擋」。
       #   **只探測、不寫資料。**
+      # ★★ 官方年度／月統計，當**價格層的外部判準**（回測線 2026-09-09 20:14 要的）。
+      #   FMNPTK 逐檔逐年的「收盤平均價」＝ 日收盤價的**簡單平均**
+      #   （⛔ 不是成交金額÷股數：2330 的 114 年前者 1,163.06、後者 1,144.0）
+      #   ⇒ **一列驗一整年**：收盤價對不對、有沒有缺日、有沒有多出非交易日。
+      #   FMSRFK 逐檔逐月的成交金額／股數 ⇒ 驗 `amount`／`volume`。
+      #   ⚠ 逐檔一個請求、2,000+ 檔 ⇒ 一趟跑不完，用 `--limit` 分批 ＋ 進度檔續跑。
+      #   ⛔ 排這裡不排 daily：它是判準不是每日資料，而且它會打 4,000+ 發。
+      # ⭐⭐ 上櫃除權息的**歷史**官方來源。這一支推翻了我自己寫過三次的
+      #   「上櫃除權息的歷史官方來源：仍然沒有」——市場情報分析線 2026-09-10 09:41
+      #   在櫃買公告區找到 `bulletin/exDailyQ`，**一次請求回完十一年半、10,232 筆**。
+      #   ⛔ 必須 POST、日期必須帶斜線——兩者任一沒做到都會**靜靜回「今天～明天」**。
+      #   ⛔ 這一支只寫判準檔，不碰 `data/universe/otcexright/`（單一寫入者）。
+      - name: 上櫃除權息歷史（官方公告區，只寫判準檔）
+        if: inputs.mode == 'otc-exright-history'
+        run: |
+          python selftest_twparse.py
+          python selftest_otc_exright_history.py
+          python otc_exright_history.py --start "2008/01/01"
+
+      # ⭐⭐ 上櫃**減資**的官方歷史。這一支是**必要的**不是錦上添花：
+      #   `exDailyQ`（除權息表）**不含減資**——59 檔的抽驗裡就少了 17 筆。
+      #   拿除權息表當上櫃 adj 的完整來源會**刪掉減資因子**，那幾檔還原價整段錯。
+      #   ⭐ 它同時做情報分析線 10:00 指名要我做的那一掃：
+      #     他驗過「我方已有的那些對得上」（12/12），**沒驗「我方缺哪些」**。
+      - name: 上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些
+        if: inputs.mode == 'otc-reduce-history'
+        run: |
+          python selftest_twparse.py
+          python selftest_otc_reduce_history.py
+          python otc_reduce_history.py --start "2013/01/01"
+
+      - name: 官方年度／月統計（外部判準，續跑）
+        if: inputs.mode == 'official-stats'
+        run: python official_stats.py --limit 400 --sleep 1
+
       - name: 找基本面歷史的來源
         if: inputs.mode == 'mops-history-probe'
         run: python mops_history_probe.py --sleep 2   # 同上：打 MOPS，不吃 inputs.sleep
@@ -225,87 +554,29 @@ jobs:
       #   摘要不會抱怨，只是每一檔跨過減資日的還原都是錯的。
       - name: 算還原因子
         if: inputs.mode == 'adjust'
-        run: python adjust.py
+        run: |
+          python selftest_adjust_official.py
+          python adjust.py
 
       # probe 不寫資料，所以 commit 步驟只對 run 與 adjust 有意義。
+      # ⛔⛔ 2026-09-09：這裡本來是一份**寫死的「會寫資料的 mode」白名單**。
+      #   我加了新 mode `official-stats`、卻沒加進這份清單
+      #   ⇒ 腳本跑了 **22 分鐘、抓了 400 檔**，然後 commit 那一步 `skipped`，
+      #     **資料全部丟掉，而整趟是綠的**（run 34364668441）。
+      #   ⚠ `probe.yml` 檔頭記過一模一樣的坑（守門清單加了、`git add` 忘了加），
+      #     我今天還讀過那段——**兩份清單分開維護就會這樣**。
+      #
+      # ⇒ 結構性修法：**把條件反過來**。
+      #   列的不再是「會寫的」，而是**「唯讀的」**（探針、診斷、乾跑）。
+      #   ⭐ 這樣新增一個會寫資料的 mode 時，**預設就會被 commit**；
+      #     忘了改這裡的代價從「資料靜默消失」變成「commit 了一個沒有變動的空 diff」
+      #     ——後者會印「沒有變動，不 commit」，**無害**。
+      #   ⛔ 失敗的方向要選會吵的那一邊，不是安靜的那一邊。
       - name: Commit 回 repo
-        if: always() && (inputs.mode == 'run' || inputs.mode == 'adjust' || inputs.mode == 'purge' || inputs.mode == 'industry' || inputs.mode == 'mops' || inputs.mode == 'calendar-audit' || inputs.mode == 'content-audit' || inputs.mode == 'mops-history' || inputs.mode == 'otc-adj')
+        if: >-
+          always() && !contains(fromJSON('["diag","probe","industry-probe","mops-probe","otc-adj-probe","mops-history-probe","mops-history-dry"]'), inputs.mode)
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # ★ 用 -A：`git add <路徑>` 在舊版 git 不會把「檔案被刪掉」記進暫存區。
-          #   purge 模式產出的**就是刪除**，漏掉的話會 commit 不到任何東西、
-          #   印出「沒有變動」，而那批錯的日檔原封不動留在 repo 裡——
-          #   看起來成功、其實什麼都沒清掉。
-          git add -A data
-          if git diff --staged --quiet; then
-            echo "沒有變動，不 commit"
-          else
-            git commit -m "feeds(${{ inputs.mode }}/${{ inputs.feed }}): ${{ inputs.start }}~${{ inputs.end }}"
-            # ⚠ 2026-09-09 實測：原本這裡假設「資料是 append-only，rebase 不會有內容衝突」，
-            #   **那句是錯的**。data/meta/ 底下 `_` 開頭的報告檔是每一趟**整份重寫**的，
-            #   七支 workflow 都會 push 同一個 repo，加上人手動改，同一份就會逐字衝突。
-            #   而重試同一個 rebase 只會一模一樣地再撞一次——三次全白費。
-            #   ⚠ 失敗的樣子：log 印「push 失敗」，看起來像網路問題，其實一次都不可能成功。
-            #   run 34296206882 就是這樣掛的，那一趟抓到的資料一列都沒推上去。
-            #
-            # → 衝突時分兩種處置：
-            #   ① 衝突的檔案**全部**在 REGEN 裡 → 取本趟的版本續做（rebase 裡 --theirs
-            #      才是「正在重放的那個 commit」，也就是本趟；--ours 是遠端，別挑錯邊）。
-            #      那些檔完全由當下的 repo 資料重新推導，誰贏都一樣，下一趟會再寫一次。
-            #   ② 只要有**一個**不在 REGEN 裡 → **不自作主張**：abort、印出檔名、整趟紅掉。
-            #      真資料的衝突要人來看，不可以自動挑一邊。
-            #   ⛔ REGEN 只放「每趟重生」的。不放帳本——_otcadj_done.csv 是續跑進度，
-            #      自動取一邊會把另一趟做過的進度吃掉；也不放任何不帶 `_` 前綴的真資料。
-            LASTRUN="data/meta/_last_run.md"
-            REGEN=" data/meta/_db_status.md data/meta/_content_audit.csv data/meta/_breadth_audit.csv data/meta/_parvalue_scan.md data/meta/_capital_missing.txt data/meta/_suspend_skipped.txt data/meta/_study_inst.md data/meta/_tdcc_probe.txt data/meta/_tpex_probe.txt data/meta/_twsthr_probe.txt data/meta/_holiday_probe.txt data/meta/_parvalue_probe.txt data/meta/_capital_probe.txt data/meta/_suspend_probe.txt data/meta/_breakpoint_scan.md data/meta/_holes_scan.csv data/meta/_data_audit.md "
-            ok=0
-            for i in 1 2 3; do
-              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
-                ok=1; break
-              fi
-              CONF=$(git diff --name-only --diff-filter=U 2>/dev/null || true)
-              if [ -n "$CONF" ]; then
-                BAD=""
-                for f in $CONF; do
-                  [ "$f" = "$LASTRUN" ] && continue
-                  case "$REGEN" in *" $f "*) ;; *) BAD="$BAD $f";; esac
-                done
-                if [ -n "$BAD" ]; then
-                  echo "⛔ rebase 衝突，而且不只是可自動處理的報告檔：$BAD" >&2
-                  echo "   真資料的衝突不自動挑一邊，請人工處理。" >&2
-                  git rebase --abort 2>/dev/null || true
-                  break
-                fi
-                echo "rebase 衝突，可自動處理：$CONF"
-                MERGED=1
-                for f in $CONF; do
-                  if [ "$f" = "$LASTRUN" ]; then
-                    # ⛔ _last_run.md **不可以整份取一邊**：runlog 只覆蓋自己那一個區塊，
-                    #   所以這一份是跨 workflow 累積的。整份取一邊 ⇒ 另一支剛報的 ✗
-                    #   會被安靜換回上一輪的 ✓——檔案在、格式對、只有狀態悄悄變綠。
-                    #   逐區塊合併，每塊留「最後執行」較新的那一份。
-                    git show :3:"$f" > /tmp/lr_ours.md \
-                      && git show :2:"$f" > /tmp/lr_theirs.md \
-                      && python3 merge_last_run.py /tmp/lr_ours.md /tmp/lr_theirs.md > "$f" \
-                      && git add -- "$f" || MERGED=0
-                  else
-                    git checkout --theirs -- "$f" && git add -- "$f" || MERGED=0
-                  fi
-                done
-                if [ "$MERGED" != "1" ]; then
-                  echo "⛔ 自動處理失敗，不硬推" >&2
-                  git rebase --abort 2>/dev/null || true
-                  break
-                fi
-                if GIT_EDITOR=true git rebase --continue && git push origin HEAD:main; then
-                  ok=1; break
-                fi
-              fi
-              # ★ rebase 卡在衝突時工作區會留在 unmerged 狀態，下一輪 git pull 會直接
-              #   說 "Pulling is not possible"，三次全白重試。先 abort 回到乾淨狀態。
-              git rebase --abort 2>/dev/null || true
-              echo "push 失敗（第 $i 次），5 秒後重試"; sleep 5
-            done
-            [ "$ok" = "1" ] || { echo "連續三次 push 失敗" >&2; exit 1; }
-          fi
+          # ⛔ 這一段本來在**八支 workflow 各抄一份**。同一段邏輯抄兩份，
+          #   今晚已經害過一次（`limit` 的 bug 在 fetch/backfill 各一份，
+          #   修好的那份天天跑、沒修的那份只有回補才跑）。⇒ 只留一份。
+          bash push_data.sh "feeds(${{ inputs.mode }}/${{ inputs.feed }}): ${{ inputs.start }}~${{ inputs.end }}"

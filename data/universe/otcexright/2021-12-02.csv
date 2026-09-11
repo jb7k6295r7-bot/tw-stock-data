@@ -1,2 +1,2 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2021-12-02,6523,151,145.78,5.22,除息,,finmind
+2021-12-02,6523,151,145.78,5.220000,除息,,exDailyQ

@@ -1,0 +1,370 @@
+# 下市清單／變更交易 端點探針
+# ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
+# ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
+#   ⇒ 這支就是要回答「欄位怎麼對」，⛔ 在那之前不寫 parser。
+
+── 終止上市清單 company/suspendListing
+   https://www.twse.com.tw/rwd/zh/company/suspendListing?response=json
+   頂層鍵 ['data', 'fields', 'maxYear', 'minYear', 'status', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['maxYear', 'minYear', 'status', 'total']
+     ── title：終止上市公司
+     ── maxYear：2026
+     ── minYear：2001
+     ── status：ok
+     ── total：265
+   ⭐ total=265｜解析出的列數=265　✓ 一致
+   頂層 `fields`：['終止上市日期', '公司名稱', '上市編號']
+   ⭐ 頂層 `data`：265 列（第一列的型別 list）
+     樣本：["115/09/01", "三商壽", "2867"]
+     樣本：["115/06/23", "森崴能源", "6806"]
+     樣本：["115/03/27", "晶睿", "3454"]
+   `_tables()` 認出 1 張表
+     欄位（3）：['終止上市日期', '公司名稱', '上市編號']
+     列數：265
+       樣本：["115/09/01", "三商壽", "2867"]
+       樣本：["115/06/23", "森崴能源", "6806"]
+       樣本：["115/03/27", "晶睿", "3454"]
+
+── ⚠ 同上，帶 yy=115（情報分析線說這個參數被無視 ⇒ 驗它）
+   https://www.twse.com.tw/rwd/zh/company/suspendListing?yy=115&response=json
+   頂層鍵 ['data', 'fields', 'maxYear', 'minYear', 'status', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['maxYear', 'minYear', 'status', 'total']
+     ── title：終止上市公司
+     ── maxYear：2026
+     ── minYear：2001
+     ── status：ok
+     ── total：265
+   ⭐ total=265｜解析出的列數=265　✓ 一致
+   頂層 `fields`：['終止上市日期', '公司名稱', '上市編號']
+   ⭐ 頂層 `data`：265 列（第一列的型別 list）
+     樣本：["115/09/01", "三商壽", "2867"]
+     樣本：["115/06/23", "森崴能源", "6806"]
+     樣本：["115/03/27", "晶睿", "3454"]
+   `_tables()` 認出 1 張表
+     欄位（3）：['終止上市日期', '公司名稱', '上市編號']
+     列數：265
+       樣本：["115/09/01", "三商壽", "2867"]
+       樣本：["115/06/23", "森崴能源", "6806"]
+       樣本：["115/03/27", "晶睿", "3454"]
+
+── 變更交易 fullDelivery/TWT85U（20150105）
+   https://www.twse.com.tw/rwd/zh/fullDelivery/TWT85U?date=20150105&response=json
+   頂層鍵 ['data', 'date', 'fields', 'notes', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['date', 'notes', 'stat', 'total']
+     ── title：104年01月05日 變更交易
+     ── notes（2 項）
+        **代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        當日如有臨時新增之變更交易有價證券標的，網頁右上角會呈現點選框，屆時請點選明細查詢，另外，歷史資料也可點選此 <a href='/zh/trading/bfihbu.html' target='_blank'>連結</a> 查詢。
+     ── date：20150105
+     ── stat：OK
+     ── total：23
+   ⭐ total=23｜解析出的列數=23　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：23 列（第一列的型別 list）
+     樣本：["1449", "佳和", "  "]
+     樣本：["1456", "怡華", "  "]
+     樣本：["1516", "川飛", "  "]
+   `_tables()` 認出 1 張表
+     欄位（3）：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：23
+       樣本：["1449", "佳和", "  "]
+       樣本：["1456", "怡華", "  "]
+       樣本：["1516", "川飛", "  "]
+
+── 變更交易 fullDelivery/TWT85U（20200103）
+   https://www.twse.com.tw/rwd/zh/fullDelivery/TWT85U?date=20200103&response=json
+   頂層鍵 ['data', 'date', 'fields', 'notes', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['date', 'notes', 'stat', 'total']
+     ── title：109年01月03日 變更交易
+     ── notes（2 項）
+        **代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        當日如有臨時新增之變更交易有價證券標的，網頁右上角會呈現點選框，屆時請點選明細查詢，另外，歷史資料也可點選此 <a href='/zh/trading/bfihbu.html' target='_blank'>連結</a> 查詢。
+     ── date：20200103
+     ── stat：OK
+     ── total：21
+   ⭐ total=21｜解析出的列數=21　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：21 列（第一列的型別 list）
+     樣本：["1213", "大飲", "  "]
+     樣本：["1418", "東華", "  "]
+     樣本：["1471", "首利", "  "]
+   `_tables()` 認出 1 張表
+     欄位（3）：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：21
+       樣本：["1213", "大飲", "  "]
+       樣本：["1418", "東華", "  "]
+       樣本：["1471", "首利", "  "]
+
+── 變更交易 fullDelivery/TWT85U（20260909）
+   https://www.twse.com.tw/rwd/zh/fullDelivery/TWT85U?date=20260909&response=json
+   頂層鍵 ['data', 'date', 'fields', 'notes', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['date', 'notes', 'stat', 'total']
+     ── title：115年09月09日 變更交易
+     ── notes（2 項）
+        **代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        當日如有臨時新增之變更交易有價證券標的，網頁右上角會呈現點選框，屆時請點選明細查詢，另外，歷史資料也可點選此 <a href='/zh/trading/bfihbu.html' target='_blank'>連結</a> 查詢。
+     ── date：20260909
+     ── stat：OK
+     ── total：10
+   ⭐ total=10｜解析出的列數=10　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：10 列（第一列的型別 list）
+     樣本：["1213", "大飲", "  "]
+     樣本：["1538", "正峰", "  "]
+     樣本：["2314", "台揚", "**"]
+   `_tables()` 認出 1 張表
+     欄位（3）：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：10
+       樣本：["1213", "大飲", "  "]
+       樣本：["1538", "正峰", "  "]
+       樣本：["2314", "台揚", "**"]
+
+── 新增之變更交易證券 fullDelivery/BFIHBU
+   https://www.twse.com.tw/rwd/zh/fullDelivery/BFIHBU?response=json
+   頂層鍵 ['data', 'fields', 'notes', 'stat', 'title']
+   ⭐ 平常被丟掉的鍵：['notes', 'stat']
+     ── title：新增之變更交易證券
+     ── notes（2 項）
+        代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        變更交易有價證券不得進行當日沖銷交易、融資融券交易、借券交易、平盤以下借券賣出，並停止當日證券業務借貸款項及不限用途款項借貸。
+     ── stat：OK
+   頂層 `fields`：['新增變更交易日期', '證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：0 列（第一列的型別 —）
+   `_tables()` 認出 1 張表
+     欄位（4）：['新增變更交易日期', '證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：0
+
+── ⛔ 隱藏 span 的陷阱 violation/change
+   https://www.twse.com.tw/rwd/zh/violation/change?response=json
+   頂層鍵 ['data', 'fields', 'groups', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['groups', 'stat', 'total']
+     ── title：115年09月11日 變更交易及併採行分盤集合競價交易
+     ── groups：[{"span": 2, "title": ""}, {"span": 3, "title": "變更交易"}, {"span": 3, "title": "併採行分盤"}]
+     ── stat：ok
+     ── total：15
+   ⭐ total=15｜解析出的列數=15　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '違反營業細則條款', '變更交易原因', '變更交易開始日', '違反營業細則條款', '併採行分盤交易原因', '併採行分盤交易開始日']
+   ⭐ 頂層 `data`：15 列（第一列的型別 list）
+     樣本：["1213", "大飲", "第49條第1項第19款<span class=\"hide\">1213</span>", "該公司未依規定時限檢送相關資料，核有本公司營業細則第49條第1 項第19款規定之情事，爰將其上市有價證券列為變更交易方法。<span class=\"hide\">1213</span>", "108年06月17日<span class=\"hide\">1213</span>", "無<span class=\
+     樣本：["1213", "大飲", "第49條第1項第14款<span class=\"hide\">1213</span>", "該公司於109年12月10日發布重大訊息，揭示其與旭順公司之和解契\r\n約相關內容，惟就該公司商標權之歸屬等相關疑義，於嗣後召開之\r\n記者會，均未能充分釐清<span class=\"hide\">1213</span>", "109年12月14日<span class=\"hide\">1213</spa
+     樣本：["1538", "正峰", "第49條第1項第1款<span class=\"hide\">1538</span>", "淨值低於財務報告所列示股本二分之一者<span class=\"hide\">1538</span>", "108年08月19日<span class=\"hide\">1538</span>", "無<span class=\"hide\">1538</span>", "無<span class=\"hide\"
+   `_tables()` 認出 1 張表
+     欄位（8）：['證券代號', '證券名稱', '違反營業細則條款', '變更交易原因', '變更交易開始日', '違反營業細則條款', '併採行分盤交易原因', '併採行分盤交易開始日']
+     列數：15
+       樣本：["1213", "大飲", "第49條第1項第19款<span class=\"hide\">1213</span>", "該公司未依規定時限檢送相關資料，核有本公司營業細則第49條第1 項第19款規定之情事，爰將其上市有價證券列為變更交易方法。<span class=\"hide\">1213</span>", "108年06月17日<span class=\"hide\">1213</span>", "無<span class=\
+       樣本：["1213", "大飲", "第49條第1項第14款<span class=\"hide\">1213</span>", "該公司於109年12月10日發布重大訊息，揭示其與旭順公司之和解契\r\n約相關內容，惟就該公司商標權之歸屬等相關疑義，於嗣後召開之\r\n記者會，均未能充分釐清<span class=\"hide\">1213</span>", "109年12月14日<span class=\"hide\">1213</spa
+       樣本：["1538", "正峰", "第49條第1項第1款<span class=\"hide\">1538</span>", "淨值低於財務報告所列示股本二分之一者<span class=\"hide\">1538</span>", "108年08月19日<span class=\"hide\">1538</span>", "無<span class=\"hide\">1538</span>", "無<span class=\"hide\"
+   ⛔ **值裡有 `<span class="hide">`**（排序用的隱藏 HTML）⇒ 直接吃會把代號混進日期，⚠ **而且不報錯**
+     附近原文：…title":"變更交易"},{"span":3,"title":"併採行分盤"}],"data":[["1213","大飲","第49條第1項第19款<span class=\"hide\">1213<\u002fspan>","該公司未依規定時限檢送相關資料，核有本公司營業細則第49條第1 項第…
+
+── 信用交易標的？ marginTrading/MI_MARGN_MSTOCK（推的）
+   https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN_MSTOCK?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=747；前 200：b'<!DOCTYPE html>\n<html lang="zh-Hant-tw">\n<head>\n\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>404</title>\n<meta name="layout" content="blank"/>\n'
+
+── 信用交易標的？ marginTrading/TWT78U（推的）
+   https://www.twse.com.tw/rwd/zh/marginTrading/TWT78U?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=747；前 200：b'<!DOCTYPE html>\n<html lang="zh-Hant-tw">\n<head>\n\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>404</title>\n<meta name="layout" content="blank"/>\n'
+
+── 信用交易標的？ marginTrading/MI_MARGN?selectType=MS（推的）
+   https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN?date=20260909&selectType=MS&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：20260909
+     ── stat：OK
+   頂層 `fields`：None
+   `_tables()` 認出 2 張表
+     欄位（6）：['項目', '買進', '賣出', '現金(券)償還', '前日餘額', '今日餘額']
+     列數：3
+       樣本：["融資(交易單位)", "301,443", "273,367", "6,023", "9,048,661", "9,070,714"]
+       樣本：["融券(交易單位)", "16,116", "15,532", "4,420", "208,614", "203,610"]
+       樣本：["融資金額(仟元)", "26,925,829", "25,728,750", "297,244", "586,266,976", "587,166,811"]
+     欄位（0）：[]
+     列數：0
+
+── ⭐ 上櫃歷史暫停/恢復交易 openapi tpex_spendi_history
+   https://www.tpex.org.tw/openapi/v1/tpex_spendi_history
+   ⚠ 頂層不是 dict，是 list
+   ⭐ 頂層就是**陣列**：362 列（第一列型別 dict）
+   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'DateOfResumedTrading', 'DateOfSuspendedTrading', 'SecuritiesCompanyCode', 'Serial', 'TimeOfResumedTrading', 'TimeOfSuspendedTrading']
+   ⚠ 不同鍵組合的種類：1
+   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
+     CompanyName：181 種｜最小 世紀*｜最大 龍鋒｜例 ['世紀*', '世紀*元大57購01', '世紀*元大57購02']
+     Date：1 種 115×362
+     DateOfResumedTrading：11 種 1150803×64、1150514×43、1150429×31、1150716×27、1150122×6、1150313×4、1150210×2、1150622×1、1150813×1、1150112×1、1150616×1｜⚠ 空的 181
+     DateOfSuspendedTrading：11 種 1150731×64、1150513×43、1150428×31、1150715×27、1150121×6、1150312×4、1150209×2、1150618×1、1150812×1、1150109×1、1150615×1｜⚠ 空的 181
+     SecuritiesCompanyCode：181 種｜最小 1788｜最大 9960｜例 ['1788', '1799', '19094']
+     Serial：362 種｜最小 1｜最大 99｜例 ['1', '10', '100']
+     TimeOfResumedTrading：1 種 080000×181｜⚠ 空的 181
+     TimeOfSuspendedTrading：1 種 080000×181｜⚠ 空的 181
+     樣本：{"Date": "115", "Serial": "1", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "1150618", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
+     樣本：{"Date": "115", "Serial": "2", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "", "TimeOfSuspendedTrading": "", "DateOfResumedTrading": "1150622", "TimeOfResumedTrading": "080000"}
+     樣本：{"Date": "115", "Serial": "3", "SecuritiesCompanyCode": "1799", "CompanyName": "易威", "DateOfSuspendedTrading": "1150312", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
+
+   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
+   鍵的形狀：⛔ 認不出（日期候選 []、代號候選 ['SecuritiesCompanyCode']）｜CompanyName: 像日期 0/362、像代號 0/362｜Date: 像日期 0/362、像代號 0/362｜DateOfResumedTrading: 像日期 0/362、像代號 0/362｜DateOfSuspendedTrading: 像日期 0/362、像代號 0/362｜SecuritiesCompanyCode: 像日期 0/362、像代號 362/362｜Serial: 像日期 0/362、像代號 0/362｜TimeOfResumedTrading: 像日期 0/362、像代號 181/362｜TimeOfSuspendedTrading: 像日期 0/362、像代號 181/362
+   ⛔ 認不出日期／代號欄 ⇒ **不比**（⚠ 硬挑一欄會整批錯位）
+
+── 上櫃當日暫停/恢復交易 openapi tpex_spendi_today
+   https://www.tpex.org.tw/openapi/v1/tpex_spendi_today
+   ⚠ 頂層不是 dict，是 list
+   ⭐ 頂層就是**陣列**：1 列（第一列型別 dict）
+   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'SecuritiesCompanyCode', '恢復交易', '暫停交易']
+   ⚠ 不同鍵組合的種類：1
+   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
+     CompanyName：0 種 ｜⚠ 空的 1
+     Date：1 種 20260910×1
+     SecuritiesCompanyCode：0 種 ｜⚠ 空的 1
+     恢復交易：0 種 ｜⚠ 空的 1
+     暫停交易：0 種 ｜⚠ 空的 1
+     樣本：{"Date": "20260910", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
+
+   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
+   鍵的形狀：⛔ 認不出（日期候選 []、代號候選 []）｜CompanyName: 像日期 0/1、像代號 0/1｜Date: 像日期 0/1、像代號 0/1｜SecuritiesCompanyCode: 像日期 0/1、像代號 0/1｜恢復交易: 像日期 0/1、像代號 0/1｜暫停交易: 像日期 0/1、像代號 0/1
+   ⛔ 認不出日期／代號欄 ⇒ **不比**（⚠ 硬挑一欄會整批錯位）
+
+── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
+   https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+
+── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
+   https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+
+── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
+   https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
+   ⚠ 頂層不是 dict，是 list
+   ⭐ 頂層就是**陣列**：265 列（第一列型別 dict）
+   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['Code', 'Company', 'DelistingDate']
+   ⚠ 不同鍵組合的種類：1
+   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
+     Code：265 種｜最小 1107｜最大 9936｜例 ['1107', '1204', '1207']
+     Company：265 種｜最小 F-IML｜最大 龍燈-KY｜例 ['F-IML', 'F-敦泰', 'F-晨星']
+     DelistingDate：225 種｜最小 090/01/20｜最大 115/09/01｜例 ['090/01/20', '090/02/20', '090/04/10']
+     樣本：{"DelistingDate": "115/09/01", "Company": "三商壽", "Code": "2867"}
+     樣本：{"DelistingDate": "115/06/23", "Company": "森崴能源", "Code": "6806"}
+     樣本：{"DelistingDate": "115/03/27", "Company": "晶睿", "Code": "3454"}
+
+   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
+   鍵的形狀：Code: 像日期 0/265、像代號 265/265｜Company: 像日期 0/265、像代號 0/265｜DelistingDate: 像日期 265/265、像代號 0/265
+   ⇒ 日期欄＝'DelistingDate'、代號欄＝'Code'（⭐ 照值認出來的，不是照鍵名）
+   我方 265 筆｜openapi 265 筆｜重疊 265
+   A 官方 openapi 有、我方**沒有**：0 檔　[]
+   B 我方有、openapi **沒有**：0 檔　[]
+   ⭐ 重疊處日期**不一致**的：0 檔（正例 265 檔重疊）　[]
+   ⇒ 判讀：A、B 兩邊都不是 0 ⇒ **這是兩張不同母體的表**，⛔ 不是誰漏了誰；只有一邊不是 0 才是「那一邊比較完整」
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=ALL（⛔ 這個是陷阱，要跟逐年加總比）
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=ALL&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：ALL
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：10
+       樣本：["5371", "中強光電股份有限公司", "115-09-03", "依本中心證券商營業處所買賣有價證券業務規則第15條之12、14、15及16規定", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4130", "健亞生物科技股份有限公司", "115-07-28", "本中心證券商營業處所買賣有價證券業務規則第15條之12", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5236", "凌陽創新科技股份有限公司", "115-07-16", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2015
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2015&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2015
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：7
+       樣本：["5506", "長鴻營造股份有限公司", "104-11-26", "依本中心業務規則第12條之2第1項第5款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4927", "泰鼎國際股份有限公司", "104-09-08", "依本中心業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5505", "和旺聯合實業股份有限公司", "104-07-16", "本中心業務規則第12條之2第1項第5款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2020
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2020&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2020
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：10
+       樣本：["1597", "直得科技股份有限公司", "109-12-23", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5304", "鼎創達股份有限公司", "109-11-20", "本中心證券商營業處所買賣有價證券管理辦法第10條", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["8934", "衡平股份有限公司", "109-11-18", "本中心證券商營業處所買賣有價證券業務規則第12條之2及第15條之11", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2025
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2025&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2025
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：6
+       樣本：["6747", "亨泰光學股份有限公司", "114-12-04", "本中心證券商營業處所買賣有價證券業務規則第15條之18", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4945", "陞達科技股份有限公司", "114-09-08", "本中心證券商營業處所買賣有價證券業務規則第15條之18", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["3202", "樺晟電子股份有限公司", "114-07-21", "本中心證券商營業處所買賣有價證券業務規則第12條之2及第15條之11", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+── ⭐⭐ 終止上櫃 company/deListed｜date=2026
+   https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2026&reason=-1&id=&response=json
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：2026
+     ── stat：ok
+   頂層 `fields`：None
+   `_tables()` 認出 1 張表
+     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
+     列數：5
+       樣本：["5371", "中強光電股份有限公司", "115-09-03", "依本中心證券商營業處所買賣有價證券業務規則第15條之12、14、15及16規定", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["4130", "健亞生物科技股份有限公司", "115-07-28", "本中心證券商營業處所買賣有價證券業務規則第15條之12", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+       樣本：["5236", "凌陽創新科技股份有限公司", "115-07-16", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+
+## ⇒ 拿到結果之後要回答的
+  Q1 `suspendListing` 的列是 list 還是 dict？欄位順序／鍵名是什麼？
+  Q2 `TWT85U` 的 `date` 真的吃嗎（三個日期的 title 與筆數要不同）？
+  Q3 `violation/change` 的隱藏 span 長什麼樣（剝法要照真形狀寫）？
+  ⚠ Q4 `suspendListing` 的 `yy` 是不是真的被無視（兩趟筆數要一樣）？
+  ⭐ Q5 **K線線 16:40 §8 指名要的**：`TWT85U` 的 `**` 符號說明逐字是什麼？
+     ⚠ 他們整條「分盤撮合有兩個來源」的裁定建在這個符號上，
+     ⛔ 而目前的依據是一句**轉述**，不是官方 `notes` 的逐字。
+     ⇒ 若 `**` 其實是別的意思（例如「本日新增」），那條裁定要整條作廢。
+  ✅ Q7／Q8 **已答（2026-09-11 run 43 實測）**：`tpex_spendi_history`
+     ⛔⛔ **名字裡的 `history` 是騙人的——它只有今年。**
+       Date：**1 種**　115×362　⇒ 整份都是民國 115（＝2026）
+       DateOfSuspendedTrading：11 種（1150731×64、1150513×43、1150428×31…）
+       ⇒ ⭐ 一次幾十檔同時停、幾天後同時復，`Time` 全是 080000
+       ⇒ 那是**盤中暫停交易後當週復牌**，⛔ 不是長期停止買賣
+     ⚠ 而 181 檔裡**混著權證**（`CompanyName` 有「元大57購01」）
+       ⇒ 跟 TWSE 的 TWTAWU（我方 meta/suspend，9,594/10,034 是權證）同一種
+     ⇒ ⛔ 它**不是**上櫃長期停止買賣的來源；我方 `chtm.halted`（逐日、回到 2015）
+       比它好。⚠ 這條的教訓寫進第二點：**端點的名字不是證據**，
+       ⭐ 判準是「每個鍵的相異值分佈」——只有一種值的鍵當場把答案講出來。
+  ⭐⭐ Q11 **終止上櫃**（情報分析線 12:40 給的端點，我方自己實測）：
+     ① `date=ALL` 到底回幾筆？逐年（2015／2020／2025／2026）各幾筆？
+     ⛔ **逐年加總 > ALL 就坐實「參數說全部、只回一部分」** ⇒ 一律逐年抓。
+     ② 每一年的列，`終止上櫃日期` 是不是真的落在**那一年**？
+       ⚠ 不是的話就是「靜靜回最新一期」那一族（第二點②）。
+     ③ 歷史下限在哪？2015 回得出東西 ⇒ 往前試；回 0 或 404 就是底。
+     ⭐ ④ 5371 中光電在不在（情報分析線說 115-09-03）——
+       ⚠ 這是**定點探針**：指定一個已知該在名單上的代號問它在不在，
+       ⛔ 不是拿總數當判準（總數已經騙過我們三次）。
+  ⛔ Q9 那兩條「終止上櫃」是**明示推的**——這一趟就是要淘汰它們。
+     ⇒ 兩條都不通的話，下一步是**請情報分析線掃 TPEx 選單**
+     （他們掃 TWSE 280 條那次撿到四支新端點），⛔ 不要再自己編路徑。
+  ⭐⭐ Q10 **終止上市有兩支官方端點，數字不一樣**——哪一支是哪一張表？
+     我方 rwd/company/suspendListing：官方自己說 `total:265`，回到民國 090
+     K線分析線 openapi/v1/…CsvAndHtml：他們說「約 400」
+     ⚠ 而他們自己也說那個數字不可信（同一份快取問三次回 397／400／155）
+     ⇒ 這支探針的 §雙向比對 直接給 A／B 兩個方向的數字：
+       ⛔ **兩邊都不是 0 ⇒ 是兩張不同母體的表**（例如一張含終止興櫃／
+       終止公開發行），⛔ 不是誰漏了誰；只有一邊不是 0 才叫「那邊比較完整」
+     ⭐ 已知事實一枚：2867 三商壽（2026-09-01）**我方有**，
+       而他們的逐列輸出**沒有** ⇒ 他們的取得方式會靜默截斷尾巴，
+       ⚠ 而尾巴正是「最近下市的公司」＝最需要的那一段。
+  ⭐ Q6 有沒有「信用交易標的名單」？（K線線 §3 的第三個成因，他們標【未查證】）
+     ⚠ 「本來就不是信用交易標的」是**中性**的，而 ①② 是**負面訊號**，
+     ⛔ 三者在資料上都長成「融資餘額 0」。

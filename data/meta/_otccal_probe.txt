@@ -16,10 +16,10 @@
 
   ── /tpex_daily_trading_index｜上櫃日成交量值指數  ★ 最像 FMTQIK 的那一個
      https://www.tpex.org.tw/openapi/v1/tpex_daily_trading_index
-     ✓ 1,018 bytes｜list[dict]｜列數 7
+     ✓ 1,163 bytes｜list[dict]｜列數 8
      欄位：['Date', 'TradeVolume', 'TradeAmount', 'NumberOfTransactions', 'TPExIndex', 'Change']
      首列：{"Date": "1150901", "TradeVolume": "902905474", "TradeAmount": "252387964702", "NumberOfTransactions": "1095837", "TPExIndex": "410.77", "Change": "9.07"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -27,10 +27,10 @@
 
   ── /tpex_index｜櫃買指數歷史資料  ★ 櫃買指數＝上櫃大盤，名字就寫著歷史
      https://www.tpex.org.tw/openapi/v1/tpex_index
-     ✓ 713 bytes｜list[dict]｜列數 7
+     ✓ 815 bytes｜list[dict]｜列數 8
      欄位：['Date', 'Open', 'High', 'Low', 'Close', 'Change']
      首列：{"Date": "20260901", "Open": "402.12", "High": "412.90", "Low": "402.12", "Close": "410.77", "Change": "9.07"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -38,10 +38,10 @@
 
   ── /tpex_reward_index｜櫃買指數與報酬指數之收市指數
      https://www.tpex.org.tw/openapi/v1/tpex_reward_index
-     ✓ 513 bytes｜list[dict]｜列數 7
+     ✓ 586 bytes｜list[dict]｜列數 8
      欄位：['Date', 'TPExIndex', 'TPExTotalReturnIndex']
      首列：{"Date": "1150901", "TPExIndex": "410.77", "TPExTotalReturnIndex": "763.21"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -49,10 +49,10 @@
 
   ── /tpex50_index｜富櫃50指數歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpex50_index
-     ✓ 547 bytes｜list[dict]｜列數 7
+     ✓ 625 bytes｜list[dict]｜列數 8
      欄位：['Date', 'TPEx50Index', 'TPEx50TotalReturnIndex']
      首列：{"Date": "1150901", "TPEx50Index": "607.06", "TPEx50TotalReturnIndex": "1045.97"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -60,10 +60,10 @@
 
   ── /tpcgi_reward_index｜上櫃公司治理指數歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpcgi_reward_index
-     ✓ 744 bytes｜list[dict]｜列數 7
+     ✓ 850 bytes｜list[dict]｜列數 8
      欄位：['Date', 'TPExCorporateGovernanceIndex', 'TPExCorporateGovernanceReturnIndex']
      首列：{"Date": "1150901", "TPExCorporateGovernanceIndex": "422.07", "TPExCorporateGovernanceReturnIndex": "641.83"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -71,10 +71,10 @@
 
   ── /tpci_reward_index｜櫃買「薪酬指數」歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpci_reward_index
-     ✓ 681 bytes｜list[dict]｜列數 7
+     ✓ 778 bytes｜list[dict]｜列數 8
      欄位：['Date', 'GTSMCompensationIndex', 'GTSMCompensationTotalReturnIndex']
      首列：{"Date": "1150901", "GTSMCompensationIndex": "232.55", "GTSMCompensationTotalReturnIndex": "341.69"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -82,10 +82,10 @@
 
   ── /tphd_index｜高殖利率指數歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tphd_index
-     ✓ 751 bytes｜list[dict]｜列數 7
+     ✓ 858 bytes｜list[dict]｜列數 8
      欄位：['Date', 'TPExHighDividendYieldIndex', 'TPExHighDividendYieldTotalReturnIndex']
      首列：{"Date": "1150901", "TPExHighDividendYieldIndex": "412.84", "TPExHighDividendYieldTotalReturnIndex": "741.59"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -93,10 +93,10 @@
 
   ── /tpex_emp88_reward_index｜櫃買「勞工就業88指數」歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpex_emp88_reward_index
-     ✓ 779 bytes｜list[dict]｜列數 7
+     ✓ 890 bytes｜list[dict]｜列數 8
      欄位：['Date', 'GretaiLaborEmployment88Index', 'GretaiLaborEmployment88TotalReturnIndex']
      首列：{"Date": "1150901", "GretaiLaborEmployment88Index": "359.46", "GretaiLaborEmployment88TotalReturnIndex": "585.09"}
-     日期欄「Date」：解得出 7/7｜唯一 7 天｜2026-09-01 ~ 2026-09-09｜最大相鄰間隔 3 天
+     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-09-01 ~ 2026-09-10｜最大相鄰間隔 3 天
      ★ 重疊區間 2026-09-01 ~ 2026-09-09｜對方 7 天／我方 7 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
@@ -127,7 +127,7 @@
          tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
        ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3863af4cb1a2ca1',t:'MTc4ODk1NzI5OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a39429e9db99f050',t:'MTc4OTEwMzQwMg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -188,14 +188,14 @@
 
 [5] 這一輪的結論
      ✓ 有 8 個候選端點回了帶日期序列的資料：
-       /tpex_daily_trading_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpex_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpex_reward_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpex50_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpcgi_reward_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpci_reward_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tphd_index：7 天｜2026-09-01 ~ 2026-09-09
-       /tpex_emp88_reward_index：7 天｜2026-09-01 ~ 2026-09-09
+       /tpex_daily_trading_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpex_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpex_reward_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpex50_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpcgi_reward_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpci_reward_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tphd_index：8 天｜2026-09-01 ~ 2026-09-10
+       /tpex_emp88_reward_index：8 天｜2026-09-01 ~ 2026-09-10
      ⇒ 下一步：把**唯一一個涵蓋期間最長、且與我方 0 差異**的接進`calendar_audit.py`，寫成有 rl.check 的比對。
      ⛔ 但先看清楚涵蓋期間：只蓋得到近一年的，就只能把那一年升級成 B，**2015~2025 仍然是 C**——⛔ 不可以整列寫成「已升 B」。
 

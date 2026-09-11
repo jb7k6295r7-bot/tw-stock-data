@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2022-03-21,00853B,32.03,31.78,0.250000,除息,,exDailyQ

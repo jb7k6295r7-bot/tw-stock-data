@@ -692,6 +692,45 @@ def main():
                     "⛔ 若幾乎全是 1 天，那它是**短期暫停**，"
                     "我方那個缺口沒被關掉。")
 
+    # ── [T12] 回測線 2026-09-09 20:14 要的兩個官方統計 ─────────────────
+    #   FMNPTK「年度收盤平均價」與 FMSRFK「月成交金額／股數」，
+    #   由市場情報分析線 19:40／19:50 實測通過（2330 十一年 11/11 全中）。
+    #   ⛔ **但我不知道它們在哪一個區段**，而 TWSE 的區段名沒有規律：
+    #     TWTAUU 在 `reducation/`（不是 change/ 也不是 exRight/），
+    #     前一輪就是因為區段名猜錯而掃不到它。
+    #   ⇒ 這一節**逐個區段試**，⛔ 猜的路徑只有回真資料才算數。
+    say("\n[T12] 回測線要的 `FMNPTK`／`FMSRFK`（⛔ 區段名我不知道，逐個試）")
+    say("     判準：stat=OK ＋ **title 要提到我要的標的與期間** ＋ 欄位逐字 ＋ 列數")
+    _T12_SEC = ("afterTrading", "exchangeReport", "zh/afterTrading", "statistics")
+    for _rep, _q in (("FMNPTK", "date=20250101&stockNo=2330"),
+                     ("FMSRFK", "date=20250101&stockNo=2330")):
+        say(f"  ── {_rep}")
+        _ok = False
+        for _sec in _T12_SEC:
+            _u = f"https://www.twse.com.tw/rwd/zh/{_sec}/{_rep}?{_q}&response=json"
+            _r, _e = B.get(_u, retries=1, timeout=45)
+            if _e:
+                say(f"     ✗ {_sec}/：{str(_e)[:80]}")
+                continue
+            try:
+                _j = json.loads(_r.decode("utf-8", "replace"))
+            except Exception:                                    # noqa: BLE001
+                say(f"     ? {_sec}/：不是 JSON｜{len(_r):,} bytes")
+                continue
+            _tb = (B._tables(_j) or [{}])[0]
+            _d2 = _tb.get("data") or []
+            _f2 = [str(x) for x in (_tb.get("fields") or [])]
+            say(f"     {'✓' if _d2 else '?'} {_sec}/｜stat={_j.get('stat')!r}"
+                f"｜title={_j.get('title')!r}｜列數 {len(_d2)}")
+            if _d2:
+                _ok = True
+                say(f"       欄位逐字：{_f2}")
+                say(f"       首列：{_d2[0]}｜末列：{_d2[-1]}")
+                break
+        if not _ok:
+            say(f"     ⇒ ⛔ 四個區段都沒回出資料。**這不代表端點不存在**"
+                "（區段名可能是第五個），⇒ 下一步請情報分析線給**逐字網址**。")
+
     say("\n── 下一步 ──")
     say("四項判準都答出來、而且參數確定有生效，才可以接成 feed 並加進")
     say("`adjust.py` 的 EVENT_DIRS 與 BOUNDS。")

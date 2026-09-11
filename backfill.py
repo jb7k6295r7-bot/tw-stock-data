@@ -26,6 +26,7 @@
 4. **休市日不是錯誤**：TWSE 回 `stat != OK` 就當休市，記錄後往下一天，不重試。
 """
 import argparse
+import csv
 import json
 import os
 import re
@@ -37,6 +38,21 @@ import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 import runlog
+# ⛔ 只借 `_lock_dir` 這一個函式。同一段邏輯抄兩份的代價今天已經付過了：
+#   `fetch.py` 修好了平盤鎖死的判斷，`backfill.py` 這份沒跟著修，
+#   而回補會把 `fix_limit.py` 修好的 50,382 列整批打回原形。
+from fetch import (_isz, _lock_dir, fill_twse_shares,
+                   parse_openapi_daily as _parse_openapi_daily,
+                   parse_twse_daily as _parse_twse_daily,
+                   _twse_tables as _fetch_tables,
+                   write_universe_day as _write_universe_day,
+                   _kind as _fetch_kind,
+                   _same_day as _fetch_same_day,
+                   _num as _fetch_num, _is_dash as _fetch_is_dash,
+                   UNIVERSE_HEADER as _UNIVERSE_HEADER,
+                   assert_row_width,           # ⭐ 唯一一份，見 fetch.py
+                   COV_HEADER as _COV_HEADER,
+                   STOCKS_HEADER as _STOCKS_HEADER)
 
 TPE = timezone(timedelta(hours=8))
 UA = "Mozilla/5.0 (compatible; tw-stock-data-backfill/1.0; +https://github.com/)"
@@ -56,12 +72,29 @@ LEGACY_COVERAGE = os.path.join(UNI_DIR, "_coverage.csv")     # 拆檔前的舊�
 DAILY_COVERAGE = os.path.join(UNI_DIR, "_coverage_daily.csv")  # fetch.py 寫的，只讀
 PROBE = os.path.join(UNI_DIR, "_backfill_probe.txt")
 
-HEADER = ["key", "date", "stock_id", "name", "market",
-          "open", "high", "low", "close", "volume", "amount", "change", "limit",
-          "shares", "transactions", "price_basis"]
-# ★ 欄位必須與 fetch.py 的 UNIVERSE_HEADER 逐字一致——兩邊產出同一批檔案，
-#   格式一分岔，之後建 DB 就會有一半的日子欄位對不上。
-COV_HEADER = ["date", "twse", "tpex", "emerging", "total", "note"]
+# ⛔⛔ 2026-09-10：這裡原本是**抄一份**的欄位清單，旁邊寫著
+#   「必須與 fetch.py 的 UNIVERSE_HEADER 逐字一致」——⚠ 而它已經不一致了。
+#   `fetch.py` 09-10 加了 `last_price`（第 17 欄），這一份停在 16 欄。
+#
+#   ⭐ 而後果**不是少寫一欄**（列是 `parse_*` 產的，那兩支早就 alias 過去了，
+#   寫檔的 `write_day` 也是 fetch 那一份）——後果在 `done_days()`：
+#
+#       want = ",".join(HEADER)   ⇒ 16 欄的字串
+#       檔案表頭 17 欄 ⇒ head != want ⇒ 判成「舊版欄位」
+#
+#   ⛔ **判準整個反過來了**：09-10 之後寫的（正確的）每一天被判成要重補，
+#   而 09-10 之前的（真正的舊格式）反而被判成「現行版本、可以跳過」。
+#   ⚠ 它不會報錯、不會少資料，只會讓長工去重跑一批不必跑的日子，
+#   同時把真正該重跑的那些**永遠跳過**。
+#
+#   ⇒ CLAUDE.md 第四點五：**同一件事只准有一份實作。**
+#   ⚠ 而這一份是**常數**不是函式 ⇒ `selftest_no_dup.py`（比函式本體的 AST）
+#   看不到它。⇒ 另立 `selftest_header_sync.py` 釘住每一份「欄位契約」。
+HEADER = _UNIVERSE_HEADER
+# ⛔ 第十二份（`selftest_no_dup.scan_consts` 抓到）：與 `fetch.COV_HEADER`
+#   逐字相同。⚠ **兩支都在寫同一個 `_coverage_daily.csv`** ⇒ 走岔的那天，
+#   同一個檔會出現兩種表頭，⛔ 而先寫的那一份不會有人回頭看。
+COV_HEADER = _COV_HEADER
 
 SLEEP = 1.5
 
@@ -271,126 +304,103 @@ def preflight(url, what):
 # fetch.py 是每日腳本，這支是一次性工具；讓它們各自獨立，
 # 改一邊不會意外弄壞另一邊。**兩邊的欄位順序必須一致**（HEADER 就是契約）。
 
-def _num(v):
-    if v is None:
-        return ""
-    t = str(v).replace(",", "").replace("+", "").replace("%", "").strip()
-    if t in ("", "-", "--", "X", "N/A", "null", "None"):
-        return ""
-    try:
-        float(t)
-    except ValueError:
-        return ""
-    return t
+# ⭐ 2026-09-10：官方的「這格沒有值」不是一種寫法，是**一族**。
+#   TWSE 寫 `--`、TPEx 同一件事寫 `----`（情報分析線 2026-09-10 實測回報）。
+#   ⛔ 舊版只列舉了 `"-"`／`"--"`，`----` 是靠底下 `float()` 失敗**順便**被擋掉的
+#     ——擋得住，但沒有人知道它在擋這個，也沒有人測過它。
+#   ⚠ 這種「意外免疫」的代價已經看得到：情報分析線自己那一版把 `----` 轉成 NaN，
+#     `JSON.stringify(NaN)` 印出來是 `null`，於是「我方 null、官方 null」
+#     長得一模一樣卻被判成不符，差一點被回報成資料瑕疵。
+#   ⇒ 改成明示規則：**整串都是破折號就是空值**，而且測它（selftest_num.py）。
+# ⚠ 只認「整串」——`-3.40` 的負號不在此列（它不是整串破折號）。
+_DASHES = "-\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uff0d\u2500\u30fc"
 
 
-def _isz(v):
-    """_num() 的輸出是字串，"0.00" 是 truthy——要判零一律走這支。"""
-    try:
-        return float(v) == 0.0
-    except (TypeError, ValueError):
-        return True
+_is_dash = _fetch_is_dash
 
 
-def _kind(code):
-    c = str(code)
-    if len(c) == 6 and c[0] == "7":
-        return "warrant"
-    if c.startswith("00"):
-        return "etf"
-    if len(c) == 5:
-        return "special"
-    if len(c) == 6:
-        return "other"
-    return "stock"
+# ⛔ 最後一份：`_num` 與 `fetch._num` 逐字相同。
+#   ⚠ 破折號那條規則 2026-09-10 才改成明示的（`--` 與 `----`），
+#     ⭐ 改的時候兩邊都改了——但那是因為當時剛好想起來，⛔ 不是因為有東西擋著。
+_num = _fetch_num
 
 
-def _tables(d):
-    if not isinstance(d, dict):
-        return []
-    if isinstance(d.get("tables"), list):
-        return [t for t in d["tables"] if isinstance(t, dict)]
-    if d.get("fields") and d.get("data"):
-        return [{"title": d.get("title", ""), "fields": d["fields"], "data": d["data"]}]
-    # ★ 第三種形狀：**編號鍵**（`fields1`/`data1` … `fields9`/`data9`）。
-    #   TWSE 舊版 MI_INDEX 就是這樣回的——一個回應裡塞好幾張表，
-    #   用序號區分而不是放進 tables 陣列。
-    #   2026-09-03 實測：2015 年整年回補時 twse 每一天都「失敗」，
-    #   而 2026-08-28 的同一條端點卻正常，差別只在日期 → 高度懷疑是這個。
-    #   不支援它的話，症狀是「連得上、stat=OK、解析出 0 列」，
-    #   看起來跟「那天沒有資料」一模一樣。
-    out = []
-    for k in sorted(d.keys()):
-        if not k.startswith("fields"):
-            continue
-        suffix = k[len("fields"):]
-        dk = "data" + suffix
-        if isinstance(d.get(k), list) and isinstance(d.get(dk), list):
-            out.append({"title": d.get("title" + suffix, d.get("title", "")),
-                        "fields": d[k], "data": d[dk]})
-    if out:
-        return out
-    return []
+# ⛔ 第六份：`_kind` 兩邊逐字相同（差別只有 fetch 那份多一個從來沒用到的 `name`）。
+#   ⚠ 這一對還沒走岔——⛔ 但「還沒」不是判準。
+_kind = _fetch_kind
 
 
-def _same_day(d, day):
-    """回應自己宣告的日期，是不是我們要的那一天。→ (是否相符, 它說的日期)
+def describe_response(d, want=None):
+    """把官方回應裡**我方平常丟掉的那些鍵**攤開來講。→ list[str]
 
-    ★ 這是回補的最後一道防線。端點「不吃日期參數」或「查無就回最近一天」時，
-      HTTP 200、stat=OK、欄位全對、每個數字都是真的——**只是屬於別的日子**。
-      2026-09-03 就是這樣把 2026-09-02 的資料寫成 2015-01-01。
-      沒有這個檢查，錯誤在檔案裡完全看不出來。
+    ## ⛔ 為什麼這個要有一個共用函式
+
+    使用者 2026-09-10：「官方回應裡有 `notes` 欄，我一直沒讀。」
+    查完發現**我方完全沒讀**：`_tables()` 只取 `title`／`fields`／`data`，
+    其餘（`stat`／`date`／`notes`／`hints`／`params`／`total`…）
+    **全部丟掉，而且丟的時候沒有任何紀錄**——連「有這些鍵」都不知道。
+
+    ⭐ 而那些鍵至少有三個用處，每一個都對應一件我方**手工做過**的事：
+
+        total   官方自己說有幾列 ⇒ **免費的、每次請求的完整性斷言**
+                （我方為此另外造過 N₁、Σamount÷大盤、六張清單差集…）
+        params  端點把收到的參數**回顯** ⇒ 「參數有沒有生效」的直接檢查
+                （我方為此在三支程式裡各寫了一道「回應要講出我請求的那一天」）
+        notes   符號說明、涵蓋起始年、單位 ⇒ 可能是我方某些**推論的權威出處**
+
+    ⚠ 使用者同時定了一條規矩：
+    **「以後新端點第一件事就是把 `notes`／`hints`／`title` 印出來，再開始比對。」**
+    ⇒ 這個函式就是那條規矩的執行者。新端點的探針一律先呼叫它。
+      ⛔ 不要各自抄一份——同一段邏輯抄兩份今晚已經害過一次。
+
+    `want`：我送出去的參數 dict。給了就順便對 `params` 有沒有被換掉。
     """
-    want = day.replace("-", "")
     if not isinstance(d, dict):
-        return True, ""            # 無從判斷就不擋，交給呼叫端的其他檢查
-
-    def _norm(v):
-        """抽出字串裡**第一個**日期，正規化成西元 YYYYMMDD；抽不到回空字串。
-
-        ★ 不可以用「把所有數字串起來再取前 8 碼」——
-          `title` 長成「104年07月16日 至 104年07月16日」，
-          串起來會變成 `10407161040716`，取前 8 碼得到 `10407161`，是垃圾。
-        """
-        t = str(v)
-        m = re.search(r"(\d{2,3})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日", t)
-        if m:
-            y, mo, dd = int(m.group(1)) + 1911, int(m.group(2)), int(m.group(3))
-            return f"{y:04d}{mo:02d}{dd:02d}"
-        m = re.search(r"(?<!\d)(\d{8})(?!\d)", t)          # 西元 20150716
-        if m:
-            return m.group(1)
-        m = re.search(r"(?<!\d)(\d{7})(?!\d)", t)          # 民國 1040716
-        if m:
-            g = m.group(1)
-            return f"{int(g[:3]) + 1911}{g[3:]}"
-        return ""
-
-    # ★★ 2026-09-04：**只看 `date` 會被參數回音打穿。**
-    #   TWSE `TWT49U` 不吃 `date`（它要的是 startDate/endDate），
-    #   但會把收到的 `date` **原樣放回 response**——於是 `date=20150123` 通過檢查，
-    #   實際回的卻是 `strDate:20260907` 那天的四列。
-    #   結果是 2026-09-07 的資料被寫進 2015 年的每一個日期檔，
-    #   HTTP 200、stat=OK、欄位全對、數字全是真的，**只是屬於別的年代**。
-    #   → 所以要**看它自己宣告服務了哪一天**（title／strDate／endDate），
-    #     而不是只看它把我們的參數抄回來的那一欄。
-    #     任何一個自述欄位與 want 矛盾，就判定不符。
-    said, mism = [], []
-    for k in ("strDate", "endDate", "title", "date", "Date"):
-        v = d.get(k)
-        if v in (None, ""):
+        return [f"⚠ 頂層不是 dict，是 {type(d).__name__}"]
+    tabs = _tables(d)
+    used = {"tables", "fields", "data", "title"}
+    used |= {k for k in d if k.startswith(("fields", "data", "title"))}
+    dropped = [k for k in sorted(d) if k not in used]
+    out = [f"頂層鍵 {sorted(d)}",
+           f"⭐ 平常被丟掉的鍵：{dropped}" if dropped else "（沒有被丟掉的鍵）"]
+    for k in ("title", "notes", "hints"):
+        if k in d:
+            v = d[k]
+            if isinstance(v, (list, tuple)):
+                out.append(f"  ── {k}（{len(v)} 項）")
+                out += [f"     {str(x)[:220]}" for x in v[:8]]
+            else:
+                out.append(f"  ── {k}：{str(v)[:300]}")
+    for k in dropped:
+        if k in ("title", "notes", "hints"):
             continue
-        n = _norm(v)
-        if not n:
-            continue
-        said.append(f"{k}={v}")
-        if n != want:
-            mism.append(f"{k}={v}")
-    if mism:
-        return False, "；".join(mism)
-    if not said:
-        return True, ""
-    return True, "；".join(said)
+        v = d[k]
+        out.append(f"  ── {k}：{json.dumps(v, ensure_ascii=False)[:260]}"
+                   if isinstance(v, (dict, list)) else f"  ── {k}：{str(v)[:260]}")
+    n_data = sum(len(t.get("data") or []) for t in tabs)
+    if d.get("total") is not None:
+        same = str(d["total"]).strip() == str(n_data)
+        out.append(f"⭐ total={d['total']}｜解析出的列數={n_data}　"
+                   + ("✓ 一致" if same else "⚠ **對不上** ⇒ 這一趟少收了東西"))
+    if want and isinstance(d.get("params"), dict):
+        bad = {k: (v, d["params"].get(k)) for k, v in want.items()
+               if k in d["params"] and str(d["params"][k]) != str(v)}
+        miss = [k for k in want if k not in d["params"]]
+        out.append("⭐ params 對帳："
+                   + ("✓ 我送的參數都被原樣回顯" if not bad and not miss else
+                      f"⚠ **被換掉的 {bad}**｜沒回顯的 {miss}"
+                      "　⇒ 被換掉＝那個參數是假的（TWTAWU 的 `date=` 就是這樣）"))
+    return out
+
+
+# ⛔ 同上：`_tables` 與 `fetch._twse_tables` 原本是**逐字相同的兩份**。
+#   這一對還沒走岔，⚠ 但「還沒」不是判準——上面那四次也都有「還沒」的時候。
+#   ⇒ 一併收成一份。（`feeds.py` 用的是 `B._tables`，這個名字要留著。）
+_tables = _fetch_tables
+
+
+# ⛔ 第九份：`_same_day` 搬到 `fetch.py`（每日那條路更需要它，見那邊的說明）。
+_same_day = _fetch_same_day
 
 
 def _idx(fields, *kws):
@@ -409,121 +419,36 @@ def _idx_any(fields, *options):
     return None
 
 
-def parse_twse(d, day, market="twse"):
-    for t in _tables(d):
-        fields = [str(x) for x in (t.get("fields") or [])]
-        # 找表的條件放寬到「有代號欄 ＋ 有收盤欄」——TPEx 用「代號」，TWSE 用「證券代號」，
-        # 寫死其中一種會找不到另一種（2026-09-02 probe 診斷發現）。
-        if not (any("代號" in f for f in fields) and any("收盤" in f for f in fields)):
-            continue
-        i_code = _idx_any(fields, "證券代號", "股票代號", "代號")
-        i_name = _idx_any(fields, "證券名稱", "股票名稱", "名稱")
-        i_o, i_h = _idx_any(fields, "開盤"), _idx_any(fields, "最高")
-        i_l, i_c = _idx_any(fields, "最低"), _idx_any(fields, "收盤")
-        i_v, i_a = _idx_any(fields, "成交股數"), _idx_any(fields, "成交金額")
-        i_sh = _idx_any(fields, "發行股數")
-        i_tx = _idx_any(fields, "成交筆數")
-        i_chg = _idx_any(fields, "漲跌價差")
-        i_sign = _idx_any(fields, ("漲跌", "+"), "漲跌(+/-)", "漲跌")
-        if any(x is None for x in (i_code, i_o, i_h, i_l, i_c)):
-            return [], f"欄位對不上：{fields}"
-        raw = t.get("data") or []
-        # ★ 非交易日 TPEx 回的是「欄位齊全但一列資料都沒有」的空表，
-        #   **不是** stat=休市。原本一律當成失敗，結果每個假日都觸發退避，
-        #   冷卻一路爬到 300 秒（2026-09-03 掃 2015 週六時實測）。
-        #   → 原始資料列數為 0 ＝ 休市；有資料卻解析不出來才是真的故障。
-        if not raw:
-            return [], "no_rows:空表（休市或無成交）"
-        out = []
-        for r in raw:
-            if not r or len(r) <= i_c:
-                continue
-            code = str(r[i_code]).strip()
-            if not code or not code[0].isdigit():
-                continue
-            o, h, l, c = _num(r[i_o]), _num(r[i_h]), _num(r[i_l]), _num(r[i_c])
-            if not c:
-                continue
-            # 漲跌有兩種寫法：TWSE 拆成「方向欄（HTML 的 +/-）＋ 漲跌價差」，
-            # TPEx 則是單一「漲跌」欄、正負號直接寫在值裡。兩種都要吃。
-            if i_chg is not None:
-                sign = -1 if (i_sign is not None and "-" in str(r[i_sign])) else 1
-                chg = _num(r[i_chg])
-                chg = str(sign * float(chg)) if chg else ""
-            elif i_sign is not None:
-                # ★ 這一欄的正負號直接寫在值裡（"+10.00" / "-5.50"），
-                #   而 _num() 只清掉 "+"、**保留 "-"**——所以直接用就好。
-                #   先前多做一次 -1 造成負負得正，跌停被標成漲停（2026-09-02 測到）。
-                chg = _num(r[i_sign])
-            else:
-                chg = ""
-            lim = ""
-            if o and h and l and c and o == h == l == c:
-                lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
-            out.append([f"{day}_{code}", day, code,
-                        str(r[i_name]).strip() if i_name is not None else "", market,
-                        o, h, l, c,
-                        _num(r[i_v]) if i_v is not None else "",
-                        _num(r[i_a]) if i_a is not None else "", chg, lim,
-                        _num(r[i_sh]) if i_sh is not None else "",
-                        _num(r[i_tx]) if i_tx is not None else "",
-                        ""])          # price_basis：上市／上櫃是收盤價，留空
-        return out, f"欄位={fields}"
-    return [], "找不到含『證券代號』與『收盤』的表"
-
-
-def parse_openapi(rows, day, market):
-    if isinstance(rows, list) and not rows:
-        return [], "no_rows:空 list（休市或無成交）"
-    if not isinstance(rows, list):
-        return [], "回傳不是 list"
-    keys = list(rows[0].keys())
-
-    def pick(*names):
-        for n in names:
-            for k in keys:
-                if n.lower() == k.lower() or n in k:
-                    return k
-        return None
-
-    k_code = pick("SecuritiesCompanyCode", "Code", "證券代號", "股票代號")
-    k_name = pick("CompanyName", "Name", "證券名稱")
-    k_c = pick("Close", "LatestPrice", "收盤")
-    k_o, k_h, k_l = pick("Open", "開盤"), pick("High", "Highest", "最高"), pick("Low", "Lowest", "最低")
-    k_v = pick("TradingShares", "TransactionVolume", "成交股數")
-    k_a = pick("TransactionAmount", "成交金額")
-    k_chg = pick("Change", "漲跌")
-
-    def exact(*names):
-        """完全相等才算。pick() 是「包含」比對，`pick("Average")` 會先撞上
-        `PreviousAveragePrice`，把昨天的價格當成今天的收盤——靜默且每列都錯。"""
-        for n in names:
-            for k in keys:
-                if str(k).strip() == n:
-                    return k
-        return None
-
-    # 成交筆數不可用 pick("Transaction")，會撞上 TransactionVolume（成交量）
-    k_tx = exact("成交筆數", "NumberOfTransactions", "Transactions", "Transaction")
-    if not (k_code and k_c):
-        return [], f"欄位對不上：{keys}"
-    out = []
-    for r in rows:
-        code = str(r.get(k_code, "")).strip()
-        if not code or not code[0].isdigit():
-            continue
-        o, h, l, c = (_num(r.get(k_o)), _num(r.get(k_h)),
-                      _num(r.get(k_l)), _num(r.get(k_c)))
-        if not c:
-            continue
-        chg = _num(r.get(k_chg))
-        lim = ""
-        if o and h and l and c and o == h == l == c:
-            lim = "up" if (chg and float(chg) > 0) else ("down" if chg else "flat")
-        out.append([f"{day}_{code}", day, code, str(r.get(k_name, "")).strip(), market,
-                    o, h, l, c, _num(r.get(k_v)), _num(r.get(k_a)), chg, lim, "",
-                    _num(r.get(k_tx)) if k_tx else "", ""])
-    return out, f"欄位={keys}"
+# ══════════════════════════════════════════════════════════════════
+# ⛔⛔⛔ 2026-09-10：這裡本來有**兩份自己的 parser**，現在改成指向 `fetch.py`。
+#
+# 原本的理由寫在檔頭：「刻意複製而不 import，讓它們各自獨立，
+# 改一邊不會意外弄壞另一邊。」
+# ⚠ **那個理由被現實推翻了四次，而且四次都是同一個方向。**
+#   真正發生的從來不是「改一邊弄壞另一邊」，而是
+#   **「改一邊，另一邊沒跟上，而且沒有人會發現」**：
+#
+#     ① `limit` 平盤被判跌停   fetch 修了、backfill.parse_twse 沒修
+#                              ⇒ 修好的那份天天跑、沒修的只有回補才跑
+#     ② 「甲」保留無成交列      backfill.parse_twse 修了、fetch 沒修
+#                              ⇒ 回補補回十一年、每日繼續挖新洞
+#     ③ 興櫃 0 價的 `_isz`      esb 逐月檔有、fetch 的日檔沒有
+#                              ⇒ 52 列 `close=0` 被寫進去
+#     ⭐ ④ `backfill.parse_openapi`（就是這裡）——**三個都中**：
+#          `limit` 是最原始的壞版本（`"0.0"` 是 truthy ⇒ 平盤判跌停）、
+#          還在 `if not c: continue`、也沒有 `_isz`。
+#          ⚠ 而它是**興櫃回補**與任何回 JSON list 的端點會走的那一條。
+#
+# ⇒ 判準改成：**同一件事只准有一份實作。**
+#   ⛔ 「兩邊各留一份、記得同步」已經證明做不到——四次全敗。
+#   ⚠ 而兩份長得幾乎一樣的程式，肉眼 review 看不出誰少了哪一行。
+#
+# ★ 欄位順序（`HEADER`）仍然是契約，兩邊共用同一份輸出 ⇒ 天生一致。
+# ★ `selftest_parse_daily.py` ⑨ 會拿一整批不同形狀的回應餵兩邊、**逐格比對**，
+#   ⛔ 那才是這條規矩的守門——別名本身可以被下一個人拆掉。
+# ══════════════════════════════════════════════════════════════════
+parse_twse = _parse_twse_daily
+parse_openapi = _parse_openapi_daily
 
 
 def fetch_day_market(day, market, urls, probe_lines=None):
@@ -604,17 +529,29 @@ def fetch_day_market(day, market, urls, probe_lines=None):
     return [], f"all_failed:{last_err[:80]}"
 
 
-def write_day(day, lines):
-    kept = [r for r in lines if _kind(r[2]) != "warrant"]
-    if not kept:
-        return 0
-    os.makedirs(DAILY_DIR, exist_ok=True)
-    path = os.path.join(DAILY_DIR, f"{day}.csv")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(",".join(HEADER) + "\n")
-        for r in sorted(kept, key=lambda r: r[2]):
-            f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
-    return len(kept)
+# ⛔ 第五份拷貝也收掉了：`write_day` 與 `fetch.write_universe_day` 是同一件事，
+#   而 2026-09-10 的實情是**只有這一份有「保留沒抓的市場」與「濾掉權證」**，
+#   每日那一份是整份覆蓋 ⇒ 同一天跑第二次而某個市場失敗，那個市場的列會無聲消失。
+#   ⇒ 實作留在 `fetch.py`（每日那條路天天跑，放那裡比較不會被忘記），這裡指過去。
+write_day = _write_universe_day
+
+
+def _gateway_blocked(note):
+    """這一趟的失敗是不是**我方閘道**擋的（不是交易所擋的）？
+
+    ⛔ 2026-09-10 實測代價：我在開發容器裡跑了一次 `--run` 當測試，
+      容器對交易所是 `Tunnel connection failed: 403 Forbidden`——
+      那是**我方 proxy 對 CONNECT 回的 403**，不是交易所回的。
+      結果它把一列 `2026-09-08,0,0,0,0,twse:失敗(...)` 寫進
+      `_coverage_backfill.csv`，而 `done_days()` 會讀那個 note ⇒
+      那一天從此被標成「失敗過」。**假資料，而且會影響之後要不要重抓。**
+
+    ⭐ 這兩種 403 的意思完全相反：
+      對方擋 ⇒ Actions 上也會擋；**我方閘道擋 ⇒ Actions 上是通的**。
+    ⇒ 我方閘道擋下的那一趟**什麼都不知道**，⛔ 不可以寫成「那天抓失敗」。
+    """
+    t = str(note)
+    return ("Tunnel connection failed" in t) or ("connect_rejected" in t)
 
 
 def append_coverage(day, per_market, note):
@@ -622,7 +559,14 @@ def append_coverage(day, per_market, note):
 
     某一天只抓到上市、沒抓到上櫃，如果不標，回測時會把「沒抓到」當成
     「上櫃股當天全部沒交易」——那是**靜默失真**，比整天缺資料還糟。
+
+    ⛔ 但**我方閘道擋下來的那一趟不寫**（見 `_gateway_blocked`）：
+      那一趟對「那天有沒有資料」一無所知，寫進去就是假紀錄。
     """
+    if sum(per_market.values()) == 0 and _gateway_blocked(note):
+        print(f"[backfill] ⚠ {day}：**我方閘道擋下 CONNECT**（不是交易所擋的）"
+              "⇒ 這一趟什麼都沒問到，⛔ 不寫 coverage。要在 Actions 上跑。")
+        return
     os.makedirs(UNI_DIR, exist_ok=True)
     # ★ 以日期為主鍵合併後整份重寫，**不可以用 "a" 純追加**。
     #   2026-09-03 實測：同一天重跑三次就留下三列（2015-01-01 出現 3 次），
@@ -865,7 +809,9 @@ def cmd_esb(args):
 
 
 META_DIR = os.path.join(_ROOT, "meta")
-STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
+# ⛔ 第十三份：與 `fetch.STOCKS_HEADER` 逐字相同，而且兩支都在寫
+#   `data/meta/stocks.csv`（第五點：誰是這個目錄的唯一寫入者）。
+STOCKS_HEADER = _STOCKS_HEADER
 
 
 INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total"]
@@ -1007,11 +953,18 @@ def cmd_inst(args):
     if os.path.isdir(INST_DIR):
         done = {n[:-4] for n in os.listdir(INST_DIR) if n.endswith(".csv")}
     days, how = _inst_days(args)
-    days = [d for d in days if d not in done]
+    # ⛔⛔ 2026-09-09 修：這一行本來是 `if d not in done`，**完全沒看 `args.force`**，
+    #   而 `--force` 這個參數是有定義的（argparse 收得下、help 寫著「已存在的日期也重抓」）
+    #   ⇒ 打了 `--inst --force` 會**安靜地什麼都不做**，log 還印「待處理 0 天」，
+    #     看起來像「本來就沒事要做」。
+    #   ⚠ 這正是今天一直在抓的那一族：**參數存在不等於它有作用。**
+    #   ★ 為什麼現在需要它：官方會事後修訂三大法人的投信欄（實測 29 筆／3 天），
+    #     不重抓的話那些錯值永久留著，而且列數、內部 total 都自洽 ⇒ 看不出來。
+    days = [d for d in days if args.force or d not in done]
     if args.limit:
         days = days[:args.limit]
     print(f"[inst] {args.start} ~ {args.end}｜{how}｜待處理 {len(days)} 天"
-          f"（已存在 {len(done)} 天，略過）")
+          f"（已存在 {len(done)} 天，{'照樣重抓（--force）' if args.force else '略過'}）")
     known = _known_codes()
     if not known:
         print("[inst] 找不到 data/meta/stocks.csv，先跑 fetch.py 或 --rebuild-meta",
@@ -1265,6 +1218,47 @@ def cmd_run(args):
         SLEEP = args.sleep
     markets = [m.strip() for m in args.markets.split(",") if m.strip()]
     skip = done_days() if not args.force else set()
+    # ★★ 2026-09-10「甲」的回補要能**續跑**。
+    #   `--force` 是「全部重抓」：2,848 天 × 2 市場 × 5 秒 ≈ 7.9 小時，
+    #   而 job 上限 350 分鐘 ⇒ 被砍在半路的話**下一趟又從第一天重來**，
+    #   永遠補不完，而且每一趟的 log 都很正常。
+    #
+    #   ⭐ 續跑的判準用**資料自己**：「這一天的日檔裡有沒有任何一列
+    #     `price_basis == '無成交'`」——那正是這次回補要補進去的東西
+    #     ⇒ **續跑判準就是成功判準**，不需要另一本台帳，也就不會台帳與資料不一致。
+    #   ⚠ 這個判準成立的前提是「每一天至少漏一列」，而那是量過的：
+    #     `_missing_rows_by_day.csv` 2,848 天裡 **missing=0 的有 0 天**。
+    #     ⛔ 如果哪天這個前提不成立，那一天會被每趟重抓——白費，但不會出錯。
+    if getattr(args, "need_notrade", False):
+        # ⚠ 判準要**同時**涵蓋這一趟要補的兩件事，少一件就會留下靜默的洞：
+        #     ① 無成交的列（`price_basis == '無成交'`）
+        #     ② 上市的發行股數（十一年來全期是空的）
+        #   ⛔ 只看 ① 的話：某天補到了無成交列、但 MI_QFIIS 那一發失敗
+        #     ⇒ 那天從此被跳過，`shares` 永遠是空的，而且看不出來。
+        has = set()
+        if os.path.isdir(DAILY_DIR):
+            for n in os.listdir(DAILY_DIR):
+                if not n.endswith(".csv"):
+                    continue
+                try:
+                    with open(os.path.join(DAILY_DIR, n), encoding="utf-8") as f:
+                        rd = csv.DictReader(f)
+                        notrade = False
+                        tw = tw_sh = 0
+                        for r in rd:
+                            if r.get("price_basis") == "無成交":
+                                notrade = True
+                            if r.get("market") == "twse":
+                                tw += 1
+                                if (r.get("shares") or "").strip():
+                                    tw_sh += 1
+                        # 沒有上市列的日子（例如只有上櫃資料的舊檔）不要求 ②
+                        if notrade and (tw == 0 or tw_sh > 0):
+                            has.add(n[:-4])
+                except OSError:
+                    pass
+        skip = has
+        print(f"[backfill] --need-notrade：已經有『無成交』列的 {len(has)} 天跳過")
     days = [d for d in daterange(args.start, args.end, args.saturdays) if d not in skip]
     if args.limit:
         days = days[:args.limit]
@@ -1305,6 +1299,16 @@ def cmd_run(args):
             # 某個市場整條失敗多半是被限流 → 多等一下再打下一個，
             # 否則接下來的日子會連鎖失敗（2026-09-03 2015 回補實測到 twse 失敗）
             time.sleep(SLEEP * 4 if str(src).startswith("all_failed") else SLEEP)
+        # ⭐ 上市的發行股數要另外補一發：`MI_INDEX` 沒有那一欄，
+        #   ⇒ `data/universe/daily/` 的 twse 列 `shares` **十一年來全期是空的**
+        #   （2026-09-10 實測：2015／2020／2026 三個抽樣日都是 100.0% 空）。
+        #   ⛔ 補不到不擋這一天，但 note 一定要帶出去，
+        #     否則「補不到」會被讀成「本來就沒有上市股」。
+        if all_lines:
+            n_sh, note_sh = fill_twse_shares(all_lines, day)
+            if n_sh or str(note_sh).startswith("✗"):
+                notes.append(f"股數:{note_sh}")
+            time.sleep(SLEEP)
         n = write_day(day, all_lines)
         note = ";".join(notes) or "ok"
         append_coverage(day, per, note)
@@ -1338,6 +1342,9 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    ap.add_argument("--need-notrade", action="store_true",
+                    help="只重抓「檔案裡還沒有任何『無成交』列」的日期"
+                         "（2026-09-10「甲」的回補用，可續跑）")
     # ★ --inst 已改照交易日曆走，不看這個旗標；--run 仍然需要它
     #   （--run 產生的正是那份日曆，不能拿日曆當自己的輸入）。
     ap.add_argument("--saturdays", action="store_true",

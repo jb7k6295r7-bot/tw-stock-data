@@ -1,4 +1,4 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2017-08-24,0.93600000,1.07191334,8.75,8.19,息,exright
-2021-04-15,1.16774194,1.14520656,13.95,16.29,彌補虧損,reduce
-2023-08-23,0.98070175,0.98070175,11.4,11.18,息,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2017-08-24,0.93600000,,1.07191334,8.75,8.19,息,exright
+2021-04-15,1.16774194,,1.14520656,13.95,16.29,彌補虧損,reduce
+2023-08-23,0.98070175,,0.98070175,11.4,11.18,息,exright

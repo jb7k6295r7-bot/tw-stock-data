@@ -32,6 +32,8 @@ import io
 import json
 import os
 import sys
+
+import runlog
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
@@ -275,7 +277,22 @@ NOT_YET = [
     "那會每年 12 月底固定紅一次，然後大家學會忽略它；但那時"
     "**也不可以把「不在清單裡」當成「開盤」**。"
     "⚠ 這一條解的是**國定假日**那一半；颱風臨時休市走 `holiday.py` 的單向偵測。",
-    "上櫃的交易日曆**沒有獨立的外部來源**（FMTQIK 只有上市）。"
+    "⭐ **翻案（2026-09-10）：上櫃交易日曆有官方歷史來源，我方原本那句是錯的。**"
+    "市場情報分析線照全站選單找到櫃買的 `FMTQIK` 對應品："
+    "`afterTrading/tradingIndex?date=<民國年/月>&response=json`，"
+    "**一次回一個月的逐日列，至少回到 2011-01** ⇒ 2015-01-05～2026-08-31 完全涵蓋。"
+    "⭐ 而且 104/01 的首列就是 104/01/05，自動證實 01-01 與 01-02 不是交易日，"
+    "與我方日曆起點一致。"
+    "⛔ **這一支的越界是「靜默回本月」**：97/01 與 94/01 都回 `stat:ok`，"
+    "但 `date` 回 20260901、內容是當月的 7 列 ⇒ "
+    "**必須檢查回應的 `date` 欄，不可以只看 `stat` 與列數**。"
+    "⚠ 兩件不要假設：① 欄名在期間內改過（103/12 以前「成交股數（仟股）」、"
+    "114/12 已是「成交張數」，**切換點未測**）；"
+    "② **口徑未對**——同日這支給 832,664 張，`dailyQuotes` 表頭是 832,712,141 股，"
+    "兩者不相等 ⇒ **判「哪一天有列」是安全的；拿它的金額當大盤成交值要先對口徑**。"
+    "⇒ 下一步（還沒做的）：接成 `otc_calendar.py` 的歷史回補模式。"
+    "以下是翻案前的紀錄，留著是因為它就是那個錯的形狀："
+    "「上櫃的交易日曆**沒有獨立的外部來源**（FMTQIK 只有上市）。」"
     "⚠ 2026-09-09 做過一次全庫自我一致性檢查：2,847 個日檔裡"
     "「出現在日檔卻不在日曆」**0 天**、反方向也 0 天，週六 8 天兩邊一致，"
     "而且**不是循環自證**（backfill 逐平日迭代、與日曆無關）。"
@@ -290,8 +307,8 @@ NOT_YET = [
 ]
 
 
-def now_tpe():
-    return datetime.now(TPE)
+# ⭐ 這裡原本自己寫了一份。⛔ 同一件事只准有一份實作（四點五）⇒ 指過去。
+now_tpe = runlog.now_tpe
 
 
 def _rows(path):
@@ -303,6 +320,51 @@ def _rows(path):
 
 def _count_dir(d, pat="*.csv"):
     return len(glob.glob(os.path.join(d, pat))) if os.path.isdir(d) else 0
+
+
+def universe_dirs(uni):
+    """→ [(目錄名, 檔數, 最早, 最晚, 是否逐日)]，⛔ **自動列舉，不是寫死清單**。
+
+    ## ⛔⛔ 為什麼一定要自動列舉（2026-09-10）
+
+    `_db_status.md` 是契約第一句指定的「**回答『有什麼』**」的那份文件。
+    ⚠ 而它原本只列**寫死的 6 層** ⇒ 實測 `data/universe/` 有 **21 個目錄**，
+      而文件裡只提到 **3 個**。
+    ⇒ ⭐ `margin`／`per`／`inst`／`exright`／`reduce`／`breadth`／`sbl`／`tib`…
+      **全部不在裡面**——讀的人照契約去查「有什麼」，會查不到它們。
+
+    ⛔ 而這是**第三次**同一個形狀：寫死一份清單、新增東西時要記得同步。
+      前兩次是 `push_data.sh` 的 mode 白名單（22 分鐘的資料靜靜丟掉）
+      與 `feeds.yml` 的 feed 選單（新 feed 選不到）。
+    ⭐ 那兩次的修法都是**把清單反過來或拿掉**——這裡拿掉。
+    """
+    out = []
+    if not os.path.isdir(uni):
+        return out
+    for name in sorted(os.listdir(uni)):
+        d = os.path.join(uni, name)
+        if not os.path.isdir(d):
+            continue
+        names = [os.path.basename(x)[:-4]
+                 for x in glob.glob(os.path.join(d, "*.csv"))]
+        # ⚠ 第三種形狀：**巢狀**（`capital/` 底下是一層子目錄才是 CSV）
+        #   ⛔ 只看第一層會報「0 檔」——而 0 在這份文件裡會被讀成「這一層是空的」，
+        #     ⭐ 那正好是這份文件最不該產生的誤解。
+        nested = False
+        if not names:
+            deep = glob.glob(os.path.join(d, "*", "*.csv"))
+            if deep:
+                nested = True
+                names = [os.path.basename(x)[:-4] for x in deep]
+        # ⚠ 兩種形狀：**逐日**（檔名是日期）與**逐檔**（檔名是代號，如 esb）
+        #   ⛔ 混在一起報「區間」會把代號當成日期排序。
+        days = sorted(x for x in names if len(x) == 10 and x[4] == "-")
+        out.append((name, len(names),
+                    days[0] if days else "—", days[-1] if days else "—",
+                    "逐日" if days else ("⚠ 巢狀（子目錄底下才是 CSV）"
+                                        if nested else
+                                        "⚠ 逐檔（檔名是代號，⛔ 不是日期）")))
+    return out
 
 
 def _span(rows, key):
@@ -329,6 +391,27 @@ def section_layers(out):
         mark = "" if n >= exp else f" ★ 少於預期 {exp}"
         out.append(f"| {label} | {n} 檔 | — | {exp}+{mark} |")
 
+    # ══════════════════════════════════════════════════════════
+    # ⭐⭐ `data/universe/` **全部**目錄——⛔ 自動列舉，不是寫死清單
+    #   （理由見 `universe_dirs()`：這份文件是契約指定用來回答「有什麼」的，
+    #     而它原本只提到 21 個目錄裡的 3 個。）
+    # ══════════════════════════════════════════════════════════
+    uds = universe_dirs(uni)
+    out.append("")
+    out.append("### `data/universe/` 全部目錄"
+               "（⛔ 自動列舉——新增 feed 會自己出現，不必有人記得改這裡）")
+    out.append("")
+    out.append("| 目錄 | 檔數 | 區間 | 形狀 |")
+    out.append("|---|---|---|---|")
+    for name, n, lo, hi, shape in uds:
+        out.append(f"| `{name}/` | {n:,} | {lo} ~ {hi} | {shape} |")
+    out.append("")
+    out.append(f"⚠ 共 **{len(uds)}** 個目錄。"
+               "⛔ 覆蓋率低不一定是缺口：`exright`／`reduce`／`otcexright`／"
+               "`otcreduce`／`parvalue`／`etfsplit` 是**事件型**"
+               "（只有發生事件那幾天有檔）。")
+    out.append("")
+
     days = sorted(os.path.basename(p)[:-4]
                   for p in glob.glob(os.path.join(uni, "daily", "*.csv")))
     exp = EXPECT["daily"]
@@ -344,6 +427,149 @@ def section_layers(out):
         out.append(f"| 交易日曆 `calendar_twse.csv` | {len(cs)} 天 | — | "
                    f"日曆有而日檔沒有：**{len(miss)} 天**"
                    + (f"（{'、'.join(miss[:5])}…）" if miss else "") + " |")
+    out.append("")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ `shares` 的**兩條回補前緣** —— ⛔ 每趟重算，⛔ 不手抄日期
+# ══════════════════════════════════════════════════════════════════
+# ## 為什麼一定要算，而且要算「兩邊的差集」
+#
+# 2026-09-10 情報分析線來信給了兩個手抄的日期：
+#
+#     shares 回補前緣：universe/daily 至 2023-12-31｜data/stocks 至 2018-12-31
+#     ⇒ 這兩個日期之間，兩種表示法不一致是預期的
+#
+# ⚠ 手抄的日期**會過期，而且過期的方向通常是「看起來比實際好」**。
+# ⛔ 而這一組實測**對不上**：現在兩邊 `tpex` 都是 100%、`twse`／`emerging`
+#   都是 0%，**兩條前緣完全一致、不一致區間是空的**
+#   （`db_status` 的「尚未取得」那一節 2026-09-09 就寫著
+#    「⛔ 上市的 `shares` 歷史序列：這個端點取不到」——⭐ 兩者相符，
+#     對不上的是那封信的數字）。
+#
+# ⇒ 所以這一節印的不是日期，是**判準本身每趟跑出來的結果**。
+#
+# ## ⛔ 而「差集」要扣掉一件不是差異的事：`data/stocks/` 還沒追上
+#
+# `data/stocks/` 是 `transpose` 從日檔重建的 ⇒ 它**天生落後**。
+# ⚠ 「日檔有這一天、個股庫沒有這一天」是**轉置落後**，
+# ⛔ 不是 `shares` 不一致——混在一起報，會把每天都報成事故。
+# ⇒ 差集一律**先跟「兩邊都有的那些天」取交集**，落後另外報。
+#
+# ⚠ 而且要**逐市場**算：整格是空的（`twse` 0/2848）會被別格的高填值率蓋掉
+#   ——跟 `adj_gap.coverage_grid()` 那次是同一個盲點。
+
+
+def shares_cells(paths, day_from_name=False):
+    """掃一批 CSV → `{(market, date): (有 shares 的列數, 總列數)}`。
+
+    ⭐ **日檔與個股庫共用這一支**（CLAUDE.md 四點五：同一件事只准有一份實作）。
+    兩邊的表頭都有 `date`／`market`／`shares` 三欄 ⇒ 同一段程式讀得動。
+
+    ⚠ `day_from_name=True` 時**另外**拿檔名當那一天，用來斷言
+      「日檔的 `date` 欄跟檔名一致」——⛔ 不一致就是第二點那種靜默失敗
+      （靜靜回了別天），這支會把它算成 `(market, 檔名那天)` 的 0 列，
+      在表上看得見。
+    """
+    have, tot = collections.Counter(), collections.Counter()
+    mismatch = 0
+    for p in paths:
+        fday = os.path.basename(p)[:-4] if day_from_name else None
+        with io.open(p, encoding="utf-8", errors="replace") as f:
+            hdr = f.readline().rstrip("\n").split(",")
+            try:
+                di, si, mi = (hdr.index("date"), hdr.index("shares"),
+                              hdr.index("market"))
+            except ValueError:
+                continue
+            mx = max(di, si, mi)
+            for line in f:
+                c = line.rstrip("\n").split(",")
+                if len(c) <= mx:
+                    continue
+                d = c[di]
+                if fday is not None and d != fday:
+                    mismatch += 1
+                    d = fday
+                k = (c[mi], d)
+                tot[k] += 1
+                # ⛔ `"0"` 也算沒有：股數 0 是「沒填」的另一種寫法
+                if c[si] not in ("", "0"):
+                    have[k] += 1
+    return {k: (have[k], tot[k]) for k in tot}, mismatch
+
+
+def shares_frontier(cells_daily, cells_stocks):
+    """→ `{market: dict}`。**純函式**，吃兩份 `shares_cells()` 的結果。
+
+    ⛔ 不吃路徑 ⇒ 自測餵得進假資料，不必碰真的 1 GB。
+    """
+    out = {}
+    markets = sorted({m for m, _ in cells_daily} | {m for m, _ in cells_stocks})
+    for m in markets:
+        da = {d for (mm, d) in cells_daily if mm == m}
+        db = {d for (mm, d) in cells_stocks if mm == m}
+        a = {d for (mm, d), (w, _t) in cells_daily.items() if mm == m and w > 0}
+        b = {d for (mm, d), (w, _t) in cells_stocks.items() if mm == m and w > 0}
+        both = da & db
+        out[m] = {
+            "daily": (len(a), len(da), min(a) if a else "—", max(a) if a else "—"),
+            "stocks": (len(b), len(db), min(b) if b else "—", max(b) if b else "—"),
+            # ⭐ 不一致只在「兩邊都有那一天」上成立
+            "only_daily": sorted((a - b) & both),
+            "only_stocks": sorted((b - a) & both),
+            # ⚠ 轉置落後：日檔有、個股庫整天沒有。⛔ 這不是不一致。
+            "lag": sorted(da - db),
+            "ahead": sorted(db - da),
+        }
+    return out
+
+
+def _rng(days):
+    if not days:
+        return "—"
+    return f"{days[0]} ~ {days[-1]}（{len(days):,} 天）"
+
+
+def section_shares(out):
+    out.append("## ①-2 `shares` 兩條管線的回補前緣"
+               "（⛔ **每趟重算**，⛔ 這一節沒有任何手抄的日期）\n")
+    daily = sorted(glob.glob(os.path.join(DATA, "universe", "daily", "*.csv")))
+    stocks = sorted(glob.glob(os.path.join(DATA, "stocks", "*.csv")))
+    if not daily or not stocks:
+        out.append("（`data/universe/daily/` 或 `data/stocks/` 不存在 ⇒ **算不出來**。"
+                   "⛔ 這裡不填任何數字。）\n")
+        return
+    cd, mism = shares_cells(daily, day_from_name=True)
+    cs, _ = shares_cells(stocks)
+    fr = shares_frontier(cd, cs)
+    out.append("| 市場 | `universe/daily/` 有 shares | `data/stocks/` 有 shares | "
+               "只有日檔有 | 只有個股庫有 | 個股庫還沒追上 |")
+    out.append("|---|---|---|---|---|---|")
+    for m in sorted(fr):
+        v = fr[m]
+        aw, at, alo, ahi = v["daily"]
+        bw, bt, blo, bhi = v["stocks"]
+        out.append(
+            f"| `{m}` | {aw:,}/{at:,}　{alo} ~ {ahi} | {bw:,}/{bt:,}　{blo} ~ {bhi} | "
+            f"{_rng(v['only_daily'])} | {_rng(v['only_stocks'])} | {_rng(v['lag'])} |")
+    out.append("")
+    bad = {m: v for m, v in fr.items() if v["only_daily"] or v["only_stocks"]}
+    if bad:
+        out.append("⚠ **兩邊對同一天給出相反答案**（讀取端會依照「從哪個檔讀」"
+                   "拿到不同結果，⛔ 而且兩邊都不報錯）：")
+        for m, v in sorted(bad.items()):
+            out.append(f"- `{m}`：只有日檔有 {_rng(v['only_daily'])}；"
+                       f"只有個股庫有 {_rng(v['only_stocks'])}")
+    else:
+        out.append("⭐ **兩條前緣一致**：沒有任何一天是「一邊有、另一邊沒有」"
+                   "（已扣掉個股庫還沒追上的那些天）。")
+    if mism:
+        out.append(f"\n⛔ **日檔裡有 {mism:,} 列的 `date` 欄跟檔名不同**"
+                   "——那是第二點那種靜默失敗（靜靜回了別天）。")
+    out.append("")
+    out.append("⚠ 讀法：**這一節每天重算**。⛔ 不要把上面的日期抄進別的文件——"
+               "抄出去的那一份不會跟著動，而過期的方向通常是「看起來比實際好」。")
     out.append("")
 
 
@@ -508,6 +734,7 @@ def main():
     out = [f"# 資料庫現況　{now_tpe().isoformat(timespec='seconds')}（台北）", "",
            "**這一頁報的是資料庫現況，不是某一趟做了什麼。**", ""]
     section_layers(out)
+    section_shares(out)
     section_events(out)
     section_lastrun(out)
     section_nosource(out)

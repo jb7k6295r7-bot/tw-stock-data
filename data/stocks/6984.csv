@@ -1,6 +1,8 @@
-date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis
-2026-09-03,6984,ACpay,emerging,,16.4,15.25,16.05,18100,290505,-0.25,,,,均價/額推算
-2026-09-04,6984,ACpay,emerging,,16.05,16.05,16.05,101,1621,0.00,,,,均價/額推算
-2026-09-07,6984,ACpay,emerging,,0,0,0,0,0,-16.05,,,,均價/額推算
-2026-09-08,6984,ACpay,emerging,,0,0,0,0,0,-16.05,,,,均價/額推算
-2026-09-09,6984,ACpay,emerging,,16.1,15.3,15.3,1012,15484,-0.75,,,,均價/額推算
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price
+2026-09-03,6984,ACpay,emerging,,16.4,15.25,16.05,18100,290505,-0.25,,,,均價/額推算,
+2026-09-04,6984,ACpay,emerging,,16.05,16.05,16.05,101,1621,0.00,,,,均價/額推算,
+2026-09-07,6984,ACpay,emerging,,0,0,0,0,0,-16.05,,,,均價/額推算,
+2026-09-08,6984,ACpay,emerging,,,,,0,0,,,,,無成交,
+2026-09-09,6984,ACpay,emerging,,16.1,15.3,15.3,1012,15484,-0.75,,,,均價/額推算,
+2026-09-10,6984,ACpay,emerging,,16.1,16.1,16.1,11,177,0.80,,,,均價/額推算,16.1
+2026-09-11,6984,ACpay,emerging,,16.1,15.3,15.7,20,314,-0.40,,,,均價/額推算,16.1
