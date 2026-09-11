@@ -41,6 +41,10 @@ TPE = timezone(timedelta(hours=8))
 #   ⚠ 這正是「不碰真的 data/」那句保證失效的方式，而且**看起來完全成功**。
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
+# ⛔ 守門要比的是**repo 裡那個真的檔**，⚠ 不是 `PATH` 這個變數——
+#   自測就是靠改 `PATH` 把輸出導到暫存檔的，
+#   拿 `PATH` 來比等於「改了也照樣被擋」（第一版就是這樣，反向驗當場抓到）。
+_REAL = PATH
 
 
 class Run:
@@ -88,6 +92,22 @@ class Run:
         return "\n".join(out) + "\n\n"
 
     def finish(self):
+        # ⛔⛔ 自測**永遠不可以**寫進真的 `_last_run.md`。
+        #   ⚠ 上面 2026-09-08 那段註解講的就是這件事（`selftest_reduce.py` 把
+        #   suspend 那一塊洗成 adjust），⭐ 而那之後只留了註解、**沒有守門**
+        #   ⇒ 2026-09-11 又發生一次（`selftest_margin_universe.py` ⑧ 直接呼叫
+        #   `halt_spans.main()`，把假資料的區塊寫進 repo 裡那個檔）。
+        #   ⛔ 而它**看起來完全成功**：檔在、格式對、程式回 0。
+        # ⇒ 判準是「跑的人是誰」，⚠ 不是「path 對不對」——
+        #   自測正是**沒有**改 path 的那一個，所以只有這個方向擋得住。
+        if (os.path.abspath(self.path) == _REAL
+                and os.path.basename(sys.argv[0] or "").startswith("selftest_")):
+            raise RuntimeError(
+                f"⛔ `{os.path.basename(sys.argv[0])}` 想寫進真的 runlog "
+                f"（{_REAL}）——⚠ 那會把 repo 裡的紀錄洗成假資料，"
+                "而且不會有任何地方報錯。\n"
+                "⇒ 改法：呼叫受測的 `main()` 之前先把 `runlog.PATH` 指到暫存檔"
+                "（或給 `runlog.Run(name, path=...)`）。")
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         old = ""
         if os.path.exists(self.path):
