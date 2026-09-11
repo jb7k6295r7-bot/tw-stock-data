@@ -33,6 +33,20 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
+
+
+def now_tpe():
+    """→ 台北時間的 `datetime`。**全庫唯一一份**（CLAUDE.md 四點五）。
+
+    ⛔ 這裡原本沒有，而 `db_status.py` 自己寫了一份、`reduce_check.py` 用
+      `hasattr(runlog, "now_tpe")` 探它在不在（探不到就自己 import 一次 datetime）
+      ——⚠ 三個地方各自為政，⇒ 2026-09-11 `feeds.month_is_open()` 照著
+      `reduce_check` 的樣子寫 `runlog.now_tpe()`，**AttributeError 掛在 Actions 上**。
+    ⚠ 而它掛的位置很典型：自測一律傳 `today=`，⛔ **預設值那條路一次都沒被走過**。
+    """
+    return datetime.now(TPE)
+
+
 # ★ 一定要用 `__file__` 錨定，不可以用相對路徑。
 #   相對路徑是相對 **CWD**，不是相對這支程式——GitHub Actions 的 CWD 剛好是 repo 根目錄，
 #   所以看起來一直是對的；但只要有人從別的地方叫（selftest 把腳本複製到暫存目錄再跑，

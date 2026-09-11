@@ -32,6 +32,8 @@ import io
 import json
 import os
 import sys
+
+import runlog
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
@@ -305,8 +307,8 @@ NOT_YET = [
 ]
 
 
-def now_tpe():
-    return datetime.now(TPE)
+# ⭐ 這裡原本自己寫了一份。⛔ 同一件事只准有一份實作（四點五）⇒ 指過去。
+now_tpe = runlog.now_tpe
 
 
 def _rows(path):

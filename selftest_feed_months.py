@@ -71,6 +71,36 @@ def main():
        not F.month_is_open("2026-08", "2026-09-01"))
     ck("  隔天就結束了", not F.month_is_open("2026-09", "2026-10-01"))
 
+    print("\n[1之二] ⛔⛔ **不傳 today 的那條路**（run 113 就是掛在這裡）")
+    # `month_is_open()` 的預設值走 `runlog.now_tpe()`——⛔ 而那個函式當時
+    # **根本不存在**（`AttributeError`），⚠ 而上面每一條都傳了 `today=`
+    # ⇒ 預設值那條路**一次都沒被走過**，自測全綠、Actions 當場掛掉。
+    # ⭐ 「測了判準、沒測呼叫點」這一族今天是第二次。
+    import datetime as _dt
+    _real_today = _dt.datetime.now(
+        _dt.timezone(_dt.timedelta(hours=8))).strftime("%Y-%m-%d")
+    # ⚠ 這裡要 try/except：這條壞掉時是**丟例外**，⛔ 不是回錯答案
+    #   ——不接住的話整支測試當場中斷，後面的斷言一條都不會跑，
+    #   ⭐ 而且「紅」會長成一串 traceback，不是一行講得清楚的失敗。
+    try:
+        _cur = F.month_is_open(_real_today[:7])
+        _prev = F.month_is_open(
+            f"{int(_real_today[:4]) - 1:04d}-{_real_today[5:7]}")
+        _t, _r = F.months_to_ask(
+            [(_real_today[:7] + "-01", _real_today)], {_real_today[:7]: "x"})
+        _boom = None
+    except Exception as _e:                                   # noqa: BLE001
+        _cur = _prev = _t = _r = None
+        _boom = f"{type(_e).__name__}: {_e}"
+    ck("⭐⭐ 不傳 today ⇒ **不可以丟例外**（run 113 就是這裡 AttributeError）",
+       _boom is None, _boom or "")
+    ck("  當月 ⇒ True", _cur is True, str(_cur))
+    ck("  上個月 ⇒ False", _prev is False, str(_prev))
+    ck("  `months_to_ask` 不傳 today ⇒ 當月照樣重問",
+       _r == [_real_today[:7]], str(_r))
+    ck("⭐ 而 `runlog.now_tpe` 真的存在（⛔ 這就是掛掉的那一行）",
+       callable(getattr(__import__("runlog"), "now_tpe", None)))
+
     print("\n[2] months_to_ask：台帳只對**已經結束的月份**有效")
     # ⚠ 照真的形狀做：`_months()` 回的迄日被 `--end` 夾過
     rng = [("2026-07-01", "2026-07-31"),
