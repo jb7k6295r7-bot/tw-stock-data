@@ -44,6 +44,7 @@ from datetime import datetime, timedelta, timezone
 
 import backfill as B
 import runlog
+import adjust as _adjust
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -90,7 +91,7 @@ def adj_events():
     return out
 
 
-def classify(rows, have, today):
+def classify(rows, have, today):          # ⚠ `today` ＝ **資料最後一天**
     """→ ({(代號,日期): 標記}, 缺口的鍵, 未來預告的鍵)。
 
     ⛔ 抽成函式有兩個理由，兩個都是付過代價的：
@@ -106,6 +107,17 @@ def classify(rows, have, today):
 
     ⚠ 官方會回**除權息日在未來**的預告列 ⇒ ⛔ 把預告當缺口會每天假紅；
       ⭐ 而它們確實還不該落地：那一天還沒到，前收盤價根本還不存在。
+
+    ## ⛔⛔ 而「未來」要跟**我方資料的最後一天**比，不是跟 `today` 比
+
+    2026-09-11 實際踩到：3141 晶宏的除息日**就是今天**，而我方日檔只到昨天
+    （09-10，今天盤後才會有）。⇒ `k[1] > today` 判它**不是**未來事件
+    ⇒ ⛔ 報成「沒落地 ⇒ **那幾檔今天的漲跌算出來是錯的**」
+    ⇒ ⚠ 而我照那句話寫信給 K線分析線，**那封信是錯的**。
+
+    ⭐ 正確的判準是 `adjust.py` 用的那一個：**事件日 > 我方資料最後一天 ⇒ 未來**。
+    ⛔ 跟 `today` 比會在「事件日 == 今天、但盤還沒收」那一段製造誤導性紅燈，
+    ⚠ 而那一段**每天都會出現一次**——那正是最容易被當成真事故的時候。
     """
     miss_keys = {(r[1], r[0]) for r in rows if (r[1], r[0]) not in have}
     future = {k for k in miss_keys if k[1] > today}
@@ -199,8 +211,22 @@ def main():
     #   ⭐ 同一份 runlog 裡兩句話互相矛盾，而矛盾的那一半（顯示）是騙人的那一半。
     #   （CLAUDE.md 第四點二：⛔ 顯示說落地了 ≠ 真的落地了。）
     #   ⇒ 用**鍵的集合**比，⛔ 不是拿鍵去比對一串列。
-    today = datetime.now(TPE).strftime("%Y-%m-%d")
-    marks, miss_keys, future = classify(rows, have, today)
+    # ⭐⭐ 「未來」要跟**我方資料的最後一天**比，⛔ 不是跟今天比（見 `classify` 的說明）。
+    #   ⛔ 日檔列表不在這裡自己算——`adjust.trading_days()` 就是那一份（第四點五）。
+    #   ⚠ 而它讀不到（目錄不在／checkout 問題）時**退回今天**，
+    #     ⭐ 並在 runlog 裡講出來：⛔ 靜靜退回去會讓判準悄悄變回舊的那一個。
+    _days = _adjust.trading_days()
+    if _days:
+        last_data = _days[-1]
+        rl.info("⚠ 「未來事件」的比較基準",
+                f"我方資料最後一天 **{last_data}**（⛔ 不是今天 "
+                f"{datetime.now(TPE).strftime('%Y-%m-%d')}）"
+                "　⇒ 事件日晚於它的算預告，不算缺口")
+    else:
+        last_data = datetime.now(TPE).strftime("%Y-%m-%d")
+        rl.info("⛔ 讀不到日檔目錄，退回用今天當基準",
+                "⚠ 這會讓「事件日就是今天」的那幾筆被報成缺口（誤導性紅燈）")
+    marks, miss_keys, future = classify(rows, have, last_data)
     for r in rows:
         rl.note(f"  {r[0]} {r[1]} {r[2]}｜前收 {r[3]}／參考價 {r[4]}"
                 f"｜{r[5]}｜{marks[(r[1], r[0])]}")

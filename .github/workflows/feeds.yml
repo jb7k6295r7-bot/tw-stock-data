@@ -365,6 +365,22 @@ jobs:
       #   ③ 官方寫入 `otcexright/`／`otcreduce/`
       #   ④ `adjust.py` 重算 `data/adj/`（⛔ 不跑它，前面三步等於沒發生）
       #   ⑤ 再跑一次雙向比對 ⇒ ⭐ **換完之後 C 類應該掉下來**
+      # ⛔⛔ 2026-09-11：這一步**讀 `data/`**（交易日曆、日檔、既有 `data/adj/`），
+      #   而在分支上 dispatch 拿到的是**分支那份，永遠比 main 舊**。
+      #   實測 run 108：分支的 `calendar_twse.csv` 最後一天是 **2026-09-09**、
+      #   main 是 **2026-09-10** ⇒ `adjust.py` 把 09-10 的三筆除權息判成
+      #   「未來事件」擋下 ⇒ ⛔ 4541／5328／8234 的因子沒寫進去，
+      #   ⚠ 而那一趟的每一個訊息都正常（它「正確地」擋下了它以為的未來事件）。
+      #   ⇒ CLAUDE.md 第四點六落地條①：讀 main 才有的判準檔就先取下來。
+      - name: 取 main 的交易日曆（⛔ 分支那份比 main 舊）
+        if: inputs.mode == 'otc-adj-official'
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/meta/calendar_twse.csv \
+                                      data/meta/calendar_tpex.csv || \
+            echo "⚠ main 上也沒有交易日曆（⛔ 那才是真的沒有）" >&2
+          echo "交易日曆最後一天：$(tail -1 data/meta/calendar_twse.csv)"
+
       - name: 上櫃還原因子換成官方來源（第 2 步）
         if: inputs.mode == 'otc-adj-official'
         timeout-minutes: 60

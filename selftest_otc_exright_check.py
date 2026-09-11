@@ -22,6 +22,7 @@
 ⛔ 把預告當缺口 ⇒ 這道斷言**每天都會紅**，然後被學會忽略。
 ⭐ 而它們確實還不該落地：那一天還沒到，前收盤價根本還不存在。
 """
+import io
 import sys
 from datetime import datetime, timedelta
 
@@ -66,6 +67,35 @@ def main():
        old_mark == ["✓", "✓", "✓"], str(old_mark))
     ck("  ⚠ 而它同時算得出「3 筆沒落地」⇒ **同一份報告自己矛盾**",
        len(miss_list) == 3, str(len(miss_list)))
+
+    print("①之二 ⭐⭐ 基準要是**我方資料最後一天**，⛔ 不是「今天」（2026-09-11 踩到）")
+    # ⚠ 實際情形：3141 的除息日**就是今天**（09-11），而我方日檔只到昨天（09-10，
+    #   今天盤後才會有）。⇒ 拿 `today` 當基準 ⇒ 它不算未來 ⇒ 被報成「沒落地」
+    #   ⇒ ⛔ runlog 寫「那幾檔今天的漲跌算出來是錯的」，⚠ 而我照那句寫信給 K線分析線。
+    _t = "2026-09-11"                       # 今天
+    _last = "2026-09-10"                    # ⭐ 我方資料最後一天（盤還沒收）
+    _rows = [[_t, "3141", "晶宏", "92.10", "91.74", "除息"]]
+    _m1, _miss1, _fut1 = mark_of(_rows, set(), _t)        # ⛔ 舊判準：跟今天比
+    ck("  ⛔ 拿**今天**當基準 ⇒ 今天才除息的那筆被算成缺口（誤導性紅燈）",
+       len(_miss1) == 1 and not _fut1, f"miss={_miss1}｜future={_fut1}")
+    _m2, _miss2, _fut2 = mark_of(_rows, set(), _last)     # ⭐ 新判準：跟資料最後一天比
+    ck("  ⭐⭐ 拿**資料最後一天**當基準 ⇒ 同一筆變成「⏳ 未來事件」，不是缺口",
+       not _miss2 and len(_fut2) == 1, f"miss={_miss2}｜future={_fut2}")
+    ck("  ⚠ 正例：昨天就除息、而且真的沒落地的 ⇒ **照樣算缺口**"
+       "（⛔ 證明這不是把紅燈關掉）",
+       len(mark_of([[_last, "5328", "華容", "58.80", "58.45", "除息"]],
+                   set(), _last)[1]) == 1,
+       str(mark_of([[_last, "5328", "華容", "58.80", "58.45", "除息"]],
+                   set(), _last)))
+
+    # ⛔⛔ 而「測了判準、沒測呼叫點」今天已經是第五次 ⇒ 這一條直接掃原始碼：
+    #   `main()` 傳給 `classify` 的**必須是資料最後一天**，⚠ 不是 `datetime.now(...)`。
+    _src = io.open(C.__file__, encoding="utf-8").read()
+    ck("  ⭐⭐ `main()` 真的把**資料最後一天**傳進 classify"
+       "（⛔ 只測 classify 的話，呼叫點改回 today 也不會紅）",
+       "classify(rows, have, last_data)" in _src
+       and "_adjust.trading_days()" in _src,
+       "⛔ 呼叫點沒有用 last_data／沒有用 adjust.trading_days()")
 
     print("② ⛔ 未來的預告列不算缺口（否則這道斷言每天假紅）")
     ck("  ⏳ 3141（明天）被標成未來", m[("3141", tmr)] .startswith("⏳ 未來"), str(m))
