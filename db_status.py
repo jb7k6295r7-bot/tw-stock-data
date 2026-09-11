@@ -34,6 +34,7 @@ import os
 import sys
 
 import runlog
+import transpose as _T
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
@@ -372,9 +373,46 @@ def _span(rows, key):
     return (ds[0], ds[-1], len(ds)) if ds else ("—", "—", 0)
 
 
+# ⭐⭐ 轉置出來的四層，各自對應 `transpose` 的哪一個 `kind`。
+#   ⛔ 這一份對照要跟 `transpose.OUT` 一致——⚠ 不一致的表現是**靜靜漏檢**，
+#     不是報錯（拼錯的 kind 只會讓那一層沒有新鮮度欄）。
+_TRANSPOSED = {"stocks": "price", "stocks_inst": "inst",
+               "stocks_margin": "margin", "stocks_per": "per"}
+
+
+def _freshness(key):
+    """轉置層的新鮮度。→ 表格裡那一格的字。
+
+    ## ⛔ 為什麼這一欄要在**這份文件**裡（2026-09-11）
+
+    `_db_status.md` 是契約第一句指定用來回答「**有什麼**」的那份。
+    ⚠ 而「有 3,030 個檔」跟「這 3,030 個檔是用**現在這份日檔**建的」
+      是兩件事——⛔ 而後者壞掉的時候，前者一個數字都不會變。
+
+    當天實際發生的：「甲」把 2022~2024 三整年的無成交列補進日檔之後，
+    個股庫還沒重建 ⇒ ⛔ 我拿它算了洞的分類**寄了出去**，
+    17 段「未解釋」裡 12 段其實是零成交。
+    ⚠ 而當時那道閘門比的是**最後一天**，兩邊一模一樣 ⇒ 綠的。
+
+    ⇒ 讀這份文件的人（包含別條線）要能**自己看出來**那一層新不新。
+    """
+    kind = _TRANSPOSED.get(key)
+    if not kind:
+        return "—"
+    try:
+        fresh, why = _T.stale_vs_source(kind)
+    except Exception as ex:                                   # noqa: BLE001
+        return f"⚠ 算不出來（{type(ex).__name__}）"
+    if fresh:
+        fp = _T.source_fingerprint(kind)
+        return f"✅ 用 {fp['last']} 那份日檔建的"
+    # ⛔ 不新的時候要說**為什麼**，⚠ 不是只給一個叉
+    return "⛔ **不是用現在這份日檔建的**：" + why.replace("⛔ ", "").replace("\n", " ")
+
+
 def section_layers(out):
     out.append("## ① 各層現況\n")
-    out.append("| 層 | 檔／列 | 區間 | 預期 |")
+    out.append("| 層 | 檔／列 | 新鮮度（⭐ 是不是用現在這份日檔建的） | 預期 |")
     out.append("|---|---|---|---|")
     uni = os.path.join(DATA, "universe")
     layers = [
@@ -389,7 +427,12 @@ def section_layers(out):
         n = _count_dir(d)
         exp = EXPECT.get(key, 0)
         mark = "" if n >= exp else f" ★ 少於預期 {exp}"
-        out.append(f"| {label} | {n} 檔 | — | {exp}+{mark} |")
+        out.append(f"| {label} | {n} 檔 | {_freshness(key)} | {exp}+{mark} |")
+    out.append("")
+    out.append("⚠ 讀法：**「有幾個檔」跟「這些檔是用現在這份日檔建的」是兩件事**"
+               "——⛔ 後者壞掉時前者一個數字都不會變。"
+               "⭐ 新鮮度那一欄比的是**輸入的指紋**（檔數／總位元組／最後一天），"
+               "⛔ 不是比最後一天：2026-09-11 就是「最後一天一樣、中間少了幾萬列」。")
 
     # ══════════════════════════════════════════════════════════
     # ⭐⭐ `data/universe/` **全部**目錄——⛔ 自動列舉，不是寫死清單

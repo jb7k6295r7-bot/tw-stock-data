@@ -107,6 +107,11 @@ def main():
     if _fail:
         FAILED.append(f"shares_frontier 有 {_fail} 項失敗")
 
+    print("\n── ①各層的新鮮度欄（⭐ 有幾個檔 ≠ 是用現在這份建的）──")
+    _ok, _fail = _freshness_section()
+    if _fail:
+        FAILED.append(f"freshness 有 {_fail} 項失敗")
+
     print("\n" + "=" * 60)
     if FAILED:
         print(f"✗ {len(FAILED)} 項失敗：")
@@ -283,6 +288,103 @@ def _shares_frontier_section():
         ck("⛔ 目錄不存在 ⇒ 明講「算不出來」，⛔ 不填任何數字",
            "算不出來" in "\n".join(out2), "\n".join(out2)[:200])
     finally:
+        _sh.rmtree(d, ignore_errors=True)
+    return ok, fail
+
+
+def _freshness_section():
+    """⭐ ①各層那張表的**新鮮度欄**。
+
+    ## ⛔ 為什麼要有（2026-09-11）
+
+    「有 3,030 個檔」跟「這 3,030 個檔是用**現在這份日檔**建的」是兩件事
+    ——⛔ 而後者壞掉時，前者一個數字都不會變。
+    當天我就是拿一份沒重建的個股庫算了洞的分類**寄了出去**。
+
+    ## 要釘的三件
+
+        ① `_TRANSPOSED` 的 kind 名稱要跟 `transpose.OUT` 對得起來
+           ⛔ 拼錯只會讓那一層**靜靜沒有新鮮度欄**，不會報錯
+        ② 不新的時候要說**為什麼**（⛔ 不是只給一個叉）
+        ③ 新的時候要講出**是用哪一天那份**建的
+    """
+    import os as _o
+    import shutil as _sh
+    import tempfile as _tf
+    import db_status as D
+    import transpose as T
+    _T = D._T
+
+    ok = fail = 0
+
+    def ck(name, cond, hint=""):
+        nonlocal ok, fail
+        if cond:
+            ok += 1
+            print(f"  ok   {name}")
+        else:
+            fail += 1
+            print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
+
+    # ── ① 對照表必須對得上 `transpose` ──
+    ck("⭐⭐ `_TRANSPOSED` 的每一個 kind 都在 `transpose.OUT` 裡"
+       "（⛔ 拼錯只會讓那一層靜靜沒有新鮮度欄）",
+       all(k in T.OUT for k in D._TRANSPOSED.values()),
+       str([k for k in D._TRANSPOSED.values() if k not in T.OUT]))
+    ck("  ⭐ 反向：`transpose` 產的四層**每一層都被涵蓋到**"
+       "（⛔ 新增一層卻忘了加進來 ＝ 那一層沒人驗）",
+       set(D._TRANSPOSED.values()) == set(T.OUT),
+       f"漏掉 {set(T.OUT) - set(D._TRANSPOSED.values())}")
+    ck("  ⛔ 不是轉置出來的層回 `—`（⛔ 不是假裝驗過）",
+       D._freshness("adj") == "—" and D._freshness("esb") == "—")
+
+    # ── ②③ 拿假的來源目錄實跑 ──
+    d = _tf.mkdtemp(prefix="dbfresh_")
+    _osrc, _oout = T.SRC["price"], T.OUT["price"]
+    try:
+        src = _o.path.join(d, "daily")
+        out = _o.path.join(d, "stocks")
+        _o.makedirs(src)
+        _o.makedirs(out)
+        T.SRC["price"] = [src]
+        T.OUT["price"] = out
+        io.open(_o.path.join(src, "2026-09-09.csv"), "w",
+                encoding="utf-8").write("date,stock_id\n2026-09-09,2330\n")
+
+        t0 = D._freshness("stocks")
+        ck("⛔ 沒有指紋 ⇒ 說**不是用現在這份建的**，⚠ 而且說得出原因",
+           t0.startswith("⛔") and "_built.json" in t0, t0)
+
+        T.write_stamp("price", 1)
+        t1 = D._freshness("stocks")
+        ck("⭐ 蓋章之後 ⇒ ✅，⚠ 而且講得出是用**哪一天**那份建的",
+           t1.startswith("✅") and "2026-09-09" in t1, t1)
+
+        # ⭐ 同一天的檔裡多一列（＝「甲」回補的形狀）⇒ 要轉回 ⛔
+        io.open(_o.path.join(src, "2026-09-09.csv"), "w",
+                encoding="utf-8").write(
+                    "date,stock_id\n2026-09-09,2330\n2026-09-09,4419\n")
+        t2 = D._freshness("stocks")
+        ck("⭐⭐ 同一天多一列（最後一天沒變）⇒ 轉回 ⛔"
+           "（⛔ 這正是 2026-09-11 漏掉的那一種）",
+           t2.startswith("⛔") and "bytes" in t2, t2)
+
+        # ⛔ 表格裡那一格不可以塞進換行（會把 markdown 表格切斷）
+        # ⚠ 第一版我只斷言 `"\n" not in t2`——⛔ 而 `stale_vs_source` 現在**不會**
+        #   回帶換行的字串 ⇒ 那條是**恆真**的，突變（拿掉 `.replace`）沒紅。
+        # ⇒ ⭐ 直接餵一個帶換行的說明進去，逼那道防線真的被走到。
+        _real = _T.stale_vs_source
+        try:
+            _T.stale_vs_source = lambda *_a, **_k: (False, "壞了\n第二行\n第三行")
+            t3 = D._freshness("stocks")
+        finally:
+            _T.stale_vs_source = _real
+        ck("⛔ 說明裡有換行時，那一格要把它壓平"
+           "（⚠ 換行會把整張 markdown 表切斷）",
+           "\n" not in t3 and "第三行" in t3, repr(t3))
+        ck("  ⚠ 而壓平不可以把內容吃掉", "第二行" in t3, repr(t3))
+    finally:
+        T.SRC["price"], T.OUT["price"] = _osrc, _oout
         _sh.rmtree(d, ignore_errors=True)
     return ok, fail
 
