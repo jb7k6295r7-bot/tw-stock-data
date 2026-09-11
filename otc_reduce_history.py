@@ -303,14 +303,29 @@ def classify_gaps(miss, cover, known=None):
     return inside, named, live
 
 
+# ⭐ `factor` 與 `factor_official` 兩欄都只存到**小數 8 位**
+#   ⇒ 各自的捨入誤差 ≤ 5e-9，兩個相減 ⇒ **最多 1e-8**。
+#   ⛔ 第一版的上界漏了這一項 ⇒ 四筆常駐紅燈，超出量全是 2~4e-9（正好落在這裡面）。
+#   ⚠ 而那種紅燈最糟：它天天紅、永遠修不好，然後**大家學會忽略它**。
+FACTOR_DP = 1e-8
+
+
 def over_bound(rows, cents=0.005):
     """→ 兩種 factor 的差**超過捨入理論上界**的那些。⛔ 抽成函式是為了測得到。
 
-    官方參考價印到**分**為止 ⇒ 它與真值差 ≤ 0.005 元
-    ⇒ 由它回推的 factor 與原始比例的差 ≤ **0.005 ÷ 最後收盤價**。
+    上界有**兩項**，⛔ 少算任何一項都會製造常駐假紅：
 
-    ⚠ 上界**跟前收成反比**：10 元的股票上界是 5e-4，100 元的是 5e-5
-    ⇒ ⛔ 不可以用一個固定常數當門檻，那會對低價股太鬆、對高價股太嚴。
+        ① 官方參考價印到**分** ⇒ 與真值差 ≤ 0.005 元
+           ⇒ 回推的 factor 與原始比例差 ≤ **0.005 ÷ 最後收盤價**
+        ⭐ ② 我方兩個 factor 欄各只存 **8 位小數** ⇒ 相減的捨入誤差 ≤ **1e-8**
+
+    ⚠ ①**跟前收成反比**：10 元的股票是 5e-4、100 元的是 5e-5
+    ⇒ ⛔ 不可以用固定常數當門檻（對低價股太鬆、對高價股太嚴）。
+    ⚠ ②是**固定**的，而且在高價股那一端會變成主導項
+    （100 元的股票①只有 5e-5，②的 1e-8 相對就不可忽略）。
+
+    ⛔ 這不是「加個 epsilon 讓它變綠」：2026-09-11 那四筆的超出量是
+    **2~4e-9**，而 8 位小數的捨入本來就能製造到 1e-8——⭐ 是上界寫漏了，不是資料錯。
     """
     out = []
     for r in rows:
@@ -318,13 +333,42 @@ def over_bound(rows, cents=0.005):
         if not (r[5] and r[9] and lc):
             continue
         try:
-            gap, bound = abs(float(r[5]) - float(r[9])), cents / lc
+            gap, bound = abs(float(r[5]) - float(r[9])), cents / lc + FACTOR_DP
         except ValueError:
             continue
         if gap > bound:
             out.append((r[1], r[0], round(gap, 8), round(bound, 8), r[5], r[9]))
     out.sort(key=lambda x: -x[2])
     return out
+
+
+# ⚠ 容差照情報分析線量到的：絕對 0.005（官方參考價印到分為止）＋相對 1e-4。
+# ⭐ 而 `REPR_EPS` 是第三項，2026-09-11 補的：**0.005 在二進位不可表示**
+#   ⇒ `abs(48.125 - 48.13)` 算出來是 0.005000000000002558，比 0.005 大 **2.5e-15**
+#   ⇒ 官方參考價是 `x.xx5` 進位上去的那幾筆，會**全部落在邊界外、天天紅**。
+#   ⛔ 這一項純粹是浮點表示誤差，⚠ 而真正的解析錯誤至少差 0.01 ⇒ 1e-9 藏不住它。
+IDENT_ABS, IDENT_REL, REPR_EPS = 0.005, 1e-4, 1e-9
+
+
+def identity_check(rows):
+    """官方自帶的恆等式逐筆驗。→ (過的, 不過的)。⛔ 抽成函式是為了測得到。
+
+        恢復買賣參考價 ＝（最後收盤 − 每股退還股款）÷（每壹仟股換發新股 ÷ 1000）
+
+    ⭐ 它的價值不是「多一個數字」，是**把兩個獨立欄位綁在一起**：
+    換股比例讀錯、參考價欄位錯位、我方欄位對應搞反——任一種都會讓它不符，
+    ⛔ 而那三種失敗**單看任何一欄都完全正常**。
+    """
+    ok, bad = [], []
+    for r in rows:
+        lc, rp = _num(r[3]), _num(r[4])
+        if not r[7] or not lc or not rp:
+            continue
+        ref_o = official_ref(lc, float(r[7]), float(r[8] or 0))
+        tol = max(IDENT_ABS, rp * IDENT_REL) + REPR_EPS
+        (ok if abs(ref_o - rp) <= tol else bad).append(
+            (r[1], r[0], round(ref_o, 4), rp))
+    return ok, bad
 
 
 def adj_rows():
@@ -405,19 +449,13 @@ def main():
              f"{n_ratio}/{len(rows)}　⛔ 缺 {len(rows) - n_ratio} 列"
              "（說明欄有第一列原文，⇒ 不必再打對方一趟才知道為什麼）"
              if n_ratio != len(rows) else f"{n_ratio}/{len(rows)}")
-    ident_ok, ident_bad = [], []
-    for r in rows:
-        lc, rp = _num(r[3]), _num(r[4])
-        if not r[7] or not lc or not rp:
-            continue
-        ref_o = official_ref(lc, float(r[7]), float(r[8] or 0))
-        # ⚠ 容差照情報分析線量到的：絕對 0.005（官方參考價印到分為止）＋相對 1e-4
-        (ident_ok if abs(ref_o - rp) <= max(0.005, rp * 1e-4)
-         else ident_bad).append((r[1], r[0], round(ref_o, 4), rp))
+    ident_ok, ident_bad = identity_check(rows)
     rl.check("⭐ 官方自洽恆等式（參考價 ＝（收盤−退款）÷（換股數÷1000））逐筆成立",
              not ident_bad,
              f"⛔ {len(ident_bad)} 筆不符：{ident_bad[:6]}" if ident_bad
-             else f"{len(ident_ok)} 筆全過（容差 0.005 ＋ 相對 1e-4）")
+             else f"{len(ident_ok)} 筆全過"
+                  f"（容差 {IDENT_ABS} ＋ 相對 {IDENT_REL}"
+                  f" ＋ {REPR_EPS} 表示誤差）")
 
     # ⛔ 只 info 不 check：**用哪一個當 factor 是判準問題 ⇒ K線線裁定。**
     #   ⚠ 我方原本的 `factor` 是從「印到分為止」的參考價回推的 ⇒ 帶四捨五入殘差；
