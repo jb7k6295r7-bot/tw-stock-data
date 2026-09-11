@@ -51,8 +51,102 @@ OUT = os.path.join(_ROOT, "meta", "delisted.csv")
 LOW = os.path.join(_ROOT, "meta", "_delisted_low.txt")
 STOCKS = os.path.join(_ROOT, "meta", "stocks.csv")
 URL = "https://www.twse.com.tw/rwd/zh/company/suspendListing?response=json"
-HEADER = ["delist_date", "stock_id", "name", "asof"]
+# ⚠ `market` 是 2026-09-11 補上櫃那半時**加在最後**的（新欄一律加在尾端）。
+HEADER = ["delist_date", "stock_id", "name", "asof", "market"]
 FIELDS = ["終止上市日期", "公司名稱", "上市編號"]
+
+# ══════════════════════════════════════════════════════════════════════
+# ⭐⭐ 上櫃那半（2026-09-11）。端點由市場情報分析線用瀏覽器 js 找到，
+#   ⛔ 而下面每一個數字都是我方在 Actions 上**自己實測**的（轉述不算實測）。
+# ══════════════════════════════════════════════════════════════════════
+OTC_URL = ("https://www.tpex.org.tw/www/zh-tw/company/deListed"
+           "?code=&date={y}&reason=-1&id=&response=json")
+OTC_FIELDS = ["股票代號", "公司名稱", "終止上櫃日期", "終止上櫃原因", "公司資料網址"]
+# ⛔⛔ `date=ALL` 是陷阱：實測回 **10 筆**，而 2015／2020／2025／2026 四年
+#   加總就已經 **28 筆**。⚠ 而 ALL 那一趟是**成功**的——`stat:ok`、欄位齊全、
+#   10 筆全部是真的，只是它其實是「最近 10 筆」。
+#   ⇒ CLAUDE.md 第二點⑥：**參數說「全部」，但只回一部分。**
+#   ⇒ 所以這裡**逐年抓**，⛔ 永遠不要用 ALL。
+OTC_FIRST_YEAR = 2007          # ⚠ 下限還沒探到底；2015 實測回得出民國 104 的列
+OTC_STOP_AFTER_EMPTY = 3       # 連續幾年 0 筆就收手（⛔ 不要無限往前打人家伺服器）
+
+
+def parse_otc(payload, want_year):
+    """→ (rows, note)。⛔ `want_year` 是我送出去的年，**一定要驗回顯**。
+
+    ⭐ 這一支難得地**有 `date` 回顯**（頂層鍵 `date`）——
+    那就是 CLAUDE.md 第一點講的 `params` 等價物：**我送的參數有沒有生效，它自己會講**。
+    ⚠ 而且還有第二道：那一年的列，`終止上櫃日期`（民國）換算後要**真的落在那一年**。
+    ⛔ 少了這兩道，「靜靜回最新一期」跟「真的有那一年」在回應上長得一模一樣。
+    """
+    if not isinstance(payload, dict):
+        return [], f"回應不是 dict，是 {type(payload).__name__}"
+    st = str(payload.get("stat") or payload.get("status") or "").strip()
+    if st and st.lower() not in ("ok", "success"):
+        return [], f"⛔ 端點自己說失敗：stat={st!r}"
+    echo = str(payload.get("date") or "").strip()
+    if echo and echo != str(want_year):
+        return [], (f"⛔ **回顯的年份不是我送的**：我送 {want_year}、它回 {echo!r}"
+                    "　⇒ 那個參數是假的（第一點：`params` 被換掉就代表參數沒生效）")
+    tabs = B._tables(payload)
+    if not tabs:
+        return [], f"沒有表；頂層鍵={sorted(payload)}"
+    f = [str(x) for x in (tabs[0].get("fields") or [])]
+    if f != OTC_FIELDS:
+        return [], f"欄位結構與 2026-09-11 實測不符，拒收：{f}"
+    asof = datetime.now(TPE).strftime("%Y-%m-%d")
+    rows, bad, offyear = [], [], []
+    for r in tabs[0].get("data") or []:
+        if not isinstance(r, list) or len(r) < 3:
+            bad.append(str(r)[:60])
+            continue
+        code, iso = str(r[0]).strip(), _roc_iso(r[2])
+        if not code or not iso:
+            bad.append(str(r)[:60])
+            continue
+        # ⭐ 第二道：這一列自己講出來的年份，要等於我請求的那一年
+        if iso[:4] != str(want_year):
+            offyear.append(f"{code}:{iso}")
+            continue
+        rows.append([iso, code, str(r[1]).strip(), asof, "tpex"])
+    note = (f"{want_year}：{len(rows)} 筆"
+            + (f"｜⛔ 認不出 {len(bad)}：{bad[:2]}" if bad else "")
+            + (f"｜⛔ **年份對不上 {len(offyear)}**：{offyear[:3]}"
+               "（⇒ 它沒有照我送的年份給，那一年的結果不可信）" if offyear else ""))
+    return rows, note
+
+
+def fetch_otc(rl, this_year, get=None):
+    """逐年抓上櫃終止名單。→ (rows, 每年筆數 dict)。⛔ 絕不使用 `date=ALL`。"""
+    getter = get or B.get
+    out, per, empty = [], {}, 0
+    for y in range(this_year, OTC_FIRST_YEAR - 1, -1):
+        raw, err = getter(OTC_URL.format(y=y), retries=2, timeout=45)
+        if err:
+            rl.info(f"  ⚠ {y} 抓不到", str(err)[:100])
+            per[y] = None
+            continue
+        try:
+            payload = json.loads(raw.decode("utf-8", "replace"))
+        except ValueError as ex:                                 # noqa: BLE001
+            rl.info(f"  ⚠ {y} 不是 JSON", f"{ex}｜前 100：{raw[:100]!r}")
+            per[y] = None
+            continue
+        rows, note = parse_otc(payload, y)
+        per[y] = len(rows)
+        if rows:
+            out += rows
+            empty = 0
+        else:
+            empty += 1
+            rl.info(f"  {y}", note)
+            # ⚠ 連續幾年 0 筆就收手 ⇒ 那就是歷史下限，⛔ 不是「官方沒有」
+            if empty >= OTC_STOP_AFTER_EMPTY:
+                rl.info("  ⇒ 連續 0 筆，收手",
+                        f"最早問到 {y}｜⚠ 這是**我方停在哪裡**，"
+                        "⛔ 不是「官方只有到這裡」")
+                break
+    return out, per
 
 
 def parse(payload):
@@ -85,7 +179,7 @@ def parse(payload):
         if not d or not code:
             bad.append(str(r)[:60])
             continue
-        rows.append([d, code, str(r[1]).strip(), asof])
+        rows.append([d, code, str(r[1]).strip(), asof, "twse"])
     rows.sort(key=lambda x: (x[0], x[1]))
     # ⭐ `total` 是官方自己說的列數 ⇒ 免費的完整性斷言
     total = payload.get("total")
@@ -131,10 +225,35 @@ def main():
     if not rows:
         return rl.finish()
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 上櫃那半（2026-09-11 接）。⛔ 逐年抓，永遠不用 `date=ALL`。
+    # ══════════════════════════════════════════════════════════════
+    this_year = datetime.now(TPE).year
+    rl.info("上櫃端點", OTC_URL.format(y="<西元年>")
+            + "　⛔ `date=ALL` 實測只回 10 筆（其實是「最近 10 筆」）⇒ 逐年抓")
+    otc, per = fetch_otc(rl, this_year)
+    got_years = {y: n for y, n in per.items() if n}
+    rl.info("上櫃逐年筆數",
+            "、".join(f"{y}:{n}" for y, n in sorted(got_years.items()))
+            or "⛔ 一年都沒有")
+    # ⭐ 第七點：報「某群 0 筆」要附正例數 ⇒ 這裡附的是「有幾年抓到東西」
+    rl.check("⭐ 上櫃終止名單抓得到（⛔ 0 筆代表端點或判準壞了，"
+             "⚠ 而它壞掉的表現是「上櫃從來沒有人下櫃」）",
+             bool(otc), f"{len(otc)} 筆／{len(got_years)} 個年份有資料")
+    # ⭐⭐ 驗終點：逐年加總一定要 **大於** `ALL` 那一趟（第二點⑥）
+    #   ⚠ 這一條不連外重打一次 ALL——⛔ 那會讓每天多一個請求只為了證明同一件事；
+    #   實測值（10）寫在檔頭，這裡只斷言「我方逐年拿到的比它多」。
+    rl.check("⭐ 逐年加總 > `date=ALL` 的 10 筆（⛔ 坐實「參數說全部卻只回一部分」）",
+             len(otc) > 10, f"逐年 {len(otc)} 筆 vs ALL 實測 10 筆")
+    if otc:
+        rows += otc
+        rows.sort(key=lambda x: (x[0], x[1]))
+
     total = payload.get("total")
-    rl.check("官方 total 與我方認出的列數一致",
-             total is None or int(total) == len(rows),
-             f"total={total}｜我方 {len(rows)}"
+    rl.check("官方 total 與我方認出的列數一致（⛔ 只比上市那半）",
+             total is None or int(total) == sum(1 for r in rows if r[4] == "twse"),
+             f"total={total}｜我方上市 {sum(1 for r in rows if r[4] == 'twse')}"
+             f"（另有上櫃 {sum(1 for r in rows if r[4] == 'tpex')}）"
              + ("　⚠ 沒有 total 可比" if total is None else ""))
 
     # ⛔ 只進不出：這是一份**累積**清單，列數不可以變少
@@ -158,6 +277,8 @@ def main():
     except OSError:
         pass
     rl.info("判準檔", f"data/meta/delisted.csv｜{len(rows)} 筆"
+                      f"（上市 {sum(1 for r in rows if r[4] == 'twse')}"
+                      f"／上櫃 {sum(1 for r in rows if r[4] == 'tpex')}）"
                       f"｜{rows[0][0]} ~ {rows[-1][0]}")
 
     # ══════════════════════════════════════════════════════════════

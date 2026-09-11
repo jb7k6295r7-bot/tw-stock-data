@@ -18,6 +18,7 @@
     ③ ⭐ `cross_check`：我方 `last_seen` **晚於**官方終止上市日 ⇒ 抓得出來。
        這是這支程式真正的產出，⚠ 而它只在 Actions 上跑得到 ⇒ 得在這裡驗。
 """
+import json
 import sys
 
 import delisted as D
@@ -133,6 +134,83 @@ def main():
     ck("  只寫 data/meta/delisted.csv", D.OUT.endswith("meta/delisted.csv"), D.OUT)
     ck("  ⚠ STOCKS 只被讀（沒有任何 open(..., \"w\") 指向它）",
        D.STOCKS != D.OUT and D.STOCKS != D.LOW, D.STOCKS)
+
+    # ══════════════════════════════════════════════════════════════════
+    print("⑦ ⭐⭐ 上櫃那半：`date` 回顯 ＋ 列的年份，兩道都要驗")
+    # ⚠ 假回應**照 2026-09-11 於 Actions 的實測形狀**做：
+    #   頂層 `stat`/`date`/`tables`，欄位 5 個，列是 list，日期是**民國減號** 104-11-26
+    def _otc(year, data, stat="ok", fields=None):
+        return {"stat": stat, "date": str(year),
+                "tables": [{"fields": fields or D.OTC_FIELDS, "data": data}]}
+
+    REAL = [["5506", "長鴻營造股份有限公司", "104-11-26", "依…第12條之2第1項第5款", "u"],
+            ["4927", "泰鼎國際股份有限公司", "104-09-08", "依…第12條之2第1項第1款", "u"]]
+    rows, note = D.parse_otc(_otc(2015, REAL), 2015)
+    ck("  ⭐ 正常年解得出來，民國 104 換成 2015", len(rows) == 2
+       and rows[0][0].startswith("2015"), f"{rows}｜{note}")
+    ck("  ⭐ `market` 欄是 tpex（⛔ 上市那半是 twse，同一個檔要分得開）",
+       all(r[4] == "tpex" for r in rows), str(rows))
+    ck("  ⚠ 列寬跟表頭一致（⛔ 少一格會讓後面整片錯位）",
+       all(len(r) == len(D.HEADER) for r in rows), str(rows))
+
+    print("  ⛔ 第一道：`date` 回顯不是我送的那一年 ⇒ 拒收")
+    r2, n2 = D.parse_otc(_otc(2026, REAL), 2015)     # 我送 2015、它回 2026
+    ck("  ⭐ 拒收，而且說明講出「參數是假的」", not r2 and "參數是假的" in n2, n2)
+
+    print("  ⛔ 第二道：回顯對了，但列的年份不對 ⇒ 那些列不可以收")
+    r3, n3 = D.parse_otc(_otc(2015, REAL + [["9999", "別年的", "113-05-06", "x", "u"]]),
+                         2015)
+    ck("  ⭐ 別年的那一列被擋掉（2 筆不是 3 筆）", len(r3) == 2, str(r3))
+    ck("  ⚠ 而且說明**講得出來**（⛔ 安靜跳過就是靜默失敗那一族）",
+       "年份對不上" in n3, n3)
+
+    print("  ⛔ 欄位結構不符 ⇒ 拒收（⚠ 官方改欄位時不可以照收）")
+    r4, n4 = D.parse_otc(_otc(2015, REAL, fields=["股票代號", "公司名稱"]), 2015)
+    ck("  拒收並印出實際欄位", not r4 and "拒收" in n4, n4)
+    r5, n5 = D.parse_otc(_otc(2015, REAL, stat="查無資料"), 2015)
+    ck("  ⛔ `stat` 不是 ok ⇒ 拒收（⚠ 正例在上面，兩邊都測過）",
+       not r5 and "端點自己說失敗" in n5, n5)
+
+    print("⑧ ⭐ `fetch_otc`：⛔ 絕不使用 `date=ALL`＋連續 0 筆要收手")
+    seen = []
+
+    def fake_get(url, **kw):
+        seen.append(url)
+        raw_y = url.split("date=")[1].split("&")[0]
+        y = int(raw_y) if raw_y.isdigit() else raw_y      # ⚠ 容得下 "ALL"
+        # ⭐ 只有 2015 有資料，其餘都空 ⇒ 連續 OTC_STOP_AFTER_EMPTY 年就該收手
+        data = [["5506", "長鴻", "104-11-26", "r", "u"]] if y == 2015 else []
+        return json.dumps(_otc(y, data)).encode(), None
+
+    class _RL:
+        def info(self, *a):
+            return self
+    got, per = D.fetch_otc(_RL(), 2020, get=fake_get)
+    ck("  ⛔ 送出去的網址裡**一個 ALL 都沒有**", not any("date=ALL" in u for u in seen),
+       str([u for u in seen if "ALL" in u][:2]))
+    ck("  ⭐ 連續 3 年 0 筆就收手（⛔ 不會一路打到 2007）",
+       [u for u in seen if "date=ALL" in u] == []
+       and min(int(u.split("date=")[1].split("&")[0]) for u in seen
+               if u.split("date=")[1].split("&")[0].isdigit()) == 2018,
+       f"共問 {len(seen)} 個：{[u.split(chr(61))[2].split(chr(38))[0] for u in seen]}")
+    # ⚠ 上面那個 fixture 停在 2018，**測不到「有資料就把計數歸零」**
+    #   ⛔ 第一版我在這裡寫了一條 `… or True` 的斷言——那條永遠成立，等於沒測。
+    #   ⇒ 換一個 fixture：讓 2019 有資料，它必須把 empty 歸零、繼續往前問到 2016。
+    seen2 = []
+
+    def fake_get2(url, **kw):
+        seen2.append(url)
+        raw_y = url.split("date=")[1].split("&")[0]
+        y = int(raw_y) if raw_y.isdigit() else raw_y
+        data = [["5506", "長鴻", "108-11-26", "r", "u"]] if y == 2019 else []
+        return json.dumps(_otc(y, data)).encode(), None
+    got2, _ = D.fetch_otc(_RL(), 2020, get=fake_get2)
+    yrs = [int(u.split("date=")[1].split("&")[0]) for u in seen2
+           if u.split("date=")[1].split("&")[0].isdigit()]
+    ck("  ⭐⭐ 中途有資料的那年把計數歸零 ⇒ 繼續問到 2016（⛔ 不歸零會停在 2017）",
+       bool(yrs) and min(yrs) == 2016, f"問到 {sorted(yrs)}")
+    ck("  ⚠ 而那一筆確實被收下來了（⛔ 只證明它繼續問還不夠）",
+       len(got2) == 1 and got2[0][0].startswith("2019"), str(got2))
 
     print(f"\n{OK} ok, {FAIL} failed")
     return 1 if FAIL else 0
