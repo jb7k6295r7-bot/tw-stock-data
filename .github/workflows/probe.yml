@@ -192,7 +192,8 @@ jobs:
                       "esb_day_probe.py:_esb_day_probe.txt" \
                       "chtm_probe.py:_chtm_probe.txt" \
                       "finmind_probe.py:_finmind_probe.txt" \
-                      "bsr_probe.py:_bsr_probe.txt"; do
+                      "bsr_probe.py:_bsr_probe.txt" \
+                      "broker_probe.py:_broker_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
             #   排程觸發時才套三選一的重跑條件：
