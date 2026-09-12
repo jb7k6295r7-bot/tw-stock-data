@@ -8,7 +8,7 @@
 | 項目 | 值 |
 |---|---|
 | 分支 | `claude/stock-analysis-backtest-iv9xji`（已併入 origin/main 2d2c505f） |
-| 跨線信箱已讀到 | **createdTime 2026-09-12T18:00:55.290Z**（件-K線分析-0250 valid_bar）；09-13 這一輪讀全文的是給回測的四封（K線分析 2355／0210、情報分析 0150、CODE 0240），其餘（histock 條款往返、valid_bar 物化、feeds 全綠、稅法手冊交接）只看標題。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
+| 跨線信箱已讀到 | **createdTime 2026-09-12T18:28:07.412Z**（件-回測線-0330 K線分析對帳結案）；09-13 這一輪讀全文的是給回測的四封（K線分析 2355／0210、情報分析 0150、CODE 0240），其餘（histock 條款往返、valid_bar 物化、feeds 全綠、稅法手冊交接）只看標題。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
 | 分支與 main | main 已於 09-09 併入 `backtest/` 快照（4d8d7ef0，排除 skill_patch）；分支已併回 main 8d39c227 之後版本並刪除 skill_patch；**只在分支改，更新 main 再併一次** |
 | 研究二 判準 | `PREREG.md`（更正一～三、追加分析） |
 | 研究三／四 判準 | `PREREG3.md`（更正一） |
@@ -189,3 +189,4 @@
 - 落地（commit 5f4a3dcd9）：`signals.csv` 加 `has_adj`／`asof`／`data_sha`；停牌逾 60 交易日強制出場（`forced`）；runlog 記母體檔數；`RULE.md` 追加一（釐清有效／可進場 K 棒、母體是 `stocks.csv` 累積名冊、籌碼層不加、CODE 排程）。scratch 重驗權益不變、`selftest_no_dup` 過。
 - 已寄三線 `件-K線分析與CODE與情報分析-20260913-0230-…`（`1B66gpRIBLAMIJQ6gVIgWyrS59nx6GbWc`）：請 CODE 取 sha 5f4a3dcd9 整個 `backtest/` 併 main（本線不動 main）；指出 `forward.yml` 缺 `pip install pandas numpy`；三段再驗 ＝ 研究十三三窗改三段（不急）。
 - **等回覆**：K線分析（`DED` 判斷式）；CODE（併 main、pip、`limit`、F2、F3）。
+- 02:35 補記：K線分析 0330 撤回「去重」——真兇是她 `bad[i−20:i+121]` 141 根乾淨窗（砍 53%，偏向不配息公司）；SE 那句撤回、三段再驗裁不要。情報分析 0225 收回 20 日聯集、收可進場 K 棒。回 K線分析 `件-K線分析-20260913-0235-…`（`1lHvA5zKEEC43N5hsVG6R6VxGPH43Xybr`）：本版排除砍掉比例（H20 1.2%／H60 3.7%／H120 9.3%、除權息不擋）＝ PREREG9 追加二。等她重跑後的 n／H120 超額／LD−H120 做最後對帳。
