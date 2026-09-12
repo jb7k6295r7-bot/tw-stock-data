@@ -106,9 +106,9 @@ def cond_exit(o, c, k, nb, cond):
     return last, c[last] / ep - 1, False
 
 
-def stock_features(args):
-    sid, market, first_seen = args
-    cal = _G["cal"]
+def load_bars(sid, market, cal):
+    """有效 K 棒序列與壞根視窗（研究十一／十三共用）。回傳 dict 或 None（< 260 根）。
+    鍵：idx（日曆位置）、dates、o/c/h/l/amt（還原價）、rc（未還原收盤）、up/dn（漲跌停）、ev_bar、skip、next_bad、df。"""
     st = D.load_stock(sid, market, cal)
     if st is None:
         return None
@@ -152,8 +152,19 @@ def stock_features(args):
     if dates[0] > pd.Timestamp("2015-01-12"):
         skip[:5] = True
     up, dn = limit_flags(rc, dates, skip)
+    return {"idx": idx, "dates": dates, "o": o, "c": c, "h": h, "l": l, "amt": amt, "rc": rc, "up": up, "dn": dn,
+            "ev_bar": ev_bar, "skip": skip, "next_bad": next_bad, "df": df}
+
+
+def stock_features(args):
+    sid, market, first_seen = args
+    B = load_bars(sid, market, _G["cal"])
+    if B is None:
+        return None
+    idx, dates, o, c, h, l, amt, up, dn, skip, next_bad, df = (B[k] for k in ("idx", "dates", "o", "c", "h", "l", "amt", "up", "dn", "skip", "next_bad", "df"))
+    n = len(idx)
     # 特徵
-    ret20 = np.array(c / np.roll(c, 20) - 1, dtype=float); ret20[:20] = np.nan
+    ret20 =np.array(c / np.roll(c, 20) - 1, dtype=float); ret20[:20] = np.nan
     nup20 = pd.Series(up.astype(int)).rolling(20, min_periods=20).sum().to_numpy(float)
     amt_prev20 = np.array(_roll_mean(np.roll(amt, 1), 20), dtype=float); amt_prev20[:21] = np.nan
     amt_ratio = amt / amt_prev20
@@ -378,7 +389,7 @@ def paired_table(df, per, L):
     L.append("")
 
 
-def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int):
+def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False):
     d = sig[["sid", "entry_pos", f"xpos_{rule}", f"g_{rule}"]].dropna()
     d = d[d[f"xpos_{rule}"] >= 0].rename(columns={f"xpos_{rule}": "exit_pos", f"g_{rule}": "gross"})
     by_entry = {k: g for k, g in d.groupby("entry_pos")}
@@ -411,7 +422,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
     years = (end - first) / 245; final = equity[end - 1]
     peak = np.maximum.accumulate(equity); mdd = float(((equity - peak) / peak).min())
-    return {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / ((end - first) * n_slots)}
+    out = {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / ((end - first) * n_slots), "first": first, "end": end}
+    if return_equity:
+        out["equity"] = equity
+    return out
 
 
 def report(main_df, grid_df, b12, base, closes, opens, cal, reps):
