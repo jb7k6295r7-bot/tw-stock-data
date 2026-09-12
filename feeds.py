@@ -1823,6 +1823,23 @@ def day_is_open(day, today=None):
     return day >= (today or runlog.now_tpe().strftime("%Y-%m-%d"))
 
 
+def range_note(start, end, n_days, limit=0):
+    """→ runlog「區間」那一列的文字。
+
+    ⛔⛔ `--limit` 那一趟**不是整個區間的結果**，而區塊裡看不出來。
+      2026-09-12 當場踩到：長工前的「一天實測」帶 `--limit 1`，
+      它把區塊寫成「區間 2022-07-01 ~ 2022-07-31｜待處理 **1 天**」
+      ⇒ ⚠ 我讀成「整個 7 月只有 1 個交易日待處理」，差點據此下結論。
+      ⭐ 而後面那一批真的跑完時是「待處理 20 天」——同一個區塊、同一個標題。
+    ⇒ 這一趟只問了一部分，就要**自己講出來**（CLAUDE.md 第二點）。
+    """
+    txt = f"{start} ~ {end}｜待處理 {n_days} 天"
+    if limit:
+        txt += (f"　⚠⚠ 這一趟帶了 `--limit {limit}`（長工前的一天實測）"
+                "⇒ ⛔ **這不是整個區間的結果**，別拿它下結論")
+    return txt
+
+
 def days_to_ask(days, done, ledger, force=False, today=None):
     """→ `(這一趟要問的 [日期], 台帳有但因為是今天而重問的 [日期])`。
 
@@ -2354,7 +2371,8 @@ def cmd_feed(args):
     #     當月區間，沒有事件的月份 ok=0 是**正常**的，不可以拿它當失敗
     #     （防護誤殺跟防護失效一樣糟）。
     rl = runlog.Run(f"feeds:{name}")
-    rl.info("區間", f"{args.start} ~ {args.end}｜待處理 {len(days)} 天")
+    rl.info("區間", range_note(args.start, args.end, len(days),
+                               getattr(args, "limit", 0)))
     rl.info("結果", f"有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
     # ⛔ 這一列即使是 0 也要在：⚠ 0 跟「這道根本沒做」在紙上看起來一樣。
     rl.info("⭐ 記進台帳的「問到了、那天沒資料」",

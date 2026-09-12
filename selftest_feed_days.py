@@ -147,6 +147,32 @@ def main():
     out3, _ = M.merge_json('{"a":1}', "")
     ck("  main 上還沒有這個檔（空字串）⇒ 本趟就是全部", json.loads(out3) == {"a": 1})
 
+    print("\n── ⑦ `range_note`：⛔ 只問了一部分的那一趟要**自己講出來** ──")
+    full = F.range_note("2022-07-01", "2022-07-31", 20)
+    part = F.range_note("2022-07-01", "2022-07-31", 1, 1)
+    # ⭐ 這一條**沒傳 limit=**，走預設值那條路（CLAUDE.md 第七點第三個陷阱）
+    ck("沒帶 --limit ⇒ 不多講（⛔ 每趟都警告會被學會忽略）",
+       "limit" not in full and "待處理 20 天" in full, full)
+    ck("⛔ 帶了 --limit ⇒ 區塊裡**自己講出**這不是整個區間的結果",
+       "--limit 1" in part and "不是整個區間" in part, part)
+    ck("★ 反向驗：兩種情形產出的字**真的不同**"
+       "（⛔ 一樣的話上面兩條有一條是假的）", full != part)
+    # ⛔⛔ 上面三條**測的是判準，不是呼叫點**。突變驗當場證明了這件事：
+    #   把呼叫點的 `limit` 拿掉（`range_note(start, end, n)`）⇒ 上面三條**全綠**。
+    #   ⚠ 而那正是 Actions 上唯一會走的那條路。⇒ 這一條比**機制**：
+    #     `cmd_feed` 裡那個 `range_note(...)` 真的有把第四個引數餵進去。
+    import ast as _ast
+    with open(os.path.join(HERE, "feeds.py"), encoding="utf-8") as _f:
+        _src = _f.read()
+    _calls = [n for n in _ast.walk(_ast.parse(_src))
+              if isinstance(n, _ast.Call)
+              and getattr(n.func, "id", "") == "range_note"]
+    ck("★ 呼叫點真的把 `--limit` 餵進 `range_note`"
+       "（⛔ 不是比字串——把引數拿掉時上面三條全綠）",
+       bool(_calls) and all(len(c.args) >= 4 or c.keywords for c in _calls),
+       f"⛔ 掃到 {len(_calls)} 個呼叫，引數個數 "
+       f"{[len(c.args) for c in _calls]}")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
