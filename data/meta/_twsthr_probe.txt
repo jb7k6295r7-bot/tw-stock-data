@@ -8,7 +8,7 @@
 
 ── 大戶持股查詢頁
    https://norway.twsthr.info/StockHolders.aspx
-   ✓ 35,757 bytes
+   ✓ 35,758 bytes
    [1] 抓不到級距文字（可能在 JS 或另一頁）
    [2] ★ 八碼日期 1 個：['20170103'] … ['20170103']
    [3] form input（6）：{'__EVENTTARGET': '', '__EVENTARGUMENT': '', '__VIEWSTATE': '/wEPDwUJNDg4NDI0NjIwZGQ082dhNjJtKHCMOCKI…', '__VIEWSTATEGENERATOR': 'B22D0476', '__EVENTVALIDATION': '/wEdAARcm5d18CQYQ07sV/YOf9OVprT8jKN33hsB…', 'txtStock': ''}
