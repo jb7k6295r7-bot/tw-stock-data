@@ -342,6 +342,35 @@ def main():
        bool(_old) and _old != _new and sorted(_old.split()) == sorted(_new.split()),
        f"oldest={_old!r}｜newest={_new!r}")
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ `push_data.sh` 的 `PUSH_TREES`：⛔ 預設值壞掉 ＝ **八支全部推空**
+    #
+    # 2026-09-13 為了 `forward.yml`（輸出在 `backtest/forward/`，不在 `data/`）
+    # 把三個寫死的 `data` 換成 `$TREES`。⚠ 而如果預設值打錯，
+    # 八支 workflow 會**照樣綠、照樣說「沒有變動，不 commit」**——
+    # ⛔ 那正是 CLAUDE.md 四點二那一族：中間那一步成功了，就被當成整件事成功了。
+    # ⇒ 這一節**真的把那一行交給 bash 跑**，⛔ 不是比字串。
+    # ══════════════════════════════════════════════════════════════
+    _pd = io.open("push_data.sh", encoding="utf-8").read()
+    _defline = [ln for ln in _pd.split("\n") if ln.startswith("TREES=")]
+    ck("★ `push_data.sh` 有且只有一行定義 `TREES`", len(_defline) == 1, _defline)
+    if _defline:
+        _r = subprocess.run(["bash", "-c", _defline[0] + "; echo $TREES"],
+                            capture_output=True, text=True)
+        ck("★ 不帶 `PUSH_TREES` 時，bash 真的算出 `data`"
+           "（⛔ 八支 workflow 全靠這個預設值）",
+           _r.stdout.strip() == "data", f"⛔ 算出 {_r.stdout.strip()!r}")
+        _r2 = subprocess.run(
+            ["bash", "-c", "PUSH_TREES=backtest/forward; " + _defline[0]
+             + "; echo $TREES"], capture_output=True, text=True)
+        ck("★ 帶了 `PUSH_TREES` 時真的換過去", _r2.stdout.strip() == "backtest/forward",
+           f"⛔ 算出 {_r2.stdout.strip()!r}")
+    _hard = [ln for ln in _pd.split("\n")
+             if ("git add -A data" in ln or 'git diff --name-only "$BASE" "$DC" -- data' in ln)
+             and not ln.lstrip().startswith("#")]
+    ck("★ 沒有任何一處還寫死 `data`（⛔ 漏改一處 ⇒ 那一處永遠只搬 data）",
+       not _hard, f"⛔ 還寫死的：{_hard}")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
