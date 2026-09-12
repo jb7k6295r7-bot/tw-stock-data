@@ -267,6 +267,69 @@
         → /zh-tw/mainboard/trading/info/mi-pricing.html
       …（另有 30 條）
 
+★ ⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）
+   TWSE：⭐ **7 條**
+      證券商月報
+        → ${root}/zh/trading/statistics/index03.html
+      證券商資訊
+        → ${root}/zh/products/broker/infomation/list.html
+      證券商內控標準規範系統
+        → https://sicsweb.twse.com.tw
+      證券商辦理定期定額業務資料
+        → ${root}/zh/products/broker/business.html
+      證券商辦理有價證券借貸
+        → ${root}/zh/products/broker/sbl/sbl.html
+      證券商機動提撥機制
+        → ${root}/zh/clearing/securities/mechanism.html
+      …（另有 1 條）
+   TPEx：⭐ **34 條**
+      上櫃 / 交易資訊 / 盤中指數及熱門資料 / 熱門股證券商進出排行(依成交量)
+        → /zh-tw/mainboard/trading/realtime/broker-vol.html
+      上櫃 / 交易資訊 / 盤中指數及熱門資料 / 熱門股證券商進出排行(依成交金額)
+        → /zh-tw/mainboard/trading/realtime/broker-amt.html
+      上櫃 / 交易資訊 / 盤後資訊 / 各券商當日營業金額統計表
+        → /zh-tw/mainboard/trading/info/sec-trading.html
+      上櫃 / 交易資訊 / 盤後資訊 / 各券商總公司當日營業金額統計表
+        → /zh-tw/mainboard/trading/info/sec-summary.html
+      上櫃 / 交易資訊 / 歷史熱門資料 / 熱門股證券商進出排行 (依成交量)
+        → /zh-tw/mainboard/trading/historical/broker-vol.html
+      上櫃 / 交易資訊 / 歷史熱門資料 / 熱門股證券商進出排行(依成交金額)
+        → /zh-tw/mainboard/trading/historical/broker-amt.html
+      …（另有 28 條）
+
+★ 八大行庫／官股買賣
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+
+★ 當日沖銷（歷史）
+   TWSE：⭐ **6 條**
+      每日當日沖銷交易標的
+        → ${root}/zh/trading/day-trading.html
+      每月當日沖銷交易標的及統計
+        → ${root}/zh/trading/day-trading/twtb4u-month.html
+      暫停先賣後買當日沖銷交易標的預告表
+        → ${root}/zh/trading/day-trading/twtbau.html
+      暫停先賣後買當日沖銷交易歷史查詢
+        → ${root}/zh/trading/day-trading/twtbau-history.html
+      應付現股當日沖銷券差借券費率
+        → ${root}/zh/trading/day-trading/bfif8u.html
+      當日沖銷交易專區
+        → ${root}/zh/products/system/day-trading.html
+      …（另有 0 條）
+   TPEx：⭐ **7 條**
+      上櫃 / 交易資訊 / 現股當日沖銷交易
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 制度介紹
+        → /zh-tw/mainboard/trading/day-trading/rules.html
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 現股當沖交易標的
+        → /zh-tw/mainboard/trading/day-trading/securities.html
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 現股當沖交易統計資訊
+        → /zh-tw/mainboard/trading/day-trading/statistics/day.html
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 應付現股當日沖銷券差借券費率
+        → /zh-tw/mainboard/trading/day-trading/fee.html
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 暫停先賣後買當日沖銷交易標的預告表
+        → /zh-tw/mainboard/trading/day-trading/suspended-annouce.html
+      …（另有 1 條）
+
 ── ⇒ 這份輸出的用法 ──
   ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用
   ② 沒命中的：那才是**真的要請人去站上翻**的——而且是**一次把這幾條一起請託**，⛔ 不要一條一封信
