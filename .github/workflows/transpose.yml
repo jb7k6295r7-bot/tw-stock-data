@@ -77,6 +77,13 @@ jobs:
       - name: 驗累積型 CSV 的逐鍵合併（零相依）
         run: python selftest_merge_ledger.py
 
+      # ⛔⛔ 這一支**只有在這裡**才擋得住：`data/stocks/` 是這支 workflow 建的，
+      #   而 `valid_bar` 是寫進那裡的**衍生欄**。
+      #   ⚠ 一欄衍生值壞掉的樣子是「數字連續、欄位齊、沒有任何地方會報錯」
+      #   ⇒ K線分析線 2026-09-11 的兩個落地條件（並存、帶指紋）要在建之前先驗。
+      - name: 驗 `valid_bar`（並存＋指紋，零相依）
+        run: python selftest_valid_bar.py
+
       - name: 把程式同步到 main（趁 checkout 還新）
         run: |
           BR="${GITHUB_REF_NAME:-main}"

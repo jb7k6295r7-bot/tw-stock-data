@@ -102,6 +102,7 @@ jobs:
           python selftest_mutate.py
           python selftest_freshness.py
           python selftest_transpose_stamp.py
+          python selftest_valid_bar.py
           python selftest_feed_months.py
           python selftest_feed_days.py
           python selftest_syntax_warnings.py

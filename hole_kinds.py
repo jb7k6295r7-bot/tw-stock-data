@@ -53,6 +53,7 @@ import csv
 import io
 import os
 import sys
+import valid_bar
 from collections import Counter, defaultdict
 
 import runlog
@@ -109,7 +110,7 @@ def rows_in(code, a, b, root=None):
             d = (r.get("date") or "").strip()
             if a < d < b:
                 n += 1
-                if (r.get("price_basis") or "").strip() == "無成交":
+                if valid_bar.is_notrade(r):
                     nt += 1
     return n, nt
 

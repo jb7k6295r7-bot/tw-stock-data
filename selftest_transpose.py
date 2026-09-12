@@ -85,6 +85,9 @@ def build_fixture(root, break_header=False, overlap=False, skip_price_inst=False
     # transpose.py 會 import runlog 寫 _last_run.md，沙盒裡也要有它，
     # 否則整支在 import 就死掉，而失敗訊息看起來像轉置本身壞了。
     shutil.copy(os.path.join(HERE, "runlog.py"), root)
+    # ⛔ 同理：`valid_bar` 也是 import 期就要有的。⚠ 少了它整支在 import 死掉，
+    #   而錯誤訊息長得像「轉置本身壞了」（2026-09-12 當場踩到）。
+    shutil.copy(os.path.join(HERE, "valid_bar.py"), root)
 
 
 def run(root, kind, *extra):

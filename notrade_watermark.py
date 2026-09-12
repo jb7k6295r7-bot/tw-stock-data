@@ -37,6 +37,7 @@ import csv
 import io
 import os
 import sys
+import valid_bar
 from collections import Counter
 
 import runlog
@@ -66,7 +67,10 @@ def scan(daily_dir=None):
                 n_rows += 1
                 # ⭐ 用 price_basis 判，⛔ 不用「close 是不是空的」——
                 #   那一欄是正面標記，close 空不空只是它的副作用。
-                if (r.get("price_basis") or "").strip() != "無成交":
+                # ⛔ 判準只有一份實作（`valid_bar.is_notrade`）：這裡、`hole_kinds`
+                #   與 `valid_bar.flag()` 判得不一樣的話，三邊都算得出數字，
+                #   ⚠ 只是母體不同——**沒有任何地方會說**。
+                if not valid_bar.is_notrade(r):
                     continue
                 mk = (r.get("market") or "").strip()
                 by_mk[mk] += 1
