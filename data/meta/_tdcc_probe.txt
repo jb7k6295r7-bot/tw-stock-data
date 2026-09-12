@@ -118,9 +118,9 @@
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
-  ✓ 查詢頁 69,472 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
+  ✓ 查詢頁 69,468 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = 'e0b3aa36-4f6a-4201-a59e-3e5895843285'
+    SYNCHRONIZER_TOKEN = 'cd2018d7-cf49-46d4-892f-2db2c5d48546'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260911'
     method = 'submit'
@@ -169,7 +169,7 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 540,941 bytes
+     ✓ 540,418 bytes
      更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
      檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
@@ -192,16 +192,18 @@
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
      ✓ 69,472 bytes｜CSV 561 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,472 bytes｜CSV 561 列｜**相異資料日期 0 個** []
-       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
-     ✗ TimeoutError: The read operation timed out
+     ✓ 2,363,628 bytes｜CSV 68,935 列｜**相異資料日期 1 個** ['20260911']
+       「小-大」數字對 0 個｜**最長連續鏈 0 段**｜「N 以上」0 個
+       （一個都沒有）
 
   ── 開放資料專區：https://www.tdcc.com.tw/portal/zh/stats/openData
      ✓ 64,291 bytes｜CSV 407 列｜**相異資料日期 0 個** []

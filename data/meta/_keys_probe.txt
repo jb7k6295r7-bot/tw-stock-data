@@ -76,18 +76,11 @@
 
 ── 上櫃每日收盤行情
    https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/09/09&response=json
-   頂層鍵 ['date', 'flagField', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-     ── date：20260909
-     ── flagField：張數
-     ── stat：ok
+   ✗ 抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certific
 
 ── 上櫃融資融券 margin/balance
    https://www.tpex.org.tw/www/zh-tw/margin/balance?date=2026/09/09&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20260909
-     ── stat：ok
+   ✗ 抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certific
 
 ── 要從這份輸出回答的三件事 ──
   ① `total` 對得上我方解析出的列數嗎 ⇒ 若對得上，這是**免費的**每次請求完整性斷言

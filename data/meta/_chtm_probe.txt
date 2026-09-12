@@ -4,67 +4,18 @@
 
 ── 上櫃 chtm｜date=104/01/05　⭐ 情報分析線實測回 36 列 ⇒ **有歷史**的證據
    https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=104/01/05&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20150105
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（10）：['證券代號', '證券名稱', '變更交易', '分盤交易', '屬管理股票', '分盤或管理股票撮合循環時間(分鐘)', '停止交易', '財務資訊重點專區', '公告連結', '財務重點專區連結']
-     列數：36
-       樣本：["3066", "李洲", "Ｙ", "", "", "", "", "Ｙ", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-       樣本：["3085", "久大", "", "", "", "", "Ｙ", "Ｙ", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-       樣本：["3095", "及成", "Ｙ", "", "", "", "", "Ｙ", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-       樣本：["3126", "信億", "Ｙ", "Ｙ", "", "030", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-     欄 0「證券代號」：36 種相異值，前 8：['3066', '3085', '3095', '3126', '3465', '3562', '3629', '4131']
-     欄 1「證券名稱」：36 種相異值，前 8：['中日新', '久大', '久正', '信億', '元隆', '全達', '冠華', '卓韋']
-     ⭐ 欄 2「變更交易」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 3「分盤交易」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 4「屬管理股票」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（3）：['', '030', '045']
-     ⭐ 欄 6「停止交易」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 7「財務資訊重點專區」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 8「公告連結」的相異值（10）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTAwMDAxMTIyNw==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDAxNTAxOTI=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMDI5MA==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMDYwMTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMDgwNw==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAyMDIwMTA5OA==&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAzMDIwMDQwOTE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAzMDIwMDczMzE=&content_file=XX', '/zh-tw/announce/market/announce/detail.html?docId=MTAzMDIwMTAzMzE=&content_file=XX']
-     ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── 上櫃 chtm｜date=098/06/01　⛔ 越界：情報分析線說它**靜靜回今天** ⇒ 本探針要逐位元組證實
    https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=098/06/01&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20090601
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（10）：['證券代號', '證券名稱', '變更交易', '分盤交易', '屬管理股票', '分盤或管理股票撮合循環時間(分鐘)', '停止交易', '財務資訊重點專區', '公告連結', '財務重點專區連結']
-     列數：38
-       樣本：["1107", "建台", "", "", "Ｙ", "045", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-       樣本：["2396", "精碟", "", "", "Ｙ", "045", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-       樣本：["3099", "頂倫", "Ｙ", "", "", "", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-       樣本：["3144", "新揚科", "Ｙ", "", "", "", "", "", "", "https://mops.twse.com.tw/mops/#/web/t211sb01_q1"]
-     欄 0「證券代號」：38 種相異值，前 8：['1107', '2396', '3099', '3144', '3205', '3252', '4413', '4801']
-     欄 1「證券名稱」：38 種相異值，前 8：['世一旦', '久陽', '亞全', '佳鼎', '元隆', '凌越', '合邦', '商丞']
-     ⭐ 欄 2「變更交易」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 3「分盤交易」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 4「屬管理股票」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 5「分盤或管理股票撮合循環時間(分鐘)」的相異值（3）：['', '030', '045']
-     ⭐ 欄 6「停止交易」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 7「財務資訊重點專區」的相異值（2）：['', 'Ｙ']
-     ⭐ 欄 8「公告連結」的相異值（2）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTA0MDIwMTE3NDE=&content_file=XX']
-     ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── 上櫃 chtm｜date=115/09/12　對照組：今天（⚠ 越界那一份要跟這一份比）
    https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/12&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20260912
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（10）：['證券代號', '證券名稱', '變更交易', '分盤交易', '屬管理股票', '分盤或管理股票撮合循環時間(分鐘)', '停止交易', '財務資訊重點專區', '公告連結', '財務重點專區連結']
-     列數：0
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 越界那一天 vs 今天：逐位元組比
-   ✅ 不同（越界 4591B vs 今天 789B）　⇒ 越界**不是**靜默回今天，可以靠回應本身分辨
+   ⚠ 有一邊沒拿到 ⇒ **不可判定**（⛔ 不要寫成「沒問題」）
 
 ── 上市 融資成數調整 BFIB9U（不帶日期，看它回什麼）
    https://www.twse.com.tw/rwd/zh/marginTrading/BFIB9U?startDate=&endDate=&sortType=ALL&stockNo=&selectType=%E5%85%A8%E9%83%A8&response=json

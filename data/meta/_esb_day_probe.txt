@@ -5,94 +5,46 @@
 
 ══ 目標日 2026-09-08
   候選 9 條（來自 `backfill.candidates()`，⚠ 全是未驗證的假設）
-  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/08&id=&response=json
-      頂層鍵 ['stat']
-      ⭐ 平常被丟掉的鍵：['stat']
-        ── stat：請輸入資料日期及股票代碼查詢個股行情
-      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
-  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/08&code=&id=&response=json
-      頂層鍵 ['stat']
-      ⭐ 平常被丟掉的鍵：['stat']
-        ── stat：請輸入資料日期及股票代碼查詢個股行情
-      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
+  ✗ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/08&id=&response=json
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+  ✗ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/08&code=&id=&response=json
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/comPricing?date=2026/09/08&id=&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/historical/day/com-pricing?date=2026/09/08&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/stockPricing?date=2026/09/08&id=&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date=2026/09/08&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/09/08&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/08&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/08&o=json
-      HTTP 404 Not Found | <!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="wi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ⇒ 2026-09-08 可用的候選：0 條
 
 ══ 目標日 2026-09-09
   候選 9 條（來自 `backfill.candidates()`，⚠ 全是未驗證的假設）
-  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/09&id=&response=json
-      頂層鍵 ['stat']
-      ⭐ 平常被丟掉的鍵：['stat']
-        ── stat：請輸入資料日期及股票代碼查詢個股行情
-      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
-  ○ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/09&code=&id=&response=json
-      頂層鍵 ['stat']
-      ⭐ 平常被丟掉的鍵：['stat']
-        ── stat：請輸入資料日期及股票代碼查詢個股行情
-      解析：找不到含『證券代號』與『收盤』欄位的表｜0 列
+  ✗ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/09&id=&response=json
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+  ✗ www.tpex.org.tw/www/zh-tw/emerging/historical?type=Daily&date=2026/09/09&code=&id=&response=json
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/comPricing?date=2026/09/09&id=&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/historical/day/com-pricing?date=2026/09/09&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/stockPricing?date=2026/09/09&id=&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date=2026/09/09&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/09/09&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/09&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/09&o=json
-      HTTP 404 Not Found | <!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="wi
+      URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
   ⇒ 2026-09-09 可用的候選：0 條
 
 ## ⇒ 結論

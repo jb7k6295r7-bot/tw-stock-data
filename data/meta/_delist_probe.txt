@@ -183,58 +183,19 @@
 
 ── ⭐ 上櫃歷史暫停/恢復交易 openapi tpex_spendi_history
    https://www.tpex.org.tw/openapi/v1/tpex_spendi_history
-   ⚠ 頂層不是 dict，是 list
-   ⭐ 頂層就是**陣列**：362 列（第一列型別 dict）
-   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'DateOfResumedTrading', 'DateOfSuspendedTrading', 'SecuritiesCompanyCode', 'Serial', 'TimeOfResumedTrading', 'TimeOfSuspendedTrading']
-   ⚠ 不同鍵組合的種類：1
-   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-     CompanyName：181 種｜最小 世紀*｜最大 龍鋒｜例 ['世紀*', '世紀*元大57購01', '世紀*元大57購02']
-     Date：1 種 115×362
-     DateOfResumedTrading：11 種 1150803×64、1150514×43、1150429×31、1150716×27、1150122×6、1150313×4、1150210×2、1150622×1、1150813×1、1150112×1、1150616×1｜⚠ 空的 181
-     DateOfSuspendedTrading：11 種 1150731×64、1150513×43、1150428×31、1150715×27、1150121×6、1150312×4、1150209×2、1150618×1、1150812×1、1150109×1、1150615×1｜⚠ 空的 181
-     SecuritiesCompanyCode：181 種｜最小 1788｜最大 9960｜例 ['1788', '1799', '19094']
-     Serial：362 種｜最小 1｜最大 99｜例 ['1', '10', '100']
-     TimeOfResumedTrading：1 種 080000×181｜⚠ 空的 181
-     TimeOfSuspendedTrading：1 種 080000×181｜⚠ 空的 181
-     樣本：{"Date": "115", "Serial": "1", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "1150618", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
-     樣本：{"Date": "115", "Serial": "2", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "", "TimeOfSuspendedTrading": "", "DateOfResumedTrading": "1150622", "TimeOfResumedTrading": "080000"}
-     樣本：{"Date": "115", "Serial": "3", "SecuritiesCompanyCode": "1799", "CompanyName": "易威", "DateOfSuspendedTrading": "1150312", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
-
-   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
-   鍵的形狀：⛔ 認不出（日期候選 []、代號候選 ['SecuritiesCompanyCode']）｜CompanyName: 像日期 0/362、像代號 0/362｜Date: 像日期 0/362、像代號 0/362｜DateOfResumedTrading: 像日期 0/362、像代號 0/362｜DateOfSuspendedTrading: 像日期 0/362、像代號 0/362｜SecuritiesCompanyCode: 像日期 0/362、像代號 362/362｜Serial: 像日期 0/362、像代號 0/362｜TimeOfResumedTrading: 像日期 0/362、像代號 181/362｜TimeOfSuspendedTrading: 像日期 0/362、像代號 181/362
-   ⛔ 認不出日期／代號欄 ⇒ **不比**（⚠ 硬挑一欄會整批錯位）
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── 上櫃當日暫停/恢復交易 openapi tpex_spendi_today
    https://www.tpex.org.tw/openapi/v1/tpex_spendi_today
-   ⚠ 頂層不是 dict，是 list
-   ⭐ 頂層就是**陣列**：1 列（第一列型別 dict）
-   ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'SecuritiesCompanyCode', '恢復交易', '暫停交易']
-   ⚠ 不同鍵組合的種類：1
-   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-     CompanyName：0 種 ｜⚠ 空的 1
-     Date：1 種 20260911×1
-     SecuritiesCompanyCode：0 種 ｜⚠ 空的 1
-     恢復交易：0 種 ｜⚠ 空的 1
-     暫停交易：0 種 ｜⚠ 空的 1
-     樣本：{"Date": "20260911", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
-
-   ══ 與我方 data/meta/delisted.csv 雙向比對 ══
-   鍵的形狀：⛔ 認不出（日期候選 []、代號候選 []）｜CompanyName: 像日期 0/1、像代號 0/1｜Date: 像日期 0/1、像代號 0/1｜SecuritiesCompanyCode: 像日期 0/1、像代號 0/1｜恢復交易: 像日期 0/1、像代號 0/1｜暫停交易: 像日期 0/1、像代號 0/1
-   ⛔ 認不出日期／代號欄 ⇒ **不比**（⚠ 硬挑一欄會整批錯位）
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
-   ✗ HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
@@ -261,73 +222,23 @@
 
 ── ⭐⭐ 終止上櫃 company/deListed｜date=ALL（⛔ 這個是陷阱，要跟逐年加總比）
    https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=ALL&reason=-1&id=&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：ALL
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
-     列數：10
-       樣本：["5371", "中強光電股份有限公司", "115-09-03", "依本中心證券商營業處所買賣有價證券業務規則第15條之12、14、15及16規定", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["4130", "健亞生物科技股份有限公司", "115-07-28", "本中心證券商營業處所買賣有價證券業務規則第15條之12", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["5236", "凌陽創新科技股份有限公司", "115-07-16", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 終止上櫃 company/deListed｜date=2015
    https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2015&reason=-1&id=&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：2015
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
-     列數：7
-       樣本：["5506", "長鴻營造股份有限公司", "104-11-26", "依本中心業務規則第12條之2第1項第5款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["4927", "泰鼎國際股份有限公司", "104-09-08", "依本中心業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["5505", "和旺聯合實業股份有限公司", "104-07-16", "本中心業務規則第12條之2第1項第5款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 終止上櫃 company/deListed｜date=2020
    https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2020&reason=-1&id=&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：2020
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
-     列數：10
-       樣本：["1597", "直得科技股份有限公司", "109-12-23", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["5304", "鼎創達股份有限公司", "109-11-20", "本中心證券商營業處所買賣有價證券管理辦法第10條", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["8934", "衡平股份有限公司", "109-11-18", "本中心證券商營業處所買賣有價證券業務規則第12條之2及第15條之11", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 終止上櫃 company/deListed｜date=2025
    https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2025&reason=-1&id=&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：2025
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
-     列數：6
-       樣本：["6747", "亨泰光學股份有限公司", "114-12-04", "本中心證券商營業處所買賣有價證券業務規則第15條之18", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["4945", "陞達科技股份有限公司", "114-09-08", "本中心證券商營業處所買賣有價證券業務規則第15條之18", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["3202", "樺晟電子股份有限公司", "114-07-21", "本中心證券商營業處所買賣有價證券業務規則第12條之2及第15條之11", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 終止上櫃 company/deListed｜date=2026
    https://www.tpex.org.tw/www/zh-tw/company/deListed?code=&date=2026&reason=-1&id=&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：2026
-     ── stat：ok
-   頂層 `fields`：None
-   `_tables()` 認出 1 張表
-     欄位（5）：['股票代號', '公司名稱', '終止上櫃日期', '終止上櫃原因', '公司資料網址']
-     列數：5
-       樣本：["5371", "中強光電股份有限公司", "115-09-03", "依本中心證券商營業處所買賣有價證券業務規則第15條之12、14、15及16規定", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["4130", "健亞生物科技股份有限公司", "115-07-28", "本中心證券商營業處所買賣有價證券業務規則第15條之12", "https://mops.twse.com.tw/mops/#/web/t05st03"]
-       樣本：["5236", "凌陽創新科技股份有限公司", "115-07-16", "本中心證券商營業處所買賣有價證券業務規則第12條之2第1項第1款", "https://mops.twse.com.tw/mops/#/web/t05st03"]
+   ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ## ⇒ 拿到結果之後要回答的
   Q1 `suspendListing` 的列是 list 還是 dict？欄位順序／鍵名是什麼？
