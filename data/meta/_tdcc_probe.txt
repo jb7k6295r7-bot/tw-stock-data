@@ -44,10 +44,10 @@
 
   ── 集保戶股權分散表查詢頁（資料日期清單＋級距文字）
      https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
-     ✓ 69,472 bytes
-     ★ 資料日期選項 52 個：['20260911', '20260904', '20260828', '20260821', '20260814'] … ['20250926', '20250919', '20250912']
+     ✓ 69,367 bytes
+     ★ 資料日期選項 51 個：['20260911', '20260904', '20260828', '20260821', '20260814'] … ['20251003', '20250926', '20250919']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['02-2719']
+     ★ 疑似級距文字：['7747-0', '4-4946', '02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -118,46 +118,46 @@
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
-  ✓ 查詢頁 69,468 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
+  ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = 'cd2018d7-cf49-46d4-892f-2db2c5d48546'
+    SYNCHRONIZER_TOKEN = '4cde2150-f9e2-4f43-862f-bfa28dc90ddb'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260911'
     method = 'submit'
     sqlMethod = 'StockName'
     stockName = ''   ← ⚠ 空值
     stockNo = ''   ← ⚠ 空值
-  日期選項 52 個
+  日期選項 51 個
   頁面裡出現的 `method=…` 候選值（逐字，⛔ 沒有就是沒有）：['post']
     scaDate 最新 20260911：2 bytes｜回應裡的日期 []｜大數字 0 個
     firDate 最新 20260911：2 bytes｜回應裡的日期 []｜大數字 0 個
-    scaDate 較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
-    firDate 較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+    scaDate 較舊 20260320：2 bytes｜回應裡的日期 []｜大數字 0 個
+    firDate 較舊 20260320：2 bytes｜回應裡的日期 []｜大數字 0 個
   ⇒ 仍然全是空回應 ⇒ 擋點也不是 Cookie，那就要到「這條路在不執行 js 的前提下走不通」為止。
   ⇒ 有內容 ⇒ **集保歷史抓得到**，寫回補（51 週）。
 
 [7] ★ 歷史週別（第二版：每發重抓 token、兩個日期欄名都試）
-    日期選項 52 個｜最新 20260911｜較舊 20260313｜最舊 20250912
+    日期選項 51 個｜最新 20260911｜較舊 20260320｜最舊 20250919
 
     ── 日期欄名試 `scaDate`
        最新 20260911：2 bytes｜回應裡的日期 []｜大數字 0 個
-       較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+       較舊 20260320：2 bytes｜回應裡的日期 []｜大數字 0 個
 
     ── 日期欄名試 `firDate`
        最新 20260911：2 bytes｜回應裡的日期 []｜大數字 0 個
-       較舊 20260313：2 bytes｜回應裡的日期 []｜大數字 0 個
+       較舊 20260320：2 bytes｜回應裡的日期 []｜大數字 0 個
 
     ⛔ **每一發都還是空回應（< 200 bytes）。**
        重抓 token 沒有解決，代表擋點不在 token——
        可能還要 Cookie／Session，或這條 ajax 不接受直接呼叫。
-       ⛔ 仍然**不可以**下「沒有歷史」的結論：查詢頁確實列了 52 個週別，只是我方取不到。
+       ⛔ 仍然**不可以**下「沒有歷史」的結論：查詢頁確實列了 51 個週別，只是我方取不到。
 
 [8] 開放資料專區其他 dataset id 的形狀（只量，不猜用途）
     id=1-1: 14,453,458 bytes｜CSV 144,765 列｜相異資料日期 0 個 []
              欄位：['證券代號', '證券名稱', '市場別', '股務單位', '停止過戶領回', '證券狀態', '無面無實體', '歸戶領回']
     id=1-2: 22,802,559 bytes｜CSV 142,474 列｜相異資料日期 1 個 ['20260912']
              欄位：['資料日期', '證券代號', '證券名稱', '市場別', '股務單位', '股務單位地址', '電話', '備 註(終止日期)']
-    id=1-3: 1,037,774 bytes｜CSV 5,080 列｜相異資料日期 1 個 ['20260912']
+    id=1-3: 1,037,774 bytes｜CSV 5,080 列｜相異資料日期 1 個 ['20260913']
              欄位：['資料日期', '發行機構名稱', '發行機構名稱(英文)', '發行辦法名稱', '發行辦法檔案網址(http://www.tdcc.com.tw/tcdata/tc11/)', '債券代號', '債券簡稱']
     id=1-4: 5,060 bytes｜CSV 93 列｜相異資料日期 1 個 ['20260910']
              欄位：['資料日期', '證券代號', '證券名稱', '分戶保管股數', '特定保管股數', '強制集保總股數', '發行仟股數']
@@ -170,9 +170,9 @@
 
   ── 網頁：https://data.gov.tw/dataset/11452
      ✓ 540,418 bytes
-     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
+     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":562,"code_name":563},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
-     檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
+     檔案格式：['_value":553,"code_name":554},"6","建議提供其他檔案格式",{"code_type":531,"code_value":556,"code_name']
      授權：['><a href="/licenses" class="" title="前往 授權條款" data-v-5c04cf44>授權條款</a></li><li class="menu', 'data-v-8377536e><strong data-v-8377536e>授權方式</strong></div><div class="table-cell" data-v-']
 
   ── 公開 API：https://data.gov.tw/api/v2/rest/dataset/11452
@@ -191,12 +191,12 @@
 [11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
-     ✓ 69,472 bytes｜CSV 561 列｜**相異資料日期 0 個** []
+     ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
        「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
-     ✓ 69,472 bytes｜CSV 561 列｜**相異資料日期 0 個** []
+     ✓ 69,363 bytes｜CSV 559 列｜**相異資料日期 0 個** []
        「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 

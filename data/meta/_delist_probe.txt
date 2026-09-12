@@ -138,7 +138,7 @@
    https://www.twse.com.tw/rwd/zh/violation/change?response=json
    頂層鍵 ['data', 'fields', 'groups', 'stat', 'title', 'total']
    ⭐ 平常被丟掉的鍵：['groups', 'stat', 'total']
-     ── title：115年09月12日 變更交易及併採行分盤集合競價交易
+     ── title：115年09月13日 變更交易及併採行分盤集合競價交易
      ── groups：[{"span": 2, "title": ""}, {"span": 3, "title": "變更交易"}, {"span": 3, "title": "併採行分盤"}]
      ── stat：ok
      ── total：15

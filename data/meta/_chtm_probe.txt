@@ -10,8 +10,8 @@
    https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=098/06/01&response=json
    ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
-── 上櫃 chtm｜date=115/09/12　對照組：今天（⚠ 越界那一份要跟這一份比）
-   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/12&response=json
+── 上櫃 chtm｜date=115/09/13　對照組：今天（⚠ 越界那一份要跟這一份比）
+   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/13&response=json
    ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
 
 ── ⭐⭐ 越界那一天 vs 今天：逐位元組比
