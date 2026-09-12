@@ -28,6 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "forward")
 START = "2026-09-14"
 HOLD = 60
+FORCE_GAP = 60     # 持倉中連續 60 個交易日沒有有效 K 棒 ⇒ 以最後一根收盤強制出場（RULE.md 追加一）
 COST = R.COST
 NS = [30, 40]
 _W: dict = {}
@@ -83,11 +84,14 @@ def run_engine(st, sig, series, cal, from_pos, to_pos):
         for p in pos_list:
             s = series[p["sid"]]; idx = s["idx"]; kx = p["k"] + HOLD
             ep = float(s["open"][p["entry_pos"]])
-            if kx < len(idx) and int(idx[kx]) <= t:
-                x = int(idx[kx]); gross = float(s["close"][x]) / ep - 1
+            forced = kx >= len(idx) and t - int(idx[-1]) > FORCE_GAP   # 連續 60 個交易日沒有有效 K 棒（下市／長期停牌）
+            if (kx < len(idx) and int(idx[kx]) <= t) or forced:
+                x = int(idx[kx]) if not forced else int(idx[-1]); gross = float(s["close"][x]) / ep - 1
                 cash += p["amt"] * (1 + gross - COST)
+                bars = HOLD if not forced else int(len(idx) - 1 - p["k"])
                 trades.append({"sid": p["sid"], "signal_date": str(cal[p["pos"]].date()), "entry_date": str(cal[p["entry_pos"]].date()),
-                               "exit_date": str(cal[x].date()), "bars": HOLD, "gross": gross, "net": gross - COST, "amt": p["amt"], "pnl": p["amt"] * (gross - COST)})
+                               "exit_date": str(cal[x].date()), "bars": bars, "gross": gross, "net": gross - COST, "amt": p["amt"], "pnl": p["amt"] * (gross - COST),
+                               "forced": forced})
             else:
                 still.append(p)
         pos_list = still
@@ -131,7 +135,7 @@ def main():
     from_pos = min((st["last_pos"] + 1) if st["last_pos"] is not None else start_pos for st in states.values())
     now = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M")
     sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=HERE).stdout.strip()
-    log = [f"## {now}（台北）　資料到 {cal[end_pos].date()}　HEAD {sha}", ""]
+    log = [f"## {now}（台北）　資料到 {cal[end_pos].date()}　HEAD {sha}　母體 {len(uni):,} 檔（`data/meta/stocks.csv` 累積名冊，含已下市）", ""]
     if from_pos > end_pos:
         for st in states.values():
             if st["last_pos"] is None:
@@ -170,12 +174,17 @@ def main():
         f0 = (st["last_pos"] + 1) if st["last_pos"] is not None else start_pos
         eq_rows, trades, taken = run_engine(st, new[new["entry_pos"] >= f0], series, cal, f0, end_pos)
         append_csv(os.path.join(a.out, f"equity_N{N}.csv"), eq_rows, ["date", "equity", "cash", "n_pos", "slot_use"])
-        append_csv(os.path.join(a.out, f"trades_N{N}.csv"), trades, ["sid", "signal_date", "entry_date", "exit_date", "bars", "gross", "net", "amt", "pnl"])
+        append_csv(os.path.join(a.out, f"trades_N{N}.csv"), trades, ["sid", "signal_date", "entry_date", "exit_date", "bars", "gross", "net", "amt", "pnl", "forced"])
         taken_all[N] = set(taken); save_state(a.out, st)
         log.append(f"- N＝{N}：記到 {cal[end_pos].date()}，權益 {st['equity']:.4f}、現金 {st['cash']:.4f}、持倉 {len(st['positions'])}（槽位 {len(st['positions']) / N * 100:.0f}%）、本次進 {len(taken)} 筆、出 {len(trades)} 筆")
+    asof = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%dT%H:%M:%S+08:00")
+    data_sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=HERE).stdout.strip()
+    def _has_adj(sid):
+        adj = D.load_adj(sid); return bool(adj is not None and len(adj))
     rows = [{"signal_date": str(cal[int(r.pos)].date()), "entry_date": str(cal[int(r.entry_pos)].date()), "sid": r.sid, "score": int(r.score), "amt_ratio60": float(r.amt_ratio60),
-             **{f"taken_N{N}": (r.sid, int(r.pos)) in taken_all[N] for N in states}} for r in new.sort_values(["entry_pos", "sid"]).itertuples()]
-    append_csv(sig_path, rows, ["signal_date", "entry_date", "sid", "score", "amt_ratio60"] + [f"taken_N{N}" for N in states])
+             **{f"taken_N{N}": (r.sid, int(r.pos)) in taken_all[N] for N in states},
+             "has_adj": _has_adj(r.sid), "asof": asof, "data_sha": data_sha} for r in new.sort_values(["entry_pos", "sid"]).itertuples()]
+    append_csv(sig_path, rows, ["signal_date", "entry_date", "sid", "score", "amt_ratio60"] + [f"taken_N{N}" for N in states] + ["has_adj", "asof", "data_sha"])
     log.append(f"- 新 AND 訊號 {len(rows)} 筆（3/5 主格 {int((S['entry_pos'] >= from_pos).sum()) if len(S) else 0} 筆）；營收面板最新期 {panel['signal_pos'].max() if len(panel) else '—'}（{cal[int(panel['signal_pos'].max())].date() if len(panel) else '—'}）；{time.time() - t0:.0f}s")
     with open(os.path.join(a.out, "runlog.md"), "a", encoding="utf-8") as fh:
         fh.write("\n".join(log) + "\n\n")
