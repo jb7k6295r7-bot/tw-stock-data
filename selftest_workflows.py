@@ -267,6 +267,30 @@ def main():
        and all("|| RC=" in ln for ln in _rc_calls(_g_ok)),
        f"⛔ 掃到 {_rc_calls(_g_ok)}")
 
+    # ⭐⭐ 「取 main 的資料」一定要排在**用那份資料的步驟之前**。
+    #   2026-09-12 付過代價：feeds.yml 的「取 main 的日檔與台帳」寫在
+    #   `回補` **後面** 180 行 ⇒ ⛔ 回補讀的是**分支那份過期的 data/**，
+    #   ⚠ 而那一步照樣 `skipped`／`success`，**沒有任何地方會說**。
+    #   ⇒ 判準是**順序**，⛔ 不是「有沒有這一步」——有這一步但排在後面，
+    #     跟沒有這一步的後果一模一樣（CLAUDE.md 四點六）。
+    def _order(text):
+        """→ (取 main 那一步的位置, 用它的那一步的位置)；找不到回 None。"""
+        a = text.find("- name: 取 main 的日檔與台帳")
+        b = text.find("- name: 回補")
+        return (a, b) if a >= 0 and b >= 0 else None
+
+    _fe = io.open(".github/workflows/feeds.yml", encoding="utf-8").read()
+    _o = _order(_fe)
+    ck("★ feeds.yml：「取 main 的日檔與台帳」排在「回補」**之前**",
+       _o is not None and _o[0] < _o[1],
+       f"⛔ 位置 {_o} ⇒ 回補拿到的是分支那份過期的 data/")
+    # 反向驗（⛔ 沒證明過會失敗的檢查不算檢查）
+    _rev = "x\n      - name: 回補\ny\n      - name: 取 main 的日檔與台帳\n"
+    _ro = _order(_rev)
+    ck("★ 反向驗：把兩步對調的 workflow **確實**會被判成不合格",
+       _ro is not None and not (_ro[0] < _ro[1]),
+       f"⛔ 對調了還說通過（位置 {_ro}）⇒ 這一道是死的")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
