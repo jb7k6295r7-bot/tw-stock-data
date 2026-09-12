@@ -49,6 +49,8 @@ import csv, io, json, os, sys, argparse, time, collections
 
 import runlog
 
+import valid_bar
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 UNI = os.path.join(ROOT, "data", "universe")
 # ★★ 一種 kind 可以有**多個來源目錄**。
@@ -132,11 +134,17 @@ def source_fingerprint(kind):
     return {"files": files, "bytes": total, "last": last}
 
 
-def write_stamp(kind, rows_total):
+def write_stamp(kind, rows_total, has_valid_bar=False):
     """建完就把指紋寫進 `<輸出目錄>/_built.json`。"""
     p = os.path.join(OUT[kind], STAMP)
     os.makedirs(OUT[kind], exist_ok=True)
-    body = {"kind": kind, "rows": rows_total, "src": source_fingerprint(kind)}
+    src = source_fingerprint(kind)
+    body = {"kind": kind, "rows": rows_total, "src": src}
+    # ⭐ 條件二（K線分析線 2026-09-11 裁定）：衍生欄要帶**定義版本**與
+    #   **產生它那一趟的輸入指紋**。⛔ 沒有指紋的衍生欄會跟日檔早一趟就不一致，
+    #   ⚠ 而它長得跟對的一模一樣。
+    if has_valid_bar:
+        body[valid_bar.COL] = valid_bar.contract(src)
     with open(p, "w", encoding="utf-8") as f:
         json.dump(body, f, ensure_ascii=False, sort_keys=True)
         f.write("\n")
@@ -250,6 +258,20 @@ def build(kind):
     if header is None:
         print(f"[transpose] ✗ {kind} {note}", file=sys.stderr)
         return 1, info
+    # ⭐⭐ `valid_bar`：一根 K 棒可不可以拿來算的單一判準（K線分析線 方案乙）。
+    #   ⛔ 只在 price 層發——其他層沒有 `price_basis`，發出來會是不可反證的一欄。
+    #   ⚠ 而它**接在表頭最後面**：來源日檔的欄位仍然是全庫表頭的前綴
+    #     ⇒ 下面那道「本檔是不是前綴」的檢查照樣成立。
+    vb_i = None
+    if kind == "price":
+        okc, vbnote = valid_bar.assert_coexists(header)
+        info["valid_bar_note"] = vbnote
+        if okc:
+            header = header + [valid_bar.COL]
+            vb_i = len(header) - 1
+        else:
+            print(f"[transpose] ⚠ {kind} 不發 `{valid_bar.COL}`：{vbnote}",
+                  file=sys.stderr)
     info["header_cols"] = len(header)
     info["header_note"] = note
     if len(set(note.split("｜"))) > 1:
@@ -287,7 +309,12 @@ def build(kind):
                         code = (r.get("stock_id") or "").strip()
                         if not code:
                             continue
-                        buf[code].append([r.get(c, "") for c in header])
+                        row = [r.get(c, "") for c in header]
+                        if vb_i is not None:
+                            # ⛔ 這一格不是從來源抄的（來源沒有這一欄），
+                            #   是**算出來的** ⇒ 一定要蓋掉 `r.get()` 的那個空字串。
+                            row[vb_i] = valid_bar.flag(r)
+                        buf[code].append(row)
                         rows_total += 1
         di = header.index("date")
         for code, rows in buf.items():
@@ -345,7 +372,7 @@ def build(kind):
     # ⭐ **通過之後才蓋章**：⛔ 失敗的那一趟絕不可以留下「我是新的」這個說法
     #   ——⚠ 那會讓下游把一份壞掉的個股庫當成最新的來用，
     #   比「沒有指紋」更糟（沒有指紋至少會被判成不新）。
-    info["stamp"] = write_stamp(kind, rows_total)
+    info["stamp"] = write_stamp(kind, rows_total, vb_i is not None)
     return 0, info
 
 
@@ -454,6 +481,18 @@ def main():
                  + ("　⚠ 19:00 那一趟 margin／per 落後一個交易日是正常的"
                     "（晚間才發布）⇒ 那一趟要帶 --lag-tolerance 1"
                     if behind and a.lag_tolerance == 0 else ""))
+    # ⑥ ⭐⭐ 衍生欄 `valid_bar`：要**講出它有沒有發、以及是哪一版**。
+    #   ⛔ 不講的話，「沒發這一欄」跟「這一欄全是 0」在下游長得一模一樣，
+    #   ⚠ 而兩者的意思完全相反（一個是沒資料、一個是那幾天全部無效）。
+    if "price" in kinds:
+        vbn = info["price"].get("valid_bar_note") or "⛔ 這一趟沒有走到表頭那一步"
+        st = (info["price"].get("stamp") or {}).get(valid_bar.COL) or {}
+        rl.check(f"⭐ `{valid_bar.COL}` 有發，而且與 `price_basis` **並存**",
+                 bool(st.get("version")),
+                 f"{vbn}"
+                 + (f"｜{st['version']}：{st['rule']}｜用 {st['from']['files']} 檔／"
+                    f"{st['from']['bytes']:,} 位元組／最後一天 {st['from']['last']}"
+                    " 的日檔算的" if st.get("version") else ""))
     rc = rl.finish()
     return 1 if (bad or rc) else 0
 
