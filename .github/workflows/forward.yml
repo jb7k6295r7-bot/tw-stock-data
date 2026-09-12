@@ -42,6 +42,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      # ⛔⛔ 回測線 2026-09-13 02:30 在我的分支上讀出來的：這一步原本**不存在**。
+      #   `forward_and` import pandas 與 numpy ⇒ 會在「跑前瞻紀錄」那步 ImportError。
+      # ⚠ 而失敗的樣子會是「那個月沒跑」——正是前瞻紀錄最怕的形狀。
+      # ⛔ 這裡**不加 `continue-on-error`**（`daily.yml` 那一步有，因為斷點掃描是附帶的）：
+      #   裝不起來就等於這一趟不能跑，要當場紅，⚠ 不可以往下走到「跑了但少一筆」。
+      - name: 裝 pandas 與 numpy（forward_and 要用）
+        timeout-minutes: 5
+        run: python -m pip install --quiet --disable-pip-version-check pandas numpy
+
       - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
         run: python selftest_workflows.py
 

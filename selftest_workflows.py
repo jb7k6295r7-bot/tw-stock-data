@@ -343,6 +343,33 @@ def main():
        f"oldest={_old!r}｜newest={_new!r}")
 
     # ══════════════════════════════════════════════════════════════
+    # ⭐ 相依套件要裝在**用它之前**。⛔ 判準是**順序**，不是「有沒有那一步」
+    #   （跟上面「取 main 排在回補之前」同一個形狀）。
+    # ⚠ 2026-09-13 回測線在我的分支上讀出來的：`forward.yml` 少了
+    #   `pip install pandas numpy` ⇒ 會在「跑前瞻紀錄」那步 ImportError，
+    #   ⛔ 而失敗的樣子是「那個月沒跑」——正是前瞻紀錄最怕的形狀。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        src = io.open(f, encoding="utf-8").read()
+        use = src.find("backtest.forward_and")
+        if use < 0:
+            continue
+        inst = src.find("pip install")
+        ck(f"{os.path.basename(f)}｜`pip install` 排在跑 `forward_and` **之前**",
+           0 <= inst < use,
+           f"⛔ 位置 pip={inst} / forward_and={use}"
+           "　⇒ 會 ImportError，而失敗的樣子是「那個月沒跑」")
+        # ⛔ 比的是**那一行 `pip install` 本身**，⚠ 不是「這兩個字在不在檔案裡」
+        #   ——第一版我寫 `"numpy" in src`，而 `numpy` 在我自己的註解裡也有一份
+        #   ⇒ 把 numpy 從安裝行拿掉的突變 **全綠**（2026-09-13 當場踩到）。
+        _pipln = [ln for ln in src.split("\n")
+                  if "pip install" in ln and not ln.lstrip().startswith("#")]
+        ck(f"{os.path.basename(f)}｜`pip install` 那一行**真的**同時裝 pandas 與 numpy"
+           "（⛔ `forward_and` 兩個都 import）",
+           bool(_pipln) and all("pandas" in ln and "numpy" in ln for ln in _pipln),
+           f"⛔ 安裝行：{_pipln}")
+
+    # ══════════════════════════════════════════════════════════════
     # ⭐⭐ `push_data.sh` 的 `PUSH_TREES`：⛔ 預設值壞掉 ＝ **八支全部推空**
     #
     # 2026-09-13 為了 `forward.yml`（輸出在 `backtest/forward/`，不在 `data/`）
