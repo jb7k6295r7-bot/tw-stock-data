@@ -1,7 +1,7 @@
-date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price
-2026-09-03,8298,威睿,emerging,,,,,0,0,,,,,無成交,
-2026-09-04,8298,威睿,emerging,,38.3,38.1,38.11,6400,243904,-0.89,,,,均價/額推算,
-2026-09-07,8298,威睿,emerging,,,,,0,0,,,,,無成交,
-2026-09-08,8298,威睿,emerging,,,,,0,0,,,,,無成交,
-2026-09-09,8298,威睿,emerging,,38.35,38,38.27,6010,230003,0.16,,,,均價/額推算,
-2026-09-11,8298,威睿,emerging,,40.4,39,39.46,19400,765524,1.41,,,,均價/額推算,39.2
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-09-03,8298,威睿,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-04,8298,威睿,emerging,,38.3,38.1,38.11,6400,243904,-0.89,,,,均價/額推算,,1
+2026-09-07,8298,威睿,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-08,8298,威睿,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-09,8298,威睿,emerging,,38.35,38,38.27,6010,230003,0.16,,,,均價/額推算,,1
+2026-09-11,8298,威睿,emerging,,40.4,39,39.46,19400,765524,1.41,,,,均價/額推算,39.2,1

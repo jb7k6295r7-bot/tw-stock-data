@@ -1,1 +1,1 @@
-{"kind": "price", "rows": 5629088, "src": {"bytes": 603846954, "files": 2850, "last": "2026-09-11"}}
+{"kind": "price", "rows": 5629088, "src": {"bytes": 603846954, "files": 2850, "last": "2026-09-11"}, "valid_bar": {"from": {"bytes": 603846954, "files": 2850, "last": "2026-09-11"}, "rule": "有列 且 price_basis != 無成交 且 close 非空", "version": "v1"}}

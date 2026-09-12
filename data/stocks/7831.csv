@@ -1,7 +1,7 @@
-date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price
-2026-09-03,7831,捷博,emerging,,,,,0,0,,,,,無成交,
-2026-09-04,7831,捷博,emerging,,,,,0,0,,,,,無成交,
-2026-09-07,7831,捷博,emerging,,,,,0,0,,,,,無成交,
-2026-09-08,7831,捷博,emerging,,,,,0,0,,,,,無成交,
-2026-09-09,7831,捷博,emerging,,,,,0,0,,,,,無成交,
-2026-09-11,7831,捷博,emerging,,,,,0,,,,,,無成交,
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-09-03,7831,捷博,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-04,7831,捷博,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-07,7831,捷博,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-08,7831,捷博,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-09,7831,捷博,emerging,,,,,0,0,,,,,無成交,,0
+2026-09-11,7831,捷博,emerging,,,,,0,,,,,,無成交,,0
