@@ -130,4 +130,11 @@ jobs:
       - name: Commit 回 repo
         env:
           PUSH_TREES: backtest/forward
-        run: bash push_data.sh "forward: 前瞻紀錄（$(TZ=Asia/Taipei date +%Y-%m-%d)）"
+        # ⛔⛔ 這一行原本是**單行** `run:`，而它的值裡有 `forward: `（冒號＋空白）
+        #   ⇒ YAML 把它讀成一個對映 ⇒ **整份 forward.yml 解析失敗**。
+        #   ⚠ 而 GitHub 照樣把它**註冊成一支 workflow**（state: active），
+        #     只是名字顯示成檔案路徑、而且 `workflow_dispatch` **靜靜不存在**
+        #     ——派工時才回「Workflow does not have 'workflow_dispatch' trigger」。
+        #   ⇒ 用區塊純量（`run: |`），冒號在裡面就沒有意義了。
+        run: |
+          bash push_data.sh "forward: 前瞻紀錄（$(TZ=Asia/Taipei date +%Y-%m-%d)）"
