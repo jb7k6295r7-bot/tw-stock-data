@@ -343,6 +343,77 @@ def main():
        f"oldest={_old!r}｜newest={_new!r}")
 
     # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ YAML 本身合不合法。⛔ 這一道**本來完全沒有**，而它今天出事了
+    #
+    # CLAUDE.md 六點五 記的是「**YAML 合法 ≠ 裡面的 shell 合法**」，
+    # ⇒ 我們做了 shell 那一半，⚠ 而 YAML 那一半因為 runner 上沒有 `yaml`
+    #   被拿掉了，**從此沒有任何地方驗它**。
+    #
+    # 2026-09-13 的災情（`forward.yml`）：
+    #     run: bash push_data.sh "forward: 前瞻紀錄（…）"
+    #   單行 `run:` 的值裡有 `forward: `（冒號＋空白）⇒ YAML 讀成對映 ⇒ **整份解析失敗**。
+    # ⛔⛔ 而 GitHub **照樣把它註冊成一支 workflow**（`state: active`），
+    #   只是名字顯示成檔案路徑、`workflow_dispatch` **靜靜不存在**
+    #   ——派工時才回「Workflow does not have 'workflow_dispatch' trigger」。
+    #   ⚠ 排程那一半會不會跑？**沒有任何地方會說。**
+    #
+    # ⇒ 兩層：① 有 `yaml` 就真的 parse（本機 pre-commit 一定有）
+    #        ② ⭐ 沒有也擋得住這一類：**單行 `run:` 的值含 `: ` 就要整串加引號**
+    #          ——零相依，而且 runner 上跳不掉。
+    # ══════════════════════════════════════════════════════════════
+    try:
+        import yaml as _yaml
+    except ImportError:
+        _yaml = None
+    # ⛔⛔ 這裡**不可以用 `ck`**。第一版我寫成斷言 ⇒ runner 上沒有 `yaml`
+    #   ⇒ 這一步 `exit 1` ⇒ ⛔ **九支 workflow 的第二步全部當場紅**，
+    #   而「把程式同步到 main」在它後面 ⇒ 那一趟什麼都沒搬（實測 probe run 52）。
+    # ⚠ 這一節本來就是「有就多驗一層」——⛔ 環境缺套件不是**這個 repo** 壞掉。
+    # ⇒ 大聲印出來，但不算失敗；真正跳不掉的是下面那道零相依的。
+    print("  " + ("--   有 `yaml`，多驗一層（parse／name／workflow_dispatch）"
+                  if _yaml is not None else
+                  "--   ⚠ 這台**沒有** `yaml` ⇒ 上面那一層整個沒跑，"
+                  "只剩下面那道零相依的（⛔ 不要把這行讀成『驗過了』）"))
+    if _yaml is not None:
+        for f in files:
+            short = os.path.basename(f)
+            try:
+                doc = _yaml.safe_load(io.open(f, encoding="utf-8"))
+                bad = None
+            except Exception as ex:                            # noqa: BLE001
+                doc, bad = None, str(ex).replace("\n", " ")[:120]
+            ck(f"{short}｜YAML 真的 parse 得過", bad is None, f"⛔ {bad}")
+            if doc:
+                # ⛔ YAML 1.1 把 `on:` 讀成布林 True ⇒ 要兩個鍵都問
+                trig = doc.get(True, doc.get("on"))
+                ck(f"{short}｜有 `name:` 與觸發條件"
+                   "（⛔ 缺 name 時 GitHub 會拿檔案路徑當名字，那是解析壞掉的徵兆）",
+                   bool(doc.get("name")) and bool(trig),
+                   f"name={doc.get('name')!r} 觸發={trig!r}")
+                # ⭐ 每一支都要有 `workflow_dispatch`，⛔ 不是「有觸發就好」。
+                #   CLAUDE.md 四點六③：**排程與 push 觸發的一律是 `main`**
+                #   ⇒ 要驗分支上剛加的東西，**只能** `workflow_dispatch` 指定分支。
+                #   ⚠ 沒有它，分支上的新步驟永遠只能「等排程跑到」——而那跑的是另一份程式。
+                ck(f"{short}｜有 `workflow_dispatch`"
+                   "（⛔ 沒有的話，分支上剛改的東西沒有任何辦法驗）",
+                   isinstance(trig, dict) and "workflow_dispatch" in trig,
+                   f"⛔ 觸發只有 {list(trig) if isinstance(trig, dict) else trig}")
+
+    # ⭐ 零相依那一道：單行 `run:`（⛔ 不是 `run: |`）的值含 `: ` 就一定要整串加引號。
+    _rx = re.compile(r"^\s*run:\s*(?![|>])(.+)$")
+    for f in files:
+        short = os.path.basename(f)
+        for i, ln in enumerate(io.open(f, encoding="utf-8").read().split("\n"), 1):
+            m = _rx.match(ln)
+            if not m:
+                continue
+            v = m.group(1).strip()
+            quoted = (v[:1] == v[-1:] and v[:1] in ("'", '"'))
+            ck(f"{short}:{i}｜單行 `run:` 的值含 `: ` 時有整串加引號"
+               "（⛔ 沒加 ⇒ YAML 讀成對映 ⇒ 整份解析失敗，而 GitHub 照樣註冊）",
+               (": " not in v) or quoted, f"⛔ {v[:70]}")
+
+    # ══════════════════════════════════════════════════════════════
     # ⭐ 相依套件要裝在**用它之前**。⛔ 判準是**順序**，不是「有沒有那一步」
     #   （跟上面「取 main 排在回補之前」同一個形狀）。
     # ⚠ 2026-09-13 回測線在我的分支上讀出來的：`forward.yml` 少了
