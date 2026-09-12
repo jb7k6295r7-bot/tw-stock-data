@@ -3,3 +3,6 @@
 #   所以它從來不會被 Actions commit 進來；這一份是給本機與雲端 session 用的。
 __pycache__/
 *.py[cod]
+
+# 回測線：大型二進位中間檔不進 git（可由 --report-only 重建）
+backtest/results11/*.npz
