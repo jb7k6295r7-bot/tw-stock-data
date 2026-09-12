@@ -213,10 +213,8 @@ def report(S, G, AND, base, closes, opens, cal, bench, reps, and60, out, procs=4
         fh.write("\n".join(L) + "\n")
 
 
-def build_sets(cal, panel):
-    S = pd.read_csv(os.path.join(HERE, "results11", "signals.csv.gz"), dtype={"sid": str})
-    S = S[["sid", "k", "pos", "entry_pos", "month", "g_H60", "g_H120", "g_LD", "xpos_H60", "xpos_H120", "xpos_LD", "t_LD"]].copy()
-    # AND：最新一期面板列（signal_pos ≤ pos、距離 ≤ 45）rev_hi24
+def and_flags(S, panel):
+    """AND：訊號日當下最新一期面板列（signal_pos ≤ pos、距離 ≤ STALE_MAX）rev_hi24；AND-60：前 60 個交易日內有 G1 訊號日。回傳兩個 bool 陣列。"""
     p = panel.sort_values(["stock_id", "signal_pos"])
     flags = np.zeros(len(S), bool); and60 = np.zeros(len(S), bool)
     by = {sid: (g["signal_pos"].to_numpy(), g["rev_hi24"].to_numpy(bool)) for sid, g in p.groupby("stock_id")}
@@ -231,6 +229,13 @@ def build_sets(cal, panel):
         lo = int(np.searchsorted(sp, pos - 60)); hi_j = int(np.searchsorted(sp, pos, side="right"))
         if hi[lo:hi_j].any():
             and60[i] = True
+    return flags, and60
+
+
+def build_sets(cal, panel):
+    S = pd.read_csv(os.path.join(HERE, "results11", "signals.csv.gz"), dtype={"sid": str})
+    S = S[["sid", "k", "pos", "entry_pos", "month", "g_H60", "g_H120", "g_LD", "xpos_H60", "xpos_H120", "xpos_LD", "t_LD"]].copy()
+    flags, and60 = and_flags(S, panel)
     return S, S[flags].copy(), S[and60].copy()
 
 

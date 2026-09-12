@@ -173,6 +173,8 @@ def stock_features(args):
     pct = np.array(c / np.roll(c, 1) - 1, dtype=float); pct[0] = np.nan
     atr = wilder_atr(h, l, c)
     liq = amt_prev20
+    amt_med60 = pd.Series(amt).shift(1).rolling(60, min_periods=60).median().to_numpy(float)
+    amt_ratio60 = amt / amt_med60   # K線分析 09-09 裁定的挑選規則：訊號日成交金額 ÷ 前 60 根中位數（只記錄，不用來選）
     nb_sig = np.array([next_bad[max(0, k - 20)] for k in range(n)])
     eligible = (np.arange(n) >= 249) & ~skip & ~np.isnan(ma100) & ~np.isnan(amt_ratio)
     eligible &= nb_sig > np.arange(n)   # 訊號根本身與前 20 根無壞根
@@ -206,7 +208,7 @@ def stock_features(args):
                         continue
                     row = {"cell": f"{int(c1 * 100)}|{int(c3)}|{dd}", "sid": sid, "k": int(k), "pos": int(idx[k]), "entry_pos": int(idx[k + 1]),
                            "month": month[k], "score": int(score[k]), "c1": bool(ret20[k] >= c1), "c2": bool(nup20[k] >= 3),
-                           "c3": bool(amt_ratio[k] >= c3), "c4": bool(c[k] > ma100[k]), "c5": bool(c[k] >= hi[250][k]), "liq": float(liq[k])}
+                           "c3": bool(amt_ratio[k] >= c3), "c4": bool(c[k] > ma100[k]), "c5": bool(c[k] >= hi[250][k]), "liq": float(liq[k]), "amt_ratio60": float(amt_ratio60[k])}
                     for H in (20, 60, 120):
                         r = fixed_exit(o, c, k, H, nb_sig[k]); row[f"g_H{H}"] = r[1] if r else np.nan
                     if not is_main:
