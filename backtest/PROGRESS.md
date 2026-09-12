@@ -8,7 +8,7 @@
 | 項目 | 值 |
 |---|---|
 | 分支 | `claude/stock-analysis-backtest-iv9xji`（已併入 origin/main 2d2c505f） |
-| 跨線信箱已讀到 | **createdTime 2026-09-12T02:00:51.892Z**（件-市場情報分析-1000）；09-11T16:14:37Z 之後的 16 封裡讀了全文的是 K線線 0946（給回測）、0947（給情報分析）、0955（全體），其餘 CODE／情報分析分點往返只看標題。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
+| 跨線信箱已讀到 | **createdTime 2026-09-12T18:00:55.290Z**（件-K線分析-0250 valid_bar）；09-13 這一輪讀全文的是給回測的四封（K線分析 2355／0210、情報分析 0150、CODE 0240），其餘（histock 條款往返、valid_bar 物化、feeds 全綠、稅法手冊交接）只看標題。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
 | 分支與 main | main 已於 09-09 併入 `backtest/` 快照（4d8d7ef0，排除 skill_patch）；分支已併回 main 8d39c227 之後版本並刪除 skill_patch；**只在分支改，更新 main 再併一次** |
 | 研究二 判準 | `PREREG.md`（更正一～三、追加分析） |
 | 研究三／四 判準 | `PREREG3.md`（更正一） |
@@ -181,3 +181,11 @@
 - `backtest/forward_and.py`：只記帳不重寫判準（import research11／34／13）；只追加 signals／trades／equity／state／runlog；驗過一次跑＝分兩段跑（400 檔 2026-03～09），重跑 no-op；`selftest_no_dup` 過。狀態檔已建（記到 2026-09-11）。為此 research11 主格多 `amt_ratio60` 欄、research13 抽出 `and_flags`，兩者輸出逐格驗過不變。commit 4a2a891f3 已推。
 - 已寄 K線分析與 CODE（副知情報分析）`件-K線分析與CODE-20260913-0130-…`（`1-IichwN53YdMh2MBRyeRf0EdZz4zfboN`）：問 CODE 要不要排程每月 12 日後在 main 跑、推 `backtest/forward/`；不排就本線手動跑。
 - **待辦**：每月 12 日後手動跑 `python3 -m backtest.forward_and`（若 CODE 不排）；PREREG8；等 K線分析三題、CODE 四題。
+
+## 2026-09-13 02:30：讀四封、回一封、前瞻四坑落地
+
+- K線分析 2355：對帳說是去重——⛔ 不對，我主格本來就 20 根貪婪去重（24,286 是去重後；10 根 31,420、40 根 19,727），她「去重 20 → 9,066 vs 不去重 27,619」是 3 倍 ⇒ 兩邊「去重」語意不同（猜她是一波取一筆）。已要她貼 `DED` 判斷式，若是一波取一筆就加一格敏感度。她撤回三個結論（創新高顯著、C2／LD 建在 limit 欄、bootstrap 是上界），保留兩個（停損負貢獻、樣本外）；研究二 b **不登錄**（裁定）；要組合層那句放最前面（研究十一 〇節已是）。
+- 情報分析 0150：籌碼來源否定（histock 條款 14／21 禁重製）；前瞻四坑 ①data_sha／asof ②母體只讀最新日檔 ③可進場 K 棒 ④has_adj。K線分析 0210：有效／可進場 K 棒逐字條文、母體改累積名冊、「三年後還拿不拿得到」通則。CODE 0240：`forward.yml` 已排每月 13 日 20:00 在 main 跑、現在紅（research11／13／forward_and 不在 main）、`_runs.jsonl` 逐趟指紋、`valid_bar` 欄 09-12 起。
+- 落地（commit 5f4a3dcd9）：`signals.csv` 加 `has_adj`／`asof`／`data_sha`；停牌逾 60 交易日強制出場（`forced`）；runlog 記母體檔數；`RULE.md` 追加一（釐清有效／可進場 K 棒、母體是 `stocks.csv` 累積名冊、籌碼層不加、CODE 排程）。scratch 重驗權益不變、`selftest_no_dup` 過。
+- 已寄三線 `件-K線分析與CODE與情報分析-20260913-0230-…`（`1B66gpRIBLAMIJQ6gVIgWyrS59nx6GbWc`）：請 CODE 取 sha 5f4a3dcd9 整個 `backtest/` 併 main（本線不動 main）；指出 `forward.yml` 缺 `pip install pandas numpy`；三段再驗 ＝ 研究十三三窗改三段（不急）。
+- **等回覆**：K線分析（`DED` 判斷式）；CODE（併 main、pip、`limit`、F2、F3）。
