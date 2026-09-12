@@ -342,6 +342,62 @@ def main():
        bool(_old) and _old != _new and sorted(_old.split()) == sorted(_new.split()),
        f"oldest={_old!r}｜newest={_new!r}")
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐ 相依套件要裝在**用它之前**。⛔ 判準是**順序**，不是「有沒有那一步」
+    #   （跟上面「取 main 排在回補之前」同一個形狀）。
+    # ⚠ 2026-09-13 回測線在我的分支上讀出來的：`forward.yml` 少了
+    #   `pip install pandas numpy` ⇒ 會在「跑前瞻紀錄」那步 ImportError，
+    #   ⛔ 而失敗的樣子是「那個月沒跑」——正是前瞻紀錄最怕的形狀。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        src = io.open(f, encoding="utf-8").read()
+        use = src.find("backtest.forward_and")
+        if use < 0:
+            continue
+        inst = src.find("pip install")
+        ck(f"{os.path.basename(f)}｜`pip install` 排在跑 `forward_and` **之前**",
+           0 <= inst < use,
+           f"⛔ 位置 pip={inst} / forward_and={use}"
+           "　⇒ 會 ImportError，而失敗的樣子是「那個月沒跑」")
+        # ⛔ 比的是**那一行 `pip install` 本身**，⚠ 不是「這兩個字在不在檔案裡」
+        #   ——第一版我寫 `"numpy" in src`，而 `numpy` 在我自己的註解裡也有一份
+        #   ⇒ 把 numpy 從安裝行拿掉的突變 **全綠**（2026-09-13 當場踩到）。
+        _pipln = [ln for ln in src.split("\n")
+                  if "pip install" in ln and not ln.lstrip().startswith("#")]
+        ck(f"{os.path.basename(f)}｜`pip install` 那一行**真的**同時裝 pandas 與 numpy"
+           "（⛔ `forward_and` 兩個都 import）",
+           bool(_pipln) and all("pandas" in ln and "numpy" in ln for ln in _pipln),
+           f"⛔ 安裝行：{_pipln}")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ `push_data.sh` 的 `PUSH_TREES`：⛔ 預設值壞掉 ＝ **八支全部推空**
+    #
+    # 2026-09-13 為了 `forward.yml`（輸出在 `backtest/forward/`，不在 `data/`）
+    # 把三個寫死的 `data` 換成 `$TREES`。⚠ 而如果預設值打錯，
+    # 八支 workflow 會**照樣綠、照樣說「沒有變動，不 commit」**——
+    # ⛔ 那正是 CLAUDE.md 四點二那一族：中間那一步成功了，就被當成整件事成功了。
+    # ⇒ 這一節**真的把那一行交給 bash 跑**，⛔ 不是比字串。
+    # ══════════════════════════════════════════════════════════════
+    _pd = io.open("push_data.sh", encoding="utf-8").read()
+    _defline = [ln for ln in _pd.split("\n") if ln.startswith("TREES=")]
+    ck("★ `push_data.sh` 有且只有一行定義 `TREES`", len(_defline) == 1, _defline)
+    if _defline:
+        _r = subprocess.run(["bash", "-c", _defline[0] + "; echo $TREES"],
+                            capture_output=True, text=True)
+        ck("★ 不帶 `PUSH_TREES` 時，bash 真的算出 `data`"
+           "（⛔ 八支 workflow 全靠這個預設值）",
+           _r.stdout.strip() == "data", f"⛔ 算出 {_r.stdout.strip()!r}")
+        _r2 = subprocess.run(
+            ["bash", "-c", "PUSH_TREES=backtest/forward; " + _defline[0]
+             + "; echo $TREES"], capture_output=True, text=True)
+        ck("★ 帶了 `PUSH_TREES` 時真的換過去", _r2.stdout.strip() == "backtest/forward",
+           f"⛔ 算出 {_r2.stdout.strip()!r}")
+    _hard = [ln for ln in _pd.split("\n")
+             if ("git add -A data" in ln or 'git diff --name-only "$BASE" "$DC" -- data' in ln)
+             and not ln.lstrip().startswith("#")]
+    ck("★ 沒有任何一處還寫死 `data`（⛔ 漏改一處 ⇒ 那一處永遠只搬 data）",
+       not _hard, f"⛔ 還寫死的：{_hard}")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

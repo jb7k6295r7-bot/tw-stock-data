@@ -1,0 +1,133 @@
+name: 前瞻紀錄（每月，回測線的 forward_and）
+
+# ⭐ 回測線 2026-09-13 01:30 來信要的：`backtest/forward_and.py` 每月跑一次、
+#   把 `backtest/forward/` 推上 main。
+#
+# ## ⛔⛔ 為什麼這件事**必須**排程，不可以靠人記得手動跑
+#
+# 前瞻紀錄漏跑一個月，那個月的訊號只能**用後來的資料重算**
+# ——⚠ 而重算出來的東西**就不是前瞻了**。
+# ⇒ 它屬於「不累積就永久失去」那一族（跟 `stophalt` 同一族），
+#   ⛔ 而那一族已經證實不可以掛在「有人會記得」上面。
+#
+# ## ⛔⛔ 而它**只准在 main 上跑**（CLAUDE.md 四點六那個會刪資料的例外）
+#
+# 它讀 `data/stocks/`、`data/universe/`——⚠ 而分支上的 `data/` 永遠比 main 舊
+# ⇒ 在分支上跑＝拿過期的輸入算訊號，⛔ 而算出來的東西長得跟對的一模一樣。
+
+on:
+  schedule:
+    # 每月 13 日 20:00 台北（＝ 12:00 UTC）。⚠ 月營收 10 日公布 ⇒ 13 日跑得到。
+    - cron: "0 12 13 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forward
+  cancel-in-progress: false
+
+jobs:
+  forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ⛔⛔ 回測線 2026-09-13 02:30 在我的分支上讀出來的：這一步原本**不存在**。
+      #   `forward_and` import pandas 與 numpy ⇒ 會在「跑前瞻紀錄」那步 ImportError。
+      # ⚠ 而失敗的樣子會是「那個月沒跑」——正是前瞻紀錄最怕的形狀。
+      # ⛔ 這裡**不加 `continue-on-error`**（`daily.yml` 那一步有，因為斷點掃描是附帶的）：
+      #   裝不起來就等於這一趟不能跑，要當場紅，⚠ 不可以往下走到「跑了但少一筆」。
+      - name: 裝 pandas 與 numpy（forward_and 要用）
+        timeout-minutes: 5
+        run: python -m pip install --quiet --disable-pip-version-check pandas numpy
+
+      - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
+        run: python selftest_workflows.py
+
+      - name: 掃有沒有第二份實作（零相依）
+        run: python selftest_no_dup.py
+
+      # ⛔⛔ 這一道擋的是 CLAUDE.md 四點六那個**會刪資料**的例外。
+      #   ⚠ 在分支上跑會讀到過期的 `data/` ⇒ 訊號算錯，而且看不出來。
+      - name: ⛔ 只准在 main 上跑（讀 data/）
+        run: |
+          BR="${GITHUB_REF_NAME:-}"
+          if [ "$BR" != "main" ]; then
+            echo "⛔ 這一支讀 data/，在分支（$BR）上跑會拿到過期的輸入" >&2
+            echo "   ⇒ 算出來的訊號長得跟對的一模一樣。⛔ 不跑。" >&2
+            exit 1
+          fi
+          echo "✓ 在 main 上"
+
+      # ⛔⛔ `forward_and` import 的三支判準模組（research11／13／34）
+      #   若有任何一支不在 main 上，這一趟**要大聲失敗**，
+      #   ⚠ 不可以讓它變成「跑了、但少了一個月」——那正是前瞻紀錄最怕的。
+      #   ⚠ 2026-09-13 實測：main 上**只有 research34**，另外三支還在
+      #     `claude/stock-analysis-backtest-iv9xji` 分支上 ⇒ 這一道現在是紅的，
+      #     ⭐ 而它紅得對：排程跑的是 main（四點六③）。
+      - name: ⭐ 判準模組真的在 main 上（⛔ 不是在分支上）
+        run: |
+          MISS=""
+          for M in forward_and research11 research13 research34; do
+            [ -f "backtest/$M.py" ] || MISS="$MISS $M"
+          done
+          if [ -n "$MISS" ]; then
+            echo "⛔ main 上缺這幾支：$MISS" >&2
+            echo "   ⇒ 排程跑的是 **main**（CLAUDE.md 四點六③）," >&2
+            echo "     分支上有不算數。請回測線先把它們推上 main。" >&2
+            exit 1
+          fi
+          echo "✓ 四支都在 main 上"
+
+      - name: 跑前瞻紀錄
+        run: python3 -m backtest.forward_and
+
+      # ⭐⭐ 市場情報分析線 2026-09-13 01:50 §① 要的：
+      #   「跑完請把**當次的輸入指紋**一起推進 forward/，不要只推結果。」
+      #   理由：main 的回補是逐年分批推的 ⇒ **今天算出來的訊號，和一年後
+      #   重算同一天的訊號可能不一樣**，⚠ 而前瞻紀錄的全部價值就在
+      #   「這個數字是哪一版資料算的」這一句上。
+      # ⛔ 累積型：**逐行追加**，不可以整份覆蓋（CLAUDE.md 四點六）。
+      - name: ⭐ 把這一趟的輸入指紋追加進去（⛔ 不是覆蓋）
+        run: |
+          mkdir -p backtest/forward
+          python3 - <<'PY' >> backtest/forward/_runs.jsonl
+          import io, json, os, subprocess, sys
+          sys.path.insert(0, ".")
+          import runlog
+          import transpose as T
+          rec = {
+              "asof": runlog.now_tpe().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
+              "data_sha": subprocess.run(
+                  ["git", "rev-parse", "HEAD"],
+                  capture_output=True, text=True).stdout.strip(),
+              "run_id": os.environ.get("GITHUB_RUN_ID", ""),
+              # ⭐ 日檔指紋：檔數／總位元組／最後一天。⛔ 不是只比最後一天
+              #   ——2026-09-11 那次就是「最後一天一樣、中間少了幾萬列」。
+              "daily": T.source_fingerprint("price"),
+          }
+          p = "data/stocks/_built.json"
+          if os.path.exists(p):
+              rec["stocks_built"] = json.load(io.open(p, encoding="utf-8"))
+          print(json.dumps(rec, ensure_ascii=False, sort_keys=True))
+          PY
+          echo "── 這一趟追加的：──"
+          tail -1 backtest/forward/_runs.jsonl
+          echo "── 累計 $(wc -l < backtest/forward/_runs.jsonl) 趟 ──"
+
+      # ⛔ 只有一份推檔實作（CLAUDE.md 四點五）。`PUSH_TREES` 換的是**要搬哪一棵樹**，
+      #   重試、逐鍵合併那些都照舊——⚠ 另寫一支的話，漏掉的那幾道不會有人發現。
+      - name: Commit 回 repo
+        env:
+          PUSH_TREES: backtest/forward
+        run: bash push_data.sh "forward: 前瞻紀錄（$(TZ=Asia/Taipei date +%Y-%m-%d)）"

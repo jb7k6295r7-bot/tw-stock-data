@@ -37,9 +37,18 @@ FORCE="$*"
 git config user.name  "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+# ⭐ 要搬哪一棵樹。預設 `data`——⛔ 八支 workflow 全部靠預設值，不要改它。
+#   `PUSH_TREES` 只給「輸出不在 `data/` 底下」的呼叫端用
+#   （目前只有 `forward.yml`，它寫的是 `backtest/forward/`）。
+#   ⚠ 為什麼不另寫一支推檔腳本：CLAUDE.md 四點五。⛔ 兩份推檔邏輯 ＝
+#     其中一份會漏掉重試、漏掉逐鍵合併，而且**沒有人會發現**。
+#   ⚠ 下面那些 `data/` 專屬的處理（`_last_run.md` 逐區塊合併、台帳逐鍵合併）
+#     對別的樹就是**不匹配、不生效**，不會誤傷。
+TREES="${PUSH_TREES:-data}"
+
 # ★ 用 -A：`git add <路徑>` 在舊版 git 不會把「檔案被刪掉」記進暫存區，
 #   而 purge 模式產出的**就是刪除**。
-git add -A data
+git add -A $TREES
 if git diff --staged --quiet; then
   echo "[push_data] 沒有變動，不 commit"
   exit 0
@@ -80,7 +89,7 @@ data/meta/holiday_schedule.csv:date
 data/universe/*/_fetched.json:json
 data/universe/*/_asked.json:json
 "
-CHANGED=$(git diff --name-only "$BASE" "$DC" -- data)
+CHANGED=$(git diff --name-only "$BASE" "$DC" -- $TREES)
 if [ -n "$FORCE" ]; then
   for fp in $FORCE; do
     if printf '%s\n' "$CHANGED" | grep -qx "$fp"; then
@@ -142,7 +151,7 @@ for i in 1 2 3; do
       fi
     done
   done
-  git add -A data
+  git add -A $TREES
   if git diff --staged --quiet; then
     echo "[push_data] 搬到 main 之後沒有差異（多半是別的 workflow 已推過同樣內容）"
     git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
