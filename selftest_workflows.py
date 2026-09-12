@@ -365,8 +365,15 @@ def main():
         import yaml as _yaml
     except ImportError:
         _yaml = None
-    ck("★ 本機有 `yaml` 可以真的 parse（⚠ runner 上沒有 ⇒ 靠下面那道零相依的）",
-       _yaml is not None, "⛔ 這台沒有 yaml，只剩零相依那道")
+    # ⛔⛔ 這裡**不可以用 `ck`**。第一版我寫成斷言 ⇒ runner 上沒有 `yaml`
+    #   ⇒ 這一步 `exit 1` ⇒ ⛔ **九支 workflow 的第二步全部當場紅**，
+    #   而「把程式同步到 main」在它後面 ⇒ 那一趟什麼都沒搬（實測 probe run 52）。
+    # ⚠ 這一節本來就是「有就多驗一層」——⛔ 環境缺套件不是**這個 repo** 壞掉。
+    # ⇒ 大聲印出來，但不算失敗；真正跳不掉的是下面那道零相依的。
+    print("  " + ("--   有 `yaml`，多驗一層（parse／name／workflow_dispatch）"
+                  if _yaml is not None else
+                  "--   ⚠ 這台**沒有** `yaml` ⇒ 上面那一層整個沒跑，"
+                  "只剩下面那道零相依的（⛔ 不要把這行讀成『驗過了』）"))
     if _yaml is not None:
         for f in files:
             short = os.path.basename(f)
