@@ -66,10 +66,19 @@ LASTRUN="data/meta/_last_run.md"
 #   `_missing_rows.csv`／`_notrade_days.csv` 那些是**每趟全量重算**的，
 #   合併它們會把已經修好的舊列**復活**。
 #   ⇒ 只有「這一趟只 append 自己那幾列」的檔才進這張清單。
+#
+# ⭐ 2026-09-12：清單裡可以放**萬用字元**，第二欄填 `json` 就走字典逐鍵合併。
+#   `feeds` 的兩本台帳本來走的是「整檔取本趟的」——⛔ 同一個道理又只做了一半：
+#     `_fetched.json`  逐月型：哪幾個月問過了
+#     `_asked.json`    逐日型：哪幾天問到了但那天沒資料（⇒ 續跑的判準）
+#   ⚠ 它們被回退的樣子看起來只是「多花幾分鐘重問」，
+#   ⛔ 直到 `--limit` 分批補那種跑法**永遠補不完**為止。
 LEDGERS="
 data/universe/_coverage_backfill.csv:date
 data/meta/calendar_tpex.csv:date
 data/meta/holiday_schedule.csv:date
+data/universe/*/_fetched.json:json
+data/universe/*/_asked.json:json
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- data)
 if [ -n "$FORCE" ]; then
@@ -89,10 +98,16 @@ for i in 1 2 3; do
   git fetch origin main || { sleep $((i * 5)); continue; }
   git checkout -q -B _push origin/main || break
   # 累積型的先排除，下面單獨逐鍵合併
-  LEDGER_PATHS=$(printf '%s\n' "$LEDGERS" | grep -v '^$' | cut -d: -f1)
-  KEEP=$(printf '%s\n' "$CHANGED" | grep -v '^$' | grep -vx "$LASTRUN")
-  for lp in $LEDGER_PATHS; do
-    KEEP=$(printf '%s\n' "$KEEP" | grep -vx "$lp" || true)
+  # ⚠ 清單裡可能有萬用字元 ⇒ 用 `case` 逐條比對，⛔ 不可以用 `grep -x`
+  #   （`grep -x 'data/universe/*/_asked.json'` 比的是**字面**，永遠不中，
+  #     ⇒ 那些檔會走到下面的整檔取代，而那正是這一段要防的事）
+  KEEP=""
+  for f in $(printf '%s\n' "$CHANGED" | grep -v '^$' | grep -vx "$LASTRUN"); do
+    hit=""
+    for ent in $(printf '%s\n' "$LEDGERS" | grep -v '^$'); do
+      case "$f" in ${ent%%:*}) hit=1; break ;; esac
+    done
+    [ -n "$hit" ] || KEEP=$(printf '%s\n%s' "$KEEP" "$f")
   done
   printf '%s\n' "$KEEP" | grep -v '^$' | xargs -r git checkout "$DC" --
   printf '%s\n' "$DELETED" | grep -v '^$' \
@@ -111,19 +126,21 @@ for i in 1 2 3; do
   fi
   # ⭐ 累積型 CSV：逐鍵合併（本趟的鍵覆蓋、main 的其餘列原封不動保留）
   for ent in $(printf '%s\n' "$LEDGERS" | grep -v '^$'); do
-    LP=${ent%%:*}; LK=${ent#*:}
-    printf '%s\n' "$CHANGED" | grep -qx "$LP" || continue
-    git show "$DC:$LP" > /tmp/lg_mine.csv 2>/dev/null || continue
-    git show "origin/main:$LP" > /tmp/lg_main.csv 2>/dev/null || : > /tmp/lg_main.csv
-    if python3 merge_ledger.py /tmp/lg_mine.csv /tmp/lg_main.csv "$LK" > /tmp/lg_out.csv; then
-      cp /tmp/lg_out.csv "$LP"
-      git add -- "$LP"
-    else
-      # ⛔ 合併不成就**整檔取本趟的**，⚠ 但一定要吼出來：
-      #   那正是會靜靜刪掉別人剛寫的列的那條路。
-      echo "[push_data] ⛔ $LP 逐鍵合併失敗，退回整檔取本趟的（⚠ main 上較新的列可能被回退）" >&2
-      git checkout "$DC" -- "$LP" && git add -- "$LP"
-    fi
+    LK=${ent#*:}
+    for LP in $(printf '%s\n' "$CHANGED" | grep -v '^$'); do
+      case "$LP" in ${ent%%:*}) ;; *) continue ;; esac
+      git show "$DC:$LP" > /tmp/lg_mine.dat 2>/dev/null || continue
+      git show "origin/main:$LP" > /tmp/lg_main.dat 2>/dev/null || : > /tmp/lg_main.dat
+      if python3 merge_ledger.py /tmp/lg_mine.dat /tmp/lg_main.dat "$LK" > /tmp/lg_out.dat; then
+        cp /tmp/lg_out.dat "$LP"
+        git add -- "$LP"
+      else
+        # ⛔ 合併不成就**整檔取本趟的**，⚠ 但一定要吼出來：
+        #   那正是會靜靜刪掉別人剛寫的列的那條路。
+        echo "[push_data] ⛔ $LP 逐鍵合併失敗，退回整檔取本趟的（⚠ main 上較新的可能被回退）" >&2
+        git checkout "$DC" -- "$LP" && git add -- "$LP"
+      fi
+    done
   done
   git add -A data
   if git diff --staged --quiet; then

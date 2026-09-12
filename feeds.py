@@ -1771,6 +1771,81 @@ def _months(start, end):
     return out
 
 
+def load_ledger(path):
+    """讀一份台帳 JSON → dict。⛔ 壞掉／不存在都回 `{}`（不要因為台帳停擺）。
+
+    ⭐ **只有這一份實作**（CLAUDE.md 四點五）：逐月那支（`cmd_feed_range`）
+      與逐日那支（`cmd_feed`）共用。⚠ 原本逐月那支在函式裡就地 `json.load`，
+      ⛔ 而逐日那支**根本沒有台帳**——「同一件事只做了一半」的第七次。
+    """
+    if not os.path.exists(path):
+        return {}
+    try:
+        return json.load(io.open(path, encoding="utf-8")) or {}
+    except (ValueError, OSError):
+        return {}
+
+
+def save_ledger(path, add):
+    """把 `add` **合併**進 `path` 的台帳 → 回 (合併後鍵數, 本趟新增鍵數)。
+
+    ## ⛔ 為什麼是合併不是取代（CLAUDE.md 四點六）
+
+    這一趟只知道**自己問過的那幾天**。整份取代 ＝ `--limit` 分批補的時候，
+    後一趟會把前幾趟的紀錄洗掉 ⇒ **永遠補不完，而且每趟都像有在跑**
+    （`otc_adj.save_done` 把 1,996 列洗成一列表頭，就是這個形狀）。
+
+    ## ⭐ 斷言驗的是**終點**（四點二）
+
+    ⛔ 不斷言「寫檔成功」⇒ ⭐ 寫完**重讀**，斷言讀回來的鍵數沒有變少。
+    """
+    cur = load_ledger(path)
+    before = len(cur)
+    cur.update(add)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    io.open(path, "w", encoding="utf-8").write(
+        json.dumps(cur, ensure_ascii=False, indent=0, sort_keys=True))
+    back = load_ledger(path)      # ⭐ 重讀。⛔ 寫檔沒丟例外 ≠ 內容還在
+    if len(back) < before:
+        raise RuntimeError(
+            f"台帳 {path} 合併後從 {before} 鍵變成 {len(back)} 鍵——"
+            "這支絕不可以變成刪東西的那個人")
+    return len(back), len(back) - before
+
+
+def day_is_open(day, today=None):
+    """`day` ＝ `"YYYY-MM-DD"`。→ 這一天**還沒結束**（含今天）。
+
+    ⭐ 跟 `month_is_open()` 同一個道理，只是粒度換成天：
+      台帳記「問過了」⇒ 問過就永遠不再問，⚠ 而**今天**的那一批
+      在盤中問是空的、收盤後才有 ⇒ 記上去就等於今天永遠抓不到。
+    """
+    return day >= (today or runlog.now_tpe().strftime("%Y-%m-%d"))
+
+
+def days_to_ask(days, done, ledger, force=False, today=None):
+    """→ `(這一趟要問的 [日期], 台帳有但因為是今天而重問的 [日期])`。
+
+    - `done`   ＝ 已經有日檔的日期集合（**資料自己**，最可信的那一份）
+    - `ledger` ＝ 問過、但那天沒有資料的日期（⛔ 沒有日檔，光看檔案分不出
+      「那天沒資料」與「從來沒問過」）
+
+    ## ⛔⛔ 沒有它的時候會怎樣（2026-09-12 量到的）
+
+    `feeds:tib` 每晚從區間第一天開始問，前 30 天都回「沒有資料」⇒ 收手。
+    ⚠ 而那 30 天**不寫任何檔**⇒ 明晚的 `done` 一模一樣 ⇒ **問一樣的 30 天**。
+    ⇒ 2021-06-28 之後的 377 個交易日永遠走不到，⛔ 而每一趟看起來都有在跑。
+
+    ⭐ 抽成純函式的理由跟 `months_to_ask()` 一樣：這段壞掉時**整趟是綠的**。
+    """
+    if force:
+        return list(days), []
+    todo = [x for x in days
+            if x not in done and (x not in ledger or day_is_open(x, today))]
+    reask = [x for x in todo if x in ledger]
+    return todo, reask
+
+
 def month_is_open(ym, today=None):
     """`ym` ＝ `"YYYY-MM"`。→ 這個月**還沒結束**（含今天所在的那個月）。
 
@@ -1853,12 +1928,7 @@ def cmd_feed_range(args, name):
     #   有了它，`--limit` 才能挑出**還沒問過**的月份分批補，
     #   而不是每趟都把 141 個月重打一遍（減資／面額那三支各要十幾分鐘）。
     led_path = os.path.join(d, "_fetched.json")
-    ledger = {}
-    if os.path.exists(led_path):
-        try:
-            ledger = json.load(io.open(led_path, encoding="utf-8")) or {}
-        except (ValueError, OSError):
-            ledger = {}          # 壞掉就當空的重問，不要因為台帳壞掉就停擺
+    ledger = load_ledger(led_path)     # ⭐ 讀寫都收在一支（四點五）
     # ⭐ 台帳只對**已經結束的月份**有效（理由見 `month_is_open()`）。
     todo, reask = months_to_ask(rng, ledger, args.force)
     if args.limit:
@@ -1982,14 +2052,11 @@ def cmd_feed_range(args, name):
     #    （`calendar_audit.py --write` 2026-09-08 踩過同一個坑：
     #      全量取代把 2,845 天砍成 5 天，而且沒有任何錯誤。）
     if fetched_now:
-        ledger.update(fetched_now)
         try:
-            os.makedirs(d, exist_ok=True)
-            io.open(led_path, "w", encoding="utf-8").write(
-                json.dumps(ledger, ensure_ascii=False, indent=0, sort_keys=True))
-            print(f"[{name}] 台帳 {led_path}：本趟 +{len(fetched_now)}，"
-                  f"累計 {len(ledger)} 個月")
-        except OSError as ex:                                    # noqa: BLE001
+            n_all, n_new = save_ledger(led_path, fetched_now)
+            print(f"[{name}] 台帳 {led_path}：本趟問了 {len(fetched_now)} 個月"
+                  f"（其中 {n_new} 個是新的），累計 {n_all} 個月")
+        except (OSError, RuntimeError) as ex:                    # noqa: BLE001
             print(f"[{name}] 台帳寫檔失敗：{ex}", file=sys.stderr)
     print(f"[{name}] 完成：有資料 {ok} 個月、無事件 {empty} 個月、失敗 {failed} 個月，"
           f"合計 {total_rows} 列"
@@ -2134,12 +2201,30 @@ def cmd_feed(args):
               f"**{len(stale)} 天的表頭缺這一欄**，要重抓")
         if not stale:
             print(f"[{name}] ⇒ 這個區間已經全部有 `{need}` 欄了，沒有要重抓的")
-    days = [x for x in days if args.force or x not in done or x in stale]
+    # ── ⭐⭐ 台帳：哪幾天**問過了、而那天沒有資料** ──
+    #
+    # ⛔ 這是 2026-09-12 量到的 `feeds:tib` 那個缺陷（見 `days_to_ask()`）：
+    #   「沒有資料」的那一天**不寫檔** ⇒ 光看 `data/universe/<feed>/`
+    #   分不出「那天沒資料」與「從來沒問過」⇒ 每晚問一樣的前 30 天、
+    #   一樣收手，⚠ 而每一趟看起來都有在跑。
+    # ⭐ 逐月那支（`cmd_feed_range`）一開始就有台帳，⛔ 逐日這支沒有——
+    #   **同一件事只做了一半**，跟 CLAUDE.md 四點六③ `save_done` 同一個形狀。
+    day_led_path = os.path.join(d, "_asked.json")
+    day_ledger = load_ledger(day_led_path)
+    if stale:
+        # ⚠ 補欄位的那條路徑要**無視台帳**：那些天有檔，只是表頭缺一欄。
+        days = [x for x in days if args.force or x not in done or x in stale]
+        day_reask = []
+    else:
+        days, day_reask = days_to_ask(days, done, day_ledger, args.force)
     if args.limit:
         days = days[:args.limit]
     print(f"[{name}] {FEEDS[name]['status']}")
     print(f"[{name}] {args.start} ~ {args.end}｜{how}｜"
-          f"待處理 {len(days)} 天（已存在 {len(done)} 天）")
+          f"待處理 {len(days)} 天（已存在 {len(done)} 天、"
+          f"台帳記著「問過但那天沒資料」{len(day_ledger)} 天）"
+          + (f"｜⭐ 其中 {len(day_reask)} 天是**今天**，台帳有也照樣重問"
+             if day_reask else ""))
     known = B._known_codes()
     if FEEDS[name]["known"] and not known:
         print(f"[{name}] 找不到 data/meta/stocks.csv，先跑 --rebuild-meta", file=sys.stderr)
@@ -2160,6 +2245,7 @@ def cmd_feed(args):
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
     ok = closed = failed = dropped_days = dropped_rows = 0
+    asked_now = {}           # ⭐ 本趟問到、但那天沒有資料的日期
     dropped_at = []          # ⭐ 哪幾天丟了幾列（⛔ 不是只給天數）
     dropped_who = []         # ⭐ (日期, 代號)——歸因那一步要用
     bailed = ""     # 提前收手的原因；空字串＝跑完整個區間
@@ -2196,6 +2282,10 @@ def cmd_feed(args):
                 dropped_who += [(day, c) for c, _why in _drop_codes(note)]
         elif url is not None:
             closed += 1               # 問到了，那天沒有資料（休市或無事件）
+            # ⭐ 記台帳。⛔ 只記**已經結束**的日子——今天的那一批盤中是空的、
+            #   收盤後才有，記上去就等於今天永遠抓不到（`day_is_open()`）。
+            if not day_is_open(day):
+                asked_now[day] = "empty"
         else:
             failed += 1               # 根本沒問到
             last_fail = str(note)[:260]
@@ -2208,10 +2298,22 @@ def cmd_feed(args):
         #   若端點有**日期下限**（例如只回得到近幾年），整趟會安靜跑滿
         #   5.8 小時、一列都沒寫，最後才發現。30 天足以跨過任何連假。
         if closed >= 30 and ok == 0:
-            bailed = f"連續 {i} 天回「沒有資料」且無一有列（很可能有日期下限）"
-            print(f"[{name}] 前 {i} 天全部回「沒有資料」且無一有列，收手。"
-                  f"端點是通的，但這個區間查不到東西——**很可能有日期下限**，"
-                  f"不是連假。最後一則：{note}", file=sys.stderr)
+            # ⛔⛔ 這句原本寫「很可能有日期下限」——**那是錯的診斷**（2026-09-12 訂正）。
+            #   有日期下限的端點是**大聲失敗**：`STOCK_TIB` 越界時回
+            #   `stat:"查詢日期小於110年6月28日，請重新查詢!"` ⇒ 那會算進 `failed`。
+            #   ⚠ 這裡 `failed == 0` ⇒ 端點**明確回答了「這一天沒有資料」**。
+            #   ⇒ 真正剩下的可能只有一種：那幾天的母體是空的
+            #     （例：創新板 2021-07-20 才開板，而端點下限是 2021-06-28）。
+            # ⭐ 而「把錯的原因寫進 runlog」的代價是一整個來回——
+            #   下一個人會照著那句話去找根本不存在的日期下限。
+            bailed = (f"連續 {i} 天回「沒有資料」且無一有列"
+                      f"｜⚠ 失敗 {failed} 天 ⇒ 端點是通的、也明講了「這天沒資料」，"
+                      f"⛔ 這**不是**日期下限（越界會大聲失敗，會算進失敗天數）")
+            print(f"[{name}] 前 {i} 天全部回「沒有資料」且無一有列，收手。\n"
+                  f"        ⚠ 失敗 {failed} 天 ⇒ 端點通、參數對，它就是說那幾天沒有資料。\n"
+                  f"        ⭐ 這一趟問過的天數**已經記進台帳**，下一趟會從沒問過的接著跑，"
+                  f"⛔ 不會再從第一天重來。\n"
+                  f"        最後一則：{note}", file=sys.stderr)
             break
         # 只數「根本沒問到」的天數。休市不算失敗，否則農曆年會被誤判成端點壞掉。
         if failed >= 5 and ok == 0:
@@ -2221,6 +2323,18 @@ def cmd_feed(args):
                   f"最後一則：{note}", file=sys.stderr)
             break
         time.sleep(B.SLEEP)
+    # ── 台帳寫回。⭐ **收手（break）之後也會走到這裡**，那正是重點：
+    #    提前收手的那一趟問過的天數一樣要留下來，⛔ 否則下一趟又從第一天重來。
+    led_all = led_new = 0
+    led_err = ""
+    if asked_now:
+        try:
+            led_all, led_new = save_ledger(day_led_path, asked_now)
+            print(f"[{name}] 台帳 {day_led_path}：本趟 +{led_new} 天"
+                  f"（問到但沒資料），累計 {led_all} 天")
+        except (OSError, RuntimeError) as ex:                    # noqa: BLE001
+            led_err = str(ex)[:200]
+            print(f"[{name}] ⛔ 台帳寫檔失敗：{ex}", file=sys.stderr)
     print(f"[{name}] 完成：有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
     if dropped_days:
         print(f"[{name}] ⚠ 有 {dropped_days} 天出現驗算不符而丟棄的列（詳見上面各該日）。"
@@ -2242,6 +2356,15 @@ def cmd_feed(args):
     rl = runlog.Run(f"feeds:{name}")
     rl.info("區間", f"{args.start} ~ {args.end}｜待處理 {len(days)} 天")
     rl.info("結果", f"有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
+    # ⛔ 這一列即使是 0 也要在：⚠ 0 跟「這道根本沒做」在紙上看起來一樣。
+    rl.info("⭐ 記進台帳的「問到了、那天沒資料」",
+            (f"本趟 +{led_new} 天，累計 {led_all} 天"
+             "　⇒ 下一趟會從**沒問過**的接著跑，⛔ 不是從區間第一天重來")
+            if asked_now else
+            "0 天（這一趟沒有任何一天是『問到了但沒資料』）")
+    # ⭐ 台帳寫不進去是**要紅的**：它一失敗，下一趟就會再從第一天重來，
+    #   ⚠ 而那個失敗在紙上長得跟「這個區間本來就沒東西」一模一樣。
+    rl.check("台帳寫得進去", not led_err, led_err or "沒有要寫的或已寫入")
     # ⛔ 提前收手在 Actions 上是看不見的（這幾步都是 continue-on-error），
     #    而收手代表整趟根本沒跑完——這是要紅的，不是資訊。
     rl.check("跑完整個區間，沒有提前收手", not bailed, bailed or "跑完")
