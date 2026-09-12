@@ -158,6 +158,7 @@ jobs:
           python selftest_freshness.py
           python selftest_transpose_stamp.py
           python selftest_feed_months.py
+          python selftest_feed_days.py
           python selftest_syntax_warnings.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
@@ -384,6 +385,38 @@ jobs:
       # ⭐ 教訓：要取的是**程式真的讀的那個路徑**，⛔ 不是名字看起來像的那個。
       #   ⚠ 判準：去 grep 那支程式讀哪裡，⛔ 不要照檔名猜。
       # ⚠ `git checkout` 只會寫出**有差異**的檔（分支只缺最近一兩天）⇒ 成本很低。
+      # ⭐⭐ 2026-09-12 補。`mode=run` 讀 `data/`，⛔ 而分支那份永遠比 main 舊
+      #   （所有資料都是 workflow 推到 **main** 的）⇒ CLAUDE.md 四點六③ 那個
+      #   「指定分支 ＝ 拿過期的輸入」的例外。這一支具體會壞在哪裡：
+      #     ① 交易日曆 ＝ `data/universe/daily/` 的**檔名集合**
+      #        ⇒ 分支舊 ⇒ 最近幾天**根本不在待處理清單裡**，⚠ 而那一趟是綠的
+      #     ② `done` ＝ `data/universe/<feed>/` 的檔名 ⇒ 分支舊 ⇒ 重抓已經有的天
+      #     ③ ⭐ 台帳 `_asked.json`／`_fetched.json` ⇒ 分支舊 ⇒ 續跑從頭開始
+      #   ⛔ 只取這三樣，**不取 `data/stocks`**（0.55 GB，這個 mode 根本不讀它）。
+      - name: 取 main 的日檔與台帳（run｜⛔ 分支那份比 main 舊）
+        if: inputs.mode == 'run'
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/universe/daily \
+            || echo "⚠ 取不到 main 的 data/universe/daily" >&2
+          git checkout origin/main -- data/meta/stocks.csv || true
+          # feed=all 時把整個 universe 的台帳與日檔都取回來
+          if [ "${{ inputs.feed }}" = "all" ]; then
+            git checkout origin/main -- data/universe \
+              || echo "⚠ 取不到 main 的 data/universe" >&2
+          else
+            git checkout origin/main -- "data/universe/${{ inputs.feed }}" \
+              || echo "⚠ main 上還沒有 data/universe/${{ inputs.feed }}（第一次跑就是這樣）" >&2
+          fi
+          # ⭐ 印「這一步有沒有生效」，⛔ 不是印「取過了」
+          echo "[checkout] 交易日曆最後一天：$(ls data/universe/daily | sort | tail -1)"
+          echo "[checkout] ${{ inputs.feed }} 日檔：$(ls data/universe/${{ inputs.feed }} 2>/dev/null | grep -c '^2' || echo 0) 天"
+          for L in data/universe/${{ inputs.feed }}/_asked.json \
+                   data/universe/${{ inputs.feed }}/_fetched.json; do
+            [ -f "$L" ] && echo "[checkout] $L：$(python3 -c "import json,sys;print(len(json.load(open(sys.argv[1]))))" "$L") 鍵"
+          done
+          echo "⭐ 以上是 **main** 的狀態；⛔ 若交易日曆最後一天比今天早很多，這一步沒生效。"
+
       - name: 取 main 的日檔與判準檔（⛔ 分支那份比 main 舊）
         # ⛔⛔ 條件要涵蓋**每一個會跑 `adjust.py` 的 mode**，⚠ 不只 otc-adj-official。
         #   2026-09-11 差點踩下去：`mode=run --feed exright` 把 09-10 的除權息
