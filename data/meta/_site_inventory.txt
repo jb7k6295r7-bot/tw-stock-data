@@ -42,7 +42,10 @@
         → /zh-tw/bond/info/statistics-ib/day/yield.html
       債券 / 市況與統計 / 國際債券統計 / 日統計 / 美元國際債券殖利率曲線
         → /zh-tw/bond/info/statistics-ib/day/curve.html
-      …（另有 2 條）
+      債券 / 市況與統計 / 殖利率曲線圖
+        → /zh-tw/bond/info/chart.html
+      債券 / 業務服務 / 殖利率/百元價格換算
+        → /zh-tw/bond/service/conversion.html
 
 ★ 創新板成分清單
    TWSE：⭐ **2 條**
@@ -105,7 +108,6 @@
         → /zh-tw/announce/market/reduction/reference.html
       公告與法規 / 市場公告 / 股票增減資上櫃掛牌（興櫃登錄）公告暨TDR再發行及註銷公告
         → /zh-tw/announce/market/reduction-tdr.html
-      …（另有 0 條）
 
 ★ 變更股票面額
    TWSE：⭐ **2 條**
@@ -170,7 +172,13 @@
         → /zh-tw/announcement/mainboard/attention.html
       注意及處置 / 注意及處置 / 上櫃有價證券 / 上櫃公布注意累計次數可能達處置標準之有價證券
         → /zh-tw/announcement/mainboard/warning.html
-      …（另有 4 條）
+      注意及處置 / 注意及處置 / 興櫃股票
+      注意及處置 / 注意及處置 / 興櫃股票 / 興櫃處置股票
+        → /zh-tw/announcement/esb/esb-disposal.html
+      注意及處置 / 注意及處置 / 興櫃股票 / 興櫃達通知標準及公布注意股票
+        → /zh-tw/announcement/esb/esb-attention.html
+      注意及處置 / 注意及處置 / 興櫃股票 / 興櫃公布注意累計次數可能達處置標準之股票
+        → /zh-tw/announcement/esb/esb-warning.html
 
 ★ 外資持股比率
    TWSE：⭐ **5 條**
@@ -197,7 +205,6 @@
         → /zh-tw/service/investor/info/faq.html#part5
       ETF/ETN / ETF / 市況與統計 / ETF外資及陸資持股統計
         → /zh-tw/product/etf/info/foreign.html
-      …（另有 0 條）
 
 ★ 發行股數／股本
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
@@ -223,7 +230,8 @@
         → ${root}/zh/trading/margin/twt96u.html
       借券資訊
         → ${root}/zh/products/sbl/disclosures/info.html
-      …（另有 1 條）
+      交割借券制度
+        → ${root}/zh/clearing/borrowing.html
    TPEx：⭐ **25 條**
       上櫃 / 交易資訊 / 盤後資訊 / 當日融券賣出與借券賣出成交量值
         → /zh-tw/mainboard/trading/info/short.html
@@ -236,7 +244,42 @@
         → /zh-tw/mainboard/trading/margin-trading/adjusting.html
       上櫃 / 交易資訊 / 融資融券 / 標借
         → /zh-tw/mainboard/trading/margin-trading/borrowing.html
-      …（另有 19 條）
+      上櫃 / 交易資訊 / 融資融券 / 融券借券賣出餘額
+        → /zh-tw/mainboard/trading/margin-trading/sbl.html
+      上櫃 / 交易資訊 / 融資融券 / 信用交易餘額概況表
+        → /zh-tw/mainboard/trading/margin-trading/highlight.html
+      上櫃 / 交易資訊 / 融資融券 / 平盤下得融(借)券賣出之證券名單
+        → /zh-tw/mainboard/trading/margin-trading/exempted.html
+      上櫃 / 交易資訊 / 融資融券 / 信用交易公告
+        → /zh-tw/mainboard/trading/margin-trading/announce.html
+      上櫃 / 交易資訊 / 融資融券 / 融資融券餘額表
+        → /zh-tw/mainboard/trading/margin-trading/transactions.html
+      上櫃 / 交易資訊 / 融資融券 / 借貸款項與不限用途款項借貸擔保品餘額表
+        → https://www.twse.com.tw/zh/trading/margin/twta1u.html
+      上櫃 / 交易資訊 / 融資融券 / 融資融券使用率報表
+        → /zh-tw/mainboard/trading/margin-trading/usage/day.html
+      上櫃 / 交易資訊 / 融資融券 / 融資融券增減排行表
+        → /zh-tw/mainboard/trading/margin-trading/rank/day.html
+      上櫃 / 交易資訊 / 借券交易
+      上櫃 / 交易資訊 / 借券交易 / 標的證券
+        → http://www.twse.com.tw/zh/page/trading/exchange/TWT60U.html
+      上櫃 / 交易資訊 / 借券交易 / 可擔保證券
+        → http://www.twse.com.tw/zh/page/trading/exchange/TWT59U.html
+      上櫃 / 交易資訊 / 借券交易 / 當日借券資訊揭示
+        → https://mis.twse.com.tw/stock/detail-sblInquiry?lang=zhHant
+      上櫃 / 交易資訊 / 借券交易 / 借券餘額表
+        → http://www.twse.com.tw/zh/page/trading/exchange/TWT72U.html
+      上櫃 / 交易資訊 / 借券交易 / 當日可借券賣出股數
+        → http://www.twse.com.tw/zh/page/trading/SBL/TWT96U.html
+      上櫃 / 交易資訊 / 借券交易 / 歷史還券明細查詢
+        → http://www.twse.com.tw/zh/page/trading/SBL/t13sa870.html
+      上櫃 / 交易資訊 / 借券交易 / 歷史借券成交明細查詢
+        → http://www.twse.com.tw/zh/page/trading/SBL/t13sa710.html
+      債券 / 市況與統計 / 債券市況 / 借券中心即時行情
+      債券 / 市況與統計 / 債券市況 / 借券中心即時行情 / 借券即時行情表
+        → /zh-tw/bond/info/market/lending/real-time.html
+      債券 / 市況與統計 / 債券市況 / 借券中心即時行情 / 借券盤後行情表
+        → /zh-tw/bond/info/market/lending/after-hour.html
 
 ★ 盤後定價／零股／鉅額
    TWSE：⭐ **14 條**
@@ -252,7 +295,20 @@
         → ${root}/zh/trading/block/bfiauu-stock.html
       鉅額交易日成交量值統計
         → ${root}/zh/trading/block/bfiauu-day.html
-      …（另有 8 條）
+      鉅額交易月成交量值統計
+        → ${root}/zh/trading/block/bfiauu-month.html
+      鉅額交易年成交量值統計
+        → ${root}/zh/trading/block/bfiauu-year.html
+      每5秒指數盤後統計
+        → ${root}/zh/indices/taiex/mi-5min-indices.html
+      盤後資訊與歷史交易資料
+        → ${root}/zh/products/information/history.html
+      盤中零股交易
+        → ${root}/zh/products/system/trading.html#sec04
+      盤後零股交易
+        → ${root}/zh/products/system/trading.html#sec05
+      鉅額交易
+        → ${root}/zh/products/system/trading.html#sec06
    TPEx：⭐ **36 條**
       上櫃 / 交易資訊 / 盤後資訊
       上櫃 / 交易資訊 / 盤後資訊 / 上櫃股票行情
@@ -265,7 +321,63 @@
         → /zh-tw/mainboard/trading/info/statistics/day.html
       上櫃 / 交易資訊 / 盤後資訊 / 每日收盤行情(不含定價)
         → /zh-tw/mainboard/trading/info/mi-pricing.html
-      …（另有 30 條）
+      上櫃 / 交易資訊 / 盤後資訊 / 日成交量值指數
+        → /zh-tw/mainboard/trading/info/daily-indices.html
+      上櫃 / 交易資訊 / 盤後資訊 / 個股日成交資訊
+        → /zh-tw/mainboard/trading/info/stock-pricing.html
+      上櫃 / 交易資訊 / 盤後資訊 / 個股月成交資訊
+        → /zh-tw/mainboard/trading/info/stock-month.html
+      上櫃 / 交易資訊 / 盤後資訊 / 個股年成交資訊
+        → /zh-tw/mainboard/trading/info/stock-year.html
+      上櫃 / 交易資訊 / 盤後資訊 / 當日融券賣出與借券賣出成交量值
+        → /zh-tw/mainboard/trading/info/short.html
+      上櫃 / 交易資訊 / 盤後資訊 / 盤後定價行情
+        → /zh-tw/mainboard/trading/info/post.html
+      上櫃 / 交易資訊 / 盤後資訊 / 零股交易資訊
+      上櫃 / 交易資訊 / 盤後資訊 / 零股交易資訊 / 盤中零股每日收盤行情
+        → /zh-tw/mainboard/trading/info/odd-lot/pricing.html
+      上櫃 / 交易資訊 / 盤後資訊 / 零股交易資訊 / 盤後零股每日收盤行情
+        → /zh-tw/mainboard/trading/info/odd-lot/post-pricing/day.html
+      上櫃 / 交易資訊 / 盤後資訊 / 零股交易資訊 / 零股交易成交統計
+        → /zh-tw/mainboard/trading/info/odd-lot/statistics/day.html
+      上櫃 / 交易資訊 / 盤後資訊 / 個股本益比、殖利率及股價淨值比(依日期查詢)
+        → /zh-tw/mainboard/trading/info/daily-pe.html
+      上櫃 / 交易資訊 / 盤後資訊 / 個股本益比、殖利率及股價淨值比(依代碼查詢)
+        → /zh-tw/mainboard/trading/info/stock-pe.html
+      上櫃 / 交易資訊 / 盤後資訊 / 首五日無漲跌幅資訊
+        → /zh-tw/mainboard/trading/info/no-limit.html
+      上櫃 / 交易資訊 / 盤後資訊 / 變更交易、分盤交易、管理股票與停止交易資訊
+        → /zh-tw/mainboard/trading/info/altered.html
+      上櫃 / 交易資訊 / 盤後資訊 / 各券商當日營業金額統計表
+        → /zh-tw/mainboard/trading/info/sec-trading.html
+      上櫃 / 交易資訊 / 盤後資訊 / 各券商總公司當日營業金額統計表
+        → /zh-tw/mainboard/trading/info/sec-summary.html
+      上櫃 / 交易資訊 / 盤後資訊 / 等價系統成交分價表
+        → /zh-tw/mainboard/trading/info/volume-profile.html
+      上櫃 / 交易資訊 / 鉅額交易
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易日成交資訊
+        → /zh-tw/mainboard/trading/block-trading/pricing.html
+      上櫃 / 交易資訊 / 鉅額交易 / 個股單一證券鉅額交易日成交資訊
+        → /zh-tw/mainboard/trading/block-trading/stock-pricing.html
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易日成交量值統計
+        → /zh-tw/mainboard/trading/block-trading/day.html
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易月成交量值統計
+        → /zh-tw/mainboard/trading/block-trading/month.html
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易年成交量值統計
+        → /zh-tw/mainboard/trading/block-trading/year.html
+      上櫃 / 交易資訊 / 交易制度專區 / 盤中零股交易專區
+        → /zh-tw/mainboard/trading/rules/odd-lot.html
+      債券 / 市況與統計 / 債券市況 / 借券中心即時行情 / 借券盤後行情表
+        → /zh-tw/bond/info/market/lending/after-hour.html
+      ETF/ETN / ETF / 上櫃ETF鉅額詢價平台
+      ETF/ETN / ETF / 上櫃ETF鉅額詢價平台 / 合意價格揭示
+        → /zh-tw/product/etf/etfrfq/price.html
+      ETF/ETN / ETF / 上櫃ETF鉅額詢價平台 / 相關文件
+        → /zh-tw/product/etf/etfrfq/document.html
+      指數 / 櫃買股價指數系列 / 櫃買指數暨產業分類指數 / 每5秒盤後統計
+        → /zh-tw/indices/stock-index/industrial/sec.html
+      服務 / 資訊購買 / 商品說明 / 盤後資訊( 收市後交易 )
+        → /zh-tw/service/data/product/post.html
 
 ★ ⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）
    TWSE：⭐ **7 條**
@@ -281,7 +393,6 @@
         → ${root}/zh/products/broker/sbl/sbl.html
       證券商機動提撥機制
         → ${root}/zh/clearing/securities/mechanism.html
-      …（另有 1 條）
    TPEx：⭐ **34 條**
       上櫃 / 交易資訊 / 盤中指數及熱門資料 / 熱門股證券商進出排行(依成交量)
         → /zh-tw/mainboard/trading/realtime/broker-vol.html
@@ -295,7 +406,56 @@
         → /zh-tw/mainboard/trading/historical/broker-vol.html
       上櫃 / 交易資訊 / 歷史熱門資料 / 熱門股證券商進出排行(依成交金額)
         → /zh-tw/mainboard/trading/historical/broker-amt.html
-      …（另有 28 條）
+      上櫃 / 交易資訊 / 上櫃統計報表 / 證券商月報
+      上櫃 / 交易資訊 / 上櫃統計報表 / 證券商月報 / 櫃檯買賣股票營業彙總表
+        → /zh-tw/mainboard/trading/statistics/securities-firms/summary.html
+      上櫃 / 交易資訊 / 上櫃統計報表 / 證券商月報 / 證券商成交金額
+        → /zh-tw/mainboard/trading/statistics/securities-firms/trading-amount.html
+      上櫃 / 交易資訊 / 上櫃統計報表 / 證券商月報 / 證券商成交金額彙計表
+        → /zh-tw/mainboard/trading/statistics/securities-firms/trading-status.html
+      上櫃 / 交易資訊 / 上櫃統計報表 / 證券商月報 / 證券商成交金額統計表-地區別
+        → /zh-tw/mainboard/trading/statistics/securities-firms/trading-area.html
+      興櫃 / 申請興櫃 / 推薦券商資料
+      興櫃 / 申請興櫃 / 推薦券商資料 / 主辦輔導推薦證券商參考名單
+        → /zh-tw/esb/ipo/recommended-dealers/assistance.html
+      興櫃 / 申請興櫃 / 推薦券商資料 / 興櫃股票推薦證券商名單
+        → /zh-tw/esb/ipo/recommended-dealers/list.html
+      興櫃 / 申請興櫃 / 推薦券商資料 / 推薦證券商與推薦之股票查詢
+        → /zh-tw/esb/ipo/recommended-dealers/search/stock.html
+      ETF/ETN / ETF / 獎勵活動專區 / 證券商ETF競賽獎勵活動(115年)
+        → /zh-tw/product/etf/reward/securities-firm-reward2.html
+      ETF/ETN / ETN / 獎勵活動專區 / 證券商業績競賽獎勵活動 (115年)
+        → /zh-tw/product/etn/reward/securities-firm-reward2.html
+      衍生性金融商品 / 店頭衍生性金融商品 / 商品資訊 / 證券商及槓桿交易商結構型商品總覽
+        → /zh-tw/derivative/tpex-derivative/product/structure/overview.html
+      衍生性金融商品 / 店頭衍生性金融商品 / 業務服務 / 證券商及槓桿交易商名單
+        → /zh-tw/derivative/tpex-derivative/application/list.html
+      服務 / 證券商資訊
+      服務 / 證券商資訊 / 證券商總分公司資訊
+        → https://www.twse.com.tw/zh/products/broker/infomation/list.html
+      服務 / 證券商資訊 / 證券反詐騙聯防行動專區
+        → https://cam.twse.com.tw/antifraud
+      服務 / 證券商資訊 / 證券性質虛擬通貨業務(STO)
+      服務 / 證券商資訊 / 證券性質虛擬通貨業務(STO) / 簡介
+        → /zh-tw/service/securities-firm/sto/introduction.html
+      服務 / 證券商資訊 / 證券性質虛擬通貨業務(STO) / 管理辦法及相關規章
+        → /zh-tw/service/securities-firm/sto/regulation.html
+      服務 / 證券商資訊 / 證券性質虛擬通貨業務(STO) / 經營證券性質之虛擬通貨業務(STO)之證券商
+        → /zh-tw/service/securities-firm/sto/sec.html
+      服務 / 證券商資訊 / 股權募資
+      服務 / 證券商資訊 / 股權募資 / 簡介
+        → /zh-tw/service/securities-firm/eqcf/introduction.html
+      服務 / 證券商資訊 / 股權募資 / 管理辦法及相關規章
+        → /zh-tw/service/securities-firm/eqcf/regulation.html
+      服務 / 證券商資訊 / 股權募資 / 經營股權性質群眾募資業務之證券商
+        → /zh-tw/service/securities-firm/eqcf/sec.html
+      服務 / 證券商資訊 / 基金受益憑證買賣及互易之居間業務
+      服務 / 證券商資訊 / 基金受益憑證買賣及互易之居間業務 / 簡介
+        → /zh-tw/service/securities-firm/brokerage/introduction.html
+      服務 / 證券商資訊 / 基金受益憑證買賣及互易之居間業務 / 管理辦法及相關規章
+        → /zh-tw/service/securities-firm/brokerage/regulation.html
+      服務 / 證券商資訊 / 基金受益憑證買賣及互易之居間業務 / 基金受益憑證買賣及互易之居間業務證券商
+        → /zh-tw/service/securities-firm/brokerage/sec.html
 
 ★ 八大行庫／官股買賣
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
@@ -315,7 +475,6 @@
         → ${root}/zh/trading/day-trading/bfif8u.html
       當日沖銷交易專區
         → ${root}/zh/products/system/day-trading.html
-      …（另有 0 條）
    TPEx：⭐ **7 條**
       上櫃 / 交易資訊 / 現股當日沖銷交易
       上櫃 / 交易資訊 / 現股當日沖銷交易 / 制度介紹
@@ -328,7 +487,8 @@
         → /zh-tw/mainboard/trading/day-trading/fee.html
       上櫃 / 交易資訊 / 現股當日沖銷交易 / 暫停先賣後買當日沖銷交易標的預告表
         → /zh-tw/mainboard/trading/day-trading/suspended-annouce.html
-      …（另有 1 條）
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 暫停先賣後買當日沖銷交易歷史查詢
+        → /zh-tw/mainboard/trading/day-trading/suspended-historical.html
 
 ── ⇒ 這份輸出的用法 ──
   ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用
