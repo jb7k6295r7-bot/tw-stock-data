@@ -186,6 +186,20 @@ def main():
            and '"無成交"' not in body.replace('NOTRADE = "無成交"', ""),
            "⛔ 還有一份自己寫的 `== \"無成交\"`")
 
+    print("\n── ⑥ `_db_status.md` 講不講得出這一欄 ──")
+    # ⛔ 「這份個股庫沒有 valid_bar」跟「那一欄全是 0」在讀的人眼裡長得一樣，
+    #   ⚠ 而意思完全相反 ⇒ 契約指定回答「有什麼」的那份文件要自己講出來。
+    # ⭐ 比**機制**，⛔ 不比字串（「valid_bar」四個字在註解裡也有一份）。
+    import ast as _ast
+    with open(os.path.join(HERE, "db_status.py"), encoding="utf-8") as _f:
+        _tree = _ast.parse(_f.read())
+    _calls = [n for n in _ast.walk(_tree) if isinstance(n, _ast.Call)
+              and isinstance(n.func, _ast.Attribute)
+              and n.func.attr == "read_contract"
+              and getattr(n.func.value, "id", "") == "valid_bar"]
+    ck("★ `db_status` 真的去讀了契約（⛔ 不是自己另外判一次）",
+       len(_calls) == 1, f"⛔ 掃到 {len(_calls)} 個 valid_bar.read_contract(…)")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

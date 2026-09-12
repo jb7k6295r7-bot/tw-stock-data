@@ -32,6 +32,7 @@ import io
 import json
 import os
 import sys
+import valid_bar
 
 import runlog
 import transpose as _T
@@ -428,6 +429,17 @@ def section_layers(out):
         exp = EXPECT.get(key, 0)
         mark = "" if n >= exp else f" ★ 少於預期 {exp}"
         out.append(f"| {label} | {n} 檔 | {_freshness(key)} | {exp}+{mark} |")
+    out.append("")
+    # ⭐⭐ 衍生欄 `valid_bar`（K線分析線 方案乙）：這份文件要講得出
+    #   **它在不在、是哪一版、用哪一批日檔算的**。
+    #   ⛔ 不講的話，「這份個股庫沒有那一欄」跟「那一欄全是 0」在讀的人眼裡
+    #   長得一模一樣，⚠ 而兩者的意思完全相反。
+    _vb, _vbnote = valid_bar.read_contract(os.path.join(DATA, "stocks"))
+    out.append("")
+    out.append(f"- **`data/stocks/` 的 `valid_bar`**："
+               + (f"✅ {_vbnote}" if _vb else f"{_vbnote}")
+               + "　⚠ 而 `valid_bar=0` 只有一半——**那一天根本沒有列**是另一半，"
+                 "⛔ 算硬斷點時兩種都要算進去")
     out.append("")
     out.append("⚠ 讀法：**「有幾個檔」跟「這些檔是用現在這份日檔建的」是兩件事**"
                "——⛔ 後者壞掉時前者一個數字都不會變。"
