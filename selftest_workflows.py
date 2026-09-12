@@ -193,11 +193,21 @@ def main():
         ck(f"{label}｜而**之後**要 `exit 1`（⛔ 不可以把失敗吞掉）",
            "RC" in after and "exit 1" in after, f"後面那一段：{after.strip()[:80]}")
 
+    # ⛔⛔ 2026-09-13 當場踩到：這個 pattern 原本寫死 `for Y in $(seq`，
+    #   ⚠ 而我把迴圈改成 `for Y in $YEARS`（為了支援 newest 順序）⇒ **一條都沒match**
+    #   ⇒ 那兩道檢查**靜靜不再檢查**，而總數從 186 掉到 184——
+    #   ⛔ 「掃到 0 個迴圈、全部通過」跟「掃到 2 個迴圈、全部通過」在紙上一模一樣。
+    # ⇒ 兩件：① pattern 放寬成任何 `for Y in `
+    #        ② ⭐ **數出來的迴圈數要自己是一道檢查**（下面 `_loops`）
+    _loops = 0
+    _loops_by = {}
     for f in files:
         short = os.path.basename(f)
         src = io.open(f, encoding="utf-8").read()
-        for m in re.finditer(r"for Y in \$\(seq.*?\n(.*?)\n\s*done\n(.*?)\n",
+        for m in re.finditer(r"for Y in .*?\n(.*?)\n\s*done\n(.*?)\n",
                              src, re.S):
+            _loops += 1
+            _loops_by[short] = _loops_by.get(short, 0) + 1
             _rc_check(f"{short}｜逐年迴圈", m.group(1), m.group(2))
 
         # ══════════════════════════════════════════════════════════════
@@ -290,6 +300,47 @@ def main():
     ck("★ 反向驗：把兩步對調的 workflow **確實**會被判成不合格",
        _ro is not None and not (_ro[0] < _ro[1]),
        f"⛔ 對調了還說通過（位置 {_ro}）⇒ 這一道是死的")
+
+    # ⛔ 判準要**指名那一支**：`_loops >= 1` 全庫加總的話，
+    #   feeds.yml 的迴圈改寫法時 backfill.yml 那個還在 ⇒ 照樣綠（突變 M1 實測）。
+    ck("★ `feeds.yml` 的逐年迴圈真的**掃到了**（⛔ 掃到 0 個跟全部通過長得一樣）",
+       _loops_by.get("feeds.yml", 0) >= 1,
+       f"⛔ feeds.yml 只掃到 {_loops_by.get('feeds.yml', 0)} 個 `for Y in …`"
+       "　⇒ 多半是迴圈改寫法了、而這道 pattern 沒跟上")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ `order: newest` 那一支：⛔ 不比字串，**真的把那幾行交給 bash 跑**
+    #
+    # 使用者 2026-09-13 要「先跑 2026 的讓我先用」⇒ 逐年順序要能反過來。
+    # ⚠ 而「順序錯了」的表現是：它照樣成功、照樣推、照樣寫 runlog，
+    #   ⛔ 只是先補的是 2015——**要三小時之後才看得出來**。
+    # ⇒ 這一節把 workflow 裡算 `YEARS` 的那幾行抽出來，兩種 order 各跑一次。
+    # ══════════════════════════════════════════════════════════════
+    _fe = io.open(".github/workflows/feeds.yml", encoding="utf-8").read()
+    _m = re.search(r"( *Y0=.*?\n)(.*?\n *fi\n)", _fe, re.S)
+
+    def _years(order):
+        """→ bash 真的算出來的年份序列（字串）。⛔ 算不出來回 ''。"""
+        if not _m:
+            return ""
+        frag = (_m.group(1) + _m.group(2)).replace(
+            "${{ inputs.start }}", "2015-01-01").replace(
+            "${{ inputs.end }}", "2026-09-12").replace(
+            "${{ inputs.order }}", order)
+        r = subprocess.run(["bash", "-c", frag + "\necho $YEARS"],
+                           capture_output=True, text=True)
+        return " ".join(r.stdout.split())
+
+    _old, _new = _years("oldest"), _years("newest")
+    ck("★ `order=oldest` ⇒ bash 真的算出 2015 → 2026",
+       _old.startswith("2015 ") and _old.endswith(" 2026"), f"⛔ 算出 {_old!r}")
+    ck("★⭐ `order=newest` ⇒ bash 真的算出 **2026 → 2015**"
+       "（⛔ 不是比字串——把那一支拿掉時字串檢查照樣綠）",
+       _new.startswith("2026 ") and _new.endswith(" 2015"), f"⛔ 算出 {_new!r}")
+    ck("★ 反向驗：兩種順序**真的不同**，而且年份集合一樣"
+       "（⛔ 只換順序，不可以換範圍）",
+       bool(_old) and _old != _new and sorted(_old.split()) == sorted(_new.split()),
+       f"oldest={_old!r}｜newest={_new!r}")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
