@@ -154,6 +154,16 @@ def main():
     out.append("\n" + "=" * 62)
     out.append("Q3 資料集總表（⛔ 不猜端點名，照官方清單）")
     out.append("=" * 62)
+    # ⛔⛔ 2026-09-12 訂正：我第一版拿 `/api/v4/datalist` **不帶參數**去要「資料集總表」，
+    #   回了 84B、`msg=success`，我把它印成「共 6 個資料集、籌碼面 0 個」。
+    #   ⚠ 而 K線分析線那份有 **94 個** ⇒ **我端點用錯了**
+    #     （`datalist` 列的是某個 dataset 的 `data_id`，⛔ 不是列 dataset）。
+    # ⇒ ⭐ 這一格**不猜端點**（CLAUDE.md：不要自己編路徑）：
+    #   原樣把回應印出來並標明它**不是**資料集總表，總表以 K線分析線那份為準。
+    out.append("⛔ **這一格我第一版問錯了端點**：`/api/v4/datalist` 不帶參數"
+               "列的是某個 dataset 的 `data_id`，⛔ **不是資料集總表**。")
+    out.append("⚠ 所以下面那個數字**不是**「FinMind 有幾個資料集」，"
+               "⛔ 不可以拿它去反駁 K線分析線那份 94 條的清單。")
     d, note = ask(LIST_API + ("?token=" + TOKEN if TOKEN else ""))
     out.append(f"  回應：{note}")
     if isinstance(d, dict):
@@ -165,11 +175,13 @@ def main():
         if isinstance(lst, list):
             names = sorted(str(x) for x in lst) if lst and isinstance(lst[0], str) \
                 else sorted(str(x.get("dataset", x)) for x in lst if x)
-            out.append(f"    共 {len(names)} 個資料集")
+            out.append(f"    回了 {len(names)} 個項目"
+                       "（⛔ 這是 `data_id`，不是資料集名稱）")
             hit = [n for n in names if any(w in n for w in
                    ("Holding", "Trading", "Shareholding", "Securities",
                     "Margin", "Government", "Disposition"))]
-            out.append(f"    ⭐ 籌碼面相關 {len(hit)} 個：")
+            out.append(f"    ⚠ 其中字面像籌碼面的 {len(hit)} 個"
+                       "（⛔ 這個數字沒有意義，見上面那句）：")
             for n in hit:
                 out.append(f"      {n}")
 
