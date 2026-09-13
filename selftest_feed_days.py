@@ -203,6 +203,74 @@ def main():
             and getattr(n.value, "id", "") == "err"]
     ck("★ 原始碼裡**沒有任何** `err[...]` 的切片（⛔ 一律走 `_why()`）",
        not _bad, f"⛔ 還有 {len(_bad)} 處在切 err")
+
+    print("\n── ⑨ `IncompleteRead`：訊息要**自己講出它是傳輸被切斷** ──")
+    # ⭐ 2026-09-13 實測：TPEx 的 openapi/swagger.json（452 KB）連兩次只讀到 24 KB。
+    #   ⛔ 原本的訊息只有 `IncompleteRead: IncompleteRead(24064 bytes read, ...)`
+    #     ——它跟「這個端點不能用」長得一模一樣，⚠ 而它其實重試就會好。
+    #   ⇒ 這一族跟 ⑧ 是同一條規矩：**可行動的部分要留在訊息裡**。
+    import http.client as _hc
+    import urllib.request as _ur
+    import backfill as _B
+    _orig = _ur.urlopen
+
+    class _Boom:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            raise _hc.IncompleteRead(b"x" * 24064, 452859)
+
+    try:
+        _ur.urlopen = lambda *a, **k: _Boom()
+        _raw, _err = _B.get("https://example.invalid/x.json", retries=1, timeout=1)
+    finally:
+        _ur.urlopen = _orig
+    ck("⭐ 訊息講出這是**傳輸被切斷**，⛔ 不是端點壞掉",
+       _err is not None and "傳輸被切斷" in _err, str(_err))
+    ck("⭐ 而且把「已讀多少／還差多少」帶出來（⇒ 看得出是不是只讀到零頭）",
+       _err is not None and "24,064" in _err and "452,859" in _err, str(_err))
+    # ⛔ 反向：Python 原本的字串**看不出**這兩件事
+    _plain = f"{_hc.IncompleteRead(b'x' * 24064, 452859)!r}"
+    ck("★ 反向驗：Python 原本那串裡沒有「傳輸被切斷」（⛔ 不然上面兩條是假的）",
+       "傳輸被切斷" not in _plain, _plain[:80])
+
+    # ⭐⭐ 而真正該分開的是這兩種——⛔ 只留最後一次的話它們長得一模一樣：
+    #     每次都停在**同一個 byte 數** ⇒ 決定性（重試永遠不會好）
+    #     每次不一樣                   ⇒ 偶發（重試有意義）
+    #   ⚠ 而處置相反：前者要改路（換參數／換來源），後者只要重試。
+    def _boomseq(sizes):
+        it = iter(sizes)
+
+        class _B2:
+            def __enter__(self):
+                self.n = next(it)
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                raise _hc.IncompleteRead(b"x" * self.n, 476923 - self.n)
+        return _B2
+
+    try:
+        _ur.urlopen = lambda *a, _c=_boomseq([24064, 24064]), **k: _c()
+        _, _e1 = _B.get("https://example.invalid/y", retries=2, timeout=1)
+        _ur.urlopen = lambda *a, _c=_boomseq([24064, 133700]), **k: _c()
+        _, _e2 = _B.get("https://example.invalid/y", retries=2, timeout=1)
+    finally:
+        _ur.urlopen = _orig
+    ck("⭐ 兩次都停在同一個 byte 數 ⇒ 訊息要說**決定性、重試不會好**",
+       _e1 is not None and "決定性" in _e1, str(_e1))
+    ck("⭐ 兩次停在不同位置 ⇒ 訊息要說**重試通常會好**（⛔ 不可以說決定性）",
+       _e2 is not None and "決定性" not in _e2 and "傳輸被切斷" in _e2, str(_e2))
+    ck("⭐ 而兩者都要把**每一次**讀到多少列出來（⛔ 只留最後一次就分不出來）",
+       _e1 is not None and _e1.count("24,064") >= 2
+       and _e2 is not None and "133,700" in _e2 and "24,064" in _e2)
     _calls = [n for n in _a2.walk(_a2.parse(_fs))
               if isinstance(n, _a2.Call) and getattr(n.func, "id", "") == "_why"]
     ck("★ 而 `_why()` 真的有被呼叫", len(_calls) >= 1,
