@@ -434,6 +434,20 @@ def section_layers(out):
     #   **它在不在、是哪一版、用哪一批日檔算的**。
     #   ⛔ 不講的話，「這份個股庫沒有那一欄」跟「那一欄全是 0」在讀的人眼裡
     #   長得一模一樣，⚠ 而兩者的意思完全相反。
+    # ⭐⭐ 走 FinMind 落地的資料要標**免費層**（市場情報分析線 2026-09-13 02:25 裁定）。
+    #   ⛔ 理由不是「便宜」：免費層與付費層的**涵蓋範圍不同，而我方證不出差在哪**
+    #     （2026-09-12 實測：`TaiwanStockTradingDailyReport` 2010／2015／近期
+    #      三段全部 HTTP 400 `"Your level is free."` ⇒ 連近期都拿不到）。
+    #   ⚠ **「不知道差多少」必須寫出來**，⛔ 不可以因為查不到就不寫。
+    out.append("")
+    out.append("- ⚠ **走 FinMind 落地的資料一律是【免費層】**："
+               "`data/adj/` 的**上櫃**還原因子（`_index.csv` 的 `market == tpex`）"
+               "是 `otc_adj.py` 走 FinMind 抓的。"
+               "⛔ 我方**從來沒有設過** `FINMIND_TOKEN`（探針實測印「無」），"
+               "而使用者 2026-09-12 裁定**不付費** ⇒ "
+               "⚠ 免費層與付費層的涵蓋範圍差在哪，**我方證不出來**"
+               "（三段測試全部 HTTP 400）⇒ ⛔ 引用上櫃因子時要一起揭露這一點。")
+
     _vb, _vbnote = valid_bar.read_contract(os.path.join(DATA, "stocks"))
     out.append("")
     out.append(f"- **`data/stocks/` 的 `valid_bar`**："

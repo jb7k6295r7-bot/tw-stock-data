@@ -355,11 +355,14 @@ jobs:
       #   不符 0.00%、「只有我方有」= 0。上櫃佔母體近一半，補完才有還原可言。
       #   ⚠ 逐檔抓 971 × 2 ≈ 30 分鐘。免費額度可能中途被擋——
       #   **被擋會把已拿到的寫出去並存進度**，加 --resume 續跑即可。
-      #   有 FinMind token 的話設成 repo secret `FINMIND_TOKEN` 可提高額度。
-      - name: 上櫃除權息與減資（FinMind 回補）
+      # ⛔⛔ FinMind **免費層**。2026-09-12 使用者裁定**不付費**。
+      #   日後若購買，這裡要加回 `env: FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}`。
+      # ⚠ 原本這裡寫著 `secrets.FINMIND_TOKEN`，而那個 secret **從來沒有設過**
+      #   （`finmind_probe` 第一行實測印「無」）⇒ 它是「欄位在但填值率 0%」的 workflow 版：
+      #   讓讀這個檔的人以為那條路有驗證，⛔ 而實際上一直跑免費層。
+      #   ⇒ 市場情報分析線 2026-09-13 02:25 裁定拿掉。
+      - name: 上櫃除權息與減資（FinMind 回補｜⛔ 免費層）
         if: inputs.mode == 'otc-adj'
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         timeout-minutes: 330
         run: |
           # ★ **一定要 `--resume`，不可以是 `--fresh`。**
@@ -377,10 +380,10 @@ jobs:
       # ⭐ 只補指定的幾檔。⛔ 這一步**不帶 `--resume`**：
       #   進度檔可能已經把那一檔記成「做過了」，而我們正是因為它做得不對才要重補
       #   ——帶 `--resume` 會讓這一步安靜地什麼都不做，⚠ 而且看起來完全成功。
-      - name: 上櫃除權息與減資（只補指定的幾檔）
+      # ⛔ 同上：FinMind 免費層，2026-09-12 使用者裁定不付費。
+      #   日後若購買，這裡要加回 `env: FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}`。
+      - name: 上櫃除權息與減資（只補指定的幾檔｜⛔ 免費層）
         if: inputs.mode == 'otc-adj-codes'
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         timeout-minutes: 60
         run: |
           python selftest_otc_adj.py
