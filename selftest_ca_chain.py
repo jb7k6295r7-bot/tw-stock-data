@@ -101,13 +101,35 @@ def main():
        (r.stdout + r.stderr).strip()[:200])
     os.remove(tmp)
 
-    print("\n── ⑤ 每一支會 urlopen 的程式都吃得到（⛔ 不是只有 backfill）──")
-    for m in ("backfill.py", "fetch.py", "capital.py", "mops_history.py",
-              "mops_probe.py", "mops_history_probe.py"):
-        s = io.open(os.path.join(HERE, m), encoding="utf-8").read()
-        b = "\n".join(l for l in s.split("\n") if not l.lstrip().startswith("#"))
-        ck(f"{m} 有 `import ca_chain`", "import ca_chain" in b,
-           "⛔ 少了它 ⇒ 這一支的 TPEx 抓取會**靜靜地繼續失敗**")
+    print("\n── ⑤ 每一支會自己開連線的程式都**真的**吃得到 ──")
+    # ⛔⛔ 這一節第一版是 grep `import ca_chain`——⚠ 而那是錯的判準：
+    #   `ca_chain.install()` 換的是**行程層級**的預設，所以只要**任何一條 import 路徑**
+    #   走到它就生效（`feeds` 自己沒有那一行，但它 import `backfill`）。
+    #   ⇒ 判準是**行為**：把那支 import 起來，看 urllib 的預設有沒有真的被換掉。
+    # ⚠ 而第一版的行為測試**也是假的**：我在檢查之前自己 `import ca_chain`
+    #   ⇒ 13 支全 OK。⛔ 那不是它們吃得到，是我親手裝的（2026-09-13 當場踩到）。
+    #   ⇒ 改成用 `sys.modules.get("ca_chain")` 問「**它自己**有沒有帶進來」。
+    need = ["backfill", "capital", "feeds", "fetch", "mops_history",
+            "mops_history_probe", "mops_probe", "suspend", "suspend_probe",
+            "tdcc_probe", "twparse", "twsthr_probe"]
+    code = ("import importlib, ssl, sys\n"
+            "importlib.import_module(sys.argv[1])\n"
+            "cc = sys.modules.get('ca_chain')\n"
+            "print('OK' if cc and ssl._create_default_https_context is cc.context"
+            " else 'NG')\n")
+    for m in need:
+        r = subprocess.run([sys.executable, "-c", code, m], cwd=HERE,
+                           capture_output=True, text=True, timeout=90)
+        ck(f"{m}｜import 之後 urllib 的預設**真的**是補鏈版",
+           r.stdout.strip().endswith("OK"),
+           "⛔ 沒有 ⇒ 這一支的 TPEx 抓取會**靜靜地繼續失敗**"
+           f"｜{(r.stdout + r.stderr).strip()[-120:]}")
+    # ⭐ 而 `tls_probe` **故意**不吃：它是量現況的那把尺。
+    #   ⛔ 補鏈之後它會永遠回「通」⇒ 下次對方再壞掉沒有任何地方會說。
+    r = subprocess.run([sys.executable, "-c", code, "tls_probe"], cwd=HERE,
+                       capture_output=True, text=True, timeout=90)
+    ck("⭐ 而 `tls_probe` **故意不吃**（它是量現況的尺，吃了就永遠回「通」）",
+       r.stdout.strip().endswith("NG"), r.stdout.strip()[-80:])
 
     print("\n── ⑥ 快到期要先叫（⛔ 不是等它過期那天才發現）──")
     import datetime

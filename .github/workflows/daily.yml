@@ -104,6 +104,7 @@ jobs:
           python selftest_transpose_stamp.py
           python selftest_valid_bar.py
           python selftest_ca_chain.py
+          python selftest_reduce_shares.py
           python selftest_feed_months.py
           python selftest_feed_days.py
           python selftest_syntax_warnings.py
@@ -192,6 +193,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         run: python selftest_mops_history.py
+          python selftest_revenue_complete.py
 
       - name: 驗上市發行股數的補值（離線）
         timeout-minutes: 10
@@ -699,6 +701,25 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         run: python -m pip install --quiet --disable-pip-version-check pandas
+
+      # ⭐⭐ 用**我方自己的 `shares` 欄**重算官方減資參考價（⛔ 不連外）。
+      #   2026-09-13 之前我方寫過「上市那 303 筆沒有任何第二來源可以驗」——⛔ 那是錯的：
+      #   `shares` 完全不從價格推 ⇒ 它就是那個獨立裁判。
+      #   ⚠ 而兩種減資的算式不一樣，用錯是**系統性**偏差（1563 實測差 3.9%）。
+      - name: 減資參考價用 shares 重算（只讀，不連外）
+        if: always()
+        continue-on-error: true
+        run: python reduce_shares_check.py --write
+
+      # ⭐ 同一套機制套到「權」族上。⛔ 它**判不出對錯**——台灣的「除權」把
+      #   無償配股與現金增資綁在同一個事件裡，而現增那一式我方缺「認購價／認購率」。
+      #   ⇒ 它只判「這一筆是不是純無償配股」（＝那一筆的因子有了第二來源）。
+      #   ⚠ 而 `kind` 有兩套詞彙且按市場切開（上市 權/權息、上櫃 除權/除權息）
+      #     ⇒ 一律**包含**比對，⛔ 寫 `kind == "權"` 會靜靜地只拿到上市。
+      - name: 除權因子跟 shares 對照（只讀，不連外｜⛔ 判不出對錯）
+        if: always()
+        continue-on-error: true
+        run: python reduce_shares_check.py --exright --write
 
       - name: 斷點掃描與面額變更對帳
         if: always()

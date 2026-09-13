@@ -387,6 +387,74 @@ def _kinds_on_disk(sub, per, market):
             if x.startswith(pre) and x.endswith(suf)}
 
 
+def _permonths(per):
+    """`"2022-02"` → 距離 0 年 0 月的月數。⭐ 只用來排「誰跟誰相鄰」。"""
+    y, m = per.split("-")
+    return int(y) * 12 + int(m)
+
+
+def revenue_rows(per, market):
+    """→ 那一期那個市場的月營收列數（扣表頭）；檔不在回 `None`。"""
+    p = os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv")
+    if not os.path.exists(p):
+        return None
+    with open(p, encoding="utf-8") as f:
+        return max(0, sum(1 for _ in f) - 1)
+
+
+def revenue_complete(per, market, floor=0.9):
+    """該期別的月營收**抓完了沒**。⛔ 判準不是「檔案在不在」。
+
+    ## ⛔⛔ 為什麼要有這一支：同一個檔案裡，同一個道理只做了一半
+
+    ⚠ `has_output` 的說明早就記著 2026-09-06 那次教訓
+      （「第一版問的是有沒有**任何**檔案」）——⭐ 而那次只修了 `bs`，
+      **`revenue` 這一支一直是 `os.path.exists`**。
+    ⇒ 2026-09-13 實測到後果：
+
+    ```
+    2022-02_tpex.csv    412 列   （鄰月 797 / 798）⇒ 缺 385 檔
+    2026-08_tpex.csv     94 列   （鄰月 860）
+    2026-08_twse.csv    123 列   （鄰月 993）
+    ```
+
+    ⛔ 三個檔**都存在** ⇒ `--fill` 一律跳過 ⇒ **永遠補不到**，
+    ⚠ 而那一趟會印「0 期檔、0 個失敗」，看起來像都做完了。
+    ⭐ 這正是 CLAUDE.md 四點六③ 那個形狀（`otc_adj.save_done` 同一個檔裡只做一半）。
+
+    ## 判準：跟**同市場其他期別**比列數
+
+    月營收的公司家數不會月月劇變 ⇒ 拿同市場所有期別的**中位數**當基準，
+    低於 `floor`（預設一半）就判成沒抓完。
+
+    ⚠ 這是一個**抓取完整性**的門檻，⛔ 不是分析判準——而它的兩種錯代價不對稱：
+    ```
+    判太嚴 ⇒ 多抓一次（幾秒）
+    判太鬆 ⇒ ⛔ 那個洞**永遠補不到**，而且看起來像做完了
+    ```
+    ⇒ 所以往嚴的那邊放。
+    """
+    n = revenue_rows(per, market)
+    if n is None:
+        return False
+    d = os.path.join(OUT, "revenue_hist")
+    if not os.path.isdir(d):
+        return True
+    suf = f"_{market}.csv"
+    # ⭐ 基準是**鄰近期別**，⛔ 不是全庫中位數：
+    #   上櫃的家數十一年從 669 長到 860，拿全庫中位數當基準會讓
+    #   舊期別的門檻太高、新期別的太低。⚠ 2026-09-13 實測：
+    #   `2022-02_tpex` 411 列（鄰月 797）用全庫中位數算是 52%，**剛好躲過 50%**。
+    peers = sorted(x[:-len(suf)] for x in os.listdir(d)
+                   if x.endswith(suf) and x[:-len(suf)] != per)
+    near = sorted(peers, key=lambda x: abs(_permonths(x) - _permonths(per)))[:6]
+    vals = sorted(v for v in (revenue_rows(x, market) for x in near) if v)
+    if not vals:
+        return True          # ⚠ 沒有可比的對象就不判（⛔ 不要用猜的門檻擋）
+    med = vals[len(vals) // 2]
+    return n >= med * floor
+
+
 def has_output(sub, per, market):
     """該期別＋市場**是否已經完整**。`--fill` 用來只補缺的，不重跑全部。
 
@@ -402,8 +470,7 @@ def has_output(sub, per, market):
       不會只缺一張）。
     """
     if sub == "revenue":
-        return os.path.exists(os.path.join(OUT, "revenue_hist",
-                                           f"{per}_{market}.csv"))
+        return revenue_complete(per, market)
     got = _kinds_on_disk(sub, per, market)
     if not got:
         return False

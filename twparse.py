@@ -25,6 +25,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+# ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
+import ca_chain  # noqa: F401
 
 # 民國↔西元的分界：官方民國年一律 < 1000（例：115），西元 > 1990。
 _ROC_ADD = 1911
