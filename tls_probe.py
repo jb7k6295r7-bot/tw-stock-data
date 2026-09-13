@@ -85,12 +85,52 @@ def _chain(host, lines):
     if cert:
         lines.append(f"      subject={cert.get('subject')}｜notAfter={cert.get('notAfter')}")
     # ⭐ 這一格才是判準：**對方一共送了幾張**
-    if chain is None:
-        lines.append("    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）"
-                     "⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證")
-    else:
+    if chain is not None:
         lines.append(f"    ⭐ 對方一共送了 **{len(chain)} 張**憑證"
                      "（1 張 ⇒ **只有葉憑證、沒有中間憑證** ⇒ 是對方漏送）")
+    else:
+        # ⛔ `get_verified_chain` 是 Python 3.13+ 才有的，runner 是 3.12
+        #   ⇒ 2026-09-13 第一版就卡在這一格，**問不出最關鍵的那個數字**。
+        # ⭐ 改走 `openssl s_client -showcerts`：runner 一定有它，而且它印的是
+        #   **對方實際送出來的每一張**——那正是「有沒有漏送中間憑證」的直接證據。
+        _openssl(host, lines)
+
+
+def _openssl(host, lines):
+    """用 `openssl s_client -showcerts` 數**對方實際送了幾張憑證**，並印發行者。
+
+    ⭐ 這是「漏送中間憑證」唯一的直接證據：
+      送 1 張 ⇒ 只有葉憑證 ⇒ 用戶端得自己去把中間憑證補起來。
+    ⚠ 順便印葉憑證的 **AIA caIssuers**——那就是中間憑證的下載位置，
+      ⛔ 而它是**對方自己在憑證裡寫的**，不是我猜的。
+    """
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["openssl", "s_client", "-showcerts", "-servername", host,
+             "-connect", f"{host}:443"],
+            input="", capture_output=True, text=True, timeout=30)
+    except Exception as ex:                                    # noqa: BLE001
+        lines.append(f"    openssl            ✗ {type(ex).__name__}: {ex}")
+        return
+    out = r.stdout + r.stderr
+    n = out.count("-----BEGIN CERTIFICATE-----")
+    lines.append(f"    ⭐ 對方實際送了 **{n} 張**憑證"
+                 + ("（**只有葉憑證、沒有中間憑證** ⇒ **是對方漏送**）" if n == 1
+                    else "（有中間憑證 ⇒ 問題不在漏送）"))
+    for ln in out.splitlines():
+        t = ln.strip()
+        if t.startswith("issuer=") or t.startswith("subject=") or "Verify return code" in t:
+            lines.append(f"      {t[:150]}")
+    # AIA：中間憑證的官方下載位置（⛔ 對方自己寫在憑證裡的，不是我猜的）
+    try:
+        x = subprocess.run(["openssl", "x509", "-noout", "-text"],
+                           input=out, capture_output=True, text=True, timeout=20)
+        for i, ln in enumerate(x.stdout.splitlines()):
+            if "CA Issuers - URI:" in ln:
+                lines.append(f"      AIA caIssuers: {ln.split('URI:', 1)[1].strip()[:120]}")
+    except Exception:                                          # noqa: BLE001
+        pass
 
 
 def main():
