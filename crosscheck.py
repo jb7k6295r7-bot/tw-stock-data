@@ -31,7 +31,21 @@ C 級最危險的地方是它**最像 A 級**——報表一樣綠，差別只�
 EPS 來自 MOPS 財報（累計值相減還原單季，取最近四季），`per` 來自 `BWIBBU_d`
 ——**兩個不同的發布管道**。實測 855 檔可比、**中位誤差 0.21%**、89.1% 落在 5% 內。
 
-⛔ 三個都**不是**「證明資料正確」，是「**多一個獨立的人在看**」。
+## ⭐⭐ ④ 除權息：官方**自己寫出來的**恆等式
+
+`TWT49U` 的 notes 有一句：**「權值+息值 ＝ 除權息前收盤價 − 除權息參考價」**。
+
+⇒ ⭐ 這是**官方講的**，⛔ 不是我推的 ⇒ 它是這一族裡最硬的一個判準：
+三個欄位任何一個被撿錯（`_pick` 那一族的錯法），這條**當場就不成立**。
+
+⚠ 容差要 **0.011 不是 0.005**：兩個價各自捨入到「分」，誤差可以各 0.005
+⇒ 差值的誤差上限是 0.01。⛔ 用 0.005 的話 16.6% 會誤報
+（實測：±0.005 是 83.43%、±0.011 是 **11,751/11,751 ＝ 100.000%**）。
+
+⭐ 而它同時是**涵蓋率**的判準：這三欄有一欄整批空掉，`n` 就會掉下來
+——⛔ 而「0 列可比」跟「全部通過」在報表上長得一樣，所以下面會先釘母體。
+
+⛔ 四個都**不是**「證明資料正確」，是「**多一個獨立的人在看**」。
    C 級升 B 級靠的是這個，不是通過率變高。
 """
 import csv
@@ -221,13 +235,55 @@ def per_check(rl):
              "｜⚠ 這是兩個發布管道的比對，⛔ 不是同一份資料自己比自己")
 
 
+def exright_identity_check(rl, tol=0.011):
+    """④ 除權息：`權值+息值 ＝ 前收 − 參考價`（**官方 notes 自己寫的**）。
+
+    ⛔ `tol` 的預設 0.011 是**算出來的**，不是調出來的：兩個價各自捨入到分
+    ⇒ 差值誤差上限 0.01。⚠ 調小它會讓這道閘門天天紅，然後被學會忽略。
+    """
+    d = os.path.join(_ROOT, "universe", "exright")
+    if not os.path.isdir(d):
+        rl.info("④ 除權息恆等式", "⚠ 沒有 data/universe/exright，跳過")
+        return
+    n = ok = 0
+    worst = (0.0, "")
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith(".csv") or fn.startswith("_"):
+            continue
+        with io.open(os.path.join(d, fn), encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                pre, ref = _f(r.get("pre_close")), _f(r.get("ref_price"))
+                val = _f(r.get("value"))
+                if pre is None or ref is None or val is None:
+                    continue
+                n += 1
+                dv = abs((pre - ref) - val)
+                if dv <= tol:
+                    ok += 1
+                elif dv > worst[0]:
+                    worst = (dv, f"{r.get('date')} {r.get('stock_id')}"
+                                 f"｜前收 {pre}｜參考 {ref}｜權息值 {val}")
+    if not n:
+        rl.info("④ 除權息恆等式", "⚠ 一列都讀不到")
+        return
+    rl.info("④ 除權息 權值+息值 ＝ 前收 − 參考價（官方 notes 自己寫的）",
+            f"可比 {n:,} 列｜相符 {ok:,}（{ok / n * 100:.3f}%）"
+            + (f"｜⛔ 最差：{worst[1]}（差 {worst[0]:.4f}）" if worst[1] else ""))
+    # ⭐ 先釘母體：⛔「0 列可比」跟「全部通過」在報表上長得一樣
+    rl.check("④ 這道閘門真的有母體可掃（⛔ 0 列跟全部通過長得一樣）",
+             n >= 5000, f"{n:,} 列")
+    rl.check(f"④ 官方恆等式全數成立（容差 {tol}＝兩個價各自捨入到分）",
+             ok == n, f"{ok:,}/{n:,}")
+
+
 def main():
     rl = runlog.Run("crosscheck")
-    rl.info("這一支在做什麼", "幫三份原本只有自我一致（C 級）的資料找第二個判準；"
+    rl.info("這一支在做什麼", "幫原本只有自我一致（C 級）的資料找第二個判準；"
                             "⛔ 不是證明它們正確，是**多一個獨立的人在看**")
     inst_check(rl)
     margin_check(rl)
     per_check(rl)
+    exright_identity_check(rl)
     return rl.finish()
 
 
