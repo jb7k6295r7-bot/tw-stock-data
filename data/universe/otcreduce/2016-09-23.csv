@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
-2016-09-23,3105,59,80.52,現金減資,80.5,0.0,finmind
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2016-09-23,3105,59,80.52,現金減資,,,1.36466317,revivt

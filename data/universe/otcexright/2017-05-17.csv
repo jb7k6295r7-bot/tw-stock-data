@@ -1,2 +1,2 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2017-05-17,6219,10.6,10.51,0.09,除息,,finmind
+2017-05-17,6219,10.6,10.51,0.09,除息,,exDailyQ

@@ -1,0 +1,4 @@
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2020-02-20,0.97987060,,0.95364507,41.73,40.89,除息,exright
+2020-05-21,0.97744565,,0.97323573,36.8,35.97,除息,exright
+2020-08-18,0.99569293,,0.99569293,39.47,39.3,除息,exright

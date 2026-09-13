@@ -1,0 +1,4 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2011-08-23,3402,22,18.18,3.82,除權息,,exDailyQ
+2011-08-23,4138,130,130,0.00,除權,,exDailyQ
+2011-08-23,5483,58,57.91,0.09,除權,,exDailyQ

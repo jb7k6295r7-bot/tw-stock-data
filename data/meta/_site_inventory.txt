@@ -1,0 +1,192 @@
+# site_inventory.py 的輸出。**只讀不寫資料。**
+# 問的是：「這個站到底有沒有我要的東西」——一次問完。
+# ⛔ 它只回答「選單上有沒有這個名字」，不回答「那條端點能不能用」。
+
+── 「這個站到底有沒有我要的東西」一次問完 ──
+⛔ 這一支只回答「**選單上有沒有這個名字**」，不回答「那條端點能不能用」。
+  ⚠ 兩者差很遠：`chtm` 的選擇器寫 `data-start=20080409`，實際下限在民國 99~100 之間——**選擇器騙人**。
+  ⇒ 命中之後仍然要照 `docs/NEW_ENDPOINT.md` 走一次（第 0 步：先印 notes／hints／title／params／total）。
+
+── TWSE｜https://www.twse.com.tw/res/data/zh/menu-mega.html
+   ✓ 36,250 bytes｜攤平出 **281 條**選單項目
+
+── TPEx｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
+   ✗ 抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certific
+   ⛔ 抓不到**不等於**這個站沒有——這一趟對它一無所知。
+
+── 逐條比對「我方還缺什麼」──
+
+★ 月營收（歷史，逐月）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+
+★ 財報（歷史，逐季）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+
+★ 本益比（歷史段，含收盤價欄）
+   TWSE：⭐ **2 條**
+      個股日本益比、殖利率及股價淨值比(依日期查詢)
+        → ${root}/zh/trading/historical/bwibbu-day.html
+      個股日本益比、殖利率及股價淨值比(依代碼查詢)
+        → ${root}/zh/trading/historical/bwibbu.html
+
+★ 創新板成分清單
+   TWSE：⭐ **2 條**
+      每日創新板股票成交量值
+        → ${root}/zh/trading/historical/mi-stock-tib.html
+      臺灣創新板(TIB)專區
+        → https://www.twse.com.tw/TIB/zh/index.html
+
+★ 集保／股權分散（歷史）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+
+★ 上櫃交易日曆（歷史）
+   TWSE：⭐ **2 條**
+      各類指數日成交量值
+        → ${root}/zh/trading/historical/bfiamu.html
+      鉅額交易日成交量值統計
+        → ${root}/zh/trading/block/bfiauu-day.html
+
+★ 上櫃除權息（歷史）
+   TWSE：⭐ **1 條**
+      除權除息預告表
+        → ${root}/zh/announcement/ex-right/twt48u.html
+
+★ 上櫃減資（歷史）
+   TWSE：⭐ **4 條**
+      減資預告表
+        → ${root}/zh/announcement/reduction/twtavu.html
+      股票減資恢復買賣參考價格
+        → ${root}/zh/announcement/reduction/twtauu.html
+      變更股票面額恢復買賣參考價格
+        → ${root}/zh/announcement/change/twtb8u.html
+      ETF分割(反分割)恢復買賣參考價格
+        → ${root}/zh/announcement/split/twtcau.html
+
+★ 變更股票面額
+   TWSE：⭐ **2 條**
+      變更股票面額預告表
+        → ${root}/zh/announcement/change/twtb7u.html
+      變更股票面額恢復買賣參考價格
+        → ${root}/zh/announcement/change/twtb8u.html
+
+★ 暫停／停止交易（歷史）
+   TWSE：⭐ **2 條**
+      暫停交易證券
+        → ${root}/zh/trading/historical/twtawu.html
+      終止上市公司
+        → ${root}/zh/listed/suspend-listing.html
+
+★ ⭐ 終止上市／上櫃（下市下櫃名單）
+   TWSE：⭐ **2 條**
+      停止買賣
+        → ${root}/zh/listed/violations/stop.html
+      終止上市公司
+        → ${root}/zh/listed/suspend-listing.html
+
+★ 處置／注意股（歷史）
+   TWSE：⭐ **3 條**
+      公布注意有價證券
+        → ${root}/zh/announcement/notice.html
+      公布處置有價證券
+        → ${root}/zh/announcement/punish.html
+      公布注意累計次數可能達處置標準之有價證券
+        → ${root}/zh/announcement/notetrans.html
+
+★ 外資持股比率
+   TWSE：⭐ **5 條**
+      外資及陸資買賣超彙總表
+        → ${root}/zh/trading/foreign/twt38u.html
+      外資及陸資投資持股統計
+        → ${root}/zh/trading/foreign/mi-qfiis.html
+      外資及陸資持股前20名彙總表
+        → ${root}/zh/trading/foreign/mi-qfiis20.html
+      外資及陸資投資類股持股比率表
+        → ${root}/zh/trading/foreign/mi-qfiis-cat.html
+      僑外投資
+        → ${root}/zh/products/education/foreign/overview.html
+
+★ 發行股數／股本
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+
+★ 借券／融券（歷史）
+   TWSE：⭐ **7 條**
+      當日融券賣出與借券賣出成交量值
+        → ${root}/zh/trading/historical/twtasu.html
+      應付現股當日沖銷券差借券費率
+        → ${root}/zh/trading/day-trading/bfif8u.html
+      融資融券餘額
+        → ${root}/zh/trading/margin/mi-margn.html
+      融券借券賣出餘額
+        → ${root}/zh/trading/margin/twt93u.html
+      當日可借券賣出股數
+        → ${root}/zh/trading/margin/twt96u.html
+      借券資訊
+        → ${root}/zh/products/sbl/disclosures/info.html
+      交割借券制度
+        → ${root}/zh/clearing/borrowing.html
+
+★ 盤後定價／零股／鉅額
+   TWSE：⭐ **14 條**
+      盤後定價交易
+        → ${root}/zh/trading/historical/bft41u.html
+      盤中零股交易行情單
+        → ${root}/zh/trading/historical/twtc7u.html
+      盤後零股交易行情單
+        → ${root}/zh/trading/historical/twt53u.html
+      鉅額交易日成交資訊
+        → ${root}/zh/trading/block/bfiauu.html
+      個股單一證券鉅額交易日成交資訊
+        → ${root}/zh/trading/block/bfiauu-stock.html
+      鉅額交易日成交量值統計
+        → ${root}/zh/trading/block/bfiauu-day.html
+      鉅額交易月成交量值統計
+        → ${root}/zh/trading/block/bfiauu-month.html
+      鉅額交易年成交量值統計
+        → ${root}/zh/trading/block/bfiauu-year.html
+      每5秒指數盤後統計
+        → ${root}/zh/indices/taiex/mi-5min-indices.html
+      盤後資訊與歷史交易資料
+        → ${root}/zh/products/information/history.html
+      盤中零股交易
+        → ${root}/zh/products/system/trading.html#sec04
+      盤後零股交易
+        → ${root}/zh/products/system/trading.html#sec05
+      鉅額交易
+        → ${root}/zh/products/system/trading.html#sec06
+
+★ ⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）
+   TWSE：⭐ **7 條**
+      證券商月報
+        → ${root}/zh/trading/statistics/index03.html
+      證券商資訊
+        → ${root}/zh/products/broker/infomation/list.html
+      證券商內控標準規範系統
+        → https://sicsweb.twse.com.tw
+      證券商辦理定期定額業務資料
+        → ${root}/zh/products/broker/business.html
+      證券商辦理有價證券借貸
+        → ${root}/zh/products/broker/sbl/sbl.html
+      證券商機動提撥機制
+        → ${root}/zh/clearing/securities/mechanism.html
+
+★ 八大行庫／官股買賣
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列）
+
+★ 當日沖銷（歷史）
+   TWSE：⭐ **6 條**
+      每日當日沖銷交易標的
+        → ${root}/zh/trading/day-trading.html
+      每月當日沖銷交易標的及統計
+        → ${root}/zh/trading/day-trading/twtb4u-month.html
+      暫停先賣後買當日沖銷交易標的預告表
+        → ${root}/zh/trading/day-trading/twtbau.html
+      暫停先賣後買當日沖銷交易歷史查詢
+        → ${root}/zh/trading/day-trading/twtbau-history.html
+      應付現股當日沖銷券差借券費率
+        → ${root}/zh/trading/day-trading/bfif8u.html
+      當日沖銷交易專區
+        → ${root}/zh/products/system/day-trading.html
+
+── ⇒ 這份輸出的用法 ──
+  ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用
+  ② 沒命中的：那才是**真的要請人去站上翻**的——而且是**一次把這幾條一起請託**，⛔ 不要一條一封信

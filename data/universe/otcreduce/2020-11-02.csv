@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,source
-2020-11-02,4905,46.65,50.78,現金減資,50.8,0.0,finmind
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2020-11-02,4905,46.65,50.78,現金減資,,,1.08863026,revivt

@@ -1,2 +1,2 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2026-07-03,0.95687104,0.95687104,47.3,45.26,除息,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2026-07-03,0.95687104,,0.95687104,47.3,45.26,除息,exright

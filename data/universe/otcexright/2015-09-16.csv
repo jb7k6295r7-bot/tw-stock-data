@@ -1,2 +1,2 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2015-09-16,1752,43.95,43.46,0.49,除息,,finmind
+2015-09-16,1752,43.95,43.46,0.49,除息,,exDailyQ

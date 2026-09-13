@@ -1,2 +1,2 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2026-03-31,0.04544737,0.04544737,443.15,20.14,,etfsplit
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2026-03-31,0.04544737,,0.04544737,443.15,20.14,,etfsplit

@@ -1,0 +1,4 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2020-03-18,00777B,45.45,45.09,0.360000,除息,,exDailyQ
+2020-03-18,00778B,44.4,43.97,0.430000,除息,,exDailyQ
+2020-03-18,00779B,53.7,53.45,0.255000,除息,,exDailyQ

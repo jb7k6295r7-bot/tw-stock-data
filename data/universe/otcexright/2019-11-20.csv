@@ -1,2 +1,4 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2019-11-20,3680,125,124.28,0.72,除權,,finmind
+2019-11-20,00845B,40.11,39.68,0.43,除息,,exDailyQ
+2019-11-20,00846B,39.78,39.58,0.20,除息,,exDailyQ
+2019-11-20,3680,125,124.28,0.72,除權,,exDailyQ

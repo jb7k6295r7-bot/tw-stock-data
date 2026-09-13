@@ -1,2 +1,3 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2017-10-30,1.18305085,1.18305085,17.7,20.94,現金減資,reduce
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2012-09-27,0.96937500,,1.14656239,16,15.51,除息,exright
+2017-10-30,1.18305085,1.18278519,1.18278519,17.7,20.94,現金減資,reduce

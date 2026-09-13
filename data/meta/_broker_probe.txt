@@ -1,0 +1,15 @@
+broker_probe.py　2026-09-13 09:45 台北
+⭐ 問的是：這兩條到底是**全市場 × 全部分點**，還是「熱門股排行」。
+⛔ 判準不是「有回列」——是**它自己講不講得出它是哪一天、涵蓋誰**。
+
+========================================================================
+■ 上櫃 熱門股券商進出（量）
+  https://www.tpex.org.tw/zh-tw/mainboard/trading/historical/broker-vol.html
+  ⛔ 頁面抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+  ⚠ 這個容器對交易所一律 403（我方閘道）⇒ ⛔ 在這裡看到的失敗**不是事實**，要看 Actions 上那一份。
+
+========================================================================
+■ 上櫃 熱門股券商進出（金額）
+  https://www.tpex.org.tw/zh-tw/mainboard/trading/historical/broker-amt.html
+  ⛔ 頁面抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+  ⚠ 這個容器對交易所一律 403（我方閘道）⇒ ⛔ 在這裡看到的失敗**不是事實**，要看 Actions 上那一份。

@@ -1,2 +1,2 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2020-09-28,3.39636364,3.39636364,2.75,9.34,彌補虧損,reduce
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2020-09-28,3.39636364,,3.39636364,2.75,9.34,彌補虧損,reduce

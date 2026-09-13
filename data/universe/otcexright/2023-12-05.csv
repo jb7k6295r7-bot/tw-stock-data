@@ -1,2 +1,2 @@
 date,stock_id,pre_close,ref_price,value,kind,open_base,source
-2023-12-05,8444,34.55,34.38,0.170551,除權,,finmind
+2023-12-05,8444,34.55,34.38,0.170551,除權,,exDailyQ

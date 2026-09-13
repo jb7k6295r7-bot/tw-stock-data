@@ -1,0 +1,4 @@
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2021-11-16,0.98157701,,0.96052856,40.71,39.96,除息,exright
+2022-02-22,0.98972793,,0.97855650,36.02,35.65,除息,exright
+2022-05-18,0.98871263,,0.98871263,32.78,32.41,除息,exright

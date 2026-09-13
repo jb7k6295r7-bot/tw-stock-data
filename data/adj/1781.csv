@@ -1,0 +1,3 @@
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2013-09-03,0.99764982,,0.98321205,42.55,42.45,除息,exright
+2014-07-25,0.98552822,,0.98552822,34.55,34.05,除息,exright

@@ -1,2 +1,2 @@
-date,factor,cum_factor,pre_close,ref_price,kind,event
-2022-07-22,0.97063622,0.97063622,30.65,29.75,除權,exright
+date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
+2022-07-22,0.97063622,,0.97063622,30.65,29.75,除權,exright

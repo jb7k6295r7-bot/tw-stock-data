@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,source
+2008-05-19,3523,121,115,6.00,除息,,exDailyQ
