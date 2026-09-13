@@ -83,7 +83,7 @@ def main():
         ck("③ volume 照官方原文（0）", g["volume"] == "0", repr(g["volume"]))
         ck("③ shares 照樣拿得到（發行股數跟有沒有成交無關）",
            g["shares"] == "50000000", repr(g["shares"]))
-        ck("④ 沒有成交價 ⇒ 不判漲跌停", g["limit"] == "", repr(g["limit"]))
+        ck("④ 沒有成交價 ⇒ `limit` 空（⛔ 它判的是「一價到底」不是漲跌停）", g["limit"] == "", repr(g["limit"]))
 
     # ── ⭐ 反向驗：證明「舊行為」會被這支抓到 ──
     #   ⛔ 直接改回 `if not c: continue` 不可行（那要動原始碼），
@@ -205,7 +205,7 @@ def main():
     ck("⑦ ⛔ volume／amount 照官方原文（0 與 2000，不是自己填的 0）",
        bool(fnt) and (fnt[0]["volume"], fnt[0]["amount"]) == ("0", "2000"),
        str(fnt))
-    ck("⑦ 無成交列不判漲跌停", bool(fnt) and fnt[0]["limit"] == "", str(fnt))
+    ck("⑦ 無成交列 `limit` 空（⛔ 它判的是「一價到底」不是漲跌停）", bool(fnt) and fnt[0]["limit"] == "", str(fnt))
 
     # ⭐ 兩支的輸出要**逐格相同**——這才是「只修一份」真正的守門
     brows, _ = B.parse_twse(fpay, "2026-09-03", market="tpex")
@@ -444,6 +444,47 @@ def main():
                         "data", "universe", "daily")
     ck("★ 沒有寫任何檔（這支只呼叫 parse，不落地）",
        True if not os.path.isdir(real) else True)
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ `limit` 欄的**語意**釘死（2026-09-13）
+    #
+    # 它叫 `limit`，⚠ 而它判的只有「開＝高＝低＝收」（一價到底），
+    # **從來沒有跟當天的漲跌停價比過**。全庫實測 5,529,865 列：
+    # 非空 177,153 列裡 |漲跌幅| ≥ 9.5% 的只有 10,710 ⇒ **精確度上限 6.0%**。
+    #
+    # ⇒ 這一節防兩件，⛔ 兩件都是「靜默」的：
+    #   ① 有人把它**改成真的漲跌停判準**而沒改契約
+    #      ⇒ 同一個欄名前後兩種意思，⚠ 而舊資料不會重算
+    #   ② 契約裡那一節被刪掉 ⇒ 下一個人又把它當漲跌停用
+    # ══════════════════════════════════════════════════════════════
+    print("\n── `limit` 欄的語意（⛔ 它不是漲跌停旗標）──")
+    _src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "fetch.py"), encoding="utf-8").read()
+    _body = "\n".join(ln for ln in _src.split("\n")
+                      if not ln.lstrip().startswith("#"))
+    ck("★ `fetch.py` 判 `limit` 的條件仍然只有「開＝高＝低＝收」"
+       "（⛔ 改成別的就要同時改契約）",
+       "o == h == l == c" in _body,
+       "⛔ 那個條件不見了 ⇒ 語意變了，`docs/READ_CONTRACT.md` 那一節要一起改")
+    # ⭐ 而它只准有**一份**實作（四點五）。2026-09-13 之前這三行在
+    #   `parse_twse_daily` 與 `parse_openapi_daily` 各抄一份——⚠ 當時兩份**一樣**，
+    #   ⛔ 而「還沒走岔」不是判準：這個形狀本專案已經付過六次。
+    ck("★ 判「一價到底」的地方只有**一處**（⛔ 兩份 ＝ 下一次的第七次）",
+       _body.count("o == h == l == c") == 1,
+       f"⛔ 出現 {_body.count('o == h == l == c')} 次")
+    # ⚠ 數 `= one_price(`，⛔ 不是 `one_price(`——後者會把 `def` 那一行也算進去
+    #   （第一版就是這樣，回「呼叫 3 次」）。
+    _calls = _body.count("= one_price(")
+    ck("★ 而兩支解析器都是**呼叫**那一份（⛔ 不是各自 inline）",
+       _calls == 2, f"⛔ 呼叫 {_calls} 次（要 2）")
+    ck("★ 而它**沒有**去比當天的漲跌停價（⛔ 有的話就是另一種欄了）",
+       "limit_price" not in _body and "漲停價" not in _body,
+       "⛔ 出現了漲跌停價的比較 ⇒ 語意變了")
+    _doc = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "docs/READ_CONTRACT.md"), encoding="utf-8").read()
+    ck("★ 契約裡那一節還在（⛔ 刪掉的話下一個人又會把它當漲跌停用）",
+       "不是漲跌停旗標" in _doc and "一價到底" in _doc,
+       "⛔ `docs/READ_CONTRACT.md` 裡找不到那一節")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

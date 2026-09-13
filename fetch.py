@@ -869,6 +869,27 @@ def _lock_dir(chg):
     return "up" if v > 0 else ("down" if v < 0 else "flat")
 
 
+def one_price(o, h, l, c, chg):
+    """→ `limit` 欄的值：一價到底就回方向（`up`／`down`／`flat`），否則回 `""`。
+
+    ⭐ **只有這一份實作**（CLAUDE.md 四點五）：`parse_twse_daily` 與
+      `parse_openapi_daily` 共用。⚠ 2026-09-13 之前這三行**在兩支各抄一份**，
+      ⛔ 而那正是本專案六次事故的形狀（「改一邊，另一邊沒跟上，沒有人會發現」）。
+
+    ⛔⛔ 這一欄叫 `limit`，⚠ 而它**不是漲跌停旗標**——判準只有
+      「開＝高＝低＝收」，**從來沒有跟當天的漲跌停價比過**。
+      2026-09-13 全庫實測（5,529,865 列）：非空 177,153 列裡
+      |漲跌幅| ≥ 9.5% 的只有 10,710 列 ⇒ **精確度上限 6.0%**。
+    ⇒ 它誠實回答的只有那一句字面：**這一天這一檔只成交在一個價位**
+      （拿來當流動性／可成交性旗標是對的）。
+    ⚠ 欄名取錯了，⛔ 而改名會動到每一個日檔 ⇒ 定義寫死在
+      `docs/READ_CONTRACT.md`〈`limit` 欄不是漲跌停旗標〉。
+    """
+    if o and h and l and c and o == h == l == c:
+        return _lock_dir(chg)
+    return ""
+
+
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
 
@@ -1215,10 +1236,7 @@ def parse_twse_daily(d, day, market="twse"):
             chg = _num(r[i_sign])
         else:
             chg = ""
-        # 漲跌停鎖死：開＝高＝低＝收且有量。**回測必須知道這一天買不到。**
-        lim = ""
-        if o and h and l and c and o == h == l == c:
-            lim = _lock_dir(chg)
+        lim = one_price(o, h, l, c, chg)      # ⛔ 不是漲跌停，見該函式的說明
         out.append([f"{day}_{code}", day, code,
                     str(r[i_name]).strip() if i_name is not None else "",
                     market, o, h, l, c,
@@ -1347,9 +1365,7 @@ def parse_openapi_daily(rows, day, market):
                 #   但它終究不是官方公告值，所以 price_basis 一定要標出來。
                 amt = str(int(round(float(c) * float(vol))))
                 basis = "均價/額推算"
-        lim = ""
-        if o and h and l and c and o == h == l == c:
-            lim = _lock_dir(chg)
+        lim = one_price(o, h, l, c, chg)      # ⛔ 不是漲跌停，見該函式的說明
         out.append([f"{day}_{code}", day, code,
                     str(r.get(k_name, "")).strip(), market,
                     o, h, l, c, vol, amt, chg, lim, "",

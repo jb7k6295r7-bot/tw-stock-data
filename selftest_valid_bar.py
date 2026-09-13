@@ -200,6 +200,32 @@ def main():
     ck("★ `db_status` 真的去讀了契約（⛔ 不是自己另外判一次）",
        len(_calls) == 1, f"⛔ 掃到 {len(_calls)} 個 valid_bar.read_contract(…)")
 
+    print("\n── ⑦ FinMind 免費層那一句在不在（情報分析線 2026-09-13 裁定）──")
+    # ⛔ 拿掉死掉的 `secrets.FINMIND_TOKEN` **之後**，若不補這一句，
+    #   就從「一個永遠取不到值的 secret」變成「完全沒有人提過這件事」
+    #   ——⚠ 後者更靜默。⇒ 兩邊都要有人守。
+    with open(os.path.join(HERE, "db_status.py"), encoding="utf-8") as _f:
+        _ds = _f.read()
+    # ⛔ 比的是**真的會印出去的那幾行**，⚠ 不是「這幾個字在不在檔案裡」
+    #   ——「免費層」三個字在我自己的註解裡也有一份 ⇒ 第一版突變 M3 全綠
+    #   （2026-09-13 當場踩到，今天第三次）。
+    _body = "\n".join(ln for ln in _ds.split("\n")
+                      if not ln.lstrip().startswith("#"))
+    ck("★ `_db_status.md` **真的會印出**「走 FinMind 的是免費層」"
+       "（⛔ 比的是 out.append 那幾行，不是註解）",
+       "免費層" in _body and "FINMIND_TOKEN" in _body,
+       "⛔ db_status 的輸出裡沒有那一句")
+    with open(os.path.join(HERE, ".github/workflows/feeds.yml"), encoding="utf-8") as _f:
+        _fe = _f.read()
+    _live = [ln for ln in _fe.split("\n")
+             if "FINMIND_TOKEN" in ln and not ln.lstrip().startswith("#")]
+    ck("★ `feeds.yml` 裡**沒有**還活著的 `secrets.FINMIND_TOKEN`"
+       "（⛔ 它從來沒設過 ⇒ 讓人以為那條路有驗證）",
+       not _live, f"⛔ 還在的：{_live}")
+    ck("★ 而它留了一行註解說**日後若購買要加回去**"
+       "（⛔ 不然三個月後有人以為是漏掉的）",
+       "日後若購買" in _fe, "⛔ 沒有那一行")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
