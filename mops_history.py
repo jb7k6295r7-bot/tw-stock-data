@@ -53,6 +53,8 @@ import urllib.parse
 import urllib.request
 from html.parser import HTMLParser
 
+import neighbor_floor          # ⭐ 「跟鄰近同類比數量」只有那一份實作（四點五）
+
 MOPSOV = "https://mopsov.twse.com.tw"
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "mops")
@@ -402,7 +404,7 @@ def revenue_rows(per, market):
         return max(0, sum(1 for _ in f) - 1)
 
 
-def revenue_complete(per, market, floor=0.9):
+def revenue_complete(per, market, floor=neighbor_floor.FLOOR_PERIOD):
     """該期別的月營收**抓完了沒**。⛔ 判準不是「檔案在不在」。
 
     ## ⛔⛔ 為什麼要有這一支：同一個檔案裡，同一個道理只做了一半
@@ -447,12 +449,17 @@ def revenue_complete(per, market, floor=0.9):
     #   `2022-02_tpex` 411 列（鄰月 797）用全庫中位數算是 52%，**剛好躲過 50%**。
     peers = sorted(x[:-len(suf)] for x in os.listdir(d)
                    if x.endswith(suf) and x[:-len(suf)] != per)
-    near = sorted(peers, key=lambda x: abs(_permonths(x) - _permonths(per)))[:6]
-    vals = sorted(v for v in (revenue_rows(x, market) for x in near) if v)
-    if not vals:
-        return True          # ⚠ 沒有可比的對象就不判（⛔ 不要用猜的門檻擋）
-    med = vals[len(vals) // 2]
-    return n >= med * floor
+    near = sorted(peers, key=lambda x: abs(_permonths(x) - _permonths(per)))[:neighbor_floor.K]
+    vals = [v for v in (revenue_rows(x, market) for x in near) if v]
+    # ⭐ 判準本體在 `neighbor_floor.is_short`——⛔ 這裡不可以再寫一份
+    #   （CLAUDE.md 四點五）。2026-09-13 市場情報分析線指出：這個形狀
+    #   跟「憑證鏈壞掉整批抓不到」在資料裡長得一模一樣 ⇒ 已推廣成逐日 feed 的通則
+    #   （`feed_rowcount_check.py`）。
+    # ⚠ 期別檔用 FLOOR_PERIOD（0.9）不是日檔那個 0.5：一個月的家數幾乎不動。
+    short, _med, why = neighbor_floor.is_short(n, vals, floor=floor)
+    if why:
+        return True          # ⚠ 判不了就不判（⛔ 不要用猜的門檻擋）
+    return not short
 
 
 def has_output(sub, per, market):
