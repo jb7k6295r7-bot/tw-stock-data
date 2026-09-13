@@ -36,6 +36,11 @@ import ssl
 import sys
 import urllib.request
 
+# ⛔⛔ 這一支**故意不 import `ca_chain`**。
+#   它是**量現況**的那把尺：補鏈之後它會永遠回「通」，
+#   ⇒ 下次對方再壞掉（或我方補鏈失效）**沒有任何地方會說**。
+#   ⚠ 尺要量的是「沒有我方補救時，對方長什麼樣」。
+
 HOSTS = [
     ("TPEx（今天掛的那一站）", "www.tpex.org.tw",
      "https://www.tpex.org.tw/www/zh-tw/margin/sbl?date=2026/09/11&id=&response=json"),

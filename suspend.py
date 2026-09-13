@@ -59,6 +59,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+# ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
+import ca_chain  # noqa: F401
 
 import runlog
 from datetime import datetime, timedelta, timezone
