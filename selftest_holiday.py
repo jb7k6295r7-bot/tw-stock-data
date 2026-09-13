@@ -27,6 +27,8 @@ import tempfile
 
 import holiday as H
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 # 平安日：照抄探針量到的特徵——有日期、22 縣市一個都沒有、但「停止上班」出現很多次
 CALM = """<html><body>
 <h1>天然災害停止上班及上課情形</h1>
@@ -103,6 +105,14 @@ def main():
     #   ⛔ 同一個坑今天已經踩過一次（runlog 的路徑）。這次是同一族的第二個。
     old_sched = H.SCHED_CSV
     H.SCHED_CSV = os.path.join(d, "holiday_schedule.csv")
+    # ⛔⛔ 2026-09-14 又踩了**同一族的第三個**：`_schedule()` 新加的涵蓋率低水位
+    #   `SCHED_LOW` 沒被導走 ⇒ 這支自測拿假資料（3 個年份）跑一趟，就把 repo 真的
+    #   `_holiday_years_low.txt` 從 `6` **寫成 `2`**，⚠ 而它是「只往上寫」的檔
+    #   ⇒ 看起來像「涵蓋率本來就只有 2 年」，那道閘門從此永遠綠。
+    #   ⭐ 判準不是「記得導走」，是**下面那條「沒有動到 repo 真的檔」的斷言**：
+    #     前兩個坑都是它抓到的，⛔ 而這個新檔當時沒有跟著加一條。
+    old_low = H.SCHED_LOW
+    H.SCHED_LOW = os.path.join(d, "_holiday_years_low.txt")
     import backfill as _B
     old_get = _B.get
     # ⛔⛔ 這裡**不可以**寫成「一律回錯誤」。2026-09-09 實測代價：
@@ -163,6 +173,15 @@ def main():
     # ⛔ 「跑之前」就要記下來，⛔ 不可以在跑完之後才取兩次——
     #   那會拿同一個值跟自己比，**永遠通過**（今天已經寫過一次 `… or True`）。
     sched_before = _stat(real_sched)
+    # ⭐⭐ 沙箱的低水位先**填一個很高的值**（9 年）。理由：
+    #   ⛔ 不填的話這一趟是「第一次跑」⇒ 直接建檔、那道 check 根本不會被評估
+    #   ⇒ 「閘門會不會紅」與「檔會不會被寫小」兩件事**一條都測不到**
+    #     （實測：AB2／AB4 兩個突變在沒有這一段時**全綠**）。
+    io.open(H.SCHED_LOW, "w", encoding="utf-8").write("9,2026-01-01\n")
+    real_low = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data", "meta",
+        "_holiday_years_low.txt")
+    low_before = _stat(real_low)
     try:
         for label, html in (("calm", CALM), ("typhoon", TYPHOON)):
             p = os.path.join(d, label + ".html")
@@ -198,9 +217,34 @@ def main():
            "不在 20~27" in lr, lr[-400:])
         ck("★ 2021 那一年的列真的併進檔案了（不是只印訊息）",
            sched.count("2021-") == 12, f"實際 {sched.count('2021-')} 列")
+        # ── ⭐⭐ 涵蓋率閘門的**執行期**三條（⛔ 上面 ⑨ 那幾條只測得到純函式）──
+        # ⚠ 假資料只有 2021／2026 兩年 ⇒ 缺 2015~2020、2022~2025 共 10 年。
+        ck("⭐ 缺的年份**逐年**印在 runlog 裡（⛔ 只報一個數字的話，"
+           "沒有人知道要去補哪幾年）",
+           "缺 10 年" in lr and "2015,2016,2017,2018,2019,2020" in lr,
+           lr[-500:])
+        _red = [ln for ln in lr.splitlines()
+                if "✗" in ln and "行事曆涵蓋的年份數" in ln]
+        ck("⭐⭐ 涵蓋率從 9 年掉到 2 年 ⇒ 那道 check **真的紅**"
+           "（⛔ 只掃 AST 的話，改成 `True` 以外的假通過抓不到）",
+           len(_red) == 1, f"掃到 {len(_red)} 行｜{lr[-500:]}")
+        ck("⛔⛔ 而低水位檔**沒有被寫小**（⚠ 方向寫反 ⇒ 下一趟拿 2 當基準，"
+           "這道閘門從此永遠綠）",
+           io.open(H.SCHED_LOW, encoding="utf-8").read().startswith("9,"),
+           io.open(H.SCHED_LOW, encoding="utf-8").read())
+        # ⭐ 反向：涵蓋率**變多**時要真的上修（⛔ 否則「不會寫小」用「都不寫」
+        #   就能通過，而那樣第一次跑之後低水位就凍住了）
+        io.open(H.SCHED_LOW, "w", encoding="utf-8").write("1,2020-01-01\n")
+        sys.argv = ["holiday.py", "--html",
+                    os.path.join(d, "calm.html")]
+        H.main()
+        ck("⭐ 涵蓋率變多（1 → 2 年）⇒ 低水位真的上修",
+           io.open(H.SCHED_LOW, encoding="utf-8").read().startswith("2,"),
+           io.open(H.SCHED_LOW, encoding="utf-8").read())
     finally:
         H.OUT, H.ARCH = old_out, old_arch
         H.SCHED_CSV = old_sched
+        H.SCHED_LOW = old_low
         _B.get = old_get
         _RL.PATH = old_rl
     # ⛔ 這一項要**真的去看檔案系統**，不是宣告自己沒事
@@ -210,6 +254,59 @@ def main():
        f"mtime {before} → {after}")
     ck("★ 沒有動到 repo 真的 holiday_schedule.csv",
        sched_before == _stat(real_sched), f"{sched_before} → {_stat(real_sched)}")
+    ck("★★ 沒有動到 repo 真的 _holiday_years_low.txt"
+       "（⛔ 導走漏一個 ⇒ 假資料會把低水位寫小，而那道閘門從此永遠綠）",
+       low_before == _stat(real_low), f"{low_before} → {_stat(real_low)}")
+
+    print("\n⑨ ⭐⭐ 行事曆**涵蓋率**（2026-09-14 加：原本沒有任何閘門在管）")
+    # ⛔ 起因：那一塊在報表上是 ✓ 正常，而 2015~2020 每天回 0 列、
+    #   六年的交易日曆**沒有外部判準**在核，⚠ 而沒有人會被告知。
+    have, miss = H.sched_year_coverage(["2021-01-01", "2022-02-28", "2026-12-25"])
+    ck("⭐ 有資料的年份認得出來（2021／2022／2026）",
+       have == {"2021", "2022", "2026"}, str(sorted(have)))
+    ck("⭐ 缺的年份逐年列出來（⛔ 不是只報一個數字）",
+       miss == ["2015", "2016", "2017", "2018", "2019", "2020",
+                "2023", "2024", "2025"], str(miss))
+    ck("⛔ 上界是**有資料的最大年**，不是今年"
+       "（⚠ 否則每年 1 月 1 日會固定多出一個「缺今年」）",
+       "2027" not in miss and "2026" not in miss)
+    ck("⭐ 沒有缺口時回空 list",
+       H.sched_year_coverage(["2015-01-01", "2016-06-06"])[1] == [])
+    # ⭐ 有預設值的參數，一定要有一條**不傳它**的斷言（第七點③）
+    ck("⭐ `first`／`last` 不傳 ⇒ 走預設（⛔ 這是 `main()` 唯一會走的路）",
+       H.sched_year_coverage(["2021-01-01"])[1]
+       == ["2015", "2016", "2017", "2018", "2019", "2020"])
+    # ⛔ 低水位的方向：這一個存的是**最高**值（涵蓋越多越好），
+    #   ⚠ 跟 `_factor_limit_low.txt` 存最低值方向**相反**
+    n, day = H.read_sched_low()
+    ck("⭐ 讀得到涵蓋率低水位（年數是整數、日期 10 碼）",
+       isinstance(n, int) and len(day) == 10, f"{n},{day}")
+    ck("⭐ 而它就是今天實測的 6 年（2021~2026）⛔ 改大它 = 假裝有涵蓋",
+       n == 6, str(n))
+    # ⛔⛔ 上面七條測的是**純函式**，而那道閘門在 `main()` 的連網路徑裡
+    #   ⇒ 自測走不到 ⇒ 把 `rl.check` 的條件改成 `True` 的突變**全綠**（實測 AB1）。
+    #   ⚠ 「測了判準、沒測呼叫點」在本專案這是第三次（CLAUDE.md 第七點③）。
+    #   ⇒ 這一條掃**原始碼的 AST**：那個 check 的條件真的是「不可以變少」嗎。
+    import ast as _ast
+    _src = io.open(os.path.join(HERE, "holiday.py"), encoding="utf-8").read()
+    _cmp = [n2 for n2 in _ast.walk(_ast.parse(_src))
+            if isinstance(n2, _ast.Compare)
+            and isinstance(n2.ops[0], _ast.GtE)
+            and isinstance(n2.left, _ast.Call)
+            and getattr(n2.left.func, "id", "") == "len"
+            and getattr(n2.left.args[0], "id", "") == "have"
+            and getattr(n2.comparators[0], "id", "") == "low"]
+    ck("⭐ 呼叫點真的是 `len(have) >= low`（⛔ 比 AST 不比字串）"
+       "——⚠ 改成 True 的突變原本全綠",
+       len(_cmp) == 1, f"掃到 {len(_cmp)} 處")
+    # ⛔ 而 `rl.check` 真的有拿它當條件（⚠ 算出來卻沒接上去也是全綠）
+    _chk = [n2 for n2 in _ast.walk(_ast.parse(_src))
+            if isinstance(n2, _ast.Call)
+            and getattr(n2.func, "attr", "") == "check"
+            and len(n2.args) >= 2 and isinstance(n2.args[1], _ast.Compare)
+            and isinstance(n2.args[1].ops[0], _ast.GtE)]
+    ck("⭐ 而它真的被餵進 `rl.check` 的第二個引數（⛔ 算了不用也是全綠）",
+       len(_chk) >= 1, f"掃到 {len(_chk)} 處")
 
     print()
     if FAIL:
