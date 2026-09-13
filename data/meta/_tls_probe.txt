@@ -10,7 +10,11 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
     系統 CA                  ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
     certifi 的 CA           ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
     對方送的葉憑證       1,923 bytes
-    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證
+    ⭐ 對方實際送了 **1 張**憑證（**只有葉憑證、沒有中間憑證** ⇒ **是對方漏送**）
+      subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
+      issuer=C = TW, O = TAIWAN-CA, OU = SSL Sub-CA, CN = TWCA SSL Certification Authority
+      Verify return code: 21 (unable to verify the first certificate)
+      AIA caIssuers: http://sslserver.twca.com.tw/cacert/Cyber_SSL_2023.crt
 
 ====================================================================
 ■ TWSE（對照組，剛剛才跑完 2,850 天）
@@ -18,7 +22,11 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
     系統 CA                  ✅ HTTP 200｜4,798,344 bytes
     certifi 的 CA           ✅ HTTP 200｜4,798,344 bytes
     對方送的葉憑證       1,957 bytes
-    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證
+    ⭐ 對方實際送了 **3 張**憑證（有中間憑證 ⇒ 問題不在漏送）
+      subject=C = TW, ST = Taiwan, L = Taipei, O = Taiwan Stock Exchange Corporation, CN = www.twse.com.tw
+      issuer=C = TW, O = TAIWAN-CA, OU = SSL Sub-CA, CN = TWCA SSL Certification Authority
+      Verify return code: 0 (ok)
+      AIA caIssuers: http://sslserver.twca.com.tw/cacert/Cyber_SSL_2023.crt
 
 ====================================================================
 ■ TPEx openapi（同一站的另一條）
@@ -26,7 +34,11 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
     系統 CA                  ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
     certifi 的 CA           ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
     對方送的葉憑證       1,923 bytes
-    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證
+    ⭐ 對方實際送了 **1 張**憑證（**只有葉憑證、沒有中間憑證** ⇒ **是對方漏送**）
+      subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
+      issuer=C = TW, O = TAIWAN-CA, OU = SSL Sub-CA, CN = TWCA SSL Certification Authority
+      Verify return code: 21 (unable to verify the first certificate)
+      AIA caIssuers: http://sslserver.twca.com.tw/cacert/Cyber_SSL_2023.crt
 
 ====================================================================
 ■ 判讀（⛔ 照這三格看，不要自己推）
