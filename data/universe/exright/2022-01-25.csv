@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
-2022-01-25,6715,119.00,117.61,1.388430,權,119.00,130.50,106.00
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2022-01-25,6715,119.00,117.61,1.388430,權,119.00,130.50,106.00,119.00

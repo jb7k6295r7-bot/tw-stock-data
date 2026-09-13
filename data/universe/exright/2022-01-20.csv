@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
-2022-01-20,00728,33.51,31.52,1.990000,息,31.52,34.67,28.37
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2022-01-20,00728,33.51,31.52,1.990000,息,31.52,34.67,28.37,31.52
