@@ -419,6 +419,47 @@ def check_delist_cross():
     return bad
 
 
+def check_site_inventory_openapi():
+    """⭐ `site_inventory` 的兩份 OpenAPI 目錄，攤平**必須真的攤出東西**。
+
+    ⛔⛔ 這一條存在的理由：OpenAPI 文件的名字在 `paths[p][method].summary`，
+    ⚠ 而 `flatten()` 找的是 `name/title/text/label/cname` ⇒ 它一條都撈不到。
+    ⇒ 那兩份目錄會變成「✅ 抓得到、0 條」——**而那看起來跟「這個站沒有」一樣**。
+    ⭐ 所以要驗的不是「不會炸」，是**攤得出中文說明**（四點二：斷言終點）。
+    """
+    import json as _j
+    import site_inventory as SI
+    bad = 0
+    doc = {"paths": {
+        "/exchangeReport/TWT48U": {"get": {"summary": "除權除息預告表"}},
+        "/opendata/t187ap05_L": {"get": {"description": "上市公司減資資訊"}},
+        "/nokey": {"get": {}},
+    }}
+    got = SI.parse_menu("TWSE-OpenAPI", _j.dumps(doc).encode("utf-8"))
+    ok = len(got) == 3
+    print(f"{'✓' if ok else '✗'} site_inventory OpenAPI：三條路徑都攤出來"
+          f"（得到 {len(got)}）")
+    bad += 0 if ok else 1
+    names = [n for n, _h in got]
+    ok = "除權除息預告表" in names and "上市公司減資資訊" in names
+    print(f"{'✓' if ok else '✗'} site_inventory OpenAPI：⭐ 名字取的是 "
+          f"`summary`／`description`（⛔ 不是路徑）｜{names}")
+    bad += 0 if ok else 1
+    # ⛔ 反向：沒有 summary 的那一條要退回用路徑，不可以變成空字串
+    ok = any(n == "/nokey" for n in names)
+    print(f"{'✓' if ok else '✗'} site_inventory OpenAPI：⛔ 沒有說明的那條退回用路徑"
+          "（⚠ 空字串會讓它在關鍵詞比對裡永遠不命中）")
+    bad += 0 if ok else 1
+    # ⭐ 而選單那兩種形狀**不可以**被 OpenAPI 那一支吃掉
+    menu = SI.parse_menu("TPEx", _j.dumps(
+        {"menu": [{"name": "上櫃股票減資", "url": "/x.html"}]}).encode("utf-8"))
+    ok = any(n.endswith("上櫃股票減資") for n, _h in menu)
+    print(f"{'✓' if ok else '✗'} site_inventory：⛔ 一般選單 JSON 仍然走 `flatten`"
+          f"（⚠ 沒有 `paths` 鍵就不是 OpenAPI）｜{menu}")
+    bad += 0 if ok else 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -436,6 +477,7 @@ def main():
             print(f"✓ {name} 走完全程"
                   + (f"，{len(want)} 節都出現" if want else ""))
     bad += check_delist_cross()
+    bad += check_site_inventory_openapi()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟
