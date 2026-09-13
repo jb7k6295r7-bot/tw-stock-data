@@ -51,6 +51,8 @@ import traceback
 
 import backfill as B
 import ca_chain  # noqa: F401
+# ⭐ 同一件事只准有一份實作（四點五）：⛔ 這裡原本自己包了一份 `B_why`
+from feeds import _why as B_why                               # noqa: E402
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_reduce_ratio_probe.txt")
@@ -126,15 +128,6 @@ def one(base, a, b, param="range"):
         say(f"         首列：{data[0]}")
     return {"stat": stat, "n": len(data), "fields": fields,
             "title": str(t.get("title") or ""), "hit": hit}
-
-
-def B_why(err):
-    """⛔ 錯誤訊息太長時**中間**省略，不砍尾巴（六點六）。⭐ 借 feeds 那一份實作。"""
-    try:
-        import feeds
-        return feeds._why(err)
-    except Exception:                                            # noqa: BLE001
-        return str(err)
 
 
 def main():

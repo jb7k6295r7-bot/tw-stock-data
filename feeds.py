@@ -909,6 +909,15 @@ def parse_reduce(d, day, known=None):
     i_reason = _exact(f, "減資原因", "分割(反分割)")
     i_open = _exact(f, "開盤競價基準")
     i_exref = _exact(f, "除權參考價")
+    # ⭐⭐ 2026-09-13 補：官方**一直有給**這兩欄，而我方一直丟掉。
+    #   ⛔ 而我為此花了一整輪去**推論**交易所的漲跌停（`factor_limit_check.py`：
+    #     拿每一檔自己的歷史量「有沒有 ±10% 硬性上限」，1,926 檔 × 19,767 事件）
+    #     ——⚠ 交易所自己就有給，就在這張我方每天都在抓的表裡。
+    #   ⭐ 有了它，那道閘門可以從「推論」換成**直接比官方數字**，
+    #     而且擴得到無漲跌幅限制的 ETF（現在那 3 檔是靠「量不出上限」排除的）。
+    #   ⚠ 舊日檔沒有這兩欄 ⇒ 要用 `--need-col limit_up` 重抓（進度就是資料本身）。
+    i_up = _exact(f, "漲停價格")
+    i_down = _exact(f, "跌停價格")
     if i_code is None or i_pre is None or i_ref is None or i_date is None:
         return [], f"欄位對不上：{f}"
     out, nodate, noprice = [], 0, 0
@@ -932,7 +941,7 @@ def parse_reduce(d, day, known=None):
         reason = (str(r[i_reason]).strip()
                   if i_reason is not None and i_reason < len(r) else "")
         out.append([dt, code, pre, ref, reason.replace(",", "；"),
-                    g(i_open), g(i_exref)])
+                    g(i_open), g(i_exref), g(i_up), g(i_down)])
     note = f"{len(out)} 列"
     if nodate:
         note += f"（{nodate} 列無日期，已丟棄）"
@@ -964,7 +973,10 @@ def parse_parvalue(d, day, known=None):
       停止買賣**——24 筆面額變更拿去對它，`resume_date` 命中 **0 筆**。
       丟掉這一欄，那段停止買賣區間就**整個資料庫都沒有第二個地方查得到**。
 
-    所以本函式在 `parse_reduce` 的七欄之後補一欄 `halt_date`（停止買賣起日）。
+    所以本函式在 `parse_reduce` 的**九欄**之後補一欄 `halt_date`（停止買賣起日）。
+    ⚠ 2026-09-13 從七欄變九欄（補了官方的 `漲停價格／跌停價格`）——
+    ⛔ 這一句跟 `FEEDS[...]['header']` **必須一起改**，
+      而它正是「改一邊、另一邊沒跟上」最容易發生的地方（四點五）。
     恢復買賣日不另存——它就是第一欄 `date`，存兩份會飄移。
     """
     rows, note = parse_reduce(d, day, known)
@@ -1485,7 +1497,7 @@ FEEDS = {
     "reduce": {
         "dir": "reduce",
         "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
-                   "open_base", "ex_ref_price"],
+                   "open_base", "ex_ref_price", "limit_up", "limit_down"],
         "parse": parse_reduce,
         "known": False,   # 減資表會有已下市或非 universe 的標的，先全收
         "range": True,
@@ -1560,7 +1572,8 @@ FEEDS = {
         #   **丟掉這一欄，那段區間整個資料庫就沒有第二個地方查得到。**
         #   恢復買賣日不另存：它就是第一欄 `date`。
         "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
-                   "open_base", "ex_ref_price", "halt_date"],
+                   "open_base", "ex_ref_price", "limit_up", "limit_down",
+                   "halt_date"],
         "parse": parse_parvalue,
         "known": False,
         "range": True,
@@ -1598,7 +1611,8 @@ FEEDS = {
     "etfsplit": {
         "dir": "etfsplit",
         "header": ["date", "stock_id", "pre_close", "ref_price", "reason",
-                   "open_base", "ex_ref_price", "halt_date"],
+                   "open_base", "ex_ref_price", "limit_up", "limit_down",
+                   "halt_date"],
         "parse": parse_parvalue,
         "known": False,           # ETF 不在 industry.csv 母體裡，一定要全收
         "range": True,

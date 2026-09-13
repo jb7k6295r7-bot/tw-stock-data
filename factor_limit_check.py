@@ -6,7 +6,8 @@
 ## ⭐⭐ 為什麼這一條是「證明」而不是「推論」
 
 事件日的漲跌停，交易所是用**參考價**算的（⛔ 不是前一日收盤）。
-⇒ 若我方的 `ref_price` 就是交易所用的那個，成交價**不可能**超出 `ref × 1.10`。
+⇒ 若我方的 `ref_price` 就是交易所用的那個，成交價**不可能**超出該日的漲停價。
+⚠ 而「該日的漲停價」是有年代的：**2015-06-01 以前是 7%**（`price_limit.py`）。
 ⇒ **超出了 ⇒ 交易所用的參考價不是我方那個 ⇒ 我方的因子是錯的。**
 
 ⚠ 它跟「事件日漲跌幅落在 [0.895, 1.105] 之外」（回測線 PREREG9 的 F2）不同：
@@ -18,6 +19,7 @@ F2 抓到 21 筆，⛔ 而其中 3 筆是**無漲跌幅限制的 ETF 真的大�
 ⚠ 無漲跌幅限制的證券（國外成分 ETF、債券 ETF、槓桿型…）套上去就是誤報。
 ⇒ 判準不是一份清單，是**拿它自己的歷史問**：
    非事件日 ≥ 500 天，而且 `|日漲跌|` **一次都沒有**超過 10.5%。
+⚠ 而這一格**故意不做年代切分**（⛔ 跟事件日那一側相反），理由見 `has_hard_limit()`。
 ⛔ 而「非事件日」這個排除是必要的：事件日本身的跳空會讓每一檔看起來都無限制
 （⚠ 第一版沒排除 ⇒ 3562 的最大日漲跌算出 290%，整個判準當場失效）。
 
@@ -36,6 +38,7 @@ import io
 import os
 import sys
 
+import price_limit
 import runlog
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -49,9 +52,13 @@ OUT = os.path.join(_HERE, "data", "meta", "_factor_limit_check.csv")
 #   ⇒ 判準改成「**不可以變多**」，⭐ 而那 7 筆仍然逐筆印進 runlog，
 #     ⛔ 不是讓它們消失——消失的那一刻就再也沒有人會想起它。
 LOW = os.path.join(_HERE, "data", "meta", "_factor_limit_low.txt")
-LIMIT = 1.105        # ±10% ＋ 一點點分位與 tick 的餘裕
+# ⭐⭐ 2026-09-13：原本這裡寫的是 `LIMIT = 1.105`（＝一律 ±10%）。
+#   ⛔ **那是一個有年代的數字**：台股 2015-06-01 才由 7% 放寬為 10%。
+#   ⚠ 而它錯的方向是**放行**——用 10% 去量 7% 的日子，超出 7% 的那些靜靜通過
+#     ⇒ ⛔ 不會有任何地方叫，只會少抓。⇒ 改走 `price_limit`（唯一的一份實作）。
+SLACK = 0.005        # 相對餘裕（⛔ 不是絕對值，三點6）：我方 ref 只存到分
 MIN_DAYS = 500       # 非事件日至少要這麼多天才判得出「它有沒有硬性上限」
-LOOSE = 0.105        # 「超過這個就當它沒有 10% 上限」
+LOOSE = 0.005        # 判「有沒有硬性上限」時，在 10% 之外再讓一點
 
 
 def _num(x):
@@ -93,12 +100,19 @@ def has_hard_limit(series, evd, min_days=MIN_DAYS, loose=LOOSE):
         if series[i - 1][1] <= 0:
             continue
         n += 1
-        if abs(series[i][1] / series[i - 1][1] - 1) > loose:
+        # ⛔⛔ 這裡**故意不做**年代切分（⚠ 跟事件日那一側相反）。
+        #   實測：改成用該日的 7% 之後，3374／4530／8341 三檔被踢出母體
+        #   ——它們在 2015 上半年各有一天走了 8.9~9.8%，⚠ 而那在 7% 之下**不可能**。
+        #   ⇒ 成因不明（早期日檔本身有缺天），⛔ 而把它們判成「無漲跌幅限制」
+        #     會讓這道閘門**少掃三檔**，方向是無聲的少抓。
+        #   ⇒ ⭐ 在這裡放寬（一律 10%）只會讓母體變小一點點，
+        #     ⛔ 而收緊會憑一個我解釋不了的現象刪掉母體。
+        if abs(series[i][1] / series[i - 1][1] - 1) > price_limit.CAP_NEW + loose:
             return False, n
     return n >= min_days, n
 
 
-def check_all(limit=LIMIT):
+def check_all(slack=SLACK):
     """→ (超出漲跌停的事件, 有判的事件數, 有硬性上限的檔數)。⛔ 只讀。"""
     import bisect
     bad, checked, nhard = [], 0, 0
@@ -127,11 +141,14 @@ def check_all(limit=LIMIT):
                 continue
             q = ser[i][1] / ref
             checked += 1
-            if q > limit or q < 2 - limit:
+            if not price_limit.within(ser[i][1], ref, d, slack):
                 bad.append({"stock_id": code, "date": d,
                             "kind": (r.get("kind") or "").strip(),
                             "factor": r.get("factor", ""),
+                            "cap": f"{price_limit.cap(d):.2f}",
                             "ref_price": f"{ref:.4f}", "close": f"{ser[i][1]:.4f}",
+                            "limit_up": f"{price_limit.up(ref, d):.2f}",
+                            "limit_down": f"{price_limit.down(ref, d):.2f}",
                             "close_over_ref": f"{q:.4f}"})
     return bad, checked, nhard
 
@@ -152,8 +169,9 @@ def main():
     rl = runlog.Run("factor_limit")
     bad, checked, nhard = check_all()
     rl.info("⭐ 這一支在驗什麼",
-            "事件日成交價**不可能**超出「參考價 ×1.10」——交易所的漲跌停就是這樣算的"
-            "⇒ 超出了就**證明**我方的參考價不是交易所用的那個")
+            "事件日成交價**不可能**超出該日的漲停價——交易所的漲跌停是用**參考價**算的"
+            "⇒ 超出了就**證明**我方的參考價不是交易所用的那個"
+            "（⚠ 而「該日的」是有年代的：2015-06-01 以前是 7%）")
     rl.info("母體", f"有硬性 ±10% 上限的證券 {nhard} 檔｜事件 {checked:,} 筆"
                     f"（⛔ 無漲跌幅限制的 ETF 等已排除，它們套這條就是誤報）")
     # ⭐ 「掃到 0 筆」跟「根本沒掃到」長得一樣 ⇒ 先釘母體
@@ -163,7 +181,8 @@ def main():
     for x in sorted(bad, key=lambda t: t["date"]):
         rl.info(f"⛔ {x['stock_id']} {x['date']} {x['kind']}",
                 f"收/參考 {x['close_over_ref']}｜factor {x['factor']}"
-                f"｜參考價 {x['ref_price']}｜收盤 {x['close']}")
+                f"｜參考價 {x['ref_price']}｜收盤 {x['close']}"
+                f"｜該日漲跌停 {x['limit_down']}~{x['limit_up']}（±{x['cap']}）")
     low, lowday = read_low()
     if low is None:
         rl.check("沒有任何事件的成交價超出交易所漲跌停（⇒ 參考價與交易所一致）",
