@@ -175,6 +175,43 @@ SCHED_YEAR_URL = ("https://www.twse.com.tw/rwd/zh/holidaySchedule/holidaySchedul
 #     不可以當成「那一年沒有休市日」——那會讓春節整段被判成資料缺漏。
 SCHED_MIN_ROWS, SCHED_MAX_ROWS = 20, 27
 SCHED_CSV = os.path.join(_ROOT, "meta", "holiday_schedule.csv")
+# ⭐⭐ 2026-09-14：涵蓋率的低水位（跟 `_factor_limit_low.txt` 同一個慣例）。
+#
+#   ⛔ 這一支原本只有兩道閘門（抓得到頁面／頁面日期是今天），
+#     **沒有任何一道在管「行事曆涵蓋哪幾年」**。
+#   ⇒ 實測 2026-09-14：2015~2020 與 2027 每天都回 **0 列**（title 回對了，
+#     ⇒ 參數是生效的，就是沒資料），而那 7 行是寫成 `rl.info` 的
+#     ⇒ ⚠ 那一塊在報表上是 **✓ 正常**，而六年的外部判準是空的，**沒有人會被告知**。
+#
+#   ⛔ 而**不可以**寫成「一定要涵蓋 2015 起」那種硬斷言：那會天天紅，
+#     然後被學會忽略（六點五）。⇒ 判準改成「**涵蓋的年份數不可以變少**」，
+#     ⭐ 而缺哪幾年**逐年印出來**——⛔ 不是讓它們從報表上消失。
+SCHED_LOW = os.path.join(_ROOT, "meta", "_holiday_years_low.txt")
+
+
+def sched_year_coverage(rows, first=2015, last=None):
+    """→ (有資料的年份 set, 缺的年份 list)。⛔ 抽成純函式才驗得到。
+
+    `rows` 是 `holiday_schedule.csv` 的日期集合（`YYYY-MM-DD`）。
+    """
+    have = {d[:4] for d in rows if len(d) >= 4}
+    if last is None:
+        last = max((int(y) for y in have), default=first)
+    want = [str(y) for y in range(first, int(last) + 1)]
+    return have, [y for y in want if y not in have]
+
+
+def read_sched_low():
+    """→ (歷史最高涵蓋年數, 那一天)；讀不到回 (None, "")。
+
+    ⚠ 這裡的低水位是**下限**（涵蓋越多越好）⇒ 檔裡存的是**最高**值，
+    ⛔ 跟 `_factor_limit_low.txt` 存最低值方向相反——**別照抄語意**。
+    """
+    try:
+        n, d = io.open(SCHED_LOW, encoding="utf-8").read().strip().split(",", 1)
+        return int(n), d
+    except (OSError, ValueError):
+        return None, ""
 
 
 def _sched_rows():
@@ -306,6 +343,30 @@ def _schedule(rl, today):
             f"｜累積 {len(rows)} 列 {ds[0]} ~ {ds[-1]}"
             f"｜**今天之後還有 {len(ahead)} 天**")
     rl.info("  欄位", str(fields))
+    # ── ⭐⭐ 涵蓋率：⛔ 這一塊原本是綠的，而六年的外部判準是空的 ──
+    have, miss = sched_year_coverage(rows)
+    rl.info("⭐ 行事曆涵蓋的年份",
+            f"{len(have)} 年（{min(have) if have else '—'}~{max(have) if have else '—'}）"
+            + (f"｜⛔ **缺 {len(miss)} 年**：{','.join(miss)}"
+               "　⇒ ⚠ 那幾年的交易日曆**沒有外部判準**在核"
+               if miss else "｜✅ 沒有缺口"))
+    low, lowday = read_sched_low()
+    if low is None:
+        rl.info("  ⚠ 沒有涵蓋率低水位檔", f"第一次跑會建立（本趟 {len(have)} 年）")
+    else:
+        # ⛔ 判準是「不可以變少」，⚠ 不是「一定要涵蓋 2015 起」
+        #   ——後者會天天紅，然後被學會忽略。
+        rl.check(f"⭐ 行事曆涵蓋的年份數**沒有變少**（歷史最高 {low} 年，{lowday}）",
+                 len(have) >= low, f"這一趟 {len(have)} 年 vs 歷史最高 {low} 年")
+    if low is None or len(have) > low:
+        try:
+            os.makedirs(os.path.dirname(SCHED_LOW), exist_ok=True)
+            io.open(SCHED_LOW, "w", encoding="utf-8").write(
+                f"{len(have)},{today}\n")
+            if low is not None:
+                rl.info("  ⭐ 涵蓋率上修", f"{low} → {len(have)} 年")
+        except OSError as ex:                                    # noqa: BLE001
+            rl.info("  ⚠ 低水位檔寫不進去", str(ex))
     # ⛔ 不寫成 check：年底時「今天之後 0 天」是**正常**的（端點只給當年），
     #   拿它當錯誤會在每年 12 月底固定紅一次，然後大家學會忽略它。
     if not ahead:
