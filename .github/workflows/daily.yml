@@ -104,6 +104,7 @@ jobs:
           python selftest_transpose_stamp.py
           python selftest_valid_bar.py
           python selftest_ca_chain.py
+          python selftest_reduce_shares.py
           python selftest_feed_months.py
           python selftest_feed_days.py
           python selftest_syntax_warnings.py
@@ -699,6 +700,15 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         run: python -m pip install --quiet --disable-pip-version-check pandas
+
+      # ⭐⭐ 用**我方自己的 `shares` 欄**重算官方減資參考價（⛔ 不連外）。
+      #   2026-09-13 之前我方寫過「上市那 303 筆沒有任何第二來源可以驗」——⛔ 那是錯的：
+      #   `shares` 完全不從價格推 ⇒ 它就是那個獨立裁判。
+      #   ⚠ 而兩種減資的算式不一樣，用錯是**系統性**偏差（1563 實測差 3.9%）。
+      - name: 減資參考價用 shares 重算（只讀，不連外）
+        if: always()
+        continue-on-error: true
+        run: python reduce_shares_check.py --write
 
       - name: 斷點掃描與面額變更對帳
         if: always()
