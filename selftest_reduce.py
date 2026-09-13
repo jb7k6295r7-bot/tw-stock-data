@@ -115,6 +115,28 @@ check(P.up(_r2, rows[2][0]) == float(rows[2][7])
 check(P.up(_ref, "2026-01-02") != _up,
       "⛔ 反向：拿 10% 去算 2015-01-23 那一列，漲停就對不上（45.40 ≠ 44.15）")
 
+print("── 1.5 ⭐ `--need-col` 對**區間型** feed 也要有效 ──")
+# ⛔⛔ 原本它是**靜靜無效**的：`cmd_feed_range()` 在那段程式碼之前就 return 了
+#   ⇒ `reduce`／`parvalue`／`etfsplit` 帶 `--need-col` 跑起來完全正常、什麼都沒補。
+_H = feeds.FEEDS["reduce"]["header"]
+_heads = {"2015-01-23.csv": ",".join(_H) + "\n",
+          "2015-03-20.csv": "date,stock_id,pre_close,ref_price,reason,open_base,"
+                            "ex_ref_price\n",
+          "2015-12-30.csv": "date,stock_id,pre_close,ref_price,reason,open_base,"
+                            "ex_ref_price\n"}
+_bad, _ok = feeds.months_missing_col(_heads, "limit_up", _H)
+check(_bad == {"2015-03", "2015-12"},
+      f"⭐ 只挑出**表頭缺那一欄**的月份（得到 {sorted(_bad)}）")
+check(_ok, "⭐ 而 `limit_up` 確實是這個 feed 的欄名")
+# ⛔ 反向：欄名打錯 ⇒ 每一天都「缺」它 ⇒ 會整批重抓、白打幾百發
+_bad2, _ok2 = feeds.months_missing_col(_heads, "limit_upp", _H)
+check(len(_bad2) == 3 and not _ok2,
+      "⛔ 欄名打錯 ⇒ 三個月**全部**算缺，而第二個回傳值要講出「這不是欄名」")
+check(feeds.months_missing_col(_heads, "", _H) == (set(), True),
+      "⛔ 沒帶 `--need-col` ⇒ 一個月都不重問（⚠ 這是預設那條路）")
+# ⚠ 而「表頭有這一欄」的那個月**不可以**被挑出來——⛔ 否則每趟都重抓全部
+check("2015-01" not in _bad, "⭐ 已經有那一欄的月份不重問")
+
 print("── 2. _roc_date 兩種格式＋西元不誤中 ──")
 check(feeds._roc_date("115/09/07") == "2026-09-07", "斜線民國")
 check(feeds._roc_date("104年07月16日") == "2015-07-16", "年月日民國")

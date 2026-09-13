@@ -1985,6 +1985,41 @@ def months_to_ask(rng, ledger, force=False, today=None):
     return todo, reask
 
 
+def months_missing_col(day_files, need, header):
+    """→ (要重問的 {"YYYY-MM"}, 這個 feed 的表頭裡到底有沒有 `need`)。
+
+    ## ⛔⛔ 為什麼要有這一支：`--need-col` 對**區間型** feed 原本是**靜靜無效**的
+
+    `cmd_feed_range()` 在 `need_col` 那段程式碼**之前**就 return 了
+    ⇒ `reduce`／`parvalue`／`etfsplit` 三支（全是 `range=True`）帶 `--need-col`
+    跑起來**完全正常、回 0、什麼都沒補**。
+    ⚠ 而那正是四點二那條：「這一步跑完了」跟「這一步造成了它該造成的後果」是兩件事。
+
+    ## ⭐ 而「0 個月要補」有兩種，⛔ 意思相反
+
+    ```
+    ① 表頭本來就有這一欄 ⇒ 真的補完了
+    ② ⛔ `need` 根本不是這個 feed 的欄名（打錯字）⇒ **每一天都「缺」它**…
+       ⚠ 不對——是每一天都缺，所以會**整批重抓**，白打幾百發
+    ```
+    ⇒ 所以第二個回傳值是「這個 feed 的表頭裡有沒有這一欄」——
+    ⛔ 沒有就代表使用者打錯了，要**當場停下來**，不是默默重抓全部。
+
+    `day_files` 是日檔名（含 `.csv`）到**表頭那一行**的對照。
+    """
+    if not need:
+        return set(), True
+    in_header = need in [c.strip() for c in header]
+    bad = set()
+    for fn, head in day_files.items():
+        if not fn.endswith(".csv") or len(fn) < 8:
+            continue
+        cols = [c.strip() for c in str(head).rstrip("\n").split(",")]
+        if need not in cols:
+            bad.add(fn[:7])
+    return bad, in_header
+
+
 # 端點自己說「查無資料」時的字樣。**這代表那段期間沒有事件，不是抓取失敗。**
 _EMPTY_STAT_RE = re.compile(r"沒有符合條件的資料|查無資料|無符合條件|沒有資料")
 _EMPTY = object()          # cmd_feed_range 內部用的哨符：這個月沒有事件
@@ -2022,6 +2057,33 @@ def cmd_feed_range(args, name):
     ledger = load_ledger(led_path)     # ⭐ 讀寫都收在一支（四點五）
     # ⭐ 台帳只對**已經結束的月份**有效（理由見 `month_is_open()`）。
     todo, reask = months_to_ask(rng, ledger, args.force)
+    # ⭐⭐ `--need-col`：區間型原本走不到那段程式碼（見 `months_missing_col`）
+    need = getattr(args, "need_col", "")
+    if need:
+        heads = {}
+        if os.path.isdir(d):
+            for fn in sorted(os.listdir(d)):
+                if not fn.endswith(".csv") or fn.startswith("_"):
+                    continue
+                try:
+                    with open(os.path.join(d, fn), encoding="utf-8") as f_:
+                        heads[fn] = f_.readline()
+                except OSError:
+                    continue
+        stale, in_header = months_missing_col(heads, need, spec["header"])
+        if not in_header:
+            # ⛔ 打錯欄名 ⇒ **每一天都會「缺」它** ⇒ 整批重抓、白打幾百發
+            print(f"[{name}] ⛔⛔ `--need-col {need}` 不是這個 feed 的欄名"
+                  f"（表頭是 {spec['header']}）⇒ 停下來，不重抓。", file=sys.stderr)
+            return 1
+        have = {m[0][:7] for m in rng}
+        add = sorted(m for m in stale if m in have)
+        print(f"[{name}] --need-col {need}：{len(heads)} 個日檔裡，"
+              f"**{len(stale)} 個月**的表頭缺這一欄"
+              f"（落在本趟區間的 {len(add)} 個月要重問）")
+        if add:
+            byk = {m[0][:7]: m for m in rng}
+            todo = sorted(set(todo) | {byk[m] for m in add})
     if args.limit:
         todo = todo[:args.limit]
     skipped = len(rng) - len(todo)
