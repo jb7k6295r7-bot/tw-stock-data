@@ -45,6 +45,10 @@ import runlog
 _HERE = os.path.dirname(os.path.abspath(__file__))
 ADJ = os.path.join(_HERE, "data", "adj")
 STOCKS = os.path.join(_HERE, "data", "stocks")
+# ⭐⭐ 官方**逐筆**給的漲跌停就在這兩個目錄的日檔裡（2026-09-13 才開始存）。
+#   ⇒ 有官方數字的事件**一律用官方的**，⛔ 推論只是沒有官方數字時的退路。
+UNI = os.path.join(_HERE, "data", "universe")
+OFFICIAL_DIRS = ("exright", "reduce")
 OUT = os.path.join(_HERE, "data", "meta", "_factor_limit_check.csv")
 # ⭐ 歷史最低值：斷言的基準（跟 `adj_gap.py` 同一個慣例）。
 #   ⛔ 用「上一趟」當基準會讓門檻停在補完後的低點；用固定數字則永遠不會降。
@@ -124,12 +128,65 @@ def has_hard_limit(series, evd, min_days=MIN_DAYS, loose=LOOSE):
     return n >= min_days, n
 
 
+def official_limits(dirs=OFFICIAL_DIRS):
+    """→ {(股票代號, 日期): (漲停, 跌停)}，官方逐筆給的那兩欄。⛔ 只讀。
+
+    ⚠ 舊日檔**沒有**這兩欄（2026-09-13 才加）⇒ 這份對照表一開始會是空的，
+    ⛔ 而「空的」跟「全部都在範圍內」長得一模一樣
+      ⇒ 呼叫端一定要把**涵蓋率**印出來（`main()` 有）。
+    """
+    out = {}
+    for sub in dirs:
+        d = os.path.join(UNI, sub)
+        if not os.path.isdir(d):
+            continue
+        for fn in sorted(os.listdir(d)):
+            if not fn.endswith(".csv") or fn.startswith("_"):
+                continue
+            try:
+                with io.open(os.path.join(d, fn), encoding="utf-8") as f:
+                    for r in csv.DictReader(f):
+                        up, dn = r.get("limit_up"), r.get("limit_down")
+                        code, day = r.get("stock_id"), r.get("date")
+                        if not code or not day or not up or not dn:
+                            continue
+                        out[(code, day)] = (up, dn)
+            except OSError:
+                continue
+    return out
+
+
+def judge(close, ref, day, official, slack=SLACK, etf=False):
+    """→ ("官方"|"推論"|"官方說無限制", 有沒有超出)。
+
+    ⭐ 這一支是整個判定的**唯一**入口（四點五），而它把三種情形分開：
+    ```
+    官方給了漲跌停          ⇒ ⭐ 用官方的，⛔ 不再推
+    官方說「無漲跌幅限制」  ⇒ 這一筆**沒有判準**，⛔ 不可以算成「通過」
+    官方沒給（舊日檔）      ⇒ 退回 price_limit 的公式
+    ```
+    ⚠ 第二種最重要：把它算成「通過」等於**把母體灌水**，
+    ⛔ 而那正是第七點那句「0 筆與沒掃到長得一樣」。
+    """
+    if official:
+        up, dn = official
+        if price_limit.is_unlimited(up, dn):
+            return "官方說無限制", False
+        u, d_ = price_limit._num(up), price_limit._num(dn)
+        if u is not None and d_ is not None and u > 0:
+            return "官方", not (d_ * (1.0 - slack) <= close <= u * (1.0 + slack))
+    return "推論", not price_limit.within(close, ref, day, slack, etf)
+
+
 def check_all(slack=SLACK):
-    """→ (超出漲跌停的事件, 有判的事件數, 有硬性上限的檔數)。⛔ 只讀。"""
+    """→ (超出漲跌停的事件, 有判的事件數, 有硬性上限的檔數, 各判準來源的筆數)。⛔ 只讀。"""
     import bisect
+    import collections
     bad, checked, nhard = [], 0, 0
+    how = collections.Counter()
+    off = official_limits()
     if not os.path.isdir(ADJ):
-        return bad, checked, nhard
+        return bad, checked, nhard, how
     for fn in sorted(os.listdir(ADJ)):
         if not fn.endswith(".csv") or fn.startswith("_"):
             continue
@@ -152,9 +209,15 @@ def check_all(slack=SLACK):
             if i >= len(days) or days[i] != d:
                 continue
             q = ser[i][1] / ref
+            src, over = judge(ser[i][1], ref, d, off.get((code, d)), slack,
+                              etf=code.startswith("00"))
+            how[src] += 1
+            # ⛔ 官方說「無漲跌幅限制」的那一筆**沒有判準** ⇒ 不進母體
+            if src == "官方說無限制":
+                continue
             checked += 1
-            if not price_limit.within(ser[i][1], ref, d, slack):
-                bad.append({"stock_id": code, "date": d,
+            if over:
+                bad.append({"stock_id": code, "date": d, "src": src,
                             "kind": (r.get("kind") or "").strip(),
                             "factor": r.get("factor", ""),
                             "cap": f"{price_limit.cap(d):.2f}",
@@ -162,7 +225,7 @@ def check_all(slack=SLACK):
                             "limit_up": f"{price_limit.up(ref, d):.2f}",
                             "limit_down": f"{price_limit.down(ref, d):.2f}",
                             "close_over_ref": f"{q:.4f}"})
-    return bad, checked, nhard
+    return bad, checked, nhard, how
 
 
 def read_low():
@@ -179,13 +242,25 @@ def main():
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
     rl = runlog.Run("factor_limit")
-    bad, checked, nhard = check_all()
+    bad, checked, nhard, how = check_all()
     rl.info("⭐ 這一支在驗什麼",
             "事件日成交價**不可能**超出該日的漲停價——交易所的漲跌停是用**參考價**算的"
             "⇒ 超出了就**證明**我方的參考價不是交易所用的那個"
             "（⚠ 而「該日的」是有年代的：2015-06-01 以前是 7%）")
     rl.info("母體", f"有硬性 ±10% 上限的證券 {nhard} 檔｜事件 {checked:,} 筆"
                     f"（⛔ 無漲跌幅限制的 ETF 等已排除，它們套這條就是誤報）")
+    # ⭐⭐ 判準來源要分開講：⛔ 「官方」與「推論」的可信度差很遠，
+    #   ⚠ 而兩者在最後那個筆數上長得一模一樣。
+    tot = sum(how.values()) or 1
+    rl.info("⭐ 判準來源",
+            "｜".join(f"{k} {v:,}（{v / tot * 100:.1f}%）"
+                      for k, v in sorted(how.items(), key=lambda x: -x[1]))
+            + "　⚠ 官方那兩欄 2026-09-13 才開始存 ⇒ 舊日檔要 `--need-col limit_up`")
+    # ⭐ 「官方涵蓋率 0%」跟「官方全部通過」長得一樣 ⇒ 這一條專門把它講出來
+    rl.info("⚠ 官方逐筆漲跌停的涵蓋率",
+            f"{how.get('官方', 0) + how.get('官方說無限制', 0):,} / {tot:,}"
+            + ("　⛔ **是 0** ⇒ 這一趟完全靠推論（回補還沒跑）"
+               if not (how.get("官方", 0) + how.get("官方說無限制", 0)) else ""))
     # ⭐ 「掃到 0 筆」跟「根本沒掃到」長得一樣 ⇒ 先釘母體
     rl.check("⭐ 這道閘門真的有母體可掃（⛔ 掃到 0 筆事件跟全部通過長得一樣）",
              checked >= 1000, f"{checked:,} 筆")
