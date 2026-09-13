@@ -721,6 +721,35 @@ jobs:
         continue-on-error: true
         run: python reduce_shares_check.py --exright --write
 
+      # ⭐⭐ 市場情報分析線 2026-09-13 14:00 的建議：把「比鄰近中位數」從月營收
+      #   推廣成**所有逐日 feed 的落地閘門**。理由是他們指出的那個形狀——
+      #   `--fill` 只問檔案在不在、與 TPEx 憑證鏈整批抓不到，
+      #   ⭐ **病因完全不同，而在資料裡長得一模一樣**：「今天 93 列、昨天 859 列」。
+      #   ⇒ 這道閘門**不需要知道失敗的原因**。
+      # ⛔ 而不可以拿區間端點去核：`otcper 2015-01-05 ~ 2026-09-11` 看起來連續，
+      #   中間某天列數塌掉在那裡完全看不到 ⇒ 要**逐日**看列數。
+      - name: 逐日 feed 的列數閘門（只讀，不連外）
+        if: always()
+        continue-on-error: true
+        run: |
+          python selftest_neighbor_floor.py
+          python feed_rowcount_check.py --write
+
+      # ⭐⭐ 用**交易所的漲跌停**證明還原因子錯了（2026-09-13 判 F2 那 21 筆時做出來的）。
+      #   事件日的漲跌停是用**參考價**算的 ⇒ 成交價不可能超出 `ref × 1.10`
+      #   ⇒ 超出了就**證明**交易所用的參考價不是我方那個。
+      # ⭐ 全庫校準：1,926 檔有硬性上限的證券、19,767 個事件 ⇒ 只抓到 7 筆，
+      #   誤報 **0 / 19,760**。⚠ 而那 7 筆全部落在回測線 F2 那 21 筆裡。
+      # ⛔ 無漲跌幅限制的證券（ETF 等）會自動排除——判準是拿它自己的歷史量的，
+      #   ⛔ 不是一份會過期的清單。
+      - name: 還原因子 vs 交易所漲跌停（只讀，不連外）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_factor_limit.py
+          python factor_limit_check.py --write
+
       - name: 斷點掃描與面額變更對帳
         if: always()
         continue-on-error: true
