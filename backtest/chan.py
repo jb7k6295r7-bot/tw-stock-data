@@ -213,6 +213,12 @@ def selftest():
     # 情境 6：序列起點（敏感度 A）——從第 3 根起算，包含處理路徑可能不同，但不可以炸、且仍找得到 B3
     _, sA = detect(h, l, c, start=3)
     check("情境6 起點平移仍有 B3", any(x["kind"] == "B3" for x in sA))
+    # 情境 8：中樞第五筆（上升筆）自己探出 ZG，不算「離開」（離開筆必須在中樞之後）⇒ 不可以在它後面產生放棄組；B3 在後面真正的離開＋回抽
+    pts8 = [10, 8, 12, 10, 13, 10.5, 12.2, 11.8, 15, 13, 17]
+    h8, l8, c8 = _seq(pts8, 5)
+    cen8, sig8 = detect(h8, l8, c8)
+    k8 = [(x["kind"], x["pen"]) for x in sig8 if x["kind"] != "C2"]
+    check("情境8 第五筆探出 ZG 不算離開：無放棄、B3 在中樞之後", bool(cen8) and k8 == [("B3", cen8[0]["start_pen"] + 8)], f"{k8} center {[(x['start_pen'], x['end_pen']) for x in cen8]}")
     # 情境 7：NaN 洞不炸
     h7 = h.copy(); l7 = l.copy(); c7 = c.copy(); h7[7] = l7[7] = c7[7] = np.nan
     detect(h7, l7, c7)
