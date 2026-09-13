@@ -129,6 +129,14 @@ def is_fine_tick(code):
     return c.startswith("00") or c.startswith("01")
 
 
+# ⭐ 待接（2026-09-13 `site_inventory` 掃到，⛔ 還沒照 NEW_ENDPOINT 走過）：
+#   TWSE  `/exchangeReport/TWT88U`「上市個股**首五日無漲跌幅**」
+#   TPEx  `/zh-tw/mainboard/trading/info/no-limit.html` 上櫃首五日無漲跌幅
+#   ⚠ 「新上市（櫃）前五個交易日無漲跌幅」這條規則我方是從 2015 上半年
+#     148,484 組相鄰日對裡**量出來**的（8 組全部落在首五日）——⭐ 官方有名有姓。
+#   ⇒ 接上之後，`factor_limit_check` 的母體判定就不必再靠那個推論。
+#   ⛔ 而在接上之前**不要假設它有歷史**：同一家的 `tpex_spendi_history`
+#     名字有 history、實際只有今年（CLAUDE.md 第二點⑤）。
 def is_unlimited(limit_up, limit_down):
     """→ 官方這兩欄是不是在說「這一檔**無漲跌幅限制**」。
 
