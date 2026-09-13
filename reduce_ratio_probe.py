@@ -61,10 +61,24 @@ TARGETS = [
     ("TWTAVU（減資預告表）", "https://www.twse.com.tw/rwd/zh/reducation/TWTAVU"),
     ("TWTAUU（恢復買賣參考價，⭐ 只為看漲跌停兩欄）",
      "https://www.twse.com.tw/rwd/zh/reducation/TWTAUU"),
+    # ⭐⭐ 2026-09-13 加：F2 那 4 筆未判定（911608／2429／6225／7610）要的是
+    #   **權值與息值分開**＋現增認購價／認購率。而我方 `parse_exright` 只取
+    #   `權值+息值`（**一個合併欄**）⇒ 拆不開。
+    # ⛔ 而官方 TWT49U **完整**有幾欄，我方沒有紀錄——`_keys_probe` 那次被擋回 HTML。
+    #   ⇒ 先把它的完整欄位印出來（第一點），⛔ 不要再憑「我們取的那幾個」推論它只有那些。
+    ("TWT49U（除權除息計算結果，⭐ 只為看完整欄位）",
+     "https://www.twse.com.tw/rwd/zh/afterTrading/TWT49U"),
+    # ⚠ 以下路徑是**待驗的假設**（上櫃那邊有 `tpex_exright_prepost`＝除權息預告表，
+    #   ⛔ 而上市對應的路徑我沒有出處）⇒ 打不通就是打不通，**不要寫成「官方沒有」**。
+    ("TWT48U（除權除息預告表？⚠ 路徑是假設）",
+     "https://www.twse.com.tw/rwd/zh/exRight/TWT48U"),
+    ("TWT48U（除權除息預告表？⚠ 另一個路徑假設）",
+     "https://www.twse.com.tw/rwd/zh/afterTrading/TWT48U"),
 ]
 RANGES = [("20150101", "20151231"), ("20200101", "20201231"),
           ("20260101", "20260913")]
-WANT = ("減資換股率", "換股率", "漲停價格", "跌停價格", "權值", "息值")
+WANT = ("減資換股率", "換股率", "漲停價格", "跌停價格", "權值", "息值",
+        "股利", "認購", "增資")
 
 LINES = []
 
@@ -74,8 +88,11 @@ def say(s=""):
     LINES.append(s)
 
 
-def one(base, a, b):
-    url = f"{base}?startDate={a}&endDate={b}&response=json"
+def one(base, a, b, param="range"):
+    # ⚠ 同一站不同端點的參數**互不相同**（三點②）：TWTAUU 吃 startDate/endDate，
+    #   ⛔ 而 TWT49U 實測是吃單一 `date` ⇒ 兩種都要試，不要假設。
+    url = (f"{base}?startDate={a}&endDate={b}&response=json" if param == "range"
+           else f"{base}?date={a}&response=json")
     say(f"\n  ── {a} ~ {b}")
     say(f"     {url}")
     raw, err = B.get(url, retries=2, timeout=60)
@@ -130,6 +147,11 @@ def main():
     for name, base in TARGETS:
         say(f"\n{'=' * 70}\n【{name}】\n{base}")
         got = [one(base, a, b) for a, b in RANGES]
+        # ⭐ 區間參數全掛的話，再用單一 `date` 試一次（⛔ 不要一種打不通就判死）
+        if not any(isinstance(g, dict) and g.get("n") for g in got):
+            say("\n  ⚠ 區間參數沒拿到列 ⇒ 改用單一 `date` 再試（⛔ 不是端點沒有）")
+            got += [one(base, d, d, param="date")
+                    for d in ("20150619", "20200619", "20260619")]
         res[name] = got
         ok = [g for g in got if isinstance(g, dict)]
         # ⚠ 參數回音：三個區間的標題／列數一樣 ⇒ 參數被無視，⛔ 不是有歷史
