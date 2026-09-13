@@ -427,6 +427,8 @@ def main():
     _sc = io.open("sync_code.sh", encoding="utf-8").read()
     _m2 = re.search(r"(EXCLUDE_TREES=\"\n.*?\n\")", _sc, re.S)
     ck("★ `sync_code.sh` 有排除清單", bool(_m2), "⛔ 找不到 EXCLUDE_TREES")
+    _spec = []          # ⛔ 先給預設值：下面那一層在 main 上是**唯一**的守衛，
+                        #   ⚠ 而它讀 `_spec` ⇒ 抓不到區塊時要判紅，⛔ 不是 NameError
     if _m2:
         _frag = (_m2.group(1) + '\nSPEC=""\n'
                  'for T in $EXCLUDE_TREES; do SPEC="$SPEC :(exclude)$T"; done\n'
@@ -450,10 +452,36 @@ def main():
        len(_rulechk) == 1, f"⛔ 取 RULE.md 的那一行：{_rulechk}")
     # ⭐ 累積檔**不可以留在這個分支上**——留著的話，排除清單一旦被拿掉就會再犯一次。
     #   ⚠ 這是第二道，跟排除清單是**兩層**，⛔ 不是重複。
-    for _bad in ("backtest/forward/runlog.md", "backtest/forward/state_N30.json",
-                 "backtest/forward/state_N40.json", "backtest/forward/_runs.jsonl"):
-        ck(f"★ 分支上**沒有** `{_bad}`（⛔ 那是 main 上 forward.yml 寫的累積檔）",
-           not os.path.exists(_bad), "⛔ 它在分支上 ⇒ 排除清單一旦失效就會蓋掉 main 的")
+    #
+    # ⛔⛔ 2026-09-13 付過代價：第一版直接斷言「工作區裡沒有這些檔」，
+    #   ⚠ 而它的**主詞是分支**——在 **main** 上那些檔本來就該在（forward.yml 寫的）
+    #   ⇒ ⛔ 這一步在 main 上一跑就紅 ⇒ **九支 workflow 的第二步全部紅**，
+    #     而「把程式同步到 main」排在它後面 ⇒ 那一趟什麼都沒搬。
+    #   ⭐ 這跟今天早上那條 `yaml` 斷言是**同一個形狀**（六點五）：
+    #     ⛔ 一條「在某個環境下必然不成立」的斷言，等於把整條線鎖死。
+    # ⇒ 只在**不是 main** 的 ref 上驗；在 main 上**大聲印出這一層沒跑**。
+    _ref = (os.environ.get("GITHUB_REF_NAME")
+            or subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                              capture_output=True, text=True).stdout.strip())
+    _accum = ("backtest/forward/runlog.md", "backtest/forward/state_N30.json",
+              "backtest/forward/state_N40.json", "backtest/forward/_runs.jsonl")
+    if _ref == "main":
+        # ⛔ 這一行要寫成**不會被讀成「驗過了」**的樣子（六點五）
+        print("  --   ⚠ 這一趟在 **main** 上 ⇒ 「分支不留累積檔」那一層**整個沒跑**"
+              "（⛔ 不要把這行讀成『驗過了』；那些檔在 main 上本來就該在）")
+    else:
+        for _bad in _accum:
+            ck(f"★ 分支（{_ref}）上**沒有** `{_bad}`（⛔ 那是 main 上 forward.yml 寫的累積檔）",
+               not os.path.exists(_bad),
+               "⛔ 它在分支上 ⇒ 排除清單一旦失效就會蓋掉 main 的")
+    # ⭐ 而**不論在哪個 ref**，排除清單都必須擋住它們——⛔ 上面那一層跳過時，
+    #   這一層就是唯一的守衛，所以它不可以跟著跳過。
+    for _bad in _accum:
+        ck(f"★ 排除清單真的擋得住 `{_bad}`（⛔ 這一層在 main 上也要跑）",
+           any(_bad.startswith(x[len(":(exclude)"):])
+               for x in _spec if x.startswith(":(exclude)"))
+           or _bad == "backtest/forward/RULE.md",
+           f"⛔ 排除清單算出來是 {_spec}")
 
     # ⭐ 八支的同步段只准有一份實作（四點五）——⛔ 這一段本來逐字抄了八份。
     _inline = [os.path.basename(f) for f in files

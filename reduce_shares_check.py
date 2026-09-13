@@ -95,6 +95,35 @@ def expected_ref(pre_close, keep, cash):
     return ((pre_close - PAR * r) / keep) if cash else (pre_close / keep)
 
 
+def implied_cash(pre_close, keep, ref_official):
+    """→ 官方參考價**隱含**的「每股退還金額」。⛔ 只對現金型有意義。
+
+    ⭐ 它存在的理由：`PAR * (1 - keep)` 是一個**假設**，⛔ 不是規則。
+    2026-09-13 實測 248 筆現金減資，**232 筆（93.5%）**的隱含退還就是面額×比例
+    （±0.02 元內），⚠ 而剩下 16 筆不是——最極端的 3356 差 2.90 元。
+    ⇒ 那 16 筆的「對不上」**未必是我方 keep 錯**，可能只是公司退還的金額不同。
+    ⛔ 而一條式子兩個未知數（退還金額、keep）分不開 ⇒ 這一欄是**線索，不是判決**。
+    """
+    return pre_close - keep * ref_official
+
+
+def official_keep(pre_close, ref_official, cash):
+    """→ 從官方參考價**反推**的換股比。
+
+    ⭐ 彌補虧損型沒有現金項 ⇒ `keep = 前收 ÷ 參考價` 是**唯一解**
+      ⇒ 它跟我方 shares 算出來的 keep 是**兩個來源的同一個量**，可以直接比。
+    ⚠ 現金型多了「退還金額」這個未知數 ⇒ 這裡只能**沿用面額×比例的假設**反推，
+      ⛔ 所以現金型的 `keep_official` 只是參考，不是第二來源。
+    """
+    if ref_official <= 0:
+        return None
+    if not cash:
+        return pre_close / ref_official
+    if abs(ref_official - PAR) < 1e-9:
+        return None
+    return (pre_close - PAR) / (ref_official - PAR)
+
+
 def has_share_part(kind):
     """→ 這一筆事件有沒有「股數變動」那一半（配股／現增）。
 
@@ -199,6 +228,20 @@ def exright_scan(window=EX_WIN):
     return res, stat
 
 
+def tally(stat):
+    """→ (對得上, 對不上, 其中只差在分位, 算不了)。⭐ 只有這一份實作。
+
+    ⛔ 「對不上（⚠ 只差在分位）」**仍然算對不上**——⛔ 不可以用 `endswith("對不上")`
+    把它漏掉：那會讓「對得上 ＋ 對不上」**加不回可算的總數**，
+    ⚠ 而少掉的那幾筆**不會有任何地方報**（＝把問題藏起來，四點二）。
+    """
+    good = sum(v for k, v in stat.items() if k.endswith("對得上"))
+    bad = sum(v for k, v in stat.items() if "對不上" in k)
+    near = sum(v for k, v in stat.items() if "只差在分位" in k)
+    cant = sum(v for k, v in stat.items() if k.startswith("算不了"))
+    return good, bad, near, cant
+
+
 def load_events(event="reduce"):
     """→ [(代號, 那一列)]，只取指定的 `event`（`reduce`／`exright`）。"""
     out = []
@@ -241,10 +284,13 @@ def check_all():
             continue
         via = "事件日"
         if sa is None or sb is None or sa >= sb or sb <= 0 or sa <= 0:
-            # ⛔⛔ 讀事件日那一格會漏掉**兩種**，而兩種都不是資料壞掉（2026-09-13 實測）：
-            #   ① 事件日**不是交易日**：官方公告的恢復買賣日碰到颱風休市
-            #      （2016-09-28 梅姬、2019-09-30 米塔 ⇒ 那兩天全市場沒有日檔）
-            #   ② 股數**更新落後**：實測 lag 1~19 個交易日都有
+            # ⛔⛔ 讀事件日那一格會漏掉**三種**，而三種都不是資料壞掉（2026-09-13 實測）：
+            #   ① 事件日**不是交易日**（5 筆：2016-09-28 ×2、2019-09-30 ×3）
+            #      ⭐ 判準是「那天**全市場**沒有任何價格型 feed 的日檔」——⛔ 不是我記得
+            #        那天放颱風假。⚠ 那兩天只有事件型 feed（exright／reduce）有檔，
+            #        因為那一族是**按期間查**的，公告日期本來就可以落在非交易日。
+            #   ② 事件日是交易日、但**該檔停牌**沒有列（1 筆：6222 2016-12-29）
+            #   ③ 股數**更新落後**：實測 lag 1~19 個交易日都有（8 筆）
             # ⇒ 兩種都往後找第一個**變過**的股數。⭐ 跟除權那邊走同一支（四點五）。
             b2, a2, _lag = shares_after(code, day)
             # ⚠ 一定要**再驗一次是減少**：往後找可能撈到增資／可轉債轉換那種**增加**，
@@ -254,15 +300,27 @@ def check_all():
                 continue
             sb, sa, via = b2, a2, "往後找"
         keep = sa / sb
-        calc = expected_ref(pre, keep, is_cash(kind))
+        cash = is_cash(kind)
+        calc = expected_ref(pre, keep, cash)
         diff = abs(calc - ref)
-        tag = "現金型" if is_cash(kind) else "彌補虧損型"
-        stat[f"{tag}｜{'對得上' if diff <= TOL else '對不上'}"] += 1
+        tag = "現金型" if cash else "彌補虧損型"
+        ok = diff <= TOL
+        ko = official_keep(pre, ref, cash)
+        # ⭐ 「對不上」要再分一刀：⛔ 價格空間的 5 分容差**對高價股太嚴**
+        #   （6271 前收 139 元，keep 只差 0.03% 就被判成對不上）。
+        #   ⇒ 換算到 **keep 空間**再看一次：差在 ±1% 內的是**印到分的差**，
+        #     ⛔ 不是我方股數抓錯。⚠ 而它仍然算「對不上」，只是分開報。
+        near = (not ok) and ko is not None and ko > 0 and abs(keep / ko - 1) <= 0.01
+        stat[f"{tag}｜{'對得上' if ok else ('對不上（⚠ 只差在分位）' if near else '對不上')}"] += 1
         res.append({"stock_id": code, "date": day, "kind": kind,
-                    "keep": f"{keep:.6f}", "pre_close": f"{pre:.2f}",
+                    "keep": f"{keep:.6f}",
+                    "keep_official": ("" if ko is None else f"{ko:.6f}"),
+                    "pre_close": f"{pre:.2f}",
                     "ref_official": f"{ref:.2f}", "ref_calc": f"{calc:.2f}",
-                    "diff": f"{diff:.4f}", "ok": "1" if diff <= TOL else "0",
-                    "shares_via": via})
+                    "diff": f"{diff:.4f}",
+                    "cash_implied": (f"{implied_cash(pre, keep, ref):.4f}" if cash else ""),
+                    "cash_par_based": (f"{PAR * (1 - keep):.4f}" if cash else ""),
+                    "ok": "1" if ok else "0", "shares_via": via})
     return res, stat
 
 
@@ -330,16 +388,20 @@ def main():
     res, stat = check_all()
     rl = runlog.Run("reduce_shares_check")
 
-    good = sum(v for k, v in stat.items() if k.endswith("對得上"))
-    bad = sum(v for k, v in stat.items() if k.endswith("對不上"))
-    cant = sum(v for k, v in stat.items() if k.startswith("算不了"))
+    good, bad, near, cant = tally(stat)
     rl.info("⭐ 這一支在驗什麼",
             "用**我方自己的 `shares` 欄**算換股比，重算官方減資參考價"
             "（⛔ 不連外、不靠人工匯出的表）")
     for k in sorted(stat):
         rl.info(k, str(stat[k]))
     # ⛔ 「對不上 N 筆」一定要跟「對得上幾筆」放在一起（CLAUDE.md 第七點）
-    rl.info("總計", f"對得上 {good}｜對不上 {bad}｜算不了 {cant}")
+    rl.info("總計", f"對得上 {good}｜對不上 {bad}（其中 {near} 筆只差在分位）｜算不了 {cant}")
+    # ⭐ 加不回去就是有一群掉在外面（⛔ 而那一群不會有任何地方報）
+    # ⭐ 這一條**故意**用另一種數法（`sum(stat.values())`）當右邊：
+    #   ⛔ 兩邊都用 `tally()` 的話它永遠成立，那就不是斷言而是恆等式。
+    rl.check("⭐ 對得上 ＋ 對不上 ＋ 算不了 ＝ 全部（⛔ 沒有任何一筆掉在外面）",
+             good + bad + cant == sum(stat.values()),
+             f"{good} + {bad} + {cant} vs {sum(stat.values())}")
 
     # ⭐ 兩種算式**都要有正例**。⛔ 只有一種有，代表另一種其實沒被測到
     #   ——而那正是「某群 0 筆」那個陷阱。
@@ -358,8 +420,9 @@ def main():
                           sorted((x for x in res if x["ok"] == "0"),
                                  key=lambda x: -float(x["diff"])),
                           list(res[0]) if res else
-                          ["stock_id", "date", "kind", "keep", "pre_close",
-                           "ref_official", "ref_calc", "diff", "ok", "shares_via"])
+                          ["stock_id", "date", "kind", "keep", "keep_official",
+                           "pre_close", "ref_official", "ref_calc", "diff",
+                           "cash_implied", "cash_par_based", "ok", "shares_via"])
         rl.check("對不上的清單寫得進去而且讀得回來",
                  back == bad, f"寫 {bad} 列、讀回 {back} 列")
     return rl.finish()
