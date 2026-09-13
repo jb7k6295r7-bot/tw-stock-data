@@ -226,7 +226,7 @@ def main():
         # ① 事件日**不是交易日**（颱風休市 ⇒ 全市場那天沒有日檔）
         io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
             "date,close,shares\n2026-01-05,66,1000000\n2026-01-07,84,750000\n")
-        _r, st = val(R.check_all)
+        _r, st, _ra = val(R.check_all)
         ck("⭐ 事件日碰到休市（沒有那一列）⇒ 往後找，照樣算得出來",
            st.get("現金型｜對得上") == 1, str(dict(st)))
         ck("　　而它會記下用的是哪一條路（`shares_via`）",
@@ -236,7 +236,7 @@ def main():
         io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
             "date,close,shares\n2026-01-05,66,1000000\n"
             "2026-01-06,84,1000000\n2026-01-08,84,750000\n")
-        _r, st = val(R.check_all)
+        _r, st, _ra = val(R.check_all)
         ck("⭐ 股數更新落後 ⇒ 往後找，照樣算得出來",
            st.get("現金型｜對得上") == 1, str(dict(st)))
 
@@ -245,7 +245,7 @@ def main():
         io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
             "date,close,shares\n2026-01-05,66,1000000\n"
             "2026-01-06,84,1000000\n2026-01-08,84,1200000\n")
-        _r, st = val(R.check_all)
+        _r, st, _ra = val(R.check_all)
         ck("⛔⛔ 往後找撈到的是**增加** ⇒ 算不了，⛔ 不可以拿它算出一個假參考價",
            st.get("算不了：問不到變少的股數") == 1 and not _r, str(dict(st)))
 
@@ -253,7 +253,7 @@ def main():
         io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
             "date,close,shares\n2026-01-05,66,1000000\n"
             "2026-01-06,84,750000\n2026-01-08,84,500000\n")
-        _r, st = val(R.check_all)
+        _r, st, _ra = val(R.check_all)
         ck("⛔ 事件日讀得到就用事件日（⛔ 不可以被後面更小的股數蓋過去）",
            _r and _r[0].get("shares_via") == "事件日"
            and _r[0].get("keep") == "0.750000", str(_r))
@@ -275,7 +275,7 @@ def main():
         io.open(os.path.join(da, "4444.csv"), "w", encoding="utf-8").write(
             "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
             "2026-01-06,1,1,139,180.74,退還股款,reduce\n")
-        _r, st = val(R.check_all)
+        _r, st, _ra = val(R.check_all)
         ck("⭐ 高價股：價格差 > 5 分、⛔ 而 keep 只差 0.03% ⇒ 進「只差在分位」那一格",
            st.get("現金型｜對不上（⚠ 只差在分位）") == 1, str(dict(st)))
         ck("　　⛔ 而它**仍然算對不上**（⛔ 不可以被算成對得上）",
@@ -286,7 +286,7 @@ def main():
         io.open(os.path.join(da, "4444.csv"), "w", encoding="utf-8").write(
             "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
             "2026-01-06,1,1,8.80,24.44,彌補虧損,reduce\n")
-        _r, st = val(R.check_all)
+        _r, st, _ra = val(R.check_all)
         ck("⛔ keep 差 53%（4502 實例）⇒ 是真的對不上，⛔ 不是分位",
            st.get("彌補虧損型｜對不上") == 1, str(dict(st)))
     finally:
@@ -311,14 +311,96 @@ def main():
              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     ck("⭐ `main()` 真的呼叫 `tally()`（⛔ 不是自己又數一份）", "tally" in calls,
        str(sorted(calls)))
-    # ⛔ 而 `main()` 不可以自己**再濾一次** stat 的鍵——那就是第二份數法。
-    #   ⚠ `sum(stat.values())` 不算：它是那條不變式**故意**用的另一種數法。
-    ck("⛔ `main()` 裡沒有第二份「濾鍵再數」的寫法",
+    # ⛔ 而 `main()` 不可以自己**再數一次分類**——那就是第二份 `tally()`。
+    #   ⚠ 那條不變式**故意**用另一種數法當右邊（濾掉「（參考）」前綴之後全加），
+    #     ⛔ 兩邊都用 `tally()` 的話它永遠成立 ⇒ 那不是斷言是恆等式。
+    #   ⇒ 判準寫成：`main()` 裡不可以有**提到分類字眼**的濾鍵加總。
+    CLS_WORDS = ("對得上", "對不上", "算不了", "只差在分位")
+    def _mentions_cls(node):
+        return any(isinstance(x, ast.Constant) and isinstance(x.value, str)
+                   and any(w in x.value for w in CLS_WORDS)
+                   for x in ast.walk(node))
+    ck("⛔ `main()` 裡沒有第二份「照分類濾鍵再數」的寫法",
        not [n for n in ast.walk(fn)
             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
             and n.func.id == "sum"
-            and any(isinstance(a, (ast.GeneratorExp, ast.ListComp)) and a.generators[0].ifs
+            and any(isinstance(a, (ast.GeneratorExp, ast.ListComp))
+                    and a.generators[0].ifs and _mentions_cls(a)
                     for a in n.args)])
+
+    print("\n── ⑧e ⭐ 第三個來源：官方**換股比率**（⛔ 不是從價格推的）──")
+    d = tempfile.mkdtemp(prefix="rsc6_")
+    da = tempfile.mkdtemp(prefix="rsc6a_")
+    old, olda, oldt = R.STOCKS, R.ADJ, R.OFFICIAL_TABLE
+    try:
+        R.STOCKS, R.ADJ = d, da
+        R.OFFICIAL_TABLE = os.path.join(d, "otc_reduce_history.csv")
+        # 6241 實例：官方換股比率 729.644150／1000、官方參考價 18.98、前收 13.85
+        #   ⇒ 官方兩欄互相一致（0.729644 vs 0.729715）
+        #   ⛔ 而我方 shares 算出 0.934983 ——**異類是我方 shares**
+        io.open(R.OFFICIAL_TABLE, "w", encoding="utf-8").write(
+            "date,stock_id,shares_per_1000\n2026-01-06,3333,729.644150\n")
+        io.open(os.path.join(d, "3333.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,13.85,48700000\n"
+            "2026-01-06,18.98,45533670\n")
+        io.open(os.path.join(da, "3333.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            "2026-01-06,1,1,13.85,18.98,彌補虧損,reduce\n")
+        _r, st, _ra = val(R.check_all)
+        ck("⭐ 官方換股比率站在參考價那邊 ⇒ 判成「異類是我方 shares」",
+           st.get("彌補虧損型｜對不上（⛔ 異類是我方 shares）") == 1, str(dict(st)))
+        ck("　　而逐筆結果留下那個比率（⛔ 不是空白）",
+           _r and _r[0].get("keep_ratio_official", "").startswith("0.7296"), str(_r))
+        # ⛔ 反向①：官方那張表**不見了** ⇒ 不可以還判成「異類是我方 shares」
+        os.remove(R.OFFICIAL_TABLE)
+        _r, st, _ra = val(R.check_all)
+        ck("⛔ 官方表讀不到 ⇒ 退回普通的「對不上」，⛔ 不可以栽贓給 shares",
+           st.get("彌補虧損型｜對不上") == 1
+           and not st.get("彌補虧損型｜對不上（⛔ 異類是我方 shares）"), str(dict(st)))
+        ck("⛔ 而「查得到官方換股比率」要是 0（⇒ runlog 上那條斷言會紅）",
+           not st.get(R.INFO + "⭐ 查得到官方換股比率"), str(dict(st)))
+        # ⛔ 反向②：官方兩欄**互相矛盾**時，⛔ 不可以說「異類是我方 shares」
+        io.open(R.OFFICIAL_TABLE, "w", encoding="utf-8").write(
+            "date,stock_id,shares_per_1000\n2026-01-06,3333,500.000000\n")
+        _r, st, _ra = val(R.check_all)
+        ck("⛔ 官方換股比率跟官方參考價**自己就對不上** ⇒ 退回普通的「對不上」",
+           st.get("彌補虧損型｜對不上") == 1
+           and not st.get("彌補虧損型｜對不上（⛔ 異類是我方 shares）"), str(dict(st)))
+        # ⭐ 反向③：官方比率跟我方 shares **一致**時，⛔ 也不可以栽贓給 shares
+        io.open(R.OFFICIAL_TABLE, "w", encoding="utf-8").write(
+            "date,stock_id,shares_per_1000\n2026-01-06,3333,934.983000\n")
+        _r, st, _ra = val(R.check_all)
+        ck("⛔ 官方比率跟我方 shares 一致 ⇒ ⛔ 不是 shares 的問題",
+           not st.get("彌補虧損型｜對不上（⛔ 異類是我方 shares）"), str(dict(st)))
+        # ⭐ 反向③b：⚠ 上面那一格**隔離不了**那個條件——官方比率跟參考價差太多，
+        #   前一個條件就先擋掉了。⇒ 要一格「三方都一致、只是價格差超過 5 分」的：
+        #   高價股 pre 139.00／官方 ref 180.74 ⇒ ko = 0.768994
+        #   我方 shares keep 0.768700（差 0.0003）⇒ 價格差 0.088 > 0.05
+        io.open(R.OFFICIAL_TABLE, "w", encoding="utf-8").write(
+            "date,stock_id,shares_per_1000\n2026-01-06,3333,768.700000\n")
+        io.open(os.path.join(d, "3333.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,139,10000000\n"
+            "2026-01-06,180,7687000\n")
+        io.open(os.path.join(da, "3333.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            "2026-01-06,1,1,139.00,180.74,彌補虧損,reduce\n")
+        _r, st, _ra = val(R.check_all)
+        ck("⭐ 三方都一致、只是價格差超過 5 分 ⇒ 要落在「只差在分位」",
+           st.get("彌補虧損型｜對不上（⚠ 只差在分位）") == 1, str(dict(st)))
+        ck("⛔ 而**不可以**被判成「異類是我方 shares」（官方比率跟我方 shares 一樣）",
+           not st.get("彌補虧損型｜對不上（⛔ 異類是我方 shares）"), str(dict(st)))
+    finally:
+        R.STOCKS, R.ADJ, R.OFFICIAL_TABLE = old, olda, oldt
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(da, ignore_errors=True)
+
+    print("\n── ⑧f ⛔ 參考型的鍵不可以混進分類的加總 ──")
+    # ⚠ 參考型的鍵**故意寫成含有分類字眼**——⛔ 現在的鍵剛好沒撞到那幾個字，
+    #   而「靠命名沒撞到」不是保護：判準必須是**前綴**，不是字眼。
+    st = {"現金型｜對得上": 5, "現金型｜對不上": 2, "算不了：問不到變少的股數": 7,
+          R.INFO + "官方兩欄對得上": 99, R.INFO + "算不了：沒查到": 88}
+    ck("⛔ `tally()` 靠**前綴**排除參考型的鍵（⛔ 不是靠字眼剛好沒撞到）",
+       R.tally(st) == (5, 2, 0, 7), str(R.tally(st)))
 
     print("\n── ⑨ `exright_scan`：三格分類，⛔ 而它判不出對錯 ──")
     d = tempfile.mkdtemp(prefix="rsc3_")

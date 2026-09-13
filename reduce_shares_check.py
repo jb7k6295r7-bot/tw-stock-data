@@ -80,6 +80,16 @@ CASH_KINDS = ("退還股款", "現金減資")
 PAR = 10.0          # 台股面額。⚠ 非 10 元面額的個股會落進「對不上」，那是刻意的
 TOL = 0.05
 OUT_EX = os.path.join(_HERE, "data", "meta", "_exright_shares_check.csv")
+# ⭐⭐ 官方上櫃減資表的 `shares_per_1000` 是**換股比率**——⛔ 它不是從價格推的
+#   ⇒ 它是繼 `shares` 之後的**第三個**來源，而且跟價格那一邊完全獨立。
+#   ⚠ 這個檔由 `otc_reduce_history.py` 寫，daily.yml 裡排在本支**之前**。
+OFFICIAL_TABLE = os.path.join(_HERE, "data", "meta", "otc_reduce_history.csv")
+RATIO_TOL = 0.001
+# ⛔⛔ 統計裡有兩種鍵：**分類**（每一筆事件剛好落一格）與**參考**（同一筆會再被數一次）。
+#   混在一起 ⇒ 「對得上＋對不上＋算不了 ＝ 全部」那條不變式當場破掉
+#   ——⭐ 而 2026-09-13 加第三個來源時它**當場就抓到了**（584 變成 1040）。
+#   ⇒ 參考型的鍵一律加這個前綴，`tally()` 與那條不變式都把它們排除。
+INFO = "（參考）"
 EX_WIN = 40         # 事件日起往後找幾個交易日，等 shares 更新
 EX_TOL = 0.005      # 「factor 等於股數比」的容差（比值空間，見 exright_scan）
 
@@ -228,6 +238,25 @@ def exright_scan(window=EX_WIN):
     return res, stat
 
 
+def load_official_ratio():
+    """→ {(代號, 日期): 官方換股比率}，讀不到就回空的 dict。
+
+    ⛔ 讀不到**不可以靜靜放行**：`check_all()` 會把「有幾筆查得到官方比率」
+    寫進統計 ⇒ 0 筆會直接顯示在 runlog 上（四點六：讀不到判準檔的表現是空值，不是錯誤）。
+    """
+    out = {}
+    if not os.path.exists(OFFICIAL_TABLE):
+        return out
+    for r in csv.DictReader(io.open(OFFICIAL_TABLE, encoding="utf-8")):
+        try:
+            v = float(r.get("shares_per_1000") or "")
+        except ValueError:
+            continue
+        if v > 0:
+            out[(r.get("stock_id"), r.get("date"))] = v / 1000.0
+    return out
+
+
 def tally(stat):
     """→ (對得上, 對不上, 其中只差在分位, 算不了)。⭐ 只有這一份實作。
 
@@ -235,10 +264,11 @@ def tally(stat):
     把它漏掉：那會讓「對得上 ＋ 對不上」**加不回可算的總數**，
     ⚠ 而少掉的那幾筆**不會有任何地方報**（＝把問題藏起來，四點二）。
     """
-    good = sum(v for k, v in stat.items() if k.endswith("對得上"))
-    bad = sum(v for k, v in stat.items() if "對不上" in k)
-    near = sum(v for k, v in stat.items() if "只差在分位" in k)
-    cant = sum(v for k, v in stat.items() if k.startswith("算不了"))
+    cls = {k: v for k, v in stat.items() if not k.startswith(INFO)}
+    good = sum(v for k, v in cls.items() if k.endswith("對得上"))
+    bad = sum(v for k, v in cls.items() if "對不上" in k)
+    near = sum(v for k, v in cls.items() if "只差在分位" in k)
+    cant = sum(v for k, v in cls.items() if k.startswith("算不了"))
     return good, bad, near, cant
 
 
@@ -274,6 +304,7 @@ def shares_around(code, day):
 def check_all():
     """→ (逐筆結果 list, 統計 Counter)。⛔ 只讀，不寫。"""
     res, stat = [], collections.Counter()
+    ratios = load_official_ratio()
     for code, r in load_events():
         day, kind = r["date"], (r.get("kind") or "").strip()
         sa, sb = shares_around(code, day)
@@ -311,7 +342,26 @@ def check_all():
         #   ⇒ 換算到 **keep 空間**再看一次：差在 ±1% 內的是**印到分的差**，
         #     ⛔ 不是我方股數抓錯。⚠ 而它仍然算「對不上」，只是分開報。
         near = (not ok) and ko is not None and ko > 0 and abs(keep / ko - 1) <= 0.01
-        stat[f"{tag}｜{'對得上' if ok else ('對不上（⚠ 只差在分位）' if near else '對不上')}"] += 1
+        # ⭐⭐ 第三個來源：官方公告的**換股比率**（⛔ 不是從價格推的）。
+        #   它跟官方參考價是**兩欄分別公告**的 ⇒ 兩者一致就代表價格那一邊沒問題，
+        #   ⇒ 這時候「對不上」的**異類是我方 `shares`**，⛔ 不是還原因子。
+        kr = ratios.get((code, day))
+        if kr:
+            stat[INFO + "⭐ 查得到官方換股比率"] += 1
+            if ko is not None and abs(kr - ko) <= RATIO_TOL:
+                stat[INFO + "⭐ 官方換股比率與官方參考價一致（⇒ 價格那一邊沒問題）"] += 1
+        blame_shares = (not ok and kr and ko is not None
+                        and abs(kr - ko) <= RATIO_TOL
+                        and abs(kr - keep) > RATIO_TOL)
+        if blame_shares:
+            lab = "對不上（⛔ 異類是我方 shares）"
+        elif ok:
+            lab = "對得上"
+        elif near:
+            lab = "對不上（⚠ 只差在分位）"
+        else:
+            lab = "對不上"
+        stat[f"{tag}｜{lab}"] += 1
         res.append({"stock_id": code, "date": day, "kind": kind,
                     "keep": f"{keep:.6f}",
                     "keep_official": ("" if ko is None else f"{ko:.6f}"),
@@ -320,8 +370,9 @@ def check_all():
                     "diff": f"{diff:.4f}",
                     "cash_implied": (f"{implied_cash(pre, keep, ref):.4f}" if cash else ""),
                     "cash_par_based": (f"{PAR * (1 - keep):.4f}" if cash else ""),
+                    "keep_ratio_official": (f"{kr:.6f}" if kr else ""),
                     "ok": "1" if ok else "0", "shares_via": via})
-    return res, stat
+    return res, stat, ratios
 
 
 def _write_csv(path, rows, fields):
@@ -385,7 +436,7 @@ def main():
     a = ap.parse_args()
     if a.exright:
         return main_exright(a.write)
-    res, stat = check_all()
+    res, stat, ratios = check_all()
     rl = runlog.Run("reduce_shares_check")
 
     good, bad, near, cant = tally(stat)
@@ -400,8 +451,10 @@ def main():
     # ⭐ 這一條**故意**用另一種數法（`sum(stat.values())`）當右邊：
     #   ⛔ 兩邊都用 `tally()` 的話它永遠成立，那就不是斷言而是恆等式。
     rl.check("⭐ 對得上 ＋ 對不上 ＋ 算不了 ＝ 全部（⛔ 沒有任何一筆掉在外面）",
-             good + bad + cant == sum(stat.values()),
-             f"{good} + {bad} + {cant} vs {sum(stat.values())}")
+             good + bad + cant == sum(v for k, v in stat.items()
+                                      if not k.startswith(INFO)),
+             f"{good} + {bad} + {cant} vs "
+             f"{sum(v for k, v in stat.items() if not k.startswith(INFO))}")
 
     # ⭐ 兩種算式**都要有正例**。⛔ 只有一種有，代表另一種其實沒被測到
     #   ——而那正是「某群 0 筆」那個陷阱。
@@ -410,6 +463,14 @@ def main():
     rl.check("⭐ 兩種算式都各自對上過（⛔ 只有一種有正例 ＝ 另一種沒被測到）",
              cash_ok > 0 and loss_ok > 0,
              f"現金型 {cash_ok} 筆、彌補虧損型 {loss_ok} 筆")
+    # ⭐ 第三個來源的兩條斷言。⛔ 第一條擋的是「判準檔讀不到 ⇒ 整欄空白」（四點六）
+    have = stat.get(INFO + "⭐ 查得到官方換股比率", 0)
+    agree = stat.get(INFO + "⭐ 官方換股比率與官方參考價一致（⇒ 價格那一邊沒問題）", 0)
+    rl.check("⭐ 官方換股比率那張表**讀得到而且有內容**（⛔ 讀不到的表現是空值，不是錯誤）",
+             have > 0, f"查得到 {have} 筆｜表 {len(ratios)} 列"
+                       f"｜{os.path.relpath(OFFICIAL_TABLE, _HERE)}")
+    rl.check("⭐ 官方的【換股比率】與【參考價】互相一致（⛔ 掉下來代表來源那張表變了）",
+             have > 0 and agree / have >= 0.90, f"{agree}/{have}")
     rl.check("九成以上的減資參考價重算得出來",
              good + bad > 0 and good / (good + bad) >= 0.90,
              f"{good}/{good + bad}"
@@ -421,8 +482,9 @@ def main():
                                  key=lambda x: -float(x["diff"])),
                           list(res[0]) if res else
                           ["stock_id", "date", "kind", "keep", "keep_official",
-                           "pre_close", "ref_official", "ref_calc", "diff",
-                           "cash_implied", "cash_par_based", "ok", "shares_via"])
+                           "keep_ratio_official", "pre_close", "ref_official",
+                           "ref_calc", "diff", "cash_implied", "cash_par_based",
+                           "ok", "shares_via"])
         rl.check("對不上的清單寫得進去而且讀得回來",
                  back == bad, f"寫 {bad} 列、讀回 {back} 列")
     return rl.finish()
