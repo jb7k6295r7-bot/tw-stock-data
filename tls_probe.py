@@ -122,6 +122,34 @@ def _openssl(host, lines):
         t = ln.strip()
         if t.startswith("issuer=") or t.startswith("subject=") or "Verify return code" in t:
             lines.append(f"      {t[:150]}")
+    # ⭐⭐ **把對方送的每一張（葉憑證以外）都印成 PEM。**
+    #   ⛔ 2026-09-13 差點只抓 AIA 那一張就收工——⚠ 而本機一驗就發現：
+    #     那張中間憑證的發行者是 **TWCA CYBER Root CA**，
+    #     而這台的系統信任庫裡**只有** TWCA Global Root CA 與 TWCA Root CA。
+    #   ⇒ TWSE 送 **3** 張而不是 2 張，多的那一張多半是**交叉憑證**
+    #     （把 CYBER Root 接到一個已被信任的舊根上）。
+    #   ⭐ 而 TWSE 在 runner 上是**驗得過**的 ⇒ 它送的那幾張就是「夠用的那一組」。
+    #   ⇒ 照抄它們，⛔ 不要只憑 AIA 猜一張。
+    if n > 1:
+        cur, blocks = [], []
+        for ln in out.splitlines():
+            if "-----BEGIN CERTIFICATE-----" in ln:
+                cur = [ln.strip()]
+            elif cur:
+                cur.append(ln.strip())
+                if "-----END CERTIFICATE-----" in ln:
+                    blocks.append("\n".join(cur))
+                    cur = []
+        for k, b in enumerate(blocks[1:], start=2):            # ⛔ 跳過葉憑證
+            info = subprocess.run(
+                ["openssl", "x509", "-noout", "-subject", "-issuer", "-dates"],
+                input=b, capture_output=True, text=True, timeout=20).stdout
+            lines.append(f"    ── ⭐ 對方送的第 {k} 張（葉憑證以外）──")
+            for t in info.strip().splitlines():
+                lines.append(f"      {t[:150]}")
+            lines.append("    ── PEM ──")
+            lines.extend("      " + x for x in b.strip().splitlines())
+
     # ⭐⭐ 對方漏送時，把**中間憑證本身**抓下來印成 PEM。
     #   ⛔ 這不是「修法」，是**把要補的那張憑證拿到手**——
     #   ⚠ 補鏈之後**驗證一樣是全開的**：那張中間憑證仍然必須被
