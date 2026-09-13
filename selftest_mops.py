@@ -17,11 +17,14 @@
 跑法：python3 selftest_mops.py（不連網、不需要資料）
 """
 import csv
+import glob
 import io
+import json
 import os
 import shutil
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -243,6 +246,213 @@ def main():
 
         print("\n── 7之二. ⭐ 隔久重試（⛔ 重試成功不可以靜悄悄）──")
         _retry_section()
+
+        print("\n── 7之三. ⭐⭐ 兩個市場申報進度不同步 ⇒ **分開寫檔** ──")
+        # ⛔ 這一節是**實測踩到的**（main，台北 2026-09-14 04:45）：
+        #   data/mops/revenue/2026-07.csv 1,976 列裡
+        #     twse 1,085 列 資料年月 = 11507 ✅
+        #     tpex 　891 列 資料年月 = **11508** ⛔ 八月的資料貼著七月的檔名
+        #   ⇒ 舊版取「最常見的那一期」，把兩期寫進同一個檔。
+        #   ⚠ 假資料照真回應的形狀做：上市一期、上櫃**另一期**。
+        recs = ([{"公司代號": f"1{i:03d}", "資料年月": "11507"} for i in range(5)]
+                + [{"SecuritiesCompanyCode": f"6{i:03d}",
+                    "資料年月": "11508"} for i in range(3)])
+        g, nop = M.group_by_period("revenue", recs)
+        chk("⭐ 兩期各自成組（⛔ 不是取最常見的那一期）",
+            sorted(g) == ["2026-07", "2026-08"], str(sorted(g)))
+        chk("⭐ 而列數沒有被吃掉（5 ＋ 3）",
+            len(g.get("2026-07", [])) == 5 and len(g.get("2026-08", [])) == 3,
+            str({k: len(v) for k, v in g.items()}))
+        chk("⛔ 反向：舊寫法（取最常見）會把 8 列全部貼上 2026-07"
+            "　⇒ 這一節不是憑空擔心",
+            max(((len(v), k) for k, v in g.items()))[1] == "2026-07"
+            and sum(len(v) for v in g.values()) == 8)
+        # ⭐ 取不到期別的列：不寫、但要數出來（⛔ 不可以靜靜丟掉）
+        g2, nop2 = M.group_by_period("revenue",
+                                     recs + [{"公司代號": "9999"}])
+        chk("⭐ 取不到期別的列**不進任何一組**，而且數得出來（1 列）",
+            nop2 == 1 and sum(len(v) for v in g2.values()) == 8,
+            f"noperiod={nop2}")
+        chk("⚠ 而全都取得到時它是 0（⛔ 否則上面那條分不出是不是永遠回 1）",
+            nop == 0, str(nop))
+        # ⭐ 單一期別那條路（最常見的情形）不可以壞掉
+        g3, _ = M.group_by_period("revenue",
+                                  [{"公司代號": "1101", "資料年月": "11508"}])
+        chk("⭐ 只有一期時就只有一組（⛔ 不要為了分檔而分檔）",
+            list(g3) == ["2026-08"], str(list(g3)))
+        # ⭐ 季報那一半用的是另一組欄名 ⇒ 要各自有一條
+        g4, _ = M.group_by_period("fs", [{"公司代號": "2330", "年度": "115",
+                                          "季別": "2"},
+                                         {"SecuritiesCompanyCode": "6488",
+                                          "Year": "115", "Season": "1"}])
+        chk("⭐ 季報也照每一列自己的年度／季別分組（⚠ 上櫃用英文欄名）",
+            sorted(g4) == ["2026Q1", "2026Q2"], str(sorted(g4)))
+
+        print("\n── 7之四. ⭐⭐ 呼叫點：兩期真的落成**兩個檔**（⛔ 只測純函式抓不到）──")
+        # ⛔⛔ 這一節存在的理由：只測 `group_by_period` 時，把呼叫點改成
+        #   `for period in sorted(groups)[:1]:`（分組對了、只寫第一期）**全綠**。
+        #   ⚠ 「測了判準、沒測呼叫點」在本專案這是第六次（CLAUDE.md 第七點③）。
+        import argparse as _ap
+        import backfill as _B
+        import runlog as _RL
+        _old_get, _old_rl, _old_sleep = _B.get, _RL.PATH, time.sleep
+        _RL.PATH = os.path.join(tmp, "_last_run.md")
+        _rl_real = os.path.join(HERE, "data", "meta", "_last_run.md")
+        _rl_before = (io.open(_rl_real, "rb").read()
+                      if os.path.isfile(_rl_real) else None)
+        # ⭐ 假回應照真回應的形狀：頂層是 list、欄名兩市場不同、
+        #   而**兩個市場的資料年月不一樣**（上市 7 月、上櫃已經 8 月）。
+        _TW = json.dumps([{"公司代號": "1101", "公司名稱": "台泥",
+                           "資料年月": "11507", "出表日期": "1150812",
+                           "營業收入-當月營收": "1"}]).encode()
+        _TP = json.dumps([{"SecuritiesCompanyCode": "6488",
+                           "CompanyName": "環球晶", "資料年月": "11508",
+                           "Date": "1150912", "營業收入-當月營收": "2"}]).encode()
+
+        def _fake_get(url, *a, **k):
+            u = str(url)
+            if "t187ap05_L" in u:
+                return _TW, None
+            if "mopsfin_t187ap05_O" in u:
+                return _TP, None
+            return None, "selftest：不連外"
+        _B.get = _fake_get
+        time.sleep = lambda *a, **k: None      # ⛔ 不要真的睡 B.SLEEP
+        try:
+            M.cmd_run(_ap.Namespace(sleep=0, kind="revenue"))
+        finally:
+            _B.get, _RL.PATH, time.sleep = _old_get, _old_rl, _old_sleep
+        _made = sorted(os.path.basename(x) for x in
+                       glob.glob(os.path.join(tmp, "revenue", "*.csv")))
+        chk("⭐⭐ 兩個期別 ⇒ **兩個檔**（⛔ 舊版只會有一個）",
+            _made == ["2026-07.csv", "2026-08.csv"], str(_made))
+        # ⚠ 檔不在時要**印 ✗ 繼續跑**，⛔ 不是崩潰：崩潰吐 traceback、不印 ✗，
+        #   而且後面的斷言一條都不會跑（CLAUDE.md 第七點②）。
+        def _rows(fn):
+            fp = os.path.join(tmp, "revenue", fn)
+            if not os.path.isfile(fp):
+                return []
+            return list(csv.DictReader(io.open(fp, encoding="utf-8")))
+        _p7, _p8 = _rows("2026-07.csv"), _rows("2026-08.csv")
+        chk("⭐ 上市那一列在 7 月檔、上櫃那一列在 8 月檔（⛔ 不是混在一起）",
+            [r["stock_id"] for r in _p7] == ["1101"]
+            and [r["stock_id"] for r in _p8] == ["6488"],
+            f"{[r['stock_id'] for r in _p7]}｜{[r['stock_id'] for r in _p8]}")
+        chk("⭐⭐ `period` 欄與**每一列自己的 `資料年月`** 對得上"
+            "（⛔ 舊版是整欄覆蓋成檔名那一期）",
+            bool(_p7) and bool(_p8)
+            and _p7[0]["period"] == "2026-07" and _p7[0]["資料年月"] == "11507"
+            and _p8[0]["period"] == "2026-08" and _p8[0]["資料年月"] == "11508",
+            f"7月檔 {len(_p7)} 列｜8月檔 {len(_p8)} 列")
+        chk("⭐ runlog 有把「含多個期別、已分開寫檔」講出來（⛔ 只印 stderr 不夠）",
+            "已分開寫檔" in io.open(_RL.PATH if False else
+                                os.path.join(tmp, "_last_run.md"),
+                                encoding="utf-8").read(),
+            io.open(os.path.join(tmp, "_last_run.md"), encoding="utf-8").read()[-300:])
+        chk("★ 沒有動到 repo 真的 _last_run.md",
+            _rl_before == (io.open(_rl_real, "rb").read()
+                           if os.path.isfile(_rl_real) else None))
+        print("\n── 7之五. ⭐⭐ 期別自癒：把**已經寫錯期**的舊列搬回去 ──")
+        # ⛔ 這一節對應的是 main 上真的躺著的東西（台北 2026-09-14 04:45 實測）：
+        #   data/mops/revenue/2026-07.csv 裡 tpex 891 列的 `資料年月` 是 11508。
+        #   ⚠ 而它不會自己好：上市也換到 8 月之後，**沒有人會再寫 2026-07.csv**。
+        rd = os.path.join(tmp, "revenue")
+        os.makedirs(rd, exist_ok=True)
+        for f in glob.glob(os.path.join(rd, "*.csv")):
+            os.remove(f)
+        _H = "stock_id,name,period,market,報表日期,公司代號,資料年月,營收"
+        io.open(os.path.join(rd, "2026-07.csv"), "w", encoding="utf-8").write(
+            _H + "\n"
+            "1101,台泥,2026-07,twse,1150812,1101,11507,1\n"      # ✅ 對的
+            "6488,環球晶,2026-07,tpex,1150912,6488,11508,2\n"    # ⛔ 錯期
+            "8069,元太,2026-07,tpex,1150912,8069,11508,3\n")     # ⛔ 錯期
+        n, msg = M.repair_periods("revenue")
+        made = sorted(os.path.basename(x) for x in glob.glob(os.path.join(rd, "*.csv")))
+        chk("⭐ 搬了 2 列（⛔ 對的那一列不動）", n == 2, f"{n}｜{msg}")
+        chk("⭐ 8 月那個檔被建出來", made == ["2026-07.csv", "2026-08.csv"], str(made))
+        # ⚠ 檔不在時印 ✗ 繼續跑，⛔ 不是崩潰（第七點②）
+        def _rd(fn):
+            fp = os.path.join(rd, fn)
+            return (list(csv.DictReader(io.open(fp, encoding="utf-8")))
+                    if os.path.isfile(fp) else [])
+        r7, r8 = _rd("2026-07.csv"), _rd("2026-08.csv")
+        chk("⭐ 7 月檔只剩那一列對的（⛔ 而它沒有被搬走）",
+            [r["stock_id"] for r in r7] == ["1101"], str([r["stock_id"] for r in r7]))
+        chk("⭐ 兩列錯期的都到 8 月檔了", sorted(r["stock_id"] for r in r8)
+            == ["6488", "8069"], str([r["stock_id"] for r in r8]))
+        chk("⭐⭐ `period` 欄跟著改（⛔ 只搬檔不改欄 ⇒ 欄與檔名又互相矛盾）",
+            bool(r8) and all(r["period"] == "2026-08" for r in r8),
+            str([r["period"] for r in r8]))
+        chk("⭐ 總列數不變（3 → 3）⛔ 這一支絕不可以變成刪東西的那個人",
+            len(r7) + len(r8) == 3, f"{len(r7)}＋{len(r8)}")
+        n2, msg2 = M.repair_periods("revenue")
+        chk("⭐ 再跑一次是 no-op（⛔ 否則它會天天產生 commit）", n2 == 0, msg2)
+        # ⭐ 取不到期別的列要**原地不動**，⛔ 不是丟掉
+        io.open(os.path.join(rd, "2026-07.csv"), "a", encoding="utf-8").write(
+            "9999,無期別,2026-07,twse,,9999,,9\n")
+        n3, _ = M.repair_periods("revenue")
+        r7b = list(csv.DictReader(io.open(os.path.join(rd, "2026-07.csv"),
+                                          encoding="utf-8")))
+        chk("⭐ 取不到期別的列留在原地（⛔ 不丟）",
+            n3 == 0 and sorted(r["stock_id"] for r in r7b) == ["1101", "9999"],
+            f"n={n3}｜{[r['stock_id'] for r in r7b]}")
+
+        # ⛔⛔ 整批都搬走的檔要**刪掉**，⛔ 不是留一個只有表頭的空殼
+        #   （空殼會被讀成「那一期沒有資料」；⚠ 而且原檔沒被重寫的話，
+        #     同一列會在兩個檔裡各留一份——實測踩到）
+        for f in glob.glob(os.path.join(rd, "*.csv")):
+            os.remove(f)
+        io.open(os.path.join(rd, "2026-07.csv"), "w", encoding="utf-8").write(
+            _H + "\n8069,元太,2026-07,tpex,1150912,8069,11508,3\n")
+        M.repair_periods("revenue")
+        chk("⭐⭐ 整批搬走 ⇒ 舊檔被刪掉（⛔ 不是空殼、⛔ 也不是原封不動留著）",
+            not os.path.exists(os.path.join(rd, "2026-07.csv"))
+            and os.path.exists(os.path.join(rd, "2026-08.csv")),
+            str(sorted(os.path.basename(x)
+                       for x in glob.glob(os.path.join(rd, "*.csv")))))
+        chk("⭐ 而那一列**只有一份**（⛔ 不可以兩個檔各留一份）",
+            len(_rd("2026-08.csv")) == 1 and not _rd("2026-07.csv"))
+        # ⛔⛔ ①那道「列數不符就一列都不寫」的閘門：拿掉它的突變原本**全綠**
+        for f in glob.glob(os.path.join(rd, "*.csv")):
+            os.remove(f)
+        io.open(os.path.join(rd, "2026-07.csv"), "w", encoding="utf-8").write(
+            _H + "\n"
+            "6488,環球晶,2026-07,tpex,1150912,6488,11508,2\n"
+            "6488,環球晶,2026-07,tpex,1150911,6488,11508,9\n")   # ⚠ 同代號兩列
+        _before = io.open(os.path.join(rd, "2026-07.csv"), "rb").read()
+        n4, msg4 = M.repair_periods("revenue")
+        chk("⛔⛔ 搬家會少列時 **回 -1 並一列都不寫**"
+            "（⚠ 這一支絕不可以變成刪東西的那個人）",
+            n4 == -1 and "一列都不寫" in msg4, f"{n4}｜{msg4}")
+        # ⚠ 檔不在時要印 ✗ 繼續跑，⛔ 不是崩潰（第七點②）
+        _p07 = os.path.join(rd, "2026-07.csv")
+        _now = io.open(_p07, "rb").read() if os.path.isfile(_p07) else None
+        chk("⭐ 而檔案真的**逐位元沒變**（⛔ 只看回傳值不夠）",
+            _now == _before and not os.path.exists(os.path.join(rd, "2026-08.csv")),
+            "⛔ 檔不見了" if _now is None else "內容被動過")
+
+        print("\n── 7之六. ⭐⭐ 呼叫點：`cmd_run` 真的會先自癒（⛔ 只測函式抓不到）──")
+        # ⛔ 把 cmd_run 裡那一段拿掉的突變（R5）原本**全綠**。
+        for f in glob.glob(os.path.join(rd, "*.csv")):
+            os.remove(f)
+        io.open(os.path.join(rd, "2026-07.csv"), "w", encoding="utf-8").write(
+            _H + "\n8069,元太,2026-07,tpex,1150912,8069,11508,3\n")
+        _old_get2, _old_rl2, _old_sleep2 = _B.get, _RL.PATH, time.sleep
+        _RL.PATH = os.path.join(tmp, "_last_run2.md")
+        _B.get, time.sleep = _fake_get, (lambda *a, **k: None)
+        try:
+            M.cmd_run(_ap.Namespace(sleep=0, kind="revenue"))
+        finally:
+            _B.get, _RL.PATH, time.sleep = _old_get2, _old_rl2, _old_sleep2
+        _r7 = _rd("2026-07.csv")
+        _r8 = _rd("2026-08.csv")
+        chk("⭐⭐ 那一列錯期的舊列被 `cmd_run` 自己搬走了",
+            "8069" not in [r["stock_id"] for r in _r7]
+            and "8069" in [r["stock_id"] for r in _r8],
+            f"7月 {[r['stock_id'] for r in _r7]}｜8月 {[r['stock_id'] for r in _r8]}")
+        chk("⭐ runlog 講得出它搬了（⛔ 靜靜搬 = 列數變了沒有人知道）",
+            "期別自癒" in io.open(os.path.join(tmp, "_last_run2.md"),
+                               encoding="utf-8").read())
 
         print("\n── 8. 沒有碰到 repo ──")
         log_after = io.open(REPO_LOG, "rb").read() if os.path.isfile(REPO_LOG) else None
