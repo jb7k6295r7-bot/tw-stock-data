@@ -123,6 +123,14 @@ jobs:
       #     只寫著「我方那份不在這個 ref 上」——⭐ 幸好程式端有那句，
       #     ⛔ 沒有那句的話它會靜靜比出「A 265 筆、B 0 筆」那種假結論。
       #   ⇒ CLAUDE.md 第四點六鏡像的落地條①：讀 main 才有的檔就先取下來。
+      # ⭐ `tls_probe` 要用它回答「是不是我方 CA 太舊」。
+      #   ⚠ 裝不起來不該讓整趟紅（其他十三支不需要它）⇒ `continue-on-error`，
+      #   ⛔ 而 `tls_probe` 自己會在報告第一行寫「certifi：**無**」並說它答不出那一格。
+      - name: 裝 certifi（只有 tls_probe 要用）
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python -m pip install --quiet --disable-pip-version-check certifi
+
       - name: 取 main 上的判準檔（雙向比對要用）
         if: always()
         continue-on-error: true
@@ -163,6 +171,7 @@ jobs:
                       "delist_probe.py:_delist_probe.txt" \
                       "esb_day_probe.py:_esb_day_probe.txt" \
                       "chtm_probe.py:_chtm_probe.txt" \
+                      "tls_probe.py:_tls_probe.txt" \
                       "finmind_probe.py:_finmind_probe.txt" \
                       "bsr_probe.py:_bsr_probe.txt" \
                       "broker_probe.py:_broker_probe.txt"; do
