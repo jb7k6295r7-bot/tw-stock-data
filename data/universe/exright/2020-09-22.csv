@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
-2020-09-22,1589,94.00,93.36,0.632812,權,94.00,103.00,84.10
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2020-09-22,1589,94.00,93.36,0.632812,權,94.00,103.00,84.10,94.00

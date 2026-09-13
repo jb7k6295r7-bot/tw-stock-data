@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
-2020-11-30,8442,45.60,45.30,0.300000,息,45.30,49.80,40.80
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2020-11-30,8442,45.60,45.30,0.300000,息,45.30,49.80,40.80,45.30
