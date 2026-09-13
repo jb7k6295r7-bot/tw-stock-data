@@ -33,6 +33,7 @@
 輸出寫進 `data/meta/_tpex_probe.txt` 進 repo，不必有人去翻 Actions log。
 """
 import io
+import collections
 import csv
 import io
 import json
@@ -629,6 +630,96 @@ def main():
     say("\n── 下一步 ──")
     say("從第 2、4 節挑出真正的端點名，再寫抓取與驗算。")
     say("**沒有命中不等於不存在**——先看清單，不要回頭去猜網址。")
+    # ── [12] ⭐⭐ 上櫃的「除權息計算結果」與「漲跌停」到底有沒有 ──────
+    #   ⛔ 起因：`factor_limit_check` 的上櫃那一半只能靠推論，
+    #     而那條推論對現金增資除權**會誤報**（全庫漲停側只中 95.39%）。
+    #     ⇒ F2 那 21 筆裡剩下 6 筆「未證實」，全部是上櫃。
+    #   ⭐ 而 `site_inventory` 2026-09-14 掃到 TPEx-OpenAPI 有這兩條：
+    #        /tpex_exright_daily     上櫃股票除權除息**計算結果表**  ← 上櫃版的 TWT49U
+    #        /tpex_ceil_non_trading  上櫃**漲跌停未成交**資訊
+    #   ⚠ 而「有這個名字」≠「有我要的欄位」≠「有歷史」（第二點⑤：名字不是證據）
+    #   ⇒ 這一節要回答三件，⛔ 缺一件都不可以下結論：
+    #     ① 欄位裡有沒有**漲停價格／跌停價格**
+    #     ② 有沒有**日期參數**（沒有 ⇒ 只有當下那一份，回補不了）
+    #     ③ 日期欄的**相異值分佈**（⭐ 只有一種 ⇒ 它當場講出自己只有一期）
+    say("\n[12] ⭐⭐ 上櫃除權息計算結果／漲跌停（F2 剩下那 6 筆未證實要用）")
+    OPEN12 = "https://www.tpex.org.tw/openapi/v1/"
+    for name, why in (
+            ("tpex_exright_daily", "⭐ 上櫃除權除息計算結果表（上櫃版 TWT49U）"),
+            ("tpex_exright_prepost", "上櫃除權除息預告表"),
+            ("tpex_ceil_non_trading", "上櫃漲跌停未成交資訊"),
+            ("tpex_ipo_no_limit", "上櫃首五日無漲跌幅資訊")):
+        say(f"\n  ── {name}｜{why}")
+        r12, e12 = B.get(OPEN12 + name, retries=2, timeout=60)
+        if e12:
+            say(f"     ✗ 抓不到：{e12}")
+            say("     ⛔ 抓不到**不等於不存在**——照實記，下一輪再試。")
+            continue
+        try:
+            d12 = json.loads(r12.decode("utf-8-sig", "replace"))
+        except ValueError as ex:
+            say(f"     ✗ 不是 JSON：{ex}｜開頭 "
+                f"{r12[:120].decode('utf-8', 'replace')}")
+            continue
+        if not isinstance(d12, list) or not d12:
+            say(f"     ⚠ 不是非空陣列（type={type(d12).__name__}）"
+                f"｜頂層 {list(d12)[:10] if isinstance(d12, dict) else d12}")
+            continue
+        keys = list(d12[0]) if isinstance(d12[0], dict) else []
+        say(f"     ✓ {len(d12):,} 列｜欄位（{len(keys)}）：{keys}")
+        want12 = [k for k in keys
+                  if any(w in str(k) for w in ("漲停", "跌停", "Ceiling", "Floor",
+                                               "Limit", "參考", "Reference"))]
+        say(f"     ⭐ ①有沒有漲跌停欄：{want12 if want12 else '⛔ 一個都沒有'}")
+        say(f"     首列：{d12[0]}")
+        # ③ 日期欄的相異值分佈（⭐ 只有一種 ⇒ 它自己講出只有一期）
+        for k in keys:
+            if not any(w in str(k) for w in ("Date", "日期", "date")):
+                continue
+            vals = collections.Counter(str(r.get(k)) for r in d12
+                                       if isinstance(r, dict))
+            if len(vals) == 1:
+                v, c = next(iter(vals.items()))
+                say(f"     ⛔ ③`{k}` 相異值只有 **1 種**：{v} × {c}"
+                    "　⇒ **它只有這一期，沒有歷史**")
+            else:
+                ks = sorted(vals)
+                say(f"     ③`{k}` 相異值 {len(vals)} 種｜最小 {ks[0]}｜最大 {ks[-1]}")
+        # ② 有沒有日期參數：送一個看看內容變不變（⛔ 參數收下不等於生效）
+        r12b, e12b = B.get(OPEN12 + name + "?date=20200101", retries=1, timeout=60)
+        if e12b:
+            say(f"     ②帶 `date=` 參數：✗ {e12b}")
+        else:
+            same = r12b == r12
+            say(f"     ②帶 `date=20200101` 回的內容跟不帶時"
+                f"{'**完全相同** ⇒ ⛔ 參數被無視' if same else '**不同** ⇒ ⭐ 參數有生效'}")
+
+    # ⭐ 而頁面那一層可能才是真的（`otcinst` 那三條就住在 www/zh-tw 那一層）
+    #   ⛔ 不從頁名回推 API，把頁面抓下來看它自己呼叫什麼（同第 5、8 節）
+    say("\n  ── 頁面層：看它們自己呼叫哪個網址")
+    for why, url in (
+            ("⭐ 上櫃除權除息**計算結果表**",
+             "https://www.tpex.org.tw/zh-tw/announce/market/ex/cal.html"),
+            ("⭐ 上櫃減資**恢復交易參考價**（上櫃版 TWTAUU）",
+             "https://www.tpex.org.tw/zh-tw/announce/market/reduction/reference.html"),
+            ("上櫃首五日無漲跌幅資訊",
+             "https://www.tpex.org.tw/zh-tw/mainboard/trading/info/no-limit.html")):
+        say(f"\n     {why}\n     {url}")
+        r13, e13 = B.get(url, retries=2, timeout=60)
+        if e13:
+            say(f"     ✗ 抓不到：{e13}")
+            continue
+        html = r13.decode("utf-8", "replace")
+        hits = set(re.findall(r"[\"'\(]([a-zA-Z0-9_/.-]*(?:www|web)/zh-tw/[a-zA-Z0-9_/.-]+)",
+                              html))
+        hits |= set(re.findall(r"url\s*[:=]\s*[\"'`]([^\"'`]{4,140})", html))
+        say(f"     ✓ {len(r13):,} bytes｜它自己呼叫的候選 {len(hits)} 條：")
+        for h in sorted(hits)[:12]:
+            say(f"        {h}")
+        if not hits:
+            say("        ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，"
+                "**不可以**寫成「沒有 API」）")
+
     return _write(0)
 
 
