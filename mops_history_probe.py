@@ -51,6 +51,9 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+# ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
+#   import 就生效：它把 urllib 的預設 SSLContext 換成「系統預設＋補鏈」。
+import ca_chain  # noqa: F401
 
 import backfill as B
 
