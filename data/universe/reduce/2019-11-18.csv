@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
-2019-11-18,3321,11.70,14.76,彌補虧損,14.75,
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2019-11-18,3321,11.70,14.76,彌補虧損,14.75,,16.20,13.30
