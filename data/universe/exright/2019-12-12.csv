@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2019-12-12,8070,177.50,173.40,4.100000,息,173.50
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
+2019-12-12,8070,177.50,173.40,4.100000,息,173.50,190.50,156.50
