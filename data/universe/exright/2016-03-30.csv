@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2016-03-30,2438,15.50,14.76,0.735172,權,15.50
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
+2016-03-30,2438,15.50,14.76,0.735172,權,15.50,17.05,13.30
