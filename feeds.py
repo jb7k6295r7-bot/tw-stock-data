@@ -18,7 +18,7 @@
 | feed | 端點 | 結果 |
 |---|---|---|
 | `per`     | TWSE `BWIBBU_d` | stat=OK、**1,580 列**、8 欄（本益比／殖利率／股價淨值比） |
-| `exright` | TWSE `TWT49U`   | stat=OK、**4 列**、15 欄（除權息前收盤價／參考價／權值+息值） |
+| `exright` | TWSE `TWT49U`   | stat=OK、**4 列**、15 欄（除權息前收盤價／參考價／權值+息值／⭐ 漲停價格／跌停價格） |
 
 `exright` 那天的 4 列含 3661 世芯-KY 除息 32.551656、參考價 4,167.44，
 與 `claude/watchlist_state.md` 記的「09/03 除息 32.55、參考價 4,167.45」對得起來。
@@ -825,6 +825,13 @@ def parse_exright(d, day, known=None):
     i_val = _exact(f, "權值+息值")
     i_kind = _exact(f, "權/息")
     i_open = _exact(f, "開盤競價基準")
+    # ⭐⭐ 2026-09-13：官方這張表**一直有給** `漲停價格／跌停價格`（15 欄裡的兩欄），
+    #   ⚠ 而我方只取 7 欄 ⇒ 丟掉了它們。⛔ 而我為此花了一整輪**推論**交易所的漲跌停
+    #   （`factor_limit_check.py`：拿每一檔自己的歷史量「有沒有 ±10% 硬性上限」）。
+    # ⭐ 而官方連「**無**漲跌幅限制」都標出來了：00714 群益道瓊美國地產 2020-01-16
+    #   漲停 `9,999.95`、跌停 `0.01` ⇒ 那就是旗標（見 `price_limit.is_unlimited`）。
+    i_up = _exact(f, "漲停價格")
+    i_down = _exact(f, "跌停價格")
     if i_code is None or i_pre is None or i_ref is None:
         return [], f"欄位對不上：{f}"
     out, nodate = [], 0
@@ -847,7 +854,7 @@ def parse_exright(d, day, known=None):
             continue          # ★ 沒有自述日期就不收——寧可少一列，不要標錯日子
         out.append([dt, code, pre, ref, g(i_val),
                     (str(r[i_kind]).strip() if i_kind is not None and i_kind < len(r) else ""),
-                    g(i_open)])
+                    g(i_open), g(i_up), g(i_down)])
     note = f"{len(out)} 列"
     if nodate:
         note += f"（{nodate} 列無資料日期，已丟棄）"
@@ -1471,8 +1478,10 @@ FEEDS = {
     },
     "exright": {
         "dir": "exright",
+        # ⚠ 2026-09-13 從七欄變**九欄**（補了官方的 `漲停價格／跌停價格`）
+        #   ⛔ 舊日檔沒有這兩欄 ⇒ 要用 `--need-col limit_up` 重抓。
         "header": ["date", "stock_id", "pre_close", "ref_price", "value",
-                   "kind", "open_base"],
+                   "kind", "open_base", "limit_up", "limit_down"],
         "parse": parse_exright,
         "known": False,   # 除權息表會有已下市或非 universe 的標的，先全收
         # ★★ 2026-09-04 事故：原本用 `date=` 參數——**這支端點根本不吃 `date`**，
