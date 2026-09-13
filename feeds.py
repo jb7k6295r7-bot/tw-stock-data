@@ -1727,7 +1727,7 @@ def fetch_one(name, day, known):
         # 只留路徑與參數，⛔ 不印整串（`_last_run.md` 是給人看的）
         u_ = url.split("//", 1)[-1][:140]
         if err:
-            last = f"失敗({err[:50]})｜URL={u_}"
+            last = f"失敗({_why(err)})｜URL={u_}"
             continue
         try:
             d = json.loads(raw.decode("utf-8"))
@@ -1821,6 +1821,26 @@ def day_is_open(day, today=None):
       在盤中問是空的、收盤後才有 ⇒ 記上去就等於今天永遠抓不到。
     """
     return day >= (today or runlog.now_tpe().strftime("%Y-%m-%d"))
+
+
+def _why(err, cap=160):
+    """把錯誤訊息縮短成一行，⭐ **保留頭也保留尾**。
+
+    ⛔⛔ 2026-09-13 付過代價：原本是 `err[:50]`，而那一天 TPEx 回的是
+
+        URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_
+
+    ——⚠ **剛好切在有用的字開始的地方**。SSL／憑證／逾時這一族，
+    **可行動的部分永遠在尾巴**（`unable to get local issuer certificate`、
+    `certificate has expired`、`hostname mismatch` 各自的下一步完全不同），
+    ⛔ 而前 50 個字元每一次都長得一樣。
+    ⇒ 太長就中間省略，⛔ 不要砍尾巴。
+    """
+    t = " ".join(str(err).split())
+    if len(t) <= cap:
+        return t
+    keep = (cap - 3) // 2
+    return t[:keep] + "..." + t[-keep:]
 
 
 def range_note(start, end, n_days, limit=0):
@@ -1982,7 +2002,7 @@ def cmd_feed_range(args, name):
         for url in spec["urls_range"](aa, bb):
             raw, err = B.get(url)
             if err:
-                note = f"失敗({err[:60]})"
+                note = f"失敗({_why(err)})"
                 continue
             try:
                 doc = json.loads(raw.decode("utf-8"))
@@ -2257,7 +2277,7 @@ def cmd_feed(args):
             _raw, _err = B.get(cands[0], retries=1, timeout=30)
             if _err and _err.startswith("LIMITED"):
                 print(f"[{name}] **被交易所限流擋下**，不是端點或參數的問題。\n"
-                      f"        {_err[:160]}\n"
+                      f"        {_why(_err)}\n"
                       f"        等一段時間再跑，或錯開同日其他回補工作。"
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
@@ -2474,7 +2494,7 @@ def cmd_probe(args):
                 raw, err = B.get(url, retries=1, timeout=30)
                 short = url.replace("https://www.", "")
                 if err:
-                    print(f"   ✗ {short}\n       {err[:100]}")
+                    print(f"   ✗ {short}\n       {_why(err)}")
                     continue
                 try:
                     d = json.loads(raw.decode("utf-8"))

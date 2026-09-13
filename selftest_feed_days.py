@@ -173,6 +173,41 @@ def main():
        f"⛔ 掃到 {len(_calls)} 個呼叫，引數個數 "
        f"{[len(c.args) for c in _calls]}")
 
+    print("\n── ⑧ `_why`：錯誤訊息**保留尾巴**（⛔ 可行動的部分在後面）──")
+    _ssl = ("URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] "
+            "certificate verify failed: unable to get local issuer "
+            "certificate (_ssl.c:1000)>")
+    _o = F._why(_ssl)
+    # ⭐ 這一條沒傳 `cap=`，走預設值那條路（第七點第三個陷阱）
+    ck("⛔ 原本的 `err[:50]` 剛好切掉最重要的那一段 ⇒ 現在留得住",
+       "unable to get local issuer certificate" in _o, _o)
+    ck("★ 反向驗：舊做法（前 50 字）**確實**看不出原因"
+       "（⛔ 不然這條斷言是假的）",
+       "unable to get local issuer" not in _ssl[:50], _ssl[:50])
+    _long = "x" * 400 + "TAIL_MATTERS"
+    _c = F._why(_long, cap=60)
+    ck("★ 太長時中間省略，⛔ 不砍尾巴",
+       len(_c) <= 60 and _c.endswith("TAIL_MATTERS") and "..." in _c, _c)
+    ck("★ 短訊息原樣不動（⛔ 不要每一則都加省略號）",
+       F._why("短的") == "短的")
+    ck("★ 換行被壓成一行（`_last_run.md` 是逐列的）",
+       "\n" not in F._why("a\nb\nc"), repr(F._why("a\nb\nc")))
+    # ⛔⛔ 上面五條**測的是判準，不是呼叫點**。突變證明過：把呼叫點改回
+    #   `err[:50]` ⇒ 上面五條**全綠**。⚠ 而那正是 Actions 上唯一會走的那條路。
+    #   （「測了判準沒測呼叫點」今天第四次。）⇒ 這一條比 AST：
+    with open(os.path.join(HERE, "feeds.py"), encoding="utf-8") as _f:
+        _fs = _f.read()
+    import ast as _a2
+    _bad = [n for n in _a2.walk(_a2.parse(_fs))
+            if isinstance(n, _a2.Subscript)
+            and getattr(n.value, "id", "") == "err"]
+    ck("★ 原始碼裡**沒有任何** `err[...]` 的切片（⛔ 一律走 `_why()`）",
+       not _bad, f"⛔ 還有 {len(_bad)} 處在切 err")
+    _calls = [n for n in _a2.walk(_a2.parse(_fs))
+              if isinstance(n, _a2.Call) and getattr(n.func, "id", "") == "_why"]
+    ck("★ 而 `_why()` 真的有被呼叫", len(_calls) >= 1,
+       f"⛔ 呼叫 {len(_calls)} 次")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
