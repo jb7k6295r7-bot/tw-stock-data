@@ -85,6 +85,14 @@ TARGETS = [
 FORCE_DATE = {"TWT48U（除權除息預告表，✅ 已驗證路徑）"}
 RANGES = [("20150101", "20151231"), ("20200101", "20201231"),
           ("20260101", "20260913")]
+# ⭐⭐ 分割重取（`data-source-recon` §二④）：這一族的回應**沒有 `total`**
+#   （頂層鍵只有 data/endDate/extraNotes/fields/formula/notes/stat/strDate/title）
+#   ⇒ 「它就是這麼多列」與「它截斷在某個上限」**回應裡沒有任何欄位分得出來**。
+#   ⇒ 唯一的驗法：把同一段切小、各取一次再加總，跟一次大區間比。
+#   ⚠ 差 0 才可以說「沒有截斷」；⛔ 「看起來不是整數」不算證據。
+SPLIT_YEAR = "2015"
+SPLIT_PARTS = [("20150101", "20150331"), ("20150401", "20150630"),
+               ("20150701", "20150930"), ("20151001", "20151231")]
 WANT = ("減資換股率", "換股率", "漲停價格", "跌停價格", "權值", "息值",
         "股利", "認購", "增資")
 
@@ -169,6 +177,33 @@ def main():
                 say(f"\n  ✅ 不同區間回不同內容（列數 {sorted(ns)}）⇒ 參數有生效")
         allhit = sorted({h for g in ok for h in g.get("hit", [])})
         say(f"\n  ⭐⭐ 這張表命中的欄名：{allhit if allhit else '⛔ 一個都沒有'}")
+    # ── ⭐⭐ 分割重取：一次大區間 vs 切成四段各取一次 ──────────
+    say("\n" + "=" * 70)
+    say("【分割重取】⛔ 沒有 `total` 就分不出「就是這麼多」與「截斷在上限」")
+    say(f"  ⇒ {SPLIT_YEAR} 一次整年 vs 切成四季各一次，比總列數（⚠ 差 0 才算沒截斷）")
+    base = "https://www.twse.com.tw/rwd/zh/exRight/TWT49U"
+    whole = one(base, f"{SPLIT_YEAR}0101", f"{SPLIT_YEAR}1231")
+    parts, psum, pok = [], 0, True
+    for a, b in SPLIT_PARTS:
+        g = one(base, a, b)
+        if not isinstance(g, dict):
+            pok = False
+            continue
+        parts.append(g["n"])
+        psum += g["n"]
+    if isinstance(whole, dict) and pok:
+        wn = whole["n"]
+        say(f"\n  ⭐ 整年一次 **{wn:,}** 列　vs　四季加總 **{psum:,}** 列"
+            f"（各季 {parts}）")
+        if wn == psum:
+            say("  ✅ 差 0 ⇒ 這個區間長度**沒有**被截斷"
+                f"（⚠ 而這句話的範圍就是「{SPLIT_YEAR} 這一年、這一支端點」）")
+        else:
+            say(f"  ⛔⛔ 差 {psum - wn:,} 列 ⇒ **一次大區間被截斷了**"
+                "　⇒ 逐月／逐季抓才拿得到全部")
+    else:
+        say("  ⚠ 這一節沒跑完（有一發沒回來）⇒ ⛔ **不可以**當成「沒有截斷」")
+
     say("\n" + "=" * 70)
     say("⇒ 判讀：TWTAVU 若有 `減資換股率` ⇒ 上市那 303 筆就有了與價格**無關**的第二來源")
     say("   （等同上櫃 `otc_reduce_history.csv` 的 `shares_per_1000`）")
