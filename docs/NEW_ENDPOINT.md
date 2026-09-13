@@ -32,6 +32,30 @@
 
 ⚠ 換站之後**要從 ① 重來**——⛔ 不要把舊站的參數習慣與越界行為帶過去。
 
+### ⭐⭐ 2026-09-13 實測：這四份目錄長這樣（⛔ 這就是「掃描範圍」的出處）
+
+`site_inventory.py` 在 Actions 上跑出來的數字——⚠ 引用「官方沒有」時要一起貼：
+
+```
+TWSE mega menu   195 條   res/data/zh/menu-mega.html
+TPEx menu.json   485 條   data/menu/zh-tw/menu.json
+TWSE OpenAPI     143 條   openapi.twse.com.tw/v1/swagger.json      ← ⛔ 選單掃不到這族
+TPEx OpenAPI     225 條   tpex.org.tw/openapi/swagger.json         ← ⛔ 同上
+TWSE sitemap   3,109 條   twse.com.tw/sitemap.xml                  ← ⭐ 最寬的一份
+```
+
+#### ⛔⛔ 而 sitemap 那 3,109 條，用中文詞表去搜是 **0 命中**
+
+⚠ 我差一點把那個 0 讀成「TWSE 站上沒有」。
+⭐ 實際上 `<loc>` **只有網址、沒有任何中文** ⇒ 中文詞表的命中數**結構上必定是 0**。
+
+> **一個在該群體上結構性不可能成立的判準，它的 0 不是結論。**
+> ⇒ 第七點那條（報「0 筆」要附該群的正例數）在這裡的正例數是
+>   「這份清單有幾條含中文」＝ **0/3,109**——那個數字自己就說明了一切。
+
+⇒ 落地：`site_inventory.PATH_WORDS` 每一列多帶一組**英文路徑詞**，
+⭐ 而且要比到**連結**——⛔ 選單的常態是中文標題＋英文網址，只比標題就中不到。
+
 ### ⇒ 這條規則今天的實際帳
 
     照做撿到的：官方 notes 一次給七件，其中兩件（旗標是「次一營業日」、
