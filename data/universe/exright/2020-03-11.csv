@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2020-03-11,01010T,10.30,10.09,0.207351,息,10.09
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
+2020-03-11,01010T,10.30,10.09,0.207351,息,10.09,11.09,9.09
