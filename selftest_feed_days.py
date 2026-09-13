@@ -271,6 +271,45 @@ def main():
     ck("⭐ 而兩者都要把**每一次**讀到多少列出來（⛔ 只留最後一次就分不出來）",
        _e1 is not None and _e1.count("24,064") >= 2
        and _e2 is not None and "133,700" in _e2 and "24,064" in _e2)
+
+    # ⛔⛔ 而上面那些假回應**每一個都帶了 expected**——⚠ 真回應不一定有。
+    #   chunked 傳輸斷在「下一塊的長度」那一行時，Python 丟的是
+    #   `IncompleteRead(b'')`，`expected` 是 **None** ⇒ `f"{None:,}"` ⇒ TypeError
+    #   ⇒ ⛔ 這個**錯誤處理自己炸掉** ⇒ 例外沒被轉成錯誤字串 ⇒ 不重試、整支當場結束。
+    #   ⚠ 代價（2026-09-14 feeds run 143）：otcmargin 回補十二年**每一年**都只跑了
+    #     8~9 天就掛，2,850 天只補到 86 天，⛔ 而每一年都照樣 push、看起來有在跑。
+    #   ⭐ 教訓就是第七點那句：**假回應比真回應簡單，等於那段沒測。**
+    class _BoomNone:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            raise _hc.IncompleteRead(b"x" * 56326)     # ⚠ 不帶 expected
+
+    ck("⭐ 前提：不帶 expected 時 Python 真的給 None（⛔ 否則下面那條測不到東西）",
+       _hc.IncompleteRead(b"x" * 3).expected is None)
+    try:
+        _ur.urlopen = lambda *a, **k: _BoomNone()
+        _, _e3 = _B.get("https://example.invalid/z", retries=1, timeout=1)
+        _crash = None
+    except TypeError as _ex:
+        _e3, _crash = None, f"⛔ 錯誤處理自己炸了：{_ex}"
+    finally:
+        _ur.urlopen = _orig
+    ck("⛔⛔ `expected is None` 時**不可以崩潰**——要回一個錯誤字串"
+       "（⚠ 崩潰 ⇒ 不重試 ⇒ 整趟回補當場結束）",
+       _crash is None and _e3 is not None, _crash or "回了 None")
+    ck("⭐ 而訊息要講出「對方沒說還差多少」，⛔ 不是印一個假的數字",
+       _e3 is not None and "傳輸被切斷" in _e3 and "沒說還差多少" in _e3,
+       str(_e3))
+    # ⚠ 這一條要比「**已讀** 56,326」整串——⛔ 只比 "56,326" 會被
+    #   後面「各次讀到 ['56,326']」那一段撐著，於是拿掉「已讀」那一格照樣全綠
+    #   （突變 N3 實測）。
+    ck("⚠ 已讀的位元數照樣要在（⛔ 那是唯一還剩下的量）",
+       _e3 is not None and "已讀 56,326" in _e3, str(_e3))
     _calls = [n for n in _a2.walk(_a2.parse(_fs))
               if isinstance(n, _a2.Call) and getattr(n.func, "id", "") == "_why"]
     ck("★ 而 `_why()` 真的有被呼叫", len(_calls) >= 1,

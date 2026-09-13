@@ -291,8 +291,19 @@ def get(url, retries=3, timeout=45):
             #     ——看起來就像那個端點不能用，而它其實重試就會好。
             #   ⇒ 訊息要**自己講出**它是傳輸被切斷，並且已讀／還差多少。
             same = len(set(partials)) == 1 and len(partials) > 1
+            # ⛔⛔ 2026-09-14 付過代價：`e.expected` **可以是 None**。
+            #   chunked 傳輸斷在「下一塊的長度」那一行時，Python 丟的是
+            #   `IncompleteRead(b'')`——**沒有 expected**。
+            #   ⇒ `f"{None:,}"` ⇒ TypeError ⇒ ⛔ **這個「錯誤處理」自己炸掉**
+            #     ⇒ 例外沒有被轉成錯誤字串 ⇒ 不重試、整支 feeds.py 當場結束。
+            #   ⚠ 實測後果：otcmargin 回補 run 143 十二年每一年都只跑了 8~9 天
+            #     就掛掉（2,850 天只補到 86 天），⛔ 而每一年都照樣 push 了。
+            #   ⭐ 教訓是第七點那句：**假回應比真回應簡單，等於那段沒測**——
+            #     我只餵過「有 expected」的那一種形狀。
+            _exp = (f"{e.expected:,}" if isinstance(e.expected, int)
+                    else "⚠ 對方沒說還差多少（chunked 斷在長度那一行）")
             last = (f"IncompleteRead：連線傳到一半斷掉"
-                    f"（已讀 {len(e.partial):,} bytes、還差 {e.expected:,}）"
+                    f"（已讀 {len(e.partial):,} bytes、還差 {_exp}）"
                     f"｜各次讀到 {['{:,}'.format(x) for x in partials]}"
                     + ("　⛔ **每次都停在同一個位置 ⇒ 這是決定性的，重試不會好**"
                        if same else
