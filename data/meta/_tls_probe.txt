@@ -1,0 +1,37 @@
+tls_probe.py　TPEx／TWSE 的 TLS 憑證鏈探針。⛔ 只讀不寫資料，也**不改任何驗證設定**。
+
+⛔ 只讀不寫資料，也**不改任何驗證設定**。三發的差別只在「拿哪一份 CA」。
+
+certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/certifi/cacert.pem）
+
+====================================================================
+■ TPEx（今天掛的那一站）
+  https://www.tpex.org.tw/www/zh-tw/margin/sbl?date=2026/09/11&id=&response=json
+    系統 CA                  ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+    certifi 的 CA           ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+    對方送的葉憑證       1,923 bytes
+    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證
+
+====================================================================
+■ TWSE（對照組，剛剛才跑完 2,850 天）
+  https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260911&type=ALL&response=json
+    系統 CA                  ✅ HTTP 200｜4,798,344 bytes
+    certifi 的 CA           ✅ HTTP 200｜4,798,344 bytes
+    對方送的葉憑證       1,957 bytes
+    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證
+
+====================================================================
+■ TPEx openapi（同一站的另一條）
+  https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes
+    系統 CA                  ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+    certifi 的 CA           ✗ URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>
+    對方送的葉憑證       1,923 bytes
+    ⚠ 這個 Python 版本問不到完整鏈（`get_verified_chain` 不在）⇒ ⛔ 無法從這裡判斷對方有沒有漏送中間憑證
+
+====================================================================
+■ 判讀（⛔ 照這三格看，不要自己推）
+  TPEx（今天掛的那一站）：⛔ **兩份 CA 都不通** ⇒ 多半是**對方漏送中間憑證**（看上面「對方一共送了幾張」）⇒ 修法：補中間憑證，⛔ **仍然不可以關掉驗證**
+  TWSE（對照組，剛剛才跑完 2,850 天）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
+  TPEx openapi（同一站的另一條）：⛔ **兩份 CA 都不通** ⇒ 多半是**對方漏送中間憑證**（看上面「對方一共送了幾張」）⇒ 修法：補中間憑證，⛔ **仍然不可以關掉驗證**
+
+⛔⛔ 不論結果是哪一格，**都不可以用 `verify=False`／`CERT_NONE` 當修法**。
