@@ -563,17 +563,17 @@
 
 ## feeds:otcsbl　✗ 有問題
 
-最後執行：2026-09-13T11:18:25+08:00（台北）
+最後執行：2026-09-13T11:33:09+08:00（台北）
 
-- **區間**：2022-01-01 ~ 2022-12-31｜待處理 246 天
-- **結果**：有資料 244 天、無資料/休市 0 天、失敗 2 天
+- **區間**：2021-01-01 ~ 2021-12-31｜待處理 244 天
+- **結果**：有資料 243 天、無資料/休市 0 天、失敗 1 天
 - **⭐ 記進台帳的「問到了、那天沒資料」**：0 天（這一趟沒有任何一天是『問到了但沒資料』）
-- **⛔ 最後一則「沒問到」的原因**：失敗(HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troublesh...tle":"Error 520: Web server is returning an unknown error","status":520,"detai)｜URL=www.tpex.org.tw/www/zh-tw/margin/sbl?date=2022/07/29&id=&response=json
+- **⛔ 最後一則「沒問到」的原因**：失敗(HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troublesh...tle":"Error 520: Web server is returning an unknown error","status":520,"detai)｜URL=www.tpex.org.tw/www/zh-tw/margin/sbl?date=2021/09/30&id=&response=json
 
 檢查：
 - ok　台帳寫得進去　（沒有要寫的或已寫入）
 - ok　跑完整個區間，沒有提前收手　（跑完）
-- **✗**　沒有「連問都問不到」的日子　（失敗 2 天）
+- **✗**　沒有「連問都問不到」的日子　（失敗 1 天）
 - ok　沒有**未歸因**的驗算不符列　（0 天）
 
 ## feeds:sbl　✓ 正常
