@@ -419,6 +419,103 @@ def check_delist_cross():
     return bad
 
 
+def check_site_inventory_openapi():
+    """⭐ `site_inventory` 的兩份 OpenAPI 目錄，攤平**必須真的攤出東西**。
+
+    ⛔⛔ 這一條存在的理由：OpenAPI 文件的名字在 `paths[p][method].summary`，
+    ⚠ 而 `flatten()` 找的是 `name/title/text/label/cname` ⇒ 它一條都撈不到。
+    ⇒ 那兩份目錄會變成「✅ 抓得到、0 條」——**而那看起來跟「這個站沒有」一樣**。
+    ⭐ 所以要驗的不是「不會炸」，是**攤得出中文說明**（四點二：斷言終點）。
+    """
+    import json as _j
+    import site_inventory as SI
+    bad = 0
+    doc = {"paths": {
+        "/exchangeReport/TWT48U": {"get": {"summary": "除權除息預告表"}},
+        "/opendata/t187ap05_L": {"get": {"description": "上市公司減資資訊"}},
+        "/nokey": {"get": {}},
+    }}
+    got = SI.parse_menu("TWSE-OpenAPI", _j.dumps(doc).encode("utf-8"))
+    ok = len(got) == 3
+    print(f"{'✓' if ok else '✗'} site_inventory OpenAPI：三條路徑都攤出來"
+          f"（得到 {len(got)}）")
+    bad += 0 if ok else 1
+    names = [n for n, _h in got]
+    ok = "除權除息預告表" in names and "上市公司減資資訊" in names
+    print(f"{'✓' if ok else '✗'} site_inventory OpenAPI：⭐ 名字取的是 "
+          f"`summary`／`description`（⛔ 不是路徑）｜{names}")
+    bad += 0 if ok else 1
+    # ⛔ 反向：沒有 summary 的那一條要退回用路徑，不可以變成空字串
+    ok = any(n == "/nokey" for n in names)
+    print(f"{'✓' if ok else '✗'} site_inventory OpenAPI：⛔ 沒有說明的那條退回用路徑"
+          "（⚠ 空字串會讓它在關鍵詞比對裡永遠不命中）")
+    bad += 0 if ok else 1
+    # ⭐ 而選單那兩種形狀**不可以**被 OpenAPI 那一支吃掉
+    menu = SI.parse_menu("TPEx", _j.dumps(
+        {"menu": [{"name": "上櫃股票減資", "url": "/x.html"}]}).encode("utf-8"))
+    ok = any(n.endswith("上櫃股票減資") for n, _h in menu)
+    print(f"{'✓' if ok else '✗'} site_inventory：⛔ 一般選單 JSON 仍然走 `flatten`"
+          f"（⚠ 沒有 `paths` 鍵就不是 OpenAPI）｜{menu}")
+    bad += 0 if ok else 1
+
+    # ── sitemap 與路徑詞 ───────────────────────────────────
+    sm = SI.parse_menu("TWSE-sitemap", b"<urlset><url><loc> https://w/zh/announcement/"
+                                       b"reduction/twtavu.html </loc></url></urlset>")
+    ok = len(sm) == 1 and sm[0][0].endswith("twtavu.html")
+    print(f"{'✓' if ok else '✗'} site_inventory sitemap：`<loc>` 撈得出來且去掉空白"
+          f"｜{sm}")
+    bad += 0 if ok else 1
+
+    # ⭐⭐ 這一條是主角：PATH_WORDS 的鍵**對不上** WANTED 的標籤時，
+    #   ⛔ 那一列就靜靜地沒有路徑詞 ⇒ sitemap 那 3,109 條對它永遠 0 命中，
+    #   ⚠ 而輸出上長得跟「站上真的沒有」一模一樣。
+    labels = {w for w, _ws in SI.WANTED}
+    orphan = sorted(k for k in SI.PATH_WORDS if k not in labels)
+    ok = not orphan
+    print(f"{'✓' if ok else '✗'} site_inventory：⭐ PATH_WORDS 的每一個鍵都對得上 "
+          f"WANTED 的標籤（⛔ 對不上 = 那一列沒有路徑詞）｜孤兒鍵 {orphan}")
+    bad += 0 if ok else 1
+
+    # ⛔ 反向：中文詞表對「只有網址」的清單必定 0 ⇒ 路徑詞要真的救得回來
+    ok = any("reduction" in q for q in
+             SI.PATH_WORDS.get("⭐ 減資換股率／退還股款（歷史）", ()))
+    print(f"{'✓' if ok else '✗'} site_inventory：⭐ 減資那一列的路徑詞含 `reduction`"
+          "（⛔ 中文詞表對 sitemap 結構上一條都不會中）")
+    bad += 0 if ok else 1
+
+    # ⭐ 比對本體：兩層都要走得到
+    items = [("上櫃股票減資", "/a.html"),
+             ("https://w/zh/announcement/REDUCTION/twtavu.html",
+              "https://w/zh/announcement/REDUCTION/twtavu.html"),
+             ("完全無關的一頁", "/z.html")]
+    got = SI.match(items, ("減資",), ("reduction",))
+    ok = len(got) == 2
+    print(f"{'✓' if ok else '✗'} site_inventory match：中文詞與路徑詞**各自**都要命中"
+          f"（得到 {len(got)}）｜{got}")
+    bad += 0 if ok else 1
+    got = SI.match(items, ("減資",), ())
+    ok = len(got) == 1
+    print(f"{'✓' if ok else '✗'} site_inventory match：⛔ 沒有路徑詞時那條網址就中不到"
+          f"（⇒ 這就是 sitemap 那 3,109 條的 0）｜{got}")
+    bad += 0 if ok else 1
+    ok = len(SI.match(items, (), ("REDuction",))) == 1
+    print(f"{'✓' if ok else '✗'} site_inventory match：⭐ 路徑詞不分大小寫")
+    bad += 0 if ok else 1
+    # ⭐⭐ 真正的選單就是這個形狀：**中文標題 ＋ 英文網址**
+    #   ⇒ 路徑詞只比標題的話，這一條中不到——⛔ 而那是 mega menu 的常態。
+    menu_row = [("股票減資恢復買賣參考價格", "/zh/announcement/reduction/twtauu.html")]
+    ok = len(SI.match(menu_row, ("完全不相干",), ("twtauu",))) == 1
+    print(f"{'✓' if ok else '✗'} site_inventory match：⭐ 路徑詞要比到**連結**"
+          "（⚠ 選單是中文標題＋英文網址，只比標題就中不到）")
+    bad += 0 if ok else 1
+
+    ok = SI.has_cjk("減資") and not SI.has_cjk("https://w/zh/reduction/twtavu.html")
+    print(f"{'✓' if ok else '✗'} site_inventory：`has_cjk` 認得出「這份清單沒有中文」"
+          "（⇒ 那個 0 是結構造成的，第七點）")
+    bad += 0 if ok else 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -436,6 +533,7 @@ def main():
             print(f"✓ {name} 走完全程"
                   + (f"，{len(want)} 節都出現" if want else ""))
     bad += check_delist_cross()
+    bad += check_site_inventory_openapi()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

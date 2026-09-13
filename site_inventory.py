@@ -39,6 +39,8 @@ import sys
 import traceback
 
 import backfill as B
+# ⭐ 同一件事只准有一份實作（四點五）：錯誤訊息**中間**省略那條規矩
+from feeds import _why
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_site_inventory.txt")
@@ -46,6 +48,20 @@ OUT = os.path.join(_ROOT, "meta", "_site_inventory.txt")
 SITES = [
     ("TWSE", "https://www.twse.com.tw/res/data/zh/menu-mega.html"),
     ("TPEx", "https://www.tpex.org.tw/data/menu/zh-tw/menu.json"),
+    # ⭐⭐ 2026-09-13 加這兩份，理由是**選單掃不到它們**：
+    #   openapi 那一族（`openapi.twse.com.tw` / `tpex.org.tw/openapi`）是
+    #   另一套目錄，⛔ 不在 mega menu／menu.json 裡。
+    #   ⚠ 而我方已經有四條端點走的就是 openapi（`delist_probe` 那一族）
+    #     ⇒ 「選單上沒有」曾經**同時**意味著「我方正在用它」。
+    #   ⇒ 少了這兩份，這一支的「⛔ 選單上沒有」就會漏掉一整族。
+    ("TWSE-OpenAPI", "https://openapi.twse.com.tw/v1/swagger.json"),
+    ("TPEx-OpenAPI", "https://www.tpex.org.tw/openapi/swagger.json"),
+    # ⭐⭐ 2026-09-13 加：sitemap 有 **3,109 條**，比 mega menu 的 195 條寬得多。
+    #   ⛔ 而它**只有網址、沒有中文** ⇒ 拿中文詞表去搜必定 0 命中
+    #     ——⚠ 而那個 0 跟「這個站沒有」長得一模一樣（第七點）。
+    #   ⇒ 所以 `WANTED` 每一列多帶一組**路徑詞**（英文），並在最後那張表
+    #     把「這份目錄有幾條含中文」講出來，讓那個 0 自己說明它是結構造成的。
+    ("TWSE-sitemap", "https://www.twse.com.tw/sitemap.xml"),
 ]
 
 # ⭐ 我方**還缺什麼**。一條一組關鍵詞（任一命中就算）。
@@ -91,6 +107,17 @@ WANTED = [
     ("⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）",
      ("券商", "分公司", "分點", "買賣證券", "經紀商", "各券商")),
     ("八大行庫／官股買賣", ("行庫", "官股", "公股")),
+    # ⭐⭐ 2026-09-13 加這三組——⛔ 而它們是從我**兩句沒有掃描範圍的否定句**來的：
+    #   ①「上市沒有官方換股比率欄位」⇒ 使用者指出 `TWTAVU` 就有（我 grep 0 次）
+    #   ②「上市沒有官方除權息明細」  ⇒ 實測 `exRight/TWT48U` 有 13 欄，
+    #      含無償配股率／現金增資配股率／現金增資認購價／現金股利（權值息值是分開的）
+    #   ⚠ 而那兩張都是**預告表**（三個區間回同一批列）⇒ 只能從今天起累積。
+    #   ⇒ ⭐ 所以要問的是**歷史**那一半：官方有沒有逐日／逐期的明細表。
+    ("⭐ 除權息明細（權值／息值分開、現增認購價與認購率）",
+     ("除權除息預告", "除權息預告", "除權除息計算", "配股率", "認購", "權值", "息值")),
+    ("⭐ 減資換股率／退還股款（歷史）",
+     ("減資預告", "減資換股", "退還股款", "恢復買賣參考價")),
+    ("⭐ 漲跌停價格（官方直接給的）", ("漲停", "跌停", "漲跌幅")),
     ("當日沖銷（歷史）", ("當日沖銷", "現股當沖", "當沖")),
 ]
 
@@ -117,6 +144,45 @@ def _write(rc):
     return rc
 
 
+# ⭐ 路徑詞（英文）：⛔ 只有中文詞表的話，sitemap 那 3,109 條**結構上**一條都不會中。
+#   ⚠ 鍵要跟 WANTED 的標籤一字不差，⛔ 對不上就等於那一列沒有路徑詞（會被下面驗出來）。
+PATH_WORDS = {
+    "⭐ 除權息明細（權值／息值分開、現增認購價與認購率）":
+        ("exright", "exRight", "TWT48U", "TWT49U", "dividend", "t187ap45"),
+    "⭐ 減資換股率／退還股款（歷史）":
+        ("reduction", "reducation", "TWTAVU", "TWTAUU", "capitalreduction"),
+    "⭐ 漲跌停價格（官方直接給的）": ("limit", "fluctuation"),
+    "月營收（歷史，逐月）": ("t187ap05", "revenue"),
+    "財報（歷史，逐季）": ("t187ap06", "t163sb", "financial"),
+    "⭐ 終止上市／上櫃（下市下櫃名單）": ("suspend", "delist", "terminat"),
+    "⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）": ("broker", "brk", "bsr"),
+}
+
+
+def match(items, words, path_words=()):
+    """→ 命中的 [(標題, 連結)]。
+
+    ⭐ 兩層：中文詞比**標題**，路徑詞比**標題＋連結**且不分大小寫。
+    ⛔ 少了第二層，sitemap 那一族（只有網址）**結構上**一條都不會中，
+    ⚠ 而那個 0 跟「這個站沒有」長得一模一樣（第七點）。
+    """
+    out = []
+    for n, h in items:
+        if any(w in n for w in words):
+            out.append((n, h))
+            continue
+        if path_words:
+            hay = (str(n) + " " + str(h)).lower()
+            if any(str(q).lower() in hay for q in path_words):
+                out.append((n, h))
+    return out
+
+
+def has_cjk(s):
+    """→ 這個字串裡有沒有中日韓字。⛔ 一份沒有中文的清單，中文詞表搜不到是**必然**。"""
+    return any("\u4e00" <= c <= "\u9fff" for c in str(s))
+
+
 def flatten(obj, out, trail=""):
     """把選單（不管是 JSON 樹還是 HTML）攤平成 (標題, 連結)。"""
     if isinstance(obj, dict):
@@ -141,17 +207,48 @@ def flatten(obj, out, trail=""):
             flatten(v, out, trail)
 
 
+def parse_openapi(d):
+    """OpenAPI/Swagger 文件 → [(中文說明, 路徑)]。
+
+    ⛔ 它的形狀跟選單**完全不同**：名字在 `paths[p][method].summary` 裡，
+    ⚠ 而 `flatten()` 抓的是 `name/title/text/label/cname` ⇒ 它一條都撈不到。
+    ⇒ 少了這一支，兩份 OpenAPI 目錄會「抓得到、攤平出 0 條」——
+      ⛔ 而那看起來跟「這個站沒有」**一模一樣**。
+    """
+    paths = d.get("paths")
+    if not isinstance(paths, dict):
+        return None
+    out = []
+    for p, v in paths.items():
+        desc = ""
+        if isinstance(v, dict):
+            for _m, op in v.items():
+                if isinstance(op, dict):
+                    desc = op.get("summary") or op.get("description") or ""
+                    if desc:
+                        break
+        out.append((str(desc) or p, p))
+    return out
+
+
 def parse_menu(label, raw):
-    """→ [(標題, 連結)]。JSON 與 HTML 兩種都吃。"""
+    """→ [(標題, 連結)]。選單 JSON／HTML／OpenAPI 三種都吃。"""
     txt = raw.decode("utf-8", "replace")
     try:
         d = json.loads(txt)
     except ValueError:
         d = None
     if d is not None:
+        api = parse_openapi(d) if isinstance(d, dict) else None
+        if api is not None:
+            return api
         out = []
         flatten(d, out)
         return out
+    # sitemap.xml：只有 <loc>網址</loc>，⛔ 沒有任何標題
+    locs = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", txt)
+    if locs:
+        return [(u, u) for u in locs]
     # HTML：抓 <a href=...>文字</a>
     out = []
     for m in re.finditer(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
@@ -172,17 +269,24 @@ def main():
     say("")
 
     menus = {}
+    scope = []          # ⭐ (目錄, 網址, 幾條, 失敗原因)：最後那張掃描範圍表
     for label, url in SITES:
         say(f"── {label}｜{url}")
         raw, err = B.get(url, retries=2, timeout=60)
         if err or not raw:
-            say(f"   ✗ 抓不到：{str(err)[:120]}")
+            # ⛔⛔ 這裡原本是 `str(err)[:120]`——**砍尾巴**（六點六）。
+            #   ⚠ SSL／憑證／逾時那一族，可行動的部分永遠在後面，
+            #     而前 120 個字元每一次都長得一樣。⇒ 改走 `_why`（中間省略）。
+            say(f"   ✗ 抓不到：{_why(err)}")
             say("   ⛔ 抓不到**不等於**這個站沒有——這一趟對它一無所知。")
+            scope.append((label, url, 0, _why(err)))
             say("")
             continue
         items = parse_menu(label, raw)
         menus[label] = items
         say(f"   ✓ {len(raw):,} bytes｜攤平出 **{len(items)} 條**選單項目")
+        scope.append((label, url, len(items),
+                      "" if items else "⛔ 攤平出 0 條（抓得到但解析不出清單）"))
         say("")
 
     if not menus:
@@ -194,10 +298,21 @@ def main():
     for want, words in WANTED:
         say(f"★ {want}")
         for label, items in menus.items():
-            hits = [(n, h) for n, h in items if any(w in n for w in words)]
+            pw = PATH_WORDS.get(want, ())
+            hits = match(items, words, pw)
             if not hits:
-                say(f"   {label}：⛔ 選單上**沒有**這個名字"
-                    "（⚠ 這不代表站上沒有，只代表選單沒列）")
+                # ⭐⭐ 第七點：報「0 筆」一定要附這一群的**正例數**。
+                #   ⛔ 這份目錄若一條中文都沒有，這個 0 是**結構**造成的，
+                #     ⚠ 而它跟「這個站沒有」在紙上一模一樣。
+                ncjk = sum(1 for n, _h in items if has_cjk(n))
+                if ncjk == 0 and not pw:
+                    say(f"   {label}：⛔⛔ 這份目錄 {len(items)} 條**一條中文都沒有**"
+                        "，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，"
+                        "**不是「站上沒有」**")
+                else:
+                    say(f"   {label}：⛔ 選單上**沒有**這個名字"
+                        f"（⚠ 這不代表站上沒有，只代表選單沒列"
+                        f"｜這份目錄 {ncjk}/{len(items)} 條含中文）")
                 continue
             say(f"   {label}：⭐ **{len(hits)} 條**")
             seen = set()
@@ -215,6 +330,20 @@ def main():
                     say(f"      …（另有 {len(hits) - CAP} 條，⛔ 被 CAP={CAP} 截斷）")
                     break
         say("")
+    # ── ⭐⭐ 掃描範圍表 ────────────────────────────────────
+    #   ⛔ 沒有這張表，上面每一句「選單上沒有」都不知道成立範圍（三點①）。
+    say("── ⭐ 掃描範圍表（⛔ 只要有一列失敗，這一趟就不可以寫出「官方沒有」）──")
+    bad = [x for x in scope if x[3]]
+    for label, url, n, err in scope:
+        ncjk = sum(1 for nm, _h in menus.get(label, []) if has_cjk(nm))
+        say(f"  {'✗' if err else '✅'} {label}｜{n} 條"
+            f"（含中文 {ncjk}）｜{url}" + (f"｜{err}" if err else ""))
+    say(f"  ⇒ 成功 {len(scope) - len(bad)} / {len(scope)} 份目錄"
+        f"｜合計 {sum(x[2] for x in scope):,} 條")
+    if bad:
+        say("  ⛔⛔ **有目錄沒掃到** ⇒ 這一趟的否定句只涵蓋成功的那幾份。")
+        say("      ⚠ 而在開發容器裡全失敗是我方閘道擋的（第六點），**不是事實**。")
+    say("")
     say("── ⇒ 這份輸出的用法 ──")
     say("  ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用")
     say("  ② 沒命中的：那才是**真的要請人去站上翻**的——"

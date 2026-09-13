@@ -94,6 +94,7 @@ jobs:
       - name: 驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）
         run: |
           python selftest_reduce.py
+          python selftest_official_formula.py
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py
           python selftest_schema_audit.py

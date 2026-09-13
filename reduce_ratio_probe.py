@@ -68,15 +68,21 @@ TARGETS = [
     #   `權值+息值`（**一個合併欄**）⇒ 拆不開。
     # ⛔ 而官方 TWT49U **完整**有幾欄，我方沒有紀錄——`_keys_probe` 那次被擋回 HTML。
     #   ⇒ 先把它的完整欄位印出來（第一點），⛔ 不要再憑「我們取的那幾個」推論它只有那些。
+    # ⛔⛔ 上一趟我把它猜成 `afterTrading/TWT49U` ⇒ **六發全部回一頁 HTML**。
+    #   ⚠ 而「回 404 頁面」跟「參數不對」處理方式**相反**（NEW_ENDPOINT 第 −1 步③），
+    #     ⛔ 我差一點把它讀成「這張表問不到」。
+    #   ⭐ 而正確路徑**我方自己就有**：`FEEDS["exright"]["urls_range"]` 寫著
+    #     `rwd/zh/exRight/TWT49U`。⇒ 猜路徑之前先 grep 我方在用哪一條。
     ("TWT49U（除權除息計算結果，⭐ 只為看完整欄位）",
-     "https://www.twse.com.tw/rwd/zh/afterTrading/TWT49U"),
-    # ⚠ 以下路徑是**待驗的假設**（上櫃那邊有 `tpex_exright_prepost`＝除權息預告表，
-    #   ⛔ 而上市對應的路徑我沒有出處）⇒ 打不通就是打不通，**不要寫成「官方沒有」**。
-    ("TWT48U（除權除息預告表？⚠ 路徑是假設）",
+     "https://www.twse.com.tw/rwd/zh/exRight/TWT49U"),
+    # ⭐ 這一條上一趟**打通了**（13 欄，含無償配股率／現金增資配股率／現金增資認購價／
+    #   現金股利）——⛔ 而三個區間回同樣的 68 列 ⇒ 它是**預告表**，沒有歷史。
+    ("TWT48U（除權除息預告表，✅ 已驗證路徑）",
      "https://www.twse.com.tw/rwd/zh/exRight/TWT48U"),
-    ("TWT48U（除權除息預告表？⚠ 另一個路徑假設）",
-     "https://www.twse.com.tw/rwd/zh/afterTrading/TWT48U"),
 ]
+# ⭐ 有些表**一定**要再用單一 `date` 打一次才知道有沒有歷史
+#   ——⛔ 區間有回列的時候，原本的自動退路不會觸發。
+FORCE_DATE = {"TWT48U（除權除息預告表，✅ 已驗證路徑）"}
 RANGES = [("20150101", "20151231"), ("20200101", "20201231"),
           ("20260101", "20260913")]
 WANT = ("減資換股率", "換股率", "漲停價格", "跌停價格", "權值", "息值",
@@ -140,6 +146,11 @@ def main():
     for name, base in TARGETS:
         say(f"\n{'=' * 70}\n【{name}】\n{base}")
         got = [one(base, a, b) for a, b in RANGES]
+        if name in FORCE_DATE:
+            say("\n  ⭐ 這張表**強制**再用單一 `date` 打一輪"
+                "（⛔ 區間有回列 ⇒ 自動退路不會觸發，而那正是它騙人的方式）")
+            got += [one(base, d, d, param="date")
+                    for d in ("20150716", "20200619", "20260902")]
         # ⭐ 區間參數全掛的話，再用單一 `date` 試一次（⛔ 不要一種打不通就判死）
         if not any(isinstance(g, dict) and g.get("n") for g in got):
             say("\n  ⚠ 區間參數沒拿到列 ⇒ 改用單一 `date` 再試（⛔ 不是端點沒有）")

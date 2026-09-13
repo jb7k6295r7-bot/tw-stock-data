@@ -57,6 +57,7 @@ import time
 
 import backfill as B
 import fetch as _F
+import official_formula
 import runlog
 
 _ROOT = B._ROOT
@@ -1758,12 +1759,51 @@ def fetch_one(name, day, known):
         if not same:
             last = f"日期不符({said})｜URL={u_}"
             continue
+        _watch_formula(name, d)
         lines, nt = spec["parse"](d, day, known if spec["known"] else None)
         return lines, nt, url
     # NODATA 代表「端點答了、只是那天沒有資料」——回傳 url 讓呼叫端歸到「休市」。
     if last.startswith("NODATA"):
         return [], last[7:], (spec["urls"](day) or [None])[0]
     return [], last, None
+
+
+# ⭐⭐ 官方在同一個回應裡給的 `formula`（CLAUDE.md 第一點：`_tables()` 丟掉的鍵之一）。
+#   ⚠ 這裡只**收集**，由 `main()` 統一印進 runlog——⛔ 三個呼叫點各印一次會洗版。
+#   ⛔ 而它是 dict（feed → (狀態, 訊息)）：同一趟會問幾十次同一條端點，
+#     ⚠ 每次都是同一段公式。
+_FORMULA_SEEN = {}
+
+
+def _watch_formula(name, d):
+    """把這一次回應裡的 `formula` 跟釘住的那份比一次。⛔ 只記，不中斷抓取。"""
+    st, msg = official_formula.check(name, d)
+    if st == "absent":
+        return
+    # ⛔ 已經記到 `changed` 就不要被後面的 `same` 蓋掉（⚠ 最壞的那個要留著）
+    old = _FORMULA_SEEN.get(name)
+    if old and old[0] == "changed" and st != "changed":
+        return
+    _FORMULA_SEEN[name] = (st, msg)
+
+
+def report_formula(rl):
+    """把收集到的公式狀態印進 runlog。⭐ 四種狀態**分開講**（理由見 official_formula）。
+
+    ⚠ `same` 也要印——⛔ 一道「只有出事才講話」的閘門，
+    跟「它今天有沒有跑」是分不出來的（第七點：0 筆與沒掃到長得一樣）。
+    """
+    if not _FORMULA_SEEN:
+        rl.info("官方公式", "這一趟的回應裡沒有 `formula` 鍵"
+                            "（⛔ 不是「官方沒有公式」，只是這幾張表沒給）")
+        return
+    for name, (st, msg) in sorted(_FORMULA_SEEN.items()):
+        if st == "same":
+            rl.info(f"官方公式 {name}", f"✅ {msg}")
+        elif st == "unknown":
+            rl.info(f"⚠ 官方公式 {name}：**我方沒有記錄**", msg)
+        else:
+            rl.check(f"⛔⛔ 官方公式 {name} **變了**", False, msg)
 
 
 def _months(start, end):
@@ -1998,6 +2038,7 @@ def cmd_feed_range(args, name):
         rl.note(f"這個區間的 {skipped} 個月台帳裡都問過了，本趟沒有要問的"
                 "　⚠ 而**還沒結束的月份一律重問** ⇒ 這裡是 0 就代表"
                 "這個區間裡沒有任何一個月是當月")
+        report_formula(rl)
         rl.check("跑完整個區間，沒有提前收手", True, "沒有待處理的月份")
         return rl.finish()
     ok = empty = failed = 0
@@ -2062,6 +2103,7 @@ def cmd_feed_range(args, name):
             time.sleep(B.SLEEP)
             continue
 
+        _watch_formula(name, got)
         lines, nt = spec["parse"](got, a, known if spec["known"] else None)
         stray = [r[0] for r in lines if not (a <= r[0] <= b_lim)]
         if fwd:
@@ -2139,6 +2181,7 @@ def cmd_feed_range(args, name):
     #   （寫出去的因子有沒有晚於資料最後一天）。
     if n_future:
         rl.info("尚未到期的公告", f"{n_future} 列（正常，事件日到了會自然進來）")
+    report_formula(rl)
     rl.check("每個月都問到了", failed == 0,
              f"失敗 {failed} / {len(rng)} 個月" if failed else f"{len(rng)} 個月全問到")
     # ⛔ finish() 一定要無條件呼叫——寫在三元運算的其中一支，
@@ -2408,6 +2451,7 @@ def cmd_feed(args):
     rl.info("區間", range_note(args.start, args.end, len(days),
                                getattr(args, "limit", 0)))
     rl.info("結果", f"有資料 {ok} 天、無資料/休市 {closed} 天、失敗 {failed} 天")
+    report_formula(rl)
     # ⛔ 這一列即使是 0 也要在：⚠ 0 跟「這道根本沒做」在紙上看起來一樣。
     rl.info("⭐ 記進台帳的「問到了、那天沒資料」",
             (f"本趟 +{led_new} 天，累計 {led_all} 天"
@@ -2563,6 +2607,7 @@ def cmd_probe(args):
                 if fields:
                     print(f"       欄位={fields}")
                 if flag == "✓":
+                    _watch_formula(name, d)
                     lines, nt = spec["parse"](
                         d, cmp_day, known if spec["known"] else None)
                     print(f"       解析結果：{nt}")
