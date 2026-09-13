@@ -218,7 +218,8 @@ def selftest():
     h8, l8, c8 = _seq(pts8, 5)
     cen8, sig8 = detect(h8, l8, c8)
     k8 = [(x["kind"], x["pen"]) for x in sig8 if x["kind"] != "C2"]
-    check("情境8 第五筆探出 ZG 不算離開：無放棄、B3 在中樞之後", bool(cen8) and k8 == [("B3", cen8[0]["start_pen"] + 8)], f"{k8} center {[(x['start_pen'], x['end_pen']) for x in cen8]}")
+    # 筆 0..4 是中樞（b5 ＝ 10.5→12.2 探出 ZG 12.3 但不算離開）、筆 5 回檔留在中樞、筆 6 離開、筆 7 回抽 ⇒ 唯一的非 C2 訊號是 B3@pen 7
+    check("情境8 第五筆探出 ZG 不算離開：無放棄、B3 在中樞之後", bool(cen8) and k8 == [("B3", cen8[0]["start_pen"] + 7)], f"{k8} center {[(x['start_pen'], x['end_pen']) for x in cen8]}")
     # 情境 7：NaN 洞不炸
     h7 = h.copy(); l7 = l.copy(); c7 = c.copy(); h7[7] = l7[7] = c7[7] = np.nan
     detect(h7, l7, c7)
