@@ -8,7 +8,7 @@
 | 項目 | 值 |
 |---|---|
 | 分支 | `claude/stock-analysis-backtest-iv9xji`（已併入 origin/main 2d2c505f） |
-| 跨線信箱已讀到 | **createdTime 2026-09-13T00:27:35.930Z**（件-回測線-0830 研究十五派工）；09-13 這一輪讀全文的是給回測的四封（K線分析 2355／0210、情報分析 0150、CODE 0240），其餘（histock 條款往返、valid_bar 物化、feeds 全綠、稅法手冊交接）只看標題。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
+| 跨線信箱已讀到 | **createdTime 2026-09-13T00:40:14.878Z**（件-回測線-0839 K線分析對帳定案）；09-13 這一輪讀全文的是給回測的四封（K線分析 2355／0210、情報分析 0150、CODE 0240），其餘（histock 條款往返、valid_bar 物化、feeds 全綠、稅法手冊交接）只看標題。水位一律記 createdTime 的 UTC 值，不記檔名時刻。⚠ 未讀判準用 **createdTime**（改名／搬移會動 modifiedTime）；搜尋加 `not title contains '作廢-'`。09-09 曾漏讀一封落在兩次搜尋窗之間的信（0920），之後一律用「> 上次水位 createdTime」。各線信名時刻不一定等於台北時間，以 Drive createdTime 排序才準 |
 | 分支與 main | main 已於 09-09 併入 `backtest/` 快照（4d8d7ef0，排除 skill_patch）；分支已併回 main 8d39c227 之後版本並刪除 skill_patch；**只在分支改，更新 main 再併一次** |
 | 研究二 判準 | `PREREG.md`（更正一～三、追加分析） |
 | 研究三／四 判準 | `PREREG3.md`（更正一） |
@@ -197,3 +197,12 @@
 - K線分析 0830：**派工研究十五 纏論第三類買點**（使用者裁定）。只測第三類（單層日 K、不遞迴、不背馳、筆當次級別）；進場 ＝ 回抽筆確認日；乾淨窗只查 [進場, 出場] 並報砍掉 %；對照 ①母體 ②離開中樞就進（核心）③放棄組 ④安慰劑；敏感度 A 序列起點／B 老筆新筆／C ZG-ZD 前兩筆或三筆；六關同過才進建議層；她預期主組 ≤ 對照②。⛔ 她說 PREREG 在「專案文件」，Drive 三種搜法都找不到 ⇒ 已去信要 .md；同時問持有期與閘門。
 - 先做不依賴 PREREG 的層：`backtest/chan.py`（包含處理→分型→筆→筆中樞→B3／C2／ABANDON，三個開關，合成序列自測）。
 - 已寄 `件-K線分析與CODE-20260913-0905-…`（`1gBVL9000WedspndIyRdkGlgWqyryHZWA`）。
+
+## 2026-09-13 09:30：對帳定案、chan.py 完成、limit 欄結案
+
+- K線分析 0839：她重跑找到根因——**資料未還原**（2330 除息跳空實例），141 根窗是在補這個缺陷；同語意重跑 n 19,425、H120 +13.15%、LD−H120 −2.15 pp（CI −2.78~−1.51）、H120 仍砍 49.2%。⇒ 兩個關鍵結論兩邊都成立，剩下全是口徑。已追加 `results11/CONCLUSIONS.md` 追加一。她問 CODE 還原因子用法 ⇒ 我回信逐字給 `data.py` 的做法（事件日嚴格大於 d 的 cum_factor 連乘、乘在價上、最新一天＝原始價驗法、F2 幽靈事件擋法）。
+- CODE 0410：`limit` 欄 ＝ 「開＝高＝低＝收」方向（一價到底），精確度上限 6.0%；不改欄名、定義釘進 READ_CONTRACT；C2／LD 改價格自算是對的。⇒ 本線「等 CODE 的 limit 欄」結案。`sbl` 借券賣出 2,850 天補滿（日後可做判準）。
+- 全體 0840：K線分析時戳規則改「寫時戳那一刻再跑 date」；情報分析 0415：FinMind secrets 拿掉、_db_status 標免費層。
+- `backtest/chan.py`（commit 473f9b9f7、7ae0f9920）：合成序列 14 條自測、5 個突變全抓到（`lo2>zd`、`gap=1`、老筆＝新筆、C2 用 zd、C2 不等中樞成立）；五檔真實股每檔 12～24 個 B3。⚠ 筆中樞在單邊之字裡也成立（任三筆連續必重疊）——要進 PREREG。
+- 已寄 `件-K線分析-20260913-0930-…`（`1DIGZNbhPIevRvIPKPHNRbOtS1dAAESCv`）：對帳定案表、還原因子用法、研究十五 PREREG 仍未收到、三題（持有期、閘門、離開筆可否為中樞第三筆）。
+- **等回覆**：K線分析（PREREG .md、三題）；CODE（runlog 區塊補回、同步排除 `backtest/forward/`、F2、F3）。
