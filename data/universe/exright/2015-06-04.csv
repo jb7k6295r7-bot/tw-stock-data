@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
-2015-06-04,912398,9.38,9.08,0.296832,息,9.08,9.98,8.18
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2015-06-04,912398,9.38,9.08,0.296832,息,9.08,9.98,8.18,9.08
