@@ -34,6 +34,7 @@ import sys
 import time
 import urllib.error
 import urllib.parse
+import http.client
 import urllib.request
 # ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
 #   import 就生效：它把 urllib 的預設 SSLContext 換成「系統預設＋補鏈」。
@@ -242,9 +243,12 @@ def get(url, retries=3, timeout=45):
     last = None
     for i in range(retries):
         try:
-            # ★ Accept 一定要帶。fetch.py 的 get() 有帶、backfill 原本沒帶，
-            #   而 fetch.py 每天抓 T86 都成功、backfill 抓同一條卻每天 JSONDecodeError
-            #   （2026-09-03 實測 699 天全失敗）——兩者唯一的差別就是這個標頭。
+            # ★ Accept 一定要帶。2026-09-03 實測：不帶它抓 T86 是 699 天全 JSONDecodeError。
+            # ⚠ 2026-09-13 訂正：這段註解原本寫「fetch.py 的 get() 有帶」——**現在沒有**
+            #   （`fetch.get` 只帶 User-Agent）。⛔ 一句描述另一個檔的註解會過期，
+            #   而過期的註解比沒有註解更糟：下一個人會拿它當現況。
+            #   ⇒ 現況是：`fetch.get` 只服務 FinMind（`get_json` 一個呼叫點），
+            #     交易所那條路一律走這一支。⚠ 兩份 `get` 仍然是兩份（四點五未收）。
             req = urllib.request.Request(url, headers={
                 "User-Agent": UA,
                 "Accept": "application/json,text/plain,*/*"})
@@ -273,6 +277,15 @@ def get(url, retries=3, timeout=45):
                 continue
             if 400 <= e.code < 500 and e.code not in (408, 429):
                 return None, last          # 4xx 重試沒有意義
+        except http.client.IncompleteRead as e:
+            # ⭐⭐ 傳到一半斷掉（2026-09-13 實測：TPEx 的 openapi/swagger.json
+            #   452 KB，只讀到 24 KB）。⛔ 它跟「端點壞掉」完全是兩件事，
+            #   ⚠ 而原本的訊息只有 `IncompleteRead: IncompleteRead(...)`
+            #     ——看起來就像那個端點不能用，而它其實重試就會好。
+            #   ⇒ 訊息要**自己講出**它是傳輸被切斷，並且已讀／還差多少。
+            last = (f"IncompleteRead：連線傳到一半斷掉"
+                    f"（已讀 {len(e.partial):,} bytes、還差 {e.expected:,}）"
+                    f"⇒ ⭐ 這是**傳輸被切斷**，不是端點壞掉，重試通常會好")
         except Exception as e:  # noqa: BLE001
             last = f"{type(e).__name__}: {e}"
         if i < retries - 1:

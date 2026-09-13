@@ -203,6 +203,40 @@ def main():
             and getattr(n.value, "id", "") == "err"]
     ck("★ 原始碼裡**沒有任何** `err[...]` 的切片（⛔ 一律走 `_why()`）",
        not _bad, f"⛔ 還有 {len(_bad)} 處在切 err")
+
+    print("\n── ⑨ `IncompleteRead`：訊息要**自己講出它是傳輸被切斷** ──")
+    # ⭐ 2026-09-13 實測：TPEx 的 openapi/swagger.json（452 KB）連兩次只讀到 24 KB。
+    #   ⛔ 原本的訊息只有 `IncompleteRead: IncompleteRead(24064 bytes read, ...)`
+    #     ——它跟「這個端點不能用」長得一模一樣，⚠ 而它其實重試就會好。
+    #   ⇒ 這一族跟 ⑧ 是同一條規矩：**可行動的部分要留在訊息裡**。
+    import http.client as _hc
+    import urllib.request as _ur
+    import backfill as _B
+    _orig = _ur.urlopen
+
+    class _Boom:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            raise _hc.IncompleteRead(b"x" * 24064, 452859)
+
+    try:
+        _ur.urlopen = lambda *a, **k: _Boom()
+        _raw, _err = _B.get("https://example.invalid/x.json", retries=1, timeout=1)
+    finally:
+        _ur.urlopen = _orig
+    ck("⭐ 訊息講出這是**傳輸被切斷**，⛔ 不是端點壞掉",
+       _err is not None and "傳輸被切斷" in _err, str(_err))
+    ck("⭐ 而且把「已讀多少／還差多少」帶出來（⇒ 看得出是不是只讀到零頭）",
+       _err is not None and "24,064" in _err and "452,859" in _err, str(_err))
+    # ⛔ 反向：Python 原本的字串**看不出**這兩件事
+    _plain = f"{_hc.IncompleteRead(b'x' * 24064, 452859)!r}"
+    ck("★ 反向驗：Python 原本那串裡沒有「傳輸被切斷」（⛔ 不然上面兩條是假的）",
+       "傳輸被切斷" not in _plain, _plain[:80])
     _calls = [n for n in _a2.walk(_a2.parse(_fs))
               if isinstance(n, _a2.Call) and getattr(n.func, "id", "") == "_why"]
     ck("★ 而 `_why()` 真的有被呼叫", len(_calls) >= 1,

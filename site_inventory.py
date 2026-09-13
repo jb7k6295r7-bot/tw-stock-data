@@ -272,7 +272,10 @@ def main():
     scope = []          # ⭐ (目錄, 網址, 幾條, 失敗原因)：最後那張掃描範圍表
     for label, url in SITES:
         say(f"── {label}｜{url}")
-        raw, err = B.get(url, retries=2, timeout=60)
+        # ⭐ 目錄檔可以到 450 KB（TPEx 的 swagger.json），⚠ 2026-09-13 實測
+        #   兩次都 `IncompleteRead`（只讀到 24 KB）⇒ 多給幾次、也給久一點。
+        #   ⛔ 而它失敗的代價是**整份目錄沒掃到** ⇒ 這一趟不可以寫任何「官方沒有」。
+        raw, err = B.get(url, retries=4, timeout=120)
         if err or not raw:
             # ⛔⛔ 這裡原本是 `str(err)[:120]`——**砍尾巴**（六點六）。
             #   ⚠ SSL／憑證／逾時那一族，可行動的部分永遠在後面，
