@@ -272,10 +272,19 @@ def main():
     scope = []          # ⭐ (目錄, 網址, 幾條, 失敗原因)：最後那張掃描範圍表
     for label, url in SITES:
         say(f"── {label}｜{url}")
-        # ⭐ 目錄檔可以到 450 KB（TPEx 的 swagger.json），⚠ 2026-09-13 實測
-        #   兩次都 `IncompleteRead`（只讀到 24 KB）⇒ 多給幾次、也給久一點。
-        #   ⛔ 而它失敗的代價是**整份目錄沒掃到** ⇒ 這一趟不可以寫任何「官方沒有」。
-        raw, err = B.get(url, retries=4, timeout=120)
+        # ⭐⭐ 這一行的參數是**實驗設計**，⛔ 不是隨手調大的。
+        #
+        #   2026-09-13：這裡 `retries=2, timeout=60` 抓 TPEx 的 swagger.json
+        #   連兩次 `IncompleteRead`（476,923 bytes 只讀到 24,064）。
+        #   ⭐ 而**同一趟 job** 裡 `tpex_probe.py` 抓**同一個 URL 成功**了
+        #     （`✓ 取得 476,923 bytes`）⇒ ⛔ 不是對方壞掉。
+        #   ⇒ 兩邊唯一的差別是 **`timeout` 90 vs 60**。
+        #
+        #   ⛔ 我第一版把 `retries` 也一起改成 4 ——那就**測不出是哪一個**
+        #     （CLAUDE.md 三點5：要判一個參數管什麼，只准動那一個變數）。
+        #   ⇒ 改回跟那支**一模一樣**的參數：只有 timeout 從 60 變 90。
+        #     ⚠ 下一趟若還是失敗，就證明 timeout **不是**成因，要往別處找。
+        raw, err = B.get(url, retries=2, timeout=90)
         if err or not raw:
             # ⛔⛔ 這裡原本是 `str(err)[:120]`——**砍尾巴**（六點六）。
             #   ⚠ SSL／憑證／逾時那一族，可行動的部分永遠在後面，

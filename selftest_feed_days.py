@@ -237,6 +237,40 @@ def main():
     _plain = f"{_hc.IncompleteRead(b'x' * 24064, 452859)!r}"
     ck("★ 反向驗：Python 原本那串裡沒有「傳輸被切斷」（⛔ 不然上面兩條是假的）",
        "傳輸被切斷" not in _plain, _plain[:80])
+
+    # ⭐⭐ 而真正該分開的是這兩種——⛔ 只留最後一次的話它們長得一模一樣：
+    #     每次都停在**同一個 byte 數** ⇒ 決定性（重試永遠不會好）
+    #     每次不一樣                   ⇒ 偶發（重試有意義）
+    #   ⚠ 而處置相反：前者要改路（換參數／換來源），後者只要重試。
+    def _boomseq(sizes):
+        it = iter(sizes)
+
+        class _B2:
+            def __enter__(self):
+                self.n = next(it)
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def read(self):
+                raise _hc.IncompleteRead(b"x" * self.n, 476923 - self.n)
+        return _B2
+
+    try:
+        _ur.urlopen = lambda *a, _c=_boomseq([24064, 24064]), **k: _c()
+        _, _e1 = _B.get("https://example.invalid/y", retries=2, timeout=1)
+        _ur.urlopen = lambda *a, _c=_boomseq([24064, 133700]), **k: _c()
+        _, _e2 = _B.get("https://example.invalid/y", retries=2, timeout=1)
+    finally:
+        _ur.urlopen = _orig
+    ck("⭐ 兩次都停在同一個 byte 數 ⇒ 訊息要說**決定性、重試不會好**",
+       _e1 is not None and "決定性" in _e1, str(_e1))
+    ck("⭐ 兩次停在不同位置 ⇒ 訊息要說**重試通常會好**（⛔ 不可以說決定性）",
+       _e2 is not None and "決定性" not in _e2 and "傳輸被切斷" in _e2, str(_e2))
+    ck("⭐ 而兩者都要把**每一次**讀到多少列出來（⛔ 只留最後一次就分不出來）",
+       _e1 is not None and _e1.count("24,064") >= 2
+       and _e2 is not None and "133,700" in _e2 and "24,064" in _e2)
     _calls = [n for n in _a2.walk(_a2.parse(_fs))
               if isinstance(n, _a2.Call) and getattr(n.func, "id", "") == "_why"]
     ck("★ 而 `_why()` 真的有被呼叫", len(_calls) >= 1,
