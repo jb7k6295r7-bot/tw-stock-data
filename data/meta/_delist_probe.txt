@@ -224,21 +224,17 @@
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ HTTP 404  | 
+   ✗ HTTP 404 Not Found | 
 <html>
 <head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body></body>
-</html>
-
+<body><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
-   ✗ HTTP 404  | 
+   ✗ HTTP 404 Not Found | 
 <html>
 <head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body></body>
-</html>
-
+<body><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&
 
 ── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
