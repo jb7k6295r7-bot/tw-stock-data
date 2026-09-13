@@ -82,20 +82,43 @@ def main():
         ev = ser[300][0]
         # 參考價 90、收盤 98.9 ⇒ 98.9/90 = 1.099 ⇒ 在漲停內
         write("1111", ser, ev, 90.0, 98.9)
-        bad, checked, nhard = F.check_all()
+        bad, checked, nhard, _how = F.check_all()
         ck("收/參考 = 1.099（漲停內）⇒ ⛔ 不可以叫", not bad and checked == 1, str(bad))
         ck("　　而母體有算到（1 檔、1 筆）", nhard == 1 and checked == 1)
         # 參考價 90、收盤 100.0 ⇒ 1.111 ⇒ 超出
         write("1111", ser, ev, 90.0, 100.0)
-        bad, checked, nhard = F.check_all()
+        bad, checked, nhard, _how = F.check_all()
         ck("⭐ 收/參考 = 1.111（超出漲停）⇒ 一定要抓到",
            len(bad) == 1 and bad[0]["stock_id"] == "1111", str(bad))
         ck("　　而它記下收/參考", bad and bad[0]["close_over_ref"].startswith("1.11"),
            str(bad[0] if bad else None))
         # 跌破跌停側
         write("1111", ser, ev, 90.0, 79.0)
-        bad, _c, _n = F.check_all()
+        bad, _c, _n, _how = F.check_all()
         ck("⭐ 跌破跌停側（收/參考 0.878）也要抓到", len(bad) == 1, str(bad))
+
+        # ⭐⭐ 官方說「無漲跌幅限制」的那一筆 ⇒ **不進母體**，也不算超出
+        #   ⛔ 把它算成「通過」等於把母體灌水（第七點：0 筆與沒掃到長得一樣）
+        write("1111", ser, ev, 90.0, 500.0)     # 收 500、參考 90 ⇒ 推論一定判超出
+        bad, checked, nhard, how = F.check_all()
+        ck("　（先確認沒有官方數字時它**會**被判超出）", len(bad) == 1)
+        ou2 = F.UNI
+        du2 = os.path.join(d, "uni2")
+        os.makedirs(os.path.join(du2, "exright"))
+        io.open(os.path.join(du2, "exright", f"{ev}.csv"), "w",
+                encoding="utf-8").write(
+            "date,stock_id,limit_up,limit_down\n"
+            f"{ev},1111,\"9,999.95\",0.01\n")
+        try:
+            F.UNI = du2
+            bad, checked, nhard, how = F.check_all()
+            ck("⭐ 官方說無限制 ⇒ **不算超出**", not bad, str(bad))
+            ck("⛔⛔ 而且**不進母體**（checked 要是 0，⚠ 不是 1）",
+               checked == 0, f"checked={checked}｜how={dict(how)}")
+            ck("⭐ 而來源欄要講出它是被官方排除的",
+               how.get("官方說無限制") == 1, str(dict(how)))
+        finally:
+            F.UNI = ou2
 
         # ⛔⛔ 反向：無漲跌幅限制的證券**不可以**被判
         wild = list(ser)
@@ -103,18 +126,78 @@ def main():
             wild[j] = (wild[j][0], wild[j][1] * 1.25)      # 平常就會 +25%
         write("2222", wild, ev, 90.0, 100.0)
         os.remove(os.path.join(ds, "1111.csv")); os.remove(os.path.join(da, "1111.csv"))
-        bad, checked, nhard = F.check_all()
+        bad, checked, nhard, _how = F.check_all()
         ck("⛔⛔ 無漲跌幅限制的證券 ⇒ 整檔不判（⚠ 那 3 檔 ETF 就是這樣被排除的）",
            not bad and checked == 0 and nhard == 0, f"bad={bad} checked={checked}")
     finally:
         F.ADJ, F.STOCKS = oa, os_
         shutil.rmtree(d, ignore_errors=True)
 
+    print("\n── ②.5 ⭐ `judge()`：官方 > 推論，而「無限制」不是「通過」──")
+    # ⭐ 有官方數字就用官方的（⛔ 不再推）
+    src, over = F.judge(45.00, 41.28, "2015-01-23", ("44.15", "38.40"))
+    ck("⭐ 官方漲停 44.15，收 45.00 ⇒ 判超出，來源是「官方」",
+       src == "官方" and over, f"{src} {over}")
+    src, over = F.judge(44.15, 41.28, "2015-01-23", ("44.15", "38.40"))
+    ck("⭐ 收在官方漲停上 ⇒ 不超出", src == "官方" and not over)
+    # ⛔⛔ 官方說無限制 ⇒ 這一筆**沒有判準**，不可以算成通過
+    src, over = F.judge(999.0, 21.92, "2020-01-16", ("9,999.95", "0.01"))
+    ck("⛔⛔ 官方說無限制 ⇒ 來源是「官方說無限制」且**不算超出**",
+       src == "官方說無限制" and not over, f"{src} {over}")
+    # ⭐ 沒有官方數字 ⇒ 退回推論
+    src, over = F.judge(45.00, 41.28, "2015-01-23", None)
+    ck("⭐ 沒有官方數字 ⇒ 退回推論（⚠ 舊日檔就是這條路）",
+       src == "推論" and over, f"{src} {over}")
+    # ⛔ 反向：官方那兩欄是空字串／壞值 ⇒ 也要退回推論，⛔ 不是崩潰
+    src, _ = F.judge(45.00, 41.28, "2015-01-23", ("", ""))
+    ck("⛔ 官方那兩欄是空的 ⇒ 退回推論，不崩潰", src == "推論")
+    # ⭐ 有預設值的參數，一定要有一條不傳它的斷言（第七點③）
+    #   ⚠ 而 44.20 **不夠**：預設 slack 0.5% ⇒ 門檻是 44.15×1.005 = 44.37
+    #   ⛔ 拿 44.20 當斷言等於在測 slack 不存在——那條會紅，而且該紅。
+    ck("⭐ `slack`／`etf` 不傳 ⇒ 走預設 0.5%（⛔ 這是 `check_all` 唯一會走的路）",
+       F.judge(44.50, 41.28, "2015-01-23", None)[1]
+       and not F.judge(44.20, 41.28, "2015-01-23", None)[1])
+    # ⭐⭐ 而「官方說無限制」一定要被 `check_all` 排除在母體之外
+    d = tempfile.mkdtemp()
+    oa, os_, ou = F.ADJ, F.STOCKS, F.UNI
+    try:
+        da, ds, du = (os.path.join(d, "adj"), os.path.join(d, "stocks"),
+                      os.path.join(d, "uni"))
+        os.makedirs(da); os.makedirs(ds); os.makedirs(os.path.join(du, "exright"))
+        F.ADJ, F.STOCKS, F.UNI = da, ds, du
+        io.open(os.path.join(du, "exright", "2020-01-16.csv"), "w",
+                encoding="utf-8").write(
+            "date,stock_id,pre_close,ref_price,value,kind,open_base,"
+            "limit_up,limit_down\n"
+            "2020-01-16,00714,22.13,21.92,0.21,息,21.92,\"9,999.95\",0.01\n")
+        off = F.official_limits()
+        ck("⭐ `official_limits` 從日檔讀得到官方那兩欄",
+           off.get(("00714", "2020-01-16")) == ("9,999.95", "0.01"), str(off))
+        ck("⛔ 而沒有那兩欄的列不會進來（⚠ 舊日檔就是這樣）",
+           len(off) == 1, str(off))
+        # ⛔⛔ 反向：欄在、值是空的（⚠ 官方偶爾就是給空字串）⇒ 也不可以收
+        #   收了的話 `judge` 會走進「官方」那條路、拿空字串去比 ⇒ 靜靜當成沒超出
+        io.open(os.path.join(du, "exright", "2020-01-17.csv"), "w",
+                encoding="utf-8").write(
+            "date,stock_id,pre_close,ref_price,value,kind,open_base,"
+            "limit_up,limit_down\n"
+            "2020-01-17,1101,22.13,21.92,0.21,息,21.92,,\n")
+        off2 = F.official_limits()
+        ck("⛔⛔ 欄在但值是**空的** ⇒ 不收（⚠ 收了會靜靜當成「官方說沒超出」）",
+           ("1101", "2020-01-17") not in off2, str(off2))
+    finally:
+        F.ADJ, F.STOCKS, F.UNI = oa, os_, ou
+        shutil.rmtree(d, ignore_errors=True)
+
     print("\n── ③ 低水位：⛔ 不可以動到真的那個檔 ──")
     n, day = F.read_low()
     ck("讀得到低水位（筆數是整數、日期是 10 碼）",
        isinstance(n, int) and len(day) == 10, f"{n},{day}")
-    ck("⭐ 低水位就是今天判定過的 7 筆（⛔ 改小它 = 假裝修好了）", n == 7, str(n))
+    # ⛔⛔ 2026-09-13 從 7 降到 2，⚠ 而**不是修好了**：官方漲跌停回補下來之後，
+    #   原本那 7 筆裡的 5 筆（全是上市）被官方的數字清掉 ⇒ 它們是**誤報**。
+    #   ⇒ 剩下的 2 筆都是上櫃（沒有官方漲跌停），走的是已被推翻的推論
+    #     ⇒ ⭐ 標成「未證實」，⛔ 不是「已證明因子錯」。
+    ck("⭐ 低水位就是今天判定過的 2 筆（⛔ 改小它 = 假裝修好了）", n == 2, str(n))
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

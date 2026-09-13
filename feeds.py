@@ -832,6 +832,14 @@ def parse_exright(d, day, known=None):
     #   漲停 `9,999.95`、跌停 `0.01` ⇒ 那就是旗標（見 `price_limit.is_unlimited`）。
     i_up = _exact(f, "漲停價格")
     i_down = _exact(f, "跌停價格")
+    # ⭐⭐ `減除股利參考價`：**只扣現金股利、不調整配股**的那個價。
+    #   ⇒ 它正是 TradingView 那顆 `ADJ` 開關兩種口徑裡的一種，
+    #     ⚠ 而兩條線為了「哪一邊才是完整口徑」來回了一整天。
+    #   ⭐ 而它同時是官方**漲停價的基準**（2353 宏碁 2015-01-05：
+    #     漲停 22.80 ＝ ⌊21.35 × 1.07⌋，21.35 就是這一欄）。
+    #   ⇒ 實測：不存這一欄，公式算的漲停對官方 1,453 筆只中 96.2%，
+    #     ⛔ 而差的那 55 筆全是「基準不是除權息參考價」的現增／含息案。
+    i_exdiv = _exact(f, "減除股利參考價")
     if i_code is None or i_pre is None or i_ref is None:
         return [], f"欄位對不上：{f}"
     out, nodate = [], 0
@@ -854,7 +862,7 @@ def parse_exright(d, day, known=None):
             continue          # ★ 沒有自述日期就不收——寧可少一列，不要標錯日子
         out.append([dt, code, pre, ref, g(i_val),
                     (str(r[i_kind]).strip() if i_kind is not None and i_kind < len(r) else ""),
-                    g(i_open), g(i_up), g(i_down)])
+                    g(i_open), g(i_up), g(i_down), g(i_exdiv)])
     note = f"{len(out)} 列"
     if nodate:
         note += f"（{nodate} 列無資料日期，已丟棄）"
@@ -1478,10 +1486,10 @@ FEEDS = {
     },
     "exright": {
         "dir": "exright",
-        # ⚠ 2026-09-13 從七欄變**九欄**（補了官方的 `漲停價格／跌停價格`）
-        #   ⛔ 舊日檔沒有這兩欄 ⇒ 要用 `--need-col limit_up` 重抓。
+        # ⚠ 2026-09-13 從七欄變**十欄**（官方的 `漲停價格／跌停價格／減除股利參考價`）
+        #   ⛔ 舊日檔沒有這幾欄 ⇒ 要用 `--need-col limit_up`、`--need-col ex_div_ref` 重抓。
         "header": ["date", "stock_id", "pre_close", "ref_price", "value",
-                   "kind", "open_base", "limit_up", "limit_down"],
+                   "kind", "open_base", "limit_up", "limit_down", "ex_div_ref"],
         "parse": parse_exright,
         "known": False,   # 除權息表會有已下市或非 universe 的標的，先全收
         # ★★ 2026-09-04 事故：原本用 `date=` 參數——**這支端點根本不吃 `date`**，
