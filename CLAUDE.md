@@ -469,6 +469,76 @@ kind: connect_rejected｜gateway answered 403 to CONNECT
 
 ---
 
+## ⭐⭐ 六點六、**對方的 TLS 設定壞掉，而瀏覽器會替它遮掩**（2026-09-13）
+
+`otcsbl` 在 Actions 上第一發就掛，而錯誤訊息只留下前 50 個字元：
+
+```
+失敗(URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_)
+```
+
+### ⇒ 第一件事：**錯誤訊息不可以砍尾巴**
+
+SSL／憑證／逾時這一族，**可行動的部分永遠在後面**：
+
+```
+unable to get local issuer certificate  ⇒ 鏈不完整（對方漏送，或我方缺 CA）
+certificate has expired                 ⇒ 對方憑證過期
+hostname mismatch                       ⇒ 打錯站
+```
+
+⛔ 而前 50 個字元每一次都長得一樣。⇒ `feeds._why()`：太長就**中間**省略。
+⚠ 補這條斷言時用 AST 掃「還有沒有 `err[...]` 的切片」，**當場多找出兩處**我不知道存在的。
+
+### ⇒ 第二件：`unable to get local issuer` 有兩種成因，**處置相反**
+
+```
+① 我方 CA 太舊     ⇒ 換一份新的（certifi）
+② 對方漏送中間憑證 ⇒ 我方要補鏈
+```
+
+⇒ 判準：**同一個網址用兩份 CA 各打一次，再拿一個「現在是通的」站當對照組。**
+
+```
+【實測】TPEx  系統 CA ✗　certifi ✗　對方送 **1 張**　Verify return code: 21
+       TWSE  系統 CA ✅　certifi ✅　對方送 **3 張**　Verify return code: 0
+       ⭐ 而兩者的葉憑證發行者**完全相同** ⇒ 只可能是②
+```
+
+⚠ 而「對方送了幾張」在 Python 3.12 問不到（`get_verified_chain` 是 3.13+）
+⇒ 用 `openssl s_client -showcerts` 數。⛔ 第一版卡在這裡，而報告照樣產出、
+只在那一格寫「無法判斷」——⚠ 那跟「判斷過、沒問題」在紙上很像。
+
+### ⭐ 而瀏覽器為什麼看不出來
+
+瀏覽器會照憑證裡的 **AIA** 自己去把中間憑證抓回來補上（AIA chasing），
+⛔ 而 `urllib`／`curl` 不會。⇒ **「瀏覽器打得開」不是「程式抓得到」的證據。**
+
+### ⛔⛔ 而補鏈**不是**把驗證關掉——這一條要寫死
+
+補進來的憑證**自己不會產生信任**，它們只是「路」；鏈仍然要走到系統本來就信任的根。
+⇒ 假的葉憑證仍然要有中間 CA 的**簽章**才驗得過。
+
+```
+✅ create_default_context() 之後 load_verify_locations()  ← **追加**，系統的根一張沒少
+⛔ CERT_NONE／check_hostname = False                      ← **永遠不是修法**
+```
+
+⚠ 而**只補一張是不夠的**：那張中間憑證的發行者可能也不在信任庫裡
+（這次就是——`TWCA CYBER Root CA` 不在，還要那張交叉憑證）。
+⭐ ⇒ **照抄那個「現在是通的」站送的整組**，⛔ 不要憑 AIA 猜一張。
+本機離線 `openssl verify -untrusted` 驗得過才算數。
+
+### ⇒ 而這一族的自測，**反向那幾條才是主角**
+
+補鏈最糟的壞法**不是「沒補到」**（那會抓不到資料，很吵），
+⭐ 是**「順手把驗證關掉」**——⚠ 那會安靜地成功，成功得跟對的一模一樣。
+⇒ `selftest_ca_chain.py` 盯 `verify_mode`／`check_hostname`／原始碼裡沒有 `CERT_NONE`
+（⛔ 比 AST 不比字串——那四個字在說明文字裡也有一份），
+並釘「最早到期那張少於 180 天就紅」。
+
+---
+
 ## ⭐ 六點五、動到 workflow／`.sh` 之後，**commit 之前**一定要驗 shell 語法
 
     git config core.hooksPath .githooks     ← 新 session 進來第一件事
