@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
-2020-11-16,1538,3.21,8.41,彌補虧損,8.41,
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2020-11-16,1538,3.21,8.41,彌補虧損,8.41,,9.25,7.57
