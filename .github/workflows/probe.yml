@@ -145,7 +145,7 @@ jobs:
             echo "⚠ main 上也沒有 delisted.csv（⛔ 那才是真的沒有）"
           ls -l data/meta/delisted.csv || true
 
-      - name: 跑十三支探針（這支一律全跑）
+      - name: 跑十四支探針（這支一律全跑）
         if: always()
         continue-on-error: true
         timeout-minutes: 15
@@ -179,7 +179,8 @@ jobs:
                       "tls_probe.py:_tls_probe.txt" \
                       "finmind_probe.py:_finmind_probe.txt" \
                       "bsr_probe.py:_bsr_probe.txt" \
-                      "broker_probe.py:_broker_probe.txt"; do
+                      "broker_probe.py:_broker_probe.txt" \
+                      "reduce_ratio_probe.py:_reduce_ratio_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
             #   排程觸發時才套三選一的重跑條件：
