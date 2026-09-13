@@ -414,6 +414,55 @@ def main():
                (": " not in v) or quoted, f"⛔ {v[:70]}")
 
     # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ `sync_code.sh` 的排除清單 ＝「main 是唯一寫入者」的樹
+    #
+    # ⚠ 2026-09-13 付過代價：`forward.yml` 在 main 上寫了
+    #   `backtest/forward/runlog.md` 的 02:42 區塊，⇒ 同步那一步把**分支上那份舊的**
+    #   搬過去 ⇒ 那一塊被刪掉（−4 行）。⛔ 而 `git diff` 看起來完全正常、那一趟是綠的。
+    #   ⭐ 這正是 CLAUDE.md 四點六，只是主詞從 `data/` 換成 `backtest/forward/`。
+    #
+    # ⇒ 這一節**真的把那幾行交給 bash 跑**，⛔ 不是比字串——
+    #   排除清單打錯字的話，它照樣同步、照樣綠，而累積檔會被蓋掉。
+    # ══════════════════════════════════════════════════════════════
+    _sc = io.open("sync_code.sh", encoding="utf-8").read()
+    _m2 = re.search(r"(EXCLUDE_TREES=\"\n.*?\n\")", _sc, re.S)
+    ck("★ `sync_code.sh` 有排除清單", bool(_m2), "⛔ 找不到 EXCLUDE_TREES")
+    if _m2:
+        _frag = (_m2.group(1) + '\nSPEC=""\n'
+                 'for T in $EXCLUDE_TREES; do SPEC="$SPEC :(exclude)$T"; done\n'
+                 'echo $SPEC')
+        _r = subprocess.run(["bash", "-c", _frag], capture_output=True, text=True)
+        _spec = _r.stdout.split()
+        ck("★ bash 真的算出 `:(exclude)data`（⛔ 少了它，別的 workflow 剛寫的資料會被蓋）",
+           ":(exclude)data" in _spec, f"⛔ 算出 {_spec}")
+        ck("★ bash 真的算出 `:(exclude)backtest/forward`"
+           "（⛔ 少了它，main 上的前瞻紀錄會被分支那份舊的蓋掉）",
+           ":(exclude)backtest/forward" in _spec, f"⛔ 算出 {_spec}")
+    # ⛔ 比**非註解**那幾行，⚠ 不是「這個路徑在不在檔案裡」
+    #   ——它在說明註解裡也有一份 ⇒ 第一版突變全綠（2026-09-13，今天第四次）。
+    _scbody = "\n".join(ln for ln in _sc.split("\n")
+                        if not ln.lstrip().startswith("#"))
+    # ⛔ 而且要比**真的取檔那一行**：只比「這個路徑有沒有出現」的話，
+    #   前面那道 `git cat-file -e` 就足以讓它綠，⚠ 而 checkout 那行早就壞了。
+    _rulechk = [ln for ln in _scbody.split("\n")
+                if "git checkout" in ln and "backtest/forward/RULE.md" in ln]
+    ck("★ 而 `RULE.md` 有例外放行（⛔ 整個目錄排除的話，判準檔永遠到不了 main）",
+       len(_rulechk) == 1, f"⛔ 取 RULE.md 的那一行：{_rulechk}")
+    # ⭐ 累積檔**不可以留在這個分支上**——留著的話，排除清單一旦被拿掉就會再犯一次。
+    #   ⚠ 這是第二道，跟排除清單是**兩層**，⛔ 不是重複。
+    for _bad in ("backtest/forward/runlog.md", "backtest/forward/state_N30.json",
+                 "backtest/forward/state_N40.json", "backtest/forward/_runs.jsonl"):
+        ck(f"★ 分支上**沒有** `{_bad}`（⛔ 那是 main 上 forward.yml 寫的累積檔）",
+           not os.path.exists(_bad), "⛔ 它在分支上 ⇒ 排除清單一旦失效就會蓋掉 main 的")
+
+    # ⭐ 八支的同步段只准有一份實作（四點五）——⛔ 這一段本來逐字抄了八份。
+    _inline = [os.path.basename(f) for f in files
+               if "git checkout -q -B _sync origin/main" in
+               io.open(f, encoding="utf-8").read()]
+    ck("★ 沒有任何 workflow 還把同步邏輯 inline 抄一份（⛔ 一律呼叫 `sync_code.sh`）",
+       not _inline, f"⛔ 還 inline 的：{_inline}")
+
+    # ══════════════════════════════════════════════════════════════
     # ⭐ 相依套件要裝在**用它之前**。⛔ 判準是**順序**，不是「有沒有那一步」
     #   （跟上面「取 main 排在回補之前」同一個形狀）。
     # ⚠ 2026-09-13 回測線在我的分支上讀出來的：`forward.yml` 少了
