@@ -43,6 +43,18 @@
 ⚠ **我不知道為什麼**，而「不知道」就寫不知道（三點6）——
 ⛔ 不要為了讓公式看起來完美而去改那個數字。
 
+## ⛔⛔ 而 2026-09-13 的 `TWT49U` 給了第二個反例：**漲停與跌停的基準可以不同**
+
+```
+2353 宏碁 2015-01-05（含現金增資除權）
+  除權息前收盤 21.35｜除權息參考價 21.02｜減除股利參考價 21.35｜開盤競價基準 21.35
+  官方漲停 22.80 ＝ ⌊21.35 × 1.07⌋       ← ⭐ 用**減除股利參考價**
+  官方跌停 19.55 ＝ ⌈21.02 × 0.93⌉       ← ⭐ 用**除權息參考價**
+```
+⇒ ⭐ 兩邊各用對自己**比較寬**的那個基準。
+⚠ 所以「拿一個參考價 ± 一個百分比」這種算法，⛔ 結構上就不可能對到每一格。
+⇒ 而這正是下面那個不對稱**不是我偷懶**的理由：官方自己就是不對稱的。
+
 ### ⇒ 落地：**收緊只做在有證據的那一側**
 
 ```
@@ -69,50 +81,92 @@ def cap(date):
     return CAP_NEW if str(date) >= WIDEN_DAY else CAP_OLD
 
 
-def tick(price):
-    """→ 這個價位的升降單位。"""
-    for hi, t in TICKS:
+# ⭐⭐ ETF／受益憑證的升降單位**跟股票不同**，⛔ 只有兩檔。
+#   實測（TWT49U 官方逐筆給的漲跌停）：
+#     00939 統一台灣高息動能 2026-01-02 ref 14.62 ⇒ 官方漲停 **16.08**
+#     用股票的 0.05 去算會得到 16.05 ⇒ ⛔ 差一檔，而 16.08 不是 0.05 的倍數
+#   ⚠ 而「16.05 vs 16.08」這種差在紙上看不出來，只有逐位比對才顯形。
+TICKS_ETF = ((50.0, 0.01),)
+TICK_ETF_BIG = 0.05
+
+# ⭐ 官方在 `漲停價格／跌停價格` 兩欄用這兩個數字表示「**無漲跌幅限制**」。
+#   實測：00714 群益道瓊美國地產 2020-01-16 ⇒ 漲停 `9,999.95`、跌停 `0.01`
+UNLIMITED_UP = 9000.0
+UNLIMITED_DOWN = 0.02
+
+
+def tick(price, etf=False):
+    """→ 這個價位的升降單位。
+
+    ⛔ `etf` 一定要由呼叫端講清楚——⚠ 這一支**猜不出來**，
+    而猜錯的表現是「差一檔」，在紙上跟對的一模一樣。
+    """
+    table = TICKS_ETF if etf else TICKS
+    big = TICK_ETF_BIG if etf else TICK_BIG
+    for hi, t in table:
         if price < hi:
             return t
-    return TICK_BIG
+    return big
+
+
+def is_unlimited(limit_up, limit_down):
+    """→ 官方這兩欄是不是在說「這一檔**無漲跌幅限制**」。
+
+    ⭐ 這件事 `factor_limit_check.has_hard_limit()` 原本是**拿歷史推**的
+    （非事件日 ≥ 500 天且從沒超過 10.5%）——⛔ 而官方**逐筆**就標著。
+    ⚠ 推論那一版還有一個它處理不了的情形：**同一檔在不同時期可以換**
+      （加掛、改型態）⇒ 一檔一個布林值本來就不夠。
+    """
+    up, dn = _num(limit_up), _num(limit_down)
+    if up is None or dn is None:
+        return False
+    return up >= UNLIMITED_UP or dn <= UNLIMITED_DOWN
+
+
+def _num(x):
+    try:
+        return float(str(x).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
 
 
 def _cents(x):
     return x * 100.0
 
 
-def _round_to_tick(value, down):
+def _round_to_tick(value, down, etf=False):
     """把 `value` 落到升降單位上；`down=True` 捨去、`False` 進位。
 
     ⛔ 用「分」當整數算——浮點直接除會在剛好落在檔位上的時候兩邊跳。
     """
-    t = _cents(tick(value))
+    t = _cents(tick(value, etf))
     v = _cents(value)
     n = (v + 1e-6) // t if down else -((-v + 1e-6) // t)
     return round(n * t) / 100.0
 
 
-def up(ref, date):
-    """→ 該日的漲停價。"""
-    return _round_to_tick(ref * (1.0 + cap(date)), True)
+def up(ref, date, etf=False):
+    """→ 該日的漲停價。⛔ `etf` 要由呼叫端講（升降單位不同）。"""
+    return _round_to_tick(ref * (1.0 + cap(date)), True, etf)
 
 
-def down(ref, date):
-    """→ 該日的跌停價。"""
-    return _round_to_tick(ref * (1.0 - cap(date)), False)
+def down(ref, date, etf=False):
+    """→ 該日的跌停價。⛔ `etf` 要由呼叫端講（升降單位不同）。"""
+    return _round_to_tick(ref * (1.0 - cap(date)), False, etf)
 
 
-def down_observed(ref, date):
+def down_observed(ref, date, etf=False):
     """→ 跌停價，但**取較寬的那一個**（⛔ 有已知反例，見檔頭）。
 
     ⚠ 這一支跟 `down()` **不是重複實作**：
     `down()` 是「公式說的跌停」——拿去跟官方欄位逐位比對的那個；
     這一支是「⛔ 我敢拿去當閘門的跌停」——在有反例的那一側不收緊。
     """
-    return min(down(ref, date), _round_to_tick(ref * (1.0 - CAP_NEW), False))
+    return min(down(ref, date, etf),
+               _round_to_tick(ref * (1.0 - CAP_NEW), False, etf))
 
 
-def within(price, ref, date, slack=0.0):
+def within(price, ref, date, slack=0.0, etf=False):
     """→ 這個成交價在不在該日的漲跌停之內（⭐ 閘門用的那一版）。
 
     `slack` 是**相對**餘裕（⛔ 不是絕對值——三點6：兩者長得一樣而結論相反）。
@@ -120,6 +174,6 @@ def within(price, ref, date, slack=0.0):
     """
     if not ref or ref <= 0:
         return True
-    return (down_observed(ref, date) * (1.0 - slack) <= price
-            <= up(ref, date) * (1.0 + slack))
+    return (down_observed(ref, date, etf) * (1.0 - slack) <= price
+            <= up(ref, date, etf) * (1.0 + slack))
 

@@ -73,6 +73,18 @@ def main():
     ck("⭐ 而扣的是官方欄位「每股退還股款」（⛔ 不是我推的「面額 10 × 減資比率」）",
        "每股退還股款" in REAL[0] and "面額" not in REAL[0])
 
+    print("\n── ④.5 ⭐ TWT49U 那兩條也釘住（⛔ 我方推了兩輪的那兩條）──")
+    EX = ["除權息參考價 = (除權息前收盤價-息值+現金增資認購價*現金增資配股率)"
+          "/(1+無償配股率+現金增資配股率)",
+          "減除股利參考價 = (除權息前收盤價-息值)/(1+無償配股率)"]
+    ck("⭐ `exright` 的兩條逐字相同", F.check("exright", {"formula": EX})[0] == "same",
+       F.check("exright", {"formula": EX})[1])
+    ck("⭐ 而它也有 **息值** 那一項（⛔ 我把除權與除息當兩件事分開推，官方是同一條）",
+       "息值" in EX[0] and "息值" in EX[1])
+    ck("⛔ 把現金增資那一項拿掉 ⇒ changed",
+       F.check("exright", {"formula": [EX[0].replace(
+           "+現金增資認購價*現金增資配股率", ""), EX[1]]})[0] == "changed")
+
     print("\n── ⑤ feeds 端的收集：⛔ `changed` 不可以被後來的 `same` 蓋掉 ──")
     import feeds
     feeds._FORMULA_SEEN.clear()

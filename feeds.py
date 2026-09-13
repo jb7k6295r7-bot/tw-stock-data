@@ -18,7 +18,7 @@
 | feed | 端點 | 結果 |
 |---|---|---|
 | `per`     | TWSE `BWIBBU_d` | stat=OK、**1,580 列**、8 欄（本益比／殖利率／股價淨值比） |
-| `exright` | TWSE `TWT49U`   | stat=OK、**4 列**、15 欄（除權息前收盤價／參考價／權值+息值） |
+| `exright` | TWSE `TWT49U`   | stat=OK、**4 列**、15 欄（除權息前收盤價／參考價／權值+息值／⭐ 漲停價格／跌停價格） |
 
 `exright` 那天的 4 列含 3661 世芯-KY 除息 32.551656、參考價 4,167.44，
 與 `claude/watchlist_state.md` 記的「09/03 除息 32.55、參考價 4,167.45」對得起來。
@@ -825,6 +825,13 @@ def parse_exright(d, day, known=None):
     i_val = _exact(f, "權值+息值")
     i_kind = _exact(f, "權/息")
     i_open = _exact(f, "開盤競價基準")
+    # ⭐⭐ 2026-09-13：官方這張表**一直有給** `漲停價格／跌停價格`（15 欄裡的兩欄），
+    #   ⚠ 而我方只取 7 欄 ⇒ 丟掉了它們。⛔ 而我為此花了一整輪**推論**交易所的漲跌停
+    #   （`factor_limit_check.py`：拿每一檔自己的歷史量「有沒有 ±10% 硬性上限」）。
+    # ⭐ 而官方連「**無**漲跌幅限制」都標出來了：00714 群益道瓊美國地產 2020-01-16
+    #   漲停 `9,999.95`、跌停 `0.01` ⇒ 那就是旗標（見 `price_limit.is_unlimited`）。
+    i_up = _exact(f, "漲停價格")
+    i_down = _exact(f, "跌停價格")
     if i_code is None or i_pre is None or i_ref is None:
         return [], f"欄位對不上：{f}"
     out, nodate = [], 0
@@ -847,7 +854,7 @@ def parse_exright(d, day, known=None):
             continue          # ★ 沒有自述日期就不收——寧可少一列，不要標錯日子
         out.append([dt, code, pre, ref, g(i_val),
                     (str(r[i_kind]).strip() if i_kind is not None and i_kind < len(r) else ""),
-                    g(i_open)])
+                    g(i_open), g(i_up), g(i_down)])
     note = f"{len(out)} 列"
     if nodate:
         note += f"（{nodate} 列無資料日期，已丟棄）"
@@ -1471,8 +1478,10 @@ FEEDS = {
     },
     "exright": {
         "dir": "exright",
+        # ⚠ 2026-09-13 從七欄變**九欄**（補了官方的 `漲停價格／跌停價格`）
+        #   ⛔ 舊日檔沒有這兩欄 ⇒ 要用 `--need-col limit_up` 重抓。
         "header": ["date", "stock_id", "pre_close", "ref_price", "value",
-                   "kind", "open_base"],
+                   "kind", "open_base", "limit_up", "limit_down"],
         "parse": parse_exright,
         "known": False,   # 除權息表會有已下市或非 universe 的標的，先全收
         # ★★ 2026-09-04 事故：原本用 `date=` 參數——**這支端點根本不吃 `date`**，
@@ -1985,6 +1994,41 @@ def months_to_ask(rng, ledger, force=False, today=None):
     return todo, reask
 
 
+def months_missing_col(day_files, need, header):
+    """→ (要重問的 {"YYYY-MM"}, 這個 feed 的表頭裡到底有沒有 `need`)。
+
+    ## ⛔⛔ 為什麼要有這一支：`--need-col` 對**區間型** feed 原本是**靜靜無效**的
+
+    `cmd_feed_range()` 在 `need_col` 那段程式碼**之前**就 return 了
+    ⇒ `reduce`／`parvalue`／`etfsplit` 三支（全是 `range=True`）帶 `--need-col`
+    跑起來**完全正常、回 0、什麼都沒補**。
+    ⚠ 而那正是四點二那條：「這一步跑完了」跟「這一步造成了它該造成的後果」是兩件事。
+
+    ## ⭐ 而「0 個月要補」有兩種，⛔ 意思相反
+
+    ```
+    ① 表頭本來就有這一欄 ⇒ 真的補完了
+    ② ⛔ `need` 根本不是這個 feed 的欄名（打錯字）⇒ **每一天都「缺」它**…
+       ⚠ 不對——是每一天都缺，所以會**整批重抓**，白打幾百發
+    ```
+    ⇒ 所以第二個回傳值是「這個 feed 的表頭裡有沒有這一欄」——
+    ⛔ 沒有就代表使用者打錯了，要**當場停下來**，不是默默重抓全部。
+
+    `day_files` 是日檔名（含 `.csv`）到**表頭那一行**的對照。
+    """
+    if not need:
+        return set(), True
+    in_header = need in [c.strip() for c in header]
+    bad = set()
+    for fn, head in day_files.items():
+        if not fn.endswith(".csv") or len(fn) < 8:
+            continue
+        cols = [c.strip() for c in str(head).rstrip("\n").split(",")]
+        if need not in cols:
+            bad.add(fn[:7])
+    return bad, in_header
+
+
 # 端點自己說「查無資料」時的字樣。**這代表那段期間沒有事件，不是抓取失敗。**
 _EMPTY_STAT_RE = re.compile(r"沒有符合條件的資料|查無資料|無符合條件|沒有資料")
 _EMPTY = object()          # cmd_feed_range 內部用的哨符：這個月沒有事件
@@ -2022,6 +2066,33 @@ def cmd_feed_range(args, name):
     ledger = load_ledger(led_path)     # ⭐ 讀寫都收在一支（四點五）
     # ⭐ 台帳只對**已經結束的月份**有效（理由見 `month_is_open()`）。
     todo, reask = months_to_ask(rng, ledger, args.force)
+    # ⭐⭐ `--need-col`：區間型原本走不到那段程式碼（見 `months_missing_col`）
+    need = getattr(args, "need_col", "")
+    if need:
+        heads = {}
+        if os.path.isdir(d):
+            for fn in sorted(os.listdir(d)):
+                if not fn.endswith(".csv") or fn.startswith("_"):
+                    continue
+                try:
+                    with open(os.path.join(d, fn), encoding="utf-8") as f_:
+                        heads[fn] = f_.readline()
+                except OSError:
+                    continue
+        stale, in_header = months_missing_col(heads, need, spec["header"])
+        if not in_header:
+            # ⛔ 打錯欄名 ⇒ **每一天都會「缺」它** ⇒ 整批重抓、白打幾百發
+            print(f"[{name}] ⛔⛔ `--need-col {need}` 不是這個 feed 的欄名"
+                  f"（表頭是 {spec['header']}）⇒ 停下來，不重抓。", file=sys.stderr)
+            return 1
+        have = {m[0][:7] for m in rng}
+        add = sorted(m for m in stale if m in have)
+        print(f"[{name}] --need-col {need}：{len(heads)} 個日檔裡，"
+              f"**{len(stale)} 個月**的表頭缺這一欄"
+              f"（落在本趟區間的 {len(add)} 個月要重問）")
+        if add:
+            byk = {m[0][:7]: m for m in rng}
+            todo = sorted(set(todo) | {byk[m] for m in add})
     if args.limit:
         todo = todo[:args.limit]
     skipped = len(rng) - len(todo)
