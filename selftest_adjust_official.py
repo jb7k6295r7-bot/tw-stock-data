@@ -194,6 +194,79 @@ def main():
        l5 and l5[0][i["cum_factor"]] == "1.01190476",
        l5[0][i["cum_factor"]] if l5 else "（空）")
 
+    # ══════════════════════════════════════════════════════════
+    print("\n⑦ ⭐⭐ 因子改用**未捨入參考價**（2026-09-14）")
+    import os as _o2
+    import shutil as _sh2
+    import tempfile as _tf2
+
+    def _read(files):
+        """把 {子目錄: [(表頭, 列…)]} 寫成假 universe，跑一次 read_events。"""
+        d = _tf2.mkdtemp(prefix="adjex_")
+        try:
+            uni = _o2.path.join(d, "universe")
+            for sub, (head, body) in files.items():
+                _o2.makedirs(_o2.path.join(uni, sub))
+                io.open(_o2.path.join(uni, sub, "2020-06-01.csv"), "w",
+                        encoding="utf-8").write(head + "\n" + "".join(body))
+            old_dirs, old_uni = A.EVENT_DIRS, A.UNI_DIR
+            try:
+                A.UNI_DIR = uni
+                A.EVENT_DIRS = [(m, sk, _o2.path.join(uni, _o2.path.basename(dd)))
+                                for m, sk, dd in old_dirs]
+                return A.read_events()
+            finally:
+                A.EVENT_DIRS, A.UNI_DIR = old_dirs, old_uni
+        finally:
+            _sh2.rmtree(d, ignore_errors=True)
+
+    EH = "date,stock_id,pre_close,ref_price,value,kind,open_base"
+    # ⭐ 官方 2353 那一列的形狀：pre 21.35、ref 21.02（**捨去後**）、value 0.325605
+    #   ⇒ 未捨入的 ref = 21.35 − 0.325605 = 21.024395
+    ev7 = _read({"exright": (EH, ["2020-06-01,1111,21.35,21.02,0.325605,權,21.35\n"])})
+    f7 = ev7["1111"][0][1]
+    ck("⭐ TWSE 除權息用**未捨入**參考價（21.024395/21.35），⛔ 不是 21.02/21.35",
+       abs(f7 - (21.35 - 0.325605) / 21.35) < 1e-12
+       and abs(f7 - 21.02 / 21.35) > 1e-6, f"{f7:.10f}")
+    # ⛔ 而上櫃（FinMind）**不可以**用：實測它的 `value` 是各自捨入的
+    #   （ref 較高 14.05%、較低 11.57% ⇒ 兩邊都有 ⇒ 不是「更準的 ref」）
+    ev7b = _read({"otcexright": (EH + ",source",
+                                 ["2020-06-01,1111,21.35,21.02,0.325605,除權,21.35,x\n"])})
+    f7b = ev7b["1111"][0][1]
+    ck("⛔ 上櫃（FinMind）仍然用 ref/pre（⚠ 它的 value 是各自捨入的，用了只是加噪音）",
+       abs(f7b - 21.02 / 21.35) < 1e-12, f"{f7b:.10f}")
+    # ⛔ 恆等式對不上（value 是別的意思）⇒ 退回 ref/pre
+    ev7c = _read({"exright": (EH, ["2020-06-01,1111,21.35,21.02,5.000000,權,21.35\n"])})
+    ck("⛔ `pre − value` 離 ref 太遠 ⇒ 退回 ref/pre（⚠ 欄名相同不代表是同一個東西）",
+       abs(ev7c["1111"][0][1] - 21.02 / 21.35) < 1e-12,
+       f"{ev7c['1111'][0][1]:.10f}")
+
+    print("\n⑧ ⛔⛔ 去重要比**原始價格欄**，不是比算出來的因子")
+    # 這是 2026-09-14 真的踩到的：換過市場的股票（上櫃轉上市）同一個事件
+    # 在 exright 與 otcexright 各出現一次。⛔ 舊判準比 `round(因子,9)`，
+    # 而它能運作只是因為兩邊算出**逐位元相同**的因子——因子算法一改就失效
+    # ⇒ 因子被連乘兩次 ⇒ 4912 的 cum_factor 掉 **43%**，而且不會報錯。
+    # ⚠ `value` 一定要**滿足恆等式**（538.0 − 484.8 = 53.2 附近），否則
+    #   官方那一列會走退路 ⇒ 兩邊因子變成一樣 ⇒ ⛔ 這條斷言就什麼都沒測到
+    #   （第一版寫 53.1234 ⇒ 差 0.077 > 容差 ⇒ 突變 Z1 **全綠**）。
+    ev8 = _read({
+        "exright": (EH, ["2020-06-01,1111,538.0,484.8,53.196789,權,484.8\n"]),
+        "otcexright": (EH + ",source",
+                       ["2020-06-01,1111,538.0,484.8,53.196789,除權,484.8,x\n"]),
+    })
+    # ⭐ 先確認這兩列**真的**會算出不同的因子（⛔ 否則下面那條是空的）
+    _f8a = (538.0 - 53.196789) / 538.0
+    _f8b = 484.8 / 538.0
+    ck("  （前提）兩個來源的因子**確實不同**，而且差距大於舊判準的 1e-9",
+       abs(_f8a - _f8b) > 1e-8, f"{_f8a:.10f} vs {_f8b:.10f}｜差 {_f8a-_f8b:.2e}")
+    ck("⭐ 同一事件、兩個來源、**因子不同** ⇒ 仍然只留一列（比的是前收與參考價）",
+       len(ev8["1111"]) == 1, str([(r[0], round(r[1], 9), r[5]) for r in ev8["1111"]]))
+    # ⛔ 反向：參考價**真的不同** ⇒ 兩列都要留（權與息分開公告就是這樣）
+    ev8b = _read({"exright": (EH, ["2020-06-01,1111,538.0,484.8,53.1234,權,484.8\n",
+                                   "2020-06-01,1111,538.0,500.0,38.0000,息,500.0\n"])})
+    ck("⛔ 反向：同一天但**參考價不同** ⇒ 兩列都留（⚠ 不可以合併成一筆）",
+       len(ev8b["1111"]) == 2, str([(r[0], r[3]) for r in ev8b["1111"]]))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

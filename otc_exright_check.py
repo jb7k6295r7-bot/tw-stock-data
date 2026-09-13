@@ -52,7 +52,29 @@ OUT = os.path.join(_ROOT, "meta", "otc_exright_official.csv")
 ADJ_DIR = os.path.join(_ROOT, "adj")
 
 URL = "https://www.tpex.org.tw/openapi/v1/tpex_exright_daily"
-HEADER = ["date", "stock_id", "name", "pre_close", "ref_price", "kind", "asof"]
+# ⭐⭐ 2026-09-14 從 7 欄加到 14 欄。⛔ 而理由不是「多存一點比較好」：
+#
+#   這一支原本只留 `pre_close`／`ref_price`／`kind` 六欄 ——
+#   ⚠ 而官方這張表**一直有給** 21 欄，其中六欄正好是我方今天證明有用的：
+#
+#     LimitUp / LimitDown            上櫃的**官方漲跌停**
+#        ⇒ F2 那 6 筆「未證實」全部是上櫃，卡的就是沒有這個
+#        ⇒ `factor_limit_check` 上櫃那半只能靠推論，而那條推論對現增除權
+#          會誤報（上市實測漲停側只中 95.39%）
+#     DividendDeductedQuote          減除股利參考價（＝只扣現金股利的口徑）
+#        ⇒ 上市那一欄（`ex_div_ref`）今天證實**同時是官方漲停的基準**
+#     StockDividend / CashDividend   ⭐ **權值與息值分開**
+#        ⇒ 上市只給合併值（notes 自己寫著它 = 前收 − 參考價，是導出值）
+#          ⇒ 這是上市**沒有**而上櫃有的東西
+#     SubscriptionPricePerShare / CashCapitalIncreaseShares  現增認購價與股數
+#
+#   ⇒ ⭐ 這與集保、行事曆同一族：**拿不到過去，但可以從今天起不再丟掉。**
+#   ⚠ 而現在加幾乎不損失——累積檔到 2026-09-14 只有 13 列。
+#   ⛔ 舊列那幾欄會是空的，⚠ 而「空」跟「官方沒給」要分得出來
+#     ⇒ 靠 `asof`：2026-09-14 以前的列本來就不會有。
+HEADER = ["date", "stock_id", "name", "pre_close", "ref_price", "kind",
+          "limit_up", "limit_down", "ex_div_ref", "open_base",
+          "stock_div", "cash_div", "sub_price", "sub_shares", "asof"]
 
 # ⛔ 欄名逐字照抄官方（含拼字錯誤）。用 .get 找不到就留空，不自己「修正」拼字，
 #   因為「修正」等於假設官方哪天會改，而那個假設沒有根據。
@@ -62,6 +84,15 @@ F_NAME = "CompanyName"
 F_PRE = "ClosePriceBeforeExRightsDiviend"
 F_REF = "ExRightsDiviendQuote"
 F_KIND = "ExRightsDiviend"
+# ⭐ 2026-09-14 探針（`_tpex_probe.txt` [12]）逐字抄回來的另外八個欄名
+F_UP = "LimitUp"
+F_DOWN = "LimitDown"
+F_XDIV = "DividendDeductedQuote"
+F_OPEN = "OpeningReferencePrice"
+F_SDIV = "StockDividend"
+F_CDIV = "CashDividend"
+F_SUBP = "SubscriptionPricePerShare"
+F_SUBS = "CashCapitalIncreaseShares"
 
 
 def roc7(v):
@@ -70,6 +101,22 @@ def roc7(v):
     if not re.fullmatch(r"1[0-9]{6}", s):
         return None
     return f"{int(s[:3]) + 1911:04d}-{s[3:5]}-{s[5:7]}"
+
+
+def to_row(r, dt, sid, today):
+    """官方一列 → 我方一列（順序＝`HEADER`）。⛔ 抽成純函式才驗得到。
+
+    ⚠ 「測了判準、沒測呼叫點」這一族在本專案已經兩次（CLAUDE.md 第七點③）
+    ⇒ 呼叫點只剩一行 `rows.append(to_row(...))`，⭐ 而欄序由這裡與 `HEADER` 一起定。
+    """
+    def g(k):
+        return str(r.get(k, "")).strip()
+    out = [dt, sid, g(F_NAME), g(F_PRE), g(F_REF), g(F_KIND),
+           g(F_UP), g(F_DOWN), g(F_XDIV), g(F_OPEN),
+           g(F_SDIV), g(F_CDIV), g(F_SUBP), g(F_SUBS), today]
+    # ⛔ 欄數與 `HEADER` 對不上就是有人只改了一邊（四點五那一族）
+    assert len(out) == len(HEADER), f"欄數 {len(out)} != HEADER {len(HEADER)}"
+    return out
 
 
 def adj_events():
@@ -169,15 +216,20 @@ def main():
         if not dt or not sid:
             bad += 1
             continue
-        rows.append([dt, sid, str(r.get(F_NAME, "")).strip(),
-                     str(r.get(F_PRE, "")).strip(),
-                     str(r.get(F_REF, "")).strip(),
-                     str(r.get(F_KIND, "")).strip(), today])
+        rows.append(to_row(r, dt, sid, today))
     rl.info("本趟官方回的", f"{len(d)} 列｜認得出的 {len(rows)}"
             + (f"｜⚠ 認不出 {bad}" if bad else ""))
     # ⛔ 這一項是為了防「我把我取到的範圍寫成它的全部」——
     #   情報分析線 2026-09-09 20:50 就是這樣把 9 筆報成 2 筆的。
     rl.check("官方回的每一列都認得出日期與代號", bad == 0, f"認不出 {bad} 列")
+    # ⭐⭐ 欄名不見了要**大聲講**，⛔ 不是靜靜留空——`.get()` 找不到就是空字串，
+    #   而「官方這一列沒填」與「官方把欄名改掉了」在檔案裡長得一模一樣。
+    if d and isinstance(d[0], dict):
+        want = {F_UP, F_DOWN, F_XDIV, F_OPEN, F_SDIV, F_CDIV, F_SUBP, F_SUBS}
+        miss = sorted(want - set(d[0]))
+        rl.check("⭐ 官方那八個新欄名都還在（⛔ 改名了會靜靜變成整欄空白）",
+                 not miss, f"⛔ 不見了：{miss}｜官方實際欄位：{sorted(d[0])}"
+                           if miss else f"{len(want)} 個都在")
     if not rows:
         rl.info("今天", "官方回 0 筆上櫃除權息")
         return rl.finish()

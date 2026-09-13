@@ -133,6 +133,23 @@ EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
 #   實測停止買賣天數：減資數日、面額變更 6~8 天、ETF 分割 5~6 天。
 HALTING_KINDS = {"reduce", "parvalue", "etfsplit"}
 
+# ⭐ 同一（代號,日期,來源）出現多列時，因子差多少才算「同一個事件」。
+#   ⛔ 這個數字是**算出來的**，不是調的：見 `read_events()` 裡那段。
+DUP_REL_TOL = 1e-6
+
+# ⭐⭐ 哪些來源可以用「未捨入參考價」（`pre_close − 權值息值`）當因子。
+#   ⛔ 這**不是**一份方便清單，是量出來的：同一把尺量兩個來源，行為相反。
+#
+#   ```
+#   TWSE exright   （11,751 列）ref 較低 35.01%｜⛔ ref 較高 **0.00%**
+#                  ⇒ **單邊** ⇒ ref 確定是無條件捨去 ⇒ `pre − value` 就是捨去前的值
+#   TPEx otcexright（13,187 列）ref 較低 11.57%｜⛔ ref 較高 **14.05%**
+#                  ⇒ **兩邊都有** ⇒ FinMind 的 `value` 是各自捨入的，
+#                    ⛔ `pre − value` 不是「更準的 ref」，用它只是加噪音
+#   ```
+#   ⚠ 兩邊的欄名一模一樣、恆等式也都通過 ⇒ ⛔ 靠欄位分不出來，只能靠**量**。
+EXACT_REF_SRC = {("twse", "exright")}
+
 BOUNDS = {"exright": (0.05, 1.5), "reduce": (0.20, 12.0),
           # ★ 面額變更：因子 ＝ 恢復買賣參考價 ÷ 停止買賣前收盤，**官方直接給**，
           #   所以它是乾淨的 1/k（實測 19/190 ＝ 18.5/185 ＝ 0.10，面額 10→1）。
@@ -226,6 +243,9 @@ def read_events():
     ev = defaultdict(list)
     up = 0                      # 參考價高於前收盤（現金增資認股價 > 市價）的筆數
     n_src = defaultdict(int)
+    # ⭐ 用了幾筆「未捨入參考價」、幾筆對不上恆等式（⛔ 兩個都要印出來：
+    #   只印前者的話，「恆等式大批對不上」會靜靜變成「這批沒有 value」）
+    n_exact = n_val_off = n_ref_high = 0
     for market, srck, d in EVENT_DIRS:
         if not os.path.isdir(d):
             continue
@@ -259,12 +279,43 @@ def read_events():
                         continue
                     if not pre or not ref or pre <= 0 or ref <= 0:
                         continue
-                    f = ref / pre
                     # ⭐ 官方換股比例回推的因子。⚠ 只有上櫃減資（`revivt`）有；
                     #   ⛔ 沒有就留 None——**不要用 `f` 頂替**，
                     #   那會讓「有官方值」與「沒有」在檔案裡長得一模一樣。
                     fo = _f(g("official_factor"))
                     val = _f(g("value"))
+                    # ⭐⭐ 2026-09-14：因子改用**未捨入**的參考價。
+                    #
+                    #   官方 `ref_price` 是**無條件捨去到分**的
+                    #   （實測 11,751 列：等於 65%、比較低 35%、⛔ 比較高 **0** 筆）；
+                    #   而官方 `權值+息值` 給到**六位小數**，且官方 notes 自己寫著
+                    #   `權值+息值 ＝ 除權息前收盤價 − 除權息參考價`
+                    #   ⇒ `pre − val` 就是**捨去前**的參考價。
+                    #
+                    #   ⚠ 而 `cum_factor` 是**連乘** ⇒ 每筆少一點點會累積成單邊偏差：
+                    #     受影響 920 檔、⛔ 100% 為負、中位 −3.87e-04、
+                    #     最差 −2.90e-02（9105）、2330 −5.76e-05
+                    #     ——⭐ 而 2330 那個數字跟 TradingView 線量到的 −5.68e-05 對得上。
+                    #
+                    #   ⛔⛔ 而**一定要有這道恆等式閘門**：`value` 這個欄名在別的來源
+                    #     可能是別的意思（`otcexright` 走的是 FinMind，不是官方）。
+                    #     ⇒ 只有 `pre − val` 真的落在 `ref` 的捨入誤差內才採用；
+                    #     ⚠ 容差 0.011 是**算出來的**（兩個價各自捨入到分 ⇒ 差值上限 0.01）。
+                    #     ⇒ 對不上就退回 `ref/pre`，而且**計數**（⛔ 不是靜靜忽略）。
+                    f = ref / pre
+                    if val is not None and (market, srck) in EXACT_REF_SRC:
+                        exact = pre - val
+                        if exact > 0 and abs(exact - ref) <= 0.011:
+                            f = exact / pre
+                            n_exact += 1
+                            # ⭐ 自我驗證：這個來源的前提是「ref 被**捨去**」
+                            #   ⇒ `pre − value` 只會 ≥ ref。⛔ 出現 < ref 就代表
+                            #   那個前提壞了（官方改成四捨五入、或欄位語意變了）
+                            #   ⇒ 要**大聲講**，不可以繼續靜靜用下去。
+                            if exact < ref - 1e-9:
+                                n_ref_high += 1
+                        else:
+                            n_val_off += 1
 
                     # ★★ 2026-09-04 修正：原本寫死 `f <= 1.0001`，理由是
                     #   「除權息不會讓參考價高於前收盤」——**那個假設是錯的**。
@@ -316,17 +367,36 @@ def read_events():
             if len(v) == 1:
                 keep.append(v[0])
                 continue
-            fs = {round(x[1], 9) for x in v}
-            if len(fs) == 1:
+            # ⛔⛔ 2026-09-14：這裡原本比的是 `round(因子, 9)`——比**算出來的**值。
+            #
+            #   ⚠ 它能運作只是因為兩個獨立來源（TWSE 官方表與 FinMind 上櫃表）
+            #     對同一個事件算出**逐位元完全相同**的因子。那是運氣，不是判準。
+            #   ⇒ 因子的算法一改（改用未捨入參考價），兩邊就差開了
+            #     ⇒ 去重當場失效 ⇒ **因子被連乘兩次**
+            #     ⇒ 4912 的 cum_factor 掉 **43%**，⛔ 而它一聲都不會吭。
+            #   ⚠ 踩到的那幾檔（4912／8462／3416／3528／6446／6472／4736）
+            #     **全部是換過市場**的股票（上櫃轉上市）
+            #     ⇒ 同一個事件在 `exright`（TWSE）與 `otcexright`（FinMind）各一次。
+            #
+            #   ⇒ ⭐ 判準改成比**原始價格欄**（前收、參考價），⛔ 不是比算出來的因子：
+            #     ① 兩個來源報同一個事件 ⇒ 這兩欄逐位相同 ⇒ 收一列
+            #     ② 真的兩個不同事件（權與息分開公告）⇒ 參考價不同 ⇒ 兩組都留
+            #     ⭐ 而它**不受因子算法改變影響**——那正是上面那個坑的根因。
+            sub = defaultdict(list)
+            for x in v:
+                sub[(round(x[2], 4), round(x[3], 4))].append(x)
+            if len(sub) == 1:
                 keep.append(v[0])                 # 純重複，收一列
                 dupdrop += len(v) - 1
             else:
-                # 因子不同＝同一天有兩個**不一樣**的事件，或資料矛盾。
-                # 這在目前的資料裡是 0 件。真的發生就是要有人看，不可靜默決定。
-                print(f"[adj] ★ 同一（代號,日期,來源）出現因子不同的多列，"
+                # 價格欄不同＝同一天有兩個**不一樣**的事件，或資料矛盾。
+                # 真的發生就是要有人看，⛔ 不可靜默決定。
+                print(f"[adj] ★ 同一（代號,日期,來源）出現**價格欄不同**的多列，"
                       f"**已全部保留、請人工判斷**：{c} {key[0]} {key[1]} "
-                      f"f={sorted(fs)}", file=sys.stderr)
-                keep.extend(v)
+                      f"(前收,參考)={sorted(sub)}", file=sys.stderr)
+                for g_ in sorted(sub):
+                    keep.append(sub[g_][0])       # ⭐ 每一組價格各收一列
+                    dupdrop += len(sub[g_]) - 1
         ev[c] = sorted(keep)
     if dupdrop:
         print(f"[adj] 同一事件的重複列丟棄 {dupdrop} 列（四個價格欄完全相同）。"
@@ -353,6 +423,15 @@ def read_events():
     if up:
         print(f"[adj] 其中 {up} 筆的參考價高於前收盤（權值為負＝現金增資認股價高於市價），"
               f"已照實收下，不是錯誤")
+    # ⭐ 這兩個數字要印在一起：⛔ 只印「用了幾筆」的話，
+    #   「恆等式大批對不上」會靜靜長得像「這一批沒有 value 欄」。
+    print(f"[adj] ⭐ 因子用**未捨入參考價**（pre − 權值息值）的：{n_exact:,} 筆"
+          f"｜⛔ 恆等式對不上而退回 ref/pre 的：{n_val_off:,} 筆")
+    if n_ref_high:
+        print(f"[adj] ⛔⛔ `EXACT_REF_SRC` 的前提壞了：有 {n_ref_high:,} 筆的"
+              f"「pre − 權值息值」**低於** ref（前提是官方 ref 無條件捨去 ⇒ 只會更高）"
+              f"　⇒ 官方可能改成四捨五入，或那一欄的語意變了。**先去量，不要繼續用。**",
+              file=sys.stderr)
     print(f"[adj] 事件來源：除權息 {n_src['exright']:,} 筆、減資 {n_src['reduce']:,} 筆"
           + (f"；同日重疊丟棄 {dup} 筆除權息" if dup else ""))
     if not n_src["reduce"]:
