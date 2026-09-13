@@ -747,6 +747,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         run: |
+          python selftest_price_limit.py
           python selftest_factor_limit.py
           python factor_limit_check.py --write
 

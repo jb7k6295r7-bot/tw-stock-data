@@ -10,6 +10,7 @@ import io, os, shutil, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import feeds
+import price_limit as P
 
 
 # ★ 「這支測試有沒有碰到真的 data/」要用**測試前後的指紋比對**來證明。
@@ -80,8 +81,39 @@ check(rows[1][0] == "2015-03-20" and rows[2][0] == "2015-12-30", "另兩列日�
 check(rows[1][4] == "彌補虧損", "減資原因有進來")
 check(feeds.FEEDS["reduce"]["header"] ==
       ["date", "stock_id", "pre_close", "ref_price", "reason", "open_base",
-       "ex_ref_price"], "表頭與 parse 輸出的欄數一致")
+       "ex_ref_price", "limit_up", "limit_down"],
+      "表頭就是這九欄（⛔ 字面比對：欄序也是契約的一部分）")
 check(len(rows[0]) == len(feeds.FEEDS["reduce"]["header"]), "每列欄數 = 表頭欄數")
+
+# ⭐⭐ 2026-09-13：官方**一直有給** `漲停價格／跌停價格`，而我方一直丟掉。
+#   ⛔ 而我為此花了一整輪去推論交易所的漲跌停（`factor_limit_check.py`）。
+#   ⚠ 而「欄數對了」跟「那一欄是對的值」是兩件事（四點二③）
+#     ⇒ 這兩條比的是**官方真的回過的數字**：3040 遠見 2015-01-23
+#       前收 31.90 → 參考 41.28、漲停 44.15、跌停 38.40。
+check(rows[0][7] == "44.15", "⭐ `limit_up` 取到官方的漲停價（44.15）")
+check(rows[0][8] == "38.40", "⭐ `limit_down` 取到官方的跌停價（38.40）")
+# ⛔ 反向：⚠ 若取錯欄位，最可能撿到的是**隔壁的開盤競價基準**（41.30）
+#   ——它跟漲停價都是「合法的價格數字」，⛔ 光看型別分不出來。
+check(rows[0][7] != rows[0][5] and rows[0][8] != rows[0][5],
+      "⛔ 而它們不等於開盤競價基準（⇒ 不是撿到隔壁那一欄）")
+# ⭐ 官方漲跌停必定夾住參考價
+_ref, _up, _dn = float(rows[0][3]), float(rows[0][7]), float(rows[0][8])
+check(_dn < _ref < _up, "⭐ 官方漲跌停夾住參考價")
+# ⛔⛔ 2026-09-13 這裡原本寫的是「就是參考價的 ±10%」——**它紅了，而且它該紅**：
+#   44.15/41.28 = 1.0695。⚠ 台股的單日漲跌幅 **2015-06-01 才由 7% 放寬為 10%**，
+#   而這一列是 2015-01-23 ⇒ 它是 **7%**。
+#   ⇒ 那個斷言把一個**有年代的**數字寫成了通則（三點2）。
+# ⭐ 現在改成拿 `price_limit`（唯一的一份實作，四點五）逐位對——
+#   ⛔ 而三列橫跨放寬日兩側，所以它同時釘住「年代切分真的有作用」。
+check(P.up(_ref, rows[0][0]) == _up and P.down(_ref, rows[0][0]) == _dn,
+      f"⭐ 官方漲跌停 = `price_limit` 算的（{rows[0][0]} 7% era）",)
+_r2 = float(rows[2][3])
+check(P.up(_r2, rows[2][0]) == float(rows[2][7])
+      and P.down(_r2, rows[2][0]) == float(rows[2][8]),
+      f"⭐ 而放寬日之後那一列是 10%（{rows[2][0]}）")
+# ⛔ 反向：若把年代切分拿掉、一律用 10%，第一列就對不上 ⇒ 證明這個切分不是裝飾
+check(P.up(_ref, "2026-01-02") != _up,
+      "⛔ 反向：拿 10% 去算 2015-01-23 那一列，漲停就對不上（45.40 ≠ 44.15）")
 
 print("── 2. _roc_date 兩種格式＋西元不誤中 ──")
 check(feeds._roc_date("115/09/07") == "2026-09-07", "斜線民國")
