@@ -735,6 +735,21 @@ jobs:
           python selftest_neighbor_floor.py
           python feed_rowcount_check.py --write
 
+      # ⭐⭐ 用**交易所的漲跌停**證明還原因子錯了（2026-09-13 判 F2 那 21 筆時做出來的）。
+      #   事件日的漲跌停是用**參考價**算的 ⇒ 成交價不可能超出 `ref × 1.10`
+      #   ⇒ 超出了就**證明**交易所用的參考價不是我方那個。
+      # ⭐ 全庫校準：1,926 檔有硬性上限的證券、19,767 個事件 ⇒ 只抓到 7 筆，
+      #   誤報 **0 / 19,760**。⚠ 而那 7 筆全部落在回測線 F2 那 21 筆裡。
+      # ⛔ 無漲跌幅限制的證券（ETF 等）會自動排除——判準是拿它自己的歷史量的，
+      #   ⛔ 不是一份會過期的清單。
+      - name: 還原因子 vs 交易所漲跌停（只讀，不連外）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          python selftest_factor_limit.py
+          python factor_limit_check.py --write
+
       - name: 斷點掃描與面額變更對帳
         if: always()
         continue-on-error: true
