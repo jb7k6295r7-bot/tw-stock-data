@@ -104,6 +104,11 @@ jobs:
       - name: 驗累積型 CSV 的逐鍵合併（零相依）
         run: python selftest_merge_ledger.py
 
+      # ⛔⛔ 補鏈這種東西最糟的壞法**不是「沒補到」**（那會抓不到資料，很吵），
+      #   ⭐ 是**「順手把驗證關掉」**——⚠ 那會安靜地成功，成功得跟對的一模一樣。
+      - name: 驗補鏈沒有降低驗證（零相依）
+        run: python selftest_ca_chain.py
+
       - name: 把程式同步到 main（趁 checkout 還新）
         # ⛔ 只有一份實作（CLAUDE.md 四點五）。⚠ 這一段本來八支各抄一份、
         #   逐字相同——而 2026-09-13 要在裡面加一份**排除清單**，
