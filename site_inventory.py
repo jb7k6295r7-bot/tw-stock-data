@@ -56,6 +56,12 @@ SITES = [
     #   ⇒ 少了這兩份，這一支的「⛔ 選單上沒有」就會漏掉一整族。
     ("TWSE-OpenAPI", "https://openapi.twse.com.tw/v1/swagger.json"),
     ("TPEx-OpenAPI", "https://www.tpex.org.tw/openapi/swagger.json"),
+    # ⭐⭐ 2026-09-13 加：sitemap 有 **3,109 條**，比 mega menu 的 195 條寬得多。
+    #   ⛔ 而它**只有網址、沒有中文** ⇒ 拿中文詞表去搜必定 0 命中
+    #     ——⚠ 而那個 0 跟「這個站沒有」長得一模一樣（第七點）。
+    #   ⇒ 所以 `WANTED` 每一列多帶一組**路徑詞**（英文），並在最後那張表
+    #     把「這份目錄有幾條含中文」講出來，讓那個 0 自己說明它是結構造成的。
+    ("TWSE-sitemap", "https://www.twse.com.tw/sitemap.xml"),
 ]
 
 # ⭐ 我方**還缺什麼**。一條一組關鍵詞（任一命中就算）。
@@ -138,6 +144,45 @@ def _write(rc):
     return rc
 
 
+# ⭐ 路徑詞（英文）：⛔ 只有中文詞表的話，sitemap 那 3,109 條**結構上**一條都不會中。
+#   ⚠ 鍵要跟 WANTED 的標籤一字不差，⛔ 對不上就等於那一列沒有路徑詞（會被下面驗出來）。
+PATH_WORDS = {
+    "⭐ 除權息明細（權值／息值分開、現增認購價與認購率）":
+        ("exright", "exRight", "TWT48U", "TWT49U", "dividend", "t187ap45"),
+    "⭐ 減資換股率／退還股款（歷史）":
+        ("reduction", "reducation", "TWTAVU", "TWTAUU", "capitalreduction"),
+    "⭐ 漲跌停價格（官方直接給的）": ("limit", "fluctuation"),
+    "月營收（歷史，逐月）": ("t187ap05", "revenue"),
+    "財報（歷史，逐季）": ("t187ap06", "t163sb", "financial"),
+    "⭐ 終止上市／上櫃（下市下櫃名單）": ("suspend", "delist", "terminat"),
+    "⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）": ("broker", "brk", "bsr"),
+}
+
+
+def match(items, words, path_words=()):
+    """→ 命中的 [(標題, 連結)]。
+
+    ⭐ 兩層：中文詞比**標題**，路徑詞比**標題＋連結**且不分大小寫。
+    ⛔ 少了第二層，sitemap 那一族（只有網址）**結構上**一條都不會中，
+    ⚠ 而那個 0 跟「這個站沒有」長得一模一樣（第七點）。
+    """
+    out = []
+    for n, h in items:
+        if any(w in n for w in words):
+            out.append((n, h))
+            continue
+        if path_words:
+            hay = (str(n) + " " + str(h)).lower()
+            if any(str(q).lower() in hay for q in path_words):
+                out.append((n, h))
+    return out
+
+
+def has_cjk(s):
+    """→ 這個字串裡有沒有中日韓字。⛔ 一份沒有中文的清單，中文詞表搜不到是**必然**。"""
+    return any("\u4e00" <= c <= "\u9fff" for c in str(s))
+
+
 def flatten(obj, out, trail=""):
     """把選單（不管是 JSON 樹還是 HTML）攤平成 (標題, 連結)。"""
     if isinstance(obj, dict):
@@ -200,6 +245,10 @@ def parse_menu(label, raw):
         out = []
         flatten(d, out)
         return out
+    # sitemap.xml：只有 <loc>網址</loc>，⛔ 沒有任何標題
+    locs = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", txt)
+    if locs:
+        return [(u, u) for u in locs]
     # HTML：抓 <a href=...>文字</a>
     out = []
     for m in re.finditer(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
@@ -249,10 +298,21 @@ def main():
     for want, words in WANTED:
         say(f"★ {want}")
         for label, items in menus.items():
-            hits = [(n, h) for n, h in items if any(w in n for w in words)]
+            pw = PATH_WORDS.get(want, ())
+            hits = match(items, words, pw)
             if not hits:
-                say(f"   {label}：⛔ 選單上**沒有**這個名字"
-                    "（⚠ 這不代表站上沒有，只代表選單沒列）")
+                # ⭐⭐ 第七點：報「0 筆」一定要附這一群的**正例數**。
+                #   ⛔ 這份目錄若一條中文都沒有，這個 0 是**結構**造成的，
+                #     ⚠ 而它跟「這個站沒有」在紙上一模一樣。
+                ncjk = sum(1 for n, _h in items if has_cjk(n))
+                if ncjk == 0 and not pw:
+                    say(f"   {label}：⛔⛔ 這份目錄 {len(items)} 條**一條中文都沒有**"
+                        "，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，"
+                        "**不是「站上沒有」**")
+                else:
+                    say(f"   {label}：⛔ 選單上**沒有**這個名字"
+                        f"（⚠ 這不代表站上沒有，只代表選單沒列"
+                        f"｜這份目錄 {ncjk}/{len(items)} 條含中文）")
                 continue
             say(f"   {label}：⭐ **{len(hits)} 條**")
             seen = set()
@@ -275,7 +335,9 @@ def main():
     say("── ⭐ 掃描範圍表（⛔ 只要有一列失敗，這一趟就不可以寫出「官方沒有」）──")
     bad = [x for x in scope if x[3]]
     for label, url, n, err in scope:
-        say(f"  {'✗' if err else '✅'} {label}｜{n} 條｜{url}" + (f"｜{err}" if err else ""))
+        ncjk = sum(1 for nm, _h in menus.get(label, []) if has_cjk(nm))
+        say(f"  {'✗' if err else '✅'} {label}｜{n} 條"
+            f"（含中文 {ncjk}）｜{url}" + (f"｜{err}" if err else ""))
     say(f"  ⇒ 成功 {len(scope) - len(bad)} / {len(scope)} 份目錄"
         f"｜合計 {sum(x[2] for x in scope):,} 條")
     if bad:

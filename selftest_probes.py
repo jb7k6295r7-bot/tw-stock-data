@@ -457,6 +457,62 @@ def check_site_inventory_openapi():
     print(f"{'✓' if ok else '✗'} site_inventory：⛔ 一般選單 JSON 仍然走 `flatten`"
           f"（⚠ 沒有 `paths` 鍵就不是 OpenAPI）｜{menu}")
     bad += 0 if ok else 1
+
+    # ── sitemap 與路徑詞 ───────────────────────────────────
+    sm = SI.parse_menu("TWSE-sitemap", b"<urlset><url><loc> https://w/zh/announcement/"
+                                       b"reduction/twtavu.html </loc></url></urlset>")
+    ok = len(sm) == 1 and sm[0][0].endswith("twtavu.html")
+    print(f"{'✓' if ok else '✗'} site_inventory sitemap：`<loc>` 撈得出來且去掉空白"
+          f"｜{sm}")
+    bad += 0 if ok else 1
+
+    # ⭐⭐ 這一條是主角：PATH_WORDS 的鍵**對不上** WANTED 的標籤時，
+    #   ⛔ 那一列就靜靜地沒有路徑詞 ⇒ sitemap 那 3,109 條對它永遠 0 命中，
+    #   ⚠ 而輸出上長得跟「站上真的沒有」一模一樣。
+    labels = {w for w, _ws in SI.WANTED}
+    orphan = sorted(k for k in SI.PATH_WORDS if k not in labels)
+    ok = not orphan
+    print(f"{'✓' if ok else '✗'} site_inventory：⭐ PATH_WORDS 的每一個鍵都對得上 "
+          f"WANTED 的標籤（⛔ 對不上 = 那一列沒有路徑詞）｜孤兒鍵 {orphan}")
+    bad += 0 if ok else 1
+
+    # ⛔ 反向：中文詞表對「只有網址」的清單必定 0 ⇒ 路徑詞要真的救得回來
+    ok = any("reduction" in q for q in
+             SI.PATH_WORDS.get("⭐ 減資換股率／退還股款（歷史）", ()))
+    print(f"{'✓' if ok else '✗'} site_inventory：⭐ 減資那一列的路徑詞含 `reduction`"
+          "（⛔ 中文詞表對 sitemap 結構上一條都不會中）")
+    bad += 0 if ok else 1
+
+    # ⭐ 比對本體：兩層都要走得到
+    items = [("上櫃股票減資", "/a.html"),
+             ("https://w/zh/announcement/REDUCTION/twtavu.html",
+              "https://w/zh/announcement/REDUCTION/twtavu.html"),
+             ("完全無關的一頁", "/z.html")]
+    got = SI.match(items, ("減資",), ("reduction",))
+    ok = len(got) == 2
+    print(f"{'✓' if ok else '✗'} site_inventory match：中文詞與路徑詞**各自**都要命中"
+          f"（得到 {len(got)}）｜{got}")
+    bad += 0 if ok else 1
+    got = SI.match(items, ("減資",), ())
+    ok = len(got) == 1
+    print(f"{'✓' if ok else '✗'} site_inventory match：⛔ 沒有路徑詞時那條網址就中不到"
+          f"（⇒ 這就是 sitemap 那 3,109 條的 0）｜{got}")
+    bad += 0 if ok else 1
+    ok = len(SI.match(items, (), ("REDuction",))) == 1
+    print(f"{'✓' if ok else '✗'} site_inventory match：⭐ 路徑詞不分大小寫")
+    bad += 0 if ok else 1
+    # ⭐⭐ 真正的選單就是這個形狀：**中文標題 ＋ 英文網址**
+    #   ⇒ 路徑詞只比標題的話，這一條中不到——⛔ 而那是 mega menu 的常態。
+    menu_row = [("股票減資恢復買賣參考價格", "/zh/announcement/reduction/twtauu.html")]
+    ok = len(SI.match(menu_row, ("完全不相干",), ("twtauu",))) == 1
+    print(f"{'✓' if ok else '✗'} site_inventory match：⭐ 路徑詞要比到**連結**"
+          "（⚠ 選單是中文標題＋英文網址，只比標題就中不到）")
+    bad += 0 if ok else 1
+
+    ok = SI.has_cjk("減資") and not SI.has_cjk("https://w/zh/reduction/twtavu.html")
+    print(f"{'✓' if ok else '✗'} site_inventory：`has_cjk` 認得出「這份清單沒有中文」"
+          "（⇒ 那個 0 是結構造成的，第七點）")
+    bad += 0 if ok else 1
     return bad
 
 
