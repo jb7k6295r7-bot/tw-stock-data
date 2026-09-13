@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
-2018-06-19,5906,10.95,21.90,彌補虧損,21.90,
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2018-06-19,5906,10.95,21.90,彌補虧損,21.90,,24.05,19.75
