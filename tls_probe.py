@@ -122,6 +122,34 @@ def _openssl(host, lines):
         t = ln.strip()
         if t.startswith("issuer=") or t.startswith("subject=") or "Verify return code" in t:
             lines.append(f"      {t[:150]}")
+    # ⭐⭐ 對方漏送時，把**中間憑證本身**抓下來印成 PEM。
+    #   ⛔ 這不是「修法」，是**把要補的那張憑證拿到手**——
+    #   ⚠ 補鏈之後**驗證一樣是全開的**：那張中間憑證仍然必須被
+    #     系統信任的根簽過才成立（TWSE 用同一張、同一個根，現在就是通的）。
+    #   ⇒ 拿到 PEM 之後我方會把它**存進 repo**（公開資訊、可離線稽核），
+    #     ⛔ 不在執行期去 AIA 抓（那會讓每一趟抓取多一個對外相依）。
+    if n == 1:
+        aia = [ln.split("URI:", 1)[1].strip()
+               for ln in subprocess.run(
+                   ["openssl", "x509", "-noout", "-text"], input=out,
+                   capture_output=True, text=True, timeout=20).stdout.splitlines()
+               if "CA Issuers - URI:" in ln]
+        if aia:
+            try:
+                der = urllib.request.urlopen(aia[0], timeout=25).read()
+                pem = subprocess.run(
+                    ["openssl", "x509", "-inform", "DER", "-outform", "PEM"],
+                    input=der, capture_output=True, timeout=20).stdout.decode()
+                info = subprocess.run(
+                    ["openssl", "x509", "-noout", "-subject", "-issuer", "-dates"],
+                    input=pem, capture_output=True, text=True, timeout=20).stdout
+                lines.append("    ── ⭐ 要補的那張中間憑證（從對方憑證裡寫的 AIA 抓的）──")
+                for t in info.strip().splitlines():
+                    lines.append(f"      {t[:150]}")
+                lines.append("    ── PEM（原樣，下面整段可直接存檔）──")
+                lines.extend("      " + x for x in pem.strip().splitlines())
+            except Exception as ex:                            # noqa: BLE001
+                lines.append(f"    ⚠ AIA 抓不到：{type(ex).__name__}: {ex}")
     # AIA：中間憑證的官方下載位置（⛔ 對方自己寫在憑證裡的，不是我猜的）
     try:
         x = subprocess.run(["openssl", "x509", "-noout", "-text"],
