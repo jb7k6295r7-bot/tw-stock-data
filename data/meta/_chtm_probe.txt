@@ -52,11 +52,11 @@
      ⭐ 欄 8「公告連結」的相異值（2）：['', '/zh-tw/announce/market/announce/detail.html?docId=MTA0MDIwMTE3NDE=&content_file=XX']
      ⭐ 欄 9「財務重點專區連結」的相異值（1）：['https://mops.twse.com.tw/mops/#/web/t211sb01_q1']
 
-── 上櫃 chtm｜date=115/09/13　對照組：今天（⚠ 越界那一份要跟這一份比）
-   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/13&response=json
+── 上櫃 chtm｜date=115/09/14　對照組：今天（⚠ 越界那一份要跟這一份比）
+   https://www.tpex.org.tw/www/zh-tw/afterTrading/chtm?date=115/09/14&response=json
    頂層鍵 ['date', 'stat', 'tables']
    ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20260913
+     ── date：20260914
      ── stat：ok
    頂層 `fields`：None
    `_tables()` 認出 1 張表
