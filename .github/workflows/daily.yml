@@ -193,6 +193,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         run: python selftest_mops_history.py
+          python selftest_revenue_complete.py
 
       - name: 驗上市發行股數的補值（離線）
         timeout-minutes: 10
