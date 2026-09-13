@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2015-01-05,2353,21.35,21.02,0.325605,權,21.35
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down
+2015-01-05,2353,21.35,21.02,0.325605,權,21.35,22.80,19.55
