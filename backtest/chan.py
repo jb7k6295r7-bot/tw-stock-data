@@ -196,7 +196,13 @@ def selftest():
     pts4 = [8, 12, 10, 13, 10.5, 12.0, 11, 15, 13, 17, 14, 18]
     h4, l4, c4 = _seq(pts4, 2)
     _, so = detect(h4, l4, c4, pen_mode="old"); _, sn = detect(h4, l4, c4, pen_mode="new")
-    check("情境4 新筆訊號數 ≥ 老筆", len(sn) >= len(so), f"old {len(so)} new {len(sn)}")
+    check("情境4 步長 2：分型相距 2 根，老筆新筆都不成筆 ⇒ 0 訊號", len(so) == 0 and len(sn) == 0, f"old {len(so)} new {len(sn)}")
+    h4b, l4b, c4b = _seq(pts4, 3)                                    # 步長 3：分型相距 3 根 ⇒ 只有新筆成立
+    _, so3 = detect(h4b, l4b, c4b, pen_mode="old"); _, sn3 = detect(h4b, l4b, c4b, pen_mode="new")
+    check("情境4 步長 3：老筆 0、新筆 ≥ 1", len(so3) == 0 and len(sn3) >= 1, f"old {len(so3)} new {len(sn3)}")
+    check("情境1 C2 訊號日收盤 > ZG", bool(c2) and c[c2[0]["signal_raw"]] > centers[0]["zg"], f"close {c[c2[0]['signal_raw']] if c2 else None} zg {centers[0]['zg']}")
+    check("情境1 C2 前一根收盤 ≤ ZG（第一根突破）", bool(c2) and c[c2[0]["signal_raw"] - 1] <= centers[0]["zg"])
+    check("情境1 C2 在中樞成立（第三筆確認）之後", bool(c2) and c2[0]["signal_raw"] > centers[0]["formed_raw"], f"C2 {c2[0]['signal_raw'] if c2 else None} formed {centers[0]['formed_raw']}")
     # 情境 5：zg_mode 2 與 3 在三筆同幅時相同
     _, s2 = detect(h, l, c, zg_mode=2); _, s3 = detect(h, l, c, zg_mode=3)
     check("情境5 zg_mode 2/3 在情境1 給同樣的 B3 日", [x["signal_raw"] for x in s2 if x["kind"] == "B3"] == [x["signal_raw"] for x in s3 if x["kind"] == "B3"])
