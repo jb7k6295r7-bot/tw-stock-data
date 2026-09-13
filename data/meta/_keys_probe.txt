@@ -76,17 +76,21 @@
 
 ── 上櫃每日收盤行情
    https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/09/09&response=json
-   ✗ 抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certific
+   頂層鍵 ['date', 'flagField', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
+     ── date：20260909
+     ── flagField：張數
+     ── stat：ok
 
 ── 上櫃融資融券 margin/balance
    https://www.tpex.org.tw/www/zh-tw/margin/balance?date=2026/09/09&response=json
-   ✗ 抓不到：URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certific
+   頂層鍵 ['date', 'stat', 'tables']
+   ⭐ 平常被丟掉的鍵：['date', 'stat']
+     ── date：20260909
+     ── stat：ok
 
 ── 要從這份輸出回答的三件事 ──
   ① `total` 對得上我方解析出的列數嗎 ⇒ 若對得上，這是**免費的**每次請求完整性斷言
   ② `params` 有沒有把我送的參數回顯 ⇒ 那是「參數有沒有生效」的直接檢查
   ③ `notes` 裡有沒有**符號說明** ⇒ `adj_gap.py` 五處寫的「官方 X0.00 ＝ 無前一日收盤價可資比較」目前**沒有留下出處**；
      有的話它就是權威出處，⛔ 沒有的話那句話要降級成推論（而它是「轉上市首日不算缺陷」那個歸因的地基）。
-
-✗ 2026-09-13T18:24:47Z keys_probe.py 非 0 結束（rc=1），
-  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。

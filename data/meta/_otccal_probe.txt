@@ -127,7 +127,7 @@
          tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
        ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3a92db5cfe00df9',t:'MTc4OTMyMzc1OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3a978221d684b21',t:'MTc4OTMyNjgwNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -145,7 +145,7 @@
        ・/rsrc/asset/js/jquery.simplePagination.js｜15,354 bytes｜路徑 0 個｜（沒有關鍵字）
        ・/rsrc/js/ie.js｜727 bytes｜路徑 0 個｜（沒有關鍵字）
        ・/rsrc/js/main.js｜45,227 bytes｜路徑 0 個｜（沒有關鍵字）
-       ・/rsrc/asset/js/global.js｜103,202 bytes｜路徑 0 個｜（沒有關鍵字）
+       ✗ /rsrc/asset/js/global.js｜IncompleteRead：連線傳到一半斷掉（已讀 97,458 bytes、還差 5,744）｜各次讀到 ['97,458']　⇒ ⭐ 
        ・https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z｜（外部網域，跳過）
        ・/rsrc/js/tables.js｜168,139 bytes｜路徑 0 個｜關鍵字 {'calendar': 56, 'Calendar': 86}
          ★★ 這一支有關鍵字，印出附近的原文（最多 12 段）：

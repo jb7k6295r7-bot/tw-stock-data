@@ -87,10 +87,12 @@
 <head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
 <body><script>(function(){functi
   ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/09&response=json
-      HTTP 404 Not Found | 
+      HTTP 404  | 
 <html>
 <head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+<body></body>
+</html>
+
   ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/09&o=json
       HTTP 404 Not Found | <!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta name="viewport" content="wi
   ⇒ 2026-09-09 可用的候選：0 條
