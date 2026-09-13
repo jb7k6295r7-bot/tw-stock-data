@@ -61,7 +61,8 @@ URL = "https://www.tpex.org.tw/openapi/v1/tpex_exright_daily"
 #        ⇒ F2 那 6 筆「未證實」全部是上櫃，卡的就是沒有這個
 #        ⇒ `factor_limit_check` 上櫃那半只能靠推論，而那條推論對現增除權
 #          會誤報（上市實測漲停側只中 95.39%）
-#     DividendDeductedQuote          減除股利參考價（＝只扣現金股利的口徑）
+#     DividendDeductedQuote          減除股利參考價（＝**不計現增稀釋**的口徑）
+#        ⛔ 2026-09-14 訂正：不是「只扣現金股利」——它有除以**無償**配股率
 #        ⇒ 上市那一欄（`ex_div_ref`）今天證實**同時是官方漲停的基準**
 #     StockDividend / CashDividend   ⭐ **權值與息值分開**
 #        ⇒ 上市只給合併值（notes 自己寫著它 = 前收 − 參考價，是導出值）
