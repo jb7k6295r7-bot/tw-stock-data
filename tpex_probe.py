@@ -694,6 +694,80 @@ def main():
             say(f"     ②帶 `date=20200101` 回的內容跟不帶時"
                 f"{'**完全相同** ⇒ ⛔ 參數被無視' if same else '**不同** ⇒ ⭐ 參數有生效'}")
 
+    # ── [13] ⭐⭐ 上櫃融資融券的「備註」欄：**歷史到底補不補得回來** ──────
+    #   ⛔ 起因（市場情報分析線 0415）：我方 `data/universe/otcmargin/` 的
+    #     2015-01-05 ~ 2026-09-08 是 9 欄、**沒有 note** ⇒ 上櫃的「停止融資融券」
+    #     閘門在那 11 年半是**全歷史偽陰性**（讀不到欄位 ⇒ 判成「沒有被停」）。
+    #
+    #   ⚠⚠ 而那個測量講的是**我方檔案的表頭史**，⛔ 不是**對方給不給**：
+    #     `note` 是 2026-09-09 才加進我方 header 的 ⇒ 舊檔沒有它是**必然的**，
+    #     跟來源有沒有那一欄**無關**。⇒ 這兩件事在檔案上長得一模一樣。
+    #
+    #   ⇒ ⭐ 只有一個問題要問：**同一支端點帶歷史日期時，回應裡有沒有「備註」欄？**
+    #     有 ⇒ `feeds.py --need-col note` 可以把 11 年重抓回來（上市那批
+    #          `limit_up` 就是這樣補的：1,759 個日檔、100% 有值）
+    #     沒有 ⇒ 那就是真的補不回來，⛔ 而那要**寫成實測**，不是推論
+    #
+    #   ⛔ 判準不是「有沒有那一欄」而已，還要「**有值的列數 > 0**」——
+    #     一個「有欄位、整欄空」的回應跟沒有那一欄，對閘門來說是同一件事，
+    #     ⚠ 而它在紙上看起來像「補到了」。（第七點：回報 0 筆要附正例數。）
+    say("\n[13] ⭐⭐ 上櫃融資融券的「備註」欄，歷史日期回不回")
+    say("  ⚠ 我方舊檔沒有 note 是**我方 header 2026-09-09 才加**，"
+        "⛔ 不等於來源沒有——這一節就是要分開這兩件事。")
+    got13 = []
+    for day13 in ("2015-01-05", "2019-11-13", "2023-05-10", "2026-09-11"):
+        u13 = ("https://www.tpex.org.tw/www/zh-tw/margin/balance"
+               f"?date={day13.replace('-', '/')}&id=&response=json")
+        r13, e13 = B.get(u13, retries=2, timeout=60)
+        if e13:
+            say(f"  {day13}　✗ 抓不到：{e13}")
+            say("    ⛔ 抓不到**不等於沒有那一欄**——照實記，下一輪再試。")
+            continue
+        try:
+            d13 = json.loads(r13.decode("utf-8-sig", "replace"))
+        except ValueError as ex:
+            say(f"  {day13}　✗ 不是 JSON：{ex}")
+            continue
+        tabs13 = B._tables(d13)
+        if not tabs13:
+            say(f"  {day13}　⚠ 沒有 tables（{len(r13):,}B）")
+            continue
+        # ⭐ 照 CLAUDE.md 第一點：先把回應自己講的話印出來，再開始比對
+        for ln in B.describe_response(d13, want={"date": day13}):
+            say(f"    {ln}")
+        for t13 in tabs13:
+            f13 = [str(x) for x in (t13.get("fields") or [])]
+            if not any("代號" in x for x in f13):
+                continue
+            ni = next((i for i, x in enumerate(f13)
+                       if x in ("備註", "註記")), None)
+            rows13 = t13.get("data") or []
+            if ni is None:
+                say(f"    ⛔ {len(f13)} 欄、{len(rows13):,} 列｜"
+                    f"**沒有「備註」欄** ⇒ 這一天補不回來｜欄名={f13}")
+                got13.append((day13, False, 0, len(rows13)))
+            else:
+                nz = sum(1 for r in rows13
+                         if len(r) > ni and str(r[ni]).strip() not in ("", "-"))
+                say(f"    ✓ {len(f13)} 欄、{len(rows13):,} 列｜"
+                    f"⭐ 有「備註」欄（第 {ni} 欄）｜**有值的列 {nz:,}**")
+                say(f"    ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣"
+                    f" ⇒ 這一天{'**可以**' if nz else '⛔ **不可以**'}算補得到")
+                got13.append((day13, True, nz, len(rows13)))
+            break
+    if got13:
+        ok13 = [g for g in got13 if g[1] and g[2] > 0]
+        say(f"\n  ⇒ 結論：抽了 {len(got13)} 天，**有備註欄且有值的 {len(ok13)} 天**"
+            f"｜{[g[0] for g in ok13]}")
+        if len(ok13) == len(got13) and len(got13) >= 2:
+            say("  ⭐⭐ ⇒ 來源**有**這一欄 ⇒ `feeds.py --need-col note` 可以回補全歷史")
+        elif not ok13:
+            say("  ⛔ ⇒ 來源在歷史日期**沒有**這一欄 ⇒ 真的補不回來（實測，不是推論）")
+        else:
+            say("  ⚠ ⇒ **有些年份有、有些沒有** ⇒ 要逐年標，⛔ 不可以一句話帶過")
+    else:
+        say("  ⚠ 這一節這一趟一天都沒抓到 ⇒ **答不出來**，⛔ 不寫成「沒有」")
+
     # ⭐ 而頁面那一層可能才是真的（`otcinst` 那三條就住在 www/zh-tw 那一層）
     #   ⛔ 不從頁名回推 API，把頁面抓下來看它自己呼叫什麼（同第 5、8 節）
     say("\n  ── 頁面層：看它們自己呼叫哪個網址")

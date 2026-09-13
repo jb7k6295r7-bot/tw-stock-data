@@ -43,6 +43,7 @@ import argparse
 
 import runlog
 import csv
+import io
 import json
 import os
 import sys
@@ -137,27 +138,43 @@ def fetch(url):
     return d, f"{len(d):,} 筆"
 
 
-def period_of(kind, recs):
-    """從資料自己的欄位取期別。**不從今天推算。**
+def period_of_row(kind, r):
+    """→ **這一列自己**講出來的期別（取不到回 ""）。⛔ 不從今天推算。"""
+    if kind == "revenue":
+        return _roc_ym(_pick(r, YM_KEYS))
+    y, q = _roc_y(_pick(r, Y_KEYS)), _pick(r, Q_KEYS)
+    return f"{y}Q{q}" if y and q else ""
 
-    回 (期別字串, 是否一致)。同一批資料裡若出現多個期別，回最常見的那個並回報——
-    **不要靜默挑一個**。
+
+def group_by_period(kind, recs):
+    """→ ({期別: [列, …]}, 取不到期別的列數)。
+
+    ⛔⛔ 2026-09-14 之前這裡是 `period_of()`：把整批資料**取最常見的那一期**，
+    然後把**所有**列寫進那一期的檔。實測踩到的後果：
+
+        data/mops/revenue/2026-07.csv　1,976 列
+          twse 1,085 列　資料年月 = 11507　✅
+          tpex 　891 列　資料年月 = **11508**　⛔ 八月的資料，貼著七月的檔名
+
+    ⚠ 成因是兩個市場的**申報進度不同步**（上市 7 月、上櫃已經 8 月），
+    而它們被併成一批才取期別 ⇒ **少數那一邊被貼上多數那一邊的期別**。
+    ⛔ 而 `period` 欄整欄會被覆蓋成檔名那一期 ⇒ 每一列自己的 `資料年月` 是對的，
+    **只有檔名與 `period` 欄是錯的**——而大部分人是照檔名讀的。
+
+    ⚠ 舊版**有印警告**（「同一批資料含多個期別，取最常見的」），
+    ⛔ 而它照樣把兩期寫進同一個檔 ⇒ **警告不是閘門**。
+
+    ⇒ ⭐ 判準改成 CLAUDE.md 第二點那一句：**這一批要自己講出它是哪一期**
+      ——一批資料含兩期就寫**兩個檔**，⛔ 不是挑一個。
     """
-    vals = []
+    groups, noperiod = {}, 0
     for r in recs:
-        if kind == "revenue":
-            v = _roc_ym(_pick(r, YM_KEYS))
-        else:
-            y, q = _roc_y(_pick(r, Y_KEYS)), _pick(r, Q_KEYS)
-            v = f"{y}Q{q}" if y and q else ""
-        if v:
-            vals.append(v)
-    if not vals:
-        return "", True
-    from collections import Counter
-    c = Counter(vals)
-    top, n = c.most_common(1)[0]
-    return top, len(c) == 1
+        v = period_of_row(kind, r)
+        if not v:
+            noperiod += 1
+            continue
+        groups.setdefault(v, []).append(r)
+    return groups, noperiod
 
 
 def write_period(kind, tag, period, recs, market_of):
@@ -192,6 +209,33 @@ def write_period(kind, tag, period, recs, market_of):
     # ★ 取不到代號的列**不寫**，並回報。寧可少一列，不要寫一列查不到是誰的。
     if nocode:
         print(f"  ⚠ {kind}/{tag} 有 {nocode} 列取不到代號，已丟棄", file=sys.stderr)
+    # ⛔⛔ 2026-09-14：這裡本來是**整檔取代**，而分期之後那會刪資料（四點六①）。
+    #   實際會發生的：run 47 把上市 1,074 列寫進 2026-08.csv；
+    #   下一趟上櫃也換到 8 月 ⇒ 這一批的 2026-08 組**只有上櫃 891 列**
+    #   ⇒ 整檔取代 ⇒ ⛔ **上市那 1,074 列被刪掉**，而 git diff 看起來像「重算過」。
+    # ⇒ ⭐ 判準照四點六那一句：**這一趟只知道自己那一部分 ⇒ 一律合併，不是取代。**
+    #   本趟的鍵覆蓋、其餘原封不動；鍵是 (market, 代號)。
+    kept = 0
+    if os.path.exists(path):
+        with io.open(path, encoding="utf-8") as f:
+            rd = csv.DictReader(f)
+            oldcols = list(rd.fieldnames or [])
+            oldrows = list(rd)
+        mine = {(r[3], r[0]) for r in rows}
+        for c in oldcols:                      # ⚠ 舊欄不可以因為本趟沒有就消失
+            if c not in cols:
+                cols.append(c)
+        add = []
+        for r in oldrows:
+            k = (r.get("market", ""), r.get("stock_id", ""))
+            if k in mine:
+                continue
+            add.append([str(r.get(c, "")).strip() for c in cols])
+            kept += 1
+        rows = [row + [""] * (len(cols) - len(row)) for row in rows] + add
+    if kept:
+        print(f"  [{kind}/{tag}] ⭐ 合併：本趟 {len(rows) - kept} 列 ＋ "
+              f"保留檔上原有的 {kept} 列（⛔ 不是整檔取代）")
     rows.sort(key=lambda x: (x[3], x[0]))
 
     new = [",".join('"' + c.replace('"', '""') + '"' if ("," in c or '"' in c) else c
@@ -208,6 +252,94 @@ def write_period(kind, tag, period, recs, market_of):
         return "changed", len(rows)
     open(path, "w", encoding="utf-8").write(body)
     return "new", len(rows)
+
+
+def repair_periods(kind, apply=True):
+    """把**已經寫錯期別**的舊列搬回它自己那一期的檔。→ (搬了幾列, 訊息)
+
+    ⛔ 這一支存在的理由是 `group_by_period` 修不到的那一半：
+    修好之後只有**未來**的資料會分對，⚠ 而 main 上已經躺著
+
+        data/mops/revenue/2026-07.csv 裡的上櫃 891 列，`資料年月` 是 **11508**
+
+    ⇒ 而它不會自己好：下一趟上市若也換到 8 月，就**沒有人會再寫 2026-07.csv**，
+    那 891 列會**永遠**掛在錯的檔名下。
+
+    ⭐ 判準只有一句（第二點）：**每一列自己講出來的期別，要跟檔名那一期相同。**
+
+    ⛔⛔ 而這一支自己絕不可以變成刪東西的那個人（四點六）：
+      ① 搬家前後的**總列數必須相同**——不相等就**一列都不寫**並大聲失敗
+      ② 取不到期別的列**原地不動**（⛔ 不是丟掉）
+      ③ 目的檔已經有同一個代號時，**以那一列自己期別對的那份為準**，
+         ⚠ 而且要講出來（同一檔同一期同一代號出現兩次是異常，不是雜訊）
+    """
+    d = os.path.join(OUT_DIR, kind)
+    if not os.path.isdir(d):
+        return 0, "沒有這個目錄"
+    files = sorted(f for f in os.listdir(d) if f.endswith(".csv"))
+    # tag → {期別 → {代號 → 列(dict)}}；並記下每個 tag 的欄序
+    buckets, colorder, n_in, stay = {}, {}, 0, 0
+    for fn in files:
+        base = fn[:-4]
+        period, tag = (base.split("_", 1) + ["all"])[:2]
+        with io.open(os.path.join(d, fn), encoding="utf-8") as f:
+            rd = csv.DictReader(f)
+            cols = list(rd.fieldnames or [])
+            rows = list(rd)
+        colorder.setdefault(tag, cols)
+        # ⭐ 每一個**來源檔**都要被重寫一次，⛔ 否則「整批都搬走了」的檔
+        #   會原封不動留在原地 ⇒ 同一列在兩個檔裡各有一份（實測踩到）。
+        buckets.setdefault(tag, {}).setdefault(period, {})
+        for r in rows:
+            n_in += 1
+            own = period_of_row(kind, r) or period      # ② 取不到 ⇒ 留在原地
+            if own == period:
+                stay += 1
+            buckets.setdefault(tag, {}).setdefault(own, {})
+            code = r.get("stock_id") or _pick(r, CODE_KEYS)
+            key = (code, r.get("market", ""))
+            prev = buckets[tag][own].get(key)
+            if prev is not None and prev is not r:
+                print(f"  ⚠ {kind}/{tag}/{own} 同一個代號出現兩次：{key}",
+                      file=sys.stderr)
+            r["period"] = own                            # ⭐ 欄也要跟著改
+            buckets[tag][own][key] = r
+    moved = n_in - stay
+    n_out = sum(len(v) for t in buckets.values() for v in t.values())
+    if n_out != n_in:
+        # ① 不相等就一列都不寫
+        return -1, (f"⛔ 搬家前 {n_in} 列、搬家後 {n_out} 列 ⇒ **一列都不寫**"
+                    f"（差 {n_in - n_out} 列，多半是同一期同一代號重複）")
+    if not moved:
+        return 0, f"{len(files)} 個檔、{n_in} 列，每一列都在對的期別"
+    if not apply:
+        return moved, f"⚠ 有 {moved} 列在錯的期別（--repair-periods 才會搬）"
+    for tag, byper in buckets.items():
+        cols = colorder[tag]
+        for period, rows in byper.items():
+            name = f"{period}.csv" if tag == "all" else f"{period}_{tag}.csv"
+            out = sorted(rows.values(), key=lambda x: (x.get("market", ""),
+                                                       x.get("stock_id", "")))
+            body = ",".join(cols) + "\n" + "".join(
+                ",".join('"' + str(r.get(c, "")).replace('"', '""') + '"'
+                         if ("," in str(r.get(c, "")) or '"' in str(r.get(c, "")))
+                         else str(r.get(c, "")) for c in cols) + "\n"
+                for r in out)
+            path = os.path.join(d, name)
+            if not out:
+                # ⚠ 整批都搬走了 ⇒ **刪掉這個檔**，⛔ 不是留一個只有表頭的空殼：
+                #   空殼會被讀成「那一期沒有資料」（四點二②：檔案存在 ≠ 內容還在）。
+                if os.path.exists(path):
+                    os.remove(path)
+                    print(f"  ⚠ {kind}/{name} 整批都搬走了 ⇒ 刪掉這個空檔",
+                          file=sys.stderr)
+                continue
+            old = io.open(path, encoding="utf-8").read() if os.path.exists(path) else ""
+            if old != body:
+                if old:
+                    _log_changes(kind, name, old, body)
+                io.open(path, "w", encoding="utf-8").write(body)
+    return moved, f"⭐ 搬了 {moved} 列回它自己那一期（總列數 {n_in} 不變）"
 
 
 def _log_changes(kind, name, old, new):
@@ -287,6 +419,16 @@ def listed_codes():
 
 def cmd_run(args):
     B.SLEEP = args.sleep
+    # ⭐ 先自癒再抓：⛔ 抓完再搬的話，這一趟寫進去的列會先跟舊的錯列混在一起。
+    #   ⚠ 乾淨的時候它是 no-op（不寫檔、不產生 commit）。
+    repaired = []
+    for _k in SOURCES:
+        if args.kind in ("all", _k):
+            _n, _msg = repair_periods(_k)
+            if _n:
+                repaired.append((_k, _n, _msg))
+                print(f"[mops] 期別自癒 {_k}：{_msg}",
+                      file=sys.stderr if _n < 0 else sys.stdout)
     tw, tp = listed_codes()
     print(f"[mops] 對照基準：上市 {len(tw):,} 檔、上櫃 {len(tp):,} 檔\n")
     total = {"new": 0, "changed": 0, "unchanged": 0, "skip": 0}
@@ -302,6 +444,9 @@ def cmd_run(args):
     #     看起來正常的假值。所以這裡把原始列**原樣**留下來，讓人下一趟直接看。
     zero_raw = {}
     retried = []          # ⭐ 第一次失敗、重試才成功的：**要留在 runlog 裡**
+    # ⭐ 同一批資料含多個期別的：⛔ 這件事只印在 stderr 是不夠的
+    #   （舊版就是「有印警告、照樣寫錯檔」）⇒ 要進 runlog 讓人看得到。
+    multi = []            # (kind, tag, {期別: 列數})
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -385,18 +530,26 @@ def cmd_run(args):
             if not recs:
                 total["skip"] += 1
                 continue
-            period, uniform = period_of(kind, recs)
-            if not period:
-                print(f"  [{kind}/{tag}] ✗ 取不到期別，**不寫檔**"
+            groups, noperiod = group_by_period(kind, recs)
+            if noperiod:
+                # ★ 取不到期別的列**不寫**（不從今天推算），但要講出來
+                print(f"  [{kind}/{tag}] ✗ {noperiod} 列取不到期別，**不寫**"
                       f"（不從今天推算）", file=sys.stderr)
+            if not groups:
                 total["skip"] += 1
                 continue
-            if not uniform:
-                print(f"  [{kind}/{tag}] ⚠ 同一批資料含多個期別，取最常見的 {period}",
-                      file=sys.stderr)
-            st, n = write_period(kind, tag, period, recs, market_of)
-            total[st] += 1
-            print(f"  [{kind}/{tag}] 期別 {period}｜{n:,} 列｜{st}")
+            if len(groups) > 1:
+                # ⭐ 不再是「取最常見的」——每一期各寫各的檔
+                print(f"  [{kind}/{tag}] ⚠ 同一批資料含 {len(groups)} 個期別："
+                      + "、".join(f"{k}({len(v)} 列)"
+                                  for k, v in sorted(groups.items()))
+                      + " ⇒ **分開寫檔**", file=sys.stderr)
+                multi.append((kind, tag,
+                              {k: len(v) for k, v in sorted(groups.items())}))
+            for period in sorted(groups):
+                st, n = write_period(kind, tag, period, groups[period], market_of)
+                total[st] += 1
+                print(f"  [{kind}/{tag}] 期別 {period}｜{n:,} 列｜{st}")
     print(f"\n[mops] 完成：新增 {total['new']}、更新 {total['changed']}、"
           f"無變動 {total['unchanged']}、略過 {total['skip']}")
     print("[mops] ★ 這些端點只給最新一期，**沒有歷史**。回測要等逐期累積。")
@@ -452,6 +605,24 @@ def cmd_run(args):
                 + "\n```")
     rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
              f"略過 {total['skip']} 張")
+    # ⭐⭐ 兩個市場的申報進度不同步時，同一批資料會含兩期。
+    #   ⛔ 這**不是錯**（對方本來就可以不同步），⚠ 而它以前的處置是錯的：
+    #     取最常見的那一期、把兩期寫進同一個檔 ⇒ 少數那一邊被貼上錯的檔名。
+    #   ⇒ 現在是分開寫檔 ⇒ 所以這裡是 `info` 不是 `check`，
+    #     ⛔ 但一定要印出來：它會讓「某一期只有單邊市場」看起來像缺資料。
+    # ⛔ 自癒搬過的列一定要進 runlog：它會讓某一期的列數**變多或變少**，
+    #   ⚠ 而那看起來跟「來源改了」一模一樣。
+    if repaired:
+        rl.info("⭐ 期別自癒（把寫錯期的舊列搬回它自己那一期）",
+                "；".join(f"{k}：{m}" for k, _n, m in repaired))
+    rl.check("⛔ 期別自癒沒有因為列數對不上而中止",
+             all(n > 0 for _k, n, _m in repaired),
+             "；".join(m for _k, n, m in repaired if n < 0) or "（沒有中止）")
+    if multi:
+        rl.info("⭐ 同一批含多個期別（**已分開寫檔**，⛔ 不是取最常見的）",
+                "；".join(f"{k}/{t}：" + "、".join(f"{p}({n} 列)"
+                                                  for p, n in g.items())
+                          for k, t, g in multi))
     return rl.finish()
 
 
