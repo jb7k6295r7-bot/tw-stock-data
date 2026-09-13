@@ -17,7 +17,7 @@
    ✓ 309,960 bytes｜攤平出 **143 條**選單項目
 
 ── TPEx-OpenAPI｜https://www.tpex.org.tw/openapi/swagger.json
-   ✗ 抓不到：IncompleteRead：連線傳到一半斷掉（已讀 15,872 bytes、還差 461,051）｜各次讀到 ['15,872', '15,872'] ⛔ **每次都停在同一個位置 ⇒ 這是決定性的，重試不會好**
+   ✗ 抓不到：IncompleteRead：連線傳到一半斷掉（已讀 24,064 bytes、還差 452,859）｜各次讀到 ['32,256', '24,064'] ⇒ ⭐ 這是**傳輸被切斷**，不是端點壞掉，重試通常會好
    ⛔ 抓不到**不等於**這個站沒有——這一趟對它一無所知。
 
 ── TWSE-sitemap｜https://www.twse.com.tw/sitemap.xml
@@ -933,7 +933,7 @@
   ✅ TWSE｜281 條（含中文 276）｜https://www.twse.com.tw/res/data/zh/menu-mega.html
   ✅ TPEx｜762 條（含中文 759）｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
   ✅ TWSE-OpenAPI｜143 條（含中文 143）｜https://openapi.twse.com.tw/v1/swagger.json
-  ✗ TPEx-OpenAPI｜0 條（含中文 0）｜https://www.tpex.org.tw/openapi/swagger.json｜IncompleteRead：連線傳到一半斷掉（已讀 15,872 bytes、還差 461,051）｜各次讀到 ['15,872', '15,872'] ⛔ **每次都停在同一個位置 ⇒ 這是決定性的，重試不會好**
+  ✗ TPEx-OpenAPI｜0 條（含中文 0）｜https://www.tpex.org.tw/openapi/swagger.json｜IncompleteRead：連線傳到一半斷掉（已讀 24,064 bytes、還差 452,859）｜各次讀到 ['32,256', '24,064'] ⇒ ⭐ 這是**傳輸被切斷**，不是端點壞掉，重試通常會好
   ✅ TWSE-sitemap｜3109 條（含中文 0）｜https://www.twse.com.tw/sitemap.xml
   ⇒ 成功 4 / 5 份目錄｜合計 4,295 條
   ⛔⛔ **有目錄沒掃到** ⇒ 這一趟的否定句只涵蓋成功的那幾份。
