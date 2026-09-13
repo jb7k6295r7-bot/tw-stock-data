@@ -192,6 +192,26 @@ def main():
         R.STOCKS = old
         shutil.rmtree(d, ignore_errors=True)
 
+    print("\n── ⑤b `PAR × 比例` 是**假設**，⛔ 不是規則 ──")
+    # 官方參考價隱含的每股退還 = 前收 − keep × 參考價
+    ck("1563：隱含退還 ≈ 面額 10 × 25% = 2.50（⇒ 那一筆的假設成立）",
+       abs(R.implied_cash(66.00, 0.75, 84.66) - 2.50) <= 0.01,
+       f"{R.implied_cash(66.00, 0.75, 84.66):.4f}")
+    # 6197 2017-10-02：keep 0.75 是乾淨的，⛔ 而隱含退還是 3.70，不是 2.50
+    ck("⛔ 6197：keep 一樣是 0.75，隱含退還卻是 3.70 ⇒ **假設不成立的那 16 筆**",
+       abs(R.implied_cash(31.25, 0.75, 36.73) - 3.70) <= 0.01,
+       f"{R.implied_cash(31.25, 0.75, 36.73):.4f}")
+
+    print("\n── ⑤c `official_keep`：⭐ 彌補虧損型才是真的第二來源 ──")
+    ck("彌補虧損型：keep = 前收 ÷ 參考價（唯一解）",
+       abs(R.official_keep(6.58, 13.33, False) - 6.58 / 13.33) < 1e-12)
+    ck("現金型：沿用面額假設反推（6197 ⇒ 0.795，⛔ 跟真的 0.75 不同）",
+       abs(R.official_keep(31.25, 36.73, True) - 0.79499) <= 1e-4,
+       f"{R.official_keep(31.25, 36.73, True)}")
+    ck("⛔ 參考價 ≤ 0 ⇒ 回 None，不爆", R.official_keep(10, 0, False) is None)
+    ck("⛔ 現金型參考價剛好等於面額 ⇒ 分母 0 ⇒ 回 None，不爆",
+       R.official_keep(10, R.PAR, True) is None)
+
     print("\n── ⑧b `check_all` 的往後找：兩種漏法，⛔ 而它不可以撈到「增加」──")
     d = tempfile.mkdtemp(prefix="rsc4_")
     da = tempfile.mkdtemp(prefix="rsc4a_")
@@ -241,6 +261,64 @@ def main():
         R.STOCKS, R.ADJ = old, olda
         shutil.rmtree(d, ignore_errors=True)
         shutil.rmtree(da, ignore_errors=True)
+
+    print("\n── ⑧c 「只差在分位」要分開報，⛔ 但仍然算對不上 ──")
+    d = tempfile.mkdtemp(prefix="rsc5_")
+    da = tempfile.mkdtemp(prefix="rsc5a_")
+    old, olda = R.STOCKS, R.ADJ
+    try:
+        R.STOCKS, R.ADJ = d, da
+        # 高價股：keep 只差 0.03%，⛔ 而在價格空間差 0.05 元以上
+        #   6271 2020-11-30 實例：前收 139.00、官方 180.74、我方 keep 0.755760
+        io.open(os.path.join(d, "4444.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,139,1000000\n2026-01-06,180,755760\n")
+        io.open(os.path.join(da, "4444.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            "2026-01-06,1,1,139,180.74,退還股款,reduce\n")
+        _r, st = val(R.check_all)
+        ck("⭐ 高價股：價格差 > 5 分、⛔ 而 keep 只差 0.03% ⇒ 進「只差在分位」那一格",
+           st.get("現金型｜對不上（⚠ 只差在分位）") == 1, str(dict(st)))
+        ck("　　⛔ 而它**仍然算對不上**（⛔ 不可以被算成對得上）",
+           not st.get("現金型｜對得上"), str(dict(st)))
+        # keep 真的不一樣（差 50%）⇒ ⛔ 不可以進「只差在分位」
+        io.open(os.path.join(d, "4444.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,8.8,1000000\n2026-01-06,24,552630\n")
+        io.open(os.path.join(da, "4444.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            "2026-01-06,1,1,8.80,24.44,彌補虧損,reduce\n")
+        _r, st = val(R.check_all)
+        ck("⛔ keep 差 53%（4502 實例）⇒ 是真的對不上，⛔ 不是分位",
+           st.get("彌補虧損型｜對不上") == 1, str(dict(st)))
+    finally:
+        R.STOCKS, R.ADJ = old, olda
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(da, ignore_errors=True)
+
+    print("\n── ⑧d `tally`：⛔ 分位那一群不可以掉在外面 ──")
+    st = {"現金型｜對得上": 5, "現金型｜對不上": 2,
+          "現金型｜對不上（⚠ 只差在分位）": 3, "算不了：問不到變少的股數": 7}
+    ck("⛔ 「只差在分位」算進**對不上**（⛔ endswith 會漏掉它）",
+       R.tally(st) == (5, 5, 3, 7), str(R.tally(st)))
+    ck("⭐ 對得上 ＋ 對不上 ＝ 可算的總數（⛔ 沒有一筆掉在外面）",
+       sum(R.tally(st)[:2]) == 5 + 2 + 3, str(R.tally(st)))
+    ck("空的統計不會爆", R.tally({}) == (0, 0, 0, 0))
+    # ⭐ 第七點③：測完純函式，再掃原始碼確認**呼叫點**真的那樣叫
+    import ast
+    src = io.open(os.path.join(HERE, "reduce_shares_check.py"), encoding="utf-8").read()
+    fn = next(n for n in ast.walk(ast.parse(src))
+              if isinstance(n, ast.FunctionDef) and n.name == "main")
+    calls = {n.func.id for n in ast.walk(fn)
+             if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    ck("⭐ `main()` 真的呼叫 `tally()`（⛔ 不是自己又數一份）", "tally" in calls,
+       str(sorted(calls)))
+    # ⛔ 而 `main()` 不可以自己**再濾一次** stat 的鍵——那就是第二份數法。
+    #   ⚠ `sum(stat.values())` 不算：它是那條不變式**故意**用的另一種數法。
+    ck("⛔ `main()` 裡沒有第二份「濾鍵再數」的寫法",
+       not [n for n in ast.walk(fn)
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+            and n.func.id == "sum"
+            and any(isinstance(a, (ast.GeneratorExp, ast.ListComp)) and a.generators[0].ifs
+                    for a in n.args)])
 
     print("\n── ⑨ `exright_scan`：三格分類，⛔ 而它判不出對錯 ──")
     d = tempfile.mkdtemp(prefix="rsc3_")
