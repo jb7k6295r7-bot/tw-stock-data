@@ -51,3 +51,9 @@
 5. **強制出場**（原本沒寫，程式裡也沒有，這是唯一加的行為）：持倉中若連續 60 個交易日沒有有效 K 棒（下市／長期停牌），以最後一根有效 K 棒收盤出場、`trades_*.csv` 標 `forced=True`。回測裡這種筆被壞根窗整筆剔除，前瞻不能剔除、只能記。
 6. **籌碼層**：情報分析 0150 一節，目前沒有免費且條款允許落地的分點來源；K線分析 0210 加一條「三年後還拿不拿得到」。⇒ 本規則**不會**加籌碼層；要加只能另開新凍結檔。
 7. 誰跑：CODE `forward.yml` 每月 13 日 20:00 台北在 main 跑（CODE 0240）；本線不再手動跑，除非排程紅掉。
+
+## 追加二（2026-09-13 09:00，紀錄檔的歸屬；⛔ 規則沒動）
+
+- 紀錄檔（`signals.csv`、`trades_*.csv`、`equity_*.csv`、`state_*.json`、`runlog.md`、`_runs.jsonl`）**只在 main 上**，由 CODE 的 `forward.yml` 寫入並推上 main。⛔ 本分支不再帶這些檔（09-13 已從分支刪除），所以 CODE 之後 `git checkout <sha> -- backtest/` 取程式時碰不到它們。
+- 為什麼：09-13 02:42 workflow 寫的 runlog 區塊，被 03:00 的同步（取分支的 `backtest/`）整份覆蓋掉了（main 上 commit 8b1704a7b 對 runlog.md 是 −4 行）。這正是 CLAUDE.md 四點六「累積型的檔不可以整份覆蓋」。
+- 本分支只保留 `RULE.md` 與程式 `forward_and.py`。
