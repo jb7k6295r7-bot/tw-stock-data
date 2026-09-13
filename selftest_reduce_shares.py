@@ -26,6 +26,18 @@ def ck(name, cond, hint=""):
         print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
 
 
+def val(fn, *a, **k):
+    """→ 呼叫結果；⭐ 丟例外就回一個絕不會相等的東西，**不讓它中斷整支測試**。
+
+    ⛔ CLAUDE.md 第七點：斷言那條路崩掉的話，後面一條都不會跑，
+    ⚠ 而突變驗只會看到「崩潰」而不是「紅 N 條」——那讀起來像工具壞了。
+    """
+    try:
+        return fn(*a, **k)
+    except Exception as e:                                    # noqa: BLE001
+        return ("💥", f"{type(e).__name__}: {e}")
+
+
 def main():
     print("=" * 64)
     print("reduce_shares_check：兩種減資的算式不一樣（不連網）")
@@ -100,6 +112,133 @@ def main():
     finally:
         R.STOCKS = old
         shutil.rmtree(d, ignore_errors=True)
+
+    print("\n── ⑦ ⛔⛔ `kind` 有兩套詞彙，⇒ 一律**包含**比對 ──")
+    # 上市 息/權/權息　　上櫃 除息/除權/除權息（2026-09-13 全庫實測，見 READ_CONTRACT）
+    for k in ("權", "權息", "除權", "除權息"):
+        ck(f"`{k}` 有股數那一半", R.has_share_part(k))
+    for k in ("息", "除息"):
+        ck(f"⛔ `{k}` **沒有**股數那一半", not R.has_share_part(k))
+    for k in ("息", "權息", "除息", "除權息"):
+        ck(f"`{k}` 有現金那一半", R.has_cash_part(k))
+    for k in ("權", "除權"):
+        ck(f"⛔ `{k}` **沒有**現金那一半", not R.has_cash_part(k))
+    ck("空值不會爆", not R.has_share_part(None) and not R.has_cash_part(None))
+    # ⭐ 反向那一條才是主角：整串相等會靜靜地只拿到上市
+    ck("⛔ `kind == '權'` 這種寫法會漏掉上櫃的 `除權`（本測就是在擋這個）",
+       R.has_share_part("除權") and "除權" != "權")
+
+    print("\n── ⑦b 全 repo 掃：有沒有人拿 `kind` 去做**整串相等**比對 ──")
+    import ast
+    LIT = {"權", "除權", "權息", "除權息", "息", "除息"}
+    bad = []
+    for fn in sorted(x for x in os.listdir(HERE) if x.endswith(".py")):
+        if fn.startswith("selftest_"):
+            continue
+        try:
+            tree = ast.parse(io.open(os.path.join(HERE, fn), encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Compare):
+                continue
+            for op, cmp_ in zip(node.ops, node.comparators):
+                if isinstance(op, (ast.Eq, ast.NotEq)) and \
+                        isinstance(cmp_, ast.Constant) and cmp_.value in LIT:
+                    bad.append(f"{fn}:{node.lineno}")
+    # ⛔ 比的是 **AST**，不是字串——那六個字在說明文字裡到處都有
+    ck("⛔ 沒有任何一支拿 kind 的字面值做 ==／!=（⇒ 會靜靜地只拿到一個市場）",
+       not bad, "、".join(bad))
+
+    print("\n── ⑧ `shares_after`：往後找**第一個變過**的值（配股會落後十幾天）──")
+    d = tempfile.mkdtemp(prefix="rsc2_")
+    old = R.STOCKS
+    try:
+        R.STOCKS = d
+        io.open(os.path.join(d, "8888.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n"
+            "2026-01-05,10,1000000\n"
+            "2026-01-06,10,1000000\n"      # ← 事件日，股數還沒更新
+            "2026-01-07,10,\n"             # ⚠ 空的一天不算一格
+            "2026-01-08,10,1000000\n"
+            "2026-01-09,10,1250000\n")     # ← 這一天才變
+        # ⚠ lag 數的是「**有 shares 值**的那些天」，⛔ 不是日曆天也不是全部交易日
+        #   ⇒ 01-07 空值那天不算一格 ⇒ 01-06 → 01-09 是 **2**，不是 3
+        ck("⭐ 事件日股數還沒更新 ⇒ 往後找到 2026-01-09 那筆，lag=2（空值那天不算）",
+           val(R.shares_after, "8888", "2026-01-06") == (1000000.0, 1250000.0, 2),
+           str(val(R.shares_after, "8888", "2026-01-06")))
+        ck("⛔ 視窗只給 2 天就找不到（⇒ 算不了，⛔ 不是硬湊一個值）",
+           val(R.shares_after, "8888", "2026-01-06", window=2) == (None, None, None))
+        io.open(os.path.join(d, "7777.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,10,1000000\n2026-01-06,10,1000000\n")
+        ck("⛔ 股數從頭到尾沒變 ⇒ (None, None, None)，⛔ 不回一個比值 1",
+           val(R.shares_after, "7777", "2026-01-06") == (None, None, None))
+        ck("⛔ 事件日在序列最前面 ⇒ 沒有「事件前」可用 ⇒ 算不了",
+           val(R.shares_after, "8888", "2026-01-05") == (None, None, None))
+        # ⛔⛔ `shares` 欄出現 **0** 是這個庫已經有前例的壞法（興櫃 close=0 那一族）。
+        #   ⚠ 0 混進來的表現**不是報錯**：它會變成除以 0，或一個天文數字的比值。
+        io.open(os.path.join(d, "6666.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n"
+            "2026-01-05,10,0\n"            # ⛔ 0：要被當成「沒有值」丟掉
+            "2026-01-06,10,1000000\n"
+            "2026-01-07,10,1250000\n")
+        ck("⛔ shares 是 0 的那一列要被丟掉（⛔ 不可以拿它當事件前的基準）",
+           val(R.shares_after, "6666", "2026-01-07") == (1000000.0, 1250000.0, 0),
+           str(val(R.shares_after, "6666", "2026-01-07")))
+        ck("⛔ 而 0 那天本身問不出「事件前」（它前面只剩 0）⇒ 算不了",
+           val(R.shares_after, "6666", "2026-01-06") == (None, None, None),
+           str(val(R.shares_after, "6666", "2026-01-06")))
+    finally:
+        R.STOCKS = old
+        shutil.rmtree(d, ignore_errors=True)
+
+    print("\n── ⑨ `exright_scan`：三格分類，⛔ 而它判不出對錯 ──")
+    d = tempfile.mkdtemp(prefix="rsc3_")
+    da = tempfile.mkdtemp(prefix="rsc3a_")
+    old, olda, oldwin = R.STOCKS, R.ADJ, R.EX_WIN
+    try:
+        R.STOCKS, R.ADJ = d, da
+        io.open(os.path.join(d, "1111.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,10,1000000\n2026-01-06,10,1100000\n")
+        io.open(os.path.join(da, "1111.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            # 純無償配股 100 股/千股 ⇒ 股數比 = 1/1.1 = 0.909091，factor 相同
+            "2026-01-06,0.90909091,1,11,10,權,exright\n")
+        res, stat = val(R.exright_scan)
+        if not isinstance(stat, dict) and not hasattr(stat, 'get'):
+            res, stat = [], {}   # ⛔ 崩了 ⇒ 下面每一條都會判紅，⛔ 不中斷
+        ck("純無償配股 ⇒ 落在「＝股數比」那一格",
+           stat.get("純股數｜＝股數比（純無償配股）") == 1, str(dict(stat)))
+        io.open(os.path.join(da, "1111.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            # 現增：股數 ×1.1，⭐ 而股東付了錢 ⇒ 價格幾乎不動 ⇒ factor ≈ 1
+            "2026-01-06,0.99500000,1,11,10.945,除權,exright\n")
+        res, stat = val(R.exright_scan)
+        if not isinstance(stat, dict) and not hasattr(stat, 'get'):
+            res, stat = [], {}   # ⛔ 崩了 ⇒ 下面每一條都會判紅，⛔ 不中斷
+        ck("⭐ 帶現增 ⇒ 落在「＞股數比」那一格（⛔ 上櫃詞彙 `除權` 也要吃得到）",
+           stat.get("純股數｜＞股數比（有現增）") == 1, str(dict(stat)))
+        io.open(os.path.join(da, "1111.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            # 除權息：股數 ×1.1 ＋ 配息 ⇒ factor 比純股數比再低一截
+            "2026-01-06,0.86363636,1,11,9.5,除權息,exright\n")
+        res, stat = val(R.exright_scan)
+        if not isinstance(stat, dict) and not hasattr(stat, 'get'):
+            res, stat = [], {}   # ⛔ 崩了 ⇒ 下面每一條都會判紅，⛔ 不中斷
+        ck("除權息 ⇒ 落在「股數＋現金｜＜股數比」那一格",
+           stat.get("股數＋現金｜＜股數比（還有現金流出）") == 1, str(dict(stat)))
+        io.open(os.path.join(da, "1111.csv"), "w", encoding="utf-8").write(
+            "date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+            "2026-01-06,0.96000000,1,11,10.56,息,exright\n")
+        res, stat = val(R.exright_scan)
+        if not isinstance(stat, dict) and not hasattr(stat, 'get'):
+            res, stat = [], {}   # ⛔ 崩了 ⇒ 下面每一條都會判紅，⛔ 不中斷
+        ck("⛔ 純除息（沒有股數那一半）整筆跳過，⛔ 不算進任何一格",
+           not res and not stat, str(dict(stat)))
+    finally:
+        R.STOCKS, R.ADJ, R.EX_WIN = old, olda, oldwin
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(da, ignore_errors=True)
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
