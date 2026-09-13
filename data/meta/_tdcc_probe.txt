@@ -47,7 +47,7 @@
      ✓ 69,367 bytes
      ★ 資料日期選項 51 個：['20260911', '20260904', '20260828', '20260821', '20260814'] … ['20251003', '20250926', '20250919']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['80-4591', '02-2719']
+     ★ 疑似級距文字：['02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -120,7 +120,7 @@
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
   ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = '48cda5be-8981-43d6-92c4-5796589d7cbf'
+    SYNCHRONIZER_TOKEN = '992773c1-bd03-4191-a35d-7c25623a3b4f'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260911'
     method = 'submit'
@@ -163,7 +163,7 @@
              欄位：['資料日期', '證券代號', '證券名稱', '分戶保管股數', '特定保管股數', '強制集保總股數', '發行仟股數']
     id=1-6: 407,142 bytes｜CSV 2,987 列｜相異資料日期 0 個 []
              欄位：['資料年月', '債券代號', '債券名稱', '債券類別', '債券餘額', '個人戶持有比率', '法人戶持有比率', '自營商持有比率']
-    id=1-7: 33,892 bytes｜CSV 780 列｜相異資料日期 0 個 []
+    id=1-7: 33,942 bytes｜CSV 781 列｜相異資料日期 0 個 []
              欄位：['證券代號', '證券名稱', '交付日期', '交付原因']
 
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
@@ -191,13 +191,13 @@
 [11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
-     ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 4 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+     ✓ 69,363 bytes｜CSV 559 列｜**相異資料日期 0 個** []
+       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
