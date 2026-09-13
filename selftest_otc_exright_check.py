@@ -23,10 +23,13 @@
 ⭐ 而它們確實還不該落地：那一天還沒到，前收盤價根本還不存在。
 """
 import io
+import os
 import sys
 from datetime import datetime, timedelta
 
 import otc_exright_check as C
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 OK = FAIL = 0
 
@@ -118,6 +121,37 @@ def main():
     m3, miss3, fut3 = mark_of([rows[2]], set(), today)
     ck("  miss 空、future 1 筆", not miss3 and len(fut3) == 1,
        f"{miss3}｜{fut3}")
+
+    print("\n⑤ ⭐⭐ `to_row`：官方 21 欄裡我方要留的那 14 欄（2026-09-14 加寬）")
+    # ⭐ 這一列是 `_tpex_probe.txt` [12] 逐字抄回來的官方回應
+    OFF = {"Date": "1150914", "SecuritiesCompanyCode": "5278",
+           "CompanyName": "尚凡*", "ClosePriceBeforeExRightsDiviend": "23.90",
+           "ExRightsDiviendQuote": "23.63", "StockDividend": "0.000000",
+           "CashDividend": "0.266182", "StockDividendPlusCashDividend": "0.266182",
+           "ExRightsDiviend": "除息", "LimitUp": "25.95", "LimitDown": "21.30",
+           "OpeningReferencePrice": "23.65", "DividendDeductedQuote": "23.63",
+           "CashDivdend": "0.26618165", "StockDivdendThousandShares": "0.00000000",
+           "CashCapitalIncreaseShares": "0", "SubscriptionPricePerShare": "0.00"}
+    row = C.to_row(OFF, "2026-09-14", "5278", "2026-09-14")
+    m = dict(zip(C.HEADER, row))
+    ck("  欄數 = HEADER", len(row) == len(C.HEADER), f"{len(row)} vs {len(C.HEADER)}")
+    ck("  ⭐ 上櫃的**官方漲跌停**收下來了（25.95／21.30）",
+       m["limit_up"] == "25.95" and m["limit_down"] == "21.30", str(m))
+    ck("  ⭐ 減除股利參考價（23.63）與開盤競價基準（23.65）分得開",
+       m["ex_div_ref"] == "23.63" and m["open_base"] == "23.65", str(m))
+    ck("  ⭐⭐ **權值與息值分開**（0.000000／0.266182）"
+       "——⛔ 上市只給合併值，這是上櫃才有的",
+       m["stock_div"] == "0.000000" and m["cash_div"] == "0.266182", str(m))
+    ck("  ⭐ 現增認購價與股數也在", m["sub_price"] == "0.00" and m["sub_shares"] == "0")
+    # ⛔ 反向：官方把欄名改掉 ⇒ 那一欄變空（而這正是要**大聲講**的那件事）
+    off2 = {k: v for k, v in OFF.items() if k != "LimitUp"}
+    m2 = dict(zip(C.HEADER, C.to_row(off2, "2026-09-14", "5278", "2026-09-14")))
+    ck("  ⛔ 欄名不見時那一欄是空的（⇒ 所以 `main()` 另外釘一條欄名檢查）",
+       m2["limit_up"] == "" and m2["limit_down"] == "21.30", str(m2))
+    # ⭐ 而 `HEADER` 與 `to_row` 是**同一個契約**：改一邊就該炸
+    ck("  ⭐ `to_row` 自己會檢查欄數（⛔ 只改 HEADER 不改 to_row 會當場炸）",
+       "assert len(out) == len(HEADER)" in io.open(
+           os.path.join(HERE, "otc_exright_check.py"), encoding="utf-8").read())
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
