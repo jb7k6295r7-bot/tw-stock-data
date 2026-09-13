@@ -192,6 +192,56 @@ def main():
         R.STOCKS = old
         shutil.rmtree(d, ignore_errors=True)
 
+    print("\n── ⑧b `check_all` 的往後找：兩種漏法，⛔ 而它不可以撈到「增加」──")
+    d = tempfile.mkdtemp(prefix="rsc4_")
+    da = tempfile.mkdtemp(prefix="rsc4a_")
+    old, olda = R.STOCKS, R.ADJ
+    try:
+        R.STOCKS, R.ADJ = d, da
+        # 減資 25%（現金型）：前收 66 ⇒ (66 − 2.5) ÷ 0.75 = 84.67
+        adj = ("date,factor,cum_factor,pre_close,ref_price,kind,event\n"
+               "2026-01-06,1,1,66,84.67,退還股款,reduce\n")
+        io.open(os.path.join(da, "5555.csv"), "w", encoding="utf-8").write(adj)
+
+        # ① 事件日**不是交易日**（颱風休市 ⇒ 全市場那天沒有日檔）
+        io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,66,1000000\n2026-01-07,84,750000\n")
+        _r, st = val(R.check_all)
+        ck("⭐ 事件日碰到休市（沒有那一列）⇒ 往後找，照樣算得出來",
+           st.get("現金型｜對得上") == 1, str(dict(st)))
+        ck("　　而它會記下用的是哪一條路（`shares_via`）",
+           _r and _r[0].get("shares_via") == "往後找", str(_r))
+
+        # ② 股數**更新落後**：事件日當天股數還沒變
+        io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,66,1000000\n"
+            "2026-01-06,84,1000000\n2026-01-08,84,750000\n")
+        _r, st = val(R.check_all)
+        ck("⭐ 股數更新落後 ⇒ 往後找，照樣算得出來",
+           st.get("現金型｜對得上") == 1, str(dict(st)))
+
+        # ③ ⛔⛔ 反向那一條才是主角：往後找可能撈到**增加**（增資／可轉債轉換）
+        #    ⇒ keep > 1 ⇒ 會生出一個「看起來正常」的假參考價。⛔ 一定要擋掉。
+        io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,66,1000000\n"
+            "2026-01-06,84,1000000\n2026-01-08,84,1200000\n")
+        _r, st = val(R.check_all)
+        ck("⛔⛔ 往後找撈到的是**增加** ⇒ 算不了，⛔ 不可以拿它算出一個假參考價",
+           st.get("算不了：問不到變少的股數") == 1 and not _r, str(dict(st)))
+
+        # ④ 事件日那一格本來就讀得到 ⇒ ⛔ 不可以改走往後找
+        io.open(os.path.join(d, "5555.csv"), "w", encoding="utf-8").write(
+            "date,close,shares\n2026-01-05,66,1000000\n"
+            "2026-01-06,84,750000\n2026-01-08,84,500000\n")
+        _r, st = val(R.check_all)
+        ck("⛔ 事件日讀得到就用事件日（⛔ 不可以被後面更小的股數蓋過去）",
+           _r and _r[0].get("shares_via") == "事件日"
+           and _r[0].get("keep") == "0.750000", str(_r))
+    finally:
+        R.STOCKS, R.ADJ = old, olda
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(da, ignore_errors=True)
+
     print("\n── ⑨ `exright_scan`：三格分類，⛔ 而它判不出對錯 ──")
     d = tempfile.mkdtemp(prefix="rsc3_")
     da = tempfile.mkdtemp(prefix="rsc3a_")

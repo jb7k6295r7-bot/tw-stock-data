@@ -239,13 +239,20 @@ def check_all():
         except (ValueError, KeyError, TypeError):
             stat["算不了：價格欄壞掉"] += 1
             continue
-        if sa is None or sb is None:
-            stat["算不了：問不到 shares"] += 1
-            continue
-        if sb <= 0 or sa <= 0 or sa >= sb:
-            # ⚠ 股數沒變少 ⇒ 這一筆的 shares 對不上這個事件（可能是別的原因改了股數）
-            stat["算不了：股數沒變少"] += 1
-            continue
+        via = "事件日"
+        if sa is None or sb is None or sa >= sb or sb <= 0 or sa <= 0:
+            # ⛔⛔ 讀事件日那一格會漏掉**兩種**，而兩種都不是資料壞掉（2026-09-13 實測）：
+            #   ① 事件日**不是交易日**：官方公告的恢復買賣日碰到颱風休市
+            #      （2016-09-28 梅姬、2019-09-30 米塔 ⇒ 那兩天全市場沒有日檔）
+            #   ② 股數**更新落後**：實測 lag 1~19 個交易日都有
+            # ⇒ 兩種都往後找第一個**變過**的股數。⭐ 跟除權那邊走同一支（四點五）。
+            b2, a2, _lag = shares_after(code, day)
+            # ⚠ 一定要**再驗一次是減少**：往後找可能撈到增資／可轉債轉換那種**增加**，
+            #   ⛔ 而拿它算出來的 keep > 1 會生出一個看起來正常的假參考價。
+            if b2 is None or a2 >= b2:
+                stat["算不了：問不到變少的股數"] += 1
+                continue
+            sb, sa, via = b2, a2, "往後找"
         keep = sa / sb
         calc = expected_ref(pre, keep, is_cash(kind))
         diff = abs(calc - ref)
@@ -254,7 +261,8 @@ def check_all():
         res.append({"stock_id": code, "date": day, "kind": kind,
                     "keep": f"{keep:.6f}", "pre_close": f"{pre:.2f}",
                     "ref_official": f"{ref:.2f}", "ref_calc": f"{calc:.2f}",
-                    "diff": f"{diff:.4f}", "ok": "1" if diff <= TOL else "0"})
+                    "diff": f"{diff:.4f}", "ok": "1" if diff <= TOL else "0",
+                    "shares_via": via})
     return res, stat
 
 
@@ -351,7 +359,7 @@ def main():
                                  key=lambda x: -float(x["diff"])),
                           list(res[0]) if res else
                           ["stock_id", "date", "kind", "keep", "pre_close",
-                           "ref_official", "ref_calc", "diff", "ok"])
+                           "ref_official", "ref_calc", "diff", "ok", "shares_via"])
         rl.check("對不上的清單寫得進去而且讀得回來",
                  back == bad, f"寫 {bad} 列、讀回 {back} 列")
     return rl.finish()
