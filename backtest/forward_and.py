@@ -149,6 +149,12 @@ def main():
         uni = uni.head(a.limit)
     bdf = D.load_benchmark(cal); bench = {"o": bdf["open"].to_numpy(float), "c": bdf["close"].to_numpy(float)}
     disp = D.load_disposal_intervals(); rev, rev_ly, _ = R34.load_revenue(); rdates = R34.rebalance_dates(list(rev.index), cal)
+    # 營收供料自檢（CODE 2026-09-13 12:40：2026-08 兩市場殘缺而 --fill 看不到）：每期有值檔數、最新期對前 6 期中位；⛔ 只記不擋，少訊號要看得出是供料
+    cov = rev.notna().sum(axis=1)
+    if len(cov) >= 2:
+        last_p = cov.index[-1]; med6 = float(cov.iloc[-7:-1].median()) if len(cov) >= 7 else float(cov.iloc[:-1].median())
+        ratio = cov.iloc[-1] / med6 if med6 > 0 else float("nan")
+        log.append(f"- 營收供料：最新期 {last_p} 有值 {int(cov.iloc[-1]):,} 檔，前 6 期中位 {med6:.0f}（{ratio * 100:.0f}%）{'⛔ 殘缺（< 90%），這一趟的 AND 訊號會偏少' if ratio < 0.9 else '✓'}；近 8 期：" + "、".join(f"{p} {int(v):,}" for p, v in cov.iloc[-8:].items()))
     lo = max(0, start_pos - 80); hi = end_pos
     jobs = list(zip(uni["stock_id"], uni["market"], uni["first_seen"], uni["last_seen"]))
     series = {}; main_rows = []; g_rows = []
