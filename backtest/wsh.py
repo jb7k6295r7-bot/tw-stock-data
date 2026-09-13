@@ -6,7 +6,7 @@
 
 swing（K線分析 0947 逐字）：swing high(i) ＝ high[i] > high[i−k..i−1] 且 > high[i+1..i+k]，k＝5，確認日 i+k；swing low 鏡像。
 末跌高狀態機（0925 三①）：每一次新的更低低點 L 確認，末跌高 := L 之前最近的一個 swing high（反彈沒破 ⇒ 往下移；反彈破了又再破底 ⇒ 往上移，兩種情形同一條規則）。
-下降趨勢的最低要求：L 低於前一個 swing low（LL）且末跌高低於它之前的 swing high（LH）。
+下降趨勢的最低要求：新 swing low 低於前一個 swing low（LL）且末跌高低於它之前的 swing high（LH）；較高低點不改結構（末跌高等它被突破或被新的 LL 取代）。
 ⛔ 全部只用 t 之前（含）的資料：swing 用確認日、線用已確認的 swing。
 
     python3 -m backtest.wsh     # 自測（合成序列）
@@ -93,14 +93,14 @@ def detect(o, h, l, c, mode="E0", redraw_n=0, hthr=0.0, start=0):
                 if state == 1:                               # 第一步之後第一個 HL（打底不再破底）
                     hl = p; hl_idx = i; H = float(np.nanmax(h[t1:i + 1])); state = 2
                 sl.append((i, p)); continue
-            if L is not None and p >= L:                     # 狀態 0 的較高低點：結構不變（末跌高要等它被突破或被更低低點取代）
+            if sl and p >= sl[-1][1] and state == 0:        # 不低於前一個 swing low ⇒ 不是新的下降結構，末跌高不動
                 sl.append((i, p)); continue
             if state == 2:
                 sig.append({"kind": "ABANDON", "t1": t1, "hl_idx": hl_idx, "H": H, "L": L, "lh": lh, "signal_raw": t, "line_ok": True})
             if state >= 1:
                 state = 0; t1 = None; hl = None; hl_idx = None; H = None
-            # 新的更低低點：L ＝ 它，末跌高 ＝ 它之前最近的 swing high（0925 兩種情形同一條規則）；重新武裝
-            L_prev = L; L = p
+            # 低於前一個 swing low（LL）：L ＝ 它，末跌高 ＝ 它之前最近的 swing high（0925 兩種情形同一條規則）；重新武裝
+            L_prev = sl[-1][1] if sl else None; L = p
             prev = [x for x in sh if x[0] < i]
             if prev:
                 lh = prev[-1][1]; lh_idx = prev[-1][0]; lh_prev = prev[-2][1] if len(prev) >= 2 else None
