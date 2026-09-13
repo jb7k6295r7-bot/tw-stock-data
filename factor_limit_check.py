@@ -210,7 +210,7 @@ def check_all(slack=SLACK):
                 continue
             q = ser[i][1] / ref
             src, over = judge(ser[i][1], ref, d, off.get((code, d)), slack,
-                              etf=code.startswith("00"))
+                              etf=price_limit.is_fine_tick(code))
             how[src] += 1
             # ⛔ 官方說「無漲跌幅限制」的那一筆**沒有判準** ⇒ 不進母體
             if src == "官方說無限制":
