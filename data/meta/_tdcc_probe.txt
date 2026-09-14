@@ -120,7 +120,7 @@
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
   ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = '3078a3fe-e3f1-42c2-ae70-98e6b837b655'
+    SYNCHRONIZER_TOKEN = 'f806fbb6-0a1a-4f1e-80bd-04309867fe61'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260911'
     method = 'submit'
@@ -201,13 +201,13 @@
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 4 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 4 個｜**最長連續鏈 1 段**｜「N 以上」0 個
-       （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
+       「小-大」數字對 3 個｜**最長連續鏈 2 段**｜「N 以上」0 個
+       （接不成鏈，最長只有 2 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
      ✓ 2,363,628 bytes｜CSV 68,935 列｜**相異資料日期 1 個** ['20260911']
@@ -215,7 +215,7 @@
        （一個都沒有）
 
   ── 開放資料專區：https://www.tdcc.com.tw/portal/zh/stats/openData
-     ✓ 64,291 bytes｜CSV 407 列｜**相異資料日期 0 個** []
+     ✓ 64,287 bytes｜CSV 407 列｜**相異資料日期 0 個** []
        「小-大」數字對 118 個｜**最長連續鏈 2 段**｜「N 以上」0 個
        （接不成鏈，最長只有 2 段——這些多半是電話或代碼，不是級距）
 
