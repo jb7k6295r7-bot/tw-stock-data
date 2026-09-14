@@ -2389,18 +2389,10 @@ def cmd_feed(args):
         done = {n[:-4] for n in os.listdir(d) if n.endswith(".csv")}
     days, how = _target_days(args)
     need = getattr(args, "need_col", "")
-    stale = set()
+    # ⛔ 這一段本來在這裡 inline 一份，而 `backfill.py --inst` 沒有 ⇒ 上市那半
+    #   只能用 `--force`（整段重抓、斷掉要從頭）。⇒ 收成一份（四點五）。
+    stale = B.days_missing_col(d, need, done) if need else set()
     if need:
-        # ⛔ 只讀第一行。2,846 個檔全部讀完是幾百 MB，而我只要表頭。
-        for x in sorted(done):
-            p_ = os.path.join(d, x + ".csv")
-            try:
-                with open(p_, encoding="utf-8") as f_:
-                    head = f_.readline()
-            except OSError:
-                continue
-            if need not in [c.strip() for c in head.rstrip("\n").split(",")]:
-                stale.add(x)
         print(f"[{name}] --need-col {need}：已存在的 {len(done)} 天裡，"
               f"**{len(stale)} 天的表頭缺這一欄**，要重抓")
         if not stale:

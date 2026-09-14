@@ -154,6 +154,52 @@ def main():
     ck("  ⛔ 第 16 欄不是「買賣超股數」⇒ **整批拒收**（⛔ 不硬取位置）",
        not o6b and "分項欄不在預期位置" in n6b, n6b)
 
+    print("\n⑦ ⭐⭐ `--need-col` 的續跑判準：**用資料自己當進度**")
+    # ⛔⛔ 這一節的起因是我自己寫錯的一句註解：我在 INST_HEADER 寫
+    #   「`--need-col dealer_self` 靠表頭認日子」——⚠ 而 `--inst` **當時沒有那個參數**，
+    #   上市那半只有 `--force`（整段重抓、斷掉要從頭）。
+    #   ⇒ ⭐ 現在收成一份 `backfill.days_missing_col()`，兩邊都叫它。
+    import os as _os
+    import tempfile as _tf
+    _d = _tf.mkdtemp()
+    io.open(_os.path.join(_d, "2015-01-05.csv"), "w", encoding="utf-8").write(
+        "date,stock_id,foreign,trust,dealer,total\n")          # 舊 6 欄
+    io.open(_os.path.join(_d, "2026-09-11.csv"), "w", encoding="utf-8").write(
+        ",".join(B.INST_HEADER) + "\n")                        # 新 8 欄
+    _done = {"2015-01-05", "2026-09-11"}
+    _stale = B.days_missing_col(_d, "dealer_self", _done)
+    ck("  ⭐ 只有**表頭缺那一欄**的日子要重抓",
+       _stale == {"2015-01-05"}, str(_stale))
+    ck("  ⛔ 反向：已經有那一欄的日子**不重抓**（⚠ 否則每趟都全庫重跑）",
+       "2026-09-11" not in _stale, str(_stale))
+    # ⚠ 接住例外再判：⛔ 不接的話整支測試當場中斷，後面一條都不會跑（第七點②）
+    try:
+        _g = B.days_missing_col(_d, "dealer_self", _done | {"1999-01-01"})
+    except Exception as _ex:                                  # noqa: BLE001
+        _g = f"⛔ 炸了：{type(_ex).__name__}"
+    ck("  ⚠ 而檔不存在時不會炸（⛔ 只是不算它）",
+       _g == {"2015-01-05"}, str(_g))
+    # ⛔⛔ 要測「完全相等 vs 包含」，光靠上面兩個檔**分不出來**
+    #   （兩份表頭都含 `dealer`，兩種比對的答案一樣 ⇒ 突變 E1 全綠）。
+    #   ⇒ ⭐ 要一個**有 `dealer_self`、沒有 `dealer`** 的表頭：
+    #     完全相等 ⇒ 缺 `dealer` ⇒ 要重抓；包含 ⇒ 被 `dealer_self` 頂替 ⇒ 不重抓。
+    io.open(_os.path.join(_d, "2020-01-02.csv"), "w", encoding="utf-8").write(
+        "date,stock_id,dealer_self,dealer_hedge\n")
+    ck("  ⭐ 欄名是**完全相等**比對（⛔ `dealer_self` 不可以頂替 `dealer`）",
+       "2020-01-02" in B.days_missing_col(_d, "dealer", _done | {"2020-01-02"}),
+       str(B.days_missing_col(_d, "dealer", _done | {"2020-01-02"})))
+    # ⛔ 而「呼叫點真的用了它」要掃原始碼（第七點③，這是第八次）
+    _src_b = io.open(B.__file__, encoding="utf-8").read()
+    _src_f = io.open(F.__file__, encoding="utf-8").read()
+    ck("  ⭐⭐ `--inst` 的呼叫點真的看 stale（⛔ 只測函式的話，"
+       "把它從 days 篩選裡拿掉不會紅）",
+       "or d in stale" in _src_b and 'dest="need_col"' in _src_b,
+       "⛔ cmd_inst 沒有用 stale／argparse 沒有 --need-col")
+    ck("  ⭐ 而 feeds 也是叫同一份（⛔ 不是自己再抄一次）",
+       "B.days_missing_col(" in _src_f
+       and "head = f_.readline()" not in _src_f,
+       "⛔ feeds 還留著自己那一份")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
