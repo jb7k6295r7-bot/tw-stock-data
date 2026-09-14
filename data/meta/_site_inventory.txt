@@ -17,8 +17,7 @@
    ✓ 309,960 bytes｜攤平出 **143 條**選單項目
 
 ── TPEx-OpenAPI｜https://www.tpex.org.tw/openapi/swagger.json
-   ✗ 抓不到：IncompleteRead：連線傳到一半斷掉（已讀 24,064 bytes、還差 452,859）｜各次讀到 ['32,256', '24,064'] ⇒ ⭐ 這是**傳輸被切斷**，不是端點壞掉，重試通常會好
-   ⛔ 抓不到**不等於**這個站沒有——這一趟對它一無所知。
+   ✓ 476,923 bytes｜攤平出 **225 條**選單項目
 
 ── TWSE-sitemap｜https://www.twse.com.tw/sitemap.xml
    ✓ 261,860 bytes｜攤平出 **3109 條**選單項目
@@ -39,6 +38,15 @@
         → /opendata/t187ap05_P
       上市公司每月營業收入彙總表
         → /opendata/t187ap05_L
+   TPEx-OpenAPI：⭐ **4 條**
+      興櫃公司每月營業收入彙總表
+        → /t187ap05_R
+      二十九大類股營收變化統計表
+        → /mopsfin_t187ap05_OA
+      發行公司營收創新高一覽表(上櫃)
+        → /mopsfin_t187ap05_OB
+      上櫃公司每月營業收入彙總表
+        → /mopsfin_t187ap05_O
    TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ 財報（歷史，逐季）
@@ -121,6 +129,71 @@
         → /opendata/t187ap06_L_basi
       上市公司資產負債表(金融業)
         → /opendata/t187ap07_L_basi
+   TPEx-OpenAPI：⭐ **32 條**
+      上櫃公司資產負債表(金融業)
+        → /mopsfin_t187ap07_O_basi
+      上櫃公司資產負債表(證券期貨業)
+        → /mopsfin_t187ap07_O_bd
+      上櫃公司資產負債表(一般業)
+        → /mopsfin_t187ap07_O_ci
+      上櫃公司資產負債表(金控業)
+        → /mopsfin_t187ap07_O_fh
+      上櫃公司資產負債表(保險業)
+        → /mopsfin_t187ap07_O_ins
+      上櫃公司資產負債表(異業)
+        → /mopsfin_t187ap07_O_mim
+      上櫃公司綜合損益表(金融業)
+        → /mopsfin_t187ap06_O_basi
+      上櫃公司綜合損益表(證券期貨業)
+        → /mopsfin_t187ap06_O_bd
+      上櫃公司綜合損益表(一般業)
+        → /mopsfin_t187ap06_O_ci
+      上櫃公司綜合損益表(金控業)
+        → /mopsfin_t187ap06_O_fh
+      上櫃公司綜合損益表(保險業)
+        → /mopsfin_t187ap06_O_ins
+      上櫃公司綜合損益表(異業)
+        → /mopsfin_t187ap06_O_mim
+      上櫃公司財報資訊(金融業)
+        → /mopsfin_t187ap06_O_basiA
+      上櫃公司財報資訊(證券期貨業)
+        → /mopsfin_t187ap06_O_bdA
+      上櫃公司財報資訊( 一般業)
+        → /mopsfin_t187ap06_O_ciA
+      上櫃公司財報資訊(金控業)
+        → /mopsfin_t187ap06_O_fhA
+      上櫃公司財報資訊(保險業)
+        → /mopsfin_t187ap06_O_insA
+      上櫃公司財報資訊(異業)
+        → /mopsfin_t187ap06_O_mimA
+      興櫃公司資產負債表-證券期貨業
+        → /mopsfin_t187ap07_U_bd
+      興櫃公司資產負債表-一般業
+        → /mopsfin_t187ap07_U_ci
+      興櫃公司資產負債表-金控業
+        → /mopsfin_t187ap07_U_fh
+      興櫃公司資產負債表-保險業
+        → /mopsfin_t187ap07_U_ins
+      興櫃公司資產負債表-異業
+        → /mopsfin_t187ap07_U_mim
+      興櫃公司綜合損益表-金融業
+        → /mopsfin_t187ap06_U_basi
+      興櫃公司綜合損益表-證券期貨業
+        → /mopsfin_t187ap06_U_bd
+      興櫃公司綜合損益表-一般業
+        → /mopsfin_t187ap06_U_ci
+      興櫃公司綜合損益表-金控業
+        → /mopsfin_t187ap06_U_fh
+      興櫃公司綜合損益表-保險業
+        → /mopsfin_t187ap06_U_ins
+      興櫃公司綜合損益表-異業
+        → /mopsfin_t187ap06_U_mim
+      興櫃公司資產負債表-金融業
+        → /mopsfin_t187ap07_U_basi
+      上櫃公司截至各季綜合損益財測達成情形(簡式)
+        → /mopsfin_t187ap15_O
+      上櫃公司當季綜合損益經會計師查核(核閱)數與當季預測數差異達百分之十以上者，或截至當季累計差異達百分之二十以上者(簡式)
+        → /mopsfin_t187ap16_O
    TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ 本益比（歷史段，含收盤價欄）
@@ -151,6 +224,17 @@
         → /exchangeReport/BWIBBU_ALL
       上市個股日本益比、殖利率及股價淨值比（依日期查詢）
         → /exchangeReport/BWIBBU_d
+   TPEx-OpenAPI：⭐ **5 條**
+      上櫃股票個股本益比、殖利率、股價淨值比
+        → /tpex_mainboard_peratio_analysis
+      上櫃歷史個股本益比排行
+        → /tpex_pe_ratio_top10
+      櫃買「高殖利率指數」當日成分股
+        → /tphd_constituents
+      櫃買「高殖利率指數」當日收盤指數
+        → /tphd_change
+      高殖利率指數歷史收盤指數
+        → /tphd_index
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 創新板成分清單
@@ -161,12 +245,14 @@
         → https://www.twse.com.tw/TIB/zh/index.html
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 集保／股權分散（歷史）
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 上櫃交易日曆（歷史）
@@ -191,6 +277,17 @@
         → /opendata/t187ap14_L
       電子式交易統計資訊
         → /opendata/t187ap19
+   TPEx-OpenAPI：⭐ **5 條**
+      上櫃股票現股當沖交易統計資訊
+        → /tpex_intraday_trading_statistics
+      上櫃日成交量值指數
+        → /tpex_daily_trading_index
+      上櫃鉅額交易日成交量值統計
+        → /tpex_daily_trading_summary_odd
+      上櫃公司各產業EPS統計資訊
+        → /mopsfin_t187ap14_O
+      電子式交易統計資訊(上櫃)
+        → /mopsfin_t187ap19_O
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 上櫃除權息（歷史）
@@ -208,6 +305,11 @@
    TWSE-OpenAPI：⭐ **1 條**
       上市股票除權除息預告表
         → /exchangeReport/TWT48U_ALL
+   TPEx-OpenAPI：⭐ **2 條**
+      上櫃股票除權除息計算結果表
+        → /tpex_exright_daily
+      上櫃股票除權除息預告表
+        → /tpex_exright_prepost
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 上櫃減資（歷史）
@@ -233,6 +335,7 @@
       公告與法規 / 市場公告 / 股票增減資上櫃掛牌（興櫃登錄）公告暨TDR再發行及註銷公告
         → /zh-tw/announce/market/reduction-tdr.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 變更股票面額
@@ -252,6 +355,7 @@
       公告與法規 / 市場公告 / 上櫃變更股票面額 / 變更股票面額恢復交易參考價
         → /zh-tw/announce/market/change/reference.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 暫停／停止交易（歷史）
@@ -274,6 +378,9 @@
         → /company/suspendListingCsvAndHtml
       集中市場暫停交易證券
         → /exchangeReport/TWTAWU
+   TPEx-OpenAPI：⭐ **1 條**
+      上櫃股票變更交易、分盤交易、管理股票與停止交易資訊
+        → /tpex_cmode
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 終止上市／上櫃（下市下櫃名單）
@@ -308,6 +415,13 @@
         → /company/suspendListingCsvAndHtml
       上市公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更停止買賣公司
         → /opendata/t187ap26_L
+   TPEx-OpenAPI：⭐ **3 條**
+      上櫃權證當日暫停/恢復交易資訊
+        → /tpex_warrant_suspend_today
+      上櫃權證歷史暫停/恢復交易資訊
+        → /tpex_warrant_suspend_history
+      上櫃公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更停止買賣公司
+        → /mopsfin_t187ap26_O
    TWSE-sitemap：⭐ **4 條**
       https://www.twse.com.tw/zh/page/clearing/suspended.html
         → https://www.twse.com.tw/zh/page/clearing/suspended.html
@@ -350,6 +464,17 @@
         → /announcement/notetrans
       集中市場當日公布注意股票
         → /announcement/notice
+   TPEx-OpenAPI：⭐ **5 條**
+      上櫃公布注意股票資訊
+        → /tpex_trading_warning_information
+      上櫃處置有價證券資訊
+        → /tpex_disposal_information
+      上櫃公布注意累計次數異常資訊
+        → /tpex_trading_warning_note
+      興櫃處置有價證券資訊
+        → /tpex_esb_disposal_information
+      興櫃公布注意有價證券資訊
+        → /tpex_esb_warning_information
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 外資持股比率
@@ -382,6 +507,13 @@
         → /fund/MI_QFIIS_cat
       集中市場外資及陸資持股前 20 名彙總表
         → /fund/MI_QFIIS_sort_20
+   TPEx-OpenAPI：⭐ **3 條**
+      上櫃僑外資及陸資持股比例排行表
+        → /tpex_3insti_qfii
+      上櫃各類股僑外資及陸資持股比例表
+        → /tpex_3insti_qfii_industry
+      上櫃股票外資及陸資買賣超彙總表
+        → /tpex_3insti_qfii_trading
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 發行股數／股本
@@ -394,6 +526,11 @@
       上櫃 / 交易資訊 / 歷史熱門資料 / 個股本益比排行
         → /zh-tw/mainboard/trading/historical/pe.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⭐ **2 條**
+      上櫃股票個股本益比、殖利率、股價淨值比
+        → /tpex_mainboard_peratio_analysis
+      上櫃歷史個股本益比排行
+        → /tpex_pe_ratio_top10
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 借券／融券（歷史）
@@ -465,6 +602,27 @@
         → /exchangeReport/MI_MARGN
       上市上櫃股票當日可借券賣出股數
         → /SBL/TWT96U
+   TPEx-OpenAPI：⭐ **10 條**
+      上櫃股票融資融券餘額
+        → /tpex_mainboard_margin_balance
+      上櫃股票融券借券賣出餘額
+        → /tpex_margin_sbl
+      上櫃融資融券暫停融券賣出預告表
+        → /tpex_margin_trading_term
+      上櫃融資融券調整成數
+        → /tpex_margin_trading_adjust
+      上櫃融資融券標借
+        → /tpex_margin_trading_lend
+      上櫃信用交易餘額概況表
+        → /tpex_margin_trading_marginspot
+      上櫃融資融券使用率報表
+        → /tpex_margin_trading_margin_used
+      上櫃融資融券增減排行表
+        → /tpex_margin_trading_short_sell
+      上櫃當日融券賣出與借券賣出成交量值
+        → /tpex_short_sell
+      上櫃應付現股當日沖銷券差借券費率
+        → /tpex_intraday_fee
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 盤後定價／零股／鉅額
@@ -575,6 +733,23 @@
         → /block/BFIAUU_m
       集中市場鉅額交易年成交量值統計
         → /block/BFIAUU_y
+   TPEx-OpenAPI：⭐ **8 條**
+      上櫃股票零股交易資訊
+        → /tpex_odd_stock
+      上櫃股票盤後定價行情
+        → /tpex_off_market
+      上櫃鉅額交易日成交資訊
+        → /tpex_daily_qutoes_block
+      上櫃個股單一證券鉅額交易日成交資訊
+        → /tpex_daily_trading_block
+      上櫃鉅額交易日成交量值統計
+        → /tpex_daily_trading_summary_odd
+      上櫃鉅額交易月成交量值統計
+        → /tpex_monthly_trading_summary_block
+      上櫃鉅額交易年成交量值統計
+        → /tpex_yearly_trading_summary_block
+      鉅額交易歷史成交資訊
+        → /tpex_daily_trade_block_day
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）
@@ -677,6 +852,19 @@
         → /opendata/OpenData_BRK01
       證券商分公司基本資料
         → /opendata/OpenData_BRK02
+   TPEx-OpenAPI：⭐ **6 條**
+      上櫃股票熱門股證券商進出排行
+        → /tpex_active_broker_volume
+      上櫃各券商當日營業金額統計表
+        → /tpex_daily_broker1
+      興櫃推薦證券商與推薦之股票
+        → /tpex_esb_recommended_dealer
+      券商業務別人員數
+        → /mopsfin_t187ap01
+      轉(交)換公司債買賣斷券商買賣日報表
+        → /bond_cb_daily
+      上櫃股票各券商總公司當日營業金額統計表
+        → /tpex_daily_broker2
    TWSE-sitemap：⭐ **32 條**
       https://www.twse.com.tw/zh/brokerService/brokerServiceAudit
         → https://www.twse.com.tw/zh/brokerService/brokerServiceAudit
@@ -747,6 +935,7 @@
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 除權息明細（權值／息值分開、現增認購價與認購率）
@@ -832,6 +1021,15 @@
         → /opendata/t187ap42_L
       上市股票除權除息預告表
         → /exchangeReport/TWT48U_ALL
+   TPEx-OpenAPI：⭐ **4 條**
+      上櫃股票除權除息計算結果表
+        → /tpex_exright_daily
+      上櫃股票除權除息預告表
+        → /tpex_exright_prepost
+      上櫃認購(售)權證每日成交資料檔
+        → /mopsfin_t187ap42_O
+      上櫃認購(售)權證年度發行量概況統計表
+        → /mopsfin_t187ap36_O
    TWSE-sitemap：⭐ **6 條**
       https://www.twse.com.tw/zh/page/trading/exchange/TWT48U.html
         → https://www.twse.com.tw/zh/page/trading/exchange/TWT48U.html
@@ -864,6 +1062,7 @@
       公告與法規 / 市場公告 / 股票增減資上櫃掛牌（興櫃登錄）公告暨TDR再發行及註銷公告
         → /zh-tw/announce/market/reduction-tdr.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
+   TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⭐ **6 條**
       https://www.twse.com.tw/zh/page/trading/exchange/TWTAVU.html
         → https://www.twse.com.tw/zh/page/trading/exchange/TWTAVU.html
@@ -890,6 +1089,11 @@
    TWSE-OpenAPI：⭐ **1 條**
       上市個股首五日無漲跌幅
         → /exchangeReport/TWT88U
+   TPEx-OpenAPI：⭐ **2 條**
+      上櫃漲跌停未成交資訊
+        → /tpex_ceil_non_trading
+      上櫃首五日無漲跌幅資訊
+        → /tpex_ipo_no_limit
    TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ 當日沖銷（歷史）
@@ -927,17 +1131,26 @@
         → /exchangeReport/TWTBAU1
       集中市場暫停先賣後買當日沖銷交易歷史查詢
         → /exchangeReport/TWTBAU2
+   TPEx-OpenAPI：⭐ **5 條**
+      上櫃股票現股當沖交易標的資訊
+        → /tpex_securities
+      上櫃股票現股當沖交易統計資訊
+        → /tpex_intraday_trading_statistics
+      上櫃應付現股當日沖銷券差借券費率
+        → /tpex_intraday_fee
+      上櫃暫停先賣後買當日沖銷交易標的預告表
+        → /tpex_intraday_trading_pre
+      上櫃暫停先賣後買當日沖銷交易歷史查詢
+        → /tpex_intraday_trading_his
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ── ⭐ 掃描範圍表（⛔ 只要有一列失敗，這一趟就不可以寫出「官方沒有」）──
   ✅ TWSE｜281 條（含中文 276）｜https://www.twse.com.tw/res/data/zh/menu-mega.html
   ✅ TPEx｜762 條（含中文 759）｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
   ✅ TWSE-OpenAPI｜143 條（含中文 143）｜https://openapi.twse.com.tw/v1/swagger.json
-  ✗ TPEx-OpenAPI｜0 條（含中文 0）｜https://www.tpex.org.tw/openapi/swagger.json｜IncompleteRead：連線傳到一半斷掉（已讀 24,064 bytes、還差 452,859）｜各次讀到 ['32,256', '24,064'] ⇒ ⭐ 這是**傳輸被切斷**，不是端點壞掉，重試通常會好
+  ✅ TPEx-OpenAPI｜225 條（含中文 225）｜https://www.tpex.org.tw/openapi/swagger.json
   ✅ TWSE-sitemap｜3109 條（含中文 0）｜https://www.twse.com.tw/sitemap.xml
-  ⇒ 成功 4 / 5 份目錄｜合計 4,295 條
-  ⛔⛔ **有目錄沒掃到** ⇒ 這一趟的否定句只涵蓋成功的那幾份。
-      ⚠ 而在開發容器裡全失敗是我方閘道擋的（第六點），**不是事實**。
+  ⇒ 成功 5 / 5 份目錄｜合計 4,520 條
 
 ── ⇒ 這份輸出的用法 ──
   ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用

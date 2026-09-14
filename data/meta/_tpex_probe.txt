@@ -381,7 +381,8 @@
 
   ── 櫃買中心 公告專區（找得到休市日的入口就好）
      https://www.tpex.org.tw/zh-tw/announce/market.html
-     ✗ HTTP 404 Not Found | <!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><me　⛔ 抓不到不等於不存在
+     ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
+       /zh-tw/announce/market/holiday.html
 
 [10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
 
