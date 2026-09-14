@@ -18,6 +18,7 @@
     ③ ⭐ `cross_check`：我方 `last_seen` **晚於**官方終止上市日 ⇒ 抓得出來。
        這是這支程式真正的產出，⚠ 而它只在 Actions 上跑得到 ⇒ 得在這裡驗。
 """
+import csv
 import io
 import json
 import tempfile
@@ -254,6 +255,112 @@ def main():
        bool(yrs) and min(yrs) == 2016, f"問到 {sorted(yrs)}")
     ck("  ⚠ 而那一筆確實被收下來了（⛔ 只證明它繼續問還不夠）",
        len(got2) == 1 and got2[0][0].startswith("2019"), str(got2))
+
+    # ══════════════════════════════════════════════════════════════
+    print("\n[N] ⭐⭐ **先合併再寫**：某幾年逾時不可以刪掉既有的列")
+    # ⛔⛔ 2026-09-14 實際發生：2014~2017 四年 `TimeoutError`
+    #   ⇒ 這一趟只有 403 列、而檔案裡本來有 436 ⇒ **33 列當場消失**。
+    #   ⚠ 低水位那道閘門**有喊**（`✗ 列數沒有比上一趟少`），
+    #   ⛔ 而它只是報告——寫入照做。⇒ ⭐ **報告擋不住任何東西。**
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _d:
+        _p = os.path.join(_d, "delisted.csv")
+        _exist = [["2002-11-04", "2301", "光寶舊", "2026-09-01", "twse"],
+                  ["2016-05-05", "1111", "某上櫃", "2026-09-01", "tpex"],
+                  ["2017-06-06", "2222", "另一家", "2026-09-01", "tpex"]]
+        with io.open(_p, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(D.HEADER)
+            w.writerows(_exist)
+        # 這一趟：2016／2017 逾時 ⇒ 只抓到 twse 那一筆（`asof` 換新）
+        _now = [["2002-11-04", "2301", "光寶舊", "2026-09-14", "twse"]]
+        _merged, _only_old = D.merge_existing(_now, _p)
+        ck("⭐⭐ 合併後列數**沒有變少**（⛔ 這一條就是那 33 列）",
+           len(_merged) == 3, f"{len(_merged)} 列")
+        ck("  ⭐ 而且講得出**幾列只有既有檔才有**（⇒ 這一趟沒抓全）",
+           _only_old == 2, str(_only_old))
+        ck("  ⭐ 本趟的鍵**覆蓋**既有的（`asof` 要更新）",
+           [r for r in _merged if r[1] == "2301"][0][3] == "2026-09-14",
+           str([r for r in _merged if r[1] == "2301"]))
+        ck("  ⛔ 逾時那兩年的列原封不動留著",
+           sorted(r[1] for r in _merged) == ["1111", "2222", "2301"],
+           str(sorted(r[1] for r in _merged)))
+        # ⛔⛔ 排序要跟這個檔本來的一樣：`(delist_date, stock_id)`
+        #   ⚠ 第一版照**合併用的主鍵**排 ⇒ 整份檔案列序翻掉
+        #   （開頭從 2001 的 twse 變成 2012 的 tpex），
+        #   ⛔ 而後果不報錯：git diff 變成整份重寫、區間那一行印錯。
+        ck("⭐⭐ 合併後照 `(delist_date, stock_id)` 排（⛔ 不是照合併主鍵）",
+           [r[0] for r in _merged] == sorted(r[0] for r in _merged),
+           str([(r[0], r[4]) for r in _merged]))
+        ck("  ⭐ 而第一筆是**最早的下市日**（⇒ 區間那一行才印得對）",
+           _merged[0][0] == min(r[0] for r in _merged),
+           f"{_merged[0]}")
+        # ⭐ 主鍵要含 `delist_date`：**代號會回收**
+        _recycled = [["2020-03-03", "2301", "新光寶", "2026-09-14", "twse"]]
+        _m2, _ = D.merge_existing(_recycled, _p)
+        ck("⭐⭐ 代號回收：同一個 2301 不同下市日 ⇒ **兩筆都在**"
+           "（⛔ 主鍵少了 delist_date 會靜靜蓋掉舊那一筆）",
+           len([r for r in _m2 if r[1] == "2301"]) == 2,
+           str([r for r in _m2 if r[1] == "2301"]))
+        # ⭐ 反向：檔不存在時照原樣回，⛔ 不可以炸掉
+        _m3, _o3 = D.merge_existing(_now, os.path.join(_d, "沒這個檔.csv"))
+        ck("⭐ 既有檔不存在 ⇒ 照原樣回、only_old=0（⛔ 不是炸掉）",
+           _m3 == _now and _o3 == 0, f"{_m3}｜{_o3}")
+        # ⭐ 反向：這一趟抓全了 ⇒ only_old = 0（⛔ 否則每天都會喊「沒抓全」）
+        _full = [list(r[:3]) + ["2026-09-14", r[4]] for r in _exist]
+        _m4, _o4 = D.merge_existing(_full, _p)
+        ck("⭐ 反向：抓全了 ⇒ only_old = 0（⛔ 否則天天喊「沒抓全」會被學會忽略）",
+           _o4 == 0 and len(_m4) == 3, f"only_old={_o4}｜{len(_m4)} 列")
+
+    import ast as _a4
+    print("\n[N2] ⭐⭐ 「那一年 0 筆」≠「那一年沒問到」")
+    ck("沒問到的年份挑得出來（None）",
+       D.missing_years({2019: 10, 2018: None, 2017: 0, 2016: None}) == [2016, 2018],
+       str(D.missing_years({2019: 10, 2018: None, 2017: 0, 2016: None})))
+    ck("  ⛔⛔ 而「那一年 0 筆」**不算**沒問到（⚠ 兩者混在一起這條就廢了）",
+       D.missing_years({2017: 0}) == [], str(D.missing_years({2017: 0})))
+    ck("  ⭐ 全部問到 ⇒ 空 list", D.missing_years({2019: 10, 2018: 9}) == [])
+    # ⛔ 而它要真的接上一條 `rl.check`（⚠ 算出來沒用上也是全綠）
+    _t5 = _a4.parse(io.open(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "delisted.py"),
+        encoding="utf-8").read())
+    _used = [n for n in _a4.walk(_t5)
+             if isinstance(n, _a4.Call)
+             and getattr(n.func, "attr", "") == "check"
+             and len(n.args) >= 2
+             and "missing_years" not in _a4.dump(n.args[1])
+             and "_miss" in _a4.dump(n.args[1])]
+    ck("⭐ `missing_years` 真的被餵進一條 `rl.check`（⛔ 算了不用是全綠）",
+       len(_used) == 1, f"{len(_used)} 處")
+    # ⭐ 而重試次數不可以退回去（⚠ 那正是掉 33 列的原因）
+    _src5 = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "delisted.py"), encoding="utf-8").read()
+    _rt = [n for n in _a4.walk(_a4.parse(_src5))
+           if isinstance(n, _a4.Call)
+           and any(k.arg == "retries" for k in n.keywords)
+           and "OTC_URL" in _a4.dump(n)]
+    ck("⭐ 上櫃逐年那一發的 `retries` >= 4、`timeout` >= 90"
+       "（⛔ 2026-09-14 用 2/45 時四年同時逾時）",
+       len(_rt) == 1
+       and next(k.value.value for k in _rt[0].keywords if k.arg == "retries") >= 4
+       and next(k.value.value for k in _rt[0].keywords if k.arg == "timeout") >= 90,
+       _a4.dump(_rt[0]) if _rt else "找不到")
+
+    # ⛔ 而「合併」要真的接在寫檔**之前**——⚠ 算出來沒用上也是全綠
+    _src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "delisted.py"), encoding="utf-8").read()
+    _t4 = _a4.parse(_src)
+    _fn = next((f for f in _a4.walk(_t4) if isinstance(f, _a4.FunctionDef)
+                and f.name == "main"), None)
+    _call_ln = next((n.lineno for n in _a4.walk(_t4)
+                     if isinstance(n, _a4.Call)
+                     and getattr(n.func, "id", "") == "merge_existing"), None)
+    _write_ln = next((n.lineno for n in _a4.walk(_t4)
+                      if isinstance(n, _a4.Call)
+                      and getattr(n.func, "attr", "") == "writerows"), None)
+    ck("⭐ `merge_existing` 真的被呼叫（⛔ 定義了沒用是全綠）", _call_ln is not None)
+    ck("⭐⭐ 而它排在 `writerows` **之前**（⛔ 之後等於沒有合併）",
+       _call_ln is not None and _write_ln is not None and _call_ln < _write_ln,
+       f"merge 在第 {_call_ln} 行、writerows 在第 {_write_ln} 行")
 
     print(f"\n{OK} ok, {FAIL} failed")
     return 1 if FAIL else 0

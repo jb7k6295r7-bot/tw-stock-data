@@ -2426,6 +2426,7 @@ def cmd_feed(args):
                       f"**不要改標頭、不要加大重試。**", file=sys.stderr)
                 return 2
     ok = closed = failed = dropped_days = dropped_rows = 0
+    failed_open = 0          # ⭐ 其中「那一天還沒結束」的（見下面 `day_is_open`）
     asked_now = {}           # ⭐ 本趟問到、但那天沒有資料的日期
     dropped_at = []          # ⭐ 哪幾天丟了幾列（⛔ 不是只給天數）
     dropped_who = []         # ⭐ (日期, 代號)——歸因那一步要用
@@ -2470,6 +2471,26 @@ def cmd_feed(args):
         else:
             failed += 1               # 根本沒問到
             last_fail = str(note)[:260]
+            # ⭐⭐ 2026-09-14：把「**今天**還沒問到」跟「過去某天問不到」分開。
+            #   ⚠ TWSE 的融資融券（MI_MARGN）在**收盤之後好幾個小時**才發，
+            #     而 daily.yml 排在 19:07 台北 ⇒ 當天那一發固定回
+            #     `stat=很抱歉，沒有符合條件的資料` ⇒ ⛔ 這個區塊**每個交易日都紅**。
+            #   ⛔ 而天天紅的檢查會被學會忽略（CLAUDE.md 六點五）——
+            #     實測就是這樣：`data/universe/margin/` 2,850 天**一個洞都沒有**
+            #     （比 `daily/` 少的那 1 天正好是今天），⇒ 隔天那一趟一定補得回來。
+            #   ⭐ 而 `transpose` 那道閘門**早就**寫著「容忍 1 個交易日」
+            #     ⇒ ⛔ 同一件事，兩道閘門給相反的判決。
+            #
+            # ⛔⛔ 而這**不是**把那個 stat 重新分類成「那天沒資料」：
+            #   `很抱歉，沒有符合條件的資料` 這串字**講不出它是哪一天**
+            #   （休市、日期越界、還沒發，三種長得一模一樣）⇒ 第二點。
+            #   ⇒ 它仍然算 `failed`（收手規則照舊用總數），
+            #     ⭐ 只有**判準**放行「那一天還沒結束」的那幾筆。
+            #   ⚠ 而放行之後還有沒有人在守？**有，而且是兩道**：
+            #     ① 隔天那一趟 `day_is_open` 變 False ⇒ 同一筆就會是 ✗
+            #     ② `transpose` 的「落後不超過 1 個交易日」⇒ 落後 2 天就紅
+            if day_is_open(day):
+                failed_open += 1
         if i % 20 == 0 or url is None:
             print(f"  [{i}/{len(days)}] {day} {note}", flush=True)
         # ★ 與 cmd_inst 同一條收手規則：一開始就全失敗代表端點或參數不對，
@@ -2555,8 +2576,22 @@ def cmd_feed(args):
         # ⭐ 這一行就是「為什麼」。⛔ 不要只留在 Actions log 裡——
         #   `_last_run.md` 才是進 repo、下一個人會看到的那一份。
         rl.info("⛔ 最後一則「沒問到」的原因", last_fail)
-    rl.check("沒有「連問都問不到」的日子", failed == 0,
-             f"失敗 {failed} 天" if failed else "0 天")
+    # ⭐ 判準只看**已經結束**的那幾天（理由見上面 `failed_open` 那一段）。
+    failed_closed = failed - failed_open
+    if failed_open:
+        # ⛔ 寫成**不會被讀成「驗過了」**的樣子（⚠ 一行 skipped 跟一行 ok 長得一樣）
+        rl.info("⚠ 其中**今天**還沒問到的",
+                f"{failed_open} 天　⇒ ⛔ **不算失敗，也不算抓到了**"
+                "：官方在收盤後幾小時才發（實測 MI_MARGN）"
+                "　⇒ 隔天那一趟會再問一次，⭐ 那時 `day_is_open` 是 False"
+                "、同一筆就會變成 ✗")
+    rl.check("沒有「連問都問不到」的日子（⛔ 只算**已經結束**的那幾天）",
+             failed_closed == 0,
+             f"已結束的日子失敗 {failed_closed} 天"
+             + (f"（另有今天 {failed_open} 天，不列入）" if failed_open else "")
+             if failed_closed else
+             f"0 天" + (f"（另有今天 {failed_open} 天，不列入）"
+                        if failed_open else ""))
     # ⛔ 丟棄不是零就要看過——可能是欄位對應在某個年代變了，
     #    而每天默默丟幾十列外表完全正常。
     # ⭐ 歸因：不符的列裡，哪些是「該檔離開了本市場」（⛔ 不是瑕疵）

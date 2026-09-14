@@ -84,6 +84,7 @@ LASTRUN="data/meta/_last_run.md"
 #   ⛔ 直到 `--limit` 分批補那種跑法**永遠補不完**為止。
 LEDGERS="
 data/universe/_coverage_backfill.csv:date
+data/meta/delisted.csv:market,stock_id,delist_date
 data/meta/calendar_tpex.csv:date
 data/meta/holiday_schedule.csv:date
 data/universe/*/_fetched.json:json

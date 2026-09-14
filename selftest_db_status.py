@@ -535,6 +535,97 @@ def check_ledger():
     finally:
         D.LEDGER = _old
 
+    # ⛔⛔ ③ 2026-09-14：**回補完成 ≠ 下游拿得到**（CLAUDE.md 四點二）
+    #   B2 原本只量 `universe/inst` 的**表頭** ⇒ 回補跑完那一刻就翻 ✅ 完成，
+    #   ⚠ 而四條線讀的是 `data/stocks_inst/`——那一層要等 `transpose` 跑過。
+    #   實測當天：回補 43.1%、而 2330 的衍生層是 **5 / 2,851**。
+    #   ⭐ 全部拿**合成目錄**驗（⛔ 不可以靠真實 `data/`：
+    #     那樣這條斷言的壽命會綁在「transpose 還沒跑」上——第七點第七個陷阱）。
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _d:
+        _raw = os.path.join(_d, "raw")
+        os.makedirs(_raw)
+        for i, hdr in enumerate(("date,stock_id,dealer_self", "date,stock_id,dealer_self")):
+            io.open(os.path.join(_raw, f"2020-01-0{i + 1}.csv"), "w",
+                    encoding="utf-8").write(hdr + "\n")
+        _drv = os.path.join(_d, "drv.csv")
+
+        def _mk(filled, total, first_at=0):
+            """⚠ `first_at`：讓「有值的那幾列」從第幾列開始
+            ——⭐ 稀疏欄要驗的是**最早有值的那一天**，⛔ 不是百分比。"""
+            rows = ["date,stock_id,dealer_self"]
+            for j in range(total):
+                on = first_at <= j < first_at + filled
+                rows.append(f"2020-01-{j + 1:02d},2330," + ("100" if on else ""))
+            io.open(_drv, "w", encoding="utf-8").write("\n".join(rows) + "\n")
+
+        _oldD = D.DATA
+        try:
+            D.DATA = _d
+            # ⓐ 回補滿、衍生層空 ⇒ ⛔ **不可以**是 ✅
+            _mk(0, 5)
+            st, ev = D._p_col_two("raw", "dealer_self", "drv.csv", "樣本X", D.DENSE)()
+            ck("⛔⛔ 回補 100% 但衍生層 0% ⇒ 狀態**不是** ✅ 完成",
+               not st.startswith("✅"), f"{st}｜{ev}")
+            ck("  ⭐ 而且要**明講**是 transpose 還沒跑（⛔ 只給百分比看不出來）",
+               "下游還沒拿到" in ev and "transpose" in ev, ev)
+            ck("  ⭐ 而證據欄要寫出**樣本是誰**（⛔ 一個裸百分比沒有母體）",
+               "樣本X" in ev, ev)
+            # ⓑ 兩層都滿 ⇒ ✅
+            _mk(5, 5)
+            st2, ev2 = D._p_col_two("raw", "dealer_self", "drv.csv", "樣本X", D.DENSE)()
+            ck("⭐ 反向：兩層都 100% ⇒ 才是 ✅ 完成", st2.startswith("✅"),
+               f"{st2}｜{ev2}")
+            ck("  ⛔ 而這時不可以再喊 transpose", "下游還沒拿到" not in ev2, ev2)
+            # ⓒ 衍生層檔案不存在 ⇒ 要說「讀不到」，⛔ 不是靜靜當成 0%
+            st3, ev3 = D._p_col_two("raw", "dealer_self", "沒這個檔.csv", "樣本X", D.DENSE)()
+            ck("⛔ 衍生層樣本讀不到 ⇒ 明講**讀不到**（⚠ 跟「0%」是兩件事）",
+               "讀不到" in ev3 and not st3.startswith("✅"), f"{st3}｜{ev3}")
+            # ⓓ ⛔ 衍生層**不可以**用表頭量：它的表頭永遠有那一欄
+            io.open(_drv, "w", encoding="utf-8").write(
+                "date,stock_id,dealer_self\n2020-01-01,2330,\n")
+            fn, ft, _first = D._derived_fill(_drv, "dealer_self")
+            ck("⛔⛔ 表頭有那一欄但整片是空的 ⇒ 算 0 有值（⭐ 數的是**值**不是表頭）",
+               (fn, ft) == (0, 1), f"{fn}/{ft}")
+
+            # ⛔⛔ ④ 稀疏欄與稠密欄的判準**相反**——而兩種欄長得一模一樣
+            #   （`note` 只有處置股那幾天才有字：實測 2330 是 183/2,850＝6.4%）
+            #   ⇒ 套上 100% 的判準，B3 那一格**永遠到不了 ✅**。
+            _mk(2, 10, first_at=1)          # 10 列裡只有 2 列有值（20%）
+            _d_st, _d_ev = D._p_col_two("raw", "dealer_self", "drv.csv",
+                                        "樣本X", D.DENSE)()
+            _s_st, _s_ev = D._p_col_two("raw", "dealer_self", "drv.csv",
+                                        "樣本X", D.SPARSE)()
+            ck("⭐⭐ 同一份資料（20% 有值）：DENSE ⇒ ⛔ 還沒完成",
+               not _d_st.startswith("✅"), f"{_d_st}｜{_d_ev}")
+            ck("⭐⭐ 而 SPARSE ⇒ ✅ 完成（⛔ 兩者相反，這就是不可以照抄語意的地方）",
+               _s_st.startswith("✅"), f"{_s_st}｜{_s_ev}")
+            ck("  ⭐ SPARSE 報的是**最早有值的那一天**，⛔ 不是百分比",
+               "最早有值 2020-01-02" in _s_ev, _s_ev)
+            ck("  ⛔ 而 SPARSE 不可以拿百分比當判準（證據欄要講明）",
+               "百分比不是判準" in _s_ev, _s_ev)
+            # ⭐ 一列都沒有值 ⇒ SPARSE 也不可以是 ✅
+            _mk(0, 10)
+            _s2, _e2 = D._p_col_two("raw", "dealer_self", "drv.csv",
+                                    "樣本X", D.SPARSE)()
+            ck("⭐ 反向：SPARSE 但**一列都沒值** ⇒ ⛔ 不是 ✅",
+               not _s2.startswith("✅"), f"{_s2}｜{_e2}")
+
+            # ⛔⛔ `derived` **沒有預設值**（跟 lowwater 同一條）
+            import inspect as _insp
+            _pr = _insp.signature(D._p_col_two).parameters.get("derived")
+            ck("⭐⭐ `_p_col_two(derived=)` 是必填、**沒有預設值**",
+               _pr is not None and _pr.default is _insp.Parameter.empty,
+               f"default={_pr.default!r}" if _pr else "沒有這個參數")
+            for _bad in ("Dense", "", None, "100%"):
+                try:
+                    D._p_col_two("raw", "c", "drv.csv", "X", _bad)
+                    ck(f"derived={_bad!r} 要被擋下來", False, "⛔ 沒丟例外")
+                except ValueError as _ex:
+                    ck(f"derived={_bad!r} 丟 ValueError", "derived" in str(_ex))
+        finally:
+            D.DATA = _oldD
+
     # ⭐ 人工判定那幾格要標得出來——⛔ 手寫的 ✅ 與量到的 ✅ 不可以長得一樣
     ck("⭐ 人工判定的列有標記，而且說明文字有解釋它的意思",
        D.LEDGER_HAND in txt and "繼續顯示完成" in txt)

@@ -117,12 +117,72 @@ def parse_otc(payload, want_year):
     return rows, note
 
 
+def missing_years(per):
+    """→ 這一趟**連問都沒問到**的年份（`per[y] is None`）。
+
+    ⛔ 「那一年 0 筆」與「那一年沒問到」在逐年筆數那一行長得**不一樣**
+    （後者整個不出現），⚠ 而那一行有二十個數字 ⇒ **沒有人會發現少了四個**。
+    ⇒ ⭐ 抽成純函式才驗得到，而且要有一條自己的 `rl.check`。
+    """
+    return sorted(y for y, n in per.items() if n is None)
+
+
+def merge_existing(rows, path):
+    """把這一趟抓到的併進**既有那一份**。→ (合併後, 只有既有檔才有的筆數)。
+
+    ⛔⛔ 2026-09-14 實際發生的資料遺失：
+
+        ⚠ 2014/2015/2016/2017 四年 `TimeoutError` ⇒ 那四年一列都沒抓到
+        ⇒ 這一趟只有 403 列，而檔案裡本來有 **436** 列
+        ⇒ ⛔ 而它**照樣整份覆蓋** ⇒ **33 列當場消失**
+        ⚠ 低水位那道閘門有喊（`✗ 列數沒有比上一趟少`），
+        ⛔ 而它只是**報告**——寫入照做。⇒ 報告擋不住任何東西。
+
+    ⇒ ⭐ CLAUDE.md 四點六：**任何「這一趟只知道自己那一部分」的寫入，
+      一律是合併，不是取代。** 而「某一年逾時」正是這句話的定義。
+
+    ⚠ 主鍵取 `(market, stock_id, delist_date)`，⛔ 不是 `(market, stock_id)`：
+    **代號會回收**（2301 在 2002 下市，現在那個代號是另一家公司）
+    ⇒ 少了 `delist_date`，新那一家下市時會把舊那一筆**蓋掉**
+    ⇒ ⛔ 靜靜少一個歷史事件。⭐ 而多帶一個日期最壞只是多一列，看得見。
+    """
+    if not os.path.exists(path):
+        return rows, 0
+
+    def key(r):
+        return (r[4], r[1], r[0])          # market, stock_id, delist_date
+
+    old = {}
+    try:
+        with io.open(path, encoding="utf-8") as f:
+            rd = csv.DictReader(f)
+            for r in rd:
+                v = [r.get(c, "") for c in HEADER]
+                old[key(v)] = v
+    except OSError:
+        return rows, 0
+    merged = dict(old)
+    for r in rows:
+        merged[key(r)] = r                 # ⭐ 本趟的鍵覆蓋（`asof` 會更新）
+    only_old = len(set(old) - {key(r) for r in rows})
+    # ⛔⛔ 排序要跟**這個檔本來的**一樣（`(delist_date, stock_id)`，上面第 369 行），
+    #   ⚠ 不是照合併用的主鍵排——第一版就是那樣，⇒ 整份檔案的列序**全部翻掉**：
+    #     開頭從 `2001-01-20 twse` 變成 `2012-06-07 tpex`（先 tpex 再 twse）。
+    #   ⛔ 而它的兩個後果都不會報錯：① `git diff` 變成整份重寫，真正的
+    #     增減看不出來 ② 下面那行 `{rows[0][0]} ~ {rows[-1][0]}` 會印出錯的區間。
+    return (sorted(merged.values(), key=lambda x: (x[0], x[1])), only_old)
+
+
 def fetch_otc(rl, this_year, get=None):
     """逐年抓上櫃終止名單。→ (rows, 每年筆數 dict)。⛔ 絕不使用 `date=ALL`。"""
     getter = get or B.get
     out, per, empty = [], {}, 0
     for y in range(this_year, OTC_FIRST_YEAR - 1, -1):
-        raw, err = getter(OTC_URL.format(y=y), retries=2, timeout=45)
+        # ⚠ 2026-09-14：2014~2017 **四年**同時 `TimeoutError`
+        #   ⇒ 那一趟少了 33 列（而它照樣「成功」）。
+        #   ⭐ 這一支一天只跑一次、一年一發（約 20 發）⇒ 多重試幾次的成本可以忽略，
+        #   ⛔ 而少一年的代價是**永久少掉那一年的下市事件**。
+        raw, err = getter(OTC_URL.format(y=y), retries=4, timeout=90)
         if err:
             rl.info(f"  ⚠ {y} 抓不到", str(err)[:100])
             per[y] = None
@@ -320,6 +380,27 @@ def main():
              f"（另有上櫃 {sum(1 for r in rows if r[4] == 'tpex')}）"
              + ("　⚠ 沒有 total 可比" if total is None else ""))
 
+    # ⛔⛔ 「那一年 0 筆」跟「那一年沒問到」在逐年筆數那一行**長得不一樣**，
+    #   ⚠ 而那一行有二十個數字 ⇒ 沒有人會發現少了四個。
+    #   ⇒ 2026-09-14 就是這樣掉了 33 列，而那一趟是「成功」的。
+    _miss = missing_years(per)
+    rl.check("⭐⭐ 上櫃每一年都**問到了**（⛔ 少一年 = 永久少掉那一年的下市事件）",
+             not _miss,
+             f"⛔ **{len(_miss)} 年沒問到**：{_miss}"
+             "　⇒ 那幾年的列只能靠既有檔撐著，⚠ 而新的下市事件會漏掉"
+             if _miss else f"{len(per)} 年全問到")
+
+    # ⭐⭐ **先合併，再寫**（四點六）。⛔ 這一步不是選配：
+    #   低水位那道閘門只會**報告**列數變少，⚠ 它擋不住寫入
+    #   ——2026-09-14 就是這樣掉了 33 列（四年逾時），而那一趟「成功」。
+    n_fetched = len(rows)
+    rows, only_old = merge_existing(rows, OUT)
+    if only_old:
+        rl.info("⭐⭐ 這一趟**沒抓全**，已從既有檔補回",
+                f"本趟抓到 {n_fetched:,} 列｜⛔ 另有 **{only_old:,} 列**只有既有檔才有"
+                f"（多半是某幾年逾時）⇒ 合併後 {len(rows):,} 列"
+                "　⚠ 這不是「補好了」：那幾年**這一趟仍然沒問到**，"
+                "⛔ 下一趟要是又逾時，新的下市事件就會漏掉")
     # ⛔ 只進不出：這是一份**累積**清單，列數不可以變少
     #   ⚠ 方向是 `UP`——⛔ 跟 `_missing_rows_low` 那幾個**相反**，
     #     而它們的檔名長得一模一樣（`_*_low.txt`）。別照抄語意（lowwater.py 檔頭）。
