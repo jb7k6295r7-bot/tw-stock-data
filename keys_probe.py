@@ -78,6 +78,16 @@ TARGETS = [
     ("上櫃融資融券 margin/balance",
      f"{TP}/www/zh-tw/margin/balance?date={DAY.replace('-', '/')}&response=json",
      {"date": DAY.replace('-', '/')}),
+    # ⭐⭐ 2026-09-14 加：回測線問「本庫有沒有加權指數日線」。
+    #   ⇒ `data/history/market_index.csv` **有**，⛔ 只有 9 列（2026-09-01 起累積）。
+    #   ⚠ 而 `calendar_audit.py` **早就在逐月抓這一支**（2015-01 起、140 個月、
+    #     已有標題驗證），⛔ 而它只留首欄日期，**其餘欄整列丟掉**
+    #     ——正是本檔開頭在講的那件事，只是這次丟掉的是加權指數本身。
+    #   ⇒ 動手改之前先照第一點把 `fields` 原文印出來：⛔ 我**沒有**印過它，
+    #     「第 4 欄是發行量加權股價指數」目前是**推測**，不是實測。
+    ("上市大盤日成交資訊 FMTQIK（月頻｜⭐ 加權指數日線的候選來源）",
+     f"{TW}/afterTrading/FMTQIK?date={YMD[:6]}01&response=json",
+     {"date": YMD[:6] + "01"}),
 ]
 
 LINES = []
