@@ -1237,6 +1237,9 @@ def parse_otcinst(d, day, known=None):
     i_dl = _exact(f, "自營淨買股數", "自營商淨買股數", "自營商買賣超股數")
     i_tt = _exact(f, "三大法人買賣超股數", "三大法人買賣超股數合計", "三大法人淨買股數")
     how = None
+    # ⭐ 分項（舊版 16 欄那一代的欄名；⚠ 取不到就留空，⛔ 不是寫 0）
+    i_ds = _exact(f, "自營商(自行買賣)淨買股數", "自營商(自行買賣)買賣超股數")
+    i_dh = _exact(f, "自營商(避險)淨買股數", "自營商(避險)買賣超股數")
     if None not in (i_code, i_fo, i_tr, i_dl, i_tt):
         how = "名稱定位"
     else:
@@ -1248,6 +1251,12 @@ def parse_otcinst(d, day, known=None):
             return [], f"買賣超欄不在預期位置，拒收：{f}"
         i_code, i_fo, i_tr, i_dl, i_tt = 0, 10, 13, 22, 23
         how = "位置定位（24 欄新版）"
+        # ⭐ 分項也在同一個結構裡：七組各三欄，⑤自營商(自行買賣) ⑥自營商(避險)
+        #   ⇒ 買賣超分別在 16 與 19。⛔ 而這不是**猜**的：下面那一行
+        #     跟上面 (4, 10, 22) 同一種結構檢查，對不上就整批拒收。
+        if not all(f[i] == "買賣超股數" for i in (16, 19)):
+            return [], f"自營商分項欄不在預期位置，拒收：{f}"
+        i_ds, i_dh = 16, 19
 
     out, bad, samples = [], 0, []
     g = lambda r, i: float(B._num(r[i]) or 0) if i < len(r) else 0.0
@@ -1265,8 +1274,23 @@ def parse_otcinst(d, day, known=None):
             samples.append((code, f"外{fo:.0f}+投{tr:.0f}+自{dl:.0f}"
                                   f"≠合計{tt:.0f}（差 {fo + tr + dl - tt:+.0f}）"))
             continue
-        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}"])
-    return out, _drop_note(len(out), how, bad, samples)
+        # ⭐ 分項：取不到留空（⛔ 不是 0——0 是「沒買沒賣」，空是「沒有這個欄位」）
+        if i_ds is None or i_dh is None:
+            ds = dh = ""
+        else:
+            vs, vh = g(r, i_ds), g(r, i_dh)
+            if abs(vs + vh - dl) > 1:     # ⭐ 自行買賣 ＋ 避險 ＝ 自營合計
+                bad += 1
+                samples.append((code, f"自行{vs:.0f}+避險{vh:.0f}"
+                                      f"≠自營合計{dl:.0f}"))
+                continue
+            ds, dh = f"{vs:.0f}", f"{vh:.0f}"
+        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}",
+                    ds, dh])
+    note = _drop_note(len(out), how, bad, samples)
+    if i_ds is None or i_dh is None:
+        note += "｜⚠ **找不到自營商分項欄，dealer_self／dealer_hedge 整欄留空**"
+    return out, note
 
 
 # ────────────────────────────────────────────────────────────
@@ -1662,7 +1686,11 @@ FEEDS = {
     },
     "otcinst": {
         "dir": "otcinst",
-        "header": ["date", "stock_id", "foreign", "trust", "dealer", "total"],
+        # ⭐⭐ 2026-09-14 加最後兩欄（K線分析線 0707 裁定）。⛔ **一定要接在最後**
+        #   （`--need-col dealer_self` 靠表頭認要重抓的日子；插中間會讓舊檔錯位）。
+        #   ⚠ `dealer` 仍然是**合計**，⛔ 不改語意。
+        "header": ["date", "stock_id", "foreign", "trust", "dealer", "total",
+                   "dealer_self", "dealer_hedge"],
         "parse": parse_otcinst,
         "known": True,
         "urls": lambda day: [_tpex("insti/dailyTrade", day, "&type=Daily&sect=EW&id=")],
