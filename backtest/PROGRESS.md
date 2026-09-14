@@ -403,3 +403,10 @@
 - 自測第一版三條紅是我的期望值錯（2026-01-02 才是第一個交易日、rank pct 的 33.3 不是 25、中心要在標準化空間）——已改期望值並把中心空間寫進 docstring。
 - 自喚醒 00:36（trig_012npSKBa7JYArte7VUba5PP）。**下一件**：forward_p4.py（09-25 前）。
 
+## 2026-09-15 00:45：00:36 自喚醒——零新信；forward_p4.py 建好（09-25 期限提前完成）
+
+- 收信（13:25Z 之後）：零新信（只有本線兩封）⇒ 水位不動。
+- **`backtest/forward_p4.py`**（1c5f3ccbe）：每月第一個交易日（量測日）的次一交易日收盤後跑；母體 `load_universe()` 當日在籍 → 近 20 日均額 ≥ 5,000 萬 → 全部檔寫 `records.csv`（13 特徵原始值＋百分位、型號（`--centers` 沒給就空）、`n_filled`、`has_adj`、`shares_ok`、`close`、`open_next`、`asof`、`data_sha`）；`universe.csv` 只增不減（v0 612 檔已種入、first_seen 2026-09-11）；`runlog.md`；同月重跑冪等；日曆外或次日還沒資料 ⇒ 紅不寫。`selftest_forward_p4.py` 9 條全綠（暫存目錄、--limit 60）。
+- ⚠ 2026-09-01 那個量測日**不寫**（v1 自 2026-10 起，K線分析 1935 §六③）；10-02 收盤後由資料庫線在 main 上跑第一趟——月頻排程還在等資料庫線回。
+- 自喚醒 01:39（trig_01B8vTAm1TrUGfQG2mgYXozq）。**下一件**：無新信時寫信給資料庫線要月頻排程（含指令與時點）。
+
