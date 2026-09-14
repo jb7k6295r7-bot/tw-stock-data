@@ -66,6 +66,9 @@ def main():
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
+    _lo, _lf = check_ledger()
+    globals()["_LEDGER_FAIL"] = _lf
+
     print("\n[2] 有資料：異常要被標出來，正常的不要亂標")
     tmp = tempfile.mkdtemp()
     try:
@@ -463,6 +466,81 @@ def _universe_dirs_section():
            "brandnew" in got2, str(sorted(got2)))
     finally:
         _sh.rmtree(d, ignore_errors=True)
+    return ok, fail
+
+
+def check_ledger():
+    """⓪ 交辦清單。⭐ **反向那幾條才是主角**（第七點）。
+
+    ⛔ 這一節擋的兩件事，兩件都在 2026-09-14 當天發生過：
+      ① 在**分支**上跑 ⇒ 進度全部偏低，而 `0/2,850` 讀起來像「沒開始」
+      ② 一個 probe 炸掉 ⇒ 整張表消失，而「表沒印出來」跟「表上沒東西」長得一樣
+    """
+    import db_status as D
+    ok = fail = 0
+
+    def ck(label, cond, detail=""):
+        nonlocal ok, fail
+        if cond:
+            ok += 1
+            print(f"  ✓ {label}" + (f"　（{detail}）" if detail else ""))
+        else:
+            fail += 1
+            print(f"  ✗ {label}" + (f"　（{detail}）" if detail else ""))
+
+    print("\n[4] ⓪ 交辦清單")
+    out = []
+    D.section_ledger(out)
+    txt = "\n".join(out)
+    ck("表頭四欄都在", "| # | 項目 | 狀態 | 證據／進度 | 備註 |" in txt)
+    ck("⭐ 每一列都有出現（LEDGER 有幾列就印幾列）",
+       all(f"| {n} |" in txt for n, *_ in D.LEDGER),
+       f"{len(D.LEDGER)} 列")
+    ck("⭐ 有「完成 N / M」的總計", "**完成 " in txt and " / " in txt)
+
+    # ⛔⛔ ①：ref 不是 main 時**一定要大聲講**
+    _g = D._git_ref
+    try:
+        D._git_ref = lambda: "some-branch"
+        o2 = []
+        D.section_ledger(o2)
+        t2 = "\n".join(o2)
+        ck("⛔⛔ 不在 main 上跑 ⇒ 講出「這一份只能當草稿」",
+           "只能當草稿" in t2 and "some-branch" in t2,
+           [x for x in o2 if "草稿" in x][:1])
+        ck("  ⭐ 而且要講出**為什麼**（分支的 data 比 main 舊）",
+           "永遠比 main 舊" in t2)
+        D._git_ref = lambda: "main"
+        o3 = []
+        D.section_ledger(o3)
+        t3 = "\n".join(o3)
+        ck("  ⚠ 反向：在 main 上跑時**不可以**出現那句警告"
+           "（⛔ 天天紅的警告會被學會忽略）",
+           "只能當草稿" not in t3, [x for x in o3 if "草稿" in x][:1])
+    finally:
+        D._git_ref = _g
+
+    # ⛔⛔ ②：一個 probe 炸掉，整張表不可以消失
+    ck("⛔⛔ probe 丟例外 ⇒ 那一格寫「算不出來」，⛔ 不是整支掛掉",
+       D._run_probe(lambda: 1 / 0)[0] == "⚠ 算不出來",
+       str(D._run_probe(lambda: 1 / 0)))
+    _bad = [("Z9", "會炸的那一列", lambda: 1 / 0, None, "")]
+    _old = D.LEDGER
+    try:
+        D.LEDGER = _old + _bad
+        o4 = []
+        D.section_ledger(o4)
+        ck("  ⭐ 而整張表照樣印得完（⚠「表沒印出來」跟「表上沒東西」長得一樣）",
+           "| Z9 |" in "\n".join(o4) and "| A1 |" in "\n".join(o4))
+    finally:
+        D.LEDGER = _old
+
+    # ⭐ 人工判定那幾格要標得出來——⛔ 手寫的 ✅ 與量到的 ✅ 不可以長得一樣
+    ck("⭐ 人工判定的列有標記，而且說明文字有解釋它的意思",
+       D.LEDGER_HAND in txt and "繼續顯示完成" in txt)
+    _auto = [n for n, _nm, pr, _h, _no in D.LEDGER if pr is not None]
+    ck("⭐ 而至少一半的列是**算出來的**（⛔ 全人工就是一份會飄的台帳）",
+       len(_auto) * 2 >= len(D.LEDGER), f"{len(_auto)}/{len(D.LEDGER)} 列有 probe")
     return ok, fail
 
 

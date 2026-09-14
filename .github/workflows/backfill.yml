@@ -47,6 +47,15 @@ on:
         description: "已存在的日期也重抓（⛔ 全期會跑 7.9 小時，補欄位請用 need_notrade）"
         type: boolean
         default: false
+      # ⭐⭐ 2026-09-14：`backfill.py --inst` 當天加了 `--need-col`，
+      #   ⛔ **而這裡沒有對應的 input** ⇒ 那個旗標**按不到**。
+      #   ⚠ 這正是四點二那條：程式裡有那個機制 ≠ 有人叫得動它，
+      #     而派工時 API 回的是 `Unexpected inputs provided: ["need_col"]`
+      #     ——⭐ 這次是**大聲**失敗（算幸運）；若我改用 `force` 代打，
+      #     就會變成 2,850 天全期重抓 7.9 小時，⛔ 而且看起來完全正常。
+      need_col:
+        description: "只重抓「日檔表頭缺這一欄」的日期（inst 用，可續跑）。例：dealer_self"
+        default: ""
 
 permissions:
   contents: write
@@ -171,9 +180,14 @@ jobs:
       - name: 全市場三大法人（上市 T86）
         if: inputs.mode == 'inst'
         run: |
+          ARGS=""
+          if [ -n "${{ inputs.need_col }}" ]; then
+            ARGS="--need-col ${{ inputs.need_col }}"
+          fi
+          echo "續跑判準：${ARGS:-（無，照 coverage 台帳）}"
           python backfill.py --inst \
             --start "${{ inputs.start }}" --end "${{ inputs.end }}" \
-            --sleep "${{ inputs.sleep || '5' }}"
+            --sleep "${{ inputs.sleep || '5' }}" $ARGS
 
       - name: 重建 stocks.csv 的 first_seen／last_seen（只讀本地檔）
         if: inputs.mode == 'meta'
