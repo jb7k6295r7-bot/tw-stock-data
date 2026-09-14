@@ -250,6 +250,30 @@ ck("⭐ 而這一族真的有**兩種相反**的方向在用（⛔ 只剩一種 
    {"UP", "DOWN"} <= {d for ds in _dirs_seen.values() for d in ds},
    str(_dirs_seen))
 
+# ⛔⛔ 上面那條只證明「兩種方向都還在」，⚠ 它**證明不了哪一支配哪一個**
+#   ——把 `delisted` 與 `missing_rows` 的方向對調，上面那條照樣全綠。
+#   ⇒ ⭐ 每一支的方向要**逐支釘死**（第七點③：測了判準、沒測呼叫點）。
+#   ⚠ 而這張表要人手維護是**故意的**：加第十個低水位檔時，
+#     作者必須在這裡把方向再寫一次 ⇒ ⭐ 「照抄語意」的人會在這一格被擋下來。
+#     ⛔ 忘了加 ⇒ 這一節紅，而那正是要的失敗方向。
+WANT_DIR = {
+    "adj_gap.py":             ["DOWN"],   # 未歸因筆數，越少越好
+    "missing_rows.py":        ["DOWN"],   # 漏列筆數
+    "factor_limit_check.py":  ["DOWN"],   # 超出漲跌停的筆數
+    "otc_exright_history.py": ["DOWN"],   # 缺的除權息
+    "otc_reduce_history.py":  ["DOWN"],   # 未歸因的缺口
+    "selftest_feed_days.py":  ["DOWN"],   # 砍錯誤訊息尾巴的地方
+    "delisted.py":            ["UP"],     # ⭐ 下市不可逆，列數只會多
+    "holiday.py":             ["UP"],     # ⭐ 行事曆涵蓋年數
+    "tdcc.py":                ["UP"],     # ⭐ 集保週檔，漏一週永久少一週
+}
+ck(f"⭐⭐ 逐支釘方向：掃到的 {len(_dirs_seen)} 支跟這張表**逐格相同**"
+   "（⛔ 對調兩支的方向，上面那條照樣全綠）",
+   _dirs_seen == WANT_DIR,
+   str({k: (WANT_DIR.get(k), _dirs_seen.get(k))
+        for k in set(WANT_DIR) | set(_dirs_seen)
+        if WANT_DIR.get(k) != _dirs_seen.get(k)}))
+
 # ⛔ 而「自己再寫一份讀寫」要擋在字面之外：掃 AST 找 `io.open(<那個常數>)`
 # ⛔⛔ 這一條對**所有**檔生效（自測也算）——`_err_cut_low` 就住在
 #   `selftest_feed_days.py` 裡，⚠ 下一道閘門一樣可能藏進某支自測。
