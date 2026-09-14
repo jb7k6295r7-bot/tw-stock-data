@@ -117,7 +117,12 @@ def calibrate_m(distA, lo, ep, target):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=4); ap.add_argument("--limit", type=int)
+    ap.add_argument("--calib-window", choices=["full", "A"], default="full", help="安慰劑 C 的 m(k) 校準母體：full＝全樣本（原版，方法論第五十二條命中）；A＝只用 A 窗 2016–2020 校準再套全部（追加）")
+    ap.add_argument("--out", default=None, help="輸出目錄（追加重跑時另開，⛔ 不覆蓋 results19）")
     a = ap.parse_args()
+    global RESULTS
+    if a.out:
+        RESULTS = a.out
     os.makedirs(RESULTS, exist_ok=True); t0 = time.time()
     cal = D.load_calendar(); uni = D.load_universe().set_index("stock_id")["market"]
     S = pd.read_csv(os.path.join(R15DIR, "signals.csv.gz"), dtype={"sid": str}, low_memory=False)
@@ -148,11 +153,13 @@ def main():
     L.append("## 一、停損距離 %（entry − stop）÷ entry 與 C 的校準"); L.append("")
     L.append("| 組 | 距離中位 | p10 | p90 |"); L.append("|---|---:|---:|---:|")
     dA = M["distA"].to_numpy(float); lo = M["lo"].to_numpy(float); ep = M["entry"].to_numpy(float); atrv = M["atr"].to_numpy(float)
+    cw = (M["month"] < "2021-01").to_numpy() if a.calib_window == "A" else np.ones(len(M), bool)   # 校準母體（A 窗 or 全樣本）
+    L.append(f"校準母體：{a.calib_window}（{int(cw.sum()):,}／{len(M):,} 筆）"); L.append("")
     L.append(f"| A | {np.nanmedian(dA) * 100:.2f}% | {np.nanpercentile(dA, 10) * 100:.2f}% | {np.nanpercentile(dA, 90) * 100:.2f}% |")
     mk = {}
     for kk in KS:
         dB = dA + kk * atrv / ep
-        m = calibrate_m(dA, lo, ep, float(np.nanmedian(dB))); mk[kk] = m
+        m = calibrate_m(dA[cw], lo[cw], ep[cw], float(np.nanmedian(dB[cw]))); mk[kk] = m
         dC = dA + m * lo / ep
         L.append(f"| B_{kk} | {np.nanmedian(dB) * 100:.2f}% | {np.nanpercentile(dB, 10) * 100:.2f}% | {np.nanpercentile(dB, 90) * 100:.2f}% |")
         L.append(f"| C_{kk}（m＝{m * 100:.2f}%） | {np.nanmedian(dC) * 100:.2f}% | {np.nanpercentile(dC, 10) * 100:.2f}% | {np.nanpercentile(dC, 90) * 100:.2f}% |")
