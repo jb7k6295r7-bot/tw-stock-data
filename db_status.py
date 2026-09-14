@@ -835,18 +835,15 @@ def _hdr_col(d, col):
     return n, len(fs)
 
 
-def _p_col(d, col):
-    def go():
-        n, t = _hdr_col(os.path.join(DATA, d), col)
-        if not t:
-            return "⛔ 沒有這個目錄", d
-        return ("✅ 完成" if n == t else
-                ("🔄 進行中" if n else "⬜ 未開始")), _pct(n, t)
-    return go
+# ⛔ `_p_col`（只量回補那一層）已經**刪掉**，⚠ 不是留著沒人用：
+#   留著的話下一個人加新列時會挑到它（它比較短、比較好用），
+#   ⇒ 那一列就回到 2026-09-14 那個 bug——回補跑完就翻 ✅，而下游一列都讀不到。
+#   ⭐ 判準：**一個已知會產生錯誤結論的工具，要移走，⛔ 不是標註「別用」。**
 
 
 def _derived_fill(path, col):
-    """衍生層某一欄**有值的列數**。→ (有值, 總列)；檔不在回 (0, 0)。
+    """衍生層某一欄**有值的列數與最早有值的那一天**。
+    → (有值, 總列, 最早日期)；檔不在回 (0, 0, "")。
 
     ⛔ 衍生層**不可以**用「表頭有沒有這一欄」來量：`transpose.py` 的表頭是
     全庫的**聯集** ⇒ ⭐ **每一個個股檔的表頭本來就有 `dealer_self`**，
@@ -854,23 +851,30 @@ def _derived_fill(path, col):
     ⇒ 只能數**值**。
     """
     if not os.path.exists(path):
-        return 0, 0
+        return 0, 0, ""
     try:
         with io.open(path, encoding="utf-8") as f:
             rd = csv.DictReader(f)
             if not rd.fieldnames or col not in rd.fieldnames:
-                return 0, 0
+                return 0, 0, ""
             n = t = 0
+            first = ""
             for r in rd:
                 t += 1
                 if (r.get(col) or "").strip():
                     n += 1
-        return n, t
+                    if not first:
+                        first = (r.get("date") or "").strip()
+        return n, t, first
     except OSError:
-        return 0, 0
+        return 0, 0, ""
 
 
-def _p_col_two(raw_dir, col, sample, sample_label):
+DENSE = "dense"
+SPARSE = "sparse"
+
+
+def _p_col_two(raw_dir, col, sample, sample_label, derived):
     """⭐⭐ 兩層都要到位才算完成（CLAUDE.md 四點二）。
 
     ⛔⛔ 2026-09-14 找到：B2 原本只量 `universe/inst` 的**表頭**
@@ -882,21 +886,49 @@ def _p_col_two(raw_dir, col, sample, sample_label):
 
     ⚠ 衍生層用**一個具名樣本**量（⛔ 全庫逐列掃是 0.5 GB）——
     ⭐ 所以證據欄一定要**寫出那個樣本是誰**，⛔ 不可以只給一個百分比。
+
+    ## ⛔⛔ `derived` 是**必填**的，而且**不可以有預設值**
+
+    ⚠ 兩種欄**長得一模一樣**，而衍生層的判準**相反**：
+
+        DENSE   每一列都該有值（`dealer_self`／`dealer_hedge`）
+                ⇒ 判準是 **100%**
+        SPARSE  本來就多半是空的（`note`：只有**處置股**那幾天才有字）
+                ⇒ ⛔ 判準**不可以**是 100%——那樣它永遠到不了 ✅
+                ⇒ 判準是「**有值，而且最早那一天回到涵蓋期開頭**」
+                （實測 2330 的 `note`：183/2,850＝6.4%，最早 2015-03-31
+                 ⇒ 6.4% 是**對的**，⛔ 不是缺口）
+
+    ⭐ 預設值就是「照抄語意」那個坑的自動化版本（跟 `lowwater.py` 同一條）：
+    不寫也會跑，而它會默默套上多數派那個判準
+    ⇒ ⛔ 那一格從此用錯的尺量，⚠ 而畫面上看不出來。
     """
+    if derived not in (DENSE, SPARSE):
+        raise ValueError(
+            f"derived 必須是 {DENSE!r} 或 {SPARSE!r}，收到 {derived!r}"
+            "　⇒ ⛔ 這裡**沒有預設值**：稀疏欄套上 100% 的判準，"
+            "那一格永遠到不了 ✅；稠密欄套上「有值就好」，整片空著也會是 ✅")
+
     def go():
         n, t = _hdr_col(os.path.join(DATA, raw_dir), col)
         if not t:
             return "⛔ 沒有這個目錄", raw_dir
-        fn, ft = _derived_fill(os.path.join(DATA, sample), col)
+        fn, ft, first = _derived_fill(os.path.join(DATA, sample), col)
         raw_ok = (n == t)
-        drv_ok = (ft > 0 and fn == ft)
+        drv_ok = ((ft > 0 and fn == ft) if derived == DENSE else (fn > 0))
         st = ("✅ 完成" if raw_ok and drv_ok else
               ("🔄 進行中" if n or fn else "⬜ 未開始"))
         ev = f"回補 {_pct(n, t)}"
         if ft == 0:
             ev += f"｜⛔ 衍生層樣本（{sample_label}）**讀不到**"
-        else:
+        elif derived == DENSE:
             ev += f"｜衍生層 {_pct(fn, ft)}（樣本：{sample_label}）"
+        else:
+            # ⭐ 稀疏欄報**最早有值的那一天**，⛔ 不是百分比
+            #   ——百分比在這裡沒有意義（6.4% 是對的）。
+            ev += (f"｜衍生層最早有值 {first or '—'}"
+                   f"（樣本：{sample_label}｜{fn:,}/{ft:,} 列有字，"
+                   "⚠ 稀疏欄，⛔ 百分比不是判準）")
         if raw_ok and not drv_ok:
             ev += "　⛔ **回補完成但下游還沒拿到** ⇒ 要跑 `transpose.yml`"
         return st, ev
@@ -927,20 +959,29 @@ LEDGER = [
      "衍生層，由 `transpose.yml` 重建"),
     ("A3", "逐日股本 `shares` 欄", None, "✅ 完成",
      "⭐ 日檔每一列都有，2015 起。⚠ 興櫃 363 檔整批沒有 ⇒ 標不可用、⛔ 不補 0"),
+    # ⚠ 樣本挑**上櫃**那一檔：`stocks_inst/` 是上市＋上櫃合併的，
+    #   拿 2330（上市）去量上櫃這一列會量到別人的進度。
     ("B1", "三大法人：自營商**自行買賣／避險**分項（上櫃）",
-     _p_col("universe/otcinst", "dealer_self"), None,
+     _p_col_two("universe/otcinst", "dealer_self", "stocks_inst/6488.csv",
+                "6488（上櫃）", DENSE), None,
      "K線分析線 0707 裁定要收"),
     # ⛔⛔ 這一列量**兩層**：`universe/inst`（回補）＋ `stocks_inst/`（下游真正讀的）。
     #   ⚠ 只量前者的話，回補跑完那一刻它就翻 ✅，而四條線一列都讀不到
     #   ——`transpose` 還沒跑。實測 2026-09-14：回補 43.1%、衍生層 5/2,851。
     ("B2", "三大法人：自營商**自行買賣／避險**分項（上市 T86）",
      _p_col_two("universe/inst", "dealer_self", "stocks_inst/2330.csv",
-                "2330（上市，全期都在）"), None,
+                "2330（上市，全期都在）", DENSE), None,
      "⛔ 與 B1 不並行，排在它後面。⭐ 回補完**還要跑 `transpose.yml`**，"
      "⚠ 而那兩件事在這張表上本來長得一模一樣"),
+    # ⛔⛔ 這一列的衍生層判準是 **SPARSE**，⚠ 跟 B1／B2 **相反**：
+    #   `note` 只有**處置股**那幾天才有字（實測 2330：183/2,850＝6.4%）
+    #   ⇒ 套上 100% 的判準，這一格**永遠到不了 ✅**。
+    #   ⭐ 判準改成「最早有值的那一天回到涵蓋期開頭」（2015-03-31 ⇒ 已傳到下游）。
     ("B3", "融資融券**備註欄**（上櫃，全歷史）",
-     _p_col("universe/otcmargin", "note"), None,
-     "2026-09-14 完成：偽陰性成因是我方 header 09-09 才加，⛔ 不是來源缺"),
+     _p_col_two("universe/otcmargin", "note", "stocks_margin/6488.csv",
+                "6488（上櫃）", SPARSE), None,
+     "2026-09-14 完成：偽陰性成因是我方 header 09-09 才加，⛔ 不是來源缺。"
+     "⚠ `note` 是**稀疏欄**（只有處置股有字）⇒ ⛔ 百分比不是判準"),
     ("C1", "還原因子（`adj/`）", _p_dir("adj", 1000), None,
      "除權息＋減資＋面額變更。⚠ `cum_factor` 是連乘 ⇒ 一筆假資料的半徑是整條序列"),
     ("C2", "上櫃除權息**歷史**（2008 起）",
