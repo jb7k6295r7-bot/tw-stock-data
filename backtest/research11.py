@@ -417,8 +417,11 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
 
     def _rec(row, reason, t, delay=0, gross=np.nan):
         if log is not None:
-            log.append({"t": t, "sid": row["sid"], "entry_pos": int(row["entry_pos"]), "exit_pos": int(row["exit_pos"]), "reason": reason, "delay": delay, "gross": gross,
-                        **{c: row[c] for c in extra}})
+            rec = {"t": t, "sid": row["sid"], "entry_pos": int(row["entry_pos"]), "exit_pos": int(row["exit_pos"]), "reason": reason, "delay": delay, "gross": gross,
+                   **{c: row[c] for c in extra}}
+            if f"g_{rule}" not in rec:
+                rec[f"g_{rule}"] = float(row["gross"])      # 主格出場的原始逐筆報酬（rule 那一欄被改名成 gross，這裡補回原名）
+            log.append(rec)
 
     for t in range(first, min(ncal, last + 2)):
         still = []
