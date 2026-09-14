@@ -28,6 +28,7 @@ sys.path.insert(0, HERE)
 ok = fail = 0
 
 REPO_CAL = os.path.join(HERE, "data", "meta", "calendar_twse.csv")
+REPO_MI = os.path.join(HERE, "data", "history", "market_index.csv")
 
 
 def chk(label, cond, detail=""):
@@ -52,6 +53,7 @@ def main():
 
     tmp = tempfile.mkdtemp(prefix="caltest_")
     cal_before = io.open(REPO_CAL, "rb").read() if os.path.isfile(REPO_CAL) else None
+    mi_before = io.open(REPO_MI, "rb").read() if os.path.isfile(REPO_MI) else None
     out = os.path.join(tmp, "calendar_twse.csv")
     C.OUT = out
     C.runlog = type("_N", (), {"Run": lambda *a, **k: type(
@@ -137,9 +139,77 @@ def main():
             last2 == "2026-09-03" and not (last2 >= pd2),
             f"union {last2}｜日檔 {pd2} ⇒ 落後 ⇒ 斷言為假")
 
+        print("\n── 5. ⭐⭐ 收盤指數：照欄名取，⛔ 只取那一欄 ──")
+        # 真回應的形狀（2026-09-14 probe run 77 逐字抄回來的）
+        F = ["日期", "成交股數", "成交金額", "成交筆數",
+             "發行量加權股價指數", "漲跌點數"]
+        R = ["115/09/01", "13,000,849,196", "1,187,571,567,117",
+             "5,301,801", "46,948.72", "820.25"]
+        chk("⭐ 取得到收盤指數，而且千分位逗號被拿掉",
+            C.index_of_row(F, R) == "46948.72", C.index_of_row(F, R))
+        chk("⭐⭐ **照欄名**取，⛔ 不是位置（欄序換掉照樣要對）",
+            C.index_of_row(["日期", "發行量加權股價指數"],
+                           ["115/09/01", "46,948.72"]) == "46948.72")
+        chk("⛔ 反向：沒有那個欄名時回空字串（⛔ 不是硬取 [4]）",
+            C.index_of_row(["日期", "成交金額", "X", "Y", "Z"],
+                           ["115/09/01", "1", "2", "3", "9999"]) == "")
+        chk("⛔ 破折號／空值不可以變成 0（0 是一個指數值，空不是）",
+            C.index_of_row(F, ["115/09/01", "", "", "", "--", ""]) == ""
+            and C.index_of_row(F, ["115/09/01", "", "", "", "", ""]) == "")
+        chk("⛔ 非數字不可以放行", C.index_of_row(F, R[:4] + ["休市", ""]) == "")
+
+        print("\n── 6. ⭐⭐ 寫入端：重疊的日子是**閘門**，⛔ 不是跳過就算 ──")
+        _mi = os.path.join(tmp, "market_index.csv")
+        io.open(_mi, "w", encoding="utf-8").write(
+            "date,close,change,change_pct\n"
+            "2026-09-01,46948.72,820.25,1.78\n"
+            "2026-09-02,46543.61,-405.11,0.86\n")
+        _before = io.open(_mi, "rb").read()
+        # ① 重疊相符 ＋ 有新日子 ⇒ 只寫新的，⛔ 舊的一列都不動
+        n1, m1 = C.write_index({"2026-09-01": "46948.72", "2026-09-02": "46543.61",
+                                "2015-01-05": "9274.11"}, path=_mi)
+        rows = {l.split(",")[0]: l for l in
+                io.open(_mi, encoding="utf-8").read().splitlines()[1:] if l.strip()}
+        chk("⭐ 只補了沒有的那一天", n1 == 1 and "2015-01-05" in rows, f"{n1}｜{m1}")
+        chk("⛔⛔ 而既有那兩列**逐字沒變**（change／change_pct 沒有被洗成空白）",
+            rows.get("2026-09-01") == "2026-09-01,46948.72,820.25,1.78"
+            and rows.get("2026-09-02") == "2026-09-02,46543.61,-405.11,0.86",
+            str([rows.get("2026-09-01"), rows.get("2026-09-02")]))
+        chk("⭐ 新那列的 change／change_pct 是**空的**"
+            "（⛔ 不是 0、⛔ 也不是自己乘出來的）",
+            rows.get("2015-01-05") == "2015-01-05,9274.11,,", rows.get("2015-01-05"))
+        # ② ⛔⛔ 對不上 ⇒ **一列都不寫**（這一條是本節的主角）
+        io.open(_mi, "w", encoding="utf-8").write(_before.decode("utf-8"))
+        n2, m2 = C.write_index({"2026-09-01": "46948.73",      # ⚠ 差 0.01
+                                "2015-01-05": "9274.11"}, path=_mi)
+        chk("⛔⛔ 重疊那天對不上 ⇒ 回 -1 並講出兩邊的值",
+            n2 == -1 and "46948.73" in m2 and "46948.72" in m2, f"{n2}｜{m2}")
+        chk("⛔⛔ 而檔案**逐位元沒變**（⚠ 只看回傳值不夠——"
+            "那個新日子本來是可以寫進去的）",
+            io.open(_mi, "rb").read() == _before)
+        # ③ 全部重疊且相符 ⇒ no-op（⛔ 否則它會天天產生 commit）
+        n3, m3 = C.write_index({"2026-09-01": "46948.72"}, path=_mi)
+        chk("⭐ 全部重疊且相符 ⇒ 0 列、no-op", n3 == 0 and "沒有新的日子" in m3, m3)
+        chk("⛔ 而 no-op 也不可以動到檔案",
+            io.open(_mi, "rb").read() == _before)
+        # ④ ⭐ 呼叫點：main() 真的把 --write-index 接到 write_index
+        #   （第七點第三個陷阱：測了純函式、沒測呼叫點）
+        _src = io.open(os.path.join(HERE, "calendar_audit.py"),
+                       encoding="utf-8").read()
+        chk("⭐ main() 真的有 `--write-index` 這個參數",
+            '"--write-index"' in _src)
+        chk("⭐⭐ 而它接到 `write_index(idx_all)`，"
+            "並且結果進了 `rl.check`（⛔ 只寫 rl.info 的話對不上也不會紅）",
+            "write_index(idx_all)" in _src
+            and "rl.check(\"⭐ 收盤指數與我方既有值對得上" in _src)
+
         print("\n── 4. 沒有碰到 repo ──")
         cal_after = io.open(REPO_CAL, "rb").read() if os.path.isfile(REPO_CAL) else None
         chk("★ repo 的 calendar_twse.csv 逐位元沒變", cal_before == cal_after)
+        _repo_mi = os.path.join(HERE, "data", "history", "market_index.csv")
+        chk("★★ 沒有動到 repo 真的 data/history/market_index.csv",
+            io.open(_repo_mi, "rb").read() == mi_before
+            if mi_before is not None else not os.path.exists(_repo_mi))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

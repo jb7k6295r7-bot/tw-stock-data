@@ -1198,6 +1198,41 @@ K線線 2026-09-10 14:55：那幾天成交量都是 0，而 `change` 被編出
 ⚠ 這也解釋了為什麼 Σ我方上市 `amount` ÷ 官方大盤成交金額穩定在 0.995 而不是 1.000：
 分子分母的口徑本來就差一截。
 
+#### ⭐⭐ 大盤那四個檔：`market_index` 有歷史，`market_amount` **沒有**，而且補不了
+
+```
+data/history/market_index.csv    date,close,change,change_pct
+data/history/market_amount.csv   date,trade_value,trade_volume,transactions
+data/history/market_breadth.csv  date,up,down,flat,limit_up,limit_down
+data/history/market_inst.csv
+```
+
+四個都是 `fetch.py` 從 **2026-09-01** 起一天累積一列（⛔ 不是 2015 年起）。
+
+⭐ 而 `market_index.csv` 的 `close` **回補得到**：TWSE `FMTQIK`（`calendar_audit.py`
+每個月本來就會打一次）第 5 欄就是發行量加權股價指數，2015-01 起 140 個月
+⇒ **0 次額外請求**。⚠ 而回補的列 `change`／`change_pct` 是**空的**
+（FMTQIK 沒有 `change_pct`；`漲跌點數` 那一欄實測**不帶正負號**，
+⛔ 存一個可能反向的值比留空更糟——`change` 從 `close` 自己減得出來）。
+
+⛔⛔ **而同一張表的總量三欄不可以拿來補 `market_amount.csv`**（2026-09-01 實測）：
+
+```
+              我方（MI_INDEX type=IND）        FMTQIK
+成交金額      1,090,449,046,456        1,187,571,567,117   ＋8.9%
+成交股數          5,209,282,128           13,000,849,196   ⛔ **2.5 倍**
+成交筆數              4,224,598                5,301,801   ＋25%
+⭐ 指數              46,948.72                46,948.72   **逐位相同**
+```
+
+⇒ 兩條路的**口徑不同**（含不含鉅額／零股／盤後定價／外幣成交值），
+⚠ 而差異**只落在總量那三欄**。⛔ 硬補的話 2015~2026-08 是一種口徑、
+2026-09 起是另一種，**而接縫不會報錯**（主鍵是 date，兩段不重疊）。
+
+⇒ ⭐ `calendar_audit --write-index` 的重疊日是**閘門**：
+FMTQIK 與 MI_INDEX 兩條路算同一天的指數，對不上就一列都不寫、runlog 紅。
+daily.yml 每天跑一次（`fetch.py` 排在前面 ⇒ 100% 重疊 ⇒ 純對照，不寫入）。
+
 ### ⛔⛔ `close` 可能是**空字串**（2026-09-10 起）——`price_basis == '無成交'`
 
 十一年來 `data/universe/daily/` 只收「當天有成交價」的證券：

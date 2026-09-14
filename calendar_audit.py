@@ -93,8 +93,46 @@ def _month_ok(titles, y, m):
     return False, f"標題抽不到年月：{joined[:60] or '（沒有標題）'}"
 
 
+def index_of_row(fields, row):
+    """→ 這一列的**發行量加權股價指數**（取不到回 ""）。
+
+    ⭐ 照**欄名**取，⛔ 不是位置——第二點⑤（名字不是證據）的反面同樣成立：
+    位置也不是證據。2026-09-14 實測 `fields` 是 6 欄、指數在 [4]，
+    ⚠ 而「今天在 [4]」不保證 2015 年那幾個月也在 [4]。
+
+    ⛔⛔ **只取這一欄。** 同一張表的 `成交股數`／`成交金額`／`成交筆數`
+    **不可以**拿來補 `market_amount.csv`——實測同一天兩條路差很遠：
+
+        2026-09-01   我方(MI_INDEX)          FMTQIK
+        成交金額     1,090,449,046,456   1,187,571,567,117   ＋8.9%
+        成交股數         5,209,282,128      13,000,849,196   ⛔ **2.5 倍**
+        成交筆數             4,224,598           5,301,801   ＋25%
+
+    ⚠ 而**指數那一欄逐位相同**（46,948.72）⇒ 這不是「FMTQIK 壞掉」，
+    ⭐ 是**同一張表裡有的欄可以信、有的不行**——口徑差異只落在總量那三欄。
+    """
+    idx = None
+    for i, c in enumerate(fields or []):
+        if str(c).strip() == "發行量加權股價指數":
+            idx = i
+            break
+    if idx is None or idx >= len(row):
+        return ""
+    v = str(row[idx]).replace(",", "").strip()
+    if not v or v in ("--", "---", "－"):
+        return ""
+    try:
+        float(v)
+    except ValueError:
+        return ""
+    return v
+
+
 def fetch_month(y, m, sleep):
-    """→ (set(日期), 說明)。整月拒收時回 (None, 原因)。"""
+    """→ (set(日期), 說明)。整月拒收時回 (None, 原因)。
+
+    ⭐ 2026-09-14 起同時收 `{日期: 收盤指數}`（`fetch_month.index` 放最後一次的結果）。
+    """
     doc, err = None, ""
     raw, err = B.get(URL.format(f"{y:04d}{m:02d}01"), retries=2, timeout=45)
     if err:
@@ -126,7 +164,8 @@ def fetch_month(y, m, sleep):
     if tab is None:
         return None, f"{len(tabs)} 張表，沒有一張的首欄是民國日期"
 
-    days, bad = set(), 0
+    days, bad, idx_rows = set(), 0, {}
+    fetch_month.index = idx_rows
     for r in (tab.get("data") or []):
         if not r:
             continue
@@ -138,7 +177,77 @@ def fetch_month(y, m, sleep):
             # 落在別的月份的列 → 整月不可信，寧可拒收也不要收一半
             return None, f"有列落在區間外（{d}）"
         days.add(d)
-    return days, f"{len(days)} 天" + (f"（{bad} 列日期抽不到，已丟棄）" if bad else "")
+        iv = index_of_row(tab.get("fields"), r)
+        if iv:
+            idx_rows[d] = iv
+    fetch_month.index = idx_rows
+    return days, (f"{len(days)} 天"
+                  + (f"（{bad} 列日期抽不到，已丟棄）" if bad else "")
+                  + f"｜指數 {len(idx_rows)} 天")
+
+
+def write_index(idx_rows, path=None, apply=True):
+    """把 FMTQIK 的收盤指數併進 `data/history/market_index.csv`。→ (寫了幾列, 訊息)
+
+    ## ⛔ 三件事寫死在這裡，每一件都對應一條已經付過代價的規矩
+
+    **① 欄位與合併只准有一份實作**（四點五＋第五點）
+    這個檔的**唯一寫入者**本來是 `fetch.py`。⇒ 這裡不自己造欄序、不自己寫檔，
+    一律用 `fetch.MKT_INDEX_HEADER` ＋ `fetch.merge_history`。
+
+    **② 已經有的日子一律不動**——⛔ 連「看起來一樣」都不動。
+    `merge_history` 的主鍵是 date、而且是**整列取代**。
+    ⚠ 而我方既有那 9 列是 `fetch` 寫的，`change`／`change_pct` **有值**；
+    FMTQIK 給不出 `change_pct` ⇒ 我若把它們一起寫進去，
+    那兩欄會被**洗成空白**——⛔ 而 `git diff` 看起來只是「這一趟重算過」（四點六）。
+
+    **③ 而那 9 列正好是天然對照組** ⇒ 不是跳過就算了，是**拿來當閘門**：
+    兩條不同的路（FMTQIK 月報 vs MI_INDEX type=IND 日報）算同一個數字，
+    對不上就**一列都不寫**。⛔ 不可以先灌進去再說。
+
+    ## ⛔ 為什麼只寫 `close`
+
+    `change` 官方那一欄（`漲跌點數`）2026-09-14 實測是 `'820.25'`，**沒有正負號**，
+    ⚠ 而那天本來就是漲的 ⇒ **「它跌的時候有沒有負號」我沒有量到**。
+    ⭐ 而 `change` 從 `close` 減得出來 ⇒ **存一個正負號可能是錯的值，
+    比留空更糟**（錯的跟對的在檔案裡長得一模一樣）。⇒ 留空。
+    """
+    import fetch as _F
+    path = path or os.path.join(_ROOT, "history", "market_index.csv")
+    if not idx_rows:
+        return 0, "沒有指數列"
+    _, old = _F._read_csv(path)
+    same, diff = 0, []
+    for d, v in sorted(idx_rows.items()):
+        if d not in old:
+            continue
+        mine_v = old[d][1] if len(old[d]) > 1 else ""
+        try:
+            if abs(float(mine_v) - float(v)) < 5e-9:
+                same += 1
+                continue
+        except ValueError:
+            pass
+        diff.append((d, mine_v, v))
+    if diff:
+        # ③ 對不上 ⇒ 一列都不寫。⚠ 這是「兩條路算同一個數字」的閘門，
+        #   ⛔ 它紅的時候要**大聲**，不可以只回一個數字。
+        return -1, ("⛔ 與我方既有值對不上 {} 天 ⇒ **一列都不寫**（重疊 {} 天、"
+                    "相符 {} 天）：{}".format(
+                        len(diff), same + len(diff), same,
+                        "；".join(f"{d} 我方 {a}／FMTQIK {b}" for d, a, b in diff[:5])))
+    new = [[d, v, "", ""] for d, v in sorted(idx_rows.items()) if d not in old]
+    if not new:
+        return 0, f"重疊 {same} 天全部相符，沒有新的日子要寫"
+    if not apply:
+        return len(new), f"⚠ 有 {len(new)} 天可以補（重疊 {same} 天全部相符）"
+    total, added, changed = _F.merge_history(
+        path, _F.MKT_INDEX_HEADER, new, "market_index")
+    if changed:
+        # ⛔ 不該發生：上面已經濾掉既有的日子。發生就是 old 讀錯了。
+        return -1, f"⛔ merge_history 回報改動了 {len(changed)} 列，**這不該發生**"
+    return added, (f"⭐ 補了 {added} 天（重疊 {same} 天逐位相符，⛔ 一列都沒動）"
+                   f"｜檔內共 {total} 天")
 
 
 def ours():
@@ -186,6 +295,9 @@ def main():
                     help="把獨立日曆併進 data/meta/calendar_twse.csv（預設只報告）")
     ap.add_argument("--replace", action="store_true",
                     help="⛔ 整份重建，不保留既有的日子。只有在跑完整區間時才可以用")
+    ap.add_argument("--write-index", action="store_true",
+                    help="⭐ 順便把收盤指數補進 data/history/market_index.csv"
+                         "（⛔ 只補沒有的日子；重疊的日子拿來當對照組，對不上就一列都不寫）")
     a = ap.parse_args()
     B.SLEEP = a.sleep
 
@@ -200,7 +312,7 @@ def main():
     print(f"[cal] 獨立來源：TWSE FMTQIK（大盤成交資訊），一個月一發")
     print(f"[cal] {a.start} ~ {end}｜我方日曆 {len(mine)} 天 "
           f"（{min(mine)} ~ {max(mine)}）")
-    official, failed = set(), []
+    official, failed, idx_all = set(), [], {}
     n = 0
     while (y, m) <= (ey, em):
         n += 1
@@ -210,6 +322,7 @@ def main():
             print(f"  ✗ {y}-{m:02d} {note}", flush=True)
         else:
             official |= days
+            idx_all.update(getattr(fetch_month, "index", None) or {})
             if n % 12 == 0:
                 print(f"  [{n}] {y}-{m:02d} {note}", flush=True)
         m += 1
@@ -294,6 +407,19 @@ def main():
              ("沒問到：" + "、".join(k for k, _ in failed[:6])) if failed else f"{n} 個月")
     rl.check("官方有、我方沒有的日子為 0（疑似漏抓）", not miss,
              f"{len(miss)} 天：{'、'.join(miss[:5])}" if miss else "0 天")
+
+    # ⭐ 收盤指數：順便補進 data/history/market_index.csv（同一批回應，0 次額外請求）
+    if a.write_index:
+        _n, _msg = write_index(idx_all)
+        print(f"\n[cal] 收盤指數：{_msg}")
+        rl.info("收盤指數", f"解析到 {len(idx_all)} 天｜{_msg}")
+        # ⛔ 閘門：兩條路（FMTQIK 月報 vs MI_INDEX 日報）算同一個數字，
+        #   對不上就是 -1，而那**一定要紅**——⚠ 不紅的話它只是一行 info，
+        #   而「沒補到」跟「補了錯的」在檔案裡長得一模一樣。
+        rl.check("⭐ 收盤指數與我方既有值對得上（重疊那幾天）", _n >= 0, _msg)
+    elif idx_all:
+        rl.info("收盤指數", f"解析到 {len(idx_all)} 天"
+                            "（⚠ 這一趟**沒有寫入**，要寫請加 --write-index）")
 
     # ★★ 2026-09-09 補：**把日曆自己的最後一天印出來**（K線線 19:22 要的）。
     #
