@@ -250,6 +250,67 @@ def main():
     if _did and _lo is not None:
         print(f"  ⭐ 低水位下修 {_lo} → {_new} 處")
 
+    print("\n── ⑩ ⭐⭐「今天還沒問到」⛔ 不可以跟「過去某天問不到」算同一件事 ──")
+    # ⛔⛔ 2026-09-14 實測：TWSE 的 MI_MARGN 在收盤後**好幾個小時**才發，
+    #   而 daily.yml 排在 19:07 台北 ⇒ 當天那一發固定回
+    #   「很抱歉，沒有符合條件的資料」⇒ `feeds:margin` 這個區塊**每個交易日都紅**。
+    #   ⚠ 而天天紅的檢查會被學會忽略。⭐ 而「隔天一定補得回來」是有證據的：
+    #     `data/universe/margin/` 2,850 天**一個洞都沒有**。
+    #
+    # ⭐ 判準要釘在**原始碼**上：那條 check 真的用的是「已結束」那個數，
+    #   ⛔ 不是總數——⚠ 而這兩者在 runlog 上長得一模一樣（都是一行 ok）。
+    import ast as _a3
+    _src = io.open(os.path.join(HERE, "feeds.py"), encoding="utf-8").read()
+    _tree = _a3.parse(_src)
+    _chk = [n for n in _a3.walk(_tree)
+            if isinstance(n, _a3.Call)
+            and getattr(n.func, "attr", "") == "check"
+            and n.args and isinstance(n.args[0], _a3.Constant)
+            and "連問都問不到" in str(n.args[0].value)]
+    ck("⭐ 找得到那條 check（⛔ 0 個跟「條件對了」長得一樣）", len(_chk) == 1,
+       f"{len(_chk)} 處")
+    if _chk:
+        _cond = _a3.dump(_chk[0].args[1])
+        ck("⭐⭐ 而它比的是 `failed_closed`，⛔ 不是 `failed`",
+           "failed_closed" in _cond and "'failed'" not in _cond, _cond)
+    # ⛔ 而 `failed_open` 真的只在「那一天還沒結束」時才加
+    _inc = [n for n in _a3.walk(_tree)
+            if isinstance(n, _a3.AugAssign)
+            and getattr(n.target, "id", "") == "failed_open"]
+    ck("⭐ `failed_open` 只有一處在加", len(_inc) == 1, f"{len(_inc)} 處")
+    _guard = [n for n in _a3.walk(_tree)
+              if isinstance(n, _a3.If)
+              and isinstance(n.test, _a3.Call)
+              and getattr(n.test.func, "id", "") == "day_is_open"
+              and any(isinstance(b, _a3.AugAssign)
+                      and getattr(b.target, "id", "") == "failed_open"
+                      for b in n.body)]
+    ck("⭐⭐ 而它的守衛就是 `day_is_open(day)`（⛔ 不是別的條件）",
+       len(_guard) == 1, f"{len(_guard)} 處")
+    # ⭐ 收手規則仍然要用**總數**——⛔ 端點真的壞掉時不可以因為「今天」而不收手
+    # ⛔⛔ 第一版寫成「全檔至少有一處 `failed >= N`」⇒ 突變 R3 **沒抓到**：
+    #   `cmd_month` 裡另有一處 `failed >= 3`，它把這條斷言撐住了。
+    #   ⇒ ⭐ 判準要落在**跟 `failed_open` 同一個函式**裡（CLAUDE.md：包含比對
+    #     會命中一個看起來很像的鄰居——這次那個鄰居是另一個函式）。
+    _fn = [f for f in _a3.walk(_tree)
+           if isinstance(f, _a3.FunctionDef)
+           and any(isinstance(n, _a3.AugAssign)
+                   and getattr(n.target, "id", "") == "failed_open"
+                   for n in _a3.walk(f))]
+    ck("⭐ 找得到 `failed_open` 住的那個函式", len(_fn) == 1,
+       f"{[f.name for f in _fn]}")
+    if _fn:
+        _bail = [n for n in _a3.walk(_fn[0])
+                 if isinstance(n, _a3.Compare)
+                 and getattr(n.left, "id", "") == "failed"
+                 and isinstance(n.ops[0], _a3.GtE)]
+        ck(f"⭐⭐ 而 `{_fn[0].name}` 裡的收手規則是 `failed >= N`（**總數**）"
+           "　⛔ 改成 failed_closed ⇒ 端點整個壞掉那天不會收手",
+           len(_bail) == 1, f"{len(_bail)} 處")
+    # ⚠ 而「放行之後還有沒有人在守」要寫在原始碼裡，⛔ 不是只寫在 commit 訊息
+    ck("⛔ 而原始碼要寫出**隔天就會變 ✗**（⚠ 否則下一個人會以為這條被放掉了）",
+       "day_is_open` 是 False" in _src or "day_is_open 是 False" in _src)
+
     print("\n── ⑨ `IncompleteRead`：訊息要**自己講出它是傳輸被切斷** ──")
     # ⭐ 2026-09-13 實測：TPEx 的 openapi/swagger.json（452 KB）連兩次只讀到 24 KB。
     #   ⛔ 原本的訊息只有 `IncompleteRead: IncompleteRead(24064 bytes read, ...)`
