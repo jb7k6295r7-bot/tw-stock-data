@@ -535,6 +535,59 @@ def check_ledger():
     finally:
         D.LEDGER = _old
 
+    # ⛔⛔ ③ 2026-09-14：**回補完成 ≠ 下游拿得到**（CLAUDE.md 四點二）
+    #   B2 原本只量 `universe/inst` 的**表頭** ⇒ 回補跑完那一刻就翻 ✅ 完成，
+    #   ⚠ 而四條線讀的是 `data/stocks_inst/`——那一層要等 `transpose` 跑過。
+    #   實測當天：回補 43.1%、而 2330 的衍生層是 **5 / 2,851**。
+    #   ⭐ 全部拿**合成目錄**驗（⛔ 不可以靠真實 `data/`：
+    #     那樣這條斷言的壽命會綁在「transpose 還沒跑」上——第七點第七個陷阱）。
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _d:
+        _raw = os.path.join(_d, "raw")
+        os.makedirs(_raw)
+        for i, hdr in enumerate(("date,stock_id,dealer_self", "date,stock_id,dealer_self")):
+            io.open(os.path.join(_raw, f"2020-01-0{i + 1}.csv"), "w",
+                    encoding="utf-8").write(hdr + "\n")
+        _drv = os.path.join(_d, "drv.csv")
+
+        def _mk(filled, total):
+            rows = ["date,stock_id,dealer_self"]
+            for j in range(total):
+                rows.append(f"2020-01-{j + 1:02d},2330,"
+                            + ("100" if j < filled else ""))
+            io.open(_drv, "w", encoding="utf-8").write("\n".join(rows) + "\n")
+
+        _oldD = D.DATA
+        try:
+            D.DATA = _d
+            # ⓐ 回補滿、衍生層空 ⇒ ⛔ **不可以**是 ✅
+            _mk(0, 5)
+            st, ev = D._p_col_two("raw", "dealer_self", "drv.csv", "樣本X")()
+            ck("⛔⛔ 回補 100% 但衍生層 0% ⇒ 狀態**不是** ✅ 完成",
+               not st.startswith("✅"), f"{st}｜{ev}")
+            ck("  ⭐ 而且要**明講**是 transpose 還沒跑（⛔ 只給百分比看不出來）",
+               "下游還沒拿到" in ev and "transpose" in ev, ev)
+            ck("  ⭐ 而證據欄要寫出**樣本是誰**（⛔ 一個裸百分比沒有母體）",
+               "樣本X" in ev, ev)
+            # ⓑ 兩層都滿 ⇒ ✅
+            _mk(5, 5)
+            st2, ev2 = D._p_col_two("raw", "dealer_self", "drv.csv", "樣本X")()
+            ck("⭐ 反向：兩層都 100% ⇒ 才是 ✅ 完成", st2.startswith("✅"),
+               f"{st2}｜{ev2}")
+            ck("  ⛔ 而這時不可以再喊 transpose", "下游還沒拿到" not in ev2, ev2)
+            # ⓒ 衍生層檔案不存在 ⇒ 要說「讀不到」，⛔ 不是靜靜當成 0%
+            st3, ev3 = D._p_col_two("raw", "dealer_self", "沒這個檔.csv", "樣本X")()
+            ck("⛔ 衍生層樣本讀不到 ⇒ 明講**讀不到**（⚠ 跟「0%」是兩件事）",
+               "讀不到" in ev3 and not st3.startswith("✅"), f"{st3}｜{ev3}")
+            # ⓓ ⛔ 衍生層**不可以**用表頭量：它的表頭永遠有那一欄
+            io.open(_drv, "w", encoding="utf-8").write(
+                "date,stock_id,dealer_self\n2020-01-01,2330,\n")
+            fn, ft = D._derived_fill(_drv, "dealer_self")
+            ck("⛔⛔ 表頭有那一欄但整片是空的 ⇒ 算 0 有值（⭐ 數的是**值**不是表頭）",
+               (fn, ft) == (0, 1), f"{fn}/{ft}")
+        finally:
+            D.DATA = _oldD
+
     # ⭐ 人工判定那幾格要標得出來——⛔ 手寫的 ✅ 與量到的 ✅ 不可以長得一樣
     ck("⭐ 人工判定的列有標記，而且說明文字有解釋它的意思",
        D.LEDGER_HAND in txt and "繼續顯示完成" in txt)

@@ -845,6 +845,64 @@ def _p_col(d, col):
     return go
 
 
+def _derived_fill(path, col):
+    """衍生層某一欄**有值的列數**。→ (有值, 總列)；檔不在回 (0, 0)。
+
+    ⛔ 衍生層**不可以**用「表頭有沒有這一欄」來量：`transpose.py` 的表頭是
+    全庫的**聯集** ⇒ ⭐ **每一個個股檔的表頭本來就有 `dealer_self`**，
+    ⚠ 只是那一欄整片是空的。⇒ 拿表頭去問，答案永遠是「有」。
+    ⇒ 只能數**值**。
+    """
+    if not os.path.exists(path):
+        return 0, 0
+    try:
+        with io.open(path, encoding="utf-8") as f:
+            rd = csv.DictReader(f)
+            if not rd.fieldnames or col not in rd.fieldnames:
+                return 0, 0
+            n = t = 0
+            for r in rd:
+                t += 1
+                if (r.get(col) or "").strip():
+                    n += 1
+        return n, t
+    except OSError:
+        return 0, 0
+
+
+def _p_col_two(raw_dir, col, sample, sample_label):
+    """⭐⭐ 兩層都要到位才算完成（CLAUDE.md 四點二）。
+
+    ⛔⛔ 2026-09-14 找到：B2 原本只量 `universe/inst` 的**表頭**
+      ⇒ 回補跑完的那一刻它就翻成 ✅ 完成，
+      ⚠ 而四條線真正**讀**的是 `data/stocks_inst/`——那一層要等 `transpose`
+      跑過才會有值。實測當天：raw 43.1%、而 2330 的衍生層是 **5 / 2,851**。
+    ⇒ ⭐ 「回補完成」與「下游用得到」是**兩件事**，
+      ⛔ 而它們在這張表上本來長得一模一樣。
+
+    ⚠ 衍生層用**一個具名樣本**量（⛔ 全庫逐列掃是 0.5 GB）——
+    ⭐ 所以證據欄一定要**寫出那個樣本是誰**，⛔ 不可以只給一個百分比。
+    """
+    def go():
+        n, t = _hdr_col(os.path.join(DATA, raw_dir), col)
+        if not t:
+            return "⛔ 沒有這個目錄", raw_dir
+        fn, ft = _derived_fill(os.path.join(DATA, sample), col)
+        raw_ok = (n == t)
+        drv_ok = (ft > 0 and fn == ft)
+        st = ("✅ 完成" if raw_ok and drv_ok else
+              ("🔄 進行中" if n or fn else "⬜ 未開始"))
+        ev = f"回補 {_pct(n, t)}"
+        if ft == 0:
+            ev += f"｜⛔ 衍生層樣本（{sample_label}）**讀不到**"
+        else:
+            ev += f"｜衍生層 {_pct(fn, ft)}（樣本：{sample_label}）"
+        if raw_ok and not drv_ok:
+            ev += "　⛔ **回補完成但下游還沒拿到** ⇒ 要跑 `transpose.yml`"
+        return st, ev
+    return go
+
+
 def _p_dir(d, least=1):
     def go():
         n = _count_dir(os.path.join(DATA, d))
@@ -872,9 +930,14 @@ LEDGER = [
     ("B1", "三大法人：自營商**自行買賣／避險**分項（上櫃）",
      _p_col("universe/otcinst", "dealer_self"), None,
      "K線分析線 0707 裁定要收"),
+    # ⛔⛔ 這一列量**兩層**：`universe/inst`（回補）＋ `stocks_inst/`（下游真正讀的）。
+    #   ⚠ 只量前者的話，回補跑完那一刻它就翻 ✅，而四條線一列都讀不到
+    #   ——`transpose` 還沒跑。實測 2026-09-14：回補 43.1%、衍生層 5/2,851。
     ("B2", "三大法人：自營商**自行買賣／避險**分項（上市 T86）",
-     _p_col("universe/inst", "dealer_self"), None,
-     "⛔ 與 B1 不並行，排在它後面"),
+     _p_col_two("universe/inst", "dealer_self", "stocks_inst/2330.csv",
+                "2330（上市，全期都在）"), None,
+     "⛔ 與 B1 不並行，排在它後面。⭐ 回補完**還要跑 `transpose.yml`**，"
+     "⚠ 而那兩件事在這張表上本來長得一模一樣"),
     ("B3", "融資融券**備註欄**（上櫃，全歷史）",
      _p_col("universe/otcmargin", "note"), None,
      "2026-09-14 完成：偽陰性成因是我方 header 09-09 才加，⛔ 不是來源缺"),
