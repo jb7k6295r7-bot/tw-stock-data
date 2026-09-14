@@ -10,3 +10,4 @@ backtest/results15/eligible.csv.gz
 backtest/results*/eligible.csv.gz
 backtest/resultsp1/regress/closes.npz
 backtest/resultsp1/regress/opens.npz
+backtest/results19_calibA_0914/rows.csv.gz
