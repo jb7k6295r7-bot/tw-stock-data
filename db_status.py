@@ -791,6 +791,197 @@ def section_nosource(out):
     out.append("")
 
 
+# ── ⓪ 交辦清單：有什麼／缺什麼／完成了沒 ────────────────────────────
+#
+# ⛔⛔ 這一節存在的前提，是 CLAUDE.md 第四點那條規矩：
+#
+#     續跑判準一律用**資料自己**，⛔ 不要另開台帳——**台帳會跟資料不一致**。
+#
+# ⚠ 使用者要的是「完成一項就上去改成完成」——⛔ 而那正是一份**人工台帳**，
+#   也正是那條規矩禁止的東西。⇒ 折衷寫死在這裡：
+#
+#   ⭐ **狀態能從 `data/` 算出來的，一律用算的**（`probe` 欄）。
+#   ⭐ 算不出來的（例如「官方根本沒有這個端點」）才人工，
+#     ⛔ 而且**必須標成「人工判定」**——讀的人要分得出
+#     哪一格是量到的、哪一格是我說的。
+#
+# ⚠ 為什麼這個區別是本節最重要的部分：一個手寫的 ✅ 跟一個量出來的 ✅
+#   在表格裡長得一模一樣，⛔ 而前者會在資料被刪掉之後**繼續顯示完成**。
+#
+# 每一列：(編號, 項目, probe 或 None, 人工狀態, 備註)
+#   probe() → (狀態字串, 證據字串)；⛔ 丟例外不可以讓整支掛掉（見 _run_probe）。
+
+LEDGER_HAND = "⚠ 人工判定"
+
+
+def _pct(n, d):
+    return f"{n:,}/{d:,}（{100.0 * n / d:.1f}%）" if d else f"{n:,}/0"
+
+
+def _hdr_col(d, col):
+    """`d` 目錄裡，表頭含 `col` 的日檔數 / 總日檔數。⇒ 回補完成度是**算出來的**。"""
+    import glob as _g
+    fs = sorted(_g.glob(os.path.join(d, "*.csv")))
+    if not fs:
+        return 0, 0
+    n = 0
+    for f in fs:
+        try:
+            with io.open(f, encoding="utf-8") as fh:
+                if col in (fh.readline() or ""):
+                    n += 1
+        except OSError:
+            pass
+    return n, len(fs)
+
+
+def _p_col(d, col):
+    def go():
+        n, t = _hdr_col(os.path.join(DATA, d), col)
+        if not t:
+            return "⛔ 沒有這個目錄", d
+        return ("✅ 完成" if n == t else
+                ("🔄 進行中" if n else "⬜ 未開始")), _pct(n, t)
+    return go
+
+
+def _p_dir(d, least=1):
+    def go():
+        n = _count_dir(os.path.join(DATA, d))
+        return ("✅ 完成" if n >= least else "⬜ 未開始"), f"{n:,} 個檔"
+    return go
+
+
+def _p_rows(path, least=1):
+    def go():
+        r = _rows(os.path.join(DATA, path))
+        n = 0 if r is None else len(r)
+        return ("✅ 完成" if n >= least else
+                ("🔄 進行中" if n else "⬜ 未開始")), f"{n:,} 列"
+    return go
+
+
+LEDGER = [
+    ("A1", "上市／上櫃／興櫃日K（`universe/daily`）",
+     _p_dir("universe/daily", 2800), None,
+     "2015-01-05 起。⚠ 2007~2014 **可行但建議先不做**（那段只有上市 ⇒ 母體斷層）"),
+    ("A2", "個股轉置庫（`stocks/`）", _p_dir("stocks", 2000), None,
+     "衍生層，由 `transpose.yml` 重建"),
+    ("A3", "逐日股本 `shares` 欄", None, "✅ 完成",
+     "⭐ 日檔每一列都有，2015 起。⚠ 興櫃 363 檔整批沒有 ⇒ 標不可用、⛔ 不補 0"),
+    ("B1", "三大法人：自營商**自行買賣／避險**分項（上櫃）",
+     _p_col("universe/otcinst", "dealer_self"), None,
+     "K線分析線 0707 裁定要收"),
+    ("B2", "三大法人：自營商**自行買賣／避險**分項（上市 T86）",
+     _p_col("universe/inst", "dealer_self"), None,
+     "⛔ 與 B1 不並行，排在它後面"),
+    ("B3", "融資融券**備註欄**（上櫃，全歷史）",
+     _p_col("universe/otcmargin", "note"), None,
+     "2026-09-14 完成：偽陰性成因是我方 header 09-09 才加，⛔ 不是來源缺"),
+    ("C1", "還原因子（`adj/`）", _p_dir("adj", 1000), None,
+     "除權息＋減資＋面額變更。⚠ `cum_factor` 是連乘 ⇒ 一筆假資料的半徑是整條序列"),
+    ("C2", "上櫃除權息**歷史**（2008 起）",
+     _p_rows("meta/otc_exright_history.csv", 10000), None,
+     "⭐ 櫃買公告區 `bulletin/exDailyQ`，一次請求回十一年半"),
+    ("C3", "上櫃減資歷史", _p_rows("meta/otc_reduce_history.csv", 200), None, ""),
+    ("C4", "上櫃**面額變更**：自動取得", None, "⛔ 卡住　" + LEDGER_HAND,
+     "數字有官方佐證（14/14 相符）⛔ 但是**人工匯出**的，新事件不會自己進來"
+     "⇒ 真正的解要能執行 js 的環境"),
+    ("D1", "月營收／財報三表（`mops/`）", _p_dir("mops/revenue", 1), None,
+     "⛔ 端點**只給最新一期**，歷史只能逐期累積"),
+    ("D2", "財報**實際公告日**", None, "⬜ 未開始　" + LEDGER_HAND,
+     "⭐ K線分析線 1740 §2-1 指出 FinLab 有兩欄（揭露日／法定期限）"
+     "⛔ 而 FinLab 條款未裁定 ⇒ 這條等情報分析線"),
+    ("E1", "集保股權分散：**從今天起累積**", _p_dir("tdcc", 1), None,
+     "⭐ 2026-09-08 起每週一份，17 級距原樣保留、⛔ 入庫端不聚合"),
+    ("E2", "集保股權分散：**回補那 51 週**", None, "⛔ 卡住　" + LEDGER_HAND,
+     "兩條官方路都實測不通：opendata 不吃日期參數（四個欄名全是假參數）、"
+     "qryStockAjax 回 2 bytes。⭐ 卡的是**技術不是量**"
+     "（全市場 206,601 次／追蹤 8 檔只要 408 次）"),
+    ("E3", "集保**級距對照**（第幾級＝幾張）", None, "⬜ 未開始　" + LEDGER_HAND,
+     "⛔ 來源只給代碼 1~17，級距文字是 js 動態組的 ⇒ 「千張大戶」現在落不了地"),
+    ("F1", "大盤**加權指數**日線（`history/market_index.csv`）",
+     _p_rows("history/market_index.csv", 2800), None,
+     "⭐ close 補得回 2015-01（FMTQIK 第 5 欄、0 次額外請求）⛔ 回補還沒跑。"
+     "⚠ 回補列的 `change`/`change_pct` 留空，要用請自己從 close 減"),
+    ("F2", "大盤**成交金額／股數／筆數**歷史", None, "⛔ 卡住　" + LEDGER_HAND,
+     "⛔⛔ FMTQIK 那三欄**口徑不同**（同日實測成交股數 2.5 倍）⇒ 不可用來回補。"
+     "⭐ 而指數欄逐位相同 ⇒ 問題是**欄**不是端點"),
+    ("G1", "交易日曆（獨立判準）", _p_rows("meta/calendar_twse.csv", 2800), None,
+     "TWSE FMTQIK，與建日檔的個股端點不同條路"),
+    ("G2", "**長期停止買賣**的來源", None, "⛔ 卡住　" + LEDGER_HAND,
+     "⚠ `suspend.csv` 收的是**暫停交易**，10,034 列裡 9,594 列是權證"),
+    ("H1", "分點進出（券商買賣日報表）", None, "⬜ 未開始　" + LEDGER_HAND,
+     "⭐ 對**全市場自動化**不可行（驗證碼／逐檔查／只有當日）"
+     "⛔ 而那三個全是**規模**的函數 ⇒ 對「追蹤幾檔」一個都不痛"),
+]
+
+
+def _git_ref():
+    """→ 現在在哪個分支（問不到回 ""）。⛔ 只讀，不動 repo。"""
+    import subprocess
+    try:
+        r = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                           capture_output=True, text=True, timeout=10)
+        return r.stdout.strip() if r.returncode == 0 else ""
+    except Exception:                                          # noqa: BLE001
+        return ""
+
+
+def _run_probe(fn):
+    # ⛔ 一個 probe 炸掉不可以讓整份清單消失——那會讓「清單沒印出來」
+    #   跟「清單上什麼都沒有」長得一樣（第七點②）。
+    try:
+        return fn()
+    except Exception as ex:                                    # noqa: BLE001
+        return "⚠ 算不出來", f"{type(ex).__name__}: {ex}"
+
+
+def section_ledger(out):
+    out.append("## ⓪ 交辦清單：有什麼／缺什麼／完成了沒\n")
+    out.append("⭐ **`狀態` 那一欄凡是沒標「" + LEDGER_HAND + "」的，都是**這一趟從 "
+               "`data/` 算出來的**，⛔ 不是人寫上去的。\n")
+    out.append("⚠ 標了「" + LEDGER_HAND + "」的是**算不出來**的那幾格"
+               "（例如「官方根本沒有這個端點」）——⛔ 那幾格會在資料被刪掉之後"
+               "**繼續顯示完成**，讀的時候請當成「我說的」，不是「量到的」。\n")
+    # ⛔⛔ 這一行是**防呆，不是裝飾**（2026-09-14 第一次跑就踩到）：
+    #   在**分支**上跑這支 ⇒ 讀到的是分支的 `data/`，而它永遠比 main 舊
+    #   ⇒ 上櫃 dealer_self 印出 `0/2,850`，⚠ 而 main 上當時已經 2,607/2,850。
+    #   ⭐ 而「0/2,850」會被讀成**「沒開始」**——⛔ 跟「回補到一半」差很遠。
+    #   ⇒ 把日檔最後一天印在表格**正上方**：它就是「這份表算的是哪一天的資料」。
+    #   ⚠ 而判準**不可以**用「日檔最後一天」——我第一版就寫錯了：
+    #     分支的 `universe/daily/` 檔名也到 2026-09-11，⛔ 分辨不出來。
+    #     真正舊掉的是**別的目錄的表頭**（`otcinst` 少了兩欄）。
+    #   ⇒ ⭐ 判準只能是那一句原話：**「這個東西在哪個 ref 上」**。
+    _ref = _git_ref()
+    if _ref and _ref != "main":
+        out.append(f"⛔⛔ **這一趟是在 `{_ref}` 上跑的，不是 `main`。**"
+                   "⚠ 所有資料都是 workflow 推到 **main** 的 ⇒ 分支的 `data/` "
+                   "永遠比 main 舊 ⇒ **下表的進度全部偏低**。"
+                   "⭐ 實例（2026-09-14）：上櫃 `dealer_self` 在這裡印 `0/2,850`，"
+                   "而同一刻 main 上是 `2,607/2,850`——"
+                   "⛔ 而「0/2,850」讀起來像**「沒開始」**。"
+                   "⇒ 這一份**只能當草稿**，正式那份由 `daily.yml` 在 main 上產生。\n")
+    else:
+        out.append(f"⭐ 這一趟在 `{_ref or '（問不到 ref）'}` 上跑"
+                   "（⛔ 只有 main 上跑出來的才算數：所有資料都是推到 main 的）。\n")
+    out.append("| # | 項目 | 狀態 | 證據／進度 | 備註 |")
+    out.append("|---|---|---|---|---|")
+    done = tot = 0
+    for num, name, probe, hand, note in LEDGER:
+        if probe is not None:
+            st, ev = _run_probe(probe)
+        else:
+            st, ev = hand, "—"
+        tot += 1
+        if st.startswith("✅"):
+            done += 1
+        out.append(f"| {num} | {name} | {st} | {ev} | {note} |")
+    out.append("")
+    out.append(f"⇒ **完成 {done} / {tot}**"
+               "（⚠ 這個分母只算列進本表的項目，⛔ 不是「資料庫的全部」）\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
@@ -802,6 +993,7 @@ def main():
 
     out = [f"# 資料庫現況　{now_tpe().isoformat(timespec='seconds')}（台北）", "",
            "**這一頁報的是資料庫現況，不是某一趟做了什麼。**", ""]
+    section_ledger(out)
     section_layers(out)
     section_shares(out)
     section_events(out)

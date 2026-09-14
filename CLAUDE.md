@@ -491,6 +491,36 @@ ref + 0.005  ⇒ 離對方 −2.87e-04   ← 若全部截斷，**超過頭 5 倍
 ⇒ ⭐ **判準要釘在那一份實作自己身上**：拿一個沙箱日檔目錄，
 答案必須是**檔名**（`2019-01-03`），⛔ 不是今天。突變 T4／T6／T7 才開始會紅。
 
+### ⛔⛔ 而 2026-09-14 傍晚掃到**第九次**，這次是「已經有八份」——⚠ 還沒走岔，但語意已經分兩派
+
+要替 `tdcc.py`（集保週檔）加一條「累積週數只能往上」的閘門之前，先 grep 一次
+——⛔ **低水位檔已經有八個，而讀寫實作至少七份**：
+
+```
+_adj_gap_low        adj_gap.py              _delisted_low       delisted.py
+_err_cut_low        （selftest_feed_days）   _factor_limit_low   factor_limit_check.py
+_holiday_years_low  holiday.py              _missing_rows_low   missing_rows.py
+_otc_exright_adjgap_low  otc_exright_history.py
+_otc_reduce_gap_low      otc_reduce_history.py
+```
+
+⚠⚠ 而 `holiday.py` 的檔頭**自己就寫著**這一族最危險的地方：
+
+> 「⛔ 跟 `_factor_limit_low.txt` 存**最低值**方向相反——**別照抄語意**。」
+
+⇒ ⭐ **八個檔、兩種相反的語意（有的只准往上、有的只准往下）、七份各自的實作。**
+⛔ 而 `selftest_no_dup.py` **抓不到**：七份的函式本體長得都不一樣
+（讀的檔名不同、回傳的形狀不同）——正是第八次那條講的
+「同一個判準的兩份實作，只要外觀不同就躲得過那道守門」。
+
+⇒ ⛔ **所以那一刻正確的動作不是「再寫第九份」**，是停下來記這一條。
+⭐ 收法：一份 `lowwater.py`，`direction` 當**必填參數**（`"up"`／`"down"`），
+⛔ 不可以有預設值——預設值就是「照抄語意」那個坑的自動化版本。
+
+⚠ 而這一條**還沒做**（它要動七個檔，超出當時那一輪的範圍）。
+⭐ 留著的理由是：這一族的傷害方向已知——**低水位檔被寫小一次，那道閘門從此永遠綠**，
+而畫面上是 ✓（2026-09-14 早上 `_holiday_years_low` 被自測寫成 2 就是實例）。
+
 ### ⇒ 做成常駐守門（跟第六點五那條同一個道理）
 
     .githooks/pre-commit    動到任何 .py 就掃 → 有第二份就**不讓 commit**
