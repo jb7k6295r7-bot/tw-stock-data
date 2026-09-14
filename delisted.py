@@ -42,6 +42,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 import backfill as B
+import lowwater
 import runlog
 from twparse import roc_iso as _roc_iso
 
@@ -320,25 +321,15 @@ def main():
              + ("　⚠ 沒有 total 可比" if total is None else ""))
 
     # ⛔ 只進不出：這是一份**累積**清單，列數不可以變少
-    low = None
-    if os.path.exists(LOW):
-        try:
-            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0])
-        except (ValueError, IndexError):
-            low = None
-    rl.check("列數沒有比上一趟少（⛔ 下市是不可逆的，只會變多）",
-             low is None or len(rows) >= low,
-             f"上一趟 {low}｜本輪 {len(rows)}" if low is not None else "第一趟")
+    #   ⚠ 方向是 `UP`——⛔ 跟 `_missing_rows_low` 那幾個**相反**，
+    #     而它們的檔名長得一模一樣（`_*_low.txt`）。別照抄語意（lowwater.py 檔頭）。
+    lowwater.gate(rl, LOW, len(rows), lowwater.UP,
+                  "下市清單的列數（⛔ 下市是不可逆的，只會變多）")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(HEADER)
         w.writerows(rows)
-    try:
-        io.open(LOW, "w", encoding="utf-8").write(
-            f"{max(low or 0, len(rows))},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
-    except OSError:
-        pass
     rl.info("判準檔", f"data/meta/delisted.csv｜{len(rows)} 筆"
                       f"（上市 {sum(1 for r in rows if r[4] == 'twse')}"
                       f"／上櫃 {sum(1 for r in rows if r[4] == 'tpex')}）"

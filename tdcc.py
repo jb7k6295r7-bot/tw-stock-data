@@ -47,10 +47,18 @@ import sys
 
 import backfill as B
 from backfill import why as _W
+import lowwater
 import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT_DIR = os.path.join(_ROOT, "tdcc")
+# ⭐⭐ 週檔是**累積**的：官方只給最近一期 ⇒ 漏一週就**永久少一週**。
+#   ⛔ 而原本「已累積 N 週」只是 `rl.info` ⇒ 51 週變成 1 週也是 ✓。
+#   ⚠ 而它會這樣少：整批覆蓋（四點六）、分支上的 `data/` 比 main 舊、
+#     或某一趟在錯的 ref 上跑 ⇒ 三種都**不會報錯**，只是檔變少。
+#   ⇒ 方向是 `UP`（越多越好）——⛔ 跟 `_missing_rows_low` 那幾個**相反**，
+#     而它們的檔名長得一模一樣。別照抄語意（`lowwater.py` 檔頭）。
+LOW = os.path.join(_ROOT, "meta", "_tdcc_weeks_low.txt")
 IND = os.path.join(_ROOT, "meta", "industry.csv")
 
 URL = "https://opendata.tdcc.com.tw/getOD.ashx?id=1-5"
@@ -262,7 +270,11 @@ def main():
     print(f"[tdcc] 寫出 {path}（{len(out):,} 列）")
     rl.info("寫出", f"{day}.csv（{len(out):,} 列）")
     have = sorted(n[:-4] for n in os.listdir(OUT_DIR) if n.endswith(".csv"))
-    rl.info("已累積", f"{len(have)} 週（{have[0]} ~ {have[-1]}）")
+    rl.info("已累積", f"{len(have)} 週（{have[0]} ~ {have[-1]}）"
+            if have else "⛔ **0 週**（⚠ 目錄是空的）")
+    # ⛔ 原本這裡只有上面那一行 `rl.info` ⇒ **沒有任何一道在管週數會不會變少**。
+    lowwater.gate(rl, LOW, len(have), lowwater.UP,
+                  "集保週檔的累積週數（⛔ 官方只給最近一期，漏一週永久少一週）")
     return rl.finish()
 
 

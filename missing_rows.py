@@ -51,6 +51,7 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
+import lowwater
 import runlog
 
 TPE = timezone(timedelta(hours=8))
@@ -171,13 +172,6 @@ def main():
         rl.info("狀態", "✗ 沒有可比的日子（`data/universe/daily/` 或六張官方清單都不在）")
         return rl.finish()
 
-    low = None
-    if os.path.exists(LOW):
-        try:
-            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0].strip())
-        except (ValueError, IndexError, OSError):
-            low = None
-
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
@@ -222,18 +216,7 @@ def main():
     rl.info("完整清單", "data/meta/_missing_rows.csv（逐筆）／"
                         "_missing_rows_by_day.csv（每日計數）")
 
-    base = len(rows) if low is None else min(low, len(rows))
-    rl.info("歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}"
-            "　⭐ 斷言用這個，不是用上一趟——否則補完之後門檻會停在低點")
-    rl.check("漏列筆數沒有高於歷史最低值",
-             low is None or len(rows) <= low,
-             f"歷史最低 {low}｜本輪 {len(rows)}" if low is not None
-             else "第一趟，只記錄不判定")
-    try:
-        io.open(LOW, "w", encoding="utf-8").write(
-            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
-    except OSError:
-        pass
+    lowwater.gate(rl, LOW, len(rows), lowwater.DOWN, "漏列筆數")
     return rl.finish()
 
 

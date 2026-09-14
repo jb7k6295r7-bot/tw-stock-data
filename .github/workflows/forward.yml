@@ -57,6 +57,22 @@ jobs:
       - name: 掃有沒有第二份實作（零相依）
         run: python selftest_no_dup.py
 
+      # ⛔⛔ 低水位檔這一族 `selftest_no_dup.py` **抓不到**：八份的函式本體長得
+      #   都不一樣（讀的檔名不同、回傳的形狀不同）⇒ 那道守門比的是 AST 函式本體。
+      #   ⚠ 而這一族有**兩種相反的語意**（有的只准往上、有的只准往下）
+      #   ⇒ 抄錯方向 = 那道閘門在反方向守門，**而畫面上永遠是 ✓**。
+      #   ⇒ ⭐ 它要自己的守門（CLAUDE.md 四點五第九次）。零相依。
+      - name: 掃低水位檔有沒有第九份實作（零相依）
+        run: python selftest_lowwater.py
+
+      # ⛔⛔ `continue-on-error: true` 的自測紅了，run 的 conclusion 仍然是
+      #   **success** ⇒ 沒有任何地方會說（daily.yml 有 62 個這種步驟）。
+      #   ⚠ 抓資料那些自己會寫 runlog ⇒ 看得到；⛔ **自測沒有** ⇒ 看不到。
+      #   ⇒ `ci_step.py` 記下來、`ci_report.py` 寫成 runlog 區塊。
+      #   ⭐ 這一道釘的是那兩支本身（⛔ 尺壞掉 ⇒ 它會說「全綠」）。零相依。
+      - name: 驗「紅掉的自測會被說出來」（零相依）
+        run: python selftest_ci_steps.py
+
       # ⛔⛔ 這一道擋的是 CLAUDE.md 四點六那個**會刪資料**的例外。
       #   ⚠ 在分支上跑會讀到過期的 `data/` ⇒ 訊號算錯，而且看不出來。
       - name: ⛔ 只准在 main 上跑（讀 data/）
