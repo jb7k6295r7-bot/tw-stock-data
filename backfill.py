@@ -855,6 +855,9 @@ STOCKS_HEADER = _STOCKS_HEADER
 # ⭐⭐ 2026-09-14 加最後兩欄（K線分析線 0707 裁定）。⛔ **一定要接在最後**：
 #   舊日檔是 6 欄，`--need-col dealer_self` 靠「表頭缺這一欄」認出要重抓的日子，
 #   插在中間會讓舊檔的欄位整排錯位。
+# ⚠ 而寫下這句話的當下 `--inst` **還沒有 `--need-col`**（只有 `--force`）
+#   ⇒ 那句註解當時是**假的**。⭐ 已補上，而且跟 feeds 共用 `days_missing_col()`。
+#   ⛔ 教訓：註解裡寫「靠某個機制」之前，先確認那個機制**在這一支裡真的存在**。
 # ⚠ `dealer` 仍然是**合計**（自行買賣 ＋ 避險），⛔ 不改語意——
 #   改掉的話下游每一個讀 `dealer` 的地方都要跟著改，而沒有人會被通知。
 INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total",
@@ -973,6 +976,33 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
+def days_missing_col(dir_, need, done):
+    """→ `done` 裡**表頭缺 `need` 欄**的那些日期（set）。
+
+    ⭐⭐ 這是「補欄位」的續跑判準：**用資料自己當進度**（CLAUDE.md 第四點），
+    ⛔ 不另開台帳——台帳會跟資料不一致。
+
+    ⚠ 只讀**第一行**：2,850 個檔全部讀完是幾百 MB，而我只要表頭。
+
+    ⛔⛔ 這一份本來只在 `feeds.cmd_feed` 裡（inline），
+    而 `backfill.py --inst` **根本沒有 `--need-col`**
+    ⇒ 2026-09-14 我在 `INST_HEADER` 的註解寫「`--need-col dealer_self` 靠表頭認日子」，
+      **那句話當時是假的**——上市那半只有 `--force`（整段重抓、不能續跑）。
+    ⇒ ⭐ 收成一份放這裡（`backfill` 是下層，`feeds` import 它 ⇒ 不會循環）。
+    """
+    stale = set()
+    for x in sorted(done):
+        p_ = os.path.join(dir_, x + ".csv")
+        try:
+            with open(p_, encoding="utf-8") as f_:
+                head = f_.readline()
+        except OSError:
+            continue
+        if need not in [c.strip() for c in head.rstrip("\n").split(",")]:
+            stale.add(x)
+    return stale
+
+
 def write_inst(day, lines):
     if not lines:
         return 0
@@ -1036,7 +1066,13 @@ def cmd_inst(args):
     #   ⚠ 這正是今天一直在抓的那一族：**參數存在不等於它有作用。**
     #   ★ 為什麼現在需要它：官方會事後修訂三大法人的投信欄（實測 29 筆／3 天），
     #     不重抓的話那些錯值永久留著，而且列數、內部 total 都自洽 ⇒ 看不出來。
-    days = [d for d in days if args.force or d not in done]
+    # ⭐ 補欄位時的續跑判準：表頭缺那一欄就重抓（⛔ 不是「檔不在才抓」）
+    need = getattr(args, "need_col", "")
+    stale = days_missing_col(INST_DIR, need, done) if need else set()
+    if need:
+        print(f"[inst] --need-col {need}：已存在的 {len(done)} 天裡，"
+              f"**{len(stale)} 天的表頭缺這一欄**，要重抓")
+    days = [d for d in days if args.force or d not in done or d in stale]
     if args.limit:
         days = days[:args.limit]
     print(f"[inst] {args.start} ~ {args.end}｜{how}｜待處理 {len(days)} 天"
@@ -1418,6 +1454,10 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    # ⭐ 補欄位用：只重抓「表頭缺這一欄」的既有日期（可續跑）。
+    #   ⛔ 跟 `--force` 不同：force 是整段重抓，斷掉就要從頭。
+    ap.add_argument("--need-col", dest="need_col", default="",
+                    help="只重抓表頭缺這一欄的既有日期（補欄位用，可續跑）")
     ap.add_argument("--need-notrade", action="store_true",
                     help="只重抓「檔案裡還沒有任何『無成交』列」的日期"
                          "（2026-09-10「甲」的回補用，可續跑）")
