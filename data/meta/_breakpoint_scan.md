@@ -3,15 +3,15 @@
 # 產生方式：python3 breakpoint_check.py
 
 ```
-附表 holes_scan.csv：缺 ≥ 5 日且無事件的洞 1402 個、173 檔；其中 liq_ok 10 個（＝ 進斷點清單的 gap 規則）
-母體 2130 檔，斷點 12 個、11 檔
+附表 holes_scan.csv：缺 ≥ 5 日且無事件的洞 1404 個、175 檔；其中 liq_ok 11 個（＝ 進斷點清單的 gap 規則）
+母體 2130 檔，斷點 13 個、12 檔
 rule
-gap          9
-price+gap    3
-missing_trading_days 分布： {'min': 6.0, '50%': 59.5, 'max': 218.0}
+gap          10
+price+gap     3
+missing_trading_days 分布： {'min': 6.0, '50%': 58.0, 'max': 218.0}
 
 對帳 par_change.csv：24 筆／22 檔 → 已有因子 24、仍為斷點 0、漏抓 0
-規則另外抓到（不在 par_change.csv）：12 個、11 檔；其中 price 規則 3 個
+規則另外抓到（不在 par_change.csv）：13 個、12 檔；其中 price 規則 3 個
 stock_id market       date  prev_date  ratio  missing_trading_days      rule
     1225   twse 2025-06-23 2025-04-02 1.0995                    53       gap
     1591   tpex 2026-07-22 2026-06-10 1.0995                    27       gap
@@ -20,6 +20,7 @@ stock_id market       date  prev_date  ratio  missing_trading_days      rule
     4414   twse 2023-06-26 2022-08-17 1.0993                   203       gap
     4415   tpex 2017-11-22 2017-04-11 2.4790                   156 price+gap
     5481   tpex 2025-09-19 2025-05-19 0.9014                    87       gap
+    6129   tpex 2026-09-14 2026-09-02 1.0496                     7       gap
     6131   twse 2016-07-05 2016-04-06 1.0741                    61       gap
     6131   twse 2019-04-10 2018-05-17 0.2562                   218 price+gap
     8101   twse 2024-11-19 2024-08-21 5.5000                    58 price+gap
