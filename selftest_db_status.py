@@ -538,6 +538,32 @@ def check_ledger():
     # ⭐ 人工判定那幾格要標得出來——⛔ 手寫的 ✅ 與量到的 ✅ 不可以長得一樣
     ck("⭐ 人工判定的列有標記，而且說明文字有解釋它的意思",
        D.LEDGER_HAND in txt and "繼續顯示完成" in txt)
+    # ⛔⛔ 2026-09-14 實測：F1 的門檻寫 2,800（＝「2015 起補完」），
+    #   ⇒ 那段落地後它**自己翻成 ✅**，⚠ 而使用者當天已把目標改成 1990-01
+    #   ⇒ 表上寫「完成」，而使用者要的事沒做。**一個綠勾會讓人不再去問。**
+    #   ⭐ 判準：**備註裡寫「還沒」的列，狀態不可以是 ✅。**
+    #   ⚠ 這條擋的不是「算錯」，是**算對了但對著舊目標**——
+    #     ⛔ 而那兩者在表格裡長得一模一樣。
+    def _stale(rows):
+        out = []
+        for num, _nm, probe, hand, note in rows:
+            st = (D._run_probe(probe)[0] if probe is not None else hand) or ""
+            if st.startswith("✅") and any(k in note for k in
+                                          ("還沒跑", "還沒做", "未完成", "仍是 🔄")):
+                out.append(num)
+        return out
+
+    # ⭐ 先用**合成列**證明這條規則抓得到，⛔ 不可以靠真實 `data/`：
+    #   分支上 `market_index.csv` 只有 9 列 ⇒ 把門檻改回舊值也翻不成 ✅
+    #   ⇒ 突變**套不出效果**，而那看起來跟「斷言沒用」一模一樣（第七點第四個陷阱）。
+    _fake = [("Z1", "假的", lambda: ("✅ 完成", "—"), None, "⛔ 回補還沒跑")]
+    ck("⛔⛔ 規則本身抓得到「✅ 但備註說還沒跑」"
+       "　（⭐ 算對了但對著**舊目標**，跟算錯在表格裡長得一樣）",
+       _stale(_fake) == ["Z1"], str(_stale(_fake)))
+    _ok = [("Z2", "假的", lambda: ("✅ 完成", "—"), None, "已經補完")]
+    ck("  ⚠ 反向：備註沒說「還沒」的 ✅ 不可以被誤判", _stale(_ok) == [])
+    ck("⭐ 而真的 LEDGER 現在沒有這種列", not _stale(D.LEDGER), str(_stale(D.LEDGER)))
+
     _auto = [n for n, _nm, pr, _h, _no in D.LEDGER if pr is not None]
     ck("⭐ 而至少一半的列是**算出來的**（⛔ 全人工就是一份會飄的台帳）",
        len(_auto) * 2 >= len(D.LEDGER), f"{len(_auto)}/{len(D.LEDGER)} 列有 probe")
