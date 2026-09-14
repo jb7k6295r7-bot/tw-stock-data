@@ -120,7 +120,14 @@ HDR = ["| 格 | n | 平均 | 中位 | 勝率 | p10 | 最壞 | 月分群 95% CI |
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=4); ap.add_argument("--limit", type=int); ap.add_argument("--reps", type=int, default=2000)
+    ap.add_argument("--r15", default=None, help="研究十五結果目錄（追加重跑時指到 results15_xxx；預設 results15）")
+    ap.add_argument("--out", default=None, help="輸出目錄（追加重跑時另開，⛔ 不覆蓋 results16）")
     a = ap.parse_args()
+    global RESULTS, R15DIR
+    if a.r15:
+        R15DIR = a.r15
+    if a.out:
+        RESULTS = a.out
     os.makedirs(RESULTS, exist_ok=True)
     t0 = time.time()
     cal = D.load_calendar(); uni = D.load_universe().set_index("stock_id")["market"]

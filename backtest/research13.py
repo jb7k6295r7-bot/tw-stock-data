@@ -247,13 +247,14 @@ def main():
     ap.add_argument("--sets", nargs="*", default=None, help="只跑這些集合（預設 S G AND OR）")
     ap.add_argument("--ns", nargs="*", type=int, default=None, help="槽數（預設 10 20）")
     ap.add_argument("--g1-from", default=None, help="--report-only 時 g1_signals.csv.gz 所在目錄（預設 --out）")
+    ap.add_argument("--panel", default=None, help="面板 panel.csv.gz 路徑（預設 results3/panel.csv.gz；追加重跑時指到重建的面板）")
     a = ap.parse_args()
     if a.out:
         RESULTS = a.out
     os.makedirs(RESULTS, exist_ok=True)
     t0 = time.time()
     cal = D.load_calendar(); uni = D.load_universe(); ncal = len(cal)
-    panel = pd.read_csv(os.path.join(HERE, "results3", "panel.csv.gz"), dtype={"stock_id": str})
+    panel = pd.read_csv(a.panel or os.path.join(HERE, "results3", "panel.csv.gz"), dtype={"stock_id": str})
     panel["rev_hi24"] = panel["rev_hi24"].fillna(False).astype(bool)   # 面板裡沒有 24 期歷史的列是 NaN ＝ 不算創高
     S, AND, and60 = build_sets(cal, panel)
     bm = pd.read_csv(os.path.join(HERE, "results11", "baseline_months.csv"), dtype={"month": str}).set_index(["hold", "month"])
