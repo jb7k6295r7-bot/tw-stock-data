@@ -285,6 +285,16 @@ def main():
         ck("  ⛔ 逾時那兩年的列原封不動留著",
            sorted(r[1] for r in _merged) == ["1111", "2222", "2301"],
            str(sorted(r[1] for r in _merged)))
+        # ⛔⛔ 排序要跟這個檔本來的一樣：`(delist_date, stock_id)`
+        #   ⚠ 第一版照**合併用的主鍵**排 ⇒ 整份檔案列序翻掉
+        #   （開頭從 2001 的 twse 變成 2012 的 tpex），
+        #   ⛔ 而後果不報錯：git diff 變成整份重寫、區間那一行印錯。
+        ck("⭐⭐ 合併後照 `(delist_date, stock_id)` 排（⛔ 不是照合併主鍵）",
+           [r[0] for r in _merged] == sorted(r[0] for r in _merged),
+           str([(r[0], r[4]) for r in _merged]))
+        ck("  ⭐ 而第一筆是**最早的下市日**（⇒ 區間那一行才印得對）",
+           _merged[0][0] == min(r[0] for r in _merged),
+           f"{_merged[0]}")
         # ⭐ 主鍵要含 `delist_date`：**代號會回收**
         _recycled = [["2020-03-03", "2301", "新光寶", "2026-09-14", "twse"]]
         _m2, _ = D.merge_existing(_recycled, _p)

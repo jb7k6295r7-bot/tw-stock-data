@@ -165,7 +165,12 @@ def merge_existing(rows, path):
     for r in rows:
         merged[key(r)] = r                 # ⭐ 本趟的鍵覆蓋（`asof` 會更新）
     only_old = len(set(old) - {key(r) for r in rows})
-    return [merged[k] for k in sorted(merged)], only_old
+    # ⛔⛔ 排序要跟**這個檔本來的**一樣（`(delist_date, stock_id)`，上面第 369 行），
+    #   ⚠ 不是照合併用的主鍵排——第一版就是那樣，⇒ 整份檔案的列序**全部翻掉**：
+    #     開頭從 `2001-01-20 twse` 變成 `2012-06-07 tpex`（先 tpex 再 twse）。
+    #   ⛔ 而它的兩個後果都不會報錯：① `git diff` 變成整份重寫，真正的
+    #     增減看不出來 ② 下面那行 `{rows[0][0]} ~ {rows[-1][0]}` 會印出錯的區間。
+    return (sorted(merged.values(), key=lambda x: (x[0], x[1])), only_old)
 
 
 def fetch_otc(rl, this_year, get=None):
