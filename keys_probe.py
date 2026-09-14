@@ -158,6 +158,30 @@ def show(label, url, want=None):
             say(f"      [{i:>2}] {c}")
     else:
         say("   ⚠ 這個回應**沒有 fields**（⛔ 不是「我沒印」）")
+    # ⭐⭐ 2026-09-14 加：**第一列資料逐字印出來，對齊 fields**。
+    #   ⛔ 起因：FMTQIK 我印到了 `[5] 漲跌點數`，⚠ 而「它帶不帶正負號」
+    #     欄名**講不出來**——MI_INDEX 那張表的正負號在**另一個欄**
+    #     （`漲跌(+/-)`），⇒ 照它去猜 FMTQIK 就是第二點⑤「名字不是證據」。
+    #   ⚠ 同理還有千分位逗號、破折號代表的空值、數字有沒有引號。
+    #   ⇒ 只印**一列**（⛔ 不洗版），而且是 `repr`：逗號、空白、全形字
+    #     在 repr 裡看得見，⛔ 在 print 裡看不見。
+    rows = d.get("data")
+    if not rows:
+        for t in (d.get("tables") or []):
+            if isinstance(t, dict) and t.get("data"):
+                rows = t["data"]
+                break
+    if rows:
+        r0 = rows[0]
+        say(f"   ⭐ 第一列（共 {len(rows):,} 列，逐字 repr）：")
+        if isinstance(r0, (list, tuple)):
+            for i, v in enumerate(r0):
+                nm = fs[i] if fs and i < len(fs) else "?"
+                say(f"      [{i:>2}] {nm}　= {v!r}")
+        else:
+            say(f"      {r0!r}")
+    else:
+        say("   ⚠ 這個回應**沒有 data 列**（⛔ 不是「我沒印」）")
     say("")
 
 
