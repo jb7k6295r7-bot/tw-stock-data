@@ -17,6 +17,7 @@ K線線 2026-09-10 20:20 裁定，逐字：
     ④ ⛔ 加欄位造成的**位置索引錯位**：`ADJ_HEADER` 中間插一欄之後，
        原本寫死的 `r[6]`（event）會指到 `kind` ⇒ ⚠ **減資事件數靜靜變成 0**
 """
+import os
 import io
 import sys
 
@@ -266,6 +267,36 @@ def main():
                                    "2020-06-01,1111,538.0,500.0,38.0000,息,500.0\n"])})
     ck("⛔ 反向：同一天但**參考價不同** ⇒ 兩列都留（⚠ 不可以合併成一筆）",
        len(ev8b["1111"]) == 2, str([(r[0], r[3]) for r in ev8b["1111"]]))
+
+    print("\n⑨ ⭐⭐ `last_data_day()`：判「未來事件」的**唯一**基準（2026-09-14 加）")
+    # ⛔⛔ 這一節存在的理由：把它改成「回今天」的突變，在兩支下游自測裡**全綠**。
+    #   成因是那兩支比的是「預設路徑 == 傳 last_data_day() 的結果」
+    #   ⇒ 兩邊會**一起變** ⇒ 那是一條恆真的斷言（第七點：沒證明過會紅的不算測試）。
+    #   ⇒ ⭐ 這裡直接釘它回什麼：拿一個沙箱日檔目錄，答案必須是**檔名**，
+    #     ⛔ 不是今天。
+    import tempfile as _tf
+    import datetime as _dt9
+    _tpe_today = _dt9.datetime.now(
+        _dt9.timezone(_dt9.timedelta(hours=8))).strftime("%Y-%m-%d")
+    _old_dir = A.DAILY_DIR
+    _d9 = _tf.mkdtemp()
+    try:
+        for _n in ("2019-01-02.csv", "2019-01-03.csv", "notacsv.txt"):
+            io.open(os.path.join(_d9, _n), "w", encoding="utf-8").write("x\n")
+        A.DAILY_DIR = _d9
+        _got = A.last_data_day()
+        ck("⭐⭐ 回的是**日檔名的最後一個**（⛔ 不是今天）",
+           _got == ("2019-01-03", False), f"{_got}｜今天是 {_tpe_today}")
+        ck("⚠ 而 `.csv` 以外的檔不算（⛔ 否則塞一個 README 就改掉答案）",
+           A.trading_days() == ["2019-01-02", "2019-01-03"], str(A.trading_days()))
+        # ⛔ 反向：目錄讀不到 ⇒ 退回今天，**而且第二個回傳值要說它退回了**
+        A.DAILY_DIR = os.path.join(_d9, "does-not-exist")
+        _got2 = A.last_data_day()
+        ck("⭐ 讀不到目錄 ⇒ 退回今天，⛔ 而且**要講出它退回了**"
+           "（⚠ 靜靜退回 ＝ 判準悄悄變回舊的那一個）",
+           _got2 == (_tpe_today, True), str(_got2))
+    finally:
+        A.DAILY_DIR = _old_dir
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

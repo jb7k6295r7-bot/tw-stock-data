@@ -129,6 +129,25 @@ def show(label, url, want=None):
     #     「新端點第一件事就是把 notes／hints／title 印出來」那條規矩的執行者。
     for ln in B.describe_response(d, want=want):
         say(f"   {ln}")
+    # ⭐⭐ 2026-09-14 加：**把 `fields` 逐字印出來**。
+    #   ⛔ 起因是我要替 T86 加「自營商(自行買賣)／(避險)」兩欄，
+    #     而我**不知道官方那兩欄叫什麼**——而第二點⑤說得很清楚：
+    #     **名字不是證據**，⛔ 不可以照別張表的欄名去猜這一張。
+    #   ⚠ 而這支探針本來就打了 T86，卻**只印被丟掉的鍵、沒印 fields**
+    #     ⇒ 要寫解析的人還是得自己再打一次。⇒ 一起印。
+    #   ⚠ `_tables()` 那一族（tables 包起來的）也要照顧到。
+    fs = d.get("fields")
+    if not fs:
+        for t in (d.get("tables") or []):
+            if isinstance(t, dict) and t.get("fields"):
+                fs = t["fields"]
+                break
+    if fs:
+        say(f"   ⭐ fields（{len(fs)} 欄，逐字）：")
+        for i, c in enumerate(fs):
+            say(f"      [{i:>2}] {c}")
+    else:
+        say("   ⚠ 這個回應**沒有 fields**（⛔ 不是「我沒印」）")
     say("")
 
 

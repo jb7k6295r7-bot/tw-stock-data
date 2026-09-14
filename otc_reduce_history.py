@@ -52,6 +52,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 import runlog
+import adjust as _adjust
 from twparse import (pick_field as _pick_field, post_form as _post_form,
                      roc_iso as _roc_iso)
 
@@ -259,7 +260,7 @@ KNOWN_OFFICIAL_DUP = {
 }
 
 
-def classify_gaps(miss, cover, known=None):
+def classify_gaps(miss, cover, known=None, upper=None):
     """「官方有、我方沒有」分成三堆。→ (涵蓋期內, 已歸因, 未歸因)
 
     ⭐⭐ 2026-09-10：**「涵蓋期內」與「涵蓋期外」是兩件事，不可以混在一起數。**
@@ -296,8 +297,16 @@ def classify_gaps(miss, cover, known=None):
     #     那些事件根本還沒發生，我方當然沒有。
     #   ⚠ 而一條每天紅的斷言，三天之後就沒有人看了——
     #     它會連旁邊真正的 ✗ 一起帶走。
-    today = datetime.now(TPE).strftime("%Y-%m-%d")
-    inside = [r for r in miss if cover <= r[0] <= today]
+    # ⛔⛔ 2026-09-14 付過代價：上界原本寫死成 `今天`。
+    #   6129 普誠的恢復買賣日是 2026-09-14（週一），而我方日檔最後一天是
+    #   09-11（週五）⇒ 用「今天」當上界 ⇒ 它被判成**涵蓋期內的未歸因缺口**
+    #   ⇒ runlog 寫「那一檔的還原序列在這一天是假報酬」，⚠ 而那一天還沒收盤。
+    # ⭐ 而同一句話 `otc_exright_check` 2026-09-11 就修過了（基準要用**資料最後一天**）
+    #   ——⛔ 修了那一支、這一支沒跟上，正是四點五那一族。
+    #   ⇒ 現在兩邊都叫 `adjust.last_data_day()`，**只有一份實作**。
+    if upper is None:
+        upper = _adjust.last_data_day()[0]
+    inside = [r for r in miss if cover <= r[0] <= upper]
     named = [r for r in inside if (r[1], r[0]) in known]
     live = [r for r in inside if (r[1], r[0]) not in known]
     return inside, named, live
@@ -545,11 +554,20 @@ def main():
     #
     # ⛔ 涵蓋起點**從資料自己算**，不寫死：寫死的話資料庫往前長之後就對不上。
     # ══════════════════════════════════════════════════════════════
-    dd = os.path.join(_ROOT, "universe", "daily")
-    days = sorted(n[:-4] for n in os.listdir(dd)) if os.path.isdir(dd) else []
+    # ⛔ 日檔列表**不在這裡自己算**——`adjust.trading_days()` 就是那一份（四點五）。
+    days = _adjust.trading_days()
     cover = days[0] if days else ""
+    upper, fellback = _adjust.last_data_day()
+    if fellback:
+        rl.info("⛔ 讀不到日檔目錄，「未來事件」的上界退回用今天",
+                "⚠ 這會讓事件日就是今天的那幾筆被報成缺口（誤導性紅燈）")
+    else:
+        rl.info("⚠ 「未來事件」的比較基準",
+                f"我方資料最後一天 **{upper}**（⛔ 不是今天 "
+                f"{datetime.now(TPE).strftime('%Y-%m-%d')}）"
+                "　⇒ 恢復買賣日晚於它的算預告，不算缺口")
 
-    inside, named, live = classify_gaps(miss, cover)
+    inside, named, live = classify_gaps(miss, cover, upper=upper)
 
     rl.info("  ⭐ 其中**落在我方涵蓋期內**（≥ 首個日檔 " + (cover or "—") + "）",
             f"**{len(inside)} 筆**"

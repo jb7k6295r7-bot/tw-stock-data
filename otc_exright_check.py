@@ -268,17 +268,18 @@ def main():
     #   ⛔ 日檔列表不在這裡自己算——`adjust.trading_days()` 就是那一份（第四點五）。
     #   ⚠ 而它讀不到（目錄不在／checkout 問題）時**退回今天**，
     #     ⭐ 並在 runlog 裡講出來：⛔ 靜靜退回去會讓判準悄悄變回舊的那一個。
-    _days = _adjust.trading_days()
-    if _days:
-        last_data = _days[-1]
+    # ⛔ 這一段**不在這裡自己算**——`adjust.last_data_day()` 就是那一份（四點五）。
+    #   ⚠ 2026-09-14 付過代價：這支修好了、`otc_reduce_history` 沒跟上
+    #     ⇒ 6129 普誠 2026-09-14 的減資被那一支報成「未歸因缺口」。
+    last_data, _fellback = _adjust.last_data_day()
+    if _fellback:
+        rl.info("⛔ 讀不到日檔目錄，退回用今天當基準",
+                "⚠ 這會讓「事件日就是今天」的那幾筆被報成缺口（誤導性紅燈）")
+    else:
         rl.info("⚠ 「未來事件」的比較基準",
                 f"我方資料最後一天 **{last_data}**（⛔ 不是今天 "
                 f"{datetime.now(TPE).strftime('%Y-%m-%d')}）"
                 "　⇒ 事件日晚於它的算預告，不算缺口")
-    else:
-        last_data = datetime.now(TPE).strftime("%Y-%m-%d")
-        rl.info("⛔ 讀不到日檔目錄，退回用今天當基準",
-                "⚠ 這會讓「事件日就是今天」的那幾筆被報成缺口（誤導性紅燈）")
     marks, miss_keys, future = classify(rows, have, last_data)
     for r in rows:
         rl.note(f"  {r[0]} {r[1]} {r[2]}｜前收 {r[3]}／參考價 {r[4]}"

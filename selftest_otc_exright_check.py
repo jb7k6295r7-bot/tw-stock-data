@@ -97,8 +97,16 @@ def main():
     ck("  ⭐⭐ `main()` 真的把**資料最後一天**傳進 classify"
        "（⛔ 只測 classify 的話，呼叫點改回 today 也不會紅）",
        "classify(rows, have, last_data)" in _src
-       and "_adjust.trading_days()" in _src,
-       "⛔ 呼叫點沒有用 last_data／沒有用 adjust.trading_days()")
+       and "_adjust.last_data_day()" in _src,
+       "⛔ 呼叫點沒有用 last_data／沒有用 adjust.last_data_day()")
+    # ⛔⛔ 2026-09-14：這一段本來在**兩支各一份**，而只有這一支被修好
+    #   ⇒ `otc_reduce_history` 把 6129 普誠 2026-09-14 的減資報成未歸因缺口。
+    #   ⇒ ⭐ 現在兩邊都叫 `adjust.last_data_day()`，這條釘住它不准再分家。
+    # ⚠ 判準只釘「有沒有自己取日檔最後一天」——⛔ 不可以寫成「不准有 os.listdir」，
+    #   這支另外有一處合法的 `os.listdir(ADJ_DIR)`（列 data/adj），那是別件事。
+    ck("  ⭐ 而它是**共用的那一份**（⛔ 不是自己在這裡算日檔最後一天）",
+       "_days[-1]" not in _src and "trading_days()[-1]" not in _src,
+       "⛔ 這支又自己算了一份資料最後一天")
 
     print("② ⛔ 未來的預告列不算缺口（否則這道斷言每天假紅）")
     ck("  ⏳ 3141（明天）被標成未來", m[("3141", tmr)] .startswith("⏳ 未來"), str(m))
