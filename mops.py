@@ -447,6 +447,8 @@ def cmd_run(args):
     # ⭐ 同一批資料含多個期別的：⛔ 這件事只印在 stderr 是不夠的
     #   （舊版就是「有印警告、照樣寫錯檔」）⇒ 要進 runlog 讓人看得到。
     multi = []            # (kind, tag, {期別: 列數})
+    # ⛔ 沒回應時**為什麼**——⚠ 只記名字的話，runlog 上那個 ✗ 查不下去
+    dead_why = {}         # "kind/tag/market" → 原因（頭尾都留）
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -466,12 +468,21 @@ def cmd_run(args):
                     d2, note2 = fetch(url)
                     time.sleep(B.SLEEP)
                     if d2 is None:
+                        # ⛔⛔ 2026-09-14：這裡本來只 `print`，而 runlog 只寫
+                        #   「沒回應：revenue/all/tpex」——**沒有原因**。
+                        #   ⇒ 我要查那個 ✗ 的時候，查不下去：憑證鏈壞掉、限流、
+                        #     端點改名、參數被無視，在那一行字裡**長得一模一樣**。
+                        #   ⚠ 而原因還被 `note[:70]` 砍掉尾巴（六點六：
+                        #     SSL 那一族可行動的部分永遠在尾巴）。
+                        #   ⇒ ⭐ 原因**進 runlog**，而且走 `B.why()` 中間省略。
                         calls.append((kind, tag, mk, False, 0, 0.0, 0.0))
+                        dead_why[f"{kind}/{tag}/{mk}"] = (
+                            f"第一次：{B.why(note)}｜重試：{B.why(note2)}")
                         print(f"  [{kind}/{tag}/{mk}] 略過（**隔久再試一次也不行**）："
-                              f"{note[:70]}｜重試：{note2[:70]}")
+                              f"{B.why(note)}｜重試：{B.why(note2)}")
                         continue
-                    retried.append((f"{kind}/{tag}/{mk}", note[:60]))
-                    print(f"  [{kind}/{tag}/{mk}] ⚠ 第一次失敗（{note[:60]}），"
+                    retried.append((f"{kind}/{tag}/{mk}", B.why(note)))
+                    print(f"  [{kind}/{tag}/{mk}] ⚠ 第一次失敗（{B.why(note)}），"
                           f"**隔久再試一次成功**：{note2}")
                     d, note = d2, note2
                 # ⛔ **一列沒有公司代號的列，不是一列資料。**
@@ -567,7 +578,8 @@ def cmd_run(args):
                     f"有回應 {sum(1 for c in calls if c[3])} 個")
     dead = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if not c[3]]
     rl.check("每一個表×市場都有回應", not dead,
-             ("沒回應（**隔久再試一次也不行**）：" + "、".join(dead))
+             ("沒回應（**隔久再試一次也不行**）："
+              + "；".join(f"{n} ⇒ {dead_why.get(n, '⚠ 沒記到原因')}" for n in dead))
              if dead else f"{len(calls)} 個全有")
     # ⛔ 這一列即使是 0 也要在：⚠ 靜靜重試成功 ＝ 把「這張表在惡化」的訊號抹掉。
     rl.info("⚠ 第一次失敗、隔久再試才成功的",

@@ -1925,24 +1925,9 @@ def day_is_open(day, today=None):
     return day >= (today or runlog.now_tpe().strftime("%Y-%m-%d"))
 
 
-def _why(err, cap=160):
-    """把錯誤訊息縮短成一行，⭐ **保留頭也保留尾**。
-
-    ⛔⛔ 2026-09-13 付過代價：原本是 `err[:50]`，而那一天 TPEx 回的是
-
-        URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_
-
-    ——⚠ **剛好切在有用的字開始的地方**。SSL／憑證／逾時這一族，
-    **可行動的部分永遠在尾巴**（`unable to get local issuer certificate`、
-    `certificate has expired`、`hostname mismatch` 各自的下一步完全不同），
-    ⛔ 而前 50 個字元每一次都長得一樣。
-    ⇒ 太長就中間省略，⛔ 不要砍尾巴。
-    """
-    t = " ".join(str(err).split())
-    if len(t) <= cap:
-        return t
-    keep = (cap - 3) // 2
-    return t[:keep] + "..." + t[-keep:]
+# ⛔ 這一份**不在這裡實作**——`backfill.why()` 就是那一份（四點五）。
+#   ⚠ 別名留著是因為這支有十幾個呼叫點，而改名不會讓它變好。
+_why = B.why
 
 
 def range_note(start, end, n_days, limit=0):
