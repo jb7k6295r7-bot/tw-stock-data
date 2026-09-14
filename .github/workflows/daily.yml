@@ -1023,7 +1023,11 @@ jobs:
         run: |
           M=$(TZ=Asia/Taipei date '+%Y-%m')
           echo "當月 $M（台北時間）"
-          python calendar_audit.py --start "$M" --end "$M" --sleep 5 --write
+          # ⭐ --write-index：fetch.py 排在這一步**之前**（它先寫好今天那一列）
+          #   ⇒ 這裡 100% 重疊 ⇒ **一列都不會寫**，它是一道純對照：
+          #   FMTQIK 月報 vs MI_INDEX type=IND 日報，兩條不同的路算同一個指數，
+          #   對不上 runlog 就紅。⚠ 0 次額外請求（同一批回應）。
+          python calendar_audit.py --start "$M" --end "$M" --sleep 5 --write --write-index
 
       # ★ 產業別（約每月一次，自癒式）。
       #   類股集中度是選股的硬條件，而新上市的公司在對照表更新之前查不到類股——
