@@ -212,11 +212,11 @@
    ⚠ 不同鍵組合的種類：1
    ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
      CompanyName：0 種 ｜⚠ 空的 1
-     Date：1 種 20260913×1
+     Date：1 種 20260914×1
      SecuritiesCompanyCode：0 種 ｜⚠ 空的 1
      恢復交易：0 種 ｜⚠ 空的 1
      暫停交易：0 種 ｜⚠ 空的 1
-     樣本：{"Date": "20260913", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
+     樣本：{"Date": "20260914", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
 
    ══ 與我方 data/meta/delisted.csv 雙向比對 ══
    鍵的形狀：⛔ 認不出（日期候選 []、代號候選 []）｜CompanyName: 像日期 0/1、像代號 0/1｜Date: 像日期 0/1、像代號 0/1｜SecuritiesCompanyCode: 像日期 0/1、像代號 0/1｜恢復交易: 像日期 0/1、像代號 0/1｜暫停交易: 像日期 0/1、像代號 0/1
