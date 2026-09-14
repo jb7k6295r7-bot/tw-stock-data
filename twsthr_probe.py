@@ -203,7 +203,7 @@ def main():
             form[code_k] = SAMPLE
             raw2, err2 = _post(q, form, referer=q)
             if err2:
-                say(f"    ✗ {err2[:160]}")
+                say(f"    ✗ {_W(err2, 160)}")
             else:
                 h2 = raw2.decode("utf-8", "replace")
                 say(f"    ✓ 回 {len(raw2):,} bytes")

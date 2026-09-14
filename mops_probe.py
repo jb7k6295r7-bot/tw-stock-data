@@ -121,7 +121,7 @@ def one(api, year, out, **kw):
     #     若還是斷，那就**不是暫時性的**，而那本身是有用的資訊。
     raw2, err2 = B.get(url, retries=3, timeout=120)
     if err2:
-        out.append(f"    ⛔ 取舊站失敗：{err2[:200]}")
+        out.append(f"    ⛔ 取舊站失敗：{_W(err2, 200)}")
         return None
     out.append(f"    ✓ 取回 {len(raw2):,} bytes")
     return raw2

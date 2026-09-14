@@ -155,7 +155,7 @@ def main():
         say(f"     {url}")
         raw2, err2 = B.get(url, retries=2, timeout=60)
         if err2:
-            say(f"     ✗ 抓不到：{err2[:120]}")
+            say(f"     ✗ 抓不到：{_W(err2, 120)}")
             continue
         html = raw2.decode("utf-8", "replace")
         say(f"     ✓ {len(raw2):,} bytes")
@@ -185,7 +185,7 @@ def main():
         say(f"\n  ── /{name}｜{why}")
         r2, e2 = B.get(OPEN + name, retries=2, timeout=60)
         if e2:
-            say(f"     ✗ {e2[:120]}")
+            say(f"     ✗ {_W(e2, 120)}")
             continue
         try:
             d2 = json.loads(r2.decode("utf-8-sig", "replace"))
@@ -237,7 +237,7 @@ def main():
         r7, e7 = B.get(OPEN + "mopsfin_t187ap05_OA", retries=2, timeout=60)
         off = {}
         if e7:
-            say(f"  ✗ 抓不到 mopsfin_t187ap05_OA：{e7[:120]}")
+            say(f"  ✗ 抓不到 mopsfin_t187ap05_OA：{_W(e7, 120)}")
         else:
             try:
                 d7 = json.loads(r7.decode("utf-8-sig", "replace"))

@@ -338,7 +338,7 @@ def main():
         say(f"     {url}")
         raw2, err2 = B.get(url, retries=2, timeout=60)
         if err2:
-            say(f"     ✗ 抓不到：{err2[:120]}")
+            say(f"     ✗ 抓不到：{_W(err2, 120)}")
             continue
         html = raw2.decode("utf-8", "replace")
         say(f"     ✓ {len(raw2):,} bytes")

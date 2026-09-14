@@ -216,7 +216,12 @@ def main():
     #   （六點五）。⇒ ⭐ 用**低水位**：只能往下走，退步就紅。
     import glob as _gl
     _LOW = os.path.join(HERE, "data", "meta", "_err_cut_low.txt")
-    _names = {"err", "note", "msg", "why", "reason", "note2", "e"}
+    # ⛔⛔ 名字清單本來是寫死的六個 ⇒ `err2`／`e2`／`e7` **全部逃掉**
+    #   （2026-09-14 實測：低水位剛歸零，放寬之後又冒出 6 處）。
+    #   ⚠ 一個「看起來已經清乾淨」的閘門，比沒有閘門更容易被相信。
+    #   ⇒ ⭐ 改成**名字＋可選數字**的樣式，⛔ 不是一份手抄的清單。
+    import re as _re2
+    _pat = _re2.compile(r"^(err|note|msg|why|reason|e)\d*$")
     _cuts = []
     for _p in sorted(_gl.glob(os.path.join(HERE, "*.py"))):
         if os.path.basename(_p).startswith("selftest_"):
@@ -227,7 +232,7 @@ def main():
             continue
         for _n in _a2.walk(_t):
             if (isinstance(_n, _a2.Subscript)
-                    and getattr(_n.value, "id", "") in _names
+                    and _pat.match(getattr(_n.value, "id", "") or "")
                     and isinstance(_n.slice, _a2.Slice)):
                 _cuts.append(f"{os.path.basename(_p)}:{_n.lineno}")
     try:
