@@ -10,6 +10,7 @@
   ④ 0 列 ⇒ 當失敗，⛔ 不是「這十一年沒有減資」
   ⑤ 欄位對不上 ⇒ 講得出缺哪一個
 """
+import io
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,9 @@ import otc_reduce_history as R
 # ⚠ 用「今天」而不是寫死日期：這一組要測的正是「今天算、明天不算」的邊界，
 #   ⛔ 寫死的話這支測試明天就開始測別的東西了。
 _TODAY = _dt0.datetime.now(_dt0.timezone(_dt0.timedelta(hours=8))).strftime('%Y-%m-%d')
+# ⭐ 假的「我方資料最後一天」：⛔ 固定寫死，不要跟著 repo 現況跑
+#   （跟著跑的話這一節會在週末與盤中給出不同答案，而那正是要測的東西）
+_LAST = '2026-09-11'
 
 TPE = timezone(timedelta(hours=8))
 OK = FAIL = 0
@@ -92,9 +96,9 @@ def main():
         # 涵蓋期內、已歸因（官方自己重複的列）
         ["2020-09-25", "6109", "亞元", "10.50", "10.63", "1.01238095", "現金減資", "a"],
         # ⭐ 涵蓋期內、未歸因 ⇒ **現在就錯的還原因子**
-        [_TODAY, "6461", "益得", "16.65", "26.92", "1.61681682", "彌補虧損", "a"],
+        [_LAST, "6461", "益得", "16.65", "26.92", "1.61681682", "彌補虧損", "a"],
     ]
-    inside, named, live = R.classify_gaps(M, "2015-01-05")
+    inside, named, live = R.classify_gaps(M, "2015-01-05", upper=_LAST)
     ck("  涵蓋期外的兩筆不算進來", len(inside) == 2, str([r[0] for r in inside]))
     ck("  6109 那筆被歸因掉（官方自己重複的列）",
        len(named) == 1 and named[0][1] == "6109", str(named))
@@ -107,27 +111,60 @@ def main():
     _tomorrow = (_dt.datetime.now(_tw) + _dt.timedelta(days=9)).strftime("%Y-%m-%d")
     _M2 = M + [[_tomorrow, "8277", "商丞", "10.00", "23.20", "2.32000000",
                 "彌補虧損", "a"]]
-    _in, _named, _live = R.classify_gaps(_M2, "2015-01-05")
+    _in, _named, _live = R.classify_gaps(_M2, "2015-01-05", upper=_LAST)
     ck("  未來那一筆不進「涵蓋期內」", len(_in) == 2, str([r[0] for r in _in]))
     ck("  ⭐ 也不進「未歸因」（⛔ 它每天都會出現，會把這條斷言弄成每天紅）",
        all(r[0] != _tomorrow for r in _live), str(_live))
-    ck("  ⚠ 而**今天**那一筆仍然算（邊界是 <= today，不是 < today）",
+    ck("  ⚠ 而**資料最後一天**那一筆仍然算（邊界是 <= upper，不是 < upper）",
        any(r[1] == "6461" for r in _live), str(_live))
+
+    print("⑦之二 ⛔⛔ 上界是**我方資料最後一天**，⛔ 不是「今天」（2026-09-14 踩到）")
+    # ⚠ 實際情形：6129 普誠的恢復買賣日是 2026-09-14（週一），
+    #   而我方日檔最後一天是 09-11（週五，週末沒有盤）。
+    #   ⇒ 拿「今天」當上界 ⇒ 它被判成**涵蓋期內的未歸因缺口**
+    #   ⇒ runlog 寫「那一檔的還原序列在這一天是假報酬」，⛔ 而那一天還沒收盤。
+    # ⭐ 同一句話 `otc_exright_check` 2026-09-11 就修過了——⛔ 這一支沒跟上。
+    _MID = [["2026-09-14", "6129", "普誠", "13.10", "14.76", "1.12671756",
+             "彌補虧損", "a"]]
+    _i1, _, _l1 = R.classify_gaps(_MID, "2015-01-05", upper="2026-09-11")
+    ck("  ⭐⭐ 事件日晚於資料最後一天（但**不晚於今天**）⇒ 不算缺口",
+       not _i1 and not _l1, f"inside={_i1}｜live={_l1}")
+    _i2, _, _l2 = R.classify_gaps(_MID, "2015-01-05", upper="2026-09-14")
+    ck("  ⛔ 反向：上界改回「今天」⇒ 它就變成未歸因缺口"
+       "　⇒ 這一節不是憑空擔心",
+       len(_i2) == 1 and len(_l2) == 1, f"inside={_i2}｜live={_l2}")
+    # ⭐ 有預設值的參數，一定要有一條**不傳它**的斷言（第七點③）
+    import adjust as _adj
+    ck("  ⭐ 不傳 `upper` ⇒ 走預設，而預設就是 `adjust.last_data_day()`"
+       "（⛔ 這是 Actions 上唯一會走的那條）",
+       R.classify_gaps(_MID, "2015-01-05")
+       == R.classify_gaps(_MID, "2015-01-05", upper=_adj.last_data_day()[0]),
+       str(_adj.last_data_day()))
+    # ⛔⛔ 而「測了判準、沒測呼叫點」在本專案已經第七次 ⇒ 掃原始碼
+    _src_r = io.open(R.__file__, encoding="utf-8").read()
+    ck("  ⭐⭐ `main()` 真的把資料最後一天傳進去（⛔ 只測純函式的話，"
+       "呼叫點改回 today 也不會紅）",
+       "classify_gaps(miss, cover, upper=upper)" in _src_r
+       and "_adjust.last_data_day()" in _src_r,
+       "⛔ 呼叫點沒有傳 upper／沒有用 adjust.last_data_day()")
+    ck("  ⭐ 而日檔列表也不再自己算一份（⛔ 那是四點五那一族）",
+       "os.listdir(dd)" not in _src_r and "_adjust.trading_days()" in _src_r)
 
     print("⑧ ⛔ 反向：三種會讓這條判準失效的情形")
     ck("  ★ 具名排除清單**是空的**時，6109 也要留在未歸因"
        "（證明 ⑥ 不是靠寫死通過的）",
-       len(R.classify_gaps(M, "2015-01-05", known={})[2]) == 2,
-       str(R.classify_gaps(M, "2015-01-05", known={})[2]))
+       len(R.classify_gaps(M, "2015-01-05", known={}, upper=_LAST)[2]) == 2,
+       str(R.classify_gaps(M, "2015-01-05", known={}, upper=_LAST)[2]))
     ck("  ★ 涵蓋起點算不出來（沒有日檔）⇒ **一律當涵蓋期外**，"
        "⛔ 不可以反過來全部當成期內（那會憑空生一堆假警報）",
-       R.classify_gaps(M, "") == ([], [], []), str(R.classify_gaps(M, "")))
+       R.classify_gaps(M, "", upper=_LAST) == ([], [], []),
+       str(R.classify_gaps(M, "", upper=_LAST)))
     ck("  ★ 涵蓋起點往前挪到 2013 ⇒ 四筆全部變成期內"
        "（證明它真的在用那個日期，不是寫死 2015）",
-       len(R.classify_gaps(M, "2013-01-01")[0]) == 4,
-       str(len(R.classify_gaps(M, "2013-01-01")[0])))
+       len(R.classify_gaps(M, "2013-01-01", upper=_LAST)[0]) == 4,
+       str(len(R.classify_gaps(M, "2013-01-01", upper=_LAST)[0])))
     ck("  ⚠ 邊界：**等於**涵蓋起點那一天算期內（不是 > 而是 >=）",
-       len(R.classify_gaps([M[3]], "2026-09-09")[0]) == 1)
+       len(R.classify_gaps([M[3]], _LAST, upper=_LAST)[0]) == 1)
 
     print("⑨ ⭐⭐ 第 11 欄：官方自己給的換股比例（2026-09-10 起）")
     # ⚠ 假回應照真回應的形狀做：那一欄是 **HTML**，兩行、帶單位、帶全形空白。
