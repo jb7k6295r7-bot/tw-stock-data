@@ -7,3 +7,6 @@ __pycache__/
 # 回測線：大型二進位中間檔不進 git（可由 --report-only 重建）
 backtest/results11/*.npz
 backtest/results15/eligible.csv.gz
+backtest/results*/eligible.csv.gz
+backtest/resultsp1/regress/closes.npz
+backtest/resultsp1/regress/opens.npz
