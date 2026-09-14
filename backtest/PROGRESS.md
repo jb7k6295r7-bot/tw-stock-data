@@ -289,3 +289,11 @@
 - **研究十五追加四**（`results15_adj0914/`，597 秒；`git checkout origin/main -- data/adj` 921 檔）：結論不變，主格 ±0.02 pp；安慰劑 B 抽樣差 ⇒ 時點佔比 201/54/23 → 170/49/25％（±30 pp 量級）。**研究十六追加三**（`results16_adj0914/`，`--r15`／`--out` 新參數）：22 格 ±0.02 pp。**研究十三追加二**（`results13_adj0914/` 只換 adj：G1 逐字相同；`results13_f3_0914/`＋重建面板 `results3_f3_0914/`：G1 8,827 → 9,010，上櫃 2022-03～2024-02 303 → 486；上櫃 H60 +6.87 → +6.53、H120 +9.46 → +8.82；組合層 win 不變）。⚠ `results15_adj0914/eligible.csv.gz`（65 MB）與原版一樣不進 git。
 - ⚠ 研究十三讀的是 `results3/panel.csv.gz`（研究三的凍結面板），不是 `revenue_hist` ⇒ F3 追加要先用 `research34.py --out` 重建面板；`research13.py` 加 `--panel`。
 - **下一件**：PREREGP1 落地（`PREREGP1.md`／`researchp1.py`／`resultsp1/`；引擎加 d／rule_pick／擋掉組逐筆；回歸三格）。**等回覆**：策略線（要不要自己先發訂正信）；資料庫線（run 144＋transpose）；使用者（決議表形式、財報歸屬）。
+
+## 2026-09-14 09:41：PREREGP1 跑完（組合層 N 下探 × d）；回歸 R0～R3 全過；引擎加參數
+
+- 09:12 自喚醒；07:44 之後收：策略線 0805（等它改登錄 seq=3、六件逐字；四十八條誤植源頭是它 0532）、0812（PREREGP2 前置問資料庫線產業別）、K線分析 0817（方法論五十二／五十三：門檻不可用全樣本 max/min/quantile；要各線 grep 自查）、0855（給資料庫線：籌碼再找）、資料庫線 0920（回 0722/0812：財報三表有 fs_hist/bs_hist 372 檔；revenue_hist 280 期全；⛔ 沒有公告日欄；產業別歷史在 revenue_hist 產業別欄）。
+- **PREREGP1**：`research11.simulate_mtm` 加 d_max／pick／log／queue_days（預設逐位元相同：改前基線 `resultsp1/regress/baseline_{S,AND}.npz`，R1 24 格逐種子相等；R2 對 results13_adj0914 相等；R3 合成；R0 股息口徑 5/5）。主格 AND×H60 4-C **22 格測得出 0（雜訊期望 1.1）⇒ 測不出**；H20 8/22 in > 擋掉（時點選擇效應，N ≤ 8）；N ≤ 8 沒有一格贏 0050；d 在 AND 幾乎不咬（推遲 24 筆、1 天）；R1(relvol) 在 AND 5/11 組態 ≥ null p97.5（描述、未登錄檢定 ⇒ 觀察不建議）；連續 20 筆累計為正 63～76%（回測線定義）。細節 `PREREGP1.md` 追加一、`resultsp1/summary.md`。CONCLUSIONS 由策略線寫。
+- ⚠ 開跑 09:05、策略線 0805 09:08 才讀到；seq=3 六件與落地版相同、未重跑。⚠ 第一趟 log 漏了 g_H60（rule 欄被改名 gross），殺掉重跑；修法 2e5e6bc4f。
+- **第五十二條自查**（K線分析 0817）：grep 本線程式的 max/min/quantile/median 當門檻的——**一處命中：研究十九 `calibrate_m`**，安慰劑 C_k 的 m(k) 用全樣本（2016～2026 全部訊號）停損距離中位數校準 ⇒ 一個看過全部訊號的常數套到每一筆（含 2016）。不影響訊號、只影響安慰劑鬆緊；正確做法＝只用 A 窗校準再套到 B 窗。已在信裡報她，要不要重跑她裁。其餘：relvol／liq20／amt_med60／rev_hi24／RS 月底截面／wsh swing 都是滾動或截面 ✓。
+- **等回覆**：策略線（CONCLUSIONS、要不要 PREREGP1b）；資料庫線（run 144＋transpose）；K線分析（研究十九校準要不要追加）。自喚醒 10:40。
