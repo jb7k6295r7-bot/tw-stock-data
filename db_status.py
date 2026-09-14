@@ -930,7 +930,12 @@ def _p_col_two(raw_dir, col, sample, sample_label, derived):
                    f"（樣本：{sample_label}｜{fn:,}/{ft:,} 列有字，"
                    "⚠ 稀疏欄，⛔ 百分比不是判準）")
         if raw_ok and not drv_ok:
-            ev += "　⛔ **回補完成但下游還沒拿到** ⇒ 要跑 `transpose.yml`"
+            # ⚠ 不要寫「要跑 transpose.yml」——`daily.yml` 每一趟都跑
+            #   `transpose.py --kind all`（含 inst）⇒ ⭐ **它會自己補上**。
+            #   ⛔ 寫成「要人去按一支 workflow」會讓下一個人去按一支不必按的。
+            ev += ("　⛔ **回補完成但下游還沒拿到**"
+                   "　⇒ ⭐ 下一趟 `daily.yml` 會自己補（它跑 `transpose --kind all`）"
+                   "，⚠ 跑完再看一次這一格")
         return st, ev
     return go
 

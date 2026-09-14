@@ -70,6 +70,47 @@ SUSP = os.path.join(_ROOT, "meta", "suspend_twse.csv")
 HEADER = ["date", "stock_id", "name", "market", "sources", "why"]
 
 
+def read_byday(path):
+    """讀回上一趟的逐日計數 → {日期: 筆數}；讀不到回 `{}`。"""
+    out = {}
+    try:
+        with io.open(path, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                try:
+                    out[(r.get("date") or "").strip()] = int(r.get("missing") or 0)
+                except ValueError:
+                    continue
+    except OSError:
+        return {}
+    return out
+
+
+def day_regressions(new_byday, old_byday):
+    """→ [(日期, 舊, 新), ...]：**既有的日子變差**的那幾天，⛔ 不含新日子。
+
+    ⛔⛔ 2026-09-14 實測到的病根：原本的閘門拿**總筆數**對低水位比，
+
+        11:07Z 那趟   6,799 筆 ／ 可比 2,850 天   ✓ 綠
+        16:22Z 那趟   6,807 筆 ／ 可比 2,851 天   ✗ 紅
+
+    ⚠ 差別只是**多了一個可比日**（當天的融資融券傍晚才發）。
+    而每個交易日固定會多 2~9 筆（09-08:4、09-10:9、09-11:9、09-14:8）
+    ⇒ ⭐ **那個總數只會單調增加**，而低水位（DOWN）只在變好時才寫
+    ⇒ ⛔ **從那一天起它每個交易日都紅**，然後被學會忽略（六點五）。
+
+    ⇒ ⭐ 真正要抓的是「**以前好好的那一天變差了**」——那才是退步。
+    ⚠ 新的日子多出幾筆**不是**退步，是新資訊。
+
+    ⛔ 而這**不是**把總數藏起來：總數與歷史最低值照樣印在報表上，
+    只是**判準**換成這一條（⇒ 總數變大時仍然看得見，只是不會假紅）。
+    """
+    out = []
+    for d, n in sorted(new_byday.items()):
+        if d in old_byday and n > old_byday[d]:
+            out.append((d, old_byday[d], n))
+    return out
+
+
 def _codes(path):
     """→ {代號} 或 None（檔案不存在）。⛔ 兩者要分得出來：
     「這一天官方清單沒存」和「這一天官方清單是空的」意思完全不同。"""
@@ -177,6 +218,9 @@ def main():
         w = csv.writer(f)
         w.writerow(HEADER)
         w.writerows(rows)
+    # ⭐⭐ **先讀舊的逐日計數，再覆蓋**（跟 `delisted.merge_existing` 同一個道理）：
+    #   ⛔ 覆蓋之後就再也問不到「昨天這一天是幾筆」。
+    old_byday = read_byday(SUM)
     with io.open(SUM, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["date", "missing"])
@@ -216,7 +260,25 @@ def main():
     rl.info("完整清單", "data/meta/_missing_rows.csv（逐筆）／"
                         "_missing_rows_by_day.csv（每日計數）")
 
-    lowwater.gate(rl, LOW, len(rows), lowwater.DOWN, "漏列筆數")
+    # ⭐ 總數與歷史最低值**照樣印**（趨勢要看得見），⛔ 只是不再拿它當判準。
+    _low, _lowday = lowwater.read(LOW, lowwater.DOWN)
+    rl.info("漏列總筆數", f"{len(rows):,}｜歷史最低 "
+            + (f"{_low:,}（{_lowday}）" if _low is not None else "（第一趟）")
+            + "　⚠ 這個數**只會單調增加**（每個交易日固定多 2~9 筆）"
+            "⇒ ⛔ 拿它當判準會從某一天起天天紅，然後被學會忽略"
+            "　⇒ ⭐ 判準見下一條")
+    lowwater.write(LOW, len(rows), lowwater.DOWN)
+
+    # ⭐⭐ 判準：**以前好好的那一天變差了**才是退步。
+    #   ⚠ 新的日子多出幾筆不是退步，是新資訊（那正是總數會單調增加的原因）。
+    _reg = day_regressions(byday, old_byday)
+    rl.check("⭐⭐ 沒有**既有的日子**變差（⛔ 新日子多幾筆不算——那是新資訊）",
+             not _reg,
+             f"⛔ **{len(_reg)} 天變差**：{[(d, a, b) for d, a, b in _reg[:6]]}"
+             if _reg else
+             f"{len(set(byday) & set(old_byday)):,} 個既有日子一個都沒變差"
+             + ("　⚠⚠ **這一層沒跑**：沒有上一趟的逐日計數可比"
+                "（⇒ ⛔ 不算失敗，⛔ 也不算驗過）" if not old_byday else ""))
     return rl.finish()
 
 

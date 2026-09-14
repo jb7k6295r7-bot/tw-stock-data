@@ -117,6 +117,29 @@ def parse(raw):
     return rows, f"{len(rows):,} 列"
 
 
+def weeks_gate(rl):
+    """「已累積幾週」的閘門。→ 週數。
+
+    ⛔⛔ 2026-09-14 我第一版把它寫在 `main()` **最後面**
+      ⇒ 而 `main()` 在「這一週的檔已經存在」時**早就 return 了**
+      ⇒ ⭐ 那是**每天都會走的那條路** ⇒ 這道閘門一週只跑一次。
+    ⚠ 而它要擋的事（目錄裡的週檔變少）**每天都可能發生**
+      ——整份覆蓋、分支的 `data/` 比 main 舊、某趟在錯的 ref 上跑。
+    ⇒ ⭐ 抽成函式，**每一條 return 之前都叫一次**。
+
+    ⚠ 這正是 CLAUDE.md 第七點③那一族：**測了判準、沒測呼叫點**
+      ——判準本身沒問題，⛔ 而它掛在一條「正常情況下走不到」的路上。
+    """
+    have = sorted(n[:-4] for n in os.listdir(OUT_DIR)
+                  if n.endswith(".csv")) if os.path.isdir(OUT_DIR) else []
+    rl.info("已累積", f"{len(have)} 週（{have[0]} ~ {have[-1]}）"
+            if have else "⛔ **0 週**（⚠ 目錄是空的）")
+    # ⛔ 原本這裡只有上面那一行 `rl.info` ⇒ **沒有任何一道在管週數會不會變少**。
+    lowwater.gate(rl, LOW, len(have), lowwater.UP,
+                  "集保週檔的累積週數（⛔ 官方只給最近一期，漏一週永久少一週）")
+    return len(have)
+
+
 def main():
     ap = argparse.ArgumentParser(description="集保戶股權分散表（每週）")
     ap.add_argument("--run", action="store_true", help="抓最新一週並寫檔")
@@ -255,6 +278,9 @@ def main():
     if os.path.exists(path) and not a.force:
         rl.note(f"{day} 已存在，跳過（--force 可覆寫）")
         print(f"[tdcc] {path} 已存在，跳過")
+        # ⭐ ⛔ 這條是**每天都會走的**那條路（一週只有一天會寫新檔）
+        #   ⇒ 閘門一定要在這裡也跑一次，否則它一週只守一天。
+        weeks_gate(rl)
         return rl.finish()
     os.makedirs(OUT_DIR, exist_ok=True)
     out = []
@@ -269,12 +295,7 @@ def main():
         w.writerows(out)
     print(f"[tdcc] 寫出 {path}（{len(out):,} 列）")
     rl.info("寫出", f"{day}.csv（{len(out):,} 列）")
-    have = sorted(n[:-4] for n in os.listdir(OUT_DIR) if n.endswith(".csv"))
-    rl.info("已累積", f"{len(have)} 週（{have[0]} ~ {have[-1]}）"
-            if have else "⛔ **0 週**（⚠ 目錄是空的）")
-    # ⛔ 原本這裡只有上面那一行 `rl.info` ⇒ **沒有任何一道在管週數會不會變少**。
-    lowwater.gate(rl, LOW, len(have), lowwater.UP,
-                  "集保週檔的累積週數（⛔ 官方只給最近一期，漏一週永久少一週）")
+    weeks_gate(rl)
     return rl.finish()
 
 

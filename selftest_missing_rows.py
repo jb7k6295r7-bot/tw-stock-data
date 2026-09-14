@@ -126,6 +126,88 @@ def main():
     finally:
         shutil.rmtree(root, ignore_errors=True)
     ck("★ 沒有動到 repo 真的 data/", os.path.isdir(real) == before)
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 判準換了：從「總筆數不得高於歷史最低值」換成
+    #   「**以前好好的那一天變差了**才算退步」（2026-09-14）
+    #
+    # ⛔⛔ 為什麼要換——原本那個總數**只會單調增加**：
+    #
+    #     11:07Z 那趟   6,799 筆 ／ 可比 2,850 天   ✓ 綠
+    #     16:22Z 那趟   6,807 筆 ／ 可比 2,851 天   ✗ 紅
+    #
+    #   差別只是**多了一個可比日**（當天的融資融券傍晚才發），
+    #   而每個交易日固定多 2~9 筆（09-08:4、09-10:9、09-11:9、09-14:8）
+    #   ⇒ ⛔ 從那天起它**每個交易日都紅**，然後被學會忽略（六點五）。
+    # ══════════════════════════════════════════════════════════════
+    print("\n[N] ⭐⭐ 新的日子多幾筆**不算**退步，既有的日子變差才算")
+    OLD = {"2026-09-10": 9, "2026-09-11": 9}
+    ck("新增一天（09-14 八筆）⇒ 沒有退步",
+       M.day_regressions({**OLD, "2026-09-14": 8}, OLD) == [],
+       str(M.day_regressions({**OLD, "2026-09-14": 8}, OLD)))
+    ck("  ⭐ 新那天就算很多筆（999）也一樣不算",
+       M.day_regressions({**OLD, "2026-09-14": 999}, OLD) == [])
+    ck("  ⭐⭐ 而這正是原本那道閘門紅掉的那一組（總數變大、但沒有退步）",
+       sum({**OLD, "2026-09-14": 8}.values()) > sum(OLD.values())
+       and M.day_regressions({**OLD, "2026-09-14": 8}, OLD) == [])
+    ck("⛔ 09-10 從 9 變 12 ⇒ 抓到，而且講得出舊值與新值",
+       M.day_regressions({"2026-09-10": 12, "2026-09-11": 9}, OLD)
+       == [("2026-09-10", 9, 12)],
+       str(M.day_regressions({"2026-09-10": 12, "2026-09-11": 9}, OLD)))
+    ck("  ⭐ 兩天同時變差 ⇒ 兩筆都列出來",
+       len(M.day_regressions({"2026-09-10": 10, "2026-09-11": 11}, OLD)) == 2)
+    ck("⭐ 反向：既有日子**變好**不算退步（⇒ 補好東西不可以假紅）",
+       M.day_regressions({"2026-09-10": 3, "2026-09-11": 9}, OLD) == [])
+    ck("⭐ 反向：完全一樣 ⇒ 沒有退步", M.day_regressions(dict(OLD), OLD) == [])
+    ck("⛔ 沒有上一趟的計數 ⇒ 回空 list（⚠ 不是全部當成退步）",
+       M.day_regressions({"2026-09-10": 9}, {}) == [])
+
+    print("\n[N2] `read_byday`：讀得回來、壞了不炸")
+    d2 = tempfile.mkdtemp()
+    try:
+        pth = os.path.join(d2, "by_day.csv")
+        io.open(pth, "w", encoding="utf-8").write(
+            "date,missing\n2026-09-10,9\n2026-09-11,9\n")
+        ck("讀得回 2 天",
+           M.read_byday(pth) == {"2026-09-10": 9, "2026-09-11": 9})
+        io.open(pth, "w", encoding="utf-8").write(
+            "date,missing\n2026-09-10,9\n2026-09-11,壞掉\n")
+        ck("  ⛔ 壞掉那一列跳過，其餘照讀（⚠ 不是整份丟掉）",
+           M.read_byday(pth) == {"2026-09-10": 9})
+        ck("  檔不存在 ⇒ {}（⛔ 不是炸掉）",
+           M.read_byday(os.path.join(d2, "沒這個檔.csv")) == {})
+    finally:
+        shutil.rmtree(d2, ignore_errors=True)
+
+    print("\n[N3] ⭐ 原始碼：判準真的換了，而總數**還在報表上**")
+    import ast as _a
+    src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "missing_rows.py"), encoding="utf-8").read()
+    tree = _a.parse(src)
+    _checks = [n for n in _a.walk(tree)
+               if isinstance(n, _a.Call) and getattr(n.func, "attr", "") == "check"]
+    ck("⭐⭐ 有一條 check 用的是 `day_regressions` 的結果",
+       any("_reg" in _a.dump(c.args[1]) for c in _checks if len(c.args) >= 2))
+    ck("⛔ 而**沒有**任何一條 check 還在拿總筆數比低水位（⚠ 留著等於沒換）",
+       "lowwater.gate" not in src)
+    _infos = [n for n in _a.walk(tree)
+              if isinstance(n, _a.Call) and getattr(n.func, "attr", "") == "info"]
+    ck("⭐ 總筆數與歷史最低值仍然 `rl.info` 出來（⛔ 換判準 ≠ 把數字藏起來）",
+       any("漏列總筆數" in _a.dump(i) for i in _infos))
+    ck("  ⭐ 而那一行要講出**它為什麼不能當判準**（⚠ 否則下一個人會改回去）",
+       "只會單調增加" in src)
+    _read_ln = next((n.lineno for n in _a.walk(tree)
+                     if isinstance(n, _a.Call)
+                     and getattr(n.func, "id", "") == "read_byday"), None)
+    _open_ln = next((n.lineno for n in _a.walk(tree)
+                     if isinstance(n, _a.Call)
+                     and getattr(n.func, "attr", "") == "open"
+                     and any(getattr(x, "id", "") == "SUM" for x in n.args)), None)
+    ck("⭐⭐ `read_byday(SUM)` 排在覆蓋 `SUM` **之前**"
+       "（⛔ 之後就再也問不到昨天是幾筆）",
+       _read_ln is not None and _open_ln is not None and _read_ln < _open_ln,
+       f"read 第 {_read_ln} 行、open 第 {_open_ln} 行")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
