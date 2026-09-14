@@ -110,6 +110,7 @@ import os
 import sys
 
 import price_limit
+import lowwater
 import runlog
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -311,12 +312,12 @@ def check_all(slack=SLACK):
 
 
 def read_low():
-    """→ (歷史最低筆數, 那一天)；讀不到回 (None, "")。"""
-    try:
-        n, d = io.open(LOW, encoding="utf-8").read().strip().split(",", 1)
-        return int(n), d
-    except (OSError, ValueError):
-        return None, ""
+    """→ (歷史最低筆數, 那一天)；讀不到回 (None, "")。
+
+    ⭐ 實作在 `lowwater.py`（**全庫唯一一份**，CLAUDE.md 四點五第九次）；
+    這裡只是 `DOWN` 那個方向的別名。
+    """
+    return lowwater.read(LOW, lowwater.DOWN)
 
 
 def main():
@@ -352,18 +353,19 @@ def main():
                 f"收/參考 {x['close_over_ref']}｜factor {x['factor']}"
                 f"｜參考價 {x['ref_price']}｜收盤 {x['close']}"
                 f"｜該日漲跌停 {x['limit_down']}~{x['limit_up']}（±{x['cap']}）")
-    low, lowday = read_low()
+    low, _lowday = read_low()
     if low is None:
+        # ⚠ 第一趟沒有水位可比 ⇒ 這裡改用**絕對**判準（一筆都不准超出），
+        #   ⛔ 不是讓它靜靜放行——`gate()` 的第一趟是「不算失敗也不算驗過」，
+        #   而這一支的第一趟有更強的話可以講。
         rl.check("沒有任何事件的成交價超出交易所漲跌停（⇒ 參考價與交易所一致）",
                  not bad, f"{len(bad)} 筆（⚠ 沒有低水位檔可比）")
+        if a.write:
+            lowwater.write(LOW, len(bad), lowwater.DOWN)
     else:
-        rl.check(f"⭐ 超出漲跌停的筆數**沒有變多**（歷史最低 {low} 筆，{lowday}）",
-                 len(bad) <= low, f"這一趟 {len(bad)} 筆 vs 歷史最低 {low} 筆")
-        if a.write and len(bad) < low:
-            import datetime
-            io.open(LOW, "w", encoding="utf-8").write(
-                f"{len(bad)},{datetime.date.today().isoformat()}\n")
-            rl.info("⭐ 低水位下修", f"{low} → {len(bad)}")
+        # ⛔ `--write` 沒帶就只判不寫：這一支可以只跑報表
+        lowwater.gate(rl, LOW, len(bad), lowwater.DOWN,
+                      "⭐ 超出漲跌停的筆數", write_it=bool(a.write))
     if a.write and bad:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8", newline="") as f:

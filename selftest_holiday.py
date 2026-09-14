@@ -302,27 +302,42 @@ def main():
     # ⛔⛔ 上面七條測的是**純函式**，而那道閘門在 `main()` 的連網路徑裡
     #   ⇒ 自測走不到 ⇒ 把 `rl.check` 的條件改成 `True` 的突變**全綠**（實測 AB1）。
     #   ⚠ 「測了判準、沒測呼叫點」在本專案這是第三次（CLAUDE.md 第七點③）。
-    #   ⇒ 這一條掃**原始碼的 AST**：那個 check 的條件真的是「不可以變少」嗎。
+    #   ⇒ 這一條掃**原始碼的 AST**：那個閘門真的是「不可以變少」的方向嗎。
+    #
+    # ⭐⭐ 2026-09-14：判定本身已經收成 `lowwater.py`（全庫唯一一份，四點五第九次）
+    #   ⇒ 這裡要釘的**換了一件事**：⛔ 不是「`len(have) >= low` 這個比較還在不在」
+    #     （它已經不在 holiday.py 裡了，⚠ 而那是**對的**），
+    #     ⭐ 而是「holiday 用的是**共用的那一份**，而且方向是 `UP`」。
+    #   ⚠ CLAUDE.md 四點五第八次：收成一份之後，**兩支的自測裡要各釘一條
+    #     「它是共用的那一份」**——⛔ 否則下一個人把別名拆掉時一切正常。
     import ast as _ast
     _src = io.open(os.path.join(HERE, "holiday.py"), encoding="utf-8").read()
-    _cmp = [n2 for n2 in _ast.walk(_ast.parse(_src))
-            if isinstance(n2, _ast.Compare)
-            and isinstance(n2.ops[0], _ast.GtE)
-            and isinstance(n2.left, _ast.Call)
-            and getattr(n2.left.func, "id", "") == "len"
-            and getattr(n2.left.args[0], "id", "") == "have"
-            and getattr(n2.comparators[0], "id", "") == "low"]
-    ck("⭐ 呼叫點真的是 `len(have) >= low`（⛔ 比 AST 不比字串）"
-       "——⚠ 改成 True 的突變原本全綠",
-       len(_cmp) == 1, f"掃到 {len(_cmp)} 處")
-    # ⛔ 而 `rl.check` 真的有拿它當條件（⚠ 算出來卻沒接上去也是全綠）
-    _chk = [n2 for n2 in _ast.walk(_ast.parse(_src))
-            if isinstance(n2, _ast.Call)
-            and getattr(n2.func, "attr", "") == "check"
-            and len(n2.args) >= 2 and isinstance(n2.args[1], _ast.Compare)
-            and isinstance(n2.args[1].ops[0], _ast.GtE)]
-    ck("⭐ 而它真的被餵進 `rl.check` 的第二個引數（⛔ 算了不用也是全綠）",
-       len(_chk) >= 1, f"掃到 {len(_chk)} 處")
+    _tree = _ast.parse(_src)
+    _dirs = []
+    for n2 in _ast.walk(_tree):
+        if (isinstance(n2, _ast.Attribute)
+                and getattr(n2.value, "id", "") == "lowwater"
+                and n2.attr in ("UP", "DOWN")):
+            _dirs.append(n2.attr)
+    ck("⭐ holiday.py 走的是**共用的那一份** `lowwater`（⛔ 不是自己第九份實作）",
+       len(_dirs) >= 2, f"掃到 {_dirs}")
+    ck("⭐⭐ 而方向**全部是 `UP`**（涵蓋越多越好）"
+       "——⛔ 抄成 `DOWN` 就是那道閘門在**反方向**守門，而畫面上永遠是 ✓",
+       _dirs and all(d == "UP" for d in _dirs), f"{_dirs}")
+    # ⛔ 而它真的接上了 `lowwater.gate`（⚠ 只 `read` 不 `gate` ⇒ 根本沒有那道 check）
+    _gate = [n2 for n2 in _ast.walk(_tree)
+             if isinstance(n2, _ast.Call)
+             and getattr(n2.func, "attr", "") == "gate"
+             and getattr(getattr(n2.func, "value", None), "id", "") == "lowwater"]
+    ck("⭐ 而 `lowwater.gate(...)` 真的被叫到（⛔ 只讀不判也是全綠）",
+       len(_gate) == 1, f"掃到 {len(_gate)} 處")
+    ck("  ⇒ 而那一發的 direction 引數逐字是 `lowwater.UP`",
+       len(_gate) == 1 and any(
+           isinstance(a, _ast.Attribute) and a.attr == "UP" for a in _gate[0].args),
+       _ast.dump(_gate[0]) if _gate else "(沒有)")
+    # ⛔ 而 holiday.py 自己**不可以**再有一份讀寫（那就是第九份）
+    ck("⭐ holiday.py 裡沒有自己讀寫 `SCHED_LOW` 的 io.open（⛔ 那就是第九份實作）",
+       "io.open(SCHED_LOW" not in _src)
 
     print()
     if FAIL:

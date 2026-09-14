@@ -235,20 +235,20 @@ def main():
                     and _pat.match(getattr(_n.value, "id", "") or "")
                     and isinstance(_n.slice, _a2.Slice)):
                 _cuts.append(f"{os.path.basename(_p)}:{_n.lineno}")
-    try:
-        _lo = int(io.open(_LOW, encoding="utf-8").read().split(",")[0])
-    except (OSError, ValueError):
-        _lo = None
+    # ⭐ 讀寫**只有一份實作**（`lowwater.py`，CLAUDE.md 四點五第九次）。
+    #   ⛔ 這一支沒有 `rl` ⇒ 走 read/write，不走 `gate()`。
+    #   ⚠ 方向是 `DOWN`：砍尾巴的地方越少越好。
+    import lowwater as _LW
+    _lo, _loday = _LW.read(_LOW, _LW.DOWN)
     if _lo is None:
         print(f"  ⚠⚠ **這一層沒跑**：沒有 `_err_cut_low.txt`（本趟 {len(_cuts)} 處）"
               "　⇒ ⛔ 不算失敗，⛔ 也不算驗過")
     else:
-        ck(f"⭐⭐ 全 repo 砍錯誤訊息尾巴的地方**沒有變多**（低水位 {_lo} 處）",
-           len(_cuts) <= _lo, f"本趟 {len(_cuts)} 處：{_cuts[:6]}")
-        if len(_cuts) < _lo:
-            io.open(_LOW, "w", encoding="utf-8").write(
-                f"{len(_cuts)},{_dt3.datetime.now(_dt3.timezone(_dt3.timedelta(hours=8))).strftime('%Y-%m-%d')}\n")
-            print(f"  ⭐ 低水位下修 {_lo} → {len(_cuts)} 處")
+        ck(f"⭐⭐ 全 repo 砍錯誤訊息尾巴的地方**沒有變多**（低水位 {_lo} 處，{_loday}）",
+           _LW.ok(len(_cuts), _lo, _LW.DOWN), f"本趟 {len(_cuts)} 處：{_cuts[:6]}")
+    _did, _new = _LW.write(_LOW, len(_cuts), _LW.DOWN)
+    if _did and _lo is not None:
+        print(f"  ⭐ 低水位下修 {_lo} → {_new} 處")
 
     print("\n── ⑨ `IncompleteRead`：訊息要**自己講出它是傳輸被切斷** ──")
     # ⭐ 2026-09-13 實測：TPEx 的 openapi/swagger.json（452 KB）連兩次只讀到 24 KB。

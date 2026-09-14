@@ -57,6 +57,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 import backfill as B
+import lowwater
 import runlog
 
 TPE = timezone(timedelta(hours=8))
@@ -206,12 +207,9 @@ def read_sched_low():
 
     ⚠ 這裡的低水位是**下限**（涵蓋越多越好）⇒ 檔裡存的是**最高**值，
     ⛔ 跟 `_factor_limit_low.txt` 存最低值方向相反——**別照抄語意**。
+    ⇒ ⭐ 實作在 `lowwater.py`（**全庫唯一一份**）；這裡只是那個方向的別名。
     """
-    try:
-        n, d = io.open(SCHED_LOW, encoding="utf-8").read().strip().split(",", 1)
-        return int(n), d
-    except (OSError, ValueError):
-        return None, ""
+    return lowwater.read(SCHED_LOW, lowwater.UP)
 
 
 def _sched_rows():
@@ -350,23 +348,10 @@ def _schedule(rl, today):
             + (f"｜⛔ **缺 {len(miss)} 年**：{','.join(miss)}"
                "　⇒ ⚠ 那幾年的交易日曆**沒有外部判準**在核"
                if miss else "｜✅ 沒有缺口"))
-    low, lowday = read_sched_low()
-    if low is None:
-        rl.info("  ⚠ 沒有涵蓋率低水位檔", f"第一次跑會建立（本趟 {len(have)} 年）")
-    else:
-        # ⛔ 判準是「不可以變少」，⚠ 不是「一定要涵蓋 2015 起」
-        #   ——後者會天天紅，然後被學會忽略。
-        rl.check(f"⭐ 行事曆涵蓋的年份數**沒有變少**（歷史最高 {low} 年，{lowday}）",
-                 len(have) >= low, f"這一趟 {len(have)} 年 vs 歷史最高 {low} 年")
-    if low is None or len(have) > low:
-        try:
-            os.makedirs(os.path.dirname(SCHED_LOW), exist_ok=True)
-            io.open(SCHED_LOW, "w", encoding="utf-8").write(
-                f"{len(have)},{today}\n")
-            if low is not None:
-                rl.info("  ⭐ 涵蓋率上修", f"{low} → {len(have)} 年")
-        except OSError as ex:                                    # noqa: BLE001
-            rl.info("  ⚠ 低水位檔寫不進去", str(ex))
+    # ⛔ 判準是「不可以變少」，⚠ 不是「一定要涵蓋 2015 起」
+    #   ——後者會天天紅，然後被學會忽略。
+    lowwater.gate(rl, SCHED_LOW, len(have), lowwater.UP,
+                  "⭐ 行事曆涵蓋的年份數", today=today)
     # ⛔ 不寫成 check：年底時「今天之後 0 天」是**正常**的（端點只給當年），
     #   拿它當錯誤會在每年 12 月底固定紅一次，然後大家學會忽略它。
     if not ahead:

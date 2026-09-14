@@ -81,6 +81,7 @@ from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
 
+import lowwater
 import runlog
 import transpose as _T
 
@@ -379,13 +380,6 @@ def main():
     if os.path.exists(OUT):
         with io.open(OUT, encoding="utf-8") as f:
             old_un = sum(1 for r in csv.DictReader(f) if r.get("why") == "未歸因")
-    # ⭐ 歷史最低值（K線線 2026-09-09 22:50 加的，理由見下）
-    low = None
-    if os.path.exists(LOW):
-        try:
-            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0].strip())
-        except (ValueError, IndexError, OSError):
-            low = None
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
@@ -514,18 +508,7 @@ def main():
     #   ⛔ 用「比上一趟多」的話：那 27 檔補回來時它會變少（好事），
     #     但補完之後基準就停在那個低點——**下一次新的漏抓要累積到超過舊基準才會紅**。
     #   ⇒ 用歷史最低值 ⇒ **單調收斂**：每補好一次，門檻自動變嚴一次。
-    base = len(un) if low is None else min(low, len(un))
-    rl.info("歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}"
-            "　⭐ 斷言用這個，不是用上一趟——否則補完之後門檻會停在低點")
-    rl.check("未歸因的筆數沒有高於歷史最低值",
-             low is None or len(un) <= low,
-             f"歷史最低 {low}｜本輪 {len(un)}" if low is not None
-             else "第一趟，只記錄不判定")
-    try:
-        io.open(LOW, "w", encoding="utf-8").write(
-            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
-    except OSError:
-        pass
+    lowwater.gate(rl, LOW, len(un), lowwater.DOWN, "未歸因的筆數")
     return rl.finish()
 
 

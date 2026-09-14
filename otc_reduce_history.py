@@ -51,6 +51,7 @@ import urllib.request
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
+import lowwater
 import runlog
 import adjust as _adjust
 from twparse import (pick_field as _pick_field, post_form as _post_form,
@@ -581,23 +582,7 @@ def main():
     # ⛔ 判準用**歷史最低值**，不是「比上一趟多」——跟 `missing_rows.py`／`adj_gap.py`
     #   同一條理由：用「比上一趟」的話，補好一次基準就停在低點，
     #   下一個新缺口要累積到超過舊基準才會紅。用歷史最低 ⇒ **單調收斂**。
-    low = None
-    if os.path.exists(LOW):
-        try:
-            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0])
-        except (ValueError, IndexError):
-            low = None
-    base = len(live) if low is None else min(low, len(live))
-    rl.info("  歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}")
-    rl.check("涵蓋期內未歸因的缺口沒有高於歷史最低值",
-             low is None or len(live) <= low,
-             f"歷史最低 {low}｜本輪 {len(live)}" if low is not None
-             else f"第一趟，只記錄不判定（本輪 {len(live)}）")
-    try:
-        io.open(LOW, "w", encoding="utf-8").write(
-            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
-    except OSError:
-        pass
+    lowwater.gate(rl, LOW, len(live), lowwater.DOWN, "涵蓋期內未歸因的缺口")
     # ⛔ 涵蓋期**外**那些仍然不設 check：那才是真的歷史欠帳，天天紅會被學會忽略。
     rl.info("⛔ 這一支不寫 data/adj/",
             "單一寫入者是 `adjust.py`／`otc_adj.py`。這裡只提供證據。")

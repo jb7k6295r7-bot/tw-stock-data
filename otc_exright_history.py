@@ -78,6 +78,7 @@ import urllib.request
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
+import lowwater
 import runlog
 # ⛔ 用**同一支** classify_gaps 與 adj_rows，不再抄一份（CLAUDE.md 第四點五）
 from otc_reduce_history import adj_rows as _adj_rows, classify_gaps as _classify_gaps
@@ -281,23 +282,8 @@ def main():
         rl.info(f"  ⛔ 涵蓋期內 {r[1]} {r[0]}",
                 f"{r[2] if len(r) > 2 else ''}"
                 "　⇒ 沒有這個因子，那一檔的還原序列在這一天是**假報酬**")
-    low = None
-    if os.path.exists(LOW):
-        try:
-            low = int(io.open(LOW, encoding="utf-8").read().split(",")[0])
-        except (ValueError, IndexError):
-            low = None
-    base = len(live) if low is None else min(low, len(live))
-    rl.info("  歷史最低值", f"{low if low is not None else '（第一趟）'} → {base}")
-    rl.check("涵蓋期內、我方 data/adj 缺的除權息沒有高於歷史最低值",
-             low is None or len(live) <= low,
-             f"歷史最低 {low}｜本輪 {len(live)}" if low is not None
-             else f"第一趟，只記錄不判定（本輪 {len(live)}）")
-    try:
-        io.open(LOW, "w", encoding="utf-8").write(
-            f"{base},{datetime.now(TPE).strftime('%Y-%m-%d')}\n")
-    except OSError:
-        pass
+    lowwater.gate(rl, LOW, len(live), lowwater.DOWN,
+                  "涵蓋期內、我方 data/adj 缺的除權息")
     rl.info("⛔ 這一支不寫 data/universe/otcexright/",
             "那個目錄的唯一寫入者是 `otc_adj.py`（走 FinMind）。"
             "換供料是**換維護者**的決定，不是順手加一行。")
