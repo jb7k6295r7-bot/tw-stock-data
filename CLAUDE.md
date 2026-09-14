@@ -628,6 +628,35 @@ _otc_reduce_gap_low      otc_reduce_history.py
 - ⚠ 而**判準是輸出裡有沒有那一節**（我方那一節的標題），
   ⛔ 不是「這一趟成功了沒」——舊程式一樣會成功。
 
+#### ⛔⛔ 而 2026-09-14 同一天踩了**三次**的是它的**下半場**：input 也在分支上
+
+上面那條講「要驗分支上的**程式**，就指定分支派工」。
+⚠ 而當那一步**讀 `data/`**（下一格那個會刪資料的例外）⇒ **只能在 main 上派**
+⇒ ⛔ 那麼「我剛加的那個 workflow input」**也必須先在 main 上**。
+
+```
+18:48  派 backfill mode=inst need_col=dealer_self
+       ⇒ ⛔ Unexpected inputs provided: ["need_col"]（我只加在分支）
+19:57  派 feeds mode=calendar-audit cal_start=1990-01
+       ⇒ ⛔ Unexpected inputs provided: ["cal_start","cal_end","cal_index_only"]
+```
+
+⇒ ⭐ **順序是死的，⛔ 不可以跳**：
+
+```
+① 在分支上改 workflow（加 input）
+② 讓它**同步到 main**（任何一支 workflow 的「把程式同步到 main」那一步）
+③ 才在 main 上派工
+```
+
+⚠ 而②**沒有捷徑**：`schedule`／`push` 跑的是 main 上**現有**那份，
+⛔ 而我不能直接推 main。⇒ 只能派一支**不讀 `data/`** 的（例如 probe）去搬。
+
+⭐ 這次是**大聲**失敗（API 直接回 `Unexpected inputs`），算運氣好——
+⛔ 而它的近親會靜悄悄：若我當時改用一個 main 上**已經存在**的參數代打
+（例如拿 `force` 代替 `need_col`），那會變成 2,850 天全期重抓 7.9 小時，
+⚠ 而且**看起來完全正常**。
+
 #### ⛔⛔ 而上面那條有一個**會刪資料**的例外，2026-09-11 差點踩下去
 
 指定分支跑，拿到的是**分支的程式**（要的）＋**分支的 `data/`**（⛔ 不要的）。
