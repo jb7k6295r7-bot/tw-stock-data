@@ -40,6 +40,7 @@ import sys
 import traceback
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_broker_probe.txt")
@@ -88,7 +89,7 @@ def _ask(url, lines, want=None):
     """打一發 → (doc 或 None)。⭐ 先印全部頂層鍵，再談內容。"""
     raw, err = B.get(url, retries=2, timeout=40)
     if err:
-        _p(lines, f"  ⛔ 失敗：{err[:200]}")
+        _p(lines, f"  ⛔ 失敗：{_W(err, 200)}")
         return None
     _p(lines, f"  {len(raw)} bytes")
     try:
@@ -110,7 +111,7 @@ def probe_page(name, url, lines):
     _p(lines, f"  {url}")
     raw, err = B.get(url, retries=2, timeout=40)
     if err:
-        _p(lines, f"  ⛔ 頁面抓不到：{err[:200]}")
+        _p(lines, f"  ⛔ 頁面抓不到：{_W(err, 200)}")
         _p(lines, "  ⚠ 這個容器對交易所一律 403（我方閘道）⇒ "
                   "⛔ 在這裡看到的失敗**不是事實**，要看 Actions 上那一份。")
         return

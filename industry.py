@@ -50,6 +50,7 @@ import sys
 import time
 
 import backfill as B
+from backfill import why as _W
 import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -198,7 +199,7 @@ def cmd_probe(args):
             for c in list(d)[:3]:
                 print(f"       {c} {d[c]}")
             break
-        print(f"   ✗ {short}｜{note[:100]}")
+        print(f"   ✗ {short}｜{_W(note, 100)}")
     else:
         print("   → 沒有可用候選（上櫃產業別待解）")
 

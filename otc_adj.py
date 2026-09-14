@@ -67,6 +67,7 @@ import sys
 import time
 
 import backfill as B
+from backfill import why as _W
 
 FINMIND = "https://api.finmindtrade.com/api/v4/data"
 DS_DIV = "TaiwanStockDividendResult"
@@ -600,18 +601,18 @@ def main():
                     break
                 if a.limit_wait <= 0 or waits >= a.max_waits:
                     print(f"[otc] ★ 第 {i} 檔（{c}）額度用完，等過 {waits} 次仍未回復："
-                          f"{err[:70]}", file=sys.stderr)
+                          f"{_W(err, 70)}", file=sys.stderr)
                     limited = True
                     break
                 waits += 1
                 print(f"[otc] 額度用完（第 {i}/{len(codes)} 檔），"
                       f"等 {a.limit_wait / 60:.0f} 分鐘後續跑（第 {waits}/{a.max_waits} 次）"
-                      f"｜{err[:60]}", flush=True)
+                      f"｜{_W(err, 60)}", flush=True)
                 time.sleep(a.limit_wait)
             if limited:
                 break
             if err:
-                print(f"[otc] ✗ {c} {ds}｜{err[:70]}", file=sys.stderr)
+                print(f"[otc] ✗ {c} {ds}｜{_W(err, 70)}", file=sys.stderr)
                 continue
             done.add((c, ds))
             if not data:

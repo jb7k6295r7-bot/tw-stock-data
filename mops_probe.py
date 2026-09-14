@@ -40,6 +40,7 @@ import urllib.request
 import ca_chain  # noqa: F401
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_mops_probe.txt")
@@ -150,7 +151,7 @@ def openapi_case(name, out):
     out.append(f"── OpenAPI {url}")
     raw, err = B.get(url, retries=2, timeout=60)
     if err:
-        out.append(f"  ⛔ {err[:200]}")
+        out.append(f"  ⛔ {_W(err, 200)}")
         return
     try:
         d = json.loads(raw.decode("utf-8"))

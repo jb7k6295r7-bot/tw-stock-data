@@ -49,6 +49,7 @@ import sys
 import time
 
 import backfill as B
+from backfill import why as _W
 
 TPEX = "https://www.tpex.org.tw/www/zh-tw/"
 TPEX_OLD = "https://www.tpex.org.tw/web/stock/"
@@ -177,7 +178,7 @@ def main():
         d, err = _get(url)
         label = "revivt" + (p or "（無參數）")
         if err:
-            print(f"   ✗ {label}｜{err[:90]}")
+            print(f"   ✗ {label}｜{_W(err, 90)}")
         elif _show(label, d):
             hit += 1
         time.sleep(a.sleep)
@@ -187,7 +188,7 @@ def main():
     for p in OLD_PATHS:
         d, err = _get(TPEX_OLD + p)
         if err:
-            print(f"   ✗ {p.split('?')[0]}｜{err[:90]}")
+            print(f"   ✗ {p.split('?')[0]}｜{_W(err, 90)}")
         elif _show(p, d):
             hit += 1
         time.sleep(a.sleep)
@@ -197,7 +198,7 @@ def main():
     for p in BULLETIN_PATHS:
         d, err = _get(f"{TPEX}{p}?response=json&date=115/09/01")
         if err:
-            print(f"   ✗ {p}｜{err[:90]}")
+            print(f"   ✗ {p}｜{_W(err, 90)}")
         elif _show(p, d):
             hit += 1
         time.sleep(a.sleep)
@@ -207,7 +208,7 @@ def main():
     for p in OPENAPI_PATHS:
         d, err = _get(OPENAPI + p)
         if err:
-            print(f"   ✗ openapi/{p}｜{err[:90]}")
+            print(f"   ✗ openapi/{p}｜{_W(err, 90)}")
         elif _show(f"openapi/{p}", d):
             hit += 1
         time.sleep(a.sleep)

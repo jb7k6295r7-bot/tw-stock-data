@@ -49,6 +49,7 @@ import urllib.parse
 import urllib.request
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 IND = os.path.join(_ROOT, "meta", "industry.csv")
@@ -238,7 +239,7 @@ def main():
     say(f"端點（WebSearch 結果，非自行生成）：{URL}")
     raw, err = B.get(URL, retries=2, timeout=90)
     if err:
-        say(f"✗ 請求失敗：{err[:200]}")
+        say(f"✗ 請求失敗：{_W(err, 200)}")
         say("  ⚠ 若這是在開發容器跑的，403 是環境差異不是端點狀態；"
             "結論一律以 Actions 的 probe 為準。")
         return _write(1)

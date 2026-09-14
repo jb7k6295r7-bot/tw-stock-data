@@ -43,6 +43,7 @@ import sys
 import traceback
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_tpex_probe.txt")
@@ -86,7 +87,7 @@ def main():
     say(f"來源（WebSearch 結果，非自行生成）：{SWAGGER}")
     raw, err = B.get(SWAGGER, retries=2, timeout=90)
     if err:
-        say(f"✗ 請求失敗：{err[:200]}")
+        say(f"✗ 請求失敗：{_W(err, 200)}")
         say("  ⚠ 開發容器對 tpex.org.tw 是 403（WebFetch 也被 egress 擋）——"
             "那是環境差異，端點結論一律以 Actions 為準。")
         return _write(1)

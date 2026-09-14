@@ -52,6 +52,7 @@ import urllib.parse
 import urllib.request
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_twsthr_probe.txt")
@@ -116,7 +117,7 @@ def main():
         say(f"   {url}")
         raw, err = B.get(url, retries=2, timeout=60)
         if err:
-            say(f"   ✗ {err[:180]}")
+            say(f"   ✗ {_W(err, 180)}")
             if str(err).startswith("LIMITED"):
                 say("   ⚠ 這是**被限流／擋下**，不是站台沒有東西——換個時間再測。")
             continue

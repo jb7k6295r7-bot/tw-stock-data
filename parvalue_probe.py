@@ -53,6 +53,7 @@ import traceback
 from datetime import datetime, timedelta, timezone
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_parvalue_probe.txt")
@@ -78,7 +79,7 @@ def one(a, b):
     say(f"     {url}")
     raw, err = B.get(url, retries=2, timeout=60)
     if err:
-        say(f"     ✗ {err[:140]}")
+        say(f"     ✗ {_W(err, 140)}")
         # ★ 「被限流擋下」與「端點沒有這個東西」是兩件事。
         #   backfill.get() 已經幫我們分好了：3xx 無 Location 或 429 → `LIMITED|`。
         #   2026-09-08 21:29 那趟三個區間全是 LIMITED——同一趟裡 feeds:reduce、

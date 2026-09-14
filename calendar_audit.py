@@ -49,6 +49,7 @@ import sys
 import time
 
 import backfill as B
+from backfill import why as _W
 import runlog
 
 URL = "https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date={}&response=json"
@@ -97,7 +98,7 @@ def fetch_month(y, m, sleep):
     doc, err = None, ""
     raw, err = B.get(URL.format(f"{y:04d}{m:02d}01"), retries=2, timeout=45)
     if err:
-        return None, f"請求失敗：{err[:70]}"
+        return None, f"請求失敗：{_W(err, 70)}"
     try:
         doc = json.loads(raw.decode("utf-8"))
     except Exception as ex:                               # noqa: BLE001

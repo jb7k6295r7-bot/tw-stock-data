@@ -44,6 +44,8 @@ import html
 import os
 import re
 import sys
+
+from backfill import why as _W
 import time
 # ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
 #   import 就生效：它把 urllib 的預設 SSLContext 換成「系統預設＋補鏈」。
@@ -676,7 +678,7 @@ def dump(title, header, rows, note, extra=None):
     if extra:
         print(f"   ★ 沒被認成資料表的表（前 3 張的第一列）：")
         for e in extra[:3]:
-            print(f"       {e[:8]}")
+            print(f"       {_W(e, 8)}")
     print()
 
 
@@ -859,7 +861,7 @@ def main():
                     continue
                 raw, err = _fetch(rev_url(mkt, y, m))
                 if err:
-                    _note("revenue", per, mkt, err[:50])
+                    _note("revenue", per, mkt, _W(err, 50))
                     time.sleep(a.sleep)
                     continue
                 rows, header, note, _sk = parse_revenue(raw, y, m, mkt)
@@ -871,7 +873,7 @@ def main():
                     raw, err = _fetch(rev_url(mkt, y, m))
                     rows, header, note, _sk = (
                         parse_revenue(raw, y, m, mkt) if not err
-                        else ([], None, err[:50], []))
+                        else ([], None, _W(err, 50), []))
                 if not rows or not header:
                     _note("revenue", per, mkt, f"0 列（{note}）")
                     time.sleep(a.sleep)
@@ -916,7 +918,7 @@ def main():
                     raw, err = _fetch(f"{MOPSOV}/mops/web/ajax_{form}",
                                       fs_form(mkt, y, q))
                     if err:
-                        _note(sub, per, mkt, err[:50])
+                        _note(sub, per, mkt, _W(err, 50))
                         if sub == "fs":
                             # ★ 損益表失敗會讓同期的資產負債表失去依據，
                             #   下游那個「ci 重複」不是獨立的錯，是這個的後果。

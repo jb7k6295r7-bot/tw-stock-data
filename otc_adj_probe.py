@@ -63,6 +63,7 @@ import sys
 import time
 
 import backfill as B
+from backfill import why as _W
 
 FINMIND = "https://api.finmindtrade.com/api/v4/data?dataset="
 TPEX = "https://www.tpex.org.tw/www/zh-tw/bulletin/revivt?response=json"
@@ -139,7 +140,7 @@ def sec_tpex(sleep):
     print("   判準＝**帶參數與不帶參數回的東西一不一樣**，不是日期看起來新舊。")
     base, err = _get(TPEX)
     if err:
-        print(f"   ✗ 無參數的基準就拿不到：{err[:80]}")
+        print(f"   ✗ 無參數的基準就拿不到：{_W(err, 80)}")
         return
     def sig(d):
         t = (B._tables(d) or [{}])[0]
@@ -151,7 +152,7 @@ def sec_tpex(sleep):
         d, err = _get(TPEX + p)
         time.sleep(sleep)
         if err:
-            print(f"   ✗ {p}｜{err[:70]}")
+            print(f"   ✗ {p}｜{_W(err, 70)}")
             continue
         stat = str(d.get("stat", ""))
         if stat.lower() not in ("ok", "success"):
@@ -175,10 +176,10 @@ def sec_coverage(market, codes, limit, sleep):
             if err:
                 errs.append((c, err))
                 if len(errs) >= 5 and hit == 0:
-                    print(f"   ★ 前 {i} 檔連續失敗且無一成功，收手。最後：{err[:70]}")
+                    print(f"   ★ 前 {i} 檔連續失敗且無一成功，收手。最後：{_W(err, 70)}")
                     break
                 if "429" in err or "limit" in err.lower():
-                    print(f"   ★ 第 {i} 發被限流：{err[:70]}")
+                    print(f"   ★ 第 {i} 發被限流：{_W(err, 70)}")
                     break
             elif data:
                 hit += 1

@@ -328,12 +328,12 @@ def preflight(url, what):
         return True
     if err.startswith("LIMITED"):
         print(f"[preflight] {what}：**被交易所限流擋下**，不是端點或參數的問題。\n"
-              f"           {err[:160]}\n"
+              f"           {why(err)}\n"
               f"           同一支程式在沒被擋的時候是通的（netdiag 18/18 全過）。\n"
               f"           做法：等一段時間再跑，或錯開同日其他回補工作。"
               f"**不要改標頭、不要加大重試。**", file=sys.stderr)
     else:
-        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {err[:200]}",
+        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {why(err, 200)}",
               file=sys.stderr)
     return False
 
@@ -559,7 +559,7 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                         f"        [診斷] 首筆={json.dumps(d[0], ensure_ascii=False)[:300]}")
         if lines:
             return lines, u
-        last_err = last_err or f"解析出 0 列（{note[:60]}）"
+        last_err = last_err or f"解析出 0 列（{why(note)}）"
     # ★ 失敗原因一定要帶出去。只寫「失敗」的話，事後看 coverage 分不出是
     #   被限流（重跑就好）、端點改版（要改程式）、還是那天真的沒有資料。
     if wrong_day:
@@ -1127,7 +1127,7 @@ def cmd_inst(args):
         raw, err = get(inst_url(day))
         note = ""
         if err:
-            failed += 1; streak += 1; note = f"失敗({err[:60]})"
+            failed += 1; streak += 1; note = f"失敗({why(err)})"
         else:
             try:
                 d = json.loads(raw.decode("utf-8"))

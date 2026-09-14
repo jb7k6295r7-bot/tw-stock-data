@@ -56,6 +56,7 @@ import urllib.request
 import ca_chain  # noqa: F401
 
 import backfill as B
+from backfill import why as _W
 
 MOPSOV = "https://mopsov.twse.com.tw"
 FINMIND = "https://api.finmindtrade.com/api/v4/data?dataset="
@@ -101,7 +102,7 @@ def sec_b(sleep):
         url = f"{MOPSOV}/nas/t21/{mkt}/t21sc03_{y}_{m}_0.html"
         raw, err = B.get(url, retries=1, timeout=60)
         if err:
-            print(f"   ✗ {mkt} {y}/{m}｜{err[:70]}")
+            print(f"   ✗ {mkt} {y}/{m}｜{_W(err, 70)}")
             time.sleep(sleep)
             continue
         fp, ttl = _fp(raw), _title(raw)
@@ -134,7 +135,7 @@ def sec_c(sleep):
         raw, status, err = _post(url, form)
         tag = f"{name} {typek} {year}Q{int(season)}"
         if err:
-            print(f"   ✗ {tag}｜{err[:70]}")
+            print(f"   ✗ {tag}｜{_W(err, 70)}")
             time.sleep(sleep)
             continue
         if len(raw) < 2000:

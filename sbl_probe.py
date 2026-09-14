@@ -42,6 +42,7 @@ import os
 import sys
 
 import backfill as B
+from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_sbl_probe.txt")
@@ -90,7 +91,7 @@ def probe(label, url, want, out):
         # ⛔ 我方閘道的 403 與交易所的 403 意思**相反**，要分得出來
         gw = ("Tunnel connection failed" in str(err)
               or "connect_rejected" in str(err))
-        out.append(f"   ✗ {err[:200]}"
+        out.append(f"   ✗ {_W(err, 200)}"
                    + ("　⚠ **這是我方閘道擋的**，不是端點的問題"
                       "（Actions 上會是通的）" if gw else ""))
         return
