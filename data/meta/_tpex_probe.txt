@@ -300,7 +300,7 @@
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
      ✓ 5,182 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1150911', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '836671360', 'PercentageOfSharesOC/FMIHeld': '16.04%'}
+     首列：{'Date': '1150914', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '836513818', 'PercentageOfSharesOC/FMIHeld': '16.04%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
 
 [7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
@@ -481,8 +481,12 @@
       ── stat：ok
     ✓ 20 欄、572 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 132**
     ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
-  2019-11-13　✗ 抓不到：HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
-    ⛔ 抓不到**不等於沒有那一欄**——照實記，下一輪再試。
+    頂層鍵 ['date', 'stat', 'tables']
+    ⭐ 平常被丟掉的鍵：['date', 'stat']
+      ── date：20191113
+      ── stat：ok
+    ✓ 20 欄、740 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 259**
+    ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
     頂層鍵 ['date', 'stat', 'tables']
     ⭐ 平常被丟掉的鍵：['date', 'stat']
       ── date：20230510
@@ -496,7 +500,7 @@
     ✓ 20 欄、920 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 285**
     ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
 
-  ⇒ 結論：抽了 3 天，**有備註欄且有值的 3 天**｜['2015-01-05', '2023-05-10', '2026-09-11']
+  ⇒ 結論：抽了 4 天，**有備註欄且有值的 4 天**｜['2015-01-05', '2019-11-13', '2023-05-10', '2026-09-11']
   ⭐⭐ ⇒ 來源**有**這一欄 ⇒ `feeds.py --need-col note` 可以回補全歷史
 
   ── 頁面層：看它們自己呼叫哪個網址
