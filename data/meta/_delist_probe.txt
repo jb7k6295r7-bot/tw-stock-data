@@ -224,7 +224,7 @@
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-c...rors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
