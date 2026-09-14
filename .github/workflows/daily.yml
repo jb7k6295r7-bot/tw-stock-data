@@ -87,6 +87,14 @@ jobs:
       - name: 掃低水位檔有沒有第九份實作（零相依）
         run: python selftest_lowwater.py
 
+      # ⛔⛔ `continue-on-error: true` 的自測紅了，run 的 conclusion 仍然是
+      #   **success** ⇒ 沒有任何地方會說（daily.yml 有 62 個這種步驟）。
+      #   ⚠ 抓資料那些自己會寫 runlog ⇒ 看得到；⛔ **自測沒有** ⇒ 看不到。
+      #   ⇒ `ci_step.py` 記下來、`ci_report.py` 寫成 runlog 區塊。
+      #   ⭐ 這一道釘的是那兩支本身（⛔ 尺壞掉 ⇒ 它會說「全綠」）。零相依。
+      - name: 驗「紅掉的自測會被說出來」（零相依）
+        run: python selftest_ci_steps.py
+
       # ⛔ `push_data.sh` 的累積型 CSV 逐鍵合併。這一支擋的是**已經發生過**的
       #   資料遺失：分支上的 `data/` 比 main 舊，整檔搬過去會刪掉別人剛寫的列，
       #   ⚠ 而 `git diff` 看起來只是「這一趟重算過」。
@@ -134,7 +142,7 @@ jobs:
       - name: 驗 runlog（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_runlog.py
+        run: python ci_step.py selftest_runlog.py
 
       # ★ 順便驗 mops 的差異紀錄（離線、約 1 秒）。
       #   `data/mops/_changes.log` 存在的唯一理由是「財報更正不可以被靜默覆蓋」，
@@ -143,7 +151,7 @@ jobs:
       - name: 驗 mops 差異紀錄（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_mops.py
+        run: python ci_step.py selftest_mops.py
 
       # ★ 把四支探針的 main() 整條走一遍（網路換成假回應）。
       #   ⚠ 開發容器對 tdcc／tpex 是 403 ⇒ main() 在第 30 行就 return，
@@ -152,44 +160,44 @@ jobs:
       - name: 驗四支探針跑得完（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_probes.py
+        run: python ci_step.py selftest_probes.py
 
       # ★ 釘住漲跌停方向：`"0.0"` 是 truthy，寫成 `if chg` 會把平盤鎖死判成跌停。
       #   2026-09-09 全庫 50,382 列中招（佔所有 down 的 47.7%）。
       - name: 驗漲跌停方向（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_lock_dir.py
+        run: python ci_step.py selftest_lock_dir.py
 
       - name: 驗交易日曆的寫檔（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_calendar.py
+        run: python ci_step.py selftest_calendar.py
 
       - name: 驗颱風休市判讀（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_holiday.py
+        run: python ci_step.py selftest_holiday.py
 
       - name: 驗上櫃日曆判準的累積（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_otccal.py
+        run: python ci_step.py selftest_otccal.py
 
       - name: 驗上市短期暫停交易的守門（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_suspend_twse.py
+        run: python ci_step.py selftest_suspend_twse.py
 
       - name: 驗上櫃除權息判準會紅也會綠（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_otcexright.py
+        run: python ci_step.py selftest_otcexright.py
 
       - name: 驗缺還原因子的斷言會紅也會綠（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_adj_gap.py
+        run: python ci_step.py selftest_adj_gap.py
 
       # ⛔ 這三支是 2026-09-09 清理時發現的**孤兒測試**：程式在 repo 裡、
       #   一支 workflow 都沒有在跑。⇒ **有測試但沒人跑，比沒有測試更糟**——
@@ -198,12 +206,12 @@ jobs:
       - name: 驗資料庫現況頁（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_db_status.py
+        run: python ci_step.py selftest_db_status.py
 
       - name: 驗基本面歷史的解析（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_mops_history.py
+        run: python ci_step.py selftest_mops_history.py
           python selftest_revenue_complete.py
 
       - name: 驗上市發行股數的補值（離線）
@@ -223,7 +231,7 @@ jobs:
       - name: 驗個股庫轉置（離線）
         continue-on-error: true
         timeout-minutes: 10
-        run: python selftest_transpose.py
+        run: python ci_step.py selftest_transpose.py
 
       # ★ 天然災害停止上班 ⇒ 台股全日休市。**交易日曆天生沒有的前瞻那一半。**
       #   ⛔ 判定是**單向**的：預設開盤，只有正面比對到「台北市＋停止上班」才標休市
@@ -1113,6 +1121,18 @@ jobs:
       #     一份**看起來完整、其實過期**的摘要，比沒有摘要更糟。
       #   任何一塊是 ✗ 就去看該支腳本那一步的 log；步驟本身照樣綠的，
       #   因為 `continue-on-error`，紅字在檔案裡不在 job 狀態上。
+      # ⛔⛔ 上面那 13 支自測是 `continue-on-error` ⇒ 它們紅了 run 仍然是 success。
+      #   ⚠ 抓資料那些步驟紅了會在 `_last_run.md` 留下 ✗（它們自己寫 runlog），
+      #   ⛔ **而自測沒有 runlog 區塊** ⇒ 紅了沒有任何地方會說。
+      #   ⇒ 實際發生過：`selftest_adj_gap.py` 因為未歸因收斂到 0 而必然紅，
+      #     而那正是那一族的**目標**（2026-09-14 找到，當時已經紅著）。
+      #   ⇒ ⭐ 這一步把 `ci_step.py` 記下的結果寫成一個 runlog 區塊
+      #     ⇒ 進 `_last_run.md` ⇒ 進 commit ⇒ 四條線讀得到。
+      #   ⛔ 它**一律 exit 0**：一支離線自測不該賠掉整趟抓到的資料。
+      - name: 這一輪有沒有自測紅著（⛔ continue-on-error 會把它藏起來）
+        if: always()
+        run: python ci_report.py
+
       - name: 這一輪的摘要
         if: always()
         continue-on-error: true

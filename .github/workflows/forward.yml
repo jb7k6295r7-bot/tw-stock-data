@@ -65,6 +65,14 @@ jobs:
       - name: 掃低水位檔有沒有第九份實作（零相依）
         run: python selftest_lowwater.py
 
+      # ⛔⛔ `continue-on-error: true` 的自測紅了，run 的 conclusion 仍然是
+      #   **success** ⇒ 沒有任何地方會說（daily.yml 有 62 個這種步驟）。
+      #   ⚠ 抓資料那些自己會寫 runlog ⇒ 看得到；⛔ **自測沒有** ⇒ 看不到。
+      #   ⇒ `ci_step.py` 記下來、`ci_report.py` 寫成 runlog 區塊。
+      #   ⭐ 這一道釘的是那兩支本身（⛔ 尺壞掉 ⇒ 它會說「全綠」）。零相依。
+      - name: 驗「紅掉的自測會被說出來」（零相依）
+        run: python selftest_ci_steps.py
+
       # ⛔⛔ 這一道擋的是 CLAUDE.md 四點六那個**會刪資料**的例外。
       #   ⚠ 在分支上跑會讀到過期的 `data/` ⇒ 訊號算錯，而且看不出來。
       - name: ⛔ 只准在 main 上跑（讀 data/）

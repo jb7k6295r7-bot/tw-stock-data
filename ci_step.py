@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""ci_step.py — 跑一支自測，把結果**記下來**，然後**一律 exit 0**。
+
+★ 為什麼要有這一支（2026-09-14）
+────────────────────────────────
+`daily.yml` 裡有 **62 個** `continue-on-error: true` 的步驟
+⇒ ⛔ 它們紅了，run 的 conclusion 還是 **success**。
+
+⚠ 而其中大多數是**抓資料**的步驟，它們呼叫的程式自己會寫 `runlog` 區塊
+⇒ 紅了會在 `_last_run.md` 裡留下 ✗ ⇒ **看得到**。
+
+⛔⛔ **13 支自測不是**：它們沒有 `runlog` 區塊
+⇒ 紅了之後**沒有任何地方會說**，而 run 是綠的。
+
+⇒ 實際發生過（2026-09-14 找到）：`selftest_adj_gap.py` 的一條斷言
+要求現場**一定要有未歸因的樣本**才造得出「本輪高於水位」的情境，
+⚠ 而未歸因收斂到 0 正是那一族的**目標**
+⇒ 目標達成的那一天它必然紅，⛔ 而沒有任何地方會說。
+（實測同一天：main 上 3 筆 ⇒ 綠；分支上 0 筆 ⇒ 紅。）
+
+## ⛔ 而「這支自測紅了」與「這支自測沒被寫進 workflow」在畫面上一模一樣
+
+兩種都是**綠的一趟**、兩種都**沒有人被告知**。
+⚠ 後者已經有守門（`selftest_workflows.py`「每一支自測都至少有一支 workflow 會跑它」），
+⛔ 而前者一直沒有。
+
+## 用法
+
+    python ci_step.py selftest_adj_gap.py
+
+- 子行程的 stdout／stderr **原樣透出去**（⛔ 不吃掉，log 要看得到）
+- 結果追加到 `data/meta/_ci_steps.tsv`
+- ⭐ **一律 exit 0** ⇒ 這一支**取代** `continue-on-error`，行為一模一樣，
+  ⛔ 差別只在「紅掉這件事被記下來了」
+
+⚠ 而它**自己不判定**：判定在 `ci_report.py`，那一支把紀錄寫成 `runlog` 區塊
+⇒ 進 `_last_run.md` ⇒ 進 commit ⇒ ⭐ **四條線讀得到**。
+⛔ 分成兩支的理由：這一支要 `exit 0`，而判定那一支要講得出「哪幾支紅了」。
+"""
+import io
+import os
+import subprocess
+import sys
+
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+TSV = os.path.join(_ROOT, "data", "meta", "_ci_steps.tsv")
+
+
+def record(name, rc, path=None):
+    """把一次結果追加進台帳。→ 寫進去的那一行。
+
+    ⚠ 這是**追加**（`a`），⛔ 不是整份取代——CLAUDE.md 四點六：
+    「任何『這一趟只知道自己那一部分』的寫入，一律是合併，不是取代」。
+    ⭐ 而整份清空的責任在 `ci_report.py`（它跑完就砍檔），
+    ⛔ 不在這裡：這一支只知道自己那一格。
+    """
+    line = f"{name}\t{rc}\n"
+    p = path or TSV
+    try:
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        io.open(p, "a", encoding="utf-8").write(line)
+    except OSError:
+        pass                    # ⛔ 記不下來不可以害這一步失敗
+    return line
+
+
+def main(argv):
+    if len(argv) < 2:
+        print("用法：python ci_step.py <script.py> [args...]", file=sys.stderr)
+        return 2
+    name = os.path.basename(argv[1])
+    rc = subprocess.call([sys.executable] + argv[1:], cwd=_ROOT)
+    record(name, rc)
+    # ⭐ 寫成**不會被讀成「驗過了」**的樣子（⛔ 一行 skipped 跟一行 ok 長得一樣）
+    print(f"[ci_step] {name} ⇒ rc={rc}"
+          + ("" if rc == 0 else "　⛔ **這一支紅了**（本步驟仍然 exit 0，"
+                               "⚠ 判定在這一輪最後的 `ci_report.py`）"))
+    return 0                    # ⭐ 一律 0——這一支**就是** continue-on-error
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
