@@ -31,6 +31,7 @@ otcmargin／breadth／otcinst／tib **全部 0 筆** ⇒ 誤報率 0 / 25,650
 import argparse
 import datetime as dt
 import os
+import statistics
 import sys
 
 import neighbor_floor as NF
@@ -59,17 +60,33 @@ def is_saturday(day):
         return False
 
 
+# ⛔⛔ 這個修法**縮小了守備範圍**，而那要寫出來，不可以只寫「誤報修好了」：
+#
+#   修之前  有判 13 支（含 fulldelivery、tib）
+#   修之後  有判 11 支　⇒ ⚠ 那兩支**從此沒有任何列數閘門在守**
+#
+# ⭐ 而它們本來就不該由這道閘門守：名單型 feed（變更交易、創新板）常態只有
+#   十幾二十列，一次加入／一次到期就會讓列數腰斬——⛔ 那是**正常**，不是塌掉。
+# ⚠ 但「不該由這道閘門守」不等於「不必守」：
+#   ⇒ 它們要的是**別的**判準（例如當天的名單變動對得上官方公告），
+#     ⛔ 而那一條目前**沒有人做**。這是一個已知的缺口，不是已解決的問題。
 def scan_feed(d, floor=NF.FLOOR):
     """→ (逐筆疑似殘缺, 統計 dict)。⛔ 只讀，不寫。"""
     days = sorted(x[:-4] for x in os.listdir(d) if x.endswith(".csv")
                   and not x.startswith("_"))
     rows = [day_rows(os.path.join(d, f"{x}.csv")) for x in days]
+    # ⭐⭐ 「判不判」看這支 feed **全期**的水位，⛔ 不看鄰近中位數——
+    #   後者會被一次尖峰推過門檻，⇒ 一支 feed 只在波動最大的時候才被判
+    #   （2026-09-14 誤報：fulldelivery 常態 ~20 列，兩天 21 列被判成塌掉）。
+    _lv = [v for v in rows if v is not None]
+    level = statistics.median(_lv) if _lv else 0
     bad, stat = [], {"天數": len(days), "疑似殘缺": 0, "週六（另計）": 0, "沒判": 0}
     for i, day in enumerate(days):
         n = rows[i]
         if n is None:
             continue
-        short, med, why = NF.is_short(n, NF.neighbors(rows, i), floor=floor)
+        short, med, why = NF.is_short(n, NF.neighbors(rows, i), floor=floor,
+                                      level=level)
         if why:
             stat["沒判"] += 1
             stat["不判的原因"] = why
