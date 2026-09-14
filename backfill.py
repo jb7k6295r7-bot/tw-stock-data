@@ -852,7 +852,13 @@ META_DIR = os.path.join(_ROOT, "meta")
 STOCKS_HEADER = _STOCKS_HEADER
 
 
-INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total"]
+# ⭐⭐ 2026-09-14 加最後兩欄（K線分析線 0707 裁定）。⛔ **一定要接在最後**：
+#   舊日檔是 6 欄，`--need-col dealer_self` 靠「表頭缺這一欄」認出要重抓的日子，
+#   插在中間會讓舊檔的欄位整排錯位。
+# ⚠ `dealer` 仍然是**合計**（自行買賣 ＋ 避險），⛔ 不改語意——
+#   改掉的話下游每一個讀 `dealer` 的地方都要跟著改，而沒有人會被通知。
+INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total",
+               "dealer_self", "dealer_hedge"]
 
 
 def inst_url(day):
@@ -914,9 +920,20 @@ def parse_inst(d, day, known=None):
     # ★ 自營商取「合計」那一欄，不是自行買賣或避險的分項
     i_dl = ex("自營商買賣超股數")
     i_tt = ex("三大法人買賣超股數")
+    # ⭐⭐ 2026-09-14：分項**也收下來**（K線分析線 0707：判籌碼只看「自行買賣」，
+    #   避險是法規強制的獨立帳戶、不代表方向判斷）。
+    #   ⛔ 欄名不是猜的——`_keys_probe.txt` 2026-09-14 逐字印出 19 欄：
+    #     [11] 自營商買賣超股數　　　　　　← 合計
+    #     [14] 自營商買賣超股數(自行買賣)
+    #     [17] 自營商買賣超股數(避險)
+    #   ⚠⚠ 而 [11] 是 [14][17] 的**子字串** ⇒ 這正是 T86 那次 16,394 列的坑
+    #     ⇒ `ex()` 是**完全相等**比對，所以 [11] 不會命中 [14]／[17]。
+    #     ⛔ 任何人把它改成「包含」比對，三欄會全部撞在一起。
+    i_ds = ex("自營商買賣超股數(自行買賣)")
+    i_dh = ex("自營商買賣超股數(避險)")
     if any(x is None for x in (i_code, i_tr, i_tt)):
         return [], f"欄位對不上：{fields}"
-    out, bad = [], 0
+    out, bad, bad2 = [], 0, 0
     for r in (t.get("data") or []):
         if not r or len(r) <= i_tt:
             continue
@@ -931,8 +948,29 @@ def parse_inst(d, day, known=None):
         if abs(fo + tr + dl - tt) > 1:      # 恆等式，不符就丟掉那一列並回報
             bad += 1
             continue
-        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}"])
-    return out, f"{len(out)} 列可用（驗算不符丟棄 {bad} 列）"
+        # ⭐ 兩個分項：取不到就**留空**，⛔ 不可以寫 0——
+        #   `0` 的意思是「那天沒買也沒賣」，`空` 的意思是「這一天沒有這個欄位」，
+        #   ⚠ 兩者在下游完全不同（0 會被算進平均，空不會）。
+        if i_ds is None or i_dh is None:
+            ds = dh = ""
+        else:
+            vs, vh = g(i_ds), g(i_dh)
+            # ⭐ 免費的恆等式：自行買賣 ＋ 避險 ＝ 自營商合計。
+            #   ⛔ 對不上代表**取到別的欄**（子字串那個坑），整列丟掉並回報，
+            #   ⚠ 不可以靜靜寫進去。
+            if abs(vs + vh - dl) > 1:
+                bad2 += 1
+                continue
+            ds, dh = f"{vs:.0f}", f"{vh:.0f}"
+        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}",
+                    ds, dh])
+    note = f"{len(out)} 列可用（驗算不符丟棄 {bad} 列）"
+    if i_ds is None or i_dh is None:
+        # ⚠ 大聲講：⛔ 整欄空白與「今天大家都是 0」長得一樣
+        note += "｜⚠ **找不到自營商分項欄，dealer_self／dealer_hedge 整欄留空**"
+    if bad2:
+        note += f"｜⛔ **自行買賣＋避險≠自營合計，丟棄 {bad2} 列**"
+    return out, note
 
 
 def write_inst(day, lines):
