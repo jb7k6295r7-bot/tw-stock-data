@@ -31,6 +31,8 @@
     ⑤ `save_ledger` 是**合併**：⛔ 本趟只知道自己那一部分，整份取代 ＝ 洗掉
     ⑥ `merge_json` 合併後的鍵數**不可以少於 main 那一份**
 """
+import datetime as _dt3
+import io
 import json
 import os
 import shutil
@@ -203,6 +205,50 @@ def main():
             and getattr(n.value, "id", "") == "err"]
     ck("★ 原始碼裡**沒有任何** `err[...]` 的切片（⛔ 一律走 `_why()`）",
        not _bad, f"⛔ 還有 {len(_bad)} 處在切 err")
+
+    # ⛔⛔ 2026-09-14：上面那條**只掃 `feeds.py` 一支**。
+    #   全 repo 掃過去是 **44 處**在切 `err[:N]`／`note[:N]`
+    #   ⇒ 2026-09-13 那次「錯誤訊息不可以砍尾巴」只修了一個檔，其餘從來沒跟上。
+    #   ⚠ 實際代價：`mops` 的 `note[:70]` 讓 runlog 上那個 ✗ 只寫「沒回應」、
+    #     **沒有原因** ⇒ 憑證鏈壞掉、限流、端點改名在那一行字裡長得一模一樣。
+    #
+    # ⛔ 而這一條**不可以**寫成「必須是 0」——那會當天就紅、然後被學會忽略
+    #   （六點五）。⇒ ⭐ 用**低水位**：只能往下走，退步就紅。
+    import glob as _gl
+    _LOW = os.path.join(HERE, "data", "meta", "_err_cut_low.txt")
+    # ⛔⛔ 名字清單本來是寫死的六個 ⇒ `err2`／`e2`／`e7` **全部逃掉**
+    #   （2026-09-14 實測：低水位剛歸零，放寬之後又冒出 6 處）。
+    #   ⚠ 一個「看起來已經清乾淨」的閘門，比沒有閘門更容易被相信。
+    #   ⇒ ⭐ 改成**名字＋可選數字**的樣式，⛔ 不是一份手抄的清單。
+    import re as _re2
+    _pat = _re2.compile(r"^(err|note|msg|why|reason|e)\d*$")
+    _cuts = []
+    for _p in sorted(_gl.glob(os.path.join(HERE, "*.py"))):
+        if os.path.basename(_p).startswith("selftest_"):
+            continue          # ⚠ 自測裡切 note 是在做斷言，不是在報錯誤
+        try:
+            _t = _a2.parse(io.open(_p, encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        for _n in _a2.walk(_t):
+            if (isinstance(_n, _a2.Subscript)
+                    and _pat.match(getattr(_n.value, "id", "") or "")
+                    and isinstance(_n.slice, _a2.Slice)):
+                _cuts.append(f"{os.path.basename(_p)}:{_n.lineno}")
+    try:
+        _lo = int(io.open(_LOW, encoding="utf-8").read().split(",")[0])
+    except (OSError, ValueError):
+        _lo = None
+    if _lo is None:
+        print(f"  ⚠⚠ **這一層沒跑**：沒有 `_err_cut_low.txt`（本趟 {len(_cuts)} 處）"
+              "　⇒ ⛔ 不算失敗，⛔ 也不算驗過")
+    else:
+        ck(f"⭐⭐ 全 repo 砍錯誤訊息尾巴的地方**沒有變多**（低水位 {_lo} 處）",
+           len(_cuts) <= _lo, f"本趟 {len(_cuts)} 處：{_cuts[:6]}")
+        if len(_cuts) < _lo:
+            io.open(_LOW, "w", encoding="utf-8").write(
+                f"{len(_cuts)},{_dt3.datetime.now(_dt3.timezone(_dt3.timedelta(hours=8))).strftime('%Y-%m-%d')}\n")
+            print(f"  ⭐ 低水位下修 {_lo} → {len(_cuts)} 處")
 
     print("\n── ⑨ `IncompleteRead`：訊息要**自己講出它是傳輸被切斷** ──")
     # ⭐ 2026-09-13 實測：TPEx 的 openapi/swagger.json（452 KB）連兩次只讀到 24 KB。

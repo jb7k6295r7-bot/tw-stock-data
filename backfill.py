@@ -328,12 +328,12 @@ def preflight(url, what):
         return True
     if err.startswith("LIMITED"):
         print(f"[preflight] {what}：**被交易所限流擋下**，不是端點或參數的問題。\n"
-              f"           {err[:160]}\n"
+              f"           {why(err)}\n"
               f"           同一支程式在沒被擋的時候是通的（netdiag 18/18 全過）。\n"
               f"           做法：等一段時間再跑，或錯開同日其他回補工作。"
               f"**不要改標頭、不要加大重試。**", file=sys.stderr)
     else:
-        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {err[:200]}",
+        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {why(err, 200)}",
               file=sys.stderr)
     return False
 
@@ -559,7 +559,7 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                         f"        [診斷] 首筆={json.dumps(d[0], ensure_ascii=False)[:300]}")
         if lines:
             return lines, u
-        last_err = last_err or f"解析出 0 列（{note[:60]}）"
+        last_err = last_err or f"解析出 0 列（{why(note)}）"
     # ★ 失敗原因一定要帶出去。只寫「失敗」的話，事後看 coverage 分不出是
     #   被限流（重跑就好）、端點改版（要改程式）、還是那天真的沒有資料。
     if wrong_day:
@@ -976,6 +976,30 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
+def why(err, cap=160):
+    """把錯誤訊息縮短成一行，⭐ **保留頭也保留尾**。⭐ 只有這一份實作（四點五）。
+
+    ⛔⛔ 2026-09-13 付過代價：原本是 `err[:50]`，而那一天 TPEx 回的是
+
+        URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_
+
+    ——⚠ **剛好切在有用的字開始的地方**。SSL／憑證／逾時這一族，
+    **可行動的部分永遠在尾巴**（`unable to get local issuer certificate`、
+    `certificate has expired`、`hostname mismatch` 各自的下一步完全不同），
+    ⛔ 而前 50 個字元每一次都長得一樣。
+    ⇒ 太長就中間省略，⛔ 不要砍尾巴。
+
+    ⚠ 而 2026-09-14 發現那次**只修了 `feeds.py` 一支**：全 repo 還有 44 處在切
+    `err[:N]`／`note[:N]`。⇒ 搬到這裡（最底層，誰都 import 得到），
+    並加一道**低水位**斷言讓那 44 處只能往下走（`selftest_feed_days.py` ⑧）。
+    """
+    t = " ".join(str(err).split())
+    if len(t) <= cap:
+        return t
+    keep = (cap - 3) // 2
+    return t[:keep] + "..." + t[-keep:]
+
+
 def days_missing_col(dir_, need, done):
     """→ `done` 裡**表頭缺 `need` 欄**的那些日期（set）。
 
@@ -1103,7 +1127,7 @@ def cmd_inst(args):
         raw, err = get(inst_url(day))
         note = ""
         if err:
-            failed += 1; streak += 1; note = f"失敗({err[:60]})"
+            failed += 1; streak += 1; note = f"失敗({why(err)})"
         else:
             try:
                 d = json.loads(raw.decode("utf-8"))

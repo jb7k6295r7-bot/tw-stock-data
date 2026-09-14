@@ -98,12 +98,14 @@ def _retry_section():
     out = {}
     for label, failing in (("重試才成功", {bad_url}), ("一次就過", set())):
         d = _tf.mkdtemp(prefix="mopsretry_")
-        _oget, _oout, _ochg, _opath, _olisted = (
-            B.get, M.OUT_DIR, M.CHANGES, runlog.PATH, M.listed_codes)
+        _oget, _oout, _opath, _olisted = (
+            B.get, M.OUT_DIR, runlog.PATH, M.listed_codes)
         try:
             B.get = make_get(failing)
+            # ⭐ 只導 `OUT_DIR` 一個旋鈕：`changes_path()` 是**呼叫當下**才算的。
+            #   ⛔ 舊版還要再導一個 `M.CHANGES`，而漏掉它的話 log 會寫進 repo
+            #   真的那一份——⚠ 而檔案在沙箱、看起來完全正常（第七點第五個陷阱）。
             M.OUT_DIR = d
-            M.CHANGES = _o.path.join(d, "_changes.log")
             runlog.PATH = _o.path.join(d, "_last_run.md")
             M.listed_codes = lambda: ({"2330"}, {"6488"})
             _sleep = M.time.sleep
@@ -114,8 +116,8 @@ def _retry_section():
                 M.time.sleep = _sleep
             out[label] = _io.open(runlog.PATH, encoding="utf-8").read()
         finally:
-            (B.get, M.OUT_DIR, M.CHANGES, runlog.PATH, M.listed_codes) = (
-                _oget, _oout, _ochg, _opath, _olisted)
+            (B.get, M.OUT_DIR, runlog.PATH, M.listed_codes) = (
+                _oget, _oout, _opath, _olisted)
             _sh.rmtree(d, ignore_errors=True)
 
     t = out["重試才成功"]
@@ -141,17 +143,18 @@ def main():
     tmp = tempfile.mkdtemp(prefix="mopstest_")
     log_before = io.open(REPO_LOG, "rb").read() if os.path.isfile(REPO_LOG) else None
     M.OUT_DIR = tmp
-    M.CHANGES = os.path.join(tmp, "_changes.log")
 
     def run(old, new):
         """跑一次 _log_changes，回傳這一次新增的紀錄行。"""
         n0 = 0
-        if os.path.exists(M.CHANGES):
-            n0 = len(io.open(M.CHANGES, encoding="utf-8").read().splitlines())
+        if os.path.exists(M.changes_path()):
+            n0 = len(io.open(M.changes_path(),
+                             encoding="utf-8").read().splitlines())
         M._log_changes("fs", "115Q2_ci.csv", old, new)
-        if not os.path.exists(M.CHANGES):
+        if not os.path.exists(M.changes_path()):
             return []
-        return io.open(M.CHANGES, encoding="utf-8").read().splitlines()[n0:]
+        return io.open(M.changes_path(),
+                       encoding="utf-8").read().splitlines()[n0:]
 
     # 正規化欄在前，原始欄在後——跟 write_period 產生的形狀一致
     H1 = ["stock_id", "name", "period", "market", "公司代號", "營業收入", "每股盈餘"]
@@ -385,8 +388,32 @@ def main():
             str([r["period"] for r in r8]))
         chk("⭐ 總列數不變（3 → 3）⛔ 這一支絕不可以變成刪東西的那個人",
             len(r7) + len(r8) == 3, f"{len(r7)}＋{len(r8)}")
+        # ⛔⛔ 搬家**不可以**被記成「財報更正」（2026-09-14 實測代價）
+        #   舊版讓搬家走 `_log_changes` ⇒ 來源檔看起來「891 列消失」、
+        #   目的檔「891 列新增」⇒ 1,782 行灌進 log，⚠ 而一個數字都沒被更正。
+        #   ⭐ 而那 891 行「消失」是最糟的：讀 log 的人會以為 891 檔公司掉出母體。
+        _lg = (io.open(M.changes_path(), encoding="utf-8").read()
+               if os.path.isfile(M.changes_path()) else "")
+        _mv = [x for x in _lg.splitlines() if "期別自癒" in x]
+        chk("⭐ 搬家**有**留下紀錄（⛔ 靜靜搬 = 檔名變了沒有人知道）",
+            len(_mv) == 1, f"{len(_mv)} 行｜{_mv}")
+        chk("⭐⭐ 而它是**一組一行**（⛔ 不是一列一行）"
+            "　⚠ 891 列的真實情況下那是 1,782 行",
+            len(_mv) == 1 and "2 列搬家" in _mv[0] and "6488" in _mv[0]
+            and "8069" in _mv[0], str(_mv))
+        # ⚠ 只看 `revenue/` 那幾行：前面幾節是**直接測 `_log_changes`**，
+        #   那裡的「新增／消失」是它該做的事（⛔ 全檔掃就會抓到自己人）。
+        _rv = [x for x in _lg.splitlines() if "\trevenue/" in x]
+        chk("⛔⛔ 反向：搬家寫出的行裡**一行都不可以**是『消失』或『新增』"
+            "　（那兩個字是留給財報更正的）",
+            len(_rv) == 1 and not [x for x in _rv
+                                   if x.endswith("\t消失") or x.endswith("\t新增")],
+            str(_rv))
         n2, msg2 = M.repair_periods("revenue")
         chk("⭐ 再跑一次是 no-op（⛔ 否則它會天天產生 commit）", n2 == 0, msg2)
+        chk("⛔ 而 no-op 那一趟**一行都不加**（⚠ 否則 log 每天長一行假紀錄）",
+            (io.open(M.changes_path(), encoding="utf-8").read()
+             if os.path.isfile(M.changes_path()) else "") == _lg)
         # ⭐ 取不到期別的列要**原地不動**，⛔ 不是丟掉
         io.open(os.path.join(rd, "2026-07.csv"), "a", encoding="utf-8").write(
             "9999,無期別,2026-07,twse,,9999,,9\n")

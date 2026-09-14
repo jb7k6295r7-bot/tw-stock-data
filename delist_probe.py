@@ -54,6 +54,7 @@ import sys
 from collections import Counter
 
 import backfill as B
+from backfill import why as _W
 from twparse import roc_iso as _roc_iso
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -254,7 +255,7 @@ def probe(label, url, want, out):
     if err:
         gw = ("Tunnel connection failed" in str(err)
               or "connect_rejected" in str(err))
-        out.append(f"   ✗ {err[:200]}"
+        out.append(f"   ✗ {_W(err, 200)}"
                    + ("　⚠ **這是我方閘道擋的**（Actions 上會是通的）" if gw else ""))
         return
     try:

@@ -46,6 +46,7 @@ import os
 import sys
 
 import backfill as B
+from backfill import why as _W
 import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -120,8 +121,8 @@ def main():
     rl = runlog.Run("tdcc")
     raw, err = B.get(URL, retries=3, timeout=120)
     if err:
-        print(f"[tdcc] 請求失敗：{err[:160]}", file=sys.stderr)
-        rl.check("端點有回應", False, err[:100])
+        print(f"[tdcc] 請求失敗：{_W(err, 160)}", file=sys.stderr)
+        rl.check("端點有回應", False, _W(err, 100))
         return rl.finish()
     rows, note = parse(raw)
     print(f"[tdcc] {len(raw):,} bytes｜{note}")

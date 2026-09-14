@@ -53,19 +53,38 @@ MIN_MEDIAN = 30      # ⛔ 中位數低於這個就不判（小數字的比值�
 MIN_PEERS = 3        # ⛔ 鄰居太少就不判（⛔ 不要用猜的門檻擋）
 
 
-def is_short(n, peers, floor=FLOOR, min_median=MIN_MEDIAN, min_peers=MIN_PEERS):
+def is_short(n, peers, floor=FLOOR, min_median=MIN_MEDIAN, min_peers=MIN_PEERS,
+             level=None):
     """→ (判成殘缺嗎, 中位數 or None, 為什麼不判 or "")。⭐ 只有這一份實作。
 
     ⛔ 回三個值而不是一個 bool，是因為「**不判**」跟「判成沒事」必須分得開
     ——⚠ 兩者在呼叫端都是 `not short`，而在報表上意義完全相反
     （CLAUDE.md 第七點：回報「某群 0 筆」要附上該判準在該群抓到的正例數）。
+
+    ## ⛔⛔ `level`：決定「判不判」的那個量，不可以是**鄰居自己**（2026-09-14）
+
+    實測誤報：`fulldelivery`（變更交易名單）2020-08-07 與 08-18 各 21 列，
+    被判成「塌掉」（鄰近中位數 45）。⚠ 而那一支**全期 2,850 天裡有 2,798 天 ≤ 25 列**
+    ——21 列就是它的**常態**；⛔ 塌掉的不是它，是 08-10／08-17 那幾天
+    名單暫時漲到 70（一批股票同時被列入）把鄰近中位數推過了 30。
+
+    ⇒ ⭐ 病根：`min_median` 用**鄰近中位數**來決定判不判
+      ⇒ **一支 feed 只在自己波動最大的時候才被納入判定**，
+      ⚠ 而那正是最容易誤報的時候。
+
+    ⇒ ⭐ `level` 是那支 feed **穩定的水位**（呼叫端給全期中位數）：
+      判不判看它，⛔ 不看會被一次尖峰推動的鄰近中位數。
+      ⚠ 而**比大小仍然跟鄰近中位數比**——那一半是對的（家數十一年會長）。
+      ⛔ 不傳 `level` 時退回舊行為（相容），⚠ 而那條路會踩上面那個誤報。
     """
     vals = [v for v in peers if v is not None and v >= 0]
     if len(vals) < min_peers:
         return False, None, f"鄰居只有 {len(vals)} 個（要 {min_peers} 個）"
     med = statistics.median(vals)
-    if med < min_median:
-        return False, med, f"鄰近中位數 {med:g} < {min_median}（量太小，比值沒意義）"
+    base = med if level is None else level
+    if base < min_median:
+        which = "鄰近中位數" if level is None else "全期中位數"
+        return False, med, f"{which} {base:g} < {min_median}（量太小，比值沒意義）"
     return (n < med * floor), med, ""
 
 

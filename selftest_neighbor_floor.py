@@ -115,6 +115,36 @@ def main():
     finally:
         shutil.rmtree(d, ignore_errors=True)
 
+    print("\n⑧ ⭐⭐ `level`：決定「判不判」的量不可以是鄰居自己（2026-09-14 誤報）")
+    # ⛔ 實測：fulldelivery（變更交易名單）全期 2,850 天有 2,798 天 ≤ 25 列，
+    #   而 2020-08-10／08-17 名單暫時漲到 ~70 ⇒ 鄰近中位數被推過 30
+    #   ⇒ 旁邊那兩天的 **21 列（＝常態）** 被判成「塌掉」。
+    #   ⭐ 病根：一支 feed **只在自己波動最大的時候才被納入判定**。
+    _peers = [70, 68, 70, 21, 22, 21]        # 鄰近中位數 45（被尖峰推上去）
+    _short_old, _med_old, _why_old = NF.is_short(21, _peers)
+    ck("  ⛔ 舊行為（不傳 level）：21 列被判成塌掉　⇒ 這一節不是憑空擔心",
+       _short_old and not _why_old, f"short={_short_old}｜med={_med_old}｜{_why_old}")
+    _short, _med, _why = NF.is_short(21, _peers, level=20)
+    ck("  ⭐ 傳全期水位 20 ⇒ **不判**（⛔ 不是判成沒事）",
+       not _short and "全期中位數" in _why, f"short={_short}｜{_why}")
+    ck("  ⚠ 而不判的理由要講出是**哪一個**中位數太小（⛔ 兩者處置不同）",
+       "全期中位數 20" in _why, _why)
+    # ⛔ 反向：真正的大 feed 不可以因此變得判不動
+    ck("  ⭐ 反向：全期水位夠大的 feed **照樣判得到**"
+       "（⛔ 否則這個修法等於把閘門關掉）",
+       NF.is_short(123, [992] * 6, level=990)[0])
+    ck("  ⚠ 而 level 只管「判不判」，**比大小仍然跟鄰近中位數比**"
+       "（⛔ 家數十一年會長，拿全期中位數比會讓舊期別門檻太高）",
+       not NF.is_short(500, [1000] * 6, level=200)[0]
+       and NF.is_short(499, [1000] * 6, level=200)[0])
+    # ⭐ 有預設值的參數，要有一條不傳它的斷言（第七點③）——上面 `_short_old` 就是
+    # ⛔ 而呼叫點有沒有真的傳：掃原始碼（這是第九次）
+    import io as _io2
+    _src = _io2.open("feed_rowcount_check.py", encoding="utf-8").read()
+    ck("  ⭐⭐ `feed_rowcount_check` 真的把全期水位傳進去了",
+       "level=level" in _src and "statistics.median(_lv)" in _src,
+       "⛔ 呼叫點沒有傳 level")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

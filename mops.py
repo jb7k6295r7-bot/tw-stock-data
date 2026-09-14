@@ -55,7 +55,21 @@ import backfill as B
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT_DIR = os.path.join(_ROOT, "mops")
 IND = os.path.join(_ROOT, "meta", "industry.csv")
-CHANGES = os.path.join(OUT_DIR, "_changes.log")
+
+
+def changes_path():
+    """`_changes.log` 的位置。⛔ **不可以**寫成模組層級的常數。
+
+    ⚠ 2026-09-14 實測付過代價：舊版是 `CHANGES = os.path.join(OUT_DIR, ...)`，
+    在 **import 當下**就算好了 ⇒ 任何人把 `OUT_DIR` 導到沙箱、卻忘了**同時**
+    導 `CHANGES`，寫出來的檔在沙箱、⛔ 而 log **照樣寫進 repo 真的那一份**。
+    我自己用它試跑一次期別自癒，就往真的 `_changes.log` 灌進 1,782 行。
+
+    ⭐ 判準（第七點第五個陷阱）：**兩個要一起導的旋鈕，就是遲早會漏掉一個的旋鈕**
+    ⇒ 收成一個：路徑在**呼叫當下**才從 `OUT_DIR` 算。
+    """
+    return os.path.join(OUT_DIR, "_changes.log")
+
 
 TWSE = "https://openapi.twse.com.tw/v1/opendata/"
 TPEX = "https://www.tpex.org.tw/openapi/v1/"
@@ -278,7 +292,7 @@ def repair_periods(kind, apply=True):
         return 0, "沒有這個目錄"
     files = sorted(f for f in os.listdir(d) if f.endswith(".csv"))
     # tag → {期別 → {代號 → 列(dict)}}；並記下每個 tag 的欄序
-    buckets, colorder, n_in, stay = {}, {}, 0, 0
+    buckets, colorder, n_in, stay, moves = {}, {}, 0, 0, {}
     for fn in files:
         base = fn[:-4]
         period, tag = (base.split("_", 1) + ["all"])[:2]
@@ -295,6 +309,9 @@ def repair_periods(kind, apply=True):
             own = period_of_row(kind, r) or period      # ② 取不到 ⇒ 留在原地
             if own == period:
                 stay += 1
+            else:
+                moves.setdefault((tag, period, own), []).append(
+                    r.get("stock_id") or _pick(r, CODE_KEYS))
             buckets.setdefault(tag, {}).setdefault(own, {})
             code = r.get("stock_id") or _pick(r, CODE_KEYS)
             key = (code, r.get("market", ""))
@@ -336,10 +353,43 @@ def repair_periods(kind, apply=True):
                 continue
             old = io.open(path, encoding="utf-8").read() if os.path.exists(path) else ""
             if old != body:
-                if old:
-                    _log_changes(kind, name, old, body)
+                # ⛔⛔ 這裡**不可以**叫 `_log_changes`（2026-09-14 實測）：
+                #   搬家在來源檔看起來是「891 列消失」、在目的檔是「891 列新增」
+                #   ⇒ 1,782 行「**財報更正**」灌進 log，⚠ 而一個數字都沒被更正。
+                #   ⭐ 而那 891 行「消失」是**最糟的那一種**：讀 log 的人會以為
+                #     891 檔上櫃公司從母體掉出去了。⇒ 搬家自己留一行紀錄（下面）。
                 io.open(path, "w", encoding="utf-8").write(body)
+    _log_moves(kind, moves)
     return moved, f"⭐ 搬了 {moved} 列回它自己那一期（總列數 {n_in} 不變）"
+
+
+def _log_moves(kind, moves):
+    """期別自癒的紀錄：**一組 (來源期→目的期) 一行**，⛔ 不是一列一行。
+
+    ⚠ 它跟 `_log_changes` 記的是**兩件不同的事**，⛔ 不可以混在同一種行裡：
+
+        _log_changes   同一個代號、同一期，**值變了**   ⇒ 財報更正
+        _log_moves     值一個都沒變，**換了一個檔名**   ⇒ 我方期別修正
+
+    ⭐ 而分不開的代價是實測過的：891 列搬家寫成 891 行「消失」＋891 行「新增」
+    ⇒ 讀 log 的人會把「我方把檔名修對了」讀成「891 檔公司從母體掉出去了」。
+    """
+    if not moves:
+        return
+    ts = datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds")
+    lines = []
+    for (tag, src, dst), codes in sorted(moves.items()):
+        sfx = "" if tag == "all" else f"_{tag}"
+        # ⚠ 代號要留下來（⛔ 只留一個數字的話，日後查「這一列去哪了」查不到），
+        #   而 891 個代號塞一行會沒法讀 ⇒ 前 10 個 ＋ 明講還有幾個。
+        head = "、".join(codes[:10])
+        more = f"（另有 {len(codes) - 10} 檔）" if len(codes) > 10 else ""
+        lines.append(f"{ts}\t{kind}/{src}{sfx}.csv→{dst}{sfx}.csv\t(期別自癒)\t"
+                     f"{len(codes)} 列搬家（值未變動）：{head}{more}")
+    with open(changes_path(), "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    for ln in lines:
+        print("  ⭐ " + ln.split("\t", 1)[1].replace("\t", "　"), file=sys.stderr)
 
 
 def _log_changes(kind, name, old, new):
@@ -398,7 +448,7 @@ def _log_changes(kind, name, old, new):
                              f"{'; '.join(diff[:6])}{more}")
                 nrow += 1
     if lines:
-        with open(CHANGES, "a", encoding="utf-8") as f:
+        with open(changes_path(), "a", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
         parts = []
         if oh != nh:
@@ -447,6 +497,8 @@ def cmd_run(args):
     # ⭐ 同一批資料含多個期別的：⛔ 這件事只印在 stderr 是不夠的
     #   （舊版就是「有印警告、照樣寫錯檔」）⇒ 要進 runlog 讓人看得到。
     multi = []            # (kind, tag, {期別: 列數})
+    # ⛔ 沒回應時**為什麼**——⚠ 只記名字的話，runlog 上那個 ✗ 查不下去
+    dead_why = {}         # "kind/tag/market" → 原因（頭尾都留）
     for kind, srcs in SOURCES.items():
         if args.kind not in ("all", kind):
             continue
@@ -466,12 +518,21 @@ def cmd_run(args):
                     d2, note2 = fetch(url)
                     time.sleep(B.SLEEP)
                     if d2 is None:
+                        # ⛔⛔ 2026-09-14：這裡本來只 `print`，而 runlog 只寫
+                        #   「沒回應：revenue/all/tpex」——**沒有原因**。
+                        #   ⇒ 我要查那個 ✗ 的時候，查不下去：憑證鏈壞掉、限流、
+                        #     端點改名、參數被無視，在那一行字裡**長得一模一樣**。
+                        #   ⚠ 而原因還被 `note[:70]` 砍掉尾巴（六點六：
+                        #     SSL 那一族可行動的部分永遠在尾巴）。
+                        #   ⇒ ⭐ 原因**進 runlog**，而且走 `B.why()` 中間省略。
                         calls.append((kind, tag, mk, False, 0, 0.0, 0.0))
+                        dead_why[f"{kind}/{tag}/{mk}"] = (
+                            f"第一次：{B.why(note)}｜重試：{B.why(note2)}")
                         print(f"  [{kind}/{tag}/{mk}] 略過（**隔久再試一次也不行**）："
-                              f"{note[:70]}｜重試：{note2[:70]}")
+                              f"{B.why(note)}｜重試：{B.why(note2)}")
                         continue
-                    retried.append((f"{kind}/{tag}/{mk}", note[:60]))
-                    print(f"  [{kind}/{tag}/{mk}] ⚠ 第一次失敗（{note[:60]}），"
+                    retried.append((f"{kind}/{tag}/{mk}", B.why(note)))
+                    print(f"  [{kind}/{tag}/{mk}] ⚠ 第一次失敗（{B.why(note)}），"
                           f"**隔久再試一次成功**：{note2}")
                     d, note = d2, note2
                 # ⛔ **一列沒有公司代號的列，不是一列資料。**
@@ -567,7 +628,8 @@ def cmd_run(args):
                     f"有回應 {sum(1 for c in calls if c[3])} 個")
     dead = [f"{c[0]}/{c[1]}/{c[2]}" for c in calls if not c[3]]
     rl.check("每一個表×市場都有回應", not dead,
-             ("沒回應（**隔久再試一次也不行**）：" + "、".join(dead))
+             ("沒回應（**隔久再試一次也不行**）："
+              + "；".join(f"{n} ⇒ {dead_why.get(n, '⚠ 沒記到原因')}" for n in dead))
              if dead else f"{len(calls)} 個全有")
     # ⛔ 這一列即使是 0 也要在：⚠ 靜靜重試成功 ＝ 把「這張表在惡化」的訊號抹掉。
     rl.info("⚠ 第一次失敗、隔久再試才成功的",
