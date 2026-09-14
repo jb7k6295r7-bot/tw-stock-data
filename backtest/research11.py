@@ -395,7 +395,8 @@ _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 
 
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
-                 d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0):
+                 d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
+                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -404,7 +405,20 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
       log         list ⇒ 逐筆記錄每個候選訊號的去向：in（進場，delay＝推遲天數）／a 槽滿／b 當日新增達 d／c 該 sid 已持有／b_expired
       queue_days  被 b 擋掉的訊號最多再等 Q 個交易日（每天重試；進場價＝實際進場日開盤、出場日不變、gross 重算）；0 ＝ 不排隊
     擋掉原因：候選數 > min(槽餘, d 餘) 時，多出來的標 a（槽餘 ≤ d 餘）或 b（否則）；cash 用盡視同 a。⚠ a 不排隊（原版：當天沒進就丟）。
+    PREREGP3（2026-09-14）再加：
+      cash_mode   "zero"（原版：閒置資金報酬 0）／"bench"（閒置資金持有 bench，進出 bench 各付一次 bench_cost 的單邊成本）
+      bench       cash_mode="bench" 時必填：與 closes 同長度的還原收盤序列（ffill 過、全正）
+      bench_cost  單邊成本（預設 COST/2＝來回成本的一半，⚠ 回測線定的：台股買 0.1425%、賣 0.4425% 不對稱，這裡取平均）
+    bench 記帳：閒置資金以 bench 單位數持有，equity ＝ 單位數 × bench[t] ＋ 持股市值；進場要提 amt 現金 ⇒ 賣 amt/(1−c) 的 bench；
+    出場拿回 P ⇒ 買 P×(1−c) 的 bench。cash_mode="zero" 時程式路徑與原版相同（回歸 R1 逐位元驗）。
     """
+    use_bench = cash_mode == "bench"
+    if use_bench:
+        if bench is None:
+            raise ValueError("cash_mode='bench' 需要 bench 序列")
+        bench = np.asarray(bench, float)
+        if not np.all(np.isfinite(bench)) or not np.all(bench > 0):
+            raise ValueError("bench 序列要 ffill 過且全正")
     cols = ["sid", "entry_pos", f"xpos_{rule}", f"g_{rule}"]
     extra = [c for c in _LOG_COLS if c in sig.columns and c not in cols]
     d = sig[cols + extra].dropna(subset=cols)
@@ -412,6 +426,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     by_entry = {k: g for k, g in d.groupby("entry_pos")}
     first, last = int(d["entry_pos"].min()), int(d["exit_pos"].max())
     equity = np.ones(ncal); cash = 1.0; open_pos = []; held = set(); trades = 0; used = 0
+    units = (1.0 / bench[max(first - 1, 0)]) if use_bench else 0.0      # bench 模式：閒置資金以 bench 單位數持有
     wins = 0; pending = []; n_deferred = 0; delays = []; n_expired = 0
     inf = float("inf")
 
@@ -427,7 +442,11 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         still = []
         for ex, sid, amt, gross, ep in open_pos:
             if ex <= t:
-                cash += amt * (1 + gross - COST); held.discard(sid)
+                if use_bench:
+                    units += amt * (1 + gross - COST) * (1 - bench_cost) / bench[t]   # 拿回的錢買 bench，付單邊成本
+                else:
+                    cash += amt * (1 + gross - COST)
+                held.discard(sid)
             else:
                 still.append((ex, sid, amt, gross, ep))
         open_pos = still
@@ -463,10 +482,16 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 slot = equity[t - 1] / n_slots
                 entered_q = set()
                 for j, i in enumerate(take):
+                    if use_bench:
+                        cash = units * bench[t] * (1 - bench_cost)                   # 賣 bench 能提出的現金（扣單邊成本）
                     row = cand.iloc[i]; amt = min(slot, cash)
                     if amt <= 1e-9:
                         rest = list(take[j:]) + rest; break
-                    cash -= amt; ep = float(opens[row["sid"]][t])   # 進場價 ＝ 進場日開盤（還原價）；市值 ＝ 收盤 ÷ 進場開盤
+                    if use_bench:
+                        units -= amt / ((1 - bench_cost) * bench[t])
+                    else:
+                        cash -= amt
+                    ep = float(opens[row["sid"]][t])   # 進場價 ＝ 進場日開盤（還原價）；市值 ＝ 收盤 ÷ 進場開盤
                     if not np.isfinite(ep) or ep <= 0:
                         ep = float(closes[row["sid"]][t])
                     t0 = int(row["_t0"]) if "_t0" in row else t
@@ -489,6 +514,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                         else:
                             _rec(row, reason, t)
         used += len(open_pos)
+        if use_bench:
+            cash = units * bench[t]
         equity[t] = cash + sum(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos)
     equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
     years = (end - first) / 245; final = equity[end - 1]
