@@ -295,6 +295,17 @@ def main():
                     help="把獨立日曆併進 data/meta/calendar_twse.csv（預設只報告）")
     ap.add_argument("--replace", action="store_true",
                     help="⛔ 整份重建，不保留既有的日子。只有在跑完整區間時才可以用")
+    # ⛔⛔ 2026-09-14：回補 1990~2015 的指數時**一定要帶這個**。
+    #   理由是六點五那條：**一條在某個環境下【必然】不成立的斷言，
+    #   等於把那個環境的整條線關掉。**
+    #   ⚠ 我方 `data/universe/daily/` 只有 2015 起 ⇒ 拿 1990 年代的官方日曆去比，
+    #     「官方有、我方沒有」必然是**幾千天** ⇒ 那條 `rl.check` 必然紅，
+    #     ⛔ 而它紅的不是資料有問題，是**我拿了一把量不到那段的尺**。
+    #   ⇒ 這個模式**只做指數**：不寫日曆、不做日曆比對、那幾條 check 大聲跳過。
+    ap.add_argument("--index-only", action="store_true",
+                    help="⭐ 只回補收盤指數，⛔ 不碰交易日曆、也不做日曆比對"
+                         "（1990~2015 那段一定要用：我方日檔只有 2015 起，"
+                         "日曆比對在那段必然全紅而且紅得沒有意義）")
     ap.add_argument("--write-index", action="store_true",
                     help="⭐ 順便把收盤指數補進 data/history/market_index.csv"
                          "（⛔ 只補沒有的日子；重疊的日子拿來當對照組，對不上就一列都不寫）")
@@ -302,16 +313,22 @@ def main():
     B.SLEEP = a.sleep
 
     mine = ours()
-    if not mine:
+    if not mine and not a.index_only:
         print("[cal] 找不到 data/universe/daily/，沒有東西可以核對", file=sys.stderr)
         return 1
+    if a.index_only:
+        # ⛔ 大聲印，⚠ 而且要寫成**不會被讀成「驗過了」**的樣子（六點五）。
+        print("[cal] ⭐ --index-only：**只回補收盤指數**。")
+        print("[cal] ⛔⛔ 這一趟**沒有**做交易日曆比對，也沒有寫日曆——")
+        print("[cal]    ⚠ 不是「比對通過」，是**根本沒比**。"
+              "理由：我方日檔只有 2015 起，拿它比 1990 年代必然全紅。")
     end = a.end or max(mine)[:7]
     y, m = int(a.start[:4]), int(a.start[5:7])
     ey, em = int(end[:4]), int(end[5:7])
 
     print(f"[cal] 獨立來源：TWSE FMTQIK（大盤成交資訊），一個月一發")
     print(f"[cal] {a.start} ~ {end}｜我方日曆 {len(mine)} 天 "
-          f"（{min(mine)} ~ {max(mine)}）")
+          f"（{min(mine) if mine else '—'} ~ {max(mine) if mine else '—'}）")
     official, failed, idx_all = set(), [], {}
     n = 0
     while (y, m) <= (ey, em):
@@ -405,8 +422,14 @@ def main():
                         + (f"，本趟新增 {added} 天" if not a.replace else "（整份重建）"))
     rl.check("每個月都問到了", not failed,
              ("沒問到：" + "、".join(k for k, _ in failed[:6])) if failed else f"{n} 個月")
-    rl.check("官方有、我方沒有的日子為 0（疑似漏抓）", not miss,
-             f"{len(miss)} 天：{'、'.join(miss[:5])}" if miss else "0 天")
+    if a.index_only:
+        # ⛔ 不是「通過」，是**沒比**——兩者在 runlog 裡長得一樣，所以要寫清楚。
+        rl.note("⛔ 這一趟是 --index-only：**沒有做日曆比對**"
+                "（⚠ 不是比對通過）。理由：我方日檔只有 2015 起，"
+                "拿它比 1990 年代必然全紅，而那個紅不代表資料有問題。")
+    else:
+        rl.check("官方有、我方沒有的日子為 0（疑似漏抓）", not miss,
+                 f"{len(miss)} 天：{'、'.join(miss[:5])}" if miss else "0 天")
 
     # ⭐ 收盤指數：順便補進 data/history/market_index.csv（同一批回應，0 次額外請求）
     if a.write_index:
@@ -456,7 +479,8 @@ def main():
                 if not (_pd and _last >= _pd) else ""))
 
     rc = rl.finish()
-    return 1 if (failed or miss or rc) else 0
+    # ⚠ index-only 時 `miss` 必然很大而且無意義 ⇒ 不可以拿它決定回傳碼。
+    return 1 if (failed or (miss and not a.index_only) or rc) else 0
 
 
 if __name__ == "__main__":

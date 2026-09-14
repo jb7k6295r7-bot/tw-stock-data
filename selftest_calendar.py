@@ -203,6 +203,40 @@ def main():
             "write_index(idx_all)" in _src
             and "rl.check(\"⭐ 收盤指數與我方既有值對得上" in _src)
 
+        print("\n── 7. ⭐⭐ `--index-only`：呼叫點與那條**會刪資料**的組合 ──")
+        # ⛔ 純函式測不到這兩件，而它們都在 main()／workflow 裡（第七點第三個陷阱）。
+        _src = io.open(os.path.join(HERE, "calendar_audit.py"),
+                       encoding="utf-8").read()
+        chk("⭐ `--index-only` 這個參數存在", '"--index-only"' in _src)
+        chk("⭐⭐ 而它真的把「官方有我方沒有」那條 check **關掉**"
+            "　（⚠ 我方日檔只有 2015 起，比 1990 年代必然全紅）",
+            "if a.index_only:" in _src
+            and _src.index("if a.index_only:\n        # ⛔ 不是「通過」")
+                < _src.index('rl.check("官方有、我方沒有的日子為 0'))
+        chk("⛔ 而它要講出「**沒比**」，⚠ 不可以只是安靜跳過"
+            "（『沒比』跟『比對通過』在 runlog 裡長得一樣）",
+            "**沒有做日曆比對**" in _src and "不是比對通過" in _src)
+        chk("⛔ 回傳碼不可以被那個無意義的 miss 決定",
+            "miss and not a.index_only" in _src)
+        # ⛔⛔ 這一條是本節的主角：--index-only 配 --replace 會**洗掉整份日曆**
+        _wf = io.open(os.path.join(HERE, ".github", "workflows", "feeds.yml"),
+                      encoding="utf-8").read()
+        _blk = _wf[_wf.index('cal_index_only'):]
+        _blk = _blk[_blk.index('ARGS="--start'):][:900]
+        _io_branch = _blk[_blk.index('cal_index_only }}" = "true"'):]
+        _io_branch = _io_branch[:_io_branch.index("else")]
+        # ⚠ 先濾掉**註解行**再比：那一支的註解裡本來就寫著「不可以帶 --replace」
+        #   ⇒ ⛔ 直接 `in` 會抓到說明文字（第七點：斷言要比帶標籤的整串，
+        #     不是一個裸字串）。第一版就是這樣假紅的。
+        _io_code = "\n".join(x for x in _io_branch.splitlines()
+                             if not x.strip().startswith("#"))
+        chk("⛔⛔ workflow 的 index-only 那一支**沒有** `--replace`"
+            "　（⚠ `--replace` 是整份重建 ⇒ 拿兩個月跑一趟會把 2,851 天洗成 2 個月）",
+            "--replace" not in _io_code and "--index-only" in _io_code,
+            _io_code.strip()[:120])
+        chk("⭐ 而非 index-only 那一支**仍然**有 --write --replace（⛔ 別修壞原本的路）",
+            "--write --replace" in _blk)
+
         print("\n── 4. 沒有碰到 repo ──")
         cal_after = io.open(REPO_CAL, "rb").read() if os.path.isfile(REPO_CAL) else None
         chk("★ repo 的 calendar_twse.csv 逐位元沒變", cal_before == cal_after)
