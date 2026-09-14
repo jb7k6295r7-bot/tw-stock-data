@@ -177,6 +177,50 @@ def openapi_case(name, out):
         out.append("  ⇒ ⭐ 期別欄不只一個值 ⇒ **含多期**，值得當來源評估。")
 
 
+def revenue_hist_columns(out):
+    """⭐⭐ 回測線 0722 ③要的那一格：`revenue_hist` 的來源**有沒有公告日**。
+
+    ⛔ 起因（前視偏誤，而且不會報錯、只會讓結果變好看）：
+      我方 `data/mops/revenue_hist/<期>_<市場>.csv` **一個日期欄都沒有**
+      ⇒ 下游只能拿「期別」去對齊價格，而那是前視。
+
+    ⚠ 而我 0920 給回測線的答案是【推論】不是實測：
+      我方解析是「`header[2:]` 原樣保留來源欄名」⇒ 產出沒有日期欄
+      ⇒ **推**得出「那張頁本身就沒有」。⛔ 而我沒去看過那張頁。
+
+    ⇒ 這一節就是把那一格從【推論】升成【實測】：把 `t21sc03` 的欄名逐字印出來。
+    ⭐ 判準只有一個：**欄名裡有沒有任何一個像日期的**
+      （`日期`／`年月`／`公告`／`申報`／`出表`）。
+    ⛔ 沒有 ⇒ 那就是真的沒有，前視這一格要靠規則擋（次月 10 日），不是靠資料。
+    """
+    import mops_history as MH
+    out.append("── ⭐ `t21sc03`（revenue_hist 的來源）的欄名：有沒有公告日")
+    url = MH.rev_url("sii", 114, 1)          # 民國 114 年 1 月，上市
+    out.append(f"   {url}")
+    raw, err = B.get(url, retries=2, timeout=60)
+    if err or not raw:
+        out.append(f"   ✗ 抓不到：{B.why(err)}")
+        out.append("   ⛔ 抓不到**不等於沒有那一欄**——這一格仍然是【未驗】，下一輪再試。")
+        return
+    rows, header, note, _ = MH.parse_revenue(raw, 114, 1, "twse")
+    if not header:
+        out.append(f"   ⚠ 解析不出表頭：{note}")
+        out.append("   ⛔ 這一格答不出來，⛔ 不可以寫成「沒有公告日」。")
+        return
+    out.append(f"   ⭐ 欄名（{len(header)} 欄，逐字）：")
+    for i, c in enumerate(header):
+        out.append(f"      [{i:>2}] {c}")
+    hit = [c for c in header
+           if any(w in str(c) for w in ("日期", "年月", "公告", "申報", "出表", "Date"))]
+    if hit:
+        out.append(f"   ⭐⭐ **有像日期的欄**：{hit}"
+                   "　⇒ 可以收下來當公告日，前視那一格有救")
+    else:
+        out.append("   ⛔ **一個像日期的欄都沒有** ⇒ 來源本身就沒有公告日"
+                   "　⇒ 前視只能靠規則擋（次月 10 日），⚠ 而規則擋不住提前／延後公告的")
+    out.append(f"   （解析：{note}；⛔ 這裡只看欄名，不寫任何資料檔）")
+
+
 def main():
     out = [f"# MOPS／OpenAPI 探針（丁級 11 終點驗證）",
            f"# ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果",
@@ -189,6 +233,15 @@ def main():
     bridge_case("ajax_t21sc03", "114", "110", out, month="01")
     out.append("")
     bridge_case("ajax_t163sb04", "114", "110", out, season="02")
+    out.append("")
+    revenue_hist_columns(out)
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    print("\n".join(out))
+    print(f"\n[mops_probe] 寫出 {OUT}")
+    return 0
+
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
     print("\n".join(out))
