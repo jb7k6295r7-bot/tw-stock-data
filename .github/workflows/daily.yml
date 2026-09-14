@@ -1129,6 +1129,14 @@ jobs:
       #   ⇒ ⭐ 這一步把 `ci_step.py` 記下的結果寫成一個 runlog 區塊
       #     ⇒ 進 `_last_run.md` ⇒ 進 commit ⇒ 四條線讀得到。
       #   ⛔ 它**一律 exit 0**：一支離線自測不該賠掉整趟抓到的資料。
+      # ⛔ 這一步**故意沒有** `continue-on-error`，⚠ 那不是漏寫：
+      #   它只負責「說」。若它自己炸掉：
+      #     有 continue-on-error ⇒ run 是綠的、而 `_last_run.md` 少一塊 ⇒ 安靜
+      #     沒有             ⇒ run **紅**，⭐ 而「Commit 回 repo」是 `if: always()`
+      #                        ⇒ **這一趟抓到的資料照樣進 commit**
+      #   ⇒ 後者又大聲又不賠資料 ⇒ 選後者。
+      #   ⚠⚠ 而這條的前提是**下面那個 Commit 步驟真的有 `if: always()`**
+      #     ⇒ `selftest_ci_steps.py` ⑧ 釘住它（拿掉就紅）。
       - name: 這一輪有沒有自測紅著（⛔ continue-on-error 會把它藏起來）
         if: always()
         run: python ci_report.py

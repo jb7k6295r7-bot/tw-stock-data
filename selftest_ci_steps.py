@@ -129,6 +129,45 @@ try:
 finally:
     runlog.PATH, R.TSV = old_lr, old_tsv
 
+print("\n── ⑧ ⭐⭐ `ci_report` 那一步的**前提**：Commit 是 `if: always()` ──")
+# ⛔⛔ `ci_report` 那一步故意**沒有** `continue-on-error`——理由是
+#   「它炸掉時 run 要紅，⭐ 而資料照樣進 commit」。
+#   ⚠ 而後半句完全靠下面這個事實：**Commit 那一步是 `if: always()`**。
+#   ⇒ 有人把它拿掉的那一天，`ci_report` 一炸就會**賠掉整趟抓到的資料**，
+#     ⛔ 而那正是這兩支程式當初要防的事。⇒ 這一條釘住那個前提。
+_wf = os.path.join(HERE, ".github", "workflows", "daily.yml")
+if not os.path.exists(_wf):
+    print("  ⚠⚠ **這一層沒跑**：找不到 `.github/workflows/daily.yml`"
+          "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+else:
+    _t = io.open(_wf, encoding="utf-8").read()
+    _lines = _t.split("\n")
+    _i = next((i for i, l in enumerate(_lines) if "run: python ci_report.py" in l), -1)
+    ck("daily.yml 裡真的有 `ci_report.py` 這一步", _i >= 0)
+    if _i >= 0:
+        # 這一步自己**不可以**有 continue-on-error（見上面的理由）
+        # ⛔⛔ 只看這一步**`- name:` 與 `run:` 之間那幾行設定**。
+        #   ⚠ 兩次被自己的文字命中（CLAUDE.md：包含比對會命中一個很像的鄰居）：
+        #     ① 我上面寫了一段註解解釋「為什麼這裡沒有 continue-on-error」
+        #     ② 而這一步的**標題**就叫「⛔ continue-on-error 會把它藏起來」
+        #   ⇒ ⭐ 判準要落在**設定行**上，⛔ 不是「這一步附近有沒有這串字」。
+        _nm = max((j for j in range(_i, -1, -1)
+                   if _lines[j].lstrip().startswith("- name:")), default=_i)
+        _blk = [l for l in _lines[_nm + 1:_i]          # ⛔ 不含 name 那一行
+                if not l.lstrip().startswith("#")]
+        ck("⭐ 而它**沒有** `continue-on-error`（⛔ 有的話炸掉就沒人知道）",
+           not any("continue-on-error" in l for l in _blk), str(_blk))
+        ck("  ★ 而這一節真的看到設定行了（⛔ 空 list 跟「沒有那一行」長得一樣）",
+           any("if:" in l or "timeout" in l for l in _blk), str(_blk))
+        # 它之後的第一個 Commit 步驟要有 if: always()
+        _after = _lines[_i:]
+        _ci = next((j for j, l in enumerate(_after) if "name: Commit 回 repo" in l), -1)
+        ck("⭐ `ci_report` **排在** Commit 之前（⇒ 那一塊來得及進 commit）", _ci >= 0)
+        if _ci >= 0:
+            ck("⭐⭐ 而 Commit 那一步是 `if: always()`"
+               "（⛔ 拿掉 ⇒ ci_report 一炸就賠掉整趟抓到的資料）",
+               "if: always()" in _after[_ci + 1], repr(_after[_ci + 1]))
+
 print("\n── ⑦ ★ 沒有動到 repo 真的 `_last_run.md` 與 `_ci_steps.tsv` ──")
 now = (_dig(REAL_LR), _dig(REAL_TSV))
 ck("★ `_last_run.md` 逐位元沒變", B4[0] == now[0])
