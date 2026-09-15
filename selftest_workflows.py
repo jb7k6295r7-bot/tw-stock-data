@@ -549,8 +549,17 @@ def main():
     _ref = (os.environ.get("GITHUB_REF_NAME")
             or subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
                               capture_output=True, text=True).stdout.strip())
+    # ⭐⭐ 2026-09-15 加後兩個：`p4_types/` 的 `universe.csv` 與 `records.csv`。
+    #   ⚠ 它們 09-15 之前是**回測線分支上的種子檔**，我一次性搬上 main
+    #   ⇒ ⭐ **從那一刻起它們換了寫入者**：main 上的 `forward.yml` 每月 append
+    #     （`universe.csv` 的 `first_seen` 取小／`last_seen` 取大是讀既有檔算的）
+    #   ⇒ ⛔ 分支上再留一份，就是四點六那個「分支那份永遠是舊的」。
+    # ⚠ 而同一個目錄的 `README.md` 與 `v0_…md` **不進這張清單**：
+    #   它們是靜態文件、沒有人在 append ⇒ ⛔ 判準是**誰寫它**，不是「同一個目錄」。
     _accum = ("backtest/forward/runlog.md", "backtest/forward/state_N30.json",
-              "backtest/forward/state_N40.json", "backtest/forward/_runs.jsonl")
+              "backtest/forward/state_N40.json", "backtest/forward/_runs.jsonl",
+              "backtest/forward/p4_types/universe.csv",
+              "backtest/forward/p4_types/records.csv")
     if _ref == "main":
         # ⛔ 這一行要寫成**不會被讀成「驗過了」**的樣子（六點五）
         print("  --   ⚠ 這一趟在 **main** 上 ⇒ 「分支不留累積檔」那一層**整個沒跑**"
