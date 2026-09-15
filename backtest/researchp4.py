@@ -497,9 +497,19 @@ def main():
     verdict = overall_verdict(S, pA)
     # summary.md
     n_liq = int(panel["liq_ok"].sum()); n_gate = int((panel["liq_ok"] & ~panel["bars_ok"]).sum()); n_inst = int((panel["liq_ok"] & panel["bars_ok"] & ~panel["inst_ok"]).sum())
+    # 〈八十二〉③：每道閘門「與上一輪相比擋掉的筆數變了多少」——追加型台帳 gate_history.csv（⛔ 不整份覆蓋）
+    gh_p = os.path.join(a.out, "gate_history.csv"); cols = ["stamp", "commit", "n_panel", "n_liq", "n_bars_dropped", "n_inst_dropped", "n_innov_dropped", "n_eligible"]
+    row = {"stamp": stamp, "commit": commit, "n_panel": len(panel), "n_liq": n_liq, "n_bars_dropped": n_gate, "n_inst_dropped": n_inst, "n_innov_dropped": n_innov, "n_eligible": len(cl)}
+    prev = pd.read_csv(gh_p, comment="#").iloc[-1].to_dict() if os.path.exists(gh_p) and len(pd.read_csv(gh_p, comment="#")) else None
+    with open(gh_p, "a", encoding="utf-8") as fh:
+        if prev is None and not os.path.exists(gh_p):
+            fh.write("# 閘門逐輪計數（〈八十二〉③）：每跑一輪追加一列；⛔ 不可整份覆蓋\n" + ",".join(cols) + "\n")
+        fh.write(",".join(str(row[c]) for c in cols) + "\n")
+    gate_delta = "（第一輪，無上一輪）" if prev is None else "、".join(f"{c} {int(prev[c]):,}→{row[c]:,}（{row[c] - int(prev[c]):+,}）" for c in cols[2:])
     mp_line = open(os.path.join(a.out, "min_periods_check.txt"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(a.out, "min_periods_check.txt")) else "（沿用既有面板，本趟沒跑）"
     L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、流動性合格 {n_liq:,} 列、bars<{P.MIN_BARS} 再擋 {n_gate:,} 列（放棄組⑧）、法人欄 NaN 再擋 {n_inst:,} 列（放棄組⑩，K線分析 2035 (c)）、創新板規則排除 {n_innov} 列、合格 {len(cl):,} 列。", "",
          f"環境指紋（〈六十七〉）：python {sys.version.split()[0]}、pandas {pd.__version__}、numpy {np.__version__}；無成交日 amount／volume 依〈七十七〉還原 0（區間內部；依據＝該日日檔存在且不含該檔）。", "",
+         f"閘門逐輪計數（〈八十二〉③，vs 上一輪 `gate_history.csv`）：{gate_delta}", "",
          f"閘門（v3 補件 §3-1／§3-2，K線分析 1855 合併）：量測日 bars ≥ {P.MIN_BARS} 才進母體、所有回看窗 min_periods＝w；§4-1 常設斷言：{mp_line}", ""]
     L.append("## 一、主格 2021-01～2026-03，H=120（唯一判定格）"); L.append("")
     L.append("| 型 | 有效月 | 超額 | 95% CI | 月勝率 | 逐筆勝率 | p05 / p10 / p50 / p90 / p95 | 絕對平均（扣成本） | 月均檔數 | 判定 |"); L.append("|---|---:|---:|---|---:|---:|---|---:|---:|---|")
