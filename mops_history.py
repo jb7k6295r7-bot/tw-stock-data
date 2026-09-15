@@ -59,6 +59,7 @@ import urllib.request
 from html.parser import HTMLParser
 
 import neighbor_floor          # ⭐ 「跟鄰近同類比數量」只有那一份實作（四點五）
+import twparse                  # ⭐ csv_cell 只有那一份（四點五）
 import runlog                  # ⭐ 可見性要由**資料**承擔，⛔ 不是由 log（四點二⑤）
 
 MOPSOV = "https://mopsov.twse.com.tw"
@@ -1228,7 +1229,9 @@ def main():
                   encoding="utf-8") as fh:
             fh.write("kind,period,market,status,note\n")
             for (k, per, mkt), (st, msg) in sorted(state.items()):
-                fh.write(f"{k},{per},{mkt},{st},{str(msg).replace(',', '；')}\n")
+                # ⭐ 同 `official_stats`：走 `twparse.csv_cell`（四點五）
+                #   ⛔ 只換逗號 ⇒ 訊息裡的換行會把一列切成好幾列
+                fh.write(f"{k},{per},{mkt},{st},{twparse.csv_cell(msg)}\n")
         nok = sum(1 for v in state.values() if v[0] == "ok")
         print(f"[hist] 狀態帳本：data/mops/_hist_status.csv"
               f"｜ok {nok}、fail {len(fails)}、pending {len(pending)}"

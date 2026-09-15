@@ -67,6 +67,24 @@ TWSE  volume 12,740,507,347    amount 916,448,075,621        （2330 100 年）
 ⛔ 而**總量那三欄是另一種口徑**（零股／盤後定價／鉅額之類，⚠ 我沒有量出是哪幾種
 ⇒ **那就寫不知道**）。
 
+#### ⛔⛔ 而「另一種口徑」**每一欄的幅度不一樣** ⇒ 不可以套同一個換算
+
+```
+             我方日檔          官方（×1,000 之後）    差
+成交股數     1,263,212,000     1,323,393,000         ＋4.8%
+成交金額   1,016,311,783,500  1,066,891,796,000      ＋5.0%
+⛔ 成交筆數      919,431           2,354,000         ＋156%（**2.56 倍**）
+```
+
+⚠ 而我方 tpex 的 `transactions` 欄**不是缺值**（2026-09-15 那天 1,013 列 100% 有值，
+6488 當天 6,274 筆）⇒ ⛔ 不是我方漏抓。
+⭐ 候選（**未驗**）：官方可能買賣各算一筆（2×）、或含盤中零股。⛔ 我答不出來 ⇒ 寫不知道。
+
+⇒ ⭐⭐ **落地判準：只有 `收盤平均價` 那一欄可以進共用的判準表。**
+⛔ 其餘各欄原樣另存（張／仟元／仟筆都保留官方單位），
+⚠ 一旦把它們換算後併進同一張表，就會做出一張**接縫不會報錯**的表
+（主鍵是代號＋年度，兩段代號根本不重疊 ⇒ 第二點那條 FMTQIK 接縫）。
+
 ⚠⚠ 這**正是** CLAUDE.md 第二點 2026-09-14 那條（`FMTQIK`）的同一個形狀：
 **同一張表裡，有的欄可以信、有的不行**，而差異只落在總量那幾欄。
 ⇒ ⛔ 「這個端點可不可信」問錯了問題，要問的是「這個【欄】可不可信」。
@@ -110,6 +128,7 @@ from datetime import datetime, timedelta, timezone
 
 import backfill as B
 import runlog
+import twparse                     # ⭐ csv_cell 只有那一份（四點五）
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -126,6 +145,73 @@ Y_HEADER = ["stock_id", "roc_year", "volume", "amount", "transactions",
             "high", "high_date", "low", "low_date", "avg_close", "asof"]
 M_HEADER = ["stock_id", "roc_year", "month", "high", "low", "avg_price",
             "transactions", "amount", "volume", "turnover", "asof"]
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 上櫃那一半（2026-09-16 probe 120/121 實測）
+#
+#   一發回**全部 12 年**（`totalCount:12`，民國 104~115）；
+#   ⛔ `date` **不是篩選器**（我送 2024 它照樣回全部）。
+#   ⚠ `fields` 有**兩個都叫「日期」**的欄 ⇒ 跟 FMNPTK 一樣**用位置取**。
+#
+#   ⭐ 哪一欄可以信：拿 6488 環球晶跟我方日檔對 114／115 兩年——
+#
+#       收盤平均價        366.43／749.62      **逐位相同**
+#       盤中最高價＋日期  558.00@10/27／1,600.00@7/15   **逐位相同**
+#       盤中最低價＋日期  255.50@4/09／403.00@1/02      **逐位相同**
+#       ⛔ 成交張數 ＋4.8%｜成交金額 ＋5.0%｜成交筆數 **＋156%**
+#       ⛔ 加權平均價(B/A) ⇒ **由那兩個口徑不同的欄推導** ⇒ 一起不可信
+#
+#   ⇒ ⭐ **價那五格進共用判準表，量那三欄原樣另存**（保留官方單位：張／仟元／仟筆）。
+#     ⛔ 換算後併進同一張表 ＝ 做出一張接縫不會報錯的表（第二點那條 FMTQIK）。
+# ══════════════════════════════════════════════════════════════════
+TPEX_YEARLY_URL = ("https://www.tpex.org.tw/www/zh-tw/statistics/yearlyStock"
+                   "?code={s}&response=json")
+TPEX_YEARLY = os.path.join(META, "official_yearly_tpex.csv")
+# ⛔ 欄名帶單位：`_lots`（張）／`_kntd`（仟元）／`_k`（仟筆）
+#   ⚠ 第十個那條：跨線交換一個量，欄名要講得出它是什麼單位／怎麼推導的。
+TY_HEADER = ["stock_id", "roc_year", "volume_lots", "amount_kntd",
+             "transactions_k", "wavg_price_derived", "asof"]
+
+
+def parse_tpex_yearly(payload, sid):
+    """上櫃 `yearlyStock` 的回應 → `(價那五格, 量那四格, err)`。
+
+    → `price_rows` 每列 `(代號, 民國年, 最高, 最高日, 最低, 最低日, 收盤平均價)`
+      `vol_rows`   每列 `(代號, 民國年, 張數, 仟元, 仟筆, 加權平均價)`
+
+    ⛔ 判準是**回應自己回顯的 `code`**跟我請求的那一檔相同（第二點：
+    「這一批要自己講出它是誰」）——⚠ 而 `monthlyStock` 那一發就是靠這個看出
+    參數沒生效的（`code: null`、`stat` 照樣是 `ok`）。
+    """
+    try:
+        d = json.loads(payload.decode("utf-8", "replace")
+                       if isinstance(payload, bytes) else payload)
+    except ValueError as ex:                                     # noqa: BLE001
+        return [], [], f"yearlyStock 不是 JSON：{str(ex)[:80]}"
+    if (d.get("stat") or "") != "ok":
+        return [], [], f"yearlyStock stat={d.get('stat')!r}"
+    tabs = d.get("tables") or []
+    if not tabs:
+        return [], [], "yearlyStock 回應沒有 tables"
+    t = tabs[0]
+    got = (t.get("code") or "").strip()
+    if got != str(sid):
+        # ⭐ 這一格就是「靜靜回了別的東西」的那一種（第二點①）
+        return [], [], (f"yearlyStock 回顯的 code 是 {got!r}，"
+                        f"⛔ 不是我送的 {sid!r} ⇒ 參數沒生效")
+    pr, vr = [], []
+    for row in (t.get("data") or []):
+        if len(row) < 10:
+            continue
+        y = str(row[0]).strip()
+        # ⚠ 位置取，⛔ 不用名字：`fields` 裡有兩個都叫「日期」
+        pr.append((sid, y, _n(row[5]), str(row[6]).strip(),
+                   _n(row[7]), str(row[8]).strip(), _n(row[9])))
+        vr.append((sid, y, _n(row[1]), _n(row[2]), _n(row[3]), _n(row[4])))
+    if not pr:
+        return [], [], "yearlyStock 回了 0 列（⛔ 不是「這一檔沒有」）"
+    return pr, vr, None
 
 
 def _n(v):
@@ -270,8 +356,42 @@ def excluded(covered=COVERED):
     return n
 
 
+def is_code(sid):
+    """看起來像不像一個證券代號。⭐ 只有這一份實作（`load_miss` 與 `bad_rows` 共用）。
+
+    ⛔ 它不是「這個代號存不存在」——那要查母體。⚠ 它擋的是**根本不是代號**的東西：
+    2026-09-16 實測 `_official_stats_miss.csv` 106 列裡有兩列的 `stock_id` 是
+    `<head>` 與 `<meta h`（整頁 HTML 被寫進 `why` 欄，⇒ 換行把一列切成好幾列）。
+    ⇒ 寫入端已經收成 `twparse.csv_cell`；這一支是**讀入端**的第二層
+    （⭐ 兩層都要：舊檔裡已經有的那幾列不會自己消失）。
+    """
+    return bool(re.fullmatch(r"[0-9A-Z]{4,6}", (sid or "").strip()))
+
+
+def bad_rows(path=None):
+    """→ miss 台帳裡**不像代號**的那幾列（原始 `stock_id` 字串）。
+
+    ⭐ 它存在的理由是第七點那句：「回報某群 0 筆時，要附上該判準抓到的正例數」
+    ——⛔ 靜靜丟掉那幾列的話，檔案被污染這件事**沒有任何地方會說**。
+    """
+    p = path or MISS
+    out = []
+    if not os.path.exists(p):
+        return out
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            sid = (r.get("stock_id") or "").strip()
+            if sid and not is_code(sid):
+                out.append(sid[:40])
+    return out
+
+
 def load_miss(path=None):
-    """→ {代號: (tries, last_asof, why)}。讀不到回 {}（⛔ 不是炸掉）。"""
+    """→ {代號: (tries, last_asof, why)}。讀不到回 {}（⛔ 不是炸掉）。
+
+    ⛔ 不像代號的列**丟掉**（見 `is_code`），⚠ 而丟了幾列由 `bad_rows()` 報出來
+    ——⭐ 丟掉而不說，跟沒有被污染在畫面上一模一樣。
+    """
     p = path or MISS
     out = {}
     if not os.path.exists(p):
@@ -279,7 +399,7 @@ def load_miss(path=None):
     with io.open(p, encoding="utf-8") as f:
         for r in csv.DictReader(f):
             sid = (r.get("stock_id") or "").strip()
-            if not sid:
+            if not sid or not is_code(sid):
                 continue
             try:
                 n = int(r.get("tries") or 0)
@@ -315,7 +435,9 @@ def bump_miss(fail, today, path=None, alive=True):
         f.write(MISS_HEADER)
         for sid in sorted(cur):
             n, asof, why = cur[sid]
-            f.write(f"{sid},{n},{asof},{str(why).replace(',', '；')}\n")
+            # ⭐ 走 `twparse.csv_cell`（全庫唯一那一份）：⛔ 只換逗號是不夠的,
+            #   `why` 可能是整頁 HTML ⇒ 裡面的換行會把一列切成好幾列。
+            f.write(f"{sid},{n},{asof},{twparse.csv_cell(why)}\n")
     return len(fail)
 
 
@@ -483,6 +605,14 @@ def main():
     pool = codes()
     # ⭐ 三堆只在**這裡切一次**（四點五）：⛔ 不要在別處再算一次 `c not in done`。
     miss = load_miss() if not a.force else {}
+    # ⛔ 台帳被污染過就要**講出來**（⚠ 丟掉而不說 ＝ 沒被污染，看起來一樣）
+    _bad = bad_rows()
+    if _bad:
+        rl.info("⛔ miss 台帳裡有**不是代號**的列（已跳過，下次寫入時會消失）",
+                f"{len(_bad)} 列：{_bad[:5]}"
+                "　⇒ 病根是舊版把整頁 HTML 寫進 `why` 欄而只換了逗號沒換換行"
+                "（第二點④：TWSE 被 CDN 擋時回 HTTP 428 ＋ HTML）"
+                "　⇒ 寫入端已改走 `twparse.csv_cell`")
     todo, fresh, give_up = split_todo(pool, done, miss, a.limit)
     ex = excluded()
     for label, value in progress_lines(pool, done, todo, ex, give_up):
