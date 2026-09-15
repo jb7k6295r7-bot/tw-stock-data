@@ -155,6 +155,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# site_inventory.py 的輸出。**只讀不寫資料。**\n")
             f.write("# 問的是：「這個站到底有沒有我要的東西」——一次問完。\n")
             f.write("# ⛔ 它只回答「選單上有沒有這個名字」，"

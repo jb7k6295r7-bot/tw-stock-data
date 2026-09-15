@@ -66,6 +66,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# hist_probe.py 的輸出。這是探針結果，不是資料。\n")
             f.write(f"# 主機：hist.tpex.org.tw（使用者 2026-09-09 提供）\n")
             f.write("# ⛔ 要答的：這個站有沒有**上櫃／興櫃的歷史**——"

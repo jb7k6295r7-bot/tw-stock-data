@@ -418,7 +418,7 @@ def main():
     out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
     print("\n".join(out))
     print(f"\n[mops_probe] 寫出 {OUT}")
     return 0

@@ -369,7 +369,7 @@ def main():
         "     ⛔ 三者在資料上都長成「融資餘額 0」。",
     ]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
     print("\n".join(out))
     print(f"\n[delist_probe] 寫出 {OUT}")
     return 0

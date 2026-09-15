@@ -211,6 +211,7 @@ def main():
     say("   從『拿歷史推論有沒有 ±10% 上限』換成**直接比官方給的漲跌停**")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
+        f.write(B.probe_stamp())
         f.write("\n".join(LINES) + "\n")
     say(f"\n[probe] 寫出 {OUT}")
     return 0

@@ -65,6 +65,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# holiday_probe.py 的輸出。這是探針結果，不是資料。\n")
             f.write("# 網址（使用者 2026-09-09 提供）：" + URL + "\n")
             f.write("# 判準：**台北市**停止上班 ⇒ 台股全日休市。"

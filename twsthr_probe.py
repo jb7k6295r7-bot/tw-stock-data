@@ -226,7 +226,7 @@ def main():
 
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
-        io.open(OUT, "w", encoding="utf-8").write(
+        io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + 
             "# twsthr_probe.py 的輸出。這是探針結果，不是資料。\n"
             f"# 網址（使用者提供）：{BASE}/StockHolders.aspx\n"
             "# ⛔ 第三方彙整站，不是官方——級距文字只是線索，"

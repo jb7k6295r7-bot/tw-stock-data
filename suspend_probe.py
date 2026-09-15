@@ -37,6 +37,7 @@ import urllib.request
 # ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
 import ca_chain  # noqa: F401
 from backfill import js_shell, why                           # noqa: E402
+import backfill as B
 from delist_probe import _spread                             # noqa: E402
 from datetime import datetime, timedelta, timezone
 
@@ -379,6 +380,7 @@ def probe_one(tag, market, tpl, sleep):
 def _finish(head, body):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
+        f.write(B.probe_stamp())
         f.write("\n".join(head + body) + "\n")
     print("\n".join(head + body))
     print(f"\n[probe] 寫出 {OUT}")

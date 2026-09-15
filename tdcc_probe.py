@@ -991,6 +991,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# tdcc_probe.py 的輸出。這是探針結果，不是資料。\n")
             f.write("# 端點：" + URL + "\n\n")
             f.write("\n".join(LINES) + "\n")

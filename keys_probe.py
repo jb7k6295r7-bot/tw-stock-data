@@ -102,6 +102,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# keys_probe.py 的輸出。**只讀不寫資料。**\n")
             f.write("# 問的是：官方回應裡那些我方一路丟掉的鍵，到底寫了什麼。\n")
             f.write("# ⛔ 我方 `_tables()` 只取 title/fields/data，其餘全丟，"
