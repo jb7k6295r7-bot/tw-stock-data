@@ -60,12 +60,12 @@ if __name__ == "__main__":
     full_b = L1[(L1.signal == "b") & (L1.H == 20) & (L1.window == "全期")]["n_days"].sum()
     check(dec == full_b, f"b 三個年代視窗日數合計 {dec}＝全期 {full_b}（合成序列 1990～2013）")
     small = R.layer1(c.iloc[:1500])
-    under = small[(small["n_seg"] < R.N_MIN) | (small["rest_n_seg"] < R.N_MIN)]
+    under = small[(small["n_seg"] < 24) | (small["rest_n_seg"] < 24)]   # ⚠ 寫死 24，不引用 R.N_MIN（否則突變抓不到）
     check(len(under) > 0 and under["judge"].str.startswith(("還沒測", "窗口長度不可比")).all(), f"n<24 的 {len(under)} 格沒有一格被判測得出／測不出")
-    check(not L1[L1["judge"].str.startswith("測")].pipe(lambda z: ((z["n_seg"] < R.N_MIN) | (z["rest_n_seg"] < R.N_MIN)).any()), "判「測得出／測不出」的格 n 與 rest_n 都 ≥ 24")
+    check(not L1[L1["judge"].str.startswith("測")].pipe(lambda z: ((z["n_seg"] < 24) | (z["rest_n_seg"] < 24)).any()), "判「測得出／測不出」的格 n 與 rest_n 都 ≥ 24")
     a90 = L1[(L1.signal == "a") & (L1.window == "1990s")]
     check(len(a90) > 0 and a90["judge"].str.startswith("窗口長度不可比").all(), "a 的 1990s 視窗結論欄＝窗口長度不可比")
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
 
-# 突變：把 layer1 的 `d = d[~d["open"]]` 拿掉 ⇒ 第 3～7 條的段數會多 1、右設限條紅；把 N_MIN 改 5 ⇒ 「還沒測」那條紅
+# 突變：把 layer1 的 `d = d[~d["open"]]` 拿掉 ⇒ 第 3～7 條的段數會多 1、右設限條紅；把 N_MIN 改 5 ⇒ 末兩條紅（2026-09-15 實測：第一版測試引用 R.N_MIN ⇒ 突變仍綠，改寫死 24 才抓到）
