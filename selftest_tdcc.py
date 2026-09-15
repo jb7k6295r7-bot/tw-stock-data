@@ -504,13 +504,20 @@ else:
             for code in range(30):
                 bounds = [(1, 99), (100, 500), (501, 2000), (2001, 50000)]
                 for k, (a, b) in enumerate(bounds, start=1):
-                    # ⭐ 讓每一級偶爾出現「只有 1 個人、剛好持有上界」
-                    #   ⇒ 那正是把 max(avg) 推到上界的那一格
-                    if wk % 7 == k % 7:
+                    # ⭐ 讓每一級偶爾出現「只有 1 個人、剛好持有**下界**／**上界**」
+                    #   ⇒ 那兩格正是把 min(avg)／max(avg) 推到邊界的那一格。
+                    # ⭐⭐ 而第 1 級**故意不給上界那一格** ⇒ 造出
+                    #   「**上界夾死、下界沒夾死**」的第 2 級
+                    #   ⇒ 那是 `exact` 那一欄唯一會分岔的形狀（⛔ 沒有它，
+                    #     「exact 只看上界」的寫法跟正確的寫法長得一模一樣）。
+                    if wk % 7 == k % 7 and k != 1:
                         pe, sh = 1, b if b < 50000 else 9999
+                    elif wk % 11 == k % 11:
+                        pe, sh = 1, a
                     else:
                         pe = _rnd.randint(2, 50)
-                        sh = _rnd.randint(a * pe, b * pe)
+                        top = (b - 5) if k == 1 else b       # ⛔ 第 1 級搆不到上界
+                        sh = _rnd.randint(a * pe, top * pe)
                     recs.append((f"2020-01-{wk+1:02d}", f"{1000+code}", k, pe, sh))
                 for k in (4 + 1, 4 + 2):   # 補到 17 級的形狀（16 調整、17 合計）
                     recs.append((f"2020-01-{wk+1:02d}", f"{1000+code}", k, 0, 0))
@@ -529,17 +536,62 @@ else:
             for i, ub in enumerate(TRUE_UB):
                 r = rows[i]
                 ck(f"  ⭐⭐ 第 {i+1} 級的真上界 {ub} 落在夾出來的 "
-                   f"[{r[2]}, {r[3]}] 裡（⛔ 夾錯就是判準壞了）",
-                   r[2] <= ub <= r[3], f"{r[2]} ~ {r[3]}")
-            ck("  ⭐ 而下界接得起來（a_{k+1} = b_k + 1）",
+                   f"[{r[3]}, {r[4]}] 裡（⛔ 夾錯就是判準壞了）",
+                   r[3] <= ub <= r[4], f"{r[3]} ~ {r[4]}")
+            # ⛔⛔ 而**下界**也是一個區間——第一版把它寫成
+            #   `round(hi[k-1]) + 1`（上一級上界的**樂觀端**）
+            #   ⇒ 最高那一級印出一個看起來確定、其實差 1 股沒夾死的數字。
+            TRUE_LB = [1] + [u + 1 for u in TRUE_UB]
+            for i, lb in enumerate(TRUE_LB):
+                r = rows[i]
+                ck(f"  ⭐⭐ 第 {i+1} 級的真下界 {lb} 也落在夾出來的 "
+                   f"[{r[1]}, {r[2]}] 裡",
+                   r[1] <= lb <= r[2], f"{r[1]} ~ {r[2]}")
+            ck("  ⭐ 而下界的區間 ＝ 上一級上界的區間 +1（⛔ 不是取一端）",
+               all(rows[i + 1][1] == rows[i][3] + 1
+                   and rows[i + 1][2] == rows[i][4] + 1
+                   for i in range(len(rows) - 1)),
+               str([(r[1], r[2], r[3], r[4]) for r in rows]))
+            ck("  ⭐ 而級距接得起來（a_{k+1} = b_k + 1）",
                not T.levels_gaps(rows), str(T.levels_gaps(rows)))
-            ck("  ⭐ 至少夾出一個唯一解（⇒ 樣本夠）",
-               any(r[4] == "1" for r in rows), str([r[4] for r in rows]))
+            ck("  ⭐ 至少夾出一級**兩端都是**唯一解（⇒ 樣本夠）",
+               any(r[5] == "1" for r in rows), str([r[5] for r in rows]))
+            # ⭐⭐ `exact` 是「**兩端都**夾死」，⛔ 不是「上界夾死」。
+            #   ⚠ 這一條要有「上界夾死、下界沒夾死」的樣本才驗得到
+            #     ⇒ 上面的假庫**刻意**造了一級出來（⛔ 不是碰運氣）。
+            _half = [r for r in rows if r[3] == r[4] and r[1] != r[2]]
+            ck("⭐⭐ 假庫真的造出「上界夾死、下界沒夾死」那一級"
+               "（⛔ 沒有它，這條斷言驗不到東西）",
+               bool(_half), str([(r[0], r[1], r[2], r[3], r[4]) for r in rows]))
+            ck("⭐⭐ 而那一級的 `exact` 必須是 **0**（⛔ `exact` 不是只看上界）",
+               all(r[5] == "0" for r in _half),
+               str([(r[0], r[5]) for r in _half]))
             # ⛔ 接不起來要抓到
             _broken = [list(r) for r in rows]
             _broken[1][1] = _broken[0][3] + 99      # 造一個縫
             ck("⛔ 級距中間有縫 ⇒ `levels_gaps` 抓到",
                bool(T.levels_gaps(_broken)), str(T.levels_gaps(_broken)))
+            # ⭐⭐ 而**只有一端**對不上也要抓到（⛔ 第一版只比一端 ⇒ 這個會漏）
+            _one = [list(r) for r in rows]
+            _one[1][2] = _one[1][2] + 7             # 只動下界的 hi 那一端
+            ck("⛔⛔ **只有一端**接不上也要抓到（⚠ 三點1：只比一個方向）",
+               bool(T.levels_gaps(_one)), str(T.levels_gaps(_one)))
+
+            # ── `level_of`：沒夾死的地方要回**兩個**級別 ──
+            # 真邊界 1-99｜100-500｜501-2000｜2001+ ⇒ 99 與 500 都夾死了嗎？
+            ck("⭐ 某個**確定**在第 1 級的股數 ⇒ 回 (1, 1)",
+               T.level_of(rows, 50) == (1, 1), str(T.level_of(rows, 50)))
+            ck("⭐ 某個**確定**在最高級的股數 ⇒ 兩端都是最高級",
+               T.level_of(rows, 999_999) == (4, 4), str(T.level_of(rows, 999_999)))
+            # ⭐⭐ 造一個**沒夾死**的邊界，問那一股 ⇒ 必須回兩個級別
+            _fz = [list(r) for r in rows]
+            _fz[0][3], _fz[0][4] = 99, 101          # 第 1 級上界故意不夾死
+            _fz[1][1], _fz[1][2] = 100, 102
+            ck("⭐⭐ 邊界沒夾死時 ⇒ `level_of` 回**兩個**級別（⛔ 不挑一端）",
+               T.level_of(_fz, 100) == (1, 2), str(T.level_of(_fz, 100)))
+            ck("  ⭐ 而區間外那一股仍然只有一個答案",
+               T.level_of(_fz, 99) == (1, 1) and T.level_of(_fz, 102) == (2, 2),
+               f"{T.level_of(_fz, 99)}｜{T.level_of(_fz, 102)}")
         finally:
             T.N_LEVELS = _old_n
 
@@ -552,11 +604,19 @@ else:
             T.N_LEVELS = _old_n
         ck("⭐ `levels_cmd` 有「接得起來」那道 check",
            any("接得起來" in k for k, _c, _d in rl.checks), str(rl.checks))
-        ck("⭐ 也有「至少 5 個唯一解」那道",
+        ck("⭐ 也有「唯一解夠不夠」那道",
            any("唯一解" in k for k, _c, _d in rl.checks), str(rl.checks))
         ck("⭐⭐ 而它**自己講出**千張大戶落在哪一級（⛔ 那是 E3 卡住的原因）",
            any("千張大戶" in k for k, _v in rl.infos),
            str([i for i in rl.infos if "千張" in str(i)]))
+        # ⭐⭐ 而它要**分開**講「剛好 N 張」與「超過 N 張」
+        #   ⛔ 只講一個 ⇒ 讀的人會把「以上」跟「超過」當同一件事，
+        #     ⚠ 而實測那兩個**不是同一級**（1,000 張整在第 14 級）。
+        _qz = " ".join(f"{k}{v}" for k, v in rl.infos)
+        ck("⭐⭐ 而「剛好 N 張」與「超過 N 張」**分開講**"
+           "（⛔ 合成一句就是把精度講掉了）",
+           "剛好" in _qz and "超過" in _qz,
+           str([i for i in rl.infos if "張" in str(i)]))
         ck("⛔ 不帶 `--apply` ⇒ 不寫檔",
            any("只算不寫" in f"{k}{v}" for k, v in rl.infos))
         # ⛔ 沒有 parquet ⇒ 大聲說這一層沒跑

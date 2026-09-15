@@ -304,7 +304,8 @@ def hist_rows(rows, day, c=None):
 
 
 LEVELS_CSV = os.path.join(_ROOT, "meta", "tdcc_levels.csv")
-LEVELS_HEADER = ["level", "lower", "upper_lo", "upper_hi", "exact", "n"]
+LEVELS_HEADER = ["level", "lower_lo", "lower_hi",
+                 "upper_lo", "upper_hi", "exact", "n"]
 
 
 def derive_levels(hist_dir=None):
@@ -335,10 +336,18 @@ def derive_levels(hist_dir=None):
     ② 15 個級距**互斥且相鄰**（沒有縫、沒有重疊）
     ⇒ 兩條都是這張表的標準讀法，⛔ 而本檔**不宣稱**它們被證明過。
 
-    ## ⭐ 而它直接回答了 E3 卡住的那件事
+    ## ⭐ 而它直接回答了 E3 卡住的那件事——⚠ 而**措辭要照夾出來的精度**
 
-    第 15 級 = 1,000,001 股以上 ＝ **1,000 張以上** ⇒ 「千張大戶」就是第 15 級；
-    400 張以上 ＝ 第 12 級起。
+    ```
+    ⭐ 「超過 400 張」（400,001 股）⇒ **第 12 級**起｜這個邊界是**唯一解**
+    ⭐ 「超過 1,000 張」            ⇒ 第 15 級，⚠ **而差 1 股沒夾死**
+       b_14 ∈ {1,000,000, 1,000,001} ⇒ 1,000,001 股可能在 14 也可能在 15
+    ⛔ 而「千張大戶 ＝ 1,000 張**以上**」這個寫法是**錯的**：
+       剛好 1,000 張（1,000,000 股）確定在**第 14 級**（b_14 ≥ 1,000,000）
+    ```
+
+    ⇒ 問「某個股數在第幾級」一律走 `level_of()`，⛔ 不要自己拿 `lower_lo` 比
+    ——它回**兩個**級別，沒夾死的地方會自己講出來。
     """
     try:
         import numpy as np
@@ -365,32 +374,70 @@ def derive_levels(hist_dir=None):
             lo[k] = min(lo.get(k, float("inf")), float(a.min()))
             hi[k] = max(hi.get(k, 0.0), float(a.max()))
             n[k] = n.get(k, 0) + int(m.sum())
+    ub = {}
+    for k in sorted(lo):
+        ub[k] = ((int(round(hi[k])), int(lo[k + 1]) - 1) if k + 1 in lo
+                 else (0, 0))               # 最高一級沒有上界
     rows = []
     for k in sorted(lo):
-        lower = 1 if k == 1 else int(round(hi[k - 1])) + 1
-        if k + 1 in lo:
-            ub_lo, ub_hi = int(round(hi[k])), int(lo[k + 1]) - 1
-        else:
-            ub_lo, ub_hi = 0, 0                 # 最高一級沒有上界
-        rows.append([k, lower, ub_lo, ub_hi,
-                     "1" if (ub_hi and ub_lo == ub_hi) else "0", n.get(k, 0)])
-    n_exact = sum(1 for r in rows if r[4] == "1")
+        # ⛔⛔ 下界**也是一個區間**：`a_k = b_{k-1} + 1`，而 b_{k-1} 本身可能沒夾死。
+        #   ⚠ 第一版寫的是 `lower = round(hi[k-1]) + 1` ⇒ 取了上一級上界的**樂觀端**
+        #     ⇒ 第 15 級印出「1,000,001 股起」，⛔ 看起來像個確定的數字，
+        #       而它其實是 1,000,001 或 1,000,002 **還沒夾死**。
+        #   ⭐ 而 `exact` 那一欄只標上界 ⇒ 最高那一級（沒有上界）**連標都沒有標**。
+        lo_lo, lo_hi = (1, 1) if k == 1 else (ub[k - 1][0] + 1, ub[k - 1][1] + 1)
+        ub_lo, ub_hi = ub[k]
+        # ⭐ `exact` ＝ **這一級的兩端都夾死了**（⛔ 不是只有上界）
+        exact = "1" if (lo_lo == lo_hi and ub_hi and ub_lo == ub_hi) else "0"
+        rows.append([k, lo_lo, lo_hi, ub_lo, ub_hi, exact, n.get(k, 0)])
+    n_exact = sum(1 for r in rows if r[5] == "1")
     return rows, (f"{len(rows)} 級｜{n_exact} 個邊界夾成唯一解"
                   f"｜樣本 {sum(n.values()):,} 列")
 
 
 def levels_gaps(rows):
-    """→ 接不起來的地方 `[(級, 上界, 下一級下界), ...]`。
+    """→ 接不起來的地方 `[(級, 本級上界區間, 下一級下界區間), ...]`。
 
     ⛔ 級距必須**相鄰**：`a_{k+1} = b_k + 1`。⚠ 接不起來就代表
     ① 我方的推導前提錯了，或 ② 官方改過級距 ⇒ 兩種都要人看，**不可以自動放行**。
+
+    ⭐ 而判準是**兩端逐個對齊**（`lo+1` 對 `lo`、`hi+1` 對 `hi`），
+    ⛔ 不是「只要有一端對得上就算」——第一版那樣寫，
+    ⚠ 下界被取成樂觀端時它**照樣綠**（三點1：只比一個方向就宣告一致）。
     """
     bad = []
     for i, r in enumerate(rows[:-1]):
         nxt = rows[i + 1]
-        if r[3] and nxt[1] != r[3] + 1 and nxt[1] != r[2] + 1:
-            bad.append((r[0], r[3], nxt[1]))
+        if not r[4]:                       # 最高一級沒有上界，沒得接
+            continue
+        if (nxt[1], nxt[2]) != (r[3] + 1, r[4] + 1):
+            bad.append((r[0], (r[3], r[4]), (nxt[1], nxt[2])))
     return bad
+
+
+def level_of(rows, shares):
+    """某個股數**落在哪一級**。→ `(最低可能的級, 最高可能的級)`。
+
+    ⭐ 回**兩個**數字是這支的重點：邊界沒夾死的地方，答案本來就是一個區間。
+    ⛔ 回單一個級別＝把「差一股沒夾死」偷偷變成「我知道」。
+
+        level_of(rows, 1_000_000) → (14, 14)   ⇒ **1,000 張整在第 14 級**
+        level_of(rows, 1_000_001) → (14, 15)   ⚠ 這一股差在 b_14 夾不夾得死
+        level_of(rows,   400_001) → (12, 12)   ⇒ 這個邊界是唯一解
+
+    ⇒ ⭐⭐ 所以「千張大戶 ＝ 第 15 級」要寫成「**超過** 1,000 張」，
+    ⛔ 寫「1,000 張**以上**」是錯的——剛好 1,000 張的人在第 14 級。
+    """
+    cand = []
+    for r in rows:
+        lo_lo, lo_hi, ub_lo, ub_hi = r[1], r[2], r[3], r[4]
+        # 可能落在這一級 ⇔ 存在一組合法邊界讓 a ≤ shares ≤ b
+        if shares < lo_lo:
+            continue
+        if ub_hi and shares > ub_hi:
+            continue
+        cand.append(r[0])
+    return (min(cand), max(cand)) if cand else (0, 0)
 
 
 def import_hist(rl, src, out_dir=None, apply=False):
@@ -623,26 +670,35 @@ def levels_cmd(rl, apply=False, hist_dir=None, out=None):
         return rl.finish()
     rl.info("結果", note)
     for r in rows:
-        ub = f"{r[2]:,} ~ {r[3]:,}" if r[3] else "（無上限）"
+        lb = f"{r[1]:,}" if r[1] == r[2] else f"{r[1]:,} ~ {r[2]:,}"
+        ub = (f"{r[3]:,} ~ {r[4]:,}" if r[3] != r[4] else f"{r[3]:,}") \
+            if r[4] else "（無上限）"
         rl.info(f"  第 {r[0]:>2} 級",
-                f"{r[1]:>9,} 股起｜上界夾在 {ub}"
-                + ("　⭐ **唯一解**" if r[4] == "1" else "")
-                + f"｜樣本 {r[5]:,}")
+                f"下界 {lb} 股｜上界 {ub}"
+                + ("　⭐ **兩端都是唯一解**" if r[5] == "1" else "")
+                + f"｜樣本 {r[6]:,}")
     rl.check("⭐ 15 級都夾得出來（⛔ 少一級就不可以寫）",
              len(rows) == N_LEVELS - 2, f"{len(rows)} 級")
     gaps = levels_gaps(rows)
     rl.check("⭐⭐ 級距**接得起來**（a_{k+1} = b_k + 1，⛔ 沒有縫也沒有重疊）",
              not gaps, f"⛔ {gaps}" if gaps else f"{len(rows)} 級連續")
-    n_exact = sum(1 for r in rows if r[4] == "1")
-    rl.check("⭐ 至少 5 個邊界被夾成**唯一解**"
-             "（⛔ 一個都沒有就代表樣本不夠，這張表不可以當判準）",
-             n_exact >= 5, f"{n_exact} 個唯一解")
+    n_exact = sum(1 for r in rows if r[5] == "1")
+    rl.check("⭐ 至少 3 級的**兩端都**夾成唯一解"
+             "（⛔ 一級都沒有就代表樣本不夠，這張表不可以當判準）",
+             n_exact >= 3, f"{n_exact} 級兩端都是唯一解")
     # ⭐⭐ 而「千張大戶」那一格要自己講出來——⛔ 那是 E3 卡住的原因
-    top = rows[-1]
-    rl.info("⭐⭐ 「千張大戶」落在哪一級",
-            f"第 {top[0]} 級 ＝ {top[1]:,} 股以上 ＝ **{top[1] // 1000:,} 張以上**"
-            f"　⇒ 400 張以上是第 "
-            f"{next((r[0] for r in rows if r[1] >= 400_000), '?')} 級起")
+    #   ⚠ 而它要照**夾出來的精度**講：`level_of` 回兩個級別，
+    #     沒夾死的地方會自己顯出來（⛔ 不可以挑一端寫成確定值）。
+    for zhang, label in ((1000, "千張大戶"), (400, "400 張")):
+        a, b = level_of(rows, zhang * 1000)          # 剛好 N 張
+        c, d = level_of(rows, zhang * 1000 + 1)      # 超過 N 張
+        rl.info(f"⭐⭐ 「{label}」落在哪一級",
+                f"剛好 {zhang:,} 張（{zhang * 1000:,} 股）⇒ 第 "
+                + (f"{a} 級" if a == b else f"{a}~{b} 級（⚠ 沒夾死）")
+                + f"｜超過 {zhang:,} 張 ⇒ 第 "
+                + (f"{c} 級" if c == d else f"{c}~{d} 級（⚠ 差 1 股沒夾死）")
+                + ("　⛔ 所以「以上」與「超過」**不是同一級**"
+                   if a != c else ""))
     if not apply:
         rl.info("⚠ 這一趟沒有 `--apply`", "只算不寫")
         return rl.finish()
