@@ -237,6 +237,70 @@ def main():
         import shutil
         shutil.rmtree(d2, ignore_errors=True)
 
+    # ───────── [對照組] ⭐ 「全失敗」的兩種，⛔ 它們長得一模一樣 ─────────
+    #  ⚠ 這一節**不連網**：`endpoint_alive` 的 fetch 是注入的假的。
+    pool4 = ["1101", "1102", "1103", "9999"]
+    done4 = {"1102", "1101", "5555"}     # 5555 已不在母體 ⇒ ⛔ 不可以當對照組
+    ctrl = O.controls(pool4, done4)
+    ck("⭐ 對照組取 **母體 ∩ 已完成**（⛔ 不是寫死的代號）",
+       ctrl == ["1101", "1102"], str(ctrl))
+    ck("  ⛔ 已經不在母體裡的（5555）不會被選進對照組",
+       "5555" not in ctrl, str(ctrl))
+    ck("  ⭐ 同一批母體每趟挑到**同一組**（可重現）",
+       O.controls(pool4[::-1], set(done4)) == ctrl, str(ctrl))
+    ck("  limit 有生效", O.controls(pool4, done4, n=1) == ["1101"])
+
+    good = lambda sid, today: ([("x",)], [("y",)], None)
+    dead = lambda sid, today: ([], [], "FMSRFK stat='很抱歉，沒有符合條件的資料!'")
+    half = lambda sid, today: (([], [], "壞了") if sid == "1101"
+                               else ([("x",)], [("y",)], None))
+    a1, w1 = O.endpoint_alive(ctrl, "20260916", fetch=good)
+    a2, w2 = O.endpoint_alive(ctrl, "20260916", fetch=dead)
+    a3, w3 = O.endpoint_alive([], "20260916", fetch=dead)
+    a4, w4 = O.endpoint_alive(ctrl, "20260916", fetch=half)
+    ck("⭐ 對照組答得出來 ⇒ True（端點是好的 ⇒ 全失敗是那一批自己的性質）",
+       a1 is True, f"{a1}｜{w1[:60]}")
+    ck("⭐ 對照組也答不出來 ⇒ False（端點側 ⇒ 一個字都不記 miss）",
+       a2 is False, f"{a2}｜{w2[:60]}")
+    ck("⭐⭐ 沒有對照組 ⇒ **None**，⛔ 不是 False（那是「這一層沒跑」）",
+       a3 is None, f"{a3}｜{w3[:60]}")
+    ck("  ⚠ 而 None 那一格要**大聲講出它沒跑**（⛔ 一行 skipped 讀起來像 ok）",
+       "這一層沒跑" in w3 and "退回舊判準" in w3, w3[:120])
+    ck("  ⭐ 只要有一檔答得出來就算活著（⛔ 不是要求全中）",
+       a4 is True, f"{a4}｜{w4[:60]}")
+    ck("  說明要講得出**幾檔／哪幾檔**（⛔ 不是只講活著）",
+       "1102" in w4 and "1／2" in w4, w4[:120])
+
+    # ⭐⭐ 呼叫點（CLAUDE.md 第七點第三個：測了判準、沒測呼叫點）
+    src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "official_stats.py"), encoding="utf-8").read()
+    import ast
+    tree = ast.parse(src)
+    fn = next(n for n in tree.body
+              if isinstance(n, ast.FunctionDef) and n.name == "main")
+    calls = [n for n in ast.walk(fn)
+             if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "bump_miss"]
+    ck("⭐ main() 只有一個 bump_miss 呼叫點", len(calls) == 1, str(len(calls)))
+    kw = {k.arg: k.value for k in calls[0].keywords}
+    ck("⭐⭐ 而它傳的 alive 是**那個變數**，⛔ 不是 bool(ok)"
+       "（這就是 2026-09-16 那趟判錯的那一格）",
+       isinstance(kw.get("alive"), ast.Name) and kw["alive"].id == "alive",
+       ast.dump(kw.get("alive")) if kw.get("alive") else "沒有 alive=")
+    probes = [n for n in ast.walk(fn)
+              if isinstance(n, ast.Call)
+              and getattr(n.func, "id", "") == "endpoint_alive"]
+    ck("⭐ main() 真的會去問對照組（⛔ 不是只有函式在那裡沒人叫）",
+       len(probes) == 1, str(len(probes)))
+    checks = [n for n in ast.walk(fn)
+              if isinstance(n, ast.Call)
+              and getattr(n.func, "attr", "") == "check"]
+    batch = [c for c in checks
+             if isinstance(c.args[0], ast.Constant) and "整批失敗" in c.args[0].value]
+    ck("⭐ 「不是整批失敗」那道閘門還在", len(batch) == 1, str(len(batch)))
+    names = {n.id for n in ast.walk(batch[0].args[1]) if isinstance(n, ast.Name)}
+    ck("⭐⭐ 而它的判準裡有 **alive**（⛔ 少了它就回到每趟都紅的那一版）",
+       "alive" in names, str(sorted(names)))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

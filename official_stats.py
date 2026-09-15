@@ -264,6 +264,63 @@ def split_todo(pool, done, miss, limit, tries=MISS_TRIES):
     return fresh[:limit], fresh, give_up
 
 
+CONTROL_N = 3
+
+
+def controls(pool, done, n=CONTROL_N):
+    """→ 對照組：**已經答得出來過**而且**還在母體裡**的前 n 個代號。
+
+    ⭐ 它回答的是「全失敗是**哪一種**」——⛔ 而那兩種在 runlog 上長得一模一樣：
+
+    ```
+    ① 端點被擋／參數壞了          ⇒ 真的要紅，⛔ 而且一個字都不可以寫進 miss
+    ② 剩下的那一批**剛好**全部是
+       這個端點答不出來的         ⇒ 這是**收斂的正常終局**，⛔ 不是故障
+    ```
+
+    ⚠ 2026-09-16 04:00（run 35010414869）就是②的形狀：母體 1,158、已完成 1,054、
+    本趟 104 檔**全部失敗** ⇒ 舊判準 `alive=bool(ok)` 把它判成①（不記 miss）
+    ⇒ ⛔ 那 104 檔永遠停在「還沒問過」，下一趟再問同一批、再全失敗
+    ⇒ ⭐ **這道閘門從此每一趟都紅**——而 CLAUDE.md 四點五那條已經寫過代價：
+    一道天天紅的閘門會被學會忽略，⚠ 而它一旦被忽略，真的壞掉那天也沒有人會看。
+
+    ⭐ 而對照組是**算出來的**，⛔ 不是寫死的代號清單：
+    `pool ∩ done` ＝「還在母體裡」∩「以前答得出來」——兩件事都是本趟現場量到的。
+    ⚠ `sorted(...)[:n]` 只是要**同一批母體每趟挑到同一組**（可重現），
+    ⛔ 不是因為那幾個代號有什麼特別。
+    """
+    return sorted(set(pool) & set(done))[:n]
+
+
+def endpoint_alive(ctrl, today, fetch=None):
+    """拿對照組問一次 ⇒ (True／False／**None**, 說明)。
+
+    ⛔ `None` 是**第三種**，⚠ 而它跟 `False` 不可以混在一起：
+    沒有對照組可用（`--force` 把 done 清掉，或母體與 done 沒有交集）
+    ⇒ 意思是**這一層沒跑**，⛔ 不是「端點掛了」。
+    ⇒ 照 CLAUDE.md 六點五那條：條件不成立就**大聲印出「這一層沒跑」**，
+      ⛔ 不可以寫成斷言（那會把這條線整個關掉），而**退回舊判準**由呼叫端做。
+    """
+    f = fetch or fetch_one
+    if not ctrl:
+        return None, ("⛔ **這一層沒跑**：沒有對照組可用"
+                      "（`--force` 清掉了 done，或母體與 done 沒有交集）"
+                      "　⇒ ⚠ 退回舊判準「本趟有沒有任何一檔成功」")
+    got, bad = [], []
+    for sid in ctrl:
+        _ys, _ms, err = f(sid, today)
+        if err:
+            bad.append((sid, str(err)[:60]))
+        else:
+            got.append(sid)
+    if got:
+        return True, (f"✓ 對照組 {len(got)}／{len(ctrl)} 答得出來（{','.join(got)}）"
+                      "　⇒ ⭐ 端點是好的 ⇒ **本趟全失敗是那一批自己的性質**，"
+                      "⛔ 不是故障 ⇒ 照常記 miss")
+    return False, (f"✗ 對照組 {len(ctrl)} 檔**也**答不出來（{bad}）"
+                   "　⇒ ⛔ 端點側的問題 ⇒ ⭐ 一個字都不寫進 miss 台帳")
+
+
 def land(Y, M, ok, today, rl=None):
     """把這一批**落地**：兩份判準檔 ＋ 續跑台帳。→ 這次寫進台帳的檔數。
 
@@ -391,9 +448,18 @@ def main():
     land(Y, M, ok[flushed:], today)
     # ⭐⭐ 失敗也要落地，⛔ 否則下一趟還會再問同一批（本節開頭那 69 檔）。
     #   ⚠ `alive` ＝ 這一趟有沒有任何一檔成功：端點整個掛掉時**一個字都不寫**。
-    n_miss = bump_miss(fail, today, alive=bool(ok))
+    #   ⭐⭐ 而「本趟全失敗」有**兩種**（見 `controls()`），⛔ 它們長得一模一樣
+    #     ⇒ 拿**對照組**（還在母體裡而且以前答得出來的幾檔）當**外部錨點**問一次。
+    #     ⚠ 只在需要判別的時候問（`fail and not ok`）⇒ 正常那幾趟一發都不多打。
+    alive = bool(ok)
     if fail and not ok:
-        rl.info("⛔ 本趟全失敗 ⇒ **不記 miss**",
+        probed, ctrl_why = endpoint_alive(controls(pool, done), today)
+        rl.info("⭐ 全失敗 ⇒ 拿**對照組**問一次（⛔ 不是在兩種成因之間猜）", ctrl_why)
+        if probed is True:
+            alive = True
+    n_miss = bump_miss(fail, today, alive=alive)
+    if fail and not ok and not alive:
+        rl.info("⛔ 本趟全失敗、**而且對照組也答不出來** ⇒ 不記 miss",
                 f"{len(fail):,} 檔全部失敗 ⇒ 判定是**端點側**的問題，"
                 "⚠ 而不是這些檔沒有資料　⇒ ⭐ 一個字都不寫進 miss 台帳"
                 "（⛔ 寫了的話，掛掉兩趟就把全庫判死，而畫面上完全正常）")
@@ -415,10 +481,17 @@ def main():
     # ⛔ 只增不減：這兩份是外部判準，寫短了等於判準消失。
     rl.check("兩份判準檔都只增不減", len(Y) >= n0y and len(M) >= n0m,
              f"年 {n0y}→{len(Y)}｜月 {n0m}→{len(M)}")
-    # ⚠ 全失敗＝被擋或參數壞了，要當場紅；零星失敗（下市檔沒有資料）是正常的。
-    rl.check("不是整批失敗（全失敗＝被擋或參數壞了）",
-             not todo or len(ok) > 0,
-             f"本趟 {len(todo)} 檔全部失敗" if todo and not ok else f"成功 {len(ok)}")
+    # ⚠ 全失敗**而且對照組也答不出來**＝被擋或參數壞了，要當場紅；
+    #   零星失敗（下市檔沒有資料）、以及「剩下的剛好全都答不出來」都是正常的。
+    # ⭐⭐ 放行之後還有誰在守（CLAUDE.md 四點五⑥③，⛔ 這段要留在原始碼裡）：
+    #   ① **對照組自己**——它答不出來的那一趟立刻 ✗，而它是每趟現場重算的
+    #   ② 那 104 檔照常累加進 miss 台帳 ⇒ 連續 MISS_TRIES 趟之後轉進「問到放棄」，
+    #      ⭐ 而那一欄**照常印在報表上**（⛔ 不是從報表消失）⇒ 收斂得到、也看得見
+    #   ③ 「兩份判準檔只增不減」那道沒有動
+    rl.check("不是整批失敗（全失敗**而且對照組也答不出來**＝被擋或參數壞了）",
+             not todo or bool(ok) or alive,
+             f"本趟 {len(todo)} 檔全部失敗，且對照組也答不出來"
+             if todo and not ok else f"成功 {len(ok)}")
     return rl.finish()
 
 
