@@ -28,6 +28,31 @@
          首列：['115/01/19', '7780', '大研生醫', '185.00', '18.50', '20.35', '16.65', '18.50', '7780,20260109,20260119']
      [4] ★ 日期欄 115/01/19 ~ 115/09/07（2 列有日期）
 
+── ⭐ 清單 C4：**上櫃**面額變更，官方選單上那兩條（從來沒探過）──
+⚠ 既有的否定句是「TPEx 沒有對應端點」，⛔ 而它的掃描範圍**只有 swagger**。
+
+  ── 上櫃變更股票面額預告表
+     https://www.tpex.org.tw/zh-tw/announce/market/change.html
+     ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
+     [形狀] 11,276 bytes｜中文 744 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+     ①  `/…/api/…` 出現過哪些：1 種
+         /fonts.googleapis
+     ②  `fetch(` 的對象：0 種
+     ③  `$.ajax` / `url:` 的對象：0 種
+     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）
+
+  ── 變更股票面額恢復交易參考價
+     https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
+     ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
+     [形狀] 11,776 bytes｜中文 748 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+     ①  `/…/api/…` 出現過哪些：1 種
+         /fonts.googleapis
+     ②  `fetch(` 的對象：0 種
+     ③  `$.ajax` / `url:` 的對象：0 種
+     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）
+
 ── ★ 參數有沒有被無視 ──
 TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
   ✓ 不同區間回不同內容，參數有生效。
