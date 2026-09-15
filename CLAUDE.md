@@ -496,6 +496,23 @@ ref + 0.005  ⇒ 離對方 −2.87e-04   ← 若全部截斷，**超過頭 5 倍
    ⚠ 掃描範圍要標：自 2026-09-08 起可見的 **386 個** main 資料 commit 裡，
      `data/` 底下**零個刪除** ⇒ 「刪掉 main 上原本就有的檔」那一種從未觸發；
      ⛔ 而 `otc_adj.py --fresh` 會刪掉被追蹤的 `_otcadj_done.csv` ⇒ 那條路一直通著。
+⭐ ⑧ **run 的 conclusion 是 `cancelled` ≠ 它什麼都沒做**（2026-09-16，probe run 125）
+   ⚠ 這是⑤的**鏡像**：⑤說「success ≠ 每一步都成功」，這一條說
+   「**cancelled ≠ 一步都沒成功**」。
+   ```
+   run 35033086139  conclusion: **cancelled**
+   ⭐ 而逐步看：step 13 同步到 main ✓｜step 17 跑十四支探針 ✓
+              step 21 Commit 回 repo ✓｜Complete job ✓   ← **每一步都 success**
+   ⇒ 實測後果：main 上 `_tpex_probe.txt` 的時戳就是**那一趟**（06:57:46），
+     而那一趟的 sync commit 也在 main 上
+   ```
+   ⚠ 沒有任何一趟新的 probe 去搶 concurrency group ⇒ ⛔ **不是**④那個原因；
+   看起來是 job 跑完之後 runner 才被回收／取消。
+   ⇒ ⭐ 危險在**反方向**：讀到 `cancelled` 就以為「沒跑到」⇒ 再派一趟
+     ⇒ ⛔ 不是冪等的那一步會做**兩次**（例如累加型台帳、append 型 log）。
+   ⇒ 判準還是那一句：**驗後果，⛔ 不驗 conclusion**
+     ——而「後果」要看**輸出檔裡那一趟自己的時戳**（⭐ `probe_stamp()` 就是為這個而有的）。
+
 ⭐ ⑦ **「檔名在 workflow 裡」≠「它會被執行」**（2026-09-15）
    ```yaml
    run: python ci_step.py selftest_mops_history.py
