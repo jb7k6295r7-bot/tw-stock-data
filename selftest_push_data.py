@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""`push_data.sh` 的自測：**真的開一個 git 沙箱跑它**。⛔ 不連外、不碰 repo。
+
+## ⛔ 為什麼要有這一支（2026-09-15）
+
+probe run 101 印了「✓ 已推上 main」，⚠ 而 main 上**只多了 `_last_run.md`**
+——那一趟寫出來的 22 份探針輸出**一個都沒有搬過去**。
+
+```
+[push_data] 本趟改到 23 個 data 檔
+error: pathspec 'data/meta/_ci_steps.tsv' did not match any file(s) known to git
+[push_data] ✓ 已推上 main            ← ⛔ 而 22 個檔沒到
+```
+
+⭐ 病根：那一步是**一整批** `xargs git checkout "$DC" -- <23 個路徑>`，
+而其中一個在本趟被**刪掉**了 ⇒ 整批失敗 ⇒ 另外 22 個一個都沒取出來。
+⚠ `xargs` 的失敗沒有人接 ⇒ ⛔ 它照樣往下 commit、push、印成功。
+
+⇒ 這是四點二那一族：**「推成功了」≠「東西搬過去了」**。
+⇒ 判準只能是**終點**：搬完之後，main 上那幾個檔要**逐位元組等於本趟的**。
+"""
+import io
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OK = FAIL = 0
+
+
+def ck(name, cond, hint=""):
+    global OK, FAIL
+    if cond:
+        OK += 1
+        print(f"  ok   {name}")
+    else:
+        FAIL += 1
+        print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
+
+
+def git(cwd, *a, **kw):
+    return subprocess.run(["git"] + list(a), cwd=cwd, capture_output=True,
+                          text=True, **kw)
+
+
+def write(p, s):
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    io.open(p, "w", encoding="utf-8").write(s)
+
+
+def build(d):
+    """做一個 origin（bare）＋ 一個工作副本，main 上已經有幾個 data 檔。"""
+    origin = os.path.join(d, "origin.git")
+    work = os.path.join(d, "work")
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", origin],
+                   check=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", work], check=True)
+    git(work, "config", "user.email", "t@example.invalid")
+    git(work, "config", "user.name", "t")
+    git(work, "remote", "add", "origin", origin)
+    for n in ("a", "b", "c"):
+        write(os.path.join(work, "data", "meta", f"_{n}.txt"), f"main-{n}\n")
+    write(os.path.join(work, "data", "meta", "_doomed.txt"), "main-doomed\n")
+    write(os.path.join(work, "data", "meta", "_last_run.md"),
+          "## x　✓ 正常\n\n最後執行：2026-09-01T00:00:00+08:00（台北）\n\n")
+    git(work, "add", "-A")
+    git(work, "commit", "-q", "-m", "seed")
+    git(work, "push", "-q", "origin", "main")
+    # ⭐ 開一個分支，模擬 workflow 的 checkout
+    git(work, "checkout", "-q", "-b", "feature")
+    return origin, work
+
+
+def main():
+    d = tempfile.mkdtemp(prefix="pushdata_")
+    try:
+        origin, work = build(d)
+        shutil.copy(os.path.join(HERE, "push_data.sh"), work)
+        for helper in ("merge_last_run.py", "merge_ledger.py"):
+            shutil.copy(os.path.join(HERE, helper), work)
+
+        # ── 本趟：改三個檔、刪一個檔（⭐ 就是 run 101 的形狀）──
+        for n in ("a", "b", "c"):
+            write(os.path.join(work, "data", "meta", f"_{n}.txt"), f"本趟-{n}\n")
+        write(os.path.join(work, "data", "meta", "_last_run.md"),
+              "## x　✓ 正常\n\n最後執行：2026-09-15T00:00:00+08:00（台北）\n\n")
+        os.remove(os.path.join(work, "data", "meta", "_doomed.txt"))
+
+        r = subprocess.run(["bash", "push_data.sh", "測試"], cwd=work,
+                           capture_output=True, text=True,
+                           env=dict(os.environ, GITHUB_REF_NAME="feature"))
+        out = r.stdout + r.stderr
+        print("── ① 改三個檔 ＋ 刪一個檔（⭐ run 101 的形狀）──")
+        ck("push_data 回 0", r.returncode == 0, f"rc={r.returncode}｜{out[-400:]}")
+
+        # ⭐⭐ 判準是**終點**：main 上那三個檔要逐位元組等於本趟的
+        got = {}
+        for n in ("a", "b", "c"):
+            g = git(work, "show", f"origin/main:data/meta/_{n}.txt")
+            got[n] = g.stdout
+        ck("⭐⭐ 三個改過的檔**都**搬到 main 了"
+           "（⛔ 這是 run 101 沒做到的那一件：它只搬了 `_last_run.md`）",
+           all(got[n] == f"本趟-{n}\n" for n in ("a", "b", "c")), str(got))
+        g = git(work, "show", "origin/main:data/meta/_doomed.txt")
+        ck("  而被刪掉的那個在 main 上**也刪掉了**", g.returncode != 0, g.stdout[:80])
+        lr = git(work, "show", "origin/main:data/meta/_last_run.md").stdout
+        ck("  `_last_run.md` 也更新了（逐區塊合併那條路）",
+           "2026-09-15" in lr, lr[:120])
+
+        # ── ② 反向驗：取不出來時要**大聲失敗**，⛔ 不可以照樣印成功 ──
+        print("\n── ② 反向驗：有檔取不出來 ⇒ ⛔ 不可以照樣 push ──")
+        bad = os.path.join(d, "push_bad.sh")
+        src = io.open(os.path.join(HERE, "push_data.sh"), encoding="utf-8").read()
+        # ⭐ 把 KEEP 裡塞一個不存在的路徑（＝ run 101 那個被刪掉的檔的角色）
+        src = src.replace('    [ -n "$hit" ] || KEEP=$(printf \'%s\\n%s\' "$KEEP" "$f")',
+                          '    [ -n "$hit" ] || KEEP=$(printf \'%s\\n%s\\n%s\' '
+                          '"$KEEP" "$f" "data/meta/_nope.txt")')
+        io.open(bad, "w", encoding="utf-8").write(src)
+        shutil.copy(bad, os.path.join(work, "push_bad.sh"))
+        git(work, "checkout", "-q", "feature")
+        write(os.path.join(work, "data", "meta", "_a.txt"), "第二趟\n")
+        r2 = subprocess.run(["bash", "push_bad.sh", "測試2"], cwd=work,
+                            capture_output=True, text=True,
+                            env=dict(os.environ, GITHUB_REF_NAME="feature"))
+        o2 = r2.stdout + r2.stderr
+        ck("⛔ 有檔取不出來 ⇒ **回非 0**（⚠ 靜靜跳過就是 run 101 的病根）",
+           r2.returncode != 0, f"rc={r2.returncode}｜{o2[-300:]}")
+        ck("  而且**點名**是哪一個取不出來", "_nope.txt" in o2, o2[-300:])
+        # ⚠ 比的是**那一行成功訊息的整串**，⛔ 不是「已推上 main」這幾個字
+        #   ——⭐ 失敗訊息裡本來就引用了那句話（跟 `selftest_ca_chain` 盯
+        #   `CERT_NONE` 時踩到的同一個：那幾個字在說明文字裡也有一份）。
+        ck("⛔⛔ 而且**沒有**印成功那一行（⚠ 它會讓人以為東西到了）",
+           "[push_data] ✓ 已推上 main" not in o2, o2[-300:])
+        a_now = git(work, "show", "origin/main:data/meta/_a.txt").stdout
+        ck("⭐ main 上那個檔**沒有被動到**（⇒ 失敗就是失敗，不是半套）",
+           a_now == "本趟-a\n", repr(a_now))
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+    print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
+    return 1 if FAIL else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
