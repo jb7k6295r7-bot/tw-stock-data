@@ -33,7 +33,55 @@ if echo "$STAGED" | grep -qE '\.py$'; then
   tail -2 /tmp/_dup.log | head -1
 fi
 
-# ⛔ 第三道（2026-09-10 加）：**新增一支自測，也要驗 workflow。**
+# ⛔⛔ 第三道（2026-09-16 加）：**改到 X.py 就跑 selftest_X.py**。
+#
+#   代價：2026-09-16 我改了 `official_stats.py` 的一句報表文字，
+#   自測印出 `通過 44｜失敗 1`——⚠ 而我**看到了那一行然後照樣 commit 出去**。
+#   （紅的原因是那條斷言比的是一句固定的字，語意其實沒變；但那是另一回事：
+#     ⛔ 紅了就是要停下來看，不可以帶著紅往下走。）
+#
+#   ⭐ 而前兩道擋不到它：`selftest_no_dup` 比的是有沒有第二份實作，
+#     `selftest_workflows` 只在動到 workflow／`.sh`／新增自測時才跑。
+#   ⇒ 這一道只跑**跟這次改動直接對應**的那幾支（⛔ 不是全跑，那會慢到被繞過）。
+TESTS=""
+for f in $STAGED; do
+  case "$f" in
+    */*) continue ;;                      # ⛔ 只管 repo 根目錄那一層
+    selftest_*.py) T="$f" ;;              # 改到自測本身 ⇒ 跑它
+    *.py)          T="selftest_${f}" ;;   # 改到 X.py ⇒ 跑 selftest_X.py
+    *)             continue ;;
+  esac
+  [ -f "$T" ] || continue
+  case " $TESTS " in *" $T "*) continue ;; esac
+  TESTS="$TESTS $T"
+done
+if [ -n "$TESTS" ]; then
+  echo "[pre-commit] 動到的程式有對應自測 ⇒ 跑：$TESTS"
+  BAD=""
+  for T in $TESTS; do
+    # ⚠ 逐一跑並記下失敗，⛔ 不是「一個壞就整批不跑」（四點二⑥那條）
+    if timeout 180 python3 "$T" >"/tmp/_st_$$.log" 2>&1; then
+      :
+    else
+      RC=$?
+      BAD="$BAD $T"
+      echo "⛔ $T 沒過（rc=$RC）："
+      # ⛔ 印 tail 是錯的：後面可能全是 ok。只印 ✗ 那幾行與最後一行統計。
+      grep -E "^\s*✗|Traceback|Error" "/tmp/_st_$$.log" | head -12
+      tail -1 "/tmp/_st_$$.log"
+    fi
+    rm -f "/tmp/_st_$$.log"
+  done
+  if [ -n "$BAD" ]; then
+    echo "   ⇒ 這幾支自測是紅的，**不讓 commit**：$BAD"
+    echo "   ⚠ 若確定是斷言本身過時（例如它比的是一句固定的字），"
+    echo "     ⛔ 也要**先改斷言**再 commit——不可以帶著紅往下走。"
+    echo "   （要跳過：git commit --no-verify）"
+    exit 1
+  fi
+fi
+
+# ⛔ 第四道（2026-09-10 加）：**新增一支自測，也要驗 workflow。**
 #   `selftest_workflows.py` 現在多一條「每一支 selftest_*.py 都要有人跑它」——
 #   ⚠ 而觸發它的時機正是**新增自測的那一刻**，⛔ 不是改 workflow 的那一刻。
 #   （`selftest_reduce.py` 就是這樣紅著沒人知道：它從來沒被列進任何 workflow。）
