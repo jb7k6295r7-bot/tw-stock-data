@@ -186,21 +186,34 @@ jobs:
       #   ⇒ 寫死檔名會讓那一道紅，而它紅得沒有道理（這裡本來就擋了不存在的情況）。
       #   ⭐ 而 glob 有它自己的坑：**一個都沒配到時跟全部通過長得一樣**
       #   ⇒ 底下數出來、0 個就大聲說「這一層沒跑」。
+      # ⭐⭐ 2026-09-15：回測線 2025 §二**裁定**把 glob 從 `*p4*` 放寬成全部 8 支。
+      #   ⛔⛔ 而跑法**一律 `python3 -m backtest.<name>`，不可以當腳本跑**：
+      #     `selftest_exits`／`selftest_patterns` 用的是**相對 import**
+      #     ⇒ `python3 backtest/selftest_exits.py` 會 ImportError。
+      #   ⚠ 而它是四點二⑦那一族的近親：檔名配到了 ≠ 它跑得起來。
+      # ⭐ 母體大小自己是一道斷言（第七點⑨）：少於 8 就是 glob 沒掃到
+      #   ⇒ **紅**。⛔ 而它只在母體**縮小**時才紅——多一支是新資訊，不是退步。
       - name: 驗 P4 前瞻（回測線的自測，backtest/ 底下）
         if: steps.pick.outputs.p4 == '1'
         run: |
           N=0
-          for T in backtest/selftest_*p4*.py; do
+          for T in backtest/selftest_*.py; do
             [ -f "$T" ] || continue
+            M=$(basename "$T" .py)
+            echo "── backtest.$M ──"
+            python3 -m "backtest.$M" || { echo "✗ $M"; exit 1; }
             N=$((N + 1))
-            echo "── $T ──"
-            python3 "$T"
           done
           if [ "$N" -eq 0 ]; then
-            echo "⚠⚠ **這一層沒跑**：main 的 backtest/ 底下一支 P4 自測都沒有"
+            echo "⚠⚠ **這一層沒跑**：main 的 backtest/ 底下一支自測都沒有"
             echo "   ⇒ ⛔ 不算失敗（下一步的模組檢查會擋），⛔ **也不算驗過**"
           else
             echo "✓ 跑了 $N 支"
+            if [ "$N" -lt 8 ]; then
+              echo "⛔⛔ 母體縮小了：應該至少 8 支（回測線 2025 §二實測），實得 $N"
+              echo "   ⇒ glob 沒掃到 ⇒ **這一趟算失敗**"
+              exit 1
+            fi
           fi
 
       - name: 跑前瞻紀錄（P4 四型）
