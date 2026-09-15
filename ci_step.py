@@ -69,8 +69,20 @@ def main(argv):
     if len(argv) < 2:
         print("用法：python ci_step.py <script.py> [args...]", file=sys.stderr)
         return 2
+    # ⛔⛔ 2026-09-15 付過代價：`daily.yml` 裡有一行是**上一個 `run:` 的續行**
+    #   ⇒ YAML 把單行純量折成一串 ⇒ 這支收到的是
+    #     `selftest_mops_history.py python selftest_revenue_complete.py`
+    #   ⇒ 它照樣跑第一支、照樣 rc=0，⚠ 而 `selftest_revenue_complete.py`
+    #     **從來沒有被執行過**——⭐ 而「每一支自測都有人跑」那道守門看的是
+    #     檔名有沒有出現在 workflow 文字裡 ⇒ 它一直是綠的。
+    # ⇒ ⭐ 多的參數一律**大聲拒絕**：⛔ 靜靜忽略就是這次藏了多久的原因。
+    if len(argv) > 2:
+        print(f"⛔ ci_step 只收一支自測，實得 {argv[1:]}"
+              "　⇒ ⚠ 多半是 YAML 把上一個 `run:` 的續行折進來了"
+              "（那支自測其實沒有被跑）", file=sys.stderr)
+        return 2
     name = os.path.basename(argv[1])
-    rc = subprocess.call([sys.executable] + argv[1:], cwd=_ROOT)
+    rc = subprocess.call([sys.executable, argv[1]], cwd=_ROOT)
     record(name, rc)
     # ⭐ 寫成**不會被讀成「驗過了」**的樣子（⛔ 一行 skipped 跟一行 ok 長得一樣）
     print(f"[ci_step] {name} ⇒ rc={rc}"

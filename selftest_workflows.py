@@ -723,6 +723,80 @@ def main():
     ck("★ 這兩道真的**掃到了**（⛔ 0 條 cron 跟全部通過長得一樣）",
        len(_crons) >= 2, f"{len(_crons)} 條 cron｜{len(_arms)} 個分支")
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 自測步驟紅了，**有沒有任何地方會說**（2026-09-15 加）
+    #
+    # ⛔ 已經發生過：`probe.yml` 的「驗十四支探針跑得完」寫成
+    #   `run: python selftest_probes.py`，而註解說「不加 continue-on-error
+    #   ⇒ 連跑都跑不完就不必往下打」。⚠ **那句話是假的**：後面兩步都是
+    #   `if: always()` ⇒ 它紅了，整趟照樣跑完、照樣 commit，
+    #   ⛔ 而 `_last_run.md` 裡沒有任何一塊提到它。
+    #
+    # ⇒ 判準：**一支 workflow 只要有任何 `if: always()` 的步驟，
+    #   它裡面的自測步驟就一定要走 `ci_step.py`**（記下 rc ⇒ 進 runlog ⇒ 進 commit）。
+    # ⚠ 例外是「零相依」那幾道：它們排在 `if: always()` 步驟**之前**而且
+    #   本來就該擋住同步，⛔ 而那個「擋得住」現在也只是說法——
+    #   ⇒ 所以判準只放行**檔名帶 `selftest_` 而且在同一支裡沒有 always 步驟**的。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        short = os.path.basename(f)
+        txt = io.open(f, encoding="utf-8").read()
+        if "if: always()" not in txt:
+            continue
+        naked = re.findall(r"^\s*run:\s*python3?\s+(selftest_[A-Za-z0-9_]+\.py)\s*$",
+                           txt, re.M)
+        # ⭐ 零相依那幾道（排在同步之前、要擋住同步的）不算：它們是**擋門**的，
+        #   ⛔ 走 ci_step 會把它們變成「記一筆就放行」。
+        gate = set(re.findall(r"零相依[^\n]*\n\s*run:\s*python3?\s+"
+                              r"(selftest_[A-Za-z0-9_]+\.py)", txt))
+        gate |= set(re.findall(r"run:\s*python3?\s+(selftest_[A-Za-z0-9_]+\.py)"
+                               r"[\s\S]{0,200}?零相依", txt))
+        bare = [n for n in naked if n not in gate]
+        ck(f"⭐⭐ {short}：自測步驟紅了會被說出來"
+           "（⛔ `if: always()` 在後面 ⇒ 不走 `ci_step.py` 的紅**沒有任何地方會說**）",
+           not bare, f"⛔ 這幾支是裸跑的：{sorted(set(bare))}")
+        # ⛔ 比的是**真的有一行 `run:` 在跑它**，⚠ 不是「這三個字出現在檔案裡」
+        #   ——`probe.yml` 的註解裡本來就寫著 `ci_report.py`
+        #   ⇒ 比字串的話這一條永遠綠（突變 R3 當場證明）。
+        runs_step = re.search(r"^\s*run:\s*python3?\s+ci_step\.py\b", txt, re.M)
+        runs_report = re.search(r"^\s*run:\s*python3?\s+ci_report\.py\b", txt, re.M)
+        if runs_step:
+            ck(f"  {short}：有 `ci_step.py` 就一定要有 `ci_report.py`"
+               "（⛔ 只記不說 ＝ 沒說）", bool(runs_report),
+               "⛔ 記了 rc 卻沒有人把它寫成 runlog 區塊")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ 單行 `run:` **不可以有續行**（2026-09-15 付過代價）
+    #
+    # ```yaml
+    # run: python ci_step.py selftest_mops_history.py
+    #   python selftest_revenue_complete.py        ← ⛔ 這是**續行**
+    # ```
+    # ⇒ YAML 把它折成**一個純量**：
+    #   `python ci_step.py selftest_mops_history.py python selftest_revenue_complete.py`
+    # ⇒ ⭐ 第二支**從來沒有被跑過**，⚠ 而它的檔名出現在 workflow 裡
+    #   ⇒ 「每一支自測都有人跑」那道守門一直是綠的。
+    #
+    # ⇒ ⭐ 這是四點二的又一個：**「檔名在 workflow 裡」≠「它會被執行」。**
+    # ⚠ 要兩個方向都有人守：這一道擋 YAML 折行，`ci_step.py` 自己擋多餘參數。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        short = os.path.basename(f)
+        lines = io.open(f, encoding="utf-8").read().splitlines()
+        folded = []
+        for i, ln in enumerate(lines):
+            m = re.match(r"^(\s*)run:\s*(?!\||>)(\S.*)$", ln)
+            if not m:
+                continue
+            ind = len(m.group(1))
+            nxt = lines[i + 1] if i + 1 < len(lines) else ""
+            if nxt.strip() and not nxt.lstrip().startswith("#") \
+                    and len(nxt) - len(nxt.lstrip()) > ind:
+                folded.append(f"第 {i + 1} 行：{m.group(2)[:50]} ← {nxt.strip()[:40]}")
+        ck(f"⛔⛔ {short}：單行 `run:` 沒有續行"
+           "（⚠ 有續行 ⇒ YAML 折成一串 ⇒ 後面那支**根本沒被跑**，而守門照樣綠）",
+           not folded, "；".join(folded))
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

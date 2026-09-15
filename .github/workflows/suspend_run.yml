@@ -107,7 +107,7 @@ jobs:
       # 日期格式寫錯時交易所回今天而不報錯、TPEx 用假資料列表示無資料、
       # 讀寫用不同的鍵造成重複列。三個都只有自測抓得到。
       - name: 自測（不連網）
-        run: python selftest_suspend.py
+        run: python ci_step.py selftest_suspend.py
 
       - name: 每日
         if: inputs.mode == 'daily' || inputs.mode == ''
@@ -137,6 +137,14 @@ jobs:
         if: always()
         continue-on-error: true
         run: cat data/meta/_last_run.md || true
+
+      # ⛔ 這一步**故意沒有** `continue-on-error`：它只負責「說」。
+      #   ⚠ 自己炸掉的話要大聲，⭐ 而下面 Commit 是 `if: always()`
+      #   ⇒ 這一趟抓到的資料照樣進 commit。
+      # ⇒ 沒有這一步的話，`ci_step.py` 記下的 rc **沒有人讀** ⇒ 只記不說 ＝ 沒說。
+      - name: 這一輪有沒有自測紅著（⛔ continue-on-error 會把它藏起來）
+        if: always()
+        run: python ci_report.py
 
       - name: Commit 回 repo
         if: always()

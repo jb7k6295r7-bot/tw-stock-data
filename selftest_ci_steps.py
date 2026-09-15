@@ -184,5 +184,24 @@ else:
     ck("★ 而這一節真的有東西可比（⛔ 檔不存在跟沒變長得一樣）",
        B4[0] is not None, f"_last_run.md 存在={B4[0] is not None}")
 
+# ══════════════════════════════════════════════════════════════════
+# ⑨ ⛔⛔ 多餘的參數要**大聲拒絕**（2026-09-15 付過代價）
+#
+# `daily.yml` 裡有一行是**上一個 `run:` 的續行** ⇒ YAML 折成一個純量：
+#   `python ci_step.py selftest_mops_history.py python selftest_revenue_complete.py`
+# ⇒ 這支照樣跑第一支、照樣 rc=0，⚠ 而第二支**從來沒有被執行過**，
+#   ⭐ 而「每一支自測都有人跑」那道守門看的是**檔名有沒有出現在 workflow 文字裡**
+#   ⇒ 它一直是綠的。⇒ 「檔名在 workflow 裡」≠「它會被執行」（四點二）。
+# ⇒ ⭐ 靜靜忽略多餘參數，就是這件事藏了那麼久的原因。
+# ══════════════════════════════════════════════════════════════════
+print("\n[⑨ 多餘參數]")
+_ok9 = subprocess.run([sys.executable, os.path.join(HERE, "ci_step.py"),
+                 "x.py", "python", "y.py"], capture_output=True, text=True)
+ck("⑨.1 ⛔ 多給一支就**大聲拒絕**（rc≠0）"
+   "（⚠ 靜靜忽略 ⇒ 那一支根本沒跑，而 rc 記成 0）",
+   _ok9.returncode != 0, f"rc={_ok9.returncode}")
+ck("⑨.2 而訊息要講出**為什麼**（YAML 續行）⇒ 讀的人才知道去改哪裡",
+   "續行" in (_ok9.stderr + _ok9.stdout), (_ok9.stderr + _ok9.stdout)[:200])
+
 print(f"\n[selftest] 通過 {_n[0] - _n[1]}｜失敗 {_n[1]}")
 sys.exit(1 if _n[1] else 0)
