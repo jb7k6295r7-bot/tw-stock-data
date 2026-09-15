@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T05:48:45+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35026972877
+# ⏱ 這一趟：2026-09-16T06:07:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35028809828
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -153,7 +153,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3bad54d9aa0a1fd',t:'MTc4OTUwODg4MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3baf154fc026c93',t:'MTc4OTUxMDAyOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -168,9 +168,7 @@
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgAnn
            [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/15 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
-        https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
-           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
-           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+        https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn　⛔ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troublesh...tle":"Error 520: Web server is returning an unknown error","status":520,"detai　⇒ ⚠ 取不回來**不等於**它不存在
      ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
            ⭐ 它回顯的 `date`：（沒有這個鍵）｜`totalCount`：['0']
@@ -302,7 +300,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3bad56ccae0ad24',t:'MTc4OTUwODg4Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3baf1896bcef7c9',t:'MTc4OTUxMDAzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -447,11 +445,11 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
      ⇒ 兩條列數 394 vs 394（一樣 ⇒ 同一個東西，`/zh/` 可有可無）
      官方 394 列｜解析出 389 筆｜日期 2011-01-25 ~ 2026-09-07
      ── 雙向對帳（只比 2013-01-16 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
-       我方 584 筆｜官方（同區間）350 筆
+       我方 585 筆｜官方（同區間）350 筆
        ① 官方有、我方沒有：47 筆　← ⛔ **這才是漏抓** [('1234', '2013-11-12'), ('1310', '2013-02-01'), ('1315', '2014-10-31'), ('1410', '2014-10-20'), ('1413', '2014-11-28'), ('1416', '2013-11-01'), ('1449', '2014-11-18'), ('1451', '2013-08-19'), ('1456', '2014-01-13'), ('1513', '2014-12-10')]
-       ② 我方有、官方沒有：281 筆　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）[('1333', '2016-10-17'), ('1584', '2016-11-08'), ('1742', '2018-03-13'), ('1785', '2017-09-28'), ('1799', '2014-02-21'), ('1799', '2022-10-11'), ('2061', '2018-10-22'), ('2061', '2021-01-18'), ('2641', '2018-08-22'), ('2719', '2019-10-21')]
+       ② 我方有、官方沒有：282 筆　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）[('1333', '2016-10-17'), ('1584', '2016-11-08'), ('1742', '2018-03-13'), ('1785', '2017-09-28'), ('1799', '2014-02-21'), ('1799', '2022-10-11'), ('2061', '2018-10-22'), ('2061', '2021-01-18'), ('2641', '2018-08-22'), ('2719', '2019-10-21')]
        ⚠ ② 不為 0 **不一定是錯**：上櫃減資不在 TWTAUU 裡。⛔ 但要逐筆看過才可以這樣說，不要先假設。
-       ② 按市場拆：{'（不在 industry.csv）': 20, 'tpex': 261}
+       ② 按市場拆：{'（不在 industry.csv）': 20, 'tpex': 262}
        ✓ 沒有一筆是上市 ⇒ 「② 全是上櫃」這個解釋站得住。
        ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。
 

@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T05:47:54+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35026972877
+# ⏱ 這一趟：2026-09-16T06:07:05+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35028809828
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -527,6 +527,8 @@
      ── 個股月成交資訊
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-month.html
      ✓ 11,476 bytes｜它自己寫的 action：['statistics/monthlyStock']
+        ⭐ 頁面表單欄位（input／select 的 name／id）：['code', 'date', 'query']
+        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'afterRender', 'align', 'autoChange', 'autoLoad', 'beforeInit', 'beforeRender', 'notes', 'option', 'pagin', 'pattern', 'r', 'sortable', 'subtitle', 'subtitle2', 't', 'tables', 'thead', 'title']
 
         ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/monthlyStock
            [GET code+date] ✓ JSON 29 bytes
@@ -560,6 +562,8 @@
      ── 個股年成交資訊
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-year.html
      ✓ 11,083 bytes｜它自己寫的 action：['statistics/yearlyStock']
+        ⭐ 頁面表單欄位（input／select 的 name／id）：['code', 'query']
+        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'align', 'autoLoad', 'pattern', 'r', 't', 'tables']
 
         ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/yearlyStock
            [GET code+date] ✓ JSON 1,767 bytes
