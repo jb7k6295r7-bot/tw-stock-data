@@ -35,7 +35,12 @@ import socket
 import ssl
 import sys
 import urllib.request
-import backfill as B
+# ⛔⛔ **這一支不可以 `import backfill`**：backfill 會 import `ca_chain`，
+# 而 ca_chain 把補鏈的 opener 裝成 urllib 的**預設** ⇒ 這支探針就吃到補鏈了
+# ⇒ ⚠ 它是「量現況」的尺，吃了之後永遠回「通」⇒ ⛔ 那道守門從此是瞎的。
+# ⇒ `probe_stamp` 改從 `runlog` 拿（runlog 只 import 標準庫）。
+#   （2026-09-15 我為了加時戳 import 了 backfill，`selftest_ca_chain` ⑤ 當場紅。）
+import runlog
 
 # ⛔⛔ 這一支**故意不 import `ca_chain`**。
 #   它是**量現況**的那把尺：補鏈之後它會永遠回「通」，
@@ -242,7 +247,7 @@ def main():
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write(
-        B.probe_stamp() + "\n".join(lines) + "\n")
+        runlog.probe_stamp() + "\n".join(lines) + "\n")
     print("\n".join(lines))
     return 0
 
