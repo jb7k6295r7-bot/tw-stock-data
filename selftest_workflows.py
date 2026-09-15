@@ -208,6 +208,20 @@ def main():
         ck(f"{os.path.basename(sh)} 語法", p.returncode == 0,
            p.stderr.strip()[:200])
 
+    # ⭐⭐ `.githooks/` 底下的 hook **也是 shell**，而 2026-09-16 之前
+    #   **沒有任何地方驗它的語法**——⚠ 而六點五那一整節講的就是
+    #   「shell 合法要在 commit 的那一刻驗」，⛔ 結果驗它的那支自己沒人驗。
+    #   ⭐ 而母體大小自己要是一道斷言（第七點第九個）：
+    #     ⛔ glob 掃不到（例如有人把 hook 改名或搬走）與「全部通過」長得一樣。
+    _hooks = sorted(g for g in glob.glob(os.path.join(here, ".githooks", "*"))
+                    if os.path.isfile(g))
+    ck("⭐ `.githooks/` 底下真的有 hook（⛔ 掃到 0 個跟全部通過長得一樣）",
+       len(_hooks) >= 1, f"{len(_hooks)} 個：{[os.path.basename(h) for h in _hooks]}")
+    for _h in _hooks:
+        _p = subprocess.run(["bash", "-n", _h], capture_output=True, text=True)
+        ck(f".githooks/{os.path.basename(_h)} 語法", _p.returncode == 0,
+           _p.stderr.strip()[:200])
+
     # ══════════════════════════════════════════════════════════════
     # ⭐⭐ 每一支自測都要**有人跑它**（2026-09-10 加）
     #
