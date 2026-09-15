@@ -146,8 +146,14 @@ def bridge_case(api, y1, y2, out, **kw):
 
 
 def openapi_case(name, out):
-    """⚠ 情報分析線標「一般認知只給最新一期，但那是印象不是實測」⇒ 這裡實測。"""
-    url = OPENAPI + name
+    """⚠ 情報分析線標「一般認知只給最新一期，但那是印象不是實測」⇒ 這裡實測。
+
+    ⭐ `name` 可以是短名（接在 TWSE 的 `opendata/` 後面），
+    也可以是**整條網址**——⛔ 而那不是為了方便：櫃買那一族在別的網域
+    （`www.tpex.org.tw/openapi/v1/`），⚠ 而這一支的判準（期別欄的相異值分佈）
+    對兩邊**完全一樣** ⇒ ⛔ 不可以為了跨網域另寫一份（CLAUDE.md 四點五）。
+    """
+    url = name if "://" in name else OPENAPI + name
     out.append(f"── OpenAPI {url}")
     raw, err = B.get(url, retries=2, timeout=60)
     if err:
@@ -227,6 +233,30 @@ def main():
            ""]
     # ⭐ 先試乾淨的那條：不必經過 MOPS，也不必解 blob。
     for n in ("t187ap05_L", "t187ap05_O"):
+        openapi_case(n, out)
+        out.append("")
+    # ⭐⭐ 清單 D2（財報**實際公告日**）2026-09-15 加。
+    #
+    # ⛔ 已知的否定要先講清楚範圍：官方 `t187ap06/07`（財報三表）裡的
+    #   `報表日期`／`出表日期` 相異值都只有 **1 種**（＝我方抓取當天）
+    #   ⇒ 那是**快照時戳**，不是公告日。⚠ 而那句話**只說得了那兩條端點**。
+    #
+    # ⭐ 而市場情報分析線 1846 §二指的路是「財報公告本身就是一則**重大訊息**」，
+    #   並自承「上櫃那一半我完全沒碰」。
+    # ⛔⛔ 而我方自己的 `_tpex_probe.txt` 第 67 行**早就寫著**：
+    #       /mopsfin_t187ap04_O｜上櫃公司每日重大訊息｜參數 無
+    #   ⇒ ⚠ 又是一次「外面的東西我知道要去查，而『我們自己有沒有』我以為我知道」
+    #     （CLAUDE.md 三點 3.5 ④）。
+    #
+    # ⚠ 而「每日」這個名字**不是證據**（第二點⑤：名字叫 history 也可能只有今年）
+    #   ⇒ 這裡問的是同一個判準：**期別欄有幾個相異值**。
+    for n, why in (
+        ("https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O",
+         "⭐ 上櫃每日重大訊息｜來源：我方 `_tpex_probe.txt` 第 67 行，⛔ 不是我拼的"),
+        ("https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+         "⚠ 上市的對應那條｜**這條是我依 `_O`／`_L` 慣例拼的** ⇒ 量得到才算"),
+    ):
+        out.append(f"── 清單 D2 候選：{why}")
         openapi_case(n, out)
         out.append("")
     # ⛔ 再驗橋接，而且**只驗那個唯一還沒排除的失敗模式**。
