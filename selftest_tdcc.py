@@ -257,6 +257,34 @@ ck("  ⭐ 而 BOM 剝掉之後第一個欄名逐字是 `資料日期`（⛔ 不�
    list(T.parse(("\ufeff\ufeff" + _hdr).encode())[0][0])[0] == "資料日期",
    repr(list(T.parse(("\ufeff\ufeff" + _hdr).encode())[0][0])[0]))
 
+print("\n── ⑥.7 ⛔⛔ 副檔名比對**不可以大小寫敏感** ──")
+# ⛔⛔ 2026-09-15 實測：使用者第二份 2020 封存裡有一個 `20200619.**CSV**`
+#   （大寫，⚠ 同一包裡其餘 51 個都是小寫）⇒ 舊版 `path.endswith(".csv")` 不中
+#   ⇒ 回「不認得的副檔名」⇒ ⛔ `import_hist` 把**整週排除**，
+#   ⚠ 而排除理由寫的是副檔名 ⇒ 看的人會去查錯的方向。
+# ⭐ 而 2019~2024 那一族**只有封存這個來源**：漏一週就是永遠少一週。
+with tempfile.TemporaryDirectory() as _d7:
+    _body = ("\ufeff資料日期,證券代號,持股分級,人數,股數,占集保庫存數比例%\n"
+             "20200103,1101,1,10,100,1.5\n").encode("utf-8")
+    for _nm in ("a.csv", "B.CSV", "c.Csv"):
+        _p7 = os.path.join(_d7, _nm)
+        io.open(_p7, "wb").write(_body)
+        _r7, _n7 = T.read_hist_week(_p7)
+        ck(f"⭐ `{_nm}` 讀得出來（⛔ 大小寫不可以決定一週的生死）",
+           len(_r7) == 1, f"{len(_r7)} 列｜{_n7!r}")
+    import zipfile as _zf
+    _p7 = os.path.join(_d7, "d.ZIP")
+    with _zf.ZipFile(_p7, "w") as _z7:
+        _z7.writestr("x.csv", _body)
+    _r7, _n7 = T.read_hist_week(_p7)
+    ck("⭐ `d.ZIP` 也讀得出來", len(_r7) == 1, f"{len(_r7)} 列｜{_n7!r}")
+    # ⛔ 而真的不認得的副檔名仍然要說出來（⚠ 不可以連它也吞掉）
+    _p7 = os.path.join(_d7, "e.txt")
+    io.open(_p7, "wb").write(_body)
+    _r7, _n7 = T.read_hist_week(_p7)
+    ck("⛔ 而 `.txt` 仍然回『不認得的副檔名』（⚠ 放寬不可以放到全部都收）",
+       not _r7 and "不認得" in str(_n7), f"{_r7!r}｜{_n7!r}")
+
 print("\n── ⑥.8 ⛔⛔ 截斷要**直接問**，不要從別的症狀推 ──")
 _hdr2 = b"\xef\xbb\xbf" + "資料日期,證券代號,持股分級,人數,股數,占集保庫存數比例%\r\n".encode()
 _body = "20231020,1101,1,96,15269,0.02\r\n".encode()

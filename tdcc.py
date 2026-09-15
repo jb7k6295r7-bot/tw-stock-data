@@ -219,13 +219,19 @@ def read_hist_week(path):
     或 `.7z`（2021 起），裡面**只有一個** CSV。
     ⛔ 這裡不猜檔名——取壓縮檔裡的第一個檔。
     """
-    if path.endswith(".csv"):
+    # ⛔⛔ 2026-09-15 實測：使用者第二份 2020 封存裡有一個 `20200619.**CSV**`
+    #   （大寫，⚠ 同一包裡其餘 51 個都是小寫）⇒ 舊版比對大小寫敏感
+    #   ⇒ 那一週被判成「不認得的副檔名」⇒ ⛔ **整週被排除**，
+    #   ⚠ 而排除的理由寫的是副檔名，⛔ 不是真正的原因 ⇒ 看的人會去查錯的方向。
+    # ⭐ 而這一族（2019~2024）**只有這個來源**：漏一週就是永遠少一週。
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".csv":
         return parse(io.open(path, "rb").read())
-    if path.endswith(".zip"):
+    if ext == ".zip":
         import zipfile
         with zipfile.ZipFile(path) as z:
             return parse(z.read(z.namelist()[0]))
-    if path.endswith(".7z"):
+    if ext == ".7z":
         import shutil as _sh
         import tempfile as _tf
         import py7zr
