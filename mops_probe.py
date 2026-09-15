@@ -575,6 +575,76 @@ def ky_revenue_case(out):
                "（⇒ 那就要去找別的路，⛔ 不是把 `_1` 硬接上去）")
 
 
+def survivor_case(out):
+    """⭐⭐⭐ 策略線 2225 §2-4 要的那一件：那張靜態歷史頁是不是**事後重繪**的。
+
+    ## 離線已經量到的（⛔ 這一節只補最後一塊：機制）
+
+    掃描範圍 `data/mops/revenue_hist/*.csv` 全 140 期（2015-01 ~ 2026-08），
+    母體 `data/meta/stocks.csv` 的 `kind == "stock"`，⭐ 而**分組用 `last_seen`**
+    （⛔ 不用 `delisted.csv`——那張表把**市場轉換**也記成下市：
+    1752 南光「2022 年從上櫃下市」而它今天在上市、天天有成交）：
+
+    ```
+    真的停止交易（last_seen 2016-01~2026-07）140 檔 ⇒ 面板出現 **0 檔（0.0%）**
+    仍在市（last_seen ＝ 日檔最後一天）    2,333 檔 ⇒ 面板出現 1,844 檔（79.0%）
+    ⭐ 而判準是「它**還在申報**的那些期別裡有沒有它」：140／140 **整檔消失**
+    ```
+
+    ⇒ ⛔ 一家 2025 年下市的公司，連它 2015~2025 **還在市、還在按月申報**
+    的那些月份，在這份面板裡也**整檔不存在**。
+
+    ## ⛔ 而「是那張頁沒有」還是「我方沒抓到」，要分開
+
+    我方解析不濾（`t21sc03_114_1_0.html` 解析 987 列 ＝ 我方存 987 列）
+    ⇒ 指向那張頁。⚠ 而那仍然是**推論** ⇒ 這一節去**看那張頁**。
+
+    ⇒ 判準：拿一個**已知在那一期還在正常交易**的代號，
+    去打**那一期**的頁，看它在不在。
+    ⛔ 這一節不下結論：在不在由輸出當場講出來。
+    """
+    import mops_history as MH
+    out.append("── ⭐⭐⭐ 策略線 2225：月營收歷史面板是不是**事後重繪**（倖存者偏誤）")
+    out.append("   離線已量到：真的停止交易的 140 檔 ⇒ 面板 **0 檔**；"
+               "仍在市 2,333 檔 ⇒ 1,844 檔（79.0%）")
+    out.append("   ⇒ 這一節只問一件事：**那一期的頁裡有沒有它**")
+    # (代號, 名稱, 市場, 我方最後一筆成交, 拿哪一期來問)
+    cases = (("2456", "奇力新", "sii", "2021-12-28", 110, 6),
+             ("1507", "永大", "sii", "2022-04-13", 110, 6),
+             ("6251", "定穎", "sii", "2022-08-12", 110, 6),
+             ("5371", "中光電", "otc", "2026-08-21", 110, 6))
+    for code, name, mkt, last, y, m in cases:
+        url = MH.rev_url(mkt, y, m)
+        out.append("")
+        out.append(f"  ── {code} {name}（{mkt}）｜我方最後一筆成交 {last}"
+                   f"｜問民國 {y} 年 {m} 月那一期")
+        out.append(f"     {url}")
+        raw, err = B.get(url, retries=2, timeout=60)
+        if err or not raw:
+            out.append(f"     ✗ 取不回來：{B.why(err, 200)}"
+                       "　⇒ ⛔ **取不回來不等於它不在那張頁上**，這一格【未驗】")
+            continue
+        txt = raw.decode("cp950", "replace")
+        n_code = txt.count(code)
+        n_name = txt.count(name)
+        out.append(f"     [形狀] {len(raw):,} bytes｜「{code}」出現 {n_code} 次"
+                   f"｜「{name}」出現 {n_name} 次")
+        try:
+            rows, _hdr, note, _ = MH.parse_revenue(raw, y, m, "twse")
+        except Exception as ex:                       # noqa: BLE001
+            out.append(f"     ⚠ 解析丟例外：{type(ex).__name__}: {ex}")
+            continue
+        hit = [r for r in rows if str(r[0]).strip() == code]
+        out.append(f"     解析：{note}｜{len(rows)} 列"
+                   f"｜⭐ 這一檔在裡面：**{'是' if hit else '否'}**"
+                   + (f"　{hit[0][:4]}" if hit else ""))
+    out.append("")
+    out.append("  ⇒ ⛔ 這一節**不下結論**：四發裡「否」幾發、「是」幾發，"
+               "由上面那幾行當場講出來。")
+    out.append("  ⚠ 而**全部取不回來**也是一種結果（⇒ 這一格未驗），"
+               "⛔ 不可以讀成「證實了」。")
+
+
 def revenue_hist_columns(out):
     """⭐⭐ 回測線 0722 ③要的那一格：`revenue_hist` 的來源**有沒有公告日**。
 
@@ -682,6 +752,7 @@ def main():
     out.append("")
     ezsearch_case(out)
     ky_revenue_case(out)
+    survivor_case(out)
     out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
