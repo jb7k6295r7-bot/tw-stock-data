@@ -100,7 +100,69 @@ def main():
            "（⚠ 排掉它不等於解決它）",
            "仍然沒有來源" in v, v[:160])
 
-        print("\n── ⑥ ★ 沒有動到 repo 真的 stocks.csv ──")
+        print("\n── ⑥ ⭐⭐ 期中落地：被砍最多賠 FLUSH_EVERY 檔，⛔ 不是整批 ──")
+        # ⛔ 這一步實測一趟**超過一小時**，而它本來只在最後寫檔
+        #   ⇒ job 被砍／runner 掉／任何例外 ⇒ **整批 400 檔全部白跑**
+        #   ⇒ ⭐ 那正是四點六③「永遠跑不完，每趟都像有在跑」。
+        old_y, old_m, old_d = O.YEARLY, O.MONTHLY, O.DONE
+        try:
+            O.YEARLY = os.path.join(d, "y.csv")
+            O.MONTHLY = os.path.join(d, "m.csv")
+            O.DONE = os.path.join(d, "done.csv")
+            Y = {("1101", "114", "1"): ["1101", "114", "1"] + [""] * 8}
+            O.land(Y, {}, ["1101"], "20260915")
+            ck("⭐ 落地之後台帳**真的**有那一檔（⛔ 不是「land 回了 1」）",
+               "1101" in io.open(O.DONE, encoding="utf-8").read(),
+               io.open(O.DONE, encoding="utf-8").read())
+            # ⛔⛔ 台帳是 **append**：第二次落地不可以把第一次的洗掉（四點六③）
+            O.land(Y, {}, ["2330"], "20260915")
+            t = io.open(O.DONE, encoding="utf-8").read()
+            ck("⛔⛔ 台帳是**追加**：第二次落地之後第一檔**還在**"
+               "（⚠ 整份取代就是 `save_done` 那個坑）",
+               "1101" in t and "2330" in t, t)
+            ck("  而表頭只有一列（⛔ 每次落地都寫一次表頭 ＝ 台帳讀不回來）",
+               t.count("stock_id,asof") == 1, t)
+            # ⭐⭐ 判準是**行為**，⛔ 不是「原始碼裡有沒有那一行」
+            #   ——2026-09-15 我今天第四次踩到那個：把 `if … >= FLUSH_EVERY:`
+            #   改成 `if False:` 的突變，**呼叫那一行還在** ⇒ 比字串的斷言全綠。
+            # ⇒ ⭐ 做法：讓迴圈跑到一半**炸掉**，再看台帳裡已經有幾檔。
+            io.open(os.path.join(d, "done.csv"), "w", encoding="utf-8").write("")
+            os.remove(os.path.join(d, "done.csv"))
+            io.open(os.path.join(d, "stocks.csv"), "w", encoding="utf-8").write(
+                "stock_id,market,kind\n"
+                + "".join(f"{1000 + i},twse,stock\n" for i in range(12)))
+            old_fe, old_fetch, old_argv = O.FLUSH_EVERY, O.fetch_one, sys.argv
+            hit = []
+
+            def boom(sid, today):
+                hit.append(sid)
+                if len(hit) > 7:                      # ⛔ 第 8 檔炸掉
+                    raise RuntimeError("測試用：runner 掛了")
+                return ([[sid, "114", "1"] + [""] * 8], [], None)
+            try:
+                O.FLUSH_EVERY = 3
+                O.fetch_one = boom
+                sys.argv = ["official_stats.py", "--limit", "12", "--sleep", "0"]
+                try:
+                    O.main()
+                except RuntimeError:
+                    pass
+            finally:
+                O.FLUSH_EVERY, O.fetch_one, sys.argv = old_fe, old_fetch, old_argv
+            got = (io.open(O.DONE, encoding="utf-8").read()
+                   if os.path.exists(O.DONE) else "")
+            n_done = len([x for x in got.splitlines()[1:] if x.strip()])
+            ck("⭐⭐ 跑到第 8 檔炸掉 ⇒ 台帳裡**已經有 6 檔**"
+               "（FLUSH_EVERY=3 ⇒ 落地過兩次）"
+               "　⛔ 只在最後寫的話這裡會是 0 ＝ 整批白跑",
+               n_done == 6, f"實得 {n_done} 檔｜{got!r}")
+            ck("  而 `FLUSH_EVERY` 是個明示的常數（⛔ 不是散在迴圈裡的數字）",
+               isinstance(O.FLUSH_EVERY, int) and O.FLUSH_EVERY > 0,
+               str(O.FLUSH_EVERY))
+        finally:
+            O.YEARLY, O.MONTHLY, O.DONE = old_y, old_m, old_d
+
+        print("\n── ⑦ ★ 沒有動到 repo 真的 stocks.csv ──")
         ck("★ `META` 導到沙箱期間，repo 的 data/meta 沒有被讀寫",
            O.META == d and not os.path.exists(
                os.path.join(d, "_official_stats_done.csv")))
