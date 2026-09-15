@@ -645,6 +645,72 @@ def survivor_case(out):
                "⛔ 不可以讀成「證實了」。")
 
 
+def survivor_fs_case(out):
+    """⭐⭐ 財報三表的歷史頁**有沒有同一個倖存者偏誤**。
+
+    ## ⛔ 為什麼要單獨量：它走的是**另一條路**
+
+    ```
+    月營收   靜態頁  GET  /nas/t21/{sii,otc}/t21sc03_<年>_<月>_<部>.html
+    ⭐ 財報   查詢表單 POST /mops/web/ajax_t163sb04（損益）／t163sb05（資產負債）
+    ```
+
+    ⇒ ⛔ 月營收那條已證實是「用產生當下的公司清單重繪」（`survivor_case`，四發全否），
+    ⚠ 而**不可以**把那個結論套到這一條——第三點②：
+    **同一族／同一站的不同端點，行為互不相同，每支都要自己實測。**
+
+    ## ⇒ 判準（跟月營收那一節同一招）
+
+    拿**在那一季還在正常交易、後來才停止交易**的代號，去打**那一季**的查詢，
+    看它在不在。⛔ 這一節不下結論：在不在由輸出當場講出來。
+    """
+    import mops_history as MH
+    out.append("── ⭐⭐ 財報三表的歷史頁有沒有同一個倖存者偏誤（⛔ 另一條路，要自己量）")
+    out.append("   ⚠ 月營收那條已證實是事後重繪（四發全否）"
+               "⇒ ⛔ 不可以套過來（三點②：每支端點都要自己實測）")
+    # 民國 110 年第 1 季（＝2021Q1）：底下四檔那時都還在正常交易
+    y, q = 110, 1
+    want = (("2456", "奇力新", "sii", "2021-12-28"),
+            ("1507", "永大", "sii", "2022-04-13"),
+            ("6251", "定穎", "sii", "2022-08-12"),
+            ("5371", "中光電", "otc", "2026-08-21"))
+    for form, kind in MH.FS_FORMS:
+        for mkt in ("sii", "otc"):
+            url = f"{MH.MOPSOV}/mops/web/ajax_{form}"
+            out.append("")
+            out.append(f"  ── {form}（{kind}）｜{mkt}｜民國 {y} 年第 {q} 季")
+            out.append(f"     POST {url}")
+            raw, err = MH._fetch(url, MH.fs_form(mkt, y, q), retries=2)
+            if err or not raw:
+                out.append(f"     ✗ 取不回來：{B.why(err, 200)}"
+                           "　⇒ ⚠ ⛔ **取不回來不等於它不在裡面** ⇒ 這一格【未驗】")
+                continue
+            txt = raw.decode("utf-8", "replace")
+            try:
+                tables, enc = MH.parse_fs(raw)
+            except Exception as ex:                        # noqa: BLE001
+                out.append(f"     ⚠ 解析丟例外：{type(ex).__name__}: {ex}"
+                           "　⇒ ⛔ 這一格只量到形狀")
+                tables, enc = [], "?"
+            codes = set()
+            for _k, _cap, hdr, rows in tables:
+                for r in rows:
+                    if r:
+                        codes.add(str(r[0]).strip())
+            out.append(f"     [形狀] {len(raw):,} bytes｜編碼 {enc}"
+                       f"｜{len(tables)} 張表｜⭐ 相異代號 {len(codes)} 個")
+            hit = [(c, n) for c, n, m, _last in want
+                   if m == mkt and (c in codes or n in txt)]
+            miss = [(c, n) for c, n, m, _last in want
+                    if m == mkt and not (c in codes or n in txt)]
+            out.append(f"     ⭐ 那幾檔在裡面：{hit or '（一檔都不在）'}")
+            out.append(f"     ⛔ 不在裡面的：{miss or '（沒有）'}")
+    out.append("")
+    out.append("  ⇒ ⛔ 這一節**不下結論**：在／不在由上面那幾行當場講出來。")
+    out.append("  ⚠ 而**全部取不回來**也是一種結果（這一格未驗），"
+               "⛔ 不可以讀成「跟月營收一樣」，也不可以讀成「不一樣」。")
+
+
 def revenue_hist_columns(out):
     """⭐⭐ 回測線 0722 ③要的那一格：`revenue_hist` 的來源**有沒有公告日**。
 
@@ -753,6 +819,7 @@ def main():
     ezsearch_case(out)
     ky_revenue_case(out)
     survivor_case(out)
+    survivor_fs_case(out)
     out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
