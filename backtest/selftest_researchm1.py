@@ -62,7 +62,7 @@ if __name__ == "__main__":
         cs = synth(seed)
         Ls = R._cells(R.day_states(cs), R.fwd_returns(cs), R.WINDOWS, R.HOLDS, judged_cells=ALL)
         m = Ls[(Ls.window == "全期") & Ls.judge.str.startswith("測得出")]
-        ok = Ls[(Ls.window == "全期") & Ls.judge.str.startswith("測")]
+        ok = Ls[(Ls.window == "全期") & Ls.judge.str.startswith(("測", "未判定"))]
         hits += len(m); tot += len(ok)
     rate = hits / max(tot, 1)
     check(rate < 0.20, f"隨機漫步下「測得出」占可判格 {rate * 100:.0f}%（< 20%；⚠ H 重疊讓 5% 名目率會偏高）")
@@ -93,11 +93,11 @@ if __name__ == "__main__":
     under = small[[is_judged(r) and (r.n_seg < 24 or r.rest_n_seg < 24) for r in small.itertuples()]]   # ⚠ 寫死 24，不引用 R.N_MIN
     check(len(under) > 0 and under["judge"].str.startswith("還沒測").all(), f"判定格 n<24 的 {len(under)} 格全是「還沒測」")
     judged_rows = L1[[is_judged(r) for r in L1.itertuples()]]; other = L1[[not is_judged(r) for r in L1.itertuples()]]
-    check(len(judged_rows) > 0 and judged_rows["judge"].str.startswith(("測", "還沒測")).all(), f"判定格 {len(judged_rows)} 列只寫 測得出／測不出／還沒測")
+    check(len(judged_rows) > 0 and judged_rows["judge"].str.startswith(("測得出", "未判定", "還沒測")).all(), f"判定格 {len(judged_rows)} 列只寫 測得出／未判定（缺半寬）／還沒測")
     z = R._judge("c", "全期", 120, 30, 30, 0.003, -0.01, 0.02); nz = R._judge("c", "全期", 120, 30, 30, 0.02, -0.01, 0.05)
-    check(z == "測不出（零）" and nz.startswith("測不出（|點估計| > 0.585%"), "CI 含 0：|點估計| ≤ 0.585% ⇒ 零；> 0.585% ⇒ 量不準（⚠ 寫死 0.585）")
+    check(z == "未判定（缺假訊號組半寬；零候選）" and nz == "未判定（缺假訊號組半寬；量不準候選）", "CI 含 0 ⇒ 未判定（缺半寬）；候選字 |點估計| ≤ 0.585% 零／> 量不準（⚠ 寫死 0.585）")
     check(other["judge"].str.startswith(("非判定格", "窗口長度不可比")).all(), f"非判定格 {len(other)} 列只寫 非判定格（方向）／窗口長度不可比")
-    check(not L1[L1["judge"].str.startswith("測")].pipe(lambda z: ((z["n_seg"] < 24) | (z["rest_n_seg"] < 24)).any()), "判「測得出／測不出」的格 n 與 rest_n 都 ≥ 24")
+    check(not L1[L1["judge"].str.startswith(("測", "未判定"))].pipe(lambda z: ((z["n_seg"] < 24) | (z["rest_n_seg"] < 24)).any()), "判「測得出／未判定」的格 n 與 rest_n 都 ≥ 24")
     a90 = L1[(L1.signal == "a") & (L1.window == "1990s")]
     check(len(a90) > 0 and a90["judge"].str.startswith("窗口長度不可比").all(), "a 的 1990s 視窗結論欄＝窗口長度不可比")
     print("[researchm1] 分位數與逐段勝率")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     def fake(judges):
         rows = [{"signal": k, "window": w, "H": H, "judge": j} for (k, w, H), j in judges.items()]
         return pd.DataFrame(rows)
-    base = {("c", "全期", 120): "測不出", ("d", "全期", 120): "測不出", ("a", "主判定 2001 起", 120): "測不出", ("b", "全期", 120): "非判定格（方向＋）"}
+    base = {("c", "全期", 120): "未判定（缺假訊號組半寬；量不準候選）", ("d", "全期", 120): "未判定（缺假訊號組半寬；零候選）", ("a", "主判定 2001 起", 120): "測不出", ("b", "全期", 120): "非判定格（方向＋）"}
     check("不跑" in R.exit_rule(fake(base))[0], "全部測不出 ⇒ 不跑")
     check("不跑" in R.exit_rule(fake({**base, ("d", "全期", 120): "測得出（＋）"}))[0], "只有 d 測得出 ⇒ 不跑")
     check("不跑" in R.exit_rule(fake({**base, ("a", "主判定 2001 起", 120): "還沒測（狀態別 n < 24）"}))[0], "測不出＋還沒測、沒有測得出 ⇒ 不跑")

@@ -92,7 +92,8 @@ def _judge(key: str, wname: str, H: int, n: int, n2: int, diff: float, lo: float
     if not np.isfinite(lo):
         return "還沒測"
     if lo <= 0 <= hi:
-        return "測不出（零）" if abs(diff) <= ZERO else "測不出（|點估計| > 0.585%：量不準，不是零）"
+        # K線分析 09-15 17:45 §五（〈四十九之二〉）：沒算過假訊號組半寬的「測不出」一律降「未判定」；候選字保留給補算半寬之後用
+        return "未判定（缺假訊號組半寬；零候選）" if abs(diff) <= ZERO else "未判定（缺假訊號組半寬；量不準候選）"
     return "測得出（＋）" if diff > 0 else "測得出（−）"
 
 
@@ -157,12 +158,12 @@ def exit_rule(L1: pd.DataFrame) -> tuple[str, pd.DataFrame]:
     """v2 §3-3 ③④：判定格全部測不出 ⇒ 層二不跑；只有 d 測得出 ⇒ 層二不跑。回傳 (結論, 判定格表)。"""
     J = L1[[(r.signal, r.window, r.H) in JUDGE_CELLS for r in L1.itertuples()]]
     got = J[J["judge"].str.startswith("測得出")]
-    if J["judge"].str.startswith("測不出").all():
-        return "判定格全部測不出 ⇒ 層二不跑（§3-3 ③）", J
+    if J["judge"].str.startswith(("測不出", "未判定")).all():
+        return "判定格全部測不出／未判定 ⇒ 層二不跑（§3-3 ③；⚠ 未判定＝缺假訊號組半寬，補算後再定）", J
     if len(got) and set(got["signal"]) == {"d"}:
         return "只有 d 測得出 ⇒ 層二不跑（§3-3 ④）", J
     if len(got) == 0:
-        return "判定格沒有測得出（其餘是還沒測）⇒ 層二不跑（§3-3 ③）", J
+        return "判定格沒有測得出（其餘是還沒測／未判定）⇒ 層二不跑（§3-3 ③）", J
     return f"判定格測得出：{sorted(set(got['signal']))} ⇒ 層二可排（⛔ 由策略線／K線分析決定，本線不自行開跑）", J
 
 
@@ -220,6 +221,7 @@ def main():
         L.append(row(r))
     L.append(""); L.append(f"⇒ 出口（§3-3）：**{verdict}**"); L.append("")
     L.append("⚠ 三種判定字是三種不同的結論（K線分析 09-15 13:15）：**零**＝測到它沒有（d）；**測不出（量不準）**＝精度不足、不是沒有效果（c 中／高）；**還沒測**＝樣本不夠、不觸發撤除（a）。⛔ 不可壓成「都沒用」。")
+    L.append("⛔ 品質標記（K線分析 09-15 17:45 §五，〈四十九之二〉）：本表判定格的「測不出」**全部沒有假訊號組半寬** ⇒ 一律標「未判定（缺假訊號組半寬）」，括號內只是候選字；補算半寬（注入法／段標籤打亂，見 PREREGM1 追加三）後才回到 零／量不準。")
     L.append("⚠ CI 用段分群 SE、**未修正跨段重疊**（未來 H 日窗口跨段共用），實際覆蓋率低於 95%（自測隨機漫步假陽性 13%）⇒ 對「測不出」只會更保守；⛔ 日後任何「測得出」格要先跑**段標籤打亂**安慰劑（重排段、不是重排日；登錄尚未加，策略線補）。")
     L.append("⚠ a 的方向（「下」高於「上」）五視窗一致，⛔ 但五視窗是同一條序列切出來、共用同一批段，**不是五次獨立實驗**；只能寫「方向一致但樣本不足以判定」，⛔ 不可因方向反了就反著用。"); L.append("")
     L.append("## 三、非判定格：全期 H=120（只寫方向；末欄＝與同訊號同狀態的判定格同向／不同向）"); L.append(""); L += hdr
