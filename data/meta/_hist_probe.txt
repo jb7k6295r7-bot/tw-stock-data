@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T01:26:42+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35000415600
+# ⏱ 這一趟：2026-09-16T01:44:56+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35002248812
 # hist_probe.py 的輸出。這是探針結果，不是資料。
 # 主機：hist.tpex.org.tw（使用者 2026-09-09 提供）
 # ⛔ 要答的：這個站有沒有**上櫃／興櫃的歷史**——而我今晚說過三次「上櫃沒有歷史來源」。
@@ -20,7 +20,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a3b952625e67c0a8\',t:\'MTc4OTQ5MzAzMw==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a3b96cd2b8c5d133\',t:\'MTc4OTQ5NDExNg==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -35,8 +35,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3b95269581d2986\','
-     't:\'MTc4OTQ5MzAzNA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3b96cda4fe3e82d\','
+     't:\'MTc4OTQ5NDExNw==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -71,8 +71,8 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b9527a7
-         a90eabc',t:'MTc4OTQ5MzAzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b96cf31
+         f1cc694',t:'MTc4OTQ5NDEyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate
@@ -170,7 +170,7 @@
      CA  ｜  56,273 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票證券商總分支機構營業額統計表>> ⏎ 日期: 95年12月29日                                                   單位: 元
      CB  ｜   5,549 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票證券商營業額統計表>> ⏎ 日期: 06年12月29日                                                   單位: 元
      CC  ｜   2,786 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票推薦券商營業額統計表>> ⏎ 日期: 95年12月29日                                                   單位: 元
-     DA  ｜  28,980 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票華僑及外國人櫃檯買賣投資彙總表>>                                      頁次:    1 ⏎ 日期: 95年12月29日                                                                                                 
+     DA  ｜✗ URLError: <urlopen error [Errno 104] Connection reset by peer>
      DB  ｜   2,767 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<主要機構法人買賣日彙總表>> ⏎ 日期: 95年12月29日                                                       頁次:  1
      EA  ｜  60,111 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票熱門股排行(依成交張數由大而小排列)>> ⏎ 日期: 95年12月29日
      FA  ｜  72,443 bytes｜財團法人中華民國證券櫃檯買賣中心 ⏎ <<興櫃股票推薦券商推薦興櫃股票一覽表>>    頁次:    1 ⏎ 日期: 95年12月29日
@@ -189,7 +189,7 @@
      民國  88（1999）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國  89（2000）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
      民國  90（2001）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
-     民國  91（2002）｜✓ 1227 有檔 30,276 bytes
+     民國  91（2002）｜✓ 0930 有檔 22,159 bytes
      民國  92（2003）｜✓ 1229 有檔 49,912 bytes
      民國  93（2004）｜✓ 1229 有檔 71,803 bytes
      民國  94（2005）｜✓ 1229 有檔 52,346 bytes
@@ -209,6 +209,7 @@
      民國 108（2019）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
      民國 109（2020）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國 110（2021）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+       ⚠ AA1110930.txt 抓得到日期卻**不是我要的那天**（['2008-04-19']）⇒ 不算命中
      民國 111（2022）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國 112（2023）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
      民國 113（2024）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）

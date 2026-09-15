@@ -1038,10 +1038,13 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-09-16T01:32:15+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35000415600
+最後執行：2026-09-16T01:50:37+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35002248812
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **⚠⚠ **這一層沒跑****：這一趟沒有 `_ci_steps.tsv`（⇒ 沒有走 `ci_step.py` 的步驟）　⇒ ⛔ 不算失敗，⛔ **也不算驗過**
+- **跑過的自測**：1 支｜selftest_probes.py
+
+檢查：
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
 
 ## reduce_shares_check　✓ 正常
 
