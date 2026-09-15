@@ -366,6 +366,31 @@ def main():
         import shutil
         shutil.rmtree(d2, ignore_errors=True)
 
+    # ───── [主鍵] ⛔ 年表的第三欄是 volume，⚠ 而月表的第三欄是 month ─────
+    print("\n── 主鍵：年表兩格、月表三格 ──")
+    _yrow = ["2330", "114", "12740507347", "916448075621", "2829457",
+             "78.30", "1/19", "62.20", "8/09", "72.09", "20260909"]
+    ck("⭐⭐ 年表主鍵**只有 (代號, 年度)**"
+       "（⛔ `r[:3]` 會把**成交股數**寫進主鍵 ⇒ `--force` 重抓多一列而不是覆蓋）",
+       O.y_key(_yrow) == ("2330", "114"), str(O.y_key(_yrow)))
+    ck("  ⇒ 同一檔同一年、量不同 ⇒ 仍然是**同一個鍵**（覆蓋，⛔ 不是多一列）",
+       O.y_key(_yrow) == O.y_key(_yrow[:2] + ["999"] + _yrow[3:]),
+       f"{O.y_key(_yrow)} vs {O.y_key(_yrow[:2] + ['999'] + _yrow[3:])}")
+    _mrow = ["2330", "115", "1", "1835.00", "1545.00", "1718.05"]
+    ck("⭐ 而**月**表的第三格是 `month` ⇒ 主鍵要三格",
+       O.m_key(_mrow) == ("2330", "115", "1"), str(O.m_key(_mrow)))
+    ck("  ⇒ 同一檔同一年**不同月**是不同的鍵",
+       O.m_key(_mrow) != O.m_key(_mrow[:2] + ["2"] + _mrow[3:]))
+    import ast as _ast
+    _mfn = [n for n in _ast.parse(io.open(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "official_stats.py"),
+        encoding="utf-8").read()).body
+        if isinstance(n, _ast.FunctionDef) and n.name == "main"][0]
+    _keyed = {getattr(n.func, "id", "") for n in _ast.walk(_mfn)
+              if isinstance(n, _ast.Call)}
+    ck("⭐ `main()` 兩個都用了（⛔ 不是還留著 `r[:3]`）",
+       {"y_key", "m_key"} <= _keyed, str(sorted(x for x in _keyed if x)))
+
     # ───── [上櫃年度] ⭐ 假回應**照真的形狀**做（含兩個都叫「日期」的欄） ─────
     #  ⚠ 這一段是 probe 120 真的回應的子集：兩張 tables、fields 有重複欄名、
     #    code／name／curDate／totalCount／notes 都在。⛔ 少一樣就等於那一格沒測。

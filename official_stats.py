@@ -387,6 +387,29 @@ def _load(path, header):
     return rows
 
 
+def y_key(row):
+    """年度表的主鍵 ＝ **(代號, 民國年)**。⛔ 只有兩格。
+
+    ## ⛔ 舊版是 `tuple(r[:3])`，而**年表的第三欄是 `volume`**
+
+    ⚠ 那一版對**月**表是對的（第三欄是 `month`），對年表則把**成交股數**
+    寫進了主鍵 ⇒ 同一檔同一年的數字若被官方修正過，`--force` 重抓會**多出一列**，
+    ⛔ 而不是覆蓋掉舊的。
+    ⭐ 而它至今沒有發作，只因為成功過的檔會進 `done` ⇒ **從來沒有被重問過**
+    （實測 21,459 列，(代號,年度) 相異也是 21,459 ⇒ 0 筆重複）。
+    ⇒ ⛔ 「還沒發作」不是判準（四點五⑥那句）。
+
+    ⚠ 病根是**一個表達式做兩件事**：`r[:3]` 對月表對、對年表錯，
+    而兩邊長得一模一樣。⇒ 收成兩支具名的。
+    """
+    return (row[0], row[1])
+
+
+def m_key(row):
+    """月表的主鍵 ＝ **(代號, 民國年, 月)**。⭐ 三格才對。"""
+    return (row[0], row[1], row[2])
+
+
 def _save(path, header, rows):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with io.open(path, "w", encoding="utf-8", newline="") as f:
@@ -796,9 +819,9 @@ def main():
             print(f"  [{i}/{len(todo)}] {sid} ✗ {err}", flush=True)
             continue
         for r in ys:
-            Y[tuple(r[:3])] = r
+            Y[y_key(r)] = r
         for r in ms:
-            M[tuple(r[:3])] = r
+            M[m_key(r)] = r
         ok.append(sid)
         print(f"  [{i}/{len(todo)}] {sid} ✓ 年 {len(ys)}／月 {len(ms)}", flush=True)
         # ⭐ 每 FLUSH_EVERY 檔落地一次 ⇒ 被砍最多賠 FLUSH_EVERY 檔，⛔ 不是整批 400
