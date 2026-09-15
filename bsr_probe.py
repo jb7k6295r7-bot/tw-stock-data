@@ -127,7 +127,7 @@ def main():
     txt = "\n".join(out)
     print(txt)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write(txt + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + txt + "\n")
     print(f"\n[bsr_probe] 寫出 {OUT}")
     return 0
 

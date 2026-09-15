@@ -158,11 +158,21 @@ jobs:
         #   八份各改一次就是「改一邊、另一邊沒跟上」的完美條件。
         run: bash sync_code.sh
 
-      # ★ 先離線驗四支跑不跑得完（假回應整條走一遍）。
-      #   ⚠ 這一步**不加 continue-on-error**：這支的唯一產出就是探針輸出，
-      #     連跑都跑不完就沒有必要往下打對方的伺服器。
+      # ★ 先離線驗十四支跑不跑得完（假回應整條走一遍）。
+      #
+      # ⛔⛔ 2026-09-15 付過代價：這一步本來寫 `run: python selftest_probes.py`，
+      #   而註解說「不加 continue-on-error ⇒ 連跑都跑不完就不必往下打」。
+      #   ⚠ **那句話是假的**：下面「取 main 上的判準檔」與「跑十四支探針」
+      #   兩步都是 `if: always()` ⇒ 這一步紅了，**後面照樣全跑**。
+      #   ⇒ run 100 實測：step 12 failure，而整趟照樣往下走、照樣 commit，
+      #     ⛔ 而 `_last_run.md` 裡**沒有任何一塊**提到它紅了。
+      #
+      # ⇒ ⭐ 改成走 `ci_step.py`（記下 rc、⛔ 一律 exit 0），
+      #   下面加一步 `ci_report.py` 把它寫成 runlog 區塊 ⇒ 進 commit ⇒ 四條線讀得到。
+      #   ⚠ 這不是「把紅的藏起來」——⭐ 反過來：原本那個紅**只有 run 畫面看得到**，
+      #     現在它會進到**資料**裡（四點二⑤：可見性要由資料承擔，⛔ 不是由 log）。
       - name: 驗十四支探針跑得完（離線）
-        run: python selftest_probes.py
+        run: python ci_step.py selftest_probes.py
 
       # ⛔⛔ `delist_probe.py` 的雙向比對要讀 `data/meta/delisted.csv`，
       #   而那個檔**只在 main 上**（`delisted.py` 是 daily 跑的、推到 main）。
@@ -319,6 +329,13 @@ jobs:
               echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
             } >> data/meta/_suspend_probe.txt
           fi
+
+      # ⛔ 這一步**故意沒有** `continue-on-error`（跟 daily.yml 那一步同一個理由）：
+      #   它只負責「說」。自己炸掉的話要大聲，⚠ 而下面 Commit 是 `if: always()`
+      #   ⇒ 這一趟的探針輸出照樣進 commit。
+      - name: 這一輪有沒有自測紅著（⛔ continue-on-error 會把它藏起來）
+        if: always()
+        run: python ci_report.py
 
       - name: Commit 回 repo
         if: always()

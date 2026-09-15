@@ -44,7 +44,21 @@ import subprocess
 import sys
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-TSV = os.path.join(_ROOT, "data", "meta", "_ci_steps.tsv")
+#: ⛔⛔ 2026-09-15 付過代價：這裡本來是一個**import 當下**就算好的常數。
+#  ⇒ 自測要把它導走時，`ci_step.TSV` 與 `ci_report.TSV` 是**兩個旋鈕**，
+#    ⚠ 而子行程（`python ci_step.py …`）**兩個都看不到**
+#    ⇒ 一次突變跑（S1「多餘參數靜靜忽略」）就把 `x.py<TAB>2` 寫進 repo 真的台帳，
+#    ⛔ 而它跟著 commit 上了分支 ⇒ probe run 101 讀到它
+#    ⇒ **main 上的 `_last_run.md` 出現一塊「x.py 紅了」的假報告**。
+#  ⇒ ⭐ 照 `mops.changes_path()` 那條：收成**一個**在呼叫當下才算的函式，
+#    並吃一個環境變數 ⇒ 子行程也導得走。
+TSV_ENV = "CI_STEPS_TSV"
+
+
+def tsv_path():
+    """單趟台帳的位置。⭐ 只有這一份實作（四點五），⛔ 不是 import 當下的常數。"""
+    return os.environ.get(TSV_ENV) or os.path.join(
+        _ROOT, "data", "meta", "_ci_steps.tsv")
 
 
 def record(name, rc, path=None):
@@ -56,7 +70,7 @@ def record(name, rc, path=None):
     ⛔ 不在這裡：這一支只知道自己那一格。
     """
     line = f"{name}\t{rc}\n"
-    p = path or TSV
+    p = path or tsv_path()
     try:
         os.makedirs(os.path.dirname(p), exist_ok=True)
         io.open(p, "a", encoding="utf-8").write(line)
@@ -69,8 +83,20 @@ def main(argv):
     if len(argv) < 2:
         print("用法：python ci_step.py <script.py> [args...]", file=sys.stderr)
         return 2
+    # ⛔⛔ 2026-09-15 付過代價：`daily.yml` 裡有一行是**上一個 `run:` 的續行**
+    #   ⇒ YAML 把單行純量折成一串 ⇒ 這支收到的是
+    #     `selftest_mops_history.py python selftest_revenue_complete.py`
+    #   ⇒ 它照樣跑第一支、照樣 rc=0，⚠ 而 `selftest_revenue_complete.py`
+    #     **從來沒有被執行過**——⭐ 而「每一支自測都有人跑」那道守門看的是
+    #     檔名有沒有出現在 workflow 文字裡 ⇒ 它一直是綠的。
+    # ⇒ ⭐ 多的參數一律**大聲拒絕**：⛔ 靜靜忽略就是這次藏了多久的原因。
+    if len(argv) > 2:
+        print(f"⛔ ci_step 只收一支自測，實得 {argv[1:]}"
+              "　⇒ ⚠ 多半是 YAML 把上一個 `run:` 的續行折進來了"
+              "（那支自測其實沒有被跑）", file=sys.stderr)
+        return 2
     name = os.path.basename(argv[1])
-    rc = subprocess.call([sys.executable] + argv[1:], cwd=_ROOT)
+    rc = subprocess.call([sys.executable, argv[1]], cwd=_ROOT)
     record(name, rc)
     # ⭐ 寫成**不會被讀成「驗過了」**的樣子（⛔ 一行 skipped 跟一行 ok 長得一樣）
     print(f"[ci_step] {name} ⇒ rc={rc}"

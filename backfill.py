@@ -976,7 +976,7 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
-def xhr_clues(text, cap=12):
+def xhr_clues(text, cap=12, base=None):
     """那一頁的 js **去打誰**——把線索挖出來。→ list[str]（要印的行）。
 
     ⭐ 只有這一份實作（四點五）：MOPS 與櫃買公告區**同一個問題**
@@ -1008,54 +1008,143 @@ def xhr_clues(text, cap=12):
         out.append(f"  ⭐ `{m.group(1)}` 本體前 400 字：{body[:400]}")
     else:
         out.append("  ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體"
-                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）")
+                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）")
+    # ⭐ ⑤ 外部 .js —— ①~④ 全是 0 種時，答案只可能在這裡。
+    #   ⚠ 這一節**一定要印**（就算 0 支）：⛔「沒有這一節」跟「這一節是 0」
+    #     在紙上長得一模一樣（第七點）。
+    srcs = script_srcs(t, base=base, cap=cap)
+    out.append(f"  ⑤  外部載入的 `.js`：{len(srcs)} 支"
+               + ("" if base else "　⚠ 沒給 base ⇒ **相對路徑不算在內**"))
+    out += [f"      {u[:140]}" for u in srcs]
     return out
 
 
-def probe_stamp(note=""):
-    """探針輸出的**第一行**：這一趟是誰、什麼時候、在哪個 ref 上跑的。
+def visible_text(text, sep):
+    """把回應**去標籤、壓空白**，變成人讀得懂的一串。→ str。
 
-    → 一行字串（含換行）。⭐ 只有這一份實作（四點五）。
+    ⭐ 只有這一份實作（四點五）。⛔ 它存在的理由是 CLAUDE.md 第一點那句：
+    **判準沒辦法窮舉形狀，而人讀三行字就分得出來。**
 
-    ## ⛔ 為什麼要有它
+    ⚠ 2026-09-15 我為了「這一頁是查無／表單／空殼哪一種」改過兩次判準，
+    每次都又冒出第三種形狀 ⇒ ⭐ 不要再猜形狀，把字印出來讓人讀。
 
-    2026-09-15 實測：**17 支**會寫 `data/meta/_*.txt` 的探針裡，
-    只有 `suspend_probe` 一支在檔頭寫時戳 ⇒ ⛔ **其餘 16 份，讀的人
-    看不出它是哪一趟跑的**。
+    ## ⛔⛔ `sep` 是**必填、沒有預設值**——這一族有兩種相反的語意
 
-    ⚠ 而那些檔正是四條線拿來判斷「官方到底有沒有」的依據
-    ——⭐ 一份三天前的 `_mops_probe.txt` 跟今天剛跑的**長得一模一樣**。
+    收攏之前 repo 裡六份實作分成兩派，而**差別是靜默的**：
 
-    ⇒ 而它同一天被一個 bug 放大過：`probe.yml` 的 job timeout 是 15 分、
-    而裡面有一步自己就是 15 分 ⇒ 四趟 run 被砍在 `Commit 回 repo` **之前**
-    ⇒ main 上那幾份輸出**停在更早的一趟**，⛔ 而沒有任何地方會說。
+    ```
+    sep=" "   標籤換成空白  `<td>2330<br/>台積電</td>` → `2330 台積電`
+              ⇒ 整頁可讀文字、要讓人一眼分辨形狀的，用這個
+    sep=""    標籤直接刪掉  同一段            → `2330台積電`
+              ⇒ 取**一格**的值（表格 cell、`<a>` 的文字）用這個
+              ⚠ 換成 " " 的話 `"產業別" in cells` 這種比對會靜靜對不上
+    ```
 
-    ## ⭐ 這正是 CLAUDE.md 第二點那句話，套在**我方自己的輸出**上
-
-    「這一批要自己講出它是哪一天」——⛔ 我們對官方的回應要求這件事，
-    ⚠ 而我們自己寫給別人讀的檔**沒有做到**。
-
-    ⚠ `ref` 與 `run` 一起寫，是因為四點六③：**排程跑的一律是 main**
-    ⇒ 「這份輸出是哪個 ref 上的程式產生的」跟內容一樣重要。
+    ⇒ 照 `lowwater.direction`／`db_status._p_col_two(derived=)` 那條通則：
+    ⛔ **有預設值就是「照抄語意」那個坑的自動化版本**——不寫也會跑，
+    而它會默默套上多數派那一種，⚠ 而畫面上看不出來。
+    （`selftest_probes` ⑮ 用 `inspect.signature` 直接釘「沒有 default」。）
     """
-    import os as _os
-    ref = (_os.environ.get("GITHUB_REF_NAME")
-           or _os.environ.get("GIT_BRANCH") or "?")
-    run = _os.environ.get("GITHUB_RUN_ID", "")
-    where = "Actions" if _os.environ.get("GITHUB_ACTIONS") else "本機／開發容器"
-    try:
-        import runlog
-        now = runlog.now_tpe().isoformat(timespec="seconds")
-    except Exception:                                        # noqa: BLE001
-        from datetime import datetime as _dt, timedelta as _td, timezone as _tz
-        now = _dt.now(_tz(_td(hours=8))).isoformat(timespec="seconds")
-    tail = f"｜run {run}" if run else ""
-    extra = f"｜{note}" if note else ""
-    return (f"# ⏱ 這一趟：{now}（台北）｜ref {ref}｜{where}{tail}{extra}\n"
-            + ("" if where == "Actions" else
-               "# ⚠ **不是 Actions 跑的** ⇒ ⛔ 若內容含抓取結果一律不可信"
-               "（這裡對交易所是我方閘道 403）\n"))
+    assert sep in ("", " "), f"sep 只能是 '' 或 ' '，實得 {sep!r}"
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    # ⛔⛔ `<script>`／`<style>` 要**先**整段拿掉，⚠ 而這一行是有代價換來的：
+    #   我 2026-09-15 新寫的那一版沒有它 ⇒ `t05st01` 的「前 160 字」印出來是
+    #   `… window.onload=getMsg; var MAR = document.querySelector("#marquee") …`
+    #   ⇒ ⛔ **那不是人看得到的字**，而這一格存在的理由就是「讓人讀三行就分得出來」。
+    #   ⭐ 而 `hist_probe._text` **本來就有**這兩行——⇒ 收成一份的時候要取**比較嚴**
+    #     的那一版，⛔ 不是取我剛寫的那一版（四點五：收攏不等於照抄新的那份）。
+    t = re.sub(r"<script[^>]*>.*?</script>", " ", t, flags=re.S)
+    t = re.sub(r"<style[^>]*>.*?</style>", " ", t, flags=re.S)
+    return " ".join(re.sub(r"<[^>]+>", sep, t).split())
 
+
+def script_srcs(text, base=None, cap=12):
+    """那一頁**外部載入**的 .js 清單。→ list[str]（絕對網址，已去重排序）。
+
+    ⭐ 只有這一份實作（四點五）：MOPS 的 `t05st01` 與櫃買那兩頁
+    （`announce/market/change*.html`）是**同一個問題**——inline 裡
+    `fetch(`／`$.ajax`／`url:` 全部 0 種，⇒ 那一發請求寫在**外部 .js** 裡。
+
+    ⛔ 它**不下結論**、也不抓：只把 `<script src>` 逐條解析成絕對網址。
+    ⚠ `base` 沒給就只回那些本來就是絕對網址的——⛔ 相對路徑不猜。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    hits = []
+    for m in re.finditer(r"<script[^>]*\bsrc\s*=\s*[\"\']([^\"\']{2,300})[\"\']",
+                         t, re.I):
+        u = m.group(1).strip()
+        if u.startswith(("data:", "javascript:")):
+            continue
+        if u.startswith("//"):
+            u = "https:" + u
+        elif not u.startswith(("http://", "https://")):
+            if not base:
+                continue            # ⛔ 沒有 base 就不猜（相對路徑會拼錯站）
+            u = urllib.parse.urljoin(base, u)
+        hits.append(u)
+    # ⚠ 第三方（Google 字型／分析）不是我們要找的那一支，但**照樣列出來**
+    #   ——⛔ 由讀的人判斷，這一份不替他篩掉。
+    return sorted(set(hits))[:cap]
+
+
+def js_followups(text, base, cap=6, skip_hosts=("googleapis", "gstatic",
+                                                 "google-analytics", "googletagmanager",
+                                                 "jquery.com", "cdnjs", "jsdelivr")):
+    """⑤ 那幾支外部 `.js` **裡面**去打誰——⛔ 這是「取不到」之後的下一步。
+
+    → list[str]（要印的行）。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼一定要有這一層
+
+    2026-09-15 實測，三頁**同時**是 js 空殼而且 inline 線索全部 0 種：
+
+    ```
+    MOPS  t05st01（重大訊息）                     ①②③④ 全 0
+    TPEx  announce/market/change.html             ②③④ 全 0（① 只有字型站）
+    TPEx  announce/market/change/reference.html   ②③④ 全 0（① 只有字型站）
+    ```
+
+    ⇒ ⭐ 「inline 全 0」**不是**「站上沒有」——它是「那一發請求寫在外部檔裡」。
+    ⛔ 而那兩件事在報告上長得一模一樣（第七點）。
+
+    ⚠ 第三方站（字型／分析／CDN）**不抓**：不是我們要找的那一支，而且
+    ⛔ 對別人的 CDN 發請求跟這件事無關。⇒ 跳過的**逐條印出來**，
+    ⛔ 不可以靜靜篩掉——讀的人要看得到「⑤ 有 11 支、我只抓了 2 支」。
+    """
+    out = []
+    srcs = script_srcs(text, base=base, cap=24)
+    mine, third = [], []
+    for u in srcs:
+        (third if any(h in u for h in skip_hosts) else mine).append(u)
+    out.append(f"  ⑥ 外部 `.js` 逐支挖：共 {len(srcs)} 支"
+               f"｜本站 {len(mine)} 支｜第三方 {len(third)} 支（⛔ 不抓）")
+    for u in third:
+        out.append(f"      ⛔ 跳過（第三方）：{u[:120]}")
+    if not mine:
+        out.append("      ⚠ **本站一支都沒有** ⇒ 這一層挖不下去"
+                   "（⛔ 這不是「官方沒有」，是我方還沒找到入口）")
+        return out
+    for u in mine[:cap]:
+        raw, err = get(u, retries=2, timeout=60)
+        if err:
+            out.append(f"      ⛔ {u[:100]} 取不回來：{why(err)}")
+            out.append("         ⇒ 這一支**沒挖**（⛔ 不是「裡面沒有」）")
+            continue
+        out.append(f"      ── {u[:120]}（{len(raw):,} bytes）")
+        for ln in xhr_clues(raw, base=u):
+            out.append("    " + ln)
+    if len(mine) > cap:
+        out.append(f"      …（本站另 {len(mine) - cap} 支未挖，cap={cap}）")
+    return out
+
+
+#: ⭐ `probe_stamp` **搬到 `runlog`** 了（2026-09-15），這裡留成別名。
+#  ⛔ 搬的理由不是整理：`tls_probe.py` 需要它，⚠ 而 `import backfill` 會把
+#    `ca_chain` 的補鏈 opener 裝上去 ⇒ **那支探針就吃到補鏈了**
+#    ⇒ 它是「量現況」的尺，吃了之後永遠回「通」
+#    ⇒ ⭐ `selftest_ca_chain` ⑤ 當場抓到（probe run 101 step 10 紅、擋住同步）。
+#  ⚠ 而 `runlog` 只 import 標準庫 ⇒ 它進得去、補鏈進不去。
+probe_stamp = runlog.probe_stamp
 
 def js_shell(text):
     """這一頁是不是**js 空殼**（＝框架回來了，而資料是載入後才由 js 取的）。

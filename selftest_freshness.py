@@ -159,6 +159,85 @@ def main():
            all(t[2] in ("filename", "filename_roc", "asof_column")
                for t in F.TARGETS),
            str([t[2] for t in F.TARGETS]))
+        # ══════════════════════════════════════════════════════════
+        # ⑨ ⭐ 排程區塊有沒有死掉——⛔ 而「沒人按」要跟「壞掉」分開講
+        #
+        # ⚠ 這一節**全部用合成的 `_last_run.md`**，⛔ 不讀現場那一份。
+        #   理由是第七點⑦：拿現場資料驗判準，等於把斷言的壽命綁在
+        #   「那個 bug 還沒修好」上——⚠ 而現場那 60 個區塊**修好的那天**
+        #   （格式都換過一輪）這一節就再也驗不到東西了。
+        # ══════════════════════════════════════════════════════════
+        print("\n[⑨ 排程區塊]")
+        old_d = (today - timedelta(days=9)).isoformat() + "T08:00:00+08:00"
+        new_d = today.isoformat() + "T08:00:00+08:00"
+        lr = os.path.join(d, "lr9.md")
+        io.open(lr, "w", encoding="utf-8").write(
+            f"## 排程死了　✓ 正常\n\n最後執行：{old_d}（台北）"
+            "｜觸發 schedule｜每日台股資料｜ref main｜run 1\n\n"
+            f"## 排程還活著　✓ 正常\n\n最後執行：{new_d}（台北）"
+            "｜觸發 schedule｜每日台股資料｜ref main｜run 2\n\n"
+            f"## 手動沒人按　✓ 正常\n\n最後執行：{old_d}（台北）"
+            "｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref main｜run 3\n\n"
+            f"## 舊格式　✓ 正常\n\n最後執行：{old_d}（台北）\n\n"
+            # ⭐ 月頻的那一支：9 天前**不算壞**（⛔ 用日頻那把尺會誤報）
+            f"## 月頻沒過期　✓ 正常\n\n最後執行：{old_d}（台北）"
+            "｜觸發 schedule｜股本／發行股數（每月）｜ref main｜run 4\n\n")
+        # ⛔⛔ 容忍度要從**那一支的 cron** 推，⚠ 不是從名字猜
+        #   ——我第一版寫「名字裡有『月』就用 40 天」⇒ `股本／發行股數（每月）`
+        #   剛好中，⛔ 而那是運氣：改個名字就會被當成日頻 ⇒ **天天紅**。
+        ck("⑨.0a 月頻（cron 指定了日期）⇒ 容忍 40 天",
+           F._tol_for(["0 1 1 * *"])[0] == F.SCHED_TOL_MONTHLY,
+           str(F._tol_for(["0 1 1 * *"])))
+        ck("⑨.0b 日／週頻（日期欄是 `*`）⇒ 容忍 3 天",
+           F._tol_for(["0 11 * * 1-5"])[0] == F.SCHED_TOL_DAYS,
+           str(F._tol_for(["0 11 * * 1-5"])))
+        ck("⑨.0c ⛔ 沒有 cron ⇒ **不判**（⚠ 亂判會變成一塊天天紅的閘門）",
+           F._tol_for([])[0] is None, str(F._tol_for([])))
+        ck("⑨.0d ⭐ 而 `_wf_crons()` 真的讀到東西（⛔ 0 支跟全部通過長得一樣）",
+           len(F._wf_crons()) >= 8 and any(F._wf_crons().values()),
+           str(sorted(F._wf_crons())[:3]))
+
+        rl9 = runlog.Run("t9", os.path.join(d, "sink9.md"))
+        n_dead = F.stale_scheduled(rl9, lr)
+        txt9 = "\n".join(rl9.lines) + "｜" + "｜".join(
+            f"{l}={o}:{dt}" for l, o, dt in rl9.checks)
+        ck("⑨.1 ⛔ **排程 ＋ 過期 ⇒ 算壞掉**（那代表該天天跑的東西死了）",
+           n_dead == 1 and "排程死了" in txt9, txt9[:300])
+        ck("⑨.2 排程但沒過期 ⇒ 不算壞",
+           "排程還活著" not in txt9.split("排程寫的區塊都還活著")[-1], txt9[:300])
+        ck("⑨.3 ⚠ **手動 ＋ 過期 ⇒ 不算壞**，只說沒人按"
+           "（⛔ 要不要排程是另一個決定）",
+           "手動沒人按" in txt9 and "手動而久沒按 1" in txt9, txt9[:300])
+        ck("⑨.4 ⛔ 舊格式要**明講它講不出自己是誰寫的**"
+           "（⚠ 不可以當成手動的）",
+           "舊格式" in txt9 and "講不出自己是誰寫的** 1" in txt9, txt9[:300])
+        ck("⑨.4b ⭐⭐ **月頻**的那一支 9 天沒動 ⇒ **不算壞**"
+           "（⛔ 用日頻那把尺量月頻 ⇒ 那一塊天天紅，然後被學會忽略）",
+           n_dead == 1 and "月頻沒過期" not in txt9.split("排程寫的區塊都還活著")[-1],
+           txt9[:400])
+        ck("⑨.5 ⭐ 那一條 check 的紅綠**只由「排程 ＋ 過期」決定**",
+           any(l == "排程寫的區塊都還活著" and o is False for l, o, _ in rl9.checks),
+           str(rl9.checks))
+        # ⭐ 而 `runlog.who()` 那一半要一起釘：它是這一節唯一的資料來源
+        _env = {k: os.environ.get(k) for k in
+                ("GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_WORKFLOW",
+                 "GITHUB_RUN_ID", "GITHUB_REF_NAME")}
+        try:
+            os.environ.update(GITHUB_ACTIONS="true", GITHUB_EVENT_NAME="schedule",
+                              GITHUB_WORKFLOW="每日更新", GITHUB_RUN_ID="7",
+                              GITHUB_REF_NAME="main")
+            w = runlog.who()
+            ck("⑨.6 `runlog.who()` 在 Actions 上講得出**觸發方式／workflow／ref／run**",
+               all(x in w for x in ("觸發 schedule", "每日更新", "ref main", "run 7")), w)
+            os.environ["GITHUB_ACTIONS"] = "false"
+            ck("⑨.7 ⛔ 不是 Actions ⇒ **不寫**（⚠ 本機跑的那一塊本來就另有警語）",
+               runlog.who() == "", repr(runlog.who()))
+        finally:
+            for k, v in _env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
     finally:
         shutil.rmtree(d, ignore_errors=True)
 

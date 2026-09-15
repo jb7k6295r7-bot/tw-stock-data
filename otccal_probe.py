@@ -332,10 +332,7 @@ def main():
         #   中文字數與 <tr> 個數，⛔ **沒有印出這一頁到底寫了什麼**——
         #   而「頁面是空殼」與「頁面說『請見公告專區』」是兩種完全不同的結論，
         #   前者要去翻 js，後者要去翻它指過去的地方。**數字分不出這兩者。**
-        txt = re.sub(r"<script[^>]*>.*?</script>", " ", t, flags=re.S)
-        txt = re.sub(r"<style[^>]*>.*?</style>", " ", txt, flags=re.S)
-        txt = re.sub(r"<[^>]+>", " ", txt)
-        txt = re.sub(r"\s+", " ", txt).strip()
+        txt = B.visible_text(t, " ")      # ⭐ 唯一那一份（四點五）；整頁可讀文字 ⇒ " "
         say(f"     ★ 這一頁**看得見的字**（{len(txt)} 字，全部印出來）：")
         for i in range(0, min(len(txt), 2000), 160):
             say("       " + txt[i:i + 160])

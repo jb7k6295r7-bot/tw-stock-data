@@ -99,9 +99,9 @@ def taipei_stopped(html):
     for w in TAIPEI:
         for m in re.finditer(w, html):
             seg = html[m.start():m.start() + 400]
-            seg = re.sub(r"<[^>]+>", " ", seg)
+            seg = B.visible_text(seg, " ")      # ⭐ 唯一那一份（四點五）
             if STOP in seg:
-                return True, re.sub(r"\s+", " ", seg[:160]).strip()
+                return True, seg[:160]
     return False, ""
 
 

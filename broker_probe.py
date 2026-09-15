@@ -32,6 +32,7 @@ TWSE 那邊的個股 × 分點是 `bsr.twse.com.tw/bshtm/`：
 
 ⛔ 這一支**只測不寫資料**。輸出進 `data/meta/_broker_probe.txt`。
 """
+import csv
 import io
 import json
 import os
@@ -104,6 +105,69 @@ def _ask(url, lines, want=None):
     return doc
 
 
+def scale_lines():
+    """⭐⭐ H1 分點：**這條路是對哪一種規模不可用**。→ list[str]。
+
+    ## ⛔ 為什麼這一段要「算」而不是「寫」
+
+    三點③：**沒有標規模的「不可用」，下一個人會拿它去擋一件它沒測過的事。**
+    ⚠ 而擋住分點的三件事（驗證碼／逐檔查／只有當日）**全部是規模的函數**
+    ⇒ 規模要是**量出來的數字**，⛔ 不是我記得的數字
+    （2026-09-13 我寫「1,954 檔 × 245 日」，實測母體是 2,493／交易日 243）。
+    """
+    out = ["⭐⭐ H1 分點（券商買賣日報）：**這條路是對哪一種規模不可用**",
+           "─" * 60,
+           "⛔ 三點③：沒有標規模的「不可用」，下一個人會拿它去擋一件它沒測過的事。",
+           "⚠ 而擋住分點的三件事——**驗證碼／逐檔查／只有當日**——全部是**規模的函數**。",
+           ""]
+    n_mkt, days = {}, 0
+    try:
+        with io.open(os.path.join(_ROOT, "meta", "stocks.csv"),
+                     encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("kind") == "stock":
+                    n_mkt[r.get("market") or "?"] = n_mkt.get(r.get("market") or "?", 0) + 1
+    except OSError:
+        pass
+    d = os.path.join(_ROOT, "universe", "daily")
+    if os.path.isdir(d):
+        days = len([x for x in os.listdir(d) if x.startswith("2025") and x.endswith(".csv")])
+    if not n_mkt or not days:
+        # ⛔ 算不出來要**大聲說**，⚠ 不可以印一個看起來像量過的數字
+        out += ["  ⛔⛔ **這一段沒跑**：這個 ref 上讀不到 `meta/stocks.csv` 或 "
+                "`universe/daily/`",
+                "     ⇒ ⚠ 規模是量出來的，量不到就**不寫數字**"
+                "（⛔ 寫一個記得的數字比不寫更糟）"]
+        return out
+    listed = n_mkt.get("twse", 0) + n_mkt.get("tpex", 0)
+    out += [f"  母體（`meta/stocks.csv` 的 `kind=stock`，⭐ 含已下市）："
+            + "｜".join(f"{k} {v:,}" for k, v in sorted(n_mkt.items()))
+            + f"｜上市＋上櫃 **{listed:,}**",
+            f"  一年的交易日（`universe/daily/` 的 2025 檔名）：**{days}** 天",
+            "",
+            f"    全市場回補一年   {listed:,} 檔 × {days} 日 ≈ "
+            f"**{listed * days:,}** 次請求",
+            f"    追蹤一檔回補一年  1 檔 × {days} 日 = **{days}** 次",
+            "    ⭐ 而 FinMind 那條 `?day=365` 一次請求就回整年 = **1** 次",
+            "",
+            "  逐項對照（同一個障礙，兩種規模的結論相反）",
+            "    驗證碼    ⇒ 擋的是**自動化**。一檔一天輸一次，**人做得到**",
+            "    逐檔查    ⇒ 追蹤單檔時**本來就只查一檔**，不是成本",
+            "    只有當日  ⇒ 從今天開始一天記一次，一年後就有一年",
+            "",
+            "⇒ ⭐ **判死的不是「分點」這條路，是「全市場自動化」那一格。**",
+            "",
+            "⛔⛔ 而還有一個理由**跟規模無關**，不可以跟上面三個並排寫：",
+            "     **條款禁「重製」。** 它在單檔也成立 ⇒ 任何規模都要先解決授權，",
+            "     ⚠ 而我 2026-09-13 把它跟「請求量」並排寫成「兩個都獨立成立」，",
+            "     ⛔ 看起來就像「到處都成立」——那正是使用者一句話戳破的地方。",
+            "",
+            "⇒ 本庫現況：**不落地任何分點資料**。⛔ 這不是「查不到」，"
+            "是**授權沒有解決**。",
+            "   ⚠ 而「技術上單檔做得到」要寫在這裡，⛔ 不可以被上面那句吃掉。"]
+    return out
+
+
 def probe_page(name, url, lines):
     _p(lines, "")
     _p(lines, "=" * 72)
@@ -125,8 +189,18 @@ def probe_page(name, url, lines):
     cands = [f for f in found if re.search(r"broker|deal|trad", f, re.I)]
     if not cands:
         _p(lines, "  ⛔ 沒掃到看起來像資料端點的路徑 ⇒ "
-                  "⚠ 它可能是**另外載入**的 JS 才組出來的。"
-                  "⇒ 這一條要人去開開發者工具看，⛔ 不要在這裡猜。")
+                  "⚠ 它可能是**另外載入**的 JS 才組出來的。")
+        # ⭐ 而「要人去開開發者工具看」**不是句點**——那一發寫在外部 `.js` 裡，
+        #   而把它讀出來是程式做得到的事（`backfill.js_followups`，唯一那一份）。
+        #   ⚠ 這跟 MOPS `t05st01`、櫃買 `announce/market/change*.html` 是同一族：
+        #   inline 線索全 0 ⛔ 不是「站上沒有」。
+        han, n_tr, n_js, shell = B.js_shell(raw)
+        _p(lines, f"  [形狀] 中文 {han:,} 字｜<tr> {n_tr} 個｜js {n_js} 支"
+                  + ("　⛔ **js 空殼**" if shell else ""))
+        for ln in B.xhr_clues(raw, base=url):
+            _p(lines, " " + ln)
+        for ln in B.js_followups(raw, base=url):
+            _p(lines, " " + ln)
         return
     _p(lines, f"  ⇒ 候選資料端點 {len(cands)} 條：{cands}")
 
@@ -153,6 +227,8 @@ def main():
     _p(lines, f"broker_probe.py　{runlog.now_tpe():%Y-%m-%d %H:%M} 台北")
     _p(lines, "⭐ 問的是：這兩條到底是**全市場 × 全部分點**，還是「熱門股排行」。")
     _p(lines, "⛔ 判準不是「有回列」——是**它自己講不講得出它是哪一天、涵蓋誰**。")
+    for ln in scale_lines():
+        _p(lines, ln)
     rc = 0
     for name, url in PAGES:
         try:

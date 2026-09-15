@@ -78,10 +78,13 @@ def _write(rc):
     return rc
 
 
+#: ⭐ 去標籤只有**一份**實作（四點五）——這一份的內容已經搬進 `backfill.visible_text`
+#  （連同「script／style 先整段拿掉」那兩行，那正是比較嚴的那一版）。
+#  ⚠ 留成別名是因為這支裡有好幾個呼叫點；⛔ 別名被拆掉的當下一切正常，
+#    所以 `selftest_probes.check_js_followups` ⑭ **掃全 repo** 盯著沒有第二份。
 def _text(html):
-    t = re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=re.S)
-    t = re.sub(r"<style[^>]*>.*?</style>", " ", t, flags=re.S)
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", t)).strip()
+    """⭐ 走唯一那一份（四點五）。這支要的是**整頁可讀文字** ⇒ `sep=" "`。"""
+    return B.visible_text(html, " ")
 
 
 def _dates(t):

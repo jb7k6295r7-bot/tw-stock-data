@@ -108,6 +108,83 @@ def run_blocks(path):
     return out
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⛔⛔ 同一個 `run:` 裡的多行會**連坐**（`set -e`），而它已經吃掉東西了
+#
+# 2026-09-15 現場證據：`daily.yml`「除權息與減資（當月）」是五行裸跑，
+#   `feeds:exright`／`reduce`／`parvalue`／`etfsplit` 四塊都是**今天 00:17**，
+#   ⛔ 而第五行寫的 `otcparvalue` 那一塊停在 **2026-09-11**
+#   ⇒ ⚠ 四天沒跑，而 run 是綠的、那一步也沒有紅。
+#
+# ⇒ 而全 repo 掃一次：**34 個**多呼叫的 run 區塊沒有 RC-GUARD。
+# ⛔ 不能一次機械式全改：其中有些是**有順序相依**的（前一行的產出是後一行的輸入）
+#   ⇒ 讓失敗的那一行後面照樣跑，可能寫出**錯的資料**，而那比連坐更糟。
+#
+# ⇒ ⭐ 所以這一道是一個**只能往下的台帳**（跟 `lowwater.DOWN` 同一個道理）：
+#     ① 名單**外**出現新的沒守護區塊 ⇒ 紅（⛔ 不准再欠新的）
+#     ② 名單**裡**的區塊已經守護好了 ⇒ 也紅（⭐ 逼人把名單刪短）
+#   ⚠ 只做①的話名單會永遠停在 34：修好了沒有人會去刪它。
+# ══════════════════════════════════════════════════════════════════
+KNOWN_UNGUARDED = {
+    ('backfill.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
+    ('backfill.yml', '驗解析規則（空值寫法＋無成交列，離線）'),
+    ('backfill.yml', '興櫃單日修補（把被刪掉的那一天補回去）'),
+    ('backfill.yml', '回補'),
+    ('daily.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
+    ('daily.yml', '全市場三大法人（上櫃 TPEx）'),
+    ('daily.yml', '融資融券與本益比（上市＋上櫃）'),
+    ('daily.yml', '借券賣出餘額（上市＋上櫃）'),
+    ('daily.yml', '官方創新板成分清單（逐日，回到 2021-06-28）'),
+    ('daily.yml', '變更交易（全額交割）名單（逐日，回到 2015-01-01）'),
+    ('daily.yml', '停止買賣中的名單（上市，⛔ 沒有歷史、漏一天永久少一天）'),
+    ('daily.yml', '上櫃變更交易／分盤／管理股票（逐日）'),
+    ('daily.yml', '個股融資融券成數調整（逐日）'),
+    ('daily.yml', '終止上市（下市）清單'),
+    ('daily.yml', '面額變更（歷史回補，每趟 30 個月）'),
+    ('daily.yml', 'ETF 分割（歷史回補，每趟 30 個月）'),
+    ('daily.yml', '算還原因子'),
+    ('daily.yml', '上櫃減資／除權息的官方判準（各一發請求）'),
+    ('daily.yml', '上櫃減資對帳'),
+    ('daily.yml', '逐日 feed 的列數閘門（只讀，不連外）'),
+    ('daily.yml', '還原因子 vs 交易所漲跌停（只讀，不連外）'),
+    ('daily.yml', '發行股數對帳（上櫃，官方個股市值排行）'),
+    ('daily.yml', '母體漏列規模（六張官方清單差集，不連外）'),
+    ('daily.yml', '無成交列水位（哪幾天已是新語意，不連外）'),
+    ('daily.yml', '上櫃除權息判準（官方當日，逐日累積）'),
+    ('daily.yml', '漲跌家數（當天 ＋ 分批回補）'),
+    ('feeds.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
+    ('feeds.yml', '回補'),
+    ('feeds.yml', '上櫃除權息與減資（FinMind 回補｜⛔ 免費層）'),
+    ('feeds.yml', '上櫃除權息與減資（只補指定的幾檔｜⛔ 免費層）'),
+    ('feeds.yml', '上櫃除權息歷史（官方公告區，只寫判準檔）'),
+    ('feeds.yml', '上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些'),
+    ('feeds.yml', '核對每一天的內容'),
+    ('feeds.yml', '算還原因子'),
+}
+
+
+def check_rc_debt(files):
+    """⭐ 沒有 RC-GUARD 的多呼叫區塊：**只准變少**。"""
+    now = set()
+    for f in files:
+        short = os.path.basename(f)
+        for name, body in run_blocks(f):
+            calls = [ln for ln in body.split("\n")
+                     if re.search(r"^\s*python\s", ln) and "|| true" not in ln]
+            if len(calls) >= 2 and any("|| RC=" not in ln for ln in calls):
+                now.add((short, name))
+    added = sorted(now - KNOWN_UNGUARDED)
+    fixed = sorted(KNOWN_UNGUARDED - now)
+    ck("⛔⛔ 沒有新的「多行裸跑」區塊"
+       "（⚠ `set -e` 會讓前一行掛掉時，後面幾行一次都不跑，而 run 是綠的）",
+       not added, f"⛔ 新欠的：{[a[1][:40] for a in added]}")
+    ck("⭐ 而名單裡已經修好的要**從名單刪掉**"
+       "（⛔ 只擋新的 ⇒ 名單永遠停在原地，修好了沒有人會去刪它）",
+       not fixed, f"⭐ 已修好、請從 KNOWN_UNGUARDED 刪除：{[a[1][:40] for a in fixed]}")
+    ck(f"★ 而這一道真的掃到了（⛔ 0 個區塊跟全部通過長得一樣）｜目前欠 {len(now)} 個",
+       len(now) + len(fixed) >= 20, f"只掃到 {len(now)} 個")
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     files = sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml")))
@@ -722,6 +799,96 @@ def main():
        _arms <= _crons, f"⛔ 沒有 cron 的分支：{sorted(_arms - _crons)}")
     ck("★ 這兩道真的**掃到了**（⛔ 0 條 cron 跟全部通過長得一樣）",
        len(_crons) >= 2, f"{len(_crons)} 條 cron｜{len(_arms)} 個分支")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 自測步驟紅了，**有沒有任何地方會說**（2026-09-15 加）
+    #
+    # ⛔ 已經發生過：`probe.yml` 的「驗十四支探針跑得完」寫成
+    #   `run: python selftest_probes.py`，而註解說「不加 continue-on-error
+    #   ⇒ 連跑都跑不完就不必往下打」。⚠ **那句話是假的**：後面兩步都是
+    #   `if: always()` ⇒ 它紅了，整趟照樣跑完、照樣 commit，
+    #   ⛔ 而 `_last_run.md` 裡沒有任何一塊提到它。
+    #
+    # ⇒ 判準：**一支 workflow 只要有任何 `if: always()` 的步驟，
+    #   它裡面的自測步驟就一定要走 `ci_step.py`**（記下 rc ⇒ 進 runlog ⇒ 進 commit）。
+    # ⚠ 例外是「零相依」那幾道：它們排在 `if: always()` 步驟**之前**而且
+    #   本來就該擋住同步，⛔ 而那個「擋得住」現在也只是說法——
+    #   ⇒ 所以判準只放行**檔名帶 `selftest_` 而且在同一支裡沒有 always 步驟**的。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        short = os.path.basename(f)
+        txt = io.open(f, encoding="utf-8").read()
+        if "if: always()" not in txt:
+            continue
+        naked = re.findall(r"^\s*run:\s*python3?\s+(selftest_[A-Za-z0-9_]+\.py)\s*$",
+                           txt, re.M)
+        # ⭐ 零相依那幾道（排在同步之前、要擋住同步的）不算：它們是**擋門**的，
+        #   ⛔ 走 ci_step 會把它們變成「記一筆就放行」。
+        gate = set(re.findall(r"零相依[^\n]*\n\s*run:\s*python3?\s+"
+                              r"(selftest_[A-Za-z0-9_]+\.py)", txt))
+        gate |= set(re.findall(r"run:\s*python3?\s+(selftest_[A-Za-z0-9_]+\.py)"
+                               r"[\s\S]{0,200}?零相依", txt))
+        bare = [n for n in naked if n not in gate]
+        ck(f"⭐⭐ {short}：自測步驟紅了會被說出來"
+           "（⛔ `if: always()` 在後面 ⇒ 不走 `ci_step.py` 的紅**沒有任何地方會說**）",
+           not bare, f"⛔ 這幾支是裸跑的：{sorted(set(bare))}")
+        # ⛔ 比的是**真的有一行 `run:` 在跑它**，⚠ 不是「這三個字出現在檔案裡」
+        #   ——`probe.yml` 的註解裡本來就寫著 `ci_report.py`
+        #   ⇒ 比字串的話這一條永遠綠（突變 R3 當場證明）。
+        runs_step = re.search(r"^\s*run:\s*python3?\s+ci_step\.py\b", txt, re.M)
+        runs_report = re.search(r"^\s*run:\s*python3?\s+ci_report\.py\b", txt, re.M)
+        if runs_step:
+            ck(f"  {short}：有 `ci_step.py` 就一定要有 `ci_report.py`"
+               "（⛔ 只記不說 ＝ 沒說）", bool(runs_report),
+               "⛔ 記了 rc 卻沒有人把它寫成 runlog 區塊")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ 單行 `run:` **不可以有續行**（2026-09-15 付過代價）
+    #
+    # ```yaml
+    # run: python ci_step.py selftest_mops_history.py
+    #   python selftest_revenue_complete.py        ← ⛔ 這是**續行**
+    # ```
+    # ⇒ YAML 把它折成**一個純量**：
+    #   `python ci_step.py selftest_mops_history.py python selftest_revenue_complete.py`
+    # ⇒ ⭐ 第二支**從來沒有被跑過**，⚠ 而它的檔名出現在 workflow 裡
+    #   ⇒ 「每一支自測都有人跑」那道守門一直是綠的。
+    #
+    # ⇒ ⭐ 這是四點二的又一個：**「檔名在 workflow 裡」≠「它會被執行」。**
+    # ⚠ 要兩個方向都有人守：這一道擋 YAML 折行，`ci_step.py` 自己擋多餘參數。
+    # ══════════════════════════════════════════════════════════════
+    for f in files:
+        short = os.path.basename(f)
+        lines = io.open(f, encoding="utf-8").read().splitlines()
+        folded = []
+        for i, ln in enumerate(lines):
+            m = re.match(r"^(\s*)run:\s*(?!\||>)(\S.*)$", ln)
+            if not m:
+                continue
+            ind = len(m.group(1))
+            nxt = lines[i + 1] if i + 1 < len(lines) else ""
+            if nxt.strip() and not nxt.lstrip().startswith("#") \
+                    and len(nxt) - len(nxt.lstrip()) > ind:
+                folded.append(f"第 {i + 1} 行：{m.group(2)[:50]} ← {nxt.strip()[:40]}")
+        ck(f"⛔⛔ {short}：單行 `run:` 沒有續行"
+           "（⚠ 有續行 ⇒ YAML 折成一串 ⇒ 後面那支**根本沒被跑**，而守門照樣綠）",
+           not folded, "；".join(folded))
+
+    # ⛔⛔ 每一支都要 `fetch-depth: 0`（2026-09-15 加）
+    #   shallow clone（預設 depth 1）⇒ `push_data.sh` 的 rebase 與
+    #   `sync_code.sh` 的比較都拿不到歷史，⚠ 而失敗的方式包含「看起來正常」。
+    #   ⭐ 而它最安靜的後果是：在 shallow clone 裡量「倉庫多大／歷史佔多少」
+    #     **一律是錯的**——2026-09-15 我照那個數字連錯三次，三次都作廢。
+    for f in files:
+        short = os.path.basename(f)
+        txt = io.open(f, encoding="utf-8").read()
+        m = re.search(r"uses:\s*actions/checkout@[^\n]*\n(?:[^\n]*\n){0,12}?"
+                      r"\s*fetch-depth:\s*0", txt)
+        ck(f"⛔ {short}：checkout 有 `fetch-depth: 0`"
+           "（⚠ shallow clone ⇒ rebase／比較拿不到歷史，而失敗方式包含「看起來正常」）",
+           bool(m), "⛔ 沒有 ⇒ 預設 depth 1")
+
+    check_rc_debt(files)
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")

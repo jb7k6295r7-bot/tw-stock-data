@@ -91,8 +91,21 @@ def _params(api, year, **kw):
     return {"apiName": api, "parameters": p}
 
 
+#: ⭐ `one()` 這一趟**最後真的 GET 的那個網址**。
+#  ⚠ 為什麼用模組屬性而不是多一個回傳值：`one()` 有五個呼叫點，
+#    改簽章要改五處 ⇒ ⛔ 那是「改一邊、另一邊沒跟上」的完美條件（四點五）。
+#  ⛔ 而它一定要有：外部 `.js` 的相對路徑要靠它才拼得出絕對網址，
+#    ⚠ 而舊站的 host（mopsov）跟橋的 host（mops）**不同** ⇒ 拿橋的網址去拼會拼錯站。
+LAST_URL = None
+
+
 def one(api, year, out, **kw):
-    """走一次完整的橋：POST 拿 URL → GET 那個 URL。→ (內容 bytes 或 None)"""
+    """走一次完整的橋：POST 拿 URL → GET 那個 URL。→ (內容 bytes 或 None)
+
+    ⚠ 同時把那個網址記在 `LAST_URL`（見上面那段的理由）。
+    """
+    global LAST_URL
+    LAST_URL = None
     sent = _params(api, year, **kw)
     out.append(f"  POST {BRIDGE}  apiName={api} year={year} {kw}")
     raw, err = _post(BRIDGE, sent)
@@ -113,6 +126,7 @@ def one(api, year, out, **kw):
         out.append(f"    ⛔ 回應裡沒有 result.url ⇒ 這條橋在這個 apiName 上不成立")
         return None
     out.append(f"    → {url[:150]}…（blob 長 {len(url)}）")
+    LAST_URL = url
     # ⚠ 2026-09-10 兩趟都斷在**這一段**（不是 POST）：
     #   `RemoteDisconnected: Remote end closed connection without response`。
     #   ⭐ 而同一段對 `ajax_t163sb04` 拿得回 **1,628,079 bytes** ⇒ 路是通的。
@@ -166,10 +180,9 @@ def bridge_case(api, y1, y2, out, **kw):
         #   ⚠ 我已經為了這一格改過兩次判準，每次都又冒出一種形狀
         #   ⇒ ⭐ **不要再猜形狀了，把字印出來讓人讀。**
         #   （CLAUDE.md 第一點的同一句：先把回應自己講的話攤開，再開始比對。）
-        _re = __import__("re")
-        _vis = _re.sub(r"<[^>]+>", " ", t)
-        _vis = " ".join(_vis.split())
-        out.append(f"      ⭐ 前 160 字：{_vis[:160]}")
+        #   ⇒ 去標籤那一半走**唯一那一份**（`backfill.visible_text`，四點五）
+        out.append("      ⭐ 前 160 字："
+                   + B.visible_text(t, " ")[:160])
     _t1 = a.decode("utf-8", "replace")
     _blank = any(w in _t1 for w in ("查無", "無資料", "沒有符合", "查詢無"))
     # ⛔⛔ js 空殼要**先**判：它同時滿足「兩期相同」與「沒有查無字樣」
@@ -220,7 +233,9 @@ def xhr_hunt(api, out, **kw):
                + ("　⛔ **js 空殼**" if shell else ""))
     # ⭐ 挖的那一半走**唯一那一份**（`backfill.xhr_clues`，四點五）
     #   ——櫃買公告區那幾頁是**同一個問題**，⛔ 不可以再抄一份。
-    out += B.xhr_clues(raw)
+    out += B.xhr_clues(raw, base=LAST_URL)
+    # ⭐ ①~④ 全 0 的時候，答案在**外部 .js 裡** ⇒ 再挖一層（唯一那一份實作）
+    out += B.js_followups(raw, base=LAST_URL)
 
 
 def openapi_case(name, out):
@@ -309,6 +324,47 @@ def openapi_case(name, out):
         out.append(f"  ⇒ ⭐ **批次日**不只一個值（`{_sp[1]}` 有 {_sp[0]} 種）"
                    "⇒ **含多期**，值得當來源評估。"
                    "　⚠ 而「幾種」≠「涵蓋幾天」——要看上面那一行的最小與最大。")
+
+
+def ezsearch_case(out):
+    """⭐ 清單 D2 的新入口：「公開資訊觀測站**公告快易查**」（`ezsearch`）。
+
+    ## ⛔ 它是怎麼冒出來的——而這正是三點④「先查自己家」
+
+    2026-09-15 我替 `site_inventory.py` 加了關鍵詞「重大訊息／財報公告日」，
+    ⇒ 櫃買官方選單回 **21 條**，其中一條是：
+
+    ```
+    關於櫃買 / 各項專區 / 公開資訊觀測站公告快易查
+      → https://mopsov.twse.com.tw/mops/web/ezsearch
+    ```
+
+    ⚠ 而我整天都在打 `t05st01`（**每日**重大訊息）撞 js 空殼。
+    ⭐ 「快易查」按名字是**查**（⇒ 有查詢條件 ⇒ 多半有日期區間），
+    ⛔ 而**名字不是證據**（第二點⑤、TradingView 那顆按鈕）⇒ 所以這裡只量、不判。
+
+    ## ⇒ 這一段做什麼
+
+    只有三件：形狀（是不是 js 空殼）、inline 線索、外部 `.js` 再挖一層。
+    ⛔ 不猜查詢參數、⛔ 不下「有沒有歷史」的結論——
+    ⚠ 那個結論要靠「**這一批自己講出它是哪一期**」（第二點），而現在連資料都還沒拿到。
+    """
+    url = "https://mopsov.twse.com.tw/mops/web/ezsearch"
+    out.append("── ⭐ 清單 D2 新入口：公開資訊觀測站**公告快易查** `ezsearch`")
+    out.append(f"   {url}")
+    out.append("   ⭐ 網址取自我方 `_site_inventory.txt`（櫃買官方選單），⛔ 不是我拼的")
+    out.append("   ⚠ 只量形狀與線索，⛔ 不判它有沒有歷史（名字不是證據）")
+    raw, err = B.get(url, retries=2, timeout=60)
+    if err:
+        out.append(f"   ⛔ 取不回來：{_W(err, 200)}　⇒ 這一段**沒跑**"
+                   "（⛔ 不是「站上沒有」）")
+        return
+    han, n_tr, n_js, shell = B.js_shell(raw)
+    out.append(f"   [形狀] {len(raw):,} bytes｜中文 {han:,} 字｜<tr> {n_tr} 個"
+               f"｜js {n_js} 支" + ("　⛔ **js 空殼**" if shell else ""))
+    out.append("   ⭐ 前 160 字：" + B.visible_text(raw, " ")[:160])
+    out += B.xhr_clues(raw, base=url)
+    out += B.js_followups(raw, base=url)
 
 
 def revenue_hist_columns(out):
@@ -416,6 +472,8 @@ def main():
     #   ⇒ 下一步是**把那個 js 要打的網址從頁面裡讀出來**（⛔ 不是猜端點名）。
     xhr_hunt("t05st01", out, month="09", day="01")
     out.append("")
+    ezsearch_case(out)
+    out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
@@ -423,12 +481,10 @@ def main():
     print(f"\n[mops_probe] 寫出 {OUT}")
     return 0
 
-
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
-    print("\n".join(out))
-    print(f"\n[mops_probe] 寫出 {OUT}")
-    return 0
+# ⛔ 這裡本來有一段**到不了**的寫檔碼（在 `return 0` 之後）。
+#   ⚠ 它寫 OUT 的時候**沒有帶 `B.probe_stamp()`** ⇒ 若哪天有人動了上面那個
+#     `return`，輸出會退回「講不出自己是哪一趟跑的」那個狀態，⛔ 而不會報錯。
+#   ⇒ 照「已知會產生錯誤結論的工具要移走、不是標註別用」那條，刪掉，留這行說明。
 
 
 if __name__ == "__main__":

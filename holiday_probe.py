@@ -105,8 +105,7 @@ def main():
         n = t.count(w)
         say(f"     「{w}」出現 {n} 次")
         for m in list(re.finditer(w, t))[:3]:
-            seg = re.sub(r"<[^>]+>", " ", t[m.start() - 120:m.start() + 200])
-            seg = re.sub(r"\s+", " ", seg).strip()
+            seg = B.visible_text(t[m.start() - 120:m.start() + 200], " ")
             say(f"       …{seg}…")
 
     # ── 全部縣市：是「只列放假的」還是「全部都列」

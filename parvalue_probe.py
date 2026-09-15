@@ -166,7 +166,10 @@ def main():
         han, n_tr, n_js, shell = B.js_shell(raw)
         say(f"     [形狀] {len(raw):,} bytes｜中文 {han:,} 字｜<tr> {n_tr} 個"
             f"｜js {n_js} 支" + ("　⛔ **js 空殼**" if shell else ""))
-        for ln in B.xhr_clues(raw):
+        for ln in B.xhr_clues(raw, base=url):
+            say("   " + ln)
+        # ⭐ ②③④ 全 0 ⇒ 那一發請求寫在**外部 .js** 裡（唯一那一份實作）
+        for ln in B.js_followups(raw, base=url):
             say("   " + ln)
 
     say("\n── ★ 參數有沒有被無視 ──")

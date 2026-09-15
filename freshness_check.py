@@ -30,6 +30,7 @@
 
 ⚠ 這一支**不驗內容**，只驗新舊。內容的檢查在各自的腳本裡。
 """
+import glob
 import io
 import os
 import re
@@ -123,6 +124,133 @@ def _newest(path, how):
     return None, f"不認得的取法 {how}"
 
 
+# ⚠ 排程觸發的區塊**幾天沒動就算壞掉**。
+#   ⛔ 不可以統一用一個數字：daily.yml 天天跑、probe.yml 只在工作日跑、
+#     forward.yml 一個月一次 ⇒ 一把尺量三種週期，不是誤報就是漏報。
+#   ⇒ 沒有把握的一律用最寬的那個（月頻 40 天），⚠ 而**寬到失去意義**要標出來。
+SCHED_TOL_DAYS = 3          # 日／週頻排程：容忍 3 天（週末 ＋ 一次失敗）
+SCHED_TOL_MONTHLY = 40      # 月頻排程：容忍 40 天（週期 31 ＋ 緩衝）
+
+
+def _wf_crons(root=None):
+    """`.github/workflows/*.yml` 的 **workflow 名稱 → cron 清單**。→ dict。
+
+    ⛔ 為什麼要讀 workflow：`runlog.who()` 寫的是 `GITHUB_WORKFLOW`（＝ `name:`），
+    ⚠ 而「這一支多久跑一次」**只有 cron 講得準**。
+    ⭐ 我第一版拿名稱裡有沒有「月」字去猜 ⇒ `股本／發行股數（每月）` 剛好中，
+      ⛔ 而那是運氣：`forward.yml` 也是月頻、`capital` 改個名字就會被當成日頻
+      ⇒ 那一塊會**天天紅**，然後被學會忽略（四點五那條 `feeds:margin` 的形狀）。
+    """
+    here = root or os.path.dirname(os.path.abspath(__file__))
+    out = {}
+    for p in sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml"))):
+        t = io.open(p, encoding="utf-8").read()
+        m = re.search(r"^name:\s*(.+)$", t, re.M)
+        if not m:
+            continue
+        out[m.group(1).strip().strip('"\'')] = re.findall(
+            r'-\s*cron:\s*"([^"]+)"', t)
+    return out
+
+
+def _tol_for(crons):
+    """從 cron 推容忍天數。→ (天數, 說明) 或 (None, 原因)。
+
+    ⛔ 判準是 cron 的**日期欄**，⚠ 不是名字：
+    日期欄是 `*` ⇒ 每天／每週跑；是具體日子（`1`、`13`、`2-7`）⇒ 一個月一次。
+    """
+    if not crons:
+        return None, "這一支沒有 cron（⇒ 它不是排程跑的）"
+    monthly = False
+    for c in crons:
+        f = c.split()
+        if len(f) >= 3 and f[2] != "*":
+            monthly = True
+    return ((SCHED_TOL_MONTHLY, f"月頻（cron 指定了日期：{crons}）") if monthly
+            else (SCHED_TOL_DAYS, f"日／週頻（cron：{crons}）"))
+
+
+def _blocks(path):
+    """把 `_last_run.md` 拆成 [(區塊名, 時戳字串, 那一行的其餘部分)]。
+
+    ⛔ 只讀，不改。⚠ 舊格式的區塊沒有「觸發 …」那一段 ⇒ 第三個欄位是空的，
+    而那要被讀成「**這一塊講不出它是誰寫的**」，⛔ 不是「它是手動的」。
+    """
+    out = []
+    if not os.path.exists(path):
+        return out
+    name = None
+    for ln in io.open(path, encoding="utf-8"):
+        if ln.startswith("## "):
+            name = ln[3:].split("　")[0].strip()
+        elif ln.startswith("最後執行：") and name:
+            body = ln[len("最後執行："):].strip()
+            t = body.split("（台北）")[0].strip()
+            rest = body.split("（台北）", 1)[1] if "（台北）" in body else ""
+            out.append((name, t, rest))
+            name = None
+    return out
+
+
+def stale_scheduled(rl, path=None):
+    """⭐ 排程寫的區塊有沒有死掉——⛔ 而「沒人按」要跟「壞掉」分開講。
+
+    ## ⛔ 為什麼要有這一段
+
+    2026-09-15 掃 `_last_run.md`：**8 個區塊**停在 09-09~09-11，而同一份裡
+    另外 52 個是今天的。⚠ 而那一份報表上**分不出**哪幾個是
+    「該天天跑而死掉」、哪幾個是「本來就要人按、沒人按」。
+
+    ⇒ ⭐ 判準來自區塊**自己講的**那一段（`runlog.who()`：`觸發 schedule`
+    還是 `workflow_dispatch`），⛔ 不是我在這裡寫一份清單去猜——
+    清單會跟 workflow 走岔，而走岔的那一天沒有人會發現（四點五）。
+
+    ⇒ 分**三類**，⛔ 缺第三類就會把舊格式讀成「手動的」：
+
+    ```
+    ⛔ 排程 ＋ 過期     這是**壞了**             ⇒ rl.check 紅
+    ⚠ 手動 ＋ 過期     只是沒人按               ⇒ info（要不要排程是另一個決定）
+    ⛔ 講不出來        舊格式／不是 Actions 寫的 ⇒ info，並**明講它講不出來**
+    ```
+    """
+    path = path or runlog.PATH
+    crons = _wf_crons()
+    today = datetime.now(TPE).date()
+    dead, idle, mute = [], [], []
+    for name, t, rest in _blocks(path):
+        try:
+            age = (today - datetime.fromisoformat(t).date()).days
+        except ValueError:
+            mute.append(f"{name}（時戳讀不懂：{t[:20]}）")
+            continue
+        if "觸發 " not in rest:
+            mute.append(f"{name}（{age} 天前）")
+        elif "觸發 schedule" in rest:
+            # ⭐ 容忍度從**那一支的 cron** 推，⛔ 不是從名字猜（見 `_wf_crons`）
+            wf = rest.split("｜")[2].strip() if rest.count("｜") >= 2 else ""
+            tol, why_tol = _tol_for(crons.get(wf, []))
+            if tol is None:
+                # ⛔ 講不出週期就**不判**（⚠ 亂判會變成一塊天天紅的閘門）
+                mute.append(f"{name}（排程，但 {why_tol}）")
+            elif age > tol:
+                dead.append(f"{name}（排程{why_tol}，{age} 天前 > 容忍 {tol}）")
+        elif age > SCHED_TOL_DAYS:
+            idle.append(f"{name}（手動，{age} 天前）")
+    rl.info("排程區塊", f"死掉 {len(dead)}｜手動而久沒按 {len(idle)}"
+                        f"｜⛔ **講不出自己是誰寫的** {len(mute)}")
+    if idle:
+        rl.info("⚠ 手動而久沒按（⛔ 這不是壞掉）", "；".join(sorted(idle)[:12]))
+    if mute:
+        # ⛔ 這一類要**大聲**：它不是「沒問題」，是「這一格量不到」。
+        rl.info("⛔ 講不出自己是誰寫的（舊格式／非 Actions 寫的）",
+                "；".join(sorted(mute)[:12])
+                + "｜⇒ 等它們各自再被寫一次就會自己講")
+    # ⭐ 只有「排程 ＋ 過期」才是紅的：那代表**該天天跑的東西死了**。
+    rl.check("排程寫的區塊都還活著", not dead,
+             "；".join(sorted(dead)) or "沒有排程區塊過期")
+    return len(dead)
+
+
 def main():
     rl = runlog.Run("freshness")
     today = datetime.now(TPE).date()
@@ -144,6 +272,8 @@ def main():
              "；".join(bad) + "｜⛔ 這類資料補不回來，紅了要當天處理")
     rl.info("容忍天數的理由", "；".join(f"{n} {tol} 天（{why}）"
                                     for n, _p, _h, tol, why in TARGETS))
+    # ⭐ 第二半：**排程寫的區塊有沒有死掉**（⛔ 跟「沒人按」分開講）
+    stale_scheduled(rl)
     return rl.finish()
 
 
