@@ -143,6 +143,82 @@ def main():
     finally:
         C._ROOT = old
 
+    # ══════════════════════════════════════════════════════════════
+    # ⑤ 自營商分項恆等式：自行買賣 ＋ 避險 ＝ 自營商合計
+    #
+    # ⭐ 它抓得到的是**我方這一端**的錯（欄位對錯位、解析抓錯欄），
+    #   ⛔ 不是「官方的數字對不對」——三個欄來自**同一發回應**。
+    #   ⚠ 而那正是 CLAUDE.md 四點二③：`dealer_self` 整欄填成別的數字，
+    #     **沒有任何現有閘門看得出來**。
+    # ══════════════════════════════════════════════════════════════
+    print("\n[⑤] 自營商分項恆等式")
+    d5 = tempfile.mkdtemp(prefix="cc5_")
+    old5 = C._ROOT
+    try:
+        C._ROOT = os.path.join(d5, "data")
+        base = os.path.join(C._ROOT, "universe", "inst")
+        os.makedirs(base)
+        hdr = "date,stock_id,foreign,trust,dealer,total,dealer_self,dealer_hedge\n"
+        # 兩天全對
+        io.open(os.path.join(base, "2026-09-01.csv"), "w", encoding="utf-8").write(
+            hdr + "2026-09-01,2330,1,2,30,33,10,20\n"
+                  "2026-09-01,2317,1,2,-5,-2,-8,3\n")
+        io.open(os.path.join(base, "2026-09-02.csv"), "w", encoding="utf-8").write(
+            hdr + "2026-09-02,2330,1,2,0,3,0,0\n")
+        tot, bad = C.dealer_identity()
+        ck("⑤ 三列都可驗、⛔ 一列都不不符", (tot, bad) == (3, []), f"{tot}｜{bad}")
+        rec = Rec()
+        C.dealer_check(rec)
+        ck("  ⛔ 但母體太小 ⇒ 那條「有母體可掃」要紅"
+           "（⚠ 0 列跟全部通過長得一樣）",
+           verdict(rec, "母體") is False, str(rec.checks))
+        ck("  ⭐ 而恆等式那一條是綠的", verdict(rec, "全數成立") is True,
+           str(rec.checks))
+
+        # ⛔ 一列對錯位 ⇒ 一定要紅，而且點名是誰
+        io.open(os.path.join(base, "2026-09-03.csv"), "w", encoding="utf-8").write(
+            hdr + "2026-09-03,1101,1,2,30,33,10,19\n")
+        tot2, bad2 = C.dealer_identity()
+        ck("⛔ 一列不符 ⇒ 抓到", len(bad2) == 1, str(bad2))
+        ck("  ⭐ 而且講得出**哪一天、哪一檔、三個數字各是多少**",
+           bad2[0][:2] == ("2026-09-03", "1101") and bad2[0][2:] == (10, 19, 30),
+           str(bad2))
+        rec = Rec()
+        C.dealer_check(rec)
+        ck("  ⭐ `rl.check` 也跟著紅", verdict(rec, "全數成立") is False,
+           str(rec.checks))
+        # ⛔ 光是「紅了」不夠：報表上要**點名是哪一列**
+        #   ⚠ 否則下一個人只看到「1 列不符」，得自己去 4,811,538 列裡找。
+        _hint = next((h for a, _c, h in rec.checks if "全數成立" in a), "")
+        ck("  ⭐⭐ 而 ✗ 的細節要**點名**（哪一天、哪一檔）"
+           "⛔ 只給個數 = 叫人去 480 萬列裡自己找",
+           "2026-09-03" in _hint and "1101" in _hint, repr(_hint))
+
+        # ⚠ 空欄（還沒回補的舊檔）**不算不符**——⛔ 否則回補到一半就天天紅
+        io.open(os.path.join(base, "2026-09-04.csv"), "w", encoding="utf-8").write(
+            "date,stock_id,foreign,trust,dealer,total\n2026-09-04,2330,1,2,30,33\n")
+        tot3, bad3 = C.dealer_identity()
+        ck("⚠ 沒有那兩欄的舊檔 ⇒ **整個跳過**，⛔ 不算不符"
+           "（否則回補到一半天天紅）", len(bad3) == 1 and tot3 == tot2, f"{tot3}｜{bad3}")
+        # ⚠ 有欄但值是空的也一樣
+        io.open(os.path.join(base, "2026-09-07.csv"), "w", encoding="utf-8").write(
+            hdr + "2026-09-07,2330,1,2,30,33,,\n")
+        tot4, bad4 = C.dealer_identity()
+        ck("  ⭐ 欄在但值是空的也跳過（⛔ 空字串 int() 會炸）",
+           len(bad4) == 1 and tot4 == tot2, f"{tot4}｜{bad4}")
+
+        # ⭐ 上櫃那一半也要掃到（⛔ 只掃 inst 會漏掉一半的庫）
+        base2 = os.path.join(C._ROOT, "universe", "otcinst")
+        os.makedirs(base2)
+        io.open(os.path.join(base2, "2026-09-01.csv"), "w", encoding="utf-8").write(
+            hdr + "2026-09-01,6488,1,2,30,33,10,21\n")
+        tot5, bad5 = C.dealer_identity()
+        ck("⭐⭐ `otcinst` 也掃（⛔ 只掃 inst 會漏掉一半的庫）",
+           len(bad5) == 2 and any(b[1] == "6488" for b in bad5), str(bad5))
+    finally:
+        C._ROOT = old5
+        shutil.rmtree(d5, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

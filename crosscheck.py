@@ -276,6 +276,70 @@ def exright_identity_check(rl, tol=0.011):
              ok == n, f"{ok:,}/{n:,}")
 
 
+def dealer_identity(root=None):
+    """自營商分項恆等式：`自行買賣 + 避險 == 自營商合計`。
+
+    → (可驗列數, [(日期, 代號, self, hedge, dealer), ...] 不符的)。
+
+    ## ⛔ 這一條的**適用範圍**要先講清楚
+
+    三個欄**來自同一發回應**（T86／TPEx）⇒ ⚠ 它**不是**「獨立的第二個來源」，
+    ⛔ 不可以拿它宣稱「官方那三個數字是對的」。
+    ⭐ 它抓得到的是**我方這一端**的錯：欄位對錯位、解析抓錯欄、
+      回補與每日兩條路寫出不同語意的欄（四點五那一族）。
+    ⚠ 而那正是 CLAUDE.md 四點二③「**欄位有值 ≠ 值是對的**」要防的事
+      ——`dealer_self` 整欄填成別的數字，**沒有任何現有閘門看得出來**。
+
+    ## ⭐ 為什麼判準是「一列都不准不符」
+
+    2026-09-14 上市那 2,851 天回補完之後**全庫實測**：
+
+        可驗 4,811,538 列（上市＋上櫃、2015~2026）｜⛔ 不符 **0** 列
+
+    ⇒ 它是一條**會回到 0** 的量（`lowwater.py` 檔頭那條）⇒ 絕對門檻是對的，
+    ⛔ 不必也不應該用低水位——那會讓第一筆錯位被默默接受。
+    """
+    base = os.path.join(root or _ROOT, "universe")
+    tot, bad = 0, []
+    for d in ("inst", "otcinst"):
+        for path in sorted(glob.glob(os.path.join(base, d, "*.csv"))):
+            try:
+                with io.open(path, encoding="utf-8") as f:
+                    rd = csv.DictReader(f)
+                    if not rd.fieldnames or "dealer_self" not in rd.fieldnames:
+                        continue
+                    day = os.path.basename(path)[:-4]
+                    for r in rd:
+                        try:
+                            sv = int(r["dealer_self"])
+                            hv = int(r["dealer_hedge"])
+                            dv = int(r["dealer"])
+                        except (ValueError, KeyError, TypeError):
+                            continue        # ⚠ 空欄不算不符（舊檔還沒回補）
+                        tot += 1
+                        if sv + hv != dv:
+                            bad.append((day, r.get("stock_id"), sv, hv, dv))
+            except OSError:
+                continue
+    return tot, bad
+
+
+def dealer_check(rl):
+    tot, bad = dealer_identity()
+    rl.info("⑤ 自營商分項恆等式　自行買賣 ＋ 避險 ＝ 自營商合計",
+            f"可驗 {tot:,} 列（上市＋上櫃）｜不符 {len(bad):,}"
+            + (f"｜⛔ 前 3：{bad[:3]}" if bad else "")
+            + "　⚠ 三個欄來自**同一發回應** ⇒ ⛔ 它驗的是**我方有沒有對錯位**，"
+              "不是官方的數字對不對")
+    # ⭐ 先釘母體：⛔「0 列可驗」跟「全部通過」在報表上長得一樣
+    rl.check("⑤ 這道閘門真的有母體可掃（⛔ 0 列跟全部通過長得一樣）",
+             tot >= 1_000_000, f"{tot:,} 列")
+    rl.check("⑤ 自營商分項恆等式全數成立（⛔ 一列都不准不符）",
+             not bad,
+             f"⛔ **{len(bad):,} 列不符**：{bad[:3]}" if bad
+             else f"{tot:,} 列全過")
+
+
 def main():
     rl = runlog.Run("crosscheck")
     rl.info("這一支在做什麼", "幫原本只有自我一致（C 級）的資料找第二個判準；"
@@ -283,6 +347,7 @@ def main():
     inst_check(rl)
     margin_check(rl)
     per_check(rl)
+    dealer_check(rl)
     exright_identity_check(rl)
     return rl.finish()
 

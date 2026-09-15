@@ -36,6 +36,18 @@ name: 端點探針（只跑探針，約 1 分鐘）
 
 on:
   workflow_dispatch:
+    inputs:
+      # ⭐⭐ 分支上產生的**資料**要怎麼進 main：`sync_code.sh` 排除 `data`
+      #   （四點六：main 是 data/ 的唯一寫入者），⛔ 所以它不會自己過去。
+      #   ⚠ 而 `push_data.sh` 問的是「**本趟**改了什麼」——分支上**早就 commit**
+      #     的檔它問不到（四點六那個鏡像①）。
+      #   ⇒ `push_data.sh` 的第二個參數起就是為這種情況留的「強制搬」。
+      # ⛔⛔ 只可以在**分支**上派這一支（它不讀 `data/` 來重算，只搬）。
+      #   ⚠ 在 main 上派沒有意義：main 上那些路徑本來就是 main 的。
+      force_paths:
+        description: "強制搬到 main 的 data/ 路徑（空白分隔）｜⛔ 只在分支上派"
+        required: false
+        default: ""
   # ★ 2026-09-09 補回「自癒」：這一支變成唯一寫入者之後，
   #   「改了探針會自動重跑」那個條件就沒了——**改了探針沒人按，等於沒改**，
   #   而且外表完全正常（檔案在、格式對，只是內容是上一版的）。
@@ -306,4 +318,5 @@ jobs:
           # ⛔ 這一段本來在**八支 workflow 各抄一份**。同一段邏輯抄兩份，
           #   今晚已經害過一次（`limit` 的 bug 在 fetch/backfill 各一份，
           #   修好的那份天天跑、沒修的那份只有回補才跑）。⇒ 只留一份。
-          bash push_data.sh "data: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
+          # ⚠ `force_paths` 只在 `workflow_dispatch` 才有值；排程那趟是空的。
+          bash push_data.sh "data: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北" ${{ inputs.force_paths }}

@@ -626,6 +626,69 @@ def check_ledger():
         finally:
             D.DATA = _oldD
 
+    # ⭐⭐ E2：判準是**週數**，⛔ 不是檔案數（一年一個檔 ⇒ 檔案數永遠是 8）
+    #   ⚠ 實測到的實例：372 份來源裡有一份是別一週的複本 ⇒ 檔案數 ≠ 週數。
+    #   ⭐ 全部拿合成 parquet 驗（⛔ 不靠真實 data/：那樣這條的壽命
+    #     會綁在「現在剛好有 370 週」上——第七點第七個陷阱）。
+    try:
+        import pyarrow as _pa
+        import pyarrow.parquet as _pq2
+        _has_pa = True
+    except ImportError:
+        _has_pa = False
+    if not _has_pa:
+        # ⭐ 寫成不會被讀成「驗過了」的樣子
+        print("  ⚠⚠ **這一層沒跑**：這台沒有 pyarrow ⇒ ⛔ 不算失敗，⛔ 也不算驗過")
+    else:
+        with _tf.TemporaryDirectory() as _d2:
+            _hd = os.path.join(_d2, "tdcc_hist"); os.makedirs(_hd)
+            def _mkpq(year, days, per_day=3):
+                rows = [(d, f"{1000+i}") for d in days for i in range(per_day)]
+                _pq2.write_table(_pa.table({
+                    "date": _pa.array([r[0] for r in rows]),
+                    "stock_id": _pa.array([r[1] for r in rows]),
+                }), os.path.join(_hd, f"{year}.parquet"))
+            _oldD2 = D.DATA
+            try:
+                D.DATA = _d2
+                _mkpq("2019", ["2019-06-28", "2019-07-05"])
+                _mkpq("2020", ["2020-01-03"])
+                st, ev = D._p_hist_weeks("tdcc_hist", 3)()
+                ck("⭐⭐ E2 數的是**週數**（3 週／2 個年檔）⛔ 不是檔案數",
+                   st.startswith("✅") and "3 週" in ev, f"{st}｜{ev}")
+                ck("  ⭐ 而且講得出**區間**（⇒ 看得出補到哪）",
+                   "2019-06-28 ~ 2020-01-03" in ev, ev)
+                st2, _ = D._p_hist_weeks("tdcc_hist", 350)()
+                ck("  ⭐ 反向：門檻 350 而只有 3 週 ⇒ 不是 ✅",
+                   not st2.startswith("✅"), st2)
+                # ⛔ 同一週出現在兩個年檔裡只算一次（⇒ 真的在數相異值）
+                _mkpq("2021", ["2019-06-28"])
+                st3, ev3 = D._p_hist_weeks("tdcc_hist", 3)()
+                ck("⭐⭐ 同一個日期出現在兩個年檔 ⇒ **只算一次**（⛔ 不是加總）",
+                   "3 週" in ev3, ev3)
+                # ⛔⛔ 沒有 pyarrow 那條路**在這台永遠走不到**（這台有裝）
+                #   ⇒ 第七點③：測了判準、沒測那條路。⭐ 把 import 擋掉來走它。
+                _saved = sys.modules.get("pyarrow.parquet", "ABSENT")
+                sys.modules["pyarrow.parquet"] = None   # ⇒ import 會丟 ImportError
+                try:
+                    st5, ev5 = D._p_hist_weeks("tdcc_hist", 3)()
+                finally:
+                    if _saved == "ABSENT":
+                        sys.modules.pop("pyarrow.parquet", None)
+                    else:
+                        sys.modules["pyarrow.parquet"] = _saved
+                ck("⭐⭐ 沒有 pyarrow ⇒ 說**算不出來**"
+                   "（⛔ 不可以回 0／未開始——那跟「一週都沒有」長得一樣）",
+                   "算不出來" in st5, f"{st5}｜{ev5}")
+                ck("  ⭐ 而且講出是**環境**的問題，⛔ 不是資料的",
+                   "pyarrow" in ev5 and "不是「沒有資料」" in ev5, ev5)
+                # ⛔ 目錄不在 ⇒ 未開始，⚠ 不是炸掉
+                st4, ev4 = D._p_hist_weeks("沒這個目錄", 1)()
+                ck("⛔ 目錄不在 ⇒ 說「未開始」，⚠ 不是炸掉",
+                   st4.startswith("⬜"), f"{st4}｜{ev4}")
+            finally:
+                D.DATA = _oldD2
+
     # ⭐ 人工判定那幾格要標得出來——⛔ 手寫的 ✅ 與量到的 ✅ 不可以長得一樣
     ck("⭐ 人工判定的列有標記，而且說明文字有解釋它的意思",
        D.LEDGER_HAND in txt and "繼續顯示完成" in txt)
