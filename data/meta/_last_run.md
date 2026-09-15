@@ -1038,7 +1038,7 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-09-16T05:17:30+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35023155126
+最後執行：2026-09-16T05:38:03+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35025164498
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
 - **跑過的自測**：1 支｜selftest_probes.py
@@ -1119,6 +1119,7 @@
 檢查：
 - ok　⭐⭐ 外國企業那一段**真的進來了**（⛔ 全部 0 列 ⇒ `_1` 沒抓到，⚠ 而它跟「官方沒發」長得一樣）　（有值的期別檔 280 個｜合計 13,912 列）
 - ok　不是整批失敗（全失敗＝被擋或參數壞了）　（ok 464）
+
 
 ## otc_parvalue_history　✓ 正常
 
