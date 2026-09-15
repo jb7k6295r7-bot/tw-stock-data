@@ -377,13 +377,21 @@ def fetch_one(sid, today):
     return ys, ms, None
 
 
-def _load(path, header):
+def _load(path, header, key):
+    """讀回一份判準表 → `{主鍵: 列}`。
+
+    ⛔⛔ `key` **必填**：它必須跟寫入端用的是**同一支**。
+    ⚠ 2026-09-16 我把寫入端從 `r[:3]` 改成 `y_key`（兩格）卻**忘了改這裡**
+    ⇒ 讀進來的列掛在三格的鍵上、本趟抓到的掛在兩格的鍵上
+    ⇒ ⛔ 同一檔同一年會變成**兩列**——⭐ 比原本那個 bug 更糟（半修）。
+    ⇒ 所以它沒有預設值：忘了傳會**當場 TypeError**，⛔ 而不是靜靜寫出兩列。
+    """
     rows = {}
     if os.path.exists(path):
         with io.open(path, encoding="utf-8") as f:
             for r in csv.DictReader(f):
-                rows[tuple(r.get(k, "") for k in header[:3])] = \
-                    [r.get(k, "") for k in header]
+                row = [r.get(k, "") for k in header]
+                rows[key(row)] = row
     return rows
 
 
@@ -795,9 +803,9 @@ def main():
                         f"（⛔ 不等於「全市場都有官方統計」；⚠ 另有 {len(give_up):,} 檔"
                         "連續答不出來而放棄，見 `_official_stats_miss.csv`）")
 
-    Y = _load(yearly_path(a.market), Y_HEADER)
-    M = _load(monthly_path(a.market), M_HEADER)
-    T = _load(tpex_yearly_path(), TY_HEADER) if a.market == "tpex" else {}
+    Y = _load(yearly_path(a.market), Y_HEADER, y_key)
+    M = _load(monthly_path(a.market), M_HEADER, m_key)
+    T = _load(tpex_yearly_path(), TY_HEADER, y_key) if a.market == "tpex" else {}
     n0y, n0m = len(Y), len(M)
     ok = []
     flushed = 0

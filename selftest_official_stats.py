@@ -390,6 +390,29 @@ def main():
               if isinstance(n, _ast.Call)}
     ck("⭐ `main()` 兩個都用了（⛔ 不是還留著 `r[:3]`）",
        {"y_key", "m_key"} <= _keyed, str(sorted(x for x in _keyed if x)))
+    # ⭐⭐ 驗**終點**：讀→改量→寫→再讀，同一檔同一年**只能有一列**
+    #   ⛔ 寫入端與讀入端用不同的 key ⇒ 會變兩列（半修比原本的 bug 更糟）
+    import tempfile as _tf
+    _d = _tf.mkdtemp(prefix="oskey_")
+    try:
+        _fp = os.path.join(_d, "y.csv")
+        O._save(_fp, O.Y_HEADER, {O.y_key(_yrow): _yrow})
+        _back = O._load(_fp, O.Y_HEADER, O.y_key)
+        _chg = _yrow[:2] + ["999"] + _yrow[3:]      # ⚠ 官方把成交股數修正了
+        _back[O.y_key(_chg)] = _chg
+        O._save(_fp, O.Y_HEADER, _back)
+        _lines = [x for x in io.open(_fp, encoding="utf-8").read().splitlines()
+                  if x.startswith("2330,114,")]
+        ck("⭐⭐ 讀→改量→寫 ⇒ 同一檔同一年**只有一列**（⛔ 不是兩列）",
+           len(_lines) == 1 and ",999," in _lines[0], str(_lines))
+        import inspect as _insp
+        _sig = _insp.signature(O._load)
+        ck("⭐ 而 `_load` 的 `key` **沒有預設值**"
+           "（⛔ 忘了傳要當場 TypeError，不是靜靜寫出兩列）",
+           _sig.parameters["key"].default is _insp.Parameter.empty, str(_sig))
+    finally:
+        import shutil as _sh2
+        _sh2.rmtree(_d, ignore_errors=True)
 
     # ───── [上櫃年度] ⭐ 假回應**照真的形狀**做（含兩個都叫「日期」的欄） ─────
     #  ⚠ 這一段是 probe 120 真的回應的子集：兩張 tables、fields 有重複欄名、
