@@ -1100,6 +1100,50 @@ def check_scale_qualified():
     return bad
 
 
+def check_f2_numbers():
+    """⭐⭐ F2：「口徑差落在哪一欄」——⛔ 沒有數字，這個問題答不了。
+
+    ⚠ 第一版那一節只印 `describe_response`（被丟掉的頂層鍵）⇒ 看得到 `stat: OK`、
+    看得到 `title`，⛔ 而**一個總量數字都沒有** ⇒ 那一節回答不了它自己問的問題。
+    ⚠ 而且上半段寫死 2026-09-01、下半段打 `DAY` ⇒ **兩個不同的日子並排**，
+    ⛔ 讀的人會以為是同一天（錨點要落在同一格）。
+    """
+    import keys_probe as KP
+    bad = 0
+
+    def ck(name, cond, extra=""):
+        nonlocal bad
+        print(("✓ " if cond else "✗ ") + name)
+        if not cond:
+            bad += 1
+            if extra:
+                print(f"    {extra}")
+
+    f = ["日期", "成交股數", "成交金額", "成交筆數", "發行量加權股價指數"]
+    rows = [["115/09/09", "1,000", "2,000", "30", "46,948.72"],
+            ["115/09/10", "5", "7", "1", "1"]]
+    got = KP._sum_by_name(f, rows)
+    ck("① 逐欄合計照**欄名**取（⛔ 不是位置——今天在 [1] 不保證 2015 也在 [1]）",
+       got == {"成交股數": 1005.0, "成交金額": 2007.0, "成交筆數": 31.0}, str(got))
+    ck("② 千分位逗號要吃掉（⛔ 否則 float() 全部失敗、合計靜靜變 0）",
+       got.get("成交金額") == 2007.0, str(got))
+    ck("③ ⛔ 沒有那幾個欄名 ⇒ 回空 dict（⚠ 不是回 0：0 跟「那天沒成交」一樣）",
+       KP._sum_by_name(["a", "b"], rows) == {}, str(KP._sum_by_name(["a", "b"], rows)))
+    ck("④ ⛔ 指數那一欄**不加總**（⚠ 它不是總量，加起來沒有意義）",
+       "發行量加權股價指數" not in got, str(got))
+    ck("⑤ 那一天不在這個 ref 上 ⇒ 回 **None**"
+       "（⇒ 呼叫端才說得出「這一格沒量到」，⛔ 回 0 就變成「那天沒成交」）",
+       KP._our_twse_total("1999-01-01") is None)
+    # ⭐ 而三條路要落在**同一天**——⛔ 兩個日子並排就是錨點錯了
+    import inspect
+    src = inspect.getsource(KP.f2_kou_jing)
+    ck("⑥ ⭐ 三條路用**同一個** `day` 換算出來的 iso"
+       "（⛔ 上半段寫死一天、下半段打另一天 ＝ 錨點錯了）",
+       'iso = f"{day[:4]}-{day[4:6]}-{day[6:]}"' in src
+       and "_our_twse_total(iso)" in src, "⛔ 沒有從 day 換算")
+    return bad
+
+
 def check_no_dup_keys():
     """⛔⛔ `SECTIONS` 這種 dict 字面量**有重複鍵也不會報錯**——Python 靜靜取後面那個。
 
@@ -1320,6 +1364,7 @@ def main():
     bad += check_xhr_hunt()
     bad += check_js_followups()
     bad += check_scale_qualified()
+    bad += check_f2_numbers()
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
