@@ -490,3 +490,4 @@
 - 落地（9ff0a45ce）：全文檔＋拆出 PREREGP3／P1b／P2／P5（等過目）；CONCLUSIONS 十一、十二附上（原文不改，十二加待覆核註）。引擎查證：`research11.simulate_mtm` 已有 cash_mode="bench"；⛔ 丙（時點隨機）沒有 ⇒ 落地版定義提案給 K線分析裁：丙＝甲每種子的逐日曝險 e_t 隨機重排（整段一次）套回持股報酬流 r_inv，200 次新種子；替代＝按月重排。「那三格」＝N30 null／N40 null／N40 relvol。
 - 寄 1425：四份收到落地；順序照使用者 P4→P3→P1b→P2、P5 等對帳；P3 請 K線分析過目兩件定義；P1b 退回一項（種子起點沒寫）；資料庫線：main 已有 v0 md、還沒 centers_v3.json／researchp4／V1_START ⇒ 1325 兩件仍等。
 - 水位 → `createdTime 2026-09-15T05:38:13.858Z`（情報分析 1337）。自喚醒 15:15。
+- 14:27 追加：P3 落地版程式先備好（⛔ 不跑，等 K線分析過目 1425 二節）：`research11.simulate_mtm` 加 `hold_val` 回傳（15fb4d6b1，預設路徑對 baseline 逐位元）；`researchp3.py`＋`selftest_researchp3.py`（b33bb93fb，14 條、5 突變全紅；丙 day／month 兩種重排都做在 `--shuffle-mode`，K線分析裁哪個當主格）。⚠ 落地時發現：P1 網格 N ≤ 8 是 **14 格**（登錄寫 16）；冒煙 N30 null 種子 7000：甲 −34.7% 乙 −38.2% 0050 −34.0%。
