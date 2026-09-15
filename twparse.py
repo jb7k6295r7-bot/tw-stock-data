@@ -156,6 +156,31 @@ def post_form(url, form, timeout=120, retries=3, sleep=None):
     return b"", last + (f"（重試 {retries} 次都失敗）" if retries > 1 else "")
 
 
+def csv_cell(v, sep="；"):
+    """任意文字 → **可以直接塞進一格 CSV** 的字串。⭐ 全庫唯一那一份（四點五）。
+
+    ## ⛔ 這一支存在的理由：`_official_stats_miss.csv` 裡有 HTML
+
+    2026-09-16 實測，那份判準檔 106 列裡有 **2 列是 `<head>` 與 `<meta h`**：
+
+    ```python
+    f.write(f"{sid},{n},{asof},{str(why).replace(',', '；')}\n")   # ⛔ 只換了逗號
+    ```
+
+    ⚠ 而 `why` 可能是**整頁 HTML**——CLAUDE.md 第二點④：TWSE 被 CDN 擋時回的是
+    HTTP 428 ＋ HTML。⇒ 那串字裡的 `\n` 把**一列切成好幾列**
+    ⇒ ⛔ 判準檔被污染，而 `load_miss()` 讀到的是 `stock_id="<head>"` 這種列。
+
+    ⭐ 它的壞法是最難看出來的那一種：檔案在、格式看起來對、程式不報錯，
+    ⚠ 只是**列數多了**、而多出來的那幾列永遠對不到任何代號。
+
+    ⇒ 這裡把**所有**空白（含 `\n`／`\r`／`\t`）收成一個空格，再換掉逗號與引號。
+    ⛔ 不截斷：錯誤訊息可行動的部分常常在後面（六點六）——要截由呼叫端自己決定。
+    """
+    t = " ".join(str(v).split())
+    return t.replace(",", sep).replace('"', "'")
+
+
 def render_csv(header, rows):
     """→ CSV 文字（`\n` 結尾符，跟 repo 裡的日檔一致）。
 

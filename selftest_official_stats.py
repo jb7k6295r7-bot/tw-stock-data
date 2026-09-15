@@ -242,6 +242,42 @@ def main():
         import shutil
         shutil.rmtree(d2, ignore_errors=True)
 
+    # ───── [污染] ⛔ 整頁 HTML 被寫進 `why` ⇒ 一列被切成好幾列 ─────
+    d3 = tempfile.mkdtemp(prefix="osmiss_")
+    try:
+        mp = os.path.join(d3, "_miss.csv")
+        # ⭐ 假回應照真的形狀做：真的那兩列就是 `<head>` 與 `<meta h`
+        with io.open(mp, "w", encoding="utf-8") as f:
+            f.write(O.MISS_HEADER)
+            f.write("1262,1,20260915,FMSRFK stat='很抱歉；沒有符合條件的資料!'\n")
+            f.write("<head>,,,\n")
+            f.write("<meta h,,,\n")
+            f.write("00679B,2,20260915,x\n")
+        got = O.load_miss(mp)
+        ck("⛔ 不像代號的列**不會**進 miss 台帳（`<head>`／`<meta h`）",
+           set(got) == {"1262", "00679B"}, str(sorted(got)))
+        ck("⭐ 而它們有被**數出來**（⛔ 丟掉而不說 ＝ 沒被污染，看起來一樣）",
+           O.bad_rows(mp) == ["<head>", "<meta h"], str(O.bad_rows(mp)))
+        ck("  ⭐ ETF 那種帶字母的代號**不可以**被誤殺", O.is_code("00679B"))
+        ck("  六碼的也不可以（912000 晨訊科-DR）", O.is_code("912000"))
+        ck("  ⛔ 而 `<head>` 不是代號", not O.is_code("<head>"))
+
+        # ⭐⭐ 寫入端：整頁 HTML 進去，出來**只能是一列**（驗終點，四點二）
+        mp2 = os.path.join(d3, "_miss2.csv")
+        html = '<head>\n<meta http-equiv="refresh">\n</head>428, blocked'
+        O.bump_miss([("2330", html)], "20260916", path=mp2, alive=True)
+        body = io.open(mp2, encoding="utf-8").read().splitlines()
+        ck("⭐⭐ `why` 是整頁 HTML ⇒ 寫出來**仍然只有表頭＋1 列**"
+           "（⛔ 這就是那兩列的病根）",
+           len(body) == 2, f"{len(body)} 行：{body[:4]}")
+        ck("  而內容沒有被丟掉（⛔ 六點六：錯誤訊息可行動的部分常在後面）",
+           "428" in body[1] and "blocked" in body[1], body[1][:120])
+        ck("  重讀回來認得出那一檔（驗終點，⛔ 不是斷言寫檔成功）",
+           set(O.load_miss(mp2)) == {"2330"}, str(sorted(O.load_miss(mp2))))
+    finally:
+        import shutil
+        shutil.rmtree(d3, ignore_errors=True)
+
     # ───────── [對照組] ⭐ 「全失敗」的兩種，⛔ 它們長得一模一樣 ─────────
     #  ⚠ 這一節**不連網**：`endpoint_alive` 的 fetch 是注入的假的。
     pool4 = ["1101", "1102", "1103", "9999"]

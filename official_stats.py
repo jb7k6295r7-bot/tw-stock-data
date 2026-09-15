@@ -110,6 +110,7 @@ from datetime import datetime, timedelta, timezone
 
 import backfill as B
 import runlog
+import twparse                     # ⭐ csv_cell 只有那一份（四點五）
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -270,8 +271,42 @@ def excluded(covered=COVERED):
     return n
 
 
+def is_code(sid):
+    """看起來像不像一個證券代號。⭐ 只有這一份實作（`load_miss` 與 `bad_rows` 共用）。
+
+    ⛔ 它不是「這個代號存不存在」——那要查母體。⚠ 它擋的是**根本不是代號**的東西：
+    2026-09-16 實測 `_official_stats_miss.csv` 106 列裡有兩列的 `stock_id` 是
+    `<head>` 與 `<meta h`（整頁 HTML 被寫進 `why` 欄，⇒ 換行把一列切成好幾列）。
+    ⇒ 寫入端已經收成 `twparse.csv_cell`；這一支是**讀入端**的第二層
+    （⭐ 兩層都要：舊檔裡已經有的那幾列不會自己消失）。
+    """
+    return bool(re.fullmatch(r"[0-9A-Z]{4,6}", (sid or "").strip()))
+
+
+def bad_rows(path=None):
+    """→ miss 台帳裡**不像代號**的那幾列（原始 `stock_id` 字串）。
+
+    ⭐ 它存在的理由是第七點那句：「回報某群 0 筆時，要附上該判準抓到的正例數」
+    ——⛔ 靜靜丟掉那幾列的話，檔案被污染這件事**沒有任何地方會說**。
+    """
+    p = path or MISS
+    out = []
+    if not os.path.exists(p):
+        return out
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            sid = (r.get("stock_id") or "").strip()
+            if sid and not is_code(sid):
+                out.append(sid[:40])
+    return out
+
+
 def load_miss(path=None):
-    """→ {代號: (tries, last_asof, why)}。讀不到回 {}（⛔ 不是炸掉）。"""
+    """→ {代號: (tries, last_asof, why)}。讀不到回 {}（⛔ 不是炸掉）。
+
+    ⛔ 不像代號的列**丟掉**（見 `is_code`），⚠ 而丟了幾列由 `bad_rows()` 報出來
+    ——⭐ 丟掉而不說，跟沒有被污染在畫面上一模一樣。
+    """
     p = path or MISS
     out = {}
     if not os.path.exists(p):
@@ -279,7 +314,7 @@ def load_miss(path=None):
     with io.open(p, encoding="utf-8") as f:
         for r in csv.DictReader(f):
             sid = (r.get("stock_id") or "").strip()
-            if not sid:
+            if not sid or not is_code(sid):
                 continue
             try:
                 n = int(r.get("tries") or 0)
@@ -315,7 +350,9 @@ def bump_miss(fail, today, path=None, alive=True):
         f.write(MISS_HEADER)
         for sid in sorted(cur):
             n, asof, why = cur[sid]
-            f.write(f"{sid},{n},{asof},{str(why).replace(',', '；')}\n")
+            # ⭐ 走 `twparse.csv_cell`（全庫唯一那一份）：⛔ 只換逗號是不夠的,
+            #   `why` 可能是整頁 HTML ⇒ 裡面的換行會把一列切成好幾列。
+            f.write(f"{sid},{n},{asof},{twparse.csv_cell(why)}\n")
     return len(fail)
 
 
@@ -483,6 +520,14 @@ def main():
     pool = codes()
     # ⭐ 三堆只在**這裡切一次**（四點五）：⛔ 不要在別處再算一次 `c not in done`。
     miss = load_miss() if not a.force else {}
+    # ⛔ 台帳被污染過就要**講出來**（⚠ 丟掉而不說 ＝ 沒被污染，看起來一樣）
+    _bad = bad_rows()
+    if _bad:
+        rl.info("⛔ miss 台帳裡有**不是代號**的列（已跳過，下次寫入時會消失）",
+                f"{len(_bad)} 列：{_bad[:5]}"
+                "　⇒ 病根是舊版把整頁 HTML 寫進 `why` 欄而只換了逗號沒換換行"
+                "（第二點④：TWSE 被 CDN 擋時回 HTTP 428 ＋ HTML）"
+                "　⇒ 寫入端已改走 `twparse.csv_cell`")
     todo, fresh, give_up = split_todo(pool, done, miss, a.limit)
     ex = excluded()
     for label, value in progress_lines(pool, done, todo, ex, give_up):
