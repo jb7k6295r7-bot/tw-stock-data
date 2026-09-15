@@ -414,25 +414,75 @@ def ezsearch_case(out):
     #   `step` 主查詢的值還沒讀到 ⇒ ⭐ 那就**每個都試一次**並把結果並排，
     #   ⛔ 不要挑一個看起來對的填進去（第二點：靜默失敗都長成 stat:OK）。
     import twparse as _tw                                   # noqa: PLC0415
+    from delist_probe import _spread as _sp                 # noqa: PLC0415
     EZ = "https://mopsov.twse.com.tw/mops/web/ezsearch_query"
-    for step in ("00", "01", "02", "03"):
-        form = {"step": step, "CO_MARKET": "", "CO_ID": "2330",
-                "PRO_ITEM": "C00", "SUBJECT": "",
-                "SDATE": "20260101", "EDATE": "20260915",
-                "lang": "TW", "AN": ""}
-        out.append(f"      ── step={step}｜CO_ID=2330｜PRO_ITEM=C00"
-                   "｜SDATE=20260101 EDATE=20260915")
+
+    def _shot(label, form):
+        """打一發並把回應攤開。→ (rows 或 None)。⛔ 這裡不下結論。"""
+        out.append(f"      ── {label}")
         raw, err = _tw.post_form(EZ, form, timeout=60, retries=2)
         if err:
             out.append(f"         ⛔ 取不回來：{_W(err, 180)}"
                        "　⇒ 這一發**沒量到**（⛔ 不是「它不答」）")
-            continue
+            return None
         han, n_tr, n_js, shell = B.js_shell(raw)
         out.append(f"         [形狀] {len(raw):,} bytes｜中文 {han:,} 字"
                    f"｜<tr> {n_tr} 個｜js {n_js} 支"
                    + ("　⛔ **js 空殼**" if shell else ""))
-        out.append("         ⭐ 前 300 字："
-                   + B.visible_text(raw, " ")[:300])
+        out.append("         ⭐ 前 300 字：" + B.visible_text(raw, " ")[:300])
+        try:
+            d = json.loads(raw.decode("utf-8-sig", "replace"))
+        except ValueError:
+            out.append("         ⚠ 不是 JSON ⇒ 這一發只量到形狀")
+            return None
+        rows = d.get("data") if isinstance(d, dict) else (
+            d if isinstance(d, list) else None)
+        if not isinstance(rows, list) or not rows:
+            out.append(f"         ⚠ 沒有 `data` 陣列（頂層鍵 "
+                       f"{sorted(d)[:8] if isinstance(d, dict) else type(d).__name__}）")
+            return None
+        out.append(f"         ⭐ `data` **{len(rows):,} 列**｜欄名 "
+                   f"{sorted(rows[0])[:12]}")
+        # ⛔ 第二點⑤：陣列型回應唯一問得出涵蓋期間的方式，是**每個鍵的相異值分佈**
+        for _ln in _sp(rows):
+            out.append("         " + _ln)
+        return rows
+
+    # ⭐ 主查詢是哪個 step ⇒ 四個都試一次並排（⛔ 不挑一個看起來對的）
+    base = {"CO_MARKET": "", "CO_ID": "2330", "PRO_ITEM": "C00",
+            "SUBJECT": "", "SDATE": "20260101", "EDATE": "20260915",
+            "lang": "TW", "AN": ""}
+    got = {}
+    for step in ("00", "01", "02", "03"):
+        got[step] = _shot(f"step={step}｜CO_ID=2330｜PRO_ITEM=C00"
+                          "｜SDATE=20260101 EDATE=20260915",
+                          dict(base, step=step))
+
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ 而「它回了資料」**不等於**「我送的參數有生效」（第二點①②）
+    #
+    # ⭐ 2026-09-15 第一發實測：我送 `CO_ID=2330`，⚠ 而回來的第一列是
+    #   `COMPANY_ID: 6591`（動力-KY）、`CDATE: 115/09/15`（＝今天）
+    #   ⇒ ⛔ 那看起來像「靜靜回今天的全部公告」，⚠ 而**看起來**不算數。
+    #
+    # ⇒ ⭐ 判準是 repo 到處在用的那一條：**換一個區間再打一次，比內容**。
+    #   ⛔ 兩發逐位元組相同 ⇒ 那些參數是假的；不同 ⇒ 它們有生效。
+    # ══════════════════════════════════════════════════════════════
+    out.append("")
+    out.append("      ── ⭐⭐ 參數到底有沒有生效：**換一個區間再打一次，比內容**")
+    out.append("         ⛔ 「它回了資料」≠「我送的參數有生效」（第二點①②）")
+    a = _shot("A｜step=00｜SDATE=20260301 EDATE=20260331（三月）",
+              dict(base, step="00", SDATE="20260301", EDATE="20260331"))
+    b = _shot("B｜step=00｜SDATE=20240301 EDATE=20240331（兩年前的三月）",
+              dict(base, step="00", SDATE="20240301", EDATE="20240331"))
+    if a is not None and b is not None:
+        same = (a == b)
+        out.append(f"         ⇒ ⭐ A 與 B **{'逐列相同' if same else '不同'}**"
+                   + ("　⛔ **⇒ 日期參數是假的**（靜靜回同一批）"
+                      if same else "　⇒ ⭐ 日期參數**有生效**"))
+    else:
+        out.append("         ⚠⚠ **這一格沒量到**（至少一發沒回來或不是 JSON）"
+                   "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
     for js in ("js/mop_search.js", "js/mops2.js"):
         jurl = "https://mopsov.twse.com.tw/mops/web/" + js
         out.append(f"  ── {jurl}")
