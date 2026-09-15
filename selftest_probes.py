@@ -623,6 +623,59 @@ def check_openapi_period_col():
     return bad
 
 
+def check_bridge_blank_vs_ignored():
+    """⭐⭐ `bridge_case`「兩期相同」有**兩種**成因，⛔ 而下一步完全相反。
+
+    ⛔⛔ 2026-09-15 付過代價：這一段本來**只比位元組、不說回來的是什麼**
+    ⇒ 量 `t05st01` 時回「期別參數被忽略，這條路不可用」。
+    ⚠ 而兩期都是 22,788 bytes 的小頁面 ⇒ ⭐ 它也可能是**查無資料頁**，
+    而那代表**我沒問對**（`t05st01` 是逐檔查的，沒給公司代號本來就查無），
+    ⛔ 不是「它沒有歷史」。
+
+    ⚠ CLAUDE.md 二③ 記過同一個坑：hist.tpex 的 4,449 bytes 查無資料頁
+    讓 **32 個年份全部命中**。
+
+    ⇒ 三種形狀各一條（⛔ 少了①那一種，這個 bug 不會紅）。
+    """
+    import mops_probe as MP
+    bad = 0
+
+    def _run(a, b):
+        out, seq, saved = [], [a, b], MP.one
+        MP.one = lambda api, year, out_, **kw: seq.pop(0)
+        try:
+            MP.bridge_case("X", "114", "110", out)
+        finally:
+            MP.one = saved
+        return "\n".join(out)
+
+    blank = "<html><body>查無資料</body></html>".encode("utf-8")
+    full = ("<html><body>" + "<tr><td>重大訊息公告本公司民國</td></tr>" * 30
+            + "</body></html>").encode("utf-8")
+    cases = [
+        ("① ⭐ 兩期相同、**而且都是查無資料頁** ⇒ **不可判定**"
+         "（⛔ 不是「這條路不可用」）", blank, blank, "不可判定", "這條路不可用"),
+        ("② 兩期相同、而且**有資料** ⇒ 期別參數被忽略 ⇒ 這條路不可用",
+         full, full, "這條路不可用", "不可判定"),
+        ("③ 兩期不同 ⇒ 期別參數真的生效", full, blank, "真的生效", "不可判定"),
+    ]
+    for name, a, b, want, unwant in cases:
+        txt = _run(a, b)
+        ok = want in txt and unwant not in txt
+        print(("✓ " if ok else "✗ ") + f"bridge_case {name}")
+        if not ok:
+            print(f"    ⛔ 要有「{want}」、不可有「{unwant}」；實得：{txt[-220:]}")
+            bad += 1
+    # ⭐ 而**不論哪一種**都要把「回來的是什麼」講出來（⛔ 只給結論等於沒給證據）
+    txt = _run(full, full)
+    ok = "<tr> 30 個" in txt and "中文" in txt
+    print(("✓ " if ok else "✗ ")
+          + "bridge_case 逐期講出**回來的是什麼**（中文字數／<tr> 數／查無字樣）")
+    if not ok:
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -642,6 +695,7 @@ def main():
     bad += check_delist_cross()
     bad += check_site_inventory_openapi()
     bad += check_openapi_period_col()
+    bad += check_bridge_blank_vs_ignored()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟
