@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T20:05:06+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34965349148
+# ⏱ 這一趟：2026-09-15T20:21:45+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34967079956
 # MOPS／OpenAPI 探針（丁級 11 終點驗證）
 # ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果
 
@@ -32,7 +32,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:02:54
+      ── datetime：115/09/15 20:20:03
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -41,7 +41,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:03:09
+      ── datetime：115/09/15 20:20:15
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018…（blob 長 316）
@@ -53,21 +53,21 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:03:22
+      ── datetime：115/09/15 20:20:27
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa8…（blob 長 317）
-    ✓ 取回 1,628,075 bytes
+    ✓ 取回 1,628,079 bytes
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=110 {'season': '02'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:03:54
+      ── datetime：115/09/15 20:20:48
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa8…（blob 長 317）
     ✓ 取回 1,505,457 bytes
-  ⇒ year=114 取回 1,628,075 bytes；year=110 取回 1,505,457 bytes
+  ⇒ year=114 取回 1,628,079 bytes；year=110 取回 1,505,457 bytes
     [114] 中文 4,200 字｜<tr> 1098 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 上市公司第二季資料 註1：依證券交易法第36條及證券期貨局相關函令規定，財務報告申報期限如下： 1.一般行業申報期限：第一季為5月15日，第二季為8月14日，第三季為11月14日，年度為3月31日。 2.金控業申報期限：第一季為5月30日，第二季為8月31日，第三季為11月29日，年度為3月31日。 3
     [110] 中文 3,941 字｜<tr> 1018 個｜js 1 支｜（沒有查無字樣）
@@ -79,7 +79,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:04:27
+      ── datetime：115/09/15 20:21:05
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -88,7 +88,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:04:29
+      ── datetime：115/09/15 20:21:07
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a…（blob 長 311）
@@ -105,7 +105,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:04:31
+      ── datetime：115/09/15 20:21:08
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -208,22 +208,33 @@
       ⑤  外部載入的 `.js`：0 支
 
 ── ⭐⭐ 那個查詢端點的**參數怎麼組**（⛔ 原始碼原樣印，不猜）
+   ⛔ 訂正：`ezsearch_query` 的每一處都在**被註解掉的行**裡，而且都在 `/*跑馬燈*/ getMsg()` 內
+   ⇒ ⭐ 活著的是 `POST /server-java/AjaxCheck` ＋ `pg=ezsearch`（`mops2.js` 裡同一支是 `step=0` ＋ `eval(resp)` ＋ 一小時一次）
+   ⇒ ⛔ **查詢表單送到哪裡，目前仍然不知道**（⚠ 註解掉的網址證明它曾經存在，⛔ 不證明它現在答得出來）
   ── https://mopsov.twse.com.tw/mops/web/js/mop_search.js
      ⭐ `ezsearch_query` 前後：
         […2023041217steven:(T88K)增加參數搜尋 2023041243steven:(T88G)修改參數傳遞的問題 2023032542steven:(T88G)增加參數搜尋 2023032541max:(T88G)補上 2022081540max:(T88G)修改跑馬燈英文呼叫AjaxCheck_e 2022081539Max:(T88G)讓跑馬燈呼叫ezsearch_query 2022081538steven:(T88G)增加參數傳給跑馬燈程式 */ window.onload = function () { // 抓取path function GetQueryString(name) { var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i"); v…]
         […ae; } home(); /*跑馬燈*/ function getMsg(value) { //20220815 start //var step = "03"; //var keyValue = "step=" + step + "&lang=" + value + "&pg=ezsearch" ; //var url = "/mops/web/ezsearch_query"; //var url = "/server-java/AjaxCheck" var keyValue = "pg=ezsearch"; var url = ""; var lang = document.querySelector("body").getAttribute("data-language"); if (lang == "T…]
         […RO_ITEM == null || PRO_ITEM == "") { // PRO_ITEM = ""; // } // var keyValue = "step=" + step + "&PRO_ITEM=" + PRO_ITEM; // var keyValue = "step=" + step ; // var url = "/mops/web/ezsearch_query"; // var url ="/mops/web/json/industry.json"; // var xhttp = new XMLHttpRequest(); // xhttp.open("POST", url, true); // xhttp.setRequestHeader("Content-type", "application/x-w…]
-        …（另 3 處未印）
+        […PRO_ITEM + "&SUBJECT=" + SUBJECT + "&SDATE=" + SDATE + "&EDATE=" + EDATE + "&lang=" + lang + "&AN=" + AN; var url = "/mops/web/ezsearch_query"; var txt = ""; var src_content = document.querySelector("#searchContent > div"); var xhttp = new XMLHttpRequest(); xhttp.onreadystatechange = function () { if (thi…]
+        […EDATE, lang, "" ); } /* 最新消息 */ function proAN(AN, lang) { var step = "01"; var keyValue = "step=" + step + "&AN=" + AN + "&lang=" + lang; var url = "/mops/web/ezsearch_query"; var NEWS_INFO = document.getElementById("NEWS_INFO"); var xhttp = new XMLHttpRequest(); xhttp.open("POST", url, true); xhttp.setRequestHeader( "Content-type",…]
+        [….querySelector("body").getAttribute("data-language"); //語言 var protocol = document.location.protocol; //傳輸協定(149用http交易所用https) var host = document.location.host; //IP位址 var url_str = "/mops/web/ezsearch_query"; //檔案路徑 var url; //目標網址 /*20220224*/ url = protocol + "//" + host + url_str; //將上述 [傳輸協定] [IP位址] [檔案路徑] 組成網址 var xhttp; if (window.XMLHttpRequest) { xhttp =…]
      ⭐ `AjaxCheck` 前後：
         […K)修改問題 2023042644steven:(T88G)修改問題 2023041217steven:(T88K)增加參數搜尋 2023041243steven:(T88G)修改參數傳遞的問題 2023032542steven:(T88G)增加參數搜尋 2023032541max:(T88G)補上 2022081540max:(T88G)修改跑馬燈英文呼叫AjaxCheck_e 2022081539Max:(T88G)讓跑馬燈呼叫ezsearch_query 2022081538steven:(T88G)增加參數傳給跑馬燈程式 */ window.onload = function () { // 抓取path function GetQueryString(name) { var reg = new RegExp("(^…]
         […Msg(value) { //20220815 start //var step = "03"; //var keyValue = "step=" + step + "&lang=" + value + "&pg=ezsearch" ; //var url = "/mops/web/ezsearch_query"; //var url = "/server-java/AjaxCheck" var keyValue = "pg=ezsearch"; var url = ""; var lang = document.querySelector("body").getAttribute("data-language"); if (lang == "TW") { url = "/server-java/AjaxCheck";…]
         […"/server-java/AjaxCheck" var keyValue = "pg=ezsearch"; var url = ""; var lang = document.querySelector("body").getAttribute("data-language"); if (lang == "TW") { url = "/server-java/AjaxCheck"; } else if (lang == "EN") { url = "/server-java/AjaxCheck_e"; } //20220815 end var xhttp = new XMLHttpRequest(); xhttp.open("POST", url, true); xhttp.setRequestHe…]
-        …（另 1 處未印）
+        […rl = ""; var lang = document.querySelector("body").getAttribute("data-language"); if (lang == "TW") { url = "/server-java/AjaxCheck"; } else if (lang == "EN") { url = "/server-java/AjaxCheck_e"; } //20220815 end var xhttp = new XMLHttpRequest(); xhttp.open("POST", url, true); xhttp.setRequestHeader( "Content-type", "application/x-www-form-urlencoded;…]
      ⭐ `keyValue` 前後：
         […} homebutton.setAttribute("href", homelink); homebutton.innerText = buttonnmae; } home(); /*跑馬燈*/ function getMsg(value) { //20220815 start //var step = "03"; //var keyValue = "step=" + step + "&lang=" + value + "&pg=ezsearch" ; //var url = "/mops/web/ezsearch_query"; //var url = "/server-java/AjaxCheck" var keyValue = "pg=ezsearch"; var url = "";…]
         […20220815 start //var step = "03"; //var keyValue = "step=" + step + "&lang=" + value + "&pg=ezsearch" ; //var url = "/mops/web/ezsearch_query"; //var url = "/server-java/AjaxCheck" var keyValue = "pg=ezsearch"; var url = ""; var lang = document.querySelector("body").getAttribute("data-language"); if (lang == "TW") { url = "/server-java/AjaxCheck"; } else if (lang ==…]
         […d var xhttp = new XMLHttpRequest(); xhttp.open("POST", url, true); xhttp.setRequestHeader( "Content-type", "application/x-www-form-urlencoded;charset=UTF-8" ); xhttp.send(keyValue); xhttp.onreadystatechange = function () { if (this.readyState == 4 && this.status == 200) { /*首頁搜尋列跑馬*/ if (!document.querySelector("#marquee")) { document.q…]
-        …（另 7 處未印）
+        […// var PRO_ITEM = encodeURIComponent(document.querySelector("#declarationValue").getAttribute("value")); // if (PRO_ITEM == null || PRO_ITEM == "") { // PRO_ITEM = ""; // } // var keyValue = "step=" + step + "&PRO_ITEM=" + PRO_ITEM; // var keyValue = "step=" + step ; // var url = "/mops/web/ezsearch_query"; // var url ="/mops/web/json/industry.json"; // var xhttp = ne…]
+        […#declarationValue").getAttribute("value")); // if (PRO_ITEM == null || PRO_ITEM == "") { // PRO_ITEM = ""; // } // var keyValue = "step=" + step + "&PRO_ITEM=" + PRO_ITEM; // var keyValue = "step=" + step ; // var url = "/mops/web/ezsearch_query"; // var url ="/mops/web/json/industry.json"; // var xhttp = new XMLHttpRequest(); // xhttp.open("POST", url, true); /…]
+        […estHeader("content-type", "charset=UTF-8"); xhr.send(); // xhr.onload = function(){ // var data = JSON.parse(this.responseText); // console.log(data); // } // xhttp.send(keyValue); // xhttp.onreadystatechange xhr.onload = function () { if (this.readyState == 4 && this.status == 200) { data = this.responseText; if (/查詢過於頻繁/.test(data)) {…]
+        […) { if (document.querySelector("body[data-refresh]")) { document.querySelector("body").removeAttribute("data-refresh"); } // setInterval(research , 600000); var step = "00"; var keyValue = "step=" + step + "&RADIO_CM=" + RADIO_CM + "&TYPEK=" + TYPEK + "&CO_MARKET=" + CO_MARKET + "&CO_ID=" + CO_ID + "&PRO_ITEM=…]
+        […return; } } }; xhttp.open("POST", url, true); xhttp.setRequestHeader( "Content-type", "application/x-www-form-urlencoded;charset=UTF-8" ); xhttp.send(keyValue); } document.querySelector("#searchButton").onclick = function () { var CO_ID; CO_ID = encodeURIComponent(document.querySelector("#co_id").value); //CO_ID = 公司代號 if (CO_ID == ""…]
+        […EK, CO_MARKET, CO_ID, PRO_ITEM, SUBJECT, SDATE, EDATE, lang, "" ); } /* 最新消息 */ function proAN(AN, lang) { var step = "01"; var keyValue = "step=" + step + "&AN=" + AN + "&lang=" + lang; var url = "/mops/web/ezsearch_query"; var NEWS_INFO = document.getElementById("NEWS_INFO"); var xhttp = new XMLHttpRequest(); xht…]
+        […; var xhttp = new XMLHttpRequest(); xhttp.open("POST", url, true); xhttp.setRequestHeader( "Content-type", "application/x-www-form-urlencoded;charset=UTF-8" ); xhttp.send(keyValue); xhttp.onreadystatechange = function () { NEWS_INFO.innerText = ""; if (this.readyState == 4 && this.status == 200) { var data = this.responseText; if (/查詢過於頻繁…]
   ── https://mopsov.twse.com.tw/mops/web/js/mops2.js
      ⭐ `ezsearch_query` 前後：
         ⚠ 這一份裡**找不到** `ezsearch_query`（⛔ 不是「它不存在」，是不在這一支）

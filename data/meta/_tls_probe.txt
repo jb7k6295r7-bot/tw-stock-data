@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T20:01:48+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34965349148
+# ⏱ 這一趟：2026-09-15T20:19:04+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34967079956
 tls_probe.py　TPEx／TWSE 的 TLS 憑證鏈探針。⛔ 只讀不寫資料，也**不改任何驗證設定**。
 
 ⛔ 只讀不寫資料，也**不改任何驗證設定**。三發的差別只在「拿哪一份 CA」。
@@ -243,7 +243,7 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ====================================================================
 ■ TPEx openapi（同一站的另一條）
   https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes
-    系統 CA                  ✗ IncompleteRead: IncompleteRead(1998441 bytes read, 2436120 more expected)
+    系統 CA                  ✅ HTTP 200｜4,434,561 bytes
     certifi 的 CA           ✅ HTTP 200｜4,434,561 bytes
     對方送的葉憑證       1,923 bytes
     ⭐ 對方實際送了 **4 張**憑證（有中間憑證 ⇒ 問題不在漏送）
@@ -380,6 +380,6 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ■ 判讀（⛔ 照這三格看，不要自己推）
   TPEx（今天掛的那一站）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
   TWSE（對照組，剛剛才跑完 2,850 天）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
-  TPEx openapi（同一站的另一條）：⭐ **系統 CA 不通、certifi 通** ⇒ **我方 CA 太舊**⇒ 修法：workflow 裝 certifi 並讓程式用它（⛔ 不是關掉驗證）
+  TPEx openapi（同一站的另一條）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
 
 ⛔⛔ 不論結果是哪一格，**都不可以用 `verify=False`／`CERT_NONE` 當修法**。

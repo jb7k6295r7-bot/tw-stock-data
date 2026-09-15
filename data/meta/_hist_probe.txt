@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T19:58:37+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34965349148
+# ⏱ 這一趟：2026-09-15T20:17:33+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34967079956
 # hist_probe.py 的輸出。這是探針結果，不是資料。
 # 主機：hist.tpex.org.tw（使用者 2026-09-09 提供）
 # ⛔ 要答的：這個站有沒有**上櫃／興櫃的歷史**——而我今晚說過三次「上櫃沒有歷史來源」。
@@ -20,7 +20,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a3b7713f7d96d234\',t:\'MTc4OTQ3MzMyNQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a3b78e34b9e3f3e5\',t:\'MTc4OTQ3NDUxMg==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -35,8 +35,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3b771465d7fe8ea\','
-     't:\'MTc4OTQ3MzMyNw==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3b78e397c08b152\','
+     't:\'MTc4OTQ3NDUxMg==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -71,8 +71,8 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b7715d2
-         f546a41',t:'MTc4OTQ3MzMzMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b78e4b1
+         80d3478',t:'MTc4OTQ3NDUxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate

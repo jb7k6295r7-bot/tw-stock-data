@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T19:58:48+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34965349148
+# ⏱ 這一趟：2026-09-15T20:17:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34967079956
 # keys_probe.py 的輸出。**只讀不寫資料。**
 # 問的是：官方回應裡那些我方一路丟掉的鍵，到底寫了什麼。
 # ⛔ 我方 `_tables()` 只取 title/fields/data，其餘全丟，而且丟的時候沒有紀錄。
@@ -292,3 +292,32 @@
   ② `params` 有沒有把我送的參數回顯 ⇒ 那是「參數有沒有生效」的直接檢查
   ③ `notes` 裡有沒有**符號說明** ⇒ `adj_gap.py` 五處寫的「官方 X0.00 ＝ 無前一日收盤價可資比較」目前**沒有留下出處**；
      有的話它就是權威出處，⛔ 沒有的話那句話要降級成推論（而它是「轉上市首日不算缺陷」那個歸因的地基）。
+
+── ⭐⭐ F2：大盤總量三欄的**口徑差落在哪**（四條路同一天各量一次）──
+   測試日 20260909｜⛔ 這一段不下結論：採哪一種口徑是**換供料的決定**（第五點）
+   ⭐ 離線已量到的兩項（2026-09-01，我方日檔 twse 1,377 列）：
+      我方日檔合計  金額 1,182,898,779,151｜筆數 5,163,637｜股數 9,235,110,196
+      FMTQIK        金額 1,187,571,567,117｜筆數 5,301,801｜股數 13,000,849,196
+      ⇒ ⭐ 金額 **−0.40%**、筆數 **−2.6%**，⛔ 而股數 **−29%**
+      ⇒ ⚠ 口徑差**不是一個籠統的差**：它落在不同欄、幅度也不同
+
+  ── 鉅額交易**日**成交量值統計 BFIAUU
+     https://www.twse.com.tw/rwd/zh/block/BFIAUU?date=20260909&response=json&type=day
+     頂層鍵 ['buyNo', 'data', 'date', 'fields', 'notes', 'selectType', 'sideL', 'sideR', 'stat', 'stockType', 'sub', 'title']
+     ⭐ 平常被丟掉的鍵：['buyNo', 'date', 'notes', 'selectType', 'sideL', 'sideR', 'stat', 'stockType', 'sub']
+       ── title：115年09月09日 鉅額交易日成交資訊-單一證券
+       ── notes（2 項）
+          ETF證券代號第六碼為K、M、S、C者，表示該ETF以外幣交易。
+          外幣成交值係以本公司當日下午3時30分公告匯率換算後加入成交金額。<br>公告匯率請參考本公司首頁>產品與服務>交易系統>雙幣ETF專區>代號對應及每日公告匯率。
+       ── buyNo：
+       ── date：20260909
+       ── selectType：S
+       ── sideL：
+       ── sideR：
+       ── stat：OK
+       ── stockType：
+       ── sub：
+
+  ── 每日上市上櫃跨市場成交資訊 MI_INDEX4
+     https://www.twse.com.tw/rwd/zh/indices/MI_INDEX4?date=20260909&response=json
+     ⛔ 不是 JSON（747 bytes）⇒ 這一條**沒量到**
