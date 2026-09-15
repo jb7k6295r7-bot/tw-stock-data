@@ -849,13 +849,37 @@ try:
        os.listdir(out) == [], str(os.listdir(out)))
     ck("  而且那一塊在 runlog 裡是 ✗（⇒ 有人會被告知）",
        "✗" in io.open(os.path.join(_d, "rl.md"), encoding="utf-8").read())
-    # ⭐ 反向：閘門過了就要**真的寫出來**（⛔ 否則上面那條在「永遠不寫」時也綠）
-    T.daily_cross = lambda day, codes, root=None: (100, 100, [])
-    _rl2 = runlog.Run("tdcc_hist_sandbox2", path=os.path.join(_d, "rl2.md"))
-    T.import_hist(_rl2, os.path.join(_d, "src"), out_dir=out, apply=True)
-    ck("⭐ 反向：閘門過 ⇒ 真的寫出 `2018.parquet`"
-       "（⛔ 少了這條，上面那條在「永遠不寫」時也會綠）",
-       os.listdir(out) != [], str(os.listdir(out)))
+    # ── ⭐ 反向：閘門過了就要**真的寫出來**（⛔ 否則上面那條在「永遠不寫」時也綠）
+    #
+    # ⛔⛔ 而這一半要 `pyarrow`（`write_hist` 用它寫 parquet），
+    #   ⚠ 而 **probe runner 沒裝**（只有 daily／feeds 那兩支會裝）。
+    #   ⇒ 2026-09-15 probe run 115 實測代價：這一節讓 `selftest_tdcc.py` 紅
+    #     ⇒ ⛔ **step 10／11／12 全部 skipped** ⇒ 「把程式同步到 main」那一步
+    #       **根本沒跑** ⇒ 那一趟什麼都沒搬過去。
+    #   ⭐ 六點五那條一字不差：**一條在某個環境下必然不成立的斷言，
+    #     等於把那個環境的整條線關掉。**
+    # ⇒ 處置：套件不在就**大聲印「這一層沒跑」**，⛔ 不算失敗。
+    # ⛔⛔ 而跳掉的同時要問「還有沒有人在守」：
+    #   ⭐ **紅的那一半（上面兩條）不需要 pyarrow**——它在 `write_hist` 之前就 return
+    #   ⇒ 「閘門會擋」每個環境都驗得到；
+    #   ⚠ 這裡跳掉的只有「閘門過了會不會真的寫」那一格。
+    try:
+        import pyarrow                                            # noqa: F401
+        _HAS_PA = True
+    except ImportError:
+        _HAS_PA = False
+    if _HAS_PA:
+        T.daily_cross = lambda day, codes, root=None: (100, 100, [])
+        _rl2 = runlog.Run("tdcc_hist_sandbox2", path=os.path.join(_d, "rl2.md"))
+        T.import_hist(_rl2, os.path.join(_d, "src"), out_dir=out, apply=True)
+        ck("⭐ 反向：閘門過 ⇒ 真的寫出 `2018.parquet`"
+           "（⛔ 少了這條，上面那條在「永遠不寫」時也會綠）",
+           os.listdir(out) != [], str(os.listdir(out)))
+    else:
+        print("  ⚠⚠ **這一層沒跑**：沒有 `pyarrow`（`write_hist` 要用）"
+              "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+        print("     ⚠ 跳掉的是「閘門過了會不會**真的寫**」那一格；"
+              "⭐ 而「閘門紅了會不會擋」上面兩條**照樣驗過**（它在寫檔之前就 return）")
 finally:
     T._ROOT, T.daily_cross = _old_root, _old_cross
     shutil.rmtree(_d, ignore_errors=True)
