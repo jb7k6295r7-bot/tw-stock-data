@@ -587,49 +587,56 @@ def land(Y, M, ok, today, market="twse", T=None, rl=None):
     return len(ok)
 
 
-def progress_lines(pool, done, todo, ex, give_up=()):
+def progress_lines(pool, done, todo, ex, give_up=(), market="twse"):
     """續跑那兩行怎麼寫。→ [(label, value)]。⭐ 抽出來是為了驗得到（第七點）。
 
-    ⛔ **分母是 `pool`（這個端點涵蓋得到的），不是全部普通股。**
+    ⛔ **分母是 `pool`（這一趟這個市場涵蓋得到的），不是全部普通股。**
     ⚠ 用全部當分母的話，13% 這個數字會永遠爬不上去，
     而每一趟都像有在跑——那正是「永遠跑不完，每趟都像有在跑」那個形狀。
+
+    ⛔⛔ `market` **必須進來**：2026-09-16 接上上櫃之後，
+    「這個端點答不出來的」那一行若照舊寫，在 tpex 那一趟會把 **twse 1,158 檔**
+    報成「答不出來」——⚠ 而它們只是**另一趟**在做，⛔ 完全不是缺口。
     """
     pct = len(done) * 100 // max(1, len(pool))
     gu = list(give_up or [])
     reach = len(pool) - len(gu)
     rp = len(done) * 100 // max(1, reach)
+    mk = {"twse": "上市", "tpex": "上櫃"}.get(market, market)
+    other = {"twse": "tpex", "tpex": "twse"}.get(market, "")
+    n_other = ex.get(other, 0)
+    n_esb = ex.get("emerging", 0)
     return [
-        ("續跑", f"母體 **{len(pool):,}** 檔（⭐ 只有上市——這個端點不涵蓋別的）"
+        ("續跑", f"母體 **{len(pool):,}** 檔（⭐ 這一趟只有**{mk}**）"
                  f"｜已完成 {len(done):,}｜**{pct}%**｜本趟 {len(todo)}"),
         # ⭐⭐ 三堆分開報。⛔ 「還沒做」把後兩堆混在一起 ⇒ 那個數字會**永遠不歸零**，
         #   而每一趟都像有在跑（四點六③那個形狀）。
         ("⭐ 還剩下的分兩種（⛔ 不可以合著看）",
          f"**還沒問過** {max(0, reach - len(done)):,} 檔"
          f"｜**問到放棄** {len(gu):,} 檔"
-         f"（連續 {MISS_TRIES} 趟答不出來，記在 `_official_stats_miss.csv`）"
+         f"（連續 {MISS_TRIES} 趟答不出來，記在 `{os.path.basename(miss_path(market))}`）"
          f"　⇒ ⭐ 對**問得到**的那 {reach:,} 檔而言是 **{rp}%**"
          "　⚠ 而「問到放棄」⛔ 不等於「這檔沒有官方統計」"
          "——那句失敗訊息（`很抱歉，沒有符合條件的資料!`）講不出它是哪一種"),
         # ⛔ 排掉的要講出來：「排掉了」與「沒有這種股票」**不是同一件事**
-        ("⚠ 這個端點答不出來的（⛔ 不是缺口，是涵蓋範圍）",
-         "｜".join(f"{k} {v:,} 檔" for k, v in sorted(ex.items()))
-         + "　⇒ ⭐ 實測命中率 twse 94%／tpex 0%／emerging 0%"
-           "（⛔ 判準是**兩個市場的命中率**，不是那句「沒有符合條件的資料」"
-           "——那句話講不出它是哪一種）"
-         + "　⇒ ⛔⛔ **2026-09-16 推翻**「上櫃的官方年度／月統計沒有來源」："
-           "probe 120 實測 `POST/GET https://www.tpex.org.tw/www/zh-tw/"
-           "statistics/yearlyStock?code=<代號>` ⇒ **一發回 12 年**"
-           "（民國 104~115，`totalCount:12`），"
-           "⭐ 欄位跟 `FMNPTK` **同一組**：年度／成交張數／金額(仟元)／筆數／"
-           "加權平均價／盤中最高最低＋日期／**收盤平均價**"
-           "　⇒ ⚠ 而線索一直在我方自己的 `data/meta/_site_inventory.txt` 裡"
-           "（3.5④「自己家查過沒有」）"
-           "　⇒ ⛔ 而**月**那一半還沒答完：`statistics/monthlyStock` 吃的是"
-           "`stkno`＋`year`（`code`＋`date` 回 `參數輸入錯誤`），"
-           "⚠ 而它回顯的 `date` 是**今天**（20260916）"
-           "⇒ 我還不知道 `year` 有沒有生效（第二點①靜靜回今天）"
-           "　⇒ ⭐ 所以這一條**還開著**，⛔ 但開著的理由已經從「沒有來源」"
-           "變成「還沒接上」"),
+        # ⭐ 而**兩種被排掉的意義完全不同**，⛔ 不可以並排寫成一行
+        ("⚠ 這一趟不涵蓋的（⛔ 分兩種，意義不同）",
+         f"**{other} {n_other:,} 檔**　⇒ ⭐ 那是**另一趟**在做"
+         f"（`--market {other}`），⛔ **不是缺口**"
+         f"　｜**emerging {n_esb:,} 檔**　⇒ ⛔ 興櫃**兩支端點都不涵蓋**，"
+         "這一條**還開著**"),
+        ("⭐ 上櫃那一半的現況（2026-09-16）",
+         "✅ **年**：`statistics/yearlyStock?code=<代號>` 一發回 12 年，"
+         "已接上（`--market tpex`）"
+         "　⇒ ⭐ 只有**價**那五格進共用判準表（收盤平均價／盤中最高最低＋日期，"
+         "實測 6488 兩年跟我方日檔**逐位相同**）；"
+         "量那四欄原樣另存（張／仟元／仟筆），⛔ 因為它們是另一種口徑"
+         "（＋4.8%／＋5.0%／**＋156%**）"
+         "　⇒ ⛔ 而**月**那一半（`statistics/monthlyStock`）**還開著**："
+         "參數名已從頁面讀到是 `code`＋`date`，⚠ 而 `date` 的**格式**還沒試出來"
+         "（`2024/01/01` 回 `參數輸入錯誤`）"
+         "　⇒ ⚠ 而線索一直在我方自己的 `data/meta/_site_inventory.txt` 裡"
+         "（3.5④「自己家查過沒有」）"),
     ]
 
 
@@ -672,7 +679,8 @@ def main():
                 "　⇒ 寫入端已改走 `twparse.csv_cell`")
     todo, fresh, give_up = split_todo(pool, done, miss, a.limit)
     ex = excluded(covered=(a.market,))
-    for label, value in progress_lines(pool, done, todo, ex, give_up):
+    for label, value in progress_lines(pool, done, todo, ex, give_up,
+                                       market=a.market):
         rl.info(label, value)
     if not todo:
         rl.info("狀態", "✓ **問得到的全部問完了**"
