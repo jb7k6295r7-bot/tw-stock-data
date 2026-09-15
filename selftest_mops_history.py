@@ -221,12 +221,12 @@ def main():
         _w("revenue_hist/2026-08_twse.csv",
            [("2330", "台積電"), ("8登", "某某-KY")])
         chk("① 兩條路都講得出 KY ⇒ **沒有**缺口",
-            H.class_gaps(*H.two_path_kinds("2026-08")) == [],
-            str(H.class_gaps(*H.two_path_kinds("2026-08"))))
+            H.class_gaps(*H.two_path_kinds("2026-08", "revenue")) == [],
+            str(H.class_gaps(*H.two_path_kinds("2026-08", "revenue"))))
 
         # ② 歷史那條路整類 KY 是 0（＝2026-09-15 之前的真實狀態）
         _w("revenue_hist/2026-08_twse.csv", [("2330", "台積電")])
-        g = H.class_gaps(*H.two_path_kinds("2026-08"))
+        g = H.class_gaps(*H.two_path_kinds("2026-08", "revenue"))
         chk("②⭐⭐ 歷史面板整類 KY ＝ 0 而當期有 ⇒ **紅**（KY 缺了一年多的那個形狀）",
             g == [("KY", 1, 0)], str(g))
 
@@ -234,7 +234,7 @@ def main():
         _w("revenue/2026-08.csv", [("2330", "台積電")])
         _w("revenue_hist/2026-08_twse.csv",
            [("2330", "台積電"), ("8登", "某某-KY")])
-        g2 = H.class_gaps(*H.two_path_kinds("2026-08"))
+        g2 = H.class_gaps(*H.two_path_kinds("2026-08", "revenue"))
         chk("②b⭐ **當期** feed 整類 KY ＝ 0 而歷史有 ⇒ 一樣紅"
             "（⛔ 只比一個方向不算一致，三點①）",
             g2 == [("KY", 0, 1)], str(g2))
@@ -243,8 +243,8 @@ def main():
         _w("revenue/2026-08.csv", [("2330", "台積電")])
         _w("revenue_hist/2026-08_twse.csv", [("2330", "台積電")])
         chk("③⛔ 兩邊都沒有 KY ⇒ **不回報**（⚠ 真的沒有外國企業的期別，五點三）",
-            H.class_gaps(*H.two_path_kinds("2026-08")) == [],
-            str(H.class_gaps(*H.two_path_kinds("2026-08"))))
+            H.class_gaps(*H.two_path_kinds("2026-08", "revenue")) == [],
+            str(H.class_gaps(*H.two_path_kinds("2026-08", "revenue"))))
 
         # ④ 總數差很多、但每一類兩邊都有 ⇒ ⛔ 不可以紅
         _w("revenue/2026-08.csv", [("2330", "台積電"), ("8登", "某某-KY")])
@@ -253,16 +253,34 @@ def main():
            + [(str(9000 + i), f"其他{i}") for i in range(50)])
         chk("④⛔ 總數差 50 檔但每一類兩邊都有 ⇒ **不回報**"
             "（⚠ 倖存者偏誤／期別重分組都會讓總數差，那是正當的）",
-            H.class_gaps(*H.two_path_kinds("2026-08")) == [],
-            str(H.class_gaps(*H.two_path_kinds("2026-08"))))
+            H.class_gaps(*H.two_path_kinds("2026-08", "revenue")) == [],
+            str(H.class_gaps(*H.two_path_kinds("2026-08", "revenue"))))
 
         # ⑤ 少一邊的檔 ⇒ 這一期比不了，⛔ 不是「沒有缺口」也不是紅
-        c5, h5 = H.two_path_kinds("2099-01")
+        c5, h5 = H.two_path_kinds("2099-01", "revenue")
         chk("⑤ 任一條路沒有那一期的檔 ⇒ `two_path_kinds` 給 None（⛔ 不是空集合）",
             c5 is None and h5 is None, f"{c5}｜{h5}")
         n_cmp, bad = H.two_path_summary()
         chk("  而 `two_path_summary` 只數**比得了**的期別",
             n_cmp == 1 and bad == [], f"{n_cmp}｜{bad}")
+        chk("⭐ 而它掃的是**三族**（⛔ 只掃月營收＝掃描範圍靜靜縮小，三點①）",
+            tuple(H.TWO_PATH_SUBS) == ("revenue", "fs", "bs"),
+            str(H.TWO_PATH_SUBS))
+        import inspect
+        _sig = inspect.signature(H.two_path_kinds)
+        chk("⭐⭐ `two_path_kinds` 的 `sub` **沒有預設值**"
+            "（⛔ 有預設值就會靜靜只比月營收那一族）",
+            _sig.parameters["sub"].default is inspect.Parameter.empty,
+            str(_sig))
+        # fs／bs 的檔名多一層業別 ⇒ ⛔ 用 `<期>.csv` 找不到，要 `<期>_*.csv`
+        os.makedirs(os.path.join(d3, "fs"))
+        os.makedirs(os.path.join(d3, "fs_hist"))
+        _w("fs/2026Q2_ci.csv", [("2330", "台積電"), ("8登", "某某-KY")])
+        _w("fs_hist/2026Q2_ci_twse.csv", [("2330", "台積電")])
+        g6 = H.class_gaps(*H.two_path_kinds("2026Q2", "fs"))
+        chk("⭐ fs／bs 那一族的檔名是 `<期>_<業別>.csv` ⇒ 一樣比得到"
+            "（⛔ 只找 `<期>.csv` 會靜靜回 None ＝ 這一族從來沒被比過）",
+            g6 == [("KY", 1, 0)], str(g6))
 
         # ⭐ 呼叫點（第七點第三個）
         import ast

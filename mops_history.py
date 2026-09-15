@@ -41,6 +41,7 @@
 
 import argparse
 import csv
+import glob
 import html
 import io
 import os
@@ -578,20 +579,37 @@ def foreign_rows(per, market):
     return len(k.get("KY", ())) + len(k.get("DR", ()))
 
 
-def two_path_kinds(per):
-    """同一期、兩條路各自的 `{類別: 代號集合}` → (當期 feed, 歷史面板)。
-
-    ⛔ 任一邊沒有檔就回 `None`（⚠ 兩條路的涵蓋期間本來就不同）。
-    """
-    cur = path_kinds(os.path.join(OUT, "revenue", f"{per}.csv"))
-    hist = None
-    for mkt in ("twse", "tpex"):
-        one = path_kinds(os.path.join(OUT, "revenue_hist", f"{per}_{mkt}.csv"))
+def _union_kinds(paths):
+    """一疊 CSV → 合併後的 `{類別: 代號集合}`；⛔ 一個檔都讀不到回 `None`。"""
+    out = None
+    for path in paths:
+        one = path_kinds(path)
         if one is None:
             continue
-        hist = hist or {}
+        out = out if out is not None else {}
         for k, v in one.items():
-            hist.setdefault(k, set()).update(v)
+            out.setdefault(k, set()).update(v)
+    return out
+
+
+def two_path_kinds(per, sub):
+    """同一期、兩條路各自的 `{類別: 代號集合}` → (當期 feed, 歷史面板)。
+
+    `sub` ＝ `"revenue"`／`"fs"`／`"bs"`，⛔ **必填**：
+    ⚠ 給它預設值的話，「掃描範圍」會靜靜縮成只有月營收那一種（三點①）。
+
+    ⭐ 兩族的檔名形狀不同，⛔ 而那不是寫兩份的理由：
+    ```
+    revenue   當期 revenue/<期>.csv            歷史 revenue_hist/<期>_<市場>.csv
+    fs／bs    當期 fs/<期>_<業別>.csv          歷史 fs_hist/<期>_<業別>_<市場>.csv
+    ```
+    ⇒ 兩邊都用「`<期>.csv` 或 `<期>_*.csv`」一次收掉。
+    ⛔ 任一邊一個檔都沒有就回 `None`（⚠ 兩條路的涵蓋期間本來就不同）。
+    """
+    cur = _union_kinds([os.path.join(OUT, sub, f"{per}.csv")]
+                       + sorted(glob.glob(os.path.join(OUT, sub, f"{per}_*.csv"))))
+    hist = _union_kinds(sorted(glob.glob(
+        os.path.join(OUT, f"{sub}_hist", f"{per}_*.csv"))))
     return cur, hist
 
 
@@ -631,20 +649,29 @@ def class_gaps(cur, hist):
     return out
 
 
-def two_path_summary():
-    """全庫逐期跑一次 `class_gaps` → (比得了的期別數, [(期別, 缺口…)])。"""
-    d = os.path.join(OUT, "revenue")
-    pers = sorted(n[:-4] for n in (os.listdir(d) if os.path.isdir(d) else [])
-                  if n.endswith(".csv"))
+TWO_PATH_SUBS = ("revenue", "fs", "bs")
+
+
+def two_path_summary(subs=TWO_PATH_SUBS):
+    """三族逐期跑一次 `class_gaps` → (比得了的期別數, [(族_期別, 缺口…)])。
+
+    ⭐ 掃描範圍要寫出來（三點①）：**當期 feed 有哪幾期**就比哪幾期
+    ——當期那一層本來就只留最近幾期，⛔ 而歷史面板是 2015 起。
+    """
     n_cmp, bad = 0, []
-    for per in pers:
-        cur, hist = two_path_kinds(per)
-        if cur is None or hist is None:
-            continue
-        n_cmp += 1
-        g = class_gaps(cur, hist)
-        if g:
-            bad.append((per, g))
+    for sub in subs:
+        d = os.path.join(OUT, sub)
+        pers = sorted({n[:-4].split("_")[0]
+                       for n in (os.listdir(d) if os.path.isdir(d) else [])
+                       if n.endswith(".csv")})
+        for per in pers:
+            cur, hist = two_path_kinds(per, sub)
+            if cur is None or hist is None:
+                continue
+            n_cmp += 1
+            g = class_gaps(cur, hist)
+            if g:
+                bad.append((f"{sub} {per}", g))
     return n_cmp, bad
 
 
