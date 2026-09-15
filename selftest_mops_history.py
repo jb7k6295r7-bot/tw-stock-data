@@ -192,6 +192,107 @@ def main():
         bool(_got) and [r[0] for r in _got[0][4]] == ["2330", "2456"],
         str(_got[0][4] if _got else ""))
 
+    # ───── [兩條路] ⭐ 五點二的閘門：一整類只在其中一條路上 ─────
+    #  ⚠ 這一節用**合成**資料（⛔ 不是現場的 data/）：
+    #    CLAUDE.md 第七點第七個——拿現場資料驗判準，等於把斷言的壽命
+    #    綁在「這個 bug 還沒修好」上。⭐ KY 那個缺口**已經補好了**
+    #    ⇒ 拿現場資料這一節今天就驗不到。
+    d3 = tempfile.mkdtemp(prefix="mopsdiff_")
+    _old_out = H.OUT
+    try:
+        H.OUT = d3
+        os.makedirs(os.path.join(d3, "revenue"))
+        os.makedirs(os.path.join(d3, "revenue_hist"))
+
+        def _w(rel, rows):
+            with io.open(os.path.join(d3, rel), "w", encoding="utf-8") as f:
+                f.write("stock_id,name,period,market\n")
+                for sid, nm in rows:
+                    f.write(f"{sid},{nm},2026-08,twse\n")
+
+        chk("⭐ `sec_kind` 用**含**、⛔ 不是 endswith（創新板 `-KY創`）",
+            (H.sec_kind("錼創科技-KY創"), H.sec_kind("晨訊科-DR"),
+             H.sec_kind("台積電")) == ("KY", "DR", "一般"))
+        chk("  ⚠ 名稱裡有逗號時**不會**判到別欄去（⛔ 裸 split 會）",
+            H.sec_kind('友達, Inc.-KY') == "KY")
+
+        # ① 兩邊都齊 ⇒ 沒有缺口
+        _w("revenue/2026-08.csv", [("2330", "台積電"), ("8登", "某某-KY")])
+        _w("revenue_hist/2026-08_twse.csv",
+           [("2330", "台積電"), ("8登", "某某-KY")])
+        chk("① 兩條路都講得出 KY ⇒ **沒有**缺口",
+            H.class_gaps(*H.two_path_kinds("2026-08")) == [],
+            str(H.class_gaps(*H.two_path_kinds("2026-08"))))
+
+        # ② 歷史那條路整類 KY 是 0（＝2026-09-15 之前的真實狀態）
+        _w("revenue_hist/2026-08_twse.csv", [("2330", "台積電")])
+        g = H.class_gaps(*H.two_path_kinds("2026-08"))
+        chk("②⭐⭐ 歷史面板整類 KY ＝ 0 而當期有 ⇒ **紅**（KY 缺了一年多的那個形狀）",
+            g == [("KY", 1, 0)], str(g))
+
+        # ②b ⭐ **反方向**也要抓（三點①：只比一個方向不算一致）
+        _w("revenue/2026-08.csv", [("2330", "台積電")])
+        _w("revenue_hist/2026-08_twse.csv",
+           [("2330", "台積電"), ("8登", "某某-KY")])
+        g2 = H.class_gaps(*H.two_path_kinds("2026-08"))
+        chk("②b⭐ **當期** feed 整類 KY ＝ 0 而歷史有 ⇒ 一樣紅"
+            "（⛔ 只比一個方向不算一致，三點①）",
+            g2 == [("KY", 0, 1)], str(g2))
+
+        # ③ 兩邊都沒有 KY ⇒ ⛔ 不可以紅（五點三 absent ≠ zero）
+        _w("revenue/2026-08.csv", [("2330", "台積電")])
+        _w("revenue_hist/2026-08_twse.csv", [("2330", "台積電")])
+        chk("③⛔ 兩邊都沒有 KY ⇒ **不回報**（⚠ 真的沒有外國企業的期別，五點三）",
+            H.class_gaps(*H.two_path_kinds("2026-08")) == [],
+            str(H.class_gaps(*H.two_path_kinds("2026-08"))))
+
+        # ④ 總數差很多、但每一類兩邊都有 ⇒ ⛔ 不可以紅
+        _w("revenue/2026-08.csv", [("2330", "台積電"), ("8登", "某某-KY")])
+        _w("revenue_hist/2026-08_twse.csv",
+           [("2330", "台積電"), ("8登", "某某-KY")]
+           + [(str(9000 + i), f"其他{i}") for i in range(50)])
+        chk("④⛔ 總數差 50 檔但每一類兩邊都有 ⇒ **不回報**"
+            "（⚠ 倖存者偏誤／期別重分組都會讓總數差，那是正當的）",
+            H.class_gaps(*H.two_path_kinds("2026-08")) == [],
+            str(H.class_gaps(*H.two_path_kinds("2026-08"))))
+
+        # ⑤ 少一邊的檔 ⇒ 這一期比不了，⛔ 不是「沒有缺口」也不是紅
+        c5, h5 = H.two_path_kinds("2099-01")
+        chk("⑤ 任一條路沒有那一期的檔 ⇒ `two_path_kinds` 給 None（⛔ 不是空集合）",
+            c5 is None and h5 is None, f"{c5}｜{h5}")
+        n_cmp, bad = H.two_path_summary()
+        chk("  而 `two_path_summary` 只數**比得了**的期別",
+            n_cmp == 1 and bad == [], f"{n_cmp}｜{bad}")
+
+        # ⭐ 呼叫點（第七點第三個）
+        import ast
+        src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "mops_history.py"), encoding="utf-8").read()
+        fn = next(n for n in ast.parse(src).body
+                  if isinstance(n, ast.FunctionDef) and n.name == "main")
+        names = {getattr(n.func, "id", "") for n in ast.walk(fn)
+                 if isinstance(n, ast.Call)}
+        chk("⭐ main() 真的會叫 `two_path_summary`（⛔ 不是函式在那裡沒人叫）",
+            "two_path_summary" in names)
+        checks = [n for n in ast.walk(fn) if isinstance(n, ast.Call)
+                  and getattr(n.func, "attr", "") == "check"]
+        hit = [c for c in checks if isinstance(c.args[0], ast.Constant)
+               and "一整類" in c.args[0].value]
+        chk("⭐⭐ 而它接上了一道 `rl.check`（⛔ 只寫 info 的話沒有人在守）",
+            len(hit) == 1, str(len(hit)))
+        # ⛔ `hit` 空的時候不可以讓它 IndexError：崩潰會把後面每一條都掐掉，
+        #   ⚠ 而「紅 1 條」與「紅 5 條」對突變驗是兩回事（第七點第二個）。
+        vs = ({n.id for n in ast.walk(hit[0].args[1]) if isinstance(n, ast.Name)}
+              if len(hit) == 1 else set())
+        chk("  而那道閘門的判準裡有 `bad`", "bad" in vs, str(sorted(vs)))
+
+        # ⭐ 沒有動到 repo 真的 data/mops/
+        chk("★ 沒有動到 repo 真的 `data/mops/revenue/`",
+            H.OUT == d3 and os.path.isdir(os.path.join(d3, "revenue")))
+    finally:
+        H.OUT = _old_out
+        shutil.rmtree(d3, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {ok}｜失敗 {fail}")
     return 1 if fail else 0
 
