@@ -236,6 +236,26 @@ ck("  ⭐ 而 BOM 剝掉之後第一個欄名逐字是 `資料日期`（⛔ 不�
    list(T.parse(("\ufeff\ufeff" + _hdr).encode())[0][0])[0] == "資料日期",
    repr(list(T.parse(("\ufeff\ufeff" + _hdr).encode())[0][0])[0]))
 
+print("\n── ⑥.8 ⛔⛔ 截斷要**直接問**，不要從別的症狀推 ──")
+_hdr2 = b"\xef\xbb\xbf" + "資料日期,證券代號,持股分級,人數,股數,占集保庫存數比例%\r\n".encode()
+_body = "20231020,1101,1,96,15269,0.02\r\n".encode()
+ck("正常（有換行、欄數齊）⇒ 不算截斷",
+   T.looks_truncated(_hdr2 + _body) == "", repr(T.looks_truncated(_hdr2 + _body)))
+# ⚠ 真檔那一行是 `…,760864,`（結尾有逗號）⇒ **逗號數跟表頭一樣**
+#   ⇒ 欄數那條抓不到它，真正抓到它的是「檔尾沒有換行」＋「KiB 整數倍」。
+_cut_comma = _hdr2 + _body + "20231020,8162,2,343,760864,".encode()
+ck("⛔ 切在逗號後（欄數一樣）⇒ 仍然靠『檔尾沒換行』抓到",
+   "檔尾沒有換行" in T.looks_truncated(_cut_comma), T.looks_truncated(_cut_comma))
+# ⭐ 切在欄位**中間** ⇒ 欄數那條才會說話
+_cut_mid = _hdr2 + _body + "20231020,8162,2,343,7608".encode()
+ck("⛔ 切在欄位中間 ⇒ 欄數那條說得出來",
+   "欄" in T.looks_truncated(_cut_mid), T.looks_truncated(_cut_mid))
+_pad = _hdr2 + _body * 10
+_pad = _pad + b"x" * ((1024 - len(_pad) % 1024) % 1024)
+ck("⭐⭐ 大小剛好是 KiB 整數倍 ⇒ 也算（⛔ 切在列邊界時只剩這個線索）",
+   "區塊邊界" in T.looks_truncated(_pad), T.looks_truncated(_pad))
+ck("  ⛔ 空的位元組不算截斷（⚠ 那是別的問題）", T.looks_truncated(b"") == "")
+
 print("\n── ⑦ `import_hist`：不過就不寫、不帶 --apply 就不寫 ──")
 with tempfile.TemporaryDirectory() as d:
     import csv as _csv
@@ -261,10 +281,64 @@ with tempfile.TemporaryDirectory() as d:
         _w("20190705.csv", _rows("20190705", break_shares=True))
         rl = FakeRun()
         T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⛔⛔ 有一份沒過驗算 ⇒ **一個檔都不寫**", not os.path.isdir(out),
+        # ⛔⛔ 逐週排除，**不是**整批不寫：一週壞掉不可以賠掉其餘的。
+        #   ⚠ 我第一版是整批擋 ⇒ 372 週裡 1 份截斷就全部寫不出來。
+        ck("⭐⭐ 壞掉那一週被**排除**，其餘照寫（⛔ 不是整批不寫）",
+           os.path.exists(os.path.join(out, "2019.parquet")),
            str(os.path.isdir(out)))
-        ck("  ⭐ 而那一條 check 是 False", any(
-            "三道驗算" in k and c is False for k, c, _ in rl.checks), str(rl.checks))
+        ck("  ⭐ 而排除的那幾週要**逐筆講出原因**",
+           any("排除的週" in k and "20190705" in v for k, v in rl.infos),
+           str([i for i in rl.infos if "排除" in str(i)]))
+        _t0 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
+        ck("  ⭐⭐ 而壞掉那一週**一列都沒寫進去**（⛔ 絕不寫部分資料）",
+           "2019-07-05" not in set(_t0.column("date").to_pylist()),
+           str(sorted(set(_t0.column("date").to_pylist()))))
+        _sh0b = __import__("shutil"); _sh0b.rmtree(out, ignore_errors=True)
+        ck("  ⭐ 而母體只有 2 份 ⇒ 通過率那道**大聲說判不出來**"
+           "（⛔ 不假裝判過，⛔ 也不假紅）",
+           any("這一層沒跑" in k and "通過率" in k for k, _v in rl.infos),
+           str([i for i in rl.infos if "通過率" in str(i)]))
+        # ⛔⛔ 而「截斷」要真的接在 `import_hist` 裡（⚠ 只驗純函式不夠：
+        #   突變 W9「截斷不擋」第一次**全綠**，因為我只測了 `looks_truncated`）
+        _sh0c = __import__("shutil"); _sh0c.rmtree(out, ignore_errors=True)
+        for f in list(os.listdir(src)):
+            os.remove(os.path.join(src, f))
+        _w("20190628.csv", _rows("20190628"))
+        # 造一份截斷的：把檔尾的換行砍掉、並補到 KiB 整數倍
+        _p2 = os.path.join(src, "20190705.csv")
+        _w("20190705.csv", _rows("20190705"))
+        _b = io.open(_p2, "rb").read().rstrip(b"\r\n")
+        _b += b" " * ((1024 - len(_b) % 1024) % 1024)
+        io.open(_p2, "wb").write(_b)
+        rl = FakeRun()
+        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+        ck("⭐⭐ 截斷的那一週被**排除**（⚠ 只驗純函式不夠，要驗呼叫點）",
+           any("排除的週" in k and "被截斷" in v for k, v in rl.infos),
+           str([i for i in rl.infos if "排除" in str(i)]))
+        _t9 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
+        ck("  ⭐ 而它**一列都沒寫進去**",
+           "2019-07-05" not in set(_t9.column("date").to_pylist()),
+           str(sorted(set(_t9.column("date").to_pylist()))))
+        _sh0c.rmtree(out, ignore_errors=True)
+        # ⭐ 母體夠大、而**大部分**壞掉 ⇒ 通過率那道要紅
+        for f in list(os.listdir(src)):
+            os.remove(os.path.join(src, f))
+        for i in range(30):
+            day = f"201908{i+1:02d}"
+            rr = _rows(day)
+            if i >= 3:
+                rr[0]["股數"] = "999999"          # ⛔ 27/30 壞 ⇒ 10%
+            _w(f"{day}.csv", rr)
+        rl = FakeRun()
+        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+        ck("⭐⭐ 母體 30 份、通過率 10% ⇒ **整批不寫**"
+           "（⛔ 少數壞掉是封存的事，多數壞掉是我方讀錯）",
+           any("通過率" in k and c is False for k, c, _ in rl.checks)
+           and not os.path.isdir(out), str(rl.checks))
+        for f in list(os.listdir(src)):
+            os.remove(os.path.join(src, f))
+        _w("20190628.csv", _rows("20190628"))
+        _w("20190705.csv", _rows("20190705", break_shares=True))
         os.remove(os.path.join(src, "20190705.csv"))
         # ⛔ 檔名與內容講的日期不一致
         _w("20190712.csv", _rows("20190719"))
@@ -353,9 +427,10 @@ with tempfile.TemporaryDirectory() as d:
            "　⚠ 而那四週**三道驗算全過**（⛔ 它們抓不到截斷）",
            any("斷崖" in k and c is False for k, c, _ in rl.checks)
            and not os.path.isdir(out), str([c for c in rl.checks]))
-        ck("  ⭐ 而三道驗算那一條是**綠的**（⇒ 證明斷崖這道不是多餘的）",
-           any("三道驗算" in k and c is True for k, c, _ in rl.checks),
-           str(rl.checks))
+        ck("  ⭐⭐ 而那四週**一週都沒被排除**（⇒ 三道驗算全過）"
+           "　⇒ 這就證明斷崖那道**不是多餘的**",
+           not any("排除的週" in k for k, _v in rl.infos),
+           str([i for i in rl.infos if "排除" in str(i)]))
         ck("  ⭐ 訊息講得出**檔數、中位數、檔案大小**（⇒ 看得出是截斷）",
            any("斷崖" in k and "中位" in dt and "bytes" in dt
                for k, _c, dt in rl.checks), str(rl.checks))

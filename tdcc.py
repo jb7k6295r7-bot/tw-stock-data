@@ -240,6 +240,59 @@ def read_hist_week(path):
     return [], f"不認得的副檔名：{path}"
 
 
+def truncation_note(path):
+    """→ 這一份是不是**被截斷**的（原因字串），不是就回空字串。⭐ 讀原始位元組。"""
+    try:
+        if path.endswith('.csv'):
+            raw = io.open(path, 'rb').read()
+        elif path.endswith('.zip'):
+            import zipfile
+            with zipfile.ZipFile(path) as z:
+                raw = z.read(z.namelist()[0])
+        elif path.endswith('.7z'):
+            import shutil as _sh, tempfile as _tf, py7zr
+            d = _tf.mkdtemp()
+            try:
+                with py7zr.SevenZipFile(path) as z:
+                    z.extractall(d)
+                f = [os.path.join(r, n) for r, _, ns in os.walk(d) for n in ns]
+                raw = io.open(f[0], 'rb').read()
+            finally:
+                _sh.rmtree(d, ignore_errors=True)
+        else:
+            return ''
+    except OSError:
+        return ''
+    return looks_truncated(raw)
+
+
+def looks_truncated(raw):
+    """→ 這一份是不是**被截斷**的（原因字串），不是就回 `""`。
+
+    ⛔⛔ 2026-09-15 實測 `2023/20231020.7z`：解出來剛好 **1,572,864 bytes
+      ＝ 1.5 MiB**（區塊邊界）、結尾**沒有換行**、最後一列只有 5 欄
+      ⇒ 那一週少了一千多檔。
+    ⚠ 而三道驗算是**碰巧**抓到它的（截斷落在列中間 ⇒ 那一檔只有 2 級）；
+      ⛔ 落在**列邊界**上就三道全過，而幾百檔靜靜消失。
+    ⇒ ⭐ 所以「是不是截斷」要**直接問**，⛔ 不要從別的症狀推。
+    """
+    if not raw:
+        return ""
+    why = []
+    if not raw.endswith(b"\n") and not raw.endswith(b"\r"):
+        why.append("檔尾沒有換行")
+    txt = raw.decode("utf-8", "replace").lstrip("\ufeff")
+    lines = txt.splitlines()
+    if len(lines) >= 2:
+        n_hdr = lines[0].count(",")
+        if lines[-1].count(",") < n_hdr:
+            why.append(f"最後一列只有 {lines[-1].count(',') + 1} 欄"
+                       f"（表頭 {n_hdr + 1} 欄）")
+    if len(raw) % 1024 == 0:
+        why.append(f"大小剛好是 {len(raw) // 1024} KiB 的整數倍（⇒ 切在區塊邊界）")
+    return "｜".join(why)
+
+
 def hist_rows(rows, day, c=None):
     """→ 照 `HIST_COLS` 排好的 tuple list。⛔ 日期用**驗算算出來的** `day`，
     ⚠ 不是檔名——檔名與內容不一致時要以內容為準（第二點）。"""
@@ -289,6 +342,10 @@ def import_hist(rl, src, out_dir=None, apply=False):
     for path in files:
         rows, note = read_hist_week(path)
         base = os.path.basename(path).split(".")[0]
+        trunc = truncation_note(path)
+        if trunc:
+            bad_files.append((base, f"⛔ **被截斷**：{trunc}"))
+            continue
         if not rows:
             bad_files.append((base, f"讀不到列（{note}）"))
             continue
@@ -337,9 +394,32 @@ def import_hist(rl, src, out_dir=None, apply=False):
                         f"｜{n_rows:,} 列")
     for b, why in bad_files[:10]:
         rl.info(f"  ⛔ {b}", why)
-    rl.check("⭐ 每一份週檔都過三道驗算（⛔ 不過就不寫）",
-             not bad_files, f"{len(bad_files)} 份沒過：{bad_files[:5]}"
-             if bad_files else f"{len(files)} 份全過")
+    # ⛔⛔ 這裡**逐週排除**，不是整批不寫。
+    #   ⚠ `tdcc.py` 檔頭那句「對不上就整批丟棄」是對**那一週**說的
+    #   ——⛔ 不是「一週壞掉就賠掉另外 371 週」。
+    #   ⇒ 壞掉的那幾週**不寫**（⛔ 絕不寫部分資料），⭐ 而且逐筆講出原因。
+    if bad_files:
+        rl.info("⛔ 排除的週（**不寫**，⚠ 那幾週就是缺）",
+                f"{len(bad_files)} 份："
+                + "｜".join(f"{b}（{why}）" for b, why in bad_files[:8]))
+    # ⭐ 而「系統性壞掉」要自己有一道：少數壞掉是封存的事，
+    #   ⛔ 大部分壞掉就是我方讀法錯了（例如換了格式而我沒跟上）。
+    rate = (len(files) - len(bad_files)) / len(files) if files else 0
+    # ⛔⛔ 母體太小的時候這道**判不出來**：2 份裡 1 份壞是 50%，
+    #   ⚠ 而那既可能是封存壞了一份，也可能是我方讀錯——**分不出**。
+    #   ⇒ ⭐ 分不出就大聲說分不出，⛔ 不可以假裝判過（也不可以假紅）。
+    RATE_MIN_N = 20
+    if len(files) < RATE_MIN_N:
+        rl.info("⚠⚠ **這一層沒跑**：通過率",
+                f"只有 {len(files)} 份（< {RATE_MIN_N}）⇒ 分不出「封存壞一份」"
+                f"還是「我方讀錯」　⇒ ⛔ 不算失敗，⛔ **也不算驗過**"
+                f"｜本趟 {len(files) - len(bad_files)}/{len(files)}")
+        rate_ok = True
+    else:
+        rate_ok = rate >= 0.95
+        rl.check("⭐⭐ 通過率 ≥ 95%（⛔ 少數壞掉是封存的事，**大部分**壞掉是我方讀錯）",
+                 rate_ok,
+                 f"{len(files) - len(bad_files)} / {len(files)}（{rate * 100:.1f}%）")
     # ⛔ 檔名與內容不一致**不算失敗**：內容才是判準（第二點），而檔名是人取的。
     #   ⚠ 但一定要講出來——⭐ 否則「372 個檔」會被讀成「372 週」。
     if name_mismatch:
@@ -421,7 +501,7 @@ def import_hist(rl, src, out_dir=None, apply=False):
                  not diff,
                  f"⛔ {len(diff)} 週對不上：{diff[:3]}" if diff
                  else f"{same} 週逐格相同")
-    if bad_files or dup_diff or diff or cliffs:
+    if not rate_ok or dup_diff or diff or cliffs:
         rl.info("⛔ 有沒過的驗算 ⇒ **一個檔都不寫**", "先把上面那幾項弄清楚")
         return rl.finish()
 
