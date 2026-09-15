@@ -505,7 +505,51 @@ def revenue_complete(per, market, floor=neighbor_floor.FLOOR_PERIOD):
     short, _med, why = neighbor_floor.is_short(n, vals, floor=floor)
     if why:
         return True          # ⚠ 判不了就不判（⛔ 不要用猜的門檻擋）
-    return not short
+    if short:
+        return False
+    # ── ⭐⭐ 第二道：**外國企業那一段（`_1`）在不在**（2026-09-15 加）
+    #
+    # ⛔ 為什麼上面那一道擋不住：它比的是「這一期 vs **鄰近期別**的列數」，
+    # ⚠ 而 KY 是**每一期都同時缺**的——`rev_url()` 本來只打 `_0`
+    # ⇒ 鄰居也一樣少 ⇒ 280 期全部判成「已完成」。
+    # ⭐ **一個鄰居比對法，對「所有鄰居一起缺同一段」完全免疫。**
+    #   （⚠ 這跟 K線分析線 2035 ④那句是同一族：
+    #     「內部一致性檢查對整批同倍數縮放免疫」——⛔ 都要**外部**錨點。）
+    #
+    # ⇒ 這一道問的是**另一件事**：這一期有沒有 `-KY`／`-DR` 的列。
+    # ⛔ 而它**仍然不是**寫死的「每一期都必須有 KY」——那會犯 absent≠zero
+    #   （CLAUDE.md 五點三）：真的沒有外國企業的期別會被判成永遠抓不完。
+    # ⭐ 判準一樣交給鄰居：**鄰近期別有，而我沒有 ⇒ 我少了那一段。**
+    #   ⚠ 所以在「全部都還沒補」的當下它一律放行（鄰居也是 0）
+    #   ⇒ 第一次整批重抓要靠 `feeds.yml` 的 `mops_fill=false`，
+    #   ⭐ 而這一道守的是**之後**：任何一期漏掉 `_1`，它當場判不完整。
+    mine = foreign_rows(per, market)
+    if mine is None:
+        return False
+    peer_f = [v for v in (foreign_rows(x, market) for x in near) if v is not None]
+    if mine == 0 and peer_f and sum(1 for v in peer_f if v > 0) >= max(2, len(peer_f) // 2):
+        return False
+    return True
+
+
+def foreign_rows(per, market):
+    """該期檔裡**外國企業**（`-KY`／`-DR`）幾列。⛔ 沒有那個檔回 `None`。
+
+    ⚠ 判準是名稱含 `-KY`／`-DR`，⛔ 不是 `endswith`：
+      創新板的掛法是 `錼創科技-KY創`（2026-07 實測 124 檔裡有 4 檔長這樣，
+      用 `endswith` 只數到 120）。
+    """
+    p = os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv")
+    if not os.path.isfile(p):
+        return None
+    n = 0
+    with open(p, encoding="utf-8") as fh:
+        fh.readline()
+        for ln in fh:
+            f = ln.split(",")
+            if len(f) > 1 and ("-KY" in f[1] or "-DR" in f[1]):
+                n += 1
+    return n
 
 
 def has_output(sub, per, market):
