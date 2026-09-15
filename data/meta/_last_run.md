@@ -493,17 +493,16 @@
 
 ## official_stats　✓ 正常
 
-最後執行：2026-09-09T23:30:45+08:00（台北）
+最後執行：2026-09-15T21:19:26+08:00（台北）
 
-- **續跑**：母體 2,492 檔｜已完成 0｜本趟 400
-- **年度表**：meta/official_yearly_close.csv｜9,125 列（本趟 +9125）
-- **月表**：meta/official_monthly_amount.csv｜2,595 列（本趟 +2595）
-- **本趟**：成功 325／失敗 75｜失敗例：[('1240', "FMNPTK stat='很抱歉，沒有符合條件的資料!'"), ('1258', "FMNPTK stat='很抱歉，沒有符合條件的資料!'"), ('1259', "FMNPTK stat='很抱歉，沒有符合條件的資料!'")]
+- **續跑**：母體 2,493 檔｜已完成 325｜本趟 400
+- **年度表**：meta/official_yearly_close.csv｜13,682 列（本趟 +4557）
+- **月表**：meta/official_monthly_amount.csv｜4,051 列（本趟 +1456）
+- **本趟**：成功 182／失敗 218｜失敗例：[('1240', "FMNPTK stat='很抱歉，沒有符合條件的資料!'"), ('1258', "FMNPTK stat='很抱歉，沒有符合條件的資料!'"), ('1259', "FMNPTK stat='很抱歉，沒有符合條件的資料!'")]
 
 檢查：
-- ok　兩份判準檔都只增不減　（年 0→9125｜月 0→2595）
-- ok　不是整批失敗（全失敗＝被擋或參數壞了）　（成功 325）
-
+- ok　兩份判準檔都只增不減　（年 9125→13682｜月 2595→4051）
+- ok　不是整批失敗（全失敗＝被擋或參數壞了）　（成功 182）
 
 ## missing_rows　✓ 正常
 
@@ -1010,16 +1009,6 @@
 - ok　⭐ `notrade` 這一類抓得到（⛔ 0 的話代表判準壞了，⚠ 而它壞掉的表現是「每個洞看起來都是斷點」）　（notrade 1,356｜halted 26（⇒ 兩類都不是 0 才證明分得開））
 - ok　⭐ `halted` 這一類也抓得到（⚠ 正例，⛔ 一個只會回 notrade 的分類器沒有用）　（halted 26）
 
-## ci_steps　✓ 正常
-
-最後執行：2026-09-15T20:56:33+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 34970454552
-
-- **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **跑過的自測**：1 支｜selftest_probes.py
-
-檢查：
-- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
-
 ## reduce_shares_check　✓ 正常
 
 最後執行：2026-09-15T19:17:21+08:00（台北）
@@ -1079,4 +1068,14 @@
 檢查：
 - ok　⭐ 這道閘門真的掃到東西了（⛔ 掃到 0 支跟全部通過長得一樣）　（有判的 feed 11 支）
 - ok　逐日 feed 沒有列數塌掉的日子　（0 天）
+
+## ci_steps　✓ 正常
+
+最後執行：2026-09-15T20:56:33+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 34970454552
+
+- **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
+- **跑過的自測**：1 支｜selftest_probes.py
+
+檢查：
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
 
