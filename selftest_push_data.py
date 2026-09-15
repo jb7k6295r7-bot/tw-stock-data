@@ -140,6 +140,44 @@ def main():
     finally:
         shutil.rmtree(d, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ③ ⛔⛔ `sync_code.sh`：**push 失敗不可以靜靜 exit 0**
+    #
+    # ⚠ 它本來寫成 `git push … && echo "✓ 程式已同步到 main"`
+    #   ⇒ push 被搶先／被拒絕時，畫面上只是**少了一行成功訊息**，
+    #   ⛔ 而腳本回 0 ⇒ 那一步是綠的、main 上的程式一個字都沒更新。
+    # ⭐ 而 `probe.yml` 的註解早就寫著該怎麼辦：
+    #   「走到 push 還失敗就是**真的有問題**，該紅。」
+    # ══════════════════════════════════════════════════════════════
+    d3 = tempfile.mkdtemp(prefix="synccode_")
+    try:
+        print("\n── ③ `sync_code.sh`：push 推不上去 ⇒ ⛔ 不可以回 0 ──")
+        origin, work = build(d3)
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
+        write(os.path.join(work, "hello.py"), "print(1)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "程式")
+        # ⭐ 把 origin 設成一個**不存在**的路徑 ⇒ push 一定失敗
+        git(work, "remote", "set-url", "origin", os.path.join(d3, "nope.git"))
+        r3 = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                            capture_output=True, text=True,
+                            env=dict(os.environ, GITHUB_REF_NAME="feature"))
+        o3 = r3.stdout + r3.stderr
+        # ⚠ fetch 先失敗 ⇒ 那是「跳過同步」那一條正當出口（回 0）
+        #   ⇒ 這一條要驗的是**它有講**，⛔ 不是靜悄悄
+        ck("⛔ 推不上去（或連 fetch 都失敗）時**一定要出聲**"
+           "（⚠ 少一行成功訊息 ≠ 說出問題）",
+           ("fetch main 失敗" in o3 or "推不上去" in o3 or "push 失敗" in o3),
+           f"rc={r3.returncode}｜{o3[-300:]}")
+        src3 = io.open(os.path.join(HERE, "sync_code.sh"), encoding="utf-8").read()
+        ck("⭐⭐ 而三次都推不上去要 **exit 4**，⛔ 不是 exit 0"
+           "（⚠ 回 0 ＝ 那一步是綠的，而 main 上的程式沒更新）",
+           "exit 4" in src3 and "三次都推不上去" in src3, src3[-400:])
+        ck("  而且要講出**後果**：排程跑的是 main 上那一份",
+           "排程跑的是 main" in src3, src3[-400:])
+    finally:
+        shutil.rmtree(d3, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
