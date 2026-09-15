@@ -377,6 +377,28 @@ def ezsearch_case(out):
     # ══════════════════════════════════════════════════════════════
     out.append("")
     out.append("── ⭐⭐ 那個查詢端點的**參數怎麼組**（⛔ 原始碼原樣印，不猜）")
+    # ⛔⛔ 2026-09-15 讀完第一趟輸出之後的訂正——⚠ 我自己在 commit 訊息裡
+    #   把 `/mops/web/ezsearch_query` 寫成「⭐⭐ D2 有進展：查詢端點」。
+    #   ⭐ **那是過度解讀。** 逐字讀那幾段：
+    #
+    #     ① `ezsearch_query` 的每一處都在**被註解掉的行**裡
+    #        （`//var url = "/mops/web/ezsearch_query";`）
+    #     ② 而它們全部在 `getMsg()` ——⚠ 那個函式的註解寫著 **`/*跑馬燈*/`**
+    #        （首頁那條捲動的最新消息），⛔ **不是查詢表單**
+    #     ③ 活著的那一行是 `url = "/server-java/AjaxCheck"` ＋ `keyValue = "pg=ezsearch"`
+    #        ⇒ 而 `mops2.js` 裡同一個端點是 `xhttp.send("step=0")` ＋ `eval(resp)`
+    #        ＋ 一小時一次的 `setTimeout` ⇒ ⭐ 那更像**跑馬燈／連線檢查**
+    #
+    # ⇒ ⛔ 所以目前**還不知道**「公告快易查」的查詢表單送到哪裡。
+    # ⚠ 而「註解掉的網址」與「現在還活著的網址」是**兩件事**
+    #   ——⭐ 前者證明它**曾經**存在，⛔ 不證明它現在答得出來。
+    # ⇒ 下一步是把 cap 放大、把**剩下那幾處**也印出來（`…（另 N 處未印）`）。
+    out.append("   ⛔ 訂正：`ezsearch_query` 的每一處都在**被註解掉的行**裡，"
+               "而且都在 `/*跑馬燈*/ getMsg()` 內")
+    out.append("   ⇒ ⭐ 活著的是 `POST /server-java/AjaxCheck` ＋ `pg=ezsearch`"
+               "（`mops2.js` 裡同一支是 `step=0` ＋ `eval(resp)` ＋ 一小時一次）")
+    out.append("   ⇒ ⛔ **查詢表單送到哪裡，目前仍然不知道**"
+               "（⚠ 註解掉的網址證明它曾經存在，⛔ 不證明它現在答得出來）")
     for js in ("js/mop_search.js", "js/mops2.js"):
         jurl = "https://mopsov.twse.com.tw/mops/web/" + js
         out.append(f"  ── {jurl}")
@@ -386,7 +408,7 @@ def ezsearch_case(out):
             continue
         for needle in ("ezsearch_query", "AjaxCheck", "keyValue"):
             out.append(f"     ⭐ `{needle}` 前後：")
-            out += ["  " + ln for ln in B.around(jraw, needle, span=420, cap=3)]
+            out += ["  " + ln for ln in B.around(jraw, needle, span=420, cap=12)]
 
 
 def revenue_hist_columns(out):

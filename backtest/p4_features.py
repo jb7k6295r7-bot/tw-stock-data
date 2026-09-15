@@ -15,6 +15,7 @@
   ma_stack  close > MA20 > MA60 > MA120                ma60_up MA60_t > MA60_{t−20}
   rev_hi24  另算一欄 rev_hi24_p4：當期月營收 ≥ 近 24 期最高 × 0.9999；近 24 期有效期數 < 18 ⇒ NaN（⛔ 不是 False）；
             可得性＝期別次月 10 日後第一個交易日（research34.rebalance_dates）；⛔ 不動研究三／十三的 rev_hi24
+⭐ 母體閘門（v3 補件 §3-1）：量測日 bars ≥ MIN_BARS(120) 才合格，不足者整檔排除當月（放棄組⑧）、⛔ 不是補 50；所有回看窗 min_periods＝w（§3-2）。
 缺值一律補 50；標準化 (x − mu) / sd；歸型取歐氏距離最近的中心。
 量測日＝每月第一個交易日；進場＝次一交易日開盤還原價；出場＝H 個交易日後收盤（H = 20 / 60 / 120）。
 """
@@ -36,6 +37,8 @@ FILL = 50.0
 LIQ_MIN = 50_000_000     # 近 20 日均額 ≥ 5,000 萬（v2 §三）
 HOLDS = (20, 60, 120)
 REV_WIN, REV_MIN_VALID, REV_TOL = 24, 18, 0.9999
+MIN_BARS = 120          # v3 補件 §3-1（策略線 09-15 18:27、K線分析 1855 合併）：量測日有價收盤根數 ≥ 120 才進母體；⛔ 120 從當期特徵集最長回看窗推出（ret_120／dist_hi120／dist_lo120／MA120），新增回看窗 > 120 的特徵時本常數要一起改
+LOOKBACKS = {"ma20": 20, "ma60": 60, "ma120": 120, "ret_120": 120, "ret_20": 20, "hi_lo_120": 120, "vol60": 60, "amt20": 20, "amt120": 120, "vol20": 20, "inst20": 20}
 
 
 def measurement_days(cal: pd.DatetimeIndex, start: str | None = None, end: str | None = None) -> np.ndarray:
@@ -95,34 +98,38 @@ def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10) 
     return out.ffill()
 
 
-def stock_raw(sid: str, market: str, cal: pd.DatetimeIndex, rev_flags: pd.Series | None = None) -> pd.DataFrame | None:
-    """一檔的逐日原始特徵（尚未百分位化）＋ 進出場價與流動性閘門。全部只看 t 及之前。"""
+def stock_raw(sid: str, market: str, cal: pd.DatetimeIndex, rev_flags: pd.Series | None = None, mp_frac: float = 1.0) -> pd.DataFrame | None:
+    """一檔的逐日原始特徵（尚未百分位化）＋ 進出場價與流動性閘門 ＋ bars（有價收盤根數，自序列起累計）。全部只看 t 及之前。
+    mp_frac：每個回看窗的 min_periods ＝ ceil(w × mp_frac)。⛔ 正式值一律 1.0（v3 補件 §3-2：min_periods＝w）；0.5 只給 §4-1 的常設斷言用
+    （閘門 MIN_BARS 擋乾淨 ⇒ 合格列上 0.5 與 1.0 逐位元相同；不同就是閘門沒擋到那一欄的缺值）。"""
     st = D.load_stock(sid, market, cal)
     if st is None:
         return None
     df = st.df
+    mp = lambda w: max(1, int(np.ceil(w * mp_frac)))
     c = df["close"].ffill()
     o = df["open"]
     vol = pd.to_numeric(df["volume"], errors="coerce"); amt = pd.to_numeric(df["amount"], errors="coerce")
     shares = load_shares(sid, cal); inst = load_inst(sid, cal)
-    ma20, ma60, ma120 = c.rolling(20).mean(), c.rolling(60).mean(), c.rolling(120).mean()
+    ma20, ma60, ma120 = c.rolling(20, min_periods=mp(20)).mean(), c.rolling(60, min_periods=mp(60)).mean(), c.rolling(120, min_periods=mp(120)).mean()
     out = pd.DataFrame(index=cal)
     out["ret_120"] = c / c.shift(120) - 1
     out["ret_20"] = c / c.shift(20) - 1
-    out["dist_hi120"] = c / c.rolling(120, min_periods=60).max() - 1
-    out["dist_lo120"] = c / c.rolling(120, min_periods=60).min() - 1
-    out["vol60"] = c.pct_change().rolling(60, min_periods=30).std() * np.sqrt(245)
-    out["vr_20_120"] = amt.rolling(20).mean() / amt.rolling(120).mean()
-    out["amt20"] = amt.rolling(20).mean()
+    out["dist_hi120"] = c / c.rolling(120, min_periods=mp(120)).max() - 1
+    out["dist_lo120"] = c / c.rolling(120, min_periods=mp(120)).min() - 1
+    out["vol60"] = c.pct_change().rolling(60, min_periods=mp(60)).std() * np.sqrt(245)
+    out["vr_20_120"] = amt.rolling(20, min_periods=mp(20)).mean() / amt.rolling(120, min_periods=mp(120)).mean()
+    out["amt20"] = amt.rolling(20, min_periods=mp(20)).mean()
     k = shares / 1000.0
-    out["turn20"] = vol.rolling(20).mean() / 1000.0 / k
-    out["fore20"] = inst["foreign"].rolling(20).sum() / k
-    out["trust20"] = inst["trust"].rolling(20).sum() / k
+    out["turn20"] = vol.rolling(20, min_periods=mp(20)).mean() / 1000.0 / k
+    out["fore20"] = inst["foreign"].rolling(20, min_periods=mp(20)).sum() / k
+    out["trust20"] = inst["trust"].rolling(20, min_periods=mp(20)).sum() / k
     out["ma_stack"] = ((c > ma20) & (ma20 > ma60) & (ma60 > ma120)).astype(float) * 100
     out["ma60_up"] = (ma60 > ma60.shift(20)).astype(float) * 100
     out.loc[ma120.isna(), "ma_stack"] = np.nan; out.loc[ma60.shift(20).isna(), "ma60_up"] = np.nan
     out["rev_hi24"] = rev_flags.reindex(cal).to_numpy(float) if rev_flags is not None else np.nan
     out["shares_ok"] = shares.notna().astype(int)
+    out["bars"] = df["traded"].astype(bool).cumsum().to_numpy()      # 有價收盤根數（ffill 前的原始有成交列，自序列起算累計）
     out["close"] = c; out["open"] = o; out["traded"] = df["traded"].astype(bool)
     return out
 

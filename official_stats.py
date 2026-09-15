@@ -148,6 +148,10 @@ def _save(path, header, rows):
 #    ⇒ ⭐ 分辨它的**不是訊息，是拿兩個市場的命中率對一次**。
 COVERED = ("twse",)
 
+#: ⭐ 每幾檔落地一次。⛔ 太大＝被砍時賠得多；太小＝每次都重寫兩份大 CSV。
+#  實測一趟 400 檔超過一小時 ⇒ 50 檔約 8 分鐘，賠得起。
+FLUSH_EVERY = 50
+
 
 def codes(covered=COVERED):
     """這個端點**答得出來**的普通股（含已下市）。→ sorted list[str]。
@@ -180,6 +184,37 @@ def excluded(covered=COVERED):
                 if r.get("kind") == "stock" and m not in covered:
                     n[m] = n.get(m, 0) + 1
     return n
+
+
+def land(Y, M, ok, today, rl=None):
+    """把這一批**落地**：兩份判準檔 ＋ 續跑台帳。→ 這次寫進台帳的檔數。
+
+    ⭐ 只有這一份實作（四點五）：**期中 flush 與最後一次走同一條路**。
+    ⛔ 兩條路的話，期中那條遲早會少寫一個檔，而且沒有人會發現。
+
+    ## ⛔ 為什麼要期中落地（CLAUDE.md 第四點）
+
+    這一步 `--limit 400`，實測一趟 **超過一小時**。⚠ 而它本來只在**最後**寫檔
+    ⇒ job 被砍（350 分上限）、runner 掉、任何例外 ⇒ ⛔ **整批 400 檔全部白跑**，
+    而下一趟從同一個起點重來 ⇒ ⭐ 那正是「永遠跑不完，每趟都像有在跑」。
+
+    ⇒ 台帳是 **append**（⛔ 不是整份取代——四點六③那個 `save_done` 的坑），
+    ⚠ 而 `_save` 是「讀進來的 dict ＋ 本趟的鍵」再整份寫回 ⇒ 那是**逐鍵合併**，
+    ⛔ 不是覆蓋。
+    """
+    if Y or os.path.exists(YEARLY):
+        _save(YEARLY, Y_HEADER, Y)
+    if M or os.path.exists(MONTHLY):
+        _save(MONTHLY, M_HEADER, M)
+    if not ok:
+        return 0
+    new = not os.path.exists(DONE)
+    with io.open(DONE, "a", encoding="utf-8") as f:
+        if new:
+            f.write("stock_id,asof\n")
+        for s in ok:
+            f.write(f"{s},{today}\n")
+    return len(ok)
 
 
 def progress_lines(pool, done, todo, ex):
@@ -230,6 +265,7 @@ def main():
     Y, M = _load(YEARLY, Y_HEADER), _load(MONTHLY, M_HEADER)
     n0y, n0m = len(Y), len(M)
     ok = []
+    flushed = 0
     fail = []
     for i, sid in enumerate(todo, 1):
         ys, ms, err = fetch_one(sid, today)
@@ -243,6 +279,12 @@ def main():
             M[tuple(r[:3])] = r
         ok.append(sid)
         print(f"  [{i}/{len(todo)}] {sid} ✓ 年 {len(ys)}／月 {len(ms)}", flush=True)
+        # ⭐ 每 FLUSH_EVERY 檔落地一次 ⇒ 被砍最多賠 FLUSH_EVERY 檔，⛔ 不是整批 400
+        if len(ok) - flushed >= FLUSH_EVERY:
+            land(Y, M, ok[flushed:], today)
+            flushed = len(ok)
+            print(f"  ⭐ 期中落地：已完成 {flushed}／{len(todo)}"
+                  "（⇒ 這一趟就算被砍，前面這些不會白跑）", flush=True)
         if a.sleep:
             time.sleep(a.sleep)
 
@@ -252,20 +294,14 @@ def main():
     #   而那正是今晚一路在抓的形狀（孤兒檔、恆真的 0 筆、留著不標的停更檔）。
     #   ⇒ 有舊內容就照常寫回（不能因為本趟失敗就讓舊的消失）；
     #     完全沒有內容就不落地。
-    if Y or os.path.exists(YEARLY):
-        _save(YEARLY, Y_HEADER, Y)
-    if M or os.path.exists(MONTHLY):
-        _save(MONTHLY, M_HEADER, M)
+    # ⭐ 最後一次落地走**同一個函式**（⛔ 不是另寫一段）
+    land(Y, M, ok[flushed:], today)
     if not Y and not M:
         rl.info("處置", "⛔ 一筆都沒抓到且檔案不存在 ⇒ **不建立空檔**"
                         "（空的判準檔讀起來像是有這份判準）")
-    if ok:
-        new = not os.path.exists(DONE)
-        with io.open(DONE, "a", encoding="utf-8") as f:
-            if new:
-                f.write("stock_id,asof\n")
-            for s in ok:
-                f.write(f"{s},{today}\n")
+    rl.info("期中落地", f"每 {FLUSH_EVERY} 檔寫一次"
+                        f"｜本趟落地 {len(ok):,} 檔"
+                        "　⇒ ⭐ 被砍最多賠 {} 檔，⛔ 不是整批".format(FLUSH_EVERY))
 
     rl.info("年度表", f"{YEARLY.split('data/')[-1]}｜{len(Y):,} 列（本趟 +{len(Y)-n0y}）")
     rl.info("月表", f"{MONTHLY.split('data/')[-1]}｜{len(M):,} 列（本趟 +{len(M)-n0m}）")
