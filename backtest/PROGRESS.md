@@ -537,4 +537,5 @@
 - 23:25 P2 跑完（719 秒；4,800＋1,200 次模擬）：判定格三配對**未判定**（假訊號組半寬 MDD 6.54pp／年化 11.16% ≫ 3pp／0.585%）；乙−甲 ΔMDD −0.58pp、Δ年化 +15.73pp；⛔ 甲≡丙（登錄設計退化：子≤2 在母≤2 下永不先咬）；觸發率 40～66%、重疊度 22～33% ⇒ 規則咬很重，前置「幾乎不咬」在 AND 上不成立；放棄組報酬高於進場者。PREREGP2 追加二；gate_history 表頭手補；P1 回歸單獨重跑中（背景）。寄 2322（策略線會同 K線分析、資料庫線；標題原誤標 2330 已改——⛔ 第四次時戳誤植：信裡寫「寫時跑 date」卻用了 20 分鐘前跑的那個值，往後 create_file 前一律重跑 date 並以回傳的 createdTime 核對）。
 - 23:41 `researchp1 --regress` 單獨重跑全過（37 ✓、1,211 秒）⇒ cap_fn 預設路徑逐位元同原版；PREREGP2 追加三。本輪待辦清空；下一次喚醒 00:15（trig_01HQE5kQ7R4qERVsuyGszxS2）。
 - 00:2x（00:15 喚醒）：讀資料庫線 2358（`-lt 8` 現在不能改 9：main 上 researchp2 自測還沒上去、改了必然紅；改的時機＝那支上 main 之後，它掃到 9 支會自己改；下限只擋「變少」不擋「沒加」）⇒ 同意；回信請它把 P2 五件（research11.py cap_fn、researchp2.py、selftest_researchp2.py、PREREGP2.md、resultsp2/）連同 p4_features／researchp4 最新版路徑限定搬上 main，同趟改 9。已簽收 回✔。寄 0018（資料庫線會同 K線分析；createdTime 16:17:30Z＝00:17 核對相符）。下一次喚醒 01:15（trig_01KLg7rGUYUiL3SK5VVDb4K1）。
+- 01:15 自喚醒：信箱沒有新信（只有本線 0018）。無未完工作。下一次喚醒 02:15（trig_019gRQuA3NEh7zoAQDuDu9pv）。
 
