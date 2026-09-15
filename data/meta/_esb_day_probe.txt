@@ -24,7 +24,10 @@
   ✗ www.tpex.org.tw/www/zh-tw/esb/trading/info/stock-pricing?date=2026/09/08&response=json
       不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
   ✗ www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/09/08&response=json
-      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
+      HTTP 404 Not Found | 
+<html>
+<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
+<body><script>(function(){functi
   ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/08&response=json
       不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
   ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/08&o=json
@@ -54,10 +57,7 @@
   ✗ www.tpex.org.tw/www/zh-tw/esb/pricing?date=2026/09/09&response=json
       不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
   ✗ www.tpex.org.tw/www/zh-tw/emerging/dailyQuotes?date=2026/09/09&response=json
-      HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.tpex.org.tw/errors"></head>
-<body><script>(function(){functi
+      不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
   ✗ www.tpex.org.tw/web/emergingstock/historical/daily/EMdaily_result.php?l=zh-tw&d=115/09/09&o=json
       不是 JSON（JSONDecodeError）｜10892B｜前 120：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta na'
   ⇒ 2026-09-09 可用的候選：0 條
