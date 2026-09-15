@@ -39,6 +39,7 @@ N₁、Σ上市 amount ÷ 官方大盤、六張官方清單差集（67,446 筆�
 ⛔ 本支**只讀不寫資料**，輸出進 `data/meta/_keys_probe.txt`。
 """
 import io
+import csv
 import json
 import os
 import sys
@@ -186,6 +187,55 @@ def show(label, url, want=None):
     say("")
 
 
+def _our_twse_total(iso):
+    """我方日檔那一天的 **twse 合計**。→ dict 或 None（那一天不在這個 ref 上）。
+
+    ⛔ 讀不到要回 None 讓呼叫端說「這一格沒量到」，⚠ 不是回 0
+    ——0 跟「那一天真的沒有成交」長得一樣。
+    """
+    p = os.path.join(_ROOT, "universe", "daily", f"{iso}.csv")
+    if not os.path.exists(p):
+        return None
+    out = {"n": 0, "volume": 0.0, "amount": 0.0, "transactions": 0.0}
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r.get("market") != "twse":
+                continue
+            out["n"] += 1
+            for k in ("volume", "amount", "transactions"):
+                v = (r.get(k) or "").replace(",", "").strip()
+                try:
+                    out[k] += float(v)
+                except ValueError:
+                    pass
+    return out if out["n"] else None
+
+
+def _sum_by_name(fields, rows):
+    """把**看起來像總量**的欄逐欄加總。→ dict[欄名, 合計]（沒有就回 {}）。
+
+    ⛔ 照**欄名**取，⚠ 不是位置（`calendar_audit.index_of_row` 那條：
+    「今天在 [4]」不保證 2015 年那幾個月也在 [4]）。
+    """
+    want = ("成交股數", "成交金額", "成交筆數", "成交數量", "成交值")
+    idx = {c: i for i, c in enumerate(fields or []) if str(c).strip() in want}
+    if not idx:
+        return {}
+    out = {}
+    for name, i in idx.items():
+        t = 0.0
+        for r in rows:
+            if i >= len(r):
+                continue
+            v = str(r[i]).replace(",", "").strip()
+            try:
+                t += float(v)
+            except ValueError:
+                pass
+        out[name] = t
+    return out
+
+
 def f2_kou_jing(day):
     """⭐⭐ F2：**大盤總量那三欄的口徑差，到底差在哪**——四條路同一天各量一次。
 
@@ -236,11 +286,28 @@ def f2_kou_jing(day):
     say("      FMTQIK        金額 1,187,571,567,117｜筆數 5,301,801｜股數 13,000,849,196")
     say("      ⇒ ⭐ 金額 **−0.40%**、筆數 **−2.6%**，⛔ 而股數 **−29%**")
     say("      ⇒ ⚠ 口徑差**不是一個籠統的差**：它落在不同欄、幅度也不同")
-    for label, url in (
+    # ⛔⛔ 上面那三行是 **2026-09-01** 量的，而下面打的是 `DAY`
+    #   ⇒ ⚠ 兩個不同的日子並排，讀的人會以為是同一天（錨點要落在同一格）。
+    #   ⭐ ⇒ 下面**同一天**把三條路各算一次，讓算術當場成立或不成立。
+    iso = f"{day[:4]}-{day[4:6]}-{day[6:]}"
+    mine = _our_twse_total(iso)
+    say("")
+    say(f"  ── ⭐ 同一天（{iso}）三條路並排")
+    if mine is None:
+        say(f"     ⚠⚠ **這一格沒量到**：這個 ref 上沒有 "
+            f"`data/universe/daily/{iso}.csv` ⇒ ⛔ 不算失敗，⛔ 也不算驗過")
+    else:
+        say(f"     ① 我方日檔 twse {mine['n']:,} 列｜"
+            f"股數 {mine['volume']:,.0f}｜金額 {mine['amount']:,.0f}｜"
+            f"筆數 {mine['transactions']:,.0f}")
+
+    for label, url, note in (
+            ("FMTQIK（同一天，⭐ 拿來當被減數）",
+             f"{TW}/afterTrading/FMTQIK?date={day}&response=json", "fmtqik"),
             ("鉅額交易**日**成交量值統計 BFIAUU",
-             f"{TW}/block/BFIAUU?date={day}&response=json&type=day"),
+             f"{TW}/block/BFIAUU?date={day}&response=json&type=day", "block"),
             ("每日上市上櫃跨市場成交資訊 MI_INDEX4",
-             f"{TW}/indices/MI_INDEX4?date={day}&response=json")):
+             f"{TW}/indices/MI_INDEX4?date={day}&response=json", "x")):
         say("")
         say(f"  ── {label}")
         say(f"     {url}")
@@ -252,11 +319,28 @@ def f2_kou_jing(day):
         try:
             d = json.loads(raw.decode("utf-8", "replace"))
         except ValueError:
+            # ⭐ 不是 JSON 時要把**前 300 字**印出來——⛔ 只寫「不是 JSON」
+            #   跟「官方沒有這條」在紙上一樣（第二點④：被 CDN 擋回 HTML）
             say(f"     ⛔ 不是 JSON（{len(raw):,} bytes）⇒ 這一條**沒量到**")
+            say(f"     ⭐ 前 300 字：{B.visible_text(raw, ' ')[:300]}")
             continue
         # ⭐ 第一點：先把**全部頂層鍵**攤開再看資料
         for ln in B.describe_response(d, want={"date": day}):
             say("     " + ln)
+        # ⭐⭐ 而**數字**要印出來，⛔ 不是只印被丟掉的鍵
+        #   ——沒有數字，「口徑差落在哪一欄」這個問題答不了。
+        for ti, t in enumerate(B._tables(d) or []):
+            rows = t.get("data") or []
+            fl = t.get("fields") or []
+            say(f"     表{ti}：{str(t.get('title'))[:60]!r}｜{len(fl)} 欄 × "
+                f"{len(rows)} 列")
+            say(f"          欄名：{fl}")
+            tot = _sum_by_name(fl, rows)
+            if tot:
+                say("          ⭐ 逐欄合計："
+                    + "｜".join(f"{k} {v:,.0f}" for k, v in tot.items()))
+            elif rows:
+                say(f"          首列：{rows[0]}")
 
 
 def main():

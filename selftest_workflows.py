@@ -238,12 +238,30 @@ def main():
     #     ⭐ 而失敗的位置往往在一大段抓取之後（第六點五那條 1h50m 的同一族）。
     #   ⚠ 2026-09-10 差點發生：`stophalt` 那一步先寫進 daily.yml，
     #     `selftest_stophalt.py` 還沒寫——⛔ 而孤兒那一道**是綠的**。
+    # ⛔⛔ 2026-09-15：這一道**要找兩個地方**，⚠ 而我是撞上去才知道的。
+    #   回測線的 8 支自測住在 `backtest/`（⛔ 不在 repo 根），
+    #   ⇒ 只找根目錄的話，任何一句提到 `selftest_exits.py` 的**註解**
+    #     都會讓這一道紅——⚠ 而它紅得**沒有道理**：那個檔是存在的。
+    #   ⭐ 而這正是第七點⑧那一族從另一邊咬：這一道**本來就**是比原始碼字串的
+    #     （它問的是「有沒有人提到這個檔名」）⇒ ⛔ 它連**註解裡**的檔名也會撿走。
+    #     ⚠ 這裡不改成 AST：比字串是這一道的**本意**（提到就算數），
+    #     ⛔ 錯的是「該去哪裡找那個檔」，不是「該不該比字串」。
+    SELFTEST_DIRS = (here, os.path.join(here, "backtest"))
     called = sorted(set(re.findall(r"(selftest_[A-Za-z0-9_]+\.py)", wf_text)))
-    missing = [n for n in called if not os.path.exists(os.path.join(here, n))]
+    missing = [n for n in called
+               if not any(os.path.exists(os.path.join(d, n)) for d in SELFTEST_DIRS)]
     ck("⭐⭐ workflow 叫到的每一支 selftest 都**存在**",
        not missing,
-       f"⛔ 叫得到但檔不在：{missing}"
+       f"⛔ 叫得到但檔不在（找過 {[os.path.basename(d) or '.' for d in SELFTEST_DIRS]}）：{missing}"
        "　⇒ 那一步會在 Actions 上跑起來才失敗，⚠ 而且往往在抓完之後")
+
+    # ⛔⛔ 而**孤兒那一道刻意不擴到 `backtest/`**，理由要寫下來，
+    #   ⚠ 否則下一個人會「順手補齊」，而那會讓它天天紅：
+    #   `forward.yml` 跑那 8 支用的是 **glob ＋ `-m backtest.<name>`**
+    #   ⇒ ⛔ **它們的檔名一個都不會出現在 workflow 文字裡**
+    #   ⇒ 照基本名去找會判它們全是孤兒——⚠ 而它們每一支都真的有人跑。
+    #   ⭐ 那一層的守門改由 `forward.yml` 自己帶：「跑了 N 支」且 N < 8 就紅
+    #     （第七點⑨：母體大小自己要是一道斷言）。
 
     # ══════════════════════════════════════════════════════════════
     # ⭐⭐ 而第三道：**自測本身必須零相依**（2026-09-15 加，付過兩次代價）
