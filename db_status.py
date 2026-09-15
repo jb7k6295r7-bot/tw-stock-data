@@ -940,6 +940,38 @@ def _p_col_two(raw_dir, col, sample, sample_label, derived):
     return go
 
 
+def _p_hist_weeks(d, least=1):
+    """`data/tdcc_hist/*.parquet` 裡**相異資料日期**的總數。
+
+    ⛔⛔ 判準是**週數**，⚠ 不是檔案數（一年一個檔 ⇒ 檔案數永遠是 8）。
+    ⭐ 而且是 parquet 裡 `date` 欄的相異值——⛔ 不是檔名推的：
+      2026-09-15 實測，372 份來源裡有一份是別一週的複本
+      （`20200619` 內容是 `20200612`）⇒ **檔案數 ≠ 週數**。
+    ⚠ 沒有 pyarrow 就大聲說算不出來，⛔ 不可以回 0（那跟「一週都沒有」一樣）。
+    """
+    def go():
+        base = os.path.join(DATA, d)
+        if not os.path.isdir(base):
+            return "⬜ 未開始", f"沒有 {d}/"
+        try:
+            import pyarrow.parquet as pq
+        except ImportError:
+            return "⚠ 算不出來", "這台沒有 pyarrow（⛔ 不是「沒有資料」）"
+        days, files = set(), sorted(glob.glob(os.path.join(base, "*.parquet")))
+        for f in files:
+            try:
+                days |= set(pq.read_table(f, columns=["date"])
+                            .column("date").to_pylist())
+            except (OSError, ValueError):
+                continue
+        n = len(days)
+        ev = (f"{n:,} 週（{min(days)} ~ {max(days)}）｜{len(files)} 個年檔"
+              if days else "0 週")
+        return ("✅ 完成" if n >= least else
+                ("🔄 進行中" if n else "⬜ 未開始")), ev
+    return go
+
+
 def _p_dir(d, least=1):
     def go():
         n = _count_dir(os.path.join(DATA, d))
@@ -1006,10 +1038,18 @@ LEDGER = [
      "⛔ 而 FinLab 條款未裁定 ⇒ 這條等情報分析線"),
     ("E1", "集保股權分散：**從今天起累積**", _p_dir("tdcc", 1), None,
      "⭐ 2026-09-08 起每週一份，17 級距原樣保留、⛔ 入庫端不聚合"),
-    ("E2", "集保股權分散：**回補那 51 週**", None, "⛔ 卡住　" + LEDGER_HAND,
-     "兩條官方路都實測不通：opendata 不吃日期參數（四個欄名全是假參數）、"
-     "qryStockAjax 回 2 bytes。⭐ 卡的是**技術不是量**"
-     "（全市場 206,601 次／追蹤 8 檔只要 408 次）"),
+    # ⭐⭐ 2026-09-15：這一格從「⛔ 卡住」翻成完成，⚠ 而**不是因為那兩條路通了**
+    #   ——它們仍然不通。是使用者提供了自 2019 起每週手動下載的封存。
+    #   ⛔ 而官方查詢頁只列 51 個週別（最舊 2025-09-19）⇒ 2019~2024 它本來就沒有
+    #   ⇒ ⭐ 那 300 多週**只有這個來源**。
+    ("E2", "集保股權分散：**歷史回補**（原本只求 51 週）",
+     _p_hist_weeks("tdcc_hist", 350), None,
+     "⭐ 使用者提供 2019 起的每週封存 ⇒ `data/tdcc_hist/<年>.parquet`。"
+     "⛔ 官方那兩條路**仍然不通**（opendata 不吃日期參數、qryStockAjax 回 2 bytes），"
+     "而查詢頁只列 51 週（最舊 2025-09-19）⇒ 2019~2024 官方本來就沒有。"
+     "⭐⭐ 獨立驗證：重疊的 2026-09-04 跟我方自己抓的 68,867 格**逐格相同**。"
+     "⚠ 372 份來源 → **370 週**：20231020 被截斷（缺）、"
+     "20200619 是 20200612 的複本 ⇒ ⛔ 別把檔案數當週數"),
     ("E3", "集保**級距對照**（第幾級＝幾張）", None, "⬜ 未開始　" + LEDGER_HAND,
      "⛔ 來源只給代碼 1~17，級距文字是 js 動態組的 ⇒ 「千張大戶」現在落不了地"),
     # ⛔⛔ 2026-09-14 實測踩到的那個坑就在這一列：門檻本來是 2,800（＝「2015 起補完」）
