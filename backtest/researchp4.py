@@ -58,12 +58,13 @@ REF = {("主格", 120): {"①營收＋回檔": dict(excess=4.88, lo=1.70, hi=8.0
        ("第二層", 120): {"①營收＋回檔": dict(excess=18.29), "②正在噴出": dict(excess=6.09), "③純技術＋回檔": dict(excess=1.28), "④死水": dict(excess=-9.26)}}
 REF_BENCH = {("主格", 120): 8.08}
 TOL_Q, TOL_X = 1.0, 0.3
+INNOV_CUTOFF = "2025-01-06"   # K線分析 1745 §一：創新板量測日 < 此日排除
 _G: dict = {}
 
 
 # ───────────────────────── 第一段：面板（每檔 × 每個量測日） ─────────────────────────
-def _init(cal, rev_flags, positions):
-    _G["cal"] = cal; _G["rev_flags"] = rev_flags; _G["pos"] = positions
+def _init(cal, rev_flags, positions, mp_check=True):
+    _G["cal"] = cal; _G["rev_flags"] = rev_flags; _G["pos"] = positions; _G["mp_check"] = mp_check
 
 
 def panel_worker(args):
@@ -73,8 +74,9 @@ def panel_worker(args):
     rf = _G["rev_flags"][sid] if sid in _G["rev_flags"].columns else None
     raw = P.stock_raw(sid, market, cal, rf)
     if raw is None:
-        return []
-    rows = []
+        return [], []
+    raw05 = P.stock_raw(sid, market, cal, rf, mp_frac=0.5) if _G.get("mp_check", True) else None   # §4-1 常設斷言用
+    rows = []; mism = []
     for pos in _G["pos"]:
         d = cal[pos]
         if d < first or d > last or pos >= len(raw):
@@ -83,28 +85,47 @@ def panel_worker(args):
         if not bool(r["traded"]):
             continue
         fr = P.forward_returns(raw, pos)
+        liq_ok = bool(pd.notna(r["amt20"]) and r["amt20"] >= P.LIQ_MIN); bars = int(r["bars"]); bars_ok = bars >= P.MIN_BARS
         row = {"measure_date": d, "stock_id": sid, "market": market, "amt20": float(r["amt20"]) if pd.notna(r["amt20"]) else np.nan,
-               "eligible": bool(pd.notna(r["amt20"]) and r["amt20"] >= P.LIQ_MIN), "shares_ok": int(r["shares_ok"])}
+               "bars": bars, "liq_ok": liq_ok, "bars_ok": bars_ok,
+               "eligible": liq_ok and bars_ok,      # v3 補件 §3-1：流動性 ∧ bars ≥ MIN_BARS（不足者整檔排除當月 ⇒ 放棄組⑧）
+               "shares_ok": int(r["shares_ok"])}
         for f in P.FEATURES:
             row[f] = float(r[f]) if pd.notna(r[f]) else np.nan
         for H in HOLDS:
             row[f"fwd_{H}"] = fr[f"ret_{H}"]   # ⛔ 不可叫 ret_H：ret_120／ret_20 是特徵名，會被蓋掉
         rows.append(row)
-    return rows
+        if row["eligible"] and raw05 is not None:
+            r5 = raw05.iloc[pos]
+            for f in P.FEATURES:            # 逐欄：合格列上 min_periods=w 與 =w/2 要逐位元相同（都 NaN 也算相同）
+                a, b = r[f], r5[f]
+                if not ((pd.isna(a) and pd.isna(b)) or (pd.notna(a) and pd.notna(b) and a == b)):
+                    mism.append({"stock_id": sid, "measure_date": d, "column": f, "mp_w": a, "mp_half": b, "bars": bars})
+    return rows, mism
 
 
-def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print) -> pd.DataFrame:
+def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print, mp_check=True) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """回 (面板, min_periods 斷言的不一致列)。⛔ 不一致列 > 0 由呼叫端決定要不要中止（main 一律中止並逐列印 股／月／欄）。"""
     rev, _, _ = R34.load_revenue(); rev_flags = P.rev_hi24_flags(rev, cal, pub_day)
     jobs = [(r.stock_id, r.market, r.first_seen, r.last_seen) for r in uni.itertuples()]
-    rows = []; t0 = time.time()
-    with Pool(procs, initializer=_init, initargs=(cal, rev_flags, positions)) as pool:
-        for i, rs in enumerate(pool.imap_unordered(panel_worker, jobs, chunksize=8)):
-            rows.extend(rs)
+    rows = []; mism = []; t0 = time.time()
+    with Pool(procs, initializer=_init, initargs=(cal, rev_flags, positions, mp_check)) as pool:
+        for i, (rs, ms) in enumerate(pool.imap_unordered(panel_worker, jobs, chunksize=8)):
+            rows.extend(rs); mism.extend(ms)
             if (i + 1) % 400 == 0:
                 log(f"  {i + 1}/{len(jobs)} {time.time() - t0:.0f}s")
     df = pd.DataFrame(rows)
     df["measure_date"] = pd.to_datetime(df["measure_date"])
-    return df.sort_values(["measure_date", "stock_id"]).reset_index(drop=True)
+    M = pd.DataFrame(mism, columns=["stock_id", "measure_date", "column", "mp_w", "mp_half", "bars"])
+    return df.sort_values(["measure_date", "stock_id"]).reset_index(drop=True), M
+
+
+def apply_innovation_rule(panel: pd.DataFrame, uni: pd.DataFrame, cutoff: str = INNOV_CUTOFF) -> tuple[pd.DataFrame, int]:
+    """K線分析 1745 §一：創新板（名稱含「-創」）按量測日分段——量測日 < cutoff 的股-月排除、≥ 納入。回 (面板, 被排除的合格股-月數)。"""
+    innov = set(uni.loc[uni["name"].astype(str).str.contains("-創", na=False), "stock_id"])
+    hit = panel["stock_id"].isin(innov) & (panel["measure_date"] < pd.Timestamp(cutoff)) & panel["eligible"]
+    panel = panel.copy(); panel.loc[hit, "eligible"] = False; panel["innov_excluded"] = hit
+    return panel, int(hit.sum())
 
 
 # ───────────────────────── 第二段：橫截面 → 歸型 → 超額 ─────────────────────────
@@ -316,6 +337,22 @@ def dropped_table(panel: pd.DataFrame, cl: pd.DataFrame, S: pd.DataFrame, uni: p
     main = _in(cl, JUDGE_PERIOD); ms = main[main["stock_id"].isin(sm["stock_id"])]
     for typ, g in ms.groupby("type"):
         rows.append({"group": "⑥結構性缺 rev_hi24", "period": "主格", "H": np.nan, "n": int(len(g)), "value": float(len(g) / max(len(ms), 1)) * 100, "ref": int(len(ms)), "note": f"{typ}；value＝占這批主格列 %"})
+    # ⑧ bars < MIN_BARS 擋掉（流動性合格）：股-月數、逐年、後續報酬 vs 合格者（v3 補件 §3-1 放棄組）
+    g8 = panel[panel["liq_ok"] & ~panel["bars_ok"]]
+    for period, (a, b) in PERIODS.items():
+        pp = panel[(panel["measure_date"] >= a) & (panel["measure_date"] <= b)]; x8 = pp[pp["liq_ok"] & ~pp["bars_ok"]]; y8 = pp[pp["eligible"]]
+        for H in HOLDS:
+            rows.append({"group": "⑧bars<120 擋掉（流動性合格）", "period": period, "H": H, "n": int(x8[f"fwd_{H}"].notna().sum()),
+                         "value": float(x8[f"fwd_{H}"].mean()) * 100 if x8[f"fwd_{H}"].notna().any() else np.nan, "ref": float(y8[f"fwd_{H}"].mean()) * 100 if len(y8) else np.nan,
+                         "note": f"股-月 {len(x8)}；value＝被擋掉者平均毛報酬 pp；ref＝合格者"})
+    for y, g in g8.groupby(g8["measure_date"].dt.year):
+        tot = int((panel["measure_date"].dt.year == y).sum() and panel.loc[panel["measure_date"].dt.year == y, "liq_ok"].sum())
+        rows.append({"group": "⑧bars<120 擋掉（流動性合格）", "period": str(y), "H": np.nan, "n": int(len(g)), "value": float(len(g) / max(tot, 1)) * 100, "ref": tot,
+                     "note": f"逐年；value＝占流動性合格股-月 %；ref＝流動性合格股-月；檔數 {g['stock_id'].nunique()}"})
+    # ⑨ 創新板量測日 < 2025-01-06 排除（K線分析 1745 §一）
+    n9 = int(panel["innov_excluded"].sum()) if "innov_excluded" in panel else 0
+    rows.append({"group": "⑨創新板量測日<2025-01-06 排除", "period": "全部", "H": np.nan, "n": n9, "value": np.nan, "ref": int(panel["eligible"].sum()),
+                 "note": ("本窗內觸發 0 次" if n9 == 0 else "被排除的合格股-月數") + "；ref＝合格股-月"})
     # ⑦ 排除那批後重跑主格 H120
     ex = main[~main["stock_id"].isin(sm["stock_id"])]
     for typ in TYPES:
@@ -390,6 +427,8 @@ def main():
     ap.add_argument("--out", default=os.path.join(HERE, "resultsp4")); ap.add_argument("--procs", type=int, default=4)
     ap.add_argument("--limit", type=int); ap.add_argument("--placebo-n", type=int, default=1000); ap.add_argument("--pub-day", type=int, default=10)
     ap.add_argument("--panel", default=None, help="已算好的 panel.csv.gz（跳過第一段）")
+    ap.add_argument("--no-mp-check", action="store_true", help="⛔ 只給自測用：跳過 §4-1 min_periods 常設斷言")
+    ap.add_argument("--mp-check-report", action="store_true", help="§4-1 斷言不成立時只寫表、逐欄統計並印前 50 列，不中止（數字要標「斷言不成立下產出」）")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     stamp = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M"); commit = _commit()
@@ -403,9 +442,23 @@ def main():
         panel = pd.read_csv(a.panel, dtype={"stock_id": str}, parse_dates=["measure_date"])
     else:
         log(f"第一段：{len(uni)} 檔 × {len(positions)} 個量測日")
-        panel = build_panel(cal, uni, positions, a.procs, a.pub_day, log)
+        panel, M = build_panel(cal, uni, positions, a.procs, a.pub_day, log, mp_check=not a.no_mp_check)
+        write_csv(M, os.path.join(a.out, "min_periods_mismatch.csv"), stamp, commit)
+        n_el0 = int(panel["eligible"].sum())
+        bycol = M.groupby("column").agg(n=("stock_id", "size"), n_stocks=("stock_id", "nunique"), n_nan_at_w=("mp_w", lambda x: int(x.isna().sum()))).reset_index() if len(M) else pd.DataFrame(columns=["column", "n", "n_stocks", "n_nan_at_w"])
+        with open(os.path.join(a.out, "min_periods_check.txt"), "w", encoding="utf-8") as fh:
+            fh.write(f"{stamp} commit {commit}；合格股-月 {n_el0:,} × {len(P.FEATURES)} 欄；min_periods=w vs =ceil(w/2) 不一致 {len(M)} 筆" + ("（--no-mp-check 跳過）" if a.no_mp_check else "")
+                     + ("" if not len(M) else "；逐欄：" + "、".join(f"{r.column} {r.n}（{r.n_stocks} 檔；mp=w 為 NaN {r.n_nan_at_w}）" for r in bycol.itertuples()) + ("；⛔ 斷言不成立，數字在 --mp-check-report 下產出" if a.mp_check_report else "")) + "\n")
+        if len(M):
+            for r in M.head(50).itertuples():
+                log(f"  ✗ {r.stock_id} {pd.Timestamp(r.measure_date):%Y-%m} {r.column}: mp=w {r.mp_w} vs mp=w/2 {r.mp_half}（bars {r.bars}）")
+            log(open(os.path.join(a.out, "min_periods_check.txt"), encoding="utf-8").read())
+            if not a.mp_check_report:
+                raise AssertionError(f"§4-1 常設斷言：閘門 bars≥{P.MIN_BARS} 沒擋乾淨，{len(M)} 筆合格列在 min_periods=w 與 w/2 下不同（見 min_periods_mismatch.csv）")
         panel.to_csv(panel_p, index=False)
         back = pd.read_csv(panel_p, dtype={"stock_id": str}); assert len(back) == len(panel), "面板寫完重讀列數要對"
+    panel, n_innov = apply_innovation_rule(panel, uni)
+    log(f"創新板量測日 < {INNOV_CUTOFF} 排除：{n_innov} 股-月" + ("（本窗內觸發 0 次）" if n_innov == 0 else ""))
     C, mu, sd = load_centers(a.centers)
     cl = classify(panel, C, mu, sd)
     cl.to_csv(os.path.join(a.out, "classified.csv.gz"), index=False)
@@ -421,7 +474,10 @@ def main():
     cmp_ = compare_table(S); write_csv(cmp_, os.path.join(a.out, "compare_v3_s10.csv"), stamp, commit)
     verdict = overall_verdict(S, pA)
     # summary.md
-    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、合格 {len(cl):,} 列。", ""]
+    n_liq = int(panel["liq_ok"].sum()); n_gate = int((panel["liq_ok"] & ~panel["bars_ok"]).sum())
+    mp_line = open(os.path.join(a.out, "min_periods_check.txt"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(a.out, "min_periods_check.txt")) else "（沿用既有面板，本趟沒跑）"
+    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、流動性合格 {n_liq:,} 列、bars<{P.MIN_BARS} 再擋 {n_gate:,} 列（放棄組⑧）、創新板規則排除 {n_innov} 列、合格 {len(cl):,} 列。", "",
+         f"閘門（v3 補件 §3-1／§3-2，K線分析 1855 合併）：量測日 bars ≥ {P.MIN_BARS} 才進母體、所有回看窗 min_periods＝w；§4-1 常設斷言：{mp_line}", ""]
     L.append("## 一、主格 2021-01～2026-03，H=120（唯一判定格）"); L.append("")
     L.append("| 型 | 有效月 | 超額 | 95% CI | 月勝率 | 逐筆勝率 | p05 / p10 / p50 / p90 / p95 | 絕對平均（扣成本） | 月均檔數 | 判定 |"); L.append("|---|---:|---:|---|---:|---:|---|---:|---:|---|")
     for r in S[(S.period == "主格") & (S.H == 120)].itertuples():
@@ -446,7 +502,7 @@ def main():
         L.append(f"- {r.check} {r.type}：{r.excess_pp:+.2f}（{r.ci_lo_pp:+.2f}～{r.ci_hi_pp:+.2f}）")
     L.append(f"- 鑑別力：對調後仍「④負②正」＝{bool(pD['bug_if_true'].iloc[0])}（True ⇒ 程式有 bug）")
     L.append(""); L.append("## 五、放棄組（`dropped.csv`）摘要"); L.append("")
-    for r in Dp[Dp["group"].str.startswith(("⑥", "⑦", "③"))].itertuples():
+    for r in Dp[Dp["group"].str.startswith(("⑥", "⑦", "③", "⑧", "⑨"))].itertuples():
         L.append(f"- {r.group}｜{r.period}｜n={r.n}｜value={r.value if not isinstance(r.value, float) or np.isnan(r.value) else round(r.value, 2)}｜ref={r.ref}｜{r.note}")
     L.append(""); L.append("其餘：`quantiles_wide.csv`（四型並列）、`yearly.csv`、`placebo.csv`、`compare_v3_s10.csv`、`structural_missing.csv`；面板 `panel.csv.gz`、歸型 `classified.csv.gz`。⛔ 沒有任何「贏過 0050」的比較。")
     with open(os.path.join(a.out, "summary.md"), "w", encoding="utf-8") as fh:
