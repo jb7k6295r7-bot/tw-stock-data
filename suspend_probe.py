@@ -36,6 +36,8 @@ import urllib.error
 import urllib.request
 # ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
 import ca_chain  # noqa: F401
+from backfill import why                                     # noqa: E402
+from delist_probe import _spread                             # noqa: E402
 from datetime import datetime, timedelta, timezone
 
 TPE = timezone(timedelta(hours=8))
@@ -403,6 +405,16 @@ def _finish(head, body):
 #   ① 頁面／端點裡要**出現我方那 6 檔中的任何一檔**——出現才算對到路
 #   ② 要有**起訖日期**，只有代號清單無法對上洞的區間
 #   ③ ⛔ 「有回東西」不算：`stop.html` 是網頁，可能要 js
+# ⛔⛔ 2026-09-15：上面那兩條是這一輪**唯二**量過的，而判準寫著「0/6 ⇒ 這條路不對」
+#   ⇒ 於是 G2 被記成「卡住」。⚠ 而那是 CLAUDE.md 三點①【掃描範圍】：
+#     **只量了兩個頁就替整個站下了結論。**
+# ⭐⭐ 而 3.5④【自己家】更便宜也更該先做：`data/meta/_site_inventory.txt`
+#   （`site_inventory.py` 每趟跑、掃官方選單 195＋485 條）**早就列著**
+#   底下這六條，其中兩條的名字裡逐字有「**停止買賣**」。
+#   ⇒ 我沒有去讀我們自己抓回來的那份目錄。
+#
+# ⚠ 以下每一條都標了**它在選單上的原名**——⛔ 全部照抄自 `_site_inventory.txt`，
+#   ⛔ 沒有一條是我依慣例拼的（上面那條「⚠ 我拼的」留著當對照）。
 LONGHALT = [
     # 這一條的網址取自 parvalue_probe 的實測紀錄，⛔ 非自行生成。
     ("twse-violations-stop", "twse",
@@ -411,6 +423,28 @@ LONGHALT = [
     # ⚠ 這一條**是我依站台慣例拼的**，標明出來——量得到才算，量不到就是量不到。
     ("twse-rwd-stop（⚠ 我拼的）", "twse",
      "https://www.twse.com.tw/rwd/zh/listed/violations/stop?response=json"),
+    # ── 以下六條來自 `_site_inventory.txt`（官方選單），⛔ 不是我猜的 ──
+    # 選單原名：上市公司經營權及營業範圍異(變)動專區-
+    #           經營權異動且營業範圍重大變更**停止買賣**公司
+    ("twse-openapi-t187ap26_L（選單名裡有「停止買賣」）", "twse",
+     "https://openapi.twse.com.tw/v1/opendata/t187ap26_L"),
+    # 選單原名：上櫃公司經營權及營業範圍異(變)動專區-…**停止買賣**公司
+    ("tpex-openapi-mopsfin_t187ap26_O（選單名裡有「停止買賣」）", "tpex",
+     "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap26_O"),
+    # 選單原名：集中市場暫停交易證券（⚠ 我方 `suspend.csv` 已經在用這一條，
+    #   ⛔ 而 10,034 列裡 9,594 列是權證 ⇒ 這一發是**對照組**：
+    #   要看新那四條有沒有講出它講不出來的事）
+    ("twse-openapi-TWTAWU（⚠ 對照組：我方已在用）", "twse",
+     "https://openapi.twse.com.tw/v1/exchangeReport/TWTAWU"),
+    # 選單原名：暫停交易證券（⭐ 路徑裡有 `historical`）
+    ("twse-twtawu-historical（選單原名「暫停交易證券」）", "twse",
+     "https://www.twse.com.tw/zh/trading/historical/twtawu.html"),
+    # 選單原名：終止上市公司
+    ("twse-openapi-suspendListing（選單原名「終止上市公司」）", "twse",
+     "https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml"),
+    # 選單原名：上櫃股票變更交易、分盤交易、管理股票與**停止交易**資訊
+    ("tpex-openapi-cmode（選單原名含「停止交易」）", "tpex",
+     "https://www.tpex.org.tw/openapi/v1/tpex_cmode"),
 ]
 
 
@@ -425,7 +459,8 @@ def probe_longhalt(say, sleep):
         say(f"\n── {tag}\n   {url}")
         raw, err = get(url)
         if err:
-            say(f"   ✗ {str(err)[:140]}")
+            # ⛔ 不砍尾巴（六點六）：SSL／憑證那一族可行動的部分永遠在後面。
+            say(f"   ✗ {why(err)}")
             continue
         t = raw.decode("utf-8", "replace")
         han = len(re.findall("[一-龥]", t))
@@ -438,6 +473,21 @@ def probe_longhalt(say, sleep):
         say(f"   ② 日期 {len(ds)} 個{('｜' + ds[0] + ' ~ ' + ds[-1]) if ds else ''}")
         for kw in ("停止買賣", "終止上市", "恢復買賣", "財務業務"):
             say(f"      「{kw}」{t.count(kw)} 次")
+        # ⭐⭐ 頂層是陣列的那一族（openapi）沒有 `stat`／`total`／`notes` 可以問
+        #   ⇒ 判準只剩「**每個鍵的相異值分佈**」（CLAUDE.md 第二點⑤）。
+        #   ⚠ 相異值只有一種的鍵，當場就把涵蓋期間講出來了
+        #     （`tpex_spendi_history` 的 `Date` 只有民國 115 一種 ⇒ 它不是歷史）。
+        #   ⛔ 用 `delist_probe._spread`，不另寫一份（四點五）。
+        try:
+            _j = json.loads(t)
+        except Exception:                                    # noqa: BLE001
+            _j = None
+        if isinstance(_j, list) and _j:
+            say(f"   ④ 頂層是**陣列**、{len(_j):,} 列")
+            for _ln in _spread(_j):
+                say("   " + _ln)
+        elif isinstance(_j, dict):
+            say(f"   ④ 頂層是**物件**、鍵：{sorted(_j)[:12]}")
         n_tr = len(re.findall(r"<tr[ >]", t, re.I))
         n_js = len(re.findall(r"\.js[\"'?]", t))
         say(f"   ③ <tr> {n_tr} 個｜js {n_js} 支")
