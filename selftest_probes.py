@@ -526,6 +526,71 @@ def check_site_inventory_openapi():
     return bad
 
 
+def check_openapi_period_col():
+    """⭐⭐ `mops_probe.openapi_case`：要拿**內容日期**問涵蓋期間，⛔ 不是快照時戳。
+
+    ⛔⛔ 2026-09-15 付過代價。舊版只認 `年月／出表／年度／月別／Date`
+    ⇒ 量 `t187ap04`（每日重大訊息）時只看到 `出表日期` 1 種
+    ⇒ 我寫了「只給最新一期，沒有歷史」。**那是量錯了欄。**
+
+        `出表日期`／`Date`  ＝ 我方抓取那一天的**快照時戳**
+                            ⚠ 它**必定**只有 1 種 ⇒ 拿它問「有沒有歷史」，
+                            ⛔ 答案永遠是「沒有」，而那不是量出來的
+        `發言日期`          ＝ **內容日期** ⇒ 它的相異值才回答涵蓋期間
+
+    ⚠ 這正是 CLAUDE.md 二那條：**「這個端點可不可信」問錯了問題，
+      要問的是「這個【欄】…」**——同一張表裡，有的欄是時戳、有的欄是內容。
+
+    ⭐ 三種形狀各驗一次（照真回應的形狀做，⛔ 不連外）：
+    ①只有時戳 ⇒ **不可判定**｜②內容日期一天 ⇒ 沒有歷史｜③跨多天 ⇒ 含多期。
+    ⛔ 少了③，舊版那個 bug 不會紅。
+    """
+    import json as _j
+    import mops_probe as MP
+    import backfill as _B
+    bad = 0
+
+    def _run(rows):
+        saved = _B.get
+        _B.get = lambda *a, **k: (_j.dumps(rows).encode("utf-8"), None)
+        out = []
+        try:
+            MP.openapi_case("https://example.invalid/x", out)
+        finally:
+            _B.get = saved
+        return "\n".join(out)
+
+    cases = [
+        ("① 只有快照時戳 ⇒ **不可判定**（⛔ 不是「沒有歷史」）",
+         [{"出表日期": "1150915", "公司代號": "1101"},
+          {"出表日期": "1150915", "公司代號": "2330"}],
+         "不可判定", "只給最新一期，沒有歷史"),
+        ("② 內容日期只有一天 ⇒ 沒有歷史",
+         [{"出表日期": "1150915", "發言日期": "1150915", "公司代號": "1101"},
+          {"出表日期": "1150915", "發言日期": "1150915", "公司代號": "2330"}],
+         "只給最新一期，沒有歷史", "不可判定"),
+        ("③ ⭐ 內容日期跨多天 ⇒ **含多期**（⛔ 舊版看不到這一欄，會誤判成沒有歷史）",
+         [{"出表日期": "1150915", "發言日期": f"11509{d:02d}"} for d in range(1, 16)],
+         "含多期", "只給最新一期"),
+    ]
+    for name, rows, want, unwant in cases:
+        txt = _run(rows)
+        ok = want in txt and unwant not in txt
+        print(("✓ " if ok else "✗ ") + f"openapi_case {name}")
+        if not ok:
+            print(f"    ⛔ 要有「{want}」、不可有「{unwant}」；實得：{txt[-200:]}")
+            bad += 1
+    # ⭐ 而③還要講得出**最小與最大**（⛔「15 種」不等於「涵蓋 15 天」）
+    txt3 = _run([{"出表日期": "1150915", "發言日期": f"11509{d:02d}"}
+                 for d in range(1, 16)])
+    ok = "最小 1150901" in txt3 and "最大 1150915" in txt3
+    print(("✓ " if ok else "✗ ")
+          + "openapi_case ③ 講得出**最小與最大**（⛔「幾種」≠「涵蓋幾天」）")
+    if not ok:
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -544,6 +609,7 @@ def main():
                   + (f"，{len(want)} 節都出現" if want else ""))
     bad += check_delist_cross()
     bad += check_site_inventory_openapi()
+    bad += check_openapi_period_col()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

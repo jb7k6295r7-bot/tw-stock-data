@@ -169,18 +169,40 @@ def openapi_case(name, out):
         return
     out.append(f"  ✓ {len(d):,} 筆；第一筆的鍵 = {sorted(d[0]) if d else '（空）'}")
     # ⭐ 判準：**這一批要自己講出它是哪一期**。找出期別欄，看它有幾個相異值。
-    keys = [k for k in (d[0] if d else {})
-            if any(t in k for t in ("年月", "出表", "年度", "月別", "Date", "date"))]
-    for k in keys:
-        vals = sorted({str(r.get(k, "")) for r in d})
-        out.append(f"  ── `{k}` 有 {len(vals)} 個相異值：{vals[:8]}"
-                   + ("…" if len(vals) > 8 else ""))
-    if not keys:
-        out.append("  ⚠ 找不到期別欄 ⇒ ⛔ **不可判定它是不是只給最新一期**")
-    elif all(len({str(r.get(k, "")) for r in d}) <= 1 for k in keys):
-        out.append("  ⇒ ⛔ 期別欄只有一個值 ⇒ **只給最新一期**，沒有歷史。")
+    # ⛔⛔ 2026-09-15 付過代價：這裡本來只認 `年月／出表／年度／月別／Date`
+    #   ⇒ 量 `t187ap04`（每日重大訊息）時只看到 `出表日期`／`Date` 各 1 種
+    #   ⇒ 我據此寫「只給最新一期，沒有歷史」。⛔ **那是量錯了欄。**
+    # ⭐ 那兩欄是**快照時戳**（＝我方抓取那一天），⚠ 它必定只有 1 種——
+    #   ⛔ 拿它問「有沒有歷史」，答案**永遠**是「沒有」，而那不是量出來的。
+    # ⇒ 真正回答涵蓋期間的是**內容日期**（`發言日期`／`事實發生日`）。
+    # ⚠ 而這正是 CLAUDE.md 二那條：**「這個端點可不可信」問錯了問題，
+    #   要問的是「這個【欄】…」**——同一張表裡，有的欄是時戳、有的欄是內容。
+    STAMP = ("出表", "Date", "date", "asof")          # 快照時戳那一族
+    CONTENT = ("發言", "發生日", "年月", "年度", "月別",
+               "公告", "申報", "日期")                 # 內容日期那一族
+    allk = list(d[0] if d else {})
+    stamp_k = [k for k in allk if any(t in k for t in STAMP)]
+    cont_k = [k for k in allk
+              if k not in stamp_k and any(t in k for t in CONTENT)]
+    for label, ks in (("快照時戳", stamp_k), ("⭐ 內容日期", cont_k)):
+        for k in ks:
+            vals = sorted({str(r.get(k, "")).strip() for r in d} - {""})
+            out.append(f"  ── [{label}] `{k}` 有 {len(vals)} 個相異值："
+                       + (f"{vals[:8]}…（最小 {vals[0]}｜最大 {vals[-1]}）"
+                          if len(vals) > 8 else f"{vals}"))
+    if not cont_k:
+        out.append("  ⚠ 找不到**內容日期**欄 ⇒ ⛔ **不可判定**它是不是只給最新一期"
+                   + (f"（只有快照時戳 {stamp_k}，⛔ 那一族永遠只有 1 種）"
+                      if stamp_k else ""))
+    elif all(len({str(r.get(k, "")).strip() for r in d} - {""}) <= 1
+             for k in cont_k):
+        out.append("  ⇒ ⛔ **內容日期**只有一個值 ⇒ 只給最新一期，沒有歷史。")
     else:
-        out.append("  ⇒ ⭐ 期別欄不只一個值 ⇒ **含多期**，值得當來源評估。")
+        _sp = max((len({str(r.get(k, "")).strip() for r in d} - {""}), k)
+                  for k in cont_k)
+        out.append(f"  ⇒ ⭐ **內容日期**不只一個值（`{_sp[1]}` 有 {_sp[0]} 種）"
+                   "⇒ **含多期**，值得當來源評估。"
+                   "　⚠ 而「幾種」≠「涵蓋幾天」——要看上面那一行的最小與最大。")
 
 
 def revenue_hist_columns(out):
