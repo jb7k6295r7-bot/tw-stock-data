@@ -1,0 +1,1 @@
+2026-09-15 18:52 commit ad383d518；合格股-月 60,519 × 13 欄；min_periods=w vs =ceil(w/2) 不一致 2128 筆；逐欄：fore20 801（519 檔；mp=w 為 NaN 801）、trust20 801（519 檔；mp=w 為 NaN 801）、vr_20_120 526（130 檔；mp=w 為 NaN 526）；⛔ 斷言不成立，數字在 --mp-check-report 下產出

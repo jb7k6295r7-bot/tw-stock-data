@@ -88,12 +88,36 @@ def t_real_stock():
     check(raw["ret_120"].iloc[:120].isna().all(), "ret_120 前 120 根 NaN")
 
 
+def t_gate_min_periods():
+    """v3 補件 §3-1／§3-2：bars 欄＝有價收盤根數累計；MIN_BARS 寫死 120；min_periods＝w ⇒ 第 w 根之前 NaN；合格列上 mp_frac 0.5 與 1.0 逐位元相同。"""
+    check(P.MIN_BARS == 120, "MIN_BARS 寫死 120（由最長回看窗推出）")
+    cal = D.load_calendar()
+    raw = P.stock_raw("2330", "twse", cal)
+    check(raw["bars"].iloc[-1] == int(raw["traded"].sum()) and (raw["bars"].diff().dropna() >= 0).all(), f"bars 單調累計、末值＝有成交根數 {int(raw['traded'].sum())}")
+    fi = lambda col: int(np.argmax(raw[col].notna().to_numpy()))     # 第一個非 NaN 的位置（0 起算）
+    check(fi("ma_stack") == 119 and fi("dist_hi120") == 119 and fi("vol60") == 60 and fi("amt20") == 19 and fi("fore20") == 19,
+          f"min_periods＝w：ma_stack/dist_hi120 第 120 根起、vol60 第 61 根（pct_change 先吃一根）、amt20/fore20 第 20 根起（實得 {fi('ma_stack')}/{fi('dist_hi120')}/{fi('vol60')}/{fi('amt20')}/{fi('fore20')}）")
+    check(raw["ret_120"].iloc[119:121].isna().tolist() == [True, False], "ret_120 第 121 根才有值（shift 120）")
+    raw05 = P.stock_raw("2330", "twse", cal, mp_frac=0.5)
+    check(int(np.argmax(raw05["ma_stack"].notna().to_numpy())) == 59 and int(np.argmax(raw05["vol60"].notna().to_numpy())) == 30, "mp_frac=0.5 ⇒ ma_stack 第 60 根、vol60 第 31 根就有值（斷言的對照組真的不一樣）")
+    el = raw["bars"] >= P.MIN_BARS
+    diff_cols = [f for f in P.FEATURES if not ((raw.loc[el, f].isna() == raw05.loc[el, f].isna()).all() and np.allclose(raw.loc[el, f].fillna(0), raw05.loc[el, f].fillna(0), rtol=0, atol=0))]
+    check(el.sum() > 2000 and diff_cols == [], f"合格列（bars ≥ 120，{int(el.sum())} 列）13 欄 mp 0.5 vs 1.0 逐位元相同（不同的欄：{diff_cols}）")
+    bad = raw.loc[~el & raw["traded"], ["ma_stack", "dist_hi120", "ret_120"]]
+    check(len(bad) == 119 and bad.isna().all().all(), f"bars < 120 的有成交列（{len(bad)}）ma_stack/dist_hi120/ret_120 全 NaN（閘門擋的就是這些）")
+    late = P.stock_raw("7610", "tpex", cal)
+    if late is not None:
+        pos = int(np.searchsorted(cal, pd.Timestamp("2026-01-02")))
+        check(late["bars"].iloc[pos] < 120 and pd.isna(late["ma_stack"].iloc[pos]), f"7610 2026-01-02 bars {int(late['bars'].iloc[pos])} < 120 ⇒ ma_stack NaN（v3 補件的那一檔）")
+
+
 if __name__ == "__main__":
     print("[p4_features] 量測日"); t_measurement_days()
     print("[p4_features] rev_hi24_p4"); t_rev_flags()
     print("[p4_features] shares"); t_shares_ffill_not_bfill()
     print("[p4_features] 橫截面＋歸型"); t_cross_section_assign()
     print("[p4_features] 真實一檔"); t_real_stock()
+    print("[p4_features] 閘門與 min_periods"); t_gate_min_periods()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
 
