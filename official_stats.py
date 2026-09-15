@@ -147,6 +147,73 @@ M_HEADER = ["stock_id", "roc_year", "month", "high", "low", "avg_price",
             "transactions", "amount", "volume", "turnover", "asof"]
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 上櫃那一半（2026-09-16 probe 120/121 實測）
+#
+#   一發回**全部 12 年**（`totalCount:12`，民國 104~115）；
+#   ⛔ `date` **不是篩選器**（我送 2024 它照樣回全部）。
+#   ⚠ `fields` 有**兩個都叫「日期」**的欄 ⇒ 跟 FMNPTK 一樣**用位置取**。
+#
+#   ⭐ 哪一欄可以信：拿 6488 環球晶跟我方日檔對 114／115 兩年——
+#
+#       收盤平均價        366.43／749.62      **逐位相同**
+#       盤中最高價＋日期  558.00@10/27／1,600.00@7/15   **逐位相同**
+#       盤中最低價＋日期  255.50@4/09／403.00@1/02      **逐位相同**
+#       ⛔ 成交張數 ＋4.8%｜成交金額 ＋5.0%｜成交筆數 **＋156%**
+#       ⛔ 加權平均價(B/A) ⇒ **由那兩個口徑不同的欄推導** ⇒ 一起不可信
+#
+#   ⇒ ⭐ **價那五格進共用判準表，量那三欄原樣另存**（保留官方單位：張／仟元／仟筆）。
+#     ⛔ 換算後併進同一張表 ＝ 做出一張接縫不會報錯的表（第二點那條 FMTQIK）。
+# ══════════════════════════════════════════════════════════════════
+TPEX_YEARLY_URL = ("https://www.tpex.org.tw/www/zh-tw/statistics/yearlyStock"
+                   "?code={s}&response=json")
+TPEX_YEARLY = os.path.join(META, "official_yearly_tpex.csv")
+# ⛔ 欄名帶單位：`_lots`（張）／`_kntd`（仟元）／`_k`（仟筆）
+#   ⚠ 第十個那條：跨線交換一個量，欄名要講得出它是什麼單位／怎麼推導的。
+TY_HEADER = ["stock_id", "roc_year", "volume_lots", "amount_kntd",
+             "transactions_k", "wavg_price_derived", "asof"]
+
+
+def parse_tpex_yearly(payload, sid):
+    """上櫃 `yearlyStock` 的回應 → `(價那五格, 量那四格, err)`。
+
+    → `price_rows` 每列 `(代號, 民國年, 最高, 最高日, 最低, 最低日, 收盤平均價)`
+      `vol_rows`   每列 `(代號, 民國年, 張數, 仟元, 仟筆, 加權平均價)`
+
+    ⛔ 判準是**回應自己回顯的 `code`**跟我請求的那一檔相同（第二點：
+    「這一批要自己講出它是誰」）——⚠ 而 `monthlyStock` 那一發就是靠這個看出
+    參數沒生效的（`code: null`、`stat` 照樣是 `ok`）。
+    """
+    try:
+        d = json.loads(payload.decode("utf-8", "replace")
+                       if isinstance(payload, bytes) else payload)
+    except ValueError as ex:                                     # noqa: BLE001
+        return [], [], f"yearlyStock 不是 JSON：{str(ex)[:80]}"
+    if (d.get("stat") or "") != "ok":
+        return [], [], f"yearlyStock stat={d.get('stat')!r}"
+    tabs = d.get("tables") or []
+    if not tabs:
+        return [], [], "yearlyStock 回應沒有 tables"
+    t = tabs[0]
+    got = (t.get("code") or "").strip()
+    if got != str(sid):
+        # ⭐ 這一格就是「靜靜回了別的東西」的那一種（第二點①）
+        return [], [], (f"yearlyStock 回顯的 code 是 {got!r}，"
+                        f"⛔ 不是我送的 {sid!r} ⇒ 參數沒生效")
+    pr, vr = [], []
+    for row in (t.get("data") or []):
+        if len(row) < 10:
+            continue
+        y = str(row[0]).strip()
+        # ⚠ 位置取，⛔ 不用名字：`fields` 裡有兩個都叫「日期」
+        pr.append((sid, y, _n(row[5]), str(row[6]).strip(),
+                   _n(row[7]), str(row[8]).strip(), _n(row[9])))
+        vr.append((sid, y, _n(row[1]), _n(row[2]), _n(row[3]), _n(row[4])))
+    if not pr:
+        return [], [], "yearlyStock 回了 0 列（⛔ 不是「這一檔沒有」）"
+    return pr, vr, None
+
+
 def _n(v):
     return str(v).replace(",", "").strip()
 

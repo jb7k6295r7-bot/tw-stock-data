@@ -242,6 +242,56 @@ def main():
         import shutil
         shutil.rmtree(d2, ignore_errors=True)
 
+    # ───── [上櫃年度] ⭐ 假回應**照真的形狀**做（含兩個都叫「日期」的欄） ─────
+    #  ⚠ 這一段是 probe 120 真的回應的子集：兩張 tables、fields 有重複欄名、
+    #    code／name／curDate／totalCount／notes 都在。⛔ 少一樣就等於那一格沒測。
+    print("\n── 上櫃年度統計（yearlyStock） ──")
+    TP = ('{"flagField":"張數","tables":[{"title":"6488 環球晶          ",'
+          '"fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)",'
+          '"加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],'
+          '"data":[[115,"1,323,393","1,066,891,796","2,354","806.18","1,600.00",'
+          '"7/15","403.00","1/02","749.62"],'
+          '[114,"788,658","312,330,604","1,195","396.03","558.00","10/27",'
+          '"255.50","4/09","366.43"]],'
+          '"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ",'
+          '"curDate":1150915,"subtitle":"近年個股成交資訊(當年度統計至 1150915 止)"},'
+          '{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],'
+          '"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF…"]}],'
+          '"stat":"ok"}')
+    pr, vr, err = O.parse_tpex_yearly(TP.encode("utf-8"), "6488")
+    ck("⭐ 解得出來（bytes 進、兩組列出來）", err is None and len(pr) == 2 and len(vr) == 2,
+       f"{err}｜價 {len(pr)}｜量 {len(vr)}")
+    ck("⭐⭐ **價**那五格逐位相同（⛔ 兩個都叫「日期」⇒ 一定要用位置取）",
+       pr[0] == ("6488", "115", "1600.00", "7/15", "403.00", "1/02", "749.62"),
+       str(pr[0]))
+    ck("  114 那一列也對（⇒ 不是只讀了第一列）",
+       pr[1] == ("6488", "114", "558.00", "10/27", "255.50", "4/09", "366.43"),
+       str(pr[1]))
+    ck("⭐ **量**那四格保留官方單位（張／仟元／仟筆），⛔ 不在這裡換算",
+       vr[0] == ("6488", "115", "1323393", "1066891796", "2354", "806.18"),
+       str(vr[0]))
+    ck("⭐⭐ 判準是**回應自己回顯的 code**（⛔ 不是「有回列」）",
+       O.parse_tpex_yearly(TP, "2330")[2] is not None
+       and "沒生效" in O.parse_tpex_yearly(TP, "2330")[2],
+       str(O.parse_tpex_yearly(TP, "2330")[2]))
+    # ⛔ `monthlyStock` 真的回過的那一種：stat 是 ok、data 空、code 是 null
+    NUL = ('{"tables":[{"title":"null ","fields":["年","月"],"data":[],'
+           '"date":2026,"totalCount":0,"code":null,"name":""}],'
+           '"date":"20260916","stat":"ok","flagField":"張數"}')
+    ck("⭐⭐ `stat:\"ok\"` ＋ `data:[]` ＋ `code:null` ⇒ **當失敗**"
+       "（⚠ probe 121 真的回過這一種）",
+       O.parse_tpex_yearly(NUL, "6488")[2] is not None,
+       str(O.parse_tpex_yearly(NUL, "6488")[2]))
+    ck("⛔ 不是 JSON ⇒ 講得出它不是 JSON（⚠ 被 CDN 擋時回的是 HTML）",
+       "不是 JSON" in (O.parse_tpex_yearly(b"<html>428</html>", "6488")[2] or ""),
+       str(O.parse_tpex_yearly(b"<html>428</html>", "6488")[2]))
+    ck("⛔ stat 不是 ok ⇒ 把 stat 原文講出來",
+       "參數輸入錯誤" in (O.parse_tpex_yearly('{"stat":"參數輸入錯誤"}', "6488")[2] or ""),
+       str(O.parse_tpex_yearly('{"stat":"參數輸入錯誤"}', "6488")[2]))
+    ck("⭐ 欄名帶單位（⛔ 只叫 volume 的話，下一個人不知道它是張還是股）",
+       O.TY_HEADER[2:6] == ["volume_lots", "amount_kntd", "transactions_k",
+                            "wavg_price_derived"], str(O.TY_HEADER))
+
     # ───── [污染] ⛔ 整頁 HTML 被寫進 `why` ⇒ 一列被切成好幾列 ─────
     d3 = tempfile.mkdtemp(prefix="osmiss_")
     try:
