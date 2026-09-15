@@ -455,3 +455,9 @@
 - 收信（01:59:56Z 之後）：只有本線 1020 那一封 ⇒ 水位不動。
 - 驗終點：`origin/main`（cd446a207，11:03 data）仍**沒有** `backtest/forward_p4.py`、`p4_features.py`、`backtest/forward/p4_types/`；10:48Z 那趟 sync（32e06bb72）只動 `db_status.py`／`mops_probe.py`／`selftest_probes.py`（資料庫線自己的分支）⇒ 1020 一節兩件都還沒做。10-02 前要看到。
 - 無未完工作。自喚醒 12:15（trig 見下一輪）。
+
+## 2026-09-15 12:17：12:15 自喚醒——零新信；main 仍無 forward_p4／p4_types
+
+- 收信（01:59:56Z 之後）：只有本線 1020 ⇒ 水位不動。
+- 驗終點：`origin/main` 仍在 cd446a207（11:03 data），沒有新 sync；`backtest/forward_p4.py`、`p4_features.py`、`backtest/forward/p4_types/` 都還沒有。
+- 無未完工作。自喚醒 13:15。
