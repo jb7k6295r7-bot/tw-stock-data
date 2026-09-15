@@ -36,6 +36,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        # ⛔⛔ 沒有 `fetch-depth: 0` ⇒ **shallow clone**（只有一個 commit）。
+        #   ⚠ 而 `push_data.sh` 要 rebase 到 main、`sync_code.sh` 要比較兩邊
+        #   ⇒ 歷史不在手上時，那些動作要嘛失敗、要嘛做出**看起來正常的錯事**。
+        #   ⭐ 而它還有一個更安靜的後果：在 shallow clone 裡量出來的
+        #     「倉庫有多大／歷史佔多少」**一律是錯的**
+        #     （2026-09-15 我照著 shallow 的數字連錯三次，全部作廢）。
+        #   ⇒ 其餘七支本來就有，這兩支是漏的。
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:

@@ -797,6 +797,20 @@ def main():
            "（⚠ 有續行 ⇒ YAML 折成一串 ⇒ 後面那支**根本沒被跑**，而守門照樣綠）",
            not folded, "；".join(folded))
 
+    # ⛔⛔ 每一支都要 `fetch-depth: 0`（2026-09-15 加）
+    #   shallow clone（預設 depth 1）⇒ `push_data.sh` 的 rebase 與
+    #   `sync_code.sh` 的比較都拿不到歷史，⚠ 而失敗的方式包含「看起來正常」。
+    #   ⭐ 而它最安靜的後果是：在 shallow clone 裡量「倉庫多大／歷史佔多少」
+    #     **一律是錯的**——2026-09-15 我照那個數字連錯三次，三次都作廢。
+    for f in files:
+        short = os.path.basename(f)
+        txt = io.open(f, encoding="utf-8").read()
+        m = re.search(r"uses:\s*actions/checkout@[^\n]*\n(?:[^\n]*\n){0,12}?"
+                      r"\s*fetch-depth:\s*0", txt)
+        ck(f"⛔ {short}：checkout 有 `fetch-depth: 0`"
+           "（⚠ shallow clone ⇒ rebase／比較拿不到歷史，而失敗方式包含「看起來正常」）",
+           bool(m), "⛔ 沒有 ⇒ 預設 depth 1")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
