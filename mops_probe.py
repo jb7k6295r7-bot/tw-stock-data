@@ -393,12 +393,46 @@ def ezsearch_case(out):
     # ⚠ 而「註解掉的網址」與「現在還活著的網址」是**兩件事**
     #   ——⭐ 前者證明它**曾經**存在，⛔ 不證明它現在答得出來。
     # ⇒ 下一步是把 cap 放大、把**剩下那幾處**也印出來（`…（另 N 處未印）`）。
-    out.append("   ⛔ 訂正：`ezsearch_query` 的每一處都在**被註解掉的行**裡，"
-               "而且都在 `/*跑馬燈*/ getMsg()` 內")
-    out.append("   ⇒ ⭐ 活著的是 `POST /server-java/AjaxCheck` ＋ `pg=ezsearch`"
-               "（`mops2.js` 裡同一支是 `step=0` ＋ `eval(resp)` ＋ 一小時一次）")
-    out.append("   ⇒ ⛔ **查詢表單送到哪裡，目前仍然不知道**"
-               "（⚠ 註解掉的網址證明它曾經存在，⛔ 不證明它現在答得出來）")
+    out.append("   ⛔⛔ 這一格我**連錯兩次**，兩次的病根都是「只讀了印出來的那幾處」：")
+    out.append("      ① 第一次：看到 `ezsearch_query` 就寫「查詢端點找到了」"
+               "　⛔ 而當時印出來的三處**全是被註解掉的**")
+    out.append("      ② 第二次：改寫成「每一處都在註解裡、都在 `/*跑馬燈*/` 內」"
+               "　⛔ 而那只對**印出來的那三處**成立——輸出自己寫著「…（另 3 處未印）」")
+    out.append("   ⇒ ⭐ cap 3 → 12 之後，那幾處裡**有沒被註解的**：")
+    out.append("      `var url = \"/mops/web/ezsearch_query\";` 出現在 `/* 最新消息 */ proAN()`"
+               "、在組長字串那一段、以及 `url_str` 那一段 ⇒ ⭐ **它是活的**")
+    out.append("   ⇒ ⭐⭐ 而參數名**讀得到**（⛔ 不是猜的）：")
+    out.append("      `step`／`CO_MARKET`／`CO_ID`／`PRO_ITEM`／`SUBJECT`"
+               "／**`SDATE`**／**`EDATE`**／`lang`／`AN`")
+    out.append("      ⚠ `SDATE`／`EDATE` 是**日期區間** ⇒ ⭐ 那正是 D2 缺的「歷史」那一半")
+    out.append("      ⚠ `proAN()` 用 `step=\"01\"`；⛔ 主查詢的 `step` 值還沒讀到")
+    out.append("")
+    out.append("   ── ⭐⭐ 那就**真的打一發**（第一點：先把回應自己講的話攤開）")
+    out.append("      ⛔ 這一段**不下結論**：只印形狀與前 300 字，"
+               "⚠ 由人判斷它到底回了什麼")
+    # ⛔ 參數是從上面那幾段**讀出來的**，⚠ 不是我拼的。
+    #   `step` 主查詢的值還沒讀到 ⇒ ⭐ 那就**每個都試一次**並把結果並排，
+    #   ⛔ 不要挑一個看起來對的填進去（第二點：靜默失敗都長成 stat:OK）。
+    import twparse as _tw                                   # noqa: PLC0415
+    EZ = "https://mopsov.twse.com.tw/mops/web/ezsearch_query"
+    for step in ("00", "01", "02", "03"):
+        form = {"step": step, "CO_MARKET": "", "CO_ID": "2330",
+                "PRO_ITEM": "C00", "SUBJECT": "",
+                "SDATE": "20260101", "EDATE": "20260915",
+                "lang": "TW", "AN": ""}
+        out.append(f"      ── step={step}｜CO_ID=2330｜PRO_ITEM=C00"
+                   "｜SDATE=20260101 EDATE=20260915")
+        raw, err = _tw.post_form(EZ, form, timeout=60, retries=2)
+        if err:
+            out.append(f"         ⛔ 取不回來：{_W(err, 180)}"
+                       "　⇒ 這一發**沒量到**（⛔ 不是「它不答」）")
+            continue
+        han, n_tr, n_js, shell = B.js_shell(raw)
+        out.append(f"         [形狀] {len(raw):,} bytes｜中文 {han:,} 字"
+                   f"｜<tr> {n_tr} 個｜js {n_js} 支"
+                   + ("　⛔ **js 空殼**" if shell else ""))
+        out.append("         ⭐ 前 300 字："
+                   + B.visible_text(raw, " ")[:300])
     for js in ("js/mop_search.js", "js/mops2.js"):
         jurl = "https://mopsov.twse.com.tw/mops/web/" + js
         out.append(f"  ── {jurl}")
@@ -406,7 +440,11 @@ def ezsearch_case(out):
         if jerr:
             out.append(f"     ⛔ 取不回來：{_W(jerr, 160)}　⇒ 這一支**沒挖**")
             continue
-        for needle in ("ezsearch_query", "AjaxCheck", "keyValue"):
+        # ⚠ `SDATE` 是**日期區間**那一半的錨點——⭐ D2 要的「歷史」就掛在它上面。
+        #   `CO_MARKET`／`PRO_ITEM` 是市場與公告項目（C00 財務資料／M00 重大訊息）。
+        #   ⇒ 把組 keyValue 的那一段整串印出來，⛔ 參數名不可以猜。
+        for needle in ("ezsearch_query", "AjaxCheck", "keyValue",
+                       "SDATE", "CO_MARKET", "PRO_ITEM"):
             out.append(f"     ⭐ `{needle}` 前後：")
             out += ["  " + ln for ln in B.around(jraw, needle, span=420, cap=12)]
 
