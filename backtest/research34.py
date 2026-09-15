@@ -44,13 +44,14 @@ def load_revenue() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return rev, rev_ly, ind
 
 
-def rebalance_dates(periods: list[str], cal: pd.DatetimeIndex) -> dict[str, tuple[int, int]]:
-    """period 'YYYY-MM' → (signal_pos, entry_pos)：M+1 月 10 日之後第一個交易日進場。"""
+def rebalance_dates(periods: list[str], cal: pd.DatetimeIndex, pub_day: int = 10) -> dict[str, tuple[int, int]]:
+    """period 'YYYY-MM' → (signal_pos, entry_pos)：M+1 月 pub_day 日之後第一個交易日進場（預設 10＝法定期限；
+    15＝把延後申報整批吸收掉的保守口徑，K線分析 09-14 1051 四節，兩口徑並跑看結論變不變）。"""
     out = {}
     for p in periods:
         y, m = int(p[:4]), int(p[5:])
         y2, m2 = (y + 1, 1) if m == 12 else (y, m + 1)
-        cutoff = pd.Timestamp(year=y2, month=m2, day=10)
+        cutoff = pd.Timestamp(year=y2, month=m2, day=pub_day)
         e = int(cal.searchsorted(cutoff, side="right"))   # 第一個 > 10 日的交易日
         if e >= len(cal) or e == 0:
             continue
@@ -320,6 +321,7 @@ def main():
     ap.add_argument("--procs", type=int, default=4); ap.add_argument("--out", default=RESULTS)
     ap.add_argument("--report-only", action="store_true", help="只用既有 panel.csv.gz 重做報表")
     ap.add_argument("--liq", choices=["shares", "amount"], default="shares", help="流動性閘門：shares＝500 張（主表）；amount＝近 20 日成交金額均值 ≥ 5,000 萬（PREREG3 更正三）")
+    ap.add_argument("--pub-day", type=int, default=10, help="營收可用日＝次月幾日之後第一個交易日（預設 10；追加口徑 B 用 15）")
     a = ap.parse_args()
     P.PARAMS["liq_mode"] = a.liq          # 在建 Pool 之前改，fork 出去的 worker 才會帶到
     t0 = time.time()
@@ -339,7 +341,7 @@ def main():
     bench = {"o": bdf["open"].to_numpy(float), "c": bdf["close"].to_numpy(float)}
     disp = D.load_disposal_intervals()
     rev, rev_ly, ind = load_revenue()
-    rdates = rebalance_dates(list(rev.index), cal)
+    rdates = rebalance_dates(list(rev.index), cal, a.pub_day)
     lo = int(cal.searchsorted(pd.Timestamp(SIG_START))); hi = int(cal.searchsorted(pd.Timestamp(SIG_END), side="right") - 1)
     split = int(cal.searchsorted(pd.Timestamp(SPLIT)))
     jobs = list(zip(uni["stock_id"], uni["market"], uni["first_seen"], uni["last_seen"]))
