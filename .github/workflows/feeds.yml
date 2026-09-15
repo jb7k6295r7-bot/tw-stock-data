@@ -87,6 +87,24 @@ on:
         description: "重抓已存在的日期（⛔ 要配小的區間；補欄位請改用 need_col）"
         type: boolean
         default: false
+      # ⭐⭐ 2026-09-15：KY 月營收要回補 ⇒ 每一期都要**重抓一次**（多抓 `_1` 那一段）。
+      #   ⛔ 而 `mops-history` 那一步寫死 `--fill`，⚠ 而 `--fill` 的判準是
+      #     「列數跟**鄰近期別**比有沒有掉一半」——⇒ 所有期別**同時**少了 KY
+      #     ⇒ 鄰居也一樣少 ⇒ **280 期全部判成已完成**。
+      #   ⇒ 實測（2026-09-15，本機）：2015-01／2020-06／2026-07 六格全部 `complete=True`
+      #     ⇒ 派下去會印「0 期檔、0 個失敗」⇒ ⛔ **一趟全綠而且什麼都沒做**（四點二）。
+      #   ⚠ 而這個坑**不是**「--fill 判錯了」：它的判準是對的，
+      #     ⛔ 只是「所有期別一起缺同一段」這件事**任何鄰居比對都看不出來**。
+      #   ⇒ 所以要一個按得到的開關，⛔ 不是去放寬那個判準。
+      mops_fill:
+        description: "mops-history 是否只補缺的期別（--fill）。⛔ 加新的一段（例如 KY `_1`）要整批重抓 ⇒ 選 false"
+        type: boolean
+        default: true
+      mops_kind:
+        description: "mops-history 要跑哪一種。⭐ 只補 KY 月營收就選 revenue（財報 188 發不必陪跑）"
+        type: choice
+        options: [both, revenue, fs]
+        default: both
 
 permissions:
   contents: write
@@ -616,7 +634,15 @@ jobs:
           # ★ `--fill`：只補**還沒有產出**的期別。修完失敗清單後用它，
           #   470 發整批重跑要 25 分鐘，補幾個洞只要幾十秒。
           #   要整批重來就把 --fill 拿掉。
-          python mops_history.py --run --kind both --start 2015-01 --sleep 3 --fill
+          # ⭐ `--fill` 與 `--kind` 開成 input 的理由寫在上面 `mops_fill` 那一格。
+          ARGS="--run --kind ${{ inputs.mops_kind || 'both' }} --start 2015-01 --sleep 3"
+          if [ "${{ inputs.mops_fill }}" != "false" ]; then
+            ARGS="$ARGS --fill"
+          else
+            echo "⚠ 這一趟**不帶 --fill** ⇒ 280 期全部重抓（KY 那一段要靠它才補得進來）"
+          fi
+          echo "[mops-history] python mops_history.py $ARGS"
+          python mops_history.py $ARGS
 
       # ★★ 拿**獨立來源**核對交易日曆。目前的日曆＝`data/universe/daily/` 的檔名，
       #   那是用自己的產出當自己的判準：某天整批漏抓的話，七個 feed 會

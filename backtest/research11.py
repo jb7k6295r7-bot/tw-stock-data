@@ -396,7 +396,7 @@ _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
-                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2):
+                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -411,6 +411,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
       bench_cost  單邊成本（預設 COST/2＝來回成本的一半，⚠ 回測線定的：台股買 0.1425%、賣 0.4425% 不對稱，這裡取平均）
     bench 記帳：閒置資金以 bench 單位數持有，equity ＝ 單位數 × bench[t] ＋ 持股市值；進場要提 amt 現金 ⇒ 賣 amt/(1−c) 的 bench；
     出場拿回 P ⇒ 買 P×(1−c) 的 bench。cash_mode="zero" 時程式路徑與原版相同（回歸 R1 逐位元驗）。
+    PREREGP2（2026-09-15）再加：
+      cap_fn      None（原版路徑，逐位元相同）／callable(sid, t, holding_sids) → bool：類股集中度上限。候選依 order 逐一問，
+                  不合格者標 log 原因 "cap"（⛔ 不排隊、不占 avail，名額讓給下一個候選）；holding_sids ＝ 當下持有 ＋ 今天已進的。
     """
     use_bench = cash_mode == "bench"
     if use_bench:
@@ -479,7 +482,19 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 else:
                     key = cand[pick].to_numpy(float); key = np.where(np.isnan(key), -inf, key)
                     order = np.argsort(-key, kind="stable")
-                take = order[:avail]; rest = list(order[avail:])
+                if cap_fn is None:
+                    take = order[:avail]; rest = list(order[avail:])
+                else:                                            # PREREGP2：逐一問 cap_fn，不合格者記 "cap"、名額往後讓
+                    take = []; rest = []; hold_now = set(held)
+                    for i in order:
+                        if len(take) >= avail:
+                            rest.append(i); continue
+                        sid_i = cand.iloc[i]["sid"]
+                        if cap_fn(sid_i, t, hold_now):
+                            take.append(i); hold_now.add(sid_i)
+                        else:
+                            _rec(cand.iloc[i], "cap", t)
+                    take = np.asarray(take, dtype=int)
                 slot = equity[t - 1] / n_slots
                 entered_q = set()
                 for j, i in enumerate(take):

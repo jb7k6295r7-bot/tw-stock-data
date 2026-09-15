@@ -187,6 +187,47 @@ def main():
         #   ⭐ 走唯一那一份（`backfill.page_wiring`，四點五）。
         for ln in B.page_wiring(raw):
             say("   " + ln)
+        # ⭐⭐ 2026-09-15 第三輪：`API_PATTERN` 的**值**挖到了（probe 113，`main.js`）：
+        #     let isDev=…,API_PATTERN="/www/{LANG}/{ACTION}";
+        #   而同一支的用法逐字是
+        #     API_PATTERN.replace(/\{LANG\}/,lang).replace(/\{ACTION\}/,"api/codeQuery")
+        #   ⇒ 配上這兩頁 inline 的 `action: "bulletin/pvChgAnn"`／`"bulletin/pvChgRslt"`，
+        #     形狀就是 `/www/<lang>/<action>`。
+        # ⛔⛔ 而「形狀對」**不是**「那個網址存在」（第二點：名字／形狀不是證據）
+        #   ⇒ 這一段**真的打一發**，並把回來的**是什麼**印出來。
+        #   ⚠ 而 `lang` 我不知道 ⇒ 三種都打（`zh-tw`／`en-us`／`zh_hant`），
+        #     ⛔ 不猜一種然後拿失敗當結論。
+        # ⛔⛔ 2026-09-15 當場踩到：第一版是從 **`url`** 推 `action`
+        #   （`"pvChgAnn" if "pvChgAnn" in url`）——⚠ 而這兩頁的網址是
+        #   `/announce/market/change.html`，`action` 根本不在網址裡，它在
+        #   **頁面自己的 inline script** 裡 ⇒ 那一版對真的頁面也永遠推不出東西。
+        # ⭐ 這就是三點5 那條（「⛔ 不要照名字推一個開關／欄位管什麼」）的同一個形狀
+        #   ⇒ **從它自己寫的字裡讀**，⛔ 不是從網址猜。
+        acts = sorted(set(re.findall(
+            r'action\s*:\s*["\'](bulletin/[A-Za-z0-9_]+)["\']',
+            raw.decode("utf-8", "replace"))))
+        for act in acts:
+            say("     ── ⭐ 照它自己寫的形狀打一發"
+                "（`API_PATTERN=\"/www/{LANG}/{ACTION}\"` ⇒ `/www/<lang>/<action>`）")
+            for lang in ("zh-tw", "en-us", "zh_hant"):
+                u2 = f"https://www.tpex.org.tw/www/{lang}/{act}"
+                r2, e2 = B.get(u2, retries=1, timeout=45)
+                if e2 or not r2:
+                    say(f"        {u2}　⛔ {_W(e2, 160)}"
+                        "　⇒ ⚠ 取不回來**不等於**它不存在")
+                    continue
+                h2, tr2, js2, sh2 = B.js_shell(r2)
+                head = r2[:120].decode("utf-8", "replace").replace("\n", " ")
+                say(f"        {u2}")
+                say(f"           [形狀] {len(r2):,} bytes｜中文 {h2:,} 字"
+                    f"｜<tr> {tr2} 個｜js {js2} 支"
+                    + ("　⛔ **js 空殼**" if sh2 else "")
+                    + f"｜開頭 {head!r}")
+                # ⭐ 判準是「它自己講不講得出它是什麼」，⛔ 不是「有沒有回東西」
+                say("           " + ("⭐ 有列 ⇒ 下一步是問它吃不吃期間參數"
+                                     if tr2 > 1 else
+                                     "⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」"
+                                     "（可能要 POST／要參數／是 js 空殼）"))
 
     say("\n── ★ 參數有沒有被無視 ──")
     say("TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，"

@@ -255,6 +255,28 @@ def main():
        f"⛔ 叫得到但檔不在（找過 {[os.path.basename(d) or '.' for d in SELFTEST_DIRS]}）：{missing}"
        "　⇒ 那一步會在 Actions 上跑起來才失敗，⚠ 而且往往在抓完之後")
 
+    # ── ⭐⭐ `forward.yml` 那個「至少 N 支」的下限，**沒有人在守**（2026-09-16 加）
+    #
+    # ⛔ 突變 W2（把 `-lt 9` 改成 `-lt 0`）**全綠** ⇒ 那個下限可以被靜靜調小，
+    #   ⚠ 而調小之後「glob 沒掃到 ⇒ 母體縮小」那件事就**再也不會紅**
+    #   ——它正是第七點⑨那一族（母體被判準悄悄縮小），只是主詞換成門檻自己。
+    #
+    # ⭐ 判準是 **`下限 == backtest/ 底下自測的支數`**：
+    #   ⛔ 用 `<=` 會放行「調小」（就是 W2）；
+    #   ⛔ 用 `>=` 會在**加了一支還沒調**的那一刻紅——⚠ 而那是對的時機：
+    #     兩者本來就該在**同一個 commit** 裡動（六點五：先改門檻 ⇒ main 必然紅）。
+    _fw = os.path.join(here, ".github", "workflows", "forward.yml")
+    if os.path.isfile(_fw):
+        _m = re.search(r'\[\s*"\$N"\s+-lt\s+(\d+)\s*\]',
+                       io.open(_fw, encoding="utf-8").read())
+        _n_bt = len([n for n in os.listdir(os.path.join(here, "backtest"))
+                     if n.startswith("selftest_") and n.endswith(".py")]) \
+            if os.path.isdir(os.path.join(here, "backtest")) else 0
+        ck("⭐⭐ `forward.yml` 的「至少 N 支」下限 == `backtest/` 底下的自測支數"
+           "（⛔ 調小 ⇒ 母體縮小再也不會紅；⚠ 加了一支沒調也要紅，兩者該同一個 commit）",
+           bool(_m) and int(_m.group(1)) == _n_bt,
+           f"下限 {_m.group(1) if _m else '找不到'}｜實際 {_n_bt} 支")
+
     # ⛔⛔ 而**孤兒那一道刻意不擴到 `backtest/`**，理由要寫下來，
     #   ⚠ 否則下一個人會「順手補齊」，而那會讓它天天紅：
     #   `forward.yml` 跑那 8 支用的是 **glob ＋ `-m backtest.<name>`**

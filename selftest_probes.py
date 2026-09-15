@@ -161,6 +161,25 @@ def fake_get(url, **kw):
     #   落到下面的「twse ⇒ 回 JSON」，於是 holiday_probe 那條「去頁面撈 js」的分支
     #   **從來沒被走到**，一個 NameError 一路過關到 Actions 才炸。
     #   ⇒ **是網頁的就要回網頁**。假回應的形狀錯，等於那段沒測。
+    # ⭐⭐ C4 那兩頁（上櫃面額變更）要照**真頁面的形狀**做：
+    #   它們的 `action` 在**頁面自己的 inline script** 裡，⛔ 不在網址裡
+    #   （2026-09-15 實測 probe 113 逐字：
+    #     `tables.init({pattern: API_PATTERN, action: "bulletin/pvChgAnn"})`）。
+    #   ⚠ 第一版的假回應沒有那一行 ⇒ 「照形狀打一發」那一節走不進去
+    #   ⇒ ⛔ 那一節等於沒測（而它當場抓到我從 `url` 推 `action` 的錯）。
+    if "announce/market/change" in u:
+        return ('<html><body><table><tr><td>x</td></tr></table>'
+                '<script>tables.init({pattern: API_PATTERN,'
+                ' action: "bulletin/pvChgAnn"});</script>'
+                '</body></html>').encode(), None
+    # ⭐ 而照那個形狀打出去的那一發（`/www/<lang>/<action>`）要回**有列**的東西，
+    #   ⛔ 否則「有列 ⇒ 下一步問期間參數」那一條分支也走不到。
+    if "/www/" in u and "bulletin/pvChg" in u:
+        return ("<html><body><table>"
+                + "<tr><td>115/09/01</td><td>1234</td></tr>" * 5
+                + "</table></body></html>").encode(), None
+    # ⛔ 上面那兩塊一定要排在這一塊**之前**：
+    #   這一塊吃掉所有 `.html` 與 `/www/` ⇒ 排在它後面等於永遠走不到。
     if (u.endswith(".html") or "qryStock" in u or "/www/" in u or "/web/" in u
             or "holidaySchedule" in u or "class_main.jsp" in u):
         return HTML.encode(), None
@@ -240,7 +259,10 @@ SECTIONS = {
                    "[11]", "[12]", "[13]"],
     # ⭐ 釘住 C4 那一節：⛔ 少了它，這一格就停在「TPEx 沒有對應端點」，
     #   ⚠ 而那句否定的**掃描範圍只有 swagger**。
-    "parvalue_probe": ["清單 C4"],
+    # ⭐ 第二節是 2026-09-15 第三輪加的：`API_PATTERN` 的值挖到之後，
+    #   **照它自己寫的形狀真的打一發**（⛔ 形狀對不等於那個網址存在，第二點）。
+    #   ⚠ 少了它，這一支就停在「我知道形狀了」——⛔ 而那不是實測。
+    "parvalue_probe": ["清單 C4", "照它自己寫的形狀打一發"],
     "twsthr_probe": [],
     # ⛔ 這一支的每一節都是判讀前提（見 holiday_probe 的檔頭四項），
     #   少掉任何一節都會讓「颱風休市偵測」建立在沒問過的假設上。
@@ -294,6 +316,14 @@ SECTIONS = {
 }
 
 
+# ⭐ 「這支探針借了誰的門」的**唯一那一份清單**。
+#   ⛔ 加一支新探針、而它 import 別的模組去抓東西時，一定要在這裡登記
+#   ——⚠ 否則那支「離線」自測會真的連外，而且**在本機看起來完全正常**。
+SIBLING_DOORS = {
+    "mops_probe": {"mops_history": ("_fetch",)},
+}
+
+
 def run(name):
     mod = __import__(name)
     tmp = tempfile.mkstemp(prefix=name + "_", suffix=".txt")[1]
@@ -337,6 +367,24 @@ def run(name):
     if hasattr(mod, "get") and callable(getattr(mod, "get")):
         olds["get"] = mod.get
         mod.get = _get
+    # ⛔⛔ 2026-09-15 付過代價（daily run 34993234076，main 上紅）：
+    #   一支探針可以**借別的模組的門**出去。`mops_probe.survivor_fs_case`
+    #   打的是 `mops_history._fetch`，⛔ 而上面只換掉 `mod` 自己的 `_post`／`get`
+    #   ⇒ ⚠ **這支「離線」自測在 Actions 上真的連外打了 4 發 MOPS**（每次約 1.2 MB）。
+    #
+    # ⭐ 而它壞的方式正是六點五那一族：在開發容器裡那 4 發**一定失敗**
+    #   ⇒ 走「取不回來 ⇒ 【未驗】」那條 ⇒ 本機全綠；
+    #   ⛔ 在 Actions 上那 4 發**會成功** ⇒ 輸出完全不同 ⇒ 那裡紅。
+    #   ⚠ 「本機綠、Actions 紅」在畫面上跟「這條斷言壞了」一模一樣。
+    #
+    # ⇒ 落地：**把借來的門也一起換掉**，並且下面 ⑬ 有一道斷言掃全 repo，
+    #   確保沒有第二支探針在借沒被列出來的門。
+    for sib, doors in SIBLING_DOORS.get(name, {}).items():
+        smod = __import__(sib)
+        for fn in doors:
+            real = getattr(smod, fn)
+            olds[f"{sib}.{fn}"] = (smod, fn, real)
+            setattr(smod, fn, strict_stub(real, (HTML.encode(), None)))
     buf, old_stdout = io.StringIO(), sys.stdout
     sys.stdout = buf
     try:
@@ -349,7 +397,10 @@ def run(name):
         mod.OUT, B.get = old_out, old_get
         B.new_session = _real_ns
         for fn, v in olds.items():
-            setattr(mod, fn, v)
+            if isinstance(v, tuple):            # 借來的門：(模組, 名字, 真函式)
+                setattr(v[0], v[1], v[2])
+            else:
+                setattr(mod, fn, v)
     out = buf.getvalue()
     if os.path.exists(tmp):
         with io.open(tmp, encoding="utf-8") as f:
@@ -1572,6 +1623,12 @@ def check_survivor_fs():
             ("③ 逐格講「那幾檔在不在裡面」（⛔ 不下結論，由輸出講）", "那幾檔在裡面"),
             ("④ 而**不在裡面的**也要單獨列（⇒ 兩個方向都印）", "不在裡面的"),
             ("⑤ 明寫「⛔ 不可以把月營收那條的結論套過來」（三點②）", "每支端點都要自己實測"),
+            # ⭐⭐ ⑥ 代號**整份**要印出來（⛔ 只印個數的話，母體級差集做不出來）
+            #   ⚠ 第十個那句：一個抽樣檢查點對得上，證明的是那幾個點，不是那一批。
+            ("⑥ ⭐ 把**代號整份**攤出來（⇒ 140 檔那種母體級差集才做得出來）",
+             "代號整份（3 個，供母體級差集用）：2330,2456,2882"),
+            ("  而它只印損益表那一格（⛔ 資產負債表代號集合相同，再印一次是洗版）",
+             "t163sb05"),
     ):
         if want in txt:
             print(f"✓ survivor_fs_case {name}")
@@ -1597,6 +1654,80 @@ def check_survivor_fs():
     if not ok:
         print(f"    ⛔ err={err2}｜實得：{t2[-260:]}")
         bad += 1
+    return bad
+
+
+def check_sibling_doors():
+    """⛔⛔ 一支探針**借別的模組的門**出去，而那道門沒被換掉 ⇒ 這支「離線」自測會真的連外。
+
+    2026-09-15 實際代價（daily run 34993234076，main 上）：
+    `mops_probe.survivor_fs_case` 打的是 `mops_history._fetch`，
+    ⚠ 而 `run()` 只換掉 `mod` 自己的 `_post`／`get`
+    ⇒ 那 4 發**真的送出去了**（每發約 1.2 MB）。
+
+    ⭐ 而它壞的方向正是六點五那一族：
+    ```
+    開發容器   那 4 發**一定失敗** ⇒ 走「取不回來 ⇒【未驗】」⇒ 本機全綠
+    Actions    那 4 發**會成功**   ⇒ 輸出完全不同 ⇒ ⛔ 那裡紅
+    ```
+    ⚠ 而「本機綠、Actions 紅」在畫面上跟「這條斷言壞了」一模一樣。
+
+    ⇒ 這一道掃**全部探針**的 AST：凡是 `<別的模組>.<抓取用的函式>(` 的呼叫，
+    都要在 `SIBLING_DOORS` 裡登記過。⛔ 比 AST 不比字串
+    （第七點第八個：那幾個名字在註解裡也有一份——本函式的 docstring 就有）。
+    """
+    import ast as _ast
+    doors = {"_fetch", "_post", "get", "one", "post", "fetch"}
+    here = _here_dir()
+    ours = {n[:-3] for n in os.listdir(here) if n.endswith(".py")}
+    bad, checked, found = 0, 0, 0
+    for name in SECTIONS:
+        path = os.path.join(here, name + ".py")
+        if not os.path.isfile(path):
+            continue
+        checked += 1
+        tree = _ast.parse(io.open(path, encoding="utf-8").read())
+        alias = {}                       # 區域名字 → 真模組名
+        for n in _ast.walk(tree):
+            if isinstance(n, _ast.Import):
+                for a in n.names:
+                    alias[a.asname or a.name] = a.name
+        reg = SIBLING_DOORS.get(name, {})
+        for n in _ast.walk(tree):
+            if not (isinstance(n, _ast.Call)
+                    and isinstance(n.func, _ast.Attribute)
+                    and isinstance(n.func.value, _ast.Name)):
+                continue
+            mod = alias.get(n.func.value.id)
+            if mod is None or mod not in ours or mod == name:
+                continue
+            if n.func.attr not in doors:
+                continue
+            # ⭐ `backfill.get`／`new_session` 是 `run()` **本來就換掉**的那道主門
+            #   （`B.get = _get`、`B.new_session = _fake_ns`）⇒ 不是「借來的門」。
+            #   ⛔ 而它要列在這裡、不是靠「反正它會過」——下一個人改 `run()` 時
+            #   才看得出這兩個名字是有人在負責的。
+            if mod == "backfill" and n.func.attr in ("get", "new_session"):
+                continue
+            found += 1
+            if n.func.attr not in reg.get(mod, ()):
+                print(f"✗ {name} 借了 `{mod}.{n.func.attr}` 這道門"
+                      f"（第 {n.lineno} 行），⛔ 而 SIBLING_DOORS 沒登記"
+                      "　⇒ 這支「離線」自測會真的連外")
+                bad += 1
+    # ⭐ 母體大小自己是一道斷言（第七點⑨：母體被判準悄悄縮小過一次）
+    if checked < 10:
+        print(f"✗ 掃到的探針只有 {checked} 支（⛔ 母體縮小了，SECTIONS 有 "
+              f"{len(SECTIONS)} 支）")
+        bad += 1
+    elif found == 0:
+        print("✗ 這一道**一個借來的門都沒掃到**"
+              "（⛔ 0 個與「全部合規」在紙上一模一樣，第七點）")
+        bad += 1
+    elif not bad:
+        print(f"✓ ⭐ {checked} 支探針裡借別的模組的門共 {found} 處，"
+              "全部都在 `SIBLING_DOORS` 裡登記過"
+              "（⛔ 沒登記 ⇒ 那支「離線」自測會真的連外）")
     return bad
 
 
@@ -1629,6 +1760,7 @@ def main():
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
     bad += check_survivor_fs()
+    bad += check_sibling_doors()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

@@ -31,6 +31,8 @@ import ast
 import hashlib
 import io
 import os
+import shutil
+import runlog
 import sys
 import tempfile
 
@@ -728,6 +730,159 @@ ck("★ 逐位元沒變（含「本來就不存在」這一種）", _dig(REAL_LO
 #   ⇒ 拿 3 列假資料就把 repo 真的那個寫壞，而它從此永遠綠）
 ck("★ 也沒有動到 repo 真的 `_tdcc_hist_weeks_low.txt`",
    _dig(REAL_HIST_LOW) == B5, f"{B5} → {_dig(REAL_HIST_LOW)}")
+
+# ── ⭐⭐ Excel 吃掉前導 0 的復原（使用者 2026-09-15 送來的 2018 週檔）──
+#
+# ⛔ 假資料要把**兩個實測踩到的失敗模式**都做出來，⚠ 少一個那一半就沒測：
+#   ① 檔頭第一塊 `0050`：左邊沒有錨點 ⇒ 由前往後挑「最小的」會變成 `000050`
+#   ② `8201` 有**兩塊**（`008201` 在 `00756B` 之後、`8201` 在 4 碼區）
+#      ⇒ 由後往前挑會把前面那一塊也判成 `8201`（上界 `8210` 擋不住它）
+# ⭐ 所以正解是**錨點定寬度、順序定身分**，⛔ 單一個方向都不夠。
+print("\n── ⭐ rebuild_codes：Excel 吃掉前導 0 ──")
+_KNOWN = {"0050", "0051", "00636", "00666R", "006201", "6201",
+          "008201", "8201", "00756B", "8210", "1702"}
+
+
+def _blk(v, n=3):
+    return [v] * n
+
+
+# ⛔⛔ 這一串的**順序**也是形狀的一部分（2026-09-15 當場踩到）：
+#   我第一版把 `6201` 排在 `00666R` 之後 ⇒ 那不是真檔的字串序
+#   （真檔是 `…0061 → 006201 → 00625K…`）⇒ 三條斷言紅，
+#   ⚠ 而紅的是**假資料**不是程式。⭐ 第七點：假回應要照真回應的形狀做。
+_cells = (_blk(50) + _blk(51) + _blk(6201) + _blk(636) + _blk("00666R")
+          + _blk(667) + _blk("00756B") + _blk(8201)
+          + _blk(1702) + _blk(6201) + _blk(8201) + _blk(8210))
+_got, _why, _guess = T.rebuild_codes(_cells, _KNOWN)
+_seq = [k for i, k in enumerate(_got) if i == 0 or k != _got[i - 1]]
+ck("⛔ 沒有任何一處字串序不遞增", _why == "", _why)
+ck("⭐① 檔頭第一塊是 `0050`（⛔ 不是 `000050`——由前往後沒錨點會挑成那個）",
+   _seq[0] == "0050", str(_seq[:2]))
+ck("⭐② `008201` 與 `8201` **分成兩塊**（⛔ 由後往前會把兩塊都判成 8201）",
+   _seq.count("008201") == 1 and _seq.count("8201") == 1, str(_seq))
+ck("⭐  而 `006201`／`6201` 也分得開", 
+   _seq.count("006201") == 1 and _seq.count("6201") == 1, str(_seq))
+ck("  文字型的代號原樣保留（它們是真的錨點）",
+   "00666R" in _seq and "00756B" in _seq, str(_seq))
+ck("  整串嚴格遞增", _seq == sorted(_seq) and len(set(_seq)) == len(_seq),
+   str(_seq))
+ck("⭐ 沒有錨點的（`667`）要被列出來，⛔ 不是默默補零", _guess == [667], str(_guess))
+ck("  而它仍然由列序定出唯一解 `00667`（前一塊是 `00666R`）",
+   "00667" in _seq, str(_seq))
+
+# ⛔⛔ 沒有錨點時要**大聲拒絕**，⛔ 不是用猜的寬度寫進資料庫
+_g2, _w2, _ = T.rebuild_codes(_cells, set())
+ck("⭐⭐ `known` 是空的 ⇒ 回一句「沒有錨點」⇒ 這一份**不寫**",
+   "沒有錨點" in _w2, _w2)
+
+# ⛔ 這份檔不是照代號排序的 ⇒ 前提不成立 ⇒ 要講出來
+_g3, _w3, _ = T.rebuild_codes(_blk(8201) + _blk(50), _KNOWN)
+ck("⛔ 字串序倒退 ⇒ 判成「不是照原始代號排序的」",
+   "不遞增" in _w3, _w3)
+
+# ⭐ `known` 是**必填**：⛔ 有預設值＝「沒有錨點也會跑」的自動化版本
+import inspect as _ins
+ck("⭐ `rebuild_codes(cells, known)` 的 `known` **沒有預設值**"
+   "（⛔ 有的話「沒錨點也會跑」就變成預設行為）",
+   _ins.signature(T.rebuild_codes).parameters["known"].default
+   is _ins.Parameter.empty)
+
+# ── ⭐⭐ `daily_cross`：第二個**獨立**驗證點（三道驗算對「代號被標錯」免疫）──
+print("\n── ⭐ daily_cross：拿同一天的日檔當獨立對照 ──")
+_d = tempfile.mkdtemp(prefix="tdccx_")
+try:
+    _dd = os.path.join(_d, "universe", "daily")
+    os.makedirs(_dd)
+    with io.open(os.path.join(_dd, "2018-11-02.csv"), "w", encoding="utf-8") as f:
+        f.write("date,stock_id,name\n")
+        for c in ("0050", "0056", "00636", "006201", "01001T", "2330", "6201"):
+            f.write(f"2018-11-02,{c},X\n")
+    _good = {"0050", "0056", "00636", "006201", "2330", "6201"}
+    _hit, _tot, _miss = T.daily_cross("20181102", _good, root=_d)
+    ck("⭐ 母體只取**前導 0** 的那一族（⛔ 不是全體——全體對這個壞法不敏感）",
+       _tot == 5, f"母體 {_tot}")
+    ck("  命中 4／5（少的是 `01001T` 受益證券，⚠ 那是常態不是壞掉）",
+       (_hit, _miss) == (4, ["01001T"]), f"{_hit} {_miss}")
+    # ⛔⛔ 代號被標錯的那一種：前導 0 那一族**全軍覆沒**
+    _bad = {"000050", "000056", "000636", "0006201", "2330", "6201"}
+    _h2, _t2, _ = T.daily_cross("20181102", _bad, root=_d)
+    ck("⭐⭐ 代號被標錯 ⇒ 這一格從 80% 掉到 0%（⛔ 而三道驗算那時全過）",
+       _h2 == 0, f"{_h2}/{_t2}")
+    # ⭐ 兩種日期寫法都要認得——⛔ 只認一種的話這一層會**靜靜跳過**
+    ck("⭐ `2018-11-02` 這種寫法也認得（⛔ 只認 `20181102` ⇒ 這一層靜靜跳過）",
+       T.daily_cross("2018-11-02", _good, root=_d) == (_hit, _tot, _miss))
+    ck("  ⛔ 沒有那一天的日檔 ⇒ 回 None（⚠ 「沒得比」與「比過了」要分得開）",
+       T.daily_cross("20180101", _good, root=_d) is None)
+finally:
+    shutil.rmtree(_d, ignore_errors=True)
+
+# ── ⭐⭐ **呼叫點**：那道閘門紅了，`import_hist` 真的一個檔都不寫嗎 ──
+#
+# ⛔ 第七點第三個：測了判準、沒測呼叫點。⚠ 實測 T7（把 `cross_bad` 從停寫條件
+#   拿掉）**全綠** ⇒ 那道閘門當時只是「會算出一個數字」，⛔ 不是「會擋」。
+# ⭐ 所以這一節驗的是**終點**：`--apply` 跑完 `out_dir` 裡**一個檔都沒有**。
+print("\n── ⭐ 閘門紅了 ⇒ import_hist 一個檔都不寫（驗終點）──")
+_d = tempfile.mkdtemp(prefix="tdccw_")
+_old_root, _old_cross = T._ROOT, T.daily_cross
+try:
+    T._ROOT = os.path.join(_d, "data")
+    src = os.path.join(_d, "src", "2018")
+    out = os.path.join(_d, "out")
+    os.makedirs(src)
+    os.makedirs(out)
+    # ⭐ 假週檔要**照真的形狀**：17 級、人數合計＝Σ(1~15)、股數合計＝Σ(1~15)−調整
+    with io.open(os.path.join(src, "20181102.csv"), "w", encoding="utf-8") as f:
+        f.write("資料日期,證券代號,持股分級,人數,股數\n")
+        for code in ("0050", "2330"):
+            ppl = shr = 0
+            for lv in range(1, 16):
+                f.write(f"20181102,{code},{lv},{lv * 10},{lv * 1000}\n")
+                ppl += lv * 10
+                shr += lv * 1000
+            f.write(f"20181102,{code},16,0,500\n")          # 差異數調整
+            f.write(f"20181102,{code},17,{ppl},{shr - 500}\n")
+    T.daily_cross = lambda day, codes, root=None: (0, 100, ["0050"])   # ⛔ 必紅
+    _rl = runlog.Run("tdcc_hist_sandbox", path=os.path.join(_d, "rl.md"))
+    T.import_hist(_rl, os.path.join(_d, "src"), out_dir=out, apply=True)
+    ck("⭐⭐ 閘門紅 ⇒ `out_dir` **一個檔都沒有**（⛔ 不是「有算出數字」）",
+       os.listdir(out) == [], str(os.listdir(out)))
+    ck("  而且那一塊在 runlog 裡是 ✗（⇒ 有人會被告知）",
+       "✗" in io.open(os.path.join(_d, "rl.md"), encoding="utf-8").read())
+    # ── ⭐ 反向：閘門過了就要**真的寫出來**（⛔ 否則上面那條在「永遠不寫」時也綠）
+    #
+    # ⛔⛔ 而這一半要 `pyarrow`（`write_hist` 用它寫 parquet），
+    #   ⚠ 而 **probe runner 沒裝**（只有 daily／feeds 那兩支會裝）。
+    #   ⇒ 2026-09-15 probe run 115 實測代價：這一節讓 `selftest_tdcc.py` 紅
+    #     ⇒ ⛔ **step 10／11／12 全部 skipped** ⇒ 「把程式同步到 main」那一步
+    #       **根本沒跑** ⇒ 那一趟什麼都沒搬過去。
+    #   ⭐ 六點五那條一字不差：**一條在某個環境下必然不成立的斷言，
+    #     等於把那個環境的整條線關掉。**
+    # ⇒ 處置：套件不在就**大聲印「這一層沒跑」**，⛔ 不算失敗。
+    # ⛔⛔ 而跳掉的同時要問「還有沒有人在守」：
+    #   ⭐ **紅的那一半（上面兩條）不需要 pyarrow**——它在 `write_hist` 之前就 return
+    #   ⇒ 「閘門會擋」每個環境都驗得到；
+    #   ⚠ 這裡跳掉的只有「閘門過了會不會真的寫」那一格。
+    try:
+        import pyarrow                                            # noqa: F401
+        _HAS_PA = True
+    except ImportError:
+        _HAS_PA = False
+    if _HAS_PA:
+        T.daily_cross = lambda day, codes, root=None: (100, 100, [])
+        _rl2 = runlog.Run("tdcc_hist_sandbox2", path=os.path.join(_d, "rl2.md"))
+        T.import_hist(_rl2, os.path.join(_d, "src"), out_dir=out, apply=True)
+        ck("⭐ 反向：閘門過 ⇒ 真的寫出 `2018.parquet`"
+           "（⛔ 少了這條，上面那條在「永遠不寫」時也會綠）",
+           os.listdir(out) != [], str(os.listdir(out)))
+    else:
+        print("  ⚠⚠ **這一層沒跑**：沒有 `pyarrow`（`write_hist` 要用）"
+              "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+        print("     ⚠ 跳掉的是「閘門過了會不會**真的寫**」那一格；"
+              "⭐ 而「閘門紅了會不會擋」上面兩條**照樣驗過**（它在寫檔之前就 return）")
+finally:
+    T._ROOT, T.daily_cross = _old_root, _old_cross
+    shutil.rmtree(_d, ignore_errors=True)
 
 print(f"\n[selftest] 通過 {_n[0] - _n[1]}｜失敗 {_n[1]}")
 sys.exit(1 if _n[1] else 0)
