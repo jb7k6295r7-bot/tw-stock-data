@@ -119,6 +119,7 @@ jobs:
           python selftest_reduce.py
           python selftest_official_formula.py
           python selftest_official_stats.py
+          python selftest_push_data.py
           python selftest_crosscheck.py
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py
@@ -753,11 +754,18 @@ jobs:
       # ⚠ 這是整條管線**第一個**需要第三方套件的步驟（其餘全是標準庫）。
       #   所以裝不起來時 breakpoint_check.py 會報 ✗，**不是安靜跳過**——
       #   安靜跳過就會天天回報「沒問題」，那正是這道檢查要防的失敗形狀。
-      - name: 裝 pandas（只有斷點掃描要用）
+      # ⭐ 2026-09-15 加 `pyarrow`：`db_status` 的 E2（集保歷史回補）要讀
+      #   `data/tdcc_hist/<年>.parquet` 才數得出**週數**。
+      #   ⚠ 沒有它時那一格會誠實地寫「⚠ 算不出來｜這台沒有 pyarrow
+      #   （⛔ 不是「沒有資料」）」——⭐ 那個處置是對的，⛔ 但它一直**算不出來**
+      #   ⇒ 那一格從來沒有真正被量過。⇒ 裝上去，讓它變成一個數字。
+      #   ⛔ 仍然 `continue-on-error`：裝不起來不該賠掉整趟抓取，
+      #     而 `db_status` 自己會說那一格沒算到（⚠ 那條路要留著，不可以拿掉）。
+      - name: 裝 pandas 與 pyarrow（斷點掃描與集保歷史要用）
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        run: python -m pip install --quiet --disable-pip-version-check pandas
+        run: python -m pip install --quiet --disable-pip-version-check pandas pyarrow
 
       # ⭐⭐ 用**我方自己的 `shares` 欄**重算官方減資參考價（⛔ 不連外）。
       #   2026-09-13 之前我方寫過「上市那 303 筆沒有任何第二來源可以驗」——⛔ 那是錯的：

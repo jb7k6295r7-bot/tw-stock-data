@@ -131,7 +131,28 @@ for i in 1 2 3; do
     done
     [ -n "$hit" ] || KEEP=$(printf '%s\n%s' "$KEEP" "$f")
   done
-  printf '%s\n' "$KEEP" | grep -v '^$' | xargs -r git checkout "$DC" --
+  # ⛔⛔ 2026-09-15 付過代價（probe run 101）：這裡本來是**一整批**
+  #   `xargs -r git checkout "$DC" -- <23 個路徑>`。
+  #   ⚠ 其中一個（`data/meta/_ci_steps.tsv`）在本趟被**刪掉**了
+  #   ⇒ `error: pathspec … did not match any file(s) known to git`
+  #   ⇒ ⭐ **整批失敗 ⇒ 另外 22 個檔一個都沒有被取出來**
+  #   ⇒ 那一趟照樣 commit、照樣 push、照樣印「✓ 已推上 main」，
+  #     ⛔ 而 main 上只多了 `_last_run.md`——**探針輸出一個都沒搬過去**。
+  #   ⚠ 而它跟四點六那條是同一族：**「推成功了」≠「東西搬過去了」**。
+  # ⇒ 兩件：① 刪掉的路徑不進 KEEP（它們由下面那行 `git rm` 處理）
+  #        ② ⭐ 一個一個取，並且**記下失敗**——⛔ 靜靜跳過就是這次的病根
+  CKFAIL=0
+  for f in $(printf '%s\n' "$KEEP" | grep -v '^$'); do
+    case " $(printf '%s ' $DELETED) " in *" $f "*) continue ;; esac
+    git checkout "$DC" -- "$f" || { echo "[push_data] ⛔ 取不出來：$f" >&2
+                                    CKFAIL=$((CKFAIL + 1)); }
+  done
+  if [ "$CKFAIL" -gt 0 ]; then
+    echo "[push_data] ⛔⛔ 有 $CKFAIL 個檔沒搬過去 ⇒ **這一趟算失敗**" >&2
+    echo "[push_data] ⚠ ⛔ 不可以照樣 push：那會印「✓ 已推上 main」而東西沒到" >&2
+    git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
+    exit 3
+  fi
   printf '%s\n' "$DELETED" | grep -v '^$' \
     | xargs -r git rm -q -f --ignore-unmatch
   # ⚠ `_last_run.md` 是**跨 workflow 累積**的（runlog 只覆蓋自己那一區塊）

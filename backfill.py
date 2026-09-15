@@ -1087,7 +1087,36 @@ def script_srcs(text, base=None, cap=12):
     return sorted(set(hits))[:cap]
 
 
-def js_followups(text, base, cap=6, skip_hosts=("googleapis", "gstatic",
+def around(text, needle, span=300, cap=4):
+    """把 `needle` 前後的原始碼**原樣印出來**。→ list[str]。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要有它：**端點名挖到了，參數還是不知道**
+
+    2026-09-15 `mop_search.js` 裡挖到 `/mops/web/ezsearch_query`
+    ——⭐ 那是 MOPS「公告快易查」真正的查詢端點，我方從來沒用過。
+    ⚠ 而「知道網址」離「打得到」還差**參數怎麼組**。
+
+    ⇒ ⛔ 而參數**不可以猜**（CLAUDE.md 第一點：先把回應／原始碼自己講的話攤開）。
+    ⭐ 最便宜的做法就是把那一段原始碼**原樣印出來**讓人讀
+    ——⚠ 判準沒辦法窮舉形狀，而人讀三行字就分得出來。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out, seen = [], 0
+    for m in re.finditer(re.escape(needle), t):
+        if seen >= cap:
+            out.append(f"      …（另 {len(re.findall(re.escape(needle), t)) - cap} 處未印）")
+            break
+        a = max(0, m.start() - span // 2)
+        seg = " ".join(t[a:m.start() + span // 2].split())
+        out.append(f"      […{seg}…]")
+        seen += 1
+    if not seen:
+        # ⛔ 找不到要說「找不到」，⚠ 不是印一片空白（那跟「沒有這一段」長得一樣）
+        out.append(f"      ⚠ 這一份裡**找不到** `{needle}`（⛔ 不是「它不存在」，是不在這一支）")
+    return out
+
+
+def js_followups(text, base, cap=8, skip_hosts=("googleapis", "gstatic",
                                                  "google-analytics", "googletagmanager",
                                                  "jquery.com", "cdnjs", "jsdelivr")):
     """⑤ 那幾支外部 `.js` **裡面**去打誰——⛔ 這是「取不到」之後的下一步。
@@ -1116,8 +1145,19 @@ def js_followups(text, base, cap=6, skip_hosts=("googleapis", "gstatic",
     mine, third = [], []
     for u in srcs:
         (third if any(h in u for h in skip_hosts) else mine).append(u)
+    # ⛔⛔ 2026-09-15 付過代價：`mine` 是**照字母排序**的，而 cap=6
+    #   ⇒ 額度被 `gsap`／`jquery-3.7.1`／`jquery.cookie`／`jquery.mousewheel`
+    #     吃光 ⇒ ⭐ 站方**自己寫的** `main.js`／`tables.js` 一支都沒挖到
+    #   ⇒ ⚠ 報告上是「本站另 4 支未挖」——⛔ 而那 4 支正是最可能有答案的。
+    # ⇒ ⭐ 通用函式庫**排到最後**（它們是別人寫的，不會有這個站的端點）。
+    # ⛔ 仍然列出來、仍然可以挖得到——⚠ 只是順序，不是篩掉。
+    vendor = ("jquery", "gsap", "bootstrap", "slick", "swiper", "modernizr",
+              "polyfill", "lodash", "moment", "/ie.js", "underscore")
+    mine.sort(key=lambda u: (any(v in u.lower() for v in vendor), u))
+    n_vendor = sum(1 for u in mine if any(v in u.lower() for v in vendor))
     out.append(f"  ⑥ 外部 `.js` 逐支挖：共 {len(srcs)} 支"
-               f"｜本站 {len(mine)} 支｜第三方 {len(third)} 支（⛔ 不抓）")
+               f"｜本站 {len(mine)} 支（其中通用函式庫 {n_vendor} 支，⭐ **排到最後**）"
+               f"｜第三方 {len(third)} 支（⛔ 不抓）")
     for u in third:
         out.append(f"      ⛔ 跳過（第三方）：{u[:120]}")
     if not mine:

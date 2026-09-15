@@ -365,6 +365,28 @@ def ezsearch_case(out):
     out.append("   ⭐ 前 160 字：" + B.visible_text(raw, " ")[:160])
     out += B.xhr_clues(raw, base=url)
     out += B.js_followups(raw, base=url)
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 端點名挖到了，**參數還是不知道**——⇒ 把那一段原始碼原樣印出來
+    #
+    # 2026-09-15 `mop_search.js` 裡挖到（在**被註解掉**的那幾行裡）：
+    #     //var url = "/mops/web/ezsearch_query";
+    #     //var keyValue = "step=" + step + "&lang=" + value + "&pg=ezsearch";
+    # ⭐ 那是「公告快易查」真正的查詢端點，我方從來沒用過。
+    # ⛔ 而參數**不可以猜**（第一點）⇒ 把 `ezsearch_query`／`AjaxCheck`
+    #   前後的碼原樣印出來，⚠ 人讀完才知道下一發怎麼組。
+    # ══════════════════════════════════════════════════════════════
+    out.append("")
+    out.append("── ⭐⭐ 那個查詢端點的**參數怎麼組**（⛔ 原始碼原樣印，不猜）")
+    for js in ("js/mop_search.js", "js/mops2.js"):
+        jurl = "https://mopsov.twse.com.tw/mops/web/" + js
+        out.append(f"  ── {jurl}")
+        jraw, jerr = B.get(jurl, retries=2, timeout=60)
+        if jerr:
+            out.append(f"     ⛔ 取不回來：{_W(jerr, 160)}　⇒ 這一支**沒挖**")
+            continue
+        for needle in ("ezsearch_query", "AjaxCheck", "keyValue"):
+            out.append(f"     ⭐ `{needle}` 前後：")
+            out += ["  " + ln for ln in B.around(jraw, needle, span=420, cap=3)]
 
 
 def revenue_hist_columns(out):

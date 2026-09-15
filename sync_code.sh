@@ -51,26 +51,52 @@ for T in $EXCLUDE_TREES; do SPEC="$SPEC :(exclude)$T"; done
 echo "[sync_code] 排除（main 是唯一寫入者）：$(echo $EXCLUDE_TREES | tr '\n' ' ')"
 
 SRC=$(git rev-parse HEAD)
-git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
-git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
-# shellcheck disable=SC2086
-git checkout "$SRC" -- . $SPEC || {
-  echo "⚠ 取程式路徑失敗，跳過同步" >&2; git checkout -q "$BR" 2>/dev/null; exit 0; }
+# ⛔⛔ 2026-09-15 補：`git push … && echo "✓ …"` 的失敗**沒有人接**
+#   ⇒ push 被別人搶先、被拒絕、網路掉，這支照樣 `exit 0`，
+#     ⚠ 而畫面上只是**少了一行成功訊息** ⇒ ⛔ 沒有任何地方會說。
+#   ⭐ 而 probe.yml 的註解早就寫著這件事該怎麼辦：
+#     「走到 push 還失敗就是**真的有問題**，該紅。」
+# ⇒ 重試 3 次（⚠ 搶先是常態：daily／feeds 一直在推 main，
+#   一次就紅會變成一道天天紅的閘門），⭐ 三次都不成才 exit 4。
+# ⚠ 為什麼不跟 `push_data.sh` 共用那個重試迴圈：那一份的迴圈體是
+#   **逐檔搬資料 ＋ 逐鍵合併台帳**，這裡是**整棵程式樹**，兩邊的重建動作不同。
+#   ⛔ 硬湊成一份會多出一堆「這一邊不適用」的分支——那比兩份更難改。
+SYNCED=0
+for i in 1 2 3; do
+  git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
+  git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
+  # shellcheck disable=SC2086
+  git checkout "$SRC" -- . $SPEC || {
+    echo "⚠ 取程式路徑失敗，跳過同步" >&2; git checkout -q "$BR" 2>/dev/null; exit 0; }
 
-# ⭐ `backtest/forward/RULE.md` 是**回測線寫的判準檔**，⛔ 不是紀錄檔
-#   ⇒ 它要跟著同步。⚠ 而同一個目錄裡的 runlog／state 是 main 寫的，上面已排除。
-#   ⛔ 不要因為「同一個目錄」就一起排除——那會讓 RULE.md 永遠到不了 main。
-if git cat-file -e "$SRC:backtest/forward/RULE.md" 2>/dev/null; then
-  git checkout "$SRC" -- backtest/forward/RULE.md \
-    && echo "[sync_code] ⭐ 例外放行：backtest/forward/RULE.md（判準檔，回測線寫的）"
-fi
+  # ⭐ `backtest/forward/RULE.md` 是**回測線寫的判準檔**，⛔ 不是紀錄檔
+  #   ⇒ 它要跟著同步。⚠ 而同一個目錄裡的 runlog／state 是 main 寫的，上面已排除。
+  #   ⛔ 不要因為「同一個目錄」就一起排除——那會讓 RULE.md 永遠到不了 main。
+  if git cat-file -e "$SRC:backtest/forward/RULE.md" 2>/dev/null; then
+    git checkout "$SRC" -- backtest/forward/RULE.md \
+      && echo "[sync_code] ⭐ 例外放行：backtest/forward/RULE.md（判準檔，回測線寫的）"
+  fi
 
-git add -A
-if git diff --staged --quiet; then
-  echo "程式已經跟 main 一致，沒有要同步的"
-else
+  git add -A
+  if git diff --staged --quiet; then
+    echo "程式已經跟 main 一致，沒有要同步的"
+    SYNCED=1
+    break
+  fi
   git commit -q -m "sync: 把分支的程式同步到 main"
-  git push origin HEAD:main && echo "✓ 程式已同步到 main"
+  if git push origin HEAD:main; then
+    echo "✓ 程式已同步到 main"
+    SYNCED=1
+    break
+  fi
+  echo "[sync_code] push 失敗（第 $i 次），多半是這幾秒又有人推了 main，重來" >&2
+  sleep $((i * 5))
+done
+if [ "$SYNCED" -ne 1 ]; then
+  echo "[sync_code] ⛔⛔ 三次都推不上去 ⇒ **main 上的程式沒有更新**" >&2
+  echo "[sync_code] ⚠ 而排程跑的是 main 上那一份 ⇒ ⛔ 這一趟之後的排程跑的是舊程式" >&2
+  git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
+  exit 4
 fi
 # ⛔ 一定要切回原本的分支：後面的步驟（回補、Commit）都靠它。
 git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
