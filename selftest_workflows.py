@@ -632,6 +632,55 @@ def main():
     ck("★ 沒有任何一處還寫死 `data`（⛔ 漏改一處 ⇒ 那一處永遠只搬 data）",
        not _hard, f"⛔ 還寫死的：{_hard}")
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 前瞻紀錄那三道**要一起成立**（回測線 2026-09-15 0141 §一）
+    #
+    # `p4_types/universe.csv` 的 `first_seen` 取小／`last_seen` 取大，
+    # 是 `forward_p4` 讀既有檔時算的 ⇒ ⛔ 它算得對的**前提**有三個：
+    #
+    #   ① `forward.yml` 有「只准在 main 上跑」            ⇒ 讀到的是最新那份
+    #   ② `sync_code.sh` 的 EXCLUDE_TREES 有 backtest/forward ⇒ 分支不會反向蓋回去
+    #   ③ `push_data.sh` 的 LEDGERS 有那兩個檔            ⇒ 推回去時逐鍵合併不掉列
+    #
+    # ⛔ 缺**任何一道**，取小取大就會錯，⚠ 而錯的樣子是「某個月不見了」
+    #   ——⭐ 而前瞻紀錄**補不回來**（重算出來的就不是前瞻了）。
+    # ⇒ 三道釘成**一條**斷言：拿掉任何一道都紅，⛔ 不是分成三條讓人以為可以少一道。
+    # ══════════════════════════════════════════════════════════════
+    _sc = io.open(os.path.join(here, "sync_code.sh"), encoding="utf-8").read()
+    _fw = io.open(os.path.join(here, ".github", "workflows",
+                               "forward.yml"), encoding="utf-8").read()
+    _three = {
+        "① forward.yml 只准在 main 上跑": '"$BR" != "main"' in _fw,
+        "② sync_code.sh 排除 backtest/forward":
+            re.search(r"EXCLUDE_TREES=\"[^\"]*backtest/forward", _sc) is not None,
+        "③ push_data.sh 的 LEDGERS 有 p4_types 那兩個檔":
+            "backtest/forward/p4_types/records.csv:" in _pd
+            and "backtest/forward/p4_types/universe.csv:" in _pd,
+    }
+    _bad3 = [k for k, v in _three.items() if not v]
+    ck("⭐⭐ 前瞻紀錄那三道**全部**還在（⛔ 缺一道，`first_seen`／`last_seen` 就會錯）",
+       not _bad3,
+       f"⛔ 沒了：{_bad3}"
+       "　⇒ 錯的樣子是「某個月不見了」，⚠ 而前瞻紀錄**補不回來**"
+       if _bad3 else "三道都在")
+
+    # ⭐⭐ 而第四道：**排程本身**。⛔ 上面那三道都在、而 cron 被拿掉的話，
+    #   那一支從此再也不會跑，⚠ 而畫面上什麼都不會說（沒有失敗、沒有紅）
+    #   ——正是「不累積就永久失去」那一族最怕的形狀。
+    # ⇒ 判準**兩個方向都比**（三點1）：
+    #   ① 每一條 cron 都有人認得（⛔ 否則那一趟會 `exit 1`，白跑）
+    #   ② 每一個 case 分支都對得上一條 cron（⛔ 否則是 cron 被拿掉了，而分支留著）
+    _crons = set(re.findall(r'-\s*cron:\s*"([^"]+)"', _fw))
+    _arms = set(re.findall(r'^\s*"([0-9*/, -]+)"\)\s*RUN_', _fw, re.M))
+    ck("⭐⭐ forward.yml：每一條 cron 都有對應的分支"
+       "（⛔ 少一條 ⇒ 那一趟 exit 1 白跑）",
+       _crons <= _arms, f"⛔ 沒人認得：{sorted(_crons - _arms)}｜cron={sorted(_crons)}")
+    ck("⭐⭐ 而反過來：每一個分支都對得上一條 cron"
+       "（⛔ 對不上 ＝ **cron 被拿掉了**，而那一支從此不會跑、沒有任何地方會說）",
+       _arms <= _crons, f"⛔ 沒有 cron 的分支：{sorted(_arms - _crons)}")
+    ck("★ 這兩道真的**掃到了**（⛔ 0 條 cron 跟全部通過長得一樣）",
+       len(_crons) >= 2, f"{len(_crons)} 條 cron｜{len(_arms)} 個分支")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
