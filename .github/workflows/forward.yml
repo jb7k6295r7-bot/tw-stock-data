@@ -19,7 +19,20 @@ on:
   schedule:
     # 每月 13 日 20:00 台北（＝ 12:00 UTC）。⚠ 月營收 10 日公布 ⇒ 13 日跑得到。
     - cron: "0 12 13 * *"
+    # ⭐⭐ P4 四型（回測線 2026-09-15 01:41 來信要的）。
+    #   量測日 ＝ 每月**第一個交易日**，而進場價要拿**次日開盤** ⇒ 要等次一交易日收盤。
+    #   ⚠ 而「第一個交易日是哪天」會被元旦、農曆年、颱風推移
+    #   ⇒ ⛔ 不可以寫死某一天。⭐ 2~7 日**每天跑一次**，靠程式自己認：
+    #     同一量測日已有紀錄就不寫（冪等、回 0）；次日開盤還沒進日檔就紅掉不寫。
+    #   ⇒ 六次機會裡只有對的那一次會寫進去。第一趟 2026-10-02。
+    - cron: "0 12 2-7 * *"
   workflow_dispatch:
+    inputs:
+      which:
+        description: "auto 照排程決定｜and 只跑 forward_and｜p4 只跑 forward_p4"
+        type: choice
+        options: [auto, and, p4]
+        default: auto
 
 permissions:
   contents: write
@@ -92,6 +105,35 @@ jobs:
           fi
           echo "✓ 在 main 上"
 
+      # ⭐⭐ 「這一趟跑哪一支」**只在這裡決定一次**（四點五）。
+      #   ⚠ 兩條 cron 打進**同一支** workflow ⇒ 靠 `github.event.schedule` 分辨，
+      #     ⛔ 不要分成兩支 workflow——那一整串守門步驟就會變成兩份。
+      #   ⚠ 手動派工時 `github.event.schedule` 是空的 ⇒ 由 `which` 決定，
+      #     而 `auto` 在手動派工下代表**兩支都跑**（各自冪等，跑到已有紀錄就不寫）。
+      - name: ⭐ 決定這一趟跑哪一支
+        id: pick
+        run: |
+          SCH="${{ github.event.schedule }}"
+          WH="${{ inputs.which }}"
+          RUN_AND=0
+          RUN_P4=0
+          if [ -n "$SCH" ]; then
+            case "$SCH" in
+              "0 12 13 * *")  RUN_AND=1 ;;
+              "0 12 2-7 * *") RUN_P4=1 ;;
+              *) echo "⛔ 不認得的排程字串：$SCH" >&2; exit 1 ;;
+            esac
+          else
+            case "${WH:-auto}" in
+              and)  RUN_AND=1 ;;
+              p4)   RUN_P4=1 ;;
+              *)    RUN_AND=1; RUN_P4=1 ;;
+            esac
+          fi
+          echo "and=$RUN_AND" >> "$GITHUB_OUTPUT"
+          echo "p4=$RUN_P4"   >> "$GITHUB_OUTPUT"
+          echo "⇒ forward_and=$RUN_AND｜forward_p4=$RUN_P4（排程「$SCH」／which「$WH」）"
+
       # ⛔⛔ `forward_and` import 的三支判準模組（research11／13／34）
       #   若有任何一支不在 main 上，這一趟**要大聲失敗**，
       #   ⚠ 不可以讓它變成「跑了、但少了一個月」——那正是前瞻紀錄最怕的。
@@ -113,7 +155,57 @@ jobs:
           echo "✓ 四支都在 main 上"
 
       - name: 跑前瞻紀錄
+        if: steps.pick.outputs.and == '1'
         run: python3 -m backtest.forward_and
+
+      # ⭐⭐ P4 四型（回測線 2026-09-15 01:41 §一）。
+      # ⛔ 同一個道理：模組不在 **main** 上就要**當場紅**，
+      #   ⚠ 不可以變成「跑了、但那個月沒有紀錄」——前瞻紀錄補不回來。
+      #   ⚠ 2026-09-15 現況：`forward_p4.py`／`p4_features.py` 還在回測線的分支上
+      #     ⇒ 這一道現在會紅，⭐ 而它紅得對（排程跑的是 main，四點六③）。
+      - name: ⭐ P4 的模組真的在 main 上（⛔ 不是在分支上）
+        if: steps.pick.outputs.p4 == '1'
+        run: |
+          MISS=""
+          for M in forward_p4 p4_features; do
+            [ -f "backtest/$M.py" ] || MISS="$MISS $M"
+          done
+          if [ -n "$MISS" ]; then
+            echo "⛔ main 上缺這幾支：$MISS" >&2
+            echo "   ⇒ 排程跑的是 **main**（CLAUDE.md 四點六③）," >&2
+            echo "     分支上有不算數。請回測線先把它們推上 main。" >&2
+            exit 1
+          fi
+          echo "✓ 兩支都在 main 上"
+
+      # ⚠ 自測跟著跑（回測線 2026-09-15 §一末：請放進 selftest 清單）。
+      #   ⛔ 不加 `continue-on-error`：這一支的產出補不回來，
+      #     自測紅了就不該往下寫。
+      # ⚠ 這裡用 **glob**，⛔ 不逐支寫死檔名——那兩支現在還在回測線的分支上，
+      #   而 `selftest_workflows` 有一道「workflow 叫到的自測必須**存在**」
+      #   ⇒ 寫死檔名會讓那一道紅，而它紅得沒有道理（這裡本來就擋了不存在的情況）。
+      #   ⭐ 而 glob 有它自己的坑：**一個都沒配到時跟全部通過長得一樣**
+      #   ⇒ 底下數出來、0 個就大聲說「這一層沒跑」。
+      - name: 驗 P4 前瞻（回測線的自測，backtest/ 底下）
+        if: steps.pick.outputs.p4 == '1'
+        run: |
+          N=0
+          for T in backtest/selftest_*p4*.py; do
+            [ -f "$T" ] || continue
+            N=$((N + 1))
+            echo "── $T ──"
+            python3 "$T"
+          done
+          if [ "$N" -eq 0 ]; then
+            echo "⚠⚠ **這一層沒跑**：main 的 backtest/ 底下一支 P4 自測都沒有"
+            echo "   ⇒ ⛔ 不算失敗（下一步的模組檢查會擋），⛔ **也不算驗過**"
+          else
+            echo "✓ 跑了 $N 支"
+          fi
+
+      - name: 跑前瞻紀錄（P4 四型）
+        if: steps.pick.outputs.p4 == '1'
+        run: python3 -m backtest.forward_p4
 
       # ⭐⭐ 市場情報分析線 2026-09-13 01:50 §① 要的：
       #   「跑完請把**當次的輸入指紋**一起推進 forward/，不要只推結果。」

@@ -215,6 +215,45 @@ def main():
        if naked else f"掃了 {len(glob.glob(os.path.join(here, 'selftest_*.py')))} 支")
 
     # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 「蒐證」那一步要排在「修好」**之後**（2026-09-15 加）
+    #
+    # ⛔ `feeds.yml` 的 `otc-adj-official`：`otc_reduce_history.py` 與
+    #   `otc_exright_history.py` **同時**做兩件事——抓官方判準檔，
+    #   以及「逐筆掃我方 `data/adj` 缺哪些」。
+    #   ⚠ 而它們排在 `adjust.py` **前面** ⇒ 掃到的是**還沒補之前**的狀態
+    #   ⇒ ⭐ 這個 mode **每一趟都以那兩塊紅著收尾**，⛔ 即使這一趟補的
+    #     正好就是它報的那幾筆（run 150 實測：09:33 報三筆缺、09:34 就補進去了）。
+    # ⚠ 而「一道天天紅的閘門」的代價 CLAUDE.md 寫過：**會被學會忽略**。
+    # ⇒ 判準：那兩支必須**也**出現在 `adjust.py` 之後。
+    #   ⛔ 不是「只能在後面」——①那一次是拿官方判準檔當輸入，本來就該在前面。
+    # ⚠ 這跟 `daily.yml` 那條（`adj_gap` 讀 transpose 的產出 ⇒ 要排在它後面）
+    #   是**同一族**：**「讀別人產出的那一步」排在產出之前，量到的是上一趟。**
+    # ══════════════════════════════════════════════════════════════
+    # ⚠ `run_blocks()` 回的是 **(步驟名, shell 原文)**，⛔ 不是字串
+    #   ——第一版我當成字串去 `in` ⇒ 每一塊都被 `continue` 掉
+    #   ⇒ ⛔ **掃到 0 塊，而輸出跟「全部通過」一模一樣**（第七點④）。
+    #   ⇒ ⭐ 所以底下多一條「這道判準真的掃到東西」。
+    _evi = ("otc_reduce_history.py", "otc_exright_history.py")
+    _seen = 0
+    for path in files:
+        for step, body in run_blocks(path):
+            if "adjust.py" not in body:
+                continue
+            i_adj = body.rindex("adjust.py")
+            for name in _evi:
+                if name not in body:
+                    continue
+                _seen += 1
+                ck(f"⭐⭐ {os.path.basename(path)}／{step}：`{name}` 也排在 "
+                   f"`adjust.py` **之後**（⛔ 否則它量到的是補之前的狀態）",
+                   body.rindex(name) > i_adj,
+                   "⛔ 最後一次出現在 adjust.py 之前"
+                   "　⇒ 這個 step 會**以那一塊紅著收尾**，"
+                   "而它報的缺口可能就是同一趟補掉的")
+    ck("★ 這道「蒐證排在修好之後」真的**掃到了**（⛔ 0 塊跟全部通過長得一樣）",
+       _seen >= 2, f"{_seen} 塊")
+
+    # ══════════════════════════════════════════════════════════════
     # ⭐⭐ 逐年分批的迴圈：**一批失敗不可以賠掉後面的批次**（2026-09-10 加）
     #
     # ⛔ run 104：`tib` 的 2023 那批有**一天**回 HTML 不是 JSON ⇒ 程式 exit 1
@@ -592,6 +631,55 @@ def main():
              and not ln.lstrip().startswith("#")]
     ck("★ 沒有任何一處還寫死 `data`（⛔ 漏改一處 ⇒ 那一處永遠只搬 data）",
        not _hard, f"⛔ 還寫死的：{_hard}")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 前瞻紀錄那三道**要一起成立**（回測線 2026-09-15 0141 §一）
+    #
+    # `p4_types/universe.csv` 的 `first_seen` 取小／`last_seen` 取大，
+    # 是 `forward_p4` 讀既有檔時算的 ⇒ ⛔ 它算得對的**前提**有三個：
+    #
+    #   ① `forward.yml` 有「只准在 main 上跑」            ⇒ 讀到的是最新那份
+    #   ② `sync_code.sh` 的 EXCLUDE_TREES 有 backtest/forward ⇒ 分支不會反向蓋回去
+    #   ③ `push_data.sh` 的 LEDGERS 有那兩個檔            ⇒ 推回去時逐鍵合併不掉列
+    #
+    # ⛔ 缺**任何一道**，取小取大就會錯，⚠ 而錯的樣子是「某個月不見了」
+    #   ——⭐ 而前瞻紀錄**補不回來**（重算出來的就不是前瞻了）。
+    # ⇒ 三道釘成**一條**斷言：拿掉任何一道都紅，⛔ 不是分成三條讓人以為可以少一道。
+    # ══════════════════════════════════════════════════════════════
+    _sc = io.open(os.path.join(here, "sync_code.sh"), encoding="utf-8").read()
+    _fw = io.open(os.path.join(here, ".github", "workflows",
+                               "forward.yml"), encoding="utf-8").read()
+    _three = {
+        "① forward.yml 只准在 main 上跑": '"$BR" != "main"' in _fw,
+        "② sync_code.sh 排除 backtest/forward":
+            re.search(r"EXCLUDE_TREES=\"[^\"]*backtest/forward", _sc) is not None,
+        "③ push_data.sh 的 LEDGERS 有 p4_types 那兩個檔":
+            "backtest/forward/p4_types/records.csv:" in _pd
+            and "backtest/forward/p4_types/universe.csv:" in _pd,
+    }
+    _bad3 = [k for k, v in _three.items() if not v]
+    ck("⭐⭐ 前瞻紀錄那三道**全部**還在（⛔ 缺一道，`first_seen`／`last_seen` 就會錯）",
+       not _bad3,
+       f"⛔ 沒了：{_bad3}"
+       "　⇒ 錯的樣子是「某個月不見了」，⚠ 而前瞻紀錄**補不回來**"
+       if _bad3 else "三道都在")
+
+    # ⭐⭐ 而第四道：**排程本身**。⛔ 上面那三道都在、而 cron 被拿掉的話，
+    #   那一支從此再也不會跑，⚠ 而畫面上什麼都不會說（沒有失敗、沒有紅）
+    #   ——正是「不累積就永久失去」那一族最怕的形狀。
+    # ⇒ 判準**兩個方向都比**（三點1）：
+    #   ① 每一條 cron 都有人認得（⛔ 否則那一趟會 `exit 1`，白跑）
+    #   ② 每一個 case 分支都對得上一條 cron（⛔ 否則是 cron 被拿掉了，而分支留著）
+    _crons = set(re.findall(r'-\s*cron:\s*"([^"]+)"', _fw))
+    _arms = set(re.findall(r'^\s*"([0-9*/, -]+)"\)\s*RUN_', _fw, re.M))
+    ck("⭐⭐ forward.yml：每一條 cron 都有對應的分支"
+       "（⛔ 少一條 ⇒ 那一趟 exit 1 白跑）",
+       _crons <= _arms, f"⛔ 沒人認得：{sorted(_crons - _arms)}｜cron={sorted(_crons)}")
+    ck("⭐⭐ 而反過來：每一個分支都對得上一條 cron"
+       "（⛔ 對不上 ＝ **cron 被拿掉了**，而那一支從此不會跑、沒有任何地方會說）",
+       _arms <= _crons, f"⛔ 沒有 cron 的分支：{sorted(_arms - _crons)}")
+    ck("★ 這兩道真的**掃到了**（⛔ 0 條 cron 跟全部通過長得一樣）",
+       len(_crons) >= 2, f"{len(_crons)} 條 cron｜{len(_arms)} 個分支")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")

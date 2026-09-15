@@ -82,6 +82,16 @@ LASTRUN="data/meta/_last_run.md"
 #     `_asked.json`    逐日型：哪幾天問到了但那天沒資料（⇒ 續跑的判準）
 #   ⚠ 它們被回退的樣子看起來只是「多花幾分鐘重問」，
 #   ⛔ 直到 `--limit` 分批補那種跑法**永遠補不完**為止。
+#
+# ⭐⭐ 2026-09-15：`backtest/forward/p4_types/` 那兩個檔（回測線 0141 §一）。
+#   ⚠ 它們跟上面那幾個是**同一族**：由 main 上的 `forward.yml` 逐月 append
+#   ⇒ 分支那份永遠比 main 舊 ⇒ ⛔ 整份取本趟的就是把新的月份刪掉。
+#   ⚠ 而前瞻紀錄**補不回來**（重算出來的就不是前瞻了）⇒ 這一族刪了沒有第二次機會。
+# ⛔ 而 `universe.csv` 的 `first_seen` 取小／`last_seen` 取大**這一份不做**：
+#   逐鍵合併只保證那一列不會消失，⚠ 取小取大是 `forward_p4` 自己讀既有檔時算的。
+#   ⇒ ⭐ 前提是它**在 main 上跑**（`forward.yml` 有一道「只准在 main 上跑」擋著），
+#     而且 `sync_code.sh` 的 EXCLUDE_TREES 有 `backtest/forward`
+#     ⇒ 分支那份不會反向蓋回去。⛔ 這三道缺一道，取小取大就會錯。
 LEDGERS="
 data/universe/_coverage_backfill.csv:date
 data/meta/delisted.csv:market,stock_id,delist_date
@@ -89,6 +99,8 @@ data/meta/calendar_tpex.csv:date
 data/meta/holiday_schedule.csv:date
 data/universe/*/_fetched.json:json
 data/universe/*/_asked.json:json
+backtest/forward/p4_types/records.csv:measure_date,stock_id
+backtest/forward/p4_types/universe.csv:stock_id
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- $TREES)
 if [ -n "$FORCE" ]; then
