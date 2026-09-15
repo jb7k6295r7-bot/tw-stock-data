@@ -62,6 +62,7 @@ NO_PA = ("  ⚠⚠ **這一層沒跑**：這台沒有 pyarrow／numpy"
          "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
 
 REAL_LOW = os.path.join(HERE, "data", "meta", "_tdcc_weeks_low.txt")
+REAL_HIST_LOW = os.path.join(HERE, "data", "meta", "_tdcc_hist_weeks_low.txt")
 
 
 def _dig(p):
@@ -70,6 +71,7 @@ def _dig(p):
 
 
 B4 = _dig(REAL_LOW)
+B5 = _dig(REAL_HIST_LOW)
 _n = [0, 0]
 
 
@@ -157,43 +159,48 @@ ck("⭐⭐ 用到的方向**全部是 UP**（⛔ 抄成 DOWN ⇒ 週數變少也
 
 print("\n── ③ `weeks_gate` 自己：數目錄、退步要紅 ──")
 with tempfile.TemporaryDirectory() as d:
-    old_out, old_low = T.OUT_DIR, T.LOW
+    # ⭐⭐ 2026-09-15：沙箱**只導一個旋鈕** `T._ROOT`。
+    #   ⛔ 原本是導 `T.OUT_DIR` 與 `T.LOW` 兩個 ⇒ 加第三個檔（`HIST_LOW`）時
+    #     當場漏掉，拿假資料跑一趟就把 repo 真的那個寫出來了。
+    #   ⚠ 而處置不是「記得三個都導」（那正是判準檔已經否決的說法），
+    #     是把它們收成**呼叫當下才算**的函式 ⇒ 導 `_ROOT` 一個就全動。
+    old_root = T._ROOT
     try:
-        T.OUT_DIR = os.path.join(d, "tdcc")
-        T.LOW = os.path.join(d, "_tdcc_weeks_low.txt")
-        os.makedirs(T.OUT_DIR)
+        T._ROOT = d
+        os.makedirs(os.path.join(d, "meta"), exist_ok=True)
+        os.makedirs(T.week_dir())
         for w in ("2026-08-28", "2026-09-04", "2026-09-11"):
-            io.open(os.path.join(T.OUT_DIR, f"{w}.csv"), "w").write("x\n")
+            io.open(os.path.join(T.week_dir(), f"{w}.csv"), "w").write("x\n")
         rl = FakeRun()
         ck("數得出 3 週", T.weeks_gate(rl) == 3)
         ck("  第一趟不判定（沒有水位檔）", not rl.checks, str(rl.checks))
         ck("  ⭐ 而水位檔被建立成 3",
-           io.open(T.LOW, encoding="utf-8").read().startswith("3,"),
-           io.open(T.LOW, encoding="utf-8").read())
+           io.open(T.low_path(), encoding="utf-8").read().startswith("3,"),
+           io.open(T.low_path(), encoding="utf-8").read())
         # ⛔ 少一週 ⇒ 要紅
-        os.remove(os.path.join(T.OUT_DIR, "2026-08-28.csv"))
+        os.remove(os.path.join(T.week_dir(), "2026-08-28.csv"))
         rl = FakeRun()
         ck("⭐⭐ 週數從 3 掉到 2 ⇒ check 是 False", T.weeks_gate(rl) == 2
            and rl.checks and rl.checks[0][1] is False, str(rl.checks))
         ck("  ⛔ 而水位檔**還是 3**（⚠ 被寫小 = 那道閘門從此永遠綠）",
-           io.open(T.LOW, encoding="utf-8").read().startswith("3,"),
-           io.open(T.LOW, encoding="utf-8").read())
+           io.open(T.low_path(), encoding="utf-8").read().startswith("3,"),
+           io.open(T.low_path(), encoding="utf-8").read())
         # ⭐ 反向：多一週要綠並上修
         for w in ("2026-08-28", "2026-09-18"):
-            io.open(os.path.join(T.OUT_DIR, f"{w}.csv"), "w").write("x\n")
+            io.open(os.path.join(T.week_dir(), f"{w}.csv"), "w").write("x\n")
         rl = FakeRun()
         ck("⭐ 反向：週數變多 ⇒ 綠，而且水位上修到 4",
            T.weeks_gate(rl) == 4 and rl.checks[0][1] is True
-           and io.open(T.LOW, encoding="utf-8").read().startswith("4,"),
-           io.open(T.LOW, encoding="utf-8").read())
+           and io.open(T.low_path(), encoding="utf-8").read().startswith("4,"),
+           io.open(T.low_path(), encoding="utf-8").read())
         # ⛔ 目錄不存在不可以炸掉
-        T.OUT_DIR = os.path.join(d, "沒這個目錄")
+        T._ROOT = os.path.join(d, "沒這個目錄")
         rl = FakeRun()
         ck("⛔ 目錄不存在 ⇒ 回 0 而不是炸掉", T.weeks_gate(rl) == 0)
         ck("  ⭐ 而且明講「目錄是空的」（⚠ 0 週跟沒跑長得一樣）",
            any("目錄是空的" in f"{k}{v}" for k, v in rl.infos), str(rl.infos))
     finally:
-        T.OUT_DIR, T.LOW = old_out, old_low
+        T._ROOT = old_root
 
 print("\n── ⑤ ⭐⭐ 三道驗算**只有一份實作**（`week_facts`）──")
 # ⛔ 2026-09-15 之前那三道整段寫在 `main()` 裡 ⇒ 要匯入歷史檔就只能抄一份，
@@ -317,9 +324,9 @@ else:
                 w = _csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
         _w("20190628.csv", _rows("20190628"))
         out = os.path.join(d, "out")
-        old_out = T.OUT_DIR
+        old_out = T._ROOT
         try:
-            T.OUT_DIR = os.path.join(d, "nope")      # 沒有重疊週
+            T._ROOT = os.path.join(d, "nope")        # 沒有重疊週
             rl = FakeRun()
             T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=False)
             ck("⛔ 不帶 `--apply` ⇒ 一個檔都不寫", not os.path.isdir(out))
@@ -453,7 +460,7 @@ else:
 
             # ⭐⭐ 檔數斷崖：⛔ 三道驗算抓不到「截斷剛好落在列邊界」那一種
             import shutil as _sh1; _sh1.rmtree(out, ignore_errors=True)
-            T.OUT_DIR = os.path.join(d, "nope2")
+            T._ROOT = os.path.join(d, "nope2")
             for f in list(os.listdir(src)):
                 os.remove(os.path.join(src, f))
             def _many(day, n_codes):
@@ -496,11 +503,11 @@ else:
                 os.remove(os.path.join(src, f))
             _sh1.rmtree(out, ignore_errors=True)
             _w("20190628.csv", _rows("20190628"))
-            T.OUT_DIR = os.path.join(d, "nope")
+            T._ROOT = os.path.join(d, "nope")
 
             # ⭐⭐ 重疊週對不上 ⇒ 擋下來
-            T.OUT_DIR = os.path.join(d, "mine"); os.makedirs(T.OUT_DIR)
-            with io.open(os.path.join(T.OUT_DIR, "2019-06-28.csv"), "w",
+            T._ROOT = os.path.join(d, "mine"); os.makedirs(T.week_dir())
+            with io.open(os.path.join(T.week_dir(), "2019-06-28.csv"), "w",
                          encoding="utf-8", newline="") as f:
                 w = _csv.writer(f); w.writerow(T.HEADER)
                 w.writerow(["2019-06-28", "1101", "1", "999999", "100", "1.0"])
@@ -511,7 +518,7 @@ else:
                any("逐格相同" in k and c is False for k, c, _ in rl.checks)
                and not os.path.isdir(out), str(rl.checks))
         finally:
-            T.OUT_DIR = old_out
+            T._ROOT = old_out
 
 print("\n── ⑧ ⭐⭐ 持股級距是**夾出來**的，⛔ 不是抄坊間表 ──")
 # ⭐ 判準本身拿**合成**資料驗（環境無關）：造一個級距**已知**的假庫，
@@ -653,9 +660,74 @@ else:
         ck("⛔ 沒有 tdcc_hist ⇒ 大聲說**這一層沒跑**（⚠ 不是算出空表）",
            any("這一層沒跑" in k for k, _v in rl.infos), str(rl.infos))
 
+# ══════════════════════════════════════════════════════════════
+# ⑤ ⭐⭐ `tdcc_hist/` 那道閘門：判準拿**合成**日期驗，⛔ 不靠現場資料
+#
+# ⚠ 第七點⑦那條：「一條『要有壞樣本才驗得到』的斷言，它的壽命等於那個
+#   壞樣本的壽命」——⛔ 而我們每天在做的事就是把壞樣本清掉。
+# ⇒ ⭐ 判準（`iso_week_gaps`）拿合成數字驗（環境無關），
+#   現場資料只用來驗「呼叫點真的那樣叫」。
+# ══════════════════════════════════════════════════════════════
+print("\n── ⑤ ISO 週缺口的判準（合成資料，⛔ 不碰 data/）──")
+
+ck("⭐ 連續五週 ⇒ 0 個缺口",
+   T.iso_week_gaps(["2024-03-01", "2024-03-08", "2024-03-15",
+                    "2024-03-22", "2024-03-29"]) == [])
+
+# ⛔⛔ 這一條就是為什麼不用「> 7 天」：**快照日位移**，而一週都沒少
+ck("⛔⛔ 快照日位移（6 天 ＋ 8 天）⇒ **0 個缺口**"
+   "（⚠ 「> 7 天」會在這裡報 2 個 ⇒ 那道閘門會天天紅）",
+   T.iso_week_gaps(["2019-08-02", "2019-08-08", "2019-08-16"]) == [],
+   str(T.iso_week_gaps(["2019-08-02", "2019-08-08", "2019-08-16"])))
+
+ck("⭐ 真的少一週 ⇒ 報出**那一週的 ISO 週一**",
+   T.iso_week_gaps(["2024-03-01", "2024-03-15"]) == ["2024-03-04"],
+   str(T.iso_week_gaps(["2024-03-01", "2024-03-15"])))
+
+ck("⭐ 一次少兩週 ⇒ 報**兩個**（⛔ 不是報一個缺口）",
+   T.iso_week_gaps(["2024-03-01", "2024-03-22"])
+   == ["2024-03-04", "2024-03-11"],
+   str(T.iso_week_gaps(["2024-03-01", "2024-03-22"])))
+
+# ⚠ 順序顛倒的輸入也要對（`hist_weeks` 有排序，⛔ 而別人可能不排）
+ck("⭐ 輸入沒排序也算得對",
+   T.iso_week_gaps(["2024-03-15", "2024-03-01"]) == ["2024-03-04"])
+
+print("\n── ⑤-b 白名單那 7 筆：每一筆都要寫**為什麼** ──")
+ck("⭐ 白名單有 7 筆", len(T.KNOWN_HIST_GAPS) == 7,
+   str(sorted(T.KNOWN_HIST_GAPS)))
+ck("⛔ 每一筆的成因都不是空字串（⚠ 沒寫理由的白名單＝把問題藏起來）",
+   all(len(v.strip()) >= 2 for v in T.KNOWN_HIST_GAPS.values()),
+   str({k: v for k, v in T.KNOWN_HIST_GAPS.items() if len(v.strip()) < 2}))
+# ⭐ 而**不明**的那一筆要留著「不明」兩個字，⛔ 不可以被人補一個好聽的理由
+ck("⭐ 那個成因不明的（2022-10-31）仍然寫著「不明」",
+   "不明" in T.KNOWN_HIST_GAPS.get("2022-10-31", ""),
+   T.KNOWN_HIST_GAPS.get("2022-10-31", "<沒有這一筆>"))
+
+print("\n── ⑤-c 呼叫點：`weeks_gate` 裡真的叫得到 `hist_gate` ──")
+# ⛔ 這一條釘的是**呼叫點**，不是判準（第七點③：測了判準、沒測呼叫點）。
+#   ⚠ 而它必須這樣釘：`hist_gate` 若在兩個呼叫點各寫一次，
+#   就回到四點五「改一邊、另一邊沒跟上」——所以它**只准**掛在 weeks_gate 裡。
+_wg = next((f for f in ast.walk(_tree)
+            if isinstance(f, ast.FunctionDef) and f.name == "weeks_gate"), None)
+ck("找得到 `weeks_gate()`", _wg is not None)
+ck("⭐⭐ `weeks_gate` 裡有叫 `hist_gate`"
+   "（⇒ 兩條 return 的路自動都有，⛔ 不必在兩處各寫一次）",
+   any(isinstance(n, ast.Call) and getattr(n.func, "id", "") == "hist_gate"
+       for n in ast.walk(_wg)) if _wg else False)
+_n_hist = sum(1 for n in ast.walk(_tree)
+              if isinstance(n, ast.Call)
+              and getattr(n.func, "id", "") == "hist_gate")
+ck("⛔ 而且全檔**只叫一次**（⚠ 多一處就是第二份呼叫點）",
+   _n_hist == 1, f"實得 {_n_hist} 處")
+
 print("\n── ④ ★ 沒有動到 repo 真的 `_tdcc_weeks_low.txt` ──")
 ck("★ 逐位元沒變（含「本來就不存在」這一種）", _dig(REAL_LOW) == B4,
    f"{B4} → {_dig(REAL_LOW)}")
+# ⭐ 新的那個水位檔也要有同一條（第七點第五個陷阱：沙箱導走漏一個
+#   ⇒ 拿 3 列假資料就把 repo 真的那個寫壞，而它從此永遠綠）
+ck("★ 也沒有動到 repo 真的 `_tdcc_hist_weeks_low.txt`",
+   _dig(REAL_HIST_LOW) == B5, f"{B5} → {_dig(REAL_HIST_LOW)}")
 
 print(f"\n[selftest] 通過 {_n[0] - _n[1]}｜失敗 {_n[1]}")
 sys.exit(1 if _n[1] else 0)

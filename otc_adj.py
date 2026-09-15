@@ -513,7 +513,8 @@ def main():
     ap.add_argument("--resume", action="store_true",
                     help="沿用 data/meta/_otcadj_done.csv，跳過做過的")
     ap.add_argument("--fresh", action="store_true",
-                    help="清掉進度檔，全部重抓。**寫入是合併的，重跑安全**")
+                    help="這一趟不跳過任何組合，全部重抓。"
+                         "⛔ 不動進度檔（它被 git 追蹤）。**寫入是合併的，重跑安全**")
     ap.add_argument("--limit-wait", type=float, default=900,
                     help="撞到額度上限時等幾秒再續（0＝不等、直接收工）")
     ap.add_argument("--max-waits", type=int, default=6,
@@ -565,9 +566,30 @@ def main():
               + (f"　⚠ 不在上櫃母體裡而跳過的：{miss}" if miss else ""))
     if a.limit:
         codes = codes[:a.limit]
-    if a.fresh and os.path.exists(DONE):
-        os.remove(DONE)
-        print(f"[otc] --fresh：已清掉進度檔，全部重抓")
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ 這裡原本是 `os.remove(DONE)` ——⚠ 而 `DONE` 是一個**被 git 追蹤**的檔
+    #   ⇒ 刪掉它，下一趟 `push_data.sh` 會把那個刪除**搬到 main**。
+    #
+    # ⭐ K線分析線 2026-09-15 20:35 §5-3：
+    #   「請當成**已經觸發過**來修，不要當成還沒踩到。
+    #    理由：它沒觸發的唯一原因是『沒有人按過那個旗標』
+    #    ——⛔ 那是一個**時間問題**，不是一個**設計上的保護**。」
+    #   ⚠ 實測過的掃描範圍：自 2026-09-08 起 main 上 386 個資料 commit，
+    #     `data/` 底下**零個刪除** ⇒ 這條路確實沒被走過，⛔ 而它一直通著。
+    #
+    # ⇒ ⭐ 而拿掉它**什麼都不會少**：底下那一行
+    #     `done = load_done() if (a.resume and not a.fresh) else set()`
+    #   已經讓 `--fresh` 拿到**空集合** ⇒「這一趟什麼都不跳過」本來就成立。
+    #   ⛔ 刪檔那一步從頭到尾只做了一件事：**把一個被追蹤的檔弄不見**。
+    #
+    # ⚠ 要標清楚語意變了哪裡（⛔ 不可以假裝沒變）：
+    #   `--fresh` 現在是「**這一趟不跳過任何組合**」，
+    #   ⛔ 不再是「把台帳清空」——而台帳留著是**對的**：`save_done()` 是併集，
+    #   跑完之後它本來就會把全部裝回去（那個併集也是 2026-09-10 的教訓）。
+    # ══════════════════════════════════════════════════════════════
+    if a.fresh:
+        print("[otc] --fresh：這一趟**不跳過任何組合**"
+              "（⛔ 不動 `_otcadj_done.csv`：它被 git 追蹤，刪掉會搬到 main）")
     done = load_done() if (a.resume and not a.fresh) else set()
     print(f"[otc] 上櫃 {len(codes)} 檔｜區間 {a.start} ~ {hi}"
           f"｜token {'有' if token else '**無**（免費額度較低，被擋就會停下來續跑）'}")

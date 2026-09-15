@@ -499,6 +499,82 @@ def ezsearch_case(out):
             out += ["  " + ln for ln in B.around(jraw, needle, span=420, cap=12)]
 
 
+def ky_revenue_case(out):
+    """⭐⭐ 策略線 2155 問的那一格：`revenue_hist` 為什麼**一檔 KY 都沒有**。
+
+    ## 離線已經量到的（⛔ 這一節是去補最後一塊，不是從零開始）
+
+    ```
+    同一期 2026-07、同樣兩個市場：
+      當期 feed（`data/mops/revenue/2026-07.csv`，走 ajax 端點） 1,976 檔
+      歷史面板（`data/mops/revenue_hist/2026-07_*.csv`，走靜態頁） 1,851 檔
+    ⇒ 只有當期有、歷史沒有的 **127 檔**，其中 **122 檔是 KY**
+      ⚠ 另外 5 檔：2867 三商壽／3718 中光電投控／7825 和亞智慧／
+                   9105 泰金寶-DR／912000 晨訊科-DR（⭐ 兩檔 DR 也是外國發行）
+    ⇒ ⛔ **不是(丙)**：官方**有**發 KY 的月營收——我方當期 feed 裡就有 122 檔。
+    ```
+
+    ## ⛔ 而(乙)（我方解析濾掉）也已經被排除，⚠ 而且是**用數字**排除的
+
+    ```
+    探針解析 `t21sc03_114_1_0.html` ⇒ **987 列**
+    我方 `data/mops/revenue_hist/2025-01_twse.csv` ⇒ **987 列**
+    ⇒ ⭐ 逐列都留下來了，我方一列都沒濾
+    ```
+
+    ⇒ 剩下的是 **(甲)**：我方歷史那條路打的 URL **就不涵蓋 KY**。
+
+    ## ⇒ 所以這一節只問一件事：`_0` 那個尾碼是什麼意思
+
+    `rev_url()` 寫死 `t21sc03_<年>_<月>_**0**.html`。
+    ⚠ 而「`_0` 是國內、`_1` 是外國企業」是**我的猜測**
+    ——⛔ 第二點⑤：**名字（或編號）不是證據**。
+    ⇒ 這一節把 `_0`／`_1`／`_2` 各打一發，逐發印：
+    HTTP 形狀、`<tr>` 數、自述期別、⭐ **裡面有沒有「KY」**。
+
+    ⛔ 這一節**不下結論、不寫任何資料檔**：它只把三個回應攤開。
+    """
+    import mops_history as MH
+    out.append("── ⭐⭐ 策略線 2155：`revenue_hist` 一檔 KY 都沒有，`_0` 尾碼是什麼")
+    out.append("   ⛔ 離線已排除 (丙)（當期 feed 有 122 檔 KY）與 (乙)"
+               "（解析 987 列 ＝ 我方存 987 列）⇒ 這一節只驗 (甲) 的**補法**")
+    y, m = 114, 1
+    for mkt in ("sii", "otc"):
+        for suf in ("0", "1", "2"):
+            url = f"{MH.MOPSOV}/nas/t21/{mkt}/t21sc03_{y}_{m}_{suf}.html"
+            out.append("")
+            out.append(f"  ── {mkt}　尾碼 `_{suf}`")
+            out.append(f"     {url}")
+            raw, err = B.get(url, retries=2, timeout=60)
+            if err or not raw:
+                out.append(f"     ✗ 取不回來：{B.why(err, 200)}")
+                out.append("     ⚠ ⛔ **取不回來不等於那一頁不存在**（第二點）"
+                           "——這一格仍然是【未驗】")
+                continue
+            txt = raw.decode("cp950", "replace")
+            n_tr = raw.count(b"<tr")
+            n_ky = txt.count("KY")
+            n_dr = txt.count("-DR")
+            out.append(f"     [形狀] {len(raw):,} bytes｜<tr> {n_tr}｜"
+                       f"⭐ 出現「KY」{n_ky} 次｜「-DR」{n_dr} 次")
+            try:
+                rows, header, note, _ = MH.parse_revenue(raw, y, m, "twse")
+            except Exception as ex:            # noqa: BLE001
+                out.append(f"     ⚠ 解析丟例外：{type(ex).__name__}: {ex}"
+                           "　⇒ ⛔ 這一格只量到形狀")
+                continue
+            out.append(f"     解析：{note}｜{len(rows)} 列")
+            if rows:
+                ky = [r for r in rows if "KY" in str(r[1])]
+                out.append(f"     ⭐ 解析出來的列裡含 KY 的：**{len(ky)}** 檔"
+                           + (f"　例 {[(r[0], r[1]) for r in ky[:5]]}" if ky else ""))
+                out.append(f"     首列：{rows[0][:4]}")
+    out.append("")
+    out.append("  ⇒ ⛔ 這一節**不下結論**：哪一個尾碼是外國企業，由上面「含 KY 幾檔」"
+               "當場講出來；⚠ 而三個尾碼**都沒有 KY** 也是一種答案"
+               "（⇒ 那就要去找別的路，⛔ 不是把 `_1` 硬接上去）")
+
+
 def revenue_hist_columns(out):
     """⭐⭐ 回測線 0722 ③要的那一格：`revenue_hist` 的來源**有沒有公告日**。
 
@@ -605,6 +681,7 @@ def main():
     xhr_hunt("t05st01", out, month="09", day="01")
     out.append("")
     ezsearch_case(out)
+    ky_revenue_case(out)
     out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

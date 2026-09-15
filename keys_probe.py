@@ -211,6 +211,31 @@ def _our_twse_total(iso):
     return out if out["n"] else None
 
 
+def _row_for_day(fields, rows, day):
+    """挑出「日期」欄等於 `day` 的**那一列**，解成 {欄名: 數字}。→ dict 或 {}。
+
+    ⛔⛔ 沒有這一支的時候，F2 那一節把 FMTQIK 的**整月合計**跟我方的**單日**
+    並排印 ⇒ ⚠ 兩個數字長得一樣可比，而它們不是同一個量。
+
+    ⚠ 官方的日期是民國（`115/09/09`），⭐ 而傳進來的 `day` 是西元 `20260909`
+    ⇒ 兩種都比得上（⛔ 不要只比一種：換一個端點格式就不一樣了）。
+    """
+    if not fields or not rows:
+        return {}
+    di = next((i for i, f in enumerate(fields) if "日期" in str(f)), None)
+    if di is None:
+        return {}
+    y, m, d = day[:4], day[4:6], day[6:]
+    want = {f"{y}{m}{d}", f"{y}/{m}/{d}", f"{int(y) - 1911}/{m}/{d}",
+            f"{y}-{m}-{d}"}
+    for r in rows:
+        if di >= len(r):
+            continue
+        if str(r[di]).strip() in want:
+            return _sum_by_name(fields, [r])
+    return {}
+
+
 def _sum_by_name(fields, rows):
     """把**看起來像總量**的欄逐欄加總。→ dict[欄名, 合計]（沒有就回 {}）。
 
@@ -341,6 +366,19 @@ def f2_kou_jing(day):
                     + "｜".join(f"{k} {v:,.0f}" for k, v in tot.items()))
             elif rows:
                 say(f"          首列：{rows[0]}")
+            # ⛔⛔ 2026-09-15 第一版的病根：FMTQIK 回的是**整個月**（11 列）
+            #   ⇒ 只印「逐欄合計」＝ 整月合計，⚠ 而上面①是**單日**
+            #   ⇒ 兩個數字並排，而它們**不是同一個量**。
+            #   ⭐ 這就是第三點 5 那條（要判一件事只准動一個變數）套在錨點上：
+            #     ⛔ 一個月對一天，差異可以被歸給任何一件事。
+            #   ⇒ 把 `日期` ＝ 本次測試日的**那一列**單獨挑出來印。
+            one = _row_for_day(fl, rows, day)
+            if one:
+                say(f"          ⭐⭐ 其中 {day} **那一列**（⇒ 這才跟①可比）："
+                    + "｜".join(f"{k} {v:,.0f}" for k, v in one.items()))
+            elif rows and any("日期" in str(x) for x in fl):
+                say(f"          ⚠ 這張表裡**找不到** {day} 那一列"
+                    f"（{len(rows)} 列）⇒ ⛔ 不可以拿整月合計去跟①比")
 
 
 def main():

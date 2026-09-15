@@ -184,6 +184,56 @@ def main():
     finally:
         shutil.rmtree(d3, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ④ ⛔⛔ **push 回 0，而東西沒到 main**（K線分析線 2026-09-15〈七十二〉）
+    #
+    # ⭐ 那條條文的判別法就是這一節要造的情境：
+    #   「把那個步驟的實際動作註解掉，成功訊息還會不會印？」
+    #   ⇒ 原本的 `git push … && echo "✓ 已推上 main"` 證明的是
+    #     **「push 這個命令回了 0」**，⛔ 不是「那些檔到了 main」。
+    #   ⚠ 而 2026-09-15 probe run 101 正是這個形狀：push 真的成功了，
+    #     ⛔ 只是那個 commit 裡根本沒有那 22 個檔。
+    #
+    # ⇒ ⭐ 造法：在 bare repo 放 **`post-receive`**（⛔ 不是 `pre-receive`）——
+    #   它在 ref 已經更新**之後**才跑 ⇒ push 端看到的是**成功**，
+    #   而它把 main 倒回去 ⇒ ⭐ 「推成功了」與「東西在 main 上」當場分家。
+    #   ⛔ `pre-receive` 造不出這一格：那會讓 push 失敗（③ 用的是那個）。
+    # ══════════════════════════════════════════════════════════════
+    d4 = tempfile.mkdtemp(prefix="pushback_")
+    try:
+        print("\n── ④ push 回 0 而東西沒到 main ⇒ ⛔ 不可以印成功 ──")
+        origin, work = build(d4)
+        shutil.copy(os.path.join(HERE, "push_data.sh"), work)
+        for helper in ("merge_last_run.py", "merge_ledger.py"):
+            shutil.copy(os.path.join(HERE, helper), work)
+        base = git(work, "rev-parse", "origin/main").stdout.strip()
+        hook = os.path.join(origin, "hooks", "post-receive")
+        os.makedirs(os.path.dirname(hook), exist_ok=True)
+        io.open(hook, "w", encoding="utf-8").write(
+            f"#!/bin/sh\ngit update-ref refs/heads/main {base}\n")
+        os.chmod(hook, 0o755)
+        write(os.path.join(work, "data", "meta", "_a.txt"), "第四趟\n")
+        r4 = subprocess.run(["bash", "push_data.sh", "測試4"], cwd=work,
+                            capture_output=True, text=True,
+                            env=dict(os.environ, GITHUB_REF_NAME="feature"))
+        o4 = r4.stdout + r4.stderr
+        ck("⭐⭐ push 回 0 而 main 上沒有那個檔 ⇒ **回非 0**"
+           "（⚠ 這是 run 101 那一趟印「✓ 已推上 main」的那一格）",
+           r4.returncode != 0, f"rc={r4.returncode}｜{o4[-500:]}")
+        ck("  而且**點名**是哪一個檔對不上",
+           "_a.txt" in o4, o4[-500:])
+        # ⚠ 比的是那一行成功訊息的**整串**（第七點⑧：那幾個字在說明文字裡也有一份）
+        ck("⛔⛔ 而且**沒有**印成功那一行",
+           "[push_data] ✓ 已推上 main" not in o4, o4[-500:])
+        ck("⭐ 而且講得出**為什麼**：我的 commit 不在 main 的歷史裡",
+           "不在 main 的歷史裡" in o4, o4[-500:])
+        # ⭐ 而正向那一半也要有：①那一趟的成功訊息要說出它**讀回來比過**，
+        #   ⛔ 否則「有沒有做讀回驗證」跟「做了」長得一模一樣。
+        ck("⭐ 而正常那一趟（①）的成功訊息說得出它是**讀回來比過**的",
+           "讀回來逐檔比過" in out, out[-300:])
+    finally:
+        shutil.rmtree(d4, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
