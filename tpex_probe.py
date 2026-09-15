@@ -843,6 +843,19 @@ def main():
             continue
         _acts = twparse.actions_in(_r)      # ⭐ 唯一那一份（四點五），⛔ 不縮 prefix
         say(f"     ✓ {len(_r):,} bytes｜它自己寫的 action：{_acts or '⛔ 一個都沒讀到'}")
+        # ⭐⭐ 參數名也要**從頁面自己寫的字讀**，⛔ 不是猜（同 action 那條，三點5）。
+        #   ⚠ probe 121 付過代價：我猜了 `code+date` 與 `stkno+year` 兩套，
+        #     `monthlyStock` 兩套都沒中——回應 `stat:"ok"` 而 `data:[]`、
+        #     ⭐ 而**它自己講了**：`code: null`、`name: ""`、`title: "null "`
+        #     ⇒ 那是「我沒收到代號」，⛔ 不是「這一檔沒有資料」（第二點①）。
+        _html = _r.decode("utf-8", "replace")
+        _names = sorted(set(re.findall(
+            r'<(?:input|select)[^>]*\b(?:name|id)\s*=\s*["\']([A-Za-z0-9_\-]+)["\']',
+            _html, re.I)))
+        _jskeys = sorted(set(re.findall(
+            r'[{,]\s*([A-Za-z_][A-Za-z0-9_]*)\s*:', _html)))
+        say(f"        ⭐ 頁面表單欄位（input／select 的 name／id）：{_names or '⛔ 一個都沒有'}")
+        say(f"        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：{_jskeys[:40]}")
         if not _acts:
             # ⭐ 「inline 讀不到」**不是**「站上沒有」——它可能寫在外部 .js 裡
             #   ⇒ 一定要有下一步（`js_followups`），⛔ 不可以停在「我方取不到」

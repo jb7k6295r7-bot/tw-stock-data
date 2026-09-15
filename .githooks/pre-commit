@@ -44,6 +44,7 @@ fi
 #     `selftest_workflows` 只在動到 workflow／`.sh`／新增自測時才跑。
 #   ⇒ 這一道只跑**跟這次改動直接對應**的那幾支（⛔ 不是全跑，那會慢到被繞過）。
 TESTS=""
+NOTEST=""
 for f in $STAGED; do
   case "$f" in
     */*) continue ;;                      # ⛔ 只管 repo 根目錄那一層
@@ -51,10 +52,17 @@ for f in $STAGED; do
     *.py)          T="selftest_${f}" ;;   # 改到 X.py ⇒ 跑 selftest_X.py
     *)             continue ;;
   esac
-  [ -f "$T" ] || continue
+  if [ ! -f "$T" ]; then NOTEST="$NOTEST $f"; continue; fi
   case " $TESTS " in *" $T "*) continue ;; esac
   TESTS="$TESTS $T"
 done
+# ⛔ 對應不到自測的那幾支要**大聲講出來**（六點五：條件不成立就印「這一層沒跑」）。
+#   ⚠ 這一族的命名不是一對一：`shares_check.py` 的自測叫 `selftest_shares.py`
+#     ⇒ 這條規則對它**靜靜什麼都沒做**，而「沒跑」與「跑過了全綠」在畫面上一樣。
+#   ⛔ 不算失敗：很多檔本來就沒有自測，寫成斷言會擋掉每一次 commit。
+if [ -n "$NOTEST" ]; then
+  echo "[pre-commit] ⚠ **這一層沒跑**（對應不到 selftest_<檔名>.py）：$NOTEST"
+fi
 if [ -n "$TESTS" ]; then
   echo "[pre-commit] 動到的程式有對應自測 ⇒ 跑：$TESTS"
   BAD=""

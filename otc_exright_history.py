@@ -68,6 +68,7 @@
    而這一支的產出正好就是做那個決定所需要的證據（全期規模，不是抽 20 檔）。
 """
 import argparse
+import bisect
 import csv
 import io
 import json
@@ -198,6 +199,92 @@ def ours_events():
     return out
 
 
+def _transfer_out():
+    """→ `{代號: 從上櫃轉出的日子}`（`delisted.csv` 裡 `market=tpex` 的**最後一筆**）。
+
+    ⚠ 取最後一筆的理由：一個代號可能有多列（轉板一筆＋真下市一筆）
+    ——2026-09-16 全庫掃過，436 列／429 檔裡有 7 檔是多列的。
+    ⛔ 而這張表的上櫃那一半**不完整**（`delist_probe` 檔頭寫著 265 筆全是上市）
+    ⇒ 查不到**不代表**它沒轉板 ⇒ 呼叫端要有第二條路（`_market_on`）。
+    """
+    p = os.path.join(_ROOT, "meta", "delisted.csv")
+    out = {}
+    if not os.path.isfile(p):
+        return out
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if (r.get("market") or "") != "tpex":
+                continue
+            sid, d = (r.get("stock_id") or "").strip(), (r.get("delist_date") or "").strip()
+            if sid and d and d > out.get(sid, ""):
+                out[sid] = d
+    return out
+
+
+def _market_on(code, date, days, ahead=5):
+    """事件當天（或其後最多 `ahead` 個交易日）我方**日檔**記的市場。⛔ 查不到回 None。
+
+    ⭐ 它是 `_transfer_out()` 的**第二條路**：`delisted.csv` 的上櫃那一半不完整，
+    ⚠ 而日檔逐日記著每一檔掛在哪個市場——那是完全獨立的一份證據。
+    ⛔ 往後找幾天的理由：除權息日**當天**該檔可能無成交而不在日檔裡。
+    """
+    i = bisect.bisect_left(days, date)
+    for d in days[i:i + ahead]:
+        fp = os.path.join(_ROOT, "universe", "daily", f"{d}.csv")
+        try:
+            with io.open(fp, encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    if r.get("stock_id") == code:
+                        return r.get("market")
+        except OSError:
+            continue
+    return None
+
+
+def ours_only_verdict(only, out_day, days):
+    """「我方有、官方沒有」那一批各是什麼 → `(轉板後, ⛔ 轉板前, 日檔說是上市, 仍未判定)`。
+
+    ## ⛔ 為什麼要有這一段（三點①）
+
+    2026-09-16 之前這一支**只比一個方向**（官方有、我方沒有 189 筆），
+    ⚠ 而反方向是 **246 筆／26 檔**，⛔ 報表上一個字都沒有。
+    ⚠ 而三點①那條的原始事故就發生在這一族：
+    「只比一個方向 ⇒ 宣告某端點可當完整來源；補比反方向才發現它少 17 筆減資。」
+
+    ⭐ 而 246 筆量完的結論是**官方一筆都沒漏**：
+
+    ```
+    223 筆  事件日在該檔**轉出上櫃之後**（`delisted.csv` 的 tpex 那一列）
+     23 筆  該檔查不到 tpex 那一列（上櫃下市清單我方不完整）
+            ⇒ 改問我方**日檔**：事件當天它掛哪個市場 ⇒ **23／23 都是 twse**
+      0 筆  事件日落在轉板**之前** ← ⭐ 只有這一格才代表官方漏了
+    ```
+
+    ⇒ ⭐ 所以判準是**第二格 == 0**，⛔ 不是「兩邊筆數要一樣」
+    （那永遠不會一樣：我方那個目錄裝的是 FinMind 給的，含轉板之後的上市事件）。
+    """
+    after = before = via_day = unknown = 0
+    bad = []
+    for code, date in sorted(only):
+        t = out_day.get(code)
+        if t:
+            if date > t:
+                after += 1
+            else:
+                before += 1
+                bad.append((code, date, f"事件 {date} ≤ 轉出上櫃 {t}"))
+            continue
+        m = _market_on(code, date, days)
+        if m == "twse":
+            via_day += 1
+        elif m == "tpex":
+            before += 1
+            bad.append((code, date, "日檔說事件當天它還在上櫃"))
+        else:
+            unknown += 1
+    return after, before, via_day, unknown, bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default="2008/01/01")
@@ -251,6 +338,39 @@ def main():
             f"**{len(miss):,} 筆／{len({r[1] for r in miss})} 檔**"
             f"（其中代號 00 開頭的 ETF／ETN {len(etf):,} 筆）")
     rl.info("  分年", "｜".join(f"{y} {n:,}" for y, n in sorted(by_year.items())))
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ **反方向**（三點①：只比一個方向就宣告一致）
+    #   2026-09-16 之前這一支只比了上面那一個方向，⚠ 而反方向是 246 筆／26 檔
+    #   ——⛔ 報表上一個字都沒有。詳見 `ours_only_verdict` 的說明。
+    # ══════════════════════════════════════════════════════════════
+    # ⚠ `have` 是 `(代號, 日期)`，官方 `rows` 是 `(日期, 代號, …)`
+    #   ⇒ **先轉成同一個方向**再比。⛔ 第一版我把 key 轉反了 ⇒ 13,197 筆全判成
+    #     「我方獨有」、其中 12,951 筆「官方漏了」——⭐ 數字大到離譜才看得出來，
+    #     ⚠ 而若只差幾筆，那個方向錯**看起來會跟真的一模一樣**。
+    _off_keys = {(r[1], r[0]) for r in rows}
+    only = sorted(k for k in have if k not in _off_keys)
+    dd2 = os.path.join(_ROOT, "universe", "daily")
+    days2 = sorted(n[:-4] for n in os.listdir(dd2)) if os.path.isdir(dd2) else []
+    _after, _before, _via, _unk, _bad = ours_only_verdict(only, _transfer_out(), days2)
+    rl.info("⭐ **反方向**：我方有、官方沒有",
+            f"**{len(only):,} 筆／{len({c for c, _ in only})} 檔**"
+            f"　⇒ 轉出上櫃**之後**的上市事件 {_after:,}"
+            f"｜`delisted.csv` 查不到但**日檔說是上市** {_via:,}"
+            f"｜⛔ **轉板之前**（＝官方真的漏了）**{_before:,}**"
+            f"｜仍未判定 {_unk:,}")
+    for b in _bad[:5]:
+        rl.info(f"  ⛔ {b[0]} {b[1]}", b[2])
+    # ⭐ 判準是「轉板之前那一格 == 0」，⛔ 不是「兩邊筆數一樣」
+    #   （那永遠不會一樣：我方那個目錄裝的是 FinMind 給的，含轉板之後的上市事件）
+    # ⇒ 放行之後誰在守：這一格本身（它是**算出來的**，每趟現場重算），
+    #   ＋ 下面那道「官方有、我方 data/adj 沒有」的低水位閘門。
+    rl.check("⭐⭐ **反方向**沒有一筆是「事件還在上櫃時官方就漏了」"
+             "（⛔ 判準不是兩邊筆數一樣）",
+             _before == 0,
+             f"⛔ **{_before} 筆**：{_bad[:3]}" if _before
+             else f"{len(only):,} 筆全部解釋得了"
+                  f"（轉板後 {_after:,}＋日檔判定 {_via:,}＋未判定 {_unk:,}）")
     # ⛔ 上面那個比的是「我方的**判準目錄**」⇒ 不設 check：
     #   `data/universe/otcexright/` 是逐日累積的，早年本來就是空的，
     #   那是**歷史欠帳**，天天紅的檢查會被學會忽略。
