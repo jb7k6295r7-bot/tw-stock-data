@@ -35,6 +35,7 @@
 import io
 import collections
 import csv
+import hashlib
 import io
 import json
 import os
@@ -854,9 +855,12 @@ def main():
         for _act in _acts:
             _u = f"https://www.tpex.org.tw/www/zh-tw/{_act}"
             say(f"\n        ⭐ {_u}")
-            _best = None        # ⭐ 要整份印的是**第一發解得出 JSON 的**，
-                                #   ⛔ 不是迴圈跑完剛好留在變數裡的那一個
-                                #   （⚠ 那多半是最後一發、而最後一發常常是失敗的）
+            # ⭐⭐ 要整份印的是**每一種相異的回應**，⛔ 不是「第一發解得出 JSON 的」。
+            #   ⚠ probe 120 付過代價：`monthlyStock` 的第一發是
+            #     `{"stat":"參數輸入錯誤"}`（29 bytes）⇒ 整份印出來的就是那一句，
+            #     ⛔ 而真正有資料的那一發（`stkno+year`，506 bytes）**一個字都沒印**。
+            #   ⇒ 照內容去重（⛔ 不是照打法），四種打法回同一份就只印一次。
+            _seen, _bodies = set(), []
             # ⚠ 參數名我不知道 ⇒ 兩套常見的各打一次，⛔ 不猜一套然後拿失敗當結論
             for _tag, _form in (("code+date", {"code": _CODE, "date": _YEAR + "/01/01",
                                                "response": "json"}),
@@ -885,24 +889,33 @@ def main():
                                 say("              " + _ln)
                         continue
                     say(f"           [{_how} {_tag}] ✓ JSON {len(_raw):,} bytes")
-                    _best = _best or (f"{_how} {_tag}", _raw)
+                    _key = hashlib.sha1(_raw).hexdigest()
+                    if _key in _seen:
+                        say(f"              ⇒ ⭐ 跟前面某一發**逐位元相同**"
+                            "（⛔ 那代表這兩套參數裡至少有一套沒生效）")
+                    else:
+                        _seen.add(_key)
+                        _bodies.append((f"{_how} {_tag}", _raw))
                     # ⭐ CLAUDE.md 第一點：**先把 notes／hints／title／params 印出來**
                     for _ln in B.describe_response(_d, want=_form):
                         say("              " + _ln)
             # ⭐ 整份印出來（C4 那條：開頭 160 字寫不出解析程式）
             #   ⛔ 只在小的時候——大的印出來會洗版（⚠ 那也是一種看不見）
-            if _best and len(_best[1]) <= 20000:
-                say(f"           ── ⭐ **原始回應整份**（{_best[0]}）"
-                    "（⛔ 不是開頭 160 字）──")
-                for _ln in _best[1].decode("utf-8", "replace").splitlines():
-                    say("              " + _ln)
-            elif _best:
-                say(f"           ⚠ 回應 {len(_best[1]):,} bytes，超過 20,000"
-                    " ⇒ 不整份印（⛔ 洗版也是一種看不見）")
-            else:
+            if not _bodies:
                 say("           ⚠ 四種打法**沒有一種**解得出 JSON"
                     "　⇒ ⛔ 這不等於「這個端點不存在」：參數名是我猜的兩套，"
                     "而 CLAUDE.md 三點② 要求把**用過什麼詞**寫出來 ⇒ 上面四行就是")
+            for _lab, _b in _bodies:
+                if len(_b) <= 20000:
+                    say(f"           ── ⭐ **原始回應整份**（{_lab}）"
+                        "（⛔ 不是開頭 160 字）──")
+                    for _ln in _b.decode("utf-8", "replace").splitlines():
+                        say("              " + _ln)
+                else:
+                    say(f"           ⚠ （{_lab}）{len(_b):,} bytes，超過 20,000"
+                        " ⇒ 不整份印（⛔ 洗版也是一種看不見）")
+            say(f"           ⇒ ⭐ 相異回應 **{len(_bodies)}** 種／四種打法"
+                "（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）")
 
     return _write(0)
 
