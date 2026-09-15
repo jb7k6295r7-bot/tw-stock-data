@@ -44,7 +44,21 @@ import subprocess
 import sys
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-TSV = os.path.join(_ROOT, "data", "meta", "_ci_steps.tsv")
+#: ⛔⛔ 2026-09-15 付過代價：這裡本來是一個**import 當下**就算好的常數。
+#  ⇒ 自測要把它導走時，`ci_step.TSV` 與 `ci_report.TSV` 是**兩個旋鈕**，
+#    ⚠ 而子行程（`python ci_step.py …`）**兩個都看不到**
+#    ⇒ 一次突變跑（S1「多餘參數靜靜忽略」）就把 `x.py<TAB>2` 寫進 repo 真的台帳，
+#    ⛔ 而它跟著 commit 上了分支 ⇒ probe run 101 讀到它
+#    ⇒ **main 上的 `_last_run.md` 出現一塊「x.py 紅了」的假報告**。
+#  ⇒ ⭐ 照 `mops.changes_path()` 那條：收成**一個**在呼叫當下才算的函式，
+#    並吃一個環境變數 ⇒ 子行程也導得走。
+TSV_ENV = "CI_STEPS_TSV"
+
+
+def tsv_path():
+    """單趟台帳的位置。⭐ 只有這一份實作（四點五），⛔ 不是 import 當下的常數。"""
+    return os.environ.get(TSV_ENV) or os.path.join(
+        _ROOT, "data", "meta", "_ci_steps.tsv")
 
 
 def record(name, rc, path=None):
@@ -56,7 +70,7 @@ def record(name, rc, path=None):
     ⛔ 不在這裡：這一支只知道自己那一格。
     """
     line = f"{name}\t{rc}\n"
-    p = path or TSV
+    p = path or tsv_path()
     try:
         os.makedirs(os.path.dirname(p), exist_ok=True)
         io.open(p, "a", encoding="utf-8").write(line)

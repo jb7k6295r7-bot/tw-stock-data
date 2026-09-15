@@ -27,7 +27,9 @@ import sys
 import runlog
 
 _ROOT = os.path.dirname(os.path.abspath(__file__))
-TSV = os.path.join(_ROOT, "data", "meta", "_ci_steps.tsv")
+#: ⭐ 走**唯一那一份**（`ci_step.tsv_path()`，四點五）。
+#  ⛔ 這裡本來自己算一次 ⇒ 兩個旋鈕 ⇒ 導走時必漏一個。
+from ci_step import tsv_path       # noqa: E402
 
 
 def read(path=None):
@@ -37,7 +39,7 @@ def read(path=None):
     前者是「這一趟根本沒有自測步驟」，後者是「有台帳但裡面沒有列」。
     ⚠ 兩者在畫面上長得一樣，而處置不同 ⇒ 這裡分開。
     """
-    p = path or TSV
+    p = path or tsv_path()
     if not os.path.exists(p):
         return None
     out = []
@@ -80,7 +82,7 @@ def main(argv=None):
     rl.finish()
     if not keep:
         try:
-            os.remove(TSV)      # ⭐ 台帳是**單趟**的 ⇒ 報完就砍
+            os.remove(tsv_path())      # ⭐ 台帳是**單趟**的 ⇒ 報完就砍
         except OSError:         # ⛔ 留著的話下一趟會把上一趟的紅列再報一次
             pass
     # ⛔⛔ **一律 0**：這一支不可以賠掉那一趟抓到的資料（見檔頭）。

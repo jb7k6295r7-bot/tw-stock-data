@@ -68,7 +68,9 @@ io.open(BOOM, "w").write("raise SystemExit(RuntimeError('炸了'))\n")
 
 print("\n── ① 紅掉要被記下來，而那一步仍然 exit 0 ──")
 TSV = os.path.join(d, "_ci_steps.tsv")
-S.TSV = TSV
+# ⭐ 導走的旋鈕只有**一個**（環境變數），⛔ 不是 `S.TSV` 與 `R.TSV` 兩個
+#   ——⚠ 兩個旋鈕遲早會漏掉一個，而漏掉那次寫的是 repo 真的台帳。
+os.environ[S.TSV_ENV] = TSV
 for path, want_rc, label in ((GREEN, 0, "綠的"), (RED, 1, "紅的"), (BOOM, 1, "炸掉的")):
     rc = S.main(["ci_step.py", path])
     ck(f"{label}：`ci_step` 本身 exit 0（⛔ 不可以賠掉那一趟）", rc == 0, f"rc={rc}")
@@ -84,10 +86,9 @@ S.record("later.py", 0, TSV)
 ck("追加之後前三列還在", len(R.read(TSV)) == 4, str(R.read(TSV)))
 
 print("\n── ③ `ci_report`：留下 ✗，⛔ 而 main() 仍然回 0 ──")
-old_lr, old_tsv = runlog.PATH, R.TSV
+old_lr = runlog.PATH
 try:
     runlog.PATH = os.path.join(d, "_last_run.md")
-    R.TSV = TSV
     rc = R.main([])
     ck("⭐⭐ `ci_report.main()` 回 0（⛔ 它不可以賠掉那一趟抓到的資料）",
        rc == 0, f"rc={rc}")
@@ -127,7 +128,7 @@ try:
     ck("  ⭐ 壞掉的那兩列是非 0（⇒ 會被報成紅的）",
        rows[1][1] != 0 and rows[2][1] != 0, str(rows))
 finally:
-    runlog.PATH, R.TSV = old_lr, old_tsv
+    runlog.PATH = old_lr
 
 print("\n── ⑧ ⭐⭐ `ci_report` 那一步的**前提**：Commit 是 `if: always()` ──")
 # ⛔⛔ `ci_report` 那一步故意**沒有** `continue-on-error`——理由是
@@ -195,13 +196,29 @@ else:
 # ⇒ ⭐ 靜靜忽略多餘參數，就是這件事藏了那麼久的原因。
 # ══════════════════════════════════════════════════════════════════
 print("\n[⑨ 多餘參數]")
+# ⛔⛔ 子行程要**把台帳導走**：⚠ `ci_step.TSV = …` 只改得到這個行程，
+#   子行程看不到 ⇒ 2026-09-15 一次突變跑就把 `x.py` 寫進 repo 真的台帳，
+#   ⛔ 而它跟著 commit 上分支 ⇒ main 的 `_last_run.md` 出現一塊假報告。
+#   ⇒ ⭐ 走環境變數（`ci_step.tsv_path()` 吃它）——子行程也導得走。
+_env9 = dict(os.environ, **{S.TSV_ENV: os.path.join(
+    tempfile.mkdtemp(prefix="ci9_"), "_ci_steps.tsv")})
 _ok9 = subprocess.run([sys.executable, os.path.join(HERE, "ci_step.py"),
-                 "x.py", "python", "y.py"], capture_output=True, text=True)
+                 "x.py", "python", "y.py"], capture_output=True, text=True,
+                env=_env9)
 ck("⑨.1 ⛔ 多給一支就**大聲拒絕**（rc≠0）"
    "（⚠ 靜靜忽略 ⇒ 那一支根本沒跑，而 rc 記成 0）",
    _ok9.returncode != 0, f"rc={_ok9.returncode}")
 ck("⑨.2 而訊息要講出**為什麼**（YAML 續行）⇒ 讀的人才知道去改哪裡",
    "續行" in (_ok9.stderr + _ok9.stdout), (_ok9.stderr + _ok9.stdout)[:200])
+# ⭐ 而**最重要的一條**：不管它拒絕與否，⛔ 都不可以寫到 repo 真的台帳
+ck("⑨.3 ⛔⛔ 子行程**不會**寫到 repo 真的 `_ci_steps.tsv`"
+   "（⚠ 環境變數導得走 ⇒ 突變跑也污染不了 repo）",
+   _dig(REAL_TSV) == B4[1],
+   f"⛔ 被動到了：{B4[1]} → {_dig(REAL_TSV)}")
+ck("⑨.4 ⭐ `tsv_path()` 是**呼叫當下**才算的（⛔ 不是 import 當下的常數）"
+   "——⚠ 兩個旋鈕遲早會漏掉一個",
+   S.tsv_path is R.tsv_path and "CI_STEPS_TSV" == S.TSV_ENV,
+   f"{S.tsv_path} vs {R.tsv_path}")
 
 print(f"\n[selftest] 通過 {_n[0] - _n[1]}｜失敗 {_n[1]}")
 sys.exit(1 if _n[1] else 0)

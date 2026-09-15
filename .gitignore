@@ -6,3 +6,8 @@ __pycache__/
 
 # 回測線：大型二進位中間檔不進 git（可由 --report-only 重建）
 backtest/results11/*.npz
+
+# ⛔ 單趟台帳（`ci_step.py` 寫、`ci_report.py` 報完就砍）——**不可以進 commit**：
+#   2026-09-15 它被一次突變跑寫進去、跟著上了分支，
+#   ⇒ probe run 101 讀到它 ⇒ main 的 `_last_run.md` 出現一塊「x.py 紅了」的假報告。
+data/meta/_ci_steps.tsv
