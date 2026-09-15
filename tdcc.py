@@ -51,14 +51,28 @@ import lowwater
 import runlog
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
-OUT_DIR = os.path.join(_ROOT, "tdcc")
+# ⛔⛔ 這四個路徑原本是**模組層常數**（import 當下就算好了）。
+#   ⚠ 而 2026-09-15 加 `hist_gate` 時當場踩到第七點第五個陷阱的下半場：
+#     `selftest_tdcc` 的沙箱導走了 `OUT_DIR` 與 `LOW`（**兩個**旋鈕），
+#     ⇒ 新加的 `HIST_LOW` 沒導 ⇒ 拿假資料跑一趟，
+#       **把 repo 真的 `_tdcc_hist_weeks_low.txt` 寫出來了**。
+#   ⭐ 而判準檔案裡早就寫著這條的處置，⛔ 不是「記得三個都導」：
+#     **一件事要導走卻需要動好幾個旋鈕，那就是遲早會漏掉一個的旋鈕**
+#     ⇒ **收成一個**：全部改成從 `_ROOT` **呼叫當下**才算
+#   ⚠ 而每週那個目錄的函式叫 `week_dir()`，⛔ **不叫 `out_dir()`**：
+#     `import_hist(…, out_dir=…)` 有一個同名參數 ⇒ 會把函式遮掉
+#     （第一版就這樣炸了：`TypeError: 'str' object is not callable`）。
+#     ⇒ 沙箱只要導 `_ROOT`，四個一起動。（同 `mops.changes_path()`。）
+def week_dir():
+    return os.path.join(_ROOT, "tdcc")
 # ⭐⭐ 週檔是**累積**的：官方只給最近一期 ⇒ 漏一週就**永久少一週**。
 #   ⛔ 而原本「已累積 N 週」只是 `rl.info` ⇒ 51 週變成 1 週也是 ✓。
 #   ⚠ 而它會這樣少：整批覆蓋（四點六）、分支上的 `data/` 比 main 舊、
 #     或某一趟在錯的 ref 上跑 ⇒ 三種都**不會報錯**，只是檔變少。
 #   ⇒ 方向是 `UP`（越多越好）——⛔ 跟 `_missing_rows_low` 那幾個**相反**，
 #     而它們的檔名長得一模一樣。別照抄語意（`lowwater.py` 檔頭）。
-LOW = os.path.join(_ROOT, "meta", "_tdcc_weeks_low.txt")
+def low_path():
+    return os.path.join(_ROOT, "meta", "_tdcc_weeks_low.txt")
 IND = os.path.join(_ROOT, "meta", "industry.csv")
 
 URL = "https://opendata.tdcc.com.tw/getOD.ashx?id=1-5"
@@ -198,18 +212,128 @@ def weeks_gate(rl):
     ⚠ 這正是 CLAUDE.md 第七點③那一族：**測了判準、沒測呼叫點**
       ——判準本身沒問題，⛔ 而它掛在一條「正常情況下走不到」的路上。
     """
-    have = sorted(n[:-4] for n in os.listdir(OUT_DIR)
-                  if n.endswith(".csv")) if os.path.isdir(OUT_DIR) else []
+    _od = week_dir()
+    have = sorted(n[:-4] for n in os.listdir(_od)
+                  if n.endswith(".csv")) if os.path.isdir(_od) else []
     rl.info("已累積", f"{len(have)} 週（{have[0]} ~ {have[-1]}）"
             if have else "⛔ **0 週**（⚠ 目錄是空的）")
     # ⛔ 原本這裡只有上面那一行 `rl.info` ⇒ **沒有任何一道在管週數會不會變少**。
-    lowwater.gate(rl, LOW, len(have), lowwater.UP,
+    lowwater.gate(rl, low_path(), len(have), lowwater.UP,
                   "集保週檔的累積週數（⛔ 官方只給最近一期，漏一週永久少一週）")
+    # ⭐⭐ `tdcc_hist/` 那道**從這裡叫**，⛔ 不在兩個呼叫點各加一次
+    #   ——那正是四點五「改一邊、另一邊沒跟上」的完美條件。
+    #   ⚠ 而 `weeks_gate` 已經是「每一條 return 之前都叫一次」的那一份
+    #   ⇒ 掛在它裡面，兩條路自動都有。
+    hist_gate(rl)
     return len(have)
 
 
-HIST_DIR = os.path.join(_ROOT, "tdcc_hist")
+def hist_dir_path():
+    return os.path.join(_ROOT, "tdcc_hist")
 HIST_COLS = ["date", "stock_id", "level", "people", "shares", "pct"]
+
+# ⛔⛔ 這一族在 `tdcc_hist/` 落地之後**一直沒有任何人在守**：
+#   `verify_hist()` 只在 `--import-hist` 那一趟跑，而那是**一次性**的
+#   ⇒ 之後那 77 MB 少了一年、或在錯的 ref 上被整份覆蓋（四點六），
+#     ⚠ **沒有任何地方會說**。
+def hist_low_path():
+    return os.path.join(_ROOT, "meta", "_tdcc_hist_weeks_low.txt")
+
+# ⭐ 已知缺的那 7 週（以該週的 ISO 週一標示），⛔ 而每一筆都要寫**為什麼**。
+#   ⚠ 這是**棘輪**，不是低水位：缺口數不會收斂到 0
+#   （封存裡本來就沒有那幾週）⇒ ⛔ 不可以套 `lowwater.DOWN`
+#     （四點六那條：只會隨時間長大／根本不會變的量，不可以用 DOWN）。
+#   ⇒ 多一個 ⇒ 紅（有東西壞了）；少一個 ⇒ 也要紅（⛔ 過期的白名單
+#     會讓下一個人以為那一週還缺著）。
+KNOWN_HIST_GAPS = {
+    "2020-06-15": "封存裡 20200619 與 20200612 **逐位元相同** ⇒ 去重後不算一週",
+    "2022-01-31": "農曆年",
+    "2022-10-31": "⛔ **不明**：372 份來源裡根本沒有 20221104"
+                  "（⚠ 官方有沒有發過，端點只吐當期 ⇒ 驗不了）",
+    "2023-01-23": "農曆年",
+    "2023-10-16": "⛔ 20231020 那份**被截斷**（1,536 KiB 整數倍｜檔尾沒換行"
+                  "｜最後一列只有 5 欄）⇒ 不收",
+    "2025-01-27": "農曆年",
+    "2026-02-16": "農曆年",
+}
+
+
+def hist_weeks():
+    """`tdcc_hist/*.parquet` 裡的相異【資料日期】。→ (日期 list, 說明)。
+
+    ⭐ 只讀 `date` 這一欄（parquet 的欄裁剪）⇒ 77 MB 裡只碰到很小一塊。
+    """
+    import glob as _g
+    files = sorted(_g.glob(os.path.join(hist_dir_path(), "*.parquet")))
+    if not files:
+        return [], "⛔ 沒有 tdcc_hist/*.parquet"
+    try:
+        import pyarrow.parquet as pq
+    except ImportError:
+        return [], "skip:沒有 pyarrow"
+    got = set()
+    for f in files:
+        t = pq.read_table(f, columns=["date"])
+        got |= {str(v) for v in t.column("date").to_pylist()}
+    return sorted(iso(d) for d in got), f"{len(files)} 個年檔"
+
+
+def iso_week_gaps(days):
+    """相鄰兩個日期的 **ISO 週**不連續的地方。→ [缺掉那一週的週一（ISO）]。
+
+    ## ⛔ 為什麼不是「相鄰日期差 > N 天」
+
+    K線分析線 2026-09-15 §4-2 建議「差 > 7 天就列出來」。⇒ 實測 **85 個**，
+    ⚠ 而其中絕大多數是**同一件事的兩半**：
+
+        2019-08-02 → 2019-08-08　6 天
+        2019-08-08 → 2019-08-16　8 天     ← 6 ＋ 8 ＝ 14 ⇒ **一週都沒少**
+
+    ⇒ ⛔ 「> N 天」會把**快照日位移**跟**真的少一週**混成同一堆，
+      而位移正是這份資料的常態（星期分佈：五 325、四 22、六 13、三 9、二 1）。
+    ⇒ ⭐ 折成 ISO 週再看連不連續 ⇒ 85 個降成 7 個，而那 7 個**每一個都真的缺**。
+
+    ⚠ 而它是**獨立**驗過的：這個掃描自己冒出 `2023-10-16` 那一週，
+      ⭐ 而市場情報分析線的 371 週副本裡多出來的那一天正是 `2023-10-20`
+      ——⛔ 我是先掃完才去讀他們那份的。兩條互相獨立的路指到同一週。
+    """
+    import datetime as _dt
+    ds = sorted({_dt.date.fromisoformat(d) for d in days})
+    gaps = []
+    for a, b in zip(ds, ds[1:]):
+        ma = _dt.date.fromisocalendar(*a.isocalendar()[:2], 1)
+        mb = _dt.date.fromisocalendar(*b.isocalendar()[:2], 1)
+        n = (mb - ma).days // 7
+        for i in range(1, n):
+            gaps.append(str(ma + _dt.timedelta(days=7 * i)))
+    return gaps
+
+
+def hist_gate(rl):
+    """`tdcc_hist/` 的常駐閘門（週數只准往上 ＋ 缺口棘輪）。→ 週數。"""
+    days, note = hist_weeks()
+    if note.startswith("skip:"):
+        # ⚠ 六點五：選用套件不在 ⇒ **大聲印「這一層沒跑」**，⛔ 不算失敗。
+        rl.info("集保歷史", f"⚠⚠ **這一層沒跑**（{note[5:]}）⇒ ⛔ 也不算驗過")
+        return 0
+    if not days:
+        rl.info("集保歷史", note)
+        return 0
+    rl.info("集保歷史", f"{len(days)} 週（{days[0]} ~ {days[-1]}）｜{note}")
+    lowwater.gate(rl, hist_low_path(), len(days), lowwater.UP,
+                  "集保歷史週檔的週數（⛔ 這批只有使用者那份封存，"
+                  "官方查詢頁最舊只到 2025-09-19 ⇒ 少一週就永久少一週）")
+    got = set(iso_week_gaps(days))
+    known = set(KNOWN_HIST_GAPS)
+    rl.check("⭐ 缺的週就是已知那幾週（⛔ 多一個代表有東西壞了）",
+             not (got - known),
+             f"⛔ 新出現的缺口：{sorted(got - known)}" if got - known
+             else f"{len(got)} 個，每一個都有記成因")
+    rl.check("  而且白名單沒有過期的（⛔ 過期的會讓人以為那一週還缺著）",
+             not (known - got),
+             f"⛔ 白名單有而現況沒有：{sorted(known - got)}" if known - got
+             else f"{len(known)} 個都還在")
+    return len(days)
 
 
 def read_hist_week(path):
@@ -361,7 +485,7 @@ def derive_levels(hist_dir=None):
     except ImportError as ex:                                    # noqa: BLE001
         return [], f"⚠ 這台沒有 {ex.name}（⛔ 不是「算不出來」，是環境缺套件）"
     import glob as _g
-    files = sorted(_g.glob(os.path.join(hist_dir or HIST_DIR, "*.parquet")))
+    files = sorted(_g.glob(os.path.join(hist_dir or hist_dir_path(), "*.parquet")))
     if not files:
         return [], "⛔ 沒有 tdcc_hist/*.parquet"
     lo, hi, n = {}, {}, {}
@@ -469,7 +593,7 @@ def import_hist(rl, src, out_dir=None, apply=False):
     ⇒ 兩者不一致就當作壞檔擋下來。
     """
     import glob as _g
-    out_dir = out_dir or HIST_DIR
+    out_dir = out_dir or hist_dir_path()
     files = sorted(_g.glob(os.path.join(src, "*", "*.zip"))
                    + _g.glob(os.path.join(src, "*", "*.7z"))
                    + _g.glob(os.path.join(src, "*", "*.csv")))
@@ -614,10 +738,10 @@ def import_hist(rl, src, out_dir=None, apply=False):
 
     # ⭐⭐ 重疊那幾週是**閘門**：跟 `data/tdcc/` 我方自己抓的逐格對
     ours, same, diff = {}, 0, []
-    if os.path.isdir(OUT_DIR):
-        for f in sorted(os.listdir(OUT_DIR)):
+    if os.path.isdir(week_dir()):
+        for f in sorted(os.listdir(week_dir())):
             if f.endswith(".csv"):
-                ours[f[:-4]] = os.path.join(OUT_DIR, f)
+                ours[f[:-4]] = os.path.join(week_dir(), f)
     for day, path in sorted(ours.items()):
         mine = by_year.get(day[:4], [])
         theirs = {(r[1], r[2]): (r[3], r[4]) for r in mine if r[0] == day}
@@ -894,7 +1018,7 @@ def main():
                 "（待 tdcc_probe 第 7 節實測確認真的抓得到）")
         return rl.finish()
 
-    path = os.path.join(OUT_DIR, f"{day}.csv")
+    path = os.path.join(week_dir(), f"{day}.csv")
     if os.path.exists(path) and not a.force:
         rl.note(f"{day} 已存在，跳過（--force 可覆寫）")
         print(f"[tdcc] {path} 已存在，跳過")
@@ -902,7 +1026,7 @@ def main():
         #   ⇒ 閘門一定要在這裡也跑一次，否則它一週只守一天。
         weeks_gate(rl)
         return rl.finish()
-    os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(week_dir(), exist_ok=True)
     out = []
     for r in rows:
         out.append([day, str(r[code_k]).strip(), str(r[lvl_k]).strip(),
