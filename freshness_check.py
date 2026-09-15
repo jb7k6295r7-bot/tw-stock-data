@@ -30,6 +30,7 @@
 
 ⚠ 這一支**不驗內容**，只驗新舊。內容的檢查在各自的腳本裡。
 """
+import glob
 import io
 import os
 import re
@@ -127,8 +128,46 @@ def _newest(path, how):
 #   ⛔ 不可以統一用一個數字：daily.yml 天天跑、probe.yml 只在工作日跑、
 #     forward.yml 一個月一次 ⇒ 一把尺量三種週期，不是誤報就是漏報。
 #   ⇒ 沒有把握的一律用最寬的那個（月頻 40 天），⚠ 而**寬到失去意義**要標出來。
-SCHED_TOL_DAYS = 3          # 排程區塊：容忍 3 天（週末 ＋ 一次失敗）
-SCHED_TOL_MONTHLY = 40      # 月頻排程
+SCHED_TOL_DAYS = 3          # 日／週頻排程：容忍 3 天（週末 ＋ 一次失敗）
+SCHED_TOL_MONTHLY = 40      # 月頻排程：容忍 40 天（週期 31 ＋ 緩衝）
+
+
+def _wf_crons(root=None):
+    """`.github/workflows/*.yml` 的 **workflow 名稱 → cron 清單**。→ dict。
+
+    ⛔ 為什麼要讀 workflow：`runlog.who()` 寫的是 `GITHUB_WORKFLOW`（＝ `name:`），
+    ⚠ 而「這一支多久跑一次」**只有 cron 講得準**。
+    ⭐ 我第一版拿名稱裡有沒有「月」字去猜 ⇒ `股本／發行股數（每月）` 剛好中，
+      ⛔ 而那是運氣：`forward.yml` 也是月頻、`capital` 改個名字就會被當成日頻
+      ⇒ 那一塊會**天天紅**，然後被學會忽略（四點五那條 `feeds:margin` 的形狀）。
+    """
+    here = root or os.path.dirname(os.path.abspath(__file__))
+    out = {}
+    for p in sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml"))):
+        t = io.open(p, encoding="utf-8").read()
+        m = re.search(r"^name:\s*(.+)$", t, re.M)
+        if not m:
+            continue
+        out[m.group(1).strip().strip('"\'')] = re.findall(
+            r'-\s*cron:\s*"([^"]+)"', t)
+    return out
+
+
+def _tol_for(crons):
+    """從 cron 推容忍天數。→ (天數, 說明) 或 (None, 原因)。
+
+    ⛔ 判準是 cron 的**日期欄**，⚠ 不是名字：
+    日期欄是 `*` ⇒ 每天／每週跑；是具體日子（`1`、`13`、`2-7`）⇒ 一個月一次。
+    """
+    if not crons:
+        return None, "這一支沒有 cron（⇒ 它不是排程跑的）"
+    monthly = False
+    for c in crons:
+        f = c.split()
+        if len(f) >= 3 and f[2] != "*":
+            monthly = True
+    return ((SCHED_TOL_MONTHLY, f"月頻（cron 指定了日期：{crons}）") if monthly
+            else (SCHED_TOL_DAYS, f"日／週頻（cron：{crons}）"))
 
 
 def _blocks(path):
@@ -175,6 +214,7 @@ def stale_scheduled(rl, path=None):
     ```
     """
     path = path or runlog.PATH
+    crons = _wf_crons()
     today = datetime.now(TPE).date()
     dead, idle, mute = [], [], []
     for name, t, rest in _blocks(path):
@@ -186,10 +226,14 @@ def stale_scheduled(rl, path=None):
         if "觸發 " not in rest:
             mute.append(f"{name}（{age} 天前）")
         elif "觸發 schedule" in rest:
-            tol = (SCHED_TOL_MONTHLY if "月" in rest or "forward" in rest
-                   else SCHED_TOL_DAYS)
-            if age > tol:
-                dead.append(f"{name}（排程，{age} 天前 > 容忍 {tol}）")
+            # ⭐ 容忍度從**那一支的 cron** 推，⛔ 不是從名字猜（見 `_wf_crons`）
+            wf = rest.split("｜")[2].strip() if rest.count("｜") >= 2 else ""
+            tol, why_tol = _tol_for(crons.get(wf, []))
+            if tol is None:
+                # ⛔ 講不出週期就**不判**（⚠ 亂判會變成一塊天天紅的閘門）
+                mute.append(f"{name}（排程，但 {why_tol}）")
+            elif age > tol:
+                dead.append(f"{name}（排程{why_tol}，{age} 天前 > 容忍 {tol}）")
         elif age > SCHED_TOL_DAYS:
             idle.append(f"{name}（手動，{age} 天前）")
     rl.info("排程區塊", f"死掉 {len(dead)}｜手動而久沒按 {len(idle)}"

@@ -173,12 +173,30 @@ def main():
         lr = os.path.join(d, "lr9.md")
         io.open(lr, "w", encoding="utf-8").write(
             f"## 排程死了　✓ 正常\n\n最後執行：{old_d}（台北）"
-            "｜觸發 schedule｜每日更新｜ref main｜run 1\n\n"
+            "｜觸發 schedule｜每日台股資料｜ref main｜run 1\n\n"
             f"## 排程還活著　✓ 正常\n\n最後執行：{new_d}（台北）"
-            "｜觸發 schedule｜每日更新｜ref main｜run 2\n\n"
+            "｜觸發 schedule｜每日台股資料｜ref main｜run 2\n\n"
             f"## 手動沒人按　✓ 正常\n\n最後執行：{old_d}（台北）"
-            "｜觸發 workflow_dispatch｜feed 回補｜ref main｜run 3\n\n"
-            f"## 舊格式　✓ 正常\n\n最後執行：{old_d}（台北）\n\n")
+            "｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref main｜run 3\n\n"
+            f"## 舊格式　✓ 正常\n\n最後執行：{old_d}（台北）\n\n"
+            # ⭐ 月頻的那一支：9 天前**不算壞**（⛔ 用日頻那把尺會誤報）
+            f"## 月頻沒過期　✓ 正常\n\n最後執行：{old_d}（台北）"
+            "｜觸發 schedule｜股本／發行股數（每月）｜ref main｜run 4\n\n")
+        # ⛔⛔ 容忍度要從**那一支的 cron** 推，⚠ 不是從名字猜
+        #   ——我第一版寫「名字裡有『月』就用 40 天」⇒ `股本／發行股數（每月）`
+        #   剛好中，⛔ 而那是運氣：改個名字就會被當成日頻 ⇒ **天天紅**。
+        ck("⑨.0a 月頻（cron 指定了日期）⇒ 容忍 40 天",
+           F._tol_for(["0 1 1 * *"])[0] == F.SCHED_TOL_MONTHLY,
+           str(F._tol_for(["0 1 1 * *"])))
+        ck("⑨.0b 日／週頻（日期欄是 `*`）⇒ 容忍 3 天",
+           F._tol_for(["0 11 * * 1-5"])[0] == F.SCHED_TOL_DAYS,
+           str(F._tol_for(["0 11 * * 1-5"])))
+        ck("⑨.0c ⛔ 沒有 cron ⇒ **不判**（⚠ 亂判會變成一塊天天紅的閘門）",
+           F._tol_for([])[0] is None, str(F._tol_for([])))
+        ck("⑨.0d ⭐ 而 `_wf_crons()` 真的讀到東西（⛔ 0 支跟全部通過長得一樣）",
+           len(F._wf_crons()) >= 8 and any(F._wf_crons().values()),
+           str(sorted(F._wf_crons())[:3]))
+
         rl9 = runlog.Run("t9", os.path.join(d, "sink9.md"))
         n_dead = F.stale_scheduled(rl9, lr)
         txt9 = "\n".join(rl9.lines) + "｜" + "｜".join(
@@ -193,6 +211,10 @@ def main():
         ck("⑨.4 ⛔ 舊格式要**明講它講不出自己是誰寫的**"
            "（⚠ 不可以當成手動的）",
            "舊格式" in txt9 and "講不出自己是誰寫的** 1" in txt9, txt9[:300])
+        ck("⑨.4b ⭐⭐ **月頻**的那一支 9 天沒動 ⇒ **不算壞**"
+           "（⛔ 用日頻那把尺量月頻 ⇒ 那一塊天天紅，然後被學會忽略）",
+           n_dead == 1 and "月頻沒過期" not in txt9.split("排程寫的區塊都還活著")[-1],
+           txt9[:400])
         ck("⑨.5 ⭐ 那一條 check 的紅綠**只由「排程 ＋ 過期」決定**",
            any(l == "排程寫的區塊都還活著" and o is False for l, o, _ in rl9.checks),
            str(rl9.checks))
