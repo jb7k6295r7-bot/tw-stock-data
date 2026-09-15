@@ -157,24 +157,30 @@ def main():
         write(os.path.join(work, "hello.py"), "print(1)\n")
         git(work, "add", "-A")
         git(work, "commit", "-q", "-m", "程式")
-        # ⭐ 把 origin 設成一個**不存在**的路徑 ⇒ push 一定失敗
-        git(work, "remote", "set-url", "origin", os.path.join(d3, "nope.git"))
+        # ⭐⭐ 要讓 **fetch 成功、push 失敗**（⛔ 不是把 origin 指到不存在的路徑
+        #   ——那會走到「fetch 失敗 ⇒ 跳過同步」那條正當出口，驗不到這一格）。
+        #   ⇒ 在 bare repo 放一個一律拒絕的 `pre-receive` hook。
+        hook = os.path.join(origin, "hooks", "pre-receive")
+        os.makedirs(os.path.dirname(hook), exist_ok=True)
+        io.open(hook, "w", encoding="utf-8").write(
+            "#!/bin/sh\necho '拒絕（測試用）' >&2\nexit 1\n")
+        os.chmod(hook, 0o755)
         r3 = subprocess.run(["bash", "sync_code.sh"], cwd=work,
                             capture_output=True, text=True,
                             env=dict(os.environ, GITHUB_REF_NAME="feature"))
         o3 = r3.stdout + r3.stderr
-        # ⚠ fetch 先失敗 ⇒ 那是「跳過同步」那一條正當出口（回 0）
-        #   ⇒ 這一條要驗的是**它有講**，⛔ 不是靜悄悄
-        ck("⛔ 推不上去（或連 fetch 都失敗）時**一定要出聲**"
-           "（⚠ 少一行成功訊息 ≠ 說出問題）",
-           ("fetch main 失敗" in o3 or "推不上去" in o3 or "push 失敗" in o3),
-           f"rc={r3.returncode}｜{o3[-300:]}")
-        src3 = io.open(os.path.join(HERE, "sync_code.sh"), encoding="utf-8").read()
-        ck("⭐⭐ 而三次都推不上去要 **exit 4**，⛔ 不是 exit 0"
+        # ⛔⛔ 判準是**行為**（rc 與輸出），⚠ 不是「原始碼裡有沒有 `exit 4`」
+        #   ——2026-09-15 我今天第三次踩到同一個：那幾個字**在說明註解裡也有一份**
+        #   ⇒ 突變 AB1（把 `exit 4` 改成 `exit 0`）當場全綠。
+        ck("⭐⭐ 三次都推不上去 ⇒ **回非 0**"
            "（⚠ 回 0 ＝ 那一步是綠的，而 main 上的程式沒更新）",
-           "exit 4" in src3 and "三次都推不上去" in src3, src3[-400:])
-        ck("  而且要講出**後果**：排程跑的是 main 上那一份",
-           "排程跑的是 main" in src3, src3[-400:])
+           r3.returncode != 0, f"rc={r3.returncode}｜{o3[-400:]}")
+        ck("  而且**出聲**（⚠ 少一行成功訊息 ≠ 說出問題）",
+           "推不上去" in o3 or "push 失敗" in o3, o3[-400:])
+        ck("  而且講出**後果**：排程跑的是 main 上那一份",
+           "排程跑的是 main" in o3, o3[-400:])
+        ck("⭐ 而且**沒有**印成功那一行",
+           "✓ 程式已同步到 main" not in o3, o3[-300:])
     finally:
         shutil.rmtree(d3, ignore_errors=True)
 
