@@ -255,7 +255,10 @@ SECTIONS = {
     # ⭐ 再釘一節：`t05st01` 那一段（清單 D2 最後一條）。
     #   ⛔ 判準是**輸出裡有沒有那一節**（四點六③：中途 return 的舊程式一樣會成功、
     #     一樣會推上 main，⚠ 而「沒有那一節」跟「那一節查無結果」長得一模一樣）。
-    "mops_probe": ["未驗", "的欄名：有沒有公告日", "橋接 t05st01"],
+    "mops_probe": ["未驗", "的欄名：有沒有公告日", "橋接 t05st01",
+                   # ⭐ 「js 空殼」講完之後**還要有下一步**：把那個 js 去打誰挖出來。
+                   #   ⛔ 少了這一節，這一格就停在「取不到」——而那不是句點。
+                   "的 js 去打誰"],
     # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
     #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
     #     而把限額當成餘額用，是這一支最可能造成的傷害。
@@ -732,6 +735,89 @@ def check_bridge_blank_vs_ignored():
     return bad
 
 
+def check_xhr_hunt():
+    """⭐ `xhr_hunt`：把那一頁的 js **去打誰**挖出來（⛔ 不是猜端點名）。
+
+    ⚠ 「js 空殼 ⇒ 我方取不到」是**還沒解決的工程問題**，⛔ 不是句點
+    ⇒ 下一步是從回應裡讀出那個 js 要打的網址。
+    ⭐ 而我方到 2026-09-15 為止**只用過一個** MOPS api 路徑（`redirectToOld`）
+      ——全 repo grep 過只有它，⛔ 而那個名字本身就說明還有別的。
+    """
+    import mops_probe as MP
+    bad = 0
+    # ⛔⛔ 假回應裡**每個模式要有自己專屬的值**（2026-09-15 付過代價）：
+    #   第一版四個線索都寫成 `/mops/api/…` ⇒ 它同時被 ①③④ 撈到
+    #   ⇒ 把 ③（`$.ajax` 那一條）整個拿掉的突變 **全綠**。
+    #   ⭐ 這是第七點那條的同一個形狀：**斷言要比帶標籤的那一串，
+    #     ⛔ 不是比一個裸字串**——而這裡是「假回應讓四條斷言分不開」。
+    page = ("""<html><head><script src="/mops/js/a.js"></script>
+<script src="/mops/js/b.js"></script><script src="/mops/js/c.js"></script></head>
+<body>公開資訊觀測站
+<script>window.onload=getMsg;
+function getMsg(){ $.ajax({url:"https://mopsov.twse.com.tw/server-java/OnlyInAjax",
+  type:"POST", data:{companyId:"2330"}, success:function(d){render(d);} }); }
+fetch("/mops/onlyinfetch/list");
+var z = "/nas/t05/onlyinfour.json";
+</script><table><tr><td>x</td></tr></table></body></html>""").encode("utf-8")
+    out, saved = [], MP.one
+    MP.one = lambda api, year, out_, **kw: page
+    try:
+        MP.xhr_hunt("t05st01", out)
+    finally:
+        MP.one = saved
+    txt = "\n".join(out)
+    # ⛔⛔ 而斷言要**照標籤分節**比（2026-09-15 第二次付代價）：
+    #   我把假回應改成「每個模式有專屬值」之後，突變「拿掉 ③ 那一條」**還是全綠**
+    #   ——因為那個字串也出現在 `getMsg` **本體的傾印**裡。
+    #   ⭐ 這正是第七點那條的完整版：**比帶標籤的整串**
+    #     ⇒ 這裡的「標籤」是**那一節**，所以要先切節再比。
+    def _sect(marker):
+        """→ 那一節（從標籤那一行到下一個 `  ` 開頭的標籤）的文字。"""
+        lines = out
+        for i, ln in enumerate(lines):
+            if marker in ln:
+                body = []
+                for nxt in lines[i + 1:]:
+                    if nxt.startswith("  ") and not nxt.startswith("      "):
+                        break
+                    body.append(nxt)
+                return "\n".join(body)
+        return ""
+
+    for name, marker, want in (
+            ("① 挖得出 `$.ajax` 裡那個 url（⭐ 比的是**那一節**）",
+             "`$.ajax` / `url:`", "OnlyInAjax"),
+            ("② 也挖得出 `fetch(` 那一個", "`fetch(` 的對象", "onlyinfetch"),
+            ("③ 也挖得出 `.json` 那一種", "其他 `.ashx`", "onlyinfour.json"),
+            ("④ ⭐ 把 `getMsg` 的**本體**印出來（⇒ 參數名也看得到）",
+             "`getMsg` 本體", "companyId"),
+            ("⑤ 而形狀那一行照樣要講（js 空殼）", "[形狀]", "js 空殼")):
+        seg = _sect(marker)
+        ok = bool(seg is not None) and (want in seg
+                                        or (marker in txt and want in
+                                            txt.split(marker, 1)[1][:400]))
+        print(("✓ " if ok else "✗ ") + f"xhr_hunt {name}")
+        if not ok:
+            print(f"    ⛔ 「{marker}」那一節裡找不到「{want}」；實得：{seg[:200]!r}")
+            bad += 1
+    # ⛔ 取不回來時要**說它沒跑**（⚠ 不可以印一堆 0 種，那跟「站上沒有」長得一樣）
+    out, saved = [], MP.one
+    MP.one = lambda api, year, out_, **kw: None
+    try:
+        MP.xhr_hunt("t05st01", out)
+    finally:
+        MP.one = saved
+    txt = "\n".join(out)
+    ok = "沒跑" in txt and "0 種" not in txt
+    print(("✓ " if ok else "✗ ")
+          + "xhr_hunt ⛔ 取不回來 ⇒ 說「這一段**沒跑**」"
+            "（⚠ 不是印一堆 `0 種`——那跟「站上沒有」長得一樣）")
+    if not ok:
+        print(f"    實得：{txt}")
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -752,6 +838,7 @@ def main():
     bad += check_site_inventory_openapi()
     bad += check_openapi_period_col()
     bad += check_bridge_blank_vs_ignored()
+    bad += check_xhr_hunt()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟
