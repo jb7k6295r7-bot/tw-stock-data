@@ -1096,6 +1096,150 @@
         → /tpex_ipo_no_limit
    TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
+★ ⭐ 重大訊息／財報公告日（申報時程）
+   TWSE：⭐ **5 條**
+      ETF受理申報案件情形
+        → ${root}/zh/products/etf-registration-processing-status.html
+      大量取得股份申報宣導
+        → ${root}/zh/products/education/shareholding/shareholding.html
+      臺灣證券交易所FMI原則資訊揭露及自我評估報告
+        → ${root}/zh/clearing/download/pfmidisclosure20180912zh.pdf
+      即時重大訊息
+        → http://mops.twse.com.tw/mops/web/t05sr01_1
+   TPEx：⭐ **21 條**
+      上櫃 / 交易資訊 / 交易制度專區 / 開收盤前資訊揭露配套措施專區
+        → /zh-tw/mainboard/trading/rules/opening-closing.html
+      上櫃 / 交易資訊 / 交易制度專區 / 櫃買中心金融市場基本架構原則資訊揭露報告（CCP&SSS）
+        → /zh-tw/mainboard/trading/rules/ccp.html
+      上櫃 / 上櫃公司資訊 / 公發及募資 / 申報案件
+      上櫃 / 上櫃公司資訊 / 公發及募資 / 申報案件 / 減資、私募補辦公發及合併、受讓、收購或分割
+        → /zh-tw/service/pi/statement/apply/company.html
+      上櫃 / 上櫃發行人服務 / 上櫃公司入口網 / 永續資訊揭露
+        → https://portal.tpex.org.tw/inquiry/disclosure/standard/code01?lang=zh-TW
+      興櫃 / 興櫃發行人服務 / 興櫃公司資訊申報講習
+        → https://dsp.tpex.org.tw/web/listing/briefing_session.php
+      債券 / 業務服務 / 公發及募資 / 申報案件
+      債券 / 業務服務 / 公發及募資 / 申報案件 / 受理申報案件情形
+        → /zh-tw/service/pi/statement/apply/bond.html
+      ETF/ETN / ETF / ETF受理申報案件情形
+        → /zh-tw/service/pi/statement/apply/etf.html
+      衍生性金融商品 / 認購(售)權證 / 公開資訊觀測站權證資訊
+        → /zh-tw/derivative/warrant/announce.html
+      衍生性金融商品 / 認購(售)權證 / 權證資訊揭露平台
+        → https://warrants.twse.com.tw/
+      服務 / 投資人服務 / 內部人股權申報專區
+        → https://dsp.tpex.org.tw/web/listing/shareholder_information.php
+      服務 / 投資人服務 / 大量取得股份申報新制專區
+        → https://dsp.tpex.org.tw/web/listing/shareholder_stock.php
+      服務 / 公發及募集 / 申報案件
+      服務 / 公發及募集 / 申報案件 / 補辦公開發行/上櫃前現金增資
+        → /zh-tw/service/pi/statement/apply/retro.html
+      服務 / 公發及募集 / 申報案件 / 減資、私募補辦公發及合併、受讓、收購或分割
+        → /zh-tw/service/pi/statement/apply/company.html
+      服務 / 公發及募集 / 申報案件 / 普通公司債
+        → /zh-tw/service/pi/statement/apply/bond.html
+      服務 / 公發及募集 / 申報案件 / 上櫃ETF
+        → /zh-tw/service/pi/statement/apply/etf.html
+      關於櫃買 / 各項專區 / 公開資訊觀測站
+        → https://mops.twse.com.tw
+      關於櫃買 / 各項專區 / 公開資訊觀測站公告快易查
+        → https://mopsov.twse.com.tw/mops/web/ezsearch
+      關於櫃買 / 櫃買影音 / 重大訊息記者會
+        → /zh-tw/about/company/media/press-conference.html
+   TWSE-OpenAPI：⭐ **25 條**
+      上市公司企業ESG資訊揭露彙總資料-職業安全衛生
+        → /opendata/t187ap46_L_21
+      上市公司企業ESG資訊揭露彙總資料-反競爭行為法律訴訟
+        → /opendata/t187ap46_L_20
+      上市公司企業ESG資訊揭露彙總資料-風險管理政策
+        → /opendata/t187ap46_L_19
+      上市公司企業ESG資訊揭露彙總資料-持股及控制力
+        → /opendata/t187ap46_L_18
+      上市公司企業ESG資訊揭露彙總資料-普惠金融
+        → /opendata/t187ap46_L_17
+      上市公司企業ESG資訊揭露彙總資料-資訊安全
+        → /opendata/t187ap46_L_16
+      上市公司企業ESG資訊揭露彙總資料-社區關係
+        → /opendata/t187ap46_L_15
+      上市公司企業ESG資訊揭露彙總資料-產品品質與安全
+        → /opendata/t187ap46_L_14
+      上市公司企業ESG資訊揭露彙總資料-供應鏈管理
+        → /opendata/t187ap46_L_13
+      上市公司企業ESG資訊揭露彙總資料-食品安全
+        → /opendata/t187ap46_L_12
+      上市公司企業ESG資訊揭露彙總資料-產品生命週期
+        → /opendata/t187ap46_L_11
+      上市公司企業ESG資訊揭露彙總資料-燃料管理
+        → /opendata/t187ap46_L_10
+      上市公司企業ESG資訊揭露彙總資料-功能性委員會
+        → /opendata/t187ap46_L_9
+      上市公司企業ESG資訊揭露彙總資料-氣候相關議題管理
+        → /opendata/t187ap46_L_8
+      上市公司企業ESG資訊揭露彙總資料-投資人溝通
+        → /opendata/t187ap46_L_7
+      上市公司企業ESG資訊揭露彙總資料-董事會
+        → /opendata/t187ap46_L_6
+      上市公司企業ESG資訊揭露彙總資料-人力發展
+        → /opendata/t187ap46_L_5
+      上市公司企業ESG資訊揭露彙總資料-廢棄物管理
+        → /opendata/t187ap46_L_4
+      上市公司企業ESG資訊揭露彙總資料-水資源管理
+        → /opendata/t187ap46_L_3
+      上市公司企業ESG資訊揭露彙總資料-能源管理
+        → /opendata/t187ap46_L_2
+      上市公司企業ESG資訊揭露彙總資料-溫室氣體排放
+        → /opendata/t187ap46_L_1
+      上市公司每日重大訊息
+        → /opendata/t187ap04_L
+      上市公司每日內部人持股轉讓事前申報表-持股轉讓日報表
+        → /opendata/t187ap12_L
+      上市公司每日內部人持股轉讓事前申報表-持股未轉讓日報表
+        → /opendata/t187ap13_L
+      上市公司違反資訊申報、重大訊息及說明記者會規定專區
+        → /opendata/t187ap23_L
+   TPEx-OpenAPI：⭐ **20 條**
+      上櫃公司企業ESG資訊揭露彙總資料-職業安全衛生
+        → /t187ap46_O_21
+      上櫃公司企業ESG資訊揭露彙總資料-功能性委員會
+        → /t187ap46_O_9
+      上櫃公司企業ESG資訊揭露彙總資料-氣候相關議題管理
+        → /t187ap46_O_8
+      上櫃公司企業ESG資訊揭露彙總資料-反競爭行為法律訴訟 
+        → /t187ap46_O_20
+      上櫃公司企業ESG資訊揭露彙總資料-風險管理政策 
+        → /t187ap46_O_19
+      上櫃公司企業ESG資訊揭露彙總資料-社區關係 
+        → /t187ap46_O_15
+      上櫃公司企業ESG資訊揭露彙總資料-供應鏈管理 
+        → /t187ap46_O_13
+      上櫃公司企業ESG資訊揭露彙總資料-食品安全
+        → /t187ap46_O_12
+      上櫃公司企業ESG資訊揭露彙總資料-產品品質與安全
+        → /t187ap46_O_14
+      上櫃公司企業ESG資訊揭露彙總資料-廢棄物管理
+        → /t187ap46_O_4
+      上櫃公司企業ESG資訊揭露彙總資料-能源管理
+        → /t187ap46_O_2
+      上櫃公司企業ESG資訊揭露彙總資料-投資人溝通
+        → /t187ap46_O_7
+      上櫃公司企業ESG資訊揭露彙總資料-溫室氣體排放
+        → /t187ap46_O_1
+      上櫃公司企業ESG資訊揭露彙總資料-董事會
+        → /t187ap46_O_6
+      上櫃公司企業ESG資訊揭露彙總資料-人力發展
+        → /t187ap46_O_5
+      上櫃公司企業ESG資訊揭露彙總資料-水資源管理
+        → /t187ap46_O_3
+      上櫃公司每日重大訊息
+        → /mopsfin_t187ap04_O
+      上櫃公司每日內部人持股轉讓事前申報表-持股轉讓日報表
+        → /mopsfin_t187ap12_O
+      上櫃公司每日內部人持股轉讓事前申報表-持股未轉讓日報表
+        → /mopsfin_t187ap13_O
+      上櫃公司違反資訊申報、重大訊息及說明記者會規定專區
+        → /mopsfin_t187ap23_O
+   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
+
 ★ ⭐ 大盤／市場成交統計（金額、股數、筆數的歷史）
    TWSE：⭐ **11 條**
       每日市場成交資訊
