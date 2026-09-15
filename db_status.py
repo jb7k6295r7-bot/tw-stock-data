@@ -100,7 +100,7 @@ NOT_YET = [
     "以下是取得官方值之前的沿革，留著是因為它解釋了因子怎麼來的："
     "**因子是用股數倍率推導的，不是官方公告**"
     "（TWSE `change/TWTB8U` 只涵蓋上市，實測上市 2/2、上櫃 0/5；"
-    "TPEx **openapi/swagger** 那 225 個端點裡沒有減資／面額／參考價——⚠ 但那**只說明那一層沒有**：我方每天在用的 `otcinst`／`otcper`／`otcmargin` 也一個都不在 swagger 裡，它們住在 `www/zh-tw/<path>?date=…` 那一層。2026-09-09 使用者提供了頁面層的三個候選（`announce/market/change/reference.html` 等），已排進 `tpex_probe.py` 第 8 節量）。"
+    "⛔⛔ **2026-09-15 推翻**：`POST /www/zh-tw/bulletin/pvChgRslt`（公告區，跟我方天天在用的 `exDailyQ`／`revivt` 同一族）帶 `startDate`／`endDate` 回 **14 筆**（2015-01-01~2026-09-15），而且回應**回顯了我請求的區間** ⇒ 期間參數真的生效。⚠ 而舊那句（「TPEx openapi/swagger 那 225 個端點裡沒有減資／面額／參考價」）的**掃描範圍只有 swagger** ⇒ 它說的是那一層，⛔ 不是「官方沒有」（三點①）。⇒ ⭐ 欄位含**最後交易日之收盤價格**與**恢復買賣開始參考價** ⇒ 算得出還原因子，而 `otcparvalue.py` 的股數倍率成了它的外部錨點（兩條路互驗）。⇒ 待辦：寫抓取＋對帳，`adjust.py` 那句「官方優先、衝突報 ✗」要兌現。"
     "四道閘門在 `otcparvalue.py`，輸出帶 `derived_from=shares_ratio`。"
     "⚠ 日後 TPEx 官方端點出現時**官方優先、不符報 ✗**",
     "✅ **上櫃減資：同一天下午就補上了**（`data/meta/otc_reduce_reference.csv`，官方 284 筆）。"
