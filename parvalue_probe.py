@@ -169,7 +169,15 @@ def main():
         for ln in B.xhr_clues(raw, base=url):
             say("   " + ln)
         # ⭐ ②③④ 全 0 ⇒ 那一發請求寫在**外部 .js** 裡（唯一那一份實作）
-        for ln in B.js_followups(raw, base=url):
+        # ⭐⭐ 2026-09-15 第二輪：`page_wiring` 把 inline 挖出來之後，
+        #   那兩頁的 inline 逐字寫著
+        #     `tables.init({pattern: API_PATTERN, action: "bulletin/pvChgAnn"})`
+        #     `tables.init({pattern: API_PATTERN, action: "bulletin/pvChgRslt"})`
+        #   ⇒ ⭐ **action 讀到了**，⛔ 而 `API_PATTERN` 的**值**在別支 js 裡
+        #   ⇒ 這一輪把那個常數名當 needle 丟給 `js_followups`。
+        #   ⛔ 仍然不拼網址：只把它自己怎麼寫的印出來。
+        for ln in B.js_followups(raw, base=url,
+                                 needles=("API_PATTERN", "bulletin/pvChg")):
             say("   " + ln)
         # ⛔⛔ 2026-09-15：上一輪停在「11 支 js 都沒有寫死的路徑」，
         #   ⚠ 而 `otccal_probe` 2026-09-09 第四輪**早就記過**那個結論是不完整的：

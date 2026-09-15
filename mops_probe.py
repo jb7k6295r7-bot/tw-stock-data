@@ -693,7 +693,10 @@ def survivor_fs_case(out):
                            "　⇒ ⛔ 這一格只量到形狀")
                 tables, enc = [], "?"
             codes = set()
-            for _k, _cap, hdr, rows in tables:
+            # ⛔ `parse_fs` 回的是 **5 元組** `(kind, how, caption, 表頭, 列)`，
+            #   ⚠ docstring 只寫了 4 個 ⇒ 我照 docstring 拆，probe 112 當場 ValueError。
+            #   ⭐ 判準不是「照說明拆」，是**照實際回來的形狀拆**（CLAUDE.md 第一點）。
+            for _k, _how, _cap, _hdr, rows in tables:
                 for r in rows:
                     if r:
                         codes.add(str(r[0]).strip())

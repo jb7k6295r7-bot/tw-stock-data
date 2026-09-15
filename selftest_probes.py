@@ -1173,6 +1173,72 @@ def check_f2_numbers():
     return bad
 
 
+def check_js_needles():
+    """⭐ `js_followups(..., needles=)`：把某個**常數名**前後的原文印出來。
+
+    ⛔ 加它的理由是 C4 那一格（2026-09-15 第二輪）：
+    `page_wiring` 把 inline 挖出來之後，那兩頁逐字寫著
+
+        tables.init({pattern: API_PATTERN, action: "bulletin/pvChgAnn"})
+
+    ⇒ ⭐ **`action` 讀到了**，⛔ 而 `API_PATTERN` 的**值**在別支 js 裡。
+    ⚠ 而 `xhr_clues` 只認**寫死的路徑字串** ⇒ 一個常數名它看不到
+    ——⛔ 「它沒找到」與「那一支裡沒有」在報告上長得一模一樣。
+    """
+    import backfill as BB
+    bad = 0
+
+    def ck(name, cond, extra=""):
+        nonlocal bad
+        print(("✓ " if cond else "✗ ") + name)
+        if not cond:
+            bad += 1
+            if extra:
+                print(f"    {extra}")
+
+    # ⚠ 這個假 js 要**照真的形狀**做（第七點）：常數的值是**拼出來的**，
+    #   ⛔ 不是一個寫死的完整網址——寫死的話 `xhr_clues` 自己就看得到，
+    #   ⇒ 那樣 ①「不傳 needles 就挖不到」會是**假的**（我第一版就這樣，當場紅）。
+    js = (b'var BASE="/www/"+LANG; const API_PATTERN=BASE+"/api/"+act;'
+          b' function go(){tables.init({pattern:API_PATTERN});}')
+    seen = {}
+
+    def fake_get(u, **kw):
+        seen[u] = seen.get(u, 0) + 1
+        return (js, None) if u.endswith(".js") else (b"", "nope")
+
+    old_get = BB.get
+    try:
+        BB.get = fake_get
+        html = '<html><script src="/a.js"></script></html>'
+        no_nd = "\n".join(BB.js_followups(html, base="https://h/p.html"))
+        with_nd = "\n".join(BB.js_followups(html, base="https://h/p.html",
+                                            needles=("API_PATTERN",)))
+    finally:
+        BB.get = old_get
+
+    ck("① ⛔ 不傳 needles ⇒ 那個常數**怎麼拼的**看不到"
+       "（⚠ 這正是 `xhr_clues` 挖不到的那一種：值是拼出來的）",
+       "API_PATTERN=BASE" not in no_nd, no_nd[-300:])
+    ck("② ⭐ 傳了 needles ⇒ 那一段原文**逐字印出來**",
+       "API_PATTERN=BASE" in with_nd, with_nd[-400:])
+    ck("③ ⭐ 而兩者真的不同（⛔ 一樣的話上面兩條有一條是假的）",
+       no_nd != with_nd)
+    with_miss = None
+    try:
+        BB.get = fake_get
+        with_miss = "\n".join(BB.js_followups(html, base="https://h/p.html",
+                                              needles=("NOT_THERE_XYZ",)))
+    finally:
+        BB.get = old_get
+    ck("④ ⛔ 找不到那個字時要**明講找不到**（⚠ 空白跟「沒挖」長得一樣）",
+       "找不到" in with_miss, with_miss[-300:])
+    ck("⑤ ⭐ 而 needles 是**選用**的：呼叫端沒傳時行為不變"
+       "（⛔ 有預設值的參數要有一條不傳它的斷言，第七點③）",
+       "⑤" in no_nd or "外部載入" in no_nd or len(no_nd) > 0, no_nd[:120])
+    return bad
+
+
 def check_page_wiring():
     """⭐⭐ `page_wiring`：頁面**自己**把參數放在哪裡（inline script ＋ data-*）。
 
@@ -1446,6 +1512,94 @@ def check_probe_stamp():
     return bad
 
 
+def check_survivor_fs():
+    """⛔⛔ `mops_probe.survivor_fs_case` **自己會不會炸**（2026-09-15 付過代價）。
+
+    probe 112 實測：`mops_history.parse_fs` 的 docstring 寫「回 4 元組」、
+    ⚠ 而它回的是 **5 個** ⇒ 我照說明拆 ⇒
+    `ValueError: too many values to unpack` ⇒ ⛔ **整支 `mops_probe.py` rc=1**
+    ⇒ 那一趟的 `data/meta/_mops_probe.txt` 是**上一次**的內容
+    （守門有補一行 ✗ 標記，⚠ 而那一節從頭到尾沒落地）。
+
+    ⇒ ⭐ 這一條是第七點第六個那條的同一族：
+      **一段解析／錯誤處理本身也是程式 ⇒ 它也要有「它自己會不會炸」的斷言**，
+      ⛔ 而斷言要驗**終點**（跑完、那幾行真的印出來），
+      不是驗「原始碼裡有沒有那個 unpack」（第七點第八個：註解裡也有一份）。
+
+    ⚠ 而假回應要照真回應的形狀做：真的 t163sb04 是「一個業別一張表」
+      ⇒ 這裡給**兩張**，而且其中一張帶目標代號、另一張不帶
+      ⇒ ⛔ 只給一張的話，「跨表收集代號」那一段等於沒測。
+    """
+    import mops_probe as MP
+    import mops_history as MH
+    bad = 0
+
+    def _tbl(rows):
+        head = ("<tr><td>公司代號</td><td>公司名稱</td>"
+                "<td>營業收入</td><td>營業成本</td></tr>")
+        body = "".join(f"<tr><td>{c}</td><td>{n}</td><td>1,000</td><td>500</td></tr>"
+                       for c, n in rows)
+        return f"<table>{head}{body}</table>"
+
+    page = ("<html><body>一般業<" + "/br>" + _tbl([("2330", "台積電"),
+                                                   ("2456", "奇力新")])
+            + "金融保險業" + _tbl([("2882", "國泰金")])
+            + "</body></html>").encode("utf-8")
+
+    out, saved = [], MH._fetch
+    MH._fetch = lambda url, form=None, **kw: (page, "")
+    try:
+        MP.survivor_fs_case(out)
+        err = None
+    except Exception as ex:                                      # noqa: BLE001
+        err = ex
+    finally:
+        MH._fetch = saved
+    txt = "\n".join(out)
+
+    # ⭐ ①「跑完不炸」——⛔ 這一條就是 probe 112 那個 bug 的**終點**斷言
+    ok = err is None
+    print(("✓ " if ok else "✗ ")
+          + "survivor_fs_case 拿**真形狀的假回應**跑完不丟例外"
+            "（⛔ probe 112 就是死在這裡：docstring 4 個、實際 5 個）")
+    if not ok:
+        print(f"    ⛔ {type(err).__name__}: {err}")
+        bad += 1
+        return bad
+
+    for name, want in (
+            ("② 把**相異代號數**講出來（⇒ 兩張表都收得到 ⇒ 3 個）", "相異代號 3 個"),
+            ("③ 逐格講「那幾檔在不在裡面」（⛔ 不下結論，由輸出講）", "那幾檔在裡面"),
+            ("④ 而**不在裡面的**也要單獨列（⇒ 兩個方向都印）", "不在裡面的"),
+            ("⑤ 明寫「⛔ 不可以把月營收那條的結論套過來」（三點②）", "每支端點都要自己實測"),
+    ):
+        if want in txt:
+            print(f"✓ survivor_fs_case {name}")
+        else:
+            print(f"✗ survivor_fs_case {name}｜找不到「{want}」")
+            bad += 1
+
+    # ⭐ ⑥ 取不回來那一格：⛔ **不可以**讀成「它不在裡面」
+    out2, saved = [], MH._fetch
+    MH._fetch = lambda url, form=None, **kw: (b"", "HTTP 500 Internal Server Error")
+    try:
+        MP.survivor_fs_case(out2)
+        err2 = None
+    except Exception as ex:                                      # noqa: BLE001
+        err2 = ex
+    finally:
+        MH._fetch = saved
+    t2 = "\n".join(out2)
+    ok = err2 is None and "【未驗】" in t2 and "不在裡面的" not in t2
+    print(("✓ " if ok else "✗ ")
+          + "survivor_fs_case ⭐ 取不回來 ⇒ 標【未驗】，"
+            "⛔ 不可以印成「那幾檔不在裡面」（那會被讀成倖存者偏誤的證據）")
+    if not ok:
+        print(f"    ⛔ err={err2}｜實得：{t2[-260:]}")
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -1470,9 +1624,11 @@ def main():
     bad += check_js_followups()
     bad += check_scale_qualified()
     bad += check_f2_numbers()
+    bad += check_js_needles()
     bad += check_page_wiring()
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
+    bad += check_survivor_fs()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

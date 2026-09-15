@@ -647,7 +647,14 @@ def fs_kind(header, codes=(), kmap=None, learned=None):
 
 
 def parse_fs(raw, kmap=None, learned=None):
-    """t163sb04／sb05 → ([(kind, caption, 表頭, 列)], 編碼)。
+    """t163sb04／sb05 → ([(kind, how, caption, 表頭, 列)], 編碼)。
+
+    ⛔⛔ 這一行本來寫的是 4 元組（漏了 `how`），⚠ 而回傳的一直是 **5 個**。
+      ⇒ 2026-09-15 probe 112：`mops_probe.survivor_fs_case` 照這句拆
+        ⇒ `ValueError: too many values to unpack` ⇒ 整支探針 rc=1
+        ⇒ ⛔ 那一趟的 `_mops_probe.txt` 是**上一次**的內容（守門有標，但那一節沒落地）。
+      ⭐ 判準（CLAUDE.md 第一點的近親）：**照實際回來的形狀拆，⛔ 不要照說明拆**
+        ——而說明會過期，`selftest_mops_history` 已釘一條「回傳元組長度 == 5」。
 
     ★ 不合併不同業別。銀行的損益表有「利息淨收益」，一般業有「營業收入」，
       **欄位意義完全不同**，硬併會產出幾百欄、絕大多數是空的怪物
