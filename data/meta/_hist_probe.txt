@@ -19,7 +19,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a3b38be4bcf516af\',t:\'MTc4OTQzMjQ3NA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a3b3b125be1bd64c\',t:\'MTc4OTQzNDAwMA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -34,8 +34,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3b38beb9aa53567\','
-     't:\'MTc4OTQzMjQ3NQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3b3b12c99b41011\','
+     't:\'MTc4OTQzNDAwMQ==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -70,8 +70,8 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b38c030
-         ac12913',t:'MTc4OTQzMjQ3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b3b1874
+         f28e5ba',t:'MTc4OTQzNDAxNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate
@@ -184,6 +184,7 @@
      ⛔ 下面每一行都是「我打了這個網址、得到這個結果」，**不是**「櫃買宣告有這些年」。
      民國  85（1996）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
      民國  86（1997）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+       ⚠ AA870331.txt 抓得到日期卻**不是我要的那天**（['2006-10-11']）⇒ 不算命中
      民國  87（1998）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國  88（1999）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國  89（2000）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
@@ -203,6 +204,7 @@
      民國 103（2014）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國 104（2015）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
      民國 105（2016）｜✗ 試了 1229/0930/0630/0331 四天都沒有（都是平日）
+       ⚠ AA1060331.txt 抓得到日期卻**不是我要的那天**（['1992-10-11']）⇒ 不算命中
      民國 106（2017）｜✗ 試了 1229/0929/0630/0331 四天都沒有（都是平日）
      民國 107（2018）｜✗ 試了 1228/0928/0629/0330 四天都沒有（都是平日）
      民國 108（2019）｜✗ 試了 1227/0930/0628/0329 四天都沒有（都是平日）
