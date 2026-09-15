@@ -1,4 +1,4 @@
-# commit=fffb707b4 run=2026-09-15 21:18 (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers=centers_v3.json(23be85b004977222)
+# commit=bd3d8e5cb run=2026-09-15 22:10 (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers=centers_v3.json(23be85b004977222)
 stock_id,name,tag,n_rows,miss_share
 1262,綠悅-KY,KY,31,1.0
 1337,再生-KY,KY,7,1.0

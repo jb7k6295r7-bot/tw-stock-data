@@ -1,1 +1,1 @@
-2026-09-15 21:18 commit fffb707b4；合格股-月 59,612 × 13 欄；min_periods=w vs =ceil(w/2) 不一致 513 筆；逐欄：vr_20_120 513（123 檔；mp=w 為 NaN 513）；⛔ 斷言不成立，數字在 --mp-check-report 下產出
+2026-09-15 22:10 commit bd3d8e5cb；合格股-月 59,612 × 13 欄；min_periods=w vs =ceil(w/2) 不一致 0 筆

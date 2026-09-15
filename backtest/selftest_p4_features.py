@@ -112,6 +112,11 @@ def t_gate_min_periods():
     g = P.stock_raw("1240", "twse", cal); q = int(np.searchsorted(cal, pd.Timestamp("2022-05-03")))
     check(int(g["inst_nan20"].iloc[q]) == 3 and pd.isna(g["fore20"].iloc[q]) and pd.isna(g["trust20"].iloc[q]) and g["bars"].iloc[q] >= 120,
           f"1240 2022-05-03：inst_nan20＝{int(g['inst_nan20'].iloc[q])}（要 3）、fore20/trust20 NaN、bars {int(g['bars'].iloc[q])} ≥ 120（閘門擋不到、(c) 才擋得到的那種）")
+    # 〈七十七〉：1315 2020-10-15～10-22 有 7 個區間內部無成交日 ⇒ amount 還原 0（不是 NaN）⇒ 2020-12-01 的 vr_20_120／amt20 有值；上市前仍 NaN
+    h = P.stock_raw("1315", "tpex", cal); q1 = int(np.searchsorted(cal, pd.Timestamp("2020-10-15"))); q2 = int(np.searchsorted(cal, pd.Timestamp("2020-12-01")))
+    check(int(h["notraded_inside"].iloc[q1:q1 + 6].sum()) == 6 and h["notraded_inside"].iloc[q1] == 1, f"1315 2020-10-15 起 6 個交易日標為區間內部無成交（實得 {int(h['notraded_inside'].iloc[q1:q1 + 6].sum())}）")
+    check(np.isfinite(h["vr_20_120"].iloc[q2]) and np.isfinite(h["amt20"].iloc[q2]), f"1315 2020-12-01 vr_20_120＝{h['vr_20_120'].iloc[q2]:.3f}、amt20 有值（無成交日 amount 還原 0 之後 min_periods=w 不再打掉整窗）")
+    check(pd.isna(late_first := P.stock_raw("7610", "tpex", cal)["amt20"].iloc[0]) and int(P.stock_raw("7610", "tpex", cal)["notraded_inside"].iloc[0]) == 0, "7610 上市前（序列第一列）amt20 仍 NaN、不算區間內部（還原只在首末成交日之間）")
     late = P.stock_raw("7610", "tpex", cal)
     if late is not None:
         pos = int(np.searchsorted(cal, pd.Timestamp("2026-01-02")))

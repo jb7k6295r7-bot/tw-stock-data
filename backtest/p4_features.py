@@ -110,6 +110,14 @@ def stock_raw(sid: str, market: str, cal: pd.DatetimeIndex, rev_flags: pd.Series
     c = df["close"].ffill()
     o = df["open"]
     vol = pd.to_numeric(df["volume"], errors="coerce"); amt = pd.to_numeric(df["amount"], errors="coerce")
+    # 〈七十七〉（K線分析 2210 §二）：無成交日的 amount／volume 是【記錄形式的空缺】——日檔只收當天有成交的證券，真值＝0 ⇒ 還原為 0，⛔ 不是補值、不進放棄組。
+    # 依據＝該日日檔存在（cal 就是 data/universe/daily/ 的檔名集合）且不含該檔；只在該檔首末成交日之間還原（上市前／下市後仍 NaN）。
+    tr = df["traded"].to_numpy(bool)
+    if tr.any():
+        i0, i1 = int(np.argmax(tr)), len(tr) - 1 - int(np.argmax(tr[::-1]))
+        inside = np.zeros(len(tr), bool); inside[i0:i1 + 1] = True
+        fill0 = inside & ~tr
+        vol = vol.where(~fill0, 0.0); amt = amt.where(~fill0, 0.0)
     shares = load_shares(sid, cal); inst = load_inst(sid, cal)
     ma20, ma60, ma120 = c.rolling(20, min_periods=mp(20)).mean(), c.rolling(60, min_periods=mp(60)).mean(), c.rolling(120, min_periods=mp(120)).mean()
     out = pd.DataFrame(index=cal)
@@ -131,6 +139,7 @@ def stock_raw(sid: str, market: str, cal: pd.DatetimeIndex, rev_flags: pd.Series
     out["shares_ok"] = shares.notna().astype(int)
     out["inst_nan20"] = inst["foreign"].isna().astype(int).rolling(20, min_periods=1).sum()   # 近 20 日法人缺值日數（只給放棄組⑩成因用，不是特徵）
     out["bars"] = df["traded"].astype(bool).cumsum().to_numpy()      # 有價收盤根數（ffill 前的原始有成交列，自序列起算累計）
+    out["notraded_inside"] = (inside & ~tr).astype(int) if tr.any() else 0    # 該日是區間內部無成交日（amount 已還原 0）——只給放棄組／統計用
     out["close"] = c; out["open"] = o; out["traded"] = df["traded"].astype(bool)
     return out
 
