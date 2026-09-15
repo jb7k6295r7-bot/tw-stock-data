@@ -53,6 +53,7 @@ import traceback
 from datetime import datetime, timedelta, timezone
 
 import backfill as B
+from twparse import post_form as _post_form
 from backfill import why as _W
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -228,6 +229,46 @@ def main():
                                      if tr2 > 1 else
                                      "⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」"
                                      "（可能要 POST／要參數／是 js 空殼）"))
+            # ── ⭐⭐ 而**正確的問法早就寫在我們自己家**（2026-09-15 第四輪）
+            #
+            # ⛔ 上面那三發是 **GET**，而 `otc_exright_history.py` 的檔頭逐字寫著：
+            #     「① **GET 的 startDate／endDate 會被忽略**，靜靜回
+            #       『今天～明天』⇒ **必須 POST**」
+            #   ⚠ 而 GET 回來的 `"date":"20260916~20260917"` **正是那句話描述的
+            #     今天～明天** ⇒ ⭐ 我方早就知道，而我沒去讀（CLAUDE.md 3.5 ④）。
+            #
+            # ⚠ 而 `revivt`（上櫃減資，我方**天天在用**）的網址就是
+            #   `/www/zh-tw/bulletin/revivt`——⛔ 跟這兩條是**同一族、同一個形狀**。
+            # ⇒ 照既有配方問：POST ＋ `startDate`／`endDate`（**日期帶斜線**）＋ `response=json`。
+            # ⭐ 而判準是**它自己回顯的 `date` 欄**：回顯我請求的那一段才算數
+            #   （⛔ 回「今天～明天」就代表參數被忽略——第二點①）。
+            say("     ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次"
+                "（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）")
+            for act in acts:
+                u3 = f"https://www.tpex.org.tw/www/zh-tw/{act}"
+                form = {"startDate": "2015/01/01", "endDate": "2026/09/15",
+                        "response": "json"}
+                r3, e3 = _post_form(u3, form)
+                if e3 or not r3:
+                    say(f"        {u3}　⛔ {_W(e3, 160)}"
+                        "　⇒ ⚠ 取不回來**不等於**這條路不通")
+                    continue
+                txt3 = r3.decode("utf-8", "replace")
+                m = re.search(r'"date"\s*:\s*"([^"]*)"', txt3)
+                tot = re.findall(r'"totalCount"\s*:\s*(\d+)', txt3)
+                say(f"        {u3}　[形狀] {len(r3):,} bytes")
+                say(f"           ⭐ 它回顯的 `date`：{m.group(1) if m else '（沒有這個鍵）'}"
+                    f"｜`totalCount`：{tot or '（沒有這個鍵）'}")
+                if m and m.group(1) == "20150101~20260915":
+                    say("           ⭐⭐ **回顯了我請求的那一段** ⇒ 期間參數真的生效"
+                        "　⇒ 這條路有歷史")
+                elif m:
+                    say("           ⛔ 回顯的**不是**我請求的那一段"
+                        "　⇒ ⚠ 參數被忽略（第二點①：靜靜回今天）")
+                else:
+                    say("           ⚠ 回應裡沒有 `date` 鍵 ⇒ ⛔ 這一格**判不出**"
+                        "參數有沒有生效（⚠ 不可以讀成「有生效」）")
+                say("           開頭 " + repr(txt3[:160]))
 
     say("\n── ★ 參數有沒有被無視 ──")
     say("TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，"

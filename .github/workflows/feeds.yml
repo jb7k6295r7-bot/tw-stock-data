@@ -177,6 +177,17 @@ jobs:
       - name: 掃有沒有第二份實作（零相依）
         run: python selftest_no_dup.py
 
+      # ⛔⛔ 2026-09-15 probe run 115 的代價：`selftest_tdcc.py` 走到了
+      #   `write_hist` ⇒ `import pyarrow`，⚠ 而 **probe runner 沒裝**
+      #   ⇒ 那一步 failure ⇒ 後面三步（含**把程式同步到 main**）全部 skipped
+      #   ⇒ 那一趟什麼都沒搬過去。⭐ 六點五：一條在某個環境下必然不成立的
+      #     斷言，等於把那個環境的整條線關掉。
+      # ⚠ 而既有三道守門**一道都抓不到**：`selftest_workflows` 只驗語法與存在、
+      #   `selftest_no_dup` 比函式本體、AST 掃 import 抓不到「別的模組的函式裡
+      #   的 import」⇒ ⭐ 唯一抓得到的方式是**真的在那個環境跑一次**。
+      - name: 驗「零相依」那幾步在缺套件時真的跑得完（零相依）
+        run: python selftest_zero_dep.py
+
       # ⛔⛔ 低水位檔這一族 `selftest_no_dup.py` **抓不到**：八份的函式本體長得
       #   都不一樣（讀的檔名不同、回傳的形狀不同）⇒ 那道守門比的是 AST 函式本體。
       #   ⚠ 而這一族有**兩種相反的語意**（有的只准往上、有的只准往下）

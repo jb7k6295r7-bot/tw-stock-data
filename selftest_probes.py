@@ -323,6 +323,12 @@ SIBLING_DOORS = {
     "mops_probe": {"mops_history": ("_fetch",)},
 }
 
+# ⭐ 共用的抓取門：**每一支**探針都可能用到，⇒ 一律換掉（理由見 `run()` 裡那段）。
+SHARED_DOORS = (("twparse", "post_form"),)
+
+
+NET_TRIED = [0]
+
 
 def run(name):
     mod = __import__(name)
@@ -385,6 +391,56 @@ def run(name):
             real = getattr(smod, fn)
             olds[f"{sib}.{fn}"] = (smod, fn, real)
             setattr(smod, fn, strict_stub(real, (HTML.encode(), None)))
+    # ── ⭐⭐ 共用的門：**每一支探針都要換**，而且要照**物件同一性**掃別名
+    #
+    # ⛔ 2026-09-15 實測：`mops_probe.ezsearch_case` 一直在打 `twparse.post_form`，
+    #   ⚠ 而它**從來沒被換掉** ⇒ 那支「離線」自測每一趟都真的連外（12 發），
+    #   ⛔ 而探針自己的「取不回來 ⇒ 標【未驗】」處理把它吞掉 ⇒ 沒有人知道。
+    # ⚠ 而 `from twparse import post_form as _post_form` 這種寫法會**綁住原函式物件**
+    #   ⇒ 只換 `twparse.post_form` 對那個別名**無效**。
+    # ⇒ ⭐ 換完之後**再掃一次 `mod` 的屬性**，凡是 `is` 那個真函式的一併換掉
+    #   ——⛔ 比物件不比名字，任何別名都躲不掉。
+    for sib, fn in SHARED_DOORS:
+        smod = __import__(sib)
+        real = getattr(smod, fn, None)
+        if real is None:
+            continue
+        stub = strict_stub(real, (HTML.encode(), None))
+        olds[f"{sib}.{fn}"] = (smod, fn, real)
+        setattr(smod, fn, stub)
+        for attr in dir(mod):
+            if getattr(mod, attr, None) is real:
+                olds[f"{name}.{attr}"] = (mod, attr, real)
+                setattr(mod, attr, stub)
+    # ── ⭐⭐⭐ 真正的終點判準：**離線自測期間把 socket 封掉**（2026-09-15 第二版）
+    #
+    # ⛔ 第一版是 `SIBLING_DOORS`（一張手寫清單）＋ 一道掃 `模組.函式(` 的 AST 守門。
+    # ⚠ 而我**同一個小時內**就寫出它抓不到的形狀：
+    #     `from twparse import post_form as _post_form` ⇒ 呼叫時是**裸名字**
+    #     ⇒ ⛔ 那道 AST 守門（比 `Attribute`）看不到它。
+    # ⇒ ⭐ 判準不該是「有沒有登記」，是**「這一趟到底有沒有連出去」**
+    #   ——⛔ 前者永遠會漏掉一種寫法，後者**每一種寫法都擋得住**。
+    #
+    # ⚠ 而封 socket 之後，沒被換掉的門會丟例外 ⇒ `run()` 本來就會把例外
+    #   回報成「⛔ main() 丟例外」⇒ 那一支當場紅，而且訊息直接說它連外了。
+    # ⛔⛔ 而判準要**記次數**，不可以只靠丟例外（2026-09-15 當場踩到）：
+    #   探針自己有「取不回來 ⇒ 標【未驗】」的錯誤處理（那是**對的**設計）
+    #   ⇒ ⚠ 它會把我丟的例外**吞掉** ⇒ 那一支照樣綠，而它真的連外了。
+    # ⇒ ⭐ 例外照丟（讓那一發失敗），⭐ 而**次數記在外面**，跑完再斷言它是 0。
+    import socket as _sock
+    _real_socket, _real_conn = _sock.socket, _sock.create_connection
+    NET_TRIED[0] = 0
+
+    class _NoNet(_sock.socket):
+        def __init__(self, *a, **k):
+            NET_TRIED[0] += 1
+            raise AssertionError("⛔⛔ 這支「離線」自測**真的連外了**")
+
+    def _no_conn(*a, **k):
+        NET_TRIED[0] += 1
+        raise AssertionError("⛔⛔ 這支「離線」自測**真的連外了**（create_connection）")
+
+    _sock.socket, _sock.create_connection = _NoNet, _no_conn
     buf, old_stdout = io.StringIO(), sys.stdout
     sys.stdout = buf
     try:
@@ -394,6 +450,7 @@ def run(name):
         err = ex
     finally:
         sys.stdout = old_stdout
+        _sock.socket, _sock.create_connection = _real_socket, _real_conn
         mod.OUT, B.get = old_out, old_get
         B.new_session = _real_ns
         for fn, v in olds.items():
@@ -401,6 +458,7 @@ def run(name):
                 setattr(v[0], v[1], v[2])
             else:
                 setattr(mod, fn, v)
+    run.last_net = NET_TRIED[0]          # ⭐ 這一趟試著連外幾次（⛔ 應該是 0）
     out = buf.getvalue()
     if os.path.exists(tmp):
         with io.open(tmp, encoding="utf-8") as f:
@@ -1675,6 +1733,20 @@ def check_sibling_doors():
     ⇒ 這一道掃**全部探針**的 AST：凡是 `<別的模組>.<抓取用的函式>(` 的呼叫，
     都要在 `SIBLING_DOORS` 裡登記過。⛔ 比 AST 不比字串
     （第七點第八個：那幾個名字在註解裡也有一份——本函式的 docstring 就有）。
+
+    ## ⛔⛔ 而這一道**不夠**——我同一個小時內就寫出它抓不到的形狀
+
+    ```python
+    from twparse import post_form as _post_form      # ⇒ 呼叫時是**裸名字**
+    _post_form(url, form)                            # ⛔ 不是 `模組.函式(`
+    ```
+    ⇒ 這一道看不到它。⚠ 而實測 `mops_probe.ezsearch_case` **一直**在打
+    `twparse.post_form`（每趟 12 發真的連外），而它回報「全部都登記過」。
+
+    ⇒ ⭐ **真正的終點判準是 `run()` 裡那個「連外次數」計數器**（socket 層）：
+    ⛔ 它不問你怎麼寫的，只問**有沒有連出去** ⇒ 每一種寫法都擋得住。
+    ⚠ 這一道留著當**輔助**：它講得出「是哪一行」，而計數器只講得出「有」。
+    ⇒ ⛔ 而它**不可以**被讀成「已經沒有人在借門了」。
     """
     import ast as _ast
     doors = {"_fetch", "_post", "get", "one", "post", "fetch"}
@@ -1725,9 +1797,10 @@ def check_sibling_doors():
               "（⛔ 0 個與「全部合規」在紙上一模一樣，第七點）")
         bad += 1
     elif not bad:
-        print(f"✓ ⭐ {checked} 支探針裡借別的模組的門共 {found} 處，"
+        print(f"✓ ⭐ {checked} 支探針裡 `模組.函式(` 形式的借門共 {found} 處，"
               "全部都在 `SIBLING_DOORS` 裡登記過"
-              "（⛔ 沒登記 ⇒ 那支「離線」自測會真的連外）")
+              "　⚠ **而這一道抓不到 `from X import y` 那種裸名字**"
+              "　⇒ ⭐ 真正的守門是 `run()` 的連外次數計數器")
     return bad
 
 
@@ -1739,6 +1812,15 @@ def main():
             print(f"✗ {name}.main() 丟例外：{type(err).__name__}: {err}")
             bad += 1
             continue
+        # ⭐⭐ 終點：這一支在「離線」自測裡**一次都沒有試著連外**
+        #   ⛔ 前一版是掃 AST 找 `模組.函式(`，⚠ 而 `from X import y as z` 那種
+        #   **裸名字**的呼叫它看不到——我同一個小時內就寫出那種形狀。
+        #   ⇒ 判準換成「到底有沒有連出去」，⭐ 每一種寫法都擋得住。
+        if getattr(run, "last_net", 0):
+            print(f"✗ {name} 在「離線」自測裡試著**連外 {run.last_net} 次**"
+                  "　⇒ ⛔ 有一道抓取的門沒被換掉"
+                  "（⚠ 探針自己的「取不回來」處理會把它吞掉 ⇒ 看起來完全正常）")
+            bad += 1
         missing = [s for s in want if s not in out]
         if missing:
             print(f"✗ {name} 少了這幾節：{missing}"
