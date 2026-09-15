@@ -908,6 +908,31 @@ def check_js_followups():
        not any(("googleapis" in u or "jsdelivr" in u) for u in calls),
        f"實際打了 {calls}")
 
+    # ⑦b ⭐⭐ 通用函式庫要**排到最後**（2026-09-15 付過代價）
+    #   `mine` 本來照字母排序 ＋ cap ⇒ 額度被 `gsap`／`jquery-*` 吃光
+    #   ⇒ ⛔ 站方**自己寫的** `main.js`／`tables.js` 一支都沒挖到，
+    #   ⚠ 而報告上只寫「本站另 4 支未挖」——⭐ 那 4 支正是最可能有答案的。
+    vend = ('<html>'
+            '<script src="/rsrc/asset/js/jquery-3.7.1.min.js"></script>'
+            '<script src="/rsrc/asset/js/gsap.min.js"></script>'
+            '<script src="/rsrc/asset/js/jquery.cookie.min.js"></script>'
+            '<script src="/rsrc/js/tables.js"></script>'
+            '<script src="/rsrc/js/main.js"></script>'
+            '</html>')
+    order = []
+    B.get = lambda u, **k: (order.append(u) or (b"x", None))
+    try:
+        txt7 = "\n".join(B.js_followups(vend, base="https://x.invalid/a.html",
+                                        cap=2))
+    finally:
+        B.get = saved
+    ck("⑦b ⭐⭐ 站方自己寫的先挖，通用函式庫**排到最後**"
+       "（⛔ 照字母排 ＋ cap ⇒ `main.js`／`tables.js` 永遠挖不到）",
+       len(order) == 2 and all("jquery" not in u and "gsap" not in u
+                               for u in order), str(order))
+    ck("  而且**講出**有幾支是通用函式庫（⛔ 不是靜靜重排）",
+       "通用函式庫 3 支" in txt7, txt7[:200])
+
     # ⑩ 本站一支都沒有 ⇒ 要說「挖不下去」，⛔ 不可以讀成「官方沒有」
     B.get = fake_get
     try:

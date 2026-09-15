@@ -1087,7 +1087,7 @@ def script_srcs(text, base=None, cap=12):
     return sorted(set(hits))[:cap]
 
 
-def js_followups(text, base, cap=6, skip_hosts=("googleapis", "gstatic",
+def js_followups(text, base, cap=8, skip_hosts=("googleapis", "gstatic",
                                                  "google-analytics", "googletagmanager",
                                                  "jquery.com", "cdnjs", "jsdelivr")):
     """⑤ 那幾支外部 `.js` **裡面**去打誰——⛔ 這是「取不到」之後的下一步。
@@ -1116,8 +1116,19 @@ def js_followups(text, base, cap=6, skip_hosts=("googleapis", "gstatic",
     mine, third = [], []
     for u in srcs:
         (third if any(h in u for h in skip_hosts) else mine).append(u)
+    # ⛔⛔ 2026-09-15 付過代價：`mine` 是**照字母排序**的，而 cap=6
+    #   ⇒ 額度被 `gsap`／`jquery-3.7.1`／`jquery.cookie`／`jquery.mousewheel`
+    #     吃光 ⇒ ⭐ 站方**自己寫的** `main.js`／`tables.js` 一支都沒挖到
+    #   ⇒ ⚠ 報告上是「本站另 4 支未挖」——⛔ 而那 4 支正是最可能有答案的。
+    # ⇒ ⭐ 通用函式庫**排到最後**（它們是別人寫的，不會有這個站的端點）。
+    # ⛔ 仍然列出來、仍然可以挖得到——⚠ 只是順序，不是篩掉。
+    vendor = ("jquery", "gsap", "bootstrap", "slick", "swiper", "modernizr",
+              "polyfill", "lodash", "moment", "/ie.js", "underscore")
+    mine.sort(key=lambda u: (any(v in u.lower() for v in vendor), u))
+    n_vendor = sum(1 for u in mine if any(v in u.lower() for v in vendor))
     out.append(f"  ⑥ 外部 `.js` 逐支挖：共 {len(srcs)} 支"
-               f"｜本站 {len(mine)} 支｜第三方 {len(third)} 支（⛔ 不抓）")
+               f"｜本站 {len(mine)} 支（其中通用函式庫 {n_vendor} 支，⭐ **排到最後**）"
+               f"｜第三方 {len(third)} 支（⛔ 不抓）")
     for u in third:
         out.append(f"      ⛔ 跳過（第三方）：{u[:120]}")
     if not mine:
