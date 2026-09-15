@@ -1,18 +1,184 @@
-# ⏱ 這一趟：2026-09-15T18:56:15+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34959659495
-broker_probe.py　2026-09-15 18:56 台北
+# ⏱ 這一趟：2026-09-15T19:42:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34963947381
+broker_probe.py　2026-09-15 19:42 台北
 ⭐ 問的是：這兩條到底是**全市場 × 全部分點**，還是「熱門股排行」。
 ⛔ 判準不是「有回列」——是**它自己講不講得出它是哪一天、涵蓋誰**。
+⭐⭐ H1 分點（券商買賣日報）：**這條路是對哪一種規模不可用**
+────────────────────────────────────────────────────────────
+⛔ 三點③：沒有標規模的「不可用」，下一個人會拿它去擋一件它沒測過的事。
+⚠ 而擋住分點的三件事——**驗證碼／逐檔查／只有當日**——全部是**規模的函數**。
+
+  母體（`meta/stocks.csv` 的 `kind=stock`，⭐ 含已下市）：emerging 363｜tpex 972｜twse 1,158｜上市＋上櫃 **2,130**
+  一年的交易日（`universe/daily/` 的 2025 檔名）：**243** 天
+
+    全市場回補一年   2,130 檔 × 243 日 ≈ **517,590** 次請求
+    追蹤一檔回補一年  1 檔 × 243 日 = **243** 次
+    ⭐ 而 FinMind 那條 `?day=365` 一次請求就回整年 = **1** 次
+
+  逐項對照（同一個障礙，兩種規模的結論相反）
+    驗證碼    ⇒ 擋的是**自動化**。一檔一天輸一次，**人做得到**
+    逐檔查    ⇒ 追蹤單檔時**本來就只查一檔**，不是成本
+    只有當日  ⇒ 從今天開始一天記一次，一年後就有一年
+
+⇒ ⭐ **判死的不是「分點」這條路，是「全市場自動化」那一格。**
+
+⛔⛔ 而還有一個理由**跟規模無關**，不可以跟上面三個並排寫：
+     **條款禁「重製」。** 它在單檔也成立 ⇒ 任何規模都要先解決授權，
+     ⚠ 而我 2026-09-13 把它跟「請求量」並排寫成「兩個都獨立成立」，
+     ⛔ 看起來就像「到處都成立」——那正是使用者一句話戳破的地方。
+
+⇒ 本庫現況：**不落地任何分點資料**。⛔ 這不是「查不到」，是**授權沒有解決**。
+   ⚠ 而「技術上單檔做得到」要寫在這裡，⛔ 不可以被上面那句吃掉。
 
 ========================================================================
 ■ 上櫃 熱門股券商進出（量）
   https://www.tpex.org.tw/zh-tw/mainboard/trading/historical/broker-vol.html
   11496 bytes｜<title> 熱門股證券商進出排行(等價整股由大而小排列) - 證券櫃檯買賣中心
   頁面裡掃到 0 個 /www/ 路徑：
-  ⛔ 沒掃到看起來像資料端點的路徑 ⇒ ⚠ 它可能是**另外載入**的 JS 才組出來的。⇒ 這一條要人去開開發者工具看，⛔ 不要在這裡猜。
+  ⛔ 沒掃到看起來像資料端點的路徑 ⇒ ⚠ 它可能是**另外載入**的 JS 才組出來的。
+  [形狀] 中文 758 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+   ①  `/…/api/…` 出現過哪些：1 種
+       /fonts.googleapis
+   ②  `fetch(` 的對象：0 種
+   ③  `$.ajax` / `url:` 的對象：0 種
+   ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+   ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+   ⑤  外部載入的 `.js`：11 支
+       https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+       https://www.tpex.org.tw/rsrc/asset/js/global.js
+       https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
+       https://www.tpex.org.tw/rsrc/js/ie.js
+       https://www.tpex.org.tw/rsrc/js/main.js
+       https://www.tpex.org.tw/rsrc/js/tables.js
+   ⑥ 外部 `.js` 逐支挖：共 11 支｜本站 10 支｜第三方 1 支（⛔ 不抓）
+       ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+       ── https://www.tpex.org.tw/rsrc/asset/js/global.js（103,202 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：2 種
+           /data/menu/en-us/menu.json
+           /data/menu/zh-tw/menu.json
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js（87,533 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+           e.jsonp
+           e.jsonpCallback
+           t.jsonpCallback
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js（1,300 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+           h.json
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js（2,771 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js（3,702 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       …（本站另 4 支未挖，cap=6）
 
 ========================================================================
 ■ 上櫃 熱門股券商進出（金額）
   https://www.tpex.org.tw/zh-tw/mainboard/trading/historical/broker-amt.html
   11274 bytes｜<title> 熱門股證券商進出排行(依成交金額) - 證券櫃檯買賣中心
   頁面裡掃到 0 個 /www/ 路徑：
-  ⛔ 沒掃到看起來像資料端點的路徑 ⇒ ⚠ 它可能是**另外載入**的 JS 才組出來的。⇒ 這一條要人去開開發者工具看，⛔ 不要在這裡猜。
+  ⛔ 沒掃到看起來像資料端點的路徑 ⇒ ⚠ 它可能是**另外載入**的 JS 才組出來的。
+  [形狀] 中文 727 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+   ①  `/…/api/…` 出現過哪些：1 種
+       /fonts.googleapis
+   ②  `fetch(` 的對象：0 種
+   ③  `$.ajax` / `url:` 的對象：0 種
+   ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+   ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+   ⑤  外部載入的 `.js`：11 支
+       https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+       https://www.tpex.org.tw/rsrc/asset/js/global.js
+       https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js
+       https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
+       https://www.tpex.org.tw/rsrc/js/ie.js
+       https://www.tpex.org.tw/rsrc/js/main.js
+       https://www.tpex.org.tw/rsrc/js/tables.js
+   ⑥ 外部 `.js` 逐支挖：共 11 支｜本站 10 支｜第三方 1 支（⛔ 不抓）
+       ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+       ── https://www.tpex.org.tw/rsrc/asset/js/global.js（103,202 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：2 種
+           /data/menu/en-us/menu.json
+           /data/menu/zh-tw/menu.json
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js（87,533 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+           e.jsonp
+           e.jsonpCallback
+           t.jsonpCallback
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js（1,300 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+           h.json
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js（2,771 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js（3,702 bytes）
+       ①  `/…/api/…` 出現過哪些：0 種
+       ②  `fetch(` 的對象：0 種
+       ③  `$.ajax` / `url:` 的對象：0 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+       ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+       ⑤  外部載入的 `.js`：0 支
+       …（本站另 4 支未挖，cap=6）
