@@ -1,4 +1,4 @@
-# commit=c46b7cc20 run=2026-09-15 09:22 (Asia/Taipei) prereg=backtest/PREREGM1.md
+# commit=10151c045 run=2026-09-15 13:23 (Asia/Taipei) prereg=backtest/PREREGM1.md | ⚠ CI 未修正跨段重疊（未來 H 日窗口跨段），實際覆蓋率低於 95%（隨機漫步假陽性 13%）——測得出的格要先過段標籤打亂安慰劑
 signal,label,raw_switches,n,n_by_state,seg_len_median,seg_len_min,seg_len_max,last_state,last_len,first_date,judge
 a,a 收盤 vs 240MA,261,39,"{'上': 19, '下': 20}",215,27,636,上,296,1990-11-07,可跑
 b,b 近 60 日報酬正負,433,76,"{'正': 38, '負': 38}",88,10,559,正,300,1990-03-23,可跑

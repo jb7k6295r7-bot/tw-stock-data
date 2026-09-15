@@ -92,7 +92,7 @@ def _judge(key: str, wname: str, H: int, n: int, n2: int, diff: float, lo: float
     if not np.isfinite(lo):
         return "還沒測"
     if lo <= 0 <= hi:
-        return "測不出（零）" if abs(diff) <= ZERO else "測不出"
+        return "測不出（零）" if abs(diff) <= ZERO else "測不出（|點估計| > 0.585%：量不準，不是零）"
     return "測得出（＋）" if diff > 0 else "測得出（−）"
 
 
@@ -189,7 +189,7 @@ def _commit() -> str:
 def write_csv(df: pd.DataFrame, path: str, stamp: str, commit: str):
     """v2 §七：每檔首行註明 commit 與執行時間（台北）——讀取時 `pd.read_csv(path, comment="#")`。"""
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(f"# commit={commit} run={stamp} (Asia/Taipei) prereg=backtest/PREREGM1.md\n")
+        fh.write(f"# commit={commit} run={stamp} (Asia/Taipei) prereg=backtest/PREREGM1.md | ⚠ CI 未修正跨段重疊（未來 H 日窗口跨段），實際覆蓋率低於 95%（隨機漫步假陽性 13%）——測得出的格要先過段標籤打亂安慰劑\n")
         df.to_csv(fh, index=False)
 
 
@@ -219,6 +219,9 @@ def main():
     for r in J.itertuples():
         L.append(row(r))
     L.append(""); L.append(f"⇒ 出口（§3-3）：**{verdict}**"); L.append("")
+    L.append("⚠ 三種判定字是三種不同的結論（K線分析 09-15 13:15）：**零**＝測到它沒有（d）；**測不出（量不準）**＝精度不足、不是沒有效果（c 中／高）；**還沒測**＝樣本不夠、不觸發撤除（a）。⛔ 不可壓成「都沒用」。")
+    L.append("⚠ CI 用段分群 SE、**未修正跨段重疊**（未來 H 日窗口跨段共用），實際覆蓋率低於 95%（自測隨機漫步假陽性 13%）⇒ 對「測不出」只會更保守；⛔ 日後任何「測得出」格要先跑**段標籤打亂**安慰劑（重排段、不是重排日；登錄尚未加，策略線補）。")
+    L.append("⚠ a 的方向（「下」高於「上」）五視窗一致，⛔ 但五視窗是同一條序列切出來、共用同一批段，**不是五次獨立實驗**；只能寫「方向一致但樣本不足以判定」，⛔ 不可因方向反了就反著用。"); L.append("")
     L.append("## 三、非判定格：全期 H=120（只寫方向；末欄＝與同訊號同狀態的判定格同向／不同向）"); L.append(""); L += hdr
     for r in L1[(L1["window"] == "全期") & (L1["H"] == 120) & ~L1["signal"].isin(["c", "d"])].itertuples():
         L.append(row(r, f"｜{r.same_dir_as_judged}" if r.same_dir_as_judged else ""))
