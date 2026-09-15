@@ -1096,6 +1096,95 @@
         → /tpex_ipo_no_limit
    TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
+★ ⭐ 大盤／市場成交統計（金額、股數、筆數的歷史）
+   TWSE：⭐ **11 條**
+      每日市場成交資訊
+        → ${root}/zh/trading/historical/fmtqik.html
+      每日第一上市外國股票成交量值
+        → ${root}/zh/trading/historical/mi-stock-first.html
+      每日創新板股票成交量值
+        → ${root}/zh/trading/historical/mi-stock-tib.html
+      每日成交量前二十名證券
+        → ${root}/zh/trading/historical/mi-stock20.html
+      每5秒委託成交統計
+        → ${root}/zh/trading/historical/mi-5mins.html
+      各類指數日成交量值
+        → ${root}/zh/trading/historical/bfiamu.html
+      當日融券賣出與借券賣出成交量值
+        → ${root}/zh/trading/historical/twtasu.html
+      鉅額交易日成交量值統計
+        → ${root}/zh/trading/block/bfiauu-day.html
+      鉅額交易月成交量值統計
+        → ${root}/zh/trading/block/bfiauu-month.html
+      鉅額交易年成交量值統計
+        → ${root}/zh/trading/block/bfiauu-year.html
+      每日上市上櫃跨市場成交資訊
+        → ${root}/zh/indices/cross/mi-index4.html
+   TPEx：⭐ **13 條**
+      上櫃 / 交易資訊 / 盤後資訊 / 上櫃證券成交統計
+        → /zh-tw/mainboard/trading/info/statistics/day.html
+      上櫃 / 交易資訊 / 盤後資訊 / 日成交量值指數
+        → /zh-tw/mainboard/trading/info/daily-indices.html
+      上櫃 / 交易資訊 / 盤後資訊 / 當日融券賣出與借券賣出成交量值
+        → /zh-tw/mainboard/trading/info/short.html
+      上櫃 / 交易資訊 / 盤後資訊 / 零股交易資訊 / 零股交易成交統計
+        → /zh-tw/mainboard/trading/info/odd-lot/statistics/day.html
+      上櫃 / 交易資訊 / 現股當日沖銷交易 / 現股當沖交易統計資訊
+        → /zh-tw/mainboard/trading/day-trading/statistics/day.html
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易日成交量值統計
+        → /zh-tw/mainboard/trading/block-trading/day.html
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易月成交量值統計
+        → /zh-tw/mainboard/trading/block-trading/month.html
+      上櫃 / 交易資訊 / 鉅額交易 / 鉅額交易年成交量值統計
+        → /zh-tw/mainboard/trading/block-trading/year.html
+      興櫃 / 交易資訊 / 興櫃股票成交統計
+        → /zh-tw/esb/trading/statistics/day.html
+      債券 / 市況與統計 / 公債、公司債與金融債統計 / 月統計 / 成交統計表
+        → /zh-tw/bond/info/statistics-gb/month/statistics.html
+      債券 / 市況與統計 / 公債、公司債與金融債統計 / 公債發行前交易統計表
+        → /zh-tw/bond/info/statistics-gb/issue.html
+      ETF/ETN / ETF / 市況與統計 / 債券ETF上櫃發行及交易統計表(年)
+        → /zh-tw/product/etf/info/year-stat.html
+      其他商品 / 黃金現貨 / 市況及統計 / 黃金現貨成交統計
+        → /zh-tw/other/gold/statistics/day.html
+   TWSE-OpenAPI：⭐ **10 條**
+      每日收盤行情-大盤統計資訊
+        → /exchangeReport/MI_INDEX
+      每日上市上櫃跨市場成交資訊
+        → /exchangeReport/MI_INDEX4
+      每 5 秒委託成交統計
+        → /exchangeReport/MI_5MINS
+      集中市場每日市場成交資訊
+        → /exchangeReport/FMTQIK
+      集中市場每日成交量前二十名證券
+        → /exchangeReport/MI_INDEX20
+      集中市場鉅額交易日成交量值統計
+        → /block/BFIAUU_d
+      集中市場鉅額交易月成交量值統計
+        → /block/BFIAUU_m
+      集中市場鉅額交易年成交量值統計
+        → /block/BFIAUU_y
+      每日第一上市外國股票成交量值
+        → /exchangeReport/STOCK_FIRST
+      電子式交易統計資訊
+        → /opendata/t187ap19
+   TPEx-OpenAPI：⭐ **7 條**
+      上櫃股票現股當沖交易統計資訊
+        → /tpex_intraday_trading_statistics
+      上櫃日成交量值指數
+        → /tpex_daily_trading_index
+      上櫃當日融券賣出與借券賣出成交量值
+        → /tpex_short_sell
+      上櫃鉅額交易日成交量值統計
+        → /tpex_daily_trading_summary_odd
+      上櫃鉅額交易月成交量值統計
+        → /tpex_monthly_trading_summary_block
+      上櫃鉅額交易年成交量值統計
+        → /tpex_yearly_trading_summary_block
+      電子式交易統計資訊(上櫃)
+        → /mopsfin_t187ap19_O
+   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
+
 ★ 當日沖銷（歷史）
    TWSE：⭐ **6 條**
       每日當日沖銷交易標的
