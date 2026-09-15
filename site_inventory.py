@@ -276,7 +276,9 @@ def parse_menu(label, raw):
     out = []
     for m in re.finditer(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
                          txt, re.S | re.I):
-        name = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(2))).strip()
+        # ⭐ 唯一那一份（四點五）。⛔ 這裡要的是**一格的值**（選單項的文字）
+        #   ⇒ `sep=""`：換成空白的話「上櫃<b>公司</b>資訊」會變「上櫃 公司 資訊」。
+        name = B.visible_text(m.group(2), "")
         if name:
             out.append((name, m.group(1).strip()))
     return out

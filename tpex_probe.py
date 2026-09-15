@@ -608,7 +608,9 @@ def main():
         rowsx = re.findall(r"<tr[^>]*>(.*?)</tr>", t11, re.S | re.I)
         head, vals = None, []
         for tr in rowsx:
-            cells = [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", c)).strip()
+            # ⭐ 唯一那一份（四點五）。⛔ 表格 cell ⇒ `sep=""`
+            #   ——換成空白的話下一行 `"產業別" in cells` 會靜靜對不上。
+            cells = [B.visible_text(c, "")
                      for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", tr, re.S | re.I)]
             if head is None and "產業別" in cells:
                 head = cells

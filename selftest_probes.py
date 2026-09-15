@@ -32,6 +32,7 @@
 假回應刻意做成「格式對、內容夠讓每一節都走進去」，目的是**執行到每一行**，
 不是模擬真實資料。
 """
+import glob
 import inspect
 import io
 import json
@@ -41,6 +42,12 @@ import sys
 import tempfile
 
 import backfill as B
+
+
+def _here_dir():
+    """這支自測所在的目錄。⭐ 只有這一份實作（四點五）。"""
+    return os.path.dirname(os.path.abspath(__file__))
+
 
 FAKE_ROWS = [{"資料日期": "20260904", "證券代號": "2330", "持股分級": str(i),
               "人數": "10", "股數": "100", "占集保庫存數比例%": "1.0"}
@@ -820,6 +827,167 @@ var z = "/nas/t05/onlyinfour.json";
     return bad
 
 
+def check_js_followups():
+    """⭐ ①~④ 全 0 的時候，答案在**外部 `.js`** 裡——這一層有沒有做。
+
+    ## ⛔ 為什麼一定要有這一層
+
+    2026-09-15 三頁**同時**是 js 空殼、而且 inline 線索幾乎全 0：
+
+    ```
+    MOPS  t05st01（重大訊息）                     ①②③④ 全 0
+    TPEx  announce/market/change.html             ②③④ 全 0（① 只有字型站）
+    TPEx  announce/market/change/reference.html   ②③④ 全 0（① 只有字型站）
+    ```
+
+    ⇒ ⭐ 「inline 全 0」**不是**「站上沒有」，⛔ 而兩者在報告上長得一模一樣。
+    """
+    import backfill as B
+    bad = 0
+
+    def ck(name, cond, extra=""):
+        nonlocal bad
+        print(("✓ " if cond else "✗ ") + name)
+        if not cond:
+            bad += 1
+            if extra:
+                print(f"    {extra}")
+
+    page = ('<html><head>'
+            '<script src="/js/mine.js"></script>'
+            '<script src="https://fonts.googleapis.com/x.js"></script>'
+            '<script src="//cdn.jsdelivr.net/y.js"></script>'
+            '<script src="data:text/javascript,1"></script>'
+            '<script src="/js/mine.js"></script>'      # ⚠ 重複一支，要去重
+            '<script>var a=1;</script></head><body></body></html>')
+    base = "https://mopsov.twse.com.tw/mops/web/t05st01"
+
+    # ── ① script_srcs 本身
+    got = B.script_srcs(page, base=base)
+    ck("① `script_srcs` 相對路徑照 base 拼成絕對",
+       "https://mopsov.twse.com.tw/js/mine.js" in got, f"實得 {got}")
+    ck("② `//` 開頭補成 https", "https://cdn.jsdelivr.net/y.js" in got, f"實得 {got}")
+    ck("③ `data:` 不算（⛔ 它不是一個可以去打的網址）",
+       not any(u.startswith("data:") for u in got), f"實得 {got}")
+    ck("④ 同一支出現兩次只算一支（去重）",
+       len([u for u in got if u.endswith("/js/mine.js")]) == 1, f"實得 {got}")
+    # ⛔ 沒有 base 就**不猜**：相對路徑會拼到錯的站
+    nob = B.script_srcs(page, base=None)
+    ck("⑤ ⛔ 沒給 base ⇒ 相對路徑**不猜**（⚠ 猜會拼到錯的站）",
+       not any("mine.js" in u for u in nob), f"實得 {nob}")
+
+    # ── ⑥ xhr_clues 的第 ⑤ 節「就算是 0 也一定要印」
+    #    ⛔⛔ 這一條是第七點那句：**「沒有這一節」跟「這一節是 0」長得一模一樣**
+    lines = B.xhr_clues("<html><body>什麼都沒有</body></html>", base=base)
+    ck("⑥ ⭐ 外部 `.js` 那一節**就算 0 支也要印**"
+       "（⛔ 沒有那一節跟那一節是 0，在紙上一模一樣）",
+       any("外部載入的 `.js`：0 支" in ln for ln in lines), f"實得 {lines}")
+
+    # ── ⑦⑧⑨ js_followups：第三方要**列出來再跳過**、抓不到要說「沒挖」
+    calls = []
+    saved = B.get
+
+    def fake_get(url, **kw):
+        calls.append(url)
+        if "mine.js" in url:
+            return (b'function q(){ $.ajax({url:"/mops/api/OnlyInExternalJs"}); }', None)
+        return (None, "URLError: boom")
+
+    B.get = fake_get
+    try:
+        got = "\n".join(B.js_followups(page, base=base))
+    finally:
+        B.get = saved
+    ck("⑦ ⭐ 外部 `.js` 裡那個端點**真的挖出來了**（⇒ 這一層有用）",
+       "OnlyInExternalJs" in got, f"實得 {got[:400]}")
+    ck("⑧ 第三方（字型／CDN）**逐條列出來再跳過**"
+       "（⛔ 靜靜篩掉的話，讀的人看不出「⑤ 有 3 支我只抓 1 支」）",
+       "跳過（第三方）" in got and "fonts.googleapis" in got and "jsdelivr" in got,
+       f"實得 {got[:400]}")
+    ck("⑨ ⛔ 第三方**沒有被真的打**（⚠ 跟這件事無關，不該發請求）",
+       not any(("googleapis" in u or "jsdelivr" in u) for u in calls),
+       f"實際打了 {calls}")
+
+    # ⑩ 本站一支都沒有 ⇒ 要說「挖不下去」，⛔ 不可以讀成「官方沒有」
+    B.get = fake_get
+    try:
+        none = "\n".join(B.js_followups("<html><body>x</body></html>", base=base))
+    finally:
+        B.get = saved
+    ck("⑩ 本站一支都沒有 ⇒ 說**挖不下去**，⛔ 並明講「這不是官方沒有」",
+       "挖不下去" in none and "不是「官方沒有」" in none, f"實得 {none}")
+
+    # ⑪ 某一支取不回來 ⇒ 要說「這一支沒挖」（⛔ 不是「裡面沒有」）
+    B.get = lambda url, **kw: (None, "URLError: boom")
+    try:
+        fail = "\n".join(B.js_followups(page, base=base))
+    finally:
+        B.get = saved
+    ck("⑪ 某一支取不回來 ⇒ 說「這一支**沒挖**」（⛔ 不是「裡面沒有」）",
+       "沒挖" in fail and "不是「裡面沒有」" in fail, f"實得 {fail[:300]}")
+
+    # ── ⑫⑬ ⭐ 測完純函式，再掃一次**呼叫點**（第七點第三個陷阱）
+    #    ⚠ `base` 傳 None 的話 ⑤ 永遠是 0 支 ⇒ 上面十一條全綠、而現場挖不到東西。
+    import re as _re
+    for mod, fnname in (("mops_probe.py", "xhr_hunt"),
+                        ("parvalue_probe.py", "main")):
+        src = io.open(mod, encoding="utf-8").read()
+        body = src.split(f"def {fnname}(", 1)[1]
+        hit = _re.search(r"js_followups\(\s*\w+\s*,\s*base\s*=\s*(\w+)", body)
+        ok = bool(hit) and hit.group(1) != "None"
+        ck(f"⑫ 呼叫點 `{mod}:{fnname}` 真的把 base 傳進去"
+           "（⛔ base=None ⇒ 這一層永遠 0 支，而十一條斷言照樣全綠）",
+           ok, f"實得 {hit.group(0) if hit else '找不到呼叫'}")
+
+    # ⑭ `visible_text` 只有一份實作（四點五）：⛔ 不可以有人自己 re.sub 去標籤
+    # ⚠ 只掃 `.py`：⛔ `grep -rn .` 會去掃 `data/`（1.6 GiB）⇒ 這一條要跑好幾分鐘，
+    #   而一條慢到讓人想拿掉的斷言，跟沒有那條斷言是一樣的。
+    hits = []
+    for _f in sorted(glob.glob(os.path.join(_here_dir(), "*.py"))):
+        if os.path.basename(_f) == "backfill.py":
+            continue      # ⭐ 那一份就是**唯一**那一份
+        if re.search(r"re\.sub\(\s*r?[\"\']<\[\^>\]\+>", io.open(_f, encoding="utf-8").read()):
+            hits.append(os.path.basename(_f))
+    ck("⑭ 去標籤只有 `backfill.visible_text` 一份實作（四點五）",
+       not hits, "⛔ 另有一份：" + "；".join(hits[:3]))
+
+    # ── ⑮⑯ ⭐⭐ `sep` 必填而且**沒有預設值**
+    #    ⚠ 這一族有兩種相反的語意（`" "` 整頁可讀文字／`""` 取一格的值），
+    #    ⛔ 而預設值就是「照抄語意」那個坑的自動化版本：不寫也會跑，
+    #      默默套上多數派那一種，而畫面上看不出來。
+    #    ⭐ 釘的是 `inspect.signature` 裡**沒有 default**，
+    #      ⛔ 不是釘「忘了傳會 TypeError」——後者在有人加上預設值之後照樣全綠。
+    sig = inspect.signature(B.visible_text)
+    ck("⑮ ⭐⭐ `visible_text(sep)` **沒有預設值**"
+       "（⛔ 有預設值＝自動套上多數派的語意，而畫面上看不出來）",
+       "sep" in sig.parameters
+       and sig.parameters["sep"].default is inspect.Parameter.empty,
+       f"實得 {sig}")
+    # ⭐ 而「兩種語意都還在」也要盯：只剩一種就代表有人把語意抄平了
+    #   （跟 `selftest_lowwater` ⑨ 同一條）。
+    seps = set()
+    for _f in sorted(glob.glob(os.path.join(_here_dir(), "*.py"))):
+        if os.path.basename(_f).startswith("selftest_"):
+            continue
+        for m in re.finditer(r"visible_text\([^()]*,\s*(\"[^\"]*\")\s*\)",
+                             io.open(_f, encoding="utf-8").read()):
+            seps.add(m.group(1))
+    # ⑰ ⛔ `<script>` 的內容**不是**人看得見的字
+    #    ⚠ 實測代價：沒有這兩行的話，`t05st01` 的「前 160 字」印出來是
+    #      `… window.onload=getMsg; var MAR = document.querySelector(…`
+    #    ⇒ 而這一格存在的理由就是「讓人讀三行就分得出來」⇒ 印 js 等於沒印。
+    vt = B.visible_text('<script>window.onload=getMsg;</script>'
+                        '<style>.a{color:red}</style><p>公開資訊觀測站</p>', " ")
+    ck("⑰ ⛔ `<script>`／`<style>` 的內容不算可見文字"
+       "（⚠ 沒這兩行的話「前 160 字」印出來是一串 js）",
+       vt == "公開資訊觀測站", f"實得 {vt!r}")
+
+    ck("⑯ 兩種語意**都還在**（`\" \"` 與 `\"\"`）"
+       "——⛔ 只剩一種就代表有人把語意抄平了",
+       seps == {'" "', '""'}, f"實得 {sorted(seps)}")
+    return bad
+
+
 def check_no_dup_keys():
     """⛔⛔ `SECTIONS` 這種 dict 字面量**有重複鍵也不會報錯**——Python 靜靜取後面那個。
 
@@ -833,7 +1001,7 @@ def check_no_dup_keys():
     import ast as _ast
     import collections as _c
     bad = 0
-    _here = os.path.dirname(os.path.abspath(__file__))
+    _here = _here_dir()          # ⭐ 走唯一那一份（四點五）
     src = io.open(os.path.join(_here, "selftest_probes.py"), encoding="utf-8").read()
     tree = _ast.parse(src)
     dups = []
@@ -939,6 +1107,7 @@ def main():
     bad += check_openapi_period_col()
     bad += check_bridge_blank_vs_ignored()
     bad += check_xhr_hunt()
+    bad += check_js_followups()
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──

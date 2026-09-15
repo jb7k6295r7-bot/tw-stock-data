@@ -976,7 +976,7 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
-def xhr_clues(text, cap=12):
+def xhr_clues(text, cap=12, base=None):
     """那一頁的 js **去打誰**——把線索挖出來。→ list[str]（要印的行）。
 
     ⭐ 只有這一份實作（四點五）：MOPS 與櫃買公告區**同一個問題**
@@ -1008,7 +1008,133 @@ def xhr_clues(text, cap=12):
         out.append(f"  ⭐ `{m.group(1)}` 本體前 400 字：{body[:400]}")
     else:
         out.append("  ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體"
-                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）")
+                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）")
+    # ⭐ ⑤ 外部 .js —— ①~④ 全是 0 種時，答案只可能在這裡。
+    #   ⚠ 這一節**一定要印**（就算 0 支）：⛔「沒有這一節」跟「這一節是 0」
+    #     在紙上長得一模一樣（第七點）。
+    srcs = script_srcs(t, base=base, cap=cap)
+    out.append(f"  ⑤  外部載入的 `.js`：{len(srcs)} 支"
+               + ("" if base else "　⚠ 沒給 base ⇒ **相對路徑不算在內**"))
+    out += [f"      {u[:140]}" for u in srcs]
+    return out
+
+
+def visible_text(text, sep):
+    """把回應**去標籤、壓空白**，變成人讀得懂的一串。→ str。
+
+    ⭐ 只有這一份實作（四點五）。⛔ 它存在的理由是 CLAUDE.md 第一點那句：
+    **判準沒辦法窮舉形狀，而人讀三行字就分得出來。**
+
+    ⚠ 2026-09-15 我為了「這一頁是查無／表單／空殼哪一種」改過兩次判準，
+    每次都又冒出第三種形狀 ⇒ ⭐ 不要再猜形狀，把字印出來讓人讀。
+
+    ## ⛔⛔ `sep` 是**必填、沒有預設值**——這一族有兩種相反的語意
+
+    收攏之前 repo 裡六份實作分成兩派，而**差別是靜默的**：
+
+    ```
+    sep=" "   標籤換成空白  `<td>2330<br/>台積電</td>` → `2330 台積電`
+              ⇒ 整頁可讀文字、要讓人一眼分辨形狀的，用這個
+    sep=""    標籤直接刪掉  同一段            → `2330台積電`
+              ⇒ 取**一格**的值（表格 cell、`<a>` 的文字）用這個
+              ⚠ 換成 " " 的話 `"產業別" in cells` 這種比對會靜靜對不上
+    ```
+
+    ⇒ 照 `lowwater.direction`／`db_status._p_col_two(derived=)` 那條通則：
+    ⛔ **有預設值就是「照抄語意」那個坑的自動化版本**——不寫也會跑，
+    而它會默默套上多數派那一種，⚠ 而畫面上看不出來。
+    （`selftest_probes` ⑮ 用 `inspect.signature` 直接釘「沒有 default」。）
+    """
+    assert sep in ("", " "), f"sep 只能是 '' 或 ' '，實得 {sep!r}"
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    # ⛔⛔ `<script>`／`<style>` 要**先**整段拿掉，⚠ 而這一行是有代價換來的：
+    #   我 2026-09-15 新寫的那一版沒有它 ⇒ `t05st01` 的「前 160 字」印出來是
+    #   `… window.onload=getMsg; var MAR = document.querySelector("#marquee") …`
+    #   ⇒ ⛔ **那不是人看得到的字**，而這一格存在的理由就是「讓人讀三行就分得出來」。
+    #   ⭐ 而 `hist_probe._text` **本來就有**這兩行——⇒ 收成一份的時候要取**比較嚴**
+    #     的那一版，⛔ 不是取我剛寫的那一版（四點五：收攏不等於照抄新的那份）。
+    t = re.sub(r"<script[^>]*>.*?</script>", " ", t, flags=re.S)
+    t = re.sub(r"<style[^>]*>.*?</style>", " ", t, flags=re.S)
+    return " ".join(re.sub(r"<[^>]+>", sep, t).split())
+
+
+def script_srcs(text, base=None, cap=12):
+    """那一頁**外部載入**的 .js 清單。→ list[str]（絕對網址，已去重排序）。
+
+    ⭐ 只有這一份實作（四點五）：MOPS 的 `t05st01` 與櫃買那兩頁
+    （`announce/market/change*.html`）是**同一個問題**——inline 裡
+    `fetch(`／`$.ajax`／`url:` 全部 0 種，⇒ 那一發請求寫在**外部 .js** 裡。
+
+    ⛔ 它**不下結論**、也不抓：只把 `<script src>` 逐條解析成絕對網址。
+    ⚠ `base` 沒給就只回那些本來就是絕對網址的——⛔ 相對路徑不猜。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    hits = []
+    for m in re.finditer(r"<script[^>]*\bsrc\s*=\s*[\"\']([^\"\']{2,300})[\"\']",
+                         t, re.I):
+        u = m.group(1).strip()
+        if u.startswith(("data:", "javascript:")):
+            continue
+        if u.startswith("//"):
+            u = "https:" + u
+        elif not u.startswith(("http://", "https://")):
+            if not base:
+                continue            # ⛔ 沒有 base 就不猜（相對路徑會拼錯站）
+            u = urllib.parse.urljoin(base, u)
+        hits.append(u)
+    # ⚠ 第三方（Google 字型／分析）不是我們要找的那一支，但**照樣列出來**
+    #   ——⛔ 由讀的人判斷，這一份不替他篩掉。
+    return sorted(set(hits))[:cap]
+
+
+def js_followups(text, base, cap=6, skip_hosts=("googleapis", "gstatic",
+                                                 "google-analytics", "googletagmanager",
+                                                 "jquery.com", "cdnjs", "jsdelivr")):
+    """⑤ 那幾支外部 `.js` **裡面**去打誰——⛔ 這是「取不到」之後的下一步。
+
+    → list[str]（要印的行）。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼一定要有這一層
+
+    2026-09-15 實測，三頁**同時**是 js 空殼而且 inline 線索全部 0 種：
+
+    ```
+    MOPS  t05st01（重大訊息）                     ①②③④ 全 0
+    TPEx  announce/market/change.html             ②③④ 全 0（① 只有字型站）
+    TPEx  announce/market/change/reference.html   ②③④ 全 0（① 只有字型站）
+    ```
+
+    ⇒ ⭐ 「inline 全 0」**不是**「站上沒有」——它是「那一發請求寫在外部檔裡」。
+    ⛔ 而那兩件事在報告上長得一模一樣（第七點）。
+
+    ⚠ 第三方站（字型／分析／CDN）**不抓**：不是我們要找的那一支，而且
+    ⛔ 對別人的 CDN 發請求跟這件事無關。⇒ 跳過的**逐條印出來**，
+    ⛔ 不可以靜靜篩掉——讀的人要看得到「⑤ 有 11 支、我只抓了 2 支」。
+    """
+    out = []
+    srcs = script_srcs(text, base=base, cap=24)
+    mine, third = [], []
+    for u in srcs:
+        (third if any(h in u for h in skip_hosts) else mine).append(u)
+    out.append(f"  ⑥ 外部 `.js` 逐支挖：共 {len(srcs)} 支"
+               f"｜本站 {len(mine)} 支｜第三方 {len(third)} 支（⛔ 不抓）")
+    for u in third:
+        out.append(f"      ⛔ 跳過（第三方）：{u[:120]}")
+    if not mine:
+        out.append("      ⚠ **本站一支都沒有** ⇒ 這一層挖不下去"
+                   "（⛔ 這不是「官方沒有」，是我方還沒找到入口）")
+        return out
+    for u in mine[:cap]:
+        raw, err = get(u, retries=2, timeout=60)
+        if err:
+            out.append(f"      ⛔ {u[:100]} 取不回來：{why(err)}")
+            out.append("         ⇒ 這一支**沒挖**（⛔ 不是「裡面沒有」）")
+            continue
+        out.append(f"      ── {u[:120]}（{len(raw):,} bytes）")
+        for ln in xhr_clues(raw, base=u):
+            out.append("    " + ln)
+    if len(mine) > cap:
+        out.append(f"      …（本站另 {len(mine) - cap} 支未挖，cap={cap}）")
     return out
 
 
