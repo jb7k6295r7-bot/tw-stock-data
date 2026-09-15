@@ -119,12 +119,25 @@ def main():
              "；".join(f"{k[0]} {k[1]} {n}" for k, n in diff[:5]))
 
     # ── ② 官方有、我方沒有
-    #   ⛔ 恢復買賣日在**今天或以後**的不算漏抓——那是預告，價格還沒發生。
-    today = runlog.now_tpe().strftime("%Y-%m-%d") \
-        if hasattr(runlog, "now_tpe") else ""
-    if not today:
-        from datetime import datetime, timedelta, timezone
-        today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+    #   ⛔ 恢復買賣日**晚於我方資料最後一天**的不算漏抓——價格還沒發生。
+    #
+    # ⛔⛔ 2026-09-15：這一段本來寫的是「**今天**」，而那是同一個坑的**第三次**。
+    #   `adjust.last_data_day()` 的檔頭已經記著前兩次（`otc_exright_check`、
+    #   `otc_reduce_history`），⚠ 而這一支**沒有跟上**——四點五那句逐字成立：
+    #   「修好了一支，另一支沒跟上，而它正在誤報。」
+    #   ⇒ 差別在週末與盤中：今天 09-15（週一）而我方日檔停在 09-11（週五）時，
+    #     一筆 09-14 的官方減資會被這裡報成「⛔ 我方漏抓」，⚠ 而我方只是還沒抓到那天。
+    #   ⛔ 而它報出來的那句話（「也可能是那份人工匯出檔過期了」）會讓人去查錯的方向。
+    # ⇒ ⭐ 只留**一份**實作，這裡叫它。⚠ 邊界跟 `otc_reduce_history` 一致：
+    #   **晚於** upper 才算預告（`> upper`，⛔ 不是 `>=`）——
+    #   事件日 == 我方最後一天時，那天的價格我方已經有了 ⇒ 沒落地就是真的漏抓。
+    import adjust as _adjust
+    upper, fellback = _adjust.last_data_day()
+    if fellback:
+        # ⚠ 退回去了就要**講出來**（⛔ 靜靜退回 ＝ 判準悄悄變回舊的那一個）
+        rl.info("⚠ `last_data_day()` 退回用今天",
+                f"{upper}　⇒ ⛔ 讀不到 `data/universe/daily/` "
+                "⇒ 這一輪的「未來事件」判準**不是**我方資料最後一天")
     # ⛔ **只比兩邊都涵蓋的區間**：官方這份從 2013-09 起，我方價格從日曆第一天起。
     #   拿更早的官方事件說我方漏抓是錯的比法（第一版就是這樣，一次噴出 8 筆假漏抓）。
     cal = os.path.join(_ROOT, "meta", "calendar_twse.csv")
@@ -143,12 +156,13 @@ def main():
     #     `set -e` 連坐把同一個 step 後面的步驟全掐死（四點二 ④ 那一族）。
     #   ⇒ 窄的那一份**另外命名**，⛔ 原本那份原封不動。
     ref_win = {k: v for k, v in ref.items() if not start or k[1] >= start}
-    ahead = sorted(k for k in ref_win if k not in mine and k[1] >= today)
-    known = sorted(k for k in ref_win if k not in mine and k[1] < today
+    ahead = sorted(k for k in ref_win if k not in mine and k[1] > upper)
+    known = sorted(k for k in ref_win if k not in mine and k[1] <= upper
                    and k in KNOWN_BAD)
-    miss = sorted(k for k in ref_win if k not in mine and k[1] < today
+    miss = sorted(k for k in ref_win if k not in mine and k[1] <= upper
                   and k not in KNOWN_BAD)
-    rl.info("官方有我方沒有", f"未來／今天 {len(ahead)} 筆（預告，不算漏抓）"
+    rl.info("官方有我方沒有", f"晚於我方最後一天（{upper}）{len(ahead)} 筆"
+                            "（預告，不算漏抓）"
                             f"｜已知官方自己重複 {len(known)} 筆"
                             f"｜**真的沒有 {len(miss)} 筆**")
     for k in known:

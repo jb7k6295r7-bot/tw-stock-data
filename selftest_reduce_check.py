@@ -177,6 +177,79 @@ def main():
     finally:
         shutil.rmtree(d, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # [4] ⭐⭐ 「未來事件」的基準是**我方資料最後一天**，⛔ 不是「今天」
+    #
+    # ⛔⛔ 2026-09-15 修的就是這個：這一支本來用 `runlog.now_tpe()`
+    #   ⇒ 這是同一個坑的**第三次**（`adjust.last_data_day()` 的檔頭記著前兩次）。
+    #   ⚠ 差別只在週末與盤中：今天 09-15（週一）而我方日檔停在 09-11（週五）時，
+    #     一筆 09-14 的官方減資會被報成「⛔ 我方漏抓」，⚠ 而我方只是還沒抓到那天。
+    #
+    # ⭐ 判準要釘在**沙箱**上：答案必須是沙箱日檔的**檔名**，⛔ 不是今天
+    #   ——比「不傳 upper == 傳 last_data_day()」那種**恆真**的寫法強
+    #   （兩邊一起變，突變照樣全綠；CLAUDE.md 四點五那一節逐字記著）。
+    # ══════════════════════════════════════════════════════════════
+    print("\n[4] ⭐⭐ 基準是**我方資料最後一天**，⛔ 不是今天")
+    import adjust as _A
+    d4 = tempfile.mkdtemp(prefix="rchk4_")
+    _old_daily = _A.DAILY_DIR
+    try:
+        # 我方日檔停在 2020-06-01
+        for day in ("2015-01-05", "2015-01-06", "2020-06-01"):
+            w(os.path.join(d4, "universe", "daily", day + ".csv"), "date\n")
+        _A.DAILY_DIR = os.path.join(d4, "universe", "daily")
+        ck("★ 沙箱真的接上了（`last_data_day()` 回的是**檔名**，⛔ 不是今天）",
+           _A.last_data_day() == ("2020-06-01", False), str(_A.last_data_day()))
+
+        w(os.path.join(d4, "meta", "calendar_twse.csv"),
+          "date\n2015-01-05\n2015-01-06\n2020-06-01\n")
+        w(os.path.join(d4, "meta", "industry.csv"),
+          "stock_id,market\n6461,tpex\n7777,tpex\n8888,tpex\n")
+        w(os.path.join(d4, "meta", "otc_reduce_reference.csv"),
+          "event_date,stock_id,last_close,ref_price,reason\n"
+          "2020-06-01,6461,16.65,26.92,彌補虧損\n"
+          "2020-06-05,7777,10.00,12.00,彌補虧損\n")     # ⭐ 晚於我方最後一天
+        hdr = "date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event"
+        w(os.path.join(d4, "adj", "6461.csv"),
+          hdr + "\n2020-06-01,1.61681,1.61662,1.61681,16.65,26.92,彌補虧損,reduce\n")
+        rc, txt = run(d4)
+        ck("⭐⭐ 晚於我方最後一天的那筆 ⇒ 算**預告**，⛔ 不算漏抓",
+           "**真的沒有 0 筆**" in txt,
+           [x for x in txt.splitlines() if "官方有我方沒有" in x])
+        ck("  ⭐ 而訊息要**講出那個基準是哪一天**（⛔ 不是只說「未來」）",
+           "2020-06-01" in txt and "晚於我方最後一天" in txt,
+           [x for x in txt.splitlines() if "晚於我方" in x])
+
+        # ⛔ 反向：**不晚於**我方最後一天而我方沒有 ⇒ 照樣要抓到
+        #   ⚠ 沒有這一半，「全部當成預告」也會全綠（三點1：只比一個方向）
+        w(os.path.join(d4, "meta", "otc_reduce_reference.csv"),
+          "event_date,stock_id,last_close,ref_price,reason\n"
+          "2020-06-01,6461,16.65,26.92,彌補虧損\n"
+          "2015-01-06,8888,10.00,12.00,彌補虧損\n")
+        rc, txt = run(d4)
+        ck("⛔ 反向：早於我方最後一天而我方沒有 ⇒ **照樣**報漏抓",
+           "**真的沒有 1 筆**" in txt and "8888" in txt,
+           [x for x in txt.splitlines() if "官方有我方沒有" in x or "漏抓" in x])
+
+        # ⭐ 邊界：事件日 **等於** 我方最後一天 ⇒ 那天的價格我方已經有了 ⇒ 算漏抓
+        w(os.path.join(d4, "meta", "otc_reduce_reference.csv"),
+          "event_date,stock_id,last_close,ref_price,reason\n"
+          "2020-06-01,7777,10.00,12.00,彌補虧損\n")
+        rc, txt = run(d4)
+        ck("⭐⭐ 邊界：事件日 **==** 我方最後一天 ⇒ 算漏抓（⛔ 不是預告）",
+           "**真的沒有 1 筆**" in txt,
+           [x for x in txt.splitlines() if "官方有我方沒有" in x])
+
+        # ⛔ 讀不到日檔目錄 ⇒ 要**講出來**它退回用今天了
+        _A.DAILY_DIR = os.path.join(d4, "沒這個目錄")
+        rc, txt = run(d4)
+        ck("⛔ 讀不到日檔 ⇒ 大聲說「退回用今天」（⚠ 靜靜退回 ＝ 判準悄悄變回舊的）",
+           "退回用今天" in txt,
+           [x for x in txt.splitlines() if "退回" in x])
+    finally:
+        _A.DAILY_DIR = _old_daily
+        shutil.rmtree(d4, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
