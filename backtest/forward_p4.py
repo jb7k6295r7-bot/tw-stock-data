@@ -5,12 +5,15 @@ backtest/forward/p4_types/（⛔ 只寫當月、不判定、不挑、不排名�
 
 特徵全部 import p4_features（同一件事只有一份實作）。⚠ 讀 data/ ⇒ 一定要在 main 上跑（分支的 data/ 比 main 舊）。
 〈二十八〉三個事後補不回來的欄位：asof（台北時戳）、data_sha（git rev-parse HEAD）、has_adj（當天有沒有還原因子）；
-母體名單 universe.csv 只增不減（first_seen／last_seen）。型號欄：--centers 沒給就留空（中心到了再貼，⛔ 原始輸入不重算）。
+母體名單 universe.csv 只增不減（first_seen／last_seen）。型號欄：--centers 預設 auto＝讀 p4_types/centers_v3.json（策略線 09-15 12:52，sha256 前 16 23be85b004977222）；
+檔不在就留空、大聲說；`--centers none` 強制留空。中心 JSON 收 centers_z（v3 投遞格式）或 centers。
+⛔ v1 起始月下限 V1_START＝2026-10（0141 §三：2026-09-01 那期不補寫；資料庫線 1320 §三 (b)）：量測月早於它一律紅、不寫，除非 --allow-before-v1（只給自測用）。
 冪等：同一個量測日已在 records.csv 就不再寫（回傳 0 列）。
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -29,6 +32,25 @@ from . import research34 as R34
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DEFAULT = os.path.join(HERE, "forward", "p4_types")
 RAW_COLS = P.FEATURES + ["shares_ok", "close", "open"]
+V1_START = "2026-10"                                             # ⛔ 前瞻 v1 起始月；之前的月份不寫
+CENTERS_DEFAULT = os.path.join(OUT_DEFAULT, "centers_v3.json")
+
+
+def load_centers(path: str | None):
+    """回傳 (centers, mu, sd, version) 或 None。path：None／"auto" ⇒ CENTERS_DEFAULT（不存在 ⇒ None）；"none" ⇒ None。"""
+    if path in (None, "auto"):
+        path = CENTERS_DEFAULT if os.path.exists(CENTERS_DEFAULT) else None
+    elif path == "none":
+        path = None
+    if path is None:
+        return None
+    raw = open(path, "rb").read(); cj = json.loads(raw.decode("utf-8"))
+    C = cj.get("centers_z", cj.get("centers"))
+    order = cj.get("feature_order")
+    if order is not None and list(order) != P.FEATURES:
+        raise SystemExit(f"⛔ 中心的 feature_order 與 p4_features.FEATURES 不同：{order}")
+    ver = str(cj.get("version") or cj.get("schema") or "?") + "@" + hashlib.sha256(raw).hexdigest()[:16]
+    return np.array(C, float), np.array(cj["mu"], float), np.array(cj["sd"], float), ver
 _G: dict = {}
 
 
@@ -81,7 +103,8 @@ def update_universe(out: str, sids: list[str], date: str) -> pd.DataFrame:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=None, help="量測日所在月份的任一天（預設：日曆最後一天所在月）；實際量測日＝該月第一個交易日")
-    ap.add_argument("--centers", default=None, help="JSON：{version, centers(4×13), mu(13), sd(13)}；沒給就型號留空")
+    ap.add_argument("--centers", default="auto", help="auto＝p4_types/centers_v3.json（不在就留空）；none＝強制留空；或給路徑")
+    ap.add_argument("--allow-before-v1", action="store_true", help="⚠ 只給自測：允許量測月早於 V1_START")
     ap.add_argument("--out", default=OUT_DEFAULT); ap.add_argument("--procs", type=int, default=4); ap.add_argument("--limit", type=int)
     ap.add_argument("--seed-v0", default=None, help="策略線 v0 markdown 路徑：把 612 檔種進累積名單（first_seen 2026-09-11）")
     ap.add_argument("--pub-day", type=int, default=10)
@@ -97,6 +120,8 @@ def main():
     if not cand:
         print(f"⛔ {target.date()} 所在月沒有量測日（日曆最後一天 {cal[-1].date()}）", file=sys.stderr); sys.exit(1)
     pos = int(cand[0]); mdate = str(cal[pos].date())
+    if str(cal[pos].to_period("M")) < V1_START and not a.allow_before_v1:
+        print(f"⛔ 量測月 {cal[pos].to_period('M')} 早於前瞻 v1 起始月 {V1_START}——不寫（那不是前瞻；要跑舊月份是回溯，用 researchp4）", file=sys.stderr); sys.exit(2)
     if pos + 1 >= len(cal):
         print(f"⛔ 量測日 {mdate} 的次一交易日還沒有資料（進場價要次日開盤）——等隔天再跑", file=sys.stderr); sys.exit(1)
     edate = str(cal[pos + 1].date())
@@ -121,9 +146,12 @@ def main():
     X = P.cross_section(elig[P.FEATURES])
     n_filled = elig[P.FEATURES].isna().sum(axis=1)
     label = pd.Series(np.nan, index=elig.index, dtype=object); cver = ""
-    if a.centers:
-        cj = json.load(open(a.centers, encoding="utf-8")); cver = str(cj.get("version", "?"))
-        label = pd.Series(P.assign(X, np.array(cj["centers"]), np.array(cj["mu"]), np.array(cj["sd"])), index=elig.index)
+    cen = load_centers(a.centers)
+    if cen is not None:
+        C_, mu_, sd_, cver = cen
+        label = pd.Series(P.assign(X, C_, mu_, sd_), index=elig.index)
+    else:
+        print("⚠ 沒有中心檔 ⇒ 型號留空（p4_types/centers_v3.json 不在這個 ref 上？）", file=sys.stderr)
     asof = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%dT%H:%M:%S+08:00")
     data_sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=HERE).stdout.strip()
     rec = pd.DataFrame({"measure_date": mdate, "entry_date": edate, "stock_id": elig.index, "market": elig["market"].to_numpy(),
@@ -138,7 +166,7 @@ def main():
     rec.to_csv(rec_p, mode="a", header=header, index=False)
     back = pd.read_csv(rec_p, dtype={"stock_id": str}); assert (back["measure_date"] == mdate).sum() == n_el, "寫完重讀，列數要對"
     u = update_universe(a.out, list(elig.index), mdate)
-    tc = label.value_counts(dropna=False).to_dict() if a.centers else {"（型號未貼，中心未到）": n_el}
+    tc = label.value_counts(dropna=False).to_dict() if cen is not None else {"（型號未貼，沒有中心檔）": n_el}
     log = [f"## {mdate}（跑於 {asof}，data_sha {data_sha[:12]}）",
            f"- 母體 {n_pop:,} → 過流動性門檻（近 20 日均額 ≥ {P.LIQ_MIN / 1e6:.0f} 百萬）{n_el:,} 檔；進場日 {edate}；型號 {tc}；centers_version「{cver}」",
            f"- has_adj=0 {int((elig['has_adj'] == 0).sum())} 檔；shares_ok=0 {int((elig['shares_ok'] == 0).sum())} 檔；補值欄數≥1 {int((n_filled >= 1).sum())} 檔（rev_hi24 缺 {int(elig['rev_hi24'].isna().sum())}、turn20 缺 {int(elig['turn20'].isna().sum())}）",

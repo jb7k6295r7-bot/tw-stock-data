@@ -1,0 +1,458 @@
+"""PREREGP4 v3 回溯分析（回測線獨立重算）。判準 backtest/P4_v3_回溯分析.md；中心 backtest/forward/p4_types/centers_v3.json（策略線 09-15 12:52）。
+
+    python3 -m backtest.researchp4 --centers backtest/forward/p4_types/centers_v3.json --out backtest/resultsp4 [--procs 4] [--limit N] [--placebo-n 1000]
+
+規則（v3 §三／§四／§4-2）：
+  母體 load_universe()（twse+tpex 普通股、含已下市、興櫃本就不在）；量測日＝每月第一個交易日；當日在籍且有成交；近 20 日均額 ≥ 5,000 萬
+  特徵 p4_features.stock_raw（13 條）→ 同日橫截面百分位（嚴格小於／有限值數）→ 缺值補 50 → z 化 → 最近中心（歐氏）
+  進場 次一交易日開盤還原價；出場 H=20/60/120 個交易日後收盤；基準＝同量測日合格母體等權平均；超額＝該型當月等權平均 − 同月基準
+  有效月 ＝ 該型當月 ≥ 5 檔且基準可得；月分群 SE＝std(ddof=1)/√有效月；CI＝±1.96 SE
+  期間 擬合窗／追認格 2017-01～2020-12｜主格 2021-01～2026-03（唯一判定格）｜副格 2017-01～2024-12｜第二層 2025-01～2026-03｜2015-2016 只進放棄組⑤
+  判定 只有主格 H=120 四格：H1 ④<0、H2 ②>0、H3 ①>0、H4 ③<0（CI 不含 0）；「零」＝CI 含 0 ∧ |點估計| ≤ 0.585%；n_min 24 個有效月
+  安慰劑 A 隨機分型（組大小＝當月真實）1000 次、B 標籤平移 +6/+12/+18（+12 不進判定）、鑑別力＝④↔② 標籤對調
+  ⛔ 判定字只用 測得出／測不出／還沒測；⛔ 不做「贏過 0050」的比價
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+from multiprocessing import Pool
+
+import numpy as np
+import pandas as pd
+
+from . import data as D
+from . import p4_features as P
+from . import research34 as R34
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+COST = 0.00585
+N_MIN = 24
+MIN_PER_MONTH = 5
+ZERO = 0.00585
+HOLDS = P.HOLDS
+QS = (0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95)
+PERIODS = {"擬合窗／追認格": ("2017-01-01", "2020-12-31"), "主格": ("2021-01-01", "2026-03-31"), "副格": ("2017-01-01", "2024-12-31"),
+           "第二層": ("2025-01-01", "2026-03-31")}
+JUDGE_PERIOD, JUDGE_H = "主格", 120
+TYPE_OF_IDX = {0: "①營收＋回檔", 3: "②正在噴出", 2: "③純技術＋回檔", 1: "④死水"}     # v3 §1-1（⛔ 寫死）
+HYP = {"①營收＋回檔": ("H3", +1), "②正在噴出": ("H2", +1), "③純技術＋回檔": ("H4", -1), "④死水": ("H1", -1)}
+TYPES = ["①營收＋回檔", "②正在噴出", "③純技術＋回檔", "④死水"]
+# v3 §10-1／10-2 策略線參考值（對帳用；門檻：分位數差 ≤ 1.0pp、超額差 ≤ 0.3pp）
+REF = {("主格", 120): {"①營收＋回檔": dict(excess=4.88, lo=1.70, hi=8.07, mwin=61.9, win=41.9, p05=-44.2, p10=-34.8, p50=-5.2, p90=61.0, p95=99.3),
+                     "②正在噴出": dict(excess=2.98, lo=1.00, hi=4.97, mwin=61.9, win=41.8, p05=-43.2, p10=-35.0, p50=-5.6, p90=49.4, p95=82.1),
+                     "③純技術＋回檔": dict(excess=-0.22, lo=-1.22, hi=0.78, mwin=50.8, win=37.1, p05=-42.8, p10=-34.6, p50=-8.3, p90=38.5, p95=67.8),
+                     "④死水": dict(excess=-3.87, lo=-5.50, hi=-2.23, mwin=23.8, win=36.3, p05=-42.6, p10=-33.3, p50=-6.8, p90=24.9, p95=43.2)},
+       ("主格", 60): {"①營收＋回檔": dict(excess=3.29), "②正在噴出": dict(excess=1.57), "③純技術＋回檔": dict(excess=-0.35), "④死水": dict(excess=-2.10)},
+       ("主格", 20): {"①營收＋回檔": dict(excess=0.38, p05=-16.8, p10=-13.6, p25=-7.9, p50=-1.5, p90=16.6, p95=28.1, win=44.5),
+                    "②正在噴出": dict(excess=0.44, p05=-18.8, p10=-14.9, p25=-9.0, p50=-2.0, p90=18.7, p95=29.9, win=42.9),
+                    "③純技術＋回檔": dict(excess=-0.17, p05=-15.7, p10=-12.9, p25=-7.9, p50=-2.3, p90=14.3, p95=22.9, win=40.3),
+                    "④死水": dict(excess=-0.51, p05=-13.2, p10=-10.4, p25=-6.2, p50=-1.6, p90=10.0, p95=15.1, win=41.4)},
+       ("副格", 120): {"①營收＋回檔": dict(excess=2.28, lo=0.32, hi=4.25, win=41.9), "②正在噴出": dict(excess=3.00, lo=1.92, hi=4.08, win=42.0),
+                     "③純技術＋回檔": dict(excess=-0.83, lo=-1.57, hi=-0.09, win=38.0), "④死水": dict(excess=-2.45, lo=-3.30, hi=-1.60, win=38.6)},
+       ("擬合窗／追認格", 120): {"①營收＋回檔": dict(excess=3.91), "②正在噴出": dict(excess=3.99), "③純技術＋回檔": dict(excess=-0.98), "④死水": dict(excess=-2.72)},
+       ("第二層", 120): {"①營收＋回檔": dict(excess=18.29), "②正在噴出": dict(excess=6.09), "③純技術＋回檔": dict(excess=1.28), "④死水": dict(excess=-9.26)}}
+REF_BENCH = {("主格", 120): 8.08}
+TOL_Q, TOL_X = 1.0, 0.3
+_G: dict = {}
+
+
+# ───────────────────────── 第一段：面板（每檔 × 每個量測日） ─────────────────────────
+def _init(cal, rev_flags, positions):
+    _G["cal"] = cal; _G["rev_flags"] = rev_flags; _G["pos"] = positions
+
+
+def panel_worker(args):
+    """一檔：在籍的量測日逐一取 13 條原始特徵、流動性、shares 有無、次日開盤進的 H 日毛報酬。"""
+    sid, market, first, last = args
+    cal = _G["cal"]
+    rf = _G["rev_flags"][sid] if sid in _G["rev_flags"].columns else None
+    raw = P.stock_raw(sid, market, cal, rf)
+    if raw is None:
+        return []
+    rows = []
+    for pos in _G["pos"]:
+        d = cal[pos]
+        if d < first or d > last or pos >= len(raw):
+            continue
+        r = raw.iloc[pos]
+        if not bool(r["traded"]):
+            continue
+        fr = P.forward_returns(raw, pos)
+        row = {"measure_date": d, "stock_id": sid, "market": market, "amt20": float(r["amt20"]) if pd.notna(r["amt20"]) else np.nan,
+               "eligible": bool(pd.notna(r["amt20"]) and r["amt20"] >= P.LIQ_MIN), "shares_ok": int(r["shares_ok"])}
+        for f in P.FEATURES:
+            row[f] = float(r[f]) if pd.notna(r[f]) else np.nan
+        for H in HOLDS:
+            row[f"fwd_{H}"] = fr[f"ret_{H}"]   # ⛔ 不可叫 ret_H：ret_120／ret_20 是特徵名，會被蓋掉
+        rows.append(row)
+    return rows
+
+
+def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print) -> pd.DataFrame:
+    rev, _, _ = R34.load_revenue(); rev_flags = P.rev_hi24_flags(rev, cal, pub_day)
+    jobs = [(r.stock_id, r.market, r.first_seen, r.last_seen) for r in uni.itertuples()]
+    rows = []; t0 = time.time()
+    with Pool(procs, initializer=_init, initargs=(cal, rev_flags, positions)) as pool:
+        for i, rs in enumerate(pool.imap_unordered(panel_worker, jobs, chunksize=8)):
+            rows.extend(rs)
+            if (i + 1) % 400 == 0:
+                log(f"  {i + 1}/{len(jobs)} {time.time() - t0:.0f}s")
+    df = pd.DataFrame(rows)
+    df["measure_date"] = pd.to_datetime(df["measure_date"])
+    return df.sort_values(["measure_date", "stock_id"]).reset_index(drop=True)
+
+
+# ───────────────────────── 第二段：橫截面 → 歸型 → 超額 ─────────────────────────
+def load_centers(path: str):
+    cj = json.load(open(path, encoding="utf-8"))
+    assert list(cj["feature_order"]) == P.FEATURES, "feature_order 與 p4_features.FEATURES 不同"
+    return np.array(cj["centers_z"], float), np.array(cj["mu"], float), np.array(cj["sd"], float)
+
+
+def assign_masked(day_raw: pd.DataFrame, C, mu, sd) -> np.ndarray:
+    """放棄組③用：缺值那幾維不進距離（⛔ 不是正式歸型），看補 50 有沒有改變歸型。"""
+    Z = (day_raw[P.FEATURES].to_numpy(float) - mu) / sd
+    m = np.isfinite(Z)
+    Zf = np.where(m, Z, 0.0)
+    d = ((Zf[:, None, :] - C[None, :, :]) ** 2 * m[:, None, :]).sum(axis=2)
+    return d.argmin(axis=1)
+
+
+def classify(panel: pd.DataFrame, C, mu, sd) -> pd.DataFrame:
+    """合格列：逐量測日做橫截面百分位、補 50、歸型；加 bench_H、excess_H、n_filled、type_masked。"""
+    el = panel[panel["eligible"]].copy()
+    out = []
+    for d, g in el.groupby("measure_date", sort=True):
+        g = g.set_index("stock_id")
+        X = P.cross_section(g[P.FEATURES])
+        lab = P.assign(X, C, mu, sd)
+        gg = g.copy()
+        gg["type_idx"] = lab; gg["type"] = [TYPE_OF_IDX[i] for i in lab]
+        gg["n_filled"] = g[P.FEATURES].isna().sum(axis=1).to_numpy()
+        Xr = X.copy(); Xr[P.FEATURES] = X[P.FEATURES].where(g[P.FEATURES].notna().to_numpy(), np.nan)
+        gg["type_masked_idx"] = assign_masked(Xr, C, mu, sd)
+        for f in P.PCT_FEATURES:
+            gg[f"pct_{f}"] = X[f].to_numpy()
+        for H in HOLDS:
+            b = g[f"fwd_{H}"].mean()
+            gg[f"bench_{H}"] = b; gg[f"exc_{H}"] = g[f"fwd_{H}"] - b
+        out.append(gg.reset_index())
+    return pd.concat(out, ignore_index=True)
+
+
+def _in(df: pd.DataFrame, period: str) -> pd.DataFrame:
+    a, b = PERIODS[period]
+    return df[(df["measure_date"] >= pd.Timestamp(a)) & (df["measure_date"] <= pd.Timestamp(b))]
+
+
+def cell_stats(rows: pd.DataFrame, H: int) -> dict:
+    """一格（型 × H × 期間）：有效月＝當月 ≥5 檔且報酬可得；點估計＝有效月均值的平均；SE 月分群。"""
+    r = rows[rows[f"exc_{H}"].notna()]
+    per_m = r.groupby("measure_date").agg(n=("stock_id", "size"), exc=(f"exc_{H}", "mean"), ret=(f"fwd_{H}", "mean"))
+    ok = per_m[per_m["n"] >= MIN_PER_MONTH]
+    n_m = int(len(ok)); dropped_cells = int((per_m["n"] < MIN_PER_MONTH).sum())
+    x = ok["exc"].to_numpy(float)
+    point = float(x.mean()) if n_m else np.nan
+    se = float(x.std(ddof=1) / np.sqrt(n_m)) if n_m > 1 else np.nan
+    rr = r[r["measure_date"].isin(ok.index)]
+    q = rr[f"exc_{H}"].quantile(QS) if len(rr) else pd.Series(np.nan, index=QS)
+    return {"n_months": n_m, "n_rows": int(len(rr)), "excess_pp": point * 100, "se_pp": se * 100,
+            "ci_lo_pp": (point - 1.96 * se) * 100 if np.isfinite(se) else np.nan, "ci_hi_pp": (point + 1.96 * se) * 100 if np.isfinite(se) else np.nan,
+            "win_rate": float((rr[f"exc_{H}"] > 0).mean()) if len(rr) else np.nan, "month_win_rate": float((x > 0).mean()) if n_m else np.nan,
+            **{f"p{int(qq * 100):02d}": float(q.loc[qq]) * 100 for qq in QS},
+            "abs_mean_pp": float(rr[f"fwd_{H}"].mean()) * 100 if len(rr) else np.nan,
+            "abs_mean_net_pp": (float(rr[f"fwd_{H}"].mean()) - COST) * 100 if len(rr) else np.nan,
+            "avg_n_per_month": float(ok["n"].mean()) if n_m else np.nan, "dropped_cells_lt5": dropped_cells}
+
+
+def judge(period: str, H: int, typ: str, s: dict) -> str:
+    if (period, H) != (JUDGE_PERIOD, JUDGE_H):
+        if not np.isfinite(s["excess_pp"]):
+            return "非判定格"
+        hyp, sign = HYP[typ]
+        return f"非判定格（方向{'＋' if s['excess_pp'] > 0 else '−'}，與 {hyp} {'一致' if np.sign(s['excess_pp']) == sign else '不一致'}）"
+    if s["n_months"] < N_MIN or not np.isfinite(s["ci_lo_pp"]):
+        return "還沒測（有效月 < 24）"
+    hyp, sign = HYP[typ]
+    contains0 = s["ci_lo_pp"] <= 0 <= s["ci_hi_pp"]
+    if contains0:
+        return f"{hyp} 否證：測不出{'（零）' if abs(s['excess_pp']) <= ZERO * 100 else ''}"
+    if np.sign(s["excess_pp"]) == sign:
+        return f"{hyp} 方向成立：測得出（{'＋' if sign > 0 else '−'}）"
+    return f"{hyp} 否證：測得出但方向相反（{'＋' if s['excess_pp'] > 0 else '−'}）"
+
+
+def summary_table(cl: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for period in PERIODS:
+        sub = _in(cl, period)
+        for H in HOLDS:
+            bench = sub.groupby("measure_date")[f"bench_{H}"].first()
+            for typ in TYPES:
+                s = cell_stats(sub[sub["type"] == typ], H)
+                idx = [k for k, v in TYPE_OF_IDX.items() if v == typ][0]
+                rows.append({"period": period, "type": typ, "kmeans_idx": idx, "H": H, **s, "bench_mean_pp": float(bench.mean()) * 100,
+                             "judge": judge(period, H, typ, s)})
+    return pd.DataFrame(rows)
+
+
+def quantiles_wide(S: pd.DataFrame) -> pd.DataFrame:
+    cols = ["period", "H", "type", "n_rows"] + [f"p{int(q * 100):02d}" for q in QS] + ["win_rate", "excess_pp"]
+    return S[cols].sort_values(["period", "H", "type"]).reset_index(drop=True)
+
+
+# ───────────────────────── 安慰劑／鑑別力 ─────────────────────────
+def placebo_A(cl: pd.DataFrame, H: int = 120, period: str = JUDGE_PERIOD, n_iter: int = 1000, seed: int = 0) -> pd.DataFrame:
+    """每月把合格股隨機打散成四組（組大小＝當月真實），算四型點估計（有效月均值的平均）的分佈。"""
+    rng = np.random.default_rng(seed)
+    sub = _in(cl, period); sub = sub[sub[f"exc_{H}"].notna()]
+    months = []
+    for d, g in sub.groupby("measure_date"):
+        e = g[f"exc_{H}"].to_numpy(float); lab = g["type_idx"].to_numpy()
+        months.append((e, lab))
+    sims = {i: [] for i in range(4)}
+    for _ in range(n_iter):
+        acc = {i: [] for i in range(4)}
+        for e, lab in months:
+            p = rng.permutation(lab)
+            for i in range(4):
+                m = p == i
+                if m.sum() >= MIN_PER_MONTH:
+                    acc[i].append(e[m].mean())
+        for i in range(4):
+            sims[i].append(np.mean(acc[i]) if acc[i] else np.nan)
+    rows = []
+    for i in range(4):
+        a = np.array(sims[i]) * 100
+        lo, hi = np.nanpercentile(a, [2.5, 97.5])
+        rows.append({"check": "安慰劑A 隨機分型", "type": TYPE_OF_IDX[i], "kmeans_idx": i, "H": H, "period": period, "n_iter": n_iter,
+                     "band_lo_pp": lo, "band_hi_pp": hi, "half_width_pp": (hi - lo) / 2, "contains_0": bool(lo <= 0 <= hi),
+                     "half_width_gt_cost": bool((hi - lo) / 2 > ZERO * 100)})
+    return pd.DataFrame(rows)
+
+
+def placebo_B(cl: pd.DataFrame, shift_months: int, H: int = 120, period: str = JUDGE_PERIOD) -> pd.DataFrame:
+    """標籤平移：第 m 月的型別套到同一檔第 m+k 月的報酬（該檔那個月要合格）。"""
+    lab = cl[["measure_date", "stock_id", "type"]].copy()
+    lab["measure_date"] = (lab["measure_date"].dt.to_period("M") + shift_months).dt.to_timestamp()
+    ret = cl[["measure_date", "stock_id", f"exc_{H}", f"fwd_{H}"]].copy()
+    ret["measure_date"] = ret["measure_date"].dt.to_period("M").dt.to_timestamp()
+    j = ret.merge(lab, on=["measure_date", "stock_id"], how="inner")
+    j["measure_date"] = j["measure_date"]
+    rows = []
+    for typ in TYPES:
+        s = cell_stats(_in(j, period)[lambda z: z["type"] == typ], H)
+        rows.append({"check": f"安慰劑B 平移 +{shift_months}", "type": typ, "H": H, "period": period, "n_months": s["n_months"],
+                     "excess_pp": s["excess_pp"], "ci_lo_pp": s["ci_lo_pp"], "ci_hi_pp": s["ci_hi_pp"], "in_judgement": shift_months != 12})
+    return pd.DataFrame(rows)
+
+
+def discrimination(cl: pd.DataFrame, H: int = 120, period: str = JUDGE_PERIOD) -> pd.DataFrame:
+    """④ 與 ② 標籤對調：對調後若仍「④負②正」⇒ 程式有 bug。"""
+    sw = cl.copy(); m4 = sw["type"] == "④死水"; m2 = sw["type"] == "②正在噴出"
+    sw.loc[m4, "type"] = "②正在噴出"; sw.loc[m2, "type"] = "④死水"
+    rows = []
+    for typ in ("②正在噴出", "④死水"):
+        s = cell_stats(_in(sw, period)[lambda z: z["type"] == typ], H)
+        rows.append({"check": "鑑別力 ④↔② 對調", "type": typ, "H": H, "period": period, "n_months": s["n_months"], "excess_pp": s["excess_pp"],
+                     "ci_lo_pp": s["ci_lo_pp"], "ci_hi_pp": s["ci_hi_pp"]})
+    df = pd.DataFrame(rows)
+    x2 = df[df["type"] == "②正在噴出"]["excess_pp"].iloc[0]; x4 = df[df["type"] == "④死水"]["excess_pp"].iloc[0]
+    df["bug_if_true"] = bool(x4 < 0 and x2 > 0)
+    return df
+
+
+# ───────────────────────── 放棄組（§七） ─────────────────────────
+def structural_missing(cl: pd.DataFrame, uni: pd.DataFrame, min_rows=6, share=0.9) -> pd.DataFrame:
+    """結構性缺 rev_hi24：合格列 ≥ min_rows 且 rev_hi24 缺值占比 ≥ share 的檔。KY／金融 用名稱與代號區間標（⚠ 啟發式）。"""
+    g = cl.groupby("stock_id")["rev_hi24"].agg(n="size", miss=lambda s: s.isna().mean())
+    ids = g[(g["n"] >= min_rows) & (g["miss"] >= share)].index
+    nm = uni.set_index("stock_id")["name"]
+    rows = []
+    for sid in ids:
+        name = str(nm.get(sid, ""))
+        tag = "KY" if "KY" in name.upper() else ("金融（28xx／58xx 代號區）" if (sid[:2] in ("28", "58")) else "其他")
+        rows.append({"stock_id": sid, "name": name, "tag": tag, "n_rows": int(g.loc[sid, "n"]), "miss_share": float(g.loc[sid, "miss"])})
+    return pd.DataFrame(rows)
+
+
+def dropped_table(panel: pd.DataFrame, cl: pd.DataFrame, S: pd.DataFrame, uni: pd.DataFrame, C, mu, sd) -> tuple[pd.DataFrame, pd.DataFrame]:
+    rows = []
+    # ① 流動性擋掉的：同期報酬
+    for period, (a, b) in PERIODS.items():
+        pp = panel[(panel["measure_date"] >= a) & (panel["measure_date"] <= b)]
+        for H in HOLDS:
+            x = pp[~pp["eligible"]][f"fwd_{H}"]; y = pp[pp["eligible"]][f"fwd_{H}"]
+            rows.append({"group": "①流動性擋掉", "period": period, "H": H, "n": int(x.notna().sum()), "value": float(x.mean()) * 100 if x.notna().any() else np.nan,
+                         "ref": float(y.mean()) * 100, "note": "value＝被擋掉者平均毛報酬 pp；ref＝合格者"})
+    # ② shares 缺值逐年
+    for y, g in cl.groupby(cl["measure_date"].dt.year):
+        rows.append({"group": "②shares 缺值補 50", "period": str(y), "H": np.nan, "n": int((g["shares_ok"] == 0).sum()), "value": float((g["shares_ok"] == 0).mean()) * 100,
+                     "ref": int(len(g)), "note": "value＝占合格列 %；ref＝合格列數"})
+    # ③ 因補 50 歸型改變
+    m = cl["n_filled"] > 0
+    rows.append({"group": "③補 50 改變歸型", "period": "全部", "H": np.nan, "n": int((cl.loc[m, "type_idx"] != cl.loc[m, "type_masked_idx"]).sum()),
+                 "value": float((cl.loc[m, "type_idx"] != cl.loc[m, "type_masked_idx"]).mean()) * 100 if m.any() else np.nan, "ref": int(m.sum()),
+                 "note": "value＝改變占有缺值列 %；ref＝有缺值列數（對照＝缺值維不進距離）"})
+    # ④ <5 檔丟掉的型×月
+    for r in S[S["H"] == 120].itertuples():
+        rows.append({"group": "④型×月 <5 檔丟棄", "period": r.period, "H": 120, "n": int(r.dropped_cells_lt5), "value": np.nan, "ref": int(r.n_months), "note": f"{r.type}；ref＝有效月"})
+    # ⑤ 2015-2016 硬納入
+    e = cl[(cl["measure_date"] >= "2015-01-01") & (cl["measure_date"] <= "2016-12-31")]
+    cov = float(e["rev_hi24"].notna().mean()) * 100 if len(e) else np.nan
+    for typ in TYPES:
+        s = cell_stats(e[e["type"] == typ], 120)
+        rows.append({"group": "⑤2015-2016 硬納入（不判定）", "period": "2015-2016", "H": 120, "n": s["n_months"], "value": s["excess_pp"], "ref": cov,
+                     "note": f"{typ}；value＝超額 pp（CI {s['ci_lo_pp']:+.2f}～{s['ci_hi_pp']:+.2f}）；ref＝rev_hi24 覆蓋率 %"})
+    # ⑥ 結構性缺 rev_hi24
+    sm = structural_missing(cl, uni)
+    for tag, g in sm.groupby("tag"):
+        rows.append({"group": "⑥結構性缺 rev_hi24", "period": "全部", "H": np.nan, "n": int(len(g)), "value": np.nan, "ref": int(len(sm)), "note": f"{tag}；ref＝合計檔數"})
+    main = _in(cl, JUDGE_PERIOD); ms = main[main["stock_id"].isin(sm["stock_id"])]
+    for typ, g in ms.groupby("type"):
+        rows.append({"group": "⑥結構性缺 rev_hi24", "period": "主格", "H": np.nan, "n": int(len(g)), "value": float(len(g) / max(len(ms), 1)) * 100, "ref": int(len(ms)), "note": f"{typ}；value＝占這批主格列 %"})
+    # ⑦ 排除那批後重跑主格 H120
+    ex = main[~main["stock_id"].isin(sm["stock_id"])]
+    for typ in TYPES:
+        s = cell_stats(ex[ex["type"] == typ], 120); base = S[(S.period == "主格") & (S.H == 120) & (S.type == typ)].iloc[0]
+        rows.append({"group": "⑦排除結構性缺值檔重跑主格", "period": "主格", "H": 120, "n": s["n_months"], "value": s["excess_pp"], "ref": float(base["excess_pp"]),
+                     "note": f"{typ}；value＝排除後超額 pp（CI {s['ci_lo_pp']:+.2f}～{s['ci_hi_pp']:+.2f}）；ref＝原主格"})
+    return pd.DataFrame(rows), sm
+
+
+def yearly_table(panel: pd.DataFrame, cl: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for y, g in cl.groupby(cl["measure_date"].dt.year):
+        r = {"year": y, "n_eligible_rows": int(len(g)), "rev_hi24_coverage": float(g["rev_hi24"].notna().mean()) * 100, "shares_coverage": float((g["shares_ok"] == 1).mean()) * 100}
+        for typ in TYPES:
+            r[f"n_{typ}"] = int((g["type"] == typ).sum())
+        r["bench_120_pp"] = float(g.groupby("measure_date")["bench_120"].first().mean()) * 100
+        rows.append(r)
+    return pd.DataFrame(rows)
+
+
+def compare_table(S: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for (period, H), ref in REF.items():
+        for typ, rv in ref.items():
+            me = S[(S.period == period) & (S.H == H) & (S.type == typ)].iloc[0]
+            mine = {"excess": me["excess_pp"], "lo": me["ci_lo_pp"], "hi": me["ci_hi_pp"], "mwin": me["month_win_rate"] * 100, "win": me["win_rate"] * 100,
+                    **{f"p{q:02d}": me[f"p{q:02d}"] for q in (5, 10, 25, 50, 75, 90, 95)}}
+            for k, v in rv.items():
+                tol = TOL_X if k in ("excess", "lo", "hi") else (TOL_Q if k.startswith("p") else np.nan)
+                d = mine[k] - v
+                rows.append({"period": period, "H": H, "type": typ, "metric": k, "策略線": v, "回測線": mine[k], "diff": d, "tol": tol,
+                             "within": (abs(d) <= tol) if np.isfinite(tol) else ""})
+    for (period, H), b in REF_BENCH.items():
+        me = S[(S.period == period) & (S.H == H)].iloc[0]["bench_mean_pp"]
+        rows.append({"period": period, "H": H, "type": "母體基準", "metric": "bench", "策略線": b, "回測線": me, "diff": me - b, "tol": TOL_X, "within": abs(me - b) <= TOL_X})
+    return pd.DataFrame(rows)
+
+
+# ───────────────────────── 輸出 ─────────────────────────
+def _commit() -> str:
+    try:
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=HERE, text=True).strip()
+    except Exception:
+        return "unknown"
+
+
+def write_csv(df: pd.DataFrame, path: str, stamp: str, commit: str):
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(f"# commit={commit} run={stamp} (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers=centers_v3.json(23be85b004977222)\n")
+        df.to_csv(fh, index=False)
+
+
+def overall_verdict(S: pd.DataFrame, pA: pd.DataFrame) -> str:
+    J = S[(S.period == JUDGE_PERIOD) & (S.H == JUDGE_H)]
+    refuted = int(J["judge"].str.contains("否證").sum()); nm = int(J["n_months"].min())
+    parts = []
+    if nm < N_MIN:
+        parts.append(f"ⓑ 主格有效月 {nm} < 24 ⇒ 還沒測")
+    if refuted >= 3:
+        parts.append(f"ⓐ {refuted}/4 個假說被否證 ⇒ 本方法論範圍內測不到")
+    nd = pA[pA["half_width_gt_cost"]]["type"].tolist()
+    if nd:
+        parts.append(f"ⓒ 安慰劑 CI 半寬 > 0.585%：{nd} ⇒ 該型無鑑別力")
+    if not pA["contains_0"].all():
+        parts.append("⛔ 安慰劑 A 的帶不含 0 ⇒ 安慰劑有偏，整份作廢")
+    return "；".join(parts) if parts else f"整體否證條件 ⓐⓑⓒ 皆未觸發（否證 {refuted}/4、有效月 {nm}）"
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--centers", default=os.path.join(HERE, "forward", "p4_types", "centers_v3.json"))
+    ap.add_argument("--out", default=os.path.join(HERE, "resultsp4")); ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--limit", type=int); ap.add_argument("--placebo-n", type=int, default=1000); ap.add_argument("--pub-day", type=int, default=10)
+    ap.add_argument("--panel", default=None, help="已算好的 panel.csv.gz（跳過第一段）")
+    a = ap.parse_args()
+    os.makedirs(a.out, exist_ok=True)
+    stamp = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M"); commit = _commit()
+    log = lambda s: print(s, file=sys.stderr)
+    cal = D.load_calendar(); uni = D.load_universe()
+    if a.limit:
+        uni = uni.head(a.limit)
+    positions = P.measurement_days(cal, "2015-01-01", "2026-03-31")
+    panel_p = a.panel or os.path.join(a.out, "panel.csv.gz")
+    if a.panel and os.path.exists(a.panel):
+        panel = pd.read_csv(a.panel, dtype={"stock_id": str}, parse_dates=["measure_date"])
+    else:
+        log(f"第一段：{len(uni)} 檔 × {len(positions)} 個量測日")
+        panel = build_panel(cal, uni, positions, a.procs, a.pub_day, log)
+        panel.to_csv(panel_p, index=False)
+        back = pd.read_csv(panel_p, dtype={"stock_id": str}); assert len(back) == len(panel), "面板寫完重讀列數要對"
+    C, mu, sd = load_centers(a.centers)
+    cl = classify(panel, C, mu, sd)
+    cl.to_csv(os.path.join(a.out, "classified.csv.gz"), index=False)
+    S = summary_table(cl); write_csv(S, os.path.join(a.out, "summary.csv"), stamp, commit)
+    write_csv(quantiles_wide(S), os.path.join(a.out, "quantiles_wide.csv"), stamp, commit)
+    Dp, sm = dropped_table(panel, cl, S, uni, C, mu, sd); write_csv(Dp, os.path.join(a.out, "dropped.csv"), stamp, commit)
+    write_csv(sm, os.path.join(a.out, "structural_missing.csv"), stamp, commit)
+    write_csv(yearly_table(panel, cl), os.path.join(a.out, "yearly.csv"), stamp, commit)
+    pA = placebo_A(cl, n_iter=a.placebo_n)
+    pB = pd.concat([placebo_B(cl, k) for k in (6, 12, 18)], ignore_index=True)
+    pD = discrimination(cl)
+    write_csv(pd.concat([pA, pB, pD], ignore_index=True), os.path.join(a.out, "placebo.csv"), stamp, commit)
+    cmp_ = compare_table(S); write_csv(cmp_, os.path.join(a.out, "compare_v3_s10.csv"), stamp, commit)
+    verdict = overall_verdict(S, pA)
+    # summary.md
+    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、合格 {len(cl):,} 列。", ""]
+    L.append("## 一、主格 2021-01～2026-03，H=120（唯一判定格）"); L.append("")
+    L.append("| 型 | 有效月 | 超額 | 95% CI | 月勝率 | 逐筆勝率 | p05 / p10 / p50 / p90 / p95 | 絕對平均（扣成本） | 月均檔數 | 判定 |"); L.append("|---|---:|---:|---|---:|---:|---|---:|---:|---|")
+    for r in S[(S.period == "主格") & (S.H == 120)].itertuples():
+        L.append(f"| {r.type} | {r.n_months} | {r.excess_pp:+.2f} | {r.ci_lo_pp:+.2f}～{r.ci_hi_pp:+.2f} | {r.month_win_rate * 100:.1f}% | {r.win_rate * 100:.1f}% | {r.p05:+.1f} / {r.p10:+.1f} / {r.p50:+.1f} / {r.p90:+.1f} / {r.p95:+.1f} | {r.abs_mean_pp:+.2f}（{r.abs_mean_net_pp:+.2f}） | {r.avg_n_per_month:.0f} | {r.judge} |")
+    b = S[(S.period == "主格") & (S.H == 120)].iloc[0]["bench_mean_pp"]
+    L.append(""); L.append(f"母體基準（主格 H120 等權）：{b:+.2f}%。⇒ 整體：**{verdict}**"); L.append("")
+    L.append("## 二、與 v3 §十 對帳（門檻：分位數差 ≤ 1.0pp、超額／CI 差 ≤ 0.3pp）"); L.append("")
+    bad = cmp_[(cmp_["within"] == False)]
+    L.append(f"逐格 {len(cmp_)} 項，超出門檻 {len(bad)} 項。" + ("" if len(bad) == 0 else " ⛔ 超出的："))
+    for r in bad.itertuples():
+        L.append(f"- {r.period} H{r.H} {r.type} {r.metric}：策略線 {r.策略線:+.2f} vs 回測線 {r.回測線:+.2f}（差 {r.diff:+.2f}）")
+    L.append(""); L.append("## 三、其餘期間 H=120（不判定，只寫方向）"); L.append("")
+    L.append("| 期間 | 型 | 有效月 | 超額 | 95% CI | 逐筆勝率 | 判定 |"); L.append("|---|---|---:|---:|---|---:|---|")
+    for r in S[(S.period != "主格") & (S.H == 120)].itertuples():
+        L.append(f"| {r.period} | {r.type} | {r.n_months} | {r.excess_pp:+.2f} | {r.ci_lo_pp:+.2f}～{r.ci_hi_pp:+.2f} | {r.win_rate * 100:.1f}% | {r.judge} |")
+    L.append(""); L.append("## 四、安慰劑與鑑別力（主格 H120）"); L.append("")
+    for r in pA.itertuples():
+        L.append(f"- 安慰劑A {r.type}：95% 帶 {r.band_lo_pp:+.2f}～{r.band_hi_pp:+.2f}（半寬 {r.half_width_pp:.2f}pp；含 0 {r.contains_0}；半寬 > 0.585 {r.half_width_gt_cost}）")
+    for r in pB.itertuples():
+        L.append(f"- {r.check} {r.type}：{r.excess_pp:+.2f}（{r.ci_lo_pp:+.2f}～{r.ci_hi_pp:+.2f}，有效月 {r.n_months}）{'' if r.in_judgement else '｜⛔ +12 不進判定'}")
+    for r in pD.itertuples():
+        L.append(f"- {r.check} {r.type}：{r.excess_pp:+.2f}（{r.ci_lo_pp:+.2f}～{r.ci_hi_pp:+.2f}）")
+    L.append(f"- 鑑別力：對調後仍「④負②正」＝{bool(pD['bug_if_true'].iloc[0])}（True ⇒ 程式有 bug）")
+    L.append(""); L.append("## 五、放棄組（`dropped.csv`）摘要"); L.append("")
+    for r in Dp[Dp["group"].str.startswith(("⑥", "⑦", "③"))].itertuples():
+        L.append(f"- {r.group}｜{r.period}｜n={r.n}｜value={r.value if not isinstance(r.value, float) or np.isnan(r.value) else round(r.value, 2)}｜ref={r.ref}｜{r.note}")
+    L.append(""); L.append("其餘：`quantiles_wide.csv`（四型並列）、`yearly.csv`、`placebo.csv`、`compare_v3_s10.csv`、`structural_missing.csv`；面板 `panel.csv.gz`、歸型 `classified.csv.gz`。⛔ 沒有任何「贏過 0050」的比較。")
+    with open(os.path.join(a.out, "summary.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(L) + "\n")
+    print("\n".join(L))
+
+
+if __name__ == "__main__":
+    main()

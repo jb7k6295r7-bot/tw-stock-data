@@ -1,5 +1,5 @@
 """PREREGP4 v2 的特徵層——同一件事只有一份實作：researchp4（主格）與 forward_p4（前瞻檔）都 import 這裡。
-判準 backtest/PREREGP4.md（v2，策略線 09-14 18:38；⛔ 中心 C[0..3]／mu／sd 尚未投遞 ⇒ assign() 只收參數、不內建）。
+判準 backtest/P4_v3_回溯分析.md（v3，策略線 09-15 08:18；中心 backtest/forward/p4_types/centers_v3.json，策略線 09-15 12:52 投遞、sha256 前 16＝23be85b004977222）。assign() 只收參數、不內建。
 
 13 條特徵（順序固定）：
   同日橫截面百分位（0～100）：ret_120 ret_20 dist_hi120 dist_lo120 vol60 vr_20_120 amt20 turn20 fore20 trust20
@@ -127,11 +127,24 @@ def stock_raw(sid: str, market: str, cal: pd.DatetimeIndex, rev_flags: pd.Series
     return out
 
 
+def pct_strict_less(x: pd.Series) -> pd.Series:
+    """v3 §4-2（策略線 0818 確認）：pct ＝ 嚴格小於 v 的個數 ÷ 該欄有限值的檔數 × 100
+    ＝ np.searchsorted(sorted_x, v, side="left") / len(x) * 100。同值取最低名次；母體含自己；NaN／inf 不進分母、結果 NaN（之後補 50）。"""
+    v = pd.to_numeric(x, errors="coerce").astype(float)
+    ok = np.isfinite(v.to_numpy())
+    out = pd.Series(np.nan, index=x.index, dtype=float)
+    if ok.sum() == 0:
+        return out
+    xs = np.sort(v.to_numpy()[ok])
+    out[ok] = np.searchsorted(xs, v.to_numpy()[ok], side="left") / len(xs) * 100.0
+    return out
+
+
 def cross_section(day: pd.DataFrame) -> pd.DataFrame:
-    """同一量測日的合格母體（列＝stock_id）：百分位特徵 → 0～100（pandas rank(pct=True)×100：平均名次、NaN 不進分母），布林照舊；缺值補 50。⚠ 百分位的算法（平均名次 vs 最小名次、含不含自己）待策略線確認與中心同一套。"""
+    """同一量測日的合格母體（列＝stock_id）：百分位特徵 → 0～100（pct_strict_less：嚴格小於／有限值數、同值最低名次），布林照舊；缺值補 50。"""
     X = pd.DataFrame(index=day.index)
     for f in PCT_FEATURES:
-        X[f] = day[f].rank(pct=True) * 100
+        X[f] = pct_strict_less(day[f])
     for f in BOOL_FEATURES:
         X[f] = day[f]
     return X.fillna(FILL)

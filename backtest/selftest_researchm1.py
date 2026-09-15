@@ -94,6 +94,8 @@ if __name__ == "__main__":
     check(len(under) > 0 and under["judge"].str.startswith("還沒測").all(), f"判定格 n<24 的 {len(under)} 格全是「還沒測」")
     judged_rows = L1[[is_judged(r) for r in L1.itertuples()]]; other = L1[[not is_judged(r) for r in L1.itertuples()]]
     check(len(judged_rows) > 0 and judged_rows["judge"].str.startswith(("測", "還沒測")).all(), f"判定格 {len(judged_rows)} 列只寫 測得出／測不出／還沒測")
+    z = R._judge("c", "全期", 120, 30, 30, 0.003, -0.01, 0.02); nz = R._judge("c", "全期", 120, 30, 30, 0.02, -0.01, 0.05)
+    check(z == "測不出（零）" and nz.startswith("測不出（|點估計| > 0.585%"), "CI 含 0：|點估計| ≤ 0.585% ⇒ 零；> 0.585% ⇒ 量不準（⚠ 寫死 0.585）")
     check(other["judge"].str.startswith(("非判定格", "窗口長度不可比")).all(), f"非判定格 {len(other)} 列只寫 非判定格（方向）／窗口長度不可比")
     check(not L1[L1["judge"].str.startswith("測")].pipe(lambda z: ((z["n_seg"] < 24) | (z["rest_n_seg"] < 24)).any()), "判「測得出／測不出」的格 n 與 rest_n 都 ≥ 24")
     a90 = L1[(L1.signal == "a") & (L1.window == "1990s")]

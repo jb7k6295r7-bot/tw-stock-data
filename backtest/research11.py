@@ -426,6 +426,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     by_entry = {k: g for k, g in d.groupby("entry_pos")}
     first, last = int(d["entry_pos"].min()), int(d["exit_pos"].max())
     equity = np.ones(ncal); cash = 1.0; open_pos = []; held = set(); trades = 0; used = 0
+    hold_val = np.zeros(ncal) if return_equity else None
     units = (1.0 / bench[max(first - 1, 0)]) if use_bench else 0.0      # bench 模式：閒置資金以 bench 單位數持有
     wins = 0; pending = []; n_deferred = 0; delays = []; n_expired = 0
     inf = float("inf")
@@ -516,14 +517,17 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         used += len(open_pos)
         if use_bench:
             cash = units * bench[t]
-        equity[t] = cash + sum(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos)
+        hv = sum(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos)
+        equity[t] = cash + hv
+        if return_equity:
+            hold_val[t] = hv          # PREREGP3 丙（時點隨機對照）要的逐日持股市值；⛔ 只在 return_equity 時記，數值路徑不變
     equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
     years = (end - first) / 245; final = equity[end - 1]
     peak = np.maximum.accumulate(equity); mdd = float(((equity - peak) / peak).min())
     out = {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / ((end - first) * n_slots), "first": first, "end": end,
            "m": trades, "pos_frac": wins / trades if trades else np.nan, "deferred": n_deferred, "delay_med": float(np.median(delays)) if delays else np.nan, "expired": n_expired}
     if return_equity:
-        out["equity"] = equity
+        out["equity"] = equity; out["hold_val"] = hold_val
     return out
 
 
