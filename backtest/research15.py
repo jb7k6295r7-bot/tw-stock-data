@@ -42,19 +42,37 @@ def _init(cal, disp, att, marg):
     R._init(cal); _G.update(cal=cal, disp=disp, att=att, marg=marg)
 
 
+MARGIN_O_REPORT: dict = {}   # load_margin_o 最近一次的缺欄／讀不到清單（給呼叫端與 runlog 用）
+
+
 def load_margin_o() -> dict[str, set]:
     """停止融資（官方註記 O）日期，鍵＝代號。⚠ X 是停券期（每年例行），不當閘門。"""
+    # ⚠ 缺欄不可以靜靜跳過（市場情報分析 09-14 0546 §四：「跳過」跟「沒有 O」在結果上同形）
+    #   ⇒ 缺 note 欄的檔要記下來並印出來；呼叫端看得到「這道閘門在哪些檔上是空轉的」。
     out = {}
-    for f in glob.glob(os.path.join(D.DATA, "stocks_margin", "*.csv")):
+    files = [f for f in glob.glob(os.path.join(D.DATA, "stocks_margin", "*.csv")) if not os.path.basename(f).startswith("_")]  # _index.csv 不是個股
+    no_col, bad = [], []
+    for f in files:
         sid = os.path.basename(f)[:-4]
+        try:
+            head = pd.read_csv(f, nrows=0).columns
+        except Exception:
+            bad.append(sid); continue
+        if "note" not in head or "date" not in head:
+            no_col.append(sid); continue
         try:
             d = pd.read_csv(f, usecols=["date", "note"], dtype=str)
         except Exception:
-            continue
+            bad.append(sid); continue
         m = d["note"].fillna("").str.contains("O")
         if m.any():
             out[sid] = set(pd.to_datetime(d.loc[m, "date"]))
+    MARGIN_O_REPORT.update({"files": len(files), "with_O": len(out), "no_note_col": sorted(no_col), "unreadable": sorted(bad)})
+    print(f"[margin O] 讀 {len(files)} 檔｜有 O 的 {len(out)} 檔｜⛔ 缺 note 欄 {len(no_col)} 檔"
+          f"{'（' + ', '.join(no_col[:8]) + ('…' if len(no_col) > 8 else '') + '）' if no_col else ''}"
+          f"｜讀不到 {len(bad)} 檔{'（' + ', '.join(bad[:8]) + '）' if bad else ''}", flush=True)
     return out
+
 
 
 def worker(args):

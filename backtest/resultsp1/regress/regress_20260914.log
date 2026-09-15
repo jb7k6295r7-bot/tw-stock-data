@@ -1,0 +1,40 @@
+特徵：AND 2,199（H20 補得出 2,163）、S 24,286；relvol 缺 AND 0／S 0；k↔pos 不符 0；讀不到 0 檔  18s
+回歸：
+  ✓ R1 S N=5 H20：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=5 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=5 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=5 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=10 H20：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=10 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=10 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=10 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=20 H20：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=20 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=20 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 S N=20 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=10 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=10 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=10 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=20 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=20 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=20 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=30 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=30 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=30 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=40 H60：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=40 H120：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R1 AND N=40 LD：200 種子 cagr/mdd/slot/trades 與基線逐位元相同
+  ✓ R2 AND N=10 H60：中位 cagr/mdd 與 results13_adj0914 相等（+29.9% / +29.9%）
+  ✓ R2 AND N=10 H120：中位 cagr/mdd 與 results13_adj0914 相等（+33.2% / +33.2%）
+  ✓ R2 AND N=10 LD：中位 cagr/mdd 與 results13_adj0914 相等（+23.8% / +23.8%）
+  ✓ R2 AND N=20 H60：中位 cagr/mdd 與 results13_adj0914 相等（+34.1% / +34.1%）
+  ✓ R2 AND N=20 H120：中位 cagr/mdd 與 results13_adj0914 相等（+32.9% / +32.9%）
+  ✓ R2 AND N=20 LD：中位 cagr/mdd 與 results13_adj0914 相等（+19.5% / +19.5%）
+  ✓ R2 AND N=30 H60：對 results13b ±1 pp（+31.7% / +31.7%，價格改版容忍）
+  ✓ R2 AND N=40 H60：對 results13b ±1 pp（+32.5% / +32.5%，價格改版容忍）
+  ✓ R3 d=∞：第一天進 8、槽滿擋 2（進 8、a 2）
+  ✓ R3 d=1：每天新增 ≤ 1（最大 1）、b 擋掉 310 筆
+  ✓ R3 隊列：推遲進場 46 筆、delay ∈ [1,4]、b_expired 407
+  ✓ R3 輸出鍵 m／pos_frac
+  ✓ R0 股息口徑：5 檔「息」事件日 還原變動率 ＝ 原始變動率 ÷ 因子（5/5）
+回歸全過 1389s

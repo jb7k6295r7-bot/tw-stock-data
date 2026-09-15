@@ -116,9 +116,9 @@ def centers_and_signals(ends, zg_mode=2, n_pens=5):
                 if cr is None:
                     break
                 if lo2 >= zg:
-                    signals.append({"kind": "B3", "signal_raw": int(cr), "zg": zg, "zd": zd, "center": len(centers), "pen": k + 1})
+                    signals.append({"kind": "B3", "signal_raw": int(cr), "zg": zg, "zd": zd, "center": len(centers), "pen": k + 1, "stop": float(lo2)})
                     c["exit"] = ("up", k); c["end_pen"] = k + 1; k = None; break
-                signals.append({"kind": "ABANDON", "signal_raw": int(cr), "zg": zg, "zd": zd, "center": len(centers), "pen": k + 1})
+                signals.append({"kind": "ABANDON", "signal_raw": int(cr), "zg": zg, "zd": zd, "center": len(centers), "pen": k + 1, "stop": float(lo2)})
                 c["end_pen"] = k + 1; k += 2; continue
             if (not up_pen) and lo < zd and k + 1 < total:
                 lo2, hi2 = _pen_range(ends, k + 1)
