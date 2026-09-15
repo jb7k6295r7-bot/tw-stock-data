@@ -142,6 +142,63 @@ def _susp(base=None):
     return out
 
 
+def _halt_spans(base=None):
+    """→ {代號: [(start, end)]}，官方公告**停止交易**的區間（上櫃）。
+
+    ⭐⭐ 2026-09-15 加的，⚠ 而加它的理由是量出來的：
+
+    ```
+    只用 `suspend_twse.csv`      歸因 **0** ／ 6,799
+    ⭐ 加上 `halt_spans.csv`     歸因 **2,958** ／ 6,799（43.5%）
+                                 ⇒ 上櫃那一半 2,958／3,340 ＝ **88.6%**
+    ```
+
+    ⇒ ⛔ 換句話說：「6,799 筆漏列」這個數字**嚴重高估**了抓取端的缺陷
+      ——上櫃那一半有將近九成是**官方公告不准交易**的日子。
+
+    ## ⛔ 而它為什麼**不是**循環論證
+
+    `halt_spans.csv` 是 `halt_spans.py` 從 `data/universe/chtm/` 的 `halted`
+    欄壓出來的——⭐ 那是**另一條官方每日清單**，
+    ⛔ 不是從我方日檔的洞反推的。⇒ 三件事同時成立才進這一欄：
+    官方 chtm 說它停牌、官方 margin 清單仍然列著它、我方日檔沒有它。
+
+    ## ⚠ 而它**只有上櫃**（365 段全部是 tpex）
+
+    ⇒ 上市那 3,459 筆**仍然沒有歸因來源**：
+    `suspend_twse.csv` 逐日與逐區間比都是 0，成因見 `scan()` 裡那一段
+    （被停牌的證券也會從六張清單上消失 ⇒ 進不了這一支的母體）。
+    ⛔ 所以**不可以**把「上櫃歸因掉了」讀成「這件事解決了」。
+    """
+    p = (os.path.join(base, "meta", "halt_spans.csv") if base
+         else os.path.join(_ROOT, "meta", "halt_spans.csv"))
+    out = {}
+    if not os.path.exists(p):
+        return out
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            c = (r.get("stock_id") or "").strip()
+            a = (r.get("start") or "").strip()
+            b = (r.get("end") or "").strip()
+            if c and a and b:
+                out.setdefault(c, []).append((a, b))
+    return out
+
+
+def excuse(code, day, susp, spans):
+    """→ 這一筆漏列有沒有**官方的正當理由**（字串；沒有就回 ""）。
+
+    ⛔ 只准有這一份實作（四點五）：判準一旦有兩份，
+    ⚠ 「逐筆那一欄」與「runlog 那個計數」就會慢慢對不上，而沒有人會發現。
+    """
+    if (code, day) in susp:
+        return "官方暫停交易"
+    for a, b in spans.get(code, ()):
+        if a <= day <= b:
+            return "官方停止交易"
+    return ""
+
+
 def _meta():
     m = {}
     if os.path.exists(META):
@@ -169,6 +226,7 @@ def scan(root=None):
         return [], {}, {}, 0
     days = sorted(n[:-4] for n in os.listdir(dd) if n.endswith(".csv"))
     susp = _susp(base if root else None)
+    spans = _halt_spans(base if root else None)
     rows, byday, bysrc, n_cmp = [], {}, Counter(), 0
     for d in days:
         have = _codes(os.path.join(dd, d + ".csv"))
@@ -202,7 +260,7 @@ def scan(root=None):
             rows.append([d, code, meta.get(code, {}).get("name", nm.get(code, "")),
                          meta.get(code, {}).get("market", mk.get(code, "")),
                          "+".join(srcs),
-                         "官方暫停交易" if (code, d) in susp else ""])
+                         excuse(code, d, susp, spans)])
     return rows, byday, dict(bysrc), n_cmp
 
 
@@ -247,12 +305,48 @@ def main():
                                                      key=lambda x: -x[1])))
     strong = sum(v for k, v in bysrc.items() if k in ("inst", "otcinst"))
     rl.info("  ⭐ 其中鐵證（法人有交易 ⇒ 一定有成交）", f"{strong:,} 筆")
-    # ⭐ 歸因：其中有多少是**官方那天公告暫停交易**（＝有正當理由，不是抓取端漏抓）
-    n_susp = sum(1 for r in rows if r[5])
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 歸因：有多少是**官方那天公告暫停交易**（＝有正當理由，不是抓取端漏抓）
+    #
+    # ⛔⛔ 2026-09-15 量到：這個數字是 **0**，⚠ 而它是**結構上必然的 0**
+    #   ——⛔ 不是「停牌解釋不了」，是**這一欄根本不可能命中任何一筆**：
+    #
+    #   ① 上櫃那一半（3,340／6,799）：`suspend_twse.csv` **只有上市**
+    #      ⇒ ⛔ 結構上不可能命中。
+    #   ② 上市那一半（3,459）：逐日比 **0**、逐**區間**比也 **0**。
+    #   ③ ⭐ 而機制查出來了：**被停牌的證券也會從那六張官方清單上消失**
+    #      ⇒ 它根本進不了這一支的**母體**（母體＝「清單上有、我方日檔沒有」）。
+    #      ⚠ 實測 2026 年四筆停牌：停牌那幾天 `margin` 清單裡**都沒有它**。
+    #   ④ 而真的留在清單上的那種（單日處置，例如 3311／2436／6670／3032）
+    #      ⇒ 我方日檔**有**那一列 ⇒ 也不會變成漏列。
+    #
+    # ⇒ ⭐ 所以這一欄留著，⛔ 而它的 0 必須**連同「為什麼是 0」一起印**：
+    #   第七點那條「回報某群 0 筆時，必須附上該判準在該群抓到的正例數」，
+    #   ⚠ 而這裡比 0 筆更糟——**正例數在這個母體裡恆為 0**。
+    #   ⛔ 原本那句「暫停交易只解釋千分之三」是 2026-09-10 抄來的舊數字，
+    #     ⚠ 而它讀起來像「已經歸因掉一小部分了」——**一筆都沒有**。
+    # ══════════════════════════════════════════════════════════════
+    n_susp = sum(1 for r in rows if r[5] == "官方暫停交易")
+    n_halt = sum(1 for r in rows if r[5] == "官方停止交易")
+    n_tw = sum(1 for r in rows if r[3] == "twse")
+    n_otc = len(rows) - n_tw
+    n_un = len(rows) - n_susp - n_halt
     rl.info("  歸因",
-            f"官方暫停交易 **{n_susp:,} 筆**（{n_susp / max(1, len(rows)) * 100:.2f}%）"
-            f"｜未歸因 {len(rows) - n_susp:,} 筆"
-            "　⛔ 暫停交易只解釋千分之三，其餘仍是 `parse_twse()` 跳過 `--` 那一條")
+            f"官方停止交易（上櫃 chtm）**{n_halt:,} 筆**"
+            f"｜官方暫停交易（上市名單）**{n_susp:,} 筆**"
+            f"｜未歸因 **{n_un:,} 筆**"
+            f"　⇒ 歸因掉 {(n_susp + n_halt) / max(1, len(rows)) * 100:.1f}%")
+    # ⭐ 第七點那條：回報「某群 N 筆」時要附上**該判準在該群的正例數**，
+    #   ⛔ 而這裡兩個判準的**可及範圍完全不同** ⇒ 分開報，⛔ 不可以加起來看。
+    rl.info("  ⭐ 兩個歸因來源的可及範圍不同，⛔ 不可以合著看",
+            f"上櫃 {n_otc:,} 筆 → `halt_spans.csv`（chtm）歸因 {n_halt:,}"
+            f"（{n_halt / max(1, n_otc) * 100:.1f}%）；"
+            f"上市 {n_tw:,} 筆 → `suspend_twse.csv` 歸因 {n_susp:,}"
+            f"（{n_susp / max(1, n_tw) * 100:.1f}%）"
+            "　⛔ 而上市那個 0 是**結構上的**，不是「停牌解釋不了」："
+            "⭐ 被停牌的證券也會從那六張官方清單上消失 ⇒ 它進不了這一支的母體"
+            "（實測 2026 年四筆停牌，`margin` 清單裡都沒有它）"
+            "　⇒ ⛔ 上市這一半**目前沒有歸因來源**")
     top = Counter(r[1] for r in rows).most_common(8)
     rl.info("  最常被漏的 8 檔", "｜".join(f"{c} {n}天" for c, n in top))
     recent = sorted(byday)[-5:]
