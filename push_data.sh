@@ -191,9 +191,58 @@ for i in 1 2 3; do
     git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
     exit 0
   fi
+  # ⭐⭐ 要驗收的那幾個路徑，**在 commit 之前**先記下來（K線分析線〈七十二〉）。
+  STAGED=$(git diff --staged --name-only --diff-filter=d)
   git commit -q -m "$MSG"
   if git push origin HEAD:main; then
-    echo "[push_data] ✓ 已推上 main"
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ **「✓ 已推上 main」原本是一行 echo，不是證據**（K線分析線 2026-09-15
+    #   〈七十二〉，而它是拿 2026-09-15 那件實際事故寫出來的：probe run 101
+    #   印了「✓ 已推上 main」，⚠ 而那一趟寫出來的 22 份探針輸出**一份都沒到**。）
+    #
+    # ⭐ 判別法一句話：**把那個步驟的實際動作註解掉，成功訊息還會不會印？**
+    #   會印 ⇒ ⛔ 它不是證據，是一行 echo。
+    #   ⚠ 而原本這一行在 `git push` 回 0 的時候就印了
+    #   ⇒ 它證明的是「push 這個命令成功了」，⛔ **不是「那些檔到了 main」**。
+    #     （那次 push 確實成功——⚠ 只是 commit 裡根本沒有那 22 個檔。）
+    #
+    # ⇒ ⭐ 改成**從 main 讀回來**：fetch 之後逐檔比 blob sha。
+    #   ⛔ 不比 commit sha：別人可能在這幾秒也推了 main，main 會往前走
+    #   ⇒ 我們的 commit 變成祖先，而那是**正常**的。
+    #   ⚠ 而「別人推的那一趟改了同一個檔」也是正常的 ⇒ 那種情況下 blob 會不同，
+    #     ⭐ 所以對不上時要先看我們的 commit 還在不在 main 的歷史裡：
+    #     在 ⇒ 是被後來的人覆蓋（吼一聲，⛔ 不算這一趟失敗）
+    #     不在 ⇒ ⛔⛔ 這一趟真的沒到 ⇒ **失敗**
+    # ══════════════════════════════════════════════════════════════
+    MYC=$(git rev-parse HEAD)
+    if ! git fetch -q origin main 2>/dev/null; then
+      echo "[push_data] ⚠⚠ **讀回驗證這一層沒跑**：fetch origin main 失敗" >&2
+      echo "   ⇒ ⛔ 不算失敗（push 本身回 0），⛔ **也不算驗過**" >&2
+    else
+      BAD=0
+      for f in $(printf '%s\n' "$STAGED" | grep -v '^$'); do
+        A=$(git rev-parse "$MYC:$f" 2>/dev/null || echo "-")
+        B=$(git rev-parse "origin/main:$f" 2>/dev/null || echo "-")
+        [ "$A" = "$B" ] && continue
+        BAD=$((BAD + 1))
+        echo "[push_data] ⛔ main 上那一份跟我推的不一樣：$f（我 $A｜main $B）" >&2
+      done
+      if [ "$BAD" -gt 0 ]; then
+        if git merge-base --is-ancestor "$MYC" origin/main 2>/dev/null; then
+          echo "[push_data] ⚠ 我的 commit 在 main 的歷史裡 ⇒ 上面 $BAD 個是被**後來的人**改的" >&2
+          echo "   ⇒ ⛔ 不算這一趟失敗，⚠ 而它值得看一眼（誰在同一秒改了同一個檔）" >&2
+        else
+          echo "[push_data] ⛔⛔ 而我的 commit **不在 main 的歷史裡** ⇒ 這一趟根本沒到" >&2
+          git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
+          exit 5
+        fi
+      fi
+      NV=$(printf '%s\n' "$STAGED" | grep -vc '^$' || true)
+      echo "[push_data] ✓ 已推上 main（⭐ 從 main 讀回來逐檔比過：$NV 個檔的 blob sha）"
+      git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
+      exit 0
+    fi
+    echo "[push_data] ✓ 已推上 main（⚠ 讀回那一層沒跑，見上）"
     # ⛔ 一定要切回原本的分支：呼叫端後面可能還要繼續跑。
     git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
     exit 0
