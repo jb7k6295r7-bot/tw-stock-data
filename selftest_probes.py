@@ -988,6 +988,56 @@ def check_js_followups():
     return bad
 
 
+def check_scale_qualified():
+    """⭐⭐ 「這個來源不可用」必須寫成「對 ___ 規模不可用」（三點③）。
+
+    ⚠ 而規模要是**量出來的**：2026-09-13 我寫「1,954 檔 × 245 日」，
+    ⛔ 實測母體是 **2,493**（含興櫃）、上市＋上櫃 **2,130**、2025 交易日 **243**。
+    ⇒ 一個記得的數字比不寫更糟：它讀起來跟量過的一模一樣。
+    """
+    import broker_probe as BP
+    bad = 0
+
+    def ck(name, cond, extra=""):
+        nonlocal bad
+        print(("✓ " if cond else "✗ ") + name)
+        if not cond:
+            bad += 1
+            if extra:
+                print(f"    {extra}")
+
+    txt = "\n".join(BP.scale_lines())
+    ck("① 判死的是**那一格**，⛔ 不是整條路",
+       "判死的不是" in txt and "全市場自動化" in txt, txt[:200])
+    ck("② 三個障礙**逐項**對照兩種規模（⛔ 不是只講一句「規模有差」）",
+       all(w in txt for w in ("驗證碼", "逐檔查", "只有當日", "人做得到")), txt[:200])
+    ck("③ ⛔ 跟規模**無關**的那個理由要分開寫（條款禁重製）"
+       "（⚠ 並排寫成「兩個都獨立成立」＝看起來到處都成立）",
+       "跟規模無關" in txt and "重製" in txt, txt[:200])
+    ck("④ ⭐ 規模是**量出來的**（母體與交易日都從 repo 讀）",
+       "meta/stocks.csv" in txt and "universe/daily" in txt, txt[:200])
+    # ⭐ 而數字要對得上現場，⛔ 不是寫死的
+    import csv as _csv
+    import os as _os
+    n = 0
+    pth = _os.path.join(BP._ROOT, "meta", "stocks.csv")
+    if _os.path.exists(pth):
+        with io.open(pth, encoding="utf-8") as f:
+            n = sum(1 for r in _csv.DictReader(f)
+                    if r.get("kind") == "stock"
+                    and r.get("market") in ("twse", "tpex"))
+        ck(f"⑤ 母體數字跟現場一致（實測上市＋上櫃 {n:,}）",
+           f"**{n:,}**" in txt, txt[:300])
+    else:
+        # ⛔ 讀不到就**大聲說沒跑**（六點五：某個 ref 上必然不成立的斷言
+        #   等於把那個環境的整條線關掉）
+        print("  ⚠⚠ **這一層沒跑**：這個 ref 上沒有 `meta/stocks.csv`"
+              "　⇒ ⛔ 不算失敗，⛔ 也不算驗過")
+        ck("⑤' 而那種時候要**大聲說算不出來**，⛔ 不可以印一個記得的數字",
+           "這一段沒跑" in "\n".join(BP.scale_lines()), txt[:200])
+    return bad
+
+
 def check_no_dup_keys():
     """⛔⛔ `SECTIONS` 這種 dict 字面量**有重複鍵也不會報錯**——Python 靜靜取後面那個。
 
@@ -1207,6 +1257,7 @@ def main():
     bad += check_bridge_blank_vs_ignored()
     bad += check_xhr_hunt()
     bad += check_js_followups()
+    bad += check_scale_qualified()
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
