@@ -40,7 +40,10 @@
 """
 
 import argparse
+import csv
+import glob
 import html
+import io
 import os
 import re
 import sys
@@ -533,24 +536,143 @@ def revenue_complete(per, market, floor=neighbor_floor.FLOOR_PERIOD):
     return True
 
 
-def foreign_rows(per, market):
-    """該期檔裡**外國企業**（`-KY`／`-DR`）幾列。⛔ 沒有那個檔回 `None`。
+def sec_kind(name):
+    """證券名稱 → 類別（`"KY"`／`"DR"`／`"一般"`）。⭐ **全庫唯一一份**（四點五）。
 
-    ⚠ 判準是名稱含 `-KY`／`-DR`，⛔ 不是 `endswith`：
+    ⚠ 判準是名稱**含** `-KY`／`-DR`，⛔ 不是 `endswith`：
       創新板的掛法是 `錼創科技-KY創`（2026-07 實測 124 檔裡有 4 檔長這樣，
       用 `endswith` 只數到 120）。
     """
-    p = os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv")
-    if not os.path.isfile(p):
+    n = name or ""
+    if "-KY" in n:
+        return "KY"
+    if "-DR" in n:
+        return "DR"
+    return "一般"
+
+
+def path_kinds(path):
+    """一份月營收 CSV → `{類別: 代號集合}`。⛔ 讀不到回 `None`。
+
+    ⭐ 兩條路的前兩欄都是 `stock_id,name` ⇒ 這一份**兩條路共用**
+    （⛔ 不要為了「欄位不一樣」再寫第二份——不一樣的是後面那些欄）。
+    ⚠ 用 `csv` 讀，⛔ 不是 `split(",")`：名稱裡真的出現逗號時，
+      裸切會把類別判到別欄去，而那種錯**不會報錯**。
+    """
+    if not os.path.isfile(path):
         return None
-    n = 0
-    with open(p, encoding="utf-8") as fh:
-        fh.readline()
-        for ln in fh:
-            f = ln.split(",")
-            if len(f) > 1 and ("-KY" in f[1] or "-DR" in f[1]):
-                n += 1
-    return n
+    out = {}
+    with io.open(path, encoding="utf-8") as fh:
+        for r in csv.DictReader(fh):
+            sid = (r.get("stock_id") or "").strip()
+            if not sid:
+                continue
+            out.setdefault(sec_kind(r.get("name") or ""), set()).add(sid)
+    return out
+
+
+def foreign_rows(per, market):
+    """該期檔裡**外國企業**（`-KY`／`-DR`）幾檔。⛔ 沒有那個檔回 `None`。"""
+    k = path_kinds(os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv"))
+    if k is None:
+        return None
+    return len(k.get("KY", ())) + len(k.get("DR", ()))
+
+
+def _union_kinds(paths):
+    """一疊 CSV → 合併後的 `{類別: 代號集合}`；⛔ 一個檔都讀不到回 `None`。"""
+    out = None
+    for path in paths:
+        one = path_kinds(path)
+        if one is None:
+            continue
+        out = out if out is not None else {}
+        for k, v in one.items():
+            out.setdefault(k, set()).update(v)
+    return out
+
+
+def two_path_kinds(per, sub):
+    """同一期、兩條路各自的 `{類別: 代號集合}` → (當期 feed, 歷史面板)。
+
+    `sub` ＝ `"revenue"`／`"fs"`／`"bs"`，⛔ **必填**：
+    ⚠ 給它預設值的話，「掃描範圍」會靜靜縮成只有月營收那一種（三點①）。
+
+    ⭐ 兩族的檔名形狀不同，⛔ 而那不是寫兩份的理由：
+    ```
+    revenue   當期 revenue/<期>.csv            歷史 revenue_hist/<期>_<市場>.csv
+    fs／bs    當期 fs/<期>_<業別>.csv          歷史 fs_hist/<期>_<業別>_<市場>.csv
+    ```
+    ⇒ 兩邊都用「`<期>.csv` 或 `<期>_*.csv`」一次收掉。
+    ⛔ 任一邊一個檔都沒有就回 `None`（⚠ 兩條路的涵蓋期間本來就不同）。
+    """
+    cur = _union_kinds([os.path.join(OUT, sub, f"{per}.csv")]
+                       + sorted(glob.glob(os.path.join(OUT, sub, f"{per}_*.csv"))))
+    hist = _union_kinds(sorted(glob.glob(
+        os.path.join(OUT, f"{sub}_hist", f"{per}_*.csv"))))
+    return cur, hist
+
+
+def class_gaps(cur, hist):
+    """→ `[(類別, 當期幾檔, 歷史幾檔)]`：**一邊 0、另一邊 >0** 的那些類別。
+
+    ## ⭐⭐ 這是 CLAUDE.md 五點二的落地（⛔ 那一條原本只有判準、沒有閘門）
+
+    月營收有兩條路，⚠ 而 `-KY`／`-DR`（外國發行）**整整一類**在歷史面板那條路
+    缺了一年多：兩邊欄名一樣、格式一樣、列數都是幾千、**兩邊都不會報錯**
+    ⇒ ⛔ 任何一份報表上都看不出來，是**別條線問到**才量的。
+
+    ## ⛔ 而判準**不可以**是「兩條路的代號集合要一樣」
+
+    ```
+    2026-07  當期 1,085  歷史 1,977   ← 期別重分組（09-14 修的那個）
+    2026-08  當期 1,965  歷史 1,978   ← 只歷史有 13 檔
+    2867 三商壽  只當期有             ← 2026-09-01 下市 ⇒ 歷史面板不收（倖存者偏誤）
+    ```
+
+    ⇒ ⚠ 那三種差都是**正當的**，拿總數當判準會天天紅然後被學會忽略（四點五）。
+    ⭐ 而 KY 那一種不一樣：它是**一整類在其中一條路上是 0**，
+    ⛔ 而另一條路同一期有 124 檔 ⇒ 那不可能是倖存者或重分組。
+
+    ## ⇒ 而它為什麼不犯五點三（absent ≠ zero）
+
+    「某一期真的沒有外國企業」時**兩邊都是 0** ⇒ 不回報。
+    ⭐ 它要求的是**另一條路講得出那一類存在**——那是外部錨點，⛔ 不是我方的假設。
+    """
+    if cur is None or hist is None:
+        return []
+    out = []
+    for k in sorted(set(cur) | set(hist)):
+        a, b = len(cur.get(k, ())), len(hist.get(k, ()))
+        if (a == 0) != (b == 0):
+            out.append((k, a, b))
+    return out
+
+
+TWO_PATH_SUBS = ("revenue", "fs", "bs")
+
+
+def two_path_summary(subs=TWO_PATH_SUBS):
+    """三族逐期跑一次 `class_gaps` → (比得了的期別數, [(族_期別, 缺口…)])。
+
+    ⭐ 掃描範圍要寫出來（三點①）：**當期 feed 有哪幾期**就比哪幾期
+    ——當期那一層本來就只留最近幾期，⛔ 而歷史面板是 2015 起。
+    """
+    n_cmp, bad = 0, []
+    for sub in subs:
+        d = os.path.join(OUT, sub)
+        pers = sorted({n[:-4].split("_")[0]
+                       for n in (os.listdir(d) if os.path.isdir(d) else [])
+                       if n.endswith(".csv")})
+        for per in pers:
+            cur, hist = two_path_kinds(per, sub)
+            if cur is None or hist is None:
+                continue
+            n_cmp += 1
+            g = class_gaps(cur, hist)
+            if g:
+                bad.append((f"{sub} {per}", g))
+    return n_cmp, bad
 
 
 def foreign_summary():
@@ -1154,6 +1276,17 @@ def main():
         rl.check("⭐⭐ 外國企業那一段**真的進來了**"
                  "（⛔ 全部 0 列 ⇒ `_1` 沒抓到，⚠ 而它跟「官方沒發」長得一樣）",
                  per_f > 0, f"有值的期別檔 {per_f} 個｜合計 {tot:,} 列")
+        # ⭐⭐ CLAUDE.md 五點二的落地：**兩條路的代號差集**（⛔ 那一條原本只有判準）
+        #   ⚠ 而它比的是**類別分佈**，⛔ 不是總數——三種正當的總數差見 `class_gaps`。
+        n_cmp, bad = two_path_summary()
+        rl.info("⭐ 兩條路的**類別**差集（當期 feed vs 歷史面板）",
+                f"比得了 **{n_cmp}** 期（⛔ 兩條路涵蓋的期間本來就不同）"
+                f"｜一整類只有一邊有的：**{len(bad)}** 期"
+                + (f"（{bad[:3]}）" if bad else "　⇒ ⭐ KY／DR 兩邊都講得出來"))
+        rl.check("⭐⭐ 沒有**一整類**只在其中一條路上"
+                 "（⛔ 這一族兩邊都不會報錯——KY 就這樣缺了一年多）",
+                 not bad, f"{len(bad)} 期有整類缺口：{bad[:3]}"
+                 if bad else f"比得了 {n_cmp} 期，一期都沒有")
     rl.info("期別結果", f"ok {sum(1 for v in state.values() if v[0] == 'ok')}"
                         f"｜fail {len(fails)}｜尚未公告 {len(pending)}")
     if fails:

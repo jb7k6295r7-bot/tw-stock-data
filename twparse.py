@@ -74,6 +74,29 @@ def roc_iso(v):
     return f"{y:04d}-{m:02d}-{d:02d}"
 
 
+def actions_in(raw, prefix=None):
+    """TPEx 頁面的 inline script → 它自己寫的 `action:` 清單（已排序去重）。
+
+    ## ⛔ 為什麼要從**頁面自己寫的字**讀，不是從網址猜
+
+    2026-09-15 付過代價：第一版是從 `url` 推（`"pvChgAnn" if "pvChgAnn" in url`），
+    ⚠ 而那兩頁的網址是 `/announce/market/change.html`——`action` 根本不在網址裡。
+    ⇒ 那一版對**真的頁面**也永遠推不出東西。
+    ⭐ 這是三點5 那條的同一個形狀：**不要照名字推一個東西管什麼。**
+
+    配上 `API_PATTERN = "/www/{LANG}/{ACTION}"`，資料端點就是 `/www/<lang>/<action>`。
+
+    ⛔⛔ `prefix` 預設是 **None ＝ 全收**。⚠ 這一條是有代價才寫成這樣的：
+    上一版把 `bulletin/` **寫死在正規式裡** ⇒ 想問別的區段（`afterTrading/` …）
+    的人只能再寫一份 ⇒ 那就是第二份實作（四點五）。
+    ⇒ 要縮範圍的人自己傳 `prefix`，⛔ 而預設不縮——
+    **一個預設就把掃描範圍縮小的函式，下一個人不會知道它縮了**（三點①）。
+    """
+    txt = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else (raw or "")
+    got = re.findall(r'action\s*:\s*["\']([A-Za-z0-9_]+/[A-Za-z0-9_]+)["\']', txt)
+    return sorted({a for a in got if prefix is None or a.startswith(prefix)})
+
+
 def pick_field(fields, *words):
     """欄位名**包含**其中任一個關鍵字 ⇒ 回它的位置。找不到回 None。
 

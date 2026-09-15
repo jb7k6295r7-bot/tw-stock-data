@@ -53,6 +53,7 @@ import traceback
 from datetime import datetime, timedelta, timezone
 
 import backfill as B
+import twparse                      # ⭐ 讀 action／POST 都走那一份（四點五）
 from twparse import post_form as _post_form
 from backfill import why as _W
 
@@ -204,9 +205,9 @@ def main():
         #   **頁面自己的 inline script** 裡 ⇒ 那一版對真的頁面也永遠推不出東西。
         # ⭐ 這就是三點5 那條（「⛔ 不要照名字推一個開關／欄位管什麼」）的同一個形狀
         #   ⇒ **從它自己寫的字裡讀**，⛔ 不是從網址猜。
-        acts = sorted(set(re.findall(
-            r'action\s*:\s*["\'](bulletin/[A-Za-z0-9_]+)["\']',
-            raw.decode("utf-8", "replace"))))
+        # ⭐ 讀 action 只有 `twparse.actions_in` 那一份（四點五）——
+        #   ⛔ 這裡原本自己帶一條寫死 `bulletin/` 的正規式。
+        acts = twparse.actions_in(raw, prefix="bulletin/")
         for act in acts:
             say("     ── ⭐ 照它自己寫的形狀打一發"
                 "（`API_PATTERN=\"/www/{LANG}/{ACTION}\"` ⇒ `/www/<lang>/<action>`）")
