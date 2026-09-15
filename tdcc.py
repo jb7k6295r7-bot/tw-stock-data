@@ -314,7 +314,14 @@ def hist_gate(rl):
     days, note = hist_weeks()
     if note.startswith("skip:"):
         # ⚠ 六點五：選用套件不在 ⇒ **大聲印「這一層沒跑」**，⛔ 不算失敗。
-        rl.info("集保歷史", f"⚠⚠ **這一層沒跑**（{note[5:]}）⇒ ⛔ 也不算驗過")
+        # ⛔ 這裡原本寫 `note[5:]`（剝掉 "skip:" 前綴）⇒ `selftest_feed_days` ⑧
+        #   那道「全 repo 砍錯誤訊息尾巴的地方沒有變多」**當場紅**，
+        #   ⚠ 而它是**誤報**：這是剝前綴，不是砍尾巴。
+        # ⇒ ⭐ 而處置不是把它加進白名單，是**寫成講得出自己在做什麼的形狀**
+        #   ——`removeprefix` 一眼就看得出它不是截斷。
+        #   ⚠ 代價是真的：那道紅掉讓整趟 feeds（official-stats）**一步都沒跑**。
+        rl.info("集保歷史",
+                f"⚠⚠ **這一層沒跑**（{note.removeprefix('skip:')}）⇒ ⛔ 也不算驗過")
         return 0
     if not days:
         rl.info("集保歷史", note)
