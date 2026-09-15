@@ -976,6 +976,42 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
+def xhr_clues(text, cap=12):
+    """那一頁的 js **去打誰**——把線索挖出來。→ list[str]（要印的行）。
+
+    ⭐ 只有這一份實作（四點五）：MOPS 與櫃買公告區**同一個問題**
+    ——頁面是 js 空殼，而資料在載入後那一發請求裡。
+    ⛔ 兩邊的**取頁方式**不同（MOPS 走橋、櫃買直接 GET），
+    ⚠ 而「挖什麼」完全一樣 ⇒ 挖的那一半收在這裡。
+
+    ⛔ 它**不下任何結論**：只把像端點的字串逐條印出來，人讀完才知道下一發打哪裡。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out = []
+    pats = (
+        ("①  `/…/api/…` 出現過哪些", r"/[A-Za-z0-9_.-]*api[A-Za-z0-9_/-]*"),
+        ("②  `fetch(` 的對象", r"fetch\(\s*[\"'`]([^\"'`]{4,120})"),
+        ("③  `$.ajax` / `url:` 的對象", r"url\s*:\s*[\"'`]([^\"'`]{4,120})"),
+        ("④  其他 `.ashx`／`.json`／`/api/` 字串",
+         r"[A-Za-z0-9_./-]*(?:\.ashx|\.json|/api/)[A-Za-z0-9_./-]*"),
+    )
+    for label, pat in pats:
+        hits = sorted({(m if isinstance(m, str) else m[0])
+                       for m in re.findall(pat, t)})
+        out.append(f"  {label}：{len(hits)} 種")
+        out += [f"      {h[:110]}" for h in hits[:cap]]
+        if len(hits) > cap:
+            out.append(f"      …（另 {len(hits) - cap} 種）")
+    m = re.search(r"function\s+(getMsg|query|search|doQuery)\s*\([^)]*\)\s*\{", t)
+    if m:
+        body = " ".join(t[m.start():m.start() + 600].split())
+        out.append(f"  ⭐ `{m.group(1)}` 本體前 400 字：{body[:400]}")
+    else:
+        out.append("  ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體"
+                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）")
+    return out
+
+
 def js_shell(text):
     """這一頁是不是**js 空殼**（＝框架回來了，而資料是載入後才由 js 取的）。
 

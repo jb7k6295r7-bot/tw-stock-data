@@ -215,6 +215,39 @@ def main():
        if naked else f"掃了 {len(glob.glob(os.path.join(here, 'selftest_*.py')))} 支")
 
     # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ **job 的 timeout 必須大於任何單一步驟的 timeout**（2026-09-15 加）
+    #
+    # ⛔⛔ `probe.yml` 本來 job 是 **15**，而「跑十四支探針」那一步**自己就是 15**
+    #   ⇒ 探針一跑滿，整個 job 先被 job-level timeout 砍掉
+    #   ⇒ 畫面上是 `cancelled`，⚠ 而真正的後果是**後面四步一步都沒跑**：
+    #     「MOPS 橋接」「長期停止買賣探針」「Commit 回 repo」全部沒有
+    #   ⇒ ⭐ **那一趟什麼都沒推**，而 run 的樣子只是「被取消」。
+    # ⚠ 實測 2026-09-15 吃掉四趟（run 86／87／97／98，都在開始後約 15 分被砍）
+    #   ——⛔ 而我一度把它讀成「基礎設施問題」，⚠ 那讓我少查了一整天。
+    #
+    # ⚠ 而判準**不是**「各步驟 timeout 的合計 > job」：
+    #   `feeds.yml`／`daily.yml` 有一堆互斥的 `if:` 步驟，一趟只跑其中一個
+    #   ⇒ 那樣寫會誤報兩支（實測：合計 459 與 450，而它們其實沒問題）。
+    #   ⭐ 對的判準是**單一步驟 ≥ job**——那一步自己就吃得完整個 job。
+    # ══════════════════════════════════════════════════════════════
+    for path in files:
+        txt = io.open(path, encoding="utf-8").read()
+        lines = txt.split("\n")
+        job = [int(m.group(1)) for m in
+               (re.match(r"^    timeout-minutes:\s*(\d+)", l) for l in lines) if m]
+        step = [(int(m.group(1)), i + 1) for i, l in enumerate(lines)
+                for m in [re.match(r"^        timeout-minutes:\s*(\d+)", l)] if m]
+        if not job:
+            continue
+        j = min(job)
+        bad = [(v, ln) for v, ln in step if v >= j]
+        ck(f"⭐⭐ {os.path.basename(path)}：沒有**單一步驟**的 timeout ≥ job 的 "
+           f"({j} 分)（⛔ 有的話那一步吃得完整個 job，後面的步驟一步都不跑）",
+           not bad,
+           f"⛔ {[(v, f'行 {ln}') for v, ln in bad]}"
+           "　⇒ 那一趟會顯示 `cancelled`，⚠ 而真正的後果是**什麼都沒推**")
+
+    # ══════════════════════════════════════════════════════════════
     # ⭐⭐ 「蒐證」那一步要排在「修好」**之後**（2026-09-15 加）
     #
     # ⛔ `feeds.yml` 的 `otc-adj-official`：`otc_reduce_history.py` 與

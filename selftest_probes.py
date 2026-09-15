@@ -231,7 +231,9 @@ SECTIONS = {
     #   ⚠ 不是「這一趟成功了沒」。中途 return 的話舊程式一樣會成功。
     "tpex_probe": ["[1]", "[2]", "[4]", "[6]", "[7]", "[8]", "[9]", "[10]",
                    "[11]", "[12]", "[13]"],
-    "parvalue_probe": [],
+    # ⭐ 釘住 C4 那一節：⛔ 少了它，這一格就停在「TPEx 沒有對應端點」，
+    #   ⚠ 而那句否定的**掃描範圍只有 swagger**。
+    "parvalue_probe": ["清單 C4"],
     "twsthr_probe": [],
     # ⛔ 這一支的每一節都是判讀前提（見 holiday_probe 的檔頭四項），
     #   少掉任何一節都會讓「颱風休市偵測」建立在沒問過的假設上。
@@ -818,6 +820,41 @@ var z = "/nas/t05/onlyinfour.json";
     return bad
 
 
+def check_no_dup_keys():
+    """⛔⛔ `SECTIONS` 這種 dict 字面量**有重複鍵也不會報錯**——Python 靜靜取後面那個。
+
+    2026-09-15 實際發生：我要替 `parvalue_probe` 加一節，⚠ 而它**本來就有一格**
+    （空的），我沒看到就在別處又寫了一個 ⇒ 兩個鍵並存。
+    ⭐ 這一次剛好是我的那個在後面、**行為是對的**——⛔ 而那正是它危險的地方：
+      **它現在是對的，而任何一次重排就會靜靜換成另一個。**
+
+    ⇒ 掃 AST，⛔ 不是掃建好的 dict（建好之後重複鍵已經消失了，看不出來）。
+    """
+    import ast as _ast
+    import collections as _c
+    bad = 0
+    _here = os.path.dirname(os.path.abspath(__file__))
+    src = io.open(os.path.join(_here, "selftest_probes.py"), encoding="utf-8").read()
+    tree = _ast.parse(src)
+    dups = []
+    for node in _ast.walk(tree):
+        if not isinstance(node, _ast.Dict):
+            continue
+        keys = [k.value for k in node.keys
+                if isinstance(k, _ast.Constant) and isinstance(k.value, str)]
+        for k, n in _c.Counter(keys).items():
+            if n > 1:
+                dups.append((node.lineno, k, n))
+    ok = not dups
+    print(("✓ " if ok else "✗ ")
+          + "selftest_probes 自己沒有**重複的 dict 鍵**"
+            "（⛔ Python 靜靜取後面那個，而重排就會換人）")
+    if not ok:
+        print(f"    ⛔ {dups}")
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -839,6 +876,7 @@ def main():
     bad += check_openapi_period_col()
     bad += check_bridge_blank_vs_ignored()
     bad += check_xhr_hunt()
+    bad += check_no_dup_keys()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

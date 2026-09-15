@@ -71,7 +71,15 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # ⛔⛔ 2026-09-15 付過代價：這裡本來是 **15**，而底下「跑十四支探針」
+    #   那一步**自己就是 15** ⇒ 探針一跑滿，整個 job 先被 job-level timeout 砍掉
+    #   ⇒ 畫面上是 `cancelled`，⚠ 而真正的後果是**後面四步一步都沒跑**：
+    #     「MOPS 橋接」「長期停止買賣探針」「Commit 回 repo」全部沒有
+    #   ⇒ ⭐ **那一趟什麼都沒推**，而 run 的樣子只是「被取消」。
+    # ⚠ 實測今天吃掉四趟（run 86／87／97／98，都在開始後約 15 分被砍）
+    #   ——⛔ 而我一度把它讀成「基礎設施問題」。
+    # ⇒ job 的 timeout 必須**大於任何單一步驟**的 timeout，這裡留足餘裕。
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4

@@ -210,38 +210,17 @@ def xhr_hunt(api, out, **kw):
     （`/mops/api/…`、`fetch(`、`$.ajax`、`url:`、`getMsg` 的函式本體）。
     ⛔ 不下任何結論 —— ⭐ 人讀完那幾行才知道下一發要打哪裡。
     """
-    import re as _re
     out.append(f"── ⭐ `{api}` 的 js 去打誰（只挖線索，⛔ 不下結論）")
     raw = one(api, "114", out, **kw)
     if raw is None:
         out.append("  ⛔ 取不回來 ⇒ 這一段**沒跑**")
         return
-    t = raw.decode("utf-8", "replace")
     han, n_tr, n_js, shell = B.js_shell(raw)
     out.append(f"  [形狀] 中文 {han:,} 字｜<tr> {n_tr} 個｜js {n_js} 支"
                + ("　⛔ **js 空殼**" if shell else ""))
-    pats = (
-        ("①  `/mops/api/…` 出現過哪些", r"/mops/api/[A-Za-z0-9_/-]+"),
-        ("②  `fetch(` 的對象", r"fetch\(\s*[\"'`]([^\"'`]{4,120})"),
-        ("③  `$.ajax` / `url:` 的對象", r"url\s*:\s*[\"'`]([^\"'`]{4,120})"),
-        ("④  其他 `.ashx`／`.json`／`/api/` 字串", r"[A-Za-z0-9_./-]*(?:\.ashx|\.json|/api/)[A-Za-z0-9_./-]*"),
-    )
-    for label, pat in pats:
-        hits = sorted({(m if isinstance(m, str) else m[0])
-                       for m in _re.findall(pat, t)})
-        out.append(f"  {label}：{len(hits)} 種")
-        for h in hits[:12]:
-            out.append(f"      {h[:110]}")
-        if len(hits) > 12:
-            out.append(f"      …（另 {len(hits) - 12} 種）")
-    # ⭐ `getMsg` 是 `window.onload` 掛的那一支 ⇒ 它的本體最可能藏著那一發
-    m = _re.search(r"function\s+getMsg\s*\([^)]*\)\s*\{", t)
-    if m:
-        body = " ".join(t[m.start():m.start() + 600].split())
-        out.append(f"  ⭐ `getMsg` 本體前 400 字：{body[:400]}")
-    else:
-        out.append("  ⚠ 找不到 `function getMsg` 的本體"
-                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）")
+    # ⭐ 挖的那一半走**唯一那一份**（`backfill.xhr_clues`，四點五）
+    #   ——櫃買公告區那幾頁是**同一個問題**，⛔ 不可以再抄一份。
+    out += B.xhr_clues(raw)
 
 
 def openapi_case(name, out):
