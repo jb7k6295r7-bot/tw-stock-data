@@ -177,30 +177,58 @@ def openapi_case(name, out):
     # ⇒ 真正回答涵蓋期間的是**內容日期**（`發言日期`／`事實發生日`）。
     # ⚠ 而這正是 CLAUDE.md 二那條：**「這個端點可不可信」問錯了問題，
     #   要問的是「這個【欄】…」**——同一張表裡，有的欄是時戳、有的欄是內容。
-    STAMP = ("出表", "Date", "date", "asof")          # 快照時戳那一族
-    CONTENT = ("發言", "發生日", "年月", "年度", "月別",
-               "公告", "申報", "日期")                 # 內容日期那一族
-    allk = list(d[0] if d else {})
+    # ⛔⛔ 而我第一版的修法**過頭到另一邊**（同一天，2026-09-15）：
+    #   我把「內容日期」當成一族，⚠ 而那一族裡其實有**兩種**，問的是不同的事：
+    #
+    #     ⭐ 批次日（`發言日期`／`年月`／`資料日期`）＝ **這一批是哪一天的**
+    #        ⇒ ⭐ **只有它回答「涵蓋期間」**
+    #        事件日（`事實發生日`）　　　　　　　＝ **這一列在講哪一天**
+    #        ⇒ ⛔ 一批**單日**的公告裡，事件日本來就會散在好幾個月
+    #
+    #   ⇒ 實測的反證（⛔ 不是推理）：`t187ap04_L` 一批 82 筆，
+    #     `發言日期` 只有 1 種（1150914），⚠ 而 `事實發生日` 有 11 種、
+    #     ⭐ **最大值是 1151103——那是未來**。
+    #     ⇒ 一個涵蓋期間的上界不可能落在未來 ⇒ ⛔ 事件日不是涵蓋期間。
+    #
+    # ⚠ 而 `發言時間` 是**時分秒**，⛔ 根本不是日期
+    #   ——我上一版用 `"日期"`／`"發言"` 去比子字串就把它吃進來了，
+    #   ⇒ 它有 80 個相異值 ⇒ 判準當場說「含多期」。⛔ 那是假的。
+    TIMEY = ("時間", "Time", "time")                  # ⛔ 時分秒，不是日期
+    STAMP = ("出表", "Date", "date", "asof")          # 快照時戳：必定 1 種
+    EVENT = ("發生日", "事實發生")                     # 事件日：⛔ 不回答涵蓋期間
+    BATCH = ("發言日", "年月", "年度", "月別",
+             "資料日", "公告日", "申報日")              # ⭐ 批次日：只有它算數
+    allk = [k for k in (d[0] if d else {})
+            if not any(t in k for t in TIMEY)]
     stamp_k = [k for k in allk if any(t in k for t in STAMP)]
-    cont_k = [k for k in allk
-              if k not in stamp_k and any(t in k for t in CONTENT)]
-    for label, ks in (("快照時戳", stamp_k), ("⭐ 內容日期", cont_k)):
+    event_k = [k for k in allk
+               if k not in stamp_k and any(t in k for t in EVENT)]
+    cont_k = [k for k in allk if k not in stamp_k and k not in event_k
+              and any(t in k for t in BATCH)]
+    for label, ks in (("快照時戳", stamp_k),
+                      ("事件日｜⛔ 不回答涵蓋期間", event_k),
+                      ("⭐ 批次日", cont_k)):
         for k in ks:
             vals = sorted({str(r.get(k, "")).strip() for r in d} - {""})
             out.append(f"  ── [{label}] `{k}` 有 {len(vals)} 個相異值："
                        + (f"{vals[:8]}…（最小 {vals[0]}｜最大 {vals[-1]}）"
                           if len(vals) > 8 else f"{vals}"))
     if not cont_k:
-        out.append("  ⚠ 找不到**內容日期**欄 ⇒ ⛔ **不可判定**它是不是只給最新一期"
+        out.append("  ⚠ 找不到**批次日**欄 ⇒ ⛔ **不可判定**它是不是只給最新一期"
                    + (f"（只有快照時戳 {stamp_k}，⛔ 那一族永遠只有 1 種）"
-                      if stamp_k else ""))
+                      if stamp_k else "")
+                   + (f"　⚠ 有事件日 {event_k}，⛔ **不可以拿它代打**"
+                      if event_k else ""))
     elif all(len({str(r.get(k, "")).strip() for r in d} - {""}) <= 1
              for k in cont_k):
-        out.append("  ⇒ ⛔ **內容日期**只有一個值 ⇒ 只給最新一期，沒有歷史。")
+        out.append("  ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。"
+                   + (f"　⚠ 而事件日 {event_k} 散在好幾期是**正常的**"
+                      "（一批單日的公告在講過去甚至未來的事）⇒ ⛔ 那不是歷史"
+                      if event_k else ""))
     else:
         _sp = max((len({str(r.get(k, "")).strip() for r in d} - {""}), k)
                   for k in cont_k)
-        out.append(f"  ⇒ ⭐ **內容日期**不只一個值（`{_sp[1]}` 有 {_sp[0]} 種）"
+        out.append(f"  ⇒ ⭐ **批次日**不只一個值（`{_sp[1]}` 有 {_sp[0]} 種）"
                    "⇒ **含多期**，值得當來源評估。"
                    "　⚠ 而「幾種」≠「涵蓋幾天」——要看上面那一行的最小與最大。")
 
