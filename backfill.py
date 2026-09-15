@@ -1165,16 +1165,15 @@ def probe_stamp(note=""):
     ⇒ 「這份輸出是哪個 ref 上的程式產生的」跟內容一樣重要。
     """
     import os as _os
+    import runlog
     ref = (_os.environ.get("GITHUB_REF_NAME")
            or _os.environ.get("GIT_BRANCH") or "?")
     run = _os.environ.get("GITHUB_RUN_ID", "")
-    where = "Actions" if _os.environ.get("GITHUB_ACTIONS") else "本機／開發容器"
-    try:
-        import runlog
-        now = runlog.now_tpe().isoformat(timespec="seconds")
-    except Exception:                                        # noqa: BLE001
-        from datetime import datetime as _dt, timedelta as _td, timezone as _tz
-        now = _dt.now(_tz(_td(hours=8))).isoformat(timespec="seconds")
+    # ⭐ 「在不在 Actions 上」走**唯一**那一份（`runlog.on_actions`，四點五）。
+    #   ⛔ 這裡本來寫成 `if _os.environ.get("GITHUB_ACTIONS")`（只看真假值）
+    #   ⇒ `GITHUB_ACTIONS="false"` 也算真 ⇒ **那句「不可信」的警語被拿掉**。
+    where = "Actions" if runlog.on_actions() else "本機／開發容器"
+    now = runlog.now_tpe().isoformat(timespec="seconds")
     tail = f"｜run {run}" if run else ""
     extra = f"｜{note}" if note else ""
     return (f"# ⏱ 這一趟：{now}（台北）｜ref {ref}｜{where}{tail}{extra}\n"

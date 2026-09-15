@@ -1067,22 +1067,86 @@ def check_probe_stamp():
         print(f"    ⛔ 只掃到 {n} 支（⚠ 0 支跟全部通過長得一樣）")
         bad += 1
     # ⭐ 而那一份實作自己也要驗（⛔ 不是只驗呼叫點）
+    #
+    # ⛔⛔ 這兩條**一定要自己把環境切出來**，⚠ 不可以用「現在剛好在哪裡」：
+    #   2026-09-15 我第一版寫成 `"不是 Actions" in probe_stamp()`
+    #   ⇒ 在 Actions 上 `GITHUB_ACTIONS=true` ⇒ 那句話**必然不在** ⇒ 必然紅
+    #   ⇒ probe run 100 的 step 12 當場 failure（而它 `continue-on-error`
+    #     ⇒ ⛔ 沒有任何地方會說，run 的畫面照樣往下跑）。
+    # ⭐ 這是 CLAUDE.md 六點五那條的**第三個變數**：
+    #   已知會讓斷言必然不成立的環境差異，原本兩個（選用套件在不在、在哪個 ref），
+    #   ⇒ 現在第三個：**這一趟是不是在 Actions 上**。
+    # ⇒ 處置不是「跳過」，是**兩種都自己造出來各驗一次**（環境無關）。
     import backfill as _B
-    line = _B.probe_stamp()
-    need = ("這一趟", "台北", "ref")
-    ok2 = all(w in line for w in need) and line.endswith("\n")
-    print(("✓ " if ok2 else "✗ ")
-          + "backfill.probe_stamp 本身：講得出**時間／ref／在哪裡跑**"
-            "（⚠ ref 要寫，因為排程跑的一律是 main）")
-    if not ok2:
-        print(f"    實得：{line!r}")
-        bad += 1
-    # ⛔ 不是 Actions 時要**大聲說**（⚠ 否則本機跑的輸出會被當成真的）
-    ok3 = "不是 Actions" in _B.probe_stamp()
-    print(("✓ " if ok3 else "✗ ")
-          + "⛔ 非 Actions 時要標「不是 Actions 跑的」（⚠ 這裡對交易所 403）")
-    if not ok3:
-        bad += 1
+    _saved = os.environ.get("GITHUB_ACTIONS")
+    try:
+        os.environ["GITHUB_ACTIONS"] = "true"
+        line = _B.probe_stamp()
+        need = ("這一趟", "台北", "ref")
+        ok2 = all(w in line for w in need) and line.endswith("\n")
+        print(("✓ " if ok2 else "✗ ")
+              + "backfill.probe_stamp 本身：講得出**時間／ref／在哪裡跑**"
+                "（⚠ ref 要寫，因為排程跑的一律是 main）")
+        if not ok2:
+            print(f"    實得：{line!r}")
+            bad += 1
+        ok4 = "不是 Actions" not in line
+        print(("✓ " if ok4 else "✗ ")
+              + "⭐ 在 Actions 上**不會**誤標成「不是 Actions 跑的」"
+                "（⛔ 誤標的話每一份輸出都帶一句假警語，警語就沒有人看了）")
+        if not ok4:
+            bad += 1
+        os.environ["GITHUB_ACTIONS"] = "false"
+        ok3 = "不是 Actions" in _B.probe_stamp()
+        print(("✓ " if ok3 else "✗ ")
+              + "⛔ 非 Actions 時要標「不是 Actions 跑的」（⚠ 這裡對交易所 403）")
+        if not ok3:
+            bad += 1
+        # ⛔⛔ 而「在不在 Actions 上」只准有**一份**判準（四點五）：
+        #   `runlog._block` 比的是 `== "true"`，而 `probe_stamp` 本來比的是
+        #   **有沒有設** ⇒ `GITHUB_ACTIONS="false"` 在後者是真
+        #   ⇒ 它會說「這是 Actions 跑的」並**把那句「不可信」的警語拿掉**。
+        #   ⚠ 而拿掉之後，一份本機跑的輸出看起來跟 Actions 跑的一模一樣。
+        import runlog as _rl
+        ok5 = _rl.on_actions() is False
+        os.environ["GITHUB_ACTIONS"] = "true"
+        ok5 = ok5 and _rl.on_actions() is True
+        print(("✓ " if ok5 else "✗ ")
+              + '⭐ `on_actions()` 比的是逐字 `"true"`'
+                "（⛔ 不是「有沒有設」——`\"false\"` 也是有設）")
+        if not ok5:
+            bad += 1
+        # ⭐ 而**沒有第二份**：⛔ 誰都不准自己讀那個環境變數
+        # ⛔⛔ 這一掃要比 **AST**，⚠ 不是比字串——「GITHUB_ACTIONS」這幾個字
+        #   在上面那段**說明文字裡本來就有一份**（`selftest_ca_chain` 盯
+        #   `CERT_NONE` 時踩過同一個）。⇒ 比字串的話它永遠紅，
+        #   而一條永遠紅的斷言會被學會忽略。
+        import ast as _ast2
+        others = []
+        for _f in sorted(glob.glob(os.path.join(_here_dir(), "*.py"))):
+            b = os.path.basename(_f)
+            if b in ("runlog.py",) or b.startswith("selftest_"):
+                continue
+            try:
+                tree = _ast2.parse(io.open(_f, encoding="utf-8").read())
+            except SyntaxError:
+                continue
+            for node in _ast2.walk(tree):
+                if (isinstance(node, _ast2.Constant)
+                        and node.value == "GITHUB_ACTIONS"):
+                    others.append(b)
+                    break
+        print(("✓ " if not others else "✗ ")
+              + "⭐ 只有 `runlog.on_actions()` 一份實作"
+                "（⛔ 兩份的判準不一樣時，結論會相反）")
+        if others:
+            print(f"    ⛔ 另有自己讀環境變數的：{others}")
+            bad += 1
+    finally:
+        if _saved is None:
+            os.environ.pop("GITHUB_ACTIONS", None)
+        else:
+            os.environ["GITHUB_ACTIONS"] = _saved
     return bad
 
 

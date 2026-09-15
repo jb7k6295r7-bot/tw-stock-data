@@ -61,6 +61,28 @@ PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
 _REAL = PATH
 
 
+def on_actions():
+    """這一趟是不是在 GitHub Actions 上跑的。→ bool。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要收成一份：兩份的判準**不一樣**，而它們的結論相反
+
+    2026-09-15 實際狀況：
+
+    ```
+    runlog._block          os.environ.get("GITHUB_ACTIONS") == "true"   ← 對
+    backfill.probe_stamp   os.environ.get("GITHUB_ACTIONS")             ← ⛔ 只看真假值
+    ```
+
+    ⇒ `GITHUB_ACTIONS="false"`（自測要造「本機」那一種情境時會這樣設）
+      在後者是**真**的 ⇒ 它會說「這是 Actions 跑的」並**拿掉那句警語**。
+    ⚠ 而那句警語正是「這份輸出的抓取結果不可信」——⛔ 拿掉之後看起來像真的。
+
+    ⭐ GitHub 官方保證這個變數在 Actions 上**逐字是 `"true"`**
+    ⇒ 判準寫成 `== "true"`，⛔ 不是「有沒有設」。
+    """
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
 def who():
     """這一塊是**誰、被什麼觸發**寫的。→ 一段接在時戳後面的字（可能是空的）。
 
@@ -85,7 +107,7 @@ def who():
     （`feeds:calendar-audit` 手動、`feeds:margin` 天天）⇒ cadence 不是程式的性質，
     ⛔ 是**這一趟**的性質。⇒ 只有這一趟自己講得準（第二點）。
     """
-    if os.environ.get("GITHUB_ACTIONS") != "true":
+    if not on_actions():
         return ""
     ev = os.environ.get("GITHUB_EVENT_NAME") or "?"
     wf = os.environ.get("GITHUB_WORKFLOW") or "?"
@@ -126,7 +148,7 @@ class Run:
         #   ⭐ 這裡不擋寫入（本地跑 `missing_rows.py` 之類算本地資料的是正當的），
         #     但**一定要標出來**：讀的人要分得出「這是 Actions 跑的」還是
         #     「某人在容器裡跑的」——後者的網路結果一律不可信。
-        where = ("" if os.environ.get("GITHUB_ACTIONS") == "true"
+        where = ("" if on_actions()
                  else "　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；"
                       "⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）")
         out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）"
