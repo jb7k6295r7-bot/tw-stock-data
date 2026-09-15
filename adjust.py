@@ -117,8 +117,12 @@ EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
               #     所以照樣要還原——否則算 ETF 長期報酬會踩到同一種靜默錯誤。
               ("twse", "etfsplit", os.path.join(UNI_DIR, "etfsplit")),
               # ★★ 上櫃面額變更（2026-09-09 接上）。**來源不是官方公告，是股數倍率推導**
-              #   （`otcparvalue.py`，四道閘門）。TWSE TWTB8U 只涵蓋上市、
-              #   TPEx 沒有對應端點，所以這 14 筆只能這樣算。
+              #   （`otcparvalue.py`，四道閘門）。TWSE TWTB8U 只涵蓋上市。
+              # ⛔⛔ 而「TPEx 沒有對應端點」那句 2026-09-15 被推翻了：
+              #   `POST /www/zh-tw/bulletin/pvChgRslt`（跟 exDailyQ／revivt 同一族）
+              #   帶 startDate／endDate 回 **14 筆**，而且回應**回顯了我請求的區間**。
+              #   ⚠ 舊那句的掃描範圍只有 swagger，⛔ 而它住在公告區。
+              #   ⇒ 下面那句「日後官方端點出現時官方優先」**現在該兌現了**。
               #   因子 ＝ 股數前 ÷ 股數後，是精確值（實測 14/14 是分母 ≤4 的整數比）。
               #   ⚠ 日後 TPEx 官方端點出現時**官方優先**，衝突要報 ✗ 不可靜默取一邊
               #     ——那道閘門寫在 `otcparvalue.py` 裡。
