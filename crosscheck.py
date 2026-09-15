@@ -340,6 +340,94 @@ def dealer_check(rl):
              else f"{tot:,} 列全過")
 
 
+def tdcc_seam(root=None):
+    """集保**兩層重疊的那幾週**要逐格相同。→ `(重疊週數, 可比格數, [不符…])`。
+
+    ## ⛔ 這道閘門要擋的事：**兩層是重疊的，而重疊處沒有人在比**
+
+    集保現在有兩層，⚠ 而它們**不是接續的，是重疊的**：
+
+        data/tdcc/<資料日>.csv      `tdcc.py` 每週寫一份，**往後累積**
+        data/tdcc_hist/<年>.parquet 2019-06-28 ~ 2026-09-11，**凍結不再改**
+
+    ⇒ 2026-09-04 與 2026-09-11 **兩層都有**（實測 137,802 格逐格相同）。
+    ⛔ 所以讀的人取聯集時一定要照 `date` 去重，⚠ 否則那兩週會被**算兩次**。
+
+    ## ⭐ 而這道閘門比「去重」更前面一步
+
+    重疊處若哪天**對不上**，代表兩件事之一：
+    ① 那批封存有問題，或 ② `tdcc.py` 的解析改過而 parquet 沒跟上（四點五那一族）
+    ⇒ 兩種都要人看，⛔ 不可以自動挑一邊。
+
+    ⚠ 而母體是**結構性穩定**的（parquet 凍結、csv 只往後長）⇒ 重疊永遠是那幾週
+    ⇒ 母體變 0 就代表有人動了不該動的東西 ⇒ 那也要紅。
+    """
+    base = root or _ROOT
+    try:
+        import pyarrow.parquet as pq
+    except ImportError as ex:                                # noqa: BLE001
+        return None, f"⚠ 這台沒有 {ex.name}"
+    # ⛔ 第一版把 8 個年檔（2,061 萬列）整份讀進 dict ⇒ 120 秒還沒跑完。
+    #   ⭐ 而要比的只有 `data/tdcc/` 那幾週 ⇒ **先看 csv 有哪幾天**，
+    #     只讀那幾年、而且只留那幾天的列。
+    csvs = sorted(glob.glob(os.path.join(base, "tdcc", "*.csv")))
+    want = {os.path.basename(p)[:-4] for p in csvs}
+    years = {d[:4] for d in want}
+    par = {}
+    for f in sorted(glob.glob(os.path.join(base, "tdcc_hist", "*.parquet"))):
+        if os.path.basename(f)[:-8] not in years:
+            continue
+        t = pq.read_table(f).to_pydict()
+        for i in range(len(t["date"])):
+            if t["date"][i] not in want:
+                continue
+            par[(t["date"][i], t["stock_id"][i], int(t["level"][i]))] = (
+                int(t["people"][i]), int(t["shares"][i]), round(float(t["pct"][i]), 4))
+    if not par:
+        return (0, 0, []), ("⛔ 沒有 tdcc_hist/*.parquet"
+                            if not glob.glob(os.path.join(base, "tdcc_hist", "*"))
+                            else "⚠ 兩層目前**沒有重疊的週**")
+    weeks, cells, bad = set(), 0, []
+    for p in csvs:
+        for r in csv.DictReader(io.open(p, encoding="utf-8")):
+            try:
+                k = (r["date"], r["stock_id"], int(r["level"]))
+                mine = (int(r["people"]), int(r["shares"]),
+                        round(float(r["pct"]), 4))
+            except (KeyError, ValueError, TypeError):
+                continue
+            if k not in par:
+                continue                # ⚠ 不重疊的週不算不符（csv 往後長是正常的）
+            weeks.add(r["date"])
+            cells += 1
+            if mine != par[k]:
+                bad.append((k, mine, par[k]))
+    return (len(weeks), cells, bad), ""
+
+
+def tdcc_check(rl):
+    got, note = tdcc_seam()
+    if got is None:
+        # ⭐ 寫成不會被讀成「驗過了」的樣子（六點五）
+        rl.info("⚠⚠ **這一層沒跑**", f"⑥ 集保兩層重疊比對：{note}"
+                                      "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+        return
+    weeks, cells, bad = got
+    rl.info("⑥ 集保兩層**重疊**的週要逐格相同",
+            f"重疊 {weeks} 週｜可比 {cells:,} 格｜不符 {len(bad):,}"
+            + (f"｜⛔ 前 3：{bad[:3]}" if bad else "")
+            + "　⚠ 兩層是**重疊**不是接續 ⇒ ⛔ 讀的人取聯集要照 `date` 去重")
+    # ⭐ 先釘母體：⛔「0 格可比」跟「全部通過」在報表上長得一樣
+    #   ⚠ 而這裡的母體是**結構性穩定**的（parquet 凍結、csv 只往後長）
+    #   ⇒ 它變 0 就代表有人動了 `data/tdcc/` 或 `data/tdcc_hist/`，那也要紅。
+    rl.check("⑥ 兩層真的還有重疊可比（⛔ 0 格跟全部通過長得一樣）",
+             cells > 0, f"{weeks} 週／{cells:,} 格{note and '｜' + note}")
+    rl.check("⑥ 重疊的那幾週**逐格相同**（⛔ 一格都不准不同）",
+             not bad,
+             f"⛔ **{len(bad):,} 格不同**：{bad[:3]}" if bad
+             else f"{cells:,} 格全過")
+
+
 def main():
     rl = runlog.Run("crosscheck")
     rl.info("這一支在做什麼", "幫原本只有自我一致（C 級）的資料找第二個判準；"
@@ -348,6 +436,7 @@ def main():
     margin_check(rl)
     per_check(rl)
     dealer_check(rl)
+    tdcc_check(rl)
     exright_identity_check(rl)
     return rl.finish()
 

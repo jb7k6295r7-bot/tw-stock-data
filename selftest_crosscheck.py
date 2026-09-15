@@ -219,6 +219,113 @@ def main():
         C._ROOT = old5
         shutil.rmtree(d5, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⑥ 集保**兩層重疊**的那幾週要逐格相同
+    #
+    # ⭐ 判準本身拿**合成**資料驗（第七點第七個陷阱）：造一個兩層都有的假庫，
+    #   ⛔ 不拿現場的 tdcc_hist 驗——那會把這條斷言的壽命綁在
+    #     「現在剛好有那兩週重疊」上。
+    # ⚠ 這一節要 pyarrow ⇒ 缺就**大聲印「這一層沒跑」**，⛔ 不算失敗（六點五）。
+    # ══════════════════════════════════════════════════════════════
+    print("\n[⑥] 集保兩層重疊的週")
+    try:
+        import pyarrow as _pa
+        import pyarrow.parquet as _pq
+        _HAS6 = True
+    except ImportError:
+        _HAS6 = False
+    if not _HAS6:
+        print("  ⚠⚠ **這一層沒跑**：這台沒有 pyarrow"
+              "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+    else:
+        d6 = tempfile.mkdtemp()
+        old6 = C._ROOT
+        try:
+            C._ROOT = d6
+            os.makedirs(os.path.join(d6, "tdcc"))
+            os.makedirs(os.path.join(d6, "tdcc_hist"))
+
+            def _mk(days, bump=0):
+                """兩層各寫一份。`bump` 不是 0 就讓 csv 的某一格跟 parquet 不同。"""
+                recs = [(d, c, lv, 10 + lv, 100 * lv, 1.5)
+                        for d in days for c in ("1101", "2330") for lv in (1, 2, 17)]
+                _pq.write_table(_pa.table({
+                    "date": _pa.array([r[0] for r in recs]),
+                    "stock_id": _pa.array([r[1] for r in recs]),
+                    "level": _pa.array([r[2] for r in recs], _pa.int8()),
+                    "people": _pa.array([r[3] for r in recs], _pa.int64()),
+                    "shares": _pa.array([r[4] for r in recs], _pa.int64()),
+                    "pct": _pa.array([r[5] for r in recs], _pa.float32()),
+                }), os.path.join(d6, "tdcc_hist", days[0][:4] + ".parquet"))
+                for d in days:
+                    with io.open(os.path.join(d6, "tdcc", d + ".csv"), "w",
+                                 encoding="utf-8", newline="") as f:
+                        f.write("date,stock_id,level,people,shares,pct\n")
+                        for r in recs:
+                            if r[0] != d:
+                                continue
+                            sh = r[4] + (bump if (r[1] == "2330" and r[2] == 1) else 0)
+                            f.write(f"{r[0]},{r[1]},{r[2]},{r[3]},{sh},{r[5]}\n")
+
+            _mk(["2020-01-03", "2020-01-10"])
+            (wk, cells, bad), _n = C.tdcc_seam()
+            ck("⑥ 兩層一致 ⇒ 不符 0", wk == 2 and cells == 12 and not bad,
+               f"{wk} 週／{cells} 格／{len(bad)} 不符")
+
+            # ⛔ 有一格不同 ⇒ 要抓到（⭐ 而且要**指得出**是哪一格）
+            _mk(["2020-01-03", "2020-01-10"], bump=7)
+            (wk, cells, bad), _n = C.tdcc_seam()
+            ck("⛔ csv 有一格跟 parquet 不同 ⇒ 抓到",
+               len(bad) == 2 and all(b[0][1] == "2330" for b in bad), str(bad[:2]))
+
+            # ⭐ csv 多出一週（往後長）**不算**不符——⛔ 那是正常的
+            with io.open(os.path.join(d6, "tdcc", "2020-02-07.csv"), "w",
+                         encoding="utf-8", newline="") as f:
+                f.write("date,stock_id,level,people,shares,pct\n")
+                f.write("2020-02-07,1101,1,11,100,1.5\n")
+            _mk(["2020-01-03", "2020-01-10"])
+            (wk, cells, bad), _n = C.tdcc_seam()
+            ck("⭐ csv 比 parquet 多一週（往後長）⇒ **不算**不符",
+               wk == 2 and not bad, f"{wk} 週／{len(bad)} 不符")
+
+            # ⛔⛔ 完全沒有重疊 ⇒ 母體那道要**紅**（⚠ 不是靜靜通過）
+            shutil.rmtree(os.path.join(d6, "tdcc_hist"))
+            os.makedirs(os.path.join(d6, "tdcc_hist"))
+            _pq.write_table(_pa.table({
+                "date": _pa.array(["2019-01-04"]),
+                "stock_id": _pa.array(["1101"]),
+                "level": _pa.array([1], _pa.int8()),
+                "people": _pa.array([1], _pa.int64()),
+                "shares": _pa.array([1], _pa.int64()),
+                "pct": _pa.array([1.0], _pa.float32()),
+            }), os.path.join(d6, "tdcc_hist", "2019.parquet"))
+            rl6 = Rec()
+            C.tdcc_check(rl6)
+            ck("⛔⛔ 完全沒有重疊 ⇒ 母體那道**紅**（⚠ 0 格跟全部通過長得一樣）",
+               any("有重疊可比" in k and c is False for k, c, _d in rl6.checks),
+               str(rl6.checks))
+
+            # ⛔ 目錄不在也不可以炸
+            # ⚠ 而這一條要**接住例外再判**（第七點第二個陷阱）：
+            #   不接住的話，「它炸了」會讓整支測試當場中斷、後面一條都不跑，
+            #   ⛔ 而輸出裡連一個 `✗` 都不會有。
+            shutil.rmtree(os.path.join(d6, "tdcc_hist"))
+            try:
+                got6 = C.tdcc_seam()
+            except Exception as ex6:                         # noqa: BLE001
+                got6 = None
+                _why6 = f"⛔ 炸了：{type(ex6).__name__}: {ex6}"
+            if got6 is None:
+                ck("⛔ 沒有 tdcc_hist ⇒ 回 0 而不是炸掉，而且講得出原因",
+                   False, _why6)
+            else:
+                (wk, cells, bad), note = got6
+                ck("⛔ 沒有 tdcc_hist ⇒ 回 0 而不是炸掉，而且講得出原因",
+                   (wk, cells, bad) == (0, 0, []) and "tdcc_hist" in note, note)
+        finally:
+            C._ROOT = old6
+            shutil.rmtree(d6, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
