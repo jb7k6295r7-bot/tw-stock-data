@@ -497,3 +497,5 @@
 - 收信（05:38:13Z 之後）：只有本線 1425 ⇒ 水位不動。
 - 驗終點：`origin/main` 仍 2d0848bb6（14:11 data）；p4_types 只有 README／universe／v0；`researchp4`、`resultsp4`、`P4_v3`、`researchp3`、`PREREGP3` 都不在；`forward_p4.py` 沒有 V1_START ⇒ 1325 二節兩件仍等資料庫線。
 - 無可自行推進的工作（P3 等過目、P4 等①序列、P1b 等種子）。自喚醒 16:15。
+## 2026-09-15 16:17：16:15 自喚醒——零新信；main 未動（2d0848bb6，14:11）
+- 收信（05:38:13Z 之後）：只有本線 1425 ⇒ 水位不動。main 仍無 centers_v3／researchp4／researchp3／V1_START。無可自行推進的工作。自喚醒 17:15。
