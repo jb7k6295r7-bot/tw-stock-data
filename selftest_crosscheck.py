@@ -326,6 +326,34 @@ def main():
             C._ROOT = old6
             shutil.rmtree(d6, ignore_errors=True)
 
+    # ───── ⑦ 月營收兩條路：⛔ 這裡只驗「**每天都有人叫它**」 ─────
+    #  ⚠ 判準本體的斷言在 `selftest_mops_history.py`（⭐ 唯一那一份，四點五）
+    #    ⇒ ⛔ 不在這裡再寫一次合成資料——那就是第二份實作。
+    #  ⭐ 這一節存在的理由是四點二⑦：函式寫好了 ≠ 它會被執行。
+    print("\n── ⑦ 月營收兩條路的呼叫點 ──")
+    import ast
+    _src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "crosscheck.py"), encoding="utf-8").read()
+    _tree = ast.parse(_src)
+    _main = next(n for n in _tree.body
+                 if isinstance(n, ast.FunctionDef) and n.name == "main")
+    _called = {getattr(n.func, "id", "") for n in ast.walk(_main)
+               if isinstance(n, ast.Call)}
+    ck("⭐⭐ `crosscheck.main()` 真的會叫 ⑦（⛔ feeds.yml 沒有 cron ⇒ "
+       "掛在 mops_history 自己那邊只有手動派工才跑）",
+       "revenue_twopath_check" in _called, str(sorted(x for x in _called if x)))
+    _fn7 = next((n for n in _tree.body if isinstance(n, ast.FunctionDef)
+                 and n.name == "revenue_twopath_check"), None)
+    _calls7 = {getattr(n.func, "attr", "") for n in ast.walk(_fn7)
+               if isinstance(n, ast.Call)} if _fn7 else set()
+    ck("⭐ 而 ⑦ 是**叫 mops_history 那一份**（⛔ 不是自己再實作一次判準）",
+       "two_path_summary" in _calls7, str(sorted(x for x in _calls7 if x)))
+    _ck7 = [n for n in ast.walk(_fn7) if isinstance(n, ast.Call)
+            and getattr(n.func, "attr", "") == "check"] if _fn7 else []
+    ck("⭐ ⑦ 有**兩道** check：先釘母體、再判缺口"
+       "（⛔ 0 期可比跟全部通過長得一樣）",
+       len(_ck7) == 2, str(len(_ck7)))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

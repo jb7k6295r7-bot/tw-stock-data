@@ -428,6 +428,37 @@ def tdcc_check(rl):
              else f"{cells:,} 格全過")
 
 
+def revenue_twopath_check(rl):
+    """⑦ 月營收**兩條路**的類別差集（CLAUDE.md 五點二）。
+
+    ⭐ 判準與實作都在 `mops_history.class_gaps`（**唯一那一份**，四點五）——
+    ⛔ 這裡只負責「**每天都有人叫它**」。
+    ⚠ 理由：`feeds.yml` **沒有 cron**（只吃 workflow_dispatch）
+      ⇒ 掛在 `mops_history` 自己的 runlog 裡，那道閘門只在我手動派工時才跑
+      ⇒ ⛔ 那不叫常駐（四點二⑦：檔名在 workflow 裡 ≠ 它會被執行）。
+    """
+    try:
+        import mops_history as MH
+    except Exception as ex:                                      # noqa: BLE001
+        # ⭐ 寫成不會被讀成「驗過了」的樣子（六點五）
+        rl.info("⚠⚠ **這一層沒跑**", f"⑦ 月營收兩條路：import 失敗 {str(ex)[:80]}"
+                                      "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+        return
+    n_cmp, bad = MH.two_path_summary()
+    rl.info("⑦ 月營收兩條路（當期 feed vs 歷史面板）的**類別**差集",
+            f"比得了 **{n_cmp}** 期｜一整類只有一邊有的 **{len(bad)}** 期"
+            + (f"｜⛔ 前 3：{bad[:3]}" if bad else "")
+            + "　⚠ 比的是類別（KY／DR／一般），⛔ 不是總數"
+              "——期別重分組與倖存者偏誤都會讓總數差，那是正當的")
+    # ⭐ 先釘母體：⛔「0 期可比」跟「全部通過」在報表上長得一樣
+    rl.check("⑦ 兩條路真的還有**同一期**可比（⛔ 0 期跟全部通過長得一樣）",
+             n_cmp > 0, f"比得了 {n_cmp} 期")
+    rl.check("⑦ 沒有**一整類**只在其中一條路上"
+             "（⛔ 這一族兩邊都不會報錯——KY 就這樣缺了一年多）",
+             not bad, f"⛔ **{len(bad)} 期**：{bad[:3]}" if bad
+             else f"{n_cmp} 期全過")
+
+
 def main():
     rl = runlog.Run("crosscheck")
     rl.info("這一支在做什麼", "幫原本只有自我一致（C 級）的資料找第二個判準；"
@@ -438,6 +469,7 @@ def main():
     dealer_check(rl)
     tdcc_check(rl)
     exright_identity_check(rl)
+    revenue_twopath_check(rl)
     return rl.finish()
 
 
