@@ -326,6 +326,52 @@ with tempfile.TemporaryDirectory() as d:
         ck("  ⭐ 讀回來 34 列（2 檔 × 17 級）", _t2.num_rows == 34, str(_t2.num_rows))
         ck("  ⭐ 欄名逐字＝HIST_COLS", _t2.column_names == T.HIST_COLS, str(_t2.column_names))
 
+        # ⭐⭐ 檔數斷崖：⛔ 三道驗算抓不到「截斷剛好落在列邊界」那一種
+        import shutil as _sh1; _sh1.rmtree(out, ignore_errors=True)
+        T.OUT_DIR = os.path.join(d, "nope2")
+        for f in list(os.listdir(src)):
+            os.remove(os.path.join(src, f))
+        def _many(day, n_codes):
+            out_rows = []
+            for i in range(n_codes):
+                code = f"{1000+i}"
+                tp = ts = 0
+                for lv in range(1, 18):
+                    if lv <= 15: p, sh = 10*lv, 100*lv; tp += p; ts += sh
+                    elif lv == 16: p, sh = 7, 500; ts -= sh
+                    else: p, sh = tp, ts
+                    out_rows.append({"資料日期": day, "證券代號": code,
+                                     "持股分級": str(lv), "人數": str(p),
+                                     "股數": str(sh), "占集保庫存數比例%": "1.0"})
+            return out_rows
+        for day, n in (("20230106", 100), ("20230113", 100), ("20230120", 100),
+                       ("20230127", 60)):      # ⛔ 最後一週斷崖，⚠ 但每檔都剛好 17 級
+            _w(f"{day}.csv", _many(day, n))
+        rl = FakeRun()
+        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+        ck("⭐⭐ 檔數斷崖（60 vs 中位 100）⇒ 擋下來"
+           "　⚠ 而那四週**三道驗算全過**（⛔ 它們抓不到截斷）",
+           any("斷崖" in k and c is False for k, c, _ in rl.checks)
+           and not os.path.isdir(out), str([c for c in rl.checks]))
+        ck("  ⭐ 而三道驗算那一條是**綠的**（⇒ 證明斷崖這道不是多餘的）",
+           any("三道驗算" in k and c is True for k, c, _ in rl.checks),
+           str(rl.checks))
+        ck("  ⭐ 訊息講得出**檔數、中位數、檔案大小**（⇒ 看得出是截斷）",
+           any("斷崖" in k and "中位" in dt and "bytes" in dt
+               for k, _c, dt in rl.checks), str(rl.checks))
+        # ⭐ 反向：檔數正常的四週不可以假紅
+        _w("20230127.csv", _many("20230127", 98))
+        rl = FakeRun()
+        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+        ck("⭐ 反向：98 vs 中位 100（差 2%）⇒ 不可以假紅",
+           any("斷崖" in k and c is True for k, c, _ in rl.checks)
+           and os.path.exists(os.path.join(out, "2023.parquet")), str(rl.checks))
+        for f in list(os.listdir(src)):
+            os.remove(os.path.join(src, f))
+        _sh1.rmtree(out, ignore_errors=True)
+        _w("20190628.csv", _rows("20190628"))
+        T.OUT_DIR = os.path.join(d, "nope")
+
         # ⭐⭐ 重疊週對不上 ⇒ 擋下來
         T.OUT_DIR = os.path.join(d, "mine"); os.makedirs(T.OUT_DIR)
         with io.open(os.path.join(T.OUT_DIR, "2019-06-28.csv"), "w",

@@ -284,6 +284,7 @@ def import_hist(rl, src, out_dir=None, apply=False):
 
     by_year, bad_files, name_mismatch = {}, [], []
     seen_day, dup_same, dup_diff = {}, [], []
+    n_codes = {}
     n_rows = 0
     for path in files:
         rows, note = read_hist_week(path)
@@ -328,6 +329,7 @@ def import_hist(rl, src, out_dir=None, apply=False):
                 dup_diff.append((base, prev_name, day))
             continue
         seen_day[day] = (base, recs)
+        n_codes[day] = (len(by), os.path.getsize(path))
         by_year.setdefault(day[:4], []).extend(recs)
         n_rows += len(rows)
 
@@ -353,6 +355,39 @@ def import_hist(rl, src, out_dir=None, apply=False):
              not dup_diff,
              f"⛔ {len(dup_diff)} 組矛盾：{dup_diff[:5]}" if dup_diff
              else f"{len(seen_day)} 週沒有矛盾")
+
+    # ⭐⭐ 檔數的**斷崖**：一份被截斷的週檔，證券會從某一個代號之後整批消失
+    #
+    # ⛔⛔ 2026-09-15 實測：`2023/20231020.7z` 解出來剛好 **1,572,864 bytes
+    #   ＝ 1.5 MiB**，結尾沒有換行、最後一列切在一半 ⇒ 那一週只有 2,787 檔，
+    #   而同年其他週是 4,000 出頭 ⇒ **一千多檔整批不見**。
+    # ⚠⚠ 而三道驗算**差一點就全過**：這次只因為截斷剛好落在**列中間**
+    #   （8162 只有 2 級）才被「非 17 級」那道碰巧抓到。
+    #   ⛔ 截斷若落在**列邊界**上，每一檔都剛好 17 級、恆等式也都成立
+    #   ⇒ 三道全過，而幾百檔靜靜消失。
+    # ⇒ ⭐ 所以檔數要**自己有一道**，⛔ 不可以靠那三道順便。
+    #
+    # ⚠ 門檻用**同年的中位數**，⛔ 不是寫死一個數字：檔數逐年在長
+    #   （2019 約 2,689 → 2026 約 4,055）⇒ 寫死的門檻對某幾年一定是錯的。
+    cliffs = []
+    by_year_codes = {}
+    for day, (n, _sz) in n_codes.items():
+        by_year_codes.setdefault(day[:4], []).append((day, n))
+    for year, pairs in sorted(by_year_codes.items()):
+        med = sorted(n for _d, n in pairs)[len(pairs) // 2]
+        for day, n in sorted(pairs):
+            if med and n < med * 0.9:
+                cliffs.append((day, n, med, n_codes[day][1]))
+    rl.info("⭐ 逐年檔數（中位數）",
+            "｜".join(f"{y} {sorted(n for _d, n in v)[len(v)//2]:,}"
+                      for y, v in sorted(by_year_codes.items())))
+    rl.check("⭐⭐ 沒有哪一週的檔數對同年中位數**斷崖**（< 90%）"
+             "　⚠ 截斷的週檔就長這樣，⛔ 而三道驗算抓不到它",
+             not cliffs,
+             f"⛔ {len(cliffs)} 週斷崖："
+             + "｜".join(f"{d} {n:,}檔 vs 中位 {m:,}（檔 {sz:,} bytes）"
+                         for d, n, m, sz in cliffs[:5])
+             if cliffs else f"{len(n_codes)} 週都在中位數 90% 以上")
 
     # ⭐⭐ 重疊那幾週是**閘門**：跟 `data/tdcc/` 我方自己抓的逐格對
     ours, same, diff = {}, 0, []
@@ -386,7 +421,7 @@ def import_hist(rl, src, out_dir=None, apply=False):
                  not diff,
                  f"⛔ {len(diff)} 週對不上：{diff[:3]}" if diff
                  else f"{same} 週逐格相同")
-    if bad_files or dup_diff or diff:
+    if bad_files or dup_diff or diff or cliffs:
         rl.info("⛔ 有沒過的驗算 ⇒ **一個檔都不寫**", "先把上面那幾項弄清楚")
         return rl.finish()
 
