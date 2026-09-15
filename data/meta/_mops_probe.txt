@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T20:55:59+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34970454552
+# ⏱ 這一趟：2026-09-15T21:27:42+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34973538510
 # MOPS／OpenAPI 探針（丁級 11 終點驗證）
 # ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果
 
@@ -32,7 +32,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:54:59
+      ── datetime：115/09/15 21:26:07
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -41,7 +41,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:55:12
+      ── datetime：115/09/15 21:26:20
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018…（blob 長 316）
@@ -53,7 +53,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:55:23
+      ── datetime：115/09/15 21:26:33
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa8…（blob 長 317）
@@ -62,7 +62,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:55:29
+      ── datetime：115/09/15 21:26:46
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa8…（blob 長 317）
@@ -79,7 +79,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:55:33
+      ── datetime：115/09/15 21:26:58
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -88,7 +88,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:55:35
+      ── datetime：115/09/15 21:26:59
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a…（blob 長 311）
@@ -105,7 +105,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/15 20:55:36
+      ── datetime：115/09/15 21:27:01
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -236,16 +236,16 @@
            SUBJECT：277 種｜最小 (更正舉辦單位)受邀參加第一金證券舉辦之2026第三季投資論壇｜最大 玉山金控受邀參加Goldman Sachs舉辦Asia Leaders Conference｜例 ['(更正舉辦單位)受邀參加第一金證券舉辦之2026第三季投資論壇', '110年11月法人說明會簡報', '111年11月法人說明會簡報']
            TYPEK：1 種 上市×1000
       ── step=01｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
-         [形狀] 3,340 bytes｜中文 224 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"system_time":"20:50","data":[{"COMPANY_NAME":"台蠟","CDATE":"115/09/15","CTIME":"19:52:58","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=4&SPOKE_TIME=195258&SPOKE_DATE=20260915&COMPANY_ID=1742","SUBJECT":"公告本公司新任管理部副總經理","COMPANY_ID":"1742"},{"COM
+         [形狀] 3,452 bytes｜中文 237 字｜<tr> 0 個｜js 0 支
+         ⭐ 前 300 字：﻿ {"system_time":"21:20","data":[{"COMPANY_NAME":"定穎投控","CDATE":"115/09/15","CTIME":"20:57:33","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=205733&SPOKE_DATE=20260915&COMPANY_ID=3715","SUBJECT":"代子公司Dynamic Technology Manufacturing (Th
          ⭐ `data` **10 列**｜欄名 ['CDATE', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT']
          ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
            CDATE：1 種 115/09/15×10
-           COMPANY_ID：5 種 3041×5、2545×2、1742×1、7769×1、4763×1
-           COMPANY_NAME：5 種 揚智×5、皇翔×2、台蠟×1、鴻勁×1、材料*-KY×1
-           CTIME：10 種 19:52:58×1、19:29:23×1、19:29:12×1、19:29:00×1、19:28:49×1、19:28:32×1、18:33:54×1、18:32:38×1、18:30:25×1、18:29:25×1
-           HYPERLINK：10 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=4&SPOKE_TIME=195258&SPOKE_DATE=20260915&COMPANY_ID=1742×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=11&SPOKE_TIME=192923&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=10&SPOKE_TIME=192912&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=7&SPOKE_TIME=192900&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=6&SPOKE_TIME=192849&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=192832&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=183354&SPOKE_DATE=20260915&COMPANY_ID=7769×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=183238&SPOKE_DATE=20260915&COMPANY_ID=4763×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=183025&SPOKE_DATE=20260915&COMPANY_ID=2545×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=182925&SPOKE_DATE=20260915&COMPANY_ID=2545×1
-           SUBJECT：10 種 公告本公司新任管理部副總經理×1、代重要子公司ALi (BVI) MicroelectronicsCorporation公告董事會決議辦理現金減資事宜×1、本公司配合114年第三季及第四季合併財報重編，更正本公司114年7至12月營收公告×1、公告本公司更正115年第一季及第二季合併財務報告說明×1、公告本公司董事會決議重編114年第三季合併與第四季個體及合併財務報告說明×1、公告本公司董事會決議重編114年第三季及第四季合併財務報告×1、公告本公司受邀參加瑞銀證券(UBS)舉辦之UBS Taiwan Summit 2026×1、公告本公司115年第一次股東臨時會重要決議事項×1、公告處分有價證券×1、公告取得有價證券×1
+           COMPANY_ID：5 種 3041×5、7769×2、3715×1、1742×1、4763×1
+           COMPANY_NAME：5 種 揚智×5、鴻勁×2、定穎投控×1、台蠟×1、材料*-KY×1
+           CTIME：10 種 20:57:33×1、20:55:44×1、19:52:58×1、19:29:23×1、19:29:12×1、19:29:00×1、19:28:49×1、19:28:32×1、18:33:54×1、18:32:38×1
+           HYPERLINK：10 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=205733&SPOKE_DATE=20260915&COMPANY_ID=3715×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=205544&SPOKE_DATE=20260915&COMPANY_ID=7769×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=4&SPOKE_TIME=195258&SPOKE_DATE=20260915&COMPANY_ID=1742×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=11&SPOKE_TIME=192923&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=10&SPOKE_TIME=192912&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=7&SPOKE_TIME=192900&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=6&SPOKE_TIME=192849&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=192832&SPOKE_DATE=20260915&COMPANY_ID=3041×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=183354&SPOKE_DATE=20260915&COMPANY_ID=7769×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=183238&SPOKE_DATE=20260915&COMPANY_ID=4763×1
+           SUBJECT：10 種 代子公司Dynamic Technology Manufacturing (Thailand)公告取得設備×1、本公司代子公司Top Vintage International Ltd.公告取得固定收益證券×1、公告本公司新任管理部副總經理×1、代重要子公司ALi (BVI) MicroelectronicsCorporation公告董事會決議辦理現金減資事宜×1、本公司配合114年第三季及第四季合併財報重編，更正本公司114年7至12月營收公告×1、公告本公司更正115年第一季及第二季合併財務報告說明×1、公告本公司董事會決議重編114年第三季合併與第四季個體及合併財務報告說明×1、公告本公司董事會決議重編114年第三季及第四季合併財務報告×1、公告本公司受邀參加瑞銀證券(UBS)舉辦之UBS Taiwan Summit 2026×1、公告本公司115年第一次股東臨時會重要決議事項×1
       ── step=02｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
          [形狀] 41,534 bytes｜中文 640 字｜<tr> 0 個｜js 0 支
          ⭐ 前 300 字：﻿ 公司現況及股權變動 E01 公開說明書 F01 公司基本資料 F02 募資計畫 F03 變更登記 F04 特別股 F07 員工認股權憑證 F08 員工認股權憑證執行情形 F09 限制員工權利新股 F10 僑外投資持股 F11 庫藏股基本資料 F12 庫藏股買回情形 F13 庫藏股執行結果 M11 發行有價證券、減資、併購或股份轉交換 M35 庫藏股 M36 減資或面額異動 M40 暫停/恢復交易 M42 終止上市 重大交易、合約及投資 F37 公開收購說明書 M10 重要契約或產品開發 M15 重大投資計畫 M20 重大取得或處分資產 M24 取得或處分私募證券 M38 公開收購 重大訊息

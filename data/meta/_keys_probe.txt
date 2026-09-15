@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T20:51:24+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34970454552
+# ⏱ 這一趟：2026-09-15T21:23:15+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34973538510
 # keys_probe.py 的輸出。**只讀不寫資料。**
 # 問的是：官方回應裡那些我方一路丟掉的鍵，到底寫了什麼。
 # ⛔ 我方 `_tables()` 只取 title/fields/data，其餘全丟，而且丟的時候沒有紀錄。
@@ -301,6 +301,24 @@
       ⇒ ⭐ 金額 **−0.40%**、筆數 **−2.6%**，⛔ 而股數 **−29%**
       ⇒ ⚠ 口徑差**不是一個籠統的差**：它落在不同欄、幅度也不同
 
+  ── ⭐ 同一天（2026-09-09）三條路並排
+     ① 我方日檔 twse 1,382 列｜股數 6,558,338,220｜金額 812,844,043,053｜筆數 4,056,475
+
+  ── FMTQIK（同一天，⭐ 拿來當被減數）
+     https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date=20260909&response=json
+     頂層鍵 ['data', 'date', 'fields', 'hints', 'notes', 'stat', 'title']
+     ⭐ 平常被丟掉的鍵：['date', 'hints', 'notes', 'stat']
+       ── title：115年09月市場成交資訊
+       ── notes（2 項）
+          當日統計資訊含大盤、零股、盤後定價及鉅額交易，不含拍賣、標購。
+          外幣成交值係以本公司當日下午3時30分公告匯率換算後加入成交金額。公告匯率請參考本公司首頁>產品與服務>交易系統>雙幣ETF專區>代號對應及每日公告匯率。
+       ── hints：單位：元、股
+       ── date：20260909
+       ── stat：OK
+     表0：'115年09月市場成交資訊'｜6 欄 × 11 列
+          欄名：['日期', '成交股數', '成交金額', '成交筆數', '發行量加權股價指數', '漲跌點數']
+          ⭐ 逐欄合計：成交股數 109,936,741,743｜成交金額 9,565,168,791,588｜成交筆數 50,737,940
+
   ── 鉅額交易**日**成交量值統計 BFIAUU
      https://www.twse.com.tw/rwd/zh/block/BFIAUU?date=20260909&response=json&type=day
      頂層鍵 ['buyNo', 'data', 'date', 'fields', 'notes', 'selectType', 'sideL', 'sideR', 'stat', 'stockType', 'sub', 'title']
@@ -317,7 +335,11 @@
        ── stat：OK
        ── stockType：
        ── sub：
+     表0：'115年09月09日 鉅額交易日成交資訊-單一證券'｜6 欄 × 49 列
+          欄名：['證券代號', '證券名稱', '交易別', '成交價', '成交股數', '成交金額']
+          ⭐ 逐欄合計：成交股數 55,095,672｜成交金額 25,351,537,048
 
   ── 每日上市上櫃跨市場成交資訊 MI_INDEX4
      https://www.twse.com.tw/rwd/zh/indices/MI_INDEX4?date=20260909&response=json
      ⛔ 不是 JSON（747 bytes）⇒ 這一條**沒量到**
+     ⭐ 前 300 字：404 此網頁不存在 請回到本公司 首頁 ,查找您所需要的資訊 This page does not exist. Please return to our homepage to find the information you need.

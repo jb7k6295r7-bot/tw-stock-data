@@ -1009,6 +1009,16 @@
 - ok　⭐ `notrade` 這一類抓得到（⛔ 0 的話代表判準壞了，⚠ 而它壞掉的表現是「每個洞看起來都是斷點」）　（notrade 1,356｜halted 26（⇒ 兩類都不是 0 才證明分得開））
 - ok　⭐ `halted` 這一類也抓得到（⚠ 正例，⛔ 一個只會回 notrade 的分類器沒有用）　（halted 26）
 
+## ci_steps　✓ 正常
+
+最後執行：2026-09-15T21:28:16+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 34973538510
+
+- **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
+- **跑過的自測**：1 支｜selftest_probes.py
+
+檢查：
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
+
 ## reduce_shares_check　✓ 正常
 
 最後執行：2026-09-15T19:17:21+08:00（台北）
@@ -1068,14 +1078,4 @@
 檢查：
 - ok　⭐ 這道閘門真的掃到東西了（⛔ 掃到 0 支跟全部通過長得一樣）　（有判的 feed 11 支）
 - ok　逐日 feed 沒有列數塌掉的日子　（0 天）
-
-## ci_steps　✓ 正常
-
-最後執行：2026-09-15T20:56:33+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 34970454552
-
-- **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **跑過的自測**：1 支｜selftest_probes.py
-
-檢查：
-- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
 
