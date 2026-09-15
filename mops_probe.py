@@ -314,6 +314,25 @@ def main():
     out.append("")
     bridge_case("ajax_t163sb04", "114", "110", out, season="02")
     out.append("")
+    # ⭐⭐ 清單 D2 的**最後一條**（市場情報分析線 1846 §二切入點①）。
+    #
+    # 已經量掉的：`t187ap04_L`／`mopsfin_t187ap04_O` 兩條 OpenAPI 都存在、
+    # 欄位形狀正是公告日要的，⛔ 而 `發言日期` 相異值**各只有 1 種** ⇒ 只有當天。
+    # ⇒ ⭐ 剩下唯一可能有歷史的就是 MOPS 的 `t05st01`（重大訊息）。
+    #
+    # ⚠ 而「它吃不吃日期參數」**不可以用讀的**——同一族已經騙過我們兩次
+    #   （`t164sb03` 四種 year／season 組合回應完全相同；
+    #     TDCC opendata 四個欄名逐位元相同）。
+    # ⇒ ⭐ 判準走**同一份** `bridge_case`：兩個期別各抓一次，**比位元組**。
+    #   ⛔ 相同就是期別參數被忽略，⚠ 而那跟「那一期真的沒有資料」長得一樣——
+    #     所以底下取的兩個期別**都是一定有重大訊息的月份**。
+    #
+    # ⚠⚠ 參數名是**我依同族慣例拼的**（`year`／`month`／`day`），⛔ 不是查到的。
+    #   ⭐ 而這不影響結論的可信度：`one()` 會把 `params` 的**回顯**印出來
+    #     ⇒ 我送的參數有沒有生效，回應自己會講（CLAUDE.md 第一點）。
+    #   ⇒ 若回應把我的參數換掉，那就是「這個參數是假的」，⛔ 不是「沒有歷史」。
+    bridge_case("t05st01", "114", "110", out, month="09", day="01")
+    out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
