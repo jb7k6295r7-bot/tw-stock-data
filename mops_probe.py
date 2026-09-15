@@ -702,6 +702,18 @@ def survivor_fs_case(out):
                         codes.add(str(r[0]).strip())
             out.append(f"     [形狀] {len(raw):,} bytes｜編碼 {enc}"
                        f"｜{len(tables)} 張表｜⭐ 相異代號 {len(codes)} 個")
+            # ⭐⭐ 把**整份代號**印出來（2026-09-15 第二輪加）。
+            # ⛔ 理由是 CLAUDE.md 第十個那句：
+            #   **一個「抽樣檢查點」對得上，證明的是那幾個點，⛔ 不是那一批。**
+            # ⚠ 下面那四檔是**四個點**——四格全否很強，但它仍然是四個點。
+            # ⇒ 把代號整份攤出來，`data/universe/daily/` 那邊就做得出
+            #   「140 檔已停止交易的，有幾檔在裡面」那種**母體級**的差集
+            #   （月營收那條就是這樣從 4 個點變成 140/140 的）。
+            # ⚠ 只印損益表那兩格：實測資產負債表的代號集合大小逐位相同
+            #   （sii 946／otc 756）⇒ ⛔ 再印一次是洗版，不是新資訊。
+            if form == "t163sb04":
+                out.append(f"     ⭐ 代號整份（{len(codes)} 個，供母體級差集用）："
+                           + ",".join(sorted(codes)))
             hit = [(c, n) for c, n, m, _last in want
                    if m == mkt and (c in codes or n in txt)]
             miss = [(c, n) for c, n, m, _last in want
