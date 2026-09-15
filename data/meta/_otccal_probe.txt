@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T21:19:24+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34973538510
+# ⏱ 這一趟：2026-09-15T21:50:24+08:00（台北）｜ref main｜Actions｜run 34976800629
 # otccal_probe.py 的輸出。這是探針結果，不是資料。
 # 要答的問題：**上櫃交易日曆有沒有第二來源**（目前唯一一列 C 級：只有自我一致）。
 # 判準四項見 otccal_probe.py 檔頭，⛔ 其中第 2 項（日期 min/max）是分水嶺。
@@ -8,7 +8,7 @@
 判準四項（跑之前就定好的，見檔頭）：① 是上櫃這邊的 ② 日期 min/max 蓋得到 ③ 一天一列 ④ 與我方日檔不同條路
 
 [1] 我方現況（⛔ 這是被驗的對象，不是判準）
-     `data/universe/daily/` 裡**有上櫃列**的日期：2,850 天｜2015-01-05 ~ 2026-09-11
+     `data/universe/daily/` 裡**有上櫃列**的日期：2,852 天｜2015-01-05 ~ 2026-09-15
      最大相鄰間隔 13 天（過年那一段）
 
 [2] ★ 候選 A：櫃買 openapi 的「大盤層級／歷史」端點
@@ -21,7 +21,7 @@
      欄位：['Date', 'TradeVolume', 'TradeAmount', 'NumberOfTransactions', 'TPExIndex', 'Change']
      首列：{"Date": "1150901", "TradeVolume": "902905474", "TradeAmount": "252387964702", "NumberOfTransactions": "1095837", "TPExIndex": "410.77", "Change": "9.07"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpex_daily_trading_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -32,7 +32,7 @@
      欄位：['Date', 'Open', 'High', 'Low', 'Close', 'Change']
      首列：{"Date": "20260901", "Open": "402.12", "High": "412.90", "Low": "402.12", "Close": "410.77", "Change": "9.07"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpex_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -43,7 +43,7 @@
      欄位：['Date', 'TPExIndex', 'TPExTotalReturnIndex']
      首列：{"Date": "1150901", "TPExIndex": "410.77", "TPExTotalReturnIndex": "763.21"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpex_reward_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -54,7 +54,7 @@
      欄位：['Date', 'TPEx50Index', 'TPEx50TotalReturnIndex']
      首列：{"Date": "1150901", "TPEx50Index": "607.06", "TPEx50TotalReturnIndex": "1045.97"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpex50_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -65,7 +65,7 @@
      欄位：['Date', 'TPExCorporateGovernanceIndex', 'TPExCorporateGovernanceReturnIndex']
      首列：{"Date": "1150901", "TPExCorporateGovernanceIndex": "422.07", "TPExCorporateGovernanceReturnIndex": "641.83"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpcgi_reward_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -76,7 +76,7 @@
      欄位：['Date', 'GTSMCompensationIndex', 'GTSMCompensationTotalReturnIndex']
      首列：{"Date": "1150901", "GTSMCompensationIndex": "232.55", "GTSMCompensationTotalReturnIndex": "341.69"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpci_reward_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -87,7 +87,7 @@
      欄位：['Date', 'TPExHighDividendYieldIndex', 'TPExHighDividendYieldTotalReturnIndex']
      首列：{"Date": "1150901", "TPExHighDividendYieldIndex": "412.84", "TPExHighDividendYieldTotalReturnIndex": "741.59"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tphd_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -98,7 +98,7 @@
      欄位：['Date', 'GretaiLaborEmployment88Index', 'GretaiLaborEmployment88TotalReturnIndex']
      首列：{"Date": "1150901", "GretaiLaborEmployment88Index": "359.46", "GretaiLaborEmployment88TotalReturnIndex": "585.09"}
      日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-09-01 ~ 2026-09-15｜最大相鄰間隔 3 天
-     ★ 重疊區間 2026-09-01 ~ 2026-09-11｜對方 9 天／我方 9 天
+     ★ 重疊區間 2026-09-01 ~ 2026-09-15｜對方 11 天／我方 11 天
        對方有、我方無 0 天  ← 這一類幾乎確定是我方漏抓
        我方有、對方無 0 天  ← 這一類要逐日看，⛔ 不可以自動刪
        ⇒ 【tpex_emp88_reward_index】在這個區間內與我方**完全一致**——這就是上櫃日曆缺的那個外部判準。
@@ -128,7 +128,7 @@
          tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
        ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3b7ebf1abc7c05f',t:'MTc4OTQ3ODM1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3b818ff5e30c98d',t:'MTc4OTQ4MDE5Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};

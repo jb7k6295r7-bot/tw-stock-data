@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T21:24:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34973538510
+# ⏱ 這一趟：2026-09-15T21:57:09+08:00（台北）｜ref main｜Actions｜run 34976800629
 # 上櫃 chtm（變更交易／分盤／管理股票）與 BFIB9U（融資成數調整）探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⛔ 在看到真回應之前不寫 parser。
