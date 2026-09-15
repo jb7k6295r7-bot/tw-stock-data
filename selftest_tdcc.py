@@ -40,6 +40,27 @@ sys.path.insert(0, HERE)
 import lowwater  # noqa: E402
 import tdcc as T  # noqa: E402
 
+# ⛔⛔ 2026-09-15 付過代價：⑦⑧ 兩節要 pyarrow，而我在 ⑦ 裡寫的是**裸 import**
+#   ⇒ runner 上沒有 pyarrow ⇒ 這支當場 traceback ⇒ ⛔ `set -e` 把同一個 job 裡
+#     後面**六個步驟**掐死，其中一個是「把程式同步到 main」（probe run 84／86 實測）
+#   ⇒ ⭐ CLAUDE.md 六點五那條逐字成立：
+#     **一條在某個環境下【必然】不成立的斷言，等於把那個環境的整條線關掉。**
+# ⇒ 處置：條件不成立就**大聲印「這一層沒跑」**，⛔ 不算失敗。
+# ⚠ 而它只准有**一份**（四點五）：⑧ 本來自己 try 了一次，已改成讀這裡。
+try:
+    import numpy as _np  # noqa: F401,E402  ⭐ derive_levels 的夾逼要用
+    import pyarrow as _pa2  # noqa: E402
+    import pyarrow.parquet as _pq_early  # noqa: E402
+    HAS_PA = True
+except ImportError:
+    _np = _pa2 = _pq_early = None
+    HAS_PA = False
+
+# ⚠ 這一行要寫成**不會被讀成「驗過了」**的樣子——⛔ 一行 `skipped` 跟一行 `ok`
+#   在捲動的 log 裡看起來一樣。
+NO_PA = ("  ⚠⚠ **這一層沒跑**：這台沒有 pyarrow／numpy"
+         "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+
 REAL_LOW = os.path.join(HERE, "data", "meta", "_tdcc_weeks_low.txt")
 
 
@@ -257,226 +278,221 @@ ck("⭐⭐ 大小剛好是 KiB 整數倍 ⇒ 也算（⛔ 切在列邊界時只�
 ck("  ⛔ 空的位元組不算截斷（⚠ 那是別的問題）", T.looks_truncated(b"") == "")
 
 print("\n── ⑦ `import_hist`：不過就不寫、不帶 --apply 就不寫 ──")
-with tempfile.TemporaryDirectory() as d:
-    import csv as _csv
-    src = os.path.join(d, "src", "2019"); os.makedirs(src)
-    def _w(name, rows):
-        with io.open(os.path.join(src, name), "w", encoding="utf-8", newline="") as f:
-            w = _csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
-    _w("20190628.csv", _rows("20190628"))
-    out = os.path.join(d, "out")
-    old_out = T.OUT_DIR
-    import pyarrow.parquet as _pq_early
-    try:
-        T.OUT_DIR = os.path.join(d, "nope")      # 沒有重疊週
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=False)
-        ck("⛔ 不帶 `--apply` ⇒ 一個檔都不寫", not os.path.isdir(out))
-        ck("  ⭐ 而且明講「只驗不寫」",
-           any("只驗不寫" in f"{k}{v}" for k, v in rl.infos), str(rl.infos[-3:]))
-        ck("⭐⭐ 沒有重疊週 ⇒ 大聲說**這一層沒跑**（⛔ 不是靜靜通過）",
-           any("這一層沒跑" in f"{k}{v}" for k, v in rl.infos),
-           str([i for i in rl.infos if "沒跑" in str(i)]))
-        # ⛔ 壞掉的一份 ⇒ 整批不寫
-        _w("20190705.csv", _rows("20190705", break_shares=True))
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        # ⛔⛔ 逐週排除，**不是**整批不寫：一週壞掉不可以賠掉其餘的。
-        #   ⚠ 我第一版是整批擋 ⇒ 372 週裡 1 份截斷就全部寫不出來。
-        ck("⭐⭐ 壞掉那一週被**排除**，其餘照寫（⛔ 不是整批不寫）",
-           os.path.exists(os.path.join(out, "2019.parquet")),
-           str(os.path.isdir(out)))
-        ck("  ⭐ 而排除的那幾週要**逐筆講出原因**",
-           any("排除的週" in k and "20190705" in v for k, v in rl.infos),
-           str([i for i in rl.infos if "排除" in str(i)]))
-        _t0 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
-        ck("  ⭐⭐ 而壞掉那一週**一列都沒寫進去**（⛔ 絕不寫部分資料）",
-           "2019-07-05" not in set(_t0.column("date").to_pylist()),
-           str(sorted(set(_t0.column("date").to_pylist()))))
-        _sh0b = __import__("shutil"); _sh0b.rmtree(out, ignore_errors=True)
-        ck("  ⭐ 而母體只有 2 份 ⇒ 通過率那道**大聲說判不出來**"
-           "（⛔ 不假裝判過，⛔ 也不假紅）",
-           any("這一層沒跑" in k and "通過率" in k for k, _v in rl.infos),
-           str([i for i in rl.infos if "通過率" in str(i)]))
-        # ⛔⛔ 而「截斷」要真的接在 `import_hist` 裡（⚠ 只驗純函式不夠：
-        #   突變 W9「截斷不擋」第一次**全綠**，因為我只測了 `looks_truncated`）
-        _sh0c = __import__("shutil"); _sh0c.rmtree(out, ignore_errors=True)
-        for f in list(os.listdir(src)):
-            os.remove(os.path.join(src, f))
+if not HAS_PA:
+    print(NO_PA)
+else:
+    with tempfile.TemporaryDirectory() as d:
+        import csv as _csv
+        src = os.path.join(d, "src", "2019"); os.makedirs(src)
+        def _w(name, rows):
+            with io.open(os.path.join(src, name), "w", encoding="utf-8", newline="") as f:
+                w = _csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
         _w("20190628.csv", _rows("20190628"))
-        # 造一份截斷的：把檔尾的換行砍掉、並補到 KiB 整數倍
-        _p2 = os.path.join(src, "20190705.csv")
-        _w("20190705.csv", _rows("20190705"))
-        _b = io.open(_p2, "rb").read().rstrip(b"\r\n")
-        _b += b" " * ((1024 - len(_b) % 1024) % 1024)
-        io.open(_p2, "wb").write(_b)
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐⭐ 截斷的那一週被**排除**（⚠ 只驗純函式不夠，要驗呼叫點）",
-           any("排除的週" in k and "被截斷" in v for k, v in rl.infos),
-           str([i for i in rl.infos if "排除" in str(i)]))
-        _t9 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
-        ck("  ⭐ 而它**一列都沒寫進去**",
-           "2019-07-05" not in set(_t9.column("date").to_pylist()),
-           str(sorted(set(_t9.column("date").to_pylist()))))
-        _sh0c.rmtree(out, ignore_errors=True)
-        # ⭐ 母體夠大、而**大部分**壞掉 ⇒ 通過率那道要紅
-        for f in list(os.listdir(src)):
-            os.remove(os.path.join(src, f))
-        for i in range(30):
-            day = f"201908{i+1:02d}"
-            rr = _rows(day)
-            if i >= 3:
-                rr[0]["股數"] = "999999"          # ⛔ 27/30 壞 ⇒ 10%
-            _w(f"{day}.csv", rr)
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐⭐ 母體 30 份、通過率 10% ⇒ **整批不寫**"
-           "（⛔ 少數壞掉是封存的事，多數壞掉是我方讀錯）",
-           any("通過率" in k and c is False for k, c, _ in rl.checks)
-           and not os.path.isdir(out), str(rl.checks))
-        for f in list(os.listdir(src)):
-            os.remove(os.path.join(src, f))
-        _w("20190628.csv", _rows("20190628"))
-        _w("20190705.csv", _rows("20190705", break_shares=True))
-        os.remove(os.path.join(src, "20190705.csv"))
-        # ⛔ 檔名與內容講的日期不一致
-        _w("20190712.csv", _rows("20190719"))
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        # ⛔⛔ 檔名≠內容**不該擋**——內容才是判準（第二點），檔名是人取的。
-        #   ⭐ 要驗的是兩件事：① 大聲講出來 ② 它照**內容**的日期落地。
-        #   ⚠ 我第一版斷言它要擋，那是把「檔名」當成了判準。
-        ck("⭐ 檔名 0712／內容 0719 ⇒ **大聲講**，⛔ 但不擋",
-           any("檔名與內容講的日期不一致" in k for k, _v in rl.infos)
-           and os.path.exists(os.path.join(out, "2019.parquet")),
-           str([i for i in rl.infos if "檔名" in str(i)]))
-        _t3 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
-        ck("  ⭐⭐ 而它照**內容**的日期（2019-07-19）落地，⛔ 不是檔名那個",
-           "2019-07-19" in set(_t3.column("date").to_pylist()),
-           str(sorted(set(_t3.column("date").to_pylist()))))
-        os.remove(os.path.join(src, "20190712.csv"))
-        import shutil as _sh0; _sh0.rmtree(out, ignore_errors=True)
+        out = os.path.join(d, "out")
+        old_out = T.OUT_DIR
+        try:
+            T.OUT_DIR = os.path.join(d, "nope")      # 沒有重疊週
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=False)
+            ck("⛔ 不帶 `--apply` ⇒ 一個檔都不寫", not os.path.isdir(out))
+            ck("  ⭐ 而且明講「只驗不寫」",
+               any("只驗不寫" in f"{k}{v}" for k, v in rl.infos), str(rl.infos[-3:]))
+            ck("⭐⭐ 沒有重疊週 ⇒ 大聲說**這一層沒跑**（⛔ 不是靜靜通過）",
+               any("這一層沒跑" in f"{k}{v}" for k, v in rl.infos),
+               str([i for i in rl.infos if "沒跑" in str(i)]))
+            # ⛔ 壞掉的一份 ⇒ 整批不寫
+            _w("20190705.csv", _rows("20190705", break_shares=True))
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            # ⛔⛔ 逐週排除，**不是**整批不寫：一週壞掉不可以賠掉其餘的。
+            #   ⚠ 我第一版是整批擋 ⇒ 372 週裡 1 份截斷就全部寫不出來。
+            ck("⭐⭐ 壞掉那一週被**排除**，其餘照寫（⛔ 不是整批不寫）",
+               os.path.exists(os.path.join(out, "2019.parquet")),
+               str(os.path.isdir(out)))
+            ck("  ⭐ 而排除的那幾週要**逐筆講出原因**",
+               any("排除的週" in k and "20190705" in v for k, v in rl.infos),
+               str([i for i in rl.infos if "排除" in str(i)]))
+            _t0 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
+            ck("  ⭐⭐ 而壞掉那一週**一列都沒寫進去**（⛔ 絕不寫部分資料）",
+               "2019-07-05" not in set(_t0.column("date").to_pylist()),
+               str(sorted(set(_t0.column("date").to_pylist()))))
+            _sh0b = __import__("shutil"); _sh0b.rmtree(out, ignore_errors=True)
+            ck("  ⭐ 而母體只有 2 份 ⇒ 通過率那道**大聲說判不出來**"
+               "（⛔ 不假裝判過，⛔ 也不假紅）",
+               any("這一層沒跑" in k and "通過率" in k for k, _v in rl.infos),
+               str([i for i in rl.infos if "通過率" in str(i)]))
+            # ⛔⛔ 而「截斷」要真的接在 `import_hist` 裡（⚠ 只驗純函式不夠：
+            #   突變 W9「截斷不擋」第一次**全綠**，因為我只測了 `looks_truncated`）
+            _sh0c = __import__("shutil"); _sh0c.rmtree(out, ignore_errors=True)
+            for f in list(os.listdir(src)):
+                os.remove(os.path.join(src, f))
+            _w("20190628.csv", _rows("20190628"))
+            # 造一份截斷的：把檔尾的換行砍掉、並補到 KiB 整數倍
+            _p2 = os.path.join(src, "20190705.csv")
+            _w("20190705.csv", _rows("20190705"))
+            _b = io.open(_p2, "rb").read().rstrip(b"\r\n")
+            _b += b" " * ((1024 - len(_b) % 1024) % 1024)
+            io.open(_p2, "wb").write(_b)
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐⭐ 截斷的那一週被**排除**（⚠ 只驗純函式不夠，要驗呼叫點）",
+               any("排除的週" in k and "被截斷" in v for k, v in rl.infos),
+               str([i for i in rl.infos if "排除" in str(i)]))
+            _t9 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
+            ck("  ⭐ 而它**一列都沒寫進去**",
+               "2019-07-05" not in set(_t9.column("date").to_pylist()),
+               str(sorted(set(_t9.column("date").to_pylist()))))
+            _sh0c.rmtree(out, ignore_errors=True)
+            # ⭐ 母體夠大、而**大部分**壞掉 ⇒ 通過率那道要紅
+            for f in list(os.listdir(src)):
+                os.remove(os.path.join(src, f))
+            for i in range(30):
+                day = f"201908{i+1:02d}"
+                rr = _rows(day)
+                if i >= 3:
+                    rr[0]["股數"] = "999999"          # ⛔ 27/30 壞 ⇒ 10%
+                _w(f"{day}.csv", rr)
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐⭐ 母體 30 份、通過率 10% ⇒ **整批不寫**"
+               "（⛔ 少數壞掉是封存的事，多數壞掉是我方讀錯）",
+               any("通過率" in k and c is False for k, c, _ in rl.checks)
+               and not os.path.isdir(out), str(rl.checks))
+            for f in list(os.listdir(src)):
+                os.remove(os.path.join(src, f))
+            _w("20190628.csv", _rows("20190628"))
+            _w("20190705.csv", _rows("20190705", break_shares=True))
+            os.remove(os.path.join(src, "20190705.csv"))
+            # ⛔ 檔名與內容講的日期不一致
+            _w("20190712.csv", _rows("20190719"))
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            # ⛔⛔ 檔名≠內容**不該擋**——內容才是判準（第二點），檔名是人取的。
+            #   ⭐ 要驗的是兩件事：① 大聲講出來 ② 它照**內容**的日期落地。
+            #   ⚠ 我第一版斷言它要擋，那是把「檔名」當成了判準。
+            ck("⭐ 檔名 0712／內容 0719 ⇒ **大聲講**，⛔ 但不擋",
+               any("檔名與內容講的日期不一致" in k for k, _v in rl.infos)
+               and os.path.exists(os.path.join(out, "2019.parquet")),
+               str([i for i in rl.infos if "檔名" in str(i)]))
+            _t3 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
+            ck("  ⭐⭐ 而它照**內容**的日期（2019-07-19）落地，⛔ 不是檔名那個",
+               "2019-07-19" in set(_t3.column("date").to_pylist()),
+               str(sorted(set(_t3.column("date").to_pylist()))))
+            os.remove(os.path.join(src, "20190712.csv"))
+            import shutil as _sh0; _sh0.rmtree(out, ignore_errors=True)
 
-        # ⭐⭐ 同一天兩份：內容相同 ⇒ 歸因（不擋）；內容不同 ⇒ ⛔ 擋
-        _w("20200612.csv", _rows("20200612"))
-        _w("20200619.csv", _rows("20200612"))      # 逐格相同 ⇒ 檔名重複
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐⭐ 同一週存成兩個檔名（內容相同）⇒ 歸因、丟一份，⛔ 不擋",
-           any("同一週被存成兩個檔名" in k for k, _v in rl.infos)
-           and os.path.exists(os.path.join(out, "2020.parquet")),
-           str([i for i in rl.infos if "兩個檔名" in str(i)]))
-        ck("  ⭐ 而且明講「那幾個檔名對應的週其實沒有」（⚠ 別把檔案數當週數）",
-           any("其實沒有" in f"{k}{v}" for k, v in rl.infos))
-        _t4 = _pq_early.read_table(os.path.join(out, "2020.parquet"))
-        ck("  ⭐ 2020 只落地 1 週（⛔ 不是 2 週）",
-           len(set(_t4.column("date").to_pylist())) == 1,
-           str(sorted(set(_t4.column("date").to_pylist()))))
-        _sh0.rmtree(out, ignore_errors=True)
-        _w("20200619.csv", _rows("20200612"))
-        # ⚠ 造一份同一天但**內容不同**的——⛔ 而那個「不同」不可以順便
-        #   破壞恆等式，否則它會在更前面就被擋掉，⭐ 這一條就測不到重複那道。
-        #   （第一版改 `人數` ⇒ 合計對不上 ⇒ 走的是「三道驗算」那條路。）
-        #   ⇒ 改 `pct`：它不屬於任何一道恆等式。
-        _bad_rows = _rows("20200612")
-        _bad_rows[0]["占集保庫存數比例%"] = "99.9"
-        _w("20200626.csv", _bad_rows)
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⛔⛔ 同一天但內容**不同** ⇒ 真的矛盾 ⇒ 整批不寫",
-           any("不可以不同" in k and c is False for k, c, _ in rl.checks)
-           and not os.path.isdir(out), str(rl.checks))
-        for f in ("20200612.csv", "20200619.csv", "20200626.csv"):
-            os.remove(os.path.join(src, f))
-        # ⭐ 正常 ⇒ 寫得出來、而且重讀對得回來
-        rl = FakeRun()
-        rc = T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐ 乾淨的一份 ⇒ 寫出 2019.parquet",
-           os.path.exists(os.path.join(out, "2019.parquet")))
-        ck("  ⭐⭐ 而它**重讀**驗過（⛔ 不是斷言寫檔成功）",
-           any("寫完重讀" in k and c is True for k, c, _ in rl.checks), str(rl.checks))
-        _t2 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
-        ck("  ⭐ 讀回來 34 列（2 檔 × 17 級）", _t2.num_rows == 34, str(_t2.num_rows))
-        ck("  ⭐ 欄名逐字＝HIST_COLS", _t2.column_names == T.HIST_COLS, str(_t2.column_names))
+            # ⭐⭐ 同一天兩份：內容相同 ⇒ 歸因（不擋）；內容不同 ⇒ ⛔ 擋
+            _w("20200612.csv", _rows("20200612"))
+            _w("20200619.csv", _rows("20200612"))      # 逐格相同 ⇒ 檔名重複
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐⭐ 同一週存成兩個檔名（內容相同）⇒ 歸因、丟一份，⛔ 不擋",
+               any("同一週被存成兩個檔名" in k for k, _v in rl.infos)
+               and os.path.exists(os.path.join(out, "2020.parquet")),
+               str([i for i in rl.infos if "兩個檔名" in str(i)]))
+            ck("  ⭐ 而且明講「那幾個檔名對應的週其實沒有」（⚠ 別把檔案數當週數）",
+               any("其實沒有" in f"{k}{v}" for k, v in rl.infos))
+            _t4 = _pq_early.read_table(os.path.join(out, "2020.parquet"))
+            ck("  ⭐ 2020 只落地 1 週（⛔ 不是 2 週）",
+               len(set(_t4.column("date").to_pylist())) == 1,
+               str(sorted(set(_t4.column("date").to_pylist()))))
+            _sh0.rmtree(out, ignore_errors=True)
+            _w("20200619.csv", _rows("20200612"))
+            # ⚠ 造一份同一天但**內容不同**的——⛔ 而那個「不同」不可以順便
+            #   破壞恆等式，否則它會在更前面就被擋掉，⭐ 這一條就測不到重複那道。
+            #   （第一版改 `人數` ⇒ 合計對不上 ⇒ 走的是「三道驗算」那條路。）
+            #   ⇒ 改 `pct`：它不屬於任何一道恆等式。
+            _bad_rows = _rows("20200612")
+            _bad_rows[0]["占集保庫存數比例%"] = "99.9"
+            _w("20200626.csv", _bad_rows)
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⛔⛔ 同一天但內容**不同** ⇒ 真的矛盾 ⇒ 整批不寫",
+               any("不可以不同" in k and c is False for k, c, _ in rl.checks)
+               and not os.path.isdir(out), str(rl.checks))
+            for f in ("20200612.csv", "20200619.csv", "20200626.csv"):
+                os.remove(os.path.join(src, f))
+            # ⭐ 正常 ⇒ 寫得出來、而且重讀對得回來
+            rl = FakeRun()
+            rc = T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐ 乾淨的一份 ⇒ 寫出 2019.parquet",
+               os.path.exists(os.path.join(out, "2019.parquet")))
+            ck("  ⭐⭐ 而它**重讀**驗過（⛔ 不是斷言寫檔成功）",
+               any("寫完重讀" in k and c is True for k, c, _ in rl.checks), str(rl.checks))
+            _t2 = _pq_early.read_table(os.path.join(out, "2019.parquet"))
+            ck("  ⭐ 讀回來 34 列（2 檔 × 17 級）", _t2.num_rows == 34, str(_t2.num_rows))
+            ck("  ⭐ 欄名逐字＝HIST_COLS", _t2.column_names == T.HIST_COLS, str(_t2.column_names))
 
-        # ⭐⭐ 檔數斷崖：⛔ 三道驗算抓不到「截斷剛好落在列邊界」那一種
-        import shutil as _sh1; _sh1.rmtree(out, ignore_errors=True)
-        T.OUT_DIR = os.path.join(d, "nope2")
-        for f in list(os.listdir(src)):
-            os.remove(os.path.join(src, f))
-        def _many(day, n_codes):
-            out_rows = []
-            for i in range(n_codes):
-                code = f"{1000+i}"
-                tp = ts = 0
-                for lv in range(1, 18):
-                    if lv <= 15: p, sh = 10*lv, 100*lv; tp += p; ts += sh
-                    elif lv == 16: p, sh = 7, 500; ts -= sh
-                    else: p, sh = tp, ts
-                    out_rows.append({"資料日期": day, "證券代號": code,
-                                     "持股分級": str(lv), "人數": str(p),
-                                     "股數": str(sh), "占集保庫存數比例%": "1.0"})
-            return out_rows
-        for day, n in (("20230106", 100), ("20230113", 100), ("20230120", 100),
-                       ("20230127", 60)):      # ⛔ 最後一週斷崖，⚠ 但每檔都剛好 17 級
-            _w(f"{day}.csv", _many(day, n))
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐⭐ 檔數斷崖（60 vs 中位 100）⇒ 擋下來"
-           "　⚠ 而那四週**三道驗算全過**（⛔ 它們抓不到截斷）",
-           any("斷崖" in k and c is False for k, c, _ in rl.checks)
-           and not os.path.isdir(out), str([c for c in rl.checks]))
-        ck("  ⭐⭐ 而那四週**一週都沒被排除**（⇒ 三道驗算全過）"
-           "　⇒ 這就證明斷崖那道**不是多餘的**",
-           not any("排除的週" in k for k, _v in rl.infos),
-           str([i for i in rl.infos if "排除" in str(i)]))
-        ck("  ⭐ 訊息講得出**檔數、中位數、檔案大小**（⇒ 看得出是截斷）",
-           any("斷崖" in k and "中位" in dt and "bytes" in dt
-               for k, _c, dt in rl.checks), str(rl.checks))
-        # ⭐ 反向：檔數正常的四週不可以假紅
-        _w("20230127.csv", _many("20230127", 98))
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐ 反向：98 vs 中位 100（差 2%）⇒ 不可以假紅",
-           any("斷崖" in k and c is True for k, c, _ in rl.checks)
-           and os.path.exists(os.path.join(out, "2023.parquet")), str(rl.checks))
-        for f in list(os.listdir(src)):
-            os.remove(os.path.join(src, f))
-        _sh1.rmtree(out, ignore_errors=True)
-        _w("20190628.csv", _rows("20190628"))
-        T.OUT_DIR = os.path.join(d, "nope")
+            # ⭐⭐ 檔數斷崖：⛔ 三道驗算抓不到「截斷剛好落在列邊界」那一種
+            import shutil as _sh1; _sh1.rmtree(out, ignore_errors=True)
+            T.OUT_DIR = os.path.join(d, "nope2")
+            for f in list(os.listdir(src)):
+                os.remove(os.path.join(src, f))
+            def _many(day, n_codes):
+                out_rows = []
+                for i in range(n_codes):
+                    code = f"{1000+i}"
+                    tp = ts = 0
+                    for lv in range(1, 18):
+                        if lv <= 15: p, sh = 10*lv, 100*lv; tp += p; ts += sh
+                        elif lv == 16: p, sh = 7, 500; ts -= sh
+                        else: p, sh = tp, ts
+                        out_rows.append({"資料日期": day, "證券代號": code,
+                                         "持股分級": str(lv), "人數": str(p),
+                                         "股數": str(sh), "占集保庫存數比例%": "1.0"})
+                return out_rows
+            for day, n in (("20230106", 100), ("20230113", 100), ("20230120", 100),
+                           ("20230127", 60)):      # ⛔ 最後一週斷崖，⚠ 但每檔都剛好 17 級
+                _w(f"{day}.csv", _many(day, n))
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐⭐ 檔數斷崖（60 vs 中位 100）⇒ 擋下來"
+               "　⚠ 而那四週**三道驗算全過**（⛔ 它們抓不到截斷）",
+               any("斷崖" in k and c is False for k, c, _ in rl.checks)
+               and not os.path.isdir(out), str([c for c in rl.checks]))
+            ck("  ⭐⭐ 而那四週**一週都沒被排除**（⇒ 三道驗算全過）"
+               "　⇒ 這就證明斷崖那道**不是多餘的**",
+               not any("排除的週" in k for k, _v in rl.infos),
+               str([i for i in rl.infos if "排除" in str(i)]))
+            ck("  ⭐ 訊息講得出**檔數、中位數、檔案大小**（⇒ 看得出是截斷）",
+               any("斷崖" in k and "中位" in dt and "bytes" in dt
+                   for k, _c, dt in rl.checks), str(rl.checks))
+            # ⭐ 反向：檔數正常的四週不可以假紅
+            _w("20230127.csv", _many("20230127", 98))
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐ 反向：98 vs 中位 100（差 2%）⇒ 不可以假紅",
+               any("斷崖" in k and c is True for k, c, _ in rl.checks)
+               and os.path.exists(os.path.join(out, "2023.parquet")), str(rl.checks))
+            for f in list(os.listdir(src)):
+                os.remove(os.path.join(src, f))
+            _sh1.rmtree(out, ignore_errors=True)
+            _w("20190628.csv", _rows("20190628"))
+            T.OUT_DIR = os.path.join(d, "nope")
 
-        # ⭐⭐ 重疊週對不上 ⇒ 擋下來
-        T.OUT_DIR = os.path.join(d, "mine"); os.makedirs(T.OUT_DIR)
-        with io.open(os.path.join(T.OUT_DIR, "2019-06-28.csv"), "w",
-                     encoding="utf-8", newline="") as f:
-            w = _csv.writer(f); w.writerow(T.HEADER)
-            w.writerow(["2019-06-28", "1101", "1", "999999", "100", "1.0"])
-        import shutil as _sh; _sh.rmtree(out, ignore_errors=True)
-        rl = FakeRun()
-        T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
-        ck("⭐⭐ 重疊週跟我方對不上 ⇒ **整批不寫**（⛔ 這是唯一的獨立驗證點）",
-           any("逐格相同" in k and c is False for k, c, _ in rl.checks)
-           and not os.path.isdir(out), str(rl.checks))
-    finally:
-        T.OUT_DIR = old_out
+            # ⭐⭐ 重疊週對不上 ⇒ 擋下來
+            T.OUT_DIR = os.path.join(d, "mine"); os.makedirs(T.OUT_DIR)
+            with io.open(os.path.join(T.OUT_DIR, "2019-06-28.csv"), "w",
+                         encoding="utf-8", newline="") as f:
+                w = _csv.writer(f); w.writerow(T.HEADER)
+                w.writerow(["2019-06-28", "1101", "1", "999999", "100", "1.0"])
+            import shutil as _sh; _sh.rmtree(out, ignore_errors=True)
+            rl = FakeRun()
+            T.import_hist(rl, os.path.join(d, "src"), out_dir=out, apply=True)
+            ck("⭐⭐ 重疊週跟我方對不上 ⇒ **整批不寫**（⛔ 這是唯一的獨立驗證點）",
+               any("逐格相同" in k and c is False for k, c, _ in rl.checks)
+               and not os.path.isdir(out), str(rl.checks))
+        finally:
+            T.OUT_DIR = old_out
 
 print("\n── ⑧ ⭐⭐ 持股級距是**夾出來**的，⛔ 不是抄坊間表 ──")
 # ⭐ 判準本身拿**合成**資料驗（環境無關）：造一個級距**已知**的假庫，
 #   看 `derive_levels()` 夾不夾得回那些邊界。
 #   ⛔ 拿真實 tdcc_hist 驗判準的話，這條的壽命會綁在「現在剛好是那批資料」上
 #     （第七點第七個陷阱）。
-try:
-    import numpy as _np
-    import pyarrow as _pa2
-    import pyarrow.parquet as _pq3
-    _HAS = True
-except ImportError:
-    _HAS = False
-if not _HAS:
-    print("  ⚠⚠ **這一層沒跑**：這台沒有 pyarrow／numpy"
-          "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+_pq3 = _pq_early          # ⭐ 同一份探測（⛔ 不再各 try 一次）
+if not HAS_PA:
+    print(NO_PA)
 else:
     with tempfile.TemporaryDirectory() as d:
         # 真邊界（我自己訂的）：1-99｜100-500｜501-2000｜2001 以上

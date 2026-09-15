@@ -40,6 +40,7 @@
 ⚠ `${{ ... }}` 在 shell 眼裡不是語法 ⇒ 驗之前先換成佔位字串，
 ⛔ 不換的話它會誤報，然後這支檢查就會被學會忽略。
 """
+import ast
 import glob
 import io
 import os
@@ -166,6 +167,52 @@ def main():
        not missing,
        f"⛔ 叫得到但檔不在：{missing}"
        "　⇒ 那一步會在 Actions 上跑起來才失敗，⚠ 而且往往在抓完之後")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 而第三道：**自測本身必須零相依**（2026-09-15 加，付過兩次代價）
+    #
+    # CLAUDE.md 六點五寫死了：「第二步的自測是【零相依】的，⛔ 這是硬規定不是習慣」
+    # ⚠ 而那條規矩**沒有任何地方在守**——它只寫在判準檔裡。
+    #
+    # ⛔ 實際發生（probe run 84／86，2026-09-15）：
+    #   `selftest_tdcc.py` 的 ⑦ 節裸 `import pyarrow.parquet`
+    #   ⇒ runner 上沒有 pyarrow ⇒ 這支 **traceback**（⛔ 不是印 ✗）
+    #   ⇒ `set -e` 把同一個 job 後面**六個步驟**掐死，
+    #     其中一個是「**把程式同步到 main**」⇒ 那兩趟什麼都沒搬。
+    # ⚠ 而畫面上看起來只是「有一支自測紅了」——⛔ 沒有任何地方會說
+    #   「因為它，另外六步沒跑」。
+    #
+    # ⇒ 判準：`selftest_*.py` 裡凡是 import 選用套件的，一定要包在 `try` 裡。
+    #   ⭐ 而**包起來之後要做什麼**這支管不到（那是各支自己的事）——
+    #     ⛔ 這道只擋「缺套件就整支炸掉」這一種。
+    # ⚠ 而它跟上面兩道是同一族：
+    #   「自測存在」≠「自測會被跑」≠「自測**跑得起來**」。
+    # ══════════════════════════════════════════════════════════════
+    OPTIONAL = ("pyarrow", "numpy", "pandas", "yaml", "certifi",
+                "requests", "zstandard", "py7zr", "lxml", "bs4")
+    naked = []
+    for t in sorted(glob.glob(os.path.join(here, "selftest_*.py"))):
+        tree = ast.parse(io.open(t, encoding="utf-8").read())
+        guarded = {id(sub)
+                   for n in ast.walk(tree) if isinstance(n, ast.Try)
+                   for sub in ast.walk(n)
+                   if isinstance(sub, (ast.Import, ast.ImportFrom))}
+        for n in ast.walk(tree):
+            if not isinstance(n, (ast.Import, ast.ImportFrom)):
+                continue
+            if id(n) in guarded:
+                continue
+            mods = ([a.name for a in n.names] if isinstance(n, ast.Import)
+                    else [n.module or ""])
+            for m in mods:
+                if m.split(".")[0] in OPTIONAL:
+                    naked.append(f"{os.path.basename(t)}:{n.lineno} {m}")
+    ck("⭐⭐ 沒有任何自測**裸 import** 選用套件（⛔ 缺套件要印字，不是炸掉）",
+       not naked,
+       f"⛔ {naked}"
+       "　⇒ 那一支在 runner 上會 traceback，⚠ 而 `set -e` 會把同一個 job 後面"
+       "的步驟（含『把程式同步到 main』）一起掐死"
+       if naked else f"掃了 {len(glob.glob(os.path.join(here, 'selftest_*.py')))} 支")
 
     # ══════════════════════════════════════════════════════════════
     # ⭐⭐ 逐年分批的迴圈：**一批失敗不可以賠掉後面的批次**（2026-09-10 加）
