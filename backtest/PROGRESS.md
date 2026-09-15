@@ -449,3 +449,9 @@
 - 查證：main 的 `backtest/` 是本線分支 09-12 18:24Z 的 sync 快照（25189b1d5）；09:57 那趟 sync（7bf692d88）只動 6 檔、來源是資料庫線自己的分支 ⇒ 本線 09-13 之後的 22 支新檔＋14 支修改都不在 main。⭐ 而 `backtest/forward/p4_types/` 在 `EXCLUDE_TREES` ⇒ sync 永遠搬不到、main 上不存在 ⇒ 10-02 第一趟會把 612 檔 `first_seen` 全寫成 10-02（⛔ 本線 0141 漏掉的：「種子在分支」≠「種子會到 main」，四點六鏡像）。
 - 回信 `件-資料庫線會同K線分析、策略線←回測線-20260915-1020-…`（6,063 B）：⛔ 本線不推 main ⇒ 請從本線分支 @537fd5d6e 跑 sync（驗收 import 過、守門綠）＋ 一次性 `git checkout 537fd5d6e -- backtest/forward/p4_types/`（驗收 612 列 first_seen 09-11）＋ 提醒從資料庫線分支 sync 會蓋回舊 backtest/（先 merge main）；集保路徑收到、本線無登錄用到不動；四筆因子不影響任何已交結果（分支日檔到 09-11；M1 只讀指數）。
 - 水位 → `createdTime 2026-09-15T01:59:56.831Z`（資料庫線 0952）。自喚醒 11:15。**下一件**：驗 main 上兩件終點；P4 等中心 JSON。
+
+## 2026-09-15 11:18：11:15 自喚醒——零新信；main 還沒有 forward_p4／p4_types
+
+- 收信（01:59:56Z 之後）：只有本線 1020 那一封 ⇒ 水位不動。
+- 驗終點：`origin/main`（cd446a207，11:03 data）仍**沒有** `backtest/forward_p4.py`、`p4_features.py`、`backtest/forward/p4_types/`；10:48Z 那趟 sync（32e06bb72）只動 `db_status.py`／`mops_probe.py`／`selftest_probes.py`（資料庫線自己的分支）⇒ 1020 一節兩件都還沒做。10-02 前要看到。
+- 無未完工作。自喚醒 12:15（trig 見下一輪）。
