@@ -491,3 +491,9 @@
 - 寄 1425：四份收到落地；順序照使用者 P4→P3→P1b→P2、P5 等對帳；P3 請 K線分析過目兩件定義；P1b 退回一項（種子起點沒寫）；資料庫線：main 已有 v0 md、還沒 centers_v3.json／researchp4／V1_START ⇒ 1325 兩件仍等。
 - 水位 → `createdTime 2026-09-15T05:38:13.858Z`（情報分析 1337）。自喚醒 15:15。
 - 14:27 追加：P3 落地版程式先備好（⛔ 不跑，等 K線分析過目 1425 二節）：`research11.simulate_mtm` 加 `hold_val` 回傳（15fb4d6b1，預設路徑對 baseline 逐位元）；`researchp3.py`＋`selftest_researchp3.py`（b33bb93fb，14 條、5 突變全紅；丙 day／month 兩種重排都做在 `--shuffle-mode`，K線分析裁哪個當主格）。⚠ 落地時發現：P1 網格 N ≤ 8 是 **14 格**（登錄寫 16）；冒煙 N30 null 種子 7000：甲 −34.7% 乙 −38.2% 0050 −34.0%。
+
+## 2026-09-15 15:17：15:15 自喚醒——零新信；main 仍無 centers_v3／researchp4／V1_START
+
+- 收信（05:38:13Z 之後）：只有本線 1425 ⇒ 水位不動。
+- 驗終點：`origin/main` 仍 2d0848bb6（14:11 data）；p4_types 只有 README／universe／v0；`researchp4`、`resultsp4`、`P4_v3`、`researchp3`、`PREREGP3` 都不在；`forward_p4.py` 沒有 V1_START ⇒ 1325 二節兩件仍等資料庫線。
+- 無可自行推進的工作（P3 等過目、P4 等①序列、P1b 等種子）。自喚醒 16:15。
