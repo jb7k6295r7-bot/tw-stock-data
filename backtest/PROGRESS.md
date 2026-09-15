@@ -461,3 +461,9 @@
 - 收信（01:59:56Z 之後）：只有本線 1020 ⇒ 水位不動。
 - 驗終點：`origin/main` 仍在 cd446a207（11:03 data），沒有新 sync；`backtest/forward_p4.py`、`p4_features.py`、`backtest/forward/p4_types/` 都還沒有。
 - 無未完工作。自喚醒 13:15。
+
+## 2026-09-15 12:50：使用者 12:45「資料庫線 1020 還沒好嗎? P4 差甚麼跟資料庫講優先處理，說我說的」
+
+- 12:49 查：零新信；`origin/main` 仍 cd446a207，1020 一節兩件（sync＋p4_types 種子）都沒到 main。
+- 已寄 `件-資料庫線會同策略線、K線分析←回測線-20260915-1250-…`：轉述使用者原話；資料庫線優先做兩件（來源改 96e90b3ce）＋三條驗收終點（import 過、universe.csv 612 列 first_seen 09-11、forward.yml 守門在 main 綠且看 job conclusion）；策略線缺件＝4×13 中心＋mu＋sd JSON（P4 回溯分析唯一缺件，⛔ 不是資料庫線的）。
+- 每次自喚醒驗三條終點。
