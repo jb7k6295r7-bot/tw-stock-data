@@ -1017,16 +1017,31 @@
 - ok　⭐ `notrade` 這一類抓得到（⛔ 0 的話代表判準壞了，⚠ 而它壞掉的表現是「每個洞看起來都是斷點」）　（notrade 1,356｜halted 26（⇒ 兩類都不是 0 才證明分得開））
 - ok　⭐ `halted` 這一類也抓得到（⚠ 正例，⛔ 一個只會回 notrade 的分類器沒有用）　（halted 26）
 
-## ci_steps　✗ 有問題
+## tdcc_hist　✓ 正常
 
-最後執行：2026-09-16T00:29:26+08:00（台北）｜觸發 schedule｜每日台股資料｜ref main｜run 34993234076
+最後執行：2026-09-16T01:00:32+08:00（台北）　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）
 
-- **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **跑過的自測**：17 支｜selftest_runlog.py、selftest_mops.py、selftest_probes.py、selftest_lock_dir.py、selftest_calendar.py、selftest_holiday.py、selftest_otccal.py、selftest_suspend_twse.py、selftest_otcexright.py、selftest_adj_gap.py、selftest_db_status.py、selftest_mops_history.py、selftest_revenue_complete.py、selftest_shares_twse.py、selftest_num.py、selftest_parse_daily.py、selftest_transpose.py
-- **⛔ selftest_probes.py**：rc=1　⇒ 這一支紅了，⚠ 而那一步是 `continue-on-error` ⇒ run 仍然是綠的
+- **來源**：/tmp/claude-0/-home-user-tw-stock-data/bb6eedf8-fd41-5ad0-8351-758d42a8f215/scratchpad/tdcc_stage｜10 份週檔
+- **驗算通過**：10 / 10 週｜443,411 列
+- **⚠⚠ **這一層沒跑**：通過率**：只有 10 份（< 20）⇒ 分不出「封存壞一份」還是「我方讀錯」　⇒ ⛔ 不算失敗，⛔ **也不算驗過**｜本趟 10/10
+- **⭐ 逐年檔數（中位數）**：2017 2,498｜2018 2,619
+- **⚠⚠ **這一層沒跑****：外部封存與 `data/tdcc/` **沒有重疊的週**　⇒ ⛔ 不算失敗，⛔ **也不算驗過**　⚠ 那表示這批資料只有「自己跟自己一致」
+- **分年**：2017 1 週／42,466 列｜2018 9 週／400,945 列
+- **寫出**：2017 0.3 MB｜2018 1.5 MB
 
 檢查：
-- **✗**　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支紅了：selftest_probes.py）
+- ok　⛔ 同一個資料日期的兩份內容**不可以不同**（⚠ 那是真的矛盾）　（10 週沒有矛盾）
+- ok　⭐⭐ 沒有哪一週的檔數對同年中位數**斷崖**（< 90%）　⚠ 截斷的週檔就長這樣，⛔ 而三道驗算抓不到它　（10 週都在中位數 90% 以上）
+- ok　⭐⭐ 前導 0 的代號對得上同一天的日檔（≥ 80%）　⚠ 只比**日檔→集保**這一個方向（反向不算問題：集保涵蓋沒在交易的代號）　（10 週都過｜2017-07-21 89/94＝94.7%｜2018-11-02 147/153＝96.1%｜2018-11-09 147/153＝96.1%｜2018-11-16 150/156＝96.2%…）
+- ok　⭐ 寫完重讀，列數與週數逐年對得回來（⛔ 不是斷言寫檔成功）　（2 年逐年重讀，列數與週數都對得回來）
+
+
+## ci_steps　✓ 正常
+
+最後執行：2026-09-16T01:17:20+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 34998801525
+
+- **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
+- **⚠⚠ **這一層沒跑****：這一趟沒有 `_ci_steps.tsv`（⇒ 沒有走 `ci_step.py` 的步驟）　⇒ ⛔ 不算失敗，⛔ **也不算驗過**
 
 ## reduce_shares_check　✓ 正常
 
