@@ -77,6 +77,14 @@ jobs:
       - name: 掃低水位檔有沒有第九份實作（零相依）
         run: python selftest_lowwater.py
 
+      # ⛔⛔ 這一道擋的是「程式刪掉**被 git 追蹤**的 `data/` 檔」——
+      #   ⚠ 而傷害是兩段的：① 程式刪掉工作區那個檔
+      #   ② `push_data.sh` 看到一個刪除 ⇒ 把那個刪除**搬到 main**。
+      #   ⭐ K線分析線 2026-09-15 §5-3：`otc_adj.py --fresh` 那條路一直通著，
+      #     沒觸發的唯一原因是「沒有人按過那個旗標」⇒ 是時間問題，不是保護。零相依。
+      - name: 掃有沒有程式會刪掉被追蹤的 data/ 檔（零相依）
+        run: python selftest_no_data_delete.py
+
       # ⛔⛔ `continue-on-error: true` 的自測紅了，run 的 conclusion 仍然是
       #   **success** ⇒ 沒有任何地方會說（daily.yml 有 62 個這種步驟）。
       #   ⚠ 抓資料那些自己會寫 runlog ⇒ 看得到；⛔ **自測沒有** ⇒ 看不到。
