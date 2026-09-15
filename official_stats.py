@@ -124,6 +124,30 @@ monthly ：成交仟股(B)      **收市**最高價／**收市**最低價
 ⇒ ⭐⭐ **同一族的兩張表，「最高價」是兩個不同的量**——年表是盤中、月表是收盤。
 ⛔ 把它們當同一欄用，差的不是誤差，是定義。⚠ 而兩邊都叫「最高價」。
 
+#### ⛔⛔ 而拿**上市那張月表**（`FMSRFK`）一起量 ⇒ 差異有**三個**，不是一個
+
+```
+                上市 FMSRFK                上櫃 monthlyStock
+high／low       **盤中**最高／最低          **收市**（收盤）最高／最低
+avg             **加權**平均（金額÷股數）    **收盤價的簡單平均**
+成交量單位      股                          **仟股**
+```
+
+⇒ 實測（2330，115/1、115/2、115/3 三個月，對我方日檔）：
+
+```
+官方 high/low  1835/1545、2025/1740、1995/1760
+我方 **盤中**   1835/1545、2025/1740、1995/1760   ⭐ **3／3 逐位相同**
+我方 **收盤**   1820/1585、2015/1765、1975/1760   ⛔ 三個月都不一樣
+官方 avg 1718.05 vs 我方收盤簡單平均 1727.62
+        而 金額÷股數 ＝ 1,463,745,509,957 ÷ 851,975,987 ＝ **1,717.82** ⇒ ⭐ 是加權
+```
+
+⇒ ⭐⭐ **兩張月表的 `high`／`low`／`avg` 是三對不同的量，而欄名都一樣。**
+⛔ 併進同一張 `official_monthly_amount.csv` ＝ 一次做出**三道**靜默的定義接縫。
+⇒ 所以上櫃的月表**還沒接**：它要自己一份檔、欄名自己帶定義
+（`close_high`／`close_low`／`close_avg`／`volume_kshares`）。
+
 #### ⇒ 而量那三欄**仍然**是另一種口徑，⛔ 而且比例還不一樣
 
 ```
@@ -353,14 +377,45 @@ def fetch_one(sid, today):
     return ys, ms, None
 
 
-def _load(path, header):
+def _load(path, header, key):
+    """讀回一份判準表 → `{主鍵: 列}`。
+
+    ⛔⛔ `key` **必填**：它必須跟寫入端用的是**同一支**。
+    ⚠ 2026-09-16 我把寫入端從 `r[:3]` 改成 `y_key`（兩格）卻**忘了改這裡**
+    ⇒ 讀進來的列掛在三格的鍵上、本趟抓到的掛在兩格的鍵上
+    ⇒ ⛔ 同一檔同一年會變成**兩列**——⭐ 比原本那個 bug 更糟（半修）。
+    ⇒ 所以它沒有預設值：忘了傳會**當場 TypeError**，⛔ 而不是靜靜寫出兩列。
+    """
     rows = {}
     if os.path.exists(path):
         with io.open(path, encoding="utf-8") as f:
             for r in csv.DictReader(f):
-                rows[tuple(r.get(k, "") for k in header[:3])] = \
-                    [r.get(k, "") for k in header]
+                row = [r.get(k, "") for k in header]
+                rows[key(row)] = row
     return rows
+
+
+def y_key(row):
+    """年度表的主鍵 ＝ **(代號, 民國年)**。⛔ 只有兩格。
+
+    ## ⛔ 舊版是 `tuple(r[:3])`，而**年表的第三欄是 `volume`**
+
+    ⚠ 那一版對**月**表是對的（第三欄是 `month`），對年表則把**成交股數**
+    寫進了主鍵 ⇒ 同一檔同一年的數字若被官方修正過，`--force` 重抓會**多出一列**，
+    ⛔ 而不是覆蓋掉舊的。
+    ⭐ 而它至今沒有發作，只因為成功過的檔會進 `done` ⇒ **從來沒有被重問過**
+    （實測 21,459 列，(代號,年度) 相異也是 21,459 ⇒ 0 筆重複）。
+    ⇒ ⛔ 「還沒發作」不是判準（四點五⑥那句）。
+
+    ⚠ 病根是**一個表達式做兩件事**：`r[:3]` 對月表對、對年表錯，
+    而兩邊長得一模一樣。⇒ 收成兩支具名的。
+    """
+    return (row[0], row[1])
+
+
+def m_key(row):
+    """月表的主鍵 ＝ **(代號, 民國年, 月)**。⭐ 三格才對。"""
+    return (row[0], row[1], row[2])
 
 
 def _save(path, header, rows):
@@ -693,9 +748,14 @@ def progress_lines(pool, done, todo, ex, give_up=(), market="twse"):
          "實測 6488 兩年跟我方日檔**逐位相同**）；"
          "量那四欄原樣另存（張／仟元／仟筆），⛔ 因為它們是另一種口徑"
          "（＋4.8%／＋5.0%／**＋156%**）"
-         "　⇒ ⛔ 而**月**那一半（`statistics/monthlyStock`）**還開著**："
-         "參數名已從頁面讀到是 `code`＋`date`，⚠ 而 `date` 的**格式**還沒試出來"
-         "（`2024/01/01` 回 `參數輸入錯誤`）"
+         "　⇒ ⭐ **月**那一半端點也解了（probe 123）："
+         "`statistics/monthlyStock?code=<代號>&date=<**西元年**>`"
+         "（⛔ 只有年；七種格式只有這一種中，⚠ 我送西元它回民國）"
+         "　⇒ ⛔ **而刻意還沒接**：上市月表的 high／low 是**盤中**、"
+         "上櫃月表是**收市**（收盤），avg 一個加權一個簡單平均，單位一個股一個仟股"
+         "　⇒ 併進同一張表 ＝ 一次做出**三道**靜默的定義接縫"
+         "　⇒ ⭐ 要接就自己一份檔（`official_monthly_tpex.csv`），"
+         "⚠ 而目前**沒有消費者**要它 ⇒ 這一格**還開著**"
          "　⇒ ⚠ 而線索一直在我方自己的 `data/meta/_site_inventory.txt` 裡"
          "（3.5④「自己家查過沒有」）"),
     ]
@@ -748,9 +808,9 @@ def main():
                         f"（⛔ 不等於「全市場都有官方統計」；⚠ 另有 {len(give_up):,} 檔"
                         "連續答不出來而放棄，見 `_official_stats_miss.csv`）")
 
-    Y = _load(yearly_path(a.market), Y_HEADER)
-    M = _load(monthly_path(a.market), M_HEADER)
-    T = _load(tpex_yearly_path(), TY_HEADER) if a.market == "tpex" else {}
+    Y = _load(yearly_path(a.market), Y_HEADER, y_key)
+    M = _load(monthly_path(a.market), M_HEADER, m_key)
+    T = _load(tpex_yearly_path(), TY_HEADER, y_key) if a.market == "tpex" else {}
     n0y, n0m = len(Y), len(M)
     ok = []
     flushed = 0
@@ -772,9 +832,9 @@ def main():
             print(f"  [{i}/{len(todo)}] {sid} ✗ {err}", flush=True)
             continue
         for r in ys:
-            Y[tuple(r[:3])] = r
+            Y[y_key(r)] = r
         for r in ms:
-            M[tuple(r[:3])] = r
+            M[m_key(r)] = r
         ok.append(sid)
         print(f"  [{i}/{len(todo)}] {sid} ✓ 年 {len(ys)}／月 {len(ms)}", flush=True)
         # ⭐ 每 FLUSH_EVERY 檔落地一次 ⇒ 被砍最多賠 FLUSH_EVERY 檔，⛔ 不是整批 400
