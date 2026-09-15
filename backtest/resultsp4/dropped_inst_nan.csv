@@ -1,4 +1,4 @@
-# commit=bd3d8e5cb run=2026-09-15 22:10 (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers=centers_v3.json(23be85b004977222)
+# commit=621507cf5 run=2026-09-16 03:18 (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers=centers_v3.json(23be85b004977222)
 measure_date,stock_id,market,bars,inst_win_notraded,inst_win_missing_traded,fwd_20,fwd_60,fwd_120
 2015-08-03,1799,tpex,139,0.0,1.0,-0.26447574334898283,-0.09076682316118934,0.020344287949921824
 2015-08-03,3520,tpex,139,0.0,2.0,-0.245933014354067,-0.22775119617224882,-0.044976076555024114
