@@ -929,6 +929,40 @@ def main():
                         " ⇒ 不整份印（⛔ 洗版也是一種看不見）")
             say(f"           ⇒ ⭐ 相異回應 **{len(_bodies)}** 種／四種打法"
                 "（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）")
+            # ⭐⭐ `monthlyStock` 那一頁的表單欄位是 **['code','date','query']**
+            #   （probe 122 從頁面自己讀到的）⇒ 參數名是 `code`＋`date`，
+            #   ⛔ 而 `date=2024/01/01` 回 `參數輸入錯誤` ⇒ **格式**不對，不是名字不對。
+            #   ⇒ 這一段只掃 `date` 的**格式**，⛔ 不再猜名字。
+            #   ⚠ 判準是「回應回顯的 `code` 等於我送的」＋ `totalCount`，
+            #     ⛔ 不是 `stat`——它在沒收到代號時照樣是 `ok`。
+            if "month" in _act.lower():
+                say("           ── ⭐ `date` 的**格式**掃描（⛔ 名字已經從頁面讀到了）──")
+                for _dv in ("2024", "113", "2024/01/01", "20240101",
+                            "113/01/01", "2024/01", "11301"):
+                    _raw2, _e2 = twparse.post_form(
+                        _u, {"code": _CODE, "date": _dv, "response": "json"},
+                        retries=1, timeout=45)
+                    if _e2 or not _raw2:
+                        say(f"              date={_dv!r:14} ⛔ {_W(_e2, 80)}")
+                        continue
+                    try:
+                        _d2 = json.loads(_raw2.decode("utf-8", "replace"))
+                    except ValueError:
+                        say(f"              date={_dv!r:14} ⚠ 不是 JSON"
+                            f"（{len(_raw2):,} bytes）")
+                        continue
+                    _t2 = (_d2.get("tables") or [{}])[0]
+                    _echo = _t2.get("code")
+                    _tc = _t2.get("totalCount")
+                    _hit = (str(_echo or "") == _CODE and (_tc or 0) > 0)
+                    say(f"              date={_dv!r:14} stat={_d2.get('stat')!r}"
+                        f"｜回顯 code={_echo!r}｜totalCount={_tc}"
+                        f"｜inner date={_t2.get('date')!r}"
+                        + ("　⭐⭐ **中了**" if _hit else ""))
+                    if _hit:
+                        say("                 fields："
+                            + str(_t2.get("fields")))
+                        say("                 第一列：" + str((_t2.get("data") or [None])[0]))
 
     return _write(0)
 
