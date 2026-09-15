@@ -1087,6 +1087,35 @@ def script_srcs(text, base=None, cap=12):
     return sorted(set(hits))[:cap]
 
 
+def around(text, needle, span=300, cap=4):
+    """把 `needle` 前後的原始碼**原樣印出來**。→ list[str]。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要有它：**端點名挖到了，參數還是不知道**
+
+    2026-09-15 `mop_search.js` 裡挖到 `/mops/web/ezsearch_query`
+    ——⭐ 那是 MOPS「公告快易查」真正的查詢端點，我方從來沒用過。
+    ⚠ 而「知道網址」離「打得到」還差**參數怎麼組**。
+
+    ⇒ ⛔ 而參數**不可以猜**（CLAUDE.md 第一點：先把回應／原始碼自己講的話攤開）。
+    ⭐ 最便宜的做法就是把那一段原始碼**原樣印出來**讓人讀
+    ——⚠ 判準沒辦法窮舉形狀，而人讀三行字就分得出來。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out, seen = [], 0
+    for m in re.finditer(re.escape(needle), t):
+        if seen >= cap:
+            out.append(f"      …（另 {len(re.findall(re.escape(needle), t)) - cap} 處未印）")
+            break
+        a = max(0, m.start() - span // 2)
+        seg = " ".join(t[a:m.start() + span // 2].split())
+        out.append(f"      […{seg}…]")
+        seen += 1
+    if not seen:
+        # ⛔ 找不到要說「找不到」，⚠ 不是印一片空白（那跟「沒有這一段」長得一樣）
+        out.append(f"      ⚠ 這一份裡**找不到** `{needle}`（⛔ 不是「它不存在」，是不在這一支）")
+    return out
+
+
 def js_followups(text, base, cap=8, skip_hosts=("googleapis", "gstatic",
                                                  "google-analytics", "googletagmanager",
                                                  "jquery.com", "cdnjs", "jsdelivr")):

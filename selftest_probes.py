@@ -933,6 +933,21 @@ def check_js_followups():
     ck("  而且**講出**有幾支是通用函式庫（⛔ 不是靜靜重排）",
        "通用函式庫 3 支" in txt7, txt7[:200])
 
+    # ⑦c ⭐⭐ `around()`：端點名挖到了，**參數還是不知道** ⇒ 原始碼原樣印
+    js = ('function getMsg(value) { //var url = "/mops/web/ezsearch_query"; '
+          'var keyValue = "pg=ezsearch"; if (lang == "TW") '
+          '{ url = "/server-java/AjaxCheck"; } }')
+    a = "\n".join(B.around(js, "ezsearch_query", span=200))
+    ck("⑦c ⭐ 把端點前後的碼**原樣**印出來（⇒ 參數名讀得到，⛔ 不用猜）",
+       "ezsearch_query" in a and "getMsg" in a, a[:200])
+    miss = "\n".join(B.around(js, "沒有這個字"))
+    ck("  ⛔ 找不到要說「找不到」，⚠ 不是印一片空白"
+       "（那跟「沒有這一段」長得一樣）",
+       "找不到" in miss and "不是「它不存在」" in miss, miss)
+    many = "\n".join(B.around("xAx" * 10, "A", span=6, cap=2))
+    ck("  而超過 cap 要講**還有幾處沒印**（⛔ 不是靜靜截斷）",
+       "另 8 處未印" in many, many)
+
     # ⑩ 本站一支都沒有 ⇒ 要說「挖不下去」，⛔ 不可以讀成「官方沒有」
     B.get = fake_get
     try:
