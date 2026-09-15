@@ -1173,6 +1173,82 @@ def check_f2_numbers():
     return bad
 
 
+def check_page_wiring():
+    """⭐⭐ `page_wiring`：頁面**自己**把參數放在哪裡（inline script ＋ data-*）。
+
+    ⛔ 它存在的理由是一個**錯過的結論**：`otccal_probe` 2026-09-09 第四輪寫著
+
+    > `tables.js` 那 142 處 `calendar` 全是 moment.js 的語系表
+    > ⇒ **關鍵字次數多 ≠ 有端點**。11 支 js 裡一條寫死的路徑都沒有。
+    > ⇒ 網址只剩兩個地方可能：頁面自己的 inline `<script>`，或 `data-*` 屬性。
+
+    ⚠ 而 `parvalue_probe`（清單 C4）**從來沒挖過那兩個地方**
+    ⇒ 它的「沒有端點」是在**沒掃過的範圍**上說的（三點①）。
+    """
+    import backfill as BB
+    bad = 0
+
+    def ck(name, cond, extra=""):
+        nonlocal bad
+        print(("✓ " if cond else "✗ ") + name)
+        if not cond:
+            bad += 1
+            if extra:
+                print(f"    {extra}")
+
+    # ⚠ 這裡的 `src` script **故意帶內容**：空的 `<script src>` 被「內容是空字串」
+    #   那一關濾掉了 ⇒ 突變（把 `(?![^>]*\bsrc=)` 拿掉）**什麼都不會變**，
+    #   ⛔ 而那看起來跟「這條斷言沒用」一模一樣（第七點第四個陷阱）。
+    #   ⭐ 帶了內容，那個突變才真的會多算一段。
+    html = ('<html><head><script src="/rsrc/js/tables.js">/*fallback*/z=1;</script>'
+            '</head>'
+            '<body><script>\n var u = "/api/codeQuery";\n  go(u);\n</script>'
+            '<div data-kind="parvalue" data-year="115" data-kind="dup"></div>'
+            '<script src="https://x/y.js"></script></body></html>')
+    out = "\n".join(BB.page_wiring(html))
+    ck("① 帶 src 的 <script> **不算** inline（⛔ 算進去會把外部 js 當成頁面自己的）",
+       "**1 段**" in out, out[:200])
+    ck("② inline 的內容逐字印出來（⇒ 人讀得到它怎麼拼網址）",
+       "/api/codeQuery" in out, out[:300])
+    ck("③ `data-*` 抓得到，而且**去重**", "data-kind" in out and "data-year" in out
+       and out.count("data-kind = ") == 2, out[:400])
+    # ⭐ 反向：完全沒有的時候要**講出來**，⛔ 不是印一片空白
+    out0 = "\n".join(BB.page_wiring("<html><body>hi</body></html>"))
+    ck("④ ⛔ 一段都沒有時要**明講**（⚠ 空白跟「沒挖」長得一樣）",
+       "⛔ 一段都沒有" in out0 and "⛔ 一個都沒有" in out0, out0)
+    ck("⑤ 而且仍然印出**0** 這個數字（⇒ 讀得出它掃過了）",
+       "**0 段**" in out0 and "**0 種**" in out0, out0)
+    # ⭐ 超過 cap 要說「另 N 段未印」，⛔ 不是靜靜截掉
+    many = "".join(f"<script>x{i}=1;</script>" for i in range(9))
+    outm = "\n".join(BB.page_wiring(many, inline_cap=2))
+    ck("⑥ 超過 cap ⇒ 講「另 N 段未印」（⛔ 靜靜截掉就是我今天連錯兩次的那個坑）",
+       "另 7 段未印" in outm, outm[-200:])
+    long1 = "<script>" + ("a" * 3000) + "</script>"
+    outl = "\n".join(BB.page_wiring(long1, inline_chars=300))
+    ck("⑦ 單段太長也要講「另 N 字未印」",
+       "字未印" in outl, outl[-200:])
+
+    # ⭐⭐ 呼叫點：兩支探針都要走**這一份**（四點五）
+    import ast as _a
+    _here = _here_dir()
+    n_call, n_own = 0, []
+    for fn in ("parvalue_probe.py", "otccal_probe.py"):
+        src = io.open(os.path.join(_here, fn), encoding="utf-8").read()
+        tree = _a.parse(src)
+        if any(isinstance(n, _a.Call)
+               and getattr(n.func, "attr", "") == "page_wiring"
+               for n in _a.walk(tree)):
+            n_call += 1
+        # ⛔ 而且不可以自己再寫一份：掃有沒有自己在 findall `data-`
+        if "data-[a-zA-Z0-9_" in src:
+            n_own.append(fn)
+    ck("⑧ ⭐ 兩支探針都走 `page_wiring`（⛔ 不是各寫一份）",
+       n_call == 2, f"實得 {n_call} 支")
+    ck("⑨ ⛔ 而且沒有人自己再 findall 一次 `data-*`（那就是第二份實作）",
+       not n_own, str(n_own))
+    return bad
+
+
 def check_no_dup_keys():
     """⛔⛔ `SECTIONS` 這種 dict 字面量**有重複鍵也不會報錯**——Python 靜靜取後面那個。
 
@@ -1394,6 +1470,7 @@ def main():
     bad += check_js_followups()
     bad += check_scale_qualified()
     bad += check_f2_numbers()
+    bad += check_page_wiring()
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──

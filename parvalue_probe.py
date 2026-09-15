@@ -171,6 +171,14 @@ def main():
         # ⭐ ②③④ 全 0 ⇒ 那一發請求寫在**外部 .js** 裡（唯一那一份實作）
         for ln in B.js_followups(raw, base=url):
             say("   " + ln)
+        # ⛔⛔ 2026-09-15：上一輪停在「11 支 js 都沒有寫死的路徑」，
+        #   ⚠ 而 `otccal_probe` 2026-09-09 第四輪**早就記過**那個結論是不完整的：
+        #     「網址只剩兩個地方可能：**頁面自己的 inline `<script>`**，
+        #       或 **`data-*` 屬性**（TPEx 新站把參數放在這裡）。」
+        #   ⇒ ⛔ 而這一支從來沒挖過那兩個地方 ⇒ 「沒有端點」是在**沒掃過的範圍**上說的。
+        #   ⭐ 走唯一那一份（`backfill.page_wiring`，四點五）。
+        for ln in B.page_wiring(raw):
+            say("   " + ln)
 
     say("\n── ★ 參數有沒有被無視 ──")
     say("TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，"

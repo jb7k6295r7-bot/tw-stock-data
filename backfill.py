@@ -976,6 +976,48 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
+def page_wiring(text, inline_cap=6, inline_chars=1200, attr_cap=40):
+    """那一頁**自己**把參數放在哪裡：inline `<script>` ＋ `data-*` 屬性。
+
+    ⭐ 只有這一份實作（四點五）。⚠ 而它是從 `otccal_probe` 抽出來的——
+    那一支 2026-09-09 第四輪的結論就是這件事：
+
+    > `tables.js` 那 142 處 `calendar` 全是 moment.js 的語系表
+    > ⇒ **關鍵字次數多 ≠ 有端點**。11 支 js 裡一條寫死的路徑都沒有。
+    > ⇒ 網址只剩兩個地方可能：**頁面自己的 inline `<script>`**，
+    >   或 **`data-*` 屬性**（TPEx 新站把參數放在這裡）。
+
+    ⇒ ⛔ 這一支**不下結論、不拼網址**：只把那兩個地方的原文印出來。
+    ⚠ 而 `xhr_clues()` 挖的是**外部 .js**，這一支挖的是**頁面自己**
+    ——⭐ 兩者互補，⛔ 少了這一支就會得到「11 支 js 都沒有 ⇒ 沒有端點」那個錯結論。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out = []
+    inline = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", t, re.S)
+    inline = [re.sub(r"\s+", " ", b).strip() for b in inline]
+    inline = [b for b in inline if b]
+    out.append(f"⑥ 頁面自己的 inline <script>：**{len(inline)} 段**"
+               f"（共 {sum(len(x) for x in inline):,} 字）"
+               + ("　⛔ 一段都沒有" if not inline else ""))
+    for i, b in enumerate(inline[:inline_cap], 1):
+        out.append(f"   ── 第 {i} 段（{len(b):,} 字）")
+        for k in range(0, min(len(b), inline_chars), 160):
+            out.append(f"      {b[k:k + 160]}")
+        if len(b) > inline_chars:
+            out.append(f"      …（這一段另 {len(b) - inline_chars:,} 字未印）")
+    if len(inline) > inline_cap:
+        out.append(f"   …（另 {len(inline) - inline_cap} 段未印）")
+
+    das = sorted(set(re.findall(r'(data-[a-zA-Z0-9_\-]+)\s*=\s*["\']([^"\']*)', t)))
+    out.append(f"⑦ `data-*` 屬性：**{len(das)} 種**"
+               + ("　⛔ 一個都沒有" if not das else ""))
+    for k, v in das[:attr_cap]:
+        out.append(f"   {k} = {v[:90]!r}")
+    if len(das) > attr_cap:
+        out.append(f"   …（另 {len(das) - attr_cap} 種未印）")
+    return out
+
+
 def xhr_clues(text, cap=12, base=None):
     """那一頁的 js **去打誰**——把線索挖出來。→ list[str]（要印的行）。
 
