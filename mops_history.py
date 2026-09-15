@@ -56,6 +56,7 @@ import urllib.request
 from html.parser import HTMLParser
 
 import neighbor_floor          # ⭐ 「跟鄰近同類比數量」只有那一份實作（四點五）
+import runlog                  # ⭐ 可見性要由**資料**承擔，⛔ 不是由 log（四點二⑤）
 
 MOPSOV = "https://mopsov.twse.com.tw"
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -550,6 +551,31 @@ def foreign_rows(per, market):
             if len(f) > 1 and ("-KY" in f[1] or "-DR" in f[1]):
                 n += 1
     return n
+
+
+def foreign_summary():
+    """全庫的 `revenue_hist` 裡，外國企業那一段的現況 → (有值的期別檔數, 0 列的清單, 總列數)。
+
+    ⭐ 抽成一支函式的理由：它本來寫在 `main()` 裡 ⇒ ⛔ **測不到**
+      （`main()` 會連網）。CLAUDE.md 第七點第三個：測了判準沒測呼叫點是一族，
+      ⚠ 而「判準根本住在一個測不到的地方」比那個更前面。
+    """
+    per_f, zero, tot = 0, [], 0
+    d = os.path.join(OUT, "revenue_hist")
+    for n in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if not n.endswith(".csv") or "_" not in n:
+            continue
+        base = n[:-4]
+        per, mkt = base.rsplit("_", 1)
+        v = foreign_rows(per, mkt)
+        if v is None:
+            continue
+        tot += v
+        if v:
+            per_f += 1
+        else:
+            zero.append(base)
+    return per_f, zero, tot
 
 
 def has_output(sub, per, market):
@@ -1101,6 +1127,42 @@ def main():
     print("[hist] 寫在 data/mops/revenue_hist、fs_hist、bs_hist，"
           "**與 mops.py 的 revenue/、fs/、bs/ 分開**——"
           "欄位不同期不一樣，先分開存，對照過再決定要不要合併。")
+
+    # ── ⭐ runlog 區塊（2026-09-15 加）
+    #
+    # ⛔ 在這之前，這一支「做完了沒」**只活在 Actions 的 log 裡**
+    # ⇒ log 會捲掉，而捲掉的東西不算守門（CLAUDE.md 四點二⑤：
+    #   **可見性要由「資料」承擔**）。⚠ 而四條線讀的是 `_last_run.md`。
+    #
+    # ⭐ 而這一塊最重要的是**外國企業那一段**：`--fill` 那道判準對
+    #   「所有鄰居一起缺同一段」免疫（七點五）⇒ ⛔ 它不會替我們說話
+    #   ⇒ 這裡把**逐期的實際列數**攤開來講，讓人一眼看得出它到底進來了沒。
+    rl = runlog.Run("mops_history")
+    rl.info("這一趟", f"kind={a.kind}｜start={a.start}｜"
+                      f"fill={'是' if a.fill else '⭐ **否**（整批重抓）'}")
+    rl.info("狀態帳本", "data/mops/_hist_status.csv"
+                        "　⭐ 逐期的 note 裡寫著**每一段各幾列**"
+                        "（`0／國內 N 列｜1／外國企業（KY／DR） M 列`）")
+    if a.kind in ("revenue", "both"):
+        per_f, zero, tot = foreign_summary()
+        rl.info("⭐ 外國企業（`-KY`／`-DR`）那一段",
+                f"**{per_f}** 個期別檔有值｜合計 **{tot:,}** 列"
+                f"｜0 列的有 **{len(zero)}** 個"
+                + (f"（前幾個：{zero[:6]}）" if zero else ""))
+        # ⛔ 判準不是「每一期都要有」（absent ≠ zero，五點三）
+        # ⭐ 是「**有沒有任何一期有**」——全 0 就代表 `_1` 那一段根本沒進來。
+        rl.check("⭐⭐ 外國企業那一段**真的進來了**"
+                 "（⛔ 全部 0 列 ⇒ `_1` 沒抓到，⚠ 而它跟「官方沒發」長得一樣）",
+                 per_f > 0, f"有值的期別檔 {per_f} 個｜合計 {tot:,} 列")
+    rl.info("期別結果", f"ok {sum(1 for v in state.values() if v[0] == 'ok')}"
+                        f"｜fail {len(fails)}｜尚未公告 {len(pending)}")
+    if fails:
+        rl.note("⚠ 有問題的期別（前 10）：" + "；".join(
+            f"{f[0]} {f[1]} {f[2]}｜{f[3]}" for f in fails[:10]))
+    rl.check("不是整批失敗（全失敗＝被擋或參數壞了）",
+             any(v[0] == "ok" for v in state.values()) or not state,
+             f"ok {sum(1 for v in state.values() if v[0] == 'ok')}")
+    rl.finish()
     return 1 if fails else 0
 
 

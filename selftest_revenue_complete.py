@@ -20,6 +20,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import mops_history as M                                       # noqa: E402
+import runlog                                                  # noqa: E402
 
 OK = FAIL = 0
 
@@ -160,6 +161,65 @@ def main():
     finally:
         M.OUT = old5
         shutil.rmtree(d5, ignore_errors=True)
+
+    # ── ⑦ ⭐ `foreign_summary()`：runlog 那一格的數字（⛔ 它本來住在 main() 裡，測不到）──
+    print("\n── ⑦ runlog 要講得出外國企業那一段到底進來了沒 ──")
+    d7 = tempfile.mkdtemp(prefix="mrev7_")
+    old7, oldrl = M.OUT, runlog.PATH
+    rlp = os.path.join(d7, "_last_run.md")
+    repo_rl = os.path.join(HERE, "data", "meta", "_last_run.md")
+    before = (io.open(repo_rl, "rb").read() if os.path.isfile(repo_rl) else None)
+    try:
+        M.OUT = d7
+        runlog.PATH = rlp
+        write(d7, "2024-01", "twse", 100, foreign=12)
+        write(d7, "2024-02", "twse", 100, foreign=0)
+        write(d7, "2024-01", "tpex", 80, foreign=3)
+        n, zero, tot = M.foreign_summary()
+        ck("⭐ 有值的期別檔數（2 個）", n == 2, str(n))
+        ck("⭐ 0 列的那一個被列出來（⇒ 讀的人看得到是哪一期）",
+           zero == ["2024-02_twse"], str(zero))
+        ck("⭐ 合計列數 12+3=15", tot == 15, str(tot))
+        # ⛔ 全 0 的那一種：判準是「**有沒有任何一期有**」，⛔ 不是「每一期都要有」
+        d8 = tempfile.mkdtemp(prefix="mrev8_")
+        M.OUT = d8
+        write(d8, "2024-01", "twse", 100, foreign=0)
+        n2, _z2, t2 = M.foreign_summary()
+        ck("⛔ 全庫一列外國企業都沒有 ⇒ n=0（⇒ runlog 那一格會 ✗）",
+           n2 == 0 and t2 == 0, f"n={n2} tot={t2}")
+        shutil.rmtree(d8, ignore_errors=True)
+    finally:
+        M.OUT, runlog.PATH = old7, oldrl
+        shutil.rmtree(d7, ignore_errors=True)
+    # ★ 沒有動到 repo 真的 `_last_run.md`（CLAUDE.md 第七點第五個：沙箱導走漏一個的代價）
+    after = (io.open(repo_rl, "rb").read() if os.path.isfile(repo_rl) else None)
+    ck("★ 沒有動到 repo 真的 `data/meta/_last_run.md`（逐位元）", before == after)
+
+    # ⭐ 呼叫點：`main()` 真的把它接到一條 runlog `check` 上
+    #   ⚠ 比 **AST 且限定在 `main()` 裡**，⛔ 不是全檔 grep 字串
+    #     （第七點第八個：那幾個字在上面的註解裡也有一份）
+    import ast as _ast
+    _src = io.open(os.path.join(HERE, "mops_history.py"), encoding="utf-8").read()
+    _fmain = next((f for f in _ast.walk(_ast.parse(_src))
+                   if isinstance(f, _ast.FunctionDef) and f.name == "main"), None)
+    _calls = [n for n in _ast.walk(_fmain) if isinstance(n, _ast.Call)]
+    ck("⭐ `main()` 裡真的叫了 `foreign_summary()`",
+       any(getattr(c.func, "id", "") == "foreign_summary" for c in _calls))
+    ck("⭐ 而且 `main()` 開了一個 runlog 區塊（⛔ 不是只印到 log——log 會捲掉）",
+       any(getattr(getattr(c.func, "value", None), "id", "") == "runlog"
+           and getattr(c.func, "attr", "") == "Run" for c in _calls))
+    # ⛔⛔ 第一版寫「`main()` 裡有任何一個 `.check(`」⇒ 突變 K6（把**那一條**
+    #   改成 `info`）**全綠**——因為 `main()` 本來就有別的 `.check(`。
+    #   ⭐ 第七點那句的又一次：**斷言要釘住那一條**，⛔ 不是釘住那一族。
+    def _mentions(node, name):
+        return any(isinstance(x, _ast.Name) and x.id == name
+                   for x in _ast.walk(node))
+    _checks_pf = [c for c in _calls
+                  if getattr(c.func, "attr", "") == "check"
+                  and any(_mentions(a, "per_f") for a in c.args)]
+    ck("⭐⭐ 而外國企業那個數字真的接到一條 `.check(` 上"
+       "（⛔ 只有 `info` 的話它永遠不會紅）",
+       len(_checks_pf) == 1, f"實得 {len(_checks_pf)} 條")
 
     # ── ⑥ ⭐ 而「第一次整批重抓」靠的是 workflow 那顆開關，⛔ 不是這道判準 ──
     #   ⚠ 這一條釘的是**呼叫點**：`feeds.yml` 真的有一條路會把 `--fill` 拿掉。
