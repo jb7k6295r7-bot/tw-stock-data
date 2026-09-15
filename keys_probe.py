@@ -332,7 +332,17 @@ def f2_kou_jing(day):
             ("鉅額交易**日**成交量值統計 BFIAUU",
              f"{TW}/block/BFIAUU?date={day}&response=json&type=day", "block"),
             ("每日上市上櫃跨市場成交資訊 MI_INDEX4",
-             f"{TW}/indices/MI_INDEX4?date={day}&response=json", "x")):
+             f"{TW}/indices/MI_INDEX4?date={day}&response=json", "x"),
+            # ⭐⭐ 2026-09-15 加：F2 卡在一句**未驗的候選**——
+            #   「那 29% 的股數缺口是**權證**」（我方母體刻意排除、FMTQIK 含）。
+            # ⛔ 而我方庫裡沒有權證的量 ⇒ 離線量不到。
+            # ⇒ MI_INDEX 的回應裡有**分類別**的大盤統計（股票／權證／ETF／…），
+            #   ⭐ 而下面那個迴圈本來就會逐表印標題、欄名與逐欄合計
+            #   ⇒ 把它加進來，那張表**自己會講出**權證那一列是多少。
+            # ⛔ 這裡**不猜 type**：用我方既有那一個（`ALLBUT0999`，第 62 行那條）。
+            ("上市每日收盤行情 MI_INDEX（⭐ 要的是它的**分類別**大盤統計）",
+             f"{TW}/afterTrading/MI_INDEX?date={day}&type=ALLBUT0999"
+             "&response=json", "x")):
         say("")
         say(f"  ── {label}")
         say(f"     {url}")
@@ -364,8 +374,18 @@ def f2_kou_jing(day):
             if tot:
                 say("          ⭐ 逐欄合計："
                     + "｜".join(f"{k} {v:,.0f}" for k, v in tot.items()))
+            # ⛔⛔ 這裡本來是 `elif`（2026-09-15 當場踩到）：分類別那張大盤統計表
+            #   **有可加總的欄** ⇒ 走 `tot` 那一支 ⇒ ⛔ 逐列**永遠印不出來**，
+            #   ⚠ 而 F2 要的正是它的「認購(售)權證」**那一列**，不是合計。
+            # ⇒ ⭐ 兩個都印：合計說總量，逐列說**分佈在誰身上**。
+            if rows and len(rows) <= 20:
+                # ⭐ 標籤要有：⛔ 一堆裸 list 在捲動的輸出裡看不出是什麼，
+                #   ⚠ 而斷言也只能比帶標籤的整串（第七點）。
+                say(f"          ── ⭐ 逐列（{len(rows)} 列，⛔ 不是只有合計）──")
+                for r in rows:
+                    say(f"             {r}")
             elif rows:
-                say(f"          首列：{rows[0]}")
+                say(f"          首列：{rows[0]}　⚠ 另 {len(rows) - 1} 列未印（表太大）")
             # ⛔⛔ 2026-09-15 第一版的病根：FMTQIK 回的是**整個月**（11 列）
             #   ⇒ 只印「逐欄合計」＝ 整月合計，⚠ 而上面①是**單日**
             #   ⇒ 兩個數字並排，而它們**不是同一個量**。
