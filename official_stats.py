@@ -152,6 +152,23 @@ COVERED = ("twse",)
 #  實測一趟 400 檔超過一小時 ⇒ 50 檔約 8 分鐘，賠得起。
 FLUSH_EVERY = 50
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 「問過而它答不出來」的台帳。⛔ 沒有它，這一條**永遠到不了終點**。
+#
+# 2026-09-15 實測（run 34976777901）：本趟 400 檔，成功 331／失敗 69。
+# ⚠ 而**失敗的那 69 檔沒有被記下來** ⇒ 下一趟 `todo` 還是會挑到它們
+#   ⇒ ⛔ 每一趟都拿越來越多的請求去問已知答不出來的檔，
+#     而「還沒做 320 檔」這個數字**讀起來像是還有 320 檔可以補**。
+#
+# ⭐ 而那句失敗訊息（`很抱歉，沒有符合條件的資料!`）**講不出它是哪一種**
+#   （第二點①那一族）：下市太久／那一年還沒上市／端點當下不穩，三種長得一樣。
+# ⇒ 所以判準**不是**「失敗一次就放棄」，是**連續失敗 MISS_TRIES 次**，
+#   ⛔ 而且只有在**那一趟有別的檔成功**（＝端點是活的）時才記一次。
+#   ⚠ 沒有後面那個條件的話，端點掛掉一趟就會把全部 1,158 檔判死。
+MISS = os.path.join(META, "_official_stats_miss.csv")
+MISS_HEADER = "stock_id,tries,last_asof,why\n"
+MISS_TRIES = 2
+
 
 def codes(covered=COVERED):
     """這個端點**答得出來**的普通股（含已下市）。→ sorted list[str]。
@@ -186,6 +203,67 @@ def excluded(covered=COVERED):
     return n
 
 
+def load_miss(path=None):
+    """→ {代號: (tries, last_asof, why)}。讀不到回 {}（⛔ 不是炸掉）。"""
+    p = path or MISS
+    out = {}
+    if not os.path.exists(p):
+        return out
+    with io.open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            sid = (r.get("stock_id") or "").strip()
+            if not sid:
+                continue
+            try:
+                n = int(r.get("tries") or 0)
+            except ValueError:
+                n = 0
+            out[sid] = (n, (r.get("last_asof") or "").strip(),
+                        (r.get("why") or "").strip())
+    return out
+
+
+def bump_miss(fail, today, path=None, alive=True):
+    """把本趟失敗的檔**累加**進 miss 台帳。→ 寫進去的檔數。
+
+    ⛔⛔ `alive` 是**必填語意**：那一趟有沒有任何一檔成功。
+    ⚠ 端點整個掛掉時每一檔都會失敗 ⇒ 若照樣累加，**兩趟就把全庫判死**，
+    而畫面上完全正常（四點二那一族：這個綠燈在錯的時候也一樣綠）。
+    ⇒ `alive=False` ⇒ **一個字都不寫**。
+
+    ⭐ 而它是**合併**，⛔ 不是整份取代（四點六③ `save_done` 那個坑）：
+    讀進來的 dict ＋ 本趟的鍵，再整份寫回。
+    ⚠ 而**成功過的檔要從這裡消失**——那是由 `todo` 那一側保證的
+    （成功之後它進 `DONE`，就再也不會被挑到）⇒ 這裡只管累加。
+    """
+    p = path or MISS
+    if not alive or not fail:
+        return 0
+    cur = load_miss(p)
+    for sid, why in fail:
+        n, _, _ = cur.get(sid, (0, "", ""))
+        cur[sid] = (n + 1, today, str(why)[:120])
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with io.open(p, "w", encoding="utf-8") as f:
+        f.write(MISS_HEADER)
+        for sid in sorted(cur):
+            n, asof, why = cur[sid]
+            f.write(f"{sid},{n},{asof},{str(why).replace(',', '；')}\n")
+    return len(fail)
+
+
+def split_todo(pool, done, miss, limit, tries=MISS_TRIES):
+    """把母體切成三堆。→ (todo, 還沒問過的全部, 問到放棄的)。
+
+    ⛔ **三堆要分開報**：「還沒做」把後兩者混在一起，
+    ⚠ 而它們的意義完全不同——一個是還有得補，一個是**這條路到此為止**。
+    """
+    give_up = sorted(c for c in pool
+                     if c not in done and miss.get(c, (0,))[0] >= tries)
+    fresh = [c for c in pool if c not in done and c not in set(give_up)]
+    return fresh[:limit], fresh, give_up
+
+
 def land(Y, M, ok, today, rl=None):
     """把這一批**落地**：兩份判準檔 ＋ 續跑台帳。→ 這次寫進台帳的檔數。
 
@@ -217,7 +295,7 @@ def land(Y, M, ok, today, rl=None):
     return len(ok)
 
 
-def progress_lines(pool, done, todo, ex):
+def progress_lines(pool, done, todo, ex, give_up=()):
     """續跑那兩行怎麼寫。→ [(label, value)]。⭐ 抽出來是為了驗得到（第七點）。
 
     ⛔ **分母是 `pool`（這個端點涵蓋得到的），不是全部普通股。**
@@ -225,9 +303,21 @@ def progress_lines(pool, done, todo, ex):
     而每一趟都像有在跑——那正是「永遠跑不完，每趟都像有在跑」那個形狀。
     """
     pct = len(done) * 100 // max(1, len(pool))
+    gu = list(give_up or [])
+    reach = len(pool) - len(gu)
+    rp = len(done) * 100 // max(1, reach)
     return [
         ("續跑", f"母體 **{len(pool):,}** 檔（⭐ 只有上市——這個端點不涵蓋別的）"
                  f"｜已完成 {len(done):,}｜**{pct}%**｜本趟 {len(todo)}"),
+        # ⭐⭐ 三堆分開報。⛔ 「還沒做」把後兩堆混在一起 ⇒ 那個數字會**永遠不歸零**，
+        #   而每一趟都像有在跑（四點六③那個形狀）。
+        ("⭐ 還剩下的分兩種（⛔ 不可以合著看）",
+         f"**還沒問過** {max(0, reach - len(done)):,} 檔"
+         f"｜**問到放棄** {len(gu):,} 檔"
+         f"（連續 {MISS_TRIES} 趟答不出來，記在 `_official_stats_miss.csv`）"
+         f"　⇒ ⭐ 對**問得到**的那 {reach:,} 檔而言是 **{rp}%**"
+         "　⚠ 而「問到放棄」⛔ 不等於「這檔沒有官方統計」"
+         "——那句失敗訊息（`很抱歉，沒有符合條件的資料!`）講不出它是哪一種"),
         # ⛔ 排掉的要講出來：「排掉了」與「沒有這種股票」**不是同一件事**
         ("⚠ 這個端點答不出來的（⛔ 不是缺口，是涵蓋範圍）",
          "｜".join(f"{k} {v:,} 檔" for k, v in sorted(ex.items()))
@@ -254,13 +344,16 @@ def main():
             f.readline()
             done = {ln.split(",")[0].strip() for ln in f if ln.strip()}
     pool = codes()
-    todo = [c for c in pool if c not in done][:a.limit]
+    # ⭐ 三堆只在**這裡切一次**（四點五）：⛔ 不要在別處再算一次 `c not in done`。
+    miss = load_miss() if not a.force else {}
+    todo, fresh, give_up = split_todo(pool, done, miss, a.limit)
     ex = excluded()
-    for label, value in progress_lines(pool, done, todo, ex):
+    for label, value in progress_lines(pool, done, todo, ex, give_up):
         rl.info(label, value)
     if not todo:
-        rl.info("狀態", "✓ 這個端點涵蓋得到的**全部跑完了**"
-                        "（⛔ 不等於「全市場都有官方統計」）")
+        rl.info("狀態", "✓ **問得到的全部問完了**"
+                        f"（⛔ 不等於「全市場都有官方統計」；⚠ 另有 {len(give_up):,} 檔"
+                        "連續答不出來而放棄，見 `_official_stats_miss.csv`）")
 
     Y, M = _load(YEARLY, Y_HEADER), _load(MONTHLY, M_HEADER)
     n0y, n0m = len(Y), len(M)
@@ -296,6 +389,18 @@ def main():
     #     完全沒有內容就不落地。
     # ⭐ 最後一次落地走**同一個函式**（⛔ 不是另寫一段）
     land(Y, M, ok[flushed:], today)
+    # ⭐⭐ 失敗也要落地，⛔ 否則下一趟還會再問同一批（本節開頭那 69 檔）。
+    #   ⚠ `alive` ＝ 這一趟有沒有任何一檔成功：端點整個掛掉時**一個字都不寫**。
+    n_miss = bump_miss(fail, today, alive=bool(ok))
+    if fail and not ok:
+        rl.info("⛔ 本趟全失敗 ⇒ **不記 miss**",
+                f"{len(fail):,} 檔全部失敗 ⇒ 判定是**端點側**的問題，"
+                "⚠ 而不是這些檔沒有資料　⇒ ⭐ 一個字都不寫進 miss 台帳"
+                "（⛔ 寫了的話，掛掉兩趟就把全庫判死，而畫面上完全正常）")
+    elif n_miss:
+        rl.info("本趟記進 miss 台帳",
+                f"{n_miss:,} 檔　⇒ 連續 {MISS_TRIES} 趟才會被跳過，"
+                "⭐ 而它們仍然留在母體裡（⛔ 不是從報表上消失）")
     if not Y and not M:
         rl.info("處置", "⛔ 一筆都沒抓到且檔案不存在 ⇒ **不建立空檔**"
                         "（空的判準檔讀起來像是有這份判準）")
