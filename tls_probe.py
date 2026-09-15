@@ -35,6 +35,7 @@ import socket
 import ssl
 import sys
 import urllib.request
+import backfill as B
 
 # ⛔⛔ 這一支**故意不 import `ca_chain`**。
 #   它是**量現況**的那把尺：補鏈之後它會永遠回「通」，
@@ -240,7 +241,8 @@ def main():
     lines.append("⛔⛔ 不論結果是哪一格，**都不可以用 `verify=False`／`CERT_NONE` 當修法**。")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(
+        B.probe_stamp() + "\n".join(lines) + "\n")
     print("\n".join(lines))
     return 0
 

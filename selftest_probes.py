@@ -1046,24 +1046,59 @@ def check_probe_stamp():
     bad = 0
     here = os.path.dirname(os.path.abspath(__file__))
     miss, n = [], 0
+    # ⛔⛔ 這一段本來比**正規式**：
+    #     OUT\s*=\s*os\.path\.join\([^)]*"meta"[^)]*"_[A-Za-z0-9_]+\.txt"
+    #   ⚠ 而 `[^)]*` **跨不過括號** ⇒ 寫成
+    #     `os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "meta", …)`
+    #     的那幾支**掃不到**。
+    #   ⇒ 2026-09-15 實測：它說「17 支全部都叫」，⭐ 而真正的母體是 **20 支**，
+    #     ⛔ 漏掉的三支（`bsr_probe`／`finmind_probe`／`tls_probe`）**正好就是
+    #     沒有叫 `probe_stamp()` 的那三支**——⚠ 而報表上寫著 17/17。
+    #   ⇒ ⭐ 這是第七點那句套在守門自己身上：
+    #     **回報「某群 0 筆」時，要附上那個判準在該群抓到的正例數**
+    #     ——⛔ 而「母體本身被判準縮小了」比 0 筆更難看出來。
+    # ⇒ 改比 **AST**：任何一個 `os.path.join(...)`，只要它的引數（含巢狀）裡
+    #   同時出現字串 `"meta"` 與 `"_….txt"`，就算這支會寫探針輸出。
+    import ast as _ast
     for f in sorted(_g.glob(os.path.join(here, "*.py"))):
         base = os.path.basename(f)
         if base.startswith("selftest_"):
             continue
         t = io.open(f, encoding="utf-8").read()
-        if not _re.search(r'OUT\s*=\s*os\.path\.join\([^)]*"meta"[^)]*"_[A-Za-z0-9_]+\.txt"', t):
+        try:
+            tree = _ast.parse(t)
+        except SyntaxError:
+            continue
+        found = False
+        for node in _ast.walk(tree):
+            if not (isinstance(node, _ast.Call)
+                    and isinstance(node.func, _ast.Attribute)
+                    and node.func.attr == "join"):
+                continue
+            lits = [x.value for x in _ast.walk(node)
+                    if isinstance(x, _ast.Constant) and isinstance(x.value, str)]
+            # ⛔ `_*_low.txt` 不算：那是**低水位檔**（一個數字），⚠ 不是給人讀的報告
+            #   ——它們走 `lowwater.py`，而那一族自己有 `selftest_lowwater` ⑨ 在守。
+            #   ⇒ 判準放寬成 AST 之後這一族會被撈進來（實測多 8 支）⇒ 要排掉，
+            #   ⛔ 否則這一條會變成一條天天紅而且紅得沒道理的閘門。
+            if "meta" in lits and any(
+                    _re.fullmatch(r"_[A-Za-z0-9_]+\.txt", v)
+                    and not v.endswith("_low.txt") for v in lits):
+                found = True
+                break
+        if not found:
             continue
         n += 1
         if "probe_stamp(" not in t:
             miss.append(base)
-    ok = not miss and n >= 15
+    ok = not miss and n >= 20
     print(("✓ " if ok else "✗ ")
           + f"⭐⭐ {n} 支寫探針輸出的程式**全部**都叫 `backfill.probe_stamp()`"
             "（⛔ 少一支，那一份就講不出自己是哪一趟）")
     if miss:
         print(f"    ⛔ 沒叫的：{miss}")
         bad += 1
-    elif n < 15:
+    elif n < 20:
         print(f"    ⛔ 只掃到 {n} 支（⚠ 0 支跟全部通過長得一樣）")
         bad += 1
     # ⭐ 而那一份實作自己也要驗（⛔ 不是只驗呼叫點）
