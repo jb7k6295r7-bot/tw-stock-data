@@ -251,9 +251,10 @@ def main():
     # 閘門三件（〈八十二〉）：本輪額外特徵最長回看窗 ＝ relvol 60；AND 訊號自身的閘門在研究十三（k 最小值印出）
     kmin = int(AND["k"].min()); gate_drop = int((AND["k"] < RELVOL_WIN).sum())
     AND = AND[AND["k"] >= RELVOL_WIN].reset_index(drop=True)
-    gh_p = os.path.join(a.out, "gate_history.csv"); prev = pd.read_csv(gh_p, comment="#").iloc[-1].to_dict() if os.path.exists(gh_p) and len(pd.read_csv(gh_p, comment="#")) else None
+    gh_p = os.path.join(a.out, "gate_history.csv"); existed = os.path.exists(gh_p)     # ⚠ 要在 open("a") 之前判，否則 open 已把檔建出來、表頭永遠寫不進去
+    prev = pd.read_csv(gh_p, comment="#").iloc[-1].to_dict() if existed and len(pd.read_csv(gh_p, comment="#")) else None
     with open(gh_p, "a", encoding="utf-8") as fh:
-        if prev is None and not os.path.exists(gh_p):
+        if not existed:
             fh.write("# 閘門逐輪計數（〈八十二〉③）：每跑一輪追加一列；⛔ 不可整份覆蓋\nstamp,commit,n_signals,gate_window,gate_dropped\n")
         fh.write(f"{stamp},{commit},{len(AND)},{RELVOL_WIN},{gate_drop}\n")
     gate_note = f"閘門：有效 K 棒 ≥ {RELVOL_WIN}（本輪特徵集最長回看窗＝relvol 60；AND 自身在研究十三已閘，k 最小 {kmin}）⇒ 擋掉 {gate_drop} 筆" + ("（本窗內觸發 0 次）" if gate_drop == 0 else "") + (f"；上一輪擋 {int(prev['gate_dropped'])} 筆（差 {gate_drop - int(prev['gate_dropped']):+d}）" if prev else "（第一輪）")

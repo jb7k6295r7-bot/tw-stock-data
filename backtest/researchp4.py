@@ -503,9 +503,10 @@ def main():
     # 〈八十二〉③：每道閘門「與上一輪相比擋掉的筆數變了多少」——追加型台帳 gate_history.csv（⛔ 不整份覆蓋）
     gh_p = os.path.join(a.out, "gate_history.csv"); cols = ["stamp", "commit", "n_panel", "n_liq", "n_bars_dropped", "n_inst_dropped", "n_innov_dropped", "n_eligible"]
     row = {"stamp": stamp, "commit": commit, "n_panel": len(panel), "n_liq": n_liq, "n_bars_dropped": n_gate, "n_inst_dropped": n_inst, "n_innov_dropped": n_innov, "n_eligible": len(cl)}
-    prev = pd.read_csv(gh_p, comment="#").iloc[-1].to_dict() if os.path.exists(gh_p) and len(pd.read_csv(gh_p, comment="#")) else None
+    existed = os.path.exists(gh_p)     # ⚠ 要在 open("a") 之前判，否則表頭永遠寫不進去
+    prev = pd.read_csv(gh_p, comment="#").iloc[-1].to_dict() if existed and len(pd.read_csv(gh_p, comment="#")) else None
     with open(gh_p, "a", encoding="utf-8") as fh:
-        if prev is None and not os.path.exists(gh_p):
+        if not existed:
             fh.write("# 閘門逐輪計數（〈八十二〉③）：每跑一輪追加一列；⛔ 不可整份覆蓋\n" + ",".join(cols) + "\n")
         fh.write(",".join(str(row[c]) for c in cols) + "\n")
     gate_delta = "（第一輪，無上一輪）" if prev is None else "、".join(f"{c} {int(prev[c]):,}→{row[c]:,}（{row[c] - int(prev[c]):+,}）" for c in cols[2:])
