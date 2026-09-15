@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T01:41:15+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35002248812
+# ⏱ 這一趟：2026-09-16T02:17:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35005817113
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -153,7 +153,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3b96ae61d51c694',t:'MTc4OTQ5NDAzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3b9a041fae30ac8',t:'MTc4OTQ5NjIyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -171,6 +171,11 @@
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
            [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+     ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
+           ⭐ 它回顯的 `date`：（沒有這個鍵）｜`totalCount`：['0']
+           ⚠ 回應裡沒有 `date` 鍵 ⇒ ⛔ 這一格**判不出**參數有沒有生效（⚠ 不可以讀成「有生效」）
+           開頭 '{"tables":[{"title":"","subtitle":"115年09月15日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
 
   ── 變更股票面額恢復交易參考價
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
@@ -295,7 +300,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3b96b1cdaf98728',t:'MTc4OTQ5NDA0Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3b9a05dfa443910',t:'MTc4OTQ5NjIyNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -315,6 +320,11 @@
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
            [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+     ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt　[形狀] 8,025 bytes
+           ⭐ 它回顯的 `date`：20150101~20260915｜`totalCount`：['14']
+           ⭐⭐ **回顯了我請求的那一段** ⇒ 期間參數真的生效　⇒ 這條路有歷史
+           開頭 '{"date":"20150101~20260915","tables":[{"title":"","totalCount":14,"fields":["恢復買賣日期","證券代號","證券名稱","最後交易日之收盤價格","恢復買賣開始參考價","漲停價格","跌停價格","開始交易基準價","詳細資料"],"dat'
 
 ── ★ 參數有沒有被無視 ──
 TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。

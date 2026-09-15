@@ -1038,7 +1038,7 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-09-16T01:50:37+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35002248812
+最後執行：2026-09-16T02:29:16+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35005817113
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
 - **跑過的自測**：1 支｜selftest_probes.py

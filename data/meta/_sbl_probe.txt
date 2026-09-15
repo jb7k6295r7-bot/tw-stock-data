@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T01:45:35+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35002248812
+# ⏱ 這一趟：2026-09-16T02:21:48+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35005817113
 # 借券賣出（SBL）端點探針　目標日 2026-09-09
 # ⛔ 只測不寫資料。在開發容器裡跑一定失敗（我方閘道對交易所 403）——看 Actions 的結果
 # ⚠ 候選路徑是**照同站其他端點的模式推的**，這一支就是用來淘汰它們的。
