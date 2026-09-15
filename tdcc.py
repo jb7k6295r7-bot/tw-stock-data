@@ -358,6 +358,10 @@ def read_hist_week(path):
     ext = os.path.splitext(path)[1].lower()
     if ext == ".csv":
         return parse(io.open(path, "rb").read())
+    # ⭐ 2026-09-15 加：使用者送來的 2018 封存是 `.xlsx`
+    #   ⇒ ⛔ 它的證券代號被 Excel 吃掉前導 0，要照列序復原（`rebuild_codes`）。
+    if ext == ".xlsx":
+        return parse_xlsx(path)
     if ext == ".zip":
         import zipfile
         with zipfile.ZipFile(path) as z:
@@ -375,6 +379,205 @@ def read_hist_week(path):
         finally:
             _sh.rmtree(d, ignore_errors=True)
     return [], f"不認得的副檔名：{path}"
+
+
+def daily_cross(day, codes, root=None):
+    """拿**同一天的日檔**當獨立對照 → (命中, 母體, 少的那幾個)。⛔ 沒有日檔就回 None。
+
+    ## ⛔ 為什麼需要它：三道驗算對「代號被標錯」**完全免疫**
+
+    `import_hist` 的三道（單一日期／每檔 15 級／恆等式）驗的是**一份檔自己內部**。
+    ⚠ 而 Excel 把 `0050` 存成 `50`、把 `006201` 與 `6201` 併成一個數字時，
+    那三道**全部照過**：級數齊、日期一致、加總對得上——
+    ⛔ **錯的只是那一列掛在誰名下**。
+
+    ⇒ ⭐ 而 `data/universe/daily/<那一天>.csv` 是**另一條路**產生的、
+      而且是**當時**的清單（⛔ 不是今天的）⇒ 它是真正獨立的錨點。
+
+    ## ⇒ 判準只看**前導 0 那一族**，⛔ 不看全體
+
+    ⚠ 全體那個數字對這個失敗模式**不敏感**：48 個代號被標錯只讓
+      2,613 分之 48 不見（98.3% → 95.7%）⇒ 一個 90% 的門檻擋不住。
+    ⭐ 而前導 0 那一族**全軍覆沒**（`0050`→`000050` 之類一個都對不上）
+      ⇒ 那一格會從 95% 掉到接近 0。
+
+    【實測，2026-09-15，使用者送來的那 10 週】
+    ```
+    2017-07-21  日檔裡前導 0 的  94 檔 ⇒ 在集保裡 89 ⇒ 94.7%
+    2018-11-02  同上           153 檔 ⇒       147 ⇒ 96.1%
+    ⇒ 缺的一律是 `0100xT`（受益證券）那一族，⛔ 不是 ETF
+    ```
+    ⚠ 而反方向（集保有、日檔沒有）**不算問題**：集保涵蓋沒有在交易的代號
+      ⇒ ⛔ 這裡只比一個方向，而**那個方向要寫出來**（CLAUDE.md 三點1）。
+    """
+    root = root or _ROOT
+    # ⛔ `day` 兩種形狀都會進來（`20181102` 與 `2018-11-02`）：`week_facts()`
+    #   算出來的是哪一種取決於來源檔的寫法 ⇒ ⚠ 只認一種的話這一層會**靜靜跳過**
+    #   （2026-09-15 當場踩到：印「一天都沒有對應的日檔」，而那個日檔就在那裡）。
+    d = day.replace("-", "")
+    if len(d) != 8 or not d.isdigit():
+        return None
+    p = os.path.join(root, "universe", "daily", f"{d[:4]}-{d[4:6]}-{d[6:]}.csv")
+    if not os.path.isfile(p):
+        return None
+    with io.open(p, encoding="utf-8") as f:
+        zero = {r["stock_id"].strip() for r in csv.DictReader(f)
+                if r.get("stock_id", "").strip().startswith("0")}
+    if not zero:
+        return None
+    return len(zero & set(codes)), len(zero), sorted(zero - set(codes))
+
+
+def known_codes(hist_dir=None):
+    """→ 我方 `tdcc_hist/*.parquet` 裡**真實的代號字串**集合（外部錨點）。
+
+    ⭐ 它是 `rebuild_codes()` 唯一可靠的錨點：那幾年的代號是**字串**存下來的
+      （2019+2020 兩年就有 3,082 個），⛔ 而 Excel 吃掉前導 0 這件事只發生在
+      使用者送來的 `.xlsx` 那幾週。⇒ 用**同一個來源的別的年份**來定寬度。
+    ⚠ 讀不到就回空集合 ⇒ `rebuild_codes()` 會**大聲說**它沒有錨點，
+      ⛔ 不是默默用猜的。
+    """
+    import glob as _g
+    d = hist_dir or hist_dir_path()
+    out = set()
+    try:
+        import pandas as pd
+    except ImportError:
+        return out
+    for f in sorted(_g.glob(os.path.join(d, "*.parquet"))):
+        try:
+            out |= set(pd.read_parquet(f, columns=[HIST_COLS[1]])
+                       [HIST_COLS[1]].astype(str).unique())
+        except Exception:                                     # noqa: BLE001
+            continue
+    return out
+
+
+def rebuild_codes(cells, known):
+    """把 Excel 吃掉前導 0 的證券代號復原。→ (codes, why)。⛔ `known` 必填。
+
+    ## ⛔⛔ 傷害有兩種，⚠ 而第二種比第一種嚴重
+
+    使用者 2026-09-15 送來的 2018 週檔（`.xlsx`）實測：
+
+    ```
+    ① 前導 0 被吃掉    0050→50、00636→636      20181102：48 個代號
+    ⭐ ② **兩檔併成一檔**  6201（亞弘電）與 006201（元大富櫃50）**都存在**
+                        ⇒ Excel 裡都是數字 6201   實測 8 組（6201 6203~6208 8201）
+    ```
+
+    ⚠ 而②在檔案裡看起來完全正常：那個代號有 **34 列**（兩塊各 1~17 級），
+    ⛔ 而「一檔有兩套分級」跟「一檔有 34 級」在紙上一模一樣。
+
+    ## ⇒ 判準：**錨點定寬度、順序定身分**，⛔ 兩個缺一不可
+
+    ```
+    寬度   `known`（我方 tdcc_hist 2019+ 的**字串**代號）∩ {4,5,6 碼補零}
+    身分   這份檔是照**原始字串**排序的 ⇒ 由前往後挑「大於前一個」的**最小**候選
+    ```
+
+    ⛔⛔ 而單靠順序**不行**，兩個方向各有一個盲點（都是實測踩到的）：
+
+    ```
+    由前往後   第一塊左邊沒有錨點 ⇒ `0050` 被復原成 `000050`
+    由後往前   `8201` 的上界是 `8210`（4 碼）⇒ 擋不住 `8201`
+               ⇒ 前面那一塊（真正的 `008201`）被判成 `8201`
+    ```
+    ⭐ 加上 `known` 之後，`50` 的候選裡只有 `0050` 在 ⇒ 第一塊當場定住，
+    而 `6201`／`8201` 那兩組的候選各剩兩個 ⇒ 由順序分。
+
+    ⚠ 文字型的代號（`00625K` 這種 Excel 變不成數字的）**原樣保留**，
+    ⭐ 它們順便當錨點：那幾格的字串序是真的，不是推出來的。
+    """
+    out, prev, bad, guessed = [], "", [], []
+    for i, c in enumerate(cells):
+        if isinstance(c, str):
+            code = c.strip()
+        else:
+            v = int(c)
+            wide = sorted({f"{v:0{w}d}" for w in (4, 5, 6)
+                           if int(f"{v:0{w}d}") == v})
+            cands = [x for x in wide if x in known] or wide
+            if not any(x in known for x in wide):
+                guessed.append(v)
+            if prev in cands:
+                code = prev                     # 同一塊繼續
+            else:
+                up = [x for x in cands if x > prev]
+                if not up:
+                    bad.append((i, v, prev))
+                    code = cands[-1]
+                else:
+                    code = up[0]                # ⭐ 大於前一個的**最小**那個
+        if code < prev:
+            bad.append((i, code, prev))
+        out.append(code)
+        prev = code
+    why = ""
+    if not known:
+        why = ("⛔ 沒有錨點（`known` 是空的，多半是讀不到 tdcc_hist 或沒有 pandas）"
+               "　⇒ ⚠ 寬度只能用猜的，這一份**不寫**")
+    elif bad:
+        why = (f"⛔ {len(bad)} 處字串序不遞增（⇒ 這份檔**不是**照原始代號排序的，"
+               f"復原規則的前提不成立）；前三處：{bad[:3]}")
+    return out, why, sorted(set(guessed))
+
+
+def parse_xlsx(path):
+    """把一份 **.xlsx** 週檔讀成 rows（跟 `parse()` **同一個形狀**：list[dict]）。
+
+    ⚠ 使用者 2026-09-15 送來的 2018 封存是 `.xlsx`，⛔ 而 2017 那份是 `.csv`
+      ——**同一種資料、兩種形狀**（五點二的近親）。
+    ⭐ 而 `.csv` 那份的代號是**帶引號的字串**（`"0050"`）⇒ 沒有這個問題；
+      ⛔ 只有 `.xlsx` 要走 `rebuild_codes()`。
+
+    ⇒ 復原的判準與證據寫在 `rebuild_codes()` 的檔頭。
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        return [], "⚠ 這一層沒跑：沒有 openpyxl（⛔ 這不算這個 repo 壞掉）"
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    hdr, body = None, []
+    for r in ws.iter_rows(values_only=True):
+        if hdr is None:
+            hdr = [("" if x is None else str(x).strip()) for x in r]
+            continue
+        body.append(r)
+    wb.close()
+    if not hdr or not body:
+        return [], "讀不到列"
+    try:
+        ci = next(i for i, h in enumerate(hdr) if h in CODE_KEYS)
+    except StopIteration:
+        return [], f"找不到證券代號欄（欄名：{hdr}）"
+    codes, why, guessed = rebuild_codes([r[ci] for r in body], known_codes())
+    if why:
+        return [], why
+    rows = []
+    for r, code in zip(body, codes):
+        d = {}
+        for h, v in zip(hdr, r):
+            if v is None:
+                d[h] = ""
+            elif isinstance(v, float) and v == int(v):
+                d[h] = str(int(v))          # ⛔ 20181102.0 / 18577.0 → 去掉 .0
+            else:
+                d[h] = str(v).strip()
+        d[hdr[ci]] = code
+        rows.append(d)
+    note = f"{len(rows):,} 列（⭐ 代號用錨點＋列序復原過，見 rebuild_codes）"
+    if guessed:
+        # ⚠ 這幾個代號在我方 2019+ 的歷史裡**不存在** ⇒ 寬度沒有錨點可定
+        #   ⛔ 它們多半是 2019 之前就消失的代號 ⇒ 要講出來，不是默默補零
+        # ⛔ 講清楚它**實際上**怎麼定的：這幾個沒有錨點 ⇒ 寬度只由**順序**定
+        #   （前一塊的字串 < 它 < 後一塊）⇒ ⚠ 那是**唯一解的時候才對**。
+        #   實測 20181102 的 `667`：前一塊是 `00666R` ⇒ 只有 `00667` 排得進去。
+        #   ⛔ 而「排得進去」與「它就是那個代號」是兩件事 ⇒ 這一行是要給人看的。
+        note += (f"｜⚠ 其中 {len(guessed)} 個代號在 tdcc_hist 裡**查無**"
+                 f"（⇒ 寬度只由列序定，⛔ 沒有錨點）：{guessed[:10]}")
+    return rows, note
 
 
 def truncation_note(path):
@@ -603,7 +806,8 @@ def import_hist(rl, src, out_dir=None, apply=False):
     out_dir = out_dir or hist_dir_path()
     files = sorted(_g.glob(os.path.join(src, "*", "*.zip"))
                    + _g.glob(os.path.join(src, "*", "*.7z"))
-                   + _g.glob(os.path.join(src, "*", "*.csv")))
+                   + _g.glob(os.path.join(src, "*", "*.csv"))
+                   + _g.glob(os.path.join(src, "*", "*.xlsx")))
     rl.info("來源", f"{src}｜{len(files)} 份週檔")
     if not files:
         rl.check("找得到週檔", False, f"{src} 底下一份都沒有")
@@ -775,7 +979,33 @@ def import_hist(rl, src, out_dir=None, apply=False):
                  not diff,
                  f"⛔ {len(diff)} 週對不上：{diff[:3]}" if diff
                  else f"{same} 週逐格相同")
-    if not rate_ok or dup_diff or diff or cliffs:
+    # ── ⭐⭐ 第二個獨立驗證點：**同一天的日檔**（2026-09-15 加）
+    #   理由寫在 `daily_cross()` 的檔頭：三道驗算對「代號被標錯」完全免疫，
+    #   ⛔ 而 `.xlsx` 那幾週的代號是**復原出來的**，正是會這樣壞的東西。
+    cross_bad, cross_n, cross_lines = [], 0, []
+    for day in sorted({r[0] for v in by_year.values() for r in v}):
+        got = daily_cross(day, {r[1] for v in by_year.values()
+                                for r in v if r[0] == day})
+        if got is None:
+            continue
+        hit, tot, missing = got
+        cross_n += 1
+        pct = hit / tot * 100
+        cross_lines.append(f"{day} {hit}/{tot}＝{pct:.1f}%")
+        if pct < 80:
+            cross_bad.append((day, f"{pct:.1f}%", missing[:4]))
+    if not cross_n:
+        rl.info("⚠⚠ **這一層沒跑**",
+                "這幾週**一天都沒有**對應的 `data/universe/daily/` 日檔"
+                "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+    else:
+        rl.check("⭐⭐ 前導 0 的代號對得上同一天的日檔（≥ 80%）"
+                 "　⚠ 只比**日檔→集保**這一個方向（反向不算問題：集保涵蓋沒在交易的代號）",
+                 not cross_bad,
+                 f"⛔ {len(cross_bad)} 週對不上：{cross_bad[:3]}" if cross_bad
+                 else f"{cross_n} 週都過｜{'｜'.join(cross_lines[:4])}"
+                      + ("…" if len(cross_lines) > 4 else ""))
+    if not rate_ok or dup_diff or diff or cliffs or cross_bad:
         rl.info("⛔ 有沒過的驗算 ⇒ **一個檔都不寫**", "先把上面那幾項弄清楚")
         return rl.finish()
 
