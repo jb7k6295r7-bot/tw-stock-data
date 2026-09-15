@@ -426,8 +426,18 @@ def main():
         ck(f"{label}｜每個 python 呼叫都帶 `|| RC=`（⛔ 一行失敗不可以賠掉後面的）",
            bool(calls) and all("|| RC=" in ln for ln in calls),
            f"⛔ 沒帶的：{[ln.strip()[:60] for ln in calls if '|| RC=' not in ln]}")
-        ck(f"{label}｜而**之後**要 `exit 1`（⛔ 不可以把失敗吞掉）",
-           "RC" in after and "exit 1" in after, f"後面那一段：{after.strip()[:80]}")
+        # ⛔⛔ 2026-09-15 當場抓到：這一條本來比的是文字裡有沒有 `exit 1`，
+        #   ⚠ 而既有每一個區塊的寫法是 `exit $RC` ＋ 一句**註解**
+        #   「⭐ 記下來之後仍然 exit 1：⛔ 吞掉失敗比連坐更糟。」
+        #   ⇒ ⛔ **它一直是被那句註解滿足的**（第七點第八個：那幾個字在註解裡也有一份）
+        #   ⇒ 把 `exit $RC` 整行刪掉、只留註解，這一條**照樣綠**。
+        # ⇒ ⭐ 改成**先把註解剝掉**再比，而且 `exit $RC` 與 `exit 1` 都算
+        #   （前者是這個 repo 的慣例，⛔ 而註解不算數）。
+        _code = "\n".join(ln.split("#", 1)[0] for ln in after.splitlines())
+        ck(f"{label}｜而**之後**真的有 `exit $RC`／`exit 1`"
+           "（⛔ 比**程式**不比註解——註解裡也寫著 exit 1）",
+           "RC" in after and ("exit $RC" in _code or "exit 1" in _code),
+           f"後面那一段（剝掉註解）：{_code.strip()[:80]}")
 
     # ⛔⛔ 2026-09-13 當場踩到：這個 pattern 原本寫死 `for Y in $(seq`，
     #   ⚠ 而我把迴圈改成 `for Y in $YEARS`（為了支援 newest 順序）⇒ **一條都沒match**
