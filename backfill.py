@@ -1160,7 +1160,8 @@ def around(text, needle, span=300, cap=4):
 
 def js_followups(text, base, cap=8, skip_hosts=("googleapis", "gstatic",
                                                  "google-analytics", "googletagmanager",
-                                                 "jquery.com", "cdnjs", "jsdelivr")):
+                                                 "jquery.com", "cdnjs", "jsdelivr"),
+                 needles=()):
     """⑤ 那幾支外部 `.js` **裡面**去打誰——⛔ 這是「取不到」之後的下一步。
 
     → list[str]（要印的行）。⭐ 只有這一份實作（四點五）。
@@ -1215,6 +1216,14 @@ def js_followups(text, base, cap=8, skip_hosts=("googleapis", "gstatic",
         out.append(f"      ── {u[:120]}（{len(raw):,} bytes）")
         for ln in xhr_clues(raw, base=u):
             out.append("    " + ln)
+        # ⭐ `needles`：那一支 js 裡某個字**前後的原文**。
+        #   ⛔ 加它的理由是 2026-09-15 C4 那一格：頁面 inline 寫著
+        #     `tables.init({pattern: API_PATTERN, action: "bulletin/pvChgAnn"})`
+        #   ⇒ ⭐ **action 讀到了，⛔ 而 `API_PATTERN` 的值在別支 js 裡**。
+        #   ⚠ 而 `xhr_clues` 只認寫死的路徑字串 ⇒ 一個常數名它看不到。
+        for nd in needles:
+            for ln in around(raw, nd, span=260, cap=3):
+                out.append("        " + ln)
     if len(mine) > cap:
         out.append(f"      …（本站另 {len(mine) - cap} 支未挖，cap={cap}）")
     return out
