@@ -494,9 +494,24 @@ def probe_longhalt(say, sleep):
         #   ⛔ `mops_probe` 本來沒有它 ⇒ 把一個 js 空殼判成「這條路不可用」。
         #   ⚠ 輸出的字一個都沒改——換的是**數字的來源**。
         _han2, n_tr, n_js, _shell = js_shell(raw)
-        say(f"   ③ <tr> {n_tr} 個｜js {n_js} 支")
+        say(f"   ③ <tr> {n_tr} 個｜js {n_js} 支"
+            + ("　⛔ **js 空殼**" if _shell else ""))
+        # ⭐⭐ 而「js 空殼 ⇒ 我方取不到」**不是句點**（2026-09-15）：
+        #   那一發請求寫在**外部 `.js`** 裡，而把它讀出來是程式做得到的事。
+        #   ⚠ 這一支本來只寫「記成我方取不到」就停了 ⇒ ⛔ 跟 `mops_probe`
+        #     當初把 js 空殼判成「這條路不可用」是同一個形狀，只是輕一級。
+        #   ⇒ 走**唯一那一份**（`backfill.js_followups`，四點五）。
+        #   ⛔ 只在真的是空殼時才挖：⚠ 不然每一條都會多印十幾行，
+        #     而一份洗版的報告等於沒有報告。
+        if _shell:
+            for _ln in B.xhr_clues(raw, base=url):
+                say("   " + _ln)
+            for _ln in B.js_followups(raw, base=url):
+                say("   " + _ln)
         time.sleep(sleep)
     say("\n⇒ ① 沒有命中 ⇒ 這條路不對，⛔ **不要**因為名字像就接上去。")
+    say("⇒ ⭐ 而 ③ 是 js 空殼時，⑤⑥ 兩節把外部 `.js` 挖一層"
+        "——⛔ 「取不到」是還沒解決的工程問題，不是句點。")
     say("⇒ ① 有命中但 ③ 是 js 空殼 ⇒ 記成「我方取不到」，"
         "跟櫃買那三頁同一種，⛔ 不是「證交所沒有」。")
 
