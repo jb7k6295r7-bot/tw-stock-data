@@ -65,7 +65,17 @@ if __name__ == "__main__":
     check(j4["judge"].startswith("H2 成立") and j5["judge"].startswith("H2 否證"), "N≤8：乙下沒贏 ⇒ H2 成立；出現贏格 ⇒ H2 否證")
     check(R.judge_cell((30, None, "null"), mk(0.2, -0.2, 0.2, -0.35), b, 23)["judge"].startswith("還沒測"), "有效月 23 ⇒ 還沒測（⚠ 寫死 24）")
     cl = R.cells()
-    check(cl[:3] == [(30, None, "null"), (40, None, "null"), (40, None, "relvol")] and all(c[0] <= 8 for c in cl[3:]) and len(cl) == 3 + 14, f"格子：三主格＋N≤8 共 {len(cl)} 格（P1 網格 N≤8 是 14 格，⚠ 登錄寫 16）")
+    check(cl[:3] == [(30, None, "null"), (40, None, "null"), (40, None, "relvol")] and cl[3:5] == [(30, None, "relvol"), (20, None, "null")] and all(c[0] <= 8 for c in cl[5:]) and len(cl) == 3 + 2 + 14, f"格子：三主格＋兩對照格（輸）＋N≤8 共 {len(cl)} 格（P1 網格 N≤8 是 14 格，⚠ 登錄寫 16）")
+    es2 = R.shuffle_exposure(e2, np.random.default_rng(5), "shift")
+    k = int(np.random.default_rng(5).integers(1, len(e2)))
+    check(np.allclose(es2, np.roll(e2, -k)) and abs(es2.mean() - e2.mean()) < 1e-12 and 1 <= k <= len(e2) - 1, f"shift 重排：e'_t＝e_(t+k)（k={k} ∈ [1,T−1]）、平均曝險相同")
+    ac = lambda x: np.corrcoef(x[:-1], x[1:])[0, 1]
+    ee = np.repeat(rng.uniform(0, 1, 60), 10)   # 有自相關的曝險
+    check(abs(ac(R.shuffle_exposure(ee, np.random.default_rng(6), "shift")) - ac(ee)) < 0.05 and ac(R.shuffle_exposure(ee, np.random.default_rng(6), "day")) < 0.3, "shift 保住一階自相關、day 重排把它打掉")
+    ist = R.idle_stats(np.array([0, 0, 0.5, 0, 0, 0, 1.0]))
+    check(ist["idle_day_share"] == 5 / 7 and ist["longest_idle_run"] == 3 and abs(ist["avg_idle_frac"] - (1 - 1.5 / 7)) < 1e-12, "idle_stats：空手佔比 5/7、最長連續 3、平均閒置")
+    jl = R.judge_cell((20, None, "null"), mk(0.2, -0.2, 0.2, -0.35), b, 100)
+    check(jl["judge"].startswith("對照格"), "對照格（輸）不判定")
     print("[researchp3] 冒煙（真實 P1 訊號，一格三種子五重排）")
     out = tempfile.mkdtemp(prefix="p3_")
     r = subprocess.run([sys.executable, "-m", "backtest.researchp3", "--out", out, "--cells", "1", "--reps", "3", "--shuffles", "5", "--procs", "2"], cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))), capture_output=True, text=True)
@@ -73,7 +83,7 @@ if __name__ == "__main__":
     if r.returncode == 0:
         S = pd.read_csv(os.path.join(out, "summary.csv"), comment="#"); sd = pd.read_csv(os.path.join(out, "seeds.csv"), comment="#")
         P = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "resultsp1", "portfolio.csv"))
-        check({"A_mdd_med", "B_mdd_med", "C_mdd_p50_med", "A_mdd_pct_in_C_med", "judge", "bench_mdd"} <= set(S.columns) and len(S) == 1 and S["N"].iloc[0] == 30, "summary.csv 欄位齊、第一格 N30 null")
+        check({"A_mdd_med", "B_mdd_med", "C1_mdd_p50_med", "C2_mdd_p50_med", "A_mdd_pct_in_C1_med", "AminusC1_mdd_med", "C1minusC2_mdd_med", "idle_day_share_med", "judge", "bench_mdd"} <= set(S.columns) and len(S) == 1 and S["N"].iloc[0] == 30, "summary.csv 欄位齊（丙1／丙2／前置）、第一格 N30 null")
         ref = P[(P.set == "AND") & (P.N == 30) & (P.rule.isna()) & (P.d == np.inf)]
         s0 = sd[sd.seed == 7000].iloc[0]
         check(len(ref) == 1 and abs(s0["A_slot"] - ref["slot"].iloc[0]) < 0.02, f"甲 N30 null 種子 7000 槽位 {s0['A_slot']:.3f} ≈ P1 portfolio 中位 {ref['slot'].iloc[0]:.3f}（同引擎同種子；⚠ 中位 vs 單種子，只驗量級）")
