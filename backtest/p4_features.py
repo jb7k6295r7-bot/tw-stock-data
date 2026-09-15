@@ -71,9 +71,10 @@ def load_inst(sid: str, cal: pd.DatetimeIndex) -> pd.DataFrame:
     return df.apply(pd.to_numeric, errors="coerce").reindex(cal)
 
 
-def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10) -> pd.DataFrame:
+def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10, incl_current: bool = False) -> pd.DataFrame:
     """rev：period × stock_id 的月營收（research34.load_revenue）。回傳 cal × stock_id 的 0／100／NaN，
-    每期在可得日（次月 pub_day 日後第一個交易日）生效、延續到下一期可得日前。"""
+    每期在可得日（次月 pub_day 日後第一個交易日）生效、延續到下一期可得日前。
+    incl_current：⛔ 正式值 False（「近 24 期」＝當期之前的 24 期，不含當期）；True 只給對帳敏感度用（視窗＝含當期的 24 期＝前 23 期＋當期，策略線 v5 的讀法，2026-09-15 23:5x 對帳查到）。"""
     periods = list(rev.index)
     rd = R34.rebalance_dates(periods, cal, pub_day)
     flags = {}
@@ -83,7 +84,7 @@ def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10) 
         for k in range(len(periods)):
             if k < REV_WIN or np.isnan(vals[k, j]):
                 continue
-            hist = vals[k - REV_WIN:k, j]
+            hist = vals[k - REV_WIN + 1:k, j] if incl_current else vals[k - REV_WIN:k, j]   # incl_current：前 23 期（當期自己不進 max，否則永遠 True）
             valid = hist[~np.isnan(hist)]
             if len(valid) < REV_MIN_VALID:
                 continue

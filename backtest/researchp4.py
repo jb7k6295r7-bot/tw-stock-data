@@ -108,9 +108,9 @@ def panel_worker(args):
     return rows, mism
 
 
-def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print, mp_check=True) -> tuple[pd.DataFrame, pd.DataFrame]:
+def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print, mp_check=True, rev_incl_current=False) -> tuple[pd.DataFrame, pd.DataFrame]:
     """回 (面板, min_periods 斷言的不一致列)。⛔ 不一致列 > 0 由呼叫端決定要不要中止（main 一律中止並逐列印 股／月／欄）。"""
-    rev, _, _ = R34.load_revenue(); rev_flags = P.rev_hi24_flags(rev, cal, pub_day)
+    rev, _, _ = R34.load_revenue(); rev_flags = P.rev_hi24_flags(rev, cal, pub_day, incl_current=rev_incl_current)
     jobs = [(r.stock_id, r.market, r.first_seen, r.last_seen) for r in uni.itertuples()]
     rows = []; mism = []; t0 = time.time()
     with Pool(procs, initializer=_init, initargs=(cal, rev_flags, positions, mp_check)) as pool:
@@ -449,6 +449,7 @@ def main():
     ap.add_argument("--panel", default=None, help="已算好的 panel.csv.gz（跳過第一段）")
     ap.add_argument("--no-mp-check", action="store_true", help="⛔ 只給自測用：跳過 §4-1 min_periods 常設斷言")
     ap.add_argument("--mp-check-report", action="store_true", help="§4-1 斷言不成立時只寫表、逐欄統計並印前 50 列，不中止（數字要標「斷言不成立下產出」）")
+    ap.add_argument("--rev-incl-current", action="store_true", help="⛔ 只給對帳敏感度：rev_hi24 視窗改成含當期的 24 期（策略線讀法）；正式定義不動")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     stamp = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M"); commit = _commit()
@@ -462,7 +463,9 @@ def main():
         panel = pd.read_csv(a.panel, dtype={"stock_id": str}, parse_dates=["measure_date"])
     else:
         log(f"第一段：{len(uni)} 檔 × {len(positions)} 個量測日")
-        panel, M = build_panel(cal, uni, positions, a.procs, a.pub_day, log, mp_check=not a.no_mp_check)
+        panel, M = build_panel(cal, uni, positions, a.procs, a.pub_day, log, mp_check=not a.no_mp_check, rev_incl_current=a.rev_incl_current)
+        if a.rev_incl_current:
+            log("⛔ 對帳敏感度模式：rev_hi24 視窗含當期（前 23 期＋當期）——不是登錄定義，數字不進判定")
         write_csv(M, os.path.join(a.out, "min_periods_mismatch.csv"), stamp, commit)
         n_el0 = int(panel["eligible"].sum())
         bycol = M.groupby("column").agg(n=("stock_id", "size"), n_stocks=("stock_id", "nunique"), n_nan_at_w=("mp_w", lambda x: int(x.isna().sum()))).reset_index() if len(M) else pd.DataFrame(columns=["column", "n", "n_stocks", "n_nan_at_w"])
