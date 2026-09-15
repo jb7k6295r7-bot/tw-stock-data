@@ -93,7 +93,49 @@ TWSE  volume 12,740,507,347    amount 916,448,075,621        （2330 100 年）
 （`subtitle` 寫「統計至 1150915 止」）⇒ **`date` 不是篩選器**。
 ⭐ 那對我方是好事（一發拿全部），⛔ 但不可以拿它當「我指定的那一年」用。
 
-### ⛔ 而**月**那一半 probe 121 答了：**兩套參數名我都猜錯了**
+### ✅ 而**月**那一半 probe 123 也答了：`code` ＋ `date=<西元年>`（**只有年**）
+
+⭐ 七種格式只有一種中（其餘六種一律 `stat:"參數輸入錯誤"`）：
+
+```
+date='2024'        stat=ok｜回顯 code='6488'｜totalCount=12｜inner date=2024   ⭐ 中
+date='113'／'2024/01/01'／'20240101'／'113/01/01'／'2024/01'／'11301'  ⛔ 參數輸入錯誤
+```
+
+⚠ 而**我送西元、它回民國**（`年` 欄第一列是 `113`）。
+
+#### ⛔⛔ 而兩張表的欄**定義不同**，⚠ 名字就寫著，而我差點沒看見
+
+```
+yearly  ：成交張數(A)      盤中最高價／盤中最低價
+monthly ：成交仟股(B)      **收市**最高價／**收市**最低價
+```
+
+⇒ 拿 6488 的 113/1（2024-01，22 個交易日）對我方日檔：
+
+```
+收市平均價   587.27   ＝ 我方**收盤價**的簡單平均      ⭐ 逐位相同
+收市最高價   603.00   ＝ 我方**收盤價**的最高          ⭐ 逐位相同
+                      （⛔ 而我方**盤中**最高是 604.00）
+收市最低價   573.00   ＝ 我方**收盤價**的最低          ⭐ 逐位相同
+                      （⛔ 而我方**盤中**最低是 561.00）
+```
+
+⇒ ⭐⭐ **同一族的兩張表，「最高價」是兩個不同的量**——年表是盤中、月表是收盤。
+⛔ 把它們當同一欄用，差的不是誤差，是定義。⚠ 而兩邊都叫「最高價」。
+
+#### ⇒ 而量那三欄**仍然**是另一種口徑，⛔ 而且比例還不一樣
+
+```
+筆數    我方 22,286      官方 44,168      **1.98 倍**
+金額    16,859,161 仟元  17,258,302 仟元  ＋2.4%
+股數    28,797 仟股      29,478 仟股      ＋2.4%
+```
+
+⚠ 年表那一年的筆數比是 **2.56 倍**，月表這一個月是 **1.98 倍**
+⇒ ⛔ 不是一個固定倍數 ⇒ 「買賣各算一筆」**解釋不了全部** ⇒ **我還是不知道**。
+
+### ⛔ 而那之前 probe 121 的紀錄留著（那個錯的形狀本身是紀錄）：**兩套參數名我都猜錯了**
 
 ```
 GET/POST monthlyStock?code=6488&date=2024/01/01  ⇒ {"stat":"參數輸入錯誤"}
@@ -133,9 +175,40 @@ import twparse                     # ⭐ csv_cell 只有那一份（四點五）
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 META = os.path.join(_ROOT, "meta")
-YEARLY = os.path.join(META, "official_yearly_close.csv")
-MONTHLY = os.path.join(META, "official_monthly_amount.csv")
-DONE = os.path.join(META, "_official_stats_done.csv")
+# ⛔⛔ 路徑一律寫成**呼叫當下**才算的函式，⛔ 不是 import 當下就算好的常數。
+#   ⚠ CLAUDE.md 第七點第五個那個坑：`mops.CHANGES` 在 import 當下就算好
+#   ⇒ 之後再改 `OUT_DIR`，它不會跟著動 ⇒ 沙箱只導一個旋鈕，log 照樣寫進 repo。
+#   ⭐ 這裡只有 **`META` 一個旋鈕**——⛔ 而「記得兩個都導」已經被否決過。
+def yearly_path(market="twse"):
+    """⭐ 兩個市場**共用同一張**價的判準表（⛔ 不是各一份）。
+
+    ⚠ 那張表的欄位對上櫃只填得出**價**那五格：`avg_close`／`high`＋日期／
+    `low`＋日期（跟我方日檔逐位相同，實測 6488 兩年）。
+    ⛔ 而 `volume`／`amount`／`transactions` 留空——上櫃那三欄是**另一種口徑**
+    （＋4.8%／＋5.0%／**＋156%**），⚠ 而留空是對的：那不是 0（五點三）。
+    ⇒ 量的部分原樣另存在 `tpex_yearly_path()`，保留官方單位。
+    """
+    return os.path.join(META, "official_yearly_close.csv")
+
+
+def monthly_path(market="twse"):
+    return os.path.join(META, "official_monthly_amount.csv")
+
+
+def tpex_yearly_path():
+    return os.path.join(META, "official_yearly_tpex.csv")
+
+
+def done_path(market="twse"):
+    """續跑台帳。⭐ 兩個市場**各一份**——⛔ 它們的母體與端點都不同。"""
+    sfx = "" if market == "twse" else f"_{market}"
+    return os.path.join(META, f"_official_stats_done{sfx}.csv")
+
+
+def miss_path(market="twse"):
+    sfx = "" if market == "twse" else f"_{market}"
+    return os.path.join(META, f"_official_stats_miss{sfx}.csv")
+
 
 BASE = "https://www.twse.com.tw/rwd/zh/afterTrading/{rep}?date={d}&stockNo={s}&response=json"
 
@@ -172,6 +245,18 @@ TPEX_YEARLY = os.path.join(META, "official_yearly_tpex.csv")
 #   ⚠ 第十個那條：跨線交換一個量，欄名要講得出它是什麼單位／怎麼推導的。
 TY_HEADER = ["stock_id", "roc_year", "volume_lots", "amount_kntd",
              "transactions_k", "wavg_price_derived", "asof"]
+
+
+def fetch_one_tpex(sid):
+    """打一發上櫃 `yearlyStock` → `(價那五格, 量那四格, err)`。
+
+    ⛔ 沒有 `date` 參數：那一頁的表單欄位實測是 `['code', 'query']`
+    （probe 122 從頁面自己讀到的）⇒ 它**本來就不吃日期**，一發回全部 12 年。
+    """
+    raw, err = B.get(TPEX_YEARLY_URL.format(s=sid), retries=2, timeout=45)
+    if err or not raw:
+        return [], [], f"yearlyStock {str(err)[:80]}"
+    return parse_tpex_yearly(raw, sid)
 
 
 def parse_tpex_yearly(payload, sid):
@@ -318,7 +403,6 @@ FLUSH_EVERY = 50
 # ⇒ 所以判準**不是**「失敗一次就放棄」，是**連續失敗 MISS_TRIES 次**，
 #   ⛔ 而且只有在**那一趟有別的檔成功**（＝端點是活的）時才記一次。
 #   ⚠ 沒有後面那個條件的話，端點掛掉一趟就會把全部 1,158 檔判死。
-MISS = os.path.join(META, "_official_stats_miss.csv")
 MISS_HEADER = "stock_id,tries,last_asof,why\n"
 MISS_TRIES = 2
 
@@ -374,7 +458,7 @@ def bad_rows(path=None):
     ⭐ 它存在的理由是第七點那句：「回報某群 0 筆時，要附上該判準抓到的正例數」
     ——⛔ 靜靜丟掉那幾列的話，檔案被污染這件事**沒有任何地方會說**。
     """
-    p = path or MISS
+    p = path or miss_path()
     out = []
     if not os.path.exists(p):
         return out
@@ -392,7 +476,7 @@ def load_miss(path=None):
     ⛔ 不像代號的列**丟掉**（見 `is_code`），⚠ 而丟了幾列由 `bad_rows()` 報出來
     ——⭐ 丟掉而不說，跟沒有被污染在畫面上一模一樣。
     """
-    p = path or MISS
+    p = path or miss_path()
     out = {}
     if not os.path.exists(p):
         return out
@@ -421,9 +505,9 @@ def bump_miss(fail, today, path=None, alive=True):
     ⭐ 而它是**合併**，⛔ 不是整份取代（四點六③ `save_done` 那個坑）：
     讀進來的 dict ＋ 本趟的鍵，再整份寫回。
     ⚠ 而**成功過的檔要從這裡消失**——那是由 `todo` 那一側保證的
-    （成功之後它進 `DONE`，就再也不會被挑到）⇒ 這裡只管累加。
+    （成功之後它進 `done_path()`，就再也不會被挑到）⇒ 這裡只管累加。
     """
-    p = path or MISS
+    p = path or miss_path()
     if not alive or not fail:
         return 0
     cur = load_miss(p)
@@ -510,7 +594,26 @@ def endpoint_alive(ctrl, today, fetch=None):
                    "　⇒ ⛔ 端點側的問題 ⇒ ⭐ 一個字都不寫進 miss 台帳")
 
 
-def land(Y, M, ok, today, rl=None):
+def batch_fail_note(n_todo, n_ok, alive):
+    """那道「不是整批失敗」閘門的**說明文字**。→ str。⭐ 抽出來是為了驗得到。
+
+    ⛔⛔ 它一定要講**實際發生的那一種**。
+    ⚠ 2026-09-16 run 158 實測：那一格**過了**（對照組 3／3 答得出來），
+    而說明照樣印「且對照組也答不出來」
+    ⇒ ⭐ 一個通過的檢查，說明寫著相反的話——**比沒有說明更糟**：
+    讀的人會照那句去查一個根本沒發生的故障。
+    """
+    if not n_todo:
+        return "本趟沒有要問的（⇒ 問得到的都問完了）"
+    if n_ok:
+        return f"成功 {n_ok}／{n_todo}"
+    if alive:
+        return (f"本趟 {n_todo} 檔全部失敗，⭐ **而對照組答得出來**"
+                " ⇒ 端點是好的，那是**那一批自己的性質** ⇒ 照常記 miss")
+    return f"⛔ 本趟 {n_todo} 檔全部失敗，**而且對照組也答不出來**"
+
+
+def land(Y, M, ok, today, market="twse", T=None, rl=None):
     """把這一批**落地**：兩份判準檔 ＋ 續跑台帳。→ 這次寫進台帳的檔數。
 
     ⭐ 只有這一份實作（四點五）：**期中 flush 與最後一次走同一條路**。
@@ -526,14 +629,18 @@ def land(Y, M, ok, today, rl=None):
     ⚠ 而 `_save` 是「讀進來的 dict ＋ 本趟的鍵」再整份寫回 ⇒ 那是**逐鍵合併**，
     ⛔ 不是覆蓋。
     """
-    if Y or os.path.exists(YEARLY):
-        _save(YEARLY, Y_HEADER, Y)
-    if M or os.path.exists(MONTHLY):
-        _save(MONTHLY, M_HEADER, M)
+    yp, mp = yearly_path(market), monthly_path(market)
+    if Y or os.path.exists(yp):
+        _save(yp, Y_HEADER, Y)
+    if M or os.path.exists(mp):
+        _save(mp, M_HEADER, M)
+    if T or os.path.exists(tpex_yearly_path()):
+        _save(tpex_yearly_path(), TY_HEADER, T)
     if not ok:
         return 0
-    new = not os.path.exists(DONE)
-    with io.open(DONE, "a", encoding="utf-8") as f:
+    dp = done_path(market)
+    new = not os.path.exists(dp)
+    with io.open(dp, "a", encoding="utf-8") as f:
         if new:
             f.write("stock_id,asof\n")
         for s in ok:
@@ -541,49 +648,56 @@ def land(Y, M, ok, today, rl=None):
     return len(ok)
 
 
-def progress_lines(pool, done, todo, ex, give_up=()):
+def progress_lines(pool, done, todo, ex, give_up=(), market="twse"):
     """續跑那兩行怎麼寫。→ [(label, value)]。⭐ 抽出來是為了驗得到（第七點）。
 
-    ⛔ **分母是 `pool`（這個端點涵蓋得到的），不是全部普通股。**
+    ⛔ **分母是 `pool`（這一趟這個市場涵蓋得到的），不是全部普通股。**
     ⚠ 用全部當分母的話，13% 這個數字會永遠爬不上去，
     而每一趟都像有在跑——那正是「永遠跑不完，每趟都像有在跑」那個形狀。
+
+    ⛔⛔ `market` **必須進來**：2026-09-16 接上上櫃之後，
+    「這個端點答不出來的」那一行若照舊寫，在 tpex 那一趟會把 **twse 1,158 檔**
+    報成「答不出來」——⚠ 而它們只是**另一趟**在做，⛔ 完全不是缺口。
     """
     pct = len(done) * 100 // max(1, len(pool))
     gu = list(give_up or [])
     reach = len(pool) - len(gu)
     rp = len(done) * 100 // max(1, reach)
+    mk = {"twse": "上市", "tpex": "上櫃"}.get(market, market)
+    other = {"twse": "tpex", "tpex": "twse"}.get(market, "")
+    n_other = ex.get(other, 0)
+    n_esb = ex.get("emerging", 0)
     return [
-        ("續跑", f"母體 **{len(pool):,}** 檔（⭐ 只有上市——這個端點不涵蓋別的）"
+        ("續跑", f"母體 **{len(pool):,}** 檔（⭐ 這一趟只有**{mk}**）"
                  f"｜已完成 {len(done):,}｜**{pct}%**｜本趟 {len(todo)}"),
         # ⭐⭐ 三堆分開報。⛔ 「還沒做」把後兩堆混在一起 ⇒ 那個數字會**永遠不歸零**，
         #   而每一趟都像有在跑（四點六③那個形狀）。
         ("⭐ 還剩下的分兩種（⛔ 不可以合著看）",
          f"**還沒問過** {max(0, reach - len(done)):,} 檔"
          f"｜**問到放棄** {len(gu):,} 檔"
-         f"（連續 {MISS_TRIES} 趟答不出來，記在 `_official_stats_miss.csv`）"
+         f"（連續 {MISS_TRIES} 趟答不出來，記在 `{os.path.basename(miss_path(market))}`）"
          f"　⇒ ⭐ 對**問得到**的那 {reach:,} 檔而言是 **{rp}%**"
          "　⚠ 而「問到放棄」⛔ 不等於「這檔沒有官方統計」"
          "——那句失敗訊息（`很抱歉，沒有符合條件的資料!`）講不出它是哪一種"),
         # ⛔ 排掉的要講出來：「排掉了」與「沒有這種股票」**不是同一件事**
-        ("⚠ 這個端點答不出來的（⛔ 不是缺口，是涵蓋範圍）",
-         "｜".join(f"{k} {v:,} 檔" for k, v in sorted(ex.items()))
-         + "　⇒ ⭐ 實測命中率 twse 94%／tpex 0%／emerging 0%"
-           "（⛔ 判準是**兩個市場的命中率**，不是那句「沒有符合條件的資料」"
-           "——那句話講不出它是哪一種）"
-         + "　⇒ ⛔⛔ **2026-09-16 推翻**「上櫃的官方年度／月統計沒有來源」："
-           "probe 120 實測 `POST/GET https://www.tpex.org.tw/www/zh-tw/"
-           "statistics/yearlyStock?code=<代號>` ⇒ **一發回 12 年**"
-           "（民國 104~115，`totalCount:12`），"
-           "⭐ 欄位跟 `FMNPTK` **同一組**：年度／成交張數／金額(仟元)／筆數／"
-           "加權平均價／盤中最高最低＋日期／**收盤平均價**"
-           "　⇒ ⚠ 而線索一直在我方自己的 `data/meta/_site_inventory.txt` 裡"
-           "（3.5④「自己家查過沒有」）"
-           "　⇒ ⛔ 而**月**那一半還沒答完：`statistics/monthlyStock` 吃的是"
-           "`stkno`＋`year`（`code`＋`date` 回 `參數輸入錯誤`），"
-           "⚠ 而它回顯的 `date` 是**今天**（20260916）"
-           "⇒ 我還不知道 `year` 有沒有生效（第二點①靜靜回今天）"
-           "　⇒ ⭐ 所以這一條**還開著**，⛔ 但開著的理由已經從「沒有來源」"
-           "變成「還沒接上」"),
+        # ⭐ 而**兩種被排掉的意義完全不同**，⛔ 不可以並排寫成一行
+        ("⚠ 這一趟不涵蓋的（⛔ 分兩種，意義不同）",
+         f"**{other} {n_other:,} 檔**　⇒ ⭐ 那是**另一趟**在做"
+         f"（`--market {other}`），⛔ **不是缺口**"
+         f"　｜**emerging {n_esb:,} 檔**　⇒ ⛔ 興櫃**兩支端點都不涵蓋**，"
+         "這一條**還開著**"),
+        ("⭐ 上櫃那一半的現況（2026-09-16）",
+         "✅ **年**：`statistics/yearlyStock?code=<代號>` 一發回 12 年，"
+         "已接上（`--market tpex`）"
+         "　⇒ ⭐ 只有**價**那五格進共用判準表（收盤平均價／盤中最高最低＋日期，"
+         "實測 6488 兩年跟我方日檔**逐位相同**）；"
+         "量那四欄原樣另存（張／仟元／仟筆），⛔ 因為它們是另一種口徑"
+         "（＋4.8%／＋5.0%／**＋156%**）"
+         "　⇒ ⛔ 而**月**那一半（`statistics/monthlyStock`）**還開著**："
+         "參數名已從頁面讀到是 `code`＋`date`，⚠ 而 `date` 的**格式**還沒試出來"
+         "（`2024/01/01` 回 `參數輸入錯誤`）"
+         "　⇒ ⚠ 而線索一直在我方自己的 `data/meta/_site_inventory.txt` 裡"
+         "（3.5④「自己家查過沒有」）"),
     ]
 
 
@@ -592,21 +706,32 @@ def main():
     ap.add_argument("--limit", type=int, default=150)
     ap.add_argument("--sleep", type=float, default=1.0)
     ap.add_argument("--force", action="store_true")
+    # ⛔ **必填語意、但有預設值是刻意的**：`twse` 是這一支原本唯一做的事，
+    #   ⚠ 而它跟 `lowwater.direction` 那條不同——這裡兩種**沒有相反的語意**，
+    #   只是兩個不同的端點與母體 ⇒ 預設值不會讓人「照抄錯的語意」。
+    ap.add_argument("--market", choices=("twse", "tpex"), default="twse")
     a = ap.parse_args()
     B.SLEEP = a.sleep
 
-    rl = runlog.Run("official_stats")
+    rl = runlog.Run("official_stats"
+                    + ("" if a.market == "twse" else f":{a.market}"))
+    rl.info("這一趟的市場", f"**{a.market}**"
+            + ("｜端點 `afterTrading/FMNPTK`＋`FMSRFK`（逐年＋逐月）"
+               if a.market == "twse" else
+               "｜端點 `statistics/yearlyStock`（⭐ 一發回全部 12 年）"
+               "　⇒ ⛔ 只有**價**那五格進共用判準表，量那四欄原樣另存"))
     today = datetime.now(TPE).strftime("%Y%m%d")
     done = set()
-    if os.path.exists(DONE) and not a.force:
-        with io.open(DONE, encoding="utf-8") as f:
+    _dp = done_path(a.market)
+    if os.path.exists(_dp) and not a.force:
+        with io.open(_dp, encoding="utf-8") as f:
             f.readline()
             done = {ln.split(",")[0].strip() for ln in f if ln.strip()}
-    pool = codes()
+    pool = codes(covered=(a.market,))
     # ⭐ 三堆只在**這裡切一次**（四點五）：⛔ 不要在別處再算一次 `c not in done`。
-    miss = load_miss() if not a.force else {}
+    miss = load_miss(miss_path(a.market)) if not a.force else {}
     # ⛔ 台帳被污染過就要**講出來**（⚠ 丟掉而不說 ＝ 沒被污染，看起來一樣）
-    _bad = bad_rows()
+    _bad = bad_rows(miss_path(a.market))
     if _bad:
         rl.info("⛔ miss 台帳裡有**不是代號**的列（已跳過，下次寫入時會消失）",
                 f"{len(_bad)} 列：{_bad[:5]}"
@@ -614,21 +739,34 @@ def main():
                 "（第二點④：TWSE 被 CDN 擋時回 HTTP 428 ＋ HTML）"
                 "　⇒ 寫入端已改走 `twparse.csv_cell`")
     todo, fresh, give_up = split_todo(pool, done, miss, a.limit)
-    ex = excluded()
-    for label, value in progress_lines(pool, done, todo, ex, give_up):
+    ex = excluded(covered=(a.market,))
+    for label, value in progress_lines(pool, done, todo, ex, give_up,
+                                       market=a.market):
         rl.info(label, value)
     if not todo:
         rl.info("狀態", "✓ **問得到的全部問完了**"
                         f"（⛔ 不等於「全市場都有官方統計」；⚠ 另有 {len(give_up):,} 檔"
                         "連續答不出來而放棄，見 `_official_stats_miss.csv`）")
 
-    Y, M = _load(YEARLY, Y_HEADER), _load(MONTHLY, M_HEADER)
+    Y = _load(yearly_path(a.market), Y_HEADER)
+    M = _load(monthly_path(a.market), M_HEADER)
+    T = _load(tpex_yearly_path(), TY_HEADER) if a.market == "tpex" else {}
     n0y, n0m = len(Y), len(M)
     ok = []
     flushed = 0
     fail = []
     for i, sid in enumerate(todo, 1):
-        ys, ms, err = fetch_one(sid, today)
+        if a.market == "tpex":
+            # ⭐ 上櫃：價那五格填進共用表（`Y_HEADER` 其餘欄留空，⛔ 不是 0），
+            #   量那四欄原樣進 `T`。⚠ 兩者的 key 都是 (代號, 民國年)。
+            prs, vrs, err = fetch_one_tpex(sid)
+            ys = [(r[0], r[1], "", "", "", r[2], r[3], r[4], r[5], r[6], today)
+                  for r in prs]
+            ms = []
+            for r in vrs:
+                T[(r[0], r[1])] = list(r) + [today]
+        else:
+            ys, ms, err = fetch_one(sid, today)
         if err:
             fail.append((sid, err))
             print(f"  [{i}/{len(todo)}] {sid} ✗ {err}", flush=True)
@@ -641,7 +779,7 @@ def main():
         print(f"  [{i}/{len(todo)}] {sid} ✓ 年 {len(ys)}／月 {len(ms)}", flush=True)
         # ⭐ 每 FLUSH_EVERY 檔落地一次 ⇒ 被砍最多賠 FLUSH_EVERY 檔，⛔ 不是整批 400
         if len(ok) - flushed >= FLUSH_EVERY:
-            land(Y, M, ok[flushed:], today)
+            land(Y, M, ok[flushed:], today, market=a.market, T=T)
             flushed = len(ok)
             print(f"  ⭐ 期中落地：已完成 {flushed}／{len(todo)}"
                   "（⇒ 這一趟就算被砍，前面這些不會白跑）", flush=True)
@@ -655,7 +793,7 @@ def main():
     #   ⇒ 有舊內容就照常寫回（不能因為本趟失敗就讓舊的消失）；
     #     完全沒有內容就不落地。
     # ⭐ 最後一次落地走**同一個函式**（⛔ 不是另寫一段）
-    land(Y, M, ok[flushed:], today)
+    land(Y, M, ok[flushed:], today, market=a.market, T=T)
     # ⭐⭐ 失敗也要落地，⛔ 否則下一趟還會再問同一批（本節開頭那 69 檔）。
     #   ⚠ `alive` ＝ 這一趟有沒有任何一檔成功：端點整個掛掉時**一個字都不寫**。
     #   ⭐⭐ 而「本趟全失敗」有**兩種**（見 `controls()`），⛔ 它們長得一模一樣
@@ -667,7 +805,7 @@ def main():
         rl.info("⭐ 全失敗 ⇒ 拿**對照組**問一次（⛔ 不是在兩種成因之間猜）", ctrl_why)
         if probed is True:
             alive = True
-    n_miss = bump_miss(fail, today, alive=alive)
+    n_miss = bump_miss(fail, today, path=miss_path(a.market), alive=alive)
     if fail and not ok and not alive:
         rl.info("⛔ 本趟全失敗、**而且對照組也答不出來** ⇒ 不記 miss",
                 f"{len(fail):,} 檔全部失敗 ⇒ 判定是**端點側**的問題，"
@@ -684,8 +822,14 @@ def main():
                         f"｜本趟落地 {len(ok):,} 檔"
                         "　⇒ ⭐ 被砍最多賠 {} 檔，⛔ 不是整批".format(FLUSH_EVERY))
 
-    rl.info("年度表", f"{YEARLY.split('data/')[-1]}｜{len(Y):,} 列（本趟 +{len(Y)-n0y}）")
-    rl.info("月表", f"{MONTHLY.split('data/')[-1]}｜{len(M):,} 列（本趟 +{len(M)-n0m}）")
+    rl.info("年度表", f"{yearly_path(a.market).split('data/')[-1]}"
+                      f"｜{len(Y):,} 列（本趟 +{len(Y)-n0y}）")
+    rl.info("月表", f"{monthly_path(a.market).split('data/')[-1]}"
+                    f"｜{len(M):,} 列（本趟 +{len(M)-n0m}）")
+    if a.market == "tpex":
+        rl.info("⭐ 上櫃的**量**那四欄（原樣，保留官方單位：張／仟元／仟筆）",
+                f"{tpex_yearly_path().split('data/')[-1]}｜{len(T):,} 列"
+                "　⇒ ⛔ 它們跟上市那三欄**不是同一個口徑**，不可以合著算")
     rl.info("本趟", f"成功 {len(ok)}／失敗 {len(fail)}"
             + (f"｜失敗例：{fail[:3]}" if fail else ""))
     # ⛔ 只增不減：這兩份是外部判準，寫短了等於判準消失。
@@ -698,10 +842,13 @@ def main():
     #   ② 那 104 檔照常累加進 miss 台帳 ⇒ 連續 MISS_TRIES 趟之後轉進「問到放棄」，
     #      ⭐ 而那一欄**照常印在報表上**（⛔ 不是從報表消失）⇒ 收斂得到、也看得見
     #   ③ 「兩份判準檔只增不減」那道沒有動
+    # ⛔⛔ 說明文字要講**實際發生的那一種**。
+    #   ⚠ 2026-09-16 run 158 實測：這一格**過了**（對照組 3／3 答得出來），
+    #   而說明照樣印「且對照組也答不出來」——⭐ 一個通過的檢查，說明寫著相反的話。
+    #   ⇒ 它比沒有說明更糟：讀的人會照那句去查一個根本沒發生的故障。
     rl.check("不是整批失敗（全失敗**而且對照組也答不出來**＝被擋或參數壞了）",
              not todo or bool(ok) or alive,
-             f"本趟 {len(todo)} 檔全部失敗，且對照組也答不出來"
-             if todo and not ok else f"成功 {len(ok)}")
+             batch_fail_note(len(todo), len(ok), alive))
     return rl.finish()
 
 

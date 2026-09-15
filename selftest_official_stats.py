@@ -47,7 +47,31 @@ def ck(name, cond, hint=""):
         print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
 
 
+_REPO_META = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "data", "meta")
+_REPO_FILES = ("official_yearly_close.csv", "official_monthly_amount.csv",
+               "official_yearly_tpex.csv", "_official_stats_done.csv",
+               "_official_stats_miss.csv",
+               # ⭐ `_last_run.md` 一定要在裡面：`main()` 會寫它，
+               #   ⛔ 而 2026-09-16 我就漏導了 `runlog.PATH` 一次。
+               "_last_run.md")
+
+
+def _snap_repo():
+    """repo 真的那幾個判準檔的 (存在?, 位元組數)。⭐ 用來驗「沒有被動到」。
+
+    ⛔ 不是比 mtime：`touch` 不算改內容，而我們要擋的是**內容**被寫掉。
+    """
+    out = {}
+    for n in _REPO_FILES:
+        p = os.path.join(_REPO_META, n)
+        out[n] = (os.path.exists(p), os.path.getsize(p) if os.path.exists(p) else -1)
+    return out
+
+
 def main():
+    global _REPO_SNAP
+    _REPO_SNAP = _snap_repo()
     d = tempfile.mkdtemp(prefix="offstats_")
     old_meta = O.META
     try:
@@ -90,38 +114,64 @@ def main():
            "**50%**" in lines["續跑"], lines["續跑"])   # ⛔ 4 檔當分母是 25%
         ck("  而母體那個數字也寫出來了", "**2**" in lines["續跑"], lines["續跑"])
 
-        print("\n── ⑤ 那一行要講清楚「排掉≠缺口」，⛔ 也不可以假裝上櫃有來源 ──")
-        k = [x for x in lines if "答不出來" in x][0]
+        print("\n── ⑤ 那一行要講清楚「不涵蓋≠缺口」，⛔ 而且兩種不涵蓋要分開 ──")
+        k = [x for x in lines if "不涵蓋" in x][0]
         v = lines[k]
-        ck("⭐ 明講這是**涵蓋範圍**，⛔ 不是缺口", "不是缺口" in k, k)
-        ck("⭐ 明講判準是**兩個市場的命中率**，⛔ 不是那句「沒有符合條件的資料」",
-           "命中率" in v and "講不出它是哪一種" in v, v[:160])
-        # ⭐⭐ 判準是「**這一條還在報表上、而且沒有被宣告解決**」，
-        #   ⛔ 不是比某一句固定的字——2026-09-16 我把措辭從「仍然沒有來源」
-        #   改成「還開著，⛔ 而它不再是沒有線索」，語意完全沒變，
-        #   ⚠ 而這條斷言當場紅了（第七點第八個的鏡像：比字串的斷言**假紅**）。
-        ck("⛔ 而「上櫃的年度／月統計」這一條要**留著開著**"
-           "（⚠ 排掉它不等於解決它）",
-           "上櫃" in v and ("還開著" in v or "仍然沒有來源" in v)
-           and "已收掉" not in v and "已解決" not in v, v[:200])
+        ck("⭐ 明講這是**涵蓋範圍**，⛔ 不是缺口", "不是缺口" in v, v[:160])
+        # ⭐⭐ 2026-09-16 接上上櫃之後，被排掉的**有兩種、意義完全不同**：
+        #   另一個市場 ＝ 另一趟在做（⛔ 不是缺口）；興櫃 ＝ 兩支端點都不涵蓋（開著）
+        #   ⛔ 並排寫成一行的話，`--market tpex` 那一趟會把 twse 1,158 檔
+        #     報成「答不出來」——⚠ 而它們只是另一趟在做。
+        ck("⭐⭐ 另一個市場要明說是**另一趟在做**（⛔ 不是缺口）",
+           "另一趟" in v and "--market" in v, v[:200])
+        ck("⭐ 而興櫃那一種要**留著開著**（⚠ 兩支端點都不涵蓋）",
+           "emerging" in v and "還開著" in v
+           and "已收掉" not in v and "已解決" not in v, v[:240])
+        # ⭐ 而上櫃那一半的現況要講得出**年已接上、月還開著**
+        k2 = [x for x in lines if "上櫃那一半" in x][0]
+        v2 = lines[k2]
+        ck("⭐⭐ 年那一半明說**已接上**、月那一半明說**還開著**"
+           "（⛔ 兩半併成一句就會有人讀成整條都解決了）",
+           "已接上" in v2 and "還開著" in v2, v2[:240])
+        ck("  而「只有價那五格進共用表」要寫出來（⛔ 量那三欄是另一種口徑）",
+           "價" in v2 and "口徑" in v2, v2[:240])
+
+        # ⭐ 換成 tpex 那一趟：⛔ twse 不可以被寫成「答不出來」
+        lt = dict(O.progress_lines(["6488"], set(), ["6488"],
+                                   {"twse": 1158, "emerging": 363},
+                                   market="tpex"))
+        vt = [x for x in lt.values() if "不涵蓋" in str(x)] or [lt[
+            [x for x in lt if "不涵蓋" in x][0]]]
+        ck("⭐⭐ `--market tpex` 那一趟：twse 1,158 檔被寫成**另一趟在做**",
+           "twse 1,158" in vt[0] and "另一趟" in vt[0], vt[0][:200])
+        ck("  而母體那一行說得出這一趟是**上櫃**",
+           "上櫃" in lt["續跑"], lt["續跑"])
 
         print("\n── ⑥ ⭐⭐ 期中落地：被砍最多賠 FLUSH_EVERY 檔，⛔ 不是整批 ──")
         # ⛔ 這一步實測一趟**超過一小時**，而它本來只在最後寫檔
         #   ⇒ job 被砍／runner 掉／任何例外 ⇒ **整批 400 檔全部白跑**
         #   ⇒ ⭐ 那正是四點六③「永遠跑不完，每趟都像有在跑」。
-        old_y, old_m, old_d = O.YEARLY, O.MONTHLY, O.DONE
+        # ⭐⭐ **只有 META 一個旋鈕**：路徑都是呼叫當下才算的函式
+        #   ⛔ 舊版是 `O.YEARLY`／`O.MONTHLY`／`O.DONE` 三個常數（import 當下就算好）
+        #   ⇒ 那正是第七點第五個那個坑（`mops.CHANGES`）：導一個、漏一個。
+        old_meta = O.META
         try:
-            O.YEARLY = os.path.join(d, "y.csv")
-            O.MONTHLY = os.path.join(d, "m.csv")
-            O.DONE = os.path.join(d, "done.csv")
+            O.META = d
             Y = {("1101", "114", "1"): ["1101", "114", "1"] + [""] * 8}
             O.land(Y, {}, ["1101"], "20260915")
             ck("⭐ 落地之後台帳**真的**有那一檔（⛔ 不是「land 回了 1」）",
-               "1101" in io.open(O.DONE, encoding="utf-8").read(),
-               io.open(O.DONE, encoding="utf-8").read())
+               "1101" in io.open(O.done_path(), encoding="utf-8").read(),
+               io.open(O.done_path(), encoding="utf-8").read())
+            ck("⭐⭐ 導走 `META` **一個旋鈕**就夠（⛔ 路徑不可以是 import 當下算好的常數）",
+               O.done_path().startswith(d) and O.yearly_path().startswith(d),
+               f"{O.done_path()}｜{O.yearly_path()}")
+            for _gone in ("DONE", "MISS", "YEARLY", "MONTHLY"):
+                ck(f"  ⛔ 而舊的 `{_gone}` 常數**要拿掉**"
+                   "（留著的話「只導一個也會對」一次都沒被走過）",
+                   not hasattr(O, _gone), f"O.{_gone} 還在")
             # ⛔⛔ 台帳是 **append**：第二次落地不可以把第一次的洗掉（四點六③）
             O.land(Y, {}, ["2330"], "20260915")
-            t = io.open(O.DONE, encoding="utf-8").read()
+            t = io.open(O.done_path(), encoding="utf-8").read()
             ck("⛔⛔ 台帳是**追加**：第二次落地之後第一檔**還在**"
                "（⚠ 整份取代就是 `save_done` 那個坑）",
                "1101" in t and "2330" in t, t)
@@ -131,8 +181,10 @@ def main():
             #   ——2026-09-15 我今天第四次踩到那個：把 `if … >= FLUSH_EVERY:`
             #   改成 `if False:` 的突變，**呼叫那一行還在** ⇒ 比字串的斷言全綠。
             # ⇒ ⭐ 做法：讓迴圈跑到一半**炸掉**，再看台帳裡已經有幾檔。
-            io.open(os.path.join(d, "done.csv"), "w", encoding="utf-8").write("")
-            os.remove(os.path.join(d, "done.csv"))
+            # ⛔ 要清的是 `done_path()` 那個檔（⚠ 舊版寫死 `done.csv`
+            #   ⇒ 改成函式之後那一行清錯檔，這一節的 6 會變成 8）
+            if os.path.exists(O.done_path()):
+                os.remove(O.done_path())
             io.open(os.path.join(d, "stocks.csv"), "w", encoding="utf-8").write(
                 "stock_id,market,kind\n"
                 + "".join(f"{1000 + i},twse,stock\n" for i in range(12)))
@@ -154,8 +206,8 @@ def main():
                     pass
             finally:
                 O.FLUSH_EVERY, O.fetch_one, sys.argv = old_fe, old_fetch, old_argv
-            got = (io.open(O.DONE, encoding="utf-8").read()
-                   if os.path.exists(O.DONE) else "")
+            got = (io.open(O.done_path(), encoding="utf-8").read()
+                   if os.path.exists(O.done_path()) else "")
             n_done = len([x for x in got.splitlines()[1:] if x.strip()])
             ck("⭐⭐ 跑到第 8 檔炸掉 ⇒ 台帳裡**已經有 6 檔**"
                "（FLUSH_EVERY=3 ⇒ 落地過兩次）"
@@ -165,12 +217,84 @@ def main():
                isinstance(O.FLUSH_EVERY, int) and O.FLUSH_EVERY > 0,
                str(O.FLUSH_EVERY))
         finally:
-            O.YEARLY, O.MONTHLY, O.DONE = old_y, old_m, old_d
+            O.META = old_meta
+
+        print("\n── ⑥b ⭐⭐ `--market tpex`：價進共用表、量原樣另存 ──")
+        old_meta2 = O.META
+        d_tp = tempfile.mkdtemp(prefix="ostpex_")
+        old_tf, old_argv2 = O.fetch_one_tpex, sys.argv
+        import runlog as _RL2
+        old_rl2 = _RL2.PATH
+        try:
+            O.META = d_tp
+            # ⛔⛔ `runlog.PATH` **也要導走**：`main()` 會寫一個區塊，
+            #   ⚠ 漏了它就直接寫進 repo 真的 `data/meta/_last_run.md`
+            #   （第七點第五個：沙箱導走漏了一個）。
+            _RL2.PATH = os.path.join(d_tp, "_last_run.md")
+            io.open(os.path.join(d_tp, "stocks.csv"), "w",
+                    encoding="utf-8").write(
+                "stock_id,market,kind\n6488,tpex,stock\n2330,twse,stock\n")
+
+            def fake_tpex(sid):
+                return ([(sid, "115", "1600.00", "7/15", "403.00", "1/02",
+                          "749.62")],
+                        [(sid, "115", "1323393", "1066891796", "2354",
+                          "806.18")], None)
+            O.fetch_one_tpex = fake_tpex
+            sys.argv = ["official_stats.py", "--market", "tpex",
+                        "--limit", "5", "--sleep", "0"]
+            # ⛔ 接住例外再判：不接的話整支測試當場中斷，**後面一條都不會跑**
+            #   ⇒ 同一個突變會從「紅 5」變成「紅 1」（第七點第二個）。
+            _boom = None
+            try:
+                O.main()
+            except Exception as _ex:                             # noqa: BLE001
+                _boom = f"{type(_ex).__name__}: {_ex}"
+            ck("⭐ `--market tpex` 跑得完（⛔ 炸掉的話後面每一條都測不到）",
+               _boom is None, str(_boom))
+
+            ck("⭐ 台帳走 **`_tpex` 那一份**（⛔ 不是跟上市共用一份）",
+               O.done_path("tpex").endswith("_official_stats_done_tpex.csv")
+               and os.path.exists(O.done_path("tpex")),
+               O.done_path("tpex"))
+            ck("  ⛔ 而上市那一份**沒有被動到**",
+               not os.path.exists(O.done_path("twse")), O.done_path("twse"))
+
+            def _lines(fp, pre):
+                if not os.path.exists(fp):
+                    return []          # ⛔ 不存在就回空，不要炸（第七點第二個）
+                return [ln for ln in io.open(fp, encoding="utf-8")
+                        .read().splitlines() if ln.startswith(pre)]
+            yrow = _lines(O.yearly_path(), "6488,")
+            ck("⭐ 價那五格進了**共用**判準表", len(yrow) == 1, str(yrow))
+            cells = yrow[0].split(",") if yrow else []
+            ck("⭐⭐ 而 `volume`／`amount`／`transactions` 三欄是**空的**"
+               "（⛔ 不是 0——那三欄是另一種口徑，而空 ≠ 0，五點三）",
+               len(cells) == 11 and cells[2:5] == ["", "", ""], str(cells))
+            ck("  而價那幾格真的寫進去了（收盤平均價 749.62）",
+               len(cells) == 11 and cells[9] == "749.62", str(cells))
+
+            trow = _lines(O.tpex_yearly_path(), "6488,")
+            ck("⭐ 量那四欄**原樣**另存（保留官方單位：張／仟元／仟筆）",
+               len(trow) == 1 and trow[0].split(",")[2:6]
+               == ["1323393", "1066891796", "2354", "806.18"], str(trow))
+            ck("  ⛔ 而它**沒有**被換算成股／元（那會做出一張兩種單位的表）",
+               len(trow) == 1 and "1323393000" not in trow[0], str(trow))
+        finally:
+            O.fetch_one_tpex, sys.argv = old_tf, old_argv2
+            _RL2.PATH = old_rl2
+            O.META = old_meta2
+            import shutil as _sh
+            _sh.rmtree(d_tp, ignore_errors=True)
 
         print("\n── ⑦ ★ 沒有動到 repo 真的 stocks.csv ──")
-        ck("★ `META` 導到沙箱期間，repo 的 data/meta 沒有被讀寫",
-           O.META == d and not os.path.exists(
-               os.path.join(d, "_official_stats_done.csv")))
+        # ⛔ 舊版是斷言「沙箱裡不會出現真的檔名」——⚠ 那個代理判準在
+        #   路徑改成函式之後**必然不成立**（沙箱裡本來就會出現那個檔名）。
+        # ⇒ ⭐ 改成驗**終點**：repo 真的那幾個檔**逐位元沒變**（四點二）。
+        ck("★ 導走 `META` 期間，repo 真的 `data/meta/` 那幾個檔**逐位元沒變**",
+           all(_REPO_SNAP[k] == _snap_repo()[k] for k in _REPO_SNAP),
+           str({k: (v, _snap_repo()[k]) for k, v in _REPO_SNAP.items()
+                if v != _snap_repo()[k]}))
     finally:
         O.META = old_meta
         import shutil
@@ -382,6 +506,21 @@ def main():
               and getattr(n.func, "id", "") == "endpoint_alive"]
     ck("⭐ main() 真的會去問對照組（⛔ 不是只有函式在那裡沒人叫）",
        len(probes) == 1, str(len(probes)))
+    # ⛔ 說明文字要講**實際發生的那一種**（run 158 實測：檢查過了，
+    #   而說明印「且對照組也答不出來」⇒ 一個通過的檢查說著相反的話）
+    ck("⭐⭐ 全失敗**而對照組答得出來** ⇒ 說明要講「而對照組答得出來」",
+       "而對照組答得出來" in O.batch_fail_note(104, 0, True)
+       and "也答不出來" not in O.batch_fail_note(104, 0, True),
+       O.batch_fail_note(104, 0, True))
+    ck("⭐ 全失敗**而且對照組也答不出來** ⇒ 說明要講那一種",
+       "也答不出來" in O.batch_fail_note(104, 0, False),
+       O.batch_fail_note(104, 0, False))
+    ck("  有成功的 ⇒ 講成功幾檔", "成功 3" in O.batch_fail_note(10, 3, False))
+    ck("  沒有要問的 ⇒ 講「都問完了」", "都問完了" in O.batch_fail_note(0, 0, False))
+    _n = [n for n in ast.walk(fn) if isinstance(n, ast.Call)
+          and getattr(n.func, "id", "") == "batch_fail_note"]
+    ck("⭐ 而 `main()` 真的用它（⛔ 不是另外寫一段 if）", len(_n) == 1, str(len(_n)))
+
     checks = [n for n in ast.walk(fn)
               if isinstance(n, ast.Call)
               and getattr(n.func, "attr", "") == "check"]
