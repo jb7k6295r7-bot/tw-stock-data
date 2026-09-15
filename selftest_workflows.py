@@ -108,6 +108,83 @@ def run_blocks(path):
     return out
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⛔⛔ 同一個 `run:` 裡的多行會**連坐**（`set -e`），而它已經吃掉東西了
+#
+# 2026-09-15 現場證據：`daily.yml`「除權息與減資（當月）」是五行裸跑，
+#   `feeds:exright`／`reduce`／`parvalue`／`etfsplit` 四塊都是**今天 00:17**，
+#   ⛔ 而第五行寫的 `otcparvalue` 那一塊停在 **2026-09-11**
+#   ⇒ ⚠ 四天沒跑，而 run 是綠的、那一步也沒有紅。
+#
+# ⇒ 而全 repo 掃一次：**34 個**多呼叫的 run 區塊沒有 RC-GUARD。
+# ⛔ 不能一次機械式全改：其中有些是**有順序相依**的（前一行的產出是後一行的輸入）
+#   ⇒ 讓失敗的那一行後面照樣跑，可能寫出**錯的資料**，而那比連坐更糟。
+#
+# ⇒ ⭐ 所以這一道是一個**只能往下的台帳**（跟 `lowwater.DOWN` 同一個道理）：
+#     ① 名單**外**出現新的沒守護區塊 ⇒ 紅（⛔ 不准再欠新的）
+#     ② 名單**裡**的區塊已經守護好了 ⇒ 也紅（⭐ 逼人把名單刪短）
+#   ⚠ 只做①的話名單會永遠停在 34：修好了沒有人會去刪它。
+# ══════════════════════════════════════════════════════════════════
+KNOWN_UNGUARDED = {
+    ('backfill.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
+    ('backfill.yml', '驗解析規則（空值寫法＋無成交列，離線）'),
+    ('backfill.yml', '興櫃單日修補（把被刪掉的那一天補回去）'),
+    ('backfill.yml', '回補'),
+    ('daily.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
+    ('daily.yml', '全市場三大法人（上櫃 TPEx）'),
+    ('daily.yml', '融資融券與本益比（上市＋上櫃）'),
+    ('daily.yml', '借券賣出餘額（上市＋上櫃）'),
+    ('daily.yml', '官方創新板成分清單（逐日，回到 2021-06-28）'),
+    ('daily.yml', '變更交易（全額交割）名單（逐日，回到 2015-01-01）'),
+    ('daily.yml', '停止買賣中的名單（上市，⛔ 沒有歷史、漏一天永久少一天）'),
+    ('daily.yml', '上櫃變更交易／分盤／管理股票（逐日）'),
+    ('daily.yml', '個股融資融券成數調整（逐日）'),
+    ('daily.yml', '終止上市（下市）清單'),
+    ('daily.yml', '面額變更（歷史回補，每趟 30 個月）'),
+    ('daily.yml', 'ETF 分割（歷史回補，每趟 30 個月）'),
+    ('daily.yml', '算還原因子'),
+    ('daily.yml', '上櫃減資／除權息的官方判準（各一發請求）'),
+    ('daily.yml', '上櫃減資對帳'),
+    ('daily.yml', '逐日 feed 的列數閘門（只讀，不連外）'),
+    ('daily.yml', '還原因子 vs 交易所漲跌停（只讀，不連外）'),
+    ('daily.yml', '發行股數對帳（上櫃，官方個股市值排行）'),
+    ('daily.yml', '母體漏列規模（六張官方清單差集，不連外）'),
+    ('daily.yml', '無成交列水位（哪幾天已是新語意，不連外）'),
+    ('daily.yml', '上櫃除權息判準（官方當日，逐日累積）'),
+    ('daily.yml', '漲跌家數（當天 ＋ 分批回補）'),
+    ('feeds.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
+    ('feeds.yml', '回補'),
+    ('feeds.yml', '上櫃除權息與減資（FinMind 回補｜⛔ 免費層）'),
+    ('feeds.yml', '上櫃除權息與減資（只補指定的幾檔｜⛔ 免費層）'),
+    ('feeds.yml', '上櫃除權息歷史（官方公告區，只寫判準檔）'),
+    ('feeds.yml', '上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些'),
+    ('feeds.yml', '核對每一天的內容'),
+    ('feeds.yml', '算還原因子'),
+}
+
+
+def check_rc_debt(files):
+    """⭐ 沒有 RC-GUARD 的多呼叫區塊：**只准變少**。"""
+    now = set()
+    for f in files:
+        short = os.path.basename(f)
+        for name, body in run_blocks(f):
+            calls = [ln for ln in body.split("\n")
+                     if re.search(r"^\s*python\s", ln) and "|| true" not in ln]
+            if len(calls) >= 2 and any("|| RC=" not in ln for ln in calls):
+                now.add((short, name))
+    added = sorted(now - KNOWN_UNGUARDED)
+    fixed = sorted(KNOWN_UNGUARDED - now)
+    ck("⛔⛔ 沒有新的「多行裸跑」區塊"
+       "（⚠ `set -e` 會讓前一行掛掉時，後面幾行一次都不跑，而 run 是綠的）",
+       not added, f"⛔ 新欠的：{[a[1][:40] for a in added]}")
+    ck("⭐ 而名單裡已經修好的要**從名單刪掉**"
+       "（⛔ 只擋新的 ⇒ 名單永遠停在原地，修好了沒有人會去刪它）",
+       not fixed, f"⭐ 已修好、請從 KNOWN_UNGUARDED 刪除：{[a[1][:40] for a in fixed]}")
+    ck(f"★ 而這一道真的掃到了（⛔ 0 個區塊跟全部通過長得一樣）｜目前欠 {len(now)} 個",
+       len(now) + len(fixed) >= 20, f"只掃到 {len(now)} 個")
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     files = sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml")))
@@ -810,6 +887,8 @@ def main():
         ck(f"⛔ {short}：checkout 有 `fetch-depth: 0`"
            "（⚠ shallow clone ⇒ rebase／比較拿不到歷史，而失敗方式包含「看起來正常」）",
            bool(m), "⛔ 沒有 ⇒ 預設 depth 1")
+
+    check_rc_debt(files)
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
