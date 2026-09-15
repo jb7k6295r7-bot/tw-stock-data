@@ -131,6 +131,44 @@ def main():
     say("⚠ 參數 startDate/endDate 是**沿用同站減資端點的假設**，本檔要驗它成不成立。")
     got = [one(a, b) for a, b in RANGES]
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 清單 C4（**上櫃**面額變更：自動取得）2026-09-15 加。
+    #
+    # ⛔ `otcparvalue.py` 的檔頭寫著：「TPEx 沒有對應端點
+    #   （swagger 225 個端點裡沒有減資／面額／參考價）」。
+    # ⚠ 而那句否定的**掃描範圍只有 swagger** —— ⇒ 它沒有說「官方選單上沒有」。
+    # ⭐ 而我方自己的 `_site_inventory.txt` 列著**兩條從來沒被探過**的官方頁：
+    #
+    #     /zh-tw/announce/market/change.html            上櫃變更股票面額預告表
+    #     /zh-tw/announce/market/change/reference.html  變更股票面額恢復交易參考價
+    #
+    # ⚠ 而櫃買**同一個公告區**的另外兩條（`bulletin/exDailyQ`、`bulletin/revivt`）
+    #   是 POST、日期帶斜線，而且**一次回十一年**——⇒ 這一族是有歷史的。
+    #
+    # ⛔ 這一段**只挖線索、不下結論**：那兩頁多半也是 js 空殼，
+    #   ⇒ 用 `backfill.xhr_clues` 把它們的 js 去打誰印出來（跟 MOPS 那支同一份）。
+    # ⚠ 而「頁面抓得到」**不等於**「資料抓得到」（第二點③：查無資料頁）
+    #   ⇒ 形狀那一行（js 空殼與否）也要印。
+    # ══════════════════════════════════════════════════════════════
+    say("\n── ⭐ 清單 C4：**上櫃**面額變更，官方選單上那兩條（從來沒探過）──")
+    say("⚠ 既有的否定句是「TPEx 沒有對應端點」，⛔ 而它的掃描範圍**只有 swagger**。")
+    for name, url in (
+            ("上櫃變更股票面額預告表",
+             "https://www.tpex.org.tw/zh-tw/announce/market/change.html"),
+            ("變更股票面額恢復交易參考價",
+             "https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html")):
+        say(f"\n  ── {name}\n     {url}"
+            "\n     ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的")
+        raw, err = B.get(url, retries=2, timeout=60)
+        if err:
+            say(f"     ⛔ {_W(err, 200)}")
+            continue
+        han, n_tr, n_js, shell = B.js_shell(raw)
+        say(f"     [形狀] {len(raw):,} bytes｜中文 {han:,} 字｜<tr> {n_tr} 個"
+            f"｜js {n_js} 支" + ("　⛔ **js 空殼**" if shell else ""))
+        for ln in B.xhr_clues(raw):
+            say("   " + ln)
+
     say("\n── ★ 參數有沒有被無視 ──")
     say("TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，"
         "把當天的四列寫進 2015 年的每一個日期檔。")
