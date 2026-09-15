@@ -105,6 +105,13 @@ def t_gate_min_periods():
     check(el.sum() > 2000 and diff_cols == [], f"合格列（bars ≥ 120，{int(el.sum())} 列）13 欄 mp 0.5 vs 1.0 逐位元相同（不同的欄：{diff_cols}）")
     bad = raw.loc[~el & raw["traded"], ["ma_stack", "dist_hi120", "ret_120"]]
     check(len(bad) == 119 and bad.isna().all().all(), f"bars < 120 的有成交列（{len(bad)}）ma_stack/dist_hi120/ret_120 全 NaN（閘門擋的就是這些）")
+    # K線分析 2035 (c)：inst_nan20＝近 20 日法人缺值日數；缺 ⇒ fore20/trust20 NaN（min_periods=20），⛔ 不補
+    nan20 = raw["inst_nan20"]; f20 = raw["fore20"]
+    check(bool(((nan20 > 0) & raw["traded"] & (raw["bars"] >= 20)) .eq(f20.isna() & raw["traded"] & (raw["bars"] >= 20)).all()), "有成交且 bars≥20 的列：inst_nan20>0 ⇔ fore20 NaN（(c) 的判準與特徵一致）")
+    # ⚠ 2330 法人從不缺 ⇒ 上一條在 2330 上是空成立；拿一檔真的有洞的：1240 2022-05-03 的 20 日窗內缺 04-01／04-07／04-08 三日（追加四逐筆看過）
+    g = P.stock_raw("1240", "twse", cal); q = int(np.searchsorted(cal, pd.Timestamp("2022-05-03")))
+    check(int(g["inst_nan20"].iloc[q]) == 3 and pd.isna(g["fore20"].iloc[q]) and pd.isna(g["trust20"].iloc[q]) and g["bars"].iloc[q] >= 120,
+          f"1240 2022-05-03：inst_nan20＝{int(g['inst_nan20'].iloc[q])}（要 3）、fore20/trust20 NaN、bars {int(g['bars'].iloc[q])} ≥ 120（閘門擋不到、(c) 才擋得到的那種）")
     late = P.stock_raw("7610", "tpex", cal)
     if late is not None:
         pos = int(np.searchsorted(cal, pd.Timestamp("2026-01-02")))

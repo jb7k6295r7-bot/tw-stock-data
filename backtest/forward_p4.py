@@ -65,11 +65,12 @@ def worker(args):
     if raw is None or pos >= len(raw):
         return None
     row = raw.iloc[pos]
-    if not bool(row["traded"]) or not (row["amt20"] >= P.LIQ_MIN) or int(row["bars"]) < P.MIN_BARS:   # v3 補件 §3-1：bars ≥ MIN_BARS 才進母體
+    inst_ok = bool(pd.notna(row["fore20"]) and pd.notna(row["trust20"]))   # K線分析 2035 (c)：法人欄 NaN ⇒ 不進母體、不補
+    if not bool(row["traded"]) or not (row["amt20"] >= P.LIQ_MIN) or int(row["bars"]) < P.MIN_BARS or not inst_ok:   # v3 補件 §3-1：bars ≥ MIN_BARS 才進母體
         return {"stock_id": sid, "market": market, "eligible": False, "amt20": float(row["amt20"]) if pd.notna(row["amt20"]) else np.nan, "bars": int(row["bars"]),
-                "liq_ok": bool(pd.notna(row["amt20"]) and row["amt20"] >= P.LIQ_MIN)}
+                "liq_ok": bool(pd.notna(row["amt20"]) and row["amt20"] >= P.LIQ_MIN), "inst_ok": inst_ok}
     adj = D.load_adj(sid)
-    out = {"stock_id": sid, "market": market, "eligible": True, "has_adj": int(adj is not None and len(adj) > 0), "bars": int(row["bars"]), "liq_ok": True}
+    out = {"stock_id": sid, "market": market, "eligible": True, "has_adj": int(adj is not None and len(adj) > 0), "bars": int(row["bars"]), "liq_ok": True, "inst_ok": True}
     for c in RAW_COLS:
         out[c] = float(row[c]) if pd.notna(row[c]) else np.nan
     nxt = raw["open"].iloc[pos + 1] if pos + 1 < len(raw) else np.nan
@@ -169,7 +170,7 @@ def main():
     u = update_universe(a.out, list(elig.index), mdate)
     tc = label.value_counts(dropna=False).to_dict() if cen is not None else {"（型號未貼，沒有中心檔）": n_el}
     log = [f"## {mdate}（跑於 {asof}，data_sha {data_sha[:12]}）",
-           f"- 母體 {n_pop:,} → 過流動性門檻（近 20 日均額 ≥ {P.LIQ_MIN / 1e6:.0f} 百萬）{int(allr['liq_ok'].sum()):,} 檔 → 再過 bars ≥ {P.MIN_BARS} 閘門 {n_el:,} 檔（擋掉 {int((allr['liq_ok'] & (allr['bars'] < P.MIN_BARS)).sum())} 檔）；進場日 {edate}；型號 {tc}；centers_version「{cver}」",
+           f"- 母體 {n_pop:,} → 過流動性門檻（近 20 日均額 ≥ {P.LIQ_MIN / 1e6:.0f} 百萬）{int(allr['liq_ok'].sum()):,} 檔 → 再過 bars ≥ {P.MIN_BARS} 閘門（擋掉 {int((allr['liq_ok'] & (allr['bars'] < P.MIN_BARS)).sum())} 檔）→ 再過法人欄可算閘門 (c)（擋掉 {int((allr['liq_ok'] & (allr['bars'] >= P.MIN_BARS) & ~allr['inst_ok']).sum())} 檔）{n_el:,} 檔；進場日 {edate}；型號 {tc}；centers_version「{cver}」",
            f"- has_adj=0 {int((elig['has_adj'] == 0).sum())} 檔；shares_ok=0 {int((elig['shares_ok'] == 0).sum())} 檔；補值欄數≥1 {int((n_filled >= 1).sum())} 檔（rev_hi24 缺 {int(elig['rev_hi24'].isna().sum())}、turn20 缺 {int(elig['turn20'].isna().sum())}）",
            f"- 累積名單 {len(u):,} 檔；{time.time() - t0:.0f}s", ""]
     with open(os.path.join(a.out, "runlog.md"), "a", encoding="utf-8") as fh:

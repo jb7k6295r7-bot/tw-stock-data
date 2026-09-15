@@ -129,6 +129,7 @@ def stock_raw(sid: str, market: str, cal: pd.DatetimeIndex, rev_flags: pd.Series
     out.loc[ma120.isna(), "ma_stack"] = np.nan; out.loc[ma60.shift(20).isna(), "ma60_up"] = np.nan
     out["rev_hi24"] = rev_flags.reindex(cal).to_numpy(float) if rev_flags is not None else np.nan
     out["shares_ok"] = shares.notna().astype(int)
+    out["inst_nan20"] = inst["foreign"].isna().astype(int).rolling(20, min_periods=1).sum()   # 近 20 日法人缺值日數（只給放棄組⑩成因用，不是特徵）
     out["bars"] = df["traded"].astype(bool).cumsum().to_numpy()      # 有價收盤根數（ffill 前的原始有成交列，自序列起算累計）
     out["close"] = c; out["open"] = o; out["traded"] = df["traded"].astype(bool)
     return out

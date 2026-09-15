@@ -86,10 +86,14 @@ def panel_worker(args):
             continue
         fr = P.forward_returns(raw, pos)
         liq_ok = bool(pd.notna(r["amt20"]) and r["amt20"] >= P.LIQ_MIN); bars = int(r["bars"]); bars_ok = bars >= P.MIN_BARS
+        inst_ok = bool(pd.notna(r["fore20"]) and pd.notna(r["trust20"]))   # K線分析 2035 §一 (c)：法人欄近 20 日非缺值 < 20 ⇒ NaN ⇒ 該股-月整個不進主判定（放棄組⑩），⛔ 不可再被補 50
         row = {"measure_date": d, "stock_id": sid, "market": market, "amt20": float(r["amt20"]) if pd.notna(r["amt20"]) else np.nan,
-               "bars": bars, "liq_ok": liq_ok, "bars_ok": bars_ok,
-               "eligible": liq_ok and bars_ok,      # v3 補件 §3-1：流動性 ∧ bars ≥ MIN_BARS（不足者整檔排除當月 ⇒ 放棄組⑧）
+               "bars": bars, "liq_ok": liq_ok, "bars_ok": bars_ok, "inst_ok": inst_ok,
+               "eligible": liq_ok and bars_ok and inst_ok,      # v3 補件 §3-1：流動性 ∧ bars ≥ MIN_BARS（放棄組⑧）∧ 法人欄可算（放棄組⑩）
                "shares_ok": int(r["shares_ok"])}
+        if liq_ok and bars_ok and not inst_ok:                       # 放棄組⑩ 的成因欄：窗內無成交日數 vs 有成交但法人缺
+            lo = max(0, pos - 19); w_tr = raw["traded"].iloc[lo:pos + 1].to_numpy(bool)
+            row["inst_win_notraded"] = int((~w_tr).sum()); row["inst_win_missing_traded"] = int(r["inst_nan20"]) - int((~w_tr).sum()) if pd.notna(r["inst_nan20"]) else -1
         for f in P.FEATURES:
             row[f] = float(r[f]) if pd.notna(r[f]) else np.nan
         for H in HOLDS:
@@ -349,6 +353,22 @@ def dropped_table(panel: pd.DataFrame, cl: pd.DataFrame, S: pd.DataFrame, uni: p
         tot = int((panel["measure_date"].dt.year == y).sum() and panel.loc[panel["measure_date"].dt.year == y, "liq_ok"].sum())
         rows.append({"group": "⑧bars<120 擋掉（流動性合格）", "period": str(y), "H": np.nan, "n": int(len(g)), "value": float(len(g) / max(tot, 1)) * 100, "ref": tot,
                      "note": f"逐年；value＝占流動性合格股-月 %；ref＝流動性合格股-月；檔數 {g['stock_id'].nunique()}"})
+    # ⑩ 法人欄 NaN 擋掉（流動性＋bars 合格）：K線分析 2035 §一 (c)，股-月數、逐年、後續報酬、成因分佈（清單另存 dropped_inst_nan.csv）
+    g10 = panel[panel["liq_ok"] & panel["bars_ok"] & ~panel["inst_ok"]]
+    for period, (a, b) in PERIODS.items():
+        pp = panel[(panel["measure_date"] >= a) & (panel["measure_date"] <= b)]; x = pp[pp["liq_ok"] & pp["bars_ok"] & ~pp["inst_ok"]]; y = pp[pp["eligible"]]
+        for H in HOLDS:
+            rows.append({"group": "⑩法人欄NaN擋掉（(c)）", "period": period, "H": H, "n": int(x[f"fwd_{H}"].notna().sum()),
+                         "value": float(x[f"fwd_{H}"].mean()) * 100 if x[f"fwd_{H}"].notna().any() else np.nan, "ref": float(y[f"fwd_{H}"].mean()) * 100 if len(y) else np.nan,
+                         "note": f"股-月 {len(x)}；value＝被擋掉者平均毛報酬 pp；ref＝合格者"})
+    for y, g in g10.groupby(g10["measure_date"].dt.year):
+        rows.append({"group": "⑩法人欄NaN擋掉（(c)）", "period": str(y), "H": np.nan, "n": int(len(g)), "value": np.nan, "ref": int(len(g["stock_id"].unique())), "note": "逐年；ref＝檔數"})
+    if len(g10):
+        cause = np.where(g10["inst_win_notraded"] > 0, "窗內有無成交日（停牌／無成交）", np.where(g10["inst_win_missing_traded"] > 0, "有成交但法人資料缺日", "其他"))
+        for k, v in pd.Series(cause).value_counts().items():
+            rows.append({"group": "⑩法人欄NaN擋掉（(c)）", "period": "成因", "H": np.nan, "n": int(v), "value": float(v / len(g10)) * 100, "ref": int(len(g10)), "note": f"{k}；value＝占 %"})
+        for mk, v in g10["market"].value_counts().items():
+            rows.append({"group": "⑩法人欄NaN擋掉（(c)）", "period": "市場", "H": np.nan, "n": int(v), "value": float(v / len(g10)) * 100, "ref": int(len(g10)), "note": f"{mk}；value＝占 %"})
     # ⑨ 創新板量測日 < 2025-01-06 排除（K線分析 1745 §一）
     n9 = int(panel["innov_excluded"].sum()) if "innov_excluded" in panel else 0
     rows.append({"group": "⑨創新板量測日<2025-01-06 排除", "period": "全部", "H": np.nan, "n": n9, "value": np.nan, "ref": int(panel["eligible"].sum()),
@@ -465,6 +485,8 @@ def main():
     S = summary_table(cl); write_csv(S, os.path.join(a.out, "summary.csv"), stamp, commit)
     write_csv(quantiles_wide(S), os.path.join(a.out, "quantiles_wide.csv"), stamp, commit)
     Dp, sm = dropped_table(panel, cl, S, uni, C, mu, sd); write_csv(Dp, os.path.join(a.out, "dropped.csv"), stamp, commit)
+    g10 = panel[panel["liq_ok"] & panel["bars_ok"] & ~panel["inst_ok"]][["measure_date", "stock_id", "market", "bars", "inst_win_notraded", "inst_win_missing_traded"] + [f"fwd_{H}" for H in HOLDS]]
+    write_csv(g10, os.path.join(a.out, "dropped_inst_nan.csv"), stamp, commit)
     write_csv(sm, os.path.join(a.out, "structural_missing.csv"), stamp, commit)
     write_csv(yearly_table(panel, cl), os.path.join(a.out, "yearly.csv"), stamp, commit)
     pA = placebo_A(cl, n_iter=a.placebo_n)
@@ -474,9 +496,9 @@ def main():
     cmp_ = compare_table(S); write_csv(cmp_, os.path.join(a.out, "compare_v3_s10.csv"), stamp, commit)
     verdict = overall_verdict(S, pA)
     # summary.md
-    n_liq = int(panel["liq_ok"].sum()); n_gate = int((panel["liq_ok"] & ~panel["bars_ok"]).sum())
+    n_liq = int(panel["liq_ok"].sum()); n_gate = int((panel["liq_ok"] & ~panel["bars_ok"]).sum()); n_inst = int((panel["liq_ok"] & panel["bars_ok"] & ~panel["inst_ok"]).sum())
     mp_line = open(os.path.join(a.out, "min_periods_check.txt"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(a.out, "min_periods_check.txt")) else "（沿用既有面板，本趟沒跑）"
-    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、流動性合格 {n_liq:,} 列、bars<{P.MIN_BARS} 再擋 {n_gate:,} 列（放棄組⑧）、創新板規則排除 {n_innov} 列、合格 {len(cl):,} 列。", "",
+    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、流動性合格 {n_liq:,} 列、bars<{P.MIN_BARS} 再擋 {n_gate:,} 列（放棄組⑧）、法人欄 NaN 再擋 {n_inst:,} 列（放棄組⑩，K線分析 2035 (c)）、創新板規則排除 {n_innov} 列、合格 {len(cl):,} 列。", "",
          f"閘門（v3 補件 §3-1／§3-2，K線分析 1855 合併）：量測日 bars ≥ {P.MIN_BARS} 才進母體、所有回看窗 min_periods＝w；§4-1 常設斷言：{mp_line}", ""]
     L.append("## 一、主格 2021-01～2026-03，H=120（唯一判定格）"); L.append("")
     L.append("| 型 | 有效月 | 超額 | 95% CI | 月勝率 | 逐筆勝率 | p05 / p10 / p50 / p90 / p95 | 絕對平均（扣成本） | 月均檔數 | 判定 |"); L.append("|---|---:|---:|---|---:|---:|---|---:|---:|---|")
@@ -502,7 +524,7 @@ def main():
         L.append(f"- {r.check} {r.type}：{r.excess_pp:+.2f}（{r.ci_lo_pp:+.2f}～{r.ci_hi_pp:+.2f}）")
     L.append(f"- 鑑別力：對調後仍「④負②正」＝{bool(pD['bug_if_true'].iloc[0])}（True ⇒ 程式有 bug）")
     L.append(""); L.append("## 五、放棄組（`dropped.csv`）摘要"); L.append("")
-    for r in Dp[Dp["group"].str.startswith(("⑥", "⑦", "③", "⑧", "⑨"))].itertuples():
+    for r in Dp[Dp["group"].str.startswith(("⑥", "⑦", "③", "⑧", "⑨", "⑩"))].itertuples():
         L.append(f"- {r.group}｜{r.period}｜n={r.n}｜value={r.value if not isinstance(r.value, float) or np.isnan(r.value) else round(r.value, 2)}｜ref={r.ref}｜{r.note}")
     L.append(""); L.append("其餘：`quantiles_wide.csv`（四型並列）、`yearly.csv`、`placebo.csv`、`compare_v3_s10.csv`、`structural_missing.csv`；面板 `panel.csv.gz`、歸型 `classified.csv.gz`。⛔ 沒有任何「贏過 0050」的比較。")
     with open(os.path.join(a.out, "summary.md"), "w", encoding="utf-8") as fh:
