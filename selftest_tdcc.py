@@ -462,6 +462,93 @@ with tempfile.TemporaryDirectory() as d:
     finally:
         T.OUT_DIR = old_out
 
+print("\n── ⑧ ⭐⭐ 持股級距是**夾出來**的，⛔ 不是抄坊間表 ──")
+# ⭐ 判準本身拿**合成**資料驗（環境無關）：造一個級距**已知**的假庫，
+#   看 `derive_levels()` 夾不夾得回那些邊界。
+#   ⛔ 拿真實 tdcc_hist 驗判準的話，這條的壽命會綁在「現在剛好是那批資料」上
+#     （第七點第七個陷阱）。
+try:
+    import numpy as _np
+    import pyarrow as _pa2
+    import pyarrow.parquet as _pq3
+    _HAS = True
+except ImportError:
+    _HAS = False
+if not _HAS:
+    print("  ⚠⚠ **這一層沒跑**：這台沒有 pyarrow／numpy"
+          "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+else:
+    with tempfile.TemporaryDirectory() as d:
+        # 真邊界（我自己訂的）：1-99｜100-500｜501-2000｜2001 以上
+        TRUE_UB = [99, 500, 2000]
+        recs = []
+        import random as _rnd
+        _rnd.seed(15)
+        for wk in range(40):
+            for code in range(30):
+                bounds = [(1, 99), (100, 500), (501, 2000), (2001, 50000)]
+                for k, (a, b) in enumerate(bounds, start=1):
+                    # ⭐ 讓每一級偶爾出現「只有 1 個人、剛好持有上界」
+                    #   ⇒ 那正是把 max(avg) 推到上界的那一格
+                    if wk % 7 == k % 7:
+                        pe, sh = 1, b if b < 50000 else 9999
+                    else:
+                        pe = _rnd.randint(2, 50)
+                        sh = _rnd.randint(a * pe, b * pe)
+                    recs.append((f"2020-01-{wk+1:02d}", f"{1000+code}", k, pe, sh))
+                for k in (4 + 1, 4 + 2):   # 補到 17 級的形狀（16 調整、17 合計）
+                    recs.append((f"2020-01-{wk+1:02d}", f"{1000+code}", k, 0, 0))
+        _pq3.write_table(_pa2.table({
+            "date": _pa2.array([r[0] for r in recs]),
+            "stock_id": _pa2.array([r[1] for r in recs]),
+            "level": _pa2.array([r[2] for r in recs], _pa2.int8()),
+            "people": _pa2.array([r[3] for r in recs], _pa2.int64()),
+            "shares": _pa2.array([r[4] for r in recs], _pa2.int64()),
+        }), os.path.join(d, "2020.parquet"))
+        _old_n = T.N_LEVELS
+        try:
+            T.N_LEVELS = 6            # 4 個級距 ＋ 調整 ＋ 合計
+            rows, note = T.derive_levels(d)
+            ck("⭐ 夾得出 4 級", len(rows) == 4, f"{len(rows)}｜{note}")
+            for i, ub in enumerate(TRUE_UB):
+                r = rows[i]
+                ck(f"  ⭐⭐ 第 {i+1} 級的真上界 {ub} 落在夾出來的 "
+                   f"[{r[2]}, {r[3]}] 裡（⛔ 夾錯就是判準壞了）",
+                   r[2] <= ub <= r[3], f"{r[2]} ~ {r[3]}")
+            ck("  ⭐ 而下界接得起來（a_{k+1} = b_k + 1）",
+               not T.levels_gaps(rows), str(T.levels_gaps(rows)))
+            ck("  ⭐ 至少夾出一個唯一解（⇒ 樣本夠）",
+               any(r[4] == "1" for r in rows), str([r[4] for r in rows]))
+            # ⛔ 接不起來要抓到
+            _broken = [list(r) for r in rows]
+            _broken[1][1] = _broken[0][3] + 99      # 造一個縫
+            ck("⛔ 級距中間有縫 ⇒ `levels_gaps` 抓到",
+               bool(T.levels_gaps(_broken)), str(T.levels_gaps(_broken)))
+        finally:
+            T.N_LEVELS = _old_n
+
+        # ⭐ 而呼叫點（`levels_cmd`）真的把那兩道接上去
+        rl = FakeRun()
+        T.N_LEVELS = 6
+        try:
+            T.levels_cmd(rl, apply=False, hist_dir=d)
+        finally:
+            T.N_LEVELS = _old_n
+        ck("⭐ `levels_cmd` 有「接得起來」那道 check",
+           any("接得起來" in k for k, _c, _d in rl.checks), str(rl.checks))
+        ck("⭐ 也有「至少 5 個唯一解」那道",
+           any("唯一解" in k for k, _c, _d in rl.checks), str(rl.checks))
+        ck("⭐⭐ 而它**自己講出**千張大戶落在哪一級（⛔ 那是 E3 卡住的原因）",
+           any("千張大戶" in k for k, _v in rl.infos),
+           str([i for i in rl.infos if "千張" in str(i)]))
+        ck("⛔ 不帶 `--apply` ⇒ 不寫檔",
+           any("只算不寫" in f"{k}{v}" for k, v in rl.infos))
+        # ⛔ 沒有 parquet ⇒ 大聲說這一層沒跑
+        rl = FakeRun()
+        T.levels_cmd(rl, apply=False, hist_dir=os.path.join(d, "空"))
+        ck("⛔ 沒有 tdcc_hist ⇒ 大聲說**這一層沒跑**（⚠ 不是算出空表）",
+           any("這一層沒跑" in k for k, _v in rl.infos), str(rl.infos))
+
 print("\n── ④ ★ 沒有動到 repo 真的 `_tdcc_weeks_low.txt` ──")
 ck("★ 逐位元沒變（含「本來就不存在」這一種）", _dig(REAL_LOW) == B4,
    f"{B4} → {_dig(REAL_LOW)}")

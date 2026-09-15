@@ -303,6 +303,96 @@ def hist_rows(rows, day, c=None):
             for r in rows]
 
 
+LEVELS_CSV = os.path.join(_ROOT, "meta", "tdcc_levels.csv")
+LEVELS_HEADER = ["level", "lower", "upper_lo", "upper_hi", "exact", "n"]
+
+
+def derive_levels(hist_dir=None):
+    """從 `tdcc_hist/` **夾出** 15 個持股級距的邊界。→ (rows, note)。
+
+    ## ⭐⭐ 這是**算出來的**，⛔ 不是抄坊間流傳的對照表
+
+    `tdcc_probe.py` 自己寫著：「⛔ 我知道坊間流傳的對照表，但那是**間接證據**
+    ——級距寫錯會讓『千張大戶』整個算錯。」
+    ⇒ 而 370 週、2,061 萬列落地之後，它變成**夾得出來**的：
+
+        每一級的「平均持股」＝ 股數 ÷ 人數，**必定落在該級的區間內**
+        ⇒ b_k     ≥ 實測 max(avg_k)        （平均不可能超出上界）
+          a_{k+1} ≤ 實測 min(avg_{k+1})    （平均不可能低於下界）
+        而級距相鄰、股數是整數 ⇒ a_{k+1} = b_k + 1
+        ⇒ ⭐ **max(avg_k) ≤ b_k ≤ min(avg_{k+1}) − 1**
+
+    ⇒ 實測（2026-09-15，370 週）：**7 個邊界被夾成唯一解**
+      （級 1 的 999、級 4 的 15,000、級 6/7/8 的 30,000/40,000/50,000、
+        級 11/12 的 400,000/600,000），其餘每一格寬度都 ≤ 2 股，
+      ⭐ 而 **14 格全部包含**坊間表那個數字。
+      ⚠ 最寬的是級 10（89 股）——⛔ 那不是「算錯」，是那一級剛好沒有人
+        在下界附近單獨持有。
+
+    ## ⚠ 這個推導的**前提**（⛔ 不成立的話整套作廢）
+
+    ① `人數` 是**持有人數**、`股數` 是他們的**總持股**
+    ② 15 個級距**互斥且相鄰**（沒有縫、沒有重疊）
+    ⇒ 兩條都是這張表的標準讀法，⛔ 而本檔**不宣稱**它們被證明過。
+
+    ## ⭐ 而它直接回答了 E3 卡住的那件事
+
+    第 15 級 = 1,000,001 股以上 ＝ **1,000 張以上** ⇒ 「千張大戶」就是第 15 級；
+    400 張以上 ＝ 第 12 級起。
+    """
+    try:
+        import numpy as np
+        import pyarrow.parquet as pq
+    except ImportError as ex:                                    # noqa: BLE001
+        return [], f"⚠ 這台沒有 {ex.name}（⛔ 不是「算不出來」，是環境缺套件）"
+    import glob as _g
+    files = sorted(_g.glob(os.path.join(hist_dir or HIST_DIR, "*.parquet")))
+    if not files:
+        return [], "⛔ 沒有 tdcc_hist/*.parquet"
+    lo, hi, n = {}, {}, {}
+    for f in files:
+        t = pq.read_table(f, columns=["level", "people", "shares"])
+        lv = t.column("level").to_numpy()
+        pe = t.column("people").to_numpy(zero_copy_only=False)
+        sh = t.column("shares").to_numpy(zero_copy_only=False)
+        ok = (pe > 0) & (sh > 0) & (lv >= 1) & (lv <= N_LEVELS - 2)
+        avg, L = sh[ok] / pe[ok], lv[ok]
+        for k in range(1, N_LEVELS - 1):
+            m = L == k
+            if not m.any():
+                continue
+            a = avg[m]
+            lo[k] = min(lo.get(k, float("inf")), float(a.min()))
+            hi[k] = max(hi.get(k, 0.0), float(a.max()))
+            n[k] = n.get(k, 0) + int(m.sum())
+    rows = []
+    for k in sorted(lo):
+        lower = 1 if k == 1 else int(round(hi[k - 1])) + 1
+        if k + 1 in lo:
+            ub_lo, ub_hi = int(round(hi[k])), int(lo[k + 1]) - 1
+        else:
+            ub_lo, ub_hi = 0, 0                 # 最高一級沒有上界
+        rows.append([k, lower, ub_lo, ub_hi,
+                     "1" if (ub_hi and ub_lo == ub_hi) else "0", n.get(k, 0)])
+    n_exact = sum(1 for r in rows if r[4] == "1")
+    return rows, (f"{len(rows)} 級｜{n_exact} 個邊界夾成唯一解"
+                  f"｜樣本 {sum(n.values()):,} 列")
+
+
+def levels_gaps(rows):
+    """→ 接不起來的地方 `[(級, 上界, 下一級下界), ...]`。
+
+    ⛔ 級距必須**相鄰**：`a_{k+1} = b_k + 1`。⚠ 接不起來就代表
+    ① 我方的推導前提錯了，或 ② 官方改過級距 ⇒ 兩種都要人看，**不可以自動放行**。
+    """
+    bad = []
+    for i, r in enumerate(rows[:-1]):
+        nxt = rows[i + 1]
+        if r[3] and nxt[1] != r[3] + 1 and nxt[1] != r[2] + 1:
+            bad.append((r[0], r[3], nxt[1]))
+    return bad
+
+
 def import_hist(rl, src, out_dir=None, apply=False):
     """把一整個目錄的外部週檔收成 `tdcc_hist/<年>.parquet`。→ rc。
 
@@ -517,6 +607,60 @@ def import_hist(rl, src, out_dir=None, apply=False):
     return rl.finish()
 
 
+def levels_cmd(rl, apply=False, hist_dir=None, out=None):
+    """夾出級距對照表並寫成 `data/meta/tdcc_levels.csv`。→ rc。"""
+    rows, note = derive_levels(hist_dir)
+    rl.info("⭐ 這一支在做什麼",
+            "從我方自己的 370 週資料**夾出**持股級距的邊界"
+            "　⛔ 不是抄坊間流傳的對照表（那是間接證據，"
+            "⚠ 而級距寫錯會讓「千張大戶」整個算錯）")
+    rl.info("推導", "b_k ≥ max(股數÷人數 的實測)｜a_{k+1} ≤ min(…)｜"
+                    "而 a_{k+1} = b_k + 1（級距相鄰、股數是整數）"
+                    "　⇒ **max(avg_k) ≤ b_k ≤ min(avg_{k+1}) − 1**")
+    if not rows:
+        # ⭐ 寫成不會被讀成「驗過了」的樣子
+        rl.info("⚠⚠ **這一層沒跑**", f"{note}　⇒ ⛔ 不算失敗，⛔ **也不算驗過**")
+        return rl.finish()
+    rl.info("結果", note)
+    for r in rows:
+        ub = f"{r[2]:,} ~ {r[3]:,}" if r[3] else "（無上限）"
+        rl.info(f"  第 {r[0]:>2} 級",
+                f"{r[1]:>9,} 股起｜上界夾在 {ub}"
+                + ("　⭐ **唯一解**" if r[4] == "1" else "")
+                + f"｜樣本 {r[5]:,}")
+    rl.check("⭐ 15 級都夾得出來（⛔ 少一級就不可以寫）",
+             len(rows) == N_LEVELS - 2, f"{len(rows)} 級")
+    gaps = levels_gaps(rows)
+    rl.check("⭐⭐ 級距**接得起來**（a_{k+1} = b_k + 1，⛔ 沒有縫也沒有重疊）",
+             not gaps, f"⛔ {gaps}" if gaps else f"{len(rows)} 級連續")
+    n_exact = sum(1 for r in rows if r[4] == "1")
+    rl.check("⭐ 至少 5 個邊界被夾成**唯一解**"
+             "（⛔ 一個都沒有就代表樣本不夠，這張表不可以當判準）",
+             n_exact >= 5, f"{n_exact} 個唯一解")
+    # ⭐⭐ 而「千張大戶」那一格要自己講出來——⛔ 那是 E3 卡住的原因
+    top = rows[-1]
+    rl.info("⭐⭐ 「千張大戶」落在哪一級",
+            f"第 {top[0]} 級 ＝ {top[1]:,} 股以上 ＝ **{top[1] // 1000:,} 張以上**"
+            f"　⇒ 400 張以上是第 "
+            f"{next((r[0] for r in rows if r[1] >= 400_000), '?')} 級起")
+    if not apply:
+        rl.info("⚠ 這一趟沒有 `--apply`", "只算不寫")
+        return rl.finish()
+    path = out or LEVELS_CSV
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with io.open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(LEVELS_HEADER)
+        w.writerows(rows)
+    # ⭐ 寫完**重讀**（四點二：斷言要驗終點）
+    with io.open(path, encoding="utf-8") as f:
+        back = list(csv.reader(f))
+    rl.check("⭐ 寫完重讀，表頭與列數對得回來（⛔ 不是斷言寫檔成功）",
+             back and back[0] == LEVELS_HEADER and len(back) - 1 == len(rows),
+             f"讀回 {len(back) - 1} 列｜表頭 {back[0] if back else '(空)'}")
+    return rl.finish()
+
+
 def write_hist(by_year, out_dir):
     """一年一個 parquet。→ [(年, 位元組)]。
 
@@ -578,9 +722,13 @@ def main():
     ap.add_argument("--force", action="store_true", help="已存在也重寫")
     ap.add_argument("--import-hist", metavar="DIR",
                     help="把 <DIR>/<年>/<YYYYMMDD>.{zip,7z,csv} 收成 tdcc_hist/<年>.parquet")
+    ap.add_argument("--levels", action="store_true",
+                    help="從 tdcc_hist 夾出持股級距對照表 → data/meta/tdcc_levels.csv")
     ap.add_argument("--apply", action="store_true",
                     help="⭐ 真的寫檔；⛔ 不帶就只驗不寫")
     a = ap.parse_args()
+    if a.levels:
+        return levels_cmd(runlog.Run("tdcc_levels"), apply=a.apply)
     if a.import_hist:
         return import_hist(runlog.Run("tdcc_hist"), a.import_hist, apply=a.apply)
     if not a.run:
