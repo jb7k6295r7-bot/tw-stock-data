@@ -444,17 +444,17 @@
 [12] ⭐⭐ 上櫃除權息計算結果／漲跌停（F2 剩下那 6 筆未證實要用）
 
   ── tpex_exright_daily｜⭐ 上櫃除權除息計算結果表（上櫃版 TWT49U）
-     ✓ 10 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
+     ✓ 7 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
      ⭐ ①有沒有漲跌停欄：['LimitUp', 'LimitDown', 'OpeningReferencePrice']
-     首列：{'Date': '1150914', 'SecuritiesCompanyCode': '5278', 'CompanyName': '尚凡*', 'ClosePriceBeforeExRightsDiviend': '23.90', 'ExRightsDiviendQuote': '23.63', 'StockDividend': '0.000000', 'CashDividend': '0.266182', 'StockDividendPlusCashDividend': '0.266182', 'ExRightsDiviend': '除息', 'LimitUp': '25.95', 'LimitDown': '21.30', 'OpeningReferencePrice': '23.65', 'DividendDeductedQuote': '23.63', 'CashDivdend': '0.26618165', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
-     ③`Date` 相異值 2 種｜最小 1150914｜最大 1150915
+     首列：{'Date': '1150915', 'SecuritiesCompanyCode': '00942B', 'CompanyName': '台新美A公司債20+', 'ClosePriceBeforeExRightsDiviend': '13.52', 'ExRightsDiviendQuote': '13.46', 'StockDividend': '0.000000', 'CashDividend': '0.062000', 'StockDividendPlusCashDividend': '0.062000', 'ExRightsDiviend': '除息', 'LimitUp': '9999.95', 'LimitDown': '0.01', 'OpeningReferencePrice': '13.46', 'DividendDeductedQuote': '13.46', 'CashDivdend': '0.06200000', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1150915 × 7　⇒ **它只有這一期，沒有歷史**
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_exright_prepost｜上櫃除權除息預告表
-     ✓ 79 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
+     ✓ 82 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
      首列：{'ExRrightsExDividendDate': '1150907', 'SecuritiesCompanyCode': '1268', 'CompanyName': '漢來美食', 'ExRrightsExDividend': '除息', 'StockDividendRatio': '0.00000000', 'SubscriptionRatioToNewSharesIssued': '0.00000000', 'SubscriptionPricePerShare': '0.00', 'CashDividend': '8.00000000', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataInThousandShares': '0.00000000'}
-     ③`ExRrightsExDividendDate` 相異值 16 種｜最小 1150907｜最大 1151105
+     ③`ExRrightsExDividendDate` 相異值 19 種｜最小 1150907｜最大 1151105
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ceil_non_trading｜上櫃漲跌停未成交資訊
