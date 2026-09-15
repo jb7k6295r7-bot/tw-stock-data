@@ -1512,6 +1512,94 @@ def check_probe_stamp():
     return bad
 
 
+def check_survivor_fs():
+    """⛔⛔ `mops_probe.survivor_fs_case` **自己會不會炸**（2026-09-15 付過代價）。
+
+    probe 112 實測：`mops_history.parse_fs` 的 docstring 寫「回 4 元組」、
+    ⚠ 而它回的是 **5 個** ⇒ 我照說明拆 ⇒
+    `ValueError: too many values to unpack` ⇒ ⛔ **整支 `mops_probe.py` rc=1**
+    ⇒ 那一趟的 `data/meta/_mops_probe.txt` 是**上一次**的內容
+    （守門有補一行 ✗ 標記，⚠ 而那一節從頭到尾沒落地）。
+
+    ⇒ ⭐ 這一條是第七點第六個那條的同一族：
+      **一段解析／錯誤處理本身也是程式 ⇒ 它也要有「它自己會不會炸」的斷言**，
+      ⛔ 而斷言要驗**終點**（跑完、那幾行真的印出來），
+      不是驗「原始碼裡有沒有那個 unpack」（第七點第八個：註解裡也有一份）。
+
+    ⚠ 而假回應要照真回應的形狀做：真的 t163sb04 是「一個業別一張表」
+      ⇒ 這裡給**兩張**，而且其中一張帶目標代號、另一張不帶
+      ⇒ ⛔ 只給一張的話，「跨表收集代號」那一段等於沒測。
+    """
+    import mops_probe as MP
+    import mops_history as MH
+    bad = 0
+
+    def _tbl(rows):
+        head = ("<tr><td>公司代號</td><td>公司名稱</td>"
+                "<td>營業收入</td><td>營業成本</td></tr>")
+        body = "".join(f"<tr><td>{c}</td><td>{n}</td><td>1,000</td><td>500</td></tr>"
+                       for c, n in rows)
+        return f"<table>{head}{body}</table>"
+
+    page = ("<html><body>一般業<" + "/br>" + _tbl([("2330", "台積電"),
+                                                   ("2456", "奇力新")])
+            + "金融保險業" + _tbl([("2882", "國泰金")])
+            + "</body></html>").encode("utf-8")
+
+    out, saved = [], MH._fetch
+    MH._fetch = lambda url, form=None, **kw: (page, "")
+    try:
+        MP.survivor_fs_case(out)
+        err = None
+    except Exception as ex:                                      # noqa: BLE001
+        err = ex
+    finally:
+        MH._fetch = saved
+    txt = "\n".join(out)
+
+    # ⭐ ①「跑完不炸」——⛔ 這一條就是 probe 112 那個 bug 的**終點**斷言
+    ok = err is None
+    print(("✓ " if ok else "✗ ")
+          + "survivor_fs_case 拿**真形狀的假回應**跑完不丟例外"
+            "（⛔ probe 112 就是死在這裡：docstring 4 個、實際 5 個）")
+    if not ok:
+        print(f"    ⛔ {type(err).__name__}: {err}")
+        bad += 1
+        return bad
+
+    for name, want in (
+            ("② 把**相異代號數**講出來（⇒ 兩張表都收得到 ⇒ 3 個）", "相異代號 3 個"),
+            ("③ 逐格講「那幾檔在不在裡面」（⛔ 不下結論，由輸出講）", "那幾檔在裡面"),
+            ("④ 而**不在裡面的**也要單獨列（⇒ 兩個方向都印）", "不在裡面的"),
+            ("⑤ 明寫「⛔ 不可以把月營收那條的結論套過來」（三點②）", "每支端點都要自己實測"),
+    ):
+        if want in txt:
+            print(f"✓ survivor_fs_case {name}")
+        else:
+            print(f"✗ survivor_fs_case {name}｜找不到「{want}」")
+            bad += 1
+
+    # ⭐ ⑥ 取不回來那一格：⛔ **不可以**讀成「它不在裡面」
+    out2, saved = [], MH._fetch
+    MH._fetch = lambda url, form=None, **kw: (b"", "HTTP 500 Internal Server Error")
+    try:
+        MP.survivor_fs_case(out2)
+        err2 = None
+    except Exception as ex:                                      # noqa: BLE001
+        err2 = ex
+    finally:
+        MH._fetch = saved
+    t2 = "\n".join(out2)
+    ok = err2 is None and "【未驗】" in t2 and "不在裡面的" not in t2
+    print(("✓ " if ok else "✗ ")
+          + "survivor_fs_case ⭐ 取不回來 ⇒ 標【未驗】，"
+            "⛔ 不可以印成「那幾檔不在裡面」（那會被讀成倖存者偏誤的證據）")
+    if not ok:
+        print(f"    ⛔ err={err2}｜實得：{t2[-260:]}")
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -1540,6 +1628,7 @@ def main():
     bad += check_page_wiring()
     bad += check_no_dup_keys()
     bad += check_probe_stamp()
+    bad += check_survivor_fs()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

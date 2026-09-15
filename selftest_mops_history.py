@@ -171,6 +171,27 @@ def main():
         sum(1 for n in _ast.walk(_tree) if isinstance(n, _ast.Call)
             and getattr(n.func, "id", "") == "merge_parts") == 1)
 
+    # ── ⭐⭐ `parse_fs` 回的元組**幾個欄**（⛔ 不是問 docstring，是問回來的東西）
+    #   2026-09-15 probe 112 付過代價：docstring 寫 4 個、實際回 5 個
+    #   ⇒ `mops_probe.survivor_fs_case` 照說明拆 ⇒ ValueError ⇒ 整支探針 rc=1
+    #   ⇒ 那一趟的 `_mops_probe.txt` 是**上一次**的內容（⚠ 而檔案看起來完全正常）。
+    _fs_html = (
+        "<html><body><table>"
+        "<tr><td>公司代號</td><td>公司名稱</td><td>營業收入</td><td>營業成本</td></tr>"
+        "<tr><td>2330</td><td>台積電</td><td>1,234,567</td><td>600,000</td></tr>"
+        "<tr><td>2456</td><td>奇力新</td><td>7,654</td><td>3,210</td></tr>"
+        "</table></body></html>").encode("utf-8")
+    _got, _enc = H.parse_fs(_fs_html)
+    chk("⭐ `parse_fs` 至少解出一張表（⛔ 假回應要照真的形狀做，否則下一條沒測到）",
+        len(_got) >= 1, f"實得 {len(_got)} 張")
+    chk("⭐⭐ 而它每一格是 **5 元組** `(kind, how, caption, 表頭, 列)`"
+        "（⛔ docstring 曾經寫 4 個，而斷言要驗**回來的東西**）",
+        bool(_got) and all(len(t) == 5 for t in _got),
+        f"實得長度 {[len(t) for t in _got]}")
+    chk("  而最後一格是**列**、第一欄是代號（⇒ 下游 `r[0]` 拿到的是代號）",
+        bool(_got) and [r[0] for r in _got[0][4]] == ["2330", "2456"],
+        str(_got[0][4] if _got else ""))
+
     print(f"\n[selftest] 通過 {ok}｜失敗 {fail}")
     return 1 if fail else 0
 
