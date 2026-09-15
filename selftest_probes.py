@@ -979,6 +979,28 @@ def check_js_followups():
            "（⛔ base=None ⇒ 這一層永遠 0 支，而十一條斷言照樣全綠）",
            ok, f"實得 {hit.group(0) if hit else '找不到呼叫'}")
 
+    # ⑬ ⭐⭐ 凡是**判得出 js 空殼**的探針，都要接上 `js_followups`
+    #    ⛔ 否則下一支判到空殼的，又會停在「我方取不到」那一句
+    #    ——⚠ 而「取不到」是**還沒解決的工程問題**，不是句點。
+    #    ⭐ 這一道是「躲得過那道守門的族，要自己帶一道」：`selftest_no_dup`
+    #      比的是函式本體，⛔ 它看不出「有人用了 A 卻沒用 B」。
+    shell_users, no_dig = [], []
+    for _f in sorted(glob.glob(os.path.join(_here_dir(), "*.py"))):
+        b = os.path.basename(_f)
+        if b.startswith("selftest_") or b == "backfill.py":
+            continue
+        t = io.open(_f, encoding="utf-8").read()
+        if "js_shell(" not in t:
+            continue
+        shell_users.append(b)
+        if "js_followups(" not in t:
+            no_dig.append(b)
+    ck("⑬ ⭐⭐ 判得出 js 空殼的探針**都**接上了 `js_followups`"
+       "（⛔ 少一支，那一支就會停在「我方取不到」那一句）",
+       not no_dig, f"⛔ 沒接的：{no_dig}")
+    ck(f"  ★ 而這一道真的掃到了（⛔ 0 支跟全部通過長得一樣）｜{len(shell_users)} 支",
+       len(shell_users) >= 4, f"只掃到 {shell_users}")
+
     # ⑭ `visible_text` 只有一份實作（四點五）：⛔ 不可以有人自己 re.sub 去標籤
     # ⚠ 只掃 `.py`：⛔ `grep -rn .` 會去掃 `data/`（1.6 GiB）⇒ 這一條要跑好幾分鐘，
     #   而一條慢到讓人想拿掉的斷言，跟沒有那條斷言是一樣的。
