@@ -118,6 +118,7 @@ jobs:
         run: |
           python selftest_reduce.py
           python selftest_official_formula.py
+          python selftest_official_stats.py
           python selftest_crosscheck.py
           python selftest_fix_emerging_zero.py
           python selftest_done_days.py

@@ -134,16 +134,73 @@ def _save(path, header, rows):
             w.writerow(rows[k])
 
 
-def codes():
-    """普通股（含已下市）。⛔ 用 `kind`，不篩 `market`——已下市的也要驗歷史。"""
+#: ⭐ 這兩支端點**只涵蓋上市**——2026-09-15 量出來的，⛔ 不是推的。
+#  第一趟 `--limit 400` 的逐檔結果按市場拆開：
+#
+#      twse      成功 325 / 嘗試 343  = **94%**
+#      tpex      成功   0 / 嘗試  44  = **0%**
+#      emerging  成功   0 / 嘗試  13  = **0%**
+#
+#  ⇒ 跟 `TWTB8U` 那次一模一樣的形狀（同一發請求裡上市全中、上櫃全不中）
+#    ⇒ **端點不涵蓋上櫃**，⛔ 不是「那幾檔剛好沒資料」。
+#  ⚠ 而失敗訊息是 `stat='很抱歉，沒有符合條件的資料!'`
+#    ——⛔ 它講不出「是這一檔沒有」還是「這個市場整個沒有」（第二點）
+#    ⇒ ⭐ 分辨它的**不是訊息，是拿兩個市場的命中率對一次**。
+COVERED = ("twse",)
+
+
+def codes(covered=COVERED):
+    """這個端點**答得出來**的普通股（含已下市）。→ sorted list[str]。
+
+    ⛔ 本來是「`kind == stock` 全收」（2,493 檔）⇒ 而其中 1,335 檔
+    （tpex 972 ＋ emerging 363）**這個端點根本不涵蓋**
+    ⇒ ⚠ 續跑永遠到不了 100%，而每一趟都像有在跑（四點六③那個形狀）。
+
+    ⭐ 回傳的是**母體**；被排掉的那些由 `excluded()` 講出來，
+    ⛔ 不可以靜靜消失——「排掉了」與「沒有這種股票」不是同一件事。
+    """
     out = []
     p = os.path.join(META, "stocks.csv")
     if os.path.exists(p):
         with io.open(p, encoding="utf-8") as f:
             for r in csv.DictReader(f):
-                if r.get("kind") == "stock":
+                if r.get("kind") == "stock" and r.get("market") in covered:
                     out.append(r["stock_id"])
     return sorted(set(out))
+
+
+def excluded(covered=COVERED):
+    """被排掉的市場各有幾檔。→ dict[market, n]。⛔ 排掉要講出來，不是消失。"""
+    n = {}
+    p = os.path.join(META, "stocks.csv")
+    if os.path.exists(p):
+        with io.open(p, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                m = r.get("market")
+                if r.get("kind") == "stock" and m not in covered:
+                    n[m] = n.get(m, 0) + 1
+    return n
+
+
+def progress_lines(pool, done, todo, ex):
+    """續跑那兩行怎麼寫。→ [(label, value)]。⭐ 抽出來是為了驗得到（第七點）。
+
+    ⛔ **分母是 `pool`（這個端點涵蓋得到的），不是全部普通股。**
+    ⚠ 用全部當分母的話，13% 這個數字會永遠爬不上去，
+    而每一趟都像有在跑——那正是「永遠跑不完，每趟都像有在跑」那個形狀。
+    """
+    pct = len(done) * 100 // max(1, len(pool))
+    return [
+        ("續跑", f"母體 **{len(pool):,}** 檔（⭐ 只有上市——這個端點不涵蓋別的）"
+                 f"｜已完成 {len(done):,}｜**{pct}%**｜本趟 {len(todo)}"),
+        # ⛔ 排掉的要講出來：「排掉了」與「沒有這種股票」**不是同一件事**
+        ("⚠ 這個端點答不出來的（⛔ 不是缺口，是涵蓋範圍）",
+         "｜".join(f"{k} {v:,} 檔" for k, v in sorted(ex.items()))
+         + "　⇒ ⭐ 實測命中率 twse 94%／tpex 0%／emerging 0%"
+           "（⛔ 判準是**兩個市場的命中率**，不是那句「沒有符合條件的資料」"
+           "——那句話講不出它是哪一種）"
+         + "　⇒ ⚠ 上櫃的官方年度／月統計**仍然沒有來源**，這一條還開著"),
+    ]
 
 
 def main():
@@ -161,10 +218,14 @@ def main():
         with io.open(DONE, encoding="utf-8") as f:
             f.readline()
             done = {ln.split(",")[0].strip() for ln in f if ln.strip()}
-    todo = [c for c in codes() if c not in done][:a.limit]
-    rl.info("續跑", f"母體 {len(codes()):,} 檔｜已完成 {len(done):,}｜本趟 {len(todo)}")
+    pool = codes()
+    todo = [c for c in pool if c not in done][:a.limit]
+    ex = excluded()
+    for label, value in progress_lines(pool, done, todo, ex):
+        rl.info(label, value)
     if not todo:
-        rl.info("狀態", "✓ 全部跑完了")
+        rl.info("狀態", "✓ 這個端點涵蓋得到的**全部跑完了**"
+                        "（⛔ 不等於「全市場都有官方統計」）")
 
     Y, M = _load(YEARLY, Y_HEADER), _load(MONTHLY, M_HEADER)
     n0y, n0m = len(Y), len(M)
