@@ -855,6 +855,69 @@ def check_no_dup_keys():
     return bad
 
 
+def check_probe_stamp():
+    """⭐⭐ **每一份探針輸出都要自己講出它是哪一趟跑的**（2026-09-15 加）。
+
+    ⛔ 實測那天：17 支會寫 `data/meta/_*.txt` 的探針裡，**只有 1 支**寫時戳
+    ⇒ 其餘 16 份，讀的人看不出它是哪一趟——⚠ 而四條線拿那些檔判斷
+    「官方到底有沒有」。**一份三天前的 `_mops_probe.txt` 跟今天剛跑的長得一模一樣。**
+
+    ⚠ 而同一天有個 bug 把它放大：`probe.yml` 的 job timeout 15 分、
+    裡面有一步自己就是 15 分 ⇒ 四趟 run 被砍在 `Commit 回 repo` **之前**
+    ⇒ main 上那幾份停在更早的一趟，⛔ 而沒有任何地方會說。
+
+    ⭐ 這是 CLAUDE.md 第二點那句話套在**我方自己的輸出**上：
+    「這一批要自己講出它是哪一天」——⛔ 我們對官方的回應要求這件事，
+    ⚠ 而我們寫給別人讀的檔沒有做到。
+
+    ⇒ 判準：凡是宣告 `OUT = …/meta/_*.txt` 的程式，都要叫 `backfill.probe_stamp()`。
+    ⛔ 「記得加」不是守門——這一道**掃全 repo**（跟 `lowwater` ⑨ 同一個做法）。
+    """
+    import glob as _g
+    import re as _re
+    bad = 0
+    here = os.path.dirname(os.path.abspath(__file__))
+    miss, n = [], 0
+    for f in sorted(_g.glob(os.path.join(here, "*.py"))):
+        base = os.path.basename(f)
+        if base.startswith("selftest_"):
+            continue
+        t = io.open(f, encoding="utf-8").read()
+        if not _re.search(r'OUT\s*=\s*os\.path\.join\([^)]*"meta"[^)]*"_[A-Za-z0-9_]+\.txt"', t):
+            continue
+        n += 1
+        if "probe_stamp(" not in t:
+            miss.append(base)
+    ok = not miss and n >= 15
+    print(("✓ " if ok else "✗ ")
+          + f"⭐⭐ {n} 支寫探針輸出的程式**全部**都叫 `backfill.probe_stamp()`"
+            "（⛔ 少一支，那一份就講不出自己是哪一趟）")
+    if miss:
+        print(f"    ⛔ 沒叫的：{miss}")
+        bad += 1
+    elif n < 15:
+        print(f"    ⛔ 只掃到 {n} 支（⚠ 0 支跟全部通過長得一樣）")
+        bad += 1
+    # ⭐ 而那一份實作自己也要驗（⛔ 不是只驗呼叫點）
+    import backfill as _B
+    line = _B.probe_stamp()
+    need = ("這一趟", "台北", "ref")
+    ok2 = all(w in line for w in need) and line.endswith("\n")
+    print(("✓ " if ok2 else "✗ ")
+          + "backfill.probe_stamp 本身：講得出**時間／ref／在哪裡跑**"
+            "（⚠ ref 要寫，因為排程跑的一律是 main）")
+    if not ok2:
+        print(f"    實得：{line!r}")
+        bad += 1
+    # ⛔ 不是 Actions 時要**大聲說**（⚠ 否則本機跑的輸出會被當成真的）
+    ok3 = "不是 Actions" in _B.probe_stamp()
+    print(("✓ " if ok3 else "✗ ")
+          + "⛔ 非 Actions 時要標「不是 Actions 跑的」（⚠ 這裡對交易所 403）")
+    if not ok3:
+        bad += 1
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -877,6 +940,7 @@ def main():
     bad += check_bridge_blank_vs_ignored()
     bad += check_xhr_hunt()
     bad += check_no_dup_keys()
+    bad += check_probe_stamp()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

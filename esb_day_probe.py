@@ -119,7 +119,7 @@ def main():
             "  補得回來 ⇒ 排回補；補不回來 ⇒ **那一天要標成已知缺口**，",
             "  ⛔ 不可以讓讀的人以為 2026-09-08 的興櫃是「那天沒有交易」。"]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
     print("\n".join(out))
     print(f"\n[esb_day_probe] 寫出 {OUT}")
     return 0

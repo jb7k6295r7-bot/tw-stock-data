@@ -161,7 +161,7 @@ def main():
             rc = 1
             _p(lines, f"  ⛔ 這一條炸了：\n{traceback.format_exc()[:1200]}")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(lines) + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(lines) + "\n")
     print(f"\n[broker_probe] 寫出 {OUT}（{len(lines)} 行）")
     return rc
 

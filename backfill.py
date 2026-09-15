@@ -1012,6 +1012,51 @@ def xhr_clues(text, cap=12):
     return out
 
 
+def probe_stamp(note=""):
+    """探針輸出的**第一行**：這一趟是誰、什麼時候、在哪個 ref 上跑的。
+
+    → 一行字串（含換行）。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要有它
+
+    2026-09-15 實測：**17 支**會寫 `data/meta/_*.txt` 的探針裡，
+    只有 `suspend_probe` 一支在檔頭寫時戳 ⇒ ⛔ **其餘 16 份，讀的人
+    看不出它是哪一趟跑的**。
+
+    ⚠ 而那些檔正是四條線拿來判斷「官方到底有沒有」的依據
+    ——⭐ 一份三天前的 `_mops_probe.txt` 跟今天剛跑的**長得一模一樣**。
+
+    ⇒ 而它同一天被一個 bug 放大過：`probe.yml` 的 job timeout 是 15 分、
+    而裡面有一步自己就是 15 分 ⇒ 四趟 run 被砍在 `Commit 回 repo` **之前**
+    ⇒ main 上那幾份輸出**停在更早的一趟**，⛔ 而沒有任何地方會說。
+
+    ## ⭐ 這正是 CLAUDE.md 第二點那句話，套在**我方自己的輸出**上
+
+    「這一批要自己講出它是哪一天」——⛔ 我們對官方的回應要求這件事，
+    ⚠ 而我們自己寫給別人讀的檔**沒有做到**。
+
+    ⚠ `ref` 與 `run` 一起寫，是因為四點六③：**排程跑的一律是 main**
+    ⇒ 「這份輸出是哪個 ref 上的程式產生的」跟內容一樣重要。
+    """
+    import os as _os
+    ref = (_os.environ.get("GITHUB_REF_NAME")
+           or _os.environ.get("GIT_BRANCH") or "?")
+    run = _os.environ.get("GITHUB_RUN_ID", "")
+    where = "Actions" if _os.environ.get("GITHUB_ACTIONS") else "本機／開發容器"
+    try:
+        import runlog
+        now = runlog.now_tpe().isoformat(timespec="seconds")
+    except Exception:                                        # noqa: BLE001
+        from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+        now = _dt.now(_tz(_td(hours=8))).isoformat(timespec="seconds")
+    tail = f"｜run {run}" if run else ""
+    extra = f"｜{note}" if note else ""
+    return (f"# ⏱ 這一趟：{now}（台北）｜ref {ref}｜{where}{tail}{extra}\n"
+            + ("" if where == "Actions" else
+               "# ⚠ **不是 Actions 跑的** ⇒ ⛔ 若內容含抓取結果一律不可信"
+               "（這裡對交易所是我方閘道 403）\n"))
+
+
 def js_shell(text):
     """這一頁是不是**js 空殼**（＝框架回來了，而資料是載入後才由 js 取的）。
 

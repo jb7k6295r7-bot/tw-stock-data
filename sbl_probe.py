@@ -142,7 +142,7 @@ def main():
         "⇒ 排程落在兩次之間會拿到不完整的版本，而它看起來完全正常。",
     ]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    io.open(OUT, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
     print("\n".join(out))
     print(f"\n[sbl_probe] 寫出 {OUT}")
     return 0

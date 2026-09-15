@@ -119,6 +119,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# otccal_probe.py 的輸出。這是探針結果，不是資料。\n")
             f.write("# 要答的問題：**上櫃交易日曆有沒有第二來源**"
                     "（目前唯一一列 C 級：只有自我一致）。\n")

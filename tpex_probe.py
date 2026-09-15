@@ -802,6 +802,7 @@ def _write(rc):
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with io.open(OUT, "w", encoding="utf-8") as f:
+            f.write(B.probe_stamp())
             f.write("# tpex_probe.py 的輸出。這是端點目錄，不是資料。\n")
             f.write("# 來源：" + SWAGGER + "\n\n")
             f.write("\n".join(LINES) + "\n")

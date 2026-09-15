@@ -779,7 +779,7 @@ def main():
 
     try:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
-        io.open(OUT, "w", encoding="utf-8").write(
+        io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + 
             "# parvalue_probe.py 的輸出。這是探針結果，不是資料。\n"
             f"# 端點：{BASE}\n\n" + "\n".join(LINES) + "\n")
         print(f"\n[parvalue] 寫出 {OUT}")
