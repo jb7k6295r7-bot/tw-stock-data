@@ -61,6 +61,39 @@ PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
 _REAL = PATH
 
 
+def who():
+    """這一塊是**誰、被什麼觸發**寫的。→ 一段接在時戳後面的字（可能是空的）。
+
+    ## ⛔ 它回答的是「這一塊停在六天前，是壞了還是沒人按」
+
+    2026-09-15 掃 `_last_run.md`：**8 個區塊**停在 09-09~09-11，而同一份裡
+    另外 52 個是今天的。⚠ 而那 8 個裡有哪幾個是**該天天跑而死掉**、
+    哪幾個是**本來就一次性**——⛔ 那一份報表上**看不出來**，兩種長得一模一樣。
+
+    ⭐ 而答案不需要新增參數去標：**GitHub 自己就會講**。
+    `GITHUB_EVENT_NAME` 分得出 `schedule`（排程）跟 `workflow_dispatch`（有人按）：
+
+    ```
+    觸發 schedule ＋ 六天沒動   ⇒ ⛔ **壞了**（排程每天都該寫一次）
+    觸發 workflow_dispatch ＋ 六天沒動 ⇒ ⚠ 只是**沒人按**（要不要排程是另一個決定）
+    ```
+
+    ⛔ 而**舊格式的區塊沒有這一段** ⇒ 讀的人要看得出「這一塊講不出來」，
+    ⚠ 不是把它當成手動的（`freshness_check` ⑨ 就是照這條分三類）。
+
+    ⚠ 為什麼不用「在程式裡寫死 cadence」：同一支程式可以**兩種都跑**
+    （`feeds:calendar-audit` 手動、`feeds:margin` 天天）⇒ cadence 不是程式的性質，
+    ⛔ 是**這一趟**的性質。⇒ 只有這一趟自己講得準（第二點）。
+    """
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return ""
+    ev = os.environ.get("GITHUB_EVENT_NAME") or "?"
+    wf = os.environ.get("GITHUB_WORKFLOW") or "?"
+    rid = os.environ.get("GITHUB_RUN_ID") or "?"
+    ref = os.environ.get("GITHUB_REF_NAME") or "?"
+    return f"｜觸發 {ev}｜{wf}｜ref {ref}｜run {rid}"
+
+
 class Run:
     def __init__(self, name, path=None):
         self.name = name
@@ -96,7 +129,8 @@ class Run:
         where = ("" if os.environ.get("GITHUB_ACTIONS") == "true"
                  else "　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；"
                       "⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）")
-        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）{where}", ""]
+        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）"
+               f"{who()}{where}", ""]
         out += self.lines
         if self.checks:
             out += ["", "檢查："]
