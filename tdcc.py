@@ -113,8 +113,76 @@ def parse(raw):
             continue
     if txt is None:
         return [], "四種編碼都解不開"
+    # ⛔⛔ 2026-09-15 實測：2020 年有 6 份**開頭是兩個 BOM**
+    #   （`efbbbf efbbbf 資料日期…`）⇒ `utf-8-sig` 只吃掉一個
+    #   ⇒ 第一個欄名變成 `\ufeff資料日期` ⇒ 對不上 `DATE_KEYS`
+    #   ⇒ ⛔ 那六週會被判成「缺 date 欄」而整批擋下。
+    #   ⚠ 而這是**我方 parse() 的缺口**，不是那批資料壞——
+    #     官方端點哪天多送一個 BOM，`main()` 會用一模一樣的方式壞掉。
+    #   ⇒ ⭐ 剝掉**開頭所有**的 BOM（⛔ 不是剝一個）。
+    txt = txt.lstrip("\ufeff")
     rows = list(csv.DictReader(io.StringIO(txt)))
     return rows, f"{len(rows):,} 列"
+
+
+def cols_of(rows):
+    """→ 這一份的欄名對照 `{"code":…, "level":…, "shares":…, "people":…,
+    "date":…, "pct":…}`；缺哪一個就在 `missing` 裡。
+
+    ⭐ 抽成函式的理由是四點五：`main()` 與 `import_hist()` **都要用**，
+    ⛔ 而抄兩份就是那一族的第十次。
+    """
+    keys = (("code", CODE_KEYS), ("level", LEVEL_KEYS), ("shares", SHARE_KEYS),
+            ("people", PEOPLE_KEYS), ("date", DATE_KEYS), ("pct", PCT_KEYS))
+    got = {n: next((k for k in rows[0] if k in ks), None) for n, ks in keys}
+    # ⚠ `pct` 不在必要清單裡（舊檔可能沒有）——⛔ 其餘五個少一個就不可以寫
+    got["missing"] = [n for n in ("code", "level", "shares", "people", "date")
+                      if not got[n]]
+    return got
+
+
+def week_facts(rows, c=None):
+    """一份週檔的**三道驗算**。→ `(day, by, bad_lv, bad_ident, dates)`。
+
+    ⭐⭐ 這是**唯一一份**實作（CLAUDE.md 四點五）。
+    2026-09-15 之前它整段寫在 `main()` 裡 ⇒ 要匯入歷史檔就只能抄一份，
+    ⛔ 而「同一個判準的兩份實作，只要外觀不同就躲得過 `selftest_no_dup`」。
+
+        ③ `dates`      整份只能有一個資料日期（多個 ⇒ 這是累計檔，不是週檔）
+        ② `bad_lv`     每一檔都必須剛好 17 級
+        ① `bad_ident`  人數：合計 ＝ Σ(1~15)      ⛔ **不減**差異數調整
+                       股數：合計 ＝ Σ(1~15) − 差異數調整
+    ⚠ 兩條式子**不一樣**——照抄會讓人數那道在 66 檔上誤報（2026-09-08 實測）。
+    """
+    c = c or cols_of(rows)
+    dates = {pick(r, DATE_KEYS) for r in rows} - {""}
+    day = iso(sorted(dates)[0]) if dates else ""
+    by = {}
+    for r in rows:
+        by.setdefault(str(r[c["code"]]).strip(), []).append(r)
+    bad_lv = {k: len(v) for k, v in by.items() if len(v) != N_LEVELS}
+    bad = {"人數": [], "股數": []}
+    for code, rs in by.items():
+        for label, key in (("人數", c["people"]), ("股數", c["shares"])):
+            tot = adj = None
+            parts = []
+            for r in rs:
+                lv = str(r[c["level"]]).strip()
+                v = num(r[key])
+                if v is None:
+                    continue
+                if lv == TOTAL_LEVEL:
+                    tot = v
+                elif lv == ADJUST_LEVEL:
+                    adj = v
+                else:
+                    parts.append(v)
+            if tot is None or not parts:
+                continue
+            want = sum(parts) - (adj or 0) if label == "股數" else sum(parts)
+            if tot != want:
+                bad[label].append(code)
+    return day, by, bad_lv, bad, dates
 
 
 def weeks_gate(rl):
@@ -140,11 +208,266 @@ def weeks_gate(rl):
     return len(have)
 
 
+HIST_DIR = os.path.join(_ROOT, "tdcc_hist")
+HIST_COLS = ["date", "stock_id", "level", "people", "shares", "pct"]
+
+
+def read_hist_week(path):
+    """把一份**外部**週檔（.csv／.zip／.7z，內含單一 CSV）讀成 rows。
+
+    ⚠ 使用者手上的封存是巢狀的：`<年>/<YYYYMMDD>.zip`（2019~2020）
+    或 `.7z`（2021 起），裡面**只有一個** CSV。
+    ⛔ 這裡不猜檔名——取壓縮檔裡的第一個檔。
+    """
+    if path.endswith(".csv"):
+        return parse(io.open(path, "rb").read())
+    if path.endswith(".zip"):
+        import zipfile
+        with zipfile.ZipFile(path) as z:
+            return parse(z.read(z.namelist()[0]))
+    if path.endswith(".7z"):
+        import shutil as _sh
+        import tempfile as _tf
+        import py7zr
+        d = _tf.mkdtemp()
+        try:
+            with py7zr.SevenZipFile(path) as z:
+                z.extractall(d)
+            f = [os.path.join(r, n) for r, _, ns in os.walk(d) for n in ns]
+            return parse(io.open(f[0], "rb").read())
+        finally:
+            _sh.rmtree(d, ignore_errors=True)
+    return [], f"不認得的副檔名：{path}"
+
+
+def hist_rows(rows, day, c=None):
+    """→ 照 `HIST_COLS` 排好的 tuple list。⛔ 日期用**驗算算出來的** `day`，
+    ⚠ 不是檔名——檔名與內容不一致時要以內容為準（第二點）。"""
+    c = c or cols_of(rows)
+    return [(day, str(r[c["code"]]).strip(), str(r[c["level"]]).strip(),
+             pick(r, PEOPLE_KEYS), pick(r, SHARE_KEYS),
+             pick(r, PCT_KEYS) if c["pct"] else "")
+            for r in rows]
+
+
+def import_hist(rl, src, out_dir=None, apply=False):
+    """把一整個目錄的外部週檔收成 `tdcc_hist/<年>.parquet`。→ rc。
+
+    ## ⛔ 每一週都要過那三道驗算，**不過就不寫**
+
+    ⚠ 這批是**外部來源**（使用者自 2019 起每週手動下載的封存）
+    ⇒ 它比官方端點更需要驗：端點至少會回一致的格式，
+    ⛔ 而一份放了七年的封存，任何一週壞掉都不會有人知道。
+    ⇒ 判準跟 `main()` **同一份**（`week_facts`），⛔ 不另寫一套。
+
+    ## ⭐⭐ 而重疊的那幾週是【閘門】，不是「跳過」
+
+    `data/tdcc/` 已經有我方自己抓的幾週。⚠ 那幾週兩邊都有
+    ⇒ ⭐ **拿來逐格對**：對不上就整批不寫。
+    ⛔ 這是這批外部資料唯一一個**獨立**的驗證點——
+    放掉它，就只剩「它自己跟自己一致」（C 級）。
+
+    ## ⚠ 而日期以**內容**為準，⛔ 不是檔名
+
+    檔名 `20190628.zip` 只是人取的；`資料日期` 欄才是它自己講的（第二點）。
+    ⇒ 兩者不一致就當作壞檔擋下來。
+    """
+    import glob as _g
+    out_dir = out_dir or HIST_DIR
+    files = sorted(_g.glob(os.path.join(src, "*", "*.zip"))
+                   + _g.glob(os.path.join(src, "*", "*.7z"))
+                   + _g.glob(os.path.join(src, "*", "*.csv")))
+    rl.info("來源", f"{src}｜{len(files)} 份週檔")
+    if not files:
+        rl.check("找得到週檔", False, f"{src} 底下一份都沒有")
+        return rl.finish()
+
+    by_year, bad_files, name_mismatch = {}, [], []
+    seen_day, dup_same, dup_diff = {}, [], []
+    n_rows = 0
+    for path in files:
+        rows, note = read_hist_week(path)
+        base = os.path.basename(path).split(".")[0]
+        if not rows:
+            bad_files.append((base, f"讀不到列（{note}）"))
+            continue
+        c = cols_of(rows)
+        if c["missing"]:
+            bad_files.append((base, f"缺欄 {c['missing']}"))
+            continue
+        day, by, bad_lv, bad, dates = week_facts(rows, c)
+        if len(dates) != 1 or not day:
+            bad_files.append((base, f"資料日期 {len(dates)} 個：{sorted(dates)[:3]}"))
+            continue
+        if bad_lv:
+            bad_files.append((base, f"{len(bad_lv)} 檔不是 {N_LEVELS} 級"))
+            continue
+        if bad["人數"] or bad["股數"]:
+            bad_files.append((base, f"恆等式不符 人數 {len(bad['人數'])}"
+                                    f"／股數 {len(bad['股數'])}"))
+            continue
+        # ⚠ 檔名與內容講的日期不一致 ⇒ 記下來（⛔ 但以內容為準）
+        if base.isdigit() and iso(base) != day:
+            name_mismatch.append((base, day))
+        recs = hist_rows(rows, day, c)
+        if day in seen_day:
+            # ⛔⛔ 同一個資料日期出現兩次。⚠ 兩種成因，處置相反
+            #   （形狀照 `adjust.halting_event_is_real()`：**算出來的**歸因，
+            #     ⛔ 不是一份寫死的黑名單——下一次重複的會是別的日期）：
+            #
+            #   ① 兩份內容**逐格相同** ⇒ 封存裡有人把同一週存了兩個檔名
+            #      ⇒ 丟掉後來那一份，⭐ 而且要**講出那個檔名的週其實沒有**
+            #   ② 內容**不同**        ⇒ ⛔ 這是真的矛盾，整批不可以寫
+            #
+            # 【實測 2026-09-15】`20200619.zip` 與 `20200612.zip` 逐位元相同
+            #   ⇒ 2020-06-19 那一週**其實沒有**，⚠ 而檔名看起來像有。
+            prev_name, prev = seen_day[day]
+            if recs == prev:
+                dup_same.append((base, prev_name, day))
+            else:
+                dup_diff.append((base, prev_name, day))
+            continue
+        seen_day[day] = (base, recs)
+        by_year.setdefault(day[:4], []).extend(recs)
+        n_rows += len(rows)
+
+    rl.info("驗算通過", f"{len(files) - len(bad_files)} / {len(files)} 週"
+                        f"｜{n_rows:,} 列")
+    for b, why in bad_files[:10]:
+        rl.info(f"  ⛔ {b}", why)
+    rl.check("⭐ 每一份週檔都過三道驗算（⛔ 不過就不寫）",
+             not bad_files, f"{len(bad_files)} 份沒過：{bad_files[:5]}"
+             if bad_files else f"{len(files)} 份全過")
+    # ⛔ 檔名與內容不一致**不算失敗**：內容才是判準（第二點），而檔名是人取的。
+    #   ⚠ 但一定要講出來——⭐ 否則「372 個檔」會被讀成「372 週」。
+    if name_mismatch:
+        rl.info("⚠ 檔名與內容講的日期不一致（⭐ 以**內容**為準）",
+                f"{len(name_mismatch)} 份：{name_mismatch[:5]}"
+                "　⇒ ⛔ 不算失敗，⚠ 而那幾個檔名的週**不必然存在**")
+    if dup_same:
+        rl.info("⚠⚠ 同一週被存成兩個檔名（內容逐格相同 ⇒ 丟掉後來那份）",
+                f"{len(dup_same)} 組：{dup_same[:5]}"
+                "　⇒ ⛔ **那幾個檔名對應的週其實沒有**，"
+                "⚠ 別把檔案數當成週數")
+    rl.check("⛔ 同一個資料日期的兩份內容**不可以不同**（⚠ 那是真的矛盾）",
+             not dup_diff,
+             f"⛔ {len(dup_diff)} 組矛盾：{dup_diff[:5]}" if dup_diff
+             else f"{len(seen_day)} 週沒有矛盾")
+
+    # ⭐⭐ 重疊那幾週是**閘門**：跟 `data/tdcc/` 我方自己抓的逐格對
+    ours, same, diff = {}, 0, []
+    if os.path.isdir(OUT_DIR):
+        for f in sorted(os.listdir(OUT_DIR)):
+            if f.endswith(".csv"):
+                ours[f[:-4]] = os.path.join(OUT_DIR, f)
+    for day, path in sorted(ours.items()):
+        mine = by_year.get(day[:4], [])
+        theirs = {(r[1], r[2]): (r[3], r[4]) for r in mine if r[0] == day}
+        if not theirs:
+            continue
+        with io.open(path, encoding="utf-8") as f:
+            got = {(r["stock_id"], r["level"]): (r["people"], r["shares"])
+                   for r in csv.DictReader(f)}
+        bad_cells = [k for k in set(got) & set(theirs) if got[k] != theirs[k]]
+        only = len(set(got) ^ set(theirs))
+        if bad_cells or only:
+            diff.append((day, len(bad_cells), only))
+        else:
+            same += 1
+    if not ours or not any(d[:4] in by_year for d in ours):
+        # ⭐ 寫成不會被讀成「驗過了」的樣子
+        rl.info("⚠⚠ **這一層沒跑**",
+                "外部封存與 `data/tdcc/` **沒有重疊的週**"
+                "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**"
+                "　⚠ 那表示這批資料只有「自己跟自己一致」")
+    else:
+        rl.check("⭐⭐ 重疊的週跟我方自己抓的**逐格相同**"
+                 "（⛔ 這是唯一一個獨立驗證點）",
+                 not diff,
+                 f"⛔ {len(diff)} 週對不上：{diff[:3]}" if diff
+                 else f"{same} 週逐格相同")
+    if bad_files or dup_diff or diff:
+        rl.info("⛔ 有沒過的驗算 ⇒ **一個檔都不寫**", "先把上面那幾項弄清楚")
+        return rl.finish()
+
+    rl.info("分年", "｜".join(f"{y} {len({r[0] for r in v})} 週／{len(v):,} 列"
+                             for y, v in sorted(by_year.items())))
+    if not apply:
+        rl.info("⚠ 這一趟沒有 `--apply`", "只驗不寫")
+        return rl.finish()
+    written = write_hist(by_year, out_dir)
+    rl.info("寫出", "｜".join(f"{y} {sz/1048576:.1f} MB" for y, sz in written))
+    rl.check("⭐ 寫完重讀，列數與週數逐年對得回來（⛔ 不是斷言寫檔成功）",
+             *verify_hist(by_year, out_dir))
+    return rl.finish()
+
+
+def write_hist(by_year, out_dir):
+    """一年一個 parquet。→ [(年, 位元組)]。
+
+    ⭐ 先照 `(stock_id, level, date)` 排序**才**寫：同一檔同一級的 52 週
+    連在一起 ⇒ `people`／`shares` 的 delta 壓得掉。
+    實測 2026 全年 80.0 MB → **8.7 MB（10.8%）**；不排序是 2.4 倍大。
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    os.makedirs(out_dir, exist_ok=True)
+    out = []
+    for year, recs in sorted(by_year.items()):
+        recs.sort(key=lambda r: (r[1], num(r[2]) or 0, r[0]))
+        tbl = pa.table({
+            "date": pa.array([r[0] for r in recs]).dictionary_encode(),
+            "stock_id": pa.array([r[1] for r in recs]).dictionary_encode(),
+            "level": pa.array([num(r[2]) for r in recs], pa.int8()),
+            "people": pa.array([num(r[3]) for r in recs], pa.int64()),
+            "shares": pa.array([num(r[4]) for r in recs], pa.int64()),
+            "pct": pa.array([_f(r[5]) for r in recs], pa.float32()),
+        })
+        p = os.path.join(out_dir, f"{year}.parquet")
+        pq.write_table(tbl, p, compression="zstd", compression_level=9)
+        out.append((year, os.path.getsize(p)))
+    return out
+
+
+def verify_hist(by_year, out_dir):
+    """⭐ 寫完**重讀**（四點二：斷言要驗終點）。→ (通過, 說明)。"""
+    import pyarrow.parquet as pq
+    bad = []
+    for year, recs in sorted(by_year.items()):
+        p = os.path.join(out_dir, f"{year}.parquet")
+        if not os.path.exists(p):
+            bad.append((year, "檔不在"))
+            continue
+        t = pq.read_table(p)
+        got_rows = t.num_rows
+        got_weeks = len(set(t.column("date").to_pylist()))
+        want_weeks = len({r[0] for r in recs})
+        if got_rows != len(recs) or got_weeks != want_weeks:
+            bad.append((year, f"讀回 {got_rows:,} 列／{got_weeks} 週"
+                              f"，應該是 {len(recs):,}／{want_weeks}"))
+    return (not bad,
+            f"⛔ {bad}" if bad else
+            f"{len(by_year)} 年逐年重讀，列數與週數都對得回來")
+
+
+def _f(x):
+    try:
+        return float(x)
+    except (ValueError, TypeError):
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser(description="集保戶股權分散表（每週）")
     ap.add_argument("--run", action="store_true", help="抓最新一週並寫檔")
     ap.add_argument("--force", action="store_true", help="已存在也重寫")
+    ap.add_argument("--import-hist", metavar="DIR",
+                    help="把 <DIR>/<年>/<YYYYMMDD>.{zip,7z,csv} 收成 tdcc_hist/<年>.parquet")
+    ap.add_argument("--apply", action="store_true",
+                    help="⭐ 真的寫檔；⛔ 不帶就只驗不寫")
     a = ap.parse_args()
+    if a.import_hist:
+        return import_hist(runlog.Run("tdcc_hist"), a.import_hist, apply=a.apply)
     if not a.run:
         ap.print_help()
         return 1
@@ -161,14 +484,11 @@ def main():
         rl.check("解析得到列", False, note)
         return rl.finish()
 
-    code_k = next((k for k in rows[0] if k in CODE_KEYS), None)
-    lvl_k = next((k for k in rows[0] if k in LEVEL_KEYS), None)
-    shr_k = next((k for k in rows[0] if k in SHARE_KEYS), None)
-    ppl_k = next((k for k in rows[0] if k in PEOPLE_KEYS), None)
-    date_k = next((k for k in rows[0] if k in DATE_KEYS), None)
-    pct_k = next((k for k in rows[0] if k in PCT_KEYS), None)
-    missing = [n for n, k in (("代號", code_k), ("分級", lvl_k), ("股數", shr_k),
-                              ("人數", ppl_k), ("日期", date_k)) if not k]
+    # ⭐ 欄名對照與三道驗算都走**唯一一份**（`cols_of`／`week_facts`，四點五）
+    c = cols_of(rows)
+    code_k, lvl_k, shr_k = c["code"], c["level"], c["shares"]
+    ppl_k, date_k, pct_k = c["people"], c["date"], c["pct"]
+    missing = c["missing"]
     if missing:
         # ⛔ 欄位對不上就整批不寫。**把實際表頭印出來**，不然下次還是只能猜。
         print(f"[tdcc] 欄位對不上，缺 {missing}；實際表頭 {list(rows[0])}",
@@ -176,19 +496,15 @@ def main():
         rl.check("欄位對得上", False, f"缺 {missing}｜實際 {list(rows[0])}")
         return rl.finish()
 
+    day, by, bad_lv, bad, dates = week_facts(rows, c)
+
     # ── ③ 整份只能有一個資料日期 ──
-    dates = {pick(r, DATE_KEYS) for r in rows} - {""}
-    day = iso(sorted(dates)[0]) if dates else ""
     rl.info("資料日期", f"{day}（原始 {sorted(dates)}）")
     ok_date = len(dates) == 1 and bool(day)
     rl.check("整份只有一個資料日期（單週檔）", ok_date,
              f"{len(dates)} 個：{sorted(dates)[:3]}")
 
     # ── ② 每一檔剛好 17 級 ──
-    by = {}
-    for r in rows:
-        by.setdefault(str(r[code_k]).strip(), []).append(r)
-    bad_lv = {c: len(v) for c, v in by.items() if len(v) != N_LEVELS}
     rl.info("證券檔數", f"{len(by):,}｜總列數 {len(rows):,}")
     rl.check(f"每一檔都剛好 {N_LEVELS} 級", not bad_lv,
              f"{len(bad_lv)} 檔不是：{list(bad_lv.items())[:5]}" if bad_lv
@@ -212,27 +528,6 @@ def main():
     #     這就是為什麼探針抽驗 200 檔沒事——它抽到的剛好都是 0 的。
     #
     #   ⛔ 這是**改對公式**，不是放寬驗算：兩道都還在，只是人數那道用對的式子。
-    bad = {"人數": [], "股數": []}
-    for c, rs in by.items():
-        for label, key in (("人數", ppl_k), ("股數", shr_k)):
-            tot = adj = None
-            parts = []
-            for r in rs:
-                lv = str(r[lvl_k]).strip()
-                v = num(r[key])
-                if v is None:
-                    continue
-                if lv == TOTAL_LEVEL:
-                    tot = v
-                elif lv == ADJUST_LEVEL:
-                    adj = v
-                else:
-                    parts.append(v)
-            if tot is None or not parts:
-                continue
-            want = sum(parts) - (adj or 0) if label == "股數" else sum(parts)
-            if tot != want:
-                bad[label].append(c)
     for label, formula in (("人數", "合計 ＝ Σ(1~15)（不減差異數調整）"),
                            ("股數", "合計 ＝ Σ(1~15) − 差異數調整")):
         rl.check(f"恆等式（{label}）{formula}",
