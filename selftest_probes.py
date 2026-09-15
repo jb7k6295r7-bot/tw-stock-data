@@ -255,7 +255,10 @@ SECTIONS = {
     # ⭐ 再釘一節：`t05st01` 那一段（清單 D2 最後一條）。
     #   ⛔ 判準是**輸出裡有沒有那一節**（四點六③：中途 return 的舊程式一樣會成功、
     #     一樣會推上 main，⚠ 而「沒有那一節」跟「那一節查無結果」長得一模一樣）。
-    "mops_probe": ["未驗", "的欄名：有沒有公告日", "橋接 t05st01"],
+    "mops_probe": ["未驗", "的欄名：有沒有公告日", "橋接 t05st01",
+                   # ⭐ 「js 空殼」講完之後**還要有下一步**：把那個 js 去打誰挖出來。
+                   #   ⛔ 少了這一節，這一格就停在「取不到」——而那不是句點。
+                   "的 js 去打誰"],
     # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
     #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
     #     而把限額當成餘額用，是這一支最可能造成的傷害。
@@ -687,6 +690,131 @@ def check_bridge_blank_vs_ignored():
     if not ok:
         print(f"    實得：{txt[-220:]}")
         bad += 1
+    # ⛔⛔ ④ 而**真正**回來的是第四種：**js 空殼**（實測 `t05st01`：
+    #   22,788 bytes、中文 516 字、`<tr>` 14 個，前 160 字是
+    #   `公開資訊觀測站 … window.onload=getMsg;` ⇒ 框架加 JavaScript，一列資料都沒有）。
+    #   ⚠ 它**同時**滿足「兩期相同」與「沒有查無字樣」⇒ 舊判準判成「這條路不可用」，
+    #   ⛔ 而正確的是「**我方取不到**」——兩句話的下一步完全相反。
+    #   ⭐ 而這個判準 `suspend_probe` **早就有**（四點五：收成一份 `backfill.js_shell`）。
+    shell = ("<html><head>" + '<script src="a.js"></script>' * 4
+             + "</head><body>公開資訊觀測站 全站搜尋 營收 除權息"
+               "<table><tr><td>x</td></tr></table></body></html>").encode("utf-8")
+    txt = _run(shell, shell)
+    ok = "js 空殼" in txt and "我方取不到" in txt and "這條路不可用" not in txt
+    print(("✓ " if ok else "✗ ")
+          + "bridge_case ④ ⭐ 兩期都是 **js 空殼** ⇒ 「我方取不到」"
+            "（⛔ 不是「這條路不可用」，⛔ 也不是「官方沒有」）")
+    if not ok:
+        print(f"    實得：{txt[-260:]}")
+        bad += 1
+    # ⭐ 而那一份判準自己也要驗（⛔ 不是只驗呼叫點）
+    import backfill as _B
+    data = ("<html><body><table>" + "<tr><td>重大訊息</td></tr>" * 40
+            + "</table></body></html>").encode("utf-8")
+    ok = _B.js_shell(shell)[3] is True and _B.js_shell(data)[3] is False
+    print(("✓ " if ok else "✗ ")
+          + "backfill.js_shell 本身：空殼 True／資料頁 False")
+    if not ok:
+        print(f"    空殼 {_B.js_shell(shell)}｜資料 {_B.js_shell(data)}")
+        bad += 1
+    # ⛔⛔ 而上面那兩個假回應**分不出** `and` 與 `or`（兩個條件同進同出）
+    #   ⇒ 「改成任一個就算」的突變**全綠**（2026-09-15 實測）。
+    #   ⭐ 而真正會踩到的就是那一種：**真的資料頁也會掛 js**
+    #     ⇒ 用 `or` 的話，一份有 40 列資料的頁面會被判成空殼
+    #     ⇒ ⛔ 那會把一條**通的**路記成「我方取不到」。
+    data_js = ("<html><head>" + '<script src="a.js"></script>' * 5
+               + "</head><body><table>" + "<tr><td>重大訊息</td></tr>" * 40
+               + "</table></body></html>").encode("utf-8")
+    ok = _B.js_shell(data_js)[3] is False
+    print(("✓ " if ok else "✗ ")
+          + "backfill.js_shell ⭐ **有 40 列資料、而且掛了 5 支 js** ⇒ 仍然**不是**空殼"
+            "（⛔ 判準是表格少**且** js 多，不是任一個）")
+    if not ok:
+        print(f"    實得 {_B.js_shell(data_js)}")
+        bad += 1
+    return bad
+
+
+def check_xhr_hunt():
+    """⭐ `xhr_hunt`：把那一頁的 js **去打誰**挖出來（⛔ 不是猜端點名）。
+
+    ⚠ 「js 空殼 ⇒ 我方取不到」是**還沒解決的工程問題**，⛔ 不是句點
+    ⇒ 下一步是從回應裡讀出那個 js 要打的網址。
+    ⭐ 而我方到 2026-09-15 為止**只用過一個** MOPS api 路徑（`redirectToOld`）
+      ——全 repo grep 過只有它，⛔ 而那個名字本身就說明還有別的。
+    """
+    import mops_probe as MP
+    bad = 0
+    # ⛔⛔ 假回應裡**每個模式要有自己專屬的值**（2026-09-15 付過代價）：
+    #   第一版四個線索都寫成 `/mops/api/…` ⇒ 它同時被 ①③④ 撈到
+    #   ⇒ 把 ③（`$.ajax` 那一條）整個拿掉的突變 **全綠**。
+    #   ⭐ 這是第七點那條的同一個形狀：**斷言要比帶標籤的那一串，
+    #     ⛔ 不是比一個裸字串**——而這裡是「假回應讓四條斷言分不開」。
+    page = ("""<html><head><script src="/mops/js/a.js"></script>
+<script src="/mops/js/b.js"></script><script src="/mops/js/c.js"></script></head>
+<body>公開資訊觀測站
+<script>window.onload=getMsg;
+function getMsg(){ $.ajax({url:"https://mopsov.twse.com.tw/server-java/OnlyInAjax",
+  type:"POST", data:{companyId:"2330"}, success:function(d){render(d);} }); }
+fetch("/mops/onlyinfetch/list");
+var z = "/nas/t05/onlyinfour.json";
+</script><table><tr><td>x</td></tr></table></body></html>""").encode("utf-8")
+    out, saved = [], MP.one
+    MP.one = lambda api, year, out_, **kw: page
+    try:
+        MP.xhr_hunt("t05st01", out)
+    finally:
+        MP.one = saved
+    txt = "\n".join(out)
+    # ⛔⛔ 而斷言要**照標籤分節**比（2026-09-15 第二次付代價）：
+    #   我把假回應改成「每個模式有專屬值」之後，突變「拿掉 ③ 那一條」**還是全綠**
+    #   ——因為那個字串也出現在 `getMsg` **本體的傾印**裡。
+    #   ⭐ 這正是第七點那條的完整版：**比帶標籤的整串**
+    #     ⇒ 這裡的「標籤」是**那一節**，所以要先切節再比。
+    def _sect(marker):
+        """→ 那一節（從標籤那一行到下一個 `  ` 開頭的標籤）的文字。"""
+        lines = out
+        for i, ln in enumerate(lines):
+            if marker in ln:
+                body = []
+                for nxt in lines[i + 1:]:
+                    if nxt.startswith("  ") and not nxt.startswith("      "):
+                        break
+                    body.append(nxt)
+                return "\n".join(body)
+        return ""
+
+    for name, marker, want in (
+            ("① 挖得出 `$.ajax` 裡那個 url（⭐ 比的是**那一節**）",
+             "`$.ajax` / `url:`", "OnlyInAjax"),
+            ("② 也挖得出 `fetch(` 那一個", "`fetch(` 的對象", "onlyinfetch"),
+            ("③ 也挖得出 `.json` 那一種", "其他 `.ashx`", "onlyinfour.json"),
+            ("④ ⭐ 把 `getMsg` 的**本體**印出來（⇒ 參數名也看得到）",
+             "`getMsg` 本體", "companyId"),
+            ("⑤ 而形狀那一行照樣要講（js 空殼）", "[形狀]", "js 空殼")):
+        seg = _sect(marker)
+        ok = bool(seg is not None) and (want in seg
+                                        or (marker in txt and want in
+                                            txt.split(marker, 1)[1][:400]))
+        print(("✓ " if ok else "✗ ") + f"xhr_hunt {name}")
+        if not ok:
+            print(f"    ⛔ 「{marker}」那一節裡找不到「{want}」；實得：{seg[:200]!r}")
+            bad += 1
+    # ⛔ 取不回來時要**說它沒跑**（⚠ 不可以印一堆 0 種，那跟「站上沒有」長得一樣）
+    out, saved = [], MP.one
+    MP.one = lambda api, year, out_, **kw: None
+    try:
+        MP.xhr_hunt("t05st01", out)
+    finally:
+        MP.one = saved
+    txt = "\n".join(out)
+    ok = "沒跑" in txt and "0 種" not in txt
+    print(("✓ " if ok else "✗ ")
+          + "xhr_hunt ⛔ 取不回來 ⇒ 說「這一段**沒跑**」"
+            "（⚠ 不是印一堆 `0 種`——那跟「站上沒有」長得一樣）")
+    if not ok:
+        print(f"    實得：{txt}")
+        bad += 1
     return bad
 
 
@@ -710,6 +838,7 @@ def main():
     bad += check_site_inventory_openapi()
     bad += check_openapi_period_col()
     bad += check_bridge_blank_vs_ignored()
+    bad += check_xhr_hunt()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

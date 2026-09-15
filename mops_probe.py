@@ -147,13 +147,18 @@ def bridge_case(api, y1, y2, out, **kw):
     #
     #   ⚠ CLAUDE.md 二③ 記過同一個坑：hist.tpex 的 4,449 bytes 查無資料頁
     #     讓 **32 個年份全部命中**。⇒ 所以這裡要把**內容自己**講出來。
+    shell = {}
     for tag, raw in ((y1, a), (y2, b)):
         t = raw.decode("utf-8", "replace")
-        han = len(__import__("re").findall("[一-龥]", t))
-        n_tr = len(__import__("re").findall(r"<tr[ >]", t, __import__("re").I))
+        # ⭐ 「是不是 js 空殼」走**唯一那一份**（`backfill.js_shell`，四點五）
+        #   ——`suspend_probe` 早就有這個判準，而這一支沒有
+        #   ⇒ 它把一個空殼判成「期別參數被忽略」（2026-09-15 實測）。
+        han, n_tr, n_js, is_shell = B.js_shell(raw)
+        shell[tag] = is_shell
         hits = [w for w in ("查無", "無資料", "沒有符合", "查詢無", "錯誤")
                 if w in t]
-        out.append(f"    [{tag}] 中文 {han:,} 字｜<tr> {n_tr} 個"
+        out.append(f"    [{tag}] 中文 {han:,} 字｜<tr> {n_tr} 個｜js {n_js} 支"
+                   + ("　⛔ **js 空殼**" if is_shell else "")
                    + (f"｜⛔ 出現 {hits}" if hits else "｜（沒有查無字樣）"))
         # ⛔⛔ 2026-09-15 第二次付代價：上面那三個**數字**仍然分不出第三種形狀
         #   ——「它回的是**查詢表單**，不是結果」。表單頁一樣沒有「查無」字樣、
@@ -167,7 +172,15 @@ def bridge_case(api, y1, y2, out, **kw):
         out.append(f"      ⭐ 前 160 字：{_vis[:160]}")
     _t1 = a.decode("utf-8", "replace")
     _blank = any(w in _t1 for w in ("查無", "無資料", "沒有符合", "查詢無"))
-    if same and _blank:
+    # ⛔⛔ js 空殼要**先**判：它同時滿足「兩期相同」與「沒有查無字樣」
+    #   ⇒ 不先攔下來就會被判成「期別參數被忽略 ⇒ 這條路不可用」，
+    #   ⚠ 而那兩句話的下一步**完全相反**（不可用 ⇒ 不再去試；取不到 ⇒ 還沒解決）。
+    if all(shell.values()):
+        out.append("  ⇒ ⚠⚠ **兩期都是 js 空殼**（框架回來了、資料是載入後由 js 取的）"
+                   "　⇒ ⛔ **不可判定**它有沒有歷史——這是「**我方取不到**」，"
+                   "跟 TDCC `qryStockAjax` 回 2 bytes、櫃買那三頁同一族，"
+                   "⛔ **不是**「官方沒有」，⛔ 也不是「期別參數被忽略」。")
+    elif same and _blank:
         out.append("  ⇒ ⚠⚠ **兩期相同，而且兩期都是「查無資料」頁**"
                    "　⇒ ⛔ **不可判定**它有沒有歷史——"
                    "這比較像是**別的參數沒給對**（例如逐檔查要給公司代號），"
@@ -178,6 +191,57 @@ def bridge_case(api, y1, y2, out, **kw):
     else:
         out.append("  ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。"
                    "⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。")
+
+
+def xhr_hunt(api, out, **kw):
+    """⭐ 那一頁的 js **去打誰**——把線索從回應裡挖出來，⛔ 不是猜端點名。
+
+    ## ⛔ 為什麼要有這一段
+
+    2026-09-15 量 `t05st01` 的結論是「**js 空殼**：框架回來了、資料是載入後由
+    js 取的」（`backfill.js_shell`）。⇒ 那句話講完之後，下一步**不是**放棄，
+    ⚠ 也不是去猜端點名 —— ⭐ 是**把那個 js 要打的網址從頁面裡讀出來**。
+
+    ⚠ 而我方到今天為止**只用過一個** MOPS api 路徑：`mops/api/redirectToOld`
+    （全 repo grep 過，只有它）。⛔ 而那個名字本身就說明**還有別的**：
+    「redirect **to old**」是相對於「新站自己的那一套」講的。
+
+    ⇒ 這一段只做一件事：把回應裡**所有**像端點的東西逐條印出來
+    （`/mops/api/…`、`fetch(`、`$.ajax`、`url:`、`getMsg` 的函式本體）。
+    ⛔ 不下任何結論 —— ⭐ 人讀完那幾行才知道下一發要打哪裡。
+    """
+    import re as _re
+    out.append(f"── ⭐ `{api}` 的 js 去打誰（只挖線索，⛔ 不下結論）")
+    raw = one(api, "114", out, **kw)
+    if raw is None:
+        out.append("  ⛔ 取不回來 ⇒ 這一段**沒跑**")
+        return
+    t = raw.decode("utf-8", "replace")
+    han, n_tr, n_js, shell = B.js_shell(raw)
+    out.append(f"  [形狀] 中文 {han:,} 字｜<tr> {n_tr} 個｜js {n_js} 支"
+               + ("　⛔ **js 空殼**" if shell else ""))
+    pats = (
+        ("①  `/mops/api/…` 出現過哪些", r"/mops/api/[A-Za-z0-9_/-]+"),
+        ("②  `fetch(` 的對象", r"fetch\(\s*[\"'`]([^\"'`]{4,120})"),
+        ("③  `$.ajax` / `url:` 的對象", r"url\s*:\s*[\"'`]([^\"'`]{4,120})"),
+        ("④  其他 `.ashx`／`.json`／`/api/` 字串", r"[A-Za-z0-9_./-]*(?:\.ashx|\.json|/api/)[A-Za-z0-9_./-]*"),
+    )
+    for label, pat in pats:
+        hits = sorted({(m if isinstance(m, str) else m[0])
+                       for m in _re.findall(pat, t)})
+        out.append(f"  {label}：{len(hits)} 種")
+        for h in hits[:12]:
+            out.append(f"      {h[:110]}")
+        if len(hits) > 12:
+            out.append(f"      …（另 {len(hits) - 12} 種）")
+    # ⭐ `getMsg` 是 `window.onload` 掛的那一支 ⇒ 它的本體最可能藏著那一發
+    m = _re.search(r"function\s+getMsg\s*\([^)]*\)\s*\{", t)
+    if m:
+        body = " ".join(t[m.start():m.start() + 600].split())
+        out.append(f"  ⭐ `getMsg` 本體前 400 字：{body[:400]}")
+    else:
+        out.append("  ⚠ 找不到 `function getMsg` 的本體"
+                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ① 的清單再抓一層）")
 
 
 def openapi_case(name, out):
@@ -367,6 +431,11 @@ def main():
     #     ⇒ 我送的參數有沒有生效，回應自己會講（CLAUDE.md 第一點）。
     #   ⇒ 若回應把我的參數換掉，那就是「這個參數是假的」，⛔ 不是「沒有歷史」。
     bridge_case("t05st01", "114", "110", out, month="09", day="01")
+    out.append("")
+    # ⭐⭐ 上面那一段的結論是「js 空殼 ⇒ 我方取不到」。
+    #   ⇒ 而「取不到」是一個**還沒解決的工程問題**，⛔ 不是句點
+    #   ⇒ 下一步是**把那個 js 要打的網址從頁面裡讀出來**（⛔ 不是猜端點名）。
+    xhr_hunt("t05st01", out, month="09", day="01")
     out.append("")
     revenue_hist_columns(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
