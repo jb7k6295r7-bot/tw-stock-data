@@ -350,22 +350,12 @@ def main():
         #   對得起來 ⇒ 資料是**選了年份之後才去要**的。
         #   ⇒ 網址只剩兩個地方可能：**頁面自己的 inline `<script>`**，
         #     或 **`data-*` 屬性**（`_tpex_probe.txt` [10] 就記過 TPEx 用 data-）。
-        inline = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", t, re.S)
-        say(f"     ★★ 頁面自己的 inline <script> {len(inline)} 段"
-            f"（共 {sum(len(x) for x in inline):,} 字）：")
-        for i, blk in enumerate(inline):
-            b = re.sub(r"\s+", " ", blk).strip()
-            if not b:
-                continue
-            say(f"       ── 第 {i + 1} 段（{len(b)} 字）")
-            for k in range(0, min(len(b), 1200), 160):
-                say(f"         {b[k:k + 160]}")
-        # ★ data-* 屬性：TPEx 新站把參數放在這裡（見 _tpex_probe.txt [10]）
-        das = sorted(set(re.findall(r'(data-[a-zA-Z0-9_\-]+)\s*=\s*["\']([^"\']*)',
-                                    t)))
-        say(f"     ★ `data-*` 屬性 {len(das)} 種：")
-        for k, v in das[:40]:
-            say(f"       {k} = {v[:90]!r}")
+        # ⭐ 2026-09-15：這兩段本來是**這裡自己寫的一份**，⛔ 而 `parvalue_probe`
+        #   要做同一件事 ⇒ 抽成 `backfill.page_wiring()`（四點五：只准一份）。
+        #   ⚠ 而抽出去的理由就寫在這一支第四輪的結論裡：
+        #     「關鍵字次數多 ≠ 有端點 ⇒ 網址只剩 inline <script> 或 data-* 兩個地方。」
+        for ln in B.page_wiring(t):
+            say("     " + ln)
 
         # ★★ 翻它載入的**每一支** js。上一輪只翻過 global.js。
         #   ⛔ 這裡找的是**它自己寫的路徑**，不是我拼的——差別在於

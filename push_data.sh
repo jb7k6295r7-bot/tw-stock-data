@@ -101,6 +101,8 @@ data/universe/*/_fetched.json:json
 data/universe/*/_asked.json:json
 backtest/forward/p4_types/records.csv:measure_date,stock_id
 backtest/forward/p4_types/universe.csv:stock_id
+data/meta/_official_stats_done.csv:stock_id
+data/meta/_official_stats_miss.csv:stock_id
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- $TREES)
 if [ -n "$FORCE" ]; then

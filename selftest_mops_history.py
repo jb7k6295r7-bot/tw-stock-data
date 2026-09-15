@@ -109,6 +109,68 @@ def main():
         H.OUT = real_out
         shutil.rmtree(tmp, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # 6. ⭐⭐⭐ 月營收有**兩段**：`_0` 國內 ＋ `_1` 外國企業（KY／DR）
+    #
+    # ⛔ 2015~2026 十一年的歷史面板只打了 `_0` ⇒ **整類外國發行不在**，
+    #   而它不會報錯：欄位一樣、格式一樣、列數幾千。
+    # ⭐ probe run 109 實測：sii `_1` 91 列含 KY 89 檔、otc `_1` 30 列含 KY 30 檔、
+    #   `_2` 兩個市場都 404。
+    # ══════════════════════════════════════════════════════════════
+    print("\n── 6. 月營收的兩段（合成資料，⛔ 不連外）──")
+    import ast as _ast
+    import inspect as _insp
+    sig = _insp.signature(H.rev_url)
+    chk("⭐⭐ `rev_url` 的 `part` **沒有預設值**"
+        "（⛔ 有預設值 ⇒ 忘了傳就默默只拿國內那一段，⚠ 那正是原本的 bug）",
+        sig.parameters["part"].default is _insp.Parameter.empty, str(sig))
+    chk("  兩段都拼得出網址，而且尾碼不同",
+        H.rev_url("sii", 114, 1, "0").endswith("_114_1_0.html")
+        and H.rev_url("sii", 114, 1, "1").endswith("_114_1_1.html"))
+    try:
+        H.rev_url("sii", 114, 1, "9")
+        _blocked = False
+    except AssertionError:
+        _blocked = True
+    chk("⛔ 不認得的 part 要**當場擋下來**（⚠ 靜靜拼一個 404 網址最糟）", _blocked)
+    chk("⭐ `REV_PARTS` 兩段都還在（⛔ 只剩一段就是有人把它抄回去了）",
+        tuple(H.REV_PARTS) == ("0", "1"), str(H.REV_PARTS))
+
+    hdr = ["a", "b", "c", "d"]
+    r, h, note = H.merge_parts({
+        "0": ([["1101", "台泥", "水泥工業", "1"]], hdr, ""),
+        "1": ([["1256", "鮮活果汁-KY", "食品工業", "2"]], hdr, ""),
+    })
+    chk("⭐ 兩段合起來 ⇒ 列數相加、KY 那一列進得來",
+        len(r) == 2 and any("KY" in x[1] for x in r), str(r))
+    chk("  表頭沿用（兩段欄位相同）", h == hdr, str(h))
+    chk("⭐⭐ 說明要把**每一段各幾列**講出來"
+        "（⛔ 否則「`_1` 抓不到」跟「那一期沒有外國企業」長得一模一樣）",
+        "0／國內 1 列" in note and "1／外國企業" in note, note)
+
+    r2, _h2, note2 = H.merge_parts({
+        "0": ([["1101", "台泥", "水泥工業", "1"]], hdr, ""),
+        "1": ([], None, "HTTP 404 Not Found"),
+    })
+    chk("⭐ `_1` 掛掉時**主段照樣留下來**（⛔ 不是整期丟掉）", len(r2) == 1)
+    chk("⭐⭐ 而它**為什麼**空要寫在說明裡（⚠ 這一條是這一節的重點）",
+        "404" in note2 and "0 列" in note2, note2)
+
+    # ⭐ 呼叫點：回補主迴圈真的兩段都抓（第七點③：測了判準沒測呼叫點）
+    _src = io.open(os.path.join(HERE, "mops_history.py"), encoding="utf-8").read()
+    _tree = _ast.parse(_src)
+    # ⚠ 只數 `main()` 裡那一個：`merge_parts` 自己也有一個 `for part in REV_PARTS`，
+    #   ⛔ 那一個是**對的**（它就是在逐段合併）——第一版我掃全檔 ⇒ 數到 2 ⇒ 假紅。
+    _fmain = next((f for f in _ast.walk(_tree)
+                   if isinstance(f, _ast.FunctionDef) and f.name == "main"), None)
+    _loops = [n for n in _ast.walk(_fmain or _tree) if isinstance(n, _ast.For)
+              and getattr(n.iter, "id", "") == "REV_PARTS"]
+    chk("⭐⭐ 回補迴圈（`main()` 裡）是 `for part in REV_PARTS`（⛔ 不是寫死一段）",
+        len(_loops) == 1, f"實得 {len(_loops)} 個")
+    chk("  而且合併走 `merge_parts`（⛔ 不是在迴圈裡自己 extend 一份）",
+        sum(1 for n in _ast.walk(_tree) if isinstance(n, _ast.Call)
+            and getattr(n.func, "id", "") == "merge_parts") == 1)
+
     print(f"\n[selftest] 通過 {ok}｜失敗 {fail}")
     return 1 if fail else 0
 

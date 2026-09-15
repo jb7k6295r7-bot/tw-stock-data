@@ -171,6 +171,72 @@ def main():
         import shutil
         shutil.rmtree(d, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⑧ ⭐⭐ miss 台帳：⛔ 沒有它，這一條**永遠到不了終點**
+    #
+    # 2026-09-15 run 34976777901：本趟 400 檔，成功 331／失敗 69，
+    # ⚠ 而失敗那 69 檔**沒有被記下來** ⇒ 下一趟還會再問一次。
+    #
+    # ⭐ 而這一節最重要的是**反向那一條**（第七點）：
+    #   端點整個掛掉時 ⇒ `alive=False` ⇒ **一個字都不寫**。
+    #   ⛔ 少了它，掛掉兩趟就把全庫判死，⚠ 而畫面上完全正常。
+    # ══════════════════════════════════════════════════════════════
+    print("\n── ⑧ miss 台帳（合成資料，⛔ 不碰 repo）──")
+    d2 = tempfile.mkdtemp(prefix="offmiss_")
+    try:
+        mp = os.path.join(d2, "_official_stats_miss.csv")
+        ck("⛔ 檔不存在 ⇒ 回 {}（⚠ 不是炸掉）", O.load_miss(mp) == {})
+
+        n = O.bump_miss([("1101", "沒有符合條件的資料"), ("1102", "x")],
+                        "20260915", path=mp, alive=True)
+        ck("⭐ 有成功過（alive）⇒ 失敗的會被記下來", n == 2 and
+           set(O.load_miss(mp)) == {"1101", "1102"}, str(O.load_miss(mp)))
+        ck("  tries 從 1 開始", O.load_miss(mp)["1101"][0] == 1,
+           str(O.load_miss(mp)["1101"]))
+
+        O.bump_miss([("1101", "又一次")], "20260916", path=mp, alive=True)
+        ck("⭐ 第二次是**累加**，⛔ 不是覆蓋（四點六③那個坑）",
+           O.load_miss(mp)["1101"][0] == 2 and "1102" in O.load_miss(mp),
+           str(O.load_miss(mp)))
+        ck("  而沒有再失敗的那一檔 tries **沒有被動到**",
+           O.load_miss(mp)["1102"][0] == 1, str(O.load_miss(mp)["1102"]))
+
+        # ⛔⛔ 反向那一條：端點掛掉（一檔都沒成功）⇒ 一個字都不寫
+        before = io.open(mp, encoding="utf-8").read()
+        n2 = O.bump_miss([("2330", "x"), ("2317", "x")], "20260917",
+                         path=mp, alive=False)
+        ck("⛔⛔ 本趟一檔都沒成功（alive=False）⇒ **一個字都不寫**"
+           "（⚠ 少了這條，端點掛兩趟就把全庫判死）",
+           n2 == 0 and io.open(mp, encoding="utf-8").read() == before,
+           f"回 {n2}｜檔案變了 {io.open(mp, encoding='utf-8').read() != before}")
+
+        # ⭐ 三堆切法
+        pool = ["1101", "1102", "1103", "1104"]
+        done = {"1101"}
+        miss = {"1102": (2, "", ""), "1103": (1, "", "")}
+        todo, fresh, gu = O.split_todo(pool, done, miss, limit=10)
+        ck("⭐ 放棄的那一檔不在 todo 裡（⛔ 否則每趟都再問一次）",
+           "1102" not in todo and gu == ["1102"], f"{todo}｜{gu}")
+        ck("  而 tries 還沒到門檻的**仍然要問**（⚠ 一次失敗不等於沒有）",
+           "1103" in todo, str(todo))
+        ck("  已完成的不在任何一堆裡", "1101" not in todo and "1101" not in gu)
+        ck("⭐ limit 有生效（⛔ 切在 fresh 上，不是切在 pool 上）",
+           O.split_todo(pool, done, miss, limit=1)[0] == ["1103"],
+           str(O.split_todo(pool, done, miss, limit=1)[0]))
+
+        # ⭐ 報表要把三堆分開講，⛔ 而且分母要講清楚
+        lines = dict(O.progress_lines(pool, done, todo, {"tpex": 9}, gu))
+        txt = " ".join(f"{k}{v}" for k, v in lines.items())
+        ck("⭐ 報表講得出「還沒問過」與「問到放棄」是兩堆",
+           "還沒問過" in txt and "問到放棄" in txt, txt[:200])
+        ck("⛔ 而且明講「問到放棄」不等於「這檔沒有官方統計」",
+           "不等於" in txt, txt[:300])
+        ck("⭐ 而放棄那幾檔**沒有**從母體裡消失（母體仍然是 4）",
+           "**4**" in txt or " 4 " in txt, txt[:160])
+    finally:
+        import shutil
+        shutil.rmtree(d2, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

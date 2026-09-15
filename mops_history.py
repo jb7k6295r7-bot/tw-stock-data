@@ -309,8 +309,52 @@ def _sector_of(cap):
     return m[-1] if m else ""
 
 
-def rev_url(market, year, month):
-    return f"{MOPSOV}/nas/t21/{market}/t21sc03_{year}_{month}_0.html"
+# ⭐⭐⭐ 2026-09-15 實測（probe run 109，`mops_probe.ky_revenue_case`）：
+#   那個尾碼是**國內／外國**，⛔ 而我方十一年來只打了 `_0`（國內）。
+#
+#   ```
+#   sii `_0`  444,934 bytes｜987 列｜⭐ 含 KY **0** 檔
+#   sii `_1`   76,867 bytes｜ 91 列｜⭐ 含 KY **89** 檔（另 2 檔 -DR）
+#   otc `_0`  386,349 bytes｜856 列｜含 KY 0 檔
+#   otc `_1`   45,355 bytes｜ 30 列｜⭐ 含 KY **30** 檔
+#   `_2`      兩個市場都 **404**
+#   ⚠ 而 `_1` 的編碼是 **big5**、`_0` 是 **cp950** ⇒ 解析要自己認，⛔ 不可以寫死
+#   ```
+REV_PARTS = ("0", "1")
+REV_PART_NAME = {"0": "國內", "1": "外國企業（KY／DR）"}
+
+
+def rev_url(market, year, month, part):
+    """⛔⛔ `part` **必填且沒有預設值**——這一格付過代價。
+
+    ⚠ 原本是 `..._0.html` 寫死 ⇒ 十一年的歷史面板**整類外國發行都不在**，
+    而它**不會報錯**：欄位一樣、格式一樣、列數幾千。
+    ⇒ ⭐ 那正是「當一族東西有兩種語意，選哪一種的參數必須必填、
+      ⛔ 不可以有預設值」——預設值會默默套上多數派那一種（CLAUDE.md 四點五）。
+    """
+    assert part in REV_PARTS, f"part 只能是 {REV_PARTS}，實得 {part!r}"
+    return f"{MOPSOV}/nas/t21/{market}/t21sc03_{year}_{month}_{part}.html"
+
+
+def merge_parts(got):
+    """把 `{part: (rows, header)}` 併成一份。→ (rows, header, 逐段說明)。
+
+    ⭐ 只有這一份實作（四點五）：⛔ 兩個呼叫點各併一次的話，
+    其中一個遲早會少併一段，⚠ 而少的那一段**不會報錯**。
+
+    ⛔⛔ 而說明字串要把**每一段各幾列**講出來：
+    「`_1` 抓不到」與「那一期沒有外國企業」⚠ 在結果上長得一模一樣
+    ——⭐ 唯一分得開的是那一段自己講出它發生了什麼。
+    """
+    rows, header, notes = [], None, []
+    for part in REV_PARTS:
+        r, h, why = got.get(part, ([], None, "沒問"))
+        if h and header is None:
+            header = h
+        notes.append(f"{part}／{REV_PART_NAME[part]} {len(r)} 列"
+                     + (f"（{why}）" if why else ""))
+        rows.extend(r)
+    return rows, header, "｜".join(notes)
 
 
 # ── 財報 ──────────────────────────────────────────────────────────
@@ -737,7 +781,7 @@ def main():
                 print()
         else:
             y, m = int(a.period[:4]) - 1911, int(a.period[5:7])
-            raw, err = _fetch(rev_url(a.market, y, m))
+            raw, err = _fetch(rev_url(a.market, y, m, "0"))
             if err:
                 print(f"失敗：{err}")
             else:
@@ -751,7 +795,7 @@ def main():
         print("[hist] **乾跑模式**：只抓一期、印解析結果、不寫任何檔。\n")
         if a.kind in ("revenue", "both"):
             for mkt, _ in MARKETS:
-                raw, err = _fetch(rev_url(mkt, 104, 7))
+                raw, err = _fetch(rev_url(mkt, 104, 7, "0"))
                 if err:
                     print(f"── 月營收 {mkt} 104/7 ── 抓取失敗：{err}\n")
                     continue
@@ -859,25 +903,37 @@ def main():
                 if a.fill and has_output("revenue", per, market):
                     state[("revenue", per, mkt)] = ("ok", "已存在，--fill 跳過")
                     continue
-                raw, err = _fetch(rev_url(mkt, y, m))
-                if err:
-                    _note("revenue", per, mkt, _W(err, 50))
+                # ⭐⭐ 兩段都抓（`_0` 國內 ＋ `_1` 外國企業），⛔ 只抓 `_0` 就是
+                #   2015~2026 那個「整類外國發行不在」的 bug。走唯一那一份合併。
+                got = {}
+                for part in REV_PARTS:
+                    raw, err = _fetch(rev_url(mkt, y, m, part))
+                    if not err:
+                        pr, ph, pnote, _sk = parse_revenue(raw, y, m, mkt)
+                    else:
+                        pr, ph, pnote = [], None, _W(err, 50)
+                    if (not pr or not ph) and not err:
+                        # ★ HTTP 200 但解析出 0 張表 → 多半是一次壞回應，重抓一次再判。
+                        #   2026-09-06 實測 2026-03 sii 就中過（編碼 big5(replace)、
+                        #   0 張表），同一個網址後來是好的。
+                        time.sleep(a.sleep)
+                        raw, err = _fetch(rev_url(mkt, y, m, part))
+                        pr, ph, pnote, _sk = (
+                            parse_revenue(raw, y, m, mkt) if not err
+                            else ([], None, _W(err, 50), []))
+                    got[part] = (pr, ph, pnote)
                     time.sleep(a.sleep)
-                    continue
-                rows, header, note, _sk = parse_revenue(raw, y, m, mkt)
-                if not rows or not header:
-                    # ★ HTTP 200 但解析出 0 張表 → 多半是一次壞回應，重抓一次再判。
-                    #   2026-09-06 實測 2026-03 sii 就中過（編碼 big5(replace)、0 張表），
-                    #   同一個網址後來是好的。
-                    time.sleep(a.sleep)
-                    raw, err = _fetch(rev_url(mkt, y, m))
-                    rows, header, note, _sk = (
-                        parse_revenue(raw, y, m, mkt) if not err
-                        else ([], None, _W(err, 50), []))
-                if not rows or not header:
+                rows, header, note = merge_parts(got)
+                # ⛔⛔ `_0` 是主段：它空了就是整期失敗。
+                #   ⚠ 而 `_1` 空了**不算失敗**（那一期可能真的沒有外國企業），
+                #   ⭐ 但它為什麼空**一定要寫進 note** ⇒ 上面 `merge_parts` 做了。
+                if not got["0"][0] or not header:
                     _note("revenue", per, mkt, f"0 列（{note}）")
-                    time.sleep(a.sleep)
                     continue
+                if not got["1"][0]:
+                    fails.append(("revenue", per, mkt,
+                                  f"⚠ 外國企業那一段 0 列（{got['1'][2]}）"
+                                  "　⇒ ⛔ 不算失敗，⛔ 也不算「那一期沒有 KY」"))
                 blank = sum(1 for r in rows if not r[2])
                 if blank:
                     # 產業別是這張表唯一拿得到的來源，缺了就要吵，不可靜默寫出去
