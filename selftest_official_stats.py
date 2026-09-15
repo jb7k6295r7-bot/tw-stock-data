@@ -506,6 +506,21 @@ def main():
               and getattr(n.func, "id", "") == "endpoint_alive"]
     ck("⭐ main() 真的會去問對照組（⛔ 不是只有函式在那裡沒人叫）",
        len(probes) == 1, str(len(probes)))
+    # ⛔ 說明文字要講**實際發生的那一種**（run 158 實測：檢查過了，
+    #   而說明印「且對照組也答不出來」⇒ 一個通過的檢查說著相反的話）
+    ck("⭐⭐ 全失敗**而對照組答得出來** ⇒ 說明要講「而對照組答得出來」",
+       "而對照組答得出來" in O.batch_fail_note(104, 0, True)
+       and "也答不出來" not in O.batch_fail_note(104, 0, True),
+       O.batch_fail_note(104, 0, True))
+    ck("⭐ 全失敗**而且對照組也答不出來** ⇒ 說明要講那一種",
+       "也答不出來" in O.batch_fail_note(104, 0, False),
+       O.batch_fail_note(104, 0, False))
+    ck("  有成功的 ⇒ 講成功幾檔", "成功 3" in O.batch_fail_note(10, 3, False))
+    ck("  沒有要問的 ⇒ 講「都問完了」", "都問完了" in O.batch_fail_note(0, 0, False))
+    _n = [n for n in ast.walk(fn) if isinstance(n, ast.Call)
+          and getattr(n.func, "id", "") == "batch_fail_note"]
+    ck("⭐ 而 `main()` 真的用它（⛔ 不是另外寫一段 if）", len(_n) == 1, str(len(_n)))
+
     checks = [n for n in ast.walk(fn)
               if isinstance(n, ast.Call)
               and getattr(n.func, "attr", "") == "check"]
