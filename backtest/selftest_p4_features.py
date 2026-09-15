@@ -62,7 +62,10 @@ def t_cross_section_assign():
     for f in P.BOOL_FEATURES:
         day[f] = [100.0, 0.0, np.nan, 100.0]
     X = P.cross_section(day)
-    check(list(X.loc["a", P.PCT_FEATURES].round(1)) == [33.3] * 10 and X.loc["c", "ret_20"] == 100.0 and X.loc["d", "ret_20"] == 50.0, "百分位（rank pct×100，NaN 不進分母）：a＝33.3、c＝100、缺值＝50")
+    check(list(X.loc["a", P.PCT_FEATURES].round(1)) == [0.0] * 10 and round(X.loc["b", "ret_20"], 1) == 33.3 and round(X.loc["c", "ret_20"], 1) == 66.7 and X.loc["d", "ret_20"] == 50.0,
+          "百分位（v3 §4-2 嚴格小於／有限值數）：a＝0、b＝33.3、c＝66.7、缺值＝50（⛔ 不是 rank 平均名次的 33.3／100）")
+    tie = P.pct_strict_less(pd.Series([5.0, 5.0, 7.0, np.inf, np.nan], index=list("pqrst")))
+    check(tie["p"] == tie["q"] == 0.0 and round(tie["r"], 4) == round(200 / 3, 4) and np.isnan(tie["s"]) and np.isnan(tie["t"]), "同值取最低名次（5,5 都是 0）、inf／NaN 不進分母且回 NaN（分母 3）")
     check(X.loc["c", "ma_stack"] == 50.0 and X.loc["a", "ma_stack"] == 100.0, "布林缺值補 50、有值照舊")
     C = np.zeros((4, 13)); C[1] = 2.0; C[2, :5] = 2.0; C[3, 5:] = 2.0   # 中心在標準化空間
     mu = np.full(13, 50.0); sd = np.full(13, 25.0)
