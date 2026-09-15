@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-15T22:10:35+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34978648095
+# ⏱ 這一趟：2026-09-15T22:35:25+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 34981993431
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -128,6 +128,22 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          …（本站另 2 支未挖，cap=8）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,345 字）
+      ── 第 1 段（130 字）
+         function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
+      ── 第 2 段（294 字）
+         "use strict";function modifyJson(e){for(let t of e.tables[0].data)t[7]=`<a href="${t[7]}">試算</a>`}tables.init({pattern:API_PATTERN,action:"bulletin/pvChgAnn",au
+         toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3b85ae1785e72ef',t:'MTc4OTQ4Mjg5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+   ⑦ `data-*` 屬性：**2 種**
+      data-format = 'csv'
+      data-format = 'print'
 
   ── 變更股票面額恢復交易參考價
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
@@ -225,6 +241,26 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          …（本站另 2 支未挖，cap=8）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,571 字）
+      ── 第 1 段（130 字）
+         function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
+      ── 第 2 段（520 字）
+         "use strict";function modifyJson(t){for(let e of t.tables[0].data)e[0]=e[0]+'<div class="hide">'+e[8]+"</div>",e.splice(8,1);t.tables[0].fields.splice(8,1)}popu
+         pWindow.init(),tables.init({pattern:API_PATTERN,action:"bulletin/pvChgRslt",autoLoad:!0,autoChange:!1,beforeInit:t=>{},beforeRender:modifyJson,afterRender:()=>{
+         },tables:[{align:"auto F0 C1 C2 C3",sortable:!0,pagin:10}]}),$("#tables-content .rwd-table").on("click","tbody>tr",(t=>{const e=$(t.currentTarget).find("td:firs
+         t>.hide");popupWindow.open(e.html())}));
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3b85af58911d640',t:'MTc4OTQ4Mjg5OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+   ⑦ `data-*` 屬性：**4 種**
+      data-format = 'D'
+      data-format = 'csv'
+      data-format = 'print'
+      data-start = '20190909'
 
 ── ★ 參數有沒有被無視 ──
 TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
