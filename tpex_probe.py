@@ -41,9 +41,11 @@ import os
 import re
 import sys
 import traceback
+import urllib.parse
 
 import backfill as B
 from backfill import why as _W
+import twparse                      # ⭐ 讀 action／POST 都走那一份（四點五）
 
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "meta", "_tpex_probe.txt")
@@ -796,6 +798,111 @@ def main():
         if not hits:
             say("        ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，"
                 "**不可以**寫成「沒有 API」）")
+
+    # ────────────────────────────────────────────────────────────
+    # [14] ⭐⭐ 上櫃**個股年／月成交資訊**
+    #
+    # ⛔ `official_stats.py` 的 runlog 一直寫著
+    #   「⚠ 上櫃的官方年度／月統計**仍然沒有來源**，這一條還開著」。
+    # ⚠ 而那句話的證據**就在我們自己家**：`data/meta/_site_inventory.txt`
+    #   （我方 `site_inventory.py` 自己抓的 TPEx 選單）第 673~676 行——
+    #
+    #     上櫃 / 交易資訊 / 盤後資訊 / 個股月成交資訊
+    #       → /zh-tw/mainboard/trading/info/stock-month.html
+    #     上櫃 / 交易資訊 / 盤後資訊 / 個股年成交資訊
+    #       → /zh-tw/mainboard/trading/info/stock-year.html
+    #
+    # ⇒ ⭐ CLAUDE.md 3.5④ 又一次：**外面的東西我知道要去查，
+    #   ⛔ 而「我們自己有沒有」我以為我知道。**
+    #
+    # ⛔ 而「選單上有」**不是**「端點存在」（第二點：名字不是證據）
+    #   ⇒ 這一節照 C4 那條做：
+    #     ① 讀那兩頁**自己寫的** `action:`（⛔ 不從網址猜，三點5）
+    #     ② 照 `API_PATTERN = "/www/{LANG}/{ACTION}"` 真的打
+    #     ③ ⭐ GET **與** POST 各打一次——⚠ `otc_exright_history.py` 檔頭寫著
+    #        「GET 的 startDate／endDate 會被忽略，靜靜回今天」⇒ 這一族要 POST
+    #     ④ 判準是**它自己回顯了我送的參數**，⛔ 不是「有回列」
+    #     ⑤ 把 `notes`／`hints`／`title`／`params` 攤開（CLAUDE.md 第一點）
+    say("\n[14] ⭐⭐ 上櫃個股**年／月**成交資訊"
+        "（⛔ 推翻「上櫃沒有官方年度／月統計」那句話的那一步）")
+    say("     線索來源：我方自己的 `data/meta/_site_inventory.txt`"
+        "（⚠ 不是外面查到的 ⇒ 3.5④「自己家查過沒有」）")
+    _P14 = (("個股月成交資訊",
+             "https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-month.html"),
+            ("個股年成交資訊",
+             "https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-year.html"))
+    # ⭐ 拿一檔**一定在上櫃、而且活得夠久**的當樣本（⛔ 不是隨手挑）
+    _CODE, _YEAR = "6488", "2024"
+    for _why, _url in _P14:
+        say(f"\n     ── {_why}\n     {_url}")
+        _r, _e = B.get(_url, retries=2, timeout=60)
+        if _e or not _r:
+            say(f"     ✗ 抓不到：{_W(_e, 200)}"
+                "　⇒ ⚠ 取不回來**不等於**它不存在")
+            continue
+        _acts = twparse.actions_in(_r)      # ⭐ 唯一那一份（四點五），⛔ 不縮 prefix
+        say(f"     ✓ {len(_r):,} bytes｜它自己寫的 action：{_acts or '⛔ 一個都沒讀到'}")
+        if not _acts:
+            # ⭐ 「inline 讀不到」**不是**「站上沒有」——它可能寫在外部 .js 裡
+            #   ⇒ 一定要有下一步（`js_followups`），⛔ 不可以停在「我方取不到」
+            #   （`selftest_probes` ⑬ 就是在守這一件事）。
+            say("        ⚠ inline 讀不到 action ⇒ ⭐ 往外部 .js 追一層"
+                "（⛔ 停在這裡就會被讀成「沒有 API」）")
+            for _ln in B.js_followups(_r, base=_url, needles=("action", "API_PATTERN")):
+                say("           " + _ln)
+            continue
+        for _act in _acts:
+            _u = f"https://www.tpex.org.tw/www/zh-tw/{_act}"
+            say(f"\n        ⭐ {_u}")
+            _best = None        # ⭐ 要整份印的是**第一發解得出 JSON 的**，
+                                #   ⛔ 不是迴圈跑完剛好留在變數裡的那一個
+                                #   （⚠ 那多半是最後一發、而最後一發常常是失敗的）
+            # ⚠ 參數名我不知道 ⇒ 兩套常見的各打一次，⛔ 不猜一套然後拿失敗當結論
+            for _tag, _form in (("code+date", {"code": _CODE, "date": _YEAR + "/01/01",
+                                               "response": "json"}),
+                                ("stkno+year", {"stkno": _CODE, "year": _YEAR,
+                                                "response": "json"})):
+                for _how in ("GET", "POST"):
+                    if _how == "GET":
+                        _q = urllib.parse.urlencode(_form)
+                        _raw, _err = B.get(f"{_u}?{_q}", retries=1, timeout=45)
+                    else:
+                        _raw, _err = twparse.post_form(_u, _form, retries=1, timeout=45)
+                    if _err or not _raw:
+                        say(f"           [{_how} {_tag}] ⛔ {_W(_err, 160)}")
+                        continue
+                    try:
+                        _d = json.loads(_raw.decode("utf-8", "replace"))
+                    except ValueError:
+                        _h, _tr, _js, _sh = B.js_shell(_raw)
+                        say(f"           [{_how} {_tag}] ⚠ 不是 JSON"
+                            f"｜{len(_raw):,} bytes｜<tr> {_tr} 個"
+                            + ("　⛔ **js 空殼**" if _sh else ""))
+                        if _sh:
+                            # ⭐ 判了空殼就一定要有下一步（同上，⑬）
+                            for _ln in B.js_followups(_raw, base=_u,
+                                                      needles=("action",)):
+                                say("              " + _ln)
+                        continue
+                    say(f"           [{_how} {_tag}] ✓ JSON {len(_raw):,} bytes")
+                    _best = _best or (f"{_how} {_tag}", _raw)
+                    # ⭐ CLAUDE.md 第一點：**先把 notes／hints／title／params 印出來**
+                    for _ln in B.describe_response(_d, want=_form):
+                        say("              " + _ln)
+            # ⭐ 整份印出來（C4 那條：開頭 160 字寫不出解析程式）
+            #   ⛔ 只在小的時候——大的印出來會洗版（⚠ 那也是一種看不見）
+            if _best and len(_best[1]) <= 20000:
+                say(f"           ── ⭐ **原始回應整份**（{_best[0]}）"
+                    "（⛔ 不是開頭 160 字）──")
+                for _ln in _best[1].decode("utf-8", "replace").splitlines():
+                    say("              " + _ln)
+            elif _best:
+                say(f"           ⚠ 回應 {len(_best[1]):,} bytes，超過 20,000"
+                    " ⇒ 不整份印（⛔ 洗版也是一種看不見）")
+            else:
+                say("           ⚠ 四種打法**沒有一種**解得出 JSON"
+                    "　⇒ ⛔ 這不等於「這個端點不存在」：參數名是我猜的兩套，"
+                    "而 CLAUDE.md 三點② 要求把**用過什麼詞**寫出來 ⇒ 上面四行就是")
 
     return _write(0)
 

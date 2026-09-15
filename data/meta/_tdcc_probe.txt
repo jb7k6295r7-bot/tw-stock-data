@@ -1,3 +1,4 @@
+# ⏱ 這一趟：2026-09-16T03:02:02+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35010621847
 # tdcc_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://opendata.tdcc.com.tw/getOD.ashx?id=1-5
 
@@ -120,7 +121,7 @@
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
   ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = '45bd2105-8dd4-4c5f-ba15-068f52dabab0'
+    SYNCHRONIZER_TOKEN = '3c53cdb7-c68e-42ba-acab-08362ee670a5'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260911'
     method = 'submit'
@@ -153,30 +154,39 @@
        ⛔ 仍然**不可以**下「沒有歷史」的結論：查詢頁確實列了 51 個週別，只是我方取不到。
 
 [8] 開放資料專區其他 dataset id 的形狀（只量，不猜用途）
-    id=1-1: 14,453,458 bytes｜CSV 144,765 列｜相異資料日期 0 個 []
+    id=1-1: 14,443,878 bytes｜CSV 144,779 列｜相異資料日期 0 個 []
              欄位：['證券代號', '證券名稱', '市場別', '股務單位', '停止過戶領回', '證券狀態', '無面無實體', '歸戶領回']
-    id=1-2: 22,802,559 bytes｜CSV 142,474 列｜相異資料日期 1 個 ['20260913']
+    id=1-2: 22,793,660 bytes｜CSV 142,476 列｜相異資料日期 1 個 ['20260915']
              欄位：['資料日期', '證券代號', '證券名稱', '市場別', '股務單位', '股務單位地址', '電話', '備 註(終止日期)']
-    id=1-3: 1,037,774 bytes｜CSV 5,080 列｜相異資料日期 1 個 ['20260913']
+    id=1-3: 1,037,774 bytes｜CSV 5,080 列｜相異資料日期 1 個 ['20260916']
              欄位：['資料日期', '發行機構名稱', '發行機構名稱(英文)', '發行辦法名稱', '發行辦法檔案網址(http://www.tdcc.com.tw/tcdata/tc11/)', '債券代號', '債券簡稱']
-    id=1-4: 5,060 bytes｜CSV 93 列｜相異資料日期 1 個 ['20260910']
+    id=1-4: 5,060 bytes｜CSV 93 列｜相異資料日期 1 個 ['20260914']
              欄位：['資料日期', '證券代號', '證券名稱', '分戶保管股數', '特定保管股數', '強制集保總股數', '發行仟股數']
     id=1-6: 407,142 bytes｜CSV 2,987 列｜相異資料日期 0 個 []
              欄位：['資料年月', '債券代號', '債券名稱', '債券類別', '債券餘額', '個人戶持有比率', '法人戶持有比率', '自營商持有比率']
-    id=1-7: 33,892 bytes｜CSV 780 列｜相異資料日期 0 個 []
+    id=1-7: 34,120 bytes｜CSV 785 列｜相異資料日期 0 個 []
              欄位：['證券代號', '證券名稱', '交付日期', '交付原因']
+
+[8.5] ⭐ `getOD.ashx?id=1-5` 吃不吃日期參數（K線 1712 §1-2 指名）
+      判準：**回應自己宣告的 `資料日期`** ＝ 我請求的那一週才算吃
+      ⛔ 不是「有沒有回列」「bytes 夠不夠大」——靜默失敗長得一模一樣
+      對照組（不帶任何參數）：相異資料日期 ['20260911']
+      date     2,363,628 bytes｜CSV 68,935 列｜日期 ['20260911']　⛔ **假參數**（回應跟不帶參數時逐字相同 ⇒ 靜靜回最新一期）
+      dateVal  2,363,628 bytes｜CSV 68,935 列｜日期 ['20260911']　⛔ **假參數**（回應跟不帶參數時逐字相同 ⇒ 靜靜回最新一期）
+      firDate  2,363,628 bytes｜CSV 68,935 列｜日期 ['20260911']　⛔ **假參數**（回應跟不帶參數時逐字相同 ⇒ 靜靜回最新一期）
+      scaDate  2,363,628 bytes｜CSV 68,935 列｜日期 ['20260911']　⛔ **假參數**（回應跟不帶參數時逐字相同 ⇒ 靜靜回最新一期）
 
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 540,308 bytes
-     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
+     ✓ 540,387 bytes
+     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":562,"code_name":563},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
-     檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
+     檔案格式：['_value":553,"code_name":554},"6","建議提供其他檔案格式",{"code_type":531,"code_value":556,"code_name']
      授權：['><a href="/licenses" class="" title="前往 授權條款" data-v-5c04cf44>授權條款</a></li><li class="menu', 'data-v-8377536e><strong data-v-8377536e>授權方式</strong></div><div class="table-cell" data-v-']
 
   ── 公開 API：https://data.gov.tw/api/v2/rest/dataset/11452
-     ✓ 2,621 bytes
+     ✓ 2,622 bytes
      授權：['language":"zh","relatedUrl":"","notes":"授權說明網址: http:\\/\\/data.gov.tw\\/license\\nOAS標準之API說明']
 
   ★ 撈到的下載網址（2 個，逐字）：
@@ -197,7 +207,7 @@
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5

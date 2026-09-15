@@ -138,6 +138,37 @@ def main():
     finally:
         urllib.request.urlopen = real
 
+    # ───── `actions_in`：⛔ 從頁面自己寫的字讀，不是從網址猜 ─────
+    #  ⚠ 假回應照真的形狀做：真的那兩頁長成
+    #    `tables.init({pattern: API_PATTERN, action: "bulletin/pvChgRslt"})`
+    print("\n── actions_in（TPEx 頁面 inline script 的 action） ──")
+    page = ('<html><head><script src="/js/tables.js"></script></head><body>'
+            '<script>\n  tables.init({pattern: API_PATTERN,'
+            ' action: "bulletin/pvChgAnn"});\n'
+            "  tables.init({pattern: API_PATTERN, action: 'bulletin/pvChgRslt'});\n"
+            '  other.init({action:"afterTrading/stockMonth"});\n'
+            '</script></body></html>')
+    got = T.actions_in(page)
+    ck("⭐ 單引號與雙引號都讀得到（⛔ 官方兩種都寫過）",
+       got == ["afterTrading/stockMonth", "bulletin/pvChgAnn", "bulletin/pvChgRslt"],
+       str(got))
+    ck("⭐⭐ **預設全收**（⛔ 預設就縮範圍的話，下一個人不會知道它縮了）",
+       "afterTrading/stockMonth" in got, str(got))
+    ck("  要縮的人自己傳 prefix",
+       T.actions_in(page, prefix="bulletin/")
+       == ["bulletin/pvChgAnn", "bulletin/pvChgRslt"],
+       str(T.actions_in(page, prefix="bulletin/")))
+    ck("  吃 bytes 也吃 str（探針拿到的是 bytes）",
+       T.actions_in(page.encode("utf-8")) == got)
+    ck("  去重而且排序（⛔ 同一頁同一個 action 會出現兩次）",
+       T.actions_in(page + page) == got, str(T.actions_in(page + page)))
+    ck("⛔ 沒有 action 的頁回空 list（⚠ 不是 None，也不是炸掉）",
+       T.actions_in("<html>沒有腳本</html>") == [])
+    import inspect
+    ck("⭐ `prefix` 的預設是 **None**（＝不縮）",
+       inspect.signature(T.actions_in).parameters["prefix"].default is None,
+       str(inspect.signature(T.actions_in)))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

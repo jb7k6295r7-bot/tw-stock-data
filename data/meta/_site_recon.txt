@@ -1,0 +1,97 @@
+==========================================================================
+site_recon — 第 −1 步：先拿整站清單，再用名字搜（⛔ 不逐條猜路徑）
+==========================================================================
+⛔ 起因：我兩次把「我掃過的範圍」寫成「官方的全部」（CLAUDE.md 三點①）
+⭐ 【查詢用詞】共 19 個：減資、換股、增資、認購、除權、除息、權值、息值、股利、配股、配息、恢復買賣、停止買賣、面額、合併、漲停、跌停、參考價、基準日
+
+==========================================================================
+【TWSE OpenAPI 目錄】
+https://openapi.twse.com.tw/v1/swagger.json
+  ✅ 清單 143 筆
+  ⭐ 「認購」命中 3 筆
+       /opendata/t187ap36_L　上市認購(售)權證年度發行量概況統計表
+       /opendata/t187ap43_L　上市認購(售)權證交易人數檔
+       /opendata/t187ap42_L　上市認購(售)權證每日成交資料檔
+  ⭐ 「合併」命中 2 筆
+       /opendata/t187ap29_C_L　上市公司合併報表董事酬金相關資訊 
+       /opendata/t187ap29_D_L　上市公司合併報表監察人酬金相關資訊 
+  ⭐ 「除權」命中 1 筆
+       /exchangeReport/TWT48U_ALL　上市股票除權除息預告表
+  ⭐ 「除息」命中 1 筆
+       /exchangeReport/TWT48U_ALL　上市股票除權除息預告表
+  ⭐ 「股利」命中 1 筆
+       /opendata/t187ap45_L　上市公司股利分派情形
+  ⭐ 「停止買賣」命中 1 筆
+       /opendata/t187ap26_L　上市公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更停止買賣公司
+
+==========================================================================
+【TPEx OpenAPI 目錄】
+https://www.tpex.org.tw/openapi/swagger.json
+  ✅ 清單 225 筆
+  ⭐ 「認購」命中 2 筆
+       /mopsfin_t187ap42_O　上櫃認購(售)權證每日成交資料檔
+       /mopsfin_t187ap36_O　上櫃認購(售)權證年度發行量概況統計表
+  ⭐ 「除權」命中 2 筆
+       /tpex_exright_daily　上櫃股票除權除息計算結果表
+       /tpex_exright_prepost　上櫃股票除權除息預告表
+  ⭐ 「除息」命中 2 筆
+       /tpex_exright_daily　上櫃股票除權除息計算結果表
+       /tpex_exright_prepost　上櫃股票除權除息預告表
+  ⭐ 「合併」命中 2 筆
+       /mopsfin_t187ap29_C_O　上櫃公司合併報表董事酬金相關資訊
+       /mopsfin_t187ap29_D_O　上櫃公司合併報表監察人酬金相關資訊
+  ⭐ 「股利」命中 1 筆
+       /mopsfin_t187ap39_O　上櫃股利分派情形-董事會通過
+  ⭐ 「停止買賣」命中 1 筆
+       /mopsfin_t187ap26_O　上櫃公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更停止買賣公司
+  ⭐ 「跌停」命中 1 筆
+       /tpex_ceil_non_trading　上櫃漲跌停未成交資訊
+
+==========================================================================
+【TWSE sitemap】
+https://www.twse.com.tw/sitemap.xml
+  ✅ 清單 3109 筆
+  ⛔ 詞表一個都沒命中（⚠ 這句話的範圍就是**這一份清單**）
+
+==========================================================================
+【TWSE 中文首頁（選單）】
+https://www.twse.com.tw/zh/index.html
+  ✅ 清單 70 筆
+  ⭐ 「配息」命中 1 筆
+       https://www.twse.com.tw/zh/ETFortune/dividendCalendar　配息資訊
+
+==========================================================================
+【TPEx 中文首頁（選單）】
+https://www.tpex.org.tw/zh-tw/index.html
+  ✅ 清單 66 筆
+  ⭐ 「股利」命中 1 筆
+       https://www.tpex.org.tw/zh-tw/mainboard/listed/month/fundamentals.html　獲利及股利分派情形
+  ⭐ 「配息」命中 1 筆
+       https://info.tpex.org.tw/ETF/zh/dividend-calendar.html　配息資訊
+
+==========================================================================
+【MOPS 公開資訊觀測站首頁】
+https://mopsov.twse.com.tw/mops/web/index
+  ✅ 清單 20 筆
+  ⭐ 「除權」命中 1 筆
+       https://mopsov.twse.com.tw/mops/web/index/nas/rss/mopsrss201003.xml　除權除息
+  ⭐ 「除息」命中 1 筆
+       https://mopsov.twse.com.tw/mops/web/index/nas/rss/mopsrss201003.xml　除權除息
+
+==========================================================================
+③ 命中的頁面裡出現的 `rwd/zh` / `/v1` 端點
+  ⚠ 只抓前 2 頁（⛔ 不是全部 ⇒ 這一節的範圍也是有限的）
+  https://www.tpex.org.tw/zh-tw/mainboard/listed/month/fundamentals.html｜端點 0：[]
+  https://info.tpex.org.tw/ETF/zh/dividend-calendar.html｜端點 0：[]
+
+==========================================================================
+④ ⭐ 掃描範圍表（⛔ 只要有任何一列失敗，就不可以寫「官方沒有」）
+  ✅ TWSE OpenAPI 目錄｜143 筆
+  ✅ TPEx OpenAPI 目錄｜225 筆
+  ✅ TWSE sitemap｜3109 筆
+  ✅ TWSE 中文首頁（選單）｜70 筆
+  ✅ TPEx 中文首頁（選單）｜66 筆
+  ✅ MOPS 公開資訊觀測站首頁｜20 筆
+
+  ⇒ 成功 6 / 6 份目錄
+  ⭐ 六份目錄全部掃到 ⇒ 這一趟的否定句可以寫，⚠ 但要連同詞表一起寫
