@@ -673,6 +673,20 @@ def check_bridge_blank_vs_ignored():
           + "bridge_case 逐期講出**回來的是什麼**（中文字數／<tr> 數／查無字樣）")
     if not ok:
         bad += 1
+    # ⛔⛔ 而那三個**數字**仍然分不出第四種形狀：「它回的是**查詢表單**，不是結果」。
+    #   ⚠ 表單頁一樣沒有「查無」字樣、一樣有幾個 `<tr>`、一樣每一期都相同。
+    #   ⭐ 我為了這一格改過兩次判準，每次都又冒出一種形狀
+    #   ⇒ **不要再猜形狀了，把字印出來讓人讀**（CLAUDE.md 第一點）。
+    form = ("<html><body><table><tr><td>年度</td><td><select>x</select></td></tr>"
+            "<tr><td>請選擇公司代號</td></tr></table></body></html>").encode("utf-8")
+    txt = _run(form, form)
+    ok = "請選擇公司代號" in txt and "前 160 字" in txt
+    print(("✓ " if ok else "✗ ")
+          + "bridge_case ⭐ 把**回應的字**印出來"
+            "（⇒ 查詢表單那一種只有讀字才分得出來）")
+    if not ok:
+        print(f"    實得：{txt[-220:]}")
+        bad += 1
     return bad
 
 

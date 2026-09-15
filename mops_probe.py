@@ -155,6 +155,16 @@ def bridge_case(api, y1, y2, out, **kw):
                 if w in t]
         out.append(f"    [{tag}] 中文 {han:,} 字｜<tr> {n_tr} 個"
                    + (f"｜⛔ 出現 {hits}" if hits else "｜（沒有查無字樣）"))
+        # ⛔⛔ 2026-09-15 第二次付代價：上面那三個**數字**仍然分不出第三種形狀
+        #   ——「它回的是**查詢表單**，不是結果」。表單頁一樣沒有「查無」字樣、
+        #   一樣有幾個 `<tr>`、一樣每一期都相同。
+        #   ⚠ 我已經為了這一格改過兩次判準，每次都又冒出一種形狀
+        #   ⇒ ⭐ **不要再猜形狀了，把字印出來讓人讀。**
+        #   （CLAUDE.md 第一點的同一句：先把回應自己講的話攤開，再開始比對。）
+        _re = __import__("re")
+        _vis = _re.sub(r"<[^>]+>", " ", t)
+        _vis = " ".join(_vis.split())
+        out.append(f"      ⭐ 前 160 字：{_vis[:160]}")
     _t1 = a.decode("utf-8", "replace")
     _blank = any(w in _t1 for w in ("查無", "無資料", "沒有符合", "查詢無"))
     if same and _blank:
