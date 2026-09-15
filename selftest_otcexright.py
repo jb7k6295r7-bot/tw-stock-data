@@ -81,6 +81,75 @@ def main():
        (os.path.getmtime(real_lr) if os.path.exists(real_lr) else None) == b4[1])
 
     print()
+    # ───── ⭐ 反方向：「我方有、官方沒有」那一批各是什麼（三點①） ─────
+    #  ⚠ 用**合成**資料（第七點第七個）：現場那 246 筆全部解釋得了
+    #    ⇒ 拿現場資料驗，「轉板前 > 0」那一格**永遠走不到**。
+    import bisect  # noqa: F401  （`_market_on` 用得到，這裡只是確認它 import 得進來）
+    import otc_exright_history as H
+    print("\n── 反方向：我方有、官方沒有 ──")
+    _days = ["2020-01-02", "2020-01-03", "2020-06-01", "2020-06-02"]
+    _out = {"AAA": "2019-12-31"}          # AAA 2019 年底就轉出上櫃了
+    _only = [("AAA", "2020-06-01")]       # ⇒ 事件在轉板之後 ⇒ 正常
+    a, b, v, u, bad = H.ours_only_verdict(_only, _out, _days)
+    ck("⭐ 事件日在**轉出上櫃之後** ⇒ 歸到「轉板後」，⛔ 不算官方漏了",
+       (a, b, v, u) == (1, 0, 0, 0), f"{(a, b, v, u)}｜{bad}")
+
+    _only2 = [("AAA", "2019-06-01")]      # ⇒ 事件在轉板之前 ⇒ ⛔ 官方真的漏了
+    a2, b2, v2, u2, bad2 = H.ours_only_verdict(_only2, _out, _days)
+    ck("⭐⭐ 事件日在**轉板之前** ⇒ 那才是「官方漏了」，而且要講得出是哪一筆",
+       (a2, b2) == (0, 1) and bad2 and bad2[0][0] == "AAA",
+       f"{(a2, b2, v2, u2)}｜{bad2}")
+
+    # ⭐ 第二條路：`delisted.csv` 查不到那一檔 ⇒ 改問**我方日檔**
+    d9 = tempfile.mkdtemp(prefix="otcx_")
+    _oldroot = H._ROOT
+    try:
+        H._ROOT = d9
+        os.makedirs(os.path.join(d9, "universe", "daily"))
+        for d, mk in (("2021-03-01", "twse"), ("2021-09-01", "tpex")):
+            with io.open(os.path.join(d9, "universe", "daily", f"{d}.csv"),
+                         "w", encoding="utf-8") as f:
+                f.write("stock_id,market\n")
+                f.write(f"BBB,{mk}\n")
+        dd = ["2021-03-01", "2021-09-01"]
+        a3, b3, v3, u3, _ = H.ours_only_verdict([("BBB", "2021-03-01")], {}, dd)
+        ck("⭐ `delisted.csv` 查不到 ＋ 日檔說**上市** ⇒ 歸到「日檔判定」",
+           (a3, b3, v3, u3) == (0, 0, 1, 0), str((a3, b3, v3, u3)))
+        a4, b4, v4, u4, bad4 = H.ours_only_verdict([("BBB", "2021-09-01")], {}, dd)
+        ck("⭐⭐ `delisted.csv` 查不到 ＋ 日檔說**還在上櫃** ⇒ ⛔ 算官方漏了",
+           (a4, b4, v4, u4) == (0, 1, 0, 0) and bad4, f"{(a4, b4, v4, u4)}｜{bad4}")
+        a5, b5, v5, u5, _ = H.ours_only_verdict([("ZZZ", "2021-03-01")], {}, dd)
+        ck("⛔ 兩條路都查不到 ⇒ 歸到「仍未判定」，⛔ 不是塞進「官方漏了」"
+           "（⚠ absent ≠ 證據，五點三）",
+           (a5, b5, v5, u5) == (0, 0, 0, 1), str((a5, b5, v5, u5)))
+        ck("★ 沒有動到 repo 真的 `data/universe/daily/`", H._ROOT == d9)
+    finally:
+        H._ROOT = _oldroot
+        import shutil
+        shutil.rmtree(d9, ignore_errors=True)
+
+    # ⭐ 取「最後一筆」轉出日（一個代號可能有多列：轉板一筆＋真下市一筆）
+    a6, b6, _, _, _ = H.ours_only_verdict(
+        [("AAA", "2020-06-01")], {"AAA": "2019-12-31"}, _days)
+    ck("  而基準是該檔轉出上櫃的日子（⛔ 不是今天）", (a6, b6) == (1, 0))
+
+    # ⭐ 呼叫點（第七點第三個）
+    import ast
+    _src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "otc_exright_history.py"), encoding="utf-8").read()
+    _main = next(n for n in ast.parse(_src).body
+                 if isinstance(n, ast.FunctionDef) and n.name == "main")
+    _calls = {getattr(n.func, "id", "") for n in ast.walk(_main)
+              if isinstance(n, ast.Call)}
+    ck("⭐ `main()` 真的會叫反方向那一支（⛔ 不是函式在那裡沒人叫）",
+       "ours_only_verdict" in _calls, str(sorted(x for x in _calls if x)))
+    _cks = [n for n in ast.walk(_main) if isinstance(n, ast.Call)
+            and getattr(n.func, "attr", "") == "check"]
+    _rev = [c for c in _cks if isinstance(c.args[0], ast.Constant)
+            and "反方向" in c.args[0].value]
+    ck("⭐⭐ 而它接上了一道 `rl.check`（⛔ 只寫 info 的話沒有人在守）",
+       len(_rev) == 1, str(len(_rev)))
+
     if FAIL:
         print(f"⛔ {len(FAIL)} 項沒過：{FAIL}")
         return 1
