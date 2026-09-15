@@ -614,7 +614,7 @@ def survivor_case(out):
              ("6251", "定穎", "sii", "2022-08-12", 110, 6),
              ("5371", "中光電", "otc", "2026-08-21", 110, 6))
     for code, name, mkt, last, y, m in cases:
-        url = MH.rev_url(mkt, y, m)
+        url = MH.rev_url(mkt, y, m, "0")
         out.append("")
         out.append(f"  ── {code} {name}（{mkt}）｜我方最後一筆成交 {last}"
                    f"｜問民國 {y} 年 {m} 月那一期")
@@ -663,7 +663,7 @@ def revenue_hist_columns(out):
     """
     import mops_history as MH
     out.append("── ⭐ `t21sc03`（revenue_hist 的來源）的欄名：有沒有公告日")
-    url = MH.rev_url("sii", 114, 1)          # 民國 114 年 1 月，上市
+    url = MH.rev_url("sii", 114, 1, "0")          # 民國 114 年 1 月，上市
     out.append(f"   {url}")
     raw, err = B.get(url, retries=2, timeout=60)
     if err or not raw:
