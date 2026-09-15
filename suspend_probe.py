@@ -36,7 +36,7 @@ import urllib.error
 import urllib.request
 # ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
 import ca_chain  # noqa: F401
-from backfill import why                                     # noqa: E402
+from backfill import js_shell, why                           # noqa: E402
 from delist_probe import _spread                             # noqa: E402
 from datetime import datetime, timedelta, timezone
 
@@ -488,8 +488,10 @@ def probe_longhalt(say, sleep):
                 say("   " + _ln)
         elif isinstance(_j, dict):
             say(f"   ④ 頂層是**物件**、鍵：{sorted(_j)[:12]}")
-        n_tr = len(re.findall(r"<tr[ >]", t, re.I))
-        n_js = len(re.findall(r"\.js[\"'?]", t))
+        # ⭐ 這一族的判準收成**一份**（`backfill.js_shell`，四點五）：
+        #   ⛔ `mops_probe` 本來沒有它 ⇒ 把一個 js 空殼判成「這條路不可用」。
+        #   ⚠ 輸出的字一個都沒改——換的是**數字的來源**。
+        _han2, n_tr, n_js, _shell = js_shell(raw)
         say(f"   ③ <tr> {n_tr} 個｜js {n_js} 支")
         time.sleep(sleep)
     say("\n⇒ ① 沒有命中 ⇒ 這條路不對，⛔ **不要**因為名字像就接上去。")

@@ -976,6 +976,37 @@ def parse_inst(d, day, known=None):
     return out, note
 
 
+def js_shell(text):
+    """這一頁是不是**js 空殼**（＝框架回來了，而資料是載入後才由 js 取的）。
+
+    → `(中文字數, <tr> 數, js 支數, 是不是空殼)`。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼這一條要收成一份
+
+    `suspend_probe` 早就有這個判準，而且連處置都寫死了：
+
+        「① 有命中但 ③ 是 js 空殼 ⇒ 記成**我方取不到**，
+          跟櫃買那三頁同一種，⛔ **不是**『證交所沒有』」
+
+    ⚠ 而 2026-09-15 量 MOPS `t05st01` 時，`mops_probe` **沒有**這一條
+    ⇒ 它把一個 js 空殼判成「期別參數被忽略，這條路不可用」
+    ⛔ 而那兩句話的下一步完全相反：
+      「不可用」會讓人**不再去試**；「我方取不到」是一個**還沒解決的工程問題**。
+
+    ⇒ 實測那一頁：22,788 bytes、中文 516 字、`<tr>` 14 個，
+      而前 160 個可見字是 `公開資訊觀測站 … window.onload=getMsg;`
+      ——⭐ **站台外框加 JavaScript，一列資料都沒有。**
+
+    ⚠ 判準是**三個一起看**，⛔ 不是任何一個單獨成立：
+    表格少（資料頁一定有很多 `<tr>`）＋ js 多（外框才會掛一堆 .js）。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    han = len(re.findall("[一-龥]", t))
+    n_tr = len(re.findall(r"<tr[ >]", t, re.I))
+    n_js = len(re.findall(r"\.js[\"'?]", t))
+    return han, n_tr, n_js, (n_tr < 20 and n_js >= 3)
+
+
 def why(err, cap=160):
     """把錯誤訊息縮短成一行，⭐ **保留頭也保留尾**。⭐ 只有這一份實作（四點五）。
 

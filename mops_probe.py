@@ -147,13 +147,18 @@ def bridge_case(api, y1, y2, out, **kw):
     #
     #   ⚠ CLAUDE.md 二③ 記過同一個坑：hist.tpex 的 4,449 bytes 查無資料頁
     #     讓 **32 個年份全部命中**。⇒ 所以這裡要把**內容自己**講出來。
+    shell = {}
     for tag, raw in ((y1, a), (y2, b)):
         t = raw.decode("utf-8", "replace")
-        han = len(__import__("re").findall("[一-龥]", t))
-        n_tr = len(__import__("re").findall(r"<tr[ >]", t, __import__("re").I))
+        # ⭐ 「是不是 js 空殼」走**唯一那一份**（`backfill.js_shell`，四點五）
+        #   ——`suspend_probe` 早就有這個判準，而這一支沒有
+        #   ⇒ 它把一個空殼判成「期別參數被忽略」（2026-09-15 實測）。
+        han, n_tr, n_js, is_shell = B.js_shell(raw)
+        shell[tag] = is_shell
         hits = [w for w in ("查無", "無資料", "沒有符合", "查詢無", "錯誤")
                 if w in t]
-        out.append(f"    [{tag}] 中文 {han:,} 字｜<tr> {n_tr} 個"
+        out.append(f"    [{tag}] 中文 {han:,} 字｜<tr> {n_tr} 個｜js {n_js} 支"
+                   + ("　⛔ **js 空殼**" if is_shell else "")
                    + (f"｜⛔ 出現 {hits}" if hits else "｜（沒有查無字樣）"))
         # ⛔⛔ 2026-09-15 第二次付代價：上面那三個**數字**仍然分不出第三種形狀
         #   ——「它回的是**查詢表單**，不是結果」。表單頁一樣沒有「查無」字樣、
@@ -167,7 +172,15 @@ def bridge_case(api, y1, y2, out, **kw):
         out.append(f"      ⭐ 前 160 字：{_vis[:160]}")
     _t1 = a.decode("utf-8", "replace")
     _blank = any(w in _t1 for w in ("查無", "無資料", "沒有符合", "查詢無"))
-    if same and _blank:
+    # ⛔⛔ js 空殼要**先**判：它同時滿足「兩期相同」與「沒有查無字樣」
+    #   ⇒ 不先攔下來就會被判成「期別參數被忽略 ⇒ 這條路不可用」，
+    #   ⚠ 而那兩句話的下一步**完全相反**（不可用 ⇒ 不再去試；取不到 ⇒ 還沒解決）。
+    if all(shell.values()):
+        out.append("  ⇒ ⚠⚠ **兩期都是 js 空殼**（框架回來了、資料是載入後由 js 取的）"
+                   "　⇒ ⛔ **不可判定**它有沒有歷史——這是「**我方取不到**」，"
+                   "跟 TDCC `qryStockAjax` 回 2 bytes、櫃買那三頁同一族，"
+                   "⛔ **不是**「官方沒有」，⛔ 也不是「期別參數被忽略」。")
+    elif same and _blank:
         out.append("  ⇒ ⚠⚠ **兩期相同，而且兩期都是「查無資料」頁**"
                    "　⇒ ⛔ **不可判定**它有沒有歷史——"
                    "這比較像是**別的參數沒給對**（例如逐檔查要給公司代號），"

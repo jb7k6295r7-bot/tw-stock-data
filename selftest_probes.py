@@ -687,6 +687,48 @@ def check_bridge_blank_vs_ignored():
     if not ok:
         print(f"    實得：{txt[-220:]}")
         bad += 1
+    # ⛔⛔ ④ 而**真正**回來的是第四種：**js 空殼**（實測 `t05st01`：
+    #   22,788 bytes、中文 516 字、`<tr>` 14 個，前 160 字是
+    #   `公開資訊觀測站 … window.onload=getMsg;` ⇒ 框架加 JavaScript，一列資料都沒有）。
+    #   ⚠ 它**同時**滿足「兩期相同」與「沒有查無字樣」⇒ 舊判準判成「這條路不可用」，
+    #   ⛔ 而正確的是「**我方取不到**」——兩句話的下一步完全相反。
+    #   ⭐ 而這個判準 `suspend_probe` **早就有**（四點五：收成一份 `backfill.js_shell`）。
+    shell = ("<html><head>" + '<script src="a.js"></script>' * 4
+             + "</head><body>公開資訊觀測站 全站搜尋 營收 除權息"
+               "<table><tr><td>x</td></tr></table></body></html>").encode("utf-8")
+    txt = _run(shell, shell)
+    ok = "js 空殼" in txt and "我方取不到" in txt and "這條路不可用" not in txt
+    print(("✓ " if ok else "✗ ")
+          + "bridge_case ④ ⭐ 兩期都是 **js 空殼** ⇒ 「我方取不到」"
+            "（⛔ 不是「這條路不可用」，⛔ 也不是「官方沒有」）")
+    if not ok:
+        print(f"    實得：{txt[-260:]}")
+        bad += 1
+    # ⭐ 而那一份判準自己也要驗（⛔ 不是只驗呼叫點）
+    import backfill as _B
+    data = ("<html><body><table>" + "<tr><td>重大訊息</td></tr>" * 40
+            + "</table></body></html>").encode("utf-8")
+    ok = _B.js_shell(shell)[3] is True and _B.js_shell(data)[3] is False
+    print(("✓ " if ok else "✗ ")
+          + "backfill.js_shell 本身：空殼 True／資料頁 False")
+    if not ok:
+        print(f"    空殼 {_B.js_shell(shell)}｜資料 {_B.js_shell(data)}")
+        bad += 1
+    # ⛔⛔ 而上面那兩個假回應**分不出** `and` 與 `or`（兩個條件同進同出）
+    #   ⇒ 「改成任一個就算」的突變**全綠**（2026-09-15 實測）。
+    #   ⭐ 而真正會踩到的就是那一種：**真的資料頁也會掛 js**
+    #     ⇒ 用 `or` 的話，一份有 40 列資料的頁面會被判成空殼
+    #     ⇒ ⛔ 那會把一條**通的**路記成「我方取不到」。
+    data_js = ("<html><head>" + '<script src="a.js"></script>' * 5
+               + "</head><body><table>" + "<tr><td>重大訊息</td></tr>" * 40
+               + "</table></body></html>").encode("utf-8")
+    ok = _B.js_shell(data_js)[3] is False
+    print(("✓ " if ok else "✗ ")
+          + "backfill.js_shell ⭐ **有 40 列資料、而且掛了 5 支 js** ⇒ 仍然**不是**空殼"
+            "（⛔ 判準是表格少**且** js 多，不是任一個）")
+    if not ok:
+        print(f"    實得 {_B.js_shell(data_js)}")
+        bad += 1
     return bad
 
 
