@@ -23,6 +23,9 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from selftest_workflows import run_blocks as _run_blocks   # noqa: E402  ⭐ 只有一份實作（四點五）
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SH = os.path.join(HERE, "probe_step.sh")
 OK = FAIL = 0
@@ -167,6 +170,60 @@ def main():
     ck(f"⑥ ⭐ 內層秒數 < 外層 `timeout-minutes`（掃到 {n} 處）",
        n >= 3 and not bad,
        f"⛔ 外層比內層小：{bad}" if bad else f"⛔ 母體只有 {n} 處（該有 3 處）")
+
+    # ── ⑦⑧ ⭐⭐ 迴圈自己的 wall-clock 預算（run 133 的病根）──
+    #    run 133：那一步跑了 15 分 12 秒撞到 `timeout-minutes: 15`
+    #    ⇒ `keys_probe` 以後那幾支**一支都沒跑到**，
+    #    ⚠ 而 step 是 **success**、輸出檔逐位元沒變、沒有任何 ✗
+    #    ⇒ ⛔ 「沒跑到」與「跑了而且結果沒變」長得一模一樣。
+    import re as _re2
+    wf_txt = io.open(os.path.join(HERE, ".github", "workflows", "probe.yml"),
+                     encoding="utf-8").read()
+    # ⛔⛔ 第一版我寫成 `timeout-minutes:(\d+)[\s\S]*?PROBE_LOOP_BUDGET_SEC`
+    #   ⇒ 非貪婪是從**檔案裡第一個** `timeout-minutes:` 開始配
+    #   ⇒ 抓到的是 **job 層級的 60 分**，⛔ 不是那一步的
+    #   ⇒ 把預算改成 2000 秒的突變 **全綠**（2000 < 60×60）。
+    #   ⇒ ⭐ 改成：先找到預算那一行，再往**前**找**最近的**一個 `timeout-minutes:`。
+    mb = _re2.search(r"PROBE_LOOP_BUDGET_SEC=\$\{PROBE_LOOP_BUDGET_SEC:-(\d+)\}", wf_txt)
+    prev = list(_re2.finditer(r"timeout-minutes:\s*(\d+)",
+                              wf_txt[:mb.start()])) if mb else []
+    ck("⑦ ⭐⭐ 迴圈的 wall-clock 預算 **小於那一步**的 `timeout-minutes`"
+       "（⛔ 大於等於的話，步驟先被砍 ⇒ 這一層等於沒有）",
+       bool(mb) and bool(prev) and int(mb.group(1)) < int(prev[-1].group(1)) * 60,
+       ("找不到預算那一行" if not mb else
+        f"預算 {mb.group(1)} 秒 vs **最近的**步驟上限 {prev[-1].group(1)} 分"))
+
+    # ⑧ ⭐ **真的跑一次**那段迴圈（預算設 0 ⇒ 一支都不該跑），
+    #    斷言每一支的輸出檔都留下「這一趟沒有跑到」——⛔ 不是比原始碼有沒有那幾個字。
+    blocks = [b for _n, b in _run_blocks(os.path.join(HERE, ".github", "workflows",
+                                                      "probe.yml"))
+              if "PROBE_LOOP_BUDGET_SEC" in b and "LOOP_DEADLINE" in b]
+    if not blocks:
+        ck("⑧ ⭐ 找得到那段迴圈", False, "probe.yml 裡掃不到 PROBE_LOOP_BUDGET_SEC 的 run 區塊")
+    else:
+        d = tempfile.mkdtemp(prefix="probeloop_")
+        try:
+            os.makedirs(os.path.join(d, "data", "meta"))
+            names = _re2.findall(r'"([a-z0-9_]+\.py):(_[a-z0-9_]+\.txt)"', blocks[0])
+            for _sc, _out in names:
+                io.open(os.path.join(d, "data", "meta", _out), "w",
+                        encoding="utf-8").write("舊內容\n")
+            body = _re2.sub(r"\$\{\{[^}]*\}\}", "workflow_dispatch", blocks[0])
+            sh = os.path.join(d, "loop.sh")
+            io.open(sh, "w", encoding="utf-8").write(body)
+            env = dict(os.environ, PROBE_LOOP_BUDGET_SEC="0")
+            p2 = subprocess.run(["bash", sh], cwd=d, capture_output=True,
+                                text=True, env=env, timeout=120)
+            miss = [o for _s2, o in names
+                    if "這一趟沒有跑到" not in
+                    io.open(os.path.join(d, "data", "meta", o), encoding="utf-8").read()]
+            ck(f"⑧ ⭐⭐ 預算 0 ⇒ **{len(names)} 支全部**在自己的輸出檔留下「沒有跑到」"
+               "（⛔ 安靜跳過就是 run 133 那個 bug）",
+               bool(names) and not miss, f"沒留下的：{miss[:5]}｜stderr {p2.stderr[:200]}")
+            ck("⑧ ⭐ 而且母體是 18 支（⛔ 掃不到就是那條正規式縮小了母體）",
+               len(names) >= 18, f"只掃到 {len(names)} 支")
+        finally:
+            shutil.rmtree(d, ignore_errors=True)
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

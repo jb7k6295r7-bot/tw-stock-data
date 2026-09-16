@@ -79,7 +79,7 @@ jobs:
     # ⚠ 實測今天吃掉四趟（run 86／87／97／98，都在開始後約 15 分被砍）
     #   ——⛔ 而我一度把它讀成「基礎設施問題」。
     # ⇒ job 的 timeout 必須**大於任何單一步驟**的 timeout，這裡留足餘裕。
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -227,15 +227,34 @@ jobs:
             echo "⚠ main 上也沒有 delisted.csv（⛔ 那才是真的沒有）"
           ls -l data/meta/delisted.csv || true
 
+      # ⛔⛔ 2026-09-16 run 133：這一步 **10:17:54 → 10:33:06 ＝ 15 分 12 秒**
+      #   ⇒ 撞到 `timeout-minutes: 15` 被砍，而排在 `hist_probe` 後面的
+      #   `keys_probe` 以後那幾支**一支都沒跑到**。
+      #   ⚠ 而畫面上：step **success**（`continue-on-error: true`）、
+      #     輸出檔跟上一趟逐位元相同、沒有任何 ✗
+      #   ⇒ ⛔ 「它沒跑到」與「它跑了而且結果沒變」**長得一模一樣**。
+      #   ⭐ 而這一步的註解早就警告過同一件事（見下面「丁級 11」那一段：
+      #     「排在最後的一定被砍，而且被砍的樣子是『這一支沒有輸出』」）
+      #     ——⚠ 那時是 9 支共用 15 分鐘，現在是 **18 支**。
+      #
+      # ⇒ ⭐ 兩層，⛔ 缺一層都會再犯：
+      #   ① 迴圈**自己**有 wall-clock 預算（`PROBE_LOOP_BUDGET_SEC`），
+      #      用完就**不再跑**，並把剩下那幾支**逐支寫一行 ✗ 進它自己的輸出檔**
+      #      ⇒ ⭐ 可見性由**資料**承擔（四點二⑤），⛔ 不是由 log（log 會捲掉）
+      #   ② 步驟的 `timeout-minutes` 要比①大（①才有機會跑到）
       - name: 跑十四支探針（這支一律全跑）
         if: always()
         continue-on-error: true
-        timeout-minutes: 15
+        timeout-minutes: 26
         env:
           # ⭐ `finmind_probe.py` 要回答「免費層夠不夠、還是一定要付費」
           #   ⇒ ⛔ 沒有 token 的話它只答得出免費層那一半（它會自己講出來）
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: |
+          # ⭐ 迴圈的 wall-clock 預算（⛔ 要比步驟的 `timeout-minutes` 小）
+          PROBE_LOOP_BUDGET_SEC=${PROBE_LOOP_BUDGET_SEC:-1440}
+          LOOP_DEADLINE=$(( $(date +%s) + PROBE_LOOP_BUDGET_SEC ))
+          echo "⏳ 這一輪的迴圈預算：${PROBE_LOOP_BUDGET_SEC} 秒"
           # 兩支都是「只測不寫資料」，輸出進 data/meta/_*_probe.txt 並 commit，
           # 這樣結論會進 repo，不必有人去翻 Actions log。
           # 重跑條件三選一：
@@ -264,6 +283,18 @@ jobs:
                       "broker_probe.py:_broker_probe.txt" \
                       "reduce_ratio_probe.py:_reduce_ratio_probe.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
+            # ① ⭐ 迴圈自己的 wall-clock 預算：用完就**不再跑**，
+            #    ⛔ 而且**不是安靜跳過**——逐支在它自己的輸出檔留一行 ✗。
+            if [ "$(date +%s)" -ge "$LOOP_DEADLINE" ]; then
+              echo "⛔ 迴圈預算用完（${PROBE_LOOP_BUDGET_SEC} 秒）⇒ 沒跑到 $SCRIPT"
+              {
+                echo ""
+                echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') **這一趟沒有跑到 $SCRIPT**"
+                echo "  （迴圈的時間預算 ${PROBE_LOOP_BUDGET_SEC} 秒用完了）"
+                echo "  ⛔ 這一份是上一趟的內容 ⇒ ⚠ 不要當成「這一趟結果沒變」。"
+              } >> "$F" 2>/dev/null || true
+              continue
+            fi
             # ⚠ **手動按下去就是要跑**（條件會讓「我剛按了卻沒跑」變成可能）；
             #   排程觸發時才套三選一的重跑條件：
             #     ① 檔不存在
