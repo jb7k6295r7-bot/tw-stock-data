@@ -413,13 +413,19 @@ def main():
         write(os.path.join(work, "sync_bad.sh"), holed)
         write(os.path.join(work, "hello.py"), "print(1)\n")
         write(os.path.join(work, "gone.py"), "print(2)\n")
+        # ⛔⛔ `sync_code.sh` 要在這一次 commit 就**進去**（⭐ 真實世界就是這樣）。
+        #   ⚠ 本來它是在 commit 之後才 `shutil.copy` 進來的未追蹤檔
+        #   ⇒ 前置那一趥把它推上 main，而**分支的歷史裡沒有它**
+        #   ⇒ ⑨ 那道新閘門正確地把它判成「別人寫的」⇒ 整趥擋下來
+        #   ⇒ ⛔ 而這一节要驗的情境（刪不掉一個檔）**根本沒造出來**
+        #     ——第七點第四個：「斷言沒抓到」與「我沒造出那個情境」一模一樣。
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
         git(work, "add", "-A")
         git(work, "commit", "-q", "-m", "程式")
         env8 = dict(os.environ, GITHUB_REF_NAME="feature")
         # ⚠ 前置那一趟要用**原版**：改過的那份每一趟都會塞 `nope.py`
         #   ⇒ 連前置都會 exit 5 ⇒ main 上根本沒有 hello.py 可以比
         #   （⛔ 第四個陷阱的變形：情境沒造出來，跟斷言沒用長得一樣）
-        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
         subprocess.run(["bash", "sync_code.sh"], cwd=work,
                        capture_output=True, text=True, env=env8)
         os.remove(os.path.join(work, "gone.py"))
@@ -439,6 +445,86 @@ def main():
            "✓ 程式已同步到 main" not in o8, o8[-300:])
     finally:
         shutil.rmtree(d8, ignore_errors=True)
+
+    # ═══════════════════════════════════════════════════════════
+    # ⑨ ⛔⛔ `sync_code.sh`：**別人剛推上 main 的改動不可以被覆寫**
+    #
+    # 本 repo 四條線各一個分支，而它們搬進同一個 main。
+    # ⚠ 2026-09-16 量到：回測線分支跟 main 差 117 個檔、main 多 22,154 行
+    #   ⇒ 它在自己分支上派一趥工，這一步就把那 117 個檔回退成舊版。
+    #   ⭐ 而它今天做不到的唯一理由是 `sync_code.sh` 還沒到它分支上——**那是運氣**。
+    #
+    # ⇒ 判準是**行為**：造一個 main 被別人改過的情境，然後看終點——
+    #   main 上那一改**還在不在**。⛔ 不是看它有沒有印那幾個字（第七點⑧）。
+    # ═══════════════════════════════════════════════════════════
+    d9 = tempfile.mkdtemp(prefix="syncother_")
+    try:
+        print("\n── ⑨ `sync_code.sh`：別條線剛推上 main 的改動 ⇒ ⛔ 不可以被覆寫 ──")
+        origin, work = build(d9)
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
+        write(os.path.join(work, "shared.py"), "V1\n")
+        write(os.path.join(work, "mine.py"), "mine-1\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "程式")
+        env9 = dict(os.environ, GITHUB_REF_NAME="feature")
+        r = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                           capture_output=True, text=True, env=env9)
+        ck("  前置：第一趥同步把兩支推上 main",
+           r.returncode == 0
+           and git(work, "show", "origin/main:shared.py").stdout == "V1\n",
+           (r.stdout + r.stderr)[-300:])
+
+        # ⭐ 別條線（另一個 clone）把 `shared.py` 改成 V2 推上 main
+        other = os.path.join(d9, "other")
+        subprocess.run(["git", "clone", "-q", origin, other], check=True)
+        git(other, "config", "user.email", "o@example.invalid")
+        git(other, "config", "user.name", "o")
+        write(os.path.join(other, "shared.py"), "V2-別人改的\n")
+        git(other, "add", "-A")
+        git(other, "commit", "-q", "-m", "別條線改了 shared.py")
+        git(other, "push", "-q", "origin", "main")
+
+        # 本分支根本不知道 V2，只改了自己的 mine.py
+        write(os.path.join(work, "mine.py"), "mine-2\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "改 mine.py")
+        r9 = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                            capture_output=True, text=True, env=env9)
+        o9 = r9.stdout + r9.stderr
+        git(work, "fetch", "-q", "origin", "main")
+        now = git(work, "show", "origin/main:shared.py").stdout
+        ck("⑨ ⭐⭐ **終點**：main 上別人那一改還在"
+           "（⛔ 沒被回退成分支的 V1）",
+           now == "V2-別人改的\n", repr(now[:40]) + "｜" + o9[-300:])
+        ck("⑨ ⛔ 而這一趥的同步是**整趥擋下來**"
+           "（⚠ 部分同步會把 main 留在半套狀態）",
+           git(work, "show", "origin/main:mine.py").stdout == "mine-1\n",
+           repr(git(work, "show", "origin/main:mine.py").stdout[:40]))
+        ck("⑨ ⭐ 而它要**大聲講出是哪一個檔**"
+           "（⛔ 静静跳過跟沒這道闘門一樣）",
+           "shared.py" in o9 and "不同步" in o9, o9[-400:])
+        ck("⑨ ⛔ 而它**不算失敗**（rc=0）"
+           "：擋下來是設計內，⛔ 不該賠掉整趥抓取",
+           r9.returncode == 0, f"rc={r9.returncode}")
+
+        # ⭐ 反向驗：照它印的那一句**把別人那一份採過來**之後，同步要通。
+        #   ⛔ 不用 `git merge origin/main`：同步自己會在 main 上造 commit，
+        #   而分支沒有它們 ⇒ merge 幾乎一定衝突（實測過）。
+        #   ⭐ 而「採過來」正是回測線 2157 實際做的那一個動作。
+        git(work, "fetch", "-q", "origin", "main")
+        git(work, "checkout", "origin/main", "--", "shared.py")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "採用 main 上別人那一份")
+        r9b = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                             capture_output=True, text=True, env=env9)
+        git(work, "fetch", "-q", "origin", "main")
+        ck("⑨ ⭐⭐ **反向驗**：把別人那一份採過來之後同步就**通**，"
+           "而別人那一改不會不見（⛔ 這道闥門不是把路堵死）",
+           git(work, "show", "origin/main:mine.py").stdout == "mine-2\n"
+           and git(work, "show", "origin/main:shared.py").stdout == "V2-別人改的\n",
+           (r9b.stdout + r9b.stderr)[-300:])
+    finally:
+        shutil.rmtree(d9, ignore_errors=True)
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

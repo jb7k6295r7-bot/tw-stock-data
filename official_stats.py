@@ -654,7 +654,29 @@ def our_market_years(sid, market, root=None):
 #: ⭐ 官方「這一格沒有資料」的那句話。⛔ 它**講不出**是哪一種
 #  （未上市／參數越界／端點壞掉都長這樣，CLAUDE.md 第二點）
 #  ⇒ 所以它**單獨**不可以當判準，一定要跟我方資料做「且」。
-NODATA_MARK = "沒有符合條件的資料"
+# ⛔⛔ 2026-09-16 晚：這一行本來是**一個字串**，而那是 **TWSE** 的話。
+#   ⇒ feeds run 167（tpex 月表）實測：本趥 5,000 格**失敗 1,309**，
+#     訊息全部是 `monthlyStock stat='**查無該筆資料**,請重新查詢!!'`
+#   ⇒ ⛔ 比不中 ⇒ 那 1,309 格**一格都沒被記起來** ⇒ 每一趥都回來
+#   ⇒ ⭐ 跟早上幫 twse 修好的**同一個 bug**，只是另一個市場沒跟上
+#     ——CLAUDE.md 四點五那一族：**修好一支、另一支沒跟上，而沒有人會發現**。
+#
+# ⇒ ⭐ 改成**逐市場**，而且查不到要**大聲丟例外**：
+#   ⛔ 不可以有預設值——預設值會讓下一個市場默默套上**別人的那句話**，
+#   而那個 bug 的畫面是「掉這麼多格而一路沒人說」（四點五的通則）。
+# ⚠ 比的是**子串**，⛔ 不含標點：官方兩邊的驚嘆號個數不同（`!` vs `!!`）。
+NODATA_MARK = {"twse": "沒有符合條件的資料",
+               "tpex": "查無該筆資料"}
+
+
+def nodata_mark(market):
+    """這個市場的「官方說沒有」是哪一句 → str。⛔ 查不到就丟例外。"""
+    if market not in NODATA_MARK:
+        raise ValueError(
+            f"⛔ market={market!r} 沒有登記「官方說沒有」那一句話；"
+            f"目前只有 {sorted(NODATA_MARK)}。"
+            " ⚠ 默默套別人的那句會讓這個掃描永遠不收斂。")
+    return NODATA_MARK[market]
 
 
 def sweep_consistent_nodata(err, sid, roc_y, market, root=None):
@@ -690,7 +712,7 @@ def sweep_consistent_nodata(err, sid, roc_y, market, root=None):
     ⇒ 那時這一格會被記成「問完了」而其實沒有。⭐ 而它**看得出來**：
     台帳裡那幾格帶 `nodata` 標記，⇒ 我方日檔日後補齊時可以拿它重開。
     """
-    if NODATA_MARK not in str(err):
+    if nodata_mark(market) not in str(err):
         return False
     return str(roc_y + 1911) not in our_market_years(sid, market, root)
 
@@ -771,7 +793,7 @@ def run_sweep(a, rl, today):
     if nodata:
         save_sweep_done(dp, nodata, today, why="nodata")
     rl.info("⭐ 問完了但官方沒有",
-            f"**{len(nodata):,}** 格（官方說「{NODATA_MARK}」**而且**我方那一年"
+            f"**{len(nodata):,}** 格（官方說「{nodata_mark(a.market)}」**而且**我方那一年"
             f"也沒有 `{a.market}` 的日檔 ⇒ 兩邊一致）"
             "　⇒ ⭐ 記進台帳、**不再重問**；⛔ 而它帶 `nodata` 標記，"
             "我方日檔日後補齊時拿它重開"

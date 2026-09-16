@@ -200,6 +200,12 @@ jobs:
       #     ② 撞到時間預算要**講出來**（舊寫法整個 shell 被砍 ⇒ 一個字都沒留，
       #        ⚠ 而 `continue-on-error` 讓那一步顯示 success）
       #   ⚠ 走 `ci_step.py` 的理由跟上一步一樣：它紅了要進**資料**，⛔ 不是只在 log。
+      # ⭐ `feed_hosts.py` 的自測（條款分族那一支；離線、不連網）。
+      - name: 驗 feed_hosts（我方哪一支打哪一族主機）
+        if: always()
+        continue-on-error: true
+        run: python ci_step.py selftest_feed_hosts.py
+
       - name: 驗 probe_step.sh（探針壞掉時留不留得下痕跡）
         run: python ci_step.py selftest_probe_step.py
 
@@ -281,7 +287,8 @@ jobs:
                       "finmind_probe.py:_finmind_probe.txt" \
                       "bsr_probe.py:_bsr_probe.txt" \
                       "broker_probe.py:_broker_probe.txt" \
-                      "reduce_ratio_probe.py:_reduce_ratio_probe.txt"; do
+                      "reduce_ratio_probe.py:_reduce_ratio_probe.txt" \
+                      "feed_hosts.py:_feed_hosts.txt"; do
             SCRIPT=${pair%%:*}; F=data/meta/${pair##*:}
             # ① ⭐ 迴圈自己的 wall-clock 預算：用完就**不再跑**，
             #    ⛔ 而且**不是安靜跳過**——逐支在它自己的輸出檔留一行 ✗。

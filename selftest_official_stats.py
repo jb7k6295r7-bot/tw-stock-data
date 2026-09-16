@@ -866,6 +866,48 @@ def main():
            if isinstance(n, __import__("ast").Call)
            and isinstance(n.func, __import__("ast").Name)})
 
+    # ═══════════════════════════════════════════════════════════
+    # ⒓ ⛔⛔ 「官方說沒有」那一句是**逐市場**的
+    #
+    # feeds run 167（tpex 月表）實測：5,000 格失敗 1,309，訊息是
+    # `monthlyStock stat='查無該筆資料,請重新查詢!!'`
+    # ⇒ 而早上幫 twse 修好的那一行比的是 **TWSE** 的話「沒有符合條件的資料」
+    # ⇒ ⛔ 那 1,309 格一格都沒被記起來 ⇒ 每一趥都回來 ⇒ **永遠不收斂**。
+    # ⭐ 四點五那一族：修好一支、另一支沒跟上，而畫面上看不出來。
+    # ═══════════════════════════════════════════════════════════
+    d13 = tempfile.mkdtemp(prefix="nodata_")
+    try:
+        os.makedirs(os.path.join(d13, "stocks"), exist_ok=True)
+        # 1111：民108（西元 2019）有 tpex 日檔，民104 沒有
+        io.open(os.path.join(d13, "stocks", "1111.csv"), "w",
+                encoding="utf-8").write(
+            "date,stock_id,market,close\n2019-03-01,1111,tpex,10\n")
+        TW = "FMSRFK stat='很抱歉，沒有符合條件的資料!'"
+        TP = "monthlyStock stat='查無該筆資料,請重新查詢!!'"
+        ck("⒓ ⭐⭐ **tpex** 的那一句話認得出來"
+           "（⛔ 這就是 run 167 那 1,309 格掉的地方）",
+           O.sweep_consistent_nodata(TP, "1111", 104, "tpex", d13), TP)
+        ck("⒓ ⛔ 而**同一句話**在 twse 那邊不算"
+           "（⚠ 兩個市場的官方話不一樣）",
+           not O.sweep_consistent_nodata(TP, "1111", 104, "twse", d13), TP)
+        ck("⒓ ⭐ twse 那一句仍然認得出來（⛔ 不可以改壞舊的）",
+           O.sweep_consistent_nodata(TW, "1111", 104, "twse", d13), TW)
+        ck("⒓ ⛔ 而我方那一年**有** tpex 日檔 ⇒ 不算「問完了」"
+           "（⭐ 兩個條件的「且」沒有因為改逐市場而不見）",
+           not O.sweep_consistent_nodata(TP, "1111", 108, "tpex", d13))
+        ck("⒓ ⛔⛔ `nodata_mark` 遇到沒登記的市場要**大聲丟例外**"
+           "（⚠ 默默套別人那句 ⇒ 掃描永遠不收斂，而畫面正常）",
+           _raises(lambda: O.nodata_mark("sii")))
+        # ⭐⭐ 四點五那條通則：兩種相反語意的參數不可以有預設值
+        import inspect as _i13
+        ck("⒓ ⭐⭐ `sweep_consistent_nodata` 的 `market` **沒有預設值**",
+           _i13.signature(O.sweep_consistent_nodata)
+           .parameters["market"].default is _i13.Parameter.empty)
+        ck("⒓ ⭐ 兩個市場都登記了（⛔ 只剩一個就代表有人把語意抄平了）",
+           set(O.NODATA_MARK) == {"twse", "tpex"}, str(sorted(O.NODATA_MARK)))
+    finally:
+        shutil.rmtree(d13, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
