@@ -123,6 +123,22 @@ def main():
            F.classify_ep({"openapi.twse.com.tw/"})[0] == {"openapi.twse.com.tw/"},
            str(F.classify_ep({"openapi.twse.com.tw/"})))
 
+        ck("⑥ ⭐⭐ 第三方主機（FinMind／GitHub）**不在這份條款的管轄**"
+           "（⛔ 算進去會把暴露面話大）",
+           not F.in_terms_scope("api.finmindtrade.com")
+           and not F.in_terms_scope("github.com"))
+        ck("⑥ ⭐ 而交易所的**子網域**算在管轄裡"
+           "（mopsov／isin／openapi 都是 twse.com.tw 底下）",
+           F.in_terms_scope("mopsov.twse.com.tw")
+           and F.in_terms_scope("openapi.twse.com.tw")
+           and F.in_terms_scope("www.tpex.org.tw"))
+        # ⛔⛔ 這兩條的第一版我寫成 `… is False or True` ⇒ **恆真**。
+        #   ⚠ 而它印出來跟真的一模一樣（四點五那個坑）。
+        ck("⑥ ⛔ `twse.com.tw.evil.example`（把網域放在**前面**）不算",
+           F.in_terms_scope("twse.com.tw.evil.example") is False)
+        ck("⑥ ⛔ `faketwse.com.tw`（**不是子網域**，只是後綴像）不算",
+           F.in_terms_scope("faketwse.com.tw") is False)
+
         wr = F.writes_of(os.path.join(d, "real_feed.py"))
         ck("④ ⭐ 「寫哪裡」取得到（`universe`）", wr == {"universe"}, str(wr))
     finally:

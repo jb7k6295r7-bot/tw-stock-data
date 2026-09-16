@@ -126,6 +126,23 @@ def writes_of(path):
 # ⚠ 而「只有主機、沒有路徑」的（例如探針拿首頁當種子）仍然進
 #   「要逐條看」那一格——⛔ 不可以猜它是哪一族。
 OPEN_PATHS = ("/openapi/",)
+# ⛔⛔ 2026-09-16 晚再補一層：第一版把 `api.finmindtrade.com`／`github.com`
+#   也算進 B（網站型）⇒ ⛔ 而那份條款是 **TWSE／TPEx 自己的網站使用條款**
+#   ⇒ 把第三方主機算進去會把暴露面**話大**，
+#   而那又是一個「給別人拿去裁的數字」（第七點）。
+# ⇒ ⭐ 先問「這個主機在不在**這份條款的管轄**裡」，再談 A／B。
+# ⚠ 而 `mops.twse.com.tw`／`mopsov.twse.com.tw`／`isin.twse.com.tw` 這些
+#   都是 `twse.com.tw` 底下 ⇒ 算在管轄裡；⛔ 而「管不管得到子網域」
+#   本身也是**法律解讀**，這一支只按網域標，⛔ 不裁。
+TERMS_DOMAINS = ("twse.com.tw", "tpex.org.tw", "gretai.org.tw")
+
+
+def in_terms_scope(host):
+    """這個主機在不在「交易所網站使用條款」的網域底下 → bool。
+
+    ⛔ 這只是**網域比對**，不是「條款管不管得到它」的答案。
+    """
+    return any(host == d or host.endswith("." + d) for d in TERMS_DOMAINS)
 
 
 def endpoints_of(path):
@@ -228,10 +245,15 @@ def main():
     #   全丟進「要逐條看」，那等於沒分類完。
     P("")
     P("── ⭐⭐ 端點層（主機 ＋ 前兩層路徑）：`www.tpex.org.tw` 那一格拆開之後 ──")
+    P(f"   ⚠ 母體**只收在條款網域底下**的（{'／'.join(TERMS_DOMAINS)}）"
+      "——⛔ FinMind／GitHub 那些不在這份條款的管轄裡，算進去會把暴露面話大")
     ea = eb = eu = 0
     unk_list = []
     for mod in sorted(mods):
         eps = endpoints_of(os.path.join(HERE, mod))
+        if not eps:
+            continue
+        eps = {e for e in eps if in_terms_scope(e.split("/")[0])}
         if not eps:
             continue
         a2, b2, u2 = classify_ep(eps)
