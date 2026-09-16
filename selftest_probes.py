@@ -1872,7 +1872,10 @@ def check_avg_residual():
         if not c:
             bad += 1
 
-    sid, roc = K.AVG_RESID
+    # ⭐ `AVG_RESID` 現在是**三個錨點**（一群一個 ＋ 一個對照組）⇒ 這裡拿第一個測。
+    ck("⓪ ⭐ 錨點是**三個**（⛔ 一個的話「另外兩群沒量到」不會有人發現）",
+       len(K.AVG_RESID) == 3, str(K.AVG_RESID))
+    sid, roc = K.AVG_RESID[0]
     ad = roc + 1911
 
     def resp(rows, mo):
@@ -1908,7 +1911,7 @@ def check_avg_residual():
 
         B.get = K.B.get = fake
         mark = len(K.LINES)
-        K.avg_residual()
+        K._avg_residual_one(sid, roc)
         t = "\n".join(K.LINES[mark:])
     finally:
         B.get = K.B.get = real_get
@@ -1932,6 +1935,10 @@ def check_avg_residual():
     ck("⑤ ⛔ `avg_residual` 跑完**沒有丟例外**（run 131 就是死在這裡）",
        "官方回到的天數" in t, t)
     # ⑥ ⭐⭐ `_same_price` 的**三種**回答（⛔ 不是兩種）——拿合成輸入驗，⛔ 不靠現場
+    ck("⑦ ⭐ 差額的**形狀**要自己講出來（相異值＋合計；⛔ 只說「有幾天不同」講不出是哪一種）",
+       "差額的相異值" in t and "差額合計" in t, t)
+    ck("⑧ ⭐⭐ `avg_residual()` 真的把**三個錨點都跑過**（⛔ 只跑第一個看起來一樣）",
+       _calls_all_anchors(K), "")
     ck("⑥ ⭐⭐ `_same_price` 回三種：相同／不同／**比不了**（⛔ None 不可以壓成 False）",
        (K._same_price("4.3", "4.30") is True
         and K._same_price("4.3", "4.31") is False
@@ -1940,6 +1947,24 @@ def check_avg_residual():
        str([K._same_price("4.3", "4.30"), K._same_price("4.3", "4.31"),
             K._same_price("4.3", "--"), K._same_price("", "4.30")]))
     return bad
+
+
+def _calls_all_anchors(K):
+    """⭐ `avg_residual()` 是不是**逐個**跑 `AVG_RESID`——⛔ 不是只跑第一個。
+
+    ⚠ 判準用**行為**（換一份假的 AVG_RESID，數 `_avg_residual_one` 被叫幾次），
+    ⛔ 不是掃原始碼有沒有 `for`（第七點第八個）。
+    """
+    import ast as _a
+    real_one, real_anchor = K._avg_residual_one, K.AVG_RESID
+    seen = []
+    try:
+        K._avg_residual_one = lambda sid, roc: seen.append((sid, roc))
+        K.AVG_RESID = (("A", 1), ("B", 2), ("C", 3))
+        K.avg_residual()
+    finally:
+        K._avg_residual_one, K.AVG_RESID = real_one, real_anchor
+    return seen == [("A", 1), ("B", 2), ("C", 3)]
 
 
 def check_terms_case():
