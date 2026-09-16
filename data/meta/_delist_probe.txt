@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T10:09:48+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35044936870
+# ⏱ 這一趟：2026-09-16T10:33:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35047711418
 # 下市清單／變更交易 端點探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
@@ -225,11 +225,11 @@
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml

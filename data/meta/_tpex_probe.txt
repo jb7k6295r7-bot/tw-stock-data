@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T10:02:43+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35044936870
+# ⏱ 這一趟：2026-09-16T10:27:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35047711418
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -603,3 +603,24 @@
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
               {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1150915,"subtitle":"近年個股成交資訊(當年度統計至 1150915 止)"},{}],"stat":"ok"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
+
+[15] ⭐⭐ 上櫃**零股**：先讀那幾頁自己寫的 `action:`（⛔ 這一趟不打，讀到了才打）
+     線索來源：我方自己的 `data/meta/_site_inventory.txt`（3.5④）
+
+     ── 盤中零股每日收盤行情
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/pricing.html
+     ✓ 11,326 bytes｜它自己寫的 action：['afterTrading/oddQuote']
+     ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query']
+
+     ── 盤後零股每日收盤行情
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/post-pricing/day.html
+     ✓ 11,680 bytes｜它自己寫的 action：['afterTrading/odd']
+     ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query', 'type']
+
+     ── 零股交易成交統計
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/statistics/day.html
+     ✓ 11,837 bytes｜它自己寫的 action：['afterTrading/oddSummary']
+     ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query', 'type']
+
+     ⇒ ⭐ 下一步：拿讀到的 action 照 `API_PATTERN = "/www/{LANG}/{ACTION}"` 打，
+       ⛔ 判準是**它自己回顯了我送的日期**，不是「有回列」（第二點）。
