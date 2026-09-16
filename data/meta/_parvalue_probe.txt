@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T18:26:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35083932578
+# ⏱ 這一趟：2026-09-16T18:53:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35086620798
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -35,7 +35,7 @@
   ── 上櫃變更股票面額預告表
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
      ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
-     [形狀] 10,338 bytes｜中文 744 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**
+     [形狀] 11,276 bytes｜中文 744 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
      ①  `/…/api/…` 出現過哪些：1 種
          /fonts.googleapis
      ②  `fetch(` 的對象：0 種
@@ -145,12 +145,19 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          …（本站另 2 支未挖，cap=8）
-   ⑥ 頁面自己的 inline <script>：**2 段**（共 424 字）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,345 字）
       ── 第 1 段（130 字）
          function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
       ── 第 2 段（294 字）
          "use strict";function modifyJson(e){for(let t of e.tables[0].data)t[7]=`<a href="${t[7]}">試算</a>`}tables.init({pattern:API_PATTERN,action:"bulletin/pvChgAnn",au
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3bf53726d9e469e',t:'MTc4OTU1NTk5MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
    ⑦ `data-*` 屬性：**2 種**
       data-format = 'csv'
       data-format = 'print'
@@ -162,7 +169,7 @@
            [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/16 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
-           [形狀] 9,954 bytes｜中文 694 字｜<tr> 0 個｜js 9 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
+           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
      ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
@@ -175,7 +182,7 @@
   ── 變更股票面額恢復交易參考價
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
      ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
-     [形狀] 10,838 bytes｜中文 748 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**
+     [形狀] 11,776 bytes｜中文 748 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
      ①  `/…/api/…` 出現過哪些：1 種
          /fonts.googleapis
      ②  `fetch(` 的對象：0 種
@@ -285,7 +292,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          …（本站另 2 支未挖，cap=8）
-   ⑥ 頁面自己的 inline <script>：**2 段**（共 650 字）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,571 字）
       ── 第 1 段（130 字）
          function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
       ── 第 2 段（520 字）
@@ -293,6 +300,13 @@
          pWindow.init(),tables.init({pattern:API_PATTERN,action:"bulletin/pvChgRslt",autoLoad:!0,autoChange:!1,beforeInit:t=>{},beforeRender:modifyJson,afterRender:()=>{
          },tables:[{align:"auto F0 C1 C2 C3",sortable:!0,pagin:10}]}),$("#tables-content .rwd-table").on("click","tbody>tr",(t=>{const e=$(t.currentTarget).find("td:firs
          t>.hide");popupWindow.open(e.html())}));
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3bf53ae7bf147ff',t:'MTc4OTU1NjAwMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
    ⑦ `data-*` 屬性：**4 種**
       data-format = 'D'
       data-format = 'csv'
@@ -306,7 +320,7 @@
            [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260916~20260917","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
-           [形狀] 9,954 bytes｜中文 694 字｜<tr> 0 個｜js 9 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
+           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
      ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt　[形狀] 8,025 bytes

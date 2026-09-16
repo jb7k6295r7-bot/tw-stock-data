@@ -1,15 +1,14 @@
-# ⏱ 這一趟：2026-09-16T17:57:14+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35080573322
+# ⏱ 這一趟：2026-09-16T19:00:57+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35086620798
 tls_probe.py　TPEx／TWSE 的 TLS 憑證鏈探針。⛔ 只讀不寫資料，也**不改任何驗證設定**。
 
 ⛔ 只讀不寫資料，也**不改任何驗證設定**。三發的差別只在「拿哪一份 CA」。
 
-certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/certifi/cacert.pem）
+certifi：**無** ⇒ ⚠ 第二發跳過，⛔ 這一趟答不出「是不是我方 CA 太舊」
 
 ====================================================================
 ■ TPEx（今天掛的那一站）
   https://www.tpex.org.tw/www/zh-tw/margin/sbl?date=2026/09/11&id=&response=json
     系統 CA                  ✅ HTTP 200｜99,592 bytes
-    certifi 的 CA           ✅ HTTP 200｜99,592 bytes
     對方送的葉憑證       1,923 bytes
     ⭐ 對方實際送了 **4 張**憑證（有中間憑證 ⇒ 問題不在漏送）
       subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
@@ -145,7 +144,6 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ■ TWSE（對照組，剛剛才跑完 2,850 天）
   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20260911&type=ALL&response=json
     系統 CA                  ✅ HTTP 200｜4,798,344 bytes
-    certifi 的 CA           ✅ HTTP 200｜4,798,344 bytes
     對方送的葉憑證       1,957 bytes
     ⭐ 對方實際送了 **3 張**憑證（有中間憑證 ⇒ 問題不在漏送）
       subject=C = TW, ST = Taiwan, L = Taipei, O = Taiwan Stock Exchange Corporation, CN = www.twse.com.tw
@@ -243,8 +241,7 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ====================================================================
 ■ TPEx openapi（同一站的另一條）
   https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes
-    系統 CA                  ✗ IncompleteRead: IncompleteRead(1326697 bytes read, 3132117 more expected)
-    certifi 的 CA           ✗ IncompleteRead: IncompleteRead(1097321 bytes read, 3361493 more expected)
+    系統 CA                  ✗ IncompleteRead: IncompleteRead(3980910 bytes read, 477904 more expected)
     對方送的葉憑證       1,923 bytes
     ⭐ 對方實際送了 **4 張**憑證（有中間憑證 ⇒ 問題不在漏送）
       subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
@@ -380,6 +377,6 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ■ 判讀（⛔ 照這三格看，不要自己推）
   TPEx（今天掛的那一站）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
   TWSE（對照組，剛剛才跑完 2,850 天）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
-  TPEx openapi（同一站的另一條）：⛔ **兩份 CA 都不通** ⇒ 多半是**對方漏送中間憑證**（看上面「對方一共送了幾張」）⇒ 修法：補中間憑證，⛔ **仍然不可以關掉驗證**
+  TPEx openapi（同一站的另一條）：⚠ certifi 不在 ⇒ 這一趟判不出來
 
 ⛔⛔ 不論結果是哪一格，**都不可以用 `verify=False`／`CERT_NONE` 當修法**。

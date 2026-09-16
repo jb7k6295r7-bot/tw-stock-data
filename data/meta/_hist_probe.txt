@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T18:34:13+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35083932578
+# ⏱ 這一趟：2026-09-16T18:57:56+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35086620798
 # hist_probe.py 的輸出。這是探針結果，不是資料。
 # 主機：hist.tpex.org.tw（使用者 2026-09-09 提供）
 # ⛔ 要答的：這個站有沒有**上櫃／興櫃的歷史**——而我今晚說過三次「上櫃沒有歷史來源」。
@@ -20,7 +20,7 @@
    ★ 這一頁只有 1,181 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     'ams={r:\'a3bf2f21ce972f1b\',t:\'MTc4OTU1NDUwMw==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
+     'ams={r:\'a3bf5546fe82eb23\',t:\'MTc4OTU1NjA2Ng==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);"'
      ";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border"
      "='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=docum"
      "ent.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -35,8 +35,8 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,141 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3bf2f26bb3e2b77\','
-     't:\'MTc4OTU1NDUwNA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a3bf5551885f2e1b\','
+     't:\'MTc4OTU1NjA2OA==\'};var a=document.createElement(\'script\');a.src=\'/cdn-cgi/challenge-platform/scripts/jsd/main.js\';document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'h'
      "ead')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility"
      "='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||fu"
      "nction(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -71,8 +71,8 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（921 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3bf2f3d3
-         d971950',t:'MTc4OTU1NDUwOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3bf5576b
+         ae5469e',t:'MTc4OTU1NjA3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a
          );";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.styl
          e.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventList
          ener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystate
@@ -90,49 +90,22 @@
      ★ 另外 `NSHISTORYQRY.HTML` 自己連到 `/Hist/nodata.htm`——那是它的「查無資料」頁，⭐ **[6.5] 需要知道那一頁長什麼樣子**（見下）。
   ── /Hist/EMERGINGSTOCK/HISTORICAL/
      https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/HISTORICAL/
-     ✓ 3,511 bytes｜中文 156 字｜<tr> 0 個
+     ✓ 4,449 bytes｜中文 156 字｜<tr> 0 個
      ★ 看得見的字（前 400）：證券櫃檯買賣中心 證券櫃檯買賣中心 &nbsp; 您好: 很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。 Sorry, the page you requested was not found. Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below. &nbsp; 回證券櫃檯買賣中心首頁 ::: 常見問題 | 聯絡我們 | 相關網站 | 使用條款 | 隱私權保護說明 | 個人資料管理政策聲明 | 資訊安全政策 | 營運持續政策 證券櫃檯買賣中心 版權所有&copy; 10084台北市中正區羅斯福路二段100號15樓 (02)2369-9555&nbsp;投資人服務專線:(0
      ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
      連結／frame／路徑字串 12 個：['/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/web/about/contact/contact.php?l=zh-tw', '/web/inc/gtsm_disclaimer.php?l=zh-tw', '/web/inc/gtsm_privacy_rights.php?l=zh-tw', '/web/inc/gtsm_related_links.php?l=zh-tw', '/web/service/faq/index.php?l=zh-tw', 'https://www.tpex.org.tw/', 'https://www.tpex.org.tw/zh-tw/index.html', 'https://wwwov.tpex.org.tw/css/gtsm_aa.css', 'https://wwwov.tpex.org.tw/web/images/favicon.ico']
-     ★ 這一頁只有 3,511 bytes 且沒有表格，**原始碼全印**：
-       '<!DOCTYPE HTML>\r\n<html lang="zh-tw">\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n<meta http-equiv="refresh" content="10;url=http://www.tpex.org.tw">\r\n<title> 證券櫃檯買賣中心'
-       ' </title>\r\n<link rel="icon" type="image/ico" href="https://wwwov.tpex.org.tw/web/images/favicon.ico">\r\n<link rel="SHORTCUT ICON" href="https://wwwov.tpex.org.tw/web/images/favicon.ico">\r\n<link rel="st'
-       'ylesheet" type="text/css" href="https://wwwov.tpex.org.tw/css/gtsm_aa.css">\r\n</head>\r\n<body>\r\n<center>\r\n<div class="v-pnl header-pnl">\r\n\t<div class="v-pnl">\r\n\t\t<div class="h-pnl header-logo-pnl"><h1><'
-       'span>證券櫃檯買賣中心</span><a tabindex="1" href="https://www.tpex.org.tw/zh-tw/index.html" title="證券櫃檯買賣中心 logo"><img class="img-tpex-logo" alt="證券櫃檯買賣中心 logo" src="https://wwwov.tpex.org.tw/web/images/tpex_'
-       'logo.svg " border="0"></a></h1></div>\r\n\t</div>\t\r\n</div>\r\n<div class="v-pnl menu-pnl">\r\n  &nbsp;\r\n</div>\r\n<div class="v-pnl">\t\r\n    \t<br>\r\n\t\t<br>\r\n\t\t<p>您好:</p>\r\n    \t<p>很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。</'
-       "p> \t\t\r\n\t\t<p>Sorry, the page you requested was not found.</p>\r\n\t\t<p>Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below.</p"
-       '>\r\n\t\t\r\n\t\t&nbsp;<a href="https://www.tpex.org.tw/" title="回證券櫃檯買賣中心首頁" class="header_text01_over">回證券櫃檯買賣中心首頁</a>\r\n\t\t<br>\r\n\t\t<br>\r\n\t\t<br>\r\n\t\t<br>\r\n</div>\r\n\r\n<div class="v-pnl footer-pnl pt5">\r\n    <a a'
-       'ccesskey="b" href="#" class="accesskey b" title="底部功能區(b)" id="bottom">:::</a>\r\n    <div class="v-pnl footer-link-pnl">        \r\n        <a class="footer-link-over" title="常見問題" href="/web/service/faq'
   ── /Hist/EMERGINGSTOCK/
      https://hist.tpex.org.tw/Hist/EMERGINGSTOCK/
-     ✓ 3,511 bytes｜中文 156 字｜<tr> 0 個
+     ✓ 4,449 bytes｜中文 156 字｜<tr> 0 個
      ★ 看得見的字（前 400）：證券櫃檯買賣中心 證券櫃檯買賣中心 &nbsp; 您好: 很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。 Sorry, the page you requested was not found. Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below. &nbsp; 回證券櫃檯買賣中心首頁 ::: 常見問題 | 聯絡我們 | 相關網站 | 使用條款 | 隱私權保護說明 | 個人資料管理政策聲明 | 資訊安全政策 | 營運持續政策 證券櫃檯買賣中心 版權所有&copy; 10084台北市中正區羅斯福路二段100號15樓 (02)2369-9555&nbsp;投資人服務專線:(0
      ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
      連結／frame／路徑字串 12 個：['/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/web/about/contact/contact.php?l=zh-tw', '/web/inc/gtsm_disclaimer.php?l=zh-tw', '/web/inc/gtsm_privacy_rights.php?l=zh-tw', '/web/inc/gtsm_related_links.php?l=zh-tw', '/web/service/faq/index.php?l=zh-tw', 'https://www.tpex.org.tw/', 'https://www.tpex.org.tw/zh-tw/index.html', 'https://wwwov.tpex.org.tw/css/gtsm_aa.css', 'https://wwwov.tpex.org.tw/web/images/favicon.ico']
-     ★ 這一頁只有 3,511 bytes 且沒有表格，**原始碼全印**：
-       '<!DOCTYPE HTML>\r\n<html lang="zh-tw">\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n<meta http-equiv="refresh" content="10;url=http://www.tpex.org.tw">\r\n<title> 證券櫃檯買賣中心'
-       ' </title>\r\n<link rel="icon" type="image/ico" href="https://wwwov.tpex.org.tw/web/images/favicon.ico">\r\n<link rel="SHORTCUT ICON" href="https://wwwov.tpex.org.tw/web/images/favicon.ico">\r\n<link rel="st'
-       'ylesheet" type="text/css" href="https://wwwov.tpex.org.tw/css/gtsm_aa.css">\r\n</head>\r\n<body>\r\n<center>\r\n<div class="v-pnl header-pnl">\r\n\t<div class="v-pnl">\r\n\t\t<div class="h-pnl header-logo-pnl"><h1><'
-       'span>證券櫃檯買賣中心</span><a tabindex="1" href="https://www.tpex.org.tw/zh-tw/index.html" title="證券櫃檯買賣中心 logo"><img class="img-tpex-logo" alt="證券櫃檯買賣中心 logo" src="https://wwwov.tpex.org.tw/web/images/tpex_'
-       'logo.svg " border="0"></a></h1></div>\r\n\t</div>\t\r\n</div>\r\n<div class="v-pnl menu-pnl">\r\n  &nbsp;\r\n</div>\r\n<div class="v-pnl">\t\r\n    \t<br>\r\n\t\t<br>\r\n\t\t<p>您好:</p>\r\n    \t<p>很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。</'
-       "p> \t\t\r\n\t\t<p>Sorry, the page you requested was not found.</p>\r\n\t\t<p>Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below.</p"
-       '>\r\n\t\t\r\n\t\t&nbsp;<a href="https://www.tpex.org.tw/" title="回證券櫃檯買賣中心首頁" class="header_text01_over">回證券櫃檯買賣中心首頁</a>\r\n\t\t<br>\r\n\t\t<br>\r\n\t\t<br>\r\n\t\t<br>\r\n</div>\r\n\r\n<div class="v-pnl footer-pnl pt5">\r\n    <a a'
-       'ccesskey="b" href="#" class="accesskey b" title="底部功能區(b)" id="bottom">:::</a>\r\n    <div class="v-pnl footer-link-pnl">        \r\n        <a class="footer-link-over" title="常見問題" href="/web/service/faq'
   ── /Hist/
      https://hist.tpex.org.tw/Hist/
-     ✓ 3,511 bytes｜中文 156 字｜<tr> 0 個
+     ✓ 4,449 bytes｜中文 156 字｜<tr> 0 個
      ★ 看得見的字（前 400）：證券櫃檯買賣中心 證券櫃檯買賣中心 &nbsp; 您好: 很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。 Sorry, the page you requested was not found. Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below. &nbsp; 回證券櫃檯買賣中心首頁 ::: 常見問題 | 聯絡我們 | 相關網站 | 使用條款 | 隱私權保護說明 | 個人資料管理政策聲明 | 資訊安全政策 | 營運持續政策 證券櫃檯買賣中心 版權所有&copy; 10084台北市中正區羅斯福路二段100號15樓 (02)2369-9555&nbsp;投資人服務專線:(0
      ⛔ **抓不到任何日期** ⇒ 這一頁不是歷史資料本身
      連結／frame／路徑字串 12 個：['/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/web/about/contact/contact.php?l=zh-tw', '/web/inc/gtsm_disclaimer.php?l=zh-tw', '/web/inc/gtsm_privacy_rights.php?l=zh-tw', '/web/inc/gtsm_related_links.php?l=zh-tw', '/web/service/faq/index.php?l=zh-tw', 'https://www.tpex.org.tw/', 'https://www.tpex.org.tw/zh-tw/index.html', 'https://wwwov.tpex.org.tw/css/gtsm_aa.css', 'https://wwwov.tpex.org.tw/web/images/favicon.ico']
-     ★ 這一頁只有 3,511 bytes 且沒有表格，**原始碼全印**：
-       '<!DOCTYPE HTML>\r\n<html lang="zh-tw">\r\n<head>\r\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8">\r\n<meta http-equiv="refresh" content="10;url=http://www.tpex.org.tw">\r\n<title> 證券櫃檯買賣中心'
-       ' </title>\r\n<link rel="icon" type="image/ico" href="https://wwwov.tpex.org.tw/web/images/favicon.ico">\r\n<link rel="SHORTCUT ICON" href="https://wwwov.tpex.org.tw/web/images/favicon.ico">\r\n<link rel="st'
-       'ylesheet" type="text/css" href="https://wwwov.tpex.org.tw/css/gtsm_aa.css">\r\n</head>\r\n<body>\r\n<center>\r\n<div class="v-pnl header-pnl">\r\n\t<div class="v-pnl">\r\n\t\t<div class="h-pnl header-logo-pnl"><h1><'
-       'span>證券櫃檯買賣中心</span><a tabindex="1" href="https://www.tpex.org.tw/zh-tw/index.html" title="證券櫃檯買賣中心 logo"><img class="img-tpex-logo" alt="證券櫃檯買賣中心 logo" src="https://wwwov.tpex.org.tw/web/images/tpex_'
-       'logo.svg " border="0"></a></h1></div>\r\n\t</div>\t\r\n</div>\r\n<div class="v-pnl menu-pnl">\r\n  &nbsp;\r\n</div>\r\n<div class="v-pnl">\t\r\n    \t<br>\r\n\t\t<br>\r\n\t\t<p>您好:</p>\r\n    \t<p>很抱歉，您所輸入的網址並不存在，建議您可以利用搜尋功能查詢。</'
-       "p> \t\t\r\n\t\t<p>Sorry, the page you requested was not found.</p>\r\n\t\t<p>Please check the URL for proper spelling and capitalization.Also, you may find what you're looking for if you try searching below.</p"
-       '>\r\n\t\t\r\n\t\t&nbsp;<a href="https://www.tpex.org.tw/" title="回證券櫃檯買賣中心首頁" class="header_text01_over">回證券櫃檯買賣中心首頁</a>\r\n\t\t<br>\r\n\t\t<br>\r\n\t\t<br>\r\n\t\t<br>\r\n</div>\r\n\r\n<div class="v-pnl footer-pnl pt5">\r\n    <a a'
-       'ccesskey="b" href="#" class="accesskey b" title="底部功能區(b)" id="bottom">:::</a>\r\n    <div class="v-pnl footer-link-pnl">        \r\n        <a class="footer-link-over" title="常見問題" href="/web/service/faq'
   ── /Hist/nodata.htm
      https://hist.tpex.org.tw/Hist/nodata.htm
      ⚠ 編碼不是 utf-8：取亂碼最少的 **big5hkscs**（[('big5hkscs', 0), ('cp950', 0), ('utf-8', 14)]）
