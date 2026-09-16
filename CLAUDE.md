@@ -997,6 +997,31 @@ DOWN 只能用在「**修得完**」的量 —— 它應該收斂到 0
 ⚠ 而這一段本來在**八支 workflow 各抄一份、逐字相同** ⇒ 要加排除清單就得改八次
 ——⛔ 那是「改一邊、另一邊沒跟上」的完美條件。⇒ 已抽成 `sync_code.sh`（四點五）。
 
+### ⛔⛔ 而 2026-09-16 我**自己動手**做出了同一個形狀：`git worktree` 共用 `.git/config`
+
+probe run 129 的「同步到 main」紅了而我查不出原因 ⇒ 我想在本機重現，
+於是開了一個 worktree、在裡面 `git remote set-url origin <本機 bare repo>`。
+
+```
+⛔⛔ 而 worktree 跟主 repo **共用同一份 `.git/config`**
+⇒ 那一行改到的是 **/home/user/tw-stock-data 真的 origin**
+⇒ 之後 `git push` 回 `fatal: Could not read from remote repository`
+```
+
+⭐ 這次是**大聲**失敗（那個 bare repo 已經被我 `rm -rf` 了）⇒ 算運氣好。
+⛔ 而它的近親會安靜：**若那個 bare repo 還在**，`git push` 會**成功**、
+`git ls-remote` 會回一個像樣的 sha、下一次 `git push` 會說 `Everything up-to-date`
+——⚠ 而 GitHub 上一個 commit 都沒有。
+
+⇒ ⭐ 兩條落地：
+- **驗終點要用 `git ls-remote origin <ref>`**，⛔ 不是看本機的 remote-tracking
+  （`origin/xxx`）——後者是**我方**的快取，被污染過就跟著錯。
+  ⚠ 實際發生：`git push` 印 `Everything up-to-date`，而 `ls-remote` 顯示
+  遠端停在三個 commit 以前。
+- ⛔ **不要在 worktree 裡動 `remote`／`config`**。要隔離就用**另一個 clone**，
+  ⚠ 而 clone 一份 0.55 GB 的 repo 很慢 ⇒ ⭐ 那個「慢」本身就是提示：
+  **這個重現太貴 ⇒ 改用「再派一趟、當場抓 log」**（那才是這次真正有效的那一條）。
+
 ## 五、寫入資料前先問：**誰是這個目錄的唯一寫入者**
 
 換供料是**換維護者**的決定，不是順手加一行。
