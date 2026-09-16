@@ -52,7 +52,26 @@ for f in $STAGED; do
     *.py)          T="selftest_${f}" ;;   # 改到 X.py ⇒ 跑 selftest_X.py
     *)             continue ;;
   esac
-  if [ ! -f "$T" ]; then NOTEST="$NOTEST $f"; continue; fi
+  # ⛔⛔ 檔名相等這條規則對**兩整族**靜靜什麼都沒做：
+  #     `*_probe.py`（14 支）⇒ `selftest_probes.py`
+  #     `shares_check.py`     ⇒ `selftest_shares.py`
+  #   ⚠ 而它已經付過代價：2026-09-16 我在 `tpex_probe` 寫了第二份去標籤，
+  #     `selftest_probes.py` ⑭ 抓得到，⛔ 而這裡印「這一層沒跑」⇒ 我照樣 commit。
+  #   ⇒ ⭐ 對應不到就問**資料自己**：哪幾支自測 import 了它（AST）。
+  #     ⛔ 不是我在這裡維護一張對照表——那是「改一邊、另一邊沒跟上」的完美條件。
+  if [ ! -f "$T" ]; then
+    # ⛔ **全部都跑，不是 head -1**：一支模組可能被兩支自測沾到，
+    #   ⚠ 而只取第一支會挑到「只掃原始碼」那種弱的（`selftest_ca_chain.py`）
+    #   ⇒ 那會印出綠的，而真正測它的那支一次都沒跑（四點二：綠燈證明的是哪一件事）。
+    T2=$(python3 selftest_workflows.py --tests-for "$f" 2>/dev/null)
+    if [ -z "$T2" ]; then NOTEST="$NOTEST $f"; continue; fi
+    for X in $T2; do
+      [ -f "$X" ] || continue
+      case " $TESTS " in *" $X "*) continue ;; esac
+      TESTS="$TESTS $X"
+    done
+    continue
+  fi
   case " $TESTS " in *" $T "*) continue ;; esac
   TESTS="$TESTS $T"
 done

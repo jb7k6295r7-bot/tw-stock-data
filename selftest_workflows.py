@@ -185,6 +185,88 @@ def check_rc_debt(files):
        len(now) + len(fixed) >= 20, f"只掃到 {len(now)} 個")
 
 
+def covering_tests(module_file, here=None):
+    """→ 會**測到** `module_file` 的那幾支 `selftest_*.py`（檔名，已排序）。
+
+    ## ⛔ 為什麼要有這一份：`.githooks/pre-commit` 的對應規則是**檔名相等**
+
+    ```
+    *.py  ⇒  selftest_<同名>.py
+    ```
+    ⚠ 而這個 repo 的命名**不是一對一**：
+
+    ```
+    mops_probe.py／tpex_probe.py／keys_probe.py …（14 支）⇒ selftest_probes.py
+    shares_check.py                                      ⇒ selftest_shares.py
+    ```
+    ⇒ ⛔ 那道 hook 對這幾族**靜靜什麼都沒做**，只印一行
+    「⚠ 這一層沒跑」——⭐ 而它跟「跑過了全綠」在捲動的畫面上長得一樣。
+
+    ⚠ 而它已經付過代價：2026-09-16 我在 `tpex_probe` 裡寫了第二份去標籤
+    （`re.sub(r"<[^>]+>", "", …)`），`selftest_probes.py` ⑭ 抓得到，
+    ⛔ 而 hook 印的是「這一層沒跑」⇒ 我就這樣 commit 出去了。
+
+    ## ⇒ ⭐ 判準是**資料自己**，⛔ 不是一張我維護的對照表
+
+    「哪一支自測測得到 X」這件事，**自測自己的 import 就講得出來**
+    （CLAUDE.md：判準要問「這一列自己說了什麼」，⛔ 不要去另一張表查）。
+    ⇒ 逐支 `selftest_*.py` 掃 **AST 的 import**，反向建索引。
+    ⚠ 掃 AST ⛔ 不掃字串：那些模組名在說明文字裡到處都是（第七點第八個）。
+    """
+    here = here or os.path.dirname(os.path.abspath(__file__))
+    want = os.path.basename(module_file)
+    if want.endswith(".py"):
+        want = want[:-3]
+    out = []
+    for t in sorted(glob.glob(os.path.join(here, "selftest_*.py"))):
+        try:
+            tree = ast.parse(io.open(t, encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        # ① import 了它
+        names = set()
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                names.update(a.name.split(".")[0] for a in n.names)
+            elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+                names.add(n.module.split(".")[0])
+        # ② ⭐ 或者：它的名字是一個**非 docstring 的字串常數**
+        #   ⇒ `selftest_probes.py` 的 `SECTIONS` 就是這樣列 14 支探針的
+        #     （它用 importlib 動態載入 ⇒ ⛔ AST 看不到任何 import）。
+        #   ⛔ 要扣掉 docstring：那幾個名字在說明文字裡到處都是（第七點第八個）。
+        if want in names:
+            out.append((0, os.path.basename(t)))
+        elif want in _nondoc_strings(tree):
+            out.append((1, os.path.basename(t)))
+    # ⭐⭐ **排序有意義**：import 的那幾支排前面。
+    #   ⛔ 理由是「亂認一支比沒認更糟」：`selftest_ca_chain.py` 逐檔掃原始碼
+    #   ⇒ 它的字串常數裡有**每一支探針的檔名** ⇒ ②會把它認成所有人的自測，
+    #   ⚠ 而它一支都沒有真的測到（它只驗「沒有人把 TLS 驗證關掉」）。
+    #   ⇒ 呼叫端（hook）**全部都跑**，而排序讓真正對應的那支先被看到。
+    return [n for _, n in sorted(out)]
+
+
+def _nondoc_strings(tree):
+    """→ 這棵 AST 裡**扣掉 docstring**之後的字串常數集合。
+
+    ⛔ docstring 自己也是 `ast.Constant` ⇒ 不扣掉的話，
+    「我在說明文字裡提到 X」會被當成「我測了 X」——⚠ 而那比沒認到更糟：
+    hook 會去跑一支根本不測它的自測，然後印綠的。
+    """
+    doc_ids = set()
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Module, ast.FunctionDef,
+                          ast.AsyncFunctionDef, ast.ClassDef)):
+            b = getattr(n, "body", None)
+            if (b and isinstance(b[0], ast.Expr)
+                    and isinstance(getattr(b[0], "value", None), ast.Constant)
+                    and isinstance(b[0].value.value, str)):
+                doc_ids.add(id(b[0].value))
+    return {n.value for n in ast.walk(tree)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)
+            and id(n) not in doc_ids}
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     files = sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml")))
@@ -954,10 +1036,75 @@ def main():
 
     check_rc_debt(files)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ `.githooks/pre-commit` 的「改到 X.py 就跑 selftest_X.py」那一道，
+    #   對**命名不是一對一**的那兩族靜靜什麼都沒做 ⇒ `covering_tests()` 補上。
+    #   ⛔ 而這裡驗的是**終點**：那兩族真的對應得到，而且 hook 真的會去問它。
+    # ══════════════════════════════════════════════════════════════
+    probes = sorted(os.path.basename(x) for x in
+                    glob.glob(os.path.join(here, "*_probe.py"))
+                    if not os.path.basename(x).startswith("selftest_"))
+    # ⚠ 母體要標清楚：**不是每一支探針都有自測**（實測 5 支沒有：
+    #   bsr／finmind／otc_adj／reduce／reduce_ratio）⇒ ⛔ 這裡不可以斷言「全部都有」，
+    #   那會把一條「我知道它沒有」的事實寫成紅燈，然後被學會忽略（四點五）。
+    #   ⇒ ⭐ 斷言改成「**`selftest_probes.py` 的 SECTIONS 列到的那幾支**都對應得到」
+    #     ——那才是這一道要守的東西（hook 對整族靜靜什麼都沒做）。
+    import selftest_probes as _SP
+    listed = sorted(_SP.SECTIONS)
+    miss = [b for b in listed
+            if "selftest_probes.py" not in covering_tests(b + ".py", here)]
+    ck(f"⭐⭐ `SECTIONS` 列到的 {len(listed)} 支探針都對應得到 `selftest_probes.py`"
+       "（⛔ 檔名相等那條規則對整族都是「這一層沒跑」）",
+       bool(listed) and not miss, f"⛔ 對應不到：{miss}")
+    # ⭐ 順帶把「哪幾支探針一個自測都沒有」**印出來**——⛔ 不算失敗，
+    #   ⚠ 但它不可以是隱形的（六點五：條件不成立就大聲印「這一層沒跑」）。
+    naked = [b for b in probes if not covering_tests(b, here)]
+    if naked:
+        print(f"  ⚠ **這一層沒跑**：{len(naked)} 支探針一個自測都對應不到"
+              f"　{naked}　⇒ ⛔ 不算失敗，但改到它們時 hook 幫不上忙")
+    # ⭐ 母體大小自己是一道斷言（第七點第九個：⛔ 不是 0 筆，是母體被判準縮小了）
+    ck("⭐ 母體沒有被判準縮小（`*_probe.py` 至少 20 支）",
+       len(probes) >= 20, f"只掃到 {len(probes)} 支：{probes}")
+    # ⭐ 排序：import 的那一支要排在「只掃原始碼」那種弱的前面
+    #   （`mops_probe` 同時被 `selftest_probes`（import）與 `selftest_ca_chain`
+    #     （字串常數）沾到 ⇒ ⛔ 順序反了的話，讀 log 的人會以為前者沒跑）
+    _mp = covering_tests("mops_probe.py", here)
+    ck("⭐ 排序：**import 的**那一支排最前（⛔ 不是只掃原始碼的那種）",
+       bool(_mp) and _mp[0] == "selftest_probes.py", str(_mp))
+    ck("⭐ 命名不一對一的另一族也對應得到（`shares_check.py`）",
+       "selftest_shares.py" in covering_tests("shares_check.py", here),
+       str(covering_tests("shares_check.py", here)))
+    # ⛔ 反向：一個**沒有人測**的模組要回空的，⛔ 不可以亂認一支
+    ck("⛔ 沒有人測的模組回**空的**（⚠ 亂認一支比沒認更糟）",
+       covering_tests("__沒有這個模組__.py", here) == [], "")
+    # ⛔⛔ 而「②要扣掉 docstring」得**拿合成的 AST 驗**，⛔ 不是拿現場的檔
+    #   ——現場沒有「只在 docstring 出現」的模組名 ⇒ 那個突變會全綠
+    #   （第七點第七個：拿現場資料驗判準，等於把斷言綁在「還沒發生」上）。
+    _t = ast.parse('"""說明裡提到 xyz_probe。"""\nA = "abc_probe"\n')
+    _ss = _nondoc_strings(_t)
+    ck("⛔⛔ `_nondoc_strings` **扣掉 docstring**（⚠ 不扣就會亂認）",
+       "abc_probe" in _ss and not any("xyz_probe" in x for x in _ss), str(_ss))
+    # ⭐⭐ 而 hook 真的會去問它——⛔ 不是「我寫了一個函式」就算數（四點二）
+    hook = os.path.join(here, ".githooks", "pre-commit")
+    htxt = io.open(hook, encoding="utf-8").read() if os.path.exists(hook) else ""
+    ck("⭐⭐ `.githooks/pre-commit` 真的有一行去問 `--tests-for`"
+       "（⛔ 只有函式存在不算——沒有人叫它就等於沒有）",
+       "--tests-for" in htxt and "NOTEST=" in htxt,
+       "⛔ hook 裡找不到 `--tests-for`")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
 
 if __name__ == "__main__":
+    # ⭐ `--tests-for X.py` 只是把 `covering_tests()` 印出來給 `.githooks/pre-commit` 用。
+    #   ⛔ 它**不是**一個測試模式：不跑任何斷言、rc 一律 0。
+    #   ⚠ 而多餘的參數要**大聲拒絕**（四點二⑦：靜靜忽略正是那種 bug 藏那麼久的原因）。
+    if len(sys.argv) > 1:
+        if sys.argv[1] != "--tests-for" or len(sys.argv) != 3:
+            sys.stderr.write("用法：selftest_workflows.py [--tests-for <檔名.py>]\n")
+            sys.exit(2)
+        print("\n".join(covering_tests(sys.argv[2])))
+        sys.exit(0)
     sys.exit(main())
