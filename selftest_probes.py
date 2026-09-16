@@ -2027,8 +2027,23 @@ def check_official_vs_month():
            #   ⇒ ⭐ 斷言比**那句話的意思**（「不是我方的問題」），⛔ 不比排版。
            "不是我方的問題" in t and "兩條路不一致" in t, t)
         # ⛔ 反向：月表讀不到 ⇒ 大聲說沒跑，⛔ 不可以靜靜只印一半
-        os.remove(os.path.join(tmp, "meta", "official_monthly_amount.csv"))
+        #
+        # ⛔⛔ 第一版我在這裡寫 `os.remove(os.path.join(tmp, "meta",
+        #   "official_monthly_amount.csv"))` ⇒ `selftest_no_data_delete.py` **當場紅**：
+        #   它掃 AST 解出來的路徑尾巴是 `meta/official_monthly_amount.csv`，
+        #   ⚠ 而那**是一個被 git 追蹤的 data/ 檔** ⇒ 它分不出 `tmp` 是沙箱還是 repo 根
+        #   （它的檔頭自己就寫著這個盲點）。
+        #   ⇒ probe run 134 的 step 6 因此 failure ⇒ **步驟 7~16 全部 skipped**，
+        #     其中包括「把程式同步到 main」⇒ ⛔ 那一趟什麼都沒搬（六點五那一族）。
+        #
+        # ⇒ ⭐ 修法**不是**把它加進白名單（那是把一道對的閘門關掉），
+        #   是**根本不要去刪一個叫那個名字的檔**：換一個**本來就沒有月表**的沙箱。
+        tmp2 = tempfile.mkdtemp(prefix="oct2020_nomonth_")
+        os.makedirs(os.path.join(tmp2, "meta"))
+        K._ROOT = tmp2
         t2 = "\n".join(K._official_vs_month("9999"))
+        shutil.rmtree(tmp2, ignore_errors=True)
+        K._ROOT = tmp
         ck("⑤ ⛔ 月表讀不到 ⇒ 大聲印「這一層沒跑」（⚠ 只印一半跟比過了長得一樣）",
            "**這一層沒跑**" in t2, t2)
         # ⛔ 反向：官方逐日取不回來 ⇒ 同樣要大聲
