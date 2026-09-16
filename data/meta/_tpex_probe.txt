@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T17:09:58+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35076844964
+# ⏱ 這一趟：2026-09-16T17:48:46+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35080573322
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -449,7 +449,7 @@
      ⭐ ①有沒有漲跌停欄：['LimitUp', 'LimitDown', 'OpeningReferencePrice']
      首列：{'Date': '1150916', 'SecuritiesCompanyCode': '00687B', 'CompanyName': '國泰20年美債', 'ClosePriceBeforeExRightsDiviend': '26.66', 'ExRightsDiviendQuote': '26.33', 'StockDividend': '0.000000', 'CashDividend': '0.335000', 'StockDividendPlusCashDividend': '0.335000', 'ExRightsDiviend': '除息', 'LimitUp': '9999.95', 'LimitDown': '0.01', 'OpeningReferencePrice': '26.33', 'DividendDeductedQuote': '26.33', 'CashDivdend': '0.33500000', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
      ③`Date` 相異值 2 種｜最小 1150916｜最大 1150917
-     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_exright_prepost｜上櫃除權除息預告表
      ✓ 82 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
