@@ -2330,12 +2330,14 @@ def check_terms_case():
         out = []
         M.terms_case(out)
         t = "\n".join(out)
-        ck("① 只收**文字含關鍵字**的連結（月營收那條不收）", "t21sc03" not in t, t)
+        ck("① 只收**文字含關鍵字**或**網址含英文詞**的連結"
+           "（月營收那條不進候選清單）",
+           "── 月營收" not in t, t)
         ck("② 相對路徑接成絕對", "https://mopsov.twse.com.tw/mops/web/terms" in t, t)
         ck("③ 絕對路徑原樣保留", "https://x.tw/p" in t, t)
         ck("④ 命中數自己印出來（2 條）", "**2 條**" in t, t)
         ck("⑤ ⭐ 原文**逐字**印（禁止條文那一句在）", "不得重製" in t, t)
-        ck("⑥ ⭐ 母體大小自己是一道斷言（3 個 <a>）", "共 3 個" in t, t)
+        ck("⑥ ⭐ 母體大小自己是一道斷言（首頁 3 個 <a>）", "母體＝3 個 <a>" in t, t)
         ck("⑩ ⭐⭐ 超過 4,000 字要**講出它被截了**（⛔ 不是靜靜少印）",
            "截到 4,000 字" in t, t)
 
@@ -2352,7 +2354,45 @@ def check_terms_case():
         M.terms_case(o3)
         t3 = "\n".join(o3)
         ck("⑧ ⭐⭐ 0 條命中 ⇒ 明講**掃描範圍**（不證明這個站沒有）",
-           "不證明這個站沒有條款" in t3, t3)
+           "不是「這個站沒有條款」" in t3 and "查詢用詞" in t3, t3)
+
+        # ⭐⭐ ⑪ **網址判準**：連結文字完全沒有那幾個中文詞，而網址有 `terms`
+        #   ⇒ 2026-09-16 那一趥只掃到 0 條，⚠ 而只看文字正是原因之一。
+        H4 = ("<html><body><a href='/mops/web/x'>月營收</a>"
+              "<a href='/legal/rules'>Rules</a></body></html>").encode()
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (H4, None) if u.endswith("/index") else (TERMS, None))
+        o4 = []
+        M.terms_case(o4)
+        t4 = "\n".join(o4)
+        ck("⑪ ⭐⭐ **網址**含 legal／terms 就算命中（⛔ 只看連結文字會漏掉）",
+           "/legal/rules" in t4 and "**1 條**" in t4, t4)
+
+        # ⭐⭐ ⑫ 第二層：首頁沒有，而首頁連出去的**同集團**頁上有
+        #   ⇒ 三點①那條（只掃一層就寫「這站沒有」）的反向驗。
+        H5 = ("<html><body><a href='https://www.twse.com.tw/zh/foot'>公司簡介</a>"
+              "<a href='https://other.example/x'>外部</a></body></html>").encode()
+        FOOT = ("<html><body><a href='/zh/about/copyright'>著作權聲明</a>"
+                "</body></html>").encode()
+
+        def fake5(u, retries=3, timeout=45):
+            if u.endswith("/index"):
+                return (H5, None)
+            if u.endswith("/zh/foot"):
+                return (FOOT, None)
+            return (TERMS, None)
+
+        B.get = M.B.get = fake5
+        o5 = []
+        M.terms_case(o5)
+        t5 = "\n".join(o5)
+        ck("⑫ ⭐⭐ 首頁 0 條，而**第二層**（同集團頁）找得到 ⇒ 收進候選",
+           "/zh/about/copyright" in t5, t5)
+        ck("⑬ ⛔ 外部網域**不走**（⚠ 只跟著同集團的連結）",
+           "other.example" not in t5, t5)
+        ck("⑭ ⭐ 「走到幾頁」自己要印出來"
+           "（⛔ 否則『掃完沒找到』與『還沒掃到』一模一樣）",
+           "真的走到 1／1 頁" in t5, t5)
     finally:
         B.get = M.B.get = real
 
