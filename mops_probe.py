@@ -907,7 +907,12 @@ TERMS_WORDS = ("條款", "規範", "聲明", "政策", "著作權", "免責", "�
 #   ⇒ 只看文字會漏掉 ⇒ ⭐ 網址也要當一種判準。
 TERMS_HREF = ("terms", "policy", "privacy", "copyright", "disclaimer", "legal")
 TERMS_ORG = ("twse.com.tw", "tpex.org.tw")
-TERMS_MAX_PAGES = 10
+TERMS_MAX_PAGES = 25
+# ⛔⛔ probe 136 實測：命中的 4 條全部是 **PDF**（「相關**規範**差異」那幾份）
+#   ⇒ `visible_text()` 拿到的是二進位 ⇒ 輸出檔被塞進 4 × 4,000 字的亂碼。
+#   ⭐ 一個「成功」的步驟寫出一堆垃圾，正是四點二那一族。
+#   ⇒ 非 HTML 的只列**網址**，⛔ 不解析。
+TERMS_BINARY_EXT = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".zip", ".odt")
 
 
 def _terms_scan(base, html):
@@ -922,14 +927,31 @@ def _terms_scan(base, html):
         href, label = m.group(1).strip(), B.visible_text(m.group(2), " ").strip()
         url = urllib.parse.urljoin(base, href)
         low = url.lower()
-        if not (any(w in label for w in TERMS_WORDS)
-                or any(w in low for w in TERMS_HREF)):
+        why = ([f"文字:{w}" for w in TERMS_WORDS if w in label]
+               + [f"網址:{w}" for w in TERMS_HREF if w in low])
+        if not why:
             continue
         if url in seen:
             continue
         seen.add(url)
-        hits.append((label or "（連結文字是空的）", url))
+        hits.append((label or "（連結文字是空的）", url, "／".join(why)))
     return hits, len(re.findall(r'<a\b[^>]*href', html, re.I))
+
+
+def _terms_is_binary(url, raw):
+    """這一頁能不能當文字讀 → 不行的話回一句理由，行就回 `""`。
+
+    ⭐ **兩個判準都要**：網址尾巴（便宜）與**內容開頭**（準）
+    ——⛔ 只看尾巴會漏掉「網址沒有 .pdf 而回的是 PDF」那一種。
+    """
+    if any(url.lower().split("?")[0].endswith(e) for e in TERMS_BINARY_EXT):
+        return "網址尾巴是二進位檔"
+    head = raw[:8] if isinstance(raw, (bytes, bytearray)) else str(raw)[:8].encode()
+    if head.startswith(b"%PDF"):
+        return "內容開頭是 `%PDF`"
+    if head.startswith(b"PK\x03\x04"):
+        return "內容開頭是 zip（docx／xlsx 那一族）"
+    return ""
 
 
 def _terms_same_org_links(base, html):
@@ -1004,7 +1026,7 @@ def terms_case(out):
         walked += 1
         h2 = body.decode("utf-8", "replace") if isinstance(body, bytes) else str(body)
         got, n2 = _terms_scan(url, h2)
-        new = [x for x in got if x[1] not in {u for _, u in hits}]
+        new = [x for x in got if x[1] not in {u for _, u, _w in hits}]
         out.append(f"      ✓ {url}　母體 {n2} 個 <a>　⇒ 新增 **{len(new)}** 條")
         hits.extend(new)
     out.append(f"   ⇒ ⭐ 兩層合計 **{len(hits)}** 條候選（②真的走到 {walked}／"
@@ -1015,14 +1037,21 @@ def terms_case(out):
         out.append(f"      ⛔ 不是「這個站沒有條款」。掃描範圍：首頁＋{walked} 個同集團頁；")
         out.append(f"      查詢用詞：{TERMS_WORDS} ＋ 網址 {TERMS_HREF}。")
         return
-    for label, url in hits:
-        out.append(f"      ── {label}　{url}")
-    for label, url in hits:
+    for label, url, why in hits:
+        out.append(f"      ── {label}　{url}　（命中：{why}）")
+    for label, url, why in hits:
         out.append("")
-        out.append(f"   ══ 原文：{label}")
+        out.append(f"   ══ 原文：{label}　（命中：{why}）")
         body, e2 = B.get(url, retries=2, timeout=60)
         if e2 or not body:
             out.append(f"      ✗ 抓不到：{B.why(e2)}　⇒ 這一頁是【未驗】")
+            continue
+        binw = _terms_is_binary(url, body)
+        if binw:
+            out.append(f"      ⛔ **這是二進位檔**（{binw}）⇒ 本節**不解析**，"
+                       "⚠ 要看內容請直接開上面那個網址。")
+            out.append("      （⭐ 這一行存在的理由：probe 136 把 4 份 PDF 的二進位"
+                       "當成「條款原文」寫進輸出檔）")
             continue
         txt = B.visible_text(
             body.decode("utf-8", "replace") if isinstance(body, bytes) else str(body), " ")

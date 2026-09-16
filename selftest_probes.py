@@ -2239,6 +2239,47 @@ def check_terms_case():
         ck("⑭ ⭐ 「走到幾頁」自己要印出來"
            "（⛔ 否則『掃完沒找到』與『還沒掃到』一模一樣）",
            "真的走到 1／1 頁" in t5, t5)
+
+        # ⛔⛔ ⑮ probe 136 實測：命中的 4 條全是 PDF（「相關**規範**差異」）
+        #   ⇒ `visible_text()` 把二進位當文字 ⇒ 輸出檔被塞進 4 × 4,000 字亂碼。
+        #   ⭐ 假回應要照**真回應的形狀**做（第七點）⇒ 這裡餘一份真 PDF 開頭。
+        PDFB = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<</Type/Catalog>>\nendobj\n" + b"\x00\x01" * 500
+        H6 = ("<html><body>"
+              "<a href='https://mopsov.twse.com.tw/x_2012.pdf'>●相關規範差異說明</a>"
+              "</body></html>").encode()
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (H6, None) if u.endswith("/index") else (PDFB, None))
+        o6 = []
+        M.terms_case(o6)
+        t6 = "\n".join(o6)
+        ck("⑮ ⛔⛔ PDF **不解析**（網址尾巴）⇒ 明講它是二進位檔，"
+           "⛔ 不把二進位當「條款原文」印出來",
+           "這是二進位檔" in t6 and "%PDF" not in t6, t6[:400])
+        ck("⑯ ⭐ 而那一條仍然要**列出網址**（⛔ 不是静静丟掉）",
+           "x_2012.pdf" in t6, t6[:400])
+
+        # ⭐ ⑰ 網址**沒有** .pdf 尾巴，而回的是 PDF ⇒ 內容嗅那一層要擋住
+        H7 = ("<html><body><a href='/mops/web/getfile?id=9'>著作權聲明</a>"
+              "</body></html>").encode()
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (H7, None) if u.endswith("/index") else (PDFB, None))
+        o7 = []
+        M.terms_case(o7)
+        t7 = "\n".join(o7)
+        ck("⑰ ⭐⭐ 網址看不出來，而**內容開頭是 `%PDF`** ⇒ 照樣擋住"
+           "（⛔ 只看尾巴會漏掉這一種）",
+           "內容開頭是" in t7 and "%PDF-1.4" not in t7, t7[:400])
+
+        # ⭐ ⑱ 命中的**理由**要印出來——否則「規範差異 PDF」這種
+        #   假陽性跟真的條款頁在清單上長得一模一樣。
+        # ⛔ 第一版只寫 `"命中：文字:規範" in t6` ⇒ 把**候選清單那一行**的
+        #   理由拿掉的突變 X3 **全綠**：同一串在下面「原文：」那一行還有一份。
+        #   ⇒ ⭐ 斷言要釘在**那一行**：網址與理由要在**同一行**（第七點第六個的變形）。
+        _list_line = [ln for ln in o6
+                      if ln.strip().startswith("── ") and "x_2012.pdf" in ln]
+        ck("⑱ ⭐ **候選清單那一行**就要寫出它是被哪一個詞命中的",
+           len(_list_line) == 1 and "命中：文字:規範" in _list_line[0],
+           str(_list_line)[:300])
     finally:
         B.get = M.B.get = real
 
