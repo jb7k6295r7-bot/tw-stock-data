@@ -1039,16 +1039,15 @@
 - ok　⭐ 寫完重讀，列數與週數逐年對得回來（⛔ 不是斷言寫檔成功）　（2 年逐年重讀，列數與週數都對得回來）
 
 
-## ci_steps　✗ 有問題
+## ci_steps　✓ 正常
 
-最後執行：2026-09-16T08:48:06+08:00（台北）｜觸發 schedule｜端點探針（只跑探針，約 1 分鐘）｜ref main｜run 35041086430
+最後執行：2026-09-16T09:35:26+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35043238163
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
 - **跑過的自測**：1 支｜selftest_probes.py
-- **⛔ selftest_probes.py**：rc=1　⇒ 這一支紅了，⚠ 而那一步是 `continue-on-error` ⇒ run 仍然是綠的
 
 檢查：
-- **✗**　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支紅了：selftest_probes.py）
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
 
 ## reduce_shares_check　✓ 正常
 
@@ -1141,7 +1140,6 @@
 - ok　⭐⭐ 官方與我方的**換股率**沒有衝突（⛔ 有衝突就報 ✗，不自己選一邊）　（⛔ []）
 - ok　⭐ 事件集合**雙向**都對得上（⛔ 只比一個方向不算一致，三點1）　（只有官方 []｜只有我方 []）
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
-
 
 ## official_stats:tpex　✓ 正常
 
