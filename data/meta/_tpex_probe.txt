@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T22:07:22+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35105595451
+# ⏱ 這一趟：2026-09-16T23:08:43+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35112240600
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -472,7 +472,7 @@
      ⛔ ③`Date` 相異值只有 **1 種**：1150608 × 1　⇒ **它只有這一期，沒有歷史**
      ⛔ ③`StartDateForStabilizationOperation` 相異值只有 **1 種**：1150605 × 1　⇒ **它只有這一期，沒有歷史**
      ⛔ ③`EndDateForStabilizationOperation` 相異值只有 **1 種**：1150611 × 1　⇒ **它只有這一期，沒有歷史**
-     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
 
 [13] ⭐⭐ 上櫃融資融券的「備註」欄，歷史日期回不回
   ⚠ 我方舊檔沒有 note 是**我方 header 2026-09-09 才加**，⛔ 不等於來源沒有——這一節就是要分開這兩件事。
