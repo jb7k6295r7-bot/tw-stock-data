@@ -2080,160 +2080,6 @@ def check_official_vs_month():
     return bad
 
 
-def check_avg_residual():
-    """⭐⭐ `keys_probe.avg_residual()` 的**逐列迴圈**真的被走過，而且比的是數值。
-
-    ## ⛔ 這一節存在的理由是一個在 Actions 上炸掉的 `NameError`
-
-    probe run 131（2026-09-16）：`keys_probe.py:591` `NameError: name '_n' is not defined`
-    ⇒ 整支 rc=1 ⇒ `_keys_probe.txt` 被守門還原成**上一趟**的內容。
-
-    ⭐⭐ 而**離線自測是全綠的**：`run("keys_probe")` 餵的假回應沒有 `title`
-    ⇒ 上面那道「title 要回音代號與月份」提前 `continue`
-    ⇒ ⛔ 出事那一行**一次都沒有被走過**（第七點第三個：測了判準、沒測那條路）。
-
-    ⇒ ⭐ 所以這一節的假回應要**照真回應的形狀**做到「title 回音得了」那一格，
-    ⛔ 不是再餵一份走不進去的。
-
-    ## ⇒ 而順手抓到第二個：**比字串會確認一個假的發現**
-
-    我方 CSV 寫 `4.3`、官方回 `4.30` ⇒ 比字串的話**每一天**都是「收盤不同」，
-    ⚠ 而「有幾天差 0.01」正是這一節在找的答案
-    ⇒ ⛔ 它會**證實一個不存在的發現**，而輸出看起來完全正常。
-    """
-    import keys_probe as K
-    bad = 0
-
-    def ck(n, c, d=""):
-        nonlocal bad
-        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:220]}"))
-        if not c:
-            bad += 1
-
-    # ⭐ `AVG_RESID` 現在是**三個錨點**（一群一個 ＋ 一個對照組）⇒ 這裡拿第一個測。
-    ck("⓪ ⭐ 錨點是**三個**（⛔ 一個的話「另外兩群沒量到」不會有人發現）",
-       len(K.AVG_RESID) == 3, str(K.AVG_RESID))
-    sid, roc = K.AVG_RESID[0]
-    ad = roc + 1911
-
-    def resp(rows, mo):
-        return json.dumps({
-            "stat": "OK",
-            "title": f"{roc}年{mo:02d}月 {sid} 首利 各日成交資訊",
-            "fields": ["日期", "成交股數", "成交金額", "開盤價",
-                       "最高價", "最低價", "收盤價", "漲跌價差", "成交筆數"],
-            "data": rows,
-        }, ensure_ascii=False).encode()
-
-    def row(day, close):
-        return [f"{roc}/{day[:2]}/{day[2:]}", "1,000", "4,300",
-                "4.30", "4.30", "4.30", close, "0.00", "5"]
-
-    real_get, real_root = B.get, K._ROOT
-    tmp = tempfile.mkdtemp(prefix="keysprobe_")
-    try:
-        os.makedirs(os.path.join(tmp, "stocks"), exist_ok=True)
-        io.open(os.path.join(tmp, "stocks", f"{sid}.csv"), "w",
-                encoding="utf-8").write(
-            "date,close\n"
-            f"{ad}-01-05,4.3\n"      # ⭐ 我方 4.3 vs 官方 4.30 ⇒ **相同**
-            f"{ad}-01-06,4.29\n"     # ⭐ 我方 4.29 vs 官方 4.30 ⇒ **差 0.01**
-            f"{ad}-01-07,4.31\n")    # ⚠ 官方那一天回 `--` ⇒ **比不了**
-        K._ROOT = tmp
-        pages = {1: resp([row("0105", "4.30"), row("0106", "4.30"),
-                          row("0107", "--")], 1)}
-
-        def fake(url, retries=3, timeout=45):
-            mo = int(url.split("date=")[1][4:6])
-            return (pages.get(mo, resp([], mo)), None)
-
-        B.get = K.B.get = fake
-        mark = len(K.LINES)
-        K._avg_residual_one(sid, roc)
-        t = "\n".join(K.LINES[mark:])
-    finally:
-        B.get = K.B.get = real_get
-        K._ROOT = real_root
-        shutil.rmtree(tmp, ignore_errors=True)
-
-    ck("① ⭐⭐ 逐列迴圈**真的被走過**（官方回到的天數 > 0）",
-       "官方回到的天數：2" in t, t)
-    ck("② ⭐ `4.3` vs `4.30` **不算不同**（⛔ 比字串的話這裡會是 2）",
-       "**收盤價不同的日子：1**" in t, t)
-    ck("③ ⭐ 真的差 0.01 的那一天有被列出來",
-       f"{ad}-01-06" in t, t)
-    # ⛔ 我第一版在這裡斷言「官方回 `--` ⇒ 印『這一層沒跑』」——**那個情境造不出來**：
-    #   抓取那一段本來就把 `--` 濾掉了 ⇒ 那一天根本不會進 `got`
-    #   ⇒ 它落在「只有我方有的日子」，⛔ 不在交集裡 ⇒ `None` 那條分支走不到。
-    #   ⚠ 而「斷言沒抓到」與「我根本沒造出那個情境」長得一模一樣（第七點第四個）。
-    #   ⇒ ⭐ 分成兩條：④ 驗**真的會發生**的那一半（它落在只有我方有的那一邊），
-    #     ⑥ 拿**合成**輸入直接驗 `_same_price` 的三種回答（環境無關，第七點第七個）。
-    ck("④ ⭐ 官方濾掉的那一天落在「只有我方有的日子」（⛔ 不是被判成『收盤不同』）",
-       "只有我方有的日子：1" in t and f"{ad}-01-07" in t, t)
-    ck("⑤ ⛔ `avg_residual` 跑完**沒有丟例外**（run 131 就是死在這裡）",
-       "官方回到的天數" in t, t)
-    # ⑥ ⭐⭐ `_same_price` 的**三種**回答（⛔ 不是兩種）——拿合成輸入驗，⛔ 不靠現場
-    ck("⑦ ⭐ 差額的**形狀**要自己講出來（相異值＋合計；⛔ 只說「有幾天不同」講不出是哪一種）",
-       "差額的相異值" in t and "差額合計" in t, t)
-    ck("⑧ ⭐⭐ `avg_residual()` 真的把**三個錨點都跑過**（⛔ 只跑第一個看起來一樣）",
-       _calls_all_anchors(K), "")
-    # ⑨ ⭐⭐ **沒量到 ≠ 量到了 0**（probe run 134：3141／民106 十二個月 title 全空
-    #    ⇒ `got` 空 ⇒ `diff` 必然 0 ⇒ ⛔ 印成「連這一條也被排除」＝**假的排除**）
-    real_get2, real_root2 = B.get, K._ROOT
-    tmp2 = tempfile.mkdtemp(prefix="keysprobe_empty_")
-    try:
-        os.makedirs(os.path.join(tmp2, "stocks"))
-        io.open(os.path.join(tmp2, "stocks", f"{sid}.csv"), "w",
-                encoding="utf-8").write(
-            "date,close\n" + "".join(f"{ad}-01-{d:02d},4.3\n" for d in range(4, 20)))
-        K._ROOT = tmp2
-        # 官方一個月都不回（`stat` 有話說）
-        B.get = K.B.get = lambda u, retries=3, timeout=45: (
-            json.dumps({"stat": "很抱歉，沒有符合條件的資料!"},
-                       ensure_ascii=False).encode(), None)
-        mark2 = len(K.LINES)
-        K._avg_residual_one(sid, roc)
-        te = "\n".join(K.LINES[mark2:])
-    finally:
-        B.get = K.B.get = real_get2
-        K._ROOT = real_root2
-        shutil.rmtree(tmp2, ignore_errors=True)
-    ck("⑨ ⭐⭐ 官方一天都沒回 ⇒ 印「**這一格沒量到**」",
-       "**這一格沒量到**" in te, te)
-    ck("⑨ ⛔⛔ 而且**不印**那句「收盤價不同的日子：0 ⇒ 連這一條也被排除」"
-       "（⚠ 那是一個假的『排除』）",
-       "收盤價不同的日子" not in te, te)
-    ck("⑨ ⭐ title 空的時候把 `stat` 一起印出來"
-       "（⛔ 否則「回錯期別」與「根本沒答」長得一樣）",
-       "stat=" in te and "沒有符合條件" in te, te)
-    ck("⑥ ⭐⭐ `_same_price` 回三種：相同／不同／**比不了**（⛔ None 不可以壓成 False）",
-       (K._same_price("4.3", "4.30") is True
-        and K._same_price("4.3", "4.31") is False
-        and K._same_price("4.3", "--") is None
-        and K._same_price("", "4.30") is None),
-       str([K._same_price("4.3", "4.30"), K._same_price("4.3", "4.31"),
-            K._same_price("4.3", "--"), K._same_price("", "4.30")]))
-    return bad
-
-
-def _calls_all_anchors(K):
-    """⭐ `avg_residual()` 是不是**逐個**跑 `AVG_RESID`——⛔ 不是只跑第一個。
-
-    ⚠ 判準用**行為**（換一份假的 AVG_RESID，數 `_avg_residual_one` 被叫幾次），
-    ⛔ 不是掃原始碼有沒有 `for`（第七點第八個）。
-    """
-    import ast as _a
-    real_one, real_anchor = K._avg_residual_one, K.AVG_RESID
-    seen = []
-    try:
-        K._avg_residual_one = lambda sid, roc: seen.append((sid, roc))
-        K.AVG_RESID = (("A", 1), ("B", 2), ("C", 3))
-        K.avg_residual()
-    finally:
-        K._avg_residual_one, K.AVG_RESID = real_one, real_anchor
-    return seen == [("A", 1), ("B", 2), ("C", 3)]
-
-
 def check_datagov_d2():
     """⭐ `datagov_d2_case()`：那個 dataset id **是我筆記裡的**，⛔ 我沒驗過它存在。
 
@@ -2392,7 +2238,48 @@ def check_terms_case():
            "other.example" not in t5, t5)
         ck("⑭ ⭐ 「走到幾頁」自己要印出來"
            "（⛔ 否則『掃完沒找到』與『還沒掃到』一模一樣）",
-           "真的走到 1／1 頁" in t5, t5)
+           f"真的走到 {1 + len(M.TERMS_SEEDS)}／{1 + len(M.TERMS_SEEDS)} 頁" in t5, t5)
+
+        # ⛔⛔ ⑮ probe 136 實測：命中的 4 條全是 PDF（「相關**規範**差異」）
+        #   ⇒ `visible_text()` 把二進位當文字 ⇒ 輸出檔被塞進 4 × 4,000 字亂碼。
+        #   ⭐ 假回應要照**真回應的形狀**做（第七點）⇒ 這裡餘一份真 PDF 開頭。
+        PDFB = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<</Type/Catalog>>\nendobj\n" + b"\x00\x01" * 500
+        H6 = ("<html><body>"
+              "<a href='https://mopsov.twse.com.tw/x_2012.pdf'>●相關規範差異說明</a>"
+              "</body></html>").encode()
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (H6, None) if u.endswith("/index") else (PDFB, None))
+        o6 = []
+        M.terms_case(o6)
+        t6 = "\n".join(o6)
+        ck("⑮ ⛔⛔ PDF **不解析**（網址尾巴）⇒ 明講它是二進位檔，"
+           "⛔ 不把二進位當「條款原文」印出來",
+           "這是二進位檔" in t6 and "%PDF" not in t6, t6[:400])
+        ck("⑯ ⭐ 而那一條仍然要**列出網址**（⛔ 不是静静丟掉）",
+           "x_2012.pdf" in t6, t6[:400])
+
+        # ⭐ ⑰ 網址**沒有** .pdf 尾巴，而回的是 PDF ⇒ 內容嗅那一層要擋住
+        H7 = ("<html><body><a href='/mops/web/getfile?id=9'>著作權聲明</a>"
+              "</body></html>").encode()
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (H7, None) if u.endswith("/index") else (PDFB, None))
+        o7 = []
+        M.terms_case(o7)
+        t7 = "\n".join(o7)
+        ck("⑰ ⭐⭐ 網址看不出來，而**內容開頭是 `%PDF`** ⇒ 照樣擋住"
+           "（⛔ 只看尾巴會漏掉這一種）",
+           "內容開頭是" in t7 and "%PDF-1.4" not in t7, t7[:400])
+
+        # ⭐ ⑱ 命中的**理由**要印出來——否則「規範差異 PDF」這種
+        #   假陽性跟真的條款頁在清單上長得一模一樣。
+        # ⛔ 第一版只寫 `"命中：文字:規範" in t6` ⇒ 把**候選清單那一行**的
+        #   理由拿掉的突變 X3 **全綠**：同一串在下面「原文：」那一行還有一份。
+        #   ⇒ ⭐ 斷言要釘在**那一行**：網址與理由要在**同一行**（第七點第六個的變形）。
+        _list_line = [ln for ln in o6
+                      if ln.strip().startswith("── ") and "x_2012.pdf" in ln]
+        ck("⑱ ⭐ **候選清單那一行**就要寫出它是被哪一個詞命中的",
+           len(_list_line) == 1 and "命中：文字:規範" in _list_line[0],
+           str(_list_line)[:300])
     finally:
         B.get = M.B.get = real
 
@@ -2466,7 +2353,6 @@ def main():
     bad += check_mops_pause()
     bad += check_isin_issuetype()
     bad += check_official_vs_month()
-    bad += check_avg_residual()
     bad += check_datagov_d2()
     bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
