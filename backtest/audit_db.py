@@ -413,7 +413,7 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
          col_stat(yc, "volume_ok", "年成交股數（只上市）"), col_stat(yc, "amount_ok", "年成交金額（只上市）"), col_stat(yc, "transactions_ok", "年成交筆數（只上市）"), "",
          f"年成交股數不符 {len(vb):,} 列裡，**官方多的含非整張 {zl:,} 列**（判準①Δvol 非千的倍數／②Δvol÷Δtx < 1,000 股/筆，取或；{zrule}）；其餘 {len(vb) - zl:,} 列（{vb[~vb['qty_note'].str.startswith('官方多的含非整張')]['qty_note'].value_counts().to_dict()}；「判不出來」⛔ 不可讀成沒有零股；6949/113 是鉅額的形狀、未證實）。⛔⛔ 成因未定：我方上市日檔 volume 93.7% 的列不是 1,000 的倍數（2026-09-16 15:42 實測，2020-10-26 前 89.3%／後 97.6%；資料庫線 1615 全量 94.3%、上櫃 0.0%）⇒ 上市日檔本來就含零股，「官方含零股、我方不含」（資料庫線 0922，1600 已撤回）不成立；有名字的候選只有 MI_INDEX notes 明文排除的「拍賣、標購」（未驗）；差額只占官方 p50 0.005%、p95 0.5%，方向 99.7% 官方多。我方天數少於日曆的 {short:,} 列（缺日或該股無成交都會如此，⛔ 分不出）。",
          f"年成交金額不符而股數相同：{len(ab):,} 列，逐年 {ab_by_year}——⚠ 民國 109 那一年是**另一個口徑**（資料庫線 0950：股數不符率十二年最低、金額 70.9%，只作用在金額欄、方向單一、量級 1e-9；1105：差額 100% 落在 **109/10**；2109：3 檔 × 3 欄逐日對 STOCK_DAY 我方與官方逐日**逐位相同**，差的是官方月表 FMSRFK 自己比官方逐日少 317／105／20 元 ⇒ **官方兩條路自己不合、不是我方少算**，成因未知、掃描範圍 3 檔 1 月），⛔ 逐年趨勢裡 109 那格是假尖峰，標註不濾。", "",
-         f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無上市段 {int((mc["status"] != "比對").sum()):,} 列；月量不符裡官方多的含非整張 {mzl:,} 列。", "",
+         f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無上市段 {int((mc['status'] != '比對').sum()):,} 列；月量不符裡官方多的含非整張 {mzl:,} 列。", "",
          "| 欄（月表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(mc, "volume_ok", "月成交股數"), col_stat(mc, "amount_ok", "月成交金額"), col_stat(mc, "transactions_ok", "月成交筆數"),
          col_stat(mc, "high_ok", "月最高價"), col_stat(mc, "low_ok", "月最低價"), col_stat(mc, "avg_price_ok", "月加權均價（金額÷股數，無條件捨去）"), "",
