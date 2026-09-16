@@ -25,6 +25,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+# ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
+import ca_chain  # noqa: F401
 
 # 民國↔西元的分界：官方民國年一律 < 1000（例：115），西元 > 1990。
 _ROC_ADD = 1911
@@ -70,6 +72,29 @@ def roc_iso(v):
     if not (1990 < y < 2100 and 1 <= m <= 12 and 1 <= d <= 31):
         return None
     return f"{y:04d}-{m:02d}-{d:02d}"
+
+
+def actions_in(raw, prefix=None):
+    """TPEx 頁面的 inline script → 它自己寫的 `action:` 清單（已排序去重）。
+
+    ## ⛔ 為什麼要從**頁面自己寫的字**讀，不是從網址猜
+
+    2026-09-15 付過代價：第一版是從 `url` 推（`"pvChgAnn" if "pvChgAnn" in url`），
+    ⚠ 而那兩頁的網址是 `/announce/market/change.html`——`action` 根本不在網址裡。
+    ⇒ 那一版對**真的頁面**也永遠推不出東西。
+    ⭐ 這是三點5 那條的同一個形狀：**不要照名字推一個東西管什麼。**
+
+    配上 `API_PATTERN = "/www/{LANG}/{ACTION}"`，資料端點就是 `/www/<lang>/<action>`。
+
+    ⛔⛔ `prefix` 預設是 **None ＝ 全收**。⚠ 這一條是有代價才寫成這樣的：
+    上一版把 `bulletin/` **寫死在正規式裡** ⇒ 想問別的區段（`afterTrading/` …）
+    的人只能再寫一份 ⇒ 那就是第二份實作（四點五）。
+    ⇒ 要縮範圍的人自己傳 `prefix`，⛔ 而預設不縮——
+    **一個預設就把掃描範圍縮小的函式，下一個人不會知道它縮了**（三點①）。
+    """
+    txt = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else (raw or "")
+    got = re.findall(r'action\s*:\s*["\']([A-Za-z0-9_]+/[A-Za-z0-9_]+)["\']', txt)
+    return sorted({a for a in got if prefix is None or a.startswith(prefix)})
 
 
 def pick_field(fields, *words):
@@ -129,6 +154,31 @@ def post_form(url, form, timeout=120, retries=3, sleep=None):
         if i < retries - 1:
             _sleep(2 * (i + 1))
     return b"", last + (f"（重試 {retries} 次都失敗）" if retries > 1 else "")
+
+
+def csv_cell(v, sep="；"):
+    """任意文字 → **可以直接塞進一格 CSV** 的字串。⭐ 全庫唯一那一份（四點五）。
+
+    ## ⛔ 這一支存在的理由：`_official_stats_miss.csv` 裡有 HTML
+
+    2026-09-16 實測，那份判準檔 106 列裡有 **2 列是 `<head>` 與 `<meta h`**：
+
+    ```python
+    f.write(f"{sid},{n},{asof},{str(why).replace(',', '；')}\n")   # ⛔ 只換了逗號
+    ```
+
+    ⚠ 而 `why` 可能是**整頁 HTML**——CLAUDE.md 第二點④：TWSE 被 CDN 擋時回的是
+    HTTP 428 ＋ HTML。⇒ 那串字裡的 `\n` 把**一列切成好幾列**
+    ⇒ ⛔ 判準檔被污染，而 `load_miss()` 讀到的是 `stock_id="<head>"` 這種列。
+
+    ⭐ 它的壞法是最難看出來的那一種：檔案在、格式看起來對、程式不報錯，
+    ⚠ 只是**列數多了**、而多出來的那幾列永遠對不到任何代號。
+
+    ⇒ 這裡把**所有**空白（含 `\n`／`\r`／`\t`）收成一個空格，再換掉逗號與引號。
+    ⛔ 不截斷：錯誤訊息可行動的部分常常在後面（六點六）——要截由呼叫端自己決定。
+    """
+    t = " ".join(str(v).split())
+    return t.replace(",", sep).replace('"', "'")
 
 
 def render_csv(header, rows):

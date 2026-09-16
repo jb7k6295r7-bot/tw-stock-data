@@ -34,7 +34,11 @@ import sys
 import time
 import urllib.error
 import urllib.parse
+import http.client
 import urllib.request
+# ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
+#   import 就生效：它把 urllib 的預設 SSLContext 換成「系統預設＋補鏈」。
+import ca_chain  # noqa: F401
 from datetime import date, datetime, timedelta, timezone
 
 import runlog
@@ -237,11 +241,15 @@ def _safe_url(url):
 def get(url, retries=3, timeout=45):
     url = _safe_url(url)
     last = None
+    partials = []       # ⭐ IncompleteRead 時每一次讀到幾 bytes（判準見下）
     for i in range(retries):
         try:
-            # ★ Accept 一定要帶。fetch.py 的 get() 有帶、backfill 原本沒帶，
-            #   而 fetch.py 每天抓 T86 都成功、backfill 抓同一條卻每天 JSONDecodeError
-            #   （2026-09-03 實測 699 天全失敗）——兩者唯一的差別就是這個標頭。
+            # ★ Accept 一定要帶。2026-09-03 實測：不帶它抓 T86 是 699 天全 JSONDecodeError。
+            # ⚠ 2026-09-13 訂正：這段註解原本寫「fetch.py 的 get() 有帶」——**現在沒有**
+            #   （`fetch.get` 只帶 User-Agent）。⛔ 一句描述另一個檔的註解會過期，
+            #   而過期的註解比沒有註解更糟：下一個人會拿它當現況。
+            #   ⇒ 現況是：`fetch.get` 只服務 FinMind（`get_json` 一個呼叫點），
+            #     交易所那條路一律走這一支。⚠ 兩份 `get` 仍然是兩份（四點五未收）。
             req = urllib.request.Request(url, headers={
                 "User-Agent": UA,
                 "Accept": "application/json,text/plain,*/*"})
@@ -270,6 +278,36 @@ def get(url, retries=3, timeout=45):
                 continue
             if 400 <= e.code < 500 and e.code not in (408, 429):
                 return None, last          # 4xx 重試沒有意義
+        except http.client.IncompleteRead as e:
+            # ⭐⭐ 每一次都把「讀到幾 bytes」記下來，⛔ 不是只留最後一次。
+            #   ⚠ 這一格才是判準：**每次都停在同一個 byte 數 ⇒ 是決定性的**
+            #     （對方或中介固定切在那裡，重試永遠不會好）；
+            #     **每次不一樣 ⇒ 是偶發**（重試有意義）。
+            #   ⛔ 只留最後一次的話，這兩種在報告上長得一模一樣。
+            partials.append(len(e.partial))
+            # ⭐⭐ 傳到一半斷掉（2026-09-13 實測：TPEx 的 openapi/swagger.json
+            #   452 KB，只讀到 24 KB）。⛔ 它跟「端點壞掉」完全是兩件事，
+            #   ⚠ 而原本的訊息只有 `IncompleteRead: IncompleteRead(...)`
+            #     ——看起來就像那個端點不能用，而它其實重試就會好。
+            #   ⇒ 訊息要**自己講出**它是傳輸被切斷，並且已讀／還差多少。
+            same = len(set(partials)) == 1 and len(partials) > 1
+            # ⛔⛔ 2026-09-14 付過代價：`e.expected` **可以是 None**。
+            #   chunked 傳輸斷在「下一塊的長度」那一行時，Python 丟的是
+            #   `IncompleteRead(b'')`——**沒有 expected**。
+            #   ⇒ `f"{None:,}"` ⇒ TypeError ⇒ ⛔ **這個「錯誤處理」自己炸掉**
+            #     ⇒ 例外沒有被轉成錯誤字串 ⇒ 不重試、整支 feeds.py 當場結束。
+            #   ⚠ 實測後果：otcmargin 回補 run 143 十二年每一年都只跑了 8~9 天
+            #     就掛掉（2,850 天只補到 86 天），⛔ 而每一年都照樣 push 了。
+            #   ⭐ 教訓是第七點那句：**假回應比真回應簡單，等於那段沒測**——
+            #     我只餵過「有 expected」的那一種形狀。
+            _exp = (f"{e.expected:,}" if isinstance(e.expected, int)
+                    else "⚠ 對方沒說還差多少（chunked 斷在長度那一行）")
+            last = (f"IncompleteRead：連線傳到一半斷掉"
+                    f"（已讀 {len(e.partial):,} bytes、還差 {_exp}）"
+                    f"｜各次讀到 {['{:,}'.format(x) for x in partials]}"
+                    + ("　⛔ **每次都停在同一個位置 ⇒ 這是決定性的，重試不會好**"
+                       if same else
+                       "　⇒ ⭐ 這是**傳輸被切斷**，不是端點壞掉，重試通常會好"))
         except Exception as e:  # noqa: BLE001
             last = f"{type(e).__name__}: {e}"
         if i < retries - 1:
@@ -290,12 +328,12 @@ def preflight(url, what):
         return True
     if err.startswith("LIMITED"):
         print(f"[preflight] {what}：**被交易所限流擋下**，不是端點或參數的問題。\n"
-              f"           {err[:160]}\n"
+              f"           {why(err)}\n"
               f"           同一支程式在沒被擋的時候是通的（netdiag 18/18 全過）。\n"
               f"           做法：等一段時間再跑，或錯開同日其他回補工作。"
               f"**不要改標頭、不要加大重試。**", file=sys.stderr)
     else:
-        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {err[:200]}",
+        print(f"[preflight] {what}：第一發就失敗，先查端點與參數。\n           {why(err, 200)}",
               file=sys.stderr)
     return False
 
@@ -521,7 +559,7 @@ def fetch_day_market(day, market, urls, probe_lines=None):
                         f"        [診斷] 首筆={json.dumps(d[0], ensure_ascii=False)[:300]}")
         if lines:
             return lines, u
-        last_err = last_err or f"解析出 0 列（{note[:60]}）"
+        last_err = last_err or f"解析出 0 列（{why(note)}）"
     # ★ 失敗原因一定要帶出去。只寫「失敗」的話，事後看 coverage 分不出是
     #   被限流（重跑就好）、端點改版（要改程式）、還是那天真的沒有資料。
     if wrong_day:
@@ -814,7 +852,16 @@ META_DIR = os.path.join(_ROOT, "meta")
 STOCKS_HEADER = _STOCKS_HEADER
 
 
-INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total"]
+# ⭐⭐ 2026-09-14 加最後兩欄（K線分析線 0707 裁定）。⛔ **一定要接在最後**：
+#   舊日檔是 6 欄，`--need-col dealer_self` 靠「表頭缺這一欄」認出要重抓的日子，
+#   插在中間會讓舊檔的欄位整排錯位。
+# ⚠ 而寫下這句話的當下 `--inst` **還沒有 `--need-col`**（只有 `--force`）
+#   ⇒ 那句註解當時是**假的**。⭐ 已補上，而且跟 feeds 共用 `days_missing_col()`。
+#   ⛔ 教訓：註解裡寫「靠某個機制」之前，先確認那個機制**在這一支裡真的存在**。
+# ⚠ `dealer` 仍然是**合計**（自行買賣 ＋ 避險），⛔ 不改語意——
+#   改掉的話下游每一個讀 `dealer` 的地方都要跟著改，而沒有人會被通知。
+INST_HEADER = ["date", "stock_id", "foreign", "trust", "dealer", "total",
+               "dealer_self", "dealer_hedge"]
 
 
 def inst_url(day):
@@ -876,9 +923,20 @@ def parse_inst(d, day, known=None):
     # ★ 自營商取「合計」那一欄，不是自行買賣或避險的分項
     i_dl = ex("自營商買賣超股數")
     i_tt = ex("三大法人買賣超股數")
+    # ⭐⭐ 2026-09-14：分項**也收下來**（K線分析線 0707：判籌碼只看「自行買賣」，
+    #   避險是法規強制的獨立帳戶、不代表方向判斷）。
+    #   ⛔ 欄名不是猜的——`_keys_probe.txt` 2026-09-14 逐字印出 19 欄：
+    #     [11] 自營商買賣超股數　　　　　　← 合計
+    #     [14] 自營商買賣超股數(自行買賣)
+    #     [17] 自營商買賣超股數(避險)
+    #   ⚠⚠ 而 [11] 是 [14][17] 的**子字串** ⇒ 這正是 T86 那次 16,394 列的坑
+    #     ⇒ `ex()` 是**完全相等**比對，所以 [11] 不會命中 [14]／[17]。
+    #     ⛔ 任何人把它改成「包含」比對，三欄會全部撞在一起。
+    i_ds = ex("自營商買賣超股數(自行買賣)")
+    i_dh = ex("自營商買賣超股數(避險)")
     if any(x is None for x in (i_code, i_tr, i_tt)):
         return [], f"欄位對不上：{fields}"
-    out, bad = [], 0
+    out, bad, bad2 = [], 0, 0
     for r in (t.get("data") or []):
         if not r or len(r) <= i_tt:
             continue
@@ -893,8 +951,372 @@ def parse_inst(d, day, known=None):
         if abs(fo + tr + dl - tt) > 1:      # 恆等式，不符就丟掉那一列並回報
             bad += 1
             continue
-        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}"])
-    return out, f"{len(out)} 列可用（驗算不符丟棄 {bad} 列）"
+        # ⭐ 兩個分項：取不到就**留空**，⛔ 不可以寫 0——
+        #   `0` 的意思是「那天沒買也沒賣」，`空` 的意思是「這一天沒有這個欄位」，
+        #   ⚠ 兩者在下游完全不同（0 會被算進平均，空不會）。
+        if i_ds is None or i_dh is None:
+            ds = dh = ""
+        else:
+            vs, vh = g(i_ds), g(i_dh)
+            # ⭐ 免費的恆等式：自行買賣 ＋ 避險 ＝ 自營商合計。
+            #   ⛔ 對不上代表**取到別的欄**（子字串那個坑），整列丟掉並回報，
+            #   ⚠ 不可以靜靜寫進去。
+            if abs(vs + vh - dl) > 1:
+                bad2 += 1
+                continue
+            ds, dh = f"{vs:.0f}", f"{vh:.0f}"
+        out.append([day, code, f"{fo:.0f}", f"{tr:.0f}", f"{dl:.0f}", f"{tt:.0f}",
+                    ds, dh])
+    note = f"{len(out)} 列可用（驗算不符丟棄 {bad} 列）"
+    if i_ds is None or i_dh is None:
+        # ⚠ 大聲講：⛔ 整欄空白與「今天大家都是 0」長得一樣
+        note += "｜⚠ **找不到自營商分項欄，dealer_self／dealer_hedge 整欄留空**"
+    if bad2:
+        note += f"｜⛔ **自行買賣＋避險≠自營合計，丟棄 {bad2} 列**"
+    return out, note
+
+
+def page_wiring(text, inline_cap=6, inline_chars=1200, attr_cap=40):
+    """那一頁**自己**把參數放在哪裡：inline `<script>` ＋ `data-*` 屬性。
+
+    ⭐ 只有這一份實作（四點五）。⚠ 而它是從 `otccal_probe` 抽出來的——
+    那一支 2026-09-09 第四輪的結論就是這件事：
+
+    > `tables.js` 那 142 處 `calendar` 全是 moment.js 的語系表
+    > ⇒ **關鍵字次數多 ≠ 有端點**。11 支 js 裡一條寫死的路徑都沒有。
+    > ⇒ 網址只剩兩個地方可能：**頁面自己的 inline `<script>`**，
+    >   或 **`data-*` 屬性**（TPEx 新站把參數放在這裡）。
+
+    ⇒ ⛔ 這一支**不下結論、不拼網址**：只把那兩個地方的原文印出來。
+    ⚠ 而 `xhr_clues()` 挖的是**外部 .js**，這一支挖的是**頁面自己**
+    ——⭐ 兩者互補，⛔ 少了這一支就會得到「11 支 js 都沒有 ⇒ 沒有端點」那個錯結論。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out = []
+    inline = re.findall(r"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>", t, re.S)
+    inline = [re.sub(r"\s+", " ", b).strip() for b in inline]
+    inline = [b for b in inline if b]
+    out.append(f"⑥ 頁面自己的 inline <script>：**{len(inline)} 段**"
+               f"（共 {sum(len(x) for x in inline):,} 字）"
+               + ("　⛔ 一段都沒有" if not inline else ""))
+    for i, b in enumerate(inline[:inline_cap], 1):
+        out.append(f"   ── 第 {i} 段（{len(b):,} 字）")
+        for k in range(0, min(len(b), inline_chars), 160):
+            out.append(f"      {b[k:k + 160]}")
+        if len(b) > inline_chars:
+            out.append(f"      …（這一段另 {len(b) - inline_chars:,} 字未印）")
+    if len(inline) > inline_cap:
+        out.append(f"   …（另 {len(inline) - inline_cap} 段未印）")
+
+    das = sorted(set(re.findall(r'(data-[a-zA-Z0-9_\-]+)\s*=\s*["\']([^"\']*)', t)))
+    out.append(f"⑦ `data-*` 屬性：**{len(das)} 種**"
+               + ("　⛔ 一個都沒有" if not das else ""))
+    for k, v in das[:attr_cap]:
+        out.append(f"   {k} = {v[:90]!r}")
+    if len(das) > attr_cap:
+        out.append(f"   …（另 {len(das) - attr_cap} 種未印）")
+    return out
+
+
+def xhr_clues(text, cap=12, base=None):
+    """那一頁的 js **去打誰**——把線索挖出來。→ list[str]（要印的行）。
+
+    ⭐ 只有這一份實作（四點五）：MOPS 與櫃買公告區**同一個問題**
+    ——頁面是 js 空殼，而資料在載入後那一發請求裡。
+    ⛔ 兩邊的**取頁方式**不同（MOPS 走橋、櫃買直接 GET），
+    ⚠ 而「挖什麼」完全一樣 ⇒ 挖的那一半收在這裡。
+
+    ⛔ 它**不下任何結論**：只把像端點的字串逐條印出來，人讀完才知道下一發打哪裡。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out = []
+    pats = (
+        ("①  `/…/api/…` 出現過哪些", r"/[A-Za-z0-9_.-]*api[A-Za-z0-9_/-]*"),
+        ("②  `fetch(` 的對象", r"fetch\(\s*[\"'`]([^\"'`]{4,120})"),
+        ("③  `$.ajax` / `url:` 的對象", r"url\s*:\s*[\"'`]([^\"'`]{4,120})"),
+        ("④  其他 `.ashx`／`.json`／`/api/` 字串",
+         r"[A-Za-z0-9_./-]*(?:\.ashx|\.json|/api/)[A-Za-z0-9_./-]*"),
+    )
+    for label, pat in pats:
+        hits = sorted({(m if isinstance(m, str) else m[0])
+                       for m in re.findall(pat, t)})
+        out.append(f"  {label}：{len(hits)} 種")
+        out += [f"      {h[:110]}" for h in hits[:cap]]
+        if len(hits) > cap:
+            out.append(f"      …（另 {len(hits) - cap} 種）")
+    m = re.search(r"function\s+(getMsg|query|search|doQuery)\s*\([^)]*\)\s*\{", t)
+    if m:
+        body = " ".join(t[m.start():m.start() + 600].split())
+        out.append(f"  ⭐ `{m.group(1)}` 本體前 400 字：{body[:400]}")
+    else:
+        out.append("  ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體"
+                   "（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）")
+    # ⭐ ⑤ 外部 .js —— ①~④ 全是 0 種時，答案只可能在這裡。
+    #   ⚠ 這一節**一定要印**（就算 0 支）：⛔「沒有這一節」跟「這一節是 0」
+    #     在紙上長得一模一樣（第七點）。
+    srcs = script_srcs(t, base=base, cap=cap)
+    out.append(f"  ⑤  外部載入的 `.js`：{len(srcs)} 支"
+               + ("" if base else "　⚠ 沒給 base ⇒ **相對路徑不算在內**"))
+    out += [f"      {u[:140]}" for u in srcs]
+    return out
+
+
+def visible_text(text, sep):
+    """把回應**去標籤、壓空白**，變成人讀得懂的一串。→ str。
+
+    ⭐ 只有這一份實作（四點五）。⛔ 它存在的理由是 CLAUDE.md 第一點那句：
+    **判準沒辦法窮舉形狀，而人讀三行字就分得出來。**
+
+    ⚠ 2026-09-15 我為了「這一頁是查無／表單／空殼哪一種」改過兩次判準，
+    每次都又冒出第三種形狀 ⇒ ⭐ 不要再猜形狀，把字印出來讓人讀。
+
+    ## ⛔⛔ `sep` 是**必填、沒有預設值**——這一族有兩種相反的語意
+
+    收攏之前 repo 裡六份實作分成兩派，而**差別是靜默的**：
+
+    ```
+    sep=" "   標籤換成空白  `<td>2330<br/>台積電</td>` → `2330 台積電`
+              ⇒ 整頁可讀文字、要讓人一眼分辨形狀的，用這個
+    sep=""    標籤直接刪掉  同一段            → `2330台積電`
+              ⇒ 取**一格**的值（表格 cell、`<a>` 的文字）用這個
+              ⚠ 換成 " " 的話 `"產業別" in cells` 這種比對會靜靜對不上
+    ```
+
+    ⇒ 照 `lowwater.direction`／`db_status._p_col_two(derived=)` 那條通則：
+    ⛔ **有預設值就是「照抄語意」那個坑的自動化版本**——不寫也會跑，
+    而它會默默套上多數派那一種，⚠ 而畫面上看不出來。
+    （`selftest_probes` ⑮ 用 `inspect.signature` 直接釘「沒有 default」。）
+    """
+    assert sep in ("", " "), f"sep 只能是 '' 或 ' '，實得 {sep!r}"
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    # ⛔⛔ `<script>`／`<style>` 要**先**整段拿掉，⚠ 而這一行是有代價換來的：
+    #   我 2026-09-15 新寫的那一版沒有它 ⇒ `t05st01` 的「前 160 字」印出來是
+    #   `… window.onload=getMsg; var MAR = document.querySelector("#marquee") …`
+    #   ⇒ ⛔ **那不是人看得到的字**，而這一格存在的理由就是「讓人讀三行就分得出來」。
+    #   ⭐ 而 `hist_probe._text` **本來就有**這兩行——⇒ 收成一份的時候要取**比較嚴**
+    #     的那一版，⛔ 不是取我剛寫的那一版（四點五：收攏不等於照抄新的那份）。
+    t = re.sub(r"<script[^>]*>.*?</script>", " ", t, flags=re.S)
+    t = re.sub(r"<style[^>]*>.*?</style>", " ", t, flags=re.S)
+    return " ".join(re.sub(r"<[^>]+>", sep, t).split())
+
+
+def script_srcs(text, base=None, cap=12):
+    """那一頁**外部載入**的 .js 清單。→ list[str]（絕對網址，已去重排序）。
+
+    ⭐ 只有這一份實作（四點五）：MOPS 的 `t05st01` 與櫃買那兩頁
+    （`announce/market/change*.html`）是**同一個問題**——inline 裡
+    `fetch(`／`$.ajax`／`url:` 全部 0 種，⇒ 那一發請求寫在**外部 .js** 裡。
+
+    ⛔ 它**不下結論**、也不抓：只把 `<script src>` 逐條解析成絕對網址。
+    ⚠ `base` 沒給就只回那些本來就是絕對網址的——⛔ 相對路徑不猜。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    hits = []
+    for m in re.finditer(r"<script[^>]*\bsrc\s*=\s*[\"\']([^\"\']{2,300})[\"\']",
+                         t, re.I):
+        u = m.group(1).strip()
+        if u.startswith(("data:", "javascript:")):
+            continue
+        if u.startswith("//"):
+            u = "https:" + u
+        elif not u.startswith(("http://", "https://")):
+            if not base:
+                continue            # ⛔ 沒有 base 就不猜（相對路徑會拼錯站）
+            u = urllib.parse.urljoin(base, u)
+        hits.append(u)
+    # ⚠ 第三方（Google 字型／分析）不是我們要找的那一支，但**照樣列出來**
+    #   ——⛔ 由讀的人判斷，這一份不替他篩掉。
+    return sorted(set(hits))[:cap]
+
+
+def around(text, needle, span=300, cap=4):
+    """把 `needle` 前後的原始碼**原樣印出來**。→ list[str]。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要有它：**端點名挖到了，參數還是不知道**
+
+    2026-09-15 `mop_search.js` 裡挖到 `/mops/web/ezsearch_query`
+    ——⭐ 那是 MOPS「公告快易查」真正的查詢端點，我方從來沒用過。
+    ⚠ 而「知道網址」離「打得到」還差**參數怎麼組**。
+
+    ⇒ ⛔ 而參數**不可以猜**（CLAUDE.md 第一點：先把回應／原始碼自己講的話攤開）。
+    ⭐ 最便宜的做法就是把那一段原始碼**原樣印出來**讓人讀
+    ——⚠ 判準沒辦法窮舉形狀，而人讀三行字就分得出來。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    out, seen = [], 0
+    for m in re.finditer(re.escape(needle), t):
+        if seen >= cap:
+            out.append(f"      …（另 {len(re.findall(re.escape(needle), t)) - cap} 處未印）")
+            break
+        a = max(0, m.start() - span // 2)
+        seg = " ".join(t[a:m.start() + span // 2].split())
+        out.append(f"      […{seg}…]")
+        seen += 1
+    if not seen:
+        # ⛔ 找不到要說「找不到」，⚠ 不是印一片空白（那跟「沒有這一段」長得一樣）
+        out.append(f"      ⚠ 這一份裡**找不到** `{needle}`（⛔ 不是「它不存在」，是不在這一支）")
+    return out
+
+
+def js_followups(text, base, cap=8, skip_hosts=("googleapis", "gstatic",
+                                                 "google-analytics", "googletagmanager",
+                                                 "jquery.com", "cdnjs", "jsdelivr"),
+                 needles=()):
+    """⑤ 那幾支外部 `.js` **裡面**去打誰——⛔ 這是「取不到」之後的下一步。
+
+    → list[str]（要印的行）。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼一定要有這一層
+
+    2026-09-15 實測，三頁**同時**是 js 空殼而且 inline 線索全部 0 種：
+
+    ```
+    MOPS  t05st01（重大訊息）                     ①②③④ 全 0
+    TPEx  announce/market/change.html             ②③④ 全 0（① 只有字型站）
+    TPEx  announce/market/change/reference.html   ②③④ 全 0（① 只有字型站）
+    ```
+
+    ⇒ ⭐ 「inline 全 0」**不是**「站上沒有」——它是「那一發請求寫在外部檔裡」。
+    ⛔ 而那兩件事在報告上長得一模一樣（第七點）。
+
+    ⚠ 第三方站（字型／分析／CDN）**不抓**：不是我們要找的那一支，而且
+    ⛔ 對別人的 CDN 發請求跟這件事無關。⇒ 跳過的**逐條印出來**，
+    ⛔ 不可以靜靜篩掉——讀的人要看得到「⑤ 有 11 支、我只抓了 2 支」。
+    """
+    out = []
+    srcs = script_srcs(text, base=base, cap=24)
+    mine, third = [], []
+    for u in srcs:
+        (third if any(h in u for h in skip_hosts) else mine).append(u)
+    # ⛔⛔ 2026-09-15 付過代價：`mine` 是**照字母排序**的，而 cap=6
+    #   ⇒ 額度被 `gsap`／`jquery-3.7.1`／`jquery.cookie`／`jquery.mousewheel`
+    #     吃光 ⇒ ⭐ 站方**自己寫的** `main.js`／`tables.js` 一支都沒挖到
+    #   ⇒ ⚠ 報告上是「本站另 4 支未挖」——⛔ 而那 4 支正是最可能有答案的。
+    # ⇒ ⭐ 通用函式庫**排到最後**（它們是別人寫的，不會有這個站的端點）。
+    # ⛔ 仍然列出來、仍然可以挖得到——⚠ 只是順序，不是篩掉。
+    vendor = ("jquery", "gsap", "bootstrap", "slick", "swiper", "modernizr",
+              "polyfill", "lodash", "moment", "/ie.js", "underscore")
+    mine.sort(key=lambda u: (any(v in u.lower() for v in vendor), u))
+    n_vendor = sum(1 for u in mine if any(v in u.lower() for v in vendor))
+    out.append(f"  ⑥ 外部 `.js` 逐支挖：共 {len(srcs)} 支"
+               f"｜本站 {len(mine)} 支（其中通用函式庫 {n_vendor} 支，⭐ **排到最後**）"
+               f"｜第三方 {len(third)} 支（⛔ 不抓）")
+    for u in third:
+        out.append(f"      ⛔ 跳過（第三方）：{u[:120]}")
+    if not mine:
+        out.append("      ⚠ **本站一支都沒有** ⇒ 這一層挖不下去"
+                   "（⛔ 這不是「官方沒有」，是我方還沒找到入口）")
+        return out
+    for u in mine[:cap]:
+        raw, err = get(u, retries=2, timeout=60)
+        if err:
+            out.append(f"      ⛔ {u[:100]} 取不回來：{why(err)}")
+            out.append("         ⇒ 這一支**沒挖**（⛔ 不是「裡面沒有」）")
+            continue
+        out.append(f"      ── {u[:120]}（{len(raw):,} bytes）")
+        for ln in xhr_clues(raw, base=u):
+            out.append("    " + ln)
+        # ⭐ `needles`：那一支 js 裡某個字**前後的原文**。
+        #   ⛔ 加它的理由是 2026-09-15 C4 那一格：頁面 inline 寫著
+        #     `tables.init({pattern: API_PATTERN, action: "bulletin/pvChgAnn"})`
+        #   ⇒ ⭐ **action 讀到了，⛔ 而 `API_PATTERN` 的值在別支 js 裡**。
+        #   ⚠ 而 `xhr_clues` 只認寫死的路徑字串 ⇒ 一個常數名它看不到。
+        for nd in needles:
+            for ln in around(raw, nd, span=260, cap=3):
+                out.append("        " + ln)
+    if len(mine) > cap:
+        out.append(f"      …（本站另 {len(mine) - cap} 支未挖，cap={cap}）")
+    return out
+
+
+#: ⭐ `probe_stamp` **搬到 `runlog`** 了（2026-09-15），這裡留成別名。
+#  ⛔ 搬的理由不是整理：`tls_probe.py` 需要它，⚠ 而 `import backfill` 會把
+#    `ca_chain` 的補鏈 opener 裝上去 ⇒ **那支探針就吃到補鏈了**
+#    ⇒ 它是「量現況」的尺，吃了之後永遠回「通」
+#    ⇒ ⭐ `selftest_ca_chain` ⑤ 當場抓到（probe run 101 step 10 紅、擋住同步）。
+#  ⚠ 而 `runlog` 只 import 標準庫 ⇒ 它進得去、補鏈進不去。
+probe_stamp = runlog.probe_stamp
+
+def js_shell(text):
+    """這一頁是不是**js 空殼**（＝框架回來了，而資料是載入後才由 js 取的）。
+
+    → `(中文字數, <tr> 數, js 支數, 是不是空殼)`。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼這一條要收成一份
+
+    `suspend_probe` 早就有這個判準，而且連處置都寫死了：
+
+        「① 有命中但 ③ 是 js 空殼 ⇒ 記成**我方取不到**，
+          跟櫃買那三頁同一種，⛔ **不是**『證交所沒有』」
+
+    ⚠ 而 2026-09-15 量 MOPS `t05st01` 時，`mops_probe` **沒有**這一條
+    ⇒ 它把一個 js 空殼判成「期別參數被忽略，這條路不可用」
+    ⛔ 而那兩句話的下一步完全相反：
+      「不可用」會讓人**不再去試**；「我方取不到」是一個**還沒解決的工程問題**。
+
+    ⇒ 實測那一頁：22,788 bytes、中文 516 字、`<tr>` 14 個，
+      而前 160 個可見字是 `公開資訊觀測站 … window.onload=getMsg;`
+      ——⭐ **站台外框加 JavaScript，一列資料都沒有。**
+
+    ⚠ 判準是**三個一起看**，⛔ 不是任何一個單獨成立：
+    表格少（資料頁一定有很多 `<tr>`）＋ js 多（外框才會掛一堆 .js）。
+    """
+    t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
+    han = len(re.findall("[一-龥]", t))
+    n_tr = len(re.findall(r"<tr[ >]", t, re.I))
+    n_js = len(re.findall(r"\.js[\"'?]", t))
+    return han, n_tr, n_js, (n_tr < 20 and n_js >= 3)
+
+
+def why(err, cap=160):
+    """把錯誤訊息縮短成一行，⭐ **保留頭也保留尾**。⭐ 只有這一份實作（四點五）。
+
+    ⛔⛔ 2026-09-13 付過代價：原本是 `err[:50]`，而那一天 TPEx 回的是
+
+        URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_
+
+    ——⚠ **剛好切在有用的字開始的地方**。SSL／憑證／逾時這一族，
+    **可行動的部分永遠在尾巴**（`unable to get local issuer certificate`、
+    `certificate has expired`、`hostname mismatch` 各自的下一步完全不同），
+    ⛔ 而前 50 個字元每一次都長得一樣。
+    ⇒ 太長就中間省略，⛔ 不要砍尾巴。
+
+    ⚠ 而 2026-09-14 發現那次**只修了 `feeds.py` 一支**：全 repo 還有 44 處在切
+    `err[:N]`／`note[:N]`。⇒ 搬到這裡（最底層，誰都 import 得到），
+    並加一道**低水位**斷言讓那 44 處只能往下走（`selftest_feed_days.py` ⑧）。
+    """
+    t = " ".join(str(err).split())
+    if len(t) <= cap:
+        return t
+    keep = (cap - 3) // 2
+    return t[:keep] + "..." + t[-keep:]
+
+
+def days_missing_col(dir_, need, done):
+    """→ `done` 裡**表頭缺 `need` 欄**的那些日期（set）。
+
+    ⭐⭐ 這是「補欄位」的續跑判準：**用資料自己當進度**（CLAUDE.md 第四點），
+    ⛔ 不另開台帳——台帳會跟資料不一致。
+
+    ⚠ 只讀**第一行**：2,850 個檔全部讀完是幾百 MB，而我只要表頭。
+
+    ⛔⛔ 這一份本來只在 `feeds.cmd_feed` 裡（inline），
+    而 `backfill.py --inst` **根本沒有 `--need-col`**
+    ⇒ 2026-09-14 我在 `INST_HEADER` 的註解寫「`--need-col dealer_self` 靠表頭認日子」，
+      **那句話當時是假的**——上市那半只有 `--force`（整段重抓、不能續跑）。
+    ⇒ ⭐ 收成一份放這裡（`backfill` 是下層，`feeds` import 它 ⇒ 不會循環）。
+    """
+    stale = set()
+    for x in sorted(done):
+        p_ = os.path.join(dir_, x + ".csv")
+        try:
+            with open(p_, encoding="utf-8") as f_:
+                head = f_.readline()
+        except OSError:
+            continue
+        if need not in [c.strip() for c in head.rstrip("\n").split(",")]:
+            stale.add(x)
+    return stale
 
 
 def write_inst(day, lines):
@@ -960,7 +1382,13 @@ def cmd_inst(args):
     #   ⚠ 這正是今天一直在抓的那一族：**參數存在不等於它有作用。**
     #   ★ 為什麼現在需要它：官方會事後修訂三大法人的投信欄（實測 29 筆／3 天），
     #     不重抓的話那些錯值永久留著，而且列數、內部 total 都自洽 ⇒ 看不出來。
-    days = [d for d in days if args.force or d not in done]
+    # ⭐ 補欄位時的續跑判準：表頭缺那一欄就重抓（⛔ 不是「檔不在才抓」）
+    need = getattr(args, "need_col", "")
+    stale = days_missing_col(INST_DIR, need, done) if need else set()
+    if need:
+        print(f"[inst] --need-col {need}：已存在的 {len(done)} 天裡，"
+              f"**{len(stale)} 天的表頭缺這一欄**，要重抓")
+    days = [d for d in days if args.force or d not in done or d in stale]
     if args.limit:
         days = days[:args.limit]
     print(f"[inst] {args.start} ~ {args.end}｜{how}｜待處理 {len(days)} 天"
@@ -991,7 +1419,7 @@ def cmd_inst(args):
         raw, err = get(inst_url(day))
         note = ""
         if err:
-            failed += 1; streak += 1; note = f"失敗({err[:60]})"
+            failed += 1; streak += 1; note = f"失敗({why(err)})"
         else:
             try:
                 d = json.loads(raw.decode("utf-8"))
@@ -1342,6 +1770,10 @@ def main():
     ap.add_argument("--markets", default="twse,tpex,emerging")
     ap.add_argument("--limit", type=int, default=0, help="最多處理幾天（試跑用）")
     ap.add_argument("--force", action="store_true", help="已存在的日期也重抓")
+    # ⭐ 補欄位用：只重抓「表頭缺這一欄」的既有日期（可續跑）。
+    #   ⛔ 跟 `--force` 不同：force 是整段重抓，斷掉就要從頭。
+    ap.add_argument("--need-col", dest="need_col", default="",
+                    help="只重抓表頭缺這一欄的既有日期（補欄位用，可續跑）")
     ap.add_argument("--need-notrade", action="store_true",
                     help="只重抓「檔案裡還沒有任何『無成交』列」的日期"
                          "（2026-09-10「甲」的回補用，可續跑）")

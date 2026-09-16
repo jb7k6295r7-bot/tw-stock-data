@@ -29,6 +29,8 @@ import numpy as np
 import pandas as pd
 
 from . import data as D
+import official_stats as O   # ⭐ 官方年均價的進位規則只有那一份實作（資料庫線 2109；四點五）：上櫃捨去、上市民107起「先 3 位再 banker's」、民104~106 四捨五入
+from decimal import Decimal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "results_audit")
@@ -260,7 +262,8 @@ def aggregate_ours(res, freq, market: str | None = None):
             ih = int(np.flatnonzero(hv == hmax)[-1]) if not np.isnan(hmax) else -1
             il = int(np.flatnonzero(lv == lmin)[-1]) if not np.isnan(lmin) else -1
             mean_c = float(g["close"].mean()); vsum = float(g["volume"].sum()); asum = float(g["amount"].sum())
-            row = {"stock_id": r["sid"], "days": int(len(g)), "n_markets": int(g["mkt"].nunique()), "avg_close_ours": round(mean_c, 2), "avg_close_trunc_ours": _trunc2(mean_c),
+            mean_dec = sum(Decimal(str(x)) for x in g["close"].tolist()) / Decimal(len(g))   # ⛔ 不走 float：官方進位規則要吃精確的均值
+            row = {"stock_id": r["sid"], "days": int(len(g)), "n_markets": int(g["mkt"].nunique()), "avg_close_ours": round(mean_c, 2), "avg_close_trunc_ours": _trunc2(mean_c), "avg_close_dec": mean_dec,
                    "high_ours": float(hmax), "high_date_ours": g["date"].iloc[ih] if ih >= 0 else pd.NaT,
                    "low_ours": float(lmin), "low_date_ours": g["date"].iloc[il] if il >= 0 else pd.NaT,
                    "volume_ours": vsum, "amount_ours": asum,
@@ -274,7 +277,7 @@ def aggregate_ours(res, freq, market: str | None = None):
 
 def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = None, cal_days: dict | None = None) -> pd.DataFrame:
     """G1：官方年表（上市 FMNPTK＝含量三欄；上櫃 yearlyStock＝只有價五格，量三欄留空 ⇒ 用「量欄是否空白」分市場）vs 我方日檔按年聚合。
-    判準：avg_close 逐位相同——⚠ 上市是四捨五入、上櫃是無條件捨去（實測：上市 round 95.9%／trunc 50%，上櫃 trunc 99.98%／round 50%）；
+    判準：avg_close 逐位相同——進位規則交給 official_stats.avg_close_matches（上櫃捨去；上市民107起 3 位→banker's、民104~106 四捨五入；資料庫線 2109 母體級 99.983%）；
     high／low 逐位相同；high_date／low_date 月日相同（同值取最後一次）；量三欄只在官方有值時比、逐位相同。
     轉板年＝我方日檔該年 market 欄不只一種（資料庫線 0922：資料自己講得出來）⇒ 價五格只比官方那個市場的那一段、量三欄不比（口徑不同）。
     transfer 已不用（保留參數相容），cal_days＝{roc_year: 日曆交易日數} ⇒ 多一欄 days_short（我方該年少於日曆的天數；缺日或無成交都會讓它 > 0）。
@@ -290,8 +293,12 @@ def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = No
     j["days_short"] = (j["roc_year"].map(cal_days or {}) - j["days"]) if cal_days else np.nan
     cmp = j["status"].isin(["比對", "轉板年（價比該市場段、量不比）"]).to_numpy()
     _ok = lambda cond: np.where(cmp, cond.to_numpy(float), np.nan)   # 1.0／0.0／NaN（沒得比）
-    ours_avg = np.where(j["is_tpex"], j["avg_close_trunc_ours"], j["avg_close_ours"])
-    j["avg_ok"] = _ok((pd.Series(ours_avg, index=j.index) - j["avg_close"]).abs() <= 1e-9)
+    # 官方年均價的進位規則（資料庫線 2109，母體級 17,829／17,832 逐位）：上櫃無條件捨去；上市民107起 先到 3 位再 banker's 到 2 位、民104~106 直接四捨五入。
+    # ⛔ 只有 official_stats 那一份實作；已知例外 3 格（2901/105、3016/104、4906/104，都恰好半分、官方往下）⇒ 低水位「不符 ≤ 3」，不是白名單。
+    j["avg_expected"] = [str(O.avg_close_expected(m, int(y), "tpex" if t else "twse")) if isinstance(m, Decimal) else None
+                         for m, y, t in zip(j["avg_close_dec"], j["roc_year"], j["is_tpex"])]
+    j["avg_ok"] = _ok(pd.Series([O.avg_close_matches(m, int(y), "tpex" if t else "twse", o) if isinstance(m, Decimal) and not pd.isna(o) else False
+                                 for m, y, t, o in zip(j["avg_close_dec"], j["roc_year"], j["is_tpex"], j["avg_close"])], index=j.index))
     j["high_ok"] = _ok((j["high_ours"] - j["high"]).abs() <= 1e-9)
     j["low_ok"] = _ok((j["low_ours"] - j["low"]).abs() <= 1e-9)
     j["high_date_ok"] = np.where(cmp, [_official_date_ok(a, b) for a, b in zip(j["high_date_ours"], j["high_date"])], np.nan)
@@ -374,13 +381,13 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
          f"年表 {len(yc):,} 列（上市 {len(twse_y):,}、上櫃 {len(tpex_y):,}；民國 {int(yc['roc_year'].min())}～{int(yc['roc_year'].max())}）；"
          f"我方該年無成交列 {len(nomatch):,} 列（其中民國 104 之前＝資料起點前 {pre:,}，**104 起 {len(nomatch) - pre:,}**）；轉板年（我方日檔該年 market 不只一種）{int((yc['status'].str.startswith('轉板')).sum()):,} 列＝價只比該市場段、量不比；我方無該市場段 {int((yc['status'] == '我方該年無該市場段').sum()):,} 列；比對 {int((yc['status'] == '比對').sum()):,} 列。"
          + (f" 官方端點查無（`_official_stats_miss.csv`）{len(miss):,} 檔——是「查無」不是「不符」。" if miss is not None else ""), "",
-         "約定（實測出來的，不是文件寫的）：官方兩位小數——上市年表收盤平均＝四捨五入、上櫃年表收盤平均＝無條件捨去、上市月表加權均價＝無條件捨去；最高／最低日期同值取最後一次。", "",
+         "約定（實測出來的，不是文件寫的）：官方兩位小數——上市年表收盤平均＝民107起先到 3 位再 banker's、民104~106 四捨五入（資料庫線 2109：分界是逐年 100%／0% 的乾淨切換，⚠ 官方沒公告，哪天再換會安靜誤報 ⇒ 不符要逐年看）、上櫃年表收盤平均＝無條件捨去、上市月表加權均價＝無條件捨去；最高／最低日期同值取最後一次。已知例外 3 格（2901/105、3016/104、4906/104）⇒ 年均價不符的低水位＝3，⛔ 不是白名單。", "",
          "| 欄（年表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
-         col_stat(yc, "avg_ok", "收盤簡單平均（上市四捨五入／上櫃捨去）"), col_stat(yc, "high_ok", "年最高價"), col_stat(yc, "high_date_ok", "年最高價日期"),
+         col_stat(yc, "avg_ok", "收盤簡單平均（official_stats 進位規則）"), col_stat(yc, "high_ok", "年最高價"), col_stat(yc, "high_date_ok", "年最高價日期"),
          col_stat(yc, "low_ok", "年最低價"), col_stat(yc, "low_date_ok", "年最低價日期"),
          col_stat(yc, "volume_ok", "年成交股數（只上市）"), col_stat(yc, "amount_ok", "年成交金額（只上市）"), col_stat(yc, "transactions_ok", "年成交筆數（只上市）"), "",
          f"年成交股數不符 {len(vb):,} 列裡，**官方多的含非整張 {zl:,} 列**（判準①Δvol 非千的倍數／②Δvol÷Δtx < 1,000 股/筆，取或；{zrule}）；其餘 {len(vb) - zl:,} 列（{vb[~vb['qty_note'].str.startswith('官方多的含非整張')]['qty_note'].value_counts().to_dict()}；「判不出來」⛔ 不可讀成沒有零股；6949/113 是鉅額的形狀、未證實）。⛔⛔ 成因未定：我方上市日檔 volume 93.7% 的列不是 1,000 的倍數（2026-09-16 15:42 實測，2020-10-26 前 89.3%／後 97.6%；資料庫線 1615 全量 94.3%、上櫃 0.0%）⇒ 上市日檔本來就含零股，「官方含零股、我方不含」（資料庫線 0922，1600 已撤回）不成立；有名字的候選只有 MI_INDEX notes 明文排除的「拍賣、標購」（未驗）；差額只占官方 p50 0.005%、p95 0.5%，方向 99.7% 官方多。我方天數少於日曆的 {short:,} 列（缺日或該股無成交都會如此，⛔ 分不出）。",
-         f"年成交金額不符而股數相同：{len(ab):,} 列，逐年 {ab_by_year}——⚠ 民國 109 那一年是**另一個口徑**（資料庫線 0950：股數不符率十二年最低、金額 70.9%，只作用在金額欄、方向單一、量級 1e-9；1105：月表可比的 9 檔裡 8 檔的差額 100% 落在 **109/10**；1600 §五：我方日檔量的口徑在 2020-10-26 那天變了（非千倍數比例 92.5% → 98.8%），與 109/10 同月，機制未知），⛔ 逐年趨勢裡 109 那格是假尖峰，標註不濾。", "",
+         f"年成交金額不符而股數相同：{len(ab):,} 列，逐年 {ab_by_year}——⚠ 民國 109 那一年是**另一個口徑**（資料庫線 0950：股數不符率十二年最低、金額 70.9%，只作用在金額欄、方向單一、量級 1e-9；1105：差額 100% 落在 **109/10**；2109：3 檔 × 3 欄逐日對 STOCK_DAY 我方與官方逐日**逐位相同**，差的是官方月表 FMSRFK 自己比官方逐日少 317／105／20 元 ⇒ **官方兩條路自己不合、不是我方少算**，成因未知、掃描範圍 3 檔 1 月），⛔ 逐年趨勢裡 109 那格是假尖峰，標註不濾。", "",
          f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無成交列 {int((mc['status'] != '比對').sum()):,} 列；月量不符裡官方多的含非整張 {mzl:,} 列。", "",
          "| 欄（月表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(mc, "volume_ok", "月成交股數"), col_stat(mc, "amount_ok", "月成交金額"), col_stat(mc, "transactions_ok", "月成交筆數"),
@@ -481,6 +488,16 @@ def _selftest() -> int:
     Yt2 = Yt.copy(); Yt2.loc[0, "volume"] = np.nan; Yt2.loc[0, "amount"] = np.nan; Yt2.loc[0, "transactions"] = np.nan; Yt2.loc[0, "avg_close"] = 10.0; Yt2.loc[0, "high"] = 10.2; Yt2.loc[0, "high_date"] = "1/02"; Yt2.loc[0, "low"] = 9.8; Yt2.loc[0, "low_date"] = "1/02"
     yt3 = official_yearly_check(rt, Yt2).iloc[0]
     check(yt3["avg_ok"] == 1.0 and yt3["high_ok"] == 1.0 and yt3["high_date_ok"] == 1.0, "同一轉板年、上櫃表那列 ⇒ 只比 tpex 段（1/02：10.0／10.2）")
+    # 進位規則（官方年均價）：閉合 10.165 那種半分的格——上市民107起 banker's ⇒ 10.16；民104~106 四捨五入 ⇒ 10.17；上櫃捨去 ⇒ 10.16
+    res_h = [dict(res[0], close=np.array([10.16, 10.17, np.nan, 10.165, 20.0]))]    # 2025 三天均值 = 10.165 恰好
+    Yh = Y.copy(); Yh.loc[0, "avg_close"] = 10.16
+    check(official_yearly_check(res_h, Yh).iloc[0]["avg_ok"] == 1.0 and official_yearly_check(res_h, Yh).iloc[0]["avg_expected"] == "10.16", "上市民114、均值恰 10.165 ⇒ banker's 10.16 ⇒ 官方 10.16 合")
+    Yh.loc[0, "avg_close"] = 10.17
+    check(official_yearly_check(res_h, Yh).iloc[0]["avg_ok"] == 0.0, "同格官方寫 10.17（四捨五入值）⇒ 不符（民107 起不是四捨五入）")
+    Yh.loc[0, "roc_year"] = 105; dh = pd.to_datetime(["2016-01-04", "2016-01-05", "2016-02-03", "2016-12-30", "2017-01-05"]).to_numpy()
+    check(official_yearly_check([dict(res_h[0], dates=dh)], Yh).iloc[0]["avg_ok"] == 1.0, "上市民105、均值 10.165 ⇒ 四捨五入 10.17 ⇒ 合")
+    Yh.loc[0, "roc_year"] = 114; Yh.loc[0, "volume"] = np.nan; Yh.loc[0, "amount"] = np.nan; Yh.loc[0, "transactions"] = np.nan; Yh.loc[0, "avg_close"] = 10.16
+    check(official_yearly_check([dict(res_h[0], mkt=np.array(["tpex"] * 5))], Yh).iloc[0]["avg_ok"] == 1.0, "上櫃、均值 10.165 ⇒ 捨去 10.16 ⇒ 合")
     Yz = Y.copy(); Yz.loc[0, "volume"] = 6001; Yz.loc[0, "transactions"] = 19
     yz = official_yearly_check(res, Yz).iloc[0]
     check(yz["volume_ok"] == 0.0 and yz["qty_note"] == "官方多的含非整張（①②）", "官方多 1 股 1 筆 ⇒ ①非千倍 且 ②1 股/筆 ⇒ 官方多的含非整張（①②）")

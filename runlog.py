@@ -61,6 +61,104 @@ PATH = os.path.join(_ROOT, "data", "meta", "_last_run.md")
 _REAL = PATH
 
 
+def probe_stamp(note=""):
+    """探針輸出的**第一行**：這一趟是誰、什麼時候、在哪個 ref 上跑的。
+
+    → 一行字串（含換行）。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要有它
+
+    2026-09-15 實測：**17 支**會寫 `data/meta/_*.txt` 的探針裡，
+    只有 `suspend_probe` 一支在檔頭寫時戳 ⇒ ⛔ **其餘 16 份，讀的人
+    看不出它是哪一趟跑的**。
+
+    ⚠ 而那些檔正是四條線拿來判斷「官方到底有沒有」的依據
+    ——⭐ 一份三天前的 `_mops_probe.txt` 跟今天剛跑的**長得一模一樣**。
+
+    ⇒ 而它同一天被一個 bug 放大過：`probe.yml` 的 job timeout 是 15 分、
+    而裡面有一步自己就是 15 分 ⇒ 四趟 run 被砍在 `Commit 回 repo` **之前**
+    ⇒ main 上那幾份輸出**停在更早的一趟**，⛔ 而沒有任何地方會說。
+
+    ## ⭐ 這正是 CLAUDE.md 第二點那句話，套在**我方自己的輸出**上
+
+    「這一批要自己講出它是哪一天」——⛔ 我們對官方的回應要求這件事，
+    ⚠ 而我們自己寫給別人讀的檔**沒有做到**。
+
+    ⚠ `ref` 與 `run` 一起寫，是因為四點六③：**排程跑的一律是 main**
+    ⇒ 「這份輸出是哪個 ref 上的程式產生的」跟內容一樣重要。
+    """
+    import os as _os
+    ref = (_os.environ.get("GITHUB_REF_NAME")
+           or _os.environ.get("GIT_BRANCH") or "?")
+    run = _os.environ.get("GITHUB_RUN_ID", "")
+    # ⭐ 「在不在 Actions 上」走**唯一**那一份（`runlog.on_actions`，四點五）。
+    #   ⛔ 這裡本來寫成 `if _os.environ.get("GITHUB_ACTIONS")`（只看真假值）
+    #   ⇒ `GITHUB_ACTIONS="false"` 也算真 ⇒ **那句「不可信」的警語被拿掉**。
+    where = "Actions" if on_actions() else "本機／開發容器"
+    now = now_tpe().isoformat(timespec="seconds")
+    tail = f"｜run {run}" if run else ""
+    extra = f"｜{note}" if note else ""
+    return (f"# ⏱ 這一趟：{now}（台北）｜ref {ref}｜{where}{tail}{extra}\n"
+            + ("" if where == "Actions" else
+               "# ⚠ **不是 Actions 跑的** ⇒ ⛔ 若內容含抓取結果一律不可信"
+               "（這裡對交易所是我方閘道 403）\n"))
+
+
+def on_actions():
+    """這一趟是不是在 GitHub Actions 上跑的。→ bool。⭐ 只有這一份實作（四點五）。
+
+    ## ⛔ 為什麼要收成一份：兩份的判準**不一樣**，而它們的結論相反
+
+    2026-09-15 實際狀況：
+
+    ```
+    runlog._block          os.environ.get("GITHUB_ACTIONS") == "true"   ← 對
+    backfill.probe_stamp   os.environ.get("GITHUB_ACTIONS")             ← ⛔ 只看真假值
+    ```
+
+    ⇒ `GITHUB_ACTIONS="false"`（自測要造「本機」那一種情境時會這樣設）
+      在後者是**真**的 ⇒ 它會說「這是 Actions 跑的」並**拿掉那句警語**。
+    ⚠ 而那句警語正是「這份輸出的抓取結果不可信」——⛔ 拿掉之後看起來像真的。
+
+    ⭐ GitHub 官方保證這個變數在 Actions 上**逐字是 `"true"`**
+    ⇒ 判準寫成 `== "true"`，⛔ 不是「有沒有設」。
+    """
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
+def who():
+    """這一塊是**誰、被什麼觸發**寫的。→ 一段接在時戳後面的字（可能是空的）。
+
+    ## ⛔ 它回答的是「這一塊停在六天前，是壞了還是沒人按」
+
+    2026-09-15 掃 `_last_run.md`：**8 個區塊**停在 09-09~09-11，而同一份裡
+    另外 52 個是今天的。⚠ 而那 8 個裡有哪幾個是**該天天跑而死掉**、
+    哪幾個是**本來就一次性**——⛔ 那一份報表上**看不出來**，兩種長得一模一樣。
+
+    ⭐ 而答案不需要新增參數去標：**GitHub 自己就會講**。
+    `GITHUB_EVENT_NAME` 分得出 `schedule`（排程）跟 `workflow_dispatch`（有人按）：
+
+    ```
+    觸發 schedule ＋ 六天沒動   ⇒ ⛔ **壞了**（排程每天都該寫一次）
+    觸發 workflow_dispatch ＋ 六天沒動 ⇒ ⚠ 只是**沒人按**（要不要排程是另一個決定）
+    ```
+
+    ⛔ 而**舊格式的區塊沒有這一段** ⇒ 讀的人要看得出「這一塊講不出來」，
+    ⚠ 不是把它當成手動的（`freshness_check` ⑨ 就是照這條分三類）。
+
+    ⚠ 為什麼不用「在程式裡寫死 cadence」：同一支程式可以**兩種都跑**
+    （`feeds:calendar-audit` 手動、`feeds:margin` 天天）⇒ cadence 不是程式的性質，
+    ⛔ 是**這一趟**的性質。⇒ 只有這一趟自己講得準（第二點）。
+    """
+    if not on_actions():
+        return ""
+    ev = os.environ.get("GITHUB_EVENT_NAME") or "?"
+    wf = os.environ.get("GITHUB_WORKFLOW") or "?"
+    rid = os.environ.get("GITHUB_RUN_ID") or "?"
+    ref = os.environ.get("GITHUB_REF_NAME") or "?"
+    return f"｜觸發 {ev}｜{wf}｜ref {ref}｜run {rid}"
+
+
 class Run:
     def __init__(self, name, path=None):
         self.name = name
@@ -93,10 +191,11 @@ class Run:
         #   ⭐ 這裡不擋寫入（本地跑 `missing_rows.py` 之類算本地資料的是正當的），
         #     但**一定要標出來**：讀的人要分得出「這是 Actions 跑的」還是
         #     「某人在容器裡跑的」——後者的網路結果一律不可信。
-        where = ("" if os.environ.get("GITHUB_ACTIONS") == "true"
+        where = ("" if on_actions()
                  else "　⚠ **這一塊不是 Actions 跑的**（本機／開發容器；"
                       "⛔ 若內容含抓取結果，一律不可信：這裡對交易所是我方閘道 403）")
-        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）{where}", ""]
+        out = [f"## {self.name}　{head}", f"", f"最後執行：{t}（台北）"
+               f"{who()}{where}", ""]
         out += self.lines
         if self.checks:
             out += ["", "檢查："]
