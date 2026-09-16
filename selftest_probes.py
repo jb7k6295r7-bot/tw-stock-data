@@ -1842,6 +1842,95 @@ def check_sibling_doors():
     return bad
 
 
+def check_isin_issuetype():
+    """⭐⭐ `tpex_probe.isin_issuetype_case()`：**讀它自己的選單**，⛔ 不猜代碼。
+
+    ## ⛔ 第一版我猜了 `("", "I", "C")`，而它用兩種方式騙我
+
+    ```
+    issuetype=''  ⇒ 33 MB、三種編碼都解不乾淨，
+                    而 `\b9103\b` 在那一大坨裡命中的是**權證**（元大…5C購01）
+                    ⇒ ⚠ 報「7／10 命中」，⛔ 七個沒有一個是 TDR
+    'I' / 'C'     ⇒ 乾淨的 cp950、有「有價證券別」欄，⛔ 但 0／10
+    ```
+    ⇒ ⭐ 兩個病根各一條斷言：**代碼要從選單讀**、**靶子要比代號那一欄**。
+
+    ⚠ 而這一段本來寫在 `main()` 裡 ⇒ 離線試跑只能叫 `main()`，
+    ⛔ 而它會寫 repo 真的 `_tpex_probe.txt`（我今天就這樣污染過一次）
+    ⇒ 抽成函式之後這一節才測得到，⭐ 而且 ★ 那條斷言會把它釘住。
+    """
+    import tpex_probe as TP
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:260]}"))
+        if not c:
+            bad += 1
+
+    FORM = ('<html><body><select name="issuetype">'
+            '<option value="">全部</option>'
+            '<option value="I">指數投資證券</option>'
+            '<option value="R">台灣存託憑證</option>'
+            '</select></body></html>').encode("cp950")
+    # ⚠ 真回應的形狀（第七點）：表頭那一列也是 <td>、⭐ 而且有一列是**權證**
+    #   （代號欄是別的東西，而 `9103` 出現在**名稱**裡）⇒ 比代號欄才篩得掉。
+    RES = ('<html><table>'
+           '<tr><td>頁面編號</td><td>國際證券編碼</td><td>有價證券代號</td>'
+           '<td>有價證券名稱</td><td>市場別</td><td>有價證券別</td></tr>'
+           '<tr><td>9103</td><td>TW000009103</td><td>9103</td><td>美德醫療-DR</td>'
+           '<td>上市</td><td>台灣存託憑證</td></tr>'
+           '<tr><td>912000</td><td>TW000912000</td><td>912000</td><td>晨訊科-DR</td>'
+           '<td>上市</td><td>台灣存託憑證</td></tr>'
+           '<tr><td>061538</td><td>TW26Z0615388</td><td>061538</td>'
+           '<td>元大9103購01</td><td>上市</td><td>上市認購(售)權證</td></tr>'
+           '</table></html>').encode("cp950")
+    # ★ ⛔ 「沒有動到 repo 真的檔」要**逐位元**比，⛔ 不是寫一條恆真的斷言
+    #   （第七點第五個：沙箱導走漏一個 ⇒ 每一個導走的路徑都要有這一條）。
+    import hashlib
+    _pp = os.path.join(_here_dir(), "data", "meta", "_tpex_probe.txt")
+    _before = (hashlib.sha256(io.open(_pp, "rb").read()).hexdigest()
+               if os.path.exists(_pp) else None)
+    real_get, real_say = B.get, TP.say
+    seen_urls = []
+
+    def fake(u, retries=3, timeout=45):
+        seen_urls.append(u)
+        return (FORM, None) if "?" not in u else (RES, None)
+
+    out = []
+    try:
+        B.get = TP.B.get = fake
+        TP.say = lambda x="": out.append(str(x))
+        TP.isin_issuetype_case()
+    finally:
+        B.get = TP.B.get = real_get
+        TP.say = real_say
+    t = "\n".join(out)
+
+    ck("① ⭐ **先讀選單**（第一發打的是沒有 query 的表單頁）",
+       bool(seen_urls) and "?" not in seen_urls[0], str(seen_urls[:2]))
+    ck("② ⭐ 選單逐字印出來（含 value 與標籤）",
+       "value='R'" in t and "台灣存託憑證" in t, t[:400])
+    ck("③ ⭐⭐ 挑哪一個是**標籤自己講的**（含「存託憑證」），⛔ 不是我挑一個像的",
+       "標籤含「存託憑證」的：1 項" in t, t)
+    ck("④ ⛔ 沒去打那兩個猜的代碼（`issuetype=I`／`=C`）",
+       not any("issuetype=I&" in u or "issuetype=C&" in u for u in seen_urls),
+       str(seen_urls))
+    ck("⑤ ⭐⭐ 靶子比**代號欄** ⇒ 名稱裡有 9103 的那張權證**不算命中**",
+       "命中（**比代號欄**）：2／10" in t, t)
+    ck("⑥ ⭐ 母體印出來而且**扣掉表頭**（3 列資料／4 個 <tr>）",
+       "解析出 **3** 列資料（共 4 個 <tr>，含表頭）" in t, t)
+    ck("⑦ ⭐ 「有價證券別」那一欄有被印出來讓它自己講話",
+       "台灣存託憑證" in t and "有價證券別" in t, t)
+    _after = (hashlib.sha256(io.open(_pp, "rb").read()).hexdigest()
+              if os.path.exists(_pp) else None)
+    ck("★ ⛔ repo 真的 `_tpex_probe.txt` **逐位元沒變**"
+       "（⚠ 抽成函式之前這一節做不到——只能叫 `main()`，而它會覆蓋那個檔）",
+       _before == _after, f"{_before} → {_after}")
+    return bad
+
+
 def check_avg_residual():
     """⭐⭐ `keys_probe.avg_residual()` 的**逐列迴圈**真的被走過，而且比的是數值。
 
@@ -2102,6 +2191,7 @@ def main():
     bad += check_probe_stamp()
     bad += check_survivor_fs()
     bad += check_sibling_doors()
+    bad += check_isin_issuetype()
     bad += check_avg_residual()
     bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──

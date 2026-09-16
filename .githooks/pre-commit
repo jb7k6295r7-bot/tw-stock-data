@@ -75,6 +75,26 @@ for f in $STAGED; do
   case " $TESTS " in *" $T "*) continue ;; esac
   TESTS="$TESTS $T"
 done
+# ⛔⛔ 第四道（2026-09-16 加）：**分支上動到 `data/meta/_*probe.txt` 要大聲講**。
+#
+#   那幾個檔的**唯一寫入者是 `probe.yml`，而且是在 main 上寫**。
+#   ⇒ 分支上會動到它，幾乎只有一種原因：**有人在 shell 裡手動跑了探針的 `main()`**。
+#   ⚠ 今天就發生一次：我為了離線試跑 `[16]` 直接叫 `tpex_probe.main()`
+#     ⇒ 它把 repo 真的 `_tpex_probe.txt` 覆蓋掉，⛔ 而我的 commit 用 `git add -A`。
+#   ⭐ 這正是 CLAUDE.md 七點第五個那句的第二個實例：
+#     「那條斷言擋得住『自測污染 repo』，⛔ 擋不住『人手動污染 repo』。」
+#
+# ⛔ **不寫成擋下 commit**：分支歷史上有幾筆真的帶著它（判不出是不是同一個意外），
+#   而一道會誤擋的閘門會被 `--no-verify` 學會繞過 ⇒ 那就等於沒有。
+#   ⇒ 照六點五：**大聲印**，並且把「怎麼還原」一起寫出來。
+PROBEOUT=$(echo "$STAGED" | grep -E '^data/meta/_[A-Za-z0-9_]*probe\.txt$' || true)
+if [ -n "$PROBEOUT" ]; then
+  echo "[pre-commit] ⚠⚠ 這一筆動到**探針輸出檔**，而它們的唯一寫入者是 main 上的 probe.yml："
+  echo "$PROBEOUT" | sed 's/^/  ⛔ /'
+  echo "  ⇒ 多半是手動跑了探針的 main()。要還原：git checkout origin/main -- <那幾個檔>"
+  echo "  ⛔ 不算失敗（分支歷史上有幾筆真的帶著它），⭐ 但請自己確認這是你要的。"
+fi
+
 # ⛔ 對應不到自測的那幾支要**大聲講出來**（六點五：條件不成立就印「這一層沒跑」）。
 #   ⚠ 這一族的命名不是一對一：`shares_check.py` 的自測叫 `selftest_shares.py`
 #     ⇒ 這條規則對它**靜靜什麼都沒做**，而「沒跑」與「跑過了全綠」在畫面上一樣。
