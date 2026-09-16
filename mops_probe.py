@@ -899,6 +899,57 @@ def datagov_d2_case(out):
                    "　⇒ ⛔ 一個都沒有 ⇒ 這個資料集**不是** D2 要的東西")
 
 
+# ⭐ 條款掃描的**兩種**判準與掃描範圍常數。
+#   ⚠ 三點②：「查過了、沒有」必須寫出**用什麼詞查**——所以它們是具名常數，
+#   ⛔ 不是埋在函式裡的字面值（報告要把它們原樣印出來）。
+TERMS_WORDS = ("條款", "規範", "聲明", "政策", "著作權", "免責", "隱私", "版權")
+# ⛔ 中文站常把條款掛在**英文路徑**上（連結文字可能是圖片或空白）
+#   ⇒ 只看文字會漏掉 ⇒ ⭐ 網址也要當一種判準。
+TERMS_HREF = ("terms", "policy", "privacy", "copyright", "disclaimer", "legal")
+TERMS_ORG = ("twse.com.tw", "tpex.org.tw")
+TERMS_MAX_PAGES = 10
+
+
+def _terms_scan(base, html):
+    """一頁 → ([(連結文字, 絕對網址)], 這一頁的 <a> 總數)。
+
+    ⭐ 兩種判準取**聯集**：連結文字含 `TERMS_WORDS`，**或**網址含 `TERMS_HREF`。
+    ⛔ 不是只看文字——那是 2026-09-16 那一趟只掃到 0 條的原因之一。
+    """
+    seen, hits = set(), []
+    for m in re.finditer(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+                         html, re.S | re.I):
+        href, label = m.group(1).strip(), B.visible_text(m.group(2), " ").strip()
+        url = urllib.parse.urljoin(base, href)
+        low = url.lower()
+        if not (any(w in label for w in TERMS_WORDS)
+                or any(w in low for w in TERMS_HREF)):
+            continue
+        if url in seen:
+            continue
+        seen.add(url)
+        hits.append((label or "（連結文字是空的）", url))
+    return hits, len(re.findall(r'<a\b[^>]*href', html, re.I))
+
+
+def _terms_same_org_links(base, html):
+    """首頁 → 同集團網域的連結（去重、保序）。⛔ 不含 base 自己。"""
+    seen, out = set(), []
+    for m in re.finditer(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\']', html, re.I):
+        url = urllib.parse.urljoin(base, m.group(1).strip())
+        if not url.startswith("http"):
+            continue
+        host = urllib.parse.urlparse(url).netloc.lower()
+        if not any(host.endswith(o) for o in TERMS_ORG):
+            continue
+        url = url.split("#")[0]
+        if url == base or url in seen:
+            continue
+        seen.add(url)
+        out.append(url)
+    return out
+
+
 def terms_case(out):
     """⭐⭐ 市場情報分析線 1508（乙）要的那一格：**MOPS 條款原文，而且要涵蓋整個 `mopsov`**。
 
@@ -925,30 +976,44 @@ def terms_case(out):
     """
     out.append("── ⭐⭐ MOPS 條款原文（市場情報分析線 1508（乙）；⛔ 範圍＝整個 `mopsov`）")
     home = "https://mopsov.twse.com.tw/mops/web/index"
-    out.append(f"   首頁：{home}")
     raw, err = B.get(home, retries=2, timeout=60)
     if err or not raw:
-        out.append(f"   ✗ 抓不到首頁：{B.why(err)}")
+        out.append(f"   ✗ 抓不到首頁 {home}：{B.why(err)}")
         out.append("   ⛔ 這一格是【未驗】，⛔ 不可以寫成「這個站沒有條款」。")
         return
     html = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else str(raw)
-    WORDS = ("條款", "規範", "聲明", "政策", "著作權", "免責", "隱私")
-    seen, hits = set(), []
-    for m in re.finditer(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>',
-                         html, re.S | re.I):
-        href, label = m.group(1).strip(), B.visible_text(m.group(2), " ").strip()
-        if not label or not any(w in label for w in WORDS):
+
+    # ⭐ 第一層：首頁自己。⚠ 兩種判準各數一次（三點②：用什麼詞查要寫出來）。
+    hits, n_a = _terms_scan(home, html)
+    out.append(f"   ① 首頁 {home}")
+    out.append(f"      母體＝{n_a} 個 <a>｜文字判準 {TERMS_WORDS}｜"
+               f"網址判準 {TERMS_HREF}　⇒ **{len(hits)} 條**")
+
+    # ⭐⭐ 第二層：**跟著這一站自己的連結走**（⛔ 不是我拼 /terms、/policy 那種路徑）。
+    #   只走同集團網域、只走一層、最多 TERMS_MAX_PAGES 頁——⚠ 而「走到幾頁」要印出來，
+    #   ⛔ 否則「掃完了沒找到」與「還沒掃到那一頁」在紙上一模一樣（三點①）。
+    layer2 = _terms_same_org_links(home, html)
+    out.append(f"   ② 從首頁連出去的**同集團**頁（{ '／'.join(TERMS_ORG) }）："
+               f"共 {len(layer2)} 個，這一趟走前 {min(len(layer2), TERMS_MAX_PAGES)} 個")
+    walked = 0
+    for url in layer2[:TERMS_MAX_PAGES]:
+        body, e2 = B.get(url, retries=1, timeout=45)
+        if e2 or not body:
+            out.append(f"      ✗ {url}　{B.why(e2)}　⇒ 這一頁是【未驗】")
             continue
-        url = urllib.parse.urljoin(home, href)
-        if url in seen:
-            continue
-        seen.add(url)
-        hits.append((label, url))
-    out.append(f"   ⭐ 首頁連結裡**文字含 {'／'.join(WORDS)}** 的：**{len(hits)} 條**"
-               f"（⚠ 母體＝首頁全部 <a>，共 {len(re.findall(r'<a[^>]*href', html, re.I))} 個）")
+        walked += 1
+        h2 = body.decode("utf-8", "replace") if isinstance(body, bytes) else str(body)
+        got, n2 = _terms_scan(url, h2)
+        new = [x for x in got if x[1] not in {u for _, u in hits}]
+        out.append(f"      ✓ {url}　母體 {n2} 個 <a>　⇒ 新增 **{len(new)}** 條")
+        hits.extend(new)
+    out.append(f"   ⇒ ⭐ 兩層合計 **{len(hits)}** 條候選（②真的走到 {walked}／"
+               f"{min(len(layer2), TERMS_MAX_PAGES)} 頁）")
+
     if not hits:
-        out.append("   ⛔ **0 條** ⇒ ⚠ 而這只證明「首頁那一層沒有」，"
-                   "⛔ 不證明這個站沒有條款（掃描範圍見檔頭）。")
+        out.append("   ⛔ **0 條** ⇒ ⚠ 這證明的是「**這兩層**、**這幾個詞**沒有」，")
+        out.append(f"      ⛔ 不是「這個站沒有條款」。掃描範圍：首頁＋{walked} 個同集團頁；")
+        out.append(f"      查詢用詞：{TERMS_WORDS} ＋ 網址 {TERMS_HREF}。")
         return
     for label, url in hits:
         out.append(f"      ── {label}　{url}")

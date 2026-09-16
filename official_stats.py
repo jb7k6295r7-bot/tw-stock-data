@@ -195,6 +195,8 @@ from datetime import datetime, timedelta, timezone
 import backfill as B
 import runlog
 import twparse                     # ⭐ csv_cell 只有那一份（四點五）
+from decimal import Decimal as _D, ROUND_DOWN as _ROUND_DOWN, \
+    ROUND_HALF_EVEN as _ROUND_HALF_EVEN, ROUND_HALF_UP as _ROUND_HALF_UP
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -217,6 +219,55 @@ def yearly_path(market="twse"):
 
 def monthly_path(market="twse"):
     return os.path.join(META, "official_monthly_amount.csv")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐⭐ `avg_close` 的進位規則：**三段**，⛔ 不是「容許 ±0.01」
+#
+#   2026-09-16 母體級實測（17,832 個 (檔,年)，⛔ 不是抽樣。詳見
+#   `docs/READ_CONTRACT.md` 的 `official_yearly_close.csv` 那一節）：
+#
+#     上櫃           7,948 格  無條件捨去                       100.0000%
+#     上市 民107~    7,449 格  先到小數 3 位、再到 2 位用 banker's 100.0000%
+#     上市 民104~106 2,435 格  直接四捨五入                      99.8768%（3 格例外）
+#
+#   ⭐ 有鑑別力的母體（兩條規則會給不同答案的）**503** 格：
+#      民104~106 直接四捨五入 130／131｜民107~ banker's **372／372**。
+#   ⛔ 拿全母體的命中率比是分不出來的（帶外兩條規則同答案）——第七點那一句。
+#
+#   ⚠ 已知 3 格解釋不了（都在民104~106、都恰好落在半分、官方都往下）：
+#      2901/105 25.905→25.90｜3016/104 14.255→14.25｜4906/104 19.475→19.47
+#   ⇒ ⛔ **成因不知道，那就寫不知道。**
+#
+#   ⛔ 這是**唯一**一份實作（四點五）。⚠ `backtest/audit_db.py` 目前是兩段
+#     （上市 round／上櫃 trunc）⇒ 上市那半民107~ 有 372 格會誤報；已去信回測線。
+TPE_ROUND_SWITCH_ROC = 107          # ⭐ 上市的進位規則在民國 107 年換掉
+
+
+def avg_close_expected(mean, roc_year, market):
+    """我方日收盤的簡單平均 `mean` → **官方會寫成的那個兩位小數**（`decimal.Decimal`）。
+
+    `market`：`"twse"`／`"tpex"`（⛔ 必填，沒有預設值——四點五那條：
+    兩種相反的語意，選哪一種的參數不可以有預設值）。
+    ⚠ `mean` 要用 `Decimal` 傳進來；⛔ 傳 float 會先吃一次二進位誤差。
+    """
+    if market not in ("twse", "tpex"):
+        raise ValueError(f"market 只能是 twse／tpex，收到 {market!r}")
+    m = mean if isinstance(mean, _D) else _D(str(mean))
+    if market == "tpex":
+        return m.quantize(_D("0.01"), rounding=_ROUND_DOWN)
+    if int(roc_year) >= TPE_ROUND_SWITCH_ROC:
+        # ⭐ 兩步：先到 3 位（⚠ 第一步用哪一種進位不影響結果，實測三種同分），
+        #    再到 2 位用 banker's ⇒ 帶內那些格會落在「分」位的**偶數**那一邊。
+        return m.quantize(_D("0.001"), rounding=_ROUND_HALF_UP) \
+                .quantize(_D("0.01"), rounding=_ROUND_HALF_EVEN)
+    return m.quantize(_D("0.01"), rounding=_ROUND_HALF_UP)
+
+
+def avg_close_matches(mean, roc_year, market, official):
+    """官方寫的那個值對不對得上我方 ⇒ True／False。⛔ 逐位比，不留容許值。"""
+    o = official if isinstance(official, _D) else _D(str(official))
+    return avg_close_expected(mean, roc_year, market) == o
 
 
 def tpex_yearly_path():
@@ -539,15 +590,20 @@ def load_sweep_done(path):
     return done
 
 
-def save_sweep_done(path, pairs, today):
-    """⭐ **追加**（四點六）：這一趟只知道自己那一部分。"""
+def save_sweep_done(path, pairs, today, why=""):
+    """⭐ **追加**（四點六）：這一趟只知道自己那一部分。
+
+    ⚠ `why` 空字串＝真的抓到了；`"nodata"`＝官方說沒有而我方那一年也沒有
+    （`sweep_consistent_nodata()`）⇒ ⭐ **兩種要分得出來**，
+    ⛔ 混在一起的話，日後我方日檔補齊時沒有辦法把那幾格重開。
+    """
     new = not os.path.exists(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with io.open(path, "a", encoding="utf-8") as f:
         if new:
-            f.write("stock_id,roc_year,asof\n")
+            f.write("stock_id,roc_year,asof,why\n")
         for sid, y in pairs:
-            f.write(f"{sid},{y},{today}\n")
+            f.write(f"{sid},{y},{today},{why}\n")
     return len(pairs)
 
 
@@ -568,6 +624,72 @@ def sweep_fail_note(todo, ok, fail):
         return (f"成功 {len(ok)}／{len(todo)} 格"
                 + (f"｜失敗 {len(fail)} 格，例：{fail[:2]}" if fail else "｜0 失敗"))
     return f"⛔ 本趟 {len(todo)} 格**全部失敗**｜例：{fail[:2]}"
+
+
+def our_market_years(sid, market, root=None):
+    """→ {西元年字串}：我方 `data/stocks/<sid>.csv` 裡 `market == market` 的那幾年。
+
+    ⭐ 判準用**資料自己**（第四點），⛔ 不是去 `delisted.csv` 查
+    ——CLAUDE.md 記過：**上櫃轉上市**在我方資料裡就是 `market` 欄從 `tpex`
+    變成 `twse`，⛔ 而 `delisted.csv` 記的是**下市**，轉上市不是下市。
+    ⚠ 讀不到那個檔就回**空集合**（⇒ 呼叫端會當成「那一年我方也沒有」）。
+    """
+    p = os.path.join(root or _ROOT, "stocks", f"{sid}.csv")
+    out = set()
+    if not os.path.exists(p):
+        return out
+    try:
+        with io.open(p, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if (r.get("market") or "") == market:
+                    out.add((r.get("date") or "")[:4])
+    except OSError:
+        return set()
+    return out
+
+
+#: ⭐ 官方「這一格沒有資料」的那句話。⛔ 它**講不出**是哪一種
+#  （未上市／參數越界／端點壞掉都長這樣，CLAUDE.md 第二點）
+#  ⇒ 所以它**單獨**不可以當判準，一定要跟我方資料做「且」。
+NODATA_MARK = "沒有符合條件的資料"
+
+
+def sweep_consistent_nodata(err, sid, roc_y, market, root=None):
+    """這一格的失敗是不是「**官方說沒有，而我方那一年也沒有**」→ bool。
+
+    ## ⛔ 為什麼要有這一條：不然這個掃描**永遠不會收斂**
+
+    `save_sweep_done()` 只記成功的格子 ⇒ ⭐ 失敗的每一趟都回到 todo。
+    ⚠ 而 2026-09-16 run 166 實測：本趟 5,000 格**失敗 2,097**（42%），
+    訊息全部是 `FMSRFK stat='很抱歉，沒有符合條件的資料!'`。
+    ⇒ 離線拆開來看（母體：還沒完成的 3,067 格）：
+
+    ```
+    ⭐ 我方那一年**沒有 twse 日檔**  **2,180**（71.1%）⇒ 官方說沒有是**一致**的
+    ⚠ 我方那一年**有** twse 日檔       **887**  ⇒ 那才是真的還沒問到
+    ```
+
+    ⇒ ⛔ 不修的話，往後每一趟有 **71%** 的預算花在**永遠不會成功**的格子上，
+    ⚠ 而且到最後「剩下的剛好全部失敗」⇒ `sweep_fail_note` 那道閘門必然誤判
+    （CLAUDE.md 七點五第三個：**以「全部 X」為故障判準的閘門，
+    在「剩下的剛好全部 X」時必然誤判**）。
+
+    ## ⇒ ⭐ 判準是**兩個條件的「且」**，⛔ 缺一個都不可以
+
+    ```
+    ① 官方的訊息是那一句「沒有符合條件的資料」
+       ⛔ 它單獨講不出是哪一種（第二點）⇒ 單獨**不算**
+    ② ⭐ 而我方那一年**也沒有那個市場的日檔**
+       ⇒ 兩邊一致 ⇒ 這一格是**問完了**，不是「還沒問到」
+    ```
+
+    ⚠ 前提（我自己標）：②用的是我方資料，⛔ 而我方那一年沒有日檔**也可能是我方漏了**
+    ⇒ 那時這一格會被記成「問完了」而其實沒有。⭐ 而它**看得出來**：
+    台帳裡那幾格帶 `nodata` 標記，⇒ 我方日檔日後補齊時可以拿它重開。
+    """
+    if NODATA_MARK not in str(err):
+        return False
+    return str(roc_y + 1911) not in our_market_years(sid, market, root)
 
 
 def run_sweep(a, rl, today):
@@ -592,11 +714,17 @@ def run_sweep(a, rl, today):
                     f"　⇒ ⭐ 本趟跑完之後大約還剩 "
                     f"**{max(0, len(pool)*len(years)-len(done)-len(todo)):,}** 格"
                     "（⚠ 是**大約**：本趟失敗的那幾格還會再回來）")
-    ok, fail, flushed = [], [], 0
+    ok, fail, nodata, flushed = [], [], [], 0
     for i, (sid, y) in enumerate(todo, 1):
         rows, err = fetch(sid, y, today)
         if err:
             fail.append((f"{sid}/{y}", err))
+            # ⭐ 「官方說沒有」**而且**「我方那一年也沒有那個市場的日檔」
+            #   ⇒ 這一格是**問完了**，記進台帳（帶 `nodata` 標記）
+            #   ⇒ ⛔ 否則它每一趟都回到 todo ⇒ 這個掃描永遠不收斂
+            #     （run 166 實測：5,000 格裡 2,097 失敗，而其中 71% 是這一種）
+            if sweep_consistent_nodata(err, sid, y, a.market):
+                nodata.append((sid, str(y)))
             print(f"  [{i}/{len(todo)}] {sid}/{y} ✗ {err}", flush=True)
         else:
             for r in rows:
@@ -637,6 +765,16 @@ def run_sweep(a, rl, today):
     if R:
         _save(out, header, R)
     save_sweep_done(dp, ok[flushed:], today)
+    if nodata:
+        save_sweep_done(dp, nodata, today, why="nodata")
+    rl.info("⭐ 問完了但官方沒有",
+            f"**{len(nodata):,}** 格（官方說「{NODATA_MARK}」**而且**我方那一年"
+            f"也沒有 `{a.market}` 的日檔 ⇒ 兩邊一致）"
+            "　⇒ ⭐ 記進台帳、**不再重問**；⛔ 而它帶 `nodata` 標記，"
+            "我方日檔日後補齊時拿它重開"
+            if nodata else
+            "**0** 格（⚠ 本趟沒有這一種 ⇒ ⛔ 不代表這條判準沒用，"
+            "只代表本趟失敗的都不是那一種）")
     rl.info("月表", f"{out.split('data/')[-1]}｜{len(R):,} 列（本趟 +{len(R)-n0}）")
     rl.info("本趟", f"成功 {len(ok)}／失敗 {len(fail)}"
             + (f"｜失敗例：{fail[:3]}" if fail else ""))

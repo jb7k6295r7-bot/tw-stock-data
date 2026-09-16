@@ -72,6 +72,15 @@ def _snap_repo():
     return out
 
 
+def _raises(fn):
+    """⭐ 斷言「它會大聲失敗」——⛔ 不是斷言原始碼裡有 `raise`（第八個陷阱）。"""
+    try:
+        fn()
+    except Exception:
+        return True
+    return False
+
+
 def main():
     global _REPO_SNAP
     _REPO_SNAP = _snap_repo()
@@ -748,6 +757,114 @@ def main():
 
     ck("★ ⑩ 全程 repo 真的 `data/meta/` 那幾個檔**逐位元沒變**",
        _snap_repo() == snap0, "有檔被動到了")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑪ ⭐⭐ 月表掃描的**收斂**：「官方說沒有」＋「我方那一年也沒有」⇒ 問完了
+    #    ⛔ 不修的話 `save_sweep_done` 只記成功 ⇒ 失敗的每一趟都回到 todo
+    #      ⇒ run 166 實測 5,000 格失敗 2,097（42%），而其中 **71%** 是
+    #        「我方那一年根本沒有 twse 日檔」那一種 ⇒ **永遠不會成功**
+    #    ⇒ 而終局是「剩下的剛好全部失敗」⇒ 七點五第三個那道閘門必然誤判
+    # ══════════════════════════════════════════════════════════════
+    print("\n⑪ ⭐⭐ 月表掃描的收斂：問完了 vs 還沒問到")
+    d11 = tempfile.mkdtemp(prefix="osweep_")
+    try:
+        os.makedirs(os.path.join(d11, "stocks"))
+        io.open(os.path.join(d11, "stocks", "1111.csv"), "w", encoding="utf-8").write(
+            "date,stock_id,market,close\n"
+            "2019-01-02,1111,twse,10\n"      # 民108 有 twse
+            "2016-01-04,1111,tpex,10\n")     # 民105 只有 tpex（＝轉板前）
+        NO = "FMSRFK stat='很抱歉，沒有符合條件的資料!'"
+        ck("⑪ ⭐ 我方那一年**沒有** twse 日檔 ⇒ **問完了**",
+           O.sweep_consistent_nodata(NO, "1111", 104, "twse", d11) is True)
+        ck("⑪ ⭐⭐ 那一年只有 **tpex**（轉板前）⇒ 對 twse 來說也是**問完了**"
+           "（⛔ 判準是 `market` 欄，不是「有沒有列」）",
+           O.sweep_consistent_nodata(NO, "1111", 105, "twse", d11) is True)
+        ck("⑪ ⛔ 我方那一年**有** twse 日檔 ⇒ **不是**問完了（⇒ 還要再問）",
+           O.sweep_consistent_nodata(NO, "1111", 108, "twse", d11) is False)
+        ck("⑪ ⛔⛔ 官方的訊息**不是**那一句（例如逾時）⇒ 一律**不算**問完了"
+           "（⚠ 否則一次斷線會把一整批永久記成「沒有」）",
+           O.sweep_consistent_nodata("FMSRFK URLError: timed out",
+                                     "1111", 104, "twse", d11) is False)
+        ck("⑪ ⭐ 那一檔我方**根本沒有檔** ⇒ 回空集合 ⇒ 算問完了（⛔ 不是丟例外）",
+           O.sweep_consistent_nodata(NO, "9999", 104, "twse", d11) is True)
+        # ⭐ 台帳要分得出兩種：`why` 欄
+        lp = os.path.join(d11, "meta", "_x_done.csv")
+        O.save_sweep_done(lp, [("1111", "108")], "20260916")
+        O.save_sweep_done(lp, [("1111", "104")], "20260916", why="nodata")
+        body = io.open(lp, encoding="utf-8").read()
+        ck("⑪ ⭐⭐ 台帳把兩種**分得出來**（`why` 欄：空 vs `nodata`）"
+           "（⛔ 混在一起的話，日後我方補齊沒辦法重開那幾格）",
+           "stock_id,roc_year,asof,why" in body
+           and "1111,108,20260916,\n" in body
+           and "1111,104,20260916,nodata\n" in body, body)
+        ck("⑪ ⭐ 而 `load_sweep_done` 兩種都算**已完成**（⇒ 不再重問）",
+           O.load_sweep_done(lp) == {("1111", "108"), ("1111", "104")},
+           str(O.load_sweep_done(lp)))
+        # ⭐ 呼叫點：`run_sweep` 真的有叫它（⛔ 不是留一個沒人叫的函式）
+        import ast as _a11
+        src11 = io.open(os.path.join(HERE, "official_stats.py"),
+                        encoding="utf-8").read()
+        fn11 = next((n for n in _a11.walk(_a11.parse(src11))
+                     if isinstance(n, _a11.FunctionDef) and n.name == "run_sweep"), None)
+        called = {n.func.id for n in _a11.walk(fn11)
+                  if isinstance(n, _a11.Call) and isinstance(n.func, _a11.Name)} if fn11 else set()
+        ck("⑪ ⭐⭐ `run_sweep()` **真的呼叫** `sweep_consistent_nodata`"
+           "（⛔ 一個沒人叫的函式跟沒寫一樣）",
+           "sweep_consistent_nodata" in called, str(sorted(called))[:200])
+    finally:
+        shutil.rmtree(d11, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑫ ⭐⭐⭐ `avg_close` 的進位規則：**三段**，⛔ 不是「容許 ±0.01」
+    #    ⚠ 這幾條全部用**合成**數字（七點第七個：拿現場資料驗判準，
+    #      等於把斷言的壽命綁在「那筆資料還在」上）。
+    from decimal import Decimal as _DD
+    E = O.avg_close_expected
+    ck("⑫ ⭐ 上櫃：**無條件捨去**（⛔ 不是四捨五入）",
+       E(_DD("4.2999"), 108, "tpex") == _DD("4.29")
+       and E(_DD("6.5999"), 104, "tpex") == _DD("6.59"),
+       f'{E(_DD("4.2999"), 108, "tpex")}／{E(_DD("6.5999"), 104, "tpex")}')
+    ck("⑫ ⭐ 上櫃的規則**不分年**（⛔ 民107 那個分界只作用在上市）",
+       E(_DD("4.2999"), 104, "tpex") == E(_DD("4.2999"), 114, "tpex") == _DD("4.29"))
+    # ⭐ 真實錨點（1471／民108）：我方均 4.294917… ⇒ 直接四捨五入給 4.29，官方是 4.30
+    ck("⑫ ⭐⭐ 上市民107~：先到 3 位再 banker's ⇒ 4.294917… → **4.30**"
+       "（⛔ 直接四捨五入會給 4.29）",
+       E(_DD("4.294917355371900826"), 108, "twse") == _DD("4.30"),
+       str(E(_DD("4.294917355371900826"), 108, "twse")))
+    ck("⑫ ⭐⭐ 同一個數字在民104~106 是**另一段** ⇒ **4.29**"
+       "（⚠ 分界不對的話這兩條會一起倒）",
+       E(_DD("4.294917355371900826"), 106, "twse") == _DD("4.29"),
+       str(E(_DD("4.294917355371900826"), 106, "twse")))
+    ck("⑫ ⭐ 分界剛好在民107（⛔ 不是 106、也不是 108）",
+       O.TPE_ROUND_SWITCH_ROC == 107
+       and E(_DD("4.2949"), 107, "twse") == _DD("4.30")
+       and E(_DD("4.2949"), 106, "twse") == _DD("4.29"))
+    # ⭐⭐ banker's 的**簽名**：帶內（0.45~0.55）進位後的「分」位必定是偶數
+    ck("⑫ ⭐⭐ banker's 的簽名：4.294917→4.30（偶）、4.304917→**4.30**（⛔ 不是 4.31）",
+       E(_DD("4.304917"), 110, "twse") == _DD("4.30"),
+       str(E(_DD("4.304917"), 110, "twse")))
+    ck("⑫ ⭐ 而**帶外**兩段給同一個答案（⇒ 只有帶內的格有鑑別力）",
+       E(_DD("4.2912"), 106, "twse") == E(_DD("4.2912"), 110, "twse") == _DD("4.29"))
+    ck("⑫ ⛔ `market` 傳別的字串要**大聲**丟例外（⛔ 不是靜靜當成上市）",
+       _raises(lambda: E(_DD("4.29"), 108, "sii")))
+    # ⭐⭐ 四點五那條通則：兩種相反語意的參數，**不可以有預設值**
+    import inspect as _i12
+    sig12 = _i12.signature(O.avg_close_expected)
+    ck("⑫ ⭐⭐ `market` **沒有預設值**（⛔ 預設值＝「照抄語意」那個坑的自動化版本）",
+       sig12.parameters["market"].default is _i12.Parameter.empty,
+       str(sig12))
+    ck("⑫ ⭐ `avg_close_matches()` 逐位比，⛔ 沒有容許值（差 0.01 就是 False）",
+       O.avg_close_matches(_DD("4.294917355371900826"), 108, "twse", "4.30")
+       and not O.avg_close_matches(_DD("4.294917355371900826"), 108, "twse", "4.29"))
+    ck("⑫ ⭐ 這一族**只有一份實作**：`avg_close_matches` 真的走 `avg_close_expected`"
+       "（⛔ 不是各自 quantize 一次）",
+       "avg_close_expected" in {n.func.id for n in __import__("ast").walk(
+           next(x for x in __import__("ast").walk(__import__("ast").parse(io.open(
+               os.path.join(HERE, "official_stats.py"), encoding="utf-8").read()))
+               if isinstance(x, __import__("ast").FunctionDef)
+               and x.name == "avg_close_matches"))
+           if isinstance(n, __import__("ast").Call)
+           and isinstance(n.func, __import__("ast").Name)})
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
