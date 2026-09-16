@@ -859,6 +859,46 @@ def revenue_hist_columns(out):
     out.append(f"   （解析：{note}；⛔ 這裡只看欄名，不寫任何資料檔）")
 
 
+#: ⚠ 這個 id **不是我查到的**，是我自己早先的筆記寫下的 ⇒ ⛔ 它可能根本不存在
+#   （本 repo 已經記過**兩次**「憑空編一個 data.gov.tw dataset id」：
+#     `otccal_probe` 與 `holiday_probe` 的檔頭各一次）
+#   ⇒ ⭐ 所以這一節的判準是**它自己講出它是哪一個資料集**，⛔ 不是「有回東西」。
+DGT_D2_ID = "18415"
+
+
+def datagov_d2_case(out):
+    """⭐ D2 的第四條路：政府資料開放平臺有沒有「財報實際公告日」這種資料集。
+
+    ⛔ 這一節**不下結論**，只把回應攤開讓它自己講（第一點）。
+    ⚠ 而它最可能的壞法是**那個 id 是我編的**——⭐ 那會回一個長得很正常的頁，
+    ⛔ 而「這個 id 不存在」與「這個資料集不是我要的」在 200 回應上長得一樣。
+    ⇒ ⭐ 判準：**回來的東西裡有沒有回音那個 id**，＋ 資料集名稱逐字印出來。
+    """
+    out.append(f"── ⭐ D2 第四條路：data.gov.tw dataset **{DGT_D2_ID}**"
+               "（⚠ 這個 id 是我自己筆記裡的，⛔ **我沒有驗過它存在**）")
+    for label, url in (("網頁", f"https://data.gov.tw/dataset/{DGT_D2_ID}"),
+                       ("公開 API", f"https://data.gov.tw/api/v2/rest/dataset/{DGT_D2_ID}")):
+        out.append(f"   ── {label}：{url}")
+        raw, err = B.get(url, retries=2, timeout=60)
+        if err or not raw:
+            out.append(f"      ✗ 抓不到：{B.why(err)}　⇒ ⚠ 取不回來**不等於**它不存在")
+            continue
+        txt = raw.decode("utf-8", "replace")
+        out.append(f"      ✓ {len(raw):,} bytes")
+        # ⭐ 判準①：回應自己有沒有回音那個 id（⛔ 不是「有回東西」）
+        out.append(f"      ⭐ 回應裡有沒有回音 `{DGT_D2_ID}`：{DGT_D2_ID in txt}"
+                   "　⇒ ⛔ False 的話，這個 id **多半是我編的**")
+        # ⭐ 判準②：把它自己宣告的名稱／期間逐字印出來，⛔ 不做關鍵字判定
+        vis = re.sub(r"\s+", " ", B.visible_text(txt, " ")).strip()
+        out.append(f"      ⭐ 可讀文字前 400 字（逐字，⛔ 不是我的摘要）：")
+        for i in range(0, min(len(vis), 400), 200):
+            out.append("         " + vis[i:i + 200])
+        hit = [w for w in ("公告日", "發言日", "重大訊息", "財務報告", "申報")
+               if w in txt]
+        out.append(f"      ⭐ 含這幾個詞的：{hit}"
+                   "　⇒ ⛔ 一個都沒有 ⇒ 這個資料集**不是** D2 要的東西")
+
+
 def terms_case(out):
     """⭐⭐ 市場情報分析線 1508（乙）要的那一格：**MOPS 條款原文，而且要涵蓋整個 `mopsov`**。
 
@@ -997,6 +1037,8 @@ def main():
     survivor_fs_case(out)
     out.append("")
     revenue_hist_columns(out)
+    out.append("")
+    datagov_d2_case(out)
     out.append("")
     terms_case(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

@@ -310,7 +310,10 @@ SECTIONS = {
                    #   ⛔ 少了它，「條款准不准我方這樣用」就停在**我的摘要**上，
                    #   ⚠ 而三點②那條已經證明過：同一份條款換個關鍵字就翻出禁止條文
                    #   ⇒ 摘要漏掉的那一句，讀的人**沒有任何地方會發現**。
-                   "MOPS 條款原文"],
+                   "MOPS 條款原文",
+                   # ⭐ D2 第四條路（data.gov.tw）2026-09-16 加。⛔ 少了它，
+                   #   「那個 id 到底存不存在」就停在我筆記裡的一個數字上。
+                   "D2 第四條路"],
     # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
     #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
     #     而把限額當成餘額用，是這一支最可能造成的傷害。
@@ -2165,6 +2168,54 @@ def _calls_all_anchors(K):
     return seen == [("A", 1), ("B", 2), ("C", 3)]
 
 
+def check_datagov_d2():
+    """⭐ `datagov_d2_case()`：那個 dataset id **是我筆記裡的**，⛔ 我沒驗過它存在。
+
+    ⚠ 最可能的壞法：id 是編的 ⇒ 回一個長得很正常的 200 頁
+    ⇒ ⛔ 「這個 id 不存在」與「這個資料集不是我要的」在回應上長得一樣。
+    ⇒ ⭐ 判準是**回應自己有沒有回音那個 id**，⛔ 不是「有回東西」。
+    """
+    import mops_probe as M
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:200]}"))
+        if not c:
+            bad += 1
+
+    real = B.get
+    try:
+        # ① 回音得到 ＋ 有 D2 要的詞
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (f"<html><body><h1>資料集 {M.DGT_D2_ID}</h1><p>財務報告公告日</p>"
+             "</body></html>").encode(), None)
+        t = []
+        M.datagov_d2_case(t)
+        t = "\n".join(t)
+        ck("① ⭐ 標題就寫著「⛔ 我沒有驗過它存在」（⚠ 這個 id 是筆記來的）",
+           "**我沒有驗過它存在**" in t, t[:300])
+        ck("② ⭐ 判準是**回音那個 id**（⛔ 不是「有回東西」）",
+           f"回音 `{M.DGT_D2_ID}`：True" in t, t)
+        ck("③ ⭐ 詞命中列出來", "'公告日'" in t and "'財務報告'" in t, t)
+        # ② ⛔ 回了 200 但**沒有回音那個 id** ⇒ 要明講「多半是我編的」
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            "<html><body>查無此資料集</body></html>".encode(), None)
+        t2 = "\n".join(_x for _x in (lambda o: (M.datagov_d2_case(o), o)[1])([]))
+        ck("④ ⭐⭐ 回 200 卻沒回音那個 id ⇒ 明講「**多半是我編的**」",
+           f"回音 `{M.DGT_D2_ID}`：False" in t2 and "多半是我編的" in t2, t2[:300])
+        ck("⑤ ⭐ 一個關鍵詞都沒有 ⇒ 明講「不是 D2 要的東西」",
+           "含這幾個詞的：[]" in t2, t2)
+        # ③ ⛔ 抓不到 ⇒ 【取不回來不等於不存在】
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (None, "boom")
+        t3 = "\n".join((lambda o: (M.datagov_d2_case(o), o)[1])([]))
+        ck("⑥ ⛔ 抓不到 ⇒ 寫「取不回來**不等於**它不存在」",
+           "不等於**它不存在" in t3, t3[:300])
+    finally:
+        B.get = M.B.get = real
+    return bad
+
+
 def check_terms_case():
     """⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））：**連結從頁面讀出來、原文逐字印**。
 
@@ -2310,6 +2361,7 @@ def main():
     bad += check_isin_issuetype()
     bad += check_official_vs_month()
     bad += check_avg_residual()
+    bad += check_datagov_d2()
     bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
