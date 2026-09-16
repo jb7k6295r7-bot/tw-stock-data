@@ -323,6 +323,291 @@ def parse_tpex_yearly(payload, sid):
     return pr, vr, None
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ **月**那一半：一發只回一年 ⇒ 工作單位是 **(代號, 年)**，⛔ 不是代號
+#
+# 2026-09-16 回測線 0841 §四 4. 點名要它（「更早年份你抓了我就重跑」），
+# ⚠ 而我自己也需要它當**外部錨點**：他們量到兩件我在「年」這一級分不出來的事——
+#   ② 民國 109 的年成交金額，我方全部多 1~1,040 元（量與筆數逐位相同）
+#   ④ 上市年均價有 1.9% 落在「四捨五入 +0.01」，⭐ 而要把和推過分界
+#      只需要不到**一個檔位**（0.005~0.12 元）⇒ ⛔ 不可能是多算／少算一天
+#   ⇒ 兩件都要先落到「月」才看得見。
+#
+# ⛔ 而兩張月表的欄**同名不同量**（第二點那條的鏡像），所以**各一份檔**：
+#
+#     欄        上市 FMSRFK              上櫃 monthlyStock
+#     high/low  **盤中**最高／最低        **收市**（收盤）最高／最低
+#     avg       **加權**（金額÷股數）     **收盤價的簡單平均**
+#     量單位    股                       **仟股**
+#
+# ⇒ 上櫃這一份的欄名**自己帶定義**（`close_high`／`close_avg`／`volume_kshares`），
+#   ⛔ 不留「最高價」「平均價」這種對不上時無法判斷是誰錯的欄名（第七點第十個）。
+# ══════════════════════════════════════════════════════════════════
+TPEX_MONTHLY_URL = ("https://www.tpex.org.tw/www/zh-tw/statistics/monthlyStock"
+                    "?code={s}&date={y}&response=json")
+#: ⭐ 欄名帶推導方式與單位。⚠ `close_*` ＝ 收盤價的高/低/簡單平均，
+#  ⛔ 不是盤中；`volume_kshares` ＝ 仟股，⛔ 不是股也不是張。
+TM_HEADER = ["stock_id", "roc_year", "month", "close_high", "close_low",
+             "close_avg", "transactions", "amount_kntd", "volume_kshares",
+             "turnover_pct", "asof"]
+#: ⛔⛔ 這個字串是**閘門**，不是註解：`code=null` 的空回應裡那一欄叫
+#  `成交張數(B)`，⚠ 而**真的有資料**時它叫 `成交仟股(B)`——同一個端點、
+#  同一個位置、兩個**差一千倍**的單位名。⇒ 對不上就整檔失敗，⛔ 不猜。
+TM_VOL_FIELD = "成交仟股(B)"
+
+
+def tpex_monthly_path():
+    return os.path.join(META, "official_monthly_tpex.csv")
+
+
+def sweep_done_path(market):
+    """年份掃描的續跑台帳。⭐ 鍵是 **(代號, 民國年)**，⛔ 不是代號。
+
+    ⚠ 跟 `done_path()` 分開的理由：那一份的工作單位是「一檔」（一發回全部年），
+    ⛔ 而這一份是「一檔一年」——⭐ 混在同一份裡，`--market tpex` 那一趟會把
+    掃過月表的檔當成「年表也做完了」，而畫面上完全正常。
+    """
+    return os.path.join(META, f"_official_monthly_done_{market}.csv")
+
+
+def tm_key(row):
+    """上櫃月表的主鍵 ＝ (代號, 民國年, 月)。⭐ 三格。"""
+    return (row[0], row[1], row[2])
+
+
+def roc_years(today=None):
+    """要掃哪幾個民國年 → `[104, …, 今年]`。
+
+    ⛔ **不是寫死的清單**：上限由今天算出來，⚠ 否則跨年那一天它會靜靜少掃一年
+    （而「少掃一年」跟「那一年沒資料」在檔案上長得一模一樣）。
+    ⭐ 下限 104 是我方日檔的起點（2015）——比它更早我方沒有東西可以對。
+    """
+    d = today or datetime.now(TPE)
+    return list(range(104, d.year - 1911 + 1))
+
+
+def parse_years(spec, today=None):
+    """`"104-115"`／`"109"`／`""` → 年份清單。⛔ 空字串回**全部**。"""
+    full = roc_years(today)
+    spec = (spec or "").strip()
+    if not spec or spec == "all":
+        return full
+    out = []
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            a, b = part.split("-", 1)
+            out += list(range(int(a), int(b) + 1))
+        else:
+            out.append(int(part))
+    return [y for y in out if y in full]
+
+
+def parse_tpex_monthly(payload, sid, roc_y):
+    """上櫃 `monthlyStock` 的回應 → `(rows, err)`。
+
+    ⛔ 三道判準，缺一道就當失敗（第二點：這一批要自己講出它是誰、是哪一期）：
+      ① 回顯的 `code` ＝ 我送的代號（⚠ 參數沒生效時它是 `null`，而 `stat` 仍是 ok）
+      ② 回顯的 `date`（西元年）＝ 我送的那一年
+      ③ ⭐ `fields` 裡的量欄名 ＝ `成交仟股(B)`
+         ——⛔ 空回應裡它叫「成交張數」，差一千倍
+    """
+    try:
+        d = json.loads(payload.decode("utf-8", "replace")
+                       if isinstance(payload, bytes) else payload)
+    except ValueError as ex:                                     # noqa: BLE001
+        return [], f"monthlyStock 不是 JSON：{str(ex)[:80]}"
+    if (d.get("stat") or "") != "ok":
+        return [], f"monthlyStock stat={d.get('stat')!r}"
+    tabs = d.get("tables") or []
+    if not tabs:
+        return [], "monthlyStock 回應沒有 tables"
+    t = tabs[0]
+    got = (t.get("code") or "").strip()
+    if got != str(sid):
+        return [], (f"monthlyStock 回顯的 code 是 {got!r}，"
+                    f"⛔ 不是我送的 {sid!r} ⇒ 參數沒生效")
+    ad = roc_y + 1911
+    if str(t.get("date") or "").strip() != str(ad):
+        return [], (f"monthlyStock 回顯的 date 是 {t.get('date')!r}，"
+                    f"⛔ 不是我送的 {ad} ⇒ 那一年的參數沒生效")
+    fields = [str(x).strip() for x in (t.get("fields") or [])]
+    if TM_VOL_FIELD not in fields:
+        return [], (f"monthlyStock 的量欄名是 {fields[7:8]!r}，"
+                    f"⛔ 不是 {TM_VOL_FIELD!r} ⇒ **單位可能變了**，不落地")
+    rows = []
+    for r in (t.get("data") or []):
+        if len(r) < 9:
+            continue
+        rows.append([sid, str(r[0]).strip(), str(r[1]).strip(),
+                     _n(r[2]), _n(r[3]), _n(r[4]), _n(r[5]), _n(r[6]),
+                     _n(r[7]), _n(r[8])])
+    if not rows:
+        return [], f"monthlyStock {ad} 回了 0 列（⛔ 不是「這一檔沒有」）"
+    return rows, None
+
+
+def fetch_month_tpex(sid, roc_y, today):
+    rows, err = _fetch_json(TPEX_MONTHLY_URL.format(s=sid, y=roc_y + 1911),
+                            lambda raw: parse_tpex_monthly(raw, sid, roc_y))
+    return ([r + [today] for r in rows], err)
+
+
+def fetch_month_twse(sid, roc_y, today):
+    """上市 `FMSRFK`，`date=<西元年>0101` ⇒ 那一年的 12 個月。
+
+    ⭐ 判準跟 `fetch_one()` 同一條：`title` 會回音代號**與年度**
+    （`'114年2330 台積電  月成交資訊'`）⇒ 兩個都要對上。
+    ⛔ 只比代號不夠：`date` 壞掉時它會靜靜回**今年**（第二點①）。
+    """
+    ad = roc_y + 1911
+    raw, err = B.get(BASE.format(rep="FMSRFK", d=f"{ad}0101", s=sid),
+                     retries=2, timeout=45)
+    if err:
+        return [], f"FMSRFK {str(err)[:60]}"
+    data, title, e = _rows(raw)
+    if e:
+        return [], f"FMSRFK {e}"
+    if title and sid not in title:
+        return [], f"FMSRFK title 沒有回音代號：{title!r}"
+    if title and f"{roc_y}年" not in title:
+        return [], (f"FMSRFK title 是 {title!r}，⛔ 沒有回音我送的 {roc_y} 年"
+                    " ⇒ 那一年的參數沒生效（⚠ 它會靜靜回最新一年）")
+    ms = []
+    for r in data:
+        r = list(r) + [""] * 9
+        y, mo = _n(r[0]), _n(r[1])
+        if not (re.fullmatch(r"\d{2,3}", y) and re.fullmatch(r"\d{1,2}", mo)):
+            continue
+        ms.append([sid, y, mo, _n(r[2]), _n(r[3]), _n(r[4]), _n(r[5]),
+                   _n(r[6]), _n(r[7]), _n(r[8]), today])
+    if not ms:
+        return [], f"FMSRFK {roc_y} 回了 0 列"
+    return ms, None
+
+
+def _fetch_json(url, parse):
+    raw, err = B.get(url, retries=2, timeout=45)
+    if err or not raw:
+        return [], str(err)[:80]
+    return parse(raw)
+
+
+def sweep_spec(market):
+    """每個市場的「抓一檔一年」是哪一支 ＋ 寫到哪一份檔 ＋ 表頭 ＋ 主鍵。
+
+    ⭐ 只有這一份對照表（四點五）：⚠ ⛔ 不要在 `run_sweep()` 或 `main()` 裡
+    再 if 一次市場——那就是「同一件事兩份實作」的起點。
+    ⛔ 寫成函式而不是模組層的 dict，是因為 `m_key` 定義在這一行**後面**
+    ⇒ 模組層會當場 NameError（⚠ 而且是 import 時，不是呼叫時）。
+    """
+    return {
+        "twse": (fetch_month_twse, monthly_path, M_HEADER, m_key),
+        "tpex": (fetch_month_tpex, tpex_monthly_path, TM_HEADER, tm_key),
+    }[market]
+
+
+def sweep_todo(pool, years, done, limit):
+    """→ 本趟要問的 `[(代號, 民國年)]`。⭐ **先把一檔的所有年做完**再換下一檔。
+
+    ⚠ 反過來（先掃完一年的所有檔）的話，任何一趟被砍都會讓**每一檔都只有幾年**
+    ⇒ ⛔ 那份檔在任何時間點都「看起來有資料、而且每一檔都殘缺」，
+    而殘缺跟「那一檔那幾年沒上市」長得一模一樣（第二點）。
+    """
+    out = []
+    for sid in pool:
+        for y in years:
+            if (sid, str(y)) in done:
+                continue
+            out.append((sid, y))
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def load_sweep_done(path):
+    done = set()
+    if os.path.exists(path):
+        with io.open(path, encoding="utf-8") as f:
+            f.readline()
+            for ln in f:
+                p = ln.strip().split(",")
+                if len(p) >= 2:
+                    done.add((p[0].strip(), p[1].strip()))
+    return done
+
+
+def save_sweep_done(path, pairs, today):
+    """⭐ **追加**（四點六）：這一趟只知道自己那一部分。"""
+    new = not os.path.exists(path)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with io.open(path, "a", encoding="utf-8") as f:
+        if new:
+            f.write("stock_id,roc_year,asof\n")
+        for sid, y in pairs:
+            f.write(f"{sid},{y},{today}\n")
+    return len(pairs)
+
+
+def run_sweep(a, rl, today):
+    """月表的年份掃描（兩個市場走**同一條**路）。→ exit code。"""
+    fetch, path_of, header, key = sweep_spec(a.market)
+    years = parse_years(a.months_years)
+    pool = codes(covered=(a.market,))
+    dp = sweep_done_path(a.market)
+    done = set() if a.force else load_sweep_done(dp)
+    todo = sweep_todo(pool, years, done, a.limit)
+    out = path_of()
+    R = _load(out, header, key)
+    n0 = len(R)
+    rl.info("這一趟", f"**月表年份掃描**｜市場 **{a.market}**"
+                      f"｜年份 {years[0]}~{years[-1]}（{len(years)} 年）"
+            + ("｜端點 `afterTrading/FMSRFK?date=<西元>0101`"
+               if a.market == "twse" else
+               "｜端點 `statistics/monthlyStock?code=&date=<西元年>`"))
+    rl.info("續跑", f"母體 **{len(pool):,}** 檔 × {len(years)} 年 ＝ "
+                    f"**{len(pool)*len(years):,}** 格"
+                    f"｜已完成 {len(done):,}｜本趟 {len(todo):,}"
+                    f"　⇒ ⭐ 剩 **{len(pool)*len(years)-len(done):,}** 格")
+    ok, fail, flushed = [], [], 0
+    for i, (sid, y) in enumerate(todo, 1):
+        rows, err = fetch(sid, y, today)
+        if err:
+            fail.append((f"{sid}/{y}", err))
+            print(f"  [{i}/{len(todo)}] {sid}/{y} ✗ {err}", flush=True)
+        else:
+            for r in rows:
+                R[key(r)] = r
+            ok.append((sid, str(y)))
+            print(f"  [{i}/{len(todo)}] {sid}/{y} ✓ {len(rows)} 月", flush=True)
+            if len(ok) - flushed >= FLUSH_EVERY:
+                _save(out, header, R)
+                flushed += save_sweep_done(dp, ok[flushed:], today)
+                print(f"  ⭐ 期中落地：{flushed}／{len(todo)}", flush=True)
+        if a.sleep:
+            time.sleep(a.sleep)
+    if R:
+        _save(out, header, R)
+    save_sweep_done(dp, ok[flushed:], today)
+    rl.info("月表", f"{out.split('data/')[-1]}｜{len(R):,} 列（本趟 +{len(R)-n0}）")
+    rl.info("本趟", f"成功 {len(ok)}／失敗 {len(fail)}"
+            + (f"｜失敗例：{fail[:3]}" if fail else ""))
+    if a.market == "tpex":
+        rl.info("⛔ 欄名帶定義（⚠ 跟上市月表**不是同一個量**）",
+                "`close_high`／`close_low`／`close_avg` ＝ **收盤價**的高／低／"
+                "簡單平均（⛔ 上市那張是**盤中**高低＋**加權**均價）；"
+                "`volume_kshares` ＝ **仟股**（⛔ 上市那張是股）"
+                "　⇒ ⛔ 兩張表不可以合併，⚠ 而主鍵不重疊 ⇒ 合了也不會報錯")
+    # ⛔ 只增不減：這是外部判準，寫短了等於判準消失。
+    rl.check("月表只增不減", len(R) >= n0, f"{n0}→{len(R)}")
+    # ⚠ 本趟有東西要做而**一格都沒成功** ⇒ 當場紅（⛔ 不是靜靜跑完）
+    rl.check("本趟不是全失敗", (not todo) or bool(ok),
+             f"本趟 {len(todo)} 格全部失敗｜例：{fail[:2]}")
+    return rl.finish()
+
+
 def _n(v):
     return str(v).replace(",", "").strip()
 
@@ -751,11 +1036,13 @@ def progress_lines(pool, done, todo, ex, give_up=(), market="twse"):
          "　⇒ ⭐ **月**那一半端點也解了（probe 123）："
          "`statistics/monthlyStock?code=<代號>&date=<**西元年**>`"
          "（⛔ 只有年；七種格式只有這一種中，⚠ 我送西元它回民國）"
-         "　⇒ ⛔ **而刻意還沒接**：上市月表的 high／low 是**盤中**、"
-         "上櫃月表是**收市**（收盤），avg 一個加權一個簡單平均，單位一個股一個仟股"
-         "　⇒ 併進同一張表 ＝ 一次做出**三道**靜默的定義接縫"
-         "　⇒ ⭐ 要接就自己一份檔（`official_monthly_tpex.csv`），"
-         "⚠ 而目前**沒有消費者**要它 ⇒ 這一格**還開著**"
+         "　⇒ ✅ **已接**（2026-09-16，回測線 0841 §四 4. 點名要）："
+         "自己一份檔 `official_monthly_tpex.csv`，⛔ 不併進上市那張"
+         "（上市月表的 high／low 是**盤中**、上櫃是**收市**，"
+         "avg 一個加權一個簡單平均，單位一個股一個仟股 ⇒ 併了 ＝ **三道**靜默接縫）"
+         "　⇒ ⚠ 而它一發只回**一年** ⇒ 工作單位是 (代號, 年)、母體 972×12 格，"
+         "跑法是 `--months-years`（`feeds.yml` 的 `official-months`）"
+         "　⇒ ⛔ 而**興櫃**的年表與月表這一格**還開著**：兩支端點都不涵蓋它"
          "　⇒ ⚠ 而線索一直在我方自己的 `data/meta/_site_inventory.txt` 裡"
          "（3.5④「自己家查過沒有」）"),
     ]
@@ -770,8 +1057,18 @@ def main():
     #   ⚠ 而它跟 `lowwater.direction` 那條不同——這裡兩種**沒有相反的語意**，
     #   只是兩個不同的端點與母體 ⇒ 預設值不會讓人「照抄錯的語意」。
     ap.add_argument("--market", choices=("twse", "tpex"), default="twse")
+    # ⭐⭐ 月表的年份掃描：工作單位是 **(代號, 年)**，⛔ 不是代號
+    #   ⚠ 空字串 ＝「不跑這一段」，`"all"` ＝ 全部年份，`"104-109"` ＝ 指定區間。
+    #   ⛔ 它跟 `--market` **不是**兩種相反的語意（那條要必填、無預設值）——
+    #     這裡是「要不要多做一件事」⇒ 預設不做是安全的那一邊。
+    ap.add_argument("--months-years", default="",
+                    help="月表年份掃描：'all'／'104-115'／'109'；空 ＝ 不跑")
     a = ap.parse_args()
     B.SLEEP = a.sleep
+
+    if a.months_years:
+        rl = runlog.Run(f"official_stats:months:{a.market}")
+        return run_sweep(a, rl, datetime.now(TPE).strftime("%Y%m%d"))
 
     rl = runlog.Run("official_stats"
                     + ("" if a.market == "twse" else f":{a.market}"))

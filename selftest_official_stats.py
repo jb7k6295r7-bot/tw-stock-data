@@ -24,7 +24,9 @@ emerging  成功   0 / 嘗試  13  = **0%**
 ⇒ 後果如果不修：母體 2,493、可達 1,158 ⇒ **續跑永遠到不了 100%**，
 ⛔ 而每一趟都像有在跑——那正是「永遠跑不完，每趟都像有在跑」那個形狀。
 """
+import ast
 import io
+import json
 import os
 import sys
 import tempfile
@@ -51,7 +53,8 @@ _REPO_META = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "data", "meta")
 _REPO_FILES = ("official_yearly_close.csv", "official_monthly_amount.csv",
                "official_yearly_tpex.csv", "_official_stats_done.csv",
-               "_official_stats_miss.csv",
+               "_official_stats_miss.csv", "official_monthly_tpex.csv",
+               "_official_monthly_done_twse.csv", "_official_monthly_done_tpex.csv",
                # ⭐ `_last_run.md` 一定要在裡面：`main()` 會寫它，
                #   ⛔ 而 2026-09-16 我就漏導了 `runlog.PATH` 一次。
                "_last_run.md")
@@ -130,9 +133,18 @@ def main():
         # ⭐ 而上櫃那一半的現況要講得出**年已接上、月還開著**
         k2 = [x for x in lines if "上櫃那一半" in x][0]
         v2 = lines[k2]
-        ck("⭐⭐ 年那一半明說**已接上**、月那一半明說**還開著**"
-           "（⛔ 兩半併成一句就會有人讀成整條都解決了）",
-           "已接上" in v2 and "還開著" in v2, v2[:240])
+        # ⛔⛔ 2026-09-16 月那一半接上之後，這一條差一點變成「改字串讓它綠」。
+        #   ⚠ 它原本釘的是「年已接上、月還開著」——⭐ 而**月已經接上了**
+        #   ⇒ 那句話從此是**假的**，⛔ 而斷言會逼人把它留著。
+        #   ⇒ ⭐ 改成釘**結構**：同一格裡要同時講得出「哪一半已接」與
+        #     「哪一半還開著」——⛔ 只剩一種就是把兩半併成一句了。
+        ck("⭐⭐ 同一格裡**已接**與**還開著**兩種都要在"
+           "（⛔ 併成一句就會有人讀成整條都解決了）",
+           ("已接" in v2) and ("還開著" in v2), v2[:240])
+        ck("  ⭐ 而「還開著」那一半要點名**是誰**（⛔ 不是一句沒有主詞的『還開著』）",
+           "興櫃" in v2 or "emerging" in v2, v2[-260:])
+        ck("  ⭐ 月那一半要講得出它一發只回**一年**（⇒ 工作單位是 (代號,年)）",
+           "一年" in v2 and "months-years" in v2, v2[-320:])
         ck("  而「只有價那五格進共用表」要寫出來（⛔ 量那三欄是另一種口徑）",
            "價" in v2 and "口徑" in v2, v2[:240])
 
@@ -578,6 +590,135 @@ def main():
     names = {n.id for n in ast.walk(batch[0].args[1]) if isinstance(n, ast.Name)}
     ck("⭐⭐ 而它的判準裡有 **alive**（⛔ 少了它就回到每趟都紅的那一版）",
        "alive" in names, str(sorted(names)))
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑩ ⭐⭐ 月表的**年份掃描**（工作單位是 (代號, 年)，⛔ 不是代號）
+    #
+    # 2026-09-16 加：回測線 0841 §四 4. 要更早年份的月表，
+    # ⚠ 而我自己需要它當**外部錨點**（他們量到的 ② ④ 在「年」這一級分不出來）。
+    # ══════════════════════════════════════════════════════════════
+    print("\n── ⑩ 月表年份掃描 ──")
+    snap0 = _snap_repo()
+
+    # ── ⑩a `roc_years`／`parse_years` ──
+    import datetime as _dt
+    fake = _dt.datetime(2026, 9, 16, tzinfo=O.TPE)
+    ck("`roc_years` 從 104 起、上限由**今天**算（⛔ 不是寫死的清單）",
+       O.roc_years(fake) == list(range(104, 116)), str(O.roc_years(fake)))
+    ck("  ⭐ 跨年那一天會多一年（⇒ 它真的是算出來的）",
+       O.roc_years(_dt.datetime(2027, 1, 2, tzinfo=O.TPE))[-1] == 116,
+       str(O.roc_years(_dt.datetime(2027, 1, 2, tzinfo=O.TPE))[-1]))
+    # ⛔ 第七點第三個：有預設值的參數，一定要有一條**不傳它**的斷言
+    ck("  ⭐ 不傳 `today` 那條路也走得通（⛔ 預設值那條是 Actions 上唯一會走的）",
+       O.roc_years()[0] == 104 and len(O.roc_years()) >= 12, str(O.roc_years()))
+    ck("`parse_years('')` ＝ 不指定 ⇒ 全部", O.parse_years("", fake) == O.roc_years(fake))
+    ck("`parse_years('all')` ＝ 全部", O.parse_years("all", fake) == O.roc_years(fake))
+    ck("`parse_years('109')` ＝ [109]", O.parse_years("109", fake) == [109])
+    ck("`parse_years('104-106,112')`", O.parse_years("104-106,112", fake) == [104, 105, 106, 112])
+    ck("⭐ 超出範圍的年被濾掉（⛔ 不是抓一趟必定失敗的年）",
+       O.parse_years("99,200,109", fake) == [109], str(O.parse_years("99,200,109", fake)))
+
+    # ── ⑩b `parse_tpex_monthly`：三道判準各驗一次 ──
+    def _tm(code="6488", date=2024, vol_field=O.TM_VOL_FIELD, stat="ok", n=2):
+        return json.dumps({"tables": [{
+            "title": "", "code": code, "date": date, "totalCount": n,
+            "fields": ["年", "月", "收市最高價", "收市最低價", "收市平均價",
+                       "成交筆數", "成交金額仟元(A)", vol_field, "成交週轉率(%)"],
+            "data": [[113, m, "603.00", "573.00", "587.27", "44,168",
+                      "17,258,302", "29,478", "6.65"] for m in range(1, n + 1)],
+        }], "stat": "ok" if stat == "ok" else stat}).encode()
+
+    rows, err = O.parse_tpex_monthly(_tm(), "6488", 113)
+    ck("⭐ 正常回應 ⇒ 逐列解得出來", err is None and len(rows) == 2, f"{err}｜{rows[:1]}")
+    ck("  ⭐ 而**欄的順序**照真回應（⛔ 順序也是形狀的一部分）",
+       rows and rows[0] == ["6488", "113", "1", "603.00", "573.00", "587.27",
+                            "44168", "17258302", "29478", "6.65"], str(rows[:1]))
+    _, e1 = O.parse_tpex_monthly(_tm(code=None), "6488", 113)
+    ck("⛔ `code` 回顯是 null ⇒ 失敗（⚠ 而它的 `stat` 仍然是 ok）",
+       e1 and "參數沒生效" in e1, str(e1))
+    _, e2 = O.parse_tpex_monthly(_tm(date=2020), "6488", 113)
+    ck("⛔ 回顯的年**不是我送的那一年** ⇒ 失敗（⚠ 靜靜回別年是第二點①）",
+       e2 and "那一年的參數沒生效" in e2, str(e2))
+    _, e3 = O.parse_tpex_monthly(_tm(vol_field="成交張數(B)"), "6488", 113)
+    ck("⭐⭐ 量欄名變成「成交張數」⇒ **不落地**（⚠ 那是差一千倍的單位）",
+       e3 and "單位可能變了" in e3, str(e3))
+    _, e4 = O.parse_tpex_monthly(_tm(stat="參數輸入錯誤"), "6488", 113)
+    ck("⛔ stat 不是 ok ⇒ 失敗", e4 and "stat=" in e4, str(e4))
+    _, e5 = O.parse_tpex_monthly(_tm(n=0), "6488", 113)
+    ck("⛔ 0 列 ⇒ 失敗（⚠ ⛔ 不是「這一檔沒有」——那句話講不出它是哪一種）",
+       e5 and "0 列" in e5, str(e5))
+
+    # ── ⑩c 兩個市場**各一份檔**（⛔ 這是這一節存在的理由）──
+    f1, p1, h1, k1 = O.sweep_spec("twse")
+    f2, p2, h2, k2 = O.sweep_spec("tpex")
+    ck("⭐⭐ 上市／上櫃月表是**兩份不同的檔**"
+       "（⛔ 併成一張 ＝ 三道靜默的定義接縫，而主鍵不重疊 ⇒ 不會報錯）",
+       p1() != p2(), f"{p1()}｜{p2()}")
+    ck("  ⭐ 上櫃那份的欄名**自己帶定義**（收盤／仟股）",
+       "close_high" in h2 and "close_avg" in h2 and "volume_kshares" in h2, str(h2))
+    ck("  ⛔ 而它**沒有**「high／low／avg_price」這種對不上時無法判誰錯的欄名",
+       not ({"high", "low", "avg_price"} & set(h2)), str(h2))
+    ck("  ⭐ 續跑台帳也各一份", O.sweep_done_path("twse") != O.sweep_done_path("tpex"))
+    ck("  ⭐⭐ 而它跟**年**表那一份也不同"
+       "（⛔ 混在一起 ＝ 掃過月表的檔會被當成年表也做完了）",
+       O.sweep_done_path("tpex") != O.done_path("tpex"),
+       f"{O.sweep_done_path('tpex')}｜{O.done_path('tpex')}")
+
+    # ── ⑩d `sweep_todo`：先把一檔的所有年做完 ──
+    todo = O.sweep_todo(["A", "B", "C"], [104, 105], set(), 3)
+    ck("⭐ 先把**一檔的所有年**做完再換下一檔"
+       "（⛔ 先掃完一年 ⇒ 任何時間點每一檔都殘缺，而殘缺跟「沒上市」長得一樣）",
+       todo == [("A", 104), ("A", 105), ("B", 104)], str(todo))
+    todo2 = O.sweep_todo(["A", "B"], [104, 105], {("A", "104")}, 99)
+    ck("  已完成的不再問（⭐ 鍵是字串年）",
+       todo2 == [("A", 105), ("B", 104), ("B", 105)], str(todo2))
+    ck("  `limit` 真的截斷", len(O.sweep_todo(["A", "B"], [104, 105], set(), 2)) == 2)
+
+    # ── ⑩e 台帳是**追加**，⛔ 不是整份取代（四點六）──
+    d10 = tempfile.mkdtemp(prefix="ossweep_")
+    old_meta10 = O.META
+    try:
+        O.META = d10
+        dp = O.sweep_done_path("tpex")
+        O.save_sweep_done(dp, [("6488", "113")], "20260916")
+        O.save_sweep_done(dp, [("6488", "114")], "20260916")
+        got = O.load_sweep_done(dp)
+        ck("⭐⭐ 第二趟**不會洗掉**第一趟寫的（⇒ 這是合併，不是取代）",
+           got == {("6488", "113"), ("6488", "114")}, str(sorted(got)))
+        ck("  讀不到檔就是空集合（⛔ 不是炸掉）",
+           O.load_sweep_done(os.path.join(d10, "_nope.csv")) == set())
+    finally:
+        O.META = old_meta10
+        shutil.rmtree(d10, ignore_errors=True)
+
+    # ── ⑩f `fetch_month_twse`：`date` 沒生效時它會靜靜回**最新一年** ──
+    def _fm(title):
+        return json.dumps({"stat": "OK", "title": title, "fields": [
+            "年度", "月份", "最高價", "最低價", "加權(股數)平均價", "成交筆數",
+            "成交金額(元)", "成交股數", "週轉率(%)"],
+            "data": [["114", "1", "1", "1", "1", "1", "1", "1", "1"]]}).encode()
+    _got = {}
+
+    def _fake_get(url, **kw):
+        _got["url"] = url
+        return _fm(_got["title"]), None
+    old_get = O.B.get
+    try:
+        O.B.get = _fake_get
+        _got["title"] = "109年2330 台積電  月成交資訊"
+        rs, er = O.fetch_month_twse("2330", 109, "20260916")
+        ck("⭐ `FMSRFK` 送 `date=<西元>0101`", "date=20200101" in _got["url"], _got["url"])
+        ck("  title 同時回音代號**與年度** ⇒ 過", er is None and len(rs) == 1, f"{er}")
+        _got["title"] = "115年2330 台積電  月成交資訊"
+        _, er2 = O.fetch_month_twse("2330", 109, "20260916")
+        ck("⭐⭐ title 回的是**別年** ⇒ 失敗"
+           "（⚠ 只比代號的話，這一格會靜靜收下今年的資料當成 109 年）",
+           er2 and "沒有回音我送的 109 年" in er2, str(er2))
+    finally:
+        O.B.get = old_get
+
+    ck("★ ⑩ 全程 repo 真的 `data/meta/` 那幾個檔**逐位元沒變**",
+       _snap_repo() == snap0, "有檔被動到了")
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
