@@ -134,6 +134,7 @@ def check_stock(job):
     r["dates"] = raw["date"].to_numpy()
     r["close"] = c; r["volume"] = v; r["high"] = h; r["low"] = l; r["amount"] = a
     r["tx"] = pd.to_numeric(raw["transactions"], errors="coerce").to_numpy(float) if "transactions" in raw else np.full(len(c), np.nan)
+    r["mkt"] = raw["market"].astype(str).to_numpy() if "market" in raw else np.full(len(c), market)
     return r
 
 
@@ -230,18 +231,21 @@ def _trunc2(x: float) -> float:
 def _stock_frame(r):
     """單檔日資料 ⇒ DataFrame（只取有收盤的列＝有成交日）；官方的年／月統計都是對有成交日算的。"""
     df = pd.DataFrame({"date": pd.to_datetime(r["dates"]), "close": r["close"], "high": r["high"], "low": r["low"],
-                       "volume": r["volume"], "amount": r["amount"], "tx": r["tx"]})
+                       "volume": r["volume"], "amount": r["amount"], "tx": r["tx"], "mkt": r.get("mkt", np.full(len(r["close"]), ""))})
     return df[~df["close"].isna()].copy()
 
 
-def aggregate_ours(res, freq):
-    """所有檔按年（freq='Y'）或年月（freq='M'）聚合：收盤簡單平均、最高（含日期）、最低（含日期）、量／金額／筆數合計、加權均價。
-    回傳 DataFrame，鍵 stock_id＋roc_year（＋month）。"""
+def aggregate_ours(res, freq, market: str | None = None):
+    """所有檔按年（freq='Y'）或年月（freq='M'）聚合：收盤簡單平均、最高（含日期）、最低（含日期）、量／金額／筆數合計、加權均價、
+    n_markets（該期內 market 欄有幾種：>1 ＝ 轉板年，資料庫線 0922——資料自己講得出來，不必靠 delisted.csv）。
+    market 給了就只取那個市場的列（官方上市表只算上市段、上櫃表只算上櫃段）。回傳 DataFrame，鍵 stock_id＋roc_year（＋month）。"""
     out = []
     for r in res:
         if r.get("missing_file"):
             continue
         df = _stock_frame(r)
+        if market is not None:
+            df = df[df["mkt"] == market]
         if not len(df):
             continue
         df["roc_year"] = df["date"].dt.year - 1911
@@ -256,7 +260,7 @@ def aggregate_ours(res, freq):
             ih = int(np.flatnonzero(hv == hmax)[-1]) if not np.isnan(hmax) else -1
             il = int(np.flatnonzero(lv == lmin)[-1]) if not np.isnan(lmin) else -1
             mean_c = float(g["close"].mean()); vsum = float(g["volume"].sum()); asum = float(g["amount"].sum())
-            row = {"stock_id": r["sid"], "days": int(len(g)), "avg_close_ours": round(mean_c, 2), "avg_close_trunc_ours": _trunc2(mean_c),
+            row = {"stock_id": r["sid"], "days": int(len(g)), "n_markets": int(g["mkt"].nunique()), "avg_close_ours": round(mean_c, 2), "avg_close_trunc_ours": _trunc2(mean_c),
                    "high_ours": float(hmax), "high_date_ours": g["date"].iloc[ih] if ih >= 0 else pd.NaT,
                    "low_ours": float(lmin), "low_date_ours": g["date"].iloc[il] if il >= 0 else pd.NaT,
                    "volume_ours": vsum, "amount_ours": asum,
@@ -272,15 +276,19 @@ def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = No
     """G1：官方年表（上市 FMNPTK＝含量三欄；上櫃 yearlyStock＝只有價五格，量三欄留空 ⇒ 用「量欄是否空白」分市場）vs 我方日檔按年聚合。
     判準：avg_close 逐位相同——⚠ 上市是四捨五入、上櫃是無條件捨去（實測：上市 round 95.9%／trunc 50%，上櫃 trunc 99.98%／round 50%）；
     high／low 逐位相同；high_date／low_date 月日相同（同值取最後一次）；量三欄只在官方有值時比、逐位相同。
-    transfer＝{(stock_id, roc_year)} 該年有上櫃端下市紀錄（轉板）⇒ 官方上市年表只算上市段、我方算整年 ⇒ 狀態「轉板年」不比。
-    cal_days＝{roc_year: 日曆交易日數} ⇒ 多一欄 days_short（我方該年少於日曆的天數；缺日或無成交都會讓它 > 0）。"""
-    ours = aggregate_ours(res, "Y")
-    j = official.merge(ours, on=["stock_id", "roc_year"], how="left")
+    轉板年＝我方日檔該年 market 欄不只一種（資料庫線 0922：資料自己講得出來）⇒ 價五格只比官方那個市場的那一段、量三欄不比（口徑不同）。
+    transfer 已不用（保留參數相容），cal_days＝{roc_year: 日曆交易日數} ⇒ 多一欄 days_short（我方該年少於日曆的天數；缺日或無成交都會讓它 > 0）。
+    量三欄的差另標 qty_note：官方多且不是 1,000 的倍數 ⇒「零股（口徑）」（資料庫線 0922 §一：官方年表含零股、我方日檔不含）。"""
+    all_ = aggregate_ours(res, "Y")[["stock_id", "roc_year", "days", "n_markets"]]
+    j = official.merge(all_, on=["stock_id", "roc_year"], how="left")
     j["is_tpex"] = j["volume"].isna()
-    tr = np.array([(a, int(b)) in (transfer or set()) for a, b in zip(j["stock_id"], j["roc_year"])])
-    j["status"] = np.where(j["days"].isna(), "我方該年無成交列", np.where(tr, "轉板年（官方只算上市段）", "比對"))
+    seg = pd.concat([aggregate_ours(res, "Y", "twse").assign(is_tpex=False), aggregate_ours(res, "Y", "tpex").assign(is_tpex=True)], ignore_index=True)
+    seg = seg.drop(columns=["days", "n_markets"]).rename(columns={})
+    j = j.merge(seg, on=["stock_id", "roc_year", "is_tpex"], how="left")
+    multi = (j["n_markets"] > 1).to_numpy()
+    j["status"] = np.where(j["days"].isna(), "我方該年無成交列", np.where(j["avg_close_ours"].isna(), "我方該年無該市場段", np.where(multi, "轉板年（價比該市場段、量不比）", "比對")))
     j["days_short"] = (j["roc_year"].map(cal_days or {}) - j["days"]) if cal_days else np.nan
-    cmp = (j["status"] == "比對").to_numpy()
+    cmp = j["status"].isin(["比對", "轉板年（價比該市場段、量不比）"]).to_numpy()
     _ok = lambda cond: np.where(cmp, cond.to_numpy(float), np.nan)   # 1.0／0.0／NaN（沒得比）
     ours_avg = np.where(j["is_tpex"], j["avg_close_trunc_ours"], j["avg_close_ours"])
     j["avg_ok"] = _ok((pd.Series(ours_avg, index=j.index) - j["avg_close"]).abs() <= 1e-9)
@@ -288,9 +296,12 @@ def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = No
     j["low_ok"] = _ok((j["low_ours"] - j["low"]).abs() <= 1e-9)
     j["high_date_ok"] = np.where(cmp, [_official_date_ok(a, b) for a, b in zip(j["high_date_ours"], j["high_date"])], np.nan)
     j["low_date_ok"] = np.where(cmp, [_official_date_ok(a, b) for a, b in zip(j["low_date_ours"], j["low_date"])], np.nan)
+    qcmp = cmp & ~multi
     for c in ("volume", "amount", "transactions"):
         oc = "tx_ours" if c == "transactions" else f"{c}_ours"
-        j[f"{c}_ok"] = np.where(~cmp | j[c].isna() | j[oc].isna(), np.nan, ((j[oc] - j[c]).abs() <= 0.5).astype(float))
+        j[f"{c}_ok"] = np.where(~qcmp | j[c].isna() | j[oc].isna(), np.nan, ((j[oc] - j[c]).abs() <= 0.5).astype(float))
+    dv = j["volume"] - j["volume_ours"]
+    j["qty_note"] = np.where(j["volume_ok"] == 0, np.where((dv > 0) & (dv % 1000 != 0), "零股（口徑）", np.where(dv < 0, "我方多", "其他")), "")
     return j
 
 
@@ -307,12 +318,16 @@ def official_monthly_check(res, official: pd.DataFrame) -> pd.DataFrame:
     for c in ("volume", "amount", "transactions"):
         oc = "tx_ours" if c == "transactions" else f"{c}_ours"
         j[f"{c}_ok"] = np.where(~cmp | j[c].isna() | j[oc].isna(), np.nan, ((j[oc] - j[c]).abs() <= 0.5).astype(float))
+    dv = j["volume"] - j["volume_ours"]
+    j["qty_note"] = np.where(j["volume_ok"] == 0, np.where((dv > 0) & (dv % 1000 != 0), "零股（口徑）", np.where(dv < 0, "我方多", "其他")), "")
     return j
 
 
 def official_tpex_ratios(res, tpex: pd.DataFrame) -> pd.DataFrame:
     """G3（描述、不判）：上櫃官方量三欄（張／仟元／千筆）換算後 ÷ 我方年合計 的比值分佈——資料庫線 0737 說口徑不同，母體級分佈它沒量。"""
-    ours = aggregate_ours(res, "Y")
+    ours = aggregate_ours(res, "Y", "tpex")
+    if not len(ours):
+        return pd.DataFrame(columns=["stock_id", "roc_year", "volume_ratio", "amount_ratio", "tx_ratio"])
     j = tpex.merge(ours, on=["stock_id", "roc_year"], how="inner")
     j["volume_ratio"] = j["volume_lots"] * 1000 / j["volume_ours"].replace(0, np.nan)
     j["amount_ratio"] = j["amount_kntd"] * 1000 / j["amount_ours"].replace(0, np.nan)
@@ -333,17 +348,18 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
     nomatch = yc[yc["status"] == "我方該年無成交列"]; pre = int((nomatch["roc_year"] < 104).sum())
     vb = yc[yc["volume_ok"] == 0]
     short = int((vb["days_short"] > 0).sum()) if "days_short" in vb and vb["days_short"].notna().any() else 0
+    zl = int((vb["qty_note"] == "零股（口徑）").sum()); mzl = int((mc["qty_note"] == "零股（口徑）").sum()) if len(mc) else 0
     L = ["## G. 官方統計交叉核對（`data/meta/official_*.csv`，資料庫線 0737 抓）", "",
          f"年表 {len(yc):,} 列（上市 {len(twse_y):,}、上櫃 {len(tpex_y):,}；民國 {int(yc['roc_year'].min())}～{int(yc['roc_year'].max())}）；"
-         f"我方該年無成交列 {len(nomatch):,} 列（其中民國 104 之前＝資料起點前 {pre:,}，**104 起 {len(nomatch) - pre:,}**）；轉板年不比 {int((yc['status'].str.startswith('轉板')).sum()):,} 列；比對 {int((yc['status'] == '比對').sum()):,} 列。"
+         f"我方該年無成交列 {len(nomatch):,} 列（其中民國 104 之前＝資料起點前 {pre:,}，**104 起 {len(nomatch) - pre:,}**）；轉板年（我方日檔該年 market 不只一種）{int((yc['status'].str.startswith('轉板')).sum()):,} 列＝價只比該市場段、量不比；我方無該市場段 {int((yc['status'] == '我方該年無該市場段').sum()):,} 列；比對 {int((yc['status'] == '比對').sum()):,} 列。"
          + (f" 官方端點查無（`_official_stats_miss.csv`）{len(miss):,} 檔——是「查無」不是「不符」。" if miss is not None else ""), "",
          "約定（實測出來的，不是文件寫的）：官方兩位小數——上市年表收盤平均＝四捨五入、上櫃年表收盤平均＝無條件捨去、上市月表加權均價＝無條件捨去；最高／最低日期同值取最後一次。", "",
          "| 欄（年表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(yc, "avg_ok", "收盤簡單平均（上市四捨五入／上櫃捨去）"), col_stat(yc, "high_ok", "年最高價"), col_stat(yc, "high_date_ok", "年最高價日期"),
          col_stat(yc, "low_ok", "年最低價"), col_stat(yc, "low_date_ok", "年最低價日期"),
          col_stat(yc, "volume_ok", "年成交股數（只上市）"), col_stat(yc, "amount_ok", "年成交金額（只上市）"), col_stat(yc, "transactions_ok", "年成交筆數（只上市）"), "",
-         f"年成交股數不符 {len(vb):,} 列裡，我方該年有成交列的天數少於日曆交易日的 **{short:,}** 列（缺日或該股無成交都會如此，⛔ 分不出；天數齊仍不符 {len(vb) - short:,} 列）。", "",
-         f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無成交列 {int((mc['status'] != '比對').sum()):,} 列。", "",
+         f"年成交股數不符 {len(vb):,} 列裡，**零股口徑（官方多、差額不是 1,000 的倍數）{zl:,} 列**（官方年表含零股、我方日檔不含——資料庫線 0922 §一，⛔ 不是缺資料）；其餘 {len(vb) - zl:,} 列（{vb[vb['qty_note'] != '零股（口徑）']['qty_note'].value_counts().to_dict()}）。我方天數少於日曆的 {short:,} 列（缺日或該股無成交都會如此，⛔ 分不出）。", "",
+         f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無成交列 {int((mc['status'] != '比對').sum()):,} 列；月量不符裡零股口徑 {mzl:,} 列。", "",
          "| 欄（月表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(mc, "volume_ok", "月成交股數"), col_stat(mc, "amount_ok", "月成交金額"), col_stat(mc, "transactions_ok", "月成交筆數"),
          col_stat(mc, "high_ok", "月最高價"), col_stat(mc, "low_ok", "月最低價"), col_stat(mc, "avg_price_ok", "月加權均價（金額÷股數，無條件捨去）"), ""]
@@ -405,7 +421,7 @@ def _selftest() -> int:
     d = pd.to_datetime(["2025-01-02", "2025-01-03", "2025-02-03", "2025-12-30", "2026-01-05"]).to_numpy()
     close = np.array([10.0, 10.1, np.nan, 10.4, 20.0]); high = np.array([10.2, 10.5, np.nan, 10.5, 21.0]); low = np.array([9.8, 9.9, np.nan, 10.0, 19.0])
     vol = np.array([1000., 2000., np.nan, 3000., 500.]); amt = np.array([10000., 20400., np.nan, 31500., 10000.]); tx = np.array([5., 6., np.nan, 7., 1.])
-    res = [{"sid": "1111", "dates": d, "close": close, "high": high, "low": low, "volume": vol, "amount": amt, "tx": tx}]
+    res = [{"sid": "1111", "dates": d, "close": close, "high": high, "low": low, "volume": vol, "amount": amt, "tx": tx, "mkt": np.array(["twse"] * 5)}]
     # 2025：有成交 3 天；簡單平均 (10+10.1+10.4)/3 = 10.1666 → 10.17；最高 10.5 兩天（1/03 與 12/30，取第一個）；最低 9.8 於 1/02；量 6000、金額 61900、筆 18
     Y = pd.DataFrame([{"stock_id": "1111", "roc_year": 114, "volume": 6000, "amount": 61900, "transactions": 18, "high": 10.5, "high_date": "1/03", "low": 9.8, "low_date": "1/02", "avg_close": 10.17},
                       {"stock_id": "1111", "roc_year": 113, "volume": np.nan, "amount": np.nan, "transactions": np.nan, "high": 1.0, "high_date": "1/02", "low": 1.0, "low_date": "1/02", "avg_close": 1.0},
@@ -426,12 +442,30 @@ def _selftest() -> int:
     y2 = official_yearly_check(res, Y2).iloc[0]
     check(y2["avg_ok"] == 0.0 and y2["volume_ok"] == 0.0 and y2["high_date_ok"] == 1.0, "官方改 10.18／6001／12/30 ⇒ 平均、量判不符；日期 12/30＝最後一次 ⇒ 合")
     Y4 = Y.copy(); Y4.loc[0, "volume"] = np.nan; Y4.loc[0, "amount"] = np.nan; Y4.loc[0, "transactions"] = np.nan; Y4.loc[0, "avg_close"] = 10.16
-    y4 = official_yearly_check(res, Y4).iloc[0]
+    res_tpex = [dict(res[0], mkt=np.array(["tpex"] * 5))]
+    y4 = official_yearly_check(res_tpex, Y4).iloc[0]
     check(pd.isna(y4["volume_ok"]) and y4["avg_ok"] == 1.0 and bool(y4["is_tpex"]), "上櫃形狀（量三欄空白）⇒ 量不判、收盤平均用無條件捨去 10.16 ⇒ 合")
     Y4.loc[0, "avg_close"] = 10.17
-    check(official_yearly_check(res, Y4).iloc[0]["avg_ok"] == 0.0, "上櫃寫 10.17（四捨五入值）⇒ 不符（上櫃是捨去）")
-    yt = official_yearly_check(res, Y, transfer={("1111", 114)}, cal_days={114: 5, 113: 5}).iloc[0]
-    check(yt["status"].startswith("轉板年") and pd.isna(yt["avg_ok"]) and pd.isna(yt["volume_ok"]) and yt["days_short"] == 2, "轉板年 ⇒ 不比；days_short＝日曆 5 − 我方 3 ＝ 2")
+    check(official_yearly_check(res_tpex, Y4).iloc[0]["avg_ok"] == 0.0, "上櫃寫 10.17（四捨五入值）⇒ 不符（上櫃是捨去）")
+    y4b = official_yearly_check(res, Y4).iloc[0]
+    check(y4b["status"] == "我方該年無該市場段" and pd.isna(y4b["avg_ok"]), "官方上櫃列、我方該年全是 twse ⇒ 我方該年無該市場段、不比")
+    yt = official_yearly_check(res, Y, None, cal_days={114: 5, 113: 5}).iloc[0]
+    check(yt["status"] == "比對" and yt["days_short"] == 2, "days_short＝日曆 5 − 我方 3 ＝ 2")
+    # 轉板年：1/02 在 tpex、其餘 twse ⇒ 官方上市表只算 twse 段（1/03、12/30：平均 10.25、最低 9.9 於 1/03）、量不比
+    rt = [dict(res[0], mkt=np.array(["tpex", "twse", "twse", "twse", "twse"]))]
+    Yt = Y.copy(); Yt.loc[0, "avg_close"] = 10.25; Yt.loc[0, "low"] = 9.9; Yt.loc[0, "low_date"] = "1/03"
+    yt2 = official_yearly_check(rt, Yt).iloc[0]
+    check(yt2["status"].startswith("轉板年") and yt2["n_markets"] == 2 and yt2["avg_ok"] == 1.0 and yt2["low_ok"] == 1.0 and yt2["low_date_ok"] == 1.0 and pd.isna(yt2["volume_ok"]), "轉板年：價只比 twse 段（平均 10.25、最低 9.9）、量不比")
+    Yt2 = Yt.copy(); Yt2.loc[0, "volume"] = np.nan; Yt2.loc[0, "amount"] = np.nan; Yt2.loc[0, "transactions"] = np.nan; Yt2.loc[0, "avg_close"] = 10.0; Yt2.loc[0, "high"] = 10.2; Yt2.loc[0, "high_date"] = "1/02"; Yt2.loc[0, "low"] = 9.8; Yt2.loc[0, "low_date"] = "1/02"
+    yt3 = official_yearly_check(rt, Yt2).iloc[0]
+    check(yt3["avg_ok"] == 1.0 and yt3["high_ok"] == 1.0 and yt3["high_date_ok"] == 1.0, "同一轉板年、上櫃表那列 ⇒ 只比 tpex 段（1/02：10.0／10.2）")
+    Yz = Y.copy(); Yz.loc[0, "volume"] = 6001; Yz.loc[0, "transactions"] = 19
+    yz = official_yearly_check(res, Yz).iloc[0]
+    check(yz["volume_ok"] == 0.0 and yz["qty_note"] == "零股（口徑）", "官方多 1 股且不是千的倍數 ⇒ 標零股（口徑）")
+    Yz.loc[0, "volume"] = 5000
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "我方多", "官方少 ⇒ 我方多")
+    Yz.loc[0, "volume"] = 7000
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "其他", "官方多 1,000 股（整股）⇒ 不是零股、標其他")
     M = pd.DataFrame([{"stock_id": "1111", "roc_year": 114, "month": 1, "high": 10.5, "low": 9.8, "avg_price": 10.13, "transactions": 11, "amount": 30400, "volume": 3000, "turnover": 0.1},
                       {"stock_id": "1111", "roc_year": 114, "month": 2, "high": 1.0, "low": 1.0, "avg_price": 1.0, "transactions": 1, "amount": 1, "volume": 1, "turnover": 0.1}])
     mc = official_monthly_check(res, M)
@@ -440,6 +474,7 @@ def _selftest() -> int:
     check(m1["avg_price_ok"] == 1.0 and m1["avg_price_ours"] == 10.13, "月加權均價 30400÷3000 = 10.1333 → 10.13")
     M3 = M.copy(); M3.loc[0, "amount"] = 30590; M3.loc[0, "avg_price"] = 10.19
     res3 = [dict(res[0], amount=np.array([10000., 20590., np.nan, 31500., 10000.]))]
+    check(official_monthly_check([dict(res[0], volume=np.array([1000., 2000., np.nan, 3000., 500.]))], M.assign(volume=[3001, 1])).iloc[0]["qty_note"] == "零股（口徑）", "月表：官方多 1 股 ⇒ 零股（口徑）")
     check(official_monthly_check(res3, M3).iloc[0]["avg_price_ok"] == 1.0 and official_monthly_check(res3, M3).iloc[0]["avg_price_ours"] == 10.19, "30590÷3000 = 10.1966 ⇒ 捨去 10.19（四捨五入會是 10.20）")
     check(_trunc2(10.1966) == 10.19 and _trunc2(10.2) == 10.2 and _trunc2(0.29) == 0.29, "_trunc2：捨去、整值不動、浮點 0.29 不掉成 0.28")
     check(m1["high_ok"] == 1.0 and m1["low_ok"] == 1.0, "月最高 10.5／最低 9.8")
@@ -447,8 +482,10 @@ def _selftest() -> int:
     M2 = M.copy(); M2.loc[0, "avg_price"] = 10.14
     check(official_monthly_check(res, M2).iloc[0]["avg_price_ok"] == 0.0, "均價差 0.01 ⇒ 不符")
     TP = pd.DataFrame([{"stock_id": "1111", "roc_year": 114, "volume_lots": 6.222, "amount_kntd": 64.2, "transactions_k": 0.037, "wavg_price_derived": 10.3}])
-    tp = official_tpex_ratios(res, TP)
+    tp = official_tpex_ratios(res_tpex, TP)
     check(abs(tp.iloc[0]["volume_ratio"] - 6222 / 6000) < 1e-9 and abs(tp.iloc[0]["tx_ratio"] - 37 / 18) < 1e-9, "上櫃比值＝官方換算÷我方（張×1000／仟元×1000／千筆×1000）")
+    tpr = official_tpex_ratios(rt, TP)
+    check(abs(tpr.iloc[0]["volume_ratio"] - 6222 / 1000) < 1e-9 and len(official_tpex_ratios(res, TP)) == 0, "轉板年只取 tpex 段（1/02 量 1000）；全 twse 的檔 ⇒ 沒有列")
     check(_official_date_ok(np.datetime64("2025-07-22"), "7/22") == 1.0 and _official_date_ok(np.datetime64("2025-07-22"), "07/23") == 0.0 and np.isnan(_official_date_ok(pd.NaT, "7/22")), "日期比月日、缺值 ⇒ NaN")
     L = official_summary(yc, mc, tp, None)
     check(any("| 收盤簡單平均" in x and "| 1 |" in x for x in L) and any("上櫃量三欄" in x for x in L), "報告段落：年表比對列數與上櫃比值行都在")
@@ -526,11 +563,8 @@ def main():
         raise SystemExit("⛔ data/meta/official_*.csv 沒有內容（分支上的 data/ 比 main 舊？先 git checkout origin/main -- data/meta）")
     miss_p = os.path.join(meta, "_official_stats_miss.csv")
     miss = pd.read_csv(miss_p, dtype=str) if os.path.exists(miss_p) else None
-    dl = pd.read_csv(os.path.join(meta, "delisted.csv"), dtype=str)
-    dl = dl[dl["market"] == "tpex"]
-    transfer = set(zip(dl["stock_id"], pd.to_datetime(dl["delist_date"]).dt.year - 1911))   # 該年有上櫃端下市紀錄 ⇒ 轉板年（真下市的那年官方上市表也沒有它，無害）
     cal_days = pd.Series(cal.year - 1911).value_counts().to_dict()
-    yc = official_yearly_check(res, Y, transfer, cal_days); mc = official_monthly_check(res, M); tp = official_tpex_ratios(res, TP)
+    yc = official_yearly_check(res, Y, None, cal_days); mc = official_monthly_check(res, M); tp = official_tpex_ratios(res, TP)
     yc.to_csv(os.path.join(OUT, "official_yearly_check.csv"), index=False); mc.to_csv(os.path.join(OUT, "official_monthly_check.csv"), index=False)
     tp.to_csv(os.path.join(OUT, "official_tpex_ratios.csv"), index=False)
     print(f"官方統計 年 {len(yc):,} 列、月 {len(mc):,} 列，{time.time() - t0:.0f}s", file=sys.stderr)
