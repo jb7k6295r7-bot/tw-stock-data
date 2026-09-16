@@ -322,8 +322,12 @@ jobs:
         #   ⇒ 「它被砍了」與「它跑完沒有新發現」在畫面上一模一樣。
         #   ⇒ ⭐ 真正的修法是**內層自己有預算**（probe_step.sh 的 600 秒），
         #     外層只是安全網 ⇒ ⛔ 外層一定要比內層大。
-        timeout-minutes: 12
-        run: bash probe_step.sh data/meta/_mops_probe.txt 600 python mops_probe.py
+        # ⚠ 2026-09-16 又動了一次：run 132 實測 **502 秒**，而 D2 那三支前面
+        #   要**先停 60 秒**等限流（七發全部 Connection reset by peer）
+        #   ⇒ 600 秒只剩 38 秒餘裕 ⇒ 內層 780、外層 15 分。
+        #   ⛔ 外層一定要比內層大（`selftest_probe_step.py` ⑥ 釘著）。
+        timeout-minutes: 15
+        run: bash probe_step.sh data/meta/_mops_probe.txt 780 python mops_probe.py
 
       # ★ 長期停止買賣（第六輪）。⛔ 不放進上面那個迴圈：它要帶 `--set`，
       #   而那個迴圈的契約是「腳本:輸出檔」對、不帶參數。

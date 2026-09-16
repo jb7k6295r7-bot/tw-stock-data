@@ -34,6 +34,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -492,6 +493,20 @@ def ezsearch_case(out):
     #   ③ 1,000 列上限的邊界 ⇒ ⛔ 要的不是「窗開多寬」，是**判準怎麼寫**
     # ══════════════════════════════════════════════════════════════
     out.append("")
+    # ⛔⛔ 2026-09-16 probe run 132：下面**七發全部**回
+    #   `[Errno 104] Connection reset by peer`（重試 2 次都失敗）
+    #   ⇒ 三支一支都沒量到。⚠ 而 probe 105／106 同一個 POST 是**通的**
+    #   ⇒ ⭐ 那不是「端點不答」，是**這一趟在它前面已經打太多發**（限流）。
+    #   ⚠ 而它壞的樣子是對的：探針逐發寫「這一發**沒量到**（⛔ 不是它不答）」
+    #     ⇒ ⛔ 沒有被誤讀成「上櫃打不到」——那一句會直接害市場情報分析線裁錯。
+    # ⇒ ⭐ 處置：**先停一段時間再打**，並把「停了多久」印出來
+    #   （⛔ 靜靜 sleep 的話，下一個人看不出這裡有一道限流）。
+    _PAUSE = int(os.environ.get("MOPS_D2_PAUSE_SEC", "60"))
+    out.append(f"      ⏸ 先停 {_PAUSE} 秒再打下面三支"
+               "（⚠ run 132 這裡七發全部 `Connection reset by peer`"
+               "，而同一個 POST 在 probe 105／106 是通的 ⇒ 判成限流）")
+    if _PAUSE > 0:
+        time.sleep(_PAUSE)
     out.append("      ══ ⭐⭐ 市場情報分析線 1508 §二裁的三支 ══")
 
     # ── ① 阻斷項：上櫃 ──────────────────────────────────────────

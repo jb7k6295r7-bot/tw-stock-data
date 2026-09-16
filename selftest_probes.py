@@ -1842,6 +1842,46 @@ def check_sibling_doors():
     return bad
 
 
+def check_mops_pause():
+    """⭐ D2 那三支前面的「先停一段時間」：⛔ 預設值那條路也要有人驗。
+
+    ⚠ 自測把 `MOPS_D2_PAUSE_SEC` 設成 0（否則每跑一次自測就多等 60 秒）
+    ⇒ ⛔ **預設值那條路自測永遠走不到**——而那正是 Actions 上唯一會走的那條
+    （第七點第三個：`feeds.month_is_open(today=None)` 一模一樣的坑）。
+    ⇒ ⭐ 所以這一條**把環境變數拿掉**，直接驗那個預設值是 60、而且 sleep 得到。
+    """
+    import mops_probe as M
+    import ast as _a
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:200]}"))
+        if not c:
+            bad += 1
+
+    src = io.open(os.path.join(_here_dir(), "mops_probe.py"), encoding="utf-8").read()
+    tree = _a.parse(src)
+    got = None
+    for n in _a.walk(tree):
+        if (isinstance(n, _a.Call) and isinstance(n.func, _a.Attribute)
+                and n.func.attr == "get"
+                and isinstance(n.func.value, _a.Attribute)
+                and n.func.value.attr == "environ"
+                and n.args and isinstance(n.args[0], _a.Constant)
+                and n.args[0].value == "MOPS_D2_PAUSE_SEC"):
+            got = n.args[1].value if len(n.args) > 1 and isinstance(n.args[1], _a.Constant) else None
+    ck("① ⭐ `MOPS_D2_PAUSE_SEC` 的**預設值是 60**（⛔ 不是 0——0 等於這道沒做）",
+       got == "60", f"讀到 {got!r}")
+    ck("② ⭐ 真的有一行 `time.sleep(...)` 在那個變數 > 0 時才跑",
+       any(isinstance(n, _a.Call) and isinstance(n.func, _a.Attribute)
+           and n.func.attr == "sleep" for n in _a.walk(tree)),
+       "找不到 time.sleep")
+    ck("③ ⭐ 「停了多久」要**印出來**（⛔ 靜靜 sleep 的話沒人看得出這裡有限流）",
+       "先停 {_PAUSE} 秒" in src or '先停 {' in src, "")
+    return bad
+
+
 def check_isin_issuetype():
     """⭐⭐ `tpex_probe.isin_issuetype_case()`：**讀它自己的選單**，⛔ 不猜代碼。
 
@@ -2154,6 +2194,12 @@ def check_terms_case():
 
 def main():
     bad = 0
+    # ⛔⛔ `mops_probe` 的 D2 那一段會 **sleep 60 秒**等限流（run 132 七發全被 reset）。
+    #   ⚠ 離線自測沒有限流這回事 ⇒ 那 60 秒是純浪費，
+    #   ⛔ 而一支慢到讓人想跳過的自測，跟沒有那支自測是一樣的（六點五）。
+    #   ⇒ 這裡把它關掉，⭐ 而「預設值是 60」由 check_mops_pause() 另外釘
+    #     （第七點第三個：有預設值的那條路也要有人走）。
+    os.environ["MOPS_D2_PAUSE_SEC"] = "0"
     for name, want in SECTIONS.items():
         err, out = run(name)
         if err is not None:
@@ -2191,6 +2237,7 @@ def main():
     bad += check_probe_stamp()
     bad += check_survivor_fs()
     bad += check_sibling_doors()
+    bad += check_mops_pause()
     bad += check_isin_issuetype()
     bad += check_avg_residual()
     bad += check_terms_case()
