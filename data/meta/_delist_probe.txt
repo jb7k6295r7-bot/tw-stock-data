@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T19:54:19+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35089732877
+# ⏱ 這一趟：2026-09-16T21:49:21+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35100948576
 # 下市清單／變更交易 端點探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
@@ -6,25 +6,7 @@
 
 ── 終止上市清單 company/suspendListing
    https://www.twse.com.tw/rwd/zh/company/suspendListing?response=json
-   頂層鍵 ['data', 'fields', 'maxYear', 'minYear', 'status', 'title', 'total']
-   ⭐ 平常被丟掉的鍵：['maxYear', 'minYear', 'status', 'total']
-     ── title：終止上市公司
-     ── maxYear：2026
-     ── minYear：2001
-     ── status：ok
-     ── total：265
-   ⭐ total=265｜解析出的列數=265　✓ 一致
-   頂層 `fields`：['終止上市日期', '公司名稱', '上市編號']
-   ⭐ 頂層 `data`：265 列（第一列的型別 list）
-     樣本：["115/09/01", "三商壽", "2867"]
-     樣本：["115/06/23", "森崴能源", "6806"]
-     樣本：["115/03/27", "晶睿", "3454"]
-   `_tables()` 認出 1 張表
-     欄位（3）：['終止上市日期', '公司名稱', '上市編號']
-     列數：265
-       樣本：["115/09/01", "三商壽", "2867"]
-       樣本：["115/06/23", "森崴能源", "6806"]
-       樣本：["115/03/27", "晶睿", "3454"]
+   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
 
 ── ⚠ 同上，帶 yy=115（情報分析線說這個參數被無視 ⇒ 驗它）
    https://www.twse.com.tw/rwd/zh/company/suspendListing?yy=115&response=json

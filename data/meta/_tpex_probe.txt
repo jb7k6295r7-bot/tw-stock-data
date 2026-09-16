@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T19:29:37+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35089732877
+# ⏱ 這一趟：2026-09-16T21:24:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35100948576
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -275,15 +275,15 @@
 
   ── 日成交量值指數（上櫃大盤層級統計，交易日曆的候選）
      https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_index/st41.php?l=zh-tw
-     ✓ 10,291 bytes
+     ✓ 11,229 bytes
        （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
-     載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
 
   ── 上櫃股價指數收盤行情（類股指數，類股名稱的候選）
      https://www.tpex.org.tw/web/stock/aftertrading/index_summary/summary.php?l=zh-tw
-     ✓ 10,536 bytes
+     ✓ 11,474 bytes
        （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
-     載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
 
 [6] ★ 上櫃類股名稱的候選端點（欄位與樣本列）
 
@@ -330,8 +330,8 @@
 
   ── ⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
-     ✓ 10,838 bytes
-     inline script 2 段
+     ✓ 11,776 bytes
+     inline script 3 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 4 種：
        data-format='D'
@@ -341,7 +341,7 @@
      像「路徑＋查詢字串」的（1 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
-     載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「恢復買賣」5 次
        出現「參考價」4 次
        出現「停止買賣」1 次
@@ -349,8 +349,8 @@
 
   ── 變更股票面額**預告表**
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
-     ✓ 10,338 bytes
-     inline script 2 段
+     ✓ 11,276 bytes
+     inline script 3 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 2 種：
        data-format='csv'
@@ -358,31 +358,31 @@
      像「路徑＋查詢字串」的（1 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
-     載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」8 次
 
   ── 採**彈性面額**之上（興）櫃公司名冊
      https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html
-     ✓ 19,007 bytes
-     inline script 1 段
+     ✓ 19,945 bytes
+     inline script 2 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 0 種：
      像「路徑＋查詢字串」的（1 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
-     載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
+     載入的 js（下一輪要看的）：['/cdn-cgi/challenge-platform/scripts/jsd/main.js', '/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js']
        出現「面額」13 次
 
 [9] 上櫃休市日公告（前瞻用；事後靠日檔就看得出來）
 
   ── 櫃買中心 休市日／交易日曆
      https://www.tpex.org.tw/zh-tw/announce/market/holiday.html
-     ✓ 11,069 bytes｜出現「休市」5 次｜「開市」0 次
+     ✓ 12,007 bytes｜出現「休市」5 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
   ── 櫃買中心 公告專區（找得到休市日的入口就好）
      https://www.tpex.org.tw/zh-tw/announce/market.html
-     ✓ 9,954 bytes｜出現「休市」1 次｜「開市」0 次
+     ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
 [10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
@@ -463,7 +463,7 @@
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
      首列：{'Date': '1150916', 'SecuritiesCompanyCode': '8064', 'CompanyName': '東捷', 'ClosingPrice': '118.50', 'Change': '10.50', 'Tot.Trans.Vol.': '5608', 'Trans.Vol.AtUp-limitPr.': '2877', 'OrderVol.AtUp-limitPr.': '5543', 'Difference': '2666'}
      ⛔ ③`Date` 相異值只有 **1 種**：1150916 × 22　⇒ **它只有這一期，沒有歷史**
-     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
 
   ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
      ✓ 1 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
@@ -508,17 +508,17 @@
 
      ⭐ 上櫃除權除息**計算結果表**
      https://www.tpex.org.tw/zh-tw/announce/market/ex/cal.html
-     ✓ 11,754 bytes｜它自己呼叫的候選 0 條：
+     ✓ 12,692 bytes｜它自己呼叫的候選 0 條：
         ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，**不可以**寫成「沒有 API」）
 
      ⭐ 上櫃減資**恢復交易參考價**（上櫃版 TWTAUU）
      https://www.tpex.org.tw/zh-tw/announce/market/reduction/reference.html
-     ✓ 11,275 bytes｜它自己呼叫的候選 0 條：
+     ✓ 12,213 bytes｜它自己呼叫的候選 0 條：
         ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，**不可以**寫成「沒有 API」）
 
      上櫃首五日無漲跌幅資訊
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/no-limit.html
-     ✓ 10,379 bytes｜它自己呼叫的候選 0 條：
+     ✓ 11,317 bytes｜它自己呼叫的候選 0 條：
         ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，**不可以**寫成「沒有 API」）
 
 [14] ⭐⭐ 上櫃個股**年／月**成交資訊（⛔ 推翻「上櫃沒有官方年度／月統計」那句話的那一步）
@@ -526,20 +526,16 @@
 
      ── 個股月成交資訊
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-month.html
-     ✓ 10,538 bytes｜它自己寫的 action：['statistics/monthlyStock']
+     ✓ 11,476 bytes｜它自己寫的 action：['statistics/monthlyStock']
         ⭐ 頁面表單欄位（input／select 的 name／id）：['code', 'date', 'query']
-        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'afterRender', 'align', 'autoChange', 'autoLoad', 'beforeInit', 'beforeRender', 'notes', 'option', 'pagin', 'pattern', 'sortable', 'subtitle', 'subtitle2', 'tables', 'thead', 'title']
+        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'afterRender', 'align', 'autoChange', 'autoLoad', 'beforeInit', 'beforeRender', 'notes', 'option', 'pagin', 'pattern', 'r', 'sortable', 'subtitle', 'subtitle2', 't', 'tables', 'thead', 'title']
 
         ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/monthlyStock
            [GET code+date] ✓ JSON 29 bytes
               頂層鍵 ['stat']
               ⭐ 平常被丟掉的鍵：['stat']
                 ── stat：參數輸入錯誤
-           [POST code+date] ✓ JSON 29 bytes
-              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
-              頂層鍵 ['stat']
-              ⭐ 平常被丟掉的鍵：['stat']
-                ── stat：參數輸入錯誤
+           [POST code+date] ⛔ HTTPError: HTTP 520 <none>
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
@@ -571,18 +567,13 @@
 
      ── 個股年成交資訊
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-year.html
-     ✓ 10,145 bytes｜它自己寫的 action：['statistics/yearlyStock']
+     ✓ 11,083 bytes｜它自己寫的 action：['statistics/yearlyStock']
         ⭐ 頁面表單欄位（input／select 的 name／id）：['code', 'query']
-        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'align', 'autoLoad', 'pattern', 'tables']
+        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'align', 'autoLoad', 'pattern', 'r', 't', 'tables']
 
         ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/yearlyStock
-           [GET code+date] ✓ JSON 1,767 bytes
-              頂層鍵 ['flagField', 'stat', 'tables']
-              ⭐ 平常被丟掉的鍵：['flagField', 'stat']
-                ── flagField：張數
-                ── stat：ok
+           [GET code+date] ⛔ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troublesh...tle":"Error 520: Web server is returning an unknown error","status":520,"detai
            [POST code+date] ✓ JSON 1,767 bytes
-              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
               頂層鍵 ['flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['flagField', 'stat']
                 ── flagField：張數
@@ -598,7 +589,7 @@
               ⭐ 平常被丟掉的鍵：['flagField', 'stat']
                 ── flagField：張數
                 ── stat：ok
-           ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
+           ── ⭐ **原始回應整份**（POST code+date）（⛔ 不是開頭 160 字）──
               {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,330,746","1,073,614,119","2,370","806.78","1,600.00","7/15","403.00","1/02","750.71"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1150916,"subtitle":"近年個股成交資訊(當年度統計至 1150916 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
               {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1150916,"subtitle":"近年個股成交資訊(當年度統計至 1150916 止)"},{}],"stat":"ok"}
@@ -609,17 +600,17 @@
 
      ── 盤中零股每日收盤行情
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/pricing.html
-     ✓ 10,388 bytes｜它自己寫的 action：['afterTrading/oddQuote']
+     ✓ 11,326 bytes｜它自己寫的 action：['afterTrading/oddQuote']
      ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query']
 
      ── 盤後零股每日收盤行情
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/post-pricing/day.html
-     ✓ 10,742 bytes｜它自己寫的 action：['afterTrading/odd']
+     ✓ 11,680 bytes｜它自己寫的 action：['afterTrading/odd']
      ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query', 'type']
 
      ── 零股交易成交統計
      https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/statistics/day.html
-     ✓ 10,899 bytes｜它自己寫的 action：['afterTrading/oddSummary']
+     ✓ 11,837 bytes｜它自己寫的 action：['afterTrading/oddSummary']
      ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query', 'type']
 
      ⇒ ⭐ 下一步：拿讀到的 action 照 `API_PATTERN = "/www/{LANG}/{ACTION}"` 打，

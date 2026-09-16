@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T19:44:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35089732877
+# ⏱ 這一趟：2026-09-16T21:37:04+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35100948576
 # keys_probe.py 的輸出。**只讀不寫資料。**
 # 問的是：官方回應裡那些我方一路丟掉的鍵，到底寫了什麼。
 # ⛔ 我方 `_tables()` 只取 title/fields/data，其餘全丟，而且丟的時候沒有紀錄。
@@ -861,12 +861,6 @@
   ⛔ 「進位規則」也排除（它**逐檔**分群：143 檔只捨去、147 檔只四捨五入）
   ⇒ 這一節只問：**官方的逐日收盤跟我方有沒有幾天不一樣、差多少**。
   我方 2019 年有收盤的天數：242
-   2019-08 ✗ 抓不到：LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
-<head>
-<meta http-equiv="Content-T
-   2019-09 ✗ 抓不到：LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
-<head>
-<meta http-equiv="Content-T
    2019-10 ✗ 抓不到：LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
 <head>
 <meta http-equiv="Content-T
@@ -876,8 +870,8 @@
    2019-12 ✗ 抓不到：LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html>
 <head>
 <meta http-equiv="Content-T
-  官方回到的天數：138
-  ⭐ 只有我方有的日子：104 ['2019-08-01', '2019-08-02', '2019-08-05', '2019-08-06', '2019-08-07']
+  官方回到的天數：178
+  ⭐ 只有我方有的日子：64 ['2019-10-01', '2019-10-02', '2019-10-03', '2019-10-04', '2019-10-07']
   ⭐ 只有官方有的日子：0 []　⇒ ⚠ 若 >0，那就是「官方多算了幾天」（⛔ 而那做不出 ±0.01）
   ⭐⭐ **收盤價不同的日子：0**（⇒ ⛔ 一天都沒有 ⇒ 連這一條也被排除，那就寫不知道）
 
