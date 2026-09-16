@@ -2155,6 +2155,35 @@ def check_avg_residual():
        "差額的相異值" in t and "差額合計" in t, t)
     ck("⑧ ⭐⭐ `avg_residual()` 真的把**三個錨點都跑過**（⛔ 只跑第一個看起來一樣）",
        _calls_all_anchors(K), "")
+    # ⑨ ⭐⭐ **沒量到 ≠ 量到了 0**（probe run 134：3141／民106 十二個月 title 全空
+    #    ⇒ `got` 空 ⇒ `diff` 必然 0 ⇒ ⛔ 印成「連這一條也被排除」＝**假的排除**）
+    real_get2, real_root2 = B.get, K._ROOT
+    tmp2 = tempfile.mkdtemp(prefix="keysprobe_empty_")
+    try:
+        os.makedirs(os.path.join(tmp2, "stocks"))
+        io.open(os.path.join(tmp2, "stocks", f"{sid}.csv"), "w",
+                encoding="utf-8").write(
+            "date,close\n" + "".join(f"{ad}-01-{d:02d},4.3\n" for d in range(4, 20)))
+        K._ROOT = tmp2
+        # 官方一個月都不回（`stat` 有話說）
+        B.get = K.B.get = lambda u, retries=3, timeout=45: (
+            json.dumps({"stat": "很抱歉，沒有符合條件的資料!"},
+                       ensure_ascii=False).encode(), None)
+        mark2 = len(K.LINES)
+        K._avg_residual_one(sid, roc)
+        te = "\n".join(K.LINES[mark2:])
+    finally:
+        B.get = K.B.get = real_get2
+        K._ROOT = real_root2
+        shutil.rmtree(tmp2, ignore_errors=True)
+    ck("⑨ ⭐⭐ 官方一天都沒回 ⇒ 印「**這一格沒量到**」",
+       "**這一格沒量到**" in te, te)
+    ck("⑨ ⛔⛔ 而且**不印**那句「收盤價不同的日子：0 ⇒ 連這一條也被排除」"
+       "（⚠ 那是一個假的『排除』）",
+       "收盤價不同的日子" not in te, te)
+    ck("⑨ ⭐ title 空的時候把 `stat` 一起印出來"
+       "（⛔ 否則「回錯期別」與「根本沒答」長得一樣）",
+       "stat=" in te and "沒有符合條件" in te, te)
     ck("⑥ ⭐⭐ `_same_price` 回三種：相同／不同／**比不了**（⛔ None 不可以壓成 False）",
        (K._same_price("4.3", "4.30") is True
         and K._same_price("4.3", "4.31") is False

@@ -722,7 +722,10 @@ def _avg_residual_one(sid, roc):
         title = str(d.get("title") or "")
         # ⛔ 第二點：這一批要自己講出它是哪一檔、哪一期
         if sid not in title or f"{roc}年{mo:02d}月" not in title.replace(" ", ""):
-            say(f"   {ad}-{mo:02d} ⛔ title 沒有回音我送的代號與月份：{title!r}")
+            # ⭐ title 空的時候要把 `stat`／`total` 一起印出來——⛔ 否則
+            #   「它回了錯的期別」與「它根本沒答」在輸出上長得一樣（第二點）。
+            say(f"   {ad}-{mo:02d} ⛔ title 沒有回音我送的代號與月份：{title!r}"
+                f"｜stat={str(d.get('stat'))[:60]!r}｜total={d.get('total')!r}")
             continue
         for row in (d.get("data") or []):
             if len(row) < 7:
@@ -737,6 +740,20 @@ def _avg_residual_one(sid, roc):
             if iso and c not in ("", "--", "X0.00"):
                 got[iso] = c
     say(f"  官方回到的天數：{len(got)}")
+    # ⛔⛔ **沒量到 ≠ 量到了 0**（五點三那一族）。
+    #   probe run 134 實測：3141／民106 十二個月的 title **全部是空的**
+    #   ⇒ `got` 是空的 ⇒ 底下的 `diff` 必然是 0
+    #   ⇒ ⛔ 而那一行會印成「**收盤價不同的日子：0** ⇒ 連這一條也被排除」
+    #     ——⚠ **那是一個假的『排除』**：官方那一邊一個字都沒回來。
+    #   ⇒ ⭐ 官方回到的天數太少就**大聲說沒量到**，⛔ 而且**不印那個結論**。
+    _cover = (len(set(ours) & set(got)) / len(ours)) if ours else 0.0
+    if _cover < 0.5:
+        say(f"  ⚠⚠ **這一格沒量到**：官方只回了 {len(got)} 天，"
+            f"我方 {len(ours)} 天 ⇒ 重疊 {_cover:.0%}"
+            "　⇒ ⛔ 不算失敗，⛔ **也不算驗過**——"
+            "⚠ 下面那幾行在這種情況下講不出任何事情，所以不印。")
+        say("")
+        return
     only_ours = sorted(set(ours) - set(got))
     only_off = sorted(set(got) - set(ours))
     # ⛔⛔ 這裡**不可以比字串**：我方 CSV 寫 `4.3`、官方回 `4.30`
