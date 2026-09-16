@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T23:08:43+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35112240600
+# ⏱ 這一趟：2026-09-17T01:08:15+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35125748108
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -472,7 +472,7 @@
      ⛔ ③`Date` 相異值只有 **1 種**：1150608 × 1　⇒ **它只有這一期，沒有歷史**
      ⛔ ③`StartDateForStabilizationOperation` 相異值只有 **1 種**：1150605 × 1　⇒ **它只有這一期，沒有歷史**
      ⛔ ③`EndDateForStabilizationOperation` 相異值只有 **1 種**：1150611 × 1　⇒ **它只有這一期，沒有歷史**
-     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
 [13] ⭐⭐ 上櫃融資融券的「備註」欄，歷史日期回不回
   ⚠ 我方舊檔沒有 note 是**我方 header 2026-09-09 才加**，⛔ 不等於來源沒有——這一節就是要分開這兩件事。
@@ -543,20 +543,20 @@
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20260916
+                ── date：20260917
                 ── flagField：張數
                 ── stat：ok
            [POST stkno+year] ✓ JSON 506 bytes
               ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20260916
+                ── date：20260917
                 ── flagField：張數
                 ── stat：ok
            ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
               {"stat":"參數輸入錯誤"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
-              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20260916","stat":"ok","flagField":"張數"}
+              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20260917","stat":"ok","flagField":"張數"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
            ── ⭐ `date` 的**格式**掃描（⛔ 名字已經從頁面讀到了）──
               date='2024'         stat='ok'｜回顯 code='6488'｜totalCount=12｜inner date=2024　⭐⭐ **中了**

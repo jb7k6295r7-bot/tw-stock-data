@@ -1049,13 +1049,13 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-09-17T00:30:40+08:00（台北）｜觸發 schedule｜每日台股資料｜ref main｜run 35120164100
+最後執行：2026-09-17T01:22:22+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35125748108
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **跑過的自測**：17 支｜selftest_runlog.py、selftest_mops.py、selftest_probes.py、selftest_lock_dir.py、selftest_calendar.py、selftest_holiday.py、selftest_otccal.py、selftest_suspend_twse.py、selftest_otcexright.py、selftest_adj_gap.py、selftest_db_status.py、selftest_mops_history.py、selftest_revenue_complete.py、selftest_shares_twse.py、selftest_num.py、selftest_parse_daily.py、selftest_transpose.py
+- **跑過的自測**：1 支｜selftest_feed_hosts.py
 
 檢查：
-- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（17 支全綠）
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
 
 ## reduce_shares_check　✓ 正常
 
