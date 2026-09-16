@@ -66,6 +66,78 @@ LAST_ERR=""
 for i in 1 2 3; do
   git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
   git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
+
+  # ═══════════════════════════════════════════════════════════════
+  # ⛔⛔ 闘門：**不可以覆訋別人剛推上 main 的東西**（2026-09-16）
+  #
+  # 上面那份排除清單時的主詞是【樹】（`data`／`backtest/forward`）。
+  # ⛔ 而這一條的主詞是【別一條線】：本 repo 有四條線，
+  # 每一條一個分支，而它們都把自己的程式搬進同一個 main。
+  #
+  # ⚠ 2026-09-16 量到的：回測線分支跟 main 差 **117 個檔**、main 多 **22,154 行**。
+  #   ⇒ 它只要在自己分支上派任何一趣工，這一步就把那 117 個檔
+  #     回退成它分支上的舊版，⚠ 而 `git diff` 看起來像「這一趣重算過」。
+  #   ⭐ 而它今天**做不到**的唯一理由是：`sync_code.sh` 還沒到它分支上
+  #     ——⛔ 那是**運氣**，跟本檔開頭 `_runs.jsonl` 那一句一字不差。
+  #
+  # ⇒ 判準用**分岐點**（⛔ 不是「main 最後一次動它的 commit 是不是本分支的」
+  #   ——同步本身會在 main 上造一個不屬於任何分支的 commit，那個寫法會每一個檔都誤報）：
+  #
+  #     分岐點 MB = merge-base(本分支, origin/main)
+  #     某個會被覆寫的檔 F：
+  #       main 的 F == MB 的 F  ⇒ ✅ main 自分岐以來沒動過它  ⇒ 覆寫是安全的
+  #       main 的 F != MB 的 F  ⇒ 再問一句：這份內容在**本分支的歷史**裡有嗎？
+  #                                 有 ⇒ ✅ 那是我上一趥同步推的
+  #                                 沒有 ⇒ ⛔ **別人改過它** ⇒ 覆寫就是把那一改刪掉
+  #
+  # ⇒ 處置：**整趣不同步**，大聲印出是哪幾個檔跟怎麼修，而 `exit 0`。
+  #   ⚠ 選「整趣不同步」而不是「跳過那幾個檔」的理由：部分同步會把 main
+  #   留在一個半套的狀態（新程式叫一個沒搬過去的函式）⇒ 四點二⑥那一條。
+  #   ⭐ 而「沒同步」是**吵的**（我在 main 上看不到我剛改的東西），
+  #   ⛔ 「默默回退別人的程式」是**安靜的** ⇒ 兩害相權取吵的那一個。
+  # ═══════════════════════════════════════════════════════════════
+  MB=$(git merge-base "$SRC" origin/main 2>/dev/null || true)
+  if [ -n "$MB" ]; then
+    THEIRS=""
+    # shellcheck disable=SC2086
+    for F in $(git diff --name-only "$SRC" origin/main -- . $SPEC); do
+      A=$(git rev-parse --quiet --verify "origin/main:$F" 2>/dev/null || echo "-")
+      B=$(git rev-parse --quiet --verify "$MB:$F" 2>/dev/null || echo "-")
+      [ "$A" = "$B" ] && continue
+      # ⛔⛔ 第一版到這裡就判它是「別人改的」⇒ **假陽性**：
+      #   本分支上一趥同步**自己**就在 main 上造了一個 commit
+      #   ⇒ main 的 F 當然跟分岐點不同，而那是**我自己推的**。
+      #   ⇒ 實測：自測 ③⑤⑧ 的「第二趥同步」全部被擋下來（失敗 7 條）。
+      #   ⭐ 而那不是「門檻訂太嚴」，是**判準量錯了東西**（四點五那一族）。
+      # ⇒ ⭐ 再問一句：**main 這一份的內容，在本分支的歷史裡出現過嗎？**
+      #     出現過   ⇒ 它就是我上一趥推的 ⇒ ✅ 覆寫安全
+      #     沒出現過 ⇒ ⛔ 那是**別人寫的** ⇒ 覆寫就是把它刪掉
+      #   ⚠ 上限 80 個 commit：這一層是「抑假陽性」，⛔ 不是安全邊界
+      #     ——抓不到只會多擋一趥（吵），⛔ 不會放行一個該擋的。
+      SEEN=0
+      for C in $(git rev-list -n 80 "$SRC" -- "$F"); do
+        if [ "$(git rev-parse --quiet --verify "$C:$F" 2>/dev/null)" = "$A" ]; then
+          SEEN=1; break
+        fi
+      done
+      [ "$SEEN" = "1" ] || THEIRS="$THEIRS $F"
+    done
+    if [ -n "$THEIRS" ]; then
+      N=$(echo $THEIRS | wc -w)
+      echo "⛔⛔ [sync_code] **這一趥不同步**：有 $N 個檔在 main 上自分岐以來**被別人改過**，" >&2
+      echo "   覆寫過去等於把那些改動刪掉，而 git diff 看起來像「這一趥重算過」。" >&2
+      echo "   分岐點 $MB" >&2
+      for F in $THEIRS; do echo "     ── $F" >&2; done | head -20
+      [ "$N" -gt 20 ] && echo "     …（只列前 20 個）" >&2
+      echo "   ⭐ 修法（回測線 2157 就是這樣做的）：在本分支把那幾個檔**採過來**：" >&2
+      echo "      git fetch origin main && git checkout origin/main -- <上面那幾個> && git commit" >&2
+      echo "      ⚠ ⛔ 不建議 \`git merge origin/main\`：同步本身會在 main 上造 commit，" >&2
+      echo "         而分支沒有它們 ⇒ merge 幾乎一定衝突（自測⑨ 實測過）。" >&2
+      echo "   ⚠ 這一趥的程式**沒有**搬上 main（⛔ 不是失敗，是擋下來了）。" >&2
+      git checkout -q "$BR" 2>/dev/null
+      exit 0
+    fi
+  fi
   # shellcheck disable=SC2086
   git checkout "$SRC" -- . $SPEC || {
     echo "⚠ 取程式路徑失敗，跳過同步" >&2; git checkout -q "$BR" 2>/dev/null; exit 0; }
