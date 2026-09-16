@@ -310,7 +310,10 @@ SECTIONS = {
                    #   ⛔ 少了它，「條款准不准我方這樣用」就停在**我的摘要**上，
                    #   ⚠ 而三點②那條已經證明過：同一份條款換個關鍵字就翻出禁止條文
                    #   ⇒ 摘要漏掉的那一句，讀的人**沒有任何地方會發現**。
-                   "MOPS 條款原文"],
+                   "MOPS 條款原文",
+                   # ⭐ D2 第四條路（data.gov.tw）2026-09-16 加。⛔ 少了它，
+                   #   「那個 id 到底存不存在」就停在我筆記裡的一個數字上。
+                   "D2 第四條路"],
     # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
     #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
     #     而把限額當成餘額用，是這一支最可能造成的傷害。
@@ -1842,6 +1845,241 @@ def check_sibling_doors():
     return bad
 
 
+def check_mops_pause():
+    """⭐ D2 那三支前面的「先停一段時間」：⛔ 預設值那條路也要有人驗。
+
+    ⚠ 自測把 `MOPS_D2_PAUSE_SEC` 設成 0（否則每跑一次自測就多等 60 秒）
+    ⇒ ⛔ **預設值那條路自測永遠走不到**——而那正是 Actions 上唯一會走的那條
+    （第七點第三個：`feeds.month_is_open(today=None)` 一模一樣的坑）。
+    ⇒ ⭐ 所以這一條**把環境變數拿掉**，直接驗那個預設值是 60、而且 sleep 得到。
+    """
+    import mops_probe as M
+    import ast as _a
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:200]}"))
+        if not c:
+            bad += 1
+
+    src = io.open(os.path.join(_here_dir(), "mops_probe.py"), encoding="utf-8").read()
+    tree = _a.parse(src)
+    got = None
+    for n in _a.walk(tree):
+        if (isinstance(n, _a.Call) and isinstance(n.func, _a.Attribute)
+                and n.func.attr == "get"
+                and isinstance(n.func.value, _a.Attribute)
+                and n.func.value.attr == "environ"
+                and n.args and isinstance(n.args[0], _a.Constant)
+                and n.args[0].value == "MOPS_D2_PAUSE_SEC"):
+            got = n.args[1].value if len(n.args) > 1 and isinstance(n.args[1], _a.Constant) else None
+    ck("① ⭐ `MOPS_D2_PAUSE_SEC` 的**預設值是 60**（⛔ 不是 0——0 等於這道沒做）",
+       got == "60", f"讀到 {got!r}")
+    ck("② ⭐ 真的有一行 `time.sleep(...)` 在那個變數 > 0 時才跑",
+       any(isinstance(n, _a.Call) and isinstance(n.func, _a.Attribute)
+           and n.func.attr == "sleep" for n in _a.walk(tree)),
+       "找不到 time.sleep")
+    ck("③ ⭐ 「停了多久」要**印出來**（⛔ 靜靜 sleep 的話沒人看得出這裡有限流）",
+       "先停 {_PAUSE} 秒" in src or '先停 {' in src, "")
+    return bad
+
+
+def check_isin_issuetype():
+    """⭐⭐ `tpex_probe.isin_issuetype_case()`：**讀它自己的選單**，⛔ 不猜代碼。
+
+    ## ⛔ 第一版我猜了 `("", "I", "C")`，而它用兩種方式騙我
+
+    ```
+    issuetype=''  ⇒ 33 MB、三種編碼都解不乾淨，
+                    而 `\b9103\b` 在那一大坨裡命中的是**權證**（元大…5C購01）
+                    ⇒ ⚠ 報「7／10 命中」，⛔ 七個沒有一個是 TDR
+    'I' / 'C'     ⇒ 乾淨的 cp950、有「有價證券別」欄，⛔ 但 0／10
+    ```
+    ⇒ ⭐ 兩個病根各一條斷言：**代碼要從選單讀**、**靶子要比代號那一欄**。
+
+    ⚠ 而這一段本來寫在 `main()` 裡 ⇒ 離線試跑只能叫 `main()`，
+    ⛔ 而它會寫 repo 真的 `_tpex_probe.txt`（我今天就這樣污染過一次）
+    ⇒ 抽成函式之後這一節才測得到，⭐ 而且 ★ 那條斷言會把它釘住。
+    """
+    import tpex_probe as TP
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:260]}"))
+        if not c:
+            bad += 1
+
+    FORM = ('<html><body><select name="issuetype">'
+            '<option value="">全部</option>'
+            '<option value="I">指數投資證券</option>'
+            '<option value="R">台灣存託憑證</option>'
+            '</select></body></html>').encode("cp950")
+    # ⚠ 真回應的形狀（第七點）：表頭那一列也是 <td>、⭐ 而且有一列是**權證**
+    #   （代號欄是別的東西，而 `9103` 出現在**名稱**裡）⇒ 比代號欄才篩得掉。
+    RES = ('<html><table>'
+           '<tr><td>頁面編號</td><td>國際證券編碼</td><td>有價證券代號</td>'
+           '<td>有價證券名稱</td><td>市場別</td><td>有價證券別</td></tr>'
+           '<tr><td>9103</td><td>TW000009103</td><td>9103</td><td>美德醫療-DR</td>'
+           '<td>上市</td><td>台灣存託憑證</td></tr>'
+           '<tr><td>912000</td><td>TW000912000</td><td>912000</td><td>晨訊科-DR</td>'
+           '<td>上市</td><td>台灣存託憑證</td></tr>'
+           '<tr><td>061538</td><td>TW26Z0615388</td><td>061538</td>'
+           '<td>元大9103購01</td><td>上市</td><td>上市認購(售)權證</td></tr>'
+           '</table></html>').encode("cp950")
+    # ★ ⛔ 「沒有動到 repo 真的檔」要**逐位元**比，⛔ 不是寫一條恆真的斷言
+    #   （第七點第五個：沙箱導走漏一個 ⇒ 每一個導走的路徑都要有這一條）。
+    import hashlib
+    _pp = os.path.join(_here_dir(), "data", "meta", "_tpex_probe.txt")
+    _before = (hashlib.sha256(io.open(_pp, "rb").read()).hexdigest()
+               if os.path.exists(_pp) else None)
+    real_get, real_say = B.get, TP.say
+    seen_urls = []
+
+    def fake(u, retries=3, timeout=45):
+        seen_urls.append(u)
+        return (FORM, None) if "?" not in u else (RES, None)
+
+    out = []
+    try:
+        B.get = TP.B.get = fake
+        TP.say = lambda x="": out.append(str(x))
+        TP.isin_issuetype_case()
+    finally:
+        B.get = TP.B.get = real_get
+        TP.say = real_say
+    t = "\n".join(out)
+
+    ck("① ⭐ **先讀選單**（第一發打的是沒有 query 的表單頁）",
+       bool(seen_urls) and "?" not in seen_urls[0], str(seen_urls[:2]))
+    ck("①b ⛔ 第一發**不是** `class_main.jsp`（run 134 實測它回 33 MB 全表，⛔ 不是表單）",
+       bool(seen_urls) and "class_main.jsp" not in seen_urls[0], str(seen_urls[:2]))
+    ck("② ⭐ 選單逐字印出來（含 value 與標籤）",
+       "value='R'" in t and "台灣存託憑證" in t, t[:400])
+    ck("③ ⭐⭐ 挑哪一個是**標籤自己講的**（含「存託憑證」），⛔ 不是我挑一個像的",
+       "標籤含「存託憑證」的：1 項" in t, t)
+    ck("④ ⛔ 沒去打那兩個猜的代碼（`issuetype=I`／`=C`）",
+       not any("issuetype=I&" in u or "issuetype=C&" in u for u in seen_urls),
+       str(seen_urls))
+    ck("⑤ ⭐⭐ 靶子比**代號欄** ⇒ 名稱裡有 9103 的那張權證**不算命中**",
+       "命中（**比代號欄**）：2／10" in t, t)
+    ck("⑥ ⭐ 母體印出來而且**扣掉表頭**（3 列資料／4 個 <tr>）",
+       "解析出 **3** 列資料（共 4 個 <tr>，含表頭）" in t, t)
+    ck("⑦ ⭐ 「有價證券別」那一欄有被印出來讓它自己講話",
+       "台灣存託憑證" in t and "有價證券別" in t, t)
+    # ⑨ ⛔ 這一頁沒有 issuetype 的 <select> 時，**要把這一頁有什麼印出來**
+    #    （run 134 就是這一格：⛔ 只說「掃不到」的話，下一輪又從零開始猜）
+    try:
+        B.get = TP.B.get = lambda u, retries=3, timeout=45: (
+            ('<html><body><select name="market"><option value="1">上市</option></select>'
+             '<a href="C_public.jsp?strMode=2">上市證券</a>'
+             '<a href="/isin/e_single_main.jsp">English</a></body></html>').encode("cp950"),
+            None)
+        o9 = []
+        TP.say = lambda x="": o9.append(str(x))
+        TP.isin_issuetype_case()
+    finally:
+        B.get = TP.B.get = real_get
+        TP.say = real_say
+    t9 = "\n".join(o9)
+    ck("⑨ ⭐ 掃不到 `issuetype` 時，把**這一頁的其他 <select>** 印出來",
+       "<select> 共 1 個：['market']" in t9, t9[:400])
+    ck("⑨ ⭐⭐ 也把**連結**印出來（⛔ 不然下一輪又要從零開始猜路徑）",
+       "C_public.jsp?strMode=2" in t9 and "下一輪照它走" in t9, t9[:600])
+
+    _after = (hashlib.sha256(io.open(_pp, "rb").read()).hexdigest()
+              if os.path.exists(_pp) else None)
+    ck("★ ⛔ repo 真的 `_tpex_probe.txt` **逐位元沒變**"
+       "（⚠ 抽成函式之前這一節做不到——只能叫 `main()`，而它會覆蓋那個檔）",
+       _before == _after, f"{_before} → {_after}")
+    return bad
+
+
+def check_official_vs_month():
+    """⭐⭐ `keys_probe._official_vs_month()`：**三方比**，⛔ 不是兩方。
+
+    2026-09-16 離線量到：1101／109-10 **股數 Δ=0**（逐位相同）、
+    金額官方月表**少 317 元**；1229 同樣形狀（少 105）。
+    ⇒ ⭐ 所以要分開兩種完全不同的事：
+
+    ```
+    ①==② 而 ②≠③  ⇒ **官方自己**兩條路不一致（`STOCK_DAY` vs `FMSRFK`）
+    ①≠②          ⇒ 我方日檔跟官方逐日對不上   ← 處置完全相反
+    ```
+    ⛔ 只比 ①③ 的話這兩種**分不開**，而畫面上長得一樣。
+    """
+    import keys_probe as K
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:220]}"))
+        if not c:
+            bad += 1
+
+    DAY = json.dumps({
+        "stat": "OK", "title": "109年10月 9999 測試 各日成交資訊",
+        "fields": ["日期", "成交股數", "成交金額", "開盤價", "最高價",
+                   "最低價", "收盤價", "漲跌價差", "成交筆數", "註記"],
+        "data": [["109/10/05", "1,000", "10,000", "10", "10", "10", "10", "0", "5", ""],
+                 ["109/10/06", "2,000", "20,500", "10", "10", "10", "10", "0", "5", ""]],
+    }, ensure_ascii=False).encode()
+    real_get, real_root = B.get, K._ROOT
+    tmp = tempfile.mkdtemp(prefix="oct2020_")
+    try:
+        os.makedirs(os.path.join(tmp, "meta"))
+        io.open(os.path.join(tmp, "meta", "official_monthly_amount.csv"), "w",
+                encoding="utf-8").write(
+            "stock_id,roc_year,month,high,low,avg_price,transactions,amount,volume,turnover,asof\n"
+            "9999,109,10,10,10,10,10,30200,3000,1,20260916\n")
+        K._ROOT = tmp
+        B.get = K.B.get = lambda u, retries=3, timeout=45: (DAY, None)
+        out = K._official_vs_month("9999")
+        t = "\n".join(out)
+        ck("① ⭐ 官方**逐日**自己加總（1,000+2,000／10,000+20,500）",
+           "股數 3,000｜金額 **30,500**" in t, t)
+        ck("② ⭐ 官方**月表**那一邊也印出來", "月表 FMSRFK**：股數 3,000｜金額 **30,200**" in t, t)
+        ck("③ ⭐⭐ 兩條官方路的**差**自己講出來（−300）",
+           "金額 **-300**" in t, t)
+        ck("④ ⭐ 而且明講「那是官方自己不一致，⛔ 不是我方的問題」",
+           # ⛔ 第一版我把斷言寫成 `官方**自己**兩條路不一致`，⚠ 而原文是
+           #   `**官方自己**兩條路不一致`——**星號的位置差一格** ⇒ 當場紅，
+           #   而那不是程式有問題（第七點第四個：沒套上去 ≠ 沒抓到）。
+           #   ⇒ ⭐ 斷言比**那句話的意思**（「不是我方的問題」），⛔ 不比排版。
+           "不是我方的問題" in t and "兩條路不一致" in t, t)
+        # ⛔ 反向：月表讀不到 ⇒ 大聲說沒跑，⛔ 不可以靜靜只印一半
+        #
+        # ⛔⛔ 第一版我在這裡寫 `os.remove(os.path.join(tmp, "meta",
+        #   "official_monthly_amount.csv"))` ⇒ `selftest_no_data_delete.py` **當場紅**：
+        #   它掃 AST 解出來的路徑尾巴是 `meta/official_monthly_amount.csv`，
+        #   ⚠ 而那**是一個被 git 追蹤的 data/ 檔** ⇒ 它分不出 `tmp` 是沙箱還是 repo 根
+        #   （它的檔頭自己就寫著這個盲點）。
+        #   ⇒ probe run 134 的 step 6 因此 failure ⇒ **步驟 7~16 全部 skipped**，
+        #     其中包括「把程式同步到 main」⇒ ⛔ 那一趟什麼都沒搬（六點五那一族）。
+        #
+        # ⇒ ⭐ 修法**不是**把它加進白名單（那是把一道對的閘門關掉），
+        #   是**根本不要去刪一個叫那個名字的檔**：換一個**本來就沒有月表**的沙箱。
+        tmp2 = tempfile.mkdtemp(prefix="oct2020_nomonth_")
+        os.makedirs(os.path.join(tmp2, "meta"))
+        K._ROOT = tmp2
+        t2 = "\n".join(K._official_vs_month("9999"))
+        shutil.rmtree(tmp2, ignore_errors=True)
+        K._ROOT = tmp
+        ck("⑤ ⛔ 月表讀不到 ⇒ 大聲印「這一層沒跑」（⚠ 只印一半跟比過了長得一樣）",
+           "**這一層沒跑**" in t2, t2)
+        # ⛔ 反向：官方逐日取不回來 ⇒ 同樣要大聲
+        B.get = K.B.get = lambda u, retries=3, timeout=45: (None, "boom")
+        t3 = "\n".join(K._official_vs_month("9999"))
+        ck("⑥ ⛔ 官方逐日取不回來 ⇒ 大聲印「這一層沒跑」",
+           "**這一層沒跑**" in t3, t3)
+    finally:
+        B.get = K.B.get = real_get
+        K._ROOT = real_root
+        shutil.rmtree(tmp, ignore_errors=True)
+    return bad
+
+
 def check_avg_residual():
     """⭐⭐ `keys_probe.avg_residual()` 的**逐列迴圈**真的被走過，而且比的是數值。
 
@@ -1939,6 +2177,35 @@ def check_avg_residual():
        "差額的相異值" in t and "差額合計" in t, t)
     ck("⑧ ⭐⭐ `avg_residual()` 真的把**三個錨點都跑過**（⛔ 只跑第一個看起來一樣）",
        _calls_all_anchors(K), "")
+    # ⑨ ⭐⭐ **沒量到 ≠ 量到了 0**（probe run 134：3141／民106 十二個月 title 全空
+    #    ⇒ `got` 空 ⇒ `diff` 必然 0 ⇒ ⛔ 印成「連這一條也被排除」＝**假的排除**）
+    real_get2, real_root2 = B.get, K._ROOT
+    tmp2 = tempfile.mkdtemp(prefix="keysprobe_empty_")
+    try:
+        os.makedirs(os.path.join(tmp2, "stocks"))
+        io.open(os.path.join(tmp2, "stocks", f"{sid}.csv"), "w",
+                encoding="utf-8").write(
+            "date,close\n" + "".join(f"{ad}-01-{d:02d},4.3\n" for d in range(4, 20)))
+        K._ROOT = tmp2
+        # 官方一個月都不回（`stat` 有話說）
+        B.get = K.B.get = lambda u, retries=3, timeout=45: (
+            json.dumps({"stat": "很抱歉，沒有符合條件的資料!"},
+                       ensure_ascii=False).encode(), None)
+        mark2 = len(K.LINES)
+        K._avg_residual_one(sid, roc)
+        te = "\n".join(K.LINES[mark2:])
+    finally:
+        B.get = K.B.get = real_get2
+        K._ROOT = real_root2
+        shutil.rmtree(tmp2, ignore_errors=True)
+    ck("⑨ ⭐⭐ 官方一天都沒回 ⇒ 印「**這一格沒量到**」",
+       "**這一格沒量到**" in te, te)
+    ck("⑨ ⛔⛔ 而且**不印**那句「收盤價不同的日子：0 ⇒ 連這一條也被排除」"
+       "（⚠ 那是一個假的『排除』）",
+       "收盤價不同的日子" not in te, te)
+    ck("⑨ ⭐ title 空的時候把 `stat` 一起印出來"
+       "（⛔ 否則「回錯期別」與「根本沒答」長得一樣）",
+       "stat=" in te and "沒有符合條件" in te, te)
     ck("⑥ ⭐⭐ `_same_price` 回三種：相同／不同／**比不了**（⛔ None 不可以壓成 False）",
        (K._same_price("4.3", "4.30") is True
         and K._same_price("4.3", "4.31") is False
@@ -1965,6 +2232,54 @@ def _calls_all_anchors(K):
     finally:
         K._avg_residual_one, K.AVG_RESID = real_one, real_anchor
     return seen == [("A", 1), ("B", 2), ("C", 3)]
+
+
+def check_datagov_d2():
+    """⭐ `datagov_d2_case()`：那個 dataset id **是我筆記裡的**，⛔ 我沒驗過它存在。
+
+    ⚠ 最可能的壞法：id 是編的 ⇒ 回一個長得很正常的 200 頁
+    ⇒ ⛔ 「這個 id 不存在」與「這個資料集不是我要的」在回應上長得一樣。
+    ⇒ ⭐ 判準是**回應自己有沒有回音那個 id**，⛔ 不是「有回東西」。
+    """
+    import mops_probe as M
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:200]}"))
+        if not c:
+            bad += 1
+
+    real = B.get
+    try:
+        # ① 回音得到 ＋ 有 D2 要的詞
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            (f"<html><body><h1>資料集 {M.DGT_D2_ID}</h1><p>財務報告公告日</p>"
+             "</body></html>").encode(), None)
+        t = []
+        M.datagov_d2_case(t)
+        t = "\n".join(t)
+        ck("① ⭐ 標題就寫著「⛔ 我沒有驗過它存在」（⚠ 這個 id 是筆記來的）",
+           "**我沒有驗過它存在**" in t, t[:300])
+        ck("② ⭐ 判準是**回音那個 id**（⛔ 不是「有回東西」）",
+           f"回音 `{M.DGT_D2_ID}`：True" in t, t)
+        ck("③ ⭐ 詞命中列出來", "'公告日'" in t and "'財務報告'" in t, t)
+        # ② ⛔ 回了 200 但**沒有回音那個 id** ⇒ 要明講「多半是我編的」
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            "<html><body>查無此資料集</body></html>".encode(), None)
+        t2 = "\n".join(_x for _x in (lambda o: (M.datagov_d2_case(o), o)[1])([]))
+        ck("④ ⭐⭐ 回 200 卻沒回音那個 id ⇒ 明講「**多半是我編的**」",
+           f"回音 `{M.DGT_D2_ID}`：False" in t2 and "多半是我編的" in t2, t2[:300])
+        ck("⑤ ⭐ 一個關鍵詞都沒有 ⇒ 明講「不是 D2 要的東西」",
+           "含這幾個詞的：[]" in t2, t2)
+        # ③ ⛔ 抓不到 ⇒ 【取不回來不等於不存在】
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (None, "boom")
+        t3 = "\n".join((lambda o: (M.datagov_d2_case(o), o)[1])([]))
+        ck("⑥ ⛔ 抓不到 ⇒ 寫「取不回來**不等於**它不存在」",
+           "不等於**它不存在" in t3, t3[:300])
+    finally:
+        B.get = M.B.get = real
+    return bad
 
 
 def check_terms_case():
@@ -2065,6 +2380,12 @@ def check_terms_case():
 
 def main():
     bad = 0
+    # ⛔⛔ `mops_probe` 的 D2 那一段會 **sleep 60 秒**等限流（run 132 七發全被 reset）。
+    #   ⚠ 離線自測沒有限流這回事 ⇒ 那 60 秒是純浪費，
+    #   ⛔ 而一支慢到讓人想跳過的自測，跟沒有那支自測是一樣的（六點五）。
+    #   ⇒ 這裡把它關掉，⭐ 而「預設值是 60」由 check_mops_pause() 另外釘
+    #     （第七點第三個：有預設值的那條路也要有人走）。
+    os.environ["MOPS_D2_PAUSE_SEC"] = "0"
     for name, want in SECTIONS.items():
         err, out = run(name)
         if err is not None:
@@ -2102,7 +2423,11 @@ def main():
     bad += check_probe_stamp()
     bad += check_survivor_fs()
     bad += check_sibling_doors()
+    bad += check_mops_pause()
+    bad += check_isin_issuetype()
+    bad += check_official_vs_month()
     bad += check_avg_residual()
+    bad += check_datagov_d2()
     bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，

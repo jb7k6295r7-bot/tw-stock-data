@@ -85,6 +85,131 @@ def say(s=""):
     LINES.append(s)
 
 
+def isin_issuetype_case():
+    """[16] ⭐⭐ 官方**證券種類**欄拿不拿得到（市場情報分析線 1515 的前置）。
+
+    ⛔⛔ 這一段本來**寫在 `main()` 裡面**（inline）⇒ 要離線試跑只能叫 `main()`，
+    ⚠ 而 `main()` 會**寫 repo 真的 `_tpex_probe.txt`**——2026-09-16 我就這樣
+    在 shell 裡污染過一次 repo（七點第五個那句的第二個實例：
+    「擋得住自測污染 repo，⛔ 擋不住人手動污染 repo」）。
+    ⇒ ⭐ **抽成函式**才測得到（`adj_gap.grid` 的檔頭寫過同一句）。
+    """
+    say("\n[16] ⭐⭐ 官方**證券種類**欄拿不拿得到（市場情報分析線 1515 的前置）")
+    say("     ⭐ 線索在我方自己家：[11] 那個 ISIN 查詢的網址本來就有 `issuetype=`")
+    _TDR = ("9103", "9105", "9110", "9136", "910322", "910708",
+            "911608", "911616", "911619", "912000")
+    say(f"     靶子（我方 10 檔 TDR）：{list(_TDR)}")
+    # ⛔⛔ 第二版我把「選單頁」當成 `class_main.jsp`（不帶參數）
+    #   ⇒ run 134 實測：那一頁回的是 **33,328,081 bytes 的全表**，⛔ 不是表單，
+    #   而且三種編碼都解不乾淨 ⇒ 掃不到任何 `<select name=issuetype>`。
+    #   ⚠ 探針這次講對了（「選單不在這裡，⛔ 不代表沒有這個參數」），
+    #   ⭐ 而 33 MB 的下載是白花的。
+    # ⇒ ⭐ 改讀**站台根目錄**，把它的連結與 `<select>` 都印出來
+    #   ——⛔ 仍然不猜路徑（docs/NEW_ENDPOINT.md 第 −1 步）。
+    _ISIN_ROOT = "https://isin.twse.com.tw/isin/"
+    _ISIN_FORM = _ISIN_ROOT
+    _ISIN16 = (_ISIN_FORM + "?owncode=&stockname=&isincode=&market=&issuetype={}"
+               "&industry_code=&Page=1&chklike=Y")
+
+    def _decode(raw):
+        """ISIN 那一站是 cp950。⭐ 回 (文字, 用哪一種)，⛔ 解不乾淨要講出來。"""
+        for enc in ("cp950", "big5", "utf-8"):
+            try:
+                return raw.decode(enc), enc
+            except UnicodeDecodeError:
+                continue
+        return raw.decode("utf-8", "replace"), "⚠ replace（三種都不乾淨）"
+
+    # ⛔⛔ 第一版我把 `issuetype` 的值**猜**成 ("", "I", "C")：
+    #   `''` 回 **33 MB**、三種編碼都解不乾淨，而且 `\b代號\b` 在那一大坨裡
+    #   命中的是**權證**（9103 命中的那一列是「元大…5C購01」）
+    #   ⇒ ⚠ 報「7／10 命中」，⛔ **那七個沒有一個是 TDR**。
+    #   而 'I'／'C' 兩個是乾淨的 cp950、有「有價證券別」欄，⛔ 但 0／10。
+    # ⇒ ⭐ 照 docs/NEW_ENDPOINT.md 第 −1 步：**讀它自己的選單**，
+    #   ⛔ 不要再猜代碼（`otccal_probe`／`holiday_probe` 各記過一次猜 id 的代價）。
+    say(f"\n     ── 先讀它自己的 `issuetype` 選單（⛔ 不猜代碼）\n     {_ISIN_FORM}")
+    _opts = []
+    _rf, _ef = B.get(_ISIN_FORM, retries=2, timeout=60)
+    if _ef or not _rf:
+        say(f"     ✗ 抓不到表單頁：{_W(_ef, 200)}　⇒ ⚠ 取不回來**不等於**沒有這個選單")
+    else:
+        _tf, _enc = _decode(_rf)
+        say(f"     ✓ {len(_rf):,} bytes｜編碼 {_enc}")
+        _sel = re.search(r"<select[^>]*name\s*=\s*[\"\']?issuetype[\"\']?[^>]*>(.*?)</select>",
+                         _tf, re.S | re.I)
+        if not _sel:
+            say("     ⛔ 這一頁**沒有** `issuetype` 的 <select> ⇒ 選單不在這裡"
+                "　⇒ ⚠ 那不代表沒有這個參數，只代表**這一頁**讀不到")
+            # ⭐ 那就把這一頁**有什麼**印出來，⛔ 不要讓下一輪又從零開始猜。
+            _alls = re.findall(r"<select[^>]*name\s*=\s*[\"\']?([^\"\'>\s]+)",
+                               _tf, re.I)
+            say(f"     ⭐ 這一頁的 <select> 共 {len(_alls)} 個：{_alls[:12]}")
+            _links, _seen2 = [], set()
+            for _m2 in re.finditer(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\']'
+                                   r'[^>]*>(.*?)</a>', _tf[:200000], re.S | re.I):
+                _u2 = urllib.parse.urljoin(_ISIN_ROOT, _m2.group(1).strip())
+                if _u2 in _seen2:
+                    continue
+                _seen2.add(_u2)
+                _links.append((B.visible_text(_m2.group(2), " ").strip()[:24], _u2))
+            say(f"     ⭐ 這一頁的連結共 {len(_links)} 條（前 15 條，⇒ 下一輪照它走）：")
+            for _lab2, _u2 in _links[:15]:
+                say(f"        {_lab2!r}　{_u2}")
+        else:
+            for _m in re.finditer(r"<option[^>]*value\s*=\s*[\"\']?([^\"\'>]*)[\"\']?[^>]*>(.*?)</option>",
+                                  _sel.group(1), re.S | re.I):
+                _opts.append((_m.group(1).strip(),
+                              B.visible_text(_m.group(2), "").strip()))
+            say(f"     ⭐ 選單共 **{len(_opts)}** 項（逐字）：")
+            for _v, _lab in _opts:
+                say(f"        value={_v!r}　{_lab}")
+    # ⭐ 判準是**標籤自己講出它是存託憑證**，⛔ 不是我挑一個看起來像的
+    _want = [(v, lab) for v, lab in _opts if "存託憑證" in lab]
+    say(f"\n     ⭐ 標籤含「存託憑證」的：{len(_want)} 項 {[(v, l) for v, l in _want]}")
+    if not _want:
+        say("     ⛔ 一項都沒有 ⇒ **這個選單分不出 TDR**（⚠ 掃描範圍：只掃了"
+            f"{_ISIN_FORM} 這一頁的 `issuetype` select）")
+    for _it, _lab in _want[:3]:
+        _u = _ISIN16.format(_it)
+        say(f"\n     ── issuetype={_it!r}（{_lab}）\n     {_u}")
+        _r, _e = B.get(_u, retries=2, timeout=60)
+        if _e or not _r:
+            say(f"     ✗ 抓不到：{_W(_e, 200)}　⇒ ⚠ 取不回來**不等於**它不存在")
+            continue
+        _t, _enc = _decode(_r)
+        say(f"     ✓ {len(_r):,} bytes｜編碼 {_enc}")
+        # ① ⭐ 表頭逐字（CLAUDE.md 第一點：先印出來，再開始比對）
+        # ⭐ 去標籤走**唯一那一份**（四點五）：`sep=""` 是「取一格的值」那一派
+        #   ——⛔ 換成 " " 的話 `"有價證券別" in ...` 這種比對會靜靜對不上。
+        _hdr = [B.visible_text(c, "").strip()
+                for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", _t[:6000],
+                                    re.S | re.I)][:12]
+        say(f"     ⭐ 表頭（前 12 格，逐字）：{_hdr}")
+        say(f"     ⭐ 頁面有沒有「有價證券別」這四個字：{'有價證券別' in _t}")
+        # ② ⛔⛔ 靶子要比**代號那一欄**，⚠ 不是「這個字串有沒有出現在頁面裡」
+        #   ——後者在 33 MB 的全表上命中的是權證（第一版就是這樣報 7／10 的）。
+        _rows = []
+        for _m in re.finditer(r"<tr[^>]*>(.*?)</tr>", _t, re.S | re.I):
+            _c = [B.visible_text(x, "").strip()
+                  for x in re.findall(r"<td[^>]*>(.*?)</td>", _m.group(1), re.S)]
+            if len(_c) >= 6:
+                _rows.append(_c)
+        # ⚠ 表頭那一列也有 ≥6 格 ⇒ **要扣掉**，⛔ 否則母體數會多 1
+        #   （第七點第九個：母體本身就是一道斷言，⛔ 不可以隨手多算）。
+        _data = [c for c in _rows if re.fullmatch(r"\d[\dA-Za-z]*", c[2].strip())] \
+            if _rows and len(_rows[0]) > 2 else []
+        say(f"     ⭐ 解析出 **{len(_data):,}** 列資料（共 {len(_rows):,} 個 <tr>，含表頭）"
+            "　⛔ 母體要印出來：0 列跟全部不命中長得一樣")
+        _hit = [c for c in _data if c[2].strip() in _TDR]
+        say(f"     ⭐ 10 檔 TDR 命中（**比代號欄**）：{len(_hit)}／10"
+            f" {[c[0].split()[0] for c in _hit][:10]}")
+        for _c in _hit[:3]:
+            say(f"        {_c[:8]}")
+    say("\n     ⇒ ⭐ 讀法：若表頭裡有「有價證券別」而且 TDR 那幾檔在那一欄")
+    say("       被講成同一種 ⇒ **官方欄拿得到** ⇒ 照 1515 在 `kind` 那側改。")
+    say("       ⛔ 若拿不到 ⇒ 回一封說「拿不到」，由市場情報分析線改裁退路。")
+
+
 def main():
     say("── 櫃買 OpenAPI 端點目錄 ──")
     say(f"來源（WebSearch 結果，非自行生成）：{SWAGGER}")
@@ -1027,54 +1152,7 @@ def main():
     #   ② 再看我方那 10 檔 TDR 在不在、那一欄寫什麼
     #   ③ ⭐ 判準是**那一欄自己把 TDR 講出來**，⛔ 不是「有回列」
     # ══════════════════════════════════════════════════════════════
-    say("\n[16] ⭐⭐ 官方**證券種類**欄拿不拿得到（市場情報分析線 1515 的前置）")
-    say("     ⭐ 線索在我方自己家：[11] 那個 ISIN 查詢的網址本來就有 `issuetype=`")
-    _TDR = ("9103", "9105", "9110", "9136", "910322", "910708",
-            "911608", "911616", "911619", "912000")
-    say(f"     靶子（我方 10 檔 TDR）：{list(_TDR)}")
-    _ISIN16 = ("https://isin.twse.com.tw/isin/class_main.jsp"
-               "?owncode=&stockname=&isincode=&market=&issuetype={}"
-               "&industry_code=&Page=1&chklike=Y")
-    for _it in ("", "I", "C"):
-        _u = _ISIN16.format(_it)
-        say(f"\n     ── issuetype={_it!r}\n     {_u}")
-        _r, _e = B.get(_u, retries=2, timeout=60)
-        if _e or not _r:
-            say(f"     ✗ 抓不到：{_W(_e, 200)}　⇒ ⚠ 取不回來**不等於**它不存在")
-            continue
-        _t = None
-        for _enc in ("big5", "cp950", "utf-8"):
-            try:
-                _t = _r.decode(_enc)
-                say(f"     ✓ {len(_r):,} bytes｜編碼 {_enc}")
-                break
-            except UnicodeDecodeError:
-                continue
-        if _t is None:
-            _t = _r.decode("utf-8", "replace")
-            say(f"     ✓ {len(_r):,} bytes｜⚠ 三種編碼都不乾淨，用 replace")
-        # ① ⭐ 表頭逐字（CLAUDE.md 第一點：先印出來，再開始比對）
-        # ⭐ 去標籤走**唯一那一份**（四點五）：`sep=""` 是「取一格的值」那一派
-        #   ——⛔ 換成 " " 的話 `"有價證券別" in ...` 這種比對會靜靜對不上。
-        _hdr = [B.visible_text(c, "").strip()
-                for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", _t[:6000],
-                                    re.S | re.I)][:12]
-        say(f"     ⭐ 表頭（前 12 格，逐字）：{_hdr}")
-        say(f"     ⭐ 頁面有沒有「有價證券別」這四個字：{'有價證券別' in _t}")
-        # ② 靶子在不在
-        _hit = [c for c in _TDR if re.search(rf"\b{c}\b", _t)]
-        say(f"     ⭐ 10 檔 TDR 命中：{len(_hit)}／10 {_hit}")
-        # ③ 命中的那幾檔，把它整列的文字印出來讓那一欄自己講話
-        for _c in _hit[:3]:
-            _m = re.search(rf"<tr[^>]*>(?:(?!</tr>).)*?\b{_c}\b"
-                           r"(?:(?!</tr>).)*?</tr>", _t, re.S)
-            if _m:
-                _cells = [B.visible_text(x, "").strip()
-                          for x in re.findall(r"<td[^>]*>(.*?)</td>", _m.group(0), re.S)]
-                say(f"        {_c}：{_cells[:8]}")
-    say("\n     ⇒ ⭐ 讀法：若表頭裡有「有價證券別」而且 TDR 那幾檔在那一欄")
-    say("       被講成同一種 ⇒ **官方欄拿得到** ⇒ 照 1515 在 `kind` 那側改。")
-    say("       ⛔ 若拿不到 ⇒ 回一封說「拿不到」，由市場情報分析線改裁退路。")
+    isin_issuetype_case()
 
     return _write(0)
 
