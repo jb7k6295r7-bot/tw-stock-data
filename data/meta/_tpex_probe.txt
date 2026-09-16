@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T21:24:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35100948576
+# ⏱ 這一趟：2026-09-16T22:07:22+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35105595451
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -299,9 +299,9 @@
      首列：{'Date': '1150916', 'Sector': '光電業', 'TradeAmount': '8120920467', 'TradeWeight': '9.75', ' NumberOfSharesTraded': '75903506'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,181 bytes｜28 筆
+     ✓ 5,183 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1150916', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '842824287', 'PercentageOfSharesOC/FMIHeld': '16.16%'}
+     首列：{'Date': '1150916', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '844475287', 'PercentageOfSharesOC/FMIHeld': '16.19%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
 
 [7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
@@ -463,7 +463,7 @@
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
      首列：{'Date': '1150916', 'SecuritiesCompanyCode': '8064', 'CompanyName': '東捷', 'ClosingPrice': '118.50', 'Change': '10.50', 'Tot.Trans.Vol.': '5608', 'Trans.Vol.AtUp-limitPr.': '2877', 'OrderVol.AtUp-limitPr.': '5543', 'Difference': '2666'}
      ⛔ ③`Date` 相異值只有 **1 種**：1150916 × 22　⇒ **它只有這一期，沒有歷史**
-     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
      ✓ 1 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
@@ -535,7 +535,11 @@
               頂層鍵 ['stat']
               ⭐ 平常被丟掉的鍵：['stat']
                 ── stat：參數輸入錯誤
-           [POST code+date] ⛔ HTTPError: HTTP 520 <none>
+           [POST code+date] ✓ JSON 29 bytes
+              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
+              頂層鍵 ['stat']
+              ⭐ 平常被丟掉的鍵：['stat']
+                ── stat：參數輸入錯誤
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
@@ -572,8 +576,13 @@
         ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'align', 'autoLoad', 'pattern', 'r', 't', 'tables']
 
         ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/yearlyStock
-           [GET code+date] ⛔ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troublesh...tle":"Error 520: Web server is returning an unknown error","status":520,"detai
+           [GET code+date] ✓ JSON 1,767 bytes
+              頂層鍵 ['flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['flagField', 'stat']
+                ── flagField：張數
+                ── stat：ok
            [POST code+date] ✓ JSON 1,767 bytes
+              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
               頂層鍵 ['flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['flagField', 'stat']
                 ── flagField：張數
@@ -589,7 +598,7 @@
               ⭐ 平常被丟掉的鍵：['flagField', 'stat']
                 ── flagField：張數
                 ── stat：ok
-           ── ⭐ **原始回應整份**（POST code+date）（⛔ 不是開頭 160 字）──
+           ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
               {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,330,746","1,073,614,119","2,370","806.78","1,600.00","7/15","403.00","1/02","750.71"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1150916,"subtitle":"近年個股成交資訊(當年度統計至 1150916 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
               {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1150916,"subtitle":"近年個股成交資訊(當年度統計至 1150916 止)"},{}],"stat":"ok"}

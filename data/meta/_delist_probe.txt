@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T21:49:21+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35100948576
+# ⏱ 這一趟：2026-09-16T22:16:21+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35105595451
 # 下市清單／變更交易 端點探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
@@ -6,27 +6,134 @@
 
 ── 終止上市清單 company/suspendListing
    https://www.twse.com.tw/rwd/zh/company/suspendListing?response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   頂層鍵 ['data', 'fields', 'maxYear', 'minYear', 'status', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['maxYear', 'minYear', 'status', 'total']
+     ── title：終止上市公司
+     ── maxYear：2026
+     ── minYear：2001
+     ── status：ok
+     ── total：265
+   ⭐ total=265｜解析出的列數=265　✓ 一致
+   頂層 `fields`：['終止上市日期', '公司名稱', '上市編號']
+   ⭐ 頂層 `data`：265 列（第一列的型別 list）
+     樣本：["115/09/01", "三商壽", "2867"]
+     樣本：["115/06/23", "森崴能源", "6806"]
+     樣本：["115/03/27", "晶睿", "3454"]
+   `_tables()` 認出 1 張表
+     欄位（3）：['終止上市日期', '公司名稱', '上市編號']
+     列數：265
+       樣本：["115/09/01", "三商壽", "2867"]
+       樣本：["115/06/23", "森崴能源", "6806"]
+       樣本：["115/03/27", "晶睿", "3454"]
 
 ── ⚠ 同上，帶 yy=115（情報分析線說這個參數被無視 ⇒ 驗它）
    https://www.twse.com.tw/rwd/zh/company/suspendListing?yy=115&response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   頂層鍵 ['data', 'fields', 'maxYear', 'minYear', 'status', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['maxYear', 'minYear', 'status', 'total']
+     ── title：終止上市公司
+     ── maxYear：2026
+     ── minYear：2001
+     ── status：ok
+     ── total：265
+   ⭐ total=265｜解析出的列數=265　✓ 一致
+   頂層 `fields`：['終止上市日期', '公司名稱', '上市編號']
+   ⭐ 頂層 `data`：265 列（第一列的型別 list）
+     樣本：["115/09/01", "三商壽", "2867"]
+     樣本：["115/06/23", "森崴能源", "6806"]
+     樣本：["115/03/27", "晶睿", "3454"]
+   `_tables()` 認出 1 張表
+     欄位（3）：['終止上市日期', '公司名稱', '上市編號']
+     列數：265
+       樣本：["115/09/01", "三商壽", "2867"]
+       樣本：["115/06/23", "森崴能源", "6806"]
+       樣本：["115/03/27", "晶睿", "3454"]
 
 ── 變更交易 fullDelivery/TWT85U（20150105）
    https://www.twse.com.tw/rwd/zh/fullDelivery/TWT85U?date=20150105&response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   頂層鍵 ['data', 'date', 'fields', 'notes', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['date', 'notes', 'stat', 'total']
+     ── title：104年01月05日 變更交易
+     ── notes（2 項）
+        **代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        當日如有臨時新增之變更交易有價證券標的，網頁右上角會呈現點選框，屆時請點選明細查詢，另外，歷史資料也可點選此 <a href='/zh/trading/bfihbu.html' target='_blank'>連結</a> 查詢。
+     ── date：20150105
+     ── stat：OK
+     ── total：23
+   ⭐ total=23｜解析出的列數=23　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：23 列（第一列的型別 list）
+     樣本：["1449", "佳和", "  "]
+     樣本：["1456", "怡華", "  "]
+     樣本：["1516", "川飛", "  "]
+   `_tables()` 認出 1 張表
+     欄位（3）：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：23
+       樣本：["1449", "佳和", "  "]
+       樣本：["1456", "怡華", "  "]
+       樣本：["1516", "川飛", "  "]
 
 ── 變更交易 fullDelivery/TWT85U（20200103）
    https://www.twse.com.tw/rwd/zh/fullDelivery/TWT85U?date=20200103&response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   頂層鍵 ['data', 'date', 'fields', 'notes', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['date', 'notes', 'stat', 'total']
+     ── title：109年01月03日 變更交易
+     ── notes（2 項）
+        **代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        當日如有臨時新增之變更交易有價證券標的，網頁右上角會呈現點選框，屆時請點選明細查詢，另外，歷史資料也可點選此 <a href='/zh/trading/bfihbu.html' target='_blank'>連結</a> 查詢。
+     ── date：20200103
+     ── stat：OK
+     ── total：21
+   ⭐ total=21｜解析出的列數=21　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：21 列（第一列的型別 list）
+     樣本：["1213", "大飲", "  "]
+     樣本：["1418", "東華", "  "]
+     樣本：["1471", "首利", "  "]
+   `_tables()` 認出 1 張表
+     欄位（3）：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：21
+       樣本：["1213", "大飲", "  "]
+       樣本：["1418", "東華", "  "]
+       樣本：["1471", "首利", "  "]
 
 ── 變更交易 fullDelivery/TWT85U（20260909）
    https://www.twse.com.tw/rwd/zh/fullDelivery/TWT85U?date=20260909&response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   頂層鍵 ['data', 'date', 'fields', 'notes', 'stat', 'title', 'total']
+   ⭐ 平常被丟掉的鍵：['date', 'notes', 'stat', 'total']
+     ── title：115年09月09日 變更交易
+     ── notes（2 項）
+        **代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        當日如有臨時新增之變更交易有價證券標的，網頁右上角會呈現點選框，屆時請點選明細查詢，另外，歷史資料也可點選此 <a href='/zh/trading/bfihbu.html' target='_blank'>連結</a> 查詢。
+     ── date：20260909
+     ── stat：OK
+     ── total：10
+   ⭐ total=10｜解析出的列數=10　✓ 一致
+   頂層 `fields`：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：10 列（第一列的型別 list）
+     樣本：["1213", "大飲", "  "]
+     樣本：["1538", "正峰", "  "]
+     樣本：["2314", "台揚", "**"]
+   `_tables()` 認出 1 張表
+     欄位（3）：['證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：10
+       樣本：["1213", "大飲", "  "]
+       樣本：["1538", "正峰", "  "]
+       樣本：["2314", "台揚", "**"]
 
 ── 新增之變更交易證券 fullDelivery/BFIHBU
    https://www.twse.com.tw/rwd/zh/fullDelivery/BFIHBU?response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   頂層鍵 ['data', 'fields', 'notes', 'stat', 'title']
+   ⭐ 平常被丟掉的鍵：['notes', 'stat']
+     ── title：新增之變更交易證券
+     ── notes（2 項）
+        代表上市證券除應預先收足款券外，其交易採分盤集合競價方式，該方式係採每30分鐘以人工管制之撮合終端機執行撮合作業一次為原則，並得視交易情形因應公告調整撮合時間。
+        變更交易有價證券不得進行當日沖銷交易、融資融券交易、借券交易、平盤以下借券賣出，並停止當日證券業務借貸款項及不限用途款項借貸。
+     ── stat：OK
+   頂層 `fields`：['新增變更交易日期', '證券代號', '證券名稱', '分盤集合競價(以**表示)']
+   ⭐ 頂層 `data`：0 列（第一列的型別 —）
+   `_tables()` 認出 1 張表
+     欄位（4）：['新增變更交易日期', '證券代號', '證券名稱', '分盤集合競價(以**表示)']
+     列數：0
 
 ── ⛔ 隱藏 span 的陷阱 violation/change
    https://www.twse.com.tw/rwd/zh/violation/change?response=json
@@ -53,11 +160,11 @@
 
 ── 信用交易標的？ marginTrading/MI_MARGN_MSTOCK（推的）
    https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN_MSTOCK?response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   ✗ 不是 JSON（JSONDecodeError）；bytes=747；前 200：b'<!DOCTYPE html>\n<html lang="zh-Hant-tw">\n<head>\n\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>404</title>\n<meta name="layout" content="blank"/>\n'
 
 ── 信用交易標的？ marginTrading/TWT78U（推的）
    https://www.twse.com.tw/rwd/zh/marginTrading/TWT78U?response=json
-   ✗ LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content-Type" content="text...性考量，您所執行的頁面無法呈現。<BR> FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   ✗ 不是 JSON（JSONDecodeError）；bytes=747；前 200：b'<!DOCTYPE html>\n<html lang="zh-Hant-tw">\n<head>\n\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>404</title>\n<meta name="layout" content="blank"/>\n'
 
 ── 信用交易標的？ marginTrading/MI_MARGN?selectType=MS（推的）
    https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN?date=20260909&selectType=MS&response=json
@@ -118,11 +225,11 @@
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
