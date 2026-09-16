@@ -539,15 +539,20 @@ def load_sweep_done(path):
     return done
 
 
-def save_sweep_done(path, pairs, today):
-    """⭐ **追加**（四點六）：這一趟只知道自己那一部分。"""
+def save_sweep_done(path, pairs, today, why=""):
+    """⭐ **追加**（四點六）：這一趟只知道自己那一部分。
+
+    ⚠ `why` 空字串＝真的抓到了；`"nodata"`＝官方說沒有而我方那一年也沒有
+    （`sweep_consistent_nodata()`）⇒ ⭐ **兩種要分得出來**，
+    ⛔ 混在一起的話，日後我方日檔補齊時沒有辦法把那幾格重開。
+    """
     new = not os.path.exists(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with io.open(path, "a", encoding="utf-8") as f:
         if new:
-            f.write("stock_id,roc_year,asof\n")
+            f.write("stock_id,roc_year,asof,why\n")
         for sid, y in pairs:
-            f.write(f"{sid},{y},{today}\n")
+            f.write(f"{sid},{y},{today},{why}\n")
     return len(pairs)
 
 
@@ -568,6 +573,72 @@ def sweep_fail_note(todo, ok, fail):
         return (f"成功 {len(ok)}／{len(todo)} 格"
                 + (f"｜失敗 {len(fail)} 格，例：{fail[:2]}" if fail else "｜0 失敗"))
     return f"⛔ 本趟 {len(todo)} 格**全部失敗**｜例：{fail[:2]}"
+
+
+def our_market_years(sid, market, root=None):
+    """→ {西元年字串}：我方 `data/stocks/<sid>.csv` 裡 `market == market` 的那幾年。
+
+    ⭐ 判準用**資料自己**（第四點），⛔ 不是去 `delisted.csv` 查
+    ——CLAUDE.md 記過：**上櫃轉上市**在我方資料裡就是 `market` 欄從 `tpex`
+    變成 `twse`，⛔ 而 `delisted.csv` 記的是**下市**，轉上市不是下市。
+    ⚠ 讀不到那個檔就回**空集合**（⇒ 呼叫端會當成「那一年我方也沒有」）。
+    """
+    p = os.path.join(root or _ROOT, "stocks", f"{sid}.csv")
+    out = set()
+    if not os.path.exists(p):
+        return out
+    try:
+        with io.open(p, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if (r.get("market") or "") == market:
+                    out.add((r.get("date") or "")[:4])
+    except OSError:
+        return set()
+    return out
+
+
+#: ⭐ 官方「這一格沒有資料」的那句話。⛔ 它**講不出**是哪一種
+#  （未上市／參數越界／端點壞掉都長這樣，CLAUDE.md 第二點）
+#  ⇒ 所以它**單獨**不可以當判準，一定要跟我方資料做「且」。
+NODATA_MARK = "沒有符合條件的資料"
+
+
+def sweep_consistent_nodata(err, sid, roc_y, market, root=None):
+    """這一格的失敗是不是「**官方說沒有，而我方那一年也沒有**」→ bool。
+
+    ## ⛔ 為什麼要有這一條：不然這個掃描**永遠不會收斂**
+
+    `save_sweep_done()` 只記成功的格子 ⇒ ⭐ 失敗的每一趟都回到 todo。
+    ⚠ 而 2026-09-16 run 166 實測：本趟 5,000 格**失敗 2,097**（42%），
+    訊息全部是 `FMSRFK stat='很抱歉，沒有符合條件的資料!'`。
+    ⇒ 離線拆開來看（母體：還沒完成的 3,067 格）：
+
+    ```
+    ⭐ 我方那一年**沒有 twse 日檔**  **2,180**（71.1%）⇒ 官方說沒有是**一致**的
+    ⚠ 我方那一年**有** twse 日檔       **887**  ⇒ 那才是真的還沒問到
+    ```
+
+    ⇒ ⛔ 不修的話，往後每一趟有 **71%** 的預算花在**永遠不會成功**的格子上，
+    ⚠ 而且到最後「剩下的剛好全部失敗」⇒ `sweep_fail_note` 那道閘門必然誤判
+    （CLAUDE.md 七點五第三個：**以「全部 X」為故障判準的閘門，
+    在「剩下的剛好全部 X」時必然誤判**）。
+
+    ## ⇒ ⭐ 判準是**兩個條件的「且」**，⛔ 缺一個都不可以
+
+    ```
+    ① 官方的訊息是那一句「沒有符合條件的資料」
+       ⛔ 它單獨講不出是哪一種（第二點）⇒ 單獨**不算**
+    ② ⭐ 而我方那一年**也沒有那個市場的日檔**
+       ⇒ 兩邊一致 ⇒ 這一格是**問完了**，不是「還沒問到」
+    ```
+
+    ⚠ 前提（我自己標）：②用的是我方資料，⛔ 而我方那一年沒有日檔**也可能是我方漏了**
+    ⇒ 那時這一格會被記成「問完了」而其實沒有。⭐ 而它**看得出來**：
+    台帳裡那幾格帶 `nodata` 標記，⇒ 我方日檔日後補齊時可以拿它重開。
+    """
+    if NODATA_MARK not in str(err):
+        return False
+    return str(roc_y + 1911) not in our_market_years(sid, market, root)
 
 
 def run_sweep(a, rl, today):
@@ -592,11 +663,17 @@ def run_sweep(a, rl, today):
                     f"　⇒ ⭐ 本趟跑完之後大約還剩 "
                     f"**{max(0, len(pool)*len(years)-len(done)-len(todo)):,}** 格"
                     "（⚠ 是**大約**：本趟失敗的那幾格還會再回來）")
-    ok, fail, flushed = [], [], 0
+    ok, fail, nodata, flushed = [], [], [], 0
     for i, (sid, y) in enumerate(todo, 1):
         rows, err = fetch(sid, y, today)
         if err:
             fail.append((f"{sid}/{y}", err))
+            # ⭐ 「官方說沒有」**而且**「我方那一年也沒有那個市場的日檔」
+            #   ⇒ 這一格是**問完了**，記進台帳（帶 `nodata` 標記）
+            #   ⇒ ⛔ 否則它每一趟都回到 todo ⇒ 這個掃描永遠不收斂
+            #     （run 166 實測：5,000 格裡 2,097 失敗，而其中 71% 是這一種）
+            if sweep_consistent_nodata(err, sid, y, a.market):
+                nodata.append((sid, str(y)))
             print(f"  [{i}/{len(todo)}] {sid}/{y} ✗ {err}", flush=True)
         else:
             for r in rows:
@@ -637,6 +714,16 @@ def run_sweep(a, rl, today):
     if R:
         _save(out, header, R)
     save_sweep_done(dp, ok[flushed:], today)
+    if nodata:
+        save_sweep_done(dp, nodata, today, why="nodata")
+    rl.info("⭐ 問完了但官方沒有",
+            f"**{len(nodata):,}** 格（官方說「{NODATA_MARK}」**而且**我方那一年"
+            f"也沒有 `{a.market}` 的日檔 ⇒ 兩邊一致）"
+            "　⇒ ⭐ 記進台帳、**不再重問**；⛔ 而它帶 `nodata` 標記，"
+            "我方日檔日後補齊時拿它重開"
+            if nodata else
+            "**0** 格（⚠ 本趟沒有這一種 ⇒ ⛔ 不代表這條判準沒用，"
+            "只代表本趟失敗的都不是那一種）")
     rl.info("月表", f"{out.split('data/')[-1]}｜{len(R):,} 列（本趟 +{len(R)-n0}）")
     rl.info("本趟", f"成功 {len(ok)}／失敗 {len(fail)}"
             + (f"｜失敗例：{fail[:3]}" if fail else ""))
