@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T09:19:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35043238163
+# ⏱ 這一趟：2026-09-16T09:41:37+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35044458888
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -153,7 +153,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3bc0a62adb56806',t:'MTc4OTUyMTU0MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3bc2abc0f1e2c83',t:'MTc4OTUyMjg2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -302,7 +302,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3bc0aa7ae8a69fe',t:'MTc4OTUyMTU1Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3bc2adae8fef60e',t:'MTc4OTUyMjg3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
