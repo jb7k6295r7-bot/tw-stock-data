@@ -234,6 +234,199 @@ def main():
     finally:
         shutil.rmtree(d4, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⑤ ⛔⛔ `sync_code.sh`：**分支上刪掉的檔，main 上也要刪掉**
+    #
+    # ⚠ 2026-09-16 付過代價：`site_recon.py` 2026-09-13 在分支上刪了，
+    #   ⛔ 而 main 上那一份一直在 ⇒ probe run 126 的 `selftest_probes.py`
+    #   在 main 上 rc=1（母體 21 支、沒叫 `probe_stamp()` 的就是它），
+    #   ⭐ 而同一支自測在分支上是**綠的**——同一支程式、同一天、兩個答案。
+    #
+    # ⇒ ⭐ 判準是**終點**：同步完之後，去 origin/main 上**看那個檔還在不在**。
+    #   ⛔ 不是「sync_code 有沒有印刪除那一行」（第七點⑧：比行為，不比字串）。
+    # ══════════════════════════════════════════════════════════════
+    d5 = tempfile.mkdtemp(prefix="syncdel_")
+    try:
+        print("\n── ⑤ `sync_code.sh`：分支刪掉的檔 ⇒ main 上也要刪掉 ──")
+        origin, work = build(d5)
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
+        write(os.path.join(work, "hello.py"), "print(1)\n")
+        write(os.path.join(work, "gone.py"), "print(2)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "程式")
+        env5 = dict(os.environ, GITHUB_REF_NAME="feature")
+        r = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                           capture_output=True, text=True, env=env5)
+        ck("  前置：第一趟同步把兩支程式推上 main",
+           r.returncode == 0
+           and git(work, "show", "origin/main:gone.py").returncode == 0,
+           (r.stdout + r.stderr)[-300:])
+
+        # ── 本趟：刪掉 gone.py、改 hello.py，⭐ 並且**也刪掉一個 data 檔** ──
+        #   （後者是閘門①的正例：`data/` 是排除樹，⛔ 一個都不准刪）
+        os.remove(os.path.join(work, "gone.py"))
+        os.remove(os.path.join(work, "data", "meta", "_a.txt"))
+        write(os.path.join(work, "hello.py"), "print(99)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "刪掉 gone.py")
+        r5 = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                            capture_output=True, text=True, env=env5)
+        o5 = r5.stdout + r5.stderr
+        ck("sync_code 回 0", r5.returncode == 0, f"rc={r5.returncode}｜{o5[-400:]}")
+        g = git(work, "show", "origin/main:gone.py")
+        ck("⭐⭐ 分支刪掉的 `gone.py` 在 **main 上也不見了**"
+           "（⛔ 這是 `site_recon.py` 沒做到的那一件）",
+           g.returncode != 0, g.stdout[:80])
+        ck("  而改過的 `hello.py` 照樣搬過去",
+           git(work, "show", "origin/main:hello.py").stdout == "print(99)\n",
+           git(work, "show", "origin/main:hello.py").stdout[:80])
+        # ⛔⛔ 閘門①：`data/` 是排除樹 ⇒ 分支刪了也**不准**跟著刪
+        a = git(work, "show", "origin/main:data/meta/_a.txt")
+        ck("⛔⛔ 而分支刪掉的 **`data/` 檔在 main 上還在**"
+           "（⚠ 排除樹的主詞是『誰寫它』——資料是 main 寫的）",
+           a.returncode == 0 and a.stdout == "main-a\n", repr(a.stdout[:80]))
+    finally:
+        shutil.rmtree(d5, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑥ ⭐⭐ 閘門②：一趟要刪太多 ⇒ **一個都不刪**，而且**不算失敗**
+    #
+    # ⛔ 刪除是這支唯一會毀掉東西的動作 ⇒ 失控地刪是最糟的結果。
+    # ⚠ 而處置不是「整趟紅」：紅掉 ＝ 程式沒同步到 main ⇒ 排程跑舊程式。
+    # ⇒ ⭐ 六點五那條：**跳掉的那一層要大聲出聲**，新增／覆蓋照常。
+    # ══════════════════════════════════════════════════════════════
+    d6 = tempfile.mkdtemp(prefix="synccap_")
+    try:
+        print("\n── ⑥ 一趟要刪 25 個 ⇒ 一個都不刪，⛔ 而且不算失敗 ──")
+        origin, work = build(d6)
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
+        many = [f"m{i:02d}.py" for i in range(25)]
+        for n in many:
+            write(os.path.join(work, n), "print(0)\n")
+        write(os.path.join(work, "keep.py"), "print(1)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "一堆程式")
+        env6 = dict(os.environ, GITHUB_REF_NAME="feature")
+        subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                       capture_output=True, text=True, env=env6)
+        for n in many:
+            os.remove(os.path.join(work, n))
+        write(os.path.join(work, "keep.py"), "print(2)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "一次刪 25 個")
+        r6 = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                            capture_output=True, text=True, env=env6)
+        o6 = r6.stdout + r6.stderr
+        ck("⭐ 超過上限 ⇒ **不算失敗**（⛔ 紅掉 ＝ 程式沒同步 ⇒ 排程跑舊的）",
+           r6.returncode == 0, f"rc={r6.returncode}｜{o6[-400:]}")
+        alive = sum(1 for n in many
+                    if git(work, "show", f"origin/main:{n}").returncode == 0)
+        ck("⭐⭐ 25 個**一個都沒刪**（⛔ 不是刪到上限為止——那是半套）",
+           alive == 25, f"main 上還剩 {alive}／25")
+        ck("  而且**大聲說出這一層沒跑**（⚠ 一行 skipped 跟一行 ok 長得一樣）",
+           "這一層沒跑" in o6, o6[-400:])
+        ck("⭐ 而新增／覆蓋照常搬（⇒ 跳掉的只有刪除那一層）",
+           git(work, "show", "origin/main:keep.py").stdout == "print(2)\n",
+           git(work, "show", "origin/main:keep.py").stdout[:60])
+    finally:
+        shutil.rmtree(d6, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑦ ⭐⭐ 閘門①**自己**要驗得到：⚠ 它在正常路徑上**走不到**
+    #
+    # ⛔ ⑤ 那一節的「`data/` 檔還在」其實是 `$SPEC`（`:(exclude)data`）
+    #   擋下來的——⭐ 拿掉「排除樹底下一個都不刪」那道閘門，⑤ **照樣全綠**
+    #   （實測突變 D2：⛔ 全綠）⇒ 那道閘門**從來沒有被走過**
+    #   ⇒ 第七點：**沒證明過會失敗的測試，不算測試**。
+    #
+    # ⇒ ⭐ 造法跟 ② 一樣：改一份副本，把 DEL 那一行的 `$SPEC` 拔掉
+    #   （＝「下一個人把排除清單漏掉」那個未來），⛔ 然後斷言 `data/` **仍然**沒事。
+    #   ⚠ 一道閘門的價值就在「上一層漏掉的時候它還在」——
+    #     上一層沒漏時它跟不存在**長得一模一樣**。
+    # ══════════════════════════════════════════════════════════════
+    d7 = tempfile.mkdtemp(prefix="syncguard_")
+    try:
+        print("\n── ⑦ 拔掉 `$SPEC`（＝上一層漏掉）⇒ ⛔ `data/` 仍然一個都不准刪 ──")
+        origin, work = build(d7)
+        src = io.open(os.path.join(HERE, "sync_code.sh"), encoding="utf-8").read()
+        holed = src.replace('origin/main "$SRC" -- . $SPEC)',
+                            'origin/main "$SRC" -- .)')
+        ck("  前置：錨點真的換掉了（⛔ 沒換掉 ＝ 這一節什麼都沒驗）",
+           holed != src, "錨點抄錯了")
+        write(os.path.join(work, "sync_holed.sh"), holed)
+        write(os.path.join(work, "hello.py"), "print(1)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "程式")
+        env7 = dict(os.environ, GITHUB_REF_NAME="feature")
+        subprocess.run(["bash", "sync_holed.sh"], cwd=work,
+                       capture_output=True, text=True, env=env7)
+        os.remove(os.path.join(work, "data", "meta", "_b.txt"))
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "刪掉一個 data 檔")
+        r7 = subprocess.run(["bash", "sync_holed.sh"], cwd=work,
+                            capture_output=True, text=True, env=env7)
+        o7 = r7.stdout + r7.stderr
+        b = git(work, "show", "origin/main:data/meta/_b.txt")
+        ck("⭐⭐ `$SPEC` 漏掉時，那道閘門**接住了**：`data/` 檔在 main 上還在",
+           b.returncode == 0 and b.stdout == "main-b\n", repr(b.stdout[:80]))
+        ck("  而且**出聲**點名是哪一條路徑",
+           "data/meta/_b.txt" in o7, o7[-400:])
+        ck("  而且不算失敗（⛔ 紅掉 ＝ 程式沒同步）", r7.returncode == 0,
+           f"rc={r7.returncode}｜{o7[-300:]}")
+    finally:
+        shutil.rmtree(d7, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑧ ⛔⛔ 刪除清單裡有**一個壞元素** ⇒ 不可以照樣往下 commit／push
+    #
+    # ⭐ 這是四點二⑥那一條套在刪除上：`push_data.sh` 的
+    #   `xargs git checkout … <23 個路徑>` 有一個路徑取不出來
+    #   ⇒ **整批失敗** ⇒ 另外 22 個一個都沒搬，⚠ 而它照樣印「✓ 已推上 main」。
+    # ⇒ 這裡是**逐一**刪（⇒ 一個壞的毒不死整批），⛔ 而「毒不死整批」還不夠：
+    #   一個刪不掉就代表這一趟的刪除**是半套的** ⇒ ⭐ 一定要停在 push 之前。
+    #
+    # ⚠ 造法：改一份副本，在 DEL 後面塞一個**不存在的路徑**
+    #   （＝ run 101 那個「被刪掉的檔」的角色）。
+    # ══════════════════════════════════════════════════════════════
+    d8 = tempfile.mkdtemp(prefix="syncbad_")
+    try:
+        print("\n── ⑧ 刪除清單裡有一個壞元素 ⇒ ⛔ 停在 push 之前 ──")
+        origin, work = build(d8)
+        src = io.open(os.path.join(HERE, "sync_code.sh"), encoding="utf-8").read()
+        holed = src.replace(
+            'origin/main "$SRC" -- . $SPEC)',
+            'origin/main "$SRC" -- . $SPEC; echo nope.py)')
+        ck("  前置：錨點真的換掉了", holed != src, "錨點抄錯了")
+        write(os.path.join(work, "sync_bad.sh"), holed)
+        write(os.path.join(work, "hello.py"), "print(1)\n")
+        write(os.path.join(work, "gone.py"), "print(2)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "程式")
+        env8 = dict(os.environ, GITHUB_REF_NAME="feature")
+        # ⚠ 前置那一趟要用**原版**：改過的那份每一趟都會塞 `nope.py`
+        #   ⇒ 連前置都會 exit 5 ⇒ main 上根本沒有 hello.py 可以比
+        #   （⛔ 第四個陷阱的變形：情境沒造出來，跟斷言沒用長得一樣）
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
+        subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                       capture_output=True, text=True, env=env8)
+        os.remove(os.path.join(work, "gone.py"))
+        write(os.path.join(work, "hello.py"), "print(77)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "刪掉 gone.py")
+        r8 = subprocess.run(["bash", "sync_bad.sh"], cwd=work,
+                            capture_output=True, text=True, env=env8)
+        o8 = r8.stdout + r8.stderr
+        ck("⭐⭐ 有一個刪不掉 ⇒ **回非 0**（⚠ 靜靜往下走 ＝ 半套的同步）",
+           r8.returncode != 0, f"rc={r8.returncode}｜{o8[-400:]}")
+        ck("  而且**點名**是哪一個刪不掉", "nope.py" in o8, o8[-400:])
+        h = git(work, "show", "origin/main:hello.py").stdout
+        ck("⭐ 而 main **沒有被推成半套**（⇒ 停在 push 之前）",
+           h == "print(1)\n", repr(h[:60]))
+        ck("⭐ 而且**沒有**印成功那一行",
+           "✓ 程式已同步到 main" not in o8, o8[-300:])
+    finally:
+        shutil.rmtree(d8, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
