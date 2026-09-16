@@ -94,3 +94,7 @@
 - 種子 12000+r、重排 13000+k、bootstrap 12500、隨機集 12999；`resultsp2/`：summary.md、cells／pairs／trigger／dropped_cap／placebo_halfwidth／judgement／seeds／gate_history。`researchp1 --regress`（cap_fn 預設路徑逐位元同）另跑，結果補在追加三。
 
 ## 追加三（回測線，2026-09-15 23:41 台北）：`researchp1 --regress` 全過（37 條 ✓、1,211 秒）——`cap_fn=None` 的預設路徑與加參數前逐位元相同（R1 200 種子逐格 cagr／mdd／slot／trades 與基線相等）；R2／R3／R0 亦全過。⇒ 加 cap_fn 沒有動到 P1／P3／研究十一～十五的任何既有結果。
+
+---
+### 母體版本註記（回測線追加，2026-09-16 15:43 台北；依市場情報分析線 1507 §四／1515）
+本版所有數字的母體＝`data.load_universe()` **2,130 檔，含 4 檔 TDR（9103／9105／9110／9136）**。自下一登錄版本起母體改為 **2,123**（TDR 移出，在資料層 `stocks.csv` 的 `kind` 側做，⛔ 本線不在 `load_universe()` 加名稱條件）；⛔ 已寫出的前瞻列不回改。-KY 145 檔留在母體（結案）。

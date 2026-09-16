@@ -305,11 +305,12 @@ def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = No
 
 
 def _qty_note(j: pd.DataFrame) -> np.ndarray:
-    """量差註記（資料庫線 1010／1105）：兩條都是充分條件、⛔ 都不是必要條件，取【或】：
-    ① Δvol mod 1,000 ≠ 0 ⇒ 必含零股（整股類——普通／盤後定價／鉅額／拍賣／標購——一律以張成交，和必是千的倍數；⚠ 前提＝除零股外沒有第六種可成交非整張的類型，未逐條查規章）；
-    ② Δvol ÷ Δtx < 1,000 股/筆 ⇒ 必含零股（整股每筆至少一張）；
-    ①或② ⇒「零股（口徑：①／②／①②）」可當結論；都不成立 ⇒「不排除有零股」（⛔ 判不出來，不可讀成沒有零股；6949/113 那種 681 張／1 筆／整數單價是鉅額的形狀，未證實）；
-    Δvol < 0 ⇒「我方多」。⚠ 1603/107（1,000 股／4 筆）只有②判得到、8488/107（565,715 股／1 筆）只有①判得到 ⇒ 兩條缺一不可。"""
+    """量差註記（資料庫線 1010／1105 的兩條算術判準，⛔ 都是充分不必要，取【或】）：
+    ① Δvol mod 1,000 ≠ 0 ⇒ 差額必含非整張（零股）成交（整股類——普通／盤後定價／鉅額／拍賣／標購——一律以張成交，和必是千的倍數；⚠ 前提＝除零股外沒有第六種可成交非整張的類型，未逐條查規章）；
+    ② Δvol ÷ Δtx < 1,000 股/筆 ⇒ 差額必含零股（整股每筆至少一張）；
+    ①或② ⇒「差額含零股（①／②／①②）」；都不成立 ⇒「判不出來」（⛔ 不可讀成沒有零股；6949/113 那種 681 張／1 筆／整數單價是鉅額的形狀，未證實）；Δvol < 0 ⇒「我方多」。
+    ⛔⛔ 這只證明【差額】含零股，⛔ 不證明「我方日檔不含零股」：2026-09-16 15:42 實測我方上市日檔 volume 有 93.7% 的列不是 1,000 的倍數（2020-10-26 前 89.3%、後 97.6%）
+    ⇒ 我方日檔本來就含零股（MI_INDEX notes「含一般、零股、盤後定價、鉅額」），資料庫線 0922「官方含、我方不含」那個機制不成立，差額的成因【未定】（市場情報分析線 1506 §二的阻斷項答案）。"""
     dv = j["volume"] - j["volume_ours"]
     dtx = j["transactions"] - j["tx_ours"]
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -317,7 +318,7 @@ def _qty_note(j: pd.DataFrame) -> np.ndarray:
     r1 = (dv > 0) & (dv % 1000 != 0)
     r2 = (dv > 0) & (per_tx < 1000)
     rule = np.where(r1 & r2, "①②", np.where(r1, "①", np.where(r2, "②", "")))
-    lab = np.where(rule != "", np.char.add(np.char.add("零股（口徑：", rule.astype(str)), "）"), "不排除有零股")
+    lab = np.where(rule != "", np.char.add(np.char.add("差額含零股（", rule.astype(str)), "）"), "判不出來")
     return np.where(j["volume_ok"] == 0, np.where(dv < 0, "我方多", lab), "")
 
 
@@ -363,8 +364,8 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
     nomatch = yc[yc["status"] == "我方該年無成交列"]; pre = int((nomatch["roc_year"] < 104).sum())
     vb = yc[yc["volume_ok"] == 0]
     short = int((vb["days_short"] > 0).sum()) if "days_short" in vb and vb["days_short"].notna().any() else 0
-    zl = int(vb["qty_note"].str.startswith("零股").sum()); mzl = int(mc["qty_note"].str.startswith("零股").sum()) if len(mc) else 0
-    zrule = vb[vb["qty_note"].str.startswith("零股")]["qty_note"].value_counts().to_dict()
+    zl = int(vb["qty_note"].str.startswith("差額含零股").sum()); mzl = int(mc["qty_note"].str.startswith("差額含零股").sum()) if len(mc) else 0
+    zrule = vb[vb["qty_note"].str.startswith("差額含零股")]["qty_note"].value_counts().to_dict()
     ab = yc[(yc["amount_ok"] == 0) & (yc["volume_ok"] == 1)]
     ab_by_year = ab.groupby("roc_year").size().to_dict()
     L = ["## G. 官方統計交叉核對（`data/meta/official_*.csv`，資料庫線 0737 抓）", "",
@@ -376,9 +377,9 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
          col_stat(yc, "avg_ok", "收盤簡單平均（上市四捨五入／上櫃捨去）"), col_stat(yc, "high_ok", "年最高價"), col_stat(yc, "high_date_ok", "年最高價日期"),
          col_stat(yc, "low_ok", "年最低價"), col_stat(yc, "low_date_ok", "年最低價日期"),
          col_stat(yc, "volume_ok", "年成交股數（只上市）"), col_stat(yc, "amount_ok", "年成交金額（只上市）"), col_stat(yc, "transactions_ok", "年成交筆數（只上市）"), "",
-         f"年成交股數不符 {len(vb):,} 列裡，**零股口徑 {zl:,} 列**（判準①Δvol 非千的倍數／②Δvol÷Δtx < 1,000 股/筆，取或；{zrule}）——官方年表含零股、我方日檔不含（資料庫線 0922／1010／1105），⛔ 不是缺資料；其餘 {len(vb) - zl:,} 列（{vb[~vb['qty_note'].str.startswith('零股')]['qty_note'].value_counts().to_dict()}；「不排除有零股」＝兩條都不成立、判不出來，⛔ 不可讀成沒有零股；6949/113 是鉅額的形狀、未證實）。我方天數少於日曆的 {short:,} 列（缺日或該股無成交都會如此，⛔ 分不出）。",
+         f"年成交股數不符 {len(vb):,} 列裡，**差額含零股 {zl:,} 列**（判準①Δvol 非千的倍數／②Δvol÷Δtx < 1,000 股/筆，取或；{zrule}）；其餘 {len(vb) - zl:,} 列（{vb[~vb['qty_note'].str.startswith('差額含零股')]['qty_note'].value_counts().to_dict()}；「判不出來」⛔ 不可讀成沒有零股；6949/113 是鉅額的形狀、未證實）。⛔⛔ 成因未定：我方上市日檔 volume 93.7% 的列不是 1,000 的倍數（2026-09-16 15:42 實測，2020-10-26 前 89.3%／後 97.6%）⇒ 我方日檔本來就含零股，「官方含零股、我方不含」（資料庫線 0922）不成立；差額只占官方 p50 0.005%、p95 0.5%，方向 99.7% 官方多。我方天數少於日曆的 {short:,} 列（缺日或該股無成交都會如此，⛔ 分不出）。",
          f"年成交金額不符而股數相同：{len(ab):,} 列，逐年 {ab_by_year}——⚠ 民國 109 那一年是**另一個口徑**（資料庫線 0950：股數不符率十二年最低、金額 70.9%，只作用在金額欄、方向單一、量級 1e-9；1105：月表可比的 9 檔裡 8 檔的差額 100% 落在 **109/10**，成因未知），⛔ 逐年趨勢裡 109 那格是假尖峰，標註不濾。", "",
-         f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無成交列 {int((mc['status'] != '比對').sum()):,} 列；月量不符裡零股口徑 {mzl:,} 列。", "",
+         f"月表（上市 FMSRFK）{len(mc):,} 列（民國 {sorted(mc['roc_year'].unique().tolist()) if len(mc) else '—'}）；我方該月無成交列 {int((mc['status'] != '比對').sum()):,} 列；月量不符裡差額含零股 {mzl:,} 列。", "",
          "| 欄（月表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(mc, "volume_ok", "月成交股數"), col_stat(mc, "amount_ok", "月成交金額"), col_stat(mc, "transactions_ok", "月成交筆數"),
          col_stat(mc, "high_ok", "月最高價"), col_stat(mc, "low_ok", "月最低價"), col_stat(mc, "avg_price_ok", "月加權均價（金額÷股數，無條件捨去）"), ""]
@@ -480,21 +481,21 @@ def _selftest() -> int:
     check(yt3["avg_ok"] == 1.0 and yt3["high_ok"] == 1.0 and yt3["high_date_ok"] == 1.0, "同一轉板年、上櫃表那列 ⇒ 只比 tpex 段（1/02：10.0／10.2）")
     Yz = Y.copy(); Yz.loc[0, "volume"] = 6001; Yz.loc[0, "transactions"] = 19
     yz = official_yearly_check(res, Yz).iloc[0]
-    check(yz["volume_ok"] == 0.0 and yz["qty_note"] == "零股（口徑：①②）", "官方多 1 股 1 筆 ⇒ ①非千倍 且 ②1 股/筆 ⇒ 零股（①②）")
+    check(yz["volume_ok"] == 0.0 and yz["qty_note"] == "差額含零股（①②）", "官方多 1 股 1 筆 ⇒ ①非千倍 且 ②1 股/筆 ⇒ 差額含零股（①②）")
     Yz.loc[0, "volume"] = 5000
     check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "我方多", "官方少 ⇒ 我方多")
     Yz.loc[0, "volume"] = 7000; Yz.loc[0, "transactions"] = 22
-    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "零股（口徑：②）", "1603/107 型：官方多 1,000 股／4 筆＝250 股/筆 ⇒ 只有②判得到")
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "差額含零股（②）", "1603/107 型：官方多 1,000 股／4 筆＝250 股/筆 ⇒ 只有②判得到")
     Yz.loc[0, "volume"] = 6000 + 565715; Yz.loc[0, "transactions"] = 19
-    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "零股（口徑：①）", "8488/107 型：官方多 565,715 股／1 筆 ⇒ 只有①判得到（715 不是千的倍數）")
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "差額含零股（①）", "8488/107 型：官方多 565,715 股／1 筆 ⇒ 只有①判得到（715 不是千的倍數）")
     Yz.loc[0, "volume"] = 687000; Yz.loc[0, "transactions"] = 19
-    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "不排除有零股", "6949/113 型：官方多 681,000 股／1 筆 ⇒ 千的倍數且 ≥ 1,000 ⇒ 不排除有零股（判不出來）")
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "判不出來", "6949/113 型：官方多 681,000 股／1 筆 ⇒ 千的倍數且 ≥ 1,000 ⇒ 不排除有零股（判不出來）")
     Yz.loc[0, "volume"] = 7000; Yz.loc[0, "transactions"] = 18
-    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "不排除有零股", "官方多 1,000 股、筆數相同（Δtx=0）⇒ ①②都不成立 ⇒ 不排除有零股")
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "判不出來", "官方多 1,000 股、筆數相同（Δtx=0）⇒ ①②都不成立 ⇒ 不排除有零股")
     Yz.loc[0, "volume"] = 7500; Yz.loc[0, "transactions"] = 18
-    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "零股（口徑：①）", "官方多 1,500 股、筆數相同 ⇒ ②沒分母、①判得到")
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "差額含零股（①）", "官方多 1,500 股、筆數相同 ⇒ ②沒分母、①判得到")
     Yz.loc[0, "volume"] = 8000; Yz.loc[0, "transactions"] = 20
-    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "不排除有零股", "剛好 1,000 股/筆（2,000 股／2 筆）⇒ 整股做得出來、也是千的倍數 ⇒ 不排除有零股（②界線不含等號）")
+    check(official_yearly_check(res, Yz).iloc[0]["qty_note"] == "判不出來", "剛好 1,000 股/筆（2,000 股／2 筆）⇒ 整股做得出來、也是千的倍數 ⇒ 不排除有零股（②界線不含等號）")
     M = pd.DataFrame([{"stock_id": "1111", "roc_year": 114, "month": 1, "high": 10.5, "low": 9.8, "avg_price": 10.13, "transactions": 11, "amount": 30400, "volume": 3000, "turnover": 0.1},
                       {"stock_id": "1111", "roc_year": 114, "month": 2, "high": 1.0, "low": 1.0, "avg_price": 1.0, "transactions": 1, "amount": 1, "volume": 1, "turnover": 0.1}])
     mc = official_monthly_check(res, M)
@@ -503,7 +504,7 @@ def _selftest() -> int:
     check(m1["avg_price_ok"] == 1.0 and m1["avg_price_ours"] == 10.13, "月加權均價 30400÷3000 = 10.1333 → 10.13")
     M3 = M.copy(); M3.loc[0, "amount"] = 30590; M3.loc[0, "avg_price"] = 10.19
     res3 = [dict(res[0], amount=np.array([10000., 20590., np.nan, 31500., 10000.]))]
-    check(official_monthly_check(res, M.assign(volume=[3001, 1], transactions=[12, 1])).iloc[0]["qty_note"] == "零股（口徑：①②）", "月表：官方多 1 股 1 筆 ⇒ 零股（①②）")
+    check(official_monthly_check(res, M.assign(volume=[3001, 1], transactions=[12, 1])).iloc[0]["qty_note"] == "差額含零股（①②）", "月表：官方多 1 股 1 筆 ⇒ 差額含零股（①②）")
     check(official_monthly_check(res3, M3).iloc[0]["avg_price_ok"] == 1.0 and official_monthly_check(res3, M3).iloc[0]["avg_price_ours"] == 10.19, "30590÷3000 = 10.1966 ⇒ 捨去 10.19（四捨五入會是 10.20）")
     check(_trunc2(10.1966) == 10.19 and _trunc2(10.2) == 10.2 and _trunc2(0.29) == 0.29, "_trunc2：捨去、整值不動、浮點 0.29 不掉成 0.28")
     check(m1["high_ok"] == 1.0 and m1["low_ok"] == 1.0, "月最高 10.5／最低 9.8")
