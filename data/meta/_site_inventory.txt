@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-16T18:59:08+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35086620798
+# ⏱ 這一趟：2026-09-16T19:45:45+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35089732877
 # site_inventory.py 的輸出。**只讀不寫資料。**
 # 問的是：「這個站到底有沒有我要的東西」——一次問完。
 # ⛔ 它只回答「選單上有沒有這個名字」，不回答「那條端點能不能用」。
@@ -21,7 +21,8 @@
    ✓ 476,923 bytes｜攤平出 **225 條**選單項目
 
 ── TWSE-sitemap｜https://www.twse.com.tw/sitemap.xml
-   ✓ 261,860 bytes｜攤平出 **3109 條**選單項目
+   ✗ 抓不到：LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content... FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+   ⛔ 抓不到**不等於**這個站沒有——這一趟對它一無所知。
 
 ── 逐條比對「我方還缺什麼」──
 
@@ -48,7 +49,6 @@
         → /mopsfin_t187ap05_OB
       上櫃公司每月營業收入彙總表
         → /mopsfin_t187ap05_O
-   TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ 財報（歷史，逐季）
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
@@ -195,7 +195,6 @@
         → /mopsfin_t187ap15_O
       上櫃公司當季綜合損益經會計師查核(核閱)數與當季預測數差異達百分之十以上者，或截至當季累計差異達百分之二十以上者(簡式)
         → /mopsfin_t187ap16_O
-   TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ 本益比（歷史段，含收盤價欄）
    TWSE：⭐ **2 條**
@@ -236,7 +235,6 @@
         → /tphd_change
       高殖利率指數歷史收盤指數
         → /tphd_index
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 創新板成分清單
    TWSE：⭐ **2 條**
@@ -247,14 +245,12 @@
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 集保／股權分散（歷史）
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 上櫃交易日曆（歷史）
    TWSE：⭐ **2 條**
@@ -289,7 +285,6 @@
         → /mopsfin_t187ap14_O
       電子式交易統計資訊(上櫃)
         → /mopsfin_t187ap19_O
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 上櫃除權息（歷史）
    TWSE：⭐ **1 條**
@@ -311,7 +306,6 @@
         → /tpex_exright_daily
       上櫃股票除權除息預告表
         → /tpex_exright_prepost
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 上櫃減資（歷史）
    TWSE：⭐ **4 條**
@@ -337,7 +331,6 @@
         → /zh-tw/announce/market/reduction-tdr.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 變更股票面額
    TWSE：⭐ **2 條**
@@ -357,7 +350,6 @@
         → /zh-tw/announce/market/change/reference.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 暫停／停止交易（歷史）
    TWSE：⭐ **2 條**
@@ -382,7 +374,6 @@
    TPEx-OpenAPI：⭐ **1 條**
       上櫃股票變更交易、分盤交易、管理股票與停止交易資訊
         → /tpex_cmode
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 終止上市／上櫃（下市下櫃名單）
    TWSE：⭐ **4 條**
@@ -423,15 +414,6 @@
         → /tpex_warrant_suspend_history
       上櫃公司經營權及營業範圍異(變)動專區-經營權異動且營業範圍重大變更停止買賣公司
         → /mopsfin_t187ap26_O
-   TWSE-sitemap：⭐ **4 條**
-      https://www.twse.com.tw/zh/page/clearing/suspended.html
-        → https://www.twse.com.tw/zh/page/clearing/suspended.html
-      https://www.twse.com.tw/en/company/suspendListing
-        → https://www.twse.com.tw/en/company/suspendListing
-      https://www.twse.com.tw/en/page/clearing/suspended.html
-        → https://www.twse.com.tw/en/page/clearing/suspended.html
-      https://www.twse.com.tw/zh/company/suspendListing/
-        → https://www.twse.com.tw/zh/company/suspendListing/
 
 ★ 處置／注意股（歷史）
    TWSE：⭐ **3 條**
@@ -476,7 +458,6 @@
         → /tpex_esb_disposal_information
       興櫃公布注意有價證券資訊
         → /tpex_esb_warning_information
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 外資持股比率
    TWSE：⭐ **5 條**
@@ -515,7 +496,6 @@
         → /tpex_3insti_qfii_industry
       上櫃股票外資及陸資買賣超彙總表
         → /tpex_3insti_qfii_trading
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 發行股數／股本
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
@@ -532,7 +512,6 @@
         → /tpex_mainboard_peratio_analysis
       上櫃歷史個股本益比排行
         → /tpex_pe_ratio_top10
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 借券／融券（歷史）
    TWSE：⭐ **7 條**
@@ -624,7 +603,6 @@
         → /tpex_short_sell
       上櫃應付現股當日沖銷券差借券費率
         → /tpex_intraday_fee
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 盤後定價／零股／鉅額
    TWSE：⭐ **14 條**
@@ -751,7 +729,6 @@
         → /tpex_yearly_trading_summary_block
       鉅額交易歷史成交資訊
         → /tpex_daily_trade_block_day
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 分點／券商買賣（K線分析線 2026-09-12 要的）
    TWSE：⭐ **10 條**
@@ -866,78 +843,12 @@
         → /bond_cb_daily
       上櫃股票各券商總公司當日營業金額統計表
         → /tpex_daily_broker2
-   TWSE-sitemap：⭐ **32 條**
-      https://www.twse.com.tw/zh/brokerService/brokerServiceAudit
-        → https://www.twse.com.tw/zh/brokerService/brokerServiceAudit
-      https://www.twse.com.tw/zh/brokerService/brokerServiceInformation
-        → https://www.twse.com.tw/zh/brokerService/brokerServiceInformation
-      https://www.twse.com.tw/zh/brokerService/branchList
-        → https://www.twse.com.tw/zh/brokerService/branchList
-      https://www.twse.com.tw/zh/brokerService/brokerDispearList
-        → https://www.twse.com.tw/zh/brokerService/brokerDispearList
-      https://www.twse.com.tw/zh/page/products/broker/sbl/law.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl/law.html
-      https://www.twse.com.tw/zh/page/products/broker/sbl2/law.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl2/law.html
-      https://www.twse.com.tw/en/page/products/broker_service/SBL_brokers.html
-        → https://www.twse.com.tw/en/page/products/broker_service/SBL_brokers.html
-      https://www.twse.com.tw/en/page/products/broker_service/financing_service.html
-        → https://www.twse.com.tw/en/page/products/broker_service/financing_service.html
-      https://www.twse.com.tw/zh/brokerService/brokerServiceTrading/
-        → https://www.twse.com.tw/zh/brokerService/brokerServiceTrading/
-      https://www.twse.com.tw/zh/brokerService/downloads/download/b003000204.rtf
-        → https://www.twse.com.tw/zh/brokerService/downloads/download/b003000204.rtf
-      https://www.twse.com.tw/zh/brokerService/downloads/download/b003000155.rtf
-        → https://www.twse.com.tw/zh/brokerService/downloads/download/b003000155.rtf
-      https://www.twse.com.tw/zh/brokerService/brokerServiceComputer/
-        → https://www.twse.com.tw/zh/brokerService/brokerServiceComputer/
-      https://www.twse.com.tw/zh/brokerService/brokerList/
-        → https://www.twse.com.tw/zh/brokerService/brokerList/
-      https://www.twse.com.tw/zh/brokerService/secRegData/
-        → https://www.twse.com.tw/zh/brokerService/secRegData/
-      https://www.twse.com.tw/zh/brokerService/brokerCount/
-        → https://www.twse.com.tw/zh/brokerService/brokerCount/
-      https://www.twse.com.tw/zh/page/products/broker/sbl/TWT72U.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl/TWT72U.html
-      https://www.twse.com.tw/zh/page/products/broker/sbl/seminar.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl/seminar.html
-      https://www.twse.com.tw/zh/page/products/broker/sbl/news.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl/news.html
-      https://www.twse.com.tw/zh/page/products/broker/sbl/archive.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl/archive.html
-      https://www.twse.com.tw/zh/brokerService/downloads/download/1050000808.rtf
-        → https://www.twse.com.tw/zh/brokerService/downloads/download/1050000808.rtf
-      https://www.twse.com.tw/zh/brokerService/downloads/download/10500008081.rtf
-        → https://www.twse.com.tw/zh/brokerService/downloads/download/10500008081.rtf
-      https://www.twse.com.tw/zh/page/products/broker/sbl2/TWTA1U.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl2/TWTA1U.html
-      https://www.twse.com.tw/zh/page/products/broker/sbl2/seminar.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl2/seminar.html
-      https://www.twse.com.tw/zh/page/products/broker/sbl2/news.html
-        → https://www.twse.com.tw/zh/page/products/broker/sbl2/news.html
-      https://www.twse.com.tw/zh/brokerService/downloads/
-        → https://www.twse.com.tw/zh/brokerService/downloads/
-      https://www.twse.com.tw/en/brokerService/brokerList/
-        → https://www.twse.com.tw/en/brokerService/brokerList/
-      https://www.twse.com.tw/en/page/investor/faq_BrokerManagement.html
-        → https://www.twse.com.tw/en/page/investor/faq_BrokerManagement.html
-      https://www.twse.com.tw/zh/brokerService/downloads/T30/T32
-        → https://www.twse.com.tw/zh/brokerService/downloads/T30/T32
-      https://www.twse.com.tw/zh/brokerService/downloads/T30/T83
-        → https://www.twse.com.tw/zh/brokerService/downloads/T30/T83
-      https://www.twse.com.tw/zh/brokerService/downloads/download/b002000196/
-        → https://www.twse.com.tw/zh/brokerService/downloads/download/b002000196/
-      https://www.twse.com.tw/zh/brokerService/downloads/T30/T48/
-        → https://www.twse.com.tw/zh/brokerService/downloads/T30/T48/
-      https://www.twse.com.tw/zh/brokerService/downloads/T30/T30/
-        → https://www.twse.com.tw/zh/brokerService/downloads/T30/T30/
 
 ★ 八大行庫／官股買賣
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 除權息明細（權值／息值分開、現增認購價與認購率）
    TWSE：⭐ **4 條**
@@ -1031,19 +942,6 @@
         → /mopsfin_t187ap42_O
       上櫃認購(售)權證年度發行量概況統計表
         → /mopsfin_t187ap36_O
-   TWSE-sitemap：⭐ **6 條**
-      https://www.twse.com.tw/zh/page/trading/exchange/TWT48U.html
-        → https://www.twse.com.tw/zh/page/trading/exchange/TWT48U.html
-      https://www.twse.com.tw/zh/page/trading/exchange/TWT49U.html
-        → https://www.twse.com.tw/zh/page/trading/exchange/TWT49U.html
-      https://www.twse.com.tw/en/page/trading/exchange/TWT48U.html
-        → https://www.twse.com.tw/en/page/trading/exchange/TWT48U.html
-      https://www.twse.com.tw/en/page/trading/exchange/TWT49U.html
-        → https://www.twse.com.tw/en/page/trading/exchange/TWT49U.html
-      https://www.twse.com.tw/m/zh/page/stocks/fund/TWT48U.html
-        → https://www.twse.com.tw/m/zh/page/stocks/fund/TWT48U.html
-      https://www.twse.com.tw/m/zh/page/stocks/fund/TWT49U.html
-        → https://www.twse.com.tw/m/zh/page/stocks/fund/TWT49U.html
 
 ★ ⭐ 減資換股率／退還股款（歷史）
    TWSE：⭐ **4 條**
@@ -1064,19 +962,6 @@
         → /zh-tw/announce/market/reduction-tdr.html
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
-   TWSE-sitemap：⭐ **6 條**
-      https://www.twse.com.tw/zh/page/trading/exchange/TWTAVU.html
-        → https://www.twse.com.tw/zh/page/trading/exchange/TWTAVU.html
-      https://www.twse.com.tw/zh/page/trading/exchange/TWTAUU.html
-        → https://www.twse.com.tw/zh/page/trading/exchange/TWTAUU.html
-      https://www.twse.com.tw/en/page/trading/exchange/TWTAVU.html
-        → https://www.twse.com.tw/en/page/trading/exchange/TWTAVU.html
-      https://www.twse.com.tw/en/page/trading/exchange/TWTAUU.html
-        → https://www.twse.com.tw/en/page/trading/exchange/TWTAUU.html
-      https://www.twse.com.tw/m/zh/page/stocks/fund/TWTAVU.html
-        → https://www.twse.com.tw/m/zh/page/stocks/fund/TWTAVU.html
-      https://www.twse.com.tw/m/zh/page/stocks/fund/TWTAUU.html
-        → https://www.twse.com.tw/m/zh/page/stocks/fund/TWTAUU.html
 
 ★ ⭐ 漲跌停價格（官方直接給的）
    TWSE：⭐ **1 條**
@@ -1095,7 +980,6 @@
         → /tpex_ceil_non_trading
       上櫃首五日無漲跌幅資訊
         → /tpex_ipo_no_limit
-   TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ ⭐ 重大訊息／財報公告日（申報時程）
    TWSE：⭐ **5 條**
@@ -1239,7 +1123,6 @@
         → /mopsfin_t187ap13_O
       上櫃公司違反資訊申報、重大訊息及說明記者會規定專區
         → /mopsfin_t187ap23_O
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ ⭐ 大盤／市場成交統計（金額、股數、筆數的歷史）
    TWSE：⭐ **11 條**
@@ -1328,7 +1211,6 @@
         → /tpex_yearly_trading_summary_block
       電子式交易統計資訊(上櫃)
         → /mopsfin_t187ap19_O
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 當日沖銷（歷史）
    TWSE：⭐ **6 條**
@@ -1376,15 +1258,16 @@
         → /tpex_intraday_trading_pre
       上櫃暫停先賣後買當日沖銷交易歷史查詢
         → /tpex_intraday_trading_his
-   TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ── ⭐ 掃描範圍表（⛔ 只要有一列失敗，這一趟就不可以寫出「官方沒有」）──
   ✅ TWSE｜281 條（含中文 276）｜https://www.twse.com.tw/res/data/zh/menu-mega.html
   ✅ TPEx｜762 條（含中文 759）｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
   ✅ TWSE-OpenAPI｜143 條（含中文 143）｜https://openapi.twse.com.tw/v1/swagger.json
   ✅ TPEx-OpenAPI｜225 條（含中文 225）｜https://www.tpex.org.tw/openapi/swagger.json
-  ✅ TWSE-sitemap｜3109 條（含中文 0）｜https://www.twse.com.tw/sitemap.xml
-  ⇒ 成功 5 / 5 份目錄｜合計 4,520 條
+  ✗ TWSE-sitemap｜0 條（含中文 0）｜https://www.twse.com.tw/sitemap.xml｜LIMITED|HTTP 307 無 Location（擋機器人中介頁） | <html> <head> <meta http-equiv="Content... FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR> <BR> 您可以<A HREF="jav
+  ⇒ 成功 4 / 5 份目錄｜合計 1,411 條
+  ⛔⛔ **有目錄沒掃到** ⇒ 這一趟的否定句只涵蓋成功的那幾份。
+      ⚠ 而在開發容器裡全失敗是我方閘道擋的（第六點），**不是事實**。
 
 ── ⇒ 這份輸出的用法 ──
   ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用

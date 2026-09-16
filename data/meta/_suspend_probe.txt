@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-09-16T19:08:25+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35086620798
-# 停牌／處置／注意 端點探針 2026-09-16T19:07:52+08:00
+# ⏱ 這一趟：2026-09-16T19:55:02+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35089732877
+# 停牌／處置／注意 端點探針 2026-09-16T19:54:45+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
 # 這一趟的選集：--set longhalt
@@ -10,74 +10,11 @@
 
 ── twse-violations-stop
    https://www.twse.com.tw/zh/listed/violations/stop.html
-   ✓ 11,845 bytes｜中文 706 字
-   ① 靶子命中：0／6 （一檔都沒有）
-   ② 日期 0 個
-      「停止買賣」3 次
-      「終止上市」0 次
-      「恢復買賣」0 次
-      「財務業務」2 次
-   ③ <tr> 0 個｜js 4 支　⛔ **js 空殼**
-     ①  `/…/api/…` 出現過哪些：0 種
-     ②  `fetch(` 的對象：0 種
-     ③  `$.ajax` / `url:` 的對象：0 種
-     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-     ⑤  外部載入的 `.js`：5 支
-         https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
-         https://www.twse.com.tw/res/js/main.js
-         https://www.twse.com.tw/res/js/web-report.js
-         https://www.twse.com.tw/res/js/web.js
-         https://www.twse.com.tw/res/lib/ie-hints.min.js
-     ⑥ 外部 `.js` 逐支挖：共 5 支｜本站 4 支（其中通用函式庫 0 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
-         ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
-         ── https://www.twse.com.tw/res/js/main.js（128,697 bytes）
-         ①  `/…/api/…` 出現過哪些：2 種
-             /api
-             /rwd-api-sample
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：6 種
-             e.jsonp
-             e.jsonpCallback
-             f.fn.jsonTable
-             f.fn.jsonTableUpdate
-             r.json
-             t.jsonpCallback
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/js/web-report.js（19,650 bytes）
-         ①  `/…/api/…` 出現過哪些：0 種
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/js/web.js（16,563 bytes）
-         ①  `/…/api/…` 出現過哪些：0 種
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/lib/ie-hints.min.js（1,099 bytes）
-         ①  `/…/api/…` 出現過哪些：0 種
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
+   ✗ HTTP 307
 
 ── twse-rwd-stop（⚠ 我拼的）
    https://www.twse.com.tw/rwd/zh/listed/violations/stop?response=json
-   ✓ 747 bytes｜中文 23 字　← ⚠ 太少，多半是 js 空殼
-   ① 靶子命中：0／6 （一檔都沒有）
-   ② 日期 0 個
-      「停止買賣」0 次
-      「終止上市」0 次
-      「恢復買賣」0 次
-      「財務業務」0 次
-   ③ <tr> 0 個｜js 0 支
+   ✗ HTTP 307
 
 ── twse-openapi-t187ap26_L（選單名裡有「停止買賣」）
    https://openapi.twse.com.tw/v1/opendata/t187ap26_L
@@ -135,73 +72,7 @@
 
 ── twse-twtawu-historical（選單原名「暫停交易證券」）
    https://www.twse.com.tw/zh/trading/historical/twtawu.html
-   ✓ 14,830 bytes｜中文 918 字
-   ① 靶子命中：0／6 （一檔都沒有）
-   ② 日期 0 個
-      「停止買賣」0 次
-      「終止上市」0 次
-      「恢復買賣」0 次
-      「財務業務」0 次
-   ③ <tr> 0 個｜js 5 支　⛔ **js 空殼**
-     ①  `/…/api/…` 出現過哪些：0 種
-     ②  `fetch(` 的對象：0 種
-     ③  `$.ajax` / `url:` 的對象：0 種
-     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-     ⑤  外部載入的 `.js`：6 支
-         https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
-         https://www.twse.com.tw/res/js/main.js
-         https://www.twse.com.tw/res/js/stock-code.js
-         https://www.twse.com.tw/res/js/web-report.js
-         https://www.twse.com.tw/res/js/web.js
-         https://www.twse.com.tw/res/lib/ie-hints.min.js
-     ⑥ 外部 `.js` 逐支挖：共 6 支｜本站 5 支（其中通用函式庫 0 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
-         ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
-         ── https://www.twse.com.tw/res/js/main.js（128,697 bytes）
-         ①  `/…/api/…` 出現過哪些：2 種
-             /api
-             /rwd-api-sample
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：6 種
-             e.jsonp
-             e.jsonpCallback
-             f.fn.jsonTable
-             f.fn.jsonTableUpdate
-             r.json
-             t.jsonpCallback
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/js/stock-code.js（22,334 bytes）
-         ①  `/…/api/…` 出現過哪些：1 種
-             /api/
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
-             /api/
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/js/web-report.js（19,650 bytes）
-         ①  `/…/api/…` 出現過哪些：0 種
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/js/web.js（16,563 bytes）
-         ①  `/…/api/…` 出現過哪些：0 種
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
-         ── https://www.twse.com.tw/res/lib/ie-hints.min.js（1,099 bytes）
-         ①  `/…/api/…` 出現過哪些：0 種
-         ②  `fetch(` 的對象：0 種
-         ③  `$.ajax` / `url:` 的對象：0 種
-         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
-         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
-         ⑤  外部載入的 `.js`：0 支
+   ✗ HTTP 307
 
 ── twse-openapi-suspendListing（選單原名「終止上市公司」）
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
