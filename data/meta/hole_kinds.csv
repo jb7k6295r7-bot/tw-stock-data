@@ -960,6 +960,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 6222,立軒,tpex,2020-02-19,2020-02-27,5,5,5,0,notrade
 6222,立軒,tpex,2020-03-27,2020-04-09,6,6,6,0,notrade
 6225,天瀚,twse,2015-12-31,2016-01-11,5,5,5,0,notrade
+6228,全譜,tpex,2026-08-27,2026-09-16,13,13,13,0,notrade
 6236,中湛,tpex,2016-05-24,2016-06-01,5,5,5,0,notrade
 6236,中湛,tpex,2016-06-02,2016-06-16,8,8,8,0,notrade
 6236,中湛,tpex,2016-06-22,2016-06-30,5,5,5,0,notrade
