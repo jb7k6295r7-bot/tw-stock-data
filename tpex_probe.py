@@ -1054,7 +1054,9 @@ def main():
             _t = _r.decode("utf-8", "replace")
             say(f"     ✓ {len(_r):,} bytes｜⚠ 三種編碼都不乾淨，用 replace")
         # ① ⭐ 表頭逐字（CLAUDE.md 第一點：先印出來，再開始比對）
-        _hdr = [re.sub(r"<[^>]+>", "", c).strip()
+        # ⭐ 去標籤走**唯一那一份**（四點五）：`sep=""` 是「取一格的值」那一派
+        #   ——⛔ 換成 " " 的話 `"有價證券別" in ...` 這種比對會靜靜對不上。
+        _hdr = [B.visible_text(c, "").strip()
                 for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", _t[:6000],
                                     re.S | re.I)][:12]
         say(f"     ⭐ 表頭（前 12 格，逐字）：{_hdr}")
@@ -1067,7 +1069,7 @@ def main():
             _m = re.search(rf"<tr[^>]*>(?:(?!</tr>).)*?\b{_c}\b"
                            r"(?:(?!</tr>).)*?</tr>", _t, re.S)
             if _m:
-                _cells = [re.sub(r"<[^>]+>", "", x).strip()
+                _cells = [B.visible_text(x, "").strip()
                           for x in re.findall(r"<td[^>]*>(.*?)</td>", _m.group(0), re.S)]
                 say(f"        {_c}：{_cells[:8]}")
     say("\n     ⇒ ⭐ 讀法：若表頭裡有「有價證券別」而且 TDR 那幾檔在那一欄")
