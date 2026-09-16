@@ -486,10 +486,67 @@ def oct_2020():
         #     而讀的人會拿它去比官方的數字然後查錯方向。
         for ln in _our_oct_2020(sid):
             say(f"   {ln}")
-    say("  ⇒ ⭐ 讀法：把官方 `data` 逐列的成交金額，跟上面現算的我方逐日比 ⇒")
-    say("     差額落在哪一天就知道了。⛔ 而 `盤中零股 10-26 上路` 只是同一個月，")
+        # ⭐⭐ 2026-09-16 離線量到的新事實：**差額不在日檔那一層**
+        #
+        #     1101／109-10  股數 Δ=0（逐位相同）  金額 官方月表**少 317 元**
+        #     1229／109-10  股數 Δ=0            金額 官方月表**少 105 元**
+        #
+        # ⇒ ⛔ 所以要比的是**三方**，⚠ 不是兩方：
+        #     ① 我方日檔合計
+        #     ② 官方 `STOCK_DAY` 逐日合計   ← 這一節現在才算
+        #     ③ 官方月表 `FMSRFK`
+        #   ⭐ ①==② 而 ②≠③ ⇒ 是**官方自己兩條路不一致**，⛔ 不是我方的問題
+        #   ⭐ ①≠② ⇒ 那才是我方日檔跟官方逐日對不上
+        #   ⇒ ⛔ 只比 ①③ 的話這兩種**分不開**（而它們的處置完全相反）。
+        for ln in _official_vs_month(sid):
+            say(f"   {ln}")
+    say("  ⇒ ⭐ 讀法：看上面那三方。⛔ 而 `盤中零股 10-26 上路` 只是同一個月，")
     say("     ⚠ 方向不合（官方含零股 ⇒ 該是官方多，實際是官方少）。")
     say("")
+
+
+def _official_vs_month(sid):
+    """官方 `STOCK_DAY` 逐日合計 vs 官方月表 `FMSRFK`（民109/10）→ 幾行字。
+
+    ⛔ 這一節**只問官方自己**：兩條官方路徑對不對得上。
+    ⚠ 月表讀的是 `data/meta/official_monthly_amount.csv`（我方抓回來存的那份）
+    ⇒ 讀不到就**大聲說沒跑**，⛔ 不是靜靜跳過。
+    """
+    raw, err = B.get(f"{TW}/afterTrading/STOCK_DAY"
+                     f"?date=20201001&stockNo={sid}&response=json",
+                     retries=2, timeout=45)
+    if err or not raw:
+        return [f"⚠ **這一層沒跑**：官方逐日取不回來（{B.why(err)}）"]
+    try:
+        d = json.loads(raw.decode("utf-8", "replace"))
+    except ValueError as ex:                                     # noqa: BLE001
+        return [f"⚠ **這一層沒跑**：官方逐日不是 JSON（{str(ex)[:60]}）"]
+    ov = oa = 0
+    for row in (d.get("data") or []):
+        if len(row) < 3:
+            continue
+        v, a = B._num(str(row[1])), B._num(str(row[2]))
+        if v and a:
+            ov += int(float(v)); oa += int(float(a))
+    out = [f"⭐ 官方 **STOCK_DAY 逐日合計**：股數 {ov:,}｜金額 **{oa:,}**"]
+    mp = os.path.join(_ROOT, "meta", "official_monthly_amount.csv")
+    if not os.path.exists(mp):
+        out.append("⚠ **這一層沒跑**：讀不到 official_monthly_amount.csv ⇒ 月表那一邊沒得比")
+        return out
+    hit = None
+    with io.open(mp, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["stock_id"] == sid and r["roc_year"] == "109" and r["month"] in ("10", "10 "):
+                hit = r
+                break
+    if not hit:
+        out.append("⚠ **這一層沒跑**：月表裡沒有這一格（109/10）")
+        return out
+    mv, ma = int(hit["volume"]), int(hit["amount"])
+    out.append(f"⭐ 官方 **月表 FMSRFK**：股數 {mv:,}｜金額 **{ma:,}**")
+    out.append(f"⭐⭐ 官方兩條路的差（月表 − 逐日）：股數 {mv - ov:+,}｜金額 **{ma - oa:+,}**"
+               "　⇒ ⭐ 不是 0 的話，那是**官方自己**兩條路不一致，⛔ 不是我方的問題")
+    return out
 
 
 def _our_oct_2020(sid):

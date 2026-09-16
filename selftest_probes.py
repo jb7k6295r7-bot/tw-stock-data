@@ -1971,6 +1971,75 @@ def check_isin_issuetype():
     return bad
 
 
+def check_official_vs_month():
+    """⭐⭐ `keys_probe._official_vs_month()`：**三方比**，⛔ 不是兩方。
+
+    2026-09-16 離線量到：1101／109-10 **股數 Δ=0**（逐位相同）、
+    金額官方月表**少 317 元**；1229 同樣形狀（少 105）。
+    ⇒ ⭐ 所以要分開兩種完全不同的事：
+
+    ```
+    ①==② 而 ②≠③  ⇒ **官方自己**兩條路不一致（`STOCK_DAY` vs `FMSRFK`）
+    ①≠②          ⇒ 我方日檔跟官方逐日對不上   ← 處置完全相反
+    ```
+    ⛔ 只比 ①③ 的話這兩種**分不開**，而畫面上長得一樣。
+    """
+    import keys_probe as K
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:220]}"))
+        if not c:
+            bad += 1
+
+    DAY = json.dumps({
+        "stat": "OK", "title": "109年10月 9999 測試 各日成交資訊",
+        "fields": ["日期", "成交股數", "成交金額", "開盤價", "最高價",
+                   "最低價", "收盤價", "漲跌價差", "成交筆數", "註記"],
+        "data": [["109/10/05", "1,000", "10,000", "10", "10", "10", "10", "0", "5", ""],
+                 ["109/10/06", "2,000", "20,500", "10", "10", "10", "10", "0", "5", ""]],
+    }, ensure_ascii=False).encode()
+    real_get, real_root = B.get, K._ROOT
+    tmp = tempfile.mkdtemp(prefix="oct2020_")
+    try:
+        os.makedirs(os.path.join(tmp, "meta"))
+        io.open(os.path.join(tmp, "meta", "official_monthly_amount.csv"), "w",
+                encoding="utf-8").write(
+            "stock_id,roc_year,month,high,low,avg_price,transactions,amount,volume,turnover,asof\n"
+            "9999,109,10,10,10,10,10,30200,3000,1,20260916\n")
+        K._ROOT = tmp
+        B.get = K.B.get = lambda u, retries=3, timeout=45: (DAY, None)
+        out = K._official_vs_month("9999")
+        t = "\n".join(out)
+        ck("① ⭐ 官方**逐日**自己加總（1,000+2,000／10,000+20,500）",
+           "股數 3,000｜金額 **30,500**" in t, t)
+        ck("② ⭐ 官方**月表**那一邊也印出來", "月表 FMSRFK**：股數 3,000｜金額 **30,200**" in t, t)
+        ck("③ ⭐⭐ 兩條官方路的**差**自己講出來（−300）",
+           "金額 **-300**" in t, t)
+        ck("④ ⭐ 而且明講「那是官方自己不一致，⛔ 不是我方的問題」",
+           # ⛔ 第一版我把斷言寫成 `官方**自己**兩條路不一致`，⚠ 而原文是
+           #   `**官方自己**兩條路不一致`——**星號的位置差一格** ⇒ 當場紅，
+           #   而那不是程式有問題（第七點第四個：沒套上去 ≠ 沒抓到）。
+           #   ⇒ ⭐ 斷言比**那句話的意思**（「不是我方的問題」），⛔ 不比排版。
+           "不是我方的問題" in t and "兩條路不一致" in t, t)
+        # ⛔ 反向：月表讀不到 ⇒ 大聲說沒跑，⛔ 不可以靜靜只印一半
+        os.remove(os.path.join(tmp, "meta", "official_monthly_amount.csv"))
+        t2 = "\n".join(K._official_vs_month("9999"))
+        ck("⑤ ⛔ 月表讀不到 ⇒ 大聲印「這一層沒跑」（⚠ 只印一半跟比過了長得一樣）",
+           "**這一層沒跑**" in t2, t2)
+        # ⛔ 反向：官方逐日取不回來 ⇒ 同樣要大聲
+        B.get = K.B.get = lambda u, retries=3, timeout=45: (None, "boom")
+        t3 = "\n".join(K._official_vs_month("9999"))
+        ck("⑥ ⛔ 官方逐日取不回來 ⇒ 大聲印「這一層沒跑」",
+           "**這一層沒跑**" in t3, t3)
+    finally:
+        B.get = K.B.get = real_get
+        K._ROOT = real_root
+        shutil.rmtree(tmp, ignore_errors=True)
+    return bad
+
+
 def check_avg_residual():
     """⭐⭐ `keys_probe.avg_residual()` 的**逐列迴圈**真的被走過，而且比的是數值。
 
@@ -2239,6 +2308,7 @@ def main():
     bad += check_sibling_doors()
     bad += check_mops_pause()
     bad += check_isin_issuetype()
+    bad += check_official_vs_month()
     bad += check_avg_residual()
     bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
