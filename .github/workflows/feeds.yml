@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜official-months ⭐ 官方**月**統計的年份掃描（feed=twse/tpex、start=年份如 all／104-115／109）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜official-months ⭐ 官方**月**統計的年份掃描（用 months_market 與 months_years 兩個欄，⛔ 不是 feed／start）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
         type: choice
         options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months]
         default: probe
@@ -105,6 +105,30 @@ on:
         type: choice
         options: [both, revenue, fs]
         default: both
+      # ⛔⛔ 2026-09-16 差一點踩到：我本來想借 `feed` 與 `start` 來傳市場與年份，
+      #   ⚠ 而 `feed` 是 **choice**，選項裡根本沒有 twse／tpex
+      #   ⇒ 派工會被 API 直接擋（`Unexpected value`）——⭐ 這次是**大聲**失敗。
+      #   ⛔ 而它的近親會靜悄悄：`start` 是自由文字，借它傳年份**會過**，
+      #     然後 run 那一步把 `2026-01-01` 當年份丟進 `--months-years`
+      #     ⇒ `parse_years` 濾掉不在範圍的 ⇒ **回空清單 ⇒ 一趟全綠而且什麼都沒抓**。
+      #   ⇒ ⭐ 判準：**一個新的意義要有自己的 input**，⛔ 不要借一個名字像的。
+      months_market:
+        description: "official-months 要掃哪個市場"
+        type: choice
+        options: [twse, tpex]
+        default: twse
+      months_years:
+        description: "official-months 要掃哪幾個民國年。all／104-115／109／104-106,112"
+        default: "all"
+      # ⭐⭐ 母體是 **1,158×12 ＝ 13,896 格**（上市）／**972×12 ＝ 11,664 格**（上櫃）。
+      #   ⛔ 照 `official-stats` 那個 `--limit 400` 走，一趟 7 分鐘只做 400 格
+      #     ⇒ 要**三十幾趟**手動派工——⚠ 而那種補法實際上等於補不完
+      #     （四點六③那條的形狀：程式做得到，⛔ 而沒有人按得到）。
+      #   ⇒ ⭐ 一趟 8,000 格 × 1 秒 ≈ 2.2 小時，job 上限 350 分鐘 ⇒ 賠得起，
+      #     而**期中每 50 格落地一次** ⇒ 被砍最多賠 50 格，⛔ 不是整批。
+      months_limit:
+        description: "official-months 一趟最多做幾格 (代號,年)。⭐ 8000 ≈ 2.2 小時"
+        default: "8000"
 
 permissions:
   contents: write
@@ -653,12 +677,14 @@ jobs:
         if: inputs.mode == 'official-months'
         run: |
           RC=0
-          MK="${{ inputs.feed }}"; [ "$MK" = "tpex" ] || MK=twse
-          YRS="${{ inputs.start }}"; [ -n "$YRS" ] || YRS=all
+          MK="${{ inputs.months_market }}"; [ -n "$MK" ] || MK=twse
+          YRS="${{ inputs.months_years }}"; [ -n "$YRS" ] || YRS=all
+          echo "[official-months] 市場 $MK｜年份 $YRS｜本趟上限 ${{ inputs.months_limit }} 格"
           python selftest_official_stats.py || RC=1
           # ⛔ 一行寫完：續行會讓「多行裸跑」那道守門看不到 `|| RC=`，
           #   ⚠ 而它擋的是 `set -e` 讓後面幾行一次都不跑、而 run 是綠的那一種。
-          python official_stats.py --market "$MK" --months-years "$YRS" --limit 400 --sleep 1 || RC=1
+          LIM="${{ inputs.months_limit }}"; [ -n "$LIM" ] || LIM=8000
+          python official_stats.py --market "$MK" --months-years "$YRS" --limit "$LIM" --sleep 1 || RC=1
           exit $RC
 
       - name: 找基本面歷史的來源

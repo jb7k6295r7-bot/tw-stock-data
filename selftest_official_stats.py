@@ -717,6 +717,35 @@ def main():
     finally:
         O.B.get = old_get
 
+    # ── ⑩g ⛔⛔ 一個**通過**的檢查，說明不可以寫著相反的話 ──
+    #   2026-09-16 feeds run 163 實測：392／400 成功、那道閘門 **ok**，
+    #   ⚠ 而說明印的是「本趟 400 格**全部失敗**」。
+    #   ⭐ 而這正是同一支檔裡 `batch_fail_note()` 已經修過一次的那個錯
+    #     ——⛔ 我寫 `run_sweep` 時沒去看它，又寫了一次（四點五）。
+    ck("⭐⭐ 有成功 ⇒ 說明要講**成功幾格**（⛔ 不可以說「全部失敗」）",
+       "成功 392／400" in O.sweep_fail_note([1] * 400, [1] * 392, [("a", "x")] * 8)
+       and "全部失敗" not in O.sweep_fail_note([1] * 400, [1] * 392, [("a", "x")] * 8),
+       O.sweep_fail_note([1] * 400, [1] * 392, [("a", "x")] * 8))
+    ck("  真的全失敗才說「全部失敗」",
+       "全部失敗" in O.sweep_fail_note([1] * 400, [], [("a", "x")] * 400),
+       O.sweep_fail_note([1] * 400, [], [("a", "x")] * 400))
+    ck("  沒有要做的 ⇒ 說「做完了」（⛔ 不是「全部失敗」）",
+       "做完了" in O.sweep_fail_note([], [], [])
+       and "失敗" not in O.sweep_fail_note([], [], []), O.sweep_fail_note([], [], []))
+    ck("  ⭐ 有失敗就要講幾格、⛔ 沒失敗要明說 0",
+       "失敗 8 格" in O.sweep_fail_note([1] * 400, [1] * 392, [("a", "x")] * 8)
+       and "0 失敗" in O.sweep_fail_note([1] * 9, [1] * 9, []),
+       O.sweep_fail_note([1] * 9, [1] * 9, []))
+    # ⛔ 而「它真的被 run_sweep 用到」要驗——⚠ 一個沒人叫的具名函式跟 f-string 一樣沒用
+    _sw = [n for n in ast.walk(ast.parse(io.open(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "official_stats.py"), encoding="utf-8").read()))
+        if isinstance(n, ast.FunctionDef) and n.name == "run_sweep"][0]
+    _calls = [n for n in ast.walk(_sw) if isinstance(n, ast.Call)
+              and getattr(n.func, "id", "") == "sweep_fail_note"]
+    ck("⭐ 而 `run_sweep()` 真的用它（⛔ 不是留一個沒人叫的函式）",
+       len(_calls) == 1, str(len(_calls)))
+
     ck("★ ⑩ 全程 repo 真的 `data/meta/` 那幾個檔**逐位元沒變**",
        _snap_repo() == snap0, "有檔被動到了")
 

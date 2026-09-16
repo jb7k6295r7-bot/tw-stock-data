@@ -551,6 +551,25 @@ def save_sweep_done(path, pairs, today):
     return len(pairs)
 
 
+def sweep_fail_note(todo, ok, fail):
+    """那道閘門的說明文字。→ 一句話。
+
+    ⛔⛔ 2026-09-16 run 163 實測：它**通過**了（392／400 成功），
+    ⚠ 而說明印的是「本趟 400 格**全部失敗**」——⭐ 一個通過的檢查，
+    說明寫著相反的話。⇒ 讀的人會照那句去查一個根本沒發生的故障。
+
+    ⚠ 而這**正是**同一支檔裡 `batch_fail_note()` 已經修過一次的那個錯
+    ——⛔ 我寫 `run_sweep` 時沒去看它，又寫了一次（四點五：同一件事兩份實作）。
+    ⇒ ⭐ 收成具名函式的理由就是「它要驗得到」：一個 f-string 驗不到。
+    """
+    if not todo:
+        return "本趟沒有要做的格（⇒ 這個市場這些年份都做完了）"
+    if ok:
+        return (f"成功 {len(ok)}／{len(todo)} 格"
+                + (f"｜失敗 {len(fail)} 格，例：{fail[:2]}" if fail else "｜0 失敗"))
+    return f"⛔ 本趟 {len(todo)} 格**全部失敗**｜例：{fail[:2]}"
+
+
 def run_sweep(a, rl, today):
     """月表的年份掃描（兩個市場走**同一條**路）。→ exit code。"""
     fetch, path_of, header, key = sweep_spec(a.market)
@@ -569,8 +588,10 @@ def run_sweep(a, rl, today):
                "｜端點 `statistics/monthlyStock?code=&date=<西元年>`"))
     rl.info("續跑", f"母體 **{len(pool):,}** 檔 × {len(years)} 年 ＝ "
                     f"**{len(pool)*len(years):,}** 格"
-                    f"｜已完成 {len(done):,}｜本趟 {len(todo):,}"
-                    f"　⇒ ⭐ 剩 **{len(pool)*len(years)-len(done):,}** 格")
+                    f"｜**本趟開始前**已完成 {len(done):,}｜本趟要做 {len(todo):,}"
+                    f"　⇒ ⭐ 本趟跑完之後大約還剩 "
+                    f"**{max(0, len(pool)*len(years)-len(done)-len(todo)):,}** 格"
+                    "（⚠ 是**大約**：本趟失敗的那幾格還會再回來）")
     ok, fail, flushed = [], [], 0
     for i, (sid, y) in enumerate(todo, 1):
         rows, err = fetch(sid, y, today)
@@ -603,8 +624,7 @@ def run_sweep(a, rl, today):
     # ⛔ 只增不減：這是外部判準，寫短了等於判準消失。
     rl.check("月表只增不減", len(R) >= n0, f"{n0}→{len(R)}")
     # ⚠ 本趟有東西要做而**一格都沒成功** ⇒ 當場紅（⛔ 不是靜靜跑完）
-    rl.check("本趟不是全失敗", (not todo) or bool(ok),
-             f"本趟 {len(todo)} 格全部失敗｜例：{fail[:2]}")
+    rl.check("本趟不是全失敗", (not todo) or bool(ok), sweep_fail_note(todo, ok, fail))
     return rl.finish()
 
 
