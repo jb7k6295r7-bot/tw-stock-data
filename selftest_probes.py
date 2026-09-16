@@ -1953,6 +1953,8 @@ def check_isin_issuetype():
 
     ck("① ⭐ **先讀選單**（第一發打的是沒有 query 的表單頁）",
        bool(seen_urls) and "?" not in seen_urls[0], str(seen_urls[:2]))
+    ck("①b ⛔ 第一發**不是** `class_main.jsp`（run 134 實測它回 33 MB 全表，⛔ 不是表單）",
+       bool(seen_urls) and "class_main.jsp" not in seen_urls[0], str(seen_urls[:2]))
     ck("② ⭐ 選單逐字印出來（含 value 與標籤）",
        "value='R'" in t and "台灣存託憑證" in t, t[:400])
     ck("③ ⭐⭐ 挑哪一個是**標籤自己講的**（含「存託憑證」），⛔ 不是我挑一個像的",
@@ -1966,6 +1968,26 @@ def check_isin_issuetype():
        "解析出 **3** 列資料（共 4 個 <tr>，含表頭）" in t, t)
     ck("⑦ ⭐ 「有價證券別」那一欄有被印出來讓它自己講話",
        "台灣存託憑證" in t and "有價證券別" in t, t)
+    # ⑨ ⛔ 這一頁沒有 issuetype 的 <select> 時，**要把這一頁有什麼印出來**
+    #    （run 134 就是這一格：⛔ 只說「掃不到」的話，下一輪又從零開始猜）
+    try:
+        B.get = TP.B.get = lambda u, retries=3, timeout=45: (
+            ('<html><body><select name="market"><option value="1">上市</option></select>'
+             '<a href="C_public.jsp?strMode=2">上市證券</a>'
+             '<a href="/isin/e_single_main.jsp">English</a></body></html>').encode("cp950"),
+            None)
+        o9 = []
+        TP.say = lambda x="": o9.append(str(x))
+        TP.isin_issuetype_case()
+    finally:
+        B.get = TP.B.get = real_get
+        TP.say = real_say
+    t9 = "\n".join(o9)
+    ck("⑨ ⭐ 掃不到 `issuetype` 時，把**這一頁的其他 <select>** 印出來",
+       "<select> 共 1 個：['market']" in t9, t9[:400])
+    ck("⑨ ⭐⭐ 也把**連結**印出來（⛔ 不然下一輪又要從零開始猜路徑）",
+       "C_public.jsp?strMode=2" in t9 and "下一輪照它走" in t9, t9[:600])
+
     _after = (hashlib.sha256(io.open(_pp, "rb").read()).hexdigest()
               if os.path.exists(_pp) else None)
     ck("★ ⛔ repo 真的 `_tpex_probe.txt` **逐位元沒變**"

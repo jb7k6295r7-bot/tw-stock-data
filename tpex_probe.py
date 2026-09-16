@@ -99,7 +99,15 @@ def isin_issuetype_case():
     _TDR = ("9103", "9105", "9110", "9136", "910322", "910708",
             "911608", "911616", "911619", "912000")
     say(f"     靶子（我方 10 檔 TDR）：{list(_TDR)}")
-    _ISIN_FORM = "https://isin.twse.com.tw/isin/class_main.jsp"
+    # ⛔⛔ 第二版我把「選單頁」當成 `class_main.jsp`（不帶參數）
+    #   ⇒ run 134 實測：那一頁回的是 **33,328,081 bytes 的全表**，⛔ 不是表單，
+    #   而且三種編碼都解不乾淨 ⇒ 掃不到任何 `<select name=issuetype>`。
+    #   ⚠ 探針這次講對了（「選單不在這裡，⛔ 不代表沒有這個參數」），
+    #   ⭐ 而 33 MB 的下載是白花的。
+    # ⇒ ⭐ 改讀**站台根目錄**，把它的連結與 `<select>` 都印出來
+    #   ——⛔ 仍然不猜路徑（docs/NEW_ENDPOINT.md 第 −1 步）。
+    _ISIN_ROOT = "https://isin.twse.com.tw/isin/"
+    _ISIN_FORM = _ISIN_ROOT
     _ISIN16 = (_ISIN_FORM + "?owncode=&stockname=&isincode=&market=&issuetype={}"
                "&industry_code=&Page=1&chklike=Y")
 
@@ -132,6 +140,21 @@ def isin_issuetype_case():
         if not _sel:
             say("     ⛔ 這一頁**沒有** `issuetype` 的 <select> ⇒ 選單不在這裡"
                 "　⇒ ⚠ 那不代表沒有這個參數，只代表**這一頁**讀不到")
+            # ⭐ 那就把這一頁**有什麼**印出來，⛔ 不要讓下一輪又從零開始猜。
+            _alls = re.findall(r"<select[^>]*name\s*=\s*[\"\']?([^\"\'>\s]+)",
+                               _tf, re.I)
+            say(f"     ⭐ 這一頁的 <select> 共 {len(_alls)} 個：{_alls[:12]}")
+            _links, _seen2 = [], set()
+            for _m2 in re.finditer(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\']'
+                                   r'[^>]*>(.*?)</a>', _tf[:200000], re.S | re.I):
+                _u2 = urllib.parse.urljoin(_ISIN_ROOT, _m2.group(1).strip())
+                if _u2 in _seen2:
+                    continue
+                _seen2.add(_u2)
+                _links.append((B.visible_text(_m2.group(2), " ").strip()[:24], _u2))
+            say(f"     ⭐ 這一頁的連結共 {len(_links)} 條（前 15 條，⇒ 下一輪照它走）：")
+            for _lab2, _u2 in _links[:15]:
+                say(f"        {_lab2!r}　{_u2}")
         else:
             for _m in re.finditer(r"<option[^>]*value\s*=\s*[\"\']?([^\"\'>]*)[\"\']?[^>]*>(.*?)</option>",
                                   _sel.group(1), re.S | re.I):
