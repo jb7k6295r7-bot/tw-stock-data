@@ -193,6 +193,16 @@ jobs:
       - name: 驗十四支探針跑得完（離線）
         run: python ci_step.py selftest_probes.py
 
+      # ⭐⭐ `probe_step.sh`（探針壞掉時留痕跡的那一份）自己的自測。
+      #   ⛔ 它守的兩件事都在 2026-09-16 run 131 真的發生過：
+      #     ① 還原要從 `origin/main` 取（舊寫法還原**分支**那份
+      #        ⇒ main 上的 `_keys_probe.txt` 被砍掉 533 行）
+      #     ② 撞到時間預算要**講出來**（舊寫法整個 shell 被砍 ⇒ 一個字都沒留，
+      #        ⚠ 而 `continue-on-error` 讓那一步顯示 success）
+      #   ⚠ 走 `ci_step.py` 的理由跟上一步一樣：它紅了要進**資料**，⛔ 不是只在 log。
+      - name: 驗 probe_step.sh（探針壞掉時留不留得下痕跡）
+        run: python ci_step.py selftest_probe_step.py
+
       # ⛔⛔ `delist_probe.py` 的雙向比對要讀 `data/meta/delisted.csv`，
       #   而那個檔**只在 main 上**（`delisted.py` 是 daily 跑的、推到 main）。
       #   ⇒ 這支 checkout 的是分支 ⇒ 讀到「檔不存在」⇒ 那一節整節不做。
@@ -288,21 +298,12 @@ jobs:
               # ⚠ shell 是 `bash -e`：`python …; RC=$?` 會直接中斷整個步驟，
               #   而 `if ! python …; then RC=$?` 拿到的 $? 是**被 `!` 反轉後的 0**。
               #   兩種寫法都不對。用 `|| RC=$?`：既被 `-e` 放行，又拿得到真的碼。
-              RC=0
-              python "$SCRIPT" || RC=$?
-              if [ "$RC" -ne 0 ]; then
-                echo "⛔ $SCRIPT 非 0 結束（rc=$RC）——見上面的 traceback"
-                # ⛔ **先把上一版還原回來。** 2026-09-09 實測：tpex 探針在第一節就
-                #   403，`_write()` 照樣覆蓋，**458 行的好結果被 13 行的殘骸換掉**，
-                #   而附加的那句話寫著「這一份是上一次成功的內容」——**那句是假的**。
-                #   ⇒ 還原之後那句話才成立，而且不會因為一次限流就失去整份結果。
-                git checkout -- "$F" 2>/dev/null || true
-                {
-                  echo ""
-                  echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') $SCRIPT 非 0 結束（rc=$RC），"
-                  echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
-                } >> "$F"
-              fi
+              # ⭐ 收成一份（四點五）：`probe_step.sh` 負責「壞掉要留得下痕跡」。
+              #   ⛔ 這裡本來是抄三份的 `RC=0 / python … / git checkout -- "$F"`，
+              #   ⚠ 而那個 `git checkout --` 還原的是**分支**那一份
+              #   ⇒ 2026-09-16 run 131 把 main 上的 `_keys_probe.txt` 砍掉 533 行。
+              #   ⇒ 還原改從 `origin/main` 取，理由見 probe_step.sh 檔頭。
+              bash probe_step.sh "$F" 780 python "$SCRIPT"
             fi
           done
 
@@ -315,19 +316,14 @@ jobs:
       - name: MOPS 橋接與 OpenAPI（丁級 11 終點驗證）
         if: always()
         continue-on-error: true
-        timeout-minutes: 8
-        run: |
-          RC=0
-          python mops_probe.py || RC=$?
-          if [ "$RC" -ne 0 ]; then
-            echo "⛔ mops_probe.py 非 0 結束（rc=$RC）"
-            git checkout -- data/meta/_mops_probe.txt 2>/dev/null || true
-            {
-              echo ""
-              echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') mops_probe.py 非 0 結束（rc=$RC），"
-              echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
-            } >> data/meta/_mops_probe.txt
-          fi
+        # ⛔⛔ 12 分鐘（原本 8）：2026-09-16 run 131 的 mops_probe **撞到 8 分鐘被砍**，
+        #   ⇒ 整個 shell 死掉 ⇒ 寫 ✗ 那段一行都沒跑 ⇒ 輸出停在上一趟，
+        #   ⚠ 而 `continue-on-error: true` 讓那一步顯示 **success**
+        #   ⇒ 「它被砍了」與「它跑完沒有新發現」在畫面上一模一樣。
+        #   ⇒ ⭐ 真正的修法是**內層自己有預算**（probe_step.sh 的 600 秒），
+        #     外層只是安全網 ⇒ ⛔ 外層一定要比內層大。
+        timeout-minutes: 12
+        run: bash probe_step.sh data/meta/_mops_probe.txt 600 python mops_probe.py
 
       # ★ 長期停止買賣（第六輪）。⛔ 不放進上面那個迴圈：它要帶 `--set`，
       #   而那個迴圈的契約是「腳本:輸出檔」對、不帶參數。
@@ -336,18 +332,9 @@ jobs:
       - name: 長期停止買賣探針
         if: always()
         continue-on-error: true
-        timeout-minutes: 5
-        run: |
-          RC=0
-          python suspend_probe.py --set longhalt --sleep 2 || RC=$?
-          if [ "$RC" -ne 0 ]; then
-            echo "⛔ suspend_probe --set longhalt 非 0 結束（rc=$RC）"
-            {
-              echo ""
-              echo "✗ $(date -u '+%Y-%m-%dT%H:%M:%SZ') suspend_probe.py --set longhalt 非 0 結束（rc=$RC），"
-              echo "  這一份是上一次成功的內容，不是這一趟的。traceback 在 Actions log。"
-            } >> data/meta/_suspend_probe.txt
-          fi
+        # ⚠ 這一份原本連「還原」那一行都沒有（三份已經走岔了）⇒ 收成一份之後自動補上。
+        timeout-minutes: 8
+        run: bash probe_step.sh data/meta/_suspend_probe.txt 300 python suspend_probe.py --set longhalt --sleep 2
 
       # ⛔ 這一步**故意沒有** `continue-on-error`（跟 daily.yml 那一步同一個理由）：
       #   它只負責「說」。自己炸掉的話要大聲，⚠ 而下面 Commit 是 `if: always()`

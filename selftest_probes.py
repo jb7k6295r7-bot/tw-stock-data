@@ -32,6 +32,7 @@
 假回應刻意做成「格式對、內容夠讓每一節都走進去」，目的是**執行到每一行**，
 不是模擬真實資料。
 """
+import ast
 import glob
 import inspect
 import io
@@ -39,6 +40,7 @@ import json
 import os
 import re
 import sys
+import shutil
 import tempfile
 
 import backfill as B
@@ -1132,12 +1134,29 @@ def check_js_followups():
     # ⑭ `visible_text` 只有一份實作（四點五）：⛔ 不可以有人自己 re.sub 去標籤
     # ⚠ 只掃 `.py`：⛔ `grep -rn .` 會去掃 `data/`（1.6 GiB）⇒ 這一條要跑好幾分鐘，
     #   而一條慢到讓人想拿掉的斷言，跟沒有那條斷言是一樣的。
+    # ⛔⛔ 這一道本來比**原始碼字串** ⇒ 2026-09-16 當場誤報：
+    #   `selftest_workflows.covering_tests` 的 **docstring 裡引用了那段 pattern**
+    #   （它在講「⑭ 抓得到」這件事）⇒ 被判成第二份實作。
+    #   ⭐ 正是第七點第八個那條，而且這次中的是這道守門自己：
+    #     **我們的註解本來就會引用那段程式碼。**
+    #   ⇒ 改比 **AST 的呼叫**：`re.sub(<字面 pattern>, …)`，
+    #     ⛔ 註解與 docstring 一律看不到。
     hits = []
     for _f in sorted(glob.glob(os.path.join(_here_dir(), "*.py"))):
         if os.path.basename(_f) == "backfill.py":
             continue      # ⭐ 那一份就是**唯一**那一份
-        if re.search(r"re\.sub\(\s*r?[\"\']<\[\^>\]\+>", io.open(_f, encoding="utf-8").read()):
-            hits.append(os.path.basename(_f))
+        try:
+            _tree = ast.parse(io.open(_f, encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        for _n in ast.walk(_tree):
+            if (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Attribute)
+                    and _n.func.attr == "sub" and _n.args
+                    and isinstance(_n.args[0], ast.Constant)
+                    and isinstance(_n.args[0].value, str)
+                    and re.match(r"^<\[\^>\]\+>$", _n.args[0].value)):
+                hits.append(os.path.basename(_f))
+                break
     ck("⑭ 去標籤只有 `backfill.visible_text` 一份實作（四點五）",
        not hits, "⛔ 另有一份：" + "；".join(hits[:3]))
 
@@ -1823,6 +1842,106 @@ def check_sibling_doors():
     return bad
 
 
+def check_avg_residual():
+    """⭐⭐ `keys_probe.avg_residual()` 的**逐列迴圈**真的被走過，而且比的是數值。
+
+    ## ⛔ 這一節存在的理由是一個在 Actions 上炸掉的 `NameError`
+
+    probe run 131（2026-09-16）：`keys_probe.py:591` `NameError: name '_n' is not defined`
+    ⇒ 整支 rc=1 ⇒ `_keys_probe.txt` 被守門還原成**上一趟**的內容。
+
+    ⭐⭐ 而**離線自測是全綠的**：`run("keys_probe")` 餵的假回應沒有 `title`
+    ⇒ 上面那道「title 要回音代號與月份」提前 `continue`
+    ⇒ ⛔ 出事那一行**一次都沒有被走過**（第七點第三個：測了判準、沒測那條路）。
+
+    ⇒ ⭐ 所以這一節的假回應要**照真回應的形狀**做到「title 回音得了」那一格，
+    ⛔ 不是再餵一份走不進去的。
+
+    ## ⇒ 而順手抓到第二個：**比字串會確認一個假的發現**
+
+    我方 CSV 寫 `4.3`、官方回 `4.30` ⇒ 比字串的話**每一天**都是「收盤不同」，
+    ⚠ 而「有幾天差 0.01」正是這一節在找的答案
+    ⇒ ⛔ 它會**證實一個不存在的發現**，而輸出看起來完全正常。
+    """
+    import keys_probe as K
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:220]}"))
+        if not c:
+            bad += 1
+
+    sid, roc = K.AVG_RESID
+    ad = roc + 1911
+
+    def resp(rows, mo):
+        return json.dumps({
+            "stat": "OK",
+            "title": f"{roc}年{mo:02d}月 {sid} 首利 各日成交資訊",
+            "fields": ["日期", "成交股數", "成交金額", "開盤價",
+                       "最高價", "最低價", "收盤價", "漲跌價差", "成交筆數"],
+            "data": rows,
+        }, ensure_ascii=False).encode()
+
+    def row(day, close):
+        return [f"{roc}/{day[:2]}/{day[2:]}", "1,000", "4,300",
+                "4.30", "4.30", "4.30", close, "0.00", "5"]
+
+    real_get, real_root = B.get, K._ROOT
+    tmp = tempfile.mkdtemp(prefix="keysprobe_")
+    try:
+        os.makedirs(os.path.join(tmp, "stocks"), exist_ok=True)
+        io.open(os.path.join(tmp, "stocks", f"{sid}.csv"), "w",
+                encoding="utf-8").write(
+            "date,close\n"
+            f"{ad}-01-05,4.3\n"      # ⭐ 我方 4.3 vs 官方 4.30 ⇒ **相同**
+            f"{ad}-01-06,4.29\n"     # ⭐ 我方 4.29 vs 官方 4.30 ⇒ **差 0.01**
+            f"{ad}-01-07,4.31\n")    # ⚠ 官方那一天回 `--` ⇒ **比不了**
+        K._ROOT = tmp
+        pages = {1: resp([row("0105", "4.30"), row("0106", "4.30"),
+                          row("0107", "--")], 1)}
+
+        def fake(url, retries=3, timeout=45):
+            mo = int(url.split("date=")[1][4:6])
+            return (pages.get(mo, resp([], mo)), None)
+
+        B.get = K.B.get = fake
+        mark = len(K.LINES)
+        K.avg_residual()
+        t = "\n".join(K.LINES[mark:])
+    finally:
+        B.get = K.B.get = real_get
+        K._ROOT = real_root
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    ck("① ⭐⭐ 逐列迴圈**真的被走過**（官方回到的天數 > 0）",
+       "官方回到的天數：2" in t, t)
+    ck("② ⭐ `4.3` vs `4.30` **不算不同**（⛔ 比字串的話這裡會是 2）",
+       "**收盤價不同的日子：1**" in t, t)
+    ck("③ ⭐ 真的差 0.01 的那一天有被列出來",
+       f"{ad}-01-06" in t, t)
+    # ⛔ 我第一版在這裡斷言「官方回 `--` ⇒ 印『這一層沒跑』」——**那個情境造不出來**：
+    #   抓取那一段本來就把 `--` 濾掉了 ⇒ 那一天根本不會進 `got`
+    #   ⇒ 它落在「只有我方有的日子」，⛔ 不在交集裡 ⇒ `None` 那條分支走不到。
+    #   ⚠ 而「斷言沒抓到」與「我根本沒造出那個情境」長得一模一樣（第七點第四個）。
+    #   ⇒ ⭐ 分成兩條：④ 驗**真的會發生**的那一半（它落在只有我方有的那一邊），
+    #     ⑥ 拿**合成**輸入直接驗 `_same_price` 的三種回答（環境無關，第七點第七個）。
+    ck("④ ⭐ 官方濾掉的那一天落在「只有我方有的日子」（⛔ 不是被判成『收盤不同』）",
+       "只有我方有的日子：1" in t and f"{ad}-01-07" in t, t)
+    ck("⑤ ⛔ `avg_residual` 跑完**沒有丟例外**（run 131 就是死在這裡）",
+       "官方回到的天數" in t, t)
+    # ⑥ ⭐⭐ `_same_price` 的**三種**回答（⛔ 不是兩種）——拿合成輸入驗，⛔ 不靠現場
+    ck("⑥ ⭐⭐ `_same_price` 回三種：相同／不同／**比不了**（⛔ None 不可以壓成 False）",
+       (K._same_price("4.3", "4.30") is True
+        and K._same_price("4.3", "4.31") is False
+        and K._same_price("4.3", "--") is None
+        and K._same_price("", "4.30") is None),
+       str([K._same_price("4.3", "4.30"), K._same_price("4.3", "4.31"),
+            K._same_price("4.3", "--"), K._same_price("", "4.30")]))
+    return bad
+
+
 def check_terms_case():
     """⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））：**連結從頁面讀出來、原文逐字印**。
 
@@ -1958,6 +2077,7 @@ def main():
     bad += check_probe_stamp()
     bad += check_survivor_fs()
     bad += check_sibling_doors()
+    bad += check_avg_residual()
     bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
