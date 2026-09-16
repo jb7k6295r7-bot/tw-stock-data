@@ -607,6 +607,15 @@ def run_sweep(a, rl, today):
                 _save(out, header, R)
                 flushed += save_sweep_done(dp, ok[flushed:], today)
                 print(f"  ⭐ 期中落地：{flushed}／{len(todo)}", flush=True)
+                # ⛔⛔ 這裡的「落地」只寫到**工作區**，⛔ 不是推到 main——
+                #   推是 workflow 最後那一步（`push_data.sh`）做的。
+                #   ⇒ ⭐ 它擋得住的是**這支程式自己炸掉**（那一步是
+                #     `continue-on-error`／`if: always()` ⇒ commit 那一步照樣跑）；
+                #   ⛔ 擋不住的是 **job 層級被砍**（350 分上限、runner 掉）
+                #     ⇒ 那一趟做的**全部**都不會進 main。
+                #   ⚠ 所以 `months_limit` 要留足餘裕：8,000 格 × 1 秒 ≈ 135 分，
+                #     對 350 分的上限而言是安全的；⛔ 而它**不是**「每批推一次」
+                #     （CLAUDE.md 第四點那個形狀）——那要動 workflow，還沒做。
         if a.sleep:
             time.sleep(a.sleep)
     if R:
