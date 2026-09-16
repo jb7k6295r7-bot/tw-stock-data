@@ -2238,7 +2238,7 @@ def check_terms_case():
            "other.example" not in t5, t5)
         ck("⑭ ⭐ 「走到幾頁」自己要印出來"
            "（⛔ 否則『掃完沒找到』與『還沒掃到』一模一樣）",
-           "真的走到 1／1 頁" in t5, t5)
+           f"真的走到 {1 + len(M.TERMS_SEEDS)}／{1 + len(M.TERMS_SEEDS)} 頁" in t5, t5)
 
         # ⛔⛔ ⑮ probe 136 實測：命中的 4 條全是 PDF（「相關**規範**差異」）
         #   ⇒ `visible_text()` 把二進位當文字 ⇒ 輸出檔被塞進 4 × 4,000 字亂碼。

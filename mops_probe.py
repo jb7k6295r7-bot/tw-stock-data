@@ -912,6 +912,10 @@ TERMS_MAX_PAGES = 25
 #   ⇒ `visible_text()` 拿到的是二進位 ⇒ 輸出檔被塞進 4 × 4,000 字的亂碼。
 #   ⭐ 一個「成功」的步驟寫出一堆垃圾，正是四點二那一族。
 #   ⇒ 非 HTML 的只列**網址**，⛔ 不解析。
+# ⭐ 我自己加的種子：我方實際抽資料的兩個主機的根頁。
+#   ⚠ 「根頁就是首頁」是推的（三點 5：不要猜網址）
+#   ⇒ ⭐ 所以它們跟別人一樣要把「抓到沒」印出來，⛔ 抓不到不算「沒有條款」。
+TERMS_SEEDS = ("https://www.twse.com.tw/", "https://www.tpex.org.tw/")
 TERMS_BINARY_EXT = (".pdf", ".doc", ".docx", ".xls", ".xlsx", ".zip", ".odt")
 
 
@@ -1017,6 +1021,18 @@ def terms_case(out):
     layer2 = _terms_same_org_links(home, html)
     out.append(f"   ② 從首頁連出去的**同集團**頁（{ '／'.join(TERMS_ORG) }）："
                f"共 {len(layer2)} 個，這一趟走前 {min(len(layer2), TERMS_MAX_PAGES)} 個")
+    # ⭐⭐ probe 136 實測：那 22 個同集團連結裡**沒有** `www.twse.com.tw`
+    #   ⇒ ⛔ 光跟著 mopsov 的連結走，永遠走不到主站的頁尾。
+    #   ⭐ 而這兩個種子**不是猜的**：我方的資料就是從這兩個主機抓的
+    #     （`backfill.BASE` 與 tpex 那一家）⇒ 它們的條款正是要裁的那一份。
+    #   ⚠ 而「首頁就在主機根那一頁」是我推的 ⇒ 回不回得來要印出來，
+    #   ⛔ 抓不到不可以讀成「那站沒有條款」。
+    for _extra in TERMS_SEEDS:
+        if _extra not in layer2:
+            layer2.append(_extra)
+    out.append("   ②' ⭐ 另加 %d 個**我自己加的種子**（理由見原始碼）：%s"
+               % (len(TERMS_SEEDS), "、".join(TERMS_SEEDS)))
+
     walked = 0
     for url in layer2[:TERMS_MAX_PAGES]:
         body, e2 = B.get(url, retries=1, timeout=45)
