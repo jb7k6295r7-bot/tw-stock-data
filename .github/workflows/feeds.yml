@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜official-months ⭐ 官方**月**統計的年份掃描（feed=twse/tpex、start=年份如 all／104-115／109）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -642,6 +642,23 @@ jobs:
           RC=0
           python selftest_official_stats.py || RC=1
           python official_stats.py --market tpex --limit 400 --sleep 1 || RC=1
+          exit $RC
+
+      # ⭐⭐ 月表的**年份掃描**（2026-09-16）：工作單位是 (代號, 年)，⛔ 不是代號
+      #   ⚠ 一發只回一年 ⇒ 母體 ≈ 1,158×12（上市）／972×12（上櫃）格
+      #   ⇒ 續跑台帳跟年表那一份**分開**（⛔ 混在一起會把掃過月表的檔當成年表也做完）
+      #   ⭐ 為什麼要它：① 回測線 0841 §四 4. 點名要更早年份的月表
+      #     ② 我方 ② ④ 兩堆差在「年」這一級**分不出來**，要落到月才看得見
+      - name: 官方**月**統計的年份掃描（外部判準，續跑）
+        if: inputs.mode == 'official-months'
+        run: |
+          RC=0
+          MK="${{ inputs.feed }}"; [ "$MK" = "tpex" ] || MK=twse
+          YRS="${{ inputs.start }}"; [ -n "$YRS" ] || YRS=all
+          python selftest_official_stats.py || RC=1
+          # ⛔ 一行寫完：續行會讓「多行裸跑」那道守門看不到 `|| RC=`，
+          #   ⚠ 而它擋的是 `set -e` 讓後面幾行一次都不跑、而 run 是綠的那一種。
+          python official_stats.py --market "$MK" --months-years "$YRS" --limit 400 --sleep 1 || RC=1
           exit $RC
 
       - name: 找基本面歷史的來源
