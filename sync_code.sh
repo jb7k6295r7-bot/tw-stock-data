@@ -77,6 +77,63 @@ for i in 1 2 3; do
       && echo "[sync_code] ⭐ 例外放行：backtest/forward/RULE.md（判準檔，回測線寫的）"
   fi
 
+  # ══════════════════════════════════════════════════════════════════
+  # ⭐⭐ **刪除也要搬過去**（2026-09-16 付過代價）
+  #
+  # 上面那兩行只會**新增／覆蓋**：`git checkout "$SRC" -- .` 把分支有的檔
+  # 蓋到 main 的頭上，⛔ 而 **main 有、分支沒有**的檔它一個字都不碰。
+  # ⇒ 分支上刪掉一個檔，那個檔**永遠留在 main 上**。
+  #
+  # ⚠ 實際代價：`site_recon.py` 2026-09-13 在分支上刪掉了
+  #   （CLAUDE.md 四點五第七次：我重造了一份 `site_inventory.py`），
+  #   ⛔ 而 main 上那一份一直在 ⇒ 2026-09-16 probe run 126 的
+  #   `selftest_probes.py` 在 main 上 **rc=1**（母體 21 支、沒叫的就是它），
+  #   ⚠ 而同一支自測在分支上是**綠的** ⇒ 同一支程式、同一天、兩個答案。
+  # ⇒ ⭐ 這是四點六那一族的**鏡像**：那邊是「分支的檔比 main 舊」，
+  #   這邊是「**分支沒有那個檔**」——⛔ 而兩邊的畫面都是一趟綠的同步。
+  #
+  # ⛔⛔ 而刪除是這支唯一會**毀掉東西**的動作 ⇒ 三道閘門，缺一道都不刪：
+  #   ① 排除樹底下的路徑**一個都不准**出現在刪除清單裡（⚠ `data/` 是資料）
+  #   ② 一趟最多刪 $MAX_DEL 個——⭐ 超過就**一個都不刪**並大聲印，
+  #      ⛔ 但**不算失敗**：新增／覆蓋照常搬（六點五：跳過的那一層要出聲）
+  #   ③ 逐一刪、記下失敗、**有失敗就不往下走**（四點二⑥：一批裡一個壞元素
+  #      會毒死整批——`push_data.sh` 的 `xargs` 就是那樣掉了 22 個檔）
+  #      ⚠ 而要**標清楚**：③ 真正守門的是「有失敗就不往下走」那一半。
+  #      ⛔ 「逐一 vs 整批」這一半**量不到**——實測突變 D6（改成
+  #      `git rm -- $DEL` 整批）⇒ `selftest_push_data.py` ⑧ 照樣全綠，
+  #      因為兩種寫法在「有壞元素」時都走到 exit 5 ⇒ main 都沒被推成半套。
+  #      ⇒ ⭐ 那不是「那條斷言沒用」，是**那個突變什麼都沒改變**（第七點第四個）。
+  #      逐一寫法留著的理由只有一個：它講得出**是哪一個**刪不掉。
+  # ══════════════════════════════════════════════════════════════════
+  MAX_DEL=20
+  # shellcheck disable=SC2086
+  DEL=$(git diff --name-only --no-renames --diff-filter=D origin/main "$SRC" -- . $SPEC)
+  NDEL=$(printf '%s\n' "$DEL" | grep -c . || true)
+  BAD=$(printf '%s\n' "$DEL" | grep -E '^(data|backtest/forward)/' || true)
+  if [ -n "$BAD" ]; then
+    echo "[sync_code] ⛔⛔ 刪除清單裡出現**排除樹**底下的路徑 ⇒ 一個都不刪：$BAD" >&2
+  elif [ "$NDEL" -gt "$MAX_DEL" ]; then
+    echo "[sync_code] ⛔⛔ 這一趟要刪 $NDEL 個檔（上限 $MAX_DEL）⇒ **一個都不刪**" >&2
+    echo "[sync_code] ⚠ **這一層沒跑**：刪除沒有同步（新增／覆蓋照常）" >&2
+  elif [ "$NDEL" -gt 0 ]; then
+    RMFAIL=""
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      if git rm -q -f -- "$f"; then
+        echo "[sync_code] ⭐ 刪除同步到 main：$f"
+      else
+        RMFAIL="$RMFAIL $f"
+      fi
+    done <<EOF
+$DEL
+EOF
+    if [ -n "$RMFAIL" ]; then
+      echo "[sync_code] ⛔⛔ 這幾個刪不掉：$RMFAIL ⇒ **不往下走**（半套的同步比沒同步糟）" >&2
+      git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
+      exit 5
+    fi
+  fi
+
   git add -A
   if git diff --staged --quiet; then
     echo "程式已經跟 main 一致，沒有要同步的"
