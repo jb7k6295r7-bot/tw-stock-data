@@ -62,6 +62,7 @@ SRC=$(git rev-parse HEAD)
 #   **逐檔搬資料 ＋ 逐鍵合併台帳**，這裡是**整棵程式樹**，兩邊的重建動作不同。
 #   ⛔ 硬湊成一份會多出一堆「這一邊不適用」的分支——那比兩份更難改。
 SYNCED=0
+LAST_ERR=""
 for i in 1 2 3; do
   git fetch origin main || { echo "⚠ fetch main 失敗，跳過同步" >&2; exit 0; }
   git checkout -q -B _sync origin/main || { echo "⚠ 切不過去" >&2; exit 0; }
@@ -141,17 +142,30 @@ EOF
     break
   fi
   git commit -q -m "sync: 把分支的程式同步到 main"
-  if git push origin HEAD:main; then
+  # ⛔⛔ 2026-09-16 probe run 129 付過代價：這一步 **failure**（50 秒 ＝ 三次都沒推上），
+  #   ⚠ 而同樣的內容 run 130 一次就推成功 ⇒ 那是**一次性**的。
+  #   ⭐ 而真正的問題不是它失敗，是**我事後查不出原因**：
+  #     Actions 的 job log API 只回得到**尾段**，而這一步在很前面
+  #     ⇒ 等到我發現紅燈時，那幾行 git 的錯誤訊息已經拿不到了。
+  #   ⇒ ⭐ 把 push 的 stderr 接住並印在**最後那段失敗訊息裡**——
+  #     ⛔ 這樣它就跟 `exit 4` 那幾行在一起，⚠ 而那幾行在尾段。
+  PUSH_ERR=$(git push origin HEAD:main 2>&1) && PUSH_OK=1 || PUSH_OK=0
+  printf '%s\n' "$PUSH_ERR"
+  if [ "$PUSH_OK" = "1" ]; then
     echo "✓ 程式已同步到 main"
     SYNCED=1
     break
   fi
   echo "[sync_code] push 失敗（第 $i 次），多半是這幾秒又有人推了 main，重來" >&2
+  LAST_ERR="$PUSH_ERR"
   sleep $((i * 5))
 done
 if [ "$SYNCED" -ne 1 ]; then
   echo "[sync_code] ⛔⛔ 三次都推不上去 ⇒ **main 上的程式沒有更新**" >&2
   echo "[sync_code] ⚠ 而排程跑的是 main 上那一份 ⇒ ⛔ 這一趟之後的排程跑的是舊程式" >&2
+  # ⭐ 把最後一次的 git 訊息原文印在這裡（⛔ 不砍尾巴，六點六那條）
+  echo "[sync_code] ⇒ 最後一次 git push 的原文：" >&2
+  printf '%s\n' "${LAST_ERR:-（沒接到訊息）}" >&2
   git checkout -q "$BR" 2>/dev/null || git checkout -q "$SRC"
   exit 4
 fi
