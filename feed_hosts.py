@@ -118,6 +118,60 @@ def writes_of(path):
     return out
 
 
+# ⭐⭐ 2026-09-16 晚補：只看**主機**時，`www.tpex.org.tw` 有 18 支卡在
+#   「要逐條看路徑」那一格 ⇒ ⛔ 那等於沒分類完。
+#   ⇒ 實測我方在那個主機下用到的前綴只有四種：
+#         /www/zh-tw **32**｜/openapi/v1 **19**｜/web/emergingstock 1｜/ 1
+#   ⇒ ⭐ 分類升到**端點層**（主機 ＋ 前兩層路徑），那 18 支就拆開了。
+# ⚠ 而「只有主機、沒有路徑」的（例如探針拿首頁當種子）仍然進
+#   「要逐條看」那一格——⛔ 不可以猜它是哪一族。
+OPEN_PATHS = ("/openapi/",)
+
+
+def endpoints_of(path):
+    """→ {`主機+前兩層路徑`}：比 `hosts_of` 細一層的那一版。
+
+    ⛔ 同樣只從**非 docstring 的字串常量**取（判準②不變）。
+    """
+    try:
+        tree = ast.parse(io.open(path, encoding="utf-8").read())
+    except (OSError, SyntaxError):
+        return set()
+    out = set()
+    for s in W._nondoc_strings(tree):
+        for m in re.finditer(r"https?://([A-Za-z0-9._-]+)(/[A-Za-z0-9_./{}-]*)?", s):
+            h = m.group(1).lower()
+            if "." not in h or h.endswith(".invalid"):
+                continue
+            seg = "/".join((m.group(2) or "").split("/")[:3])
+            out.add(h + seg)
+    return out
+
+
+def classify_ep(eps):
+    """端點層的分類 → (A 開放資料型, B 網站型, ❗ 讀不出來的)。
+
+    ⭐ 判準順序是死的：**先看主機、再看路徑**。
+    ⛔ 而「連路徑都沒有」的不猜，進第三格。
+    """
+    a, b, unk = set(), set(), set()
+    for e in eps:
+        host = e.split("/")[0]
+        rest = e[len(host):]
+        if host in OPEN_HOSTS:
+            a.add(e)
+        elif host in MIXED_HOSTS:
+            if any(rest.startswith(x) for x in OPEN_PATHS):
+                a.add(e)
+            elif rest and rest != "/":
+                b.add(e)
+            else:
+                unk.add(e)              # ⛔ 只有主機 ⇒ 不猜
+        else:
+            b.add(e)
+    return a, b, unk
+
+
 def classify(hosts):
     """→ (開放資料型, 網站型, 要逐條看的)。⛔ 三種分開，不合併成兩種。"""
     a = {h for h in hosts if h in OPEN_HOSTS}
@@ -169,6 +223,28 @@ def main():
     P(f"     打到 **B 網站型**主機的：　　{nb} 支")
     P(f"     打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：{nm} 支")
     P("  ⛔ 三個數字會相加超過總數——**一支可以同時打兩族**，那不是錯。")
+
+    # ⭐⭐ 端點層（主機 ＋ 前兩層路徑）——⛔ 主機層把 `www.tpex.org.tw` 那 18 支
+    #   全丟進「要逐條看」，那等於沒分類完。
+    P("")
+    P("── ⭐⭐ 端點層（主機 ＋ 前兩層路徑）：`www.tpex.org.tw` 那一格拆開之後 ──")
+    ea = eb = eu = 0
+    unk_list = []
+    for mod in sorted(mods):
+        eps = endpoints_of(os.path.join(HERE, mod))
+        if not eps:
+            continue
+        a2, b2, u2 = classify_ep(eps)
+        ea += bool(a2)
+        eb += bool(b2)
+        if u2:
+            eu += 1
+            unk_list.append((mod, sorted(u2)))
+    P(f"     A 開放資料型端點：**{ea}** 支｜B 網站型端點：**{eb}** 支"
+      f"｜❗ 讀不出來的：**{eu}** 支")
+    for mod, u2 in unk_list:
+        P(f"     ❗ {mod}：{'／'.join(u2)}"
+          "（⛔ 只有主機、沒有路徑 ⇒ **不猜**）")
     # ⭐ 可見性由**資料**承擔，⛔ 不是由 log（四點二⑤：log 會捲掉）。
     os.makedirs(os.path.dirname(out_path()), exist_ok=True)
     io.open(out_path(), "w", encoding="utf-8").write(
