@@ -521,6 +521,115 @@ def _our_oct_2020(sid):
             + [f"     {d}" for d in days])
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐⭐ 年均價那 391 列 ±0.01：**整個「進位規則」那一族被排除掉了**
+#
+# 回測線 0841 §三 4. 報「年收盤平均 ±0.01 殘差 391 列，全部上市」。
+# 我方抽樣（扣掉轉板年，上市 2,610 個 (檔,年)）：
+#   四捨五入 95.33%｜（四捨 或 捨去）98.08% ⇒ 剩 **107 列**兩種都對不上…
+#   ⚠ 更正：剩 **50 列**（官方比我方大 +0.01）⇒ 而另外 57 列是四捨五入對得上、
+#     **雙重進位會弄壞**的那一批。
+#
+# ⇒ ⭐⭐ 把兩批的「精確平均換算成分之後的小數」並排：
+#
+#     雙重進位**修好**的 50 個：min 0.4504｜p50 0.4715｜max 0.4980
+#     雙重進位**弄壞**的 57 個：min 0.4504｜p50 0.4737｜max 0.4959
+#     ⇒ ⭐⭐ **兩批落在同一個帶 [0.45,0.50)，而且幾乎同分佈**
+#
+# ⇒ ⛔⛔ **任何「平均值的函數」都做不到這件事**：小數同樣是 0.472 的兩格，
+#   官方一個進位、一個不進位 ⇒ **官方的 `avg_close` 不是我方那組收盤價的函數**。
+#   ⇒ ⭐ 整個「進位規則」那一族（四捨／捨去／雙重進位／先月後年）**被排除**。
+#
+# ⇒ 那剩下什麼？**官方平均的那組數字跟我方不一樣。** 而量級對得起來：
+#
+#     要把小數從 f 推過 0.5，Σ收盤 需要多 (0.5−f)×n/100 元
+#     f=0.4980 ⇒ 0.005 元（**半天** 差 0.01）
+#     f=0.4715 ⇒ 0.070 元（約 7 天各差 0.01）
+#     f=0.4504 ⇒ 0.122 元（約 12 天各差 0.01）
+#   ⇒ ⭐ 需要的「差 0.01 的天數」是 **1~13 天**，⚠ 而那正好是這個帶的寬度。
+#   ⛔ 而「官方多／少一整天」做不出 ±0.01（那會差一整格以上）⇒ 也被排除。
+#
+# ⇒ ⭐ 所以這一節問**一件事**：拿 `STOCK_DAY` 把官方的**逐日收盤**抓回來，
+#   跟我方 `data/stocks/<sid>.csv` 逐日比 ⇒ **到底有沒有幾天差 0.01**。
+#   ⚠ 一檔一年 12 發。⛔ 只問，不寫任何資料檔。
+# ══════════════════════════════════════════════════════════════════
+#: ⭐ 挑**低價**的殘差格：0.01 對低價股是相對大的訊號，容易看出來。
+#  1471／民108：官方 4.30、我方四捨五入 4.29、242 個交易日。
+AVG_RESID = ("1471", 108)
+
+
+def avg_residual():
+    sid, roc = AVG_RESID
+    ad = roc + 1911
+    say(f"── ⭐⭐⭐ 年均價 ±0.01：{sid}／民{roc}（官方 4.30／我方 4.29）逐日比對 ──")
+    say("  ⛔ 進位規則那一族已經被排除（修好的 50 個與弄壞的 57 個落在同一個帶）")
+    say("  ⇒ 這一節只問：**官方的逐日收盤跟我方有沒有幾天差 0.01**。")
+    ours = _our_closes(sid, ad)
+    say(f"  我方 {ad} 年有收盤的天數：{len(ours)}")
+    got = {}
+    for mo in range(1, 13):
+        raw, err = B.get(f"{TW}/afterTrading/STOCK_DAY"
+                         f"?date={ad}{mo:02d}01&stockNo={sid}&response=json",
+                         retries=2, timeout=45)
+        if err or not raw:
+            say(f"   {ad}-{mo:02d} ✗ 抓不到：{str(err)[:80]}")
+            continue
+        try:
+            d = json.loads(raw.decode("utf-8", "replace"))
+        except ValueError as ex:                                 # noqa: BLE001
+            say(f"   {ad}-{mo:02d} ✗ 不是 JSON：{str(ex)[:60]}")
+            continue
+        title = str(d.get("title") or "")
+        # ⛔ 第二點：這一批要自己講出它是哪一檔、哪一期
+        if sid not in title or f"{roc}年{mo:02d}月" not in title.replace(" ", ""):
+            say(f"   {ad}-{mo:02d} ⛔ title 沒有回音我送的代號與月份：{title!r}")
+            continue
+        for row in (d.get("data") or []):
+            if len(row) < 7:
+                continue
+            iso = _roc_date(str(row[0]))
+            c = _n(str(row[6]))
+            if iso and c not in ("", "--", "X0.00"):
+                got[iso] = c
+    say(f"  官方回到的天數：{len(got)}")
+    only_ours = sorted(set(ours) - set(got))
+    only_off = sorted(set(got) - set(ours))
+    diff = sorted(d for d in set(ours) & set(got) if ours[d] != got[d])
+    say(f"  ⭐ 只有我方有的日子：{len(only_ours)} {only_ours[:5]}")
+    say(f"  ⭐ 只有官方有的日子：{len(only_off)} {only_off[:5]}"
+        "　⇒ ⚠ 若 >0，那就是「官方多算了幾天」（⛔ 而那做不出 ±0.01）")
+    say(f"  ⭐⭐ **收盤價不同的日子：{len(diff)}**"
+        + ("（⇒ ⛔ 一天都沒有 ⇒ 連這一條也被排除，那就寫不知道）" if not diff else ""))
+    for d in diff[:20]:
+        say(f"      {d}  我方 {ours[d]}　官方 {got[d]}"
+            f"　差 {float(got[d]) - float(ours[d]):+.2f}")
+    say("")
+
+
+def _roc_date(s):
+    """`109/10/05` → `2020-10-05`。⛔ 認不出來就回 None（不猜）。"""
+    p = s.strip().split("/")
+    if len(p) != 3 or not p[0].isdigit():
+        return None
+    return f"{int(p[0]) + 1911:04d}-{p[1].zfill(2)}-{p[2].zfill(2)}"
+
+
+def _our_closes(sid, ad_year):
+    """我方 `data/stocks/<sid>.csv` 那一年的 `{日期: 收盤}`。⭐ 現算，⛔ 不寫死。"""
+    path = os.path.join(_ROOT, "stocks", f"{sid}.csv")
+    out = {}
+    if not os.path.exists(path):
+        return out
+    try:
+        with io.open(path, encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r["date"].startswith(str(ad_year)) and r.get("close"):
+                    out[r["date"]] = r["close"]
+    except OSError:
+        pass
+    return out
+
+
 def main():
     say("── 官方回應裡我方丟掉的鍵 ──")
     say("⛔ `_tables()` 只取 title/fields/data。其餘（stat／date／notes／hints／"
@@ -539,6 +648,7 @@ def main():
         "（而它是「轉上市首日不算缺陷」那個歸因的地基）。")
     odd_lot()                 # ⭐ 2026-09-16 加，見上面那一段的理由
     oct_2020()                # ⭐⭐ 同上：109 年金額差已定位到 109/10
+    avg_residual()            # ⭐⭐⭐ 年均價 ±0.01：進位那一族已排除
     f2_kou_jing(YMD)          # ⭐ 走既有的那一份，⛔ 不再算一次
     return _write(0)
 

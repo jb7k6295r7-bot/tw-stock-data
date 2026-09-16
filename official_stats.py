@@ -607,6 +607,31 @@ def run_sweep(a, rl, today):
                 _save(out, header, R)
                 flushed += save_sweep_done(dp, ok[flushed:], today)
                 print(f"  ⭐ 期中落地：{flushed}／{len(todo)}", flush=True)
+                # ⛔⛔ 這裡的「落地」只寫到**工作區**，⛔ 不是推到 main——
+                #   推是 workflow 最後那一步（`push_data.sh`）做的。
+                #
+                # ⛔⛔⛔ 而我 2026-09-16 在這裡寫過一句**錯的**：
+                #   「擋不住的是 job 層級被砍 ⇒ 那一趟做的**全部**都不會進 main。」
+                #   ⭐ 同一天 **run 165 實測推翻了它**：
+                #
+                #     conclusion **cancelled**（02:34:40 開跑，08:24:54 撞 350 分上限）
+                #     ⇒ ⭐⭐ 而台帳 776 → **7,926 格**、月表 16,912 → **94,909 列**
+                #       ——**7,150 格進了 main**
+                #
+                #   ⇒ 原因：那一步的 commit 是 `if: always()` ⇒ **被砍時它照樣跑**，
+                #     而期中落地已經把東西寫進工作區了 ⇒ ⭐ **期中落地救得回來**。
+                #
+                # ⚠ 而**真的丟掉的是 runlog 區塊**：`run_sweep` 沒走到 `rl.finish()`
+                #   ⇒ `_last_run.md` 裡 `official_stats:months:twse` 那一塊停在**上一趟**
+                #   ⇒ ⛔⛔ 讀那一塊的人會以為這一趟沒跑（四點二④③：**一定要看時戳**）。
+                #   ⇒ ⭐ 所以被砍那一趟的**可見性要靠資料**（台帳的格數），
+                #     ⛔ 不是靠 runlog——而那正是 CLAUDE.md 四點二⑧那一條。
+                #
+                # ⇒ ⭐ `months_limit` 的上限仍然要留餘裕（實測 **2.55 秒/格**，
+                #   ⛔ 不是我當初只算 `--sleep` 的 1 秒）：5,000 格 ≈ 212 分，
+                #   而 8,000 ≈ 340 分 ⇒ 撞上限（run 165 就是）。
+                #   ⚠ 而「撞上限」的代價現在量清楚了：**不是全丟**，是
+                #   ⭐ 丟掉最後不到 50 格 ＋ **整塊 runlog**。
         if a.sleep:
             time.sleep(a.sleep)
     if R:

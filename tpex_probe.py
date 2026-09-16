@@ -1010,6 +1010,72 @@ def main():
     say("\n     ⇒ ⭐ 下一步：拿讀到的 action 照 `API_PATTERN = \"/www/{LANG}/{ACTION}\"` 打，")
     say("       ⛔ 判準是**它自己回顯了我送的日期**，不是「有回列」（第二點）。")
 
+    # ══════════════════════════════════════════════════════════════
+    # [16] ⭐⭐ **官方證券種類欄**拿不拿得到（市場情報分析線 1515 的前置）
+    #
+    # 1515 裁「TDR 要在 `stocks.csv` 的 `kind` 那一側修」，⛔ 不要在
+    # `load_universe()` 加名稱條件（那是拿消費端去補上游的錯值）。
+    # ⚠ 而它有一個**相依**：要在 kind 那側做，分類器就得**認得出 TDR**
+    #   ⇒ 而 `_kind()` 的檔頭寫著「只用代號規則，不猜」——那個選擇是對的
+    #   ⇒ ⛔ 所以要先拿到**官方證券種類欄**，拿不到就退回名稱＋寫 caveat。
+    #
+    # ⭐ 而線索又一次在我方自己家（3.5④）：`tpex_probe` [11] 用的那個
+    #   ISIN 證券編碼查詢，網址裡**本來就有 `issuetype=`**，
+    #   ⚠ 而那一頁的表頭裡有「**有價證券別**」。
+    # ⛔ 「參數名字看起來對」不是證據（三點5）⇒ 這一節照第一點做：
+    #   ① 先把**表頭逐字印出來**（⛔ 不是先去比對）
+    #   ② 再看我方那 10 檔 TDR 在不在、那一欄寫什麼
+    #   ③ ⭐ 判準是**那一欄自己把 TDR 講出來**，⛔ 不是「有回列」
+    # ══════════════════════════════════════════════════════════════
+    say("\n[16] ⭐⭐ 官方**證券種類**欄拿不拿得到（市場情報分析線 1515 的前置）")
+    say("     ⭐ 線索在我方自己家：[11] 那個 ISIN 查詢的網址本來就有 `issuetype=`")
+    _TDR = ("9103", "9105", "9110", "9136", "910322", "910708",
+            "911608", "911616", "911619", "912000")
+    say(f"     靶子（我方 10 檔 TDR）：{list(_TDR)}")
+    _ISIN16 = ("https://isin.twse.com.tw/isin/class_main.jsp"
+               "?owncode=&stockname=&isincode=&market=&issuetype={}"
+               "&industry_code=&Page=1&chklike=Y")
+    for _it in ("", "I", "C"):
+        _u = _ISIN16.format(_it)
+        say(f"\n     ── issuetype={_it!r}\n     {_u}")
+        _r, _e = B.get(_u, retries=2, timeout=60)
+        if _e or not _r:
+            say(f"     ✗ 抓不到：{_W(_e, 200)}　⇒ ⚠ 取不回來**不等於**它不存在")
+            continue
+        _t = None
+        for _enc in ("big5", "cp950", "utf-8"):
+            try:
+                _t = _r.decode(_enc)
+                say(f"     ✓ {len(_r):,} bytes｜編碼 {_enc}")
+                break
+            except UnicodeDecodeError:
+                continue
+        if _t is None:
+            _t = _r.decode("utf-8", "replace")
+            say(f"     ✓ {len(_r):,} bytes｜⚠ 三種編碼都不乾淨，用 replace")
+        # ① ⭐ 表頭逐字（CLAUDE.md 第一點：先印出來，再開始比對）
+        # ⭐ 去標籤走**唯一那一份**（四點五）：`sep=""` 是「取一格的值」那一派
+        #   ——⛔ 換成 " " 的話 `"有價證券別" in ...` 這種比對會靜靜對不上。
+        _hdr = [B.visible_text(c, "").strip()
+                for c in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", _t[:6000],
+                                    re.S | re.I)][:12]
+        say(f"     ⭐ 表頭（前 12 格，逐字）：{_hdr}")
+        say(f"     ⭐ 頁面有沒有「有價證券別」這四個字：{'有價證券別' in _t}")
+        # ② 靶子在不在
+        _hit = [c for c in _TDR if re.search(rf"\b{c}\b", _t)]
+        say(f"     ⭐ 10 檔 TDR 命中：{len(_hit)}／10 {_hit}")
+        # ③ 命中的那幾檔，把它整列的文字印出來讓那一欄自己講話
+        for _c in _hit[:3]:
+            _m = re.search(rf"<tr[^>]*>(?:(?!</tr>).)*?\b{_c}\b"
+                           r"(?:(?!</tr>).)*?</tr>", _t, re.S)
+            if _m:
+                _cells = [B.visible_text(x, "").strip()
+                          for x in re.findall(r"<td[^>]*>(.*?)</td>", _m.group(0), re.S)]
+                say(f"        {_c}：{_cells[:8]}")
+    say("\n     ⇒ ⭐ 讀法：若表頭裡有「有價證券別」而且 TDR 那幾檔在那一欄")
+    say("       被講成同一種 ⇒ **官方欄拿得到** ⇒ 照 1515 在 `kind` 那側改。")
+    say("       ⛔ 若拿不到 ⇒ 回一封說「拿不到」，由市場情報分析線改裁退路。")
+
     return _write(0)
 
 
