@@ -964,6 +964,52 @@ def main():
                             + str(_t2.get("fields")))
                         say("                 第一列：" + str((_t2.get("data") or [None])[0]))
 
+    # ══════════════════════════════════════════════════════════════
+    # [15] ⭐⭐ 上櫃**零股**（2026-09-16）
+    #
+    # 起因：回測線 0841 §三那堆「上市年量我方略少」逐格量完是**零股**
+    #   （1470／民107 那一格是官方 − 我方 ＝ 1 股、1 筆、17 元）
+    #   ⇒ 我方日檔（普通交易）不含零股、官方年／月表含。
+    # ⚠ 上櫃那一半還沒量，而它的量三欄比值本來就對不上
+    #   （股數／金額 1.002~1.12、**筆數 1.004~2.72**）⇒ 零股只是其中可能的一項。
+    #
+    # ⛔ 而這一節**只做一件事**：讀那幾頁**自己寫的** `action:` 與表單欄位。
+    #   ⚠ 從網址猜 API 路徑在這個 repo 已經付過兩次代價
+    #     （`otcsbl`、`monthlyStock` 的 `stkno`／`year` 兩套都是猜錯的）
+    #   ⇒ ⭐ 讀到了才打，⛔ 這一趟不打。
+    #
+    # 線索來源一樣是我方自己的 `data/meta/_site_inventory.txt`（3.5④）。
+    # ══════════════════════════════════════════════════════════════
+    say("\n[15] ⭐⭐ 上櫃**零股**：先讀那幾頁自己寫的 `action:`"
+        "（⛔ 這一趟不打，讀到了才打）")
+    say("     線索來源：我方自己的 `data/meta/_site_inventory.txt`（3.5④）")
+    _P15 = (("盤中零股每日收盤行情",
+             "https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/pricing.html"),
+            ("盤後零股每日收盤行情",
+             "https://www.tpex.org.tw/zh-tw/mainboard/trading/info/"
+             "odd-lot/post-pricing/day.html"),
+            ("零股交易成交統計",
+             "https://www.tpex.org.tw/zh-tw/mainboard/trading/info/"
+             "odd-lot/statistics/day.html"))
+    for _why, _url in _P15:
+        say(f"\n     ── {_why}\n     {_url}")
+        _r, _e = B.get(_url, retries=2, timeout=60)
+        if _e or not _r:
+            say(f"     ✗ 抓不到：{_W(_e, 200)}"
+                "　⇒ ⚠ 取不回來**不等於**它不存在")
+            continue
+        _acts = twparse.actions_in(_r)
+        say(f"     ✓ {len(_r):,} bytes｜它自己寫的 action：{_acts or '⛔ 一個都沒讀到'}")
+        try:
+            _flds = sorted(set(re.findall(
+                r'<(?:input|select)[^>]*?(?:name|id)="([A-Za-z0-9_]+)"',
+                _r.decode("utf-8", "replace"))))
+        except Exception:                                        # noqa: BLE001
+            _flds = []
+        say(f"     ⭐ 頁面表單欄位（input／select 的 name／id）：{_flds}")
+    say("\n     ⇒ ⭐ 下一步：拿讀到的 action 照 `API_PATTERN = \"/www/{LANG}/{ACTION}\"` 打，")
+    say("       ⛔ 判準是**它自己回顯了我送的日期**，不是「有回列」（第二點）。")
+
     return _write(0)
 
 
