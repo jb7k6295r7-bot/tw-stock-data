@@ -303,7 +303,12 @@ SECTIONS = {
     "mops_probe": ["未驗", "的欄名：有沒有公告日", "橋接 t05st01",
                    # ⭐ 「js 空殼」講完之後**還要有下一步**：把那個 js 去打誰挖出來。
                    #   ⛔ 少了這一節，這一格就停在「取不到」——而那不是句點。
-                   "的 js 去打誰"],
+                   "的 js 去打誰",
+                   # ⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））2026-09-16 加。
+                   #   ⛔ 少了它，「條款准不准我方這樣用」就停在**我的摘要**上，
+                   #   ⚠ 而三點②那條已經證明過：同一份條款換個關鍵字就翻出禁止條文
+                   #   ⇒ 摘要漏掉的那一句，讀的人**沒有任何地方會發現**。
+                   "MOPS 條款原文"],
     # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
     #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
     #     而把限額當成餘額用，是這一支最可能造成的傷害。
@@ -1818,6 +1823,102 @@ def check_sibling_doors():
     return bad
 
 
+def check_terms_case():
+    """⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））：**連結從頁面讀出來、原文逐字印**。
+
+    ⛔ 這一節最可能的壞法**不是抓不到**（那很吵），是三種安靜的：
+
+    ```
+    ① 我自己拼路徑（/terms、/policy）⇒ 拼錯就回「這個站沒有條款」
+       —— 而那是三點①（掃描範圍）＋四點五第七次（重造）同一個坑
+    ② 印**我的摘要**而不是原文 ⇒ 三點② 已經證明過：同一份條款
+       換個關鍵字就翻出禁止條文 ⇒ ⛔ 摘要漏掉的那一句沒有人會發現
+    ③ 抓不到首頁時寫成「這個站沒有條款」⇒ 把「我沒查」讀成「它沒有」
+    ```
+
+    ⇒ 八條斷言逐條對應，⭐ 而 ⑦⑧ 是**反向**那兩條（抓不到／0 條命中）——
+    ⛔ 它們才是主角：正向那幾條在真的壞掉時仍然會綠。
+    """
+    import re as _re
+    import mops_probe as M
+    bad = 0
+    HOME = ("<html><body>"
+            "<a href=\"/mops/web/t21sc03\">月營收</a>"
+            "<a href='/mops/web/terms'>網站使用授權條款</a>"
+            "<a href=\"https://x.tw/p\">隱私權政策</a>"
+            "</body></html>").encode()
+    # ⛔⛔ 假回應要**照真回應的形狀**做（第七點）：真的條款頁是幾千字，
+    #   ⚠ 而禁止條文**不會在開頭**。第一版我寫了一句 12 字的假條款
+    #   ⇒ 「只印前 20 字」的突變 **T3 全綠** —— 因為那 12 字整段都在前 20 字裡。
+    #   ⇒ ⭐ 把禁止條文放到**第 1,500 字之後**，再放一段超過 4,000 字的尾巴，
+    #     這樣 ⑤（逐字印）與 ⑩（截斷要講）才真的被走過。
+    TERMS = ("<html><body><p>" + "本網站係公開資訊觀測站。" * 120
+             + "本網站資料不得重製。" + "其他條文。" * 600
+             + "</p></body></html>").encode()
+    real = B.get
+
+    def fake(url, retries=3, timeout=45):
+        return (HOME, None) if url.endswith("/index") else (TERMS, None)
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:200]}"))
+        if not c:
+            bad += 1
+
+    try:
+        B.get = M.B.get = fake
+        out = []
+        M.terms_case(out)
+        t = "\n".join(out)
+        ck("① 只收**文字含關鍵字**的連結（月營收那條不收）", "t21sc03" not in t, t)
+        ck("② 相對路徑接成絕對", "https://mopsov.twse.com.tw/mops/web/terms" in t, t)
+        ck("③ 絕對路徑原樣保留", "https://x.tw/p" in t, t)
+        ck("④ 命中數自己印出來（2 條）", "**2 條**" in t, t)
+        ck("⑤ ⭐ 原文**逐字**印（禁止條文那一句在）", "不得重製" in t, t)
+        ck("⑥ ⭐ 母體大小自己是一道斷言（3 個 <a>）", "共 3 個" in t, t)
+        ck("⑩ ⭐⭐ 超過 4,000 字要**講出它被截了**（⛔ 不是靜靜少印）",
+           "截到 4,000 字" in t, t)
+
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (None, "boom")
+        o2 = []
+        M.terms_case(o2)
+        t2 = "\n".join(o2)
+        ck("⑦ ⭐⭐ 抓不到首頁 ⇒ 寫【未驗】，⛔ 不是「這個站沒有條款」",
+           "【未驗】" in t2 and "0 條" not in t2, t2)
+
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            "<a href='/a'>月營收</a>".encode(), None)
+        o3 = []
+        M.terms_case(o3)
+        t3 = "\n".join(o3)
+        ck("⑧ ⭐⭐ 0 條命中 ⇒ 明講**掃描範圍**（不證明這個站沒有）",
+           "不證明這個站沒有條款" in t3, t3)
+    finally:
+        B.get = M.B.get = real
+
+    # ⭐ ⑨ 掃原始碼：⛔ 不可以有人回去拼路徑。判準比 **AST 的字串常數**，
+    #   ⚠ 不比整份原始碼——那幾個字在上面的 docstring 裡就有一份（第七點第八個）。
+    import ast as _ast
+    src = io.open(os.path.join(_here_dir(), "mops_probe.py"), encoding="utf-8").read()
+    fn = next((n for n in _ast.walk(_ast.parse(src))
+               if isinstance(n, _ast.FunctionDef) and n.name == "terms_case"), None)
+    # ⛔⛔ **docstring 自己也是一個字串常數**——而上面那段說明裡就寫著
+    #   `/terms`、`/policy`（它們正是我在講「不要拼」的那幾個）。
+    #   ⇒ 第一版沒扣掉它 ⇒ 這一條**當場紅**，⚠ 而那不是程式有問題。
+    #   ⇒ ⭐ 這就是第七點第八個那條的又一次：**斷言要驗終點**，
+    #     而「原始碼長什麼樣」從來不是終點 ⇒ 至少要把說明文字扣掉。
+    body = fn.body[1:] if (fn and fn.body and isinstance(fn.body[0], _ast.Expr)
+                           and isinstance(getattr(fn.body[0], "value", None), _ast.Constant)
+                           and isinstance(fn.body[0].value.value, str)) else (fn.body if fn else [])
+    lits = [n.value for b in body for n in _ast.walk(b)
+            if isinstance(n, _ast.Constant) and isinstance(n.value, str)]
+    guessed = [x for x in lits if _re.search(r"/(terms|policy|privacy|copyright)\b", x)]
+    ck("⑨ ⛔ `terms_case` 的字串常數裡**沒有我自己拼的條款路徑**",
+       fn is not None and not guessed, f"{guessed}")
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -1857,6 +1958,7 @@ def main():
     bad += check_probe_stamp()
     bad += check_survivor_fs()
     bad += check_sibling_doors()
+    bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟
