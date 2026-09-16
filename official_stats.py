@@ -195,6 +195,8 @@ from datetime import datetime, timedelta, timezone
 import backfill as B
 import runlog
 import twparse                     # ⭐ csv_cell 只有那一份（四點五）
+from decimal import Decimal as _D, ROUND_DOWN as _ROUND_DOWN, \
+    ROUND_HALF_EVEN as _ROUND_HALF_EVEN, ROUND_HALF_UP as _ROUND_HALF_UP
 
 TPE = timezone(timedelta(hours=8))
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -217,6 +219,55 @@ def yearly_path(market="twse"):
 
 def monthly_path(market="twse"):
     return os.path.join(META, "official_monthly_amount.csv")
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐⭐ `avg_close` 的進位規則：**三段**，⛔ 不是「容許 ±0.01」
+#
+#   2026-09-16 母體級實測（17,832 個 (檔,年)，⛔ 不是抽樣。詳見
+#   `docs/READ_CONTRACT.md` 的 `official_yearly_close.csv` 那一節）：
+#
+#     上櫃           7,948 格  無條件捨去                       100.0000%
+#     上市 民107~    7,449 格  先到小數 3 位、再到 2 位用 banker's 100.0000%
+#     上市 民104~106 2,435 格  直接四捨五入                      99.8768%（3 格例外）
+#
+#   ⭐ 有鑑別力的母體（兩條規則會給不同答案的）**503** 格：
+#      民104~106 直接四捨五入 130／131｜民107~ banker's **372／372**。
+#   ⛔ 拿全母體的命中率比是分不出來的（帶外兩條規則同答案）——第七點那一句。
+#
+#   ⚠ 已知 3 格解釋不了（都在民104~106、都恰好落在半分、官方都往下）：
+#      2901/105 25.905→25.90｜3016/104 14.255→14.25｜4906/104 19.475→19.47
+#   ⇒ ⛔ **成因不知道，那就寫不知道。**
+#
+#   ⛔ 這是**唯一**一份實作（四點五）。⚠ `backtest/audit_db.py` 目前是兩段
+#     （上市 round／上櫃 trunc）⇒ 上市那半民107~ 有 372 格會誤報；已去信回測線。
+TPE_ROUND_SWITCH_ROC = 107          # ⭐ 上市的進位規則在民國 107 年換掉
+
+
+def avg_close_expected(mean, roc_year, market):
+    """我方日收盤的簡單平均 `mean` → **官方會寫成的那個兩位小數**（`decimal.Decimal`）。
+
+    `market`：`"twse"`／`"tpex"`（⛔ 必填，沒有預設值——四點五那條：
+    兩種相反的語意，選哪一種的參數不可以有預設值）。
+    ⚠ `mean` 要用 `Decimal` 傳進來；⛔ 傳 float 會先吃一次二進位誤差。
+    """
+    if market not in ("twse", "tpex"):
+        raise ValueError(f"market 只能是 twse／tpex，收到 {market!r}")
+    m = mean if isinstance(mean, _D) else _D(str(mean))
+    if market == "tpex":
+        return m.quantize(_D("0.01"), rounding=_ROUND_DOWN)
+    if int(roc_year) >= TPE_ROUND_SWITCH_ROC:
+        # ⭐ 兩步：先到 3 位（⚠ 第一步用哪一種進位不影響結果，實測三種同分），
+        #    再到 2 位用 banker's ⇒ 帶內那些格會落在「分」位的**偶數**那一邊。
+        return m.quantize(_D("0.001"), rounding=_ROUND_HALF_UP) \
+                .quantize(_D("0.01"), rounding=_ROUND_HALF_EVEN)
+    return m.quantize(_D("0.01"), rounding=_ROUND_HALF_UP)
+
+
+def avg_close_matches(mean, roc_year, market, official):
+    """官方寫的那個值對不對得上我方 ⇒ True／False。⛔ 逐位比，不留容許值。"""
+    o = official if isinstance(official, _D) else _D(str(official))
+    return avg_close_expected(mean, roc_year, market) == o
 
 
 def tpex_yearly_path():

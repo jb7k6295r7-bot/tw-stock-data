@@ -72,6 +72,15 @@ def _snap_repo():
     return out
 
 
+def _raises(fn):
+    """⭐ 斷言「它會大聲失敗」——⛔ 不是斷言原始碼裡有 `raise`（第八個陷阱）。"""
+    try:
+        fn()
+    except Exception:
+        return True
+    return False
+
+
 def main():
     global _REPO_SNAP
     _REPO_SNAP = _snap_repo()
@@ -804,6 +813,58 @@ def main():
            "sweep_consistent_nodata" in called, str(sorted(called))[:200])
     finally:
         shutil.rmtree(d11, ignore_errors=True)
+
+    # ══════════════════════════════════════════════════════════════
+    # ⑫ ⭐⭐⭐ `avg_close` 的進位規則：**三段**，⛔ 不是「容許 ±0.01」
+    #    ⚠ 這幾條全部用**合成**數字（七點第七個：拿現場資料驗判準，
+    #      等於把斷言的壽命綁在「那筆資料還在」上）。
+    from decimal import Decimal as _DD
+    E = O.avg_close_expected
+    ck("⑫ ⭐ 上櫃：**無條件捨去**（⛔ 不是四捨五入）",
+       E(_DD("4.2999"), 108, "tpex") == _DD("4.29")
+       and E(_DD("6.5999"), 104, "tpex") == _DD("6.59"),
+       f'{E(_DD("4.2999"), 108, "tpex")}／{E(_DD("6.5999"), 104, "tpex")}')
+    ck("⑫ ⭐ 上櫃的規則**不分年**（⛔ 民107 那個分界只作用在上市）",
+       E(_DD("4.2999"), 104, "tpex") == E(_DD("4.2999"), 114, "tpex") == _DD("4.29"))
+    # ⭐ 真實錨點（1471／民108）：我方均 4.294917… ⇒ 直接四捨五入給 4.29，官方是 4.30
+    ck("⑫ ⭐⭐ 上市民107~：先到 3 位再 banker's ⇒ 4.294917… → **4.30**"
+       "（⛔ 直接四捨五入會給 4.29）",
+       E(_DD("4.294917355371900826"), 108, "twse") == _DD("4.30"),
+       str(E(_DD("4.294917355371900826"), 108, "twse")))
+    ck("⑫ ⭐⭐ 同一個數字在民104~106 是**另一段** ⇒ **4.29**"
+       "（⚠ 分界不對的話這兩條會一起倒）",
+       E(_DD("4.294917355371900826"), 106, "twse") == _DD("4.29"),
+       str(E(_DD("4.294917355371900826"), 106, "twse")))
+    ck("⑫ ⭐ 分界剛好在民107（⛔ 不是 106、也不是 108）",
+       O.TPE_ROUND_SWITCH_ROC == 107
+       and E(_DD("4.2949"), 107, "twse") == _DD("4.30")
+       and E(_DD("4.2949"), 106, "twse") == _DD("4.29"))
+    # ⭐⭐ banker's 的**簽名**：帶內（0.45~0.55）進位後的「分」位必定是偶數
+    ck("⑫ ⭐⭐ banker's 的簽名：4.294917→4.30（偶）、4.304917→**4.30**（⛔ 不是 4.31）",
+       E(_DD("4.304917"), 110, "twse") == _DD("4.30"),
+       str(E(_DD("4.304917"), 110, "twse")))
+    ck("⑫ ⭐ 而**帶外**兩段給同一個答案（⇒ 只有帶內的格有鑑別力）",
+       E(_DD("4.2912"), 106, "twse") == E(_DD("4.2912"), 110, "twse") == _DD("4.29"))
+    ck("⑫ ⛔ `market` 傳別的字串要**大聲**丟例外（⛔ 不是靜靜當成上市）",
+       _raises(lambda: E(_DD("4.29"), 108, "sii")))
+    # ⭐⭐ 四點五那條通則：兩種相反語意的參數，**不可以有預設值**
+    import inspect as _i12
+    sig12 = _i12.signature(O.avg_close_expected)
+    ck("⑫ ⭐⭐ `market` **沒有預設值**（⛔ 預設值＝「照抄語意」那個坑的自動化版本）",
+       sig12.parameters["market"].default is _i12.Parameter.empty,
+       str(sig12))
+    ck("⑫ ⭐ `avg_close_matches()` 逐位比，⛔ 沒有容許值（差 0.01 就是 False）",
+       O.avg_close_matches(_DD("4.294917355371900826"), 108, "twse", "4.30")
+       and not O.avg_close_matches(_DD("4.294917355371900826"), 108, "twse", "4.29"))
+    ck("⑫ ⭐ 這一族**只有一份實作**：`avg_close_matches` 真的走 `avg_close_expected`"
+       "（⛔ 不是各自 quantize 一次）",
+       "avg_close_expected" in {n.func.id for n in __import__("ast").walk(
+           next(x for x in __import__("ast").walk(__import__("ast").parse(io.open(
+               os.path.join(HERE, "official_stats.py"), encoding="utf-8").read()))
+               if isinstance(x, __import__("ast").FunctionDef)
+               and x.name == "avg_close_matches"))
+           if isinstance(n, __import__("ast").Call)
+           and isinstance(n.func, __import__("ast").Name)})
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
