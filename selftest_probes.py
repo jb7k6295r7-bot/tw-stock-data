@@ -32,6 +32,7 @@
 假回應刻意做成「格式對、內容夠讓每一節都走進去」，目的是**執行到每一行**，
 不是模擬真實資料。
 """
+import ast
 import glob
 import inspect
 import io
@@ -39,6 +40,7 @@ import json
 import os
 import re
 import sys
+import shutil
 import tempfile
 
 import backfill as B
@@ -303,7 +305,12 @@ SECTIONS = {
     "mops_probe": ["未驗", "的欄名：有沒有公告日", "橋接 t05st01",
                    # ⭐ 「js 空殼」講完之後**還要有下一步**：把那個 js 去打誰挖出來。
                    #   ⛔ 少了這一節，這一格就停在「取不到」——而那不是句點。
-                   "的 js 去打誰"],
+                   "的 js 去打誰",
+                   # ⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））2026-09-16 加。
+                   #   ⛔ 少了它，「條款准不准我方這樣用」就停在**我的摘要**上，
+                   #   ⚠ 而三點②那條已經證明過：同一份條款換個關鍵字就翻出禁止條文
+                   #   ⇒ 摘要漏掉的那一句，讀的人**沒有任何地方會發現**。
+                   "MOPS 條款原文"],
     # ⛔ 同理：它的內容取決於官方回什麼（候選路徑是推的，這一支就是要淘汰它們）。
     #   ⚠ 但「限額 ≠ 餘額」那一句一定要出現——⭐ 那是 K線線 Q2 的重點，
     #     而把限額當成餘額用，是這一支最可能造成的傷害。
@@ -1127,12 +1134,29 @@ def check_js_followups():
     # ⑭ `visible_text` 只有一份實作（四點五）：⛔ 不可以有人自己 re.sub 去標籤
     # ⚠ 只掃 `.py`：⛔ `grep -rn .` 會去掃 `data/`（1.6 GiB）⇒ 這一條要跑好幾分鐘，
     #   而一條慢到讓人想拿掉的斷言，跟沒有那條斷言是一樣的。
+    # ⛔⛔ 這一道本來比**原始碼字串** ⇒ 2026-09-16 當場誤報：
+    #   `selftest_workflows.covering_tests` 的 **docstring 裡引用了那段 pattern**
+    #   （它在講「⑭ 抓得到」這件事）⇒ 被判成第二份實作。
+    #   ⭐ 正是第七點第八個那條，而且這次中的是這道守門自己：
+    #     **我們的註解本來就會引用那段程式碼。**
+    #   ⇒ 改比 **AST 的呼叫**：`re.sub(<字面 pattern>, …)`，
+    #     ⛔ 註解與 docstring 一律看不到。
     hits = []
     for _f in sorted(glob.glob(os.path.join(_here_dir(), "*.py"))):
         if os.path.basename(_f) == "backfill.py":
             continue      # ⭐ 那一份就是**唯一**那一份
-        if re.search(r"re\.sub\(\s*r?[\"\']<\[\^>\]\+>", io.open(_f, encoding="utf-8").read()):
-            hits.append(os.path.basename(_f))
+        try:
+            _tree = ast.parse(io.open(_f, encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        for _n in ast.walk(_tree):
+            if (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Attribute)
+                    and _n.func.attr == "sub" and _n.args
+                    and isinstance(_n.args[0], ast.Constant)
+                    and isinstance(_n.args[0].value, str)
+                    and re.match(r"^<\[\^>\]\+>$", _n.args[0].value)):
+                hits.append(os.path.basename(_f))
+                break
     ck("⑭ 去標籤只有 `backfill.visible_text` 一份實作（四點五）",
        not hits, "⛔ 另有一份：" + "；".join(hits[:3]))
 
@@ -1818,6 +1842,202 @@ def check_sibling_doors():
     return bad
 
 
+def check_avg_residual():
+    """⭐⭐ `keys_probe.avg_residual()` 的**逐列迴圈**真的被走過，而且比的是數值。
+
+    ## ⛔ 這一節存在的理由是一個在 Actions 上炸掉的 `NameError`
+
+    probe run 131（2026-09-16）：`keys_probe.py:591` `NameError: name '_n' is not defined`
+    ⇒ 整支 rc=1 ⇒ `_keys_probe.txt` 被守門還原成**上一趟**的內容。
+
+    ⭐⭐ 而**離線自測是全綠的**：`run("keys_probe")` 餵的假回應沒有 `title`
+    ⇒ 上面那道「title 要回音代號與月份」提前 `continue`
+    ⇒ ⛔ 出事那一行**一次都沒有被走過**（第七點第三個：測了判準、沒測那條路）。
+
+    ⇒ ⭐ 所以這一節的假回應要**照真回應的形狀**做到「title 回音得了」那一格，
+    ⛔ 不是再餵一份走不進去的。
+
+    ## ⇒ 而順手抓到第二個：**比字串會確認一個假的發現**
+
+    我方 CSV 寫 `4.3`、官方回 `4.30` ⇒ 比字串的話**每一天**都是「收盤不同」，
+    ⚠ 而「有幾天差 0.01」正是這一節在找的答案
+    ⇒ ⛔ 它會**證實一個不存在的發現**，而輸出看起來完全正常。
+    """
+    import keys_probe as K
+    bad = 0
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:220]}"))
+        if not c:
+            bad += 1
+
+    sid, roc = K.AVG_RESID
+    ad = roc + 1911
+
+    def resp(rows, mo):
+        return json.dumps({
+            "stat": "OK",
+            "title": f"{roc}年{mo:02d}月 {sid} 首利 各日成交資訊",
+            "fields": ["日期", "成交股數", "成交金額", "開盤價",
+                       "最高價", "最低價", "收盤價", "漲跌價差", "成交筆數"],
+            "data": rows,
+        }, ensure_ascii=False).encode()
+
+    def row(day, close):
+        return [f"{roc}/{day[:2]}/{day[2:]}", "1,000", "4,300",
+                "4.30", "4.30", "4.30", close, "0.00", "5"]
+
+    real_get, real_root = B.get, K._ROOT
+    tmp = tempfile.mkdtemp(prefix="keysprobe_")
+    try:
+        os.makedirs(os.path.join(tmp, "stocks"), exist_ok=True)
+        io.open(os.path.join(tmp, "stocks", f"{sid}.csv"), "w",
+                encoding="utf-8").write(
+            "date,close\n"
+            f"{ad}-01-05,4.3\n"      # ⭐ 我方 4.3 vs 官方 4.30 ⇒ **相同**
+            f"{ad}-01-06,4.29\n"     # ⭐ 我方 4.29 vs 官方 4.30 ⇒ **差 0.01**
+            f"{ad}-01-07,4.31\n")    # ⚠ 官方那一天回 `--` ⇒ **比不了**
+        K._ROOT = tmp
+        pages = {1: resp([row("0105", "4.30"), row("0106", "4.30"),
+                          row("0107", "--")], 1)}
+
+        def fake(url, retries=3, timeout=45):
+            mo = int(url.split("date=")[1][4:6])
+            return (pages.get(mo, resp([], mo)), None)
+
+        B.get = K.B.get = fake
+        mark = len(K.LINES)
+        K.avg_residual()
+        t = "\n".join(K.LINES[mark:])
+    finally:
+        B.get = K.B.get = real_get
+        K._ROOT = real_root
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    ck("① ⭐⭐ 逐列迴圈**真的被走過**（官方回到的天數 > 0）",
+       "官方回到的天數：2" in t, t)
+    ck("② ⭐ `4.3` vs `4.30` **不算不同**（⛔ 比字串的話這裡會是 2）",
+       "**收盤價不同的日子：1**" in t, t)
+    ck("③ ⭐ 真的差 0.01 的那一天有被列出來",
+       f"{ad}-01-06" in t, t)
+    # ⛔ 我第一版在這裡斷言「官方回 `--` ⇒ 印『這一層沒跑』」——**那個情境造不出來**：
+    #   抓取那一段本來就把 `--` 濾掉了 ⇒ 那一天根本不會進 `got`
+    #   ⇒ 它落在「只有我方有的日子」，⛔ 不在交集裡 ⇒ `None` 那條分支走不到。
+    #   ⚠ 而「斷言沒抓到」與「我根本沒造出那個情境」長得一模一樣（第七點第四個）。
+    #   ⇒ ⭐ 分成兩條：④ 驗**真的會發生**的那一半（它落在只有我方有的那一邊），
+    #     ⑥ 拿**合成**輸入直接驗 `_same_price` 的三種回答（環境無關，第七點第七個）。
+    ck("④ ⭐ 官方濾掉的那一天落在「只有我方有的日子」（⛔ 不是被判成『收盤不同』）",
+       "只有我方有的日子：1" in t and f"{ad}-01-07" in t, t)
+    ck("⑤ ⛔ `avg_residual` 跑完**沒有丟例外**（run 131 就是死在這裡）",
+       "官方回到的天數" in t, t)
+    # ⑥ ⭐⭐ `_same_price` 的**三種**回答（⛔ 不是兩種）——拿合成輸入驗，⛔ 不靠現場
+    ck("⑥ ⭐⭐ `_same_price` 回三種：相同／不同／**比不了**（⛔ None 不可以壓成 False）",
+       (K._same_price("4.3", "4.30") is True
+        and K._same_price("4.3", "4.31") is False
+        and K._same_price("4.3", "--") is None
+        and K._same_price("", "4.30") is None),
+       str([K._same_price("4.3", "4.30"), K._same_price("4.3", "4.31"),
+            K._same_price("4.3", "--"), K._same_price("", "4.30")]))
+    return bad
+
+
+def check_terms_case():
+    """⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））：**連結從頁面讀出來、原文逐字印**。
+
+    ⛔ 這一節最可能的壞法**不是抓不到**（那很吵），是三種安靜的：
+
+    ```
+    ① 我自己拼路徑（/terms、/policy）⇒ 拼錯就回「這個站沒有條款」
+       —— 而那是三點①（掃描範圍）＋四點五第七次（重造）同一個坑
+    ② 印**我的摘要**而不是原文 ⇒ 三點② 已經證明過：同一份條款
+       換個關鍵字就翻出禁止條文 ⇒ ⛔ 摘要漏掉的那一句沒有人會發現
+    ③ 抓不到首頁時寫成「這個站沒有條款」⇒ 把「我沒查」讀成「它沒有」
+    ```
+
+    ⇒ 八條斷言逐條對應，⭐ 而 ⑦⑧ 是**反向**那兩條（抓不到／0 條命中）——
+    ⛔ 它們才是主角：正向那幾條在真的壞掉時仍然會綠。
+    """
+    import re as _re
+    import mops_probe as M
+    bad = 0
+    HOME = ("<html><body>"
+            "<a href=\"/mops/web/t21sc03\">月營收</a>"
+            "<a href='/mops/web/terms'>網站使用授權條款</a>"
+            "<a href=\"https://x.tw/p\">隱私權政策</a>"
+            "</body></html>").encode()
+    # ⛔⛔ 假回應要**照真回應的形狀**做（第七點）：真的條款頁是幾千字，
+    #   ⚠ 而禁止條文**不會在開頭**。第一版我寫了一句 12 字的假條款
+    #   ⇒ 「只印前 20 字」的突變 **T3 全綠** —— 因為那 12 字整段都在前 20 字裡。
+    #   ⇒ ⭐ 把禁止條文放到**第 1,500 字之後**，再放一段超過 4,000 字的尾巴，
+    #     這樣 ⑤（逐字印）與 ⑩（截斷要講）才真的被走過。
+    TERMS = ("<html><body><p>" + "本網站係公開資訊觀測站。" * 120
+             + "本網站資料不得重製。" + "其他條文。" * 600
+             + "</p></body></html>").encode()
+    real = B.get
+
+    def fake(url, retries=3, timeout=45):
+        return (HOME, None) if url.endswith("/index") else (TERMS, None)
+
+    def ck(n, c, d=""):
+        nonlocal bad
+        print(("  ✓ " if c else "  ✗ ") + n + ("" if c else f"　{d[:200]}"))
+        if not c:
+            bad += 1
+
+    try:
+        B.get = M.B.get = fake
+        out = []
+        M.terms_case(out)
+        t = "\n".join(out)
+        ck("① 只收**文字含關鍵字**的連結（月營收那條不收）", "t21sc03" not in t, t)
+        ck("② 相對路徑接成絕對", "https://mopsov.twse.com.tw/mops/web/terms" in t, t)
+        ck("③ 絕對路徑原樣保留", "https://x.tw/p" in t, t)
+        ck("④ 命中數自己印出來（2 條）", "**2 條**" in t, t)
+        ck("⑤ ⭐ 原文**逐字**印（禁止條文那一句在）", "不得重製" in t, t)
+        ck("⑥ ⭐ 母體大小自己是一道斷言（3 個 <a>）", "共 3 個" in t, t)
+        ck("⑩ ⭐⭐ 超過 4,000 字要**講出它被截了**（⛔ 不是靜靜少印）",
+           "截到 4,000 字" in t, t)
+
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (None, "boom")
+        o2 = []
+        M.terms_case(o2)
+        t2 = "\n".join(o2)
+        ck("⑦ ⭐⭐ 抓不到首頁 ⇒ 寫【未驗】，⛔ 不是「這個站沒有條款」",
+           "【未驗】" in t2 and "0 條" not in t2, t2)
+
+        B.get = M.B.get = lambda u, retries=3, timeout=45: (
+            "<a href='/a'>月營收</a>".encode(), None)
+        o3 = []
+        M.terms_case(o3)
+        t3 = "\n".join(o3)
+        ck("⑧ ⭐⭐ 0 條命中 ⇒ 明講**掃描範圍**（不證明這個站沒有）",
+           "不證明這個站沒有條款" in t3, t3)
+    finally:
+        B.get = M.B.get = real
+
+    # ⭐ ⑨ 掃原始碼：⛔ 不可以有人回去拼路徑。判準比 **AST 的字串常數**，
+    #   ⚠ 不比整份原始碼——那幾個字在上面的 docstring 裡就有一份（第七點第八個）。
+    import ast as _ast
+    src = io.open(os.path.join(_here_dir(), "mops_probe.py"), encoding="utf-8").read()
+    fn = next((n for n in _ast.walk(_ast.parse(src))
+               if isinstance(n, _ast.FunctionDef) and n.name == "terms_case"), None)
+    # ⛔⛔ **docstring 自己也是一個字串常數**——而上面那段說明裡就寫著
+    #   `/terms`、`/policy`（它們正是我在講「不要拼」的那幾個）。
+    #   ⇒ 第一版沒扣掉它 ⇒ 這一條**當場紅**，⚠ 而那不是程式有問題。
+    #   ⇒ ⭐ 這就是第七點第八個那條的又一次：**斷言要驗終點**，
+    #     而「原始碼長什麼樣」從來不是終點 ⇒ 至少要把說明文字扣掉。
+    body = fn.body[1:] if (fn and fn.body and isinstance(fn.body[0], _ast.Expr)
+                           and isinstance(getattr(fn.body[0], "value", None), _ast.Constant)
+                           and isinstance(fn.body[0].value.value, str)) else (fn.body if fn else [])
+    lits = [n.value for b in body for n in _ast.walk(b)
+            if isinstance(n, _ast.Constant) and isinstance(n.value, str)]
+    guessed = [x for x in lits if _re.search(r"/(terms|policy|privacy|copyright)\b", x)]
+    ck("⑨ ⛔ `terms_case` 的字串常數裡**沒有我自己拼的條款路徑**",
+       fn is not None and not guessed, f"{guessed}")
+    return bad
+
+
 def main():
     bad = 0
     for name, want in SECTIONS.items():
@@ -1857,6 +2077,8 @@ def main():
     bad += check_probe_stamp()
     bad += check_survivor_fs()
     bad += check_sibling_doors()
+    bad += check_avg_residual()
+    bad += check_terms_case()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟

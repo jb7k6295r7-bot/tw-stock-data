@@ -32,8 +32,10 @@
 import io
 import json
 import os
+import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 # ⭐ 補上 TPEx 漏送的憑證鏈（⛔ 不降低驗證，見 `ca_chain.py`）。
 #   import 就生效：它把 urllib 的預設 SSLContext 換成「系統預設＋補鏈」。
@@ -842,6 +844,77 @@ def revenue_hist_columns(out):
     out.append(f"   （解析：{note}；⛔ 這裡只看欄名，不寫任何資料檔）")
 
 
+def terms_case(out):
+    """⭐⭐ 市場情報分析線 1508（乙）要的那一格：**MOPS 條款原文，而且要涵蓋整個 `mopsov`**。
+
+    ⛔ 他明講了範圍：「條款範圍不只 D2——我方**現在就在用** `mopsov` 的
+    `t21sc03` 與 `ajax_t163sb04/05` ⇒ 請一次涵蓋整個 `mopsov.md`。」
+
+    ## ⇒ ⛔ 而這一節**不猜網址**（CLAUDE.md 三點①：掃描範圍要寫出來）
+
+    2026-09-13 我用「猜首頁路徑」寫過一支重複的站掃（四點五第七次）
+    ⇒ ⭐ 這裡照 `docs/NEW_ENDPOINT.md` 第 −1 步：**讀那一站自己的連結**，
+    只收「連結文字裡有 條款／規範／聲明／政策／著作權／免責」的那幾條，
+    ⛔ 不去試 `/terms`、`/policy` 這種我自己拼的路徑。
+
+    ## ⇒ ⭐ 判準：**把原文逐字印出來**，⛔ 不是印我的摘要
+
+    他要裁的是「這份條款准不准我方這樣用」——⚠ 而那要拿**原文**去對
+    （三點②：同一份條款，換個關鍵字就翻出禁止條文 ⇒ ⛔ 摘要會漏掉那一句）。
+    ⇒ 所以這裡印的是去標籤後的**整段可讀文字**（上限 4,000 字），
+    ⛔ 不做關鍵字判定，也**不寫任何結論**——裁定是他的事。
+
+    ⚠ 掃描範圍（我自己標）：**只掃 `mopsov` 的首頁那一層**。
+    ⛔ 條款若只掛在某個子頁的頁尾，這一節**看不到** ⇒ 那時要換成逐頁掃，
+    而「首頁沒有」⛔ 不等於「這個站沒有」。
+    """
+    out.append("── ⭐⭐ MOPS 條款原文（市場情報分析線 1508（乙）；⛔ 範圍＝整個 `mopsov`）")
+    home = "https://mopsov.twse.com.tw/mops/web/index"
+    out.append(f"   首頁：{home}")
+    raw, err = B.get(home, retries=2, timeout=60)
+    if err or not raw:
+        out.append(f"   ✗ 抓不到首頁：{B.why(err)}")
+        out.append("   ⛔ 這一格是【未驗】，⛔ 不可以寫成「這個站沒有條款」。")
+        return
+    html = raw.decode("utf-8", "replace") if isinstance(raw, bytes) else str(raw)
+    WORDS = ("條款", "規範", "聲明", "政策", "著作權", "免責", "隱私")
+    seen, hits = set(), []
+    for m in re.finditer(r'<a\b[^>]*href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+                         html, re.S | re.I):
+        href, label = m.group(1).strip(), B.visible_text(m.group(2), " ").strip()
+        if not label or not any(w in label for w in WORDS):
+            continue
+        url = urllib.parse.urljoin(home, href)
+        if url in seen:
+            continue
+        seen.add(url)
+        hits.append((label, url))
+    out.append(f"   ⭐ 首頁連結裡**文字含 {'／'.join(WORDS)}** 的：**{len(hits)} 條**"
+               f"（⚠ 母體＝首頁全部 <a>，共 {len(re.findall(r'<a[^>]*href', html, re.I))} 個）")
+    if not hits:
+        out.append("   ⛔ **0 條** ⇒ ⚠ 而這只證明「首頁那一層沒有」，"
+                   "⛔ 不證明這個站沒有條款（掃描範圍見檔頭）。")
+        return
+    for label, url in hits:
+        out.append(f"      ── {label}　{url}")
+    for label, url in hits:
+        out.append("")
+        out.append(f"   ══ 原文：{label}")
+        body, e2 = B.get(url, retries=2, timeout=60)
+        if e2 or not body:
+            out.append(f"      ✗ 抓不到：{B.why(e2)}　⇒ 這一頁是【未驗】")
+            continue
+        txt = B.visible_text(
+            body.decode("utf-8", "replace") if isinstance(body, bytes) else str(body), " ")
+        txt = re.sub(r"\s+", " ", txt).strip()
+        out.append(f"      （{len(txt):,} 字，⭐ 逐字，⛔ 不是我的摘要）")
+        for i in range(0, min(len(txt), 4000), 200):
+            out.append("      " + txt[i:i + 200])
+        if len(txt) > 4000:
+            out.append(f"      …⚠ **截到 4,000 字**（原文 {len(txt):,} 字）"
+                       "⇒ ⛔ 後面那一段沒有印出來，要裁禁止條文的話請連網址一起看")
+
+
 def main():
     out = [f"# MOPS／OpenAPI 探針（丁級 11 終點驗證）",
            f"# ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果",
@@ -909,6 +982,8 @@ def main():
     survivor_fs_case(out)
     out.append("")
     revenue_hist_columns(out)
+    out.append("")
+    terms_case(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
     print("\n".join(out))

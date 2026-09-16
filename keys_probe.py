@@ -588,13 +588,28 @@ def avg_residual():
             if len(row) < 7:
                 continue
             iso = _roc_date(str(row[0]))
-            c = _n(str(row[6]))
+            # ⛔⛔ 這裡本來寫 `_n(...)`，⚠ 而 `_n` **這個檔裡根本沒有**
+            #   ⇒ probe run 131 在 Actions 上 `NameError` 炸掉整支（rc=1）。
+            #   ⭐ 而離線自測**全綠**：假回應讓上面那道「title 要回音代號與月份」
+            #     提前 `continue`，⇒ 這一行**一次都沒被走過**（第七點第三個）。
+            #   ⇒ 用**唯一那一份**數字清洗（四點五：`backfill._num` ＝ `fetch._num`）。
+            c = B._num(str(row[6]))
             if iso and c not in ("", "--", "X0.00"):
                 got[iso] = c
     say(f"  官方回到的天數：{len(got)}")
     only_ours = sorted(set(ours) - set(got))
     only_off = sorted(set(got) - set(ours))
-    diff = sorted(d for d in set(ours) & set(got) if ours[d] != got[d])
+    # ⛔⛔ 這裡**不可以比字串**：我方 CSV 寫 `4.3`、官方回 `4.30`
+    #   ⇒ 比字串會把**每一天**都判成「收盤不同」，⚠ 而那個結論剛好是
+    #     這一節在找的東西 ⇒ ⛔ 它會**確認一個假的發現**，而畫面上完全正常。
+    #   ⇒ ⭐ 比**數值**。轉不成數字的兩邊都當「比不了」，⛔ 不當成不同。
+    diff = sorted(d for d in set(ours) & set(got)
+                  if _same_price(ours[d], got[d]) is False)
+    n_incomp = sum(1 for d in set(ours) & set(got)
+                   if _same_price(ours[d], got[d]) is None)
+    if n_incomp:
+        say(f"  ⚠ **這一層沒跑**：{n_incomp} 天兩邊有一邊不是數字 ⇒ 比不了"
+            "（⛔ 不算「相同」也不算「不同」）")
     say(f"  ⭐ 只有我方有的日子：{len(only_ours)} {only_ours[:5]}")
     say(f"  ⭐ 只有官方有的日子：{len(only_off)} {only_off[:5]}"
         "　⇒ ⚠ 若 >0，那就是「官方多算了幾天」（⛔ 而那做不出 ±0.01）")
@@ -612,6 +627,18 @@ def _roc_date(s):
     if len(p) != 3 or not p[0].isdigit():
         return None
     return f"{int(p[0]) + 1911:04d}-{p[1].zfill(2)}-{p[2].zfill(2)}"
+
+
+def _same_price(a, b):
+    """兩個價格字串相不相同 → `True`／`False`／`None`（比不了）。
+
+    ⛔ **三種回答，不是兩種**（五點三那條的形狀）：`None` 是「有一邊不是數字」，
+    ⚠ 而把它壓進 `False` 就等於報一筆假的「收盤不同」。
+    """
+    fa, fb = B._num(str(a)), B._num(str(b))
+    if fa == "" or fb == "":
+        return None
+    return float(fa) == float(fb)
 
 
 def _our_closes(sid, ad_year):
