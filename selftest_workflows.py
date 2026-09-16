@@ -1092,6 +1092,59 @@ def main():
        "--tests-for" in htxt and "NOTEST=" in htxt,
        "⛔ hook 裡找不到 `--tests-for`")
 
+    # ═══════════════════════════════════════════════════════════
+    # ⭐⭐ daily 的上櫃還原因子：**先抓 → 再補 → 才掃**
+    #
+    # 市場情報分析線 0020 §三裁定：接進 daily，⛔ **而排序要改**。
+    # ⇒ 而順序錯的後果不是「少補一筆」，是**一道天天紅的閘門**
+    #   （掃描排在補之前 ⇒ 即使這一趟補的正好就是它報的那幾筆）
+    #   ⇒ ⭐ 而天天紅的閘門會被學會忽略（四點五）。
+    #
+    # ⛔ 而這一條不可以靠人記得——下一個人動那一步的時候，
+    #   順序看起來只是幾行 `python xxx.py` 的先後。
+    # ═══════════════════════════════════════════════════════════
+    _dy = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       ".github", "workflows", "daily.yml")
+    _sh = "\n".join(b for _n, b in run_blocks(_dy))
+    # ⛔⛔ 第一版用 `_sh.index(<字串>)` 找位置 ⇒ **當場踩到第七點⑧**：
+    #   我自己在 daily.yml 寫的那段說明裡就有一行
+    #   「② ⭐ **補**：`otc_adj.py --official` ＋ `adjust.py`」
+    #   ⇒ 它**比真正要執行的那一行早** ⇒ 順序判斷當場翻車。
+    # ⇒ ⭐ 改成只看**真的會執行的行**（去掉縮排後以 `python ` 開頭）。
+    _cmds = [ln.strip() for ln in _sh.splitlines()
+             if ln.strip().startswith("python ")]
+
+    def _at(t):
+        for i, ln in enumerate(_cmds):
+            if t in ln:
+                return i
+        return -1
+    _fetch = _at("otc_exright_history.py --no-scan")
+    _fix = _at("otc_adj.py --official")
+    # ⛔ `adjust.py` 在 daily 裡**有兩處**（早的那一處是上市那一輪）
+    #   ⇒ 要找的是 **`--official` 之後**那一處，⛔ 不是第一處
+    #   ——第一版拿到 idx 86（< fix 97）當場誤報：
+    #   ⭐ 第九個那一族，**判準自己把對象選錯了**。
+    _adj = next((i for i, ln in enumerate(_cmds)
+                 if i > _fix >= 0 and "adjust.py" in ln), -1)
+    _scan = _at("otc_exright_history.py --scan-only")
+    ck("⭐ daily 裡三段都在（--no-scan／--official／--scan-only）",
+       _fetch >= 0 and _fix >= 0 and _scan >= 0,
+       f"fetch={_fetch}｜fix={_fix}｜scan={_scan}")
+    ck("⭐⭐ 順序是**先抓 → 再補 → 才掃**"
+       "（⛔ 掃描排在補之前 ＝ 一道天天紅的閘門）",
+       0 <= _fetch < _fix < _scan,
+       f"fetch={_fetch}｜fix={_fix}｜scan={_scan}")
+    ck("⭐ 而 `adjust.py` 在**補之後、掃之前**"
+       "（⛔ 不重算的話，`data/adj/` 還是舊的）",
+       0 <= _fix < _adj < _scan, f"fix={_fix}｜adjust={_adj}｜scan={_scan}")
+    ck("⛔ 而那兩支**不可以**再用不帶旗標的寫法跑"
+       "（⚠ 那等於又把抓與掃綁回一起）",
+       not [ln for ln in _cmds
+            if ln in ("python otc_exright_history.py",
+                      "python otc_reduce_history.py")],
+       "daily 裡還有不帶旗標的那一行")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

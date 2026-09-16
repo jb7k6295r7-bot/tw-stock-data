@@ -748,9 +748,33 @@ jobs:
         run: |
           python selftest_twparse.py
           python selftest_otc_reduce_history.py
-          python otc_reduce_history.py
           python selftest_otc_exright_history.py
-          python otc_exright_history.py
+          # ══════════════════════════════════════════════════════════
+          # ⭐⭐ 三段，⛔ 順序是這件事的**全部**（市場情報分析線 0017-0020 §三裁）
+          #
+          #   ① 抓官方判準檔（`--no-scan`）
+          #   ② ⭐ **補**：`otc_adj.py --official` ＋ `adjust.py`
+          #   ③ 才掃缺口（`--scan-only`，⛔ 不連外，讀①寫下的那一份）
+          #
+          # ⛔⛔ 本來是「①③ 合在一支跑、而②根本不在 daily 裡」
+          #   ⇒ 上櫃還原因子**只在有人手動派 feeds 時才落地**
+          #   ⇒ 而③掃的是**還沒補之前**的 `data/adj/`
+          #   ⇒ ⭐ 實測：有官方事件的 5 天 **5／5** 出現 ✗、沒事件的 2 天 **2／2** 整天綠
+          #     （翻 main 上 `_last_run.md` 的 305 個歷史版本數的，樣本 7 天）
+          #
+          # ⇒ ⭐ 驗收判準（裁定裡寫死的）：**修好之後若它還是天天紅，就是沒修對。**
+          #   ⛔ 而處置不可以是把閘門放寬——那會讓它**永遠不紅**，
+          #     而永遠不紅的閘門跟沒有閘門一樣（四點五）。
+          # ══════════════════════════════════════════════════════════
+          python otc_reduce_history.py --no-scan
+          python otc_exright_history.py --no-scan
+          # ② ⭐ 補。⛔ `--official` 不連外（它讀①剛抓下來的那兩份判準檔）。
+          python selftest_otc_adj_official.py
+          python otc_adj.py --official
+          python adjust.py
+          # ③ ⭐ 現在才掃——⛔ 這一半沒有連外。
+          python otc_reduce_history.py --scan-only
+          python otc_exright_history.py --scan-only
           # ⭐⭐ 換供料的**第 1 步**（市場情報分析線 2026-09-10 20:00 裁）：
           #   官方三支聯集 vs 我方 `data/adj/`，**雙向**逐筆比對、分四類，
           #   ⛔ 一列都不寫進 `data/adj/`。

@@ -290,44 +290,98 @@ def main():
     ap.add_argument("--start", default="2008/01/01")
     ap.add_argument("--end", default="")
     ap.add_argument("--json", help="離線用：讀一個檔當回應")
+    # ═══════════════════════════════════════════════════════════════
+    # ⭐⭐ 兩半場可以分開跑（市場情報分析線 0020 §三裁的那件事）
+    #
+    # 這一支做兩件事：**抓官方判準檔** ＋ **逐筆掃我方 `data/adj/` 缺哪些**。
+    # ⛔ 而在 `daily.yml` 裡它排在 `otc_adj.py --official` **之前**
+    #   ⇒ 掃的是**還沒補之前**的 `data/adj/` ⇒ ⭐ 那一塊**每天都紅**，
+    #   ⚠ 即使這一趟補的正好就是它報的那幾筆（feeds.yml 的註解⑥實測過）。
+    #
+    # ⇒ ⭐ 而「天天紅的閘門會被學會忽略」是本 repo 付過代價的（四點五）。
+    #   ⇒ ⛔ 而處置**不是**把閘門放寬（那會讓它**永遠不紅**），
+    #     ⭐ 是把**順序**改成「先抓 → 再補 → 才掃」。
+    #
+    # ⚠ 而兩半場的 runlog 區塊名字**不同**，理由是實際的：
+    #   同名的區塊會互相覆蓋 ⇒ ⛔ 先跑的那一半就看不見了。
+    #   ⭐ 而**掃描那一半留著原名**（`otc_exright_history`），
+    #   因為別的線與歷史紀錄跟的是那一個名字。
+    ap.add_argument("--no-scan", action="store_true",
+                    help="只抓官方判準檔，⛔ 不掃缺口（daily 的第一半）")
+    ap.add_argument("--scan-only", action="store_true",
+                    help="不連外，讀回已經抓下來的判準檔再掃（daily 的第二半）")
     a = ap.parse_args()
+    if a.no_scan and a.scan_only:
+        raise SystemExit("⛔ `--no-scan` 與 `--scan-only` 不可以同時給")
 
-    rl = runlog.Run("otc_exright_history")
+    rl = runlog.Run("otc_exright_history:fetch" if a.no_scan
+                    else "otc_exright_history")
     today = datetime.now(TPE).strftime("%Y-%m-%d")
     end = a.end or today.replace("-", "/")
     rl.info("端點", f"POST {URL}｜{a.start} ~ {end}"
                     "　⛔ 一定要 POST、日期一定要帶斜線（兩者都會靜靜回今天）")
 
-    if a.json:
+    if a.scan_only:
+        # ⭐ 不連外：讀回第一半場剛寫下的那一份。
+        #   ⛔ 而「讀不到」要**大聲失敗**，⚠ 不是當成 0 筆往下跑
+        #   ——四點六那一條：讀不到判準檔的表現是**空值**，不是錯誤。
+        if not os.path.exists(OUT):
+            rl.check("`--scan-only` 要讀的判準檔在不在", False,
+                     f"{OUT} 不在 ⇒ ⛔ 這一半什麼都沒掃到，"
+                     "⚠ 請先跑一趟 `--no-scan`")
+            return rl.finish()
+        with io.open(OUT, encoding="utf-8") as f:
+            rd = list(csv.reader(f))
+        rows = [r[:len(HEADER) - 1] for r in rd[1:] if r]
+        rl.info("判準檔（`--scan-only` 讀回來的）",
+                f"data/meta/otc_exright_history.csv｜{len(rows):,} 筆"
+                "　⛔ 這一半沒有連外")
+        rl.check("判準檔讀回來不是空的", bool(rows), f"{len(rows)} 筆")
+        if not rows:
+            return rl.finish()
+    elif a.json:
         raw, err = io.open(a.json, "rb").read(), None
     else:
         raw, err = _post(URL, {"startDate": a.start, "endDate": end,
                                "response": "json"})
-    if err or not raw:
-        rl.check("抓得到 exDailyQ", False, f"{str(err)[:100]}"
-                 "｜⛔ 抓不到不等於沒有歷史（本機對 tpex 一律 403，要在 Actions 上跑）")
-        return rl.finish()
-    try:
-        payload = json.loads(raw.decode("utf-8", "replace"))
-    except ValueError as ex:                                     # noqa: BLE001
-        head = raw[:80].decode("utf-8", "replace").replace("\n", " ")
-        rl.check("回應是 JSON", False,
-                 f"{str(ex)[:50]}｜開頭={head!r}　⚠ 若是 HTML 多半是被擋，不是端點壞了")
-        return rl.finish()
+    if not a.scan_only:
+        if err or not raw:
+            rl.check("抓得到 exDailyQ", False, f"{str(err)[:100]}"
+                     "｜⛔ 抓不到不等於沒有歷史（本機對 tpex 一律 403，要在 Actions 上跑）")
+            return rl.finish()
+        try:
+            payload = json.loads(raw.decode("utf-8", "replace"))
+        except ValueError as ex:                                 # noqa: BLE001
+            head = raw[:80].decode("utf-8", "replace").replace("\n", " ")
+            rl.check("回應是 JSON", False,
+                     f"{str(ex)[:50]}｜開頭={head!r}　⚠ 若是 HTML 多半是被擋，不是端點壞了")
+            return rl.finish()
 
-    rows, note = parse(payload, a.start.replace("/", "-"), end.replace("/", "-"))
-    rl.info("官方回的", note)
-    rl.check("回應涵蓋我請求的整段期間（不是靜靜回今天）", bool(rows), note)
-    if not rows:
-        return rl.finish()
+        rows, note = parse(payload, a.start.replace("/", "-"),
+                           end.replace("/", "-"))
+        rl.info("官方回的", note)
+        rl.check("回應涵蓋我請求的整段期間（不是靜靜回今天）", bool(rows), note)
+        if not rows:
+            return rl.finish()
 
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with io.open(OUT, "w", encoding="utf-8", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(HEADER)
-        for r in sorted(rows):
-            w.writerow(r + [today])
-    rl.info("判準檔", f"data/meta/otc_exright_history.csv｜{len(rows):,} 筆")
+    if not a.scan_only:
+        os.makedirs(os.path.dirname(OUT), exist_ok=True)
+        with io.open(OUT, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(HEADER)
+            for r in sorted(rows):
+                w.writerow(r + [today])
+        rl.info("判準檔",
+                f"data/meta/otc_exright_history.csv｜{len(rows):,} 筆")
+
+    if a.no_scan:
+        # ⭐ 第一半場到此為止：判準檔抓回來了，⛔ 而**還沒補**，所以現在掃沒有意義。
+        #   ⇒ daily.yml 接下來會跑 `otc_adj.py --official` ＋ `adjust.py`，
+        #     再回頭用 `--scan-only` 掃一次。
+        rl.info("⭐ 這一半只抓不掃",
+                "⇒ 補完（`otc_adj.py --official` ＋ `adjust.py`）之後"
+                "再跑一次 `--scan-only`，⛔ 那時掃的才是補過的 `data/adj/`")
+        return rl.finish()
 
     have = ours_events()
     miss = [r for r in rows if (r[1], r[0]) not in have]
