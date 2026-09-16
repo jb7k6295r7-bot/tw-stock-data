@@ -120,6 +120,15 @@ on:
       months_years:
         description: "official-months 要掃哪幾個民國年。all／104-115／109／104-106,112"
         default: "all"
+      # ⭐⭐ 母體是 **1,158×12 ＝ 13,896 格**（上市）／**972×12 ＝ 11,664 格**（上櫃）。
+      #   ⛔ 照 `official-stats` 那個 `--limit 400` 走，一趟 7 分鐘只做 400 格
+      #     ⇒ 要**三十幾趟**手動派工——⚠ 而那種補法實際上等於補不完
+      #     （四點六③那條的形狀：程式做得到，⛔ 而沒有人按得到）。
+      #   ⇒ ⭐ 一趟 8,000 格 × 1 秒 ≈ 2.2 小時，job 上限 350 分鐘 ⇒ 賠得起，
+      #     而**期中每 50 格落地一次** ⇒ 被砍最多賠 50 格，⛔ 不是整批。
+      months_limit:
+        description: "official-months 一趟最多做幾格 (代號,年)。⭐ 8000 ≈ 2.2 小時"
+        default: "8000"
 
 permissions:
   contents: write
@@ -670,11 +679,12 @@ jobs:
           RC=0
           MK="${{ inputs.months_market }}"; [ -n "$MK" ] || MK=twse
           YRS="${{ inputs.months_years }}"; [ -n "$YRS" ] || YRS=all
-          echo "[official-months] 市場 $MK｜年份 $YRS"
+          echo "[official-months] 市場 $MK｜年份 $YRS｜本趟上限 ${{ inputs.months_limit }} 格"
           python selftest_official_stats.py || RC=1
           # ⛔ 一行寫完：續行會讓「多行裸跑」那道守門看不到 `|| RC=`，
           #   ⚠ 而它擋的是 `set -e` 讓後面幾行一次都不跑、而 run 是綠的那一種。
-          python official_stats.py --market "$MK" --months-years "$YRS" --limit 400 --sleep 1 || RC=1
+          LIM="${{ inputs.months_limit }}"; [ -n "$LIM" ] || LIM=8000
+          python official_stats.py --market "$MK" --months-years "$YRS" --limit "$LIM" --sleep 1 || RC=1
           exit $RC
 
       - name: 找基本面歷史的來源
