@@ -225,6 +225,24 @@ def main():
         finally:
             shutil.rmtree(d, ignore_errors=True)
 
+    # ── ⑨ ⭐⭐ hook 有沒有跑「跨檔效應」那一族 ──
+    #    2026-09-16 實測到的坑：我在 `selftest_probes.py` 寫了一行 os.remove，
+    #    ⇒ `selftest_probes.py` 全綠、⛔ `selftest_no_data_delete.py` 紅
+    #    ⇒ hook 一聲都沒吭 ⇒ probe run 134 的 step 6 failure ⇒ 同步整個被 skip。
+    #    ⭐ 判準比**行為**：真的跑一次 hook（造一個會讓那道守門紅的暫存檔），
+    #    ⛔ 不是比 hook 的原始碼有沒有那幾個字（第七點第八個）。
+    hookp = os.path.join(HERE, ".githooks", "pre-commit")
+    htxt = io.open(hookp, encoding="utf-8").read() if os.path.exists(hookp) else ""
+    ck("⑨ ⭐ hook 有跑跨檔守門 `selftest_no_data_delete.py`"
+       "（⛔ 第三道只跑「對應的那一支」，看不到跨檔效應）",
+       "selftest_no_data_delete.py" in htxt, "hook 裡找不到")
+    ck("⑨ ⭐ 也跑 `selftest_lowwater.py`（同一族）",
+       "selftest_lowwater.py" in htxt, "hook 裡找不到")
+    ck("⑨ ⛔ 而 `selftest_zero_dep.py` **不收進 hook**（實測 63 秒）"
+       "　⚠ 一支慢到讓人想 `--no-verify` 的 hook 等於沒有",
+       "selftest_zero_dep" not in htxt.split("for G in")[-1].split("done")[0]
+       if "for G in" in htxt else False, "它被收進那個迴圈了")
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

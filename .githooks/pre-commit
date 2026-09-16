@@ -31,6 +31,34 @@ if echo "$STAGED" | grep -qE '\.py$'; then
     exit 1
   }
   tail -2 /tmp/_dup.log | head -1
+
+  # ⛔⛔ 第五道（2026-09-16 加）：**跨檔效應的那幾道守門，hook 本來一道都沒跑。**
+  #
+  #   第三道跑的是「動到的檔**對應的**那一支自測」⇒ 它只看得到同一支的行為。
+  #   ⚠ 而今天實測到的坑是**跨檔**的：我在 `selftest_probes.py` 寫了一行
+  #     `os.remove(os.path.join(tmp, "meta", "official_monthly_amount.csv"))`
+  #     ⇒ `selftest_probes.py` 全綠，⛔ 而 `selftest_no_data_delete.py` 紅
+  #     ⇒ probe run 134 的 step 6 failure ⇒ **步驟 7~16 全部 skipped**
+  #       （其中包括「把程式同步到 main」）⇒ 那一趟一行程式都沒搬。
+  #
+  #   ⇒ ⭐ 所以這一道跑「**掃全庫**」那一族，動到任何 .py 就跑。
+  #   ⚠ 而收進來的判準是**秒數**（一支慢到讓人想 `--no-verify` 的 hook 等於沒有）：
+  #     實測 `selftest_no_data_delete` 718 ms、`selftest_lowwater` 911 ms ⇒ 收
+  #     ⛔ `selftest_zero_dep` **63 秒** ⇒ **不收**，它留在 workflow 裡
+  #        （⚠ 代價已經知道：它紅的時候會關掉整條同步線，而 hook 擋不到它）
+  for G in selftest_no_data_delete.py selftest_lowwater.py; do
+    [ -f "$G" ] || continue
+    if ! python3 "$G" >"/tmp/_g_$$.log" 2>&1; then
+      echo "⛔ $G 沒過（跨檔守門），**不讓 commit**："
+      grep -E "^\s*✗" "/tmp/_g_$$.log" | head -8
+      tail -1 "/tmp/_g_$$.log"
+      echo "   （要跳過：git commit --no-verify）"
+      rm -f "/tmp/_g_$$.log"
+      exit 1
+    fi
+    echo "[pre-commit] 跨檔守門 $G ⇒ $(tail -1 "/tmp/_g_$$.log")"
+    rm -f "/tmp/_g_$$.log"
+  done
 fi
 
 # ⛔⛔ 第三道（2026-09-16 加）：**改到 X.py 就跑 selftest_X.py**。
