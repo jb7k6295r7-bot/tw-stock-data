@@ -1026,6 +1026,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 6236,中湛,tpex,2026-06-02,2026-06-10,5,5,5,0,notrade
 6236,中湛,tpex,2026-06-10,2026-07-01,13,13,13,0,notrade
 6236,中湛,tpex,2026-07-07,2026-08-12,24,24,24,0,notrade
+6236,中湛,tpex,2026-09-01,2026-09-18,12,12,12,0,notrade
 6240,松崗,tpex,2015-01-14,2015-02-05,15,15,15,0,notrade
 6240,松崗,tpex,2015-02-10,2015-04-13,34,34,34,0,notrade
 6240,松崗,tpex,2015-05-14,2015-05-22,5,5,5,0,notrade
