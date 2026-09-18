@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-09-16,7947,補丁科,emerging,,1205,844,1006.13,1186114,1193384879,,,,,均價/額推算,915,1
 2026-09-17,7947,補丁科,emerging,,948,874,912.2,424653,387368467,-93.93,,,,均價/額推算,903,1
+2026-09-18,7947,補丁科,emerging,,969,851,913.87,793831,725458336,1.67,,,,均價/額推算,941,1
