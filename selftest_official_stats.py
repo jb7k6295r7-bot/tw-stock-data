@@ -866,6 +866,47 @@ def main():
            if isinstance(n, __import__("ast").Call)
            and isinstance(n.func, __import__("ast").Name)})
 
+    # ── ⑫-B ⭐⭐ **月**表的加權均價是**另一欄、另一條規則** ──
+    #   ⛔ 它跟上面那個 `avg_close`（收盤價的簡單平均、三段規則）不是同一個量
+    #   ——⚠ 兩欄的名字很像（第七點第十個：兩邊的數字都對，而它們不是同一個量）。
+    #   ⭐ 這幾格是 2026-09-19 母體級實測（123,847 格）裡**真的那幾格**。
+    ck("⑫-B 月均價是**無條件捨去**（1477／民107-11：商 171.4399938892）",
+       str(O.monthly_avg_expected(_DD("171.4399938892") * _DD("1000"),
+                                  _DD("1000"))) == "171.43")
+    ck("⑫-B ⛔ 而官方那一格寫的是 171.44 ⇒ `matches` 要回 **False**"
+       "（⚠ 那 45 格**成因不知道**，⛔ 而不知道不可以用容許值蓋掉）",
+       not O.monthly_avg_matches(_DD("171.4399938892") * _DD("1000"),
+                                 _DD("1000"), "171.44"))
+    ck("⑫-B ⭐ 而正常那一格要對得上",
+       O.monthly_avg_matches(_DD("25390279924"), _DD("1007670601"), "25.19"),
+       str(O.monthly_avg_expected(_DD("25390279924"), _DD("1007670601"))))
+    # ⛔ 這一條要**自己接住例外**：不接的話突變會讓整支自測當場中斷，
+    #   ⚠ 而「崩潰」跟「這條斷言沒用」在畫面上一模一樣（七點②）。
+    try:
+        _zero = (O.monthly_avg_expected(1, 0) is None
+                 and O.monthly_avg_matches(1, 0, "1.00") is False)
+    except Exception as _ex12b:                                     # noqa: BLE001
+        _zero = f"⛔ 炸掉了：{type(_ex12b).__name__}"
+    ck("⑫-B ⛔ 成交股數是 0 ⇒ 回 None（⚠ 而 `matches` 回 False，⛔ 不是炸掉）",
+       _zero is True, f"{_zero}")
+    # ⭐⭐ 而「精度不足」那一族被這個反例推翻：2330／民115-5 的商距離下一分
+    #   只有 1.86e-09（比那 45 格裡任何一格都近 20 倍）⇒ ⛔ 而官方**捨去**了它。
+    #   ⚠ 任何「照相對距離決定要不要進位」的規則都得把它進位 ⇒ 它們全部解釋不了那 45 格。
+    ck("⑫-B ⭐⭐ 反例：比那 45 格更接近下一分的那一格，官方**捨去**"
+       "（⇒ ⛔ 精度不足那一族解釋不了）",
+       O.monthly_avg_matches(_DD("2273.05999577928") * _DD("100000"),
+                             _DD("100000"), "2273.05"))
+    ck("⑫-B ⭐ 低水位寫下來了（⛔ 只准往下）",
+       O.MONTHLY_AVG_RESIDUAL_LOW == 45, str(O.MONTHLY_AVG_RESIDUAL_LOW))
+    ck("⑫-B ⭐ 這一族也只有一份實作：`monthly_avg_matches` 真的走 `monthly_avg_expected`",
+       "monthly_avg_expected" in {n.func.id for n in __import__("ast").walk(
+           next(x for x in __import__("ast").walk(__import__("ast").parse(io.open(
+               os.path.join(HERE, "official_stats.py"), encoding="utf-8").read()))
+               if isinstance(x, __import__("ast").FunctionDef)
+               and x.name == "monthly_avg_matches"))
+           if isinstance(n, __import__("ast").Call)
+           and isinstance(n.func, __import__("ast").Name)})
+
     # ═══════════════════════════════════════════════════════════
     # ⒓ ⛔⛔ 「官方說沒有」那一句是**逐市場**的
     #
