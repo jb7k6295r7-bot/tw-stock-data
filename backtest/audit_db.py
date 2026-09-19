@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import inspect
 import os
 import sys
 import time
@@ -258,10 +259,12 @@ def _stock_frame(r):
     return df[~df["close"].isna()].copy()
 
 
-def aggregate_ours(res, freq, market: str | None = None):
+def aggregate_ours(res, freq, market: str | None = None, cap: pd.Timestamp | None = None):
     """所有檔按年（freq='Y'）或年月（freq='M'）聚合：收盤簡單平均、最高（含日期）、最低（含日期）、量／金額／筆數合計、加權均價、
     n_markets（該期內 market 欄有幾種：>1 ＝ 轉板年，資料庫線 0922——資料自己講得出來，不必靠 delisted.csv）。
-    market 給了就只取那個市場的列（官方上市表只算上市段、上櫃表只算上櫃段）。回傳 DataFrame，鍵 stock_id＋roc_year（＋month）。"""
+    market 給了就只取那個市場的列（官方上市表只算上市段、上櫃表只算上櫃段）。回傳 DataFrame，鍵 stock_id＋roc_year（＋month）。
+    cap 給了就只算**那一天（含）以前**的列——⭐ 官方年表的「當年」那一列是**抓的那一刻的快照**（`asof` 欄），
+    而我方日檔每天都在往前長 ⇒ ⛔ 不切齊就會拿兩個不同的期間相比，長出一整批假不符（實測：不切齊時民115 有 843／895 列均價不符）。"""
     out = []
     for r in res:
         if r.get("missing_file"):
@@ -269,6 +272,8 @@ def aggregate_ours(res, freq, market: str | None = None):
         df = _stock_frame(r)
         if market is not None:
             df = df[df["mkt"] == market]
+        if cap is not None:
+            df = df[df["date"] <= cap]
         if not len(df):
             continue
         df["roc_year"] = df["date"].dt.year - 1911
@@ -298,22 +303,54 @@ def aggregate_ours(res, freq, market: str | None = None):
     return pd.DataFrame(out)
 
 
-def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = None, cal_days: dict | None = None) -> pd.DataFrame:
+def official_asof_cap(official: pd.DataFrame, cal=None) -> pd.Timestamp | None:
+    """官方年表那一批的快照 ⇒ 我方要算到哪一天為止。⭐ 取的是**最新那一年**那些列的 `asof` 最小值
+    （⚠ 舊年份的列可能是更早抓的，⛔ 而那些年份已經結束、切不切都一樣；會動的只有還沒結束的那一年）。
+
+    ⭐⭐ 而 `asof` 是**抓的那一天**，⛔ 不是「資料含到那一天」：給了 cal（交易日曆）就往回退到
+    **asof 之前的最後一個交易日**。2026-09-20 實測（官方那一批 asof=2026-09-16，民115 的 895 檔）：
+
+        切到 09-15（asof 的前一個交易日）  893／895 ＝ **99.78%**
+        切到 09-16（asof 當天）             131／895 ＝ 14.64%
+        切到 09-17／09-18                    70／52   ＝  7.8%／5.8%
+
+    ⇒ 那一批**不含抓取當天**。⚠ 而這句話的成立範圍是**那一批**（掃描範圍：asof=20260916 的 895 列），
+    ⛔ 不是「官方永遠這樣」——下一批若換了，當年那一整年會整批不符，⭐ 而報告裡那一格就是在叫。
+    沒有 `asof` 欄或全空 ⇒ 回 None（⛔ 不切，維持舊行為）；沒給 cal ⇒ 不退（回 asof 當天）。"""
+    if "asof" not in official.columns or not len(official):
+        return None
+    cur = official[official["roc_year"] == official["roc_year"].max()]
+    a = pd.to_numeric(cur["asof"], errors="coerce").dropna()
+    if not len(a):
+        return None
+    ts = pd.to_datetime(str(int(a.min())), format="%Y%m%d")
+    if cal is None:
+        return ts
+    prev = pd.DatetimeIndex(cal)[pd.DatetimeIndex(cal) < ts]
+    return prev[-1] if len(prev) else ts
+
+
+def official_yearly_check(res, official: pd.DataFrame, transfer: set | None = None, cal_days: dict | None = None,
+                          asof: pd.Timestamp | None = None) -> pd.DataFrame:
     """G1：官方年表（上市 FMNPTK＝含量三欄；上櫃 yearlyStock＝只有價五格，量三欄留空 ⇒ 用「量欄是否空白」分市場）vs 我方日檔按年聚合。
     判準：avg_close 逐位相同——進位規則交給 official_stats.avg_close_matches（上櫃捨去；上市民107起 3 位→banker's、民104~106 四捨五入；資料庫線 2109 母體級 99.983%）；
     high／low 逐位相同；high_date／low_date 月日相同（同值取最後一次）；量三欄只在官方有值時比、逐位相同。
     轉板年＝我方日檔該年 market 欄不只一種（資料庫線 0922：資料自己講得出來）⇒ 價五格只比官方那個市場的那一段、量三欄不比（口徑不同）。
     transfer 已不用（保留參數相容），cal_days＝{roc_year: 日曆交易日數} ⇒ 多一欄 days_short（我方該年少於日曆的天數；缺日或無成交都會讓它 > 0）。
-    量三欄的差另標 qty_note：官方多且不是 1,000 的倍數 ⇒「零股（口徑）」（資料庫線 0922 §一：官方年表含零股、我方日檔不含）。"""
-    all_ = aggregate_ours(res, "Y")[["stock_id", "roc_year", "days", "n_markets"]]
+    量三欄的差另標 qty_note：官方多且不是 1,000 的倍數 ⇒「零股（口徑）」（資料庫線 0922 §一：官方年表含零股、我方日檔不含）。
+    ⭐⭐ asof＝官方那一批的快照日（`asof` 欄）：**當年（還沒結束的那一年）那一列是快照**，而我方日檔每天往前長
+    ⇒ 我方只算到 asof（含）那一天為止，⛔ 不切齊就是拿兩個不同的期間相比。⚠ 而它的表現是「一整年的均價／高低／高低日期同時不符」，
+    ⛔ 看起來跟「我方價格壞掉」一模一樣（2026-09-20 實測：官方 asof=2026-09-16、我方已到 09-18 ⇒ 民115 均價 843／895 列假不符）。"""
+    all_ = aggregate_ours(res, "Y", cap=asof)[["stock_id", "roc_year", "days", "n_markets"]]
     j = official.merge(all_, on=["stock_id", "roc_year"], how="left")
     j["is_tpex"] = j["volume"].isna()
-    seg = pd.concat([aggregate_ours(res, "Y", "twse").assign(is_tpex=False), aggregate_ours(res, "Y", "tpex").assign(is_tpex=True)], ignore_index=True)
+    seg = pd.concat([aggregate_ours(res, "Y", "twse", cap=asof).assign(is_tpex=False), aggregate_ours(res, "Y", "tpex", cap=asof).assign(is_tpex=True)], ignore_index=True)
     seg = seg.drop(columns=["days", "n_markets"]).rename(columns={})
     j = j.merge(seg, on=["stock_id", "roc_year", "is_tpex"], how="left")
     multi = (j["n_markets"] > 1).to_numpy()
     j["status"] = np.where(j["days"].isna(), "我方該年無成交列", np.where(j["avg_close_ours"].isna(), "我方該年無該市場段", np.where(multi, "轉板年（價比該市場段、量不比）", "比對")))
     j["days_short"] = (j["roc_year"].map(cal_days or {}) - j["days"]) if cal_days else np.nan
+    j["asof_cap"] = pd.Timestamp(asof) if asof is not None else pd.NaT
     cmp = j["status"].isin(["比對", "轉板年（價比該市場段、量不比）"]).to_numpy()
     _ok = lambda cond: np.where(cmp, cond.to_numpy(float), np.nan)   # 1.0／0.0／NaN（沒得比）
     # 官方年均價的進位規則（資料庫線 2109，母體級 17,829／17,832 逐位）：上櫃無條件捨去；上市民107起 先到 3 位再 banker's 到 2 位、民104~106 直接四捨五入。
@@ -443,6 +480,12 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
          f"年表 {len(yc):,} 列（上市 {len(twse_y):,}、上櫃 {len(tpex_y):,}；民國 {int(yc['roc_year'].min())}～{int(yc['roc_year'].max())}）；"
          f"我方該年無成交列 {len(nomatch):,} 列（其中民國 104 之前＝資料起點前 {pre:,}，**104 起 {len(nomatch) - pre:,}**）；轉板年（我方日檔該年 market 不只一種）{int((yc['status'].str.startswith('轉板')).sum()):,} 列＝價只比該市場段、量不比；我方無該市場段 {int((yc['status'] == '我方該年無該市場段').sum()):,} 列；比對 {int((yc['status'] == '比對').sum()):,} 列。"
          + (f" 官方端點查無（`_official_stats_miss.csv`）{len(miss):,} 檔——是「查無」不是「不符」。" if miss is not None else ""), "",
+         (f"⭐ 官方年表的**當年**那一列是**快照**：`asof` 欄＝**抓的那一天**（本批 {pd.Timestamp(yc['asof_raw'].dropna().iloc[0]).date() if 'asof_raw' in yc and yc['asof_raw'].notna().any() else '—'}），"
+          f"⛔ 而那一批**不含抓取當天** ⇒ 我方算到它之前的最後一個交易日為止（本批 {pd.Timestamp(yc['asof_cap'].dropna().iloc[0]).date()}），日曆天數也切到同一天。"
+          f"⚠ 三種切法本支自己量到的民115 收盤平均不符列（母體 895）：切到前一交易日 **0 列**／切到 asof 當天 767 列／完全不切 843 列。"
+          f"⛔ 不切齊的話我方每多一個交易日就多一批假不符，而它的形狀是「某一年的均價、最高、最低、高低日期**同時**不符」——⚠ 看起來跟我方價格壞掉一模一樣。"
+          f"⚠ 這句話的成立範圍＝**這一批**，⛔ 不是「官方永遠這樣」；下一批若改了，當年那一整年會整批不符 ⇒ ⭐ 這一格就是在叫。"
+          if yc['asof_cap'].notna().any() else "⚠ 官方年表沒有 `asof` 欄 ⇒ ⛔ 當年那一列比不了（兩邊的期間切不齊），不符要先當成期間不同。"), "",
          "約定（實測出來的，不是文件寫的）：官方兩位小數——上市年表收盤平均＝民107起先到 3 位再 banker's、民104~106 四捨五入（資料庫線 2109：分界是逐年 100%／0% 的乾淨切換，⚠ 官方沒公告，哪天再換會安靜誤報 ⇒ 不符要逐年看）、上櫃年表收盤平均＝無條件捨去、上市月表加權均價＝無條件捨去；最高／最低日期同值取最後一次。已知例外 3 格（2901/105、3016/104、4906/104）⇒ 年均價不符的低水位＝3，⛔ 不是白名單。", "",
          "| 欄（年表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(yc, "avg_ok", "收盤簡單平均（official_stats 進位規則）"), col_stat(yc, "high_ok", "年最高價"), col_stat(yc, "high_date_ok", "年最高價日期"),
@@ -538,6 +581,22 @@ def _selftest() -> int:
     check(r13["status"] == "我方該年無成交列" and pd.isna(r13["avg_ok"]) and pd.isna(r13["volume_ok"]), "我方沒有那一年 ⇒ 狀態標出、各欄不判")
     r22 = yc[yc.stock_id == "2222"].iloc[0]
     check(r22["status"] == "我方該年無成交列", "我方無檔 ⇒ 我方該年無成交列")
+    # ⭐ 官方年表「當年」是快照：切到 asof 才比得了（⛔ 不切齊＝拿兩個不同期間相比，形狀跟我方價格壞掉一樣）
+    Ya = Y.copy(); Ya["asof"] = 20250103
+    Ya.loc[0, ["avg_close", "volume", "amount", "transactions"]] = [10.05, 3000, 30400, 11]
+    cap = official_asof_cap(Ya)
+    check(cap == pd.Timestamp("2025-01-03"), "asof 取最新那一年的最小值 ⇒ 2025-01-03（⛔ 沒給日曆就不退）")
+    check(official_asof_cap(Y) is None, "沒有 asof 欄 ⇒ 回 None（⛔ 不切，維持舊行為）")
+    check(official_asof_cap(Ya.assign(asof=[20250103, 20240101, 20250210])) == pd.Timestamp("2025-01-03"), "舊年份的 asof 更早也不影響（只看最新那一年）")
+    cal_t = pd.to_datetime(["2025-01-02", "2025-01-03", "2025-01-06"])
+    check(official_asof_cap(Ya.assign(asof=20250106), cal_t) == pd.Timestamp("2025-01-03"), "給日曆 ⇒ 退到 asof **之前**的最後一個交易日（抓的那天的資料還沒進去）")
+    check(official_asof_cap(Ya.assign(asof=20250105), cal_t) == pd.Timestamp("2025-01-03"), "asof 落在非交易日 ⇒ 一樣退到 1/03")
+    check(official_asof_cap(Ya.assign(asof=20250101), cal_t) == pd.Timestamp("2025-01-01"), "asof 早於整本日曆 ⇒ 退不了就回 asof 當天（⛔ 不是空的）")
+    ya = official_yearly_check(res, Ya, None, None, asof=cap).iloc[0]
+    check(ya["days"] == 2 and ya["avg_ok"] == 1.0 and ya["volume_ok"] == 1.0, "切到 1/03 ⇒ 我方 2 天、均價 10.05、量 3000 ⇒ 全合")
+    check(official_yearly_check(res, Ya).iloc[0]["avg_ok"] == 0.0, "⛔ 不傳 asof（預設值那條路）⇒ 我方算到 12/30 ⇒ 均價 10.17 vs 官方 10.05 判不符")
+    src = inspect.getsource(main)
+    check("asof=cap" in src and "official_asof_cap(Y, cal)" in src and "cal[cal <= cap]" in src and 'yc["asof_raw"]' in src, "呼叫點真的那樣叫：main 取 cap（⭐ 帶日曆進去才會退一天）、傳 asof=、日曆天數也切到同一天、報告拿得到原始 asof")
     Y2 = Y.copy(); Y2.loc[0, "avg_close"] = 10.18; Y2.loc[0, "volume"] = 6001; Y2.loc[0, "high_date"] = "12/30"
     y2 = official_yearly_check(res, Y2).iloc[0]
     check(y2["avg_ok"] == 0.0 and y2["volume_ok"] == 0.0 and y2["high_date_ok"] == 1.0, "官方改 10.18／6001／12/30 ⇒ 平均、量判不符；日期 12/30＝最後一次 ⇒ 合")
@@ -704,8 +763,11 @@ def main():
         raise SystemExit("⛔ data/meta/official_*.csv 沒有內容（分支上的 data/ 比 main 舊？先 git checkout origin/main -- data/meta）")
     miss_p = os.path.join(meta, "_official_stats_miss.csv")
     miss = pd.read_csv(miss_p, dtype=str) if os.path.exists(miss_p) else None
-    cal_days = pd.Series(cal.year - 1911).value_counts().to_dict()
-    yc = official_yearly_check(res, Y, None, cal_days); mc = official_monthly_check(res, M); tp = official_tpex_ratios(res, TP)
+    cap_raw = official_asof_cap(Y)      # 官方抓的那一天（⛔ 那一批不含當天）
+    cap = official_asof_cap(Y, cal)     # ⭐ 官方年表「當年」那一列是快照 ⇒ 我方切到它含到的最後一天才比得了（⛔ 不切齊會長出一整批假不符）
+    cal_days = pd.Series((cal[cal <= cap] if cap is not None else cal).year - 1911).value_counts().to_dict()
+    yc = official_yearly_check(res, Y, None, cal_days, asof=cap); mc = official_monthly_check(res, M); tp = official_tpex_ratios(res, TP)
+    yc["asof_raw"] = pd.Timestamp(cap_raw) if cap_raw is not None else pd.NaT
     mt_p = os.path.join(meta, "official_monthly_tpex.csv")
     mt = official_monthly_tpex_check(res, pd.read_csv(mt_p, dtype={"stock_id": str})) if os.path.exists(mt_p) else None
     if mt is not None:
