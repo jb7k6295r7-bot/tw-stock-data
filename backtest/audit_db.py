@@ -226,8 +226,29 @@ def _official_date_ok(ours, official):
 
 
 def _trunc2(x: float) -> float:
-    """兩位小數無條件捨去（官方上櫃年表的收盤平均、上市月表的加權均價都是這樣印的：實測相符率 99.98%／99.9%，四捨五入只有 50%）。"""
+    """兩位小數無條件捨去——⛔ 只給「進位規則還沒裁下來」的那些**候選**欄用（G4 上櫃月表 close_avg 的捨去候選、報告裡的描述欄）。
+    ⛔ 已經裁下來的兩條都**不在這裡**：年表收盤平均走 `official_stats.avg_close_expected`、月表加權均價走 `official_stats.monthly_avg_expected`（四點五：同一件事只准一份實作）。
+    ⚠ 而它跟那兩條**不等價**：這裡是浮點＋1e-9 容許值，⇒ 商離下一分不到 1e-9 時它會進位，而官方是捨去（資料庫線 2355 的 2330／民115-5 反例）。"""
     return float(np.floor(x * 100 + 1e-9) / 100)
+
+
+def _monthly_avg_ours(amount, volume) -> float:
+    """月加權均價（金額÷股數）＝官方會寫成的那個兩位小數。⛔ 規則不在這裡實作：
+    `official_stats.monthly_avg_expected` 是唯一那一份（資料庫線 2355 母體級 123,847 格實測：
+    無條件捨去 99.9637%，六種候選裡最高；⚠ 剩 45 格官方多一分、成因不知道 ⇒ 當低水位）。
+    ⚠ 它跟年表的 `avg_close`（收盤的**簡單**平均、三段進位）**不是同一條規則**——兩欄名字很像。"""
+    if not (volume > 0):
+        return np.nan
+    d = O.monthly_avg_expected(amount, volume)
+    return np.nan if d is None else float(d)
+
+
+def _low_water_note(resid: int, low: int) -> str:
+    """低水位的判讀字。⭐ 低水位只准往下（資料庫線 2355）：殘差變多＝有新的東西壞掉，
+    ⛔ 不可以把低水位往上改（那等於把一條會紅的判準關掉）。⚠ 變少要改小、⛔ 不是沉默。"""
+    if resid > low:
+        return f"⛔ 超過低水位 {low} ⇒ 有新的東西壞掉，⛔ 不可以把低水位往上改"
+    return f"✓ 未超過" if resid == low else f"✓ 低於低水位 {low} ⇒ 低水位要改小"
 
 
 def _stock_frame(r):
@@ -270,7 +291,7 @@ def aggregate_ours(res, freq, market: str | None = None):
                    "close_avg_round_ours": round(mean_c, 2), "close_avg_trunc_ours": _trunc2(mean_c),
                    "volume_ours": vsum, "amount_ours": asum,
                    "tx_ours": float(g["tx"].sum()) if g["tx"].notna().any() else np.nan,
-                   "avg_price_ours": _trunc2(asum / vsum) if vsum > 0 else np.nan}
+                   "avg_price_ours": _monthly_avg_ours(asum, vsum)}
             for kk, vv in zip(keys, k):
                 row[kk] = int(vv)
             out.append(row)
@@ -344,7 +365,8 @@ def _qty_note(j: pd.DataFrame) -> np.ndarray:
 
 def official_monthly_check(res, official: pd.DataFrame) -> pd.DataFrame:
     """G2：官方月表（上市 FMSRFK）vs 我方日檔**上市段**按年月聚合（轉板月只算 twse 段，同年表）。量三欄逐位相同；high／low 逐位；
-    avg_price（加權＝金額÷股數、兩位小數無條件捨去，實測 99.64%）逐位相同——⚠ 不符的多半是量也不符的列（官方分子分母含我方沒有的成交），報告裡分開數。"""
+    avg_price（加權＝金額÷股數）走 `official_stats.monthly_avg_matches`（唯一那一份；資料庫線 2355 在「金額與股數都逐位相同」的 123,847 格上比過六種候選，
+    無條件捨去 99.9637% 最高，⛔ 四捨五入只有 49.80%）——⚠ 不符的多半是量也不符的列（官方分子分母含我方沒有的成交），報告裡分開數。"""
     ours = aggregate_ours(res, "M", "twse")
     j = official.merge(ours, on=["stock_id", "roc_year", "month"], how="left")
     j["status"] = np.where(j["days"].isna(), "我方該月無上市段", "比對")
@@ -352,7 +374,10 @@ def official_monthly_check(res, official: pd.DataFrame) -> pd.DataFrame:
     _ok = lambda cond: np.where(cmp, cond.to_numpy(float), np.nan)
     j["high_ok"] = _ok((j["high_ours"] - j["high"]).abs() <= 1e-9)
     j["low_ok"] = _ok((j["low_ours"] - j["low"]).abs() <= 1e-9)
-    j["avg_price_ok"] = _ok((j["avg_price_ours"] - j["avg_price"]).abs() <= 1e-9)
+    # ⛔ 不比浮點差：判準走 official_stats.monthly_avg_matches（唯一那一份，逐位比、⛔ 不留容許值——
+    #    資料庫線 2355：±0.01 的容許值會把那 45 格沒解釋的殘差變成一條永遠不會紅的判準）
+    j["avg_price_ok"] = np.array([float(O.monthly_avg_matches(a, v, o)) if c and not (pd.isna(a) or pd.isna(v) or pd.isna(o) or not (v > 0)) else np.nan
+                                  for c, a, v, o in zip(cmp, j["amount_ours"], j["volume_ours"], j["avg_price"])])
     for c in ("volume", "amount", "transactions"):
         oc = "tx_ours" if c == "transactions" else f"{c}_ours"
         j[f"{c}_ok"] = np.where(~cmp | j[c].isna() | j[oc].isna(), np.nan, ((j[oc] - j[c]).abs() <= 0.5).astype(float))
@@ -411,6 +436,9 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
     zrule = vb[vb["qty_note"].str.startswith("官方多的含非整張")]["qty_note"].value_counts().to_dict()
     ab = yc[(yc["amount_ok"] == 0) & (yc["volume_ok"] == 1)]
     ab_by_year = ab.groupby("roc_year").size().to_dict()
+    # ⭐ 進位殘差的母體＝金額與股數**都**逐位相同的格（資料庫線 2355）：差別只可能是進位，⛔ 不是口徑也不是缺列
+    exact = mc[(mc["amount_ok"] == 1) & (mc["volume_ok"] == 1)] if len(mc) else mc
+    resid_base, resid = len(exact), int((exact["avg_price_ok"] == 0).sum()) if len(exact) else 0
     L = ["## G. 官方統計交叉核對（`data/meta/official_*.csv`，資料庫線 0737 抓）", "",
          f"年表 {len(yc):,} 列（上市 {len(twse_y):,}、上櫃 {len(tpex_y):,}；民國 {int(yc['roc_year'].min())}～{int(yc['roc_year'].max())}）；"
          f"我方該年無成交列 {len(nomatch):,} 列（其中民國 104 之前＝資料起點前 {pre:,}，**104 起 {len(nomatch) - pre:,}**）；轉板年（我方日檔該年 market 不只一種）{int((yc['status'].str.startswith('轉板')).sum()):,} 列＝價只比該市場段、量不比；我方無該市場段 {int((yc['status'] == '我方該年無該市場段').sum()):,} 列；比對 {int((yc['status'] == '比對').sum()):,} 列。"
@@ -426,7 +454,7 @@ def official_summary(yc: pd.DataFrame, mc: pd.DataFrame, tp: pd.DataFrame, miss:
          "| 欄（月表） | 比對列 | 不符列 | 不符檔 | 例 |", "|---|---:|---:|---:|---|",
          col_stat(mc, "volume_ok", "月成交股數"), col_stat(mc, "amount_ok", "月成交金額"), col_stat(mc, "transactions_ok", "月成交筆數"),
          col_stat(mc, "high_ok", "月最高價"), col_stat(mc, "low_ok", "月最低價"), col_stat(mc, "avg_price_ok", "月加權均價（金額÷股數，無條件捨去）"), "",
-         f"月加權均價不符 {int((mc['avg_price_ok'] == 0).sum()):,} 列裡，同列量三欄也不符的 {int(((mc['avg_price_ok'] == 0) & (mc['volume_ok'] == 0)).sum()):,} 列（分子分母不同、不是進位）；量合而均價不符 {int(((mc['avg_price_ok'] == 0) & (mc['volume_ok'] == 1)).sum()):,} 列。月金額不符而股數相同 {int(((mc['amount_ok'] == 0) & (mc['volume_ok'] == 1)).sum()):,} 列，逐年月 {mc[(mc['amount_ok'] == 0) & (mc['volume_ok'] == 1)].groupby(['roc_year', 'month']).size().to_dict()}（資料庫線 2109：109/10 是官方月表與官方逐日自己不合）。", ""]
+         f"月加權均價不符 {int((mc['avg_price_ok'] == 0).sum()):,} 列裡，同列量三欄也不符的 {int(((mc['avg_price_ok'] == 0) & (mc['volume_ok'] == 0)).sum()):,} 列（分子分母不同、不是進位）；量合而均價不符 {int(((mc['avg_price_ok'] == 0) & (mc['volume_ok'] == 1)).sum()):,} 列。⭐ 進位殘差（金額**與**股數都逐位相同、只剩進位可能的那一族，資料庫線 2355 的母體）＝**{resid:,} 列**／該族 {resid_base:,} 列，低水位 official_stats.MONTHLY_AVG_RESIDUAL_LOW＝{O.MONTHLY_AVG_RESIDUAL_LOW}（{_low_water_note(resid, O.MONTHLY_AVG_RESIDUAL_LOW)}）——⛔ 判準不留容許值（±0.01 會讓這條永遠不會紅）；成因不知道，而「官方精度不夠」那一族已被 2330／民115-5 的反例推翻（商離下一分 1.86e-09 而官方捨去）。月金額不符而股數相同 {int(((mc['amount_ok'] == 0) & (mc['volume_ok'] == 1)).sum()):,} 列，逐年月 {mc[(mc['amount_ok'] == 0) & (mc['volume_ok'] == 1)].groupby(['roc_year', 'month']).size().to_dict()}（資料庫線 2109：109/10 是官方月表與官方逐日自己不合）。", ""]
     if len(tp):
         q = lambda c: "／".join(f"{tp[c].quantile(x):.3f}" for x in (0.05, 0.5, 0.95))
         L += [f"上櫃量三欄（官方 yearlyStock ÷ 我方年合計，{len(tp):,} 列；⛔ 只描述不判）：股數 p05／p50／p95 ＝ {q('volume_ratio')}；金額 {q('amount_ratio')}；筆數 {q('tx_ratio')}。", ""]
@@ -569,11 +597,21 @@ def _selftest() -> int:
     check(official_monthly_check(res, M.assign(volume=[3001, 1], transactions=[12, 1])).iloc[0]["qty_note"] == "官方多的含非整張（①②）", "月表：官方多 1 股 1 筆 ⇒ 官方多的含非整張（①②）")
     check(official_monthly_check(res3, M3).iloc[0]["avg_price_ok"] == 1.0 and official_monthly_check(res3, M3).iloc[0]["avg_price_ours"] == 10.19, "30590÷3000 = 10.1966 ⇒ 捨去 10.19（四捨五入會是 10.20）")
     check(_trunc2(10.1966) == 10.19 and _trunc2(10.2) == 10.2 and _trunc2(0.29) == 0.29, "_trunc2：捨去、整值不動、浮點 0.29 不掉成 0.28")
+    # ⭐ 資料庫線 2355 的反例形狀：商離下一分只差 1e-10（比 _trunc2 的 1e-9 容許值還近）⇒ 官方仍然**捨去**
+    #   ⛔ 這一條就是「月均價不可以自己實作」的證據：_trunc2 會進位、official_stats 的捨去不會
+    A9, V9 = 10139999999999, 1000000000000
+    check(_monthly_avg_ours(A9, V9) == 10.13 and _trunc2(A9 / V9) == 10.14, "商 10.139999999999（離下一分 1e-10）⇒ 官方規則捨去 10.13，⛔ 而浮點 _trunc2 會給 10.14")
+    res9 = [dict(res[0], amount=np.array([A9 / 2, A9 / 2, np.nan, 31500., 10000.]), volume=np.array([V9 / 2, V9 / 2, np.nan, 3000., 1000.]))]
+    M9 = M.copy(); M9.loc[0, "amount"] = A9; M9.loc[0, "volume"] = V9; M9.loc[0, "avg_price"] = 10.13
+    check(official_monthly_check(res9, M9).iloc[0]["avg_price_ok"] == 1.0, "呼叫點也走同一條規則（⛔ 不是只有純函式對）：官方寫 10.13 ⇒ 合")
+    check(official_monthly_check(res9, M9.assign(avg_price=[10.14, 1.0])).iloc[0]["avg_price_ok"] == 0.0, "官方寫 10.14（＝浮點捨去會給的那個值）⇒ 判不符")
+    check(_monthly_avg_ours(30400, 0) is not None and np.isnan(_monthly_avg_ours(30400, 0)), "股數 0 ⇒ NaN，⛔ 不是除以零也不是 0")
+    check(_low_water_note(45, 45) == "✓ 未超過" and _low_water_note(44, 45).startswith("✓ 低於") and _low_water_note(46, 45).startswith("⛔ 超過"), "低水位：等於＝過、變少＝要改小、變多＝⛔ 有東西壞掉")
     check(m1["high_ok"] == 1.0 and m1["low_ok"] == 1.0, "月最高 10.5／最低 9.8")
     check(m2["status"] == "我方該月無上市段" and pd.isna(m2["volume_ok"]), "2 月只有無收盤列 ⇒ 我方該月無上市段")
     check(official_monthly_check(rt, M).iloc[0]["days"] == 1 and official_monthly_check(rt, M).iloc[0]["volume_ours"] == 2000.0, "轉板月：上市月表只算 twse 段（1 月只剩 1/03 那天，量 2000）")
     M2 = M.copy(); M2.loc[0, "avg_price"] = 10.14
-    check(official_monthly_check(res, M2).iloc[0]["avg_price_ok"] == 0.0, "均價差 0.01 ⇒ 不符")
+    check(official_monthly_check(res, M2).iloc[0]["avg_price_ok"] == 0.0, "均價差 0.01 ⇒ 不符（⛔ 判準不留容許值：那 45 格官方多一分的殘差要留得住，±0.01 會讓這條永遠不會紅）")
     # G4 上櫃月表：rt 的 tpex 段只有 1/02（收盤 10.0、量 1000、金額 10000、筆 5）
     MT = pd.DataFrame([{"stock_id": "1111", "roc_year": 114, "month": 1, "close_high": 10.0, "close_low": 10.0, "close_avg": 10.0, "transactions": 6, "amount_kntd": 12, "volume_kshares": 1.2, "turnover_pct": 0.1},
                        {"stock_id": "1111", "roc_year": 114, "month": 2, "close_high": 1.0, "close_low": 1.0, "close_avg": 1.0, "transactions": 1, "amount_kntd": 1, "volume_kshares": 1, "turnover_pct": 0.1}])

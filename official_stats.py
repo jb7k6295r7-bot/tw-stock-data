@@ -270,6 +270,62 @@ def avg_close_matches(mean, roc_year, market, official):
     return avg_close_expected(mean, roc_year, market) == o
 
 
+# ⭐⭐ 而**月**表的 `avg_price` 是**另一欄**：它是**加權**平均（金額÷股數），
+#   ⛔ 不是上面那個「收盤價的簡單平均」——兩欄名字很像，而它們不是同一個量
+#   （CLAUDE.md 第七點第十個）。⇒ 所以它自己一條規則，⛔ 不可以照抄上面那三段。
+#
+#   2026-09-19 母體級實測（**123,847** 個 (檔,年,月)：官方月表 vs 我方日檔月彙總，
+#   ⭐ 母體只取「成交金額與成交股數**都逐位相同**」的那些格 ⇒ 差別只可能是進位）：
+#
+#     無條件捨去                          123,802／123,847 ＝ **99.9637%**
+#     先進位到 5 位再捨去                  123,781　　　　　 99.9467%
+#     先進位到 4 位再捨去                  123,242　　　　　 99.5115%
+#     先進位到 3 位再捨去                  117,721　　　　　 95.0536%
+#     仟元÷仟股（各四捨五入）               98,994　　　　　 79.9357%
+#     直接四捨五入                         61,670　　　　　 49.7953%
+#   ⇒ ⭐ **每一個候選都比捨去差** ⇒ 判準是**無條件捨去**。
+#
+#   ⚠ 而剩下那 **45** 格（官方比我方多一分）**成因不知道**，⛔ 那就寫不知道。
+#   ⭐⭐ 而「官方算的時候精度不夠」那一整族**被一個反例推翻**了：
+#     那 45 格的商全部落在下一分**以下** 4.3e-09 ~ 1.2e-07（相對），
+#     ⛔ 而 `2330／民115-5` 的商距離下一分只有 **1.86e-09**（比那 45 格裡
+#     **任何一格**都近 20 倍）——⚠ 而官方**捨去**了它。
+#   ⇒ ⭐ 所以任何「相對距離的**單調函數**」（固定有效位數、單精度浮點、
+#     先進位到第 n 位）都解釋不了這 45 格。
+#   ⛔⛔ 而這句話**只**否定那一族：它是關於「相對距離」這個**軸**的話，
+#     ⚠ 不是「沒有任何函數做得到」（CLAUDE.md 三點 6.5 付過的代價）。
+#
+#   ⇒ 落地：判準維持捨去，而那 45 格當**低水位**（只准往下，⛔ 不准變多）。
+MONTHLY_AVG_RESIDUAL_LOW = 45       # 2026-09-19 實測；⛔ 只准往下
+
+
+def monthly_avg_expected(amount, volume):
+    """月**加權**均價：官方會寫成的那個兩位小數。→ `Decimal`；`volume` 是 0 回 `None`。
+
+    ⛔ 規則是**無條件捨去**，⚠ 而它跟年表的 `avg_close`（簡單平均、三段規則）
+    **不是同一條**——⭐ 兩欄的名字很像，⛔ 而它們是兩個不同的量。
+    """
+    a = amount if isinstance(amount, _D) else _D(str(amount))
+    v = volume if isinstance(volume, _D) else _D(str(volume))
+    if not v:
+        return None
+    return (a / v).quantize(_D("0.01"), rounding=_ROUND_DOWN)
+
+
+def monthly_avg_matches(amount, volume, official):
+    """官方寫的月均價對不對得上 ⇒ True／False。⛔ 逐位比，不留容許值。
+
+    ⚠ 已知 45 格（全母體 123,847）官方會多一分而我方說不出為什麼
+    ⇒ ⛔ **這裡不可以放一個 ±0.01 的容許值**：那會把「一個沒解釋的殘差」
+    變成「一條永遠不會紅的判準」，⭐ 而殘差變多的那一天就沒有人會知道。
+    """
+    got = monthly_avg_expected(amount, volume)
+    if got is None:
+        return False
+    o = official if isinstance(official, _D) else _D(str(official))
+    return got == o.quantize(_D("0.01"))
+
+
 def tpex_yearly_path():
     return os.path.join(META, "official_yearly_tpex.csv")
 
@@ -380,9 +436,12 @@ def parse_tpex_yearly(payload, sid):
 # 2026-09-16 回測線 0841 §四 4. 點名要它（「更早年份你抓了我就重跑」），
 # ⚠ 而我自己也需要它當**外部錨點**：他們量到兩件我在「年」這一級分不出來的事——
 #   ② 民國 109 的年成交金額，我方全部多 1~1,040 元（量與筆數逐位相同）
-#   ④ 上市年均價有 1.9% 落在「四捨五入 +0.01」，⭐ 而要把和推過分界
-#      只需要不到**一個檔位**（0.005~0.12 元）⇒ ⛔ 不可能是多算／少算一天
-#   ⇒ 兩件都要先落到「月」才看得見。
+#   ④ 上市年均價有 1.9% 落在「四捨五入 +0.01」
+#      ✅ **2026-09-16 結案：進位規則，三段**（見上面 `avg_close_expected`）
+#      ⇒ ⛔ 這一件**不再**需要月表；②（民109 金額）才需要，而它也結了：
+#        我方日檔 == 官方 `STOCK_DAY` 逐日（三檔×三欄逐位相同），
+#        而官方月表 `FMSRFK` 比它**少** 317／105／20 元
+#        ⇒ ⭐ 是官方**自己兩條路**不一致，⛔ 不是我方。成因不知道。
 #
 # ⛔ 而兩張月表的欄**同名不同量**（第二點那條的鏡像），所以**各一份檔**：
 #
@@ -590,6 +649,43 @@ def load_sweep_done(path):
     return done
 
 
+SWEEP_HEADER = "stock_id,roc_year,asof,why"
+
+
+def _upgrade_sweep_header(path):
+    """舊檔的表頭沒有 `why` 欄 ⇒ 把表頭提上來（舊列的 `why` 留空）。→ bool。
+
+    ## ⛔ 為什麼要有這一步
+
+    `why` 欄是 2026-09-16 早上才加的 ⇒ **tpex 那份台帳是舊表頭**
+    （`stock_id,roc_year,asof`，3,691 列，run 167 寫的）。
+    ⇒ 而 `save_sweep_done` 是**追加** ⇒ 下一趟會把 **4 欄**的列
+    接在**3 欄**的表頭後面 ⇒ ⚠ 一個欄數不齊的 CSV。
+
+    ⭐ 本程式自己讀得下去（`load_sweep_done` 只取前兩欄）
+    ——⛔ **而那正是它危險的地方**：下一個用 `csv.DictReader` 讀它的人
+    會拿到一個 `None` 鍵，而不會有任何地方報錯
+    （本 repo 記過的「同一個 feed 的 header 會隨時間增欄」那一族）。
+
+    ⚠ 而它是**合併不是取代**（四點六）：舊列一列都不動，
+    ⭐ 而「寫完的列數不可以少於原來那份」是這一步自己的閘門。
+    """
+    if not os.path.exists(path):
+        return False
+    with io.open(path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    if not lines or lines[0].strip() == SWEEP_HEADER:
+        return False
+    before = len(lines) - 1
+    body = [ln + "," if ln and ln.count(",") == 2 else ln for ln in lines[1:]]
+    out = [SWEEP_HEADER] + body
+    if len(out) - 1 < before:                       # ⛔ 永遠不可以變少
+        raise RuntimeError(
+            f"⛔ 升表頭會讓列數變少（{before} → {len(out) - 1}），不寫。")
+    io.open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    return True
+
+
 def save_sweep_done(path, pairs, today, why=""):
     """⭐ **追加**（四點六）：這一趟只知道自己那一部分。
 
@@ -597,11 +693,12 @@ def save_sweep_done(path, pairs, today, why=""):
     （`sweep_consistent_nodata()`）⇒ ⭐ **兩種要分得出來**，
     ⛔ 混在一起的話，日後我方日檔補齊時沒有辦法把那幾格重開。
     """
-    new = not os.path.exists(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    _upgrade_sweep_header(path)
+    new = not os.path.exists(path)
     with io.open(path, "a", encoding="utf-8") as f:
         if new:
-            f.write("stock_id,roc_year,asof,why\n")
+            f.write(SWEEP_HEADER + "\n")
         for sid, y in pairs:
             f.write(f"{sid},{y},{today},{why}\n")
     return len(pairs)
@@ -651,7 +748,29 @@ def our_market_years(sid, market, root=None):
 #: ⭐ 官方「這一格沒有資料」的那句話。⛔ 它**講不出**是哪一種
 #  （未上市／參數越界／端點壞掉都長這樣，CLAUDE.md 第二點）
 #  ⇒ 所以它**單獨**不可以當判準，一定要跟我方資料做「且」。
-NODATA_MARK = "沒有符合條件的資料"
+# ⛔⛔ 2026-09-16 晚：這一行本來是**一個字串**，而那是 **TWSE** 的話。
+#   ⇒ feeds run 167（tpex 月表）實測：本趥 5,000 格**失敗 1,309**，
+#     訊息全部是 `monthlyStock stat='**查無該筆資料**,請重新查詢!!'`
+#   ⇒ ⛔ 比不中 ⇒ 那 1,309 格**一格都沒被記起來** ⇒ 每一趥都回來
+#   ⇒ ⭐ 跟早上幫 twse 修好的**同一個 bug**，只是另一個市場沒跟上
+#     ——CLAUDE.md 四點五那一族：**修好一支、另一支沒跟上，而沒有人會發現**。
+#
+# ⇒ ⭐ 改成**逐市場**，而且查不到要**大聲丟例外**：
+#   ⛔ 不可以有預設值——預設值會讓下一個市場默默套上**別人的那句話**，
+#   而那個 bug 的畫面是「掉這麼多格而一路沒人說」（四點五的通則）。
+# ⚠ 比的是**子串**，⛔ 不含標點：官方兩邊的驚嘆號個數不同（`!` vs `!!`）。
+NODATA_MARK = {"twse": "沒有符合條件的資料",
+               "tpex": "查無該筆資料"}
+
+
+def nodata_mark(market):
+    """這個市場的「官方說沒有」是哪一句 → str。⛔ 查不到就丟例外。"""
+    if market not in NODATA_MARK:
+        raise ValueError(
+            f"⛔ market={market!r} 沒有登記「官方說沒有」那一句話；"
+            f"目前只有 {sorted(NODATA_MARK)}。"
+            " ⚠ 默默套別人的那句會讓這個掃描永遠不收斂。")
+    return NODATA_MARK[market]
 
 
 def sweep_consistent_nodata(err, sid, roc_y, market, root=None):
@@ -687,7 +806,7 @@ def sweep_consistent_nodata(err, sid, roc_y, market, root=None):
     ⇒ 那時這一格會被記成「問完了」而其實沒有。⭐ 而它**看得出來**：
     台帳裡那幾格帶 `nodata` 標記，⇒ 我方日檔日後補齊時可以拿它重開。
     """
-    if NODATA_MARK not in str(err):
+    if nodata_mark(market) not in str(err):
         return False
     return str(roc_y + 1911) not in our_market_years(sid, market, root)
 
@@ -768,7 +887,7 @@ def run_sweep(a, rl, today):
     if nodata:
         save_sweep_done(dp, nodata, today, why="nodata")
     rl.info("⭐ 問完了但官方沒有",
-            f"**{len(nodata):,}** 格（官方說「{NODATA_MARK}」**而且**我方那一年"
+            f"**{len(nodata):,}** 格（官方說「{nodata_mark(a.market)}」**而且**我方那一年"
             f"也沒有 `{a.market}` 的日檔 ⇒ 兩邊一致）"
             "　⇒ ⭐ 記進台帳、**不再重問**；⛔ 而它帶 `nodata` 標記，"
             "我方日檔日後補齊時拿它重開"
