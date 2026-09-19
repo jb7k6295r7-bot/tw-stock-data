@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜official-months ⭐ 官方**月**統計的年份掃描（用 months_market 與 months_years 兩個欄，⛔ 不是 feed／start）｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
+        description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜official-months ⭐ 官方**月**統計的年份掃描（用 months_market 與 months_years 兩個欄，⛔ 不是 feed／start）｜official-months-probe ⭐ 診斷用：印一支代號（填 probe_code）的 monthlyStock 民104/113/114/115 原始回應，只讀不落地｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months]
+        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months, official-months-probe]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
@@ -139,6 +139,14 @@ on:
       months_limit:
         description: "official-months 一趟最多做幾格 (代號,年)。⭐ 5000 ≈ 212 分（實測 2.55 秒/格，job 上限 350 分）"
         default: "5000"
+      # ⭐ 2026-09-20：run 171 實測 tpex monthlyStock 的民114／115【兩年合計 0 列】，
+      #   跨 899 檔（占母體 92.5%）全部卡在同一句「量欄名不是成交仟股(B)」——
+      #   ⛔ 不是少數幾檔的個案，是**整整兩年**。official-months-probe 就是為了
+      #   看清楚這兩年的原始回應長什麼樣，才加的（見 official_stats.py
+      #   `--probe-tpex-month`）。
+      probe_code:
+        description: "official-months-probe 要印哪一支代號（例：1259）"
+        default: "1259"
 
 permissions:
   contents: write
@@ -696,6 +704,10 @@ jobs:
           LIM="${{ inputs.months_limit }}"; [ -n "$LIM" ] || LIM=8000
           python official_stats.py --market "$MK" --months-years "$YRS" --limit "$LIM" --sleep 1 || RC=1
           exit $RC
+
+      - name: 官方**月**統計：診斷 tpex monthlyStock 的原始回應（只讀，不落地）
+        if: inputs.mode == 'official-months-probe'
+        run: python official_stats.py --probe-tpex-month "${{ inputs.probe_code }}"
 
       - name: 找基本面歷史的來源
         if: inputs.mode == 'mops-history-probe'
