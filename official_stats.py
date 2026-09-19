@@ -659,7 +659,7 @@ def _upgrade_sweep_header(path):
 
     `why` 欄是 2026-09-16 早上才加的 ⇒ **tpex 那份台帳是舊表頭**
     （`stock_id,roc_year,asof`，3,691 列，run 167 寫的）。
-    ⇒ 而 `save_sweep_done` 是**追加** ⇒ 下一趥會把 **4 欄**的列
+    ⇒ 而 `save_sweep_done` 是**追加** ⇒ 下一趟會把 **4 欄**的列
     接在**3 欄**的表頭後面 ⇒ ⚠ 一個欄數不齊的 CSV。
 
     ⭐ 本程式自己讀得下去（`load_sweep_done` 只取前兩欄）

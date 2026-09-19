@@ -1344,6 +1344,15 @@ def section_ledger(out):
     out.append("| # | 項目 | 狀態 | 證據／進度 | 備註 |")
     out.append("|---|---|---|---|---|")
     done = tot = 0
+    # ⛔⛔ 2026-09-19 付過代價：上面那一行警語**擋不住我**。
+    #   ⚠ 我當天是用 `db_status.py | grep -E "^\| [A-Z][0-9] "` 只抓表格那幾列
+    #   ⇒ ⭐ **那道防呆剛好被我的 grep 濾掉了**，然後我讀到「B1／B2 0/2,850」
+    #     並且差一點去派一趟多小時的回補——⛔ 而 main 上那兩格**早就 100%**。
+    #   ⇒ ⭐⭐ 通則：**一道寫在「表格正上方」的警語，擋不住一個只讀表格那幾列的人。**
+    #     ⚠ 而「只讀那幾列」不是懶惰，是**正常的讀法**（要拿它做別的事）。
+    #   ⇒ 落地跟本 repo 那句一樣：**可見性要由資料承擔，⛔ 不是由旁邊那行字**
+    #     ⇒ 把它蓋進**每一列自己**的狀態欄。
+    draft = "⛔ 草稿（分支）　" if (_ref and _ref != "main") else ""
     for num, name, probe, hand, note in LEDGER:
         if probe is not None:
             st, ev = _run_probe(probe)
@@ -1352,7 +1361,7 @@ def section_ledger(out):
         tot += 1
         if st.startswith("✅"):
             done += 1
-        out.append(f"| {num} | {name} | {st} | {ev} | {note} |")
+        out.append(f"| {num} | {name} | {draft}{st} | {ev} | {note} |")
     out.append("")
     out.append(f"⇒ **完成 {done} / {tot}**"
                "（⚠ 這個分母只算列進本表的項目，⛔ 不是「資料庫的全部」）\n")
