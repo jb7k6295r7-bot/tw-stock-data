@@ -491,10 +491,35 @@ TPEX_MONTHLY_URL = ("https://www.tpex.org.tw/www/zh-tw/statistics/monthlyStock"
 TM_HEADER = ["stock_id", "roc_year", "month", "close_high", "close_low",
              "close_avg", "transactions", "amount_kntd", "volume_kshares",
              "turnover_pct", "asof"]
-#: ⛔⛔ 這個字串是**閘門**，不是註解：`code=null` 的空回應裡那一欄叫
-#  `成交張數(B)`，⚠ 而**真的有資料**時它叫 `成交仟股(B)`——同一個端點、
-#  同一個位置、兩個**差一千倍**的單位名。⇒ 對不上就整檔失敗，⛔ 不猜。
-TM_VOL_FIELD = "成交仟股(B)"
+#: ⛔⛔ 2026-09-20 訂正：上面那句「差一千倍」是**錯的**。
+#
+#   run 171 實測：tpex `official-months` 續跑到剩 1,773 格時全滅，
+#   訊息全部是「量欄名是成交張數(B)」——⚠ 不是零星個案，是**民114／115
+#   兩整年、跨 899 檔（母體 92.5%）**，`official_monthly_tpex.csv`
+#   這兩年合計 **0 列**。
+#
+#   ⇒ 派 `official_stats.py --probe-tpex-month` 打一支活躍股（1259）：
+#
+#   ```
+#   民104／113（舊）  fields[7] = 成交仟股(B)  data 12 列
+#   民114／115（新）  fields[7] = 成交張數(B)  data 12／9 列 ⭐ 是真資料
+#   ```
+#
+#   ⭐ 而**逐列數字互相印證**（1259/114/1：金額仟元 9,517 ÷ 量 150
+#   ≈ 63.4，跟同一列的收市平均價 63.49 對得上）——⇒ **150 這個數字本來
+#   就是「仟股」的量級**，⛔ 不是差一千倍的「張」（1 張 ＝ 1,000 股 ＝
+#   1 仟股，兩個名字本來就是同一個單位）。
+#
+#   ⇒ ⭐⭐ 所以「成交張數(B) ⇒ 空回應」這條判準本身就是錯的：
+#   它把**兩年的真資料**當成空的擋下來，而且看起來跟「官方真的沒有」
+#   一模一樣（第二點：靜默失敗講不出是哪一種——這次連我們自己的
+#   判準都學會了同一招）。⛔ 舊的推論路徑不明，但當時顯然沒有拿一支
+#   **確定還在交易**的股票去驗證「成交張數(B) 底下是不是真的空」。
+#
+#   ⇒ 落地：兩種欄名都接受（⛔ 而不是「改認新的那個」——舊資料
+#   民104~113 仍然是「成交仟股(B)」，兩種要**同時**認得，見四點五
+#   「同一件事只准有一份實作」：判準只有一份，⛔ 不是新舊各留一份）。
+TM_VOL_FIELDS = ("成交仟股(B)", "成交張數(B)")
 
 
 def tpex_monthly_path():
@@ -552,8 +577,10 @@ def parse_tpex_monthly(payload, sid, roc_y):
     ⛔ 三道判準，缺一道就當失敗（第二點：這一批要自己講出它是誰、是哪一期）：
       ① 回顯的 `code` ＝ 我送的代號（⚠ 參數沒生效時它是 `null`，而 `stat` 仍是 ok）
       ② 回顯的 `date`（西元年）＝ 我送的那一年
-      ③ ⭐ `fields` 裡的量欄名 ＝ `成交仟股(B)`
-         ——⛔ 空回應裡它叫「成交張數」，差一千倍
+      ③ ⭐ `fields` 裡的量欄名 ∈ `TM_VOL_FIELDS`
+         ——民104~113 叫「成交仟股(B)」、民114 起官方換成「成交張數(B)」，
+         ⛔ 兩個名字是**同一個單位**（見 `TM_VOL_FIELDS` 上方的訂正），
+         ⭐ 兩種都算數，不是只認舊的那個
     """
     try:
         d = json.loads(payload.decode("utf-8", "replace")
@@ -575,9 +602,9 @@ def parse_tpex_monthly(payload, sid, roc_y):
         return [], (f"monthlyStock 回顯的 date 是 {t.get('date')!r}，"
                     f"⛔ 不是我送的 {ad} ⇒ 那一年的參數沒生效")
     fields = [str(x).strip() for x in (t.get("fields") or [])]
-    if TM_VOL_FIELD not in fields:
+    if not any(v in fields for v in TM_VOL_FIELDS):
         return [], (f"monthlyStock 的量欄名是 {fields[7:8]!r}，"
-                    f"⛔ 不是 {TM_VOL_FIELD!r} ⇒ **單位可能變了**，不落地")
+                    f"⛔ 不在 {TM_VOL_FIELDS!r} ⇒ **單位可能真的變了**，不落地")
     rows = []
     for r in (t.get("data") or []):
         if len(r) < 9:
@@ -1401,7 +1428,9 @@ def main():
     #   跨 899 檔，⛔ 不是少數幾檔的個案）——`official_monthly_tpex.csv`
     #   兩年**合計 0 列**，而低水位／續跑台帳都看不到「原始回應長什麼樣」。
     #   ⇒ 這支旗標**只印，不寫檔、不落地**，讓下一趟派工能直接看到
-    #   `fields` 陣列本身，而不是只看到 `TM_VOL_FIELD not in fields` 那句摘要。
+    #   `fields` 陣列本身，而不是只看到判準的摘要句。
+    #   ⭐ 已經靠它抓到真正的病根（見 `TM_VOL_FIELDS` 上方的訂正），
+    #   ⛔ 而旗標留著——下一次官方再換名字，還是要能直接看原始回應。
     ap.add_argument("--probe-tpex-month", default="",
                     help="診斷：印一支代號在 104/113/114/115 的 monthlyStock 原始回應"
                          "（⛔ 只讀不寫，不落地，不進 sweep 台帳）")

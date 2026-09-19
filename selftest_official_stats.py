@@ -628,7 +628,7 @@ def main():
        O.parse_years("99,200,109", fake) == [109], str(O.parse_years("99,200,109", fake)))
 
     # ── ⑩b `parse_tpex_monthly`：三道判準各驗一次 ──
-    def _tm(code="6488", date=2024, vol_field=O.TM_VOL_FIELD, stat="ok", n=2):
+    def _tm(code="6488", date=2024, vol_field="成交仟股(B)", stat="ok", n=2):
         return json.dumps({"tables": [{
             "title": "", "code": code, "date": date, "totalCount": n,
             "fields": ["年", "月", "收市最高價", "收市最低價", "收市平均價",
@@ -648,9 +648,19 @@ def main():
     _, e2 = O.parse_tpex_monthly(_tm(date=2020), "6488", 113)
     ck("⛔ 回顯的年**不是我送的那一年** ⇒ 失敗（⚠ 靜靜回別年是第二點①）",
        e2 and "那一年的參數沒生效" in e2, str(e2))
-    _, e3 = O.parse_tpex_monthly(_tm(vol_field="成交張數(B)"), "6488", 113)
-    ck("⭐⭐ 量欄名變成「成交張數」⇒ **不落地**（⚠ 那是差一千倍的單位）",
-       e3 and "單位可能變了" in e3, str(e3))
+    # ⭐⭐ 2026-09-20 訂正：「成交張數(B)」不是空回應的信號，是民114 起
+    #   官方換的新名字（見 official_stats.TM_VOL_FIELDS 上方的訂正）——
+    #   run 171 撞到的正是這一格：舊斷言原本寫「不落地」，而那是錯的。
+    rows_new, err_new = O.parse_tpex_monthly(_tm(vol_field="成交張數(B)"), "6488", 113)
+    ck("⭐⭐ 量欄名是「成交張數(B)」（民114 起的新名字）⇒ **照樣落地**",
+       err_new is None and len(rows_new) == 2, f"{err_new}｜{rows_new[:1]}")
+    ck("  ⭐ 而落地的欄跟舊名字逐位相同（⇒ 兩個名字底下是同一個量）",
+       rows_new == rows, f"{rows_new[:1]} vs {rows[:1]}")
+    _, e3 = O.parse_tpex_monthly(_tm(vol_field="別的名字(B)"), "6488", 113)
+    ck("⛔ 量欄名是**第三種**（兩個已知名字都不是）⇒ 仍然不落地",
+       e3 and "單位可能真的變了" in e3, str(e3))
+    ck("  ⭐⭐ `TM_VOL_FIELDS` 是兩個已知名字的集合，⛔ 不是只有一個",
+       set(O.TM_VOL_FIELDS) == {"成交仟股(B)", "成交張數(B)"}, str(O.TM_VOL_FIELDS))
     _, e4 = O.parse_tpex_monthly(_tm(stat="參數輸入錯誤"), "6488", 113)
     ck("⛔ stat 不是 ok ⇒ 失敗", e4 and "stat=" in e4, str(e4))
     _, e5 = O.parse_tpex_monthly(_tm(n=0), "6488", 113)
