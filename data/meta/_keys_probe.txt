@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T03:12:49+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35463133421
+# ⏱ 這一趟：2026-09-20T03:26:44+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35463916343
 # keys_probe.py 的輸出。**只讀不寫資料。**
 # 問的是：官方回應裡那些我方一路丟掉的鍵，到底寫了什麼。
 # ⛔ 我方 `_tables()` 只取 title/fields/data，其餘全丟，而且丟的時候沒有紀錄。
@@ -187,79 +187,15 @@
 
 ── 上櫃每日收盤行情
    https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/09/09&response=json
-   頂層鍵 ['date', 'flagField', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-     ── date：20260909
-     ── flagField：張數
-     ── stat：ok
-   ⭐ fields（17 欄，逐字）：
-      [ 0] 代號
-      [ 1] 名稱
-      [ 2] 收盤 
-      [ 3] 漲跌
-      [ 4] 開盤 
-      [ 5] 最高 
-      [ 6] 最低
-      [ 7] 成交股數  
-      [ 8]  成交金額(元)
-      [ 9]  成交筆數 
-      [10] 最後買價
-      [11] 最後買量<br>(張數)
-      [12] 最後賣價
-      [13] 最後賣量<br>(張數)
-      [14] 發行股數 
-      [15] 次日漲停價 
-      [16] 次日跌停價
-   ⚠ 這個回應**沒有 data 列**（⛔ 不是「我沒印」）
+   ✗ 抓不到：HTTP 403 Forbidden | <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if 
 
 ── 上櫃融資融券 margin/balance
    https://www.tpex.org.tw/www/zh-tw/margin/balance?date=2026/09/09&response=json
-   頂層鍵 ['date', 'stat', 'tables']
-   ⭐ 平常被丟掉的鍵：['date', 'stat']
-     ── date：20260909
-     ── stat：ok
-   ⭐ fields（20 欄，逐字）：
-      [ 0] 代號
-      [ 1] 名稱
-      [ 2] 前資餘額(張)
-      [ 3] 資買
-      [ 4] 資賣
-      [ 5] 現償
-      [ 6] 資餘額
-      [ 7] 資屬證金
-      [ 8] 資使用率(%)
-      [ 9] 資限額
-      [10] 前券餘額(張)
-      [11] 券賣
-      [12] 券買
-      [13] 券償
-      [14] 券餘額
-      [15] 券屬證金
-      [16] 券使用率(%)
-      [17] 券限額
-      [18] 資券相抵(張)
-      [19] 備註
-   ⭐ 第一列（共 920 列，逐字 repr）：
-      [ 0] 代號　= '00411A'
-      [ 1] 名稱　= '主動統一前沿科技'
-      [ 2] 前資餘額(張)　= '5,175'
-      [ 3] 資買　= '200'
-      [ 4] 資賣　= '243'
-      [ 5] 現償　= '0'
-      [ 6] 資餘額　= '5,132'
-      [ 7] 資屬證金　= '52'
-      [ 8] 資使用率(%)　= '3.45'
-      [ 9] 資限額　= '148,519'
-      [10] 前券餘額(張)　= '0'
-      [11] 券賣　= '101'
-      [12] 券買　= '0'
-      [13] 券償　= '0'
-      [14] 券餘額　= '101'
-      [15] 券屬證金　= '0'
-      [16] 券使用率(%)　= '0.06'
-      [17] 券限額　= '148,519'
-      [18] 資券相抵(張)　= '0'
-      [19] 備註　= ''
+   ✗ 抓不到：HTTP 403 Forbidden | <!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+<!--[if 
 
 ── 上市大盤日成交資訊 FMTQIK（月頻｜⭐ 加權指數日線的候選來源）
    https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?date=20260901&response=json

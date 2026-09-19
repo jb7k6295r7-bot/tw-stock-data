@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-09-20T03:19:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35463133421
-# 停牌／處置／注意 端點探針 2026-09-20T03:18:56+08:00
+# ⏱ 這一趟：2026-09-20T03:33:12+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35463916343
+# 停牌／處置／注意 端點探針 2026-09-20T03:32:41+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
 # 這一趟的選集：--set longhalt
@@ -98,20 +98,7 @@
 
 ── tpex-openapi-mopsfin_t187ap26_O（選單名裡有「停止買賣」）
    https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap26_O
-   ✓ 113 bytes｜中文 9 字　← ⚠ 太少，多半是 js 空殼
-   ① 靶子命中：0／6 （一檔都沒有）
-   ② 日期 0 個
-      「停止買賣」1 次
-      「終止上市」0 次
-      「恢復買賣」0 次
-      「財務業務」0 次
-   ④ 頂層是**陣列**、1 列
-   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-     CompanyName：1 種 大略-KY×1
-     Date：1 種 1150919×1
-     SecuritiesCompanyCode：1 種 4804×1
-     停止買賣開始日：1 種 1150903×1
-   ③ <tr> 0 個｜js 0 支
+   ✗ HTTP 403
 
 ── twse-openapi-TWTAWU（⚠ 對照組：我方已在用）
    https://openapi.twse.com.tw/v1/exchangeReport/TWTAWU
@@ -221,25 +208,7 @@
 
 ── tpex-openapi-cmode（選單原名含「停止交易」）
    https://www.tpex.org.tw/openapi/v1/tpex_cmode
-   ✓ 4,388 bytes｜中文 47 字　← ⚠ 太少，多半是 js 空殼
-   ① 靶子命中：0／6 （一檔都沒有）
-   ② 日期 0 個
-      「停止買賣」0 次
-      「終止上市」0 次
-      「恢復買賣」0 次
-      「財務業務」0 次
-   ④ 頂層是**陣列**、20 列
-   ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-      FinancialAnnouncements：1 種 Ｙ×20
-     AlteredTrading：1 種 Ｙ×16｜⚠ 空的 4
-     CompanyName：20 種｜最小 中湛｜最大 鑫創｜例 ['中湛', '佳總', '凱碩']
-     Date：1 種 1150918×20
-     ManagedStock：0 種 ｜⚠ 空的 20
-     MatchingFrequency：1 種 030×6｜⚠ 空的 14
-     PeriodicTrading：1 種 Ｙ×6｜⚠ 空的 14
-     SecuritiesCompanyCode：20 種｜最小 2067｜最大 8933｜例 ['2067', '3064', '3259']
-     SuspensionOfTrading：1 種 Ｙ×4｜⚠ 空的 16
-   ③ <tr> 0 個｜js 0 支
+   ✗ HTTP 403
 
 ⇒ ① 沒有命中 ⇒ 這條路不對，⛔ **不要**因為名字像就接上去。
 ⇒ ⭐ 而 ③ 是 js 空殼時，⑤⑥ 兩節把外部 `.js` 挖一層——⛔ 「取不到」是還沒解決的工程問題，不是句點。
