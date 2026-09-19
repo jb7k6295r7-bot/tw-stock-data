@@ -217,6 +217,14 @@ jobs:
         timeout-minutes: 10
         run: python ci_step.py selftest_suspend_twse.py
 
+      # ⭐ 這一道驗的是**累積**，⛔ 不是「抓不抓得到」：整份覆蓋／同一天跑兩趟
+      #   數兩次／今天沒回來就把舊列刪掉——三種都是**看起來完全正常**的壞法。
+      #   ⚠ 假回應的鍵名與形狀逐字照 `_suspend_probe.txt` 第六輪（含那一列全空的佔位列）。
+      - name: 驗長期停止買賣的累積（離線）
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python ci_step.py selftest_longhalt.py
+
       - name: 驗上櫃除權息判準會紅也會綠（離線）
         continue-on-error: true
         timeout-minutes: 10
@@ -895,6 +903,19 @@ jobs:
         continue-on-error: true
         timeout-minutes: 20
         run: python suspend.py --daily --sleep 8
+
+      # ★★ 長期停止買賣（G2）。市場情報分析線 2026-09-17 0020 裁【接成每日累積】。
+      #   ⚠ 理由跟上面那一格**一字不差**：三條端點的 `Date`／`出表日期` 相異值
+      #     都只有 1 種 ⇒ 它們是**快照，沒有歷史** ⇒ ⛔ 每天不抓就是永久損失。
+      #   ⭐ 而它是**累積型**輸出（`data/meta/longhalt.csv`）⇒ 合併不是取代，
+      #     今天沒回來的列**原封不動**留著（四點六）；一天跑兩趟是**冪等**的。
+      #   ⛔ 三個限定寫在 `longhalt.py` 的檔頭，⚠ 其中「保留期上限未知」那一條
+      #     每一趟都會在 runlog 裡重印一次——⛔ 它不是裝飾，是**不可以被省掉的**那句話。
+      - name: 長期停止買賣（每日累積）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: python ci_step.py longhalt.py
 
       # ★ 被防護擋下來的請求要印出來。這一支所有的失效模式都是「跑起來完全正常」，
       #   log 裡沒印、又沒人去讀 data/meta/_suspend_skipped.txt 的話，

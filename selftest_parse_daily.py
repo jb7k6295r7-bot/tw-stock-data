@@ -485,6 +485,75 @@ def main():
        "不是漲跌停旗標" in _doc and "一價到底" in _doc,
        "⛔ `docs/READ_CONTRACT.md` 裡找不到那一節")
 
+    print("\n── ⓭ ⭐⭐ TDR：判準是**官方證券種類欄**，⛔ 不是代號長度 ──")
+    # 市場情報分析線 2026-09-17 0010 裁：一次到底、不分批。
+    # ⛔ 這一節用**沙箱的對照表**，⚠ 不是現場的 `industry.csv`
+    #   ——七點⑦：拿現場資料驗判準，等於把斷言綁在「今天剛好有 10 檔 TDR」上。
+    _d13 = tempfile.mkdtemp(prefix="drkind_")
+    _saved13 = (_F.INDUSTRY_CSV, _F._DR_CACHE)
+    try:
+        _p13 = os.path.join(_d13, "industry.csv")
+        with io.open(_p13, "w", encoding="utf-8") as _f13:
+            _f13.write("stock_id,name,market,industry_code,industry_name,listed_date\n")
+            _f13.write("1101,台泥,twse,01,水泥工業,19620209\n")
+            _f13.write("9103,美德醫療-DR,twse,91,存託憑證,20090101\n")
+            _f13.write("910322,康師傅-DR,twse,91,存託憑證,20090101\n")
+        _F.INDUSTRY_CSV, _F._DR_CACHE = _p13, None
+        _got = _F.dr_codes()
+        ck("⓭ 官方欄 91 的都進來了", {"9103", "910322"} <= _got, f"{sorted(_got)}")
+        ck("⓭ ⛔ 而非 91 的沒有（1101 不是 TDR）", "1101" not in _got)
+        ck("⓭ ⭐ 具名的三檔名稱退路也在（⛔ 它們已停交易 ⇒ 官方欄查不到）",
+           {"9106", "9157", "9188"} <= _got)
+        ck("⓭ ⭐⭐ 四碼的 TDR 落在 `dr`（⛔ 不是 `stock` ⇒ 這就是母體那 7 檔）",
+           _F._kind("9103") == "dr" and _F._kind("9157") == "dr")
+        ck("⓭ 六碼的 TDR 也是 `dr`（⛔ 不是 `other`）", _F._kind("910322") == "dr")
+        ck("⓭ ⛔ 而普通股沒有被波及", _F._kind("2330") == "stock")
+        ck("⓭ ⛔ 權證／ETF 的判準沒有被改壞",
+           _F._kind("706985") == "warrant" and _F._kind("0050") == "etf")
+        # ⛔ 讀不到對照表要**大聲失敗**（四點六）：靜靜回空集合 ⇒ 那 4 檔在市 TDR
+        #   無聲回到普通股母體，⚠ 而畫面上完全正常。
+        _F.INDUSTRY_CSV, _F._DR_CACHE = os.path.join(_d13, "_nope.csv"), None
+        try:
+            _F.dr_codes()
+            _loud = False
+        except RuntimeError:
+            _loud = True
+        ck("⓭ ⭐ 對照表不在 ⇒ **大聲失敗**（⛔ 不是回空集合）", _loud)
+        # ⭐ 而判準是「有沒有內容」，⛔ 不是 `os.path.exists`：空殼檔也要失敗。
+        _p13b = os.path.join(_d13, "empty.csv")
+        io.open(_p13b, "w", encoding="utf-8").write(
+            "stock_id,name,market,industry_code,industry_name,listed_date\n")
+        _F.INDUSTRY_CSV, _F._DR_CACHE = _p13b, None
+        try:
+            _F.dr_codes()
+            _loud2 = False
+        except RuntimeError:
+            _loud2 = True
+        ck("⓭ ⭐⭐ **空殼檔**也要失敗（⛔ `os.path.exists` 會靜靜放行）", _loud2)
+        # ⚠ 而「91 有幾列」**不可以**是斷言：TDR 全部下市的那一天它就是 0，
+        #   而那是對的 ⇒ 只驗「一列 91 都沒有時，具名那三檔仍然在」。
+        _p13c = os.path.join(_d13, "no91.csv")
+        with io.open(_p13c, "w", encoding="utf-8") as _f13c:
+            _f13c.write("stock_id,name,market,industry_code,industry_name,listed_date\n")
+            _f13c.write("1101,台泥,twse,01,水泥工業,19620209\n")
+        _F.INDUSTRY_CSV, _F._DR_CACHE = _p13c, None
+        # ⛔ 這一條**要自己接住例外**：不接的話整支自測當場中斷，
+        #   ⚠ 而「崩潰」跟「沒抓到」在畫面上一模一樣（七點②）。
+        try:
+            _no91 = _F.dr_codes()
+        except Exception as _ex13:                                  # noqa: BLE001
+            _no91 = f"⛔ 炸掉了：{type(_ex13).__name__}"
+        ck("⓭ ⭐ 官方欄一列 91 都沒有時**不算失敗**（⚠ 全部下市是合法狀態）"
+           "，而具名三檔仍在", _no91 == {"9106", "9157", "9188"}, f"{_no91}")
+    finally:
+        _F.INDUSTRY_CSV, _F._DR_CACHE = _saved13
+        shutil.rmtree(_d13, ignore_errors=True)
+    # ⭐ 呼叫點：`backfill._kind` 要是**同一份**（四點五），⛔ 不是長得一樣的第二份。
+    ck("⓭ ⭐ `backfill._kind` 就是 `fetch._kind` 本人", B._kind is _F._kind)
+    # ★ 沒有動到 repo 真的那一份
+    ck("★ `fetch.INDUSTRY_CSV` 有還原回去",
+       _F.INDUSTRY_CSV.endswith(os.path.join("meta", "industry.csv")))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

@@ -517,6 +517,21 @@ def check_ledger():
         ck("  ⚠ 反向：在 main 上跑時**不可以**出現那句警告"
            "（⛔ 天天紅的警告會被學會忽略）",
            "只能當草稿" not in t3, [x for x in o3 if "草稿" in x][:1])
+        # ⛔⛔ 2026-09-19 付過代價：上面那句警語在**表格正上方**，
+        #   ⚠ 而我是用 `grep -E "^\| [A-Z][0-9] "` 只抓表格那幾列
+        #   ⇒ ⭐ **那道防呆剛好被我的 grep 濾掉了** ⇒ 我把 main 上早就 100% 的
+        #     B1／B2 讀成「0/2,850、沒開始」，差一點去派一趟多小時的回補。
+        # ⇒ ⭐⭐ 判準：**每一列自己**要帶得出它是草稿，⛔ 不是靠旁邊那行字。
+        _rows2 = [x for x in o2 if x.startswith("| ") and "| 項目 |" not in x
+                  and not x.startswith("|---")]
+        ck("⛔⛔ ⭐ 而**每一列自己**都標了草稿（⚠ 只讀表格那幾列的人也躲不掉）",
+           bool(_rows2) and all("草稿" in x for x in _rows2),
+           f"{len(_rows2)} 列｜沒標的 {[x[:24] for x in _rows2 if '草稿' not in x][:2]}")
+        _rows3 = [x for x in o3 if x.startswith("| ") and "| 項目 |" not in x
+                  and not x.startswith("|---")]
+        ck("  ⚠ 反向：main 上那幾列**一列都不可以**帶草稿兩個字",
+           bool(_rows3) and not any("草稿" in x for x in _rows3),
+           f"{len(_rows3)} 列")
     finally:
         D._git_ref = _g
 

@@ -895,6 +895,58 @@ def one_price(o, h, l, c, chg):
 
 STOCKS_HEADER = ["stock_id", "name", "market", "kind", "first_seen", "last_seen"]
 
+# ⭐⭐ 台灣存託憑證（TDR）：**官方證券種類欄**＝`data/meta/industry.csv` 的
+#   `industry_code == 91`（市場情報分析線 2026-09-17 0010 裁）。
+#   ⚠ 雙向驗過：`industry_code == 91` 的恰好 10 檔、名稱全部以 `-DR` 結尾；
+#     而在市的 `-DR` 結尾檔，代碼**全部**是 91（`docs/READ_CONTRACT.md` 第 122 行）。
+INDUSTRY_CSV = os.path.join(META_DIR, "industry.csv")
+DR_INDUSTRY_CODE = "91"
+
+# ⛔ 名稱退路，**只有這三檔**：它們已停止交易 ⇒ 不在 `industry.csv` 裡，
+#   而它們是**四碼**⇒ 沒有這一行的話會落在 `kind="stock"`（＝普通股母體裡多 3 檔）。
+# ⭐⭐ 而 0010 §二要求這一行旁邊逐字寫下（⛔ 不可以刪，它是這三格的出處）：
+#     **本 3 檔是名稱比對、官方欄無覆蓋**
+# ⚠ 而它**刻意不是**一條「名稱以 -DR 結尾就算」的通則：
+#   `stocks.csv` 裡 `-DR` 結尾共 21 檔，其中 11 檔已停 ⇒ 另外 8 檔是**六碼**
+#   ⇒ 它們本來就落在 `kind="other"`、⛔ 不在任何母體裡 ⇒ 改不改都沒有後果。
+#   ⇒ ⭐ 具名三檔是**可稽核**的，⛔ 而「猜名稱」是這支分類器一開始就否決的做法。
+NAME_FALLBACK_DR = ("9106", "9157", "9188")
+
+_DR_CACHE = None
+
+
+def dr_codes(path=None):
+    """→ 台灣存託憑證的代號集合（官方欄 ∪ 具名的三檔名稱退路）。
+
+    ⛔ **讀不到對照表就大聲失敗**（四點六）：靜靜回一個空集合的話，
+    那 4 檔在市 TDR 會**無聲地**回到普通股母體裡，⚠ 而畫面上完全正常。
+    ⭐ 而判準是「**對照表有沒有內容**」，⛔ 不是 `os.path.exists`
+    ——一個空殼檔會讓後者靜靜放行（`otc_adj.check_official_table()` 同一條）。
+
+    ⚠ 而「`industry_code == 91` 有幾列」**不可以**拿來當斷言：
+    ⛔ TDR 全部下市的那一天它就是 0，而那是**對的**
+    （七點⑦：一條要有壞樣本才驗得到的斷言，壽命等於那個壞樣本）。
+    """
+    global _DR_CACHE
+    if path is None and _DR_CACHE is not None:
+        return _DR_CACHE
+    p = path or INDUSTRY_CSV
+    rows = []
+    if os.path.exists(p):
+        with open(p, encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+    if not rows:
+        raise RuntimeError(
+            f"⛔ 讀不到證券種類對照表（{p}）⇒ TDR 會被分回普通股母體。"
+            "⚠ 判準是『對照表有沒有內容』，⛔ 不是檔案在不在")
+    got = {(r.get("stock_id") or "").strip() for r in rows
+           if (r.get("industry_code") or "").strip() == DR_INDUSTRY_CODE}
+    got |= set(NAME_FALLBACK_DR)
+    got.discard("")
+    if path is None:
+        _DR_CACHE = got
+    return got
+
 
 def _kind(code, name=None):
     """粗分類，只用代號規則，**不猜**。
@@ -926,12 +978,26 @@ def _kind(code, name=None):
     ⇒ 回測線 2026-09-16 的「TDR 部分覆蓋、結構缺 1 檔／10 股-月」就是 9103
     落在那個母體裡、而它沒有月營收面板（9105 反而有 140 期）。
 
-    ⛔⛔ **這裡不改**：要不要把 `-DR` 從普通股母體拿掉是**母體定義**的決定，
-    歸市場情報分析線裁（CLAUDE.md 第五點：換供料＝換維護者）。
-    ⭐ 這一段只負責讓它**不再是隱形的**——⚠ 而在此之前，
-    「四碼＝真正的股票」這句話讀起來完全沒有問題。
+    ## ✅ 已裁、已改（市場情報分析線 2026-09-17 0010）
+
+    裁的是**一次到底、不分批**，理由是：真正讀 `stocks.csv` 的 `kind` 是 13 支，
+    ⭐ 而**只有 2 支影響結果**（`load_universe` 與 `official_stats` 的母體），
+    其餘 11 支是稽核／覆蓋率／分格 ⇒ 它們沒有前瞻紀錄 ⇒ 不需要版本邊界。
+
+    ⇒ ⭐ 判準改成**官方證券種類欄**（`industry.csv` 的 `industry_code == 91`），
+    ⛔ 不是代號長度、⛔ 也不是名稱——⚠ 只有已停交易的**三檔**走具名退路
+    （`NAME_FALLBACK_DR`，那一行旁邊寫著它的出處）。
+    ⇒ 後果（實測重算 `stocks.csv` 全表）：**13 檔**改類，其中**四碼的 7 檔**
+    （在市 9103／9105／9110／9136 ＋ 已停 9106／9157／9188）從 `kind="stock"`
+    變成 `kind="dr"` ⇒ ⭐ 普通股母體 **2,130 → 2,123**（＝ 0006／0010 釘死的那個數）；
+    另外 6 檔是六碼、本來就在 `other`（⛔ 不在任何母體裡）⇒ 對結果沒有影響。
+
+    ⚠ 而 `kind="dr"` 是一個**新的值** ⇒ 下游凡是把 kind 當列舉在分格的，
+    會多出一格；⛔ 把它讀成「未知」而丟掉的地方要自己補。
     """
     c = str(code)
+    if c in dr_codes():
+        return "dr"           # 台灣存託憑證（官方證券種類欄 91 ∪ 具名三檔）
     if len(c) == 6 and c[0] == "7":
         return "warrant"      # 權證（上櫃 70～73 開頭），**不寫進 daily**
     if c.startswith("00"):

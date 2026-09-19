@@ -270,6 +270,62 @@ def avg_close_matches(mean, roc_year, market, official):
     return avg_close_expected(mean, roc_year, market) == o
 
 
+# ⭐⭐ 而**月**表的 `avg_price` 是**另一欄**：它是**加權**平均（金額÷股數），
+#   ⛔ 不是上面那個「收盤價的簡單平均」——兩欄名字很像，而它們不是同一個量
+#   （CLAUDE.md 第七點第十個）。⇒ 所以它自己一條規則，⛔ 不可以照抄上面那三段。
+#
+#   2026-09-19 母體級實測（**123,847** 個 (檔,年,月)：官方月表 vs 我方日檔月彙總，
+#   ⭐ 母體只取「成交金額與成交股數**都逐位相同**」的那些格 ⇒ 差別只可能是進位）：
+#
+#     無條件捨去                          123,802／123,847 ＝ **99.9637%**
+#     先進位到 5 位再捨去                  123,781　　　　　 99.9467%
+#     先進位到 4 位再捨去                  123,242　　　　　 99.5115%
+#     先進位到 3 位再捨去                  117,721　　　　　 95.0536%
+#     仟元÷仟股（各四捨五入）               98,994　　　　　 79.9357%
+#     直接四捨五入                         61,670　　　　　 49.7953%
+#   ⇒ ⭐ **每一個候選都比捨去差** ⇒ 判準是**無條件捨去**。
+#
+#   ⚠ 而剩下那 **45** 格（官方比我方多一分）**成因不知道**，⛔ 那就寫不知道。
+#   ⭐⭐ 而「官方算的時候精度不夠」那一整族**被一個反例推翻**了：
+#     那 45 格的商全部落在下一分**以下** 4.3e-09 ~ 1.2e-07（相對），
+#     ⛔ 而 `2330／民115-5` 的商距離下一分只有 **1.86e-09**（比那 45 格裡
+#     **任何一格**都近 20 倍）——⚠ 而官方**捨去**了它。
+#   ⇒ ⭐ 所以任何「相對距離的**單調函數**」（固定有效位數、單精度浮點、
+#     先進位到第 n 位）都解釋不了這 45 格。
+#   ⛔⛔ 而這句話**只**否定那一族：它是關於「相對距離」這個**軸**的話，
+#     ⚠ 不是「沒有任何函數做得到」（CLAUDE.md 三點 6.5 付過的代價）。
+#
+#   ⇒ 落地：判準維持捨去，而那 45 格當**低水位**（只准往下，⛔ 不准變多）。
+MONTHLY_AVG_RESIDUAL_LOW = 45       # 2026-09-19 實測；⛔ 只准往下
+
+
+def monthly_avg_expected(amount, volume):
+    """月**加權**均價：官方會寫成的那個兩位小數。→ `Decimal`；`volume` 是 0 回 `None`。
+
+    ⛔ 規則是**無條件捨去**，⚠ 而它跟年表的 `avg_close`（簡單平均、三段規則）
+    **不是同一條**——⭐ 兩欄的名字很像，⛔ 而它們是兩個不同的量。
+    """
+    a = amount if isinstance(amount, _D) else _D(str(amount))
+    v = volume if isinstance(volume, _D) else _D(str(volume))
+    if not v:
+        return None
+    return (a / v).quantize(_D("0.01"), rounding=_ROUND_DOWN)
+
+
+def monthly_avg_matches(amount, volume, official):
+    """官方寫的月均價對不對得上 ⇒ True／False。⛔ 逐位比，不留容許值。
+
+    ⚠ 已知 45 格（全母體 123,847）官方會多一分而我方說不出為什麼
+    ⇒ ⛔ **這裡不可以放一個 ±0.01 的容許值**：那會把「一個沒解釋的殘差」
+    變成「一條永遠不會紅的判準」，⭐ 而殘差變多的那一天就沒有人會知道。
+    """
+    got = monthly_avg_expected(amount, volume)
+    if got is None:
+        return False
+    o = official if isinstance(official, _D) else _D(str(official))
+    return got == o.quantize(_D("0.01"))
+
+
 def tpex_yearly_path():
     return os.path.join(META, "official_yearly_tpex.csv")
 
@@ -603,7 +659,7 @@ def _upgrade_sweep_header(path):
 
     `why` 欄是 2026-09-16 早上才加的 ⇒ **tpex 那份台帳是舊表頭**
     （`stock_id,roc_year,asof`，3,691 列，run 167 寫的）。
-    ⇒ 而 `save_sweep_done` 是**追加** ⇒ 下一趥會把 **4 欄**的列
+    ⇒ 而 `save_sweep_done` 是**追加** ⇒ 下一趟會把 **4 欄**的列
     接在**3 欄**的表頭後面 ⇒ ⚠ 一個欄數不齊的 CSV。
 
     ⭐ 本程式自己讀得下去（`load_sweep_done` 只取前兩欄）
