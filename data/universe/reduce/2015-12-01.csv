@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
-2015-12-01,1603,12.10,12.62,退還股款,12.60,
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2015-12-01,1603,12.10,12.62,退還股款,12.60,,13.85,11.40

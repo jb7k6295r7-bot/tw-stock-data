@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2016-10-28,2314,26.30,25.97,0.322985,權,26.30
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2016-10-28,2314,26.30,25.97,0.322985,權,26.30,28.90,23.40,26.30

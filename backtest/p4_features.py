@@ -37,6 +37,7 @@ FILL = 50.0
 LIQ_MIN = 50_000_000     # 近 20 日均額 ≥ 5,000 萬（v2 §三）
 HOLDS = (20, 60, 120)
 REV_WIN, REV_MIN_VALID, REV_TOL = 24, 18, 0.9999
+TDR_INDUSTRY_CODE = "91"            # 存託憑證（官方證券種類欄＝data/meta/industry.csv 的 industry_code，資料庫線 1930）
 MIN_BARS = 120          # v3 補件 §3-1（策略線 09-15 18:27、K線分析 1855 合併）：量測日有價收盤根數 ≥ 120 才進母體；⛔ 120 從當期特徵集最長回看窗推出（ret_120／dist_hi120／dist_lo120／MA120），新增回看窗 > 120 的特徵時本常數要一起改
 LOOKBACKS = {"ma20": 20, "ma60": 60, "ma120": 120, "ret_120": 120, "ret_20": 20, "hi_lo_120": 120, "vol60": 60, "amt20": 20, "amt120": 120, "vol20": 20, "inst20": 20}
 
@@ -71,23 +72,65 @@ def load_inst(sid: str, cal: pd.DatetimeIndex) -> pd.DataFrame:
     return df.apply(pd.to_numeric, errors="coerce").reindex(cal)
 
 
-def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10, incl_current: bool = False) -> pd.DataFrame:
+def load_tdr_codes(path: str | None = None) -> set[str]:
+    """存託憑證（TDR）名單＝`data/meta/industry.csv` 的 `industry_code == 91`（資料庫線 1930：那就是官方的證券種類欄）。
+    ⛔ 讀不到判準檔就**大聲失敗**，⛔ 不是靜靜回空集合（CLAUDE.md 四點六：讀不到的表現是空值、不是錯誤，所以要自己擋）。
+    ⚠ 判準是「那一族**有沒有內容**」，⛔ 不是 `os.path.exists`——一個空殼檔會讓後者靜靜放行。"""
+    p = path or os.path.join(D.DATA, "meta", "industry.csv")
+    if not os.path.exists(p):
+        raise SystemExit(f"⛔ 讀不到 {p}（分支上的 data/ 比 main 舊？先 git checkout origin/main -- data/meta/industry.csv）")
+    df = pd.read_csv(p, dtype=str)
+    ids = set(df.loc[df["industry_code"].astype(str).str.strip() == TDR_INDUSTRY_CODE, "stock_id"].astype(str))
+    if not ids:
+        raise SystemExit(f"⛔ {p} 裡 industry_code == {TDR_INDUSTRY_CODE}（存託憑證）一檔都沒有 ⇒ 判準檔是空殼或欄位換了，⛔ 不可以當成「沒有 TDR」往下跑")
+    return ids
+
+
+def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10, incl_current: bool = False,
+                   undecided: set[str] | None = None) -> pd.DataFrame:
     """rev：period × stock_id 的月營收（research34.load_revenue）。回傳 cal × stock_id 的 0／100／NaN，
     每期在可得日（次月 pub_day 日後第一個交易日）生效、延續到下一期可得日前。
-    incl_current：⛔ 正式值 False（「近 24 期」＝當期之前的 24 期，不含當期）；True 只給對帳敏感度用（視窗＝含當期的 24 期＝前 23 期＋當期，策略線 v5 的讀法，2026-09-15 23:5x 對帳查到）。"""
+    incl_current：⛔ 正式值 False（「近 24 期」＝當期之前的 24 期，不含當期）；True 只給對帳敏感度用（視窗＝含當期的 24 期＝前 23 期＋當期，策略線 v5 的讀法，2026-09-15 23:5x 對帳查到）。
+
+    ⭐⭐ 缺值分三種（K線分析線 0150 §1-2／〈八十五〉，登錄在 P4_v3 追加十八）——判準是【缺失是不是未來事件的函數】：
+
+        ① 該檔自己的營收序列首期到 k **不足 24 期** ⇒ **0.0（False）＝依定義不成立**
+           （⛔ 不是「缺值後補 False」：規則自己造出來的空缺要由規則自己講清楚，〈七十七〉第三種空缺）
+           ⇒ 前瞻可辨識（上市日、期別數，量測當下就知道）
+        ② 當期營收是 NaN（該期沒申報）⇒ **NaN 留著**
+           ⇒ ⛔ 「這家公司後來會不會下市」是量測日不可能知道的事 ⇒ 排除它＝把倖存者偏誤做實
+           ⚠ 而**實際長相**要看清楚：最後那一行 `ffill` 會把上一期的旗標往後帶
+             ⇒ 序列中途才停止申報的，日面板上看到的是**上一期的值**，⛔ 不是 NaN；
+             ⇒ ⭐ 日面板上真正是 NaN 的，是**在來源裡整檔不存在**（`first_k is None`）那一種
+               ——而那正是倖存者的形狀（資料庫線 2350：來源端就沒有已下市公司的營收史）。
+        ③ 有 ≥24 期歷史而近 24 期有效 < 18（來源覆蓋不完整）⇒ **NaN 留著、標不明**
+
+    undecided：⛔ **不寫 False 也不補值**的那一族（本案＝存託憑證，`load_tdr_codes()`）。
+    ⚠ 它**優先**於①——9103 看起來像「期數不足」，⛔ 而它其實是來源覆蓋不完整而原因不明（資料庫線 0410），裁定明文要單獨標。"""
+    undecided = undecided or set()
     periods = list(rev.index)
     rd = R34.rebalance_dates(periods, cal, pub_day)
     flags = {}
     vals = rev.to_numpy(float)
     for j, sid in enumerate(rev.columns):
         col = np.full(len(periods), np.nan)
+        rep = np.flatnonzero(~np.isnan(vals[:, j]))          # 該檔有申報的期別位置
+        first_k = int(rep[0]) if len(rep) else None          # 首期；⛔ 沒有任何一期就不存在
+        tdr = str(sid) in undecided
         for k in range(len(periods)):
-            if k < REV_WIN or np.isnan(vals[k, j]):
+            if np.isnan(vals[k, j]):
+                continue                                      # ② 當期沒申報 ⇒ NaN 留著（前視：後來下不下市不是量測日知道的事）
+            # ⚠ first_k == 0 ⇒ 分不出「新上市」與「營收面板從這裡才開始」⇒ ⛔ 不可以寫成 False，留 NaN（資料起點限制）
+            short = first_k is not None and first_k > 0 and (k - first_k) < REV_WIN
+            if short:
+                # ① 自己的序列不足 24 期 ⇒ 依定義不成立（⛔ 不是缺值）；⚠ 而 undecided（TDR）那一族優先，⛔ 不寫 False
+                if not tdr:
+                    col[k] = 0.0
                 continue
             hist = vals[k - REV_WIN + 1:k, j] if incl_current else vals[k - REV_WIN:k, j]   # incl_current：前 23 期（當期自己不進 max，否則永遠 True）
             valid = hist[~np.isnan(hist)]
             if len(valid) < REV_MIN_VALID:
-                continue
+                continue                                      # ③ 來源覆蓋不完整 ⇒ NaN、標不明
             col[k] = 100.0 if vals[k, j] >= valid.max() * REV_TOL else 0.0
         flags[sid] = col
     F = pd.DataFrame(flags, index=periods)

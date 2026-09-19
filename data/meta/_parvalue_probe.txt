@@ -1,3 +1,4 @@
+# ⏱ 這一趟：2026-09-20T01:32:37+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35458044212
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -27,6 +28,339 @@
      [3] 列數：2
          首列：['115/01/19', '7780', '大研生醫', '185.00', '18.50', '20.35', '16.65', '18.50', '7780,20260109,20260119']
      [4] ★ 日期欄 115/01/19 ~ 115/09/07（2 列有日期）
+
+── ⭐ 清單 C4：**上櫃**面額變更，官方選單上那兩條（從來沒探過）──
+⚠ 既有的否定句是「TPEx 沒有對應端點」，⛔ 而它的掃描範圍**只有 swagger**。
+
+  ── 上櫃變更股票面額預告表
+     https://www.tpex.org.tw/zh-tw/announce/market/change.html
+     ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
+     [形狀] 11,276 bytes｜中文 744 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+     ①  `/…/api/…` 出現過哪些：1 種
+         /fonts.googleapis
+     ②  `fetch(` 的對象：0 種
+     ③  `$.ajax` / `url:` 的對象：0 種
+     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+     ⑤  外部載入的 `.js`：11 支
+         https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+         https://www.tpex.org.tw/rsrc/asset/js/global.js
+         https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
+         https://www.tpex.org.tw/rsrc/js/ie.js
+         https://www.tpex.org.tw/rsrc/js/main.js
+         https://www.tpex.org.tw/rsrc/js/tables.js
+     ⑥ 外部 `.js` 逐支挖：共 11 支｜本站 10 支（其中通用函式庫 7 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
+         ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+         ── https://www.tpex.org.tw/rsrc/asset/js/global.js（103,202 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：2 種
+             /data/menu/en-us/menu.json
+             /data/menu/zh-tw/menu.json
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/js/main.js（45,227 bytes）
+         ①  `/…/api/…` 出現過哪些：1 種
+             /api/codeQuery
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+             /api/codeQuery
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 […TCHA_V3="6LdXisUUAAAAAKDX1D3tRe15UM90fxGLBU9wWRUn",TURNSTILE="0x4AAAAAAA5dUtKdGUVDW9i-";let isDev="localhost"===location.hostname,API_PATTERN="/www/{LANG}/{ACTION}";function initHeaderSearch(){const t={"上櫃":1,"興櫃":2,"創櫃":3,Stock:1,Emerging:2,GISA:3},e=API_PATT…]
+                 […ostname,API_PATTERN="/www/{LANG}/{ACTION}";function initHeaderSearch(){const t={"上櫃":1,"興櫃":2,"創櫃":3,Stock:1,Emerging:2,GISA:3},e=API_PATTERN.replace(/\{LANG\}/,lang).replace(/\{ACTION\}/,"api/codeQuery");function n(t){setTimeout((()=>{location.href=t}),200)}$…]
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/js/tables.js（168,139 bytes）
+         ①  `/…/api/…` 出現過哪些：2 種
+             /api
+             /api/codeQuery
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+             .json
+             /test-proxy/tpex_www/zh-tw/api/codeQuery
+             1.json
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：2 支
+             https://www.google.com/recaptcha/api.js?render=explicit
+             https://www.tpex.org.tw/rsrc/js/${base + $(
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js（87,533 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+             e.jsonp
+             e.jsonpCallback
+             t.jsonpCallback
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js（1,300 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+             h.json
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js（2,771 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js（3,702 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         …（本站另 2 支未挖，cap=8）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,345 字）
+      ── 第 1 段（130 字）
+         function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
+      ── 第 2 段（294 字）
+         "use strict";function modifyJson(e){for(let t of e.tables[0].data)t[7]=`<a href="${t[7]}">試算</a>`}tables.init({pattern:API_PATTERN,action:"bulletin/pvChgAnn",au
+         toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3da53d7799246f9',t:'MTc4OTgzOTEyMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+   ⑦ `data-*` 屬性：**2 種**
+      data-format = 'csv'
+      data-format = 'print'
+     ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn
+           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年09月18日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+        https://www.tpex.org.tw/www/en-us/bulletin/pvChgAnn
+           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/18 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+        https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
+           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+     ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
+           ⭐ 它回顯的 `date`：（沒有這個鍵）｜`totalCount`：['0']
+           ⚠ 回應裡沒有 `date` 鍵 ⇒ ⛔ 這一格**判不出**參數有沒有生效（⚠ 不可以讀成「有生效」）
+           開頭 '{"tables":[{"title":"","subtitle":"115年09月18日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
+           ── ⭐ 原始回應整份（⛔ 不是摘要）──
+             {"tables":[{"title":"","subtitle":"115年09月18日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
+
+  ── 變更股票面額恢復交易參考價
+     https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
+     ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
+     [形狀] 11,776 bytes｜中文 748 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+     ①  `/…/api/…` 出現過哪些：1 種
+         /fonts.googleapis
+     ②  `fetch(` 的對象：0 種
+     ③  `$.ajax` / `url:` 的對象：0 種
+     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+     ⑤  外部載入的 `.js`：11 支
+         https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+         https://www.tpex.org.tw/rsrc/asset/js/global.js
+         https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js
+         https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
+         https://www.tpex.org.tw/rsrc/js/ie.js
+         https://www.tpex.org.tw/rsrc/js/main.js
+         https://www.tpex.org.tw/rsrc/js/tables.js
+     ⑥ 外部 `.js` 逐支挖：共 11 支｜本站 10 支（其中通用函式庫 7 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
+         ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
+         ── https://www.tpex.org.tw/rsrc/asset/js/global.js（103,202 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：2 種
+             /data/menu/en-us/menu.json
+             /data/menu/zh-tw/menu.json
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/js/main.js（45,227 bytes）
+         ①  `/…/api/…` 出現過哪些：1 種
+             /api/codeQuery
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+             /api/codeQuery
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 […TCHA_V3="6LdXisUUAAAAAKDX1D3tRe15UM90fxGLBU9wWRUn",TURNSTILE="0x4AAAAAAA5dUtKdGUVDW9i-";let isDev="localhost"===location.hostname,API_PATTERN="/www/{LANG}/{ACTION}";function initHeaderSearch(){const t={"上櫃":1,"興櫃":2,"創櫃":3,Stock:1,Emerging:2,GISA:3},e=API_PATT…]
+                 […ostname,API_PATTERN="/www/{LANG}/{ACTION}";function initHeaderSearch(){const t={"上櫃":1,"興櫃":2,"創櫃":3,Stock:1,Emerging:2,GISA:3},e=API_PATTERN.replace(/\{LANG\}/,lang).replace(/\{ACTION\}/,"api/codeQuery");function n(t){setTimeout((()=>{location.href=t}),200)}$…]
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/js/tables.js（168,139 bytes）
+         ①  `/…/api/…` 出現過哪些：2 種
+             /api
+             /api/codeQuery
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+             .json
+             /test-proxy/tpex_www/zh-tw/api/codeQuery
+             1.json
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：2 支
+             https://www.google.com/recaptcha/api.js?render=explicit
+             https://www.tpex.org.tw/rsrc/js/${base + $(
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js（87,533 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+             e.jsonp
+             e.jsonpCallback
+             t.jsonpCallback
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js（1,300 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+             h.json
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js（2,771 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js（3,702 bytes）
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+                 ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
+                 ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
+         …（本站另 2 支未挖，cap=8）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,571 字）
+      ── 第 1 段（130 字）
+         function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
+      ── 第 2 段（520 字）
+         "use strict";function modifyJson(t){for(let e of t.tables[0].data)e[0]=e[0]+'<div class="hide">'+e[8]+"</div>",e.splice(8,1);t.tables[0].fields.splice(8,1)}popu
+         pWindow.init(),tables.init({pattern:API_PATTERN,action:"bulletin/pvChgRslt",autoLoad:!0,autoChange:!1,beforeInit:t=>{},beforeRender:modifyJson,afterRender:()=>{
+         },tables:[{align:"auto F0 C1 C2 C3",sortable:!0,pagin:10}]}),$("#tables-content .rwd-table").on("click","tbody>tr",(t=>{const e=$(t.currentTarget).find("td:firs
+         t>.hide");popupWindow.open(e.html())}));
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3da53efce43dd26',t:'MTc4OTgzOTEyNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+   ⑦ `data-*` 屬性：**4 種**
+      data-format = 'D'
+      data-format = 'csv'
+      data-format = 'print'
+      data-start = '20190909'
+     ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt
+           [形狀] 292 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260920~null","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券名稱'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+        https://www.tpex.org.tw/www/en-us/bulletin/pvChgRslt
+           [形狀] 316 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260920~null","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing Pric'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+        https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
+           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
+     ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt　[形狀] 8,025 bytes
+           ⭐ 它回顯的 `date`：20150101~20260915｜`totalCount`：['14']
+           ⭐⭐ **回顯了我請求的那一段** ⇒ 期間參數真的生效　⇒ 這條路有歷史
+           開頭 '{"date":"20150101~20260915","tables":[{"title":"","totalCount":14,"fields":["恢復買賣日期","證券代號","證券名稱","最後交易日之收盤價格","恢復買賣開始參考價","漲停價格","跌停價格","開始交易基準價","詳細資料"],"dat'
+           ── ⭐ 原始回應整份（⛔ 不是摘要）──
+             {"date":"20150101~20260915","tables":[{"title":"","totalCount":14,"fields":["恢復買賣日期","證券代號","證券名稱","最後交易日之收盤價格","恢復買賣開始參考價","漲停價格","跌停價格","開始交易基準價","詳細資料"],"data":[["1080909","6548","長科*           ","
+             312.00","31.20","34.30","28.10","31.20","<table><tr><th>證券代號/證券名稱:<\u002fth><td>6548&nbsp/&nbsp長科*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>108/08/29<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth
+             ><td>108/09/09<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>10.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>1.00<\u002ftd><\u0
+             02ftr><\u002ftable>"],["1110829","6613","朋億*           ","169.00","84.50","92.90","76.10","84.50","<table><tr><th>證券代號/證券名稱:<\u002fth><td>6613&nbsp/&nbsp朋億*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth
+             ><td>111/08/18<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>111/08/29<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>2.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><
+             \u002ftr><tr><th>變更後股票面額:<\u002fth><td>5.00<\u002ftd><\u002ftr><\u002ftable>"],["1110905","6548","長科*           ","90.60","36.24","39.85","32.65","36.25","<table><tr><th>證券代號/證券名稱:<\u002fth><td>6548&n
+             bsp/&nbsp長科*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>111/08/25<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>111/09/05<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>2.50000000<\u002ftd>
+             <\u002ftr><tr><th>變更前股票面額:<\u002fth><td>1.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>0.40<\u002ftd><\u002ftr><\u002ftable>"],["1110919","5536","聖暉*           ","206.00","103.00","113.00","92.
+             70","103.00","<table><tr><th>證券代號/證券名稱:<\u002fth><td>5536&nbsp/&nbsp聖暉*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>111/09/07<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>111/09/19<\u002ftd><\u
+             002ftr><tr><th>變更股票面額換股率:<\u002fth><td>2.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>5.00<\u002ftd><\u002ftr><\u002ftable>"],["1111
+             212","3093","港建*           ","109.50","27.38","30.10","24.65","27.40","<table><tr><th>證券代號/證券名稱:<\u002fth><td>3093&nbsp/&nbsp港建*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>111/12/01<\u002ftd><\u0
+             02ftr><tr><th>恢復買賣日期:<\u002fth><td>111/12/12<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>4.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u
+             002fth><td>2.50<\u002ftd><\u002ftr><\u002ftable>"],["1130909","6763","綠界科技*       ","491.00","49.10","54.00","44.20","49.10","<table><tr><th>證券代號/證券名稱:<\u002fth><td>6763&nbsp/&nbsp綠界科技*<\u002ftd><\u00
+             2ftr><tr><th>停止買賣日期:<\u002fth><td>113/08/29<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>113/09/09<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>10.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:
+             <\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>1.00<\u002ftd><\u002ftr><\u002ftable>"],["1130909","8932","智通*           ","169.50","84.75","93.20","76.30","84.80","<table><tr><th
+             >證券代號/證券名稱:<\u002fth><td>8932&nbsp/&nbsp智通*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>113/08/29<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>113/09/09<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u
+             002fth><td>2.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>5.00<\u002ftd><\u002ftr><\u002ftable>"],["1131209","5278","尚凡*           "
+             ,"319.50","31.95","35.10","28.80","31.95","<table><tr><th>證券代號/證券名稱:<\u002fth><td>5278&nbsp/&nbsp尚凡*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>113/11/28<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002f
+             th><td>113/12/09<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>10.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>1.00<\u002ftd><\
+             u002ftr><\u002ftable>"],["1140331","5314","世紀*           ","1390.00","69.50","76.40","62.60","69.50","<table><tr><th>證券代號/證券名稱:<\u002fth><td>5314&nbsp/&nbsp世紀*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002
+             fth><td>114/03/20<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>114/03/31<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>20.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002f
+             td><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>0.50<\u002ftd><\u002ftr><\u002ftable>"],["1150309","8932","智通*           ","199.50","99.75","109.50","89.80","99.80","<table><tr><th>證券代號/證券名稱:<\u002fth><td>
+             8932&nbsp/&nbsp智通*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>115/02/25<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>115/03/09<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>2.00000000<\u0
+             02ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>5.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>2.50<\u002ftd><\u002ftr><\u002ftable>"],["1150413","8937","合騏*           ","145.50","36.38","40.00",
+             "32.75","36.40","<table><tr><th>證券代號/證券名稱:<\u002fth><td>8937&nbsp/&nbsp合騏*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>115/04/01<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>115/04/13<\u002ftd>
+             <\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>4.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>2.50<\u002ftd><\u002ftr><\u002ftable>"],["1
+             150420","3086","華義*           ","325.00","32.50","35.75","29.25","32.50","<table><tr><th>證券代號/證券名稱:<\u002fth><td>3086&nbsp/&nbsp華義*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>115/04/09<\u002ftd><
+             \u002ftr><tr><th>恢復買賣日期:<\u002fth><td>115/04/20<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>10.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額
+             :<\u002fth><td>1.00<\u002ftd><\u002ftr><\u002ftable>"],["1150810","5904","寶雅*           ","720.00","72.00","79.20","64.80","72.00","<table><tr><th>證券代號/證券名稱:<\u002fth><td>5904&nbsp/&nbsp寶雅*<\u002ftd><
+             \u002ftr><tr><th>停止買賣日期:<\u002fth><td>115/07/30<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>115/08/10<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:<\u002fth><td>10.00000000<\u002ftd><\u002ftr><tr><th>變更前股
+             票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>1.00<\u002ftd><\u002ftr><\u002ftable>"],["1150831","4747","強生*           ","56.50","28.25","31.05","25.45","28.25","<table><tr>
+             <th>證券代號/證券名稱:<\u002fth><td>4747&nbsp/&nbsp強生*<\u002ftd><\u002ftr><tr><th>停止買賣日期:<\u002fth><td>115/08/20<\u002ftd><\u002ftr><tr><th>恢復買賣日期:<\u002fth><td>115/08/31<\u002ftd><\u002ftr><tr><th>變更股票面額換股率:
+             <\u002fth><td>2.00000000<\u002ftd><\u002ftr><tr><th>變更前股票面額:<\u002fth><td>10.00<\u002ftd><\u002ftr><tr><th>變更後股票面額:<\u002fth><td>5.00<\u002ftd><\u002ftr><\u002ftable>"]],"summary":[]}],"stat":"ok"}
 
 ── ★ 參數有沒有被無視 ──
 TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
@@ -106,18 +440,18 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
      ⇒ 2015 以前 **0 筆**（⇒ 我方 par_change.csv 從 2015 起是完整的）
 
 [T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆（使用者 2026-09-09 15:20 提供）
-  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20260911
-     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月11日 股票減資恢復買賣參考價格'｜列數 394
+  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20260920
+     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月20日 股票減資恢復買賣參考價格'｜列數 394
   ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西
-     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月11日 股票減資恢復買賣參考價格'｜列數 394
+     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月20日 股票減資恢復買賣參考價格'｜列數 394
      ⇒ 兩條列數 394 vs 394（一樣 ⇒ 同一個東西，`/zh/` 可有可無）
      官方 394 列｜解析出 389 筆｜日期 2011-01-25 ~ 2026-09-07
-     ── 雙向對帳（只比 2015-01-23 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
-       我方 535 筆｜官方（同區間）303 筆
-       ① 官方有、我方沒有：0 筆（✓ 沒有漏抓）
-       ② 我方有、官方沒有：232 筆　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）[('1333', '2016-10-17'), ('1584', '2016-11-08'), ('1742', '2018-03-13'), ('1785', '2017-09-28'), ('1799', '2022-10-11'), ('2061', '2018-10-22'), ('2061', '2021-01-18'), ('2641', '2018-08-22'), ('2719', '2019-10-21'), ('2719', '2020-12-31')]
+     ── 雙向對帳（只比 2013-01-16 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
+       我方 585 筆｜官方（同區間）350 筆
+       ① 官方有、我方沒有：47 筆　← ⛔ **這才是漏抓** [('1234', '2013-11-12'), ('1310', '2013-02-01'), ('1315', '2014-10-31'), ('1410', '2014-10-20'), ('1413', '2014-11-28'), ('1416', '2013-11-01'), ('1449', '2014-11-18'), ('1451', '2013-08-19'), ('1456', '2014-01-13'), ('1513', '2014-12-10')]
+       ② 我方有、官方沒有：282 筆　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）[('1333', '2016-10-17'), ('1584', '2016-11-08'), ('1742', '2018-03-13'), ('1785', '2017-09-28'), ('1799', '2014-02-21'), ('1799', '2022-10-11'), ('2061', '2018-10-22'), ('2061', '2021-01-18'), ('2641', '2018-08-22'), ('2719', '2019-10-21')]
        ⚠ ② 不為 0 **不一定是錯**：上櫃減資不在 TWTAUU 裡。⛔ 但要逐筆看過才可以這樣說，不要先假設。
-       ② 按市場拆：{'（不在 industry.csv）': 15, 'tpex': 217}
+       ② 按市場拆：{'（不在 industry.csv）': 20, 'tpex': 262}
        ✓ 沒有一筆是上市 ⇒ 「② 全是上櫃」這個解釋站得住。
        ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。
 
@@ -132,12 +466,12 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
        首列：[1, '1218', '泰山', '115/08/13', '8:00', '115/08/14', '8:00']
   ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）
      ✓ ?date=20150701&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
-     ✓ ?date=20260911&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
-     ✓ ?startDate=20150101&endDate=20260911&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/11'｜列數 7215｜539,453 bytes
+     ✓ ?date=20260920&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
+     ✓ ?startDate=20150101&endDate=20260920&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/20'｜列數 7215｜539,453 bytes
      ⇒ ⭐ 3 發**回應不同** ⇒ 參數有生效，下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）
 
   ── ④ ⭐ 它解不解釋得掉我方的長洞（⛔ 端點可用 ≠ 對我方有用）
-     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/11'
+     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/20'
        ⚠ **回音要對得上我要的區間**（TWT49U 那次就是回音沒對上，把 2026 的資料寫進 2015 的每一天）
        解析出 7,215 筆／6,656 檔｜暫停日 2015-03-30 ~ 2026-08-13
      ★ 流動性足夠（要查的那幾檔）：7 個｜**TWTAWU 解釋得掉 1｜解釋不掉 6**

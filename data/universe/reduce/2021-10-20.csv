@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price
-2021-10-20,6191,31.50,33.36,退還股款,33.35,
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2021-10-20,6191,31.50,33.36,退還股款,33.35,,36.65,30.05

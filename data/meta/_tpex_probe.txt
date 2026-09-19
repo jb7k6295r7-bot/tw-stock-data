@@ -1,3 +1,4 @@
+# ⏱ 這一趟：2026-09-20T01:31:58+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35458044212
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -287,25 +288,25 @@
 [6] ★ 上櫃類股名稱的候選端點（欄位與樣本列）
 
   ── /mopsfin_t187ap05_OA｜二十九大類股營收變化統計表
-     ✓ 494,726 bytes｜890 筆
+     ✓ 496,547 bytes｜892 筆
      欄位：['出表日期', '資料年月', '公司代號', '公司名稱', '產業別', '營業收入-當月營收', '營業收入-上月營收', '營業收入-去年當月營收', '營業收入-上月比較增減(%)', '營業收入-去年同月增減(%)', '累計營業收入-當月累計營收', '累計營業收入-去年累計營收', '累計營業收入-前期比較增減(%)', '備註']
-     首列：{'出表日期': '1150817', '資料年月': '11507', '公司代號': '1240', '公司名稱': '茂生農經', '產業別': '農業科技', '營業收入-當月營收': '242511', '營業收入-上月營收': '270176', '營業收入-去年當月營收': '214130', '營業收入-上月比較增減(%)': '-10.239621580007107', '營業收入-去年同月增減(%)': '13.254097977863914', '累計營業收入-當月累計營收': '1683183', '累計營業收入-去年累計營收': '1564493', '累計營業收入-前期比較增減(%)': '7.586483288835424', '備註': '-'}
+     首列：{'出表日期': '1150917', '資料年月': '11508', '公司代號': '1240', '公司名稱': '茂生農經', '產業別': '農業科技', '營業收入-當月營收': '251724', '營業收入-上月營收': '242511', '營業收入-去年當月營收': '230525', '營業收入-上月比較增減(%)': '3.7990029318257728', '營業收入-去年同月增減(%)': '9.195965730398004', '累計營業收入-當月累計營收': '1934907', '累計營業收入-去年累計營收': '1795018', '累計營業收入-前期比較增減(%)': '7.793180904035503', '備註': '-'}
      類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
 
   ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
-     ✓ 3,528 bytes｜28 筆
+     ✓ 3,540 bytes｜28 筆
      欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
-     首列：{'Date': '1150910', 'Sector': '光電業', 'TradeAmount': '8451777196', 'TradeWeight': '9.17', ' NumberOfSharesTraded': '73710313'}
+     首列：{'Date': '1150918', 'Sector': '光電業', 'TradeAmount': '9939462345', 'TradeWeight': '8.41', ' NumberOfSharesTraded': '105716167'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,185 bytes｜28 筆
+     ✓ 5,178 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1150910', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '837524940', 'PercentageOfSharesOC/FMIHeld': '16.06%'}
+     首列：{'Date': '1150918', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5215433202', 'CurrentlySharesOC/FIHeld': '855442119', 'PercentageOfSharesOC/FMIHeld': '16.4%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
 
 [7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
   industry.csv 的 tpex：890 檔／28 個代碼；名稱空白的代碼 ['32', '33']（[26, 4] 檔）
-  官方 mopsfin_t187ap05_OA：890 筆，帶得出代號＋產業別的 890 檔，相異產業別 28 個
+  官方 mopsfin_t187ap05_OA：892 筆，帶得出代號＋產業別的 892 檔，相異產業別 28 個
 
   ── 先驗方法：有中文名的代碼，官方產業別對不對得上 ──
      對得上 25／對不上 1／官方沒收到成員 0（共 26 個有名稱的代碼）
@@ -440,3 +441,201 @@
 ── 下一步 ──
 從第 2、4 節挑出真正的端點名，再寫抓取與驗算。
 **沒有命中不等於不存在**——先看清單，不要回頭去猜網址。
+
+[12] ⭐⭐ 上櫃除權息計算結果／漲跌停（F2 剩下那 6 筆未證實要用）
+
+  ── tpex_exright_daily｜⭐ 上櫃除權除息計算結果表（上櫃版 TWT49U）
+     ✓ 8 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
+     ⭐ ①有沒有漲跌停欄：['LimitUp', 'LimitDown', 'OpeningReferencePrice']
+     首列：{'Date': '1150921', 'SecuritiesCompanyCode': '00697B', 'CompanyName': '元大美債7-10', 'ClosePriceBeforeExRightsDiviend': '34.82', 'ExRightsDiviendQuote': '34.51', 'StockDividend': '0.000000', 'CashDividend': '0.310000', 'StockDividendPlusCashDividend': '0.310000', 'ExRightsDiviend': '除息', 'LimitUp': '9999.95', 'LimitDown': '0.01', 'OpeningReferencePrice': '34.51', 'DividendDeductedQuote': '34.51', 'CashDivdend': '0.31000000', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1150921 × 8　⇒ **它只有這一期，沒有歷史**
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+
+  ── tpex_exright_prepost｜上櫃除權除息預告表
+     ✓ 83 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
+     ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
+     首列：{'ExRrightsExDividendDate': '1150909', 'SecuritiesCompanyCode': '1815', 'CompanyName': '富喬', 'ExRrightsExDividend': '除權息', 'StockDividendRatio': '0.05000171', 'SubscriptionRatioToNewSharesIssued': '0.00000000', 'SubscriptionPricePerShare': '0.00', 'CashDividend': '0.50001709', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataInThousandShares': '0.00000000'}
+     ③`ExRrightsExDividendDate` 相異值 17 種｜最小 1150909｜最大 1151105
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+
+  ── tpex_ceil_non_trading｜上櫃漲跌停未成交資訊
+     ✓ 35 列｜欄位（9）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosingPrice', 'Change', 'Tot.Trans.Vol.', 'Trans.Vol.AtUp-limitPr.', 'OrderVol.AtUp-limitPr.', 'Difference']
+     ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
+     首列：{'Date': '1150918', 'SecuritiesCompanyCode': '8291', 'CompanyName': '尚茂', 'ClosingPrice': '31.70', 'Change': '2.85', 'Tot.Trans.Vol.': '34', 'Trans.Vol.AtUp-limitPr.': '23', 'OrderVol.AtUp-limitPr.': '35', 'Difference': '12'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1150918 × 35　⇒ **它只有這一期，沒有歷史**
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+
+  ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
+     ✓ 1 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
+     ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
+     首列：{'Date': '1150608', 'SecuritiesCompanyCode': '6945', 'CompanyName': '圓祥生技', 'StartDateForStabilizationOperation': '1150605', 'EndDateForStabilizationOperation': '1150611', 'UnderwritingPrice': '105.40', 'OverAllotmentShares': '500,000', 'TransactionType': '主辦承銷商執行穩定價格操作專戶', 'Underwriter': '9800 元大', 'TradingType': '買', 'TradingPrice': '104.00', 'TradingVolume': '35,000', 'CurrentDayCumulativeTradingVolume': '35,000'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1150608 × 1　⇒ **它只有這一期，沒有歷史**
+     ⛔ ③`StartDateForStabilizationOperation` 相異值只有 **1 種**：1150605 × 1　⇒ **它只有這一期，沒有歷史**
+     ⛔ ③`EndDateForStabilizationOperation` 相異值只有 **1 種**：1150611 × 1　⇒ **它只有這一期，沒有歷史**
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+
+[13] ⭐⭐ 上櫃融資融券的「備註」欄，歷史日期回不回
+  ⚠ 我方舊檔沒有 note 是**我方 header 2026-09-09 才加**，⛔ 不等於來源沒有——這一節就是要分開這兩件事。
+    頂層鍵 ['date', 'stat', 'tables']
+    ⭐ 平常被丟掉的鍵：['date', 'stat']
+      ── date：20150105
+      ── stat：ok
+    ✓ 20 欄、572 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 132**
+    ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
+    頂層鍵 ['date', 'stat', 'tables']
+    ⭐ 平常被丟掉的鍵：['date', 'stat']
+      ── date：20191113
+      ── stat：ok
+    ✓ 20 欄、740 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 259**
+    ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
+    頂層鍵 ['date', 'stat', 'tables']
+    ⭐ 平常被丟掉的鍵：['date', 'stat']
+      ── date：20230510
+      ── stat：ok
+    ✓ 20 欄、773 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 220**
+    ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
+    頂層鍵 ['date', 'stat', 'tables']
+    ⭐ 平常被丟掉的鍵：['date', 'stat']
+      ── date：20260911
+      ── stat：ok
+    ✓ 20 欄、920 列｜⭐ 有「備註」欄（第 19 欄）｜**有值的列 285**
+    ⛔ 判準是「有值 > 0」，⚠ 有欄位整欄空 = 跟沒有一樣 ⇒ 這一天**可以**算補得到
+
+  ⇒ 結論：抽了 4 天，**有備註欄且有值的 4 天**｜['2015-01-05', '2019-11-13', '2023-05-10', '2026-09-11']
+  ⭐⭐ ⇒ 來源**有**這一欄 ⇒ `feeds.py --need-col note` 可以回補全歷史
+
+  ── 頁面層：看它們自己呼叫哪個網址
+
+     ⭐ 上櫃除權除息**計算結果表**
+     https://www.tpex.org.tw/zh-tw/announce/market/ex/cal.html
+     ✓ 12,692 bytes｜它自己呼叫的候選 0 條：
+        ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，**不可以**寫成「沒有 API」）
+
+     ⭐ 上櫃減資**恢復交易參考價**（上櫃版 TWTAUU）
+     https://www.tpex.org.tw/zh-tw/announce/market/reduction/reference.html
+     ✓ 12,213 bytes｜它自己呼叫的候選 0 條：
+        ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，**不可以**寫成「沒有 API」）
+
+     上櫃首五日無漲跌幅資訊
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/no-limit.html
+     ✓ 11,317 bytes｜它自己呼叫的候選 0 條：
+        ⛔ 一條都沒撈到（⚠ 可能是前端組出來的 ⇒ 這一節答不出來，**不可以**寫成「沒有 API」）
+
+[14] ⭐⭐ 上櫃個股**年／月**成交資訊（⛔ 推翻「上櫃沒有官方年度／月統計」那句話的那一步）
+     線索來源：我方自己的 `data/meta/_site_inventory.txt`（⚠ 不是外面查到的 ⇒ 3.5④「自己家查過沒有」）
+
+     ── 個股月成交資訊
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-month.html
+     ✓ 11,476 bytes｜它自己寫的 action：['statistics/monthlyStock']
+        ⭐ 頁面表單欄位（input／select 的 name／id）：['code', 'date', 'query']
+        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'afterRender', 'align', 'autoChange', 'autoLoad', 'beforeInit', 'beforeRender', 'notes', 'option', 'pagin', 'pattern', 'r', 'sortable', 'subtitle', 'subtitle2', 't', 'tables', 'thead', 'title']
+
+        ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/monthlyStock
+           [GET code+date] ✓ JSON 29 bytes
+              頂層鍵 ['stat']
+              ⭐ 平常被丟掉的鍵：['stat']
+                ── stat：參數輸入錯誤
+           [POST code+date] ✓ JSON 29 bytes
+              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
+              頂層鍵 ['stat']
+              ⭐ 平常被丟掉的鍵：['stat']
+                ── stat：參數輸入錯誤
+           [GET stkno+year] ✓ JSON 506 bytes
+              頂層鍵 ['date', 'flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
+                ── date：20260920
+                ── flagField：張數
+                ── stat：ok
+           [POST stkno+year] ✓ JSON 506 bytes
+              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
+              頂層鍵 ['date', 'flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
+                ── date：20260920
+                ── flagField：張數
+                ── stat：ok
+           ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
+              {"stat":"參數輸入錯誤"}
+           ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
+              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20260920","stat":"ok","flagField":"張數"}
+           ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
+           ── ⭐ `date` 的**格式**掃描（⛔ 名字已經從頁面讀到了）──
+              date='2024'         stat='ok'｜回顯 code='6488'｜totalCount=12｜inner date=2024　⭐⭐ **中了**
+                 fields：['年', '月', '收市最高價', '收市最低價', '收市平均價', '成交筆數', '成交金額仟元(A)', '成交仟股(B)', '成交週轉率(%)']
+                 第一列：[113, 1, '603.00', '573.00', '587.27', '44,168', '17,258,302', '29,478', '6.65']
+              date='113'          stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+              date='2024/01/01'   stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+              date='20240101'     stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+              date='113/01/01'    stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+              date='2024/01'      stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+              date='11301'        stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+
+     ── 個股年成交資訊
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/stock-year.html
+     ✓ 11,083 bytes｜它自己寫的 action：['statistics/yearlyStock']
+        ⭐ 頁面表單欄位（input／select 的 name／id）：['code', 'query']
+        ⚠ 頁面 js 物件裡的鍵（**雜訊多**，只當候選）：['action', 'align', 'autoLoad', 'pattern', 'r', 't', 'tables']
+
+        ⭐ https://www.tpex.org.tw/www/zh-tw/statistics/yearlyStock
+           [GET code+date] ✓ JSON 1,767 bytes
+              頂層鍵 ['flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['flagField', 'stat']
+                ── flagField：張數
+                ── stat：ok
+           [POST code+date] ✓ JSON 1,767 bytes
+              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
+              頂層鍵 ['flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['flagField', 'stat']
+                ── flagField：張數
+                ── stat：ok
+           [GET stkno+year] ✓ JSON 379 bytes
+              頂層鍵 ['flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['flagField', 'stat']
+                ── flagField：張數
+                ── stat：ok
+           [POST stkno+year] ✓ JSON 379 bytes
+              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
+              頂層鍵 ['flagField', 'stat', 'tables']
+              ⭐ 平常被丟掉的鍵：['flagField', 'stat']
+                ── flagField：張數
+                ── stat：ok
+           ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
+              {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,357,208","1,098,283,316","2,423","809.22","1,600.00","7/15","403.00","1/02","752.76"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1150918,"subtitle":"近年個股成交資訊(當年度統計至 1150918 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
+           ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
+              {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1150918,"subtitle":"近年個股成交資訊(當年度統計至 1150918 止)"},{}],"stat":"ok"}
+           ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
+
+[15] ⭐⭐ 上櫃**零股**：先讀那幾頁自己寫的 `action:`（⛔ 這一趟不打，讀到了才打）
+     線索來源：我方自己的 `data/meta/_site_inventory.txt`（3.5④）
+
+     ── 盤中零股每日收盤行情
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/pricing.html
+     ✓ 11,326 bytes｜它自己寫的 action：['afterTrading/oddQuote']
+     ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query']
+
+     ── 盤後零股每日收盤行情
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/post-pricing/day.html
+     ✓ 11,680 bytes｜它自己寫的 action：['afterTrading/odd']
+     ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query', 'type']
+
+     ── 零股交易成交統計
+     https://www.tpex.org.tw/zh-tw/mainboard/trading/info/odd-lot/statistics/day.html
+     ✓ 11,837 bytes｜它自己寫的 action：['afterTrading/oddSummary']
+     ⭐ 頁面表單欄位（input／select 的 name／id）：['date', 'query', 'type']
+
+     ⇒ ⭐ 下一步：拿讀到的 action 照 `API_PATTERN = "/www/{LANG}/{ACTION}"` 打，
+       ⛔ 判準是**它自己回顯了我送的日期**，不是「有回列」（第二點）。
+
+[16] ⭐⭐ 官方**證券種類**欄拿不拿得到（市場情報分析線 1515 的前置）
+     ⭐ 線索在我方自己家：[11] 那個 ISIN 查詢的網址本來就有 `issuetype=`
+     靶子（我方 10 檔 TDR）：['9103', '9105', '9110', '9136', '910322', '910708', '911608', '911616', '911619', '912000']
+
+     ── 先讀它自己的 `issuetype` 選單（⛔ 不猜代碼）
+     https://isin.twse.com.tw/isin/
+     ✗ 抓不到表單頁：HTTP 404 | <head> <meta name="robots" content="noindex,nofollow"> </head> <html> <link rel="stylesheet" href="http://www.tse.com.tw/style1.css" type="text/css"> <body> <p>�@</p> <p> <p> <p> <p align=　⇒ ⚠ 取不回來**不等於**沒有這個選單
+
+     ⭐ 標籤含「存託憑證」的：0 項 []
+     ⛔ 一項都沒有 ⇒ **這個選單分不出 TDR**（⚠ 掃描範圍：只掃了https://isin.twse.com.tw/isin/ 這一頁的 `issuetype` select）
+
+     ⇒ ⭐ 讀法：若表頭裡有「有價證券別」而且 TDR 那幾檔在那一欄
+       被講成同一種 ⇒ **官方欄拿得到** ⇒ 照 1515 在 `kind` 那側改。
+       ⛔ 若拿不到 ⇒ 回一封說「拿不到」，由市場情報分析線改裁退路。

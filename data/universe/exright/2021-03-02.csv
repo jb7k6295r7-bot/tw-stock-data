@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2021-03-02,00775B,40.77,40.47,0.295000,息,40.47
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2021-03-02,00775B,40.77,40.47,0.295000,息,40.47,9999.95,0.01,40.47

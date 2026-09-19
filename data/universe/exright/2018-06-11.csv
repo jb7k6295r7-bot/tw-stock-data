@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,value,kind,open_base
-2018-06-11,912000,3.32,2.89,0.426832,息,2.89
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2018-06-11,912000,3.32,2.89,0.426832,息,2.89,3.17,2.61,2.89

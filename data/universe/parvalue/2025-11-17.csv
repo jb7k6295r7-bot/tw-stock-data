@@ -1,2 +1,2 @@
-date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,halt_date
-2025-11-17,8422,250.00,25.00,,25.00,,2025-11-06
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down,halt_date
+2025-11-17,8422,250.00,25.00,,25.00,,27.50,22.50,2025-11-06

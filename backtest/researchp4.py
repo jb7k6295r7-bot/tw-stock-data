@@ -110,7 +110,11 @@ def panel_worker(args):
 
 def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print, mp_check=True, rev_incl_current=False) -> tuple[pd.DataFrame, pd.DataFrame]:
     """回 (面板, min_periods 斷言的不一致列)。⛔ 不一致列 > 0 由呼叫端決定要不要中止（main 一律中止並逐列印 股／月／欄）。"""
-    rev, _, _ = R34.load_revenue(); rev_flags = P.rev_hi24_flags(rev, cal, pub_day, incl_current=rev_incl_current)
+    # ⭐ K線分析線 0150（登錄：追加十八）：缺 rev_hi24 依【缺失機制】分三種——不足 24 期＝依定義不成立（False）、
+    #    當期沒申報＝留 NaN（前視，⛔ 排除它就是把倖存者偏誤做實）、存託憑證＝單獨標【不明】⛔ 不寫 False。
+    tdr = P.load_tdr_codes()
+    log(f"[TDR] 存託憑證（industry_code 91）{len(tdr)} 檔 ⇒ rev_hi24 一律留 NaN、標【不明】（⛔ 不寫 False）")
+    rev, _, _ = R34.load_revenue(); rev_flags = P.rev_hi24_flags(rev, cal, pub_day, incl_current=rev_incl_current, undecided=tdr)
     jobs = [(r.stock_id, r.market, r.first_seen, r.last_seen) for r in uni.itertuples()]
     rows = []; mism = []; t0 = time.time()
     with Pool(procs, initializer=_init, initargs=(cal, rev_flags, positions, mp_check)) as pool:

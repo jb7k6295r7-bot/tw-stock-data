@@ -49,6 +49,55 @@ def t_rev_flags():
     check(F["B"].loc[:"2017-10-20"].iloc[-1] == 100.0, "B 有效期數 ≥ 18 後恢復 ⇒ 100")
 
 
+def t_rev_flags_three_kinds():
+    """⭐ K線分析線 0150（追加十八）：缺值分三種，⛔ 不可以用同一個處置。"""
+    periods = [f"{y}-{m:02d}" for y in range(2015, 2018) for m in range(1, 13)]
+    cal = D.load_calendar()
+    rev = pd.DataFrame({"OLD": np.arange(1, 37, dtype=float), "NEW": np.arange(1, 37, dtype=float),
+                        "GONE": np.arange(1, 37, dtype=float), "DR": np.arange(1, 37, dtype=float)}, index=periods)
+    rev.loc[periods[:20], "NEW"] = np.nan      # 新上市：第 21 期（2016-09）才第一次申報 ⇒ 之後 24 期內都「不足 24 期」
+    rev.loc[periods[:20], "DR"] = np.nan       # 同一個形狀，⛔ 而它在 undecided 名單裡
+    rev["GONE"] = np.nan                       # ⭐ 來源裡整檔不存在＝倖存者的形狀（資料庫線 2350：來源端就沒有已下市公司的營收史）
+    F = P.rev_hi24_flags(rev, cal, undecided={"DR"})
+    at = lambda sid, d: F[sid].loc[:d].iloc[-1]
+    # ① 不足 24 期 ⇒ 0.0（依定義不成立），⛔ 不是 NaN
+    check(at("NEW", "2016-10-20") == 0.0, "① 新上市不足 24 期 ⇒ 0.0（依定義不成立），⛔ 不是 NaN")
+    # ② 來源裡整檔不存在（倖存者）⇒ 全程 NaN，⛔ 不寫 False
+    check(F["GONE"].isna().all(), "② 來源裡整檔沒有營收史（倖存者形狀）⇒ 全程 NaN，⛔ 不寫 False")
+    # ③ undecided（TDR）⇒ ⛔ 不寫 False，留 NaN
+    check(pd.isna(at("DR", "2016-10-20")), "③ 存託憑證那一族不足 24 期也**不寫 False** ⇒ NaN（標不明）")
+    check(at("NEW", "2016-10-20") == 0.0 and pd.isna(at("DR", "2016-10-20")), "⭐ 同一個形狀、只差在不在 undecided 名單 ⇒ 一個 0.0 一個 NaN（⛔ undecided 優先）")
+    # 滿 24 期之後恢復正常判定（⛔ 不是永遠 False）
+    check(at("NEW", "2018-09-20") in (0.0, 100.0), "① 那一檔滿 24 期之後回到正常判定（⛔ 不是永遠 False）")
+    # ⛔ 有預設值的參數要有一條不傳它的斷言：不傳 undecided ⇒ DR 跟 NEW 一樣是 0.0
+    check(P.rev_hi24_flags(rev, cal)["DR"].loc[:"2016-10-20"].iloc[-1] == 0.0, "⛔ 不傳 undecided（預設值那條路）⇒ DR 也會被寫成 0.0 ⇒ 名單真的有在咬")
+    # ⚠ 首期就在面板第一期的檔：分不出「新上市」與「面板從這裡開始」⇒ ⛔ 留 NaN，不可寫 False
+    check(pd.isna(F["OLD"].loc[:"2016-10-20"].iloc[-1]), "⚠ 首期＝面板第一期 ⇒ 前 24 期留 NaN（⛔ 不可當成新上市寫 False）")
+    # 老檔滿 24 期之後照常（回歸）
+    check(at("OLD", "2017-02-20") == 100.0, "回歸：滿 24 期的老檔不受影響")
+
+
+def t_tdr_codes():
+    ids = P.load_tdr_codes()
+    check(len(ids) >= 5 and "9103" in ids, f"存託憑證名單 {len(ids)} 檔、含 9103（industry_code 91）")
+    check(all(not s.startswith("11") for s in list(ids)[:50]), "名單裡沒有水泥股那種一般股（抽查前 50 筆）")
+    # ⛔ 判準檔讀不到／是空殼 ⇒ 要**大聲失敗**，⛔ 不可以靜靜當成「沒有 TDR」（CLAUDE.md 四點六）
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        empty = os.path.join(d, "industry.csv")
+        open(empty, "w", encoding="utf-8").write("stock_id,name,market,industry_code,industry_name,listed_date\n1101,台泥,twse,01,水泥工業,19620209\n")
+        try:
+            P.load_tdr_codes(empty); ok = False
+        except SystemExit:
+            ok = True
+        check(ok, "判準檔裡沒有 industry_code 91 ⇒ SystemExit（⛔ 不是靜靜回空集合）")
+        try:
+            P.load_tdr_codes(os.path.join(d, "nope.csv")); ok2 = False
+        except SystemExit:
+            ok2 = True
+        check(ok2, "判準檔不存在 ⇒ SystemExit")
+
+
 def t_shares_ffill_not_bfill():
     cal = D.load_calendar()
     s = P.load_shares("2330", cal)
@@ -126,6 +175,8 @@ def t_gate_min_periods():
 if __name__ == "__main__":
     print("[p4_features] 量測日"); t_measurement_days()
     print("[p4_features] rev_hi24_p4"); t_rev_flags()
+    print("[p4_features] rev_hi24 缺值三種（K線分析線 0150）"); t_rev_flags_three_kinds()
+    print("[p4_features] 存託憑證名單"); t_tdr_codes()
     print("[p4_features] shares"); t_shares_ffill_not_bfill()
     print("[p4_features] 橫截面＋歸型"); t_cross_section_assign()
     print("[p4_features] 真實一檔"); t_real_stock()
