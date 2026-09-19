@@ -199,6 +199,32 @@ def cell_stats(rows: pd.DataFrame, H: int) -> dict:
             "avg_n_per_month": float(ok["n"].mean()) if n_m else np.nan, "dropped_cells_lt5": dropped_cells}
 
 
+def survivor_bound(cl: pd.DataFrame, tdr: set, subs: dict[str, float], H: int = JUDGE_H, typ: str = "①營收＋回檔") -> pd.DataFrame:
+    """⭐ K線分析線 0150 §1-3（登錄＝追加十八）：倖存者那一組**留在主格、不補值**，⇒ 結論要報【區間】不報點估計。
+
+    上界 ＝ 現況（那批列因為 rev_hi24 是 NaN，歸不出 `typ`）。
+    下界 ＝ 把那批列**當成 `typ`**、報酬以「已停止交易組實測值」代入後重算——⛔ 這是**悲觀邊界**，不是估計值。
+
+    那批列 ＝ 主格裡 rev_hi24 是 NaN 而且**不在 tdr 名單**的列（TDR 是【不明】、⛔ 不進這個代入，裁定明文）。
+    subs：{標籤: 代入的 fwd_H}。⚠ 「已停止交易組」有兩個都叫得出名字的組（追加十八 §三）⇒ 兩個都算、都報，⛔ 本線不自己選。
+    ⛔ 代入的是 `fwd_H`，而 `exc_H` ＝ fwd_H − 當月母體基準（`bench_H`）⇒ 逐列用它自己那個月的基準重算，⛔ 不是拿全期均值減。"""
+    main = _in(cl, JUDGE_PERIOD)
+    base = cell_stats(main[main["type"] == typ], H)
+    rows = [{"scenario": "上界＝現況（那批列歸不出型）", "n_sub_rows": 0, "sub_value": np.nan, "n_months": base["n_months"],
+             "excess_pp": base["excess_pp"], "ci_lo_pp": base["ci_lo_pp"], "ci_hi_pp": base["ci_hi_pp"]}]
+    miss = main[main["rev_hi24"].isna() & ~main["stock_id"].isin(tdr)]
+    for tag, v in subs.items():
+        add = miss.copy()
+        add["type"] = typ
+        add[f"fwd_{H}"] = float(v)
+        add[f"exc_{H}"] = add[f"fwd_{H}"] - add[f"bench_{H}"]
+        both = pd.concat([main[main["type"] == typ], add], ignore_index=True)
+        s = cell_stats(both, H)
+        rows.append({"scenario": f"下界＝那批列當 {typ}、報酬代入「{tag}」", "n_sub_rows": int(len(add)), "sub_value": float(v),
+                     "n_months": s["n_months"], "excess_pp": s["excess_pp"], "ci_lo_pp": s["ci_lo_pp"], "ci_hi_pp": s["ci_hi_pp"]})
+    return pd.DataFrame(rows)
+
+
 def judge(period: str, H: int, typ: str, s: dict) -> str:
     if (period, H) != (JUDGE_PERIOD, JUDGE_H):
         if not np.isfinite(s["excess_pp"]):
@@ -495,6 +521,18 @@ def main():
     g10 = panel[panel["liq_ok"] & panel["bars_ok"] & ~panel["inst_ok"]][["measure_date", "stock_id", "market", "bars", "inst_win_notraded", "inst_win_missing_traded"] + [f"fwd_{H}" for H in HOLDS]]
     write_csv(g10, os.path.join(a.out, "dropped_inst_nan.csv"), stamp, commit)
     write_csv(sm, os.path.join(a.out, "structural_missing.csv"), stamp, commit)
+    # ⭐ 倖存者區間（K線分析線 0150 §1-3，登錄＝追加十八）：⛔ 結論引區間，不引點估計
+    tdr = P.load_tdr_codes()        # ⛔ 同一份名單（讀不到就大聲失敗）；TDR 是【不明】，⛔ 不進代入
+    sv_p = os.path.join(a.out, "survivorship_by_delist.csv")
+    if os.path.exists(sv_p):
+        sv = pd.read_csv(sv_p, comment="#")
+        subs = {str(r["group"]): float(r["fwd120_①"]) for _, r in sv.iterrows()
+                if ("停止交易" in str(r["group"]) or "已下市" in str(r["group"])) and np.isfinite(r["fwd120_①"])}
+        SB = survivor_bound(cl, tdr, subs)
+        write_csv(SB, os.path.join(a.out, "survivor_bound.csv"), stamp, commit)
+        log("[倖存者區間] " + "；".join(f"{r.scenario}＝{r.excess_pp:+.2f}pp（{int(r.n_months)} 月）" for r in SB.itertuples()))
+    else:
+        log(f"⛔ 找不到 {sv_p} ⇒ 倖存者區間沒算（裁定要求報區間 ⇒ 這一趟的 ①型不可引用）")
     write_csv(yearly_table(panel, cl), os.path.join(a.out, "yearly.csv"), stamp, commit)
     pA = placebo_A(cl, n_iter=a.placebo_n)
     pB = pd.concat([placebo_B(cl, k) for k in (6, 12, 18)], ignore_index=True)

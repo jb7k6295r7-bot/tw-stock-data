@@ -1,1 +1,1 @@
-2026-09-16 03:18 commit 621507cf5；合格股-月 59,612 × 13 欄；min_periods=w vs =ceil(w/2) 不一致 0 筆
+2026-09-20 02:52 commit 57ab95643；合格股-月 59,718 × 13 欄；min_periods=w vs =ceil(w/2) 不一致 0 筆

@@ -76,6 +76,29 @@ if __name__ == "__main__":
     small = one.copy(); small = small[~((small["measure_date"] == small["measure_date"].min()) & (small.groupby("measure_date").cumcount() >= 3))]
     s2 = R.cell_stats(small, 120)
     check(s2["n_months"] == s["n_months"] - 1 and s2["dropped_cells_lt5"] == s["dropped_cells_lt5"] + 1, "某月剩 3 檔 ⇒ 不算有效月、dropped +1")
+    print("[researchp4] 倖存者區間（K線分析線 0150 §1-3）")
+    cl3 = cl.copy()
+    typ = cl3["type"].iloc[0]
+    main3 = R._in(cl3, "主格")
+    # 造兩列缺 rev_hi24 的：一列是 TDR（⛔ 不可進代入）、一列不是
+    idx = main3.index[:2]
+    cl3.loc[idx, "rev_hi24"] = np.nan
+    cl3.loc[idx[0], "stock_id"] = "9103"
+    SB = R.survivor_bound(cl3, {"9103"}, {"甲組": -0.37, "乙組": 0.04}, 120, typ)
+    check(list(SB["n_sub_rows"]) == [0, 1, 1], f"代入列數＝缺 rev_hi24 且不在 TDR 名單的那 1 列（實得 {list(SB['n_sub_rows'])}）⇒ ⛔ TDR 沒被代進去")
+    check(np.isclose(SB["excess_pp"].iloc[0], R.cell_stats(main3[main3["type"] == typ], 120)["excess_pp"]), "上界＝現況（⛔ 沒動到原本那一格）")
+    check(SB["excess_pp"].iloc[1] < SB["excess_pp"].iloc[2], "代入越差的報酬 ⇒ 區間越低（⛔ 方向不可反）")
+    check(list(SB["sub_value"])[1:] == [-0.37, 0.04], "代入值逐字進表（⛔ 不是自己算一個）")
+    # ⛔ 代入的是 fwd，exc 要**逐列用它自己那個月的基準**重算 ⇒ 拿手動組出來的同一批列對點估計
+    m3 = R._in(cl3, "主格")
+    hand = m3[m3["rev_hi24"].isna() & (m3["stock_id"] != "9103")].copy()
+    hand["type"] = typ; hand["fwd_120"] = -0.37; hand["exc_120"] = hand["fwd_120"] - hand["bench_120"]
+    exp = R.cell_stats(pd.concat([m3[m3["type"] == typ], hand], ignore_index=True), 120)["excess_pp"]
+    bad = hand.copy(); bad["exc_120"] = bad["fwd_120"]          # ⛔ 忘了減基準的那一版
+    exp_bad = R.cell_stats(pd.concat([m3[m3["type"] == typ], bad], ignore_index=True), 120)["excess_pp"]
+    check(np.isclose(SB["excess_pp"].iloc[1], exp) and not np.isclose(exp, exp_bad),
+          f"代入列的 exc＝fwd − 當月基準（手算 {exp:+.4f}；⛔ 忘了減基準會變成 {exp_bad:+.4f}）")
+    check(R.survivor_bound(cl3, set(), {"甲組": -0.37}, 120, typ)["n_sub_rows"].iloc[1] == 2, "⛔ 名單空了 ⇒ TDR 那列也被代進去（名單真的有在咬）")
     print("[researchp4] judge")
     base = dict(n_months=30, excess_pp=2.0, ci_lo_pp=0.5, ci_hi_pp=3.5)
     check(R.judge("主格", 120, "②正在噴出", base).startswith("H2 方向成立：測得出"), "②正、CI 不含 0 ⇒ H2 測得出")
