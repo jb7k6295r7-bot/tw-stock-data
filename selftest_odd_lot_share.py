@@ -67,11 +67,24 @@ def main():
     os.makedirs(src)
     _fixture(src)
 
-    cells, n_files, transfer, span = O.scan(src)
+    cells, n_files, transfer, span, files_by_market = O.scan(src)
 
     # ① 回傳形狀要從**回來的東西**量，⛔ 不是從 docstring 讀（七點⑪）。
-    ck("scan 回四個東西", len((cells, n_files, transfer, span)) == 4)
+    ck("scan 回五個東西（2026-09-20 加 files_by_market）",
+       len((cells, n_files, transfer, span, files_by_market)) == 5)
     ck("母體是檔數，⛔ 不是有成交的檔數", n_files == 5, f"{n_files}")
+
+    # ①-B ⭐⭐ 回測線 20260919-2345 §三核到的坑：`n_files`（全庫檔案數）
+    #   不是任何一個市場那一格的母體 ⇒ 逐市場另外算「有 market==mk 且有量列」的檔數。
+    #   ⛔ 9999（全部 volume=0）**不可以**被算進任一市場——它沒有一列「有量」。
+    ck("⭐ twse 母體 4 檔（2330／0050／06001L／1234，⛔ 不含 9999）",
+       files_by_market.get("twse") == {"2330", "0050", "06001L", "1234"},
+       f"{files_by_market.get('twse')}")
+    ck("⭐ tpex 母體 1 檔（1234 轉板前那一段）",
+       files_by_market.get("tpex") == {"1234"}, f"{files_by_market.get('tpex')}")
+    ck("⛔ esb 沒有任何檔（fixture 裡沒有）", not files_by_market.get("esb"))
+    ck("⛔⛔ twse 母體檔數 ≠ 全庫檔案數（4 ≠ 5，⛔ 這正是那個坑）",
+       len(files_by_market["twse"]) != n_files)
 
     # ② ⛔ volume == 0 的那兩天一天都不可以被數到。
     tw = cells[("twse", "all", "all")]
@@ -111,10 +124,21 @@ def main():
     ck("span 是有成交的最早與最晚", span == ("2019-01-02", "2021-01-05"), f"{span}")
 
     # ⑧ 驗終點：報表裡真的印得出那兩個日期與那幾格。
-    txt = O.report(cells, n_files, transfer, span)
+    txt = O.report(cells, n_files, transfer, span, files_by_market)
     ck("報表自己講出它量到哪一段", "2019-01-02" in txt and "2021-01-05" in txt)
     ck("報表印得出全庫那一格", "⭐ 全期" in txt)
     ck("報表逐市場各印一節", "## twse" in txt and "## tpex" in txt)
+    # ⑧-B ⭐⭐ 逐市場的母體檔數要印得出來，⛔ 不可以跟全庫檔案數混在一起
+    ck("⭐ twse 那一節印的是 4 檔（⛔ 不是全庫的 5）", "**4 檔**" in txt, txt[:400])
+    ck("⭐ tpex 那一節印的是 1 檔", "**1 檔**" in txt)
+    _pop_line = next(ln for ln in txt.splitlines() if ln.startswith("`data/stocks/` 全部檔案數"))
+    ck("⛔ 而全庫檔案數那一行標明「不是」任何市場的母體，⛔ 不是靜靜印一個 5",
+       "不是" in _pop_line and "5" in _pop_line, _pop_line[:60])
+    # ⚠ 有預設值的參數要有一條不傳它的斷言（七點③）：files_by_market 不傳時
+    #   ⛔ 不可以炸掉，也不可以印出一個看起來像真的數字（要印 0 檔）。
+    bare_fbm = O.report(cells, n_files, transfer, span)
+    ck("⭐ 不傳 files_by_market 時逐市場印 0 檔（⛔ 不是炸掉、不是留空）",
+       "**0 檔**" in bare_fbm)
 
     # ⑨ 沙箱：兩個旋鈕各導一次，然後**各釘一條沒動到 repo 真的那一份**。
     #    ⚠ 用 `O.OUT`／`runlog.PATH`（Attribute），⛔ 不是裸名字
@@ -133,7 +157,7 @@ def main():
         sand = io.open(O.OUT, encoding="utf-8").read()
         # ⭐ 呼叫點要驗**行為**，⛔ 不是掃原始碼字串（七點⑧：那幾個字註解裡也有一份）
         #   ⇒ `main()` 自己跑出來的那一份，要跟 `report(scan(...))` 逐位元相同。
-        want = O.report(cells, n_files, transfer, span)
+        want = O.report(cells, n_files, transfer, span, files_by_market)
         body = "\n".join(sand.splitlines()[2:])
         ck("main 寫出去的那一份 == report(scan()) 的本文（⛔ 只差時戳那兩行）",
            body.strip() == "\n".join(want.splitlines()[2:]).strip())
