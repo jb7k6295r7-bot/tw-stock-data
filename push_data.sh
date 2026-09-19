@@ -87,6 +87,14 @@ LASTRUN="data/meta/_last_run.md"
 #   ⚠ 它們跟上面那幾個是**同一族**：由 main 上的 `forward.yml` 逐月 append
 #   ⇒ 分支那份永遠比 main 舊 ⇒ ⛔ 整份取本趟的就是把新的月份刪掉。
 #   ⚠ 而前瞻紀錄**補不回來**（重算出來的就不是前瞻了）⇒ 這一族刪了沒有第二次機會。
+# ⭐⭐ 2026-09-19 加兩族，理由是同一句「**還沒發生不是判準**」：
+#   `_official_monthly_done_*.csv`  月表掃描的續跑台帳（一趟 append 5,000 列）
+#   `longhalt.csv`                  G2 每日累積（⛔ 這一族**補不回來**：
+#                                   那三條端點只有當日，刪掉就是永久損失）
+#   ⚠ 它們目前**只在 main 上被寫**（feeds／daily）⇒ 今天還沒有東西可以蓋掉它們
+#   ——⛔ 而那正是 `_runs.jsonl` 當年沒被蓋掉的理由，而那是**運氣**。
+# ⚠ 而 `merge_ledger` 要求兩邊**表頭相同** ⇒ 前提是 main 上那一份已經是新表頭
+#   （`official_stats._upgrade_sweep_header()` 會在 append 之前先把它升上來）。
 # ⛔ 而 `universe.csv` 的 `first_seen` 取小／`last_seen` 取大**這一份不做**：
 #   逐鍵合併只保證那一列不會消失，⚠ 取小取大是 `forward_p4` 自己讀既有檔時算的。
 #   ⇒ ⭐ 前提是它**在 main 上跑**（`forward.yml` 有一道「只准在 main 上跑」擋著），
@@ -103,6 +111,8 @@ backtest/forward/p4_types/records.csv:measure_date,stock_id
 backtest/forward/p4_types/universe.csv:stock_id
 data/meta/_official_stats_done.csv:stock_id
 data/meta/_official_stats_miss.csv:stock_id
+data/meta/_official_monthly_done_*.csv:stock_id,roc_year
+data/meta/longhalt.csv:src,stock_id,start_date,flags
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- $TREES)
 if [ -n "$FORCE" ]; then

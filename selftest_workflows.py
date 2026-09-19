@@ -929,6 +929,33 @@ def main():
        "　⇒ 錯的樣子是「某個月不見了」，⚠ 而前瞻紀錄**補不回來**"
        if _bad3 else "三道都在")
 
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 而 G2（`longhalt.csv`）是這一族裡**唯一補不回來**的那一個
+    #
+    # 那三條端點只有當日（`Date` 相異值 1 種）⇒ ⛔ 被整檔覆蓋掉就是**永久損失**，
+    # ⚠ 而它的樣子跟四點六開頭那句一字不差：`git diff` 一加一減，像「重算過」。
+    # ⇒ 兩道要一起成立，⛔ 缺一道都會靜悄悄地掉列：
+    #   ① `push_data.sh` 的 LEDGERS 有它  ⇒ 推回去時逐鍵合併，main 的列不會消失
+    #   ② `longhalt.save()` 自己擋「列數變少」⇒ 本機那一趟也不會把自己寫少
+    # ══════════════════════════════════════════════════════════════
+    _lh = io.open(os.path.join(here, "longhalt.py"), encoding="utf-8").read()
+    _two_lh = {
+        "① push_data.sh 的 LEDGERS 有 longhalt.csv":
+            "data/meta/longhalt.csv:" in _pd,
+        "② longhalt.save() 自己擋「合併後列數變少」":
+            "if len(cur) < before:" in _lh,
+    }
+    _bad_lh = [k for k, v in _two_lh.items() if not v]
+    ck("⭐⭐ G2 累積檔那兩道**全部**還在（⛔ 缺一道 ⇒ 靜悄悄掉列，而它**補不回來**）",
+       not _bad_lh, f"⛔ 沒了：{_bad_lh}" if _bad_lh else "兩道都在")
+    # ⭐ 而主鍵要跟程式**真的用的那一個**一致：⛔ 只寫 (src, stock_id) 的話，
+    #   同一檔的第二筆案件會被**吃掉**，⚠ 而畫面上只是「那一列又更新了一次」。
+    _lk = re.search(r"data/meta/longhalt\.csv:([^\s]+)", _pd)
+    ck("⭐ 而 LEDGERS 的主鍵含 `start_date` **與** `flags`"
+       "（⛔ 兩種形狀各用一個，少一個就會吃掉另一種）",
+       bool(_lk) and "start_date" in _lk.group(1) and "flags" in _lk.group(1),
+       _lk.group(1) if _lk else "⛔ 清單裡找不到它")
+
     # ⭐⭐ 而第四道：**排程本身**。⛔ 上面那三道都在、而 cron 被拿掉的話，
     #   那一支從此再也不會跑，⚠ 而畫面上什麼都不會說（沒有失敗、沒有紅）
     #   ——正是「不累積就永久失去」那一族最怕的形狀。
