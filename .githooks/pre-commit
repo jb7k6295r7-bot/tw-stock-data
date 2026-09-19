@@ -46,7 +46,19 @@ if echo "$STAGED" | grep -qE '\.py$'; then
   #     實測 `selftest_no_data_delete` 718 ms、`selftest_lowwater` 911 ms ⇒ 收
   #     ⛔ `selftest_zero_dep` **63 秒** ⇒ **不收**，它留在 workflow 裡
   #        （⚠ 代價已經知道：它紅的時候會關掉整條同步線，而 hook 擋不到它）
-  for G in selftest_no_data_delete.py selftest_lowwater.py; do
+  #   ⭐ 2026-09-19 再加 `selftest_feed_days.py`（6.7 s）：它帶的是「全 repo 砍
+  #     錯誤訊息尾巴的地方沒有變多」那道低水位掃描 ⇒ 動到**任何** .py 都可能讓它紅。
+  #     ⚠ 而它紅的那天（run 139）付的代價一字不差：step 6 failure ⇒ 「把程式同步
+  #     到 main」被 skip ⇒ **兩個 commit 卡在分支上三天**。⛔ 病根是一個迴圈變數
+  #     叫 `e` 而它切的是端點字串——那道閘門沒有錯，錯的是名字。
+  #
+  # SLOW-SCANNERS: selftest_probes.py selftest_zero_dep.py
+  #   ⛔ 這兩支也掃全庫，⚠ 而實測 **68 s／63 s** ⇒ 一支慢到讓人想 `--no-verify`
+  #   的 hook 等於沒有 ⇒ **不收**，留在 workflow 裡。
+  #   ⇒ ⭐ 而「跳掉之後還有沒有人在守」要答得出來：有，workflow 的第二步跳不掉
+  #     ——⛔ 代價是它紅的時候仍然會關掉整條同步線，⚠ 那就是派工之後**一定要回頭
+  #     驗 conclusion** 的理由（四點二④），⛔ 不是「它應該會過」。
+  for G in selftest_no_data_delete.py selftest_lowwater.py selftest_feed_days.py; do
     [ -f "$G" ] || continue
     if ! python3 "$G" >"/tmp/_g_$$.log" 2>&1; then
       echo "⛔ $G 沒過（跨檔守門），**不讓 commit**："

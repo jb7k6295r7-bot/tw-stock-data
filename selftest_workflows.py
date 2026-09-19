@@ -1093,6 +1093,55 @@ def main():
        "⛔ hook 裡找不到 `--tests-for`")
 
     # ═══════════════════════════════════════════════════════════
+    # ⭐⭐ **掃全庫的那一族自測，一定要進 hook 的跨檔守門清單**
+    #
+    # ⛔ 病根已經發生兩次，兩次都是同一個形狀：
+    #   run 134  `selftest_no_data_delete` 紅 ⇒ step 6 failure ⇒ 步驟 7~16 skipped
+    #   run 139  `selftest_zero_dep`（裡面是 `selftest_feed_days` 的全庫掃描）紅
+    #            ⇒ 同樣 skip 掉「把程式同步到 main」⇒ ⭐ **兩個 commit 卡在分支上三天**，
+    #            ⚠ 而我照著「main 上沒有我的修正」去讀資料，差一點判成「那個修正沒效」
+    #
+    # ⭐ 而這兩支的共同點是**掃全庫**：動到任何一支 .py 都可能讓它們紅，
+    #   ⛔ 而 hook 的第三道只跑「同名的那一支自測」⇒ 這一族它天生看不到。
+    # ⇒ 所以清單**不可以用手抄的**（四點五第九次：手抄名單放寬一次就漏 6 處）
+    #   ——這一條**自己算**：誰掃全庫，誰就要在清單裡。
+    # ⚠ 而「太慢 ⇒ 不收」是**正當**的出口（hook 的判準本來就是秒數）
+    #   ⇒ ⭐ 那就要**具名寫出來**：`# SLOW-SCANNERS:` 那一行。
+    #   ⛔ 不可以默默不收——那跟漏掉一支長得一模一樣。
+    _hook_list = _slow = ""
+    for _ln in htxt.splitlines():
+        if _ln.strip().startswith("for G in ") and "selftest_" in _ln:
+            _hook_list += _ln
+        if _ln.strip().startswith("# SLOW-SCANNERS:"):
+            _slow += _ln
+    _scanners = []
+    for _p in sorted(glob.glob(os.path.join(here, "selftest_*.py"))):
+        _b = os.path.basename(_p)
+        try:
+            _st = ast.parse(io.open(_p, encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        for _n in ast.walk(_st):
+            # `glob.glob(os.path.join(HERE, "*.py"))` ＝ 這一支在掃全庫
+            if (isinstance(_n, ast.Call)
+                    and getattr(_n.func, "attr", "") == "join"
+                    and any(isinstance(_a4, ast.Constant) and _a4.value == "*.py"
+                            for _a4 in _n.args)):
+                _scanners.append(_b)
+                break
+    ck("⭐ 找得到「掃全庫」那一族（⛔ 0 支跟『全部都在清單裡』長得一樣）",
+       len(_scanners) >= 2, f"{_scanners}")
+    _miss = [b for b in _scanners if b not in _hook_list and b not in _slow]
+    ck("⭐⭐ 掃全庫的自測**每一支**都在 hook 的跨檔守門清單裡，或具名列在"
+       " `# SLOW-SCANNERS:`（⛔ 漏一支 ⇒ 它紅的那天會把「同步到 main」整步 skip 掉）",
+       not _miss, f"⛔ 兩邊都沒有：{_miss}" if _miss else
+       f"{len(_scanners)} 支｜慢的那幾支：{_slow.split(':', 1)[-1].strip()}")
+    # ⛔ 而那條出口不可以變成「全部都丟進 SLOW」⇒ 釘住「hook 裡真的有幾支」
+    ck("⭐ 而跨檔守門清單裡**真的有東西**（⛔ 全部丟進 SLOW ＝ 這道 hook 空了）",
+       sum(1 for b in _scanners if b in _hook_list) >= 1,
+       f"{[b for b in _scanners if b in _hook_list]}")
+
+    # ═══════════════════════════════════════════════════════════
     # ⭐⭐ daily 的上櫃還原因子：**先抓 → 再補 → 才掃**
     #
     # 市場情報分析線 0020 §三裁定：接進 daily，⛔ **而排序要改**。

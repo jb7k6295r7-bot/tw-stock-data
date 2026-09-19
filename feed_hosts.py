@@ -171,21 +171,28 @@ def classify_ep(eps):
     ⭐ 判準順序是死的：**先看主機、再看路徑**。
     ⛔ 而「連路徑都沒有」的不猜，進第三格。
     """
+    # ⛔ 迴圈變數叫 `ep`，**不可以**改回 `e`：`selftest_feed_days` ⑨ 掃的是
+    #   「`err`／`note`／`msg`／`why`／`reason`／`e`＋可選數字 的切片」＝
+    #   砍錯誤訊息尾巴（六點六）。⚠ 而 `e[len(host):]` 切的是**端點字串**
+    #   ⇒ 它會被那道閘門誤判成一處退步 ⇒ ⛔ 整支自測紅
+    #   ⇒ ⛔⛔ 而 probe.yml 的「把程式同步到 main」排在它後面 ⇒ **整趟什麼都沒搬**
+    #   （實測：run 139 就是這樣掛的，兩個 commit 卡在分支上三天）。
+    # ⭐ 修的是**名字**，⛔ 不是那道閘門——它的名單放寬過一次就漏掉 6 處。
     a, b, unk = set(), set(), set()
-    for e in eps:
-        host = e.split("/")[0]
-        rest = e[len(host):]
+    for ep in eps:
+        host = ep.split("/")[0]
+        rest = ep[len(host):]
         if host in OPEN_HOSTS:
-            a.add(e)
+            a.add(ep)
         elif host in MIXED_HOSTS:
             if any(rest.startswith(x) for x in OPEN_PATHS):
-                a.add(e)
+                a.add(ep)
             elif rest and rest != "/":
-                b.add(e)
+                b.add(ep)
             else:
-                unk.add(e)              # ⛔ 只有主機 ⇒ 不猜
+                unk.add(ep)             # ⛔ 只有主機 ⇒ 不猜
         else:
-            b.add(e)
+            b.add(ep)
     return a, b, unk
 
 
