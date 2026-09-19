@@ -1396,8 +1396,46 @@ def main():
     #     這裡是「要不要多做一件事」⇒ 預設不做是安全的那一邊。
     ap.add_argument("--months-years", default="",
                     help="月表年份掃描：'all'／'104-115'／'109'；空 ＝ 不跑")
+    # ⭐⭐ 2026-09-20 診斷用：run 171 實測 tpex monthlyStock 的民114／115
+    #   （每年都是「這一批要自己講出它是誰」那一關全滅——877／895 格、
+    #   跨 899 檔，⛔ 不是少數幾檔的個案）——`official_monthly_tpex.csv`
+    #   兩年**合計 0 列**，而低水位／續跑台帳都看不到「原始回應長什麼樣」。
+    #   ⇒ 這支旗標**只印，不寫檔、不落地**，讓下一趟派工能直接看到
+    #   `fields` 陣列本身，而不是只看到 `TM_VOL_FIELD not in fields` 那句摘要。
+    ap.add_argument("--probe-tpex-month", default="",
+                    help="診斷：印一支代號在 104/113/114/115 的 monthlyStock 原始回應"
+                         "（⛔ 只讀不寫，不落地，不進 sweep 台帳）")
     a = ap.parse_args()
     B.SLEEP = a.sleep
+
+    if a.probe_tpex_month:
+        sid = a.probe_tpex_month
+        for y in (104, 113, 114, 115):
+            raw, err = B.get(TPEX_MONTHLY_URL.format(s=sid, y=y + 1911),
+                              retries=2, timeout=45)
+            print(f"\n=== {sid} 民{y} ===")
+            if err or not raw:
+                print(f"⛔ 抓取失敗：{err}")
+                continue
+            try:
+                d = json.loads(raw.decode("utf-8", "replace")
+                               if isinstance(raw, bytes) else raw)
+            except ValueError as ex:                                  # noqa: BLE001
+                print(f"⛔ 不是 JSON：{ex}")
+                continue
+            print("stat:", d.get("stat"))
+            tabs = d.get("tables") or []
+            if not tabs:
+                print("⛔ 沒有 tables")
+                continue
+            t = tabs[0]
+            print("code:", t.get("code"), "｜date:", t.get("date"))
+            print("fields:", t.get("fields"))
+            data = t.get("data") or []
+            print(f"data 列數: {len(data)}")
+            if data:
+                print("第一列:", data[0])
+        return
 
     if a.months_years:
         rl = runlog.Run(f"official_stats:months:{a.market}")
