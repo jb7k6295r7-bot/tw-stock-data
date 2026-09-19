@@ -11,12 +11,16 @@
   ⑤ 欄位對不上 ⇒ 講得出缺哪一個
 """
 import io
+import json
 import os
 import sys
+import tempfile
 from datetime import datetime, timedelta, timezone
 
 import datetime as _dt0
 import otc_reduce_history as R
+import half_run
+import runlog
 
 # ⚠ 用「今天」而不是寫死日期：這一組要測的正是「今天算、明天不算」的邊界，
 #   ⛔ 寫死的話這支測試明天就開始測別的東西了。
@@ -287,6 +291,110 @@ def main():
     ck("  ⛔ 欄位是壞字串時不炸",
        R.over_bound([["2020-01-01", "Z", "n", "10", "1", "abc", "r",
                       "1", "0", "def"]]) == [])
+
+    # ═══════════════════════════════════════════════════════════
+    # ⑫ ⭐⭐ **兩半場**（市場情報分析線 0020 §三）：先抓 → 再補 → 才掃
+    #
+    # ⛔ 這一節**真的跑一次 `main()`**，⚠ 不是讀原始碼字串（七點第八個）。
+    #   四個旋鈕（OUT／LOW／runlog.PATH／_post）由 `half_run` 一次導走，
+    #   ⛔ 兩支姊妹自測共用**同一份**——抄兩份的話下一個人只會修一份（四點五）。
+    # ═══════════════════════════════════════════════════════════
+    print("⑫ ⭐⭐ --no-scan／--scan-only：兩半場真的跑一次")
+    # ⛔ 不可以再用 main() 開頭那個 `real`／`before`——⚠ 中間被別的區段改掉了
+    #   （`real` 在這裡已經是一個 float）⇒ ⭐ 從模組屬性自己取一次。
+    # ⛔ 不可以先存成 `R.LOW = R.LOW` 再 `io.open(R.LOW, …)`：
+    #   `selftest_lowwater` ⑨ 的判準是「**裸的名字**以 LOW 結尾被拿去開檔」
+    #   ⇒ 那樣寫會被判成「第九份實作」（實測當場紅）。
+    #   ⭐ 而那道判準是對的：`io.open(R.LOW, …)` 是 Attribute ＝「核**別的模組**
+    #     的路徑寫了什麼」，⛔ 裸名才是「這個檔自己在讀寫低水位檔」。
+    #   ⚠ `run_half` 在 `finally` 把旋鈕還原了 ⇒ 這裡讀到的一律是 repo 真的那條路。
+    _b_out = (io.open(R.OUT, "rb").read()
+              if os.path.exists(R.OUT) else None)
+    _b_low = io.open(R.LOW, "rb").read() if os.path.exists(R.LOW) else None
+    _b_run = (io.open(runlog.PATH, "rb").read()
+              if os.path.exists(runlog.PATH) else None)
+    _payload = json.dumps(pack([
+        ["109/06/22", "5227", "立凱-KY", "10.00", "18.58", "彌補虧損"],
+    ])).encode()
+
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            half_run.run_half(R, ["--no-scan", "--scan-only"], td,
+                              payload=_payload)
+            _both = "⛔ 兩個一起給居然跑完了"
+        except SystemExit as ex:                                 # noqa: PERF203
+            _both = str(ex)
+        ck("  ⭐ `--no-scan` 與 `--scan-only` 同時給 ⇒ **SystemExit**"
+           "（⛔ 靜靜擇一是這一族最貴的壞法）",
+           "不可以同時給" in _both, _both)
+
+    # ── ① 只抓不掃 ────────────────────────────────────────────
+    with tempfile.TemporaryDirectory() as td:
+        rc1, tx1 = half_run.run_half(R, ["--no-scan"], td, payload=_payload)
+        _out1 = os.path.join(td, "out.csv")
+        ck("  ⭐ `--no-scan` 把判準檔寫出來了",
+           os.path.exists(_out1)
+           and len(io.open(_out1, encoding="utf-8").read().splitlines()) == 2,
+           f"rc={rc1}")
+        ck("  ⭐⭐ 而**掃描那一半沒跑**"
+           "（⛔ 跑了的話它掃的是還沒補之前的 `data/adj/` ⇒ 一道天天紅的閘門）",
+           "官方有、我方 data/adj 沒有" not in tx1, tx1[:200])
+        ck("  ⭐ 區塊名是 `otc_reduce_history:fetch`"
+           "（⛔ 同名會蓋掉掃描那一半）",
+           "## otc_reduce_history:fetch" in tx1, tx1[:120])
+
+    # ── ② 只掃不抓 ────────────────────────────────────────────
+    with tempfile.TemporaryDirectory() as td:
+        io.open(os.path.join(td, "out.csv"), "w", encoding="utf-8").write(
+            ",".join(R.HEADER) + "\n"
+            "2020-06-22,5227,立凱-KY,10.00,18.58,0.5382,彌補虧損,,,,2026-09-16\n")
+        # ⭐ `payload=None` ⇒ `_post` 換成**會炸的**那一個
+        #   ⇒ 這條斷言的終點是「它沒有炸」＝ **它沒有連外**（⛔ 不是讀原始碼）
+        # ⭐ `run_half` 自己接住例外並回 `rc=None`（⛔ 不讓它逃出去中斷整支）。
+        rc2, tx2 = half_run.run_half(R, ["--scan-only"], td)
+        ck("  ⭐⭐ `--scan-only` **一發都沒有打出去**"
+           "（⛔ `_post` 被換成會丟例外的那一個）",
+           rc2 is not None and "不可以連外" not in tx2, tx2[:160])
+        ck("  ⭐ 而它**讀回**了判準檔並且掃了",
+           "官方有、我方 data/adj 沒有" in tx2 and "1 筆" in tx2, tx2[:300])
+        ck("  ⭐ 掃描那一半**留原名**（⚠ 別的線與 305 個歷史版本跟的是它）",
+           "## otc_reduce_history　" in tx2
+           and "otc_reduce_history:fetch" not in tx2, tx2[:120])
+
+        # ⭐⭐ 這一條才是「`LOW` 真的被導走」的**終點**：
+        #   ⛔ 「repo 那一份沒變」證明不了它——現場水位已經是 **0**，
+        #   而 `lowwater.DOWN` 只在**更低**時才寫 ⇒ 沒導走它也不會變
+        #   ⇒ ⚠ 那條斷言的壽命綁在現場水位上（七點第七個）。
+        #   ⭐ 而「沙箱裡那一份**被寫出來了**」跟現場無關，每個 ref 都成立。
+        ck("  ★ `LOW` 真的被導走（沙箱的 `low.txt` 有被寫出來）",
+           os.path.exists(os.path.join(td, "low.txt")),
+           os.listdir(td))
+
+    # ── ③ 判準檔不在 ⇒ **大聲失敗**，⛔ 不是靜靜 0 筆（四點六） ──
+    with tempfile.TemporaryDirectory() as td:
+        rc3, tx3 = half_run.run_half(R, ["--scan-only"], td)
+        ck("  ⭐⭐ 判準檔不在 ⇒ **✗**，⛔ 不是當成 0 筆往下跑",
+           "**✗**" in tx3 and "要讀的判準檔在不在" in tx3, tx3[:300])
+
+    # ── ④ ⭐ 預設那條路（⛔ 一個旗標都不傳）——七點第三個 ──────
+    with tempfile.TemporaryDirectory() as td:
+        rc4, tx4 = half_run.run_half(R, [], td, payload=_payload)
+        ck("  ⭐⭐ **不傳旗標**時兩半場都跑"
+           "（⚠ 那是 `feeds.yml` 走的那條路，⛔ 沒有這條斷言它沒有人走過）",
+           "判準檔" in tx4 and "官方有、我方 data/adj 沒有" in tx4
+           and "## otc_reduce_history　" in tx4, tx4[:300])
+
+    ck("  ★ 沒有動到 repo 真的 `otc_reduce_history.csv`",
+       (io.open(R.OUT, "rb").read()
+        if os.path.exists(R.OUT) else None) == _b_out)
+    ck("  ★ 沒有動到 repo 真的 `_otc_reduce_gap_low.txt`"
+       "（⚠ 寫小一次那道閘門永遠綠。⛔ 而這一條**單獨不夠**——"
+       "現場水位已是 0 ⇒ 沒導走它也不會變，⇒ 要跟上面那條一起看）",
+       (io.open(R.LOW, "rb").read()
+        if os.path.exists(R.LOW) else None) == _b_low)
+    ck("  ★ 沒有動到 repo 真的 `_last_run.md`",
+       (io.open(runlog.PATH, "rb").read()
+        if os.path.exists(runlog.PATH) else None) == _b_run)
 
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

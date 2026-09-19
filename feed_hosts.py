@@ -118,6 +118,84 @@ def writes_of(path):
     return out
 
 
+# ⭐⭐ 2026-09-16 晚補：只看**主機**時，`www.tpex.org.tw` 有 18 支卡在
+#   「要逐條看路徑」那一格 ⇒ ⛔ 那等於沒分類完。
+#   ⇒ 實測我方在那個主機下用到的前綴只有四種：
+#         /www/zh-tw **32**｜/openapi/v1 **19**｜/web/emergingstock 1｜/ 1
+#   ⇒ ⭐ 分類升到**端點層**（主機 ＋ 前兩層路徑），那 18 支就拆開了。
+# ⚠ 而「只有主機、沒有路徑」的（例如探針拿首頁當種子）仍然進
+#   「要逐條看」那一格——⛔ 不可以猜它是哪一族。
+OPEN_PATHS = ("/openapi/",)
+# ⛔⛔ 2026-09-16 晚再補一層：第一版把 `api.finmindtrade.com`／`github.com`
+#   也算進 B（網站型）⇒ ⛔ 而那份條款是 **TWSE／TPEx 自己的網站使用條款**
+#   ⇒ 把第三方主機算進去會把暴露面**話大**，
+#   而那又是一個「給別人拿去裁的數字」（第七點）。
+# ⇒ ⭐ 先問「這個主機在不在**這份條款的管轄**裡」，再談 A／B。
+# ⚠ 而 `mops.twse.com.tw`／`mopsov.twse.com.tw`／`isin.twse.com.tw` 這些
+#   都是 `twse.com.tw` 底下 ⇒ 算在管轄裡；⛔ 而「管不管得到子網域」
+#   本身也是**法律解讀**，這一支只按網域標，⛔ 不裁。
+TERMS_DOMAINS = ("twse.com.tw", "tpex.org.tw", "gretai.org.tw")
+
+
+def in_terms_scope(host):
+    """這個主機在不在「交易所網站使用條款」的網域底下 → bool。
+
+    ⛔ 這只是**網域比對**，不是「條款管不管得到它」的答案。
+    """
+    return any(host == d or host.endswith("." + d) for d in TERMS_DOMAINS)
+
+
+def endpoints_of(path):
+    """→ {`主機+前兩層路徑`}：比 `hosts_of` 細一層的那一版。
+
+    ⛔ 同樣只從**非 docstring 的字串常量**取（判準②不變）。
+    """
+    try:
+        tree = ast.parse(io.open(path, encoding="utf-8").read())
+    except (OSError, SyntaxError):
+        return set()
+    out = set()
+    for s in W._nondoc_strings(tree):
+        for m in re.finditer(r"https?://([A-Za-z0-9._-]+)(/[A-Za-z0-9_./{}-]*)?", s):
+            h = m.group(1).lower()
+            if "." not in h or h.endswith(".invalid"):
+                continue
+            seg = "/".join((m.group(2) or "").split("/")[:3])
+            out.add(h + seg)
+    return out
+
+
+def classify_ep(eps):
+    """端點層的分類 → (A 開放資料型, B 網站型, ❗ 讀不出來的)。
+
+    ⭐ 判準順序是死的：**先看主機、再看路徑**。
+    ⛔ 而「連路徑都沒有」的不猜，進第三格。
+    """
+    # ⛔ 迴圈變數叫 `ep`，**不可以**改回 `e`：`selftest_feed_days` ⑨ 掃的是
+    #   「`err`／`note`／`msg`／`why`／`reason`／`e`＋可選數字 的切片」＝
+    #   砍錯誤訊息尾巴（六點六）。⚠ 而 `e[len(host):]` 切的是**端點字串**
+    #   ⇒ 它會被那道閘門誤判成一處退步 ⇒ ⛔ 整支自測紅
+    #   ⇒ ⛔⛔ 而 probe.yml 的「把程式同步到 main」排在它後面 ⇒ **整趟什麼都沒搬**
+    #   （實測：run 139 就是這樣掛的，兩個 commit 卡在分支上三天）。
+    # ⭐ 修的是**名字**，⛔ 不是那道閘門——它的名單放寬過一次就漏掉 6 處。
+    a, b, unk = set(), set(), set()
+    for ep in eps:
+        host = ep.split("/")[0]
+        rest = ep[len(host):]
+        if host in OPEN_HOSTS:
+            a.add(ep)
+        elif host in MIXED_HOSTS:
+            if any(rest.startswith(x) for x in OPEN_PATHS):
+                a.add(ep)
+            elif rest and rest != "/":
+                b.add(ep)
+            else:
+                unk.add(ep)             # ⛔ 只有主機 ⇒ 不猜
+        else:
+            b.add(ep)
+    return a, b, unk
+
+
 def classify(hosts):
     """→ (開放資料型, 網站型, 要逐條看的)。⛔ 三種分開，不合併成兩種。"""
     a = {h for h in hosts if h in OPEN_HOSTS}
@@ -169,6 +247,33 @@ def main():
     P(f"     打到 **B 網站型**主機的：　　{nb} 支")
     P(f"     打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：{nm} 支")
     P("  ⛔ 三個數字會相加超過總數——**一支可以同時打兩族**，那不是錯。")
+
+    # ⭐⭐ 端點層（主機 ＋ 前兩層路徑）——⛔ 主機層把 `www.tpex.org.tw` 那 18 支
+    #   全丟進「要逐條看」，那等於沒分類完。
+    P("")
+    P("── ⭐⭐ 端點層（主機 ＋ 前兩層路徑）：`www.tpex.org.tw` 那一格拆開之後 ──")
+    P(f"   ⚠ 母體**只收在條款網域底下**的（{'／'.join(TERMS_DOMAINS)}）"
+      "——⛔ FinMind／GitHub 那些不在這份條款的管轄裡，算進去會把暴露面話大")
+    ea = eb = eu = 0
+    unk_list = []
+    for mod in sorted(mods):
+        eps = endpoints_of(os.path.join(HERE, mod))
+        if not eps:
+            continue
+        eps = {e for e in eps if in_terms_scope(e.split("/")[0])}
+        if not eps:
+            continue
+        a2, b2, u2 = classify_ep(eps)
+        ea += bool(a2)
+        eb += bool(b2)
+        if u2:
+            eu += 1
+            unk_list.append((mod, sorted(u2)))
+    P(f"     A 開放資料型端點：**{ea}** 支｜B 網站型端點：**{eb}** 支"
+      f"｜❗ 讀不出來的：**{eu}** 支")
+    for mod, u2 in unk_list:
+        P(f"     ❗ {mod}：{'／'.join(u2)}"
+          "（⛔ 只有主機、沒有路徑 ⇒ **不猜**）")
     # ⭐ 可見性由**資料**承擔，⛔ 不是由 log（四點二⑤：log 會捲掉）。
     os.makedirs(os.path.dirname(out_path()), exist_ok=True)
     io.open(out_path(), "w", encoding="utf-8").write(

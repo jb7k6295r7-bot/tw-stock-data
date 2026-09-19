@@ -1092,6 +1092,108 @@ def main():
        "--tests-for" in htxt and "NOTEST=" in htxt,
        "⛔ hook 裡找不到 `--tests-for`")
 
+    # ═══════════════════════════════════════════════════════════
+    # ⭐⭐ **掃全庫的那一族自測，一定要進 hook 的跨檔守門清單**
+    #
+    # ⛔ 病根已經發生兩次，兩次都是同一個形狀：
+    #   run 134  `selftest_no_data_delete` 紅 ⇒ step 6 failure ⇒ 步驟 7~16 skipped
+    #   run 139  `selftest_zero_dep`（裡面是 `selftest_feed_days` 的全庫掃描）紅
+    #            ⇒ 同樣 skip 掉「把程式同步到 main」⇒ ⭐ **兩個 commit 卡在分支上三天**，
+    #            ⚠ 而我照著「main 上沒有我的修正」去讀資料，差一點判成「那個修正沒效」
+    #
+    # ⭐ 而這兩支的共同點是**掃全庫**：動到任何一支 .py 都可能讓它們紅，
+    #   ⛔ 而 hook 的第三道只跑「同名的那一支自測」⇒ 這一族它天生看不到。
+    # ⇒ 所以清單**不可以用手抄的**（四點五第九次：手抄名單放寬一次就漏 6 處）
+    #   ——這一條**自己算**：誰掃全庫，誰就要在清單裡。
+    # ⚠ 而「太慢 ⇒ 不收」是**正當**的出口（hook 的判準本來就是秒數）
+    #   ⇒ ⭐ 那就要**具名寫出來**：`# SLOW-SCANNERS:` 那一行。
+    #   ⛔ 不可以默默不收——那跟漏掉一支長得一模一樣。
+    _hook_list = _slow = ""
+    for _ln in htxt.splitlines():
+        if _ln.strip().startswith("for G in ") and "selftest_" in _ln:
+            _hook_list += _ln
+        if _ln.strip().startswith("# SLOW-SCANNERS:"):
+            _slow += _ln
+    _scanners = []
+    for _p in sorted(glob.glob(os.path.join(here, "selftest_*.py"))):
+        _b = os.path.basename(_p)
+        try:
+            _st = ast.parse(io.open(_p, encoding="utf-8").read())
+        except SyntaxError:
+            continue
+        for _n in ast.walk(_st):
+            # `glob.glob(os.path.join(HERE, "*.py"))` ＝ 這一支在掃全庫
+            if (isinstance(_n, ast.Call)
+                    and getattr(_n.func, "attr", "") == "join"
+                    and any(isinstance(_a4, ast.Constant) and _a4.value == "*.py"
+                            for _a4 in _n.args)):
+                _scanners.append(_b)
+                break
+    ck("⭐ 找得到「掃全庫」那一族（⛔ 0 支跟『全部都在清單裡』長得一樣）",
+       len(_scanners) >= 2, f"{_scanners}")
+    _miss = [b for b in _scanners if b not in _hook_list and b not in _slow]
+    ck("⭐⭐ 掃全庫的自測**每一支**都在 hook 的跨檔守門清單裡，或具名列在"
+       " `# SLOW-SCANNERS:`（⛔ 漏一支 ⇒ 它紅的那天會把「同步到 main」整步 skip 掉）",
+       not _miss, f"⛔ 兩邊都沒有：{_miss}" if _miss else
+       f"{len(_scanners)} 支｜慢的那幾支：{_slow.split(':', 1)[-1].strip()}")
+    # ⛔ 而那條出口不可以變成「全部都丟進 SLOW」⇒ 釘住「hook 裡真的有幾支」
+    ck("⭐ 而跨檔守門清單裡**真的有東西**（⛔ 全部丟進 SLOW ＝ 這道 hook 空了）",
+       sum(1 for b in _scanners if b in _hook_list) >= 1,
+       f"{[b for b in _scanners if b in _hook_list]}")
+
+    # ═══════════════════════════════════════════════════════════
+    # ⭐⭐ daily 的上櫃還原因子：**先抓 → 再補 → 才掃**
+    #
+    # 市場情報分析線 0020 §三裁定：接進 daily，⛔ **而排序要改**。
+    # ⇒ 而順序錯的後果不是「少補一筆」，是**一道天天紅的閘門**
+    #   （掃描排在補之前 ⇒ 即使這一趟補的正好就是它報的那幾筆）
+    #   ⇒ ⭐ 而天天紅的閘門會被學會忽略（四點五）。
+    #
+    # ⛔ 而這一條不可以靠人記得——下一個人動那一步的時候，
+    #   順序看起來只是幾行 `python xxx.py` 的先後。
+    # ═══════════════════════════════════════════════════════════
+    _dy = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                       ".github", "workflows", "daily.yml")
+    _sh = "\n".join(b for _n, b in run_blocks(_dy))
+    # ⛔⛔ 第一版用 `_sh.index(<字串>)` 找位置 ⇒ **當場踩到第七點⑧**：
+    #   我自己在 daily.yml 寫的那段說明裡就有一行
+    #   「② ⭐ **補**：`otc_adj.py --official` ＋ `adjust.py`」
+    #   ⇒ 它**比真正要執行的那一行早** ⇒ 順序判斷當場翻車。
+    # ⇒ ⭐ 改成只看**真的會執行的行**（去掉縮排後以 `python ` 開頭）。
+    _cmds = [ln.strip() for ln in _sh.splitlines()
+             if ln.strip().startswith("python ")]
+
+    def _at(t):
+        for i, ln in enumerate(_cmds):
+            if t in ln:
+                return i
+        return -1
+    _fetch = _at("otc_exright_history.py --no-scan")
+    _fix = _at("otc_adj.py --official")
+    # ⛔ `adjust.py` 在 daily 裡**有兩處**（早的那一處是上市那一輪）
+    #   ⇒ 要找的是 **`--official` 之後**那一處，⛔ 不是第一處
+    #   ——第一版拿到 idx 86（< fix 97）當場誤報：
+    #   ⭐ 第九個那一族，**判準自己把對象選錯了**。
+    _adj = next((i for i, ln in enumerate(_cmds)
+                 if i > _fix >= 0 and "adjust.py" in ln), -1)
+    _scan = _at("otc_exright_history.py --scan-only")
+    ck("⭐ daily 裡三段都在（--no-scan／--official／--scan-only）",
+       _fetch >= 0 and _fix >= 0 and _scan >= 0,
+       f"fetch={_fetch}｜fix={_fix}｜scan={_scan}")
+    ck("⭐⭐ 順序是**先抓 → 再補 → 才掃**"
+       "（⛔ 掃描排在補之前 ＝ 一道天天紅的閘門）",
+       0 <= _fetch < _fix < _scan,
+       f"fetch={_fetch}｜fix={_fix}｜scan={_scan}")
+    ck("⭐ 而 `adjust.py` 在**補之後、掃之前**"
+       "（⛔ 不重算的話，`data/adj/` 還是舊的）",
+       0 <= _fix < _adj < _scan, f"fix={_fix}｜adjust={_adj}｜scan={_scan}")
+    ck("⛔ 而那兩支**不可以**再用不帶旗標的寫法跑"
+       "（⚠ 那等於又把抓與掃綁回一起）",
+       not [ln for ln in _cmds
+            if ln in ("python otc_exright_history.py",
+                      "python otc_reduce_history.py")],
+       "daily 裡還有不帶旗標的那一行")
+
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0

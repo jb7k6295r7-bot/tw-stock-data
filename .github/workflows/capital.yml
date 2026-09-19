@@ -117,6 +117,12 @@ jobs:
       - name: 驗累積型 CSV 的逐鍵合併（零相依）
         run: python selftest_merge_ledger.py
 
+      # ⛔ 這一道用的是**合成**資料 ⇒ 不依賴現場有幾檔權證（七點⑦：
+      #   拿現場資料驗判準，等於把那條斷言的壽命綁在「今天的比例剛好是這個數」）。
+      #   ⭐ 它守的是兩件事：分格的算術，以及「舊的不可以蓋掉新的」那道閘門。
+      - name: 驗零股比例的分格與那道閘門（零相依）
+        run: python selftest_odd_lot_share.py
+
       - name: 把程式同步到 main（趁 checkout 還新）
         # ⛔ 只有一份實作（CLAUDE.md 四點五）。⚠ 這一段本來八支各抄一份、
         #   逐字相同——而 2026-09-13 要在裡面加一份**排除清單**，
@@ -163,6 +169,16 @@ jobs:
       - name: 興櫃產業別
         if: inputs.mode == 'run' || inputs.mode == ''
         run: python industry_esb.py
+
+      # ⭐ 零股比例：**這個量的母體是什麼**（#29）。掛月排程的理由是它只隨
+      #   掛牌結構變（新權證一上市就動），⛔ 不是每天變 ⇒ 掛 daily 是每天賠 60 秒。
+      # ⚠ 它讀 `data/stocks/`（0.55 GB）⇒ 在分支上派工讀到的是**過期**的那一份，
+      #   而這個檔是整份覆蓋的（四點六）⇒ ⭐ 擋在 `odd_lot_share.main()` 裡面：
+      #   這一趟量到的最後一天比既有那一份舊就**一個字都不寫**並且 runlog 紅。
+      - name: 零股比例（全庫，⛔ 不是抽樣）
+        if: inputs.mode == 'run' || inputs.mode == ''
+        continue-on-error: true
+        run: python ci_step.py odd_lot_share.py
 
       - name: 這一趟的摘要
         if: always()

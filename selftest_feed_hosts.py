@@ -95,6 +95,50 @@ def main():
         ck("③ ⛔ 三族**互斥**（⚠ 合併成兩種就會把 tpex 判進錯的那一邊）",
            not (a & b) and not (a & mix) and not (b & mix))
 
+        # ══════════════════════════════════════════════
+        # ⭐⭐ 端點層：只看主機的話，`www.tpex.org.tw` 有 **18 支**卡在
+        #   「要逐條看」那一格 ⇒ ⛔ 那等於沒分類完，而我本來要把那個
+        #   數字送出去給人裁——第七點那句：**分類完才送**。
+        # ══════════════════════════════════════════════
+        eps = F.endpoints_of(os.path.join(d, "real_feed.py"))
+        ck("⑥ ⭐ 端點層拆得出**主機 ＋ 前兩層路徑**",
+           "www.tpex.org.tw/openapi/z" in eps, str(sorted(eps)))
+        ea, eb, eu = F.classify_ep(eps)
+        ck("⑥ ⭐⭐ `www.tpex.org.tw**/openapi/**` 落在 **A**"
+           "（⛔ 主機層時它卡在「要逐條看」）",
+           "www.tpex.org.tw/openapi/z" in ea, str(sorted(ea)))
+        ck("⑥ ⭐ 而同一個主機的**別的路徑**落在 **B**",
+           not any(x.startswith("www.tpex.org.tw/www") for x in ea),
+           str(sorted(ea)))
+        eps2 = F.classify_ep({"www.tpex.org.tw/www/zh-tw"})
+        ck("⑥ ⭐ `/www/zh-tw` 那一族是 **B 網站型**",
+           eps2[1] == {"www.tpex.org.tw/www/zh-tw"}, str(eps2))
+        eps3 = F.classify_ep({"www.tpex.org.tw/"})
+        ck("⑥ ⛔⛔ 而**只有主機、沒有路徑**的 ⇒ 進第三格，**不猜**"
+           "（⚠ 猜錯一邊就是給別人拿去裁的錯數字）",
+           eps3[2] == {"www.tpex.org.tw/"} and not eps3[0] and not eps3[1],
+           str(eps3))
+        ck("⑥ ⭐ 而官方開放資料主機**不看路徑**就是 A"
+           "（⚠ 判準順序：先主機再路徑）",
+           F.classify_ep({"openapi.twse.com.tw/"})[0] == {"openapi.twse.com.tw/"},
+           str(F.classify_ep({"openapi.twse.com.tw/"})))
+
+        ck("⑥ ⭐⭐ 第三方主機（FinMind／GitHub）**不在這份條款的管轄**"
+           "（⛔ 算進去會把暴露面話大）",
+           not F.in_terms_scope("api.finmindtrade.com")
+           and not F.in_terms_scope("github.com"))
+        ck("⑥ ⭐ 而交易所的**子網域**算在管轄裡"
+           "（mopsov／isin／openapi 都是 twse.com.tw 底下）",
+           F.in_terms_scope("mopsov.twse.com.tw")
+           and F.in_terms_scope("openapi.twse.com.tw")
+           and F.in_terms_scope("www.tpex.org.tw"))
+        # ⛔⛔ 這兩條的第一版我寫成 `… is False or True` ⇒ **恆真**。
+        #   ⚠ 而它印出來跟真的一模一樣（四點五那個坑）。
+        ck("⑥ ⛔ `twse.com.tw.evil.example`（把網域放在**前面**）不算",
+           F.in_terms_scope("twse.com.tw.evil.example") is False)
+        ck("⑥ ⛔ `faketwse.com.tw`（**不是子網域**，只是後綴像）不算",
+           F.in_terms_scope("faketwse.com.tw") is False)
+
         wr = F.writes_of(os.path.join(d, "real_feed.py"))
         ck("④ ⭐ 「寫哪裡」取得到（`universe`）", wr == {"universe"}, str(wr))
     finally:

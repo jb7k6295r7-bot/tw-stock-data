@@ -908,6 +908,48 @@ def main():
     finally:
         shutil.rmtree(d13, ignore_errors=True)
 
+    # ═══════════════════════════════════════════════════════════
+    # ⒔ ⛔ 台帳的**表頭會隨時間增欄** ⇒ 追加時要先把舊表頭升上來
+    #
+    # `why` 欄是 2026-09-16 早上才加的，而 **tpex 那份台帳是舊表頭**
+    # （`stock_id,roc_year,asof`，run 167 寫的 3,691 列）
+    # ⇒ 下一趥追加 4 欄的列 ⇒ ⚠ **欄數不齊的 CSV**，
+    # ⭐ 而本程式自己讀得下去（只取前兩欄）⇒ ⛔ **沒有任何地方會報錯**。
+    # ═══════════════════════════════════════════════════════════
+    d14 = tempfile.mkdtemp(prefix="sweephdr_")
+    try:
+        lp14 = os.path.join(d14, "meta", "_done.csv")
+        os.makedirs(os.path.dirname(lp14), exist_ok=True)
+        # 舊表頭 ＋ 兩列舊資料（照 run 167 真的形狀）
+        io.open(lp14, "w", encoding="utf-8").write(
+            "stock_id,roc_year,asof\n1240,107,20260916\n1240,108,20260916\n")
+        O.save_sweep_done(lp14, [("2222", "104")], "20260917", why="nodata")
+        body14 = io.open(lp14, encoding="utf-8").read()
+        rows14 = [r for r in body14.splitlines() if r.strip()]
+        ck("⒔ ⭐ 表頭被升上來了",
+           rows14[0] == "stock_id,roc_year,asof,why", rows14[0])
+        ck("⒔ ⭐⭐ 而舊列**一列都沒少**（四點六：合併不是取代）",
+           len(rows14) == 4, str(rows14))
+        ck("⒔ ⭐ 舊列補一個**空的** `why`（⛔ 不可以猜它是哪一種）",
+           rows14[1] == "1240,107,20260916," and rows14[2] == "1240,108,20260916,",
+           str(rows14[1:3]))
+        ck("⒔ ⭐ 而新列帶著 `nodata`",
+           rows14[3] == "2222,104,20260917,nodata", rows14[3])
+        ck("⒔ ⭐ 每一列的欄數一致（⛔ 這就是要防的那件事）",
+           len({r.count(",") for r in rows14}) == 1,
+           str([r.count(",") for r in rows14]))
+        ck("⒔ ⭐ 而 `load_sweep_done` 兩種都讀得到",
+           O.load_sweep_done(lp14) == {("1240", "107"), ("1240", "108"),
+                                       ("2222", "104")},
+           str(sorted(O.load_sweep_done(lp14))))
+        # ⭐ 已經是新表頭的不要再動
+        ck("⒔ ⛔ 已經是新表頭的 ⇒ 不重寫（回 False）",
+           O._upgrade_sweep_header(lp14) is False)
+        ck("⒔ ⛔ 檔不存在 ⇒ 也回 False（⚠ 不可以炸）",
+           O._upgrade_sweep_header(os.path.join(d14, "meta", "_none.csv")) is False)
+    finally:
+        shutil.rmtree(d14, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

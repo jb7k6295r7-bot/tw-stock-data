@@ -404,45 +404,83 @@ def main():
     ap.add_argument("--start", default="2013/01/01")
     ap.add_argument("--end", default="")
     ap.add_argument("--json", help="離線用：讀一個檔當回應")
+    # ⭐⭐ 兩半場可以分開跑——理由與姊妹那一支（`otc_exright_history`）一字不差：
+    #   在 `daily.yml` 裡它排在 `otc_adj.py --official` **之前**
+    #   ⇒ 掃的是**還沒補之前**的 `data/adj/` ⇒ 那一塊每天都紅，
+    #   ⚠ 即使這一趟補的正好就是它報的那幾筆。
+    #   ⇒ ⛔ 處置不是把閘門放寬（那會讓它永遠不紅），⭐ 是改順序：
+    #     **先抓 → 再補 → 才掃**。
+    ap.add_argument("--no-scan", action="store_true",
+                    help="只抓官方判準檔，⛔ 不掃缺口（daily 的第一半）")
+    ap.add_argument("--scan-only", action="store_true",
+                    help="不連外，讀回已經抓下來的判準檔再掃（daily 的第二半）")
     a = ap.parse_args()
+    if a.no_scan and a.scan_only:
+        raise SystemExit("⛔ `--no-scan` 與 `--scan-only` 不可以同時給")
 
-    rl = runlog.Run("otc_reduce_history")
+    rl = runlog.Run("otc_reduce_history:fetch" if a.no_scan
+                    else "otc_reduce_history")
     today = datetime.now(TPE).strftime("%Y-%m-%d")
     end = a.end or today.replace("-", "/")
     rl.info("端點", f"POST {URL}｜{a.start} ~ {end}"
                     "　⛔ POST ＋日期帶斜線（無斜線這一支會 stat:參數錯誤，"
                     "⚠ 但 exDailyQ 是靜默的——同族三支行為不同）")
 
-    if a.json:
-        raw, err = io.open(a.json, "rb").read(), None
+    if a.scan_only:
+        # ⭐ 不連外：讀回第一半場剛寫下的那一份。
+        #   ⛔ 讀不到要**大聲失敗**，⚠ 不是當成 0 筆往下跑（四點六：讀不到的表現是空值）。
+        if not os.path.exists(OUT):
+            rl.check("`--scan-only` 要讀的判準檔在不在", False,
+                     f"{OUT} 不在 ⇒ ⛔ 這一半什麼都沒掃到，"
+                     "⚠ 請先跑一趟 `--no-scan`")
+            return rl.finish()
+        with io.open(OUT, encoding="utf-8") as f:
+            rd = list(csv.reader(f))
+        rows = [r[:len(HEADER) - 1] for r in rd[1:] if r]
+        rl.info("判準檔（`--scan-only` 讀回來的）",
+                f"data/meta/otc_reduce_history.csv｜{len(rows):,} 筆"
+                "　⛔ 這一半沒有連外")
+        rl.check("判準檔讀回來不是空的", bool(rows), f"{len(rows)} 筆")
+        if not rows:
+            return rl.finish()
     else:
-        raw, err = _post(URL, {"startDate": a.start, "endDate": end,
-                               "response": "json"})
-    if err or not raw:
-        rl.check("抓得到 revivt", False, f"{str(err)[:100]}"
-                 "｜⛔ 抓不到不等於沒有歷史（本機對 tpex 一律 403）")
-        return rl.finish()
-    try:
-        payload = json.loads(raw.decode("utf-8", "replace"))
-    except ValueError as ex:                                     # noqa: BLE001
-        head = raw[:80].decode("utf-8", "replace").replace("\n", " ")
-        rl.check("回應是 JSON", False, f"{str(ex)[:50]}｜開頭={head!r}")
-        return rl.finish()
+        if a.json:
+            raw, err = io.open(a.json, "rb").read(), None
+        else:
+            raw, err = _post(URL, {"startDate": a.start, "endDate": end,
+                                   "response": "json"})
+        if err or not raw:
+            rl.check("抓得到 revivt", False, f"{str(err)[:100]}"
+                     "｜⛔ 抓不到不等於沒有歷史（本機對 tpex 一律 403）")
+            return rl.finish()
+        try:
+            payload = json.loads(raw.decode("utf-8", "replace"))
+        except ValueError as ex:                                 # noqa: BLE001
+            head = raw[:80].decode("utf-8", "replace").replace("\n", " ")
+            rl.check("回應是 JSON", False, f"{str(ex)[:50]}｜開頭={head!r}")
+            return rl.finish()
 
-    rows, note = parse(payload, a.start.replace("/", "-"))
-    rl.info("官方回的", note)
-    rl.check("回應涵蓋我請求的整段期間", bool(rows), note)
-    if not rows:
-        return rl.finish()
+        rows, note = parse(payload, a.start.replace("/", "-"))
+        rl.info("官方回的", note)
+        rl.check("回應涵蓋我請求的整段期間", bool(rows), note)
+        if not rows:
+            return rl.finish()
 
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    with io.open(OUT, "w", encoding="utf-8", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(HEADER)
-        for r in sorted(rows):
-            w.writerow(r + [today])
-    rl.info("判準檔", f"data/meta/otc_reduce_history.csv｜{len(rows):,} 筆")
-    rl.info("  原因分布", dict(Counter(r[6] for r in rows).most_common(6)))
+        os.makedirs(os.path.dirname(OUT), exist_ok=True)
+        with io.open(OUT, "w", encoding="utf-8", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(HEADER)
+            for r in sorted(rows):
+                w.writerow(r + [today])
+        rl.info("判準檔", f"data/meta/otc_reduce_history.csv｜{len(rows):,} 筆")
+        rl.info("  原因分布", dict(Counter(r[6] for r in rows).most_common(6)))
+
+    if a.no_scan:
+        # ⭐ 第一半場到此為止：抓回來了，⛔ 而還沒補 ⇒ 現在掃沒有意義。
+        rl.info("⭐ 這一半只抓不掃",
+                "⇒ 補完（`otc_adj.py --official` ＋ `adjust.py`）之後"
+                "再跑一次 `--scan-only`")
+        return rl.finish()
 
     # ══════════════════════════════════════════════════════════════
     # ⭐⭐ 官方**自帶的**驗算（情報分析線 16:15：287 筆全過、不符 0、缺值 0）

@@ -593,6 +593,43 @@ def load_sweep_done(path):
     return done
 
 
+SWEEP_HEADER = "stock_id,roc_year,asof,why"
+
+
+def _upgrade_sweep_header(path):
+    """舊檔的表頭沒有 `why` 欄 ⇒ 把表頭提上來（舊列的 `why` 留空）。→ bool。
+
+    ## ⛔ 為什麼要有這一步
+
+    `why` 欄是 2026-09-16 早上才加的 ⇒ **tpex 那份台帳是舊表頭**
+    （`stock_id,roc_year,asof`，3,691 列，run 167 寫的）。
+    ⇒ 而 `save_sweep_done` 是**追加** ⇒ 下一趥會把 **4 欄**的列
+    接在**3 欄**的表頭後面 ⇒ ⚠ 一個欄數不齊的 CSV。
+
+    ⭐ 本程式自己讀得下去（`load_sweep_done` 只取前兩欄）
+    ——⛔ **而那正是它危險的地方**：下一個用 `csv.DictReader` 讀它的人
+    會拿到一個 `None` 鍵，而不會有任何地方報錯
+    （本 repo 記過的「同一個 feed 的 header 會隨時間增欄」那一族）。
+
+    ⚠ 而它是**合併不是取代**（四點六）：舊列一列都不動，
+    ⭐ 而「寫完的列數不可以少於原來那份」是這一步自己的閘門。
+    """
+    if not os.path.exists(path):
+        return False
+    with io.open(path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    if not lines or lines[0].strip() == SWEEP_HEADER:
+        return False
+    before = len(lines) - 1
+    body = [ln + "," if ln and ln.count(",") == 2 else ln for ln in lines[1:]]
+    out = [SWEEP_HEADER] + body
+    if len(out) - 1 < before:                       # ⛔ 永遠不可以變少
+        raise RuntimeError(
+            f"⛔ 升表頭會讓列數變少（{before} → {len(out) - 1}），不寫。")
+    io.open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    return True
+
+
 def save_sweep_done(path, pairs, today, why=""):
     """⭐ **追加**（四點六）：這一趟只知道自己那一部分。
 
@@ -600,11 +637,12 @@ def save_sweep_done(path, pairs, today, why=""):
     （`sweep_consistent_nodata()`）⇒ ⭐ **兩種要分得出來**，
     ⛔ 混在一起的話，日後我方日檔補齊時沒有辦法把那幾格重開。
     """
-    new = not os.path.exists(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    _upgrade_sweep_header(path)
+    new = not os.path.exists(path)
     with io.open(path, "a", encoding="utf-8") as f:
         if new:
-            f.write("stock_id,roc_year,asof,why\n")
+            f.write(SWEEP_HEADER + "\n")
         for sid, y in pairs:
             f.write(f"{sid},{y},{today},{why}\n")
     return len(pairs)
