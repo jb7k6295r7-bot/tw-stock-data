@@ -25,6 +25,30 @@
 
 一個沒有母體的百分比，跟沒有那個數字一樣——⚠ 三個舊數字就是這樣來的。
 ⇒ 逐市場 × 逐期間 × 逐種類（個股／ETF／權證）× 轉板與否，全部一次印出來。
+
+## ⛔⛔ 而 2026-09-20：**三個舊數字裡不是兩個重建不出來，是三個**
+
+資料庫線 09-19 送出全庫 89.95% 時寫了一句「回測線 1547 的 93.7% 沒有錯
+（長歷史扣 ETF／權證＝905 檔，重算 93.80%）」——⛔ 那句話**歸因錯了**。
+回測線自己重跑後發現：那個 905 檔母體算出來的分母（2,431,049）跟回測線
+1547 登錄的分母（2,725,333）**差 294,284 列**，⛔ 不是同一個母體
+——比例碰巧接近（93.80% vs 93.66%），不是重建成功。
+
+⇒ 回測線接著發現**連自己都重建不出來**：照 1547 登錄的字面
+（`market==twse`、有量、2,725,333 列）重跑，得到的是 89.95%／3,175,181
+（＝全庫），試過的其他候選（4 碼純數字／個股／905 檔）沒有一個同時對上
+分母與比例。⇒ **93.66%（回測線）跟 95.7%／94.3%（資料庫線）一樣，
+母體規則沒寫下來、事後任何人都重建不出來**——市場情報分析線 20260920-0102
+已裁：READ_CONTRACT 那一行只寫方向，四個舊百分比全部作廢、不可再引用。
+
+⭐ 而回測線與情報線都各自獨立重跑過本支算出的 89.95%，**逐位數相符**
+（差別只在區間多跑了幾個交易日）——⚠ 這不是巧合，是**母體寫清楚了**
+才能夠被驗證的直接證據。
+
+⛔⛔ 回測線同時核到一個更小但真的會咬人的坑：`n_files`（`data/stocks/`
+全部檔案數）**不是**任何一個市場那一格百分比的母體——twse 的百分比只
+用 twse 段有量的檔，⛔ 而 `n_files` 含 tpex／esb。⇒ `scan()` 現在多回一個
+`files_by_market`，逐市場各印各的母體檔數（見 `report()`）。
 """
 import csv
 import io
@@ -59,7 +83,8 @@ def shape_of(sid):
 
 
 def scan(src=None):
-    """→ `(cells, n_files, transfer, span)`；`cells[(market, axis, bucket)] = [日數, 非千倍數]`。
+    """→ `(cells, n_files, transfer, span, files_by_market)`。
+    `cells[(market, axis, bucket)] = [日數, 非千倍數]`。
 
     ⛔ 只數 `volume > 0` 的交易日：沒有成交的那一天講不出它是整張還是零股。
 
@@ -67,10 +92,17 @@ def scan(src=None):
     它量的是哪一段**（CLAUDE.md 第二點）。⚠ 理由很具體：分支上的 `data/` 永遠比
     main 舊（四點六）⇒ 同一支程式在兩個 ref 上跑會給不同的分母，而**兩份輸出檔
     在畫面上一模一樣**。
+
+    ⭐⭐ `files_by_market[mk]` ＝ 有 `market==mk` 且有量列的**檔數**（2026-09-20，
+    回測線 20260919-2345 §三指出的坑）：`n_files`（全庫 `data/stocks/` 的檔案數，
+    含 twse／tpex／esb 全部）**不是**逐市場那一格百分比的母體——一支上市股的檔案
+    也會被算進 `n_files`，⛔ 而 twse 那一格的百分比不會用到興櫃檔。
+    ⇒ 誰拿「n_files 檔」去重建某個市場的百分比，會多掃別的市場、對不上分母。
     """
     src = src or SRC
     cells = defaultdict(lambda: [0, 0])
     transfer = set()
+    files_by_market = defaultdict(set)
     dmin = dmax = None
     names = sorted(n for n in os.listdir(src) if n.endswith(".csv"))
     for fn in names:
@@ -88,6 +120,8 @@ def scan(src=None):
                 mk = r.get("market") or "?"
                 markets.add(mk)
                 rows.append((r.get("date") or "", mk, vol))
+        for mk in markets:
+            files_by_market[mk].add(sid)
         if len(markets) > 1:
             transfer.add(sid)
         shape = shape_of(sid)
@@ -103,7 +137,7 @@ def scan(src=None):
                 cell = cells[key]
                 cell[0] += 1
                 cell[1] += bad
-    return cells, len(names), transfer, (dmin, dmax)
+    return cells, len(names), transfer, (dmin, dmax), files_by_market
 
 
 SPAN_MARK = "⭐ 這一份量到的區間：**"
@@ -136,10 +170,14 @@ def _line(cells, mk, axis, bucket, label):
     return (f"  {label:24s} {c[1]:>9,}／{c[0]:>9,} ＝ {pct(c):6.2f}%")
 
 
-def report(cells, n_files, transfer, span=(None, None)):
+def report(cells, n_files, transfer, span=(None, None), files_by_market=None):
+    files_by_market = files_by_market or {}
     out = [runlog.probe_stamp("odd_lot_share")]
     out.append("# 我方日檔 `volume` 非 1,000 倍數的比例（⭐ 全庫，⛔ 不是抽樣）\n")
-    out.append(f"母體：`data/stocks/` 共 {n_files:,} 檔｜⛔ 只數 `volume > 0` 的交易日")
+    out.append(f"`data/stocks/` 全部檔案數：{n_files:,}"
+               "（⛔ 含 twse／tpex／esb 全部，⚠ **不是**下面任何一個市場的母體——"
+               "2026-09-19 回測線核到：拿這個數字去重建某個市場的百分比會多掃別的市場）"
+               "｜⛔ 只數 `volume > 0` 的交易日")
     lo, hi = span
     out.append(f"{SPAN_MARK}{lo or '—'} ~ {hi or '—'}**"
                "（⛔ 分支上的 `data/` 比 main 舊 ⇒ 換個 ref 跑，分母會不一樣）\n")
@@ -147,6 +185,8 @@ def report(cells, n_files, transfer, span=(None, None)):
         if not cells.get((mk, "all", "all"), [0])[0]:
             continue
         out.append(f"\n## {mk}")
+        out.append(f"⭐ 這個市場的母體：**{len(files_by_market.get(mk, ())):,} 檔**"
+                   "（有 `market==" + mk + "` 且有量列的檔案數——⛔ 不是上面那個全部檔案數）")
         out.append(_line(cells, mk, "all", "all", "⭐ 全期（這一個是答案）"))
         out.append(_line(cells, mk, "era", "before", f"{TWSE_INTRADAY_ODD} 之前"))
         out.append(_line(cells, mk, "era", "after", f"{TWSE_INTRADAY_ODD} 起"))
@@ -165,8 +205,8 @@ def main():
         rl.check("`data/stocks/` 在不在", False,
                  f"{SRC} 不在 ⇒ ⛔ 這一趟什麼都沒量到")
         return rl.finish()
-    cells, n_files, transfer, span = scan()
-    txt = report(cells, n_files, transfer, span)
+    cells, n_files, transfer, span, files_by_market = scan()
+    txt = report(cells, n_files, transfer, span, files_by_market)
     # ⭐ 四點六那道閘門：這個檔是**整份覆蓋**的 ⇒ 在分支上跑一趟（分支的 `data/`
     #   永遠比 main 舊）就會把 main 上比較新的那一份換成比較舊的。
     #   ⛔ 判準不是「這一趟成功了沒」，是**這一趟量到的區間有沒有退步**。
