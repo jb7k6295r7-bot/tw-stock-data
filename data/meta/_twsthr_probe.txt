@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-17T01:08:53+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35125748108
+# ⏱ 這一趟：2026-09-19T23:31:35+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35451799683
 # twsthr_probe.py 的輸出。這是探針結果，不是資料。
 # 網址（使用者提供）：https://norway.twsthr.info/StockHolders.aspx
 # ⛔ 第三方彙整站，不是官方——級距文字只是線索，歷史要跟官方交叉核對過才算數。
