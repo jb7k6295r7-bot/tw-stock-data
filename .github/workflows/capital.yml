@@ -166,6 +166,28 @@ jobs:
         if: inputs.mode == 'run' || inputs.mode == ''
         run: python par_timeline.py
 
+      # ⭐⭐ C4 官方交叉核對（2026-09-19 補上排程）。⛔ 這一步存在的理由是修正一句
+      #   已經被自己家推翻的否定句：`db_status.py` C4 那格寫著「真正的解要能執行
+      #   js 的環境」，⚠ 而 `otc_parvalue_history.py`（2026-09-15）早就找到
+      #   `bulletin/pvChgRslt` 是一支**不需要 js** 的 POST／JSON 端點，14/14 對上
+      #   官方值——那句話在寫下的當下就已經是錯的，只是沒有人把它讀成「這裡要改」。
+      # ⭐ 而「自動偵測新事件、算還原因子」本來就每天在跑（`otcparvalue.py --run`，
+      #   daily.yml）；這一步只補**官方交叉核對**那一半，⛔ 不是重造一份。
+      # ⚠ 掛月排程（不掛 daily）的理由跟零股比例同一條：這個量只隨「有沒有新的
+      #   面額變更事件」變，11.5 年只有 14 筆 ⇒ 一個月一次綽綽有餘。
+      # ⭐ 而**要**加 `continue-on-error: true`：這一步失敗（抓不到／官方衝突）
+      #   不會讓任何下游步驟讀到壞資料——它是獨立的外部錨點檔，⛔ 沒有人在讀它
+      #   （`adjust.py`／`otcparvalue.py` 都不 import 它，它只給人看）。
+      #   ⚠ 若不加，它一紅就會把後面「興櫃產業別」「零股比例」兩步
+      #   一起 skip 掉（四點二那一族：一個失敗拖累一整批不相干的步驟）。
+      #   ⛔ 而「衝突要報 ✗、不可靜默取一邊」這件事，`rl.check` 已經做到了
+      #   （進 runlog、進 commit）——continue-on-error 擋的是**這個 job**，
+      #   不是那句話會不會被看到。
+      - name: 上櫃面額變更：官方交叉核對（C4）
+        if: inputs.mode == 'run' || inputs.mode == ''
+        continue-on-error: true
+        run: python otc_parvalue_history.py --apply
+
       - name: 興櫃產業別
         if: inputs.mode == 'run' || inputs.mode == ''
         run: python industry_esb.py
