@@ -1,6 +1,6 @@
-# ⏱ 這一趟：2026-09-20T17:55:08+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35503068292
+# ⏱ 這一趟：2026-09-20T18:17:02+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35504057316
 # bsr_probe.py 的輸出。⛔ 這是探針結果，不是資料。
-# 產生時間：2026-09-20T17:55:05+08:00（台北）
+# 產生時間：2026-09-20T18:17:00+08:00（台北）
 # 端點來源：**使用者 2026-09-12 提供**，⛔ 非自行生成
 
 
@@ -19,25 +19,25 @@
 
 ==============================================================
 ── https://bsr.twse.com.tw/bshtm/bsMenu.aspx ──
-  回應：14,998B
+  回應：15,203B
   解碼：utf-8
   <title>：'未命名頁面'
   <form action>：['./bsMenu.aspx']
-  <input name>（11 個）：['Button_Reset', 'RadioButton_Excd', 'RadioButton_Normal', 'TextBox_Stkno', '__EVENTARGUMENT', '__EVENTTARGET', '__EVENTVALIDATION', '__LASTFOCUS', '__VIEWSTATE', '__VIEWSTATEGENERATOR', 'btnOK']
+  <input name>（12 個）：['Button_Reset', 'RadioButton_Excd', 'RadioButton_Normal', 'TextBox_Stkno', '__EVENTARGUMENT', '__EVENTTARGET', '__EVENTVALIDATION', '__LASTFOCUS', '__VIEWSTATE', '__VIEWSTATEENCRYPTED', '__VIEWSTATEGENERATOR', 'btnOK']
   <select name>：[]
     ⚠ ⛔ **選擇器不是涵蓋期間的結論**（`chtm` 的選擇器寫 20080409、實際下限差兩年）
-  <img>（2 個）｜⛔ 疑似驗證碼 1 個：['CaptchaImage.aspx?guid=3ebc3aef-7beb-405f-ba20-7707562c9026']
+  <img>（2 個）｜⛔ 疑似驗證碼 1 個：['CaptchaImage.aspx?guid=038e324e-3e8c-4570-a6de-50be9b7fc60d']
     ⛔⛔ **有驗證碼 ⇒ 這條路不能自動化**　⚠ 而那是「技術上取不到」，⛔ 不是「官方沒有」
     說明：!-- 買賣日報表查詢系統 table --
     說明：!-- 買賣日報表查詢系統 table --
 
 ==============================================================
 ── https://bsr.twse.com.tw/bshtm/bsContent.aspx ──
-  回應：693B
+  回應：822B
   解碼：utf-8
   <title>：''
   <form action>：['./bsContent.aspx']
-  <input name>（2 個）：['__VIEWSTATE', '__VIEWSTATEGENERATOR']
+  <input name>（3 個）：['__VIEWSTATE', '__VIEWSTATEENCRYPTED', '__VIEWSTATEGENERATOR']
   <select name>：[]
     ⚠ ⛔ **選擇器不是涵蓋期間的結論**（`chtm` 的選擇器寫 20080409、實際下限差兩年）
   <img>（0 個）｜⛔ 疑似驗證碼 0 個：[]
