@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T14:02:28+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35492718034
+# ⏱ 這一趟：2026-09-20T14:41:10+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35494362330
 # 下市清單／變更交易 端點探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
@@ -213,11 +213,11 @@
    ⚠ 不同鍵組合的種類：1
    ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
      CompanyName：0 種 ｜⚠ 空的 1
-     Date：1 種 20260919×1
+     Date：1 種 20260920×1
      SecuritiesCompanyCode：0 種 ｜⚠ 空的 1
      恢復交易：0 種 ｜⚠ 空的 1
      暫停交易：0 種 ｜⚠ 空的 1
-     樣本：{"Date": "20260919", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
+     樣本：{"Date": "20260920", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
 
    ══ 與我方 data/meta/delisted.csv 雙向比對 ══
    鍵的形狀：⛔ 認不出（日期候選 []、代號候選 []）｜CompanyName: 像日期 0/1、像代號 0/1｜Date: 像日期 0/1、像代號 0/1｜SecuritiesCompanyCode: 像日期 0/1、像代號 0/1｜恢復交易: 像日期 0/1、像代號 0/1｜暫停交易: 像日期 0/1、像代號 0/1
@@ -225,11 +225,11 @@
 
 ── 終止上櫃？ www/zh-tw/bulletin/delist（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/bulletin/delist?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── 終止上櫃？ www/zh-tw/company/suspendListing（⛔ 推的）
    https://www.tpex.org.tw/www/zh-tw/company/suspendListing?response=json
-   ✗ 不是 JSON（JSONDecodeError）；bytes=10892；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
+   ✗ 不是 JSON（JSONDecodeError）；bytes=9954；前 200：b'<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - \xe8\xad\x89\xe5\x88\xb8\xe6\xab\x83\xe6\xaa\xaf\xe8\xb2\xb7\xe8\xb3\xa3\xe4\xb8\xad\xe5\xbf\x83</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, u'
 
 ── ⭐⭐ 終止上市（第二來源）openapi/v1/company/suspendListingCsvAndHtml
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml

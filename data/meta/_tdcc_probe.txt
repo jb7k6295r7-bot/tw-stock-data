@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T13:56:04+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35492718034
+# ⏱ 這一趟：2026-09-20T14:35:09+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35494362330
 # tdcc_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://opendata.tdcc.com.tw/getOD.ashx?id=1-5
 
@@ -119,9 +119,9 @@
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
-  ✓ 查詢頁 69,367 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
+  ✓ 查詢頁 69,355 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = 'b4f91957-c545-4019-9e2a-780e6362ea8b'
+    SYNCHRONIZER_TOKEN = '4f5d36c9-fd5d-4cc2-8268-c075ca54aedc'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260918'
     method = 'submit'
@@ -179,7 +179,7 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 540,387 bytes
+     ✓ 540,784 bytes
      更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
      檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
@@ -202,7 +202,7 @@
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
      ✓ 69,367 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
