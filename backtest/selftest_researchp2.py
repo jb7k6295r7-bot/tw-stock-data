@@ -197,6 +197,38 @@ def t_gate_b_sig():
     check(len(P7.build_sig_gate_b(bad, cal, closes, op_bad, start="2020-01-01")) == 0, "進場日開盤是 NaN ⇒ 該列剔除（⛔ 不 ffill 開盤）")
 
 
+def t_p6_drop_and_pair():
+    """PREREGP6：第二道篩與【逐種子配對】的判定量。"""
+    from . import researchp6 as P6
+    sig = pd.DataFrame({"sid": ["A", "B", "C", "A"], "month": ["2024-01", "2024-01", "2024-01", "2024-02"],
+                        "entry_pos": [1, 1, 1, 20], "xpos_H120": [2, 2, 2, 21], "g_H120": [0.1, 0.2, 0.3, 0.4]})
+    # ⚠ 歸型表【比 sig 長】（含沒進門檻B 的股-月）⇒ 分母用錯就會被抓到
+    cl = pd.DataFrame({"measure_date": pd.to_datetime(["2024-01-02"] * 3 + ["2024-02-01"] * 5),
+                       "stock_id": ["A", "B", "C", "A", "D", "E", "F", "G"],
+                       "type": ["④死水", "①營收＋回檔", "④死水", "③純技術＋回檔"] + ["④死水"] * 4})
+    kept, info = P6.drop_type4(sig, cl)
+    check(list(kept["sid"]) == ["B", "A"] and info["dropped_rows"] == 2, f"④型那兩列被拿掉（實得 {list(kept['sid'])}）")
+    check(abs(info["dropped_share_pct"] - 50.0) < 1e-9, f"⭐ 佔比的分母是【門檻B 池】4 列 ⇒ 50%（實得 {info['dropped_share_pct']:.1f}%）")
+    check(info["unmatched_rows"] == 0, "歸型全部對得上 ⇒ unmatched 0")
+    miss = P6.drop_type4(sig, cl.iloc[:1])[1]
+    check(miss["unmatched_rows"] == 3, f"⭐ 對不上歸型的要數出來（實得 {miss['unmatched_rows']}）⇒ ⛔ 不可靜靜當成「不是④」")
+    # ⭐ 判定量是【逐種子配對】，⛔ 不是兩組各取中位再相減
+    x = pd.DataFrame({"seed": [1, 2, 3, 4], "cagr": [0.10, 0.30, 0.12, 0.28]})
+    y = pd.DataFrame({"seed": [1, 2, 3, 4], "cagr": [0.09, 0.29, 0.11, 0.27]})
+    st = P6._pair_stats(x, y)
+    check(abs(st["diff_median"] - 0.01) < 1e-12 and st["detectable"], "配對差 ＝ 每顆種子各自相減 ⇒ 中位 +1.00pp、CI 不含 0")
+    check(abs((x["cagr"].median() - y["cagr"].median()) - 0.01) < 1e-12, "⚠ 這一組恰好兩種算法同值（⇒ 下一條才是分辨點）")
+    x2 = pd.DataFrame({"seed": [1, 2, 3], "cagr": [0.10, 0.20, 0.30]})
+    y2 = pd.DataFrame({"seed": [1, 2, 3], "cagr": [0.05, 0.25, 0.26]})
+    st2 = P6._pair_stats(x2, y2)
+    unpaired = float(x2["cagr"].median() - y2["cagr"].median())
+    check(abs(st2["diff_median"] - 0.04) < 1e-12 and abs(unpaired - (-0.05)) < 1e-12,
+          f"⭐ 配對中位 {st2['diff_median'] * 100:+.1f}pp vs 兩組各取中位再相減 {unpaired * 100:+.1f}pp ⇒ ⛔ 不是同一個量（連符號都不同）")
+    check(abs(P6._pair_stats(x2, y2.iloc[::-1])["diff_median"] - 0.04) < 1e-12, "配對是照 seed 對，⛔ 不是照列序（把一邊倒過來答案不變）")
+    check(P6.SEED0 == 96000 and P6.N_JUDGE == 8 and P6.NS == (5, 8, 10, 20), "種子 96000、判定只看 N=8、8 格寫死")
+    check(abs(P6.NULL_EXPECT - 0.4) < 1e-12, "虛無期望寫死 0.4 格（＝0.05×8）")
+
+
 def t_overlap():
     n = 10
     la = [{"reason": "in", "t": 2, "exit_pos": 6, "sid": "A"}, {"reason": "in", "t": 2, "exit_pos": 6, "sid": "B"}]
@@ -229,6 +261,7 @@ if __name__ == "__main__":
     print("[researchp2] 預設路徑"); t_default_identical()
     print("[researchp2/引擎] 停損兩族（PREREGP7）"); t_stop()
     print("[researchp7] 門檻B sig 重建"); t_gate_b_sig()
+    print("[researchp6] 第二道篩與配對判定量"); t_p6_drop_and_pair()
     print("[researchp2] 重疊度"); t_overlap()
     print("[researchp2] 判定"); t_judge()
     print("[researchp2] 種子"); t_seeds()
