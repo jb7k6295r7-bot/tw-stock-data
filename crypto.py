@@ -105,11 +105,20 @@ def _row_from_kline(r, asof):
 
 
 def write_universe(rows, today=None):
-    """把這一趟排出來的前 15 大寫進 `crypto_universe.csv`（合併，不覆蓋）。"""
+    """把這一趟排出來的前 15 大寫進 `crypto_universe.csv`。
+
+    ⭐ **同一天**是一個整體快照（剛好 15 檔）——同一天重跑要把那一天的
+    舊列**整批**換成新的，⛔ 不是逐檔合併：2026-09-20 首次實跑就中過
+    這一坑（`STABLECOIN_SYMBOLS` 漏掉 `USDS` ⇒ 誤放進第 15 名；補好
+    清單後同一天重跑，若只逐檔合併，被排除的 `USDS` 那一列會留著，
+    讓那一天看起來有 16 檔）。⚠ **不同天**的快照互不影響——
+    那才是四點六說的「累積型」：跨天的歷史紀錄不可以被蓋掉。
+    """
     today = today or datetime.datetime.now(datetime.timezone.utc).date()
     asof = today.isoformat()
     path = universe_path()
     existing = _load(path, UNIVERSE_HEADER, universe_key)
+    existing = {k: v for k, v in existing.items() if k[1] != asof}
     for r in rows:
         existing[(r["symbol"], asof)] = [
             r["symbol"], r["name"], str(r["market_cap_rank"]), asof]
@@ -196,14 +205,25 @@ def land_recent_days(symbol, today=None, root=None, lookback=35):
     _save(csvp, DAY_HEADER, days)
     return {"ok": ok, "fail": fail, "new_rows": len(days) - n0}
 
-#: 市值排名要濾掉的穩定幣（不算「幣種」，使用者 2026-09-20 裁定）。
-#  ⛔ 這是唯一一份——crypto_probe.py 從這裡 import，不要各自維護一份
-#  （四點五：同一件事只准一份實作）。
-STABLECOIN_SYMBOLS = {"usdt", "usdc", "dai", "fdusd", "tusd", "usde", "busd"}
+#: ⛔⛔ 2026-09-20 首次跑 `--mode universe` 就抓到自己的坑：這份手寫清單
+#  漏掉了 `USDS`（Sky／原 MakerDAO 的美元穩定幣，2024 年才改名上市），
+#  結果它混進了「前 15 大」的第 15 名——⚠ 手寫清單**必然**會漏掉之後
+#  才出現的穩定幣，不是補一個名字就會好（第三點：只比一個方向就宣告
+#  一致；這裡是「清單裡沒有 ⇒ 我以為代表『不是穩定幣』」的同一個錯）。
+#  ⇒ 這份**只當最後一道防線**（CoinGecko 分類抓不到時的退路），
+#  正式判準改成 `stablecoin_symbols()`——動態抓 CoinGecko 官方
+#  「stablecoins」分類，⛔ 不要再手動維護會過期的清單。
+#  ⭐ 這是唯一一份底線清單——crypto_probe.py 從這裡 import。
+STABLECOIN_SYMBOLS = {"usdt", "usdc", "dai", "fdusd", "tusd", "usde", "busd", "usds"}
 
 VISION_BASE = "https://data.binance.vision/data/spot"
 COINGECKO_MARKETS = ("https://api.coingecko.com/api/v3/coins/markets"
                      "?vs_currency=usd&order=market_cap_desc&per_page={n}&page=1")
+#: CoinGecko 官方「穩定幣」分類——⛔ 不能只認 `vs_currency=usd`，
+#  分類本身才是「這是不是穩定幣」的官方判準，不是我方用價格猜的。
+COINGECKO_STABLECOINS = ("https://api.coingecko.com/api/v3/coins/markets"
+                        "?vs_currency=usd&category=stablecoins"
+                        "&order=market_cap_desc&per_page=250&page=1")
 
 #: klines 原始 12 欄的意義（照官方文件順序，⛔ 不要用名字猜位置）。
 #  最後一欄「ignore」官方說不用管——2026-09-20 實測它在新舊檔案裡
@@ -322,22 +342,47 @@ def binance_pair_exists(symbol, today=None, lookback_days=3):
     return False
 
 
+def stablecoin_symbols():
+    """→ `(set_of_lowercase_symbols, err)`。
+
+    ⭐ 正式判準：CoinGecko 官方「stablecoins」分類——⛔ 不是我方手寫、
+    會過期的清單（2026-09-20 首次實跑就漏掉 `USDS`，見 `STABLECOIN_SYMBOLS`
+    上面那段記錄）。⚠ 而動態抓取本身也會失敗（端點掛掉／改格式），
+    ⇒ 失敗時回傳**手寫清單當底線**＋非 None 的 `err`（六點五：條件不成立
+    就大聲講「這一層沒跑」、退回舊判準，⛔ 不是當作沒事發生）；
+    **成功時回傳「官方分類 ∪ 手寫底線」**——多一層保險，不是互斥。
+    """
+    status, body = _get(COINGECKO_STABLECOINS)
+    if status != 200:
+        return STABLECOIN_SYMBOLS, f"CoinGecko 穩定幣分類 status={status}（已退回手寫底線清單）"
+    try:
+        coins = json.loads(body)
+        official = {c["symbol"].lower() for c in coins}
+    except Exception as e:                                        # noqa: BLE001
+        return STABLECOIN_SYMBOLS, f"CoinGecko 穩定幣分類解析失敗：{e}（已退回手寫底線清單）"
+    return official | STABLECOIN_SYMBOLS, None
+
+
 def top15_symbols(today=None, candidate_pool=100):
-    """→ `(rows, err)`。`rows` 每筆 `{symbol, name, market_cap_rank}`。
+    """→ `(rows, err, sc_warn)`。`rows` 每筆 `{symbol, name, market_cap_rank}`。
 
     ⭐ 使用者 2026-09-20 裁定：市值前 15、排除穩定幣、
     **幣安沒有交易對的跳過、往後遞補**——⛔ 不是保留在清單裡換資料源。
+    ⚠ `sc_warn` 非 None ⇒ 動態穩定幣分類抓取失敗、退回手寫底線清單
+    （見 `stablecoin_symbols()`）——⛔ 不是失敗，但呼叫端要**講出來**，
+    不能悄悄吞掉（六點五：條件不成立就大聲印，不算失敗）。
     """
+    stablecoins, sc_warn = stablecoin_symbols()
     status, body = _get(COINGECKO_MARKETS.format(n=candidate_pool))
     if status != 200:
-        return None, f"CoinGecko status={status}"
+        return None, f"CoinGecko status={status}", sc_warn
     try:
         coins = json.loads(body)
     except Exception as e:                                        # noqa: BLE001
-        return None, f"CoinGecko 回應解析失敗：{e}"
+        return None, f"CoinGecko 回應解析失敗：{e}", sc_warn
     out = []
     for c in coins:
-        if c["symbol"].lower() in STABLECOIN_SYMBOLS:
+        if c["symbol"].lower() in stablecoins:
             continue
         sym = c["symbol"].upper()
         if not binance_pair_exists(sym, today):
@@ -348,8 +393,8 @@ def top15_symbols(today=None, candidate_pool=100):
             break
     if len(out) < 15:
         return None, (f"CoinGecko 前 {candidate_pool} 大濾完穩定幣、"
-                      f"再濾完幣安沒有的，只湊到 {len(out)} 個")
-    return out, None
+                      f"再濾完幣安沒有的，只湊到 {len(out)} 個"), sc_warn
+    return out, None, sc_warn
 
 
 def current_symbols():
@@ -378,7 +423,9 @@ def main():
     if a.mode == "universe":
         rl = runlog.Run("crypto:universe")
         rl.info("這一趟", "重新排前 15 大市值（排除穩定幣、幣安要有 <SYM>USDT 交易對）")
-        rows, err = top15_symbols(today)
+        rows, err, sc_warn = top15_symbols(today)
+        if sc_warn:
+            rl.info("⚠ 這一層沒跑", f"動態穩定幣分類抓取失敗，退回手寫底線清單：{sc_warn}")
         if err:
             rl.info("⛔ 失敗", err)
             rl.check("排出前 15 大", False, err)
