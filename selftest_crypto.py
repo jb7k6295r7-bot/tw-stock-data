@@ -91,9 +91,35 @@ def main():
     ck("⭐ 解壓縮出來的文字逐位跟寫進去的相同",
        C._unzip_first_csv(buf.getvalue()).strip() == OLD_ROW)
 
-    print(f"\n[selftest ① ~ ⑤] 通過 {PASS}｜失敗 {FAIL}")
+    # ── ⑥ `stablecoin_symbols`：動態分類 ∪ 手寫底線，失敗要退回底線 ──
+    #   ⛔ 2026-09-20 首次實跑就漏掉 USDS（見 crypto.py 上面那段記錄），
+    #   這裡直接驗那個修復：官方分類要能補進手寫清單漏掉的幣。
+    import json as _json
 
-    # ── ⑥ `land_history`／`land_recent_days`：落地與合併，⛔ 不連網
+    orig_get = C._get
+    C._get = lambda url, headers=None: (
+        200, _json.dumps([{"symbol": "usds"}, {"symbol": "pyusd"}]).encode())
+    try:
+        got, warn = C.stablecoin_symbols()
+        ck("⭐⭐ 官方分類（pyusd）∪ 手寫底線（usdt 等）都在",
+           {"usdt", "usds", "pyusd"} <= got, str(got))
+        ck("  成功時 warn 是 None", warn is None)
+    finally:
+        C._get = orig_get
+
+    C._get = lambda url, headers=None: (500, b"")
+    try:
+        got2, warn2 = C.stablecoin_symbols()
+        ck("⭐ 動態抓取失敗（500）⇒ 退回手寫底線清單，⛔ 不是空集合",
+           got2 == C.STABLECOIN_SYMBOLS, str(got2))
+        ck("  ⚠ 而且要講出來（warn 不是 None，六點五：條件不成立要大聲印）",
+           warn2 is not None)
+    finally:
+        C._get = orig_get
+
+    print(f"\n[selftest ① ~ ⑥] 通過 {PASS}｜失敗 {FAIL}")
+
+    # ── ⑦ `land_history`／`land_recent_days`：落地與合併，⛔ 不連網
     #    （monkeypatch `fetch_zip_rows`，用假回應模擬真實形狀）──
     print("\n" + "=" * 60)
     print("crypto.py：落地與合併（monkeypatch，不連網）")
@@ -146,7 +172,7 @@ def main():
         finally:
             C.fetch_zip_rows = orig
 
-        # ⑧ write_universe：合併不覆蓋（同一天同一代號才覆蓋）
+        # ⑧ write_universe：不同天各自累積，⛔ 不是後一天洗掉前一天
         C.write_universe([{"symbol": "BTC", "name": "Bitcoin",
                            "market_cap_rank": 1}],
                           today=_dt.date(2026, 9, 20))
@@ -156,6 +182,28 @@ def main():
         u = C._load(C.universe_path(), C.UNIVERSE_HEADER, C.universe_key)
         ck("⭐⭐ 兩天各寫一次，兩筆都在（⛔ 不是後一天洗掉前一天）",
            len(u) == 2, str(u))
+
+        # ⑨ 同一天重跑要整批換掉——⛔ 不是逐檔合併
+        #   （2026-09-20 首次實跑就中過這一坑：STABLECOIN_SYMBOLS 漏掉
+        #   USDS，補好清單後同一天重跑，若逐檔合併，被排除的 USDS 會
+        #   留著、讓那一天變成 16 檔——這條斷言要能抓到那個回歸）。
+        C.write_universe([{"symbol": "BTC", "name": "Bitcoin",
+                           "market_cap_rank": 1},
+                          {"symbol": "USDS", "name": "USDS",
+                           "market_cap_rank": 15}],
+                          today=_dt.date(2026, 9, 22))
+        C.write_universe([{"symbol": "BTC", "name": "Bitcoin",
+                           "market_cap_rank": 1},
+                          {"symbol": "SOL", "name": "Solana",
+                           "market_cap_rank": 16}],
+                          today=_dt.date(2026, 9, 22))
+        u2 = C._load(C.universe_path(), C.UNIVERSE_HEADER, C.universe_key)
+        day = {k[0] for k in u2 if k[1] == "2026-09-22"}
+        ck("⭐⭐⭐ 同一天重跑：被踢掉的 USDS 真的不見了（⛔ 不是留著變 3 檔）",
+           day == {"BTC", "SOL"}, str(day))
+        ck("★ 而其他天（09-20／09-21）完全沒被這次重跑動到",
+           {k for k in u2 if k[1] in ("2026-09-20", "2026-09-21")}
+           == {("BTC", "2026-09-20"), ("ETH", "2026-09-21")})
 
     print(f"\n[selftest] 通過 {PASS}｜失敗 {FAIL}")
     return 1 if FAIL else 0
