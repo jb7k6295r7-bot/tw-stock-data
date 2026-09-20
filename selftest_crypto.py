@@ -119,6 +119,20 @@ def main():
 
     print(f"\n[selftest ① ~ ⑥] 通過 {PASS}｜失敗 {FAIL}")
 
+    # ── ⑦a `_pair`／`monthly_url`／`daily_url`：URL 一定要帶 USDT ──
+    #   ⛔⛔ 2026-09-20 第一趟實跑 backfill：15 幣 × 109 個月**全部 404**，
+    #   而 runlog 顯示成「官方沒有」——病根是 land_history／land_recent_days
+    #   當時直接把裸代號（"BTC"）傳給 monthly_url／daily_url，沒加 USDT
+    #   ⇒ 打的網址整個是錯的（.../klines/BTC/... 而不是 .../BTCUSDT/...）。
+    #   下面這幾條直接釘介面契約，⛔ 不要再靠「跑一次 backfill 燒掉八分鐘
+    #   才發現全部 404」這種方式抓。
+    ck("⭐⭐ _pair 會加 USDT 字尾", C._pair("BTC") == "BTCUSDT")
+    ck("⭐⭐ monthly_url 網址裡是傳進去的那個 pair（呼叫端要先過 _pair）",
+       "/BTCUSDT/1d/BTCUSDT-1d-2017-08.zip" in C.monthly_url("BTCUSDT", 2017, 8))
+    ck("⭐⭐ daily_url 同上",
+       "/BTCUSDT/1d/BTCUSDT-1d-2020-01-05.zip"
+       in C.daily_url("BTCUSDT", __import__("datetime").date(2020, 1, 5)))
+
     # ── ⑦ `land_history`／`land_recent_days`：落地與合併，⛔ 不連網
     #    （monkeypatch `fetch_zip_rows`，用假回應模擬真實形狀）──
     print("\n" + "=" * 60)
@@ -148,6 +162,9 @@ def main():
             ck("⭐ 落地檔真的有那一列",
                C._load(C.symbol_csv_path("FOO", root), C.DAY_HEADER, C.day_key)
                .get(("2017-08-17",), [None])[0] == "2017-08-17")
+            ck("⭐⭐⭐ land_history 打的每一個網址都帶 FOOUSDT（⛔ 不是裸的 FOO——"
+               "這條斷言就是本節開頭那次 backfill 全滅事故要擋的那一件）",
+               calls and all("FOOUSDT" in u for u in calls), str(calls[:3]))
 
             n_calls_1 = len(calls)
             r2 = C.land_history("FOO", today=today, root=root)
@@ -169,6 +186,23 @@ def main():
             r4 = C.land_history("BAR", today=today, root=root)
             ck("⭐ 下一趟自然重試（⛔ 不像 404 那樣被鎖死）",
                r4["fail"] == 1, str(r4))
+
+            # ⑦b land_recent_days 是同一個坑的**另一個**呼叫端——本輪
+            # backfill 全滅事故只暴露了 land_history，land_recent_days
+            # 在那之前完全沒有自測，⛔ 不能只補一邊。
+            recent_calls = []
+
+            def fake_fetch_recent(url):
+                recent_calls.append(url)
+                return None, "404"
+
+            C.fetch_zip_rows = fake_fetch_recent
+            r5 = C.land_recent_days("QUX", today=today, root=root, lookback=3)
+            ck("⭐⭐⭐ land_recent_days 打的網址也帶 QUXUSDT（⛔ 不是裸的 QUX）",
+               recent_calls and all("QUXUSDT" in u for u in recent_calls),
+               str(recent_calls))
+            ck("  lookback=3 ⇒ 剛好問 3 天", len(recent_calls) == 3,
+               str(recent_calls))
         finally:
             C.fetch_zip_rows = orig
 
