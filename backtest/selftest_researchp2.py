@@ -434,6 +434,178 @@ def t_p11():
 
 
 
+def t_p12():
+    """PREREGP12（回測線 2026-09-20）：窗口徑、T0 建倉、C0 最小 n_slots、成本切換不外洩、主效果與加法表、呼叫點。"""
+    import os as _os
+
+    from . import researchp8 as P8
+    from . import researchp12 as P12
+    # ① 登錄寫死的常數（⛔ 不是「程式有跑」而已）
+    check(P12.SEED0 == 102000 and P12.C0_FRAC == 0.999 and P12.N_C1 == 8 and P12.ANCHOR_TOL == 0.01,
+          f"寫死：種子 102000／買光判準 0.999／C1＝8 檔／容差 ±1pp（實得 {P12.SEED0}／{P12.C0_FRAC}／{P12.N_C1}／{P12.ANCHOR_TOL}）")
+    check(len(P12.CORNERS) == 8 and P12.ANCHORS[("主格窗", "S1", "C1", "T1", "成本0.585%")] == -0.409
+          and P12.ANCHORS[("主格窗", "S0", "C0", "T0", "成本0")] == -0.1521
+          and [c[0] for c in P12.COSTS] == ["成本0.585%", "成本0"],
+          "八個角落；錨點①−40.9%【含成本】／錨點②−15.21%【成本 0】（§四④ 兩條容差口徑不同）")
+    check(P12.WINDOWS["主格窗"] == ("2023-07-03", "2025-04-09") and P12.WIN_DAYS["主格窗"] == 428
+          and P12.WINDOWS["全窗"] == ("2017-03-02", "2026-08-24"),
+          "兩個窗的端點與天數寫死（⛔ 天數對不上程式會停）")
+    # ② 窗與月界（合成日曆：⛔ 不碰真資料）
+    cal = pd.DatetimeIndex(pd.bdate_range("2020-01-01", periods=400))
+    try:
+        P12.win_bounds(cal, "主格窗"); bad = False
+    except SystemExit:
+        bad = True
+    check(bad, "窗端點不是交易日／天數對不上 ⇒ 大聲失敗（⛔ 不靜靜挪到最近的一天）")
+    mk = P12.month_marks(cal, 10, 120)
+    check(mk[0] == 10 and mk[-1] == 120 and (np.diff(mk) > 0).all() and len(mk) - 1 == 6,
+          f"月界 ＝ [w0, 各月最後一個交易日…, w1]、嚴格遞增、段數＝月數（實得 {len(mk) - 1} 段：{mk.tolist()}）")
+    check(list(pd.DatetimeIndex(cal[mk[1:-1]]).strftime("%m")) == ["01", "02", "03", "04", "05"],
+          "中間那幾個月界真的落在各月的最後一個交易日")
+    # ③ T0 的 sig：只取窗內第一個訊號月、xpos ＝ 窗尾、gross 用建倉日開盤重算
+    ncal = 400; w0, w1 = 100, 380
+    cl = {k: np.linspace(10.0, 20.0, ncal) for k in ("A", "B", "C")}
+    op = {k: v * 0.99 for k, v in cl.items()}
+    op["C"] = op["C"].copy(); op["C"][110] = np.nan            # ⭐ 建倉日沒有開盤價 ⇒ 要被丟掉
+    base = pd.DataFrame([{"sid": "A", "entry_pos": 110, "month": "2020-06"},
+                         {"sid": "C", "entry_pos": 110, "month": "2020-06"},
+                         {"sid": "B", "entry_pos": 150, "month": "2020-07"},
+                         {"sid": "A", "entry_pos": 90, "month": "2020-05"}])
+    base[f"xpos_{P12.RULE}"] = base["entry_pos"] + 119
+    base[f"g_{P12.RULE}"] = 0.0
+    t0sig = P12.sig_hold_to(base, w0, w1, cl, op)
+    check(list(t0sig["sid"]) == ["A"] and int(t0sig["entry_pos"].iloc[0]) == 110,
+          f"T0 只取【窗內第一個】訊號月（110，⛔ 不是窗外的 90、⛔ 不是後面的 150），且丟掉沒有開盤價的 C（實得 {list(t0sig['sid'])}）")
+    check(int(t0sig[f"xpos_{P12.RULE}"].iloc[0]) == w1
+          and abs(float(t0sig[f"g_{P12.RULE}"].iloc[0]) - (cl["A"][w1] / op["A"][110] - 1)) < 1e-12,
+          "T0 的 xpos ＝ 窗尾、gross ＝ 窗尾收盤 ÷ 建倉日開盤 − 1（⛔ 不是沿用 T1 那一欄）")
+    # ④ ⭐⭐ 窗期總報酬的分母：equity[w0]（⛔ 不是 first）——T0 的 first 在 w0 之後
+    eq = np.ones(ncal); eq[:w0] = np.linspace(0.80, 0.95, w0)     # ⭐ 窗頭前一天 ≠ 窗頭 ⇒ 分母寫錯抓得到
+    eq[w0:] = np.linspace(1.0, 1.5, ncal - w0); eq[110:] *= 1.2
+    hv = np.zeros(ncal); hv[110:] = eq[110:] * 0.8
+    out = {"equity": eq, "hold_val": hv, "first": 110, "end": ncal, "slot_use": 0.5, "trades": 3}
+    rd = P12.win_read(out, w0, w1, P12.month_marks(cal, w0, w1))
+    check(abs(rd["tr"] - (eq[w1] / eq[w0] - 1)) < 1e-12 and abs(rd["tr_prev"] - (eq[w1] / eq[w0 - 1] - 1)) < 1e-12,
+          "窗期總報酬 ＝ equity[w1]/equity[w0] − 1（對帳版另報 w0−1）")
+    want_cagr = (eq[w1] / eq[w0]) ** (245 / (w1 + 1 - w0)) - 1
+    check(abs(rd["cagr"] - want_cagr) < 1e-12,
+          f"⭐ 窗內年化的分母也是 equity[w0]：⛔ 讓 window_stats 把 a clamp 到 first(110) 會漏掉建倉那一段（"
+          f"實得 {rd['cagr'] * 100:+.3f}%／要 {want_cagr * 100:+.3f}%）")
+    check(abs(rd["expo"] - np.r_[np.zeros(10), np.full(w1 - 109, 0.8)].mean()) < 1e-12 and len(rd["mret"]) == len(P12.month_marks(cal, w0, w1)) - 1,
+          "曝險 ＝ 窗內【日均】持股市值佔比（⭐ 含建倉前那幾天的 0，⛔ 不是只算有倉位的日子）")
+    # ⑤ ⭐ 成本用模組常數切換：⛔ 不外洩（跑完要還原）
+    P12._init({}, {}, cl, op, ncal, {}, {})
+    sg = pd.DataFrame([{"sid": k, "entry_pos": 110, f"xpos_{P12.RULE}": 229, f"g_{P12.RULE}": cl[k][229] / op[k][110] - 1.0} for k in ("A", "B")])
+    a0 = P12._sim(sg, 2, 5, P12.COST_STD)
+    b0 = P12._sim(sg, 2, 5, 0.0); after = R.COST                   # ⭐ 就在成本 0 那一跑【之後】立刻看模組常數
+    a1 = P12._sim(sg, 2, 5, P12.COST_STD)
+    check(not np.array_equal(a0["equity"], b0["equity"]), "成本 0 與含成本【跑出來不一樣】（⛔ 不是設了沒用）")
+    check(after == P12.COST_STD and R.COST == P12.COST_STD,
+          f"⭐ 成本【跑完立刻還原】⇒ 不會外洩給同一個行程裡的別人（實得 {after}）")
+    check(np.array_equal(a0["equity"], a1["equity"]),
+          "成本 0 跑完之後再跑含成本，與全新跑逐位元相同")
+    # ⑥ C0 ＝ 使 trades 達上限的【最小】n_slots
+    sg6 = pd.DataFrame([{"sid": k, "entry_pos": 110, f"xpos_{P12.RULE}": 300, f"g_{P12.RULE}": cl[k[0]][300] / op[k[0]][110] - 1.0}
+                        for k in ("A1", "A2", "A3", "B1", "B2", "B3")])
+    for k in ("A1", "A2", "A3", "B1", "B2", "B3"):
+        cl[k] = cl[k[0]]; op[k] = op[k[0]]
+    P12._init({("S0", "T0", "W"): sg6}, {}, cl, op, ncal, {"W": (w0, w1)}, {"W": P12.month_marks(cal, w0, w1)})
+    shim = type("P", (), {"map": staticmethod(lambda f, it: [f(x) for x in it])})()
+    n, lad = P12.choose_c0(shim, "S0", "T0", "W", "W", len(sg6), log=lambda *_: None)
+    check(n == 6 and int(lad.loc[lad["n_slots"] == 6, "trades"].iloc[0]) == 6,
+          f"買光 ＝ 6 個候選要 6 個槽（⛔ 不是更大的數 ⇒ 那會把曝險稀釋掉）：實得 {n}")
+    check(int(lad.loc[lad["n_slots"] == 5, "trades"].iloc[0]) == 5 and (lad["n_slots"] < 6).any(),
+          "梯度表留下了【沒買光】那幾點（n_slots=5 ⇒ 只進 5 筆）⇒ ⭐ 這就是 §四⑤ 要的證據")
+    # ⑦ 主效果 ＝ 4 種組合上平均（⛔ 不是單一角落的差）；加法表的殘差
+    aS, bC, dT, k3 = -0.10, 0.02, -0.05, 0.04
+    rows, mr = [], {}
+    for s_ in ("S1", "S0"):
+        for c_ in ("C1", "C0"):
+            for t_ in ("T1", "T0"):
+                si, ci, ti = int(s_ == "S1"), int(c_ == "C1"), int(t_ == "T1")
+                y = aS * si + bC * ci + dT * ti + k3 * si * ci * ti
+                for sd in (0, 1):
+                    rows.append({"S": s_, "C": c_, "T": t_, "win": "W", "cost": "成本0", "seed": sd, "tr": y})
+                    # ⭐ 種子項【兩臂相同】⇒ 正確配對會消掉它；⛔ 配錯種子就消不掉（M10 突變）
+                    mr[(s_, c_, t_, "W", "成本0", sd)] = np.full(10, y / 10) + sd * 0.037
+    dfx = pd.DataFrame(rows)
+    eS = P12.main_effect(dfx, mr, "S", "W", "成本0")
+    check(abs(eS["point_pp"] - (aS + k3 / 4) * 100) < 1e-9,
+          f"S 主效果 ＝ 在 C、T 四種組合上平均（{(aS + k3 / 4) * 100:+.1f}pp）⛔ 不是 (S1,C1,T1)−(S0,C1,T1)（那會是 {(aS + k3) * 100:+.1f}pp）：實得 {eS['point_pp']:+.3f}pp")
+    check(abs(eS["diff_pp"] - eS["point_pp"] / 10) < 1e-9,
+          f"⭐ 逐月配對差 ＝ 【同種子】相減 ⇒ 種子項被消掉（要 {eS['point_pp'] / 10:+.3f}pp、實得 {eS['diff_pp']:+.3f}pp；"
+          "⛔ 配錯種子那一項就留在差裡)")
+    check(eS["n_pairs"] == 8 and eS["n_months"] == 10 and eS["verdict"] == "測得出" and eS["detectable"],
+          f"配對數 ＝ 4 組合 × 2 種子 ＝ 8；抽樣單位是【月】(10)；零變異且非 0 ⇒ 測得出（實得 {eS['n_pairs']}／{eS['n_months']}／{eS['verdict']}）")
+    mr2 = dict(mr)
+    for kk in mr2:
+        mr2[kk] = mr2[kk] + (np.arange(10) % 2 * 2 - 1) * (0.5 if kk[0] == "S1" else 0.0)
+    check(P12.main_effect(dfx, mr2, "S", "W", "成本0")["verdict"] == "測不出",
+          "反向驗：逐月差一半 +50%／一半 −50% ⇒ CI 含 0 ⇒ 測不出（⛔ 點估計一樣大也不算）")
+    eff = pd.DataFrame([P12.main_effect(dfx, mr, f, "W", "成本0") for f in ("S", "C", "T")])
+    at = P12.attribution(dfx, eff, "W", "成本0")
+    check(abs(at["gap_pp"] - (aS + bC + dT + k3) * 100) < 1e-9 and abs(at["resid_pp"] - k3 / 4 * 100) < 1e-9,
+          f"加法表：gap ＝ 角落差、殘差 ＝ gap −(S＋C＋T) ＝ 三階交互的 1/4（要 {k3 / 4 * 100:+.2f}pp、實得 {at['resid_pp']:+.2f}pp）")
+    def _att(a_, k_):                                  # ⭐ 同一條路餵兩組係數 ⇒ 正反例各一
+        rr = [{**r, "tr": a_ * ((r["S"] == "S1") + (r["C"] == "C1") + (r["T"] == "T1"))
+               + k_ * (r["S"] == "S1") * (r["C"] == "C1") * (r["T"] == "T1")} for r in rows]
+        d_ = pd.DataFrame(rr)
+        e_ = pd.DataFrame([P12.main_effect(d_, mr, f, "W", "成本0") for f in ("S", "C", "T")])
+        return P12.attribution(d_, e_, "W", "成本0")
+    big = _att(-0.02, 0.4)                             # 主效果 −2＋10 ＝ 8pp、殘差 10pp ⇒ 殘差較大
+    small = _att(-0.10, 0.04)                          # 主效果 −9pp、殘差 1pp ⇒ 殘差較小
+    check(big["resid_gt_max"] and not small["resid_gt_max"] and not at["resid_gt_max"],
+          f"否證②：殘差 > 最大主效果 ⇒ 旗標亮（殘差 {big['resid_pp']:+.1f}pp vs 主效果 {big['S_pp']:+.1f}pp）；"
+          f"反例（殘差 {small['resid_pp']:+.1f}pp vs {small['S_pp']:+.1f}pp）⇒ 不亮 ⭐ 正反例各一")
+    # ⑦a ⭐ 加法表用【種子平均】（⛔ 中位數不可加）：只有 (S0,C0,T0) 的第三顆種子歪掉
+    r3, mr3 = [], {}
+    for s_, c_, t_ in P12.CORNERS:
+        for sd in (0, 1, 2):
+            y3 = 0.3 if (s_, c_, t_, sd) == ("S0", "C0", "T0", 2) else 0.0
+            r3.append({"S": s_, "C": c_, "T": t_, "win": "W", "cost": "成本0", "seed": sd, "tr": y3})
+            mr3[(s_, c_, t_, "W", "成本0", sd)] = np.full(10, y3 / 10)
+    d3 = pd.DataFrame(r3)
+    e3 = pd.DataFrame([P12.main_effect(d3, mr3, f, "W", "成本0") for f in ("S", "C", "T")])
+    a3 = P12.attribution(d3, e3, "W", "成本0")
+    check(abs(a3["gap_pp"] - (-10.0)) < 1e-9 and abs(a3["resid_pp"] - (-2.5)) < 1e-9,
+          f"⭐ 加法表用【平均】：三顆種子 0／0／+30% ⇒ 平均 +10% ⇒ gap −10.00pp（⛔ 用中位數會是 0.00pp；實得 {a3['gap_pp']:+.2f}pp）")
+    # ⑦b 錨點對帳：⭐ 用【中位種子】（§八①）、容差 ±1pp
+    fake = pd.DataFrame([{"win": "主格窗", "cost": "成本0.585%", "S": "S1", "C": "C1", "T": "T1", "tr_med": -0.400, "tr_mean": -0.350},
+                         {"win": "主格窗", "cost": "成本0", "S": "S0", "C": "C0", "T": "T0", "tr_med": -0.1721, "tr_mean": -0.1521}])
+    ac = P12.check_anchors(fake)
+    check(list(ac["過"]) == [True, False],
+          f"錨點看【中位】：−40.0% vs −40.9% 差 0.9pp ⇒ 過；−17.21% vs −15.21% 差 2pp ⇒ 不過（⛔ 讀平均欄會是相反的 [False, True]；實得 {list(ac['過'])}）")
+    check(abs(float(ac["差pp"].iloc[0]) - 0.9) < 1e-9 and len(ac) == len(P12.ANCHORS),
+          "兩個錨點各一列，差以 pp 報")
+    # ⑧ 直算（口徑差）與 S0 訊號集
+    dd = P12.direct_equal_weight(["A", "B"], cl, op, w0, w1, 110)
+    check(abs(dd["A"] - np.mean([cl[k][w1] / cl[k][w0] - 1 for k in ("A", "B")])) < 1e-12
+          and abs(dd["B"] - np.mean([cl[k][w1] / op[k][110] - 1 for k in ("A", "B")])) < 1e-12,
+          "直算A ＝ 窗頭【收盤】起算（策略線口徑）、直算B ＝ 建倉日【開盤】起算（引擎口徑）⇒ 差就是口徑差")
+    cal2 = pd.date_range("2020-01-01", periods=400, freq="D")
+    cl2 = {k: np.linspace(100.0, 200.0, len(cal2)) for k in ("A", "S", "N")}
+    op2 = {k: v * 0.97 for k, v in cl2.items()}
+    pn = pd.DataFrame([{"measure_date": cal2[10], "stock_id": sid, "eligible": el, "rev_hi24": rv,
+                        "ma_stack": stk, "ma60_up": up, "amt20": 1e8, "vol60": 0.3}
+                       for sid, el, rv, stk, up in (("A", True, 100, 0, 100), ("S", True, 0, 100, 0), ("N", False, 100, 0, 100))])
+    sb = P7.build_sig_gate_b(pn, cal2, cl2, op2, start="2020-01-01")
+    sa = P7.build_sig_gate_b(pn, cal2, cl2, op2, start="2020-01-01", signal="ALL")
+    check(set(sb["sid"]) == {"A"} and set(sa["sid"]) == {"A", "S"},
+          "S0 ＝ 全市場 ＝ 【過閘門就算訊號】（三條布林都不看），⛔ 但沒過閘門的 N 仍然不算")
+    check(P12.SIG_OF == {"S1": "B", "S0": "ALL"} and len(sa) >= len(sb), "S1→signal='B'、S0→signal='ALL'（⇒ B ⊆ ALL）")
+    # ⑨ 呼叫點（⭐ 測完純函式再掃一次原始碼）
+    src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "researchp12.py"), encoding="utf-8").read()
+    check(src.count("R.simulate_mtm(") == 1 and 'pick=None, cap_fn=None, d_max=None, queue_days=0, cash_mode="zero"' in src,
+          "呼叫點：全檔只有【一個】地方呼叫引擎，且六個固定參數逐字寫在那一行（§八⑦）")
+    check("P8.month_ci(dm)" in src and "P11.monthly_returns(eq, marks)" in src and "P3.exposure_series(eq, hv" in src
+          and "R13.window_stats(eq, lo," in src,
+          "呼叫點：CI 走 P8.month_ci、逐月報酬走 P11.monthly_returns、曝險走 P3.exposure_series、年化回落走 R13.window_stats（⛔ 本檔沒有第二份）")
+    check('raise SystemExit("⛔ 否證①' in src and src.index("anchor_report(") < src.index('raise SystemExit("⛔ 否證①'),
+          "⛔ 否證①：錨點沒過 ⇒ 先寫對帳檔再 SystemExit（⛔ 不會往下算主效果）")
+    check(src.index("check_anchors(tab)") < src.index("main_effect(df, mr, f, w, ct)"),
+          "順序：先對帳錨點、後算主效果（⛔ 不是算完才回頭看錨點）")
+
+
 if __name__ == "__main__":
     print("[researchp2] 映射"); t_parent()
     print("[researchp2] 逐日標籤"); t_labels()
@@ -448,5 +620,6 @@ if __name__ == "__main__":
     print("[researchp2] 判定"); t_judge()
     print("[researchp2] 種子"); t_seeds()
     print("[researchp11] 同選擇率（逐月 N_t）"); t_p11()
+    print("[researchp12] 2×2×2 全因子（S／C／T）"); t_p12()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)

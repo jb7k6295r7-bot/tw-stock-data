@@ -58,6 +58,17 @@ HOLD_BARS_N = 120                # ⭐ H120 ＝**持有 120 根**（進場那根
 HOLD_BARS = HOLD_BARS_N - 1      # ⛔ 只留給「平均持有天數」那一欄：引擎的 hold_days 是**日數差**（出場日 − 進場日）⇒ 持有根數 − 1
 
 
+# ⛔ 策略線 1115 §1-2 的七個驗收數（⭐ 唯一一份，PREREGP12 §九 也讀這一份，⛔ 不抄第二份）
+WANT_SIG_B = {"rows": 2882, "stocks": 919, "months": 109, "m_min": "2017-03", "m_max": "2026-03", "e_min": 523, "e_max": 2716}
+
+
+def accept_sig_b(sig: pd.DataFrame) -> dict:
+    """門檻B sig 的七個驗收數（⭐ 唯一實作）⇒ 與 `WANT_SIG_B` 逐項相同才准開跑。"""
+    return {"rows": len(sig), "stocks": sig["sid"].nunique(), "months": sig["month"].nunique(),
+            "m_min": sig["month"].min(), "m_max": sig["month"].max(),
+            "e_min": int(sig["entry_pos"].min()), "e_max": int(sig["entry_pos"].max())}
+
+
 def stop_tag(stop) -> str:
     return "none" if stop is None else f"{stop[0]} {stop[1] * 100:.0f}%"
 
@@ -69,6 +80,9 @@ def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, o
     PREREGP11（2026-09-20）加 `signal`：⛔ 預設 "B" 時與原版【逐位元相同】。
       "B" 門檻B ＝ rev_hi24 ∧ ¬ma_stack ∧ ma60_up
       "C" 參考C ＝ rev_hi24 ∧ ma60_up（⭐ 就是 B 拿掉 ¬ma_stack，⛔ 沒有其他差別 ⇒ B ⊂ C）
+    PREREGP12（2026-09-20）再加一個：
+      "ALL" 全市場 ＝ **過閘門就算訊號**（⛔ 三條布林一條都不要）⇒ PREREGP12 的 S0
+      ⇒ ⭐ 仍然走同一條路（同樣的 entry_pos／xpos／剔除規則）⛔ 不另寫第二份 sig 建構。
 
     候選母體＝過閘門股-月（`eligible` ＝ liq_ok ∧ bars_ok ∧ inst_ok，(c) 已套）
     訊號  ＝ `rev_hi24 ∧ ¬ma_stack ∧ ma60_up`（⭐ 三條都是布林、⛔ 零擬合參數、零中心、零橫斷面百分位）
@@ -80,11 +94,14 @@ def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, o
     ncal = len(cal)
     p = panel[panel["measure_date"] >= pd.Timestamp(start)]
     el = p[p["eligible"].astype(bool)]
-    if signal not in ("B", "C"):
-        raise ValueError(f"signal 只能是 'B'（門檻B）或 'C'（參考C），收到 {signal!r}")
-    m = (el["rev_hi24"] == 100) & (el["ma60_up"] == 100)
-    if signal == "B":
-        m &= el["ma_stack"] == 0
+    if signal not in ("B", "C", "ALL"):
+        raise ValueError(f"signal 只能是 'B'（門檻B）／'C'（參考C）／'ALL'（全市場），收到 {signal!r}")
+    if signal == "ALL":
+        m = pd.Series(True, index=el.index)          # PREREGP12 S0：過閘門就算訊號
+    else:
+        m = (el["rev_hi24"] == 100) & (el["ma60_up"] == 100)
+        if signal == "B":
+            m &= el["ma_stack"] == 0
     b = el[m].copy()
     b["entry_pos"] = b["measure_date"].map(pos).astype("Int64") + 1
     b = b[b["entry_pos"].notna()].copy()
@@ -232,10 +249,7 @@ def main():
     log(f"[sig] 門檻B {len(sig):,} 筆／{sig['sid'].nunique():,} 檔／{sig['month'].nunique()} 月"
         f"（{sig['month'].min()} ~ {sig['month'].max()}；entry_pos {int(sig['entry_pos'].min())}~{int(sig['entry_pos'].max())}）")
     # ⛔ 策略線 1115 §1-2 的驗收數：對不上就停，⛔ 不先跑六格
-    want = {"rows": 2882, "stocks": 919, "months": 109, "m_min": "2017-03", "m_max": "2026-03", "e_min": 523, "e_max": 2716}
-    got = {"rows": len(sig), "stocks": sig["sid"].nunique(), "months": sig["month"].nunique(),
-           "m_min": sig["month"].min(), "m_max": sig["month"].max(),
-           "e_min": int(sig["entry_pos"].min()), "e_max": int(sig["entry_pos"].max())}
+    want, got = WANT_SIG_B, accept_sig_b(sig)
     if got != want:
         raise SystemExit(f"⛔ sig 驗收數對不上策略線 1115 §1-2 ⇒ 先回信、⛔ 不跑六格\n  want {want}\n  got  {got}")
     log("[sig] ✅ 七個驗收數與策略線 1115 §1-2 逐項相同")
