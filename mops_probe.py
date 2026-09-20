@@ -334,6 +334,51 @@ def openapi_case(name, out):
                    "　⚠ 而「幾種」≠「涵蓋幾天」——要看上面那一行的最小與最大。")
 
 
+def split_window_avoiding_cap(query, sdate, edate, cap=1000, max_depth=6):
+    """遞迴切分 `[sdate, edate]`（`YYYYMMDD`），直到每一段都不撞 `cap`。
+
+    市場情報分析線 20260920-2053：③ 的判準「回傳列數 == 1000 ⇒ 切半重打」
+    ⛔ 只切一層不夠（財報季連半個月都會撞）⇒ 這裡是**遞迴**版本，落地判準。
+
+    `query(a, b)` → 該窗 `[a, b]` 的列數（int），或 `None`（沒量到，⛔ 不當作 0）。
+    → `(windows, total, still_capped)`：
+      `windows` 是每一段最終窗與列數 `[(a, b, n或None), ...]`；
+      `still_capped` 是撞到 `cap` 但已經切到**單日**或到 `max_depth`、切不下去的窗
+      （⛔ 這些窗底下可能還有漏掉的列，呼叫方要把它們單獨報出來，不能吞掉）。
+    """
+    import datetime as _dt
+
+    def _to_date(s):
+        return _dt.date(int(s[:4]), int(s[4:6]), int(s[6:8]))
+
+    def _mid_and_next(a, b):
+        # ⚠ 只在 `a != b` 時才會被呼叫（見 `_rec`）⇒ `db > da`，
+        #   `dm` 必定落在 `[da, db-1]`，左右兩段**保證都非空**——
+        #   ⛔ 不需要（也不可以再）猜「切不下去」的例外，那個猜法本身是錯的
+        #   （2 天的窗 `dm == da`，而 `[da,da]`／`[da+1,db]` 是合法的切法）。
+        da, db = _to_date(a), _to_date(b)
+        dm = da + (db - da) // 2
+        return dm.strftime("%Y%m%d"), (dm + _dt.timedelta(days=1)).strftime("%Y%m%d")
+
+    def _rec(a, b, depth):
+        n = query(a, b)
+        if n is None:
+            return [(a, b, None)], []
+        if n < cap:
+            return [(a, b, n)], []
+        # ⛔ n >= cap：撞頂。單日切不下去，或深度到底 ⇒ 回報「切不下去」。
+        if a == b or depth >= max_depth:
+            return [(a, b, n)], [(a, b, n)]
+        m, m_next = _mid_and_next(a, b)
+        left, capped_l = _rec(a, m, depth + 1)
+        right, capped_r = _rec(m_next, b, depth + 1)
+        return left + right, capped_l + capped_r
+
+    windows, still_capped = _rec(sdate, edate, 0)
+    total = sum(n for _, _, n in windows if n is not None)
+    return windows, total, still_capped
+
+
 def ezsearch_case(out):
     """⭐ 清單 D2 的新入口：「公開資訊觀測站**公告快易查**」（`ezsearch`）。
 
@@ -576,6 +621,33 @@ def ezsearch_case(out):
             out.append(f"         ⇒ {_tag}：**{len(_r)} 列**"
                        + ("　⛔⛔ **剛好 1,000 ⇒ 撞上限**（⚠ 唯一看得出來的線索）"
                           if len(_r) == 1000 else ""))
+
+    # ⭐⭐ 市場情報分析線 20260920-2053：「切一次不夠」只是**觀察**，
+    #   他們要的是**遞迴切分**的判準本身落地。⇒ 真的跑一次 `split_window_avoiding_cap`，
+    #   對象用**已經確認會撞頂**的那個半個月窗（上面那一格）—— ⛔ 不用整月，
+    #   避免遞迴展開太多發撞到限流（run 132 那次七發全被 reset）。
+    out.append("")
+    out.append("      ── ③b 真的跑一次**遞迴切分**（對象：上面那個「半個月還是撞」的窗）")
+    _rec_calls = [0]
+
+    def _rec_query(_a, _b):
+        _rec_calls[0] += 1
+        _rows = _shot(f"遞迴第 {_rec_calls[0]} 發｜{_a}~{_b}",
+                      dict(base, step="00", CO_ID="", SDATE=_a, EDATE=_b))
+        return None if _rows is None else len(_rows)
+
+    _windows, _total, _capped = split_window_avoiding_cap(
+        _rec_query, "20260301", "20260315", cap=1000, max_depth=3)
+    out.append(f"         ⇒ 共 {_rec_calls[0]} 發、切出 {len(_windows)} 段、"
+               f"合計 **{_total:,} 列**")
+    if _capped:
+        out.append(f"         ⛔⛔ 其中 {len(_capped)} 段**切到底還是撞頂**"
+                   f"（{[(a, b) for a, b, _ in _capped]}）"
+                   "　⇒ ⚠ 這幾段底下可能還有漏掉的列，"
+                   "深度或 cap 之外沒有別的辦法看到——遞迴只能保證「切得到的那幾段」乾淨")
+    else:
+        out.append("         ⭐⭐ 全部段落都**沒有再撞頂**"
+                   "　⇒ 遞迴切分在這個窗（半個月）上**有效**")
 
     for js in ("js/mop_search.js", "js/mops2.js"):
         jurl = "https://mopsov.twse.com.tw/mops/web/" + js
@@ -1162,6 +1234,16 @@ def main():
     #   ⚠ 參數名 `co_id` 是依同族慣例拼的（ezsearch 那條用大寫 `CO_ID`，
     #   這條走的是舊版簡易頁 ⇒ 先試小寫；猜錯的話回應會講「未指定」還在）。
     bridge_case("ajax_t05st01", "114", "110", out, month="09", day="01", co_id="2330")
+    out.append("")
+    # ⭐⭐ 市場情報分析線 20260920-2053 §二：「只做這一個測試」——
+    #   它吃不吃**日期區間**，決定規模疑慮是不是真問題（吃區間 ⇒ 一次拿一年，
+    #   ⛔ 不吃 ⇒ 只能逐日逐檔，全市場規模不可行）。⇒ 只打這一發，⛔ 不接著
+    #   往下驗 CO_MARKET 或歷史深度（那兩項等這條路真的要用時再驗）。
+    #   ⚠ 參數名 `sdate`／`edate` 是依 `co_id` 已驗證有效的小寫慣例拼的，
+    #   ⛔ 不是查到的——回應自己會講參數有沒有被回顯（第一點）。
+    out.append("      ── ⭐⭐ 只做這一發：ajax_t05st01 吃不吃 `sdate`／`edate` 區間")
+    bridge_case("ajax_t05st01", "114", "110", out,
+               sdate="0901", edate="0910", co_id="2330")
     out.append("")
     ezsearch_case(out)
     ky_revenue_case(out)

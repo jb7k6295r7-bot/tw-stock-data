@@ -2141,6 +2141,96 @@ def check_datagov_d2():
     return bad
 
 
+def check_split_window_avoiding_cap():
+    """⭐⭐ `mops_probe.split_window_avoiding_cap`：市場情報分析線 20260920-2053
+    要的是**遞迴**判準本身，⛔ 不是「切一次不夠」這句觀察。
+
+    ⇒ 用一份**逐日真值**（`truth`）當假 `query`，可以同時驗到三件事：
+    ① 切出來的窗**不重疊、不留縫**（逐日重建回去要跟原始區間一樣）
+    ② 每一段的列數**加總**要等於逐日真值的總和（⛔ 沒有漏算也沒有重複算）
+    ③ 撞頂撞到**單日還是撞**的那幾天，會被列進 `still_capped`（⛔ 不能吞掉）
+    """
+    import datetime as _dt
+    import mops_probe as M
+    bad = 0
+
+    def _days(a, b):
+        da = _dt.date(int(a[:4]), int(a[4:6]), int(a[6:8]))
+        db = _dt.date(int(b[:4]), int(b[4:6]), int(b[6:8]))
+        out = []
+        d = da
+        while d <= db:
+            out.append(d.strftime("%Y%m%d"))
+            d += _dt.timedelta(days=1)
+        return out
+
+    def _make_query(truth, calls):
+        def _q(a, b):
+            calls.append((a, b))
+            return sum(truth.get(d, 0) for d in _days(a, b))
+        return _q
+
+    # ── ① 完全不撞頂：一發就過 ──
+    truth1 = {d: 3 for d in _days("20260301", "20260310")}
+    calls1 = []
+    windows1, total1, capped1 = M.split_window_avoiding_cap(
+        _make_query(truth1, calls1), "20260301", "20260310", cap=1000)
+    ck = []
+    ck.append(("① 不撞頂只打 1 發", len(calls1) == 1, calls1))
+    ck.append(("① 總數等於逐日真值總和",
+               total1 == sum(truth1.values()), (total1, sum(truth1.values()))))
+    ck.append(("① 沒有撞頂的段落", not capped1, capped1))
+
+    # ── ② 財報季那種「切一次不夠、切兩次才過」 ──
+    #   3/1~3/15 前 8 天每天 150（合計 1,200 撞頂），後 7 天每天 10（合計 70）
+    truth2 = {d: 150 for d in _days("20260301", "20260308")}
+    truth2.update({d: 10 for d in _days("20260309", "20260315")})
+    calls2 = []
+    windows2, total2, capped2 = M.split_window_avoiding_cap(
+        _make_query(truth2, calls2), "20260301", "20260315", cap=1000)
+    ck.append(("② 總數逐位相符",
+               total2 == sum(truth2.values()), (total2, sum(truth2.values()))))
+    ck.append(("② 沒有段落切到底還撞頂（切得完）", not capped2, capped2))
+    # ⭐⭐ 逐日重建：把每一段展開回日期，要**恰好**覆蓋原始區間一次
+    rebuilt = []
+    for a, b, _n in windows2:
+        rebuilt += _days(a, b)
+    ck.append(("② 逐日重建無縫且不重疊",
+               rebuilt == _days("20260301", "20260315"),
+               (len(rebuilt), len(set(rebuilt)))))
+
+    # ── ③ 有一天本身就超過 cap，切到單日還是撞頂 ──
+    truth3 = {d: 5 for d in _days("20260301", "20260304")}
+    truth3["20260305"] = 5000     # ⭐ 這一天自己就爆量（例如一次除權息公告潮）
+    truth3.update({d: 5 for d in _days("20260306", "20260310")})
+    calls3 = []
+    windows3, total3, capped3 = M.split_window_avoiding_cap(
+        _make_query(truth3, calls3), "20260301", "20260310", cap=1000, max_depth=6)
+    ck.append(("③ 切到底還撞頂的段落只有那一天",
+               capped3 == [("20260305", "20260305", 5000)], capped3))
+    ck.append(("③ 而其餘段落的總數仍然逐位相符",
+               total3 == sum(truth3.values()), (total3, sum(truth3.values()))))
+
+    # ── ④ `query` 回 None（沒量到）不可以被當成 0，也不可以再往下切 ──
+    def _q_none(a, b):
+        return None
+    windows4, total4, capped4 = M.split_window_avoiding_cap(
+        _q_none, "20260301", "20260302", cap=1000)
+    ck.append(("④ 沒量到 ⇒ 只回一段、不遞迴、不算進 total",
+               windows4 == [("20260301", "20260302", None)] and total4 == 0,
+               (windows4, total4)))
+    ck.append(("④ 沒量到不算「撞頂」（那是另一種失敗，⛔ 不可混在一起）",
+               not capped4, capped4))
+
+    for label, ok, detail in ck:
+        if ok:
+            print(f"✓ {label}")
+        else:
+            print(f"✗ {label}：{detail}")
+            bad += 1
+    return bad
+
+
 def check_terms_case():
     """⭐⭐ 條款原文那一節（市場情報分析線 1508（乙））：**連結從頁面讀出來、原文逐字印**。
 
@@ -2368,6 +2458,7 @@ def main():
     bad += check_official_vs_month()
     bad += check_datagov_d2()
     bad += check_terms_case()
+    bad += check_split_window_avoiding_cap()
     # ── parse() 的契約：說好回 list[dict]，就不可以混進非物件 ──
     #   ⚠ 這是 2026-09-09 第二次踩到的那一類：JSON 端點回 `[1,2,3]` 時，
     #     下游 `pick()` 的 `k in row` 會對 int 丟
