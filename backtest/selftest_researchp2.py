@@ -791,10 +791,20 @@ def t_p13():
     # 重疊度：兩個方向
     lg = [{"reason": "in", "t": 2, "exit_pos": 5, "sid": "A"}, {"reason": "in", "t": 2, "exit_pos": 5, "sid": "Z"}]
     P13.TOP_N, keep = 4, P13.TOP_N
-    a_, b_ = P13._daily_overlap(lg, 10, 2, 4, {2: {"A", "Q"}}, np.array([2]))
+    ov = P13._daily_overlap(lg, 10, 2, 4, {2: {"A", "Q"}}, np.array([2]))
     P13.TOP_N = keep
-    check(abs(a_ - 0.5) < 1e-12 and abs(b_ - 0.25) < 1e-12,
-          f"重疊度【兩個方向】：持股 2 檔有 1 檔在前 N ⇒ 0.5；÷N(4) ⇒ 0.25（實得 {a_}／{b_}）")
+    check(abs(ov["ov_hold"] - 0.5) < 1e-12 and abs(ov["ov_50"] - 0.25) < 1e-12,
+          f"重疊度【兩個方向】：持股 2 檔有 1 檔在前 N ⇒ 0.5；÷N(4) ⇒ 0.25（實得 {ov['ov_hold']}／{ov['ov_50']}）")
+    # ⭐⭐ 整條分佈都要回（⛔ 只回中位會把「四成的日子有重疊」讀成「完全不重疊」，〈九十二〉）
+    lg2 = [{"reason": "in", "t": 2, "exit_pos": 3, "sid": "A"}, {"reason": "in", "t": 2, "exit_pos": 5, "sid": "Z"}]
+    P13.TOP_N, keep = 4, P13.TOP_N
+    o2 = P13._daily_overlap(lg2, 10, 2, 4, {2: {"A", "Q"}}, np.array([2]))
+    P13.TOP_N = keep
+    check(o2["ov_hold"] == 0.0 and abs(o2["ov_hold_mean"] - 1 / 6) < 1e-12 and o2["ov_hold_max"] == 0.5
+          and abs(o2["ov_days"] - 1 / 3) < 1e-12,
+          f"⭐ A 只持有一天（t=2）、Z 持有三天 ⇒ 中位 0.0% 而平均 {o2['ov_hold_mean'] * 100:.1f}%、"
+          f"最大 {o2['ov_hold_max'] * 100:.0f}%、有重疊的日子 {o2['ov_days'] * 100:.0f}%"
+          " ⇒ ⛔ 只看中位會讀成【完全不重疊】")
 
 
 def t_p13probe():

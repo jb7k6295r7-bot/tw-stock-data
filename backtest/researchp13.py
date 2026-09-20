@@ -146,10 +146,14 @@ def _init(sig, closes, opens, caps, top50, ncal, cal, bench, wins, marks, months
 
 
 def _daily_overlap(lg, ncal: int, w0: int, w1: int, top50: dict, months: np.ndarray):
-    """逐日持股 vs 當月前 TOP_N ⇒ 兩個方向的比例（⭐ 從 log 的 'in' 還原持股）。"""
+    """逐日持股 vs 當月前 TOP_N ⇒ 兩個方向的比例（⭐ 從 log 的 'in' 還原持股）。
+
+    ⭐ 回【整條分佈】不是只回中位：中位在這一格是 0.0%（8 檔裡常常一檔都不在前 50），
+    ⛔ 只報中位會讀成「完全不重疊」——而平均有 7.3%、44% 的交易日至少有一檔（〈九十二〉）。
+    """
     ev = [(int(r["t"]), int(r["exit_pos"]), r["sid"]) for r in lg if r["reason"] == "in"]
     if not ev:
-        return np.nan, np.nan
+        return {k: np.nan for k in ("ov_hold", "ov_hold_mean", "ov_hold_p90", "ov_hold_max", "ov_days", "ov_50")}
     cur_top, mi = top50[int(months[0])], 0
     hold: dict = {}
     a, b = [], []
@@ -165,7 +169,11 @@ def _daily_overlap(lg, ncal: int, w0: int, w1: int, top50: dict, months: np.ndar
         if hold:
             k = sum(1 for s in hold if s in cur_top)
             a.append(k / len(hold)); b.append(k / TOP_N)
-    return (float(np.median(a)), float(np.median(b))) if a else (np.nan, np.nan)
+    if not a:
+        return {k: np.nan for k in ("ov_hold", "ov_hold_mean", "ov_hold_p90", "ov_hold_max", "ov_days", "ov_50")}
+    a = np.array(a, float)
+    return {"ov_hold": float(np.median(a)), "ov_hold_mean": float(a.mean()), "ov_hold_p90": float(np.quantile(a, 0.9)),
+            "ov_hold_max": float(a.max()), "ov_days": float((a > 0).mean()), "ov_50": float(np.median(b))}
 
 
 def _one(args):
@@ -192,7 +200,7 @@ def _one(args):
     er = eq[w0 + 1:w1 + 1] / eq[w0:w1] - 1.0
     br = _S["bench"][w0 + 1:w1 + 1] / _S["bench"][w0:w1] - 1.0
     out["corr"] = float(np.corrcoef(er, br)[0, 1]); out["te"] = float(np.std(er - br, ddof=1) * np.sqrt(245))
-    out["ov_hold"], out["ov_50"] = _daily_overlap(lg, _S["ncal"], w0, w1, _S["top50"], _S["months"])
+    out |= _daily_overlap(lg, _S["ncal"], w0, w1, _S["top50"], _S["months"])
     out["mret"] = P11.monthly_returns(eq, _S["marks"]["全窗"])
     return out
 
@@ -219,9 +227,14 @@ def report(tab, eff, anc, sig, cal, wins, reps, secs, bmk, probe) -> list:
           "---", "", "## 三、⭐⭐ 與 0050 的關係（§四②——本件最重要的一欄）", "",
           "⚠ 0050 官方成分本線沒有 ⇒ **代理 ＝ 上市普通股市值前 50，逐月重算，市值口徑與 W1 相同**。",
           "⛔ 這是代理，⛔ 不是 0050 的官方權重。", "",
-          "| 臂 | 重疊度 持股∩前50÷持股 | 重疊度 ÷50 | 與 0050 逐日報酬相關 | 追蹤誤差（年化） |", "|---|---:|---:|---:|---:|"]
+          "⛔⛔ **中位在這一格會騙人**：8 檔裡常常一檔都不在前 50 ⇒ 中位是 0.0%，",
+          "　 ⭐ 而平均 7% 上下、四成以上的交易日至少有一檔 ⇒ **整條分佈都要看**（〈九十二〉）。", "",
+          "| 臂 | 重疊度 中位 | 平均 | p90 | 最大 | 有重疊的交易日 | 重疊度 ÷50 | 與 0050 相關 | 追蹤誤差 |",
+          "|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
     for r in tab[tab["win"] == "全窗"].itertuples():
-        L.append(f"| {r.arm} | {r.ov_hold_med * 100:.1f}% | {r.ov_50_med * 100:.1f}% | {r.corr_med:.3f} | {r.te_med * 100:.1f}% |")
+        L.append(f"| {r.arm} | {r.ov_hold_med * 100:.1f}% | **{r.ov_mean * 100:.2f}%** | {r.ov_p90 * 100:.1f}% | "
+                 f"{r.ov_max * 100:.1f}% | {r.ov_days * 100:.1f}% | {r.ov_50_med * 100:.1f}% | {r.corr_med:.3f} | "
+                 f"{r.te_med * 100:.1f}% |")
     L += ["", "---", "", "## 四、⭐⭐ 判定：W1 − W0（§三）", "",
           "⛔ 判準 ＝ 使用者判準【年化 ≥ 0050 ∧ 最大回落 ≤ 0050】兩腳**同時成立**（`researchp9.passes`，唯一實作）。",
           "⛔ 判定量 ＝ W1 − W0 的逐種子配對差；年化那一腳看【逐月報酬配對差】的月分群 CI 含不含 0；",
@@ -324,6 +337,8 @@ def main():
                          "mdd_p90": q90(d[f"mdd_{w}"]), "expo_med": d[f"expo_{w}"].median(), "tr_med": d[f"tr_{w}"].median(),
                          "maxpos_med": d["max_pos"].median(), "trades_med": d["trades"].median(),
                          "ov_hold_med": d["ov_hold"].median(), "ov_50_med": d["ov_50"].median(),
+                         "ov_mean": d["ov_hold_mean"].median(), "ov_p90": d["ov_hold_p90"].median(),
+                         "ov_max": d["ov_hold_max"].median(), "ov_days": d["ov_days"].median(),
                          "corr_med": d["corr"].median(), "te_med": d["te"].median(), "nocap_med": d["nocap"].median(),
                          "shrink_med": d["shrink"].median(), "short_med": d["short"].median(),
                          "k_med_med": d["k_med"].median(), "k_min_med": d["k_min"].median()})
