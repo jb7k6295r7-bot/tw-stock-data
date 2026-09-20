@@ -1156,6 +1156,13 @@ def main():
     #   ⇒ 沿用 month／day 猜一次，**回應自己會講**參數有沒有生效。
     bridge_case("ajax_t05st01", "114", "110", out, month="09", day="01")
     out.append("")
+    # ⭐⭐⭐ 上面那一發自己講出了下一步：回應原文是「未指定公司代號時，
+    #   僅能查詢單日重大訊息」——⛔ 不是猜的，是官方端點自己寫的。
+    #   ⇒ 給一個公司代號（2330，慣例值），看它會不會變成**可以查區間**。
+    #   ⚠ 參數名 `co_id` 是依同族慣例拼的（ezsearch 那條用大寫 `CO_ID`，
+    #   這條走的是舊版簡易頁 ⇒ 先試小寫；猜錯的話回應會講「未指定」還在）。
+    bridge_case("ajax_t05st01", "114", "110", out, month="09", day="01", co_id="2330")
+    out.append("")
     ezsearch_case(out)
     ky_revenue_case(out)
     survivor_case(out)
