@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T18:40:43+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35505400831
+# ⏱ 這一趟：2026-09-20T19:52:41+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35508724795
 # otccal_probe.py 的輸出。這是探針結果，不是資料。
 # 要答的問題：**上櫃交易日曆有沒有第二來源**（目前唯一一列 C 級：只有自我一致）。
 # 判準四項見 otccal_probe.py 檔頭，⛔ 其中第 2 項（日期 min/max）是分水嶺。
@@ -128,7 +128,7 @@
            tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
         ── 第 3 段（921 字）
            (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-           params={r:'a3e0364f4860e7fd',t:'MTc4OTkwMDgyOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+           params={r:'a3e09fb7bb5dcfcc',t:'MTc4OTkwNTE0NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
            ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
            1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
            !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -169,7 +169,7 @@
      ? announce/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
      ? announce/market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
      ? bulletin/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
-     ? market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ✗ market/holiday?response=json：HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-
 
 [4] 候選 C：TWSE 開休市行事曆——**它說的「市場」包不包含上櫃？**
      ⛔ 這一節不是去拿日曆（那支已經通了），是去問一句話：
