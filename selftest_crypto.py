@@ -206,6 +206,16 @@ def main():
         finally:
             C.fetch_zip_rows = orig
 
+        # ⑦c reset_months_done：⛔ 這就是本節開頭那次事故的**善後**機制
+        #   （台帳被污染成全部誤記 nodata 之後，唯一能重新回補的辦法）。
+        dp = C.months_done_path()
+        ck("⭐ 重置前：台帳確實存在（上面幾趟已經寫過）", os.path.exists(dp))
+        removed = C.reset_months_done()
+        ck("⭐⭐ 重置：回傳 True（真的刪到檔）", removed is True)
+        ck("⭐⭐ 重置：檔案真的不在了", not os.path.exists(dp))
+        ck("★ 重置一個本來就不存在的台帳：回傳 False，⛔ 不炸",
+           C.reset_months_done() is False)
+
         # ⑧ write_universe：不同天各自累積，⛔ 不是後一天洗掉前一天
         C.write_universe([{"symbol": "BTC", "name": "Bitcoin",
                            "market_cap_rank": 1}],

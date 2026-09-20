@@ -24,6 +24,10 @@ on:
         type: choice
         options: [universe, backfill, daily]
         default: daily
+      reset_months_done:
+        description: "backfill 專用，⛔ 平常不要勾：續跑台帳被污染時才用（例如 URL bug 讓整批誤記成官方沒有）"
+        type: boolean
+        default: false
   schedule:
     # ⭐ 每天台北時間 08:10（UTC 00:10）補一次當月缺口——量很小
     #   （15 個幣種、近期缺口通常 0~1 天），⛔ 不需要跟 TW 那邊的
@@ -66,8 +70,13 @@ jobs:
         run: |
           MODE="${{ inputs.mode }}"; [ -n "$MODE" ] || MODE=daily
           echo "[crypto] mode=$MODE"
+          EXTRA=""
+          if [ "${{ inputs.reset_months_done }}" = "true" ]; then
+            EXTRA="--reset-months-done"
+            echo "[crypto] ⚠ 帶 --reset-months-done（續跑台帳會被刪掉重問）"
+          fi
           RC=0
-          python crypto.py --mode "$MODE" || RC=$?
+          python crypto.py --mode "$MODE" $EXTRA || RC=$?
           exit $RC
 
       - name: 把程式同步到 main
