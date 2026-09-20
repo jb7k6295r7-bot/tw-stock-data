@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T13:25:02+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35491162410
+# ⏱ 這一趟：2026-09-20T14:03:01+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35492718034
 tls_probe.py　TPEx／TWSE 的 TLS 憑證鏈探針。⛔ 只讀不寫資料，也**不改任何驗證設定**。
 
 ⛔ 只讀不寫資料，也**不改任何驗證設定**。三發的差別只在「拿哪一份 CA」。
