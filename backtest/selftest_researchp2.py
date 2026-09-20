@@ -807,6 +807,111 @@ def t_p13():
           " ⇒ ⛔ 只看中位會讀成【完全不重疊】")
 
 
+def t_p1b():
+    """PREREGP1b（seq=4＋seq=5）：假訊號組半寬、兩道閘門、四組保守法。"""
+    import os as _os
+    from . import researchp1b as B
+    check(B.PERM_ITER == 200 and B.PCT == (2.5, 97.5) and B.COST_PP == 0.585
+          and B.JUDGE_NS == (3, 5, 8, 10, 20, 30, 40) and B.MIN_N == 24 and B.MIN_CELLS == 5
+          and B.PERM_SEEDS == (20260915, 20261915) and B.BLK_REASONS == ("a", "b", "b_expired"),
+          "登錄寫死的常數：重抽 200 次／95% 帶／0.585pp／7 個 N／出口ⓐ24 ⓑ5／兩個重排種子／⛔ 排除 c")
+    # ⭐ 兩組：⛔ "c" 不算假訊號組；⚠ 逐 H 各自 dropna
+    df = pd.DataFrame({"reason": ["in", "in", "a", "b", "b_expired", "c"],
+                       "g_H60": [0.10, 0.20, 0.00, 0.02, 0.04, 9.99],
+                       "g_H120": [0.10, np.nan, 0.00, 0.02, np.nan, 9.99]})
+    e60, b60 = B.two_groups(df, 60)
+    e120, b120 = B.two_groups(df, 120)
+    check(len(e60) == 2 and len(b60) == 3 and abs(b60.mean() - 0.02) < 1e-12,
+          f"假訊號組 ＝ a／b／b_expired，⛔ c 不算（c 的 9.99 會把平均拉到 2.5；實得 {b60.mean():.4f}）")
+    check(len(e120) == 1 and len(b120) == 2,
+          f"⚠ 逐 H 各自 dropna ⇒ H120 的 n 是 1／2（⛔ 不是拿 H60 的 2／3；實得 {len(e120)}／{len(b120)}）")
+    r = B.halfwidth(e60, b60, 123)
+    check(abs(r["diff_pp"] - (0.15 - 0.02) * 100) < 1e-9 and r["n_in"] == 2 and r["n_blk"] == 3,
+          f"diff_pp ＝（進場組平均 − 假訊號組平均）×100 ＝ {(0.15 - 0.02) * 100:.1f}（實得 {r['diff_pp']:.1f}）")
+    check(abs(r["hw95_pp"] - (r["band_hi"] - r["band_lo"]) / 2) < 1e-12 and r["band_lo"] < r["band_hi"],
+          "半寬 ＝ (band_hi − band_lo) / 2")
+    r2 = B.halfwidth(e60, b60, 123)
+    check(r2 == r, "⭐ 每一格各自重新建 rng ⇒ 同種子同格【逐位元可重現】（⛔ 共用一條 stream 會漂掉）")
+    rng0 = np.random.default_rng(7)      # ⚠ 小樣本只有 C(5,2)=10 種切法 ⇒ 兩個種子會撞 ⇒ fixture 要夠大
+    big_e, big_b = rng0.normal(0.1, 0.2, 60), rng0.normal(0.0, 0.2, 40)
+    check(B.halfwidth(big_e, big_b, 123)["hw95_pp"] != B.halfwidth(big_e, big_b, 124)["hw95_pp"],
+          "⭐ 換種子會變 ⇒ 證明種子真的有進到重排裡（⚠ 小 fixture 上兩個種子會給同一個答案 ⇒ 要 60/40 才分得開）")
+    check(B.halfwidth(np.array([]), b60, 123)["n_in"] == 0 and not np.isfinite(B.halfwidth(np.array([]), b60, 123)["hw95_pp"]),
+          "空的一組 ⇒ 回 NaN（⛔ 不可以算出一個數）")
+    # 閘門二：逐位元比（⛔ 不設容差）
+    tmp = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "__p1b_bitcmp.csv")
+    ref = pd.DataFrame([{"N": "10", "d": "inf", "rule": "null", "H": 60, "n_in": 2, "n_blk": 3,
+                         "diff_pp": 0.1, "hw95_pp": 0.2, "band_lo": -0.1, "band_hi": 0.3, "reading": "x"}])
+    ref.to_csv(tmp, index=False)
+    try:
+        ok, bad = B.same_as_file(ref.copy(), tmp)
+        check(ok and not bad, "閘門二：完全一樣 ⇒ 過")
+        off = ref.copy(); off.loc[0, "hw95_pp"] = np.nextafter(0.2, 1)
+        ok2, bad2 = B.same_as_file(off, tmp)
+        check(not ok2 and len(bad2) == 1,
+              f"⭐ 差【一個 ulp】就要判不同（⛔ 容差比對會放行；實得 ok={ok2} bad={len(bad2)}）")
+        short = pd.concat([ref, ref], ignore_index=True)
+        check(not B.same_as_file(short, tmp)[0], "列數不同 ⇒ 當場判不同")
+    finally:
+        _os.path.exists(tmp) and _os.remove(tmp)
+    # 判定格：d=∞、7 個 N、⛔ 不含 N=2
+    tab = pd.DataFrame([{"N": n, "d": d, "rule": "null", "H": 60, "hw95_pp": 1.0, "n_in": 50, "n_blk": 50}
+                        for n in ("2", "3", "5", "8", "10", "20", "30", "40") for d in ("inf", "1")])
+    j = B.judged(tab, 60, "null")
+    check(j["N"].tolist() == [3, 5, 8, 10, 20, 30, 40],
+          f"判定格 ＝ d=∞ 的 7 個 N 並照數值排序（⛔ N=2 不進、⛔ d=1 不進；實得 {j['N'].tolist()}）")
+    # H1：兩個條件【缺一不可】
+    mk = lambda hs, ns=None: pd.DataFrame({"N": list(B.JUDGE_NS), "hw95_pp": hs,
+                                           "n_in": ns or [50] * 7, "n_blk": [50] * 7 if ns is None else [1] * 7})
+    A = mk([1.0] * 7)
+    v = B.judge_group(mk([0.9, 0.9, 0.9, 0.9, 0.9, 1.1, 1.1]), A)
+    check(v["h1"] == "通過" and v["win"] == 5 and v["med"] < 0, f"H1：5/7 較小且中位為負 ⇒ 通過（實得 {v}）" if v["h1"] != "通過" else
+          "H1：5/7 較小 ∧ 配對差中位為負 ⇒ 通過")
+    v2 = B.judge_group(mk([0.99, 0.99, 0.99, 0.99, 0.99, 3.0, 3.0]), A)
+    check(v2["win"] == 5 and v2["med"] < 0 and v2["h1"] == "通過", "⭐ 中位看的是【中位】不是平均（兩格大輸也不影響中位）")
+    v3 = B.judge_group(mk([0.9, 0.9, 0.9, 0.9, 1.1, 1.1, 1.1]), A)
+    check(v3["win"] == 4 and v3["h1"] == "沒通過", f"H1：只有 4/7 ⇒ 沒通過（⛔ 門檻是【至少 5 格】；實得 {v3['win']}）")
+    # H2
+    v4 = B.judge_group(mk([0.9, 0.9, 0.9, 0.9, 0.9, 0.5, 0.9]), A)
+    check(v4["fine"] == 1 and v4["h2"] == "通過", f"H2：至少 1 格 ≤ 0.585 ⇒ 通過（實得 {v4['fine']}）")
+    check(B.judge_group(mk([0.9] * 7), A)["h2"] == "沒通過", "H2：一格都沒有 ⇒ 沒通過")
+    check(B.judge_group(mk([0.586] * 7), A)["h2"] == "沒通過" and B.judge_group(mk([0.585] * 7), A)["fine"] == 7,
+          "⭐ 門檻是【≤】0.585：0.585 算、0.586 不算（⛔ 方向寫反會全中）")
+    # 出口ⓐⓑ
+    v5 = B.judge_group(mk([0.9] * 7, ns=[10, 10, 10, 50, 50, 50, 50]), A)
+    check(v5["cells"] == 4 and v5["dropped"] == 3 and v5["h1"] == "還沒測",
+          f"出口ⓐⓑ：n_in+n_blk < 24 的三格【不進判定】⇒ 只剩 4 格 < 5 ⇒ H1【還沒測】"
+          f"（⛔ 不是拿 4 格去判；實得 cells={v5['cells']} dropped={v5['dropped']} {v5['h1']}）")
+    # H3：完美直線
+    n = np.array([100, 400, 2500, 10000], float)
+    hw = 0.5 + 3.0 / np.sqrt(n)
+    # ⚠ n_blk 一定要【不是 0】：n_blk 全 0 時 n_in 與 n_in+n_blk 分不開（第一版就是這樣，突變沒紅）
+    fit = B.h3_fit(pd.DataFrame({"n_in": n * 0.6, "n_blk": n * 0.4, "hw95_pp": hw}))
+    check(abs(fit["slope"] - 3.0) < 1e-9 and abs(fit["intercept"] - 0.5) < 1e-9 and abs(fit["r2"] - 1.0) < 1e-12,
+          f"H3：hw ~ 1/√(n_in+n_blk) 的斜率 3.0／截距 0.5／R² 1（⭐ 分母是【兩組合計】；實得 {fit['slope']:.4f}／{fit['intercept']:.4f}／{fit['r2']:.6f}）")
+    # ⭐ 真資料一格：本檔的實作要重現釘死那份檔（⛔ 這條紅了就是「同一支程式」不成立）
+    here = _os.path.dirname(_os.path.abspath(__file__))
+    f1 = _os.path.join(here, "resultsp1", "blocked_AND_N10_dinf_null.csv.gz")
+    if _os.path.exists(f1) and _os.path.exists(B.AND_TABLE):
+        real = pd.read_csv(f1)
+        want = B.read_table(B.AND_TABLE)
+        check(set(want["rule"]) == {"null", "relvol"},
+              f"⛔⛔ pandas 預設會把字串 \"null\" 讀成 NaN ⇒ read_table 一定要 keep_default_na=False"
+              f"（實得 {sorted(set(want['rule']))}）")
+        w = want[(want["N"] == "10") & (want["d"] == "inf") & (want["rule"] == "null") & (want["H"] == 60)].iloc[0]
+        got = B.halfwidth(*B.two_groups(real, 60), B.PERM_SEEDS[0])
+        check(all(repr(float(got[c])) == repr(float(w[c])) for c in ("n_in", "n_blk", "diff_pp", "hw95_pp", "band_lo", "band_hi")),
+              f"⭐⭐ 真資料一格逐位元重現釘死的 AND（N=10 d=∞ null H60）：hw {got['hw95_pp']!r} vs {float(w['hw95_pp'])!r}")
+    # ⭐ 呼叫點（⭐ 測完純函式再掃一次原始碼）
+    src = open(_os.path.join(here, "researchp1b.py"), encoding="utf-8").read()
+    body = src.split("def main(")[1]
+    check("sha256_file(AND_TABLE)" in body and "same_as_file(and_re, AND_TABLE)" in body
+          and body.count("raise SystemExit") >= 2,
+          "⭐ 兩道閘門都在 main 裡，而且【沒過就 raise SystemExit】（⛔ 不是印個警告繼續跑）")
+    check("table(\"AND\", PERM_SEEDS[0]" in body and "{s: table(\"S\", s, a.src) for s in PERM_SEEDS}" in body,
+          "⭐ AND 用種子(甲)重算、S 用【兩個種子各一次】（⛔ 不可只跑一個，〈一百〇八〉）")
+
+
 def t_top50_share():
     """K線分析線 1915 §六：參考C 候選裡市值前 50 的比例（⛔ 描述性交件，⛔ 不是判定）。"""
     from . import researchp13 as P13
@@ -912,6 +1017,7 @@ if __name__ == "__main__":
     print("[引擎] weight_fn（PREREGP13 seq=3 §二）"); t_weight_fn()
     print("[researchp13] 三個 weight_fn ＋ 0050 代理 ＋ 重疊度"); t_p13()
     print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
+    print("[researchp1b] PREREGP1b 假訊號組半寬（seq=4＋seq=5）"); t_p1b()
     print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
