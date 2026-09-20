@@ -89,6 +89,14 @@ if __name__ == "__main__":
     check(np.isclose(SB["excess_pp"].iloc[0], R.cell_stats(main3[main3["type"] == typ], 120)["excess_pp"]), "上界＝現況（⛔ 沒動到原本那一格）")
     check(SB["excess_pp"].iloc[1] < SB["excess_pp"].iloc[2], "代入越差的報酬 ⇒ 區間越低（⛔ 方向不可反）")
     check(list(SB["sub_value"])[1:] == [-0.37, 0.04], "代入值逐字進表（⛔ 不是自己算一個）")
+    # ⭐〈九十四〉：正式值是寫死的邊界（⛔ 不挑代理組）＋〈七十〉四件：分母要寫清楚
+    SBd = R.survivor_bound(cl3, {"9103"}, None, 120, typ)
+    check(list(SBd["sub_value"])[1:] == [-1.0, 0.0], f"⛔ 不傳 subs（預設值那條路）⇒ 走寫死的邊界 −100%／0%（實得 {list(SBd['sub_value'])[1:]}）")
+    check(set(R.SURVIVOR_BOUNDS.values()) == {-1.0, 0.0}, "邊界常數寫死在 SURVIVOR_BOUNDS（⛔ 不是算出來的）")
+    m3b = R._in(cl3, "主格")
+    check(int(SBd["n_main_rows"].iloc[0]) == len(m3b) and abs(SBd["miss_share_pct"].iloc[0] - SBd["miss_rows"].iloc[0] / len(m3b) * 100) < 1e-9,
+          "佔比的分母＝主格母體全部列（⛔ 不是該型的列）")
+    check(SBd["excess_pp"].iloc[1] < SBd["excess_pp"].iloc[2] <= SBd["excess_pp"].iloc[0], "−100% ＜ 0% ≤ 上界（⛔ 順序不可反）")
     # ⛔ 代入的是 fwd，exc 要**逐列用它自己那個月的基準**重算 ⇒ 拿手動組出來的同一批列對點估計
     m3 = R._in(cl3, "主格")
     hand = m3[m3["rev_hi24"].isna() & (m3["stock_id"] != "9103")].copy()
