@@ -227,14 +227,18 @@ def assign(X: pd.DataFrame, centers: np.ndarray, mu: np.ndarray, sd: np.ndarray)
     return d.argmin(axis=1)
 
 
-def forward_returns(raw: pd.DataFrame, pos: int, holds=HOLDS) -> dict:
-    """量測日 pos：次日開盤進、H 日後收盤出的毛報酬（開盤 NaN ⇒ NaN）。"""
+def forward_returns(raw: pd.DataFrame, pos: int, holds=HOLDS, hold_extra: int = D.P4_FWD_HOLD_BARS) -> dict:
+    """量測日 pos：次日開盤進、**持有 H + hold_extra 根**收盤出的毛報酬（開盤 NaN ⇒ NaN）。
+
+    ⛔⛔ `hold_extra` 的預設值 ＝ `D.P4_FWD_HOLD_BARS` ＝ 1 ⇒ `ret_120` 實際持有 **121 根**（出場根 ＝ entry+120）。
+    ⭐ 那是 P4 面板**歷史口徑**，已交數字與前瞻列都在它上面 ⇒ ⛔ 不回改（P4_v3 追加二十一）。
+    ⇒ 正式定義（sig 慣例、往後一律）是 hold_extra=0 ＝ 持有 H 根 ⇒ 只准當**敏感度**跑（`--hold-extra 0`）。"""
     o = raw["open"].to_numpy(float); c = raw["close"].to_numpy(float); n = len(o)
     e = pos + 1
     out = {"entry_pos": e}
     if e >= n or np.isnan(o[e]):
         return {**out, **{f"ret_{H}": np.nan for H in holds}}
     for H in holds:
-        x = e + H
+        x = D.exit_pos(e, H + hold_extra)
         out[f"ret_{H}"] = (c[x] / o[e] - 1) if x < n else np.nan
     return out

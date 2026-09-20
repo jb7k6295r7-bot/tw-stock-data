@@ -53,6 +53,37 @@ def synth_centers():
     return C, np.full(13, 50.0), np.full(13, 25.0)
 
 
+def t_recompute_fwd():
+    """追加二十一的敏感度閘門的前提：`recompute_fwd` 走的價格路徑要與【面板建構那條】逐位元相同。"""
+    from backtest import data as D
+    cal = D.load_calendar()
+    pos = [int(np.searchsorted(cal, pd.Timestamp(d))) for d in ("2022-01-03", "2023-01-03", "2024-01-02")]
+    rows = []
+    for sid, mk in (("2330", "twse"), ("1101", "twse")):
+        raw = P.stock_raw(sid, mk, cal)                       # ⭐ 面板建構用的那一支
+        for q in pos:
+            fr = P.forward_returns(raw, q)
+            rows.append({"stock_id": sid, "market": mk, "measure_date": cal[q], **{f"fwd_{H}": fr[f"ret_{H}"] for H in R.HOLDS}})
+    panel = pd.DataFrame(rows)
+    back = R.recompute_fwd(panel, cal, D.P4_FWD_HOLD_BARS, procs=2, log=lambda *_: None)
+    same = all(np.isclose(panel[f"fwd_{H}"].to_numpy(float), back[f"fwd_{H}"].to_numpy(float), rtol=0, atol=0, equal_nan=True).all() for H in R.HOLDS)
+    check(same, f"⭐ recompute_fwd（hold_extra=1）逐位元重現 stock_raw 那條路的 fwd（{len(panel)} 列 × {len(R.HOLDS)} 欄）")
+    alt = R.recompute_fwd(panel, cal, 0, procs=2, log=lambda *_: None)
+    d = (alt["fwd_120"].to_numpy(float) - panel["fwd_120"].to_numpy(float))
+    check(np.isfinite(d).all() and (np.abs(d) > 1e-9).any(),
+          f"hold_extra=0 ⇒ 值有變（|差| 最小 {np.nanmin(np.abs(d)) * 100:.3f}pp、最大 {np.nanmax(np.abs(d)) * 100:.3f}pp）")
+    # ⭐ 而【沒變的那幾列】要講得出成因：出場根的收盤與前一根相同（ffill 的無成交日／平盤）⇒ ⛔ 不是算錯
+    flat_ok = True
+    for i, r in enumerate(panel.itertuples()):
+        if abs(d[i]) > 1e-12:
+            continue
+        cc = D.load_stock(r.stock_id, r.market, cal).df["close"].ffill().to_numpy(float)
+        x = D.exit_pos(int(np.searchsorted(cal, r.measure_date)) + 1, 120 + D.P4_FWD_HOLD_BARS)
+        flat_ok &= bool(cc[x] == cc[x - 1])
+    check(flat_ok, "⭐ 差為 0 的列，成因都是【出場根收盤 ＝ 前一根收盤】（ffill 的無成交日／平盤）⇒ ⛔ 不是重算沒生效")
+    check(len(alt) == len(panel) and list(alt.columns) == list(panel.columns), "重算後列數與欄序不變")
+
+
 if __name__ == "__main__":
     C, mu, sd = synth_centers()
     panel = synth_panel()
@@ -157,6 +188,7 @@ if __name__ == "__main__":
     uni = pd.DataFrame({"stock_id": ["S000", "S001"], "name": ["甲-KY", "乙"]})
     sm = R.structural_missing(cl5, uni)
     check(list(sm["stock_id"]) == ["S000"] and sm["tag"].iloc[0] == "KY", "全缺的 S000 是結構性（KY）、缺一半的 S001 不是")
+    print("[researchp4] recompute_fwd（追加二十一的閘門前提）"); t_recompute_fwd()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
 

@@ -85,8 +85,10 @@ def _init(cal):
 
 # ── 出場 ──
 def fixed_exit(o, c, k, H, nb):
-    """訊號根 k，進場 k+1 開盤，k+H 收盤出。回傳 (exit_bar, gross) 或 None。nb ＝ k−20 之後第一個壞根。"""
-    e = k + H
+    """訊號根 k，進場 k+1 開盤，**持有 H 根**（進場那根算第 1 根）收盤出。回傳 (exit_bar, gross) 或 None。nb ＝ k−20 之後第一個壞根。
+
+    ⭐ 出場根一律走 `data.exit_pos`（唯一實作，P4_v3 追加二十一）：exit_pos(k+1, H) ＝ k+H ⇒ 與舊寫法逐位元相同。"""
+    e = D.exit_pos(k + 1, H)
     if e >= len(c) or e >= nb:
         return None
     return e, c[e] / o[k + 1] - 1

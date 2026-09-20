@@ -108,6 +108,49 @@ def panel_worker(args):
     return rows, mism
 
 
+_FW: dict = {}
+
+
+def _fw_init(cal, hold_extra):
+    _FW.update(cal=cal, hold_extra=hold_extra, pos={d: i for i, d in enumerate(cal)})
+
+
+def _fw_one(args):
+    """一檔：只重算 fwd_H（⭐ 呼叫的是【同一支】P.forward_returns，⛔ 沒有第二份算式）。"""
+    sid, market, dates = args
+    st = D.load_stock(sid, market, _FW["cal"])
+    if st is None:
+        return []
+    mini = pd.DataFrame({"open": st.df["open"], "close": st.df["close"].ffill()}, index=_FW["cal"])
+    out = []
+    for d in dates:
+        pos = _FW["pos"].get(d)
+        if pos is None:
+            continue
+        fr = P.forward_returns(mini, pos, P.HOLDS, _FW["hold_extra"])
+        out.append({"stock_id": sid, "measure_date": d, **{f"fwd_{H}": fr[f"ret_{H}"] for H in P.HOLDS}})
+    return out
+
+
+def recompute_fwd(panel: pd.DataFrame, cal: pd.DatetimeIndex, hold_extra: int, procs: int = 4, log=print) -> pd.DataFrame:
+    """把面板的 fwd_H 用另一個【持有根數】重算（H + hold_extra 根）。回傳與 panel 同列數、只有 fwd_H 被換掉的副本。
+
+    ⭐ 價格來源與 `P.stock_raw` 逐字相同（`D.load_stock` ⇒ close ffill、open 不 ffill，float64）
+    ⇒ 所以 hold_extra ＝ `D.P4_FWD_HOLD_BARS` 時要能把現有的 fwd_H **逐位元**重現（呼叫端拿它當閘門）。"""
+    jobs = [(sid, g["market"].iloc[0], list(g["measure_date"])) for sid, g in panel.groupby("stock_id", sort=True)]
+    rows = []
+    t0 = time.time()
+    with Pool(procs, initializer=_fw_init, initargs=(cal, hold_extra)) as pool:
+        for i, part in enumerate(pool.imap_unordered(_fw_one, jobs, chunksize=8), 1):
+            rows.extend(part)
+            if i % 400 == 0:
+                log(f"  [fwd hold_extra={hold_extra}] {i}/{len(jobs)} 檔（{time.time() - t0:.0f}s）")
+    F = pd.DataFrame(rows)
+    out = panel.drop(columns=[f"fwd_{H}" for H in HOLDS]).merge(F, on=["stock_id", "measure_date"], how="left", validate="one_to_one")
+    assert len(out) == len(panel), f"重算後列數要相同（{len(out)} vs {len(panel)}）"
+    return out[panel.columns]
+
+
 def build_panel(cal, uni, positions, procs=4, pub_day=10, log=print, mp_check=True, rev_incl_current=False) -> tuple[pd.DataFrame, pd.DataFrame]:
     """回 (面板, min_periods 斷言的不一致列)。⛔ 不一致列 > 0 由呼叫端決定要不要中止（main 一律中止並逐列印 股／月／欄）。"""
     # ⭐ K線分析線 0150（登錄：追加十八）：缺 rev_hi24 依【缺失機制】分三種——不足 24 期＝依定義不成立（False）、
@@ -497,6 +540,9 @@ def main():
     ap.add_argument("--no-mp-check", action="store_true", help="⛔ 只給自測用：跳過 §4-1 min_periods 常設斷言")
     ap.add_argument("--mp-check-report", action="store_true", help="§4-1 斷言不成立時只寫表、逐欄統計並印前 50 列，不中止（數字要標「斷言不成立下產出」）")
     ap.add_argument("--rev-incl-current", action="store_true", help="⛔ 只給對帳敏感度：rev_hi24 視窗改成含當期的 24 期（策略線讀法）；正式定義不動")
+    ap.add_argument("--hold-extra-sens", type=int, default=None, metavar="K",
+                    help="⛔ 只給敏感度（P4_v3 追加二十一）：把 fwd_H 改成【持有 H+K 根】重算四型，⛔ 不覆蓋正式輸出。"
+                         "正式口徑 K＝D.P4_FWD_HOLD_BARS＝1（持有 121 根）；sig 慣例 K=0（持有 H 根）。需要 --panel。")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     stamp = pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M"); commit = _commit()
@@ -530,6 +576,28 @@ def main():
     panel, n_innov = apply_innovation_rule(panel, uni)
     log(f"創新板量測日 < {INNOV_CUTOFF} 排除：{n_innov} 股-月" + ("（本窗內觸發 0 次）" if n_innov == 0 else ""))
     C, mu, sd = load_centers(a.centers)
+    if a.hold_extra_sens is not None:
+        # ⭐⭐ 敏感度（P4_v3 追加二十一）：只換【持有根數】，其餘一字不動；⛔ 不寫任何正式輸出檔
+        ref = recompute_fwd(panel, cal, D.P4_FWD_HOLD_BARS, a.procs, log)      # 先驗證重算路徑：要逐位元重現面板
+        bad = 0
+        for H in HOLDS:
+            x, y = panel[f"fwd_{H}"].to_numpy(float), ref[f"fwd_{H}"].to_numpy(float)
+            bad += int((~np.isclose(x, y, rtol=0, atol=0, equal_nan=True)).sum())      # ⭐ atol=rtol=0 ⇒ 逐位元；equal_nan ⇒ 兩邊都 NaN 算相同
+        if bad:
+            raise SystemExit(f"⛔ 重算路徑對不上面板（{bad} 格不同）⇒ 敏感度不跑（⛔ 不可以拿對不上的重算去比）")
+        log(f"✅ 重算路徑逐位元重現面板的 fwd_H（hold_extra={D.P4_FWD_HOLD_BARS}、{len(panel):,} 列 × {len(HOLDS)} 欄）")
+        alt = recompute_fwd(panel, cal, a.hold_extra_sens, a.procs, log)
+        rows = []
+        for tag, pnl in (("正式 持有 H+1 根", panel), (f"敏感度 持有 H+{a.hold_extra_sens} 根", alt)):
+            Sx = summary_table(classify(pnl, C, mu, sd))
+            m = Sx[(Sx["period"] == "主格") & (Sx["H"] == 120)]
+            for r in m.itertuples():
+                rows.append({"variant": tag, "hold_bars": 120 + (1 if pnl is panel else a.hold_extra_sens), "type": r.type,
+                             "excess_pp": r.excess_pp, "ci_lo_pp": r.ci_lo_pp, "ci_hi_pp": r.ci_hi_pp, "n_months": r.n_months})
+        T = pd.DataFrame(rows)
+        write_csv(T, os.path.join(a.out, "hold_bars_sens.csv"), stamp, commit)
+        log(T.to_string(index=False))
+        return 0
     cl = classify(panel, C, mu, sd)
     cl.to_csv(os.path.join(a.out, "classified.csv.gz"), index=False)
     S = summary_table(cl); write_csv(S, os.path.join(a.out, "summary.csv"), stamp, commit)

@@ -20,6 +20,23 @@ DATA = os.path.join(ROOT, "data")
 PRICE_COLS = ["open", "high", "low", "close"]
 
 
+# ⭐⭐ 持有期的唯一實作（回測線 2026-09-20 裁定，P4_v3 追加二十一）
+# 「持有 n 根」＝ 進場那一根算第 1 根 ⇒ 出場根 ＝ entry_pos + n − 1。
+# ⛔ 不可以再在別的檔案裡寫 `entry + H` 或 `k + H` 這種裸算式（CLAUDE.md 四點五：同一件事只准有一份實作）。
+# ⚠ 本庫歷史上有兩種寫法，差一根：
+#   ① sig 慣例（research11／research13／researchp7／researchp6）H120 ＝ 持有 120 根 ⇒ exit_pos(entry, 120) ＝ entry+119   ✅ 正式
+#   ② P4 面板 `fwd_120`（p4_features.forward_returns）        實際是 持有 121 根 ⇒ exit_pos(entry, 121) ＝ entry+120   ⛔ 新工作不可再用
+# ⇒ 兩者都要經過本函式表達，參數就是【持有根數】——名字自己講出它是幾根，⛔ 不靠註解。
+def exit_pos(entry_pos: int, hold_bars: int) -> int:
+    """持有 `hold_bars` 根（進場那一根算第 1 根）的出場根位置。hold_bars ≥ 1。"""
+    if hold_bars < 1:
+        raise ValueError(f"hold_bars 要 ≥ 1（收到 {hold_bars}）")
+    return int(entry_pos) + int(hold_bars) - 1
+
+
+P4_FWD_HOLD_BARS = 1            # P4 面板 fwd_H 的持有根數 ＝ H + 本常數（⛔ 歷史口徑，見上）
+
+
 def load_calendar() -> pd.DatetimeIndex:
     cal = pd.read_csv(os.path.join(DATA, "meta", "calendar_twse.csv"))
     return pd.DatetimeIndex(pd.to_datetime(cal["date"])).sort_values()

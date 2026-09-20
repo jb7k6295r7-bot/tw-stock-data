@@ -11,8 +11,10 @@ import sys
 import numpy as np
 import pandas as pd
 
+from . import data as D
 from . import research11 as R
 from . import researchp2 as P2
+from . import researchp7 as P7
 
 FAIL = 0
 
@@ -178,7 +180,7 @@ def t_gate_b_sig():
     check(set(sig["sid"]) == {"A", "B"}, f"⭐ 只有三條布林全中且過閘門的才進 sig（實得 {sorted(set(sig['sid']))}）"
           "⇒ ⛔ ma_stack 成立／rev_hi24 不成立／ma60_up 不成立／沒過閘門 四種都被擋掉")
     r0 = sig[(sig.sid == "A") & (sig.entry_pos == 11)].iloc[0]
-    check(int(r0[f"xpos_{P7.RULE}"]) == 11 + P7.HOLD_BARS, f"xpos ＝ entry_pos + {P7.HOLD_BARS}（⛔ 不是 +120）")
+    check(int(r0[f"xpos_{P7.RULE}"]) == D.exit_pos(11, P7.HOLD_BARS_N), f"xpos ＝ D.exit_pos(entry_pos, {P7.HOLD_BARS_N}) ＝ entry_pos+{P7.HOLD_BARS_N - 1}（⛔ 不是 +{P7.HOLD_BARS_N}）")
     want = closes["A"][11 + P7.HOLD_BARS] / opens["A"][11] - 1
     bad_cc = closes["A"][11 + P7.HOLD_BARS] / closes["A"][11] - 1
     check(abs(float(r0[f"g_{P7.RULE}"]) - want) < 1e-12 and abs(want - bad_cc) > 1e-6,
@@ -186,7 +188,8 @@ def t_gate_b_sig():
     check(P7.SEED0 == 97000, f"種子起點寫死 97000（⛔ 不沿用 90000／96000；實得 {P7.SEED0}）")
     check([P7.stop_tag(c) for c in P7.CELLS] == ["none", "fix 8%", "fix 15%", "fix 20%", "trail 15%", "trail 20%"],
           f"六格寫死（實得 {[P7.stop_tag(c) for c in P7.CELLS]}）")
-    check(P7.HOLD_BARS == 119, "HOLD_BARS 寫死 119（策略線逐字；⚠ 本庫 P4 的 fwd_120 是 +120，差一根）")
+    check(P7.HOLD_BARS_N == 120 and P7.HOLD_BARS == 119,
+          f"⭐ HOLD_BARS_N 寫死 120＝【持有根數】、HOLD_BARS＝119 只給「平均持有天數」那一欄（日數差）；實得 {P7.HOLD_BARS_N}／{P7.HOLD_BARS}")
     # 超出日曆的量測日 ⇒ 剔除（⛔ 不是補 NaN）
     late = pd.DataFrame([{"measure_date": cal[n - 5], "stock_id": "A", "eligible": True, "rev_hi24": 100, "ma_stack": 0,
                           "ma60_up": 100, "amt20": 1e8, "vol60": 0.3}])
@@ -195,6 +198,31 @@ def t_gate_b_sig():
                          "ma60_up": 100, "amt20": 1e8, "vol60": 0.3}])
     op_bad = {k: v.copy() for k, v in opens.items()}; op_bad["A"][11] = np.nan
     check(len(P7.build_sig_gate_b(bad, cal, closes, op_bad, start="2020-01-01")) == 0, "進場日開盤是 NaN ⇒ 該列剔除（⛔ 不 ffill 開盤）")
+
+
+def t_hold_bars_ruling():
+    """P4_v3 追加二十一：H〈n〉＝持有 n 根，出場根走唯一實作 `D.exit_pos`；⭐ 兩個口徑差【剛好一根】。"""
+    check(D.exit_pos(523, 120) == 642 and D.exit_pos(100, 1) == 100,
+          f"exit_pos(entry, n) ＝ entry+n−1（持有 1 根 ⇒ 當根出場）；實得 {D.exit_pos(523, 120)}／{D.exit_pos(100, 1)}")
+    check(D.exit_pos(7, 121) - D.exit_pos(7, 120) == 1,
+          "⭐ 持有 121 根（P4 面板 fwd_120）比持有 120 根（sig 慣例 H120）晚【剛好一根】")
+    try:
+        D.exit_pos(10, 0); ok = False
+    except ValueError:
+        ok = True
+    check(ok, "hold_bars < 1 ⇒ 大聲失敗（⛔ 不是靜靜回 entry−1）")
+    check(D.P4_FWD_HOLD_BARS == 1, f"P4_FWD_HOLD_BARS 寫死 1（P4 面板 fwd_H ＝ 持有 H+1 根）；實得 {D.P4_FWD_HOLD_BARS}")
+    # research11.fixed_exit：⭐ 走 exit_pos 之後要與舊式 k+H 逐位元相同
+    n = 60
+    o = np.linspace(10, 20, n); c = np.linspace(10.5, 21.0, n)      # ⭐ 開盤 ≠ 收盤、逐根不同 ⇒ 分得出用了哪一根哪一價
+    k, H = 5, 20
+    r = R.fixed_exit(o, c, k, H, n)
+    check(r is not None and r[0] == D.exit_pos(k + 1, H) == k + H,
+          f"fixed_exit 出場根 ＝ exit_pos(k+1, H) ＝ k+H ＝ {k + H}（實得 {None if r is None else r[0]}）")
+    check(r is not None and abs(r[1] - (c[k + H] / o[k + 1] - 1)) < 1e-15 and abs(r[1] - (c[k + H + 1] / o[k + 1] - 1)) > 1e-6,
+          "fixed_exit 的毛報酬用【出場根】收盤 ÷ 進場根開盤（⛔ 不是晚一根那個收盤）")
+    check(R.fixed_exit(o, c, n - H, H, n) is None, "出場根超出序列 ⇒ None（⛔ 不是回最後一根）")
+    check(P7.BASE_NS == (3, 5, 8, 10, 15, 20, 30), f"基準線 7 個 N 寫死（策略線 0810 §二那張表）；實得 {P7.BASE_NS}")
 
 
 def t_p6_drop_and_pair():
@@ -261,6 +289,7 @@ if __name__ == "__main__":
     print("[researchp2] 預設路徑"); t_default_identical()
     print("[researchp2/引擎] 停損兩族（PREREGP7）"); t_stop()
     print("[researchp7] 門檻B sig 重建"); t_gate_b_sig()
+    print("[口徑] H〈n〉＝持有 n 根（追加二十一）"); t_hold_bars_ruling()
     print("[researchp6] 第二道篩與配對判定量"); t_p6_drop_and_pair()
     print("[researchp2] 重疊度"); t_overlap()
     print("[researchp2] 判定"); t_judge()

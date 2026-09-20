@@ -15,6 +15,16 @@
   「停損觸發日收盤出場，次一交易日該槽位才可再進場。⇒ 本件的停損組比『當日即可再進場』的設計
     少了機會數，⚠ 因此年化的下降幅度含有這一項，⛔ 不可全部歸因於停損本身。」
 ⇒ ⭐ 所以【平均槽位使用率】與【平均持有天數】都在必報裡——沒有它們就解釋不了年化為什麼掉。
+
+⭐⭐ **追加（回測線 2026-09-20 12:xx，⛔ 寫在跑之前）：門檻B 基準線 7 個 N × 三窗**
+  來源：策略線 0810 §二 逐字——「⚠ 本線只算了【全窗】⇒ ⭐ A 窗／B 窗請回測線補（PREREGP1 §4-A 要三個）」。
+  ```
+  格：stop=None × N ∈ (3, 5, 8, 10, 15, 20, 30)   ⇒ 7 格，⛔ 不是檢定，是【描述＋對帳】
+  種子：default_rng(97000 + r)，R=200              ⇒ ⭐ 沿用本件已登錄的種子，⛔ 不另開、⛔ 不沿用策略線的 90000+r
+  判準：對 0050 的三條（年化不低於 ∧ 回落較淺），⭐ 全窗／A 窗／B 窗各算一次
+  ```
+  ⭐ 種子不同 ⇒ 與策略線 0810 §二那張表**不會逐位元相同**；對帳看的是**中位數落在同一個量級**與**三條判準的結論一致**，
+  ⛔ 不是看數字一樣。⚠ N=8／stop=None 這一格與主表六格的第一格是**同一格**（同種子）⇒ ⛔ 不重複計數。
 """
 from __future__ import annotations
 
@@ -41,7 +51,10 @@ N_MAIN = 8
 CELLS = [None, ("fix", 0.08), ("fix", 0.15), ("fix", 0.20), ("trail", 0.15), ("trail", 0.20)]
 SENS_N = (5, 20)                 # 敏感度（分開寫）：N=5 與 N=20 各跑 none 與 fix 15%
 SENS_STOPS = [None, ("fix", 0.15)]
-HOLD_BARS = 119                  # xpos ＝ entry_pos + 119（策略線 1115 §1-1 逐字；⚠ 與本庫 P4 的 fwd_120（entry+120）差一根）
+BASE_NS = (3, 5, 8, 10, 15, 20, 30)   # 基準線（stop=None）：策略線 0810 §二 那張表的 7 個 N，⭐ 本線補 A 窗／B 窗
+HOLD_BARS_N = 120                # ⭐ H120 ＝**持有 120 根**（進場那根算第 1 根）⇒ xpos ＝ D.exit_pos(entry_pos, 120) ＝ entry_pos+119
+                                 # （策略線 1115 §1-1 逐字；⚠ 本庫 P4 的 fwd_120 是持有 **121** 根 ⇒ 兩者差一根，見 P4_v3 追加二十一）
+HOLD_BARS = HOLD_BARS_N - 1      # ⛔ 只留給「平均持有天數」那一欄：引擎的 hold_days 是**日數差**（出場日 − 進場日）⇒ 持有根數 − 1
 
 
 def stop_tag(stop) -> str:
@@ -53,7 +66,7 @@ def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, o
 
     候選母體＝過閘門股-月（`eligible` ＝ liq_ok ∧ bars_ok ∧ inst_ok，(c) 已套）
     訊號  ＝ `rev_hi24 ∧ ¬ma_stack ∧ ma60_up`（⭐ 三條都是布林、⛔ 零擬合參數、零中心、零橫斷面百分位）
-    entry_pos ＝ 量測日位置 + 1；xpos ＝ entry_pos + 119；g ＝ closes[xpos] / opens[entry] − 1
+    entry_pos ＝ 量測日位置 + 1；xpos ＝ D.exit_pos(entry_pos, 120) ＝ entry_pos+119（持有 120 根）；g ＝ closes[xpos] / opens[entry] − 1
     剔除：xpos ≥ ncal／opens[entry] 非有限或 ≤ 0／closes[xpos] 非有限
     ⚠ relvol(=amt20)／vol(=vol60) 是**原始值**，⛔ 不是橫斷面百分位。
     """
@@ -65,7 +78,7 @@ def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, o
     b["entry_pos"] = b["measure_date"].map(pos).astype("Int64") + 1
     b = b[b["entry_pos"].notna()].copy()
     b["entry_pos"] = b["entry_pos"].astype(int)
-    b[f"xpos_{RULE}"] = b["entry_pos"] + HOLD_BARS
+    b[f"xpos_{RULE}"] = b["entry_pos"].map(lambda e: D.exit_pos(int(e), HOLD_BARS_N))
     rows = []
     for r in b.itertuples():
         sid = r.stock_id
@@ -150,7 +163,8 @@ def report(T: pd.DataFrame, months: dict, sig: pd.DataFrame, bench_line: str) ->
     L = ["# PREREGP7：比例族停損在組合層（回測線落地）", "",
          f"產出 {pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y-%m-%d %H:%M')}（台北）。判準＝策略線 PREREGP7（0945）＋1115 補件。",
          f"訊號：門檻B `rev_hi24 ∧ ¬ma_stack ∧ ma60_up`，{len(sig):,} 筆／{sig['sid'].nunique():,} 檔／{sig['month'].nunique()} 個月"
-         f"（{sig['month'].min()} ~ {sig['month'].max()}），H120 ＝ entry_pos + {HOLD_BARS}。種子 `default_rng({SEED0} + r)`。", "",
+         f"（{sig['month'].min()} ~ {sig['month'].max()}），H120 ＝ **持有 {HOLD_BARS_N} 根**（xpos ＝ entry_pos+{HOLD_BARS_N - 1}）。種子 `default_rng({SEED0} + r)`。", "",
+         f"⚠ 「平均持有天數」那一欄是**日數差**（出場日 − 進場日）⇒ 排程出場 ＝ {HOLD_BARS_N - 1} 天差 ＝ 持有 {HOLD_BARS_N} 根。", "",
          "⛔ **範圍**：只測【比例族】兩種寫法。結構族（前低、箱底）、均線族（跌破 50 日線）不測；波動率族（ATR 偏移）在 PREREG19。",
          "⇒ ⭐ 結論**不可**寫成「停損沒用」——那只對比例族成立。", "",
          "⛔ **槽位語意**（策略線 1115 §二裁定）：停損觸發日收盤出場，**次一交易日**該槽位才可再進場。",
@@ -190,6 +204,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=8); ap.add_argument("--reps", type=int, default=200)
     ap.add_argument("--out", default=RESULTS); ap.add_argument("--panel", default=os.path.join(HERE, "resultsp4", "panel.csv.gz"))
+    ap.add_argument("--part", choices=("all", "cells", "baseline"), default="all",
+                    help="cells＝六格＋敏感度（P7_REPORT.md）；baseline＝門檻B 基準線 7 個 N × 三窗（BASELINE_REPORT.md）；⛔ 分開跑是為了每趟都在前景跑得完")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     log = print
@@ -212,14 +228,15 @@ def main():
     log("[sig] ✅ 七個驗收數與策略線 1115 §1-2 逐項相同")
     sig.to_csv(os.path.join(a.out, "sig_gateB.csv.gz"), index=False)
     bench = pd.Series(D.load_stock("0050", "twse", cal).df["close"].to_numpy()).ffill().to_numpy(float)
-    T, months = run_cells(sig, closes, opens, cal, bench, CELLS, (N_MAIN,), a.reps, a.procs, log)
-    S, months_s = run_cells(sig, closes, opens, cal, bench, SENS_STOPS, SENS_N, a.reps, a.procs, log)
-    T.to_csv(os.path.join(a.out, "cells.csv"), index=False); S.to_csv(os.path.join(a.out, "sensitivity.csv"), index=False)
-    md = []
-    for key, agg in {**months, **months_s}.items():
-        for d, k in sorted(agg.items()):
-            md.append({"N": key[0], "stop": key[1], "cal_pos": d, "date": str(cal[d].date()), "n_triggered": k})
-    pd.DataFrame(md).to_csv(os.path.join(a.out, "stop_days.csv"), index=False)
+    if a.part in ("all", "cells"):
+        T, months = run_cells(sig, closes, opens, cal, bench, CELLS, (N_MAIN,), a.reps, a.procs, log)
+        S, months_s = run_cells(sig, closes, opens, cal, bench, SENS_STOPS, SENS_N, a.reps, a.procs, log)
+        T.to_csv(os.path.join(a.out, "cells.csv"), index=False); S.to_csv(os.path.join(a.out, "sensitivity.csv"), index=False)
+        md = []
+        for key, agg in {**months, **months_s}.items():
+            for d, k in sorted(agg.items()):
+                md.append({"N": key[0], "stop": key[1], "cal_pos": d, "date": str(cal[d].date()), "n_triggered": k})
+        pd.DataFrame(md).to_csv(os.path.join(a.out, "stop_days.csv"), index=False)
     ncal = len(cal); split_pos = int(cal.searchsorted(pd.Timestamp(R13.SPLIT + "-01")))
     first_all = int(sig["entry_pos"].min())
     b_c, b_m = R13.window_stats(bench, first_all, ncal, first_all, ncal)
@@ -227,9 +244,27 @@ def main():
     b_cb, b_mb = R13.window_stats(bench, first_all, ncal, split_pos, ncal)
     bl = (f"**0050 買進持有**：全窗 年化 {b_c * 100:+.2f}%／最大回落 {b_m * 100:.1f}%；"
           f"A 窗 {b_ca * 100:+.2f}%／{b_ma * 100:.1f}%；B 窗 {b_cb * 100:+.2f}%／{b_mb * 100:.1f}%。")
-    L = report(T, months, sig, bl) + ["## 敏感度（N=5／N=20，⛔ 分開寫不進主判定）", ""] + report(S, months_s, sig, bl)[9:]
-    open(os.path.join(a.out, "P7_REPORT.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
-    log(f"寫入 {os.path.join(a.out, 'P7_REPORT.md')}")
+    if a.part in ("all", "cells"):
+        L = report(T, months, sig, bl) + ["## 敏感度（N=5／N=20，⛔ 分開寫不進主判定）", ""] + report(S, months_s, sig, bl)[9:]
+        open(os.path.join(a.out, "P7_REPORT.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+        log(f"寫入 {os.path.join(a.out, 'P7_REPORT.md')}")
+    if a.part in ("all", "baseline"):
+        B, _mb2 = run_cells(sig, closes, opens, cal, bench, [None], BASE_NS, a.reps, a.procs, log)
+        B.to_csv(os.path.join(a.out, "baseline_gateB.csv"), index=False)
+        LB = ["# 門檻B 基準線（stop=None）7 個 N × 三窗（回測線補策略線 0810 §二）", "",
+              f"產出 {pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y-%m-%d %H:%M')}（台北）。",
+              "⛔ **這是描述＋對帳，不是檢定**（登錄見 `researchp7` 檔頭追加）。種子 `default_rng(97000 + r)`、R=200 ⇒ "
+              "⭐ 與策略線 0810 §二那張表**種子不同**，對帳看的是量級與三條判準的結論，⛔ 不是看數字一樣。", "",
+              bl, "",
+              "| N | 年化 中位 | p10～p90 | 最大回落 中位 | p10～p90 | 槽位 | 筆數 | 全窗 | A 窗 | B 窗 | 三窗全過 |",
+              "|---:|---:|---|---:|---|---:|---:|:--:|:--:|:--:|:--:|"]
+        for r in B.itertuples():
+            LB.append(f"| {r.N} | {r.cagr * 100:+.2f}% | {r.cagr_p10 * 100:+.1f}～{r.cagr_p90 * 100:+.1f} | {r.mdd * 100:.1f}% | "
+                      f"{r.mdd_p10 * 100:.1f}～{r.mdd_p90 * 100:.1f} | {r.slot:.2f} | {r.m:.0f} | "
+                      f"{'✅' if r.win_all else '✗'} | {'✅' if r.win_a else '✗'} | {'✅' if r.win_b else '✗'} | {'✅' if r.win else '⛔'} |")
+        LB.append("")
+        open(os.path.join(a.out, "BASELINE_REPORT.md"), "w", encoding="utf-8").write("\n".join(LB) + "\n")
+        log(f"寫入 {os.path.join(a.out, 'BASELINE_REPORT.md')}")
 
 
 if __name__ == "__main__":

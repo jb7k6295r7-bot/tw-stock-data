@@ -158,6 +158,33 @@ def t_real_stock():
     check(raw["ret_120"].iloc[:120].isna().all(), "ret_120 前 120 根 NaN")
 
 
+def t_fwd_hold_bars():
+    """P4_v3 追加二十一：`forward_returns` 的持有根數 ＝ H + hold_extra，出場根走 `D.exit_pos`（唯一實作）。"""
+    n = 40
+    cal = pd.date_range("2020-01-06", periods=n, freq="B")
+    c = pd.Series(np.linspace(100.0, 139.0, n), index=cal)          # ⭐ 逐根不同 ⇒ 差一根就差得出來
+    o = c * 0.99                                                    # ⭐ 開盤 ≠ 收盤 ⇒ 分得出報酬用的是哪一個
+    raw = pd.DataFrame({"open": o, "close": c})
+    pos, H = 5, 10
+    e = pos + 1
+    d_def = P.forward_returns(raw, pos, holds=(H,))                 # ⛔ 不傳 hold_extra ⇒ 走預設值（Actions 上唯一會走的那條）
+    check(d_def["entry_pos"] == e, f"進場 ＝ 量測日次一根（實得 {d_def['entry_pos']}，要 {e}）")
+    check(abs(d_def[f"ret_{H}"] - (c.iloc[e + H] / o.iloc[e] - 1)) < 1e-15,
+          f"⭐ 預設值（hold_extra＝D.P4_FWD_HOLD_BARS＝{D.P4_FWD_HOLD_BARS}）⇒ 出場根 ＝ entry+{H} ＝ 持有 {H + 1} 根")
+    d0 = P.forward_returns(raw, pos, holds=(H,), hold_extra=0)
+    check(abs(d0[f"ret_{H}"] - (c.iloc[e + H - 1] / o.iloc[e] - 1)) < 1e-15,
+          f"hold_extra=0 ⇒ 出場根 ＝ entry+{H - 1} ＝ 持有 {H} 根（sig 慣例）")
+    check(abs(d0[f"ret_{H}"] - d_def[f"ret_{H}"]) > 1e-6,
+          f"⭐ 兩個口徑在同一列上【不同】（{d0[f'ret_{H}'] * 100:+.3f}% vs {d_def[f'ret_{H}'] * 100:+.3f}%）⇒ ⛔ 不可以並列比較")
+    # ⭐ 分辨點：剛好差一根的邊界 —— 持有 H 根到得了、持有 H+1 根到不了
+    pos_edge = n - 1 - H
+    ed, e0 = P.forward_returns(raw, pos_edge, holds=(H,)), P.forward_returns(raw, pos_edge, holds=(H,), hold_extra=0)
+    check(np.isnan(ed[f"ret_{H}"]) and np.isfinite(e0[f"ret_{H}"]),
+          "⭐ 序列最後一根那個邊界：持有 H 根算得出、持有 H+1 根超出序列 ⇒ NaN（⛔ 不是拿最後一根代）")
+    check(np.isnan(P.forward_returns(pd.DataFrame({"open": o.copy().mask(o.index == cal[e]), "close": c}), pos, holds=(H,))[f"ret_{H}"]),
+          "進場根開盤 NaN ⇒ NaN（⛔ 不 ffill 開盤）")
+
+
 def t_gate_min_periods():
     """v3 補件 §3-1／§3-2：bars 欄＝有價收盤根數累計；MIN_BARS 寫死 120；min_periods＝w ⇒ 第 w 根之前 NaN；合格列上 mp_frac 0.5 與 1.0 逐位元相同。"""
     check(P.MIN_BARS == 120, "MIN_BARS 寫死 120（由最長回看窗推出）")
@@ -202,6 +229,7 @@ if __name__ == "__main__":
     print("[p4_features] shares"); t_shares_ffill_not_bfill()
     print("[p4_features] 橫截面＋歸型"); t_cross_section_assign()
     print("[p4_features] 真實一檔"); t_real_stock()
+    print("[p4_features] fwd 持有根數（追加二十一）"); t_fwd_hold_bars()
     print("[p4_features] 閘門與 min_periods"); t_gate_min_periods()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
