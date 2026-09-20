@@ -809,6 +809,7 @@ def t_p13():
 
 def t_top50_share():
     """K線分析線 1915 §六：參考C 候選裡市值前 50 的比例（⛔ 描述性交件，⛔ 不是判定）。"""
+    from . import researchp13 as P13
     from . import top50_share as TS
     sig = pd.DataFrame([("A", "2020-01", 11), ("B", "2020-01", 11), ("C", "2020-01", 11),
                         ("A", "2020-02", 31), ("D", "2020-02", 31), ("E", "2020-02", 31), ("F", "2020-02", 31),
@@ -841,6 +842,24 @@ def t_top50_share():
           "⭐ 分子為 0 的月份數要一起報（⛔ 只報中位會把「有些月一檔都沒有」蓋掉，〈九十二〉）")
     check(TS.EVENT_WIN == ("2023-07", "2025-04") and TS.WANT_EVENT_B == {"rows": 503, "stocks": 323, "months": 22},
           "對帳目標 ＝ 策略線 1445 §三 的【503 筆／323 檔／22 個月】（⛔ 寫死，⛔ 不是本件的判準）")
+    check(TS.WANT_EVENT_HIT == 38 and TS.FIX_DAY == "2023-07-03",
+          "⭐ 分子的對帳目標 38（1445 §四）與代理籃的【建籃日】2023-07-03（1445 §一）⛔ 都寫死")
+    # ⭐ 對帳格：名單【逐月重算】vs【固定在窗頭】是兩個不同的數（⛔ 混用會得到一個對得上但口徑錯的答案）
+    cap2 = {"A": np.array([9.0, 9.0, 1.0]), "B": np.array([8.0, 8.0, 8.0]), "C": np.array([1.0, 1.0, 9.0]),
+            "Z": np.array([99.0, 99.0, 99.0])}
+    sg = pd.DataFrame([("A", "2020-01", 1), ("C", "2020-01", 1), ("B", "2020-02", 3), ("C", "2020-02", 3)],
+                      columns=["sid", "month", "entry_pos"])
+    P13.TOP_N, keep = 1, P13.TOP_N
+    g = TS.recon_grid(sg, TS.measure_pos(sg), cap2, {"含Z": {"A", "B", "C", "Z"}, "不含Z": {"A", "B", "C"}}, 0, 3)
+    P13.TOP_N = keep
+    got = {(r.universe, r.rule): r.hit for r in g.itertuples()}
+    check(got == {("含Z", "逐月重算"): 0, ("含Z", "固定在窗頭"): 0,
+                  ("不含Z", "逐月重算"): 2, ("不含Z", "固定在窗頭"): 1},
+          f"⭐ 四格各自不同：母體含 Z ⇒ 前 1 永遠是 Z ⇒ 0 命中；不含 Z 時【逐月重算】2 命中"
+          f"（1 月 A、2 月 C —— ⭐ 第 2 個月的龍頭換人了），⛔ 而【固定在窗頭】只有 1 命中"
+          f"（兩個月都用 0 位的名單 {{A}}，而 2 月的候選裡沒有 A）；實得 {got}")
+    check(int(g["n"].iloc[0]) == 4 and abs(float(g["share"].iloc[2]) - 0.5) < 1e-12,
+          "對帳格的分母 ＝ 事件窗訊號筆數（⛔ 不是檔數），比例 ＝ hit ÷ n")
     # ⭐ 呼叫點：光測純函式不夠（四點五／七的第三個陷阱）
     import os as _os
     src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "top50_share.py"), encoding="utf-8").read()
