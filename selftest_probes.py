@@ -1016,6 +1016,19 @@ def check_js_followups():
        "（⛔ 沒有那一節跟那一節是 0，在紙上一模一樣）",
        any("外部載入的 `.js`：0 支" in ln for ln in lines), f"實得 {lines}")
 
+    # ── ⑥b `<form action=…>` 是最便宜的線索，⛔ 比挖 js 便宜
+    #    （2026-09-20：MOPS t05st01 那次挖了三層 js 才發現那是無關的跑馬燈，
+    #     而傳統表單直接 POST 完全不必猜——這條斷言釘它一定會被印出來）
+    form_page = ('<html><body><form id="qform" method="post" '
+                'action="/mops/web/t05st01_query">…</form></body></html>')
+    flines = B.xhr_clues(form_page, base=base)
+    ck("⑥b ⭐⭐ `<form action=…>` 挖得到（⛔ 不必等 js 全部挖完才想到）",
+       any("t05st01_query" in ln for ln in flines), f"實得 {flines}")
+    no_form_lines = B.xhr_clues("<html><body>沒有表單</body></html>", base=base)
+    ck("⑥c ★ 沒有 `<form>` 時那一節印 0 種（⛔ 不是整節消失）",
+       any("`<form action=…>` 的對象：0 種" in ln for ln in no_form_lines),
+       f"實得 {no_form_lines}")
+
     # ── ⑦⑧⑨ js_followups：第三方要**列出來再跳過**、抓不到要說「沒挖」
     calls = []
     saved = B.get
