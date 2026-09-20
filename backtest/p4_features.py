@@ -227,6 +227,14 @@ def assign(X: pd.DataFrame, centers: np.ndarray, mu: np.ndarray, sd: np.ndarray)
     return d.argmin(axis=1)
 
 
+def forward_returns_p4_legacy(raw: pd.DataFrame, pos: int, holds=HOLDS) -> dict:
+    """⛔⛔ **作廢口徑**（持有 H+1 根）＝ P4 面板 `fwd_H` 的歷史算法，P4_v3 追加二十一 §二 已裁定新工作不可再用。
+
+    ⭐ 它只剩一個用途：重算**既有** P4 面板／前瞻列時要逐位元對得上（⛔ 已交數字與前瞻列不回改）。
+    ⇒ ⭐ 名字自己講出它是作廢的 ⇒ ⛔ 新程式呼叫它會在 code review 與 `selftest_p4_features` 的稽核白名單上被看見。"""
+    return forward_returns(raw, pos, holds, hold_extra=D.P4_FWD_HOLD_BARS)
+
+
 def read_panel(path: str) -> pd.DataFrame:
     """讀 `panel.csv.gz`（⭐ 唯一實作：researchp4／p6／p7 都走這支）。
 
@@ -236,12 +244,13 @@ def read_panel(path: str) -> pd.DataFrame:
     return pd.read_csv(path, dtype={"stock_id": str}, parse_dates=["measure_date"], float_precision="round_trip")
 
 
-def forward_returns(raw: pd.DataFrame, pos: int, holds=HOLDS, hold_extra: int = D.P4_FWD_HOLD_BARS) -> dict:
+def forward_returns(raw: pd.DataFrame, pos: int, holds=HOLDS, *, hold_extra: int) -> dict:
     """量測日 pos：次日開盤進、**持有 H + hold_extra 根**收盤出的毛報酬（開盤 NaN ⇒ NaN）。
 
-    ⛔⛔ `hold_extra` 的預設值 ＝ `D.P4_FWD_HOLD_BARS` ＝ 1 ⇒ `ret_120` 實際持有 **121 根**（出場根 ＝ entry+120）。
-    ⭐ 那是 P4 面板**歷史口徑**，已交數字與前瞻列都在它上面 ⇒ ⛔ 不回改（P4_v3 追加二十一）。
-    ⇒ 正式定義（sig 慣例、往後一律）是 hold_extra=0 ＝ 持有 H 根 ⇒ 只准當**敏感度**跑（`--hold-extra 0`）。"""
+    ⛔⛔ `hold_extra` **沒有預設值，而且只能用關鍵字傳**（P4_v3 追加二十一 §七，K線分析線 1200 §二 要求）：
+    本庫兩個口徑差一根 ⇒ ⭐ 呼叫的人必須自己講出持有幾根，⛔ 不准靠預設值默默拿到其中一個。
+      hold_extra=0                    ＝ 持有 H 根 ＝ **正式定義**（sig 慣例，H〈n〉＝持有 n 根）
+      hold_extra=D.P4_FWD_HOLD_BARS   ＝ 持有 H+1 根 ＝ ⛔ **作廢口徑**，只准 `forward_returns_p4_legacy` 呼叫"""
     o = raw["open"].to_numpy(float); c = raw["close"].to_numpy(float); n = len(o)
     e = pos + 1
     out = {"entry_pos": e}

@@ -53,6 +53,44 @@ def synth_centers():
     return C, np.full(13, 50.0), np.full(13, 25.0)
 
 
+def t_survivor_attribution():
+    """K線分析線 1200 §三：那批倖存者列的【臂別權重】與【月份集中度】。⭐ 分母是【臂＋那批列】，⛔ 不是主格母體。"""
+    C, mu, sd = synth_centers()
+    panel = synth_panel()
+    cl = R.classify(panel, C, mu, sd)
+    main = R._in(cl, R.JUDGE_PERIOD)
+    typ = "①營收＋回檔"
+    arm_ids = main[main["type"] == typ].index
+    others = main[main["type"] != typ].index
+    cl2 = cl.copy()
+    cl2.loc[others[:40], "rev_hi24"] = np.nan          # ⭐ 40 列變成「那批列」，而它們原本不在①型臂
+    A = R.survivor_attribution(cl2, set())
+    tot = A[A["rank"] == 0].iloc[0]
+    n_arm = len(arm_ids)
+    check(int(tot["n_miss"]) == 40 and int(tot["n_arm_before"]) == n_arm,
+          f"總表一列：那批列 40、臂 {n_arm}（實得 {int(tot['n_miss'])}／{int(tot['n_arm_before'])}）")
+    want = 40 / (n_arm + 40) * 100
+    bad = 40 / len(main) * 100
+    check(abs(tot["miss_share_of_arm_pct"] - want) < 1e-9 and abs(want - bad) > 1e-6,
+          f"⭐ 臂內權重 ＝ miss ÷（臂＋miss）＝ {want:.2f}%（⛔ 不是佔主格母體的 {bad:.2f}%）")
+    check(int(tot["n_month_pop"]) == len(main) and int(A["months_with_miss"].iloc[0]) == cl2.loc[others[:40], "measure_date"].nunique(),
+          "分母（主格母體列數）與「有那批列的月份數」都報出來（〈七十〉）")
+    check(abs(A[A["rank"] > 0]["n_miss"].sum() - 40) < 1e-9 and abs(A[A["rank"] > 0]["cum_share_of_miss_pct"].iloc[-1] - 100) < 1e-6,
+          "逐月表加總 ＝ 40、累計佔比收在 100%")
+    # ⭐ 逐月那一欄要獨立驗（⛔ 總表那一列是另一段算的：2026-09-20 的突變 M15 就是靠這條才轉紅）
+    r1 = A[A["rank"] == 1].iloc[0]
+    w1 = r1["n_miss"] / (r1["n_arm_before"] + r1["n_miss"]) * 100
+    b1 = r1["n_miss"] / len(main) * 100
+    check(abs(r1["miss_share_of_arm_pct"] - w1) < 1e-9 and abs(w1 - b1) > 1e-6,
+          f"⭐ 逐月的臂內佔比也是 ÷（該月臂＋該月 miss）＝ {w1:.2f}%（⛔ 不是 ÷ 主格母體的 {b1:.4f}%）")
+    # ⭐ bench 一併重算：那批列佔比夠大時，基準會被拉下來 ⇒ 下界【比 bench 不動那版不極端】
+    b_fix = R.survivor_bound(cl2, set(), {"x": -1.0})
+    b_upd = R.survivor_bound_bench_updated(cl2, set(), -1.0)
+    v_fix = float(b_fix[b_fix["scenario"].str.startswith("x")]["excess_pp"].iloc[0])
+    check(b_upd["excess_pp"] > v_fix,
+          f"⭐ bench 一併重算（{b_upd['excess_pp']:+.2f}pp）比 bench 不動（{v_fix:+.2f}pp）**不極端** ⇒ 正式那版是更鬆的合法下界")
+
+
 def t_recompute_fwd():
     """追加二十一的敏感度閘門的前提：`recompute_fwd` 走的價格路徑要與【面板建構那條】逐位元相同。"""
     from backtest import data as D
@@ -62,7 +100,7 @@ def t_recompute_fwd():
     for sid, mk in (("2330", "twse"), ("1101", "twse")):
         raw = P.stock_raw(sid, mk, cal)                       # ⭐ 面板建構用的那一支
         for q in pos:
-            fr = P.forward_returns(raw, q)
+            fr = P.forward_returns_p4_legacy(raw, q)
             rows.append({"stock_id": sid, "market": mk, "measure_date": cal[q], **{f"fwd_{H}": fr[f"ret_{H}"] for H in R.HOLDS}})
     panel = pd.DataFrame(rows)
     back = R.recompute_fwd(panel, cal, D.P4_FWD_HOLD_BARS, procs=2, log=lambda *_: None)
@@ -188,6 +226,7 @@ if __name__ == "__main__":
     uni = pd.DataFrame({"stock_id": ["S000", "S001"], "name": ["甲-KY", "乙"]})
     sm = R.structural_missing(cl5, uni)
     check(list(sm["stock_id"]) == ["S000"] and sm["tag"].iloc[0] == "KY", "全缺的 S000 是結構性（KY）、缺一半的 S001 不是")
+    print("[researchp4] 倖存者歸屬（K線分析線 1200 §三）"); t_survivor_attribution()
     print("[researchp4] recompute_fwd（追加二十一的閘門前提）"); t_recompute_fwd()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)

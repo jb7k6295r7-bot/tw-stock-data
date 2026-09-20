@@ -84,7 +84,7 @@ def panel_worker(args):
         r = raw.iloc[pos]
         if not bool(r["traded"]):
             continue
-        fr = P.forward_returns(raw, pos)
+        fr = P.forward_returns_p4_legacy(raw, pos)      # ⛔ 作廢口徑（持有 H+1 根）：既有面板與前瞻列都在它上面 ⇒ 不回改（追加二十一 §二）
         liq_ok = bool(pd.notna(r["amt20"]) and r["amt20"] >= P.LIQ_MIN); bars = int(r["bars"]); bars_ok = bars >= P.MIN_BARS
         inst_ok = bool(pd.notna(r["fore20"]) and pd.notna(r["trust20"]))   # K線分析 2035 §一 (c)：法人欄近 20 日非缺值 < 20 ⇒ NaN ⇒ 該股-月整個不進主判定（放棄組⑩），⛔ 不可再被補 50
         row = {"measure_date": d, "stock_id": sid, "market": market, "amt20": float(r["amt20"]) if pd.notna(r["amt20"]) else np.nan,
@@ -127,7 +127,7 @@ def _fw_one(args):
         pos = _FW["pos"].get(d)
         if pos is None:
             continue
-        fr = P.forward_returns(mini, pos, P.HOLDS, _FW["hold_extra"])
+        fr = P.forward_returns(mini, pos, P.HOLDS, hold_extra=_FW["hold_extra"])
         out.append({"stock_id": sid, "measure_date": d, **{f"fwd_{H}": fr[f"ret_{H}"] for H in P.HOLDS}})
     return out
 
@@ -243,6 +243,53 @@ def cell_stats(rows: pd.DataFrame, H: int) -> dict:
 
 
 SURVIVOR_BOUNDS = {"下界＝全部代入 −100%（下市歸零，最壞情況）": -1.0, "下界＝全部代入 0%（原價出場）": 0.0}
+
+
+def survivor_attribution(cl: pd.DataFrame, tdr: set, H: int = JUDGE_H, typ: str = "①營收＋回檔") -> pd.DataFrame:
+    """⭐ K線分析線 1200 §三 要的歸屬：那批倖存者列**落在哪幾個月**、在逐月配對的**哪一邊**。
+
+    它問的是一個算術問題：1.19% 的列怎麼把配對差移動 19.4pp（看起來像 16 倍槓桿）。
+    ⇒ ⭐ 答案在【分母換了】：那批列佔**主格母體** 1.19%，但代入之後它們是進到**①型那一臂**，
+      而那一臂只有 2,6xx 列 ⇒ ⭐ 在臂裡的權重是十幾個百分點，⛔ 不是 1.19%。
+    ⇒ ⚠ 而第二件同樣重要：`survivor_bound` 代入時**只換那批列的 fwd**，⛔ 沒有重算當月基準 `bench_H`
+      —— 而那批列本來就在基準母體裡 ⇒ ⭐ 真正一致的最壞情況要連基準一起拉下來
+      ⇒ 本函式把兩種都算（`bench_fixed` / `bench_updated`），⭐ 而 bench 不動的那一版**更極端**
+      ⇒ ⛔ 所以它仍然是合法下界（只是鬆），⚠ 但不可以拿它講「量級」。"""
+    main = _in(cl, JUDGE_PERIOD)
+    miss = main[main["rev_hi24"].isna() & ~main["stock_id"].isin(tdr)]
+    arm = main[main["type"] == typ]
+    rows = []
+    for d, g in miss.groupby("measure_date"):
+        n_arm = int((arm["measure_date"] == d).sum())
+        rows.append({"measure_date": d, "n_miss": int(len(g)), "n_arm_before": n_arm,
+                     "miss_share_of_arm_pct": len(g) / (n_arm + len(g)) * 100 if (n_arm + len(g)) else np.nan,
+                     "n_month_pop": int((main["measure_date"] == d).sum()),
+                     "arm_month_reached_5": bool(n_arm + len(g) >= MIN_PER_MONTH), "arm_month_before_5": bool(n_arm >= MIN_PER_MONTH)})
+    T = pd.DataFrame(rows).sort_values("n_miss", ascending=False).reset_index(drop=True)
+    T.insert(0, "rank", T.index + 1)
+    T["cum_share_of_miss_pct"] = T["n_miss"].cumsum() / max(1, len(miss)) * 100
+    # ⭐ 總表一列：臂別權重與月份集中度（⛔ 分母逐個寫出來，〈七十〉）
+    tot = {"rank": 0, "measure_date": pd.NaT, "n_miss": int(len(miss)), "n_arm_before": int(len(arm)),
+           "miss_share_of_arm_pct": len(miss) / (len(arm) + len(miss)) * 100 if (len(arm) + len(miss)) else np.nan,
+           "n_month_pop": int(len(main)), "arm_month_reached_5": True, "arm_month_before_5": True,
+           "cum_share_of_miss_pct": 100.0}
+    T = pd.concat([pd.DataFrame([tot]), T], ignore_index=True)
+    T["months_with_miss"] = int(miss["measure_date"].nunique())
+    T["months_in_arm"] = int(arm["measure_date"].nunique())
+    return T
+
+
+def survivor_bound_bench_updated(cl: pd.DataFrame, tdr: set, v: float, H: int = JUDGE_H, typ: str = "①營收＋回檔") -> dict:
+    """⭐ 一致版最壞情況：那批列代入 `v` 之後，**當月基準也跟著重算**（它們本來就在基準母體裡）。
+    ⛔ 不是正式值（正式值＝`survivor_bound`，它 bench 不動、更極端 ⇒ 是更鬆的下界），本函式只回答「鬆多少」。"""
+    main = _in(cl, JUDGE_PERIOD).copy()
+    is_miss = main["rev_hi24"].isna() & ~main["stock_id"].isin(tdr)
+    main.loc[is_miss, f"fwd_{H}"] = float(v)
+    main.loc[is_miss, "type"] = typ
+    b = main.groupby("measure_date")[f"fwd_{H}"].mean()          # ⭐ 基準＝當月合格列等權（與 classify 同定義）
+    main[f"bench_{H}"] = main["measure_date"].map(b)
+    main[f"exc_{H}"] = main[f"fwd_{H}"] - main[f"bench_{H}"]
+    return cell_stats(main[main["type"] == typ], H)
 
 
 def survivor_bound(cl: pd.DataFrame, tdr: set, subs: dict[str, float] | None = None, H: int = JUDGE_H, typ: str = "①營收＋回檔") -> pd.DataFrame:
@@ -540,6 +587,8 @@ def main():
     ap.add_argument("--no-mp-check", action="store_true", help="⛔ 只給自測用：跳過 §4-1 min_periods 常設斷言")
     ap.add_argument("--mp-check-report", action="store_true", help="§4-1 斷言不成立時只寫表、逐欄統計並印前 50 列，不中止（數字要標「斷言不成立下產出」）")
     ap.add_argument("--rev-incl-current", action="store_true", help="⛔ 只給對帳敏感度：rev_hi24 視窗改成含當期的 24 期（策略線讀法）；正式定義不動")
+    ap.add_argument("--survivor-attr", action="store_true",
+                    help="⛔ 只算 K線分析線 1200 §三 的歸屬（那批倖存者列的月份與臂別權重）⇒ 寫 survivor_attr.csv，⛔ 不覆蓋正式輸出。需要 --panel。")
     ap.add_argument("--hold-extra-sens", type=int, default=None, metavar="K",
                     help="⛔ 只給敏感度（P4_v3 追加二十一）：把 fwd_H 改成【持有 H+K 根】重算四型，⛔ 不覆蓋正式輸出。"
                          "正式口徑 K＝D.P4_FWD_HOLD_BARS＝1（持有 121 根）；sig 慣例 K=0（持有 H 根）。需要 --panel。")
@@ -581,6 +630,19 @@ def main():
     panel, n_innov = apply_innovation_rule(panel, uni)
     log(f"創新板量測日 < {INNOV_CUTOFF} 排除：{n_innov} 股-月" + ("（本窗內觸發 0 次）" if n_innov == 0 else ""))
     C, mu, sd = load_centers(a.centers)
+    if a.survivor_attr:
+        cl_ = classify(panel, C, mu, sd)
+        tdr_ = P.load_tdr_codes()
+        A = survivor_attribution(cl_, tdr_)
+        write_csv(A, os.path.join(a.out, "survivor_attr.csv"), stamp, commit)
+        log(A.head(8).to_string(index=False))
+        for tag, v in SURVIVOR_BOUNDS.items():
+            b_fixed = survivor_bound(cl_, tdr_, {tag: v})
+            b_upd = survivor_bound_bench_updated(cl_, tdr_, v)
+            r = b_fixed[b_fixed["scenario"].str.startswith(tag)].iloc[0]
+            log(f"[{tag}] bench 不動（正式）{r['excess_pp']:+.2f}pp（CI {r['ci_lo_pp']:+.2f}～{r['ci_hi_pp']:+.2f}、{int(r['n_months'])} 月）"
+                f" vs bench 一併重算 {b_upd['excess_pp']:+.2f}pp（CI {b_upd['ci_lo_pp']:+.2f}～{b_upd['ci_hi_pp']:+.2f}、{int(b_upd['n_months'])} 月）")
+        return 0
     if a.hold_extra_sens is not None:
         # ⭐⭐ 敏感度（P4_v3 追加二十一）：只換【持有根數】，其餘一字不動；⛔ 不寫任何正式輸出檔
         ref = recompute_fwd(panel, cal, D.P4_FWD_HOLD_BARS, a.procs, log)      # 先驗證重算路徑：要逐位元重現面板

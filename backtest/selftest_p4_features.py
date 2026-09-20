@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 
 import numpy as np
@@ -152,7 +153,7 @@ def t_real_stock():
     check(0 < last["turn20"] < 100, f"2330 turn20 {last['turn20']:.3f}（每日成交張數/千張股本）")
     check(np.isfinite(last["fore20"]) and last["shares_ok"] == 1, f"2330 fore20 {last['fore20']:+.3f}、shares_ok")
     md = P.measurement_days(cal, "2024-01-01", "2024-12-31")
-    fr = P.forward_returns(raw, int(md[0]))
+    fr = P.forward_returns_p4_legacy(raw, int(md[0]))
     check(fr["entry_pos"] == md[0] + 1 and np.isfinite(fr["ret_120"]), f"2024-01 量測日次日進、H120 {fr['ret_120']:+.3f}")
     # 前 120 根 ret_120 必為 NaN（只看過去）
     check(raw["ret_120"].iloc[:120].isna().all(), "ret_120 前 120 根 NaN")
@@ -167,10 +168,15 @@ def t_fwd_hold_bars():
     raw = pd.DataFrame({"open": o, "close": c})
     pos, H = 5, 10
     e = pos + 1
-    d_def = P.forward_returns(raw, pos, holds=(H,))                 # ⛔ 不傳 hold_extra ⇒ 走預設值（Actions 上唯一會走的那條）
+    try:                                                            # ⭐ 追加二十一 §七：⛔ 不准靠預設值拿到其中一個口徑
+        P.forward_returns(raw, pos, holds=(H,)); ok_req = False
+    except TypeError:
+        ok_req = True
+    check(ok_req, "⛔ 不傳 hold_extra ⇒ TypeError（口徑必須由呼叫端講出來，⛔ 沒有預設值）")
+    d_def = P.forward_returns_p4_legacy(raw, pos, holds=(H,))       # ⛔ 作廢口徑：名字自己講出來
     check(d_def["entry_pos"] == e, f"進場 ＝ 量測日次一根（實得 {d_def['entry_pos']}，要 {e}）")
     check(abs(d_def[f"ret_{H}"] - (c.iloc[e + H] / o.iloc[e] - 1)) < 1e-15,
-          f"⭐ 預設值（hold_extra＝D.P4_FWD_HOLD_BARS＝{D.P4_FWD_HOLD_BARS}）⇒ 出場根 ＝ entry+{H} ＝ 持有 {H + 1} 根")
+          f"⭐ forward_returns_p4_legacy（hold_extra＝{D.P4_FWD_HOLD_BARS}）⇒ 出場根 ＝ entry+{H} ＝ 持有 {H + 1} 根")
     d0 = P.forward_returns(raw, pos, holds=(H,), hold_extra=0)
     check(abs(d0[f"ret_{H}"] - (c.iloc[e + H - 1] / o.iloc[e] - 1)) < 1e-15,
           f"hold_extra=0 ⇒ 出場根 ＝ entry+{H - 1} ＝ 持有 {H} 根（sig 慣例）")
@@ -178,11 +184,66 @@ def t_fwd_hold_bars():
           f"⭐ 兩個口徑在同一列上【不同】（{d0[f'ret_{H}'] * 100:+.3f}% vs {d_def[f'ret_{H}'] * 100:+.3f}%）⇒ ⛔ 不可以並列比較")
     # ⭐ 分辨點：剛好差一根的邊界 —— 持有 H 根到得了、持有 H+1 根到不了
     pos_edge = n - 1 - H
-    ed, e0 = P.forward_returns(raw, pos_edge, holds=(H,)), P.forward_returns(raw, pos_edge, holds=(H,), hold_extra=0)
+    ed, e0 = P.forward_returns_p4_legacy(raw, pos_edge, holds=(H,)), P.forward_returns(raw, pos_edge, holds=(H,), hold_extra=0)
     check(np.isnan(ed[f"ret_{H}"]) and np.isfinite(e0[f"ret_{H}"]),
           "⭐ 序列最後一根那個邊界：持有 H 根算得出、持有 H+1 根超出序列 ⇒ NaN（⛔ 不是拿最後一根代）")
-    check(np.isnan(P.forward_returns(pd.DataFrame({"open": o.copy().mask(o.index == cal[e]), "close": c}), pos, holds=(H,))[f"ret_{H}"]),
+    check(np.isnan(P.forward_returns_p4_legacy(pd.DataFrame({"open": o.copy().mask(o.index == cal[e]), "close": c}), pos, holds=(H,))[f"ret_{H}"]),
           "進場根開盤 NaN ⇒ NaN（⛔ 不 ffill 開盤）")
+
+
+# ⭐⭐ 稽核白名單（P4_v3 追加二十一 §七；K線分析線 1200 §二 要求的全庫稽核）
+# 鍵 ＝ 檔名，值 ＝ {該檔裡「持有期位移算式」出現的行數: 口徑}。口徑只有三種：
+#   "持有n根"      出場根 ＝ 進場根 + n − 1（⭐ 正式定義）
+#   "作廢H+1根"    出場根 ＝ 進場根 + n（⛔ 只准 forward_returns_p4_legacy）
+#   "收盤位移"      close[t] → close[t+n]，沒有開盤進場 ⇒ ⛔ 不是進場出場口徑，不可與上面兩種並列
+# ⚠ 這份白名單的用途不是好看：⛔ 新增一處位移算式而沒登記 ⇒ 這條自測紅 ⇒ ⭐ 它會自己舉手
+#   （K線分析線 1200 §二：「沒有撞到的那些格子，不會自己舉手」）
+HOLD_OFFSET_SITES = {
+    "data.py": {"exit_pos": "持有n根（⭐ 唯一實作）"},
+    "p4_features.py": {"forward_returns": "由呼叫端指定（⛔ 無預設值）", "forward_returns_p4_legacy": "作廢H+1根"},
+    "evaluate.py": {"hold_exit": "持有n根", "level_stop_exit": "持有n根", "quick_returns": "持有n根（idx+HOLD ＝ entry+HOLD−1）"},
+    "research5.py": {"hold_exit_ndays": "持有n根"},
+    "research7.py": {"_hold": "持有n根", "_baseline": "持有n根"},
+    "research8.py": {"exit_pos欄": "持有n根"},
+    "research11.py": {"fixed_exit": "持有n根（⭐ 走 exit_pos）", "向量化基準": "持有n根（c[ks+H]/o[ks+1]）"},
+    "research15.py": {"fixed_exit呼叫": "持有n根", "div窗": "持有n根（k+1…k+H）"},
+    "research16.py": {"P1": "持有n根", "P2": "收盤位移（close[k]→close[k+H]，出場根同 P1）", "P3_j": "持有n根（延遲進場）"},
+    "research17.py": {"ret": "收盤位移"},
+    "research18.py": {"X0": "持有n根", "X2": "事件後再 HOLD_AFTER 根（⛔ 另一種語意）"},
+    "research19.py": {"stop_exit": "持有n根"},
+    "researchm1.py": {"fwd_returns": "收盤位移"},
+    "researchp4.py": {"recompute_fwd": "由呼叫端指定", "面板建構": "作廢H+1根（⛔ 既有面板與前瞻列不回改）"},
+    "researchp7.py": {"build_sig_gate_b": "持有n根（HOLD_BARS_N=120 ⇒ entry+119）"},
+    "forward_and.py": {"kx": "持有n根（⚠ 軸是【有效K棒 idx】不是日曆位置）"},
+    "exright_gap.py": {"exposure": "⚠ 窗 (entry, entry+hold] ⇒ 比持有期【多含一根】——追加二十一 §七 已記，⛔ 未修"},
+}
+# ⛔ 這些 pattern 是「會製造出場位置」的裸算式形狀；⚠ 白名單比對的是【檔案是否登記過】，
+#   ⛔ 不是逐行比對（行號會漂）——逐行會每天紅，然後被學會忽略（CLAUDE.md 四點五那條的教訓）。
+HOLD_OFFSET_PAT = re.compile(r"\+\s*(H\b|HOLD\w*|hold\w*|n_days|days)\b|exit_pos\(|shift\(-")
+# ⛔ 只呼叫別人的出場算式、自己不做位移的檔案（口徑是**繼承**的）⇒ 另一張表，⛔ 不與上面那張混
+HOLD_OFFSET_CALLERS = {"research13.py": "R.fixed_exit", "research21.py": "R.fixed_exit", "research34.py": "E.hold_exit"}
+
+
+def t_hold_offset_audit():
+    """全庫稽核（追加二十一 §七）：每一個出現持有期位移算式的檔案都要在白名單裡，⛔ 新增一處沒登記就紅。"""
+    here = os.path.dirname(os.path.abspath(__file__))
+    found = set()
+    for fn in sorted(f for f in os.listdir(here) if f.endswith(".py") and not f.startswith("selftest")):
+        src = open(os.path.join(here, fn), encoding="utf-8").read()
+        if any(HOLD_OFFSET_PAT.search(ln) and not ln.lstrip().startswith("#") for ln in src.splitlines()):
+            found.add(fn)
+    missing = sorted(found - set(HOLD_OFFSET_SITES))
+    check(not missing, f"⭐ 所有出現持有期位移算式的檔案都在稽核白名單裡（未登記：{missing or '無'}）"
+                       "⇒ ⛔ 新增一處就要在 HOLD_OFFSET_SITES 裡寫明它是哪一種口徑")
+    stale = sorted(set(HOLD_OFFSET_SITES) - found)
+    check(not stale, f"⚠ 白名單裡沒有實際命中的檔案（已改寫或改名 ⇒ 回頭修白名單）：{stale or '無'}")
+    bad_caller = [fn for fn, fx in HOLD_OFFSET_CALLERS.items()
+                  if fx not in open(os.path.join(here, fn), encoding="utf-8").read()]
+    check(not bad_caller, f"⭐ 繼承口徑的那三支仍然是【呼叫】共用出場算式（⛔ 不是自己寫一份）：{bad_caller or '全部成立'}")
+    n_void = sum(1 for v in HOLD_OFFSET_SITES.values() for x in v.values() if x.startswith("作廢"))
+    check(n_void == 2, f"⛔ 作廢口徑（持有 H+1 根）只剩兩個登記處（forward_returns_p4_legacy 與面板建構），實得 {n_void}")
+    check("多含一根" in HOLD_OFFSET_SITES["exright_gap.py"]["exposure"],
+          "⚠ exright_gap.exposure 的窗多含一根這件事留在白名單上（⛔ 修掉之前不准把這一行刪掉）")
 
 
 def t_gate_min_periods():
@@ -230,6 +291,7 @@ if __name__ == "__main__":
     print("[p4_features] 橫截面＋歸型"); t_cross_section_assign()
     print("[p4_features] 真實一檔"); t_real_stock()
     print("[p4_features] fwd 持有根數（追加二十一）"); t_fwd_hold_bars()
+    print("[全庫] 持有期位移算式稽核（追加二十一 §七）"); t_hold_offset_audit()
     print("[p4_features] 閘門與 min_periods"); t_gate_min_periods()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
