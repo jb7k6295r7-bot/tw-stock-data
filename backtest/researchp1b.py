@@ -112,8 +112,11 @@ def read_table(path: str) -> pd.DataFrame:
     ⚠ pandas 的預設缺值清單含字串 **"null"** ⇒ rule 欄的 `null` 會被讀成 **NaN**，
       而那正是本件的兩個 rule 之一 ⇒ ⛔ 整組 null 的格會靜靜對不上（⭐ 自測有一條專門擋它）。
     ⚠ 同理 d 欄的 `inf` 會被讀成 float inf ⇒ 標籤一律當字串讀。
+    ⛔⛔ 而 `float_precision="round_trip"` 也是必要的（K線分析線 1915 §五 逐字：
+      「往後凡要做【逐位元對帳】一律加 float_precision='round_trip'」）：
+      ⚠ 預設的解析器在這 44 列裡有 **29 個格差 1 ulp** ⇒ 閘門二會假警報。
     """
-    return pd.read_csv(path, comment="#", keep_default_na=False,
+    return pd.read_csv(path, comment="#", keep_default_na=False, float_precision="round_trip",
                        dtype={"N": str, "d": str, "rule": str, "reading": str})
 
 
@@ -132,6 +135,18 @@ def same_as_file(got: pd.DataFrame, path: str) -> tuple[bool, list]:
             if repr(float(a[c])) != repr(float(b[c])):
                 bad.append(f"第 {i} 列 {c}：{a[c]!r} vs {b[c]!r}")
     return not bad, bad
+
+
+def slot_rows(port: pd.DataFrame) -> pd.DataFrame:
+    """必報⑤⑥ 的 28 列（2 個集合 × 7 個 N × 2 個 rule、d=∞）。
+
+    ⛔ 同一個坑：`portfolio.csv` 的 rule 欄有 `null`、d 欄有 `inf`
+      ⇒ 用 pandas 預設讀會變成 NaN 與 float inf ⇒ **篩出來是空的，而且不報錯**
+      （⭐ 本件第一版就這樣印出一張空表，是看輸出才抓到的 ⇒ 自測補了一條）。
+    """
+    q = port[(port["d"] == "inf") & (port["rule"].isin(RULES))].copy()
+    q["N"] = q["N"].astype(int)
+    return q[q["N"].isin(JUDGE_NS)].sort_values(["set", "N", "rule"]).reset_index(drop=True)
 
 
 def judged(tab: pd.DataFrame, H: int, rule: str) -> pd.DataFrame:
@@ -205,8 +220,12 @@ def main():
     for s, t in tabs.items():
         t.to_csv(os.path.join(a.out, f"s_halfwidth_seed{s}.csv"), index=False)
 
-    port = pd.read_csv(os.path.join(a.src, "portfolio.csv"))
-    port["rule"] = port["rule"].fillna("null")
+    port = pd.read_csv(os.path.join(a.src, "portfolio.csv"), keep_default_na=False,
+                       dtype={"set": str, "rule": str, "d": str})
+    slots = slot_rows(port)
+    want_slots = 2 * len(JUDGE_NS) * len(RULES)
+    if len(slots) != want_slots:                 # ⭐ 驗終點：⛔ 不可以印一張空表當「必報⑤⑥ 交了」
+        raise SystemExit(f"⛔ 必報⑤⑥ 篩出 {len(slots)} 列、要 {want_slots} 列 ⇒ 停跑（多半是 null／inf 被讀成 NaN）")
 
     L = [f"# PREREGP1b：S 集合能不能讓尺變細 —— 結果",
          "",
@@ -283,12 +302,13 @@ def main():
     for k, f in fits.items():
         L.append(f"| {k} | {f['n_cells']} | {f['slope']:.3f} | {f['intercept']:+.3f} | {f['r2']:.3f} |")
     fit = fits["AND＋S"]
+    need_n = float("inf")
     L += [""]
     if not (np.isfinite(fit["slope"]) and fit["slope"] > 0):
         L += [f"⇒ ⚠ 合併那條的斜率 {fit['slope']:.3f} 不是正的 ⇒ ⛔ 外推無意義（⭐ 那本身就是「加樣本救不了」的證據）"]
     elif COST_PP > fit["intercept"]:
-        need = (fit["slope"] / (COST_PP - fit["intercept"])) ** 2
-        L += [f"⇒ ⭐ 依合併那條外推：要把半寬壓到 {COST_PP}pp，每格需要 **n ≈ {need:,.0f}**（⭐ 停排條件要用的就是這個數）"]
+        need_n = (fit["slope"] / (COST_PP - fit["intercept"])) ** 2
+        L += [f"⇒ ⭐ 依合併那條外推：要把半寬壓到 {COST_PP}pp，每格需要 **n ≈ {need_n:,.0f}**（⭐ 停排條件要用的就是這個數）"]
     else:
         L += [f"⇒ ⛔ 截距（{fit['intercept']:+.3f}pp）已經 ≥ {COST_PP}pp ⇒ **加樣本永遠到不了**（外推無解）"]
     L += ["", "⚠ §五④：半寬同時受【樣本數】與【個股報酬離散度】影響 ⇒ ⭐ H3 只能量到兩者的合成，⛔ 分不開。", ""]
@@ -296,14 +316,28 @@ def main():
     # ── ⑤⑥ ──
     L += ["## 六、必報⑤⑥ 槽位使用率與放棄組（⭐ 沿用 PREREGP1 那一趟，⛔ 本件不重跑模擬）", "",
           "| 集合 | N | rule | 槽位使用率 | m（進場次數） | deferred | expired |", "|---|---:|---|---:|---:|---:|---:|"]
-    for st in ("AND", "S"):
-        for N in JUDGE_NS:
-            for rule in RULES:
-                q = port[(port["set"] == st) & (port["N"] == N) & (port["rule"] == rule) & (port["d"] == "inf")]
-                if len(q):
-                    r = q.iloc[0]
-                    L.append(f"| {st} | {N} | {rule} | {r['slot'] * 100:.1f}% | {r['m']:.0f} | {r['deferred']:.0f} | {r['expired']:.0f} |")
-    L += ["", "## 七、⛔ 限制（逐字沿用登錄 §五）", "",
+    for r in slots.itertuples():
+        L.append(f"| {r.set} | {r.N} | {r.rule} | {r.slot * 100:.1f}% | {r.m:.0f} | {r.deferred:.0f} | {r.expired:.0f} |")
+    # ── 停排條件（登錄 §三 逐字，⛔ 本線只是把數字代進去） ──
+    s_sig = os.path.join(HERE, "results11", "signals.csv.gz")
+    pool_n = int(len(pd.read_csv(s_sig, usecols=[0]))) if os.path.exists(s_sig) else -1
+    max_n = int(max((verdict[(PERM_SEEDS[0], H, r)]["tab"]["n_s"].max() for H in HS for r in RULES), default=0))
+    L += ["", "## 六之二、⛔⛔ 停排條件（登錄 §三 逐字）", "",
+          "> H1 否證 或（H1 成立而 H2 否證且 H3 的斜率顯示外推到 0.585% 需要 n > 母體大小）",
+          "> ⇒ ⭐【本題結案，標「本方法論範圍內測不到」，停排】",
+          "> ⛔ 不得再換第三個訊號集重試 —— 那是挑格子",
+          "> ⛔ 也不得改用「更寬鬆的 CI」或「更少的重抽次數」把半寬做小 —— 那不是尺變細，那是把刻度擦掉", "",
+          "```",
+          f"H1 {H1}　H2 {H2}",
+          f"外推需要　每格 n ≈ {need_n:,.0f}" + ("（⛔ 外推無解 ⇒ 加樣本永遠到不了）" if not np.isfinite(need_n) else ""),
+          f"母體大小　S 訊號總筆數 {pool_n:,}（`results11/signals.csv.gz`）；",
+          f"　　　　　本件判定格裡最大的一格 n ＝ {max_n:,}（S、兩組合計）",
+          ("⇒ ⛔ 需要的 n【大於】母體大小 ⇒ 三個條件同時成立 ⇒ **停排條件觸發**"
+           if (H1 == "通過" and H2 == "沒通過" and need_n > pool_n)
+           else "⇒ ⚠ 三個條件【沒有同時成立】⇒ 停排條件不觸發"),
+          "```", "",
+          "⛔ 而【結案與標記】的用語是判定線的格子 ⇒ ⭐ 本線只把條件與數字擺出來，⛔ 不自行宣告結案。", "",
+          "## 七、⛔ 限制（逐字沿用登錄 §五）", "",
           "- ⛔ ① 本件**不回答** P1 的原問題（上限的成本是多少）。",
           "- ⛔ ② AND 與 S 巢狀（AND ＝ S ∩ 面板 rev_hi24）⇒ 半寬**不獨立** ⇒ 只可配對比較，⛔ 不可做兩組檢定。",
           "- ⛔ ③ 期間沿用 P1 ⇒ 不含 2008／2000。",

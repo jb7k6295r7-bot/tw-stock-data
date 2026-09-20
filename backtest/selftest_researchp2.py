@@ -902,6 +902,28 @@ def t_p1b():
         got = B.halfwidth(*B.two_groups(real, 60), B.PERM_SEEDS[0])
         check(all(repr(float(got[c])) == repr(float(w[c])) for c in ("n_in", "n_blk", "diff_pp", "hw95_pp", "band_lo", "band_hi")),
               f"⭐⭐ 真資料一格逐位元重現釘死的 AND（N=10 d=∞ null H60）：hw {got['hw95_pp']!r} vs {float(w['hw95_pp'])!r}")
+    # ⭐ 必報⑤⑥ 的 28 列：⛔ 第一版印出一張【空表】而程式回 0（null／inf 被讀成 NaN）
+    port = pd.DataFrame({"set": ["AND"] * 4 + ["S"] * 2, "N": [3, 3, 2, 8, 8, 8],
+                         "d": ["inf", "inf", "inf", "1", "inf", "inf"],
+                         "rule": ["null", "relvol", "null", "null", "null", "relvol"],
+                         "slot": [0.9] * 6, "m": [1] * 6, "deferred": [0] * 6, "expired": [0] * 6})
+    q = B.slot_rows(port)
+    check(len(q) == 4 and set(q["N"]) == {3, 8} and set(q["d"]) == {"inf"},
+          f"必報⑤⑥：只收 d=∞ ∧ N 在判定格裡的列（⛔ N=2 與 d=1 都要剔掉；實得 {len(q)} 列 N={sorted(set(q['N']))}）")
+    real_port = _os.path.join(here, "resultsp1", "portfolio.csv")
+    if _os.path.exists(real_port):
+        rp = pd.read_csv(real_port, keep_default_na=False, dtype={"set": str, "rule": str, "d": str})
+        check(len(B.slot_rows(rp)) == 2 * len(B.JUDGE_NS) * len(B.RULES),
+              f"⭐ 真資料：篩出來要剛好 28 列（⛔ 空表也會「成功」；實得 {len(B.slot_rows(rp))}）")
+    # ⛔⛔ 逐位元對帳一律 float_precision='round_trip'（K線分析線 1915 §五）
+    if _os.path.exists(B.AND_TABLE):
+        txt = [l for l in open(B.AND_TABLE, encoding="utf-8").read().splitlines() if not l.startswith("#")]
+        t = B.read_table(B.AND_TABLE)
+        bad = [i for i in range(len(t))
+               if repr(float(t.iloc[i]["band_hi"])) != txt[i + 1].split(",")[9]]
+        check(not bad,
+              f"⛔⛔ 逐位元對帳一律 float_precision='round_trip'：預設解析器在這 44 列有 29 格差 1 ulp"
+              f"（實得 {len(bad)} 格對不上檔案裡的字面）")
     # ⭐ 呼叫點（⭐ 測完純函式再掃一次原始碼）
     src = open(_os.path.join(here, "researchp1b.py"), encoding="utf-8").read()
     body = src.split("def main(")[1]
@@ -910,6 +932,8 @@ def t_p1b():
           "⭐ 兩道閘門都在 main 裡，而且【沒過就 raise SystemExit】（⛔ 不是印個警告繼續跑）")
     check("table(\"AND\", PERM_SEEDS[0]" in body and "{s: table(\"S\", s, a.src) for s in PERM_SEEDS}" in body,
           "⭐ AND 用種子(甲)重算、S 用【兩個種子各一次】（⛔ 不可只跑一個，〈一百〇八〉）")
+    check("if len(slots) != want_slots:" in body and "keep_default_na=False" in body,
+          "⭐ main 裡有【必報⑤⑥ 不是 28 列就停】那道斷言（⛔ 驗終點：空表也會「成功」）")
 
 
 def t_top50_share():
