@@ -36,7 +36,14 @@ FEATURES = PCT_FEATURES + BOOL_FEATURES
 FILL = 50.0
 LIQ_MIN = 50_000_000     # 近 20 日均額 ≥ 5,000 萬（v2 §三）
 HOLDS = (20, 60, 120)
-REV_WIN, REV_MIN_VALID, REV_TOL = 24, 18, 0.9999
+REV_WIN, REV_MIN_VALID, REV_TOL = 24, 18, 0.9999      # ⚠ REV_TOL 是舊的【乘數】，⛔ 已不用在判準上（見 REV_TOL_FRAC），留著只為了說明沿革
+# ⭐⭐〈八十六〉（K線分析線 0215 §四）：容差要先問【被容差的量會不會變號】。
+#   舊寫法 threshold = m * 0.9999 是**乘法容差**：m > 0 時門檻下移＝放寬，⛔ 而 m < 0 時門檻**上移**＝收緊
+#   （−100 × 0.9999 ＝ −99.99）⇒ 同一行程式在正負兩側做相反的事，而且**不會報錯**。
+#   ⇒ 對稱寫法 threshold = m − |m| × REV_TOL_FRAC：兩側都是放寬，而且保留「容差隨量級縮放」的原意。
+#   ⚠ 常數要換成【容差比例】⛔ 不是乘數（策略線 0330 抓到的：直接代 0.9999 會讓門檻趨近 0）⇒ 1 − 0.9999 ＝ 1e-4。
+#   ⚠ 加法容差（m − 0.01）不採：營收跨好幾個數量級，固定絕對值在大公司形同沒有。
+REV_TOL_FRAC = 1e-4
 TDR_INDUSTRY_CODE = "91"            # 存託憑證（官方證券種類欄＝data/meta/industry.csv 的 industry_code，資料庫線 1930）
 MIN_BARS = 120          # v3 補件 §3-1（策略線 09-15 18:27、K線分析 1855 合併）：量測日有價收盤根數 ≥ 120 才進母體；⛔ 120 從當期特徵集最長回看窗推出（ret_120／dist_hi120／dist_lo120／MA120），新增回看窗 > 120 的特徵時本常數要一起改
 LOOKBACKS = {"ma20": 20, "ma60": 60, "ma120": 120, "ret_120": 120, "ret_20": 20, "hi_lo_120": 120, "vol60": 60, "amt20": 20, "amt120": 120, "vol20": 20, "inst20": 20}
@@ -131,7 +138,8 @@ def rev_hi24_flags(rev: pd.DataFrame, cal: pd.DatetimeIndex, pub_day: int = 10, 
             valid = hist[~np.isnan(hist)]
             if len(valid) < REV_MIN_VALID:
                 continue                                      # ③ 來源覆蓋不完整 ⇒ NaN、標不明
-            col[k] = 100.0 if vals[k, j] >= valid.max() * REV_TOL else 0.0
+            m = valid.max()
+            col[k] = 100.0 if vals[k, j] >= m - abs(m) * REV_TOL_FRAC else 0.0     # ⭐ 對稱容差〈八十六〉，⛔ 不是 m * 乘數
         flags[sid] = col
     F = pd.DataFrame(flags, index=periods)
     # 攤到日曆：每期在 entry_pos 生效

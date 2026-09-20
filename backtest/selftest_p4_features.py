@@ -77,6 +77,27 @@ def t_rev_flags_three_kinds():
     check(at("OLD", "2017-02-20") == 100.0, "回歸：滿 24 期的老檔不受影響")
 
 
+def t_rev_tol_symmetric():
+    """⭐〈八十六〉（K線分析線 0215 §四）：容差要對稱——乘法容差在負數那側會變成【收緊】。"""
+    periods = [f"{y}-{m:02d}" for y in range(2015, 2018) for m in range(1, 13)]
+    cal = D.load_calendar()
+    check(abs(P.REV_TOL_FRAC - 1e-4) < 1e-18, f"容差比例是 1e-4（＝1−0.9999），⛔ 不是乘數 0.9999（實得 {P.REV_TOL_FRAC}）")
+    # 正數側：近 24 期最高 1000，當期 999.95 ⇒ 門檻 1000−0.1＝999.9 ⇒ 進得去（與舊的 ×0.9999 同一個門檻）
+    pos = pd.DataFrame({"P": np.r_[np.full(24, 1000.0), np.full(12, 999.95)]}, index=periods)
+    F = P.rev_hi24_flags(pos, cal)
+    check(F["P"].loc[:"2017-03-15"].iloc[-1] == 100.0, "正數側：999.95 ≥ 1000 − 1000×1e-4 ＝ 999.9 ⇒ True（容差放寬）")
+    pos2 = pd.DataFrame({"P": np.r_[np.full(24, 1000.0), np.full(12, 999.5)]}, index=periods)
+    check(P.rev_hi24_flags(pos2, cal)["P"].loc[:"2017-03-15"].iloc[-1] == 0.0, "正數側：999.5 < 999.9 ⇒ False（⛔ 容差沒有大到亂放行）")
+    # ⭐⭐ 負數側：近 24 期最高 −100，當期 −100.005
+    #    對稱：門檻 −100 − 100×1e-4 ＝ −100.01 ⇒ −100.005 ≥ −100.01 ⇒ True（放寬）
+    #    ⛔ 舊的乘法：−100 × 0.9999 ＝ −99.99 ⇒ −100.005 < −99.99 ⇒ False（收緊）⇒ 這一條就是分辨點
+    neg = pd.DataFrame({"N": np.r_[np.full(24, -100.0), np.full(12, -100.005)]}, index=periods)
+    check(P.rev_hi24_flags(neg, cal)["N"].loc[:"2017-03-15"].iloc[-1] == 100.0,
+          "⭐ 負數側：−100.005 ≥ −100 − 100×1e-4 ＝ −100.01 ⇒ True（⛔ 舊的乘法容差會判 False＝收緊）")
+    neg2 = pd.DataFrame({"N": np.r_[np.full(24, -100.0), np.full(12, -100.05)]}, index=periods)
+    check(P.rev_hi24_flags(neg2, cal)["N"].loc[:"2017-03-15"].iloc[-1] == 0.0, "負數側：−100.05 < −100.01 ⇒ False（容差有界，⛔ 不是全放行）")
+
+
 def t_tdr_codes():
     ids = P.load_tdr_codes()
     check(len(ids) >= 5 and "9103" in ids, f"存託憑證名單 {len(ids)} 檔、含 9103（industry_code 91）")
@@ -176,6 +197,7 @@ if __name__ == "__main__":
     print("[p4_features] 量測日"); t_measurement_days()
     print("[p4_features] rev_hi24_p4"); t_rev_flags()
     print("[p4_features] rev_hi24 缺值三種（K線分析線 0150）"); t_rev_flags_three_kinds()
+    print("[p4_features] 容差對稱（〈八十六〉）"); t_rev_tol_symmetric()
     print("[p4_features] 存託憑證名單"); t_tdr_codes()
     print("[p4_features] shares"); t_shares_ffill_not_bfill()
     print("[p4_features] 橫截面＋歸型"); t_cross_section_assign()
