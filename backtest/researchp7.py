@@ -62,8 +62,13 @@ def stop_tag(stop) -> str:
     return "none" if stop is None else f"{stop[0]} {stop[1] * 100:.0f}%"
 
 
-def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, opens: dict, start: str = "2017-01-01") -> pd.DataFrame:
+def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, opens: dict, start: str = "2017-01-01",
+                     signal: str = "B") -> pd.DataFrame:
     """門檻B 的 sig（策略線 1115 §1-1 逐字定義）。
+
+    PREREGP11（2026-09-20）加 `signal`：⛔ 預設 "B" 時與原版【逐位元相同】。
+      "B" 門檻B ＝ rev_hi24 ∧ ¬ma_stack ∧ ma60_up
+      "C" 參考C ＝ rev_hi24 ∧ ma60_up（⭐ 就是 B 拿掉 ¬ma_stack，⛔ 沒有其他差別 ⇒ B ⊂ C）
 
     候選母體＝過閘門股-月（`eligible` ＝ liq_ok ∧ bars_ok ∧ inst_ok，(c) 已套）
     訊號  ＝ `rev_hi24 ∧ ¬ma_stack ∧ ma60_up`（⭐ 三條都是布林、⛔ 零擬合參數、零中心、零橫斷面百分位）
@@ -75,7 +80,12 @@ def build_sig_gate_b(panel: pd.DataFrame, cal: pd.DatetimeIndex, closes: dict, o
     ncal = len(cal)
     p = panel[panel["measure_date"] >= pd.Timestamp(start)]
     el = p[p["eligible"].astype(bool)]
-    b = el[(el["rev_hi24"] == 100) & (el["ma_stack"] == 0) & (el["ma60_up"] == 100)].copy()
+    if signal not in ("B", "C"):
+        raise ValueError(f"signal 只能是 'B'（門檻B）或 'C'（參考C），收到 {signal!r}")
+    m = (el["rev_hi24"] == 100) & (el["ma60_up"] == 100)
+    if signal == "B":
+        m &= el["ma_stack"] == 0
+    b = el[m].copy()
     b["entry_pos"] = b["measure_date"].map(pos).astype("Int64") + 1
     b = b[b["entry_pos"].notna()].copy()
     b["entry_pos"] = b["entry_pos"].astype(int)

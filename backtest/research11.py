@@ -436,7 +436,20 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
       ⭐ 省下的那半個 slot **留在現金**（⛔ 不讓給下一個候選、⛔ 不放大別的部位）⇒ 它的報酬照 cash_mode 走。
       ⛔ 只作用在【新部位】：已持有的部位不減、不賣、不調整（登錄 §2-C ⓑ 逐字）。
       ⚠ weak[t] 的**時序**由呼叫端負責（PREREGP9 用 t−1 的收盤與 MA60[t−1]）——⛔ 本引擎不自己算弱勢。
+    PREREGP11（2026-09-20，策略線 seq=4 §八 ＋ 回測線追加一）：
+      n_slots  除了純量，也可以是**長度 ncal 的整數序列**＝【逐日的槽位容量】（⭐ 逐月 N_t 用這個）
+               ⇒ 第 t 天的容量 ＝ n_slots[t]；進場金額 slot ＝ equity[t−1] / n_slots[t]
+               ⛔ 容量變小時【不強制出場】（只是不再進新的）⇒ len(open_pos) > 容量會出現
+               ⛔ slot_use 的分母改成 Σ 容量（⛔ 不是 (end−first) × 某一個 N）
+      ⛔ 傳純量時走的是原來那條路，逐位元相同。
     """
+    caps = None                       # PREREGP11：逐日容量。⛔ None ＝ 純量 n_slots ⇒ 原版路徑逐位元相同
+    if not isinstance(n_slots, (int, np.integer)):
+        caps = np.asarray(n_slots, int)
+        if caps.shape != (ncal,):
+            raise ValueError(f"逐日容量要是長度 {ncal} 的整數序列，收到 {caps.shape}")
+        if (caps < 1).any():
+            raise ValueError("逐日容量每一天都要 ≥ 1（登錄 §八：N_t 下限 1 檔）")
     use_bench = cash_mode == "bench"
     if use_bench:
         if bench is None:
@@ -525,14 +538,15 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 g = q if g is None else pd.concat([g.assign(_t0=t), q], ignore_index=True)
         elif log is not None and g is not None:
             g = g.assign(_t0=t)
-        if g is not None and len(open_pos) < n_slots:
+        ns_t = n_slots if caps is None else int(caps[t])
+        if g is not None and len(open_pos) < ns_t:
             if log is not None and held:
                 for _, row in g[g["sid"].isin(held)].iterrows():
                     if "_t0" not in row or int(row["_t0"]) == t:      # 隊列裡的等待中不記；新訊號撞持倉才記 c
                         _rec(row, "c", t)
             cand = g[~g["sid"].isin(held)]
             if len(cand):
-                slots_free = n_slots - len(open_pos)
+                slots_free = ns_t - len(open_pos)
                 d_free = inf if d_max is None else d_max
                 avail = int(min(slots_free, d_free))
                 if pick is None:
@@ -553,7 +567,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                         else:
                             _rec(cand.iloc[i], "cap", t)
                     take = np.asarray(take, dtype=int)
-                slot = equity[t - 1] / n_slots
+                slot = equity[t - 1] / ns_t
                 if weak is not None and weak[t]:
                     slot = slot * weak_size          # ⭐ 只縮**今天要進的新部位**；省下的留在現金
                 entered_q = set()
@@ -608,7 +622,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
     years = (end - first) / 245; final = equity[end - 1]
     peak = np.maximum.accumulate(equity); mdd = float(((equity - peak) / peak).min())
-    out = {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / ((end - first) * n_slots), "first": first, "end": end,
+    cap_sum = (end - first) * n_slots if caps is None else int(caps[first:end].sum())
+    out = {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / cap_sum, "first": first, "end": end,
            "m": trades, "pos_frac": wins / trades if trades else np.nan, "deferred": n_deferred, "delay_med": float(np.median(delays)) if delays else np.nan, "expired": n_expired}
     if stop is not None:            # PREREGP7 必報（⛔ stop is None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同）
         out["stop_exits"] = stop_exits

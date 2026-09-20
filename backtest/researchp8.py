@@ -106,6 +106,21 @@ def decile_table(df: pd.DataFrame, H: int, k: int = N_DEC) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("bucket")
 
 
+def month_ci(d) -> dict:
+    """月分群 SE 的 95% CI（⭐ 唯一實作，PREREGP8／P11 共用）。d ＝ 逐月配對差（小數，不是 pp）。
+
+    ⛔ 以【月】為抽樣單位：mean ± 1.96 × sd/√n。detectable ＝ CI 不含 0。
+    """
+    d = np.asarray(d, float); d = d[np.isfinite(d)]
+    n = len(d)
+    if n < 2:
+        return {"n_months": n, "diff_pp": np.nan, "lo_pp": np.nan, "hi_pp": np.nan, "pos_months": int((d > 0).sum()), "detectable": False}
+    mean = float(d.mean()); se = float(d.std(ddof=1) / np.sqrt(n))
+    lo_, hi_ = mean - 1.96 * se, mean + 1.96 * se
+    return {"n_months": n, "diff_pp": mean * 100, "lo_pp": lo_ * 100, "hi_pp": hi_ * 100,
+            "pos_months": int((d > 0).sum()), "detectable": bool(lo_ * hi_ > 0)}
+
+
 def paired_diff(df: pd.DataFrame, H: int, hi: int, lo: int) -> dict:
     """逐月配對差（hi 桶月均 − lo 桶月均），月分群 SE。⭐ 只取兩桶都有值的月。"""
     col = f"fwd{H}"
@@ -113,14 +128,7 @@ def paired_diff(df: pd.DataFrame, H: int, hi: int, lo: int) -> dict:
     m = g.groupby(["measure_date", "bucket"])[col].mean().unstack()
     if hi not in m or lo not in m:
         return {"n_months": 0, "diff_pp": np.nan, "lo_pp": np.nan, "hi_pp": np.nan, "pos_months": 0, "detectable": False}
-    d = (m[hi] - m[lo]).dropna().to_numpy(float)
-    n = len(d)
-    if n < 2:
-        return {"n_months": n, "diff_pp": np.nan, "lo_pp": np.nan, "hi_pp": np.nan, "pos_months": 0, "detectable": False}
-    mean = float(d.mean()); se = float(d.std(ddof=1) / np.sqrt(n))
-    lo_, hi_ = mean - 1.96 * se, mean + 1.96 * se
-    return {"n_months": n, "diff_pp": mean * 100, "lo_pp": lo_ * 100, "hi_pp": hi_ * 100,
-            "pos_months": int((d > 0).sum()), "detectable": bool(lo_ * hi_ > 0)}
+    return month_ci((m[hi] - m[lo]).dropna().to_numpy(float))      # ⭐ 唯一實作在 month_ci
 
 
 def monotonic_exceptions(t: pd.DataFrame, col: str = "mean") -> int:

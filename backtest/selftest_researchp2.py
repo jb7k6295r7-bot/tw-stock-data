@@ -343,6 +343,97 @@ def t_seeds():
         check(not (lo <= P2.SEED0 < hi) and not (lo <= P2.SEED0 + 199 < hi) and not (lo <= 13000 < hi), f"種子 {P2.SEED0}～{P2.SEED0 + 199}／13000 不落在 [{lo},{hi})")
 
 
+def t_p11():
+    """PREREGP11（回測線 2026-09-20 15:40）：half-up、逐日容量、逐月報酬、月分群 CI、B⊂C、呼叫點。"""
+    import os as _os
+
+    from . import researchp8 as P8
+    from . import researchp11 as P11
+    # ① half-up（追加一⑤）：⚠ Python 的 round() 是 banker's rounding
+    check(P11.n_of(0.5, 5) == 3 and round(0.5 * 5) == 2,
+          "N ＝ half-up ⇒ 0.5×5＝2.5 取 3（⚠ Python 的 round(2.5) 是 2 ⇒ 那條路會少一檔）")
+    check(P11.n_of(0.35, 10) == 4 and P11.n_of(0.25, 1) == 1 and P11.n_of(0.25, 2) == 1,
+          "half-up 其餘三格：3.5→4／下限 1 檔（0.25×1＝0.25→1、0.25×2＝0.5→1）")
+    # ② 逐日容量（追加一①②）
+    sig11 = pd.DataFrame([{"sid": f"s{i}", "entry_pos": e, "month": m}
+                          for m, e, k in (("2020-01", 10, 4), ("2020-02", 30, 2), ("2020-03", 50, 10))
+                          for i in range(k)])
+    caps, tab = P11.caps_series(sig11, 0.5, 60)
+    check(list(tab["cand"]) == [4, 2, 10] and list(tab["N"]) == [2, 1, 5],
+          f"候選數＝該月 sig 筆數、N＝half-up(0.5×候選)：{list(tab['cand'])} ⇒ {list(tab['N'])}")
+    check(caps[9] == 2 and caps[10] == 2 and caps[29] == 2 and caps[30] == 1 and caps[49] == 1 and caps[50] == 5 and caps[59] == 5,
+          "容量從【該月進場日】生效到下個月進場日前一天；第一個進場日之前用第一個月的 N")
+    check(list(tab["sold_out"]) == [False, False, False] and list(P11.caps_series(sig11, 0.75, 60)[1]["sold_out"]) == [False, True, False],
+          "買光月 ＝ N_t ≥ 候選數（0.75×2＝1.5→2 ＝ 候選 2 ⇒ 買光）")
+    # ③ 引擎吃逐日容量：純量 ≡ 同值陣列；容量變小⛔ 不強制出場；slot_use 分母 ＝ Σ 容量
+    ncal = 20
+    cl = {k: np.linspace(10.0, 20.0, ncal) for k in ("A", "B")}
+    op = {k: v + 0.1 for k, v in cl.items()}
+    sg = pd.DataFrame([{"sid": k, "entry_pos": 5, "xpos_H5": 12, "g_H5": cl[k][12] / op[k][5] - 1.0} for k in ("A", "B")])
+    run = lambda n: R.simulate_mtm(sg, "H5", n, np.random.default_rng(3), cl, op, ncal, return_equity=True)
+    a2 = run(2); arr2 = run(np.full(ncal, 2, int))
+    check(np.array_equal(a2["equity"], arr2["equity"]) and a2["slot_use"] == arr2["slot_use"],
+          "逐日容量【全等於 2】⇒ 與純量 n_slots=2 逐位元相同（新路徑不動原版）")
+    drop = np.full(ncal, 2, int); drop[8:] = 1
+    ad = run(drop)
+    check(np.array_equal(ad["equity"][:20], a2["equity"][:20]) and ad["trades"] == a2["trades"],
+          "容量在持倉期間變小 ⇒ ⛔ 不強制出場（權益路徑與沒變小時相同）")
+    bind = np.full(ncal, 2, int); bind[5:] = 1
+    ab = run(bind)
+    check(ab["trades"] == 1 and a2["trades"] == 2,
+          f"容量是【逐日讀 t 那一天】的：進場日容量 1 ⇒ 只進 1 筆（⛔ 不是讀第 0 天的 2）：{ab['trades']} vs {a2['trades']}")
+    mix = np.full(ncal, 4, int); mix[10:] = 8
+    a4 = run(np.full(ncal, 4, int)); am = run(mix)
+    used4 = a4["slot_use"] * (a4["end"] - a4["first"]) * 4
+    check(abs(am["slot_use"] - used4 / mix[a4["first"]:a4["end"]].sum()) < 1e-12,
+          f"slot_use 的分母 ＝ Σ 逐日容量（⛔ 不是 (end−first)×某一個 N）：{am['slot_use']:.6f}")
+    check(P11.n_of(0.35, 23) == 8 and [P11.n_of(r, 23) for r in P11.RATES] == [6, 8, 12, 17],
+          "固定 N（追加一⑫）＝ half-up(選擇率×23) ＝ 6／8／12／17，判定格 35% ⇒ 8 檔")
+    # ④ 逐月報酬與月分群 CI
+    eq = np.array([1.0, 1.1, 1.1, 1.32, 1.32, 0.99], float)
+    mr = P11.monthly_returns(eq, np.array([1, 3, 5]))
+    check(len(mr) == 2 and abs(mr[0] - 0.2) < 1e-12 and abs(mr[1] + 0.25) < 1e-12,
+          f"逐月報酬用【月底相除】、⛔ 第一個月不算（實得 {np.round(mr, 6).tolist()}）")
+    ci = P8.month_ci(np.full(40, 0.01))
+    ci0 = P8.month_ci(np.linspace(-0.1, 0.1, 41))
+    check(ci["detectable"] and abs(ci["diff_pp"] - 1.0) < 1e-12 and ci["n_months"] == 40 and ci["pos_months"] == 40,
+          "月分群 CI：40 個月都 +1% ⇒ CI 不含 0、diff 1.00pp")
+    check((not ci0["detectable"]) and abs(ci0["diff_pp"]) < 1e-9 and not P8.month_ci([0.01])["detectable"],
+          "反向驗：對稱分佈 ⇒ CI 含 0；⛔ 只有 1 個月 ⇒ 不可判定")
+    dd = np.linspace(-0.05, 0.09, 100)                     # 平均 +2%、sd ≈ 4.1% ⇒ ⭐ 有沒有除 √n 會給相反答案
+    cn = P8.month_ci(dd); half = (cn["hi_pp"] - cn["lo_pp"]) / 2
+    want_half = 1.96 * float(dd.std(ddof=1)) / np.sqrt(len(dd)) * 100
+    check(cn["detectable"] and abs(half - want_half) < 1e-9 and half < abs(cn["diff_pp"]),
+          f"⭐ SE 要【除以 √n】：n=100、sd {dd.std(ddof=1) * 100:.2f}pp ⇒ 半寬 {half:.3f}pp（⛔ 不除 √n 會是 {want_half * 10:.2f}pp ⇒ CI 含 0）")
+    # ⑤ 訊號集：C ＝ B 拿掉 ¬ma_stack ⇒ B ⊂ C
+    cal2 = pd.date_range("2020-01-01", periods=400, freq="D")
+    cl2 = {k: np.linspace(100.0, 200.0, len(cal2)) for k in ("A", "S")}
+    op2 = {k: v * 0.97 for k, v in cl2.items()}
+    pn = pd.DataFrame([{"measure_date": cal2[10], "stock_id": sid, "eligible": True, "rev_hi24": 100,
+                        "ma_stack": stk, "ma60_up": 100, "amt20": 1e8, "vol60": 0.3}
+                       for sid, stk in (("A", 0), ("S", 100))])
+    sb = P7.build_sig_gate_b(pn, cal2, cl2, op2, start="2020-01-01")
+    sc = P7.build_sig_gate_b(pn, cal2, cl2, op2, start="2020-01-01", signal="C")
+    check(set(sb["sid"]) == {"A"} and set(sc["sid"]) == {"A", "S"},
+          "參考C ＝ 門檻B 拿掉 ¬ma_stack ⇒ ma_stack 成立的那一檔只進 C（⇒ B ⊂ C）")
+    try:
+        P7.build_sig_gate_b(pn, cal2, cl2, op2, signal="X"); bad = False
+    except ValueError:
+        bad = True
+    check(bad, "signal 只收 'B'／'C'，其餘大聲失敗（⛔ 不靜靜當成 B）")
+    # ⑥ 呼叫點（⭐ 測完純函式再掃一次原始碼）
+    src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "researchp11.py"), encoding="utf-8").read()
+    check("P8.month_ci(dm)" in src and "np.nanmean(np.vstack([mret[(\"C\"" in src,
+          "呼叫點：判定用 P8.month_ci、而 dm 是【先逐種子配對（C−B）再對種子取平均】")
+    check("P3.exposure_series(" in src and "expo_m" in src, "呼叫點：閒置用 researchp3.exposure_series（⛔ 不是槽位使用率）")
+    check("P9.passes(" in src and "def passes" not in src, "呼叫點：三條判準走 researchp9.passes（⛔ 本檔沒有第二份不等式）")
+    check('caps[(k, "fix", rate)] = n_of(rate, B_CAND_MED)' in src and P11.MAIN_RATE == 0.35,
+          "呼叫點：固定 N 兩個訊號集用同一組（n_of(rate, B_CAND_MED)）；判定格寫死 35%")
+    check(P11.SEED0 == 101000 and P11.RATES == (0.25, 0.35, 0.50, 0.75),
+          f"種子起點寫死 101000、四個選擇率寫死（實得 {P11.SEED0}／{P11.RATES}）")
+
+
+
 if __name__ == "__main__":
     print("[researchp2] 映射"); t_parent()
     print("[researchp2] 逐日標籤"); t_labels()
@@ -356,5 +447,6 @@ if __name__ == "__main__":
     print("[researchp2] 重疊度"); t_overlap()
     print("[researchp2] 判定"); t_judge()
     print("[researchp2] 種子"); t_seeds()
+    print("[researchp11] 同選擇率（逐月 N_t）"); t_p11()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
