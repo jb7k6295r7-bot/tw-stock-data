@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T21:08:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35512092922
+# ⏱ 這一趟：2026-09-21T01:39:34+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35525943817
 # 下市清單／變更交易 端點探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
@@ -139,7 +139,7 @@
    https://www.twse.com.tw/rwd/zh/violation/change?response=json
    頂層鍵 ['data', 'fields', 'groups', 'stat', 'title', 'total']
    ⭐ 平常被丟掉的鍵：['groups', 'stat', 'total']
-     ── title：115年09月20日 變更交易及併採行分盤集合競價交易
+     ── title：115年09月21日 變更交易及併採行分盤集合競價交易
      ── groups：[{"span": 2, "title": ""}, {"span": 3, "title": "變更交易"}, {"span": 3, "title": "併採行分盤"}]
      ── stat：ok
      ── total：15
