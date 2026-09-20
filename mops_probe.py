@@ -1149,6 +1149,13 @@ def main():
     #   端點、看不到請求本體怎麼組。⇒ 補一個 needle 讓 `around()` 印更長一段。
     xhr_hunt("t05st01", out, needles=("getMsg", "AjaxCheck"), month="09", day="01")
     out.append("")
+    # ⭐⭐ 上面那一輪的 `⓪ <form action=…>` 判準當場挖到真正的查詢端點：
+    #   `/mops/web/ajax_t05st01`（⛔ 不是裸的 `t05st01`）——跟我方已經在用的
+    #   `ajax_t21sc03`／`ajax_t163sb04` 是**同一個命名慣例**，⚠ 而參數名
+    #   還是不知道（`t05st01` 是逐檔查的重大訊息 ⇒ 可能要公司代號才查得到）
+    #   ⇒ 沿用 month／day 猜一次，**回應自己會講**參數有沒有生效。
+    bridge_case("ajax_t05st01", "114", "110", out, month="09", day="01")
+    out.append("")
     ezsearch_case(out)
     ky_revenue_case(out)
     survivor_case(out)
