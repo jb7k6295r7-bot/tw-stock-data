@@ -443,10 +443,14 @@ def t_p12():
     # ① 登錄寫死的常數（⛔ 不是「程式有跑」而已）
     check(P12.SEED0 == 102000 and P12.C0_FRAC == 0.999 and P12.N_C1 == 8 and P12.ANCHOR_TOL == 0.01,
           f"寫死：種子 102000／買光判準 0.999／C1＝8 檔／容差 ±1pp（實得 {P12.SEED0}／{P12.C0_FRAC}／{P12.N_C1}／{P12.ANCHOR_TOL}）")
-    check(len(P12.CORNERS) == 8 and P12.ANCHORS[("主格窗", "S1", "C1", "T1", "成本0.585%")] == -0.409
-          and P12.ANCHORS[("主格窗", "S0", "C0", "T0", "成本0")] == -0.1521
+    check(len(P12.CORNERS) == 12 and P12.C_LEVELS == ("C1", "C0a", "C0f")
+          and P12.ANCHOR_OWN_DD == -0.409 and P12.ANCHORS[("主格窗", "S0", "C0a", "T0", "成本0")] == -0.1521
           and [c[0] for c in P12.COSTS] == ["成本0.585%", "成本0"],
-          "八個角落；錨點①−40.9%【含成本】／錨點②−15.21%【成本 0】（§四④ 兩條容差口徑不同）")
+          "十二格（C0 兩版）；⭐ 錨點①-引擎對【自己最深回落】−40.9%、錨點②對【窗期報酬】−15.21% 成本 0（裁定①）")
+    check(P12.FACTOR_LEVELS["C"] == ("C1", "C0a") and "C0f" not in P12.FACTOR_LEVELS["C"]
+          and P12.GAP_REF_PP == 13.25 and P12.PRIOR_PP["S"] == (-10.3, -5.2) and P12.PRIOR_PP["T"] == (-5.2, -1.5)
+          and P12.PRIOR_PP["殘差"] == (-4.0, -1.3),
+          "⭐ 判定用 C0a（⛔ C0f 只作描述）；被拆的量 13.25pp；先驗是 25.7pp 版【按比例機械換算】的三組區間（裁定②③④）")
     check(P12.WINDOWS["主格窗"] == ("2023-07-03", "2025-04-09") and P12.WIN_DAYS["主格窗"] == 428
           and P12.WINDOWS["全窗"] == ("2017-03-02", "2026-08-24"),
           "兩個窗的端點與天數寫死（⛔ 天數對不上程式會停）")
@@ -516,14 +520,47 @@ def t_p12():
           f"買光 ＝ 6 個候選要 6 個槽（⛔ 不是更大的數 ⇒ 那會把曝險稀釋掉）：實得 {n}")
     check(int(lad.loc[lad["n_slots"] == 5, "trades"].iloc[0]) == 5 and (lad["n_slots"] < 6).any(),
           "梯度表留下了【沒買光】那幾點（n_slots=5 ⇒ 只進 5 筆）⇒ ⭐ 這就是 §四⑤ 要的證據")
+    # ⑥b ⭐⭐ C0a 的逐日容量（裁定④ ＋ §十-4）：在場部位數、⛔ 不是當天新訊號數
+    cap6 = P12.caps_buy_all(pd.DataFrame([{"sid": "A", "entry_pos": 10, f"xpos_{P12.RULE}": 20},
+                                          {"sid": "A", "entry_pos": 15, f"xpos_{P12.RULE}": 25},   # ⭐ 已持有 ⇒ 不重入
+                                          {"sid": "B", "entry_pos": 15, f"xpos_{P12.RULE}": 30}]), 40)
+    check(cap6[9] == 1 and cap6[10] == 1 and cap6[14] == 1 and cap6[15] == 2 and cap6[19] == 2,
+          f"容量 ＝ 當日【在場】的部位數（10 進 A ⇒ 1；15 再進 B ⇒ 2）：{cap6[9:21].tolist()}")
+    check(cap6[20] == 1 and cap6[25] == 1 and cap6[29] == 1 and cap6[30] == 1,
+          "⭐ 出場日【不算在場】（A 的 xpos=20 ⇒ 第 20 天只剩 B）；⛔ 同一 sid 的第二筆訊號不會把它延長到 25")
+    check(cap6.min() >= 1 and len(cap6) == 40, "沒有任何一天容量 < 1（引擎要求）、長度 ＝ ncal")
+    # ⑥c ⭐ 掛上引擎：⛔ 兩版都買光的情況下，C0a 的【曝險】才是被拉起來的那一個（裁定④ 要證的就是這件）
+    coh = ((110, 8), (150, 4), (190, 2), (230, 1))      # ⭐ 群體不重疊（持有 30 天、間隔 40 天）⇒ 出場的錢剛好夠下一批
+    rowsA = []
+    for e, k in coh:
+        for i_ in range(k):
+            sid = f"X{e}_{i_}"
+            cl[sid] = cl["A"]; op[sid] = op["A"]
+            rowsA.append({"sid": sid, "entry_pos": e, f"xpos_{P12.RULE}": e + 30, f"g_{P12.RULE}": cl["A"][e + 30] / op["A"][e] - 1.0})
+    sgA = pd.DataFrame(rowsA)
+    wa0, wa1 = 100, 345
+    mkA = P12.month_marks(cal, wa0, wa1)
+    P12._init({("S0", "T1", "*"): sgA}, {}, cl, op, ncal, {"W": (wa0, wa1)}, {"W": mkA})
+    capA = P12.caps_buy_all(sgA, ncal)
+    check(capA[110] == 8 and capA[145] == 1 and capA[150] == 4 and capA[190] == 2 and capA[230] == 1,
+          f"容量隨【在場部位數】逐日變（8→4→2→1，空手時下限 1）：{[int(capA[x]) for x in (110, 145, 150, 190, 230)]}")
+    oa = P12._sim(sgA, capA, 7, 0.0); of_ = P12._sim(sgA, 8, 7, 0.0)
+    ra = P12.win_read(oa, wa0, wa1, mkA); rf = P12.win_read(of_, wa0, wa1, mkA)
+    check(ra["trades"] == rf["trades"] == 15,
+          f"⭐ 兩版都【買光】（各 {ra['trades']} 筆 ＝ 全部候選）⇒ 曝險的差不是「買比較少」造成的")
+    check(ra["expo"] > rf["expo"] + 0.20,
+          f"⭐⭐ 而曝險差很多：C0a 對齊版 {ra['expo'] * 100:.1f}% vs C0f 字面版 {rf['expo'] * 100:.1f}%"
+          " ⇒ ⭐ 兩版之差就是【現金效應】那一格（裁定④）")
     # ⑦ 主效果 ＝ 4 種組合上平均（⛔ 不是單一角落的差）；加法表的殘差
     aS, bC, dT, k3 = -0.10, 0.02, -0.05, 0.04
     rows, mr = [], {}
     for s_ in ("S1", "S0"):
-        for c_ in ("C1", "C0"):
+        for c_ in ("C1", "C0a", "C0f"):
             for t_ in ("T1", "T0"):
                 si, ci, ti = int(s_ == "S1"), int(c_ == "C1"), int(t_ == "T1")
                 y = aS * si + bC * ci + dT * ti + k3 * si * ci * ti
+                if c_ == "C0f":
+                    y = 9.9                     # ⭐ 毒藥：描述版若漏進因子，下面每一條都會炸開
                 for sd in (0, 1):
                     rows.append({"S": s_, "C": c_, "T": t_, "win": "W", "cost": "成本0", "seed": sd, "tr": y})
                     # ⭐ 種子項【兩臂相同】⇒ 正確配對會消掉它；⛔ 配錯種子就消不掉（M10 突變）
@@ -535,6 +572,8 @@ def t_p12():
     check(abs(eS["diff_pp"] - eS["point_pp"] / 10) < 1e-9,
           f"⭐ 逐月配對差 ＝ 【同種子】相減 ⇒ 種子項被消掉（要 {eS['point_pp'] / 10:+.3f}pp、實得 {eS['diff_pp']:+.3f}pp；"
           "⛔ 配錯種子那一項就留在差裡)")
+    check(abs(eS["point_pp"] - (aS + k3 / 4) * 100) < 1e-9 and eS["n_pairs"] == 8,
+          "⭐ C0f（描述版）沒有漏進因子：它的值是 +990pp，漏了主效果一定不是 −9pp（裁定④）")
     check(eS["n_pairs"] == 8 and eS["n_months"] == 10 and eS["verdict"] == "測得出" and eS["detectable"],
           f"配對數 ＝ 4 組合 × 2 種子 ＝ 8；抽樣單位是【月】(10)；零變異且非 0 ⇒ 測得出（實得 {eS['n_pairs']}／{eS['n_months']}／{eS['verdict']}）")
     mr2 = dict(mr)
@@ -542,13 +581,19 @@ def t_p12():
         mr2[kk] = mr2[kk] + (np.arange(10) % 2 * 2 - 1) * (0.5 if kk[0] == "S1" else 0.0)
     check(P12.main_effect(dfx, mr2, "S", "W", "成本0")["verdict"] == "測不出",
           "反向驗：逐月差一半 +50%／一半 −50% ⇒ CI 含 0 ⇒ 測不出（⛔ 點估計一樣大也不算）")
+    eT_all = P12.main_effect(dfx, mr, "T", "W", "成本0")
+    eT_s0 = P12.main_effect(dfx, mr, "T", "W", "成本0", arms={"S": "S0"})
+    check(eT_s0["n_pairs"] == 4 and eT_all["n_pairs"] == 8 and eT_s0["arm"] == "S0" and eT_all["arm"] == "全部"
+          and abs(eT_s0["point_pp"] - dT * 100) < 1e-9 and abs(eT_all["point_pp"] - (dT + k3 / 4) * 100) < 1e-9,
+          f"裁定⑤：T 主效果要報兩版 —— 全部（8 對，{eT_all['point_pp']:+.1f}pp）與【只 S0 臂】（4 對，{eT_s0['point_pp']:+.1f}pp）")
     eff = pd.DataFrame([P12.main_effect(dfx, mr, f, "W", "成本0") for f in ("S", "C", "T")])
     at = P12.attribution(dfx, eff, "W", "成本0")
     check(abs(at["gap_pp"] - (aS + bC + dT + k3) * 100) < 1e-9 and abs(at["resid_pp"] - k3 / 4 * 100) < 1e-9,
           f"加法表：gap ＝ 角落差、殘差 ＝ gap −(S＋C＋T) ＝ 三階交互的 1/4（要 {k3 / 4 * 100:+.2f}pp、實得 {at['resid_pp']:+.2f}pp）")
     def _att(a_, k_):                                  # ⭐ 同一條路餵兩組係數 ⇒ 正反例各一
-        rr = [{**r, "tr": a_ * ((r["S"] == "S1") + (r["C"] == "C1") + (r["T"] == "T1"))
-               + k_ * (r["S"] == "S1") * (r["C"] == "C1") * (r["T"] == "T1")} for r in rows]
+        rr = [{**r, "tr": (9.9 if r["C"] == "C0f" else
+                           a_ * ((r["S"] == "S1") + (r["C"] == "C1") + (r["T"] == "T1"))
+                           + k_ * (r["S"] == "S1") * (r["C"] == "C1") * (r["T"] == "T1"))} for r in rows]
         d_ = pd.DataFrame(rr)
         e_ = pd.DataFrame([P12.main_effect(d_, mr, f, "W", "成本0") for f in ("S", "C", "T")])
         return P12.attribution(d_, e_, "W", "成本0")
@@ -561,7 +606,7 @@ def t_p12():
     r3, mr3 = [], {}
     for s_, c_, t_ in P12.CORNERS:
         for sd in (0, 1, 2):
-            y3 = 0.3 if (s_, c_, t_, sd) == ("S0", "C0", "T0", 2) else 0.0
+            y3 = 0.3 if (s_, c_, t_, sd) == ("S0", "C0a", "T0", 2) else (9.9 if c_ == "C0f" else 0.0)
             r3.append({"S": s_, "C": c_, "T": t_, "win": "W", "cost": "成本0", "seed": sd, "tr": y3})
             mr3[(s_, c_, t_, "W", "成本0", sd)] = np.full(10, y3 / 10)
     d3 = pd.DataFrame(r3)
@@ -570,13 +615,17 @@ def t_p12():
     check(abs(a3["gap_pp"] - (-10.0)) < 1e-9 and abs(a3["resid_pp"] - (-2.5)) < 1e-9,
           f"⭐ 加法表用【平均】：三顆種子 0／0／+30% ⇒ 平均 +10% ⇒ gap −10.00pp（⛔ 用中位數會是 0.00pp；實得 {a3['gap_pp']:+.2f}pp）")
     # ⑦b 錨點對帳：⭐ 用【中位種子】（§八①）、容差 ±1pp
-    fake = pd.DataFrame([{"win": "主格窗", "cost": "成本0.585%", "S": "S1", "C": "C1", "T": "T1", "tr_med": -0.400, "tr_mean": -0.350},
-                         {"win": "主格窗", "cost": "成本0", "S": "S0", "C": "C0", "T": "T0", "tr_med": -0.1721, "tr_mean": -0.1521}])
-    ac = P12.check_anchors(fake)
-    check(list(ac["過"]) == [True, False],
-          f"錨點看【中位】：−40.0% vs −40.9% 差 0.9pp ⇒ 過；−17.21% vs −15.21% 差 2pp ⇒ 不過（⛔ 讀平均欄會是相反的 [False, True]；實得 {list(ac['過'])}）")
-    check(abs(float(ac["差pp"].iloc[0]) - 0.9) < 1e-9 and len(ac) == len(P12.ANCHORS),
-          "兩個錨點各一列，差以 pp 報")
+    fake = pd.DataFrame([{"win": "主格窗", "cost": "成本0.585%", "S": "S1", "C": "C1", "T": "T1", "tr_med": -0.295, "tr_mean": -0.350},
+                         {"win": "主格窗", "cost": "成本0", "S": "S0", "C": "C0a", "T": "T0", "tr_med": -0.1721, "tr_mean": -0.1521}])
+    ac = P12.check_anchors(fake, own_med=-0.400)
+    check(list(ac["過"]) == [True, False] and len(ac) == 1 + len(P12.ANCHORS),
+          f"裁定①：①-引擎看【自己最深回落】−40.0% vs −40.9% ⇒ 過；②看【窗期報酬】−17.21% vs −15.21% ⇒ 不過（實得 {list(ac['過'])}）")
+    check(abs(float(ac["本線中位"].iloc[0]) - (-0.400)) < 1e-12,
+          "⭐ 報表上的「本線中位」就是傳進去的那個量（⛔ 不是另外一格的數字 ⇒ 否則表會誤導讀的人）")
+    check(abs(float(ac["差pp"].iloc[0]) - 0.9) < 1e-9 and "C0a" in ac["錨點"].iloc[1],
+          "⭐ 錨點①【不看】那一格的窗期報酬（−29.5% 就在表裡，⛔ 它不是錨點）；錨點② 對的是 C0a 那一格")
+    check(list(P12.check_anchors(fake.assign(tr_med=[-0.295, -0.1521]), own_med=-0.500)["過"]) == [False, True],
+          "反向驗：①-引擎 −50% ⇒ 不過；② −15.21% ⇒ 過（⛔ 兩條各自獨立，不是一起過一起不過）")
     # ⑧ 直算（口徑差）與 S0 訊號集
     dd = P12.direct_equal_weight(["A", "B"], cl, op, w0, w1, 110)
     check(abs(dd["A"] - np.mean([cl[k][w1] / cl[k][w0] - 1 for k in ("A", "B")])) < 1e-12
@@ -610,8 +659,14 @@ def t_p12():
           "呼叫點：CI 走 P8.month_ci、逐月報酬走 P11.monthly_returns、曝險走 P3.exposure_series、年化回落走 R13.window_stats（⛔ 本檔沒有第二份）")
     check('raise SystemExit("⛔ 否證①' in src and src.index("anchor_report(") < src.index('raise SystemExit("⛔ 否證①'),
           "⛔ 否證①：錨點沒過 ⇒ 先寫對帳檔再 SystemExit（⛔ 不會往下算主效果）")
-    check(src.index("check_anchors(tab)") < src.index("main_effect(df, mr, f, w, ct)"),
+    def _before(a_, b_):                       # ⭐ 找不到就回 False（⛔ 不讓 .index 丟例外把整支測試中斷）
+        return a_ in src and b_ in src and src.index(a_) < src.index(b_)
+    check(_before("check_anchors(tab, own_med)", "main_effect(df, mr, f, w, ct, arms)"),
           "順序：先對帳錨點、後算主效果（⛔ 不是算完才回頭看錨點）")
+    check("caps_buy_all(sigs[(s, t, wk)], ncal)" in src and "P11.caps_series(sg, 1.0, ncal)[0]" in src,
+          "呼叫點：C0a 用 caps_buy_all、【窄讀】那一版用 P11.caps_series（⛔ 本檔沒有第二份逐日容量實作）")
+    check('arms={"S": "S0"}' in src or '("T", w, ct, {"S": "S0"})' in src,
+          "呼叫點：T 的主效果真的有跑【只 S0 臂】那一版（裁定⑤）")
 
 
 if __name__ == "__main__":
