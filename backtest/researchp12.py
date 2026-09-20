@@ -60,7 +60,7 @@ COSTS = (("成本0.585%", COST_STD), ("成本0", 0.0))
 C_LEVELS = ("C1", "C0a", "C0f")
 FACTOR_LEVELS = {"S": ("S1", "S0"), "C": ("C1", "C0a"), "T": ("T1", "T0")}   # ⛔ C0f 不進因子
 CORNERS = [(s, c, t) for s in ("S1", "S0") for c in C_LEVELS for t in ("T1", "T0")]
-GAP_REF_PP = 13.25               # 裁定②：被拆的量 ＝ 同窗差（⛔ 不是 25.6pp）
+GAP_REF_PP = -13.25              # 裁定②：被拆的量 ＝ 同窗差（⛔ 不是 25.6pp；⚠ 它是【中位】口徑，加法表是【平均】）
 # 裁定③（§十-3）：先驗由 25.7pp 版【按比例機械換算】，⛔ 未重新判斷方向或量級
 PRIOR_PP = {"S": (-10.3, -5.2), "T": (-5.2, -1.5), "殘差": (-4.0, -1.3)}
 SIG_OF = {"S1": "B", "S0": "ALL"}
@@ -416,8 +416,8 @@ def main():
         jobs = [(s, c, t, wk, ctag, cost, SEED0 + r)
                 for s, c, t in CORNERS for wk in (["*"] if t == "T1" else list(WINDOWS))
                 for ctag, cost in COSTS for r in range(a.reps)]
-        log(f"[跑] {len(jobs):,} 個工作（8 角落 × 2 窗 × 2 成本 × {a.reps} 種子）")
         jobs += [("S1", "C1", "T1w", "主格窗", ctag, cost, SEED0 + r) for ctag, cost in COSTS for r in range(a.reps)]
+        log(f"[跑] {len(jobs):,} 個工作（{len(CORNERS)} 格 × 窗 × 2 成本 × {a.reps} 種子，含 T1w 對帳版）")
         rows = []
         t0 = time.time()
         for i, rs in enumerate(pool.imap_unordered(_one, jobs, chunksize=2), 1):
@@ -650,7 +650,16 @@ def report(tab, xtab, eff, att, anc, dirc, lad, ev, sigs, closes, opens, cal, wi
     t_all = float(e_main.loc["T", "point_pp"]); t_s0 = float(eff[(eff["win"] == "主格窗") & (eff["cost"] == "成本0.585%")
                                                                 & (eff["factor"] == "T") & (eff["arm"] == "S0")]["point_pp"].iloc[0])
     L += ["", f"⇒ ⭐ **T 兩版**（主格窗、含成本）：全部 {t_all:+.2f}pp／只 S0 臂 {t_s0:+.2f}pp ⇒ "
-          + ("⛔ **方向相反 ⇒ 依裁定⑤ 寫【T 在本設計下測不出】**" if t_all * t_s0 < 0 else "✅ 方向相同 ⇒ T 的結論可以寫"), "",
+          + ("⛔ **方向相反 ⇒ 依裁定⑤ 寫【T 在本設計下測不出】**" if t_all * t_s0 < 0 else "✅ 方向相同（⛔ 而兩版的判都是 CI 說了算）"), "",
+          "### ⛔⛔ 兩件會讓人讀錯這張表的事（⭐ 兩件都是本趟才看得到的）", "",
+          "**① S 的『全部』版含著同樣那兩格 4 檔的格子** —— 裁定⑤ 只要求 T 報兩版，⛔ 而 S 的主效果是",
+          "　 在 (C,T) 四種組合上平均，其中兩個組合是 T0 ⇒ 它同樣吃進 (S1,·,T0) 那兩格。",
+          f"　 實際數字：主格窗 (S1,C1,T0) {tab[(tab['win'] == '主格窗') & (tab['cost'] == '成本0.585%') & (tab['S'] == 'S1') & (tab['C'] == 'C1') & (tab['T'] == 'T0')]['tr_med'].iloc[0] * 100:+.1f}%"
+          f" vs (S0,C1,T0) {tab[(tab['win'] == '主格窗') & (tab['cost'] == '成本0.585%') & (tab['S'] == 'S0') & (tab['C'] == 'C1') & (tab['T'] == 'T0')]['tr_med'].iloc[0] * 100:+.1f}%"
+          "　⇒ ⭐ 那一格【4 檔】贏了 44pp，而它就是 S 點估計為正的主要來源。",
+          "　 ⇒ ⛔ **本線不自行加一版**（那是看過結果之後加切法，〈六十四〉）⇒ ⏳ 要不要比照 T 報兩版，是 K線分析線的格子。",
+          "**② 全窗那幾個 pp 是【9.5 年的總報酬差】** ⇒ ⛔ 不可以跟主格窗（1.7 年）的 pp 並排讀。",
+          "　 ⭐ 判定本來就不是看它（判定看逐月配對差的 CI）⇒ 那一欄只是描述。", "",
           "## 五、歸屬加法表（§三末 ＋ 裁定②）", "",
           "gap ＝ (S1,C1,T1) − (S0,**C0a**,T0) ＝ S ＋ C ＋ T ＋ 殘差（⭐ 用**種子平均**，⛔ 中位數不可加）。", "",
           "| 窗 | 成本 | gap | S | C | T | 殘差 | 殘差佔 | 殘差 > 最大主效果？ |", "|---|---|---:|---:|---:|---:|---:|---:|:--:|"]
@@ -658,8 +667,10 @@ def report(tab, xtab, eff, att, anc, dirc, lad, ev, sigs, closes, opens, cal, wi
         L.append(f"| {r.win} | {r.cost} | {r.gap_pp:+.2f}pp | {r.S_pp:+.2f}pp | {r.C_pp:+.2f}pp | {r.T_pp:+.2f}pp | "
                  f"{r.resid_pp:+.2f}pp | {r.resid_share * 100:.0f}% | {'⛔ 是 ⇒ 判【拆不開】' if r.resid_gt_max else '否'} |")
     g_main = float(att[(att["win"] == "主格窗") & (att["cost"] == "成本0.585%")]["gap_pp"].iloc[0])
-    L += ["", f"⚠ 對帳：裁定② 指定的被拆量是 **{GAP_REF_PP:+.2f}pp**（上一趟實測），本趟 gap ＝ **{g_main:+.2f}pp**"
-          f"（差 {g_main + GAP_REF_PP:+.2f}pp）⇒ ⭐ C0a 取代 C0f 只動到 T1 那一側，T0 那一側不變。", "",
+    L += ["", f"⚠ 對帳：裁定② 指定的被拆量是 **{GAP_REF_PP:+.2f}pp**，本趟加法表的 gap ＝ **{g_main:+.2f}pp**"
+          f"（差 {g_main - GAP_REF_PP:+.2f}pp）。",
+          "⭐ 差的來源**不是** C0a 取代 C0f（T0 那一側兩版完全相同 ⇒ gap 的兩端都沒被換掉），",
+          "　 而是【中位 vs 平均】：13.25pp 是**中位**口徑（錨點那一欄），加法表依 §九-7 必須用**平均**（⛔ 中位數不可加）。", "",
           "### ⭐ 先驗對照（裁定③：由 25.7pp 版【按比例機械換算】而得）", "",
           "> ⛔ 逐字揭露：**本節先驗由 25.7pp 版按比例機械換算而得，⛔ 未重新判斷方向或量級；"
           "換算時本線已看過四個角落的窗期報酬。**", "",
