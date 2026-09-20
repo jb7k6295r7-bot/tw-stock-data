@@ -69,6 +69,17 @@ def months_done_path():
     return os.path.join(META, "_crypto_months_done.csv")
 
 
+def reset_months_done():
+    """刪掉續跑台帳——⛔ 只在台帳被污染時用（見 `main()` 的 `--reset-months-done`
+    那段記錄：URL 少了 USDT 字尾，1,635 個月全部被誤記成『官方沒有』）。
+    → 回傳是否真的刪到檔（給呼叫端印訊息用，不是給邏輯分支用）。"""
+    dp = months_done_path()
+    if os.path.exists(dp):
+        os.remove(dp)
+        return True
+    return False
+
+
 UNIVERSE_HEADER = ["symbol", "name", "market_cap_rank", "asof"]
 MONTHS_DONE_HEADER = ["symbol", "year", "month", "rows", "why"]
 
@@ -434,6 +445,13 @@ def main():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", required=True, choices=("universe", "backfill", "daily"))
+    ap.add_argument("--reset-months-done", action="store_true",
+                     help="backfill 專用：先刪掉續跑台帳再回補全部月份。"
+                     "⛔ 只在台帳被污染時用（例如 2026-09-20 那次：URL 少了"
+                     "USDT 字尾，1,635 個月全部被誤記成『官方沒有』，"
+                     "不重置的話會被續跑台帳永遠鎖住、看起來像正常的"
+                     "『略過（已完成）』）。⚠ 平常不要加這個旗標——"
+                     "它會讓已經正確完成的月份重問一次。")
     a = ap.parse_args()
     today = datetime.datetime.now(datetime.timezone.utc).date()
 
@@ -462,6 +480,11 @@ def main():
 
     if a.mode == "backfill":
         rl = runlog.Run("crypto:backfill")
+        if a.reset_months_done:
+            removed = reset_months_done()
+            rl.info("⚠ 已重置續跑台帳",
+                    "刪掉 _crypto_months_done.csv，全部月份重問" if removed
+                    else "台帳本來就不存在，等同全新回補")
         rl.info("這一趟", f"回補歷史月檔（2017-{EARLIEST_MONTH:02d} 起）｜{len(symbols)} 個幣種")
         totals = {"ok": 0, "fail": 0, "skipped": 0, "nodata": 0, "new_rows": 0}
         detail = []
