@@ -309,6 +309,16 @@ def iso_week_gaps(days):
     return gaps
 
 
+# ⭐⭐ 2026-09-21：市場情報分析線 0110 問「這批週檔裡有沒有哪幾週
+#   從沒被任何外部來源核對過」——有，是 2017~2018 那 10 週（封存在
+#   2019 起那批【之前】，是使用者另外送的 `.csv`／`.xlsx`，讀法見
+#   `read_hist_week()`；2018 那份還多一道 `rebuild_codes()` 復原前導 0）。
+#   ⛔ 而 2019 起那批也只有【一次】獨立核對（市場情報分析線 2026-09-16
+#   的 23 個檢查點對帳，見 `db_status.py` E2 的說明）——這裡只標
+#   【哪一段從未被檢查過】，⛔ 不宣稱另一段「已驗證」是常態保證。
+HIST_EXT_CHECK_CUTOFF = "2019-01-01"
+
+
 def hist_gate(rl):
     """`tdcc_hist/` 的常駐閘門（週數只准往上 ＋ 缺口棘輪）。→ 週數。"""
     days, note = hist_weeks()
@@ -326,7 +336,13 @@ def hist_gate(rl):
     if not days:
         rl.info("集保歷史", note)
         return 0
-    rl.info("集保歷史", f"{len(days)} 週（{days[0]} ~ {days[-1]}）｜{note}")
+    early = [d for d in days if d < HIST_EXT_CHECK_CUTOFF]
+    unchecked_note = ""
+    if early:
+        unchecked_note = (f"｜⚠ {len(early)} 週（{early[0]} ~ {early[-1]}）"
+                           "**從未被任何外部來源核對過**")
+    rl.info("集保歷史",
+            f"{len(days)} 週（{days[0]} ~ {days[-1]}）｜{note}{unchecked_note}")
     lowwater.gate(rl, hist_low_path(), len(days), lowwater.UP,
                   "集保歷史週檔的週數（⛔ 這批只有使用者那份封存，"
                   "官方查詢頁最舊只到 2025-09-19 ⇒ 少一週就永久少一週）")
