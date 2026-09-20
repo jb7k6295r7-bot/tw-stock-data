@@ -116,9 +116,16 @@ def scan(root="."):
 #   ⛔ 門檻太低 ⇒ 每天紅 ⇒ 被學會忽略（跟 MIN_STMTS 同一個道理）。
 MIN_COLS = 6
 
-# ⚠ 白名單同上：**空的**，要加之前先回答「為什麼這兩份不能收成一份」。
+# ⚠ 白名單同上：要加之前先回答「為什麼這兩份不能收成一份」。
 ALLOW_CONST = {
-    # (("a.py:A", "b.py:B"), "prefix"): "理由",
+    # 2026-09-20：crypto.DAY_HEADER（幣安日K：quote_volume／trades／
+    # taker_buy_* 是幣安特有的量，TW 股票沒有這些概念）跟 fetch.PRICE_HEADER
+    # （台股日檔）只是剛好共用 open/high/low/close/volume 這五個通用金融
+    # 詞彙開頭，⛔ 不是同一份契約被抄了一份再走岔——它們是兩個完全不同的
+    # 資料來源／資產類別，收成一份會讓其中一邊背著另一邊用不到的欄位。
+    (("crypto.py:DAY_HEADER", "fetch.py:PRICE_HEADER"), "prefix"):
+        "幣安日K跟台股日檔是不同資產類別的獨立契約，共用前綴只是巧合"
+        "（都用 OHLCV 這五個通用詞），不是同一份被抄走岔。",
 }
 
 
@@ -143,13 +150,18 @@ def scan_consts(root="."):
             if not isinstance(tgt, ast.Name) or not tgt.id.isupper():
                 continue
             v = node.value
-            if not isinstance(v, (ast.List, ast.Tuple)):
+            # ⛔ 2026-09-20 補：只認 List／Tuple 漏掉了 `X = {"a", "b", ...}`
+            #   這種 set 常數（`STABLECOIN_SYMBOLS` 就是這樣被漏掉的）。
+            if not isinstance(v, (ast.List, ast.Tuple, ast.Set)):
                 continue
             items = [e.value for e in v.elts
                      if isinstance(e, ast.Constant) and isinstance(e.value, str)]
             if len(items) != len(v.elts) or len(items) < MIN_COLS:
                 continue
-            vals[f"{fn}:{tgt.id}"] = tuple(items)
+            # ⭐ set 是無序的（語意上），寫的順序不算數 ⇒ 排序後再比，
+            #   ⛔ 不然同一組元素換個寫法順序就會被讀成「不是同一份」；
+            #   list／tuple 保留原順序——那裡順序就是欄位順序，是真的差異。
+            vals[f"{fn}:{tgt.id}"] = tuple(sorted(items)) if isinstance(v, ast.Set) else tuple(items)
     out, names = [], sorted(vals)
     for i, a in enumerate(names):
         for b in names[i + 1:]:
