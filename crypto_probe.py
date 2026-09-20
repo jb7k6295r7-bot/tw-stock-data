@@ -29,12 +29,43 @@ IP 段被 Binance 法遵封鎖擋掉，⛔ 這條路死了，第二輪不重打�
 抓不到就退一天再試），200 才算數、⛔ 不比目錄頁的字串。
 """
 import datetime
+import io
 import json
 import sys
 import urllib.error
 import urllib.request
+import zipfile
 
 TIMEOUT = 20
+
+
+def _peek_kline_csv(zip_bytes, label):
+    """解開一個 klines zip，印出**真正的欄位長什麼樣**——⛔ 不要用猜的。
+
+    已知 Binance 在某個時間點把 daily klines 的 CSV 從「純數字、無表頭」
+    改成「第一列是表頭文字」——兩種格式混著解析會把表頭那一列當成一筆
+    假資料，或者把真資料的第一欄當成表頭跳過。⇒ 這裡直接印出來看，
+    不要靠記憶或猜測。
+    """
+    print(f"\n--- {label}：解開 zip 看真正的 CSV 內容 ---")
+    try:
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+            names = z.namelist()
+            print(f"zip 內的檔案：{names}")
+            with z.open(names[0]) as f:
+                lines = f.read().decode("utf-8", "replace").splitlines()
+    except Exception as e:                                        # noqa: BLE001
+        print(f"⛔ 解壓縮或讀取失敗：{e}")
+        return
+    print(f"總行數：{len(lines)}")
+    for i, ln in enumerate(lines[:3]):
+        cols = ln.split(",")
+        print(f"  第 {i+1} 行（{len(cols)} 欄）：{ln}")
+    if lines:
+        first_cell = lines[0].split(",")[0].strip()
+        looks_like_header = not first_cell.lstrip("-").replace(".", "", 1).isdigit()
+        print(f"⇒ 第一列第一格是 {first_cell!r}，"
+              f"{'看起來像表頭文字' if looks_like_header else '看起來是數字（無表頭）'}")
 
 
 def _get(url, headers=None):
@@ -78,6 +109,8 @@ def main():
     s5b, b5b = probe("Binance vision｜BTCUSDT 2017-08 月檔本體（真的下載一個檔）",
                        "https://data.binance.vision/data/spot/monthly/klines/"
                        "BTCUSDT/1d/BTCUSDT-1d-2017-08.zip")
+    if s5b == 200:
+        _peek_kline_csv(b5b, "2017-08（舊）月檔")
     s5c, _ = probe("Binance vision｜昨天的日檔清單（驗每日更新的時效）",
                     "https://data.binance.vision/?prefix="
                     "data/spot/daily/klines/BTCUSDT/1d/")
@@ -117,6 +150,8 @@ def main():
             st, body = _get(url)
             if st == 200 and (body or b"")[:2] == b"PK":   # 真的是 zip 檔頭
                 hit = (st, d.isoformat())
+                if sym == "BTC":
+                    _peek_kline_csv(body, f"{d.isoformat()}（新）日檔")
                 break
         avail[sym] = hit is not None
         if hit:
