@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-21T01:40:20+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35525943817
+# ⏱ 這一趟：2026-09-21T04:09:22+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35534214863
 tls_probe.py　TPEx／TWSE 的 TLS 憑證鏈探針。⛔ 只讀不寫資料，也**不改任何驗證設定**。
 
 ⛔ 只讀不寫資料，也**不改任何驗證設定**。三發的差別只在「拿哪一份 CA」。
@@ -8,8 +8,8 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ====================================================================
 ■ TPEx（今天掛的那一站）
   https://www.tpex.org.tw/www/zh-tw/margin/sbl?date=2026/09/11&id=&response=json
-    系統 CA                  ✅ HTTP 200｜99,592 bytes
-    certifi 的 CA           ✅ HTTP 200｜99,592 bytes
+    系統 CA                  ✗ HTTPError: HTTP Error 403: Forbidden
+    certifi 的 CA           ✗ HTTPError: HTTP Error 403: Forbidden
     對方送的葉憑證       1,923 bytes
     ⭐ 對方實際送了 **4 張**憑證（有中間憑證 ⇒ 問題不在漏送）
       subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
@@ -243,8 +243,8 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ====================================================================
 ■ TPEx openapi（同一站的另一條）
   https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes
-    系統 CA                  ✅ HTTP 200｜4,490,821 bytes
-    certifi 的 CA           ✅ HTTP 200｜4,490,821 bytes
+    系統 CA                  ✗ HTTPError: HTTP Error 403: Forbidden
+    certifi 的 CA           ✗ HTTPError: HTTP Error 403: Forbidden
     對方送的葉憑證       1,923 bytes
     ⭐ 對方實際送了 **4 張**憑證（有中間憑證 ⇒ 問題不在漏送）
       subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
@@ -378,8 +378,8 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 
 ====================================================================
 ■ 判讀（⛔ 照這三格看，不要自己推）
-  TPEx（今天掛的那一站）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
+  TPEx（今天掛的那一站）：⛔ **兩份 CA 都不通** ⇒ 多半是**對方漏送中間憑證**（看上面「對方一共送了幾張」）⇒ 修法：補中間憑證，⛔ **仍然不可以關掉驗證**
   TWSE（對照組，剛剛才跑完 2,850 天）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
-  TPEx openapi（同一站的另一條）：✅ 系統 CA 就通了 ⇒ 這一站沒問題
+  TPEx openapi（同一站的另一條）：⛔ **兩份 CA 都不通** ⇒ 多半是**對方漏送中間憑證**（看上面「對方一共送了幾張」）⇒ 修法：補中間憑證，⛔ **仍然不可以關掉驗證**
 
 ⛔⛔ 不論結果是哪一格，**都不可以用 `verify=False`／`CERT_NONE` 當修法**。
