@@ -12,7 +12,9 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from backtest import research11 as R11  # noqa: E402
 from backtest import researchp3 as R  # noqa: E402
+from backtest import researchp9 as P9  # noqa: E402
 
 FAIL = 0
 
@@ -88,8 +90,78 @@ if __name__ == "__main__":
         s0 = sd[sd.seed == 7000].iloc[0]
         check(len(ref) == 1 and abs(s0["A_slot"] - ref["slot"].iloc[0]) < 0.02, f"甲 N30 null 種子 7000 槽位 {s0['A_slot']:.3f} ≈ P1 portfolio 中位 {ref['slot'].iloc[0]:.3f}（同引擎同種子；⚠ 中位 vs 單種子，只驗量級）")
         check(((sd["B_slot"] - sd["A_slot"]).abs() < 0.05).all() and (sd["avg_exposure"] > 0).all() and (sd["B_trades"] > 0).all(), f"乙槽位與甲相差 < 5pp（同進場序列；bench 賣出扣成本可能少一點：{(sd['B_slot'] - sd['A_slot']).round(4).tolist()}）、平均曝險 > 0")
+    # ───────────────────────────────── PREREGP9 2-C ⓑ（回測線 2026-09-20 15:10 追加；⛔ 不新增第 10 支自測檔）
+    print("[researchp9] 引擎：弱勢日半個 slot")
+    ncal9 = 20; sids9 = ["A", "B"]
+    cl9 = {s_: np.linspace(10.0, 20.0, ncal9) for s_ in sids9}
+    op9 = {s_: np.linspace(10.0, 20.0, ncal9) + 0.1 for s_ in sids9}
+    sig9 = pd.DataFrame([{"sid": s_, "entry_pos": 5, "xpos_H5": 12,
+                          "g_H5": cl9[s_][12] / op9[s_][5] - 1.0} for s_ in sids9])
+    def sim9(**kw):
+        return R11.simulate_mtm(sig9, "H5", 2, np.random.default_rng(3), cl9, op9, ncal9, return_equity=True, **kw)
+    base9 = sim9()
+    zeros9 = sim9(weak=np.zeros(ncal9, bool))
+    check(np.array_equal(base9["equity"], zeros9["equity"]) and base9["cagr"] == zeros9["cagr"],
+          "weak 全 False ⇒ 與不傳 weak 【逐位元】相同（新參數不動原版路徑）")
+    allT9 = np.ones(ncal9, bool)
+    half9 = sim9(weak=allT9)                                   # ⭐ 不傳 weak_size ⇒ 走【預設值 0.5】那條路
+    check(abs(half9["hold_val"][5] / base9["hold_val"][5] - 0.5) < 1e-12 and base9["hold_val"][5] > 0,
+          f"weak 全 True（⛔ 不傳 weak_size ⇒ 預設 0.5）⇒ 進場日持股市值恰為一半（{half9['hold_val'][5]:.6f} vs {base9['hold_val'][5]:.6f}）")
+    one9 = sim9(weak=allT9, weak_size=1.0)
+    check(np.array_equal(one9["equity"], base9["equity"]), "weak 全 True 但 weak_size=1.0 ⇒ 與基準逐位元相同（⇒ 縮的是 weak_size 不是別的）")
+    check("max_pos_frac" not in base9, "report_maxw 預設 False ⇒ 回傳【沒有】max_pos_frac 這個鍵（原版回傳逐位元相同）")
+    solo = R11.simulate_mtm(sig9, "H5", 1, np.random.default_rng(3), cl9, op9, ncal9, return_equity=True, report_maxw=True)
+    want_mw = float(np.max(solo["hold_val"] / solo["equity"]))
+    check(abs(solo["max_pos_frac"] - want_mw) < 1e-12 and 0 < solo["max_pos_frac"] <= 1,
+          f"max_pos_frac ＝ 逐日 max(部位市值÷equity)＝{want_mw:.4f}（N=1 ⇒ 單一部位就是全部持股）")
+    print("[researchp9] 弱勢旗標的時序與暖身")
+    bn = np.full(200, 100.0); bn[120:125] = 90.0
+    w9 = P9.weak_flags(bn, 200)
+    check(not w9[:P9.MA_WIN].any(), f"暖身不足（前 {P9.MA_WIN} 天）weak 一律 False")
+    check((not w9[120]) and w9[121] and w9[125] and (not w9[126]),
+          "時序：t−1 收盤跌破才算 ⇒ 跌破當天(120) False、次日(121) True；回到均線上的次日(126) 才 False")
+    check(int(w9.sum()) == 5, f"弱勢日數 ＝ 跌破段長度（平移一天、不增不減）：{int(w9.sum())}")
+    print("[researchp9] 回落事件與分型")
+    eq9 = np.array([90, 95, 98, 100, 90, 80, 74, 85, 95, 99, 101, 97, 93, 90, 92, 95], float)
+    ev9 = P9.dd_events(eq9, 0, len(eq9))                        # ⭐ 不傳 thresh ⇒ 走【預設值 0.20】那條路
+    check(len(ev9) == 1 and ev9[0]["peak"] == 3 and ev9[0]["trough"] == 6 and ev9[0]["recover"] == 10
+          and abs(ev9[0]["dd"] + 0.26) < 1e-12 and ev9[0]["recovered"],
+          f"一個 −26% 事件：高點 3 → 谷底 6 → 回到高點 10（⛔ 後面那段 −10.9% 不算）：{[(e['peak'], e['trough'], round(e['dd'], 4)) for e in ev9]}")
+    check(len(P9.dd_events(np.array([100, 95, 90, 85, 95, 101], float), 0, 6)) == 0, "反向驗：只跌 15% ⇒ 0 個事件（⛔ 門檻是 20%）")
+    k1, p2a, _ = P9.dd_type(np.array([100, 70, 69, 68, 67], float), 0, 4)
+    k2, _, p5b = P9.dd_type(np.concatenate([[100.0], 100 * 0.99 ** np.arange(1, 41)]), 0, 40)
+    k3, p2c, p5c = P9.dd_type(np.array([100, 92, 84.6, 79.6, 74.8, 70.3, 69.6, 68.9, 68.2, 67.5, 66.9], float), 0, 10)
+    check(k1 == "單日暴跌型" and p2a >= 0.5, f"分型：最差 2 日占總跌幅 {p2a * 100:.1f}% ≥ 50% ⇒ 單日暴跌型")
+    check(k2 == "延續下跌型" and p5b < 0.5, f"分型：40 天等速下跌、最差 5 日只占 {p5b * 100:.1f}% ⇒ 延續下跌型")
+    check(k3 == "混合型" and p2c < 0.5 <= p5c, f"分型：最差2日 {p2c * 100:.1f}% < 50% ≤ 最差5日 {p5c * 100:.1f}% ⇒ 混合型")
+    check(abs(P9.window_mdd(np.array([100, 90, 95, 80, 85], float), 1, 4) - (80 / 95 - 1)) < 1e-12,
+          "window_mdd 用【窗內自己】的累積高點（95）⇒ −15.8%，⛔ 不是窗外的 100（−20%）")
+    check(P9.ma_break_segments(bn, 100, 199) == [(120, 5)], f"跌破段：起日＝前一日仍在之上的那一天、段長 5：{P9.ma_break_segments(bn, 100, 199)}")
+    check(P9.ma_break_segments(bn, 122, 199) == [] and P9.ma_break_segments(bn, 121, 130) == [],
+          "⭐ 窗從【已經在均線之下】的那幾天開始 ⇒ 那一段**不算新訊號**（登錄 §7-1：訊號＝前一日仍在之上的第一天）"
+          f"：{P9.ma_break_segments(bn, 122, 199)}")
+    print("[researchp9] 母體月報酬與判定方向")
+    cal9 = pd.DatetimeIndex(pd.date_range("2020-01-01", periods=40, freq="D"))
+    cl10 = {"A": np.full(40, 100.0), "B": np.full(40, 100.0), "C": np.full(40, 100.0)}
+    cl10["A"][39] = 110.0; cl10["B"][39] = 50.0; cl10["C"][30] = np.nan
+    pn9 = pd.DataFrame([{"stock_id": "A", "eligible": True, "measure_date": pd.Timestamp("2020-02-05")},
+                        {"stock_id": "B", "eligible": False, "measure_date": pd.Timestamp("2020-02-05")},
+                        {"stock_id": "C", "eligible": True, "measure_date": pd.Timestamp("2020-02-05")}])
+    MU9 = P9.month_universe_returns(pn9, cal9, cl10)
+    check(len(MU9) == 1 and MU9["ym"].iloc[0] == "2020-02" and MU9["n"].iloc[0] == 1 and abs(MU9["ret"].iloc[0] - 0.10) < 1e-12,
+          f"母體月報酬：只收 eligible（B 被擋）、兩端要有值（C 的上月底是 NaN）⇒ n=1、ret={MU9['ret'].iloc[0]:.4f}")
+    check(bool(P9.passes(0.30, -0.30, 0.2403, -0.34)) and not bool(P9.passes(0.30, -0.40, 0.2403, -0.34)),
+          "判定：年化夠且回落【較淺】才過；回落 −40% 深於 −34% ⇒ 不過（⛔ 負數的方向）")
+    check(not bool(P9.passes(0.20, -0.30, 0.2403, -0.34)) and not bool(P9.passes(0.20, -0.40, 0.2403, -0.34)),
+          "判定：年化不夠 ⇒ 不論回落多淺都不過（⛔ 兩條同時成立才算）")
+    src9 = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "researchp9.py"), encoding="utf-8").read()
+    check('_S["weak"] if arm == "b" else None' in src9, "呼叫點：基準組傳 weak=None（⛔ 不是傳全 False 的陣列繞過去）")
+    check('passes(md["cagr"], md["mdd"], b_c, b_m)' in src9 and 'passes(md["ca"], md["ma"], b_ca, b_ma)' in src9,
+          "呼叫點：主判定與 A 窗都走同一個 passes()（⛔ 沒有第二份不等式）")
+    check("evs = dd_events(eb," in src9 and 'eb = eqs["base"]["equity"]' in src9, "呼叫點：事件用【基準組】的曲線找（追加一 §八：用 ⓑ 自己的會循環）")
+    check('EV["saved_pp"] = (EV["mdd_win_b"] - EV["mdd_win_base"]) * 100' in src9, "呼叫點：救到幾 pp ＝ ⓑ 窗內回落 − 基準窗內回落（正值＝救到）")
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
 
-# 突變（前後 rm -rf backtest/__pycache__）：rebuild 用 e_t 而非 e_{t−1} ⇒ 第 1 條紅；shuffle 不重排 ⇒ day 條紅；judge 的 h1 改 >= ⇒ H1 兩條紅；
+# PREREGP9 突變（前後 rm -rf backtest/__pycache__）：weak 平移拿掉（w[:]=below）⇒ 時序條紅；slot*weak_size 改成不乘 ⇒ 半個 slot 條紅；\n#   dd_events 的門檻改 0.10 ⇒ 反向驗條紅；dd_type 的 p2>=0.50 改 >0.50 或兩型順序對調 ⇒ 分型條紅；window_mdd 用全序列高點 ⇒ 窗內條紅；\n#   passes 的 mdd >= 改 <= ⇒ 判定方向兩條紅；month_universe_returns 不濾 eligible ⇒ 母體月報酬條紅。\n# 突變（前後 rm -rf backtest/__pycache__）：rebuild 用 e_t 而非 e_{t−1} ⇒ 第 1 條紅；shuffle 不重排 ⇒ day 條紅；judge 的 h1 改 >= ⇒ H1 兩條紅；
 #   N_MIN_MONTHS 改 20 ⇒ 還沒測條紅；MAIN_CELLS 少一格 ⇒ 格子條紅。

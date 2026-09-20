@@ -398,7 +398,8 @@ _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
-                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None):
+                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
+                 weak=None, weak_size: float = 0.5, report_maxw: bool = False):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -427,6 +428,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         （⛔ 本引擎的進場價是當日開盤，收盤之後不可能再用同一天的開盤進場）。
       ⇒ 多回報五個量（⛔ 給 PREREGP7 的必報用）：stop_exits／stop_rate／stop_days（觸發日的日曆位置 list）／
         stop_max_same_day（單日觸發家數最大值）／stop_cut_right_tail（被砍掉、原本排程出場會賺 > 50% 的筆數）。
+    PREREGP9 2-C ⓑ（2026-09-20，策略線 seq=5 §2-C ＋ 回測線追加一）再加：
+      weak        None（原版路徑，⛔ 逐位元相同）／長度 ncal 的布林序列：weak[t] ＝ 第 t 天是「弱勢」
+                  ⇒ **當天進場的新部位**只買 weak_size 個 slot（登錄逐字：新部位只買 0.5 slot）
+      weak_size   0 < x ≤ 1，預設 0.5
+      report_maxw False（⛔ 回傳鍵與原版相同）／True ⇒ 多回 max_pos_frac＝逐日「單一部位市值 ÷ equity」的最大值
+      ⭐ 省下的那半個 slot **留在現金**（⛔ 不讓給下一個候選、⛔ 不放大別的部位）⇒ 它的報酬照 cash_mode 走。
+      ⛔ 只作用在【新部位】：已持有的部位不減、不賣、不調整（登錄 §2-C ⓑ 逐字）。
+      ⚠ weak[t] 的**時序**由呼叫端負責（PREREGP9 用 t−1 的收盤與 MA60[t−1]）——⛔ 本引擎不自己算弱勢。
     """
     use_bench = cash_mode == "bench"
     if use_bench:
@@ -450,6 +459,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     stop_kind, stop_x = (stop if stop is not None else (None, None))
     if stop is not None and (stop_kind not in ("fix", "trail") or not (0 < stop_x < 1)):
         raise ValueError(f"stop 只能是 ('fix'|'trail', 0<X<1)，收到 {stop!r}")
+    # PREREGP9 2-C ⓑ：弱勢日的新部位只買 weak_size 個 slot。⛔ weak is None 時下面每一段都跳過 ⇒ 原版路徑逐位元相同。
+    if weak is not None:
+        weak = np.asarray(weak, bool)
+        if weak.shape != (ncal,):
+            raise ValueError(f"weak 要是長度 {ncal} 的布林序列，收到 {weak.shape}")
+        if not (0 < weak_size <= 1):
+            raise ValueError(f"weak_size 要在 (0, 1]，收到 {weak_size!r}")
+    max_pos_frac = 0.0
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
     stop_exits = 0; stop_days = []; stop_cut_right_tail = 0; hold_days = []; entry_day = {}
 
@@ -537,6 +554,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                             _rec(cand.iloc[i], "cap", t)
                     take = np.asarray(take, dtype=int)
                 slot = equity[t - 1] / n_slots
+                if weak is not None and weak[t]:
+                    slot = slot * weak_size          # ⭐ 只縮**今天要進的新部位**；省下的留在現金
                 entered_q = set()
                 for j, i in enumerate(take):
                     if use_bench:
@@ -582,6 +601,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     peak_close[sid] = max(peak_close.get(sid, ep), c)
         hv = sum(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos)
         equity[t] = cash + hv
+        if report_maxw and open_pos and equity[t] > 0:   # ⭐ 必報③：單一部位最大佔比（⛔ 唯讀，不動數值路徑）
+            max_pos_frac = max(max_pos_frac, max(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos) / equity[t])
         if return_equity:
             hold_val[t] = hv          # PREREGP3 丙（時點隨機對照）要的逐日持股市值；⛔ 只在 return_equity 時記，數值路徑不變
     equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
@@ -596,6 +617,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["stop_max_same_day"] = max((n for _, n in stop_days), default=0)
         out["stop_cut_right_tail"] = stop_cut_right_tail
         out["hold_days_mean"] = float(np.mean(hold_days)) if hold_days else np.nan
+    if report_maxw:                 # PREREGP9 §2-E③（⛔ report_maxw=False 時這個鍵不存在 ⇒ 原版回傳逐位元相同）
+        out["max_pos_frac"] = max_pos_frac
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
