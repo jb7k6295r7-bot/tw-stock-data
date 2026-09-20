@@ -1,0 +1,4 @@
+method,non_monotonic_quintiles,independent,diff_pp,lo_pp,hi_pp,n_months
+ret_120,2.0,False,,,,
+dist_lo120,2.0,False,,,,
+residual,,True,3.6774090124645618,2.249755107305689,5.105062917623434,111.0

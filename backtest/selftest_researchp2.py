@@ -257,6 +257,67 @@ def t_p6_drop_and_pair():
     check(abs(P6.NULL_EXPECT - 0.4) < 1e-12, "虛無期望寫死 0.4 格（＝0.05×8）")
 
 
+def t_p8_helpers():
+    """PREREGP8：逐月橫斷面分位、十分位表、逐月配對差、單調例外、代理檢定的雙重分位。"""
+    from . import researchp8 as P8
+    d = pd.to_datetime(["2024-01-02"] * 10 + ["2024-02-01"] * 10)
+    df = pd.DataFrame({"measure_date": d, "stock_id": [f"S{i}" for i in range(10)] * 2,
+                       "dist_hi120": list(np.arange(10.0)) + list(np.arange(10.0) * -1),
+                       "fwd120": list(np.arange(10.0) / 100) + list(np.arange(10.0) / 100)})
+    b = P8.xs_bucket(df, "dist_hi120", 10)
+    check(list(b[:10]) == list(range(10)), f"⭐ 逐月橫斷面切：第一個月由小到大 ⇒ 0..9（實得 {list(b[:10])}）")
+    check(list(b[10:]) == list(range(9, -1, -1)), "⭐ 第二個月的值是反的 ⇒ 分位也反過來（⛔ 全期一起切會看不出來）")
+    df["bucket"] = b
+    t = P8.decile_table(df, 120)
+    check(len(t) == 10 and abs(t[t.bucket == 10]["mean"].iloc[0] - 0.045) < 1e-12,
+          f"十分位表 10 格；第 10 格平均＝(0.09+0.00)/2＝0.045（實得 {t[t.bucket == 10]['mean'].iloc[0]:.4f}）")
+    # ⭐ 兩個月的 D10−D1 一個 +9pp 一個 −9pp ⇒ 配對差 0、CI 含 0 ⇒ ⛔ 測不出
+    pdif = P8.paired_diff(df, 120, 9, 0)
+    check(pdif["n_months"] == 2 and abs(pdif["diff_pp"]) < 1e-9 and not pdif["detectable"],
+          f"逐月配對：兩個月一正一負 ⇒ 差 0、⛔ 測不出（實得 {pdif['diff_pp']:+.2f}pp）")
+    # ⭐⭐ 分辨點：第三個月【D1 那一桶沒有報酬】⇒ 配對法要【整月丟掉】，⛔ 各取全期均值會把它算進去
+    d3 = pd.DataFrame({"measure_date": pd.to_datetime(["2024-03-01"] * 10), "stock_id": [f"S{i}" for i in range(10)],
+                       "dist_hi120": np.arange(10.0), "fwd120": [np.nan] + [1.0] * 9})
+    df3 = pd.concat([df.drop(columns=["bucket"]), d3], ignore_index=True)
+    df3["bucket"] = P8.xs_bucket(df3, "dist_hi120", 10)
+    p3 = P8.paired_diff(df3, 120, 9, 0)
+    check(p3["n_months"] == 2 and abs(p3["diff_pp"]) < 1e-9,
+          f"⭐ 第三個月缺 D1 ⇒ 配對法只用 2 個月、差仍是 0（實得 {p3['n_months']} 月 {p3['diff_pp']:+.2f}pp）"
+          "⇒ ⛔ 兩桶各取全期均值會被那一個月拉走")
+    up = pd.DataFrame({"bucket": range(1, 11), "mean": np.arange(10.0)})
+    dn = up.copy(); dn.loc[3, "mean"] = -5.0                 # 一個坑 ⇒ 相鄰遞減 1 次
+    dn2 = up.copy(); dn2.loc[3, "mean"] = -5.0; dn2.loc[7, "mean"] = -5.0   # 兩個坑 ⇒ 2 次
+    check(P8.monotonic_exceptions(up) == 0, "單調遞增 ⇒ 例外 0")
+    check(P8.monotonic_exceptions(dn) == 1, f"⭐ 中間一個坑 ⇒ 例外 1（判準 ≤ 1 ⇒ 還算單調；實得 {P8.monotonic_exceptions(dn)}）")
+    check(P8.monotonic_exceptions(dn2) == 2, f"⭐ 兩個坑 ⇒ 例外 2 ⇒ ⛔ 判測不出（實得 {P8.monotonic_exceptions(dn2)}）")
+    check(P8.monotonic_exceptions(up.assign(mean=np.arange(10.0)[::-1])) == 9, "整條反過來 ⇒ 例外 9（⛔ 不是 0）")
+    # ⭐ 雙重分位：控制維度切五分位、內部再切三分位
+    n = 150
+    rng = np.random.default_rng(0)
+    ctl = np.arange(n, dtype=float)
+    d2 = pd.DataFrame({"measure_date": pd.to_datetime(["2024-01-02"] * n), "stock_id": [f"T{i}" for i in range(n)],
+                       "ret_120": ctl, "dist_lo120": rng.normal(size=n),
+                       "dist_hi120": ctl + rng.normal(size=n) * 0.01,   # ⭐ 與控制維度高度相關 ⇒ 分得出內層有沒有在分位【內部】切
+                       "fwd120": rng.normal(size=n) / 100})
+    T = P8.proxy_double_sort(d2, "ret_120", 120)
+    check(set(T["ctl_quintile"]) == {1, 2, 3, 4, 5} and set(T["tercile"]) == {1, 2, 3},
+          f"雙重分位 5×3 格（實得 {T['ctl_quintile'].nunique()}×{T['tercile'].nunique()}）")
+    check(len(T) == 15 and int(T["n"].min()) == int(T["n"].max()) == 10,
+          f"⭐⭐ 內層是在【每一個控制分位內部】切 ⇒ 15 格各 10 檔（實得 {int(T['n'].min())}~{int(T['n'].max())}）"
+          "⇒ ⛔ 用全域切點會讓每個分位裡只剩一種 tercile")
+    check(P8.SEED0 == 98000 and P8.HOLDS == (20, 60, 120) and P8.FEATURE == "dist_hi120",
+          "種子 98000、三個持有期、特徵名寫死")
+    check(P8.N_DEC == 10 and P8.N_TER == 3 and P8.N_QUI == 5, "十分位／三分位／五分位寫死")
+    # ⭐ 出場口徑：本件是新工作 ⇒ 持有 n 根
+    cal = pd.date_range("2024-01-01", periods=300, freq="D")
+    cl = {"A": np.linspace(100, 200, 300)}; op = {"A": np.linspace(100, 200, 300) * 0.99}
+    one = pd.DataFrame([{"measure_date": cal[5], "stock_id": "A", "amt20": 1e8, "vol60": 0.3}])
+    f = P8.add_forward(one, cal, cl, op, holds=(20,))
+    want = cl["A"][D.exit_pos(6, 20)] / op["A"][6] - 1
+    check(abs(float(f["fwd20"].iloc[0]) - want) < 1e-12, "fwd20 ＝ 收盤[exit_pos(entry,20)] / 開盤[entry] − 1（持有 20 根）")
+    check(D.exit_pos(6, 20) == 25, f"⛔ 持有 20 根 ⇒ 出場位置 entry+19＝25（⛔ 不是 26；實得 {D.exit_pos(6, 20)}）")
+
+
 def t_overlap():
     n = 10
     la = [{"reason": "in", "t": 2, "exit_pos": 6, "sid": "A"}, {"reason": "in", "t": 2, "exit_pos": 6, "sid": "B"}]
@@ -291,6 +352,7 @@ if __name__ == "__main__":
     print("[researchp7] 門檻B sig 重建"); t_gate_b_sig()
     print("[口徑] H〈n〉＝持有 n 根（追加二十一）"); t_hold_bars_ruling()
     print("[researchp6] 第二道篩與配對判定量"); t_p6_drop_and_pair()
+    print("[researchp8] 分位／配對／代理檢定"); t_p8_helpers()
     print("[researchp2] 重疊度"); t_overlap()
     print("[researchp2] 判定"); t_judge()
     print("[researchp2] 種子"); t_seeds()
