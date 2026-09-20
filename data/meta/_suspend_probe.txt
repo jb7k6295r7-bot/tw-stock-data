@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-09-20T17:38:03+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35502058830
-# 停牌／處置／注意 端點探針 2026-09-20T17:37:25+08:00
+# ⏱ 這一趟：2026-09-20T18:02:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35503068292
+# 停牌／處置／注意 端點探針 2026-09-20T18:01:50+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
 # 這一趟的選集：--set longhalt
@@ -18,6 +18,7 @@
       「恢復買賣」0 次
       「財務業務」2 次
    ③ <tr> 0 個｜js 4 支　⛔ **js 空殼**
+     ⓪  `<form action=…>` 的對象：0 種
      ①  `/…/api/…` 出現過哪些：0 種
      ②  `fetch(` 的對象：0 種
      ③  `$.ajax` / `url:` 的對象：0 種
@@ -32,6 +33,7 @@
      ⑥ 外部 `.js` 逐支挖：共 5 支｜本站 4 支（其中通用函式庫 0 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
          ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
          ── https://www.twse.com.tw/res/js/main.js（128,697 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：2 種
              /api
              /rwd-api-sample
@@ -47,6 +49,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/js/web-report.js（19,650 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -54,6 +57,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/js/web.js（16,563 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -61,6 +65,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/lib/ie-hints.min.js（1,099 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -143,6 +148,7 @@
       「恢復買賣」0 次
       「財務業務」0 次
    ③ <tr> 0 個｜js 5 支　⛔ **js 空殼**
+     ⓪  `<form action=…>` 的對象：0 種
      ①  `/…/api/…` 出現過哪些：0 種
      ②  `fetch(` 的對象：0 種
      ③  `$.ajax` / `url:` 的對象：0 種
@@ -158,6 +164,7 @@
      ⑥ 外部 `.js` 逐支挖：共 6 支｜本站 5 支（其中通用函式庫 0 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
          ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
          ── https://www.twse.com.tw/res/js/main.js（128,697 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：2 種
              /api
              /rwd-api-sample
@@ -173,6 +180,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/js/stock-code.js（22,334 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：1 種
              /api/
          ②  `fetch(` 的對象：0 種
@@ -182,6 +190,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/js/web-report.js（19,650 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -189,6 +198,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/js/web.js（16,563 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -196,6 +206,7 @@
          ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
          ⑤  外部載入的 `.js`：0 支
          ── https://www.twse.com.tw/res/lib/ie-hints.min.js（1,099 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種

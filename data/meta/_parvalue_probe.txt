@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T17:27:12+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35502058830
+# ⏱ 這一趟：2026-09-20T17:48:44+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35503068292
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -36,6 +36,8 @@
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
      ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
      [形狀] 11,276 bytes｜中文 744 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+     ⓪  `<form action=…>` 的對象：1 種
+         /zh-tw/search.html
      ①  `/…/api/…` 出現過哪些：1 種
          /fonts.googleapis
      ②  `fetch(` 的對象：0 種
@@ -57,6 +59,7 @@
      ⑥ 外部 `.js` 逐支挖：共 11 支｜本站 10 支（其中通用函式庫 7 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
          ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
          ── https://www.tpex.org.tw/rsrc/asset/js/global.js（103,202 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -68,6 +71,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/js/main.js（45,227 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：1 種
              /api/codeQuery
          ②  `fetch(` 的對象：0 種
@@ -80,6 +84,7 @@
                  […ostname,API_PATTERN="/www/{LANG}/{ACTION}";function initHeaderSearch(){const t={"上櫃":1,"興櫃":2,"創櫃":3,Stock:1,Emerging:2,GISA:3},e=API_PATTERN.replace(/\{LANG\}/,lang).replace(/\{ACTION\}/,"api/codeQuery");function n(t){setTimeout((()=>{location.href=t}),200)}$…]
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/js/tables.js（168,139 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：2 種
              /api
              /api/codeQuery
@@ -96,6 +101,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -105,6 +111,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js（87,533 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -117,6 +124,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js（1,300 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -127,6 +135,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js（2,771 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -136,6 +145,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js（3,702 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -153,7 +163,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3dfca304b70f81d',t:'MTc4OTg5NjM5OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3dfe9a61aa0b6c6',t:'MTc4OTg5NzY4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -183,6 +193,8 @@
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
      ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
      [形狀] 11,776 bytes｜中文 748 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
+     ⓪  `<form action=…>` 的對象：1 種
+         /zh-tw/search.html
      ①  `/…/api/…` 出現過哪些：1 種
          /fonts.googleapis
      ②  `fetch(` 的對象：0 種
@@ -204,6 +216,7 @@
      ⑥ 外部 `.js` 逐支挖：共 11 支｜本站 10 支（其中通用函式庫 7 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
          ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z
          ── https://www.tpex.org.tw/rsrc/asset/js/global.js（103,202 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -215,6 +228,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/js/main.js（45,227 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：1 種
              /api/codeQuery
          ②  `fetch(` 的對象：0 種
@@ -227,6 +241,7 @@
                  […ostname,API_PATTERN="/www/{LANG}/{ACTION}";function initHeaderSearch(){const t={"上櫃":1,"興櫃":2,"創櫃":3,Stock:1,Emerging:2,GISA:3},e=API_PATTERN.replace(/\{LANG\}/,lang).replace(/\{ACTION\}/,"api/codeQuery");function n(t){setTimeout((()=>{location.href=t}),200)}$…]
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/js/tables.js（168,139 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：2 種
              /api
              /api/codeQuery
@@ -243,6 +258,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -252,6 +268,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery-3.7.1.min.js（87,533 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -264,6 +281,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery.cookie.min.js（1,300 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -274,6 +292,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery.mousewheel.min.js（2,771 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -283,6 +302,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          ── https://www.tpex.org.tw/rsrc/asset/js/jquery.session.js（3,702 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
          ①  `/…/api/…` 出現過哪些：0 種
          ②  `fetch(` 的對象：0 種
          ③  `$.ajax` / `url:` 的對象：0 種
@@ -302,7 +322,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3dfca512fd16c08',t:'MTc4OTg5NjQwNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3dfe9c97e19390e',t:'MTc4OTg5NzY5Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -313,7 +333,9 @@
       data-format = 'print'
       data-start = '20190909'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
-        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt　⛔ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troublesh...tle":"Error 520: Web server is returning an unknown error","status":520,"detai　⇒ ⚠ 取不回來**不等於**它不存在
+        https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt
+           [形狀] 292 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260920~null","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券名稱'
+           ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgRslt
            [形狀] 316 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260920~null","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing Pric'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
