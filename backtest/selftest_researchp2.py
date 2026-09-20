@@ -807,6 +807,72 @@ def t_p13():
           " ⇒ ⛔ 只看中位會讀成【完全不重疊】")
 
 
+def t_p4_recheck():
+    """resultsp1 §十二 四型分位的獨立覆核（策略線 2010 §一）：⭐ 依【型名本體】配對，⛔ 不依圈號。"""
+    import os as _os
+    from . import p4_type_recheck as RC
+    check(RC.bare("②正在噴出") == "正在噴出" and RC.bare("③純技術+回檔(H4)") == "純技術＋回檔"
+          and RC.bare("①營收+回檔(H3)") == "營收＋回檔",
+          f"型名本體 ＝ 去掉圈號與括號尾巴、全形化 ＋（實得 {RC.bare('③純技術+回檔(H4)')!r}）")
+    a = {0: "①甲", 1: "②乙"}
+    check(RC.idx_conflicts(a, {0: "①甲", 1: "②乙"}) == [] and RC.idx_conflicts(a, {0: "①乙", 1: "②甲"}) == [(0, "甲", "乙"), (1, "乙", "甲")],
+          "⭐ 型名本體的差：同一個 cluster 貼到不同的型名 ⇒ 逐項列出")
+    # ⭐ 本件的核心：型名本體【相同】而圈號【不同】⇒ 這才是要查的東西
+    cc = RC.circle_conflicts({0: "②正在噴出", 1: "③純技術＋回檔"}, {0: "③正在噴出", 1: "②純技術＋回檔"})
+    check(cc == [("正在噴出", "②", "③"), ("純技術＋回檔", "③", "②")],
+          f"⭐⭐ 圈號衝突：型名本體相同、圈號不同 ⇒ 兩型都要列（實得 {cc}）")
+    check(RC.circle_conflicts({0: "②正在噴出"}, {0: "②正在噴出"}) == [],
+          "⭐ 反向驗：圈號一樣就不算衝突（⛔ 否則它會天天紅）")
+    check(RC.idx_conflicts({0: "②正在噴出"}, {0: "③正在噴出"}) == [],
+          "⭐⭐ 而【idx_conflicts 看不到圈號差】——它比的是型名本體 ⇒ ⛔ 兩支不可以混用")
+    # 逐型比對：容差內 ⇒ 口徑差；超出 ⇒ 大聲
+    base = {"period": [RC.PERIOD] * 4, "H": [RC.H] * 4, "kmeans_idx": [0, 3, 2, 1],
+            "type": ["①營收＋回檔", "②正在噴出", "③純技術＋回檔", "④死水"], "n_months": [61, 63, 63, 63]}
+    mk = lambda n, q, mean: pd.DataFrame({**base, "n_rows": n,
+                                          **{c: [q[i][j] for i in range(4)] for j, c in enumerate(("p05", "p10", "p50", "p90"))},
+                                          "excess_pp": mean})
+    good = mk([2623, 9529, 9663, 14762],
+              [[-42.4, -32.9, -4.1, 62.0], [-42.7, -34.8, -5.6, 49.2], [-42.3, -34.5, -8.3, 38.9], [-41.9, -32.8, -6.8, 24.8]],
+              [7.9, 3.5, -0.0, -3.6])
+    good["key"] = good["type"].map(RC.bare); good = good.set_index("key")
+    c1 = RC.compare(good)
+    check(list(c1["狀態"]) == ["✅ 對上（口徑差）"] * 4 and c1["最大分位差"].max() < 1e-9,
+          "⭐ 逐型比對【依型名本體】：與策略線那張表逐格相同 ⇒ 四型全部對上")
+    check(int(c1[c1["型"] == "正在噴出"]["本線 kmeans_idx"].iloc[0]) == 3,
+          "⭐ 而配對是照型名走的 ⇒ 『正在噴出』那一列拿到的是 kmeans_idx 3（⛔ 不是圈號 2）")
+    check(RC.TOL_Q == 0.5 and RC.TOL_N == 20,
+          f"容差寫死：分位 0.5pp／列數 20 列（實得 {RC.TOL_Q}／{RC.TOL_N}）")
+    bad = good.copy(); bad.loc["死水", "p90"] = 24.8 + 3.0      # ⚠ 絕對值，⛔ 不可寫成 TOL_Q+0.01（放寬容差就不會紅了）
+    check(list(RC.compare(bad)["狀態"]).count("⛔ 超出容差") == 1,
+          f"⭐ 差 3.0pp 就要判【超出容差】（⛔ 不可以無聲吸收；⚠ 這一格的偏移要寫【絕對值】）")
+    edge = good.copy(); edge.loc["死水", "p90"] = 24.8 + RC.TOL_Q
+    check("⛔" not in list(RC.compare(edge)["狀態"])[3],
+          "⭐ 門檻是【≤】：剛好等於容差算對上（⛔ 方向寫反會全紅）")
+    # ⭐ 呼叫點：mine() 的索引鍵一定要是【型名本體】（⛔ 依圈號配對會把要查的東西當成前提）
+    tmp = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "__p4rc.csv")
+    good.reset_index(drop=True).to_csv(tmp, index=False)
+    try:
+        mi = RC.mine(tmp)
+        check(sorted(mi.index) == sorted(["營收＋回檔", "正在噴出", "純技術＋回檔", "死水"])
+              and int(mi.loc["正在噴出"]["kmeans_idx"]) == 3,
+              f"⭐ mine() 的鍵 ＝ 型名本體（⛔ 不是圈號；實得 {sorted(mi.index)}）")
+    finally:
+        _os.path.exists(tmp) and _os.remove(tmp)
+    check(RC.STRAT["正在噴出"]["p50"] == -5.6 and RC.STRAT["純技術＋回檔"]["p50"] == -8.3
+          and RC.STRAT_IDX == {0: "①營收＋回檔", 1: "④死水", 2: "②純技術＋回檔", 3: "③正在噴出"},
+          "策略線 2010 §一 的表與那四行對應【逐字寫死】（⛔ 本線不改）")
+    # ⭐ 真資料：centers_v3.json 與本線程式的對應要逐項相同（⛔ 不同就是本線抄錯了）
+    if _os.path.exists(RC.CENTERS):
+        from . import researchp4 as _P4
+        cm = RC.centers_map()
+        check(RC.idx_conflicts(cm, _P4.TYPE_OF_IDX) == [],
+              f"⭐⭐ 真資料：`researchp4.TYPE_OF_IDX` 與 centers_v3.json 的 cluster_index_to_type【逐項相同】"
+              f"（⛔ 不同就是本線抄錯了來源檔）")
+        check(len(RC.circle_conflicts(cm, RC.STRAT_IDX)) == 2,
+              f"⭐⭐ 而 centers_v3.json 與策略線 2010 §一 的圈號【有 2 型不同】"
+              f"（實得 {RC.circle_conflicts(cm, RC.STRAT_IDX)}）⇒ 本件要回報的就是這一件")
+
+
 def t_p1b():
     """PREREGP1b（seq=4＋seq=5）：假訊號組半寬、兩道閘門、四組保守法。"""
     import os as _os
@@ -1041,6 +1107,7 @@ if __name__ == "__main__":
     print("[引擎] weight_fn（PREREGP13 seq=3 §二）"); t_weight_fn()
     print("[researchp13] 三個 weight_fn ＋ 0050 代理 ＋ 重疊度"); t_p13()
     print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
+    print("[p4_type_recheck] 四型分位獨立覆核（策略線 2010 §一）"); t_p4_recheck()
     print("[researchp1b] PREREGP1b 假訊號組半寬（seq=4＋seq=5）"); t_p1b()
     print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
