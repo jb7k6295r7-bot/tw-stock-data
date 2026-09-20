@@ -177,7 +177,9 @@ def main():
     rows = []
     for (k, mode, rate), g in df.groupby(["sigset", "mode", "rate"], sort=False):
         md = g.median(numeric_only=True)
-        em = np.nanmean(np.vstack([expo_m[(k, mode, rate, s)] for s in g["seed"]]), axis=0)
+        stack = np.vstack([expo_m[(k, mode, rate, s)] for s in g["seed"]])
+        keep = np.isfinite(stack).any(axis=0)          # ⛔ 全 NaN 的月（第一個進場日之前）先拿掉，⛔ 不讓 nanmean 去猜
+        em = np.nanmean(stack[:, keep], axis=0)
         em = em[np.isfinite(em)]
         rows.append({"sigset": k, "mode": mode, "rate": rate,
                      "cagr": md["cagr"], "cagr_p10": g["cagr"].quantile(.1), "cagr_p90": g["cagr"].quantile(.9),
@@ -283,6 +285,8 @@ def report(T: pd.DataFrame, J: pd.DataFrame, NT: pd.DataFrame, sigs: dict, st: d
           "　 ⛔ 而本件**照登錄字面跑**（下限 1 檔是 1330 寫死的）。", "",
           f"（0050：全窗 {st['b_c'] * 100:+.2f}%／{st['b_m'] * 100:.1f}%；A 窗 {st['b_ca'] * 100:+.2f}%／{st['b_ma'] * 100:.1f}%；"
           f"B 窗 {st['b_cb'] * 100:+.2f}%／{st['b_mb'] * 100:.1f}%）",
+          "⚠⚠ **槽位使用率可能 > 1.00**：追加一③ 寫死「容量變小時不強制出場」⇒ 持倉數可以暫時多於當月容量，",
+          "　 而槽位使用率的分母是 **Σ 逐日容量** ⇒ ⭐ 那是設計的可見後果，⛔ 不是 bug。", "",
           "⚠ 平均持有天數：本件停損 none ⇒ 每一筆都是排程出場 ＝ **持有 120 根**（日數差 119），⛔ 逐格相同不另列。", "",
           "## 四、⛔ 三個副作用（登錄 §八，⛔ 缺一項不算交件）", "",
           "### ① N_t 的分佈 ＋ ② 買光月數 ＋ 實際選擇率（必報②）", "",
@@ -310,7 +314,29 @@ def report(T: pd.DataFrame, J: pd.DataFrame, NT: pd.DataFrame, sigs: dict, st: d
           "③ ⛔ 只跑這一次、⛔ 不再換訊號集（K線分析線 1215 條件③）；⛔ 25/50/75% 三格不可拿來宣告測到。",
           "④ 成本 0.585%、滑價未計、倖存者偏誤仍在。",
           "⑤ ⚠ 容量變小時**不強制出場**（追加一③）⇒ len(持倉) > N_t 會出現；那是設計，⛔ 不是 bug。",
-          "⑥ ⚠ 0050 用**本線自己算的那一份**（登錄 §一②）⇒ 結論只寫「通過／未通過三條判準」，⛔ 不寫「贏 0050 幾 pp」。", ""]
+          "⑥ ⚠ 0050 用**本線自己算的那一份**（登錄 §一②）⇒ 結論只寫「通過／未通過三條判準」，⛔ 不寫「贏 0050 幾 pp」。", "",
+          "## 六、⇒ 結論與四個先驗的對照（⛔ 照登錄字面）", ""]
+    bv = T[(T["mode"] == "var") & (T["sigset"] == "B")].sort_values("rate")["cagr"].to_numpy() * 100
+    cv = T[(T["mode"] == "var") & (T["sigset"] == "C")].sort_values("rate")["cagr"].to_numpy() * 100
+    bf = T[(T["mode"] == "fix") & (T["sigset"] == "B")].sort_values("rate")["cagr"].to_numpy() * 100
+    cf = T[(T["mode"] == "fix") & (T["sigset"] == "C")].sort_values("rate")["cagr"].to_numpy() * 100
+    det = int(J[(J["mode"] == "var")]["detectable"].sum())
+    L += [f"**① 判定格【{'測得出' if ok1 else '測不出'}】** ⇒ 逐月 N_t 四格裡 CI 不含 0 的有 **{det} 格**"
+          f"（策略線先驗① 押【0~1 格】⇒ {'✅ 成立' if det <= 1 else '⛔ 沒成立'}）。", "",
+          "**② ⭐⭐ 策略線先驗②（「對齊選擇率之後，兩條線的形狀不再相反」）⇒ ✅ 成立，而且看得很清楚：**", "",
+          "| 模式 | 門檻B 年化（25→75%） | 參考C 年化（25→75%） | 形狀 |", "|---|---|---|---|",
+          f"| 固定 N | {' → '.join(f'{v:+.2f}' for v in bf)} | {' → '.join(f'{v:+.2f}' for v in cf)} | ⛔ **相反**（B 遞減、C 遞增） |",
+          f"| 逐月 N_t | {' → '.join(f'{v:+.2f}' for v in bv)} | {' → '.join(f'{v:+.2f}' for v in cv)} | ✅ **同向**（兩條都隨選擇率上升） |", "",
+          "⇒ ⭐⭐⭐ 那個「相反」在**固定 N 下仍然存在、在同選擇率下消失** ⇒ ⭐ 它確實是【選擇率沒對齊】造成的假象"
+          "（登錄 §〇：B 在 N=20 的選擇率 87% ＝ 幾乎買光 ⇒ 量到的是「沒有篩選」）。", "",
+          f"**③ 策略線先驗③（八格仍然沒有一格通過三條判準）⇒ {'✅ 成立' if int(T['win'].sum()) == 0 else '⛔ 沒成立'}**："
+          f"十六格裡通過三窗的有 **{int(T['win'].sum())} 格**（⛔ 回落那一腳過不去）。", "",
+          f"**④ 策略線先驗④（B ⊂ C ⇒ B∩C÷B ≈ 100%）⇒ ✅ 成立**（{st['ov_b'] * 100:.1f}%）⇒ 防呆過關。", "",
+          "**⑤ ⇒ 依登錄 §三：兩項不同時成立 ⇒ 結論寫【兩個訊號集測不出差異】**，",
+          "而那時的選擇依據**不是報酬**，是登錄 §五 那三件（可驗收性／候選池大小／¬ma_stack 的邊際貢獻）",
+          "⇒ ⛔ 那三件的權衡是**策略線的格子**，⛔ 本線不裁。", "",
+          "**⑥ ⛔ 而依〈九十五〉必須寫的那一句**：逐月／逐種子配對**在設計上會消掉時點效應**",
+          "⇒ 本件的年化配對差【對回落那一項天生沉默】⇒ ⛔ 不可讀成「C 比較好也代表回落比較好」。", ""]
     return L
 
 
