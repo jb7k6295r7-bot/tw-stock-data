@@ -396,7 +396,7 @@ _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
-                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None):
+                 cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -414,6 +414,17 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     PREREGP2（2026-09-15）再加：
       cap_fn      None（原版路徑，逐位元相同）／callable(sid, t, holding_sids) → bool：類股集中度上限。候選依 order 逐一問，
                   不合格者標 log 原因 "cap"（⛔ 不排隊、不占 avail，名額讓給下一個候選）；holding_sids ＝ 當下持有 ＋ 今天已進的。
+    PREREGP7（2026-09-20，策略線 0945）再加：
+      stop        None（原版路徑，⛔ 逐位元相同）／("fix", X)／("trail", X)，X ＝ 正的小數（0.15 ＝ 15%）
+                  ("fix",  X) 收盤 ≤ **進場價** × (1−X) ⇒ 當日收盤出場
+                  ("trail",X) 收盤 ≤ **進場後最高收盤** × (1−X) ⇒ 當日收盤出場（最高收盤含進場日）
+      ⭐ 時序（⛔ 沒有前視）：停損只看**已經收盤**的日子。第 t 天開盤前檢查到第 t−1 天收盤破線
+        ⇒ 該部位在第 t 天被結清、槽位在第 t 天釋出（⭐ 與排程出場 exit_pos ≤ t 走**同一條路**），
+        而**記帳用的是觸發日（t−1）的收盤**——⛔ 不是第 t 天的價。
+      ⚠ 所以「出場後當天釋放槽位」在本引擎的意思是：觸發日收盤出場、**次一個交易日**那個槽位可以再進場
+        （⛔ 本引擎的進場價是當日開盤，收盤之後不可能再用同一天的開盤進場）。
+      ⇒ 多回報五個量（⛔ 給 PREREGP7 的必報用）：stop_exits／stop_rate／stop_days（觸發日的日曆位置 list）／
+        stop_max_same_day（單日觸發家數最大值）／stop_cut_right_tail（被砍掉、原本排程出場會賺 > 50% 的筆數）。
     """
     use_bench = cash_mode == "bench"
     if use_bench:
@@ -433,6 +444,12 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     units = (1.0 / bench[max(first - 1, 0)]) if use_bench else 0.0      # bench 模式：閒置資金以 bench 單位數持有
     wins = 0; pending = []; n_deferred = 0; delays = []; n_expired = 0
     inf = float("inf")
+    # PREREGP7：停損。⛔ stop is None 時下面每一段都跳過 ⇒ 原版路徑逐位元相同。
+    stop_kind, stop_x = (stop if stop is not None else (None, None))
+    if stop is not None and (stop_kind not in ("fix", "trail") or not (0 < stop_x < 1)):
+        raise ValueError(f"stop 只能是 ('fix'|'trail', 0<X<1)，收到 {stop!r}")
+    peak_close = {}                 # sid → 進場後最高收盤（trail 用）
+    stop_exits = 0; stop_days = []; stop_cut_right_tail = 0; hold_days = []
 
     def _rec(row, reason, t, delay=0, gross=np.nan):
         if log is not None:
@@ -443,6 +460,23 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             log.append(rec)
 
     for t in range(first, min(ncal, last + 2)):
+        if stop is not None and open_pos and t > first:
+            # ⭐ 只看 t−1（已經收盤的那一天）⇒ ⛔ 沒有前視；破線的部位改成「今天結清、記 t−1 的收盤」
+            hit = []
+            for k, (ex, sid, amt, gross, ep) in enumerate(open_pos):
+                if ex <= t:
+                    continue                                  # 排程出場本來就在今天結清，⛔ 不搶它
+                c = float(closes[sid][t - 1])
+                if not np.isfinite(c):
+                    continue
+                level = ep * (1 - stop_x) if stop_kind == "fix" else peak_close.get(sid, ep) * (1 - stop_x)
+                if c <= level:
+                    if gross > 0.50:
+                        stop_cut_right_tail += 1              # 原本排程出場會賺 > 50%，被停損砍掉
+                    open_pos[k] = (t, sid, amt, c / ep - 1.0, ep)
+                    hit.append(sid)
+            if hit:
+                stop_exits += len(hit); stop_days.append((t - 1, len(hit)))
         still = []
         for ex, sid, amt, gross, ep in open_pos:
             if ex <= t:
@@ -451,6 +485,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 else:
                     cash += amt * (1 + gross - COST)
                 held.discard(sid)
+                if stop is not None:
+                    peak_close.pop(sid, None)
             else:
                 still.append((ex, sid, amt, gross, ep))
         open_pos = still
@@ -532,6 +568,11 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         used += len(open_pos)
         if use_bench:
             cash = units * bench[t]
+        if stop is not None:
+            for _, sid, _, _, ep in open_pos:                 # 收盤後更新最高收盤（trail 的參考點，含進場日）
+                c = float(closes[sid][t])
+                if np.isfinite(c):
+                    peak_close[sid] = max(peak_close.get(sid, ep), c)
         hv = sum(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos)
         equity[t] = cash + hv
         if return_equity:
@@ -541,6 +582,12 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     peak = np.maximum.accumulate(equity); mdd = float(((equity - peak) / peak).min())
     out = {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / ((end - first) * n_slots), "first": first, "end": end,
            "m": trades, "pos_frac": wins / trades if trades else np.nan, "deferred": n_deferred, "delay_med": float(np.median(delays)) if delays else np.nan, "expired": n_expired}
+    if stop is not None:            # PREREGP7 必報（⛔ stop is None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同）
+        out["stop_exits"] = stop_exits
+        out["stop_rate"] = stop_exits / trades if trades else np.nan
+        out["stop_days"] = stop_days
+        out["stop_max_same_day"] = max((n for _, n in stop_days), default=0)
+        out["stop_cut_right_tail"] = stop_cut_right_tail
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out

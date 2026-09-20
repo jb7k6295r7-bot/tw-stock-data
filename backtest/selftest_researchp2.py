@@ -84,6 +84,75 @@ def t_default_identical():
     check(np.array_equal(a["equity"], c["equity"]) and a["trades"] == c["trades"], "cap_fn 永遠放行 ⇒ 與原版同（同 rng 順序）")
 
 
+def _stop_fixture(n=40):
+    """PREREGP7 的手工序列：A 先漲到 120 再回落 107（trail 10% 咬、fix 10% 不咬）；
+    B 一路跌到 85（fix 10% 咬）；C 漲到 170 後回落 135（排程出場 g=+0.80 是右尾，trail 10% 會砍掉它）。"""
+    a = np.full(n, 100.0); a[6] = 110; a[7] = 115; a[8] = 120; a[9] = 112; a[10] = 107; a[11:] = 109
+    b = np.full(n, 100.0); b[6] = 97; b[7] = 94; b[8] = 91; b[9] = 88; b[10] = 85; b[11:] = 86
+    c = np.full(n, 100.0); c[6:9] = [130, 150, 170]; c[9] = 140; c[10] = 135; c[11:] = 180
+    closes = {"A": a, "B": b, "C": c}
+    opens = {k: v.copy() for k, v in closes.items()}
+    sig = pd.DataFrame({"sid": ["A", "B", "C"], "entry_pos": [5, 5, 5], "xpos_H60": [20, 20, 20],
+                        "g_H60": [float(a[20] / a[5] - 1), float(b[20] / b[5] - 1), float(c[20] / c[5] - 1)]})
+    return sig, closes, opens
+
+
+def t_stop():
+    """PREREGP7（策略線 0945）：停損兩族。⛔ 判準是手算的出場日與出場價，不是總量。"""
+    sig, closes, opens = _stop_fixture()
+    n = 40
+    run = lambda stop: R.simulate_mtm(sig, "H60", 3, np.random.default_rng(11), closes, opens, n, return_equity=True, log=[], stop=stop)
+    # ⭐ 逐位元回歸：stop=None 與【改動前】的舊版同一組數字（2026-09-20 從 HEAD 那一版抓的基準，⛔ 寫死）
+    base = run(None)
+    check(abs(base["cagr"] - 22.296123610477732) < 1e-12 and abs(base["mdd"] - (-0.14173228346456707)) < 1e-12 and base["trades"] == 3,
+          f"stop=None 與改動前逐位元相同（cagr {base['cagr']:.12f}、mdd {base['mdd']:.12f}）")
+    eq = [round(float(x), 12) for x in base["equity"][4:25]]
+    check(eq == [1.0, 1.0, 1.123333333333, 1.196666666667, 1.27, 1.133333333333, 1.09, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.24415, 1.24415, 1.24415, 1.24415, 1.24415],
+          "stop=None 的逐日權益也逐位元相同")
+    check("stop_exits" not in base, "⛔ stop=None 不多出 stop_* 那幾個鍵（回傳形狀不變）")
+    # fix 10%：B 第 10 天收 85 ≤ 進場價 100×0.9 ⇒ 第 11 天結清、記 85/100−1 ＝ −15%；A（107）與 C（135）不咬
+    fx = run(("fix", 0.10))
+    check(fx["stop_exits"] == 1 and fx["stop_max_same_day"] == 1, f"fix 10%：只有 B 觸發（實得 {fx['stop_exits']} 筆）")
+    check(fx["stop_days"] == [(9, 1)], f"fix 10%：觸發日＝第 9 天（B 收 88 ≤ 100×0.9 的**第一天**；第 8 天收 91 還在線上）；實得 {fx['stop_days']}")
+    check(abs(fx["stop_rate"] - 1 / 3) < 1e-12, "停損出場率＝1/3（⛔ 分母是 trades）")
+    check(fx["stop_cut_right_tail"] == 0, "fix 10% 沒砍到右尾（B 排程出場是 −14%）")
+    # trail 10%：A 峰 120 ⇒ 線 108，第 10 天收 107 ⇒ 咬，記 107/100−1 ＝ +7%
+    #            C 峰 170 ⇒ 線 153，第 9 天收 140 ⇒ 咬（第 10 天結清），而它排程出場是 +80% ⇒ 右尾被砍掉 1 筆
+    #            B 峰 100 ⇒ 線 90，第 9 天收 88 ⇒ 咬
+    tr = run(("trail", 0.10))
+    check(tr["stop_exits"] == 3, f"trail 10%：三檔全咬（實得 {tr['stop_exits']}）⇒ ⭐ 同一個 X 下 trail 比 fix 敏感得多")
+    check(tr["stop_cut_right_tail"] == 1, f"trail 10% 砍掉 1 筆原本會賺 > 50% 的（C 排程 +80%）；實得 {tr['stop_cut_right_tail']}")
+    check(max(n_ for _, n_ in tr["stop_days"]) == tr["stop_max_same_day"] and tr["stop_max_same_day"] >= 2,
+          f"單日觸發家數最大值＝{tr['stop_max_same_day']}（B 與 C 同一天破線）")
+    # ⭐ 沒有前視：第 10 天破線 ⇒ 第 10 天【還在持倉】、第 11 天才結清
+    check(abs(float(fx["equity"][9]) - float(base["equity"][9])) < 1e-12, "⭐ 觸發日（第 9 天）當天的權益與不停損相同 ⇒ ⛔ 沒有前視（那天還在持倉）")
+    check(abs(float(fx["equity"][11]) - float(base["equity"][11])) > 1e-9, "第 10 天結清、第 11 天起權益才不同（⇒ 結清發生在觸發日之後）")
+    # ⭐ 記帳用觸發日收盤：B 的實現報酬＝85/100−1
+    check(abs(float(fx["equity"][-1]) - float(run(("fix", 0.10))["equity"][-1])) < 1e-12, "同參數重跑逐位元相同（決定性）")
+    # 放寬到不可能觸發 ⇒ 回到原版數字
+    loose = run(("fix", 0.99))
+    check(abs(loose["cagr"] - base["cagr"]) < 1e-12 and loose["stop_exits"] == 0, "X 大到不可能觸發 ⇒ 與 stop=None 逐位元相同")
+    # ⭐ 記帳用的是【觸發日】的收盤，⛔ 不是結清日的：單檔單槽 ⇒ 期末權益可以手算
+    solo = pd.DataFrame({"sid": ["B"], "entry_pos": [5], "xpos_H60": [20], "g_H60": [float(closes["B"][20] / closes["B"][5] - 1)]})
+    one = R.simulate_mtm(solo, "H60", 1, np.random.default_rng(3), closes, opens, n, return_equity=True, stop=("fix", 0.10))
+    want = 1.0 * (1 + (88.0 / 100.0 - 1.0) - R.COST)          # 觸發日（第 9 天）收 88；⛔ 結清日（第 10 天）是 85
+    check(abs(float(one["equity"][-1]) - want) < 1e-12, f"單檔單槽：期末權益＝1+(88/100−1)−成本＝{want:.6f}（實得 {float(one['equity'][-1]):.6f}）⇒ ⛔ 用結清日的 85 會是別的數")
+    # ⭐ 排程出場日當天不被停損搶走：D 第 9 天已破線，而它的排程出場就是第 10 天 ⇒ 走排程、⛔ 不記成停損
+    dclose = np.full(n, 100.0); dclose[6:10] = [97, 94, 91, 88]; dclose[10:] = 95
+    closes2 = dict(closes, D=dclose); opens2 = dict(opens, D=dclose.copy())
+    sig2 = pd.concat([sig, pd.DataFrame({"sid": ["D"], "entry_pos": [5], "xpos_H60": [10], "g_H60": [float(dclose[10] / dclose[5] - 1)]})], ignore_index=True)
+    fx2 = R.simulate_mtm(sig2, "H60", 4, np.random.default_rng(5), closes2, opens2, n, return_equity=True, stop=("fix", 0.10))
+    check(fx2["stop_exits"] == 1 and fx2["stop_days"] == [(9, 1)],
+          f"排程出場日（第 10 天）當天不被停損搶走 ⇒ 只有 B 記成停損（實得 {fx2['stop_exits']} 筆 {fx2['stop_days']}）")
+    # ⛔ 參數檢查
+    for bad in (("fix", 0.0), ("fix", 1.0), ("nope", 0.1), ("fix", -0.1)):
+        try:
+            run(bad); ok = False
+        except ValueError:
+            ok = True
+        check(ok, f"⛔ 壞參數 {bad} ⇒ ValueError（⛔ 不是靜靜跑下去）")
+
+
 def t_overlap():
     n = 10
     la = [{"reason": "in", "t": 2, "exit_pos": 6, "sid": "A"}, {"reason": "in", "t": 2, "exit_pos": 6, "sid": "B"}]
@@ -114,6 +183,7 @@ if __name__ == "__main__":
     print("[researchp2] 逐日標籤"); t_labels()
     print("[researchp2] cap"); t_cap()
     print("[researchp2] 預設路徑"); t_default_identical()
+    print("[researchp2/引擎] 停損兩族（PREREGP7）"); t_stop()
     print("[researchp2] 重疊度"); t_overlap()
     print("[researchp2] 判定"); t_judge()
     print("[researchp2] 種子"); t_seeds()
