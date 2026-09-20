@@ -593,6 +593,14 @@ def t_p12():
     check(set(sb["sid"]) == {"A"} and set(sa["sid"]) == {"A", "S"},
           "S0 ＝ 全市場 ＝ 【過閘門就算訊號】（三條布林都不看），⛔ 但沒過閘門的 N 仍然不算")
     check(P12.SIG_OF == {"S1": "B", "S0": "ALL"} and len(sa) >= len(sb), "S1→signal='B'、S0→signal='ALL'（⇒ B ⊆ ALL）")
+    # ⑧b ⭐ 錨點沒過之後的【查】：最深那一段回落的峰谷位置
+    eqd = np.array([1.0, 1.2, 1.1, 1.3, 0.9, 1.0, 1.4, 1.35, 1.0, 1.5], float)   # 兩段回落：1.3→0.9（−30.8%）與 1.4→1.0（−28.6%）
+    cal3 = pd.DatetimeIndex(pd.bdate_range("2021-01-01", periods=len(eqd)))
+    pk, tr, dep = P12.deepest_episode(eqd, 1, len(eqd), cal3)
+    check(pk == 3 and tr == 4 and abs(dep - (0.9 / 1.3 - 1)) < 1e-12,
+          f"最深的那一段 ＝ 峰 1.3(位置 3) → 谷 0.9(位置 4)、深度 {dep * 100:.1f}%（⛔ 不是後面那段較淺的 1.4→1.0）")
+    check(P12.deepest_episode(np.array([1.0, 1.1, 1.2]), 0, 3, cal3[:3]) == (-1, -1, 0.0),
+          "反向驗：一路往上、沒有回落 ⇒ (−1, −1, 0)（⛔ 不是丟例外、⛔ 不是傳回 0 當位置）")
     # ⑨ 呼叫點（⭐ 測完純函式再掃一次原始碼）
     src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "researchp12.py"), encoding="utf-8").read()
     check(src.count("R.simulate_mtm(") == 1 and 'pick=None, cap_fn=None, d_max=None, queue_days=0, cash_mode="zero"' in src,

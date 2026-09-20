@@ -123,8 +123,8 @@ def win_read(out: dict, w0: int, w1: int, marks: np.ndarray) -> dict:
 _S: dict = {}
 
 
-def _init(sigs, nslots, closes, opens, ncal, wins, marks):
-    _S.update(sigs=sigs, nslots=nslots, closes=closes, opens=opens, ncal=ncal, wins=wins, marks=marks)
+def _init(sigs, nslots, closes, opens, ncal, wins, marks, cal=None):
+    _S.update(sigs=sigs, nslots=nslots, closes=closes, opens=opens, ncal=ncal, wins=wins, marks=marks, cal=cal)
 
 
 def _sim(sig, n, seed, cost):
@@ -260,7 +260,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=8); ap.add_argument("--reps", type=int, default=200)
     ap.add_argument("--out", default=RESULTS); ap.add_argument("--panel", default=os.path.join(HERE, "resultsp4", "panel.csv.gz"))
-    ap.add_argument("--part", choices=("all", "c0", "cells"), default="all",
+    ap.add_argument("--part", choices=("all", "c0", "cells", "anchor-diag"), default="all",
                     help="c0＝只做 C0 的 n_slots 搜尋（寫 c0_ladder.csv）；cells＝讀已存的 n_slots 跑八格")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -272,7 +272,7 @@ def main():
     closes, opens = P1.load_prices(set(panel["stock_id"]), cal, uni)
     wins = {k: win_bounds(cal, k) for k in WINDOWS}
     marks = {k: month_marks(cal, *wins[k]) for k in WINDOWS}
-    _init({}, {}, closes, opens, ncal, wins, marks)      # ⭐ 主行程自己也要有 _S（C0 二分那幾步在主行程跑）
+    _init({}, {}, closes, opens, ncal, wins, marks, cal)      # ⭐ 主行程自己也要有 _S（C0 二分那幾步在主行程跑）
     log(f"[窗] " + "；".join(f"{k} [{v[0]},{v[1]}] {v[1] - v[0] + 1} 日／{len(marks[k]) - 1} 個月" for k, v in wins.items()))
 
     # ① sig：S1 ＝ 門檻B（⛔ 七個驗收數對不上就停）、S0 ＝ 全市場
@@ -300,7 +300,8 @@ def main():
     n_670 = len(sigs[("S0", "T0", "主格窗")])
     log(f"[母體] 主格窗 S0 建倉日可買 {n_670:,} 檔（⚠ 策略線 §八② 寫 671 檔 ⇒ 差 {n_670 - 671:+d}，⛔ 明寫、⛔ 不當成同一個母體）")
 
-    pool = Pool(a.procs, initializer=_init, initargs=(sigs, {}, closes, opens, ncal, wins, marks))
+    _S.update(sigs=sigs)                 # ⭐ 主行程的 _S 也要拿到 sigs（C0 二分那幾步在主行程跑）
+    pool = Pool(a.procs, initializer=_init, initargs=(sigs, {}, closes, opens, ncal, wins, marks, cal))
     try:
         # ② C0 的 n_slots（§九-5）
         c0_path = os.path.join(a.out, "c0_ladder.csv")
@@ -322,6 +323,19 @@ def main():
                        for _, r in pd.read_csv(os.path.join(a.out, "c0_nslots.csv")).iterrows()}
         if a.part == "c0":
             return
+        if a.part == "anchor-diag":       # ⛔ 只在錨點沒過之後跑：查，⛔ 不出結論
+            dg = pd.DataFrame(pool.map(_diag_one, [(SEED0 + r, COST_STD) for r in range(a.reps)]))
+            dg["peak_date"] = [str(cal[i].date()) for i in dg["peak_pos"]]
+            dg["trough_date"] = [str(cal[i].date()) for i in dg["trough_pos"]]
+            dg.to_csv(os.path.join(a.out, "anchor_diag.csv"), index=False)
+            cp = os.path.join(a.out, "cells.csv")                 # ⭐ (S0,C0,T0) 含成本那一格從結果檔讀，⛔ 不寫死
+            ct = pd.read_csv(cp)
+            bh = float(ct[(ct["win"] == "主格窗") & (ct["cost"] == "成本0.585%") & (ct["S"] == "S0")
+                          & (ct["C"] == "C0") & (ct["T"] == "T0")]["tr_med"].iloc[0])
+            L = diag_report(dg, cal, wins, ANCHORS[("主格窗", "S1", "C1", "T1", "成本0.585%")], a.reps, bh)
+            open(os.path.join(a.out, "P12_ANCHOR_DIAG.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+            log("\n".join(L))
+            return
         NS = {}
         for s, c, t in CORNERS:
             for wk in (["*"] if t == "T1" else list(WINDOWS)):
@@ -329,7 +343,7 @@ def main():
         NS[("S1", "C1", "T1w", "主格窗")] = N_C1
         _S.update(sigs=sigs, nslots=NS)
         pool.close(); pool.join()
-        pool = Pool(a.procs, initializer=_init, initargs=(sigs, NS, closes, opens, ncal, wins, marks))
+        pool = Pool(a.procs, initializer=_init, initargs=(sigs, NS, closes, opens, ncal, wins, marks, cal))
 
         # ③ 八個角落 × 兩個窗 × 兩種成本 × R 顆種子
         jobs = [(s, c, t, wk, ctag, cost, SEED0 + r)
@@ -375,6 +389,83 @@ def main():
                time.time() - t_start)
     open(os.path.join(a.out, "P12_REPORT.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
     log(f"寫入 {os.path.join(a.out, 'P12_REPORT.md')}（總計 {time.time() - t_start:.0f}s）")
+
+
+# ── ⛔ 錨點沒過之後的【查】（§六①「停下來查」；⭐ 只查、⛔ 不出結論、⛔ 不改任何登錄） ──
+def deepest_episode(eq: np.ndarray, first: int, end: int, cal) -> tuple[int, int, float]:
+    """整條權益曲線【最深】的那一段回落 ⇒ (峰的日曆位置, 谷的日曆位置, 深度)。
+
+    ⭐ 分段走 `research13.dd_episodes`（唯一實作），本函式只把它的日期換回日曆位置並取最深那一段。
+    """
+    eps = R13.dd_episodes(eq, first, end, cal, top=1)
+    if not eps:
+        return -1, -1, 0.0
+    pk, tr, depth = eps[0][0], eps[0][1], eps[0][2]
+    return int(cal.searchsorted(pd.Timestamp(pk))), int(cal.searchsorted(pd.Timestamp(tr))), float(depth)
+
+
+def _diag_one(args):
+    """錨點①的查：一顆種子 ⇒ 主格窗報酬／窗內回落／**這顆種子自己**最深的那一段回落在哪裡。"""
+    seed, cost = args
+    out = _sim(_S["sigs"][("S1", "T1", "*")], N_C1, seed, cost)
+    w0, w1 = _S["wins"]["主格窗"]
+    r = win_read(out, w0, w1, _S["marks"]["主格窗"])
+    pk, tr, depth = deepest_episode(out["equity"], out["first"], out["end"], _S["cal"])
+    return {"seed": seed, "tr": r["tr"], "win_mdd": r["mdd"], "peak_pos": pk, "trough_pos": tr, "深度": depth}
+
+
+def diag_report(dg: pd.DataFrame, cal, wins: dict, want: float, reps: int, bh: float) -> list:
+    """⛔ 錨點①沒過之後的【查】：只把事實列出來，⛔ 不下結論、⛔ 不改口徑、⛔ 不放寬容差。"""
+    w0, w1 = wins["主格窗"]
+    hit = dg[(dg["peak_pos"] == w0) & (dg["trough_pos"] == w1)]
+    q = float((dg["tr"] <= want).mean())
+    L = ["# PREREGP12 錨點①【查】：−40.9% 是哪一個量？", ""] + _hdr(reps)
+    L += ["⛔ 依登錄 §六①，本件已停止、**不出結論**。這一份**只有事實**，交策略線裁定（⛔ 回測線不自行改錨點或容差）。", "",
+          "## 一、兩個量差了 11pp，而它們**不是同一個量**", "",
+          "| 量 | 中位（200 顆種子） | p10～p90 |", "|---|---:|---|",
+          f"| ⓐ 固定窗 [{cal[w0].date()}, {cal[w1].date()}] 的**窗期總報酬**（＝本件登錄的主口徑） | "
+          f"{dg['tr'].median() * 100:+.2f}% | {dg['tr'].quantile(0.1) * 100:+.1f}～{dg['tr'].quantile(0.9) * 100:+.1f} |",
+          f"| ⓑ 同一個固定窗內的**最大回落** | {dg['win_mdd'].median() * 100:+.2f}% | "
+          f"{dg['win_mdd'].quantile(0.1) * 100:+.1f}～{dg['win_mdd'].quantile(0.9) * 100:+.1f} |",
+          f"| ⓒ ⭐**每顆種子自己最深的那一段回落**（峰、谷各自不同） | {dg['深度'].median() * 100:+.2f}% | "
+          f"{dg['深度'].quantile(0.1) * 100:+.1f}～{dg['深度'].quantile(0.9) * 100:+.1f} |", "",
+          f"⇒ ⭐ 前測的 **{want * 100:+.2f}%** 與 **ⓒ** 只差 {abs(dg['深度'].median() - want) * 100:.2f}pp（在 ±1pp 內），"
+          f"與 ⓐ 差 {abs(dg['tr'].median() - want) * 100:.2f}pp。", "",
+          "## 二、⛔ 為什麼 ⓐ 比 ⓒ 淺 11pp：**峰不是同一天**", "",
+          f"- 每顆種子**自己**最深回落的【峰】落在哪一天（前五名，共 {reps} 顆）：", "",
+          "| 峰日 | 顆數 |", "|---|---:|"]
+    for d_, n_ in dg["peak_date"].value_counts().head().items():
+        L.append(f"| {d_} | {n_} |")
+    L += ["", f"- 【谷】：", "", "| 谷日 | 顆數 |", "|---|---:|"]
+    for d_, n_ in dg["trough_date"].value_counts().head().items():
+        L.append(f"| {d_} | {n_} |")
+    L += ["", f"- ⭐ 谷落在 {cal[w1].date()} 的有 **{int((dg['trough_pos'] == w1).sum())}/{reps}** 顆（約一半），"
+          f"但峰落在 {cal[w0].date()} 的只有 **{int((dg['peak_pos'] == w0).sum())}/{reps}** 顆。",
+          f"- ⭐ 峰與谷**兩個都**剛好是 [{cal[w0].date()}, {cal[w1].date()}] 的有 **{len(hit)}/{reps}** 顆"
+          + (f"，它們的窗期報酬中位 **{hit['tr'].median() * 100:+.2f}%**。" if len(hit) else "。"), "",
+          "⇒ ⚠ 這正是登錄 §二 自己寫的那一句：「這個窗是用**組合自己的高點**選出來的」。",
+          "　 每顆種子的峰各自不同 ⇒ 把窗**固定**成某一顆種子的峰谷之後，其餘種子在同一個窗上的跌幅自然較淺。",
+          f"　 而前測的 {want * 100:+.2f}% 落在本線【固定窗報酬】分佈的第 **{q * 100:.1f} 百分位**"
+          f"（{int((dg['tr'] <= want).sum())}/{reps} 顆比它更慘）⇒ ⛔ 它不是那個分佈的中位。", "",
+          "## 三、⛔ 這件事會往前影響【25.7pp 這個被拆的量本身】", "",
+          "```",
+          f"25.7pp ＝ (−40.9%) − (−15.21%)",
+          f"          ↑ ⓒ 逐種子自己的最深回落（含『挑最壞區段』）",
+          f"                      ↑ 固定窗 [{cal[w0].date()}, {cal[w1].date()}] 的等權買進持有報酬",
+          "⇒ ⛔ 兩邊不是同一種量：一邊是每條路徑自己的最壞區段，一邊是固定區段的報酬。",
+          "```", "",
+          "⭐ 把兩邊都放到**同一個固定窗**上（本趟實測、含成本 0.585%）：",
+          f"　 策略 (S1,C1,T1) {dg['tr'].median() * 100:+.2f}%　vs　全市場等權買光 (S0,C0,T0) {bh * 100:+.2f}%　⇒ 差 "
+          f"**{(dg['tr'].median() - bh) * 100:+.2f}pp**（⛔ 這是事實陳述，⛔ 不是本件的結論）。", "",
+          "## 四、⛔ 回測線**沒有**做的事（⭐ 逐條寫明）", "",
+          "- ⛔ 沒有改錨點、沒有放寬容差、沒有改窗、沒有改口徑（§九-4 事前就寫死不自行改）。",
+          "- ⛔ 沒有算三個主效果、沒有算加法表（程式在錨點那一步 `SystemExit`）。",
+          "- ⛔ 沒有挑一個「對得上」的口徑回頭宣告錨點過（〈六十四〉）。", "",
+          "## 五、⭐ 需要策略線裁定的兩條（⛔ 回測線不代決）", "",
+          "1. **錨點①要對的是哪一個量**：ⓐ 固定窗的窗期總報酬（本件登錄寫的）、還是 ⓒ 逐種子自己的最深回落（前測算的）？",
+          "2. 若是 ⓒ ⇒ **25.7pp 的分子與分母口徑不同**（§七⑥ 已說它是上界，⚠ 但這一項不在那個上界的說明裡）",
+          "　 ⇒ 要拆的那個量要不要改成**同一個固定窗**上的差？改了之後被拆的數就不是 25.7pp。", ""]
+    return L
 
 
 # ── 報告 ──
