@@ -209,7 +209,7 @@ def bridge_case(api, y1, y2, out, **kw):
                    "⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。")
 
 
-def xhr_hunt(api, out, **kw):
+def xhr_hunt(api, out, needles=(), **kw):
     """⭐ 那一頁的 js **去打誰**——把線索從回應裡挖出來，⛔ 不是猜端點名。
 
     ## ⛔ 為什麼要有這一段
@@ -225,6 +225,11 @@ def xhr_hunt(api, out, **kw):
     ⇒ 這一段只做一件事：把回應裡**所有**像端點的東西逐條印出來
     （`/mops/api/…`、`fetch(`、`$.ajax`、`url:`、`getMsg` 的函式本體）。
     ⛔ 不下任何結論 —— ⭐ 人讀完那幾行才知道下一發要打哪裡。
+
+    ⚠ 2026-09-20 補：光印 `getMsg` 本體**前 400 字**不夠——`mops2.js` 那份
+    在 400 字處剛好切在 `xhttp.open("POST", "/server-java/AjaxCheck", …)`
+    的請求本體組裝**之前**，看不到真正送出去的參數怎麼組。⇒ `needles`
+    讓呼叫端指定要看哪個字串前後更長的原文（走唯一那份 `around()`，四點五）。
     """
     out.append(f"── ⭐ `{api}` 的 js 去打誰（只挖線索，⛔ 不下結論）")
     raw = one(api, "114", out, **kw)
@@ -238,7 +243,7 @@ def xhr_hunt(api, out, **kw):
     #   ——櫃買公告區那幾頁是**同一個問題**，⛔ 不可以再抄一份。
     out += B.xhr_clues(raw, base=LAST_URL)
     # ⭐ ①~④ 全 0 的時候，答案在**外部 .js 裡** ⇒ 再挖一層（唯一那一份實作）
-    out += B.js_followups(raw, base=LAST_URL)
+    out += B.js_followups(raw, base=LAST_URL, needles=needles)
 
 
 def openapi_case(name, out):
@@ -1139,7 +1144,10 @@ def main():
     # ⭐⭐ 上面那一段的結論是「js 空殼 ⇒ 我方取不到」。
     #   ⇒ 而「取不到」是一個**還沒解決的工程問題**，⛔ 不是句點
     #   ⇒ 下一步是**把那個 js 要打的網址從頁面裡讀出來**（⛔ 不是猜端點名）。
-    xhr_hunt("t05st01", out, month="09", day="01")
+    # ⭐ 2026-09-20：mops2.js 的 `getMsg` 本體被 `xhr_clues` 的 400 字上限切在
+    #   `xhttp.open("POST", "/server-java/AjaxCheck", …)` 那一行——看得到
+    #   端點、看不到請求本體怎麼組。⇒ 補一個 needle 讓 `around()` 印更長一段。
+    xhr_hunt("t05st01", out, needles=("getMsg", "AjaxCheck"), month="09", day="01")
     out.append("")
     ezsearch_case(out)
     ky_revenue_case(out)
