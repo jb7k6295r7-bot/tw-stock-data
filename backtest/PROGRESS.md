@@ -918,6 +918,13 @@ data/   ⚠ 分支上那份是【舊的】。每次要跑之前先
         ⛔⛔ 而本輪踩到它的第二種長相：那個 checkout 會把檔留在【索引】裡
         ⇒ `git commit` 不帶路徑就整個索引一起收（第一版 commit 吞了 43 個檔，已 reset 重做）
         ⇒ ⭐ 判準：commit 之後一定 `git show --stat` 看一眼它到底收了什麼
+        ⭐⭐ 而本輪查證出一件可以省事的事實（⛔ 不是猜的）：
+        分支與 main 的 `data/` 差異**只在** `data/meta` 的探針／log 檔與 `data/crypto`
+        ⇒ `git diff --name-only origin/main -- data/stocks data/universe` ＝【0 個檔】、
+          `data/meta/stocks.csv` 也不在差異清單裡
+        ⇒ ⭐ 所以【回測線的跑】（讀 data/stocks、data/universe、data/meta/stocks.csv）
+          在分支上跑與在 main 上跑【輸入相同】（本輪 P9 用 main 那份、P11 用分支那份，ncal 都是 2,855）
+        ⛔ 但這是【今天的事實】，⛔ 不是通則 ⇒ ⭐ 每一輪都要自己再 diff 一次，⛔ 不可以背這個結論
 git 設定  新 session 第一件事：git config core.hooksPath .githooks
 ```
 
