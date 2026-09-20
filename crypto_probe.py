@@ -18,7 +18,17 @@ IP 段被 Binance 法遵封鎖擋掉，⛔ 這條路死了，第二輪不重打�
      市值排名、排除穩定幣）。
   ③ 這 15 個幣種是不是每一個在 Binance 現貨都有 `<SYM>USDT` 交易對
      ——⛔ 不能假設「市值前 15」跟「Binance 上市的前 15」是同一組。
+
+⛔⛔ 2026-09-20 第二輪自己踩到一個坑（記下來，⛔ 不要重犯）：第一版
+「逐幣驗證」用 `?prefix=...` 的目錄頁去猜有沒有檔案，比對字串
+`b"Contents"`——⚠ 而那個網址回的是**空殼 HTML 外殼**（JS 前端頁面，
+真正的檔案清單是前端另外發 XHR 才拿到的），⛔ 不是原始的 S3 XML 清單。
+⇒ 連**已經證實下載得到 zip**的 BTCUSDT 都被判成「沒有檔案」——
+第二點那句「靜默失敗要講出是哪一種」，這次連自己寫的探針都中了同一招。
+⇒ 改法：**直接試下載一個一定存在的近期日檔**（用昨天的 UTC 日期，
+抓不到就退一天再試），200 才算數、⛔ 不比目錄頁的字串。
 """
+import datetime
 import json
 import sys
 import urllib.error
@@ -92,17 +102,27 @@ def main():
             print(f"⚠ 解析 CoinGecko 回應失敗：{e}")
 
     # ④ 逐一驗證這 15 個幣種在 Binance 現貨有沒有 USDT 交易對
-    #   （用 vision 鏡像的目錄頁測，⛔ 不打 api.binance.com——那條已知 451）
+    #   ⛔ 不比目錄頁的字串（見檔頭那段訂正）——直接試下載一個近期日檔，
+    #   200 才算數；抓不到就往前找幾天（有些交易所日檔會晚一兩天才發布）。
     print("\n=== 逐幣驗證 Binance 現貨有沒有 <SYM>USDT 這個交易對 ===")
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    candidate_dates = [today - datetime.timedelta(days=d) for d in (1, 2, 3)]
     avail = {}
     for c in top15:
         sym = c["symbol"].upper()
-        url = f"https://data.binance.vision/?prefix=data/spot/daily/klines/{sym}USDT/1d/"
-        st, body = _get(url)
-        has_files = st == 200 and b"Contents" in (body or b"") or (
-            st == 200 and f"{sym}USDT-1d-".encode() in (body or b""))
-        avail[sym] = (st, has_files)
-        print(f"  {sym}USDT：status={st}｜看起來有檔案={has_files}")
+        hit = None
+        for d in candidate_dates:
+            url = (f"https://data.binance.vision/data/spot/daily/klines/"
+                   f"{sym}USDT/1d/{sym}USDT-1d-{d.isoformat()}.zip")
+            st, body = _get(url)
+            if st == 200 and (body or b"")[:2] == b"PK":   # 真的是 zip 檔頭
+                hit = (st, d.isoformat())
+                break
+        avail[sym] = hit is not None
+        if hit:
+            print(f"  {sym}USDT：✅ {hit[1]} 那天的日檔抓得到（zip 檔頭確認）")
+        else:
+            print(f"  {sym}USDT：⛔ 近 3 天都抓不到日檔（最後一次 status={st}）")
 
     print("\n\n=== 判讀 ===")
     print("⛔⛔ 上一輪已證實 api.binance.com 全面 451（法遵封鎖，"
@@ -127,7 +147,7 @@ def main():
     else:
         print("⛔ 沒能湊出 15 個非穩定幣，看上面 CoinGecko 那段原始回應。")
 
-    missing = [s for s, (st, ok) in avail.items() if not ok]
+    missing = [s for s, ok in avail.items() if not ok]
     if missing:
         print(f"⚠⚠ 這幾個在 Binance 現貨**沒找到** <SYM>USDT 交易對：{missing}"
               "——⛔ 不能假設市值前 15 名一定都在 Binance 上市，"
