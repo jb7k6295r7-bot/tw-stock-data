@@ -553,7 +553,7 @@ def main():
     positions = P.measurement_days(cal, "2015-01-01", "2026-03-31")
     panel_p = a.panel or os.path.join(a.out, "panel.csv.gz")
     if a.panel and os.path.exists(a.panel):
-        panel = pd.read_csv(a.panel, dtype={"stock_id": str}, parse_dates=["measure_date"])
+        panel = P.read_panel(a.panel)
     else:
         log(f"第一段：{len(uni)} 檔 × {len(positions)} 個量測日")
         panel, M = build_panel(cal, uni, positions, a.procs, a.pub_day, log, mp_check=not a.no_mp_check, rev_incl_current=a.rev_incl_current)
@@ -572,7 +572,12 @@ def main():
             if not a.mp_check_report:
                 raise AssertionError(f"§4-1 常設斷言：閘門 bars≥{P.MIN_BARS} 沒擋乾淨，{len(M)} 筆合格列在 min_periods=w 與 w/2 下不同（見 min_periods_mismatch.csv）")
         panel.to_csv(panel_p, index=False)
-        back = pd.read_csv(panel_p, dtype={"stock_id": str}); assert len(back) == len(panel), "面板寫完重讀列數要對"
+        back = P.read_panel(panel_p)      # ⭐ 寫完重讀、斷言【讀回來的內容】（⛔ 不是只斷言列數）
+        assert len(back) == len(panel), f"面板寫完重讀列數要對（{len(back)} vs {len(panel)}）"
+        for H in HOLDS:                   # ⛔ 逐位元：CSV 一趟來回不可以動到任何一格（float_precision=round_trip 才成立）
+            x, y = panel[f"fwd_{H}"].to_numpy(float), back[f"fwd_{H}"].to_numpy(float)
+            nd = int((~np.isclose(x, y, rtol=0, atol=0, equal_nan=True)).sum())
+            assert nd == 0, f"面板寫完重讀 fwd_{H} 有 {nd} 格不同（⇒ CSV 來回掉精度）"
     panel, n_innov = apply_innovation_rule(panel, uni)
     log(f"創新板量測日 < {INNOV_CUTOFF} 排除：{n_innov} 股-月" + ("（本窗內觸發 0 次）" if n_innov == 0 else ""))
     C, mu, sd = load_centers(a.centers)

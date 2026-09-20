@@ -38,6 +38,7 @@ import numpy as np
 import pandas as pd
 
 from . import data as D
+from . import p4_features as P4F
 from . import research11 as R
 from . import research13 as R13
 from . import researchp1 as P1
@@ -146,6 +147,8 @@ def run_cells(sig, closes, opens, cal, bench, cells, ns, reps, procs, log=print)
             months[(N, stop_tag(st))] = agg
             rows.append({"N": N, "stop": stop_tag(st), "cagr": md["cagr"], "cagr_p10": df["cagr"].quantile(0.1), "cagr_p90": df["cagr"].quantile(0.9),
                          "mdd": md["mdd"], "mdd_p10": df["mdd"].quantile(0.1), "mdd_p90": df["mdd"].quantile(0.9),
+                         "ca_p10": df["ca"].quantile(0.1), "ca_p90": df["ca"].quantile(0.9),      # ⭐ 逐窗離散度：沒有它不可以講「A 窗的下降不是噪音」
+                         "cb_p10": df["cb"].quantile(0.1), "cb_p90": df["cb"].quantile(0.9),
                          "slot": md["slot"], "m": md["m"], "hold_days": md["hold_days_mean"],
                          "stop_rate": md["stop_rate"], "stop_max_same_day": md["stop_max_same_day"],
                          "stop_max_same_day_worst": int(df["stop_max_same_day"].max()), "cut_right_tail": md["stop_cut_right_tail"],
@@ -212,7 +215,7 @@ def main():
     cal = D.load_calendar()
     _CAL.extend(cal)
     uni = D.load_universe().set_index("stock_id")["market"]
-    panel = pd.read_csv(a.panel, parse_dates=["measure_date"], dtype={"stock_id": str})
+    panel = P4F.read_panel(a.panel)
     sids = set(panel["stock_id"])
     closes, opens = P1.load_prices(sids, cal, uni)          # ⭐ 與 P1 同一份載入（closes ffill、opens 不 ffill）
     sig = build_sig_gate_b(panel, cal, closes, opens)
@@ -256,11 +259,12 @@ def main():
               "⛔ **這是描述＋對帳，不是檢定**（登錄見 `researchp7` 檔頭追加）。種子 `default_rng(97000 + r)`、R=200 ⇒ "
               "⭐ 與策略線 0810 §二那張表**種子不同**，對帳看的是量級與三條判準的結論，⛔ 不是看數字一樣。", "",
               bl, "",
-              "| N | 年化 中位 | p10～p90 | 最大回落 中位 | p10～p90 | 槽位 | 筆數 | 全窗 | A 窗 | B 窗 | 三窗全過 |",
-              "|---:|---:|---|---:|---|---:|---:|:--:|:--:|:--:|:--:|"]
+              "| N | 全窗 年化 | p10～p90 | 全窗 回落 | p10～p90 | A 窗 年化（p10～p90） | A 窗 回落 | B 窗 年化（p10～p90） | B 窗 回落 | 槽位 | 筆數 | 全窗 | A 窗 | B 窗 | 三窗全過 |",
+              "|---:|---:|---|---:|---|---:|---:|---:|---:|---:|---:|:--:|:--:|:--:|:--:|"]
         for r in B.itertuples():
             LB.append(f"| {r.N} | {r.cagr * 100:+.2f}% | {r.cagr_p10 * 100:+.1f}～{r.cagr_p90 * 100:+.1f} | {r.mdd * 100:.1f}% | "
-                      f"{r.mdd_p10 * 100:.1f}～{r.mdd_p90 * 100:.1f} | {r.slot:.2f} | {r.m:.0f} | "
+                      f"{r.mdd_p10 * 100:.1f}～{r.mdd_p90 * 100:.1f} | {r.ca * 100:+.2f}%（{r.ca_p10 * 100:+.1f}～{r.ca_p90 * 100:+.1f}） | {r.ma * 100:.1f}% | "
+                      f"{r.cb * 100:+.2f}%（{r.cb_p10 * 100:+.1f}～{r.cb_p90 * 100:+.1f}） | {r.mb * 100:.1f}% | {r.slot:.2f} | {r.m:.0f} | "
                       f"{'✅' if r.win_all else '✗'} | {'✅' if r.win_a else '✗'} | {'✅' if r.win_b else '✗'} | {'✅' if r.win else '⛔'} |")
         LB.append("")
         open(os.path.join(a.out, "BASELINE_REPORT.md"), "w", encoding="utf-8").write("\n".join(LB) + "\n")

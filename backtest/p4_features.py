@@ -227,6 +227,15 @@ def assign(X: pd.DataFrame, centers: np.ndarray, mu: np.ndarray, sd: np.ndarray)
     return d.argmin(axis=1)
 
 
+def read_panel(path: str) -> pd.DataFrame:
+    """讀 `panel.csv.gz`（⭐ 唯一實作：researchp4／p6／p7 都走這支）。
+
+    ⛔⛔ `float_precision="round_trip"` 不是裝飾：pandas `read_csv` 預設的快速浮點解析**不是 round-trip**
+    ⇒ 檔裡寫 `-0.10705882352941154`、讀回來是 `-0.1070588235294115`（差 ~1e-17）
+    ⇒ ⭐ 任何「拿快取面板逐位元比對」的閘門都會全紅，而差的地方在**第 17 位**（2026-09-20 實際踩到）。"""
+    return pd.read_csv(path, dtype={"stock_id": str}, parse_dates=["measure_date"], float_precision="round_trip")
+
+
 def forward_returns(raw: pd.DataFrame, pos: int, holds=HOLDS, hold_extra: int = D.P4_FWD_HOLD_BARS) -> dict:
     """量測日 pos：次日開盤進、**持有 H + hold_extra 根**收盤出的毛報酬（開盤 NaN ⇒ NaN）。
 

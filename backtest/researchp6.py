@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 
 from . import data as D
+from . import p4_features as P4F
 from . import research11 as R
 from . import research13 as R13
 from . import researchp1 as P1
@@ -87,7 +88,7 @@ def main():
     log = print
     cal = D.load_calendar(); ncal = len(cal)
     uni = D.load_universe().set_index("stock_id")["market"]
-    panel = pd.read_csv(a.panel, parse_dates=["measure_date"], dtype={"stock_id": str})
+    panel = P4F.read_panel(a.panel)
     closes, opens = P1.load_prices(set(panel["stock_id"]), cal, uni)
     sig = P7.build_sig_gate_b(panel, cal, closes, opens)
     cl = pd.read_csv(a.classified, parse_dates=["measure_date"], dtype={"stock_id": str}, usecols=["measure_date", "stock_id", "type"])
