@@ -751,6 +751,52 @@ def t_weight_fn():
     check(bad, "weight_fn 回的長度與 batch 對不上 ⇒ ValueError（⛔ 不靜靜只買一檔）")
 
 
+def t_p13():
+    """PREREGP13 seq=3 §二／§三 的三個 weight_fn ＋ 0050 代理 ＋ 重疊度。"""
+    from . import researchp13 as P13
+    B = [{"sid": x} for x in ("A", "B", "C")]
+    caps = {"A": np.array([300.0] * 6), "B": np.array([100.0] * 6), "C": np.array([np.nan] * 6)}
+    st = {"nocap": 0, "shrink": 0, "short": 0, "short_amt": 0.0, "k": []}
+    f = P13.w_mktcap(caps, 8, st)
+    tg = f(B, 3, 800.0, 1e9)                       # slot ＝ 100；可用 ＝ len(batch)×slot ＝ 300
+    check(abs(tg[0] - 225.0) < 1e-9 and abs(tg[1] - 75.0) < 1e-9 and tg[2] == 0.0 and st["nocap"] == 1,
+          f"W1：按【當批市值合計】分配 300 ⇒ A 300/400×300＝225、B 75、C 沒市值 ⇒ 0 並記 nocap（實得 {np.round(tg, 3).tolist()}）")
+    check(abs(sum(tg) - 3 * 100.0 * (400 / 400)) < 1e-9,
+          "⭐ 分母是 len(batch)（含 nocap 那一檔）⇒ 沒市值的那一格的錢【不投入】（⛔ 不是讓別人吃掉）")
+    st2 = {"nocap": 0, "shrink": 0, "short": 0, "short_amt": 0.0, "k": []}
+    tg2 = P13.w_mktcap(caps, 8, st2)(B, 3, 800.0, 150.0)   # cash 150 < Σtarget 300 ⇒ k=0.5
+    check(abs(tg2[0] - 112.5) < 1e-9 and abs(tg2[1] - 37.5) < 1e-9 and st2["shrink"] == 1 and abs(st2["k"][0] - 0.5) < 1e-12,
+          f"W1 現金不足 ⇒【按比例縮全批】k ＝ cash/Σtarget ＝ 0.5（⛔ 不是照順序給到沒錢；實得 {np.round(tg2, 3).tolist()}）")
+    check(abs(tg2[0] / tg2[1] - tg[0] / tg[1]) < 1e-12, "⭐ 縮全批之後【批內比例不變】——那正是選它的理由")
+    st3 = {"nocap": 0, "shrink": 0, "short": 0, "short_amt": 0.0, "k": []}
+    e3 = P13.w_equal_shrink(8, st3)(B, 3, 800.0, 150.0)
+    check(len(set(np.round(e3, 9))) == 1 and abs(sum(e3) - 150.0) < 1e-9,
+          "W0′：等權 ＋ 縮全批 ⇒ 三檔金額相同、合計剛好等於現金")
+    st4 = {"nocap": 0, "shrink": 0, "short": 0, "short_amt": 0.0, "k": []}
+    e4 = P13.w_equal_seq(8, st4)(B, 3, 800.0, 150.0)
+    check(abs(e4[0] - 100.0) < 1e-9 and abs(e4[1] - 50.0) < 1e-9 and e4[2] == 0.0 and st4["short"] == 2,
+          f"W0i：複製 min(slot, cash) ⇒ 100／50／0（⭐ 與 W0′ 的 50/50/50 不同）並記 2 次現金不足（實得 {np.round(e4, 3).tolist()}）")
+    # ⭐ 呼叫點：make_arm 有沒有把四個臂接到【對的】函式上（⛔ 上面那幾條測的是函式本身）
+    fns = {a_: P13.make_arm(a_, caps, 8) for a_ in P13.ARMS}
+    check(fns["W0"][0] is None and [round(x, 6) for x in fns["W0i"][0](B, 3, 800.0, 150.0)] == [100.0, 50.0, 0.0]
+          and [round(x, 6) for x in fns["W0p"][0](B, 3, 800.0, 150.0)] == [50.0, 50.0, 50.0]
+          and round(fns["W1"][0](B, 3, 800.0, 150.0)[0], 6) == 112.5,
+          "make_arm：W0→None／W0i→min(slot,cash)／W0′→等權縮全批／W1→市值加權（⛔ 四個不可接錯）")
+    # 0050 代理：只看上市普通股、逐月重算
+    caps2 = {s: np.array([float(v)]) for s, v in (("A", 9), ("B", 8), ("C", 7), ("D", 99))}
+    P13.TOP_N, keep = 2, P13.TOP_N
+    top = P13.top50_by_month(caps2, {"A", "B", "C"}, np.array([0]), 1)
+    P13.TOP_N = keep
+    check(top[0] == {"A", "B"}, f"代理 ＝【上市普通股】市值前 N（⛔ D 市值最大但不在上市普通股清單裡）：{top[0]}")
+    # 重疊度：兩個方向
+    lg = [{"reason": "in", "t": 2, "exit_pos": 5, "sid": "A"}, {"reason": "in", "t": 2, "exit_pos": 5, "sid": "Z"}]
+    P13.TOP_N, keep = 4, P13.TOP_N
+    a_, b_ = P13._daily_overlap(lg, 10, 2, 4, {2: {"A", "Q"}}, np.array([2]))
+    P13.TOP_N = keep
+    check(abs(a_ - 0.5) < 1e-12 and abs(b_ - 0.25) < 1e-12,
+          f"重疊度【兩個方向】：持股 2 檔有 1 檔在前 N ⇒ 0.5；÷N(4) ⇒ 0.25（實得 {a_}／{b_}）")
+
+
 def t_p13probe():
     """K線分析線 1755 §四 的兩個必報（⛔ 描述量，⛔ 不是判定）：單日崩跌、持有期間下市／停止交易。"""
     from . import p13_riskprobe as RP
@@ -791,6 +837,7 @@ if __name__ == "__main__":
     print("[researchp11] 同選擇率（逐月 N_t）"); t_p11()
     print("[researchp12] 2×2×2 全因子（S／C／T）"); t_p12()
     print("[引擎] weight_fn（PREREGP13 seq=3 §二）"); t_weight_fn()
+    print("[researchp13] 三個 weight_fn ＋ 0050 代理 ＋ 重疊度"); t_p13()
     print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
