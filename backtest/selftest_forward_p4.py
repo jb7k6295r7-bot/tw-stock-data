@@ -2,6 +2,7 @@
 ④ 特徵只看 ≤ 量測日、open_next＝次日開盤；⑤ 型號沒中心就空。rc != 0 或輸出含 ✗ 才算紅。"""
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -46,8 +47,18 @@ if __name__ == "__main__":
         check(r3.returncode == 0 and (rec3["measure_date"] == "2026-09-01").sum() > 0, "9 月再跑一趟 ⇒ 追加列")
         check(len(uni3) >= len(uni) and set(uni["stock_id"]) <= set(uni3["stock_id"]), f"累積名單只增不減 {len(uni)} → {len(uni3)}")
         r9 = rec3[rec3["measure_date"] == "2026-09-01"]
-        check(r9["type"].dropna().astype(int).isin([0, 1, 2, 3]).all() and r9["type"].notna().all() and r9["centers_version"].str.contains("23be85b004977222").all(),
-              f"預設 auto 中心 ⇒ 型號 0～3 全填、centers_version 帶 sha16（{r9['type'].value_counts().to_dict()}）")
+        # ⛔⛔ 這一條原本把 `23be85b004977222`（**全檔** sha）寫死 ⇒ 2026-09-20 2155 §一 的圈號訂正只改了
+        #    cluster_index_to_type 兩個字，它就紅了。⭐ 而分型結果一格都沒變 ⇒ 那是【顯示標籤】不是【定義】。
+        # ⇒ ⭐⭐〈一百一十二〉的落地：全檔 sha 只驗「centers_version 真的是這個檔算出來的」，
+        #    ⛔ 而「中心有沒有換」要問 researchp4.centers_tag() 的【本體】sha（＝ dfd5863a6566b6bc）。
+        sys.path.insert(0, ROOT)
+        from backtest import researchp4 as R4
+        cpath = os.path.join(ROOT, "backtest", "forward", "p4_types", "centers_v3.json")
+        _cs = hashlib.sha256(open(cpath, "rb").read()).hexdigest()[:16]
+        check(r9["type"].dropna().astype(int).isin([0, 1, 2, 3]).all() and r9["type"].notna().all() and r9["centers_version"].str.contains(_cs).all(),
+              f"預設 auto 中心 ⇒ 型號 0～3 全填、centers_version 帶【當下這個檔】的 sha16 {_cs}（{r9['type'].value_counts().to_dict()}）")
+        check("本體 dfd5863a6566b6bc" in R4.centers_tag(cpath),
+              "⭐⭐ 而【中心有沒有換】問的是本體 sha dfd5863a6566b6bc（⛔ 不是全檔那一個——圈號訂正會動全檔、不會動它）")
         out5 = tempfile.mkdtemp(prefix="fp4v1_")
         r5 = run(["--date", "2026-09-01", "--out", out5, "--limit", "5"])
         check(r5.returncode == 2 and "早於前瞻 v1 起始月" in r5.stderr and not os.path.exists(os.path.join(out5, "records.csv")), "⛔ 沒有 --allow-before-v1：2026-09 早於 V1_START ⇒ rc=2、不寫任何檔")

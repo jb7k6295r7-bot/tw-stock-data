@@ -5,7 +5,13 @@ backtest/forward/p4_types/（⛔ 只寫當月、不判定、不挑、不排名�
 
 特徵全部 import p4_features（同一件事只有一份實作）。⚠ 讀 data/ ⇒ 一定要在 main 上跑（分支的 data/ 比 main 舊）。
 〈二十八〉三個事後補不回來的欄位：asof（台北時戳）、data_sha（git rev-parse HEAD）、has_adj（當天有沒有還原因子）；
-母體名單 universe.csv 只增不減（first_seen／last_seen）。型號欄：--centers 預設 auto＝讀 p4_types/centers_v3.json（策略線 09-15 12:52，sha256 前 16 23be85b004977222）；
+母體名單 universe.csv 只增不減（first_seen／last_seen）。型號欄：--centers 預設 auto＝讀 p4_types/centers_v3.json；
+⛔⛔ `centers_version` 欄 ＝ schema@全檔 sha256 前 16，而 2026-09-20 21:55 的【圈號訂正】只改了 cluster_index_to_type 兩個字
+⇒ 那一欄從 `23be85b004977222`（09-15 策略線投遞版）變成 `1144304f1068094e`，⭐ 而【數值本體】sha 一直是 dfd5863a6566b6bc
+⇒ ⭐ 所以那一欄變值【不代表中心換了】（〈一百一十二〉：全檔 sha 把顯示標籤與定義混在一起）；逐字沿革見 forward/p4_types/圈號沿革註記.md。
+⚠ 而本檔寫進 records.csv 的 `type` 是 k-means 的【整數索引】⛔ 不是圈號 ⇒ ⭐ 前瞻列本來就不帶圈號、不受這次訂正影響；
+⇒ ⚠ 而 2026-09-20 當下 `records.csv` 還【不存在】（V1_START＝2026-10）⇒ ⛔ 一列都沒有要回改，這是查過的、不是推論的。
+
 檔不在就留空、大聲說；`--centers none` 強制留空。中心 JSON 收 centers_z（v3 投遞格式）或 centers。
 ⛔ v1 起始月下限 V1_START＝2026-10（0141 §三：2026-09-01 那期不補寫；資料庫線 1320 §三 (b)）：量測月早於它一律紅、不寫，除非 --allow-before-v1（只給自測用）。
 冪等：同一個量測日已在 records.csv 就不再寫（回傳 0 列）。

@@ -178,10 +178,10 @@ if __name__ == "__main__":
     check(R.survivor_bound(cl3, set(), {"甲組": -0.37}, 120, typ)["n_sub_rows"].iloc[1] == 2, "⛔ 名單空了 ⇒ TDR 那列也被代進去（名單真的有在咬）")
     print("[researchp4] judge")
     base = dict(n_months=30, excess_pp=2.0, ci_lo_pp=0.5, ci_hi_pp=3.5)
-    check(R.judge("主格", 120, "②正在噴出", base).startswith("H2 方向成立：測得出"), "②正、CI 不含 0 ⇒ H2 測得出")
+    check(R.judge("主格", 120, "③正在噴出", base).startswith("H2 方向成立：測得出"), "②正、CI 不含 0 ⇒ H2 測得出")
     check("否證" in R.judge("主格", 120, "④死水", base) and "方向相反" in R.judge("主格", 120, "④死水", base), "④正、CI 不含 0 ⇒ H1 否證（方向相反）")
-    check(R.judge("主格", 120, "③純技術＋回檔", dict(n_months=30, excess_pp=-0.2, ci_lo_pp=-1.0, ci_hi_pp=0.6)) == "H4 否證：測不出（零）", "③ CI 含 0 且 |0.2| ≤ 0.585 ⇒ 測不出（零）")
-    check(R.judge("主格", 120, "③純技術＋回檔", dict(n_months=30, excess_pp=-1.2, ci_lo_pp=-3.0, ci_hi_pp=0.6)) == "H4 否證：測不出", "③ CI 含 0 且 |1.2| > 0.585 ⇒ 測不出（不是零）")
+    check(R.judge("主格", 120, "②純技術＋回檔", dict(n_months=30, excess_pp=-0.2, ci_lo_pp=-1.0, ci_hi_pp=0.6)) == "H4 否證：測不出（零）", "③ CI 含 0 且 |0.2| ≤ 0.585 ⇒ 測不出（零）")
+    check(R.judge("主格", 120, "②純技術＋回檔", dict(n_months=30, excess_pp=-1.2, ci_lo_pp=-3.0, ci_hi_pp=0.6)) == "H4 否證：測不出", "③ CI 含 0 且 |1.2| > 0.585 ⇒ 測不出（不是零）")
     check(R.judge("主格", 120, "①營收＋回檔", dict(base, n_months=23)).startswith("還沒測"), "有效月 23 ⇒ 還沒測（⚠ 寫死 24）")
     check(R.judge("副格", 120, "①營收＋回檔", base).startswith("非判定格（方向＋，與 H3 一致）") and R.judge("主格", 60, "④死水", base).startswith("非判定格"), "副格／H60 只寫方向")
     print("[researchp4] 安慰劑 A（標籤與報酬無關）")
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     pB = R.placebo_B(cl, 12)
     check((pB["in_judgement"] == False).all() and R.placebo_B(cl, 6)["in_judgement"].all(), "+12 標不進判定、+6 進")
     print("[researchp4] 鑑別力")
-    cl4 = cl.copy(); cl4.loc[cl4["type"] == "④死水", "exc_120"] -= 0.05; cl4.loc[cl4["type"] == "②正在噴出", "exc_120"] += 0.05
+    cl4 = cl.copy(); cl4.loc[cl4["type"] == "④死水", "exc_120"] -= 0.05; cl4.loc[cl4["type"] == "③正在噴出", "exc_120"] += 0.05
     S4 = R.summary_table(cl4); pD = R.discrimination(cl4)
     x4 = S4[(S4.period == "主格") & (S4.H == 120) & (S4.type == "④死水")]["excess_pp"].iloc[0]
     sw4 = pD[pD["type"] == "④死水"]["excess_pp"].iloc[0]
@@ -219,7 +219,18 @@ if __name__ == "__main__":
     print("[researchp4] 真檔中心與結構性缺值")
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "forward", "p4_types", "centers_v3.json")
     b = open(p, "rb").read()
-    check(len(b) == 2177 and hashlib.sha256(b).hexdigest()[:16] == "23be85b004977222", "centers_v3.json 2,177 B、sha256 前 16＝23be85b004977222")
+    # ⛔⛔ 這一條原本釘的是【全檔】sha（2,177 B／23be85b004977222）——⭐ 而 2026-09-20 2155 §一 的圈號訂正
+    #    只改了 cluster_index_to_type 兩個字，全檔 sha 就變了 ⇒ 它當場紅。
+    # ⇒ ⭐⭐ 那正是〈一百一十二〉：全檔 sha 把【顯示標籤】與【定義】綁在一起 ⇒ 閘門要釘的是【數值本體】。
+    #    ⛔ 而全檔那一個【不刪】：它降格成「會隨標籤變的那一個」，兩個一起印才看得出這次動的是哪一邊。
+    try:                                   # ⛔ 對不上會 raise SystemExit ⇒ 不接住的話後面一條都不會跑
+        _tag = R.centers_tag(p)
+    except SystemExit as e:
+        _tag = f"⛔ centers_tag 當場停：{e}"
+    check(_tag == f"centers_v3.json(全檔 {hashlib.sha256(b).hexdigest()[:16]}｜本體 dfd5863a6566b6bc)",
+          f"⭐⭐ 中心檔的【數值本體】sha ＝ dfd5863a6566b6bc（⛔ 09-15 投遞版到今天沒變過；實得 {_tag}）")
+    check(R.CENTERS_CORE_SHA == "dfd5863a6566b6bc" and "cluster_index_to_type" not in R.CORE_KEYS,
+          "⭐ 本體的定義裡【沒有】cluster_index_to_type（⛔ 有的話圈號訂正又會把這道閘門弄紅）")
     Cz, mu_r, sd_r = R.load_centers(p)
     check(Cz.shape == (4, 13) and int(np.round(mu_r[0] + Cz[0, 0] * sd_r[0])) == 77 and int(np.round(mu_r[12] + Cz[0, 12] * sd_r[12])) == 94, "還原成百分位：群 0 ret_120=77、rev_hi24=94（策略線 §三 表）")
     cl5 = cl.copy(); cl5.loc[cl5["stock_id"] == "S000", "rev_hi24"] = np.nan; cl5.loc[(cl5["stock_id"] == "S001") & (cl5.index % 2 == 0), "rev_hi24"] = np.nan

@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import hashlib
 import subprocess
 import sys
 import time
@@ -39,23 +40,28 @@ QS = (0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95)
 PERIODS = {"擬合窗／追認格": ("2017-01-01", "2020-12-31"), "主格": ("2021-01-01", "2026-03-31"), "副格": ("2017-01-01", "2024-12-31"),
            "第二層": ("2025-01-01", "2026-03-31")}
 JUDGE_PERIOD, JUDGE_H = "主格", 120
-TYPE_OF_IDX = {0: "①營收＋回檔", 3: "②正在噴出", 2: "③純技術＋回檔", 1: "④死水"}     # v3 §1-1（⛔ 寫死）
-HYP = {"①營收＋回檔": ("H3", +1), "②正在噴出": ("H2", +1), "③純技術＋回檔": ("H4", -1), "④死水": ("H1", -1)}
-TYPES = ["①營收＋回檔", "②正在噴出", "③純技術＋回檔", "④死水"]
+# ⭐⭐ 圈號依 K線分析線 2026-09-20 2155 §一【(乙)】訂正：②＝純技術＋回檔、③＝正在噴出。
+# ⛔ 2026-09-20 21:55 之前本線側是相反的 ⇒ 讀舊報告要對調，逐字沿革見
+#    backtest/forward/p4_types/圈號沿革註記.md（⛔ 舊報告內文一個字都不改）。
+# ⭐ 動到的只有【圈號字元】：cluster ↔ 型名 ↔ 數字 一格都沒變（〈一百一十二〉：改編號不改任何數字 ⇒ 它是顯示標籤）。
+# ⛔ TYPES 的順序刻意維持 ①→正在噴出→純技術＋回檔→④（＝舊版的欄序）⇒ 報表列序不因本次訂正而變。
+TYPE_OF_IDX = {0: "①營收＋回檔", 3: "③正在噴出", 2: "②純技術＋回檔", 1: "④死水"}     # v3 §1-1（⛔ 寫死）
+HYP = {"①營收＋回檔": ("H3", +1), "③正在噴出": ("H2", +1), "②純技術＋回檔": ("H4", -1), "④死水": ("H1", -1)}
+TYPES = ["①營收＋回檔", "③正在噴出", "②純技術＋回檔", "④死水"]
 # v3 §10-1／10-2 策略線參考值（對帳用；門檻：分位數差 ≤ 1.0pp、超額差 ≤ 0.3pp）
 REF = {("主格", 120): {"①營收＋回檔": dict(excess=4.88, lo=1.70, hi=8.07, mwin=61.9, win=41.9, p05=-44.2, p10=-34.8, p50=-5.2, p90=61.0, p95=99.3),
-                     "②正在噴出": dict(excess=2.98, lo=1.00, hi=4.97, mwin=61.9, win=41.8, p05=-43.2, p10=-35.0, p50=-5.6, p90=49.4, p95=82.1),
-                     "③純技術＋回檔": dict(excess=-0.22, lo=-1.22, hi=0.78, mwin=50.8, win=37.1, p05=-42.8, p10=-34.6, p50=-8.3, p90=38.5, p95=67.8),
+                     "③正在噴出": dict(excess=2.98, lo=1.00, hi=4.97, mwin=61.9, win=41.8, p05=-43.2, p10=-35.0, p50=-5.6, p90=49.4, p95=82.1),
+                     "②純技術＋回檔": dict(excess=-0.22, lo=-1.22, hi=0.78, mwin=50.8, win=37.1, p05=-42.8, p10=-34.6, p50=-8.3, p90=38.5, p95=67.8),
                      "④死水": dict(excess=-3.87, lo=-5.50, hi=-2.23, mwin=23.8, win=36.3, p05=-42.6, p10=-33.3, p50=-6.8, p90=24.9, p95=43.2)},
-       ("主格", 60): {"①營收＋回檔": dict(excess=3.29), "②正在噴出": dict(excess=1.57), "③純技術＋回檔": dict(excess=-0.35), "④死水": dict(excess=-2.10)},
+       ("主格", 60): {"①營收＋回檔": dict(excess=3.29), "③正在噴出": dict(excess=1.57), "②純技術＋回檔": dict(excess=-0.35), "④死水": dict(excess=-2.10)},
        ("主格", 20): {"①營收＋回檔": dict(excess=0.38, p05=-16.8, p10=-13.6, p25=-7.9, p50=-1.5, p90=16.6, p95=28.1, win=44.5),
-                    "②正在噴出": dict(excess=0.44, p05=-18.8, p10=-14.9, p25=-9.0, p50=-2.0, p90=18.7, p95=29.9, win=42.9),
-                    "③純技術＋回檔": dict(excess=-0.17, p05=-15.7, p10=-12.9, p25=-7.9, p50=-2.3, p90=14.3, p95=22.9, win=40.3),
+                    "③正在噴出": dict(excess=0.44, p05=-18.8, p10=-14.9, p25=-9.0, p50=-2.0, p90=18.7, p95=29.9, win=42.9),
+                    "②純技術＋回檔": dict(excess=-0.17, p05=-15.7, p10=-12.9, p25=-7.9, p50=-2.3, p90=14.3, p95=22.9, win=40.3),
                     "④死水": dict(excess=-0.51, p05=-13.2, p10=-10.4, p25=-6.2, p50=-1.6, p90=10.0, p95=15.1, win=41.4)},
-       ("副格", 120): {"①營收＋回檔": dict(excess=2.28, lo=0.32, hi=4.25, win=41.9), "②正在噴出": dict(excess=3.00, lo=1.92, hi=4.08, win=42.0),
-                     "③純技術＋回檔": dict(excess=-0.83, lo=-1.57, hi=-0.09, win=38.0), "④死水": dict(excess=-2.45, lo=-3.30, hi=-1.60, win=38.6)},
-       ("擬合窗／追認格", 120): {"①營收＋回檔": dict(excess=3.91), "②正在噴出": dict(excess=3.99), "③純技術＋回檔": dict(excess=-0.98), "④死水": dict(excess=-2.72)},
-       ("第二層", 120): {"①營收＋回檔": dict(excess=18.29), "②正在噴出": dict(excess=6.09), "③純技術＋回檔": dict(excess=1.28), "④死水": dict(excess=-9.26)}}
+       ("副格", 120): {"①營收＋回檔": dict(excess=2.28, lo=0.32, hi=4.25, win=41.9), "③正在噴出": dict(excess=3.00, lo=1.92, hi=4.08, win=42.0),
+                     "②純技術＋回檔": dict(excess=-0.83, lo=-1.57, hi=-0.09, win=38.0), "④死水": dict(excess=-2.45, lo=-3.30, hi=-1.60, win=38.6)},
+       ("擬合窗／追認格", 120): {"①營收＋回檔": dict(excess=3.91), "③正在噴出": dict(excess=3.99), "②純技術＋回檔": dict(excess=-0.98), "④死水": dict(excess=-2.72)},
+       ("第二層", 120): {"①營收＋回檔": dict(excess=18.29), "③正在噴出": dict(excess=6.09), "②純技術＋回檔": dict(excess=1.28), "④死水": dict(excess=-9.26)}}
 REF_BENCH = {("主格", 120): 8.08}
 TOL_Q, TOL_X = 1.0, 0.3
 INNOV_CUTOFF = "2025-01-06"   # K線分析 1745 §一：創新板量測日 < 此日排除
@@ -180,6 +186,26 @@ def apply_innovation_rule(panel: pd.DataFrame, uni: pd.DataFrame, cutoff: str = 
 
 
 # ───────────────────────── 第二段：橫截面 → 歸型 → 超額 ─────────────────────────
+CORE_KEYS = ("schema", "feature_order", "cont_cols", "bool_cols", "mu", "sd", "centers_z")
+CENTERS_CORE_SHA = "dfd5863a6566b6bc"        # ⛔ 寫死：09-15 策略線投遞版的【數值本體】sha（⭐ 2155 §一 的圈號訂正沒有動它）
+
+
+def centers_tag(path: str) -> str:
+    """⭐⭐ 中心檔的兩個指紋：全檔 ＋【數值本體】（＝ 真正決定歸型的那幾個鍵）。
+
+    ⛔ 只印全檔 sha 會把【顯示標籤】與【定義】混在一起：2026-09-20 的圈號訂正只改了
+    `cluster_index_to_type` 兩個字，全檔 sha 就從 23be85b004977222 變成別的值，
+    而分型結果一格都沒變 ⇒ ⛔ 讀的人會以為中心換了（〈一百一十二〉）。
+    ⇒ ⭐ 所以兩個都印，而【本體】那一個對不上就當場停。"""
+    raw = open(path, "rb").read()
+    cj = json.loads(raw.decode("utf-8"))
+    core = hashlib.sha256(json.dumps({k: cj[k] for k in CORE_KEYS}, sort_keys=True,
+                                     separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()[:16]
+    if core != CENTERS_CORE_SHA:
+        raise SystemExit(f"⛔ 中心檔的【數值本體】變了：{core} ≠ {CENTERS_CORE_SHA}（{path}）⇒ 這不是圈號訂正，停")
+    return f"{os.path.basename(path)}(全檔 {hashlib.sha256(raw).hexdigest()[:16]}｜本體 {core})"
+
+
 def load_centers(path: str):
     cj = json.load(open(path, encoding="utf-8"))
     assert list(cj["feature_order"]) == P.FEATURES, "feature_order 與 p4_features.FEATURES 不同"
@@ -415,16 +441,20 @@ def placebo_B(cl: pd.DataFrame, shift_months: int, H: int = 120, period: str = J
 
 
 def discrimination(cl: pd.DataFrame, H: int = 120, period: str = JUDGE_PERIOD) -> pd.DataFrame:
-    """④ 與 ② 標籤對調：對調後若仍「④負②正」⇒ 程式有 bug。"""
-    sw = cl.copy(); m4 = sw["type"] == "④死水"; m2 = sw["type"] == "②正在噴出"
-    sw.loc[m4, "type"] = "②正在噴出"; sw.loc[m2, "type"] = "④死水"
+    """④死水 與 ③正在噴出 標籤對調：對調後若仍「④負③正」⇒ 程式有 bug。
+
+    ⛔⛔ 判準 `P4_v3_回溯分析.md` §189 逐字寫的是「把 ④ 與 ② 的標籤對調」——⭐ 那裡的 ② 是 (甲) 圈號，
+    指的就是【正在噴出】(H2)。2155 §一 裁 (乙) 之後它改叫 ③ ⇒ ⭐ **對調的是同一對，行為一格都沒變**；
+    ⛔ 不可以照 (乙) 的字面把它改成「死水 ↔ 純技術＋回檔」（那會換掉這道鑑別力檢查要檢查的東西）。"""
+    sw = cl.copy(); m4 = sw["type"] == "④死水"; m2 = sw["type"] == "③正在噴出"
+    sw.loc[m4, "type"] = "③正在噴出"; sw.loc[m2, "type"] = "④死水"
     rows = []
-    for typ in ("②正在噴出", "④死水"):
+    for typ in ("③正在噴出", "④死水"):
         s = cell_stats(_in(sw, period)[lambda z: z["type"] == typ], H)
         rows.append({"check": "鑑別力 ④↔② 對調", "type": typ, "H": H, "period": period, "n_months": s["n_months"], "excess_pp": s["excess_pp"],
                      "ci_lo_pp": s["ci_lo_pp"], "ci_hi_pp": s["ci_hi_pp"]})
     df = pd.DataFrame(rows)
-    x2 = df[df["type"] == "②正在噴出"]["excess_pp"].iloc[0]; x4 = df[df["type"] == "④死水"]["excess_pp"].iloc[0]
+    x2 = df[df["type"] == "③正在噴出"]["excess_pp"].iloc[0]; x4 = df[df["type"] == "④死水"]["excess_pp"].iloc[0]
     df["bug_if_true"] = bool(x4 < 0 and x2 > 0)
     return df
 
@@ -556,9 +586,12 @@ def _commit() -> str:
         return "unknown"
 
 
+CTAG = "centers_v3.json(⛔ 未指定)"     # ⭐ main() 開頭用 centers_tag() 覆寫；⛔ 它是每一個輸出檔表頭裡那個指紋的唯一來源
+
+
 def write_csv(df: pd.DataFrame, path: str, stamp: str, commit: str):
     with open(path, "w", encoding="utf-8") as fh:
-        fh.write(f"# commit={commit} run={stamp} (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers=centers_v3.json(23be85b004977222)\n")
+        fh.write(f"# commit={commit} run={stamp} (Asia/Taipei) prereg=backtest/P4_v3_回溯分析.md centers={CTAG}\n")
         df.to_csv(fh, index=False)
 
 
@@ -629,6 +662,8 @@ def main():
             assert nd == 0, f"面板寫完重讀 fwd_{H} 有 {nd} 格不同（⇒ CSV 來回掉精度）"
     panel, n_innov = apply_innovation_rule(panel, uni)
     log(f"創新板量測日 < {INNOV_CUTOFF} 排除：{n_innov} 股-月" + ("（本窗內觸發 0 次）" if n_innov == 0 else ""))
+    global CTAG
+    CTAG = centers_tag(a.centers)          # ⛔ 兩個指紋都算出來，本體對不上就當場停（⛔ 不是寫死一個字串）
     C, mu, sd = load_centers(a.centers)
     if a.survivor_attr:
         cl_ = classify(panel, C, mu, sd)
@@ -700,7 +735,7 @@ def main():
         fh.write(",".join(str(row[c]) for c in cols) + "\n")
     gate_delta = "（第一輪，無上一輪）" if prev is None else "、".join(f"{c} {int(prev[c]):,}→{row[c]:,}（{row[c] - int(prev[c]):+,}）" for c in cols[2:])
     mp_line = open(os.path.join(a.out, "min_periods_check.txt"), encoding="utf-8").read().strip() if os.path.exists(os.path.join(a.out, "min_periods_check.txt")) else "（沿用既有面板，本趟沒跑）"
-    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `centers_v3.json`（sha256 前 16 23be85b004977222）；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、流動性合格 {n_liq:,} 列、bars<{P.MIN_BARS} 再擋 {n_gate:,} 列（放棄組⑧）、法人欄 NaN 再擋 {n_inst:,} 列（放棄組⑩，K線分析 2035 (c)）、創新板規則排除 {n_innov} 列、合格 {len(cl):,} 列。", "",
+    L = [f"# PREREGP4 v3 回溯分析——回測線獨立重算", "", f"產出：{stamp}（台北）、commit {commit}；中心 `{CTAG}`；母體 {len(uni)} 檔、量測日 {len(positions)}；面板 {len(panel):,} 列、流動性合格 {n_liq:,} 列、bars<{P.MIN_BARS} 再擋 {n_gate:,} 列（放棄組⑧）、法人欄 NaN 再擋 {n_inst:,} 列（放棄組⑩，K線分析 2035 (c)）、創新板規則排除 {n_innov} 列、合格 {len(cl):,} 列。", "",
          f"環境指紋（〈六十七〉）：python {sys.version.split()[0]}、pandas {pd.__version__}、numpy {np.__version__}；無成交日 amount／volume 依〈七十七〉還原 0（區間內部；依據＝該日日檔存在且不含該檔）。", "",
          f"閘門逐輪計數（〈八十二〉③，vs 上一輪 `gate_history.csv`）：{gate_delta}", "",
          f"閘門（v3 補件 §3-1／§3-2，K線分析 1855 合併）：量測日 bars ≥ {P.MIN_BARS} 才進母體、所有回看窗 min_periods＝w；§4-1 常設斷言：{mp_line}", ""]

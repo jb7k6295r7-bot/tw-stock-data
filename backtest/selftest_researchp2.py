@@ -233,7 +233,7 @@ def t_p6_drop_and_pair():
     # ⚠ 歸型表【比 sig 長】（含沒進門檻B 的股-月）⇒ 分母用錯就會被抓到
     cl = pd.DataFrame({"measure_date": pd.to_datetime(["2024-01-02"] * 3 + ["2024-02-01"] * 5),
                        "stock_id": ["A", "B", "C", "A", "D", "E", "F", "G"],
-                       "type": ["④死水", "①營收＋回檔", "④死水", "③純技術＋回檔"] + ["④死水"] * 4})
+                       "type": ["④死水", "①營收＋回檔", "④死水", "②純技術＋回檔"] + ["④死水"] * 4})
     kept, info = P6.drop_type4(sig, cl)
     check(list(kept["sid"]) == ["B", "A"] and info["dropped_rows"] == 2, f"④型那兩列被拿掉（實得 {list(kept['sid'])}）")
     check(abs(info["dropped_share_pct"] - 50.0) < 1e-9, f"⭐ 佔比的分母是【門檻B 池】4 列 ⇒ 50%（實得 {info['dropped_share_pct']:.1f}%）")
@@ -845,6 +845,7 @@ def t_p12_determinism():
 
 def t_p4_recheck():
     """resultsp1 §十二 四型分位的獨立覆核（策略線 2010 §一）：⭐ 依【型名本體】配對，⛔ 不依圈號。"""
+    import hashlib as _hashlib
     import os as _os
     from . import p4_type_recheck as RC
     check(RC.bare("②正在噴出") == "正在噴出" and RC.bare("③純技術+回檔(H4)") == "純技術＋回檔"
@@ -904,9 +905,33 @@ def t_p4_recheck():
         check(RC.idx_conflicts(cm, _P4.TYPE_OF_IDX) == [],
               f"⭐⭐ 真資料：`researchp4.TYPE_OF_IDX` 與 centers_v3.json 的 cluster_index_to_type【逐項相同】"
               f"（⛔ 不同就是本線抄錯了來源檔）")
-        check(len(RC.circle_conflicts(cm, RC.STRAT_IDX)) == 2,
-              f"⭐⭐ 而 centers_v3.json 與策略線 2010 §一 的圈號【有 2 型不同】"
-              f"（實得 {RC.circle_conflicts(cm, RC.STRAT_IDX)}）⇒ 本件要回報的就是這一件")
+        # ⭐⭐ K線分析線 2155 §一 裁 (乙) 之後：圈號衝突【已經消失】（⛔ 這一條本來是 ==2，訂正就是要把它變成 0）
+        check(RC.circle_conflicts(cm, RC.STRAT_IDX) == [],
+              f"⭐⭐ 2155 §一 (乙) 落地後：centers_v3.json 與策略線 2010 §一 的圈號【一型都不差】"
+              f"（實得 {RC.circle_conflicts(cm, RC.STRAT_IDX)}）")
+        check(cm == {0: "①營收+回檔(H3)", 1: "④死水(H1)", 2: "②純技術+回檔(H4)", 3: "③正在噴出(H2)"},
+              f"⭐ centers_v3.json 的 cluster_index_to_type 逐字 ＝ (乙) 定版（實得 {cm}）")
+        # ⭐ 程式端四個表要【一起】換圈號：只換一半就會 KeyError／靜默算錯型
+        check(set(_P4.HYP) == set(_P4.TYPE_OF_IDX.values()) == set(_P4.TYPES)
+              == set(_P4.REF[("主格", 120)]),
+              "⭐⭐ TYPE_OF_IDX／HYP／TYPES／REF 的型名【四張表同一組】（⛔ 只換一半 ⇒ 這一條就紅）")
+        check(_P4.HYP["③正在噴出"] == ("H2", +1) and _P4.HYP["②純技術＋回檔"] == ("H4", -1)
+              and abs(_P4.REF[("主格", 120)]["③正在噴出"]["excess"] - 2.98) < 1e-12
+              and abs(_P4.REF[("主格", 120)]["②純技術＋回檔"]["excess"] - (-0.22)) < 1e-12,
+              "⭐⭐ 訂正只動圈號：③正在噴出 仍是 H2／+2.98、②純技術＋回檔 仍是 H4／−0.22（⛔ 數字一個都沒跟著搬）")
+        # ⭐⭐ 驗終點：中心檔的【數值本體】指紋沒變 ⇒ 這一次改的是顯示標籤（〈一百一十二〉）
+        try:                                   # ⛔ centers_tag 對不上會 raise SystemExit ⇒ 不接住的話整支自測當場中斷
+            tag = _P4.centers_tag(RC.CENTERS)   # ⭐ 接住之後同一個突變從「紅 0」變成印得出 ✗（2026-09-11 的第二個陷阱）
+        except SystemExit as e:
+            tag = f"⛔ centers_tag 當場停：{e}"
+        check(_P4.CENTERS_CORE_SHA == "dfd5863a6566b6bc" and f"本體 {_P4.CENTERS_CORE_SHA}" in tag,
+              f"⭐⭐ 中心檔【數值本體】sha 與 09-15 投遞版相同 ⇒ 圈號訂正沒有動到定義（實得 {tag}）")
+        # ⭐ 沿革註記要在，而且它記的【全檔 sha】要等於真的那一個（⛔ 不是「檔案存在」就算）
+        _note = _os.path.join(_os.path.dirname(RC.CENTERS), "圈號沿革註記.md")
+        _txt = open(_note, encoding="utf-8").read() if _os.path.exists(_note) else ""
+        _real = _hashlib.sha256(open(RC.CENTERS, "rb").read()).hexdigest()[:16]
+        check(_real in _txt and "②／③ 要對調" in _txt,
+              f"⭐⭐ 圈號沿革註記.md 在，而且裡面記的全檔 sha ＝ 真實值 {_real}（⛔ 只驗『檔案存在』擋不住它過期）")
 
 
 def t_p1b():

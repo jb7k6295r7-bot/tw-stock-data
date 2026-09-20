@@ -214,6 +214,9 @@ HOLD_OFFSET_SITES = {
     "researchm1.py": {"fwd_returns": "收盤位移"},
     "researchp4.py": {"recompute_fwd": "由呼叫端指定", "面板建構": "作廢H+1根（⛔ 既有面板與前瞻列不回改）"},
     "researchp7.py": {"build_sig_gate_b": "持有n根（HOLD_BARS_N=120 ⇒ entry+119）"},
+    # ⚠ 2026-09-20 21:25 補登：PREREGP8（commit 5bab4b0d0）新增這支時【沒有登記】⇒ 這一條稽核從那天起就是紅的，
+    #   ⛔ 而本線一直沒看它（它不在 P1b／P4 那幾輪跑的自測裡）⇒ ⭐ 兩處都是走 D.exit_pos，口徑沒問題，漏的是【登記】。
+    "researchp8.py": {"fwd_holds": "持有n根（⭐ 走 exit_pos）", "代理檢定重算": "持有n根（⭐ 走 exit_pos，H＝P7.HOLD_BARS_N）"},
     "forward_and.py": {"kx": "持有n根（⚠ 軸是【有效K棒 idx】不是日曆位置）"},
     "exright_gap.py": {"exposure": "⚠ 窗 (entry, entry+hold] ⇒ 比持有期【多含一根】——追加二十一 §七 已記，⛔ 未修"},
 }
