@@ -807,6 +807,42 @@ def t_p13():
           " ⇒ ⛔ 只看中位會讀成【完全不重疊】")
 
 
+def t_p12_determinism():
+    """P12 (S1,C1,T1) 的決定性（策略線 2130 §三①）：⛔ 逐位元零容差、⛔ round_trip 不可省。"""
+    import os as _os
+    from . import p12_determinism as DT
+    check(DT.CELL == ("S1", "C1", "T1") and DT.WIN == "全窗" and DT.N_SLOTS == 8
+          and DT.COLS == ("own_dd", "cagr", "mdd", "expo", "slot", "trades"),
+          "對帳的那一格與六個彙總量【寫死】（⛔ 本線不挑格、不挑欄）")
+    ref = {"own_dd": -0.4581959255260563, "cagr": 0.23, "mdd": -0.45, "expo": 0.86, "slot": 0.88, "trades": 138}
+    check(DT.same_row(dict(ref), ref) == [], "完全一樣 ⇒ 沒有不同的欄")
+    off = dict(ref); off["own_dd"] = np.nextafter(ref["own_dd"], 0)
+    check(DT.same_row(off, ref) == ["own_dd"],
+          f"⭐ 差【一個 ulp】就要判不同（⛔ 容差比對會放行）")
+    off2 = dict(ref); off2["trades"] = 139
+    check(DT.same_row(off2, ref) == ["trades"], "整數欄也要比（⛔ 不可只比浮點）")
+    check(DT.eq_sha({"equity": np.array([1.0, 2.0])}) == DT.eq_sha({"equity": np.array([1.0, 2.0])})
+          and DT.eq_sha({"equity": np.array([1.0, 2.0])}) != DT.eq_sha({"equity": np.array([1.0, 2.0000000000000004])}),
+          "⭐ sha256(equity.tobytes())：同序列同指紋、差一個 ulp 就換指紋")
+    # ⭐⭐ 真資料：存檔一定要用 round_trip 讀，否則逐位元比會全部假警報
+    if _os.path.exists(DT.BY_SEED):
+        rt = DT.stored()
+        naive = pd.read_csv(DT.BY_SEED)
+        nm = ((naive["S"] == DT.CELL[0]) & (naive["C"] == DT.CELL[1]) & (naive["T"] == DT.CELL[2])
+              & (naive["win"] == DT.WIN) & (naive["cost"] == DT.COST_TAG))
+        naive = naive[nm].set_index("seed")
+        seeds = [int(x) for x in list(rt.index[:5])]
+        bad = [s_ for s_ in seeds if DT.same_row({c: rt.loc[s_][c] for c in DT.COLS}, naive.loc[s_])]
+        check(len(rt) == 200 and len(bad) >= 1,
+              f"⛔⛔ 真資料：預設解析器讀 cells_by_seed.csv.gz ⇒ 前 5 顆種子裡有 {len(bad)} 顆與 round_trip 版不同"
+              f"（⇒ ⛔ 逐位元對帳一定要 float_precision='round_trip'，1915 §五）")
+    src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "p12_determinism.py"), encoding="utf-8").read()
+    check('float_precision="round_trip"' in src
+          and 'raise SystemExit("⛔ 有種子重算對不上' in src and src.count("raise SystemExit") >= 2,
+          "⭐ 讀存檔用 round_trip、且【重算對不上那一條】會 raise SystemExit"
+          "（⛔ 不是印個警告繼續；⚠ 只數 raise 的總數不夠——sig 驗收那一條本來就有一個）")
+
+
 def t_p4_recheck():
     """resultsp1 §十二 四型分位的獨立覆核（策略線 2010 §一）：⭐ 依【型名本體】配對，⛔ 不依圈號。"""
     import os as _os
@@ -1107,6 +1143,7 @@ if __name__ == "__main__":
     print("[引擎] weight_fn（PREREGP13 seq=3 §二）"); t_weight_fn()
     print("[researchp13] 三個 weight_fn ＋ 0050 代理 ＋ 重疊度"); t_p13()
     print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
+    print("[p12_determinism] P12 那一格的決定性（策略線 2130 §三①）"); t_p12_determinism()
     print("[p4_type_recheck] 四型分位獨立覆核（策略線 2010 §一）"); t_p4_recheck()
     print("[researchp1b] PREREGP1b 假訊號組半寬（seq=4＋seq=5）"); t_p1b()
     print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
