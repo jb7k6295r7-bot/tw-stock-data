@@ -807,6 +807,50 @@ def t_p13():
           " ⇒ ⛔ 只看中位會讀成【完全不重疊】")
 
 
+def t_top50_share():
+    """K線分析線 1915 §六：參考C 候選裡市值前 50 的比例（⛔ 描述性交件，⛔ 不是判定）。"""
+    from . import top50_share as TS
+    sig = pd.DataFrame([("A", "2020-01", 11), ("B", "2020-01", 11), ("C", "2020-01", 11),
+                        ("A", "2020-02", 31), ("D", "2020-02", 31), ("E", "2020-02", 31), ("F", "2020-02", 31),
+                        ("G", "2020-03", 51), ("H", "2020-03", 51)], columns=["sid", "month", "entry_pos"])
+    mp = TS.measure_pos(sig)
+    check(mp == {"2020-01": 10, "2020-02": 30, "2020-03": 50},
+          f"量測日位置 ＝ entry_pos − 1（⛔ 不是進場日；實得 {mp}）")
+    try:
+        TS.measure_pos(pd.DataFrame([("A", "2020-01", 11), ("B", "2020-01", 12)], columns=["sid", "month", "entry_pos"]))
+        bad = True
+    except SystemExit:
+        bad = False
+    check(not bad, "⭐ 同一個量測月有兩個 entry_pos ⇒ 「當月」沒有唯一量測日 ⇒ 必須【停】，⛔ 不可挑一個")
+    # ⚠ 誘餌：進場日那三格的名單【故意不同】⇒ 取錯日期當場紅
+    top = {10: {"A", "B"}, 30: {"D", "E"}, 50: {"A"},
+           11: set(), 31: {"A", "D", "E", "F"}, 51: {"G", "H"}}
+    tab = TS.share_by_month(sig, mp, top)
+    check(tab["hit"].tolist() == [2, 2, 0] and tab["n"].tolist() == [3, 4, 2],
+          f"逐月分子 ＝ 該月候選中落在【該月】前 50 的檔數、分母 ＝ 該月候選數（實得 "
+          f"{tab['hit'].tolist()}／{tab['n'].tolist()}）")
+    check(abs(tab["share"].tolist()[1] - 0.5) < 1e-12 and abs(tab["share"].tolist()[0] - 2 / 3) < 1e-12,
+          "比例 ＝ hit ÷ n（⛔ 不是 hit ÷ 50、⛔ 不是 hit ÷ 前 50 名單長度）")
+    s = TS.summarize(tab)
+    check(s["hit"] == 4 and s["n"] == 9 and abs(s["share"] - 4 / 9) < 1e-12,
+          f"⭐ 必報① 全窗合計 ＝ Σ分子 ÷ Σ分母 ＝ 4/9 ＝ {4 / 9:.4f}（⛔ 不是逐月比例的平均 "
+          f"{np.mean(tab['share']):.4f} —— 兩者不同，月大小不一樣）")
+    check(abs(s["med"] - 0.5) < 1e-12 and abs(s["p10"] - 0.1) < 1e-12 and abs(s["p90"] - 0.6333333333) < 1e-9,
+          f"⭐ 必報② 逐月比例的中位／p10／p90 ＝ {s['med']:.4f}／{s['p10']:.4f}／{s['p90']:.4f}")
+    check(s["zero_months"] == 1,
+          "⭐ 分子為 0 的月份數要一起報（⛔ 只報中位會把「有些月一檔都沒有」蓋掉，〈九十二〉）")
+    check(TS.EVENT_WIN == ("2023-07", "2025-04") and TS.WANT_EVENT_B == {"rows": 503, "stocks": 323, "months": 22},
+          "對帳目標 ＝ 策略線 1445 §三 的【503 筆／323 檔／22 個月】（⛔ 寫死，⛔ 不是本件的判準）")
+    # ⭐ 呼叫點：光測純函式不夠（四點五／七的第三個陷阱）
+    import os as _os
+    src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "top50_share.py"), encoding="utf-8").read()
+    body = src.split("def main(")[1]
+    check('signal="B"' in body and 'signal="C"' in body and "build_sig_gate_b" in body,
+          "⭐ B 與 C 都由【同一支】build_sig_gate_b 造（⛔ 不另寫第二份 sig 建構）")
+    check('"全市場"' in body and '"上市普通股"' in body and body.count("top50_by_month") == 2,
+          "⭐ 前 50 的兩個母體【都要算】：全市場（1915 §六 字面）與上市普通股（策略線 38/503 的代理）⛔ 不挑一個")
+
+
 def t_p13probe():
     """K線分析線 1755 §四 的兩個必報（⛔ 描述量，⛔ 不是判定）：單日崩跌、持有期間下市／停止交易。"""
     from . import p13_riskprobe as RP
@@ -849,5 +893,6 @@ if __name__ == "__main__":
     print("[引擎] weight_fn（PREREGP13 seq=3 §二）"); t_weight_fn()
     print("[researchp13] 三個 weight_fn ＋ 0050 代理 ＋ 重疊度"); t_p13()
     print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
+    print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
