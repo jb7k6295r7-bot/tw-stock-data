@@ -1184,3 +1184,14 @@
 - ok　月表只增不減　（90751→108934）
 - ok　本趟不是全失敗　（成功 1773／1773 格｜0 失敗）
 
+
+## crypto:universe　✓ 正常
+
+最後執行：2026-09-20T13:45:24+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref main｜run 35492414962
+
+- **這一趟**：重新排前 15 大市值（排除穩定幣、幣安要有 <SYM>USDT 交易對）
+- **結果**：BTC(Bitcoin)、ETH(Ethereum)、BNB(BNB)、XRP(XRP)、SOL(Solana)、TRX(TRON)、ZEC(Zcash)、DOGE(Dogecoin)、USDS(USDS)、LINK(Chainlink)、ADA(Cardano)、XLM(Stellar)、UNI(Uniswap)、BCH(Bitcoin Cash)、NEAR(NEAR Protocol)
+
+檢查：
+- ok　排出前 15 大　（實際 15 個）
+
