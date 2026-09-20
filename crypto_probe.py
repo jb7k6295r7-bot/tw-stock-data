@@ -6,15 +6,18 @@ data.binance.vision／fapi.binance.com／api.coingecko.com 全部
 `connect_rejected`（organization policy）。⇒ 這支探針**只能在 Actions
 上驗**，本機跑起來的失敗不算數。
 
-目的：回答三個問題，⛔ 不是「能不能連上」而已（第二點：靜默失敗要講出是哪一種）：
-  ① Binance 現貨 API（api.binance.com）從 Actions 的 IP 打不打得到
-     ——⚠ Binance 對美國地區 IP 有法遵封鎖（451），而 GitHub-hosted
-     runner 多半是美國/歐洲的雲端 IP，這是已知的高風險點，不是猜的。
-  ② Binance 的歷史資料鏡像（data.binance.vision，CloudFront 服務）
-     是不是走不同的封鎖規則（有時候 CDN 級的資源不擋雲端 IP）。
-  ③ 排「前 15 大」需要市值排名，⛔ Binance 本身不提供市值——
-     這裡用 CoinGecko 的公開 `coins/markets` 端點測通不通，
-     它是免費、不需要 API key 的排名來源。
+⭐ 2026-09-20 第一輪已經打過 api.binance.com（ping／time／ticker／klines），
+四個全部 451「restricted location」——跟猜的一樣，Actions runner 的
+IP 段被 Binance 法遵封鎖擋掉，⛔ 這條路死了，第二輪不重打。
+
+這一輪回答的問題：
+  ① `data.binance.vision`（歷史資料鏡像，CloudFront 服務）**真的下載得到
+     資料檔**，不只是目錄頁 200——目錄頁通不代表檔案本體通得過同一道封鎖。
+     ⭐ 順便驗 2017 年的月檔在不在（使用者要求回補到 2017）。
+  ② CoinGecko 抓前 30 大市值、濾掉穩定幣後湊出前 15 大（使用者裁定：
+     市值排名、排除穩定幣）。
+  ③ 這 15 個幣種是不是每一個在 Binance 現貨都有 `<SYM>USDT` 交易對
+     ——⛔ 不能假設「市值前 15」跟「Binance 上市的前 15」是同一組。
 """
 import json
 import sys
@@ -49,51 +52,88 @@ def probe(label, url, headers=None):
     return status, body
 
 
-def main():
-    # ① Binance 現貨：能不能連、會不會被地區法遵擋（451）
-    s1, _ = probe("Binance ping", "https://api.binance.com/api/v3/ping")
-    s2, b2 = probe("Binance server time", "https://api.binance.com/api/v3/time")
-    s3, b3 = probe("Binance BTCUSDT 24hr ticker",
-                    "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT")
-    s4, b4 = probe("Binance BTCUSDT 近 3 天日K",
-                    "https://api.binance.com/api/v3/klines"
-                    "?symbol=BTCUSDT&interval=1d&limit=3")
+#: 2026-09-20 第一輪探針已證實 api.binance.com 全面 451（法遵封鎖，
+#  訊息逐字是「restricted location」）——這輪不重打，省一輪配額。
+#: 使用者裁定：前 15 大＝市值排名、排除穩定幣、日K、回補到 2017。
+STABLECOIN_SYMBOLS = {"usdt", "usdc", "dai", "fdusd", "tusd", "usde", "busd"}
 
-    # ② Binance 歷史資料鏡像（CDN，走不走同一套地區封鎖不確定，實測見真章）
-    s5, _ = probe("Binance vision（歷史 zip 目錄，只探測能不能連）",
-                   "https://data.binance.vision/?prefix=data/spot/daily/klines/BTCUSDT/1d/")
+
+def main():
+    # ② Binance 歷史資料鏡像：光有目錄頁通不代表真的抓得到檔案——
+    #   這次追加抓**一個真的月檔**（monthly，比 daily 檔小很多的那種也試）
+    #   跟 2017 年那個月，直接驗證「回補到 2017」這個需求做不做得到。
+    s5a, _ = probe("Binance vision｜BTCUSDT 2017-08 月檔清單（驗 2017 年有沒有資料）",
+                    "https://data.binance.vision/?prefix="
+                    "data/spot/monthly/klines/BTCUSDT/1d/")
+    s5b, b5b = probe("Binance vision｜BTCUSDT 2017-08 月檔本體（真的下載一個檔）",
+                       "https://data.binance.vision/data/spot/monthly/klines/"
+                       "BTCUSDT/1d/BTCUSDT-1d-2017-08.zip")
+    s5c, _ = probe("Binance vision｜昨天的日檔清單（驗每日更新的時效）",
+                    "https://data.binance.vision/?prefix="
+                    "data/spot/daily/klines/BTCUSDT/1d/")
 
     # ③ 市值排名來源（Binance 不提供市值，這裡另找一個免費、不用 key 的）
-    s6, b6 = probe("CoinGecko 前 15 大市值（免 API key）",
+    #   多抓一點（30 筆）才夠濾掉穩定幣還留 15 個。
+    s6, b6 = probe("CoinGecko 前 30 大市值（免 API key，濾穩定幣後才夠 15 個）",
                     "https://api.coingecko.com/api/v3/coins/markets"
-                    "?vs_currency=usd&order=market_cap_desc&per_page=15&page=1")
+                    "?vs_currency=usd&order=market_cap_desc&per_page=30&page=1")
 
-    print("\n\n=== 判讀 ===")
-    if s1 == 451 or s2 == 451 or s3 == 451:
-        print("⛔⛔ Binance 主站回 451（法遵封鎖，Actions runner 的 IP 段被擋）"
-              "⇒ 不能直接打 api.binance.com，要走 data.binance.vision"
-              "或別的資料來源。")
-    elif s1 == 200 and s2 == 200 and s3 == 200 and s4 == 200:
-        print("✅ Binance 現貨 API 從這個環境打得通（ping／time／ticker／klines 都 200）。")
-    else:
-        print(f"⚠ 部分失敗，狀態碼分別是 ping={s1} time={s2} ticker={s3} klines={s4}"
-              "——不是乾淨的『通』或『451』，要看上面各段的原始回應才知道是哪一種。")
-
-    if s5 == 200:
-        print("✅ data.binance.vision（歷史資料鏡像）打得通。")
-    else:
-        print(f"⚠ data.binance.vision 狀態碼 {s5}——若這裡也擋，"
-              "歷史回補會需要另一條路（例如逐日打現貨 API 的 klines，量會大很多）。")
-
+    top15 = []
     if s6 == 200:
         try:
-            names = [f"{c['symbol'].upper()}({c['name']})" for c in json.loads(b6)]
-            print(f"✅ CoinGecko 前 15 大市值抓得到：{names}")
+            coins = json.loads(b6)
+            for c in coins:
+                if c["symbol"].lower() in STABLECOIN_SYMBOLS:
+                    continue
+                top15.append(c)
+                if len(top15) == 15:
+                    break
         except Exception as e:                                    # noqa: BLE001
-            print(f"⚠ CoinGecko 回 200 但解析失敗：{e}")
+            print(f"⚠ 解析 CoinGecko 回應失敗：{e}")
+
+    # ④ 逐一驗證這 15 個幣種在 Binance 現貨有沒有 USDT 交易對
+    #   （用 vision 鏡像的目錄頁測，⛔ 不打 api.binance.com——那條已知 451）
+    print("\n=== 逐幣驗證 Binance 現貨有沒有 <SYM>USDT 這個交易對 ===")
+    avail = {}
+    for c in top15:
+        sym = c["symbol"].upper()
+        url = f"https://data.binance.vision/?prefix=data/spot/daily/klines/{sym}USDT/1d/"
+        st, body = _get(url)
+        has_files = st == 200 and b"Contents" in (body or b"") or (
+            st == 200 and f"{sym}USDT-1d-".encode() in (body or b""))
+        avail[sym] = (st, has_files)
+        print(f"  {sym}USDT：status={st}｜看起來有檔案={has_files}")
+
+    print("\n\n=== 判讀 ===")
+    print("⛔⛔ 上一輪已證實 api.binance.com 全面 451（法遵封鎖，"
+          "訊息逐字是 restricted location）⇒ 現貨 REST API 這條路死了，"
+          "不管 ping／klines／哪個端點都一樣，⛔ 不用再測。")
+
+    if s5b == 200:
+        print("✅✅ data.binance.vision 的月檔**真的下載得到**"
+              "（2017-08 那個月檔 200）⇒ 回補到 2017 年做得到。")
+    elif s5a == 200:
+        print("⚠ 目錄頁通但月檔本體沒抓到（見上面 s5b 那段的原始回應），"
+              "要確認是不是檔名／路徑猜錯，而不是整條路不通。")
     else:
-        print(f"⚠ CoinGecko 狀態碼 {s6}，前 15 大市值排名需要換一個來源"
-              "（例如 CoinMarketCap，但它多數端點要 API key）。")
+        print(f"⛔ data.binance.vision 連目錄頁都不通（{s5a}），"
+              "回補到 2017 這個需求要重新找路。")
+    print(f"⚠ 昨天的日檔目錄頁 status={s5c}"
+          "（用來判斷『每天更新』這件事能不能靠它做，不是只能靠歷史月檔）。")
+
+    if top15:
+        names = [f"{c['symbol'].upper()}({c['name']})" for c in top15]
+        print(f"✅ 前 15 大市值（已排除穩定幣）：{names}")
+    else:
+        print("⛔ 沒能湊出 15 個非穩定幣，看上面 CoinGecko 那段原始回應。")
+
+    missing = [s for s, (st, ok) in avail.items() if not ok]
+    if missing:
+        print(f"⚠⚠ 這幾個在 Binance 現貨**沒找到** <SYM>USDT 交易對：{missing}"
+              "——⛔ 不能假設市值前 15 名一定都在 Binance 上市，"
+              "這幾個需要另找資料來源或跟使用者確認要不要換一個幣頂替。")
+    else:
+        print("✅ 前 15 大市值幣種在 Binance 現貨全部找得到 <SYM>USDT 交易對。")
 
     return 0
 
