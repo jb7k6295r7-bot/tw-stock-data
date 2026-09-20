@@ -1,0 +1,25 @@
+name: 虛擬貨幣資料來源探針（只讀，不寫 data/）
+
+# 使用者 2026-09-20 要把前 15 大虛擬貨幣收進資料庫，來源看幣安或 TradingView。
+# ⛔ 開發容器對外部金融站台一律 403（跟 CLAUDE.md 第六點記的 TW 交易所同一個
+#   閘道問題），本機測不出真相 ⇒ 這支只在 Actions 上驗，見 crypto_probe.py 檔頭。
+# ⛔ 只印，不寫 data/、不建立任何長期檔案。
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 跑探針
+        run: python crypto_probe.py
