@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T03:08:32+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35463133421
+# ⏱ 這一趟：2026-09-20T10:17:39+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35483356168
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -639,6 +639,3 @@
      ⇒ ⭐ 讀法：若表頭裡有「有價證券別」而且 TDR 那幾檔在那一欄
        被講成同一種 ⇒ **官方欄拿得到** ⇒ 照 1515 在 `kind` 那側改。
        ⛔ 若拿不到 ⇒ 回一封說「拿不到」，由市場情報分析線改裁退路。
-
-✗ 2026-09-19T19:25:02Z python tpex_probe.py 非 0 結束（rc=1）——traceback 在 Actions log
-  （⭐ 已從 **origin/main** 還原成上一次成功的內容）
