@@ -144,6 +144,10 @@ def t_stop():
     fx2 = R.simulate_mtm(sig2, "H60", 4, np.random.default_rng(5), closes2, opens2, n, return_equity=True, stop=("fix", 0.10))
     check(fx2["stop_exits"] == 1 and fx2["stop_days"] == [(9, 1)],
           f"排程出場日（第 10 天）當天不被停損搶走 ⇒ 只有 B 記成停損（實得 {fx2['stop_exits']} 筆 {fx2['stop_days']}）")
+    # ⭐ 平均持有天數：停損出場的會短於排程的 H（⛔ 沒有這個數就解釋不了年化為什麼掉）
+    check(abs(one["hold_days_mean"] - (10 - 5)) < 1e-12, f"單檔單槽：第 5 天進（entry_pos=5）、第 10 天結清 ⇒ 持有 5 天（實得 {one['hold_days_mean']}）")
+    nostop_like = R.simulate_mtm(solo, "H60", 1, np.random.default_rng(3), closes, opens, n, stop=("fix", 0.99))
+    check(abs(nostop_like["hold_days_mean"] - (20 - 5)) < 1e-12, f"沒觸發 ⇒ 持有到排程出場（第 20 天）＝15 天（實得 {nostop_like['hold_days_mean']}）⇒ ⭐ 停損那一版短 10 天")
     # ⛔ 參數檢查
     for bad in (("fix", 0.0), ("fix", 1.0), ("nope", 0.1), ("fix", -0.1)):
         try:
@@ -151,6 +155,46 @@ def t_stop():
         except ValueError:
             ok = True
         check(ok, f"⛔ 壞參數 {bad} ⇒ ValueError（⛔ 不是靜靜跑下去）")
+
+
+def t_gate_b_sig():
+    """PREREGP7：門檻B 的 sig 依策略線 1115 §1-1 的逐字定義重建（⛔ 不是它沙箱那份檔）。"""
+    from . import researchp7 as P7
+    cal = pd.date_range("2020-01-01", periods=400, freq="D")
+    n = len(cal)
+    sids_all = ("A", "B", "A2", "A3", "A4", "A5")
+    closes = {k: np.linspace(100 + 10 * i, 200 + 10 * i, n) for i, k in enumerate(sids_all)}
+    opens = {k: v * 0.97 for k, v in closes.items()}          # ⭐ 開盤 ≠ 收盤 ⇒ 分得出 g 用的是哪一個
+    md = [cal[10], cal[40]]
+    rows = []
+    for d in md:
+        for sid, rev, stack, up, el in (("A", 100, 0, 100, True), ("B", 100, 0, 100, True),
+                                        ("A2", 100, 100, 100, True), ("A3", 0, 0, 100, True), ("A4", 100, 0, 0, True),
+                                        ("A5", 100, 0, 100, False)):
+            rows.append({"measure_date": d, "stock_id": sid, "eligible": el, "rev_hi24": rev, "ma_stack": stack,
+                         "ma60_up": up, "amt20": 1e8, "vol60": 0.3})
+    panel = pd.DataFrame(rows)
+    sig = P7.build_sig_gate_b(panel, cal, closes, opens, start="2020-01-01")
+    check(set(sig["sid"]) == {"A", "B"}, f"⭐ 只有三條布林全中且過閘門的才進 sig（實得 {sorted(set(sig['sid']))}）"
+          "⇒ ⛔ ma_stack 成立／rev_hi24 不成立／ma60_up 不成立／沒過閘門 四種都被擋掉")
+    r0 = sig[(sig.sid == "A") & (sig.entry_pos == 11)].iloc[0]
+    check(int(r0[f"xpos_{P7.RULE}"]) == 11 + P7.HOLD_BARS, f"xpos ＝ entry_pos + {P7.HOLD_BARS}（⛔ 不是 +120）")
+    want = closes["A"][11 + P7.HOLD_BARS] / opens["A"][11] - 1
+    bad_cc = closes["A"][11 + P7.HOLD_BARS] / closes["A"][11] - 1
+    check(abs(float(r0[f"g_{P7.RULE}"]) - want) < 1e-12 and abs(want - bad_cc) > 1e-6,
+          f"g ＝ closes[xpos] / opens[entry] − 1（⛔ 不是收盤對收盤：那會是 {bad_cc:+.4f} 而不是 {want:+.4f}）")
+    check(P7.SEED0 == 97000, f"種子起點寫死 97000（⛔ 不沿用 90000／96000；實得 {P7.SEED0}）")
+    check([P7.stop_tag(c) for c in P7.CELLS] == ["none", "fix 8%", "fix 15%", "fix 20%", "trail 15%", "trail 20%"],
+          f"六格寫死（實得 {[P7.stop_tag(c) for c in P7.CELLS]}）")
+    check(P7.HOLD_BARS == 119, "HOLD_BARS 寫死 119（策略線逐字；⚠ 本庫 P4 的 fwd_120 是 +120，差一根）")
+    # 超出日曆的量測日 ⇒ 剔除（⛔ 不是補 NaN）
+    late = pd.DataFrame([{"measure_date": cal[n - 5], "stock_id": "A", "eligible": True, "rev_hi24": 100, "ma_stack": 0,
+                          "ma60_up": 100, "amt20": 1e8, "vol60": 0.3}])
+    check(len(P7.build_sig_gate_b(late, cal, closes, opens, start="2020-01-01")) == 0, "xpos 超出日曆 ⇒ 該列剔除")
+    bad = pd.DataFrame([{"measure_date": cal[10], "stock_id": "A", "eligible": True, "rev_hi24": 100, "ma_stack": 0,
+                         "ma60_up": 100, "amt20": 1e8, "vol60": 0.3}])
+    op_bad = {k: v.copy() for k, v in opens.items()}; op_bad["A"][11] = np.nan
+    check(len(P7.build_sig_gate_b(bad, cal, closes, op_bad, start="2020-01-01")) == 0, "進場日開盤是 NaN ⇒ 該列剔除（⛔ 不 ffill 開盤）")
 
 
 def t_overlap():
@@ -184,6 +228,7 @@ if __name__ == "__main__":
     print("[researchp2] cap"); t_cap()
     print("[researchp2] 預設路徑"); t_default_identical()
     print("[researchp2/引擎] 停損兩族（PREREGP7）"); t_stop()
+    print("[researchp7] 門檻B sig 重建"); t_gate_b_sig()
     print("[researchp2] 重疊度"); t_overlap()
     print("[researchp2] 判定"); t_judge()
     print("[researchp2] 種子"); t_seeds()

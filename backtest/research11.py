@@ -449,7 +449,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     if stop is not None and (stop_kind not in ("fix", "trail") or not (0 < stop_x < 1)):
         raise ValueError(f"stop 只能是 ('fix'|'trail', 0<X<1)，收到 {stop!r}")
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
-    stop_exits = 0; stop_days = []; stop_cut_right_tail = 0; hold_days = []
+    stop_exits = 0; stop_days = []; stop_cut_right_tail = 0; hold_days = []; entry_day = {}
 
     def _rec(row, reason, t, delay=0, gross=np.nan):
         if log is not None:
@@ -487,6 +487,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 held.discard(sid)
                 if stop is not None:
                     peak_close.pop(sid, None)
+                    e0 = entry_day.pop(sid, None)
+                    if e0 is not None:
+                        hold_days.append(t - e0)           # 實際持有天數（⛔ 停損出場的會短於排程的 H）
             else:
                 still.append((ex, sid, amt, gross, ep))
         open_pos = still
@@ -549,6 +552,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     t0 = int(row["_t0"]) if "_t0" in row else t
                     gross = float(row["gross"]) if t0 == t else float(closes[row["sid"]][int(row["exit_pos"])]) / ep - 1.0   # 推遲進場 ⇒ 重算
                     open_pos.append((int(row["exit_pos"]), row["sid"], amt, gross, ep)); held.add(row["sid"]); trades += 1
+                    if stop is not None:
+                        entry_day[row["sid"]] = t
                     wins += int(gross - COST > 0)
                     if t0 != t:
                         n_deferred += 1; delays.append(t - t0); entered_q.add((row["sid"], int(row["entry_pos"])))
@@ -588,6 +593,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["stop_days"] = stop_days
         out["stop_max_same_day"] = max((n for _, n in stop_days), default=0)
         out["stop_cut_right_tail"] = stop_cut_right_tail
+        out["hold_days_mean"] = float(np.mean(hold_days)) if hold_days else np.nan
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
