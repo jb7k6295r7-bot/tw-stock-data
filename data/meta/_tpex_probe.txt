@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T19:51:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35508724795
+# ⏱ 這一趟：2026-09-20T21:04:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35512092922
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -463,7 +463,7 @@
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
      首列：{'Date': '1150918', 'SecuritiesCompanyCode': '8291', 'CompanyName': '尚茂', 'ClosingPrice': '31.70', 'Change': '2.85', 'Tot.Trans.Vol.': '34', 'Trans.Vol.AtUp-limitPr.': '23', 'OrderVol.AtUp-limitPr.': '35', 'Difference': '12'}
      ⛔ ③`Date` 相異值只有 **1 種**：1150918 × 35　⇒ **它只有這一期，沒有歷史**
-     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
      ✓ 1 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
