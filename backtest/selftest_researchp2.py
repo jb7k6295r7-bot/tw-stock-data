@@ -586,6 +586,10 @@ def t_p12():
     check(eT_s0["n_pairs"] == 4 and eT_all["n_pairs"] == 8 and eT_s0["arm"] == "S0" and eT_all["arm"] == "全部"
           and abs(eT_s0["point_pp"] - dT * 100) < 1e-9 and abs(eT_all["point_pp"] - (dT + k3 / 4) * 100) < 1e-9,
           f"裁定⑤：T 主效果要報兩版 —— 全部（8 對，{eT_all['point_pp']:+.1f}pp）與【只 S0 臂】（4 對，{eT_s0['point_pp']:+.1f}pp）")
+    eS_t1 = P12.main_effect(dfx, mr, "S", "W", "成本0", arms={"T": "T1"})
+    check(eS_t1["n_pairs"] == 4 and eS_t1["arm"] == "T1" and abs(eS_t1["point_pp"] - (aS + k3 / 2) * 100) < 1e-9,
+          f"⭐ S 也要報兩版（策略線 1830 §三②）：【只 T1】那一版是 4 對、{(aS + k3 / 2) * 100:+.1f}pp"
+          f"（⛔ 不是全部那版的 {(aS + k3 / 4) * 100:+.1f}pp）⇒ 拿掉 T0 那一欄【連同它的對子】")
     eff = pd.DataFrame([P12.main_effect(dfx, mr, f, "W", "成本0") for f in ("S", "C", "T")])
     at = P12.attribution(dfx, eff, "W", "成本0")
     check(abs(at["gap_pp"] - (aS + bC + dT + k3) * 100) < 1e-9 and abs(at["resid_pp"] - k3 / 4 * 100) < 1e-9,
@@ -665,8 +669,10 @@ def t_p12():
           "順序：先對帳錨點、後算主效果（⛔ 不是算完才回頭看錨點）")
     check("caps_buy_all(sigs[(s, t, wk)], ncal)" in src and "P11.caps_series(sg, 1.0, ncal)[0]" in src,
           "呼叫點：C0a 用 caps_buy_all、【窄讀】那一版用 P11.caps_series（⛔ 本檔沒有第二份逐日容量實作）")
-    check('arms={"S": "S0"}' in src or '("T", w, ct, {"S": "S0"})' in src,
-          "呼叫點：T 的主效果真的有跑【只 S0 臂】那一版（裁定⑤）")
+    check('("T", w, ct, {"S": "S0"})' in src, "呼叫點：T 的主效果真的有跑【只 S0 臂】那一版（裁定⑤）")
+    check('("S", w, ct, {"T": "T1"})' in src and '("S", w, ct, {"T": "T0"})' not in src,
+          "呼叫點：S 的第二版是【只 T1】（＝拿掉 4 檔那一欄），⛔ 不是只 T0（那剛好是反的）"
+          "——策略線 1830 §三② ＋ K線分析線 1845 §二")
 
 
 def t_p13probe():

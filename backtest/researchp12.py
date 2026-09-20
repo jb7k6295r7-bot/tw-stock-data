@@ -451,6 +451,9 @@ def main():
     # ⑤ 主效果＋加法表（⛔ 只有三個主效果進判定；⭐ T 依裁定⑤ 多報一版【不含 S1 臂】）
     jobs_e = [(f, w, ct, None) for w in WINDOWS for ct, _ in COSTS for f in ("S", "C", "T")]
     jobs_e += [("T", w, ct, {"S": "S0"}) for w in WINDOWS for ct, _ in COSTS]
+    # ⭐ 策略線 1830 §三② ＋ K線分析線 1845 §二 裁定：**S 比照 T 報兩版，⛔ 不含那兩格 4 檔才進判定**
+    # ⇒ 「不含那兩格」＝ 拿掉 T0 那一欄（主效果是【配對】平均 ⇒ ⛔ 不能只拿掉一臂的那一格，要連它的對子一起拿掉）
+    jobs_e += [("S", w, ct, {"T": "T1"}) for w in WINDOWS for ct, _ in COSTS]
     eff = pd.DataFrame([main_effect(df, mr, f, w, ct, arms) for f, w, ct, arms in jobs_e])
     eff.to_csv(os.path.join(a.out, "effects.csv"), index=False)
     att = pd.DataFrame([attribution(df, eff, w, ct) for w in WINDOWS for ct, _ in COSTS])
@@ -640,7 +643,9 @@ def report(tab, xtab, eff, att, anc, dirc, lad, ev, sigs, closes, opens, cal, wi
           "先對【種子 × 組合】取平均 ⇒ 一條**逐月**序列 ⇒ 月分群 SE 的 95% CI（抽樣單位是月）。",
           "⛔ 多重檢定：判定格 3 個（× 2 窗），虛無期望 0.15 格／窗。",
           "⛔ **T 的「全部」那一版含 (S1,·,T0) 兩格，而那兩格的有效樣本是【4 檔】**（裁定⑤）"
-          "⇒ ⭐ 以【只 S0 臂】那一版為準；兩版方向相反 ⇒ 寫【T 在本設計下測不出】。", "",
+          "⇒ ⭐ 以【只 S0 臂】那一版為準；兩版方向相反 ⇒ 寫【T 在本設計下測不出】。",
+          "⛔⛔ **S 也一樣**（策略線 1830 §三② ＋ K線分析線 1845 §二 裁定）：S 的「全部」版同樣吃進那兩格"
+          "⇒ ⭐ **判定用【只 T1】那一版**（拿掉 T0 那一欄；⛔ 主效果是配對平均，不能只拿掉一臂的那一格）。", "",
           "| 窗 | 成本 | 因子 | 臂 | 逐月配對差 | 95% CI | 月數 | 正的月數 | 判 | 點估計（窗期總報酬差） |",
           "|---|---|---|---|---:|---|---:|---:|:--:|---:|"]
     for r in eff.sort_values(["win", "cost", "factor", "arm"]).itertuples():
@@ -649,7 +654,15 @@ def report(tab, xtab, eff, att, anc, dirc, lad, ev, sigs, closes, opens, cal, wi
     e_main = eff[(eff["win"] == "主格窗") & (eff["cost"] == "成本0.585%") & (eff["arm"] == "全部")].set_index("factor")
     t_all = float(e_main.loc["T", "point_pp"]); t_s0 = float(eff[(eff["win"] == "主格窗") & (eff["cost"] == "成本0.585%")
                                                                 & (eff["factor"] == "T") & (eff["arm"] == "S0")]["point_pp"].iloc[0])
-    L += ["", f"⇒ ⭐ **T 兩版**（主格窗、含成本）：全部 {t_all:+.2f}pp／只 S0 臂 {t_s0:+.2f}pp ⇒ "
+    s_row = eff[(eff["win"] == "主格窗") & (eff["cost"] == "成本0.585%") & (eff["factor"] == "S")].set_index("arm")
+    L += ["", f"⇒ ⭐⭐ **S 兩版**（主格窗、含成本）：全部 {float(s_row.loc['全部', 'point_pp']):+.2f}pp"
+          f"（逐月 {float(s_row.loc['全部', 'diff_pp']):+.3f}pp、{'測得出' if bool(s_row.loc['全部', 'detectable']) else '測不出'}）"
+          f"／⭐【判定用】只 T1 {float(s_row.loc['T1', 'point_pp']):+.2f}pp"
+          f"（逐月 {float(s_row.loc['T1', 'diff_pp']):+.3f}pp、CI {float(s_row.loc['T1', 'lo_pp']):+.3f}～{float(s_row.loc['T1', 'hi_pp']):+.3f}pp、"
+          f"**{'測得出' if bool(s_row.loc['T1', 'detectable']) else '測不出'}**）",
+          f"　 ⇒ ⭐ 兩版差 {float(s_row.loc['全部', 'point_pp']) - float(s_row.loc['T1', 'point_pp']):+.2f}pp"
+          "　⇐ 那就是【4 檔那兩格】塞進 S 的量。",
+          f"⇒ ⭐ **T 兩版**（主格窗、含成本）：全部 {t_all:+.2f}pp／只 S0 臂 {t_s0:+.2f}pp ⇒ "
           + ("⛔ **方向相反 ⇒ 依裁定⑤ 寫【T 在本設計下測不出】**" if t_all * t_s0 < 0 else "✅ 方向相同（⛔ 而兩版的判都是 CI 說了算）"), "",
           "### ⛔⛔ 兩件會讓人讀錯這張表的事（⭐ 兩件都是本趟才看得到的）", "",
           "**① S 的『全部』版含著同樣那兩格 4 檔的格子** —— 裁定⑤ 只要求 T 報兩版，⛔ 而 S 的主效果是",
