@@ -399,7 +399,8 @@ _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
-                 weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False):
+                 weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
+                 weight_fn=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -438,6 +439,18 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
       ⭐ 省下的那半個 slot **留在現金**（⛔ 不讓給下一個候選、⛔ 不放大別的部位）⇒ 它的報酬照 cash_mode 走。
       ⛔ 只作用在【新部位】：已持有的部位不減、不賣、不調整（登錄 §2-C ⓑ 逐字）。
       ⚠ weak[t] 的**時序**由呼叫端負責（PREREGP9 用 t−1 的收盤與 MA60[t−1]）——⛔ 本引擎不自己算弱勢。
+    PREREGP13（2026-09-20，策略線 seq=3 §二 逐字規格）再加：
+      weight_fn   None（原版路徑，⛔ 逐位元相同）／callable(batch, t, equity, cash) → list[目標金額]
+                  batch ＝ 當天【通過 order、通過 cap_fn、尚未持有、要一起進場】的候選列（⭐ 保序）
+                  回傳 ＝ 與 batch 等長的【目標金額】（⛔ 不是權重比例；單位與 equity 相同）
+      ⭐ 逐檔金額改由呼叫端決定 ⇒ 這是引擎第一次有「同一天每檔金額可以不同」這個概念。
+      ⛔ 現金不足怎麼辦【由 weight_fn 自己決定】（它收得到 cash）⇒ 引擎只做最後一道保險 min(target, cash)。
+      ⚠ target ≤ 1e-9 ⇒ 該檔【不進場】並記 log 原因 "nocap"，⭐ 然後**繼續**問下一檔
+        （⛔ 與原版路徑的 `break` 不同：原版的 amt ≤ 1e-9 只可能是現金用盡 ⇒ 後面都不必問了；
+          而 weight_fn 那條路的 0 可能是「這一檔沒有市值資料」⇒ ⛔ 不可以連累後面的候選）
+      ⛔⛔ 護欄（策略線 seq=3 §五 逐字，⭐ 與能力同一份落地）：
+        「往後任何使用 weight_fn 的登錄，都要在跑之前寫死權重函數的逐字定義。
+          ⛔ 不可以掃一組權重、⛔ 不可以事後在幾個權重函數之間挑。」
     PREREGP11（2026-09-20，策略線 seq=4 §八 ＋ 回測線追加一）：
       n_slots  除了純量，也可以是**長度 ncal 的整數序列**＝【逐日的槽位容量】（⭐ 逐月 N_t 用這個）
                ⇒ 第 t 天的容量 ＝ n_slots[t]；進場金額 slot ＝ equity[t−1] / n_slots[t]
@@ -575,12 +588,24 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 if weak is not None and weak[t]:
                     slot = slot * weak_size          # ⭐ 只縮**今天要進的新部位**；省下的留在現金
                 entered_q = set()
+                targets = None
+                if weight_fn is not None and len(take):          # PREREGP13：逐檔目標金額由呼叫端算（⛔ 現金不足的處置也在它那裡）
+                    batch = [cand.iloc[i] for i in take]
+                    targets = list(weight_fn(batch, t, equity[t - 1], cash))
+                    if len(targets) != len(take):
+                        raise ValueError(f"weight_fn 要回與 batch 等長的金額，batch {len(take)}／回 {len(targets)}")
                 for j, i in enumerate(take):
                     if use_bench:
                         cash = units * bench[t] * (1 - bench_cost)                   # 賣 bench 能提出的現金（扣單邊成本）
-                    row = cand.iloc[i]; amt = min(slot, cash)
-                    if amt <= 1e-9:
-                        rest = list(take[j:]) + rest; break
+                    row = cand.iloc[i]
+                    if targets is None:
+                        amt = min(slot, cash)
+                        if amt <= 1e-9:
+                            rest = list(take[j:]) + rest; break
+                    else:
+                        amt = min(float(targets[j]), cash)
+                        if not np.isfinite(amt) or amt <= 1e-9:
+                            _rec(row, "nocap", t); continue      # ⭐ 這一檔沒得買（沒市值／沒現金）⇒ ⛔ 不連累後面的候選
                     if use_bench:
                         units -= amt / ((1 - bench_cost) * bench[t])
                     else:

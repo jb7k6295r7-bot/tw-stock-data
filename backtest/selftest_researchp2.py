@@ -675,6 +675,82 @@ def t_p12():
           "——策略線 1830 §三② ＋ K線分析線 1845 §二")
 
 
+def t_weight_fn():
+    """PREREGP13 seq=3 §二：引擎的 weight_fn（⭐ 預設 None 逐位元相同、nocap 不連累後面、現金最後一道保險）。"""
+    ncal = 40
+    cl = {k: np.linspace(10.0, 30.0, ncal) for k in ("A", "B", "C", "D", "E")}
+    cl["E"] = np.linspace(30.0, 10.0, ncal)      # ⭐ E 一路跌：⛔ 沒有這個，「誰拿多少」改變了也看不出來（兩檔同報酬 ⇒ 權益相同）
+    op = {k: v * 0.99 for k, v in cl.items()}
+    sg = pd.DataFrame([{"sid": k, "entry_pos": 5, "xpos_H5": 20, "g_H5": cl[k][20] / op[k][5] - 1.0} for k in ("A", "B", "C")])
+    # ⭐ 第二批在 t=25 進場（此時 equity 已經長大）⇒ ⛔ 沒有這一批，「equity[t−1] vs equity[t]」的前視分不出來
+    #   （引擎在進場當下還沒寫 equity[t] ⇒ 它還是初始化的 1.0 ⇒ 只有一個進場日時兩者剛好相同）
+    sg2 = pd.concat([sg, pd.DataFrame([{"sid": k, "entry_pos": 25, "xpos_H5": 35, "g_H5": cl[k][35] / op[k][25] - 1.0}
+                                       for k in ("A", "B")])], ignore_index=True)
+    run = lambda **kw: R.simulate_mtm(sg, "H5", 4, np.random.default_rng(11), cl, op, ncal, return_equity=True, **kw)
+    base = run()
+    # ① 預設 None ⇒ 原版路徑（本身就是同一條路，⭐ 這一條驗的是「加了參數沒有動到原版」）
+    check(base["trades"] == 3 and abs(base["equity"][-1] - run()["equity"][-1]) == 0.0,
+          "weight_fn 預設 None ⇒ 原版路徑（3 檔都進場）")
+    # ② ⭐ 複製原版行為的 weight_fn ⇒ 權益【逐位元】相同（§四⑥ 要的回歸）
+    def w0i(batch, t, equity, cash):
+        slot = equity / 4; out = []
+        for _ in batch:
+            a = min(slot, cash); out.append(a); cash -= a
+        return out
+    r0i = run(weight_fn=w0i)
+    check(np.array_equal(base["equity"], r0i["equity"]) and r0i["trades"] == base["trades"],
+          "⭐ 複製 min(slot, cash) 的 weight_fn ⇒ 權益逐位元相同（⛔ 不是「差 0.5pp 以內」）")
+    # ②b ⭐⭐ 兩個進場日的版本：驗 weight_fn 收到的 equity 是【t−1】那一天（⛔ 不是還沒寫的 equity[t]）
+    run2 = lambda **kw: R.simulate_mtm(sg2, "H5", 4, np.random.default_rng(11), cl, op, ncal, return_equity=True, **kw)
+    b2, i2 = run2(), run2(weight_fn=w0i)
+    check(b2["trades"] == 5 and np.array_equal(b2["equity"], i2["equity"]) and b2["equity"][24] > 1.0,
+          f"⭐ 兩個進場日（第二批在 equity ＝ {b2['equity'][24]:.3f} 時進場）⇒ 仍然逐位元相同"
+          " ⇒ ⭐ weight_fn 收到的是 equity[t−1]（⛔ 傳 equity[t] 會拿到還沒寫的 1.0）")
+    # ②c ⭐⭐ weight_fn 收到的 cash 必須是【當下的現金】（⛔ 不是 equity）——
+    #     ⚠ 只有在 weight_fn【自己用 cash 做事】（P13 W1 的「按比例縮全批」）時才分得出來：
+    #     引擎最後那道 min(target, cash) 會把「min(slot,·) 型」的差異全部吃掉。
+    sg3 = pd.concat([pd.DataFrame([{"sid": k, "entry_pos": 5, "xpos_H5": 30, "g_H5": cl[k][30] / op[k][5] - 1.0} for k in ("A", "B", "C")]),
+                     pd.DataFrame([{"sid": k, "entry_pos": 25, "xpos_H5": 35, "g_H5": cl[k][35] / op[k][25] - 1.0} for k in ("D", "E")])],
+                    ignore_index=True)
+
+    def _shrink(use_cash):                       # ＝ P13 的 W1 現金處置：Σtarget > cash ⇒ 全批同乘 k
+        def f(batch, t, equity, cash):
+            tg = [equity / 5] * len(batch)
+            lim = cash if use_cash else equity    # ⭐ use_cash=False ＝ 模擬「引擎把 equity 當 cash 傳進來」
+            ssum = sum(tg)
+            return [x * (lim / ssum) for x in tg] if ssum > lim else tg
+        return f
+    r3 = lambda uc: R.simulate_mtm(sg3, "H5", 5, np.random.default_rng(11), cl, op, ncal, return_equity=True,
+                                   weight_fn=_shrink(uc))
+    ra, rb = r3(True), r3(False)
+    check(ra["trades"] == rb["trades"] == 5 and not np.array_equal(ra["equity"], rb["equity"]),
+          "⭐⭐ weight_fn 收到的 cash 必須是【當下的現金】：同一支函式改用 equity 當上限 ⇒ 權益路徑不同"
+          "（⛔ 若引擎把 equity 當 cash 傳，這兩條會變成同一條 ⇒ 這條斷言就是在驗那件事）")
+    check(abs(ra["equity"][-1] - rb["equity"][-1]) > 1e-6,
+          f"⭐ 而差異看得見：按比例縮 ⇒ 兩檔各拿一半；不縮 ⇒ 第一檔吃飽、第二檔撿剩的"
+          f"（末值 {ra['equity'][-1]:.6f} vs {rb['equity'][-1]:.6f}）")
+    # ③ 市值加權：同一批之內金額不同 ⇒ ⭐ 這是原版做不到的那件事
+    w = {"A": 3.0, "B": 2.0, "C": 1.0}
+    rw = run(weight_fn=lambda b, t, eq, ca: [eq / 4 * len(b) * w[r["sid"]] / sum(w[x["sid"]] for x in b) for r in b])
+    check(rw["trades"] == 3 and not np.array_equal(base["equity"], rw["equity"]),
+          "按比例分配 ⇒ 同一天每檔金額不同（⛔ 原版辦不到）⇒ 權益與等權不同")
+    # ④ ⛔ target ≤ 0 ⇒ 那一檔不進場、記 nocap，⭐ 而**後面的候選照常進場**（⛔ 不是 break）
+    lg = []
+    rn = R.simulate_mtm(sg, "H5", 4, np.random.default_rng(11), cl, op, ncal, return_equity=True, log=lg,
+                        weight_fn=lambda b, t, eq, ca: [0.0 if r["sid"] == b[0]["sid"] else eq / 4 for r in b])
+    check(rn["trades"] == 2 and sum(1 for r in lg if r["reason"] == "nocap") == 1,
+          f"第一檔 target=0 ⇒ 它記 nocap 不進場，⭐ 其餘兩檔照常進場（實得 trades {rn['trades']}）")
+    # ⑤ 引擎最後一道保險：target > cash ⇒ 只買得起 cash
+    rc = run(weight_fn=lambda b, t, eq, ca: [eq * 10.0] + [eq * 10.0] * (len(b) - 1))
+    check(rc["trades"] == 1, f"target 超過現金 ⇒ 第一檔吃光現金、其餘 nocap（實得 trades {rc['trades']}）")
+    # ⑥ 長度對不上 ⇒ 大聲失敗
+    try:
+        run(weight_fn=lambda b, t, eq, ca: [eq / 4]); bad = False
+    except ValueError:
+        bad = True
+    check(bad, "weight_fn 回的長度與 batch 對不上 ⇒ ValueError（⛔ 不靜靜只買一檔）")
+
+
 def t_p13probe():
     """K線分析線 1755 §四 的兩個必報（⛔ 描述量，⛔ 不是判定）：單日崩跌、持有期間下市／停止交易。"""
     from . import p13_riskprobe as RP
@@ -714,6 +790,7 @@ if __name__ == "__main__":
     print("[researchp2] 種子"); t_seeds()
     print("[researchp11] 同選擇率（逐月 N_t）"); t_p11()
     print("[researchp12] 2×2×2 全因子（S／C／T）"); t_p12()
+    print("[引擎] weight_fn（PREREGP13 seq=3 §二）"); t_weight_fn()
     print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
