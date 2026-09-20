@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import os
 
@@ -51,12 +52,55 @@ def centers_map(path: str = CENTERS) -> dict:
     return {int(k): v for k, v in d["cluster_index_to_type"].items()}
 
 
-def mine(path: str) -> pd.DataFrame:
-    """本線自己那一趟的四型分位（主格、H120）⇒ 依【型名本體】為鍵。"""
+def mine(path: str, h: int = H) -> pd.DataFrame:
+    """本線自己那一趟的四型分位（主格、預設 H120）⇒ 依【型名本體】為鍵。
+
+    ⛔ 鍵是型名本體（`bare`）⇒ ⭐ 本線 09-20 22:40 的圈號訂正不影響它（訂正只動圈號字元）。"""
     s = pd.read_csv(path, comment="#")
-    t = s[(s["period"] == PERIOD) & (s["H"] == H)].copy()
+    t = s[(s["period"] == PERIOD) & (s["H"] == h)].copy()
     t["key"] = t["type"].map(bare)
     return t.set_index("key")
+
+
+# ⛔ 策略線 2355 §6-1 標【待查證】的那一行：resultsp1 §十二「H=20 的 p10」——⭐ 它是**裸圈號**
+#    （那一行沒有型名本體當錨 ⇒ 字串替換抓不到它，圈號訂正也就修不到它）。逐字寫死，⛔ 不可改。
+H20, H20_STRAT_P10 = 20, {"①": -13.6, "②": -14.9, "③": -12.9, "④": -10.4}
+# ⛔ 兩個判準常數（⭐ 它們只決定【配得出／配不出】，⛔ 不決定圈號歸屬——歸屬是型名本體配對的結果）
+H20_TOL, H20_MARGIN = 0.5, 1.0      # 落在 ±0.5pp 之內才算候選；而次近的要再遠 1.0pp 才算【唯一】
+
+
+def h20_p10(path: str) -> dict:
+    """本線面板的【主格 H=20 p10】，鍵＝型名本體（⛔ 不是圈號）。"""
+    return {k: float(v) for k, v in mine(path, H20)["p10"].items()}
+
+
+def match_bare(strat: dict, mine_p10: dict, tol: float = H20_TOL, margin: float = H20_MARGIN) -> pd.DataFrame:
+    """把一行【裸圈號】的四個數**整行**配回【型名本體】。
+
+    ⭐⭐ 判準是【整行的指派】，⛔ 不是逐格取最近的：
+      ① 最佳指派的**每一格**差都要 ≤ `tol`（⛔ 否則是口徑對不上，不是配對問題）
+      ② 次佳指派的**總差**要比最佳的大 `margin` 以上（⛔ 否則本件【分不出】）
+    ⇒ ⭐⭐ 為什麼不逐格取最近：本線面板上【營收＋回檔 −13.26】與【純技術＋回檔 −12.87】
+      只差 0.39pp ⇒ 逐格看這兩格都會判「分不出」，⛔ 而【整行】其實是被唯一決定的
+      （最佳總差 0.37 vs 次佳 1.09）。⇒ 逐格判準會給出**錯的形狀**。
+    ⛔ 配不出來時四格一律回 None，⭐ 而最佳／次佳的總差照樣印出來（讀的人自己看得到有多近）。"""
+    circles, keys = list(strat), list(mine_p10)
+    cost = lambda perm: sum(abs(strat[c] - mine_p10[k]) for c, k in zip(circles, perm))
+    # ⛔ 長度要取【圈號個數】：拿全部 key 去排列的話，圈號比候選少時尾巴會製造一堆
+    #    成本相同的重複指派 ⇒ ⭐ 次佳永遠等於最佳 ⇒ 這支函式會恆判「分不出」（第一版就是這樣）。
+    ranked = sorted(itertools.permutations(keys, len(circles)), key=cost)
+    best, second = ranked[0], (ranked[1] if len(ranked) > 1 else None)
+    tb = cost(best)
+    ts = cost(second) if second is not None else float("inf")
+    worst_cell = max(abs(strat[c] - mine_p10[k]) for c, k in zip(circles, best))
+    ok = (worst_cell <= tol) and (ts - tb >= margin)
+    why = "✅ 整行唯一" if ok else ("⛔ 最佳指派有一格超出容差" if worst_cell > tol
+                                else "⛔ 次佳指派太接近 ⇒ 本件分不出")
+    t = pd.DataFrame([{"圈號": c, "策略線那一行的值": strat[c],
+                       "配到的型名本體": (k if ok else None), "本線的值": mine_p10[k],
+                       "這一格的差": abs(strat[c] - mine_p10[k])} for c, k in zip(circles, best)])
+    t["最佳總差"], t["次佳總差"], t["判定"] = tb, ts, why
+    return t
 
 
 def idx_conflicts(a: dict, b: dict) -> list:
@@ -101,11 +145,86 @@ def compare(m: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# ⛔ 爭議只在 ②／③ 這一對（①與④ 兩側從頭到尾一致 —— K線 2155 §1-4④、策略線 2215 §一 都確認過）
+DISPUTED = ("②", "③")
+DISPUTED_KEYS = ("正在噴出", "純技術＋回檔")
+
+
+def disputed_pair(mine_p10: dict) -> pd.DataFrame:
+    """⭐⭐ 爭議只在 ②／③ ⇒ 候選【限定】成那兩個型名本體，⛔ 不是拿四個型去配。
+
+    ⛔ 為什麼要限定：①與④ 兩側從頭到尾一致（K線 2155 §1-4④）⇒ 它們不在爭議裡；
+    而不限定的話，另外兩型只要湊巧離得近就會把答案搶走 —— ⭐ 而那是一個【本來就不該參賽的候選】。"""
+    return match_bare({c: H20_STRAT_P10[c] for c in DISPUTED}, {k: mine_p10[k] for k in DISPUTED_KEYS})
+
+
+def h20_report(summary_path: str, out_dir: str) -> list:
+    """策略線 2355 §6-1 標【待查證】的那一行（resultsp1 §十二「H=20 的 p10」裸圈號）。
+
+    ⛔ 本件只報【本線量到的數字與配對】，⭐ 措辭與訂正追加是策略線的格子。"""
+    mp = h20_p10(summary_path)
+    full = match_bare(H20_STRAT_P10, mp)
+    duo = disputed_pair(mp)
+    L = ["# resultsp1 §十二「H=20 的 p10」那一行 —— 回測線的獨立查證", "",
+         "⭐ 策略線 2355 §6-1 把它標【待查證】：那一行是**裸圈號**（沒有型名本體當錨）",
+         "⇒ ⛔ 字串替換抓不到它，圈號訂正也就修不到它。", "",
+         "⛔ 本件是【對帳】不是檢定：沒有判定格、沒有種子 ⇒ ⛔ 不寫「測得出／測不出」。",
+         "⛔ 而本件只報數字與配對 —— 訂正追加的措辭是策略線的格子。", "",
+         "## 一、策略線那一行（逐字）與本線面板（主格 H=20 p10）", "",
+         "| 圈號 | 策略線 §十二 那一行 | | 型名本體 | 本線 `resultsp4/summary.csv` |",
+         "|:-:|---:|---|---|---:|"]
+    ks = list(mp)
+    for i, c in enumerate(H20_STRAT_P10):
+        L.append(f"| {c} | {H20_STRAT_P10[c]:+.1f} | | {ks[i]} | {mp[ks[i]]:+.3f} |")
+    L += ["", "## 二、⛔ 整行配不出來 —— ⭐ 而配不出來的原因【不是】②③", "",
+          "```"]
+    L += [f"最佳指派總差 {float(full['最佳總差'].iloc[0]):.3f}pp／次佳 {float(full['次佳總差'].iloc[0]):.3f}pp"
+          f" ⇒ 差 {float(full['次佳總差'].iloc[0]) - float(full['最佳總差'].iloc[0]):.3f}pp < 門檻 {H20_MARGIN}pp",
+          "⇒ ⛔ 整行【分不出】——⭐ 而卡住的是【①與③】：",
+          f"   本線面板上 營收＋回檔 {mp['營收＋回檔']:+.3f} 與 純技術＋回檔 {mp['純技術＋回檔']:+.3f}"
+          f" 只差 {abs(mp['營收＋回檔'] - mp['純技術＋回檔']):.3f}pp",
+          "⇒ ⛔ 本線的數字分不開那兩格，⛔ 不可假裝分得開。", "```", "",
+          "## 三、✅ ⭐⭐ 而【本件要查的那一對 ②／③】配得出來，而且差很遠", "",
+          "```"]
+    L += [f"②／③ 兩格、候選只有 {DISPUTED_KEYS[0]} 與 {DISPUTED_KEYS[1]}（⭐ ①與④ 兩側一直一致 ⇒ 不在爭議裡）",
+          f"  ②＝{H20_STRAT_P10['②']:+.1f} → 正在噴出 {mp['正在噴出']:+.3f}（差 {abs(H20_STRAT_P10['②'] - mp['正在噴出']):.3f}pp）",
+          f"  ③＝{H20_STRAT_P10['③']:+.1f} → 純技術＋回檔 {mp['純技術＋回檔']:+.3f}（差 {abs(H20_STRAT_P10['③'] - mp['純技術＋回檔']):.3f}pp）",
+          f"⇒ 反過來配：② 對 純技術＋回檔 差 {abs(H20_STRAT_P10['②'] - mp['純技術＋回檔']):.3f}pp、"
+          f"③ 對 正在噴出 差 {abs(H20_STRAT_P10['③'] - mp['正在噴出']):.3f}pp",
+          f"⇒ 最佳總差 {float(duo['最佳總差'].iloc[0]):.3f}pp vs 次佳 {float(duo['次佳總差'].iloc[0]):.3f}pp"
+          f" ⇒ 差 {float(duo['次佳總差'].iloc[0]) - float(duo['最佳總差'].iloc[0]):.3f}pp ≫ 門檻 {H20_MARGIN}pp",
+          f"⇒ {duo['判定'].iloc[0]}", "```", "",
+          "⇒ ⭐⭐ 所以那一行的 **② 指的是【正在噴出】、③ 指的是【純技術＋回檔】** ⇒ 它是【(甲) 圈號】。",
+          "⇒ ⭐ 在 (乙) 之下那兩格**要對調** ⇒ 還原後那一行應讀：",
+          "",
+          f"```\n①{H20_STRAT_P10['①']:+.1f}　②{H20_STRAT_P10['③']:+.1f}　③{H20_STRAT_P10['②']:+.1f}　④{H20_STRAT_P10['④']:+.1f}\n```",
+          "",
+          "⭐ 與策略線 2355 §6-1 事前推的還原【逐字相同】——⇒ ⭐ 而那是兩條獨立路徑得到的同一個結果。", "",
+          "## 四、⛔ 範圍限制（⛔ 缺這一節不算交件）", "",
+          "- ⛔ 本線**沒有**重建 v8 面板：用的是 `resultsp4` 那一趟（本線自己的面板與路徑）",
+          "  ⇒ ⭐ 那正是「獨立查證」的意思，⛔ 但它與 v8 不是同一份面板 ⇒ 逐格相等本來就不該期待。",
+          f"- ⚠ 逐型差：{'／'.join(f'{k} {abs(H20_STRAT_P10[c] - mp[k]):.2f}pp' for c, k in zip(H20_STRAT_P10, ks))}"
+          f" ⇒ 最大 {max(abs(H20_STRAT_P10[c] - mp[k]) for c, k in zip(H20_STRAT_P10, ks)):.2f}pp",
+          "  ⚠ 而 H=120 那一趟量到的口徑差是 0.13pp ⇒ ⭐ H=20 這一格【比較大】，要一起讀。",
+          "- ⛔⛔ **①與③ 本線分不開**（差 0.39pp）⇒ 整行還原成立，是因為【①④ 兩側一致】這個",
+          "  **別線已確認的前提**（K線 2155 §1-4④），⛔ 不是本線量出來的 ⇒ 兩件要分開記。",
+          "- ⛔ 圈號怎麼寫是策略線／判定線的格子 ⇒ 本線只報配對，⛔ 不動任何文件。", ""]
+    os.makedirs(out_dir, exist_ok=True)
+    full.to_csv(os.path.join(out_dir, "h20_bare_circle.csv"), index=False)
+    open(os.path.join(out_dir, "H20_BARE_CIRCLE.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+    return L
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=RESULTS)
     ap.add_argument("--summary", default=os.path.join(RESULTS, "summary.csv"))
+    ap.add_argument("--task", default="recheck", choices=("recheck", "h20"),
+                    help="h20 ＝ 只查證 §十二 那一行【裸圈號】，⛔ 不重寫 TYPE_RECHECK.md（它是已交件的舊報告）")
     a = ap.parse_args()
+    if a.task == "h20":
+        print("\n".join(h20_report(a.summary, a.out)), flush=True)
+        return
     log = lambda s: print(s, flush=True)
     m = mine(a.summary)
     cm = centers_map()

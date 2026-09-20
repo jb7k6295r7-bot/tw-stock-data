@@ -932,6 +932,83 @@ def t_p4_recheck():
         _real = _hashlib.sha256(open(RC.CENTERS, "rb").read()).hexdigest()[:16]
         check(_real in _txt and "②／③ 要對調" in _txt,
               f"⭐⭐ 圈號沿革註記.md 在，而且裡面記的全檔 sha ＝ 真實值 {_real}（⛔ 只驗『檔案存在』擋不住它過期）")
+    t_h20_bare()
+
+
+def t_h20_bare():
+    """resultsp1 §十二「H=20 的 p10」那一行（**裸圈號**）的獨立查證（策略線 2355 §6-1 標待查證）。"""
+    import inspect as _ins
+    import os as _os
+    from . import p4_type_recheck as RC
+    check(RC.H20 == 20 and RC.H20_STRAT_P10 == {"①": -13.6, "②": -14.9, "③": -12.9, "④": -10.4}
+          and RC.H20_TOL == 0.5 and RC.H20_MARGIN == 1.0
+          and RC.DISPUTED == ("②", "③") and RC.DISPUTED_KEYS == ("正在噴出", "純技術＋回檔"),
+          "策略線 §十二 那一行逐字寫死 ＋ 兩個判準常數（0.5／1.0）＋ 爭議只在 ②③（⛔ ①④ 兩側一直一致）")
+    # ⭐〈一百一十三〉：fixture 要先自己證明它分得出來 ⇒ 四型彼此至少差 2pp（⛔ 不是抄真資料那種 0.39pp）
+    wide = {"甲": -13.0, "乙": -15.0, "丙": -11.0, "丁": -9.0}
+    t = RC.match_bare({"①": -13.0, "②": -15.0, "③": -11.0, "④": -9.0}, wide)
+    check(list(t["配到的型名本體"]) == ["甲", "乙", "丙", "丁"] and t["判定"].iloc[0] == "✅ 整行唯一",
+          f"⭐ 四型分得開 ⇒ 整行唯一（實得 {list(t['配到的型名本體'])}）")
+    # ⭐ 只改【一個軸】：把丙挪到離甲只有 0.3pp ⇒ 次佳指派追上來 ⇒ 分不出（⛔ 其他三格原封不動）
+    near = dict(wide, 丙=-12.7)
+    t2 = RC.match_bare({"①": -13.0, "②": -15.0, "③": -12.4, "④": -9.0}, near)
+    check(set(t2["配到的型名本體"]) == {None} and "次佳指派太接近" in t2["判定"].iloc[0],
+          f"⭐⭐ 只把丙挪近甲（⛔ 其他三格不動）⇒ 整行【分不出】（實得 {t2['判定'].iloc[0]}）")
+    # ⭐ 另一條出口：最佳指派有一格超出容差 ⇒ 也是配不出來（⛔ 與上面那條是不同的原因）
+    t3 = RC.match_bare({"①": -13.0, "②": -15.0, "③": -11.0, "④": -5.0}, wide)
+    check(set(t3["配到的型名本體"]) == {None} and "超出容差" in t3["判定"].iloc[0],
+          f"⭐ ④ 差 4pp ⇒ 最佳指派有一格超出容差 ⇒ 配不出來（實得 {t3['判定'].iloc[0]}）")
+    # ⭐⭐ 而【整行分不出】不等於【那一對分不出】——限定候選之後可以是唯一的（＝ 真資料的形狀）
+    t4 = RC.match_bare({"②": -15.0, "③": -12.4}, {"乙": -15.0, "丙": -12.7})
+    check(list(t4["配到的型名本體"]) == ["乙", "丙"] and t4["判定"].iloc[0] == "✅ 整行唯一",
+          "⭐⭐ 同一組數字，限定成爭議的那兩格 ⇒ 唯一（⛔ 所以「整行分不出」不可讀成「②③ 分不出」）")
+    check(abs(float(RC.match_bare({"②": -15.0}, {"乙": -15.0})["次佳總差"].iloc[0])) == float("inf"),
+          "⭐ 只有一個候選時次佳＝inf（⛔ 不可以炸掉，也不可以當成 0）")
+    # ⭐ 真資料
+    _sum = _os.path.join(RC.RESULTS, "summary.csv")
+    if _os.path.exists(_sum):
+        mp = RC.h20_p10(_sum)
+        check(sorted(mp) == sorted(["營收＋回檔", "正在噴出", "純技術＋回檔", "死水"]) and abs(mp["正在噴出"] + 14.862079) < 1e-5,
+              f"⭐ 真資料 H=20 主格 p10 依型名本體（實得 正在噴出 {mp['正在噴出']:.3f}）")
+        duo = RC.match_bare({c: RC.H20_STRAT_P10[c] for c in RC.DISPUTED}, {k: mp[k] for k in RC.DISPUTED_KEYS})
+        check(list(duo["配到的型名本體"]) == ["正在噴出", "純技術＋回檔"]
+              and float(duo["次佳總差"].iloc[0]) - float(duo["最佳總差"].iloc[0]) > 3.0,
+              f"⭐⭐ 真資料：②→正在噴出、③→純技術＋回檔，而反過來配差 "
+              f"{float(duo['次佳總差'].iloc[0]) - float(duo['最佳總差'].iloc[0]):.2f}pp（⇒ 那一行是 (甲) 圈號）")
+        full = RC.match_bare(RC.H20_STRAT_P10, mp)
+        check(set(full["配到的型名本體"]) == {None}
+              and abs(mp["營收＋回檔"] - mp["純技術＋回檔"]) < 0.5,
+              f"⛔ 而【整行】本線分不出（①與③ 只差 {abs(mp['營收＋回檔'] - mp['純技術＋回檔']):.3f}pp）"
+              f" ⇒ ⛔ 這一條不可以被上面那一條蓋掉")
+        check(len(RC.mine(_sum)) == 4 and int(RC.mine(_sum)["H"].iloc[0]) == RC.H
+              and int(RC.mine(_sum, RC.H20)["H"].iloc[0]) == 20,
+              "⭐ mine() 不傳 h ⇒ 預設 H120（⛔ 預設值那條路也要走過一次）；傳 20 ⇒ H20")
+    # ⭐⭐ 候選【限定】那一步要用**行為**驗，⛔ 不是掃原始碼有沒有出現 DISPUTED_KEYS 這個字
+    #    （第一版就是掃字串 ⇒ 把限定拿掉之後它照樣綠：那個字在同一支函式的說明文字裡還在）
+    adv = {"營收＋回檔": -13.26, "正在噴出": -14.86, "純技術＋回檔": -12.87, "死水": -12.89}
+    #    ⭐ 這組 fixture 只動【死水】一格：把它挪到比 純技術＋回檔 更貼近 ③（0.01 vs 0.031）
+    #    ⇒ ⛔ 不限定候選的話 ③ 會被【死水】搶走，而死水本來就不該參賽
+    dp = RC.disputed_pair(adv)
+    check(list(dp["配到的型名本體"]) == ["正在噴出", "純技術＋回檔"] and dp["判定"].iloc[0] == "✅ 整行唯一",
+          f"⭐⭐ 候選限定成爭議的兩型 ⇒ 死水挪到更近也搶不走 ③（實得 {list(dp['配到的型名本體'])}）")
+    _un = RC.match_bare({"③": RC.H20_STRAT_P10["③"]}, adv)
+    check(abs(float(_un["本線的值"].iloc[0]) - adv["死水"]) < 1e-12 and _un["配到的型名本體"].iloc[0] is None,
+          "⭐ 反向驗：同一組 fixture【不限定】候選時，最佳指派真的落在死水身上（⇒ 上一條不是空跑）"
+          "；⭐ 而它仍判【分不出】——因為死水與純技術＋回檔只差 0.02pp（⛔ 兩條講的是不同的事）")
+    # ⚠ 候選要比圈號多【兩個以上】這一條才分得出來：多一個時每組配對只出現一次、尾巴不會製造同分
+    #    （第一版用 3 個候選 ⇒ 突變沒紅，⛔ 而那不是程式對，是 fixture 分不出來 ——〈一百一十三〉）
+    _short = RC.match_bare({"②": -15.0, "③": -12.4}, {"乙": -15.0, "丙": -12.7, "丁": -9.0, "戊": -5.0})
+    check(list(_short["配到的型名本體"]) == ["乙", "丙"] and _short["判定"].iloc[0] == "✅ 整行唯一"
+          and float(_short["次佳總差"].iloc[0]) > float(_short["最佳總差"].iloc[0]),
+          f"⭐⭐ 圈號（2）比候選（4）少時只排列【圈號個數】那麼長 ⇒ 仍判得出唯一"
+          f"（⛔ 用全部 key 排列的話尾巴會製造成本相同的重複指派 ⇒ 次佳＝最佳 ⇒ 恆判分不出；"
+          f"實得 最佳 {float(_short['最佳總差'].iloc[0]):.2f} vs 次佳 {float(_short['次佳總差'].iloc[0]):.2f}）")
+    # ⭐ 呼叫點：h20 那條路⛔ 不可以碰 TYPE_RECHECK.md（它是已交件的舊報告，⛔ 內文不改）
+    src = _ins.getsource(RC.h20_report) + _ins.getsource(RC.main)
+    check("H20_BARE_CIRCLE.md" in src and "disputed_pair(" in _ins.getsource(RC.h20_report),
+          "⭐ h20_report 寫的是 H20_BARE_CIRCLE.md，而且爭議那一格是走 disputed_pair()")
+    check('if a.task == "h20":' in _ins.getsource(RC.main) and "return" in _ins.getsource(RC.main).split('if a.task == "h20":')[1][:200],
+          "⭐⭐ --task h20 那條路【當場 return】⇒ ⛔ 不會往下走到重寫 TYPE_RECHECK.md 那一段（驗終點）")
 
 
 def t_p1b():
