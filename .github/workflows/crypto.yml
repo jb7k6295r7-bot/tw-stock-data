@@ -1,0 +1,77 @@
+name: 虛擬貨幣（前 15 大市值）日K 收集
+
+# 使用者 2026-09-20 裁定的規格：前 15 大＝市值排名、排除穩定幣、
+# 幣安沒有交易對的跳過往後遞補、日K、回補到 2017 年。見 crypto.py 檔頭。
+#
+# ⛔ 這個開發容器對外部金融站台一律 403（我方閘道擋的，不是對方擋，
+#   跟 CLAUDE.md 第六點記的 TW 交易所同一個問題）⇒ 這支只能在 Actions 上跑。
+#
+# 三個模式：
+#   universe  重新排前 15 大市值（週期性；名單會隨市值排名變動）
+#   backfill  回補歷史月檔（第一次跑、或有新幣種加入時用；冪等，續跑安全）
+#   daily     補當月與最近幾天的缺口（每天排程用，量很小）
+#
+# ⛔ `data/crypto/` 與 `data/meta/crypto_universe.csv`／
+#   `_crypto_months_done.csv` 只有這支 workflow 會寫——跟 CLAUDE.md
+#   四點六同一個道理：分支上的這些檔永遠比 main 舊，跑之前要先取
+#   main 的版本，⛔ 不能讓分支那份過期的資料蓋掉 main 上更新的。
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口"
+        type: choice
+        options: [universe, backfill, daily]
+        default: daily
+  schedule:
+    # ⭐ 每天台北時間 08:10（UTC 00:10）補一次當月缺口——量很小
+    #   （15 個幣種、近期缺口通常 0~1 天），⛔ 不需要跟 TW 那邊的
+    #   daily.yml 搶時段，錯開純粹是避免同時佔用 concurrency group。
+    - cron: "10 0 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crypto-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 自測（零相依，不連網）
+        run: python selftest_crypto.py
+
+      # ⛔ schedule／push 觸發的一律是 main（GitHub 的規則），
+      #   而這支 workflow 本來就只該在 main 上動這三個檔——
+      #   跟 official-months 那一族用的是同一套理由（四點六③）。
+      - name: 取 main 現有的虛擬貨幣資料（⛔ 分支那份比 main 舊）
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/crypto data/meta/crypto_universe.csv \
+              data/meta/_crypto_months_done.csv \
+            || echo "⚠ main 上可能還沒有這些檔（第一次跑），略過" >&2
+
+      - name: 執行
+        run: |
+          MODE="${{ inputs.mode }}"; [ -n "$MODE" ] || MODE=daily
+          echo "[crypto] mode=$MODE"
+          RC=0
+          python crypto.py --mode "$MODE" || RC=$?
+          exit $RC
+
+      - name: 把程式同步到 main
+        run: bash sync_code.sh
+
+      - name: Commit 回 repo
+        run: bash push_data.sh "crypto(${{ inputs.mode || 'daily' }})"

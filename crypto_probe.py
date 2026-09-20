@@ -27,16 +27,20 @@ IP 段被 Binance 法遵封鎖擋掉，⛔ 這條路死了，第二輪不重打�
 第二點那句「靜默失敗要講出是哪一種」，這次連自己寫的探針都中了同一招。
 ⇒ 改法：**直接試下載一個一定存在的近期日檔**（用昨天的 UTC 日期，
 抓不到就退一天再試），200 才算數、⛔ 不比目錄頁的字串。
+
+⛔ 2026-09-20 補：`crypto.py` 寫完之後才發現 `_get()` 與
+`STABLECOIN_SYMBOLS` 在這裡跟那邊各有一份逐字相同的拷貝——
+`selftest_no_dup.py` 沒抓到是因為 `_get` 只有 2 個 statement（低於
+MIN_STMTS）、`STABLECOIN_SYMBOLS` 是 `set` 常數（`scan_consts` 當時
+只認 list／tuple）。⇒ 兩處都改成從 `crypto.py` import（四點五：
+同一件事只准一份實作），並把 `scan_consts` 補上 `ast.Set`。
 """
 import datetime
 import io
 import json
 import sys
-import urllib.error
-import urllib.request
-import zipfile
 
-TIMEOUT = 20
+from crypto import STABLECOIN_SYMBOLS, _get                        # noqa: F401
 
 
 def _peek_kline_csv(zip_bytes, label):
@@ -68,17 +72,6 @@ def _peek_kline_csv(zip_bytes, label):
               f"{'看起來像表頭文字' if looks_like_header else '看起來是數字（無表頭）'}")
 
 
-def _get(url, headers=None):
-    req = urllib.request.Request(url, headers=headers or {"User-Agent": "Mozilla/5.0"})
-    try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-            return r.status, r.read()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read()
-    except Exception as e:                                        # noqa: BLE001
-        return None, str(e).encode()
-
-
 def probe(label, url, headers=None):
     print(f"\n=== {label} ===")
     print(f"URL: {url}")
@@ -96,7 +89,7 @@ def probe(label, url, headers=None):
 #: 2026-09-20 第一輪探針已證實 api.binance.com 全面 451（法遵封鎖，
 #  訊息逐字是「restricted location」）——這輪不重打，省一輪配額。
 #: 使用者裁定：前 15 大＝市值排名、排除穩定幣、日K、回補到 2017。
-STABLECOIN_SYMBOLS = {"usdt", "usdc", "dai", "fdusd", "tusd", "usde", "busd"}
+#  （`STABLECOIN_SYMBOLS` 從 `crypto` import，見檔頭補記——不在這裡重寫。）
 
 
 def main():
