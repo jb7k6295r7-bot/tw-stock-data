@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T10:22:59+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35483356168
+# ⏱ 這一趟：2026-09-20T10:41:46+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35483753593
 # 興櫃「指定某一天」的來源探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 要補的是 2026-09-08 那 363 列（見檔頭）；2026-09-09 是**對照組**

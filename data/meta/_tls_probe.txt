@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-20T10:23:24+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35483356168
+# ⏱ 這一趟：2026-09-20T10:42:20+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35483753593
 tls_probe.py　TPEx／TWSE 的 TLS 憑證鏈探針。⛔ 只讀不寫資料，也**不改任何驗證設定**。
 
 ⛔ 只讀不寫資料，也**不改任何驗證設定**。三發的差別只在「拿哪一份 CA」。
@@ -244,7 +244,7 @@ certifi：**有**（/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-
 ■ TPEx openapi（同一站的另一條）
   https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes
     系統 CA                  ✅ HTTP 200｜4,490,821 bytes
-    certifi 的 CA           ✗ IncompleteRead: IncompleteRead(294510 bytes read, 4196311 more expected)
+    certifi 的 CA           ✅ HTTP 200｜4,490,821 bytes
     對方送的葉憑證       1,923 bytes
     ⭐ 對方實際送了 **4 張**憑證（有中間憑證 ⇒ 問題不在漏送）
       subject=C = TW, ST = Taiwan, L = Taipei, O = Taipei Exchange, CN = www.tpex.org.tw
