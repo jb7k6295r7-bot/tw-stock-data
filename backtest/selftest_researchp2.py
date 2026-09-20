@@ -669,6 +669,30 @@ def t_p12():
           "呼叫點：T 的主效果真的有跑【只 S0 臂】那一版（裁定⑤）")
 
 
+def t_p13probe():
+    """K線分析線 1755 §四 的兩個必報（⛔ 描述量，⛔ 不是判定）：單日崩跌、持有期間下市／停止交易。"""
+    from . import p13_riskprobe as RP
+    cl = np.array([100.0, 100.0, 69.0, 69.0, 80.0, 80.0, 80.0, 80.0], float)   # 第 2 天 −31%
+    check(RP.crash_days(cl, 1, 7, -0.30) == [2] and RP.crash_days(cl, 3, 7, -0.30) == [],
+          "單日 ≤ −30% 只算【窗內】那一天（⛔ 窗起點之前的不算、⛔ 不是拿 close[lo] 當基準算累積）")
+    check(RP.crash_days(cl, 1, 7, -0.20) == [2] and RP.crash_days(cl, 1, 7, -0.35) == [],
+          f"門檻是【≤】：−31% 打得到 −30%／−20%，打不到 −35%（⛔ 方向寫反會全中）")
+    nanc = np.array([100.0, np.nan, 50.0, 25.0], float)
+    check(RP.crash_days(nanc, 1, 3, -0.30) == [3],
+          "⭐ 前一日收盤是 NaN 的那兩天【都不算】（⛔ NaN 比較永遠 False，⛔ 不可把它讀成「沒跌」以外的東西）；"
+          "⭐ 而 25÷50 那一天的基準是真的收盤 ⇒ 它【要算】")
+    # ⭐ 沒成交的天數【不連續】：總共 5 天，⛔ 最長連續只有 3 天
+    op = np.array([1.0, np.nan, np.nan, 1.0, np.nan, np.nan, np.nan, 1.0], float)
+    h3 = RP.halt_case(op, 0, 7, last_pos=-1, gap=3)
+    check(h3["max_gap"] == 3 and h3["halted"] and not RP.halt_case(op, 0, 7, -1, gap=4)["halted"],
+          f"連續沒成交的【最長段】＝ 3 天（⛔ 不是總天數 5 天）⇒ gap=3 算停止交易、gap=4 不算")
+    check(RP.halt_case(op, 0, 7, last_pos=3)["delisted"] and not RP.halt_case(op, 4, 7, last_pos=2)["delisted"]
+          and not RP.halt_case(op, 0, 7, last_pos=9)["delisted"],
+          "下市 ＝ last_seen 落在【持有期間之內】：⛔ 在持有【之前】就消失的（last_seen 2 < 進場 4）不算、之後的也不算")
+    check(RP.DROP_1D == -0.30 and RP.HALT_GAP == 5 and RP.CUM_LEVELS == (-0.30, -0.50),
+          "1755 §四① 的門檻寫死 −30%（⛔ 本線不改）；累積那兩格是【另報的描述】")
+
+
 if __name__ == "__main__":
     print("[researchp2] 映射"); t_parent()
     print("[researchp2] 逐日標籤"); t_labels()
@@ -684,5 +708,6 @@ if __name__ == "__main__":
     print("[researchp2] 種子"); t_seeds()
     print("[researchp11] 同選擇率（逐月 N_t）"); t_p11()
     print("[researchp12] 2×2×2 全因子（S／C／T）"); t_p12()
+    print("[p13_riskprobe] 單一檔歸零的兩個必報（1755 §四）"); t_p13probe()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
