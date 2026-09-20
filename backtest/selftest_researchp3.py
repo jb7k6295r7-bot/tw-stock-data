@@ -114,6 +114,25 @@ if __name__ == "__main__":
     want_mw = float(np.max(solo["hold_val"] / solo["equity"]))
     check(abs(solo["max_pos_frac"] - want_mw) < 1e-12 and 0 < solo["max_pos_frac"] <= 1,
           f"max_pos_frac ＝ 逐日 max(部位市值÷equity)＝{want_mw:.4f}（N=1 ⇒ 單一部位就是全部持股）")
+    det = R11.simulate_mtm(sig9, "H5", 2, np.random.default_rng(3), cl9, op9, ncal9, return_equity=True,
+                           report_maxw=True, maxw_detail=True)
+    dd9 = det["maxw_daily"]
+    check("maxw_daily" not in solo and "maxw_sid" not in solo, "maxw_detail 預設 False ⇒ 只回 max_pos_frac，⛔ 沒有那兩個鍵")
+    check(abs(dd9.max() - det["max_pos_frac"]) < 1e-15 and det["maxw_sid"][int(np.argmax(dd9))] in sids9,
+          "maxw_daily 的最大值 ＝ max_pos_frac，且 maxw_sid 在那一天指得出是哪一檔（⭐〈九十二〉：百分比要連分佈一起報）")
+    check(bool((dd9[:5] == 0).all()) and bool((dd9[5:12] > 0).all()) and bool((dd9[12:] == 0).all()),
+          f"maxw_daily 只在【真的有持倉的那幾天】> 0（進場日 5 到出場前一天 11；⭐ 出場日 12 當天已結清 ⇒ 0）"
+          f"：非零日 {[i for i, v in enumerate(dd9) if v > 0]}")
+    cl_s = {"A": np.full(ncal9, 10.0), "B": np.full(ncal9, 10.0)}
+    cl_s["A"][7] = 30.0                                   # ⭐ A 在第 7 天噴一天又跌回來 ⇒ 當天佔比高、隔天掉下來
+    op_s = {k: v.copy() for k, v in cl_s.items()}
+    sg_s = pd.DataFrame([{"sid": k, "entry_pos": 5, "xpos_H5": 12, "g_H5": cl_s[k][12] / op_s[k][5] - 1.0} for k in ("A", "B")])
+    ds = R11.simulate_mtm(sg_s, "H5", 2, np.random.default_rng(3), cl_s, op_s, ncal9, return_equity=True,
+                          report_maxw=True, maxw_detail=True)
+    w = ds["maxw_daily"]
+    check(w[7] > w[8] and ds["maxw_sid"][7] == "A" and abs(w.max() - ds["max_pos_frac"]) < 1e-15,
+          f"⭐ maxw_daily 是【當天】的佔比、會往下走（{w[7] * 100:.1f}% → {w[8] * 100:.1f}%）"
+          "⇒ ⛔ 不是累積最大值（那樣就看不出分佈，只剩一個最大值）")
     print("[researchp9] 弱勢旗標的時序與暖身")
     bn = np.full(200, 100.0); bn[120:125] = 90.0
     w9 = P9.weak_flags(bn, 200)
@@ -134,6 +153,20 @@ if __name__ == "__main__":
     check(k1 == "單日暴跌型" and p2a >= 0.5, f"分型：最差 2 日占總跌幅 {p2a * 100:.1f}% ≥ 50% ⇒ 單日暴跌型")
     check(k2 == "延續下跌型" and p5b < 0.5, f"分型：40 天等速下跌、最差 5 日只占 {p5b * 100:.1f}% ⇒ 延續下跌型")
     check(k3 == "混合型" and p2c < 0.5 <= p5c, f"分型：最差2日 {p2c * 100:.1f}% < 50% ≤ 最差5日 {p5c * 100:.1f}% ⇒ 混合型")
+    # ⭐ 跨線對帳用的 scale 參數（⛔ 預設 simple ＝ 登錄那條路）
+    eqx = np.concatenate([[100.0], [85.0], 85.0 * 0.99 ** np.arange(1, 21)])   # 單日 −15% ＋ 20 天每天 −1%
+    ks, p2s, _ = P9.dd_type(eqx, 0, len(eqx) - 1)                              # ⛔ 不傳 scale ⇒ 走預設值那條路
+    kl, p2l, _ = P9.dd_type(eqx, 0, len(eqx) - 1, scale="log")
+    check(ks == "單日暴跌型" and kl == "混合型" and p2s > 0.50 > p2l,
+          f"⭐ 尺度就是跨線那 4 倍差的那一軸：同一條曲線，單純報酬 {p2s * 100:.1f}%（單日暴跌型）／"
+          f"對數報酬 {p2l * 100:.1f}%（混合型）⇒ ⛔ 兩線報分型前要先對齊這一軸")
+    check(abs(P9.dd_type(eqx, 0, len(eqx) - 1, scale="simple")[1] - p2s) < 1e-15,
+          "scale='simple' ≡ 不傳 scale（⛔ 登錄那條路沒有被新參數動到）")
+    try:
+        P9.dd_type(eqx, 0, 3, scale="pct"); bad_scale = False
+    except ValueError:
+        bad_scale = True
+    check(bad_scale, "scale 只收 'simple'／'log'，其餘大聲失敗（⛔ 不靜靜當成 simple）")
     check(abs(P9.window_mdd(np.array([100, 90, 95, 80, 85], float), 1, 4) - (80 / 95 - 1)) < 1e-12,
           "window_mdd 用【窗內自己】的累積高點（95）⇒ −15.8%，⛔ 不是窗外的 100（−20%）")
     check(P9.ma_break_segments(bn, 100, 199) == [(120, 5)], f"跌破段：起日＝前一日仍在之上的那一天、段長 5：{P9.ma_break_segments(bn, 100, 199)}")

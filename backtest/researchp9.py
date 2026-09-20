@@ -92,14 +92,32 @@ def dd_events(eq: np.ndarray, first: int, end: int, thresh: float = DD_THRESH) -
     return ev
 
 
-def dd_type(eq: np.ndarray, peak: int, trough: int) -> tuple[str, float, float]:
+def dd_type(eq: np.ndarray, peak: int, trough: int, scale: str = "simple") -> tuple[str, float, float]:
     """登錄 §7-1 逐字的分型。⭐ 機器定義（追加二）：在【peak→trough】那一段上取逐日報酬，
     「最差 k 日跌幅合計」＝ 最小的 k 個日報酬之和；「事件總跌幅」＝ trough/peak − 1。
 
     回 (型別, 最差2日占比, 最差5日占比)；⛔ 兩個占比都回，因為分型用到兩條不同的門檻。
+
+    ⭐ scale（2026-09-20 15:4x 加，⛔ 只給【跨線對帳】用，⛔ 不改本件已跑完的判定）：
+      "simple" 預設 ＝ 登錄那條路（單純報酬）⇒ ⛔ 逐位元與 P9 跑的那一趟相同
+      "log"    ＝ 策略線 ddtype.py 的口徑（對數報酬）⇒ ⭐ 用來定位 17.8% vs 4.5% 差在哪一軸
     """
     if trough <= peak:
         return "混合型", np.nan, np.nan
+    if scale not in ("simple", "log"):
+        raise ValueError(f"scale 只能是 'simple'（登錄口徑）或 'log'（策略線口徑），收到 {scale!r}")
+    if scale == "log":
+        lg = np.log(eq[peak:trough + 1])
+        r = np.diff(lg)
+        tot = float(lg[-1] - lg[0])
+        srt = np.sort(r)
+        p2 = float(srt[:2].sum()) / tot if tot < 0 else np.nan
+        p5 = float(srt[:5].sum()) / tot if tot < 0 else np.nan
+        if p2 >= 0.50:
+            return "單日暴跌型", p2, p5
+        if p5 < 0.50:
+            return "延續下跌型", p2, p5
+        return "混合型", p2, p5
     r = eq[peak + 1:trough + 1] / eq[peak:trough] - 1.0
     tot = eq[trough] / eq[peak] - 1.0
     srt = np.sort(r)

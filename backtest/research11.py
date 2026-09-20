@@ -399,7 +399,7 @@ _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
-                 weak=None, weak_size: float = 0.5, report_maxw: bool = False):
+                 weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -433,6 +433,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                   ⇒ **當天進場的新部位**只買 weak_size 個 slot（登錄逐字：新部位只買 0.5 slot）
       weak_size   0 < x ≤ 1，預設 0.5
       report_maxw False（⛔ 回傳鍵與原版相同）／True ⇒ 多回 max_pos_frac＝逐日「單一部位市值 ÷ equity」的最大值
+      maxw_detail 需要 report_maxw；True ⇒ 再多回 maxw_daily（逐日那個最大值的序列）與 maxw_sid（每天是哪一檔）
+                  ⇒ ⭐ 給【分佈】用（〈九十二〉：一個百分比要連同它的分佈一起報），⛔ 只有最大值看不出常態
       ⭐ 省下的那半個 slot **留在現金**（⛔ 不讓給下一個候選、⛔ 不放大別的部位）⇒ 它的報酬照 cash_mode 走。
       ⛔ 只作用在【新部位】：已持有的部位不減、不賣、不調整（登錄 §2-C ⓑ 逐字）。
       ⚠ weak[t] 的**時序**由呼叫端負責（PREREGP9 用 t−1 的收盤與 MA60[t−1]）——⛔ 本引擎不自己算弱勢。
@@ -480,6 +482,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if not (0 < weak_size <= 1):
             raise ValueError(f"weak_size 要在 (0, 1]，收到 {weak_size!r}")
     max_pos_frac = 0.0
+    maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
+    maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
     stop_exits = 0; stop_days = []; stop_cut_right_tail = 0; hold_days = []; entry_day = {}
 
@@ -616,7 +620,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         hv = sum(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos)
         equity[t] = cash + hv
         if report_maxw and open_pos and equity[t] > 0:   # ⭐ 必報③：單一部位最大佔比（⛔ 唯讀，不動數值路徑）
-            max_pos_frac = max(max_pos_frac, max(amt * float(closes[sid][t]) / ep for _, sid, amt, _, ep in open_pos) / equity[t])
+            w_t, sid_t = max(((amt * float(closes[sid][t]) / ep) / equity[t], sid) for _, sid, amt, _, ep in open_pos)
+            max_pos_frac = max(max_pos_frac, w_t)
+            if maxw_daily is not None:
+                maxw_daily[t] = w_t; maxw_sid[t] = sid_t
         if return_equity:
             hold_val[t] = hv          # PREREGP3 丙（時點隨機對照）要的逐日持股市值；⛔ 只在 return_equity 時記，數值路徑不變
     equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
@@ -634,6 +641,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["hold_days_mean"] = float(np.mean(hold_days)) if hold_days else np.nan
     if report_maxw:                 # PREREGP9 §2-E③（⛔ report_maxw=False 時這個鍵不存在 ⇒ 原版回傳逐位元相同）
         out["max_pos_frac"] = max_pos_frac
+        if maxw_detail:
+            out["maxw_daily"] = maxw_daily; out["maxw_sid"] = maxw_sid
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
