@@ -1031,6 +1031,12 @@ def xhr_clues(text, cap=12, base=None):
     t = text.decode("utf-8", "replace") if isinstance(text, bytes) else (text or "")
     out = []
     pats = (
+        # ⭐ 2026-09-20 補：mops_probe D2 一路挖 js（fetch／ajax／外部 .js）
+        # 才發現那個 getMsg/AjaxCheck 只是全站共用的跑馬燈（send("step=0")），
+        # ⛔ 不是那一頁真正的查詢——而**最便宜的可能性**（傳統 `<form action=…>`
+        # 直接送出，完全不靠 js）反而放在最後才想到。⇒ 放第一個，比 js 便宜。
+        ("⓪  `<form action=…>` 的對象",
+         r'<form[^>]+action\s*=\s*["\']([^"\']{1,200})'),
         ("①  `/…/api/…` 出現過哪些", r"/[A-Za-z0-9_.-]*api[A-Za-z0-9_/-]*"),
         ("②  `fetch(` 的對象", r"fetch\(\s*[\"'`]([^\"'`]{4,120})"),
         ("③  `$.ajax` / `url:` 的對象", r"url\s*:\s*[\"'`]([^\"'`]{4,120})"),
