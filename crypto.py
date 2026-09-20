@@ -159,7 +159,7 @@ def land_history(symbol, today=None, root=None):
         if k in done:
             skipped += 1
             continue
-        rows, err = fetch_zip_rows(monthly_url(symbol, y, m))
+        rows, err = fetch_zip_rows(monthly_url(_pair(symbol), y, m))
         if err == "404":
             done[k] = [symbol, str(y), str(m), "0", "nodata"]
             nodata += 1
@@ -194,7 +194,7 @@ def land_recent_days(symbol, today=None, root=None, lookback=35):
         d = today - datetime.timedelta(days=i)
         if day_key([d.isoformat()]) in days:
             continue
-        rows, err = fetch_zip_rows(daily_url(symbol, d))
+        rows, err = fetch_zip_rows(daily_url(_pair(symbol), d))
         if err:
             if err != "404":
                 fail += 1
@@ -298,12 +298,29 @@ def _unzip_first_csv(zip_bytes):
         return z.read(name).decode("utf-8", "replace")
 
 
-def monthly_url(symbol, year, month):
-    return f"{VISION_BASE}/monthly/klines/{symbol}/1d/{symbol}-1d-{year:04d}-{month:02d}.zip"
+def _pair(symbol):
+    """我方存的是**現貨基礎資產代號**（`BTC`），幣安的交易對是 `BTCUSDT`
+    ——⛔⛔ 2026-09-20 第一趟實跑 backfill 就中這個坑：`land_history`／
+    `land_recent_days` 當時直接把 `symbol` 傳給 `monthly_url`／`daily_url`
+    （沒加 USDT），15 幣 × 109 個月**全部 404**，而 runlog 把它顯示成
+    「官方沒有」——看起來像正常的『這個月沒資料』，其實是**打錯網址**。
+    ⚠ `binance_pair_exists()` 當時就有補這個字尾（沒中招），但
+    `monthly_url`／`daily_url` 的呼叫端沒有跟著做——四點五那一族：
+    「我方符號→交易對」這個轉換一個地方做對、另一個地方漏掉。
+    ⇒ 收成**一份**，兩邊都改呼叫這個函式，⛔ 不要各自兜字尾。
+    """
+    return f"{symbol}USDT"
 
 
-def daily_url(symbol, date):
-    return f"{VISION_BASE}/daily/klines/{symbol}/1d/{symbol}-1d-{date.isoformat()}.zip"
+def monthly_url(pair, year, month):
+    """⚠ `pair` 是**幣安的交易對名稱**（如 `BTCUSDT`），不是我方代號
+    ——呼叫端要先過 `_pair()`。"""
+    return f"{VISION_BASE}/monthly/klines/{pair}/1d/{pair}-1d-{year:04d}-{month:02d}.zip"
+
+
+def daily_url(pair, date):
+    """⚠ 同上，`pair` 已經是幣安交易對名稱。"""
+    return f"{VISION_BASE}/daily/klines/{pair}/1d/{pair}-1d-{date.isoformat()}.zip"
 
 
 def fetch_zip_rows(url):
@@ -336,7 +353,7 @@ def binance_pair_exists(symbol, today=None, lookback_days=3):
     """
     today = today or datetime.datetime.now(datetime.timezone.utc).date()
     for d in (today - datetime.timedelta(days=n) for n in range(1, lookback_days + 1)):
-        status, body = _get(daily_url(f"{symbol}USDT", d))
+        status, body = _get(daily_url(_pair(symbol), d))
         if status == 200 and (body or b"")[:2] == b"PK":
             return True
     return False
