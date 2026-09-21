@@ -10,3 +10,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-09-16,5271,紘通,emerging,,,,,,,,,,,無成交,,0
 2026-09-17,5271,紘通,emerging,,,,,,,,,,,無成交,,0
 2026-09-18,5271,紘通,emerging,,,,,,,,,,,無成交,,0
+2026-09-21,5271,紘通,emerging,,15,10.45,12.44,731682,9102124,,,,,均價/額推算,12.85,1

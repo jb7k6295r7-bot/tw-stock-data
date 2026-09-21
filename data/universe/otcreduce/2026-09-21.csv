@@ -1,0 +1,4 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2026-09-21,3710,5.13,8.32,彌補虧損,,,1.62209017,revivt
+2026-09-21,8059,13.4,22.33,彌補虧損,,,1.66640907,revivt
+2026-09-21,8277,8.05,18.67,彌補虧損,,,2.31971731,revivt
