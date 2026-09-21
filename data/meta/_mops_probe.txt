@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-21T22:50:27+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35612479114
+# ⏱ 這一趟：2026-09-22T01:32:25+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35630461881
 # MOPS／OpenAPI 探針（丁級 11 終點驗證）
 # ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果
 
@@ -32,7 +32,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:42:48
+      ── datetime：115/09/22 01:25:06
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -41,7 +41,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:42:59
+      ── datetime：115/09/22 01:25:18
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018…（blob 長 316）
@@ -53,7 +53,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:10
+      ── datetime：115/09/22 01:25:29
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa8…（blob 長 317）
@@ -62,12 +62,12 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:13
+      ── datetime：115/09/22 01:25:37
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa8…（blob 長 317）
-    ✓ 取回 1,505,453 bytes
-  ⇒ year=114 取回 1,628,079 bytes；year=110 取回 1,505,453 bytes
+    ✓ 取回 1,505,455 bytes
+  ⇒ year=114 取回 1,628,079 bytes；year=110 取回 1,505,455 bytes
     [114] 中文 4,200 字｜<tr> 1098 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 上市公司第二季資料 註1：依證券交易法第36條及證券期貨局相關函令規定，財務報告申報期限如下： 1.一般行業申報期限：第一季為5月15日，第二季為8月14日，第三季為11月14日，年度為3月31日。 2.金控業申報期限：第一季為5月30日，第二季為8月31日，第三季為11月29日，年度為3月31日。 3
     [110] 中文 3,941 字｜<tr> 1018 個｜js 1 支｜（沒有查無字樣）
@@ -79,7 +79,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:15
+      ── datetime：115/09/22 01:25:41
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -88,7 +88,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:17
+      ── datetime：115/09/22 01:25:42
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a…（blob 長 311）
@@ -105,7 +105,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:19
+      ── datetime：115/09/22 01:25:45
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -182,7 +182,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:27
+      ── datetime：115/09/22 01:25:56
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -191,7 +191,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:28
+      ── datetime：115/09/22 01:25:57
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018…（blob 長 316）
@@ -208,7 +208,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:29
+      ── datetime：115/09/22 01:25:58
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93b88cefe844ab0e6f28e730962e78c2354a5cb05c8745ccaba27c38f21a9951a0ca051bcf3a87e1616802cd0e519685
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e…（blob 長 348）
@@ -217,7 +217,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:30
+      ── datetime：115/09/22 01:26:00
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13b88cefe844ab0e6f28e730962e78c2354a5cb05c8745ccaba27c38f21a9951a0ca051bcf3a87e1616802cd0e519685
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018…（blob 長 348）
@@ -235,7 +235,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:31
+      ── datetime：115/09/22 01:26:02
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e23d1b3e3b8ef03c71d9a039d80720cfd43bf1c65bd3c5eab7324a774f3c9db09762ada20dc068e1bca88947e765c37448b4afa81caedbae6ad2b2cc9fb052c05
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e23d1b3e3b8ef03c71d9a039d807…（blob 長 380）
@@ -244,7 +244,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/09/21 22:43:33
+      ── datetime：115/09/22 01:26:05
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e25b3cd17ae0c90a4b2c3f6667521169913bf1c65bd3c5eab7324a774f3c9db09762ada20dc068e1bca88947e765c37448b4afa81caedbae6ad2b2cc9fb052c05
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e25b3cd17ae0c90a4b2c3f666752…（blob 長 380）
@@ -342,7 +342,7 @@
            TYPEK：1 種 上市×1000
       ── step=01｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
          [形狀] 3,220 bytes｜中文 210 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"system_time":"22:40","data":[{"COMPANY_NAME":"材料*-KY","CDATE":"115/09/21","CTIME":"21:39:36","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=3&SPOKE_TIME=213936&SPOKE_DATE=20260921&COMPANY_ID=4763","SUBJECT":"公告本公司召開重大訊息記者會新聞稿內容","COMPANY_ID":"476
+         ⭐ 前 300 字：﻿ {"system_time":"01:20","data":[{"COMPANY_NAME":"材料*-KY","CDATE":"115/09/21","CTIME":"21:39:36","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=3&SPOKE_TIME=213936&SPOKE_DATE=20260921&COMPANY_ID=4763","SUBJECT":"公告本公司召開重大訊息記者會新聞稿內容","COMPANY_ID":"476
          ⭐ `data` **10 列**｜欄名 ['CDATE', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT']
          ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
            CDATE：1 種 115/09/21×10
@@ -947,7 +947,7 @@
 
 ── ⭐ D2 第四條路：data.gov.tw dataset **18415**（⚠ 這個 id 是我自己筆記裡的，⛔ **我沒有驗過它存在**）
    ── 網頁：https://data.gov.tw/dataset/18415
-      ✓ 524,882 bytes
+      ✓ 524,966 bytes
       ⭐ 回應裡有沒有回音 `18415`：True　⇒ ⛔ False 的話，這個 id **多半是我編的**
       ⭐ 可讀文字前 400 字（逐字，⛔ 不是我的摘要）：
          上市公司每日重大訊息 ｜ 政府資料開放平臺 小幫手查詢服務(Beta版) 介接TAIDE服務 English （ Open AI ） No data 全部資料集瀏覽 預計下架資料集 歷史資料專區 資料集清單下載區 應用展示專區 教育資源專區 活化應用專區 獎勵活動專區 我想要更多 我有話要說 最新消息 專欄文章 關於平臺 網站導覽 常見問答 應用工具專區 指引文件 您的瀏覽器不支援 JavaScr
@@ -982,7 +982,7 @@
       ✓ https://mopsov.twse.com.tw/nas/rss/mopsrss201001.xml　母體 0 個 <a>　⇒ 新增 **0** 條
       ✓ https://mopsov.twse.com.tw/nas/rss/mopsrss201002.xml　母體 0 個 <a>　⇒ 新增 **0** 條
       ✓ https://mopsov.twse.com.tw/nas/rss/mopsrss201003.xml　母體 0 個 <a>　⇒ 新增 **0** 條
-      ✓ https://mopsov.twse.com.tw/server-java/t39sb01　母體 4 個 <a>　⇒ 新增 **0** 條
+      ✗ https://mopsov.twse.com.tw/server-java/t39sb01　URLError: <urlopen error [Errno 111] Connection refused>　⇒ 這一頁是【未驗】
       ✓ https://mopsfin.twse.com.tw　母體 88 個 <a>　⇒ 新增 **0** 條
       ✓ https://mopsov.twse.com.tw/mops/web/t146sb08　母體 129 個 <a>　⇒ 新增 **0** 條
       ✓ https://mopsov.twse.com.tw/nas/MOPS_HandBook.doc　母體 0 個 <a>　⇒ 新增 **0** 條
@@ -990,7 +990,7 @@
       ✓ https://www.twse.com.tw/zh/products/vendors　母體 51 個 <a>　⇒ 新增 **0** 條
       ✓ https://www.twse.com.tw/　母體 131 個 <a>　⇒ 新增 **0** 條
       ✓ https://www.tpex.org.tw/　母體 90 個 <a>　⇒ 新增 **5** 條
-   ⇒ ⭐ 兩層合計 **18** 條候選（②真的走到 24／24 頁）
+   ⇒ ⭐ 兩層合計 **18** 條候選（②真的走到 23／24 頁）
       ── ●自民國101年起，開放外國企業來臺第一上市上櫃及登錄興櫃股票得為無面額或面額不限新臺幣十元，相關規範差異及簡稱辨別方式，請投資人詳加閱讀。　https://mopsov.twse.com.tw/denominations_2012.pdf　（命中：文字:規範）
       ── ●註冊地國(日本)股東權益保護重要事項和我國相關規範差異。　https://mopsov.twse.com.tw/nas/protect/t132/ShareholderRightsDifference.pdf　（命中：文字:規範）
       ── ●註冊地國(日本)股務作業和我國相關規範差異。　https://mopsov.twse.com.tw/nas/protect/t132/ShareholderServiceDifference.pdf　（命中：文字:規範）
@@ -1011,8 +1011,7 @@
       ── 營運持續政策　https://www.tpex.org.tw/storage/publish/others/營運持續政策.pdf　（命中：文字:政策）
 
    ══ 原文：●自民國101年起，開放外國企業來臺第一上市上櫃及登錄興櫃股票得為無面額或面額不限新臺幣十元，相關規範差異及簡稱辨別方式，請投資人詳加閱讀。　（命中：文字:規範）
-      ⛔ **這是二進位檔**（網址尾巴是二進位檔）⇒ 本節**不解析**，⚠ 要看內容請直接開上面那個網址。
-      （⭐ 這一行存在的理由：probe 136 把 4 份 PDF 的二進位當成「條款原文」寫進輸出檔）
+      ✗ 抓不到：URLError: <urlopen error [Errno 111] Connection refused>　⇒ 這一頁是【未驗】
 
    ══ 原文：●註冊地國(日本)股東權益保護重要事項和我國相關規範差異。　（命中：文字:規範）
       ⛔ **這是二進位檔**（網址尾巴是二進位檔）⇒ 本節**不解析**，⚠ 要看內容請直接開上面那個網址。
