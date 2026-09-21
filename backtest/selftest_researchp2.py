@@ -15,6 +15,7 @@ from . import data as D
 from . import research11 as R
 from . import researchp2 as P2
 from . import researchp7 as P7
+from . import researchp14 as P14
 
 FAIL = 0
 
@@ -432,6 +433,98 @@ def t_p11():
     check(P11.SEED0 == 101000 and P11.RATES == (0.25, 0.35, 0.50, 0.75),
           f"種子起點寫死 101000、四個選擇率寫死（實得 {P11.SEED0}／{P11.RATES}）")
 
+
+
+def t_p14():
+    """PREREGP14：合成式與它的手算 fixture、判準的四個出口、橋欄的鑑別力、呼叫點。"""
+    import inspect as _insp
+    import math as _math
+    import os as _os
+    # ① §三⑧ 手算 fixture：五格逐位元
+    e = np.array(P14.FIX_E, float); b = np.array(P14.FIX_B, float)
+    for w in P14.WS:
+        got = P14.blend(e, b, w); exp = P14.FIX_EXPECT[w]
+        check(all(repr(float(g)) == repr(float(x)) for g, x in zip(got, exp)),
+              f"fixture w={w:.2f} 逐位元 ⇒ {[float(x) for x in got]}")
+    # ② ⭐〈一百一十三〉fixture 要先證明它【分得出來】——五種突變逐一餵進去，⛔ 不是只看正版綠
+    muts = {"w 與 1−w 對調": lambda E, B, w: (1 - w) * (E / E[0]) + w * (B / B[0]),
+            "忘記除 t0": lambda E, B, w: w * E + (1 - w) * (B / B[0]),
+            "整條再除以 2": lambda E, B, w: (w * (E / E[0]) + (1 - w) * (B / B[0])) / 2,
+            "t0 取成最後一格": lambda E, B, w: w * (E / E[-1]) + (1 - w) * (B / B[-1]),
+            "兩項相乘": lambda E, B, w: w * (E / E[0]) * (1 - w) * (B / B[0])}
+    for nm, fn in muts.items():
+        nbad = sum(1 for w in P14.WS
+                   if any(repr(float(g)) != repr(float(x)) for g, x in zip(fn(e, b, w), P14.FIX_EXPECT[w])))
+        check(nbad > 0, f"⭐ 反向驗：突變「{nm}」⇒ fixture 紅了 {nbad}/5 格（⛔ 沒紅就表示這個 fixture 分不出這個軸）")
+    check(sum(1 for w in P14.WS
+              if any(repr(float(g)) != repr(float(x))
+                     for g, x in zip(muts["w 與 1−w 對調"](e, b, w), P14.FIX_EXPECT[w]))) == 4,
+          "⭐⭐ 而【w=0.50 那一格對 w↔1−w 對調是對稱的】⇒ 只紅 4/5 "
+          "⇒ ⛔ 判定格正好是對最可能的實作錯誤最瞎的那一格 ⇒ 五個 w 一個都不能少")
+    # ③ §一1-B 的形狀守門
+    try:
+        P14.blend(np.ones(3), np.ones(4), 0.5); check(False, "長度不同要丟 SystemExit")
+    except SystemExit:
+        check(True, "兩條序列長度不同 ⇒ SystemExit（⛔ 不是靜默廣播）")
+    # ④ §二 判準的四個出口（〈一百一十一〉：至少一腳【嚴格】優）
+    C, M = P14.BENCH_CAGR, P14.BENCH_MDD
+    check(P14.judge(C, M)[0] is False, "兩腳都只是相等（＝純基準）⇒ ⛔ 不算通過（〈一百一十一〉）")
+    check(P14.judge(C + 1e-9, M)[0] is True, "年化嚴格優、回落持平 ⇒ 通過")
+    check(P14.judge(C, M + 1e-9)[0] is True, "回落嚴格優、年化持平 ⇒ 通過")
+    check(P14.judge(C + 0.1, M - 0.1)[0] is False, "年化大優但回落沒過 ⇒ ⛔ 不通過（⛔ 不可只報改善的那一腳）")
+    # ⑤ ⛔⛔ 掛起那一格是【測出來的事實】，不是報告裡的一句話：
+    #    純 0050 實測 +24.020210%／−33.957005% 在【登錄指定的捨入基準】下會算成「通過」
+    check(P14.judge(0.24020209886370614, -0.3395700527611012)[0] is True,
+          "⛔⛔ 退化解實測：純 0050 依【§七② 捨入後的基準】兩腳都嚴格優 ⇒ 判成通過"
+          "（差 +0.00021pp／+0.043pp 全是捨入）⇒ 掛起待裁，⛔ 本庫不自行改用未捨入值")
+    check(P14.judge(0.24020209886370614, -0.3395700527611012, ) [0] is True
+          and P14.judge(0.2402, -0.340)[0] is False,
+          "⭐ 反向驗：同一條 0050，用未捨入值當【被判者】會通過、用捨入值當【被判者】不通過 "
+          "⇒ 差別只在捨入，⛔ 不在資料")
+    # ⑥ 橋欄的鑑別力（⭐ 真的餵一個差 1 ulp 的表進去，⛔ 不是掃字串）
+    ref = pd.read_csv(P14.BRIDGE_CSV, float_precision="round_trip")
+    m = np.ones(len(ref), bool)
+    for k, v in P14.BRIDGE_KEY.items():
+        m &= (ref[k] == v).to_numpy()
+    good = ref[m].copy()
+    check(len(P14.bridge_check(good)) == len(P14.BRIDGE_COLS),
+          f"橋欄：拿 cells.csv 那一列餵回去 ⇒ {len(P14.BRIDGE_COLS)} 欄全同（⛔ 不丟例外）")
+    for col in ("mdd_med", "tr_p90", "expo_med"):
+        bad = good.copy(); bad[col] = _math.nextafter(float(good[col].iloc[0]), _math.inf)
+        try:
+            P14.bridge_check(bad); check(False, f"橋欄：{col} 差 1 ulp 竟然過了")
+        except SystemExit as ex:
+            check("否證⑥" in str(ex), f"⭐ 反向驗：{col} 只差【1 ulp】⇒ 橋欄紅（否證⑥）")
+    bad2 = good.copy(); bad2["win"] = "主格窗"
+    try:
+        P14.bridge_check(bad2); check(False, "識別欄換掉竟然過了")
+    except SystemExit as ex:
+        check("比錯格" in str(ex) and "否證⑥" not in str(ex),
+              "⭐ 識別欄不同 ⇒ 判【比錯格】，⛔ 不是否證⑥（§十一1-2）")
+    # ⑦ §三⑥ 回落的峰谷
+    eq = np.array([1.0, 1.2, 1.1, 1.3, 0.9, 1.0, 1.4, 1.0, 1.5], float)
+    cal = pd.DatetimeIndex(pd.bdate_range("2021-01-04", periods=len(eq)))
+    md, pk, tr = P14.mdd_with_date(eq, cal, 0)
+    check(abs(md - (0.9 / 1.3 - 1)) < 1e-12 and pk == "2021-01-07" and tr == "2021-01-08",
+          f"最深回落 {md * 100:.1f}% ⇒ 峰 {pk}／谷 {tr}（⛔ 不是後面較淺的 1.4→1.0）")
+    # ⑧ ⛔ 有預設值的參數要有一條【不傳它】的斷言（CLAUDE.md 七）
+    sp = _insp.signature(P14._sim).parameters
+    check(sp["cash_mode"].default == "zero" and sp["bench"].default is None,
+          "_sim 的預設值 ＝ cash_mode='zero'／bench=None ⇒ ⭐ 不傳就是 A0 那條路")
+    # ⑨ 呼叫點（⭐ 測完純函式再掃一次原始碼）
+    src = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "researchp14.py"), encoding="utf-8").read()
+    check(src.count("R.simulate_mtm(") == 1
+          and 'pick=None, cap_fn=None, d_max=None, queue_days=0' in src,
+          "呼叫點：全檔只有【一個】地方呼叫引擎，四個固定參數逐字寫在那一行")
+    check("P12.win_read(" in src and "P12.cell_table(" in src and "R13.window_stats(" in src
+          and "P8.month_ci(" in src and "P12.win_bounds(" in src and "P12.month_marks(" in src,
+          "呼叫點：窗讀數／彙總／年化回落／CI／窗界／月標記【全部走既有那一支】⇒ ⛔ 本檔沒有第二份")
+    check(src.count('D.load_stock("0050"') == 2,
+          "⭐ §十一2-1：0050 讀【兩次】（第二次給 w=0 那一腿當獨立序列）⇒ ⛔ 不是重用同一個陣列")
+    check("fixture_check()" in src and src.index("fixture_check()") < src.index("D.load_calendar()"),
+          "⭐ 順序：手算 fixture 在【載入任何資料之前】就跑（否證⑦ 要當場知道）")
+    check("BENCH_CAGR = 0.2402" in src and "BENCH_MDD = -0.340" in src,
+          "§七② 的基準【指定到一個值】寫死在檔裡（⛔ 不是跑的時候算、⛔ 不與 +24.54% 並列）")
 
 
 def t_p12():
@@ -1249,5 +1342,6 @@ if __name__ == "__main__":
     print("[p4_type_recheck] 四型分位獨立覆核（策略線 2010 §一）"); t_p4_recheck()
     print("[researchp1b] PREREGP1b 假訊號組半寬（seq=4＋seq=5）"); t_p1b()
     print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
+    print("[researchp14] 0050 進組合：合成式／判準／橋欄（PREREGP14 seq=5）"); t_p14()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
