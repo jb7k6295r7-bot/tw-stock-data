@@ -501,6 +501,30 @@ def t_p14():
     except SystemExit as ex:
         check("比錯格" in str(ex) and "否證⑥" not in str(ex),
               "⭐ 識別欄不同 ⇒ 判【比錯格】，⛔ 不是否證⑥（§十一1-2）")
+    # ⑥-2 ⭐ anchor_check：登錄 §十一1-3 的 21 個值 vs cells.csv（K線分析線 0050 §2-2）
+    check(len(P14.anchor_check()) == 21, "anchor_check：21 個釘死的值對 cells.csv 逐位元全同")
+    _orig_av = {k: dict(v) for k, v in P14.ANCHOR_VALS.items()}
+    try:
+        for win, col in (("全窗", "mdd_med"), ("主格窗", "cagr_med"), ("全窗", "seeds")):
+            P14.ANCHOR_VALS[win][col] = _math.nextafter(float(_orig_av[win][col]), _math.inf)
+            try:
+                P14.anchor_check(); check(False, f"⭐ 反向驗：{win}/{col} 差 1 ulp 竟然過了")
+            except SystemExit as ex:
+                check("判別法" in str(ex) and "0115" in str(ex) and "否證⑥" in str(ex),
+                      f"⭐ 反向驗：{win}/{col} 只差【1 ulp】⇒ 停，且訊息帶【K線 0050 §2-2 的三方判別法】")
+            P14.ANCHOR_VALS[win][col] = _orig_av[win][col]
+    finally:
+        P14.ANCHOR_VALS.clear(); P14.ANCHOR_VALS.update(_orig_av)
+    check(len(P14.anchor_check()) == 21, "⭐ 還原後仍過（⛔ 確認突變沒有外洩）")
+    _src14 = open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "researchp14.py"), encoding="utf-8").read()
+    check("不可改 tuple 再找一次" in _src14 and _src14.count("不可改 tuple 再找一次") == 2,
+          "⭐ K線 0050 §2-3：兩處【比錯格】都寫成【停止】，⛔ 不是「重選格再比」（那是事後動作）")
+    check(_src14.index("anchor_check()") < _src14.index("D.load_calendar()"),
+          "⭐ 順序：anchor_check 在【載入任何資料之前】就跑")
+    check(_src14.count("10.721624085824924") == 1,
+          "⭐⭐ 0115 §二 的值【只有一份】在本檔（＝登錄轉抄那一份）"
+          "⇒ ⛔ 不可再抄第二份，否則兩份轉抄不再獨立、三方判別法當場失效（四點五）")
+
     # ⑦ §三⑥ 回落的峰谷
     eq = np.array([1.0, 1.2, 1.1, 1.3, 0.9, 1.0, 1.4, 1.0, 1.5], float)
     cal = pd.DatetimeIndex(pd.bdate_range("2021-01-04", periods=len(eq)))

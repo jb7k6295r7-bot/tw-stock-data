@@ -61,6 +61,19 @@ BRIDGE_COLS = ("tr_mean", "tr_med", "tr_p10", "tr_p90", "tr_prev_med",
                "cagr_med", "cagr_p10", "cagr_p90", "mdd_med", "mdd_p10", "mdd_p90",
                "expo_med", "slot_med", "trades_med", "seeds")
 
+# §十一1-3：登錄【轉抄】自回測線 0115 §二 的 21 個值（全窗 15 ＋ 主格窗 6）
+# ⛔ 開跑前要對 cells.csv 逐位元；對不上時的判別法見 anchor_check()（K線分析線 0050 §2-2 裁）
+ANCHOR_VALS = {
+    "全窗": {"tr_mean": 10.721624085824924, "tr_med": 9.439161911168174, "tr_p10": 4.785625917637471,
+             "tr_p90": 18.292071231974276, "tr_prev_med": 9.327453029606506,
+             "cagr_med": 0.2820350701063953, "cagr_p10": 0.20434354723573306, "cagr_p90": 0.36820505943804477,
+             "mdd_med": -0.41432426935458594, "mdd_p10": -0.47524809022050024, "mdd_p90": -0.37023358981058885,
+             "expo_med": 0.8713977071219294, "slot_med": 0.8871002592912706,
+             "trades_med": 138.0, "seeds": 200.0},
+    "主格窗": {"tr_med": -0.2952280527561196, "cagr_med": -0.18150044229406254, "mdd_med": -0.3843461599544722,
+               "expo_med": 0.8745606308962086, "slot_med": 0.8871002592912706, "trades_med": 138.0},
+}
+
 # §三⑧／§十一2-2：手算 fixture（⛔ 與真實資料、P12、隨機源全部無關）
 # ⭐ 這組數是【為了二進位可精確表示】挑出來的（分母都是 2 的冪）⇒ 才可以要求逐位元。
 FIX_E = (100.0, 125.0, 75.0)
@@ -145,6 +158,40 @@ def _one(args):
 
 
 
+def anchor_check() -> list[dict]:
+    """開跑前：`resultsp12/cells.csv` 讀回的值 vs 登錄 §十一1-3 釘死的 21 個值，逐位元。
+
+    ⛔⛔ 對不上時【兩個成因的意義完全不同】（K線分析線 0050 §2-2 裁，⭐ 判別法逐字）：
+      檔 ＝ 回測線 0115 §二，且 檔 ≠ 本節 ⇒ ⭐【登錄那一節抄錯】⇒ 回信策略線訂正，⛔ 不觸發否證⑥
+      檔 ≠ 回測線 0115 §二　　　　　　 ⇒ ⛔⛔【檔案變了】⇒ 觸發否證⑥，查 P12 交件的可重現性
+    ⇒ ⛔ 本函式【不自己分辨】那兩者——它停下來並把判別法印出來，⭐ 因為 0115 §二 在信裡不在程式裡。
+    ⇒ ⛔ 而把 0115 §二 再抄一份進本檔【正好會毀掉這道檢查】：兩份轉抄不再獨立（四點五）。
+    """
+    ref = pd.read_csv(BRIDGE_CSV, float_precision="round_trip")
+    rows, bad = [], []
+    for win, exp in ANCHOR_VALS.items():
+        m = ((ref["win"] == win) & (ref["cost"] == "成本0.585%")
+             & (ref["S"] == "S1") & (ref["C"] == "C1") & (ref["T"] == "T1")).to_numpy()
+        if m.sum() != 1:
+            raise SystemExit(f"⛔【比錯格】：{win} 在 cells.csv 命中 {m.sum()} 列（要恰 1）⇒ 停止，"
+                             "⛔ 不可改 tuple 再找一次（K線分析線 0050 §2-3）")
+        r = ref[m].iloc[0]
+        for k, v in exp.items():
+            a = float(r[k]); ok = repr(a) == repr(float(v))
+            rows.append({"窗": win, "欄": k, "檔案": repr(a), "登錄 §11-1-3": repr(float(v)),
+                         "逐位元": "✅" if ok else "⛔"})
+            if not ok:
+                bad.append(f"  {win}/{k}: 檔案 {a!r} ≠ 登錄 {float(v)!r}")
+    if bad:
+        raise SystemExit(
+            "⛔⛔ cells.csv 讀回的值與登錄 §十一1-3 對不上 ⇒ 停止\n"
+            "⭐ 判別法（K線分析線 0050 §2-2，⛔ 本線不自己選）：把下面讀回的值拿去對【回測線 0115 §二】\n"
+            "   檔 ＝ 0115 §二，而 檔 ≠ §十一1-3 ⇒ ⭐【§十一1-3 抄錯】⇒ 回信策略線訂正，⛔ 不是否證⑥\n"
+            "   檔 ≠ 0115 §二　　　　　　　　 ⇒ ⛔⛔【檔案變了】⇒ 否證⑥ ⇒ 查 P12 交件的可重現性\n"
+            + "\n".join(bad))
+    return rows
+
+
 # ── §三⑦ 橋欄：把「本趟當場重算」接回「1740 已交件的那個數」──────────────────
 def bridge_check(tab: pd.DataFrame) -> list[dict]:
     """§十一1：對 `resultsp12/cells.csv` 的 20 欄，float_precision='round_trip' 逐位元。
@@ -164,7 +211,8 @@ def bridge_check(tab: pd.DataFrame) -> list[dict]:
     for k, v in BRIDGE_KEY.items():
         m &= (ref[k] == v).to_numpy()                                # ⛔ 一律 ref[k]，⛔ 不用 ref.k（ref.T 是轉置）
     if m.sum() != 1:
-        raise SystemExit(f"⛔【比錯格】：{BRIDGE_KEY} 在 cells.csv 命中 {m.sum()} 列（要恰 1）⇒ 重選格，⛔ 不是否證⑥")
+        raise SystemExit(f"⛔【比錯格】：{BRIDGE_KEY} 在 cells.csv 命中 {m.sum()} 列（要恰 1）⇒ 停止，"
+                         "⛔ 不可改 tuple 再找一次（K線分析線 0050 §2-3：選格在比對之前做完）")
     r_ref = ref[m].iloc[0]
     m2 = np.ones(len(tab), bool)
     for k, v in BRIDGE_KEY.items():
@@ -230,6 +278,10 @@ def main():
     # ⭐ ① 最先跑 §三⑧ 的手算 fixture：它與資料、P12、隨機源全部無關 ⇒ 壞了要當場知道（否證⑦）
     fix = fixture_check()
     log(f"[fixture] §三⑧ 手算 fixture {len(fix)} 格【逐位元全同】⇒ ⭐ 合成式本身通過（否證⑦ 不觸發）")
+
+    anc_rows = anchor_check()
+    log(f"[錨點值] cells.csv 對登錄 §十一1-3 的 {len(anc_rows)} 個值【逐位元全同】"
+        "（⭐ K線分析線 0050 §2-2 的判別法已寫進 anchor_check()，對不上時會印出來）")
 
     # ② 資料與訊號（⛔ 與 P12 同一條路：同一支 build_sig_gate_b、同一個驗收數）
     cal = D.load_calendar(); ncal = len(cal)
