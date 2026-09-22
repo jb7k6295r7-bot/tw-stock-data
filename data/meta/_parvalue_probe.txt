@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-22T01:18:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35630461881
+# ⏱ 這一趟：2026-09-22T16:54:18+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35706733132
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -163,7 +163,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3eaba01fa511d3e',t:'MTc5MDAxMTA3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3f01495889e5bc0',t:'MTc5MDA2NzIxOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -173,10 +173,10 @@
       data-format = 'print'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn
-           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年09月21日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
+           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年09月22日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgAnn
-           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/21 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
+           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/22 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
            [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
@@ -185,9 +185,9 @@
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
            ⭐ 它回顯的 `date`：（沒有這個鍵）｜`totalCount`：['0']
            ⚠ 回應裡沒有 `date` 鍵 ⇒ ⛔ 這一格**判不出**參數有沒有生效（⚠ 不可以讀成「有生效」）
-           開頭 '{"tables":[{"title":"","subtitle":"115年09月21日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
+           開頭 '{"tables":[{"title":"","subtitle":"115年09月22日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
            ── ⭐ 原始回應整份（⛔ 不是摘要）──
-             {"tables":[{"title":"","subtitle":"115年09月21日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
+             {"tables":[{"title":"","subtitle":"115年09月22日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
 
   ── 變更股票面額恢復交易參考價
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
@@ -322,7 +322,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3eaba1d0d7597ca',t:'MTc5MDAxMTA4NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3f014c4c88a1682',t:'MTc5MDA2NzIyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};

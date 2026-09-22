@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-22T01:18:51+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35630461881
+# ⏱ 這一趟：2026-09-22T16:54:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35706733132
 # holiday_probe.py 的輸出。這是探針結果，不是資料。
 # 網址（使用者 2026-09-09 提供）：https://www.dgpa.gov.tw/typh/daily/nds.html
 # 判準：**台北市**停止上班 ⇒ 台股全日休市。⛔ 不是「有任何縣市放假」。
@@ -45,7 +45,7 @@
 
   ── ② 中華民國政府行政機關辦公日曆表（dataset 頁）
      https://data.gov.tw/dataset/14718
-     ✓ 623,377 bytes｜中文 4,555 字
+     ✓ 623,390 bytes｜中文 4,555 字
        「休市」0 次
        「開休市」0 次
        「補班」0 次

@@ -1,6 +1,6 @@
-# ⏱ 這一趟：2026-09-22T01:24:05+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35630461881
+# ⏱ 這一趟：2026-09-22T16:58:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35706733132
 # bsr_probe.py 的輸出。⛔ 這是探針結果，不是資料。
-# 產生時間：2026-09-22T01:24:03+08:00（台北）
+# 產生時間：2026-09-22T16:58:50+08:00（台北）
 # 端點來源：**使用者 2026-09-12 提供**，⛔ 非自行生成
 
 
@@ -26,7 +26,7 @@
   <input name>（12 個）：['Button_Reset', 'RadioButton_Excd', 'RadioButton_Normal', 'TextBox_Stkno', '__EVENTARGUMENT', '__EVENTTARGET', '__EVENTVALIDATION', '__LASTFOCUS', '__VIEWSTATE', '__VIEWSTATEENCRYPTED', '__VIEWSTATEGENERATOR', 'btnOK']
   <select name>：[]
     ⚠ ⛔ **選擇器不是涵蓋期間的結論**（`chtm` 的選擇器寫 20080409、實際下限差兩年）
-  <img>（2 個）｜⛔ 疑似驗證碼 1 個：['CaptchaImage.aspx?guid=a68231d9-5190-4792-8636-06c5f578ad81']
+  <img>（2 個）｜⛔ 疑似驗證碼 1 個：['CaptchaImage.aspx?guid=5e81e63d-de9a-427b-bea9-d5adf4f7cfb0']
     ⛔⛔ **有驗證碼 ⇒ 這條路不能自動化**　⚠ 而那是「技術上取不到」，⛔ 不是「官方沒有」
     說明：!-- 買賣日報表查詢系統 table --
     說明：!-- 買賣日報表查詢系統 table --
