@@ -112,7 +112,20 @@ def universe_key(row):
 def _row_from_kline(r, asof):
     return [r["date"], r["open"], r["high"], r["low"], r["close"],
             r["volume"], r["quote_volume"], r["trades"],
-            r["taker_buy_base"], r["taker_buy_quote"], asof]
+            r["taker_buy_base"], r["taker_buy_quote"], asof, BINANCE_SOURCE]
+
+
+def _migrate_blank_source(days):
+    """既有列（寫在加 `source` 欄之前）的 `source` 一律回填 `binance`。
+
+    ⛔ 只做這件事：讀進來的列若 `source` 是空字串（`_load` 對新增欄位
+    找不到值時的預設），代表它是加這一欄**之前**寫的——這個檔案迄今
+    唯一的來源就是 `land_history`／`land_recent_days`（Binance），
+    ⇒ 直接寫死回填，不是猜。⚠ 就地修改傳進來的 dict，不回傳新的。
+    """
+    for row in days.values():
+        if row[-1] == "":
+            row[-1] = BINANCE_SOURCE
 
 
 def write_universe(rows, today=None):
@@ -244,10 +257,22 @@ KLINE_FIELDS = ("open_time", "open", "high", "low", "close", "volume",
                 "close_time", "quote_volume", "trades",
                 "taker_buy_base", "taker_buy_quote", "ignore")
 
-#: 落地的日檔欄位（⛔ 只有一份，backfill／daily 兩條路都寫這個表頭）。
+#: 落地的日檔欄位（⛔ 只有一份，backfill／daily／bitstamp 三條路都寫這個表頭）。
+#: ⭐ `source` 是 2026-09-22 補的：市場情報分析線要求「換來源要分欄標記，
+#: 不要混進同一欄」——Binance 與 Bitstamp 的 `close` 不是同一個量（不同
+#: 交易所的成交價本來就會有價差），混在一起會變成第七點那條「兩邊都對，
+#: 而它們不是同一個量」的同一族。⛔ `quote_volume`／`trades`／
+#: `taker_buy_base`／`taker_buy_quote` 這四欄 Bitstamp 沒有對應資料，
+#: Bitstamp 來源的列這四欄留空——**空白代表「這個來源沒有這個量」**，
+#: ⛔ 不是「這一天沒有成交」（五點三：absent 與 zero 是兩件事）。
 DAY_HEADER = ["date", "open", "high", "low", "close", "volume",
               "quote_volume", "trades", "taker_buy_base", "taker_buy_quote",
-              "asof"]
+              "asof", "source"]
+
+#: 現有還沒有 `source` 欄的既有列一律是這個來源（`land_history`／
+#: `land_recent_days` 目前唯一在用的來源）——`BITSTAMP_SOURCE` 補歷史用。
+BINANCE_SOURCE = "binance"
+BITSTAMP_SOURCE = "bitstamp"
 
 
 def _get(url, headers=None):
@@ -370,6 +395,98 @@ def binance_pair_exists(symbol, today=None, lookback_days=3):
     return False
 
 
+#: Bitstamp 2011 年就在營運，公開 OHLC 端點不用 API key。2026-09-22
+#: 探針實測 `start=2013-10-01` 真的回那天起的資料（第一根收盤 127.33
+#: 美元，跟真實 BTC 歷史價吻合）——⛔ 只驗過 BTC，其餘幣種 Bitstamp
+#: 上市時間普遍比 Binance 晚，不會補到更早的資料，先不加。要加新幣種
+#: 之前，⭐ 先用同一支探針打一發確認那個交易對在 Bitstamp 存不存在、
+#: 回的資料是不是真的比 Binance 現有的早。
+BITSTAMP_PAIRS = {"BTC": "btcusd"}
+
+BITSTAMP_OHLC = "https://www.bitstamp.net/api/v2/ohlc/{pair}/"
+
+#: Bitstamp 這一支 `limit` 的官方上限（2026-09-22 探針只試過 10，
+#: 這裡用文件寫的上限——⚠ 如果哪天 Bitstamp 改了限制，`land_bitstamp_history`
+#: 是逐段分頁、每段自己判斷回了幾筆，不會因為 limit 變小就漏資料，
+#: 只是分的段數會變多。
+BITSTAMP_LIMIT = 1000
+
+
+def parse_bitstamp_ohlc(body):
+    """Bitstamp OHLC 回應 → `[{date, open, high, low, close, volume}, ...]`。
+
+    ⛔ Bitstamp 沒有 `quote_volume`／`trades`／`taker_buy_*` 這幾欄
+    （那是 Binance klines 特有的）——呼叫端要自己把 `DAY_HEADER` 那四格
+    留空，⛔ 不要在這裡硬湊假資料進去。
+    """
+    j = json.loads(body)
+    ohlc = j.get("data", {}).get("ohlc", [])
+    out = []
+    for r in ohlc:
+        d = datetime.datetime.utcfromtimestamp(int(r["timestamp"])).date()
+        out.append({"date": d.isoformat(), "open": r["open"], "high": r["high"],
+                    "low": r["low"], "close": r["close"], "volume": r["volume"]})
+    return out
+
+
+def land_bitstamp_history(symbol, end_date, today=None, root=None,
+                           start_date=datetime.date(2013, 1, 1)):
+    """回補 `[start_date, end_date)` 這一段的 Bitstamp 日K——⛔ **不含** `end_date`
+    自己（那天起是既有 Binance 資料開始的地方，兩邊不可以重疊）。
+
+    ⭐ 逐段分頁：每次打 `BITSTAMP_LIMIT` 天，用**回來的最後一根時間戳 + 1 天**
+    當下一段的 `start`——⛔ 不是自己按日期算距離往前跳，因為 Bitstamp
+    可能某幾天沒有這根 K 線（那個幣還沒真的開始交易），用「回來的最後一根」
+    才不會跳過真正有資料的日子。
+    ⭐⭐ **停止條件是「這一段回來的天數比預期少」**，不是「打到 end_date」——
+    那代表已經打到 Bitstamp 自己歷史的起點了（第五點那條：換供料要分得清
+    「這個範圍我方沒有」跟「這個範圍那個來源本身就沒有」）。
+    """
+    pair = BITSTAMP_PAIRS.get(symbol)
+    if not pair:
+        return {"ok": 0, "fail": 0, "new_rows": 0,
+                "why": f"{symbol} 沒有已驗證的 Bitstamp 交易對，見 BITSTAMP_PAIRS"}
+    today = today or datetime.datetime.now(datetime.timezone.utc).date()
+    csvp = symbol_csv_path(symbol, root)
+    days = _load(csvp, DAY_HEADER, day_key)
+    _migrate_blank_source(days)
+    n0 = len(days)
+    asof = today.isoformat()
+    ok = fail = 0
+    cursor = start_date
+    reached_source_start = False
+    while cursor < end_date and not reached_source_start:
+        status, body = _get(BITSTAMP_OHLC.format(pair=pair) +
+                             f"?step=86400&limit={BITSTAMP_LIMIT}"
+                             f"&start={int(datetime.datetime(cursor.year, cursor.month, cursor.day, tzinfo=datetime.timezone.utc).timestamp())}")
+        if status != 200:
+            fail += 1
+            break
+        try:
+            rows = parse_bitstamp_ohlc(body)
+        except Exception:                                            # noqa: BLE001
+            fail += 1
+            break
+        if not rows:
+            break                                    # ⛔ 空回應：這個來源就到這裡了
+        for r in rows:
+            d = datetime.date.fromisoformat(r["date"])
+            if d >= end_date:
+                continue                              # ⛔ 撞到既有資料的邊界，不覆蓋
+            days[day_key([r["date"]])] = [
+                r["date"], r["open"], r["high"], r["low"], r["close"],
+                r["volume"], "", "", "", "", asof, BITSTAMP_SOURCE]
+        ok += 1
+        next_cursor = datetime.date.fromisoformat(rows[-1]["date"]) + datetime.timedelta(days=1)
+        if len(rows) < BITSTAMP_LIMIT:
+            reached_source_start = True               # 回得比要求的少 ⇒ 到頭了
+        if next_cursor <= cursor:
+            break                                      # 安全閥：避免游標不動造成無限迴圈
+        cursor = next_cursor
+    _save(csvp, DAY_HEADER, days)
+    return {"ok": ok, "fail": fail, "new_rows": len(days) - n0}
+
+
 def stablecoin_symbols():
     """→ `(set_of_lowercase_symbols, err)`。
 
@@ -444,7 +561,8 @@ def main():
     import runlog
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", required=True, choices=("universe", "backfill", "daily"))
+    ap.add_argument("--mode", required=True,
+                     choices=("universe", "backfill", "daily", "bitstamp-backfill"))
     ap.add_argument("--reset-months-done", action="store_true",
                      help="backfill 專用：先刪掉續跑台帳再回補全部月份。"
                      "⛔ 只在台帳被污染時用（例如 2026-09-20 那次：URL 少了"
@@ -498,6 +616,27 @@ def main():
         rl.info("合計", f"新增 {totals['new_rows']:,} 列｜成功 {totals['ok']}｜"
                        f"官方沒有 {totals['nodata']}｜失敗 {totals['fail']}｜"
                        f"略過（已完成）{totals['skipped']}")
+        rl.check("本趟不是全失敗", totals["ok"] > 0 or totals["fail"] == 0,
+                 f"成功 {totals['ok']}｜失敗 {totals['fail']}")
+        rl.finish()
+        return 0
+
+    if a.mode == "bitstamp-backfill":
+        # ⭐ 一次性回補（過去的資料不會變），⛔ 不掛進每天排程——
+        # 跟 land_history 那種「持續有新月份」的回補性質不同。
+        rl = runlog.Run("crypto:bitstamp-backfill")
+        rl.info("這一趟", f"Bitstamp 補 2013~2017 歷史（只驗證過的幣種：{list(BITSTAMP_PAIRS)}）")
+        totals = {"ok": 0, "fail": 0, "new_rows": 0}
+        detail = []
+        for sym in BITSTAMP_PAIRS:
+            end = datetime.date(EARLIEST_YEAR, EARLIEST_MONTH, 1)
+            r = land_bitstamp_history(sym, end, today=today)
+            for k in totals:
+                totals[k] += r[k]
+            why = f"｜{r['why']}" if "why" in r else ""
+            detail.append(f"{sym}：+{r['new_rows']} 列（成功 {r['ok']}／失敗 {r['fail']}）{why}")
+        rl.info("逐幣", "；".join(detail))
+        rl.info("合計", f"新增 {totals['new_rows']:,} 列｜成功 {totals['ok']}｜失敗 {totals['fail']}")
         rl.check("本趟不是全失敗", totals["ok"] > 0 or totals["fail"] == 0,
                  f"成功 {totals['ok']}｜失敗 {totals['fail']}")
         rl.finish()

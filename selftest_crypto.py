@@ -249,6 +249,121 @@ def main():
            {k for k in u2 if k[1] in ("2026-09-20", "2026-09-21")}
            == {("BTC", "2026-09-20"), ("ETH", "2026-09-21")})
 
+    # ── ⑩ Bitstamp：parse_bitstamp_ohlc／land_bitstamp_history（不連網）──
+    #   樣本來源：2026-09-22 crypto_probe.py 在 Actions 上實測的真實回應
+    #   （第一根 2013-10-01、收盤 127.33 美元），⛔ 不是編的形狀。
+    print("\n" + "=" * 60)
+    print("crypto.py：Bitstamp 解析與回補（monkeypatch，不連網）")
+    print("=" * 60)
+
+    real_bitstamp_body = (
+        b'{"data": {"pair": "BTC/USD", "ohlc": ['
+        b'{"timestamp": "1380585600", "open": "126.25", "high": "127.93", '
+        b'"low": "125.54", "close": "127.33", "volume": "7513.83496080"}, '
+        b'{"timestamp": "1380672000", "open": "127.31", "high": "127.80", '
+        b'"low": "85.00", "close": "103.85", "volume": "60639.38898698"}'
+        b']}}')
+    parsed = C.parse_bitstamp_ohlc(real_bitstamp_body)
+    ck("⭐ 真實樣本解出 2 列", len(parsed) == 2, str(parsed))
+    ck("  第一列日期 2013-10-01（⛔ 不是時區算錯的 09-30 或 10-02）",
+       parsed and parsed[0]["date"] == "2013-10-01")
+    ck("  close 逐位相同", parsed and parsed[0]["close"] == "127.33")
+    ck("  Bitstamp 沒有 quote_volume 這個鍵（⛔ 不可以湊一個假的）",
+       parsed and "quote_volume" not in parsed[0])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = os.path.join(tmp, "crypto")
+        os.makedirs(root, exist_ok=True)
+        orig_pairs = C.BITSTAMP_PAIRS
+        orig_limit = C.BITSTAMP_LIMIT
+        orig_get = C._get
+        C.BITSTAMP_PAIRS = {"FOO": "foousd"}
+        C.BITSTAMP_LIMIT = 3
+
+        def _mk_ohlc(dates):
+            return {"data": {"pair": "FOO/USD", "ohlc": [
+                {"timestamp": str(int(__import__("datetime").datetime(
+                    d.year, d.month, d.day,
+                    tzinfo=__import__("datetime").timezone.utc).timestamp())),
+                 "open": "1", "high": "1", "low": "1", "close": "1",
+                 "volume": "1"} for d in dates]}}
+
+        import datetime as _dt2
+        import json as _json2
+
+        bitstamp_calls = []
+
+        def fake_bitstamp_get(url, headers=None):
+            bitstamp_calls.append(url)
+            # ⭐ 用 URL 裡的 start= 決定回幾根，模擬「這一段撞到來源起點」
+            start_ts = int(url.split("start=")[1].split("&")[0])
+            start_d = _dt2.datetime.utcfromtimestamp(start_ts).date()
+            if start_d < _dt2.date(2013, 1, 4):
+                dates = [start_d, start_d + _dt2.timedelta(days=1),
+                         start_d + _dt2.timedelta(days=2)]        # 滿頁（3 根）
+            else:
+                dates = [start_d]                                  # 不滿頁 ⇒ 到頭了
+            return 200, _json2.dumps(_mk_ohlc(dates)).encode()
+
+        C._get = fake_bitstamp_get
+        try:
+            r1 = C.land_bitstamp_history("FOO", _dt2.date(2017, 1, 1),
+                                          today=_dt2.date(2020, 1, 1),
+                                          start_date=_dt2.date(2013, 1, 1),
+                                          root=root)
+            ck("⭐⭐ 分頁抓完：01-01~01-03（滿頁）＋01-04（不滿頁，停）＝ 4 列",
+               r1["new_rows"] == 4, str(r1))
+            days = C._load(C.symbol_csv_path("FOO", root), C.DAY_HEADER, C.day_key)
+            ck("⭐ 這幾列的 source 是 bitstamp（⛔ 不是空白）",
+               all(row[-1] == "bitstamp" for row in days.values()), str(days))
+            ck("⭐⭐ Binance 專屬那四欄留空（⛔ 不是湊假資料）",
+               all(row[6] == "" and row[7] == "" for row in days.values()))
+
+            # ⛔⛔ 邊界：end_date 之前跟之後同一頁回來時，>= end_date 的要被丟掉
+            C._get = lambda url, headers=None: (
+                200, _json2.dumps(_mk_ohlc(
+                    [_dt2.date(2020, 6, 1), _dt2.date(2020, 6, 2),
+                     _dt2.date(2020, 6, 3)])).encode())
+            r2 = C.land_bitstamp_history("FOO", _dt2.date(2020, 6, 2),
+                                          today=_dt2.date(2020, 6, 5),
+                                          start_date=_dt2.date(2020, 6, 1),
+                                          root=root)
+            days2 = C._load(C.symbol_csv_path("FOO", root), C.DAY_HEADER, C.day_key)
+            ck("⭐⭐⭐ end_date（06-02）自己跟之後的都不落地，⛔ 不可以跟既有資料重疊",
+               ("2020-06-01",) in days2 and ("2020-06-02",) not in days2
+               and ("2020-06-03",) not in days2, str(sorted(days2)))
+
+            # 未驗證過的幣種：不猜、不連網，直接回 0 列並講出理由
+            r3 = C.land_bitstamp_history("BAR", _dt2.date(2017, 1, 1))
+            ck("⭐ BITSTAMP_PAIRS 沒有的幣種 ⇒ 0 列、附理由，⛔ 不炸也不亂猜端點",
+               r3["new_rows"] == 0 and "why" in r3, str(r3))
+        finally:
+            C.BITSTAMP_PAIRS = orig_pairs
+            C.BITSTAMP_LIMIT = orig_limit
+            C._get = orig_get
+
+        # ⭐⭐⭐ 既有列（加 source 欄之前寫的）要被回填成 binance，⛔ 不是留空
+        legacy_path = C.symbol_csv_path("LEGACY", root)
+        os.makedirs(os.path.dirname(legacy_path), exist_ok=True)
+        with open(legacy_path, "w", encoding="utf-8", newline="") as f:
+            f.write("date,open,high,low,close,volume,quote_volume,trades,"
+                    "taker_buy_base,taker_buy_quote,asof\n")
+            f.write("2017-08-17,4261.48,4485.39,4200.74,4285.08,795.15,"
+                    "3454770.05,3427,616.25,2678216.40,2026-09-20\n")
+        C.BITSTAMP_PAIRS = {"LEGACY": "legacyusd"}
+        C._get = lambda url, headers=None: (200, _json2.dumps(
+            {"data": {"pair": "x", "ohlc": []}}).encode())
+        try:
+            C.land_bitstamp_history("LEGACY", _dt2.date(2013, 1, 1),
+                                     start_date=_dt2.date(2013, 1, 1), root=root)
+        finally:
+            C.BITSTAMP_PAIRS = orig_pairs
+            C._get = orig_get
+        legacy_days = C._load(legacy_path, C.DAY_HEADER, C.day_key)
+        ck("⭐⭐ 既有的 2017-08-17 那一列 source 被回填成 binance（⛔ 不是空白）",
+           legacy_days.get(("2017-08-17",), [None] * 12)[-1] == "binance",
+           str(legacy_days.get(("2017-08-17",))))
+
     print(f"\n[selftest] 通過 {PASS}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
