@@ -243,16 +243,29 @@ def mdd_with_date(eq: np.ndarray, cal, w0: int) -> tuple[float, str, str]:
     return float(dd[i]), str(cal[w0 + j].date()), str(cal[w0 + i].date())
 
 
-def judge(cagr: float, mdd: float) -> tuple[bool, str]:
-    """§二 判準（⛔ 逐字，⛔ 本支不改）：兩腳都至少持平，且【至少一腳嚴格優於】（〈一百一十一〉）。"""
-    leg_c = cagr >= BENCH_CAGR
-    leg_m = mdd >= BENCH_MDD                       # ⭐ 回落是負數 ⇒「≤ 基準的回落深度」＝ 數值上 ≥
-    strict = (cagr > BENCH_CAGR) or (mdd > BENCH_MDD)
+def judge(cagr: float, mdd: float,
+          bench_cagr: float = None, bench_mdd: float = None) -> tuple[bool, str]:
+    """§二 判準（⛔ 逐字，⛔ 本支不改）：兩腳都至少持平，且【至少一腳嚴格優於】（〈一百一十一〉）。
+
+    ⭐ 兩個基準參數是 2026-09-22 為 PREREGP15 加的（⛔ 純追加，不傳 ＝ P14 原行為）：
+      P15 §三 用的是【未捨入值】(0.24020209886370614／−0.3395700527611012)，
+      ⇒ ⛔ 而再抄一份 judge 到 researchp15.py 就是 CLAUDE.md 四點五 的下一份
+      ⇒ ⭐ 所以基準由呼叫端傳，判準本體【全庫只有這一份】。
+    ⚠ 而別名可以被下一個人拆掉 ⇒ selftest 對本函式餵【兩組基準各四個出口】逐格比對。
+    """
+    bench_cagr = BENCH_CAGR if bench_cagr is None else bench_cagr
+    bench_mdd = BENCH_MDD if bench_mdd is None else bench_mdd
+    BENCH_CAGR_, BENCH_MDD_ = bench_cagr, bench_mdd
+    leg_c = cagr >= BENCH_CAGR_
+    leg_m = mdd >= BENCH_MDD_                      # ⭐ 回落是負數 ⇒「≤ 基準的回落深度」＝ 數值上 ≥
+    strict = (cagr > BENCH_CAGR_) or (mdd > BENCH_MDD_)
     ok = leg_c and leg_m and strict
-    why = (f"年化 {cagr * 100:+.2f}% vs {BENCH_CAGR * 100:+.2f}%（{'✅' if leg_c else '⛔'}"
-           f"{'，嚴格優' if cagr > BENCH_CAGR else ''}）／"
-           f"回落 {mdd * 100:.2f}% vs {BENCH_MDD * 100:.2f}%（{'✅' if leg_m else '⛔'}"
-           f"{'，嚴格優' if mdd > BENCH_MDD else ''}）")
+    # ⛔⛔ 這四處一律用區域變數：⭐ 用模組常數的話，P15 傳了別的基準時【布林是對的、
+    #     而印出來的數字是 P14 的】⇒ 那是「欄位有值 ≠ 值是對的」那一族（CLAUDE.md 四點二③）。
+    why = (f"年化 {cagr * 100:+.2f}% vs {BENCH_CAGR_ * 100:+.2f}%（{'✅' if leg_c else '⛔'}"
+           f"{'，嚴格優' if cagr > BENCH_CAGR_ else ''}）／"
+           f"回落 {mdd * 100:.2f}% vs {BENCH_MDD_ * 100:.2f}%（{'✅' if leg_m else '⛔'}"
+           f"{'，嚴格優' if mdd > BENCH_MDD_ else ''}）")
     return ok, why
 
 

@@ -16,6 +16,7 @@ from . import research11 as R
 from . import researchp2 as P2
 from . import researchp7 as P7
 from . import researchp14 as P14
+from . import researchp15 as P15
 
 FAIL = 0
 
@@ -1344,6 +1345,125 @@ def t_p13probe():
           "1755 §四① 的門檻寫死 −30%（⛔ 本線不改）；累積那兩格是【另報的描述】")
 
 
+def t_p15():
+    """PREREGP15：K(t) 的無前視與鑑別力、判準在兩組基準下的四個出口、安慰劑欄、呼叫點。"""
+    import os as _os
+    import numpy as _np
+    import pandas as _pd
+
+    # ① §一 的手算 fixture 全綠（⛔ 它自己會在對不上時 SystemExit）
+    try:
+        rows = P15.gate_fixture(); ok = len(rows) >= 8
+    except SystemExit as e:
+        rows, ok = [], False; print("   ", e)
+    check(ok, f"§一 K(t)／擋月手算 fixture {len(rows)} 格全綠（A 組暖身邊界＋嚴格小於；B 組展開式 vs 全窗）")
+
+    # ② ⭐〈一百一十三〉fixture 要先證明它【分得出來】——五種會被寫錯的實作逐一餵進去
+    idx = [f"2000-{i+1:02d}" for i in range(12)] + ["2001-01", "2001-02", "2001-03"]
+    ca = _pd.Series([20]*11 + [1] + [9, 10, 11], index=idx)
+    kt = P15.k_series(ca)
+    base = P15.blocked_months(kt)
+    muts = {
+        "小於等於（不嚴格）": lambda k: list(k.loc[k["套閘門"] & (k["cand"] <= k["K"]), "month"]),
+        "方向寫反（大於）": lambda k: list(k.loc[k["套閘門"] & (k["cand"] > k["K"]), "month"]),
+        "忘記暖身（全套）": lambda k: list(k.loc[k["cand"] < k["K"].fillna(_np.inf), "month"]),
+        "用全窗中位": lambda k: list(k.loc[k["套閘門"] & (k["cand"] < round(float(_np.median(ca.to_numpy(float)))/2)), "month"]),
+        "忘記除以 2": lambda k: list(k.loc[k["套閘門"] & (k["cand"] < k["med_prev"]), "month"]),
+    }
+    # ⛔⛔ 而【A 組一組是不夠的】：A 的全窗中位剛好也是 20 ⇒「用全窗中位」那一種在 A 上不紅
+    #     ⇒ ⭐ 這正是 gate_fixture 為什麼要有 B 組 ⇒ 突變要對【兩組都餵】，任一組紅就算紅
+    idxb = [f"2010-{i+1:02d}" for i in range(12)] + [f"2011-{i:02d}" for i in range(1, 22)]
+    cb0 = _pd.Series([2]*13 + [1000]*20, index=idxb)
+    ktb = P15.k_series(cb0); baseb = P15.blocked_months(ktb)
+    mutsb = {
+        "小於等於（不嚴格）": lambda k: list(k.loc[k["套閘門"] & (k["cand"] <= k["K"]), "month"]),
+        "方向寫反（大於）": lambda k: list(k.loc[k["套閘門"] & (k["cand"] > k["K"]), "month"]),
+        "忘記暖身（全套）": lambda k: list(k.loc[k["cand"] < k["K"].fillna(_np.inf), "month"]),
+        "用全窗中位": lambda k: list(k.loc[k["套閘門"] & (k["cand"] < round(float(_np.median(cb0.to_numpy(float)))/2)), "month"]),
+        "忘記除以 2": lambda k: list(k.loc[k["套閘門"] & (k["cand"] < k["med_prev"]), "month"]),
+    }
+    per = {nm: (muts[nm](kt) != base, mutsb[nm](ktb) != baseb) for nm in muts}
+    nred = sum(1 for a_, b_ in per.values() if a_ or b_)
+    check(nred == len(muts),
+          f"五種突變【每一種至少在一組 fixture 上紅】⇒ {nred}/{len(muts)}　逐種 (A,B)＝"
+          + "，".join(f"{nm}{('紅' if a_ else '綠')}/{('紅' if b_ else '綠')}" for nm, (a_, b_) in per.items()))
+    check(per["用全窗中位"] == (False, True),
+          "⭐⭐ 而【用全窗中位】只在 B 組紅 ⇒ ⛔ 只有 A 組的話這條斷言會是假的（fixture 要兩組）")
+    check(base == ["2001-01"], f"正版擋月清單 ＝ {base}（cand 10 ＝ K 10 那一格【不擋】⇒ 嚴格小於）")
+
+    # ③ ⭐⭐ K(t) 無前視：把【更晚】那個月的候選數改掉，⛔ 較早的 K 一格都不可以動
+    cb = ca.copy(); cb.iloc[-1] = 99999
+    k2 = P15.k_series(cb)
+    same = all(repr(float(x)) == repr(float(y)) for x, y in
+               zip(kt["K"].to_numpy()[:-1], k2["K"].to_numpy()[:-1]))
+    check(same, "把最後一個月的候選數改成 99999 ⇒ 之前每一格 K 逐位元不變（⭐ 展開式＝無前視）")
+    check(repr(float(kt["K"].iloc[-1])) == repr(float(k2["K"].iloc[-1])),
+          "⛔ 而【當月自己的 K】也不該動（它只看 t 之前）⇒ 兩邊仍相同")
+
+    # ④ §三 判準：⭐ 先驗預設值那一條路（⛔ 不傳基準 ＝ P14 原行為，CLAUDE.md 七）
+    for c, m, want in [(0.2402, -0.340, False), (0.2500, -0.330, True),
+                       (0.2500, -0.350, False), (0.2300, -0.330, False)]:
+        check(P14.judge(c, m)[0] == want, f"judge 不傳基準：({c},{m}) ⇒ {want}（P14 原行為）")
+    # ⭐ 傳 P15 的基準 ⇒ 說明字串裡的數字要跟著換（⛔ 它曾經寫死在模組常數上）
+    _ok, why = P14.judge(0.30, -0.20, P15.BENCH_CAGR, P15.BENCH_MDD)
+    check("24.02" in why and "33.96" in why, f"judge 傳 P15 基準 ⇒ 說明字串用的是 P15 的數：{why}")
+
+    # ⑤ ⭐⭐〈一百二十三〉：把【基準自己】代進判準跑一次，它必須【不通過】
+    self_ok, _ = P14.judge(P15.BENCH_CAGR, P15.BENCH_MDD, P15.BENCH_CAGR, P15.BENCH_MDD)
+    check(not self_ok, "純 0050 代進自己的判準 ⇒【不通過】（⛔ 退化解被未捨入值堵住）")
+    old_ok, _ = P14.judge(P15.BENCH_CAGR, P15.BENCH_MDD, 0.2402, -0.340)
+    check(old_ok, "⭐ 而用【捨入後】的舊基準它會【通過】⇒ 上一條分得出來，⛔ 不是恆真")
+
+    # ⑥ §四⑦ 安慰劑欄：1 ulp 就要紅（⛔ 零容差）
+    eq0 = {r: _np.arange(10, dtype=float) + r for r in range(3)}
+    eq1 = {r: v.copy() for r, v in eq0.items()}
+    _rows, pc = P15.placebo_column(eq0, eq1, 5, 0)
+    check(pc["same"] == 3 and pc["short"] == 0, "安慰劑欄：兩臂完全相同 ⇒ 3/3 逐位元相同")
+    eq1[1][2] = _np.nextafter(eq1[1][2], _np.inf)
+    _rows, pc2 = P15.placebo_column(eq0, eq1, 5, 0)
+    check(pc2["same"] == 2, f"⭐ 只動 1 ulp ⇒ 立刻變 {pc2['same']}/3（⛔ 零容差，這一欄分得出來）")
+    # ⚠ 而【區間過短】要標出來，⛔ 不算過也不算不過
+    _rows, pc3 = P15.placebo_column(eq0, eq1, 1, 0)
+    check(pc3["short"] == 3 and pc3["same"] == 0, "m* 落在窗首 1 日內 ⇒ 3 顆標【區間過短】（⛔ 不計入通過）")
+
+    # ⑦ §四⑤／§三(ii)：重疊率【兩個方向都要報】
+    two = P15.overlap_two_ways(["a", "b"], ["b", "c", "d"], "甲", "乙")
+    check(len(two) == 2 and "1/2" in two[0] and "1/3" in two[1],
+          f"重疊率兩個方向：{two}（⛔ 只報一個方向是 CLAUDE.md 三①）")
+
+    # ⑧ month_entry_pos：同一個月有兩個進場日 ⇒ 要【大聲失敗】，⛔ 不可靜靜取一個
+    good = _pd.DataFrame({"month": ["2020-01", "2020-01", "2020-02"], "entry_pos": [5, 5, 9]})
+    check(list(P15.month_entry_pos(good)) == [5, 9], "月→進場日：同月同一天 ⇒ 正常回傳")
+    bad = _pd.DataFrame({"month": ["2020-01", "2020-01"], "entry_pos": [5, 6]})
+    try:
+        P15.month_entry_pos(bad); raised = False
+    except SystemExit:
+        raised = True
+    check(raised, "⭐ 同月有兩個進場日 ⇒ SystemExit（⛔ 不是靜靜取 min）")
+
+    # ⑨ 登錄寫死的常數（⛔ 一個都不可以在程式裡「挑」）
+    check(P15.R_PLACEBO == 30 and P15.SEED_PLACEBO == 105000 and P15.WARMUP == 12
+          and P15.K_DIV == 2 and P15.APR_SHARE_GATE == 0.80 and P15.REPS == 200
+          and P15.MIN_EVENTS == 10,
+          "常數寫死：R=30／假閘門流 105000／暖身 12／÷2／四月門檻 0.80／200 顆／有效樣本 10")
+    check(repr(P15.BENCH_CAGR) == repr(0.24020209886370614)
+          and repr(P15.BENCH_MDD) == repr(-0.3395700527611012),
+          "§三 基準 ＝【未捨入值】逐位元（⛔ 不是 +24.02%／−34.0%）")
+
+    # ⑩ 原始碼掃描：⭐ 呼叫點與「同一件事只准一份實作」
+    src = open(_os.path.join(_os.path.dirname(P15.__file__), "researchp15.py"), encoding="utf-8").read()
+    check(src.count("R.simulate_mtm(") == 0 and "P14._sim(" in src,
+          "⭐ 本支【沒有】自己的引擎呼叫點，走 P14._sim（⛔ 四點五：不抄第十二份）")
+    check("P14.judge(" in src and "def judge" not in src,
+          "⭐ 判準走 P14.judge（⛔ 本檔沒有第二份 judge）")
+    check("P14.bridge_check(" in src and "P14.anchor_check(" in src and "P9.weak_flags(" in src,
+          "橋欄／錨點值／MA60 三支都是 import 過去的（⛔ 本檔沒有第二份）")
+    check(src.index("gate_fixture()") < src.index("D.load_calendar()"),
+          "⭐ 手算 fixture 排在【讀任何資料之前】⇒ 壞了要當場知道")
+    check("half_up=True" in src and "銀行家捨入" in src,
+          "⭐ round 的兩種讀法【兩種都算】並比擋月清單（⛔ 不替登錄挑一個）")
+
+
 if __name__ == "__main__":
     print("[researchp2] 映射"); t_parent()
     print("[researchp2] 逐日標籤"); t_labels()
@@ -1367,5 +1487,6 @@ if __name__ == "__main__":
     print("[researchp1b] PREREGP1b 假訊號組半寬（seq=4＋seq=5）"); t_p1b()
     print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
     print("[researchp14] 0050 進組合：合成式／判準／橋欄（PREREGP14 seq=5）"); t_p14()
+    print("[researchp15] 月度閘門：K(t) 無前視／判準兩組基準／安慰劑欄（PREREGP15 seq=4）"); t_p15()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
