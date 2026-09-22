@@ -60,16 +60,24 @@ researchp16 的 run() 那兩個 Pool【沒有 initializer】
 ⇒ worker 拿到 _P（sigs／raws／closes／opens）完全靠【fork 繼承】
 ⇒ ⛔ spawn 之下子行程重新 import ⇒ _P 是空的
 
-✅ 實測（強制 start_method="spawn"）：
-   死在 researchp16.py:317　`_P["sigs"][arm]` ⇒ **KeyError: 'sigs'**
-   ⭐ 是【大聲失敗】，⛔ 不是靜默算錯 —— 這一點是好消息
+✅ 實測【兩種非 fork 的 start method 都測過】：
+   ・spawn　　　 ⇒ 死在 researchp16.py:317 `_P["sigs"][arm]` ⇒ **KeyError: 'sigs'**
+   ・forkserver ⇒ **同一行、同一個錯**（⭐ 2026-09-22 直接實測，⛔ 不是從 spawn 推論的）
+   ⭐ 都是【大聲失敗】，⛔ 不是靜默算錯 —— 這一點是好消息
+
+⛔⛔ 而 forkserver 這一格是【接手方那台的現況】：
+   Python 3.14 在 Linux 上把預設從 fork 改成 **forkserver**
+   ⇒ ⭐ 所以「用新一點的 Python 就好」是錯的 —— 版本越新越跑不起來
+   ⇒ ✅ 而交件指定的 3.11.15 在 Linux 上預設正好是 fork
+     ⇒ ⭐ 裝對版本，【版本對齊】與【fork 前置條件】一次滿足（接手方查出來的）
 
 ⚠⚠ 但它【會先印出六行綠的才死】：
    fixture ✅／sig ✅／逐日 ✅／回聲閘門 ✅／四個臂 ✅ ⇒ 然後才在 [否證①] 炸掉
    ⇒ ⛔ 不要因為前面六行是綠的就以為「大致上跑起來了」
 
-⇒ 結論：✅ Linux／WSL（fork）可以　⛔ Windows 原生 Python（spawn）跑不起來
-        ⚠ macOS 3.8 起預設 spawn ⇒ 同樣跑不起來
+⇒ 結論：✅ 只有 **fork** 可以
+        ⛔ Windows 原生 Python（spawn）／macOS 3.8 起（spawn）／**Linux + Python 3.14（forkserver）**
+        ⚠ 也就是說：⛔ 不是「Linux 就沒事」——【Linux 上的新 Python 一樣跑不起來】
 ⇒ ⭐ 所以「要不要 clone 到 WSL」不是效能問題，是【能不能跑】的問題
 
 ⛔ 本線【不修這件】：改 researchp16 就要重新證明逐位元，
