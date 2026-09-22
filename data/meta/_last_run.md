@@ -1126,6 +1126,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## crypto:daily　✓ 正常
+
+最後執行：2026-09-22T17:19:11+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 35709534528
+
+- **這一趟**：補當月與最近日檔缺口｜15 個幣種
+- **逐幣**：ADA：+1 列；BCH：+1 列；BNB：+1 列；BTC：+1 列；DOGE：+1 列；ETH：+1 列；LINK：+1 列；LTC：+1 列；NEAR：+1 列；SOL：+1 列；TRX：+1 列；UNI：+1 列；XLM：+1 列；XRP：+1 列；ZEC：+1 列
+- **合計**：新增 15 列｜成功 15｜失敗 0
+
+檢查：
+- ok　本趟不是全失敗　（成功 15｜失敗 0）
+
 ## crypto:bitstamp-backfill　✓ 正常
 
 最後執行：2026-09-22T17:14:09+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 35709086864
@@ -1209,17 +1220,6 @@
 檢查：
 - ok　本趟不是全失敗　（成功 1395｜失敗 0）
 
-
-## crypto:daily　✓ 正常
-
-最後執行：2026-09-22T08:28:02+08:00（台北）｜觸發 schedule｜虛擬貨幣（前 15 大市值）日K 收集｜ref main｜run 35671964107
-
-- **這一趟**：補當月與最近日檔缺口｜15 個幣種
-- **逐幣**：ADA：+1 列；BCH：+1 列；BNB：+1 列；BTC：+1 列；DOGE：+1 列；ETH：+1 列；LINK：+1 列；LTC：+1 列；NEAR：+1 列；SOL：+1 列；TRX：+1 列；UNI：+1 列；XLM：+1 列；XRP：+1 列；ZEC：+1 列
-- **合計**：新增 15 列｜成功 15｜失敗 0
-
-檢查：
-- ok　本趟不是全失敗　（成功 15｜失敗 0）
 
 ## otc_reduce_history:fetch　✓ 正常
 
