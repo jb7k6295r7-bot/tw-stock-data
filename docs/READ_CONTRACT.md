@@ -53,7 +53,7 @@ grep 不到某個欄位就推論「**資料庫沒有處置資料**」，一口�
 | **一檔的本益比／殖利率／股淨比** | `data/stocks_per/<代號>.csv`（**上市＋上櫃已合併**，2026-09-07 新增）⚠ 有兩個坑，見第五節 |
 | **一檔的還原因子（除權息＋減資）** | `data/adj/<代號>.csv`（`event` 欄分辨是哪一種）|
 | **一天的全市場**（篩選、排序） | `data/universe/daily/<日期>.csv` |
-| 一天的全市場三大法人 | `data/universe/inst/`（上市）、`data/universe/otcinst/`（上櫃） |
+| 一天的全市場三大法人 | `data/universe/inst/`（上市）、`data/universe/otcinst/`（上櫃）⚠ **單位是股數**，⛔ 跟 `data/latest/market_inst.csv`／`data/history/market_inst.csv`（單位是**金額**，新台幣元）是兩個不同的量，比值約 0.02~0.03——直接把逐股買賣超股數加總說成「買超金額」會得到一個**看起來合理的錯數字**（市場情報分析線 20260922-1636 實測：某日加總 4.9 億股，實際金額 267 億元；本線獨立驗算 2026-09-01：加總 1,258,453,046（股）vs `market_inst.csv` 56,637,394,650（元），比值 0.0222，量級吻合） |
 | 一天的全市場融資融券 | `data/universe/margin/`（上市）、`data/universe/otcmargin/`（上櫃）。⚠ **表頭有兩代**，見下方欄位說明 |
 | 一天的本益比／殖利率／股價淨值比 | `data/universe/per/`（上市）、`data/universe/otcper/`（上櫃） |
 | 一天的除權除息計算結果 | `data/universe/exright/`（**只有上市**） |
