@@ -38,9 +38,19 @@ note "════ 〇之二、⛔⛔ 輸入盤點（⭐ 2026-09-22 補：少了
 BASE=backtest/HANDOVER_BASELINE.txt
 [ -f "$BASE" ] || { bad "缺基準線 $BASE ⇒ ⛔ 無法分辨紅燈是輸入不同還是引擎不同"; }
 INPUT_DRIFT=0
+FILE_ROWS=0
 if [ -f "$BASE" ]; then
   while read -r want tracked f; do
-    case "$want" in '#'*|deliverable_commit|branch) continue;; esac
+    # ⛔⛔ 2026-09-22 訂正（接手方實測抓到）：這裡本來是【負面排除】
+    #   case "$want" in '#'*|deliverable_commit|branch) continue;; esac
+    #   ⇒ ⚠ 而本線在 〇之三 往基準線加了 env_* 與 procs_used【卻沒有同步這份清單】
+    #   ⇒ ⛔ 那 4 列被當成檔案列 ⇒ f 是空字串 ⇒ 判「不存在」⇒ FAIL 至少 4
+    #     ⭐ 也就是【這道檢查不可能回綠】，就算環境完美無瑕
+    #   ⇒ ⛔ 而它印出來的 bad 連檔名都是空的 ⇒ 紅燈【無法診斷】
+    # ⭐⭐ 改成【正面挑選】：只有第二欄宣告 tracked／UNTRACKED 的才是檔案列
+    #   ⇒ 往後基準線再加任何新鍵，這裡都不必跟著改（⛔ 這才是把那一族殺掉，不是補這一次）
+    case "$tracked" in tracked|UNTRACKED) ;; *) continue;; esac
+    FILE_ROWS=$((FILE_ROWS+1))
     printf '  %-44s ' "$f"
     if [ ! -f "$f" ]; then
       echo "⛔⛔ 不存在"
@@ -59,6 +69,8 @@ if [ -f "$BASE" ]; then
          note "     want $want"; note "     got  $got"; fi
   done < "$BASE"
 fi
+note "  （基準線裡的檔案列：$FILE_ROWS 列）"
+[ "$FILE_ROWS" -gt 0 ] || bad "基準線一列檔案都沒解析到 ⇒ ⛔ 這不是「通過」，是【沒驗到】"
 if [ "$INPUT_DRIFT" -gt 0 ]; then
   note ""
   note "⛔⛔ 有 $INPUT_DRIFT 個輸入與交件【不是同一份】"
