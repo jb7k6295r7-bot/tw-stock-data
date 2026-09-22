@@ -130,16 +130,19 @@ def _init(sigs, closes, opens, ncal, w0, w1, marks, cal, bench):
     _S.update(sigs=sigs, closes=closes, opens=opens, ncal=ncal, w0=w0, w1=w1, marks=marks, cal=cal, bench=bench)
 
 
-def _sim(sig, n, seed, cost, cash_mode="zero", bench=None):
+def _sim(sig, n, seed, cost, cash_mode="zero", bench=None, log=None):
     """⭐ 唯一一個呼叫引擎的地方。成本用模組常數切換 ⇒ ⛔ 不改引擎、⛔ 跑完立刻還原。
 
     ⚠ bench_cost 不傳 ⇒ 用引擎預設 COST/2 ＝ 0.002925（登錄 §七④ 逐字）。
+    ⭐ `log` 是 2026-09-22 為 PREREGP16 加的【純追加 pass-through】（⛔ 不傳 ＝ P14 原行為）：
+      P16 §四②③④ 要逐筆持有天數與逐筆報酬，而引擎本來就有這個參數（research11 L410）。
+      ⇒ ⛔ 再抄一份 `_sim` 就是 CLAUDE.md 四點五 的下一份 ⇒ ⭐ 由呼叫端傳一個 list 進來。
     """
     R.COST = cost
     try:
         return R.simulate_mtm(sig, P12.RULE, n, np.random.default_rng(seed), _S["closes"], _S["opens"], _S["ncal"],
                               return_equity=True, pick=None, cap_fn=None, d_max=None, queue_days=0,
-                              cash_mode=cash_mode, bench=bench)
+                              cash_mode=cash_mode, bench=bench, log=log)
     finally:
         R.COST = P12.COST_STD
 
