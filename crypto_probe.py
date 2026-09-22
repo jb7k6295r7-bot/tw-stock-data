@@ -34,11 +34,29 @@ IP 段被 Binance 法遵封鎖擋掉，⛔ 這條路死了，第二輪不重打�
 MIN_STMTS）、`STABLECOIN_SYMBOLS` 是 `set` 常數（`scan_consts` 當時
 只認 list／tuple）。⇒ 兩處都改成從 `crypto.py` import（四點五：
 同一件事只准一份實作），並把 `scan_consts` 補上 `ast.Set`。
+
+## 2026-09-22 第三輪：市場情報分析線 20260922-1636 要 2013~2017 歷史
+
+⛔ Binance 2017-08 才成立，`data.binance.vision` 天生沒有更早的資料——
+這不是抓取問題，是**這個交易所那時候不存在**。⇒ 要更早的資料一定要換
+交易所，這一輪先測兩個 2013 年就在運作的交易所公開 API，⛔ 不猜格式，
+直接打了看回應長什麼樣：
+
+  ⑤ Kraken `Trades`／`OHLC` 公開端點（`api.kraken.com`，2013 年開始營運，
+     不需要 API key）——測 `XXBTZUSD`（Kraken 的 BTC 交易對代碼跟
+     Binance 不一樣）在 2013~2014 附近有沒有資料。
+  ⑥ Bitstamp `ohlc` 公開端點（`www.bitstamp.net`，2011 年開始營運）——
+     同樣測 BTC 在 2013~2014 附近。
+
+⚠ 兩邊的**時間戳單位、K 線代碼、欄位順序**大概率都跟 Binance 不一樣
+（上面 `_ts_to_date()` 那個坑就是同一族教訓）——這輪只驗「打不打得到、
+回應長什麼樣」，⛔ 不假設格式跟 Binance 一樣，真的要接資料時再逐欄核對。
 """
 import datetime
 import io
 import json
 import sys
+import zipfile
 
 from crypto import STABLECOIN_SYMBOLS, _get                        # noqa: F401
 
@@ -183,7 +201,60 @@ def main():
     else:
         print("✅ 前 15 大市值幣種在 Binance 現貨全部找得到 <SYM>USDT 交易對。")
 
+    _probe_pre2017_sources()
+
     return 0
+
+
+def _probe_pre2017_sources():
+    """⑤⑥：Kraken／Bitstamp 在 2013~2014 附近有沒有 BTC 資料，
+    ⛔ 只印原始回應，不猜格式（見檔頭那段第三輪的說明）。
+    """
+    print("\n\n=== ⑤ Kraken OHLC（XXBTZUSD，2013 年開始營運）===")
+    s7, b7 = probe("Kraken OHLC｜XXBTZUSD，since=2013-10-01",
+                    "https://api.kraken.com/0/public/OHLC"
+                    "?pair=XXBTZUSD&interval=1440&since=1380585600")
+    if s7 == 200:
+        try:
+            j = json.loads(b7)
+            if j.get("error"):
+                print(f"⚠ Kraken 回了 error 欄位：{j['error']}")
+            else:
+                result = j.get("result", {})
+                keys = [k for k in result if k != "last"]
+                rows = result.get(keys[0], []) if keys else []
+                print(f"⇒ pair key 實際是 {keys!r}（⚠ 不一定叫 XXBTZUSD，"
+                      "Kraken 有時候回傳的 key 名稱跟送出去的參數不同）")
+                print(f"⇒ 拿到 {len(rows)} 根 K 線")
+                if rows:
+                    first_ts = int(rows[0][0])
+                    last_ts = int(rows[-1][0])
+                    print(f"  第一根：{rows[0]}")
+                    print(f"  最後一根：{rows[-1]}")
+                    print(f"  第一根日期（UTC）：{datetime.datetime.utcfromtimestamp(first_ts).date()}")
+                    print(f"  最後一根日期（UTC）：{datetime.datetime.utcfromtimestamp(last_ts).date()}")
+        except Exception as e:                                    # noqa: BLE001
+            print(f"⚠ 解析 Kraken 回應失敗：{e}")
+
+    print("\n=== ⑥ Bitstamp OHLC（btcusd，2011 年開始營運）===")
+    s8, b8 = probe("Bitstamp OHLC｜btcusd，start=2013-10-01",
+                    "https://www.bitstamp.net/api/v2/ohlc/btcusd/"
+                    "?step=86400&limit=10&start=1380585600")
+    if s8 == 200:
+        try:
+            j = json.loads(b8)
+            ohlc = j.get("data", {}).get("ohlc", [])
+            print(f"⇒ 拿到 {len(ohlc)} 根 K 線")
+            if ohlc:
+                print(f"  第一根：{ohlc[0]}")
+                print(f"  最後一根：{ohlc[-1]}")
+        except Exception as e:                                    # noqa: BLE001
+            print(f"⚠ 解析 Bitstamp 回應失敗：{e}")
+
+    print("\n=== 判讀（⑤⑥） ===")
+    print(f"Kraken status={s7}｜Bitstamp status={s8}"
+          "——⛔ 這裡只回報打不打得到、資料回到哪一年，"
+          "不代表可以直接拿來用（欄位定義、K 線代碼、時區都還沒核對）。")
 
 
 if __name__ == "__main__":

@@ -6,10 +6,13 @@ name: 虛擬貨幣（前 15 大市值）日K 收集
 # ⛔ 這個開發容器對外部金融站台一律 403（我方閘道擋的，不是對方擋，
 #   跟 CLAUDE.md 第六點記的 TW 交易所同一個問題）⇒ 這支只能在 Actions 上跑。
 #
-# 三個模式：
-#   universe  重新排前 15 大市值（週期性；名單會隨市值排名變動）
-#   backfill  回補歷史月檔（第一次跑、或有新幣種加入時用；冪等，續跑安全）
-#   daily     補當月與最近幾天的缺口（每天排程用，量很小）
+# 四個模式：
+#   universe          重新排前 15 大市值（週期性；名單會隨市值排名變動）
+#   backfill          回補歷史月檔（第一次跑、或有新幣種加入時用；冪等，續跑安全）
+#   daily             補當月與最近幾天的缺口（每天排程用，量很小）
+#   bitstamp-backfill 補 Binance 開始之前（2013~2017）的歷史，⛔ 一次性、
+#                     不掛進每天排程（過去的資料不會變）——只接了 BTC，
+#                     見 crypto.py 的 BITSTAMP_PAIRS。
 #
 # ⛔ `data/crypto/` 與 `data/meta/crypto_universe.csv`／
 #   `_crypto_months_done.csv` 只有這支 workflow 會寫——跟 CLAUDE.md
@@ -20,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口"
+        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）"
         type: choice
-        options: [universe, backfill, daily]
+        options: [universe, backfill, daily, bitstamp-backfill]
         default: daily
       reset_months_done:
         description: "backfill 專用，⛔ 平常不要勾：續跑台帳被污染時才用（例如 URL bug 讓整批誤記成官方沒有）"
@@ -56,6 +59,19 @@ jobs:
       - name: 自測（零相依，不連網）
         run: python selftest_crypto.py
 
+      # ⛔⛔ 2026-09-22 訂正：這一步原本排在「執行」之後，跟 daily.yml／
+      #   probe.yml 的慣例（「趁 checkout 還新」）相反——結果 run
+      #   35709086864 真的踩到：「執行」那一步呼叫 runlog.Run() 會在
+      #   本機寫出未 commit 的 data/meta/_last_run.md，sync_code.sh 的
+      #   `git checkout -B _sync origin/main` 因此被 git 拒絕（本機有
+      #   未 commit 的變更），列印「⚠ 切不過去」後優雅跳過（⛔ 不算
+      #   失敗，run 顯示綠燈）——但代價是**那一趟的程式改動完全沒有
+      #   同步到 main**，而使用者看到的是全綠。⇒ 搬到最前面，
+      #   趁 checkout 剛做完、工作區還乾淨的時候同步，四點二⑤那一族：
+      #   「這一步是綠的」不代表「它做了它該做的事」。
+      - name: 把程式同步到 main（趁 checkout 還新）
+        run: bash sync_code.sh
+
       # ⛔ schedule／push 觸發的一律是 main（GitHub 的規則），
       #   而這支 workflow 本來就只該在 main 上動這三個檔——
       #   跟 official-months 那一族用的是同一套理由（四點六③）。
@@ -78,9 +94,6 @@ jobs:
           RC=0
           python crypto.py --mode "$MODE" $EXTRA || RC=$?
           exit $RC
-
-      - name: 把程式同步到 main
-        run: bash sync_code.sh
 
       - name: Commit 回 repo
         run: bash push_data.sh "crypto(${{ inputs.mode || 'daily' }})"
