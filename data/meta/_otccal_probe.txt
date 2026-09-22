@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-22T16:54:54+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35706733132
+# ⏱ 這一趟：2026-09-22T17:21:11+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35706887591
 # otccal_probe.py 的輸出。這是探針結果，不是資料。
 # 要答的問題：**上櫃交易日曆有沒有第二來源**（目前唯一一列 C 級：只有自我一致）。
 # 判準四項見 otccal_probe.py 檔頭，⛔ 其中第 2 項（日期 min/max）是分水嶺。
@@ -105,7 +105,7 @@
 
 [3] 候選 B：櫃買新站「休市日」那一頁，以及它自己呼叫的端點
      ⚠ 已知（`_tpex_probe.txt` [9]）：那一頁是 **js 空殼**，HTML 裡「休市」只出現 5 次、沒有表格。這一節是去看它載入的 js。
-     ✓ 12,007 bytes｜中文 684 字｜<tr> 2 個
+     ✓ 11,069 bytes｜中文 684 字｜<tr> 2 個
      載入的 js 11 支：['/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js', '/rsrc/js/main.js', '/rsrc/asset/js/global.js', 'https://www.googletagmanager.com/gtag/js?id=G-35HCQ5YL5Z']
      頁面字串裡的 /www/ 路徑 0 個：[]
      ★ 這一頁**看得見的字**（506 字，全部印出來）：
@@ -114,7 +114,7 @@
        心申請上櫃公司 回首頁 常見問題 聯絡我們 相關網站 使用條款 隱私權保護說明 個人資料管理政策聲明 資訊安全政策 營運持續政策 FB粉絲頁 IG YouTube Linkedin 證券櫃檯買賣中心 版權所有©1994- 2024 10084台北市中正區羅斯福路二段100號15樓 總機:(02)2369-9555 投資
        人服務及投資詐騙檢舉專線:(02)2796-3788
      頁面裡的連結 42 個：['//fonts.googleapis.com', '//fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&family=Noto+Serif+TC:wght@600;700&display=swap', '//fonts.gstatic.com', '/ja-jp/about/publication/overview.html', '/rsrc/', '/storage/publish/others/04000001個人資料管理政策聲明.pdf', '/storage/publish/others/營運持續政策.pdf', '/storage/publish/others/資通安全政策及內涵.pdf', '/zh-tw/', '/zh-tw/about/company/contact/contact.html', '/zh-tw/about/company/faq.html', '/zh-tw/announce/market/holiday.html', '/zh-tw/esb/trading/info/stock-pricing.html', '/zh-tw/gtsm_disclaimer.html', '/zh-tw/index.html', '/zh-tw/indices/stock-index/industrial/inxh.html', '/zh-tw/mainboard/applying/status/company.html', '/zh-tw/mainboard/listed/month/fundamentals.html', '/zh-tw/mainboard/trading/info/daily-pe.html', '/zh-tw/mainboard/trading/info/stock-pricing.html']
-     ⑥ 頁面自己的 inline <script>：**3 段**（共 2,234 字）
+     ⑥ 頁面自己的 inline <script>：**2 段**（共 1,313 字）
         ── 第 1 段（130 字）
            function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
         ── 第 2 段（1,183 字）
@@ -126,13 +126,6 @@
            >]*>/gs,"").replace(/ class="[^"]+"/gs,"").replace(/ nowrap/gs,"").replace(/^ +/gm,""),delete e.data.html,e.tables=[{title:a,fields:l,data:t}]}tables.init({patt
            ern:API_PATTERN,action:"bulletin/tradingDate",autoLoad:!0,autoChange:!0,beforeRender:convertHtmlTableToJson,afterRender:(e,t,a)=>{$("#tables-content .rwd-table 
            tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
-        ── 第 3 段（921 字）
-           (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-           params={r:'a3f0164bcc615bc0',t:'MTc5MDA2NzI4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
-           ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
-           1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
-           !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
-           document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
      ⑦ `data-*` 屬性：**3 種**
         data-format = 'Y'
         data-initial = ''
@@ -166,10 +159,10 @@
 
      ⚠⚠ 下面這一組**是我猜的路徑**（依據：櫃買新站端點的命名慣例）。
        ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，⛔ 而且不論結果如何，猜的網址**不會**被寫成結論。
-     ? announce/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
-     ? announce/market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
-     ? bulletin/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
-     ? market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ? announce/holiday?response=json：9,954 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ? announce/market/holiday?response=json：9,954 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ? bulletin/holiday?response=json：9,954 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ? market/holiday?response=json：9,954 bytes｜不是 JSON（JSONDecodeError）｜列數 0
 
 [4] 候選 C：TWSE 開休市行事曆——**它說的「市場」包不包含上櫃？**
      ⛔ 這一節不是去拿日曆（那支已經通了），是去問一句話：
