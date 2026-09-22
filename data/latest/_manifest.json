@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-22T00:16:09+08:00",
-  "target_trading_day": "2026-09-21",
+  "generated_at": "2026-09-22T19:12:13+08:00",
+  "target_trading_day": "2026-09-22",
   "stocks": {
     "7879": {
       "extra": {
@@ -25,12 +25,12 @@
       },
       "fs_types_seen": 13,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
       "inst_date_max": "2026-09-18",
       "history": {
         "price": {
-          "total": 159,
-          "added": 0,
+          "total": 160,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -49,10 +49,10 @@
     "8289": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -62,7 +62,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -81,17 +81,17 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
+          "total": 175,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -102,10 +102,10 @@
     "2609": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -115,7 +115,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -134,17 +134,17 @@
       },
       "fs_types_seen": 17,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
+          "total": 175,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -155,10 +155,10 @@
     "6209": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -168,7 +168,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -187,17 +187,17 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
+          "total": 175,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 1
@@ -208,10 +208,10 @@
     "3017": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -221,7 +221,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -240,18 +240,18 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
-          "changed": 1
+          "total": 175,
+          "added": 1,
+          "changed": null
         },
         "dividend_rows": 2
       },
@@ -261,10 +261,10 @@
     "3406": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -274,7 +274,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -293,17 +293,17 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
+          "total": 175,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -314,10 +314,10 @@
     "3661": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -327,7 +327,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -346,17 +346,17 @@
       },
       "fs_types_seen": 16,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
+          "total": 175,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 2
@@ -367,10 +367,10 @@
     "3234": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -380,7 +380,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -399,17 +399,17 @@
       },
       "fs_types_seen": 18,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
+          "total": 175,
+          "added": 1,
           "changed": null
         },
         "dividend_rows": 1
@@ -420,10 +420,10 @@
     "3008": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -433,7 +433,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -452,18 +452,18 @@
       },
       "fs_types_seen": 18,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
-          "changed": 1
+          "total": 175,
+          "added": 1,
+          "changed": null
         },
         "dividend_rows": 4
       },
@@ -473,10 +473,10 @@
     "3443": {
       "extra": {
         "per": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null,
-          "date_max": "2026-09-21"
+          "date_max": "2026-09-22"
         },
         "revenue": {
           "total": 33,
@@ -486,7 +486,7 @@
         },
         "margin": {
           "total": 174,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-21"
         },
@@ -505,18 +505,18 @@
       },
       "fs_types_seen": 14,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-09-21",
-      "inst_date_max": "2026-09-21",
+      "price_date_max": "2026-09-22",
+      "inst_date_max": "2026-09-22",
       "history": {
         "price": {
-          "total": 417,
-          "added": 0,
+          "total": 418,
+          "added": 1,
           "changed": null
         },
         "inst": {
-          "total": 174,
-          "added": 0,
-          "changed": 1
+          "total": 175,
+          "added": 1,
+          "changed": null
         },
         "dividend_rows": 2
       },
@@ -534,54 +534,54 @@
     "errors": null,
     "csv": {
       "index": {
-        "total": 9426,
-        "added": 0,
+        "total": 9427,
+        "added": 1,
         "changed": null
       },
       "breadth": {
-        "total": 15,
-        "added": 0,
+        "total": 16,
+        "added": 1,
         "changed": null
       },
       "amount": {
-        "total": 15,
-        "added": 0,
+        "total": 16,
+        "added": 1,
         "changed": null
       },
       "inst": {
-        "total": 15,
-        "added": 0,
-        "changed": 1
+        "total": 16,
+        "added": 1,
+        "changed": null
       }
     },
     "parse_errors": null
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
   "version": "v8.0 2026-09-04",
-  "calendar_days": 417,
+  "calendar_days": 418,
   "universe": {
     "counts": {
-      "twse": 1380,
-      "tpex": 1016,
-      "emerging": 364,
+      "twse": 1381,
+      "tpex": 1017,
+      "emerging": 361,
       "warrants_excluded": 0,
-      "total": 2760,
+      "total": 2759,
       "by_kind": {
         "etf": 358,
         "other": 28,
-        "stock": 2336,
+        "stock": 2335,
         "special": 28,
         "dr": 10
       }
     },
     "errors": null,
-    "rows_written": 2760,
-    "coverage_days": 12,
+    "rows_written": 2759,
+    "coverage_days": 13,
     "stocks_meta": {
       "total": 3032,
       "added_today": 0,
       "purged_warrants": null
     }
   },
-  "history_rows_changed": 4
+  "history_rows_changed": null
 }

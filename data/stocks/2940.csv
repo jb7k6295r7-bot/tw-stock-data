@@ -11,3 +11,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-09-17,2940,歐都納,emerging,,,,,0,,,,,,無成交,,0
 2026-09-18,2940,歐都納,emerging,,,,,0,,,,,,無成交,,0
 2026-09-21,2940,歐都納,emerging,,,,,0,,,,,,無成交,,0
+2026-09-22,2940,歐都納,emerging,,24,23.9,23.95,6000,143700,0.05,,,,均價/額推算,24,1
