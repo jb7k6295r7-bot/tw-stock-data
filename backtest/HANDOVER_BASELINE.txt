@@ -3,6 +3,12 @@
 # 產生於 2026-09-22T15:50:20Z UTC；⭐ 台北時間見 PROGRESS
 deliverable_commit 91a4eb0bab82996d279d653cfafd4a7e69b08c06
 branch claude/stock-analysis-backtest-iv9xji
+env_python 3.11.15
+env_numpy 2.4.6
+env_pandas 3.0.5
+# ⭐ 交件方跑 P16 用 --procs 8（⚠ 而那台只有 4 核 ⇒ 是超訂閱）
+# ⇒ ⭐ procs 對輸出的影響【已實測】，結論見 HANDOVER.md
+procs_used 8
 52be15257072d6738d19b3610d4a0d12527bbf5e25b58b14f2865289c744472f tracked data/meta/calendar_twse.csv
 d09b9e3cfa5beeace08253d5f390303b0fc91f26438436a9bbc1e0de2312c580 tracked data/meta/stocks.csv
 76db7937a3b5858acb8690d3d10960e537f2989cbb5a41c40a9643b55f8662bc tracked backtest/resultsp12/cells.csv

@@ -19,7 +19,16 @@ note(){ printf '%s\n' "$*"; }
 bad(){ FAIL=$((FAIL+1)); printf '⛔ %s\n' "$*"; }
 
 note "════ 〇、新 session 進來第一件事（CLAUDE.md 六點五）════"
-git config core.hooksPath .githooks && note "✅ core.hooksPath ＝ .githooks（⛔ 少了這行，壞掉的那一刻不會有人叫）"
+# ⛔⛔ 2026-09-22 訂正（接手方指出）：這裡本來直接 `git config core.hooksPath .githooks`
+#   ⇒ ⚠ 而檔頭寫著「這支【不改任何東西】」⇒ ⭐ 那是一句【自己打自己】的話
+#   ⇒ ✅ 改成【只檢查、不設定】：要不要設定是跑的人的決定，⛔ 不是驗收腳本偷偷做掉
+HP=$(git config --get core.hooksPath || true)
+if [ "$HP" = ".githooks" ]; then note "✅ core.hooksPath ＝ .githooks"
+else
+  bad "core.hooksPath ＝ '${HP:-(未設)}' ⇒ ⛔ pre-commit 不會跑"
+  note "   ⇒ ⭐ 請自己執行一次：git config core.hooksPath .githooks"
+  note "   ⇒ ⚠ 少了它，壞掉的那一刻不會有人叫（CLAUDE.md 六點五）"
+fi
 
 note ""
 note "════ 〇之二、⛔⛔ 輸入盤點（⭐ 2026-09-22 補：少了這一段，紅燈的【診斷會是錯的】）════"
@@ -56,6 +65,36 @@ if [ "$INPUT_DRIFT" -gt 0 ]; then
   note "   ⇒ ⭐ 那麼第二段【對不上是預期的】，⛔ 它不代表引擎或環境有問題"
   note "   ⇒ ⚠ 而【對得上】也不能讀成「資料對齊」—— 那只是這幾天的差異剛好不影響窗內"
   note "   ⇒ ⏳ 這種情形要先定【以哪一份輸入為準】，⛔ 不可以直接讀這道檢查的顏色"
+fi
+
+note ""
+note "════ 〇之三、⛔⛔ 執行環境（⭐ 2026-09-22 補：接手方指出，⛔ 本線原本一格都沒釘）════"
+# ⚠ 逐位元比對對 Python／numpy／pandas 版本極度敏感 ⇒ ⛔ 不釘住，紅燈的歸因就是錯的
+ENV_DRIFT=0
+if [ -f "$BASE" ]; then
+  while read -r k want; do
+    case "$k" in env_*) ;; *) continue;; esac
+    got=$(python3 - "$k" <<'PYV' 2>/dev/null || echo "(取不到)"
+import sys
+k=sys.argv[1]
+if k=="env_python": print(sys.version.split()[0])
+elif k=="env_numpy": import numpy; print(numpy.__version__)
+elif k=="env_pandas": import pandas; print(pandas.__version__)
+PYV
+)
+    printf '  %-16s ' "${k#env_}"
+    if [ "$got" = "$want" ]; then echo "$got　✅ 與交件相同"
+    else echo "$got　⚠ 交件是 $want"; ENV_DRIFT=$((ENV_DRIFT+1)); fi
+  done < "$BASE"
+fi
+note "  procs            本趟 ${PROCS:-8}（⭐ 交件用 8；⚠ 已實測 procs 不影響輸出，見 HANDOVER.md）"
+if [ "$ENV_DRIFT" -gt 0 ]; then
+  note ""
+  note "⚠ 有 $ENV_DRIFT 項版本與交件不同 ⇒ ⭐ 那麼第二段的結果要這樣讀："
+  note "   ・版本不同【而且】逐位元相同 ⇒ ✅✅ 比交件方知道的更強（⭐ 表示結果不靠特定版本）"
+  note "   ・版本不同【而且】對不上　　 ⇒ ⛔ 本趟【分不出】是引擎不同還是版本不同"
+  note "     ⇒ ⏳ 要判引擎有沒有問題，必須先把版本裝成與交件相同再跑一次"
+  note "   ⇒ ⛔ 在那之前，⛔ 不可以把紅燈讀成「接手方的環境壞了」"
 fi
 
 note ""
