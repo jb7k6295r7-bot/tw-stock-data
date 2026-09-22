@@ -11,6 +11,7 @@ import tempfile
 import zipfile
 
 import crypto as C
+import runlog
 
 PASS = FAIL = 0
 
@@ -363,6 +364,75 @@ def main():
         ck("⭐⭐ 既有的 2017-08-17 那一列 source 被回填成 binance（⛔ 不是空白）",
            legacy_days.get(("2017-08-17",), [None] * 12)[-1] == "binance",
            str(legacy_days.get(("2017-08-17",))))
+
+        # ⭐⭐ earliest_landed_date：踩過的坑是拿「月初」（2017-08-01）
+        # 當 Bitstamp 回補終點，⛔ 而真正第一筆是 2017-08-17 ⇒ 中間 16 天
+        # 兩邊都沒有。這支要從既有檔案量出**真正**最早那一天。
+        ck("⭐ 沒有這個檔／沒有資料 ⇒ 回 None",
+           C.earliest_landed_date("NOSUCHSYMBOL", root=root) is None)
+        ck("⭐⭐ LEGACY 只有一列 2017-08-17 ⇒ 回那一天本身（⛔ 不是月初）",
+           C.earliest_landed_date("LEGACY", root=root) == _dt2.date(2017, 8, 17),
+           str(C.earliest_landed_date("LEGACY", root=root)))
+        ck("⭐⭐⭐ FOO 有 2013-01-01~01-04（Bitstamp）＋沒有更早的 ⇒ 回 01-01，"
+           "⛔ 不是隨便一列",
+           C.earliest_landed_date("FOO", root=root) == _dt2.date(2013, 1, 1),
+           str(C.earliest_landed_date("FOO", root=root)))
+
+    # ── ⑪ main()「bitstamp-backfill」呼叫點：⛔ 只測 earliest_landed_date()
+    #    本身抓不到「main() 忘了呼叫它」——第三個陷阱那一族（測了判準、
+    #    沒測呼叫點）。這裡真的跑 main()，⛔ 不是比原始碼字串。
+    print("\n" + "=" * 60)
+    print("crypto.py：main() bitstamp-backfill 真的呼叫 earliest_landed_date")
+    print("=" * 60)
+    with tempfile.TemporaryDirectory() as tmp:
+        old_meta, old_crypto_dir = C.META, C.CRYPTO_DIR
+        old_argv, old_rl_path, old_get = sys.argv, runlog.PATH, C._get
+        C.META = os.path.join(tmp, "meta")
+        C.CRYPTO_DIR = os.path.join(tmp, "crypto")
+        os.makedirs(C.META, exist_ok=True)
+        os.makedirs(C.CRYPTO_DIR, exist_ok=True)
+        runlog.PATH = os.path.join(tmp, "_last_run.md")
+
+        # 現行名單要有 BTC，main() 才會走到 bitstamp-backfill 那個分支的迴圈
+        C.write_universe([{"symbol": "BTC", "name": "Bitcoin",
+                           "market_cap_rank": 1}],
+                          today=_dt2.date(2026, 9, 20))
+
+        # 既有 BTC.csv 模擬 main 上真的資料：最早一列是 2017-08-17
+        # （⛔ 不是月初 2017-08-01）——這正是那個 16 天洞的邊界。
+        btc_path = C.symbol_csv_path("BTC")
+        with open(btc_path, "w", encoding="utf-8", newline="") as f:
+            f.write(",".join(C.DAY_HEADER) + "\n")
+            f.write("2017-08-17,4261.48,4485.39,4200.74,4285.08,795.15,"
+                    "3454770.05,3427,616.25,2678216.40,2026-09-20,binance\n")
+
+        def fake_get_main(url, headers=None):
+            start_ts = int(url.split("start=")[1].split("&")[0])
+            start_d = _dt2.datetime.utcfromtimestamp(start_ts).date()
+            dates = [start_d + _dt2.timedelta(days=i) for i in range(C.BITSTAMP_LIMIT)]
+            return 200, _json2.dumps(_mk_ohlc(dates)).encode()
+
+        C._get = fake_get_main
+        sys.argv = ["crypto.py", "--mode", "bitstamp-backfill"]
+        try:
+            rc = C.main()
+        finally:
+            C.META, C.CRYPTO_DIR = old_meta, old_crypto_dir
+            sys.argv, runlog.PATH, C._get = old_argv, old_rl_path, old_get
+
+        ck("⭐ main() 跑完回 0", rc == 0, str(rc))
+        btc_days = C._load(btc_path, C.DAY_HEADER, C.day_key)
+        gap = [f"2017-08-{d:02d}" for d in range(1, 17)]
+        ck("⭐⭐⭐ 16 天洞（2017-08-01～08-16）全部補上，"
+           "⛔ 不是拿月初（08-01）當終點漏掉這幾天",
+           all((g,) in btc_days for g in gap),
+           str(sorted(btc_days)[:20]))
+        ck("⭐⭐ 既有的 2017-08-17 那一列沒有被動到（source 仍是 binance）",
+           btc_days.get(("2017-08-17",), [None] * 12)[-1] == "binance",
+           str(btc_days.get(("2017-08-17",))))
+        ck("★ 新補的那幾天 source 是 bitstamp",
+           all(btc_days[(g,)][-1] == "bitstamp" for g in gap
+               if (g,) in btc_days))
 
     print(f"\n[selftest] 通過 {PASS}｜失敗 {FAIL}")
     return 1 if FAIL else 0
