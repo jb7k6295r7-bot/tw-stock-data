@@ -429,6 +429,23 @@ def parse_bitstamp_ohlc(body):
     return out
 
 
+def earliest_landed_date(symbol, root=None):
+    """既有日檔裡最早的那一天 → `datetime.date`，⛔ 沒有資料就回 `None`。
+
+    ⭐⭐ 2026-09-22 實測踩到的坑：`bitstamp-backfill` 第一版用
+    `datetime.date(EARLIEST_YEAR, EARLIEST_MONTH, 1)`（2017-08-**01**）
+    當 Bitstamp 回補的終點，⚠ 而 Binance 那個月的月檔**不是從 1 號開始**
+    ——BTC 真正第一筆資料是 2017-08-**17**。⇒ 中間 16 天（08-01～08-16）
+    兩邊都沒有，變成一個**安靜的洞**（不會報錯，兩個來源各自看都正常）。
+    ⇒ ⭐ 正確的終點是**既有檔案裡真正最早那一天**，不是月份的第一天
+    ——這支就是為了算出那個真正的邊界。
+    """
+    days = _load(symbol_csv_path(symbol, root), DAY_HEADER, day_key)
+    if not days:
+        return None
+    return min(datetime.date.fromisoformat(k[0]) for k in days)
+
+
 def land_bitstamp_history(symbol, end_date, today=None, root=None,
                            start_date=datetime.date(2013, 1, 1)):
     """回補 `[start_date, end_date)` 這一段的 Bitstamp 日K——⛔ **不含** `end_date`
@@ -629,7 +646,10 @@ def main():
         totals = {"ok": 0, "fail": 0, "new_rows": 0}
         detail = []
         for sym in BITSTAMP_PAIRS:
-            end = datetime.date(EARLIEST_YEAR, EARLIEST_MONTH, 1)
+            # ⛔ 終點是**既有檔案裡真正最早那一天**（見 earliest_landed_date
+            # 檔頭那段踩過的坑），不是月份的第一天；還沒有任何資料時
+            # （理論上不會發生——backfill／daily 都跑過了）才退回月初。
+            end = earliest_landed_date(sym) or datetime.date(EARLIEST_YEAR, EARLIEST_MONTH, 1)
             r = land_bitstamp_history(sym, end, today=today)
             for k in totals:
                 totals[k] += r[k]
