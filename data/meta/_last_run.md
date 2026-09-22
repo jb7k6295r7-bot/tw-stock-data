@@ -1128,14 +1128,14 @@
 
 ## crypto:bitstamp-backfill　✓ 正常
 
-最後執行：2026-09-22T17:29:51+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 35710529200
+最後執行：2026-09-22T17:36:31+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 35711204840
 
 - **這一趟**：Bitstamp 補 2013~2017 歷史（只驗證過的幣種：['BTC']）
-- **逐幣**：BTC：+0 列（成功 0／失敗 0）
-- **合計**：新增 0 列｜成功 0｜失敗 0
+- **逐幣**：BTC：+16 列（成功 2／失敗 0）
+- **合計**：新增 16 列｜成功 2｜失敗 0
 
 檢查：
-- ok　本趟不是全失敗　（成功 0｜失敗 0）
+- ok　本趟不是全失敗　（成功 2｜失敗 0）
 
 ## crypto:daily　✓ 正常
 
