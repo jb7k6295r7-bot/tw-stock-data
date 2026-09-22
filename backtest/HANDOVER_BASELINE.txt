@@ -1,0 +1,10 @@
+# ⭐ PREREGP16 交件的【輸入基準線】—— handover_check.sh 用它分辨
+#   ⛔ 紅燈是【引擎/環境不同】還是【輸入不同】（⚠ 兩者的處置完全相反）
+# 產生於 2026-09-22T15:50:20Z UTC；⭐ 台北時間見 PROGRESS
+deliverable_commit 91a4eb0bab82996d279d653cfafd4a7e69b08c06
+branch claude/stock-analysis-backtest-iv9xji
+52be15257072d6738d19b3610d4a0d12527bbf5e25b58b14f2865289c744472f tracked data/meta/calendar_twse.csv
+d09b9e3cfa5beeace08253d5f390303b0fc91f26438436a9bbc1e0de2312c580 tracked data/meta/stocks.csv
+76db7937a3b5858acb8690d3d10960e537f2989cbb5a41c40a9643b55f8662bc tracked backtest/resultsp12/cells.csv
+9fa03e9f291c5f26399eb6382849ad85f9411581bf5b7f8da1f17652f92348a9 tracked backtest/resultsp15/events.csv
+fc1ed89d202aeb1d0cffe885e358390f3d1048d2a17d30555ce5feefc59fc39e UNTRACKED backtest/resultsp4/panel.csv.gz
