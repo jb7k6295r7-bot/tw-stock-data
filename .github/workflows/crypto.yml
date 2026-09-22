@@ -6,10 +6,13 @@ name: 虛擬貨幣（前 15 大市值）日K 收集
 # ⛔ 這個開發容器對外部金融站台一律 403（我方閘道擋的，不是對方擋，
 #   跟 CLAUDE.md 第六點記的 TW 交易所同一個問題）⇒ 這支只能在 Actions 上跑。
 #
-# 三個模式：
-#   universe  重新排前 15 大市值（週期性；名單會隨市值排名變動）
-#   backfill  回補歷史月檔（第一次跑、或有新幣種加入時用；冪等，續跑安全）
-#   daily     補當月與最近幾天的缺口（每天排程用，量很小）
+# 四個模式：
+#   universe          重新排前 15 大市值（週期性；名單會隨市值排名變動）
+#   backfill          回補歷史月檔（第一次跑、或有新幣種加入時用；冪等，續跑安全）
+#   daily             補當月與最近幾天的缺口（每天排程用，量很小）
+#   bitstamp-backfill 補 Binance 開始之前（2013~2017）的歷史，⛔ 一次性、
+#                     不掛進每天排程（過去的資料不會變）——只接了 BTC，
+#                     見 crypto.py 的 BITSTAMP_PAIRS。
 #
 # ⛔ `data/crypto/` 與 `data/meta/crypto_universe.csv`／
 #   `_crypto_months_done.csv` 只有這支 workflow 會寫——跟 CLAUDE.md
@@ -20,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口"
+        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）"
         type: choice
-        options: [universe, backfill, daily]
+        options: [universe, backfill, daily, bitstamp-backfill]
         default: daily
       reset_months_done:
         description: "backfill 專用，⛔ 平常不要勾：續跑台帳被污染時才用（例如 URL bug 讓整批誤記成官方沒有）"
