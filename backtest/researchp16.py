@@ -691,6 +691,8 @@ def report(res: dict) -> dict:
     for nm, h in hold.items():
         A(f"| {nm} | {h['平均']:.1f} | {h['中位']:.0f} | {h['p10']:.0f} | {h['p90']:.0f} | {h['最大']:.0f} | {h['筆數']:,} |")
     A("")
+    A(f"⚠【逐筆數】那一欄的母體不同：E0／E1／分解三臂 ＝ {reps} 趟；"
+      f"R1 ＝ {reps}×{R} ＝ {reps * R:,} 趟 ⇒ ⛔ 那一欄不可橫向比大小")
     A(f"⚠ 先驗② 押【30~60 根】⇒ 實測 E1 中位 **{hold['E1']['中位']:.0f} 根**"
       f" ⇒ {'⛔ 沒押中（比押的更短）' if hold['E1']['中位'] < 30 else '✅ 押中'}")
     A(f"⇒ ⛔ 登錄同一條寫著「若它幾乎沒降（>100）⇒ 先查實作」——本趟是【遠低於】那個方向，⛔ 不觸發該條。")
@@ -942,9 +944,13 @@ def report(res: dict) -> dict:
     A("|---|---|---|---|")
     c1 = float(e1["cagr"].median())
     c0 = float(e0["cagr"].median())
-    A(f"| ① | 判定格沒通過，且是【年化那一腳】沒過（年化降 4~10pp、回落改善 3~8pp） | "
-      f"判定格 {'通過' if ok else '沒通過'}；年化 {(c1 - c0) * 100:+.2f}pp、回落改善 {imp_e1.median() * 100:+.2f}pp | "
-      f"{'✅ 方向押中' if not ok else '⛔ 沒押中'} |")
+    dc, dm = (c1 - c0) * 100, imp_e1.median() * 100
+    A(f"| ①a | 判定格【沒通過】，而且是【年化那一腳】沒過 | 判定格 {'通過' if ok else '沒通過'}"
+      f"；年化腳 {'沒過' if c1 < BENCH_CAGR else '過'} | {'✅ 押中' if not ok and c1 < BENCH_CAGR else '⛔ 沒押中'} |")
+    A(f"| ①b | 年化【降 4~10pp】 | {dc:+.2f}pp | "
+      f"{'✅ 押中' if -10 <= dc <= -4 else '⚠ 方向對、幅度遠在帶外' if dc < -10 else '⛔ 沒押中'} |")
+    A(f"| ①c | 回落【改善 3~8pp】 | {dm:+.2f}pp | "
+      f"{'✅ 押中' if 3 <= dm <= 8 else '⛔⛔ 方向就反了（回落不是變淺，是變深）' if dm < 0 else '⛔ 沒押中'} |")
     A(f"| ② | 平均持有 30~60 根 | 中位 {hold['E1']['中位']:.0f} 根 | "
       f"{'✅' if 30 <= hold['E1']['中位'] <= 60 else '⛔ 沒押中'} |")
     A(f"| ③ | (i) 那一道【含 0】 | CI {'不含' if ci['detectable'] else '含'} 0 | "
