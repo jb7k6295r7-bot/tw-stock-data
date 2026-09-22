@@ -1463,6 +1463,185 @@ def t_p15():
     check("half_up=True" in src and "銀行家捨入" in src,
           "⭐ round 的兩種讀法【兩種都算】並比擋月清單（⛔ 不替登錄挑一個）")
 
+def t_p16():
+    """PREREGP16：分量歸因／被砍掉那一段／安慰劑兩欄／四個出口的措辭／常數與呼叫點。"""
+    import os as _os
+    import numpy as _np
+    import pandas as _pd
+    from . import researchp16 as P16
+
+    # ① §一 的兩組手算 fixture 全綠（⛔ 它們自己會在對不上時 SystemExit）
+    try:
+        cf, xf = P16.cond_fixture(), P16.exit_fixture()
+        ok = len(cf) >= 4 and len(xf) >= 6
+    except SystemExit as e:
+        cf, xf, ok = [], [], False; print("   ", e)
+    check(ok, f"§一1-2 條件 {len(cf)} 格／§一1-3 出場 {len(xf)} 格 手算 fixture 全綠")
+
+    # ⭐ 有預設值的參數，一定要有一條【不傳它】的斷言（CLAUDE.md 七③ 第二次踩過）
+    raw0 = _pd.DataFrame({"rev_hi24": [100, 100, 0], "ma60_up": [100, 100, 100], "ma_stack": [0, 0, 0]})
+    check(list(P16.cond_holds(raw0)) == [True, True, False],
+          "⭐ cond_holds 走【預設值】(only 不傳) 那一條路：S ＝ rev_hi24 ∧ ma60_up ∧ ¬ma_stack")
+    check(list(P16.cond_holds(raw0, only="rev_hi24")) == [True, True, False]
+          and list(P16.cond_holds(raw0, only="ma_stack")) == [True, True, True],
+          "⭐ 單分量版：只看那一個分量（⛔ 其餘分量不參與）")
+
+    # ② §四⑥ comp_flags：⭐ 六格手算，含 NaN 那一格與 H120 那一格
+    raws = {"A": _pd.DataFrame({"rev_hi24": [100, 0, 100, 100, _np.nan, 100],
+                                "ma60_up":  [100, 100, 0, 100, 100, 100],
+                                "ma_stack": [0, 0, 0, 100, 0, 0]})}
+    det = _pd.DataFrame([
+        {"sid": "A", "judge_pos": 1, "reason": "cond"},          # 只有 rev_hi24 轉 False
+        {"sid": "A", "judge_pos": 2, "reason": "cond"},          # 只有 ma60_up 轉 False
+        {"sid": "A", "judge_pos": 3, "reason": "cond"},          # 只有 ma_stack 轉 True
+        {"sid": "A", "judge_pos": 4, "reason": "cond"},          # ⚠ NaN ⇒ 依進場側同源語意算 False
+        {"sid": "A", "judge_pos": 3, "reason": "H120"},          # ⛔ 不是條件出場 ⇒ 一格都不可標
+        {"sid": "A", "judge_pos": -1, "reason": "cap_priority"}, # ⛔ 沒有判斷日
+    ])
+    fl = P16.comp_flags(det, raws)
+    want = [(True, False, False), (False, True, False), (False, False, True),
+            (True, False, False), (False, False, False), (False, False, False)]
+    got = [tuple(bool(fl.iloc[i][c]) for c in ("rev_hi24", "ma60_up", "ma_stack")) for i in range(6)]
+    check(got == want, f"§四⑥ 分量歸因 6 格逐格相同（含 NaN 格與 H120 格）｜got {got}")
+    check(int(fl.sum().sum()) == 4 and int((fl.sum(axis=1) >= 2).sum()) == 0,
+          "⭐ 可重複計數的欄位在這組 fixture 上沒有重複 ⇒ ⛔ 它不是靠「永遠只標一個」才對")
+
+    # ⭐〈一百一十三〉：三種會被寫錯的實作，逐一證明 fixture 分得出來
+    src16 = open(_os.path.join(_os.path.dirname(P16.__file__), "researchp16.py"), encoding="utf-8").read()
+    mut_c = {
+        "ma_stack 方向寫反": lambda r: (not (r["rev_hi24"] == 100), not (r["ma60_up"] == 100), r["ma_stack"] == 0),
+        "漏掉 reason 守門": lambda r: (not (r["rev_hi24"] == 100), not (r["ma60_up"] == 100), not (r["ma_stack"] == 0)),
+        "NaN 當成立": lambda r: (r["rev_hi24"] == 0, not (r["ma60_up"] == 100), not (r["ma_stack"] == 0)),
+    }
+    reds = []
+    for nm, f in mut_c.items():
+        g = []
+        for i, r in enumerate(det.itertuples()):
+            row = raws[r.sid].iloc[int(r.judge_pos)] if int(r.judge_pos) >= 0 else None
+            if nm != "漏掉 reason 守門" and (r.reason != "cond" or row is None):
+                g.append((False, False, False))
+            elif row is None:
+                g.append((False, False, False))
+            else:
+                g.append(tuple(bool(x) for x in f(row)))
+        reds.append((nm, g != want))
+    check(all(r for _, r in reds), f"⭐ comp_flags 的三種突變【全部紅】：{reds}")
+
+    # ③ §四④ forgone：出場日 → 原 H120 期滿日 的報酬（⭐ 手算，⛔ 含「沒被提早釋放」那一列）
+    cl = {"A": _np.array([1., 2., 10., 12., 15.]), "B": _np.array([1., 1., 1., 1., 20.])}
+    op = {"A": _np.array([8., 8., 8., 8., 8.]), "B": _np.array([100., 100., 100., 100., 100.])}
+    d2 = _pd.DataFrame([{"sid": "A", "entry_pos": 0, "xpos": 2, "xpos_E0": 4},
+                        {"sid": "B", "entry_pos": 0, "xpos": 4, "xpos_E0": 4}])   # ⛔ 這一列沒提早 ⇒ 不入母體
+    fg = P16.forgone(d2, cl, op)
+    check(len(fg) == 1 and abs(float(fg["fwd"].iloc[0]) - 0.5) < 1e-12,
+          f"§四④ fwd ＝ close[期滿]/close[出場] − 1 ＝ 15/10−1 ＝ +50%（got {float(fg['fwd'].iloc[0]):.12f}）")
+    check(abs(float(fg["g_E0"].iloc[0]) - 0.875) < 1e-12 and bool(fg["g_E0"].iloc[0] > 0.50),
+          "⭐ g_E0 ＝ close[期滿]/open[進場] − 1 ＝ 15/8−1 ＝ +87.5% ⇒ 進 stop_cut_right_tail 的母體")
+    # ⭐ 突變：拿 open 當出場價／把沒提早那一列也算進去 ⇒ 兩者都要紅
+    check(abs((15. / 8. - 1.) - 0.5) > 1e-9, "⭐ 突變①「出場價誤用 open」在這組 fixture 上【值會變】")
+    check(len(d2) != len(fg), "⭐ 突變②「不排除 xpos == xpos_E0」在這組 fixture 上【筆數會變】(2 ≠ 1)")
+
+    # ④ §十一①／§十二② 安慰劑兩欄：⭐ 造一組【兩欄答案不同】的 fixture
+    #    E1 的 t* ＝ 10、R1 的 t* ＝ 5 ⇒ 共同區間 ＝ [0,5)
+    #    ⇒ 把 E1 在 index 7 動一格：共同區間看不見、E1 自己那一段看得見
+    h = lambda a: __import__("hashlib").sha256(_np.asarray(a, float).tobytes()).hexdigest()
+    base = _np.arange(20, dtype=float) + 1.0
+    eq0 = {0: base.copy()}
+    bad1 = base.copy(); bad1[7] += 1e-9
+    eq1 = {0: bad1}
+    r1 = _pd.DataFrame([{"r": 0, "rep": 0, "first_exit": 5, "own_n": 5,
+                         "own_sha": h(base[:5]), "pref": base[:10].copy()}])
+    rows, pb = P16.placebo_common(eq0, eq1, {0: 10}, r1, 0)
+    check(pb["共同區間相同"] == 1 and pb["各臂對E0相同"] == 0 and rows[0]["共同區間日數"] == 5,
+          f"⭐⭐ 兩欄【答案不同】：共同區間 ✅ 而各臂對 E0 ⛔（{rows[0]}）"
+          " ⇒ 這正是 §十二② 說的『只報一欄就寫三臂相同』會漏掉的那一段")
+    # ⇒ ⛔ 反向：R1 在共同區間內分岔 ⇒ 共同區間那一欄必須紅
+    r1b = r1.copy(); pr = base[:10].copy(); pr[3] += 1e-9; r1b.at[0, "pref"] = pr
+    _, pbb = P16.placebo_common(eq0, {0: base.copy()}, {0: 10}, r1b, 0)
+    check(pbb["共同區間相同"] == 0,
+          "⭐ R1 在【共同區間內】差 1 ulp ⇒ 共同區間那一欄紅（⛔ 證明 R1 真的有被比到）")
+    # ⇒ 全同 ⇒ 兩欄都綠（⛔ 否則上面兩條可能只是「永遠紅」）
+    _, pbg = P16.placebo_common(eq0, {0: base.copy()}, {0: 10}, r1, 0)
+    check(pbg["共同區間相同"] == 1 and pbg["各臂對E0相同"] == 1 and pbg["區間過短"] == 0,
+          "⭐ 三臂完全相同 ⇒ 兩欄都綠（⛔ 零容差不是「永遠紅」）")
+    # ⇒ ⚠ 區間過短出口：共同區間 < 2 個交易日
+    _, pbs = P16.placebo_common(eq0, {0: base.copy()}, {0: 1}, r1, 0)
+    check(pbs["區間過短"] == 1 and pbs["共同區間相同"] == 0 and pbs["共同區間可驗"] == 0,
+          "⚠【區間過短】出口（共同區間 < 2 日）⇒ ⛔ 不算過也不算不過，並單獨計數")
+    # ⭐⭐ 而【各臂對 E0】那一欄【不被】共同區間的出口作廢（⛔ 否則會少報已經驗到的東西）
+    check(pbs["各臂對E0相同"] == 1 and pbs["各臂對E0可驗"] == 1 and pbs["各臂自己也過短"] == 0,
+          "⭐ 共同區間過短時，各臂【自己的】區間仍照驗（R1 own_n=5 ⇒ 驗得到且相同）")
+    _, pbz = P16.placebo_common(eq0, {0: base.copy()}, {0: 1},
+                                _pd.DataFrame([{"r": 0, "rep": 0, "first_exit": 1, "own_n": 1,
+                                                "own_sha": "x", "pref": base[:1].copy()}]), 0)
+    check(pbz["各臂自己也過短"] == 1 and pbz["各臂對E0可驗"] == 0 and pbz["各臂對E0相同"] == 0,
+          "⭐ 兩邊都過短 ⇒ 分母也是 0（⛔ 不可把「沒驗到」算成「驗過且相同」）")
+
+    # ⑤ §三(i) 的四個出口（⛔ 全部事前寫死）⇒ ⭐ 逐一走一次
+    ci_in = {"detectable": False, "diff_pp": -3.0}
+    ci_pos = {"detectable": True, "diff_pp": +3.0}
+    ci_neg = {"detectable": True, "diff_pp": -3.0}
+    o1 = P16.verdict_i(0.30, ci_pos)          # D 超門檻 ⇒ ⛔ 不論 CI 一律【本件分不開】
+    o2 = P16.verdict_i(0.10, ci_in)
+    o3 = P16.verdict_i(0.10, ci_pos)
+    o4 = P16.verdict_i(0.10, ci_neg)
+    check(o1[0] is False and "本件分不開" in o1[1] and "不宣告它沒帶" in o1[1],
+          "§十 4-3 出口：D > 20% ⇒【本件分不開】逐字（⛔ 且它排在讀 CI 之前）")
+    check(o2[0] is False and "持有時間變短" in o2[1] and "不可寫成條件出場有效" in o2[1],
+          "§三(i) 出口：CI 含 0 ⇒【改善來自持有時間變短本身】")
+    check(o3[0] is True and "明顯大於" in o3[1], "§三(i) 出口：CI 不含 0 且為正 ⇒ (i) 通過")
+    check(o4[0] is False and "登錄沒有列舉" in o4[1] and "請策略線裁" in o4[1],
+          "⭐ 第四個出口：CI 不含 0 但【方向相反】⇒ 登錄沒列舉 ⇒ ⛔ 回測線不自行補措辭")
+    check(P16.verdict_i(P16.D_GATE, ci_pos)[0] is True and P16.verdict_i(P16.D_GATE + 1e-9, ci_pos)[0] is False,
+          "⭐ D 閘門是【嚴格大於】20% 才改措辭（⛔ 剛好 20% 不改）")
+
+    # ⑥ §十一② 的三種措辭（⛔ 三種之外不可另寫）⇒ ⭐ 兩向、含一高一低
+    check("不可相加" in P16.overlap_verdict(0.7, 0.7) and "沒有外生依據的門檻" in P16.overlap_verdict(0.7, 0.7),
+          "§十一② 兩向都 ≥60% ⇒【大量重合・不可相加】＋ seq=4 要求的那一句逐字附上")
+    check(P16.overlap_verdict(0.1, 0.2) == "【兩件打的是不同的月份】", "§十一② 兩向都 <30%")
+    check(P16.overlap_verdict(0.9, 0.1) == "【重疊程度中等，本件不下判斷】"
+          and P16.overlap_verdict(0.5, 0.5) == "【重疊程度中等，本件不下判斷】",
+          "⭐ 一高一低 ⇒【中等】（⛔ 單向 90% 不可讀成大量重合）")
+
+    # ⑦ 〈一百二十三〉自檢：基準的數值精度必須足到【基準自己不通過那個判準】
+    check(P14.judge(P16.BENCH_CAGR, P16.BENCH_MDD, P16.BENCH_CAGR, P16.BENCH_MDD)[0] is False,
+          "⭐【未捨入基準】⇒ 0050 自己【不】通過自己的判準（〈一百一十一〉至少一腳嚴格）")
+    check(P14.judge(P16.BENCH_CAGR, P16.BENCH_MDD, 0.2402, -0.340)[0] is True,
+          "⛔【捨入基準】⇒ 0050 自己會【兩腳嚴格優於自己】⇒ ⭐ 這正是 seq=5 改成未捨入值的理由")
+    check(P14.judge(0.10, P16.BENCH_MDD, P16.BENCH_CAGR, P16.BENCH_MDD)[0] is False
+          and P14.judge(0.30, -0.20, P16.BENCH_CAGR, P16.BENCH_MDD)[0] is True,
+          "⭐ 判準本身在 P16 的兩個基準下會綠也會紅（⛔ 不是永遠紅）")
+    check("+24.02" in P14.judge(0.30, -0.20, P16.BENCH_CAGR, P16.BENCH_MDD)[1],
+          "⭐ 印出來的基準數字是【呼叫端傳的】那一組（⛔ 不是 P14 的模組常數）")
+
+    # ⑧ 常數釘死（⛔ 開跑前寫死的，一個都不可以在程式裡「挑」）
+    check((P16.REPS, P16.R_RANDOM, P16.SEED_R1) == (200, 30, 106000), "§一1-1／§二(甲)：200／30／106000")
+    check(P16.BENCH_CAGR == 0.24020209886370614 and P16.BENCH_MDD == -0.3395700527611012,
+          "§三 seq=5：基準【未捨入值】逐位元")
+    check((P16.D_GATE, P16.PEAK_MULT, P16.OV_HI, P16.OV_LO, P16.MIN_TRIG_FRAC) == (0.20, 2.0, 0.60, 0.30, 0.10),
+          "§十 4-3／§十一②／§四③ 的五個門檻")
+    check(P16.HOLD_MAX == P7.HOLD_BARS_N and "HOLD_MAX = P7.HOLD_BARS_N" in src16,
+          "⭐ H120 上限取自 P7（⛔ 本檔沒有寫死一個 120）")
+    check(P16.DECOMP == {"E1a": "ma60_up", "E1b": "rev_hi24", "E1c": "ma_stack"}, "§二(乙)：三個分解臂")
+
+    # ⑨ 原始碼掃描：⭐ 呼叫點與「同一件事只准一份實作」（CLAUDE.md 四點五）
+    check(src16.count("R.simulate_mtm(") == 0 and "P14._sim(" in src16,
+          "⭐ 本支【沒有】自己的引擎呼叫點，走 P14._sim（⛔ 不抄第十三份）")
+    check("P14.judge(" in src16 and "def judge" not in src16,
+          "⭐ 判準走 P14.judge（⛔ 本檔沒有第二份 judge）")
+    check("P14.bridge_check(" in src16 and "P14.anchor_check(" in src16 and "P8.month_ci(" in src16,
+          "橋欄／錨點值／CI 三支都是 import 過去的（⛔ 本檔沒有第二份）")
+    check("D.exit_pos(" in src16 and "e + h - 1" not in src16 and "e+h-1" not in src16,
+          "⭐ R1 的持有 n 根走 D.exit_pos（⛔ 本檔沒有裸算式，⭐ 已登記在 selftest_p4_features）")
+    check(src16.index("cond_fixture()") < src16.index("D.load_calendar()"),
+          "⭐ 手算 fixture 排在【讀任何資料之前】⇒ 壞了要當場知道")
+    check(src16.count("def cond_exit(") == 1 and src16.count("cond_exit(") >= 3,
+          "⭐ 順延與 H120 上限優先【只有一份實作】：E1／分解三臂／R1 全部走同一支 cond_exit")
+    check("resultsp15\", \"events.csv\"" in src16 and "raise SystemExit" in src16,
+          "⭐ §四⑩ 讀不到 P15 觸發月要【大聲失敗】（⛔ 不是靜靜空一欄，CLAUDE.md 四點六）")
+    check("本件不另跑敏感度" in src16 and "⛔ 回測線不自行加格" in src16,
+          "⭐ 報告逐字寫明【不加格】（§十三2：讀者自行換門檻重算）")
+
 
 if __name__ == "__main__":
     print("[researchp2] 映射"); t_parent()
@@ -1488,5 +1667,6 @@ if __name__ == "__main__":
     print("[top50_share] 參考C 候選裡市值前 50 的比例（1915 §六）"); t_top50_share()
     print("[researchp14] 0050 進組合：合成式／判準／橋欄（PREREGP14 seq=5）"); t_p14()
     print("[researchp15] 月度閘門：K(t) 無前視／判準兩組基準／安慰劑欄（PREREGP15 seq=4）"); t_p15()
+    print("[researchp16] 條件出場：分量歸因／被砍那一段／安慰劑兩欄／四個出口（PREREGP16 seq=5）"); t_p16()
     print("結果：", "全綠" if FAIL == 0 else f"✗ {FAIL} 條")
     sys.exit(1 if FAIL else 0)
