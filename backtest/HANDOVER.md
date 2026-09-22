@@ -53,6 +53,30 @@ bash backtest/handover_check.sh     # 約 10 分鐘
   ⇒ ⛔ 不可以寫成「procs 一定不影響」
 ```
 
+### ⛔⛔ 前置條件：**這支程式需要 `fork`**（⭐ 已實測，⛔ 不是效能建議）
+
+```
+researchp16 的 run() 那兩個 Pool【沒有 initializer】
+⇒ worker 拿到 _P（sigs／raws／closes／opens）完全靠【fork 繼承】
+⇒ ⛔ spawn 之下子行程重新 import ⇒ _P 是空的
+
+✅ 實測（強制 start_method="spawn"）：
+   死在 researchp16.py:317　`_P["sigs"][arm]` ⇒ **KeyError: 'sigs'**
+   ⭐ 是【大聲失敗】，⛔ 不是靜默算錯 —— 這一點是好消息
+
+⚠⚠ 但它【會先印出六行綠的才死】：
+   fixture ✅／sig ✅／逐日 ✅／回聲閘門 ✅／四個臂 ✅ ⇒ 然後才在 [否證①] 炸掉
+   ⇒ ⛔ 不要因為前面六行是綠的就以為「大致上跑起來了」
+
+⇒ 結論：✅ Linux／WSL（fork）可以　⛔ Windows 原生 Python（spawn）跑不起來
+        ⚠ macOS 3.8 起預設 spawn ⇒ 同樣跑不起來
+⇒ ⭐ 所以「要不要 clone 到 WSL」不是效能問題，是【能不能跑】的問題
+
+⛔ 本線【不修這件】：改 researchp16 就要重新證明逐位元，
+   而那會動到已經定版的交件 ⇒ ⭐ 留給接手方決定，
+   ⚠ 但若要改，改完必須重跑並重新產生 HANDOVER_BASELINE.txt
+```
+
 ### ⛔⛔ 逐位元重現【不只是驗收手段，是這條線工作本身的要求】
 
 ```

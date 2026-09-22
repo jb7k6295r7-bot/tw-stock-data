@@ -88,6 +88,20 @@ PYV
   done < "$BASE"
 fi
 note "  procs            本趟 ${PROCS:-8}（⭐ 交件用 8；⚠ 已實測 procs 不影響輸出，見 HANDOVER.md）"
+# ⛔⛔ 2026-09-22 補（接手方問 WSL 時查出來的）：researchp16 的 run() 那兩個 Pool
+#   【沒有 initializer】⇒ worker 拿到 _P 完全靠 fork 繼承
+#   ⇒ ⛔ spawn 之下 _P 是空的 ⇒ KeyError: 'sigs' ⇒ ⭐ 這是【前置條件】，不是效能建議
+SM=$(python3 -c "import multiprocessing as m;print(m.get_start_method())" 2>/dev/null || echo "(取不到)")
+printf '  %-16s %s' "start_method" "$SM"
+if [ "$SM" = "fork" ]; then echo "　✅ 可以跑"
+else
+  echo "　⛔⛔ 跑不起來"
+  bad "start_method ＝ '$SM' ⇒ ⛔ researchp16 依賴 fork 繼承 _P"
+  note "   ⇒ ⛔ Windows 原生 Python／macOS 預設是 spawn ⇒ 必用 Linux 或 WSL"
+  note "   ⚠ 而它【會先印出六行綠的】（fixture／sig／逐日／回聲閘門／四個臂）才死"
+  note "     ⇒ ⭐ 死在 [否證①] 那一步，訊息是 KeyError: 'sigs'（⛔ 大聲失敗，不是靜默算錯）"
+  note "     ⇒ ⛔ 不要因為前面六行是綠的就以為「大致上跑起來了」"
+fi
 if [ "$ENV_DRIFT" -gt 0 ]; then
   note ""
   note "⚠ 有 $ENV_DRIFT 項版本與交件不同 ⇒ ⭐ 那麼第二段的結果要這樣讀："
