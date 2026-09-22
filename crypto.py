@@ -430,20 +430,36 @@ def parse_bitstamp_ohlc(body):
 
 
 def earliest_landed_date(symbol, root=None):
-    """既有日檔裡最早的那一天 → `datetime.date`，⛔ 沒有資料就回 `None`。
+    """既有 **Binance** 日檔裡最早的那一天 → `datetime.date`，
+    ⛔ 沒有 Binance 列就回 `None`。
 
-    ⭐⭐ 2026-09-22 實測踩到的坑：`bitstamp-backfill` 第一版用
+    ⭐⭐ 2026-09-22 第一個坑：`bitstamp-backfill` 第一版用
     `datetime.date(EARLIEST_YEAR, EARLIEST_MONTH, 1)`（2017-08-**01**）
     當 Bitstamp 回補的終點，⚠ 而 Binance 那個月的月檔**不是從 1 號開始**
     ——BTC 真正第一筆資料是 2017-08-**17**。⇒ 中間 16 天（08-01～08-16）
     兩邊都沒有，變成一個**安靜的洞**（不會報錯，兩個來源各自看都正常）。
-    ⇒ ⭐ 正確的終點是**既有檔案裡真正最早那一天**，不是月份的第一天
-    ——這支就是為了算出那個真正的邊界。
+
+    ⛔⛔ 而第一版的修法（對全部列取 `min`）當場在 Actions 上炸了：
+    第一趟 bitstamp-backfill 成功之後，檔案裡**最早那一列已經是
+    Bitstamp 自己的**（2013-01-01），比 Binance 真正開始的 2017-08-17
+    還早 ⇒ `min(全部列)` 量到的是 Bitstamp 自己的起點，不是 Binance
+    的——這支「找 Binance 起點」的邊界因此把自己餵給下一趟自己，
+    終點越滑越早，⇒ **第二趟直接不再抓任何新資料**，08-01~08-16 那個
+    洞原封不動（在 origin/main 的 BTC.csv 上實測到：run 35710529200
+    conclusion success、Commit 回 repo 也 success，⚠ 而洞還在——
+    四點二那一族：「run 是綠的」不代表「它做了它該做的事」，這次連
+    「這支自己新加的函式」都要驗終點，不能只驗 conclusion）。
+
+    ⇒ ⭐ 正確的邊界只能是**現有 Binance 列**的最早那一天，
+    ⛔ 不是「檔案裡最早的那一列」——後者會被 Bitstamp 自己的回補
+    結果污染。
     """
     days = _load(symbol_csv_path(symbol, root), DAY_HEADER, day_key)
-    if not days:
+    binance_dates = [datetime.date.fromisoformat(k[0]) for k, row in days.items()
+                      if row[-1] == BINANCE_SOURCE]
+    if not binance_dates:
         return None
-    return min(datetime.date.fromisoformat(k[0]) for k in days)
+    return min(binance_dates)
 
 
 def land_bitstamp_history(symbol, end_date, today=None, root=None,

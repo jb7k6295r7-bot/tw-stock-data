@@ -370,13 +370,32 @@ def main():
         # 兩邊都沒有。這支要從既有檔案量出**真正**最早那一天。
         ck("⭐ 沒有這個檔／沒有資料 ⇒ 回 None",
            C.earliest_landed_date("NOSUCHSYMBOL", root=root) is None)
-        ck("⭐⭐ LEGACY 只有一列 2017-08-17 ⇒ 回那一天本身（⛔ 不是月初）",
+        ck("⭐⭐ LEGACY 只有一列 2017-08-17（binance）⇒ 回那一天本身（⛔ 不是月初）",
            C.earliest_landed_date("LEGACY", root=root) == _dt2.date(2017, 8, 17),
            str(C.earliest_landed_date("LEGACY", root=root)))
-        ck("⭐⭐⭐ FOO 有 2013-01-01~01-04（Bitstamp）＋沒有更早的 ⇒ 回 01-01，"
-           "⛔ 不是隨便一列",
-           C.earliest_landed_date("FOO", root=root) == _dt2.date(2013, 1, 1),
+        ck("⭐⭐⭐ FOO 只有 Bitstamp 列（2013-01-01~01-04），⛔ 沒有任何 Binance 列 "
+           "⇒ 回 None（⛔ 不是隨便拿 Bitstamp 自己的最早一天充數）",
+           C.earliest_landed_date("FOO", root=root) is None,
            str(C.earliest_landed_date("FOO", root=root)))
+
+        # ⛔⛔⛔ 2026-09-22 在 Actions 上真的炸過的那一版：對全部列取 min，
+        # 第一趟 bitstamp-backfill 成功之後，檔案裡最早那一列變成
+        # Bitstamp 自己的 2013-01-01，比 Binance 真正的 2017-08-17 還早
+        # ⇒ 邊界越滑越早，第二趟直接不再抓任何新資料，16 天的洞原封不動。
+        # ⇒ 這支要模擬「已經回補過一次」的檔案形狀：早期 Bitstamp 列
+        #   ＋ 晚期 Binance 列都在同一個檔案裡。
+        mixed_path = C.symbol_csv_path("MIXED", root)
+        with open(mixed_path, "w", encoding="utf-8", newline="") as f:
+            f.write(",".join(C.DAY_HEADER) + "\n")
+            f.write("2013-01-01,1,1,1,1,1,,,,,2026-09-22,bitstamp\n")
+            f.write("2017-07-31,1,1,1,1,1,,,,,2026-09-22,bitstamp\n")
+            f.write("2017-08-17,1,1,1,1,1,1,1,1,1,2026-09-22,binance\n")
+            f.write("2017-08-18,1,1,1,1,1,1,1,1,1,2026-09-22,binance\n")
+        ck("⭐⭐⭐ MIXED 早期 Bitstamp（2013-01-01 起）＋晚期 Binance"
+           "（2017-08-17 起）混在同一個檔案 ⇒ 回 **2017-08-17**，"
+           "⛔ 不是 2013-01-01（那是 Bitstamp 自己的起點，不是 Binance 的）",
+           C.earliest_landed_date("MIXED", root=root) == _dt2.date(2017, 8, 17),
+           str(C.earliest_landed_date("MIXED", root=root)))
 
     # ── ⑪ main()「bitstamp-backfill」呼叫點：⛔ 只測 earliest_landed_date()
     #    本身抓不到「main() 忘了呼叫它」——第三個陷阱那一族（測了判準、
@@ -398,11 +417,20 @@ def main():
                            "market_cap_rank": 1}],
                           today=_dt2.date(2026, 9, 20))
 
-        # 既有 BTC.csv 模擬 main 上真的資料：最早一列是 2017-08-17
-        # （⛔ 不是月初 2017-08-01）——這正是那個 16 天洞的邊界。
+        # 既有 BTC.csv 模擬 main 上真的資料：⛔ 不是「第一次跑」的乾淨檔，
+        # 是**已經回補過一次 Bitstamp**之後的形狀——早期 Bitstamp 列
+        # （2013-01-01 起）＋ 晚期 Binance 列（2017-08-17 起）都在，
+        # 中間 08-01~08-16 那個洞還沒補。這正是 run 35710529200 在
+        # Actions 上真的炸掉的那個場景：第一版 earliest_landed_date
+        # 對全部列取 min，量到 2013-01-01（Bitstamp 自己的起點）
+        # 當終點，第二趟就再也補不到這個洞。
         btc_path = C.symbol_csv_path("BTC")
         with open(btc_path, "w", encoding="utf-8", newline="") as f:
             f.write(",".join(C.DAY_HEADER) + "\n")
+            f.write("2013-01-01,13.24,13.24,12.77,13.22,2116.93,,,,,"
+                    "2026-09-22,bitstamp\n")
+            f.write("2017-07-31,2745.76,2889.99,2680.01,2855.81,11114.34,,,,,"
+                    "2026-09-22,bitstamp\n")
             f.write("2017-08-17,4261.48,4485.39,4200.74,4285.08,795.15,"
                     "3454770.05,3427,616.25,2678216.40,2026-09-20,binance\n")
 
