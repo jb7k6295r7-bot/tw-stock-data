@@ -47,6 +47,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 EXPR = re.compile(r"\$\{\{[^}]*\}\}")
 OK = FAIL = 0
@@ -265,6 +266,69 @@ def _nondoc_strings(tree):
     return {n.value for n in ast.walk(tree)
             if isinstance(n, ast.Constant) and isinstance(n.value, str)
             and id(n) not in doc_ids}
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 「把程式同步到 main」必須排在**任何會留下未 commit 檔的步驟之前**
+#
+# ⛔ 2026-09-22 run 35709086864 付過代價（`crypto.yml`，從建立起就排錯）：
+#   「執行」那一步的 `runlog.Run()` 在工作樹寫出未 commit 的
+#   `data/meta/_last_run.md` ⇒ 排在它後面的 `sync_code.sh` 做
+#   `git checkout -q -B _sync origin/main` 被 git 拒絕（本機有未 commit 的變更）
+#   ⇒ 它依契約印「⚠ 切不過去」然後 **exit 0**（同步失敗不該賠掉整趟抓取）。
+#   ⚠ 失敗的樣子：**那一步是綠的、run 是綠的、資料照樣落地**，
+#     ⛔ 而那一趟的程式一個字都沒上 main——而排程跑的正是 main 上的程式。
+#   ⭐ 逐位對過：它積欠的 4 個檔／351 行，是**下一趟**的 sync（1435f15f8）才補搬的。
+#
+# ⇒ ⭐ 而在這之前，這條規矩只活在兩個地方：步驟名稱後面那句「趁 checkout 還新」，
+#   和 73073399b 的 commit 訊息。⛔ 兩個都**不會自己生效**
+#   ——CLAUDE.md 第四點二⑨那一句：一條寫在註解裡的警告，不會隨著規模長大而自己生效。
+#
+# ⚠ 判準的範圍要標清楚：這一條只管**順序**。
+#   「零相依自測不會在工作樹留下檔案」是它們自己的契約，⛔ 守那個契約的是
+#   各支自測裡「★ 沒有動到 repo 真的 ___」那一族斷言（CLAUDE.md 第七點第五個），
+#   ⛔ 不是這一條。這裡只假設它們**依契約**乾淨；其餘任何 `run:` 一律當成會寫檔。
+# ══════════════════════════════════════════════════════════════════
+SYNC_CALL = "sync_code.sh"
+# ⛔ 只認「整段 shell 從頭到尾只有 `python selftest_*.py`」那一種零相依步驟。
+#   ⚠ `ci_step.py selftest_X.py` **不算**：它自己要記下 rc（寫檔）⇒ 是會寫檔的那一族。
+_SAFE_LINE = re.compile(r"^python3?\s+selftest_[A-Za-z0-9_]+\.py$")
+
+
+def _live_lines(body):
+    """→ 這段 shell 裡不是註解、不是空行的那幾行。
+
+    ⛔ 比**非註解**那幾行，⚠ 不是「這個字串在不在這段裡」——`crypto.yml`
+    的說明註解裡就有一份 `sync_code.sh`，照字串比會把它當成有同步步驟。
+    """
+    return [ln.strip() for ln in body.split("\n")
+            if ln.strip() and not ln.strip().startswith("#")]
+
+
+def _is_zero_dep_selftest(body):
+    live = _live_lines(body)
+    return bool(live) and all(_SAFE_LINE.match(s) for s in live)
+
+
+def _calls_sync(body):
+    return any(SYNC_CALL in s for s in _live_lines(body))
+
+
+def sync_order_violations(blocks):
+    """→ 排在同步之前、而且會寫檔的那幾步 [(序號, 步驟名, 同步的序號)]。
+
+    `blocks` 是 `run_blocks()` 的輸出（**有序**）。
+    ⭐ 三種結果要分得開（第七點第四個）：
+      `None` ＝ 這支沒有同步步驟 ⇒ **這條不適用**（⛔ 不是「通過」）
+      `[]`   ＝ 有同步步驟而且排在最前面 ⇒ 通過
+      非空   ＝ 這幾步排在同步之前 ⇒ 同步會被它們留下的未 commit 檔擋掉
+    """
+    sync_at = [k for k, (_n, body) in enumerate(blocks) if _calls_sync(body)]
+    if not sync_at:
+        return None
+    first = sync_at[0]
+    return [(k, blocks[k][0], first) for k in range(first)
+            if not _is_zero_dep_selftest(blocks[k][1])]
 
 
 def main():
@@ -1220,6 +1284,85 @@ def main():
             if ln in ("python otc_exright_history.py",
                       "python otc_reduce_history.py")],
        "daily 裡還有不帶旗標的那一行")
+
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 同步步驟的順序（病根與範圍寫在 `sync_order_violations()` 上面）
+    # ══════════════════════════════════════════════════════════════
+    _synced = []
+    for f in files:
+        short = os.path.basename(f)
+        _bad = sync_order_violations(run_blocks(f))
+        if _bad is None:
+            continue                      # ⛔ 沒有同步步驟 ⇒ 不適用，不是通過
+        _synced.append(short)
+        ck(f"⭐⭐ {short}｜`sync_code.sh` 排在所有會寫檔的步驟**之前**",
+           not _bad,
+           "⛔ 這幾步排在同步前："
+           + "；".join(f"#{k + 1}「{n}」" for k, n, _s in _bad)
+           + "　⇒ 它們留下未 commit 的檔 ⇒ `git checkout -B _sync` 被拒"
+             " ⇒ 同步印「⚠ 切不過去」後 exit 0"
+             " ⇒ ⚠ **綠燈，而這一趟的程式沒有上 main**")
+    # ⭐ 母體自己要是一道斷言（第七點第九個）：掃到 0 支跟「全部通過」長得一樣。
+    #   ⛔ 而母體要跟**原始檔裡非註解的** `sync_code.sh` 對得上——不對得上就代表
+    #   `run_blocks()` 漏掃了那一步，⚠ 而漏掃的表現正是「這一支靜靜地不適用」。
+    _raw = sorted(os.path.basename(f) for f in files
+                  if [ln for ln in io.open(f, encoding="utf-8").read().split("\n")
+                      if SYNC_CALL in ln and not ln.lstrip().startswith("#")])
+    ck(f"★ 有同步步驟的母體（{len(_synced)} 支）跟原始檔對得上"
+       "（⛔ 掃到 0 支跟全部通過長得一樣）",
+       bool(_synced) and sorted(_synced) == _raw,
+       f"⛔ 掃出 {sorted(_synced)}｜原始檔裡有 {_raw}")
+
+    # ★★ 反向驗：⛔ 一條「永遠不會紅」的斷言，跟一條有效的斷言長得一模一樣。
+    #   ⇒ 拿**真的出事的那一版**（9d5f548db 的 `crypto.yml`，run 35709086864
+    #     跑的就是它）當樣本：判準必須當場指出「執行」排在同步之前。
+    #   ⚠ 而修好的那一版（73073399b 之後）必須是乾淨的——⛔ 少了這一半，
+    #     一條「看到什麼都說紅」的判準也會通過上面那一條。
+    _bad_yml = (
+        "jobs:\n  run:\n    steps:\n"
+        "      - name: 自測（零相依，不連網）\n"
+        "        run: python selftest_crypto.py\n"
+        "      - name: 取 main 現有的虛擬貨幣資料\n"
+        "        run: |\n          git fetch origin main\n"
+        "          git checkout origin/main -- data/crypto || true\n"
+        "      - name: 執行\n"
+        "        run: |\n          python crypto.py --mode daily\n"
+        "      - name: 把程式同步到 main\n"
+        "        run: bash sync_code.sh\n"
+        "      - name: Commit 回 repo\n"
+        "        run: bash push_data.sh \"crypto(daily)\"\n")
+    _good_yml = (
+        "jobs:\n  run:\n    steps:\n"
+        "      - name: 自測（零相依，不連網）\n"
+        "        run: python selftest_crypto.py\n"
+        "      - name: 把程式同步到 main（趁 checkout 還新）\n"
+        "        run: bash sync_code.sh\n"
+        "      - name: 取 main 現有的虛擬貨幣資料\n"
+        "        run: |\n          git fetch origin main\n"
+        "          git checkout origin/main -- data/crypto || true\n"
+        "      - name: 執行\n"
+        "        run: |\n          python crypto.py --mode daily\n"
+        "      - name: Commit 回 repo\n"
+        "        run: bash push_data.sh \"crypto(daily)\"\n")
+    with tempfile.TemporaryDirectory() as _td:
+        _bp = os.path.join(_td, "bad.yml")
+        _gp = os.path.join(_td, "good.yml")
+        io.open(_bp, "w", encoding="utf-8").write(_bad_yml)
+        io.open(_gp, "w", encoding="utf-8").write(_good_yml)
+        _vb = sync_order_violations(run_blocks(_bp))
+        _vg = sync_order_violations(run_blocks(_gp))
+        # ⛔ 先驗樣本**分得出來**：解不出步驟的話兩邊都會是 None／[]，
+        #   ⚠ 而那跟「判準有效」長得一樣（突變沒套上去那一族）。
+        ck("★ 反向驗的樣本真的解得出 5 個步驟（⛔ 解不出來的話下面兩條沒有意義）",
+           len(run_blocks(_bp)) == 5 and len(run_blocks(_gp)) == 5,
+           f"⛔ 壞的解出 {len(run_blocks(_bp))} 步｜好的解出 {len(run_blocks(_gp))} 步")
+        ck("★ 反向驗：9d5f548db 那一版（同步排在「執行」之後）**判得出來**",
+           bool(_vb) and any(n == "執行" for _k, n, _s in _vb),
+           f"⛔ 判出 {_vb}　⇒ 這條斷言抓不到它真的發生過的那一次")
+        ck("★ 而 73073399b 之後那一版是**乾淨的**"
+           "（⛔ 少了這一半，「看到什麼都說紅」也會通過上面那條）",
+           _vg == [], f"⛔ 判出 {_vg}")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
