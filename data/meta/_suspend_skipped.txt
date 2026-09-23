@@ -112,3 +112,5 @@ tpex-disposal	2026-08-24~2026-09-23	RemoteDisconnected: Remote end closed connec
 tpex-attention	2026-08-24~2026-09-23	RemoteDisconnected: Remote end closed connection without response（重試 3 次都失敗）
 tpex-halt-hist	2026	RemoteDisconnected: Remote end closed connection without response（重試 3 次都失敗）
 tpex-halt	當日	RemoteDisconnected: Remote end closed connection without response（重試 3 次都失敗）
+
+# ── 2026-09-23T19:22:40+08:00　2026-08-24~2026-09-23　擋下 0 筆

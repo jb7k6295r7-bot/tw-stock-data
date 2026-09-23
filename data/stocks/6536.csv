@@ -12,3 +12,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-09-18,6536,碩豐,emerging,,,,,,,,,,,無成交,,0
 2026-09-21,6536,碩豐,emerging,,,,,,,,,,,無成交,,0
 2026-09-22,6536,碩豐,emerging,,,,,,,,,,,無成交,,0
+2026-09-23,6536,碩豐,emerging,,36.7,34.4,34.98,7998,279770,,,,,均價/額推算,34.4,1
