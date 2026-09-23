@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-23T23:46:10+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35883268026
+# ⏱ 這一趟：2026-09-24T00:19:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35886919108
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -163,7 +163,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3faad941f0c2b64',t:'MTc5MDE3ODM0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3fade8eb8952aa3',t:'MTc5MDE4MDM0OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -322,7 +322,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a3faadac7e1b6d31',t:'MTc5MDE3ODM0Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a3faded2db1cf7d3',t:'MTc5MDE4MDM2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -334,10 +334,10 @@
       data-start = '20190909'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt
-           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260923~20260924","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
+           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260924~20260929","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgRslt
-           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260923~20260924","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
+           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260924~20260929","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
            [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
@@ -460,10 +460,10 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
      ⇒ 2015 以前 **0 筆**（⇒ 我方 par_change.csv 從 2015 起是完整的）
 
 [T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆（使用者 2026-09-09 15:20 提供）
-  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20260923
-     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月23日 股票減資恢復買賣參考價格'｜列數 397
+  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20260924
+     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月24日 股票減資恢復買賣參考價格'｜列數 397
   ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西
-     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月23日 股票減資恢復買賣參考價格'｜列數 397
+     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月24日 股票減資恢復買賣參考價格'｜列數 397
      ⇒ 兩條列數 397 vs 397（一樣 ⇒ 同一個東西，`/zh/` 可有可無）
      官方 397 列｜解析出 392 筆｜日期 2011-01-25 ~ 2026-09-21
      ── 雙向對帳（只比 2013-01-16 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
@@ -486,12 +486,12 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
        首列：[1, '1218', '泰山', '115/08/13', '8:00', '115/08/14', '8:00']
   ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）
      ✓ ?date=20150701&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
-     ✓ ?date=20260923&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
-     ✓ ?startDate=20150101&endDate=20260923&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/23'｜列數 7215｜539,453 bytes
+     ✓ ?date=20260924&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
+     ✓ ?startDate=20150101&endDate=20260924&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/24'｜列數 7215｜539,453 bytes
      ⇒ ⭐ 3 發**回應不同** ⇒ 參數有生效，下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）
 
   ── ④ ⭐ 它解不解釋得掉我方的長洞（⛔ 端點可用 ≠ 對我方有用）
-     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/23'
+     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/24'
        ⚠ **回音要對得上我要的區間**（TWT49U 那次就是回音沒對上，把 2026 的資料寫進 2015 的每一天）
        解析出 7,215 筆／6,656 檔｜暫停日 2015-03-30 ~ 2026-08-13
      ★ 流動性足夠（要查的那幾檔）：7 個｜**TWTAWU 解釋得掉 1｜解釋不掉 6**

@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-23T23:45:39+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35883268026
+# ⏱ 這一趟：2026-09-24T00:19:05+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35886919108
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -456,14 +456,14 @@
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
      首列：{'ExRrightsExDividendDate': '1150914', 'SecuritiesCompanyCode': '5278', 'CompanyName': '尚凡*', 'ExRrightsExDividend': '除息', 'StockDividendRatio': '0.00000000', 'SubscriptionRatioToNewSharesIssued': '0.00000000', 'SubscriptionPricePerShare': '0.00', 'CashDividend': '0.26618165', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataInThousandShares': '0.00000000'}
      ③`ExRrightsExDividendDate` 相異值 15 種｜最小 1150914｜最大 1151105
-     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
+     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
 
   ── tpex_ceil_non_trading｜上櫃漲跌停未成交資訊
      ✓ 19 列｜欄位（9）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosingPrice', 'Change', 'Tot.Trans.Vol.', 'Trans.Vol.AtUp-limitPr.', 'OrderVol.AtUp-limitPr.', 'Difference']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
      首列：{'Date': '1150923', 'SecuritiesCompanyCode': '8084', 'CompanyName': '巨虹', 'ClosingPrice': '36.75', 'Change': '-4.05', 'Tot.Trans.Vol.': '3260', 'Trans.Vol.AtUp-limitPr.': '1476', 'OrderVol.AtUp-limitPr.': '761', 'Difference': '-715'}
      ⛔ ③`Date` 相異值只有 **1 種**：1150923 × 19　⇒ **它只有這一期，沒有歷史**
-     ②帶 `date=` 參數：✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-520/","title":"Error 520: Web server is returning an unknown error","status":520,"detai
+     ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
      ✓ 1 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
@@ -543,20 +543,20 @@
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20260923
+                ── date：20260924
                 ── flagField：張數
                 ── stat：ok
            [POST stkno+year] ✓ JSON 506 bytes
               ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20260923
+                ── date：20260924
                 ── flagField：張數
                 ── stat：ok
            ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
               {"stat":"參數輸入錯誤"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
-              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20260923","stat":"ok","flagField":"張數"}
+              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20260924","stat":"ok","flagField":"張數"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
            ── ⭐ `date` 的**格式**掃描（⛔ 名字已經從頁面讀到了）──
               date='2024'         stat='ok'｜回顯 code='6488'｜totalCount=12｜inner date=2024　⭐⭐ **中了**
