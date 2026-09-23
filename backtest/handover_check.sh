@@ -87,11 +87,19 @@ if [ -f "$BASE" ]; then
   while read -r k want; do
     case "$k" in env_*) ;; *) continue;; esac
     got=$(python3 - "$k" <<'PYV' 2>/dev/null || echo "(取不到)"
-import sys
-k=sys.argv[1]
-if k=="env_python": print(sys.version.split()[0])
-elif k=="env_numpy": import numpy; print(numpy.__version__)
-elif k=="env_pandas": import pandas; print(pandas.__version__)
+import sys, os
+k = sys.argv[1]
+if k == "env_python": print(sys.version.split()[0])
+elif k == "env_numpy": import numpy; print(numpy.__version__)
+elif k == "env_pandas": import pandas; print(pandas.__version__)
+# ⭐ 2026-09-23 補（接手方 0210 指出）：BLAS 名稱＋版本與執行緒數都會影響浮點的歸約順序
+#   ⛔ 本線原本一格都沒釘 ⇒ ⚠ 上一趟是【碰巧兩台都對上】才沒出事
+elif k == "env_blas":
+    import numpy
+    b = numpy.__config__.show(mode="dicts")["Build Dependencies"]["blas"]
+    print(f"{b.get('name')}-{b.get('version')}")
+elif k == "env_blas_threads":
+    print(os.environ.get("OPENBLAS_NUM_THREADS") or os.cpu_count())
 PYV
 )
     printf '  %-16s ' "${k#env_}"
@@ -100,6 +108,8 @@ PYV
   done < "$BASE"
 fi
 note "  procs            本趟 ${PROCS:-8}（⭐ 交件用 8；⚠ 已實測 procs 不影響輸出，見 HANDOVER.md）"
+note "  ⚠ blas_threads 是【推得出來的】：OPENBLAS_NUM_THREADS 未設時退回 cpu_count()"
+note "    ⇒ ⛔ 不是量到的實際執行緒數 ⇒ ⭐ 它對得上只代表【推論值】對得上"
 # ⛔⛔ 2026-09-22 補（接手方問 WSL 時查出來的）：researchp16 的 run() 那兩個 Pool
 #   【沒有 initializer】⇒ worker 拿到 _P 完全靠 fork 繼承
 #   ⇒ ⛔ spawn 之下 _P 是空的 ⇒ KeyError: 'sigs' ⇒ ⭐ 這是【前置條件】，不是效能建議
