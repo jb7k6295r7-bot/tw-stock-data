@@ -204,15 +204,27 @@ def probe_mops(lines):
     hdr = {"Content-Type": "application/json", "Accept": "application/json"}
     # ⭐ 三發：合法歷史值／換一個季（只改一個參數）／dataType=1 的對照組
     # ⭐ 五發，⛔ 每一發只改一個地方（情報線 2207 §二 的控制變因寫法）
-    cases = [("113", "1", "2", None, "合法歷史值（五鍵齊、民國年、dataType=2）"),
-             ("113", "3", "2", None, "只改 season（⇒ 數字該跟著變）"),
-             ("2024", "1", "2", None,
-              "只改年制成西元（⇒ 情報線量到端點會自己換成 113）"),
-             ("113", "1", "1", None,
-              "對照組：dataType=1（⇒ 情報線量到它一律回最新季，⛔ 而且不報錯）"),
-             ("113", "1", "2", "subsidiaryCompanyId",
+    #
+    # ⛔⛔ 2026-09-23 23:40 訂正：第一版一律拿「回應講的 == 我送的」當判準
+    #   ⇒ ⚠ 有兩發【預期本來就不一樣】，卻被印成 ⛔：
+    #     ・送西元 2024 ⇒ 回 113（端點自動換算）＝⭐ 這正是我們要的行為
+    #     ・dataType=1 ⇒ 回最新季 115/2　　　　　＝⭐ 這正是我們要證明的靜默行為
+    #   ⇒ ⛔ 把預期中的結果印成 ⛔，下一個人就學會忽略這支探針的 ⛔
+    # ⇒ ⭐ 改成每一發自己帶 `expect`：
+    #     ("113","1")  ＝ 回應該講出這一期
+    #     "LATEST"     ＝ 該回「最新季」而且⛔不等於我送的那一期
+    #     "ERR500"     ＝ 該回 code:500
+    cases = [("113", "1", "2", None, ("113", "1"),
+              "合法歷史值（五鍵齊、民國年、dataType=2）"),
+             ("113", "3", "2", None, ("113", "3"),
+              "只改 season（⇒ 數字該跟著變）"),
+             ("2024", "1", "2", None, ("113", "1"),
+              "只改年制成西元（⇒ ⭐ 該被自動換成民國 113，⛔ 不是錯）"),
+             ("113", "1", "1", None, "LATEST",
+              "對照組：dataType=1（⇒ ⭐ 該回最新季、⛔ 而且不報錯）"),
+             ("113", "1", "2", "subsidiaryCompanyId", "ERR500",
               "⛔ 反向對照組：刻意少送第五個鍵（⇒ 該回 code:500）")]
-    for year, season, dtype, drop, why in cases:
+    for year, season, dtype, drop, expect, why in cases:
         st, ct, body, err = hit(MOPS, _mops_body(year, season, dtype, drop=drop),
                                 hdr)
         tag = f"   送 year={year} season={season} dataType={dtype}｜{why}"
@@ -229,20 +241,39 @@ def probe_mops(lines):
         lines.append(tag)
         lines.append(f"      HTTP={st}｜{ct}｜{len(body):,} bytes｜code={code}")
         if code == 500:
-            lines.append(f"      ⛔ code 500【傳入參數異常】＝**我方 body 錯**"
-                         f"：{msg}")
+            lines.append(f"      code 500【傳入參數異常】＝我方 body 錯：{msg}")
         elif code == 406:
-            lines.append(f"      ⚠ code 406【查無相符資料】＝body 對、那一期沒資料"
+            lines.append(f"      code 406【查無相符資料】＝body 對、那一期沒資料"
                          f"：{msg}")
         if blocked:
             lines.append("      ⛔⛔ **這是擋阻頁**（HTTP 200 也算），"
                          "⚠ 只驗狀態碼會把它當成資料")
+            continue
+        # ⭐ 判準：跟【這一發自己的預期】比，⛔ 不是一律跟「我送的」比
+        if expect == "ERR500":
+            good = (code == 500)
+            lines.append("      預期 code:500（少一個鍵）　"
+                         + ("✅ 如預期" if good
+                            else f"⛔ 竟然不是 500（code={code}）"
+                                 "　⇒ ⚠ 那表示【少一個鍵也會過】"
+                                 "，五鍵合約要重驗"))
+            if not good:
+                lines.append(f"         對方說：{short_text(body)}")
         elif said is None:
             lines.append("      ⛔ 回應**講不出自己是哪一期**（沒有 result.year／season）")
             lines.append(f"         對方說：{short_text(body)}")
+        elif expect == "LATEST":
+            good = said != (year, season)
+            lines.append(f"      回應自己說：year={said[0]} season={said[1]}　"
+                         + ("✅ 如預期【回的是最新季，不是我送的那一期】"
+                            "　⇒ ⛔ 這就是 dataType=1 的靜默行為" if good
+                            else "⛔ 竟然回了我送的那一期"
+                                 "　⇒ ⚠ dataType=1 的行為變了，判準要重寫"))
         else:
-            ok = "✅ 跟我送的一樣" if said == (year, season) else "⛔ 跟我送的不一樣"
-            lines.append(f"      回應自己說：year={said[0]} season={said[1]}　{ok}")
+            good = said == tuple(expect)
+            lines.append(f"      回應自己說：year={said[0]} season={said[1]}　"
+                         + ("✅ 如預期" if good
+                            else f"⛔ 與預期 {expect[0]}/{expect[1]} 不符"))
 
 
 def probe_doc(lines):
