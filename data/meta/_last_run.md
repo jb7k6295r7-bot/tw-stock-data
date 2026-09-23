@@ -1147,7 +1147,7 @@
 
 ## crypto:daily　✓ 正常
 
-最後執行：2026-09-22T22:39:21+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 35741594498
+最後執行：2026-09-23T08:27:52+08:00（台北）｜觸發 schedule｜虛擬貨幣（前 15 大市值）日K 收集｜ref main｜run 35802003367
 
 - **這一趟**：補當月與最近日檔缺口｜15 個幣種
 - **逐幣**：ADA：+0 列；BCH：+0 列；BNB：+0 列；BTC：+0 列；DOGE：+0 列；ETH：+0 列；LINK：+0 列；LTC：+0 列；NEAR：+0 列；SOL：+0 列；TRX：+0 列；UNI：+0 列；XLM：+0 列；XRP：+0 列；ZEC：+0 列
