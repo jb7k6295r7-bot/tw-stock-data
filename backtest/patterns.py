@@ -22,6 +22,8 @@ PARAMS = {
     "trend_pct": 0.05,       # 前段趨勢幅度
     "ma_conv_max": 0.03,     # 底穿上：三條均線平均張口上限
     "ma_vol_x": 1.5,         # 底穿上：放量門檻
+    # ⚠ 上穿與放量的對齊窗【不放在這裡】——它不是一個可調參數，是型態線裁定的尺，
+    #   見模組常數 P5_CONFIRM_WINDOW（⛔ 放進 PARAMS 會讓它看起來像可以掃的格子）
     "liq_min_shares": 500_000,  # 流動性：20 日均量 ≥ 500 張
     "liq_mode": "shares",       # "shares"（主表）｜"amount"（並列母體：近 20 日成交金額均值 ≥ 5,000 萬，PREREG 更正五）
     "liq_min_amount": 50_000_000,
@@ -108,6 +110,14 @@ class Frame:
         return (rng <= self.p["box_range_max"]) & (self.box_top_old >= self.box_top)  # 等號：箱頂在舊段裡
 
 
+# ⭐⭐ P5 的「上穿 ↔ 放量」對齊窗（單位：交易日）
+#   出處：型態線 20260923-2053 §一【裁】—— ⛔ 回測線不訂這個數字，⛔ 不得在這裡「挑」。
+#   ⚠ 型態線 §二 自承 3 這個數字仍帶一點主觀（為什麼不是 4），
+#     並逐字寫「之後若裁定線或回測線有更好的外生依據，本線接受覆核修改」。
+#   ⛔ 0 ＝ 訂正前的「必須同一天」，⭐ 只保留給對帳用。
+P5_CONFIRM_WINDOW = 3
+
+
 def _sig(pattern, pos, entry, direction, **extra):
     d = {"pattern": pattern, "signal_pos": int(pos), "entry_pos": int(entry), "direction": direction}
     d.update(extra)
@@ -190,8 +200,29 @@ def shadow_patterns(f: Frame) -> list[dict]:
     return out
 
 
-def ma_cross_up(f: Frame) -> list[dict]:
+def ma_cross_up(f: Frame, confirm_window: int | None = None) -> list[dict]:
+    """底穿上（P5）。
+
+    ⭐⭐ 尺的訂正（型態線 20260923-2053 §一 裁，⛔ 本處逐字落地，⛔ 回測線不訂門檻）：
+        「5MA 上穿 10／20MA 的那一天，與量能達到放量門檻的那一天，只要相差
+          ≤3 個交易日（不論先後），就算同一次事件；事件發生日 ＝ 兩者中【較晚】的那一天
+          （⛔ 不是較早，避免用未來的放量日回頭確認過去的上穿）」
+      ⭐ 型態線 §二 的理由：《型態資料彙整》§二 的書面定義逐字只寫「上穿＋收斂＋放量」，
+        ⛔ 從來沒有寫「同一天」⇒ 這是【訂正實作與書面定義的落差】，
+        ⛔ 不是「看到 56% 召回率才調鬆門檻」。
+
+    ⚠⚠ 回測線在落地時必須自己決定、而裁定沒有寫到的三件（⏳ 已回報型態線，裁下來就改）：
+      ① 收斂條件 conv 在【上穿日】判（⭐ 收斂描述的是均線在上穿當下的張口）
+      ② f.gate 在【上穿日與事件日】都要成立（⭐ 保守取嚴：訊號是在事件日發出的）
+      ③ 同一個事件日若被多個上穿日命中 ⇒ 只留一筆（保留最早的那個上穿日）
+      ⇒ 這三條都是【取嚴】的方向，⛔ 不會把召回率灌水。
+
+    confirm_window：None ＝ 用模組常數 P5_CONFIRM_WINDOW（＝ 裁定值 3）。
+      ⛔ 0 ＝ 訂正【前】的「必須同一天」⇒ ⭐ 只為了讓舊數字可對帳而保留，
+        ⛔ 它不是一個「可以挑」的門檻。
+    """
     p = f.p
+    k = P5_CONFIRM_WINDOW if confirm_window is None else int(confirm_window)
     out = []
     hi = np.maximum(f.ma10, f.ma20)
     hi_prev = np.roll(hi, 1); ma5_prev = np.roll(f.ma5, 1)
@@ -202,11 +233,35 @@ def ma_cross_up(f: Frame) -> list[dict]:
         spread = (top - bot) / f.c
     conv = pd.Series(spread).rolling(20, min_periods=20).mean().shift(1).to_numpy(float)
     with np.errstate(invalid="ignore"):
-        cond = (f.gate & (f.ma5 > hi) & (ma5_prev <= hi_prev)
-                & (conv <= p["ma_conv_max"]) & (f.v >= p["ma_vol_x"] * f.vol_ma20))
-    for t in np.flatnonzero(cond):
-        if t + 1 < f.n:
-            out.append(_sig("P5_ma_cross_up", t, t + 1, +1, conv=conv[t], vol_x=f.v[t] / f.vol_ma20[t]))
+        volok = f.v >= p["ma_vol_x"] * f.vol_ma20
+        cross = (f.gate & (f.ma5 > hi) & (ma5_prev <= hi_prev) & (conv <= p["ma_conv_max"]))
+        if k == 0:
+            cond = cross & volok
+    if k == 0:
+        # ⛔ 訂正前的路徑：⭐ 與舊版【逐位元相同】（對帳用）
+        for t in np.flatnonzero(cond):
+            if t + 1 < f.n:
+                out.append(_sig("P5_ma_cross_up", t, t + 1, +1, conv=conv[t], vol_x=f.v[t] / f.vol_ma20[t]))
+        return out
+
+    seen = set()
+    for tc in np.flatnonzero(cross):
+        tc = int(tc)
+        lo_, hi_ = max(0, tc - k), min(f.n - 1, tc + k)
+        le = [tv for tv in range(lo_, tc + 1) if volok[tv]]
+        gt = [tv for tv in range(tc + 1, hi_ + 1) if volok[tv]]
+        if le:
+            tv, te = le[-1], tc          # ⭐ 放量在上穿【之前】⇒ 事件日 ＝ 上穿日（較晚的那一天）
+        elif gt:
+            tv = te = gt[0]              # ⭐ 放量在上穿【之後】⇒ 事件日 ＝ 放量日（較晚的那一天）
+        else:
+            continue
+        if te in seen or te + 1 >= f.n or not f.gate[te]:
+            continue
+        seen.add(te)
+        out.append(_sig("P5_ma_cross_up", te, te + 1, +1, conv=conv[tc],
+                        vol_x=f.v[tv] / f.vol_ma20[tv], cross_pos=tc, vol_pos=tv,
+                        confirm_gap=int(tv - tc)))
     return out
 
 
