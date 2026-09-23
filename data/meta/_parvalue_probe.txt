@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-22T17:20:11+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35706887591
+# ⏱ 這一趟：2026-09-23T17:36:42+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35843153061
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -35,7 +35,7 @@
   ── 上櫃變更股票面額預告表
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
      ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
-     [形狀] 10,338 bytes｜中文 744 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**
+     [形狀] 11,276 bytes｜中文 744 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
      ⓪  `<form action=…>` 的對象：1 種
          /zh-tw/search.html
      ①  `/…/api/…` 出現過哪些：1 種
@@ -155,37 +155,44 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          …（本站另 2 支未挖，cap=8）
-   ⑥ 頁面自己的 inline <script>：**2 段**（共 424 字）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,345 字）
       ── 第 1 段（130 字）
          function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
       ── 第 2 段（294 字）
          "use strict";function modifyJson(e){for(let t of e.tables[0].data)t[7]=`<a href="${t[7]}">試算</a>`}tables.init({pattern:API_PATTERN,action:"bulletin/pvChgAnn",au
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3f88ff7eecaf284',t:'MTc5MDE1NjE1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
    ⑦ `data-*` 屬性：**2 種**
       data-format = 'csv'
       data-format = 'print'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn
-           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年09月22日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
+           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年09月23日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgAnn
-           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/22 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
+           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/09/23 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
-           [形狀] 9,954 bytes｜中文 694 字｜<tr> 0 個｜js 9 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
+           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
      ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
            ⭐ 它回顯的 `date`：（沒有這個鍵）｜`totalCount`：['0']
            ⚠ 回應裡沒有 `date` 鍵 ⇒ ⛔ 這一格**判不出**參數有沒有生效（⚠ 不可以讀成「有生效」）
-           開頭 '{"tables":[{"title":"","subtitle":"115年09月22日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
+           開頭 '{"tables":[{"title":"","subtitle":"115年09月23日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
            ── ⭐ 原始回應整份（⛔ 不是摘要）──
-             {"tables":[{"title":"","subtitle":"115年09月22日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
+             {"tables":[{"title":"","subtitle":"115年09月23日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
 
   ── 變更股票面額恢復交易參考價
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
      ⭐ 網址取自我方 `_site_inventory.txt`（官方選單），⛔ 不是我拼的
-     [形狀] 10,838 bytes｜中文 748 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**
+     [形狀] 11,776 bytes｜中文 748 字｜<tr> 0 個｜js 11 支　⛔ **js 空殼**
      ⓪  `<form action=…>` 的對象：1 種
          /zh-tw/search.html
      ①  `/…/api/…` 出現過哪些：1 種
@@ -305,7 +312,7 @@
                  ⚠ 這一份裡**找不到** `API_PATTERN`（⛔ 不是「它不存在」，是不在這一支）
                  ⚠ 這一份裡**找不到** `bulletin/pvChg`（⛔ 不是「它不存在」，是不在這一支）
          …（本站另 2 支未挖，cap=8）
-   ⑥ 頁面自己的 inline <script>：**2 段**（共 650 字）
+   ⑥ 頁面自己的 inline <script>：**3 段**（共 1,571 字）
       ── 第 1 段（130 字）
          function gtag(){dataLayer.push(arguments)}window.dataLayer=window.dataLayer||[],gtag("js",new Date),gtag("config","G-35HCQ5YL5Z");
       ── 第 2 段（520 字）
@@ -313,6 +320,13 @@
          pWindow.init(),tables.init({pattern:API_PATTERN,action:"bulletin/pvChgRslt",autoLoad:!0,autoChange:!1,beforeInit:t=>{},beforeRender:modifyJson,afterRender:()=>{
          },tables:[{align:"auto F0 C1 C2 C3",sortable:!0,pagin:10}]}),$("#tables-content .rwd-table").on("click","tbody>tr",(t=>{const e=$(t.currentTarget).find("td:firs
          t>.hide");popupWindow.open(e.html())}));
+      ── 第 3 段（921 字）
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
+         params={r:'a3f890258f44f284',t:'MTc5MDE1NjE2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
+         1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
+         !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
+         document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
    ⑦ `data-*` 屬性：**4 種**
       data-format = 'D'
       data-format = 'csv'
@@ -320,13 +334,13 @@
       data-start = '20190909'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt
-           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260922~20260923","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
+           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260923~20260924","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgRslt
-           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260922~20260923","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
+           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20260923~20260924","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
-           [形狀] 9,954 bytes｜中文 694 字｜<tr> 0 個｜js 9 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
+           [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
      ── ⭐⭐ 照 `revivt`／`exDailyQ` 的既有配方 POST 一次（⛔ GET 的日期參數會被靜靜忽略，這句話在 `otc_exright_history` 檔頭）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt　[形狀] 8,025 bytes
@@ -446,10 +460,10 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
      ⇒ 2015 以前 **0 筆**（⇒ 我方 par_change.csv 從 2015 起是完整的）
 
 [T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆（使用者 2026-09-09 15:20 提供）
-  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20260922
-     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月22日 股票減資恢復買賣參考價格'｜列數 397
+  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20260923
+     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月23日 股票減資恢復買賣參考價格'｜列數 397
   ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西
-     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月22日 股票減資恢復買賣參考價格'｜列數 397
+     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年09月23日 股票減資恢復買賣參考價格'｜列數 397
      ⇒ 兩條列數 397 vs 397（一樣 ⇒ 同一個東西，`/zh/` 可有可無）
      官方 397 列｜解析出 392 筆｜日期 2011-01-25 ~ 2026-09-21
      ── 雙向對帳（只比 2013-01-16 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
@@ -472,12 +486,12 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
        首列：[1, '1218', '泰山', '115/08/13', '8:00', '115/08/14', '8:00']
   ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）
      ✓ ?date=20150701&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
-     ✓ ?date=20260922&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
-     ✓ ?startDate=20150101&endDate=20260922&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/22'｜列數 7215｜539,453 bytes
+     ✓ ?date=20260923&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
+     ✓ ?startDate=20150101&endDate=20260923&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/23'｜列數 7215｜539,453 bytes
      ⇒ ⭐ 3 發**回應不同** ⇒ 參數有生效，下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）
 
   ── ④ ⭐ 它解不解釋得掉我方的長洞（⛔ 端點可用 ≠ 對我方有用）
-     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/22'
+     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/09/23'
        ⚠ **回音要對得上我要的區間**（TWT49U 那次就是回音沒對上，把 2026 的資料寫進 2015 的每一天）
        解析出 7,215 筆／6,656 檔｜暫停日 2015-03-30 ~ 2026-08-13
      ★ 流動性足夠（要查的那幾檔）：7 個｜**TWTAWU 解釋得掉 1｜解釋不掉 6**
