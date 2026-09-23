@@ -72,7 +72,14 @@ def _rows(path):
 
 
 def official(codes):
-    """→ {(code, date): (factor, 來源, 前收, 參考價)}。官方三支的**聯集**。
+    """→ ({(code, date): (factor, 來源, 前收, 參考價)}, 來源筆數, 最新事件日)。
+
+    ⭐ 第三個回傳值是**每一支判準檔自己最新的那一天**（2026-09-23 加）：
+    ⚠ 抓取那一段失敗時，這一支照樣跑得完（它只讀既有檔）
+    ⇒ ⛔ 「這一趟是拿【上一份】判準檔比的」本來看不出來 ——
+      而看不出來的靜默，正是這一族每一次的形狀。
+
+    官方三支的**聯集**。
 
     ⛔ 三支各補一塊，缺任何一塊都會讓 D 類假性變大：
       `exDailyQ` 不含減資、也不含該檔轉上市之後的除權息。
@@ -83,12 +90,18 @@ def official(codes):
       ⚠ 而那看起來像是「我方漏抓了一萬多筆」——**方向剛好相反、而且很嚇人**。
       ⭐ 這一支是要拿來做換源決定的，⛔ 一個灌水的 C 類會直接誤導那個決定。
     """
-    out, src = {}, Counter()
+    out, src, newest = {}, Counter(), {}
+
+    def _seen(source, date):
+        # ⛔ 只記**真的被採用**的列（過不了 codes 濾網的不算）
+        if date and date > newest.get(source, ''):
+            newest[source] = date
     for r in _rows(EXH):                       # ① 上櫃除權息
         pre, ref = _f(r.get("pre_close")), _f(r.get("ref_price"))
         if pre and ref and r["stock_id"] in codes:
             out[(r["stock_id"], r["date"])] = (ref / pre, "exDailyQ", pre, ref)
             src["exDailyQ"] += 1
+            _seen("exDailyQ", r["date"])
     for r in _rows(RDH):                       # ② 上櫃減資
         pre, ref = _f(r.get("last_close")), _f(r.get("ref_price"))
         # ⛔⛔ 官方自己重複的列要**先扣掉**，否則它會永遠停在 C 類（官方有、
@@ -104,6 +117,7 @@ def official(codes):
         if pre and ref and r["stock_id"] in codes:
             out[(r["stock_id"], r["date"])] = (ref / pre, "revivt", pre, ref)
             src["revivt"] += 1
+            _seen("revivt", r["date"])
     if os.path.isdir(TWEX):                    # ③ 轉上市之後（TWT49U）
         for n in sorted(os.listdir(TWEX)):
             if not n.endswith(".csv"):
@@ -114,7 +128,8 @@ def official(codes):
                 if pre and ref and k[0] in codes and k not in out:
                     out[k] = (ref / pre, "TWT49U", pre, ref)
                     src["TWT49U"] += 1
-    return out, dict(src)
+                    _seen("TWT49U", k[1])
+    return out, dict(src), dict(newest)
 
 
 def otc_codes():
@@ -195,12 +210,18 @@ def main():
             "先出差異清單，⛔ 確認無誤之前一列都不動 `data/adj/`")
 
     codes = otc_codes()
-    off, src = official(codes)
+    off, src, newest = official(codes)
     mine = ours(codes)
     days = sorted(n[:-4] for n in os.listdir(DAILY)) if os.path.isdir(DAILY) else []
     lo = days[0] if days else ""
     hi = datetime.now(TPE).strftime("%Y-%m-%d")
     rl.info("官方（三支聯集）", f"{len(off):,} 筆｜{src}")
+    # ⭐ 判準檔的新舊要看得見：這一支與抓取那一段**不同 step**（2026-09-23 拆的）
+    #   ⇒ 抓取失敗時它照樣跑，⛔ 而那一趟比的是【上一份】判準檔。
+    rl.info("⭐ 判準檔的最新事件日"
+            "（⚠ 抓取那一步失敗時，這一趟讀到的是**上一份**）",
+            "｜".join(f"{k}：{v}" for k, v in sorted(newest.items()))
+            or "（三支都空）")
     rl.info("我方 data/adj（只算曾經上櫃的 " + f"{len(codes):,} 檔）",
             f"{len(mine):,} 筆")
     rl.check("算得出比對窗（⛔ 沒有日檔就無從判斷涵蓋期）", bool(lo),
