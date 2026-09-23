@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-23T23:05:57+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35876295595｜財報期別參數與公告時點（情報線 20260923-1420 §三 代驗）
+# ⏱ 這一趟：2026-09-23T23:36:57+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35879973184｜財報期別參數與公告時點（情報線 20260923-1420 §三 代驗）
 
 # ⛔ 這一支只讀不寫：不動 data/ 底下任何真資料
 # ⚠ 在開發容器／本機跑到的失敗**不是事實**（我方閘道對交易所 403）⇒ 只有 Actions 上的結果算數
@@ -6,18 +6,23 @@
 ══ ① MOPS t164sb03（POST／JSON）══
    端點：https://mops.twse.com.tw/mops/api/t164sb03
    ⛔ 判準：回應要自己講出 result.year／result.season，⚠ 不是看 HTTP 200
-   送 year=113 season=1 dataType=2｜合法歷史值（民國年＋dataType=2）
-      HTTP=200｜application/json;charset=UTF-8｜89 bytes
-      ⛔ 回應**講不出自己是哪一期**（沒有 result.year／season）
-         對方說：{"code":500,"message":"傳入參數異常","result":null,"datetime":"115/09/23 23:05:57"}
+   送 year=113 season=1 dataType=2｜合法歷史值（五鍵齊、民國年、dataType=2）
+      HTTP=200｜application/json;charset=UTF-8｜7,285 bytes｜code=200
+      回應自己說：year=113 season=1　✅ 跟我送的一樣
    送 year=113 season=3 dataType=2｜只改 season（⇒ 數字該跟著變）
-      HTTP=200｜application/json;charset=UTF-8｜89 bytes
+      HTTP=200｜application/json;charset=UTF-8｜7,185 bytes｜code=200
+      回應自己說：year=113 season=3　✅ 跟我送的一樣
+   送 year=2024 season=1 dataType=2｜只改年制成西元（⇒ 情報線量到端點會自己換成 113）
+      HTTP=200｜application/json;charset=UTF-8｜7,285 bytes｜code=200
+      回應自己說：year=113 season=1　⛔ 跟我送的不一樣
+   送 year=113 season=1 dataType=1｜對照組：dataType=1（⇒ 情報線量到它一律回最新季，⛔ 而且不報錯）
+      HTTP=200｜application/json;charset=UTF-8｜7,093 bytes｜code=200
+      回應自己說：year=115 season=2　⛔ 跟我送的不一樣
+   送 year=113 season=1 dataType=2｜⛔ 反向對照組：刻意少送第五個鍵（⇒ 該回 code:500）
+      HTTP=200｜application/json;charset=UTF-8｜89 bytes｜code=500
+      ⛔ code 500【傳入參數異常】＝**我方 body 錯**：傳入參數異常
       ⛔ 回應**講不出自己是哪一期**（沒有 result.year／season）
-         對方說：{"code":500,"message":"傳入參數異常","result":null,"datetime":"115/09/23 23:05:58"}
-   送 year=113 season=1 dataType=1｜對照組：dataType=1（⇒ 情報線量到它一律回最新季）
-      HTTP=200｜application/json;charset=UTF-8｜89 bytes
-      ⛔ 回應**講不出自己是哪一期**（沒有 result.year／season）
-         對方說：{"code":500,"message":"傳入參數異常","result":null,"datetime":"115/09/23 23:05:58"}
+         對方說：{"code":500,"message":"傳入參數異常","result":null,"datetime":"115/09/23 23:37:01"}
 
 ══ ② doc.twse t57sb01（GET／big5 HTML）══
    端點：https://doc.twse.com.tw/server-java/t57sb01
