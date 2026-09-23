@@ -331,6 +331,69 @@ def sync_order_violations(blocks):
             if not _is_zero_dep_selftest(blocks[k][1])]
 
 
+# ══════════════════════════════════════════════════════════════════
+# ⭐⭐ 只讀的對帳，不可以跟【會連外抓取】的指令放在同一個 `run:` 區塊
+#
+# ⛔ 2026-09-23 付過代價（`otc_adj_compare`，交接檔③那條「未解」的病根）：
+#   `daily.yml`「上櫃減資／除權息的官方判準」一個區塊裡有 12 個指令，
+#   shell 是 `bash -e`、而且 `continue-on-error: true`
+#   ⇒ 前面任何一個 rc≠0，後面全部**不跑**，⚠ 而 step 照樣顯示 success。
+#   ⇒ 實測兩趟，觸發完全不同而後果一模一樣：
+#     run 35752267833：第 4 個指令抓 `revivt` 被對方斷線 ⇒ 後面 8 個沒跑
+#     run 35366739319：低水位閘門**正常觸發** rc=1 ⇒ 同樣把後面全部掐死
+#   ⇒ 兩趟的 `otc_adj_compare` runlog 區塊都停在上一趟 ⇒ 而 `freshness_check`
+#     排在更前面 ⇒ 要等好幾天才有人發現。
+#
+# ⭐ 判準是【相依方向】，⛔ 不是「不准放一起」：
+#   會連外抓取的那幾支，它們的產出是後面 `--scan-only`／`adjust.py` 的輸入
+#   ⇒ 那一段**連坐是對的**。而只讀的對帳不需要「這一趟真的抓到」才有意義
+#   ⇒ 它被連坐掉是**純損失**。
+# ⚠ 順序仍然要在抓取之後（早跑會拿到昨天的官方清單）——那由步驟順序保證，
+#   ⛔ 不是由「同一個區塊」保證。
+# ══════════════════════════════════════════════════════════════════
+READONLY_AUDIT = "otc_adj_compare.py"
+# ⛔ 判準是「這一行會不會連外」，⚠ 不是檔名：同一支程式帶 `--scan-only` 就不連外。
+FETCHERS = ("otc_reduce_history.py", "otc_exright_history.py", "otc_adj.py")
+
+
+def _fetches(line):
+    """這一行會不會【連外抓取，而且掛掉會把後面連坐掉】。
+
+    ⛔⛔ 第一版兩個地方都選錯了對象（2026-09-23 當場被真的 workflow 打臉）：
+      ① 用子字串比 ⇒ `selftest_otc_reduce_history.py` 也命中
+         ——⚠ 那是自測，⛔ 不是抓取
+      ② 沒看守護 ⇒ `feeds.yml` 那一段**每一行都帶 `|| RC=1`**
+         ⇒ 它本來就不會連坐，判它違規等於叫人把已經對的東西改掉
+    ⇒ ⭐ 判準要問兩件事：**被叫的是哪一支**、**這一行掛掉會不會往下傳**。
+    """
+    s = line.strip()
+    if not s.startswith("python"):
+        return False
+    if "--scan-only" in s:
+        return False                      # ⛔ 掃描那一半不連外
+    if "|| RC=" in s or "|| true" in s:
+        return False                      # ⭐ 有守護 ⇒ 掛掉不會連坐
+    parts = s.split()
+    if len(parts) < 2:
+        return False
+    return parts[1] in FETCHERS           # ⛔ 比**被叫的那一支**，不是子字串
+
+
+def coupled_audit_blocks(blocks):
+    """→ [(步驟名, 那一行抓取指令)]；空 list ＝ 沒有人把對帳綁在抓取後面。"""
+    bad = []
+    for name, body in blocks:
+        live = [ln for ln in body.split("\n")
+                if ln.strip() and not ln.strip().startswith("#")]
+        if not any(READONLY_AUDIT in ln for ln in live):
+            continue
+        for ln in live:
+            if _fetches(ln):
+                bad.append((name, ln.strip()))
+                break
+    return bad
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     files = sorted(glob.glob(os.path.join(here, ".github", "workflows", "*.yml")))
@@ -1363,6 +1426,84 @@ def main():
         ck("★ 而 73073399b 之後那一版是**乾淨的**"
            "（⛔ 少了這一半，「看到什麼都說紅」也會通過上面那條）",
            _vg == [], f"⛔ 判出 {_vg}")
+
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 只讀對帳不可以跟抓取同區塊（病根與判準寫在 `coupled_audit_blocks()` 上面）
+    # ══════════════════════════════════════════════════════════════
+    _audit_hosts = []
+    for f in files:
+        short = os.path.basename(f)
+        _blocks = run_blocks(f)
+        if not any(READONLY_AUDIT in b for _n, b in _blocks):
+            continue
+        _audit_hosts.append(short)
+        _bad = coupled_audit_blocks(_blocks)
+        ck(f"⭐⭐ {short}｜`{READONLY_AUDIT}` **沒有**跟會連外抓取的指令同一個 `run:` 區塊",
+           not _bad,
+           "⛔ 綁在一起了："
+           + "；".join(f"「{n}」裡的 `{c}`" for n, c in _bad)
+           + "　⇒ 那一行 rc≠0 就會把對帳連坐掉，⚠ 而 step 照樣 success")
+    # ⭐ 母體自己要是一道斷言（第七點第九個）：掃到 0 支跟「全部通過」長得一樣。
+    ck(f"★ 真的有 workflow 在跑 `{READONLY_AUDIT}`（{_audit_hosts}）",
+       bool(_audit_hosts), "⛔ 一支都沒掃到 ⇒ 上面那一條等於沒跑")
+
+    # ★★ 反向驗：⛔ 一條永遠不會紅的斷言跟一條有效的斷言長得一樣。
+    _coupled_yml = (
+        "jobs:\n  run:\n    steps:\n"
+        "      - name: 官方判準（綁在一起的壞版本）\n"
+        "        run: |\n"
+        "          python otc_reduce_history.py --no-scan\n"
+        "          python otc_adj_compare.py\n")
+    _split_yml = (
+        "jobs:\n  run:\n    steps:\n"
+        "      - name: 官方判準\n"
+        "        run: |\n          python otc_reduce_history.py --no-scan\n"
+        "      - name: 只讀對帳\n"
+        "        run: |\n"
+        "          RC=0\n          python otc_adj_compare.py || RC=$?\n          exit $RC\n")
+    _scanonly_yml = (
+        "jobs:\n  run:\n    steps:\n"
+        "      - name: 掃描那一半（⛔ 不連外）\n"
+        "        run: |\n"
+        "          python otc_exright_history.py --scan-only\n"
+        "          python otc_adj_compare.py\n")
+    with tempfile.TemporaryDirectory() as _td:
+        def _w(nm, txt):
+            p = os.path.join(_td, nm)
+            io.open(p, "w", encoding="utf-8").write(txt)
+            return run_blocks(p)
+        _b1, _b2, _b3 = (_w("a.yml", _coupled_yml), _w("b.yml", _split_yml),
+                         _w("c.yml", _scanonly_yml))
+        ck("★ 反向驗的樣本解得出步驟（⛔ 解不出來的話下面三條沒有意義）",
+           (len(_b1), len(_b2), len(_b3)) == (1, 2, 1),
+           f"⛔ 解出 {len(_b1)}／{len(_b2)}／{len(_b3)} 步")
+        ck("★ 反向驗：抓取與對帳**綁在同一個區塊** ⇒ 判得出來",
+           bool(coupled_audit_blocks(_b1)), "⛔ 沒判出來 ⇒ 這條斷言是假的")
+        ck("★ 而拆成兩步之後是**乾淨的**（⛔ 少了這一半，「看到什麼都說紅」也會通過上面那條）",
+           coupled_audit_blocks(_b2) == [], "⛔ 誤報")
+        ck("★ ⭐ 而 `--scan-only`（⛔ 不連外）跟對帳同區塊**不算違規**"
+           "（⚠ 判準是會不會連外，不是檔名）",
+           coupled_audit_blocks(_b3) == [], "⛔ 把不連外的也判成違規了")
+        # ⛔⛔ 下面兩條是第一版**真的誤報過**的兩種（`feeds.yml` 當場打臉）
+        _guarded = _w("d.yml", (
+            "jobs:\n  run:\n    steps:\n"
+            "      - name: 每一行都有守護\n"
+            "        run: |\n          RC=0\n"
+            "          python otc_reduce_history.py || RC=1\n"
+            "          python otc_adj_compare.py || RC=1\n          exit $RC\n"))
+        ck("★ ⭐⭐ 每一行都帶 `|| RC=` 的區塊**不算違規**"
+           "（⚠ 有守護就不會連坐，⛔ 判它違規等於叫人改掉已經對的東西）",
+           coupled_audit_blocks(_guarded) == [], "⛔ 誤報（第一版就是這樣）")
+        _selftest_only = _w("e.yml", (
+            "jobs:\n  run:\n    steps:\n"
+            "      - name: 只有自測\n"
+            "        run: |\n"
+            "          python selftest_otc_reduce_history.py\n"
+            "          python otc_adj_compare.py\n"))
+        ck("★ ⭐ `selftest_otc_reduce_history.py` **不是**抓取"
+           "（⛔ 子字串比會把它算進去——第一版就是）",
+           coupled_audit_blocks(_selftest_only) == [], "⛔ 子字串誤報")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
