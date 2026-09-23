@@ -77,7 +77,19 @@ def main():
        "⇒ 所以那一節還要看 bytes 與擋阻頁判準",
        F.upload_dates(ROW.encode("utf-8")) == ["113/05/15 14:25:29"])
 
-    print("\n④ ★ 沒有動到 repo 真的輸出檔")
+    print("\n④ ⭐ 對方的錯誤訊息要**解碼成看得懂的字**（⛔ 不是 bytes 的 repr）")
+    err = '{"code":500,"message":"傳入參數有誤"}'.encode("utf-8")
+    got = F.short_text(err)
+    ck("  ⭐⭐ utf-8 的訊息解得出中文（⛔ 不可以是 \\xe5\\x82\\xb3 那種）",
+       "傳入參數有誤" in got and "\\x" not in got, got)
+    ck("  ⭐ big5 的也解得出來（⚠ 這一族兩種編碼都遇得到）",
+       "查無資料" in F.short_text("查無資料".encode("big5")))
+    ck("  ⛔ 空回應講得出它是空的（⚠ 不可以回空字串讓人以為沒印到）",
+       F.short_text(b"") == "（空回應）")
+    ck("  ⚠ 太長要截斷而且**講出它被截斷了**",
+       F.short_text(("a" * 600).encode()).endswith("…（截斷）"))
+
+    print("\n⑤ ★ 沒有動到 repo 真的輸出檔")
     with tempfile.TemporaryDirectory() as d:
         real = F.OUT
         before = os.path.exists(real)

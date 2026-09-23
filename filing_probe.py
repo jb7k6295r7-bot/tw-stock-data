@@ -106,6 +106,29 @@ def upload_dates(body):
                       r"[0-2][0-9]:[0-5][0-9]:[0-5][0-9])", txt)
 
 
+def short_text(body, limit=500):
+    """→ 把回應**解碼成看得懂的字**。⛔ 不要印 bytes 的 repr。
+
+    ⛔⛔ 2026-09-23 run 35860275837 當場付過代價：`t164sb03` 回
+    `{"code":500,"message":"傳入…"}` 只有 89 bytes，⚠ 而本支把它印成
+    `b'{"code":500,"message":"\xe5\x82\xb3…'` 又截在 120 字
+    ⇒ ⭐ **對方其實有講原因，而我把它印成看不懂的樣子** ——
+      那跟「沒印」的差別只有一點點：它讓人以為自己看過了。
+    ⇒ ⚠ 而這一格正是 CLAUDE.md 六點六那條的同一族：
+      **錯誤訊息不可以砍尾巴，可行動的部分往往在後面。**
+    """
+    if not body:
+        return "（空回應）"
+    for enc in ("utf-8", "big5"):
+        try:
+            txt = body.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+        txt = " ".join(txt.split())
+        return txt if len(txt) <= limit else txt[:limit] + "…（截斷）"
+    return f"（解不出編碼，{len(body)} bytes）"
+
+
 def hit(url, data=None, headers=None):
     """→ (status, ctype, body, err)。⛔ 例外不吞：錯誤訊息**不砍尾巴**（六點六）。"""
     req = urllib.request.Request(url, data=data, method="POST" if data else "GET")
@@ -155,8 +178,8 @@ def probe_mops(lines):
             lines.append("      ⛔⛔ **這是擋阻頁**（HTTP 200 也算），"
                          "⚠ 只驗狀態碼會把它當成資料")
         elif said is None:
-            lines.append("      ⛔ 回應**講不出自己是哪一期**（沒有 result.year／season）"
-                         f"⇒ 前 120 字：{body[:120]!r}")
+            lines.append("      ⛔ 回應**講不出自己是哪一期**（沒有 result.year／season）")
+            lines.append(f"         對方說：{short_text(body)}")
         else:
             ok = "✅ 跟我送的一樣" if said == (year, season) else "⛔ 跟我送的不一樣"
             lines.append(f"      回應自己說：year={said[0]} season={said[1]}　{ok}")
