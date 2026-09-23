@@ -327,13 +327,29 @@ jobs:
         run: |
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
-          python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0
+          # ⛔⛔ RC-GUARD：當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⭐ 本步沒有 selftest 閘門 ⇒ 掛 `RC-GUARD`，讓既有那道嚴格檢查一起守。
+          RC=0
+          python feeds.py --run --feed otcinst --start "$DAY" --end "$DAY" --sleep 0 || RC=1
           # ★ 同「融資融券與本益比」那一步的理由：只問當天 ⇒ 漏掉的日子永遠不重試。
           #   目前 otcinst 剛好 0 個洞，⛔ 但「現在沒有洞」不是「不會有洞」。
           #   已存在就跳過，所以沒洞時這一段是 0 個請求。
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           python feeds.py --run --feed otcinst --start 2015-01-01 --end "$TODAY" \
-                          --limit 20 --sleep 1
+                          --limit 20 --sleep 1 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ★★ 2026-09-09 新增：**官方會事後修訂三大法人的投信欄，而我方 T 日抓完就定版。**
       #   市場情報分析線 23:55 用櫃買個股層端點逐檔比對，量到 09-07/08/09 投信對不上；
@@ -396,8 +412,25 @@ jobs:
           python selftest_margin_note.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           echo "目標交易日：$DAY"
+          # ⛔⛔ 當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⛔ 這一步**刻意不掛那個嚴格標記**（`selftest_workflows._rc_check`）：
+          #   它要求區塊內每一發 python 都守門，⚠ 而本步開頭的 selftest 是【閘門】
+          #   ——它紅了就不可以往下抓 ⇒ 它必須連坐。
+          #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
+          RC=0
           for f in margin per otcmargin otcper; do
-            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           done
           # ★★ 2026-09-09 新增第二段：**回頭補漏掉的日子**。
           #   在這之前這一步**只問當天** ⇒ 某一天失敗，那一天就**永遠不會被重試**，
@@ -412,8 +445,10 @@ jobs:
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           for f in margin per otcmargin otcper; do
             python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
-                            --limit 20 --sleep 2
+                            --limit 20 --sleep 2 || RC=1
           done
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ⭐⭐ 借券賣出（SBL）。K線線 2026-09-10 15:45 列**第一優先**：
       #   借券賣出是融券的 **77.5 倍**，而融券只佔空方的 **1.4%**
@@ -431,15 +466,34 @@ jobs:
         run: |
           python selftest_sbl.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          # ⛔⛔ 當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⛔ 這一步**刻意不掛那個嚴格標記**（`selftest_workflows._rc_check`）：
+          #   它要求區塊內每一發 python 都守門，⚠ 而本步開頭的 selftest 是【閘門】
+          #   ——它紅了就不可以往下抓 ⇒ 它必須連坐。
+          #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
+          RC=0
           for f in sbl otcsbl; do
-            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2
+            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           done
           # 回頭補漏掉的日子（跟融資融券那一步同一個兩段式寫法）
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           for f in sbl otcsbl; do
             python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
-                            --limit 20 --sleep 2
+                            --limit 20 --sleep 2 || RC=1
           done
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ⭐ 官方創新板成分清單（`STOCK_TIB`）。它取代的是一條**猜的**判準
       #   （名稱後綴 `-創`／`KY創`）——2026-09-09 兩者零差異，⚠ 但字串法是猜的：
@@ -455,10 +509,29 @@ jobs:
         run: |
           python selftest_tib.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
-          python feeds.py --run --feed tib --start "$DAY" --end "$DAY" --sleep 2
+          # ⛔⛔ 當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⛔ 這一步**刻意不掛那個嚴格標記**（`selftest_workflows._rc_check`）：
+          #   它要求區塊內每一發 python 都守門，⚠ 而本步開頭的 selftest 是【閘門】
+          #   ——它紅了就不可以往下抓 ⇒ 它必須連坐。
+          #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
+          RC=0
+          python feeds.py --run --feed tib --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           python feeds.py --run --feed tib --start 2021-06-28 --end "$TODAY" \
-                          --limit 40 --sleep 2
+                          --limit 40 --sleep 2 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ⭐⭐ 變更交易（全額交割）名單。K線線 2026-09-10 15:45 的 Q5：
       #   他們的前置閘門有「全額交割股」一列，而我方全文查「全額交割」**0 次**
@@ -475,10 +548,29 @@ jobs:
         run: |
           python selftest_fulldelivery.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
-          python feeds.py --run --feed fulldelivery --start "$DAY" --end "$DAY" --sleep 2
+          # ⛔⛔ 當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⛔ 這一步**刻意不掛那個嚴格標記**（`selftest_workflows._rc_check`）：
+          #   它要求區塊內每一發 python 都守門，⚠ 而本步開頭的 selftest 是【閘門】
+          #   ——它紅了就不可以往下抓 ⇒ 它必須連坐。
+          #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
+          RC=0
+          python feeds.py --run --feed fulldelivery --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           python feeds.py --run --feed fulldelivery --start 2015-01-01 --end "$TODAY" \
-                          --limit 40 --sleep 2
+                          --limit 40 --sleep 2 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ⭐⭐ 上市「**停止買賣中**」的即時名單（`violation/stop`）。
       #   K線分析線 2026-09-11 01:40（端點是使用者給的）。
@@ -514,10 +606,29 @@ jobs:
         run: |
           python selftest_chtm.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
-          python feeds.py --run --feed chtm --start "$DAY" --end "$DAY" --sleep 2
+          # ⛔⛔ 當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⛔ 這一步**刻意不掛那個嚴格標記**（`selftest_workflows._rc_check`）：
+          #   它要求區塊內每一發 python 都守門，⚠ 而本步開頭的 selftest 是【閘門】
+          #   ——它紅了就不可以往下抓 ⇒ 它必須連坐。
+          #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
+          RC=0
+          python feeds.py --run --feed chtm --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           python feeds.py --run --feed chtm --start 2015-01-01 --end "$TODAY" \
-                          --limit 40 --sleep 2
+                          --limit 40 --sleep 2 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ⭐ 個股融資融券成數的**調整幅度**（`BFIB9U`，上市）。
       #   K線線那條 166.67 的個股面：基準 60%，個股實際成數要用「基準 − 累計調整」推。
@@ -534,10 +645,29 @@ jobs:
         run: |
           python selftest_marginratio.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
-          python feeds.py --run --feed marginratio --start "$DAY" --end "$DAY" --sleep 2
+          # ⛔⛔ 當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⛔ 這一步**刻意不掛那個嚴格標記**（`selftest_workflows._rc_check`）：
+          #   它要求區塊內每一發 python 都守門，⚠ 而本步開頭的 selftest 是【閘門】
+          #   ——它紅了就不可以往下抓 ⇒ 它必須連坐。
+          #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
+          RC=0
+          python feeds.py --run --feed marginratio --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           python feeds.py --run --feed marginratio --start 2015-01-01 --end "$TODAY" \
-                          --limit 40 --sleep 2
+                          --limit 40 --sleep 2 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ⭐⭐ 終止上市（下市）清單。⛔ 它解的是**生存者偏誤**：
       #   下市公司會從母體消失 ⇒ 「2015 買、後來下市」那一段整段不見
@@ -657,25 +787,57 @@ jobs:
         continue-on-error: true
         timeout-minutes: 10
         run: |
+          # ⛔⛔ RC-GUARD：當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⭐ 本步沒有 selftest 閘門 ⇒ 掛 `RC-GUARD`，讓既有那道嚴格檢查一起守。
+          RC=0
           python feeds.py --run --feed parvalue --start 2015-01 --end 2026-09 \
-            --limit 30 --sleep 5
+            --limit 30 --sleep 5 || RC=1
           # ⭐⭐ 2026-09-13：補官方的 `漲停價格／跌停價格`（舊日檔沒有那兩欄）。
           #   ⛔ 台帳說「這個月問過了」⇒ 上面那一行不會重問 ⇒ 舊檔永遠補不到。
           #   ⇒ `--need-col` 用**資料自己**當進度（第四點）：表頭有那一欄就跳過
           #     ⇒ ⭐ 全部補完之後它會自己變成 no-op，⛔ 不必記得回來拿掉。
           python feeds.py --run --feed parvalue --start 2015-01 --end 2026-09 \
-            --need-col limit_up --limit 30 --sleep 5
+            --need-col limit_up --limit 30 --sleep 5 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       - name: ETF 分割（歷史回補，每趟 30 個月）
         if: always()
         continue-on-error: true
         timeout-minutes: 10
         run: |
+          # ⛔⛔ RC-GUARD：當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⭐ 本步沒有 selftest 閘門 ⇒ 掛 `RC-GUARD`，讓既有那道嚴格檢查一起守。
+          RC=0
           python feeds.py --run --feed etfsplit --start 2015-01 --end 2026-09 \
-            --limit 30 --sleep 5
+            --limit 30 --sleep 5 || RC=1
           # ⭐ 同上：補官方漲跌停兩欄，補完自己變 no-op
           python feeds.py --run --feed etfsplit --start 2015-01 --end 2026-09 \
-            --need-col limit_up --limit 30 --sleep 5
+            --need-col limit_up --limit 30 --sleep 5 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ★ 只讀本地檔、不連外。**一定要排在上一步後面**，否則新事件不會進因子。
       #   全量重建，資料沒變就不會 commit。
@@ -1234,10 +1396,26 @@ jobs:
         timeout-minutes: 12
         run: |
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
-          python feeds.py --run --feed breadth --start "$DAY" --end "$DAY" --sleep 0
+          # ⛔⛔ RC-GUARD：當日抓取掛掉**不可以賠掉後面的回補**（2026-09-23 補）。
+          #   ⚠ 這一步是兩段式：先抓當日，再 `--limit N` 回補漏掉的日子。
+          #   ⛔ 而 `set -e` 讓第一段非零時，第二段**一次都不會跑**
+          #     ⇒ ⭐ 回補存在的唯一理由就是補當日抓取留下的洞
+          #       ⇒ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+          #   ⭐ 現場證據 run 35852672461（2026-09-23 19:15 台北）：
+          #     `[margin] 完成：…失敗 1 天` ⇒ exit 1 ⇒ 同一步的 per／otcmargin／otcper
+          #     與兩段回補迴圈**全部沒跑** ⇒ otcmargin／otcper 停在 09-21，
+          #     ⚠ 而 09-22 是真的交易日。⭐ 而 margin 那一發的失敗是**例行的**：
+          #     19:00 那一趟交易所還沒發布當日融資融券 ⇒ ⛔ 不是偶爾，是每一趟都會。
+          #   ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+          #     ⇒ 記下來、繼續跑、⭐ 最後仍然 exit $RC。
+          # ⭐ 本步沒有 selftest 閘門 ⇒ 掛 `RC-GUARD`，讓既有那道嚴格檢查一起守。
+          RC=0
+          python feeds.py --run --feed breadth --start "$DAY" --end "$DAY" --sleep 0 || RC=1
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           python feeds.py --run --feed breadth --start 2015-01-01 --end "$TODAY" \
-                          --limit 200 --sleep 1
+                          --limit 200 --sleep 1 || RC=1
+          # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
+          exit $RC
 
       # ★ 拿大盤漲跌家數（MI_INDEX）當日檔的外部判準。離線、只讀。
       #   日曆只證明「那一天存不存在」，不證明「那天收到幾檔」；

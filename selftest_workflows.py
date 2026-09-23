@@ -127,12 +127,16 @@ def run_blocks(path):
 #   ⚠ 只做①的話名單會永遠停在 34：修好了沒有人會去刪它。
 # ══════════════════════════════════════════════════════════════════
 KNOWN_UNGUARDED = {
+    # ⭐ 2026-09-23 還掉四筆（兩段式抓取，⛔ 沒有 selftest 閘門 ⇒ 可以全守）：
+    #   全市場三大法人（上櫃 TPEx）／面額變更／ETF 分割／漲跌家數
+    #   ⇒ 病根與現場證據見 `backfill_coupled_blocks()` 上面那一段。
+    # ⚠ 另六步也守了 feeds.py，⛔ 但它們開頭的 selftest 是【閘門】必須連坐
+    #   ⇒ 依這一份的判準它們仍然算「沒守門」，所以**留在名單裡**。
     ('backfill.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
     ('backfill.yml', '驗解析規則（空值寫法＋無成交列，離線）'),
     ('backfill.yml', '興櫃單日修補（把被刪掉的那一天補回去）'),
     ('backfill.yml', '回補'),
     ('daily.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
-    ('daily.yml', '全市場三大法人（上櫃 TPEx）'),
     ('daily.yml', '融資融券與本益比（上市＋上櫃）'),
     ('daily.yml', '借券賣出餘額（上市＋上櫃）'),
     ('daily.yml', '官方創新板成分清單（逐日，回到 2021-06-28）'),
@@ -141,8 +145,6 @@ KNOWN_UNGUARDED = {
     ('daily.yml', '上櫃變更交易／分盤／管理股票（逐日）'),
     ('daily.yml', '個股融資融券成數調整（逐日）'),
     ('daily.yml', '終止上市（下市）清單'),
-    ('daily.yml', '面額變更（歷史回補，每趟 30 個月）'),
-    ('daily.yml', 'ETF 分割（歷史回補，每趟 30 個月）'),
     ('daily.yml', '算還原因子'),
     ('daily.yml', '上櫃減資／除權息的官方判準（各一發請求）'),
     ('daily.yml', '上櫃減資對帳'),
@@ -152,7 +154,6 @@ KNOWN_UNGUARDED = {
     ('daily.yml', '母體漏列規模（六張官方清單差集，不連外）'),
     ('daily.yml', '無成交列水位（哪幾天已是新語意，不連外）'),
     ('daily.yml', '上櫃除權息判準（官方當日，逐日累積）'),
-    ('daily.yml', '漲跌家數（當天 ＋ 分批回補）'),
     ('feeds.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
     ('feeds.yml', '回補'),
     ('feeds.yml', '上櫃除權息與減資（FinMind 回補｜⛔ 免費層）'),
@@ -170,8 +171,12 @@ def check_rc_debt(files):
     for f in files:
         short = os.path.basename(f)
         for name, body in run_blocks(f):
-            calls = [ln for ln in body.split("\n")
-                     if re.search(r"^\s*python\s", ln) and "|| true" not in ln]
+            # ⛔⛔ 2026-09-23：這裡原本也是逐【實體行】看，而本 repo 的長指令
+            #   用反斜線續行、**守門寫在最後一行的行尾** ⇒ 守好了照樣被算成欠債
+            #   ⇒ 修好的四步從名單刪掉之後，這一道反而報「新欠的」。
+            #   ⭐ 判準抽成一份（第四點五）：跟 `_rc_check` 共用 `_logical_lines()`。
+            calls = [ln for ln in _logical_lines(body)
+                     if re.match(r"^python\s", ln) and "|| true" not in ln]
             if len(calls) >= 2 and any("|| RC=" not in ln for ln in calls):
                 now.add((short, name))
     added = sorted(now - KNOWN_UNGUARDED)
@@ -391,6 +396,107 @@ def coupled_audit_blocks(blocks):
             if _fetches(ln):
                 bad.append((name, ln.strip()))
                 break
+    return bad
+
+
+# ══════════════════════════════════════════════════════════════════
+# ⛔⛔ 抽掉回補：**當日抓取掛掉 ⇒ 回補一次都不跑**（2026-09-23 加）
+#
+# ⭐⭐ 這一條跟上面「只讀對帳不可與抓取同區塊」是同一族，⛔ 而損失形狀不同：
+#   這幾步一律是【兩段式】——第一段抓當日，第二段 `--limit N` 回補漏掉的日子。
+#   ⇒ ⭐ 而第二段存在的**唯一理由**，就是補第一段留下的洞
+#     ⇒ `set -e` 讓第一段非零時，第二段**一次都不跑**
+#     ⇒ ⛔ 它剛好在【最需要它】的那一趟缺席，而 run 是綠的。
+#
+# ⚠ 現場證據（run 35852672461，2026-09-23 19:15 台北）：
+#   `[margin] 完成：有資料 0 天、無資料/休市 0 天、失敗 1 天` ⇒ exit 1
+#   ⇒ 同一步的 `per`／`otcmargin`／`otcper` 與**兩段回補迴圈全部沒跑**
+#   ⇒ `otcmargin`／`otcper` 停在 09-21，⚠ 而 09-22 是真的交易日
+#     （`data/universe/daily/2026-09-22.csv` 在）。
+#   ⭐ 而 margin 那一發的失敗是**例行的**：19:00 那一趟交易所還沒發布當日融資融券
+#     ⇒ ⛔ 所以這不是「偶爾掛一次」，是**每一趟 19:00 都會**。
+#
+# ⛔ 而「全部 `|| true`」不算修好：那是把失敗吞掉，比連坐更糟
+#   ⇒ 判準要的是 `|| RC=`，配區塊收尾的 `exit $RC`（與本檔 617 那一步同一套）。
+# ══════════════════════════════════════════════════════════════════
+FEED_RUN = "feeds.py --run"
+
+
+def _logical_lines(body):
+    """→ 把反斜線續行併起來的活行（⛔ 已排掉註解與空行）。
+
+    ⚠ 非併不可：守門寫在**最後一個實體行**的行尾
+      ⇒ 逐行看會把 `python feeds.py ... \\` 判成「沒守門」（誤報）。
+    """
+    out, buf = [], ""
+    for ln in body.split("\n"):
+        s = ln.strip()
+        if not s or s.startswith("#"):
+            continue
+        buf = (buf + " " + s) if buf else s
+        if buf.endswith("\\"):
+            buf = buf[:-1]
+            continue
+        out.append(buf)
+        buf = ""
+    if buf:
+        out.append(buf)
+    return out
+
+
+def backfill_coupled_blocks(blocks):
+    """→ [(步驟名, 會賠掉後面那幾發的那一發)]；空 list ＝ 乾淨。
+
+    判準逐字：**同一個 `run:` 區塊裡有兩發以上 `feeds.py --run` 時，
+      每一發都必須帶 `|| RC=`。**
+
+    ⚠ 2026-09-23 的突變驗把第一版的判準推翻了一半：原本寫「除了最後一發」，
+      理由是「它後面沒有東西可以賠」。⛔ 而突變②（拿掉**回補**那一發的守門）
+      量到的結果是【這一條不會紅】——⇒ 那一發掛掉時，
+      ⛔ 收尾的 `exit $RC` 讀不到它 ⇒ **整步的 rc 變成 0 ⇒ 失敗被吞掉**。
+      ⇒ ⭐ 所以最後一發**也要守**：守門不只是為了不連坐後面，
+        也是為了讓 `exit $RC` 講得出這一趟到底有沒有出事。
+
+    ⛔⛔ 而這一條**只套在有 `schedule:` 的 workflow 上**（呼叫端過濾），
+      ⚠ 理由不是省事，是**第一發的角色不同**：
+        ・排程檔（daily）第一發是【當日抓取】⇒ 它失敗是例行的
+          ⇒ ⛔ 拿它去擋回補＝在最需要修的那一趟不修，而沒有人在看。
+        ・手動檔（feeds／backfill）第一發是【長工前的一天實測】
+          ⇒ ⭐ 那是**刻意的閘門**：實測不過就不該開始長工，而且有人在看。
+      ⇒ 2026-09-23 第一版沒分，當場誤報了 `feeds.yml`「回補」。
+    """
+    bad = []
+    for name, body in blocks:
+        calls = [l for l in _logical_lines(body) if FEED_RUN in l]
+        if len(calls) < 2:
+            continue
+        for l in calls:
+            if "|| RC=" not in l:
+                bad.append((name, l))
+                break
+    return bad
+
+
+def backfill_swallowed_blocks(blocks):
+    """→ [步驟名]；有守門卻**沒有把 RC 吐出去**的區塊。
+
+    ⛔ 少了收尾等於把失敗吞掉，而本檔多處逐字寫著「吞掉失敗比連坐更糟」
+      ⇒ 兩件要一起守，⛔ 只守一半會換來另一種病。
+
+    ⚠ 2026-09-23 第一版只認 `exit $RC` ⇒ **誤報了兩個寫對的區塊**：
+      `feeds.yml`／`backfill.yml`「回補」收在
+      `[ "$RC" = 0 ] || { echo …; exit 1; }` —— ⭐ 那一樣沒有吞掉。
+      ⇒ 改成 `exit $RC` 與 `exit 1` 都算（與 `_rc_check` 同一套判準），
+        ⛔ 而且比**程式**不比註解：註解裡也寫著 exit 1。
+    """
+    bad = []
+    for name, body in blocks:
+        lines = _logical_lines(body)
+        if not any("|| RC=" in l for l in lines):
+            continue
+        code = [l.split("#", 1)[0] for l in lines]
+        if not any("exit $RC" in c or "exit 1" in c for c in code):
+            bad.append(name)
     return bad
 
 
@@ -640,9 +746,16 @@ def main():
     # ══════════════════════════════════════════════════════════════
     # ⭐ 判準抽成**一份**（第四點五）：逐年迴圈與 `RC-GUARD` 區塊共用它。
     def _rc_calls(body):
-        """→ 該段裡呼叫 `python` 的行。⚠ 明示 `|| true` 的不算（那是刻意容錯）。"""
-        return [ln for ln in body.split("\n")
-                if re.search(r"^\s*python\s", ln) and "|| true" not in ln]
+        """→ 該段裡呼叫 `python` 的行。⚠ 明示 `|| true` 的不算（那是刻意容錯）。
+
+        ⛔⛔ 2026-09-23 修掉一個**盲點**：這一支原本逐【實體行】看，
+          ⚠ 而本 repo 的長指令是用反斜線續行、**守門寫在最後一行的行尾**
+          ⇒ `python feeds.py ... \\` 這一行看起來「沒帶 `|| RC=`」⇒ 誤報。
+          ⭐ 改成跟 `backfill_coupled_blocks()` 共用 `_logical_lines()`
+            （第四點五：判準抽成一份）。
+        """
+        return [ln for ln in _logical_lines(body)
+                if re.match(r"^python\s", ln) and "|| true" not in ln]
 
     def _rc_check(label, body, after):
         calls = _rc_calls(body)
@@ -1504,6 +1617,82 @@ def main():
         ck("★ ⭐ `selftest_otc_reduce_history.py` **不是**抓取"
            "（⛔ 子字串比會把它算進去——第一版就是）",
            coupled_audit_blocks(_selftest_only) == [], "⛔ 子字串誤報")
+
+    # ══════════════════════════════════════════════════════════════
+    # ⭐⭐ 當日抓取不可以連坐掉回補（病根寫在 `backfill_coupled_blocks()` 上面）
+    # ══════════════════════════════════════════════════════════════
+    _n_two_stage = 0
+    for f in files:
+        short = os.path.basename(f)
+        # ⛔ 只看排程檔：手動檔的第一發是刻意的長工前實測閘門（見函式 docstring）
+        if not re.search(r"^ +schedule:", io.open(f, encoding="utf-8").read(),
+                         re.M):
+            continue
+        _blocks = run_blocks(f)
+        _n_two_stage += sum(
+            1 for _n, _b in _blocks
+            if len([l for l in _logical_lines(_b) if FEED_RUN in l]) >= 2)
+        _bad = backfill_coupled_blocks(_blocks)
+        ck(f"⭐⭐ {short}｜兩段式抓取的區塊裡，**前面每一發 `feeds.py --run` 都有 `|| RC=`**",
+           not _bad,
+           "⛔ 沒守門："
+           + "；".join(f"「{n}」裡的 `{c[:70]}`" for n, c in _bad)
+           + "　⇒ 那一發 rc≠0 就會把**同一區塊的回補**連坐掉，"
+             "⚠ 而回補存在的理由就是補它留下的洞")
+        _sw = backfill_swallowed_blocks(_blocks)
+        ck(f"⭐ {short}｜有 `|| RC=` 的區塊都收尾在 `exit $RC`（⛔ 否則等於把失敗吞掉）",
+           not _sw, f"⛔ 有守門卻沒有 exit $RC：{_sw}")
+    # ⭐ 母體自己要是一道斷言（第七點第九個）：掃到 0 個跟「全部通過」長得一樣。
+    ck(f"★ 真的掃到兩段式抓取的區塊（{_n_two_stage} 個）",
+       _n_two_stage >= 10, f"⛔ 只掃到 {_n_two_stage} 個 ⇒ 上面兩條等於沒跑")
+
+    # ★★ 反向驗：⛔ 一條永遠不會紅的斷言跟一條有效的斷言長得一樣。
+    _bf_bad = 'jobs:\n  run:\n    steps:\n      - name: 兩段式（沒守門的壞版本）\n        run: |\n          python feeds.py --run --feed margin --start "$DAY"\n          python feeds.py --run --feed margin --start 2015-01-01 --limit 20\n'
+    _bf_ok = 'jobs:\n  run:\n    steps:\n      - name: 兩段式（守好的）\n        run: |\n          RC=0\n          python feeds.py --run --feed margin --start "$DAY" || RC=1\n          python feeds.py --run --feed margin --start 2015-01-01 --limit 20 || RC=1\n          exit $RC\n'
+    _bf_cont = 'jobs:\n  run:\n    steps:\n      - name: 守門寫在續行的最後一行\n        run: |\n          RC=0\n          python feeds.py --run --feed margin --start "$DAY" \\\n                          --end "$DAY" || RC=1\n          python feeds.py --run --feed margin --limit 20 || RC=1\n          exit $RC\n'
+    _bf_one = 'jobs:\n  run:\n    steps:\n      - name: 只有一發（⛔ 不算兩段式）\n        run: |\n          python feeds.py --run --feed margin --start "$DAY"\n'
+    with tempfile.TemporaryDirectory() as _td:
+        def _wbf(nm, txt):
+            p = os.path.join(_td, nm)
+            io.open(p, "w", encoding="utf-8").write(txt)
+            return run_blocks(p)
+        _q1, _q2 = _wbf("p.yml", _bf_bad), _wbf("q.yml", _bf_ok)
+        _q3, _q4 = _wbf("r.yml", _bf_cont), _wbf("s.yml", _bf_one)
+        ck("★ 反向驗的樣本解得出步驟（⛔ 解不出來的話下面幾條沒有意義）",
+           (len(_q1), len(_q2), len(_q3), len(_q4)) == (1, 1, 1, 1),
+           f"⛔ 解出 {len(_q1)}／{len(_q2)}／{len(_q3)}／{len(_q4)} 步")
+        ck("★ 反向驗：兩段式而前一發**沒守門** ⇒ 判得出來",
+           bool(backfill_coupled_blocks(_q1)), "⛔ 沒判出來 ⇒ 這條斷言是假的")
+        ck("★ 而守好的版本是**乾淨的**"
+           "（⛔ 少了這一半，「看到什麼都說紅」也會通過上面那條）",
+           backfill_coupled_blocks(_q2) == [], "⛔ 誤報")
+        ck("★ ⭐ 守門寫在續行的**最後一行**也算數"
+           "（⚠ 逐行看會誤報，而本 repo 的寫法正是續行）",
+           backfill_coupled_blocks(_q3) == [], "⛔ 續行誤報")
+        ck("★ 只有一發的區塊**不算違規**（⛔ 它後面沒有回補可以賠）",
+           backfill_coupled_blocks(_q4) == [], "⛔ 誤報")
+        _last_bare = _wbf("w.yml", _bf_ok.replace(
+            "--start 2015-01-01 --limit 20 || RC=1", "--start 2015-01-01 --limit 20"))
+        ck("★ ⭐ **最後一發**（回補）沒守門也要判得出來"
+           "（⚠ 突變②量到：不守它，`exit $RC` 就讀不到它的失敗 ⇒ 被吞掉）",
+           bool(backfill_coupled_blocks(_last_bare)), "⛔ 沒判出來")
+        ck("★ ⭐ 有守門卻沒有 `exit $RC` ⇒ 判得出來（吞掉失敗）",
+           backfill_swallowed_blocks(
+               _wbf("t.yml", _bf_ok.replace("          exit $RC\n", ""))) != [],
+           "⛔ 沒判出來")
+        ck("★ 而有 `exit $RC` 的是乾淨的",
+           backfill_swallowed_blocks(_q2) == [], "⛔ 誤報")
+        # ⛔⛔ 下面這條是第一版**真的誤報過**的那一種（feeds.yml 當場打臉）
+        _exit1 = _wbf("u.yml", _bf_ok.replace(
+            "          exit $RC\n",
+            '          [ "$RC" = 0 ] || { echo "⛔ 有批次失敗" >&2; exit 1; }\n'))
+        ck("★ ⭐ 收在 `[ \"$RC\" = 0 ] || { …; exit 1; }` 的**也算沒吞掉**"
+           "（⚠ 第一版只認 `exit $RC` ⇒ 誤報了兩個寫對的區塊）",
+           backfill_swallowed_blocks(_exit1) == [], "⛔ 誤報")
+        _only_note = _wbf("v.yml", _bf_ok.replace(
+            "          exit $RC\n", "          # exit 1（只是註解）\n"))
+        ck("★ 而**只有註解**寫著 exit 1 ⇒ 仍然判它吞掉（⛔ 比程式不比註解）",
+           backfill_swallowed_blocks(_only_note) != [], "⛔ 被註解騙過去了")
 
     print(f"\n[selftest] 檢查了 {len(files)} 支 workflow、{n_run} 個 run 區塊"
           f"｜通過 {OK}｜失敗 {FAIL}")
