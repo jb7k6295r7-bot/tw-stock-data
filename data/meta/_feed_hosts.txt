@@ -1,10 +1,10 @@
-# ⏱ 這一趟：2026-09-23T17:46:43+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35843153061
+# ⏱ 這一趟：2026-09-23T20:39:06+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35860275837
 ==============================================================================
 我方哪一支程式打哪一個主機（母體＝真的被 workflow 跑到的 .py）
 ⛔ 這一支不判合不合條款，也不判『開放資料型主機』是不是但書涵蓋的那批
 ==============================================================================
 
-母體：114 支被 workflow 跑到，其中 **30 支**會連外
+母體：115 支被 workflow 跑到，其中 **31 支**會連外
 
   backfill.py
       workflow：backfill.yml／daily.yml
@@ -48,6 +48,9 @@
       B 網站型:api.finmindtrade.com／github.com／www.twse.com.tw
       ⚠ 要逐條看路徑:www.tpex.org.tw
       寫（線索）：1／_changes／latest
+  filing_probe.py
+      workflow：probe.yml
+      B 網站型:doc.twse.com.tw／mops.twse.com.tw
   holiday.py
       workflow：daily.yml
       B 網站型:www.dgpa.gov.tw／www.twse.com.tw
@@ -136,13 +139,13 @@
       A 開放資料型:opendata.tdcc.com.tw
       寫（線索）：meta／tdcc／universe
 
-⇒ 會連外的 30 支裡：
+⇒ 會連外的 31 支裡：
      打到 **A 開放資料型**主機的：6 支
-     打到 **B 網站型**主機的：　　22 支
+     打到 **B 網站型**主機的：　　23 支
      打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：18 支
   ⛔ 三個數字會相加超過總數——**一支可以同時打兩族**，那不是錯。
 
 ── ⭐⭐ 端點層（主機 ＋ 前兩層路徑）：`www.tpex.org.tw` 那一格拆開之後 ──
    ⚠ 母體**只收在條款網域底下**的（twse.com.tw／tpex.org.tw／gretai.org.tw）——⛔ FinMind／GitHub 那些不在這份條款的管轄裡，算進去會把暴露面話大
-     A 開放資料型端點：**8** 支｜B 網站型端點：**23** 支｜❗ 讀不出來的：**1** 支
+     A 開放資料型端點：**8** 支｜B 網站型端點：**24** 支｜❗ 讀不出來的：**1** 支
      ❗ mops_probe.py：www.tpex.org.tw/（⛔ 只有主機、沒有路徑 ⇒ **不猜**）
