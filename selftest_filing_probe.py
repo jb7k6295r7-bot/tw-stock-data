@@ -89,7 +89,35 @@ def main():
     ck("  ⚠ 太長要截斷而且**講出它被截斷了**",
        F.short_text(("a" * 600).encode()).endswith("…（截斷）"))
 
-    print("\n⑤ ★ 沒有動到 repo 真的輸出檔")
+    print("\n⑤ ⭐ MOPS 五鍵合約（情報線 2207 §一逐字給的 payload）")
+    import json as _json
+    b = _json.loads(F._mops_body("113", "1", "2"))
+    ck("  ⭐⭐ 五個鍵**全部都在**（⛔ 少一個就回 code:500，這是真成因）",
+       set(b) == {"companyId", "dataType", "season", "year",
+                  "subsidiaryCompanyId"},
+       f"實際：{sorted(b)}")
+    ck("  ⭐ `subsidiaryCompanyId` 是**空字串**（⚠ 空字串可以，⛔ 不給不行）",
+       b.get("subsidiaryCompanyId") == "", f"實際：{b.get('subsidiaryCompanyId')!r}")
+    ck("  ⭐ 值逐字等於 devtools 攔到的那一份",
+       (b["companyId"], b["dataType"], b["season"], b["year"])
+       == ("2330", "2", "1", "113"), f"實際：{b}")
+    # ⛔ 反向：對照組真的少送得掉那個鍵，否則「四鍵該回 500」那一發是假的
+    b4 = _json.loads(F._mops_body("113", "1", "2", drop="subsidiaryCompanyId"))
+    ck("  ★ 反向對照組真的**少掉**那個鍵（⛔ 少不掉的話那一發證明不了東西）",
+       "subsidiaryCompanyId" not in b4 and len(b4) == 4, f"實際：{sorted(b4)}")
+
+    print("\n⑥ ⭐ 500 與 406 要分得出來（⛔ 兩者同長、都 HTTP 200、result 都 null）")
+    ck("  ⛔ code 500 ＝ 我方 body 錯",
+       F.mops_code({"code": 500, "message": "傳入參數異常", "result": None})[0] == 500)
+    ck("  ⚠ code 406 ＝ body 對、那一期沒資料",
+       F.mops_code({"code": 406, "message": "查無相符資料", "result": None})[0] == 406)
+    ck("  ★ 而兩者**分得出來**（⛔ 都回同一個值的話這兩條等於沒跑）",
+       F.mops_code({"code": 500, "message": "x"})[0]
+       != F.mops_code({"code": 406, "message": "y"})[0])
+    ck("  ⛔ 認不出來要回 None，⚠ 不猜",
+       F.mops_code(None) == (None, "") and F.mops_code({"x": 1})[0] is None)
+
+    print("\n⑦ ★ 沒有動到 repo 真的輸出檔")
     with tempfile.TemporaryDirectory() as d:
         real = F.OUT
         before = os.path.exists(real)

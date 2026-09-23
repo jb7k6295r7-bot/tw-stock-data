@@ -32,8 +32,30 @@
 
 情報線 1420 §一 自報過一個值得抄下來的錯：他們比了兩次回應「逐位元相同」就判
 參數無效 ——⛔ 而「兩組都被忽略」與「兩組都是無效值」在回應上**完全同形**。
-⇒ ⭐ 對照組至少要有一組是**已知合法**的值（合法值寫在人類填的那張表單上：
-`year` 要民國年、`dataType="2"` 才是歷史）。
+⇒ ⭐ 對照組至少要有一組是**已知合法**的值。
+
+## ⛔⛔ 2026-09-23 22:07 訂正：合法值的成因是【鍵有沒有到齊】，⛔ 不是年制
+
+本支第一版照「`year` 要民國年、`dataType="2"` 才是歷史」寫 body ⇒ 三發全部 `code:500`。
+⇒ 情報線 2207 在頁面上攔下瀏覽器**實際送出**的那一份，並做了控制變因實測：
+
+    A 五鍵完整、year=113（民國）      ✅ 200
+    B 缺 subsidiaryCompanyId、year=113 ⛔ 500      ⇒ A vs B 只差一個鍵
+    C 五鍵完整、year=2024（西元）     ✅ 200（回應自己說 year=113）
+    F 缺 subsidiaryCompanyId、year=2024 ⛔ 500      ⇒ C vs F 年制相同
+
+⇒ ⭐ **成因是少了 `subsidiaryCompanyId`**（空字串也算）；⛔ 年制**不是**成因，
+  端點會把西元年自動換成民國年。
+⇒ ⚠ 情報線自報：他們 1420 §一 把「民國年」當成因，是因為它與「欄位齊全」共變
+  （瀏覽器表單永遠送五個鍵、也永遠送民國年）⇒ ⭐ 可執行形式：
+  **能造測試樣本就造，而且一次只改一個地方。** 本支 §四 的四鍵對照組就是照這條加的。
+
+## ⭐ 錯誤碼要分兩種（情報線 2207 §五）
+
+    code 500「傳入參數異常」⇒ **我方 body 錯**
+    code 406「查無相符資料」⇒ body 對、那一期沒有資料
+⚠ 兩者都是 HTTP 200、都 77 B、`result` 都是 null
+⇒ ⛔ 只看長度或 result 分不出來，**一定要讀 code**。
 """
 import io
 import json
@@ -144,9 +166,33 @@ def hit(url, data=None, headers=None):
         return 0, "", b"", f"{type(e).__name__}: {e}"
 
 
-def _mops_body(year, season, dtype, cid="2330"):
-    return json.dumps({"companyId": cid, "dataType": dtype,
-                       "season": season, "year": year}).encode()
+def _mops_body(year, season, dtype, cid="2330", drop=None):
+    """→ MOPS 五鍵 body。⛔ 五個鍵**全部必填**，少一個就回 code:500。
+
+    ⭐ 逐字照抄情報線 2207 §一 從 devtools 攔下來的那一份：
+      {"companyId":"2330","dataType":"2","season":"1","year":"113",
+       "subsidiaryCompanyId":""}
+    ⚠ `subsidiaryCompanyId` 給**空字串**就好，⛔ 但不可以不給。
+    ⭐ 型別與補零都不挑（season="01"、數字型別都 ✅ 200）⇒ ⛔ 只挑鍵有沒有到齊。
+
+    `drop` 是給**對照組**用的：刻意少送一個鍵，⇒ 該回 500。
+    """
+    b = {"companyId": cid, "dataType": dtype, "season": season,
+         "year": year, "subsidiaryCompanyId": ""}
+    if drop:
+        b.pop(drop, None)
+    return json.dumps(b).encode()
+
+
+def mops_code(payload):
+    """→ (code, message)；⛔ 認不出來回 (None, "")。
+
+    ⚠ 500 與 406 都是 HTTP 200、都 77 B、`result` 都 null
+    ⇒ ⛔ 分不出來的唯一原因是沒去讀 `code`（情報線 2207 §五）。
+    """
+    if not isinstance(payload, dict):
+        return None, ""
+    return payload.get("code"), str(payload.get("message", ""))
 
 
 def probe_mops(lines):
@@ -157,11 +203,18 @@ def probe_mops(lines):
                  "⚠ 不是看 HTTP 200")
     hdr = {"Content-Type": "application/json", "Accept": "application/json"}
     # ⭐ 三發：合法歷史值／換一個季（只改一個參數）／dataType=1 的對照組
-    cases = [("113", "1", "2", "合法歷史值（民國年＋dataType=2）"),
-             ("113", "3", "2", "只改 season（⇒ 數字該跟著變）"),
-             ("113", "1", "1", "對照組：dataType=1（⇒ 情報線量到它一律回最新季）")]
-    for year, season, dtype, why in cases:
-        st, ct, body, err = hit(MOPS, _mops_body(year, season, dtype), hdr)
+    # ⭐ 五發，⛔ 每一發只改一個地方（情報線 2207 §二 的控制變因寫法）
+    cases = [("113", "1", "2", None, "合法歷史值（五鍵齊、民國年、dataType=2）"),
+             ("113", "3", "2", None, "只改 season（⇒ 數字該跟著變）"),
+             ("2024", "1", "2", None,
+              "只改年制成西元（⇒ 情報線量到端點會自己換成 113）"),
+             ("113", "1", "1", None,
+              "對照組：dataType=1（⇒ 情報線量到它一律回最新季，⛔ 而且不報錯）"),
+             ("113", "1", "2", "subsidiaryCompanyId",
+              "⛔ 反向對照組：刻意少送第五個鍵（⇒ 該回 code:500）")]
+    for year, season, dtype, drop, why in cases:
+        st, ct, body, err = hit(MOPS, _mops_body(year, season, dtype, drop=drop),
+                                hdr)
         tag = f"   送 year={year} season={season} dataType={dtype}｜{why}"
         if err:
             lines.append(tag + f"\n      ⛔ 連不上：{err}")
@@ -172,8 +225,15 @@ def probe_mops(lines):
         except (ValueError, UnicodeDecodeError):
             payload = None
         said = self_declared_period(payload)
+        code, msg = mops_code(payload)
         lines.append(tag)
-        lines.append(f"      HTTP={st}｜{ct}｜{len(body):,} bytes")
+        lines.append(f"      HTTP={st}｜{ct}｜{len(body):,} bytes｜code={code}")
+        if code == 500:
+            lines.append(f"      ⛔ code 500【傳入參數異常】＝**我方 body 錯**"
+                         f"：{msg}")
+        elif code == 406:
+            lines.append(f"      ⚠ code 406【查無相符資料】＝body 對、那一期沒資料"
+                         f"：{msg}")
         if blocked:
             lines.append("      ⛔⛔ **這是擋阻頁**（HTTP 200 也算），"
                          "⚠ 只驗狀態碼會把它當成資料")
