@@ -193,6 +193,12 @@ jobs:
       - name: 驗十四支探針跑得完（離線）
         run: python ci_step.py selftest_probes.py
 
+      # ⭐ 財報探針的三個判準（離線）：擋阻頁不可以被當成資料／回應要自己講出它是哪一期／
+      #   big5 那一頁必須用 big5 解。⚠ 走 `ci_step.py` 的理由跟上面那一步一樣：
+      #   紅了要進 runlog（⛔ 只在 run 畫面上紅等於沒有人被告知）。
+      - name: 驗財報探針的判準（離線）
+        run: python ci_step.py selftest_filing_probe.py
+
       # ⭐⭐ `probe_step.sh`（探針壞掉時留痕跡的那一份）自己的自測。
       #   ⛔ 它守的兩件事都在 2026-09-16 run 131 真的發生過：
       #     ① 還原要從 `origin/main` 取（舊寫法還原**分支**那份
@@ -377,6 +383,19 @@ jobs:
         # ⚠ 這一份原本連「還原」那一行都沒有（三份已經走岔了）⇒ 收成一份之後自動補上。
         timeout-minutes: 8
         run: bash probe_step.sh data/meta/_suspend_probe.txt 300 python suspend_probe.py --set longhalt --sleep 2
+
+      # ★ 財報「期別參數」與「公告時點」兩條路（市場情報分析線 20260923-1420 §三
+      #   點名請本線代驗：他們兩條 curl 都被 egress 擋，只有瀏覽器通）。
+      # ⛔ **不放進上面那個十四支的迴圈**：那個迴圈是 780 秒**共用**預算，而
+      #   2026-09-23 run 35843153061 實測 `mops_probe.py` 已經把 780 秒**撞滿被砍**
+      #   ⇒ 掛在它後面等於一開始就被連坐（daily 那個「12 個指令一個區塊」的同一族）。
+      # ⚠ 內層 240 秒（四發請求，各 25 秒逾時）、外層 6 分
+      #   ⇒ ⛔ 外層一定要比內層大（`selftest_probe_step.py` ⑥ 釘著）。
+      - name: 財報期別參數與公告時點探針（代情報線驗通道）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 6
+        run: bash probe_step.sh data/meta/_filing_probe.txt 240 python filing_probe.py
 
       # ⛔ 這一步**故意沒有** `continue-on-error`（跟 daily.yml 那一步同一個理由）：
       #   它只負責「說」。自己炸掉的話要大聲，⚠ 而下面 Commit 是 `if: always()`
