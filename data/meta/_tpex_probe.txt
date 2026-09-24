@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T08:24:11+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35937682975
+# ⏱ 這一趟：2026-09-24T08:51:20+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35939769061
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -382,8 +382,7 @@
 
   ── 櫃買中心 公告專區（找得到休市日的入口就好）
      https://www.tpex.org.tw/zh-tw/announce/market.html
-     ✓ 10,892 bytes｜出現「休市」1 次｜「開市」0 次
-       /zh-tw/announce/market/holiday.html
+     ✗ HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-er　⛔ 抓不到不等於不存在
 
 [10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
 
@@ -535,11 +534,7 @@
               頂層鍵 ['stat']
               ⭐ 平常被丟掉的鍵：['stat']
                 ── stat：參數輸入錯誤
-           [POST code+date] ✓ JSON 29 bytes
-              ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
-              頂層鍵 ['stat']
-              ⭐ 平常被丟掉的鍵：['stat']
-                ── stat：參數輸入錯誤
+           [POST code+date] ⛔ HTTPError: HTTP 520 <none>
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
