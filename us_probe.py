@@ -51,7 +51,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ca_chain  # noqa: F401  ⭐ 補鏈（見 CLAUDE.md 六點六）
 import backfill as B
 
-OUT = os.path.join(B._ROOT, "data", "meta", "_us_probe.txt")
+# ⛔ `B._ROOT` 已經是 `<repo>/data`（backfill.py:63）⇒ ⚠ 不可以再接一個 "data"。
+#   2026-09-24 第一趟就是這樣炸的：寫到 data/data/meta/_us_probe.txt ⇒ FileNotFoundError
+#   ⭐ 而 probe_step.sh 留下了 ✗ 那一行 ⇒ 看得見；⛔ 若沒有它，run 是綠的而檔是空的。
+OUT = os.path.join(B._ROOT, "meta", "_us_probe.txt")
 
 # ⭐ 已下市的真代號 ＋ 下市年份。⛔ 年份是判準的一部分，不是註解。
 #   ⚠ 選這四檔的理由是【年份拉開成梯子】：回應會自己講出倖存者邊界在哪一年。
@@ -83,6 +86,7 @@ def yahoo_span(body):
 
     ⛔ 不用 HTTP 狀態判成功：Yahoo 對不存在的代號也可能回 200＋一個空 chart。
     ⇒ 判準是 `chart.result[0].timestamp` 真的有列。
+    ⚠ 粒度另外用 `yahoo_granularity()` 問——⛔ 有幾列【不等於】粒度對。
     """
     try:
         d = json.loads(body.decode("utf-8", "replace"))
@@ -100,6 +104,39 @@ def yahoo_span(body):
         return len(ts), f, l
     except (KeyError, IndexError, TypeError):
         return None
+
+
+def yahoo_granularity(body):
+    """→ 回應**自己講**的資料粒度（`meta.dataGranularity`），認不出來回 None。
+
+    ⛔⛔ 2026-09-24 第一趟實跑當場被咬：本支送 `interval=1d`，
+      而回應的 `meta.dataGranularity` 是 **3mo**
+      ⇒ ⚠ HTTP 200、JSON 格式完全正確、`timestamp` 也真的有 169 列
+        ——⛔ 而那 169 列是**季線**，不是日線。
+    ⇒ ⭐ 這是「參數被收下但被忽略」那一族（本庫在 TPEx 的
+      `violation/change` 上也踩過：四組參數回應逐位元相同）。
+    ⇒ ⭐⭐ 而它擋得住的唯一方法是**問回應自己講什麼**，
+      ⛔ 不是數列數（列數多寡跟粒度對不對是兩件事）。
+    """
+    try:
+        d = json.loads(body.decode("utf-8", "replace"))
+        return ((d.get("chart") or {}).get("result") or [{}])[0] \
+            .get("meta", {}).get("dataGranularity")
+    except (ValueError, AttributeError, KeyError, IndexError, TypeError):
+        return None
+
+
+def granularity_verdict(want, got):
+    """→ (結論, 一句話)：我要的粒度與它給的粒度對不對得上。"""
+    if got is None:
+        return "unknown", ("⚠ 回應沒講它的粒度 ⇒ ⛔ 這一格沒有結論"
+                           "（⚠ 不可以用列數反推）")
+    if got == want:
+        return "ok", f"✅ 我要 {want}，它說它給 {got}"
+    return "ignored", (f"⛔⛔ 我要 {want}，而它自己說給的是 **{got}**"
+                       f" ⇒ ⚠ 參數被收下但被忽略"
+                       f" ⇒ ⛔ 這一批不是我要的東西，"
+                       f"而它 HTTP 200、格式正確、列數也不是 0")
 
 
 def stooq_span(body):
@@ -167,9 +204,11 @@ def split_verdict(pre_close, post_close, ratio):
 
 SOURCES = [
     # (名稱, 組 URL 的函式, 解析函式, 一句說明)
+    # ⛔ 不用 `range=max`：2026-09-24 實測它會讓回應把粒度降成 3mo。
+    #   ⭐ 改用 period1/period2（epoch 秒）⇒ 這一組不會被降級。
     ("Yahoo chart",
      lambda s: ("https://query1.finance.yahoo.com/v8/finance/chart/"
-                f"{s}?range=max&interval=1d"),
+                f"{s}?period1=0&period2={int(time.time())}&interval=1d"),
      yahoo_span, "免費、不需 key、⚠ 非官方"),
     ("Stooq CSV",
      lambda s: f"https://stooq.com/q/d/l/?s={s.lower()}.us&i=d",
@@ -178,9 +217,21 @@ SOURCES = [
 
 # ⛔ 需要 key 才打得進去的（本支只證明「沒有 key 進不去」）
 KEYED = [
-    ("Alpha Vantage LISTING_STATUS",
+    # ⭐⭐ 2026-09-24 實測（demo key）：
+    #   不帶 state ⇒ 14,462 列，表頭 symbol,name,exchange,assetType,
+    #     ipoDate,delistingDate,status ⇒ ⭐ 欄位【有】下市那一格
+    #     ⛔ 但每一列的 status 都是 Active、delistingDate 全是 null
+    #   state=delisted ⇒ 回 `{}`（空 JSON）
+    #   ⇒ ⛔⛔ 而 `{}` 的意思是【這把 key 拿不到】，
+    #     ⚠ **不是**「沒有這份資料」——兩件事不可以混（否定句要標成立範圍）。
+    #   ⇒ ⭐ 這條路的入場費是【一把免費 key】，⛔ 不是錢。
+    ("Alpha Vantage LISTING_STATUS（不帶 state）",
      "https://www.alphavantage.co/query?function=LISTING_STATUS&apikey=demo",
-     "⭐ 文件說它回【含 delistingDate 的全代號清單】⇒ 若真的有，這是最便宜的一條路"),
+     "⭐ 欄位有 delistingDate／status ⇒ 這支端點【結構上】給得出下市清單"),
+    ("Alpha Vantage LISTING_STATUS（state=delisted）",
+     "https://www.alphavantage.co/query?function=LISTING_STATUS"
+     "&state=delisted&apikey=demo",
+     "⛔ demo key 回 {} ⇒ ⚠ 那是 key 的限制，不是資料不存在"),
     ("Polygon tickers(active=false)",
      "https://api.polygon.io/v3/reference/tickers?active=false&limit=1",
      "⭐ 文件說 active=false 回已下市代號"),
@@ -188,10 +239,13 @@ KEYED = [
 
 
 def main():
-    L = []
-    L.append("# 美股供料探針（⛔ 只讀，本支不寫任何資料檔）")
+    # ⭐ 第一行一律是 probe_stamp()：這一趟是誰、什麼時候、在哪個 ref 上跑的。
+    #   ⛔ 少了它，一份三天前的輸出跟今天剛跑的【長得一模一樣】
+    #   ⇒ 而這幾份檔正是各線判斷「官方到底有沒有」的依據。
+    #   （selftest_probes.py 會擋：24 支寫探針輸出的程式全部都要叫它。）
+    L = [B.probe_stamp("美股供料：阻斷項＝拿不拿得到已下市的股票").strip()]
     L.append("")
-    L.append(f"產出：{time.strftime('%Y-%m-%d %H:%M:%S')}（runner 的 UTC 時鐘）")
+    L.append("# 美股供料探針（⛔ 只讀，本支不寫任何資料檔）")
     L.append("範圍（使用者 2026-09-24 定）：價量 ＋ 全市場【含下市】")
     L.append("")
     L.append("⛔⛔ 阻斷項：拿不拿得到【已下市】的股票。")
@@ -220,6 +274,13 @@ def main():
             L.append("   ⇒ ⛔⛔ 對照組不通 ⇒ 本來源這一節整個沒有結論")
             continue
         L.append(f"      ✅ {span[0]:,} 列｜{span[1]} ~ {span[2]}｜{dt:.1f} 秒")
+        if parse is yahoo_span:
+            gk, gm = granularity_verdict("1d", yahoo_granularity(body))
+            L.append(f"      粒度：{gm}")
+            if gk == "ignored":
+                L.append("   ⇒ ⛔⛔ 粒度不對 ⇒ **本來源這一節的數字全部不可信**，"
+                         "⚠ 包含下面四檔與拆股那一格")
+                continue
 
         n_ok = 0
         for s, yr, d in DELISTED:
