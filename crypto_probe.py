@@ -231,8 +231,12 @@ def _probe_pre2017_sources():
                     last_ts = int(rows[-1][0])
                     print(f"  第一根：{rows[0]}")
                     print(f"  最後一根：{rows[-1]}")
-                    print(f"  第一根日期（UTC）：{datetime.datetime.utcfromtimestamp(first_ts).date()}")
-                    print(f"  最後一根日期（UTC）：{datetime.datetime.utcfromtimestamp(last_ts).date()}")
+                    print("  第一根日期（UTC）：%s"
+                          % datetime.datetime.fromtimestamp(
+                              first_ts, datetime.timezone.utc).date())
+                    print("  最後一根日期（UTC）：%s"
+                          % datetime.datetime.fromtimestamp(
+                              last_ts, datetime.timezone.utc).date())
         except Exception as e:                                    # noqa: BLE001
             print(f"⚠ 解析 Kraken 回應失敗：{e}")
 
