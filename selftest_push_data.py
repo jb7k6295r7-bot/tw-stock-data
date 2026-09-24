@@ -526,6 +526,58 @@ def main():
     finally:
         shutil.rmtree(d9, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⑩ ⛔⛔ `sync_code.sh` 閘門〇：**不在 Actions 裡就不准推真的 origin**
+    #
+    # ⚠ 這一節驗的是【上面第③⑤節自己的凶器】：那兩節會真的跑 `sync_code.sh`，
+    #   而 2026-09-24 21:00 它們在本機被 pre-commit 的 `GIT_DIR` 洩漏導回真 repo
+    #   ⇒ `git push origin HEAD:main` 推的是**真的 origin/main**，推成了三筆。
+    # ⇒ ⭐ 所以判準要**兩邊都驗**：沙盒（本機路徑 origin）要放行，
+    #   遠端 origin 要擋。⛔ 只驗擋得住，會把整支自測堵死而沒人發現。
+    # ══════════════════════════════════════════════════════════════
+    d10 = tempfile.mkdtemp(prefix="pushdata10_")
+    try:
+        print("\n── ⑩ `sync_code.sh` 閘門〇：本機 ＋ 遠端 origin ⇒ 拒絕 ──")
+        origin, work = build(d10)
+        shutil.copy(os.path.join(HERE, "sync_code.sh"), work)
+        write(os.path.join(work, "hello.py"), "print(1)\n")
+        git(work, "add", "-A")
+        git(work, "commit", "-q", "-m", "x")
+        # ⭐ 沙盒的 origin 是本機 bare 目錄 ⇒ 這一道**不可以**擋
+        env10 = dict(os.environ, GITHUB_REF_NAME="feature",
+                     GIT_TERMINAL_PROMPT="0")
+        env10.pop("GITHUB_ACTIONS", None)
+        r10a = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                              capture_output=True, text=True, env=env10)
+        git(work, "fetch", "-q", "origin", "main")
+        ck("⑩ 沙盒 origin（本機路徑）⇒ **不擋**，而且真的同步了"
+           "（⛔ 擋了就是把自測自己堵死）",
+           r10a.returncode == 0
+           and git(work, "show", "origin/main:hello.py").stdout == "print(1)\n",
+           f"rc={r10a.returncode}｜{(r10a.stdout + r10a.stderr)[-300:]}")
+
+        # ⇒ 同一個工作副本，只把 origin 換成【遠端的樣子】
+        git(work, "remote", "set-url", "origin",
+            "https://example.invalid/x/y.git")
+        r10b = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                              capture_output=True, text=True, env=env10)
+        ck("⑩ ⭐⭐ 遠端 origin ＋ 不在 Actions ⇒ **rc=6 並說出是哪個 origin**",
+           r10b.returncode == 6 and "拒絕執行" in r10b.stderr
+           and "example.invalid" in r10b.stderr,
+           f"rc={r10b.returncode}｜{(r10b.stdout + r10b.stderr)[-300:]}")
+
+        # ⭐ 反向驗：同一個遠端 origin，只要在 Actions 裡就**不是被這一道擋的**
+        #   ⛔ 沒有這一格，「閘門〇永遠擋住所有人」跟「閘門〇擋對了」長得一樣。
+        env10ci = dict(env10, GITHUB_ACTIONS="true")
+        r10c = subprocess.run(["bash", "sync_code.sh"], cwd=work,
+                              capture_output=True, text=True, env=env10ci)
+        ck("⑩ ⭐ 反向驗：GITHUB_ACTIONS=true ⇒ 不是 6"
+           "（它會停在 fetch 不到，⛔ 不是停在這一道）",
+           r10c.returncode != 6 and "拒絕執行" not in r10c.stderr,
+           f"rc={r10c.returncode}｜{(r10c.stdout + r10c.stderr)[-300:]}")
+    finally:
+        shutil.rmtree(d10, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

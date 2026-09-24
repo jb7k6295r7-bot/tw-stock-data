@@ -1438,6 +1438,10 @@ jobs:
         run: |
           # ⭐ 閘門：判準壞了就不要抓（⛔ 這一發【不可以】被 RC-GUARD 收走）
           python selftest_instamt.py
+          # ⭐ 順帶驗【交件驗收】那一支的【恆等式表】：它是判斷「合計列 ＝ 成分列加總」的判準，
+          #   ⚠ 而它壞掉的樣子是【安靜地放行】（認不得的列名就跳過）
+          #   ⇒ ⛔ 判準壞了就不要抓，理由跟上一行一字不差。
+          python selftest_instamt_audit.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
           TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
           # ⛔⛔ RC-GUARD：當日抓取掛掉不可以賠掉回補（理由同上一步，逐字見那裡）
