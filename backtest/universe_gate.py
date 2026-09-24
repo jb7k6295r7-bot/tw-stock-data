@@ -10,6 +10,10 @@
     (甲) 先同步 data/ 到 main   ⇒ require_snapshot_at_least("2026-09-21")
     (乙) 明文排除名稱含 -DR     ⇒ uni = exclude_dr(uni)
 
+⭐ 裁定線 seq87 §二 裁「甲乙不等價、都不夠 ⇒ 三道都要」，seq90 §三 指定第三道用名稱：
+    (丙) 明文排除創新板          ⇒ uni = exclude_innovation(uni)（名稱含 -創）
+    三道一起                     ⇒ uni = gate3(main_stocks())
+
 並提供每份報告都該印的一行：
 
     snapshot_stamp()  ⇒ "data/ 快照 2026-09-18（stocks.csv blob cb01b28f…；-DR 落在 kind=='stock' 的 7 檔）"
@@ -94,6 +98,69 @@ def exclude_dr(uni: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def exclude_innovation(uni: pd.DataFrame) -> pd.DataFrame:
+    """第三道閘（裁定線 seq90 §三）：明文排除【創新板】—— 依名稱含 `-創`。
+
+    ⭐ 與 exclude_dr 同一種做法：依【名稱】，⛔ 不靠會隨快照變的派生欄（裁定線 seq90 §三 指定）。
+    ⭐ 依據：裁定線 1611 §二 裁創新板剔除；而 (甲) 同步到 main 會把 7812 稜研科技*-創 帶進來。
+    """
+    assert "name" in uni.columns, "⛔ 需要 name 欄才能依名稱排除"
+    n0 = len(uni)
+    out = uni[~uni["name"].str.contains("-創", na=False, regex=False)].reset_index(drop=True)
+    print("[母體閘門] 依名稱排除創新板（-創）：{:,} ⇒ {:,} 檔（剔 {} 檔）".format(n0, len(out), n0 - len(out)))
+    return out
+
+
+def universe_from_stocks(stocks: pd.DataFrame) -> pd.DataFrame:
+    """與 data.load_universe() 同一條件（kind=='stock' ∧ market∈{twse,tpex}），但吃任意一份 stocks 表
+    ⇒ 讓閘門可以在【main 快照】上驗，⛔ 不限於本線分支的舊快照。"""
+    return stocks[(stocks["kind"] == "stock") & stocks["market"].isin(["twse", "tpex"])].reset_index(drop=True)
+
+
+def main_stocks() -> pd.DataFrame:
+    """讀 origin/main 的 data/meta/stocks.csv（⭐ data/ 以 main 為準，seq85 §三③）。"""
+    import io as _io
+    root = os.path.dirname(D.DATA)
+    txt = subprocess.run(["git", "show", "origin/main:data/meta/stocks.csv"], capture_output=True,
+                         text=True, cwd=root).stdout
+    assert txt.startswith("stock_id"), "⛔ 讀不到 origin/main 的 stocks.csv"
+    return pd.read_csv(_io.StringIO(txt), dtype=str)
+
+
+def gate3(stocks: pd.DataFrame) -> pd.DataFrame:
+    """三道閘一起（裁定線 seq87 §二、seq90 §三）：母體條件 → 排除 -DR → 排除創新板。
+    ⚠ 第一道「data/ 用 main」由呼叫方決定傳哪一份 stocks（建議 main_stocks()）。"""
+    return exclude_innovation(exclude_dr(universe_from_stocks(stocks)))
+
+
+def _selftest_gate3():
+    print()
+    print("=== 第三道閘（創新板，依名稱 -創）自測：⭐ 在 main 快照上驗 ===")
+    ms = main_stocks()
+    um = universe_from_stocks(ms)
+    inn = um[um["name"].str.contains("-創", na=False, regex=False)]
+    print("  main 母體 {:,} 檔；其中名稱含 -創 的 {} 檔：{}".format(
+        len(um), len(inn), "、".join(inn["stock_id"] + " " + inn["name"])))
+    #  ① 7812 必須在 main 母體裡（否則「必須被剔」是空話），而且必須被剔
+    assert "7812" in set(um["stock_id"]), "⛔ 7812 不在 main 母體 ⇒ 這條自測沒有鑑別力"
+    g = gate3(ms)
+    assert "7812" not in set(g["stock_id"]), "⛔ 7812 稜研科技*-創 沒被剔"
+    print("  ✅ 7812 在 main 母體裡，且被第三道閘剔除")
+    #  ② 另造一檔名稱不帶 -創 的 fixture ⇒ 必須留
+    fx = pd.DataFrame([
+        dict(stock_id="99991", name="測試創意公司", market="twse", kind="stock",
+             first_seen="2020-01-01", last_seen="2026-09-23"),   # 名稱有「創」但沒有「-創」⇒ 必須留
+        dict(stock_id="99992", name="測試科技*-創", market="twse", kind="stock",
+             first_seen="2020-01-01", last_seen="2026-09-23"),   # 必須剔
+        dict(stock_id="99993", name="測試存託-DR", market="twse", kind="stock",
+             first_seen="2020-01-01", last_seen="2026-09-23"),   # 第二道閘必須剔
+    ])
+    gf = gate3(fx)
+    assert list(gf["stock_id"]) == ["99991"], "⛔ fixture 結果不對：{}".format(list(gf["stock_id"]))
+    print("  ✅ fixture：「測試創意公司」（有『創』無『-創』）留；「*-創」剔；「-DR」剔")
+    print("  ⇒ 三道閘在 main 快照上：{:,} ⇒ {:,} 檔".format(len(um), len(g)))
+
+
 def _selftest():
     print("=== universe_gate 自測 ===")
     d = snapshot_date()
@@ -133,3 +200,4 @@ def _selftest():
 
 if __name__ == "__main__":
     _selftest()
+    _selftest_gate3()
