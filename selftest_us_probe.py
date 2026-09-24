@@ -35,6 +35,13 @@ def _yahoo(days, closes=None):
         {"timestamp": ts, "indicators": {"quote": [q]}}]}}).encode()
 
 
+def _yahoo_meta(gran):
+    """造一份帶 meta.dataGranularity 的回應。"""
+    return json.dumps({"chart": {"result": [
+        {"timestamp": [1], "meta": {"dataGranularity": gran},
+         "indicators": {"quote": [{"close": [1.0]}]}}]}}).encode()
+
+
 def main():
     print("① ⛔ 判準不可以是「HTTP 200」或「有回東西」")
     sp = U.yahoo_span(_yahoo(["2020-01-02", "2020-01-03", "2020-01-06"]))
@@ -93,7 +100,27 @@ def main():
        "（⚠ 已還原不等於歷史不會變）",
        "重算歷史" in U.split_verdict(120.0, 125.0, 4)[1])
 
-    print("\n⑤ ⭐ 下市樣本本身要是一條梯子（⛔ 年份擠在一起就量不出邊界）")
+    print("\n⑤ ⛔⛔ 粒度：回應自己講的才算數（⛔ 列數多寡不算）")
+    g_ok = U.granularity_verdict("1d", "1d")[0]
+    g_ig = U.granularity_verdict("1d", "3mo")[0]
+    g_un = U.granularity_verdict("1d", None)[0]
+    ck("  ✅ 要 1d、給 1d ⇒ ok", g_ok == "ok")
+    ck("  ⛔⛔ 要 1d、而它說給 3mo ⇒ ignored"
+       "（⚠ 2026-09-24 實跑真的遇到：HTTP 200、JSON 正確、169 列季線）",
+       g_ig == "ignored")
+    ck("  ⚠ 回應沒講粒度 ⇒ unknown（⛔ 不可以用列數反推）", g_un == "unknown")
+    ck("  ★ 三種【互不相同】（⛔ 都回同一個值的話上面等於沒跑）",
+       len({g_ok, g_ig, g_un}) == 3, f"實際：{[g_ok, g_ig, g_un]}")
+    ck("  ⛔ ignored 的訊息要講出「參數被收下但被忽略」",
+       "被忽略" in U.granularity_verdict("1d", "3mo")[1])
+    ck("  ⭐ 從真的回應讀得出粒度",
+       U.yahoo_granularity(_yahoo_meta("3mo")) == "3mo")
+    ck("  ⛔ meta 缺掉 ⇒ None，⚠ 不猜",
+       U.yahoo_granularity(_yahoo(["2020-01-02"])) is None)
+    ck("  ⛔ 不是 JSON ⇒ None，⚠ 不可以炸掉",
+       U.yahoo_granularity(b"<html>blocked</html>") is None)
+
+    print("\n⑥ ⭐ 下市樣本本身要是一條梯子（⛔ 年份擠在一起就量不出邊界）")
     yrs = sorted(y for _s, y, _d in U.DELISTED)
     ck("  ⭐ 四檔下市年份互不相同", len(set(yrs)) == 4, f"實際：{yrs}")
     ck("  ⭐ 跨度 ≥ 10 年（⇒ 量得出倖存者邊界落在哪個年代）",
@@ -101,7 +128,7 @@ def main():
     ck("  ⛔ 一定要有在市的對照組（⚠ 少了它「全都查不到」分不出成因）",
        U.LIVE[0] and isinstance(U.LIVE[0], str))
 
-    print("\n⑥ ★ 沒有動到 repo 真的輸出檔")
+    print("\n⑦ ★ 沒有動到 repo 真的輸出檔")
     before = os.path.exists(U.OUT)
     ck("  ★ 這一支自測沒有建立或改動 data/meta/_us_probe.txt",
        os.path.exists(U.OUT) == before)
