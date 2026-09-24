@@ -51,6 +51,13 @@ BASE = "https://data.binance.vision/data/futures/um/monthly/fundingRate"
 COINS = ["BTC", "ETH", "BNB", "XRP", "DOGE", "SOL"]
 # ⭐ USDT 本位永續 2019-09 才開 ⇒ 搜尋下界；⛔ 不是任何一檔的上市日
 EARLIEST = (2019, 9)
+# ⭐⭐ 常設反向樣本：六幣 465 個月裡【唯一】interval 不是一律 8 的月
+#   （2026-09-24 逐月全掃的結果；FTX 那一週 Binance 把 SOL 的結算間隔
+#     8 → 4 → 2 → 8，2 小時那一段 99 筆）
+#   ⇒ 它的用途是證明「interval 要逐列讀」那條規則【不是空的】：
+#     ⛔ 平常六幣全是 8 ⇒ 那句話在報告上看不出有沒有用
+#   ⚠ 它若變成單一值 ⇒ 代表 Binance 改寫了歷史 ⇒ 要大聲講，⛔ 不可安靜通過
+MIXED_IV_SAMPLE = ("SOL", (2022, 11), {"8": 64, "4": 2, "2": 99})
 
 
 def month_url(sym, y, m):
@@ -210,6 +217,29 @@ def main():
     okc, why = completeness(rows, top)
     L.append("   %s 完整性：%s"
              % ("✅" if okc else ("⚠" if okc is None else "⛔ 有缺口"), why))
+    L.append("")
+
+    # ── ⭐⭐ 常設反向樣本：唯一一個 interval 不是 8 的月 ──────
+    sym_x, ym_x, exp_x = MIXED_IV_SAMPLE
+    L.append("══ 常設反向樣本：%sUSDT %04d-%02d（⭐ 證明「interval 逐列讀」不是空話）══"
+             % (sym_x, ym_x[0], ym_x[1]))
+    st_x, info_x, rows_x = fetch_rows(sym_x, *ym_x)
+    if st_x != "ok":
+        L.append("   ⛔ 取不到（%s｜%s）⇒ ⚠ 這一格【沒有結論】，"
+                 "⛔ 不可讀成「規則沒問題」" % (st_x, info_x))
+    else:
+        got_x = intervals(rows_x)
+        L.append("   實際 interval 統計：%s" % got_x)
+        L.append("   當初全掃記下的：    %s" % exp_x)
+        if len(got_x) < 2:
+            L.append("   ⛔⛔ 它變成【單一值】了 ⇒ Binance 改寫了歷史，"
+                     "⚠ 或本支的 interval 解析壞了 ⇒ **要查**")
+        elif got_x != exp_x:
+            L.append("   ⚠ 仍是混合值（規則還分得出東西 ✅），"
+                     "⛔ 但逐項筆數與當初不同 ⇒ 該月被重新封存過，值得記一筆")
+        else:
+            L.append("   ✅ 與當初逐位元相符 ⇒ 「interval 逐列讀」這條規則"
+                     "【現在仍然分得出東西】")
     L.append("")
 
     # ── 逐幣：二分找最早可得的月 ──────────────────────────

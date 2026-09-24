@@ -1336,8 +1336,18 @@ def main():
     #   （`mops_probe` 同時被 `selftest_probes`（import）與 `selftest_ca_chain`
     #     （字串常數）沾到 ⇒ ⛔ 順序反了的話，讀 log 的人會以為前者沒跑）
     _mp = covering_tests("mops_probe.py", here)
-    ck("⭐ 排序：**import 的**那一支排最前（⛔ 不是只掃原始碼的那種）",
-       bool(_mp) and _mp[0] == "selftest_probes.py", str(_mp))
+    # ⛔ 這裡本來寫 `_mp[0] == "selftest_probes.py"` —— 把「強」寫死成一個檔名。
+    #   ⚠ 2026-09-24 新增 `selftest_mops_probe.py`（檔名一對一而且 import）
+    #     ⇒ 它【本來就該排第一】，而那條斷言把它判成紅 ⇒ 紅在一個假原因上。
+    #   ⇒ ⭐ 改成講意圖：強的（import／檔名一對一）要排在弱的（只掃原始碼）前面。
+    _STRONG = ("selftest_mops_probe.py", "selftest_probes.py")
+    _WEAK = "selftest_ca_chain.py"
+    ck("⭐ 排序：**強的**（import／檔名一對一）排最前（⛔ 不是只掃原始碼的那種）",
+       bool(_mp) and _mp[0] in _STRONG, str(_mp))
+    # ★ 反向樣本：弱的那一支【必須仍然在名單裡】，
+    #   ⛔ 否則上面那條會退化成「名單非空」而永遠綠
+    ck("★ 而只掃原始碼的那一支仍然在名單裡、⛔ 只是不排第一",
+       _WEAK in _mp and _mp[0] != _WEAK, str(_mp))
     ck("⭐ 命名不一對一的另一族也對應得到（`shares_check.py`）",
        "selftest_shares.py" in covering_tests("shares_check.py", here),
        str(covering_tests("shares_check.py", here)))

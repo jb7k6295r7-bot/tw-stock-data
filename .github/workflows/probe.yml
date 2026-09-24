@@ -211,6 +211,15 @@ jobs:
         timeout-minutes: 2
         run: python ci_step.py selftest_funding_probe.py
 
+      # ⭐ MOPS 探針的【內層預算】自測（離線、零連網）。⛔ 它是閘門。
+      #   ⚠ 一個沒被驗過的預算跟沒有預算在報告上長得一樣 ——
+      #     而 2026-09-24 那六趟「780.0 秒、顯示 success、輸出零資訊」
+      #     就是沒有內層預算的樣子。
+      - name: 驗 MOPS 探針的內層預算（離線）
+        continue-on-error: true
+        timeout-minutes: 2
+        run: python ci_step.py selftest_mops_probe.py
+
       # ⭐⭐ `probe_step.sh`（探針壞掉時留痕跡的那一份）自己的自測。
       #   ⛔ 它守的兩件事都在 2026-09-16 run 131 真的發生過：
       #     ① 還原要從 `origin/main` 取（舊寫法還原**分支**那份
@@ -382,8 +391,24 @@ jobs:
         #   要**先停 60 秒**等限流（七發全部 Connection reset by peer）
         #   ⇒ 600 秒只剩 38 秒餘裕 ⇒ 內層 780、外層 15 分。
         #   ⛔ 外層一定要比內層大（`selftest_probe_step.py` ⑥ 釘著）。
-        timeout-minutes: 15
-        run: bash probe_step.sh data/meta/_mops_probe.txt 780 python mops_probe.py
+        # ⛔⛔ 2026-09-24：780／15 分【已經不夠】，而且不是偶發 ——
+        #   逐 run 量過（REST API 的 started_at／completed_at）：
+        #     09-24T00:44Z 之後【連六趟】MOPS 那一步都是 780.0 秒 ＝ 撞滿內層預算
+        #     （09-23 那幾趟是 502／570／587／614／703／721／780 ⇒ 本來就貼著邊）
+        #   ⇒ 而 mops_probe 是最後才寫檔 ⇒ 被砍 ⇒ 一個字都沒寫
+        #     ⇒ probe_step.sh 再從 origin/main 還原 ⇒ ⛔ 一趟 13 分鐘【零資訊】
+        #   ⇒ main 上 _mops_probe.txt 的報頭從 09-24T08:42 就【凍住】，
+        #     而檔尾一路累積 ✗ ——⚠ 檔案在、看起來正常，正是「看起來有」那一種。
+        #
+        # ⭐ 真正的修法在【內層】：mops_probe 自己有 690 秒預算（MOPS_PROBE_BUDGET），
+        #   用完就停、把跑完的寫出去、並逐字列出沒跑到的 ⇒ exit 0 ⇒ 不會被還原。
+        # ⚠ 而內層只擋得住「開新案例」：最後一個【已經開始】的案例仍可能超時
+        #   ⇒ 外層若還是 780，那一趟又會變成零資訊
+        #   ⇒ ⭐ 外層放寬成 1500／30 分 —— 它是【安全網】，⛔ 不是預算。
+        # ⏳ 690 是暫定值：本趟就是要量出逐案例耗時（輸出檔裡有一張表），
+        #   拿到數字再決定「加預算」還是「把案例拆成兩步」。
+        timeout-minutes: 30
+        run: bash probe_step.sh data/meta/_mops_probe.txt 1500 python mops_probe.py
 
       # ★ 長期停止買賣（第六輪）。⛔ 不放進上面那個迴圈：它要帶 `--set`，
       #   而那個迴圈的契約是「腳本:輸出檔」對、不帶參數。
