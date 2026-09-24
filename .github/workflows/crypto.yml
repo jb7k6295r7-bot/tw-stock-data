@@ -23,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）"
+        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）｜funding 永續資金費率全期（C2 六幣）"
         type: choice
-        options: [universe, backfill, daily, bitstamp-backfill]
+        options: [universe, backfill, daily, bitstamp-backfill, funding]
         default: daily
       reset_months_done:
         description: "backfill 專用，⛔ 平常不要勾：續跑台帳被污染時才用（例如 URL bug 讓整批誤記成官方沒有）"
@@ -92,6 +92,10 @@ jobs:
           git checkout origin/main -- data/crypto data/meta/crypto_universe.csv \
               data/meta/_crypto_months_done.csv \
             || echo "⚠ main 上可能還沒有這些檔（第一次跑），略過" >&2
+          # ⭐ 資金費率另外取（⛔ 放在 data/crypto_funding，不放 data/crypto：
+          #   那個目錄程式常整個掃，多一個檔就多一個「幣」而且不報錯 —— 裁定線 seq97 §三）
+          git checkout origin/main -- data/crypto_funding data/meta/crypto_funding_manifest.csv \
+            || echo "⚠ main 上可能還沒有這些檔（第一次跑），略過" >&2
 
       - name: 執行
         run: |
@@ -103,6 +107,14 @@ jobs:
             echo "[crypto] ⚠ 帶 --reset-months-done（續跑台帳會被刪掉重問）"
           fi
           RC=0
+          # ⭐ funding 模式：C2 的六幣資金費率全期（裁定線 seq97 §三）
+          #   ⛔ 判準自測先跑、紅了就不抓；抓完當場跑三項交件驗收
+          if [ "$MODE" = "funding" ]; then
+            python selftest_crypto_funding.py || exit 1
+            python crypto_funding.py || RC=$?
+            python funding_audit.py || RC=$?
+            exit $RC
+          fi
           python crypto.py --mode "$MODE" $EXTRA || RC=$?
           exit $RC
 
