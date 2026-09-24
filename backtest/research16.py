@@ -202,7 +202,7 @@ def main():
         for H in HOLDS:
             L.append(f"#### H{H}"); L.append(""); L += HDR
             for g in ("C2|B3", "C2|ABANDON", "C2|none（三部曲沒完成）"):
-                L.append(cell_row(g, c2[c2.grp == g], f"g_H{H}", base["gate"][H])[0])
+                L.append(cell_row(g.replace("|", "\\|"), c2[c2.grp == g], f"g_H{H}", base["gate"][H])[0])   # ⚠ 表格內的 | 要跳脫，否則多一欄、統計層被擠出表外（裁定線 seq105 §二）
             b3 = d[(d.kind == "B3") & d.gate_all]
             first_b3 = b3.sort_values("k").groupby(["sid", "center"]).first()
             pr = c2[c2.has_b3].merge(first_b3[[f"g_H{H}", "month"]].rename(columns={f"g_H{H}": "b3_g", "month": "b3_month"}), left_on=["sid", "center"], right_index=True, how="inner")
