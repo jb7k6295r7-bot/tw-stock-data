@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T17:33:49+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35978576492｜美股供料：阻斷項＝拿不拿得到已下市的股票
+# ⏱ 這一趟：2026-09-24T18:05:55+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35980791780｜美股供料：阻斷項＝拿不拿得到已下市的股票
 
 # 美股供料探針（⛔ 只讀，本支不寫任何資料檔）
 範圍（使用者 2026-09-24 定）：價量 ＋ 全市場【含下市】
@@ -52,5 +52,5 @@
       無 key 試打：回了 2 bytes
    Polygon tickers(active=false)
       ⭐ 文件說 active=false 回已下市代號
-      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"94310a5cc737da1d39a094787275d49c","error":"API Key was not provided"}
+      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"1a32b92a6056110bf82640aad553a5e2","error":"API Key was not provided"}
    ⇒ ⭐ 這一節【不是】資料品質的證據，只是「這條路要不要付錢」的入口確認。

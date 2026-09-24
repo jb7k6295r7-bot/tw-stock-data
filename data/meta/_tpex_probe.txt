@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T17:08:55+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35978576492
+# ⏱ 這一趟：2026-09-24T17:41:57+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35980791780
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
