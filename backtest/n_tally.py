@@ -31,9 +31,9 @@ add("P15 候選檔數閘門", "resultsp15/summary.csv", 4, 2, "全窗",
     "0/2（G0、G1）", "另二臂：假訊號閘門、排除四月 ⇒ 對照")
 add("P16 條件出場", "resultsp16/summary.csv", 6, 5, "全窗",
     "0/5（E0/E1/E1a/E1b/E1c）", "R1 是對照臂")
-add("P17 外生算式決定 w", "resultsp17/per_seed_arm.csv", 6, 1, "釘死窗",
+add("P17 外生算式決定 w", "resultsp17/per_seed_arm.csv", 7, 1, "釘死窗",
     "判定格 R_eq 兩腳過、(i) 落出口③ ⇒ 判【沒有新資訊】",
-    "⭐ 六臂中只有 R_eq 是判定格；W_fix/W_shuf/R_tv/R_rp/W0/W1 只作描述（P17 §九②）")
+    "⭐ **七**臂（P17_REPORT §一 逐字「七個臂」）中只有 R_eq 是判定格；W_fix/W_shuf/R_tv/R_rp/W0/W1 只作描述（§九②）。⚠ 本線 2026 §一 誤寫成 6 ⇒ 已訂正；⇒ 合計 205→206、差 68→69。⚠⚠ n_exc69.py 查出 W_fix 與 W_shuf 的中位【通過使用者判準】（〈一百三十四〉必報）")
 add("研究十三／PREREG10", "results13/portfolio.csv", 48, 48, "全窗+A+B",
     "0/48", "set×regime×N×rule")
 add("研究十三b／PREREG11", "results13b/portfolio.csv", 48, 48, "全窗+A+B",
