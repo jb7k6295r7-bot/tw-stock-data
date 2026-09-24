@@ -199,6 +199,12 @@ jobs:
       - name: 驗財報探針的判準（離線）
         run: python ci_step.py selftest_filing_probe.py
 
+      # ⭐ 美股探針的自測（離線、零連網）。⛔ 它是閘門：判準壞了就不該去打人家的站。
+      - name: 驗美股探針的判準（離線）
+        continue-on-error: true
+        timeout-minutes: 2
+        run: python ci_step.py selftest_us_probe.py
+
       # ⭐⭐ `probe_step.sh`（探針壞掉時留痕跡的那一份）自己的自測。
       #   ⛔ 它守的兩件事都在 2026-09-16 run 131 真的發生過：
       #     ① 還原要從 `origin/main` 取（舊寫法還原**分支**那份
@@ -396,6 +402,22 @@ jobs:
         continue-on-error: true
         timeout-minutes: 6
         run: bash probe_step.sh data/meta/_filing_probe.txt 240 python filing_probe.py
+
+      # ⭐⭐ 美股供料探針（使用者 2026-09-24 定：價量＋全市場【含下市】）
+      #
+      # ⛔⛔ 它只回答一件事：**這個來源拿不拿得到已下市的股票。**
+      #   拿不到 ⇒ 母體只剩倖存者 ⇒ ⚠ 而它不會報錯、數字看起來完全正常
+      #   ⇒ ⛔ 回測不成立。台股那邊救回這一格靠的是 delisted.csv（437 檔）。
+      #
+      # ⚠ 自己帶 240 秒預算（⛔ 不靠外層 timeout-minutes）——那是 2026-09-23
+      #   量到的教訓：`mops_probe` 撞 780 秒被砍時，是 `probe_step.sh` 的內層預算
+      #   讓它還寫得下那一行 ✗；⛔ 若靠外層砍，shell 直接死、什麼痕跡都沒有。
+      # ⛔ 而它**不寫任何資料檔**，只寫自己的 data/meta/_us_probe.txt。
+      - name: 美股供料探針（⛔ 只讀，阻斷項是拿不拿得到下市股）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 6
+        run: bash probe_step.sh data/meta/_us_probe.txt 240 python us_probe.py
 
       # ⛔ 這一步**故意沒有** `continue-on-error`（跟 daily.yml 那一步同一個理由）：
       #   它只負責「說」。自己炸掉的話要大聲，⚠ 而下面 Commit 是 `if: always()`
