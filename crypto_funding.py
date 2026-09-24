@@ -27,6 +27,8 @@ import urllib.error
 import urllib.request
 import zipfile
 
+import runlog
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "data", "crypto_funding")
 MAN = os.path.join(HERE, "data", "meta", "crypto_funding_manifest.csv")
@@ -94,6 +96,9 @@ def main():
         until = (today.year - 1, 12) if today.month == 1 else (today.year, today.month - 1)
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(os.path.dirname(MAN), exist_ok=True)
+    # ⭐ 2026-09-25 補：第一版沒接 runlog ⇒ _last_run.md 沒有這一趟（三件式第③件落空，交件信自報過）
+    rl = runlog.Run("crypto:funding")
+    rl.info("這一趟", "C2 六幣永續資金費率全期（%s ~ %04d-%02d）" % ("%04d-%02d" % FIRST, until[0], until[1]))
     man = []
     errors = []
     for sym in a.syms:
@@ -123,6 +128,10 @@ def main():
                 w.writerow(allrows[k])
         ok = [x for x in man if x["sym"] == sym]
         first = min(allrows, key=int) if allrows else ""
+        rl.info(sym, "%d 列｜ok %d 月｜absent %d 月｜error %d 月"
+                % (len(allrows), sum(1 for x in ok if x["status"] == "ok"),
+                   sum(1 for x in ok if x["status"] == "absent"),
+                   sum(1 for x in ok if x["status"].startswith("error"))))
         print("%-4s %d 列｜月份 %d（ok %d／absent %d／error %d）｜第一筆 %s"
               % (sym, len(allrows), len(ok), sum(1 for x in ok if x["status"] == "ok"),
                  sum(1 for x in ok if x["status"] == "absent"),
@@ -133,8 +142,10 @@ def main():
         w = csv.DictWriter(f, fieldnames=MAN_COLS, lineterminator="\n")
         w.writeheader()
         w.writerows(man)
+    # ⛔ 抓取錯誤 ≠ 官方沒有 ⇒ 大聲講，而且 rc≠0（manifest 照寫，status 欄有 error）
+    rl.check("抓取錯誤 0 個月（⛔ error 不是 absent）", not errors, str(errors[:5]))
+    rl.finish()
     if errors:
-        # ⛔ 抓取錯誤 ≠ 官方沒有 ⇒ 大聲講，而且 rc≠0（manifest 照寫，status 欄有 error）
         print("⛔ 抓取錯誤 %d 個月：%s" % (len(errors), errors[:10]))
         return 1
     return 0
