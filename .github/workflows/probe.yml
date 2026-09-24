@@ -205,6 +205,12 @@ jobs:
         timeout-minutes: 2
         run: python ci_step.py selftest_us_probe.py
 
+      # ⭐ 資金費率探針的自測（離線、零連網；B.get 換成假的）。⛔ 它是閘門。
+      - name: 驗資金費率探針的判準（離線）
+        continue-on-error: true
+        timeout-minutes: 2
+        run: python ci_step.py selftest_funding_probe.py
+
       # ⭐⭐ `probe_step.sh`（探針壞掉時留痕跡的那一份）自己的自測。
       #   ⛔ 它守的兩件事都在 2026-09-16 run 131 真的發生過：
       #     ① 還原要從 `origin/main` 取（舊寫法還原**分支**那份
@@ -418,6 +424,18 @@ jobs:
         continue-on-error: true
         timeout-minutes: 6
         run: bash probe_step.sh data/meta/_us_probe.txt 240 python us_probe.py
+
+      # ⭐⭐ 永續合約資金費率（答加密策略線 PREREGC2 §六①③，那兩項是 C2「唯二開跑前置」）
+      #   ⛔ 走 data.binance.vision，⛔ 不走 fapi：api.binance.com 從 Actions 回 451
+      #     （crypto_probe 2026-09-20 已付過代價），fapi 是同一個實體。
+      #   ⭐ 一個來源解兩件：月檔 ＝ 歷史；最早那一檔的第一筆 ≈ 永續上市日【上界】
+      #   ⚠ 自己帶 240 秒預算（probe_step.sh），⛔ 不靠外層 timeout
+      #   ⛔ 本支不寫任何資料檔，只寫 data/meta/_funding_probe.txt
+      - name: 永續合約資金費率探針（⛔ 只讀，答 PREREGC2 兩個開跑前置）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 6
+        run: bash probe_step.sh data/meta/_funding_probe.txt 240 python funding_probe.py
 
       # ⛔ 這一步**故意沒有** `continue-on-error`（跟 daily.yml 那一步同一個理由）：
       #   它只負責「說」。自己炸掉的話要大聲，⚠ 而下面 Commit 是 `if: always()`
