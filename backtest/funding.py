@@ -88,10 +88,17 @@ def load_manifest(sha: str | None = None, repo: str | None = None, path: str | N
         m = pd.read_csv(_io.StringIO(_git_show(repo or os.path.expanduser("~/tw-stock-data"), sha, MANIFEST_REL)), dtype=str)
     else:
         m = pd.read_csv(path, dtype=str)
+    # ⭐ 資料庫線 20260925-0306 交件的表頭（逐字）：sym,month,url,zip_sha256,content_sha256,rows,interval_mix,status
+    #   ⇒ 對到本支原本用的中文欄名；status ∈ {ok, absent, error}（⛔ 三者不混、absent 不補 0）
+    if {"month", "rows", "status"} <= set(m.columns):
+        m = m.rename(columns={"month": "月份", "rows": "列數"})
     need = {"sym", "月份", "列數"}
     miss = need - set(m.columns)
     if miss:
         raise SystemExit("⛔ 清單缺欄 {}（實際欄：{}）⇒ 照資料庫線交件的欄名改這裡，⛔ 不猜".format(miss, list(m.columns)))
+    if "status" in m.columns:
+        bad = m[~m["status"].isin(["ok", "absent"])]
+        assert bad.empty, "⛔ 清單有 status 非 ok／absent 的列：{}".format(bad[["sym", "月份", "status"]].head().values.tolist())
     return m
 
 
@@ -99,6 +106,8 @@ def month_of(d: pd.DataFrame, sym: str, y: int, mth: int, manifest: pd.DataFrame
     """取一個月。⭐ 清單沒有那一月 ⇒ FundingAbsent（⛔ 不是費率 0）；有 ⇒ 列數必須與清單逐字相符。"""
     key = "{:04d}-{:02d}".format(y, mth)
     row = manifest[(manifest["sym"].str.upper().str.replace("USDT", "") == sym.upper()) & (manifest["月份"] == key)]
+    if "status" in row.columns:
+        row = row[row["status"] == "ok"]               # absent ⇒ 當成沒有這一月（⛔ 不是費率 0）
     if row.empty:
         raise FundingAbsent("{}USDT {} 清單沒有這一月（⛔ 不可當費率 0）".format(sym, key))
     sub = d[(d["ts"].dt.year == y) & (d["ts"].dt.month == mth)]
