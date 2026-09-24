@@ -5,6 +5,7 @@
    trd    當天有成交（未還原收盤非缺、> 0）
    up_o   當天【開盤 ＝ 漲停價】（⇒ 買不到）
    dn_o   當天【開盤 ＝ 跌停價】（⇒ 賣不掉）
+   dn_c   當天【收盤 ＝ 跌停價】（⇒ 排程出場日收盤賣不掉；⇐ 裁定線 20260924-1744 裁 (乙)）
 漲跌停價：⭐ 與 research11.limit_flags 同一套（research11.limit_price：tick 級距、2015-06-01 前 7%／後 10%），
    參考價 ＝ 前一個【有成交日】的未還原收盤；⛔ 差別只在拿【開盤】去比，而不是收盤（1714 §一④）
 不判（旗標一律 False）：還原事件日（除權息日的參考價不是前收）、上市前 5 根（與 load_bars 同一條）
@@ -22,7 +23,7 @@ CUT = pd.Timestamp("2015-06-01")
 def one(sid: str, cal: pd.DatetimeIndex) -> dict:
     n = len(cal)
     p = os.path.join(D.DATA, "stocks", f"{sid}.csv")
-    none = {"trd": np.zeros(n, bool), "up_o": np.zeros(n, bool), "dn_o": np.zeros(n, bool)}
+    none = {"trd": np.zeros(n, bool), "up_o": np.zeros(n, bool), "dn_o": np.zeros(n, bool), "dn_c": np.zeros(n, bool)}
     if not os.path.exists(p):
         return none
     raw = pd.read_csv(p, dtype={"date": str}, usecols=["date", "open", "close"])
@@ -32,9 +33,9 @@ def one(sid: str, cal: pd.DatetimeIndex) -> dict:
     ro[~(ro > 0)] = np.nan; rc[~(rc > 0)] = np.nan              # ⭐ 零價視為缺（與 load_stock 同）
     trd = np.isfinite(rc)
     idx = np.flatnonzero(trd)
-    up = np.zeros(n, bool); dn = np.zeros(n, bool)
+    up = np.zeros(n, bool); dn = np.zeros(n, bool); dc = np.zeros(n, bool)
     if len(idx) < 2:
-        return {"trd": trd, "up_o": up, "dn_o": dn}
+        return {"trd": trd, "up_o": up, "dn_o": dn, "dn_c": dc}
     skip = set()
     adj = D.load_adj(sid)
     if adj is not None and len(adj):
@@ -51,7 +52,12 @@ def one(sid: str, cal: pd.DatetimeIndex) -> dict:
         lim = 0.07 if cal[b] < CUT else 0.10
         up[b] = abs(ro[b] - R.limit_price(rc[a], True, lim)) < 1e-6
         dn[b] = abs(ro[b] - R.limit_price(rc[a], False, lim)) < 1e-6
-    return {"trd": trd, "up_o": up, "dn_o": dn}
+    for a, b in zip(idx[:-1], idx[1:]):                         # dn_c：同一個參考價，拿【收盤】比（⛔ 不受開盤缺值影響）
+        if b in skip:
+            continue
+        lim = 0.07 if cal[b] < CUT else 0.10
+        dc[b] = abs(rc[b] - R.limit_price(rc[a], False, lim)) < 1e-6
+    return {"trd": trd, "up_o": up, "dn_o": dn, "dn_c": dc}
 
 
 def build(sids, cal: pd.DatetimeIndex) -> dict:

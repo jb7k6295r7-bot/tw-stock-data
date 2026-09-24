@@ -466,6 +466,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     #                 延後期間照市價（ffill 收盤）計值
     #              ③ 開啟時 613–615 那個「open 非有限 ⇒ 用 ffill 收盤成交」的退路不會被走到（進場前已擋）
     #              ⚠ 排程出場日【有成交】時照原版用當日收盤出（1714 §一② 的「開盤＝跌停」是針對開盤成交）
+    #              ④（裁定線 20260924-1744 裁 (乙)）排程出場日【收盤＝跌停價】（dn_c）⇒ 視為賣不掉，
+    #                 隔日起照 ② 在第一個可交易日【開盤】出（開盤又跌停 ⇒ 再等）；計入 tr_close_locked
+    #                 ⛔ 只管排程出場；停損出場（stop）當天記的是 t−1 收盤，⛔ 不受當天 dn_c 影響
     caps = None                       # PREREGP11：逐日容量。⛔ None ＝ 純量 n_slots ⇒ 原版路徑逐位元相同
     if not isinstance(n_slots, (int, np.integer)):
         caps = np.asarray(n_slots, int)
@@ -503,7 +506,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if not (0 < weak_size <= 1):
             raise ValueError(f"weak_size 要在 (0, 1]，收到 {weak_size!r}")
     max_pos_frac = 0.0
-    tr_stats = {"limit_up": 0, "halt_in": 0, "exit_delayed": 0} if tradable is not None else None
+    tr_stats = {"limit_up": 0, "halt_in": 0, "exit_delayed": 0, "close_locked": 0} if tradable is not None else None
     maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
@@ -521,6 +524,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     for t in range(first, ncal if tradable is not None else t_end):
         if tradable is not None and t >= t_end and not open_pos:
             break                                         # ⭐ 延後出場全部了結才停
+        hit_now = ()                                      # 今天被停損改成出場的 sid（⛔ 只給 tradable 的 dn_c 排除用）
         if stop is not None and open_pos and t > first:
             # ⭐ 只看 t−1（已經收盤的那一天）⇒ ⛔ 沒有前視；破線的部位改成「今天結清、記 t−1 的收盤」
             hit = []
@@ -538,10 +542,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     hit.append(sid)
             if hit:
                 stop_exits += len(hit); stop_days.append((t - 1, len(hit)))
+            hit_now = set(hit)
         still = []
         for ex, sid, amt, gross, ep in open_pos:
-            if ex <= t and tradable is not None and (t > ex or not tradable[sid]["trd"][t]):
+            if ex <= t and tradable is not None and (t > ex or not tradable[sid]["trd"][t]
+                                                     or (sid not in hit_now and tradable[sid]["dn_c"][t])):
                 tb = tradable[sid]; o_t = float(opens[sid][t])
+                if t == ex and tb["trd"][t]:
+                    tr_stats["close_locked"] += 1                          # ④ 排程出場日收盤鎖跌停
                 if t == ex or not tb["trd"][t] or tb["dn_o"][t] or not np.isfinite(o_t) or o_t <= 0:
                     still.append((ex, sid, amt, gross, ep)); continue      # 還賣不掉：照 ffill 收盤計值
                 gross = o_t / ep - 1.0                                     # ⭐ 第一個可成交日【開盤】出
@@ -699,6 +707,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     if tradable is not None:        # ⛔ tradable=None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同
         out["tr_limit_up"] = tr_stats["limit_up"]; out["tr_halt_in"] = tr_stats["halt_in"]
         out["tr_exit_delayed"] = tr_stats["exit_delayed"]; out["tr_open_at_end"] = len(open_pos)
+        out["tr_close_locked"] = tr_stats["close_locked"]
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
