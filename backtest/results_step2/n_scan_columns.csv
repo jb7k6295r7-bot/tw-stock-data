@@ -1,0 +1,49 @@
+目錄,檔,欄,列數,語意,取值樣本,真值數
+results13,portfolio.csv,win,48,① 布林判準,false,0
+results13_adj0914,portfolio.csv,win,24,① 布林判準,false,0
+results13_f3_0914,portfolio.csv,win,24,① 布林判準,false,0
+results13_pub15_0914,portfolio.csv,win,24,① 布林判準,false,0
+results13b,portfolio.csv,win,48,① 布林判準,false／true,2
+results_step2,n_exc69_wshuf_perrep.csv,通過,30,① 布林判準,true,30
+results_step2,placebo_rate_resultsp15.csv,通過,30,① 布林判準,false,0
+results_step2,placebo_rate_resultsp17.csv,通過,30,① 布林判準,true,30
+resultsc3,cost_sens.csv,pass,4,① 布林判準,true,4
+resultsc4,per_coin.csv,pass_vs_c1,6,① 布林判準,false／true,3
+resultsc4,per_coin.csv,pass_vs_bh,6,① 布林判準,false／true,4
+resultsp1,m_windows.csv,win_rate,44,③ 數值（比例／量）,0.4441860465116279／0.4461538461538462／0.4463768115942029／0.4579710144927536,-1
+resultsp1,portfolio.csv,win,44,① 布林判準,false／true,3
+resultsp11,cells.csv,win_all,16,① 布林判準,false,0
+resultsp11,cells.csv,win_a,16,① 布林判準,false,0
+resultsp11,cells.csv,win_b,16,① 布林判準,false,0
+resultsp11,cells.csv,win,16,① 布林判準,false,0
+resultsp12,anchor_diag.csv,win_mdd,200,③ 數值（比例／量）,-0.2459928055059341／-0.2550172495722425／-0.27287884157758546／-0.27511538993222484,-1
+resultsp12,anchors.csv,過,2,① 布林判準,true,2
+resultsp12,attribution.csv,win,4,② 文字標籤（⛔ 不是判準）,主格窗／全窗,-1
+resultsp12,cells.csv,win,48,② 文字標籤（⛔ 不是判準）,主格窗／全窗,-1
+resultsp12,cells_T1w.csv,win,2,② 文字標籤（⛔ 不是判準）,主格窗,-1
+resultsp12,effects.csv,win,20,② 文字標籤（⛔ 不是判準）,主格窗／全窗,-1
+resultsp13,arms.csv,win,8,② 文字標籤（⛔ 不是判準）,主格窗／全窗,-1
+resultsp13,judge.csv,pass_w1,1,① 布林判準,false,0
+resultsp13,judge.csv,pass_w0,1,① 布林判準,false,0
+resultsp14,w_summary.csv,通過,5,① 布林判準,false／true,2
+resultsp6,cells.csv,win_all,8,① 布林判準,false,0
+resultsp6,cells.csv,win_a,8,① 布林判準,false,0
+resultsp6,cells.csv,win_b,8,① 布林判準,false,0
+resultsp6,cells.csv,win,8,① 布林判準,false,0
+resultsp7,baseline_gateB.csv,win_all,7,① 布林判準,false,0
+resultsp7,baseline_gateB.csv,win_a,7,① 布林判準,false,0
+resultsp7,baseline_gateB.csv,win_b,7,① 布林判準,false,0
+resultsp7,baseline_gateB.csv,win,7,① 布林判準,false,0
+resultsp7,cells.csv,win_all,6,① 布林判準,false,0
+resultsp7,cells.csv,win_a,6,① 布林判準,false／true,1
+resultsp7,cells.csv,win_b,6,① 布林判準,false,0
+resultsp7,cells.csv,win,6,① 布林判準,false,0
+resultsp7,sensitivity.csv,win_all,4,① 布林判準,false,0
+resultsp7,sensitivity.csv,win_a,4,① 布林判準,false,0
+resultsp7,sensitivity.csv,win_b,4,① 布林判準,false,0
+resultsp7,sensitivity.csv,win,4,① 布林判準,false,0
+resultsp8,a_deciles.csv,win,30,③ 數值（比例／量）,0.4172369151100425／0.4198261512853708／0.43166265951544297／0.43603372434017595,-1
+resultsp9,cells.csv,win_self,2,① 布林判準,false,0
+resultsp9,cells.csv,win_sl,2,① 布林判準,false,0
+resultsp9,cells.csv,win_a,2,① 布林判準,false,0
+resultsp9,cells.csv,win_b,2,① 布林判準,false,0

@@ -1,0 +1,12 @@
+件,檔,欄,判準格,其中通過
+P1 組合層槽數下探,resultsp1/portfolio.csv,win,44,3
+P6,resultsp6/cells.csv,win,8,0
+P7 停損四族（主表）,resultsp7/cells.csv,win,6,0
+P7 敏感度,resultsp7/sensitivity.csv,win,4,0
+P7 BASELINE,resultsp7/baseline_gateB.csv,win,7,0
+P9ⓑ 弱勢減碼,resultsp9/cells.csv,win_self,2,0
+P11 訊號集×選擇率,resultsp11/cells.csv,win,16,0
+P13 只換權重（判準在 judge.csv）,resultsp13/judge.csv,pass_w1,1,0
+P14 0050 進組合,resultsp14/w_summary.csv,通過,5,2
+研究十三／PREREG10,results13/portfolio.csv,win,48,0
+研究十三b／PREREG11,results13b/portfolio.csv,win,48,2
