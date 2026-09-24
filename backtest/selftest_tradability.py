@@ -91,6 +91,65 @@ ok += 1
 print("✅ F6 停損日收盤鎖跌停：開關兩邊都在 13 日以 12 日收盤 94 出（{:.6f}），tr_close_locked＝0 ⇒ 只管排程出場".format(on["equity"][13]))
 print("\n⇒ {} 個 fixture 全過，⭐ 且 F1／F2／F4／F5 的【關】與【開】都不同 ⇒ 新參數分得出來".format(ok))
 
+# ══ F7～F10：delist 參數（裁定線 20260924-2319 seq98 §二，三案＋官方日一案）══════════════
+from backtest import tradability as T
+def run_n(s, cl, op, n, tr=None, dl=None):
+    return R.simulate_mtm(s, "T", 1, np.random.default_rng(0), cl, op, n, return_equity=True, tradable=tr, delist=dl)
+def flags_n(n): return {"trd": np.ones(n, bool), "up_o": np.zeros(n, bool), "dn_o": np.zeros(n, bool), "dn_c": np.zeros(n, bool)}
+def cal_n(n): return pd.bdate_range("2020-01-01", periods=n)
+
+# F7 停牌後復牌 ⇒ 仍延到第一個可交易日開盤（delist 給了也不能改這一案）
+tr = {"A": flags()}; tr["A"]["trd"][15:18] = False
+dl = T.delist_status(tr, cal_n(N))
+assert dl["A"]["status"] == "live", dl
+a = run(s2, {"A": clA}, {"A": opA}, tr); b = run_n(s2, {"A": clA}, {"A": opA}, N, tr, dl)
+assert np.array_equal(a["equity"], b["equity"]) and b["tr_delist_settled"] == 0 and b["tr_delist_ambig"] == 0
+assert b["tr_exit_delayed"] == 1; ok += 1
+print("✅ F7 停牌後復牌：給不給 delist 權益逐位元相同（18 日開盤 90 賣出）；下市了結 0、無法區分 0")
+
+# F8 下市且最後成交離日曆尾 ≥ 60 ⇒ 以最後成交價了結（＝ tradable 關閉時）
+M = 100
+cl8 = np.full(M, 100.0); cl8[14:] = 110.0; op8 = np.full(M, 100.0); op8[15:] = np.nan
+s8 = sig([{"sid": "A", "entry_pos": 10, "xpos_T": 15, "g_T": 110 / 100 - 1}])
+tr = {"A": flags_n(M)}; tr["A"]["trd"][15:] = False
+dl = T.delist_status(tr, cal_n(M))
+assert dl["A"] == {"last": 14, "status": "delisted_gap", "gap": 85}, dl
+off = run_n(s8, {"A": cl8}, {"A": op8}, M); old = run_n(s8, {"A": cl8}, {"A": op8}, M, tr); new = run_n(s8, {"A": cl8}, {"A": op8}, M, tr, dl)
+assert close(off["equity"][15], 1 + 0.10 - C), "關：15 日以最後價 110 了結"
+assert old["tr_open_at_end"] == 1 and close(old["equity"][M - 1], 1.10), "舊（無 delist）：永遠延不到、掛到尾"
+assert close(new["equity"][15], off["equity"][15]) and close(new["equity"][M - 1], off["equity"][M - 1])
+assert new["tr_delist_settled"] == 1 and new["tr_open_at_end"] == 0
+assert not close(old["equity"][M - 1], new["equity"][M - 1]); ok += 1
+print("✅ F8 下市（gap 85 ≥ 60）：新 ⇒ 15 日以最後成交價 110 了結、終值 {:.6f}（＝ 關）；舊 ⇒ 掛到尾、終值 {:.6f}".format(
+    new["equity"][M - 1], old["equity"][M - 1]))
+
+# F9 最後成交離日曆尾 < 60、沒有官方日 ⇒ 分不出 ⇒ 照停牌（掛到尾）＋ 逐筆報數
+cl9 = arr(100); cl9[14:] = 110; op9 = arr(100); op9[15:] = np.nan
+tr = {"A": flags()}; tr["A"]["trd"][15:] = False
+dl = T.delist_status(tr, cal_n(N))
+assert dl["A"] == {"last": 14, "status": "ambig", "gap": 25}, dl
+old = run_n(s8, {"A": cl9}, {"A": op9}, N, tr); new = run_n(s8, {"A": cl9}, {"A": op9}, N, tr, dl)
+assert np.array_equal(old["equity"], new["equity"]) and new["tr_open_at_end"] == 1
+assert new["tr_delist_ambig"] == 1 and new["tr_delist_settled"] == 0; ok += 1
+print("✅ F9 最後成交離尾 25 < 60：照停牌掛到尾（權益與舊版逐位元相同）、無法區分 1 筆、了結 0")
+
+# F10 同 F9，但有官方下市日 ⇒ 用官方 ⇒ 了結（⭐ 證明官方日優先於 gap）
+dl = T.delist_status(tr, cal_n(N), official={"A": pd.Timestamp("2020-01-22")})
+assert dl["A"]["status"] == "delisted_official", dl
+new = run_n(s8, {"A": cl9}, {"A": op9}, N, tr, dl)
+assert new["tr_delist_settled"] == 1 and close(new["equity"][15], 1 + 0.10 - C) and new["tr_open_at_end"] == 0
+ok += 1
+print("✅ F10 同 F9 但有官方下市日 ⇒ 15 日以最後成交價了結（官方日優先於 gap）")
+
+# F11 delist 單獨給、tradable 沒給 ⇒ 必須炸（⛔ 不可靜默忽略）
+try:
+    run_n(s8, {"A": cl9}, {"A": op9}, N, None, dl)
+    raise SystemExit("⛔ delist 沒有 tradable 竟然沒炸")
+except ValueError:
+    ok += 1
+    print("✅ F11 delist 不配 tradable ⇒ ValueError")
+print("\n⇒ 含 delist 共 {} 個 fixture 全過".format(ok))
+
 # ── B1 builder（tradability.build）在真資料上的不變式 ＋ 人工複算一天 ──
 # ⚠ 上面 F1～F4 直接餵旗標，⛔ 沒經過 build() ⇒ 2026-09-24 build() 的唯讀陣列 bug 它們抓不到 ⇒ 補這一條
 from backtest import data as D, tradability as T

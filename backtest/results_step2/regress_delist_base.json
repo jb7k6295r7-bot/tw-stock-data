@@ -1,0 +1,138 @@
+{
+ "B_H120_plain/0": {
+  "eq": "4b44718002b0ca4b",
+  "scal": {
+   "cagr": 0.32339738065382173,
+   "mdd": -0.41770287944382745,
+   "trades": 138.0,
+   "slot_use": 0.8871002592912706,
+   "first": 523.0,
+   "end": 2837.0,
+   "m": 138.0,
+   "pos_frac": 0.572463768115942,
+   "deferred": 0.0,
+   "delay_med": NaN,
+   "expired": 0.0,
+   "tr_limit_up": 0.0,
+   "tr_halt_in": 0.0,
+   "tr_exit_delayed": 0.0,
+   "tr_open_at_end": 0.0,
+   "tr_close_locked": 0.0
+  }
+ },
+ "B_H120_plain/1": {
+  "eq": "60b654fef02c0ed7",
+  "scal": {
+   "cagr": 0.19018217361825296,
+   "mdd": -0.39988888638182307,
+   "trades": 138.0,
+   "slot_use": 0.8871002592912706,
+   "first": 523.0,
+   "end": 2837.0,
+   "m": 138.0,
+   "pos_frac": 0.4927536231884058,
+   "deferred": 0.0,
+   "delay_med": NaN,
+   "expired": 0.0,
+   "tr_limit_up": 0.0,
+   "tr_halt_in": 0.0,
+   "tr_exit_delayed": 0.0,
+   "tr_open_at_end": 0.0,
+   "tr_close_locked": 0.0
+  }
+ },
+ "B_H120_stop/0": {
+  "eq": "4c181ba80383e483",
+  "scal": {
+   "cagr": 0.20521240825031484,
+   "mdd": -0.33583057854869663,
+   "trades": 233.0,
+   "slot_use": 0.8254645635263613,
+   "first": 523.0,
+   "end": 2837.0,
+   "m": 233.0,
+   "pos_frac": 0.5407725321888412,
+   "deferred": 0.0,
+   "delay_med": NaN,
+   "expired": 0.0,
+   "stop_exits": 139.0,
+   "stop_rate": 0.5965665236051502,
+   "stop_max_same_day": 4.0,
+   "stop_cut_right_tail": 13.0,
+   "hold_days_mean": 65.58369098712447,
+   "tr_limit_up": 0.0,
+   "tr_halt_in": 0.0,
+   "tr_exit_delayed": 2.0,
+   "tr_open_at_end": 0.0,
+   "tr_close_locked": 2.0
+  }
+ },
+ "B_H120_stop/1": {
+  "eq": "bd796c4ea54db386",
+  "scal": {
+   "cagr": 0.23053883051338087,
+   "mdd": -0.3852493273309071,
+   "trades": 236.0,
+   "slot_use": 0.8305963699222126,
+   "first": 523.0,
+   "end": 2837.0,
+   "m": 236.0,
+   "pos_frac": 0.5550847457627118,
+   "deferred": 0.0,
+   "delay_med": NaN,
+   "expired": 0.0,
+   "stop_exits": 143.0,
+   "stop_rate": 0.6059322033898306,
+   "stop_max_same_day": 5.0,
+   "stop_cut_right_tail": 5.0,
+   "hold_days_mean": 65.15254237288136,
+   "tr_limit_up": 0.0,
+   "tr_halt_in": 0.0,
+   "tr_exit_delayed": 0.0,
+   "tr_open_at_end": 0.0,
+   "tr_close_locked": 0.0
+  }
+ },
+ "ALL_H120_plain/0": {
+  "eq": "f58a4e95361971ae",
+  "scal": {
+   "cagr": 0.1199237170219043,
+   "mdd": -0.5017975788914535,
+   "trades": 144.0,
+   "slot_use": 0.9122657580919932,
+   "first": 489.0,
+   "end": 2837.0,
+   "m": 144.0,
+   "pos_frac": 0.4930555555555556,
+   "deferred": 0.0,
+   "delay_med": NaN,
+   "expired": 0.0,
+   "tr_limit_up": 0.0,
+   "tr_halt_in": 0.0,
+   "tr_exit_delayed": 0.0,
+   "tr_open_at_end": 0.0,
+   "tr_close_locked": 0.0
+  }
+ },
+ "ALL_H120_plain/1": {
+  "eq": "86b474ca44a222ae",
+  "scal": {
+   "cagr": 0.057387034887127264,
+   "mdd": -0.36502498294867214,
+   "trades": 144.0,
+   "slot_use": 0.9123189948892675,
+   "first": 489.0,
+   "end": 2837.0,
+   "m": 144.0,
+   "pos_frac": 0.4583333333333333,
+   "deferred": 0.0,
+   "delay_med": NaN,
+   "expired": 0.0,
+   "tr_limit_up": 0.0,
+   "tr_halt_in": 0.0,
+   "tr_exit_delayed": 1.0,
+   "tr_open_at_end": 0.0,
+   "tr_close_locked": 1.0
+  }
+ }
+}

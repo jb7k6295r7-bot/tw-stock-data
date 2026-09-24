@@ -400,7 +400,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
-                 weight_fn=None, tradable=None, audit=None):
+                 weight_fn=None, tradable=None, audit=None, delist=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -477,6 +477,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     #              ④（裁定線 20260924-1744 裁 (乙)）排程出場日【收盤＝跌停價】（dn_c）⇒ 視為賣不掉，
     #                 隔日起照 ② 在第一個可交易日【開盤】出（開盤又跌停 ⇒ 再等）；計入 tr_close_locked
     #                 ⛔ 只管排程出場；停損出場（stop）當天記的是 t−1 收盤，⛔ 不受當天 dn_c 影響
+    #   delist     None（⛔ 原路徑逐位元相同，回歸閘門 backtest/regress_delist.py）／
+    #              dict sid → {"last","status"}（backtest/tradability.delist_status）；⛔ 只在 tradable 開啟時有意義
+    #              ⑤（裁定線 20260924-2319 seq98 §二）出場日沒成交、而且【之後再也沒有成交】（t > last）⇒ 先分類：
+    #                 status delisted_official／delisted_gap ⇒ 下市 ⇒ 以最後成交價了結（用原本的 gross，
+    #                   ＝ tradable 關閉時的行為）；計入 tr_delist_settled
+    #                 status ambig（最後成交離全域日曆尾 < 60 日、又沒有官方下市日）⇒ 照停牌處理（延後／掛到模擬尾），
+    #                   逐筆計入 tr_delist_ambig（⛔ 不猜）
+    #              ⚠ 以最後成交價了結對下市股偏樂觀 ⇒ 用到這條的結論仍附倖存者有界論證
     caps = None                       # PREREGP11：逐日容量。⛔ None ＝ 純量 n_slots ⇒ 原版路徑逐位元相同
     if not isinstance(n_slots, (int, np.integer)):
         caps = np.asarray(n_slots, int)
@@ -515,6 +523,11 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             raise ValueError(f"weak_size 要在 (0, 1]，收到 {weak_size!r}")
     max_pos_frac = 0.0
     tr_stats = {"limit_up": 0, "halt_in": 0, "exit_delayed": 0, "close_locked": 0} if tradable is not None else None
+    if delist is not None:
+        if tradable is None:
+            raise ValueError("delist 只在 tradable 開啟時有意義（seq98 §二）")
+        tr_stats.update({"delist_settled": 0, "delist_ambig": 0})
+    _dl_ambig = set()
     _eq_prev = 1.0                  # ⭐ audit 用：前一日 equity（算目標權重的分母）
     maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
@@ -557,12 +570,20 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             if ex <= t and tradable is not None and (t > ex or not tradable[sid]["trd"][t]
                                                      or (sid not in hit_now and tradable[sid]["dn_c"][t])):
                 tb = tradable[sid]; o_t = float(opens[sid][t])
-                if t == ex and tb["trd"][t]:
-                    tr_stats["close_locked"] += 1                          # ④ 排程出場日收盤鎖跌停
-                if t == ex or not tb["trd"][t] or tb["dn_o"][t] or not np.isfinite(o_t) or o_t <= 0:
-                    still.append((ex, sid, amt, gross, ep)); continue      # 還賣不掉：照 ffill 收盤計值
-                gross = o_t / ep - 1.0                                     # ⭐ 第一個可成交日【開盤】出
-                tr_stats["exit_delayed"] += 1
+                _dl = None
+                if delist is not None and (not tb["trd"][t]) and sid in delist and t > delist[sid]["last"]:
+                    _dl = delist[sid]["status"]                             # ⑤ 之後再也沒有成交
+                if _dl is not None and _dl.startswith("delisted"):
+                    tr_stats["delist_settled"] += 1                        # ⑤ 下市 ⇒ 以最後成交價了結（原 gross）
+                else:
+                    if _dl is not None and (sid, ex) not in _dl_ambig:
+                        _dl_ambig.add((sid, ex)); tr_stats["delist_ambig"] += 1   # ⑤ 分不出 ⇒ 照停牌、逐筆報數
+                    if t == ex and tb["trd"][t]:
+                        tr_stats["close_locked"] += 1                      # ④ 排程出場日收盤鎖跌停
+                    if t == ex or not tb["trd"][t] or tb["dn_o"][t] or not np.isfinite(o_t) or o_t <= 0:
+                        still.append((ex, sid, amt, gross, ep)); continue  # 還賣不掉：照 ffill 收盤計值
+                    gross = o_t / ep - 1.0                                 # ⭐ 第一個可成交日【開盤】出
+                    tr_stats["exit_delayed"] += 1
             if ex <= t:
                 if audit is not None:
                     audit.append({"t": t, "sid": sid, "side": "sell", "amt": float(amt * (1 + gross)),
@@ -727,6 +748,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["tr_limit_up"] = tr_stats["limit_up"]; out["tr_halt_in"] = tr_stats["halt_in"]
         out["tr_exit_delayed"] = tr_stats["exit_delayed"]; out["tr_open_at_end"] = len(open_pos)
         out["tr_close_locked"] = tr_stats["close_locked"]
+        if delist is not None:      # ⛔ delist=None 時這兩個鍵不存在 ⇒ 既有回傳逐位元相同
+            out["tr_delist_settled"] = tr_stats["delist_settled"]; out["tr_delist_ambig"] = tr_stats["delist_ambig"]
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out

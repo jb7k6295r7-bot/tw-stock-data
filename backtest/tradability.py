@@ -62,3 +62,44 @@ def one(sid: str, cal: pd.DatetimeIndex) -> dict:
 
 def build(sids, cal: pd.DatetimeIndex) -> dict:
     return {s: one(s, cal) for s in sids}
+
+
+# ══ 裁定線 20260924-2319 seq98 §二：下市與停牌分開 ═══════════════════════════
+DELIST_GAP = 60   # ⭐ 設計參數（在看任何新結果之前訂）；理由：本線 2013 量到的真停牌 gap 最長 49 天
+
+
+def load_official(path=None) -> dict:
+    """官方下市日（data/meta/delisted.csv：delist_date, stock_id, …）⇒ dict sid → Timestamp。"""
+    import os as _os
+    import pandas as _pd
+    from . import data as _D
+    p = path or _os.path.join(_D.DATA, "meta", "delisted.csv")
+    d = _pd.read_csv(p, dtype={"stock_id": str})
+    assert {"delist_date", "stock_id"} <= set(d.columns), "⛔ delisted.csv 欄位不對：{}".format(list(d.columns))
+    return dict(zip(d["stock_id"], _pd.to_datetime(d["delist_date"])))
+
+
+def delist_status(trad: dict, cal, official: dict | None = None, gap: int = DELIST_GAP) -> dict:
+    """每檔：最後成交位置 last 與狀態（給 simulate_mtm 的 delist 參數）。
+       ① 有官方下市日 ⇒ delisted_official
+       ② 否則 最後成交之後全域日曆還有 ≥ gap 個交易日都沒成交 ⇒ delisted_gap
+       ③ 最後成交就是日曆最後一根 ⇒ live
+       ④ 其餘（< gap）⇒ ambig（⛔ 不猜；引擎照停牌處理並逐筆報數）
+       ⭐「再也沒有成交」看的是【該檔自己】的最後成交，而 gap 量在【全域日曆】上（邊界要問是誰的）"""
+    ncal = len(cal); out = {}
+    official = official or {}
+    for sid, f in trad.items():
+        tt = np.flatnonzero(np.asarray(f["trd"], bool))
+        if len(tt) == 0:
+            continue
+        last = int(tt[-1]); g = (ncal - 1) - last
+        if sid in official:
+            st = "delisted_official"
+        elif g >= gap:
+            st = "delisted_gap"
+        elif g == 0:
+            st = "live"
+        else:
+            st = "ambig"
+        out[sid] = {"last": last, "status": st, "gap": g}
+    return out
