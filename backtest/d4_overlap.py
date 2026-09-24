@@ -118,7 +118,17 @@ def main():
                        closes, opens, ncal, return_equity=True, pick=None, cap_fn=None,
                        d_max=None, queue_days=0, cash_mode="zero", bench=None, log=lg)
         ev = [(int(r["t"]), int(r["exit_pos"]), r["sid"]) for r in lg if r["reason"] == "in"]
-        log("[{}] 訊號 {:,} 筆／進場 {:,} 筆".format(tag, len(sig), len(ev)))
+        # ⭐⭐ 全池（槽位無限時會持有的那一籃）：逐日 entry_pos ≤ t < xpos 的全部成分
+        xcol = "xpos_{}".format(P12.RULE)
+        live = {}
+        sg = sig[["sid", "entry_pos", xcol]].dropna()
+        for _sid, _e, _x in zip(sg["sid"], sg["entry_pos"].astype(int), sg[xcol].astype(int)):
+            if _x < 0: continue
+            for _t in range(max(_e, w0), min(_x, w1 + 1)):
+                live.setdefault(_t, set()).add(_sid)
+        log("[{}] 訊號 {:,} 筆／進場 {:,} 筆／全池逐日中位 {:.0f} 檔".format(
+            tag, len(sig), len(ev),
+            float(pd.Series([len(v) for v in live.values()]).median()) if live else 0))
 
         mi = 0
         hold: dict = {}
@@ -134,9 +144,14 @@ def main():
                     hold[s] = x
             if not hold:
                 continue
-            # w_策略：N 個等權槽 ⇒ 在手持股等權，正規化到 1（見檔頭 ③）
+            # w_策略 兩版（台股策略線 20260924-0841 §二② 要求兩版都報）
+            #   不含現金：在手持股正規化到 1          ⇒ 描述用、與 P13 的 ov_hold 並排
+            #   ⭐ 含現金：分母 ＝ 全部位（未滿的槽算現金）⇒ **(b′) 解 w 用這一版**
+            #     理由〈一百〇三〉：判定的量是整個組合的報酬（含現金拖累）
+            #     ⇒ 錨的量就必須是整個組合算的
             hs = sorted(hold)
-            w_s = {s: 1.0 / len(hs) for s in hs}
+            w_s = {s: 1.0 / len(hs) for s in hs}                 # 不含現金
+            w_s_cash = {s: 1.0 / N_SLOTS for s in hs}            # ⭐ 含現金（其餘是現金，不在 0050 裡）
             # w_0050：前 50 的市值權重，正規化到 1
             cw = {}
             for s in cur_top:
@@ -149,55 +164,68 @@ def main():
             w_b = {s: v / tot for s, v in cw.items()}
             # ⭐ 0031 §四 逐字：Σ_i min(w_策略, w_0050)，i 跑遍聯集
             ov_w = sum(min(w_s.get(s, 0.0), w_b.get(s, 0.0)) for s in set(w_s) | set(w_b))
+            ov_w_cash = sum(min(w_s_cash.get(s, 0.0), w_b.get(s, 0.0))
+                            for s in set(w_s_cash) | set(w_b))
+            # ⭐⭐ 地板：naive 等權【整個池子】對 0050（台股策略線 0841 §三②）
+            #   池子 ＝ 當日訊號仍在窗內的【全部】成分（entry_pos ≤ t < exit_pos）
+            #   ⛔ 不是 8 個槽 —— 它是「槽位無限」時會持有的那一籃
+            pool = live.get(t, ())
+            if pool:
+                wf = {s: 1.0 / len(pool) for s in pool}
+                floor_w = sum(min(wf.get(s, 0.0), w_b.get(s, 0.0)) for s in set(wf) | set(w_b))
+            else:
+                floor_w = float(nan)
             k = sum(1 for s in hs if s in cur_top)
             recs.append({"t": t, "ym": cal[t].strftime("%Y-%m"), "n_hold": len(hs),
-                         "ov_weight": ov_w,               # ⭐ 0031 §四 要的量
-                         "ov_count": k / len(hs),         # ⛔ 舊量（P13 否證③ 用的）
+                         "n_pool": len(pool),
+                         "ov_w": ov_w,                    # 不含現金（0835 已交那版）
+                         "ov_w_cash": ov_w_cash,          # ⭐ 含現金 ⇒ (b′) 用
+                         "floor_w": floor_w,              # ⭐⭐ 地板（naive 等權全池）
+                         "ov_hold": k / len(hs),          # ⛔ P13 否證③ 用的【檔數】量
                          "ov_top50": k / TOP_N})
         d = pd.DataFrame(recs)
         d["pool"] = tag
         rows.append(d)
-        by = d.groupby("ym")[["ov_weight", "ov_count"]].median()
-        log("  ⇒ 逐日 {:,} 天有持股｜逐月中位的中位：權重 {:.4%}／檔數 {:.2%}"
-            .format(len(d), by["ov_weight"].median(), by["ov_count"].median()))
+        by = d.groupby("ym")[["ov_w", "ov_w_cash", "floor_w", "ov_hold"]].median()
+        log("  ⇒ 逐日 {:,} 天有持股｜逐月中位的中位：".format(len(d)))
+        log("     ov_w(不含現金) {:.4%}｜ov_w_cash(含現金) {:.4%}｜**地板** {:.4%}｜ov_hold {:.2%}"
+            .format(by["ov_w"].median(), by["ov_w_cash"].median(),
+                    by["floor_w"].median(), by["ov_hold"].median()))
 
     allr = pd.concat(rows, ignore_index=True)
     allr.to_csv(os.path.join(OUT, "overlap_daily.csv.gz"), index=False)
 
-    print()
-    print("=" * 78)
-    print("⭐⭐ 0031 §四 要的答案：對 0050 的【權重】重疊度（逐月中位 ＋ p10／p90）")
-    print("=" * 78)
-    print()
-    print("  {:<8}{:>12}{:>12}{:>12}{:>14}".format("候選池", "逐月中位", "p10", "p90", "有持股月數"))
-    print("  " + "-" * 58)
+    METRICS = (("ov_w", "ov_w（不含現金）"), ("ov_w_cash", "⭐ ov_w_cash（含現金・(b′) 用）"),
+               ("floor_w", "⭐⭐ 地板 naive等權全池"), ("ov_hold", "⛔ ov_hold（檔數・P13 否證③）"))
     summ = []
-    for tag in ("門檻B", "參考C"):
-        d = allr[allr["pool"] == tag]
-        by = d.groupby("ym")["ov_weight"].median()
-        print("  {:<8}{:>11.4%}{:>12.4%}{:>12.4%}{:>14}".format(
-            tag, by.median(), by.quantile(0.10), by.quantile(0.90), len(by)))
-        summ.append({"pool": tag, "metric": "ov_weight", "median": by.median(),
-                     "p10": by.quantile(0.10), "p90": by.quantile(0.90), "n_month": len(by)})
-    print()
-    print("=" * 78)
-    print("⛔⛔ 對照：【檔數】重疊比例（＝ PREREGP13 否證③ 用的那個量，門檻 {:.0%}）"
-          .format(OVERLAP_MAX))
-    print("=" * 78)
-    print()
-    print("  {:<8}{:>12}{:>12}{:>12}".format("候選池", "逐月中位", "p10", "p90"))
-    print("  " + "-" * 46)
-    for tag in ("門檻B", "參考C"):
-        d = allr[allr["pool"] == tag]
-        by = d.groupby("ym")["ov_count"].median()
-        print("  {:<8}{:>11.2%}{:>12.2%}{:>12.2%}".format(
-            tag, by.median(), by.quantile(0.10), by.quantile(0.90)))
-        summ.append({"pool": tag, "metric": "ov_count", "median": by.median(),
-                     "p10": by.quantile(0.10), "p90": by.quantile(0.90), "n_month": len(by)})
+    for key, lab in METRICS:
+        print()
+        print("=" * 78)
+        print(lab)
+        print("=" * 78)
+        print("  {:<8}{:>12}{:>12}{:>12}".format("候選池", "逐月中位", "p10", "p90"))
+        print("  " + "-" * 46)
+        for tag in ("門檻B", "參考C"):
+            by = allr[allr["pool"] == tag].groupby("ym")[key].median().dropna()
+            print("  {:<8}{:>11.4%}{:>12.4%}{:>12.4%}".format(
+                tag, by.median(), by.quantile(0.10), by.quantile(0.90)))
+            summ.append({"pool": tag, "metric": key, "median": by.median(),
+                         "p10": by.quantile(0.10), "p90": by.quantile(0.90), "n_month": len(by)})
     pd.DataFrame(summ).to_csv(os.path.join(OUT, "overlap_summary.csv"), index=False)
+
     print()
-    print("⭐⭐ 兩個量的量級差很大 ⇒ ⛔⛔ P13 否證③ 的 50% 門檻【不可以】搬到權重那個量上。")
-    print("⇒ ⏳ 這是〈一百三十五〉的形狀（同一個名字、不同算法）⇒ 請裁定線看要不要出卡。")
+    print("=" * 78)
+    print("⭐⭐⭐ (b′) 落在哪一支（台股策略線 20260924-0841 §一 的三分支）")
+    print("=" * 78)
+    for tag in ("門檻B", "參考C"):
+        d = allr[(allr["pool"] == tag) & allr["floor_w"].notna()]
+        for key, lab in (("ov_w_cash", "含現金（(b′) 用）"), ("ov_w", "不含現金")):
+            above = (d[key] > d["floor_w"]).mean()
+            print("  {:<6}{:<18} ov_w > 地板 的交易日佔比 ＝ **{:.2%}**  ⇒ {}".format(
+                tag, lab, above,
+                "⭐ 多數落在 (甲) 有解" if above > 0.5 else "⛔⛔ 多數落在 (乙) 無解 ⇒ (b′) 與必報欄① 同一道閘"))
+    print()
+    print("  ⭐ 依 0841 §一(丙)：逐 t 混合時要報【落在 (乙) 的交易日佔比】（〈一百三十六〉）")
     print()
     print("[輸出] {}／overlap_daily.csv.gz、overlap_summary.csv".format(OUT))
 
