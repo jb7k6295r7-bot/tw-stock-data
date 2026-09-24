@@ -60,7 +60,7 @@ def load_panel(data_dir: str = C1.DATA, coins=COINS, n: int = N_SIG):
 
 # ── 引擎 ─────────────────────────────────────────────────────────────────────
 def simulate(close: np.ndarray, sig: np.ndarray, cost_rt: float = COST_RT,
-             variant: str = "v4", trace: bool = False):
+             variant: str = "v4", trace: bool = False, stats: bool = False):
     """v4 §2-A之二 的逐日引擎。回傳 nav_pre（長 T）；nav_pre[0]＝1。
 
     ⭐ 時點（沿用 C1）：訊號(t) 在收盤 t 知道 ⇒ 交易在收盤 t 成交 ⇒ 吃 t→t+1 的報酬。
@@ -76,6 +76,7 @@ def simulate(close: np.ndarray, sig: np.ndarray, cost_rt: float = COST_RT,
        (i)  買入花費 X 現金 ⇒ 得到 X×(1−單邊成本) 的部位；成本基礎記 X（＝現金支出）
        (ii) 賣出部位 V ⇒ 得到 V×(1−單邊成本) 現金
        (iii) 部位以【顆數】記帳（顆數 × 收盤價 ＝ 市值）
+    stats：True ⇒ 另回記帳（買額、賣額、成本、買賣次數、逐日收盤後現金比例）；⛔ 不改任何數值路徑
     variant：只給 selftest 的鑑別力格用（⛔ 正式跑一律 "v4"）
        "nocap"     ⇒ 拿掉洞② 的缺口上限
        "v3wait"    ⇒ 等待中只算「成本基礎 ＝ 0」（v3 的斷崖版）
@@ -94,12 +95,15 @@ def simulate(close: np.ndarray, sig: np.ndarray, cost_rt: float = COST_RT,
     cash = 1.0
     nav_pre = np.empty(T)
     rows = []
+    st = {"buy": 0.0, "sell": 0.0, "fee": 0.0, "n_buy": 0, "n_sell": 0, "cash_frac": np.zeros(T)}
     for t in range(T):
         p = close[t]
         nav_pre[t] = cash + float(np.dot(units, p))
         s_now = sig[t] > 0.5
         # ① 離場
         for k in np.flatnonzero(member & ~s_now):
+            v = units[k] * p[k]
+            st["sell"] += v; st["fee"] += v * f; st["n_sell"] += int(units[k] > 0.0)   # ⭐ 沒買到就離場的不算一次賣出
             cash += units[k] * p[k] * (1.0 - f)
             units[k] = 0.0; basis[k] = 0.0; target[k] = 0.0
         nav_after_exit = cash + float(np.dot(units, p))
@@ -134,13 +138,18 @@ def simulate(close: np.ndarray, sig: np.ndarray, cost_rt: float = COST_RT,
             for k, x in spent.items():
                 if x <= 0.0:
                     continue
+                st["buy"] += x; st["fee"] += x * f; st["n_buy"] += 1
                 units[k] += x * (1.0 - f) / p[k]
                 basis[k] = target[k] if x == target[k] - basis[k] else basis[k] + x
                 cash -= x
+        nav_post = cash + float(np.dot(units, p))
+        st["cash_frac"][t] = cash / nav_post if nav_post > 0 else 1.0
         if trace:
             rows.append({"t": t, "nav_pre": nav_pre[t], "cash": cash,
                          "units": units.copy(), "basis": basis.copy(), "target": target.copy(),
                          "nav_post": cash + float(np.dot(units, p))})
+    if stats:
+        return nav_pre, st
     return (nav_pre, rows) if trace else nav_pre
 
 
