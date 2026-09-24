@@ -31,11 +31,12 @@ def swing_lows(low: np.ndarray, k: int = K_SIDE) -> np.ndarray:
     return out
 
 
-def stop_line(o, h, l, c, e, x, k=K_SIDE, lookback=LOOKBACK):
+def stop_line(o, h, l, c, e, x, k=K_SIDE, lookback=LOOKBACK, lag=None):
     """部位從第 e 根開盤進、排程第 x 根收盤出（皆為有效 K 棒索引）⇒ 回 (levels[e..x], 初始類型)。
     levels[j] ＝ 第 e+j 根收盤時生效的停損價（NaN ＝ 無停損）。"""
     sw = swing_lows(l, k)
-    conf = lambda s: s + k                                       # 第 s 根的低點在 s+k 收盤才可用
+    lag = k if lag is None else lag                              # ⭐ 正式＝k（右邊 k 根走完才確認）；lag≠k 只給 fixture ⑤ 的突變用
+    conf = lambda s: s + lag                                      # 第 s 根的低點在 s+k 收盤才可用
     cand = [s for s in range(max(0, e - lookback), e + 1) if sw[s] and conf(s) <= e]
     if cand:
         stop = l[cand[-1]]; kind = "碎形"
@@ -47,7 +48,7 @@ def stop_line(o, h, l, c, e, x, k=K_SIDE, lookback=LOOKBACK):
         stop = np.nan; kind = "無停損"
     levels = np.full(x - e + 1, np.nan)
     for j, b in enumerate(range(e, x + 1)):
-        s_new = b - k                                            # 這一根收盤剛確認的擺動低點
+        s_new = b - lag                                          # 這一根收盤剛確認的擺動低點
         if s_new >= 0 and sw[s_new] and np.isfinite(stop) and l[s_new] > stop and s_new > (cand[-1] if cand else -1):
             stop = l[s_new]
         elif s_new >= 0 and sw[s_new] and not np.isfinite(stop) and kind != "無停損":

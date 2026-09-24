@@ -400,7 +400,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
-                 weight_fn=None, tradable=None, audit=None, delist=None):
+                 weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -528,6 +528,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             raise ValueError("delist 只在 tradable 開啟時有意義（seq98 §二）")
         tr_stats.update({"delist_settled": 0, "delist_ambig": 0})
     _dl_ambig = set()
+    # 裁定線 20260925-0407 seq119 §四（採回測 0400）：stop_line ＝ 每個部位一條【事先算好】的停損線
+    #   dict[(sid, entry_pos)] → (start, levels)：levels[i] ＝ 日曆位置 start+i 收盤時生效的停損價（NaN ＝ 無停損）
+    #   行為：t−1 收盤 < 該部位 t−1 的停損價 ⇒ 第 t 根【開盤】出場；開盤跌停／停牌／開盤無效 ⇒ 留著，第一個可賣的開盤出
+    #   ⛔ 排程出場當天不搶（同 stop）；⛔ 與 stop 同時給 ⇒ 報錯；None ⇒ 本段全部跳過（原路徑逐位元相同）
+    #   ⭐ 引擎不認識「碎形」：停損線怎麼算在研究腳本（backtest/stop_fractal.py），前視由那邊的 fixture ①⑤ 把關
+    if stop_line is not None and stop is not None:
+        raise ValueError("stop_line 與 stop 不可同時給（裁定線 seq119 §四 條件一）")
+    sl_key = {}; sl_pending = set(); sl_stats = {"sl_exits": 0, "sl_delayed_days": 0, "sl_skip_sched": 0}; sl_days = []
     _eq_prev = 1.0                  # ⭐ audit 用：前一日 equity（算目標權重的分母）
     maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
@@ -565,6 +573,36 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             if hit:
                 stop_exits += len(hit); stop_days.append((t - 1, len(hit)))
             hit_now = set(hit)
+        if stop_line is not None and open_pos and t > first:
+            hit = []
+            for k, (ex, sid, amt, gross, ep) in enumerate(open_pos):
+                if ex <= t:
+                    if sid in sl_pending:
+                        sl_pending.discard(sid)
+                    continue                                  # 排程出場本來就在今天結清，⛔ 不搶它
+                trig = sid in sl_pending
+                if not trig:
+                    key = sl_key.get(sid)
+                    rec_ = stop_line.get(key) if key is not None else None
+                    if rec_ is not None:
+                        st0, lv = rec_; i = t - 1 - st0
+                        c = float(closes[sid][t - 1])
+                        if 0 <= i < len(lv) and np.isfinite(lv[i]) and np.isfinite(c) and c < lv[i]:
+                            trig = True
+                if not trig:
+                    continue
+                o_t = float(opens[sid][t])
+                can = np.isfinite(o_t) and o_t > 0
+                if tradable is not None:
+                    can = can and bool(tradable[sid]["trd"][t]) and not bool(tradable[sid]["dn_o"][t])
+                if can:
+                    open_pos[k] = (t, sid, amt, o_t / ep - 1.0, ep)
+                    hit.append(sid); sl_pending.discard(sid)
+                else:
+                    sl_pending.add(sid); sl_stats["sl_delayed_days"] += 1
+            if hit:
+                sl_stats["sl_exits"] += len(hit); sl_days.append((t, len(hit)))
+            hit_now = set(hit_now) | set(hit)
         still = []
         for ex, sid, amt, gross, ep in open_pos:
             if ex <= t and tradable is not None and (t > ex or not tradable[sid]["trd"][t]
@@ -595,6 +633,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 else:
                     cash += amt * (1 + gross - COST)
                 held.discard(sid)
+                if stop_line is not None:
+                    sl_key.pop(sid, None); sl_pending.discard(sid)
                 if stop is not None:
                     peak_close.pop(sid, None)
                     e0 = entry_day.pop(sid, None)
@@ -689,6 +729,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                                       "equity_prev": _eq_prev, "cost": 0.0})
                     if stop is not None:
                         entry_day[row["sid"]] = t
+                    if stop_line is not None:
+                        sl_key[row["sid"]] = (row["sid"], int(row["entry_pos"]))
                     wins += int(gross - COST > 0)
                     if t0 != t:
                         n_deferred += 1; delays.append(t - t0); entered_q.add((row["sid"], int(row["entry_pos"])))
@@ -733,6 +775,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     cap_sum = (end - first) * n_slots if caps is None else int(caps[first:end].sum())
     out = {"cagr": final ** (1 / years) - 1, "mdd": mdd, "trades": trades, "slot_use": used / cap_sum, "first": first, "end": end,
            "m": trades, "pos_frac": wins / trades if trades else np.nan, "deferred": n_deferred, "delay_med": float(np.median(delays)) if delays else np.nan, "expired": n_expired}
+    if stop_line is not None:       # 裁定線 seq119 §四（⛔ stop_line is None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同）
+        out.update({"sl_exits": sl_stats["sl_exits"], "sl_delayed_days": sl_stats["sl_delayed_days"], "sl_days": sl_days,
+                    "sl_rate": sl_stats["sl_exits"] / trades if trades else np.nan})
     if stop is not None:            # PREREGP7 必報（⛔ stop is None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同）
         out["stop_exits"] = stop_exits
         out["stop_rate"] = stop_exits / trades if trades else np.nan
