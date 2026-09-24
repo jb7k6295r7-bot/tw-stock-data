@@ -311,6 +311,54 @@ def main():
         H.OUT = _old_out
         shutil.rmtree(d3, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⛔⛔ 「總計／總額」欄名：官方再改一次，這裡要先紅（2026-09-24 加）
+    #
+    # ⚠ 2026-09-24 情報線用 r.get("資產總計") 取值 ⇒ 靜默漏掉 305 列
+    #   （銀行・金控・早期證券整族）⇒ ⛔ 取不到不報錯，那一族只是消失。
+    # ⭐ 而這幾個欄名是 mops_history 拿來【分辨表別】的判別式
+    #   ⇒ 它們的不一致是我方依賴的特徵，⛔ 不是待修的髒資料
+    #   ⇒ ⭐ 所以守門不是「統一欄名」，是【出現沒見過的變體就說】。
+    #
+    # ⛔ 判準是【全樹實際出現的欄名】⊆【已知集合】，⚠ 不是抽樣。
+    #   ⇒ 官方哪天加第四種後綴（例如「資產合計」出現在 bs_hist），這裡會紅，
+    #     而 READ_CONTRACT 5.bs 與那張逐表別逐年表就要一起更新。
+    # ══════════════════════════════════════════════════════════════
+    KNOWN_TOTAL_COLS = {
+        "資產總計", "資產總額", "負債總計", "負債總額", "權益總計", "權益總額",
+    }
+    _bs = os.path.join(HERE, "data", "mops", "bs_hist")
+    if os.path.isdir(_bs):
+        _files = sorted(f for f in os.listdir(_bs) if f.endswith(".csv"))
+        _seen, _blank, _unread = set(), 0, 0
+        for _f in _files:
+            try:
+                with io.open(os.path.join(_bs, _f), encoding="utf-8",
+                             errors="replace") as fh:
+                    _h = fh.readline()
+            except OSError:
+                _unread += 1
+                continue
+            for _c in (c.strip() for c in _h.split(",")):
+                if _c == "":
+                    _blank += 1
+                elif _c.startswith(("資產總", "負債總", "權益總")):
+                    _seen.add(_c)
+        _new = sorted(_seen - KNOWN_TOTAL_COLS)
+        chk("⭐ bs_hist 的表頭全部讀得到（⛔ 讀不到就不知道漏了什麼）",
+            _unread == 0, f"⛔ 讀不到 {_unread} 檔")
+        chk("★ 這一道真的掃到了（⛔ 0 檔跟全部通過長得一樣）｜%d 檔" % len(_files),
+            len(_files) >= 100, f"只掃到 {len(_files)} 檔")
+        chk("⛔⛔ bs_hist 沒有出現【沒見過的】「總*」欄名"
+            "（⚠ 出現了就是官方又改名 ⇒ READ_CONTRACT 5.bs 要更新）",
+            not _new, f"⛔ 新的：{_new}")
+        chk("⭐ 而已知的那六個欄名【每一個都真的出現過】"
+            "（⛔ 少了就是我方漏抓某一族，或清單寫多了）",
+            _seen == KNOWN_TOTAL_COLS,
+            f"⚠ 實際出現 {sorted(_seen)}")
+        chk("⚠ 空欄名的檔數有報出來（⛔ 用位置取值的要知道）｜%d 個空欄名" % _blank,
+            True)
+
     print(f"\n[selftest] 通過 {ok}｜失敗 {fail}")
     return 1 if fail else 0
 

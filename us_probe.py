@@ -64,6 +64,31 @@ DELISTED = [
     ("TWTR", 2022, "Twitter（2022 被收購下市）"),
     ("FRC",  2023, "First Republic Bank（2023 被接管）"),
 ]
+# ⛔⛔ 降轉 OTC 後的代號：一條【被實測推翻】的線索，⚠ 而它帶陷阱
+#
+# 使用者 2026-09-24 分享的一份 Google AI 摘要說：
+#   「歷史代碼可能會被加上後綴，主要交易所的資料庫會變為不可見，
+#     必須去 OTC Markets 追蹤其粉紅單時期的殘餘股價」
+# ⇒ ⭐ 那是【機制的說法】。本支去打了 6 檔（2026-09-24 本機實測）：
+#     FRCB  ⛔ 3,970 列、2010-12-09 ~ 今天   ⇒ 這是【現在還在交易的別的東西】
+#     SBNYL ⛔ 1,450 列、最後一天也是今天    ⇒ 同上
+#     SIVBQ／LEHMQ／WAMUQ／ENRNQ ⇒ 404
+#   ⇒ ⭐ 對得上的 0/6 ⇒ ⛔ 這條路在 Yahoo 上【不成立】
+#
+# ⚠⚠ 而它的危險不在「拿不到」，在【拿到了別人的】：
+#   FRCB 與 SBNYL 都回了粒度 1d、列數合理、格式完全正確的資料
+#   ⇒ ⛔ 一支不檢查「最後一天對不對得上消失年」的管線會把它當成那家公司收下
+#   ⇒ ⭐ 擋下它的只有 delisted_verdict() 的 reused 那一格。
+# ⇒ 所以這幾檔留在探針裡當【常設的反向樣本】，⛔ 不是為了哪天會通。
+OTC_SUFFIX = [
+    ("FRCB",  2023, "First Republic 降轉後代號"),
+    ("SIVBQ", 2023, "SVB Financial（Q ＝ 破產中）"),
+    ("SBNYL", 2023, "Signature Bank 降轉後代號"),
+    ("LEHMQ", 2008, "Lehman Brothers"),
+    ("WAMUQ", 2008, "Washington Mutual"),
+    ("ENRNQ", 2001, "Enron"),
+]
+
 LIVE = ("AAPL", "⭐ 對照組：在市，⛔ 少了它分不出「沒有下市股」與「整個來源不通」")
 
 # ⭐ 拆股還原的測試點：AAPL 2020-08-31 四比一。
@@ -300,6 +325,25 @@ def main():
                      "缺哪幾檔會隨年份變，母體就不是事前釘得死的")
         else:
             L.append("     ⇒ ✅ 四檔全中 ⇒ ⭐ 值得往下驗【全市場清單】那一步")
+
+        # ⛔ 降轉 OTC 代號那一族（⭐ 常設反向樣本，見 OTC_SUFFIX 上面那一段）
+        if parse is yahoo_span:
+            n_otc = 0
+            L.append("   ⛔ 降轉 OTC 後的代號（⚠ 一條被實測推翻的線索，留著當反向樣本）")
+            for s2, yr2, d2 in OTC_SUFFIX:
+                time.sleep(1)
+                b4, e4 = B.get(mkurl(s2), retries=1, timeout=30)
+                sp2 = None if e4 else parse(b4)
+                k2, m2 = delisted_verdict(s2, yr2, sp2)
+                if k2 == "ok":
+                    n_otc += 1
+                L.append(f"      {s2}（{d2}）")
+                L.append(f"         {m2}" if not e4 else f"         ⛔ 連不上：{e4}")
+            L.append(f"      ⇒ ⭐ 對得上的 {n_otc}/{len(OTC_SUFFIX)}")
+            if n_otc == 0:
+                L.append("        ⇒ ⛔ 這條路不成立，⚠ 而危險不在拿不到、在【拿到別人的】："
+                         "回來的那幾檔粒度與格式都正常，"
+                         "⛔ 只有「最後一天對不對得上消失年」擋得住")
 
         # 拆股還原
         u = mkurl(SPLIT_SYM)
