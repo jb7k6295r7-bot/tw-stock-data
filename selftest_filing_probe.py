@@ -117,7 +117,25 @@ def main():
     ck("  ⛔ 認不出來要回 None，⚠ 不猜",
        F.mops_code(None) == (None, "") and F.mops_code({"x": 1})[0] is None)
 
-    print("\n⑦ ★ 沒有動到 repo 真的輸出檔")
+    print("\n⑦ ⛔⛔ code 500 的【兩義】要分得出來（情報線 0347 §一）")
+    ck("  ⛔ 500＋「傳入參數異常」⇒ bad_body（我方 body 錯）",
+       F.mops_verdict(500, "傳入參數異常")[0] == "bad_body")
+    ck("  ⛔⛔ 500＋「財務報表公告項目尚未申報(確認)」⇒ not_filed"
+       "（⚠ 不是我方錯）",
+       F.mops_verdict(500, "財務報表公告項目尚未申報(確認)")[0]
+       == "not_filed")
+    ck("  ★ 而兩者**分得出來**（⛔ 都回同一個值的話上面兩條等於沒跑）",
+       F.mops_verdict(500, "傳入參數異常")[0]
+       != F.mops_verdict(500, "尚未申報")[0])
+    ck("  ⚠ 406 ⇒ no_data（body 對、那一期沒資料）",
+       F.mops_verdict(406, "查無相符資料")[0] == "no_data")
+    ck("  ✅ 200 ⇒ ok", F.mops_verdict(200, "")[0] == "ok")
+    ck("  ⛔ 500 但 message 不是已知那兩種 ⇒ unknown"
+       "（⚠ 不猜、不歸到任一邊）",
+       F.mops_verdict(500, "某種還沒見過的訊息")[0] == "unknown",
+       "⛔ 被硬歸類了 ⇒ 下次新增第三種意思時會被靜靜吃掉")
+
+    print("\n⑧ ★ 沒有動到 repo 真的輸出檔")
     with tempfile.TemporaryDirectory() as d:
         real = F.OUT
         before = os.path.exists(real)

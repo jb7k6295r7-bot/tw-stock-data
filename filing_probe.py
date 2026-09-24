@@ -184,6 +184,20 @@ def _mops_body(year, season, dtype, cid="2330", drop=None):
     return json.dumps(b).encode()
 
 
+# ⛔⛔ code 500 有【兩種意思】，而它們只差在 message（情報線 2207 §五 ＋ 0347 §一）
+#
+# ⚠ 本支 2026-09-24 00:05 那一版把 500 寫死成「我方 body 錯」——**那是錯的**。
+#   情報線 0347 打了 90 發 t163sb01，抓到 7839 這一檔回：
+#     code:500  message:「財務報表公告項目尚未申報(確認)」
+#   ⇒ ⭐ 那是【那家公司那一期還沒申報】，⛔ 不是我方 body 錯。
+#   ⇒ ⛔⛔ 而後果很具體：照「500 就是參數錯」寫的重試邏輯，
+#     會對還沒申報的公司【無限重試】。
+# ⇒ ⭐ 可執行形式：**`code` 只分得出成功／不成功，
+#   分不出「我錯」還是「它沒有」——一定要讀 `message`。**
+MOPS_BAD_BODY = "傳入參數異常"          # ⇒ 我方 body 錯（少鍵、鍵名錯）
+MOPS_NOT_FILED = "尚未申報"             # ⇒ 那一期那一檔還沒申報（⛔ 不是我方錯）
+
+
 def mops_code(payload):
     """→ (code, message)；⛔ 認不出來回 (None, "")。
 
@@ -193,6 +207,32 @@ def mops_code(payload):
     if not isinstance(payload, dict):
         return None, ""
     return payload.get("code"), str(payload.get("message", ""))
+
+
+def mops_verdict(code, msg):
+    """→ ('ok'|'bad_body'|'not_filed'|'no_data'|'unknown', 一句人看得懂的話)。
+
+    ⛔ 判準是 **code ＋ message 一起看**，⚠ 不是只看 code：
+      500 ＋「傳入參數異常」  ⇒ bad_body  我方要改 body（⭐ 可以重試，改完再打）
+      500 ＋「…尚未申報…」   ⇒ not_filed 對方還沒申報（⛔ 重試沒有意義）
+      406                     ⇒ no_data   body 對、那一期沒有資料
+      200                     ⇒ ok
+    """
+    if code == 200:
+        return "ok", "查詢成功"
+    if code == 500:
+        if MOPS_BAD_BODY in msg:
+            return "bad_body", "500【傳入參數異常】＝我方 body 錯（⭐ 改完可重試）"
+        if MOPS_NOT_FILED in msg:
+            return "not_filed", ("500【尚未申報】＝那一檔那一期還沒申報"
+                                 "（⛔ 重試沒有意義，⚠ 也不可讀成「沒有這家公司」）")
+        # ⛔ 不截斷：repo 有一道低水位台帳擋「砍錯誤訊息的尾巴」
+        #   ⚠ 而本支自己就是因為那個病被修過一次（把 bytes repr 又截斷）
+        #   ⇒ ⭐ 沒見過的訊息【整句留著】，那一句就是下次分類的依據
+        return "unknown", "500 但 message 不是已知的兩種：" + msg
+    if code == 406:
+        return "no_data", "406【查無相符資料】＝body 對、那一期沒有資料"
+    return "unknown", "認不出的 code=%s｜%s" % (code, msg)
 
 
 def probe_mops(lines):
@@ -240,23 +280,22 @@ def probe_mops(lines):
         code, msg = mops_code(payload)
         lines.append(tag)
         lines.append(f"      HTTP={st}｜{ct}｜{len(body):,} bytes｜code={code}")
-        if code == 500:
-            lines.append(f"      code 500【傳入參數異常】＝我方 body 錯：{msg}")
-        elif code == 406:
-            lines.append(f"      code 406【查無相符資料】＝body 對、那一期沒資料"
-                         f"：{msg}")
+        kind, why = mops_verdict(code, msg)
+        if kind != "ok":
+            lines.append(f"      {why}｜對方原話：{msg}")
         if blocked:
             lines.append("      ⛔⛔ **這是擋阻頁**（HTTP 200 也算），"
                          "⚠ 只驗狀態碼會把它當成資料")
             continue
         # ⭐ 判準：跟【這一發自己的預期】比，⛔ 不是一律跟「我送的」比
         if expect == "ERR500":
-            good = (code == 500)
-            lines.append("      預期 code:500（少一個鍵）　"
+            # ⛔ 判的是 bad_body，⚠ 不是「任何 500」——500 也可能是「尚未申報」，
+            #   那一種出現在這一發等於【對照組沒有測到它要測的東西】
+            good = (kind == "bad_body")
+            lines.append("      預期 500【傳入參數異常】（少一個鍵）　"
                          + ("✅ 如預期" if good
-                            else f"⛔ 竟然不是 500（code={code}）"
-                                 "　⇒ ⚠ 那表示【少一個鍵也會過】"
-                                 "，五鍵合約要重驗"))
+                            else f"⛔ 不是我方 body 錯，而是 {kind}：{why}"
+                                 "　⇒ ⚠ 這一發沒測到五鍵合約，換一檔／換一期再打"))
             if not good:
                 lines.append(f"         對方說：{short_text(body)}")
         elif said is None:
