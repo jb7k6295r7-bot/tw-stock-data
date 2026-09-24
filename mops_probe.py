@@ -1157,13 +1157,66 @@ def terms_case(out):
                        "⇒ ⛔ 後面那一段沒有印出來，要裁禁止條文的話請連網址一起看")
 
 
+# ⭐⭐ 內層預算（2026-09-24 加）。⛔ 一定要比 probe_step.sh 給的秒數小，
+#   ⚠ 否則外層先砍 ⇒ 這一層等於沒有（probe_step.sh 檔頭②講的是同一件事）。
+_BUDGET = float(os.environ.get("MOPS_PROBE_BUDGET", "690"))
+_T0 = time.time()
+_TIMES = []
+_SKIPPED = []
+
+
+def step(out, name, fn, *a, **kw):
+    """跑一個案例，⭐ 記耗時；預算用完就【不跑】並記下來。
+
+    ⛔⛔ 為什麼要這個：2026-09-24 量到 MOPS 那一步【連六趟】都是 780.0 秒
+      ＝ probe_step.sh 的預算 ⇒ 每趟都被砍，⚠ 而步驟顯示 success。
+      而本支是最後才寫檔 ⇒ 被砍 ⇒ 一個字都沒寫 ⇒ 還被還原成 main 上的舊檔
+      ⇒ ⛔ 一趟 13 分鐘【零資訊】，連「跑到哪裡」都不知道。
+    ⭐ 改成：預算用完就停、把跑完的寫出去、並逐字列出沒跑到的
+      ⇒ 「沒查」與「沒有」分得開（比照 hist_probe [6.5]）。
+    ⚠ 回傳 None 代表【沒跑】，⛔ 不代表「跑了而沒結果」。
+    """
+    if _BUDGET - (time.time() - _T0) <= 0:
+        _SKIPPED.append(name)
+        return None
+    t = time.time()
+    try:
+        return fn(*a, **kw)
+    finally:
+        d = time.time() - t
+        _TIMES.append((name, d))
+        out.append("      ⏱ %s：%.1f 秒（此時累計 %.0f／%.0f 秒）"
+                   % (name, d, time.time() - _T0, _BUDGET))
+
+
+def budget_tail(out):
+    """把耗時表與【沒跑到的案例】寫進輸出檔。⛔ 不只印在 log。"""
+    out.append("")
+    out.append("══ ⏱ 逐案例耗時（⭐ 這一段是為了決定「該加預算還是該拆」）══")
+    for n, d in sorted(_TIMES, key=lambda x: -x[1]):
+        out.append("   %6.1f 秒  %s" % (d, n))
+    out.append("   ── 合計 %.0f 秒／內層預算 %.0f 秒" % (time.time() - _T0, _BUDGET))
+    if _SKIPPED:
+        out.append("")
+        out.append("⛔⛔ 這一趟【沒跑到】%d 個案例（內層預算用完）："
+                   % len(_SKIPPED))
+        for n in _SKIPPED:
+            out.append("   ⏳ %s" % n)
+        out.append("   ⇒ ⛔ 這幾格是【沒查】，⚠ 不是「查了沒有」——"
+                   "⛔ 不可以讀成否定結論")
+        out.append("   ⇒ ⭐ 而這一趟仍然把跑完的寫出來了（⛔ 不再是零資訊）")
+    else:
+        out.append("")
+        out.append("✅ 所有案例都在內層預算內跑完（⇒ 預算目前夠用）")
+
+
 def main():
     out = [f"# MOPS／OpenAPI 探針（丁級 11 終點驗證）",
            f"# ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果",
            ""]
     # ⭐ 先試乾淨的那條：不必經過 MOPS，也不必解 blob。
     for n in ("t187ap05_L", "t187ap05_O"):
-        openapi_case(n, out)
+        step(out, "openapi " + n, openapi_case, n, out)
         out.append("")
     # ⭐⭐ 清單 D2（財報**實際公告日**）2026-09-15 加。
     #
@@ -1187,12 +1240,14 @@ def main():
          "⚠ 上市的對應那條｜**這條是我依 `_O`／`_L` 慣例拼的** ⇒ 量得到才算"),
     ):
         out.append(f"── 清單 D2 候選：{why}")
-        openapi_case(n, out)
+        step(out, "openapi D2 " + n, openapi_case, n, out)
         out.append("")
     # ⛔ 再驗橋接，而且**只驗那個唯一還沒排除的失敗模式**。
-    bridge_case("ajax_t21sc03", "114", "110", out, month="01")
+    step(out, "bridge ajax_t21sc03", bridge_case,
+         "ajax_t21sc03", "114", "110", out, month="01")
     out.append("")
-    bridge_case("ajax_t163sb04", "114", "110", out, season="02")
+    step(out, "bridge ajax_t163sb04", bridge_case,
+         "ajax_t163sb04", "114", "110", out, season="02")
     out.append("")
     # ⭐⭐ 清單 D2 的**最後一條**（市場情報分析線 1846 §二切入點①）。
     #
@@ -1211,7 +1266,8 @@ def main():
     #   ⭐ 而這不影響結論的可信度：`one()` 會把 `params` 的**回顯**印出來
     #     ⇒ 我送的參數有沒有生效，回應自己會講（CLAUDE.md 第一點）。
     #   ⇒ 若回應把我的參數換掉，那就是「這個參數是假的」，⛔ 不是「沒有歷史」。
-    bridge_case("t05st01", "114", "110", out, month="09", day="01")
+    step(out, "bridge t05st01", bridge_case,
+         "t05st01", "114", "110", out, month="09", day="01")
     out.append("")
     # ⭐⭐ 上面那一段的結論是「js 空殼 ⇒ 我方取不到」。
     #   ⇒ 而「取不到」是一個**還沒解決的工程問題**，⛔ 不是句點
@@ -1219,21 +1275,25 @@ def main():
     # ⭐ 2026-09-20：mops2.js 的 `getMsg` 本體被 `xhr_clues` 的 400 字上限切在
     #   `xhttp.open("POST", "/server-java/AjaxCheck", …)` 那一行——看得到
     #   端點、看不到請求本體怎麼組。⇒ 補一個 needle 讓 `around()` 印更長一段。
-    xhr_hunt("t05st01", out, needles=("getMsg", "AjaxCheck"), month="09", day="01")
+    step(out, "xhr_hunt t05st01", xhr_hunt, "t05st01", out,
+         needles=("getMsg", "AjaxCheck"), month="09", day="01")
     out.append("")
     # ⭐⭐ 上面那一輪的 `⓪ <form action=…>` 判準當場挖到真正的查詢端點：
     #   `/mops/web/ajax_t05st01`（⛔ 不是裸的 `t05st01`）——跟我方已經在用的
     #   `ajax_t21sc03`／`ajax_t163sb04` 是**同一個命名慣例**，⚠ 而參數名
     #   還是不知道（`t05st01` 是逐檔查的重大訊息 ⇒ 可能要公司代號才查得到）
     #   ⇒ 沿用 month／day 猜一次，**回應自己會講**參數有沒有生效。
-    bridge_case("ajax_t05st01", "114", "110", out, month="09", day="01")
+    step(out, "bridge ajax_t05st01（無代號）", bridge_case,
+         "ajax_t05st01", "114", "110", out, month="09", day="01")
     out.append("")
     # ⭐⭐⭐ 上面那一發自己講出了下一步：回應原文是「未指定公司代號時，
     #   僅能查詢單日重大訊息」——⛔ 不是猜的，是官方端點自己寫的。
     #   ⇒ 給一個公司代號（2330，慣例值），看它會不會變成**可以查區間**。
     #   ⚠ 參數名 `co_id` 是依同族慣例拼的（ezsearch 那條用大寫 `CO_ID`，
     #   這條走的是舊版簡易頁 ⇒ 先試小寫；猜錯的話回應會講「未指定」還在）。
-    bridge_case("ajax_t05st01", "114", "110", out, month="09", day="01", co_id="2330")
+    step(out, "bridge ajax_t05st01（帶代號）", bridge_case,
+         "ajax_t05st01", "114", "110", out, month="09", day="01",
+         co_id="2330")
     out.append("")
     # ⭐⭐ 市場情報分析線 20260920-2053 §二：「只做這一個測試」——
     #   它吃不吃**日期區間**，決定規模疑慮是不是真問題（吃區間 ⇒ 一次拿一年，
@@ -1242,19 +1302,21 @@ def main():
     #   ⚠ 參數名 `sdate`／`edate` 是依 `co_id` 已驗證有效的小寫慣例拼的，
     #   ⛔ 不是查到的——回應自己會講參數有沒有被回顯（第一點）。
     out.append("      ── ⭐⭐ 只做這一發：ajax_t05st01 吃不吃 `sdate`／`edate` 區間")
-    bridge_case("ajax_t05st01", "114", "110", out,
-               sdate="0901", edate="0910", co_id="2330")
+    step(out, "bridge ajax_t05st01（sdate/edate 區間）", bridge_case,
+         "ajax_t05st01", "114", "110", out,
+         sdate="0901", edate="0910", co_id="2330")
     out.append("")
-    ezsearch_case(out)
-    ky_revenue_case(out)
-    survivor_case(out)
-    survivor_fs_case(out)
+    step(out, "ezsearch", ezsearch_case, out)
+    step(out, "ky_revenue", ky_revenue_case, out)
+    step(out, "survivor", survivor_case, out)
+    step(out, "survivor_fs", survivor_fs_case, out)
     out.append("")
-    revenue_hist_columns(out)
+    step(out, "revenue_hist_columns", revenue_hist_columns, out)
     out.append("")
-    datagov_d2_case(out)
+    step(out, "datagov_d2", datagov_d2_case, out)
     out.append("")
-    terms_case(out)
+    step(out, "terms", terms_case, out)
+    budget_tail(out)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     io.open(OUT, "w", encoding="utf-8").write(B.probe_stamp() + "\n".join(out) + "\n")
     print("\n".join(out))
