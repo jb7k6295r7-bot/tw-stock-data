@@ -1,0 +1,965 @@
+direction,stock_id,name,family
+新進來,0050,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0051,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0052,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0053,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0054,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0055,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0056,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0057,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0058,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0059,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,0061,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,006201,,六位數代號（權證／ETN 等）
+新進來,006203,,六位數代號（權證／ETN 等）
+新進來,006204,,六位數代號（權證／ETN 等）
+新進來,006205,,六位數代號（權證／ETN 等）
+新進來,006206,,六位數代號（權證／ETN 等）
+新進來,006207,,六位數代號（權證／ETN 等）
+新進來,006208,,六位數代號（權證／ETN 等）
+新進來,00625K,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00631L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00632R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00633L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00634R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00635U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00636,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00636K,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00637L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00638R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00639,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00640L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00641R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00642U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00643,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00643K,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00645,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00646,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00647L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00648R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00649,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00650L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00651R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00652,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00653L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00654R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00655L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00656R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00657,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00657K,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00658L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00659R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00660,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00661,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00662,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00663L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00664R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00665L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00666R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00667,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00668,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00668K,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00669R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00670L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00671R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00672L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00673R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00674R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00675L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00676R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00677U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00678,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00679B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00680L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00681R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00682U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00683L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00684R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00685L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00686R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00687B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00687C,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00688L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00689R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00690,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00691R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00692,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00693U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00694B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00695B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00696B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00697B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00698L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00699R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00700,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00701,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00702,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00703,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00704L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00705R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00706L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00707R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00708L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00709,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00710B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00711B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00712,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00713,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00714,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00715L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00716R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00717,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00718B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00719B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00720B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00721B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00722B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00723B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00724B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00725B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00726B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00727B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00728,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00729R,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00730,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00731,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00732,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00733,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00734B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00735,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00736,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00737,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00738U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00739,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00740B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00741B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00742,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00743,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00744B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00745B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00746B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00747B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00748B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00749B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00750B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00751B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00752,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00753L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00754B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00755B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00756B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00757,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00758B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00759B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00760B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00761B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00762,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00763U,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00764B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00765B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00766L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00767,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00768B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00769B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00770,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00771,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00772B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00773B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00774B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00774C,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00775B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00776,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00777B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00778B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00779B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00780B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00781B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00782B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00783,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00784B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00785B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00786B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00787B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00788B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00789B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00790B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00791B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00792B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00793B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00794B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00795B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00796B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00797B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00798B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00799B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,008201,,六位數代號（權證／ETN 等）
+新進來,00830,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00831B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00832B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00833B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00834B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00835B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00836B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00837B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00838B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00839B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00840B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00841B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00842B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00843B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00844B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00845B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00846B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00847B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00848B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00849B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00850,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00851,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00852L,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00853B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00854B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00855B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00856B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00857B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00858,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00859B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00860B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00861,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00862B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00863B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00864B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00865B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00866,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00867B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00868B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00869B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00870B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00871B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00872B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00873B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00874B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00875,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00876,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00877,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00878,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00879B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00880B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00881,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00882,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00883B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00884B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00885,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00886,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00887,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00888,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00889B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00890B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00891,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00892,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00893,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00894,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00895,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00896,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00897,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00898,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00899,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00900,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00901,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00902,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00903,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00904,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00905,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00906,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00907,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00908,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00909,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00910,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00911,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00912,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00913,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00915,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00916,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00917,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00918,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00919,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00920,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00921,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00922,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00923,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00924,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00925,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00926,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00927,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00928,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00929,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00930,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00931B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00932,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00933B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00934,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00935,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00936,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00937B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00938,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00939,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00940,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00941,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00942B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00943,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00944,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00945B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00946,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00947,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00948B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00949,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00950B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00951,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00952,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00953B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00954,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00955,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00956,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00957B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00958B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00959B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00960,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00961,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00962,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00963,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00964,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00965,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00966B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00967B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00968B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00969B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00970B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00971,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00972,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,009800,,六位數代號（權證／ETN 等）
+新進來,009801,,六位數代號（權證／ETN 等）
+新進來,009802,,六位數代號（權證／ETN 等）
+新進來,009803,,六位數代號（權證／ETN 等）
+新進來,009804,,六位數代號（權證／ETN 等）
+新進來,009805,,六位數代號（權證／ETN 等）
+新進來,009806,,六位數代號（權證／ETN 等）
+新進來,009807,,六位數代號（權證／ETN 等）
+新進來,009808,,六位數代號（權證／ETN 等）
+新進來,009809,,六位數代號（權證／ETN 等）
+新進來,00980A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00980B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00980D,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00980T,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,009810,,六位數代號（權證／ETN 等）
+新進來,009811,,六位數代號（權證／ETN 等）
+新進來,009812,,六位數代號（權證／ETN 等）
+新進來,009813,,六位數代號（權證／ETN 等）
+新進來,009814,,六位數代號（權證／ETN 等）
+新進來,009815,,六位數代號（權證／ETN 等）
+新進來,009816,,六位數代號（權證／ETN 等）
+新進來,009817,,六位數代號（權證／ETN 等）
+新進來,00981A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00981B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00981D,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00981T,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00982A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00982B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00982D,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00982T,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00983A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00983B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00983D,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00984A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00984B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00984D,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00985A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00985B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00986A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00986B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00987A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00987B,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00988A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00989A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00990A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00991A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00992A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00993A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00994A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,00995A,,ETF／受益憑證（代號 00xx／00xxx）
+新進來,01001T,,⛔ 不在 universe（來源不明）
+新進來,01002T,,⛔ 不在 universe（來源不明）
+新進來,01003T,,⛔ 不在 universe（來源不明）
+新進來,01004T,,⛔ 不在 universe（來源不明）
+新進來,01007T,,⛔ 不在 universe（來源不明）
+新進來,01009T,,⛔ 不在 universe（來源不明）
+新進來,01010T,,⛔ 不在 universe（來源不明）
+新進來,020000,,六位數代號（權證／ETN 等）
+新進來,020001,,六位數代號（權證／ETN 等）
+新進來,020002,,六位數代號（權證／ETN 等）
+新進來,020003,,六位數代號（權證／ETN 等）
+新進來,020004,,六位數代號（權證／ETN 等）
+新進來,020005,,六位數代號（權證／ETN 等）
+新進來,020006,,六位數代號（權證／ETN 等）
+新進來,020007,,六位數代號（權證／ETN 等）
+新進來,020008,,六位數代號（權證／ETN 等）
+新進來,020009,,六位數代號（權證／ETN 等）
+新進來,020010,,六位數代號（權證／ETN 等）
+新進來,020011,,六位數代號（權證／ETN 等）
+新進來,020012,,六位數代號（權證／ETN 等）
+新進來,020013,,六位數代號（權證／ETN 等）
+新進來,020014,,六位數代號（權證／ETN 等）
+新進來,020015,,六位數代號（權證／ETN 等）
+新進來,020016,,六位數代號（權證／ETN 等）
+新進來,020017,,六位數代號（權證／ETN 等）
+新進來,020018,,六位數代號（權證／ETN 等）
+新進來,020019,,六位數代號（權證／ETN 等）
+新進來,02001B,,⛔ 不在 universe（來源不明）
+新進來,02001L,,⛔ 不在 universe（來源不明）
+新進來,02001R,,⛔ 不在 universe（來源不明）
+新進來,02001S,,⛔ 不在 universe（來源不明）
+新進來,020020,,六位數代號（權證／ETN 等）
+新進來,020021,,六位數代號（權證／ETN 等）
+新進來,020022,,六位數代號（權證／ETN 等）
+新進來,020023,,六位數代號（權證／ETN 等）
+新進來,020024,,六位數代號（權證／ETN 等）
+新進來,020025,,六位數代號（權證／ETN 等）
+新進來,020026,,六位數代號（權證／ETN 等）
+新進來,020027,,六位數代號（權證／ETN 等）
+新進來,020028,,六位數代號（權證／ETN 等）
+新進來,020029,,六位數代號（權證／ETN 等）
+新進來,02002L,,⛔ 不在 universe（來源不明）
+新進來,020030,,六位數代號（權證／ETN 等）
+新進來,020031,,六位數代號（權證／ETN 等）
+新進來,020032,,六位數代號（權證／ETN 等）
+新進來,020033,,六位數代號（權證／ETN 等）
+新進來,020034,,六位數代號（權證／ETN 等）
+新進來,020035,,六位數代號（權證／ETN 等）
+新進來,020036,,六位數代號（權證／ETN 等）
+新進來,020037,,六位數代號（權證／ETN 等）
+新進來,020038,,六位數代號（權證／ETN 等）
+新進來,020039,,六位數代號（權證／ETN 等）
+新進來,02003L,,⛔ 不在 universe（來源不明）
+新進來,020040,,六位數代號（權證／ETN 等）
+新進來,020041,,六位數代號（權證／ETN 等）
+新進來,1101B,,⛔ 不在 universe（來源不明）
+新進來,1110,東泥,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1203,味王,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1213,大飲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1233,天仁,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1234,黑松,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1235,興泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1240,茂生農經,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1259,安心,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1264,德麥,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1294,漢田生技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1295,生合,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1312A,,⛔ 不在 universe（來源不明）
+新進來,1333,恩得利,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1341,富林-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1410,南染,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1413,宏洲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1416,廣豐,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1418,東華,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1432,大魯閣,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1435,中福,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1437,勤益控,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1441,大東,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1443,立益物流,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1445,大宇,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1454,台富,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1456,怡華,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1465,偉全,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1468,昶和,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1470,大統新創,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1472,三洋實業,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1475,業旺,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1506,正道,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1521,大億,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1522A,,⛔ 不在 universe（來源不明）
+新進來,1530,亞崴,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1538,正峰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1566,捷邦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1583,程泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1592,英瑞-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1623,大東電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1626,艾美特-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1715,萬洲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1724,台硝,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1726,永記,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1729,必翔,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1742,台蠟,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1781,合世,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1787,福盈科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1788,杏昌,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1805,寶徠,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1813,寶利徠,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,1817,凱撒衛,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2002A,,⛔ 不在 universe（來源不明）
+新進來,2035,唐榮,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2061,風青,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2063,世鎧,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2067,嘉鋼,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2073,雄順,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2115,六暉-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2235,謚源,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2248,華勝-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2254,巨鎧精密-創,創新板（名稱帶 -創）
+新進來,2321,東訊,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2348A,,⛔ 不在 universe（來源不明）
+新進來,2373,震旦行,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2424,隴華,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2432,倚天酷碁-創,創新板（名稱帶 -創）
+新進來,2433,互盛電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2434,統懋,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2437,旺詮,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2443,昶虹,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2450,神腦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2459,敦吉,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2596,綠意,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2616,山隆,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2640,大車隊,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2701,萬企,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2712,遠雄來,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2718,全心投控,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2719,燦星旅,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2724,藝舍-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2740,華軒,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2751,王座,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2752,豆府,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2755,揚秦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2756,聯發國際,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2832,台產,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2836A,,⛔ 不在 universe（來源不明）
+新進來,2838A,,⛔ 不在 universe（來源不明）
+新進來,2849,安泰銀,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2852,第一保,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2881A,,⛔ 不在 universe（來源不明）
+新進來,2881B,,⛔ 不在 universe（來源不明）
+新進來,2881C,,⛔ 不在 universe（來源不明）
+新進來,2882A,,⛔ 不在 universe（來源不明）
+新進來,2882B,,⛔ 不在 universe（來源不明）
+新進來,2883B,,⛔ 不在 universe（來源不明）
+新進來,2887E,,⛔ 不在 universe（來源不明）
+新進來,2887F,,⛔ 不在 universe（來源不明）
+新進來,2887G,,⛔ 不在 universe（來源不明）
+新進來,2887H,,⛔ 不在 universe（來源不明）
+新進來,2887I,,⛔ 不在 universe（來源不明）
+新進來,2887Z1,,⛔ 不在 universe（來源不明）
+新進來,2888A,,⛔ 不在 universe（來源不明）
+新進來,2888B,,⛔ 不在 universe（來源不明）
+新進來,2891B,,⛔ 不在 universe（來源不明）
+新進來,2891C,,⛔ 不在 universe（來源不明）
+新進來,2897A,,⛔ 不在 universe（來源不明）
+新進來,2897B,,⛔ 不在 universe（來源不明）
+新進來,2901,欣欣,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2904,匯僑,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2908,特力,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2910,統領,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2911,麗嬰房,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2916,滿心,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2923,鼎固-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2924,宏太-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2926,誠品生活,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2936,客思達-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2937,集雅社,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2941,米斯特,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2945,三商家購,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2947,振宇五金,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2948,寶陞,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,2949,欣新網,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3036A,,⛔ 不在 universe（來源不明）
+新進來,3052,夆典,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3054,立萬利,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3057,喬鼎,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3064,泰偉,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3067,全域,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3089,億杰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3095,及成,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3115,富榮綱,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3118,進階,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3130,一零四,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3150,鈺寶-創,創新板（名稱帶 -創）
+新進來,3158,嘉實,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3168,眾福科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3191,雲嘉南,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3226,龍鋒,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3229,晟鈦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3259,鑫創,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3266,昇陽,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3285,微端,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3288,點晶,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3310,佳穎,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3315,宣昶,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3321,同泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3332,幸康,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3349,寶德,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3383,新世紀,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3388,崇越電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3426,台興,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3431,長天,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3452,益通,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3467,台灣精材,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3489,森寶,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3492,長盛,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3516,亞帝歐,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3523,迎輝,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3531,先益,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3559,全智科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3561,昇陽光電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3562,頂晶科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3579,尚志,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3593,力銘,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3629,地心引力,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3631,晟楠,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3632,研勤,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3642,駿熠電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3646,艾恩特,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3664,安瑞-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3684,榮昌,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3702A,,⛔ 不在 universe（來源不明）
+新進來,3716,中化控股,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,3717,聯嘉投控,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4103,百略,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4129A,,⛔ 不在 universe（來源不明）
+新進來,4131,浩泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4139,馬光-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4154,樂威科-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4161,聿新科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4166,友霖,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4183,福永生技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4198,欣大健康,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4205,中華食,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4304,勝昱,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4305,世坤,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4406,新昕纖,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4413,飛寶企業,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4415,台原藥,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4416,三圓,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4417,金洲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4419,皇家美食,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4429,聚紡,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4430,耀億,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4433,興采,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4439,冠星-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4440,宜新實業,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4441,振大環球,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4442,竣邦-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4506,崇友,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4523,永彰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4529,淳紳,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4530,天意能創,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4535,至興,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4538,大詠城,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4550,長佳,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4554,橙的,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4556,旭然,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4558,寶緯,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4568,科際精密,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4580,捷流閥業,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4584,君帆,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4585,達明,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4590,富田-創,創新板（名稱帶 -創）
+新進來,4609,唐鋒,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4706,大恭,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4712,南璋,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4737,華廣,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4741,泓瀚,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4745,合富-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4754,國碳科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4762,三汰-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4767,誠泰科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4771,望隼,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4807,日成-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4905,台聯電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4911,德英,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4923,力士,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4924,欣厚-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4965,商店街,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4972,湯石照明,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,4995,晶達,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5007,三星,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5013,強新,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5016,松和,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5102,富強,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5205,中茂,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5206,坤悅,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5212,凌網,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5228,鈺鎧,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5276,達輝-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5301,寶得利,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5312,寶島科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5324,士開,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5344,立衛,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5345,馥鴻,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5348,正能量智能,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5355,佳總,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5364,力麗店,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5384,捷元,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5450,南良,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5455,昇益,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5468,凱鈺,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5480,統盟,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5487,通泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5514,三豐,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5516,雙喜,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5520,力泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5523,豐謙,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5525,順天,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5538,東明-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5543,桓鼎-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5547,久舜,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5548,安倉,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5601,台聯櫃,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5701,劍湖山,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5703,亞都,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5871A,,⛔ 不在 universe（來源不明）
+新進來,5878,台名,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5902,德記,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,5906,台南-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6020,大展證,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6021,美好證,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6022,大眾證,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6023,元大期,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6103,合邦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6105,瑞傳,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6115,鎰勝,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6128,上福,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6130,上亞科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6144,得利影,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6154,順發,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6171,大城地產,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6172,互億,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6184,大豐電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6195,詩肯,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6198,瑞築,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6201,亞弘電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6210,慶生,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6212,理銘,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6222,立軒,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6225,天瀚,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6236,中湛,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6240,松崗,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6241,鑫永洋,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6242,立康,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6246,臺龍,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6247,淇譽電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6259,百徽,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6264,富裔,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6272,驊陞,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6277,宏正,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6281,全國電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6287,元隆,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6289,華上,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6294,智基,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6404,通訊-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6431,光麗-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6464,台數科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6465,威潤,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6474,華豫寧,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6498,久禾光,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6506,雙邦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6512,啟發電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6534,正瀚-創,創新板（名稱帶 -創）
+新進來,6542,隆中,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6554,中美冠科-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6574,霈方,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6590,普鴻,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6592A,,⛔ 不在 universe（來源不明）
+新進來,6592B,,⛔ 不在 universe（來源不明）
+新進來,6594,展匯科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6597,立誠,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6614,資拓宏宇,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6615,慧智,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6616,特昇-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6617,共信-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6620,漢達,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6624,萬年清,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6629,泰金-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6637,醫影,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6641,基士德-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6645,金萬林-創,創新板（名稱帶 -創）
+新進來,6655,科定,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6661,威健生技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6662,樂斯科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6671,三能-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6674,鋐寶科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6680,鑫創電子,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6692,進能服,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6693,廣閎科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6697,東捷資訊,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6708,天擎,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6720,久昌,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6721,信實,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6722,輝創,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6725,矽科宏晟,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6728,上洋,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6730,常廣,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6751,智聯服務,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6762,達亞,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6767,台微醫,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6771,平和環保-創,創新板（名稱帶 -創）
+新進來,6790,永豐實,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6794,向榮生技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6803,崑鼎,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6804,明係,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6807,峰源-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6823,濾能,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6831,邁科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6835,圓裕,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6843,進典,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6844,諾貝兒,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6846,綠茵,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6855,數泓科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6856,鑫傳,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6865,偉康科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6872,浩宇生醫,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6875,國邑*,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6881,潤德,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6884,海柏特,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6887,寶綠特-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6899,創為精密,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6902,GOGOLOOK,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6904,伯鑫,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6907,雅特力-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6910,德鴻,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6914,阜爾運通,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6916,華凌,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6918,愛派司,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6921,嘉雨思-創,創新板（名稱帶 -創）
+新進來,6924,榮惠-KY創,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6925,意藍,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6929,佑全,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6934,心誠鎂,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6936,永鴻生技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6951,青新-創,創新板（名稱帶 -創）
+新進來,6952,大武山,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6955,邦睿生技-創,創新板（名稱帶 -創）
+新進來,6958,日盛台駿,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6961,旅天下,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6965,中傑-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6967,汎瑋材料,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6968,萬達寵物,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6969,成信實業*-創,創新板（名稱帶 -創）
+新進來,6971,惠民實業,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6988,威力暘-創,創新板（名稱帶 -創）
+新進來,6996,力領科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,6997,博弘,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7547,碩網,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7556,意德士,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7584,樂意,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7610,聯友金屬-創,創新板（名稱帶 -創）
+新進來,7631,聚賢研發-創,創新板（名稱帶 -創）
+新進來,7642,昶瑞機電,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7704,明遠精密,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7705,三商餐飲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7708,全家餐飲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7709,榮田,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7711,永擎,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7713,威力德生醫,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7715,裕山,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7716,昱臺國際,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7717,萊德光電-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7718,友鋮,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7721,微程式,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7723,築間,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7730,暉盛-創,創新板（名稱帶 -創）
+新進來,7732,金興精密,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7736,虎山,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7738,東聯互動,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7740,熙特爾-創,創新板（名稱帶 -創）
+新進來,7743,金利食安,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7744,崴寶,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7747,昕奇雲端,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7750,新代,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7753,星亞,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7757,金色三麥,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7765,中華資安,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7767,仁大資訊,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7769,鴻勁,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7770,君曜,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7777,能率亞洲,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7780,大研生醫*,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7782,光速火箭,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7786,東方風能,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7788,松川精密,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7791,皇家可口,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7792,安葆,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7795,長廣,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7799,禾榮科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7805,威聯通,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7810,捷創科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,7823,奧義賽博-KY創,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8067,志旭,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8077,洛碁,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8080,泰霖,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8083,瑞穎,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8101,華冠,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8102,傑霖科技,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8112A,,⛔ 不在 universe（來源不明）
+新進來,8162,微矽電子-創,創新板（名稱帶 -創）
+新進來,8272,全景軟體,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8284,三竹,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8287,英格爾,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8291,尚茂,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8342,益張,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8349A,,⛔ 不在 universe（來源不明）
+新進來,8354,冠好,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8401,白紗科,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8409,商之器,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8411,福貞-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8416,實威,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8418,捷必勝-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8423,保綠-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8424,惠普,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8427,基勝-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8433,弘帆,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8435,鉅邁,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8443,阿瘦,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8444,綠河-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8455,大拓-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8466,美吉吉-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8472,納維康,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8477,創業家,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8480,泰昇-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8481,政伸,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8487,愛爾達-創,創新板（名稱帶 -創）
+新進來,8488,吉源-KY,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8497,格威傳媒,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8908,欣雄,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8913,全銓,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8916A,,⛔ 不在 universe（來源不明）
+新進來,8917,欣泰,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8921,沈氏,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8923,時報,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8934,衡平,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,8941,關中,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,910322,,TDR 存託憑證（91xxxx）
+新進來,910482,,TDR 存託憑證（91xxxx）
+新進來,9106,新焦點-DR,TDR 存託憑證（91xxxx）
+新進來,910708,,TDR 存託憑證（91xxxx）
+新進來,910801,,TDR 存託憑證（91xxxx）
+新進來,910861,,TDR 存託憑證（91xxxx）
+新進來,9110,越南控-DR,TDR 存託憑證（91xxxx）
+新進來,911608,,TDR 存託憑證（91xxxx）
+新進來,911616,,TDR 存託憑證（91xxxx）
+新進來,911619,,TDR 存託憑證（91xxxx）
+新進來,911622,,TDR 存託憑證（91xxxx）
+新進來,911868,,TDR 存託憑證（91xxxx）
+新進來,912000,,TDR 存託憑證（91xxxx）
+新進來,912398,,TDR 存託憑證（91xxxx）
+新進來,9136,巨騰-DR,TDR 存託憑證（91xxxx）
+新進來,9157,陽光能源-DR,TDR 存託憑證（91xxxx）
+新進來,9188,精熙-DR,TDR 存託憑證（91xxxx）
+新進來,9905,大華,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9908,大台北,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9912,偉聯,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9918,欣天然,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9925,新保,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9926,新海,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9928,中視,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9929,秋雨,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9930,中聯資源,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9931,欣高,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9940,信義,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9941A,,⛔ 不在 universe（來源不明）
+新進來,9949,琉園,在 panel 內但【沒過閘門】（liq／bars／inst）
+新進來,9960,邁達康,在 panel 內但【沒過閘門】（liq／bars／inst）
