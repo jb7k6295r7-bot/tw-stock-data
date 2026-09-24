@@ -1024,7 +1024,7 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-09-24T20:26:49+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 35995734404
+最後執行：2026-09-24T21:52:11+08:00（台北）｜觸發 workflow_dispatch｜端點探針（只跑探針，約 1 分鐘）｜ref claude/financial-market-analysis-mmm5kf｜run 36004944721
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
 - **跑過的自測**：7 支｜selftest_probes.py、selftest_filing_probe.py、selftest_us_probe.py、selftest_funding_probe.py、selftest_mops_probe.py、selftest_feed_hosts.py、selftest_probe_step.py
@@ -1122,7 +1122,6 @@
 - ok　⭐⭐ 官方與我方的**換股率**沒有衝突（⛔ 有衝突就報 ✗，不自己選一邊）　（⛔ []）
 - ok　⭐ 事件集合**雙向**都對得上（⛔ 只比一個方向不算一致，三點1）　（只有官方 []｜只有我方 []）
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
-
 
 ## feeds:instamt　✓ 正常
 
