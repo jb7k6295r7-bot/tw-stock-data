@@ -8,7 +8,8 @@
   ④ 0 格要先證明檢查會響：判定欄存在但全是「基準／—」⇒ 印 ⚠，⛔ 不靜靜當 0
   ⑤ 摘要表沒有判定欄 ≠ 沒被判過：沒有判定欄、但格子裡出現判定用語的表 ⇒ 印 ⚠ 讓人去看
   ⑥ 同一組態在兩張表各印一次 ⇒ 用【數字】去重（列內所有數字 token 依表頭順序），⛔ 不用列名去重
-  ⑦ 列的欄數 ≠ 表頭欄數 ⇒ 印 ⚠（管線斷列會讓判定欄位移）
+  ⑦ 列的欄數 > 表頭 ⇒ 印 ⚠（判定欄會位移）；< 表頭 ⇒ 只記（尾端缺格，不位移）
+  ⑧ 格內的 \| 是字，⛔ 不可當分隔切開（results16 的「C2\|B3」就是）
 
 用法：
   python count_verdicts.py FILE.md [FILE2.md ...] [--dedup]
@@ -25,6 +26,8 @@ from collections import Counter
 VCOL = re.compile(r"^(判定|統計層|新判定|原判定|結果|事前判定|判)$")
 NOT_CELL = {"基準", "—", "-", "", "對照"}
 VERDICT_WORDS = ("測得出", "測不出", "分不出來", "反向顯著", "判過", "判不過", "較差")
+ESC = "\\|"
+SPLIT = re.compile(r"(?<!\\)\|")
 NUM = re.compile(r"[-+]?\d[\d,]*\.?\d*")
 
 
@@ -35,7 +38,7 @@ def tables(txt):
         if l.startswith("#"):
             sec = l.strip("# ").strip()[:44]
         if l.startswith("|"):
-            cells = [c.strip() for c in l.strip().strip("|").split("|")]
+            cells = [c.strip().replace(ESC, "|") for c in SPLIT.split(l.strip().strip("|"))]   # ⚠ 格內的 \| 是字，不是分隔
             if all(set(c) <= set("-: ") for c in cells):
                 continue
             if cur is None:
@@ -54,13 +57,16 @@ def _clean(v):
 
 
 def count_text(txt, dedup=False):
-    res = {"tables": [], "total": 0, "values": Counter(), "warn": [], "unique": None}
+    res = {"tables": [], "total": 0, "values": Counter(), "warn": [], "note": [], "unique": None}
     keys = []
     for sec, head, rows in tables(txt):
         vidx = [i for i, h in enumerate(head) if VCOL.match(_clean(h))]
-        bad_w = [n for n, r in enumerate(rows) if len(r) != len(head)]
-        if bad_w:
-            res["warn"].append("【{}】{} 列欄數 ≠ 表頭（{} 欄）⇒ 判定欄可能位移".format(sec, len(bad_w), len(head)))
+        long_ = [n for n, r in enumerate(rows) if len(r) > len(head)]
+        short = [n for n, r in enumerate(rows) if len(r) < len(head)]
+        if long_:
+            res["warn"].append("【{}】{} 列欄數 > 表頭（{} 欄）⇒ 判定欄可能位移".format(sec, len(long_), len(head)))
+        if short:
+            res["note"].append("【{}】{} 列欄數 < 表頭（{} 欄）⇒ 尾端缺格（顯示為空白，不位移）".format(sec, len(short), len(head)))
         if not vidx:
             hit = sum(1 for r in rows for c in r if any(w in c for w in VERDICT_WORDS))
             if hit:
@@ -106,6 +112,8 @@ def show(name, r):
         print("   ⇒ 用數字去重後 {} 格（同數同判重複 {}；⚠ 同數不同判 {}）".format(r["unique"], r["dup_same_verdict"], r["dup_conflict"]))
     for w in r["warn"]:
         print("   ⚠ " + w)
+    for w in r["note"]:
+        print("   ・" + w)
 
 
 def selftest():
@@ -141,6 +149,17 @@ def selftest():
 | 組態 | n | 判定 |
 |---|---:|---|
 | G | 7 | 較差 | 多一欄 |
+
+# 七、格內有跳脫的管線
+| 格 | n | 判定 |
+|---|---:|---|
+| C2\\|B3 | 9 | 測得出 |
+
+# 八、短列
+| 組態 | n | 超額 | 判定 |
+|---|---:|---:|---|
+| I | 11 | +2.2 | 測不出 |
+| H | 8 |
 """
     r = count_text(fx, dedup=True)
     got = {t["節"]: t["格"] for t in r["tables"]}
@@ -149,18 +168,22 @@ def selftest():
     # ② 兩欄取最後
     t3 = [t for t in r["tables"] if t["節"].startswith("三")][0]
     assert t3["兩欄取最後"] and t3["欄"] == "新判定" and t3["取值"] == {"測不出": 1}, t3
-    # ③ 合計＝ 3+1(重印)+1+1(斷列) ＝ 6，由 len 算
-    assert r["total"] == 6, (r["total"], got)
-    # ⑥ 用數字去重：A 與「A 重印」數字相同 ⇒ 5
-    assert r["unique"] == 5 and r["dup_same_verdict"] == 1 and r["dup_conflict"] == 0, r
+    # ③ 合計＝ 3+1(重印)+1+1(斷列)+1(跳脫管線)+1(短列表的完整列) ＝ 8，由 len 算
+    assert r["total"] == 8, (r["total"], got)
+    t7 = [t for t in r["tables"] if t["節"].startswith("七")][0]
+    assert t7["取值"] == {"測得出": 1}, t7                            # ⑧ 跳脫管線不可切開
+    NOTE = " ".join(r["note"])
+    assert "八、短列" in NOTE, r["note"]                               # ⑦ 短列只記
+    # ⑥ 用數字去重：A 與「A 重印」數字相同 ⇒ 7
+    assert r["unique"] == 7 and r["dup_same_verdict"] == 1 and r["dup_conflict"] == 0, r
     W = "\n".join(r["warn"])
     assert "四、摘要表" in W and "判定用語" in W, W          # ⑤
     assert "五、判定欄全是基準" in W and "0 格" in W, W       # ④
-    assert "六、斷列" in W and "欄數" in W, W                 # ⑦
+    assert "六、斷列" in W and "欄數 >" in W and "七、" not in W and "八、" not in W, W                 # ⑦
     # 同數不同判 ⇒ 要被抓到
     r2 = count_text("| a | n | 判定 |\n|---|---|---|\n| x | 1 | 測得出 |\n| y | 1 | 測不出 |\n", dedup=True)
     assert r2["dup_conflict"] == 1, r2
-    print("✅ selftest：取值集合（分不出來／反向顯著）、兩欄取最後、len 合計、數字去重、同數不同判、三種 ⚠ 全會響")
+    print("✅ selftest：取值集合（分不出來／反向顯著）、兩欄取最後、len 合計、數字去重、同數不同判、三種 ⚠ 全會響、跳脫管線不切開、短列只記不警告")
 
 
 if __name__ == "__main__":
