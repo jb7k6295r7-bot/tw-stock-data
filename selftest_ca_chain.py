@@ -9,6 +9,7 @@
 ⇒ 所以這裡有三條在盯 `verify_mode` / `check_hostname` / 沒有 `CERT_NONE`。
 """
 import io
+import re
 import os
 import ssl
 import subprocess
@@ -31,6 +32,19 @@ def ck(name, cond, hint=""):
         print(f"  ✗    {name}" + (f"｜{hint}" if hint else ""))
 
 
+def has_dn(txt, field, value):
+    """→ txt 裡有沒有這個 DN 欄位／值，⭐ 不看 openssl 的空白排版。
+
+    ⛔ openssl `-print_certs` 對等號兩邊的空白【各版本不同】：
+      OpenSSL 3.0 印 `CN = X`　OpenSSL 3.5 印 `CN=X`
+    ⇒ 比字面會在「換了一個 openssl」時紅在假原因上。
+    ⚠ 而只放寬成 `value in txt` 會變成永遠綠（值也出現在別的欄位與說明文字裡）
+      ⇒ ⭐ 所以正規化之後【連欄位名一起比】。
+    """
+    flat = re.sub(r"[ 	]*=[ 	]*", "=", txt)
+    return ("%s=%s" % (field, value)) in flat
+
+
 def main():
     print("=" * 64)
     print("ca_chain：補鏈有補上，而且沒有降低驗證（不連網）")
@@ -49,9 +63,18 @@ def main():
     txt = subprocess.run(["openssl", "pkcs7", "-print_certs", "-noout"],
                          input=subj.stdout, capture_output=True).stdout.decode()
     ck("⭐ 第一張是 TPEx 漏送的那張中間憑證",
-       "CN = TWCA SSL Certification Authority" in txt, txt[:200])
+       has_dn(txt, "CN", "TWCA SSL Certification Authority"), txt[:200])
     ck("⭐ 第二張把它接到**系統本來就信任的**根（TWCA Global Root CA）",
-       "CN = TWCA CYBER Root CA" in txt and "TWCA Global Root CA" in txt, txt[:300])
+       has_dn(txt, "CN", "TWCA CYBER Root CA")
+       and has_dn(txt, "CN", "TWCA Global Root CA"), txt[:300])
+    # ★★ 上面兩格用的 has_dn 自己要有樣本，⛔ 否則它可能是一支「永遠回 True」
+    ck("★ has_dn 不看排版：`CN = X` 與 `CN=X` 兩種都判得出來",
+       has_dn("subject=C=TW, CN = A Root", "CN", "A Root")
+       and has_dn("subject=C=TW, CN=A Root", "CN", "A Root"))
+    ck("★ has_dn 不在裡面時【必須】判不通過（⛔ 不可以永遠綠）",
+       not has_dn("subject=C=TW, CN=B Root", "CN", "A Root"))
+    ck("★ has_dn 連【欄位名】一起比（⛔ 值出現在別的欄位不算）",
+       not has_dn("subject=C=TW, O=A Root", "CN", "A Root"))
 
     print("\n── ② ⛔ 而它**沒有**降低驗證（這一節是反向的，最重要）──")
     c = ca_chain.context()
@@ -148,7 +171,9 @@ def main():
         alls.append(d.strip().split("=", 1)[1])
     soon = min(datetime.datetime.strptime(x, "%b %d %H:%M:%S %Y %Z")
                for x in alls)
-    left = (soon - datetime.datetime.utcnow()).days
+    # ⚠ 要留 naive：soon 是 naive ⇒ 帶 tzinfo 相減會 TypeError
+    left = (soon - datetime.datetime.now(
+        datetime.timezone.utc).replace(tzinfo=None)).days
     ck(f"⭐ 最早到期的那張還有 **{left} 天**（⛔ 少於 180 天就要換）",
        left > 180, f"⛔ 只剩 {left} 天，{soon}｜{ends.strip()}")
 

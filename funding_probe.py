@@ -97,7 +97,8 @@ def first_ts(rows):
         v = int(rows[0].split(",")[0])
         if v > 10 ** 12:          # 毫秒
             v //= 1000
-        return datetime.datetime.utcfromtimestamp(v).strftime("%Y-%m-%d %H:%M")
+        return datetime.datetime.fromtimestamp(
+            v, datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
     except (ValueError, IndexError, OverflowError):
         return None
 
@@ -111,6 +112,70 @@ def months_between(a, b):
         if m == 13:
             y, m = y + 1, 1
     return out
+
+
+def month_start_str(ym):
+    """→ 該月第一瞬的字串，⭐ 與 first_ts 同格式（⛔ 不同格式就永遠比不相等）。"""
+    return "%04d-%02d-01 00:00" % ym
+
+
+def censor_verdict(ym, floor, ft):
+    """→ '真' ／ '左截' ／ '不明'。⭐ 由機制推導，⛔ 不寫死任何日期。
+
+    ⛔⛔ 這一支要擋的錯：把【封存下限】讀成【上市日】。
+
+    ```
+    左截的簽名：最早月【就是封存下限月】，而第一筆正好落在該月的【第一瞬】
+      ⇒ 那個 00:00 不是一次結算 —— 資金費率是每隔數小時結算一次，
+        真的第一次結算落在月中的機率遠大於落在 00:00:00
+      ⇒ 只能說「上市日 ≤ 該月 1 日」，⛔ 給不出上市日
+    真的簽名（兩種都算真）：
+      ① 最早月【晚於】封存下限月 ⇒ 前一月確實有封存、只是這一幣沒有 ⇒ 真缺
+      ② 最早月就是下限月，但第一筆在【月中】 ⇒ 看得到真正的第一次結算
+    ```
+    ⚠ 封存下限是【母體逐幣最早月取 min】推出來的，⛔ 不是常數：
+      封存回溯一延伸，下限就會往前移，而這一支會自己跟著移。
+    """
+    if ft is None:
+        return "不明"
+    if ym != floor:
+        return "真"
+    return "左截" if ft == month_start_str(ym) else "真"
+
+
+def intervals(rows):
+    """→ {interval 值: 筆數}；⛔ 認不出來的列歸到 '?'，⚠ 不丟掉。
+
+    ⭐ 為什麼要逐列看：Binance 把【部分】交易對的結算間隔從 8 小時改過
+      ⇒ 若下游把 8 寫死成常數，那段期間的持有成本會【少算一半】。
+    """
+    out = {}
+    for r in rows:
+        c = r.split(",")
+        k = c[1].strip() if len(c) > 1 and c[1].strip() else "?"
+        out[k] = out.get(k, 0) + 1
+    return out
+
+
+def days_in_month(ym):
+    y, m = ym
+    ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+    return (datetime.date(ny, nm, 1) - datetime.date(y, m, 1)).days
+
+
+def completeness(rows, ym):
+    """→ (是否吻合, 說明)。⭐ 列數應該正好 ＝ 當月天數 × 每日結算次數。
+
+    ⛔ 「下載到 zip」看不出缺口；⭐ 這個不變式看得出來，
+       而它自己會算期望值（⛔ 不是寫死 90 或 93）。
+    """
+    iv = intervals(rows)
+    if len(iv) != 1 or "?" in iv:
+        return None, "interval 不是單一值（%s）⇒ ⛔ 不套這個不變式" % iv
+    h = int(list(iv)[0])
+    exp = days_in_month(ym) * 24 // h
+    return (len(rows) == exp,
+            "%d 列／期望 %d（%d 天 × 每 %d 小時）" % (len(rows), exp, days_in_month(ym), h))
 
 
 def last_full_month():
@@ -140,7 +205,11 @@ def main():
     L.append("   ✅ 表頭（逐字，⛔ 不假設欄名）：%s" % info)
     L.append("   ✅ %d 列｜第一筆 %s UTC｜約每日 %.1f 筆" % (len(rows), first_ts(rows), per_day))
     L.append("   前兩列：%s ／ %s" % (rows[0], rows[1] if len(rows) > 1 else "-"))
-    L.append("   ⭐ 每日約 3 筆 ＝ 每 8 小時結算一次（⚠ 若不是 3，結算間隔另有規則，要看 interval 欄）")
+    L.append("   ⭐ interval 逐列統計：%s"
+             "（⛔ 下游要【逐列讀】這一欄，不可寫死 8：Binance 改過部分交易對的間隔）" % intervals(rows))
+    okc, why = completeness(rows, top)
+    L.append("   %s 完整性：%s"
+             % ("✅" if okc else ("⚠" if okc is None else "⛔ 有缺口"), why))
     L.append("")
 
     # ── 逐幣：二分找最早可得的月 ──────────────────────────
@@ -181,16 +250,31 @@ def main():
                     "✅" if good else "⛔ 前一月不是 absent ⇒ 二分前提不成立，這一格不可信"))
         summary.append((sym, ym, ft, "ok" if good else "suspect"))
 
+    # ── ⭐⭐ 封存下限：逐幣最早月取 min（⛔ 不是常數，⚠ 封存一延伸它就往前移）
+    got = [ym for _, ym, _, _ in summary if ym]
+    floor = min(got) if got else None
+
     L.append("")
     L.append("══ ⇒ 給加密策略線的一句（⭐ 可直接抄，⚠ 但要連限制一起抄）══")
+    if floor:
+        L.append("   ⭐ 本趟推出的【月檔封存下限】＝ %04d-%02d（逐幣最早月取 min）" % floor)
+        L.append("   ⇒ ⛔⛔ 最早月落在下限月、而第一筆又正好是該月第一瞬 ⇒ 判【左截】：")
+        L.append("     那個 00:00 是「檔案從這裡開始」，⛔ 不是一次結算 ⇒ 給不出上市日")
     for sym, ym, ft, st in summary:
-        if ft:
-            L.append("   %-5s 最早可得資金費率 %s UTC（≈ 永續上市日上界）%s"
-                     % (sym, ft, "" if st == "ok" else "⛔ 可疑，見上"))
-        else:
+        if not ft:
             L.append("   %-5s ⛔ 沒有結論（%s）" % (sym, st))
-    L.append("   ⚠ 限制：①上市日是【上界】，真上市日 ≤ 第一筆 ②來源是 data.binance.vision 月檔，")
-    L.append("     ⛔ 若 Binance 沒有封存最早那個不完整月，最早日會被推遲 ③只驗到 USDT 本位永續")
+            continue
+        v = censor_verdict(ym, floor, ft)
+        if v == "左截":
+            L.append("   %-5s ⛔ 左截：只能證明【永續上市日 ≤ %s】，⛔ 本線給不出上市日"
+                     % (sym, month_start_str(ym).split()[0]))
+        else:
+            L.append("   %-5s ✅ 真：最早結算 %s UTC ⇒ 上市日在此【前 ≤ 一個結算間隔】內%s"
+                     % (sym, ft, "" if st == "ok" else "　⛔ 可疑，見上"))
+    L.append("   ⚠ 限制：①判【真】的是上界，真上市日 ≤ 第一筆，差距 ≤ 一個結算間隔")
+    L.append("     ②判【左截】的⛔ 不可當上市日用：樣本期若早於下限月，母體不能靠它圈")
+    L.append("     ③只驗到 USDT 本位永續（um）；幣本位與 USDC 本位【沒驗】")
+    L.append("     ④費率是【小數】不是百分比（0.0001 ＝ 0.01%）")
 
     io.open(OUT, "w", encoding="utf-8").write("\n".join(L) + "\n")
     print("\n".join(L))

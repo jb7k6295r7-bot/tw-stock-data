@@ -298,7 +298,8 @@ def main():
             bitstamp_calls.append(url)
             # ⭐ 用 URL 裡的 start= 決定回幾根，模擬「這一段撞到來源起點」
             start_ts = int(url.split("start=")[1].split("&")[0])
-            start_d = _dt2.datetime.utcfromtimestamp(start_ts).date()
+            start_d = _dt2.datetime.fromtimestamp(
+                start_ts, _dt2.timezone.utc).date()
             if start_d < _dt2.date(2013, 1, 4):
                 dates = [start_d, start_d + _dt2.timedelta(days=1),
                          start_d + _dt2.timedelta(days=2)]        # 滿頁（3 根）
@@ -436,7 +437,8 @@ def main():
 
         def fake_get_main(url, headers=None):
             start_ts = int(url.split("start=")[1].split("&")[0])
-            start_d = _dt2.datetime.utcfromtimestamp(start_ts).date()
+            start_d = _dt2.datetime.fromtimestamp(
+                start_ts, _dt2.timezone.utc).date()
             dates = [start_d + _dt2.timedelta(days=i) for i in range(C.BITSTAMP_LIMIT)]
             return 200, _json2.dumps(_mk_ohlc(dates)).encode()
 

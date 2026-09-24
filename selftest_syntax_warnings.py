@@ -66,6 +66,35 @@ def scan(root):
     return out
 
 
+DEPRECATED_DT = ("utcnow", "utcfromtimestamp")
+
+
+def scan_deprecated(root):
+    """→ [(檔名, 行號, 名稱)]：全庫還有沒有人用 utcnow／utcfromtimestamp。
+
+    ⛔⛔ 為什麼要守：Python 3.12 起這兩支發 DeprecationWarning、已排程移除。
+      ⚠ 而它【今天就在咬人】：selftest_zero_dep 用 -W error 跑時，
+        selftest_ca_chain 就是因為這個警告 rc=1 ⇒ 一格紅在假原因上，
+        ⭐ 而紅在假原因上的守門，下一次真的紅時沒有人會當真。
+    ⭐ 用 AST 比，⛔ 不比字串：這兩個名字在【說明文字裡本來就會出現】
+      （本庫 CERT_NONE 那一格已經付過一次這個代價）。
+    """
+    import ast
+    out = []
+    for fn in sorted(os.listdir(root)):
+        if not fn.endswith(".py"):
+            continue
+        try:
+            src = io.open(os.path.join(root, fn), encoding="utf-8").read()
+            tree = ast.parse(src)
+        except (OSError, SyntaxError):
+            continue
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Attribute) and n.attr in DEPRECATED_DT:
+                out.append((fn, n.lineno, n.attr))
+    return out
+
+
 def main():
     here = os.path.dirname(os.path.abspath(__file__)) or "."
     found = scan(here)
@@ -106,6 +135,52 @@ def main():
     n_ok += 1
     print("  ok   ⭐ 全庫 SyntaxWarning：**0 個**"
           "（⚠ 而上面兩條反向驗證明了這個 0 是真的掃過）")
+
+    # ③ ⭐ 已排程移除的 datetime API：全庫也要是 0
+    sand2 = tempfile.mkdtemp(prefix="dep_")
+    try:
+        # ⛔ 樣本用 chr(10) 串起來，不寫轉義：這台機器的工具鏈會把
+        #   heredoc 裡的雙反斜線收成單一個 ⇒ 寫 escape 的字串會被寫壞
+        #   （本線 2026-09-24 連栽兩次）
+        bad_src = chr(10).join([
+            "import datetime",
+            "def f():",
+            "    return datetime.datetime.utcnow()", ""])
+        good_src = chr(10).join([
+            "import datetime",
+            "def f():",
+            "    # 說明裡寫 utcnow() 這個名字不算用它（⛔ 比 AST 不比字串）",
+            "    return datetime.datetime.now(datetime.timezone.utc)", ""])
+        io.open(os.path.join(sand2, "bad.py"), "w",
+                encoding="utf-8").write(bad_src)
+        io.open(os.path.join(sand2, "good.py"), "w",
+                encoding="utf-8").write(good_src)
+        g2 = scan_deprecated(sand2)
+        if not any(f == "bad.py" for f, _l, _m in g2):
+            print("✗ 反向驗失敗：一段**真的**在用 utcnow() 的程式沒被抓到")
+            return 1
+        if any(f == "good.py" for f, _l, _m in g2):
+            print("✗ 反向驗失敗：只在**說明文字**裡出現那個名字的程式被誤報 "
+                  "⇒ 比字串不比 AST，這支會天天紅")
+            return 1
+        n_ok += 2
+        print("  ok   反向驗：真的在用 utcnow() **確實**被抓到")
+        print("  ok   反向驗：只出現在說明文字裡**不會**被誤報（⭐ 比 AST）")
+    finally:
+        shutil.rmtree(sand2, ignore_errors=True)
+
+    dep = scan_deprecated(here)
+    if dep:
+        print("⛔ 全庫還有 %d 處在用已排程移除的 datetime API：" % len(dep))
+        for fn, ln, nm in dep:
+            print("   %s:%s　%s()" % (fn, ln, nm))
+        print("⇒ utcfromtimestamp(x) → fromtimestamp(x, timezone.utc)")
+        print("⇒ utcnow() → now(timezone.utc)"
+              "（⚠ 要跟 naive 相減的話再 .replace(tzinfo=None)）")
+        return 1
+    n_ok += 1
+    print("  ok   ⭐ 全庫 utcnow／utcfromtimestamp：**0 處**"
+          "（⚠ 上面兩條反向驗證明了這個 0 是真的掃過）")
     print(f"\n[selftest] 通過 {n_ok}｜失敗 0")
     return 0
 

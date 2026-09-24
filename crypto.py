@@ -295,7 +295,8 @@ def _ts_to_date(raw):
     v = int(raw)
     if v >= 10 ** 14:
         v //= 1000                                # 微秒 → 毫秒
-    return datetime.datetime.utcfromtimestamp(v / 1000).date()
+    return datetime.datetime.fromtimestamp(
+        v / 1000, datetime.timezone.utc).date()
 
 
 def parse_kline_csv(text):
@@ -423,7 +424,8 @@ def parse_bitstamp_ohlc(body):
     ohlc = j.get("data", {}).get("ohlc", [])
     out = []
     for r in ohlc:
-        d = datetime.datetime.utcfromtimestamp(int(r["timestamp"])).date()
+        d = datetime.datetime.fromtimestamp(
+            int(r["timestamp"]), datetime.timezone.utc).date()
         out.append({"date": d.isoformat(), "open": r["open"], "high": r["high"],
                     "low": r["low"], "close": r["close"], "volume": r["volume"]})
     return out
