@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T17:40:54+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35980791780
+# ⏱ 這一趟：2026-09-24T18:13:40+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35982295565
 # tdcc_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://opendata.tdcc.com.tw/getOD.ashx?id=1-5
 
@@ -121,7 +121,7 @@
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
   ✓ 查詢頁 69,387 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = 'f8b88ee5-819c-441a-94dc-fd2b4091a992'
+    SYNCHRONIZER_TOKEN = '18f1e137-77cc-4b5f-a3bc-311d9ed4c542'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20260918'
     method = 'submit'
@@ -180,9 +180,9 @@
 
   ── 網頁：https://data.gov.tw/dataset/11452
      ✓ 540,387 bytes
-     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":562,"code_name":563},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
+     更新頻率：['data-v-8377536e><strong data-v-8377536e>更新頻率</strong></div><div class="table-cell" data-v-', 'value":321,"code_name":322},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-8377536e><strong data-v-8377536e>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-8377536e><strong data-v-8377536e>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
-     檔案格式：['_value":553,"code_name":554},"6","建議提供其他檔案格式",{"code_type":531,"code_value":556,"code_name']
+     檔案格式：['_value":312,"code_name":313},"6","建議提供其他檔案格式",{"code_type":289,"code_value":315,"code_name']
      授權：['><a href="/licenses" class="" title="前往 授權條款" data-v-5c04cf44>授權條款</a></li><li class="menu', 'data-v-8377536e><strong data-v-8377536e>授權方式</strong></div><div class="table-cell" data-v-']
 
   ── 公開 API：https://data.gov.tw/api/v2/rest/dataset/11452
@@ -207,7 +207,7 @@
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,387 bytes｜CSV 559 列｜**相異資料日期 0 個** []
-       「小-大」數字對 3 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
