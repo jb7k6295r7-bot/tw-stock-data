@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T08:52:40+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35939769061
+# ⏱ 這一趟：2026-09-24T09:32:57+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35942683561
 # otccal_probe.py 的輸出。這是探針結果，不是資料。
 # 要答的問題：**上櫃交易日曆有沒有第二來源**（目前唯一一列 C 級：只有自我一致）。
 # 判準四項見 otccal_probe.py 檔頭，⛔ 其中第 2 項（日期 min/max）是分水嶺。
@@ -128,7 +128,7 @@
            tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
         ── 第 3 段（921 字）
            (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-           params={r:'a3fdce66db70531e',t:'MTc5MDIxMTE0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+           params={r:'a3fe0991ada249a4',t:'MTc5MDIxMzU2OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
            ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
            1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
            !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -166,10 +166,8 @@
 
      ⚠⚠ 下面這一組**是我猜的路徑**（依據：櫃買新站端點的命名慣例）。
        ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，⛔ 而且不論結果如何，猜的網址**不會**被寫成結論。
-     ✗ announce/holiday?response=json：HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.
-     ✗ announce/market/holiday?response=json：HTTP 520 <none> | {"type":"https://developers.cloudflare.com/support/troubleshooting/http-
+     ? announce/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ? announce/market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
      ? bulletin/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
      ? market/holiday?response=json：10,892 bytes｜不是 JSON（JSONDecodeError）｜列數 0
 
