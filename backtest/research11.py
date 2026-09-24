@@ -400,7 +400,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
-                 weight_fn=None):
+                 weight_fn=None, tradable=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -458,6 +458,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                ⛔ slot_use 的分母改成 Σ 容量（⛔ 不是 (end−first) × 某一個 N）
       ⛔ 傳純量時走的是原來那條路，逐位元相同。
     """
+    # 裁定線 20260924-1714 §一（2026-09-24）再加：
+    #   tradable   None（原版路徑，⛔ 逐位元相同，回歸閘門 backtest/regress_tradability.py）／
+    #              dict sid → {"trd","up_o","dn_o"}（backtest/tradability.build）：
+    #              ① 買：進場日開盤＝漲停價 或 停牌 ⇒ 不成交，該名額今天持現金（⛔ 不遞補下一名）
+    #              ② 賣：出場日停牌 ⇒ 延到第一個可交易日【開盤】出；那天開盤＝跌停價 ⇒ 再等下一天
+    #                 延後期間照市價（ffill 收盤）計值
+    #              ③ 開啟時 613–615 那個「open 非有限 ⇒ 用 ffill 收盤成交」的退路不會被走到（進場前已擋）
+    #              ⚠ 排程出場日【有成交】時照原版用當日收盤出（1714 §一② 的「開盤＝跌停」是針對開盤成交）
     caps = None                       # PREREGP11：逐日容量。⛔ None ＝ 純量 n_slots ⇒ 原版路徑逐位元相同
     if not isinstance(n_slots, (int, np.integer)):
         caps = np.asarray(n_slots, int)
@@ -495,6 +503,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if not (0 < weak_size <= 1):
             raise ValueError(f"weak_size 要在 (0, 1]，收到 {weak_size!r}")
     max_pos_frac = 0.0
+    tr_stats = {"limit_up": 0, "halt_in": 0, "exit_delayed": 0} if tradable is not None else None
     maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
@@ -508,7 +517,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 rec[f"g_{rule}"] = float(row["gross"])      # 主格出場的原始逐筆報酬（rule 那一欄被改名成 gross，這裡補回原名）
             log.append(rec)
 
-    for t in range(first, min(ncal, last + 2)):
+    t_end = min(ncal, last + 2); t_done = t_end - 1
+    for t in range(first, ncal if tradable is not None else t_end):
+        if tradable is not None and t >= t_end and not open_pos:
+            break                                         # ⭐ 延後出場全部了結才停
         if stop is not None and open_pos and t > first:
             # ⭐ 只看 t−1（已經收盤的那一天）⇒ ⛔ 沒有前視；破線的部位改成「今天結清、記 t−1 的收盤」
             hit = []
@@ -528,6 +540,12 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 stop_exits += len(hit); stop_days.append((t - 1, len(hit)))
         still = []
         for ex, sid, amt, gross, ep in open_pos:
+            if ex <= t and tradable is not None and (t > ex or not tradable[sid]["trd"][t]):
+                tb = tradable[sid]; o_t = float(opens[sid][t])
+                if t == ex or not tb["trd"][t] or tb["dn_o"][t] or not np.isfinite(o_t) or o_t <= 0:
+                    still.append((ex, sid, amt, gross, ep)); continue      # 還賣不掉：照 ffill 收盤計值
+                gross = o_t / ep - 1.0                                     # ⭐ 第一個可成交日【開盤】出
+                tr_stats["exit_delayed"] += 1
             if ex <= t:
                 if use_bench:
                     units += amt * (1 + gross - COST) * (1 - bench_cost) / bench[t]   # 拿回的錢買 bench，付單邊成本
@@ -598,6 +616,12 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     if use_bench:
                         cash = units * bench[t] * (1 - bench_cost)                   # 賣 bench 能提出的現金（扣單邊成本）
                     row = cand.iloc[i]
+                    if tradable is not None:
+                        tb = tradable[row["sid"]]; o_t = float(opens[row["sid"]][t])
+                        if (not tb["trd"][t]) or tb["up_o"][t] or not np.isfinite(o_t) or o_t <= 0:
+                            k_ = "halt_in" if not tb["trd"][t] else "limit_up"
+                            tr_stats[k_] += 1; _rec(row, k_, t)
+                            continue                                      # ⭐ 不遞補：名額今天持現金
                     if targets is None:
                         amt = min(slot, cash)
                         if amt <= 1e-9:
@@ -649,9 +673,13 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             max_pos_frac = max(max_pos_frac, w_t)
             if maxw_daily is not None:
                 maxw_daily[t] = w_t; maxw_sid[t] = sid_t
+        t_done = t
         if return_equity:
             hold_val[t] = hv          # PREREGP3 丙（時點隨機對照）要的逐日持股市值；⛔ 只在 return_equity 時記，數值路徑不變
-    equity[:first] = 1.0; end = min(ncal, last + 2); equity[end:] = equity[end - 1]
+    end = min(ncal, last + 2)
+    if tradable is not None:
+        end = max(end, t_done + 1)          # 延後出場把模擬尾巴往後拉
+    equity[:first] = 1.0; equity[end:] = equity[end - 1]
     years = (end - first) / 245; final = equity[end - 1]
     peak = np.maximum.accumulate(equity); mdd = float(((equity - peak) / peak).min())
     cap_sum = (end - first) * n_slots if caps is None else int(caps[first:end].sum())
@@ -668,6 +696,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["max_pos_frac"] = max_pos_frac
         if maxw_detail:
             out["maxw_daily"] = maxw_daily; out["maxw_sid"] = maxw_sid
+    if tradable is not None:        # ⛔ tradable=None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同
+        out["tr_limit_up"] = tr_stats["limit_up"]; out["tr_halt_in"] = tr_stats["halt_in"]
+        out["tr_exit_delayed"] = tr_stats["exit_delayed"]; out["tr_open_at_end"] = len(open_pos)
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
