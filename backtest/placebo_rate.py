@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""裁定線 seq84 §三③：組合層判定必附【同窗假訊號臂逐 rep 通過率】。
+"""裁定線 seq84 §三③：組合層判定必附【同窗假訊號臂逐 rep 判過比例】。
 
 本支做兩件：
   ① 盤點本線 12 件組合層 ⇒ 哪幾件真的有【假訊號臂】（＝有自己的年化／回落，可以拿去比判準的臂）
-  ② 有的逐 rep 算通過率；⛔ 沒有的明文標「無假訊號臂」（依 seq84 §三③，引用它的「過」必須標）
+  ② 有的逐 rep 算判過比例；⛔ 沒有的明文標「無假訊號臂」（依 seq84 §三③，引用它的「過」必須標）
 
 判準（seq84 §二 統一版）：兩腳 ≥ 0050，且【至少一腳嚴格優】
 ⛔ 基準不抄數字 —— 用 assert_bench_1047.py 的同一串呼叫當場重算，並保留它的斷言。
@@ -54,14 +54,14 @@ rows = []
 for name, d, f, win in INV:
     bc, bm = (c_p, m_p) if win == "釘死窗" else (c_f, m_f)
     if f is None:
-        rows.append(dict(件=name, 窗=win, 假訊號臂="⛔ 無", rep數="—", 逐rep通過="—",
+        rows.append(dict(件=name, 窗=win, 假訊號臂="⛔ 無", rep數="—", 逐rep判過="—",
                          註="⇒ 依 seq84 §三③，引用本件的「過」必須標【無假訊號臂】"))
         continue
     p = os.path.join("backtest", d, f)
     df = pd.read_csv(p, float_precision="round_trip")
     if not {"cagr", "mdd"} <= set(df.columns):
         rows.append(dict(件=name, 窗=win, 假訊號臂="⛔ 無（{} 不是績效臂）".format(f),
-                         rep數="—", 逐rep通過="—",
+                         rep數="—", 逐rep判過="—",
                          註="⭐ 該檔是【共同區間／決定性】檢查（欄：{}），⛔ 沒有自己的年化／回落"
                             .format("／".join(list(df.columns)[:4]))))
         continue
@@ -69,12 +69,12 @@ for name, d, f, win in INV:
         df = df[df["arm"].isin(["PLACEBO", "W_shuf"])]
     per = df.groupby("rep").agg(c=("cagr", "median"), m=("mdd", "median"))
     per["m"] = per["m"].abs()
-    per["通過"] = [passes(a, b, bc, bm) for a, b in zip(per["c"], per["m"])]
-    k = int(per["通過"].sum())
+    per["判過"] = [passes(a, b, bc, bm) for a, b in zip(per["c"], per["m"])]
+    k = int(per["判過"].sum())
     pooled = passes(df["cagr"].median(), abs(df["mdd"].median()), bc, bm)
     rows.append(dict(件=name, 窗=win, 假訊號臂="✅ 有（{}）".format(f),
-                     rep數=len(per), 逐rep通過="**{}／{}**".format(k, len(per)),
-                     註="池化中位通過＝{}｜年化中位 {:.4f}／回落中位 {:.4f}".format(
+                     rep數=len(per), 逐rep判過="**{}／{}**".format(k, len(per)),
+                     註="池化中位判過＝{}｜年化中位 {:.4f}／回落中位 {:.4f}".format(
                          pooled, df["cagr"].median(), abs(df["mdd"].median()))))
     per.to_csv("backtest/results_step2/placebo_rate_{}.csv".format(d), encoding="utf-8")
 
@@ -90,7 +90,7 @@ print("  ⇒ ⛔ 其餘 {} 件【無假訊號臂】⇒ 引用它們的「過」�
 
 # ⛔ 自測
 assert len(have) == 2, "⛔ 有假訊號臂的件數變了：{}".format(list(have["件"]))
-_p17 = t.set_index("件").loc["P17 外生算式", "逐rep通過"]
+_p17 = t.set_index("件").loc["P17 外生算式", "逐rep判過"]
 assert _p17 == "**30／30**", "⛔ P17 的 30/30 對不上前一封：{}".format(_p17)
 print("  ✅ 兩條斷言通過（恰 2 件有假訊號臂｜P17 仍是 30／30）")
 

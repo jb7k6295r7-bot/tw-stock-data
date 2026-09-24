@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""C4 必報欄（裁定線 seq92 §三、seq94 §三）：判定格過了 ⇒ 附【同窗假訊號臂的判定格通過率（聯合、兩腳）】。
+"""C4 必報欄（裁定線 seq92 §三、seq94 §三）：判定格過了 ⇒ 附【同窗假訊號臂的判定格判過比例（聯合、兩腳）】。
 
 ⭐ C4 的判定格是「閘門 vs 該幣自己的 C1 原始」⇒ 假訊號臂也對【C1 原始】比（⛔ 不是買進持有）。
 ⭐ resultsc4 沒存逐組假訊號結果 ⇒ 照原呼叫、原種子重跑：C1.placebo_dist(g["held"], rb, rng(C1.SEED))
@@ -44,7 +44,7 @@ for s in ("ETH", "XRP", "DOGE"):
     leg_c = pcg >= cg_r; leg_m = pmd <= abs(md_r)
     rows.append(dict(幣=s, 組數=len(pcg), 閘門判定格=ok_g,
                      年化腳成立=int(leg_c.sum()), 回落腳成立=int(leg_m.sum()),
-                     判定格過_judge=int(ok.sum()), 通過率=round(ok.mean() * 100, 1),
+                     判定格過_judge=int(ok.sum()), 判過比例=round(ok.mean() * 100, 1),
                      兩腳都嚴格=int((sc & sm).sum()), 兩腳嚴格率=round((sc & sm).mean() * 100, 1),
                      邊際相乘=round(leg_c.mean() * leg_m.mean() * 100, 1)))
     print("[{}] 錨 ✅（{:.1f}／{:.1f}／{:.1f} 與交件逐位相同）⇒ 假訊號臂判定格過 {}／{} ＝ {:.1f}%".format(
@@ -54,7 +54,7 @@ T = pd.DataFrame(rows)
 print()
 print(T.to_string(index=False))
 print()
-print("⚠ 邊際相乘欄只是提醒：它 ≠ 聯合（兩腳不獨立），⛔ 不可拿來代替通過率")
+print("⚠ 邊際相乘欄只是提醒：它 ≠ 聯合（兩腳不獨立），⛔ 不可拿來代替判過比例")
 
 # ⛔ 鑑別力自測：拿 C1 原始自己當假訊號臂 ⇒ 兩腳都只是相等 ⇒ judge 必須判不過（無嚴格優）
 ok_self, _, _ = C1.judge(cg_r, md_r, cg_r, md_r)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""C3 必報欄：**時序打亂臂的判定格通過率**（⇐ 裁定線 seq88 §一③）。
+"""C3 必報欄：**時序打亂臂的判定格判過比例**（⇐ 裁定線 seq88 §一③）。
 
 裁定線逐字：「判定格過了，但 §四 只報 CAGR 百分位與 |MDD| 比例，沒報
 『時序打亂 1,000 組裡，判定格（兩腳嚴格優於基準①）過了幾組』
@@ -64,7 +64,7 @@ print("  ⭐⭐ **兩腳同時**                    {:4d}／{:,} ＝ **{:.1f}%**
 print()
 print("  ⇒ ⭐ 注意：{:.1f}% × {:.1f}% ＝ {:.1f}%，而實際是 {:.1f}%".format(
     leg_c.mean() * 100, leg_m.mean() * 100, leg_c.mean() * leg_m.mean() * 100, both.mean() * 100))
-print("     ⇒ ⇒ 兩腳【不獨立】⇒ ⛔ 不可用兩個邊際百分位相乘去推聯合通過率")
+print("     ⇒ ⇒ 兩腳【不獨立】⇒ ⛔ 不可用兩個邊際百分位相乘去推聯合判過比例")
 
 print()
 print("=== ⑤ ⭐ 順帶：橫斷面打亂（隨機選幣）那一組也算一次 ===")
@@ -76,15 +76,15 @@ print("  null_cross {:,} 組 ⇒ 兩腳同時嚴格優 {:4d} ＝ **{:.1f}%**".fo
 
 print()
 print("=== ⑥ ⇒ 本線給措辭的那一句（⛔ 本線不定稿）===")
-print('  「時序打亂臂判定格通過率 **{:.1f}%**（1,000 組裡 {} 組兩腳都嚴格優於基準①）；'
+print('  「時序打亂臂判定格判過比例 **{:.1f}%**（1,000 組裡 {} 組兩腳都嚴格優於基準①）；'
       .format(both.mean() * 100, int(both.sum())))
 print('    橫斷面打亂（隨機選幣）**{:.1f}%**。」'.format(b2.mean() * 100))
 
 out = pd.DataFrame([
     dict(空模型="時序打亂（逐幣整段重排）", 組數=n, 年化腳過=int(leg_c.sum()), 回落腳過=int(leg_m.sum()),
-         兩腳都過=int(both.sum()), 通過率=round(both.mean() * 100, 2)),
+         兩腳都過=int(both.sum()), 判過比例=round(both.mean() * 100, 2)),
     dict(空模型="橫斷面打亂（隨機選幣）", 組數=len(d2), 年化腳過=int((C2 > B_CAGR).sum()),
-         回落腳過=int((M2 < B_MDD).sum()), 兩腳都過=int(b2.sum()), 通過率=round(b2.mean() * 100, 2)),
+         回落腳過=int((M2 < B_MDD).sum()), 兩腳都過=int(b2.sum()), 判過比例=round(b2.mean() * 100, 2)),
 ])
 out.to_csv("results_step2/c3_null_passrate.csv", index=False, encoding="utf-8")
 print()
