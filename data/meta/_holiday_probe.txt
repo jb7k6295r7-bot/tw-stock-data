@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T21:27:46+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36004944721
+# ⏱ 這一趟：2026-09-24T22:22:18+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36011188117
 # holiday_probe.py 的輸出。這是探針結果，不是資料。
 # 網址（使用者 2026-09-09 提供）：https://www.dgpa.gov.tw/typh/daily/nds.html
 # 判準：**台北市**停止上班 ⇒ 台股全日休市。⛔ 不是「有任何縣市放假」。
