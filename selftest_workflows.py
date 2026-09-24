@@ -126,40 +126,59 @@ def run_blocks(path):
 #     ② 名單**裡**的區塊已經守護好了 ⇒ 也紅（⭐ 逼人把名單刪短）
 #   ⚠ 只做①的話名單會永遠停在 34：修好了沒有人會去刪它。
 # ══════════════════════════════════════════════════════════════════
+def _is_gate(ln):
+    """這一發 python 是不是【自測閘門】。⛔ 比被呼叫的腳本，不是整行文字。
+
+    ⭐ `python selftest_x.py` 與 `python ci_step.py selftest_x.py` 都算；
+    ⛔ 只要同一行還叫了別的 .py 就不算（那不是純閘門）。
+    """
+    scripts = [p for p in ln.split() if p.endswith(".py") and p != "ci_step.py"]
+    return bool(scripts) and all(
+        os.path.basename(p).startswith("selftest_") for p in scripts)
+
+
+def _drop_leading_gates(calls):
+    """把【開頭連續的】自測呼叫拿掉再判。
+
+    ⛔⛔ 為什麼：閘門必須連坐（判準壞了就不可以往下抓），
+      ⚠ 而「每發都要 || RC=」會要求它被守起來 ⇒ 兩條互相矛盾。
+    ⭐ 只放過【開頭連續】的那幾發：⛔ 夾在中間或後面的自測呼叫不算閘門。
+    """
+    i = 0
+    while i < len(calls) and _is_gate(calls[i]):
+        i += 1
+    return calls[i:]
+
+
 KNOWN_UNGUARDED = {
     # ⭐ 2026-09-23 還掉四筆（兩段式抓取，⛔ 沒有 selftest 閘門 ⇒ 可以全守）：
     #   全市場三大法人（上櫃 TPEx）／面額變更／ETF 分割／漲跌家數
     #   ⇒ 病根與現場證據見 `backfill_coupled_blocks()` 上面那一段。
     # ⚠ 另六步也守了 feeds.py，⛔ 但它們開頭的 selftest 是【閘門】必須連坐
     #   ⇒ 依這一份的判準它們仍然算「沒守門」，所以**留在名單裡**。
-    ('backfill.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
-    ('backfill.yml', '驗解析規則（空值寫法＋無成交列，離線）'),
-    ('backfill.yml', '興櫃單日修補（把被刪掉的那一天補回去）'),
+    # ⭐⭐ 2026-09-24 一次還掉 10 筆：判準學會認【閘門】了
+    #   （`_drop_leading_gates`）⇒ 開頭連續的自測呼叫不再被要求守門。
+    #   ⚠ 而「是不是多呼叫區塊」仍然用全部呼叫數判 ⇒ 台帳的份量沒有被稀釋
+    #     （⛔ 第一版把閘門拿掉之後才數，台帳 30 掉到 3，逼人去調小那個 20）。
+    # ⇒ ⭐ 名單由程式重生成，⛔ 不是手抄（手抄會漏掉三筆同名不同檔的）。
     ('backfill.yml', '回補'),
-    ('daily.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
-    ('daily.yml', '融資融券與本益比（上市＋上櫃）'),
-    ('daily.yml', '借券賣出餘額（上市＋上櫃）'),
-    ('daily.yml', '官方創新板成分清單（逐日，回到 2021-06-28）'),
-    ('daily.yml', '變更交易（全額交割）名單（逐日，回到 2015-01-01）'),
-    ('daily.yml', '停止買賣中的名單（上市，⛔ 沒有歷史、漏一天永久少一天）'),
-    ('daily.yml', '上櫃變更交易／分盤／管理股票（逐日）'),
-    ('daily.yml', '個股融資融券成數調整（逐日）'),
-    ('daily.yml', '終止上市（下市）清單'),
-    ('daily.yml', '算還原因子'),
-    ('daily.yml', '上櫃減資／除權息的官方判準（各一發請求）'),
+    ('backfill.yml', '興櫃單日修補（把被刪掉的那一天補回去）'),
     ('daily.yml', '上櫃減資對帳'),
-    ('daily.yml', '逐日 feed 的列數閘門（只讀，不連外）'),
-    ('daily.yml', '還原因子 vs 交易所漲跌停（只讀，不連外）'),
-    ('daily.yml', '發行股數對帳（上櫃，官方個股市值排行）'),
+    ('daily.yml', '上櫃減資／除權息的官方判準（各一發請求）'),
+    ('daily.yml', '上櫃除權息判準（官方當日，逐日累積）'),
+    ('daily.yml', '停止買賣中的名單（上市，⛔ 沒有歷史、漏一天永久少一天）'),
     ('daily.yml', '母體漏列規模（六張官方清單差集，不連外）'),
     ('daily.yml', '無成交列水位（哪幾天已是新語意，不連外）'),
-    ('daily.yml', '上櫃除權息判準（官方當日，逐日累積）'),
-    ('feeds.yml', '驗還原因子／興櫃 0 價／回補的「跑過了」判準（零相依，共 0.3 秒）'),
-    ('feeds.yml', '回補'),
+    ('daily.yml', '發行股數對帳（上櫃，官方個股市值排行）'),
+    ('daily.yml', '算還原因子'),
+    ('daily.yml', '終止上市（下市）清單'),
+    ('daily.yml', '逐日 feed 的列數閘門（只讀，不連外）'),
+    ('daily.yml', '還原因子 vs 交易所漲跌停（只讀，不連外）'),
+    ('feeds.yml', '上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些'),
+    ('feeds.yml', '上櫃除權息歷史（官方公告區，只寫判準檔）'),
     ('feeds.yml', '上櫃除權息與減資（FinMind 回補｜⛔ 免費層）'),
     ('feeds.yml', '上櫃除權息與減資（只補指定的幾檔｜⛔ 免費層）'),
-    ('feeds.yml', '上櫃除權息歷史（官方公告區，只寫判準檔）'),
-    ('feeds.yml', '上櫃減資歷史（官方公告區）＋逐筆掃我方 data/adj 缺哪些'),
+    ('feeds.yml', '回補'),
     ('feeds.yml', '核對每一天的內容'),
     ('feeds.yml', '算還原因子'),
 }
@@ -177,7 +196,13 @@ def check_rc_debt(files):
             #   ⭐ 判準抽成一份（第四點五）：跟 `_rc_check` 共用 `_logical_lines()`。
             calls = [ln for ln in _logical_lines(body)
                      if re.match(r"^python\s", ln) and "|| true" not in ln]
-            if len(calls) >= 2 and any("|| RC=" not in ln for ln in calls):
+            # ⭐ 開頭連續的自測呼叫是【閘門】⇒ 不要求它守門（理由見 `_drop_leading_gates`）
+            # ⛔⛔ 而「是不是多呼叫區塊」仍然用【全部】呼叫數判：
+            #   ⚠ 第一版把閘門拿掉之後才數 ⇒ 只剩一發的區塊整個不算
+            #     ⇒ 台帳 30 筆掉到 3 筆 ⇒ 同一支裡「≥20 個區塊」那一格失效
+            #     ⇒ ⛔ 而那會逼人去把 20 調小（＝母體縮小再也不會紅）
+            real = _drop_leading_gates(calls)
+            if len(calls) >= 2 and any("|| RC=" not in ln for ln in real):
                 now.add((short, name))
     added = sorted(now - KNOWN_UNGUARDED)
     fixed = sorted(KNOWN_UNGUARDED - now)
@@ -758,7 +783,8 @@ def main():
                 if re.match(r"^python\s", ln) and "|| true" not in ln]
 
     def _rc_check(label, body, after):
-        calls = _rc_calls(body)
+        # ⭐ 同上：開頭連續的自測呼叫是閘門，⛔ 它必須連坐 ⇒ 不要求它守門
+        calls = _drop_leading_gates(_rc_calls(body))
         ck(f"{label}｜每個 python 呼叫都帶 `|| RC=`（⛔ 一行失敗不可以賠掉後面的）",
            bool(calls) and all("|| RC=" in ln for ln in calls),
            f"⛔ 沒帶的：{[ln.strip()[:60] for ln in calls if '|| RC=' not in ln]}")
@@ -851,6 +877,31 @@ def main():
        len(_rc_calls(_g_bad)) == 2
        and not all("|| RC=" in ln for ln in _rc_calls(_g_bad)),
        f"⛔ 掃到 {_rc_calls(_g_bad)}")
+
+    # ══════════════════════════════════════════════════════
+    # ⭐⭐ 閘門判準（2026-09-24 加）：⛔ 它自己要有反向樣本
+    #   ⚠ 一條「什麼都當閘門」的判準會讓整本台帳歸零，而報告上看不出來
+    # ══════════════════════════════════════════════════════
+    ck("⭐ `python selftest_x.py` 算閘門", _is_gate("python selftest_x.py"))
+    ck("⭐ `python ci_step.py selftest_x.py` 也算",
+       _is_gate("python ci_step.py selftest_x.py"))
+    ck("★ `python feeds.py --run` ⛔ 不算閘門",
+       not _is_gate("python feeds.py --run --feed per"))
+    ck("★★ 同一行還叫了別的 .py ⇒ ⛔ 不算純閘門",
+       not _is_gate("python selftest_x.py && python feeds.py --run"))
+    ck("★ 沒有任何 .py（例如 `python -c`）⇒ ⛔ 不算閘門",
+       not _is_gate("python -c \"import json\""))
+    _G = "python selftest_a.py"
+    _R1 = "python feeds.py --run --feed per"
+    _R2 = "python adjust.py"
+    ck("⭐ 開頭的閘門會被拿掉",
+       _drop_leading_gates([_G, _R1, _R2]) == [_R1, _R2])
+    ck("⭐ 連續兩發閘門都拿掉",
+       _drop_leading_gates([_G, _G, _R1]) == [_R1])
+    ck("★★ 夾在中間的自測呼叫 ⛔ **不**拿掉（那不是閘門，是漏守）",
+       _drop_leading_gates([_R1, _G, _R2]) == [_R1, _G, _R2])
+    ck("★ 整區塊都是閘門 ⇒ 回空的（⇒ 沒有東西要守）",
+       _drop_leading_gates([_G, _G]) == [])
     _g_ok = ("          # RC-GUARD\n          RC=0\n          python a.py || RC=1\n"
              "          python z.py || true\n")
     ck("★ 反向驗（另一方向）：明示 `|| true` 的行**不算**"
@@ -1368,6 +1419,20 @@ def main():
        "（⛔ 只有函式存在不算——沒有人叫它就等於沒有）",
        "--tests-for" in htxt and "NOTEST=" in htxt,
        "⛔ hook 裡找不到 `--tests-for`")
+
+    # ⭐⭐ 2026-09-24：hook 要清掉 git 匯出的環境變數
+    #   ⛔ 不清 ⇒ 自測在暫存目錄建的沙盒 git 倉會被 GIT_DIR／GIT_INDEX_FILE
+    #     導回真的 repo ⇒ 三支自測在 hook 裡假紅、單獨跑全過
+    #   ⚠ 假紅比沒有檢查更糟：它教人用 `--no-verify`
+    _hk = io.open(hook, encoding="utf-8").read()
+    ck("⭐⭐ `.githooks/pre-commit` 有 `unset GIT_DIR`／`GIT_INDEX_FILE`"
+       "（⛔ 不清 ⇒ 沙盒自測會被導回真 repo ⇒ 假紅）",
+       "unset GIT_DIR" in _hk and "GIT_INDEX_FILE" in _hk,
+       "hook 裡找不到那一行")
+    ck("★ 而它排在 `STAGED=` **之後**（⛔ 之前 ⇒ 那一行會讀錯索引）",
+       _hk.find("unset GIT_DIR") > _hk.find("STAGED="),
+       "unset 在 %d／STAGED 在 %d"
+       % (_hk.find("unset GIT_DIR"), _hk.find("STAGED=")))
 
     # ═══════════════════════════════════════════════════════════
     # ⭐⭐ **掃全庫的那一族自測，一定要進 hook 的跨檔守門清單**

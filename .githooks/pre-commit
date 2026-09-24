@@ -14,6 +14,16 @@
 set -e
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
 
+# ⛔⛔ 2026-09-24：`git commit` 把 GIT_DIR／GIT_INDEX_FILE／GIT_PREFIX 這些
+#   **匯出給 hook** ⇒ 底下自測在暫存目錄裡建的【沙盒 git 倉】，其 git 指令
+#   會被導回真的這個 repo ⇒ 沙盒測試假紅。
+#   ⭐ 現場：selftest_esb_day_repair／selftest_probe_step／selftest_push_data
+#     在 hook 裡紅（6／3 格失敗、一支逾時），而【單獨跑全過】（43/0、20/0、43/0）。
+#   ⚠ 而假紅比沒有檢查更糟：它教人用 `--no-verify`
+#     ⇒ 那會讓這個 hook 存在的理由（檔頭那 1 小時 50 分鐘）整個失效。
+#   ⛔ 清除要在 `STAGED=` 之後：那一行要用 commit 當下的暫存索引。
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_PREFIX GIT_OBJECT_DIRECTORY       GIT_ALTERNATE_OBJECT_DIRECTORIES GIT_AUTHOR_DATE GIT_COMMITTER_DATE       GIT_EDITOR GIT_QUARANTINE_PATH
+
 # ⛔⛔ 第二道（2026-09-10 加）：**同一件事只准有一份實作**。
 #   使用者說「同一段邏輯抄兩份、只修一份」已經第三次——往下掃是**十份**，
 #   其中一份會讓每日抓取憑空造出一個交易日。

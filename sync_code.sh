@@ -41,6 +41,37 @@ data
 backtest/forward
 "
 
+# ══════════════════════════════════════════════════════════════════
+# ⛔⛔ 閘門〇：**不在 Actions 裡，就不准推真的 origin**（2026-09-24 付過代價）
+#
+# 這支唯一的用途是「workflow 把分支的程式搬上 main」。
+# ⚠ 而 2026-09-24 21:00 它在【本機】被叫到了，而且真的推成了三筆：
+#   `selftest_push_data.py` 在暫存目錄開的沙盒 git 倉，被 pre-commit 洩漏的
+#   `GIT_DIR` 導回真的 worktree ⇒ 沙盒裡跑的這一支，`git push origin HEAD:main`
+#   推的是**真的 origin/main** ⇒ main 上多了 `hello.py`／`gone.py`／9 個 .pyc。
+#   ⛔ 而它的後果不是那 11 個檔，是**同步從此被自己的闥門擋死**（安靜、且顯示 success）。
+#
+# ⭐ 判準用【origin 是不是本機路徑】，⛔ 不是「有沒有 GITHUB_REF_NAME」：
+#   自測的沙盒 origin 是一個本機 bare 目錄 ⇒ 要放行（⛔ 不可以把自測堵死），
+#   而任何 https://／git@ 的 origin 在 Actions 之外一律拒絕。
+# ⚠ 這一道是**第二道**：第一道是 pre-commit 不再洩漏 GIT_DIR。
+#   ⛔ 留兩道的理由是那次事故的形狀——第一道壞掉時，沒有任何地方會說。
+# ══════════════════════════════════════════════════════════════════
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  URL=$(git remote get-url origin 2>/dev/null || echo "")
+  case "$URL" in
+    ""|/*|./*|../*|file://*) : ;;
+    *)
+      echo "⛔⛔ [sync_code] 拒絕執行：不在 Actions 裡，而 origin 是遠端" >&2
+      echo "   origin = $URL" >&2
+      echo "   ⇒ 這支唯一的用途是【workflow 把分支的程式搬上 main】。" >&2
+      echo "   ⚠ 2026-09-24 21:00 它在本機被沙盒叫到，推了三筆到真的 main。" >&2
+      echo "   ⭐ 真的要在本機同步 ⇒ 自己下 git push，⛔ 不要繞過這一道。" >&2
+      exit 6
+      ;;
+  esac
+fi
+
 BR="${GITHUB_REF_NAME:-main}"
 if [ "$BR" = "main" ]; then echo "本來就在 main，不必同步"; exit 0; fi
 git config user.name  "github-actions[bot]"

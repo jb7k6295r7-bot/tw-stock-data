@@ -14,9 +14,9 @@ on:
         options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months, official-months-probe]
         default: probe
       feed:
-        description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓"
+        description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓。⭐ instamt／otcinstamt＝三大法人買賣【金額】（大盤層級，長格式）：上市回溯下限民國93-03-03、上櫃 2017-01-03，⛔ 上櫃比這更早一律 0 列"
         type: choice
-        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio, stophalt]
+        options: [all, per, exright, reduce, margin, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio, stophalt, instamt, otcinstamt]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"

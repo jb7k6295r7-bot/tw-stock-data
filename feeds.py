@@ -1352,6 +1352,69 @@ def parse_breadth(d, day, known=None):
             f"漲 {v['up']}／跌 {v['down']}／平 {v['flat']}")
 
 
+def _instamt_rows(d, day, tag):
+    """三大法人買賣【金額】→ 長格式，一列一個單位名稱。→ (lines, note)。
+
+    ⭐ 欄位用【名稱】定位，⛔ 不用位置：兩站的欄名不一樣
+      （上市「買賣差額」／上櫃「買賣超(元)」，而且上櫃帶「(元)」）。
+    ⛔ 列名【原文保留】（含上櫃子列前面的全角空白）：歸一化就回不去了。
+    ⚠ 空列要跳過：上櫃 2018-01-02 的回應最後一列是 `[]`。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = tabs[0]
+    f = [str(x) for x in (t.get("fields") or [])]
+    if not f:
+        return [], "第一張表沒有 fields"
+
+    def col(*keys):
+        for i, name in enumerate(f):
+            if any(k in name for k in keys):
+                return i
+        return None
+
+    i_buy, i_sell, i_net = col("買進"), col("賣出"), col("買賣超", "買賣差額")
+    if None in (i_buy, i_sell, i_net):
+        return [], f"欄名對不上：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not r or len(r) <= max(i_buy, i_sell, i_net):
+            continue
+        # ⛔⛔ 注意：`.strip()` **會**去掉全角空白（U+3000 是 Unicode 空白）
+        #   ⇒ 上櫃用前導全角空白表示「子列」，⚠ 那個縮排在這裡【被去掉了】
+        #   ⭐ 而這是可接受的：去掉縮排之後名稱仍然唯一
+        #     （`外資及陸資合計` vs `外資及陸資(不含自營商)` 本來就是兩個名字）
+        #   ⇒ ⚠ 但層級要從【名稱】推（帶「合計」的是上層），⛔ 不是從縮排
+        #   ⇒ ⛔⛔ 所以把所有列加起來會【重複計算】：子列已經含在合計列裡
+        who = str(r[0]).strip()
+        if not who:
+            continue
+        vals = [_blank_num(r[i_buy]), _blank_num(r[i_sell]), _blank_num(r[i_net])]
+        # ⛔⛔ write_day 是 ",".join(r)，**沒有 CSV 引號**
+        #   ⇒ 任何一格帶逗號都會讓整列錯位，⚠ 而且不報錯
+        #   ⇒ 這裡當場擋掉，⛔ 不要讓它寫進檔案
+        if any("," in x for x in [who] + vals):
+            return [], f"欄位裡有逗號，⛔ 不寫（who={who!r}）"
+        out.append([day, who] + vals)
+    if not out:
+        # ⚠ 上櫃在回溯下限（2017-01-03）之前回 stat=ok 但 0 列
+        #   ⇒ ⛔ 那是「沒有歷史」，不是「那天沒開市」，兩者要分開講
+        return [], (f"NODATA {tag} 0 列（stat 正常）"
+                    "⇒ ⚠ 可能在回溯下限之前（上櫃 2017-01-03），⛔ 不是抓取失敗")
+    return out, f"{len(out)} 列：{'／'.join(r[1] for r in out)}"
+
+
+def parse_instamt(d, day, known=None):
+    """上市 BFI82U。⭐ 回溯下限 ＝ 民國 93-03-03（端點自己講）。"""
+    return _instamt_rows(d, day, "twse")
+
+
+def parse_otcinstamt(d, day, known=None):
+    """上櫃 insti/summary。⭐ 回溯下限 ＝ 2017-01-03（本線二分找出來的）。"""
+    return _instamt_rows(d, day, "tpex")
+
+
 def _twse(path, day, extra=""):
     return f"https://www.twse.com.tw/rwd/zh/{path}?date={day.replace('-', '')}{extra}&response=json"
 
@@ -1382,6 +1445,43 @@ FEEDS = {
         "status": ("大盤漲跌證券數，**日檔的外部判準**。MI_INDEX 吃 date 參數，"
                    "所以 2015 起可以回補——`market_breadth.csv` 只有 2026-09-01 起，"
                    "是 v6 才開始存的，不是端點沒有歷史"),
+    },
+    # ⭐⭐ 2026-09-24 新增：三大法人買賣【金額】（大盤層級）。
+    #   ⏳ 使用者裁定（裁定線 1941 轉達）：「好，請資料庫線補齊」
+    #   ⛔ 我方原本只有 `latest/market_inst.csv`：2026-09-01 起 17 列、
+    #     而且 `data/history/market_inst.csv` 與它【逐位元相同】
+    #     ⇒ ⚠ 叫 history 的那一份不是歷史（本線 20260924-1927 已報）
+    #   ⭐ 長格式（date,investor,buy,sell,net），理由見 `_instamt_rows`：
+    #     列名會隨年份改，攤成固定欄會讓欄的語意【變了而不報錯】。
+    #   ⚠ 上市上櫃【分開存、分開欄】（裁定線 1941 §一③）：
+    #     兩邊的列名與口徑不一致，⛔ 不可以加總成一個「大盤」數字。
+    "instamt": {
+        "dir": "instamt",
+        "header": ["date", "investor", "buy", "sell", "net"],
+        "parse": parse_instamt,
+        "known": False,          # 大盤層級，沒有個股代號要過濾
+        # ⚠ 這一支的日期參數叫 `dayDate`，⛔ 不是 `date` ⇒ 不能用 `_twse()`
+        "urls": lambda day: [
+            "https://www.twse.com.tw/rwd/zh/fund/BFI82U?type=day&dayDate="
+            + day.replace("-", "") + "&response=json"],
+        "status": ("本線 2026-09-24 逐年實測：20260923／20240102／20210104／20180102 ⇒ 6 列；"
+                   "20150105 ⇒ 5 列；20140102／20120102／20100104 ⇒ 4 列；"
+                   "20050103 ⇒ 4 列（外資那列叫「外資」）；"
+                   "⭐ 20020102 ⇒ stat「查詢日期小於093年03月03日」"
+                   "⇒ **回溯下限是端點自己講的**，⛔ 不是我方猜的"),
+    },
+    "otcinstamt": {
+        "dir": "otcinstamt",
+        "header": ["date", "investor", "buy", "sell", "net"],
+        "parse": parse_otcinstamt,
+        "known": False,
+        "urls": lambda day: [_tpex("insti/summary", day, "&type=Daily")],
+        "status": ("本線 2026-09-24 實測：2026-09-23／2024-01-02／2021-01-04 ⇒ 8 列；"
+                   "2018-01-02 ⇒ 5 列（⛔ 連外資都沒有，且最後一列是空的）；"
+                   "⭐ 回溯下限 **2017-01-03**（二分找出來：2016-12-30 ⇒ 0 列、"
+                   "2017-01-03 ⇒ 5 列，兩者都 stat=ok）"
+                   "⇒ ⚠ 0 列 ＋ stat=ok 有兩義（沒有歷史 vs 沒開市）"
+                   "⇒ 只在已知交易日上問，⛔ 不拿它推論休市"),
     },
     "per": {
         "dir": "per",
