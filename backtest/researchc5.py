@@ -38,38 +38,43 @@ SPOT_SIDE, PERP_SIDE = 0.001, 0.0005
 MMRS = (0.005, 0.01, 0.02)
 
 
-def engine(close, high, fbd, mmr, cmult=1.0):
-    """close／high 為窗內（索引 0 ＝ 建倉日）；fbd[k+1] ＝ 第 k 期的結算 rate。回 (逐期報酬, 強平期 or None, 資金費收入總和, 成本總和)。"""
+def engine(close, high, fbd, mmr, cmult=1.0, pclose=None, phigh=None):
+    """close／high 為窗內（索引 0 ＝ 建倉日）；fbd[k+1] ＝ 第 k 期的結算 rate。回 (逐期報酬, 強平期 or None, 資金費收入總和, 成本總和)。
+    ⭐ 永續價複核（裁定線 seq124 §三）：給 pclose／phigh ⇒ 空單損益、空單名目、資金費名目用【永續收盤】，強平用【永續日高】；現貨腳不變。
+       不給 ⇒ 永續價＝現貨價（基差恆 0，交件主格）⇒ 逐位元與原版相同（回歸閘門 researchc5_perp.py）"""
+    pc = close if pclose is None else pclose
+    ph = high if phigh is None else phigh
     cs, cp = SPOT_SIDE * cmult, PERP_SIDE * cmult
     V = 1.0
     N = V / 2
     cost0 = N * cs + N * cp                                     # 建倉兩腳
     V -= cost0; N = V / 2
-    qs = N / close[0]; qp = N / close[0]; M = N
+    qs = N / close[0]; qp = N / pc[0]; M = N
     n = len(close) - 1
     r = np.zeros(n); prev = 1.0; liq = None; fund = 0.0; costs = cost0
     for k in range(n):
         c0, c1 = close[k], close[k + 1]
+        p0_, p1_ = pc[k], pc[k + 1]
         rates = fbd[k + 1]
-        dM = float((rates * c0 * qp).sum()) if len(rates) else 0.0
+        dM = float((rates * p0_ * qp).sum()) if len(rates) else 0.0
         fund += dM
         Mp = M + dM
-        L = (Mp + qp * c0) / (qp * (1.0 + mmr))
-        if high[k + 1] >= L:
+        L = (Mp + qp * p0_) / (qp * (1.0 + mmr))
+        if ph[k + 1] >= L:
             liq = k
             now = qs * c1 + 0.0                                  # 空單保證金歸零；現貨還在
             r[k] = now / prev - 1.0
             r = r[:k + 1]
             break
-        M = Mp - qp * (c1 - c0)
+        M = Mp - qp * (p1_ - p0_)
         S = qs * c1
         V = S + M
-        cst = abs(S - V / 2) * cs + abs(qp * c1 - V / 2) * cp
+        cst = abs(S - V / 2) * cs + abs(qp * p1_ - V / 2) * cp
         if k == n - 1:
-            cst = S * cs + qp * c1 * cp                          # 窗尾平倉兩腳
+            cst = S * cs + qp * p1_ * cp                         # 窗尾平倉兩腳
         costs += cst
         V -= cst
-        N = V / 2; qs = N / c1; qp = N / c1; M = N
+        N = V / 2; qs = N / c1; qp = N / p1_; M = N
         r[k] = V / prev - 1.0
         prev = V
     return r, liq, fund, costs
