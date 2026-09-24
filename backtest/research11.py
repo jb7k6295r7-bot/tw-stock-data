@@ -400,7 +400,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
-                 weight_fn=None, tradable=None):
+                 weight_fn=None, tradable=None, audit=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -458,6 +458,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                ⛔ slot_use 的分母改成 Σ 容量（⛔ 不是 (end−first) × 某一個 N）
       ⛔ 傳純量時走的是原來那條路，逐位元相同。
     """
+    # 裁定線 20260924-1714 §三⑥（2026-09-24）再加：
+    #   audit      None（原版路徑，⛔ 逐位元相同）／list ⇒ 逐次換手的稽核紀錄，每筆一個 dict：
+    #              t／date_pos／sid／side（"buy"/"sell"）／amt（成交金額）／px（成交價）
+    #              ／target_w（目標權重＝amt÷前一日 equity）／equity_prev／cost（該筆成本）
+    #              ⭐ 它與既有的 `log` 不同：log 記【訊號的去向】（含沒成交的），
+    #                audit 記【真的成交的每一筆】的金額、權重與成本 ⇒ 兩者不重複
+    #              ⛔ 成本口徑：進場不扣（COST 在出場一次扣完，見下面 cash += amt*(1+gross-COST)）
+    #                ⇒ 所以 buy 的 cost 記 0.0、sell 的 cost 記 amt*COST ⇒ ⭐ 與引擎的記帳一致
     # 裁定線 20260924-1714 §一（2026-09-24）再加：
     #   tradable   None（原版路徑，⛔ 逐位元相同，回歸閘門 backtest/regress_tradability.py）／
     #              dict sid → {"trd","up_o","dn_o"}（backtest/tradability.build）：
@@ -507,6 +515,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             raise ValueError(f"weak_size 要在 (0, 1]，收到 {weak_size!r}")
     max_pos_frac = 0.0
     tr_stats = {"limit_up": 0, "halt_in": 0, "exit_delayed": 0, "close_locked": 0} if tradable is not None else None
+    _eq_prev = 1.0                  # ⭐ audit 用：前一日 equity（算目標權重的分母）
     maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
@@ -555,6 +564,11 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 gross = o_t / ep - 1.0                                     # ⭐ 第一個可成交日【開盤】出
                 tr_stats["exit_delayed"] += 1
             if ex <= t:
+                if audit is not None:
+                    audit.append({"t": t, "sid": sid, "side": "sell", "amt": float(amt * (1 + gross)),
+                                  "px": float(ep * (1 + gross)),
+                                  "target_w": (float(amt * (1 + gross)) / _eq_prev) if _eq_prev > 0 else float("nan"),
+                                  "equity_prev": _eq_prev, "cost": float(amt * COST)})
                 if use_bench:
                     units += amt * (1 + gross - COST) * (1 - bench_cost) / bench[t]   # 拿回的錢買 bench，付單邊成本
                 else:
@@ -648,6 +662,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     t0 = int(row["_t0"]) if "_t0" in row else t
                     gross = float(row["gross"]) if t0 == t else float(closes[row["sid"]][int(row["exit_pos"])]) / ep - 1.0   # 推遲進場 ⇒ 重算
                     open_pos.append((int(row["exit_pos"]), row["sid"], amt, gross, ep)); held.add(row["sid"]); trades += 1
+                    if audit is not None:
+                        audit.append({"t": t, "sid": row["sid"], "side": "buy", "amt": float(amt), "px": ep,
+                                      "target_w": (float(amt) / _eq_prev) if _eq_prev > 0 else float("nan"),
+                                      "equity_prev": _eq_prev, "cost": 0.0})
                     if stop is not None:
                         entry_day[row["sid"]] = t
                     wins += int(gross - COST > 0)
@@ -681,6 +699,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             max_pos_frac = max(max_pos_frac, w_t)
             if maxw_daily is not None:
                 maxw_daily[t] = w_t; maxw_sid[t] = sid_t
+        _eq_prev = equity[t]
         t_done = t
         if return_equity:
             hold_val[t] = hv          # PREREGP3 丙（時點隨機對照）要的逐日持股市值；⛔ 只在 return_equity 時記，數值路徑不變
