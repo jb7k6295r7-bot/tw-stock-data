@@ -73,6 +73,18 @@ if MARK in rep:
     rep = rep[:cut].rstrip("\n") + "\n"
     open(REPORT, "w", encoding="utf-8").write(rep)
 
+# ⛔⛔ 機器檢查（⭐ 裁定線 1131 §二：同族第二次出現 ⇒ 處置必須是【機器檢查】，
+#    ⛔ 不可留成「下次小心」）。本線 09-24 發現「sha16 **{}**」那一行漏了 .format(WANT)
+#    ⇒ ⚠ 而它【沒有報錯】、⛔ 也沒有被既有閘門擋到 ——
+#      ⭐ 既有閘門驗的是【來源檔的 sha】，⛔ 不是【產出的字】。
+#    ⇒ ⭐⭐ 所以這一道驗的是產出本身：組好的字裡不得殘留未代換的大括號佔位符。
+def _no_unrendered(text):
+    import re as _re
+    bad = _re.findall(r"\{\}|\{[0-9]+\}|\{[A-Za-z_][A-Za-z0-9_]*\}", text)
+    assert not bad, (
+        "⛔ 產出裡殘留未代換的佔位符 " + repr(bad) + " ⇒ 有一行忘了 .format(...)")
+
+
 block = "\n".join([
     "",
     "---",
@@ -83,7 +95,7 @@ block = "\n".join([
     "> ⭐ 本線的角色邊界：⛔ 不訂判定用語 ⇒ 裁下來的措辭一個字都不改寫。",
     ">",
     "> 出處：`{}`".format(os.path.basename(c[0])),
-    "> sha16 **{}**（本線已重算相符：去檔尾 pw1 行 ⇒ rstrip+\\n ⇒ UTF-8 ⇒ sha256 前 16）",
+    "> sha16 **{}**（本線已重算相符：去檔尾 pw1 行 ⇒ rstrip+\\n ⇒ UTF-8 ⇒ sha256 前 16）".format(WANT),
     "> 版本：**{}**｜轉載工具：`backtest/append_verdict.py`（⭐ 它會先驗 sha16，對不上就拒絕動檔）".format(SEQ),
     ">",
     "> ⚠ 沿革（⭐ 逐版留著，⛔ 不要只留最新的）：",
@@ -113,6 +125,8 @@ block = "\n".join([
     "```",
     "",
 ])
+
+_no_unrendered(block)   # ⛔ 不過就中止，⛔ 不寫檔
 open(REPORT, "a", encoding="utf-8").write(block)
 print("✅ 已接到 {}（＋{:,} 位元組）".format(REPORT, len(block.encode("utf-8"))))
 print("   新 sha256[:16] ＝ {}".format(
