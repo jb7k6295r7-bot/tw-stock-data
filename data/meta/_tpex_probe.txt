@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T09:31:01+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35942683561
+# ⏱ 這一趟：2026-09-24T17:08:55+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35978576492
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -294,9 +294,9 @@
      類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
 
   ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
-     ✓ 3,533 bytes｜28 筆
+     ✓ 3,527 bytes｜28 筆
      欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
-     首列：{'Date': '1150923', 'Sector': '光電業', 'TradeAmount': '3507272670', 'TradeWeight': '4.68', ' NumberOfSharesTraded': '43654022'}
+     首列：{'Date': '1150924', 'Sector': '光電業', 'TradeAmount': '6080857304', 'TradeWeight': '7.64', ' NumberOfSharesTraded': '61698410'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
      ✓ 5,173 bytes｜28 筆
@@ -445,24 +445,24 @@
 [12] ⭐⭐ 上櫃除權息計算結果／漲跌停（F2 剩下那 6 筆未證實要用）
 
   ── tpex_exright_daily｜⭐ 上櫃除權除息計算結果表（上櫃版 TWT49U）
-     ✓ 7 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
+     ✓ 1 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
      ⭐ ①有沒有漲跌停欄：['LimitUp', 'LimitDown', 'OpeningReferencePrice']
-     首列：{'Date': '1150923', 'SecuritiesCompanyCode': '00836B', 'CompanyName': '永豐10年A公司債', 'ClosePriceBeforeExRightsDiviend': '27.81', 'ExRightsDiviendQuote': '27.43', 'StockDividend': '0.000000', 'CashDividend': '0.382000', 'StockDividendPlusCashDividend': '0.382000', 'ExRightsDiviend': '除息', 'LimitUp': '9999.95', 'LimitDown': '0.01', 'OpeningReferencePrice': '27.43', 'DividendDeductedQuote': '27.43', 'CashDivdend': '0.38200000', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
-     ⛔ ③`Date` 相異值只有 **1 種**：1150923 × 7　⇒ **它只有這一期，沒有歷史**
+     首列：{'Date': '20260924', 'SecuritiesCompanyCode': '', 'CompanyName': '', 'ClosePriceBeforeExRightsDiviend': '', 'ExRightsDiviendQuote': '', 'StockDividend': '', 'CashDividend': '', 'StockDividendPlusCashDividend': '', 'ExRightsDiviend': '', 'LimitUp': '', 'LimitDown': '', 'OpeningReferencePrice': '', 'DividendDeductedQuote': '', 'CashDivdend': '', 'StockDivdendThousandShares': '', 'CashCapitalIncreaseShares': '', 'SubscriptionPricePerShare': '', 'AllocatedForPublicUnderwriting': '', 'SubscribedByEmployees': '', 'SubscribedByExistingShareholders': '', 'SubscribedProRataThousandShares': ''}
+     ⛔ ③`Date` 相異值只有 **1 種**：20260924 × 1　⇒ **它只有這一期，沒有歷史**
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_exright_prepost｜上櫃除權除息預告表
-     ✓ 75 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
+     ✓ 72 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
-     首列：{'ExRrightsExDividendDate': '1150914', 'SecuritiesCompanyCode': '5278', 'CompanyName': '尚凡*', 'ExRrightsExDividend': '除息', 'StockDividendRatio': '0.00000000', 'SubscriptionRatioToNewSharesIssued': '0.00000000', 'SubscriptionPricePerShare': '0.00', 'CashDividend': '0.26618165', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataInThousandShares': '0.00000000'}
-     ③`ExRrightsExDividendDate` 相異值 15 種｜最小 1150914｜最大 1151105
+     首列：{'ExRrightsExDividendDate': '1150915', 'SecuritiesCompanyCode': '00942B', 'CompanyName': '台新美A公司債20+', 'ExRrightsExDividend': '除息', 'StockDividendRatio': '0.00000000', 'SubscriptionRatioToNewSharesIssued': '0.00000000', 'SubscriptionPricePerShare': '0.00', 'CashDividend': '0.06200000', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataInThousandShares': '0.00000000'}
+     ③`ExRrightsExDividendDate` 相異值 14 種｜最小 1150915｜最大 1151105
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ceil_non_trading｜上櫃漲跌停未成交資訊
-     ✓ 19 列｜欄位（9）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosingPrice', 'Change', 'Tot.Trans.Vol.', 'Trans.Vol.AtUp-limitPr.', 'OrderVol.AtUp-limitPr.', 'Difference']
+     ✓ 13 列｜欄位（9）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosingPrice', 'Change', 'Tot.Trans.Vol.', 'Trans.Vol.AtUp-limitPr.', 'OrderVol.AtUp-limitPr.', 'Difference']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
-     首列：{'Date': '1150923', 'SecuritiesCompanyCode': '8084', 'CompanyName': '巨虹', 'ClosingPrice': '36.75', 'Change': '-4.05', 'Tot.Trans.Vol.': '3260', 'Trans.Vol.AtUp-limitPr.': '1476', 'OrderVol.AtUp-limitPr.': '761', 'Difference': '-715'}
-     ⛔ ③`Date` 相異值只有 **1 種**：1150923 × 19　⇒ **它只有這一期，沒有歷史**
+     首列：{'Date': '1150924', 'SecuritiesCompanyCode': '8121', 'CompanyName': '越峰', 'ClosingPrice': '30.65', 'Change': '2.75', 'Tot.Trans.Vol.': '1279', 'Trans.Vol.AtUp-limitPr.': '716', 'OrderVol.AtUp-limitPr.': '6712', 'Difference': '5996'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1150924 × 13　⇒ **它只有這一期，沒有歷史**
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
@@ -599,9 +599,9 @@
                 ── flagField：張數
                 ── stat：ok
            ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
-              {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,412,652","1,151,805,639","2,525","815.35","1,600.00","7/15","403.00","1/02","756.13"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1150923,"subtitle":"近年個股成交資訊(當年度統計至 1150923 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
+              {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,422,333","1,160,924,339","2,547","816.21","1,600.00","7/15","403.00","1/02","757.22"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1150924,"subtitle":"近年個股成交資訊(當年度統計至 1150924 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
-              {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1150923,"subtitle":"近年個股成交資訊(當年度統計至 1150923 止)"},{}],"stat":"ok"}
+              {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1150924,"subtitle":"近年個股成交資訊(當年度統計至 1150924 止)"},{}],"stat":"ok"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
 
 [15] ⭐⭐ 上櫃**零股**：先讀那幾頁自己寫的 `action:`（⛔ 這一趟不打，讀到了才打）
