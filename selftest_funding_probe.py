@@ -154,6 +154,23 @@ def main():
     ck("  ★ 31 天的月只有 90 列 ⇒ 不吻合",
        F.completeness(full31[:90], (2020, 7))[0] is False)
 
+    print("")
+    print("⑨ ★★ 常設反向樣本本身要有效（⛔ 樣本被改成單一值 ⇒ 規則就變空的）")
+    _sym, _ym, _exp = F.MIXED_IV_SAMPLE
+    ck("  ★ 樣本的期望值【本身】是混合的（≥ 2 種 interval）",
+       len(_exp) >= 2, "實際：%s" % _exp)
+    ck("  ★ 而它不是全部同一個值湊出來的（⛔ {'8': n} 那種等於沒有樣本）",
+       set(_exp) != {"8"}, "實際：%s" % _exp)
+    ck("  ⭐ 樣本的月份在母體的範圍內（⛔ 指到一個沒有的月＝永遠取不到）",
+       _ym >= F.EARLIEST and _sym in F.COINS, "%s %s" % (_sym, _ym))
+    # ★ 而「混合」這件事要由 intervals() 真的判得出來（⛔ 不是常數比對）
+    # ⚠ ⛔ 不可以叫 _fake：模組層已經有一支 _fake()（假的 B.get），
+    #   在 main 裡指派同名變數會把它整支遮掉 ⇒ 上面第①節當場 UnboundLocalError
+    _synth = (["1,8,0.1"] * _exp.get("8", 0) + ["2,4,0.1"] * _exp.get("4", 0)
+              + ["3,2,0.1"] * _exp.get("2", 0))
+    ck("  ★★ 用樣本的筆數合成的列，intervals() 算回同一個統計",
+       F.intervals(_synth) == _exp, "實際：%s" % F.intervals(_synth))
+
     print("\n⑤ ★ 沒有動到 repo 真的輸出檔")
     before = os.path.exists(F.OUT)
     ck("  ★ 這一支自測沒有建立或改動 data/meta/_funding_probe.txt",
