@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-24T00:35:15+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35886919108｜財報期別參數與公告時點（情報線 20260923-1420 §三 代驗）
+# ⏱ 這一趟：2026-09-24T08:43:26+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 35937682975｜財報期別參數與公告時點（情報線 20260923-1420 §三 代驗）
 
 # ⛔ 這一支只讀不寫：不動 data/ 底下任何真資料
 # ⚠ 在開發容器／本機跑到的失敗**不是事實**（我方閘道對交易所 403）⇒ 只有 Actions 上的結果算數
@@ -20,8 +20,8 @@
       回應自己說：year=115 season=2　✅ 如預期【回的是最新季，不是我送的那一期】　⇒ ⛔ 這就是 dataType=1 的靜默行為
    送 year=113 season=1 dataType=2｜⛔ 反向對照組：刻意少送第五個鍵（⇒ 該回 code:500）
       HTTP=200｜application/json;charset=UTF-8｜89 bytes｜code=500
-      code 500【傳入參數異常】＝我方 body 錯：傳入參數異常
-      預期 code:500（少一個鍵）　✅ 如預期
+      500【傳入參數異常】＝我方 body 錯（⭐ 改完可重試）｜對方原話：傳入參數異常
+      預期 500【傳入參數異常】（少一個鍵）　✅ 如預期
 
 ══ ② doc.twse t57sb01（GET／big5 HTML）══
    端點：https://doc.twse.com.tw/server-java/t57sb01
