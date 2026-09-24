@@ -1417,6 +1417,37 @@ jobs:
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
           exit $RC
 
+      # ⭐⭐ 三大法人買賣【金額】（大盤層級，2026-09-24 新增）。
+      #   ⏳ 使用者裁定（裁定線 1941 轉達）：「好，請資料庫線補齊」
+      #   ⛔ 我方原本只有 `latest/market_inst.csv`：2026-09-01 起 17 列，
+      #     而 `data/history/market_inst.csv` 與它【逐位元相同】
+      #     ⇒ ⚠ 叫 history 的那一份不是歷史。
+      #   ⭐ 長格式（date,investor,buy,sell,net）：列名會隨年份改
+      #     （上市四代、上櫃至少兩代）⇒ 攤成固定欄會讓欄的語意變了而不報錯。
+      #   ⚠ 上市上櫃【分開存】：兩邊列名與口徑不一致，⛔ 不可加總成一個「大盤」。
+      #   ⭐ 起日各自照【端點自己的回溯下限】：
+      #     上市 BFI82U 民國 93-03-03（端點自己講）⇒ 這裡從 2015-01-01（與其他日檔同起點）
+      #     上櫃 insti/summary 2017-01-03（本線二分找出來）
+      #     ⛔ 上櫃不要從 2015 開始問：那兩年每天都回「0 列 ＋ stat=ok」
+      #       ⇒ 白跑幾百個請求，⚠ 而且把「沒有歷史」混進失敗統計裡。
+      #   ⚠ 兩段式的理由同 breadth：feeds 由舊到新跑，只跑一段的話今天排最後面。
+      - name: 三大法人買賣金額（當天 ＋ 分批回補）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          # ⭐ 閘門：判準壞了就不要抓（⛔ 這一發【不可以】被 RC-GUARD 收走）
+          python selftest_instamt.py
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          # ⛔⛔ RC-GUARD：當日抓取掛掉不可以賠掉回補（理由同上一步，逐字見那裡）
+          RC=0
+          python feeds.py --run --feed instamt --start "$DAY" --end "$DAY" --sleep 0 || RC=1
+          python feeds.py --run --feed otcinstamt --start "$DAY" --end "$DAY" --sleep 0 || RC=1
+          python feeds.py --run --feed instamt --start 2015-01-01 --end "$TODAY"                           --limit 150 --sleep 1 || RC=1
+          python feeds.py --run --feed otcinstamt --start 2017-01-03 --end "$TODAY"                           --limit 150 --sleep 1 || RC=1
+          exit $RC
+
       # ★ 拿大盤漲跌家數（MI_INDEX）當日檔的外部判準。離線、只讀。
       #   日曆只證明「那一天存不存在」，不證明「那天收到幾檔」；
       #   content_audit 的家數檢查是拿前後交易日比，那是同一條管線不同趟次。
