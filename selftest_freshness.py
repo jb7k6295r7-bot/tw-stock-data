@@ -155,10 +155,29 @@ def main():
         ck("⭐ 真的 `TARGETS` 每一項都有非空的理由（⛔ 容忍天數不可以沒有出處）",
            all(str(t[4]).strip() for t in F.TARGETS),
            str([t[0] for t in F.TARGETS if not str(t[4]).strip()]))
-        ck("  而且取法都是認得的兩種之一",
+        ck("  而且取法都是認得的那幾種之一",
            all(t[2] in ("filename", "filename_roc", "asof_column")
-               for t in F.TARGETS),
+               or t[2].startswith("column:") for t in F.TARGETS),
            str([t[2] for t in F.TARGETS]))
+
+        # ── ⭐ column:<欄名>（2026-09-24 加，給 market_inst 的 date 欄用）──
+        csvp2 = os.path.join(d, "mi.csv")
+        NL = chr(10)          # ⛔ 不寫轉義：這台機器的工具鏈會把它吃掉
+        io.open(csvp2, "w", encoding="utf-8").write(NL.join([
+            "date,foreign",
+            (today - timedelta(days=1)).isoformat() + ",1",
+            (today - timedelta(days=9)).isoformat() + ",2", ""]))
+        g4, n4 = F._newest(csvp2, "column:date")
+        ck("⭐ `column:date` 取 date 欄的**最大值**（⛔ 不是最後一列）",
+           g4 == (today - timedelta(days=1)).isoformat(), f"{g4} {n4}")
+        ck("  ⭐ `asof_column` 仍然等於 `column:asof`（⛔ 既有那幾項不可以壞掉）",
+           F._newest(csvp, "asof_column") == F._newest(csvp, "column:asof"),
+           str((F._newest(csvp, "asof_column"), F._newest(csvp, "column:asof"))))
+        # ★ 反向樣本：欄名打錯時必須說「沒有那一欄」，
+        #   ⛔ 不可以回「沒有值」——那會讓人去查資料，而病在設定
+        g5, n5 = F._newest(csvp2, "column:asof")
+        ck("★ 欄名不在表頭 ⇒ 說【沒有那一欄】並印出表頭（⛔ 不是「沒有值」）",
+           g5 is None and "沒有 asof 這一欄" in n5, f"{g5} {n5}")
         # ══════════════════════════════════════════════════════════
         # ⑨ ⭐ 排程區塊有沒有死掉——⛔ 而「沒人按」要跟「壞掉」分開講
         #

@@ -90,6 +90,21 @@ TARGETS = [
     # ⭐ 看 asof 欄：那是【我方寫進來】的日期 ⇒ 空跑那一趟 asof 不會前進
     #   ⇒ 正好量的是「多久沒拿到新資料」，⛔ 不是「資料本身是哪一天」
     # 3 天 ＝ 每天一趟 ＋ 一次失敗 ＋ 上傳延遲一天（幣市週末也交易，⛔ 沒有連假）
+    # ⭐⭐ 2026-09-24 新增：大盤三大法人金額。⛔ 在這之前沒有任何一道在守它。
+    #   ⚠ 它跟上面四份【性質不同】：T86 指定日期抓得到 ⇒ 這一份【補得回來】。
+    #     ⇒ 放這裡的理由不是「失去就永久」，而是它會【安靜停住】：
+    #       ・寫它那一步掛 continue-on-error ⇒ 壞掉那天整條管線是綠的
+    #       ・crosscheck ① 只掃檔案裡【已有的日子】⇒ 停止長列之後照樣 ok
+    #   ⚠ 而它是【2026-09-01 才開始累積】的（逐 commit 追過：列數 8→17 單調增、
+    #     起點固定 2026-09-01）⇒ 九月之前我方沒有大盤法人金額
+    #   ⭐ 日期取 `date` 欄（交易日）：它是我方寫進去的那一天的資料，
+    #     ⇒ 停一天就停在那裡，正好量「多久沒長新的」
+    #   5 天 ＝ 連假 ＋ 一次失敗（與上市停止買賣中名單同一把尺）
+    ("大盤三大法人金額", os.path.join(_ROOT, "latest", "market_inst.csv"),
+     "column:date", 5,
+     "每個交易日一列（2026-09-01 起累積）；5 天 ＝ 連假 ＋ 一次失敗。"
+     "⚠ 這一份補得回來（T86 可指定日期），守它是因為它會安靜停住："
+     "寫它那一步 continue-on-error，而 crosscheck ① 只掃已有的日子"),
     ("幣市日 K（BTC 代表）", os.path.join(_ROOT, "crypto", "BTC.csv"),
      "asof_column", 3,
      "每天一趟（週末也交易，沒有連假）；3 天 ＝ 週期 1 ＋ 一次失敗 ＋ "
@@ -122,19 +137,28 @@ def _newest(path, how):
         if re.fullmatch(r"20[0-9]{2}-[0-9]{2}-[0-9]{2}", s):
             return s, f"{len(fs)} 份"
         return None, f"檔名認不出日期：{s!r}"
-    if how == "asof_column":
+    # ⭐ `asof_column` 是 `column:asof` 的別名（⛔ 既有那幾項不動）
+    #   ⚠ 新增的一律寫 `column:<欄名>`：日期欄不一定叫 asof
+    #     （market_inst 的是 `date` ＝ 交易日）
+    if how == "asof_column" or how.startswith("column:"):
+        col = "asof" if how == "asof_column" else how.split(":", 1)[1]
         if not os.path.exists(path):
             return None, "檔案不存在"
         import csv
         best = ""
         n = 0
         with io.open(path, encoding="utf-8") as f:
-            for r in csv.DictReader(f):
+            rd = csv.DictReader(f)
+            # ⛔ 欄名打錯會讓這一支【永遠回「沒有值」】而看起來像資料壞了
+            #   ⇒ 先說清楚是欄名不在，⚠ 不是沒有值
+            if rd.fieldnames is not None and col not in rd.fieldnames:
+                return None, f"沒有 {col} 這一欄（表頭：{rd.fieldnames}）"
+            for r in rd:
                 n += 1
-                v = (r.get("asof") or "").strip()
+                v = (r.get(col) or "").strip()
                 if v > best:
                     best = v
-        return (best or None), (f"{n} 列" if best else "沒有 asof 值")
+        return (best or None), (f"{n} 列" if best else f"沒有 {col} 值")
     return None, f"不認得的取法 {how}"
 
 
