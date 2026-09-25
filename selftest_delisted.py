@@ -241,6 +241,14 @@ def main():
     ck("  ⭐⭐ 聯集補回逐年那條路漏掉的 2001，而且講得出是哪一年",
        len(un) == 3 and mm == [("2001", 0, 1)], f"{len(un)}｜{mm}")
 
+    print("  ⭐⭐ 轉上市分出去（回測線 1643）")
+    kp, mv = D.split_transfers(r8, {("6009", "2001-12-19")})
+    ck("  ⭐ 轉上市那一列被分出去、其餘留下", len(kp) == 2 and len(mv) == 1 and mv[0][1] == "6009", f"{kp}｜{mv}")
+    kp2, mv2 = D.split_transfers(r8, set())
+    ck("  ⛔ 反向：空的轉上市集合 ⇒ 一列都不動", len(kp2) == 3 and not mv2, str(mv2))
+    ck("  ⭐ 轉上市那一發是 reason=2（⛔ 不是 -1 全部）",
+       "reason=2" in D.OTC_URL.format(y="ALL").replace("&reason=-1&", "&reason=2&"), D.OTC_URL)
+
     print("⑧ ⭐ `fetch_otc`：⛔ 絕不使用 `date=ALL`＋連續 0 筆要收手")
     seen = []
 

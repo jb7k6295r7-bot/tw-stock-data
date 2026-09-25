@@ -243,6 +243,37 @@ def fetch_otc_all(rl, get=None):
     return parse_otc(payload, "ALL")
 
 
+XFER_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "meta", "otc_to_twse.csv")
+XFER_HEADER = ["transfer_date", "stock_id", "name", "asof"]
+
+
+def fetch_otc_transfers(get=None):
+    """⭐⭐ 2026-09-25（回測線 1643）：官方「終止上櫃」名單裡【一半以上是轉上市】（reason=2，342／581）。
+    ⛔ 轉上市不是下市：同一代號在上市繼續交易（例 1256、8462、6446、6472）
+    ⇒ 標成下市會讓讀名冊判在市的程式把活著的股票當死的。
+    → (set((stock_id, 日期)), rows, note)；抓不到或被截 ⇒ (None, [], note)（呼叫端要 fail closed）。"""
+    getter = get or B.get
+    url = OTC_URL.format(y="ALL").replace("&reason=-1&", "&reason=2&")
+    raw, err = getter(url, retries=4, timeout=90)
+    if err:
+        return None, [], f"⚠ 轉上市清單抓不到：{str(err)[:80]}"
+    try:
+        payload = json.loads(raw.decode("utf-8", "replace"))
+    except ValueError as ex:                                 # noqa: BLE001
+        return None, [], f"⚠ 轉上市清單不是 JSON：{ex}"
+    rows, note = parse_otc(payload, "ALL")
+    if not rows:
+        return None, [], "⚠ 轉上市清單 0 列或被拒收：" + note
+    return {(r[1], r[0]) for r in rows}, rows, note
+
+
+def split_transfers(otc_rows, xfer):
+    """→ (真下櫃, 轉上市)。鍵 ＝ (stock_id, delist_date)。"""
+    keep = [r for r in otc_rows if (r[1], r[0]) not in xfer]
+    moved = [r for r in otc_rows if (r[1], r[0]) in xfer]
+    return keep, moved
+
+
 def union_otc(per_year_rows, all_rows):
     """→ (合併後, 逐年筆數不同的年份 [(年, 逐年, 全量)])。鍵 ＝ (stock_id, delist_date)。"""
     import collections
@@ -407,6 +438,36 @@ def main():
     if mism:
         rl.info("⚠ 逐年與全量筆數不同的年份（年, 逐年, 全量）", str(mism)
                 + "　⇒ 已取聯集；⚠ 逐年那條路官方自己漏的年份就在這裡")
+    # ⭐⭐ 轉上市分出去（回測線 1643）：⛔ 轉上市不進 delisted.csv；另存 otc_to_twse.csv
+    xfer, xrows, xnote = fetch_otc_transfers()
+    rl.info("上櫃轉上市清單（reason=2）", xnote)
+    rl.check("⭐⭐ 轉上市清單抓得到（⛔ 抓不到就【不加任何上櫃新列】：分不出來寧可不寫）",
+             xfer is not None, xnote)
+    if xfer is None:
+        otc = []
+    else:
+        otc, moved = split_transfers(otc, xfer)
+        rl.info("上櫃終止名單分類", f"真下櫃 {len(otc)}｜轉上市 {len(moved)}（⛔ 不進 delisted.csv）")
+        asof = datetime.now(TPE).strftime("%Y-%m-%d")
+        old_x = {}
+        if os.path.exists(XFER_OUT):
+            with io.open(XFER_OUT, encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    old_x[(r["stock_id"], r["transfer_date"])] = [r.get(c, "") for c in XFER_HEADER]
+        for r in xrows:
+            old_x[(r[1], r[0])] = [r[0], r[1], r[2], asof]
+        with io.open(XFER_OUT, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(XFER_HEADER)
+            w.writerows(sorted(old_x.values(), key=lambda x: (x[0], x[1])))
+        # ⚠ 既有 delisted.csv 裡早就誤收的轉上市列：這裡【只報告】
+        #   ⛔ 刪不掉：push_data.sh 對這個檔是逐鍵聯集（LEDGERS），刪了會被 main 那份併回來
+        #   ⇒ ⏳ 要另做「逐鍵移除」機制（本線 2026-09-25 已告知回測線）
+        if os.path.exists(OUT):
+            with io.open(OUT, encoding="utf-8") as fh:
+                stale = [r for r in csv.DictReader(fh)
+                         if r.get("market") == "tpex" and (r["stock_id"], r["delist_date"]) in xfer]
+            rl.info("⚠ 既有檔裡誤收為下櫃的轉上市列", f"{len(stale)} 列（⏳ 待逐鍵移除機制；讀者請用 otc_to_twse.csv 排除）")
     got_years = {y: n for y, n in per.items() if n}
     rl.info("上櫃逐年筆數",
             "、".join(f"{y}:{n}" for y, n in sorted(got_years.items()))
