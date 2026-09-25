@@ -1,0 +1,272 @@
+{
+ "base＝regime_t1": true,
+ "arms": {
+  "base": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 0,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "P15": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 6,
+   "neg": 43,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "T20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 19,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "A3": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 28,
+   "neg": 40,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "M20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 54,
+   "neg": 18,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "M50": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 3,
+   "neg": 34,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "F": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 20,
+   "neg": 44,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_P15": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 15,
+   "neg": 61,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_T20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 1,
+   "neg": 18,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_A3": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 29,
+   "neg": 0,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_M20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 95,
+   "neg": 1,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_M50": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 2,
+   "neg": 17,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_F": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 5,
+   "neg": 10,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_P15": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 3,
+   "neg": 45,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_T20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 26,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_A3": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 31,
+   "neg": 37,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_M20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 50,
+   "neg": 30,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_M50": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 6,
+   "neg": 32,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_F": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 21,
+   "neg": 36,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  }
+ },
+ "bad": []
+}

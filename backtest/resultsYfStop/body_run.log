@@ -1,0 +1,25 @@
+===== PREREG營飆停損（登錄 seq1 sha bbd598d26c8f31d8；裁定 seq200） procs=3 reps=200 2026-09-26 04:13（台北）=====
+[程式 sha256] {'research11.py': '3e21c9996e2df4b7', 'listexit_lines.py': '16634eb6b99062d1', 'yfstop_lines.py': 'f7d6f05489de9971', 'researchYfStop.py': 'f2c0eb67740123eb', 'researchYfTime.py': '2a6080d757262c69'}
+[AND] /home/chemtim/tw-p17/backtest/resultsN17/sig_edc6f/and_signals.csv.gz｜2,339 筆／921 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[閘一 0050 錨] 逐位元 True
+[建線] {'P15': 1688, 'T20': 1688, 'A3': 1688, 'M20': 1688, 'M50': 1688, 'F': 1688, 'F 起點種類': {'碎形': 1688}, 'M arm': 'state（另兩種 cross_sig、cross_entry 存在、本件不跑）', '線 sha': {'P15': '497ae3ee07d26691', 'T20': '47cba069e3489d81', 'A3': 'fb6164830944eefb', 'M20': 'f533b259286a0db6', 'M50': '0badb115a7c06b9f', 'F': '0715e4d3c4ae6477'}}｜131s
+[閘二 營飆 v1 原樣臂 200 顆 ＝ regime_t1 t1 #1] 逐位元 True｜10s
+  [P15] 判定｜16s
+  [T20] 判定｜18s
+  [A3] 判定｜26s
+  [M20] 判定｜34s
+  [M50] 判定｜23s
+  [F] 判定｜31s
+  [a_P15] ⓐ整份｜16s
+  [a_T20] ⓐ整份｜18s
+  [a_A3] ⓐ整份｜27s
+  [a_M20] ⓐ整份｜35s
+  [a_M50] ⓐ整份｜24s
+  [a_F] ⓐ整份｜31s
+  [b_P15] ⓑ跌停賣不掉｜15s
+  [b_T20] ⓑ跌停賣不掉｜18s
+  [b_A3] ⓑ跌停賣不掉｜26s
+  [b_M20] ⓑ跌停賣不掉｜35s
+  [b_M50] ⓑ跌停賣不掉｜24s
+  [b_F] ⓑ跌停賣不掉｜30s
+[完成] 601s

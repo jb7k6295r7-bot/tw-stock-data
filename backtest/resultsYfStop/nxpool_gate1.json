@@ -1,0 +1,69 @@
+{
+ "when": "2026-09-26 04:41",
+ "n": 3,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "regress_tradability.py check（18 組）逐位元相同",
+   "ok": true,
+   "detail": "✅ tradable=None 與改動前逐位元相同（equity sha、全部純量輸出、log 內容）"
+  },
+  {
+   "name": "regress_delist.py check（6 組）逐位元相同",
+   "ok": true,
+   "detail": "✅ tradable 開、delist=None：6 組逐位元相同（權益雜湊＋全部純量輸出）"
+  },
+  {
+   "name": "A/B 矩陣：43 種既有參數組合 × 2 種子 ＝ 86 組，改前（e8939d4ba8）／改後逐位元相同（equity bytes、全部回傳鍵、log、audit）",
+   "ok": true,
+   "detail": "86/86；[]"
+  }
+ ],
+ "extra": {
+  "A/B 組合": [
+   "plain",
+   "stop_fix",
+   "stop_trail",
+   "log",
+   "queue",
+   "bench",
+   "weak_maxw",
+   "weight_fn",
+   "caps",
+   "cap_fn",
+   "pick",
+   "tradable",
+   "tradable_delist",
+   "stop_line",
+   "P9 2-A k=2＋audit",
+   "P9 2-A k=3",
+   "P9 2-B ⓐ gain＋audit",
+   "P9 2-B ⓐ gain partial",
+   "P9 2-B ⓑ flag",
+   "P9 2-B ⓒ hold",
+   "P9 2-C ⓐ trim＋audit",
+   "P9 2-C ⓐ trim（kind='loss' 明寫）",
+   "P9 2-C ⓐ trim＋tradable＋delist＋audit＋log",
+   "P9 2-B ⓐ gain＋tradable＋delist＋audit",
+   "P9 2-C ⓒ mult 1.5 MA60",
+   "P9 2-C ⓓ mult 0.5 MA20",
+   "P9 2-C ⓕ regime_trim MA60＋audit",
+   "P9 2-C ⓗ regime_trim MA10＋tradable",
+   "乙一 add loss＋audit",
+   "乙一 add loss partial＋tradable＋delist",
+   "乙二 trim gain＋audit（閒置版）",
+   "乙二 trim gain＋tradable＋delist＋audit＋log",
+   "乙二 next＋audit",
+   "乙二 next＋log",
+   "乙二 next＋tradable＋delist＋audit＋log",
+   "乙二 next＋caps＋audit",
+   "乙二 next＋pick＋queue＋log",
+   "乙二 next＋nx_cap=10＋audit",
+   "乙二 next＋nx_cap=10＋caps＋log",
+   "stop_line（無 tradable）＋audit＋log",
+   "stop_line＋tradable＋delist＋audit",
+   "stop_line（改後明寫 stop_line_le=False、stop_proceeds=None、stop_block=None）＋audit",
+   "pick relvol＋d_max＋queue＋log（改後明寫 pick_tie=None）"
+  ]
+ }
+}

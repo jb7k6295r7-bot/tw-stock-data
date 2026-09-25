@@ -1,0 +1,398 @@
+{
+ "base＝regime_t1": true,
+ "arms": {
+  "base": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 0,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "R0_20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 34,
+   "neg": 36,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "R0_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 189,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "R0_60": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 121,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "R10_20": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 146,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "R10_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 164,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "R10_60": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 173,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "NH_20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 14,
+   "neg": 96,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "NH_40": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 1,
+   "neg": 154,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "NH_60": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 92,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_R0_20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 32,
+   "neg": 60,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_R0_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 188,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_R0_60": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 167,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_R10_20": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 158,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_R10_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 169,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_R10_60": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 188,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_NH_20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 17,
+   "neg": 89,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_NH_40": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 3,
+   "neg": 159,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_NH_60": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 143,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_R0_20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 34,
+   "neg": 36,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_R0_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 189,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_R0_60": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 121,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_R10_20": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 145,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_R10_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 171,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_R10_60": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 173,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_NH_20": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "pos": 14,
+   "neg": 96,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_NH_40": {
+   "label": "另列",
+   "vs_v1": "分不出",
+   "pos": 2,
+   "neg": 157,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "b_NH_60": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "pos": 0,
+   "neg": 92,
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  }
+ },
+ "bad": []
+}

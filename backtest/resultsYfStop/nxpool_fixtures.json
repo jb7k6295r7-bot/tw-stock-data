@@ -1,0 +1,93 @@
+{
+ "when": "2026-09-26 05:27",
+ "n": 14,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "參數 nx_pool 存在、預設 None",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "P1 池補股：sig 沒訊號的 t＝25、池有 D ⇒ 停損的錢全額買 D（kind nx、等 4 天）；t＝30 sig 的 C 照一般新部位",
+   "ok": true,
+   "detail": "[(10, 'A', None), (10, 'B', None), (25, 'D', 'nx'), (30, 'C', None)]；[(25, 'D', 0.2913833333333333)]"
+  },
+  {
+   "name": "P2 池只有已持有的 B ⇒ 不重買、等（x_nx_pool_empty_days ≥ 1）；t＝28 池有 E ⇒ 買",
+   "ok": true,
+   "detail": "[(28, 'E', 'nx')]；empty 7"
+  },
+  {
+   "name": "P3 待買只從池挑：sig 的 E（池裡沒有）⇒ 一般新部位；待買等到池的 F",
+   "ok": true,
+   "detail": "[(22, 'E', None), (26, 'F', 'nx')]"
+  },
+  {
+   "name": "P4 池列持有期超過 sig 的最後出場 ⇒ 模擬尾端延長、D 在自己的 xpos（95）出場",
+   "ok": true,
+   "detail": "D 賣 [95]；end 97"
+  },
+  {
+   "name": "P5 池那一抽 ＝ 同顆種子 rng 接著抽（t＝10 sig 抽 2、t＝25 池抽 3 ⇒ 買 perm[0]；20 顆）",
+   "ok": true,
+   "detail": "不符 []；出現 {'Q', 'P', 'R'}"
+  },
+  {
+   "name": "鑑別力 MP_main：抓到",
+   "ok": true,
+   "detail": "[\"P3\"]"
+  },
+  {
+   "name": "鑑別力 MP_held：抓到",
+   "ok": true,
+   "detail": "[\"P2\"]"
+  },
+  {
+   "name": "鑑別力 MP_nodraw：抓到",
+   "ok": true,
+   "detail": "[\"P5\"]"
+  },
+  {
+   "name": "鑑別力 MP_last：抓到",
+   "ok": true,
+   "detail": "[\"P4\"]"
+  },
+  {
+   "name": "nx_pool 省略／None 明寫 ×（全關、停損＋待買、T1＋待買、d_max＋queue）× 隨機世界 ⇒ 與改前引擎逐位元同",
+   "ok": true,
+   "detail": "240/240"
+  },
+  {
+   "name": "防呆：nx_pool 沒開待買 ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：nx_pool＋pick ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：nx_pool＋d_max ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "extra": {
+  "突變體": {
+   "MP_main": [
+    "P3"
+   ],
+   "MP_held": [
+    "P2"
+   ],
+   "MP_nodraw": [
+    "P5"
+   ],
+   "MP_last": [
+    "P4"
+   ]
+  }
+ }
+}
