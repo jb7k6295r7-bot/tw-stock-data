@@ -1,0 +1,346 @@
+{
+ "when": "2026-09-26 02:16",
+ "n": 48,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "三個新參數存在、預設關閉（stop_line_le=False、stop_proceeds=None、stop_block=None）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "A1 ATR 手算（Wilder n＝14）：TR 恆 1 ⇒ ATR[113]＝1（前 113 根 NaN）；h 跳到 12 ⇒ ATR[120]＝(13＋2.5)/14；前一根收盤 8 ⇒ TR[125]＝2.2（用前收盤、真實高低價）",
+   "ok": true,
+   "detail": "ATR[120] np.float64(1.1071428571428572) vs 1.1071428571428572；ATR[125] np.float64(1.1596815925974722) vs 1.1596815925974722；tr124 1.0"
+  },
+  {
+   "name": "A2 ATR 對獨立寫法（純迴圈）：隨機 50 條逐點相同（容差 1e-12）",
+   "ok": true,
+   "detail": "不符 0"
+  },
+  {
+   "name": "B1 S2 entry_close 手算：起始 9.0；d5 收盤 9.9 是第一個高點 ⇒ 9.9−0.2＝9.7；d7 10.4 新高但 10.4−1.0＜9.7 ⇒ 不降；d8 平高點 10.4 ⇒ 不算新高；d9 11.0 ⇒ 10.0",
+   "ok": true,
+   "detail": "[9.7, 9.7, 9.7, 9.7, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]"
+  },
+  {
+   "name": "B2 S2 above_ep 手算：d5 9.9、d6 9.6 都沒超過進場價 10 ⇒ 維持 9.0；d7 10.4 ⇒ 9.4；d8 平高點不算；d9 11.0 ⇒ 10.0",
+   "ok": true,
+   "detail": "[9.0, 9.0, 9.4, 9.4, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]"
+  },
+  {
+   "name": "B3 兩讀法進引擎：entry_close ⇒ t＝7 開盤 9.5 出；above_ep ⇒ 抱到排程出場 t＝60",
+   "ok": true,
+   "detail": "{'entry_close': [(7, 9.5)], 'above_ep': [(60, 10.0)]}"
+  },
+  {
+   "name": "B4 只數有效 K 棒：停牌日（12、13）線沿用前一根、ffill 收盤不當新高；d14 復牌 11.5 ⇒ 10.5",
+   "ok": true,
+   "detail": "[9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 10.0, 10.0, 10.0, 10.5, 10.5, 10.5]"
+  },
+  {
+   "name": "B5 ATR(訊號日) 無效 ⇒ 不建線（回 None）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "C1 S1「收盤 ≤ ep×0.90」：收盤恰 9.0 ⇒ stop_line_le 在次日（t＝21）開盤 8.8 整檔出、期末 0.5＋0.5×(1＋g−COST)；預設嚴格 ＜ ⇒ 抱到 60",
+   "ok": true,
+   "detail": "期末 0.937075000000"
+  },
+  {
+   "name": "C2 收盤 9.01 ＞ 9.0 ⇒ 不出",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "C3 s1_lines 的 ep ＝ 引擎進場價（開盤 NaN ⇒ 收盤 12）⇒ 線 ＝ 0.9×12 ＝ 10.8",
+   "ok": true,
+   "detail": "線 np.float64(10.8)、引擎 ep 12.0"
+  },
+  {
+   "name": "D1 停損全出的淨入帳 0.5×(1＋g−COST) ⇒ 一筆待買 ⇒ t＝30 C 全額買（waits [9]、x_nx_stop_lots 1）",
+   "ok": true,
+   "detail": "[(30, 'C', 0.43707500000000005)]；L1 0.43707500000000005"
+  },
+  {
+   "name": "D2 描述 ⓐ 閒置版（stop_proceeds 不開）：t＝30 C 照一般新部位 min(slot, 現金) 買、沒有 kind nx、沒有 x_nx 鍵",
+   "ok": true,
+   "detail": "[('C', None, 0.437075)]"
+  },
+  {
+   "name": "D3 同日（登錄「次一交易日的訊號池」＝ 賣出那天）：t＝30 開盤停損 A、同日 C 用待買買進（waits [0]）、總數仍 2",
+   "ok": true,
+   "detail": "[('sell', 'A', None), ('buy', 'C', 'nx')]"
+  },
+  {
+   "name": "E1 S1＋T1：先賣半（L1＝a×0.5×11.8/10 − a×0.5×COST）、後停損剩下一半（L2＝剩名目×(1＋g) − 剩成本×COST）⇒ t＝45 先 L1 後 L2",
+   "ok": true,
+   "detail": "[(45, 0.195691666667), (45, 0.145691666667)]；L1 0.195691666667、L2 0.145691666667"
+  },
+  {
+   "name": "E2 同日先處理停損：收盤[21] 11.6 同時觸發停利（≥ 11.5）與停損（＜ 12）⇒ t＝22 整檔停損、⛔ 不賣半",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "E3 停損已觸發、開盤跌停賣不掉（stop_block）期間 ⇒ ⛔ 不賣半；第一個可賣開盤（t＝23）整檔出",
+   "ok": true,
+   "detail": "[(23, None)]"
+  },
+  {
+   "name": "F1 stop_block：停損 t＝21 開盤跌停、t＝22 停牌 ⇒ t＝23 開盤出（sl_block_days 2）；只擋停損：B 排程出場日跌停照出、C 進場日停牌照買",
+   "ok": true,
+   "detail": "A [23]、B [40]、C [30]"
+  },
+  {
+   "name": "F2 同例不開 stop_block ⇒ t＝21 開盤出（跌停也假設賣得掉，＝ #1 原樣）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "G1 D1（N＝3、空槽 1、待買 1）：before ⇒ 待買買 D；after ⇒ D 用一般現金 min(slot, 現金 − 待買)＝1−2/3 買、待買留著（期末未買 1）",
+   "ok": true,
+   "detail": "before [('D', 'nx')]；after [('D', None, 0.333333333)]"
+  },
+  {
+   "name": "G2 D1（N＝5、空槽 3；A、B 都賣半 ⇒ 待買 2 筆）：before ⇒ [待買, 待買, 一般]；after ⇒ [一般 slot, 一般（一般現金用完）, 待買 A 全額 L]、B 那筆留著；一般部位合計 ＝ 一般現金 0.6、⛔ 沒動到待買",
+   "ok": true,
+   "detail": "before ['nx', 'nx', None]；after [(None, 0.366966), (None, 0.233034), ('nx', 0.117415)]；slot 0.366966000"
+  },
+  {
+   "name": "H1 D2 併池（S1＋T1、trim_proceeds 不開）：賣半的錢併入一般現金、只有停損那筆成待買（x_nx_stop_lots 1、待買 [L2]）",
+   "ok": true,
+   "detail": "[(45, 0.145691666667)]"
+  },
+  {
+   "name": "隨機 300 個世界：停損時點、待買（停損＋賣半）先進先出全額、每個量測日待買數、不重複買、持有 ≤ N、計數鍵 全部與獨立重建相符",
+   "ok": true,
+   "detail": "300/300；{\"停損\": 1763, \"待買\": 1752, \"有停損的世界\": 298}；[]"
+  },
+  {
+   "name": "無前視（建線＋引擎整條，隨機 200 個世界）：t ≤ s 的交易與 equity[:s] 全部不變、之後確實不同 ≥ 一半",
+   "ok": true,
+   "detail": "200/200；後段不同 199"
+  },
+  {
+   "name": "鑑別力 ML_le",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"C1\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 ML_nxstop",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"D1\", \"D3\", \"E1\", \"H1\"], \"隨機重建抓到\": \"99/100\"}"
+  },
+  {
+   "name": "鑑別力 ML_block",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"E3\", \"F1\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 ML_pend",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"E3\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 ML_lag（前視）",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"B3\", \"C1\", \"D1\", \"D3\", \"E1\", \"E3\", \"F1\", \"F2\", \"H1\"], \"無前視抓到\": \"69/100\"}"
+  },
+  {
+   "name": "鑑別力 MN_after",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"G1\", \"G2\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 MN_gen",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"G1\", \"G2\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 MB_hs",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"B1\", \"B2\", \"B3\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 MB_ge",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"B1\", \"B2\", \"B3\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 MB_down",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"B1\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 MB_atr0",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"B1\", \"B2\", \"B3\"], \"隨機重建抓到\": \"0/100\"}"
+  },
+  {
+   "name": "鑑別力 MB_fut（前視）",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"B1\", \"B2\", \"B3\", \"B4\"], \"無前視抓到\": \"25/100\"}"
+  },
+  {
+   "name": "新參數省略／明寫預設 ×（全關、stop_line、T1＋待買、T1＋待買＋nx_cap、乙一 loss）× 隨機世界（1/3 開 tradable）⇒ 與改前引擎逐位元同",
+   "ok": true,
+   "detail": "600/600；[]"
+  },
+  {
+   "name": "防呆：stop_line_le 沒開 stop_line ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop_line_le＝1（非布林） ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop_proceeds 沒開 stop_line ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop_proceeds＝'idle' ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop_block 沒開 stop_line ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop_line＋trim 2-C ⓐ（loss） ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop_line＋add_rule ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：stop（fix）＋trim gain ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：nx_order＝'later' ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：nx_order＝'after' 沒開待買 ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "stop_proceeds 可配 nx_cap（不報錯）",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "extra": {
+  "突變體": {
+   "ML_le": {
+    "fixture 沒過": [
+     "C1"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "ML_nxstop": {
+    "fixture 沒過": [
+     "D1",
+     "D3",
+     "E1",
+     "H1"
+    ],
+    "隨機重建抓到": "99/100"
+   },
+   "ML_block": {
+    "fixture 沒過": [
+     "E3",
+     "F1"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "ML_pend": {
+    "fixture 沒過": [
+     "E3"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "ML_lag": {
+    "fixture 沒過": [
+     "B3",
+     "C1",
+     "D1",
+     "D3",
+     "E1",
+     "E3",
+     "F1",
+     "F2",
+     "H1"
+    ],
+    "無前視抓到": "69/100"
+   },
+   "MN_after": {
+    "fixture 沒過": [
+     "G1",
+     "G2"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "MN_gen": {
+    "fixture 沒過": [
+     "G1",
+     "G2"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "MB_hs": {
+    "fixture 沒過": [
+     "B1",
+     "B2",
+     "B3"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "MB_ge": {
+    "fixture 沒過": [
+     "B1",
+     "B2",
+     "B3"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "MB_down": {
+    "fixture 沒過": [
+     "B1"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "MB_atr0": {
+    "fixture 沒過": [
+     "B1",
+     "B2",
+     "B3"
+    ],
+    "隨機重建抓到": "0/100"
+   },
+   "MB_fut": {
+    "fixture 沒過": [
+     "B1",
+     "B2",
+     "B3",
+     "B4"
+    ],
+    "無前視抓到": "25/100"
+   }
+  }
+ }
+}

@@ -1,0 +1,30 @@
+{
+ "when": "2026-09-26 02:16",
+ "n": 3,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "#1 t−1 H120（listexit_lines.sim、不開任何新參數）20 顆 ⇒ 與 resultsN17/regime_t1/seeds.csv t1 #1 逐位元相同（cagr／mdd／vol 以 repr 比、first／end／trades、eq_sha；⛔ 數值不印）",
+   "ok": true,
+   "detail": "不同 []"
+  },
+  {
+   "name": "訊號列：rows、sid 數、entry_pos 範圍（描述）",
+   "ok": true,
+   "detail": "2,036 列／840 檔；entry_pos 526～2833"
+  },
+  {
+   "name": "查證：rerun17 的 opens 在停牌日（traded＝False）全是 NaN ⇒ 原版的停損在停牌日本來就賣不掉（延到下一個有效開盤）；描述版 stop_block 與原版的差別只在【開盤跌停】",
+   "ok": true,
+   "detail": "{\"停牌日（traded＝False）\": 129159, \"其中 opens 為 NaN\": 129159, \"有成交日\": 2272401, \"有成交日但 opens 無效\": 0}"
+  }
+ ],
+ "extra": {
+  "停牌日開盤查證": {
+   "停牌日（traded＝False）": 129159,
+   "其中 opens 為 NaN": 129159,
+   "有成交日": 2272401,
+   "有成交日但 opens 無效": 0
+  }
+ }
+}

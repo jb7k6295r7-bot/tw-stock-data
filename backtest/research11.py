@@ -417,7 +417,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
                  weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None,
                  entry_tranches=None, add_rule=None, trim_rule=None, size_mult_by_regime=None, regime_trim=None,
-                 trim_proceeds=None, nx_cap=None):
+                 trim_proceeds=None, nx_cap=None, stop_line_le=False, stop_proceeds=None, stop_block=None,
+                 nx_order="before"):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -559,6 +560,33 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 ⇒ 一般新部位買完時總數 ≤ 當天容量；待買買完時總數 ≤ K_t
               ⛔ 只能與 trim_proceeds="next" 同開；純量 n_slots 時 K 必須 ≥ n_slots；K 要是整數（bool ⇒ ValueError）
               多回傳（只在 K 給了時出現）：x_nx_over（總數已 ≥ 當天容量時由待買買進的筆數 ＝ 第 9、10 檔那種）
+    PREREG名單出場 乙（2026-09-26，台股策略線登錄 seq1 sha db11230f58632a0d；裁定線 seq189 發號；回測線落地）再加三個參數，
+    ⛔ 全部預設關閉 ⇒ 與 b1717d5c19 逐位元相同（回歸閘見 backtest/selftest_listexit.py、resultsListExit/ENGINE_REPORT.md）：
+      stop_line_le  False（預設：stop_line 照原樣「收盤 ＜ 線」才觸發）／True ⇒「收盤 ≤ 線」（S1「收盤 ≤ 進場價 × 0.90」用；線 ＝ ep × 0.90，
+                    ep 照引擎規則 ＝ 進場日開盤、開盤無效改用當日收盤）；⛔ 只能與 stop_line 同開
+      stop_proceeds None（預設）／"next" ⇒ stop_line 停損全出拿回的【淨】現金（沒動過的部位 amt×(1＋gross−COST)；被賣半過的
+                    amt×(1＋gross) − B×COST，＝ 當天實際入帳的錢）記成一筆待買，進 trim_proceeds 同一個先進先出佇列，規則照 seq3 ①～④
+                    （待買先配、全額、一筆一檔、不重複買、同顆 rng 接著抽、槽滿等、期間報酬 0；容量照 nx_cap，None ＝ 當天容量）
+                    ⛔ 只能與 stop_line 同開；可單獨開（S1、S2）或與 trim_proceeds 同開（S1＋T1、S2＋T1）
+                    ⭐ 讀法：登錄「次一交易日的訊號池」＝ 從觸發日（t−1 收盤）算的次一交易日 t ＝ 停損賣出那天；停損在 t 開盤賣、
+                      新部位也在 t 開盤買、同日順序 停損 → 排程出場 → 賣半 → 新部位 ⇒ 與 seq3 讀法 b「含賣出當天」一致（⛔ 沒有前視）
+      stop_block    None（預設）／dict sid → {"trd", "dn_o"}（backtest/tradability.build 的同名欄）⇒ 描述版「開盤跌停或停牌賣不掉」：
+                    【只】擋 stop_line 的停損賣出（開盤跌停 dn_o 或停牌 trd＝False ⇒ 延到下一個可成交開盤、每天計入 sl_delayed_days，
+                    另回 sl_block_days）；進場、排程出場、賣半一律照原樣（⛔ 不等於開 tradable）；⛔ 只能與 stop_line 同開
+      stop_line 與 trim_rule kind="gain" 可以同開（⛔ 其他 P9 參數仍與 stop_line 互斥）：
+        同一天先處理停損（整檔出）、再處理賣半 ⇒ 已停損的部位不再賣半；停損已觸發但還在等可賣開盤的部位 ⇒ 也不賣半
+      ⚠ 停損後同檔再買：⛔ 引擎沒有冷卻（裁定：照登錄括號「＝ 引擎原 20 根去重」，那是訊號建構器 research11.stock_features 的
+        「同檔上一個訊號之後 > 20 根有效 K 棒」，⛔ 不是從停損日算）；預留設計 stop_cooldown（未實作，等裁定）
+      多回傳：stop_block 給了 ⇒ sl_block_days；stop_proceeds 給了 ⇒ x_nx_stop_lots（停損產生的待買筆數）
+    裁定線 seq192（2026-09-26）描述臂 D1「一般新部位優先」（⛔ 不判定）：
+      nx_order  "before"（預設 ＝ seq3 起的現行：待買先配給挑中的前幾檔）／"after" ⇒ 同一天挑中的名單【先】照一般規則進一般新部位，
+                一般新部位只用【一般現金】＝ 現金 − 佇列裡所有待買（⛔ 不動待買的錢）；一般現金買不起（min(slot, 一般現金) ≤ 1e−9）
+                或總數已 ≥ 當天容量 ⇒ 名單剩下的檔才給待買（仍一筆一檔、全額、先進先出）
+                nx_cap 開啟時名單長度 ＝ min(K_t − 總數, max(當天容量 − 總數, 0) ＋ 待買筆數)（一般到當天容量、待買到 K_t）
+                ⛔ 只能與 trim_proceeds／stop_proceeds＝"next" 同開
+      ⚠ 描述臂 D2「待買併入 slot／併池」⛔ 不需要新參數：就是 trim_proceeds=None（賣得現金併入一般現金，有空槽時一般新部位照
+        min(equity/N, 現金) 買）；⚠ 登錄描述臂 ⓐ 的字面「賣得現金閒置到那檔出場」與引擎 None 路徑不同——引擎沒有「綁到那檔出場」
+        的閒置，None 路徑那筆錢在【任何】槽空出來時就可以被一般新部位用到（上限 equity/N）
     ⭐ 共同規則（五個參數都一樣）：
       ・時序：所有判定只讀 t−1 以前（0050 狀態 below[t−1]、個股收盤[t−1]），成交在 t 開盤（還原開盤價）
       ・同一天的順序：排程出場 → 賣（減半／賣半）→ 買（補回／分批／加碼）→ 新部位進場
@@ -669,7 +697,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         n_on = sum(p is not None for p in (_xk, add_rule, trim_rule, size_mult_by_regime, regime_trim, weak))
         if n_on != 1:
             raise ValueError("PREREGP9 seq8 的五個參數（與 weak）一次只能開一個（登錄 §二：各自獨立、不互相疊加）")
-        if stop is not None or stop_line is not None or weight_fn is not None or use_bench:
+        _sl_trim = stop_line is not None and trim_rule is not None and trim_rule.get("kind", "loss") == "gain"   # 名單出場 乙：S＋T 組合格
+        if stop is not None or (stop_line is not None and not _sl_trim) or weight_fn is not None or use_bench:
             raise ValueError("PREREGP9 seq8 的參數不與 stop／stop_line／weight_fn／cash_mode='bench' 同開（沒有 fixture 覆蓋）")
 
         def _below_of(spec, name):
@@ -733,10 +762,33 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if trim_rule is None or _trim_kind != "gain":
             raise ValueError("trim_proceeds='next' 只能與 trim_rule kind='gain' 同開（PREREG攤平停利 seq3 乙二）")
         _nx = {"lots": [], "n": 0, "amt": 0.0, "waits": [], "full_days": 0, "empty_days": 0, "blocked": 0}
+    _nx_trim = _nx is not None      # 賣半的淨現金進待買（trim_proceeds="next"）
+    _nx_stop = False                # PREREG名單出場 乙：停損全出的淨現金進待買（stop_proceeds="next"）
+    if not isinstance(stop_line_le, (bool, np.bool_)):
+        raise ValueError(f"stop_line_le 只能是 True／False，收到 {stop_line_le!r}")
+    if stop_line_le and stop_line is None:
+        raise ValueError("stop_line_le 只能與 stop_line 同開")
+    if stop_block is not None and stop_line is None:
+        raise ValueError("stop_block 只能與 stop_line 同開（只擋停損賣出）")
+    if stop_proceeds is not None:
+        if stop_proceeds != "next":
+            raise ValueError(f"stop_proceeds 只能是 None（關）或 'next'，收到 {stop_proceeds!r}")
+        if stop_line is None:
+            raise ValueError("stop_proceeds='next' 只能與 stop_line 同開")
+        _nx_stop = True
+        if _nx is None:
+            _nx = {"lots": [], "n": 0, "amt": 0.0, "waits": [], "full_days": 0, "empty_days": 0, "blocked": 0}
+        _nx["stop_lots"] = 0
+    if nx_order not in ("before", "after"):
+        raise ValueError(f"nx_order 只能是 'before'（預設）或 'after'，收到 {nx_order!r}")
+    if nx_order == "after" and _nx is None:
+        raise ValueError("nx_order='after' 只能與 trim_proceeds／stop_proceeds='next' 同開（裁定 seq192 D1）")
+    _nx_after = nx_order == "after"
+    _sl_blk = 0                     # stop_block 擋掉的停損賣出（天次）
     _nxk = None                     # 裁定 seq186 §三（乙）：待買的總檔數上限（None ⇒ ＝ 當天容量、12c39cb810 路徑）
     if nx_cap is not None:
         if _nx is None:
-            raise ValueError("nx_cap 只能與 trim_proceeds='next' 同開（裁定 seq186 §三）")
+            raise ValueError("nx_cap 只能與 trim_proceeds='next'／stop_proceeds='next' 同開（裁定 seq186 §三）")
         if isinstance(nx_cap, (bool, np.bool_)) or not isinstance(nx_cap, (int, np.integer)):
             raise ValueError(f"nx_cap 要是整數，收到 {nx_cap!r}")
         _nxk = int(nx_cap)
@@ -798,6 +850,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 s = _xs.get(sid)
                 if ex <= t or s is None or s["trim"] == 2:
                     continue
+                if stop_line is not None and sid in sl_pending:
+                    continue                        # 名單出場 乙：停損已觸發、在等可賣的開盤 ⇒ 整檔要出、⛔ 不賣半  # _SLPEND
                 if s["trim"] == 0:
                     c1 = float(closes[sid][t - 1])  # _XLAG
                     if _trim_kind == "gain":        # 乙二 2-C ⓘ：登錄字面「收盤 ≥ 1.15 × 進場價」
@@ -810,7 +864,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     if o is None:
                         _xc["trim_blocked_days"] += 1; continue
                     net_ = _x_sell(k, t, tf, o, "trim"); s["trim"] = 2; _xc["trim_n"] += 1
-                    if _nx is not None:
+                    if _nx_trim:
                         _nx["lots"].append((net_, t))       # seq3 乙二：實際入帳的淨現金 ⇒ 一筆待買（先進先出）
         # ② 跌破賣半／站回補回（2-C ⓕⓖⓗ）
         if regime_trim is not None:
@@ -956,8 +1010,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     rec_ = stop_line.get(key) if key is not None else None
                     if rec_ is not None:
                         st0, lv = rec_; i = t - 1 - st0
-                        c = float(closes[sid][t - 1])
-                        if 0 <= i < len(lv) and np.isfinite(lv[i]) and np.isfinite(c) and c < lv[i]:
+                        c = float(closes[sid][t - 1])  # _SLLAG
+                        if 0 <= i < len(lv) and np.isfinite(lv[i]) and np.isfinite(c) and (c <= lv[i] if stop_line_le else c < lv[i]):  # _SLCMP
                             trig = True
                 if not trig:
                     continue
@@ -965,6 +1019,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 can = np.isfinite(o_t) and o_t > 0
                 if tradable is not None:
                     can = can and bool(tradable[sid]["trd"][t]) and not bool(tradable[sid]["dn_o"][t])
+                if stop_block is not None and can:  # 名單出場 乙 描述版：只擋停損賣出
+                    can = bool(stop_block[sid]["trd"][t]) and not bool(stop_block[sid]["dn_o"][t])  # _SLBLOCK
+                    _sl_blk += not can
                 if can:
                     open_pos[k] = (t, sid, amt, o_t / ep - 1.0, ep)
                     hit.append(sid); sl_pending.discard(sid)
@@ -1005,6 +1062,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     units += amt * (1 + gross - COST) * (1 - bench_cost) / bench[t]   # 拿回的錢買 bench，付單邊成本
                 else:
                     cash += amt * (1 + gross - COST)
+                if _nx_stop and sid in hit_now:    # 名單出場 乙：停損全出的淨入帳（與上面入帳同一式）⇒ 一筆待買  # _NXSTOP
+                    _nx["lots"].append((amt * (1 + gross - COST) if _xb_ is None else amt * (1 + gross) - _xb_ * COST, t))
+                    _nx["stop_lots"] += 1
                 if _xs is not None:
                     s_ = _xs.pop(sid, None)
                     if s_ is not None and _xk is not None:
@@ -1051,6 +1111,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 slots_free = ns_t - len(open_pos)
                 if _nxk is not None:                     # seq186：待買可用到 K_t；一般新部位仍只到 ns_t（待買先配 ⇒ 名單長度見 docstring）
                     slots_free = max(min(len(_nx["lots"]), _nx_kt - len(open_pos)), slots_free)   # _NXK_FREE
+                    if _nx_after:                        # seq192 D1：一般到當天容量、待買到 K_t
+                        slots_free = min(_nx_kt - len(open_pos), max(ns_t - len(open_pos), 0) + len(_nx["lots"]))   # _NXAFTER_FREE
                 d_free = inf if d_max is None else d_max
                 avail = int(min(slots_free, d_free))
                 if pick is None:
@@ -1108,13 +1170,17 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                                 _nx["blocked"] += 1                   # seq3 乙二：待買不消耗，配給下一檔可買的或繼續等
                             continue                                      # ⭐ 不遞補：名額今天持現金
                     _nx_buy = _nx is not None and bool(_nx["lots"])      # seq3 乙二 ②：待買先配給挑中的前幾檔  # _NX_WHO
+                    _nx_gen = None
+                    if _nx_buy and _nx_after:            # seq192 D1：一般新部位優先，只用一般現金（現金 − 待買）
+                        _nx_gen = cash - sum(a_ for a_, _ in _nx["lots"])
+                        _nx_buy = not (len(open_pos) < ns_t and min(slot, _nx_gen) > 1e-9)   # _NXAFTER_WHO
                     if _nx_buy:
                         amt, _nx_t = _nx["lots"].pop(0)                  # seq3 乙二 ③：全額  # _NX_AMT
                         if _nxk is not None and len(open_pos) >= ns_t:
                             _nx["over"] += 1                             # seq186：超過一般容量的那幾檔（第 9、10 檔）
                         _nx["n"] += 1; _nx["amt"] += amt; _nx["waits"].append(t - _nx_t)
                     elif targets is None:
-                        amt = min(slot, cash)
+                        amt = min(slot, cash if _nx_gen is None else _nx_gen)   # _NXAFTER_GEN
                         if amt <= 1e-9:
                             rest = list(take[j:]) + rest; break
                         if _x_big is not None:       # ⓒ 1.5 slot
@@ -1202,6 +1268,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     if stop_line is not None:       # 裁定線 seq119 §四（⛔ stop_line is None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同）
         out.update({"sl_exits": sl_stats["sl_exits"], "sl_delayed_days": sl_stats["sl_delayed_days"], "sl_days": sl_days,
                     "sl_rate": sl_stats["sl_exits"] / trades if trades else np.nan})
+        if stop_block is not None:  # 名單出場 乙（⛔ stop_block=None 時這個鍵不存在）
+            out["sl_block_days"] = _sl_blk
     if stop is not None:            # PREREGP7 必報（⛔ stop is None 時這幾個鍵不存在 ⇒ 原版回傳逐位元相同）
         out["stop_exits"] = stop_exits
         out["stop_rate"] = stop_exits / trades if trades else np.nan
@@ -1233,6 +1301,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["x_nx_pending_end"] = len(_nx["lots"]); out["x_nx_pending_amt_end"] = float(sum(a_ for a_, _ in _nx["lots"]))
         if _nxk is not None:        # seq186（⛔ nx_cap=None 時這個鍵不存在 ⇒ 與 12c39cb810 逐位元相同）
             out["x_nx_over"] = _nx["over"]
+        if _nx_stop:                # 名單出場 乙（⛔ stop_proceeds=None 時這個鍵不存在）
+            out["x_nx_stop_lots"] = _nx["stop_lots"]
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
