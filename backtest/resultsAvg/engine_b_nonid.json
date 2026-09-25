@@ -1,0 +1,234 @@
+{
+ "when": "2026-09-25 21:54",
+ "n": 3,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "基準臂（全關）5 顆 equity sha ＝ resultsAvg/pre_B_seeds.csv（＝ resultsP9run 基準臂）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "乙一 By（add_rule loss 10%）：5 顆都與全關不同、每顆都有加成",
+   "ok": true,
+   "detail": "觸發 [92, 85, 80, 90, 82]／加成 [15, 16, 13, 13, 10]／現金不足 [77, 69, 67, 77, 72]"
+  },
+  {
+   "name": "乙二 Ci（trim_rule gain 15%）：5 顆都與全關不同、每顆都有賣半",
+   "ok": true,
+   "detail": "賣半 [67, 73, 66, 72, 77]"
+  }
+ ],
+ "extra": {
+  "setup": {
+   "data": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data",
+   "calendar": "2859 根 2015-01-05～2026-09-24",
+   "w0": [
+    523,
+    "2017-03-02"
+   ],
+   "w1": [
+    2835,
+    "2026-08-24"
+   ],
+   "split": [
+    1468,
+    "2021-01-04"
+   ],
+   "panel_sig": "/home/chemtim/tw-p17/backtest/resultsAFC/panel.csv.gz",
+   "sig": {
+    "建出": 2881,
+    "窗內": 2881,
+    "檔": 918,
+    "月": 109,
+    "accept": {
+     "rows": 2881,
+     "stocks": 918,
+     "months": 109,
+     "m_min": "2017-03",
+     "m_max": "2026-03",
+     "e_min": 523,
+     "e_max": 2716
+    }
+   },
+   "COST": 0.00585
+  },
+  "逐顆（只有計數與 sha 比較）": [
+   {
+    "r": 0,
+    "base_sha_eq_pre": true,
+    "By_diff": true,
+    "By_x_new_n": 137,
+    "By_x_add_trig": 92,
+    "By_x_add_n": 15,
+    "By_x_add_short": 77,
+    "By_x_add_blocked_days": 0,
+    "By_x_trim_n": 0,
+    "By_x_trim_blocked_days": 0,
+    "Ci_diff": true,
+    "Ci_x_new_n": 138,
+    "Ci_x_add_trig": 0,
+    "Ci_x_add_n": 0,
+    "Ci_x_add_short": 0,
+    "Ci_x_add_blocked_days": 0,
+    "Ci_x_trim_n": 67,
+    "Ci_x_trim_blocked_days": 0,
+    "By_比值式_sha同": true,
+    "By_比值式_trig": 92,
+    "Ci_比值式_sha同": true,
+    "Ci_比值式_trim_n": 67,
+    "pre_dn_觸發": 90,
+    "pre_dn_成交": 90,
+    "pre_up_觸發": 67,
+    "pre_up_成交": 67
+   },
+   {
+    "r": 1,
+    "base_sha_eq_pre": true,
+    "By_diff": true,
+    "By_x_new_n": 138,
+    "By_x_add_trig": 85,
+    "By_x_add_n": 16,
+    "By_x_add_short": 69,
+    "By_x_add_blocked_days": 0,
+    "By_x_trim_n": 0,
+    "By_x_trim_blocked_days": 0,
+    "Ci_diff": true,
+    "Ci_x_new_n": 138,
+    "Ci_x_add_trig": 0,
+    "Ci_x_add_n": 0,
+    "Ci_x_add_short": 0,
+    "Ci_x_add_blocked_days": 0,
+    "Ci_x_trim_n": 73,
+    "Ci_x_trim_blocked_days": 0,
+    "By_比值式_sha同": true,
+    "By_比值式_trig": 85,
+    "Ci_比值式_sha同": true,
+    "Ci_比值式_trim_n": 73,
+    "pre_dn_觸發": 85,
+    "pre_dn_成交": 85,
+    "pre_up_觸發": 73,
+    "pre_up_成交": 73
+   },
+   {
+    "r": 2,
+    "base_sha_eq_pre": true,
+    "By_diff": true,
+    "By_x_new_n": 138,
+    "By_x_add_trig": 80,
+    "By_x_add_n": 13,
+    "By_x_add_short": 67,
+    "By_x_add_blocked_days": 0,
+    "By_x_trim_n": 0,
+    "By_x_trim_blocked_days": 0,
+    "Ci_diff": true,
+    "Ci_x_new_n": 138,
+    "Ci_x_add_trig": 0,
+    "Ci_x_add_n": 0,
+    "Ci_x_add_short": 0,
+    "Ci_x_add_blocked_days": 0,
+    "Ci_x_trim_n": 66,
+    "Ci_x_trim_blocked_days": 0,
+    "By_比值式_sha同": true,
+    "By_比值式_trig": 80,
+    "Ci_比值式_sha同": true,
+    "Ci_比值式_trim_n": 66,
+    "pre_dn_觸發": 80,
+    "pre_dn_成交": 80,
+    "pre_up_觸發": 66,
+    "pre_up_成交": 66
+   },
+   {
+    "r": 3,
+    "base_sha_eq_pre": true,
+    "By_diff": true,
+    "By_x_new_n": 138,
+    "By_x_add_trig": 90,
+    "By_x_add_n": 13,
+    "By_x_add_short": 77,
+    "By_x_add_blocked_days": 0,
+    "By_x_trim_n": 0,
+    "By_x_trim_blocked_days": 0,
+    "Ci_diff": true,
+    "Ci_x_new_n": 138,
+    "Ci_x_add_trig": 0,
+    "Ci_x_add_n": 0,
+    "Ci_x_add_short": 0,
+    "Ci_x_add_blocked_days": 0,
+    "Ci_x_trim_n": 72,
+    "Ci_x_trim_blocked_days": 0,
+    "By_比值式_sha同": true,
+    "By_比值式_trig": 90,
+    "Ci_比值式_sha同": true,
+    "Ci_比值式_trim_n": 72,
+    "pre_dn_觸發": 90,
+    "pre_dn_成交": 90,
+    "pre_up_觸發": 72,
+    "pre_up_成交": 72
+   },
+   {
+    "r": 4,
+    "base_sha_eq_pre": true,
+    "By_diff": true,
+    "By_x_new_n": 137,
+    "By_x_add_trig": 82,
+    "By_x_add_n": 10,
+    "By_x_add_short": 72,
+    "By_x_add_blocked_days": 0,
+    "By_x_trim_n": 0,
+    "By_x_trim_blocked_days": 0,
+    "Ci_diff": true,
+    "Ci_x_new_n": 138,
+    "Ci_x_add_trig": 0,
+    "Ci_x_add_n": 0,
+    "Ci_x_add_short": 0,
+    "Ci_x_add_blocked_days": 0,
+    "Ci_x_trim_n": 77,
+    "Ci_x_trim_blocked_days": 0,
+    "By_比值式_sha同": true,
+    "By_比值式_trig": 82,
+    "Ci_比值式_sha同": true,
+    "Ci_比值式_trim_n": 77,
+    "pre_dn_觸發": 79,
+    "pre_dn_成交": 79,
+    "pre_up_觸發": 77,
+    "pre_up_成交": 77
+   }
+  ],
+  "描述_對 pre_B 近似": {
+   "Ci 賣半 − pre up 成交": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "By 觸發 − pre dn 觸發": [
+    2,
+    0,
+    0,
+    0,
+    3
+   ],
+   "說明": "pre_B 是在【基準臂】的部位上用比值式數的近似；By／Ci 開啟後現金與之後的進場會變 ⇒ 不要求相等，只描述"
+  },
+  "描述_字面式 vs 比值式": {
+   "By sha 相同顆數": 5,
+   "Ci sha 相同顆數": 5,
+   "By 觸發差（比值式−字面式）": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "Ci 賣半差（比值式−字面式）": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ }
+}

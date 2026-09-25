@@ -488,10 +488,13 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                                                         照 PREREGP8 算好傳進來；⛔ 引擎不認識三分位）；進場日以前的旗標讀不到
                         {"kind": "hold", "days": 40} ⓒ 持有滿 days 根（進場那根算第 1 根，同 H120 口徑）那天的收盤
                                                         ＞ 進場價 ⇒ 次一交易日開盤加；⭐ 只在那一天判一次（當天不為正 ⇒ 不加）
+                        {"kind": "loss", "x": 0.10}  ⓓ（PREREG攤平停利 乙一，見下段）收盤[t−1] ≤ (1 − x) × 進場價 ⇒ t 開盤加（攤平）
                       "short": "skip"（預設，登錄 §二 2-B 逐字「現金不足不加並記次數」）／"partial"（有多少買多少、記次數）
                       ⭐ 現金不足時該部位的加碼機會就用掉了（⛔ 不每天重試）⇒ 計入 x_add_short
       trim_rule       2-C ⓐ 個股減半：dict {"x": 0.10, "frac": 0.5}：收盤[t−1] ÷ 進場價 − 1 ≤ −x ⇒ t 開盤賣 frac（以股數計）；
                       只一次；⛔ 不是停損出場，剩下的照原排程出場
+                      {"kind": "gain", "x": 0.15, "frac": 0.5} ⓘ（PREREG攤平停利 乙二，見下段）收盤[t−1] ≥ (1 + x) × 進場價
+                        ⇒ t 開盤賣 frac；"kind" 省略或 "loss" ＝ 上面的 2-C ⓐ（⛔ 原式一字不改）
       size_mult_by_regime  2-C ⓑⓒⓓⓔ 新部位倍數：dict {"mult": m, "below": 布林序列} 或 {"mult": m, "ma": n, "bench": 0050 還原收盤}
                       below[t−1]（見 regime_below）為真 ⇒ 第 t 天進場的新部位買 m × slot
                         m ≤ 1：與 weak／weak_size 同一條算式（slot×m 再 min(slot, 現金)）⇒ ⓑⓓⓔ 用 m＝0.5
@@ -504,6 +507,21 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                       below[t−1] 為假 ⇒ t 開盤把每一個「半份」部位加買到 1÷hold 倍股數（＝賣出前的股數／整份）
                         現金 ＜ 總需求 ⇒ 每一檔按【同一比例】少補（比例＝現金÷總需求），記 x_rt_refill_short（天數）
                       賣出所得留現金（cash_mode="zero" ⇒ 報酬 0）；出場照原排程、⛔ 不因賣半而改；已出場的不補
+    PREREG攤平停利 乙（2026-09-25，台股策略線登錄 seq2 sha 17449e5624991924；裁定線 seq177 §一① 准 (a)；回測線落地）
+    在既有兩個參數上各加一種 kind，⛔ 沒有新增參數名；⭐ 不傳該 kind ⇒ 走的仍是原本那幾行（回歸閘見
+    backtest/selftest_avgengine.py、backtest/resultsAvg/ENGINE_B_REPORT.md）：
+      add_rule  {"kind": "loss", "x": 0.10[, "size": 0.5][, "short": "skip"]}   乙一 2-B ⓓ 個股攤平
+                  部位收盤[t−1] ≤ (1 − x) × 進場價 ⇒ t 開盤加 size ×【加碼當天的 slot】（equity[t−1]÷N）；每部位只一次；
+                  現金不足、漲停／停牌遞延、計數鍵（x_add_trig／x_add_n／x_add_short／x_add_blocked_days）、audit kind "add"
+                  ⇒ 全部與 gain／flag／hold 同一段程式（⭐ 只多一個觸發分支）
+      trim_rule {"kind": "gain", "x": 0.15[, "frac": 0.5]}                     乙二 2-C ⓘ 個股停利
+                  部位收盤[t−1] ≥ (1 + x) × 進場價 ⇒ t 開盤賣 frac（以股數計）；只一次；賣得的現金照 2-C ⓐ 原樣留現金；
+                  跌停／停牌遞延、計數鍵（x_trim_n／x_trim_blocked_days）、audit kind "trim" ⇒ 與 2-C ⓐ 同一段程式
+      ⭐ 等號與寫法照登錄字面「收盤 ≤ 0.90 × 進場價」「收盤 ≥ 1.15 × 進場價」（裁定 seq177 §一① 收下回測 2122 §四①）：
+        程式式是 c ≤ (1 − x)·ep、c ≥ (1 + x)·ep（等號算觸發；1 − 0.10 ＝＝ 0.90、1 + 0.15 ＝＝ 1.15 在浮點上逐位元成立）
+        ⚠ 與既有 gain／2-C ⓐ 的比值式 c/ep − 1 ≥ x、≤ −x【不同】：價格恰好落在門檻上時比值式可能差一個 ulp 而不觸發
+          （例 ep＝10、c＝9.0：字面式觸發、比值式 9.0/10 − 1 ＝ −0.09999999999999998 不觸發）⇒ 既有兩型 ⛔ 沒改（會破壞 P9 的逐位元重現）
+      x 必須明給（⛔ 不給預設值，避免 −10%／＋15% 靠預設值帶進來）；loss 的 x ∈ (0, 1)、gain 的 x ＞ 0
     ⭐ 共同規則（五個參數都一樣）：
       ・時序：所有判定只讀 t−1 以前（0050 狀態 below[t−1]、個股收盤[t−1]），成交在 t 開盤（還原開盤價）
       ・同一天的順序：排程出場 → 賣（減半／賣半）→ 買（補回／分批／加碼）→ 新部位進場
@@ -609,6 +627,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     _xk = None if (entry_tranches is None or entry_tranches == 1) else entry_tranches
     _ext = any(p is not None for p in (_xk, add_rule, trim_rule, size_mult_by_regime, regime_trim))
     _xs = _xb = _xc = _xbelow = _xm = _xm_short = _add_kind = _rt_hold = None
+    _trim_kind = None               # PREREG攤平停利 乙二：trim_rule 的 kind（None ＝ trim_rule 關）
     if _ext:
         n_on = sum(p is not None for p in (_xk, add_rule, trim_rule, size_mult_by_regime, regime_trim, weak))
         if n_on != 1:
@@ -630,14 +649,23 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             _xk = int(_xk)
         if add_rule is not None:
             _add_kind = add_rule.get("kind")
-            if _add_kind not in ("gain", "flag", "hold"):
-                raise ValueError(f"add_rule['kind'] 只能是 gain／flag／hold，收到 {_add_kind!r}")
+            if _add_kind not in ("gain", "flag", "hold", "loss"):
+                raise ValueError(f"add_rule['kind'] 只能是 gain／flag／hold／loss，收到 {_add_kind!r}")
+            if _add_kind == "loss" and not ("x" in add_rule and 0 < add_rule["x"] < 1):
+                raise ValueError(f"add_rule kind='loss' 要明給 x ∈ (0, 1)（跌 x 加碼），收到 {add_rule!r}")
             if add_rule.get("short", "skip") not in ("skip", "partial"):
                 raise ValueError("add_rule['short'] 只能是 'skip'（登錄逐字）或 'partial'")
             if _add_kind == "hold" and int(add_rule.get("days", 40)) < 1:
                 raise ValueError("add_rule['days'] 要 ≥ 1")
-        if trim_rule is not None and not (0 < trim_rule.get("x", 0.10) < 1 and 0 < trim_rule.get("frac", 0.5) < 1):
-            raise ValueError(f"trim_rule 的 x、frac 都要在 (0, 1)，收到 {trim_rule!r}")
+        if trim_rule is not None:
+            _trim_kind = trim_rule.get("kind", "loss")
+            if _trim_kind not in ("loss", "gain"):
+                raise ValueError(f"trim_rule['kind'] 只能是 loss（2-C ⓐ，預設）／gain（2-C ⓘ），收到 {_trim_kind!r}")
+            if _trim_kind == "gain":
+                if not ("x" in trim_rule and trim_rule["x"] > 0 and 0 < trim_rule.get("frac", 0.5) < 1):
+                    raise ValueError(f"trim_rule kind='gain' 要明給 x ＞ 0、frac ∈ (0, 1)，收到 {trim_rule!r}")
+            elif not (0 < trim_rule.get("x", 0.10) < 1 and 0 < trim_rule.get("frac", 0.5) < 1):
+                raise ValueError(f"trim_rule 的 x、frac 都要在 (0, 1)，收到 {trim_rule!r}")
         if size_mult_by_regime is not None:
             _xm = float(size_mult_by_regime["mult"])
             _xm_short = size_mult_by_regime.get("short", "skip")
@@ -716,7 +744,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     continue
                 if s["trim"] == 0:
                     c1 = float(closes[sid][t - 1])  # _XLAG
-                    if np.isfinite(c1) and c1 / ep - 1.0 <= -tx:
+                    if _trim_kind == "gain":        # 乙二 2-C ⓘ：登錄字面「收盤 ≥ 1.15 × 進場價」
+                        if np.isfinite(c1) and c1 >= (1.0 + tx) * ep:
+                            s["trim"] = 1
+                    elif np.isfinite(c1) and c1 / ep - 1.0 <= -tx:
                         s["trim"] = 1
                 if s["trim"] == 1:
                     o = _x_px(sid, t, "sell")
@@ -793,6 +824,9 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     if _add_kind == "gain":
                         c1 = float(closes[sid][t - 1])  # _XLAG
                         trig = bool(np.isfinite(c1) and c1 / ep - 1.0 >= add_rule.get("x", 0.15))
+                    elif _add_kind == "loss":        # 乙一 2-B ⓓ：登錄字面「收盤 ≤ 0.90 × 進場價」
+                        c1 = float(closes[sid][t - 1])  # _XLAG
+                        trig = bool(np.isfinite(c1) and c1 <= (1.0 - add_rule["x"]) * ep)
                     elif _add_kind == "flag":
                         fl = add_rule["flags"].get(sid)
                         trig = bool(fl is not None and fl[t - 1])  # _XLAG
