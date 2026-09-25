@@ -1,0 +1,72 @@
+# selftest_us_data（2026-09-25 22:13）
+資料根目錄 /home/chemtim/usdata/0043f97｜commit 0043f97d974df78ffe5626623aed2caecfd4a5b8
+✅ A0｜資料 commit 0043f97d974d 對上登錄 seq4 §三 寫死的 0043f97
+母體 747 檔｜_segments 753 列（covered 713、gap 40）｜有 covered 段 712 檔
+
+## A 還原 OHLC
+✅ A1｜Yahoo 換算後 close 與 adjclose：1251909 根比對，最大相對誤差 2.2e-16（容差 1e-12）
+✅ A1-反例｜反例（係數誤用 adjclose÷open）會紅：最大相對誤差 1.6e-01 ≫ 1e-12
+   A2 違反列（代號 日期 來源）：[('UA', '2021-05-05', 'yahoo:UA')]
+⚠ A2｜712 檔 1341954 根還原 K 棒：low ≤ open,close ≤ high 違反 1 根（相對容差 1e-9）；其中原始檔本來就違反 1 根
+✅ A2-反例｜反例（open＞high 的合成 K 棒）會紅
+✅ A3-covered｜scope=covered：面板 ret vs 還原收盤日報酬 1341239 天比對，|差|>1e-08 的 0 天（最大 5.0e-09）；非斷點日面板 ret 空白 0 天；前一根 K 棒不是面板前一列而略過 0 天
+✅ A3-panel｜scope=panel：面板 ret vs 還原收盤日報酬 1527793 天比對，|差|>1e-08 的 0 天（最大 5.0e-09）；非斷點日面板 ret 空白 0 天；前一根 K 棒不是面板前一列而略過 0 天
+✅ A3-反例｜反例（硬斷點日不排除）會紅：DHR／XRX／IR 不符 2 天（≥2 ⇒ 比對分得出來）
+
+   A4 硬斷點
+   covered 範圍內的全部硬斷點：[('DHR', '2016-07-05', 'split_div'), ('IR', '2020-03-02', 'seam'), ('XRX', '2017-01-03', 'split_div')]
+✅ A4a｜同日拆股＋配息：面板 src 帶 * [('DHR', '2016-07-05'), ('XRX', '2017-01-03')] ＝ _report.md [('DHR', '2016-07-05'), ('XRX', '2017-01-03')] ＝ 已標 split_div [('DHR', '2016-07-05'), ('XRX', '2017-01-03')] ＝ 登錄列的 DHR 2016-07-05、XRX 2017-01-03
+✅ A4b｜來源接縫（covered 範圍）：已標 seam [('IR', '2020-03-02')] ＝ 登錄的 IR（yahoo:TT → yahoo:IR）
+✅ A4c｜面板 ret 空白（各檔第一列除外）1 天，全部落在來源切換日；不是切換日的 0 天 []
+   scope=panel 的接縫（含入指數前暖身日）：[('IR', '2020-03-02', 'seam')]
+✅ A4d｜DHR 2016-07-05：跨日還原收盤比與面板 ret 差 > 50 個百分點（Yahoo 重複還原的假跳空）⇒ 已切成新段 piece
+✅ A4e｜每根 covered K 棒在面板都有同日、同 src 的列；不符 0 檔 []
+✅ A5｜scope=panel 在 covered 日期上與 scope=covered 逐位元相同；不同 0 檔 []
+   窗內每年平日休市日數：{2016: 8, 2017: 9, 2018: 10, 2019: 9, 2020: 9, 2021: 9, 2022: 9, 2023: 10, 2024: 10, 2025: 11, 2026: 7}（NYSE 正常 9～10 天；2018、2025 各多一天國喪）
+✅ A6｜窗內 K 棒不在 NYSE 日曆上的 0 根（窗外：{'2026-09-22': 60}）；窗內 covered K 棒之間缺 ≥1 交易日的空缺 7 處（共缺 15 天），其中 ≥5 交易日 1 處／1 檔
+   ≥5 交易日空缺明細（代號 前一根 後一根 缺幾天）：[('CVC', '2016-04-20', '2016-05-02', 7)]
+
+## B 母體
+   月底全名冊不符（日期, 本層多, 名冊多）：[('2016-05-31', [], ['CCE', 'CCEP']), ('2017-12-29', [], ['BCR']), ('2018-05-31', [], ['WYND']), ('2018-10-31', [], ['PX']), ('2025-10-31', [], ['KMX']), ('2025-11-28', [], ['IPG']), ('2026-06-30', [], ['CAG'])]
+   月底有價名冊不符：[]
+   名冊多出的列（月底, 代號, has_price, 當天＝移出日）：[('2016-05-31', 'CCE', '0', True), ('2016-05-31', 'CCEP', '0', True), ('2017-12-29', 'BCR', '0', True), ('2018-05-31', 'WYND', '0', True), ('2018-10-31', 'PX', '0', True), ('2025-10-31', 'KMX', '0', True), ('2025-11-28', 'IPG', '0', True), ('2026-06-30', 'CAG', '0', True)]
+⚠ B1｜_month_end_roster 128 個月底：universe(d) 與 has_price＝1 不符 0 個月；universe(d, include_unpriced) 與名冊全列不符 7 個月（8 列，全部是名冊多出 has_price＝0、且月底 ＝ 該檔移出日：True ⇒ roster.py 補列用 d ≤ b、面板用 d < b 的不一致，本層照面板）；每月檔數 503～506
+✅ B1-反例｜反例（universe 少一檔）會紅
+✅ B2-SIVB｜SIVB：窗內在指數 1256 個交易日（2018-03-19～2023-03-14）、有價 0 日、OHLC 0 根；名冊 has_price＝0 60 個月、＝1 0 個月
+✅ B2-FRC｜FRC：窗內在指數 1092 個交易日（2019-01-02～2023-05-03）、有價 0 日、OHLC 0 根；名冊 has_price＝0 52 個月、＝1 0 個月
+✅ B2-SBNY｜SBNY：窗內在指數 309 個交易日（2021-12-20～2023-03-14）、有價 0 日、OHLC 0 根；名冊 has_price＝0 15 個月、＝1 0 個月
+✅ B3｜有 OHLC 712 檔、整段沒有 35 檔（與資料庫 1753 名單相同：True）；部分缺 ['ARNC', 'DOW', 'FOX', 'FOXA', 'SNDK']
+   窗 2016-01-04～2026-08-31：在指數股-日 1351751；35 檔 21498（1.59%）；全部無價股-日 23873（1.77%），其中有 OHLC 的檔當天沒列 2375
+✅ B4｜35 檔佔在指數股-日 1.59%；含部分缺與零星缺列的全部無價佔 1.77%（資料庫 1550 說 1.58%）
+
+## C 季營收
+✅ C0｜轉接後 34411 列 ＝ 原檔 34411 列（⛔ 不增列、不補季）；latest_value／latest_filed 不在輸出欄
+✅ C1｜可用日：NaT 2 列（全是 first_filed ≥ 快照日曆最後一天 2026-09-24 的：True）；其餘一律晚於期末 True（落後最少 9 天、中位 37 天）；一律晚於 first_filed True；都是交易日 True；＝ first_filed 之後第一個交易日（逐日獨立重算）True；可用日落在窗內 27574 列
+   AAPL   一般 10-Q                期末 2023-07-01｜10-Q｜first_filed 2023-08-04（Fri）⇒ 可用日 2023-08-07（Mon）｜cal_q 2023Q3｜derived 0｜cik 0000320193
+   MSFT   derived＝1 第四季（10-K）    期末 2022-06-30｜10-K｜first_filed 2022-07-28（Thu）⇒ 可用日 2022-07-29（Fri）｜cal_q 2022Q2｜derived 1｜cik 0000789019
+   DIS    前身 CIK                 期末 2017-04-01｜10-Q｜first_filed 2017-05-09（Tue）⇒ 可用日 2017-05-10（Wed）｜cal_q 2017Q2｜derived 0｜cik 0001001039
+   WAT    52／53 週會計年度            期末 2016-07-02｜10-Q｜first_filed 2016-08-05（Fri）⇒ 可用日 2016-08-08（Mon）｜cal_q 2016Q3｜derived 0｜cik 0001000697
+   NVDA   週五申報 ⇒ 可用日跨週末          期末 2023-04-30｜10-Q｜first_filed 2023-05-26（Fri）⇒ 可用日 2023-05-30（Tue）｜cal_q 2023Q2｜derived 0｜cik 0001045810
+✅ C2｜抽查 5 家 first_filed 與可用日（值不列出）：全部 ＝ 下一個交易日且晚於期末
+   value＝0 的列 73、value＜0 的列 27（來源本身的值，⛔ 非本層補的）；涉及 29 檔：['ALK', 'APA', 'BHF', 'BHGE', 'BKR', 'BX', 'CINF', 'CNX', 'COTY', 'DLTR', 'EQT', 'FLS', 'KKR', 'MDT', 'MHK', 'MNK', 'MUR', 'PRGO', 'PSKY', 'QRVO', 'RCL', 'SCG', 'STI', 'TE', 'VRT', 'VTRS', 'WBA', 'XRAY', 'XRX']
+   XOM 2025 以前的季：0 列（資料庫 2016 §三：Exxon 只從 2025 起）⇒ 缺季沒有列
+   曆季歸季（期末）：會計季相接但落在同一曆季（撞）298 處／84 檔；相接但跳過一個曆季（假洞）325 處／86 檔；時間上真的不相接（真缺）180 處／72 檔
+   假洞最多的代號：{'NUE': 10, 'AAP': 8, 'GD': 8, 'MSI': 7, 'HSY': 7, 'MHK': 7, 'TER': 7, 'ZBRA': 7, 'ON': 7, 'PFE': 6, 'TMO': 5, 'TXT': 5, 'LHX': 5, 'PRGO': 5, 'HRS': 5}
+✅ C3｜缺季沒有列（XOM 2025 前 0 列；總列數不變）；⚠ 來源有 value＝0 73 列、＜0 27 列（29 檔）；⚠ 期末歸曆季會造成假洞 325 處／86 檔（52／53 週年度）
+✅ C4｜重編過的季 3595 個：轉接值全部 ＝ value（第一次公布），沒有一個 ＝ latest_value
+   季營收一列都沒有的 19 檔：{'ANDV': 'no_revenue_tag', 'CCEP': 'no_revenue_tag', 'CMA': 'no_revenue_tag(bank)', 'DFS': 'no_revenue_tag(bank)', 'FDXF': 'no_revenue_tag', 'FITB': 'no_revenue_tag(bank)', 'FRC': 'no_companyfacts', 'GAS': 'no_cik', 'HBAN': 'no_revenue_tag(bank)', 'NAVI': 'no_revenue_tag(bank)', 'PBCT': 'no_revenue_tag(bank)', 'PCL': 'no_revenue_tag', 'POM': 'no_revenue_tag', 'RF': 'no_revenue_tag(bank)', 'SBNY': 'no_cik', 'SE': 'no_revenue_tag', 'SIVB': 'no_revenue_tag(bank)', 'SYF': 'no_revenue_tag(bank)', 'TFC': 'no_revenue_tag(bank)'}
+   資料庫 2016 列的不適用名單（17 個代號）與實際的差：名單有但實際有營收 ['CVC', 'MJN']；實際沒有但名單沒列 ['GAS', 'NAVI']
+⚠ C5｜季營收整檔沒有的 19 檔（no_revenue_tag 16、no_companyfacts 1、no_cik 2）；與登錄 seq4 §三「不適用 16 家與 FRC、SBNY」差 ['CVC', 'GAS', 'MJN', 'NAVI']
+
+## D 基準
+✅ D1｜窗內 NYSE 日 2680 天：^SP500TR 缺 0、多 0；SPY 缺 0、多 0
+✅ D2｜同窗年化差（^SP500TR − SPY 還原，2015-12-31 收盤 → 2026-08-31 收盤，年＝日曆日÷365.25）＝ +10.4 基點（SPY 含 0.09% 費用率，預期正且小）；^SP500TR 的 adjclose ＝ close：True
+
+## E 無前視
+✅ E1｜universe(d) ＝ 只用 d 以前的面板列、spans 右端晚於 d 當『尚未移出』重建的結果：22 個日子不符 0 []
+✅ E1-反例｜反例（用隔天名冊）在 228 個變動日會與 universe(d) 不同 ⇒ E1 分得出前視
+✅ E2｜revenue_asof(d) 在 22 個日子都只含可用日 ≤ d 的列（違反 0）；抽一列：可用日前一交易日不在、可用日當天在；first_filed 是交易日的 34389 列沒有一列在申報當天就可用
+✅ E2-反例｜反例（可用日＝first_filed 當天）會在 34389 列提早一天 ⇒ E2 分得出來
+
+## 結果
+PASS 31｜WARN 3｜FAIL 0

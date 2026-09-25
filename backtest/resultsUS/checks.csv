@@ -1,0 +1,35 @@
+id,status,summary
+A0,PASS,資料 commit 0043f97d974d 對上登錄 seq4 §三 寫死的 0043f97
+A1,PASS,Yahoo 換算後 close 與 adjclose：1251909 根比對，最大相對誤差 2.2e-16（容差 1e-12）
+A1-反例,PASS,反例（係數誤用 adjclose÷open）會紅：最大相對誤差 1.6e-01 ≫ 1e-12
+A2,WARN,"712 檔 1341954 根還原 K 棒：low ≤ open,close ≤ high 違反 1 根（相對容差 1e-9）；其中原始檔本來就違反 1 根"
+A2-反例,PASS,反例（open＞high 的合成 K 棒）會紅
+A3-covered,PASS,scope=covered：面板 ret vs 還原收盤日報酬 1341239 天比對，|差|>1e-08 的 0 天（最大 5.0e-09）；非斷點日面板 ret 空白 0 天；前一根 K 棒不是面板前一列而略過 0 天
+A3-panel,PASS,scope=panel：面板 ret vs 還原收盤日報酬 1527793 天比對，|差|>1e-08 的 0 天（最大 5.0e-09）；非斷點日面板 ret 空白 0 天；前一根 K 棒不是面板前一列而略過 0 天
+A3-反例,PASS,反例（硬斷點日不排除）會紅：DHR／XRX／IR 不符 2 天（≥2 ⇒ 比對分得出來）
+A4a,PASS,"同日拆股＋配息：面板 src 帶 * [('DHR', '2016-07-05'), ('XRX', '2017-01-03')] ＝ _report.md [('DHR', '2016-07-05'), ('XRX', '2017-01-03')] ＝ 已標 split_div [('DHR', '2016-07-05'), ('XRX', '2017-01-03')] ＝ 登錄列的 DHR 2016-07-05、XRX 2017-01-03"
+A4b,PASS,"來源接縫（covered 範圍）：已標 seam [('IR', '2020-03-02')] ＝ 登錄的 IR（yahoo:TT → yahoo:IR）"
+A4c,PASS,面板 ret 空白（各檔第一列除外）1 天，全部落在來源切換日；不是切換日的 0 天 []
+A4d,PASS,DHR 2016-07-05：跨日還原收盤比與面板 ret 差 > 50 個百分點（Yahoo 重複還原的假跳空）⇒ 已切成新段 piece
+A4e,PASS,每根 covered K 棒在面板都有同日、同 src 的列；不符 0 檔 []
+A5,PASS,scope=panel 在 covered 日期上與 scope=covered 逐位元相同；不同 0 檔 []
+A6,PASS,窗內 K 棒不在 NYSE 日曆上的 0 根（窗外：{'2026-09-22': 60}）；窗內 covered K 棒之間缺 ≥1 交易日的空缺 7 處（共缺 15 天），其中 ≥5 交易日 1 處／1 檔
+B1,WARN,"_month_end_roster 128 個月底：universe(d) 與 has_price＝1 不符 0 個月；universe(d, include_unpriced) 與名冊全列不符 7 個月（8 列，全部是名冊多出 has_price＝0、且月底 ＝ 該檔移出日：True ⇒ roster.py 補列用 d ≤ b、面板用 d < b 的不一致，本層照面板）；每月檔數 503～506"
+B1-反例,PASS,反例（universe 少一檔）會紅
+B2-SIVB,PASS,SIVB：窗內在指數 1256 個交易日（2018-03-19～2023-03-14）、有價 0 日、OHLC 0 根；名冊 has_price＝0 60 個月、＝1 0 個月
+B2-FRC,PASS,FRC：窗內在指數 1092 個交易日（2019-01-02～2023-05-03）、有價 0 日、OHLC 0 根；名冊 has_price＝0 52 個月、＝1 0 個月
+B2-SBNY,PASS,SBNY：窗內在指數 309 個交易日（2021-12-20～2023-03-14）、有價 0 日、OHLC 0 根；名冊 has_price＝0 15 個月、＝1 0 個月
+B3,PASS,"有 OHLC 712 檔、整段沒有 35 檔（與資料庫 1753 名單相同：True）；部分缺 ['ARNC', 'DOW', 'FOX', 'FOXA', 'SNDK']"
+B4,PASS,35 檔佔在指數股-日 1.59%；含部分缺與零星缺列的全部無價佔 1.77%（資料庫 1550 說 1.58%）
+C0,PASS,轉接後 34411 列 ＝ 原檔 34411 列（⛔ 不增列、不補季）；latest_value／latest_filed 不在輸出欄
+C1,PASS,可用日：NaT 2 列（全是 first_filed ≥ 快照日曆最後一天 2026-09-24 的：True）；其餘一律晚於期末 True（落後最少 9 天、中位 37 天）；一律晚於 first_filed True；都是交易日 True；＝ first_filed 之後第一個交易日（逐日獨立重算）True；可用日落在窗內 27574 列
+C2,PASS,抽查 5 家 first_filed 與可用日（值不列出）：全部 ＝ 下一個交易日且晚於期末
+C3,PASS,缺季沒有列（XOM 2025 前 0 列；總列數不變）；⚠ 來源有 value＝0 73 列、＜0 27 列（29 檔）；⚠ 期末歸曆季會造成假洞 325 處／86 檔（52／53 週年度）
+C4,PASS,重編過的季 3595 個：轉接值全部 ＝ value（第一次公布），沒有一個 ＝ latest_value
+C5,WARN,"季營收整檔沒有的 19 檔（no_revenue_tag 16、no_companyfacts 1、no_cik 2）；與登錄 seq4 §三「不適用 16 家與 FRC、SBNY」差 ['CVC', 'GAS', 'MJN', 'NAVI']"
+D1,PASS,窗內 NYSE 日 2680 天：^SP500TR 缺 0、多 0；SPY 缺 0、多 0
+D2,PASS,同窗年化差（^SP500TR − SPY 還原，2015-12-31 收盤 → 2026-08-31 收盤，年＝日曆日÷365.25）＝ +10.4 基點（SPY 含 0.09% 費用率，預期正且小）；^SP500TR 的 adjclose ＝ close：True
+E1,PASS,universe(d) ＝ 只用 d 以前的面板列、spans 右端晚於 d 當『尚未移出』重建的結果：22 個日子不符 0 []
+E1-反例,PASS,反例（用隔天名冊）在 228 個變動日會與 universe(d) 不同 ⇒ E1 分得出前視
+E2,PASS,revenue_asof(d) 在 22 個日子都只含可用日 ≤ d 的列（違反 0）；抽一列：可用日前一交易日不在、可用日當天在；first_filed 是交易日的 34389 列沒有一列在申報當天就可用
+E2-反例,PASS,反例（可用日＝first_filed 當天）會在 34389 列提早一天 ⇒ E2 分得出來
