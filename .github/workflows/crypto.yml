@@ -23,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）｜funding 永續資金費率全期（C2 六幣）｜perp 永續日K全期（C5 複核）"
+        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）｜funding 永續資金費率全期（C2 六幣）｜perp 永續日K全期（C5 複核）｜mark 永續標記價日K（C5 描述臂，BTC／ETH）"
         type: choice
-        options: [universe, backfill, daily, bitstamp-backfill, funding, perp]
+        options: [universe, backfill, daily, bitstamp-backfill, funding, perp, mark]
         default: daily
       reset_months_done:
         description: "backfill 專用，⛔ 平常不要勾：續跑台帳被污染時才用（例如 URL bug 讓整批誤記成官方沒有）"
@@ -97,6 +97,8 @@ jobs:
           git checkout origin/main -- data/crypto_funding data/meta/crypto_funding_manifest.csv \n            || echo "⚠ main 上可能還沒有這些檔（第一次跑），略過" >&2
           git checkout origin/main -- data/crypto_perp data/meta/crypto_perp_manifest.csv \
             || echo "⚠ main 上可能還沒有這些檔（第一次跑），略過" >&2
+          git checkout origin/main -- data/crypto_mark data/meta/crypto_mark_manifest.csv \
+            || echo "⚠ main 上可能還沒有這些檔（第一次跑），略過" >&2
 
       - name: 執行
         run: |
@@ -111,7 +113,7 @@ jobs:
           # ⭐ funding／perp 兩個模式共用一道判準自測閘門（⛔ 紅了就不抓）
           #   ⚠ 閘門只能在【最前面】：selftest_workflows 認的是「開頭連續的自測」，
           #     放在分支裡面會被算成沒守門的裸跑
-          if [ "$MODE" = "funding" ] || [ "$MODE" = "perp" ]; then
+          if [ "$MODE" = "funding" ] || [ "$MODE" = "perp" ] || [ "$MODE" = "mark" ]; then
             python selftest_crypto_funding.py || exit 1
           fi
           # ⭐ funding 模式：C2 的六幣資金費率全期（裁定線 seq97 §三）；抓完當場跑三項交件驗收
@@ -123,6 +125,11 @@ jobs:
           # ⭐ perp 模式：C5 永續日 K 全期（裁定線 seq124 §三）；⛔ 放 data/crypto_perp，不放 data/crypto
           if [ "$MODE" = "perp" ]; then
             python crypto_perp.py || RC=$?
+            exit $RC
+          fi
+          # ⭐ mark 模式：C5 描述臂的標記價日 K（裁定線 seq155 §二；回測線 1519 只要 1d、BTC／ETH）
+          if [ "$MODE" = "mark" ]; then
+            python crypto_perp.py --kind mark || RC=$?
             exit $RC
           fi
           python crypto.py --mode "$MODE" $EXTRA || RC=$?
