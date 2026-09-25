@@ -244,6 +244,9 @@ def fetch_otc_all(rl, get=None):
 
 
 XFER_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "meta", "otc_to_twse.csv")
+RM_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "meta", "delisted.remove.csv")
+RM_HEADER = ["market", "stock_id", "delist_date"]
+XFER_KEYS = set()          # 本趟確認的轉上市鍵 (stock_id, 日期)；merge_existing 之後用來剔除
 XFER_HEADER = ["transfer_date", "stock_id", "name", "asof"]
 
 
@@ -460,14 +463,16 @@ def main():
             w = csv.writer(fh, lineterminator="\n")
             w.writerow(XFER_HEADER)
             w.writerows(sorted(old_x.values(), key=lambda x: (x[0], x[1])))
-        # ⚠ 既有 delisted.csv 裡早就誤收的轉上市列：這裡【只報告】
-        #   ⛔ 刪不掉：push_data.sh 對這個檔是逐鍵聯集（LEDGERS），刪了會被 main 那份併回來
-        #   ⇒ ⏳ 要另做「逐鍵移除」機制（本線 2026-09-25 已告知回測線）
-        if os.path.exists(OUT):
-            with io.open(OUT, encoding="utf-8") as fh:
-                stale = [r for r in csv.DictReader(fh)
-                         if r.get("market") == "tpex" and (r["stock_id"], r["delist_date"]) in xfer]
-            rl.info("⚠ 既有檔裡誤收為下櫃的轉上市列", f"{len(stale)} 列（⏳ 待逐鍵移除機制；讀者請用 otc_to_twse.csv 排除）")
+        # ⭐ 既有 delisted.csv 裡早就誤收的轉上市列（2026-09-25 量到 72 列）：
+        #   ⛔ 光在這裡刪不夠：push_data.sh 對這個檔是逐鍵聯集，會被 main 那份併回來
+        #   ⇒ ⭐ 寫一份明確的移除清單 delisted.remove.csv（鍵＝market,stock_id,delist_date）
+        #     push_data.sh 看到同名 .remove.csv 就交給 merge_ledger 只刪那些鍵
+        #   ⛔ 清單內容【只來自官方 reason=2 轉上市】，⛔ 不收任何別的理由
+        with io.open(RM_OUT, "w", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            w.writerow(RM_HEADER)
+            w.writerows(sorted(["tpex", k[0], k[1]] for k in xfer))
+        XFER_KEYS.update(xfer)
     got_years = {y: n for y, n in per.items() if n}
     rl.info("上櫃逐年筆數",
             "、".join(f"{y}:{n}" for y, n in sorted(got_years.items()))
@@ -507,6 +512,11 @@ def main():
     #   ——2026-09-14 就是這樣掉了 33 列（四年逾時），而那一趟「成功」。
     n_fetched = len(rows)
     rows, only_old = merge_existing(rows, OUT)
+    if XFER_KEYS:
+        before = len(rows)
+        rows = [r for r in rows if not (r[4] == "tpex" and (r[1], r[0]) in XFER_KEYS)]
+        rl.info("⭐ 剔除既有檔裡誤收為下櫃的轉上市列",
+                f"{before - len(rows)} 列（同一份鍵寫進 delisted.remove.csv，push_data 合併時照清單移除 main 上那些列）")
     if only_old:
         rl.info("⭐⭐ 這一趟**沒抓全**，已從既有檔補回",
                 f"本趟抓到 {n_fetched:,} 列｜⛔ 另有 **{only_old:,} 列**只有既有檔才有"
