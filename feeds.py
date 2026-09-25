@@ -1405,6 +1405,45 @@ def _instamt_rows(d, day, tag):
     return out, f"{len(out)} 列：{'／'.join(r[1] for r in out)}"
 
 
+def parse_marginmkt(d, day, known=None):
+    """⭐ 2026-09-25：上市【大盤】信用交易統計（MI_MARGN selectType=MS 的第一張表）→ 長格式。
+
+    ⭐ 為什麼要另一支：`margin` 存的是第二張表（逐檔、單位張），
+       ⛔ 逐檔 m_balance 加總 ≠ 大盤「融資金額(仟元)」（單位不同、也不含全部證券）
+       ⇒ 驅動因素 #9（台股 1609、裁定 seq156）要的是大盤那三列。
+    列：融資(交易單位)／融券(交易單位)／融資金額(仟元)（列名原文保留）
+    欄：buy,sell,repay（現金(券)償還）,prev（前日餘額）,balance（今日餘額）
+    ⭐ 標題自帶日期（「103年02月05日 信用交易統計」）⇒ 逐一驗，⛔ 不信我送的參數
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = tabs[0]
+    title = str(t.get("title") or "")
+    m = re.match(r"\s*(\d{2,3})年(\d{2})月(\d{2})日\s*信用交易統計", title)
+    if not m:
+        return [], f"第一張表不是「信用交易統計」：title={title!r}"
+    echo = "%04d-%s-%s" % (int(m.group(1)) + 1911, m.group(2), m.group(3))
+    if echo != day:
+        return [], f"⛔ 標題日期 {echo} ≠ 請求 {day}（參數沒生效）"
+    f = [str(x) for x in (t.get("fields") or [])]
+    want = ["項目", "買進", "賣出", "現金(券)償還", "前日餘額", "今日餘額"]
+    if f != want:
+        return [], f"欄位不是預期的 {want}：{f}"
+    out = []
+    for r in (t.get("data") or []):
+        if not r or len(r) < 6:
+            continue
+        who = str(r[0]).strip()
+        vals = [_blank_num(x) for x in r[1:6]]
+        if any("," in x for x in [who] + vals):
+            return [], f"欄位裡有逗號，⛔ 不寫（who={who!r}）"
+        out.append([day, who] + vals)
+    if len(out) != 3:
+        return [], f"應為 3 列（融資張數／融券張數／融資金額），實得 {len(out)}：{[r[1] for r in out]}"
+    return out, f"{len(out)} 列：{'／'.join(r[1] for r in out)}"
+
+
 def parse_instamt(d, day, known=None):
     """上市 BFI82U。⭐ 回溯下限 ＝ 民國 93-03-03（端點自己講）。"""
     return _instamt_rows(d, day, "twse")
@@ -1471,6 +1510,17 @@ FEEDS = {
                    "⇒ **回溯下限是端點自己講的**，⛔ 不是我方猜的｜"
                    "⚠ 2026-09-25 重測：20040302～0308 回「查詢日期小於093年03月31日」、"
                    "0331／0401 回「沒有符合條件的資料」、0407 起有 4 列 ⇒ 下限字樣會變，以當次回應為準"),
+    },
+    # ⭐ 2026-09-25：上市大盤信用交易統計（驅動因素 #9；台股 1609）。長格式 date,item,buy,sell,repay,prev,balance
+    "marginmkt": {
+        "dir": "marginmkt",
+        "header": ["date", "item", "buy", "sell", "repay", "prev", "balance"],
+        "parse": parse_marginmkt,
+        "known": False,
+        "urls": lambda day: [_twse("marginTrading/MI_MARGN", day, "&selectType=MS")],
+        "status": ("本線 2026-09-25 實測：20140205／20050103／20010102 皆 stat OK、第一張表「信用交易統計」3 列"
+                   "（融資(交易單位)、融券(交易單位)、融資金額(仟元)），標題自帶日期"
+                   "｜⚠ 回溯下限：本線 1423 記 MI_MARGN 2001-01-01"),
     },
     "otcinstamt": {
         "dir": "otcinstamt",
