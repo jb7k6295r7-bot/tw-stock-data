@@ -1,0 +1,159 @@
+{
+ "when": "2026-09-25 23:14",
+ "n": 3,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "基準臂（全關）5 顆 equity sha ＝ resultsAvg/pre_B_seeds.csv（＝ resultsP9run 基準臂）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "trim_proceeds=None 明寫 ⇒ 5 顆 equity sha ＝ 乙二閒置版（省略開關）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "乙二 next：5 顆都與閒置版、全關不同，每顆都有待買買進",
+   "ok": true,
+   "detail": "待買買進 [64, 71, 62, 71, 75]；賣半 [67, 73, 66, 72, 77]"
+  }
+ ],
+ "extra": {
+  "setup": {
+   "data": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data",
+   "calendar": "2859 根 2015-01-05～2026-09-24",
+   "w0": [
+    523,
+    "2017-03-02"
+   ],
+   "w1": [
+    2835,
+    "2026-08-24"
+   ],
+   "split": [
+    1468,
+    "2021-01-04"
+   ],
+   "panel_sig": "/home/chemtim/tw-p17/backtest/resultsAFC/panel.csv.gz",
+   "sig": {
+    "建出": 2881,
+    "窗內": 2881,
+    "檔": 918,
+    "月": 109,
+    "accept": {
+     "rows": 2881,
+     "stocks": 918,
+     "months": 109,
+     "m_min": "2017-03",
+     "m_max": "2026-03",
+     "e_min": 523,
+     "e_max": 2716
+    }
+   },
+   "COST": 0.00585
+  },
+  "逐顆（只有計數與 sha 比較）": [
+   {
+    "r": 0,
+    "base_sha_eq_pre": true,
+    "None明寫_sha同閒置版": true,
+    "next_與閒置版不同": true,
+    "next_與全關不同": true,
+    "閒置_x_new_n": 138,
+    "閒置_x_trim_n": 67,
+    "閒置_x_trim_blocked_days": 0,
+    "next_x_new_n": 74,
+    "next_x_trim_n": 67,
+    "next_x_trim_blocked_days": 0,
+    "next_x_nx_n": 64,
+    "next_x_nx_full_days": 45,
+    "next_x_nx_empty_days": 0,
+    "next_x_nx_blocked": 0,
+    "next_x_nx_pending_end": 3,
+    "next_waits_中位": 46.5,
+    "next_waits_最長": 120
+   },
+   {
+    "r": 1,
+    "base_sha_eq_pre": true,
+    "None明寫_sha同閒置版": true,
+    "next_與閒置版不同": true,
+    "next_與全關不同": true,
+    "閒置_x_new_n": 138,
+    "閒置_x_trim_n": 73,
+    "閒置_x_trim_blocked_days": 0,
+    "next_x_new_n": 67,
+    "next_x_trim_n": 73,
+    "next_x_trim_blocked_days": 0,
+    "next_x_nx_n": 71,
+    "next_x_nx_full_days": 47,
+    "next_x_nx_empty_days": 0,
+    "next_x_nx_blocked": 0,
+    "next_x_nx_pending_end": 2,
+    "next_waits_中位": 69.0,
+    "next_waits_最長": 120
+   },
+   {
+    "r": 2,
+    "base_sha_eq_pre": true,
+    "None明寫_sha同閒置版": true,
+    "next_與閒置版不同": true,
+    "next_與全關不同": true,
+    "閒置_x_new_n": 138,
+    "閒置_x_trim_n": 66,
+    "閒置_x_trim_blocked_days": 0,
+    "next_x_new_n": 76,
+    "next_x_trim_n": 66,
+    "next_x_trim_blocked_days": 0,
+    "next_x_nx_n": 62,
+    "next_x_nx_full_days": 48,
+    "next_x_nx_empty_days": 0,
+    "next_x_nx_blocked": 0,
+    "next_x_nx_pending_end": 4,
+    "next_waits_中位": 63.0,
+    "next_waits_最長": 120
+   },
+   {
+    "r": 3,
+    "base_sha_eq_pre": true,
+    "None明寫_sha同閒置版": true,
+    "next_與閒置版不同": true,
+    "next_與全關不同": true,
+    "閒置_x_new_n": 138,
+    "閒置_x_trim_n": 72,
+    "閒置_x_trim_blocked_days": 0,
+    "next_x_new_n": 67,
+    "next_x_trim_n": 72,
+    "next_x_trim_blocked_days": 0,
+    "next_x_nx_n": 71,
+    "next_x_nx_full_days": 58,
+    "next_x_nx_empty_days": 0,
+    "next_x_nx_blocked": 0,
+    "next_x_nx_pending_end": 1,
+    "next_waits_中位": 58.0,
+    "next_waits_最長": 120
+   },
+   {
+    "r": 4,
+    "base_sha_eq_pre": true,
+    "None明寫_sha同閒置版": true,
+    "next_與閒置版不同": true,
+    "next_與全關不同": true,
+    "閒置_x_new_n": 138,
+    "閒置_x_trim_n": 77,
+    "閒置_x_trim_blocked_days": 0,
+    "next_x_new_n": 63,
+    "next_x_trim_n": 77,
+    "next_x_trim_blocked_days": 0,
+    "next_x_nx_n": 75,
+    "next_x_nx_full_days": 51,
+    "next_x_nx_empty_days": 0,
+    "next_x_nx_blocked": 0,
+    "next_x_nx_pending_end": 2,
+    "next_waits_中位": 58.0,
+    "next_waits_最長": 131
+   }
+  ]
+ }
+}

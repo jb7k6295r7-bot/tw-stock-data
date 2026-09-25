@@ -16,12 +16,15 @@
  F7 硬斷點：brk_vec ＝ exit_signal.brk（＝ researchH2.brk）逐點（隨機 5,000 組窗）；窗 [e, x]：斷點在 e−1 不剔、在 e 剔、在 x 剔、在 x＋1 不剔
  F8 十分位與配對：deciles 對獨立寫法（隨機 200 天橫斷面）；researchAvg.match_controls 的 ȳ 對暴力法（合成 40 檔 × 8 天）逐筆同
  F9 假訊號臂：排除 [T−20, T]（含當天）；T_r＝T−21 不排除；T_r＝T＋1 不影響；逐檔種子與行程分工無關（兩種順序抽出相同）
- F10 乙 引擎能力（research11.simulate_mtm；⛔ 只 import）：
-    ⓐ 2-B ⓐ add_rule gain x＝0.15 在 +15% 那天之後的開盤加（鏡像的「漲」方向存在）；2-C ⓐ trim_rule x＝0.10 在 −10% 之後開盤賣半
-    ⓑ add_rule 沒有「跌 x% 加碼」：kind 只接受 gain／flag／hold（"loss" ⇒ ValueError）；gain 取 x＝−0.10 ⇒ 價格不動的第一天就加（方向錯）
-    ⓒ trim_rule 沒有「漲 x% 賣半」：x 必須在 (0,1)（x＝−0.15 ⇒ ValueError）
-    ⓓ flag 旗標以股票代號給、條件卻依【部位】進場價 ⇒ 同一檔兩列重疊訊號（A、B 進場價不同）時，同一份旗標無法同時對兩種持有情境都對
-    ⇒ 結論：乙一、乙二 引擎都沒有對應參數 ⇒ 停、回報（⛔ 不改引擎）
+ F10 乙 引擎能力（research11.simulate_mtm；⛔ 只 import）——2026-09-25 改寫（裁定 seq181：引擎兩型 d609e89a95 收下，F10 改驗新 kind）：
+    原本的 F10 證明「引擎沒有 跌 x% 加碼／漲 x% 賣半」；引擎擴充後改成驗 add_rule kind＝"loss"、trim_rule kind＝"gain" 三件事：
+    ⓐ 觸發：P0＝100、收盤 90.0（＝0.90·P0）⇒ 次日開盤加（等號算）；90.01 ⇒ 不加；收盤 115.0（＝1.15·P0）⇒ 次日開盤賣半；114.99 ⇒ 不賣
+       （115 用引擎舊比值式 115/100−1 ＜ 0.15 不會觸發 ⇒ 新 kind 用的是登錄字面式，與 F1 的浮點分歧示範同一個數）
+    ⓑ 只一次：觸發後更深（80）／更高（130）⇒ 不再加／不再賣（x_add_n、x_trim_n 都是 1）
+    ⓒ 與登錄門檻字面式一致：隨機 300 條路徑 × 2 筆持有 × 2 型，引擎的加碼／賣半日 − 1 ＝ 獨立寫法 ind_first_trigger（收盤 ≤ 0.90·P0、
+       ≥ 1.15·P0）的第一次觸發日，也 ＝ 甲的 avgdown.first_triggers（字面式）落在持有期內的那一次；觀察窗 ＝ 引擎能在出場前成交的
+       [e, x−2]（排程出場日 x 當天不再加減碼）
+    ⇒ 結論：乙一、乙二 引擎都有對應參數（add_rule {"kind": "loss", "x": 0.10}、trim_rule {"kind": "gain", "x": 0.15, "frac": 0.5}）
 """
 from __future__ import annotations
 import os, sys, zlib
@@ -357,55 +360,53 @@ def _sim(sig_rows, closes, opens, ncal, **kw):
 def F10():
     ncal = 40
     out = {}
-    # ⓐ 鏡像存在的那兩條：2-B ⓐ（漲 15% 加）、2-C ⓐ（跌 10% 賣半）
-    c = np.full(ncal, 100.0, np.float32); c[6] = 116.0; o = np.full(ncal, 100.0, np.float32)
-    g = float(c[30] / o[2] - 1)
-    r1 = _sim([("A", 2, 30, g)], {"A": c}, {"A": o}, ncal, add_rule={"kind": "gain", "x": 0.15}, audit=(au := []))
+    o = np.full(ncal, 100.0)
+    LOSS = {"kind": "loss", "x": 0.10}; GAIN = {"kind": "gain", "x": 0.15, "frac": 0.5}
+    # ⓐⓑ 攤平（add_rule kind＝loss）：收盤 90.0 ＝ 0.90×100 ⇒ t＝7 開盤加；之後跌到 80 不再加
+    c = np.full(ncal, 100.0); c[6] = 90.0; c[10] = 80.0; c[12] = 85.0
+    r1 = _sim([("A", 2, 30, 0.0)], {"A": c}, {"A": o}, ncal, add_rule=LOSS, audit=(au := []))
     add_days = [a["t"] for a in au if a.get("kind") == "add"]
-    assert add_days == [7] and r1["x_add_n"] == 1, (add_days, r1.get("x_add_n"))
-    c2 = np.full(ncal, 100.0, np.float32); c2[6] = 89.0
-    r2 = _sim([("A", 2, 30, float(c2[30] / o[2] - 1))], {"A": c2}, {"A": o}, ncal, trim_rule={"x": 0.10, "frac": 0.5}, audit=(au2 := []))
+    assert add_days == [7] and (r1["x_add_trig"], r1["x_add_n"]) == (1, 1), (add_days, r1.get("x_add_trig"), r1.get("x_add_n"))
+    c1 = np.full(ncal, 100.0); c1[6] = 90.01
+    r1b = _sim([("A", 2, 30, 0.0)], {"A": c1}, {"A": o}, ncal, add_rule=LOSS)
+    assert (r1b["x_add_trig"], r1b["x_add_n"]) == (0, 0), r1b.get("x_add_trig")
+    out["ⓐⓑ 攤平 loss"] = "收盤 90.0（＝0.90·P0）⇒ t＝7 開盤加、之後跌到 80 不再加（trig 1、加成 1）；90.01 ⇒ 不加"
+    # ⓐⓑ 停利（trim_rule kind＝gain）：收盤 115.0 ＝ 1.15×100 ⇒ t＝7 開盤賣半；之後漲到 130 不再賣
+    c2 = np.full(ncal, 100.0); c2[6] = 115.0; c2[10] = 130.0
+    r2 = _sim([("A", 2, 30, 0.0)], {"A": c2}, {"A": o}, ncal, trim_rule=GAIN, audit=(au2 := []))
     trim_days = [a["t"] for a in au2 if a.get("kind") == "trim"]
-    assert trim_days == [7] and r2["x_trim_n"] == 1, trim_days
-    out["ⓐ 鏡像的兩條在引擎裡"] = "2-B ⓐ gain +15% ⇒ 次日開盤加（t＝7）；2-C ⓐ trim −10% ⇒ 次日開盤賣半（t＝7）"
-    # ⓑ 沒有「跌 x% 加碼」
-    try:
-        _sim([("A", 2, 30, 0.0)], {"A": c2}, {"A": o}, ncal, add_rule={"kind": "loss", "x": 0.10})
-        raise AssertionError("⛔ add_rule kind＝loss 居然能跑")
-    except ValueError:
-        pass
-    flat = np.full(ncal, 100.0, np.float32)
-    r3 = _sim([("A", 2, 30, 0.0)], {"A": flat}, {"A": o}, ncal, add_rule={"kind": "gain", "x": -0.10}, audit=(au3 := []))
-    d3 = [a["t"] for a in au3 if a.get("kind") == "add"]
-    assert d3 == [3], d3                                   # 價格不動，進場後第一天就加 ⇒ 方向錯
-    r4 = _sim([("A", 2, 30, float(c2[30] / o[2] - 1))], {"A": c2}, {"A": o}, ncal, add_rule={"kind": "gain", "x": 0.15})
-    assert r4["x_add_n"] == 0                              # 跌 10% 時 gain 不會加
-    out["ⓑ 乙一（跌 10% 加 0.5 slot）"] = "引擎沒有：kind 只接受 gain／flag／hold（loss ⇒ ValueError）；gain x＝−0.10 在價格不動的第一天就加（方向錯）"
-    # ⓒ 沒有「漲 x% 賣半」
-    try:
-        _sim([("A", 2, 30, 0.0)], {"A": c}, {"A": o}, ncal, trim_rule={"x": -0.15, "frac": 0.5})
-        raise AssertionError("⛔ trim_rule x＝−0.15 居然能跑")
-    except ValueError:
-        pass
-    r5 = _sim([("A", 2, 30, float(c[30] / o[2] - 1))], {"A": c}, {"A": o}, ncal, trim_rule={"x": 0.10, "frac": 0.5})
-    assert r5["x_trim_n"] == 0                             # 漲 15% 時 trim 不會賣
-    out["ⓒ 乙二（漲 15% 賣半）"] = "引擎沒有：trim_rule 只有「≤ −x」方向、x 必須在 (0,1)（−0.15 ⇒ ValueError）；regime_trim 看的是 0050 不是個股"
-    # ⓓ flag 以股票代號給、條件依部位進場價 ⇒ 重疊兩列無法用同一份旗標
-    oo = np.full(ncal, 100.0, np.float32); oo[4] = 110.0     # A 在 2 進場（ep 100）、B 在 4 進場（ep 110）
-    cc = np.full(ncal, 100.0, np.float32); cc[8] = 95.0      # 95 ≤ 0.9×110＝99 ⇒ B 該加；95 > 90 ⇒ A 不該加
-    fA = np.zeros(ncal, bool); fB = np.zeros(ncal, bool)
-    fB[8] = True                                              # B 的正確旗標（A 的正確旗標全假）
-    rowA = ("S", 2, 30, float(cc[30] / oo[2] - 1)); rowB = ("S", 4, 32, float(cc[32] / oo[4] - 1))
-    res = {}
-    for nm, fl in (("A的旗標", fA), ("B的旗標", fB)):
-        a1 = _sim([rowA], {"S": cc}, {"S": oo}, ncal, add_rule={"kind": "flag", "flags": {"S": fl}})["x_add_n"]
-        b1 = _sim([rowB], {"S": cc}, {"S": oo}, ncal, add_rule={"kind": "flag", "flags": {"S": fl}})["x_add_n"]
-        res[nm] = (a1, b1)
-    assert res["A的旗標"] == (0, 0) and res["B的旗標"] == (1, 1), res       # 正確答案是 (A 不加, B 加) ＝ (0, 1)：兩份旗標都做不到
-    out["ⓓ flag 旗標代替不了"] = "同一檔兩列（ep 100／110）：A 的旗標 ⇒ (A 加 0, B 加 0)；B 的旗標 ⇒ (1, 1)；正確 ＝ (0, 1) ⇒ 靜態旗標無解"
-    out["結論"] = {"乙一_引擎有對應參數": False, "乙二_引擎有對應參數": False, "處置": "停、回報（⛔ 不改引擎）"}
+    assert trim_days == [7] and r2["x_trim_n"] == 1, (trim_days, r2.get("x_trim_n"))
+    c3 = np.full(ncal, 100.0); c3[6] = 114.99
+    assert _sim([("A", 2, 30, 0.0)], {"A": c3}, {"A": o}, ncal, trim_rule=GAIN)["x_trim_n"] == 0
+    assert 115.0 / 100.0 - 1.0 < 0.15 and 115.0 >= (1.0 + 0.15) * 100.0 and 90.0 <= (1.0 - 0.10) * 100.0   # 字面式觸發、舊比值式不觸發
+    out["ⓐⓑ 停利 gain"] = "收盤 115.0（＝1.15·P0；舊比值式 115/100−1＜0.15 不觸發）⇒ t＝7 開盤賣半、之後漲到 130 不再賣（x_trim_n 1）；114.99 ⇒ 不賣"
+    # ⓒ 與登錄門檻字面式一致：隨機路徑（無停牌 ⇒ 引擎與獨立寫法讀同一串收盤）
+    n_path = 300; ncal2 = 400; hit = {"跌": 0, "漲": 0}; tot = 0
+    for sd in range(n_path):
+        op, cl, _ = rand_path(7000 + sd, ncal2)
+        cl = pd.Series(cl).ffill().bfill().to_numpy()
+        valid = np.ones(ncal2, bool)
+        for e in (5, 200):
+            x = e + 119
+            for kind, kw, tag in (("跌", dict(add_rule=LOSS), "add"), ("漲", dict(trim_rule=GAIN), "trim")):
+                r = _sim([("A", e, x, 0.0)], {"A": cl}, {"A": op}, ncal2, audit=(a_ := []), **kw)
+                days = [z["t"] for z in a_ if z.get("kind") == tag]
+                T_ind = ind_first_trigger(cl, valid, e, float(op[e]), kind, obs=x - 1 - e)
+                T_av = int(AV.first_triggers(cl, valid, np.array([e]), np.array([float(op[e])]), kind, ncal2)[0])
+                want = [T_ind + 1] if T_ind >= 0 else []
+                want_av = [T_av + 1] if 0 <= T_av <= x - 2 else []
+                assert days == want == want_av and len(days) <= 1, (sd, e, kind, days, T_ind, T_av)
+                if kind == "跌":
+                    assert r["x_add_trig"] == len(want), (sd, e, r["x_add_trig"])
+                hit[kind] += len(days); tot += 1
+    assert hit["跌"] > 50 and hit["漲"] > 50, hit
+    out["ⓒ 字面式一致"] = "隨機 {} 條 × 2 筆 × 2 型 ＝ {} 次：引擎動作日 − 1 ＝ ind_first_trigger ＝ avgdown.first_triggers（窗 [e, x−2]）逐筆同；觸發 跌 {}、漲 {}".format(
+        n_path, tot, hit["跌"], hit["漲"])
+    out["結論"] = {"乙一_引擎有對應參數": True, "乙二_引擎有對應參數": True,
+                 "參數": {"By": {"add_rule": {"kind": "loss", "x": 0.10, "size": 0.5, "short": "skip"}},
+                        "Ci": {"trim_rule": {"kind": "gain", "x": 0.15, "frac": 0.5}}},
+                 "處置": "引擎擴充 d609e89a95（裁定 seq181 收下）；乙二 seq3 另有 trim_proceeds 開關（見 selftest_avgengine2.py）"}
     return out
-
 
 ALL = {"F1": F1, "F2": F2, "F3": F3, "F4": F4, "F5": F5, "F6": F6, "F7": F7, "F8": F8, "F9": F9, "F10": F10}
 
