@@ -1,0 +1,12 @@
+{
+ "when": "2026-09-26 03:13",
+ "n": 1,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "(b) 常數鍵＋pick_tie ＝ 抽籤版（pick=None）200 顆逐位元（全部回傳、audit），且 eq_sha ＝ regime_t1 t1 #1",
+   "ok": true,
+   "detail": "相同 200/200；eq_sha ＝ regime_t1 True"
+  }
+ ]
+}

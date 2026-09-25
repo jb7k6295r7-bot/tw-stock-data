@@ -1,0 +1,12 @@
+{
+ "when": "2026-09-26 03:13",
+ "n": 1,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "(c) pick_tie 不給 ⇒ #13（AND｜N20｜d=inf｜relvol）rerun17 main／win 20 顆逐位元（cagr／mdd／vol repr、first／end／trades、eq_sha；⛔ 數值不印）",
+   "ok": true,
+   "detail": "不同 []"
+  }
+ ]
+}

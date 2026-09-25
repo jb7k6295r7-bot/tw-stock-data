@@ -1,0 +1,107 @@
+{
+ "when": "2026-09-26 03:42",
+ "n": 14,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "參數 pick_tie 存在、預設 None",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F1 同分照同顆種子的抽籤：鍵 3、5、5、1、N＝1 ⇒ 30 顆都取 B／C 裡 permutation 在前的那檔（兩檔都出現過）；pick_tie 不給 ⇒ 永遠 B（列序）",
+   "ok": true,
+   "detail": "不符 []；出現 {'B', 'C'}；pick_tie 不給 {('B',)}"
+  },
+  {
+   "name": "F2 NaN 排最後（−∞）：鍵 NaN、NaN、1 ⇒ 永遠 C；全 NaN ⇒ 照抽籤",
+   "ok": true,
+   "detail": "{('C',)}；不符 []"
+  },
+  {
+   "name": "F3 d_max＝1＋queue_days＝2：t＝10 取鍵最大 E3；t＝11 隊列（E1 1、E2 2）＋新訊號 N1 1.5 一起排 ⇒ 取 E2（隊列裡的）；t＝12 取 N1",
+   "ok": true,
+   "detail": "['E3'] ['E2'] ['N1']"
+  },
+  {
+   "name": "F4 自訂鍵欄（不在 _LOG_COLS 裡的 K 欄）可以用（原引擎會 KeyError）",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "隨機 300 個世界（鍵 3 值＋NaN、一半 d_max＋queue、三分之一 T1＋待買）：引擎 pick_tie ＝ 診斷包裝 RankRng 逐位元（全部回傳＋audit）",
+   "ok": true,
+   "detail": "300/300；[]"
+  },
+  {
+   "name": "隨機 200 個世界：常數鍵＋pick_tie ＝ 抽籤版（pick=None）逐位元（全部回傳、audit、log）",
+   "ok": true,
+   "detail": "200/200；[]"
+  },
+  {
+   "name": "鑑別力 MT_noperm：抓到",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"F1\", \"F2\"], \"常數鍵＝抽籤 沒過\": 59, \"對包裝 沒過\": 41}"
+  },
+  {
+   "name": "鑑別力 MT_asc：抓到",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"F1\", \"F2\", \"F3\", \"F4\"], \"常數鍵＝抽籤 沒過\": 0, \"對包裝 沒過\": 60}"
+  },
+  {
+   "name": "鑑別力 MT_nodraw：抓到",
+   "ok": true,
+   "detail": "{\"fixture 沒過\": [\"F1\", \"F2\"], \"常數鍵＝抽籤 沒過\": 59, \"對包裝 沒過\": 41}"
+  },
+  {
+   "name": "pick_tie 省略／None 明寫 ×（抽籤、d_max＋queue、pick＝relvol）× 隨機世界 ⇒ 與改前引擎逐位元同（全部回傳、audit、log）",
+   "ok": true,
+   "detail": "180/180"
+  },
+  {
+   "name": "防呆：pick_tie 沒給 pick ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "防呆：pick_tie＝'random' ⇒ ValueError",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "（對照）改前引擎用自訂鍵欄 K 會 KeyError（本件修的限制）",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "extra": {
+  "突變體": {
+   "MT_noperm": {
+    "fixture 沒過": [
+     "F1",
+     "F2"
+    ],
+    "常數鍵＝抽籤 沒過": 59,
+    "對包裝 沒過": 41
+   },
+   "MT_asc": {
+    "fixture 沒過": [
+     "F1",
+     "F2",
+     "F3",
+     "F4"
+    ],
+    "常數鍵＝抽籤 沒過": 0,
+    "對包裝 沒過": 60
+   },
+   "MT_nodraw": {
+    "fixture 沒過": [
+     "F1",
+     "F2"
+    ],
+    "常數鍵＝抽籤 沒過": 59,
+    "對包裝 沒過": 41
+   }
+  }
+ }
+}

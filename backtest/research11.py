@@ -418,7 +418,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None,
                  entry_tranches=None, add_rule=None, trim_rule=None, size_mult_by_regime=None, regime_trim=None,
                  trim_proceeds=None, nx_cap=None, stop_line_le=False, stop_proceeds=None, stop_block=None,
-                 nx_order="before"):
+                 nx_order="before", pick_tie=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -587,6 +587,15 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
       ⚠ 描述臂 D2「待買併入 slot／併池」⛔ 不需要新參數：就是 trim_proceeds=None（賣得現金併入一般現金，有空槽時一般新部位照
         min(equity/N, 現金) 買）；⚠ 登錄描述臂 ⓐ 的字面「賣得現金閒置到那檔出場」與引擎 None 路徑不同——引擎沒有「綁到那檔出場」
         的閒置，None 路徑那筆錢在【任何】槽空出來時就可以被一般新部位用到（上限 equity/N）
+    PREREG營飆排名（2026-09-26，台股策略線登錄 seq1 sha 6a1a8643d7e61b4a；裁定線 seq199；回測線落地）再加（⛔ 預設關閉 ⇒ 與 84de67ccaf 逐位元相同）：
+      pick_tie  None（預設：pick 照原樣 ＝ 依欄遞減、同分照候選列序、⛔ 不動 rng）／"rng" ⇒ 同分用同顆種子的 rng 決定：
+                每天先照抽籤版抽【同一次】perm ＝ rng.permutation(len(cand))（⭐ 抽的次數、時點與抽籤版逐日相同 ⇒「同顆種子 rng 接著抽」），
+                再依鍵遞減穩定排序 order ＝ perm[argsort(−key[perm], stable)] ⇒ 同分者的先後 ＝ 那次抽籤；NaN 照舊排最後（−∞，彼此也照抽籤）
+                ⛔ 只能與 pick 同開；鍵全相同（常數欄）⇒ 與 pick=None 的抽籤版逐位元相同（fixture 驗）
+                與既有參數的互動：候選 ＝ 當天訊號 ＋ queue_days 的隊列列（它們帶自己的鍵）去掉已持有的；d_max 只限名額（avail），
+                排序對全部候選；cap_fn 照排好的順序逐一問；待買（trim／stop_proceeds）照排好的順序先配 ⇒ 全部與 pick 原路徑同一段
+      ⚠ 同時修一個既有限制（⛔ 不改既有路徑的輸出）：pick 欄原本必須在 _LOG_COLS 裡（relvol 在），其他欄在 sig 瘦身時被丟掉 ⇒ KeyError；
+        現在 pick 欄若不在其中就一併帶進來（只影響原本會報錯的呼叫；pick＝relvol／None 的 extra 欄不變）
     ⭐ 共同規則（五個參數都一樣）：
       ・時序：所有判定只讀 t−1 以前（0050 狀態 below[t−1]、個股收盤[t−1]），成交在 t 開盤（還原開盤價）
       ・同一天的順序：排程出場 → 賣（減半／賣半）→ 買（補回／分批／加碼）→ 新部位進場
@@ -648,6 +657,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             raise ValueError("bench 序列要 ffill 過且全正")
     cols = ["sid", "entry_pos", f"xpos_{rule}", f"g_{rule}"]
     extra = [c for c in _LOG_COLS if c in sig.columns and c not in cols]
+    if pick is not None and pick in sig.columns and pick not in cols and pick not in extra:
+        extra.append(pick)                       # 營飆排名：自訂鍵欄（原本只能用 _LOG_COLS 裡的欄）
     d = sig[cols + extra].dropna(subset=cols)
     d = d[d[f"xpos_{rule}"] >= 0].rename(columns={f"xpos_{rule}": "exit_pos", f"g_{rule}": "gross"})
     by_entry = {k: g for k, g in d.groupby("entry_pos")}
@@ -779,6 +790,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if _nx is None:
             _nx = {"lots": [], "n": 0, "amt": 0.0, "waits": [], "full_days": 0, "empty_days": 0, "blocked": 0}
         _nx["stop_lots"] = 0
+    if pick_tie not in (None, "rng"):
+        raise ValueError(f"pick_tie 只能是 None（預設）或 'rng'，收到 {pick_tie!r}")
+    if pick_tie is not None and pick is None:
+        raise ValueError("pick_tie 只能與 pick 同開（營飆排名）")
     if nx_order not in ("before", "after"):
         raise ValueError(f"nx_order 只能是 'before'（預設）或 'after'，收到 {nx_order!r}")
     if nx_order == "after" and _nx is None:
@@ -1119,7 +1134,11 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     order = rng.permutation(len(cand))
                 else:
                     key = cand[pick].to_numpy(float); key = np.where(np.isnan(key), -inf, key)
-                    order = np.argsort(-key, kind="stable")
+                    if pick_tie == "rng":            # 營飆排名：與抽籤版同一次 permutation，依鍵遞減、同分照抽籤先後
+                        _perm = rng.permutation(len(cand))                           # _PT_DRAW
+                        order = _perm[np.argsort(-key[_perm], kind="stable")]         # _PT_ORDER
+                    else:
+                        order = np.argsort(-key, kind="stable")
                 if cap_fn is None:
                     take = order[:avail]; rest = list(order[avail:])
                 else:                                            # PREREGP2：逐一問 cap_fn，不合格者記 "cap"、名額往後讓
