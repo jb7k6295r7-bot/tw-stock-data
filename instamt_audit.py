@@ -133,7 +133,15 @@ def load_calendar(root, which="twse"):
 
 
 # ── ① 覆蓋 ──────────────────────────────────────────────────────────────
-def sec_coverage(data, cal, feed, floor, note):
+# ⭐ 已知缺口（裁定線 seq120 §①：官方端點回 stat=ok＋0 列、重問三次一樣 ⇒ 資料缺、NaN，⛔ 不算我方漏抓）
+#   ⇒ 列在這裡的日子【照樣印出來】，但不讓 ① 報紅；⛔ 只收「官方自己沒有」的日子，我方抓失敗的不可以放進來
+KNOWN_GAPS = {
+    "otcinstamt": {"2018-01-12": "官方端點回 stat=ok＋0 列（2026-09-24 重問三次同）"},
+}
+
+
+def sec_coverage(data, cal, feed, floor, note, known=None):
+    known = known or {}
     print()
     print("① 覆蓋（逐日對 calendar_twse）")
     if not data:
@@ -142,12 +150,17 @@ def sec_coverage(data, cal, feed, floor, note):
     have = sorted(data)
     lo, hi = have[0], have[-1]
     want = [d for d in cal if max(lo, floor) <= d <= hi]
-    miss = [d for d in want if d not in data]
+    miss_all = [d for d in want if d not in data]
+    kg = [d for d in miss_all if d in known]
+    miss = [d for d in miss_all if d not in known]
     extra = [d for d in have if d not in set(cal)]
     print("   實有 %d 天：%s … %s" % (len(have), lo, hi))
     print("   應有 %d 天（calendar_twse ∩ [%s, %s]）" % (len(want), max(lo, floor), hi))
     print("   缺 %d 天%s" % (len(miss), ("：" + "、".join(miss[:40])
                                          + ("… 等" if len(miss) > 40 else "")) if miss else ""))
+    if kg:
+        print("   ⭐ 已知缺口 %d 天（官方沒有，⛔ 不算缺、值為 NaN）：%s"
+              % (len(kg), "、".join("%s（%s）" % (d, known[d]) for d in kg)))
     if extra:
         # ⚠ 我方有、日曆沒有 ⇒ 不是「多抓」就是日曆自己缺 ⇒ 兩種都要看，⛔ 不可忽略
         print("   ⚠ 我方有而 calendar_twse 沒有的 %d 天：%s"
@@ -367,7 +380,8 @@ def main():
         note = ("上櫃回溯下限 2017-01-03（二分找出來）；"
                 "⛔⛔ 而 2017-01-03 ~ 2018-01-11 那一段【沒有外資也沒有總計列】，"
                 "2018-01-12 端點回 stat=ok ＋ 0 列（重問三次一樣）⇒ 那是端點的洞；"
-                "⚠ calendar_tpex.csv 只有 2026-09 起 ⇒ 這裡拿 calendar_twse 當母體")
+                "⚠ calendar_tpex.csv 只有 2026-09 起 ⇒ 這裡拿 calendar_twse 當母體"
+                "｜⭐ 兩市開休市相同：假設，未逐日驗（裁定線 seq120）")
 
     data = load_feed(root, feed)
     cal = load_calendar(root, "twse")
@@ -376,7 +390,7 @@ def main():
     print("root=%s｜calendar_twse %d 天" % (root, len(cal)))
     print("=" * 72)
 
-    res = [("① 覆蓋", sec_coverage(data, cal, feed, floor, note))]
+    res = [("① 覆蓋", sec_coverage(data, cal, feed, floor, note, KNOWN_GAPS.get(feed)))]
     if data:
         res.append(("② 對帳", sec_recon(data, feed, root)))
         res.append(("③ 單位", sec_unit(data, feed, root, market)))
