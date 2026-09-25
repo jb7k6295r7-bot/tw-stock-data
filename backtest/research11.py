@@ -417,7 +417,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
                  weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None,
                  entry_tranches=None, add_rule=None, trim_rule=None, size_mult_by_regime=None, regime_trim=None,
-                 trim_proceeds=None):
+                 trim_proceeds=None, nx_cap=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -548,6 +548,17 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
           ・模擬結束還沒買出去的待買 ⇒ 留現金（x_nx_pending_end 筆、x_nx_pending_amt_end 元）
         多回傳（只在 "next" 時出現）：x_nx_n（待買買進筆數）、x_nx_amt（金額合計）、x_nx_waits（每筆 賣出日 → 買進日 的交易日數）、
           x_nx_full_days、x_nx_empty_days、x_nx_blocked、x_nx_pending_end、x_nx_pending_amt_end
+    裁定線 seq186 §三 選（乙）（2026-09-26；回測線落地）再加 nx_cap（⛔ 預設 None ⇒ 與 12c39cb810 逐位元相同）：
+      nx_cap  None（預設）⇒ 待買的容量 ＝ 當天容量（n_slots／caps[t]）⇒ 上面 ①「⛔ 不超過容量」原樣
+                ⭐ 裁定 seq188 的 #1（N＝10）停損／停利賣出後買下一檔、同在 10 槽上限內 ＝ 就是這條 None 路徑
+              整數 K ⇒ 待買買進可以用到【總部位數】≤ K_t ＝ max(K, 當天容量)（caps 開啟時取 max(K, caps[t])）；
+                一般新部位仍只在【總部位數】＜ 當天容量時才買（⭐ 讀法，裁定線給的：看總數、⛔ 不是看一般部位數）
+                ⇒ 例 n_slots＝8、nx_cap＝10：一般新部位滿 8 就停；待買可以開到第 9、10 檔；滿 10 待買才等（x_nx_full_days）；
+                  目前 9 檔（其中 1 檔是待買買進的）⇒ 一般新部位不買，要等總數 ＜ 8
+                同一天：挑中名單的長度 ＝ max(min(待買筆數, K_t − 總數), 當天容量 − 總數)，待買先配（同 seq3）、剩下的才是一般新部位
+                ⇒ 一般新部位買完時總數 ≤ 當天容量；待買買完時總數 ≤ K_t
+              ⛔ 只能與 trim_proceeds="next" 同開；純量 n_slots 時 K 必須 ≥ n_slots；K 要是整數（bool ⇒ ValueError）
+              多回傳（只在 K 給了時出現）：x_nx_over（總數已 ≥ 當天容量時由待買買進的筆數 ＝ 第 9、10 檔那種）
     ⭐ 共同規則（五個參數都一樣）：
       ・時序：所有判定只讀 t−1 以前（0050 狀態 below[t−1]、個股收盤[t−1]），成交在 t 開盤（還原開盤價）
       ・同一天的順序：排程出場 → 賣（減半／賣半）→ 買（補回／分批／加碼）→ 新部位進場
@@ -722,6 +733,16 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if trim_rule is None or _trim_kind != "gain":
             raise ValueError("trim_proceeds='next' 只能與 trim_rule kind='gain' 同開（PREREG攤平停利 seq3 乙二）")
         _nx = {"lots": [], "n": 0, "amt": 0.0, "waits": [], "full_days": 0, "empty_days": 0, "blocked": 0}
+    _nxk = None                     # 裁定 seq186 §三（乙）：待買的總檔數上限（None ⇒ ＝ 當天容量、12c39cb810 路徑）
+    if nx_cap is not None:
+        if _nx is None:
+            raise ValueError("nx_cap 只能與 trim_proceeds='next' 同開（裁定 seq186 §三）")
+        if isinstance(nx_cap, (bool, np.bool_)) or not isinstance(nx_cap, (int, np.integer)):
+            raise ValueError(f"nx_cap 要是整數，收到 {nx_cap!r}")
+        _nxk = int(nx_cap)
+        if _nxk < 1 or (caps is None and _nxk < n_slots):
+            raise ValueError(f"nx_cap 必須 ≥ n_slots（{n_slots}），收到 {nx_cap!r}")
+        _nx["over"] = 0
 
     def _x_px(sid, t, side):
         """t 開盤能不能成交：能 ⇒ 回開盤價；不能 ⇒ None（見 docstring「可交易性」）。"""
@@ -1015,9 +1036,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         elif log is not None and g is not None:
             g = g.assign(_t0=t)
         ns_t = n_slots if caps is None else int(caps[t])
-        if _nx is not None and _nx["lots"] and g is not None and len(open_pos) >= ns_t:
+        _nx_kt = ns_t if _nxk is None else max(_nxk, ns_t)   # seq186：待買的容量（None ⇒ ＝ 當天容量）
+        if _nx is not None and _nx["lots"] and g is not None and len(open_pos) >= _nx_kt:
             _nx["full_days"] += 1                        # seq3 乙二 ①：槽滿 ⇒ 待買等
-        if g is not None and len(open_pos) < ns_t:
+        if g is not None and (len(open_pos) < ns_t or (_nxk is not None and _nx["lots"] and len(open_pos) < _nx_kt)):  # _NXK_ENTER
             if log is not None and held:
                 for _, row in g[g["sid"].isin(held)].iterrows():
                     if "_t0" not in row or int(row["_t0"]) == t:      # 隊列裡的等待中不記；新訊號撞持倉才記 c
@@ -1027,6 +1049,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 _nx["empty_days"] += 1                   # seq3 乙二 ④：有訊號但全是已持有的 ⇒ 待買等  # _NX_EMPTY
             if len(cand):
                 slots_free = ns_t - len(open_pos)
+                if _nxk is not None:                     # seq186：待買可用到 K_t；一般新部位仍只到 ns_t（待買先配 ⇒ 名單長度見 docstring）
+                    slots_free = max(min(len(_nx["lots"]), _nx_kt - len(open_pos)), slots_free)   # _NXK_FREE
                 d_free = inf if d_max is None else d_max
                 avail = int(min(slots_free, d_free))
                 if pick is None:
@@ -1086,6 +1110,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     _nx_buy = _nx is not None and bool(_nx["lots"])      # seq3 乙二 ②：待買先配給挑中的前幾檔  # _NX_WHO
                     if _nx_buy:
                         amt, _nx_t = _nx["lots"].pop(0)                  # seq3 乙二 ③：全額  # _NX_AMT
+                        if _nxk is not None and len(open_pos) >= ns_t:
+                            _nx["over"] += 1                             # seq186：超過一般容量的那幾檔（第 9、10 檔）
                         _nx["n"] += 1; _nx["amt"] += amt; _nx["waits"].append(t - _nx_t)
                     elif targets is None:
                         amt = min(slot, cash)
@@ -1205,6 +1231,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["x_nx_n"] = _nx["n"]; out["x_nx_amt"] = _nx["amt"]; out["x_nx_waits"] = list(_nx["waits"])
         out["x_nx_full_days"] = _nx["full_days"]; out["x_nx_empty_days"] = _nx["empty_days"]; out["x_nx_blocked"] = _nx["blocked"]
         out["x_nx_pending_end"] = len(_nx["lots"]); out["x_nx_pending_amt_end"] = float(sum(a_ for a_, _ in _nx["lots"]))
+        if _nxk is not None:        # seq186（⛔ nx_cap=None 時這個鍵不存在 ⇒ 與 12c39cb810 逐位元相同）
+            out["x_nx_over"] = _nx["over"]
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out
