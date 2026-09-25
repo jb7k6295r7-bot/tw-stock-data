@@ -182,5 +182,22 @@ ck("兩代相鄰 ⇒ 報「換過 1 次」", "換過 1 次" in q.text, q.text[-3
 ck("每一個列名都帶起訖日", "2018-01-11 … 2018-01-11" in q.text, q.text[:300])
 
 print()
+
+# ⭐ 已知缺口（裁定線 seq120）：列在 KNOWN_GAPS 的日子不算缺，但要印出來
+import contextlib as _cl, io as _io
+_cal = ["2018-01-11", "2018-01-12", "2018-01-15"]
+_dat = {"2018-01-11": {}, "2018-01-15": {}}
+_buf = _io.StringIO()
+with _cl.redirect_stdout(_buf):
+    _ok = A.sec_coverage(_dat, _cal, "otcinstamt", "2017-01-03", "", A.KNOWN_GAPS["otcinstamt"])
+ck("⭐ 已知缺口 2018-01-12 不讓 ① 報紅", _ok is True, _buf.getvalue()[-200:])
+ck("⭐ 而且照樣印出來（⛔ 不是安靜吞掉）", "已知缺口 1 天" in _buf.getvalue(), _buf.getvalue()[-200:])
+_buf2 = _io.StringIO()
+with _cl.redirect_stdout(_buf2):
+    _ok2 = A.sec_coverage(_dat, _cal, "otcinstamt", "2017-01-03", "", {})
+ck("⛔ 反向：不給已知缺口 ⇒ 同一天照樣報缺", _ok2 is False and "缺 1 天" in _buf2.getvalue(), _buf2.getvalue()[-200:])
+ck("⛔ 已知缺口只有官方沒有的那一天（⛔ 不可以拿來藏我方漏抓）",
+   list(A.KNOWN_GAPS) == ["otcinstamt"] and list(A.KNOWN_GAPS["otcinstamt"]) == ["2018-01-12"], str(A.KNOWN_GAPS))
+
 print("合計：ok %d／✗ %d" % (OK, FAIL))
 sys.exit(1 if FAIL else 0)

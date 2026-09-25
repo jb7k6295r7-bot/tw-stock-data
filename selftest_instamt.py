@@ -168,6 +168,23 @@ def main():
         ck("  ★ %s 目錄沒有被這一支建出來" % nm,
            not os.path.exists(d) or os.path.isdir(d), d)
 
+    print("")
+    print("⑪ ⭐ marginmkt（大盤信用交易統計，2026-09-25）：標題日期要驗、列數要剛好 3")
+    MF = ["項目", "買進", "賣出", "現金(券)償還", "前日餘額", "今日餘額"]
+    MR = [["融資(交易單位)", "1", "2", "3", "4", "5"], ["融券(交易單位)", "1", "2", "3", "4", "5"],
+          ["融資金額(仟元)", "1,000", "2", "3", "4", "5"]]
+
+    def _mm(title, rows):
+        return {"stat": "OK", "tables": [{"title": title, "fields": MF, "data": rows}, {"title": "融資融券彙總"}]}
+    l1, n1 = F.parse_marginmkt(_mm("103年02月05日 信用交易統計", MR), "2014-02-05")
+    ck("  ⭐ 正常日 3 列、千分位逗號拿掉、列寬 ＝ header", len(l1) == 3 and l1[2][2] == "1000"
+       and all(len(r) == len(F.FEEDS["marginmkt"]["header"]) for r in l1), "%s｜%s" % (l1, n1))
+    l2, n2 = F.parse_marginmkt(_mm("103年02月06日 信用交易統計", MR), "2014-02-05")
+    ck("  ⛔ 標題日期 ≠ 請求 ⇒ 拒收（參數沒生效那一族）", not l2 and "≠ 請求" in n2, n2)
+    l3, n3 = F.parse_marginmkt(_mm("103年02月05日 信用交易統計", MR[:2]), "2014-02-05")
+    ck("  ⛔ 少一列 ⇒ 拒收（⛔ 不可以寫出缺融資金額的一天）", not l3 and "應為 3 列" in n3, n3)
+    l4, n4 = F.parse_marginmkt(_mm("融資融券彙總", MR), "2014-02-05")
+    ck("  ⛔ 第一張表不是信用交易統計 ⇒ 拒收", not l4, n4)
     print("\n[selftest] 通過 %d｜失敗 %d" % (OK, FAIL))
     return 1 if FAIL else 0
 

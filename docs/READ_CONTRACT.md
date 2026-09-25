@@ -1579,6 +1579,18 @@ data/history/market_inst.csv
 
 四個都是 `fetch.py` 從 **2026-09-01** 起一天累積一列（⛔ 不是 2015 年起）。
 
+⭐⭐ **大盤三大法人金額要長歷史 ⇒ 讀 `data/universe/instamt/`（上市 2015-01-05 起）與 `otcinstamt/`（上櫃 2017-01-03 起）**，
+⛔ 不是 `market_inst.csv`（2026-09-25 改指路；資料庫線與裁定線 seq109、情報線 20260925-0139）：
+
+```
+market_inst.csv（latest／history 兩份逐位元相同）  寬格式 date,foreign,trust,dealer,total，2026-09-01 起，只有上市
+universe/instamt/<日期>.csv                        長格式 date,investor,buy,sell,net，官方列名原文，上市上櫃分開
+⇒ 重疊期逐位元相同（instamt_audit.py ② 每天比）；⛔ market_inst 的 `history` 名字不代表它有歷史
+⇒ 兩者換算：foreign ＝「外資及陸資(不含外資自營商)」＋「外資自營商」的 net（2017-12-18 以前那列叫「外資」）；
+   trust ＝ 投信；dealer ＝ 自營商兩列（或舊代「自營商」）；total ＝ 官方「合計」列（⛔ 不是各列加總：外資自營商不入合計）
+⏳ 早年段 2004-04-07～2014-12 的上市那段會落在 data/early/instamt/（⛔ 不併進 universe）
+```
+
 ⭐ 而 `market_index.csv` 的 `close` **回補得到**：TWSE `FMTQIK`（`calendar_audit.py`
 每個月本來就會打一次）第 5 欄就是發行量加權股價指數，2015-01 起 140 個月
 ⇒ **0 次額外請求**。⚠ 而回補的列 `change`／`change_pct` 是**空的**
