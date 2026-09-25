@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-25T17:55:14+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36118875313｜永續合約資金費率（答加密策略線 PREREGC2 §六①③）
+# ⏱ 這一趟：2026-09-26T01:03:35+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36162411655｜永續合約資金費率（答加密策略線 PREREGC2 §六①③）
 
 # 永續合約資金費率探針（⛔ 只讀，本支不寫任何資料檔）
 母體：BTC／ETH／BNB／XRP／DOGE／SOL（加密策略線 20260923-1305 收斂的六幣）

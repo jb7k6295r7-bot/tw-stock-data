@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-25T17:55:02+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36118875313｜美股供料：阻斷項＝拿不拿得到已下市的股票
+# ⏱ 這一趟：2026-09-26T01:03:21+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36162411655｜美股供料：阻斷項＝拿不拿得到已下市的股票
 
 # 美股供料探針（⛔ 只讀，本支不寫任何資料檔）
 範圍（使用者 2026-09-24 定）：價量 ＋ 全市場【含下市】
@@ -8,12 +8,12 @@
 
 ══ Yahoo chart（免費、不需 key、⚠ 非官方）══
    AAPL　⭐ 對照組：在市，⛔ 少了它分不出「沒有下市股」與「整個來源不通」
-      ✅ 11,538 列｜1980-12-12 ~ 2026-09-24｜0.2 秒
+      ✅ 11,539 列｜1980-12-12 ~ 2026-09-25｜0.6 秒
       粒度：✅ 我要 1d，它說它給 1d
    LEH（Lehman Brothers（2008 破產））
       ⛔ 連不上：HTTP 404 Not Found | {"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}
    SHLD（Sears Holdings（2018 下市））
-      ⛔⛔ 有 760 列但最後一天 2026-09-24 **晚於下市年 2018 兩年以上** ⇒ ⚠ 這個代號很可能【被別家公司重用】 ⇒ ⛔ 查得到比查不到更危險
+      ⛔⛔ 有 761 列但最後一天 2026-09-25 **晚於下市年 2018 兩年以上** ⇒ ⚠ 這個代號很可能【被別家公司重用】 ⇒ ⛔ 查得到比查不到更危險
    TWTR（Twitter（2022 被收購下市））
       ⛔ 連不上：HTTP 404 Not Found | {"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}
    FRC（First Republic Bank（2023 被接管））
@@ -22,11 +22,11 @@
      ⇒ ⛔⛔ 這個來源**不能用來做回測**（母體只剩倖存者）
    ⛔ 降轉 OTC 後的代號（⚠ 一條被實測推翻的線索，留著當反向樣本）
       FRCB（First Republic 降轉後代號）
-         ⛔⛔ 有 3,971 列但最後一天 2026-09-24 **晚於下市年 2023 兩年以上** ⇒ ⚠ 這個代號很可能【被別家公司重用】 ⇒ ⛔ 查得到比查不到更危險
+         ⛔⛔ 有 3,972 列但最後一天 2026-09-25 **晚於下市年 2023 兩年以上** ⇒ ⚠ 這個代號很可能【被別家公司重用】 ⇒ ⛔ 查得到比查不到更危險
       SIVBQ（SVB Financial（Q ＝ 破產中））
          ⛔ 連不上：HTTP 404 Not Found | {"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}
       SBNYL（Signature Bank 降轉後代號）
-         ⛔⛔ 有 1,451 列但最後一天 2026-09-24 **晚於下市年 2023 兩年以上** ⇒ ⚠ 這個代號很可能【被別家公司重用】 ⇒ ⛔ 查得到比查不到更危險
+         ⛔⛔ 有 1,452 列但最後一天 2026-09-25 **晚於下市年 2023 兩年以上** ⇒ ⚠ 這個代號很可能【被別家公司重用】 ⇒ ⛔ 查得到比查不到更危險
       LEHMQ（Lehman Brothers）
          ⛔ 連不上：HTTP 404 Not Found | {"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}
       WAMUQ（Washington Mutual）
@@ -52,5 +52,5 @@
       無 key 試打：回了 2 bytes
    Polygon tickers(active=false)
       ⭐ 文件說 active=false 回已下市代號
-      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"28b8fabe1922f1c51f074e5fbc86f87f","error":"API Key was not provided"}
+      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"e9cd436fe7e6baf92669ceb90db934cc","error":"API Key was not provided"}
    ⇒ ⭐ 這一節【不是】資料品質的證據，只是「這條路要不要付錢」的入口確認。
