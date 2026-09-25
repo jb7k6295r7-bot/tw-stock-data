@@ -1059,6 +1059,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## early:tpex　✓ 正常
+
+最後執行：2026-09-26T00:29:56+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36139646439
+
+- **交易日**：1870 天（2007-07-02 ~ 2014-12-31，官方月表）
+- **⭐ 台帳補回**：1470 個 (日, 市場) 從已落地的日檔重算（notrade_blanked 留空＝算不回來）
+- **本趟**：寫 1870 天｜已有跳過 0｜失敗 0｜結構：bad_hl 0、零價 0、負價 0｜無成交 0.00 改空白 119680 列
+
+檢查：
+- ok　失敗 0 天（⛔ 交易日上拿不到 ≠ 休市）　（[]）
+
 ## early:twse　✓ 正常
 
 最後執行：2026-09-25T20:58:01+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36120748177
