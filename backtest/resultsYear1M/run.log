@@ -1,0 +1,128 @@
+[     0s] ===== researchYear1M panel 2026-09-26 00:25（台北）｜D.DATA /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data =====
+[     0s] [panel] gate3 2099 檔｜量測日 2026-08-03（重疊 fixture）＋ 2026-09-01（新增）
+[     0s] [TDR] 存託憑證（industry_code 91）10 檔 ⇒ rev_hi24 一律留 NaN、標【不明】（⛔ 不寫 False）
+[    19s]   400/2099 15s
+[    33s]   800/2099 29s
+[    46s]   1200/2099 42s
+[    60s]   1600/2099 56s
+[    73s]   2000/2099 69s
+[    78s] [panel] 重疊 2026-08-03：本檔 1915 列 vs panel_ext 1915 列 ⇒ 逐位元 True []
+[    79s] [panel] {'重疊量測日': '2026-08-03', '重疊列': 1915, '重疊逐位元': True, '新增量測日': '2026-09-01', '新增列': 1917, '新增eligible': 629, 'fwd欄': '新增列一律 NaN（p9_panel_ext.mask_fwd）', 'sha256': 'c1047cb9ba5e9d8028c72cdeffbb60f7354071e8e61e1e3a859a7fa02c2702fd'}
+[     0s] ===== researchYear1M gate 2026-09-26 00:27（台北）｜D.DATA /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data =====
+[    34s] [T1 門檻B AFC] {"原函式列數": 2881, "截斷補回": 0, "合計": 2881, "補回進場日": null, "量測月": ["2017-03", "2026-03"]}
+[    34s] [T1 門檻B ext＋0901] {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}
+[    74s] [T1 AND 資料尾] {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}
+[    79s] [設定] {"日曆": "2859 根 2015-01-05～2026-09-24", "AND": 2339, "AND_補": {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}, "門檻B_AFC": 2881, "門檻B_主版": {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}, "門檻B_ext＋0901_原函式": 2897, "Bb旗標_09-01前相同": true, "panel_ext_sha": "d75bf50baae15ed0445219a6f8003f166d65a6ce93b930d729a789fc364e0788", "最早受影響": {"AND_H60": "2026-07-03", "AND_H120": "2026-04-09", "AND_LD": "2026-09-24", "門檻B": "2026-04-02"}}
+[    79s] [G1 0050] {'年化': 0.24020209886370614, '回落': -0.3395700527611012, '錨': [0.24020209886370614, -0.3395700527611012], '逐位元': True, '本檔回落式': -0.3395700527611012, '本檔回落式_逐位元': True}
+[   140s] [G1 格 0] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0}｜✅
+[   140s] [G1 格 1] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格 2] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格 3] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格 4] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格 5] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0}｜✅
+[   140s] [G1 格 6] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格 7] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格 8] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0}｜✅
+[   140s] [G1 格 9] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格10] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格11] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格12] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格13] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格14] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格15] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格16] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格17] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格18] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格19] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格20] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格21] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格22] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1 格23] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   140s] [G1] ✅ 全部逐位元
+[     0s] ===== researchYear1M run 2026-09-26 00:30（台北）｜D.DATA /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data =====
+[    31s] [T1 門檻B AFC] {"原函式列數": 2881, "截斷補回": 0, "合計": 2881, "補回進場日": null, "量測月": ["2017-03", "2026-03"]}
+[    31s] [T1 門檻B ext＋0901] {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}
+[    70s] [T1 AND 資料尾] {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}
+[    76s] [設定] {"日曆": "2859 根 2015-01-05～2026-09-24", "AND": 2339, "AND_補": {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}, "門檻B_AFC": 2881, "門檻B_主版": {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}, "門檻B_ext＋0901_原函式": 2897, "Bb旗標_09-01前相同": true, "panel_ext_sha": "d75bf50baae15ed0445219a6f8003f166d65a6ce93b930d729a789fc364e0788", "最早受影響": {"AND_H60": "2026-07-03", "AND_H120": "2026-04-09", "AND_LD": "2026-09-24", "門檻B": "2026-04-02"}}
+[    76s] [窗] 固定 11：[('F2017', '2017-03-02', '2018-03-01', 247), ('Y2018', '2018-01-02', '2018-12-28', 247), ('Y2019', '2019-01-02', '2019-12-31', 242), ('Y2020', '2020-01-02', '2020-12-31', 245), ('Y2021', '2021-01-04', '2021-12-30', 244), ('Y2022', '2022-01-03', '2022-12-30', 246), ('Y2023', '2023-01-03', '2023-12-29', 239), ('Y2024', '2024-01-02', '2024-12-31', 242), ('Y2025', '2025-01-02', '2025-12-31', 243), ('L1Y', '2025-09-24', '2026-09-24', 243), ('YTD26', '2026-01-02', '2026-09-24', 177)]
+[    76s] [窗] 滾動 103：2017-03-01～2018-02-27 … 2025-09-01～2026-08-31；天數 235～252
+[    76s] [工作] 12,800 件（3 行程）
+[   115s]   500/12,800｜39s
+[   218s]   1,000/12,800｜142s
+[   253s]   1,500/12,800｜177s
+[   331s]   2,000/12,800｜255s
+[   383s]   2,500/12,800｜307s
+[   444s]   3,000/12,800｜369s
+[   515s]   3,500/12,800｜439s
+[   536s]   4,000/12,800｜460s
+[   689s]   4,500/12,800｜613s
+[   777s]   5,000/12,800｜702s
+[   812s]   5,500/12,800｜737s
+[   836s]   6,000/12,800｜760s
+[   850s]   6,500/12,800｜774s
+[   872s]   7,000/12,800｜796s
+[   883s]   7,500/12,800｜808s
+[   895s]   8,000/12,800｜819s
+[   908s]   8,500/12,800｜832s
+[   932s]   9,000/12,800｜856s
+[   965s]   9,500/12,800｜889s
+[  1015s]   10,000/12,800｜939s
+[  1055s]   10,500/12,800｜979s
+[  1081s]   11,000/12,800｜1006s
+[  1109s]   11,500/12,800｜1034s
+[  1135s]   12,000/12,800｜1059s
+[  1161s]   12,500/12,800｜1086s
+[  1174s] [完成] seeds.csv.gz 105,600 列｜1098s
+[     0s] ===== researchYear1M table 2026-09-26 00:49（台北）｜D.DATA /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data =====
+[    20s] [table] fixed_windows.csv 323 列｜rolling_windows.csv 103 列｜rolling_terciles.csv 3 列
+[     0s] ===== researchYear1M_mix frontier 2026-09-26 00:57（台北）=====
+[     0s] [前緣] 257 列｜主前緣 3 格：#1 AND｜regime=True｜N10｜H120（t−1 閘） 0.3944/-0.3894；#13 AND｜N20｜d=inf｜relvol 0.3612/-0.3213；219 w=0.25 0.2518/-0.3144
+[     0s] [前緣 含舊窗] 5 格：PREREG10 AND｜regime=True｜N10｜H120（t−1 閘） 0.3944/-0.3894；P1 AND｜N20｜d=inf｜relvol 0.3612/-0.3213；P3 乙臂（閒置放 0050） 主格｜N40｜d=inf｜relvol 0.3682/-0.3319；P1 AND｜N40｜d=inf｜relvol 0.3369/-0.2613；P1 AND｜N40｜d=inf｜null 0.3231/-0.2610
+[     0s] ===== researchYear1M_mix mix 2026-09-26 00:57（台北）=====
+[     0s] [臂] {"#1": {"arm": "#1", "cid": 1, "blend": null, "N": 10, "sleeve": 1.0, "name": "AND｜regime=True｜N10｜H120（t−1 閘）"}, "#13": {"arm": "#13", "cid": 13, "blend": null, "N": 20, "sleeve": 1.0, "name": "AND｜N20｜d=inf｜relvol"}, "P14 w=0.25": {"arm": "P14 w=0.25", "cid": 0, "blend": 0.25, "N": 8, "sleeve": 0.25, "name": "P14 w=0.25（P12 策略 25%＋0050、期初配置不再平衡）"}}
+[    43s] [T1 門檻B AFC] {"原函式列數": 2881, "截斷補回": 0, "合計": 2881, "補回進場日": null, "量測月": ["2017-03", "2026-03"]}
+[    44s] [T1 門檻B ext＋0901] {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}
+[    94s] [T1 AND 資料尾] {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}
+[    99s] [設定] {"日曆": "2859 根 2015-01-05～2026-09-24", "AND": 2339, "AND_補": {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}, "門檻B_AFC": 2881, "門檻B_主版": {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}, "門檻B_ext＋0901_原函式": 2897, "Bb旗標_09-01前相同": true, "panel_ext_sha": "d75bf50baae15ed0445219a6f8003f166d65a6ce93b930d729a789fc364e0788", "最早受影響": {"AND_H60": "2026-07-03", "AND_H120": "2026-04-09", "AND_LD": "2026-09-24", "門檻B": "2026-04-02"}}
+[   117s] [成交金額] 1161 檔｜18s
+[   145s]   100/600｜28s
+[   174s]   200/600｜57s
+[   375s]   300/600｜258s
+[   545s]   400/600｜428s
+[   554s]   500/600｜437s
+[   563s]   600/600｜446s
+[   566s] [查核] {"#1 w=1 對既有逐種子（compose 以日報酬連乘 ⇒ 報最大絕對差）": {"cagr": 2.4424906541753444e-15, "mdd": 3.3861802251067274e-15, "顆數": 200}, "#1 w=0 對 0050 錨": {"年化最大差": 8.881784197001252e-16, "回落最大差": 3.3306690738754696e-16}, "#13 w=1 對既有逐種子（compose 以日報酬連乘 ⇒ 報最大絕對差）": {"cagr": 1.1102230246251565e-15, "mdd": 7.216449660063518e-16, "顆數": 200}, "#13 w=0 對 0050 錨": {"年化最大差": 8.881784197001252e-16, "回落最大差": 3.3306690738754696e-16}, "P14 w=0.25 w=0 對 0050 錨": {"年化最大差": 8.881784197001252e-16, "回落最大差": 3.3306690738754696e-16}, "固定窗 w=0 對 bench_windows 最大相對差": 3.1086244689504383e-15, "#1 固定窗 w=1 對 seeds.csv.gz": {"列": 2200, "期末最大相對差": 3.774758283725532e-15}, "#13 固定窗 w=1 對 seeds.csv.gz": {"列": 2200, "期末最大相對差": 2.4424906541753444e-15}}
+[   566s] [完成] mix.csv 15 列｜liquidity.csv 3 列｜mix_seeds 36,000｜liq_positions 199,998｜449s
+[     0s] ===== researchYear1M gate 2026-09-26 01:07（台北）｜D.DATA /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data =====
+[    35s] [T1 門檻B AFC] {"原函式列數": 2881, "截斷補回": 0, "合計": 2881, "補回進場日": null, "量測月": ["2017-03", "2026-03"]}
+[    35s] [T1 門檻B ext＋0901] {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}
+[    78s] [T1 AND 資料尾] {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}
+[    83s] [設定] {"日曆": "2859 根 2015-01-05～2026-09-24", "AND": 2339, "AND_補": {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}, "門檻B_AFC": 2881, "門檻B_主版": {"原函式列數": 2897, "截斷補回": 348, "合計": 3245, "補回進場日": ["2026-05-05", "2026-09-02"], "量測月": ["2017-03", "2026-09"]}, "門檻B_ext＋0901_原函式": 2897, "Bb旗標_09-01前相同": true, "panel_ext_sha": "d75bf50baae15ed0445219a6f8003f166d65a6ce93b930d729a789fc364e0788", "最早受影響": {"AND_H60": "2026-07-03", "AND_H120": "2026-04-09", "AND_LD": "2026-09-24", "門檻B": "2026-04-02"}}
+[    83s] [G1 0050] {'年化': 0.24020209886370614, '回落': -0.3395700527611012, '錨': [0.24020209886370614, -0.3395700527611012], '逐位元': True, '本檔回落式': -0.3395700527611012, '本檔回落式_逐位元': True}
+[   168s] [G1 格 0] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0}｜✅
+[   168s] [G1 格 1] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格 2] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格 3] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格 4] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格 5] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0}｜✅
+[   168s] [G1 格 6] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格 7] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格 8] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0}｜✅
+[   168s] [G1 格 9] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格10] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格11] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格12] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格13] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格14] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格15] resultsN17/seeds_main.csv（main）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格16] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格17] resultsN17/regime_t1/seeds.csv（t1）｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格18] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格19] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格20] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格21] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格22] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1 格23] resultsP9run/seeds_arms.csv｜20 顆｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜✅
+[   168s] [G1] ✅ 全部逐位元
+[     0s] ===== researchYear1M table 2026-09-26 01:10（台北）｜D.DATA /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data =====
+[    17s] [table] fixed_windows.csv 323 列｜rolling_windows.csv 103 列｜rolling_terciles.csv 3 列
