@@ -1,0 +1,101 @@
+{
+ "when": "2026-09-25 18:13",
+ "n": 11,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "R1 前三分位 ＝ 獨立整數規則（逐列）",
+   "ok": true,
+   "detail": "128 個量測日、前三分位 19,928 列、不符 0"
+  },
+  {
+   "name": "R1b 切點上的同值（名次 ⌊2n/3⌋ 與其下一名同值 ⇒ 列順序決定誰進）",
+   "ok": true,
+   "detail": "2／128 個量測日"
+  },
+  {
+   "name": "R2 eligible 每一列 dist 逐位元相同",
+   "ok": true,
+   "detail": "59,661／59,661 列相同；最大差 0"
+  },
+  {
+   "name": "R2b source='closes' 的前三分位 ＝ source='panel'",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "R3 再平衡日一致",
+   "ok": true,
+   "detail": "113 個（2017-04-05～2026-08-03）"
+  },
+  {
+   "name": "R4a 門檻B 股票在主窗內的旗標有觸發",
+   "ok": true,
+   "detail": "{\"flag_true\": 15073, \"stocks\": 901, \"days\": 108}；panel 最後量測日 2026-03-02"
+  },
+  {
+   "name": "R4b 2-B ⓑ（P8 三分位旗標）：equity 與全關不同、加碼有觸發",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_add_trig\": 76, \"x_add_n\": 27, \"x_add_short\": 49, \"x_add_blocked_days\": 0}"
+  },
+  {
+   "name": "R4c 讀法③／⑤ 的影響量（種子 0 基準臂部位；只報次數）",
+   "ok": true,
+   "detail": "{\"持有中遇到的量測日（eligible）\": 575, \"其中前三分位\": 178, \"持有中遇到的量測日（不是 eligible ⇒ 讀法③ 記 False）\": 149, \"持有期超過 panel 最後量測日的部位\": 8}"
+  },
+  {
+   "name": "R5a ē 對照：與基準臂不同、有再平衡、實際平均持股比例貼近 ē",
+   "ok": true,
+   "detail": "再平衡 113 次、成本>0 的 69 次、實際 ē 0.4918"
+  },
+  {
+   "name": "R5b m̄＝0.8：與全關不同、每個新部位都套倍數",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_mult_n\": 138, \"x_mult_short\": 0, \"x_mbar_nominal\": 0.8}"
+  },
+  {
+   "name": "R5b m̄＝1.1：與全關不同、每個新部位都套倍數",
+   "ok": true,
+   "detail": "{\"x_new_n\": 137, \"x_mult_n\": 137, \"x_mult_short\": 24, \"x_mbar_nominal\": 1.1}"
+  }
+ ],
+ "info": {
+  "setup": {
+   "data": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data",
+   "calendar": "2859 根 2015-01-05～2026-09-24",
+   "w0": [
+    523,
+    "2017-03-02"
+   ],
+   "w1": [
+    2835,
+    "2026-08-24"
+   ],
+   "panel": "/home/chemtim/tw-p17/backtest/resultsAFC/panel.csv.gz",
+   "sig_accept": {
+    "rows": 2881,
+    "stocks": 918,
+    "months": 109,
+    "m_min": "2017-03",
+    "m_max": "2026-03",
+    "e_min": 523,
+    "e_max": 2716
+   },
+   "sig_rows_in_window": 2881
+  },
+  "boundary_tie_months": 2,
+  "seed0_2Bb_counts": {
+   "x_new_n": 138,
+   "x_add_trig": 76,
+   "x_add_n": 27,
+   "x_add_short": 49,
+   "x_add_blocked_days": 0
+  },
+  "reading3_seed0": {
+   "持有中遇到的量測日（eligible）": 575,
+   "其中前三分位": 178,
+   "持有中遇到的量測日（不是 eligible ⇒ 讀法③ 記 False）": 149,
+   "持有期超過 panel 最後量測日的部位": 8
+  }
+ }
+}

@@ -1,0 +1,144 @@
+{
+ "when": "2026-09-25 18:10",
+ "setup": {
+  "data": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data",
+  "calendar": "2859 根 2015-01-05～2026-09-24",
+  "w0": [
+   523,
+   "2017-03-02"
+  ],
+  "w1": [
+   2835,
+   "2026-08-24"
+  ],
+  "panel": "/home/chemtim/tw-p17/backtest/resultsAFC/panel.csv.gz",
+  "sig_accept": {
+   "rows": 2881,
+   "stocks": 918,
+   "months": 109,
+   "m_min": "2017-03",
+   "m_max": "2026-03",
+   "e_min": 523,
+   "e_max": 2716
+  },
+  "sig_rows_in_window": 2881
+ },
+ "secs": 20,
+ "note": "⛔ 只有計數；引擎其他回傳鍵（含年化／回落）當場丟掉、未讀未存。short='skip'（seq162 §四①）。百分位 numpy 線性內插。",
+ "cells": {
+  "2-B ⓐ 收盤 ≥ 進場價 +15%": {
+   "x_add_n": {
+    "median": 16.0,
+    "p10": 13.0,
+    "p90": 19.0,
+    "min": 9,
+    "max": 24
+   },
+   "x_add_n_in_window": {
+    "median": 16.0,
+    "p10": 13.0,
+    "p90": 19.0,
+    "min": 9,
+    "max": 24
+   },
+   "x_add_trig": {
+    "median": 74.0,
+    "p10": 68.0,
+    "p90": 79.0,
+    "min": 57,
+    "max": 83
+   },
+   "x_add_short": {
+    "median": 58.0,
+    "p10": 52.0,
+    "p90": 64.0,
+    "min": 44,
+    "max": 68
+   },
+   "x_new_n": {
+    "median": 137.0,
+    "p10": 136.0,
+    "p90": 138.0,
+    "min": 136,
+    "max": 138
+   },
+   "structurally_near_unattainable（中位 ≤ 2）": false
+  },
+  "2-B ⓑ 貼近 120 日高點三分位（P8）": {
+   "x_add_n": {
+    "median": 23.0,
+    "p10": 19.0,
+    "p90": 27.0,
+    "min": 14,
+    "max": 33
+   },
+   "x_add_n_in_window": {
+    "median": 23.0,
+    "p10": 19.0,
+    "p90": 27.0,
+    "min": 14,
+    "max": 33
+   },
+   "x_add_trig": {
+    "median": 79.0,
+    "p10": 74.0,
+    "p90": 85.1,
+    "min": 68,
+    "max": 91
+   },
+   "x_add_short": {
+    "median": 56.0,
+    "p10": 50.0,
+    "p90": 62.0,
+    "min": 46,
+    "max": 68
+   },
+   "x_new_n": {
+    "median": 136.0,
+    "p10": 135.0,
+    "p90": 138.0,
+    "min": 134,
+    "max": 138
+   },
+   "structurally_near_unattainable（中位 ≤ 2）": false
+  },
+  "2-B ⓒ 持有滿 40 根仍為正": {
+   "x_add_n": {
+    "median": 10.5,
+    "p10": 7.0,
+    "p90": 14.0,
+    "min": 5,
+    "max": 19
+   },
+   "x_add_n_in_window": {
+    "median": 10.5,
+    "p10": 7.0,
+    "p90": 14.0,
+    "min": 5,
+    "max": 19
+   },
+   "x_add_trig": {
+    "median": 69.0,
+    "p10": 63.900000000000006,
+    "p90": 75.0,
+    "min": 56,
+    "max": 82
+   },
+   "x_add_short": {
+    "median": 59.0,
+    "p10": 52.0,
+    "p90": 65.0,
+    "min": 46,
+    "max": 70
+   },
+   "x_new_n": {
+    "median": 138.0,
+    "p10": 138.0,
+    "p90": 138.0,
+    "min": 137,
+    "max": 138
+   },
+   "structurally_near_unattainable（中位 ≤ 2）": false
+  }
+ }
+}
