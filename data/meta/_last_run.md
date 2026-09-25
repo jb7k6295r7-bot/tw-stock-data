@@ -1117,6 +1117,21 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## crypto:perp　✓ 正常
+
+最後執行：2026-09-25T14:07:25+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 36100983120
+
+- **這一趟**：C5 永續日 K 全期（2020-01 ~ 2026-08）
+- **BTC**：2435 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
+- **ETH**：2435 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
+- **XRP**：2425 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-06
+- **BNB**：2395 列｜ok 79 月｜absent 1｜error 0｜第一根 2020-02-10
+- **DOGE**：2244 列｜ok 74 月｜absent 6｜error 0｜第一根 2020-07-10
+- **SOL**：2173 列｜ok 72 月｜absent 8｜error 0｜第一根 2020-09-14
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+
 ## feeds:otcinstamt　✓ 正常
 
 最後執行：2026-09-25T04:09:26+08:00（台北）｜觸發 schedule｜每日台股資料｜ref main｜run 36050521137
