@@ -486,6 +486,10 @@ def _num(v):
     if v is None:
         return ""
     t = str(v).replace(",", "").replace("+", "").replace("%", "").strip()
+    # ⛔⛔ 2026-09-26：TPEx 舊格式的漲跌寫成「- 0.35」（號與數字中間有空白）⇒ float 失敗 ⇒ 整格空白
+    #   ⇒ 上櫃【所有下跌日】的漲跌都被清掉（早年 2007～2014 約 47% 的列、主窗 2015 初也有），
+    #   ⚠ 而正數、0.00 照常 ⇒ 看起來只是「部分缺值」。⇒ 先拿掉字串內所有空白再判。
+    t = "".join(t.split())
     if t in ("", "X", "N/A", "null", "None") or _is_dash(t):
         return ""
     try:
