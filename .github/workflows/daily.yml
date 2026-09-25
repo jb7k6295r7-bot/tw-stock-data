@@ -274,6 +274,10 @@ jobs:
         timeout-minutes: 10
         run: python ci_step.py selftest_parse_daily.py
 
+      - name: 驗休市日興櫃假日檔（離線）
+        timeout-minutes: 5
+        run: python ci_step.py selftest_phantom_day.py
+
       - name: 驗個股庫轉置（離線）
         continue-on-error: true
         timeout-minutes: 10
