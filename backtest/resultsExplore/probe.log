@@ -1,0 +1,11 @@
+  probe ✅ stocks/2330.csv                        CUT 前一字不差 True｜CUT 後 901 列、變動 901（列數 2859→2589）
+  probe ✅ stocks_inst/2330.csv                   CUT 前一字不差 True｜CUT 後 901 列、變動 901（列數 2859→2589）
+  probe ✅ stocks_per/2330.csv                    CUT 前一字不差 True｜CUT 後 901 列、變動 901（列數 2859→2589）
+  probe ✅ stocks_margin/2330.csv                 CUT 前一字不差 True｜CUT 後 901 列、變動 901（列數 2859→2589）
+  probe ✅ adj/2330.csv                           CUT 前一字不差 True｜CUT 後 15 列、變動 15（列數 34→30）
+  probe ✅ mops/revenue_hist/2022-11_twse.csv     CUT 前一字不差 True｜CUT 後 0 列、變動 0（列數 1031→1031）
+  probe ✅ mops/revenue_hist/2023-01_twse.csv     CUT 前一字不差 True｜CUT 後 1037 列、變動 1037（列數 1037→1037）
+  probe ✅ meta/calendar_twse.csv                 CUT 前一字不差 True｜CUT 後 901 列、變動 901（列數 2859→2589）
+  probe ✅ meta/stocks.csv                        CUT 前一字不差 True｜CUT 後 2834 列、變動 2832（列數 3032→3032）
+  probe ✅ meta/delisted.csv                      CUT 前一字不差 True｜CUT 後 40 列、變動 40（列數 436→436）
+probe：✅ 擾動只動 CUT 以後、而且每類都動到了

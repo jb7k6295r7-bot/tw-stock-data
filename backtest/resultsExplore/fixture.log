@@ -1,0 +1,10 @@
+  ①✅ features.csv：真 e2409c95c837b2d9｜擾動 e2409c95c837b2d9
+  ①✅ cands.csv：真 7bd1389c817b4afc｜擾動 7bd1389c817b4afc
+  ①✅ cand_stats.csv：真 60c5df72b30d85ae｜擾動 60c5df72b30d85ae
+  ①✅ seeds.csv：真 cb4321d72707dc49｜擾動 cb4321d72707dc49
+  ①✅ ranking_171.csv：真 bacae27b6a9b5a6b｜擾動 bacae27b6a9b5a6b
+  ①✅ clues.csv：真 ae20b9c2cb330e0c｜擾動 ae20b9c2cb330e0c
+  ①✅ summary.json：真 0b966bb826398843｜擾動 0b966bb826398843
+  ②✅ 抓到：前視版 cands 真 17cb2449e814e6b0｜擾動 802dabc43a21a861；F05 不同 459 列；候選不同的格 18 格（例 ['F01+F05', 'F02+F05', 'F03+F05', 'F04+F05']）
+  ②' 前視開關只動到 F05＠2022-12-01：不同欄 ['F05']、不同列的量測日 ['2022-12-01'] ⇒ ✅
+fixture：✅ ①不變 ②抓得到
