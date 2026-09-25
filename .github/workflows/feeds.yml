@@ -11,7 +11,7 @@ on:
       mode:
         description: "diag 診斷｜probe 只驗端點｜run 回補（含 feed=reduce 減資）｜adjust 算還原因子｜purge 刪日檔｜industry-probe / industry 產業別｜mops-probe 重測完整性｜mops 抓月營收與財報｜otc-adj-probe 上櫃來源＋交叉驗證｜otc-adj 用 FinMind 回補上櫃事件｜otc-adj-codes 只補指定的幾檔（填 codes）｜otc-adj-official ⭐ 換供料第 2 步：官方三支為主（⛔ 不連外）｜mops-history-probe 找基本面歷史來源｜mops-history-dry 只印解析結果不寫檔｜mops-history 真的回補｜calendar-audit 用獨立來源核對交易日曆｜content-audit 核對每一天的內容齊不齊（只讀本地檔）｜official-stats 抓官方年度／月統計當價格層的外部判準（續跑）｜official-stats-tpex ⭐ 同上但**上櫃**（yearlyStock，一發回 12 年；只有價那五格進共用表）｜official-months ⭐ 官方**月**統計的年份掃描（用 months_market 與 months_years 兩個欄，⛔ 不是 feed／start）｜official-months-probe ⭐ 診斷用：印一支代號（填 probe_code）的 monthlyStock 民104/113/114/115 原始回應，只讀不落地｜otc-exright-history 上櫃除權息的**歷史**官方來源（一次拿十一年）｜otc-reduce-history 上櫃**減資**的歷史，並逐筆掃我方 data/adj 缺哪些｜otc-parvalue-history ⭐ 上櫃**面額變更**的官方歷史（一次拿十一年半），並跟 `otcparvalue` 的股數倍率逐筆對帳"
         type: choice
-        options: [diag, probe, run, adjust, purge, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months, official-months-probe]
+        options: [diag, probe, run, adjust, purge, etf-pre2015, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months, official-months-probe]
         default: probe
       feed:
         description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓。⭐ instamt／otcinstamt＝三大法人買賣【金額】（大盤層級，長格式）：上市回溯下限民國93-03-03、上櫃 2017-01-03，⛔ 上櫃比這更早一律 0 列"
@@ -670,6 +670,16 @@ jobs:
           python selftest_twparse.py || RC=1
           python selftest_otc_parvalue.py || RC=1
           python otc_parvalue_history.py --start "2015/01/01" --apply || RC=1
+          exit $RC
+
+      # ⭐ 2026-09-25（裁定線 seq127 §二）：0050 在全庫起點（2015）之前的日線＋還原因子 ⇒ data/extra/
+      #   ⛔ 不寫 data/stocks（由 transpose 從全市場日檔產生，手寫會無聲飄移）
+      #   ⛔ 全市場回補到 2015 以前是跨線決定（seq142 只查不落地），⛔ 不是這一步的事
+      - name: 單一證券 2015 以前的日線（data/extra，官方 STOCK_DAY＋TWT49U）
+        if: inputs.mode == 'etf-pre2015'
+        run: |
+          RC=0
+          python etf_pre2015.py --code 0050 --start 2012-01 --end 2014-12 --sleep 5 || RC=1
           exit $RC
 
       - name: 官方年度／月統計（外部判準，續跑）
