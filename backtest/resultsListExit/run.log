@@ -1,0 +1,30 @@
+===== researchListExit procs=3 reps=200 2026-09-26 02:23（台北）=====
+[程式 sha256] {'research11.py': '67a47ff969ecbc8b', 'listexit_lines.py': '16634eb6b99062d1', 'rerun17.py': '0ab21a09288dfe1f', 'researchListExit.py': 'af8c4e4336386733'}
+[AND] /home/chemtim/tw-p17/backtest/resultsN17/sig_edc6f/and_signals.csv.gz｜2,339 筆／921 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[閘一 0050 錨] 逐位元 True
+[建線] {'訊號列': 2036, 'xpos_H120≥0': 1688, 'S1 線': 1688, 'S2 線': 1688, 'S2 略過': 0, '訊號日有效 K 棒 ＜ 114 根的筆數': 0, 'ATR': 'ATR ＝ research11.wilder_atr（Wilder n＝14、有效 K 棒、首值＝前 14 個 TR 平均、前 113 根 NaN）；裁定 seq192 ②：與 tw-ta-exit-position 原文一致', 'S2 起點': 'entry_close（seq192 ① 甲）'}｜107s
+[閘二 營飆 v1 原樣臂 200 顆 ＝ regime_t1 t1 #1] 逐位元 True｜不同 []｜14s
+  [S1] 判定｜26s
+  [S2] 判定｜58s
+  [T1] 判定｜15s
+  [T2] 判定｜15s
+  [S1T1] 判定｜25s
+  [S2T1] 判定｜56s
+  [a_S1] ⓐ閒置｜24s
+  [a_S2] ⓐ閒置｜54s
+  [a_T1] ⓐ閒置｜14s
+  [a_T2] ⓐ閒置｜15s
+  [a_S1T1] ⓐ閒置｜25s
+  [a_S2T1] ⓐ閒置｜56s
+  [blk_S1] ⓒ跌停賣不掉｜23s
+  [blk_S2] ⓒ跌停賣不掉｜54s
+  [blk_S1T1] ⓒ跌停賣不掉｜25s
+  [blk_S2T1] ⓒ跌停賣不掉｜56s
+  [D1_T1] ⓓD1｜15s
+  [D1_T2] ⓓD1｜15s
+  [D1_S1T1] ⓓD1｜25s
+  [D1_S2T1] ⓓD1｜60s
+  [D2_S1T1] ⓓD2｜25s
+  [D2_S2T1] ⓓD2｜56s
+  [ⓑ 同平均持股對照] 22s
+[完成] 898s

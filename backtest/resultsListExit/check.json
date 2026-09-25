@@ -1,0 +1,378 @@
+{
+ "arms": {
+  "base": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "S1": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 97,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "S2": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 18,
+   "both_neg": 22,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "T2": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "S1T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "S2T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_S1": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 2,
+   "both_neg": 139,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_S2": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 3,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_T1": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_T2": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_S1T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 2,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "a_S2T1": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "blk_S1": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 103,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "blk_S2": {
+   "label": "合格",
+   "vs_v1": "分不出",
+   "both_pos": 15,
+   "both_neg": 24,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "blk_S1T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "blk_S2T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "D1_T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "D1_T2": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "D1_S1T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "D1_S2T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "D2_S1T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  },
+  "D2_S2T1": {
+   "label": "不合格",
+   "vs_v1": "分不出",
+   "both_pos": 0,
+   "both_neg": 0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "both_pos": true,
+    "both_neg": true,
+    "vs_v1": true
+   }
+  }
+ },
+ "bad": [],
+ "base＝regime_t1 t1 #1": true,
+ "判定6格": {
+  "S1": [
+   "合格",
+   "分不出"
+  ],
+  "S2": [
+   "合格",
+   "分不出"
+  ],
+  "T1": [
+   "不合格",
+   "分不出"
+  ],
+  "T2": [
+   "不合格",
+   "分不出"
+  ],
+  "S1T1": [
+   "不合格",
+   "分不出"
+  ],
+  "S2T1": [
+   "不合格",
+   "分不出"
+  ]
+ },
+ "比原本好格數": 0
+}
