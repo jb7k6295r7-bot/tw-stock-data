@@ -1215,6 +1215,19 @@ def first_date_compact(v):
     return ""
 
 
+def _list_said_day(rows):
+    """list 形的回應（TPEx openapi）每列自述的日期 → 西元 YYYYMMDD；
+    沒有日期欄回空字串（無從判斷就不擋），各列日期不一致就全部列出（一定不等於任何一天 ⇒ 擋）。"""
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return ""
+    k = next((k for k in ("Date", "日期", "資料日期") if k in rows[0]), None)
+    if k is None:
+        return ""
+    got = {first_date_compact(r.get(k, "")) for r in rows if isinstance(r, dict)}
+    got.discard("")
+    return "/".join(sorted(got))
+
+
 def _same_day(d, day):
     """回應自己宣告的日期，是不是我們要的那一天。→ (是否相符, 它說的日期)
 
@@ -1508,6 +1521,16 @@ def fetch_universe(today):
                 got = True
                 break
             if isinstance(d, list):
+                # ⛔⛔ 2026-09-26 補上：**list 這條路也要回應自述日期**（第九道原本只守 dict 那條）。
+                #   `tpex_esb_latest_statistics`（興櫃）沒有 date 參數、永遠回最近一個交易日；
+                #   2026-09-25 中秋休市，上市／上櫃都正確回「休市」，
+                #   ⚠ 而興櫃回的是 09-24 的 361 列（每列 `Date=1150924`）⇒ 被寫成 2026-09-25 的日檔
+                #   ⇒ 平白多出一個【只有興櫃在交易】的假交易日。
+                said = _list_said_day(d)
+                if said and said != ymd:
+                    probe.append(f"    ✗ 回應說它是 {said}，不是 {today} ⇒ 不採用（休市日端點回最近一個交易日）")
+                    errs[market] = f"回應是 {said}，不是 {today}（不採用）"
+                    continue
                 lines, note = parse_openapi_daily(d, today, market)
             else:
                 stat = d.get("stat")
@@ -1544,6 +1567,7 @@ def fetch_universe(today):
             if lines:
                 all_lines.extend(lines)
                 counts[market] = len(lines)
+                errs.pop(market, None)      # 前一條候選「日期不符」的紀錄，後一條成功就作廢
                 got = True
                 break
         if not got and market not in errs:
@@ -1683,6 +1707,60 @@ def write_universe_day(day, lines):
         for r in sorted(rows, key=lambda r: str(r[2])):
             f.write(",".join(str(x).replace(",", "") for x in r) + "\n")
     return len(kept)
+
+
+def purge_phantom_days(lookback=20):
+    """刪掉「休市日被寫成只有興櫃在交易」的假日檔（2026-09-25 中秋那一份就是）。→ 刪掉的日期清單
+
+    ⛔ 條件三道都要成立才刪（寧可漏刪，不可誤刪真的交易日）：
+      ① 那一天的日檔【只有】興櫃列（上市、上櫃 0 列）
+      ② 覆蓋率帳上那天上市、上櫃都是 0
+      ③ 那一天的興櫃列，扣掉 key／date 之後，與前一個日檔的興櫃列【逐列逐欄相同】
+         （真的交易日不可能 361 檔的高低均價量全部跟前一天一樣）
+    刪掉後覆蓋率帳那一列改成興櫃 0、合計 0，並在 note 註明。
+    """
+    ddir = os.path.join(UNI_DIR, "daily")
+    if not os.path.isdir(ddir):
+        return []
+    days = sorted(f[:-4] for f in os.listdir(ddir) if f.endswith(".csv") and f[:1].isdigit())
+    cov = {}
+    if os.path.exists(COVERAGE):
+        with open(COVERAGE, encoding="utf-8") as f:
+            for i, ln in enumerate(f):
+                q = ln.rstrip("\n").split(",")
+                if i and q and q[0][:1].isdigit():
+                    cov[q[0]] = q
+
+    def em_rows(day):
+        with open(os.path.join(ddir, f"{day}.csv"), encoding="utf-8") as f:
+            rs = list(csv.DictReader(f))
+        mk = {r.get("market") for r in rs}
+        body = sorted(tuple(r.get(h, "") for h in UNIVERSE_HEADER if h not in ("key", "date"))
+                      for r in rs if r.get("market") == "emerging")
+        return mk, body
+
+    gone = []
+    i0 = max(1, len(days) - lookback)
+    prev = days[i0 - 1] if days else None       # ⚠ 前一個【還在的】日檔；刪掉的那天不能當下一天的比較對象
+    for d in days[i0:]:
+        c = cov.get(d)
+        if not c or c[1] != "0" or c[2] != "0":
+            prev = d
+            continue
+        mk, body = em_rows(d)
+        if mk != {"emerging"} or not body or body != em_rows(prev)[1]:
+            prev = d
+            continue
+        os.remove(os.path.join(ddir, f"{d}.csv"))
+        c[3], c[4] = "0", "0"
+        c[5] = (c[5] + ";" if c[5] and c[5] != "ok" else "") + f"emerging=休市日端點回{prev}的列（已刪）"
+        gone.append(f"{d}（與 {prev} 相同 {len(body)} 列）")
+    if gone:
+        with open(COVERAGE, "w", encoding="utf-8") as f:
+            f.write(",".join(COV_HEADER) + "\n")
+            for k in sorted(cov):
+                f.write(",".join(cov[k]) + "\n")
+    return gone
 
 
 def merge_stocks_meta(day, lines):
@@ -1914,6 +1992,7 @@ def main():
         uni, uni_lines = fetch_universe(today)
         uni["rows_written"] = write_universe_day(today, uni_lines)
         uni["coverage_days"] = append_coverage(today, uni["counts"], uni.get("errors"))
+        uni["phantom_days_removed"] = purge_phantom_days() or None
         total, added, purged = merge_stocks_meta(today, uni_lines)
         uni["stocks_meta"] = {"total": total, "added_today": added,
                               "purged_warrants": purged or None}
@@ -2011,7 +2090,12 @@ def main():
         rl.note(f"⚠ 有 {changed_total} 列歷史資料被改寫，見 data/_changes.log")
     rl.check("universe 這一層沒有 fatal", "fatal" not in uni,
              uni.get("fatal") or "沒有")
-    _tot = cnt.get("total", 0)
+    if uni.get("phantom_days_removed"):
+        rl.note("⭐ 刪掉休市日被寫成『只有興櫃』的假日檔：" + "、".join(uni["phantom_days_removed"]))
+    # ⚠ 2026-09-26：原本看 total（含興櫃）——而興櫃端點休市日照樣回前一天的列
+    #   ⇒ 中秋休市那天 total=361 ⇒ 這道檢查誤判「上市上櫃整個沒收到」而亮紅。
+    #   ⇒ 「那天有沒有開市」只看上市＋上櫃（兩市同曆，seq120）。
+    _tot = cnt.get("twse", 0) + cnt.get("tpex", 0)
     if _tot:
         # 有收到東西才驗「兩個市場都在」。少收一整個市場跟休市長得一模一樣，
         # 差別只在「另一個市場有沒有資料」——這才是能分辨兩者的直接證據。
