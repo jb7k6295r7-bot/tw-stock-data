@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-25T13:25:36+08:00（台北）｜ref main｜Actions｜run 36097413039｜美股供料：阻斷項＝拿不拿得到已下市的股票
+# ⏱ 這一趟：2026-09-25T17:11:11+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36115090070｜美股供料：阻斷項＝拿不拿得到已下市的股票
 
 # 美股供料探針（⛔ 只讀，本支不寫任何資料檔）
 範圍（使用者 2026-09-24 定）：價量 ＋ 全市場【含下市】
@@ -8,7 +8,7 @@
 
 ══ Yahoo chart（免費、不需 key、⚠ 非官方）══
    AAPL　⭐ 對照組：在市，⛔ 少了它分不出「沒有下市股」與「整個來源不通」
-      ✅ 11,538 列｜1980-12-12 ~ 2026-09-24｜0.5 秒
+      ✅ 11,538 列｜1980-12-12 ~ 2026-09-24｜0.2 秒
       粒度：✅ 我要 1d，它說它給 1d
    LEH（Lehman Brothers（2008 破產））
       ⛔ 連不上：HTTP 404 Not Found | {"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}
@@ -52,5 +52,5 @@
       無 key 試打：回了 2 bytes
    Polygon tickers(active=false)
       ⭐ 文件說 active=false 回已下市代號
-      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"fd92c89174c005acc42d350b5df017e9","error":"API Key was not provided"}
+      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"ba5d3416dcf832c34c48c84eb7c35152","error":"API Key was not provided"}
    ⇒ ⭐ 這一節【不是】資料品質的證據，只是「這條路要不要付錢」的入口確認。
