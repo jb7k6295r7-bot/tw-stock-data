@@ -1,0 +1,8 @@
+  [AND] /home/chemtim/tw-p17/backtest/resultsN17/sig_edc6f/and_signals.csv.gz｜2,339 筆／921 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+  ✓ ⓓ 不去重 S 套回 20 根去重 ⇒ 逐列重建 signals_S.csv.gz（sid、k 集合相同、其餘欄逐值相同）｜不去重 114,977｜去重後 24,277｜原 24,277｜只在一邊 0
+  ✓ ⓓ 不去重 AND ∩ 去重鍵 ⇒ 逐列重建 and_signals.csv.gz｜不去重 AND 15,292｜重建 2,339｜原 2,339
+  ✓ ⓓ 逐日池 ∩ 去重鍵 ＝ setup_t1 的 2,036 列（['pos', 'entry_pos', 'xpos_H120', 'g_H120'] 逐值相同）｜池 13,370 列／929 檔
+  ✓ ⓓ 池多出的檔補載價格（rerun17.load_prices、branch＝快照）｜64 檔
+  池列建線 196s
+  ✓ ⓓ 逐日池大小（描述）｜{"有 v1 訊號的日子": {"p10": 2.0, "p50": 7.0, "p90": 17.0, "mean": 8.77991, "n": 886}, "逐日比 池／訊號（有訊號日）": {"p10": 1.666667, "p50": 4.0, "p90": 10.0, "mean": 5.024255, "n": 886}, "總列數比": 6.109004739336493}
+寫入 /home/chemtim/tw-p17/backtest/resultsYfStop/lines_pool.json：5 條，失敗 0
