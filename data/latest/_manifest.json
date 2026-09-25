@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-25T03:53:18+08:00",
-  "target_trading_day": "2026-09-24",
+  "generated_at": "2026-09-25T23:48:13+08:00",
+  "target_trading_day": "2026-09-25",
   "stocks": {
     "7879": {
       "extra": {
@@ -526,57 +526,39 @@
   },
   "market": {
     "ok": [
-      "index",
-      "summary",
-      "t86",
-      "bfi82u"
+      "index"
     ],
-    "errors": null,
-    "csv": {
-      "index": {
-        "total": 9429,
-        "added": 0,
-        "changed": null
-      },
-      "breadth": {
-        "total": 18,
-        "added": 0,
-        "changed": null
-      },
-      "amount": {
-        "total": 18,
-        "added": 0,
-        "changed": null
-      },
-      "inst": {
-        "total": 18,
-        "added": 0,
-        "changed": null
-      }
+    "errors": {
+      "summary": "stat=很抱歉，沒有符合條件的資料!",
+      "t86": "stat=很抱歉，沒有符合條件的資料!",
+      "bfi82u": "stat=很抱歉，沒有符合條件的資料!"
     },
-    "parse_errors": null
+    "csv": null,
+    "parse_errors": {
+      "index": "找不到『發行量加權股價指數』那一列",
+      "breadth": "找不到漲跌證券數合計那張表",
+      "amount": "找不到大盤統計資訊那張表",
+      "inst": "BFI82U 未取得"
+    }
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
   "version": "v8.0 2026-09-04",
   "calendar_days": 420,
   "universe": {
     "counts": {
-      "twse": 1380,
-      "tpex": 1015,
       "emerging": 361,
       "warrants_excluded": 0,
-      "total": 2756,
+      "total": 361,
       "by_kind": {
-        "etf": 358,
-        "other": 28,
-        "stock": 2332,
-        "special": 28,
-        "dr": 10
+        "stock": 361
       }
     },
-    "errors": null,
-    "rows_written": 2756,
-    "coverage_days": 15,
+    "errors": {
+      "twse": "stat=很抱歉，沒有符合條件的資料!",
+      "tpex": "休市或無成交"
+    },
+    "rows_written": 361,
+    "coverage_days": 16,
     "stocks_meta": {
       "total": 3032,
       "added_today": 0,
