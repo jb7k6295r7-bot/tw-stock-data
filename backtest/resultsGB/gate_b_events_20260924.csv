@@ -1,0 +1,3 @@
+stock_id,measure_date,entry_date,entry_pos,day_n,xpos_H120,exit_date,exit_date_basis,in_window_120,holding_on_asof,entry_open_ok
+6282,2026-08-03,2026-08-04,2821,38,2940,2027-01-25,只扣週末（2027 年休市表未公告）,True,True,T
+8289,2026-08-03,2026-08-04,2821,38,2940,2027-01-25,只扣週末（2027 年休市表未公告）,True,True,T
