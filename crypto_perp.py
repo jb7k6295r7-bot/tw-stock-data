@@ -31,6 +31,16 @@ MAN = os.path.join(HERE, "data", "meta", "crypto_perp_manifest.csv")
 HEADER = ["open_time", "open", "high", "low", "close", "volume", "close_time", "quote_volume",
           "count", "taker_buy_volume", "taker_buy_quote_volume", "ignore"]
 BASE = "https://data.binance.vision/data/futures/um/monthly/klines/%sUSDT/1d/%sUSDT-1d-%04d-%02d.zip"
+# ⭐ 2026-09-25（裁定線 seq155 §二、回測線 1519）：標記價 K 線（描述臂）走同一支、同一套 ⇒ `--kind mark`
+#   ⛔ 不另寫一份：月封存、sha manifest、表頭判斷全部共用；只換網址、輸出目錄、manifest 與預設幣
+#   標記價沒有成交 ⇒ volume／quote_volume／taker 欄官方就是 0（⛔ 不是缺值）
+KINDS = {
+    "perp": {"base": BASE, "out": OUT, "man": MAN, "syms": SYMS},
+    "mark": {"base": "https://data.binance.vision/data/futures/um/monthly/markPriceKlines/%sUSDT/1d/%sUSDT-1d-%04d-%02d.zip",
+             "out": os.path.join(HERE, "data", "crypto_mark"),
+             "man": os.path.join(HERE, "data", "meta", "crypto_mark_manifest.csv"),
+             "syms": ["BTC", "ETH"]},
+}
 MAN_COLS = ["sym", "month", "url", "zip_sha256", "content_sha256", "rows", "had_header", "status"]
 
 
@@ -58,20 +68,24 @@ def parse_month(zbytes):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--until", help="YYYY-MM（預設：上個月）")
-    ap.add_argument("--syms", nargs="*", default=SYMS)
+    ap.add_argument("--kind", choices=sorted(KINDS), default="perp")
+    ap.add_argument("--syms", nargs="*")
     a = ap.parse_args()
+    K = KINDS[a.kind]
+    base, out, man_path = K["base"], K["out"], K["man"]
+    syms = a.syms or K["syms"]
     today = datetime.datetime.now(datetime.timezone.utc).date()
     until = (tuple(int(x) for x in a.until.split("-")) if a.until else
              ((today.year - 1, 12) if today.month == 1 else (today.year, today.month - 1)))
-    os.makedirs(OUT, exist_ok=True)
-    os.makedirs(os.path.dirname(MAN), exist_ok=True)
-    rl = runlog.Run("crypto:perp")
-    rl.info("這一趟", "C5 永續日 K 全期（%04d-%02d ~ %04d-%02d）" % (FIRST[0], FIRST[1], until[0], until[1]))
+    os.makedirs(out, exist_ok=True)
+    os.makedirs(os.path.dirname(man_path), exist_ok=True)
+    rl = runlog.Run("crypto:%s" % a.kind)
+    rl.info("這一趟", ("C5 永續日 K 全期" if a.kind == "perp" else "C5 描述臂：永續【標記價】日 K 全期") + "（%04d-%02d ~ %04d-%02d）" % (FIRST[0], FIRST[1], until[0], until[1]))
     man, errors = [], []
-    for sym in a.syms:
+    for sym in syms:
         allrows = {}
         for y, m in months(until):
-            url = BASE % (sym, sym, y, m)
+            url = base % (sym, sym, y, m)
             b, st = fetch(url)
             ym = "%04d-%02d" % (y, m)
             if st != "ok":
@@ -87,7 +101,7 @@ def main():
                         "content_sha256": hashlib.sha256(content).hexdigest(), "rows": len(rows),
                         "had_header": int(had), "status": "ok"})
             time.sleep(0.2)
-        with io.open(os.path.join(OUT, sym + "USDT.csv"), "w", encoding="utf-8", newline="") as f:
+        with io.open(os.path.join(out, sym + "USDT.csv"), "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(HEADER)
             for k in sorted(allrows, key=int):
@@ -102,7 +116,7 @@ def main():
             if first else "—")
         rl.info(sym, msg)
         print("%-4s %s" % (sym, msg))
-    with io.open(MAN, "w", encoding="utf-8", newline="") as f:
+    with io.open(man_path, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=MAN_COLS, lineterminator="\n")
         w.writeheader()
         w.writerows(man)
