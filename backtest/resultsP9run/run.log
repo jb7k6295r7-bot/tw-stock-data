@@ -1,0 +1,14 @@
+[     0s] ===== researchP9run 2026-09-25 19:30（台北）=====
+[    29s] [設定] {"data": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data", "calendar": "2859 根 2015-01-05～2026-09-24", "w0": [523, "2017-03-02"], "w1": [2835, "2026-08-24"], "split": [1468, "2021-01-04"], "panel_sig": "/home/chemtim/tw-p17/backtest/resultsAFC/panel.csv.gz", "sig": {"建出": 2881, "窗內": 2881, "檔": 918, "月": 109, "accept": {"rows": 2881, "stocks": 918, "months": 109, "m_min": "2017-03", "m_max": "2026-03", "e_min": 523, "e_max": 2716}}, "COST": 0.00585}
+[    29s] [閘一] 0050 主窗 年化 0.24020209886370614／回落 -0.3395700527611012／波動 0.20307889107243096 ⇒ 逐位元 True
+[    29s] [閘二] panel_ext sha256 d75bf50baae15ed0445219a6f8003f166d65a6ce93b930d729a789fc364e0788 ⇒ ✅ 相同
+[    33s] [ⓑ 旗標] {'flag_true': 16040, 'stocks': 905, 'days': 113, 'panel_ext 量測日': '2015-01-05～2026-08-03'}
+[    33s] [假訊號序列] {60: {'線下天數（[w0−1,w1]）': 650, '打亂後都相同': True, '窗外不動': True, '與原序列不同的次數': 30}, 20: {'線下天數（[w0−1,w1]）': 855, '打亂後都相同': True, '窗外不動': True, '與原序列不同的次數': 30}, 10: {'線下天數（[w0−1,w1]）': 897, '打亂後都相同': True, '窗外不動': True, '與原序列不同的次數': 30}}
+[    40s] [閘三] {"對象": "resultsN17/seeds_main.csv 格 0（P12 策略側 W1 描述：H120、N8、pick None、cash zero、無 tradable／delist、種子 102000＋r）", "顆數": 200, "逐位元": {"cagr": true, "mdd": true, "vol": true}, "種子相同": true, "最大絕對差": {"cagr": 0.0, "mdd": 0.0, "vol": 0.0}, "過": true, "本件年化中位": 0.2814507120254124, "本件回落中位": -0.41432426935458594, "AFC_W1_200顆（開 tradable＋delist）": {"年化中位": 0.28158708098251295, "回落中位": -0.41432426081543844}, "與AFC差": {"年化中位": -0.0001363689571005633, "回落中位": -8.539147500208344e-09}}
+[   148s] [主臂] 2,800 列 ⇒ seeds_arms.csv
+[   154s] [決定性] 基準臂 200 顆重跑 ⇒ {'equity_sha': True, 'cagr': True, 'mdd': True, 'vol': True}
+[   299s] [m̄ 對照] 3,600 列
+[   342s] [ē 對照] 2,400 列 ⇒ seeds_controls.csv
+[   740s] [假訊號臂] 9,000 列 ⇒ seeds_fake.csv
+[   748s] [彙總] cells.csv／controls.csv／fake.csv／events.csv／summary.json
+[   748s] [完成] 報告另由 python -m backtest.researchP9run_report 產生（只讀本資料夾的檔）
