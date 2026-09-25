@@ -215,6 +215,32 @@ def main():
     ck("  ⛔ `stat` 不是 ok ⇒ 拒收（⚠ 正例在上面，兩邊都測過）",
        not r5 and "端點自己說失敗" in n5, n5)
 
+    print("  ⛔ 第三道（2026-09-25）：伺服器分頁截斷 ⇒ 列數 ≠ totalCount 就拒收")
+    trunc = _otc(2015, REAL)
+    trunc["tables"][0]["totalCount"] = 34          # ⚠ 2008 實測：官方 34、不帶分頁只回 10
+    r6, n6 = D.parse_otc(trunc, 2015)
+    ck("  ⭐⭐ 被截斷的那一年拒收，說明講出「被分頁截斷」", not r6 and "被分頁截斷" in n6, n6)
+    whole = _otc(2015, REAL)
+    whole["tables"][0]["totalCount"] = 2
+    r7, n7 = D.parse_otc(whole, 2015)
+    ck("  ⭐ 反向：列數 ＝ totalCount ⇒ 照收（⛔ 閘門不可以連正常年都擋）", len(r7) == 2, n7)
+    ck("  ⭐ 送出去的網址帶分頁參數（⛔ 不帶就是每年最多 10 筆）",
+       "paging-size=" in D.OTC_URL and "paging-offset=0" in D.OTC_URL, D.OTC_URL)
+
+    print("  ⭐ 全量那一發（2026-09-25）：不驗年、只驗 totalCount")
+    both = _otc("ALL", REAL + [["6009", "永昌綜合證券", "90-12-19", "", "u"]])
+    both["tables"][0]["totalCount"] = 3
+    r8, n8 = D.parse_otc(both, "ALL")
+    ck("  ⭐ 跨年份的全量照收（民國 90 那一列也在）", len(r8) == 3
+       and any(r[0].startswith("2001") for r in r8), n8)
+    cut = _otc("ALL", REAL)
+    cut["tables"][0]["totalCount"] = 581
+    r9, n9 = D.parse_otc(cut, "ALL")
+    ck("  ⛔⛔ 全量被截（回 2 列、官方 581）⇒ 拒收", not r9 and "被分頁截斷" in n9, n9)
+    un, mm = D.union_otc([r for r in r8 if not r[0].startswith("2001")], r8)
+    ck("  ⭐⭐ 聯集補回逐年那條路漏掉的 2001，而且講得出是哪一年",
+       len(un) == 3 and mm == [("2001", 0, 1)], f"{len(un)}｜{mm}")
+
     print("⑧ ⭐ `fetch_otc`：⛔ 絕不使用 `date=ALL`＋連續 0 筆要收手")
     seen = []
 
@@ -339,12 +365,14 @@ def main():
            if isinstance(n, _a4.Call)
            and any(k.arg == "retries" for k in n.keywords)
            and "OTC_URL" in _a4.dump(n)]
-    ck("⭐ 上櫃逐年那一發的 `retries` >= 4、`timeout` >= 90"
+    # ⚠ 2026-09-25 起有兩發（逐年＋全量）⇒ 每一發都要過，⛔ 不是只看第一發
+    ck("⭐ 上櫃每一發（逐年、全量）的 `retries` >= 4、`timeout` >= 90"
        "（⛔ 2026-09-14 用 2/45 時四年同時逾時）",
-       len(_rt) == 1
-       and next(k.value.value for k in _rt[0].keywords if k.arg == "retries") >= 4
-       and next(k.value.value for k in _rt[0].keywords if k.arg == "timeout") >= 90,
-       _a4.dump(_rt[0]) if _rt else "找不到")
+       len(_rt) == 2
+       and all(next(k.value.value for k in c.keywords if k.arg == "retries") >= 4
+               and next(k.value.value for k in c.keywords if k.arg == "timeout") >= 90
+               for c in _rt),
+       f"{len(_rt)} 發｜" + "；".join(_a4.dump(c)[:80] for c in _rt) if _rt else "找不到")
 
     # ⛔ 而「合併」要真的接在寫檔**之前**——⚠ 算出來沒用上也是全綠
     _src = io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "delisted.py"), encoding="utf-8").read()

@@ -61,14 +61,22 @@ FIELDS = ["終止上市日期", "公司名稱", "上市編號"]
 #   ⛔ 而下面每一個數字都是我方在 Actions 上**自己實測**的（轉述不算實測）。
 # ══════════════════════════════════════════════════════════════════════
 OTC_URL = ("https://www.tpex.org.tw/www/zh-tw/company/deListed"
-           "?code=&date={y}&reason=-1&id=&response=json")
+           "?code=&date={y}&reason=-1&id=&response=json"
+           "&paging-offset=0&paging-size=5000")
+# ⛔⛔ 2026-09-25：這個端點【預設只回 10 列】（伺服器端分頁），⚠ 而且不報錯。
+#   逐年打也一樣會被截：2008 官方 totalCount 34、不帶分頁只回 10；1999 是 16 回 10。
+#   ⇒ 主庫 delisted.csv 的上櫃那半原本只有 171 列（每年 ≤10、2007 以前全無），官方實為 581 列（1992 起）。
+#   ⇒ ⭐ 帶 paging-offset／paging-size（頁面 tables.js 的 serverPaging 參數，子代理 2026-09-25 讀出）
+#   ⇒ ⭐ 而且 parse_otc 逐年驗「回的列數 ＝ 回應自己的 totalCount」⇒ 再被截就大聲拒收
 OTC_FIELDS = ["股票代號", "公司名稱", "終止上櫃日期", "終止上櫃原因", "公司資料網址"]
 # ⛔⛔ `date=ALL` 是陷阱：實測回 **10 筆**，而 2015／2020／2025／2026 四年
 #   加總就已經 **28 筆**。⚠ 而 ALL 那一趟是**成功**的——`stat:ok`、欄位齊全、
 #   10 筆全部是真的，只是它其實是「最近 10 筆」。
+#   ⭐ 2026-09-25 查明成因：那是【分頁】不是 ALL 的性質（見上面 OTC_URL）⇒ 逐年也被截過。
+#     逐年保留（回顯年份可驗），並加 totalCount 閘門。
 #   ⇒ CLAUDE.md 第二點⑥：**參數說「全部」，但只回一部分。**
 #   ⇒ 所以這裡**逐年抓**，⛔ 永遠不要用 ALL。
-OTC_FIRST_YEAR = 2007          # ⚠ 下限還沒探到底；2015 實測回得出民國 104 的列
+OTC_FIRST_YEAR = 1992          # ⭐ 2026-09-25 帶分頁實測：官方最早一筆終止上櫃 1992-10-27；1994、1996 兩年 0 筆（⛔ 沒有連續三年 0 筆 ⇒ 下面的收手不會提早停）
 OTC_STOP_AFTER_EMPTY = 3       # 連續幾年 0 筆就收手（⛔ 不要無限往前打人家伺服器）
 
 
@@ -95,6 +103,12 @@ def parse_otc(payload, want_year):
     f = [str(x) for x in (tabs[0].get("fields") or [])]
     if f != OTC_FIELDS:
         return [], f"欄位結構與 2026-09-11 實測不符，拒收：{f}"
+    # ⭐ 第三道（2026-09-25）：伺服器分頁截斷 ⇒ 回的列數要等於回應自己講的 totalCount
+    total = tabs[0].get("totalCount")
+    got = len(tabs[0].get("data") or [])
+    if total is not None and str(total).strip().isdigit() and int(total) != got:
+        return [], (f"⛔ **被分頁截斷**：{want_year} 官方 totalCount={total}、只回 {got} 列"
+                    "　⇒ 拒收（⛔ 收下就是靜默少掉那一年的下市事件）")
     asof = datetime.now(TPE).strftime("%Y-%m-%d")
     rows, bad, offyear = [], [], []
     for r in tabs[0].get("data") or []:
@@ -105,8 +119,8 @@ def parse_otc(payload, want_year):
         if not code or not iso:
             bad.append(str(r)[:60])
             continue
-        # ⭐ 第二道：這一列自己講出來的年份，要等於我請求的那一年
-        if iso[:4] != str(want_year):
+        # ⭐ 第二道：這一列自己講出來的年份，要等於我請求的那一年（全量那一發不驗年，只驗 totalCount）
+        if want_year != "ALL" and iso[:4] != str(want_year):
             offyear.append(f"{code}:{iso}")
             continue
         rows.append([iso, code, str(r[1]).strip(), asof, "tpex"])
@@ -208,6 +222,36 @@ def fetch_otc(rl, this_year, get=None):
                         "⛔ 不是「官方只有到這裡」")
                 break
     return out, per
+
+
+def fetch_otc_all(rl, get=None):
+    """⭐ 2026-09-25：帶分頁的全量一發。→ (rows, note)。
+
+    ⛔⛔ 為什麼逐年之外還要它：官方 `date=2001` 回 **0 列、totalCount 0**（stat ok、回顯 2001），
+      ⚠ 而全量裡民國 90 年有 **64 列** ⇒ 逐年那條路【官方自己漏了一整年】，而且不報錯。
+    ⇒ 兩路都抓、合併；每一年兩路筆數不同就記下來（`year_mismatch`）。
+    ⚠ 全量只有在 totalCount 相符時才收（parse_otc 第三道）⇒ ⛔ 回到「只回 10 筆」那個坑會被擋。
+    """
+    getter = get or B.get
+    raw, err = getter(OTC_URL.format(y="ALL"), retries=4, timeout=90)
+    if err:
+        return [], f"⚠ 全量那一發抓不到：{str(err)[:80]}"
+    try:
+        payload = json.loads(raw.decode("utf-8", "replace"))
+    except ValueError as ex:                                 # noqa: BLE001
+        return [], f"⚠ 全量那一發不是 JSON：{ex}"
+    return parse_otc(payload, "ALL")
+
+
+def union_otc(per_year_rows, all_rows):
+    """→ (合併後, 逐年筆數不同的年份 [(年, 逐年, 全量)])。鍵 ＝ (stock_id, delist_date)。"""
+    import collections
+    merged = {(r[1], r[0]): r for r in all_rows}
+    merged.update({(r[1], r[0]): r for r in per_year_rows})
+    a = collections.Counter(r[0][:4] for r in per_year_rows)
+    b = collections.Counter(r[0][:4] for r in all_rows)
+    mism = sorted((y, a.get(y, 0), b.get(y, 0)) for y in set(a) | set(b) if a.get(y, 0) != b.get(y, 0))
+    return sorted(merged.values(), key=lambda x: (x[0], x[1])), mism
 
 
 def parse(payload):
@@ -354,8 +398,15 @@ def main():
     # ══════════════════════════════════════════════════════════════
     this_year = datetime.now(TPE).year
     rl.info("上櫃端點", OTC_URL.format(y="<西元年>")
-            + "　⛔ `date=ALL` 實測只回 10 筆（其實是「最近 10 筆」）⇒ 逐年抓")
+            + "　⭐ 帶分頁；逐年＋全量兩路合併（⛔ 官方 date=2001 回 0 列，全量裡那年有 64 列）")
     otc, per = fetch_otc(rl, this_year)
+    otc_all, all_note = fetch_otc_all(rl)
+    rl.info("上櫃全量那一發", all_note)
+    rl.check("⭐ 上櫃全量那一發收得下（列數 ＝ 官方 totalCount）", bool(otc_all), all_note)
+    otc, mism = union_otc(otc, otc_all)
+    if mism:
+        rl.info("⚠ 逐年與全量筆數不同的年份（年, 逐年, 全量）", str(mism)
+                + "　⇒ 已取聯集；⚠ 逐年那條路官方自己漏的年份就在這裡")
     got_years = {y: n for y, n in per.items() if n}
     rl.info("上櫃逐年筆數",
             "、".join(f"{y}:{n}" for y, n in sorted(got_years.items()))
