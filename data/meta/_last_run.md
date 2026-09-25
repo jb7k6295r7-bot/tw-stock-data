@@ -1119,14 +1119,15 @@
 
 ## crypto:mark　✓ 正常
 
-最後執行：2026-09-25T15:26:32+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 36107349024
+最後執行：2026-09-25T15:34:39+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 36108063567
 
 - **這一趟**：C5 描述臂：永續【標記價】日 K 全期（2020-01 ~ 2026-08）
-- **BTC**：2426 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
-- **ETH**：2432 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
+- **BTC**：2435 列｜ok 80 月｜日封存補 9 天｜補完仍缺 0 天｜absent 0｜error 0｜第一根 2020-01-01
+- **ETH**：2435 列｜ok 80 月｜日封存補 3 天｜補完仍缺 0 天｜absent 0｜error 0｜第一根 2020-01-01
 
 檢查：
 - ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+- ok　⭐ 補完之後逐日無缺（⛔ 月封存漏打包的日子要用日封存補）　（[]）
 
 ## etf_pre2015:0050　✓ 正常
 
