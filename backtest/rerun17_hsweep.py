@@ -15,6 +15,8 @@ H ∈ {90, 100, 110, 120, 130, 140, 150}；其餘（訊號、t−1 大盤閘、N
 
 裁定 seq191（使用者「好優先」）：--cell 13 ＝ #13（P1 AND N20 d=inf relvol；⛔ 無大盤閘）同一套 H90～150
   ⚠ P1 族原件持有期 ＝ H60（rerun17._sim_engine 寫死 "H60"）⇒ 7 點＋原件 H60 一列；閘三改成 H60 對 rerun17_seeds.csv main #13 逐位元
+  使用者 09-26 02:0x（直接對回測線）：「用60前後去檢查!」⇒ --near：#13 原件 H60 前後 ±30、每 10 根（30、40、50、60、70、80、90；
+  同 #1 的 120±30 設計）⇒ 輸出 resultsN17/hsweep13/near/（⛔ 仍是敏感度描述、不計 N、不換 H）
   P1 路徑的 rule 由本支包一層傳入（其餘 d_max／pick／queue_days／log＝[] 照 rerun17._sim_engine 逐字）；輸出 resultsN17/hsweep13/
 輸出 backtest/resultsN17/hsweep/：seeds.csv、cells.csv、sigcount.csv、run.log
 """
@@ -66,6 +68,7 @@ def main():
     ap.add_argument("--procs", type=int, default=1)
     ap.add_argument("--reps", type=int, default=RR.REPS)
     ap.add_argument("--cell", type=int, default=1, choices=[1, 13])
+    ap.add_argument("--near", action="store_true", help="原件 H 前後 ±30、每 10 根（只給 --cell 13）")
     ap.add_argument("--end", default=None, help="描述版：判讀窗尾改成這一天（含）之前最後一個交易日；⛔ 不跑閘三、另存子目錄")
     a = ap.parse_args()
     global OUT, HS
@@ -73,6 +76,11 @@ def main():
     if a.cell == 13:
         OUT = os.path.join(RR.OUT, "hsweep13")
         HS = [60] + HS
+        if a.near:
+            OUT = os.path.join(OUT, "near")
+            HS = [30, 40, 50, 60, 70, 80, 90]
+    elif a.near:
+        raise SystemExit("--near 只給 --cell 13")
     if a.end:
         OUT = os.path.join(OUT, f"end_{a.end}")
     os.makedirs(OUT, exist_ok=True)
