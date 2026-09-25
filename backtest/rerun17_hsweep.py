@@ -11,7 +11,11 @@ H ∈ {90, 100, 110, 120, 130, 140, 150}；其餘（訊號、t−1 大盤閘、N
   閘一 0050 錨逐位元
   閘二 重算的 H20／H60／H120 出場欄與 and_signals.csv.gz 逐位元相同（xpos 整數、g 以 repr）
   閘三 H120 用新欄重跑 200 顆 ⇒ 與 resultsN17/regime_t1/seeds.csv 的 t1 階段 #1 逐位元相同（cagr／mdd／vol／first／end／trades／eq_sha）
-    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.rerun17_hsweep [--procs 1]
+    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.rerun17_hsweep [--procs 1] [--cell 1|13] [--end YYYY-MM-DD]
+
+裁定 seq191（使用者「好優先」）：--cell 13 ＝ #13（P1 AND N20 d=inf relvol；⛔ 無大盤閘）同一套 H90～150
+  ⚠ P1 族原件持有期 ＝ H60（rerun17._sim_engine 寫死 "H60"）⇒ 7 點＋原件 H60 一列；閘三改成 H60 對 rerun17_seeds.csv main #13 逐位元
+  P1 路徑的 rule 由本支包一層傳入（其餘 d_max／pick／queue_days／log＝[] 照 rerun17._sim_engine 逐字）；輸出 resultsN17/hsweep13/
 輸出 backtest/resultsN17/hsweep/：seeds.csv、cells.csv、sigcount.csv、run.log
 """
 from __future__ import annotations
@@ -61,9 +65,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--procs", type=int, default=1)
     ap.add_argument("--reps", type=int, default=RR.REPS)
+    ap.add_argument("--cell", type=int, default=1, choices=[1, 13])
     ap.add_argument("--end", default=None, help="描述版：判讀窗尾改成這一天（含）之前最後一個交易日；⛔ 不跑閘三、另存子目錄")
     a = ap.parse_args()
-    global OUT
+    global OUT, HS
+    H0 = 120 if a.cell == 1 else 60                  # 原件持有期
+    if a.cell == 13:
+        OUT = os.path.join(RR.OUT, "hsweep13")
+        HS = [60] + HS
     if a.end:
         OUT = os.path.join(OUT, f"end_{a.end}")
     os.makedirs(OUT, exist_ok=True)
@@ -141,7 +150,7 @@ def main():
     G["regime"] = reg_t1
     e = AND["entry_pos"].to_numpy()
     inwin = (e >= w0) & (e <= w1)
-    on = reg_t1[e] & inwin
+    on = (reg_t1[e] if a.cell == 1 else np.ones(len(e), bool)) & inwin     # #13 無大盤閘
     sc = []
     for H in HS:
         x = AND[f"xpos_H{H}"].to_numpy()
@@ -155,17 +164,33 @@ def main():
     ids = {}
     for j, H in enumerate(HS):
         cid = base + j + 1
-        RR.CELLS.append((cid, "敏感度", "PREREG10", f"AND｜regime=True(t−1)｜N10｜H{H}", dict(fam="P10", reg=True, N=10, rule=f"H{H}")))
+        if a.cell == 1:
+            RR.CELLS.append((cid, "敏感度", "PREREG10", f"AND｜regime=True(t−1)｜N10｜H{H}", dict(fam="P10", reg=True, N=10, rule=f"H{H}")))
+        else:
+            RR.CELLS.append((cid, "敏感度", "P1", f"AND｜N20｜d=inf｜relvol｜H{H}", dict(fam="P1", N=20, d=None, pick="relvol", rule=f"H{H}")))
         ids[H] = cid
         assert RR.CELLS[cid - 1][4]["rule"] == f"H{H}"
+    _orig = RR._sim_engine
+
+    def _sim2(sp, sig, seed):                        # P1 路徑：只把寫死的 "H60" 換成 sp["rule"]，其餘照 rerun17._sim_engine 逐字
+        if sp["fam"] == "P1" and "rule" in sp:
+            kw = dict(d_max=sp["d"], pick=sp["pick"], queue_days=RR.P1_QUEUE if sp["d"] is not None else 0, return_equity=True)
+            return RR.R.simulate_mtm(sig, sp["rule"], sp["N"], np.random.default_rng(seed), RR._G["closes"], RR._G["opens"], RR._G["ncal"],
+                                     log=[], **kw)
+        return _orig(sp, sig, seed)
+    RR._sim_engine = _sim2
     t0 = time.time()
     d = RR.run_cells("win", a.procs, a.reps, [ids[H] for H in HS], log)
     d.insert(0, "H", d["cell"].map({v: k for k, v in ids.items()}))
     log(f"[跑完] {time.time() - t0:.0f}s")
 
-    ref = pd.read_csv(os.path.join(RR.OUT, "regime_t1", "seeds.csv"), dtype={"eq_sha": str}, **RTP)
-    ref = ref[(ref["stage"] == "t1") & (ref["cell"] == 1)].sort_values("r").reset_index(drop=True)
-    mine = d[d["H"] == 120].sort_values("r").reset_index(drop=True)
+    if a.cell == 1:
+        ref = pd.read_csv(os.path.join(RR.OUT, "regime_t1", "seeds.csv"), dtype={"eq_sha": str}, **RTP)
+        ref = ref[(ref["stage"] == "t1") & (ref["cell"] == 1)].sort_values("r").reset_index(drop=True)
+    else:
+        ref = pd.read_csv(os.path.join(RR.OUT, "rerun17_seeds.csv"), dtype={"eq_sha": str}, **RTP)
+        ref = ref[(ref["stage"] == "main") & (ref["cell"] == 13)].sort_values("r").reset_index(drop=True)
+    mine = d[d["H"] == H0].sort_values("r").reset_index(drop=True)
     diff = {}
     for c in CMP:
         if c in ("cagr", "mdd", "vol"):
@@ -175,14 +200,14 @@ def main():
         else:
             diff[c] = int(sum(int(p) != int(q) for p, q in zip(mine[c], ref[c])))
     g3 = len(mine) == len(ref) == a.reps and all(v == 0 for v in diff.values())
-    log(f"[閘三 H120 對 regime_t1 #1] 不同 {diff}｜逐位元 {g3}" + ("（描述版窗尾不同 ⇒ 本來就不會同，⛔ 不當閘）" if a.end else ""))
+    log(f"[閘三 H{H0} 對原件 #{a.cell}] 不同 {diff}｜逐位元 {g3}" + ("（描述版窗尾不同 ⇒ 本來就不會同，⛔ 不當閘）" if a.end else ""))
     if not g3 and not a.end:
         d.to_csv(os.path.join(OUT, "seeds_gatefail.csv"), index=False)
         raise SystemExit("⛔ 閘三不過")
     d.to_csv(os.path.join(OUT, "seeds.csv"), index=False)
 
     b_c, b_m = bw["cagr"], bw["mdd"]
-    h120 = d[d["H"] == 120].set_index("r")
+    h120 = d[d["H"] == H0].set_index("r")          # 名稱沿用 h120（#1 的原件 H）；#13 時是 H60
     r120 = float(h120["cagr"].median()) / abs(float(h120["mdd"].median()))
     rows = []
     for H in HS:
@@ -190,13 +215,13 @@ def main():
         c, m, v = float(g["cagr"].median()), float(g["mdd"].median()), float(g["vol"].median())
         lab, ratio, extra = RT.label(c, m, b_c, b_m)
         dc = g["cagr"] - h120["cagr"]; dm = g["mdd"] - h120["mdd"]
-        rows.append({"H": H, "年化中位": c, "回落中位": m, "比值": ratio, "年化波動中位": v, "標籤（對0050）": lab, "深淺註": extra,
+        rows.append({"H": H, "原件": H == H0, "年化中位": c, "回落中位": m, "比值": ratio, "年化波動中位": v, "標籤（對0050）": lab, "深淺註": extra,
                      "年化p10": float(g["cagr"].quantile(.1)), "年化p90": float(g["cagr"].quantile(.9)),
                      "回落p10": float(g["mdd"].quantile(.1)), "回落p90": float(g["mdd"].quantile(.9)),
-                     "對H120_年化中位差pp": (c - float(h120["cagr"].median())) * 100,
-                     "對H120_回落中位差pp": (m - float(h120["mdd"].median())) * 100,
-                     "對H120_比值差": ratio - r120,
-                     "同顆種子_年化高於H120": int((dc > 0).sum()), "同顆種子_回落淺於H120": int((dm > 0).sum()),
+                     f"對H{H0}_年化中位差pp": (c - float(h120["cagr"].median())) * 100,
+                     f"對H{H0}_回落中位差pp": (m - float(h120["mdd"].median())) * 100,
+                     f"對H{H0}_比值差": ratio - r120,
+                     f"同顆種子_年化高於H{H0}": int((dc > 0).sum()), f"同顆種子_回落淺於H{H0}": int((dm > 0).sum()),
                      "同顆種子_兩項皆好": int(((dc > 0) & (dm > 0)).sum()), "同顆種子_兩項皆差": int(((dc < 0) & (dm < 0)).sum()),
                      "trades中位": float(g["trades"].median()), "種子數": len(g)})
     C = pd.DataFrame(rows)
