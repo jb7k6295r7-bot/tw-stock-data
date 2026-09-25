@@ -125,6 +125,19 @@ def run_feed(a):
         raise SystemExit("⛔ data/early/daily 是空的 ⇒ 交易日曆不存在，⛔ 不退回逐日掃描（先跑 early-twse）")
     FD.UNI_DIR = EARLY
     FD.DAILY_DIR = cal_dir
+    # ⛔⛔ 2026-09-25：known＝True 的 feed（per、otcper…）會用 data/meta/stocks.csv 過濾代號
+    #   ⇒ 那份只有 2015 起出現過的代號 ⇒ 早年已下市的公司【整批被濾掉】＝早年段的存活者偏差，而且不報錯
+    #   ⇒ 早年模式把「早年日 K 出現過的代號」併進可接受清單
+    orig_known = FD.B._known_codes
+    early_codes = set()
+    for fn in os.listdir(cal_dir):
+        if fn.endswith(".csv"):
+            with io.open(os.path.join(cal_dir, fn), encoding="utf-8") as f:
+                early_codes.update(r["stock_id"] for r in csv.DictReader(f))
+
+    def _known_early():
+        return set(orig_known() or set()) | early_codes
+    FD.B._known_codes = _known_early
     end = min(a.end, "2015-01-04")
     sys.argv = ["feeds.py", "--run", "--feed", a.feed, "--start", a.start, "--end", end,
                 "--sleep", str(a.sleep)]
