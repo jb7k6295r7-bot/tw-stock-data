@@ -1,0 +1,101 @@
+{
+ "抽籤版＝regime_t1": true,
+ "keys": {
+  "K0": {
+   "verdict": "分不出",
+   "label": "合格",
+   "pctl_cagr": 3.5000000000000004,
+   "pctl_ratio": 23.5,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "ratio_seed_med": true,
+    "ratio_label": true,
+    "pctl_cagr": true,
+    "pctl_ratio": true,
+    "verdict": true,
+    "label": true,
+    "both_better": true,
+    "both_worse": true,
+    "buy_diff_med": true
+   }
+  },
+  "K1": {
+   "verdict": "分不出",
+   "label": "合格",
+   "pctl_cagr": 44.0,
+   "pctl_ratio": 53.0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "ratio_seed_med": true,
+    "ratio_label": true,
+    "pctl_cagr": true,
+    "pctl_ratio": true,
+    "verdict": true,
+    "label": true,
+    "both_better": true,
+    "both_worse": true,
+    "buy_diff_med": true
+   }
+  },
+  "K2": {
+   "verdict": "分不出",
+   "label": "合格",
+   "pctl_cagr": 55.50000000000001,
+   "pctl_ratio": 71.0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "ratio_seed_med": true,
+    "ratio_label": true,
+    "pctl_cagr": true,
+    "pctl_ratio": true,
+    "verdict": true,
+    "label": true,
+    "both_better": true,
+    "both_worse": true,
+    "buy_diff_med": true
+   }
+  },
+  "K3": {
+   "verdict": "分不出",
+   "label": "合格",
+   "pctl_cagr": 35.5,
+   "pctl_ratio": 48.0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "ratio_seed_med": true,
+    "ratio_label": true,
+    "pctl_cagr": true,
+    "pctl_ratio": true,
+    "verdict": true,
+    "label": true,
+    "both_better": true,
+    "both_worse": true,
+    "buy_diff_med": true
+   }
+  },
+  "K4": {
+   "verdict": "分不出",
+   "label": "合格",
+   "pctl_cagr": 88.0,
+   "pctl_ratio": 92.0,
+   "ok": {
+    "n": true,
+    "cagr_med": true,
+    "ratio_seed_med": true,
+    "ratio_label": true,
+    "pctl_cagr": true,
+    "pctl_ratio": true,
+    "verdict": true,
+    "label": true,
+    "both_better": true,
+    "both_worse": true,
+    "buy_diff_med": true
+   }
+  }
+ },
+ "bad": []
+}

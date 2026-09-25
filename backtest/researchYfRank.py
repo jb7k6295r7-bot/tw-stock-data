@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """PREREG營飆排名（台股策略線登錄 seq1 sha 6a1a8643d7e61b4a；裁定線 seq199 發號＋附則）：營飆 v1 候選多於空槽時「照排名取前」vs 抽籤。
-回測線，2026-09-26。pre 段 ＝ §一 退化檢查（⛔ 不看報酬；已跑、9d07d9505d）；body 段 ＝ §三 判定 4 格＋K0（寫好、⛔ 未跑：待裁定看過退化檢查）。
+回測線，2026-09-26。pre 段 ＝ §一 退化檢查（⛔ 不看報酬；已跑、9d07d9505d）；body 段 ＝ §三 判定 4 格＋K0（裁定 seq200 准跑；讀法 seq200 定，見 body() docstring）。
 
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchYfRank pre|body [--procs 2] [--reps 200]
     body 用引擎 simulate_mtm(pick=鍵欄, pick_tie="rng")（與 pre 的診斷包裝 RankRng 逐位元相同，selftest_yfrank gate_a 驗）
@@ -245,7 +245,7 @@ def pre(a):
     log(f"[完成] {time.time() - t00:.0f}s")
 
 
-# ═════════════════════════════ body：§三 判定 4 格＋K0 假訊號臂（⛔ 2026-09-26 寫好未跑：裁定「看過退化檢查再跑判定」）
+# ═════════════════════════════ body：§三 判定 4 格＋K0 假訊號臂（裁定 seq200 准跑）
 C50, R50 = 0.24020209886370614, 0.7073712681980713
 ANCHOR = (0.24020209886370614, -0.3395700527611012)
 HI, LO = 98.75, 1.25                                   # 1 − 0.05／4、0.05／4（N＝4；裁定 seq196 ⑤）
@@ -272,6 +272,14 @@ def _body_one(args):
         row[f"y{y}"] = float(eq[p1] / eq[p0] - 1.0)
     KV = G["KV"]
     bb = [(a["sid"], int(a["t"])) for a in au if a["side"] == "buy"]
+    if k != "lottery":                               # 必報：排名版買進 ≠ 同顆種子抽籤版的筆數（抽籤版的買進不在排名版裡）
+        al = []
+        R11.simulate_mtm(G["sigK"], "H120", 10, np.random.default_rng(1000 + r), ctx["closes"], ctx["opens"], ctx["ncal"],
+                         return_equity=True, audit=al)
+        bl = {(a["sid"], int(a["t"])) for a in al if a["side"] == "buy"}
+        row["buys"] = len(bb); row["buys_lottery"] = len(bl); row["buy_diff"] = len(bl - set(bb))
+    else:
+        row["buys"] = len(bb); row["buys_lottery"] = len(bb); row["buy_diff"] = 0
     for kk in KEYS:                                   # 買到的股票的鍵值（描述：排名有沒有真的改變買到什麼）
         v_ = np.array([KV[kk][b] for b in bb], float)
         row[f"buy_{kk}_mean"] = float(np.nanmean(v_)); row[f"buy_{kk}_med"] = float(np.nanmedian(v_))
@@ -280,7 +288,11 @@ def _body_one(args):
 
 def body(a):
     """§三：K1～K4 判定、K0 假訊號；對照 ＝ 營飆 v1 抽籤 200 顆（種子 1000＋r；閘：＝ regime_t1 t1 #1 逐位元）。
-    ⚠ 讀法待裁定確認（跑前）：排名版的「比值」＝ 年化中位 ÷ |回落中位|（與標籤同式），抽籤分佈用逐顆的 年化 ÷ |回落|。"""
+    讀法（裁定 seq200 定）：
+      百分位 ＝ 中位秩（比 x 小的 ＋ 一半等於 x 的）÷ 200 × 100 ⇒ 對抽籤運氣的位置，不是對未來的檢定
+      年化：排名版的【年化中位】落在抽籤 200 顆【逐顆年化】的百分位
+      比值：兩邊同一種算法 ⇒ 抽籤分佈 ＝ 逐顆 年化 ÷ |回落|；排名版 ＝【逐顆比值的中位】（⛔ 不用 年化中位 ÷ |回落中位|）
+      標籤（對 0050）照原式 ＝ 年化中位 ÷ |回落中位|（與上一條的判定比值是兩個不同的量，分欄寫）"""
     global OUT
     OUT = a.out
     os.makedirs(OUT, exist_ok=True)
@@ -327,13 +339,25 @@ def body(a):
     rows = []
     for k in KEYS:
         g = A[A["arm"] == k].set_index("r").sort_index()
-        c, m = float(g["cagr"].median()), float(g["mdd"].median()); ratio = c / abs(m)
-        pc, pr_ = pctl(c, lc), pctl(ratio, lr)
+        c, m = float(g["cagr"].median()), float(g["mdd"].median())
+        ratio_seed_med = float((g["cagr"] / g["mdd"].abs()).median())          # 判定用：逐顆比值的中位（seq200 ②）
+        ratio_lab = c / abs(m)                                                  # 標籤用：年化中位 ÷ |回落中位|（原式）
+        pc, pr_ = pctl(c, lc), pctl(ratio_seed_med, lr)
         verdict = "比抽籤好" if (pc >= HI and pr_ >= HI) else ("比抽籤差" if (pc <= LO and pr_ <= LO) else "分不出")
-        lab = "合格" if (c > C50 and ratio >= R50) else ("另列" if c > C50 else "不合格")
+        lab = "合格" if (c > C50 and ratio_lab >= R50) else ("另列" if c > C50 else "不合格")
         pk_ = pre_s["各鍵"][KNAME[k]]
-        row = {"key": k, "名": KNAME[k], "判定": k != "K0", "cagr_med": c, "mdd_med": m, "ratio": ratio, "pctl_cagr": pc, "pctl_ratio": pr_,
+        dc = g["cagr"] - lot["cagr"]; dm = g["mdd"] - lot["mdd"]
+        row = {"key": k, "名": KNAME[k], "判定": k != "K0", "cagr_med": c, "mdd_med": m, "ratio_seed_med": ratio_seed_med, "ratio_label": ratio_lab,
+               "pctl_cagr": pc, "pctl_ratio": pr_,
                "verdict": verdict if k != "K0" else f"{verdict}（假訊號、不判）", "label_0050": lab,
+               "cagr_p10": float(g["cagr"].quantile(.1)), "cagr_p25": float(g["cagr"].quantile(.25)), "cagr_p75": float(g["cagr"].quantile(.75)),
+               "cagr_p90": float(g["cagr"].quantile(.9)), "mdd_p10": float(g["mdd"].quantile(.1)), "mdd_p25": float(g["mdd"].quantile(.25)),
+               "mdd_p75": float(g["mdd"].quantile(.75)), "mdd_p90": float(g["mdd"].quantile(.9)),
+               "buy_diff_med": float(g["buy_diff"].median()), "buy_diff_p10": float(g["buy_diff"].quantile(.1)), "buy_diff_p90": float(g["buy_diff"].quantile(.9)),
+               "buy_diff_frac_med": float((g["buy_diff"] / g["buys_lottery"]).median()), "buy_diff_zero_seeds": int((g["buy_diff"] == 0).sum()),
+               "pair_d_cagr_med": float(dc.median()), "pair_d_mdd_med": float(dm.median()),
+               "pair_both_better": int(((dc > 0) & (dm > 0)).sum()), "pair_both_worse": int(((dc < 0) & (dm < 0)).sum()),
+               "pair_same": int(((dc == 0) & (dm == 0)).sum()),
                "d_cagr_vs_lottery_med": c - float(lot["cagr"].median()), "d_mdd_vs_lottery_med": m - float(lot["mdd"].median()),
                "tie_frac": pk_["同分占比（候選＞空槽日的候選中與別檔同分）"]["中位"], "path_diff_frac": pk_["總差占全部買進"]["中位"],
                "k0_outside_10_90": bool(k == "K0" and not (10 <= pc <= 90 and 10 <= pr_ <= 90))}
@@ -346,7 +370,9 @@ def body(a):
     TB.to_csv(os.path.join(OUT, "cells.csv"), index=False)
     S = {"登錄": "PREREG營飆排名 seq1 sha 6a1a8643d7e61b4a（§三 判定；裁定 seq199 附則）", "閘": {"一_0050錨": g1, "二_鍵＝pre": same_keys, "三_抽籤版": g3},
          "門檻": {"HI": HI, "LO": LO, "百分位": "中位秩（比 x 小的 ＋ 一半等於 x 的）÷ 200 × 100；對抽籤運氣的位置（seq199 ②）"},
-         "讀法_待確認": "排名版比值 ＝ 年化中位 ÷ |回落中位|；抽籤分佈 ＝ 逐顆 年化 ÷ |回落|",
+         "讀法": {"百分位": "中位秩；對抽籤運氣的位置，不是對未來的檢定（seq199 ②）", "年化": "排名版年化中位 在 抽籤逐顆年化 的百分位",
+                "比值（判定）": "排名版逐顆比值的中位 在 抽籤逐顆比值 的百分位（seq200 ②）", "比值（標籤）": "年化中位 ÷ |回落中位|（原式）"},
+         "抽籤版": {"cagr_med": float(lot["cagr"].median()), "mdd_med": float(lot["mdd"].median()), "ratio_seed_med": float(np.median(lr))},
          "N帳": {"N_組合": "+4（K1～K4）", "不計": "K0 假訊號、退化檢查、描述"}, "格": rows, "秒": round(time.time() - t00)}
     json.dump(S, open(os.path.join(OUT, "summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=float)
     body_report(TB, S, OUT)
@@ -359,7 +385,9 @@ def body_report(TB, S, OUT):
     pre_note = max(float(T.loc[k, "path_diff_frac"]) for k in ("K1", "K2", "K3", "K4"))
     k0 = T.loc["K0"]
     Ls = ["# PREREG營飆排名：營飆 v1 候選多於空位時照排名取前 vs 抽籤（判定 4 格＋K0 假訊號）", "",
-          f"閘：{S['閘']}｜門檻 {S['門檻']}｜⚠ {S['讀法_待確認']}", "", "## 結果句（⛔ 只照登錄 §三查表；seq199 ② 措辭）", ""]
+          f"閘：{S['閘']}", "", f"門檻：兩個量都 ≥ {HI} 百分位 ⇒ 比抽籤好；都 ≤ {LO} ⇒ 比抽籤差；其他 ⇒ 分不出（N＝4）。"
+          "⭐ 百分位是對抽籤運氣的位置，不是對未來的檢定。", "",
+          f"讀法（裁定 seq200）：{S['讀法']}", "", "## 結果句（⛔ 只照登錄 §三查表；前綴照 seq199 附則）", ""]
     head = [f"排名最多只影響約 {pre_note * 100:.0f}% 的買進（退化檢查 §一③）"]
     if k0["k0_outside_10_90"]:
         head.append("連隨便排都偏離抽籤，抽籤分佈當對照要打折")
@@ -370,10 +398,24 @@ def body_report(TB, S, OUT):
         body_ = {"比抽籤好": f"照〔{KNAME[k]}〕挑，在 2017～2026 這段比抽籤好（只是候選：營飆 v1 升 v2 須裁定定，並進 PREREGV 早年段＋前瞻紀錄）",
                  "比抽籤差": f"照〔{KNAME[k]}〕挑，在 2017～2026 這段比抽籤差 ⇒ 照原本抽籤",
                  "分不出": f"照〔{KNAME[k]}〕挑和抽籤分不出 ⇒ 照原本抽籤（營飆 v1 不改）"}[v]
-        Ls.append(f"- {'；'.join(pre)}。{body_}。年化中位 {q['cagr_med'] * 100:+.2f}%（抽籤分佈第 {q['pctl_cagr']:.2f} 百分位）、"
-                  f"比值 {q['ratio']:.4f}（第 {q['pctl_ratio']:.2f} 百分位）、回落中位 {q['mdd_med'] * 100:+.2f}%；對 0050「{q['label_0050']}」。（{FOOT}）")
+        Ls.append(f"- {'；'.join(pre)}。{body_}。年化中位 {q['cagr_med'] * 100:+.2f}%（抽籤逐顆年化的第 {q['pctl_cagr']:.2f} 百分位）、"
+                  f"逐顆比值中位 {q['ratio_seed_med']:.4f}（抽籤逐顆比值的第 {q['pctl_ratio']:.2f} 百分位）、回落中位 {q['mdd_med'] * 100:+.2f}%；"
+                  f"對 0050「{q['label_0050']}」（標籤比值 {q['ratio_label']:.4f}）。（{FOOT}）")
     Ls += ["", f"- K0 代號尾數（假訊號、不判）：年化第 {k0['pctl_cagr']:.2f}、比值第 {k0['pctl_ratio']:.2f} 百分位（應在 10～90）", "",
-           "逐鍵：對抽籤中位的年化差與回落差、分年差（dy 欄）、買到的鍵值（buy_* 欄）見 cells.csv。", "",
+           "## 必報", "", f"抽籤版（營飆 v1 原樣）：年化中位 {S['抽籤版']['cagr_med'] * 100:+.2f}%、回落中位 {S['抽籤版']['mdd_med'] * 100:+.2f}%、逐顆比值中位 {S['抽籤版']['ratio_seed_med']:.4f}", "",
+           "| 鍵 | 買進 ≠ 抽籤（筆，中位〔p10～p90〕／占比中位／0 筆的顆數） | 年化 p10／p25／中位／p75／p90 | 回落 p10／p25／中位／p75／p90 | 同顆配對 年化差中位／回落差中位 | 兩項皆好／皆差／完全相同（顆） |",
+           "|---|---|---|---|---|---|"]
+    for k in KEYS:
+        q = T.loc[k]
+        Ls.append(f"| {KNAME[k]} | {q['buy_diff_med']:.0f}〔{q['buy_diff_p10']:.0f}～{q['buy_diff_p90']:.0f}〕／{q['buy_diff_frac_med'] * 100:.1f}%／{q['buy_diff_zero_seeds']} | "
+                  f"{q['cagr_p10'] * 100:+.2f}／{q['cagr_p25'] * 100:+.2f}／{q['cagr_med'] * 100:+.2f}／{q['cagr_p75'] * 100:+.2f}／{q['cagr_p90'] * 100:+.2f}% | "
+                  f"{q['mdd_p10'] * 100:+.2f}／{q['mdd_p25'] * 100:+.2f}／{q['mdd_med'] * 100:+.2f}／{q['mdd_p75'] * 100:+.2f}／{q['mdd_p90'] * 100:+.2f}% | "
+                  f"{q['pair_d_cagr_med'] * 100:+.2f}／{q['pair_d_mdd_med'] * 100:+.2f} pp | {q['pair_both_better']}／{q['pair_both_worse']}／{q['pair_same']} |")
+    det = [k for k in KEYS if float(T.loc[k, "cagr_p10"]) == float(T.loc[k, "cagr_p90"]) and float(T.loc[k, "mdd_p10"]) == float(T.loc[k, "mdd_p90"])]
+    if det:
+        Ls += ["", f"⚠ {'、'.join(det)} 的 200 顆完全相同（年化、回落 p10 ＝ p90）：這幾個鍵在候選多於空槽的日子裡沒有同分（退化檢查同分占比 0%），"
+               "排序唯一決定、抽籤不起作用 ⇒ 排名版只有一條路徑，「200 顆取中位」就是那一條；百分位 ＝ 那一條在抽籤 200 顆裡的位置。"]
+    Ls += ["", "回落差記法：排名版回落 − 抽籤版回落（回落是負數 ⇒ 正 ＝ 變淺）。分年差（dy 欄）、買到的鍵值（buy_* 欄）見 cells.csv。", "",
            "⚠ 早年段（2012～2014）照營飆 v1 驗證排程併入 PREREGV，⛔ 不在本檔。"]
     open(os.path.join(OUT, "REPORT.md"), "w", encoding="utf-8").write("\n".join(Ls) + "\n")
 

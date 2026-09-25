@@ -1,0 +1,7 @@
+===== researchYfRank body procs=3 reps=200 2026-09-26 03:46（台北）=====
+[AND] /home/chemtim/tw-p17/backtest/resultsN17/sig_edc6f/and_signals.csv.gz｜2,339 筆／921 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[閘一 0050 錨] 逐位元 True
+[鍵] 訊號列 2,036｜驗 {'S 表對不到的訊號列': 0, 'K1＝c1～c5 加總 不符': 0, 'K3 分母 ≠ S 表 liq（相對差 ＞ 1e−9）': 0, 'K3 ≥ 3 ⇔ c3 不符': 0, 'K4 ≥ 0.30 ⇔ c1 不符': 0, 'K2 對不到 and_flags 那一列': 0, 'K2 ＜ 0（與 rev_hi24 矛盾）': 0, 'K0 NaN': 0, 'K1 NaN': 0, 'K2 NaN': 0, 'K3 NaN': 0, 'K4 NaN': 0}
+[閘二 鍵 ＝ pre_keys.csv（退化檢查時的那一份）] True
+[閘三 抽籤版 ＝ regime_t1 t1 #1 逐位元] True
+[完成] 195s
