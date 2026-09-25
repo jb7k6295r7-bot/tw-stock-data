@@ -35,12 +35,26 @@ BASE = "https://data.binance.vision/data/futures/um/monthly/klines/%sUSDT/1d/%sU
 #   ⛔ 不另寫一份：月封存、sha manifest、表頭判斷全部共用；只換網址、輸出目錄、manifest 與預設幣
 #   標記價沒有成交 ⇒ volume／quote_volume／taker 欄官方就是 0（⛔ 不是缺值）
 KINDS = {
-    "perp": {"base": BASE, "out": OUT, "man": MAN, "syms": SYMS},
+    "perp": {"base": BASE, "out": OUT, "man": MAN, "syms": SYMS,
+             "daily": "https://data.binance.vision/data/futures/um/daily/klines/%sUSDT/1d/%sUSDT-1d-%s.zip"},
     "mark": {"base": "https://data.binance.vision/data/futures/um/monthly/markPriceKlines/%sUSDT/1d/%sUSDT-1d-%04d-%02d.zip",
              "out": os.path.join(HERE, "data", "crypto_mark"),
              "man": os.path.join(HERE, "data", "meta", "crypto_mark_manifest.csv"),
-             "syms": ["BTC", "ETH"]},
+             "syms": ["BTC", "ETH"],
+             "daily": "https://data.binance.vision/data/futures/um/daily/markPriceKlines/%sUSDT/1d/%sUSDT-1d-%s.zip"},
 }
+DAY_MS = 86400000
+
+
+def gap_days(allrows):
+    """→ 第一根到最後一根之間【月封存沒有】的日子（open_time 毫秒，升冪）。
+    ⭐ 2026-09-25 實測：標記價月封存 BTC 缺 9 天、ETH 缺 3 天（例 BTC 2021-07-24～27），
+       ⚠ 而同一天的【日封存】在（200），REST 也有且與月封存重疊部分逐欄相同 ⇒ 是月封存漏打包，⛔ 不是沒有那一天。"""
+    ks = sorted(int(k) for k in allrows)
+    if not ks:
+        return []
+    have = set(ks)
+    return [t for t in range(ks[0], ks[-1] + 1, DAY_MS) if t not in have]
 MAN_COLS = ["sym", "month", "url", "zip_sha256", "content_sha256", "rows", "had_header", "status"]
 
 
@@ -81,7 +95,7 @@ def main():
     os.makedirs(os.path.dirname(man_path), exist_ok=True)
     rl = runlog.Run("crypto:%s" % a.kind)
     rl.info("這一趟", ("C5 永續日 K 全期" if a.kind == "perp" else "C5 描述臂：永續【標記價】日 K 全期") + "（%04d-%02d ~ %04d-%02d）" % (FIRST[0], FIRST[1], until[0], until[1]))
-    man, errors = [], []
+    man, errors, still_gap = [], [], []
     for sym in syms:
         allrows = {}
         for y, m in months(until):
@@ -101,6 +115,26 @@ def main():
                         "content_sha256": hashlib.sha256(content).hexdigest(), "rows": len(rows),
                         "had_header": int(had), "status": "ok"})
             time.sleep(0.2)
+        # ⭐ 月封存的缺日用官方【日封存】補（同一個站、同一種 zip；manifest 一天一列、month 欄寫日期）
+        for t in gap_days(allrows):
+            day = datetime.datetime.fromtimestamp(t / 1000, datetime.timezone.utc).strftime("%Y-%m-%d")
+            url = K["daily"] % (sym, sym, day)
+            b, st = fetch(url)
+            if st != "ok":
+                man.append({"sym": sym, "month": day, "url": url, "zip_sha256": "", "content_sha256": "",
+                            "rows": 0, "had_header": "", "status": st})
+                if st.startswith("error"):
+                    errors.append((sym, day, st))
+                continue
+            rows, content, had = parse_month(b)
+            for r in rows:
+                allrows[r[0]] = r
+            man.append({"sym": sym, "month": day, "url": url, "zip_sha256": hashlib.sha256(b).hexdigest(),
+                        "content_sha256": hashlib.sha256(content).hexdigest(), "rows": len(rows),
+                        "had_header": int(had), "status": "ok"})
+            time.sleep(0.2)
+        left = gap_days(allrows)
+        still_gap += [(sym, t) for t in left]
         with io.open(os.path.join(out, sym + "USDT.csv"), "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(HEADER)
@@ -108,8 +142,9 @@ def main():
                 w.writerow(allrows[k])
         mine = [x for x in man if x["sym"] == sym]
         first = min(allrows, key=int) if allrows else ""
-        msg = "%d 列｜ok %d 月｜absent %d｜error %d｜第一根 %s" % (
-            len(allrows), sum(1 for x in mine if x["status"] == "ok"),
+        msg = "%d 列｜ok %d 月｜日封存補 %d 天｜補完仍缺 %d 天｜absent %d｜error %d｜第一根 %s" % (
+            len(allrows), sum(1 for x in mine if x["status"] == "ok" and len(x["month"]) == 7),
+            sum(1 for x in mine if x["status"] == "ok" and len(x["month"]) == 10), len(left),
             sum(1 for x in mine if x["status"] == "absent"),
             sum(1 for x in mine if x["status"].startswith("error")),
             datetime.datetime.fromtimestamp(int(first) / 1000, datetime.timezone.utc).strftime("%Y-%m-%d")
@@ -121,6 +156,7 @@ def main():
         w.writeheader()
         w.writerows(man)
     rl.check("抓取錯誤 0 個月（⛔ error 不是 absent）", not errors, str(errors[:5]))
+    rl.check("⭐ 補完之後逐日無缺（⛔ 月封存漏打包的日子要用日封存補）", not still_gap, str(still_gap[:5]))
     rl.finish()
     return 1 if errors else 0
 
