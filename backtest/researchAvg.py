@@ -615,11 +615,15 @@ ENGINE_KW_B = {"By": {"add_rule": {"kind": "loss", "x": 0.10, "size": 0.5, "shor
                "Ci": {"trim_rule": {"kind": "gain", "x": 0.15, "frac": 0.5}, "trim_proceeds": "next", "nx_cap": 10},
                # ⛔ 描述臂（不判、不計 N）：乙三 (丙) 8 槽原樣版（待買只能用 8 槽）／乙三 賣得現金閒置版
                "Ci8": {"trim_rule": {"kind": "gain", "x": 0.15, "frac": 0.5}, "trim_proceeds": "next"},
-               "Ci0": {"trim_rule": {"kind": "gain", "x": 0.15, "frac": 0.5}}}
+               "Ci0": {"trim_rule": {"kind": "gain", "x": 0.15, "frac": 0.5}},
+               # 裁定 seq192 §二／登錄 seq5 事後描述臂（⛔ 不判、不計 N）：D1 一般新部位優先（引擎 nx_order="after"，84de67ccaf）
+               #   D2「待買併池」＝ trim_proceeds=None（賣得現金併入一般現金、有空槽照一般規則買）＝ 上面的 Ci0 ⇒ 不另跑
+               "CiD1": {"trim_rule": {"kind": "gain", "x": 0.15, "frac": 0.5}, "trim_proceeds": "next", "nx_cap": 10, "nx_order": "after"}}
 B_CELLS = [("base", "基準臂（加減碼全關）", False), ("By", "乙一 2-B ⓓ 個股收盤 ≤ 進場 −10% ⇒ 加 0.5 slot", True),
            ("Ci", "乙二 2-C ⓘ 個股收盤 ≥ 進場 +15% ⇒ 賣一半、賣得現金買下一檔（待買可到第 9、10 槽）", True),
            ("Ci8", "乙三描述 (丙)：同乙二但待買只能用 8 槽（seq3 原樣）", False),
-           ("Ci0", "乙三描述：賣半、賣得現金閒置", False)]
+           ("Ci0", "乙三描述：賣半、賣得現金閒置（＝ 事後描述臂 D2 待買併池）", False),
+           ("CiD1", "事後描述臂 D1：同乙二但一般新部位優先（待買排在當天新訊號之後）", False)]
 _BG = {}
 
 
@@ -851,7 +855,7 @@ def main_body_B(argv):
             row.update({"ctrl": "m̄ 逐種子配對" if k == "By" else "ē 逐種子配對", "ctrl_cagr": cc, "ctrl_mdd": cm, "ctrl_ratio": cc / abs(cm),
                         "ctrl_class": "甲'" if (wc and wr) else ("乙'" if (wc or wr) else "丙'"),
                         "pair_d_cagr_med": float((g["cagr"] - ctl["cagr"]).median()), "pair_d_mdd_med": float((g["mdd"] - ctl["mdd"]).median())})
-        if k in ("Ci8", "Ci0"):
+        if k in ("Ci8", "Ci0", "CiD1"):
             ci_ = A[A["arm"] == "Ci"].set_index("r").sort_index()
             row.update({"vs_Ci_d_cagr_med": float((g["cagr"] - ci_["cagr"]).median()), "vs_Ci_d_mdd_med": float((g["mdd"] - ci_["mdd"]).median())})
         if k == "By":
@@ -860,7 +864,7 @@ def main_body_B(argv):
     TB = pd.DataFrame(rows)
     TB.to_csv(os.path.join(OUT, "B_cells.csv"), index=False)
     S["格"] = rows
-    S["N帳"] = {"N_組合": "+2（乙一、乙二）", "不計": "基準臂、m̄／ē 對照、同現金比例×0050、乙三描述臂 Ci8（8 槽原樣）／Ci0（閒置）"}
+    S["N帳"] = {"N_組合": "+2（乙一、乙二）", "不計": "基準臂、m̄／ē 對照、同現金比例×0050、乙三描述臂 Ci8（8 槽原樣）／Ci0（閒置＝D2）、事後描述臂 CiD1"}
     json.dump(S, open(os.path.join(OUT, "B_summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     print("完成 乙 body {:.0f}s".format(time.time() - t0))
 
