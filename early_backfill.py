@@ -111,14 +111,40 @@ def structure(lines):
     return {"rows": len(lines), "traded": traded, "bad_hl": bad_hl, "zero": zero, "neg": neg}
 
 
+def run_feed(a):
+    """⭐ 2026-09-25（裁定線 seq156 §七：#3 instamt 2004～2014 准補，落 data/early、只驗結構）。
+
+    ⭐ 重用 feeds.py 整支（端點、解析、驗日期、台帳、寫檔），⛔ 不另寫；只換兩個路徑：
+       feeds.UNI_DIR   → data/early          ⇒ 輸出 data/early/<feed>/<日期>.csv
+       feeds.DAILY_DIR → data/early/daily    ⇒ 交易日曆＝早年段日 K 的檔名（⚠ 所以要在日 K 落地之後跑）
+    ⛔ 不在 data/universe 寫任何東西。
+    """
+    import feeds as FD
+    cal_dir = os.path.join(EARLY, "daily")
+    if not os.path.isdir(cal_dir) or not os.listdir(cal_dir):
+        raise SystemExit("⛔ data/early/daily 是空的 ⇒ 交易日曆不存在，⛔ 不退回逐日掃描（先跑 early-twse）")
+    FD.UNI_DIR = EARLY
+    FD.DAILY_DIR = cal_dir
+    end = min(a.end, "2015-01-04")
+    sys.argv = ["feeds.py", "--run", "--feed", a.feed, "--start", a.start, "--end", end,
+                "--sleep", str(a.sleep)]
+    return FD.main()
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--market", required=True, choices=["twse", "tpex"])
+    ap.add_argument("--market", choices=["twse", "tpex"])
+    ap.add_argument("--feed", default="",
+                    help="⭐ 改跑 feeds.py 的某一支（例 instamt）：交易日曆與輸出都指到 data/early")
     ap.add_argument("--start", required=True)
     ap.add_argument("--end", required=True)
     ap.add_argument("--sleep", type=float, default=5.0)
     ap.add_argument("--max-days", type=int, default=100000)
     a = ap.parse_args()
+    if a.feed:
+        return run_feed(a)
+    if not a.market:
+        ap.error("--market 或 --feed 至少要一個")
     start = max(a.start, FLOOR[a.market])
     end = min(a.end, "2015-01-04")        # ⛔ 早年段只到全庫起點（2015-01-05）之前
     F.UNI_DIR = EARLY                                  # ⭐ 唯一的改動：輸出路徑
