@@ -682,6 +682,17 @@ jobs:
           python etf_pre2015.py --code 0050 --start 2012-01 --end 2014-12 --sleep 5 || RC=1
           exit $RC
 
+      # ⛔⛔ 2026-09-25 付過代價：checkout 的是【分支】，分支上沒有 data/early
+      #   ⇒ early-twse 第二趟從空台帳開始寫 ⇒ push 時整份取代 ⇒ 第一趟 1,470 天的結構台帳被洗掉（日 K 檔本身沒事）
+      #   ⇒ 早年段每個模式開跑前都先取 main 的 data/early（交易日曆、台帳、已落地的日檔都在這裡）
+      - name: 取 main 的早年段資料（⛔ 分支沒有 data/early）
+        if: startsWith(inputs.mode, 'early-')
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/early \
+            || echo "⚠ main 上還沒有 data/early（第一次跑），略過" >&2
+          echo "data/early/daily 檔數：$(ls data/early/daily 2>/dev/null | wc -l)"
+
       # ⭐ 2026-09-25（裁定線 seq149 §二 ①②）：早年段全市場日 K ⇒ data/early/daily（⛔ 不併進 universe／stocks）
       #   用 start／end／sleep 三欄；上市官方下限 2004-02-11、上櫃 2007-07-02（程式自己夾）
       #   ⛔ 只做結構驗證（列數、low≤open,close≤high、零價、負價），⛔ 不算報酬
