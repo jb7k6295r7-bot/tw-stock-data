@@ -12,7 +12,7 @@
 
 | 資料 | 檔數 | 缺 | 缺的位置 | 證據等級 |
 |---|---|---|---|---|
-| 日檔 daily | 2,860 | 0 | — | **B** — 家數對 `MI_INDEX`（`_breadth_audit.csv`） |
+| 日檔 daily | 2,859 | 0 | — | **B** — 家數對 `MI_INDEX`（`_breadth_audit.csv`） |
 | 三大法人 inst | 2,859 | 0 | — | **B** — Σ(逐檔股數×收盤) vs 大盤合計金額（`crosscheck.py` ①） |
 | 融資融券 margin | 2,859 | 0 | — | **B** — 餘額遞推恆等式（`crosscheck.py` ②，⭐ 同時驗涵蓋率） |
 | 本益比 per | 2,859 | 0 | — | **B** — 收盤÷近四季EPS vs 端點 per（`crosscheck.py` ③，中位誤差 0.21%） |

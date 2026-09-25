@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-25T23:48:13+08:00",
+  "generated_at": "2026-09-26T03:55:10+08:00",
   "target_trading_day": "2026-09-25",
   "stocks": {
     "7879": {
@@ -546,19 +546,20 @@
   "calendar_days": 420,
   "universe": {
     "counts": {
-      "emerging": 361,
       "warrants_excluded": 0,
-      "total": 361,
-      "by_kind": {
-        "stock": 361
-      }
+      "total": 0,
+      "by_kind": {}
     },
     "errors": {
       "twse": "stat=很抱歉，沒有符合條件的資料!",
-      "tpex": "休市或無成交"
+      "tpex": "休市或無成交",
+      "emerging": "回應是 20260924，不是 2026-09-25（不採用）"
     },
-    "rows_written": 361,
+    "rows_written": 0,
     "coverage_days": 16,
+    "phantom_days_removed": [
+      "2026-09-25（與 2026-09-24 相同 361 列）"
+    ],
     "stocks_meta": {
       "total": 3032,
       "added_today": 0,
