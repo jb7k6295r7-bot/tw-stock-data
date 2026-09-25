@@ -131,6 +131,31 @@ def run_feed(a):
     return FD.main()
 
 
+def refill_from_files(old):
+    """⭐ 台帳缺的 (日期, 市場) ⇒ 用已落地的日檔重算結構補回（2026-09-25：第一趟 1,470 天的台帳被洗掉過）。
+    ⚠ notrade_blanked 從檔案算不回來（改空白之後就看不出原本是 0.00）⇒ 補回的列留空，⛔ 不填 0。→ 補了幾列。"""
+    d = os.path.join(EARLY, "daily")
+    if not os.path.isdir(d):
+        return 0
+    H = F.UNIVERSE_HEADER
+    n = 0
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith(".csv"):
+            continue
+        day = fn[:-4]
+        by = {}
+        with io.open(os.path.join(d, fn), encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                by.setdefault(r.get("market", ""), []).append([r.get(h, "") for h in H])
+        for mk, lines in by.items():
+            if (day, mk) in old or mk not in ("twse", "tpex"):
+                continue
+            st = structure(lines)
+            old[(day, mk)] = [day, mk] + [str(st[k]) for k in ("rows", "traded", "bad_hl", "zero", "neg")] + [""]
+            n += 1
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--market", choices=["twse", "tpex"])
@@ -182,6 +207,9 @@ def main():
                     old[(r[0], r[1])] = r
     for r in st_rows:
         old[(r[0], r[1])] = [str(x) for x in r]
+    refilled = refill_from_files(old)
+    if refilled:
+        rl.info("⭐ 台帳補回", "%d 個 (日, 市場) 從已落地的日檔重算（notrade_blanked 留空＝算不回來）" % refilled)
     with io.open(st_path, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["date", "market", "rows", "traded", "bad_hl", "zero", "neg", "notrade_blanked"])
