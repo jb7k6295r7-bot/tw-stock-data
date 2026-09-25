@@ -395,12 +395,28 @@ def paired_table(df, per, L):
 
 _LOG_COLS = ("g_H20", "g_H60", "g_H120", "relvol", "month")
 
+TRANCHE_GAP = 20                    # PREREGP9 seq8 §二 2-A：第 2..k 份「之後每 20 個交易日各買一份」（⛔ 登錄寫死，⛔ 不掃）
+
+
+def regime_below(bench_close, n: int) -> np.ndarray:
+    """PREREGP9 seq8 §一「大盤狀態」：below[i] ＝ 0050 還原收盤[i] < MA_n[i]（MA 含第 i 天，共 n 根）。
+
+    ⭐ 這是【第 i 天收盤之後】才知道的狀態 ⇒ simulate_mtm 在第 t 天開盤只讀 below[t−1]（引擎自己平移，⛔ 呼叫端不要先平移）。
+    暖身不足（前 n−1 天）或收盤非有限 ⇒ False。與 researchp9.weak_flags 同一個算式：weak_flags(b)[t] ＝ regime_below(b, 60)[t−1]。
+    """
+    b = np.asarray(bench_close, float)
+    if int(n) != n or n < 1:
+        raise ValueError(f"MA 天數要是正整數，收到 {n!r}")
+    ma = pd.Series(b).rolling(int(n)).mean().to_numpy()
+    return np.isfinite(ma) & (b < ma)
+
 
 def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, opens: dict, ncal: int, return_equity: bool = False,
                  d_max: int | None = None, pick: str | None = None, log: list | None = None, queue_days: int = 0,
                  cash_mode: str = "zero", bench=None, bench_cost: float = COST / 2, cap_fn=None, stop=None,
                  weak=None, weak_size: float = 0.5, report_maxw: bool = False, maxw_detail: bool = False,
-                 weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None):
+                 weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None,
+                 entry_tranches=None, add_rule=None, trim_rule=None, size_mult_by_regime=None, regime_trim=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
@@ -457,6 +473,54 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                ⛔ 容量變小時【不強制出場】（只是不再進新的）⇒ len(open_pos) > 容量會出現
                ⛔ slot_use 的分母改成 Σ 容量（⛔ 不是 (end−first) × 某一個 N）
       ⛔ 傳純量時走的是原來那條路，逐位元相同。
+
+    PREREGP9 seq8 §六（2026-09-25，台股策略線登錄 sha 373e1906b9dd52ed；回測線落地）再加五個參數，⛔ 全部預設關閉：
+      ⭐ 全部是 None（entry_tranches 另外 1 也算關閉）⇒ 下面每一段都跳過 ⇒ 原路徑逐位元相同
+        （回歸閘 1：regress_tradability 18 組、regress_delist 6 組、改前／改後 A/B；回歸閘 2：researchp9 base 臂；
+          見 backtest/selftest_p9engine.py、backtest/resultsp9_engine/ENGINE_REPORT.md）
+      entry_tranches  2-A 分批進場：整數 k ≥ 2。slot 拆 k 等份：進場日買 1 份（slot÷k），之後在進場日 +20、+40…個
+                      交易日（日曆位置）各買 1 份（每份 ＝【進場日那個 slot】÷k，⛔ 不是當天的 slot）；
+                      期間已出場（或當天就是排程出場日）⇒ 剩下的不買（計入 x_tr_unbought）
+      add_rule        2-B 加碼：dict，每部位【只加一次】、加 size（預設 0.5）×【加碼當天的 slot】（equity[t−1]÷N）
+                        {"kind": "gain", "x": 0.15}  ⓐ 收盤[t−1] ÷ 進場價 − 1 ≥ x ⇒ t 開盤加
+                        {"kind": "flag", "flags": {sid: 長度 ncal 的布林序列}}
+                                                     ⓑ flags[sid][t−1] 為真 ⇒ t 開盤加（「貼近 120 日高點三分位」由呼叫端
+                                                        照 PREREGP8 算好傳進來；⛔ 引擎不認識三分位）；進場日以前的旗標讀不到
+                        {"kind": "hold", "days": 40} ⓒ 持有滿 days 根（進場那根算第 1 根，同 H120 口徑）那天的收盤
+                                                        ＞ 進場價 ⇒ 次一交易日開盤加；⭐ 只在那一天判一次（當天不為正 ⇒ 不加）
+                      "short": "skip"（預設，登錄 §二 2-B 逐字「現金不足不加並記次數」）／"partial"（有多少買多少、記次數）
+                      ⭐ 現金不足時該部位的加碼機會就用掉了（⛔ 不每天重試）⇒ 計入 x_add_short
+      trim_rule       2-C ⓐ 個股減半：dict {"x": 0.10, "frac": 0.5}：收盤[t−1] ÷ 進場價 − 1 ≤ −x ⇒ t 開盤賣 frac（以股數計）；
+                      只一次；⛔ 不是停損出場，剩下的照原排程出場
+      size_mult_by_regime  2-C ⓑⓒⓓⓔ 新部位倍數：dict {"mult": m, "below": 布林序列} 或 {"mult": m, "ma": n, "bench": 0050 還原收盤}
+                      below[t−1]（見 regime_below）為真 ⇒ 第 t 天進場的新部位買 m × slot
+                        m ≤ 1：與 weak／weak_size 同一條算式（slot×m 再 min(slot, 現金)）⇒ ⓑⓓⓔ 用 m＝0.5
+                        m ＞ 1（ⓒ 1.5）：「上限、現金不足照 2-B 規則」⇒ "short": "skip"（預設）現金 ＜ m×slot ⇒ 只買 1 個 slot
+                                         （仍照 min(slot, 現金)）並計入 x_mult_short；"partial" ⇒ min(m×slot, 現金)
+                      ⭐ 已持有的部位不動（同 ⓑ）
+      regime_trim     2-C ⓕⓖⓗ 跌破賣半：dict {"hold": 0.5, "below": 布林序列} 或 {"hold": 0.5, "ma": n, "bench": 0050 還原收盤}
+                      below[t−1] 為真 ⇒ t 開盤把每一個「整份」部位賣到剩 hold（以股數計），並標為「半份」；
+                        線下期間進場的新部位只買 hold × slot，也標「半份」；已是半份的不再賣
+                      below[t−1] 為假 ⇒ t 開盤把每一個「半份」部位加買到 1÷hold 倍股數（＝賣出前的股數／整份）
+                        現金 ＜ 總需求 ⇒ 每一檔按【同一比例】少補（比例＝現金÷總需求），記 x_rt_refill_short（天數）
+                      賣出所得留現金（cash_mode="zero" ⇒ 報酬 0）；出場照原排程、⛔ 不因賣半而改；已出場的不補
+    ⭐ 共同規則（五個參數都一樣）：
+      ・時序：所有判定只讀 t−1 以前（0050 狀態 below[t−1]、個股收盤[t−1]），成交在 t 開盤（還原開盤價）
+      ・同一天的順序：排程出場 → 賣（減半／賣半）→ 買（補回／分批／加碼）→ 新部位進場
+        ⭐ 既有部位的加減碼先於新部位（⚠ 讀法：登錄沒寫同日先後，選「先照顧已持有的」並寫在這裡）
+      ・可交易性：買 ＝ 開盤有限且 > 0，tradable 開啟時另要有成交且開盤不是漲停；賣 ＝ 同上但開盤不是跌停
+        ⇒ 做不成的那一筆留著，下一個交易日開盤再試（每天計入 x_*_blocked_days），直到排程出場日為止
+      ・成本（引擎慣例：每一塊【買進的錢】在賣出時付一次來回 COST）：部位另記成本基礎 B（買進金額合計）
+          賣 f（以股數計）⇒ 拿回 f × 市值 − f × B × COST，B ← (1−f)B；加買 a 元 ⇒ B ← B + a
+          排程出場 ⇒ amt×(1+gross) − B×COST；⭐ 沒被動過的部位仍走原式 amt×(1+gross−COST)（⛔ 逐位元相同）
+        部位的 amt 在擴充路徑上的意思是「以進場價 ep 計的名目」：市值 ＝ amt × 收盤 ÷ ep（⛔ 與原版同一個式子）
+        ⇒ 在價格 p 加買 a 元 ⇒ amt ← amt + a × ep ÷ p；賣 f ⇒ amt ← (1−f) amt
+      ・引擎沒有整張／零股的概念（金額連續）⇒ 登錄「股數取整張以下照引擎零股規則」＝ 不取整
+      ・一個部位不論分幾批、加幾次，都只佔 1 個槽位（len(open_pos) 口徑不變）
+      ・⛔ 五個參數互斥（也不與 weak 同開；登錄 §二「各自獨立、不互相疊加」；2-D 組合要另寫規則）；
+        ⛔ 不與 stop／stop_line／weight_fn／cash_mode="bench" 同開（沒有 fixture 覆蓋 ⇒ 直接報錯）
+      ・多回傳（只在開啟時出現，⛔ 關閉時回傳鍵與原版相同）：x_new_n、x_mbar_nominal、x_mbar_actual，以及各自的
+        x_tr_*／x_add_*／x_trim_*／x_mult_*／x_rt_* 計數與成本（見程式尾）；audit 開啟時逐筆多記 kind 欄
     """
     # 裁定線 20260924-1714 §三⑥（2026-09-24）再加：
     #   audit      None（原版路徑，⛔ 逐位元相同）／list ⇒ 逐次換手的稽核紀錄，每筆一個 dict：
@@ -541,6 +605,220 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
     peak_close = {}                 # sid → 進場後最高收盤（trail 用）
     stop_exits = 0; stop_days = []; stop_cut_right_tail = 0; hold_days = []; entry_day = {}
+    # ── PREREGP9 seq8 §六 引擎擴充（規格見 docstring 末段）。⛔ 五個參數全 None ⇒ _ext False ⇒ 下面的狀態全是 None、每一段都跳過
+    _xk = None if (entry_tranches is None or entry_tranches == 1) else entry_tranches
+    _ext = any(p is not None for p in (_xk, add_rule, trim_rule, size_mult_by_regime, regime_trim))
+    _xs = _xb = _xc = _xbelow = _xm = _xm_short = _add_kind = _rt_hold = None
+    if _ext:
+        n_on = sum(p is not None for p in (_xk, add_rule, trim_rule, size_mult_by_regime, regime_trim, weak))
+        if n_on != 1:
+            raise ValueError("PREREGP9 seq8 的五個參數（與 weak）一次只能開一個（登錄 §二：各自獨立、不互相疊加）")
+        if stop is not None or stop_line is not None or weight_fn is not None or use_bench:
+            raise ValueError("PREREGP9 seq8 的參數不與 stop／stop_line／weight_fn／cash_mode='bench' 同開（沒有 fixture 覆蓋）")
+
+        def _below_of(spec, name):
+            if "below" in spec:
+                bl_ = np.asarray(spec["below"], bool)
+            else:
+                bl_ = regime_below(spec["bench"], spec["ma"])
+            if bl_.shape != (ncal,):
+                raise ValueError(f"{name} 的狀態序列要是長度 {ncal}，收到 {bl_.shape}")
+            return bl_
+        if _xk is not None:
+            if int(_xk) != _xk or _xk < 2:
+                raise ValueError(f"entry_tranches 要是 ≥ 1 的整數（1 ＝ 關閉），收到 {entry_tranches!r}")
+            _xk = int(_xk)
+        if add_rule is not None:
+            _add_kind = add_rule.get("kind")
+            if _add_kind not in ("gain", "flag", "hold"):
+                raise ValueError(f"add_rule['kind'] 只能是 gain／flag／hold，收到 {_add_kind!r}")
+            if add_rule.get("short", "skip") not in ("skip", "partial"):
+                raise ValueError("add_rule['short'] 只能是 'skip'（登錄逐字）或 'partial'")
+            if _add_kind == "hold" and int(add_rule.get("days", 40)) < 1:
+                raise ValueError("add_rule['days'] 要 ≥ 1")
+        if trim_rule is not None and not (0 < trim_rule.get("x", 0.10) < 1 and 0 < trim_rule.get("frac", 0.5) < 1):
+            raise ValueError(f"trim_rule 的 x、frac 都要在 (0, 1)，收到 {trim_rule!r}")
+        if size_mult_by_regime is not None:
+            _xm = float(size_mult_by_regime["mult"])
+            _xm_short = size_mult_by_regime.get("short", "skip")
+            if not (_xm > 0) or _xm_short not in ("skip", "partial"):
+                raise ValueError(f"size_mult_by_regime：mult 要 > 0、short 只能是 skip／partial，收到 {size_mult_by_regime!r}")
+            _xbelow = _below_of(size_mult_by_regime, "size_mult_by_regime")
+        if regime_trim is not None:
+            _rt_hold = float(regime_trim.get("hold", 0.5))
+            if not (0 < _rt_hold < 1):
+                raise ValueError(f"regime_trim['hold'] 要在 (0, 1)，收到 {_rt_hold!r}")
+            _xbelow = _below_of(regime_trim, "regime_trim")
+        _xs = {}                        # sid → 部位狀態：t0、slot0、tr（已處理份數）、add／trim（0 未觸發、1 待成交、2 完成）、rt（full／half）
+        _xb = {}                        # sid → 成本基礎 B（⭐ 只有被加減碼動過的部位才有；沒動過 ⇒ 出場走原式）
+        _xc = {"new_n": 0, "mult_nom": 0.0, "mult_act": 0.0,
+               "tr_buys": 0, "tr_short": 0, "tr_blocked_days": 0, "tr_unbought": 0,
+               "add_n": 0, "add_short": 0, "add_trig": 0, "add_blocked_days": 0,
+               "trim_n": 0, "trim_blocked_days": 0,
+               "mult_n": 0, "mult_short": 0,
+               "rt_sell_events": 0, "rt_sell_n": 0, "rt_refill_events": 0, "rt_refill_n": 0, "rt_refill_short": 0,
+               "rt_refill_fill_min": 1.0, "rt_blocked_days": 0,
+               "cost_sell": 0.0, "buy_amt": 0.0}
+        _xyear_cost = {}                # 日曆位置 t → 當天加減碼賣出付的成本（給 §四⑦「每年因賣半與補回多付的成本」）
+
+    def _x_px(sid, t, side):
+        """t 開盤能不能成交：能 ⇒ 回開盤價；不能 ⇒ None（見 docstring「可交易性」）。"""
+        o = float(opens[sid][t])
+        if not (np.isfinite(o) and o > 0):
+            return None
+        if tradable is not None:
+            tb = tradable[sid]
+            if not tb["trd"][t] or (tb["up_o"][t] if side == "buy" else tb["dn_o"][t]):
+                return None
+        return o
+
+    def _x_sell(k, t, frac, o, kind):
+        """賣掉 open_pos[k] 的 frac（以股數計）於開盤價 o；成本 ＝ frac × B × COST。"""
+        nonlocal cash
+        ex, sid, amt, gross, ep = open_pos[k]
+        b0 = _xb.get(sid, amt)
+        proceeds = amt * frac * o / ep
+        c_ = b0 * frac * COST
+        cash += proceeds - c_
+        open_pos[k] = (ex, sid, amt * (1.0 - frac), gross, ep)
+        _xb[sid] = b0 * (1.0 - frac)
+        _xc["cost_sell"] += c_; _xyear_cost[t] = _xyear_cost.get(t, 0.0) + c_
+        if audit is not None:
+            audit.append({"t": t, "sid": sid, "side": "sell", "kind": kind, "amt": float(proceeds), "px": o,
+                          "target_w": (float(proceeds) / _eq_prev) if _eq_prev > 0 else float("nan"),
+                          "equity_prev": _eq_prev, "cost": float(c_)})
+
+    def _x_buy(k, t, a, o, kind):
+        """用 a 元現金在開盤價 o 加買 open_pos[k]：amt ← amt + a×ep÷o、B ← B + a（成本等賣出時再付）。"""
+        nonlocal cash
+        ex, sid, amt, gross, ep = open_pos[k]
+        b0 = _xb.get(sid, amt)
+        cash -= a
+        open_pos[k] = (ex, sid, amt + a * ep / o, gross, ep)
+        _xb[sid] = b0 + a
+        _xc["buy_amt"] += a
+        if audit is not None:
+            audit.append({"t": t, "sid": sid, "side": "buy", "kind": kind, "amt": float(a), "px": o,
+                          "target_w": (float(a) / _eq_prev) if _eq_prev > 0 else float("nan"),
+                          "equity_prev": _eq_prev, "cost": 0.0})
+
+    def _x_day(t):
+        """每天開盤、排程出場之後、新部位進場之前：既有部位的加減碼（先賣後買）。"""
+        nonlocal cash
+        ns_ = n_slots if caps is None else int(caps[t])
+        # ① 個股減半（2-C ⓐ）
+        if trim_rule is not None:
+            tx = trim_rule.get("x", 0.10); tf = trim_rule.get("frac", 0.5)
+            for k in range(len(open_pos)):
+                ex, sid, amt, gross, ep = open_pos[k]
+                s = _xs.get(sid)
+                if ex <= t or s is None or s["trim"] == 2:
+                    continue
+                if s["trim"] == 0:
+                    c1 = float(closes[sid][t - 1])  # _XLAG
+                    if np.isfinite(c1) and c1 / ep - 1.0 <= -tx:
+                        s["trim"] = 1
+                if s["trim"] == 1:
+                    o = _x_px(sid, t, "sell")
+                    if o is None:
+                        _xc["trim_blocked_days"] += 1; continue
+                    _x_sell(k, t, tf, o, "trim"); s["trim"] = 2; _xc["trim_n"] += 1
+        # ② 跌破賣半／站回補回（2-C ⓕⓖⓗ）
+        if regime_trim is not None:
+            bl = bool(_xbelow[t - 1])  # _XLAG
+            if bl:
+                n_ = 0
+                for k in range(len(open_pos)):
+                    ex, sid, amt, gross, ep = open_pos[k]
+                    s = _xs.get(sid)
+                    if ex <= t or s is None or s["rt"] != "full":
+                        continue
+                    o = _x_px(sid, t, "sell")
+                    if o is None:
+                        _xc["rt_blocked_days"] += 1; continue
+                    _x_sell(k, t, 1.0 - _rt_hold, o, "rt_sell"); s["rt"] = "half"; n_ += 1
+                if n_:
+                    _xc["rt_sell_events"] += 1; _xc["rt_sell_n"] += n_
+            else:
+                need = []
+                for k in range(len(open_pos)):
+                    ex, sid, amt, gross, ep = open_pos[k]
+                    s = _xs.get(sid)
+                    if ex <= t or s is None or s["rt"] != "half":
+                        continue
+                    o = _x_px(sid, t, "buy")
+                    if o is None:
+                        _xc["rt_blocked_days"] += 1; continue
+                    need.append((k, s, o, amt * o / ep * (1.0 / _rt_hold - 1.0)))   # 補到 1÷hold 倍股數所需的金額
+                if need:
+                    tot = sum(n_ for _, _, _, n_ in need)
+                    scale = 1.0 if cash >= tot else max(cash, 0.0) / tot
+                    if scale < 1.0:
+                        _xc["rt_refill_short"] += 1; _xc["rt_refill_fill_min"] = min(_xc["rt_refill_fill_min"], scale)
+                    for k, s, o, n_ in need:
+                        a = n_ * scale
+                        if a > 1e-12:
+                            _x_buy(k, t, a, o, "rt_refill")
+                        s["rt"] = "full"
+                    _xc["rt_refill_events"] += 1; _xc["rt_refill_n"] += len(need)
+        # ③ 分批進場的第 2..k 份（2-A）
+        if _xk is not None:
+            for k in range(len(open_pos)):
+                ex, sid, amt, gross, ep = open_pos[k]
+                s = _xs.get(sid)
+                if ex <= t or s is None:
+                    continue
+                due = min(_xk - 1, (t - s["t0"]) // TRANCHE_GAP) - s["tr"]
+                if due <= 0:
+                    continue
+                o = _x_px(sid, t, "buy")
+                if o is None:
+                    _xc["tr_blocked_days"] += 1; continue
+                want = s["slot0"] / _xk * due
+                a = min(want, cash)
+                if a < want:
+                    _xc["tr_short"] += 1
+                if a > 1e-9:
+                    _x_buy(k, t, a, o, "tranche")
+                s["tr"] += due; _xc["tr_buys"] += due
+        # ④ 加碼（2-B ⓐⓑⓒ）
+        if add_rule is not None:
+            size = add_rule.get("size", 0.5)
+            for k in range(len(open_pos)):
+                ex, sid, amt, gross, ep = open_pos[k]
+                s = _xs.get(sid)
+                if ex <= t or s is None or s["add"] == 2:
+                    continue
+                if s["add"] == 0:
+                    if _add_kind == "gain":
+                        c1 = float(closes[sid][t - 1])  # _XLAG
+                        trig = bool(np.isfinite(c1) and c1 / ep - 1.0 >= add_rule.get("x", 0.15))
+                    elif _add_kind == "flag":
+                        fl = add_rule["flags"].get(sid)
+                        trig = bool(fl is not None and fl[t - 1])  # _XLAG
+                    else:
+                        tj = s["t0"] + int(add_rule.get("days", 40)) - 1     # 持有滿 days 根的那一天（進場那根算第 1 根）
+                        if t - 1 < tj:
+                            continue                                     # 還沒滿 days 根
+                        c1 = float(closes[sid][t - 1])  # _XLAG
+                        trig = bool(t - 1 == tj and np.isfinite(c1) and c1 > ep)
+                        if not trig:
+                            s["add"] = 2; continue                       # ⭐ 只在滿 days 根那一天判一次
+                    if not trig:
+                        continue
+                    s["add"] = 1; _xc["add_trig"] += 1
+                o = _x_px(sid, t, "buy")
+                if o is None:
+                    _xc["add_blocked_days"] += 1; continue
+                want = size * equity[t - 1] / ns_
+                if cash < want:
+                    _xc["add_short"] += 1
+                    a = min(want, cash) if add_rule.get("short", "skip") == "partial" else 0.0
+                else:
+                    a = want
+                if a > 1e-9:
+                    _x_buy(k, t, a, o, "add"); _xc["add_n"] += 1
+                s["add"] = 2
 
     def _rec(row, reason, t, delay=0, gross=np.nan):
         if log is not None:
@@ -623,15 +901,22 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     gross = o_t / ep - 1.0                                 # ⭐ 第一個可成交日【開盤】出
                     tr_stats["exit_delayed"] += 1
             if ex <= t:
+                _xb_ = _xb.pop(sid, None) if _xb is not None else None      # PREREGP9 seq8：被加減碼動過 ⇒ 成本基礎另記
                 if audit is not None:
                     audit.append({"t": t, "sid": sid, "side": "sell", "amt": float(amt * (1 + gross)),
                                   "px": float(ep * (1 + gross)),
                                   "target_w": (float(amt * (1 + gross)) / _eq_prev) if _eq_prev > 0 else float("nan"),
-                                  "equity_prev": _eq_prev, "cost": float(amt * COST)})
-                if use_bench:
+                                  "equity_prev": _eq_prev, "cost": float(amt * COST) if _xb_ is None else float(_xb_ * COST)})
+                if _xb_ is not None:
+                    cash += amt * (1 + gross) - _xb_ * COST                    # ⛔ 只有動過的部位走這條；沒動過的仍走下面原式
+                elif use_bench:
                     units += amt * (1 + gross - COST) * (1 - bench_cost) / bench[t]   # 拿回的錢買 bench，付單邊成本
                 else:
                     cash += amt * (1 + gross - COST)
+                if _xs is not None:
+                    s_ = _xs.pop(sid, None)
+                    if s_ is not None and _xk is not None:
+                        _xc["tr_unbought"] += _xk - 1 - s_["tr"]              # 2-A：出場時還沒買的份數
                 held.discard(sid)
                 if stop_line is not None:
                     sl_key.pop(sid, None); sl_pending.discard(sid)
@@ -643,6 +928,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             else:
                 still.append((ex, sid, amt, gross, ep))
         open_pos = still
+        if _ext and open_pos:
+            _x_day(t)                                     # PREREGP9 seq8：既有部位的加減碼（⛔ _ext False 時不進來）
         g = by_entry.get(t)
         if queue_days and pending:                       # 隊列裡的訊號今天再試一次；過期或出場日已到 ⇒ b_expired
             keep = []; q_rows = []
@@ -688,6 +975,20 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                 slot = equity[t - 1] / ns_t
                 if weak is not None and weak[t]:
                     slot = slot * weak_size          # ⭐ 只縮**今天要進的新部位**；省下的留在現金
+                _x_big = None
+                if _ext:                             # PREREGP9 seq8：新部位的大小（⛔ _ext False 時不進來）
+                    _x_full = slot; _x_nom = 1.0
+                    _x_bl = bool(_xbelow[t - 1]) if (_xbelow is not None and t >= 1) else False  # _XLAG
+                    if _xk is not None:
+                        slot = slot / _xk            # 2-A：第 1 份
+                    elif _xm is not None and _x_bl:
+                        _x_nom = _xm
+                        if _xm <= 1:
+                            slot = slot * _xm        # ⓑⓓⓔ：與 weak 同一條算式
+                        else:
+                            _x_big = slot * _xm      # ⓒ：上限 m×slot，現金不足照 2-B（見迴圈內）
+                    elif regime_trim is not None and _x_bl:
+                        _x_nom = _rt_hold; slot = slot * _rt_hold   # ⓕⓖⓗ：線下新部位只買 hold 份
                 entered_q = set()
                 targets = None
                 if weight_fn is not None and len(take):          # PREREGP13：逐檔目標金額由呼叫端算（⛔ 現金不足的處置也在它那裡）
@@ -709,6 +1010,13 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                         amt = min(slot, cash)
                         if amt <= 1e-9:
                             rest = list(take[j:]) + rest; break
+                        if _x_big is not None:       # ⓒ 1.5 slot
+                            if cash >= _x_big:
+                                amt = _x_big
+                            else:
+                                _xc["mult_short"] += 1
+                                if _xm_short == "partial":
+                                    amt = min(_x_big, cash)
                     else:
                         amt = min(float(targets[j]), cash)
                         if not np.isfinite(amt) or amt <= 1e-9:
@@ -727,6 +1035,12 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                         audit.append({"t": t, "sid": row["sid"], "side": "buy", "amt": float(amt), "px": ep,
                                       "target_w": (float(amt) / _eq_prev) if _eq_prev > 0 else float("nan"),
                                       "equity_prev": _eq_prev, "cost": 0.0})
+                    if _xs is not None:              # PREREGP9 seq8：登記部位狀態
+                        _xs[row["sid"]] = {"t0": t, "slot0": _x_full, "tr": 0, "add": 0, "trim": 0,
+                                           "rt": "half" if (regime_trim is not None and _x_bl) else "full"}
+                        _xc["new_n"] += 1; _xc["mult_nom"] += _x_nom; _xc["mult_act"] += amt / _x_full
+                        if _x_nom != 1.0:
+                            _xc["mult_n"] += 1
                     if stop is not None:
                         entry_day[row["sid"]] = t
                     if stop_line is not None:
@@ -795,6 +1109,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         out["tr_close_locked"] = tr_stats["close_locked"]
         if delist is not None:      # ⛔ delist=None 時這兩個鍵不存在 ⇒ 既有回傳逐位元相同
             out["tr_delist_settled"] = tr_stats["delist_settled"]; out["tr_delist_ambig"] = tr_stats["delist_ambig"]
+    if _ext:                        # PREREGP9 seq8 必報（⛔ 五個參數全關時這些鍵不存在 ⇒ 原版回傳逐位元相同）
+        for k_, v_ in _xc.items():
+            if k_ not in ("mult_nom", "mult_act"):
+                out[f"x_{k_}"] = v_
+        out["x_mbar_nominal"] = _xc["mult_nom"] / _xc["new_n"] if _xc["new_n"] else np.nan   # §四① m̄（名目倍數）
+        out["x_mbar_actual"] = _xc["mult_act"] / _xc["new_n"] if _xc["new_n"] else np.nan    # 實買金額 ÷ 當天 slot
+        out["x_open_at_end"] = len(_xs)
+        out["x_cost_days"] = sorted(_xyear_cost.items())      # (日曆位置, 當天加減碼賣出付的成本) ⇒ 呼叫端按年彙總（§四⑦）
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
     return out

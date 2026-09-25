@@ -1,0 +1,67 @@
+{
+ "when": "2026-09-25 17:38",
+ "n": 12,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "2-A k=2：與全關不同、觸發 x_tr_buys=138",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_tr_buys\": 138, \"x_tr_short\": 14, \"x_rt_refill_fill_min\": 1.0, \"x_buy_amt\": 37.1442, \"x_mbar_nominal\": 1.0, \"x_mbar_actual\": 0.5}"
+  },
+  {
+   "name": "2-A k=3：與全關不同、觸發 x_tr_buys=276",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_tr_buys\": 276, \"x_tr_short\": 13, \"x_rt_refill_fill_min\": 1.0, \"x_buy_amt\": 41.5404, \"x_mbar_nominal\": 1.0, \"x_mbar_actual\": 0.3333}"
+  },
+  {
+   "name": "2-B ⓐ gain 15%：與全關不同、觸發 x_add_n=17",
+   "ok": true,
+   "detail": "{\"x_new_n\": 137, \"x_add_n\": 17, \"x_add_short\": 48, \"x_add_trig\": 65, \"x_rt_refill_fill_min\": 1.0, \"x_buy_amt\": 4.4355, \"x_mbar_nominal\": 1.0, \"x_mbar_actual\": 0.943}"
+  },
+  {
+   "name": "2-B ⓑ flag（測試用旗標＝收盤創 120 日新高；⛔ 不是 PREREGP8 三分位）：與全關不同、觸發 x_add_n=17",
+   "ok": true,
+   "detail": "{\"x_new_n\": 137, \"x_add_n\": 17, \"x_add_short\": 63, \"x_add_trig\": 80, \"x_rt_refill_fill_min\": 1.0, \"x_buy_amt\": 3.4207, \"x_mbar_nominal\": 1.0, \"x_mbar_actual\": 0.9412}"
+  },
+  {
+   "name": "2-B ⓒ hold 40：與全關不同、觸發 x_add_n=12",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_add_n\": 12, \"x_add_short\": 57, \"x_add_trig\": 69, \"x_rt_refill_fill_min\": 1.0, \"x_buy_amt\": 3.9533, \"x_mbar_nominal\": 1.0, \"x_mbar_actual\": 0.9573}"
+  },
+  {
+   "name": "2-C ⓐ trim −10%：與全關不同、觸發 x_trim_n=85",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_trim_n\": 85, \"x_rt_refill_fill_min\": 1.0, \"x_cost_sell\": 0.1249, \"x_mbar_nominal\": 1.0, \"x_mbar_actual\": 0.993}"
+  },
+  {
+   "name": "2-C ⓒ MA60 ×1.5：與全關不同、觸發 x_mult_n=36",
+   "ok": true,
+   "detail": "{\"x_new_n\": 134, \"x_mult_n\": 36, \"x_mult_short\": 11, \"x_rt_refill_fill_min\": 1.0, \"x_mbar_nominal\": 1.1343, \"x_mbar_actual\": 1.0171}"
+  },
+  {
+   "name": "2-C ⓓ MA20 ×0.5：與全關不同、觸發 x_mult_n=48",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_mult_n\": 48, \"x_rt_refill_fill_min\": 1.0, \"x_mbar_nominal\": 0.8261, \"x_mbar_actual\": 0.8159}"
+  },
+  {
+   "name": "2-C ⓔ MA10 ×0.5：與全關不同、觸發 x_mult_n=50",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_mult_n\": 50, \"x_rt_refill_fill_min\": 1.0, \"x_mbar_nominal\": 0.8188, \"x_mbar_actual\": 0.8079}"
+  },
+  {
+   "name": "2-C ⓕ MA60 賣半：與全關不同、觸發 x_rt_sell_n=409",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_mult_n\": 38, \"x_rt_sell_events\": 58, \"x_rt_sell_n\": 409, \"x_rt_refill_events\": 59, \"x_rt_refill_n\": 419, \"x_rt_refill_short\": 30, \"x_rt_refill_fill_min\": 0.8168, \"x_rt_blocked_days\": 6, \"x_cost_sell\": 0.4506, \"x_buy_amt\": 80.0776, \"x_mbar_nominal\": 0.8623, \"x_mbar_actual\": 0.8373}"
+  },
+  {
+   "name": "2-C ⓖ MA20 賣半：與全關不同、觸發 x_rt_sell_n=787",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_mult_n\": 48, \"x_rt_sell_events\": 108, \"x_rt_sell_n\": 787, \"x_rt_refill_events\": 108, \"x_rt_refill_n\": 763, \"x_rt_refill_short\": 46, \"x_rt_refill_fill_min\": 0.8274, \"x_rt_blocked_days\": 1, \"x_cost_sell\": 1.1799, \"x_buy_amt\": 196.0381, \"x_mbar_nominal\": 0.8261, \"x_mbar_actual\": 0.8058}"
+  },
+  {
+   "name": "2-C ⓗ MA10 賣半：與全關不同、觸發 x_rt_sell_n=1317",
+   "ok": true,
+   "detail": "{\"x_new_n\": 138, \"x_mult_n\": 50, \"x_rt_sell_events\": 182, \"x_rt_sell_n\": 1317, \"x_rt_refill_events\": 183, \"x_rt_refill_n\": 1303, \"x_rt_refill_short\": 67, \"x_rt_refill_fill_min\": 0.8639, \"x_rt_blocked_days\": 3, \"x_cost_sell\": 1.6091, \"x_buy_amt\": 275.6622, \"x_mbar_nominal\": 0.8188, \"x_mbar_actual\": 0.7939}"
+  }
+ ]
+}

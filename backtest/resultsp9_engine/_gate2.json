@@ -1,0 +1,67 @@
+[
+ {
+  "name": "子行程讀的是 archive 的程式與資料、引擎是新版",
+  "ok": true,
+  "detail": "R=/home/chemtim/p9run/0dc5d62b2a/backtest/research11.py｜DATA=/home/chemtim/p9data/0dc5d62b2a/data"
+ },
+ {
+  "name": "sig 七個驗收數與 researchp9 相同",
+  "ok": true,
+  "detail": "{'rows': 2882, 'stocks': 919, 'months': 109, 'm_min': '2017-03', 'm_max': '2026-03', 'e_min': 523, 'e_max': 2716}"
+ },
+ {
+  "name": "weak_flags(0050)[t] ＝ regime_below(0050, 60)[t−1]（共用同一個算式）",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "窗 ＝ 浮動窗 [523, 2855) ＝ 2017-03-02 ~ 2026-09-18（P9B_REPORT 基準註記）",
+  "ok": true,
+  "detail": "[523, 2855) 2017-03-02 ~ 2026-09-18"
+ },
+ {
+  "name": "researchp9 base 臂：200 顆種子 × 14 欄（cagr、mdd、slot、m、ca、ma、cb、mb、maxw、first、end、expo、kind_混合型、kind_單日暴跌型）與 resultsp9/seeds.csv 逐位元相同",
+  "ok": true,
+  "detail": "不同 []"
+ },
+ {
+  "name": "researchp9 b 臂：200 顆種子 × 14 欄（cagr、mdd、slot、m、ca、ma、cb、mb、maxw、first、end、expo、kind_混合型、kind_單日暴跌型）與 resultsp9/seeds.csv 逐位元相同",
+  "ok": true,
+  "detail": "不同 []"
+ },
+ {
+  "name": "researchp9 base 臂 cells.csv 列：年化中位 +27.69%／回落中位 -42.5%（＋p10/p90、槽、筆、曝險）逐位元相同",
+  "ok": true,
+  "detail": "cagr=np.float64(0.2768772767858816) mdd=np.float64(-0.4250499165027687)；不同 {}"
+ },
+ {
+  "name": "researchp9 b 臂 cells.csv 列：年化中位 +23.67%／回落中位 -38.5%（＋p10/p90、槽、筆、曝險）逐位元相同",
+  "ok": true,
+  "detail": "cagr=np.float64(0.23665723198496624) mdd=np.float64(-0.3851052222893562)；不同 {}"
+ },
+ {
+  "name": "entry_tranches=1 ⇒ 與 base 臂 200 顆種子逐位元相同（equity sha＋cagr／mdd／槽／筆／maxw）",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "add_rule gain x=1e9（擴充路徑開著、沒觸發） ⇒ 與 base 臂 200 顆種子逐位元相同（equity sha＋cagr／mdd／槽／筆／maxw）",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "size_mult_by_regime(mult 0.5, regime_below(0050,60)) ⇒ 與 b 臂 200 顆種子逐位元相同（equity sha＋cagr／mdd／槽／筆／maxw）",
+  "ok": true,
+  "detail": ""
+ },
+ {
+  "name": "P7 既有結果 N=8 none：21 欄與 resultsp7/cells.csv 逐位元相同（200 顆種子重跑）",
+  "ok": true,
+  "detail": "年化 0.2817705154／回落 -0.4180245111；不同 []"
+ },
+ {
+  "name": "P7 既有結果 N=8 fix 15%：21 欄與 resultsp7/cells.csv 逐位元相同（200 顆種子重跑）",
+  "ok": true,
+  "detail": "年化 0.2452420103／回落 -0.3967407075；不同 []"
+ }
+]

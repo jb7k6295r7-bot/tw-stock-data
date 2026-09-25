@@ -1,0 +1,27 @@
+{
+ "when": "2026-09-25 17:36",
+ "n": 4,
+ "fail": 0,
+ "checks": [
+  {
+   "name": "regress_tradability.py check（18 組）逐位元相同",
+   "ok": true,
+   "detail": "✅ tradable=None 與改動前逐位元相同（equity sha、全部純量輸出、log 內容）"
+  },
+  {
+   "name": "regress_delist.py check（6 組）逐位元相同",
+   "ok": true,
+   "detail": "✅ tradable 開、delist=None：6 組逐位元相同（權益雜湊＋全部純量輸出）"
+  },
+  {
+   "name": "A/B 矩陣：14 種既有參數組合 × 2 種子 ＝ 28 組，改前／改後逐位元相同（equity bytes、全部回傳鍵、log、audit）",
+   "ok": true,
+   "detail": "28/28"
+  },
+  {
+   "name": "AFC W1 既有結果：前 40 顆種子（102000+r）的 cagr／mdd／tr／expo／pass 與 w1_1000.csv 逐位元相同",
+   "ok": true,
+   "detail": "不同 0 項 []"
+  }
+ ]
+}
