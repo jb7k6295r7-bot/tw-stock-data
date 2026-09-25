@@ -1117,6 +1117,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## crypto:mark　✓ 正常
+
+最後執行：2026-09-25T15:26:32+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 36107349024
+
+- **這一趟**：C5 描述臂：永續【標記價】日 K 全期（2020-01 ~ 2026-08）
+- **BTC**：2426 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
+- **ETH**：2432 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+
 ## etf_pre2015:0050　✓ 正常
 
 最後執行：2026-09-25T14:46:52+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36103805818
