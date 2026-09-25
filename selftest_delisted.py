@@ -249,6 +249,12 @@ def main():
     ck("  ⭐ 轉上市那一發是 reason=2（⛔ 不是 -1 全部）",
        "reason=2" in D.OTC_URL.format(y="ALL").replace("&reason=-1&", "&reason=2&"), D.OTC_URL)
 
+    ck("  ⭐ 移除清單的表頭 ＝ push_data 的主鍵（market,stock_id,delist_date）",
+       D.RM_HEADER == ["market", "stock_id", "delist_date"], str(D.RM_HEADER))
+    ck("  ⭐ 移除清單檔名 ＝ delisted.csv 去 .csv 加 .remove.csv（push_data 靠這個找）",
+       D.RM_OUT.endswith(os.path.join("meta", "delisted.remove.csv"))
+       and D.OUT.endswith(os.path.join("meta", "delisted.csv")), D.RM_OUT)
+
     print("⑧ ⭐ `fetch_otc`：⛔ 絕不使用 `date=ALL`＋連續 0 筆要收手")
     seen = []
 

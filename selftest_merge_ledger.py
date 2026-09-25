@@ -104,6 +104,31 @@ def main():
     ck("  三列都在（⛔ 不會因為代號相同就被當成同一個鍵）",
        out7.count("\n") == 4, repr(out7))
 
+    print("⑧ ⭐ 明確的移除清單（2026-09-25：delisted.csv 誤收的轉上市聯集刪不掉）")
+    HD = "delist_date,stock_id,name,asof,market\n"
+    RM = "market,stock_id,delist_date\n"
+    main8 = HD + "2011-07-22,3454,晶睿,x,tpex\n2016-01-04,6211,福登,x,tpex\n"
+    mine8 = HD + "2016-01-04,6211,福登,y,tpex\n2020-01-13,3452,益通,y,tpex\n"
+    keys8 = ["market", "stock_id", "delist_date"]
+    out8, n8 = M.merge(mine8, main8, keys8, RM + "tpex,3454,2011-07-22\n")
+    ck("  ⭐ 清單點名的 3454 從合併結果消失、其餘照聯集", "3454" not in out8
+       and "6211" in out8 and "3452" in out8 and out8.count("\n") == 3, repr(out8))
+    ck("  ⭐ 說明講得出刪了幾列", "刪掉 main 的 1 列" in n8, n8)
+    out8b, _ = M.merge(mine8, main8, keys8)
+    ck("  ⛔ 反向：不給清單 ⇒ 3454 照舊被併回來（⇒ 這條機制是必要的）", "3454" in out8b, repr(out8b))
+    out8c, n8c = M.merge(mine8, main8, keys8, RM + "tpex,9999,2011-07-22\n")
+    ck("  ⭐ 清單上的鍵 main 沒有 ⇒ 什麼都不刪、不報錯", out8c.count("\n") == 4, n8c)
+    for bad, why in ((RM, "空清單"), ("market,stock_id\ntpex,3454\n", "缺主鍵欄")):
+        try:
+            M.merge(mine8, main8, keys8, bad)
+            ck("  ⛔ %s ⇒ 必須丟" % why, False, "沒有丟")
+        except ValueError as e:
+            ck("  ⛔ %s ⇒ 確實丟了（%s）" % (why, str(e)[:30]), True)
+    try:
+        M.merge(mine8, main8 + "2012-01-01,1111,甲,x,tpex\n", keys8.__class__(keys8), RM + "tpex,3454,2011-07-22\n")
+        ck("  ⭐ ④ 那道還在：本趟沒有 1111、清單也沒點名 ⇒ 聯集保留它（不少）", True)
+    except ValueError as e:
+        ck("  ⭐ ④ 那道還在", False, str(e))
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

@@ -186,7 +186,10 @@ for i in 1 2 3; do
       case "$LP" in ${ent%%:*}) ;; *) continue ;; esac
       git show "$DC:$LP" > /tmp/lg_mine.dat 2>/dev/null || continue
       git show "origin/main:$LP" > /tmp/lg_main.dat 2>/dev/null || : > /tmp/lg_main.dat
-      if python3 merge_ledger.py /tmp/lg_mine.dat /tmp/lg_main.dat "$LK" > /tmp/lg_out.dat; then
+      # ⭐ 2026-09-25：同目錄有 `<檔名去 .csv>.remove.csv` ⇒ 當移除清單（只刪清單上逐字列出的鍵）
+      RMF=""
+      if git show "$DC:${LP%.csv}.remove.csv" > /tmp/lg_rm.dat 2>/dev/null; then RMF=/tmp/lg_rm.dat; fi
+      if python3 merge_ledger.py /tmp/lg_mine.dat /tmp/lg_main.dat "$LK" $RMF > /tmp/lg_out.dat; then
         cp /tmp/lg_out.dat "$LP"
         git add -- "$LP"
       else
