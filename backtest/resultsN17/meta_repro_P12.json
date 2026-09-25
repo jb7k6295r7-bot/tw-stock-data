@@ -1,0 +1,19 @@
+{
+ "stage": "repro",
+ "px": "branch",
+ "data": "/home/chemtim/tw-p17/data",
+ "bench_win": {
+  "cagr": 0.24020209886370614,
+  "mdd": -0.3395700527611012,
+  "vol": 0.20307889107243096
+ },
+ "p12_accept": {
+  "rows": 2882,
+  "stocks": 919,
+  "months": 109,
+  "m_min": "2017-03",
+  "m_max": "2026-03",
+  "e_min": 523,
+  "e_max": 2716
+ }
+}
