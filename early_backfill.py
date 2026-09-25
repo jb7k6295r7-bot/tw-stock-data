@@ -184,6 +184,8 @@ def main():
     ap.add_argument("--end", required=True)
     ap.add_argument("--sleep", type=float, default=5.0)
     ap.add_argument("--max-days", type=int, default=100000)
+    # ⭐ 2026-09-26：已落地的日子也重抓（上櫃漲跌「- 0.35」被清空那次要整段重抓；write_day 只換這個市場的列）
+    ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
     if a.feed:
         return run_feed(a)
@@ -203,7 +205,7 @@ def main():
     for day in days:
         if done >= a.max_days:
             break
-        if has_market(day, a.market):
+        if not a.force and has_market(day, a.market):
             skipped += 1
             continue
         lines, note = B.fetch_day_market(day, a.market, B.candidates(day)[a.market])

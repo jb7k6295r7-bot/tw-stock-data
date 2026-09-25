@@ -704,7 +704,7 @@ jobs:
           MODE: ${{ inputs.mode }}
         run: |
           RC=0
-          python early_backfill.py --market "${MODE#early-}" --start "${{ inputs.start }}" --end "${{ inputs.end }}" --sleep "${{ inputs.sleep }}" || RC=1
+          python early_backfill.py --market "${MODE#early-}" --start "${{ inputs.start }}" --end "${{ inputs.end }}" --sleep "${{ inputs.sleep }}" ${{ inputs.force && '--force' || '' }} || RC=1
           exit $RC
 
       # ⭐ 2026-09-25（seq149 §二 ③）：早年段月營收 2003~2014 ⇒ data/early/revenue（⛔ 不併進 revenue_hist）
