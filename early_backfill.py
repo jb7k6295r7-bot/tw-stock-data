@@ -21,6 +21,7 @@ import json
 import os
 import sys
 import time
+import types
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -138,6 +139,11 @@ def run_feed(a):
     def _known_early():
         return set(orig_known() or set()) | early_codes
     FD.B._known_codes = _known_early
+    # ⚠ 2026-09-26：feeds 的 runlog 區塊叫「feeds:<feed>」＝【每日那支同名】⇒ 早年這趟會蓋掉主窗的區塊，
+    #   下一趟每日再蓋回來 ⇒ 兩邊的紀錄輪流消失（per 那趟 fc9bbe01e7 就蓋掉了）⇒ 早年模式改名「early:feed:<feed>」
+    _Run = FD.runlog.Run
+    FD.runlog = types.SimpleNamespace(**{k: getattr(FD.runlog, k) for k in dir(FD.runlog) if not k.startswith("__")})
+    FD.runlog.Run = lambda name, *x, **kw: _Run(name.replace("feeds:", "early:feed:", 1), *x, **kw)
     end = min(a.end, "2015-01-04")
     sys.argv = ["feeds.py", "--run", "--feed", a.feed, "--start", a.start, "--end", end,
                 "--sleep", str(a.sleep)]
