@@ -1,0 +1,53 @@
+{
+ "bench_win": {
+  "cagr": 0.24020209886370614,
+  "mdd": -0.3395700527611012,
+  "vol": 0.20307889107243096
+ },
+ "gate1": true,
+ "gate2": true,
+ "gate2_diff": {
+  "cagr": 0,
+  "mdd": 0,
+  "vol": 0,
+  "first": 0,
+  "end": 0,
+  "trades": 0,
+  "eq_sha": 0
+ },
+ "counts": {
+  "AND_all": 2339,
+  "AND_win": 2309,
+  "orig_on_win": 2031,
+  "t1_on_win": 2036,
+  "out_win": 4,
+  "in_win": 9,
+  "out_all": 4,
+  "in_all": 9,
+  "pos_ne_entry_m1": 1,
+  "pos_ne_entry_m1_win": 1,
+  "pos_ne_entry_m1_gate_differs_win": 0,
+  "regime_flip_days_win": 38
+ },
+ "src_sha256": {
+  "rerun17.py": "0ab21a09288dfe1f9375e0d16ed53d93a6ecb2a96d7a9a6b2178f55ba23b30ae",
+  "rerun17_table.py": "8ca056bb33fec378ea7e61310bbe9165c1db503d4b97a652306642beb7cd79cd",
+  "research11.py": "a966a02d7c9daa751e9cf13371891f54a7f3195a22aeacf5567f01145e2091d8",
+  "research13.py": "e6fd2e7c2bf815017312c2ecbf0184033fdeaf6cb462f3299eb3c14297a16367",
+  "data.py": "2aa4f8b00cc8a89be75105058de9ccf5d0f321bb96f5e6530d2d86a6d3eabc75"
+ },
+ "cell1_t1_label": "合格",
+ "cell1_drops": false,
+ "alt_top_N8_10": {
+  "編號": 1,
+  "格": "AND｜regime=True｜N10｜H120",
+  "比值": 1.0127873205114948,
+  "標籤": "合格"
+ },
+ "alt_top_N8_10_no_mix": {
+  "編號": 1,
+  "格": "AND｜regime=True｜N10｜H120",
+  "比值": 1.0127873205114948,
+  "標籤": "合格"
+ }
+}

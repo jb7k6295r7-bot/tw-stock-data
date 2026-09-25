@@ -1,0 +1,44 @@
+===== rerun17_regime_t1 procs=2 reps=200 2026-09-25 22:58（台北）=====
+[程式 sha256] {"rerun17.py": "0ab21a09288dfe1f", "rerun17_table.py": "8ca056bb33fec378", "research11.py": "a966a02d7c9daa75", "research13.py": "e6fd2e7c2bf81501", "data.py": "2aa4f8b00cc8a89b"}
+[資料] D.DATA ＝ /home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data
+[閘一 0050 錨] 年化 0.24020209886370614／回落 -0.3395700527611012｜錨 (0.24020209886370614, -0.3395700527611012)｜逐位元 True
+[AND] /home/chemtim/tw-p17/backtest/resultsN17/sig_edc6f/and_signals.csv.gz｜2,339 筆／921 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[進出] {'AND_all': 2339, 'AND_win': 2309, 'orig_on_win': 2031, 't1_on_win': 2036, 'out_win': 4, 'in_win': 9, 'out_all': 4, 'in_all': 9, 'pos_ne_entry_m1': 1, 'pos_ne_entry_m1_win': 1, 'pos_ne_entry_m1_gate_differs_win': 0, 'regime_flip_days_win': 38}
+  [win] 格 1 PREREG10｜AND｜regime=True｜N10｜H120：年化中位 np.float64(0.405277675071815)／回落中位 np.float64(-0.3908384709555651)／波動中位 0.286434｜first 526～526｜18s
+  [win] 格 4 PREREG10｜AND｜regime=True｜N10｜LD：年化中位 np.float64(0.23252129594286408)／回落中位 np.float64(-0.3173951289783119)／波動中位 0.246239｜first 526～526｜29s
+  [win] 格 7 PREREG10｜AND｜regime=True｜N10｜H60：年化中位 np.float64(0.18554633798515452)／回落中位 np.float64(-0.40876054752307234)／波動中位 0.275115｜first 526～526｜32s
+  [win] 格16 PREREG10｜AND｜regime=True｜N20｜H60：年化中位 np.float64(0.29230811580576244)／回落中位 np.float64(-0.37459106112120255)／波動中位 0.248522｜first 526～526｜53s
+  [win] 格17 PREREG10｜AND｜regime=True｜N20｜H120：年化中位 np.float64(0.31786842237686386)／回落中位 np.float64(-0.41156909780273687)／波動中位 0.257002｜first 526～526｜34s
+[閘二 原件判閘重跑 vs rerun17_seeds main] 列 1000（應 1000）｜不同數 {'cagr': 0, 'mdd': 0, 'vol': 0, 'first': 0, 'end': 0, 'trades': 0, 'eq_sha': 0}｜逐位元 True｜166s
+  [win] 格 1 PREREG10｜AND｜regime=True｜N10｜H120：年化中位 np.float64(0.394406557221616)／回落中位 np.float64(-0.3894268315113051)／波動中位 0.284160｜first 526～526｜20s
+  [win] 格 4 PREREG10｜AND｜regime=True｜N10｜LD：年化中位 np.float64(0.2188399105176808)／回落中位 np.float64(-0.3173356911544044)／波動中位 0.244770｜first 526～526｜30s
+  [win] 格 7 PREREG10｜AND｜regime=True｜N10｜H60：年化中位 np.float64(0.18000992522296644)／回落中位 np.float64(-0.4050710117553651)／波動中位 0.274511｜first 526～526｜29s
+  [win] 格16 PREREG10｜AND｜regime=True｜N20｜H60：年化中位 np.float64(0.288580339924435)／回落中位 np.float64(-0.3916330642325778)／波動中位 0.248181｜first 526～526｜52s
+  [win] 格17 PREREG10｜AND｜regime=True｜N20｜H120：年化中位 np.float64(0.31835948731524977)／回落中位 np.float64(-0.40998284433833443)／波動中位 0.255799｜first 526～526｜33s
+[t−1] 完成 164s
+ 編號                        格    t1_年化     t1_回落    t1_比值  t1_年化波動  t1_年化÷波動 t1_標籤                        t1_深淺註  原_年化（含日內前視）  原_回落（含日內前視）  原_比值（含日內前視） 原_標籤（含日內前視） 標籤變動
+  1 AND｜regime=True｜N10｜H120 0.394407 -0.389427 1.012787 0.284160  1.387973    合格 回落比 0050 深 4.99 點、報酬多 15.42 點     0.405278    -0.390838     1.036944          合格    無
+  4   AND｜regime=True｜N10｜LD 0.218840 -0.317336 0.689616 0.244770  0.894062   不合格                                   0.232521    -0.317395     0.732593         不合格    無
+  7  AND｜regime=True｜N10｜H60 0.180010 -0.405071 0.444391 0.274511  0.655747   不合格                                   0.185546    -0.408761     0.453924         不合格    無
+ 16  AND｜regime=True｜N20｜H60 0.288580 -0.391633 0.736864 0.248181  1.162782    合格  回落比 0050 深 5.21 點、報酬多 4.84 點     0.292308    -0.374591     0.780339          合格    無
+ 17 AND｜regime=True｜N20｜H120 0.318359 -0.409983 0.776519 0.255799  1.244571    合格  回落比 0050 深 7.04 點、報酬多 7.82 點     0.317868    -0.411569     0.772333          合格    無
+ 編號        族                         格  N  混0050       年化        回落       比值  標籤               出處  N在8～10
+ 13       P1      AND｜N20｜d=inf｜relvol 20  False 0.361232 -0.321314 1.124232  合格 rerun17.csv main   False
+  1 PREREG10  AND｜regime=True｜N10｜H120 10  False 0.394407 -0.389427 1.012787  合格               t1    True
+ 14       P1        AND｜N20｜d=inf｜null 20  False 0.325791 -0.325486 1.000937  合格 rerun17.csv main   False
+ 15 PREREG10  AND｜regime=False｜N20｜H60 20  False 0.324608 -0.325662 0.996762  合格 rerun17.csv main   False
+  5      P17                 R_eq（判定格）  8   True 0.267830 -0.327020 0.819002  合格 rerun17.csv main    True
+ 17 PREREG10  AND｜regime=True｜N20｜H120 20  False 0.318359 -0.409983 0.776519  合格               t1   False
+  8      P14         w=0.50（＝各半混 0050）  8   True 0.262245 -0.341577 0.767749  合格 rerun17.csv main    True
+ 16 PREREG10   AND｜regime=True｜N20｜H60 20  False 0.288580 -0.391633 0.736864  合格               t1   False
+  4 PREREG10    AND｜regime=True｜N10｜LD 10  False 0.218840 -0.317336 0.689616 不合格               t1    True
+ 12 PREREG10 AND｜regime=False｜N10｜H120 10  False 0.265142 -0.454940 0.582807  另列 rerun17.csv main    True
+  3       P1       AND｜N8｜d=1.0｜relvol  8  False 0.230658 -0.449435 0.513217 不合格 rerun17.csv main    True
+  9       P1      AND｜N10｜d=inf｜relvol 10  False 0.211453 -0.434069 0.487141 不合格 rerun17.csv main    True
+  2      P3乙       N≤8｜N8｜d=1.0｜relvol  8  False 0.226039 -0.477943 0.472942 不合格 rerun17.csv main    True
+  7 PREREG10   AND｜regime=True｜N10｜H60 10  False 0.180010 -0.405071 0.444391 不合格               t1    True
+ 11       P1       AND｜N8｜d=inf｜relvol  8  False 0.178614 -0.447241 0.399368 不合格 rerun17.csv main    True
+ 10      P3乙       N≤8｜N8｜d=2.0｜relvol  8  False 0.178342 -0.447533 0.398500 不合格 rerun17.csv main    True
+  6       P1       AND｜N8｜d=2.0｜relvol  8  False 0.177658 -0.447241 0.397231 不合格 rerun17.csv main    True
+[#1] t−1 標籤 合格｜掉出合格 False｜8～10 檔比值最高 {'編號': 1, '格': 'AND｜regime=True｜N10｜H120', '比值': 1.0127873205114948, '標籤': '合格'}｜不含混 0050 {'編號': 1, '格': 'AND｜regime=True｜N10｜H120', '比值': 1.0127873205114948, '標籤': '合格'}
+[完成] seeds.csv 2,000 列
