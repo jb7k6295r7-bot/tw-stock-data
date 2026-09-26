@@ -230,7 +230,9 @@ class Run:
         pat = re.compile(r"^## " + re.escape(self.name) + r"　.*?(?=^## |\Z)",
                          re.S | re.M)
         if pat.search(old):
-            new = pat.sub(block, old)
+            # ⛔ 2026-09-27：replacement 要用函式，⛔ 不可直接傳字串——字串會被當成範本解析，
+            #   區塊裡只要有反斜線（例：repr() 把全形空白印成 　）就 re.error: bad escape，整支在最後一步炸掉
+            new = pat.sub(lambda _m: block, old)
         else:
             header = ("# 各支腳本最近一次執行\n\n"
                       "**這個檔是給人看的**：一次讀完就知道整個資料庫最近一輪的狀況。\n"

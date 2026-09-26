@@ -181,6 +181,52 @@ def run_inst(a):
     return BK.cmd_inst(args)
 
 
+def run_shares(a):
+    """⭐ 2026-09-27（回測 0042 M2、裁定 seq215 §三）：早年日 K 上市列的 shares（發行股數）⇐ MI_QFIIS。
+
+    early/daily 的 shares 欄全空（MI_INDEX 沒有這一欄，主窗同病，主窗靠 fetch.fill_twse_shares 補）。
+    ⭐ 重用 fetch.fill_twse_shares（只補空格、回應要講出請求的日期）＋ write_universe_day（只換出現的市場）。
+    實測 MI_QFIIS 20040211／20070102／20120601 皆 stat OK、有「發行股數」欄。
+    """
+    d = os.path.join(EARLY, "daily")
+    days = sorted(fn[:-4] for fn in os.listdir(d) if fn.endswith(".csv") and a.start <= fn[:-4] <= a.end)
+    F.UNI_DIR = EARLY
+    rl = runlog.Run("early:shares")
+    H = F.UNIVERSE_HEADER
+    done = skipped = failed = filled = 0
+    fails = []
+    for day in days:
+        with io.open(os.path.join(d, day + ".csv"), encoding="utf-8") as f:
+            lines = [[r.get(h, "") for h in H] for r in csv.DictReader(f)]
+        tw = [r for r in lines if r[4] == "twse"]
+        # ⭐ 已經補過的天（上市列有任一格有值）就跳過：官方表本來就沒有的幾檔（ETF 等）永遠是空的，
+        #   ⛔ 用「還有空格」當判準會每一趟都整段重問
+        if not tw or (not a.force and any(str(r[13]).strip() for r in tw)):
+            skipped += 1
+            continue
+        if a.force:
+            for r in tw:
+                r[13] = ""
+        n, note = F.fill_twse_shares(lines, day)
+        time.sleep(a.sleep)
+        if note.startswith("✗"):          # 整張表拿不到（端點失敗／日期不符）才算失敗
+            failed += 1
+            fails.append((day, note))
+            continue
+        if n == 0:
+            skipped += 1
+            continue
+        F.write_universe_day(day, [r for r in lines if r[4] == "twse"])
+        done += 1
+        filled += n
+    rl.info("區間", f"{a.start} ~ {a.end}｜日檔 {len(days)} 天")
+    rl.info("本趟", f"補 {done} 天、{filled} 列｜已有值跳過 {skipped} 天｜補不到 {failed} 天")
+    if fails:
+        rl.info("補不到的日子（前 10）", str(fails[:10]))
+    rl.check("補不到 0 天", not fails, str(fails[:10]))
+    return rl.finish()
+
+
 def refill_from_files(old):
     """⭐ 台帳缺的 (日期, 市場) ⇒ 用已落地的日檔重算結構補回（2026-09-25：第一趟 1,470 天的台帳被洗掉過）。
     ⚠ notrade_blanked 從檔案算不回來（改空白之後就看不出原本是 0.00）⇒ 補回的列留空，⛔ 不填 0。→ 補了幾列。"""
@@ -218,11 +264,14 @@ def main():
     # ⭐ 2026-09-26：已落地的日子也重抓（上櫃漲跌「- 0.35」被清空那次要整段重抓；write_day 只換這個市場的列）
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--inst", action="store_true", help="⭐ 上市個股 T86 三大法人 ⇒ data/early/inst")
+    ap.add_argument("--shares", action="store_true", help="⭐ 早年日 K 上市列的發行股數 ⇐ MI_QFIIS")
     a = ap.parse_args()
     if a.feed:
         return run_feed(a)
     if a.inst:
         return run_inst(a)
+    if a.shares:
+        return run_shares(a)
     if not a.market:
         ap.error("--market、--feed、--inst 至少要一個")
     start = max(a.start, FLOOR[a.market])

@@ -78,6 +78,20 @@ def main():
             os.chdir(cwd0)
             importlib.reload(_rl)
 
+        print("── 0b. 區塊內容有反斜線（repr 的 \\u3000、Windows 路徑）⇒ 第二次覆寫不可炸 ──")
+        # ⛔ 2026-09-27：finish() 原本把區塊當 re.sub 的範本字串 ⇒ bad escape \u（early:shares 第二趟實測）
+        p = os.path.join(root, "bs.md")
+        try:
+            for _ in range(2):
+                r = _rl.Run("反斜線", path=p)
+                r.info("note", repr("a\u3000b") + r" C:\temp\new")
+                r.finish()
+            txt = io.open(p, encoding="utf-8").read()
+            chk("兩次寫入都成功、區塊只有一份、反斜線原樣保留",
+                txt.count("## 反斜線") == 1 and r"\u3000" in txt and r"C:\temp\new" in txt, txt[-200:])
+        except Exception as ex:                      # noqa: BLE001
+            chk("兩次寫入都成功、區塊只有一份、反斜線原樣保留", False, f"{type(ex).__name__}: {ex}")
+
         print("── 1. 第一次寫 ──")
         rc, t = run(root, "r=runlog.Run('甲')\n"
                           "r.info('列數','10')\n"
