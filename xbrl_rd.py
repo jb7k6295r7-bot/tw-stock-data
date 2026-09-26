@@ -154,9 +154,12 @@ def download(y, q, dest, tries=3, wait=60):
                     f.write(b)
             with open(dest, "rb") as f:
                 head = f.read(4096)
-            if head[:2] == b"PK":
+            # ⛔ 2026-09-27 run 36255385807：2026Q1 檔頭是 PK、但【下載不完整】（沒有 Content-Length，斷線看不出來）
+            #   ⇒ 解析時 BadZipFile 整支炸掉 ⇒ 驗到中央目錄（檔尾）才算數，不完整就重抓
+            if head[:2] == b"PK" and zipfile.is_zipfile(dest):
                 return True, f"{os.path.getsize(dest)} bytes"
-            last = f"不是 zip（{ctype}）：{head.decode('big5', 'replace')[:200]}"
+            last = (f"zip 不完整（檔頭 PK、讀不到中央目錄，{os.path.getsize(dest)} bytes）" if head[:2] == b"PK"
+                    else f"不是 zip（{ctype}）：{head.decode('big5', 'replace')}")
         except Exception as e:                       # noqa: BLE001
             last = f"{type(e).__name__}: {e}"
         if i + 1 < tries:
@@ -202,8 +205,15 @@ def main():
             fails.append((per, note))
             row.update(status="fail", note=note)
         else:
-            with zipfile.ZipFile(src) as zf:
-                rows, st = parse_zip(zf, y, q)
+            try:
+                with zipfile.ZipFile(src) as zf:
+                    rows, st = parse_zip(zf, y, q)
+            except zipfile.BadZipFile as ex:        # 只記這一季失敗，⛔ 不讓整支炸掉（後面的季照做）
+                ok, rows = False, None
+                fail += 1
+                fails.append((per, f"BadZipFile: {ex}"))
+                row.update(status="fail", note=f"BadZipFile: {ex}")
+        if ok:
             with io.open(os.path.join(OUT_DIR, f"{per}.csv"), "w", encoding="utf-8", newline="") as f:
                 w = csv.writer(f, lineterminator="\n")
                 w.writerow(HEADER)
