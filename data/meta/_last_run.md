@@ -1056,6 +1056,16 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## early:tpex　✓ 正常
+
+最後執行：2026-09-26T23:14:52+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36250934414
+
+- **交易日**：1 天（2014-02-12 ~ 2014-02-12，官方月表）
+- **本趟**：寫 1 天｜已有跳過 0｜失敗 0｜結構：bad_hl 0、零價 0、負價 0｜無成交 0.00 改空白 0 列
+
+檢查：
+- ok　失敗 0 天（⛔ 交易日上拿不到 ≠ 休市）　（[]）
+
 ## feeds:marginmkt　✓ 正常
 
 最後執行：2026-09-26T16:44:12+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36204553151
@@ -1070,17 +1080,6 @@
 - ok　跑完整個區間，沒有提前收手　（跑完）
 - ok　沒有「連問都問不到」的日子（⛔ 只算**已經結束**的那幾天）　（0 天）
 - ok　沒有**未歸因**的驗算不符列　（0 天）
-
-## early:tpex　✗ 有問題
-
-最後執行：2026-09-26T11:46:50+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36183466734
-
-- **交易日**：1870 天（2007-07-02 ~ 2014-12-31，官方月表）
-- **本趟**：寫 1869 天｜已有跳過 0｜失敗 1｜結構：bad_hl 0、零價 0、負價 0｜無成交 0.00 改空白 119680 列
-- **失敗的日子（前 10）**：[('2014-02-12', 'all_failed:HTTP 522 <none> | {"type":"https://developers.clo')]
-
-檢查：
-- **✗**　失敗 0 天（⛔ 交易日上拿不到 ≠ 休市）　（[('2014-02-12', 'all_failed:HTTP 522 <none> | {"type":"https://developers.clo')]）
 
 ## early:feed:instamt　✓ 正常
 
