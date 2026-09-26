@@ -1,0 +1,41 @@
+{
+ "營飆 v1 對 regime_t1/seeds.csv t1 #1": {
+  "顆數": 200,
+  "不同數": {
+   "cagr": 0,
+   "mdd": 0,
+   "vol": 0,
+   "first": 0,
+   "end": 0,
+   "trades": 0,
+   "eq_sha": 0
+  },
+  "逐位元": true
+ },
+ "#13 對 rerun17_seeds.csv main #13": {
+  "顆數": 200,
+  "不同數": {
+   "cagr": 0,
+   "mdd": 0,
+   "vol": 0,
+   "first": 0,
+   "end": 0,
+   "trades": 0,
+   "eq_sha": 0
+  },
+  "逐位元": true
+ },
+ "營飆中位 對 regime_t1/cells.csv t1_年化／t1_回落": {
+  "逐位元": true
+ },
+ "#13 中位 對 rerun17.csv 主窗_年化／主窗_回落": {
+  "逐位元": true
+ },
+ "0050 對錨": {
+  "逐位元": true
+ },
+ "#13 200 顆完全相同（equity 與 audit）": {
+  "逐位元": true
+ },
+ "全部過": true
+}
