@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2009-11-13,2547,25.65,25.44,0.208107,權,25.65,27.40,23.70,25.65

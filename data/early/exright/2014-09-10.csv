@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2014-09-10,1466,22.35,21.87,0.473263,息,21.85,23.40,20.35,21.87

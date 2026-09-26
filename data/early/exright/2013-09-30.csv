@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2013-09-30,2823,30.15,26.44,3.702640,權,26.45,28.25,24.60,26.44
+2013-09-30,9151,44.70,44.33,0.363000,息,44.35,47.40,41.25,44.33

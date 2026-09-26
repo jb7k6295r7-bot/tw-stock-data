@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2011-03-31,01004T,11.13,10.94,0.187881,息,10.94,11.70,10.18,10.94

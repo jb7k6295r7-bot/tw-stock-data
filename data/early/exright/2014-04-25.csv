@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2014-04-25,2867,17.30,17.27,0.020276,權,17.30,18.50,16.10,17.30

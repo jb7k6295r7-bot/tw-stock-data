@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2007-06-22,1307,27.50,26.00,1.500000,息,26.00,27.80,24.20,26.00

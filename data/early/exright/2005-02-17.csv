@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2005-02-17,1227,13.50,12.60,0.900000,息,12.60,13.45,11.75,12.60

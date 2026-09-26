@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2014-05-22,01002T,17.77,17.26,0.509123,息,17.26,18.46,16.06,17.26
+2014-05-22,01007T,14.34,14.12,0.211681,息,14.12,15.10,13.14,14.12

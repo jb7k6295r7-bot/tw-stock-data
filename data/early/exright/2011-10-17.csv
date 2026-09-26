@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2011-10-17,2516,9.88,9.22,0.656516,權息,9.22,9.86,8.58,9.22

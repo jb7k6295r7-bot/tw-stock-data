@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2004-05-28,2847A,12.20,11.02,1.180000,息,11.00,11.75,10.25,11.02
+2004-05-28,2847B,12.40,11.26,1.140000,息,11.25,12.00,10.50,11.26

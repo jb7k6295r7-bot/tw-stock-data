@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2003-08-27,2373,23.50,22.50,1.000000,息,22.50,24.00,21.00,22.50

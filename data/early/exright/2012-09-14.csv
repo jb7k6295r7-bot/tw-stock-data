@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2012-09-14,1735,11.15,10.87,0.280000,息,10.85,11.60,10.15,10.87
+2012-09-14,2315,10.00,9.84,0.150900,息,9.84,10.50,9.16,9.84

@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2003-09-08,1436,9.30,8.00,1.300000,權息,8.00,8.55,7.45,8.00
