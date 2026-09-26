@@ -1056,6 +1056,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## early:inst　✓ 正常
+
+最後執行：2026-09-27T06:14:46+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36269894938
+
+- **區間**：2012-05-02 ~ 2014-12-31｜待處理 666 天
+- **結果**：有資料 666 天、休市 0 天、失敗 0 天
+
+檢查：
+- ok　跑完整個區間，沒有提前收手　（跑完）
+- ok　沒有「連問都問不到」的日子　（0 天）
+
 ## early:feed:exright　✓ 正常
 
 最後執行：2026-09-27T04:37:29+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36269050012
