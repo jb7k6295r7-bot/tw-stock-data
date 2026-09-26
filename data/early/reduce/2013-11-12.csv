@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2013-11-12,1234,33.70,41.59,退還股款,41.60,,44.50,38.70
+2013-11-12,2614,4.85,9.88,彌補虧損,9.88,,10.55,9.19

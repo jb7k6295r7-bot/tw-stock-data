@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2012-12-28,2348,2.80,28.66,彌補虧損,28.65,,30.65,26.70

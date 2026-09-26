@@ -1056,6 +1056,18 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## early:feed:reduce　✓ 正常
+
+最後執行：2026-09-27T04:24:56+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36267254048
+
+- **區間**：2011-01-01 ~ 2014-12-31｜48 個月
+- **⭐ 台帳有、但**還沒結束所以照樣重問**的月份**：0 個（這個區間裡沒有當月）
+- **結果**：有資料 28 個月、無事件 20 個月、失敗 0 個月，合計 88 列
+- **官方公式 reduce**：✅ 3 段，與釘住的那份逐字相同
+
+檢查：
+- ok　每個月都問到了　（48 個月全問到）
+
 ## early:feed:exright　✗ 有問題
 
 最後執行：2026-09-27T04:06:28+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36259074868

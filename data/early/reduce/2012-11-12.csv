@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2012-11-12,2542,42.55,50.68,退還股款,50.70,,54.20,47.15

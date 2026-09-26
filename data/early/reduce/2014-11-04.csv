@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down
+2014-11-04,2444,8.89,14.05,彌補虧損,14.05,,15.00,13.10
