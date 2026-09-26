@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""PREREG突破過濾【直接買 vs 加一道過濾】單筆層——回測線落地。【本支目前只有 pre 段：開跑前檢查，⛔ 不讀任何報酬】
+"""PREREG突破過濾【直接買 vs 加一道過濾】單筆層——回測線落地。（pre 段：開跑前檢查，⛔ 不讀報酬；body 段：本體）
 判準＝台股策略線 登錄 seq2（sha 245c89b4d6d49657，7503B，2026-09-26 00:57）；編號＝裁定線 seq186 §五
 （N_前段 最多 ＋14；① 退化檢查：每格報「買到的比例」「與 A 同日買進的比例」，≥ 95% 與 A 同日 ⇒ 依構造退化、不計 N；
  ② 「加過濾比較好」須 Bonferroni（0.05／可判定格數，雙尾）下界 ＞ 0）。
 
 用法（repo 根；PYTHONPATH=~/tw-p17；Python ＝ ~/tw-p16/.venv/bin/python）：
     python backtest/researchBF.py pre [--procs 2] [--limit N]     # ⛔ 不算任何報酬；--limit 只給除錯
-    （body 段：⛔ 尚未寫——等讀法 Q1～Q14 裁定後才加）
+    python backtest/researchBF.py body [--procs 2]            # 本體（裁定 seq202 §三：Q1～Q14 全照 ◇）；讀法 P1～P9 見 body 段開頭
 輸出：backtest/resultsBF/（pre_cells.csv、pre_ledger.csv、pre_sensitivity.csv、pre_events.csv.gz、pre_check.json、PRE_REPORT.md）
 
 資料／母體／事件：import researchX（⇒ researchH2：main edc6f8002f 快照、gate3、還原 OHLC、tradability 原始價漲跌停）；
@@ -588,8 +588,10 @@ def fmt_cells(C):
 
 
 def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "body":
+        return body_main()
     if len(sys.argv) < 2 or sys.argv[1] != "pre":
-        raise SystemExit("用法：researchBF.py pre [--procs 2] [--limit N]（body 段尚未寫：等讀法裁定）")
+        raise SystemExit("用法：researchBF.py pre|body [--procs 2] [--limit N（只 pre）]")
     procs = int(sys.argv[sys.argv.index("--procs") + 1]) if "--procs" in sys.argv else 2
     lim = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else None
     tag = "_limit" if lim else ""
@@ -711,6 +713,323 @@ def write_report(C, LG, SRd, chk, k, a_b, z_b, tag):
                 A(f"- {x}")
             A("")
     open(os.path.join(OUT, f"PRE_REPORT{tag}.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+
+
+# ═════════════ body：本體（裁定 seq202 §三：Q1～Q14 全照 ◇ 收下） ═════════════
+# 登錄 §三～§五 落地（⛔ 在看任何報酬之前寫在這裡）：
+#  P1 每筆每臂 r ＝ 買到：還原 close(≤ 終點最後一根有效 K 棒；下市 ＝ 最後成交價，delist on) ÷ 還原 open(進場日) − 1 − 0.585%；沒買到 ＝ 0。
+#     終點一律 ＝ T＋60（A 的 H60 收盤）⇒ 晚買的持有略短（登錄逐字標）。
+#  P2 Δ_e ＝ r(過濾) − r(A)；Δ ＝ 平均；主 CI ＝ 以 (T − 窗起點)//60 分群的 CR0（research11.cl_stats 同式）、1.96；
+#     Bonferroni：α ＝ 0.05／14（可判定 14 格，pre 段 seq202 收下）雙尾 ⇒ z ＝ Φ⁻¹(1 − α／2)，下界 ＝ Δ − z·SE（同一個 SE）。
+#     n_eff ＝ min(事件數, 區段數)；＜30 出口①、30～99 出口②（句首「樣本中等」）、≥100 出口③。結果句只查登錄 §三 的表。
+#  P3 H20（描述）：終點 T＋20；進場日 ＞ T＋20 ⇒ 該臂 H20 記 0（另報件數）。H120（描述）：子集 ＝ T ≤ 窗尾−120 且 (T＋60, T＋120] 無硬斷點（H2.brk、delist on）；
+#     終點 T＋120。兩者 ⛔ 不印 CI、不判。
+#  P4 §四「沒買到那批若照 A 買」＝ 該臂沒買到的事件的 r(A) 平均；「買到那批照 A」同理（選擇效果）。
+#  P5 §四 A vs 0050 同段（描述）：0050 還原 close(T＋60) ÷ 還原 open(T＋1) − 1（⛔ 不扣成本）；對照量 ＝ r(A)＋0.585%（毛）− 0050。
+#     0050 在 T＋1 沒有開盤（2025-06-11～17 分割停牌 5 日）⇒ 用 T＋1 起第一個有開盤的日子（件數另報：body_check.json）。
+#  P6 §四 E、F「突破後沒有回測、直接走掉」：該臂等待窗內（E：T＋1～T＋20；F：b＋1～b＋20，Q8 甲）在跌破之前沒有任何一天 還原最低 ≤ 1.02N。
+#     分類：買到／條件成立但進場日不可成交／跌破頸線／回到頸線但量縮或止跌 K 沒湊齊／沒回測、直接走掉（F 另有「B 或 D 不成立」）。
+#  P7 分年 ＝ T 的曆年；上市／上櫃 ＝ 母體檔 market 欄（twse／tpex）。只描述。
+#  P8 Q7 另一讀法（箱型 T ＝ 突破訊號日）：只在 REPORT 敏感度段描述箱型 B、D 的 Δ 與同日比例，⛔ 不判。
+#  P9 假訊號臂：登錄 §五 逐字「判定量是同一批事件兩種買法的差，不是事件本身的效果 ⇒ 不適用（同 PREREG限價）」⇒ ⛔ 不做（REPORT 寫明）。
+COST = 0.00585
+FNAME = {"B": "幅度 3% 過濾", "C": "站穩 3 天過濾", "D": "放量 1.5 倍過濾", "E": "等回測頸線＋量縮＋止跌 K", "F": "三道全加"}
+
+
+def ret_of(S, x, end):
+    if x is None or x > end:
+        return 0.0
+    return float(S["cff"][end] / S["o"][x] - 1.0 - COST)
+
+
+def retest_class(S, N, ds, r_arm):
+    x, why, _ = r_arm
+    if x is not None:
+        return "買到"
+    if why in ("進場日停牌", "進場日開盤漲停", "超過終點"):
+        return "條件成立但進場日不可成交"
+    if why == "跌破頸線":
+        return "跌破頸線"
+    if why == "B 或 D 不成立":
+        return "B 或 D 不成立"
+    for d in ds:
+        if S["valid"][d] and S["l"][d] <= E_NEAR * N:
+            return "回到頸線但量縮／止跌 K 沒湊齊"
+    return "沒回測、直接走掉"
+
+
+def sentence(m, lo, hi, blo, ex, fname):
+    if ex == "出口①":
+        return "—（出口①：樣本不足以分辨）", "出口①"
+    pre = "樣本中等，" if ex == "出口②" else ""
+    if lo <= 0 <= hi:
+        return pre + "分不出來 ⇒ 直接買（突破隔天開盤）", "分不出來"
+    if m > 0 and blo > 0:
+        return pre + "突破後加{}再買，比直接買平均好 {:.2f}%（Bonferroni 下界 {:+.2f}%）".format(fname, m * 100, blo * 100), "加過濾比較好"
+    if m > 0:
+        return pre + "單格過關、與多次嘗試分不開 ⇒ 直接買", "單格過關"
+    return pre + "加{}反而比較差：濾掉的比省下的多".format(fname), "加過濾較差"
+
+
+def body_rows(ST, cal, w0, w1, n, o, b50o, b50c, b50nx):
+    wE = w1 - H
+    rows = []
+    for typ in TYPES:
+        for sid in sorted(ST):
+            S = ST[sid]
+            if "cff" not in S:
+                S["cff"] = pd.Series(S["c"]).ffill().to_numpy(float)
+            k, _ = keep(S, typ, w0, wE, n, o)
+            for e in k:
+                T, N = e["T"], e["N"]
+                r = arms(S, e, typ, o)
+                in120 = bool(T + 120 <= w1 and not H2.brk(S, T + H + 1, T + 120))
+                row = {"sid": sid, "market": S["market"], "type": typ, "T": str(cal[T].date()), "year": int(cal[T].year),
+                       "blk": int((T - w0) // BLK), "N": N, "in120": int(in120),
+                       "bench60": float(b50c[T + H] / b50o[b50nx[T + 1]] - 1.0), "bench_shift": int(b50nx[T + 1] - (T + 1))}
+                for arm in "A" + ARMS[typ]:
+                    x = r[arm][0]
+                    row[f"entry_{arm}"] = str(cal[x].date()) if x is not None else ""
+                    row[f"bought_{arm}"] = int(x is not None)
+                    row[f"wait_{arm}"] = (x - T) if x is not None else np.nan
+                    row[f"r60_{arm}"] = ret_of(S, x, T + H)
+                    row[f"late20_{arm}"] = int(x is not None and x > T + 20)
+                    row[f"r20_{arm}"] = ret_of(S, x, T + 20)
+                    row[f"r120_{arm}"] = ret_of(S, x, T + 120) if in120 else np.nan
+                row["cls_E"] = retest_class(S, N, seq_days(S, T + 1, E_DAYS, o["days"]), r["E"])
+                bF = r["B"][2]
+                dsF = seq_days(S, bF + 1, E_DAYS, o["days"]) if bF is not None else []
+                row["cls_F"] = retest_class(S, N, dsF, r["F"])
+                rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def judge_cells(X, zb):
+    out = []
+    for typ in TYPES:
+        Y = X[X["type"] == typ]
+        for arm in ARMS[typ]:
+            d = (Y[f"r60_{arm}"] - Y["r60_A"]).to_numpy(float)
+            cs = H2.R.cl_stats(d, Y["blk"].to_numpy())
+            n_ = int(len(d)); blk = int(cs["months"]); n_eff = min(n_, blk)
+            ex = "出口①" if n_eff < 30 else ("出口②" if n_eff < 100 else "出口③")
+            blo, bhi = cs["mean"] - zb * cs["se"], cs["mean"] + zb * cs["se"]
+            s, cat = sentence(cs["mean"], cs["lo"], cs["hi"], blo, ex, FNAME[arm])
+            out.append({"型態": NAME[typ], "typ": typ, "買法": arm, "買法名": ARM_NAME[arm], "事件數": n_, "區段數": blk, "n_eff": n_eff,
+                        "出口": ex, "E_A": float(Y["r60_A"].mean()), "E_過濾": float(Y[f"r60_{arm}"].mean()),
+                        "Δ": cs["mean"], "SE": cs["se"], "CI95_lo": cs["lo"], "CI95_hi": cs["hi"], "Bonf_lo": blo, "Bonf_hi": bhi,
+                        "Δ中位": cs["median"], "Δ>0比例": float((d > 0).mean()), "Δ<0比例": float((d < 0).mean()),
+                        "買到比例": float(Y[f"bought_{arm}"].mean()), "結果類": cat, "結果句": s})
+    return pd.DataFrame(out)
+
+
+def abandon(X):
+    out = []
+    for typ in TYPES:
+        Y = X[X["type"] == typ]
+        for arm in "A" + ARMS[typ]:
+            b = Y[f"bought_{arm}"] == 1
+            out.append({"型態": NAME[typ], "買法": arm, "買法名": ARM_NAME[arm], "事件數": int(len(Y)), "買到數": int(b.sum()),
+                        "買到比例": float(b.mean()), "平均等待天數(進場日−T)": float(Y.loc[b, f"wait_{arm}"].mean()) if b.any() else np.nan,
+                        "買到那批_平均報酬": float(Y.loc[b, f"r60_{arm}"].mean()) if b.any() else np.nan,
+                        "買到那批_若照A": float(Y.loc[b, "r60_A"].mean()) if b.any() else np.nan,
+                        "沒買到數": int((~b).sum()),
+                        "沒買到那批_若照A": float(Y.loc[~b, "r60_A"].mean()) if (~b).any() else np.nan})
+    return pd.DataFrame(out)
+
+
+def vs0050(X):
+    out = []
+    for typ in TYPES:
+        Y = X[X["type"] == typ]
+        x = (Y["r60_A"] + COST - Y["bench60"]).to_numpy(float)
+        cs = H2.R.cl_stats(x, Y["blk"].to_numpy())
+        out.append({"型態": NAME[typ], "事件數": int(len(Y)), "A_淨": float(Y["r60_A"].mean()), "A_毛": float(Y["r60_A"].mean() + COST),
+                    "0050同段": float(Y["bench60"].mean()), "A毛−0050": cs["mean"], "CI95_lo(描述)": cs["lo"], "CI95_hi(描述)": cs["hi"],
+                    "區段數": int(cs["months"])})
+    return pd.DataFrame(out)
+
+
+def retest_tab(X):
+    out = []
+    for typ in TYPES:
+        Y = X[X["type"] == typ]
+        for arm in ("E", "F"):
+            for cls, g in Y.groupby(f"cls_{arm}"):
+                out.append({"型態": NAME[typ], "買法": arm, "分類": cls, "件數": int(len(g)), "比例": float(len(g) / len(Y)),
+                            "照A買的平均報酬": float(g["r60_A"].mean()), "該臂平均報酬": float(g[f"r60_{arm}"].mean())})
+    return pd.DataFrame(out)
+
+
+def split_tab(X, key):
+    out = []
+    for typ in TYPES:
+        Y = X[X["type"] == typ]
+        for kv, g in Y.groupby(key):
+            row = {"型態": NAME[typ], key: kv, "事件數": int(len(g)), "E_A": float(g["r60_A"].mean())}
+            for arm in ARMS[typ]:
+                row[f"Δ_{arm}"] = float((g[f"r60_{arm}"] - g["r60_A"]).mean())
+            out.append(row)
+    return pd.DataFrame(out)
+
+
+def desc_h(X):
+    out = []
+    for typ in TYPES:
+        Y = X[X["type"] == typ]
+        Y120 = Y[Y["in120"] == 1]
+        for arm in ARMS[typ]:
+            d20 = Y[f"r20_{arm}"] - Y["r20_A"]; d120 = Y120[f"r120_{arm}"] - Y120["r120_A"]
+            out.append({"型態": NAME[typ], "買法": arm, "H20_事件數": int(len(Y)), "H20_Δ": float(d20.mean()), "H20_Δ中位": float(d20.median()),
+                        "H20_進場晚於T+20件數": int(Y[f"late20_{arm}"].sum()),
+                        "H120_事件數": int(len(Y120)), "H120_Δ": float(d120.mean()) if len(Y120) else np.nan,
+                        "H120_Δ中位": float(d120.median()) if len(Y120) else np.nan})
+    return pd.DataFrame(out)
+
+
+def q7_sig(ST, cal, w0, w1, n):
+    o = dict(BASE, boxT="sig")
+    rows = []
+    for sid in sorted(ST):
+        S = ST[sid]
+        k, _ = keep(S, "box", w0, w1 - H, n, o)
+        for e in k:
+            r = arms(S, e, "box", o)
+            rr = {a: ret_of(S, r[a][0], e["T"] + H) for a in "ABD"}
+            rows.append({"blk": (e["T"] - w0) // BLK, "A": rr["A"], "B": rr["B"], "D": rr["D"],
+                         "sameB": int(r["B"][0] == r["A"][0]), "sameD": int(r["D"][0] == r["A"][0])})
+    Q = pd.DataFrame(rows)
+    return pd.DataFrame([{"型態": "箱型", "買法": a, "讀法": "Q7 另一讀法（T＝突破訊號日；⛔ 不判）", "事件數": int(len(Q)),
+                          "同日比例_全部": float(Q[f"same{a}"].mean()), "Δ(描述)": float((Q[a] - Q["A"]).mean())} for a in "BD"])
+
+
+def body_main():
+    procs = int(sys.argv[sys.argv.index("--procs") + 1]) if "--procs" in sys.argv else 2
+    os.makedirs(OUT, exist_ok=True)
+    chk = {"登錄": REG, "裁定": "seq202 §三：Q1～Q14 全照 ◇", "快照": SHA}
+    assert os.path.realpath(D.DATA) == os.path.realpath(H2.H2D) and SHA.startswith("edc6f8002f"), "⛔ 快照不對"
+    assert selftest(), "⛔ fixture 不過"
+    chk["fixture"] = f"{sum(x['過'] for x in FX)}／{len(FX)}"
+    from backtest import selftest_patterns_x as STX
+    t1, _ = STX.run_all()
+    assert all(t1[k] for k in TYPES), "⛔ T1 不過"
+    chk["T1"] = t1
+    cal, n, w0, w1, U, ST = load_all(procs)
+    from backtest import rerun17 as R17
+    R17.use_snapshot()
+    bw = R17.bench_row(cal, R17.load_bench(cal), w0, w1 + 1)
+    chk["0050錨逐位元"] = repr(bw["cagr"]) == repr(R17.ANCHOR[0]) and repr(bw["mdd"]) == repr(R17.ANCHOR[1])
+    assert chk["0050錨逐位元"], "⛔ 0050 錨不對"
+    # ⭐ pre 段（commit 461c3ae5d9）的逐筆事件與進場日必須逐字相同，才算報酬
+    import gzip
+    import hashlib
+    _, _, EV = run_cells(ST, cal, w0, w1, n, BASE, keep_events=True)
+    mine = EV.to_csv(index=False).encode("utf-8")
+    ref = gzip.open(os.path.join(OUT, "pre_events.csv.gz"), "rb").read()
+    chk["pre_events重現"] = {"本次md5": hashlib.md5(mine).hexdigest(), "pre檔md5": hashlib.md5(ref).hexdigest(), "相同": mine == ref}
+    print("[重現] pre_events 逐字相同：{}".format(mine == ref), flush=True)
+    assert mine == ref, "⛔ 事件或進場日與 pre 段不同 ⇒ 不算"
+    b50 = D.load_stock("0050", "twse", cal).df
+    b50o = b50["open"].to_numpy(float); b50c = pd.Series(b50["close"].to_numpy(float)).ffill().to_numpy(float)
+    b50nx = np.full(len(b50o), -1); nxt = -1
+    for i_ in range(len(b50o) - 1, -1, -1):                 # P5：T＋1 起第一個有開盤的日子（0050 2025-06-11～17 分割停牌 5 日）
+        if np.isfinite(b50o[i_]):
+            nxt = i_
+        b50nx[i_] = nxt
+    X = body_rows(ST, cal, w0, w1, n, BASE, b50o, b50c, b50nx)
+    chk["0050同段_進場順延件數"] = int((X["bench_shift"] > 0).sum())
+    assert np.isfinite(X["bench60"]).all(), "⛔ 0050 同段有缺值"
+    for c_ in [c for c in X.columns if c.startswith("r60_") or c.startswith("r20_")]:
+        assert X[c_].notna().all() or X[c_].isna().sum() == (X["type"] == "box").sum() * (c_.endswith("_C")), c_
+    k_judge = 14
+    a_b, zb = bonf(k_judge)
+    C = judge_cells(X, zb)
+    AB = abandon(X); V = vs0050(X); RT = retest_tab(X); YR = split_tab(X, "year"); MK = split_tab(X, "market"); DH = desc_h(X)
+    Q7 = q7_sig(ST, cal, w0, w1, n)
+    X.to_csv(os.path.join(OUT, "body_events.csv.gz"), index=False)
+    for nm, df in (("cells", C), ("abandon", AB), ("vs0050", V), ("retest", RT), ("by_year", YR), ("by_market", MK), ("h20_h120", DH), ("q7_sig", Q7)):
+        df.to_csv(os.path.join(OUT, f"body_{nm}.csv"), index=False)
+    chk.update({"Bonferroni_alpha": a_b, "Bonferroni_z": zb, "可判定格數": k_judge, "結果類計數": C["結果類"].value_counts().to_dict(),
+                "事件數": X.groupby("type").size().to_dict()})
+    json.dump(chk, open(os.path.join(OUT, "body_check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=float)
+    print(C[["型態", "買法", "事件數", "Δ", "CI95_lo", "CI95_hi", "Bonf_lo", "結果類"]].to_string(), flush=True)
+    body_report(C, AB, V, RT, YR, MK, DH, Q7, chk, a_b, zb)
+    print("[body] 完成", flush=True)
+
+
+def _pc(x, d=2):
+    return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else "{:+.{}f}%".format(x * 100, d)
+
+
+def body_report(C, AB, V, RT, YR, MK, DH, Q7, chk, a_b, zb):
+    L = []
+    A = L.append
+    A("# PREREG突破過濾｜本體報告（單筆層）\n")
+    A(f"> 判準：{REG}；讀法：裁定 seq202 §三（Q1～Q14 全照 pre 段 ◇，pre 段 commit 461c3ae5d9）。數字全部引自 `backtest/resultsBF/body_*.csv`、`body_check.json`。")
+    A("> ⚠ 單筆層：底層訊號（三型突破）在 PREREGX 沒測出優勢 ⇒ 就算某個過濾比直接買好，⛔ 也不等於「贏 0050」。終點一律 ＝ A 的 H60 收盤 ⇒ **晚買的持有略短**。\n")
+    A("## 一、查核\n")
+    A("- 本支 fixture {}；T1 {}；0050 錨逐位元 {}；pre_events 逐字重現 {}（md5 {}）".format(
+        chk["fixture"], "全過" if all(chk["T1"].values()) else chk["T1"], chk["0050錨逐位元"], chk["pre_events重現"]["相同"], chk["pre_events重現"]["本次md5"]))
+    A("- 獨立查核 `researchBF_check.py`（不 import 主程式；從 body_events.csv.gz 重算 Δ／CI／判語，並從快照價格逐筆重算每臂報酬）：見 `body_check_indep.json`\n")
+    A("## 二、判定（14 格；H60；60 日區段分群；Bonferroni α ＝ 0.05／14 ＝ {:.6f}、z ＝ {:.4f}）\n".format(a_b, zb))
+    A("| 型態 | 買法 | 事件數 | 區段 | 出口 | 買到 | E(A) | E(過濾) | Δ | 95% CI | Bonferroni 區間 | 結果句 |")
+    A("|---|---|---:|---:|---|---:|---:|---:|---:|---|---|---|")
+    for _, r in C.iterrows():
+        A("| {} | {} | {:,} | {} | {} | {:.1%} | {} | {} | **{}** | [{}, {}] | [{}, {}] | {} |".format(
+            r["型態"], r["買法名"], r["事件數"], r["區段數"], r["出口"], r["買到比例"], _pc(r["E_A"]), _pc(r["E_過濾"]), _pc(r["Δ"]),
+            _pc(r["CI95_lo"]), _pc(r["CI95_hi"]), _pc(r["Bonf_lo"]), _pc(r["Bonf_hi"]), r["結果句"]))
+    A("\n- 結果類計數：" + "、".join(f"{k} {v} 格" for k, v in chk["結果類計數"].items()))
+    A("- 假訊號臂：登錄 §五 逐字「判定量是同一批事件兩種買法的差，不是事件本身的效果 ⇒ 不適用（同 PREREG限價）」⇒ ⛔ 本件不做。\n")
+    A("## 三、放棄組（登錄 §四：每種買法）\n")
+    A("| 型態 | 買法 | 買到比例 | 平均等待（進場日−T） | 買到那批的平均報酬 | 買到那批若照 A | 沒買到數 | ⭐ 沒買到那批若照 A 買 |")
+    A("|---|---|---:|---:|---:|---:|---:|---:|")
+    for _, r in AB.iterrows():
+        A("| {} | {} | {:.1%} | {} | {} | {} | {:,} | {} |".format(r["型態"], r["買法名"], r["買到比例"],
+          "—" if not np.isfinite(r["平均等待天數(進場日−T)"]) else "{:.2f}".format(r["平均等待天數(進場日−T)"]),
+          _pc(r["買到那批_平均報酬"]), _pc(r["買到那批_若照A"]), r["沒買到數"], _pc(r["沒買到那批_若照A"])))
+    A("\n## 四、A 本身 vs 0050 同段（描述；0050 ＝ 還原 close(T＋60) ÷ open(T＋1) − 1，不扣成本）\n")
+    A("| 型態 | 事件數 | A 淨（扣 0.585%） | A 毛 | 0050 同段 | A 毛 − 0050 | 95% CI（描述） |")
+    A("|---|---:|---:|---:|---:|---:|---|")
+    for _, r in V.iterrows():
+        A("| {} | {:,} | {} | {} | {} | {} | [{}, {}] |".format(r["型態"], r["事件數"], _pc(r["A_淨"]), _pc(r["A_毛"]), _pc(r["0050同段"]),
+          _pc(r["A毛−0050"]), _pc(r["CI95_lo(描述)"]), _pc(r["CI95_hi(描述)"])))
+    A("\n## 五、E、F：突破後有沒有回測（登錄 §四；使用者貼文的前提「會回測」成不成立）\n")
+    A("| 型態 | 買法 | 分類 | 件數 | 比例 | 照 A 買的平均報酬 | 該臂平均報酬 |")
+    A("|---|---|---|---:|---:|---:|---:|")
+    for _, r in RT.iterrows():
+        A("| {} | {} | {} | {:,} | {:.1%} | {} | {} |".format(r["型態"], r["買法"], r["分類"], r["件數"], r["比例"], _pc(r["照A買的平均報酬"]), _pc(r["該臂平均報酬"])))
+    A("\n「沒回測、直接走掉」＝ 該臂等待窗內（跌破之前）沒有任何一天還原最低 ≤ 1.02N（body P6）。\n")
+    A("## 六、分年、上市／上櫃（描述：Δ 平均，⛔ 不判）\n")
+    for T_, nm in ((YR, "year"), (MK, "market")):
+        cols = [c for c in T_.columns]
+        A("| " + " | ".join(cols) + " |"); A("|" + "---|" * len(cols))
+        for _, r in T_.iterrows():
+            A("| " + " | ".join(_pc(r[c]) if (c.startswith("Δ_") or c == "E_A") else (str(int(r[c])) if c in ("事件數", "year") else str(r[c])) for c in cols) + " |")
+        A("")
+    A("## 七、H20、H120（描述，⛔ 不判、不印 CI）\n")
+    A("| 型態 | 買法 | H20 事件數 | H20 Δ | H20 Δ 中位 | H20 進場晚於 T＋20（記 0） | H120 事件數 | H120 Δ | H120 Δ 中位 |")
+    A("|---|---|---:|---:|---:|---:|---:|---:|---:|")
+    for _, r in DH.iterrows():
+        A("| {} | {} | {:,} | {} | {} | {:,} | {:,} | {} | {} |".format(r["型態"], r["買法"], r["H20_事件數"], _pc(r["H20_Δ"]), _pc(r["H20_Δ中位"]),
+          r["H20_進場晚於T+20件數"], r["H120_事件數"], _pc(r["H120_Δ"]), _pc(r["H120_Δ中位"])))
+    A("\nH120 子集 ＝ T ≤ 窗尾−120 且 (T＋60, T＋120] 無硬斷點；以 120 日區段只有約 18 段 ⇒ 依構造不可判定。\n")
+    A("## 八、敏感度：Q7 另一讀法（箱型 T ＝ 突破訊號日；⛔ 不判）\n")
+    A("| 型態 | 買法 | 事件數 | 與 A 同日（全部） | Δ（描述） |")
+    A("|---|---|---:|---:|---:|")
+    for _, r in Q7.iterrows():
+        A("| {} | {} | {:,} | {:.1%} | {} |".format(r["型態"], r["買法"], r["事件數"], r["同日比例_全部"], _pc(r["Δ(描述)"])))
+    A("\n這個讀法下箱型 B、D 都 ≥ 95% 與 A 同日 ⇒ 依構造退化（pre 段 pre_sensitivity.csv）；此處只描述、⛔ 不計 N。\n")
+    A("## 九、先驗對照（登錄 §七，寫下就不改；這裡只對照、⛔ 不改判）\n")
+    ef = C[C["買法"].isin(["E", "F"])]
+    A("- 押「E、F Δ ＜ 0（約六成五）」：E、F 共 {} 格，Δ ＜ 0 的 {} 格；CI 不含 0 且 ＜ 0 的 {} 格".format(
+        len(ef), int((ef["Δ"] < 0).sum()), int((ef["結果類"] == "加過濾較差").sum())))
+    bcd = C[C["買法"].isin(["B", "C", "D"])]
+    A("- 押「B、C、D 多為分不出（約六成）」：B、C、D 共 {} 格，分不出 {} 格".format(len(bcd), int((bcd["結果類"] == "分不出來").sum())))
+    A("- 押「沒有一格 Δ ＞ 0 且 CI 不含 0（約七成）」：這樣的格 {} 格".format(int(((C["Δ"] > 0) & ~((C["CI95_lo"] <= 0) & (C["CI95_hi"] >= 0))).sum())))
+    hsD = C[(C["typ"] == "hs") & (C["買法"] == "D")].iloc[0]
+    A("- 新的、可否證「D 放量過濾在頭肩底 Δ ＞ 0」：Δ {}、95% CI [{}, {}] ⇒ {}".format(_pc(hsD["Δ"]), _pc(hsD["CI95_lo"]), _pc(hsD["CI95_hi"]), hsD["結果句"]))
+    open(os.path.join(OUT, "REPORT.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+
 
 
 if __name__ == "__main__":
