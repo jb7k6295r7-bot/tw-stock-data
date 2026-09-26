@@ -9,7 +9,7 @@ on:
       mode:
         description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, esb-repair, audit, purge, meta]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -211,12 +211,25 @@ jobs:
         run: |
           python selftest_num.py
           python selftest_parse_daily.py
+          python selftest_xbrl_rd.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
         # ⛔ 只有一份實作（CLAUDE.md 四點五）。⚠ 這一段本來八支各抄一份、
         #   逐字相同——而 2026-09-13 要在裡面加一份**排除清單**，
         #   八份各改一次就是「改一邊、另一邊沒跟上」的完美條件。
         run: bash sync_code.sh
+
+      # ⭐ 2026-09-27（PREREG大師三套 裁定 seq210）：研發費用＋營收 ⇐ MOPS XBRL 整批下載（一季一個 zip）
+      #   ⇒ data/mops/rd_hist/<YYYYQn>.csv；完成的季記在 data/mops/_rd_status.csv（先取 main 的 ⇒ 續跑）
+      #   用 start／end（日期 ⇒ 換成季）／sleep；⛔ end 要設在最新已公布季（不存在的季回 200＋忙碌頁，算失敗）
+      - name: 研發費用（XBRL 整批下載 ⇒ data/mops/rd_hist）
+        if: inputs.mode == 'xbrl-rd'
+        timeout-minutes: 330
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/mops/_rd_status.csv 2>/dev/null || echo "（main 上還沒有 _rd_status.csv，第一趟）"
+          q() { Y=$(echo "$1" | cut -c1-4); M=$(echo "$1" | cut -c6-7); echo "${Y}Q$(( (10#$M - 1) / 3 + 1 ))"; }
+          python xbrl_rd.py --start "$(q ${{ inputs.start }})" --end "$(q ${{ inputs.end }})" --sleep "${{ inputs.sleep }}"
 
       # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
       #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
