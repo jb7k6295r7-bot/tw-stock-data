@@ -1,0 +1,61 @@
+{
+ "閘": {
+  "base": true,
+  "cand1＝a_M20": true,
+  "cand2＝K4": true
+ },
+ "arms": {
+  "C1": {
+   "cagr_med": 0.34171050447416607,
+   "mdd_med": -0.27821045963113966,
+   "label": "合格",
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "pos": true,
+    "neg": true,
+    "vs_cand1_pos": true,
+    "vs_cand1_neg": true,
+    "C1≈候選一": true
+   }
+  },
+  "base": {
+   "cagr_med": 0.394406557221616,
+   "mdd_med": -0.3894268315113051,
+   "label": "合格",
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "pos": true,
+    "neg": true
+   }
+  },
+  "cand1": {
+   "cagr_med": 0.39388224227781543,
+   "mdd_med": -0.2719247455459823,
+   "label": "合格",
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "pos": true,
+    "neg": true
+   }
+  },
+  "cand2": {
+   "cagr_med": 0.42224742560258166,
+   "mdd_med": -0.3649669767210692,
+   "label": "合格",
+   "ok": {
+    "cagr_med": true,
+    "mdd_med": true,
+    "label": true,
+    "pos": true,
+    "neg": true
+   }
+  }
+ },
+ "bad": []
+}
