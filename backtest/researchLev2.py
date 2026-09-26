@@ -7,6 +7,8 @@
 ⛔ 不改任何既有 .py；資料一律讀 rerun17.use_snapshot()（edc6f8002f 快照），main 只用 git show 對照。
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchLev2 pre --official ~/lev2_official
+    cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchLev2 body      # 本體（登錄 seq2；讀法寫在 body 段開頭）
+    獨立查核：~/tw-p16/.venv/bin/python backtest/researchLev2_check.py
 
 --official 目錄（官方原檔，repo 外；sha256 記進 pre_official_src.csv）：
     twt49u_<年>.json      TWSE exRight/TWT49U（除權除息計算結果表）2015～2026-09-24，每年一檔
@@ -31,6 +33,7 @@ import pandas as pd
 
 from . import data as D
 from . import rerun17 as RR
+from . import research13 as R13
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "resultsLev2")
@@ -46,9 +49,12 @@ TRACK = {"0050": "臺灣50指數", "0052": "臺灣資訊科技指數（科技類
          "00631L": "臺灣50指數 正向2倍（每日重設）", "00685L": "臺灣加權股價指數 正向2倍（每日重設；⛔ 不是台灣50）"}
 
 
+LOGF = "pre_run.log"
+
+
 def log(msg):
     print(msg, flush=True)
-    with open(os.path.join(OUT, "pre_run.log"), "a", encoding="utf-8") as f:
+    with open(os.path.join(OUT, LOGF), "a", encoding="utf-8") as f:
         f.write(msg + "\n")
 
 
@@ -458,12 +464,479 @@ def pre(a):
     log("[完] pre 段輸出 → resultsLev2/pre_*（⛔ 未讀任何報酬）")
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 本體（body）：登錄 seq2（sha 7b67dfa0cc46c389）§七 讀法定案 ＋ 協調者轉達的 R1～R19 落地值
+# ═══════════════════════════════════════════════════════════════════════════
+"""
+    cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchLev2 body
+
+讀法（⭐ 看結果前寫定；對應 PRE_REPORT §五）：
+  R1  共同起點 ＝ TWSE 交易日曆第 201 天：三檔組 2015-11-02；00685L 2018-01-15（描述）
+  R2  (d) 00685L 的格只描述、不參加挑選 ⇒ 挑選池 ＝ 正2＝00631L 的 132 格（問一）／16 格（問二）
+  R3  00685L 的格（含正2%＝0 那 11 格）一律用 00685L 起點（描述）
+  R4  判斷用 t−1 收盤、t 開盤成交；再平衡日同樣在 t 開盤成交；窗首開盤建倉並付一次成本
+  R5  成本 ＝ 換手 × 0.385%，換手 ＝ ½ Σ_{各檔＋現金} |目標 − 現有|（＝ 兩邊之間移動的金額，P17.compose 同義）
+  R6  描述「現金年 1%」＝ 每個交易日收盤 × 1.01^(1/245)（窗首當天不計息）
+  R7  分割因子用 DB 現值（官方參考價 ÷ 前收）
+  R8  該成交的那天有任何一檔（現有持股或目標持股 ＞ 0）沒有開盤 ⇒ 整筆延到下一個【全部都有開盤】的日子、用當天的目標；
+      0050 停牌期間條件判斷用 ffill 收盤（rerun17.load_bench）
+  R9  均線 ＝ 0050 還原收盤（ffill）的簡單均線；C1～C3：bench[t−1] ＞ MA_n[t−1]；C4：MA50[t−1] ＞ MA200[t−1]；嚴格 ＞
+  R10 X3 ＝ 問一挑中的 ETF／正2／權重（4 格：C1～C4）；問一照純 0050 ⇒ X3 無定義、不跑
+  R11 X1、X2 的「抱正2」＝ 100% 正2；X3 條件成立 ＝ 問一權重、不成立 ＝ 正2 那一份轉現金；三種都在每年第一個交易日再平衡到當時目標
+  R12 確認段 2022-01-03 以 1.0 重新起算（均線用之前的歷史）
+  R13 0050 同窗基準 ＝ 還原收盤買入持有、不含成本 ＝ research13.window_stats(B/B[a])（主窗錨同式）
+  年化／回落：策略權益 ＝ [1.0（窗首開盤前）, 各日收盤市值…]；年化 ＝ (末值)^(245／窗內交易日數) − 1（與 window_stats 同一年數口徑）；
+      回落 ＝ 含 1.0 起點的路徑最大回落
+  判定（seq141 同式）：條件一 年化 ＞ 0050（嚴格）；條件二 比值 ≥ 0050 比值 ⇒ 合格／另列（只條件一）／不合格
+  探索挑法（登錄 §二）：年化 ＞ 同窗 0050 的格中比值最高；R15 同分取正2 比例較低者（問二用窗內平均正2 權重），再同分取表列順序（0050 先於 0052）
+  R14 必報「2022」：00631L、00685L 單獨（2022-01-03 開盤買進、付成本）＋ 確認段 2 格；最大跌幅 ＝ 2022 年內路徑（含 1.0 起點）最大回落；
+      100 萬剩多少 ＝ 2022-12-30 收盤市值（另報年內谷底）
+  R16 假訊號：問一 ⇒ 221 種不同持有組合（pre 段）均勻抽 1,000 次（rng 20260927）；問二 ⇒ 挑中那一格在確認段的逐日狀態，
+      保留「成立段」的段數與各段長度，隨機排列段長、再隨機重抽各段起點（段間至少隔 1 日；rng 20260928），1,000 次
+  R18 00685L 只加流動性警語（確認段 28 日無成交、171 日成交額 ＜ 100 萬）
+  R19 季度再平衡描述臂照跑
+"""
+
+COST = 0.00385
+CASH_G = 1.01 ** (1 / ANN) - 1
+A_START, L85_START = "2015-11-02", "2018-01-15"
+SEED_Q1, SEED_Q2, NREP = 20260927, 20260928, 1000
+CONDS = ("C1", "C2", "C3", "C4")
+COND_TXT = {"C1": "0050＞200日線", "C2": "0050＞60日線", "C3": "0050＞20日線", "C4": "50日線＞200日線"}
+X_TXT = {"X1": "不成立全轉現金", "X2": "不成立轉ETF", "X3": "問一比例、不成立時正2那份轉現金"}
+WEIGHTS = [(e, l, 10 - e - l) for e in range(11) for l in range(11 - e)]
+
+
+def load_px(cal):
+    O, C = {}, {}
+    for s in SIDS:
+        st = D.load_stock(s, "twse", cal)
+        C[s] = pd.Series(st.df["close"].to_numpy(float)).ffill().to_numpy()
+        O[s] = st.df["open"].to_numpy(float)
+    return O, C
+
+
+def seg_idx(cal, a, b):
+    i0, i1 = int(cal.searchsorted(pd.Timestamp(a))), int(cal.searchsorted(pd.Timestamp(b)))
+    if str(cal[i0].date()) != a or str(cal[i1].date()) != b:
+        raise SystemExit(f"⛔ 段端點不是交易日 {a}～{b}")
+    return i0, i1
+
+
+def reb_mask(cal, i0, i1, freq):
+    """窗內每年（Y）／每季（Q）第一個交易日；⛔ 窗首當天不算。"""
+    s = pd.DatetimeIndex(cal[i0:i1 + 1])
+    key = s.year.to_numpy() if freq == "Y" else s.to_period("Q").astype(str).to_numpy()
+    out = np.zeros(len(s), bool)
+    out[1:] = key[1:] != key[:-1]
+    return out
+
+
+def cond_series(bench):
+    """全日曆的 cond[t]（用 t−1 的收盤與均線）；t＝0 為 False。"""
+    b = pd.Series(bench)
+    ma = {n: b.rolling(n, min_periods=n).mean().to_numpy() for n in (20, 50, 60, 200)}
+    out = {}
+    for c, x in (("C1", bench > ma[200]), ("C2", bench > ma[60]), ("C3", bench > ma[20]), ("C4", ma[50] > ma[200])):
+        x = np.where(np.isfinite(ma[200] if c in ("C1", "C4") else ma[{"C2": 60, "C3": 20}[c]]), x, False)
+        y = np.zeros(len(bench), bool)
+        y[1:] = x[:-1]
+        out[c] = y
+    return out
+
+
+def engine(assets, W, R, i0, O, C, mode="open", init_cost=True, cash_g=0.0, cost=COST):
+    """單位制逐日模擬。W：(n,k) 各檔目標權重（現金 ＝ 1 − 和）；R：(n,) 再平衡到期。
+    mode＝"open"：t 開盤成交（R8 延後）；"close"：收盤成交、窗首不收成本（只給閘二對 P17.compose 用）。"""
+    n, k = W.shape
+    o = np.stack([O[a][i0:i0 + n] for a in assets], 1)
+    c = np.stack([C[a][i0:i0 + n] for a in assets], 1)
+    u = np.zeros(k); cash = 1.0
+    eq = np.empty(n); turn = np.zeros(n); cst = np.zeros(n)
+    held = np.full((n, k), np.nan); exec_day = np.zeros(n, bool)
+    tgt_held = None; pending = True; delay = 0
+    with np.errstate(invalid="ignore", divide="ignore"):
+        for t in range(n):
+            if mode == "open":
+                if t > 0 and (R[t] or not np.array_equal(W[t], tgt_held)):
+                    pending = True
+                if pending:
+                    need = (u > 0) | (W[t] > 0)
+                    if np.all(np.isfinite(o[t][need])):
+                        px = o[t]
+                        hold = np.where(u > 0, u * px, 0.0)
+                        V = hold.sum() + cash
+                        tgt = W[t] * V; tc = (1.0 - W[t].sum()) * V
+                        tr = 0.5 * (np.abs(tgt - hold).sum() + abs(tc - cash))
+                        cc = tr * cost if (t > 0 or init_cost) else 0.0
+                        V2 = V - cc
+                        u = np.where(W[t] > 0, W[t] * V2 / px, 0.0)
+                        cash = (1.0 - W[t].sum()) * V2
+                        turn[t] = tr; cst[t] = cc; exec_day[t] = True
+                        tgt_held = W[t].copy(); pending = False
+                    else:
+                        delay += 1                                # R8：有一檔沒開盤 ⇒ 延後
+                if t > 0:
+                    cash *= 1.0 + cash_g
+                eq[t] = np.where(u > 0, u * c[t], 0.0).sum() + cash
+            else:
+                if t == 0:
+                    u = W[0] / c[0]; cash = 1.0 - W[0].sum(); eq[0] = 1.0; tgt_held = W[0].copy(); exec_day[0] = True
+                else:
+                    cash *= 1.0 + cash_g
+                    hold = u * c[t]
+                    v = hold.sum() + cash
+                    if R[t]:
+                        tgt = W[t] * v; tc = (1.0 - W[t].sum()) * v
+                        tr = 0.5 * (np.abs(tgt - hold).sum() + abs(tc - cash))
+                        cc = tr * cost; v -= cc
+                        u = W[t] * v / c[t]; cash = (1.0 - W[t].sum()) * v
+                        turn[t] = tr; cst[t] = cc; exec_day[t] = True
+                    eq[t] = v
+            held[t] = tgt_held
+    return {"eq": eq, "turn": turn, "cst": cst, "held": held, "exec": exec_day, "delay": delay}
+
+
+def perf(eq):
+    n = len(eq)
+    cagr = (eq[-1] / 1.0) ** (1 / (n / ANN)) - 1
+    path = np.concatenate([[1.0], eq])
+    pk = np.maximum.accumulate(path)
+    return float(cagr), float(((path - pk) / pk).min())
+
+
+def bench_perf(bench, i0, i1):
+    seg = bench[i0:i1 + 1]
+    c, m = R13.window_stats(seg / seg[0], 0, len(seg), 0, len(seg))
+    return float(c), float(m)
+
+
+def ratio(c, m):
+    """年化 ÷ |回落|；回落 ＝ 0（全現金）⇒ NaN（不可能 ＞ 0050）。"""
+    return c / abs(m) if m < 0 else float("nan")
+
+
+def label(c, m, c50, m50):
+    k1 = c > c50; k2 = ratio(c, m) >= ratio(c50, m50)
+    return "合格" if (k1 and k2) else ("另列" if k1 else "不合格")
+
+
+def q1_W(e, l, n):
+    return np.tile([e / 10, l / 10], (n, 1))
+
+
+def q2_W(x, on, n, w13=None):
+    """x∈X1/X2/X3；on：(n,) bool；assets：X1 (lev,)；X2 (etf, lev)；X3 (etf, lev)。"""
+    if x == "X1":
+        return on.astype(float)[:, None]
+    if x == "X2":
+        return np.stack([(~on).astype(float), on.astype(float)], 1)
+    e, l = w13
+    return np.stack([np.full(n, e / 10), np.where(on, l / 10, 0.0)], 1)
+
+
+def q2_assets(x, etf, lev):
+    return (lev,) if x == "X1" else (etf, lev)
+
+
+def sel_pick(df, c50, key_lev):
+    """登錄 §二 挑法：年化 ＞ 0050 的格中比值最高；同分取正2 比例較低者，再同分取表列順序。"""
+    ok = df[df["年化"] > c50].copy()
+    if ok.empty:
+        return None, 0
+    ok["_o"] = range(len(ok))
+    ok = ok.sort_values(["比值", key_lev, "_o"], ascending=[False, True, True])
+    return ok.iloc[0], len(ok)
+
+
+def q2_desc(r, on_w, bench, i0):
+    """每年換幾次、成本、錯過的漲幅（正2 那份不在場的日子，0050 收盤對收盤累積）。"""
+    held = r["held"]; n = len(held)
+    is_on = np.array([np.array_equal(h, on_w) for h in held])
+    sw = int(sum(1 for t in range(1, n) if r["exec"][t] and is_on[t] != is_on[t - 1]))
+    br = bench[i0 + 1:i0 + n] / bench[i0:i0 + n - 1]
+    off = ~is_on[1:]
+    return {"轉換次數": sw, "每年轉換": sw / (n / ANN), "成本合計": float(r["cst"].sum()),
+            "正2不在場日數": int((~is_on).sum()), "不在場期間0050累積": float(np.prod(br[off]) - 1) if off.any() else 0.0}
+
+
+def body(a):
+    os.makedirs(OUT, exist_ok=True)
+    global LOGF
+    LOGF = "body_run.log"; open(os.path.join(OUT, LOGF), "w").close()
+    log(f"===== researchLev2 body {pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）=====")
+    RR.use_snapshot()
+    cal = D.load_calendar()
+    bench = RR.load_bench(cal)
+    O, C = load_px(cal)
+    S = {"登錄": "PREREG正2現金 seq2 sha 7b67dfa0cc46c389", "快照": RR.SHA, "閘": {}}
+
+    # ── 閘一 0050 錨
+    w0, w1 = RR.win_bounds(cal)
+    bw = RR.bench_row(cal, bench, w0, w1 + 1)
+    g1 = repr(bw["cagr"]) == repr(RR.ANCHOR[0]) and repr(bw["mdd"]) == repr(RR.ANCHOR[1])
+    S["閘"]["一_0050錨逐位元"] = g1
+    log(f"[閘一] 0050 主窗錨逐位元 {g1}")
+    if not g1:
+        raise SystemExit("⛔ 閘一不過")
+
+    A = {"探索": seg_idx(cal, A_START, EXP_END), "確認": seg_idx(cal, CONF0, CONF1)}
+    L = {"探索": seg_idx(cal, L85_START, EXP_END), "確認": A["確認"]}
+    B50 = {("A", k): bench_perf(bench, *v) for k, v in A.items()}
+    B50[("L", "探索")] = bench_perf(bench, *L["探索"])
+    B50[("L", "確認")] = B50[("A", "確認")]
+    S["0050同窗"] = {f"{g}_{k}": {"年化": v[0], "回落": v[1], "比值": v[0] / abs(v[1])} for (g, k), v in B50.items()}
+    log(f"[0050] {S['0050同窗']}")
+    cond = cond_series(bench)
+
+    # ── 閘二：收盤成交模式 ＝ P17.compose（兩格：ETF＋正2、正2＋現金）
+    from . import researchp17 as P17
+    g2 = {}
+    i0, i1 = A["探索"]; n = i1 - i0 + 1; Ry = reb_mask(cal, i0, i1, "Y")
+    for nm, (assets, w) in {"0050 50%＋00631L 50%": (("0050", "00631L"), (5, 5)), "00631L 30%＋現金 70%": (("00631L",), (3,))}.items():
+        W = np.tile([x / 10 for x in w], (n, 1))
+        r = engine(assets, W, Ry, i0, O, C, mode="close", init_cost=False)
+        E = C["00631L"][i0:i1 + 1]
+        Bm = C["0050"][i0:i1 + 1] if len(assets) == 2 else np.ones(n)
+        wl = w[1] / 10 if len(assets) == 2 else w[0] / 10
+        V, _, _ = P17.compose(E / E[0], Bm / Bm[0], np.full(n, wl), Ry, cost=COST)
+        g2[nm] = float(np.max(np.abs(r["eq"] / V - 1)))
+    S["閘"]["二_對P17compose最大相對差"] = g2
+    log(f"[閘二] {g2}")
+    if max(g2.values()) > 1e-12:
+        raise SystemExit("⛔ 閘二不過")
+
+    # ── 問一：全部格 × 兩段（00631L 用三檔組窗、00685L 用 00685L 窗）
+    rows = []
+    for etf, lev, (e, l, cc) in product(ETFS, LEVS, WEIGHTS):
+        grp = "A" if lev == "00631L" else "L"
+        for seg in ("探索", "確認"):
+            i0, i1 = (A if grp == "A" else L)[seg]; n = i1 - i0 + 1
+            r = engine((etf, lev), q1_W(e, l, n), reb_mask(cal, i0, i1, "Y"), i0, O, C)
+            c_, m_ = perf(r["eq"]); c50, m50 = B50[(grp, seg)]
+            rows.append({"段": seg, "組": "挑選池" if grp == "A" else "00685L描述", "ETF": etf, "正2": lev, "ETF%": e * 10, "正2%": l * 10,
+                         "現金%": cc * 10, "年化": c_, "回落": m_, "比值": ratio(c_, m_), "成本合計": float(r["cst"].sum()), "R8延後日數": r["delay"],
+                         "年化>0050": c_ > c50, "標籤": label(c_, m_, c50, m50)})
+    q1 = pd.DataFrame(rows)
+    q1.to_csv(os.path.join(OUT, "body_q1.csv"), index=False, encoding="utf-8")
+    pool1 = q1[(q1["段"] == "探索") & (q1["組"] == "挑選池")].reset_index(drop=True)
+    pick1, n_beat1 = sel_pick(pool1, B50[("A", "探索")][0], "正2%")
+    S["問一_探索"] = {"挑選池格數": len(pool1), "年化>0050格數": n_beat1,
+                    "挑中": None if pick1 is None else {k: pick1[k] for k in ("ETF", "正2", "ETF%", "正2%", "現金%", "年化", "回落", "比值")}}
+    log(f"[問一探索] 池 {len(pool1)}｜年化＞0050 {n_beat1}｜挑中 {S['問一_探索']['挑中']}")
+
+    # ── 問二
+    w13 = None if pick1 is None or pick1["正2%"] == 0 else (int(pick1["ETF%"] // 10), int(pick1["正2%"] // 10))
+    rows2, runs2 = [], {}
+    for cd, x, etf, lev in product(CONDS, ("X1", "X2", "X3"), ETFS, LEVS):
+        if x == "X1" and etf != "0050":
+            continue                                             # X1 用不到 ETF ⇒ 只留一份
+        if x == "X3":
+            if w13 is None or etf != pick1["ETF"]:
+                continue                                         # R10：只跟問一挑中的 ETF
+            if lev != pick1["正2"] and lev != "00685L":
+                continue
+        grp = "A" if lev == "00631L" else "L"
+        for seg in ("探索", "確認"):
+            i0, i1 = (A if grp == "A" else L)[seg]; n = i1 - i0 + 1
+            on = cond[cd][i0:i1 + 1]
+            W = q2_W(x, on, n, w13)
+            r = engine(q2_assets(x, etf, lev), W, reb_mask(cal, i0, i1, "Y"), i0, O, C)
+            c_, m_ = perf(r["eq"]); c50, m50 = B50[(grp, seg)]
+            on_w = W[on][0] if on.any() else q2_W(x, np.ones(1, bool), 1, w13)[0]
+            lev_col = list(q2_assets(x, etf, lev)).index(lev)
+            d = q2_desc(r, on_w, bench, i0)
+            rows2.append({"段": seg, "組": "挑選池" if grp == "A" else "00685L描述", "條件": cd, "換法": x,
+                          "ETF": "—" if x == "X1" else etf, "正2": lev, "年化": c_, "回落": m_, "比值": ratio(c_, m_),
+                          "平均正2權重": float(np.nanmean(r["held"][:, lev_col])), "條件成立占比": float(on.mean()), "R8延後日數": r["delay"],
+                          "年化>0050": c_ > c50, "標籤": label(c_, m_, c50, m50), **d})
+            runs2[(seg, cd, x, etf, lev)] = (r, on)
+    q2 = pd.DataFrame(rows2)
+    q2.to_csv(os.path.join(OUT, "body_q2.csv"), index=False, encoding="utf-8")
+    pool2 = q2[(q2["段"] == "探索") & (q2["組"] == "挑選池")].reset_index(drop=True)
+    pick2, n_beat2 = sel_pick(pool2, B50[("A", "探索")][0], "平均正2權重")
+    S["問二_探索"] = {"挑選池格數": len(pool2), "年化>0050格數": n_beat2,
+                    "挑中": None if pick2 is None else {k: pick2[k] for k in ("條件", "換法", "ETF", "正2", "年化", "回落", "比值", "平均正2權重", "每年轉換")}}
+    log(f"[問二探索] 池 {len(pool2)}｜年化＞0050 {n_beat2}｜挑中 {S['問二_探索']['挑中']}")
+
+    # ── ⚠ 問一挑中的正2%＝0 ⇒ X3 無定義（主：不進池）；敏感度：X3 照字面跑（權重與問一相同、條件不影響）再挑一次
+    if pick1 is not None and w13 is None:
+        e3 = int(pick1["ETF%"] // 10); alt = []
+        for cd in CONDS:
+            for seg in ("探索", "確認"):
+                i0, i1 = A[seg]; n = i1 - i0 + 1
+                r = engine((pick1["ETF"], "00631L"), q2_W("X3", cond[cd][i0:i1 + 1], n, (e3, 0)), reb_mask(cal, i0, i1, "Y"), i0, O, C)
+                c_, m_ = perf(r["eq"]); c50, m50 = B50[("A", seg)]
+                alt.append({"段": seg, "組": "挑選池", "條件": cd, "換法": "X3", "ETF": pick1["ETF"], "正2": "00631L", "年化": c_, "回落": m_,
+                            "比值": ratio(c_, m_), "平均正2權重": 0.0, "年化>0050": c_ > c50, "標籤": label(c_, m_, c50, m50)})
+        alt = pd.DataFrame(alt)
+        alt.to_csv(os.path.join(OUT, "body_q2_x3_sensitivity.csv"), index=False, encoding="utf-8")
+        pa, nb = sel_pick(pd.concat([pool2, alt[alt["段"] == "探索"]], ignore_index=True), B50[("A", "探索")][0], "平均正2權重")
+        ca = alt[(alt["段"] == "確認") & (alt["條件"] == pa["條件"])] if pa["換法"] == "X3" else q2[(q2["段"] == "確認") & (q2["條件"] == pa["條件"]) & (q2["換法"] == pa["換法"]) & (q2["ETF"] == pa["ETF"]) & (q2["正2"] == pa["正2"])]
+        S["敏感度_X3照字面"] = {"說明": "問一挑中正2%＝0 ⇒ X3 四格＝問一格本身（條件不影響持有）；主讀法不進問二池",
+                             "池": len(pool2) + 4, "挑中": {k: pa[k] for k in ("條件", "換法", "ETF", "年化", "回落", "比值")},
+                             "確認段": {k: ca.iloc[0][k] for k in ("年化", "回落", "比值", "標籤")}}
+        log(f"[敏感度 X3] {S['敏感度_X3照字面']}")
+    # 描述：限「正2%＞0」的格照同一挑法（⛔ 不判）
+    pl = pool1[pool1["正2%"] > 0].reset_index(drop=True)
+    pp, npp = sel_pick(pl, B50[("A", "探索")][0], "正2%")
+    if pp is not None:
+        pc = q1[(q1["段"] == "確認") & (q1["ETF"] == pp["ETF"]) & (q1["正2"] == pp["正2"]) & (q1["ETF%"] == pp["ETF%"]) & (q1["正2%"] == pp["正2%"])].iloc[0]
+        S["描述_限正2大於0"] = {"池": len(pl), "年化>0050": npp, "挑中": {k: pp[k] for k in ("ETF", "ETF%", "正2%", "現金%", "年化", "回落", "比值")},
+                           "確認段（描述）": {k: pc[k] for k in ("年化", "回落", "比值", "標籤")}}
+        log(f"[描述 限正2>0] {S['描述_限正2大於0']}")
+
+    # ── 確認段 2 格判定
+    c50c, m50c = B50[("A", "確認")]
+    conf = {}
+    if pick1 is not None:
+        r1 = q1[(q1["段"] == "確認") & (q1["ETF"] == pick1["ETF"]) & (q1["正2"] == pick1["正2"]) & (q1["ETF%"] == pick1["ETF%"]) & (q1["正2%"] == pick1["正2%"])].iloc[0]
+        conf["問一"] = {"格": f"{pick1['ETF']} {pick1['ETF%']}%＋{pick1['正2']} {pick1['正2%']}%＋現金 {pick1['現金%']}%（每年再平衡）",
+                       "年化": r1["年化"], "回落": r1["回落"], "比值": r1["比值"], "標籤": r1["標籤"]}
+    if pick2 is not None:
+        etf2 = pick2["ETF"] if pick2["換法"] != "X1" else "0050"
+        r2 = q2[(q2["段"] == "確認") & (q2["條件"] == pick2["條件"]) & (q2["換法"] == pick2["換法"]) & (q2["ETF"] == pick2["ETF"]) & (q2["正2"] == pick2["正2"])].iloc[0]
+        conf["問二"] = {"格": f"{pick2['條件']}（{COND_TXT[pick2['條件']]}）× {pick2['換法']}（{X_TXT[pick2['換法']]}）× ETF {pick2['ETF']} × {pick2['正2']}",
+                       "年化": r2["年化"], "回落": r2["回落"], "比值": r2["比值"], "標籤": r2["標籤"], "每年轉換": r2["每年轉換"]}
+    S["確認段"] = {"0050": {"年化": c50c, "回落": m50c, "比值": c50c / abs(m50c)}, **conf}
+    log(f"[確認] {S['確認段']}")
+
+    # ── 假訊號臂
+    q1c = q1[q1["段"] == "確認"].copy()
+    q1c["持有"] = [tuple(sorted((a_, w_) for a_, w_ in ((r.ETF, r["ETF%"]), (r.正2, r["正2%"])) if w_ > 0)) for _, r in q1c.iterrows()]
+    uniq = q1c.drop_duplicates("持有").reset_index(drop=True)
+    if len(uniq) != 221:
+        raise SystemExit(f"⛔ 不同持有組合 {len(uniq)} ≠ 221")
+    # ⚠ 00685L 組合在確認段與 00631L 同窗（2022-01-03 起），可直接比
+    rng = np.random.default_rng(SEED_Q1)
+    draws = rng.integers(0, len(uniq), NREP)
+    lab1 = uniq["標籤"].to_numpy()[draws]
+    p1 = float(np.mean(lab1 == "合格"))
+    pool121 = uniq[uniq["正2"].eq("00631L") | uniq["正2%"].eq(0)]
+    S["假訊號_問一"] = {"抽樣母體": len(uniq), "p_合格": p1, "p_另列": float(np.mean(lab1 == "另列")),
+                     "母體精確合格比例": float(np.mean(uniq["標籤"] == "合格")),
+                     "參考_只含00631L或不含正2的組合": {"數": len(pool121), "合格比例": float(np.mean(pool121["標籤"] == "合格"))}}
+    pd.DataFrame({"draw": range(NREP), "組合列": draws, "標籤": lab1}).to_csv(os.path.join(OUT, "body_null_q1.csv"), index=False, encoding="utf-8")
+    log(f"[假訊號一] {S['假訊號_問一']}")
+
+    if pick2 is not None:
+        i0, i1 = A["確認"]; n = i1 - i0 + 1
+        on0 = cond[pick2["條件"]][i0:i1 + 1]
+        runs = []; t = 0
+        while t < n:
+            if on0[t]:
+                s_ = t
+                while t < n and on0[t]:
+                    t += 1
+                runs.append(t - s_)
+            else:
+                t += 1
+        k = len(runs); F = n - sum(runs)
+        rng2 = np.random.default_rng(SEED_Q2)
+        states = np.zeros((NREP, n), bool); labs2 = []
+        etf2 = pick2["ETF"] if pick2["換法"] != "X1" else "0050"
+        for j in range(NREP):
+            ln = rng2.permutation(runs)
+            extra = F - max(k - 1, 0)
+            cuts = np.sort(rng2.integers(0, extra + 1, k))          # k 個切點 ⇒ k+1 個間隔（含頭尾），內部間隔再 +1
+            gaps = np.diff(np.concatenate([[0], cuts, [extra]]))
+            st_ = np.zeros(n, bool); pos = gaps[0]
+            for q in range(k):
+                st_[pos:pos + ln[q]] = True
+                pos += ln[q] + gaps[q + 1] + (1 if q < k - 1 else 0)
+            if st_.sum() != sum(runs):
+                raise SystemExit("⛔ 打亂後成立日數不等")
+            states[j] = st_
+            r = engine(q2_assets(pick2["換法"], etf2, pick2["正2"]), q2_W(pick2["換法"], st_, n, w13), reb_mask(cal, i0, i1, "Y"), i0, O, C)
+            c_, m_ = perf(r["eq"]); labs2.append(label(c_, m_, c50c, m50c))
+        labs2 = np.array(labs2)
+        np.savez_compressed(os.path.join(OUT, "body_null_q2_states.npz"), states=np.packbits(states, axis=1), n=n)
+        pd.DataFrame({"draw": range(NREP), "標籤": labs2}).to_csv(os.path.join(OUT, "body_null_q2.csv"), index=False, encoding="utf-8")
+        S["假訊號_問二"] = {"成立段數": k, "成立日數": int(sum(runs)), "確認段日數": n, "p_合格": float(np.mean(labs2 == "合格")),
+                         "p_另列": float(np.mean(labs2 == "另列"))}
+        log(f"[假訊號二] {S['假訊號_問二']}")
+
+    # ── 必報：2022
+    i0, i1 = A["確認"]; y0, y1 = seg_idx(cal, "2022-01-03", "2022-12-30"); ny = y1 - y0 + 1
+    rep = []
+
+    def y22(nm, eq):
+        path = np.concatenate([[1.0], eq[:ny]]); pk = np.maximum.accumulate(path)
+        rep.append({"對象": nm, "2022年內最大回落": float(((path - pk) / pk).min()), "100萬到2022-12-30": float(eq[ny - 1] * 1e6),
+                    "100萬年內谷底": float(path.min() * 1e6), "谷底日": str(cal[y0 + int(np.argmin(path)) - 1].date()) if np.argmin(path) > 0 else "起點"})
+    for lev in LEVS:
+        r = engine((lev,), np.ones((ny, 1)), np.zeros(ny, bool), y0, O, C)
+        y22(f"{lev} 單獨（2022-01-03 開盤買進、付成本）", r["eq"])
+    seg = bench[y0:y1 + 1] / bench[y0]
+    y22("0050 參照（還原收盤買入持有、不含成本；以 2022-01-03 收盤為 1）", seg)
+    if pick1 is not None:
+        n = i1 - i0 + 1
+        r = engine((pick1["ETF"], pick1["正2"]), q1_W(int(pick1["ETF%"] // 10), int(pick1["正2%"] // 10), n), reb_mask(cal, i0, i1, "Y"), i0, O, C)
+        y22("確認段 問一格", r["eq"])
+    if pick2 is not None:
+        r, _ = runs2[("確認", pick2["條件"], pick2["換法"], pick2["ETF"] if pick2["換法"] != "X1" else "0050", pick2["正2"])]
+        y22("確認段 問二格", r["eq"])
+    pd.DataFrame(rep).to_csv(os.path.join(OUT, "body_2022.csv"), index=False, encoding="utf-8")
+    S["必報_2022"] = rep
+    log(f"[2022] {rep}")
+
+    # ── 描述臂：現金 1%、季度再平衡、00685L 格
+    desc = []
+    for seg in ("探索", "確認"):
+        i0, i1 = A[seg]; n = i1 - i0 + 1; c50, m50 = B50[("A", seg)]
+        if pick1 is not None:
+            e, l = int(pick1["ETF%"] // 10), int(pick1["正2%"] // 10)
+            for nm, R_, cg in (("問一格｜現金年1%", reb_mask(cal, i0, i1, "Y"), CASH_G), ("問一格｜季度再平衡", reb_mask(cal, i0, i1, "Q"), 0.0)):
+                r = engine((pick1["ETF"], pick1["正2"]), q1_W(e, l, n), R_, i0, O, C, cash_g=cg)
+                c_, m_ = perf(r["eq"]); desc.append({"段": seg, "臂": nm, "年化": c_, "回落": m_, "比值": ratio(c_, m_), "對0050（描述）": label(c_, m_, c50, m50)})
+        if pick2 is not None:
+            etf2 = pick2["ETF"] if pick2["換法"] != "X1" else "0050"
+            on = cond[pick2["條件"]][i0:i1 + 1]
+            r = engine(q2_assets(pick2["換法"], etf2, pick2["正2"]), q2_W(pick2["換法"], on, n, w13), reb_mask(cal, i0, i1, "Y"), i0, O, C, cash_g=CASH_G)
+            c_, m_ = perf(r["eq"]); desc.append({"段": seg, "臂": "問二格｜現金年1%", "年化": c_, "回落": m_, "比值": ratio(c_, m_), "對0050（描述）": label(c_, m_, c50, m50)})
+    # 季度版全池挑選（描述）
+    qq = []
+    i0, i1 = A["探索"]; n = i1 - i0 + 1
+    for etf, (e, l, cc) in product(ETFS, WEIGHTS):
+        r = engine((etf, "00631L"), q1_W(e, l, n), reb_mask(cal, i0, i1, "Q"), i0, O, C)
+        c_, m_ = perf(r["eq"]); qq.append({"ETF": etf, "正2": "00631L", "ETF%": e * 10, "正2%": l * 10, "現金%": cc * 10, "年化": c_, "回落": m_, "比值": ratio(c_, m_)})
+    qq = pd.DataFrame(qq); qpick, _ = sel_pick(qq, B50[("A", "探索")][0], "正2%")
+    S["描述_季度版探索挑中"] = None if qpick is None else {k: qpick[k] for k in ("ETF", "ETF%", "正2%", "現金%", "年化", "回落", "比值")}
+    # 00685L（描述）：同一挑法在 00685L 窗會挑中什麼、確認段標籤
+    l1 = q1[(q1["段"] == "探索") & (q1["組"] == "00685L描述")].reset_index(drop=True)
+    lp1, lnb1 = sel_pick(l1, B50[("L", "探索")][0], "正2%")
+    l2 = q2[(q2["段"] == "探索") & (q2["組"] == "00685L描述")].reset_index(drop=True)
+    lp2, lnb2 = sel_pick(l2, B50[("L", "探索")][0], "平均正2權重")
+
+    def conf_of(df, p, keys):
+        if p is None:
+            return None
+        m = df["段"] == "確認"
+        for k_ in keys:
+            m &= df[k_] == p[k_]
+        return df[m].iloc[0]
+    lc1 = conf_of(q1, lp1, ["ETF", "正2", "ETF%", "正2%"]); lc2 = conf_of(q2, lp2, ["條件", "換法", "ETF", "正2"])
+    S["描述_00685L"] = {"窗": f"{L85_START}～{EXP_END}（探索）", "0050同窗探索": S["0050同窗"]["L_探索"],
+                       "問一挑中": None if lp1 is None else {k: lp1[k] for k in ("ETF", "ETF%", "正2%", "現金%", "年化", "回落", "比值")},
+                       "問一確認段": None if lc1 is None else {k: lc1[k] for k in ("年化", "回落", "比值", "標籤")},
+                       "問二挑中": None if lp2 is None else {k: lp2[k] for k in ("條件", "換法", "ETF", "年化", "回落", "比值")},
+                       "問二確認段": None if lc2 is None else {k: lc2[k] for k in ("年化", "回落", "比值", "標籤")}}
+    pd.DataFrame(desc).to_csv(os.path.join(OUT, "body_desc.csv"), index=False, encoding="utf-8")
+    qq.to_csv(os.path.join(OUT, "body_q1_quarterly_explore.csv"), index=False, encoding="utf-8")
+    S["描述"] = desc
+    log(f"[描述] {desc}｜季度挑中 {S['描述_季度版探索挑中']}｜00685L {S['描述_00685L']}")
+
+    with open(os.path.join(OUT, "body_summary.json"), "w", encoding="utf-8") as f:
+        json.dump(S, f, ensure_ascii=False, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o))
+    log("[完] body")
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["pre"])
+    ap.add_argument("stage", choices=["pre", "body"])
     ap.add_argument("--official", default="~/lev2_official")
     a = ap.parse_args()
-    pre(a)
+    pre(a) if a.stage == "pre" else body(a)
 
 
 if __name__ == "__main__":
