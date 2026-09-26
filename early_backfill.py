@@ -150,6 +150,37 @@ def run_feed(a):
     return FD.main()
 
 
+def run_inst(a):
+    """⭐ 2026-09-27（回測 0042 M1、裁定 seq215 §三）：上市個股 T86 三大法人 ⇒ data/early/inst/<日期>.csv。
+
+    ⭐ 重用 backfill.cmd_inst 整支（端點、解析、驗日期、收手、寫檔），⛔ 不另寫；只換三樣：
+      ① UNI_DIR／INST_DIR ⇒ data/early（交易日曆＝data/early/daily 的檔名）
+      ② 白名單 ⇒ stocks.csv ∪ 早年日 K 出現過的代號（⛔ 否則早年已下市公司被濾掉＝存活者偏差）
+      ③ runlog 區塊 backfill:inst ⇒ early:inst（⛔ 否則蓋掉主窗那塊）
+    ⚠ T86 官方下限 2012-05-02（回測 0042 M1 起點）。
+    """
+    import types as _t
+    import backfill as BK
+    cal_dir = os.path.join(EARLY, "daily")
+    if not os.path.isdir(cal_dir) or not os.listdir(cal_dir):
+        raise SystemExit("⛔ data/early/daily 是空的 ⇒ 交易日曆不存在（先跑 early-twse）")
+    BK.UNI_DIR = EARLY
+    BK.INST_DIR = os.path.join(EARLY, "inst")
+    early_codes = set()
+    for fn in os.listdir(cal_dir):
+        if fn.endswith(".csv"):
+            with io.open(os.path.join(cal_dir, fn), encoding="utf-8") as f:
+                early_codes.update(r["stock_id"] for r in csv.DictReader(f) if r.get("market") == "twse")
+    orig_known = BK._known_codes
+    BK._known_codes = lambda: set(orig_known() or set()) | early_codes
+    _Run = BK.runlog.Run
+    BK.runlog = _t.SimpleNamespace(**{k: getattr(BK.runlog, k) for k in dir(BK.runlog) if not k.startswith("__")})
+    BK.runlog.Run = lambda name, *x, **kw: _Run(name.replace("backfill:inst", "early:inst", 1), *x, **kw)
+    args = argparse.Namespace(start=max(a.start, "2012-05-02"), end=min(a.end, "2015-01-04"),
+                              sleep=a.sleep, force=a.force, limit=0, need_col="")
+    return BK.cmd_inst(args)
+
+
 def refill_from_files(old):
     """⭐ 台帳缺的 (日期, 市場) ⇒ 用已落地的日檔重算結構補回（2026-09-25：第一趟 1,470 天的台帳被洗掉過）。
     ⚠ notrade_blanked 從檔案算不回來（改空白之後就看不出原本是 0.00）⇒ 補回的列留空，⛔ 不填 0。→ 補了幾列。"""
@@ -186,11 +217,14 @@ def main():
     ap.add_argument("--max-days", type=int, default=100000)
     # ⭐ 2026-09-26：已落地的日子也重抓（上櫃漲跌「- 0.35」被清空那次要整段重抓；write_day 只換這個市場的列）
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--inst", action="store_true", help="⭐ 上市個股 T86 三大法人 ⇒ data/early/inst")
     a = ap.parse_args()
     if a.feed:
         return run_feed(a)
+    if a.inst:
+        return run_inst(a)
     if not a.market:
-        ap.error("--market 或 --feed 至少要一個")
+        ap.error("--market、--feed、--inst 至少要一個")
     start = max(a.start, FLOOR[a.market])
     end = min(a.end, "2015-01-04")        # ⛔ 早年段只到全庫起點（2015-01-05）之前
     F.UNI_DIR = EARLY                                  # ⭐ 唯一的改動：輸出路徑
