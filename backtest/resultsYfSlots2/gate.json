@@ -1,0 +1,45 @@
+{
+ "營量各槽數 200 顆 equity 完全相同": {
+  "明細": {
+   "5": true,
+   "10": true,
+   "15": true,
+   "20": true
+  },
+  "逐位元": true
+ },
+ "營飆 10 對 regime_t1 t1 #1": {
+  "不同數": {
+   "cagr": 0,
+   "mdd": 0,
+   "vol": 0,
+   "first": 0,
+   "end": 0,
+   "trades": 0,
+   "eq_sha": 0
+  },
+  "逐位元": true
+ },
+ "營量 20 對 rerun17_seeds main #13": {
+  "不同數": {
+   "cagr": 0,
+   "mdd": 0,
+   "vol": 0,
+   "first": 0,
+   "end": 0,
+   "trades": 0,
+   "eq_sha": 0
+  },
+  "逐位元": true
+ },
+ "各半 10×20 對 resultsYfMix13 AB50 主窗": {
+  "不同數": {
+   "cagr": 0,
+   "mdd": 0,
+   "end_value": 0,
+   "cost_sum": 0
+  },
+  "逐位元": true
+ },
+ "全部過": true
+}
