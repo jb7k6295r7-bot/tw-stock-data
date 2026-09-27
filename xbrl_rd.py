@@ -74,14 +74,38 @@ def _num(txt):
         return None
 
 
+# ⭐ 2026-09-27（回測 1449、裁定 1457：fs_hist 幾乎沒有已下市公司 ⇒ 大師三套倖存者偏誤）
+#   ⇒ 同一份 XBRL 另解財報主要欄位（全產業、含當時還在、之後下市的公司）⇒ data/mops/fin_hist
+#   local name 兩代（2013Q2／2020Q4 實測 2330、2801、2882、2888、6005）：資產負債與淨利、EPS 名稱一致（前綴 ifrs → ifrs-full）；
+#   營業利益 NetOperatingIncomeLoss（XML 世代）→ ProfitLossFromOperatingActivities；營收 OperatingRevenue → Revenue
+KINDS = {"rd": RD, "rev": REV,
+         "opi": {"NetOperatingIncomeLoss", "ProfitLossFromOperatingActivities", "OperatingIncomeLoss"},
+         "ni": {"ProfitLoss"}, "nip": {"ProfitLossAttributableToOwnersOfParent"},
+         "eps": {"BasicEarningsLossPerShare"},
+         "assets": {"Assets"}, "liab": {"Liabilities"},
+         "eqp": {"EquityAttributableToOwnersOfParent"}, "eq": {"Equity"}}
+INSTANT = {"assets", "liab", "eqp", "eq"}          # 時點（AsOf<季底>）；其餘是期間（From..To..）
+KIND_OF = {n: k for k, ns in KINDS.items() for n in ns}
+FIN_DIR = os.path.join(ROOT, "data", "mops", "fin_hist")
+FIN_HEADER = ["stock_id", "period", "industry", "report", "alt", "taxonomy",
+              "rev_q", "rev_ytd", "opi_q", "opi_ytd", "ni_q", "ni_ytd", "nip_q", "nip_ytd", "eps_q", "eps_ytd",
+              "assets", "liabilities", "equity_parent", "equity_total", "rd_q", "rd_ytd"]
+
+
 def facts(text, y, q):
-    """→ {"rd_q","rd_ytd","rev_q","rev_ytd"}（元；取不到的鍵不放）。只收本期 context。"""
+    """→ {"rd_q","rd_ytd","rev_q",…,"assets",…}（元；EPS 元／股；取不到的鍵不放）。只收本期 context。"""
     end, qs, ys = f"{y}{QEND[q]}", f"{y}{QSTART[q]}", f"{y}0101"
     out = {}
 
     def put(kind, ctx, val):
+        if val is None:
+            return
+        if kind in INSTANT:
+            if (ctx or "") == f"AsOf{end}":
+                out.setdefault(kind, val)
+            return
         m = re.search(r"From(\d{8})To(\d{8})", ctx or "")
-        if val is None or not m or m.group(2) != end:
+        if not m or m.group(2) != end:
             return
         if m.group(1) == qs:
             out.setdefault(kind + "_q", val)
@@ -90,54 +114,82 @@ def facts(text, y, q):
 
     # inline XBRL：<ix:nonFraction name="ifrs-full:Revenue" contextRef=... scale="3" sign="-">1,234</ix:nonFraction>
     for m in re.finditer(r"<ix:nonFraction\b([^>]*)>(.*?)</ix:nonFraction>", text, re.S | re.I):
-        attrs, inner = m.group(1), visible_text(m.group(2), "")    # 四點五：去標籤只有一份
+        attrs = m.group(1)
         nm = re.search(r'\bname="[\w\-]+:([\w\-]+)"', attrs)
-        if not nm or (nm.group(1) not in RD and nm.group(1) not in REV):
+        if not nm or nm.group(1) not in KIND_OF:
             continue
-        v = _num(inner)
+        v = _num(visible_text(m.group(2), ""))                     # 四點五：去標籤只有一份
         if v is not None:
             sc = re.search(r'\bscale="(-?\d+)"', attrs)
             v *= 10 ** int(sc.group(1)) if sc else 1
             if re.search(r'\bsign="-"', attrs):
                 v = -v
         ctx = re.search(r'\bcontextRef="([^"]+)"', attrs)
-        put("rd" if nm.group(1) in RD else "rev", ctx.group(1) if ctx else "", v)
+        put(KIND_OF[nm.group(1)], ctx.group(1) if ctx else "", v)
     # XBRL instance：<tifrs-bsci-ci:OperatingRevenue contextRef="From..To.." decimals="-3" ...>288641316000</...>
     for m in re.finditer(r"<([\w\-]+):([\w\-]+)\b([^>]*)>([^<]*)</\1:\2>", text):
-        if m.group(1) in ("ix", "xbrli", "link", "xbrldi"):
-            continue
-        if m.group(2) not in RD and m.group(2) not in REV:
+        if m.group(1) in ("ix", "xbrli", "link", "xbrldi") or m.group(2) not in KIND_OF:
             continue
         ctx = re.search(r'\bcontextRef="([^"]+)"', m.group(3))
-        put("rd" if m.group(2) in RD else "rev", ctx.group(1) if ctx else "", _num(m.group(4)))
+        put(KIND_OF[m.group(2)], ctx.group(1) if ctx else "", _num(m.group(4)))
     return out
 
 
+def _fmt(k, v):
+    if v is None:
+        return ""
+    if k.startswith("eps"):
+        return ("%.4f" % v).rstrip("0").rstrip(".")
+    return "%.0f" % v
+
+
 def parse_zip(zf, y, q):
-    """→ (rows, stats)。一家一列：cr 優先。"""
+    """→ (rd_rows, stats, fin_rows)。一家一列：cr 優先。
+    rd_rows：只有 ci（一般業），格式與 2026-09-27 初版逐位元相同；fin_rows：全產業、財報主要欄位。"""
     per = f"{y}Q{q}"
-    by = {}
+    by, by_all = {}, {}
     files = ci = 0
     for name in zf.namelist():
         files += 1
         m = FNAME.search(os.path.basename(name))
-        if not m or m.group(3) != "ci" or f"{m.group(6)}Q{m.group(7)}" != per:
+        if not m or f"{m.group(6)}Q{m.group(7)}" != per:
+            continue
+        by_all.setdefault(m.group(5), []).append((m.group(4), m.group(1), name, m.group(3)))
+        if m.group(3) != "ci":
             continue
         ci += 1
         by.setdefault(m.group(5), []).append((m.group(4), m.group(1), name))
+    cache = {}
+
+    def fx(name):
+        if name not in cache:
+            cache[name] = facts(zf.read(name).decode("utf-8", "replace"), y, q)
+        return cache[name]
     rows = []
     for sid in sorted(by):
         cands = sorted(by[sid], key=lambda c: (c[0] != "cr", c[0]))
         rep, tax, name = cands[0]
-        f = facts(zf.read(name).decode("utf-8", "replace"), y, q)
+        f = fx(name)
 
         def g(k):
             return "" if k not in f else ("%.0f" % f[k])
         rows.append([sid, per, rep, "|".join(c[0] for c in cands[1:]), tax,
                      g("rd_q"), g("rd_ytd"), g("rev_q"), g("rev_ytd")])
+    fin = []
+    for sid in sorted(by_all):
+        cands = sorted(by_all[sid], key=lambda c: (c[0] != "cr", c[3] != "ci", c[0], c[3]))
+        rep, tax, name, ind = cands[0]
+        f = fx(name)
+        fin.append([sid, per, ind, rep, "|".join(f"{c[3]}-{c[0]}" for c in cands[1:]), tax]
+                   + [_fmt(k, f.get(k)) for k in ("rev_q", "rev_ytd", "opi_q", "opi_ytd", "ni_q", "ni_ytd",
+                                                  "nip_q", "nip_ytd", "eps_q", "eps_ytd", "assets", "liab",
+                                                  "eqp", "eq", "rd_q", "rd_ytd")])
     st = {"files": files, "ci_files": ci, "companies": len(rows),
           "with_rd": sum(1 for r in rows if r[6] or r[5]), "with_rev": sum(1 for r in rows if r[8] or r[7])}
-    return rows, st
+    st["fin_companies"] = len(fin)
+    st["fin_with_ni"] = sum(1 for r in fin if r[11] or r[10])
+    st["fin_with_assets"] = sum(1 for r in fin if r[16])
+    return rows, st, fin
 
 
 def download(y, q, dest, tries=3, wait=60):
@@ -208,20 +260,24 @@ def main():
         else:
             try:
                 with zipfile.ZipFile(src) as zf:
-                    rows, st = parse_zip(zf, y, q)
+                    rows, st, fin = parse_zip(zf, y, q)
             except zipfile.BadZipFile as ex:        # 只記這一季失敗，⛔ 不讓整支炸掉（後面的季照做）
                 ok, rows = False, None
                 fail += 1
                 fails.append((per, f"BadZipFile: {ex}"))
                 row.update(status="fail", note=f"BadZipFile: {ex}")
         if ok:
-            with io.open(os.path.join(OUT_DIR, f"{per}.csv"), "w", encoding="utf-8", newline="") as f:
-                w = csv.writer(f, lineterminator="\n")
-                w.writerow(HEADER)
-                w.writerows(rows)
+            os.makedirs(FIN_DIR, exist_ok=True)
+            for d_, h_, r_ in ((OUT_DIR, HEADER, rows), (FIN_DIR, FIN_HEADER, fin)):
+                with io.open(os.path.join(d_, f"{per}.csv"), "w", encoding="utf-8", newline="") as f:
+                    w = csv.writer(f, lineterminator="\n")
+                    w.writerow(h_)
+                    w.writerows(r_)
             done += 1
-            row.update(status="ok", zip_bytes=str(os.path.getsize(src)), note=note, **{k: str(v) for k, v in st.items()})
-            summary.append(f"{per} 公司 {st['companies']}｜研發 {st['with_rd']}｜營收 {st['with_rev']}")
+            finote = f"全產業 {st['fin_companies']} 家｜淨利 {st['fin_with_ni']}｜資產 {st['fin_with_assets']}"
+            row.update(status="ok", zip_bytes=str(os.path.getsize(src)), note=f"{note}｜{finote}",
+                       **{k: str(v) for k, v in st.items()})
+            summary.append(f"{per} 公司 {st['companies']}｜研發 {st['with_rd']}｜營收 {st['with_rev']}｜{finote}")
             print(f"[xbrl_rd] {summary[-1]}")
         stat[per] = {k: row.get(k, "") for k in STATUS_HEADER}
         with io.open(STATUS, "w", encoding="utf-8", newline="") as f:
