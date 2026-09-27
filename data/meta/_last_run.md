@@ -1058,17 +1058,17 @@
 
 ## filing_dates　✗ 有問題
 
-最後執行：2026-09-27T09:00:00+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36280880790
+最後執行：2026-09-27T11:26:18+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36288031866
 
 - **母體**：2015:1655｜2016:1688｜2017:1724｜2018:1763｜2019:1794｜2020:1828｜2021:1882｜2022:1933｜2023:1963｜2024:1971｜2025:1973｜2026:1972
-- **待問**：22146 發（已問過 0）
-- **本趟**：問 525 發｜ok 386｜empty（那年沒有檔）0｜失敗 139｜剩 21621 發｜61 分
-- **累計**：上傳紀錄 2027 列｜已問 (家, 年) 386
-- **失敗的（前 10）**：[('1216', 104, '沒有「上傳日期」表頭（不是正常頁）'), ('1219', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1220', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1234', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1310', 104, '沒有「上傳日期」表頭（不是正常頁）'), ('1312', 104, '沒有「上傳日期」表頭（不是正常頁）'), ('1338', 104, '沒有「上傳日期」表頭（不是正常頁）'), ('1339', 104, '沒有「上傳日期」表頭（不是正常頁）'), ('1410', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1413', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
+- **待問**：21760 發（已問過 386）
+- **本趟**：問 139 發｜ok 121｜empty（那年沒有檔）0｜失敗 18｜剩 21621 發｜65 分
+- **累計**：上傳紀錄 2651 列｜已問 (家, 年) 507
+- **失敗的（前 10）**：[('1464', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1538', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('1786', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('1815', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('2007', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('2008', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('2434', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('2438', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('2459', 104, 'HTTP 0 URLError: <urlopen error [Errno 111] Connection refused>'), ('2481', 104, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
 
 檢查：
 - **✗**　沒有連續失敗而收手　（最後連續 8 發失敗）
-- **✗**　失敗 ≤ 本趟 2%　（139／525）
+- **✗**　失敗 ≤ 本趟 2%　（18／139）
 
 ## early:shares　✓ 正常
 
