@@ -1,0 +1,8 @@
+===== researchRev body procs=2 limit=None 2026-09-27 17:38（台北）=====
+[程式 sha256] {'researchRev.py': '43180395c1a80328', 'patterns_all.py': '7616026819078bdd', 'patterns_x.py': '086632fa9e03f005', 'trendline_m.py': '6f1eff0792e3efbf', 'stop_fractal.py': '4ef72854c234f622', 'avgdown.py': '9d82d6026d9d3059'}
+[閘 大盤] {'主快照日曆 ＝ 大盤層日曆（主窗）': True, '接起來的序列在主窗的事件 ＝ 只用主快照': True, '不一致的訊號': [], '上升線鏡像(num=100) ＝ trendline_m 取負': True, '上升線事件數(num=100)': 42}
+  [個股 body] 400/1649｜54s
+  [個股 body] 800/1649｜108s
+  [個股 body] 1200/1649｜160s
+  [個股 body] 1600/1649｜200s
+[body 完成] 376s

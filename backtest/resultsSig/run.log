@@ -1,0 +1,33 @@
+===== researchSig pre procs=2 reps=200 fake=1000 limit=None 2026-09-27 17:45（台北）=====
+[程式 sha256] {'researchSig.py': '0c43ebba4614f215', 'researchRev.py': '43180395c1a80328', 'research11.py': '4b03583c7c616413', 'patterns_x.py': '086632fa9e03f005', 'patterns.py': '1324b3375b02fd1e', 'listexit_lines.py': '16634eb6b99062d1', 'yfstop_lines.py': 'f7d6f05489de9971'}
+  [訊號] 400/1649｜47s
+  [訊號] 800/1649｜91s
+  [訊號] 1200/1649｜135s
+  [訊號] 1600/1649｜169s
+[訊號] 1649 檔｜175s
+[閘 停損線] {'比對條數': 600, '不一致': 0}
+[pre] 完成｜293s
+===== researchSig body procs=2 reps=200 fake=1000 limit=None 2026-09-27 17:50（台北）=====
+[程式 sha256] {'researchSig.py': '0c43ebba4614f215', 'researchRev.py': '43180395c1a80328', 'research11.py': '4b03583c7c616413', 'patterns_x.py': '086632fa9e03f005', 'patterns.py': '1324b3375b02fd1e', 'listexit_lines.py': '16634eb6b99062d1', 'yfstop_lines.py': 'f7d6f05489de9971'}
+[訊號] 讀快取 /home/chemtim/tw-p17/backtest/resultsSig/sig_cache.pkl
+  [探索 E1 9 出場] 9 格 × 200 顆｜176s
+  [探索 E2 9 出場] 9 格 × 200 顆｜131s
+[挑出場] {'E1': 'EVE', 'E2': 'EVE'}
+  [探索 E1 停損停利 15 組] 15 格 × 200 顆｜277s
+  [探索 E2 停損停利 15 組] 15 格 × 200 顆｜227s
+[挑停損停利] ('探索', 'E1', 'EVE', 'SL10', 'TP50h')
+  [確認段 判定格] 3 格 × 200 顆｜23s
+  [探索 固定持有對照] 6 格 × 200 顆｜93s
+  [確認 固定持有對照] 6 格 × 200 顆｜89s
+  [假訊號 E1] 1000 次｜94s
+  [假訊號 E2] 1000 次｜195s
+[body 完成] 1587s
+===== researchSig early reps=200 2026-09-27 18:17（台北）｜挑中：{'E1': 'EVE', 'E2': 'EVE'}、['探索', 'E1', 'EVE', 'SL10', 'TP50h'] =====
+[早年 A 訊號] 569 檔｜52s
+[早年 A E1] 進場列 702（同日出場不進 0）｜{'W': 241, 'HS': 115, 'BOX': 345, 'CUP': 11}
+[早年 A E2] 進場列 6699（同日出場不進 0）｜{'RSI': 1470, 'ENG': 2491, 'TD': 1504, 'MACDc': 633, 'VS': 207, 'KDc': 983, 'MOR': 21}
+  [早年 A] 3 格 × 200 顆｜10s
+[早年 B E1] 進場列 414（同日出場不進 0）｜{'W': 134, 'BOX': 169, 'HS': 117, 'CUP': 2}
+[早年 B E2] 進場列 3662（同日出場不進 0）｜{'TD': 839, 'RSI': 897, 'MACDc': 365, 'ENG': 1334, 'KDc': 487, 'VS': 109, 'MOR': 15}
+  [早年 B] 3 格 × 200 顆｜6s
+[早年個股 完成]
