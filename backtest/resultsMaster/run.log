@@ -1,0 +1,24 @@
+=== researchMaster --part pre avail=deadline 2026-09-27 14:28（台北）
+[母體] W1 面板 backtest/resultsAFC/panel.csv.gz｜量測日 111 個（2017-01-03～2026-03-02）｜eligible 股-月 54,552
+[財報] fs 80,931 列（重複 0）｜bs 80,931 列（重複 0）｜合併 80,931｜1,973 家｜母公司淨利改用本期淨利 7,246 列、權益改用權益總計 7,244 列
+[研發] rd_hist 105,625 列（重複 0）｜2013Q1～2026Q2｜研發有值 77.9%
+[t57sb01] filing_dates.csv 2,651 列｜逐年家數 {2015: 507}｜⇒ 可用日一律 deadline（法定期限下一交易日；暫算）
+[逐列] 54,552 股-月｜51s
+[起點] {"P0": {"first_all_ge90": null, "each_first_ge90": {"cov_M": "2020-04-01", "cov_X_P0": null, "cov_O_P0": null}, "start": null, "later_below90": []}, "P1": {"first_all_ge90": "2020-04-01", "each_first_ge90": {"cov_M": "2020-04-01", "cov_X_P1": "2020-04-01", "cov_O_P1": "2020-04-01"}, "start": "2020-04-01", "later_below90": []}}
+window_from  set  months  median  p10   p25   p75  p90  min  max  share_lt10  share_eq0  cov_min_after_start
+ 2020-04-01    M      72    33.0 21.0 23.75 44.00 51.0 17.0 60.0    0.000000   0.000000             0.908571
+ 2020-04-01 X_P1      72     5.0  1.0  2.00 12.00 17.9  0.0 23.0    0.708333   0.027778             0.908571
+ 2020-04-01 O_P1      72    15.0  7.0  9.00 23.25 40.0  5.0 47.0    0.263889   0.000000             0.960000
+ 2020-04-01 X_P0      72     3.0  0.0  1.00  7.00  9.0  0.0 12.0    0.902778   0.125000             0.617496
+ 2020-04-01 O_P0      72    10.0  5.0  6.75 17.25 26.0  3.0 31.0    0.472222   0.000000             0.648370
+                               reading  base_col         alt_col  months  base_median  alt_median  months_differ  sum_abs_diff  max_abs_diff
+                   L2 不看上市年數 vs L1（墨菲）    cand_M    cand_M_noage      72         33.0        38.5             72         347.0           9.0
+                       L2 vs L1（喜偉 P1） cand_X_P1 cand_X_P1_noage      72          5.0         6.0             46          71.0           3.0
+                     L2 vs L1（歐沙那希 P1） cand_O_P1 cand_O_P1_noage      72         15.0        15.0             51         132.0           6.0
+ 本益比 P0 只讀 per（上市）vs P1 per＋otcper（喜偉） cand_X_P1       cand_X_P0      72          5.0         3.0             58         229.0          12.0
+                    本益比 P0 vs P1（歐沙那希） cand_O_P1       cand_O_P0      72         15.0        10.0             68         454.0          18.0
+    本益比 P2 as-of≤6 交易日 vs P1 恰 t−1（喜偉） cand_X_P1       cand_X_P2      72          5.0         5.0              0           0.0           0.0
+                    本益比 P2 vs P1（歐沙那希） cand_O_P1       cand_O_P2      72         15.0        15.0              0           0.0           0.0
+       營收 F1 金融業同義欄 vs F0 只認『營業收入』（墨菲）    cand_M       cand_M_F1      72         33.0        33.0              0           0.0           0.0
+                    營收 F1 vs F0（喜偉 P1） cand_X_P1    cand_X_P1_F1      72          5.0         5.0              0           0.0           0.0
+M4 營收 R2 取 fs_hist vs R1 取 rd_hist（墨菲）    cand_M       cand_M_R2      72         33.0        33.0              0           0.0           0.0

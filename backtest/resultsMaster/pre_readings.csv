@@ -1,0 +1,11 @@
+reading,base_col,alt_col,months,base_median,alt_median,months_differ,sum_abs_diff,max_abs_diff
+L2 不看上市年數 vs L1（墨菲）,cand_M,cand_M_noage,72,33.0,38.5,72,347.0,9.0
+L2 vs L1（喜偉 P1）,cand_X_P1,cand_X_P1_noage,72,5.0,6.0,46,71.0,3.0
+L2 vs L1（歐沙那希 P1）,cand_O_P1,cand_O_P1_noage,72,15.0,15.0,51,132.0,6.0
+本益比 P0 只讀 per（上市）vs P1 per＋otcper（喜偉）,cand_X_P1,cand_X_P0,72,5.0,3.0,58,229.0,12.0
+本益比 P0 vs P1（歐沙那希）,cand_O_P1,cand_O_P0,72,15.0,10.0,68,454.0,18.0
+本益比 P2 as-of≤6 交易日 vs P1 恰 t−1（喜偉）,cand_X_P1,cand_X_P2,72,5.0,5.0,0,0.0,0.0
+本益比 P2 vs P1（歐沙那希）,cand_O_P1,cand_O_P2,72,15.0,15.0,0,0.0,0.0
+營收 F1 金融業同義欄 vs F0 只認『營業收入』（墨菲）,cand_M,cand_M_F1,72,33.0,33.0,0,0.0,0.0
+營收 F1 vs F0（喜偉 P1）,cand_X_P1,cand_X_P1_F1,72,5.0,5.0,0,0.0,0.0
+M4 營收 R2 取 fs_hist vs R1 取 rd_hist（墨菲）,cand_M,cand_M_R2,72,33.0,33.0,0,0.0,0.0

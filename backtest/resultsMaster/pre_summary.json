@@ -1,0 +1,36 @@
+{
+ "登錄": "PREREG大師三套 seq3 sha 5a5ca160c8d43d91；裁定 seq210 §五、seq214 §二",
+ "財報 commit": "572b5993aa87a48fd1f860a5bdc13cbbdf2e5964",
+ "可用日": "deadline（⚠ 暫算：t57sb01 未落地）",
+ "t57sb01 逐年家數": {
+  "2015": 507
+ },
+ "重複列": {
+  "fs_dup": 0,
+  "bs_dup": 0
+ },
+ "起點": {
+  "P0": {
+   "first_all_ge90": null,
+   "each_first_ge90": {
+    "cov_M": "2020-04-01",
+    "cov_X_P0": null,
+    "cov_O_P0": null
+   },
+   "start": null,
+   "later_below90": []
+  },
+  "P1": {
+   "first_all_ge90": "2020-04-01",
+   "each_first_ge90": {
+    "cov_M": "2020-04-01",
+    "cov_X_P1": "2020-04-01",
+    "cov_O_P1": "2020-04-01"
+   },
+   "start": "2020-04-01",
+   "later_below90": []
+  }
+ },
+ "量測日數": 111,
+ "⛔": "pre 不讀任何報酬"
+}
