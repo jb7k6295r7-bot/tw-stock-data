@@ -101,12 +101,13 @@ def s2_lines(sig, rule, opens, closes, bars_of, mult=2.0, high_start="entry_clos
 
 
 # ─────────────────────────── #1 t−1 包裝（rerun17 同一套）
-def setup_t1(log=print):
+def setup_t1(log=print, t1=False):
+    """t1＝True ⇒ AND 資料尾截斷補回（rerun17.t1_censor；價格墊一根、ncal＋1）；⭐ 預設關 ⇒ 逐位元不變。"""
     from . import data as D
     from . import rerun17 as RR
     RR.use_snapshot()
     cal = D.load_calendar()
-    RR.setup_and(cal, os.path.join(RR.OUT, "sig_edc6f", "and_signals.csv.gz"), "branch", log)
+    RR.setup_and(cal, os.path.join(RR.OUT, "sig_edc6f", "and_signals.csv.gz"), "branch", log, t1=t1)
     G = RR._G
     reg = G["regime"]; AND = G["AND"]
     e = AND["entry_pos"].to_numpy()
@@ -115,8 +116,11 @@ def setup_t1(log=print):
     inwin = (e >= G["w0"]) & (e <= G["w1"])
     sig = AND[reg[e - 1] & inwin]
     mk = D.load_universe().set_index("stock_id")["market"]
-    return {"cal": cal, "sig": sig, "closes": G["closes"], "opens": G["opens"], "ncal": G["ncal"], "w0": G["w0"], "w1": G["w1"],
-            "mk": mk, "RR": RR, "D": D}
+    ctx = {"cal": cal, "sig": sig, "closes": G["closes"], "opens": G["opens"], "ncal": G["ncal"], "w0": G["w0"], "w1": G["w1"],
+           "mk": mk, "RR": RR, "D": D}
+    if t1:
+        ctx.update(t1=True, t1_cnt=G["t1_cnt"], AND=AND)
+    return ctx
 
 
 def sim(ctx, kw, r, eng=None, audit=None):

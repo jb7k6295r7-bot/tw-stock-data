@@ -245,7 +245,75 @@ def run_p12(procs, reps, log):
 
 
 # ═════════════ 各階段 ═════════════
-def setup_and(cal, and_path, px, log):
+# ═════════════ T1 資料尾補回（共用；裁定 seq260 §二、seq261）═════════════
+# 讀法 ＝ researchYear1M.and_censor／AFCext V3（逐字同一段，fixture 見 researchT1fix_check）：
+#   research11.fixed_exit 在「該股 bar k＋H ≥ 該股 K 棒數」時回 None ⇒ AND 表 xpos_H＝−1 ⇒ 引擎整筆濾掉（資料尾截斷）。
+#   T1 把【資料尾截斷】的列留下：出場日設在墊檔日（日曆位置 ncal），價格陣列尾端墊一根（收盤＝最後收盤、開盤 NaN），
+#   引擎 ncal 傳 ncal＋1 ⇒ 部位在窗內照收盤計值、⛔ 不賣、⛔ 不扣成本。g_H ＝ 最後收盤 ÷ 進場開盤 − 1（只影響窗外）。
+#   判「資料尾截斷」（⛔ 下市、壞根造成的不算）：該股 bar k＋H ≥ 該股 K 棒數、該股最後一根 ＝ 日曆最後一天、k−20 之後沒有壞根；
+#   LD ＝ t_LD 為假、出場根 ＝ 該股最後一根 ＝ 日曆最後一天、k＋CAP ＞ 最後一根。
+#   ⭐ 開關：setup_and(..., t1=False) 預設關 ⇒ 逐位元不變（researchT1fix 閘門驗）
+def pad_px_t1(closes, opens):
+    cp = {s: np.r_[c, np.float32(c[-1])].astype(c.dtype) for s, c in closes.items()}
+    op = {s: np.r_[o, np.float32(np.nan)].astype(o.dtype) for s, o in opens.items()}
+    return cp, op
+
+
+def t1_censor(AND, cal, uni, log=print):
+    """T1：AND 訊號裡「資料尾截斷」的列 ⇒ 回 (補過的 AND, 計數)。＝ researchYear1M.and_censor 同式。"""
+    ncal = len(cal)
+    A = AND.copy()
+    cnt = {}
+    cand_h = {H: A.index[A[f"xpos_H{H}"] < 0] for H in (60, 120)}
+    cand_ld = A.index[(~A["t_LD"].astype(bool)) & (A["xpos_LD"] >= 0)]
+    sids = sorted(set(A.loc[cand_h[60].union(cand_h[120]).union(cand_ld), "sid"]))
+    bars = {}
+    for s in sids:
+        B = R.load_bars(s, uni.get(s, "twse"), cal)
+        bars[s] = (B["idx"], B["next_bad"], B["o"], B["c"]) if B is not None else None
+    for H in (60, 120):
+        ok = []; why = {"delist_or_halt_end": 0, "badbar": 0, "not_end": 0, "nobars": 0, "pos_mismatch": 0}
+        for i in cand_h[H]:
+            row = A.loc[i]; b = bars.get(row["sid"])
+            if b is None:
+                why["nobars"] += 1; continue
+            idx, nb, o, c = b; k = int(row["k"]); n = len(idx)
+            if int(idx[k]) != int(row["pos"]):
+                why["pos_mismatch"] += 1; continue
+            nbk = nb[max(0, k - 20)]
+            if D.exit_pos(k + 1, H) < n:
+                why["not_end"] += 1; continue
+            if nbk <= n - 1:
+                why["badbar"] += 1; continue
+            if int(idx[n - 1]) != ncal - 1:
+                why["delist_or_halt_end"] += 1; continue
+            ok.append((i, float(c[n - 1] / o[k + 1] - 1.0)))
+        for i, g in ok:
+            A.at[i, f"xpos_H{H}"] = ncal; A.at[i, f"g_H{H}"] = g
+        cnt[f"H{H}"] = {"xpos<0": len(cand_h[H]), "補": len(ok), **why,
+                        "補的進場日": [str(cal[int(A.at[i, 'entry_pos'])].date()) for i, _ in ok[:1]] +
+                                     ([str(cal[int(A.at[ok[-1][0], 'entry_pos'])].date())] if ok else [])}
+    ok = []; why = {"triggered_or_cap": 0, "not_last": 0, "not_cal_end": 0}
+    for i in cand_ld:
+        row = A.loc[i]; b = bars.get(row["sid"])
+        if b is None:
+            continue
+        idx, nb, o, c = b; k = int(row["k"]); n = len(idx)
+        if int(row["xpos_LD"]) != int(idx[n - 1]):
+            why["not_last"] += 1; continue
+        if k + R.CAP <= n - 1:
+            why["triggered_or_cap"] += 1; continue
+        if int(idx[n - 1]) != ncal - 1:
+            why["not_cal_end"] += 1; continue
+        ok.append(i)
+    for i in ok:
+        A.at[i, "xpos_LD"] = ncal
+    cnt["LD"] = {"t_LD 假": len(cand_ld), "補": len(ok), **why}
+    log(f"[T1 AND 資料尾] {json.dumps(cnt, ensure_ascii=False)}")
+    return A, cnt
+
+
+def setup_and(cal, and_path, px, log, t1=False):
     uni = D.load_universe().set_index("stock_id")["market"]
     AND = pd.read_csv(and_path, dtype={"sid": str})
     closes, opens = load_prices(set(AND["sid"]), cal, uni, px)
@@ -254,7 +322,13 @@ def setup_and(cal, and_path, px, log):
         raise SystemExit(f"⛔ AND 訊號有 {len(miss)} 檔讀不到價格：{miss[:10]}")
     bench = load_bench(cal)
     w0, w1 = win_bounds(cal)
-    _G.update(AND=AND, closes=closes, opens=opens, ncal=len(cal), bench=bench, regime=regime_mask(bench),
+    ncal = len(cal)
+    if t1:                                                 # ⭐ 預設關：以下整段跳過 ⇒ 既有路徑逐位元不變
+        AND, t1_cnt = t1_censor(AND, cal, uni, log)
+        closes, opens = pad_px_t1(closes, opens)
+        ncal = len(cal) + 1
+        _G.update(t1=True, t1_cnt=t1_cnt)
+    _G.update(AND=AND, closes=closes, opens=opens, ncal=ncal, bench=bench, regime=regime_mask(bench),
               w0=w0, w1=w1, first_all=int(AND["entry_pos"].min()))
     log(f"[AND] {and_path}｜{len(AND):,} 筆／{AND['sid'].nunique():,} 檔｜relvol 缺 {int(AND['relvol'].isna().sum()) if 'relvol' in AND else '—'}"
         f"｜entry_pos {AND['entry_pos'].min()}～{AND['entry_pos'].max()}（{cal[AND['entry_pos'].min()].date()}～{cal[AND['entry_pos'].max()].date()}）")
