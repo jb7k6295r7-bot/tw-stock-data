@@ -63,6 +63,18 @@ def main():
     print("④ 沒有研發費用列")
     f = X.facts(IX.replace("ResearchAndDevelopmentExpense\"", "Nothing\""), 2020, 4)
     ck("⇒ rd 鍵不存在（⛔ 不是 0）", "rd_ytd" not in f and f.get("rev_ytd") == 1339254811000, f)
+    print("⑤ 財報主要欄位（fin_hist）：時點 context、EPS 小數、上期時點不收")
+    BS = """<ifrs:Assets contextRef="AsOf20130630" unitRef="TWD" decimals="-3">1169885454000</ifrs:Assets>
+<ifrs:Assets contextRef="AsOf20121231" unitRef="TWD" decimals="-3">1</ifrs:Assets>
+<ifrs:BasicEarningsLossPerShare contextRef="From20130401To20130630" unitRef="TWD" decimals="2">2.00</ifrs:BasicEarningsLossPerShare>
+<ifrs:ProfitLossAttributableToOwnersOfParent contextRef="From20130101To20130630" decimals="-3">91384601000</ifrs:ProfitLossAttributableToOwnersOfParent>
+<ix:nonFraction name="ifrs-full:EquityAttributableToOwnersOfParent" contextRef="AsOf20130630" scale="3">745,911,755</ix:nonFraction>"""
+    f = X.facts(BS, 2013, 2)
+    ck("資產取本期季底 AsOf20130630（上年底那筆不收）", f.get("assets") == 1169885454000, f)
+    ck("歸屬母公司權益 inline ×1000", f.get("eqp") == 745911755000, f)
+    ck("EPS 單季 2.00、母公司淨利累計", f.get("eps_q") == 2.0 and f.get("nip_ytd") == 91384601000, f)
+    ck("EPS 格式保留小數、去尾零", X._fmt("eps_q", 3.52) == "3.52" and X._fmt("eps_q", 2.0) == "2", X._fmt("eps_q", 2.0))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
