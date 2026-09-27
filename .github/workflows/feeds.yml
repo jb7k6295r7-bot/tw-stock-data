@@ -744,7 +744,7 @@ jobs:
             git checkout origin/main -- "$P" 2>/dev/null || echo "（main 上還沒有 $P，第一趟）"
           done
           SY=$(echo "${{ inputs.start }}" | cut -c1-4); EY=$(echo "${{ inputs.end }}" | cut -c1-4)
-          python filing_dates.py --start-year "${SY:-2015}" --end-year "${EY:-2026}" --sleep "${{ inputs.sleep || '6' }}" --budget-min 300
+          python filing_dates.py --start-year "${SY:-2015}" --end-year "${EY:-2026}" --sleep "${{ inputs.sleep || '10' }}" --budget-min 300
 
       # ⭐ 2026-09-27（回測 0042 M1、裁定 seq215）：早年段上市個股 T86 三大法人 ⇒ data/early/inst（官方下限 2012-05-02）
       #   ⭐ 重用 backfill.cmd_inst；交易日曆＝data/early/daily；白名單併早年日 K 代號；runlog 區塊 early:inst
