@@ -36,6 +36,7 @@ import sys
 import time
 
 import runlog
+from backfill import visible_text
 from filing_probe import DOC, hit, looks_blocked
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -55,10 +56,11 @@ def parse(body, co_id, roc_year):
         return [], "bad", "擋阻頁"
     txt = body.decode("big5", "replace")
     if "上傳日期" not in txt:
-        return [], "bad", "沒有「上傳日期」表頭（不是正常頁）"
+        # ⭐ 把對方頁面講的話完整帶出來（run 36280880790 只記了「不是正常頁」，看不出是限流還是別的）
+        return [], "bad", f"沒有「上傳日期」表頭（不是正常頁）：{visible_text(txt, ' ')}"
     out = []
     for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", txt, re.S | re.I):
-        cells = [html.unescape(re.sub(r"<[^>]+>", "", c)).strip()
+        cells = [html.unescape(visible_text(c, "")).strip()      # 取一格的值 ⇒ sep=""（四點五：去標籤只有一份）
                  for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S | re.I)]
         if len(cells) < 11 or not re.fullmatch(r"\d{2,3}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", cells[9]):
             continue
@@ -132,8 +134,14 @@ def main():
             break
         roc = y - 1911
         url = f"{DOC}?step=1&colorchg=1&co_id={s}&year={roc}&mtype=A&"
-        st, _, body, err = hit(url)
-        got, status, note = parse(body, s, roc) if st == 200 else ([], "bad", f"HTTP {st} {err}")
+        # ⛔ 2026-09-27 run 36280880790：525 發失敗 139（DNS 解析失敗＋不是正常頁），本機同一頁正常 ⇒ 暫時性
+        #   ⇒ 同一發失敗先退避重試（30 秒、60 秒），⛔ 不是一次失敗就記 bad
+        for attempt in range(3):
+            st, _, body, err = hit(url)
+            got, status, note = parse(body, s, roc) if st == 200 else ([], "bad", f"HTTP {st} {err}")
+            if status != "bad" or attempt == 2:
+                break
+            time.sleep(30 * (attempt + 1))
         n += 1
         asked[(s, str(roc))] = [s, str(roc), status, str(len(got)), time.strftime("%Y-%m-%d %H:%M:%S")]
         if status == "bad":

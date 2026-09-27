@@ -1713,6 +1713,20 @@ def write_universe_day(day, lines):
     return len(kept)
 
 
+def change_blank(day, market):
+    """→ (該市場有收盤的列數, 其中漲跌欄空白的列數)。讀已寫出的日檔；檔不在回 (0, 0)。"""
+    p = os.path.join(UNI_DIR, "daily", f"{day}.csv")
+    if not day or not os.path.exists(p):
+        return 0, 0
+    n = b = 0
+    with open(p, encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r.get("market") == market and (r.get("close") or "").strip():
+                n += 1
+                b += not (r.get("change") or "").strip()
+    return n, b
+
+
 def purge_phantom_days(lookback=20):
     """刪掉「休市日被寫成只有興櫃在交易」的假日檔（2026-09-25 中秋那一份就是）。→ 刪掉的日期清單
 
@@ -2109,6 +2123,12 @@ def main():
                  else f"上市 {cnt['twse']}／上櫃 {cnt['tpex']}")
         rl.check("universe 當天有寫出列", bool(uni.get("rows_written")),
                  f"{uni.get('rows_written')} 列")
+        # ⛔ 2026-09-26 的洞沒有任何一道檢查抓到：TPEx 舊格式「- 0.35」被 _num 清空 ⇒ 下跌日漲跌整片空白
+        #   （2015-01～2017-04 約 47%，做 G1 才意外發現）。正常水準 0.2～0.6% ⇒ 門檻 5%
+        _n, _b = change_blank(str(manifest.get("target_trading_day") or ""), "tpex")
+        if _n >= 100:
+            rl.check("上櫃有收盤的列漲跌欄空白 < 5%（⛔ 超過＝解析吃掉了負號之類的整片缺值）",
+                     _b / _n < 0.05, f"{_b}／{_n}（{_b / _n:.2%}）")
     else:
         rl.note("這一天 universe 0 列（休市，或整層失敗——看上面的 fatal 那條）")
     rl.check("核心個股不是全軍覆沒", bool(got), f"{len(got)}/{len(STOCKS)}")

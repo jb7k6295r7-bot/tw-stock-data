@@ -48,5 +48,14 @@ with tempfile.TemporaryDirectory() as t:
     ok("2026-09-25,0,0,0,0," in cov and "已刪" in cov, "覆蓋率帳 09-25 改為 0 並註明")
     ok(fetch.purge_phantom_days() == [], "再跑一次不再刪（冪等）")
 
+    # ③ 上櫃漲跌欄空白率（2026-09-26「- 0.35」被清空的回歸閘門用）
+    def trow(sid, close, chg):
+        r = {h: "" for h in H}
+        r.update(key=f"2026-09-29_{sid}", date="2026-09-29", stock_id=sid, name="x", market="tpex", close=close, change=chg)
+        return [r[h] for h in H]
+    put("2026-09-29", [trow("6488", "10", "-0.35"), trow("6489", "10", ""), trow("6490", "", ""), trow("6491", "10", "0.00")])
+    ok(fetch.change_blank("2026-09-29", "tpex") == (3, 1), f"有收盤 3 列、漲跌空白 1 列（無成交列不算）：{fetch.change_blank('2026-09-29', 'tpex')}")
+    ok(fetch.change_blank("2099-01-01", "tpex") == (0, 0), "檔不在 ⇒ (0, 0)")
+
 print("✓ 全部通過" if not bad else f"✗ {bad} 項沒過")
 sys.exit(1 if bad else 0)
