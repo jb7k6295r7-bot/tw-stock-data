@@ -1,0 +1,17 @@
+===== researchRev pre procs=2 limit=None 2026-09-27 13:26（台北）=====
+[程式 sha256] {'researchRev.py': '5ce03d6247363cb9', 'patterns_all.py': '7616026819078bdd', 'patterns_x.py': '086632fa9e03f005', 'trendline_m.py': '6f1eff0792e3efbf', 'stop_fractal.py': '4ef72854c234f622', 'avgdown.py': '9d82d6026d9d3059'}
+[閘 大盤] {'主快照日曆 ＝ 大盤層日曆（主窗）': True, '接起來的序列在主窗的事件 ＝ 只用主快照': True, '不一致的訊號': [], '上升線鏡像(num=100) ＝ trendline_m 取負': True, '上升線事件數(num=100)': 42}
+  [個股 pre] 400/1608｜55s
+  [個股 pre] 800/1608｜108s
+  [個股 pre] 1200/1608｜160s
+  [個股 pre] 1600/1608｜203s
+[閘 個股] {'上升線鏡像(num=100) ＝ trendline_m 取負：不一致檔數': 0, '例': [], '檢查檔數': 1608, '事件數(num=100)': 54115}
+[pre] {'大盤': {'可判定格數（主窗、n_eff ≥ 10）': 28, '格數': 42}, '個股': {'可判定格數（主窗、n_eff ≥ 10）': 42, '格數': 42}}｜209s
+===== researchRev body procs=2 limit=None 2026-09-27 13:30（台北）=====
+[程式 sha256] {'researchRev.py': 'ff3203d8797ce9e6', 'patterns_all.py': '7616026819078bdd', 'patterns_x.py': '086632fa9e03f005', 'trendline_m.py': '6f1eff0792e3efbf', 'stop_fractal.py': '4ef72854c234f622', 'avgdown.py': '9d82d6026d9d3059'}
+[閘 大盤] {'主快照日曆 ＝ 大盤層日曆（主窗）': True, '接起來的序列在主窗的事件 ＝ 只用主快照': True, '不一致的訊號': [], '上升線鏡像(num=100) ＝ trendline_m 取負': True, '上升線事件數(num=100)': 42}
+  [個股 body] 400/1608｜54s
+  [個股 body] 800/1608｜106s
+  [個股 body] 1200/1608｜156s
+  [個股 body] 1600/1608｜198s
+[body 完成] 358s
