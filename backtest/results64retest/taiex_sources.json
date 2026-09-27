@@ -1,0 +1,42 @@
+{
+ "repo": "jb7k6295r7-bot/us-stock-data",
+ "commit": "c10a1d00c358760fb8780b79863068eca9341dfc",
+ "檔案 sha256": {
+  "twse_taiex.csv": "cde0d6afe48781ff648d2dc37fc65276f713381a5a049187f646af2e31b4ea11",
+  "cbc_EG41M01_money_market_monthly.csv": "3b9a883e8563e78ec531b48650edc11f5d0d2316dd2231a2bc9be3d035cc5012",
+  "cbc_EG37D01_interbank_daily.csv": "6b64582e58bc714d572709d49cbdd127f94169241959d9c02cf8f03099fc47d5"
+ },
+ "DTB3 sha256": "b2fc294ad45a06359bdd104f6a707350ff8eb92338e9c6d502e0cdf8eb372974",
+ "manifest": {
+  "twse_taiex.csv": {
+   "rows": 9429,
+   "first": "1990-01-04",
+   "last": "2026-09-24",
+   "sha256": "cde0d6afe48781ff648d2dc37fc65276f713381a5a049187f646af2e31b4ea11",
+   "fetched_at": "2026-09-27T15:50:47+00:00",
+   "與取出檔一致": true
+  },
+  "cbc_EG41M01_money_market_monthly.csv": {
+   "rows": 471,
+   "first": "1987-05",
+   "last": "2026-07",
+   "sha256": "3b9a883e8563e78ec531b48650edc11f5d0d2316dd2231a2bc9be3d035cc5012",
+   "fetched_at": "2026-09-27T15:50:49+00:00",
+   "與取出檔一致": true
+  },
+  "cbc_EG37D01_interbank_daily.csv": {
+   "rows": 8999,
+   "first": "1991-10-01",
+   "last": "2026-07-31",
+   "sha256": "6b64582e58bc714d572709d49cbdd127f94169241959d9c02cf8f03099fc47d5",
+   "fetched_at": "2026-09-27T15:51:08+00:00",
+   "與取出檔一致": true
+  }
+ },
+ "指數列數": 9429,
+ "指數起訖": [
+  "1990-01-04",
+  "2026-09-24"
+ ],
+ "週六交易日數": 463
+}
