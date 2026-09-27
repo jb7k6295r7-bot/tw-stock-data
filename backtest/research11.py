@@ -418,8 +418,13 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None,
                  entry_tranches=None, add_rule=None, trim_rule=None, size_mult_by_regime=None, regime_trim=None,
                  trim_proceeds=None, nx_cap=None, stop_line_le=False, stop_proceeds=None, stop_block=None,
-                 nx_order="before", pick_tie=None, nx_pool=None):
+                 nx_order="before", pick_tie=None, nx_pool=None, stop_force=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
+
+    停止交易強制出場（裁定線 seq255 §一 4；回測線 2026-09-27 落地；⛔ 預設關閉 ⇒ 既有路徑逐位元相同，閘見 backtest/resultsEngineDelist/GATE.md）：
+      stop_force  None（預設）／dict {sid: L}：L ＝ 該股最後一根有效收盤的日曆位置（之後資料裡再也沒有成交；用 stop_force_days() 算）
+                  ⇒ 仍持有該股、且排程出場日 ＞ L＋1 ⇒ 第 L＋1 天以【L 的收盤價】強制出場並扣成本（照一般出場入帳：amt×(1＋gross−COST)）
+                  ⭐ 不看 tradable（停止交易本來就沒有可成交的開盤）；計數 x_stop_force_n（⛔ stop_force=None 時這個鍵不存在）
 
     PREREGP1（2026-09-14）加的四個參數**預設值下行為與原版逐位元相同**（resultsp1/regress 逐種子驗）：
       d_max       同一天最多新增幾個部位（None ＝ 不限，原版）
@@ -705,6 +710,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
     if stop_line is not None and stop is not None:
         raise ValueError("stop_line 與 stop 不可同時給（裁定線 seq119 §四 條件一）")
     sl_key = {}; sl_pending = set(); sl_stats = {"sl_exits": 0, "sl_delayed_days": 0, "sl_skip_sched": 0}; sl_days = []
+    _sf_n = 0                       # 停止交易強制出場的筆數（stop_force）
     _eq_prev = 1.0                  # ⭐ audit 用：前一日 equity（算目標權重的分母）
     maxw_daily = np.zeros(ncal) if (report_maxw and maxw_detail) else None
     maxw_sid = [""] * ncal if (report_maxw and maxw_detail) else None
@@ -1037,6 +1043,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             if hit:
                 stop_exits += len(hit); stop_days.append((t - 1, len(hit)))
             hit_now = set(hit)
+        _sf_now = ()
+        if stop_force is not None and open_pos:      # 停止交易強制出場（⛔ stop_force=None 時整段跳過）
+            _sf_now = set()
+            for k, (ex, sid, amt, gross, ep) in enumerate(open_pos):
+                _Lf = stop_force.get(sid)
+                if _Lf is not None and t == _Lf + 1 and ex > t:
+                    open_pos[k] = (t, sid, amt, float(closes[sid][_Lf]) / ep - 1.0, ep)
+                    _sf_now.add(sid); _sf_n += 1
         if stop_line is not None and open_pos and t > first:
             hit = []
             for k, (ex, sid, amt, gross, ep) in enumerate(open_pos):
@@ -1072,7 +1086,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             hit_now = set(hit_now) | set(hit)
         still = []
         for ex, sid, amt, gross, ep in open_pos:
-            if ex <= t and tradable is not None and (t > ex or not tradable[sid]["trd"][t]
+            if ex <= t and tradable is not None and sid not in _sf_now and (t > ex or not tradable[sid]["trd"][t]
                                                      or (sid not in hit_now and tradable[sid]["dn_c"][t])):
                 tb = tradable[sid]; o_t = float(opens[sid][t])
                 _dl = None
@@ -1379,8 +1393,31 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
             out["x_nx_over"] = _nx["over"]
         if _nx_stop:                # 名單出場 乙（⛔ stop_proceeds=None 時這個鍵不存在）
             out["x_nx_stop_lots"] = _nx["stop_lots"]
+    if stop_force is not None:      # ⛔ stop_force=None 時這個鍵不存在 ⇒ 既有回傳逐位元相同
+        out["x_stop_force_n"] = _sf_n
     if return_equity:
         out["equity"] = equity; out["hold_val"] = hold_val
+    return out
+
+
+def stop_force_days(valid: dict, upto: int) -> dict:
+    """停止交易日（共用；與 researchSigMA_f60.stopped 同一條）：valid ＝ {sid: 日曆長布林（收盤有限）}；
+    最後一根有效收盤 L ＜ upto、且之後再也沒有有效收盤 ⇒ {sid: L}。"""
+    out = {}
+    for sid, v in valid.items():
+        b = np.flatnonzero(np.asarray(v, bool))
+        if len(b) and b[-1] < upto:
+            out[sid] = int(b[-1])
+    return out
+
+
+def valid_from_data(sids, uni_mk, cal) -> dict:
+    """{sid: 收盤有限的布林}（D.load_stock，當下 D.DATA）。"""
+    out = {}
+    for s in sorted(set(sids)):
+        st = D.load_stock(s, uni_mk.get(s, "twse"), cal)
+        if st is not None:
+            out[s] = np.isfinite(st.df["close"].to_numpy(float))
     return out
 
 
