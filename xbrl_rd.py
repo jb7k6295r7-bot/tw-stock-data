@@ -83,13 +83,18 @@ KINDS = {"rd": RD, "rev": REV,
          "ni": {"ProfitLoss"}, "nip": {"ProfitLossAttributableToOwnersOfParent"},
          "eps": {"BasicEarningsLossPerShare"},
          "assets": {"Assets"}, "liab": {"Liabilities"},
-         "eqp": {"EquityAttributableToOwnersOfParent"}, "eq": {"Equity"}}
+         "eqp": {"EquityAttributableToOwnersOfParent"}, "eq": {"Equity"},
+         # ⭐ 2026-09-27（台股 seq305／309 ④d：F-score、毛利÷資產）：毛利取【淨額】（扣未實現銷貨損益後，同 fs_hist「營業毛利（毛損）淨額」）
+         #   XML 世代 GrossProfitLossFromOperationsNet；inline 世代 ifrs-full:GrossProfit｜營業現金流兩代同名（累計）
+         "gp": {"GrossProfitLossFromOperationsNet", "GrossProfit"},
+         "ocf": {"CashFlowsFromUsedInOperatingActivities"}}
 INSTANT = {"assets", "liab", "eqp", "eq"}          # 時點（AsOf<季底>）；其餘是期間（From..To..）
 KIND_OF = {n: k for k, ns in KINDS.items() for n in ns}
 FIN_DIR = os.path.join(ROOT, "data", "mops", "fin_hist")
 FIN_HEADER = ["stock_id", "period", "industry", "report", "alt", "taxonomy",
               "rev_q", "rev_ytd", "opi_q", "opi_ytd", "ni_q", "ni_ytd", "nip_q", "nip_ytd", "eps_q", "eps_ytd",
-              "assets", "liabilities", "equity_parent", "equity_total", "rd_q", "rd_ytd"]
+              "assets", "liabilities", "equity_parent", "equity_total", "rd_q", "rd_ytd",
+              "gp_q", "gp_ytd", "ocf_q", "ocf_ytd"]
 
 
 def facts(text, y, q):
@@ -183,7 +188,8 @@ def parse_zip(zf, y, q):
         fin.append([sid, per, ind, rep, "|".join(f"{c[3]}-{c[0]}" for c in cands[1:]), tax]
                    + [_fmt(k, f.get(k)) for k in ("rev_q", "rev_ytd", "opi_q", "opi_ytd", "ni_q", "ni_ytd",
                                                   "nip_q", "nip_ytd", "eps_q", "eps_ytd", "assets", "liab",
-                                                  "eqp", "eq", "rd_q", "rd_ytd")])
+                                                  "eqp", "eq", "rd_q", "rd_ytd",
+                                                  "gp_q", "gp_ytd", "ocf_q", "ocf_ytd")])
     st = {"files": files, "ci_files": ci, "companies": len(rows),
           "with_rd": sum(1 for r in rows if r[6] or r[5]), "with_rev": sum(1 for r in rows if r[8] or r[7])}
     st["fin_companies"] = len(fin)
