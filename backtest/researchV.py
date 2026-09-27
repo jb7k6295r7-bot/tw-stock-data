@@ -563,10 +563,942 @@ def pre_report(log):
     log("[完成 pre-report]")
 
 
+
+
+# ═════════════════════════════════════════════════════════════════════════════════════
+# ═════════ 本體段（裁定 seq218 §四；登錄 PREREGV seq6 sha 445338e8a06bbac8＋營飆v2候選 seq3 sha d37771f84327dfb0）═════════
+# ═════════════════════════════════════════════════════════════════════════════════════
+"""
+    ... -m backtest.researchV body-sig --layout main|restore [--procs 3]   # 早年訊號（AND 四步＋門檻B 面板）⇒ ~/earlydata/<sha10>/sig_<layout>/
+    ... -m backtest.researchV body-gate [--procs 3]                        # #25／#26 包裝在主窗逐位元對 resultsYfV2（20 顆）
+    ... -m backtest.researchV body-run [--procs 3]                         # 26 格 × 200 顆 × 5 版本＋假訊號臂＋控制臂（一次跑完）
+    ... -m backtest.researchV body-table                                   # 彙總、判定、REPORT.md
+
+版本（⭐ 看任何結果前寫死）：
+  main     判定版：窗 2012-06-04～2014-12-31（R14）、只上市（R1）、原定義 eligible（含 inst_ok）、T1 補回（R3 主版）、官方減資 R8 截斷
+  eng      描述：同 main，但 R3 引擎原樣（資料尾截斷的訊號整筆丟）
+  noT      描述（R1 敏感度）：同 main，剔除 63 檔轉上市股（有上市前上櫃列者）的所有訊號
+  restore  描述版（登錄 §三）：減資因子接進還原鏈、⛔ 不做 R8 剔除（另一份版面與訊號）
+  desc     描述段：窗 2008-01-03～2012-05-31、只上市、eligible_v ＝ liq_ok ∧ bars_ok、事件 ＝ 官方 ∪ 規則 A ∪ 規則 B（扣除權息）；處置資料 2010-12-14 起
+格與引擎：#1～#23 ＝ researchYear1M.run_engine（程式逐字＝rerun17／regime_t1／researchP9run；pre-arith 閘已逐種子驗 24 格）；
+  #24 ＝ researchAvg.ENGINE_KW_B["By"]；#25 ＝ yfstop_lines.ma_lines(20, arm="state")＋stop_line_le=False（無 stop_proceeds）；
+  #26 ＝ pick="K4"、pick_tie="rng"；#25、#26 的底 ＝ #1（AND、t−1 閘、10 槽、H120、種子 1000＋r）
+判定（登錄 §四）：年化中位、回落中位（200 顆）⇒ 比值 ＝ 年化中位 ÷ |回落中位|；#5／#8 取 P12 路徑合成（rerun17 同式）；
+  Q／R／F ＝ rerun17_table.label；下界 ＝ 26 格各自：200 顆逐日平均報酬 − 0050 逐日報酬，月分群 bootstrap B＝20,000，α＝0.05／26 分位（未置中）
+  #25：對 0050 標籤 ＋ 對 #1 同種子（年化差、回落差）皆正 ≥ 190 ⇒ 好；皆負 ≥ 190 ⇒ 差；其餘分不出
+  #26：先報退化量（0 ＜ 空槽 ＜ 候選的日數中位；＜ 20 ⇒ 依構造不可判定）；可判定 ⇒ 年化中位在 #1 200 顆逐顆年化的百分位、逐顆比值中位在 #1 逐顆比值的百分位，
+       兩者 ≥ 98.75 好、≤ 1.25 差（中位秩；researchYfRank.pctl）；K0 落 10～90 以外 ⇒ 句前警語
+假訊號臂（⛔ 不進判定，只決定措辭；x／次數 ≥ 5% ⇒「⚠ 隨機也有 x 合格」）：
+  P10 族 #1 #4 #7 #12 #15 #16 #17（原件 research13）：S 內隨機抽 |AND| 筆（default_rng(13) 連抽 200 次），各配 1000＋j 一條路徑，照格的閘與規則跑
+  P1 族 #3 #6 #9 #11 #13 #14（登錄）：每個訊號月從 S 同月列抽與 AND 同數（default_rng(20260925＋r)），引擎 7000＋r
+  P3 乙 #2 #10（原件 researchp3 丙1）：同顆種子的甲（閒置 0 報酬）曝險序列環形平移 200 次（default_rng(9000＋k)），每次取 200 顆中位判
+  #5（原件 P17 W_shuf）：R_eq 權重時序打亂 30 次（default_rng(108000＋r) 連抽），每次取 200 顆中位判
+  #8：權重恆 0.50 ⇒ 打亂等於原樣 ⇒ 依構造退化，⛔ 不做（照報）
+  #22 #23（原件 P9）：0050 均線狀態線上／線下段各自打亂 30 次（default_rng(20260925＋j)）× 50 顆，每次取 50 顆中位判
+  #26：K0（代號尾數）；#25：控制臂 C1（隨機賣出＋整份；早年段 #25 的 p 與觸發根分佈，rng [1000＋r, 1]）、C2（M20＋stop_proceeds="next"）
+"""
+SIG_START, SIG_END = "2005-02-01", "2014-12-31"          # R4：research34 訊號位置（主窗 2016-01-04＝資料起點後約一年；早年同義）
+PANEL_START, PANEL_END = "2004-01-01", "2014-12-31"      # R4：門檻B 面板量測日（主窗從資料起點）
+B_START = "2004-01-01"                                   # R4：build_sig_gate_b start（主窗 2017-01-01 是主窗專用；早年由窗過濾）
+W_MAIN = ("2012-06-04", "2014-12-31")
+DESC_MONTHS = ("2008-01", "2012-05")
+N_V = 26
+ALPHA_V = 0.05 / N_V
+VARIANTS = ["main", "eng", "noT", "restore", "desc"]
+REG_T1 = {1, 4, 7, 16, 17}
+P10_CELLS = [1, 4, 7, 12, 15, 16, 17]
+P1_CELLS = [3, 6, 9, 11, 13, 14]
+P3B_CELLS = [2, 10]
+P9_KEYS = {18: "A2", 19: "Ba", 20: "Bb", 21: "Bc", 22: "Cc", 23: "Ce"}
+CRASH = {"2008-05～2008-11": ("2008-04", "2008-11"), "2011-08～2011-12": ("2011-07", "2011-12")}
+_B: dict = {}
+
+
+def body_paths(layout):
+    from . import early_data as E
+    return os.path.join(E.snap_dir(E.BODY_SHA), layout, "data"), os.path.join(E.snap_dir(E.BODY_SHA), f"sig_{layout}")
+
+
+def use_layout(layout):
+    from . import data as D
+    from . import early_data as E
+    E.body_build(variant=layout)
+    D.DATA = body_paths(layout)[0]
+    return D.DATA
+
+
+# ═════════════ body-sig：早年訊號（呼叫原程式的函式，逐步照 rerun17_build＋researchAFC_panel）═════════════
+def body_sig(layout, procs, log):
+    from multiprocessing import Pool
+    from . import data as D
+    from . import patterns as PT
+    from . import research11 as R
+    from . import research13 as R13
+    from . import research34 as R34
+    from . import researchp1 as P1
+    from . import researchp4 as RP4
+    from . import p4_features as P
+    from . import universe_gate as UG
+    use_layout(layout)
+    out = body_paths(layout)[1]
+    os.makedirs(out, exist_ok=True)
+    t0 = time.time()
+    cal = D.load_calendar()
+    stocks = pd.read_csv(os.path.join(D.DATA, "meta", "stocks.csv"), dtype=str)
+    U = UG.gate3(stocks)
+    uni = D.load_universe().merge(U[["stock_id"]], on="stock_id")
+    log(f"[body-sig {layout}] D.DATA {D.DATA}｜日曆 {len(cal)}（{cal[0].date()}～{cal[-1].date()}）｜母體 {len(uni)}")
+    PT.PARAMS["liq_mode"] = "shares"
+    bdf = D.load_benchmark(cal)
+    bench = {"o": bdf["open"].to_numpy(float), "c": bdf["close"].to_numpy(float)}
+    disp = D.load_disposal_intervals()
+    rev, rev_ly, ind = R34.load_revenue()
+    rdates = R34.rebalance_dates(list(rev.index), cal, 10)
+    lo = int(cal.searchsorted(pd.Timestamp(SIG_START))); hi = int(cal.searchsorted(pd.Timestamp(SIG_END), side="right") - 1)
+    jobs = list(zip(uni["stock_id"], uni["market"], uni["first_seen"], uni["last_seen"]))
+    rows = []
+    with Pool(procs, initializer=R34._init, initargs=(cal, bench, disp, rev, rev_ly, rdates, lo, hi)) as pool:
+        for r in pool.imap_unordered(R34.process_stock, jobs, chunksize=8):
+            if r:
+                rows += r
+    panel = pd.DataFrame(rows)
+    for c in ("rev_hi12", "rev_hi24", "rev_hi36", "bull"):
+        if c in panel:
+            panel[c] = panel[c].astype("boolean")
+    panel["signal_date"] = [cal[i].strftime("%Y-%m-%d") for i in panel["signal_pos"]]
+    panel["entry_date"] = [cal[i].strftime("%Y-%m-%d") for i in panel["entry_pos"]]
+    panel.to_csv(os.path.join(out, "panel_rev.csv.gz"), index=False, compression="gzip")
+    log(f"[①營收面板] {len(panel):,} 列｜營收 {rev.shape[0]} 期（{rev.index.min()}～{rev.index.max()}）｜訊號窗 {cal[lo].date()}～{cal[hi].date()}｜{time.time() - t0:.0f}s")
+    tasks = [(r.stock_id, r.market, r.first_seen) for r in uni.itertuples()]
+    main_rows = []
+    with Pool(procs, initializer=R._init, initargs=(cal,)) as pool:
+        for r in pool.imap_unordered(R.stock_features, tasks, chunksize=8):
+            if r is not None:
+                main_rows.extend(r["main"])
+    S_full = pd.DataFrame(main_rows)
+    S_full.to_csv(os.path.join(out, "signals_S_full.csv.gz"), index=False)
+    pnl = pd.read_csv(os.path.join(out, "panel_rev.csv.gz"), dtype={"stock_id": str})
+    pnl["rev_hi24"] = pnl["rev_hi24"].fillna(False).astype(bool)
+    S = pd.read_csv(os.path.join(out, "signals_S_full.csv.gz"), dtype={"sid": str})
+    S = S[["sid", "k", "pos", "entry_pos", "month", "g_H60", "g_H120", "g_LD", "xpos_H60", "xpos_H120", "xpos_LD", "t_LD"]].copy()
+    flags, _ = R13.and_flags(S, pnl)
+    AND = S[flags].copy()
+    missing, mism = P1.attach_features(AND, S, cal, uni.set_index("stock_id")["market"], procs)
+    if mism:
+        raise SystemExit("⛔ k 與 pos 對不上")
+    AND.to_csv(os.path.join(out, "and_signals.csv.gz"), index=False)
+    S.to_csv(os.path.join(out, "signals_S.csv.gz"), index=False)
+    log(f"[②③④] S {len(S):,}｜AND {len(AND):,}／{AND['sid'].nunique()} 檔｜relvol 缺 {int(AND['relvol'].isna().sum())}｜讀不到 {len(missing)}｜{time.time() - t0:.0f}s")
+    positions = P.measurement_days(cal, PANEL_START, PANEL_END)
+    pan, M = RP4.build_panel(cal, uni, positions, procs=procs, log=lambda s: None)
+    if len(M):
+        M.to_csv(os.path.join(out, "min_periods_mismatch.csv"), index=False)
+        raise SystemExit("⛔ min_periods 常設斷言不成立")
+    pan.to_csv(os.path.join(out, "panel.csv.gz"), index=False)
+    info = {"layout": layout, "data": D.DATA, "母體": int(len(uni)), "營收面板列": int(len(panel)), "S": int(len(S)), "AND": int(len(AND)),
+            "門檻B面板列": int(len(pan)), "eligible": int(pan["eligible"].sum()), "量測日": [str(cal[positions[0]].date()), str(cal[positions[-1]].date()), int(len(positions))],
+            "SIG": [str(cal[lo].date()), str(cal[hi].date())], "秒": round(time.time() - t0)}
+    json.dump(info, open(os.path.join(out, "INFO.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    log(f"[⑤門檻B面板] {json.dumps(info, ensure_ascii=False)}")
+
+
+# ═════════════ R8：減資事件的訊號剔除與持有截斷 ═════════════
+def apply_events(tbl, E, cal, kind, px=None):
+    """kind＝"AND"（訊號日＝pos；xpos／g 三組 H60／H120／LD，g 用 D.load_stock 還原價重算）或 "B"（訊號日＝entry_pos−1；xpos_H120／g_H120 用引擎價）。
+    回 (新表, 計數)。E：stock_id, e, L（日期字串）。"""
+    from . import data as D
+    pos = {d.strftime("%Y-%m-%d"): i for i, d in enumerate(cal)}
+    T = tbl.copy()
+    sd = T["pos"].to_numpy() if kind == "AND" else T["entry_pos"].to_numpy() - 1
+    drop = np.zeros(len(T), bool); n_short = {}
+    ev = {}
+    for s, e, L in zip(E["stock_id"], E["e"], E["L"]):
+        if e in pos and L in pos:
+            ev.setdefault(s, []).append((pos[e], pos[L]))
+    sid = T["sid"].to_numpy()
+    for s, lst in ev.items():
+        m = sid == s
+        if not m.any():
+            continue
+        for pe, pL in lst:
+            drop |= m & (sd >= pe - 5) & (sd <= pe + 60)
+    T = T[~drop].copy()
+    cols = [("xpos_H60", "g_H60"), ("xpos_H120", "g_H120"), ("xpos_LD", "g_LD")] if kind == "AND" else [("xpos_H120", "g_H120")]
+    cache = {}
+    short_keys = set()
+    for s, lst in ev.items():
+        idx = np.flatnonzero(T["sid"].to_numpy() == s)
+        if not len(idx):
+            continue
+        for pe, pL in lst:
+            for i in idx:
+                e_ = int(T.iloc[i]["entry_pos"])
+                for xc, gc in cols:
+                    x_ = int(T.iloc[i][xc])
+                    if x_ < 0 or not (e_ <= pL and x_ >= pe):
+                        continue
+                    if kind == "AND":
+                        if s not in cache:
+                            st = D.load_stock(s, "twse", cal)
+                            cache[s] = (st.df["open"].to_numpy(float), st.df["close"].to_numpy(float))
+                        o_, c_ = cache[s]
+                        g = c_[pL] / o_[e_] - 1.0
+                    else:
+                        g = float(px[0][s][pL]) / float(px[1][s][e_]) - 1.0
+                    T.iat[i, T.columns.get_loc(xc)] = pL
+                    T.iat[i, T.columns.get_loc(gc)] = g
+                    n_short[xc] = n_short.get(xc, 0) + 1
+                    short_keys.add((s, e_))
+    return T, {"事件（在日曆內）": sum(len(v) for v in ev.values()), "訊號日落在 [e−5,e+60] 刪除": int(drop.sum()),
+               "持有跨事件改在 L 了結": n_short, "_short_keys": sorted(short_keys)}
+
+
+def sig12_ext(panel, cal, closes, opens, start):
+    """researchYear1M.sig12 的同一式，只把 start 換成參數（原件寫死 2017-01-01）。"""
+    from . import researchp7 as P7
+    ncal = len(cal); EXT = 300
+    cal_x = cal.append(pd.bdate_range(cal[-1] + pd.Timedelta(days=1), periods=EXT))
+    cx = {s: np.r_[c, np.full(EXT, c[-1], dtype=c.dtype)] for s, c in closes.items()}
+    ox = {s: np.r_[o, np.full(EXT, np.nan, dtype=o.dtype)] for s, o in opens.items()}
+    sx = P7.build_sig_gate_b(panel, cal_x, cx, ox, start=start, signal="B")
+    s0 = P7.build_sig_gate_b(panel, cal, closes, opens, start=start, signal="B")
+    keep = sx[sx["xpos_H120"] < ncal].reset_index(drop=True)
+    if not keep.equals(s0.reset_index(drop=True)):
+        raise SystemExit("⛔ 延伸日曆建出的非截斷列 ≠ 原日曆建出的訊號")
+    cen = sx[(sx["xpos_H120"] >= ncal) & (sx["entry_pos"] < ncal)].copy()
+    cen["g_H120"] = [float(closes[s][ncal - 1]) / float(opens[s][e]) - 1.0 for s, e in zip(cen["sid"], cen["entry_pos"])]
+    cen["xpos_H120"] = ncal
+    out = pd.concat([s0, cen], ignore_index=True).sort_values(["entry_pos", "sid"], kind="stable").reset_index(drop=True)
+    return s0, out, {"原函式列數": len(s0), "截斷補回": len(cen)}
+
+
+def win_of(cal, variant):
+    if variant == "desc":
+        per = pd.DatetimeIndex(cal).strftime("%Y-%m")
+        f = int(np.flatnonzero(per == DESC_MONTHS[0])[0]); w0 = f + 1
+        w1 = int(np.flatnonzero(per == DESC_MONTHS[1])[-1])
+        return w0, w1
+    w0 = int(cal.searchsorted(pd.Timestamp(W_MAIN[0]))); w1 = int(cal.searchsorted(pd.Timestamp(W_MAIN[1])))
+    assert str(cal[w0].date()) == W_MAIN[0] and str(cal[w1].date()) == W_MAIN[1] and w1 == len(cal) - 1
+    return w0, w1
+
+
+def body_setup(variant, log):
+    """把 researchYear1M._G／researchP9run._G 填成早年版（fork 前做）。"""
+    from . import data as D
+    from . import early_data as E
+    from . import p4_features as P4F
+    from . import p9_flags as F
+    from . import research11 as R
+    from . import researchP9run as P9R
+    from . import researchYear1M as Y
+    from . import rerun17 as RR
+    from . import yfstop_lines as YL
+    layout = "restore" if variant == "restore" else "main"
+    use_layout(layout)
+    sdir = body_paths(layout)[1]
+    cal = D.load_calendar(); ncal = len(cal)
+    uni = D.load_universe().set_index("stock_id")["market"]
+    AND = pd.read_csv(os.path.join(sdir, "and_signals.csv.gz"), dtype={"sid": str})
+    S = pd.read_csv(os.path.join(sdir, "signals_S.csv.gz"), dtype={"sid": str})
+    panel = P4F.read_panel(os.path.join(sdir, "panel.csv.gz"))
+    if variant == "desc":
+        panel["eligible"] = panel["liq_ok"].astype(bool) & panel["bars_ok"].astype(bool)      # eligible_v（登錄 §一）
+    sids = set(AND["sid"]) | set(S["sid"]) | set(panel["stock_id"])
+    closes, opens = RR.load_prices(sids, cal, uni, "branch")
+    bench = RR.load_bench(cal)
+    w0, w1 = win_of(cal, variant)
+    info = {"variant": variant, "layout": layout, "D.DATA": D.DATA, "窗": [str(cal[w0].date()), str(cal[w1].date()), w1 - w0 + 1],
+            "closes dtype": str(next(iter(closes.values())).dtype)}
+    AND_m, cA = Y.and_censor(AND, cal, uni, lambda x: None)
+    S_m, cS = Y.and_censor(S, cal, uni, lambda x: None)
+    s12_eng, s12_mtm, i12 = sig12_ext(panel, cal, closes, opens, B_START)
+    info["T1"] = {"AND": cA, "S": cS, "門檻B": i12}
+    # R8
+    if variant == "restore":
+        EV = None
+    else:
+        EV = pd.read_csv(os.path.join(E.snap_dir(E.BODY_SHA), "reduce_events.csv"), dtype=str)
+        if variant == "desc":
+            X = pd.read_csv(os.path.join(E.snap_dir(E.BODY_SHA), "detected_events.csv"), dtype={"stock_id": str, "L": str, "e": str})
+            X = X[~X["exright_in_gap"].astype(bool)]
+            EV = pd.concat([EV[["stock_id", "e", "L"]], X[["stock_id", "e", "L"]]]).drop_duplicates(["stock_id", "e"])
+    ev_info = {}
+    if EV is not None:                                      # 被剔除的股-月（門檻B 面板 eligible、量測日次日進場在窗內）
+        posd = {d.strftime("%Y-%m-%d"): i for i, d in enumerate(cal)}
+        el = panel[panel["eligible"].astype(bool)].copy()
+        el["mp"] = el["measure_date"].map(lambda d: posd.get(d.strftime("%Y-%m-%d"), -9))
+        el = el[(el["mp"] + 1 >= w0) & (el["mp"] + 1 <= w1)]
+        hit = np.zeros(len(el), bool)
+        evd = {}
+        for s_, e_, l_ in zip(EV["stock_id"], EV["e"], EV["L"]):
+            if e_ in posd:
+                evd.setdefault(s_, []).append(posd[e_])
+        sidv = el["stock_id"].to_numpy(); mpv = el["mp"].to_numpy()
+        for s_, lst in evd.items():
+            mm = sidv == s_
+            for pe in lst:
+                hit |= mm & (mpv >= pe - 5) & (mpv <= pe + 60)
+        info["R8_股月"] = {"窗內 eligible 股-月": int(len(el)), "落在 [e−5,e+60]": int(hit.sum()), "占比": float(hit.mean()) if len(el) else None,
+                          "事件數（窗內恢復日）": int(sum(1 for s_, lst in evd.items() for pe in lst if w0 <= pe <= w1))}
+    tabs = {"AND_eng": (AND, "AND"), "AND_mtm": (AND_m, "AND"), "S_mtm": (S_m, "AND"), "s12_eng": (s12_eng, "B"), "s12_mtm": (s12_mtm, "B")}
+    T = {}
+    short_all = set()
+    for k, (t, kind) in tabs.items():
+        if EV is None:
+            T[k] = t; continue
+        T[k], c = apply_events(t, EV, cal, kind, px=(closes, opens))
+        short_all |= set(map(tuple, c.pop("_short_keys")))
+        ev_info[k] = c
+    info["R8"] = ev_info
+    if variant == "noT":
+        tr = set(json.load(open(os.path.join(E.snap_dir(E.BODY_SHA), "transferred.json"))))
+        for k in T:
+            T[k] = T[k][~T[k]["sid"].isin(tr)].copy()
+        info["noT 剔除檔數"] = len(tr)
+    closesP, opensP = Y.pad_px(closes, opens)
+    benchP = np.r_[bench, bench[-1]]
+    reg = RR.regime_mask(benchP)
+    reg_t1 = np.zeros_like(reg); reg_t1[1:] = reg[:-1]
+    fl_sids = set(T["s12_mtm"]["sid"]) | set(T["s12_eng"]["sid"])
+    fo = F.build_flags(panel, cal, sids=fl_sids)
+    flags = {s: np.r_[v, False] for s, v in fo.items()}
+    below = {n: R.regime_below(benchP, n) for n in (60, 20, 10)}
+    P9R._G.update(below=below, flags=flags)
+    Y._G.update(cal=cal, ncal=ncal, NP=ncal + 1, uni=uni, AND_eng=T["AND_eng"], AND_mtm=T["AND_mtm"], s12_eng=T["s12_eng"], s12_mtm=T["s12_mtm"],
+                closes=closesP, opens=opensP, bench=bench, benchP=benchP, reg_t1=reg_t1, reg=reg, flags_orig=flags, flags_plus=flags)
+    vtag = "eng" if variant == "eng" else "mtm"
+    # #25／#26 的訊號（＝ #1 同一組）＋ K4／K0 鍵、M20 線
+    s1 = Y.sig_of(1, vtag, w0, w1).copy()
+    bars = {}
+    def bars_of(s):
+        if s not in bars:
+            bars[s] = R.load_bars(s, uni.get(s, "twse"), cal)
+        return bars[s]
+    k4 = []
+    for s, k in zip(s1["sid"], s1["k"].astype(int)):
+        c = bars_of(s)["c"]
+        k4.append(float(c[k] / c[k - 20] - 1.0))
+    s1["K4"] = k4
+    s1["K0"] = s1["sid"].str[-1].astype(int)
+    lines = YL.ma_lines(s1, closesP, bars_of, 20, arm="state")
+    V = {}
+    for s in set(s1["sid"]):
+        v = np.zeros(ncal + 1, bool); v[bars_of(s)["idx"]] = True; V[s] = v
+    ent = {}
+    for s, e in zip(s1["sid"], s1["entry_pos"].astype(int)):
+        ent.setdefault(e, []).append(s)
+    _B.clear()
+    _B.update(variant=variant, vtag=vtag, cal=cal, ncal=ncal, w0=w0, w1=w1, bench=bench, s1=s1, lines=lines, V=V, ent=ent,
+              xmap={(s, int(e)): int(x) for s, e, x in zip(s1["sid"], s1["entry_pos"], s1["xpos_H120"])},
+              short_keys=short_all, S_mtm=T["S_mtm"], AND_mtm=T["AND_mtm"])
+    info["訊號數（窗內）"] = sig_counts(cal, w0, w1, vtag)
+    info["#25 線數"] = len(lines); info["#1 訊號（=#25/#26 底）"] = int(len(s1))
+    log(f"[setup {variant}] {json.dumps({k: v for k, v in info.items() if k not in ('R8',)}, ensure_ascii=False, default=str)}")
+    return info
+
+
+def sig_counts(cal, w0, w1, vtag):
+    from . import researchYear1M as Y
+    out = {}
+    for cid in list(range(1, 24)) + [0]:
+        if cid in (5, 8):
+            continue
+        s = Y.sig_of(cid, vtag, w0, w1)
+        out[cid] = {"訊號": int(len(s)), "檔": int(s["sid"].nunique())}
+    return out
+
+
+# ── 一顆種子一格 ──
+def _metrics(eq, first, end, hv=None, au=None):
+    from . import rerun17 as RR
+    from . import research13 as R13
+    G = _B; w0, w1, cal = G["w0"], G["w1"], G["cal"]
+    eq = np.asarray(eq, float)
+    c, m, v = RR.win_metrics(eq, first, end, w0, w1)
+    seg = eq[w0:w1 + 1]
+    row = {"cagr": float(c), "mdd": float(m), "vol": float(v), "first": int(first), "end": int(end)}
+    row.update(_path_desc(seg, None if hv is None else np.asarray(hv, float)[w0:w1 + 1]))
+    if au is not None:
+        yrs = (w1 + 1 - w0) / 245; meq = float(seg.mean())
+        buy = sum(float(a["amt"]) for a in au if a["side"] == "buy" and w0 <= int(a["t"]) <= w1)
+        cost = sum(float(a.get("cost", 0.0)) for a in au if a["side"] == "sell" and w0 <= int(a["t"]) <= w1)
+        row["turnover_yr"] = buy / meq / yrs; row["cost_yr"] = cost / meq / yrs
+        sk = G["short_keys"]
+        row["short_settled"] = sum(1 for a in au if a["side"] == "buy" and (a["sid"], int(a["t"])) in sk)
+    return row
+
+
+def _path_desc(seg, hvseg):
+    """逐年（P9 讀7：首年 ÷ eq[w0]）、去掉最好一年、描述段兩個大跌段的區間報酬與在場比例。seg ＝ eq[w0..w1]。"""
+    G = _B; cal = G["cal"]; w0, w1 = G["w0"], G["w1"]
+    d = pd.DatetimeIndex(cal[w0:w1 + 1])
+    yy = d.year; ym = d.strftime("%Y-%m")
+    out = {}; yr = {}; prev = 0
+    for y in sorted(set(yy)):
+        ix = np.flatnonzero(yy == y); last = int(ix[-1])
+        yr[int(y)] = float(seg[last] / seg[prev] - 1.0); out[f"y{y}"] = yr[int(y)]; prev = last
+    if len(yr) > 1:
+        best = max(yr, key=yr.get)
+        nb = int(np.sum(yy == best))
+        rest = np.prod([1 + r for y, r in yr.items() if y != best])
+        out["drop_best_year"] = best
+        out["drop_best_geo"] = float(rest ** (245.0 / max(len(seg) - 1 - nb, 1)) - 1.0)
+    if hvseg is not None:
+        out["expo"] = float(np.mean(hvseg / seg))
+    if G["variant"] == "desc":
+        for k, (a, b) in CRASH.items():
+            ia = np.flatnonzero(ym == a); ib = np.flatnonzero(ym == b)
+            if len(ia) and len(ib):
+                p0, p1 = int(ia[-1]), int(ib[-1])
+                out[f"crash_{k}"] = float(seg[p1] / seg[p0] - 1.0)
+                if hvseg is not None:
+                    out[f"crash_expo_{k}"] = float(np.mean(hvseg[p0 + 1:p1 + 1] / seg[p0 + 1:p1 + 1]))
+    return out
+
+
+def _run_cell(cid, r, sig=None, kw_over=None, below=None, want_audit=True):
+    """回 (eq, first, end, hold_val, audit)。cid：1～24、25、26、"C1"、"C2"、"K0"。"""
+    from . import research11 as R
+    from . import researchAvg as AV
+    from . import researchP9run as P9R
+    from . import researchYear1M as Y
+    G = _B; YG = Y._G; w0, w1 = G["w0"], G["w1"]
+    au = [] if want_audit else None
+    cl, op, NP = YG["closes"], YG["opens"], YG["NP"]
+    if cid in (25, 26, "C1", "C2", "K0"):
+        s1 = G["s1"] if sig is None else sig
+        kw = {25: {"stop_line": G["lines"], "stop_line_le": False}, 26: {"pick": "K4", "pick_tie": "rng"},
+              "C2": {"stop_line": G["lines"], "stop_line_le": False, "stop_proceeds": "next"}, "K0": {"pick": "K0", "pick_tie": "rng"}}.get(cid, {})
+        if kw_over is not None:
+            kw = kw_over
+        o = R.simulate_mtm(s1, "H120", 10, np.random.default_rng(1000 + r), cl, op, NP, return_equity=True, audit=au, **kw)
+    elif cid == 24:
+        s = Y.sig_of(18, G["vtag"], w0, w1) if sig is None else sig
+        P9R._G["flags"] = YG["flags_plus"]
+        o = R.simulate_mtm(s, P9R.RULE, P9R.N_MAIN, np.random.default_rng(99000 + r), cl, op, NP,
+                           return_equity=True, report_maxw=True, audit=au, **AV.ENGINE_KW_B["By"])
+    elif below is not None:
+        s = Y.sig_of(cid, G["vtag"], w0, w1)
+        P9R._G["flags"] = YG["flags_plus"]
+        o = R.simulate_mtm(s, P9R.RULE, P9R.N_MAIN, np.random.default_rng(99000 + r), cl, op, NP,
+                           return_equity=True, report_maxw=True, **P9R.engine_kw(P9_KEYS[cid], below=below))
+    else:
+        s = Y.sig_of(cid, G["vtag"], w0, w1) if sig is None else sig
+        o = Y.run_engine(cid, s, r, G["vtag"], audit=au)
+    return o, au
+
+
+def _job(args):
+    from . import rerun17 as RR
+    from . import research13 as R13
+    from . import researchp17 as P17
+    from . import researchYear1M as Y
+    cid, r = args
+    G = _B; w0, w1 = G["w0"], G["w1"]
+    o, au = _run_cell(cid, r)
+    eq = np.asarray(o["equity"], float)
+    rows = []
+    if cid == 0:
+        n = w1 - w0 + 1
+        Vs = Y.p12_derived(eq, w0, w1)
+        for c in (0, 8, 5):
+            V = Vs[c]
+            cg, mg = R13.window_stats(V, 0, n, 0, n)
+            row = {"cell": c, "r": r, "cagr": float(cg), "mdd": float(mg), "vol": RR.ann_vol(V), "first": int(o["first"]), "end": int(o["end"])}
+            row.update(_path_desc(V, None if c != 0 else np.asarray(o["hold_val"], float)[w0:w1 + 1]))
+            if c == 0:
+                row.update({k: v for k, v in _metrics(eq, o["first"], o["end"], o.get("hold_val"), au).items() if k in ("turnover_yr", "cost_yr", "short_settled")})
+            rows.append((row, V))
+        if G["variant"] == "main":                                    # #5 假訊號臂 W_shuf（原件 P17：每顆 30 次，default_rng(108000＋r)）
+            E_ = eq[w0:w1 + 1]; B_ = G["bench"][w0:w1 + 1]
+            rb = P17.rebal_days(G["cal"], w0, w1)
+            mask = np.zeros(n, bool); mask[[int(t) for t in rb]] = True
+            sB = {int(t): P17.sigma_at(B_, int(t)) for t in rb}
+            wp = P17.w_paths(E_, B_, rb, n, sB)["R_eq"]
+            rng = np.random.default_rng(P17.SEED_SHUF + r); sh = []
+            for rep in range(P17.R_SHUF):
+                Vw, _, _ = P17.compose(E_, B_, P17.shuffled_w(wp, rb, n, rng), mask)
+                cg, mg = R13.window_stats(Vw, 0, n, 0, n); sh.append((rep, float(cg), float(mg)))
+            rows[2][0]["_shuf"] = sh
+    else:
+        row = {"cell": cid, "r": r, "trades": int(o["trades"])}
+        row.update(_metrics(eq, o["first"], o["end"], o.get("hold_val"), au))
+        if cid == 1:
+            row.update(_lottery_days(au))
+        if cid == 25:
+            row["_pos"] = _positions25(au)
+        if cid == 26:
+            _, al = _run_cell(1, r)
+            bl = {(a["sid"], int(a["t"])) for a in al if a["side"] == "buy"}
+            bb = [(a["sid"], int(a["t"])) for a in au if a["side"] == "buy"]
+            row["buy_diff"] = len(bl - set(bb)); row["buys"] = len(bb)
+            kv = dict(zip(zip(G["s1"]["sid"], G["s1"]["entry_pos"].astype(int)), G["s1"]["K4"]))
+            row["buy_K4_mean"] = float(np.nanmean([kv.get(b, np.nan) for b in bb])) if bb else np.nan
+            row["lot_K4_mean"] = float(np.nanmean([kv.get(b, np.nan) for b in bl])) if bl else np.nan
+        rows.append((row, eq[w0:w1 + 1]))
+    return [(row, np.asarray(V[1:] / V[:-1] - 1.0)) for row, V in rows]
+
+
+def _lottery_days(au, N=10):
+    G = _B; ent = G["ent"]; w0, w1 = G["w0"], G["w1"]
+    by_t = {}
+    for a in au:
+        by_t.setdefault(int(a["t"]), []).append(a)
+    held = set(); d_sig = d_over = d_act = 0; elim = 0
+    for t in sorted(set(by_t) | set(ent)):
+        for a in by_t.get(t, []):
+            if a["side"] == "sell":
+                held.discard(a["sid"])
+        if t in ent and w0 <= t <= w1:
+            cand = [s for s in ent[t] if s not in held]; free = N - len(held)
+            d_sig += 1
+            if len(cand) > free:
+                d_over += 1
+                if free > 0:
+                    d_act += 1; elim += len(cand) - free
+        for a in by_t.get(t, []):
+            if a["side"] == "buy":
+                held.add(a["sid"])
+    return {"days_sig": d_sig, "days_over": d_over, "days_act": d_act, "elim_by_lottery": elim}
+
+
+def _positions25(au):
+    """#25 部位：(是否被 M20 賣、觸發根＝researchYfV2.positions 同式)。"""
+    G = _B; xmap, V = G["xmap"], G["V"]
+    pos = {}; out = []
+    for a in au:
+        t = int(a["t"])
+        if a["side"] == "buy":
+            pos[a["sid"]] = t
+        elif "kind" not in a:
+            s = a["sid"]; e = pos.pop(s); x = xmap[(s, e)]
+            out.append((t < x, int(V[s][e:t].sum()) if t < x else 0))
+    return out
+
+
+# ── 假訊號臂與控制臂 ──
+def _job_pl(args):
+    from . import rerun17 as RR
+    from . import research11 as R
+    from . import research13 as R13
+    from . import researchYear1M as Y
+    from . import researchp1 as P1
+    kind, cid, j = args
+    G = _B; YG = Y._G; w0, w1 = G["w0"], G["w1"]
+    if kind == "P10":
+        s = G["pl_draw"][j]
+        if cid in REG_T1:
+            s = s[YG["reg_t1"][s["entry_pos"].to_numpy()]]
+        o, _ = _run_cell(cid, j, sig=s, want_audit=False)
+    elif kind == "P1":
+        o, _ = _run_cell(cid, j, sig=G["p1_draw"][j], want_audit=False)
+    elif kind == "P9":
+        key_j, r = j
+        o, _ = _run_cell(cid, r, below=G["fake"][(cid, key_j)], want_audit=False)
+    elif kind in ("K0", "C2"):
+        o, _ = _run_cell(kind, j, want_audit=False)
+    elif kind == "C1":
+        o, _ = _run_cell("C1", j, kw_over={"stop_line": G["c1_lines"][j], "stop_line_le": False}, want_audit=False)
+    elif kind == "P3":
+        sp = dict(Y.CELL[cid][4])
+        s = Y.sig_of(cid, G["vtag"], w0, w1)
+        kw = dict(d_max=sp["d"], pick=sp["pick"], queue_days=RR.P1_QUEUE if sp["d"] is not None else 0, return_equity=True)
+        A = R.simulate_mtm(s, "H60", sp["N"], np.random.default_rng(RR.P1_SEED0 + j), YG["closes"], YG["opens"], YG["NP"], log=[], **kw)
+        eq = np.asarray(A["equity"], float)[w0:w1 + 1]; hv = np.asarray(A["hold_val"], float)[w0:w1 + 1]
+        e = np.where(eq > 0, hv / eq, 0.0)
+        r_tot = np.r_[0.0, eq[1:] / eq[:-1] - 1]
+        e_prev = np.r_[0.0, e[:-1]]
+        r_inv = np.where(e_prev > 1e-12, r_tot / np.where(e_prev > 1e-12, e_prev, 1.0), 0.0)
+        n = len(eq); res = []
+        for k in range(200):
+            kk = int(np.random.default_rng(9000 + k).integers(1, n))
+            e2 = np.roll(e, -kk)
+            eq2 = np.cumprod(1.0 + np.r_[0.0, e2[:-1]] * r_inv)
+            cg, mg = R13.window_stats(eq2, 0, n, 0, n); res.append((k, float(cg), float(mg)))
+        return {"kind": kind, "cell": cid, "j": j, "shifts": res}
+    eq = np.asarray(o["equity"], float)
+    c, m, v = RR.win_metrics(eq, o["first"], o["end"], w0, w1)
+    out = {"kind": kind, "cell": cid, "j": j if not isinstance(j, tuple) else j[0], "r": j if not isinstance(j, tuple) else j[1],
+           "cagr": float(c), "mdd": float(m), "vol": float(v)}
+    if kind == "C1":
+        out["c1_sold"] = G["c1_cnt"][j]
+    return out
+
+
+def _c1_lines(r, p, bars):
+    from . import researchYfV2 as YV
+    return YV.c1_lines(r, _B["s1"], _B["V"], p, bars)
+
+
+def body_run(procs, log, only=None):
+    from multiprocessing import Pool
+    from . import researchP9run as P9R
+    from . import researchYear1M as Y
+    global OUT
+    NREP = int(os.environ.get("PV_REPS", "200"))
+    OUT = os.environ.get("PV_OUT", OUT)
+    os.makedirs(OUT, exist_ok=True)
+    t00 = time.time()
+    vlist = VARIANTS if only is None else only
+    allrows = []; meanret = {}; placebo = []; infos = {}
+    infos["程式 sha256（組態）"] = {f: _sha256(os.path.join(HERE, f))[:16] for f in (
+        "research11.py", "research13.py", "research34.py", "researchp1.py", "researchp4.py", "researchp7.py", "researchp14.py", "researchp17.py",
+        "p4_features.py", "p9_flags.py", "researchP9run.py", "researchAvg.py", "researchYear1M.py", "rerun17.py", "yfstop_lines.py", "researchYfV2.py",
+        "data.py", "early_data.py", "researchV.py")}
+    for variant in vlist:
+        info = body_setup(variant, log); infos[variant] = info
+        w0, w1 = _B["w0"], _B["w1"]
+        cells = [0] + [c for c in range(1, 27) if c not in (5, 8)]
+        jobs = [(c, r) for c in cells for r in range(NREP)]
+        acc = {}; cnt = {}; pos25 = []
+        t0 = time.time()
+        with Pool(procs) as pool:
+            for res in pool.imap_unordered(_job, jobs, chunksize=4):
+                for row, ret in res:
+                    c = row["cell"]
+                    acc[c] = acc.get(c, 0.0) + ret; cnt[c] = cnt.get(c, 0) + 1
+                    if "_pos" in row:
+                        pos25 += row.pop("_pos")
+                    if "_shuf" in row:
+                        for rep, cg, mg in row.pop("_shuf"):
+                            placebo.append({"variant": variant, "kind": "W_shuf", "cell": 5, "j": rep, "r": row["r"], "cagr": cg, "mdd": mg})
+                    row["variant"] = variant
+                    allrows.append(row)
+        log(f"  [{variant}] 26 格 × 200 顆 {time.time() - t0:.0f}s")
+        mr = pd.DataFrame({f"c{c}": acc[c] / cnt[c] for c in sorted(acc)}, index=pd.DatetimeIndex(_B["cal"][w0 + 1:w1 + 1]))
+        b = _B["bench"]; mr["0050"] = b[w0 + 1:w1 + 1] / b[w0:w1] - 1.0
+        meanret[variant] = mr
+        mr.to_csv(os.path.join(OUT, f"body_meanret_{variant}.csv.gz"), compression="gzip", float_format="%.17g")
+        if variant != "main":
+            continue
+        # ── 假訊號臂＋控制臂（只在判定版）──
+        n_sold = sum(1 for s, _ in pos25 if s); bars = np.asarray([b_ for s, b_ in pos25 if s], int)
+        p = n_sold / max(len(pos25), 1)
+        c1 = {"部位數（200 顆合併）": len(pos25), "被 M20 賣掉": n_sold, "p": p,
+              "觸發根 p10／中位／p90": [float(np.quantile(bars, q)) for q in (.1, .5, .9)] if len(bars) else None}
+        infos["C1經驗分佈"] = c1
+        c1l = {}; c1c = {}
+        for r in range(NREP):
+            c1l[r], ns, nsh = _c1_lines(r, p, bars) if len(bars) else ({}, 0, 0)
+            c1c[r] = (ns, nsh)
+        rng13 = np.random.default_rng(13)
+        S_w = _B["S_mtm"]; e_ = S_w["entry_pos"].to_numpy(); S_w = S_w[(e_ >= w0) & (e_ <= w1)].reset_index(drop=True)
+        A_w = _B["AND_mtm"]; e2 = A_w["entry_pos"].to_numpy(); A_w = A_w[(e2 >= w0) & (e2 <= w1)]
+        nA = len(A_w)
+        pl_draw = [S_w.iloc[np.sort(rng13.choice(len(S_w), min(nA, len(S_w)), replace=False))].reset_index(drop=True) for _ in range(NREP)]
+        p1_draw = []
+        need = A_w.groupby("month").size().to_dict()
+        by_m = {m: g for m, g in S_w.groupby("month")}
+        for r in range(NREP):
+            g = np.random.default_rng(20260925 + r); parts = []
+            for m, k in sorted(need.items()):
+                pool_ = by_m.get(m)
+                if pool_ is None:
+                    continue
+                parts.append(pool_.iloc[np.sort(g.choice(len(pool_), min(k, len(pool_)), replace=False))])
+            p1_draw.append(pd.concat(parts).sort_values(["entry_pos", "sid"], kind="stable").reset_index(drop=True))
+        fake = {}
+        for cid, n in ((22, 60), (23, 10)):
+            orig = P9R._G["below"][n]
+            for jj in range(1, 31):
+                fake[(cid, jj)] = P9R.shuffle_state(orig, w0 - 1, w1, np.random.default_rng(20260925 + jj))
+        _B.update(pl_draw=pl_draw, p1_draw=p1_draw, fake=fake, c1_lines=c1l, c1_cnt=c1c)
+        infos["假訊號抽樣"] = {"S 窗內列": int(len(S_w)), "|AND| 窗內": nA, "P1 月數": len(need),
+                           "P1 抽到的列數（中位）": float(np.median([len(x) for x in p1_draw])), "AND 列數": nA}
+        pj = [("P10", c, j) for c in P10_CELLS for j in range(NREP)] + [("P1", c, r) for c in P1_CELLS for r in range(NREP)] + \
+             [("P3", c, r) for c in P3B_CELLS for r in range(NREP)] + [("P9", c, (jj, r)) for c in (22, 23) for jj in range(1, 31) for r in range(min(50, NREP))] + \
+             [("K0", 26, r) for r in range(NREP)] + [("C1", 25, r) for r in range(NREP)] + [("C2", 25, r) for r in range(NREP)]
+        t0 = time.time()
+        with Pool(procs) as pool:
+            for res in pool.imap_unordered(_job_pl, pj, chunksize=8):
+                if "shifts" in res:
+                    for k, cg, mg in res["shifts"]:
+                        placebo.append({"variant": "main", "kind": "P3shift", "cell": res["cell"], "j": k, "r": res["j"], "cagr": cg, "mdd": mg})
+                else:
+                    res["variant"] = "main"; placebo.append(res)
+        log(f"  [main] 假訊號＋控制臂 {len(pj):,} 件 {time.time() - t0:.0f}s")
+    SD = pd.DataFrame(allrows)
+    SD.to_csv(os.path.join(OUT, "body_seeds.csv.gz"), index=False, compression={"method": "gzip", "mtime": 0}, float_format="%.17g")
+    PL = pd.DataFrame(placebo)
+    PL.to_csv(os.path.join(OUT, "body_placebo.csv.gz"), index=False, compression={"method": "gzip", "mtime": 0}, float_format="%.17g")
+    json.dump(infos, open(os.path.join(OUT, "body_setup.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
+    log(f"[完成 body-run] seeds {len(SD):,}｜placebo {len(PL):,}｜{time.time() - t00:.0f}s（⛔ 本 log 不印任何報酬）")
+
+
+
+# ═════════════ body-gate：#25／#26／C2／K0 的包裝在主窗逐位元對既有逐種子檔（⛔ 不碰早年）═════════════
+def body_gate(log, reps=20):
+    from . import listexit_lines as L
+    from . import research11 as R
+    from . import researchYfStop as YS
+    from . import yfstop_lines as YL
+    ctx = L.setup_t1(log)
+    RR, w0, w1 = ctx["RR"], ctx["w0"], ctx["w1"]
+    YS._G["ctx"] = ctx
+    sig = ctx["sig"].copy()
+    k4 = []
+    for s, k in zip(sig["sid"], sig["k"].astype(int)):
+        c = YS.bars_of(s)["c"]; k4.append(float(c[k] / c[k - 20] - 1.0))
+    sig["K4"] = k4; sig["K0"] = sig["sid"].str[-1].astype(int)
+    pk = pd.read_csv(os.path.join(HERE, "resultsYfRank", "pre_keys.csv"), dtype={"sid": str}, usecols=["sid", "entry_pos", "K0", "K4"], float_precision="round_trip")
+    m = sig.merge(pk, on=["sid", "entry_pos"], suffixes=("", "_ref"), validate="1:1")
+    keys_ok = len(m) == len(sig) and all(repr(a) == repr(b) for a, b in zip(m["K4"], m["K4_ref"])) and (m["K0"] == m["K0_ref"]).all()
+    lines = YL.ma_lines(sig, ctx["closes"], YS.bars_of, 20, arm="state")
+    arms = {"cand1": ({"stop_line": lines, "stop_line_le": False}, "resultsYfV2/main_seeds_arms.csv", "cand1"),
+            "cand2": ({"pick": "K4", "pick_tie": "rng"}, "resultsYfV2/main_seeds_arms.csv", "cand2"),
+            "C2": ({"stop_line": lines, "stop_line_le": False, "stop_proceeds": "next"}, "resultsYfStop/body_seeds_arms.csv", "M20"),
+            "K0": ({"pick": "K0", "pick_tie": "rng"}, "resultsYfRank/seeds.csv", "K0")}
+    res = {"鍵 K4／K0 ＝ resultsYfRank/pre_keys.csv（repr）": bool(keys_ok), "closes dtype": str(next(iter(ctx["closes"].values())).dtype)}
+    for a, (kw, f, ref_arm) in arms.items():
+        ref = pd.read_csv(os.path.join(HERE, f), float_precision="round_trip")
+        ref = ref[ref["arm"] == ref_arm].set_index("r").sort_index()
+        bad = 0
+        for r in range(reps):
+            o = R.simulate_mtm(sig, "H120", 10, np.random.default_rng(1000 + r), ctx["closes"], ctx["opens"], ctx["ncal"], return_equity=True, **kw)
+            c, mm, v = RR.win_metrics(np.asarray(o["equity"], float), o["first"], o["end"], w0, w1)
+            bad += int(repr(float(c)) != repr(float(ref.loc[r, "cagr"])) or repr(float(mm)) != repr(float(ref.loc[r, "mdd"])))
+        res[f"{a} ＝ {f}:{ref_arm}（{reps} 顆 年化／回落 repr）"] = bad == 0
+    res["全部過"] = all(v for k, v in res.items() if k != "closes dtype")
+    json.dump(res, open(os.path.join(OUT, "body_gate.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    log(f"[body-gate 主窗] {json.dumps(res, ensure_ascii=False)}")
+    if not res["全部過"]:
+        raise SystemExit("⛔ #25／#26 包裝閘不過")
+
+
+# ═════════════ body-table：彙總、判定、REPORT.md ═════════════
+def _pctl(x, dist):
+    d = np.asarray(dist, float)
+    return float(((d < x).sum() + 0.5 * (d == x).sum()) / len(d) * 100)
+
+
+def _lab(c, m, bc, bm):
+    from . import rerun17_table as RT
+    lab, ratio, extra = RT.label(c, m, bc, bm)
+    return {"合格": "Q", "另列": "R", "不合格": "F"}[lab], ratio, extra
+
+
+def boot_lb(mr, col, alpha=ALPHA_V, B=B_BOOT, seed=BOOT_SEED):
+    d = (mr[col] - mr["0050"]).to_numpy()
+    mon = mr.index.strftime("%Y-%m").to_numpy()
+    months = sorted(set(mon)); K = len(months)
+    mi = np.searchsorted(np.array(months), mon)
+    S = np.bincount(mi, weights=d, minlength=K); nm = np.bincount(mi, minlength=K).astype(float)
+    IDX = np.random.default_rng(seed).integers(0, K, size=(B, K))
+    stat = S[IDX].sum(1) / nm[IDX].sum(1) * ANN
+    return float(d.mean() * ANN), float(np.quantile(stat, alpha)), K
+
+
+def body_table(log):
+    from . import rerun17 as RR
+    from . import data as D
+    SD = pd.read_csv(os.path.join(OUT, "body_seeds.csv.gz"), float_precision="round_trip")
+    PL = pd.read_csv(os.path.join(OUT, "body_placebo.csv.gz"), float_precision="round_trip")
+    ST = json.load(open(os.path.join(OUT, "body_setup.json"), encoding="utf-8"))
+    NAME = {**{c: v[0] for c, v in PREREGV.items()}, **{c: v[0] for c, v in V2.items()}}
+    rows = []; bench = {}
+    for variant in [v for v in VARIANTS if v in set(SD["variant"])]:
+        use_layout("restore" if variant == "restore" else "main")
+        cal = D.load_calendar(); w0, w1 = win_of(cal, variant)
+        b = RR.load_bench(cal)
+        bw = RR.bench_row(cal, b, w0, w1 + 1)
+        seg = b[w0:w1 + 1] / b[w0]
+        _B.update(cal=cal, w0=w0, w1=w1, variant=variant)
+        bd = _path_desc(seg, None)
+        bench[variant] = {"window": [str(cal[w0].date()), str(cal[w1].date()), w1 - w0 + 1], **bw, "ratio": bw["cagr"] / abs(bw["mdd"]),
+                          "ann_over_vol": bw["cagr"] / bw["vol"], **bd}
+        mr = pd.read_csv(os.path.join(OUT, f"body_meanret_{variant}.csv.gz"), index_col=0, parse_dates=True, float_precision="round_trip")
+        for cid in range(1, 27):
+            g = SD[(SD["variant"] == variant) & (SD["cell"] == cid)]
+            if not len(g):
+                continue
+            c, m, v = float(g["cagr"].median()), float(g["mdd"].median()), float(g["vol"].median())
+            lab, ratio, extra = _lab(c, m, bw["cagr"], bw["mdd"])
+            row = {"variant": variant, "編號": cid, "格": NAME[cid], "顆": len(g), "起點": str(cal[w0].date()),
+                   "首筆進場（中位）": str(cal[int(g["first"].median())].date()) if "first" in g and g["first"].notna().all() and cid not in (5, 8) else "",
+                   "年化": c, "回落": m, "比值": ratio, "年化波動": v, "年化÷波動": c / v, "標籤": lab, "深淺註": extra,
+                   "0050年化": bw["cagr"], "0050回落": bw["mdd"], "0050比值": bw["cagr"] / abs(bw["mdd"]), "0050年化波動": bw["vol"],
+                   "0050年化÷波動": bw["cagr"] / bw["vol"]}
+            for k in [k for k in g.columns if (k.startswith("y") and k[1:].isdigit()) or k.startswith("crash") or k in
+                      ("drop_best_geo", "turnover_yr", "cost_yr", "expo", "trades", "short_settled", "days_act", "days_over", "days_sig", "buy_diff")]:
+                if g[k].notna().any():
+                    row[k] = float(g[k].median())
+            if f"c{cid}" in mr:
+                ad, lb, K = boot_lb(mr, f"c{cid}")
+                row.update({"年化差_算術": ad, "Bonferroni下界": lb, "月數": K})
+            rows.append(row)
+    C = pd.DataFrame(rows)
+    # ── 判定版的措辭（登錄 §四查表＋v2 §二）──
+    M = C[C["variant"] == "main"].set_index("編號")
+    b0 = bench["main"]
+    base1 = SD[(SD["variant"] == "main") & (SD["cell"] == 1)].set_index("r").sort_index()
+    v2 = {}
+    for cid in (25, 26):
+        g = SD[(SD["variant"] == "main") & (SD["cell"] == cid)].set_index("r").sort_index()
+        dc = g["cagr"] - base1.loc[g.index, "cagr"]; dm = g["mdd"] - base1.loc[g.index, "mdd"]
+        v2[cid] = {"皆正": int(((dc > 0) & (dm > 0)).sum()), "皆負": int(((dc < 0) & (dm < 0)).sum()),
+                   "年化差中位": float(dc.median()), "回落差中位": float(dm.median())}
+    g26 = SD[(SD["variant"] == "main") & (SD["cell"] == 26)]
+    lot_ratio = (base1["cagr"] / base1["mdd"].abs()).to_numpy()
+    v2[26].update({"真由抽籤決定的日數（#1 200 顆中位）": float(base1["days_act"].median()), "候選＞空槽日（中位）": float(base1["days_over"].median()),
+                   "有訊號日（中位）": float(base1["days_sig"].median()), "被改變的買進筆數（中位）": float(g26["buy_diff"].median()),
+                   "年化百分位": _pctl(float(g26["cagr"].median()), base1["cagr"].to_numpy()),
+                   "比值百分位": _pctl(float((g26["cagr"] / g26["mdd"].abs()).median()), lot_ratio)})
+    k0 = PL[(PL["kind"] == "K0")]
+    v2[26]["K0 年化百分位"] = _pctl(float(k0["cagr"].median()), base1["cagr"].to_numpy())
+    v2[26]["K0 比值百分位"] = _pctl(float((k0["cagr"] / k0["mdd"].abs()).median()), lot_ratio)
+    v2[26]["可判定"] = v2[26]["真由抽籤決定的日數（#1 200 顆中位）"] >= 20
+    for kk in ("C1", "C2"):
+        g = PL[PL["kind"] == kk].set_index("r").sort_index()
+        c25 = SD[(SD["variant"] == "main") & (SD["cell"] == 25)].set_index("r").sort_index()
+        lab, ratio, _ = _lab(float(g["cagr"].median()), float(g["mdd"].median()), b0["cagr"], b0["mdd"])
+        v2[kk] = {"年化中位": float(g["cagr"].median()), "回落中位": float(g["mdd"].median()), "比值": ratio, "對0050": lab,
+                  "對#1 皆正": int(((g["cagr"] - base1.loc[g.index, "cagr"] > 0) & (g["mdd"] - base1.loc[g.index, "mdd"] > 0)).sum()),
+                  "對#1 皆負": int(((g["cagr"] - base1.loc[g.index, "cagr"] < 0) & (g["mdd"] - base1.loc[g.index, "mdd"] < 0)).sum()),
+                  "對候選一 皆正": int(((g["cagr"] - c25.loc[g.index, "cagr"] > 0) & (g["mdd"] - c25.loc[g.index, "mdd"] > 0)).sum()),
+                  "對候選一 皆負": int(((g["cagr"] - c25.loc[g.index, "cagr"] < 0) & (g["mdd"] - c25.loc[g.index, "mdd"] < 0)).sum())}
+    # ── 假訊號臂 ──
+    pl_rows = []
+    def lab_of(c, m):
+        return _lab(c, m, b0["cagr"], b0["mdd"])[0]
+    for cid in P10_CELLS + P1_CELLS:
+        g = PL[(PL["kind"].isin(["P10", "P1"])) & (PL["cell"] == cid)]
+        labs = [lab_of(c, m) for c, m in zip(g["cagr"], g["mdd"])]
+        pl_rows.append({"編號": cid, "臂": "P10 S 內抽 |AND|" if cid in P10_CELLS else "P1 每月同數抽 S", "次數": len(g), "x_Q": labs.count("Q"), "x_R": labs.count("R")})
+    for cid in P3B_CELLS:
+        g = PL[(PL["kind"] == "P3shift") & (PL["cell"] == cid)]
+        md = g.groupby("j")[["cagr", "mdd"]].median()
+        labs = [lab_of(c, m) for c, m in zip(md["cagr"], md["mdd"])]
+        pl_rows.append({"編號": cid, "臂": "P3 丙1 環形平移（甲曝險）", "次數": len(md), "x_Q": labs.count("Q"), "x_R": labs.count("R")})
+    g = PL[PL["kind"] == "W_shuf"]
+    md = g.groupby("j")[["cagr", "mdd"]].median()
+    labs = [lab_of(c, m) for c, m in zip(md["cagr"], md["mdd"])]
+    pl_rows.append({"編號": 5, "臂": "P17 W_shuf", "次數": len(md), "x_Q": labs.count("Q"), "x_R": labs.count("R")})
+    pl_rows.append({"編號": 8, "臂": "（權重恆 0.50 ⇒ 打亂＝原樣，依構造退化，不做）", "次數": 0, "x_Q": np.nan, "x_R": np.nan})
+    for cid in (22, 23):
+        g = PL[(PL["kind"] == "P9") & (PL["cell"] == cid)]
+        md = g.groupby("j")[["cagr", "mdd"]].median()
+        labs = [lab_of(c, m) for c, m in zip(md["cagr"], md["mdd"])]
+        pl_rows.append({"編號": cid, "臂": "P9 線上／線下段打亂（50 顆中位）", "次數": len(md), "x_Q": labs.count("Q"), "x_R": labs.count("R")})
+    PLT = pd.DataFrame(pl_rows)
+    PLT["x／次數"] = PLT["x_Q"] / PLT["次數"].replace(0, np.nan)
+    PLT["警語"] = PLT["x／次數"] >= 0.05
+    PLT.to_csv(os.path.join(OUT, "body_placebo.csv"), index=False)
+    warn = {int(r["編號"]): int(r["x_Q"]) for _, r in PLT.iterrows() if bool(r["警語"])}
+    # ── 結果句 ──
+    TAIL = "（早年只驗上市股；樣本只有約 3 年；本段樣本只夠分 Q／R／F，『可以說找到』依構造不可得）"
+    sent = []
+    for cid in range(1, 27):
+        if cid not in M.index:
+            continue
+        q = M.loc[cid]; lab = q["標籤"]
+        pre = f"⚠ 隨機也有 {warn[cid]} 合格：" if cid in warn else ""
+        if cid in (25, 26):
+            vv = v2[cid]
+            if cid == 25:
+                good = vv["皆正"] >= 190; bad = vv["皆負"] >= 190
+            else:
+                good = v2[26]["可判定"] and v2[26]["年化百分位"] >= 98.75 and v2[26]["比值百分位"] >= 98.75
+                bad = v2[26]["可判定"] and v2[26]["年化百分位"] <= 1.25 and v2[26]["比值百分位"] <= 1.25
+                if not (10 <= v2[26]["K0 年化百分位"] <= 90 and 10 <= v2[26]["K0 比值百分位"] <= 90):
+                    pre = "連隨便排都偏離抽籤，抽籤分佈當對照要打折：" + pre
+            nm = "候選一（M20＋整份）" if cid == 25 else "候選二（K4 排名）"
+            if cid == 26 and not v2[26]["可判定"]:
+                s_ = f"{nm}：早年段真由抽籤決定的日數 {v2[26]['真由抽籤決定的日數（#1 200 顆中位）']:.0f} ＜ 20 ⇒ 依構造不可判定 ⇒ 營飆 v1 不改"
+            elif good:
+                s_ = f"{nm}在 2012～2014 也比營飆 v1 好（樣本只有約 3 年）⇒ 仍須前瞻紀錄滿 12 個月才談升 v2（裁定定）"
+            else:
+                s_ = f"{nm}在沒看過的年份沒有比營飆 v1 好 ⇒ 營飆 v1 不改"
+            s_ += f"；對 0050：{ {'Q': '合格', 'R': '另列', 'F': '不合格'}[lab] }｜早年只驗上市股｜這是全部選到的股票平均起來的結果，不是對某一檔的預測"
+        elif lab == "Q":
+            s_ = "驗收段也合格，但差距在誤差內" if q["Bonferroni下界"] <= 0 else "驗收段合格，而且下界 ＞ 0（⚠ 開跑前算術判定依構造不可得 ⇒ 第一種結果句已拿掉，不說「找到」）"
+            if q["回落"] < q["0050回落"]:
+                s_ += f"；回落比 0050 深 {(q['0050回落'] - q['回落']) * 100:.2f} 點、年化多 {(q['年化'] - q['0050年化']) * 100:.2f} 點"
+        elif lab == "R":
+            s_ = f"驗收段賺得比 0050 多，但風險增加得比報酬多：年化 {q['年化'] * 100:.2f}%、回落 {q['回落'] * 100:.2f}%、比值 {q['比值']:.4f}"
+        else:
+            s_ = f"早年段沒有撐住：年化 {q['年化'] * 100:.2f}% 對 0050 {q['0050年化'] * 100:.2f}%"
+        if cid == 24:
+            s_ += "；主窗對門檻B 基準臂分不出（34／200）"
+        sent.append({"編號": cid, "格": NAME[cid], "標籤": lab, "結果句": pre + s_ + TAIL})
+    SE = pd.DataFrame(sent)
+    C.to_csv(os.path.join(OUT, "body_cells.csv"), index=False)
+    SE.to_csv(os.path.join(OUT, "body_sentences.csv"), index=False)
+    summ = {"0050": bench, "v2": v2, "setup": {k: ST[k] for k in ST if k in VARIANTS},
+            "C1經驗分佈": ST.get("C1經驗分佈"), "假訊號抽樣": ST.get("假訊號抽樣"),
+            "判定版 Q／R／F": M["標籤"].value_counts().to_dict(), "Q 格": M.index[M["標籤"] == "Q"].tolist(), "R 格": M.index[M["標籤"] == "R"].tolist()}
+    json.dump(summ, open(os.path.join(OUT, "body_summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
+    body_report(C, SE, PLT, summ)
+    log(f"[完成 body-table] body_cells.csv／body_sentences.csv／body_placebo.csv／body_summary.json／REPORT.md")
+
+
+def _p(x, d=2):
+    return "—" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x * 100:+.{d}f}%"
+
+
+def body_report(C, SE, PLT, S):
+    from . import early_data as E
+    NAME = {**{c: v[0] for c, v in PREREGV.items()}, **{c: v[0] for c, v in V2.items()}}
+    M = C[C["variant"] == "main"].set_index("編號")
+    b = S["0050"]["main"]
+    L = ["# PREREGV 早年段驗收（26 格，只上市）：本體", "",
+         f"產出 {pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）。回測線。登錄 PREREGV seq6（sha 445338e8a06bbac8）＋ 營飆 v2 候選 seq3（sha d37771f84327dfb0）；裁定 seq206 §三、seq210、seq215、seq218 §四。",
+         f"資料：tw-stock-data main `{E.BODY_SHA[:10]}` 的 data/early（git archive 唯讀）；窗 {b['window'][0]}～{b['window'][1]}（{b['window'][2]} 個交易日）。",
+         "⭐ 必附：**早年只驗上市股**｜**樣本只有約 3 年**｜**本段樣本只夠分 Q／R／F，『可以說找到』依構造不可得**｜成本 0.585% 來回（手續費照上限 0.1425%，實際可能更低）", "",
+         "## 〇、表頭：營飆 v1（#1）、營量 v1（#13）", "", "| # | 格 | 年化 | 回落 | 比值 | 標籤 | 對 0050 |", "|---|---|---|---|---|---|---|"]
+    for cid in (1, 13):
+        q = M.loc[cid]
+        L.append(f"| {cid} | {NAME[cid]} | {_p(q['年化'])} | {_p(q['回落'])} | {q['比值']:.4f} | {q['標籤']} | 0050 {_p(b['cagr'])}／{_p(b['mdd'])}／{b['ratio']:.4f} |")
+    L += ["", "## 一、判定版 26 格（200 顆中位；⛔ 26 格一次跑完、一次交件）", "",
+          f"0050 同窗：年化 {_p(b['cagr'])}、回落 {_p(b['mdd'])}、比值 {b['ratio']:.4f}、年化波動 {_p(b['vol'])}、年化÷波動 {b['ann_over_vol']:.4f}", "",
+          "| # | 格 | 起點 | 年化 | 回落 | 比值 | 年化波動 | 年化÷波動 | 標籤 | 年化差（算術） | 下界 α=0.05/26 | 深淺註 |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for cid, q in M.iterrows():
+        L.append(f"| {cid} | {NAME[cid]} | {q['起點']} | {_p(q['年化'])} | {_p(q['回落'])} | {q['比值']:.4f} | {_p(q['年化波動'])} | {q['年化÷波動']:.4f} | **{q['標籤']}** | "
+                 f"{_p(q.get('年化差_算術'))} | {_p(q.get('Bonferroni下界'))} | {q['深淺註'] if isinstance(q['深淺註'], str) else ''} |")
+    L += ["", f"Q／R／F：{S['判定版 Q／R／F']}", "", "## 二、結果句（登錄 §四查表；v2 照其登錄 §二）", ""]
+    for _, r in SE.iterrows():
+        L.append(f"- **#{r['編號']} {r['格']}**（{r['標籤']}）：{r['結果句']}")
+    v2 = S["v2"]
+    L += ["", "## 三、營飆 v2 候選（#25、#26）與控制臂 C1、C2、K0（⛔ 控制臂不計 N）", ""]
+    L.append(f"```\n{json.dumps(v2, ensure_ascii=False, indent=1, default=str)}\n```")
+    L += ["", "## 四、假訊號臂（⛔ 不進判定）", "", "| # | 臂 | 次數 | Q | R | x／次數 | 警語 |", "|---|---|---|---|---|---|---|"]
+    for _, r in PLT.iterrows():
+        L.append(f"| {r['編號']} | {r['臂']} | {r['次數']} | {r['x_Q']} | {r['x_R']} | {r['x／次數']} | {'⚠' if r['警語'] else ''} |")
+    L += ["", "## 五、必報：逐年、去掉最好一年、換手與成本、在場", "", "| # | " + " | ".join(["2012", "2013", "2014", "去掉最好一年", "年換手", "年成本", "在場", "持有中遇減資了結（筆/顆）"]) + " |",
+          "|---|" + "---|" * 8]
+    L.append(f"| 0050 | {_p(b.get('y2012'))} | {_p(b.get('y2013'))} | {_p(b.get('y2014'))} | {_p(b.get('drop_best_geo'))} | — | — | — | — |")
+    for cid, q in M.iterrows():
+        L.append(f"| {cid} | {_p(q.get('y2012'))} | {_p(q.get('y2013'))} | {_p(q.get('y2014'))} | {_p(q.get('drop_best_geo'))} | "
+                 f"{q.get('turnover_yr', np.nan):.2f} | {_p(q.get('cost_yr'))} | {q.get('expo', np.nan):.3f} | {q.get('short_settled', np.nan)} |")
+    L += ["", "## 六、描述版與敏感度（⛔ 不判）", "", "| # | 判定版 年化／回落 | R3 引擎原樣 | R1 剔除轉上市 | 描述版（減資入鏈、不剔除） |", "|---|---|---|---|---|"]
+    for cid in range(1, 27):
+        cells = []
+        for v in ("main", "eng", "noT", "restore"):
+            g = C[(C["variant"] == v) & (C["編號"] == cid)]
+            cells.append(f"{_p(g['年化'].iloc[0])}／{_p(g['回落'].iloc[0])}（{g['標籤'].iloc[0]}）" if len(g) else "—")
+        L.append(f"| {cid} | " + " | ".join(cells) + " |")
+    for v in ("eng", "noT", "restore"):
+        bb = S["0050"].get(v)
+        if bb:
+            L.append(f"\n0050（{v}）：{_p(bb['cagr'])}／{_p(bb['mdd'])}")
+    dd = S["0050"].get("desc")
+    if dd:
+        L += ["", f"## 七、描述段 {dd['window'][0]}～{dd['window'][1]}（eligible_v；G0 未過（1.30%）⇒ 定義與主窗不同；2008～2010 無處置資料；只上市；⛔ 不判）", "",
+              f"0050：年化 {_p(dd['cagr'])}、回落 {_p(dd['mdd'])}；2008-05～11 {_p(dd.get('crash_2008-05～2008-11'))}；2011-08～12 {_p(dd.get('crash_2011-08～2011-12'))}", "",
+              "| # | 年化 | 回落 | 比值 | 2008-05～11 報酬 | 在場 | 2011-08～12 報酬 | 在場 |", "|---|---|---|---|---|---|---|---|"]
+        for _, q in C[C["variant"] == "desc"].iterrows():
+            L.append(f"| {q['編號']} | {_p(q['年化'])} | {_p(q['回落'])} | {q['比值']:.4f} | {_p(q.get('crash_2008-05～2008-11'))} | {q.get('crash_expo_2008-05～2008-11', np.nan):.3f} | "
+                     f"{_p(q.get('crash_2011-08～2011-12'))} | {q.get('crash_expo_2011-08～2011-12', np.nan):.3f} |")
+    L += ["", "## 八、設定、事件、讀法", "", f"```\n{json.dumps(S['setup'], ensure_ascii=False, indent=1, default=str)[:20000]}\n```", "",
+          f"讀法（R1～R14 照 seq215／seq6 §九；實作層）：\n```\n{json.dumps(E.BODY_READINGS, ensure_ascii=False, indent=1)}\n```", ""]
+    open(os.path.join(OUT, "REPORT.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["pre-data", "pre-arith", "pre-boot", "pre-report"])
+    ap.add_argument("stage", choices=["pre-data", "pre-arith", "pre-boot", "pre-report", "body-sig", "body-gate", "body-run", "body-table"])
     ap.add_argument("--procs", type=int, default=2)
+    ap.add_argument("--layout", default="main")
+    ap.add_argument("--only", nargs="*", default=None)
     a = ap.parse_args()
     log = _log_to(os.path.join(OUT, f"{a.stage}.log"))
     log(f"===== researchV {a.stage} {pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）=====")
@@ -576,8 +1508,16 @@ def main():
         pre_arith(log, a.procs)
     elif a.stage == "pre-boot":
         boot(pd.read_csv(os.path.join(OUT, "pre_arith_meanret.csv.gz"), index_col=0, parse_dates=True, float_precision="round_trip"), log)
-    else:
+    elif a.stage == "pre-report":
         pre_report(log)
+    elif a.stage == "body-sig":
+        body_sig(a.layout, a.procs, log)
+    elif a.stage == "body-gate":
+        body_gate(log)
+    elif a.stage == "body-run":
+        body_run(a.procs, log, a.only)
+    else:
+        body_table(log)
 
 
 if __name__ == "__main__":

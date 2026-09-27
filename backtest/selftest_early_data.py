@@ -141,8 +141,34 @@ def t_snapshot():
     check("0050 早年 cum 與主庫 cum 只差常數", float(np.ptp(ratio)) < 1e-6, f"比 {ratio}")
 
 
+def t_r8():
+    """R8：門檻B 形（kind="B"）的剔除窗 [e−5, e+60] 與持有截斷（出場改 L、毛報酬改 L 收盤）。"""
+    from . import researchV as V
+    cal = pd.bdate_range("2013-01-01", periods=200)
+    ds = [d.strftime("%Y-%m-%d") for d in cal]
+    closes = {"AAAA": np.linspace(10, 30, 200).astype(np.float32), "BBBB": np.full(200, 5, np.float32)}
+    opens = {k: v.copy() for k, v in closes.items()}
+    pe, pL = 100, 94
+    T = pd.DataFrame({"sid": ["AAAA"] * 6 + ["BBBB"],
+                      "entry_pos": [pe - 5, pe - 5 + 1, pe + 60 + 1, pe + 61 + 1, 50, 90, 50],
+                      "xpos_H120": [199, 199, 199, 199, 169, 93, 169]})
+    T["g_H120"] = 0.123
+    E_ = pd.DataFrame({"stock_id": ["AAAA"], "e": [ds[pe]], "L": [ds[pL]]})
+    out, c = V.apply_events(T, E_, cal, "B", px=(closes, opens))
+    ent = set(out["entry_pos"])
+    check("R8：訊號日 e−6 保留、e−5 刪", (pe - 5) in ent and (pe - 5 + 1) not in ent, str(sorted(ent)))
+    check("R8：訊號日 e+60 刪、e+61 保留", (pe + 61) not in ent and (pe + 62) in ent)
+    r = out[(out["sid"] == "AAAA") & (out["entry_pos"] == 50)].iloc[0]
+    check("R8：持有跨事件 ⇒ 出場改 L、毛報酬改 L 收盤", int(r["xpos_H120"]) == pL and abs(r["g_H120"] - (float(closes["AAAA"][pL]) / float(opens["AAAA"][50]) - 1)) < 1e-12)
+    r2 = out[(out["sid"] == "AAAA") & (out["entry_pos"] == 90)].iloc[0]
+    check("R8：事件前就出場 ⇒ 不動", int(r2["xpos_H120"]) == 93 and r2["g_H120"] == 0.123)
+    r3 = out[out["sid"] == "BBBB"].iloc[0]
+    check("R8：別檔不動", int(r3["xpos_H120"]) == 169 and r3["g_H120"] == 0.123)
+    check("R8：計數", c["訊號日落在 [e−5,e+60] 刪除"] == 2 and c["持有跨事件改在 L 了結"] == {"xpos_H120": 1}, str(c))
+
+
 def main():
-    t_rule_ab(); t_dedup(); t_roster(); t_use_early_strict(); t_snapshot()
+    t_rule_ab(); t_dedup(); t_roster(); t_use_early_strict(); t_snapshot(); t_r8()
     bad = [r for r in RES if not r[1]]
     print(f"== selftest_early_data：{len(RES) - len(bad)}／{len(RES)} 過", flush=True)
     if bad:

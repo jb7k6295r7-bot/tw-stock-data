@@ -1,0 +1,9 @@
+{
+ "鍵 K4／K0 ＝ resultsYfRank/pre_keys.csv（repr）": true,
+ "closes dtype": "float32",
+ "cand1 ＝ resultsYfV2/main_seeds_arms.csv:cand1（20 顆 年化／回落 repr）": true,
+ "cand2 ＝ resultsYfV2/main_seeds_arms.csv:cand2（20 顆 年化／回落 repr）": true,
+ "C2 ＝ resultsYfStop/body_seeds_arms.csv:M20（20 顆 年化／回落 repr）": true,
+ "K0 ＝ resultsYfRank/seeds.csv:K0（20 顆 年化／回落 repr）": true,
+ "全部過": true
+}

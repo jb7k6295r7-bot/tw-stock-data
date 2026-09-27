@@ -370,3 +370,246 @@ def use_early(sha: str = EARLY_SHA, variant: str = "R1a", strict: bool = True) -
         raise SystemExit(f"⛔ 早年版面不完整（缺 {st.get('missing')}）⇒ strict 模式拒絕；結構閘門請用 strict=False")
     D.DATA = st["data"]
     return D.DATA
+
+
+
+# ═════════════════════════════════════════════════════════════════════════════════════
+# ═════════ 本體段（裁定 seq218 §四；登錄 PREREGV seq6 §九 R1～R14 定案）═════════
+# ═════════════════════════════════════════════════════════════════════════════════════
+BODY_SHA = "3edc0e2206463bf7df0b47e87039db139f776bf3"      # 資料庫線 0754：M1～M5 到齊（釘 3edc0e2206 或之後）
+BODY_EXTRACT = EXTRACT + ["data/universe/otcexright", "data/universe/otcreduce"]
+OTC_EV_MAX = "2014-12-31"                                  # 主庫 otcexright／otcreduce 只取 ≤ 這天的檔（⛔ 不讀 2015 以後）
+BODY_READINGS = {
+    "R1": "母體＝量測日（訊號日）當時上市：meta/stocks.csv 只收有上市列的代號，first_seen／last_seen＝上市列首末日；"
+          "轉上市股【轉上市前】的上櫃列併進 stocks/<sid>.csv 當歷史（K 棒、均線、營收回看照收）；上市末日之後的上櫃列（上市→上櫃）⛔ 不收（＝下市處理）",
+    "R1-還原": "轉上市股上櫃時期的除權息：主庫 data/universe/otcexright 的 ≤ 2014-12-31 檔（主庫 adjust.py 同一來源、因子 ref/pre）；"
+               "只取事件日 ≤ 該檔上市首日的列（之後由上市 TWT49U 負責）",
+    "R2": "今日 stocks.csv 查不到的代號：四碼、首碼 1～9、非 91xx ⇒ kind＝stock；其餘不收",
+    "R4-因子": "上市除權息因子照主庫 adjust.py：有 value 且 |pre−value−ref| ≤ 0.011 ⇒ (pre−value)/pre，否則 ref/pre；範圍 (0.05, 1.5]、>1.0001 且 value 非負者丟；"
+               "同日同來源重複以 (前收,參考價) 去重；cum 由後往前連乘（未捨入），寫 8 位",
+    "R8": "主版減資：事件恢復交易日 e（官方 TWTAUU；轉上市股上櫃時期用主庫 otcreduce ≤ 2014）⇒ 訊號日落在 [e−5, e+60]（日曆位置）的訊號刪除；"
+          "持有中（進場 ≤ L 且排程出場 ≥ e，L＝消失前最後一個有成交日）⇒ 排程出場改成 L、毛報酬改成 L 收盤（＝價格序列在 L 截斷、以 L 收盤了結；⛔ 不開引擎 delist）",
+    "R10": "處置／注意：主庫 meta 的 ≤ 2014-12-31 列（最早 2010-12-14／2011-01-03）⇒ 描述段 2008～2010 無處置資料",
+}
+
+
+def body_extract(sha: str = BODY_SHA, log=print) -> dict:
+    """同 extract，但多取主庫 otcexright／otcreduce（只用 ≤ 2014 的檔）。"""
+    rd = raw_dir(sha)
+    man_p = os.path.join(snap_dir(sha), "raw_manifest.json")
+    if os.path.exists(man_p):
+        man = json.load(open(man_p, encoding="utf-8"))
+        if man.get("sha") == sha and man.get("paths") == BODY_EXTRACT:
+            return man
+    full = subprocess.run(["git", "-C", DB_REPO, "rev-parse", sha], capture_output=True, text=True, check=True).stdout.strip()
+    if full != sha:
+        raise SystemExit(f"⛔ {sha} 解析成 {full}")
+    os.makedirs(rd, exist_ok=True)
+    p = subprocess.run(["git", "-C", DB_REPO, "archive", "--format=tar", sha] + BODY_EXTRACT, capture_output=True, check=True)
+    with tarfile.open(fileobj=io.BytesIO(p.stdout)) as tf:
+        tf.extractall(rd)
+    man = {"sha": sha, "paths": BODY_EXTRACT, "tar_bytes": len(p.stdout), "tar_sha256": hashlib.sha256(p.stdout).hexdigest(),
+           "counts": {d: len(glob.glob(os.path.join(rd, "data", "early", d, "*.csv"))) for d in ("daily", "per", "instamt", "revenue", "exright", "reduce", "inst")}}
+    json.dump(man, open(man_p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    log(f"[取出] {sha[:10]} ⇒ {rd}｜{man['counts']}｜tar sha256 {man['tar_sha256'][:16]}")
+    return man
+
+
+def _read_dir(d, lo=None, hi=None):
+    fs = sorted(f for f in glob.glob(os.path.join(d, "*.csv")) if not os.path.basename(f).startswith("_"))
+    if lo or hi:
+        fs = [f for f in fs if (lo is None or os.path.basename(f)[:10] >= lo) and (hi is None or os.path.basename(f)[:10] <= hi)]
+    if not fs:
+        return pd.DataFrame()
+    return pd.concat([pd.read_csv(f, dtype=str, keep_default_na=False) for f in fs], ignore_index=True)
+
+
+def _fnum(s):
+    try:
+        return float(str(s).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def adj_events(sha: str, twse_first: dict, with_reduce: bool) -> tuple[dict, dict]:
+    """→ ({sid: [(date, f, pre, ref, kind, src, fo)]}, 計數)。上市 early/exright（全部）＋ 上櫃 otcexright（事件日 ≤ 上市首日）；
+    with_reduce ⇒ 另加 上市 early/reduce、上櫃 otcreduce（≤ 上市首日；官方比例 official_factor 有就用）。"""
+    rd = os.path.join(raw_dir(sha), "data")
+    ev = {}; cnt = {"twse_exright": 0, "tpex_exright": 0, "twse_reduce": 0, "tpex_reduce": 0, "丟_範圍": 0, "丟_方向": 0, "去重": 0, "exact": 0}
+    srcs = [("twse", "exright", _read_dir(os.path.join(rd, "early", "exright"))),
+            ("tpex", "exright", _read_dir(os.path.join(rd, "universe", "otcexright"), hi=OTC_EV_MAX))]
+    if with_reduce:
+        srcs += [("twse", "reduce", _read_dir(os.path.join(rd, "early", "reduce"))),
+                 ("tpex", "reduce", _read_dir(os.path.join(rd, "universe", "otcreduce"), hi=OTC_EV_MAX))]
+    B = {"exright": (0.05, 1.5), "reduce": (0.20, 12.0)}
+    for mk, src, df in srcs:
+        if df.empty:
+            continue
+        for r in df.to_dict("records"):
+            sid, d = str(r["stock_id"]).strip(), str(r["date"]).strip()
+            if sid not in twse_first:
+                continue
+            if mk == "tpex" and d > twse_first[sid]:
+                continue
+            pre, ref = _fnum(r.get("pre_close")), _fnum(r.get("ref_price"))
+            if not pre or not ref or pre <= 0 or ref <= 0:
+                continue
+            fo = _fnum(r.get("official_factor")) if src == "reduce" else None
+            val = _fnum(r.get("value")) if src == "exright" else None
+            f = ref / pre
+            if val is not None and (mk, src) == ("twse", "exright"):
+                ex = pre - val
+                if ex > 0 and abs(ex - ref) <= 0.011:
+                    f = ex / pre; cnt["exact"] += 1
+            lo, hi = B[src]
+            if not (lo < f <= hi):
+                cnt["丟_範圍"] += 1; continue
+            if src == "exright" and f > 1.0001 and not (val is not None and val < 0):
+                cnt["丟_方向"] += 1; continue
+            kind = str(r.get("kind") or r.get("reason") or "").strip()
+            ev.setdefault(sid, []).append((d, f, pre, ref, kind, src, fo))
+            cnt[f"{mk}_{src}"] += 1
+    for sid in list(ev):                                   # 同 (日, 來源) 以 (前收, 參考價) 去重（主庫 adjust.py 同法）
+        seen = set(); keep = []
+        for x in sorted(ev[sid], key=lambda z: (z[0], z[5])):
+            k = (x[0], x[5], round(x[2], 4), round(x[3], 4))
+            if k in seen:
+                cnt["去重"] += 1; continue
+            seen.add(k); keep.append(x)
+        ev[sid] = keep
+    return ev, cnt
+
+
+def adj_lines(rows):
+    """主庫 adjust.build 的連乘段（cum 由後往前、未捨入連乘；官方比例 > 0 則用它）。"""
+    out, cum = [], 1.0
+    for (d, f, pre, ref, kind, src, fo) in reversed(rows):
+        use = fo is not None and fo > 0
+        cum *= (fo if use else f)
+        out.append([d, f"{f:.8f}", f"{fo:.8f}" if use else "", f"{cum:.8f}", f"{pre:g}", f"{ref:g}", kind, src])
+    out.reverse()
+    return pd.DataFrame(out, columns=["date", "factor", "factor_official", "cum_factor", "pre_close", "ref_price", "kind", "event"])
+
+
+def body_build(sha: str = BODY_SHA, variant: str = "main", log=print) -> dict:
+    """variant ∈ {main（除權息還原；減資不入鏈、由 R8 截斷）, restore（描述版：減資因子入鏈、不剔除）}。
+    產出 ~/earlydata/<sha10>/<variant>/data（主窗版面）；STATUS.complete＝True。"""
+    if variant not in ("main", "restore"):
+        raise SystemExit(f"⛔ variant {variant}")
+    body_extract(sha, log)
+    out = os.path.join(snap_dir(sha), variant, "data")
+    st_p = os.path.join(snap_dir(sha), variant, "STATUS.json")
+    if os.path.exists(st_p):
+        return json.load(open(st_p, encoding="utf-8"))
+    for d in ("meta", "stocks", "adj", "stocks_per", "stocks_inst", os.path.join("mops", "revenue_hist")):
+        os.makedirs(os.path.join(out, d), exist_ok=True)
+    rd = os.path.join(raw_dir(sha), "data")
+    daily = read_daily(sha, markets=("twse", "tpex"))
+    cal = calendar(daily, "twse")
+    pd.DataFrame({"date": cal}).to_csv(os.path.join(out, "meta", "calendar_twse.csv"), index=False)
+    tw = daily[daily["market"] == "twse"]
+    g = tw.groupby("stock_id")["date"]
+    first, last = g.min().to_dict(), g.max().to_dict()
+    st = pd.read_csv(os.path.join(rd, "meta", "stocks.csv"), dtype=str).drop_duplicates("stock_id", keep="last").set_index("stock_id")
+    names = tw.sort_values("date").groupby("stock_id")["name"].last()
+    R = pd.DataFrame({"stock_id": sorted(first)})
+    R["name"] = R["stock_id"].map(names); R["market"] = "twse"
+    R["kind"] = R["stock_id"].map(st["kind"])
+    R["kind_src"] = np.where(R["kind"].notna(), "stocks.csv（今日）", "R2")
+    miss = R["kind"].isna()
+    ok = R["stock_id"].str.fullmatch(r"[1-9]\d{3}") & ~R["stock_id"].str.startswith("91")
+    R.loc[miss, "kind"] = np.where(ok[miss], "stock", "other")
+    R["first_seen"] = R["stock_id"].map(first); R["last_seen"] = R["stock_id"].map(last)
+    R[["stock_id", "name", "market", "kind", "first_seen", "last_seen"]].to_csv(os.path.join(out, "meta", "stocks.csv"), index=False)
+    R.to_csv(os.path.join(snap_dir(sha), variant, "roster_with_src.csv"), index=False)
+    otc_all = daily[(daily["market"] == "tpex") & daily["stock_id"].isin(first.keys())]
+    fmap = otc_all["stock_id"].map(first); lmap = otc_all["stock_id"].map(last)
+    otc = otc_all[otc_all["date"] < fmap]
+    after = otc_all[otc_all["date"] > lmap]
+    between = otc_all[(otc_all["date"] >= fmap) & (otc_all["date"] <= lmap)]
+    if len(between):
+        raise SystemExit(f"⛔ 上市期間內另有上櫃列 {len(between)}：{sorted(set(between['stock_id']))[:10]}")
+    both = pd.concat([tw, otc], ignore_index=True)
+    dup = int(both.duplicated(["stock_id", "date"]).sum())
+    if dup:
+        raise SystemExit(f"⛔ 上市列與轉上市前上櫃列同日重複 {dup}")
+    transferred = sorted(set(otc["stock_id"]))
+    for sid, gg in both.sort_values(["stock_id", "date"]).groupby("stock_id", sort=False):
+        x = gg.drop(columns=["key"]).copy()
+        x["market"] = x["market"].astype(str)
+        x["valid_bar"] = np.where(x["close"].notna() & (x["close"] > 0), 1, 0)
+        x[STOCK_COLS].to_csv(os.path.join(out, "stocks", f"{sid}.csv"), index=False)
+    ev, ecnt = adj_events(sha, first, with_reduce=(variant == "restore"))
+    for sid, rows in ev.items():
+        adj_lines(rows).to_csv(os.path.join(out, "adj", f"{sid}.csv"), index=False)
+    inst = _read_dir(os.path.join(rd, "early", "inst"))
+    n_inst = 0
+    for sid, gg in inst.groupby("stock_id"):
+        if sid in first:
+            gg.to_csv(os.path.join(out, "stocks_inst", f"{sid}.csv"), index=False); n_inst += 1
+    for mkt in ("twse", "tpex"):
+        rv = read_revenue(sha, (mkt,))
+        for per_, gg in rv.groupby("period"):
+            gg.to_csv(os.path.join(out, "mops", "revenue_hist", f"{per_}_{mkt}.csv"), index=False)
+    per = _read_dir(os.path.join(rd, "early", "per"))
+    for sid, gg in per.groupby("stock_id"):
+        if sid in first:
+            gg.to_csv(os.path.join(out, "stocks_per", f"{sid}.csv"), index=False)
+    for f in ("delisted.csv", "otc_to_twse.csv", "industry.csv"):
+        with open(os.path.join(rd, "meta", f), "rb") as s, open(os.path.join(out, "meta", f), "wb") as t:
+            t.write(s.read())
+    dp = pd.read_csv(os.path.join(rd, "meta", "disposal.csv"), dtype=str, keep_default_na=False)
+    dp[dp["start_date"] <= META_CUTOFF].to_csv(os.path.join(out, "meta", "disposal.csv"), index=False)
+    at = pd.read_csv(os.path.join(rd, "meta", "attention.csv"), dtype=str, keep_default_na=False)
+    at[(at["date"] != "") & (at["date"] <= META_CUTOFF)].to_csv(os.path.join(out, "meta", "attention.csv"), index=False)
+    status = {"sha": sha, "variant": variant, "data": out, "calendar": [cal[0], cal[-1], len(cal)], "complete": True, "missing": [],
+              "roster": {"列": int(len(R)), "kind": R["kind"].value_counts().to_dict(), "R2 收為 stock": int(((R["kind_src"] == "R2") & (R["kind"] == "stock")).sum())},
+              "轉上市（有上市前上櫃列）": {"檔數": len(transferred), "上櫃列": int(len(otc))},
+              "上市末日之後的上櫃列（不收）": {"檔數": int(after["stock_id"].nunique()), "列": int(len(after)), "代號": sorted(set(after["stock_id"]))[:20]},
+              "adj 事件": ecnt, "adj 檔數": len(ev), "inst 檔數": n_inst, "readings": BODY_READINGS}
+    json.dump(status, open(st_p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    json.dump(transferred, open(os.path.join(snap_dir(sha), "transferred.json"), "w"))
+    log(f"[產出 {variant}] {json.dumps({k: status[k] for k in ('calendar', 'roster', '轉上市（有上市前上櫃列）', '上市末日之後的上櫃列（不收）', 'adj 事件', 'adj 檔數', 'inst 檔數')}, ensure_ascii=False)}")
+    return status
+
+
+def reduce_events(sha: str = BODY_SHA) -> pd.DataFrame:
+    """主版官方減資事件（R8）：上市 early/reduce ＋ 轉上市股上櫃時期 otcreduce（≤ 2014、事件日 ≤ 上市首日）。
+    欄：stock_id, e（恢復買賣日）, L（e 之前最後一個有收盤日）, src。"""
+    rd = os.path.join(raw_dir(sha), "data")
+    daily = read_daily(sha, markets=("twse", "tpex"))
+    tw = daily[daily["market"] == "twse"]
+    first = tw.groupby("stock_id")["date"].min().to_dict()
+    a = _read_dir(os.path.join(rd, "early", "reduce")); a["src"] = "TWTAUU"
+    b = _read_dir(os.path.join(rd, "universe", "otcreduce"), hi=OTC_EV_MAX); b["src"] = "otcreduce"
+    b = b[b["stock_id"].isin(first.keys())]
+    b = b[b["date"] <= b["stock_id"].map(first)]
+    E = pd.concat([a[["stock_id", "date", "src"]], b[["stock_id", "date", "src"]]]).drop_duplicates(["stock_id", "date"]).rename(columns={"date": "e"})
+    tr = daily[np.isfinite(daily["close"]) & (daily["close"] > 0)][["stock_id", "date"]]
+    byk = {s: np.array(sorted(g)) for s, g in tr.groupby("stock_id")["date"]}
+    Ls = []
+    for s, e in zip(E["stock_id"], E["e"]):
+        arr = byk.get(s, np.array([]))
+        i = int(np.searchsorted(arr, e))
+        Ls.append(arr[i - 1] if i > 0 else None)
+    E["L"] = Ls
+    return E.sort_values(["e", "stock_id"]).reset_index(drop=True)
+
+
+def detected_events(sha: str = BODY_SHA) -> pd.DataFrame:
+    """描述段事件（登錄 §三）：規則 A ∪ B（資料庫 1504 §一逐字；只看上市列事件日），並標事件區間 (prev, d] 內有沒有 TWT49U 除權息（有 ⇒ 扣掉）。"""
+    rd = os.path.join(raw_dir(sha), "data")
+    daily = read_daily(sha, markets=("twse", "tpex"))
+    files = sorted(os.path.basename(p)[:-4] for p in glob.glob(os.path.join(rd, "early", "daily", "*.csv")))
+    det = detect_rule_ab(daily, files)
+    twd = daily[daily["market"] == "twse"]
+    tw_rows = set(zip(twd["stock_id"], twd["date"]))
+    ex = _read_dir(os.path.join(rd, "early", "exright"))
+    exd = {s: sorted(g) for s, g in ex.groupby("stock_id")["date"]}
+    rows = []
+    for s, p, d, rule, x in det:
+        if (s, d) not in tw_rows:
+            continue
+        hit = any(p < z <= d for z in exd.get(s, []))
+        rows.append({"stock_id": s, "L": p, "e": d, "rule": rule, "ratio": x, "exright_in_gap": hit})
+    return pd.DataFrame(rows)
