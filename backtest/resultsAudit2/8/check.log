@@ -1,0 +1,19 @@
+/home/chemtim/tw-p17/backtest/researchAudit2_8_check.py:37: DtypeWarning: Columns (0: entry_C) have mixed types. Specify dtype option on import or set low_memory=False.
+  X = pd.read_csv(os.path.join(B, "resultsBF/body_events.csv.gz"), dtype={"sid": str}, float_precision="round_trip")
+{'① 甲 14 格 × 三個 H': {'不符': [], '過': True}}
+{
+ "① 甲 14 格 × 三個 H": {
+  "不符": [],
+  "過": true
+ },
+ "② 乙 抽 300 筆 H60 出場與報酬": {
+  "出場狀態不符": 0,
+  "報酬最大差": 0.0,
+  "過": true
+ },
+ "③ 乙 H60 三格 D、CI、n_eff": {
+  "不符": [],
+  "過": true
+ },
+ "全部過": true
+}
