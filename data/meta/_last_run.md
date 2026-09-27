@@ -1056,6 +1056,16 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## early:shares　✓ 正常
+
+最後執行：2026-09-28T02:45:24+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36308746037
+
+- **區間**：2004-02-11 ~ 2012-04-30｜日檔 2046 天
+- **本趟**：補 2046 天、1507426 列｜已有值跳過 0 天｜補不到 0 天
+
+檢查：
+- ok　補不到 0 天　（[]）
+
 ## treasury　✓ 正常
 
 最後執行：2026-09-28T00:34:59+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36333424983
@@ -1147,16 +1157,6 @@
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 1 次）
 - ok　失敗 ≤ 本趟 2%　（9／540）
-
-## early:shares　✓ 正常
-
-最後執行：2026-09-27T07:43:25+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36270731531
-
-- **區間**：2012-05-01 ~ 2014-12-31｜日檔 666 天
-- **本趟**：補 666 天、582904 列｜已有值跳過 0 天｜補不到 0 天
-
-檢查：
-- ok　補不到 0 天　（[]）
 
 ## early:inst　✓ 正常
 
