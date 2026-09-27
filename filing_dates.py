@@ -127,7 +127,8 @@ def main():
     rl.info("母體", "｜".join(f"{y}:{len(uni[y])}" for y in sorted(uni)))
     rl.info("待問", f"{len(todo)} 發（已問過 {sum(len(v) for v in uni.values()) - len(todo)}）")
     n = ok = empty = bad = 0
-    streak = 0
+    streak = cools = 0
+    first_bad = None
     bads = []
     for s, y in todo:
         if n >= a.max or (time.time() - t0) / 60 > a.budget_min:
@@ -135,19 +136,21 @@ def main():
         roc = y - 1911
         url = f"{DOC}?step=1&colorchg=1&co_id={s}&year={roc}&mtype=A&"
         # ⛔ 2026-09-27 run 36280880790：525 發失敗 139（DNS 解析失敗＋不是正常頁），本機同一頁正常 ⇒ 暫時性
-        #   ⇒ 同一發失敗先退避重試（30 秒、60 秒），⛔ 不是一次失敗就記 bad
+        #   run 36288031866（退避 30／60 秒）：139 發失敗 18，改成 Connection refused ⇒ 對 runner IP 的限流，一擋一段時間
+        #   ⇒ 退避拉長（60、180 秒）；連續失敗改成【冷卻 15 分鐘再續】，⛔ 不直接收手（最多冷卻 4 次）
         for attempt in range(3):
             st, _, body, err = hit(url)
             got, status, note = parse(body, s, roc) if st == 200 else ([], "bad", f"HTTP {st} {err}")
             if status != "bad" or attempt == 2:
                 break
-            time.sleep(30 * (attempt + 1))
+            time.sleep((60, 180)[attempt])
         n += 1
         asked[(s, str(roc))] = [s, str(roc), status, str(len(got)), time.strftime("%Y-%m-%d %H:%M:%S")]
         if status == "bad":
             bad += 1
             streak += 1
             bads.append((s, roc, note))        # ⛔ 錯誤訊息不砍尾巴（CLAUDE.md 六點六）
+            first_bad = first_bad or (n, time.strftime("%H:%M:%S"))
         else:
             streak = 0
             ok += status == "ok"
@@ -155,8 +158,15 @@ def main():
             for r in got:
                 rows[tuple(r[:4])] = r
         if streak >= 8:
-            print(f"[filing_dates] 連續 {streak} 發失敗，收手（最後：{bads[-1]}）", file=sys.stderr)
-            break
+            if cools >= 4:
+                print(f"[filing_dates] 連續 {streak} 發失敗、已冷卻 {cools} 次，收手（最後：{bads[-1]}）", file=sys.stderr)
+                break
+            cools += 1
+            print(f"[filing_dates] 連續 {streak} 發失敗 ⇒ 冷卻 15 分鐘（第 {cools} 次）", flush=True)
+            _write(OUT, HEADER, sorted(rows.values()))
+            _write(ASKED, ASKED_HEADER, sorted(asked.values()))
+            time.sleep(900)
+            streak = 0
         if n % 200 == 0:
             _write(OUT, HEADER, sorted(rows.values()))
             _write(ASKED, ASKED_HEADER, sorted(asked.values()))
@@ -167,9 +177,10 @@ def main():
     left = len(todo) - n
     rl.info("本趟", f"問 {n} 發｜ok {ok}｜empty（那年沒有檔）{empty}｜失敗 {bad}｜剩 {left} 發｜{(time.time() - t0) / 60:.0f} 分")
     rl.info("累計", f"上傳紀錄 {len(rows)} 列｜已問 (家, 年) {sum(1 for v in asked.values() if v[2] in ('ok', 'empty'))}")
+    rl.info("限流跡象", f"第一次失敗在第 {first_bad[0]} 發（{first_bad[1]}）｜冷卻 {cools} 次" if first_bad else "沒有失敗")
     if bads:
         rl.info("失敗的（前 10）", str(bads[:10]))
-    rl.check("沒有連續失敗而收手", streak < 8, f"最後連續 {streak} 發失敗")
+    rl.check("沒有連續失敗而收手", streak < 8, f"最後連續 {streak} 發失敗｜冷卻 {cools} 次")
     rl.check("失敗 ≤ 本趟 2%", bad <= max(2, 0.02 * max(1, n)), f"{bad}／{n}")
     return rl.finish()
 
