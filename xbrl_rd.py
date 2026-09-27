@@ -41,6 +41,7 @@ import urllib.request
 import zipfile
 
 import runlog
+from backfill import visible_text
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(ROOT, "data", "mops", "rd_hist")
@@ -89,7 +90,7 @@ def facts(text, y, q):
 
     # inline XBRL：<ix:nonFraction name="ifrs-full:Revenue" contextRef=... scale="3" sign="-">1,234</ix:nonFraction>
     for m in re.finditer(r"<ix:nonFraction\b([^>]*)>(.*?)</ix:nonFraction>", text, re.S | re.I):
-        attrs, inner = m.group(1), re.sub(r"<[^>]+>", "", m.group(2))
+        attrs, inner = m.group(1), visible_text(m.group(2), "")    # 四點五：去標籤只有一份
         nm = re.search(r'\bname="[\w\-]+:([\w\-]+)"', attrs)
         if not nm or (nm.group(1) not in RD and nm.group(1) not in REV):
             continue

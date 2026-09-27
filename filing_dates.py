@@ -36,6 +36,7 @@ import sys
 import time
 
 import runlog
+from backfill import visible_text
 from filing_probe import DOC, hit, looks_blocked
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +59,7 @@ def parse(body, co_id, roc_year):
         return [], "bad", "沒有「上傳日期」表頭（不是正常頁）"
     out = []
     for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", txt, re.S | re.I):
-        cells = [html.unescape(re.sub(r"<[^>]+>", "", c)).strip()
+        cells = [html.unescape(visible_text(c, "")).strip()      # 取一格的值 ⇒ sep=""（四點五：去標籤只有一份）
                  for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, re.S | re.I)]
         if len(cells) < 11 or not re.fullmatch(r"\d{2,3}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}", cells[9]):
             continue
