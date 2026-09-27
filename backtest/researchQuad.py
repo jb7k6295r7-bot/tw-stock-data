@@ -583,12 +583,24 @@ def _p(x, d=2):
     return "—" if x is None or (isinstance(x, float) and np.isnan(x)) else f"{x * 100:+.{d}f}%"
 
 
+def ci_alpha4(Cc, alpha=0.05 / 4):
+    """裁定 seq218 §一③：確認段 CI 另報 α＝0.05／4（四類、雙尾）；用 confirm_cells.csv 的 mean、se（同一個以進場月分群的 CR0），⛔ 不重跑。"""
+    from statistics import NormalDist
+    z = NormalDist().inv_cdf(1 - alpha / 2)
+    out = {"α": alpha, "雙尾": True, "z": z, "來源": "confirm_cells.csv 的 mean、se（CR0，進場月分群）", "規則": []}
+    for r in Cc.itertuples():
+        lo, hi = r.mean - z * r.se, r.mean + z * r.se
+        out["規則"].append({"類": r.類, "code": r.code, "名": r.名, "mean": r.mean, "se": r.se, "lo": lo, "hi": hi, "不含0": bool(lo > 0 or hi < 0),
+                          "α0.05 的 lo／hi（原判定用，對照）": [r.lo, r.hi], "n": int(r.n), "月數": int(r.月數)})
+    return out
+
+
 def report(S, OUT_):
     E = pd.read_csv(os.path.join(OUT_, "explore_cells.csv"))
     Cc = pd.read_csv(os.path.join(OUT_, "confirm_cells.csv")) if os.path.exists(os.path.join(OUT_, "confirm_cells.csv")) else pd.DataFrame()
     best = S["探索段挑選"]
     Ls = ["# PREREG四類單獨：停損、停利、減碼、加碼（不綁任何選股策略；全市場任意進場、單筆層）", "",
-          f"產出 {pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）。登錄 seq2（sha 85d8b357fa51e67d）；裁定 seq216。回測線。", "",
+          f"產出 {pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）。登錄 seq2（sha 85d8b357fa51e67d）；裁定 seq216、seq218 §一（補三處：N 寫法、必並陳三句、α＝0.05／4 CI；⛔ 不改判定）。回測線。", "",
           "- (a) 進場比字面晚一天，為了不前視（第一個交易日收盤判 eligible、第二個交易日開盤進場；同 W1、探索批）",
           "- (甲) 兩段只收整筆落在段內的持有（探索段 e ≥ 2017-03-02 且出場 ≤ 2021-12-30；確認段 e ≥ 2022-01-03 且出場 ≤ 2026-08-24）",
           "- 假訊號臂：登錄未列、不跑", "", "## 事件帳（pre；⛔ 不含報酬）", "",
@@ -610,11 +622,33 @@ def report(S, OUT_):
             continue
         q = Cc[Cc["code"] == b["code"]].iloc[0]
         if q["verdict"] == "好":
-            Ls.append(f"- **{cls}**：一般買股票加〔{b['名']}〕，在沒看過的 2022～2026 也比買了就抱好，平均多 {_p(q['mean'], 3)}；⚠ 從 {int((E['類'] == cls).sum())} 種裡挑出來的。"
-                      f"探索段試了 {int((E['類'] == cls).sum())} 種。（{MUST}）")
+            Ls.append(f"- **{cls}**：一般買股票加〔{b['名']}〕，在沒看過的 2022～2026 也比買了就抱好，平均多 {_p(q['mean'], 3)}；"
+                      f"⚠ {cls}類 {int((E['類'] == cls).sum())} 種裡挑出；四類共試 {len(E)} 種。（{MUST}）")
         else:
             Ls.append(f"- **{cls}**：一般買股票不必{cls}：沒有比買了就抱好（確認段〔{b['名']}〕平均 {_p(q['mean'], 3)}、CI [{_p(q['lo'], 3)}, {_p(q['hi'], 3)}]、"
                       f"{q['出口']}／{q['結果']} ⇒ {q['verdict']}）。探索段試了 {int((E['類'] == cls).sum())} 種。（{MUST}）")
+    # ── 裁定 seq218 §一②：對使用者必並陳（數字取自 port_cells.csv、confirm_cells.csv）
+    good = [cls for cls in ("停損", "停利", "減碼", "加碼") if best[cls]["進確認"] and len(Cc) and Cc[Cc["code"] == best[cls]["code"]].iloc[0]["verdict"] == "好"]
+    if good:
+        Ls += ["", "**必並陳（裁定 seq218 §一②）**", ""]
+        PC = pd.read_csv(os.path.join(OUT_, "port_cells.csv")).set_index("arm") if os.path.exists(os.path.join(OUT_, "port_cells.csv")) else None
+        for cls in good:
+            code = best[cls]["code"]; q = Cc[Cc["code"] == code].iloc[0]
+            if PC is not None and code in PC.index:
+                bb, bw_ = int(PC.loc[code, "both_better"]), int(PC.loc[code, "both_worse"])
+                lab = "組合層分不出" if (bb < 190 and bw_ < 190) else ("組合層兩項皆好" if bb >= 190 else "組合層兩項皆差")
+                Ls.append(f"- 放進組合（隨機 10 檔）兩項皆好 {bb}／皆差 {bw_} ⇒ {lab}")
+            yc = [c for c in Cc.columns if c.startswith("y")]
+            neg = [c[1:] for c in yc if q[c] < 0]
+            pos_big = sorted(yc, key=lambda c: -q[c])[:2]
+            Ls.append(f"- 確認段好處主要在 {'～'.join(sorted(c[1:] for c in pos_big))}；{'、'.join(neg)} 為負" if neg else
+                      f"- 確認段好處主要在 {'～'.join(sorted(c[1:] for c in pos_big))}")
+            if CLASS[code] == "加碼":
+                Ls.append(f"- 被加碼那批本身抱到底平均 {q['base_trig_mean'] * 100:+.1f}%（加碼是攤在跌的股票上）" if code.startswith("AD") else
+                          f"- 被加碼那批本身抱到底平均 {q['base_trig_mean'] * 100:+.1f}%")
+    A4 = ci_alpha4(Cc) if len(Cc) else None
+    if A4:
+        json.dump(A4, open(os.path.join(OUT_, "confirm_ci_alpha4.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     Ls += ["", "## 探索段 26 種（全部照報，描述；每筆配對差 ＝ 加規則 − 買了就抱；CI 以進場月分群）", "",
            "| 類 | 規則 | 配對差平均 | CI | 中位 | 觸發比例 | 被觸發那些筆：配對差平均／抱著較好的占比 | 上市／上櫃 平均 |", "|---|---|---|---|---|---|---|---|"]
     for r in E.itertuples():
@@ -629,6 +663,10 @@ def report(S, OUT_):
         for r in Cc.itertuples():
             Ls.append(f"| {r.類} | {r.名} | {_p(r.mean, 3)} | [{_p(r.lo, 3)}, {_p(r.hi, 3)}] | {r.出口}／{r.結果} | {r.verdict} | {r.trig_frac:.3f} | "
                       f"{_p(r.base_trig_mean)}／{_p(r.base_trig_median)}、{r.hold_better_frac_trig:.3f} | {_p(r.mean_twse, 3)}／{_p(r.mean_tpex, 3)} |")
+        if A4:
+            Ls += ["", f"描述（裁定 seq218 §一③；⛔ 不改判定）：α＝0.05／4（四類）的 CI，z＝{A4['z']:.6f}（雙尾），同一個 CR0 標準誤、只重算 CI、沒重跑引擎：", ""]
+            for r in A4["規則"]:
+                Ls.append(f"- {r['名']}：平均 {_p(r['mean'], 3)}，CI [{_p(r['lo'], 3)}, {_p(r['hi'], 3)}] ⇒ {'不含 0' if r['不含0'] else '含 0'}（confirm_ci_alpha4.json）")
         Ls += ["", f"確認段基準（買了就抱）：抱 120 根平均 {_p(S['確認段基準']['base120_mean'])}、抱 60 根平均 {_p(S['確認段基準']['base60_mean'])}（描述）、n＝{S['確認段基準']['n']}", ""]
         Ls += ["### 分年（依進場年；配對差平均）", ""]
         yc = [c for c in Cc.columns if c.startswith("y")]
