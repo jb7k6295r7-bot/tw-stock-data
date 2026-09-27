@@ -1,0 +1,54 @@
+{
+ "resultsp4/panel.csv.gz": {
+  "量測日起": "2015-01-05",
+  "量測日迄": "2026-03-02",
+  "個數": 135,
+  "eligible列": 59718,
+  "sha256": "fc1ed89d202aeb1d"
+ },
+ "resultsAFC/panel.csv.gz": {
+  "量測日起": "2015-01-05",
+  "量測日迄": "2026-03-02",
+  "個數": 135,
+  "eligible列": 59661,
+  "sha256": "4b7b22d7cc21aa69"
+ },
+ "resultsp9_engine/panel_ext.csv.gz": {
+  "量測日起": "2015-01-05",
+  "量測日迄": "2026-08-03",
+  "個數": 140,
+  "eligible列": 63295,
+  "sha256": "d75bf50baae15ed0"
+ },
+ "W1_S1訊號": {
+  "筆": 2881,
+  "檔": 918,
+  "月": 109
+ },
+ "探索段_CUT": "2022-12-30",
+ "確認段A_pos_end": "2026-03-31",
+ "AND_2026每月進場": {
+  "2026-01": 56,
+  "2026-02": 31,
+  "2026-03": 26,
+  "2026-04": 74,
+  "2026-05": 107,
+  "2026-06": 73,
+  "2026-07": 34,
+  "2026-08": 54
+ },
+ "rerun17_P12面板": "os.path.join(HERE, \"resultsAFC\", \"panel.csv.gz\")",
+ "傳 tradable／delist 給引擎": {
+  "researchAFC.py": true,
+  "researchD5.py": true,
+  "researchExplore.py": true,
+  "researchExploreConfirm.py": false,
+  "rerun17.py": false,
+  "listexit_lines.py": false
+ },
+ "load_universe∩gate3": {
+  "檔數": 2099,
+  "last_seen 早於日曆尾（已下市或停止）": 155
+ },
+ "0050_2026-03-02至08-24報酬": 0.2997093130934909
+}
