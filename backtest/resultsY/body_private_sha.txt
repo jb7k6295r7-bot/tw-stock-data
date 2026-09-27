@@ -1,0 +1,5 @@
+#2、#5 的逐事件列（衍生自私有 us-stock-data 591624c722／2119dc10）⛔ 不入庫；repo 外 ~/us_work/prey/：
+body_events_priv.csv sha256 7a07b691e7b19411526b3183a67d01919ea88bf2f1005c983813a58fb8458a6d
+body_events5.csv sha256 c4cff60a66c2ef231aaad108a91490f2387098a149ab1bef11a1fd0fff4e9b0c
+body_events2.csv sha256 c78f14ee96b833ccedb8398e314833891121779d26b72389fc06438a5913dddb
+body_early_flags_priv.csv sha256 10f9ff048829d6ab7eb8a968d8c25f1278ed75fb1c30d73a5c5999aa5688789f

@@ -11,6 +11,7 @@
   資料  資料庫線 1509、1542（附件 央行 54 次調整 sha18a7e036eb15f3c6）、1545、1639、0822、2312、0347
 
     python -m backtest.researchY pre
+    python -m backtest.researchY body     # 判定（seq4 §十 讀法）；查核 python -m backtest.researchY_check
 """
 from __future__ import annotations
 
@@ -704,12 +705,299 @@ def pre():
     open(os.path.join(OUT, "pre_run.log"), "w", encoding="utf-8").write("\n".join(LOG) + "\n")
 
 
+# ═════════════════════════════════════════════════════════════════════════════════════
+# ═════════ 本體（判定）：登錄 PREREGY seq4（sha ed234d8ebe997bce）§十 讀法定案 ═════════
+# ═════════════════════════════════════════════════════════════════════════════════════
+"""
+讀法（seq4 §十；⛔ 看報酬前定案）：D＝a（從保留那筆起隔 ≥ 20 日）；X1＝並存（< 10 直接出口①、< 30 出口①，PREREGH1 §五）；
+  其餘照 pre 第一選項：C＝a（序列自己的觀測日）、W＝a（756 含 t）、Q＝a（線性內插）、E＝a（事件日在窗內）、H＝a（s＋20 開盤）、
+  S＝a（區段以起算日、從 w0 切）、G＝a（全時間軸去重）、F＝a（外資兩列相加；pre 已證事件逐筆與 Fb 相同）、P5b＝a（#5 也套去重）。
+#5：聯準會 ＝ us-stock-data 2119dc10 fomc_rate_changes.csv 的 statement_date ⇒ 事件日＝其後第一個台北交易日（該日開盤起算）；
+    台灣 ＝ cbc_rediscount.csv（direction 升／降），事件日＝decision_release_date ⇒ 下一個台北交易日開盤起算；公布日空白（2004-12-13）剔除、照報。
+量法（seq4 §二）：R20(s) ＝ 0050 還原開盤 o[s＋20] ÷ o[s] − 1；對照 ＝ 同窗每一個 s ∈ [w0, w1−20] 的 R20 平均（母體基準、當常數）；
+  判定量 D ＝ 事件 R20 平均 − 對照；⭐ E＝a 下事件日在窗內、但 s＋20 > w1 的事件沒有窗內 20 日報酬（§三③ 報酬只用窗內）⇒ 不收、照報筆數。
+  主 CI ＝ 月分群 SE（起算日 s 所在曆月；CR0，同 research11.cl_stats）；判定用 Bonferroni：每格 α＝0.05／16 雙尾 ⇒ D ± z*·SE；95% CI 並列（描述）。
+  非重疊 SE（第二欄）＝ 20 日區段（(s−w0)//20）平均的標準差 ÷ √區段數。
+出口（PREREGH1 §五）：事件 < 10 或 n_eff < 10 ⇒ 出口①（直接，連報酬都不算）；n_eff < 30 ⇒ 出口①（只報筆數）；30～99 ⇒ 出口②；≥ 100 ⇒ 出口③。
+結果：結果① Bonferroni CI 含 0 ⇒ 測不出；結果② 不含 0 且 D > 0 ⇒ 加碼候選；結果③ 不含 0 且 D < 0 ⇒ 減碼候選。出口① ⇒ 都不是。
+假訊號臂（§二）：同一格同事件數 n，主窗 s ∈ [w0, w1−20] 不放回抽 n 天，種子 default_rng(20260925＋r)，r＝0…999 ⇒ 報真事件平均在 1,000 個假平均裡的百分位（描述）。
+描述（⛔ 不判）：60 日欄（R60，s＋60 ≤ w1，對照同窗 R60 平均，60 日區段分群 95% CI）；00757 欄（只 #2、#5 聯準會、#7、#8；同法）。
+  ⭐ 出口① 的格照 PREREGH1 §五「只報筆數」⇒ 描述欄也 ⛔ 不算。
+早年段（§五）：本件不判 ⇒ 只輸出判得動的格在 2008-01～2014-12 的事件旗標（事件日），⛔ 不印早年因素值與報酬。
+私有資料（us-stock-data）：#2、#5 的逐事件列 ⛔ 不入 ~/tw-p17 ⇒ 寫 ~/us_work/prey/，repo 只放彙總與 sha256。
+"""
+US_SHA5 = "2119dc10718d0fc6c7d4b1df6e041713760d46b1"
+PRIV = os.path.expanduser("~/us_work/prey")
+PRIV_FACTORS = ("#2", "#5 聯準會", "#5 台灣")
+SEED_FAKE, REPS_FAKE = 20260925, 1000
+Z_BONF = NormalDist().inv_cdf(1 - ALPHA / N_CELLS / 2)
+Z95 = 1.96
+BODY_READ = {"C": "a", "W": "a", "Q": "a", "D": "a", "E": "a", "H": "a", "S": "a", "G": "a", "F": "a", "X1": "a", "P5a": "statement_date（seq4 §十）", "P5b": "a"}
+CELLS16 = [("#2", "低端"), ("#2", "高端"), ("#3", "低端"), ("#3", "高端"), ("#6", "低端"), ("#6", "高端"), ("#7", "低端"), ("#7", "高端"),
+           ("#8", "低端"), ("#8", "高端"), ("#9", "低端"), ("#9", "高端"), ("#5 台灣", "調升"), ("#5 台灣", "調降"), ("#5 聯準會", "調升"), ("#5 聯準會", "調降")]
+DESC757 = ("#2", "#5 聯準會", "#7", "#8")
+FACTOR_NAME = {"#2": "美股前一晚 S&P 500 單日報酬", "#3": "外資大盤單日淨買賣超金額", "#6": "新台幣兌美元 20 日變化", "#7": "美債 10 年 20 日變化",
+               "#8": "VIX 水準", "#9": "上市融資金額 20 日變化", "#5 台灣": "央行重貼現率", "#5 聯準會": "聯準會目標利率"}
+
+
+def us5_csv(name: str) -> tuple[pd.DataFrame, str]:
+    raw = subprocess.run(["git", "-C", US_REPO, "show", f"{US_SHA5}:data/macro/{name}"], capture_output=True, check=True).stdout
+    return pd.read_csv(io.BytesIO(raw), dtype=str, keep_default_na=False), hashlib.sha256(raw).hexdigest()
+
+
+def body_events_continuous(cal_arr, us, inst, prev):
+    """最終讀法下 #2 #3 #6 #7 #8 #9 的事件（全時間軸；⛔ 不含值）。"""
+    rows = []
+    for key in ("#2", "#6", "#7", "#8"):
+        dN, vN, evN, spN = build_native(key, us[key], cal_arr)
+        r_, _ = run_axis(key, "a", "-", dN, vN, np.arange(len(dN)), evN, spN)
+        rows += r_
+    d, v, evd, sp = build_twfactor("#3", inst["a"], cal_arr)
+    rows += run_axis("#3", "-", "a", d, v, np.arange(len(d)), evd, sp)[0]
+    d, v, evd, sp = build_twfactor("#9", prev, cal_arr)
+    rows += run_axis("#9", "-", "-", d, v, np.arange(len(d)), evd, sp)[0]
+    ev = pd.DataFrame(rows)
+    ev = ev[(ev["W"] == "a") & (ev["Q"] == "a") & (ev["D"] == "a")].copy()
+    return ev[["因素", "端", "事件日", "起算日", "起算位置"]].reset_index(drop=True)
+
+
+def body_events_5(cal_arr):
+    fr, fr_sha = us5_csv("fomc_rate_changes.csv")
+    fs, fs_sha = us5_csv("fomc_statements.csv")
+    cb, cb_sha = us5_csv("cbc_rediscount.csv")
+    rows, audit = [], {}
+    # 聯準會
+    # 欄值有 "..."、"0"、數字，也有區間（例 "75-100"）⇒ 非空、非 "..."、非 "0" 就算該方向有變動
+    def moved(col):
+        v = fr[col].str.strip()
+        return ~v.isin(["", "...", "0"])
+    up, dn = moved("increase_bp").to_numpy(), moved("decrease_bp").to_numpy()
+    assert not (up & dn).any()
+    fr["方向"] = np.where(up, "調升", np.where(dn, "調降", ""))
+    sd = fr["statement_date"].to_numpy().astype(str)
+    sp = next_tw(cal_arr, sd, strict=True)
+    audit["聯準會"] = {"fomc_rate_changes.csv sha256": fr_sha, "fomc_statements.csv sha256": fs_sha, "列": int(len(fr)),
+                     "statement_date ⊆ fomc_statements": bool(set(sd) <= set(fs["statement_date"])),
+                     "方向空白": int((fr["方向"] == "").sum()), "升": int((fr["方向"] == "調升").sum()), "降": int((fr["方向"] == "調降").sum())}
+    for end in ("調升", "調降"):
+        m = (fr["方向"] == end).to_numpy() & (sp >= 0)
+        ss = sp[m]; sdd = sd[m]
+        k = dedupe(ss, "a")
+        for i in k:
+            rows.append({"因素": "#5 聯準會", "端": end, "聲明或公布日": sdd[i], "事件日": str(cal_arr[ss[i]]), "起算日": str(cal_arr[ss[i]]), "起算位置": int(ss[i])})
+        audit["聯準會"][f"{end} 去重前／後"] = [int(m.sum()), int(len(k))]
+    # 台灣
+    rel = cb["decision_release_date"].to_numpy().astype(str)
+    blank = cb[cb["decision_release_date"] == ""]
+    audit["台灣"] = {"cbc_rediscount.csv sha256": cb_sha, "列": int(len(cb)), "公布日空白（剔除）": blank["effective_date"].tolist(),
+                   "方向空白（首列前值不明）": cb.loc[cb["direction"] == "", "effective_date"].tolist(),
+                   "升": int((cb["direction"] == "升").sum()), "降": int((cb["direction"] == "降").sum())}
+    spc = next_tw(cal_arr, rel, strict=True)
+    for end, lab in (("升", "調升"), ("降", "調降")):
+        m = (cb["direction"] == end).to_numpy() & (rel != "") & (spc >= 0)
+        ss = spc[m]; rr = rel[m]
+        k = dedupe(ss, "a")
+        for i in k:
+            rows.append({"因素": "#5 台灣", "端": lab, "聲明或公布日": rr[i], "事件日": rr[i], "起算日": str(cal_arr[ss[i]]), "起算位置": int(ss[i])})
+        audit["台灣"][f"{lab} 去重前／後"] = [int(m.sum()), int(len(k))]
+    return pd.DataFrame(rows), audit
+
+
+def open_adj(sid, cal):
+    """還原開盤（data.load_stock，edc6f 快照）對到合併日曆；2015 以前 NaN（⛔ 不讀早年報酬）。"""
+    from . import data as D
+    from . import rerun17 as RR
+    RR.use_snapshot()
+    calm = D.load_calendar()
+    s = D.load_stock(sid, "twse", calm)
+    o = s.df["open"].to_numpy(float)
+    dm = [str(d.date()) for d in calm]
+    out = np.full(len(cal), np.nan)
+    pos = {d: i for i, d in enumerate(cal)}
+    for i, d in enumerate(dm):
+        if d in pos:
+            out[pos[d]] = o[i]
+    return out
+
+
+def month_of(cal_arr, s):
+    return np.array([cal_arr[i][:7] for i in s])
+
+
+def cl_se(x, groups):
+    """CR0 月分群 SE（research11.cl_stats 同式）：√Σ_g (Σ_i∈g (x_i − x̄))² ÷ n。"""
+    n = len(x); d = x - x.mean()
+    s = pd.Series(d).groupby(groups).sum().to_numpy()
+    return float(np.sqrt((s ** 2).sum()) / n), int(len(s))
+
+
+def seg_se(x, seg):
+    m = pd.Series(x).groupby(seg).mean().to_numpy()
+    return (float(np.std(m, ddof=1) / np.sqrt(len(m))) if len(m) > 1 else float("nan")), int(len(m))
+
+
+def body():
+    t0 = time.time()
+    os.makedirs(OUT, exist_ok=True); os.makedirs(PRIV, exist_ok=True)
+    LOG.clear()
+    extract_db()
+    G = {"0050錨_主窗": gate_0050_main()}
+    log(f"[閘 0050 錨] 年化 {G['0050錨_主窗']['年化']!r}／回落 {G['0050錨_主窗']['回落']!r}｜逐位元 {G['0050錨_主窗']['逐位元']}")
+    if not G["0050錨_主窗"]["逐位元"]:
+        raise SystemExit("⛔ 0050 錨不過")
+    cal, pos, gcal = tw_calendar()
+    cal_arr = np.asarray(cal, dtype=str)
+    global cal_arr_g
+    cal_arr_g = cal_arr
+    w0, w1 = pos[W0], pos[W1]
+    e0p = int(np.searchsorted(cal_arr, E0)); e1p = int(np.searchsorted(cal_arr, E1, side="right")) - 1
+    inst, _ = load_instamt(cal)
+    prev, _, _ = load_marginmkt(cal)
+    us, _, _, _ = load_us()
+    evc = body_events_continuous(cal_arr, us, inst, prev)
+    ev5, a5 = body_events_5(cal_arr)
+    ev5_all = ev5.copy()
+    ev = pd.concat([evc, ev5.drop(columns=["聲明或公布日"])], ignore_index=True)
+    # 與 pre 的頻率對帳（pre_freq.csv 同讀法 C=a W=a Q=a D=a E=a S=a F=a）
+    pf = pd.read_csv(os.path.join(OUT, "pre_freq.csv"))
+    pf = pf[(pf["W"] == "a") & (pf["Q"] == "a") & (pf["D"] == "a") & (pf["E"] == "a") & (pf["S"] == "a") & (pf["C"].isin(["a", "-"])) & (pf["F"].isin(["a", "-"]))]
+    G["與 pre 頻率對帳"] = {}
+    for k, e in CELLS16[:12]:
+        n_body = int(((ev["因素"] == k) & (ev["端"] == e) & (ev["事件日"] >= W0) & (ev["事件日"] <= W1)).sum())
+        n_pre = int(pf[(pf["因素"] == k) & (pf["端"] == e)]["主窗事件數"].iloc[0])
+        G["與 pre 頻率對帳"][f"{k} {e}"] = [n_body, n_pre, n_body == n_pre]
+    G["與 pre 頻率對帳_全符"] = all(v[2] for v in G["與 pre 頻率對帳"].values())
+    log(f"[對帳 pre] 12 格事件數與 pre_freq（最終讀法）全符 {G['與 pre 頻率對帳_全符']}")
+    G["#5 資料"] = a5
+    log(f"[#5] {json.dumps(a5, ensure_ascii=False)}")
+
+    o50 = open_adj("0050", cal)
+    o757 = open_adj("00757", cal)
+    halt = [str(cal_arr[i]) for i in range(w0, w1 + 1) if not np.isfinite(o50[i])]
+    R20 = np.full(len(cal), np.nan); R20[:len(cal) - HOLD] = o50[HOLD:] / o50[:-HOLD] - 1.0
+    R60 = np.full(len(cal), np.nan); R60[:len(cal) - HOLD_DESC] = o50[HOLD_DESC:] / o50[:-HOLD_DESC] - 1.0
+    # ⚠ 0050 分割停牌（還原開盤無值）⇒ 起算日或第 20 日落在停牌日的 R20 無值：事件與對照【同一條規則】剔除並計數（登錄未寫；讀法 R-halt a）
+    elig_all = np.arange(w0, w1 - HOLD + 1)
+    elig = elig_all[np.isfinite(R20[elig_all])]
+    base20 = float(np.mean(R20[elig]))
+    elig60a = np.arange(w0, w1 - HOLD_DESC + 1); elig60 = elig60a[np.isfinite(R60[elig60a])]; base60 = float(np.mean(R60[elig60]))
+    G["0050 停牌"] = {"窗內還原開盤無值的日": halt, "對照起算日 剔除": int(len(elig_all) - len(elig)), "對照起算日 保留": int(len(elig))}
+    log(f"[0050 停牌] {G['0050 停牌']}")
+    f757 = int(np.where(np.isfinite(o757))[0][0])
+    R757 = np.full(len(cal), np.nan); R757[:len(cal) - HOLD] = o757[HOLD:] / o757[:-HOLD] - 1.0
+    elig757 = np.arange(max(w0, f757), w1 - HOLD + 1)
+    assert np.isfinite(R757[elig757]).all()
+    base757 = float(np.mean(R757[elig757]))
+    G["對照"] = {"0050 20 日母體基準的起算日數": int(len(elig)), "60 日": int(len(elig60)), "00757 首個還原開盤日": str(cal_arr[f757]),
+               "00757 20 日母體基準的起算日數": int(len(elig757))}
+
+    cells, priv_rows, pub_rows, early_rows, early_priv = [], [], [], [], []
+    for k, e in CELLS16:
+        g = ev[(ev["因素"] == k) & (ev["端"] == e)]
+        gm = g[(g["事件日"] >= W0) & (g["事件日"] <= W1)]
+        s_all = gm["起算位置"].to_numpy(int)
+        ok = (s_all >= w0) & (s_all + HOLD <= w1)
+        okh = ok & np.isfinite(R20[np.minimum(s_all, len(cal) - 1)])
+        s = s_all[okh]
+        n = int(len(s)); segs = len(set(((s - w0) // HOLD).tolist())); neff = min(n, segs)
+        r = {"因素": k, "名稱": FACTOR_NAME[k], "端": e, "窗內事件（事件日在窗內）": int(len(gm)), "窗尾無 20 日報酬（不收）": int((~ok).sum()), "0050 停牌使 R20 無值（不收）": int((ok & ~okh).sum()),
+             "n": n, "區段數": segs, "n_eff": neff}
+        if n < 10 or neff < 10:
+            r.update({"出口": "出口①", "結果": "—", "候選": "都不是", "結果句": f"出口①：事件 {n}、n_eff {neff}（< 10）⇒ 直接出口①，樣本不足以分辨；⛔ 報酬未算"})
+        elif neff < 30:
+            r.update({"出口": "出口①", "結果": "—", "候選": "都不是", "結果句": f"出口①：n_eff＝{neff}（< 30）⇒ 樣本不足以分辨；只報筆數，⛔ 不下判定、報酬未算"})
+        else:
+            x = R20[s]
+            assert np.isfinite(x).all()
+            D_ = float(x.mean() - base20)
+            se, nm = cl_se(x, month_of(cal_arr, s))
+            se2, nseg = seg_se(x, (s - w0) // HOLD)
+            lo_b, hi_b = D_ - Z_BONF * se, D_ + Z_BONF * se
+            lo95, hi95 = D_ - Z95 * se, D_ + Z95 * se
+            ex = "出口②" if neff < 100 else "出口③"
+            res = "結果①" if lo_b <= 0 <= hi_b else ("結果②" if D_ > 0 else "結果③")
+            cand = {"結果①": "都不是", "結果②": "加碼候選", "結果③": "減碼候選"}[res]
+            fake = np.empty(REPS_FAKE)
+            for rr in range(REPS_FAKE):
+                pick = np.random.default_rng(SEED_FAKE + rr).choice(elig, n, replace=False)
+                fake[rr] = R20[pick].mean()
+            pct = float((fake <= x.mean()).mean() * 100)
+            pre_ = f"樣本中等（n_eff＝{neff}，介於 30 與 100 之間）：" if ex == "出口②" else ""
+            if res == "結果①":
+                sent = pre_ + f"{ex}、結果①：測不出（Bonferroni CI 含 0；⛔ 不是「沒效」）"
+            else:
+                sent = pre_ + f"{ex}、{res}：測得出（{'＋' if D_ > 0 else '−'}）⇒ {cand}"
+            if res == "結果①" and not (lo95 <= 0 <= hi95):
+                sent += "；⚠ 95% CI 不含 0、但 Bonferroni（0.05／16）含 0 ⇒ ⛔ 不算候選、⛔ 不單獨引用"
+            r.update({"事件平均 R20": float(x.mean()), "對照（母體基準）": base20, "D": D_, "月分群 SE": se, "月數": nm,
+                      "Bonferroni CI 下": lo_b, "Bonferroni CI 上": hi_b, "95% CI 下": lo95, "95% CI 上": hi95,
+                      "非重疊 SE（20 日區段）": se2, "非重疊區段數": nseg, "中位 R20−對照": float(np.median(x - base20)),
+                      "R20 > 對照 的比例": float((x > base20).mean()), "最差 R20": float(x.min()),
+                      "假訊號臂百分位（真平均在 1,000 個假平均的位置）": pct, "假平均 p2.5−對照": float(np.percentile(fake, 2.5) - base20),
+                      "假平均 p97.5−對照": float(np.percentile(fake, 97.5) - base20),
+                      "出口": ex, "結果": res, "候選": cand, "結果句": sent})
+            # 描述：60 日
+            s60 = s_all[(s_all >= w0) & (s_all + HOLD_DESC <= w1)]
+            s60 = s60[np.isfinite(R60[s60])]
+            x60 = R60[s60]
+            se60, _ = cl_se(x60, (s60 - w0) // HOLD_DESC)
+            d60 = float(x60.mean() - base60)
+            r.update({"描述 60 日 n": int(len(s60)), "描述 60 日 D": d60, "描述 60 日 95% CI 下": d60 - Z95 * se60, "描述 60 日 95% CI 上": d60 + Z95 * se60})
+            if k in DESC757:
+                s7 = s_all[(s_all >= max(w0, f757)) & (s_all + HOLD <= w1)]
+                x7 = R757[s7]; se7, _ = cl_se(x7, month_of(cal_arr, s7)); d7 = float(x7.mean() - base757)
+                r.update({"描述 00757 n": int(len(s7)), "描述 00757 D": d7, "描述 00757 95% CI 下": d7 - Z95 * se7, "描述 00757 95% CI 上": d7 + Z95 * se7})
+            for si in s:
+                row = {"因素": k, "端": e, "起算日": str(cal_arr[si]), "R20": float(R20[si]), "曆月": str(cal_arr[si])[:7], "區段": int((si - w0) // HOLD)}
+                (priv_rows if k in PRIV_FACTORS else pub_rows).append(row)
+            # 早年旗標（只有事件日；⛔ 不印早年因素值與報酬）
+            ge = g[(g["事件日"] >= str(cal_arr[e0p])) & (g["事件日"] <= str(cal_arr[e1p]))]
+            for d in ge["事件日"]:
+                (early_priv if k in PRIV_FACTORS else early_rows).append({"因素": k, "端": e, "早年事件日": d})
+            r["早年事件數（旗標，2008-01～2014-12）"] = int(len(ge))
+        if "早年事件數（旗標，2008-01～2014-12）" not in r:
+            ge = g[(g["事件日"] >= str(cal_arr[e0p])) & (g["事件日"] <= str(cal_arr[e1p]))]
+            r["早年事件數（旗標，2008-01～2014-12）"] = int(len(ge))
+        cells.append(r)
+        log(f"[{k} {e}] n {n}｜n_eff {neff}｜{r['出口']}｜{r['結果']}｜{r['候選']}")
+    C = pd.DataFrame(cells)
+    C.to_csv(os.path.join(OUT, "body_cells.csv"), index=False, encoding="utf-8")
+    pd.DataFrame(pub_rows).to_csv(os.path.join(OUT, "body_events.csv"), index=False, encoding="utf-8")
+    pd.DataFrame(early_rows, columns=["因素", "端", "早年事件日"]).to_csv(os.path.join(OUT, "body_early_flags.csv"), index=False, encoding="utf-8")
+    # 私有（repo 外）
+    pp = os.path.join(PRIV, "body_events_priv.csv")
+    pd.DataFrame(priv_rows).to_csv(pp, index=False, encoding="utf-8")
+    p5 = os.path.join(PRIV, "body_events5.csv")
+    ev5_all.to_csv(p5, index=False, encoding="utf-8")
+    p2 = os.path.join(PRIV, "body_events2.csv")
+    ev[ev["因素"] == "#2"].to_csv(p2, index=False, encoding="utf-8")
+    pe = os.path.join(PRIV, "body_early_flags_priv.csv")
+    pd.DataFrame(early_priv, columns=["因素", "端", "早年事件日"]).to_csv(pe, index=False, encoding="utf-8")
+    shas = {os.path.basename(p): hashlib.sha256(open(p, "rb").read()).hexdigest() for p in (pp, p5, p2, pe)}
+    with open(os.path.join(OUT, "body_private_sha.txt"), "w", encoding="utf-8") as fh:
+        fh.write("#2、#5 的逐事件列（衍生自私有 us-stock-data 591624c722／2119dc10）⛔ 不入庫；repo 外 ~/us_work/prey/：\n")
+        for kk, vv in shas.items():
+            fh.write(f"{kk} sha256 {vv}\n")
+    summary = {"登錄": "PREREGY seq4（sha ed234d8ebe997bce）", "讀法": BODY_READ, "資料": {"tw-stock-data": DB_SHA, "us-stock-data（#2 #6 #7 #8）": US_SHA,
+               "us-stock-data（#5）": US_SHA5, "0050／00757": "edc6f8002f 快照"},
+               "Bonferroni z*": Z_BONF, "α 每格": ALPHA / N_CELLS, "對照": {"0050 R20": base20, "0050 R60": base60, "00757 R20": base757},
+               "候選": {"加碼候選": [f"{a} {b}" for a, b in C.loc[C["候選"] == "加碼候選", ["因素", "端"]].itertuples(index=False)],
+                       "減碼候選": [f"{a} {b}" for a, b in C.loc[C["候選"] == "減碼候選", ["因素", "端"]].itertuples(index=False)]},
+               "出口計數": C["出口"].value_counts().to_dict(), "結果計數": C["結果"].value_counts().to_dict(), "閘": G, "私有檔 sha256": shas}
+    json.dump(summary, open(os.path.join(OUT, "body_summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
+    log(f"[完成] 候選 {summary['候選']}｜{time.time() - t0:.0f}s")
+    open(os.path.join(OUT, "body_run.log"), "w", encoding="utf-8").write("\n".join(LOG) + "\n")
+
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["pre"])
+    ap.add_argument("stage", choices=["pre", "body"])
     a = ap.parse_args()
     if a.stage == "pre":
         pre()
+    elif a.stage == "body":
+        body()
 
 
 if __name__ == "__main__":
