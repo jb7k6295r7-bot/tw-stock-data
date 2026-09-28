@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-26T01:03:21+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36162411655｜美股供料：阻斷項＝拿不拿得到已下市的股票
+# ⏱ 這一趟：2026-09-28T13:57:52+08:00（台北）｜ref main｜Actions｜run 36382961903｜美股供料：阻斷項＝拿不拿得到已下市的股票
 
 # 美股供料探針（⛔ 只讀，本支不寫任何資料檔）
 範圍（使用者 2026-09-24 定）：價量 ＋ 全市場【含下市】
@@ -8,7 +8,7 @@
 
 ══ Yahoo chart（免費、不需 key、⚠ 非官方）══
    AAPL　⭐ 對照組：在市，⛔ 少了它分不出「沒有下市股」與「整個來源不通」
-      ✅ 11,539 列｜1980-12-12 ~ 2026-09-25｜0.6 秒
+      ✅ 11,539 列｜1980-12-12 ~ 2026-09-25｜0.3 秒
       粒度：✅ 我要 1d，它說它給 1d
    LEH（Lehman Brothers（2008 破產））
       ⛔ 連不上：HTTP 404 Not Found | {"chart":{"result":null,"error":{"code":"Not Found","description":"No data found, symbol may be delisted"}}}
@@ -46,11 +46,11 @@
 ══ ⛔ 需要 API key 才打得進去的（本支只證明【沒有 key 進不去】）══
    Alpha Vantage LISTING_STATUS（不帶 state）
       ⭐ 欄位有 delistingDate／status ⇒ 這支端點【結構上】給得出下市清單
-      無 key 試打：回了 1,067,939 bytes
+      無 key 試打：回了 1,068,358 bytes
    Alpha Vantage LISTING_STATUS（state=delisted）
       ⛔ demo key 回 {} ⇒ ⚠ 那是 key 的限制，不是資料不存在
       無 key 試打：回了 2 bytes
    Polygon tickers(active=false)
       ⭐ 文件說 active=false 回已下市代號
-      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"e9cd436fe7e6baf92669ceb90db934cc","error":"API Key was not provided"}
+      無 key 試打：⛔ 連不上：HTTP 401 Unauthorized | {"status":"ERROR","request_id":"f4e182e6e39425f2657bb2556a8bcecc","error":"API Key was not provided"}
    ⇒ ⭐ 這一節【不是】資料品質的證據，只是「這條路要不要付錢」的入口確認。
