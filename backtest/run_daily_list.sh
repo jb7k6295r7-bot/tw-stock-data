@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 每日名單（無人值守版）：抓最新 main ⇒ 唯讀 archive ⇒ 跑 backtest.daily_list ⇒ 把 daily_<資料日>.md 放到信箱 _營量觀察/
-# 用法：bash ~/tw-p17/backtest/run_daily_list.sh [--final]
+# 用法：bash ~/tw-p17/backtest/run_daily_list.sh [--final] [--force]
 #   Windows 排程每天 20:00、00:45、06:30 各跑一次；06:30 那次帶 --final
 # 規則（協調者 09-28 轉使用者同意的排程要求）：
 #   1 重複跑安全：_營量觀察/daily_<資料日>.md 已存在且檔頭的 main sha 相同 ⇒ 略過；main 有新 sha、資料日不變 ⇒ 照新資料重產、覆蓋同一檔
@@ -21,10 +21,11 @@ WD="$REPO/backtest/resultsYLwatch"
 LOG="$WD/daily_run.log"
 LOCK="$WD/.daily.lock"
 PY="$HOME/tw-p16/.venv/bin/python"
-FINAL=0; [ "${1:-}" = "--final" ] && FINAL=1
+FINAL=0; FORCE=0
+for x in "$@"; do case "$x" in --final) FINAL=1;; --force) FORCE=1;; esac; done     # --force：資料日與 sha 都相同也重產（手動改措辭用；排程不帶）
 mkdir -p "$WD" "$REPO/backtest/resultsDaily"
 NOW=$(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M:%S')
-logline() { echo "[$NOW 台北]$([ $FINAL = 1 ] && echo ' --final') $*" >> "$LOG"; echo "$*"; }
+logline() { echo "[$NOW 台北]$([ $FINAL = 1 ] && echo ' --final')$([ $FORCE = 1 ] && echo ' --force') $*" >> "$LOG"; echo "$*"; }
 
 exec 9>"$LOCK"
 if ! flock -n 9; then logline "略過：已有一個在跑（鎖 $LOCK）"; exit 0; fi
@@ -48,7 +49,7 @@ fi
 RESULT=""
 if [ -z "$FAIL" ]; then
   OUTF="$MB/daily_$ASOF.md"
-  if [ -f "$OUTF" ] && grep -q "main ${SHA:0:10}" "$OUTF"; then
+  if [ $FORCE = 0 ] && [ -f "$OUTF" ] && grep -q "main ${SHA:0:10}" "$OUTF"; then
     RESULT="略過"; logline "略過：sha ${SHA:0:10}｜資料日 $ASOF｜$OUTF 已存在且 sha 相同"
   else
     WLOG="$REPO/backtest/resultsDaily/wrapper.log"

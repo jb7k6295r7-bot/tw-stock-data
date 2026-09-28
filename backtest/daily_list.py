@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """每日名單檔 daily_<資料日>.md（營飆 v1 已達成＋營量 v1 已達成＋營量 v1 即將達成）——回測線，2026-09-28。
-依據：市場情報分析線 2109、2130（使用者要每日名單）；裁定 seq270 §四（固定註）、§五（創新板加標）。
+依據：市場情報分析線 2109、2130（使用者要每日名單）；裁定 seq270 §四、§五（創新板加標）；seq271 §一（固定註單一寫法、營飆段標題加「（實驗）」）。
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.daily_list [--procs 2]
     包裝（fetch main ⇒ archive ⇒ 跑本支 ⇒ 複製到信箱 _營量觀察/）：bash ~/tw-p17/backtest/run_daily_list.sh
@@ -27,7 +27,7 @@ from . import gate_b_status as GB
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "resultsDaily")
-NOTE = "營量 v1 目前暫定（實際紀錄觀察中）；名單是看盤參考，照規則收盤成立、隔天開盤才買"
+NOTE = "營量 v1 暫定、營飆 v1 實驗（都在實際紀錄觀察中）；看盤參考，照規則收盤成立、隔天開盤才買"          # 裁定 seq271 §一
 INNO = "創新板（限合格投資人）"
 
 
@@ -59,7 +59,7 @@ def main():
     L = [f"# 每日名單 {asof}（資料日）", "",
          f"- commit：tw-stock-data main {sha[:10]}｜資料日 {asof}｜下一交易日 {nxt[0].date()}（外推）",
          f"- 營飆大盤閘（前一天 0050 在 200 日線上）：{'開' if gate_on else '關'}（{asof} 0050 還原收盤 {bench[n - 1]:.2f}、200 日線 {ma[n - 1]:.2f}）", "",
-         f"## 一、營飆 v1 已達成（{nxt[0].date()} 開盤照規則買；最多 10 檔、候選多於空槽時抽籤）", ""]
+         f"## 一、營飆 v1（實驗）已達成（{nxt[0].date()} 開盤照規則買；最多 10 檔、候選多於空槽時抽籤）", ""]
     if gate_on and len(A):
         L += [f"- {r['代號']} {r['名稱']}{tag(r['名稱'])}｜{reason(r)}｜出場 {exit_str(120)}（第 120 個交易日收盤）" for r in A.sort_values("代號").to_dict("records")]
     else:
