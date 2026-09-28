@@ -10,13 +10,14 @@
 營飆 v1（PREREG10 #1：AND｜大盤閘｜N10｜H120）已達成 ＝ 資料日當天的 AND 訊號 ∧ 資料日（＝ 進場前一個交易日 t−1）大盤閘開（list_prereg10 L5）；出場 ＝ 第 120 個交易日
 營量 v1（#13：AND｜無大盤閘｜N20｜relvol｜H60）已達成 ＝ 資料日當天的 AND 訊號（relvol 大者先）；出場 ＝ 第 60 個交易日（list_yl13 同：D.exit_pos(進場, 60)）
 出場日超出資料日曆 ⇒ gate_b_status.future_trading_days 外推（未公告休市只扣週末 ⇒ 實際只會更晚）
-創新板 ＝ 名稱含「-創」⇒ 加標「創新板（限合格投資人）」
+創新板 ＝ 名稱含「-創」或「-KY創」⇒ 加標「創新板（限合格投資人）」
 輸出 backtest/resultsDaily/daily_<資料日>.md（包裝再複製到信箱 _營量觀察/）
 """
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import time
 
 from . import list_yl13_watch as W
@@ -31,7 +32,7 @@ INNO = "創新板（限合格投資人）"
 
 
 def tag(name):
-    return f"｜{INNO}" if "-創" in str(name) else ""
+    return f"｜{INNO}" if re.search(r"-(?:KY)?創", str(name)) else ""                 # 「-創」或「-KY創」（例 6854 錼創科技-KY創）
 
 
 def main():
