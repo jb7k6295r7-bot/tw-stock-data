@@ -418,8 +418,14 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                  weight_fn=None, tradable=None, audit=None, delist=None, stop_line=None,
                  entry_tranches=None, add_rule=None, trim_rule=None, size_mult_by_regime=None, regime_trim=None,
                  trim_proceeds=None, nx_cap=None, stop_line_le=False, stop_proceeds=None, stop_block=None,
-                 nx_order="before", pick_tie=None, nx_pool=None, stop_force=None):
+                 nx_order="before", pick_tie=None, nx_pool=None, stop_force=None, held_map=None):
     """N 個等權槽、逐日收盤市值權益（研究十一／十三／十五／P1 共用）。
+
+    同一檔判定鍵（PREREG營量出場 seq1 甲件；回測線 2026-09-28 落地；⛔ 預設關閉 ⇒ 既有路徑逐位元相同，閘見 backtest/resultsYLexit/ENGINE_GATE.md）：
+      held_map    None（預設：「已持有」以 sig 的 sid 判）／dict {sid: 底層代號}：sig 的 sid 是「每筆訊號自己的價格序列鍵」（例 "2330#1234"，
+                  closes／opens／stop_force 都用這個鍵），而「已持有同一檔 ⇒ 不再進」改用底層代號判 ⇒ 讓呼叫端用合成價格序列表達
+                  「持有期間暫出、站回再進、名額保留」這類逐筆路徑，⭐ 其餘規則（名額、排序、抽籤、成本、強制出場）與原引擎同一條
+                  ⛔ 不與 nx_pool／trim_proceeds／stop_proceeds／cap_fn／tradable 同開（沒有 fixture 覆蓋）
 
     停止交易強制出場（裁定線 seq255 §一 4；回測線 2026-09-27 落地；⛔ 預設關閉 ⇒ 既有路徑逐位元相同，閘見 backtest/resultsEngineDelist/GATE.md）：
       stop_force  None（預設）／dict {sid: L}：L ＝ 該股最後一根有效收盤的日曆位置（之後資料裡再也沒有成交；用 stop_force_days() 算）
@@ -807,6 +813,8 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
         if _nx is None:
             _nx = {"lots": [], "n": 0, "amt": 0.0, "waits": [], "full_days": 0, "empty_days": 0, "blocked": 0}
         _nx["stop_lots"] = 0
+    if held_map is not None and (nx_pool is not None or trim_proceeds is not None or stop_proceeds is not None or cap_fn is not None or tradable is not None):
+        raise ValueError("held_map 不與 nx_pool／trim_proceeds／stop_proceeds／cap_fn／tradable 同開（沒有 fixture 覆蓋）")
     if pick_tie not in (None, "rng"):
         raise ValueError(f"pick_tie 只能是 None（預設）或 'rng'，收到 {pick_tie!r}")
     if pick_tie is not None and pick is None:
@@ -1123,7 +1131,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     s_ = _xs.pop(sid, None)
                     if s_ is not None and _xk is not None:
                         _xc["tr_unbought"] += _xk - 1 - s_["tr"]              # 2-A：出場時還沒買的份數
-                held.discard(sid)
+                held.discard(sid if held_map is None else held_map[sid])   # _HELDMAP
                 if stop_line is not None:
                     sl_key.pop(sid, None); sl_pending.discard(sid)
                 if stop is not None:
@@ -1183,10 +1191,10 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                     wins += int(gross_p - COST > 0)
         if g is not None and (len(open_pos) < ns_t or (_nxk is not None and _nx["lots"] and len(open_pos) < _nx_kt)):  # _NXK_ENTER
             if log is not None and held:
-                for _, row in g[g["sid"].isin(held)].iterrows():
+                for _, row in g[(g["sid"] if held_map is None else g["sid"].map(held_map)).isin(held)].iterrows():   # _HELDMAP
                     if "_t0" not in row or int(row["_t0"]) == t:      # 隊列裡的等待中不記；新訊號撞持倉才記 c
                         _rec(row, "c", t)
-            cand = g[~g["sid"].isin(held)]
+            cand = g[~(g["sid"] if held_map is None else g["sid"].map(held_map)).isin(held)]   # _HELDMAP
             if _nx is not None and _nx["lots"] and not len(cand):
                 _nx["empty_days"] += 1                   # seq3 乙二 ④：有訊號但全是已持有的 ⇒ 待買等  # _NX_EMPTY
             if len(cand):
@@ -1291,7 +1299,7 @@ def simulate_mtm(sig: pd.DataFrame, rule: str, n_slots: int, rng, closes: dict, 
                         ep = float(closes[row["sid"]][t])
                     t0 = int(row["_t0"]) if "_t0" in row else t
                     gross = float(row["gross"]) if t0 == t else float(closes[row["sid"]][int(row["exit_pos"])]) / ep - 1.0   # 推遲進場 ⇒ 重算
-                    open_pos.append((int(row["exit_pos"]), row["sid"], amt, gross, ep)); held.add(row["sid"]); trades += 1
+                    open_pos.append((int(row["exit_pos"]), row["sid"], amt, gross, ep)); held.add(row["sid"] if held_map is None else held_map[row["sid"]]); trades += 1   # _HELDMAP
                     if audit is not None:
                         audit.append({"t": t, "sid": row["sid"], "side": "buy", "amt": float(amt), "px": ep,
                                       "target_w": (float(amt) / _eq_prev) if _eq_prev > 0 else float("nan"),
