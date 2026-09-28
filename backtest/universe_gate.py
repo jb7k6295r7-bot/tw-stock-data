@@ -14,6 +14,12 @@
     (丙) 明文排除創新板          ⇒ uni = exclude_innovation(uni)（名稱含 -創）
     三道一起                     ⇒ uni = gate3(main_stocks())
 
+⭐ 沿革（裁定線 seq271 §二，2026-09-28）：創新板名稱另有「-KY創」（6854 錼創科技-KY創、6924 榮惠-KY創、7823 奧義賽博-KY創、7827 漢康-KY創），
+   舊第三道只認「-創」⇒ 漏掉這 4 檔。補認「-KY創」只對之後新跑的件生效：開關 innov_ky，⭐ 預設關（關 ⇒ 既有路徑逐位元不變）；已判件不重跑。
+   開法（新跑的件擇一）：① 程式開頭 UG.set_innov_ky(True)（全域預設；之後所有 gate3／exclude_innovation 呼叫都生效）
+                         ② 單次呼叫 gate3(stocks, innov_ky=True)／exclude_innovation(uni, innov_ky=True)
+   ⚠ 開關只影響【當下呼叫 gate3 的那一步】；用快取訊號／面板（例 resultsN17/sig_edc6f、resultsAFC/panel、resultsp9_engine/panel_ext）的件要重建快取才會真的剔掉這 4 檔
+
 並提供每份報告都該印的一行：
 
     snapshot_stamp()  ⇒ "data/ 快照 2026-09-18（stocks.csv blob cb01b28f…；-DR 落在 kind=='stock' 的 7 檔）"
@@ -98,16 +104,32 @@ def exclude_dr(uni: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def exclude_innovation(uni: pd.DataFrame) -> pd.DataFrame:
+INNOV_KY = False                 # ⭐ 裁定 seq271 §二：預設關（關 ⇒ 與舊版逐位元相同）；開 ⇒ 另剔名稱含「-KY創」
+INNOV_KY_RE = r"-(?:KY)?創"      # 開的時候用：名稱含「-創」或「-KY創」
+
+
+def set_innov_ky(on: bool) -> None:
+    """全域預設切換（新跑的件在程式開頭呼叫一次）。"""
+    global INNOV_KY
+    INNOV_KY = bool(on)
+
+
+def exclude_innovation(uni: pd.DataFrame, innov_ky: bool | None = None) -> pd.DataFrame:
     """第三道閘（裁定線 seq90 §三）：明文排除【創新板】—— 依名稱含 `-創`。
 
     ⭐ 與 exclude_dr 同一種做法：依【名稱】，⛔ 不靠會隨快照變的派生欄（裁定線 seq90 §三 指定）。
     ⭐ 依據：裁定線 1611 §二 裁創新板剔除；而 (甲) 同步到 main 會把 7812 稜研科技*-創 帶進來。
+    ⭐ innov_ky（裁定 seq271 §二）：None ⇒ 用全域 INNOV_KY（預設 False）；True ⇒ 名稱含「-創」或「-KY創」都剔。
     """
     assert "name" in uni.columns, "⛔ 需要 name 欄才能依名稱排除"
+    on = INNOV_KY if innov_ky is None else bool(innov_ky)
     n0 = len(uni)
-    out = uni[~uni["name"].str.contains("-創", na=False, regex=False)].reset_index(drop=True)
-    print("[母體閘門] 依名稱排除創新板（-創）：{:,} ⇒ {:,} 檔（剔 {} 檔）".format(n0, len(out), n0 - len(out)))
+    if not on:                                           # ⭐ 舊路徑，一字未動
+        out = uni[~uni["name"].str.contains("-創", na=False, regex=False)].reset_index(drop=True)
+        print("[母體閘門] 依名稱排除創新板（-創）：{:,} ⇒ {:,} 檔（剔 {} 檔）".format(n0, len(out), n0 - len(out)))
+        return out
+    out = uni[~uni["name"].str.contains(INNOV_KY_RE, na=False, regex=True)].reset_index(drop=True)
+    print("[母體閘門] 依名稱排除創新板（-創／-KY創；innov_ky 開）：{:,} ⇒ {:,} 檔（剔 {} 檔）".format(n0, len(out), n0 - len(out)))
     return out
 
 
@@ -127,10 +149,11 @@ def main_stocks() -> pd.DataFrame:
     return pd.read_csv(_io.StringIO(txt), dtype=str)
 
 
-def gate3(stocks: pd.DataFrame) -> pd.DataFrame:
+def gate3(stocks: pd.DataFrame, innov_ky: bool | None = None) -> pd.DataFrame:
     """三道閘一起（裁定線 seq87 §二、seq90 §三）：母體條件 → 排除 -DR → 排除創新板。
-    ⚠ 第一道「data/ 用 main」由呼叫方決定傳哪一份 stocks（建議 main_stocks()）。"""
-    return exclude_innovation(exclude_dr(universe_from_stocks(stocks)))
+    ⚠ 第一道「data/ 用 main」由呼叫方決定傳哪一份 stocks（建議 main_stocks()）。
+    ⭐ innov_ky：None ⇒ 全域 INNOV_KY（預設關）；見 exclude_innovation。"""
+    return exclude_innovation(exclude_dr(universe_from_stocks(stocks)), innov_ky=innov_ky)
 
 
 def _selftest_gate3():
