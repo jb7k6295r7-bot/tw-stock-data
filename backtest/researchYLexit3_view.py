@@ -6,7 +6,7 @@
 數字：總表、甲 9 格、乙 18 格、放棄原因、買回次數分佈 ＝ resultsYLexit3（cells.csv、summary.json）原值；
 逐筆明細 ＝ 主世界、種子 0、挑中格（甲 營量_甲3_b5_H40、乙 營量_乙3_k55_c10_C120）在自己組合裡【實際成交】、確認段（2022-01-03～2026-08-24）進場的每一筆，取自引擎 audit；
   本規則淨 ＝ 賣出金額 ÷ 買進金額 − 1 − 0.585%（甲的暫出再進成本已在合成路徑內）；原版淨 ＝ 同一筆訊號照營量 v1（60 天）g_H60 − 0.585%
-例子（使用者 09-28 追加「多筆一點」；⛔ 不看圖挑）：按情況分類、每類 4 筆：2 筆照規則（該類「本規則 − 原版」最大、最小各 1）＋ 2 筆隨機（default_rng([20260928, 族, 類序])，從其餘筆不放回抽）；不足 4 筆 ⇒ 全列
+例子（使用者 09-28 追加「多筆一點」；⛔ 不看圖挑）：按情況分類、每類 4 筆：2 筆照規則（該類「差 ＝ 本規則 − 原版」最高、最低各 1）＋ 2 筆隨機（default_rng([20260928, 族, 類序])，從其餘筆不放回抽）；不足 4 筆 ⇒ 全列
   甲 類：沒觸發／警訊放棄／10 天放棄／買回上限放棄／買回後（未放棄）比原版好／比原版差（另有「暫出未買回、到期結束」只報占比）
   乙 類：多抱比原版好／比原版差／與原版相同；圖一律 <details>，每類第 1 張預設展開
 查核：三個組合種子 0 權益 ＝ resultsYLexit3 seeds.csv（eq_sha）；抽 10 筆明細：audit 淨報酬 ＝ 路徑自算 g − 成本；挑中格確認段年化 ＝ cells.csv
@@ -176,14 +176,25 @@ def main():
                 chosen = [(i, "全列") for i in g.sort_values("t_in").index]
             else:
                 imax = g["差"].idxmax(); imin = g["差"].idxmin()
-                chosen = [(imax, "規則：差距最大"), (imin, "規則：差距最小")]
+                chosen = [(imax, "規則：差（本規則−原版）最高"), (imin, "規則：差（本規則−原版）最低")]
                 if g["差"].max() == g["差"].min():                      # 整類差距相同 ⇒ 改取進場最早、最晚
                     gs_ = g.sort_values("t_in"); imax, imin = gs_.index[0], gs_.index[-1]
-                    chosen = [(imax, "規則：差距都相同、取進場最早"), (imin, "規則：差距都相同、取進場最晚")]
+                    chosen = [(imax, "規則：本類差（本規則−原版）都相同、取進場最早"), (imin, "規則：本類差都相同、取進場最晚")]
                 rest = [i for i in g.sort_values("t_in").index if i not in (imax, imin)]
                 rr = np.random.default_rng([20260928, 1 if fam == "甲" else 2, ci]).choice(len(rest), size=2, replace=False)
                 chosen += [(rest[int(j)], f"隨機（種子 [20260928, {1 if fam == '甲' else 2}, {ci}]）") for j in rr]
             PICK += [(fam, cat, i, how) for i, how in chosen]
+    bad_dir = []
+    for fam, cat, i, how in PICK:
+        G_ = J_ if fam == "甲" else Y_; g = G_[G_["類"] == cat]
+        if "最高" in how and G_.at[i, "差"] != g["差"].max():
+            bad_dir.append((fam, cat, "最高"))
+        if "最低" in how and G_.at[i, "差"] != g["差"].min():
+            bad_dir.append((fam, cat, "最低"))
+    CK["例子挑法方向 ＝ 標籤（最高／最低）不符"] = bad_dir
+    ab_bad = [int(i) for fam, cat, i, how in PICK if fam == "甲" and ((J_.at[i, "放棄"] if isinstance(J_.at[i, "放棄"], str) else None) is not None) != (cat in ("警訊放棄", "10 天放棄", "買回上限放棄"))]
+    CK["例子：「放棄」標籤只出現在三種放棄類（不符筆）"] = ab_bad
+    CK["全過"] = bool(CK["全過"] and not bad_dir and not ab_bad)
     # ── CSV
     J_.drop(columns=["段"]).assign(事件=J_["事件"].map(lambda z: "｜".join(f"{a} {dt(t)} {p:.2f}" for a, t, p in z))).to_csv(os.path.join(OUT, "trades_jia_seed0.csv"), index=False, float_format="%.10g")
     Y_.to_csv(os.path.join(OUT, "trades_yi_seed0.csv"), index=False, float_format="%.10g")
@@ -261,7 +272,7 @@ let a=parseFloat(p),c=parseFloat(q);if(!isNaN(a)&&!isNaN(c))return d==='a'?a-c:c
                  f"<td class='{cls(r['差'])}' data-v='{r['差']}'>{r['差'] * 100:+.2f}</td></tr>")
     H.append("</tbody></table></div><p class='note'>「原版」＝同一筆訊號照營量 v1 抱 60 天（不論原版組合當時有沒有買到）。甲挑中格抱 40 天，沒觸發的筆也會和原版不同。</p>")
     # 6 例子
-    H.append("<h2 id='s6'>6 K 線例子（按情況分類、每類 4 筆；點標題展開）</h2><p class='note'>每類 2 筆照規則（差距最大、最小）＋ 2 筆固定種子隨機抽。"
+    H.append("<h2 id='s6'>6 K 線例子（按情況分類、每類 4 筆；點標題展開）</h2><p class='note'>每類 2 筆照規則（該類「差 ＝ 本規則 − 原版」最高、最低各 1）＋ 2 筆固定種子隨機抽。"
              "▲藍 進場｜▼灰 原版第 60 天出場｜▼紅 本規則賣出｜▲橘 買回｜▼黑 本規則最後出場｜橘虛線 基準（甲：成本×(1−b)；乙：起始與最終基準）</p>" + CS.legend_html())
     H.append("<div class='wrap'><table><tr><th class='l'>件｜類</th><th>筆數</th><th>占確認段</th><th>本規則平均</th><th>原版平均</th><th>差平均（點）</th></tr>")
     for fam, G_ in (("甲", J_), ("乙", Y_)):
@@ -290,10 +301,13 @@ let a=parseFloat(p),c=parseFloat(q);if(!isNaN(a)&&!isNaN(c))return d==='a'?a-c:c
         if fam == "甲":
             for a_, t_, p_ in r["事件"]:
                 marks.append({"i": t_ - i0, "px": p_, "kind": "exit" if a_ == "賣" else "entry", "label": f"{a_} {p_:.2f}", "color": "#c62828" if a_ == "賣" else "#ef6c00", "row": 0 if a_ == "賣" else 1})
-            if not r["放棄"] and not r["終於暫出"]:
-                marks.append({"i": t_out - i0, "px": float(cf[t_out]), "kind": "exit", "label": f"規則出 {cf[t_out]:.2f}"})
-            elif r["放棄"]:
-                marks.append({"i": t_out - i0, "px": float(cf[t_out]), "kind": "exit", "label": "放棄、換下一檔", "row": 2})
+            ab = r["放棄"] if isinstance(r["放棄"], str) else None          # ⚠ None 存進 DataFrame 會變 NaN（真值），⛔ 不可直接當布林
+            if ab in ("警訊", "等滿10", "買回上限"):
+                marks.append({"i": t_out - i0, "px": float(cf[t_out]), "kind": "exit", "label": f"放棄（{'10 天' if ab == '等滿10' else ab}）、換下一檔", "row": 2})
+            elif bool(r["終於暫出"]):
+                marks.append({"i": t_out - i0, "px": float(cf[t_out]), "kind": "exit", "label": f"第 {Hj} 天結束（仍在外）", "row": 2})
+            else:
+                marks.append({"i": t_out - i0, "px": float(cf[t_out]), "kind": "exit", "label": f"第 {Hj} 天出場 {cf[t_out]:.2f}"})
             hl.append({"px": P0 * (1 - bj), "label": f"成本×{1 - bj:.2f} ＝ {P0 * (1 - bj):.2f}", "color": "#e65100"})
             sub = f"暫出 {int(r['出'])} 次、買回 {int(r['買回'])} 次｜{r['結果']}"
         else:
