@@ -1,0 +1,16 @@
+{
+ "① 自寫使用者版 H40（看／不看警訊）⇒ eq_sha ＝ seeds.csv": {
+  "不符": [],
+  "過": true
+ },
+ "② 擋下、確認賣出、延長 a／b／ab 次數 ＝ cells.csv": {
+  "不符": [],
+  "過": true
+ },
+ "③ 閘（主程式）": {
+  "主｜營量 v1 ＝ resultsYLexit3 種子 0": true,
+  "早年｜營量 v1 ＝ resultsYLexit3 種子 0": true,
+  "過": true
+ },
+ "全部過": true
+}
