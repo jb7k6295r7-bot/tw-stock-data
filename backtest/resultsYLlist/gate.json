@@ -1,0 +1,34 @@
+{
+ "閘門": "本檔重跑 #13 T1 種子 0 ＝ resultsT1fix/seeds.csv.gz（c13｜t1｜r＝0）逐位元",
+ "全過": true,
+ "逐欄": {
+  "cagr": true,
+  "mdd": true,
+  "vol": true,
+  "first": true,
+  "end": true,
+  "trades": true,
+  "eq_sha": true,
+  "sf_n": true
+ },
+ "本檔": {
+  "cagr": 0.35021040309088103,
+  "mdd": -0.32131436013029513,
+  "vol": 0.2762154909253764,
+  "first": 526,
+  "end": 2860,
+  "trades": 717,
+  "eq_sha": "3f5e8495a9d69ad7",
+  "sf_n": 0
+ },
+ "對照": {
+  "cagr": 0.35021040309088103,
+  "mdd": -0.32131436013029513,
+  "vol": 0.2762154909253764,
+  "first": 526.0,
+  "end": 2860.0,
+  "trades": 717.0,
+  "eq_sha": "3f5e8495a9d69ad7",
+  "sf_n": 0.0
+ }
+}
