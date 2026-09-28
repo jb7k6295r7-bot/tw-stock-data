@@ -154,15 +154,8 @@ def tomorrow(L):
     return th, p_novol, p_vol
 
 
-def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2)
-    ap.add_argument("--brief", action="store_true", help="只輸出精簡版（brief_<日>.md＋短網頁）；⛔ 不動完整版的檔")
-    a = ap.parse_args()
-    os.makedirs(OUT, exist_ok=True)
-    logf = open(os.path.join(OUT, "brief_run.log" if a.brief else "run.log"), "w", encoding="utf-8"); T0 = time.time()
-
-    def log(m):
-        m = f"[{time.time() - T0:5.0f}s] {m}"; print(m, flush=True); logf.write(m + "\n"); logf.flush()
+def compute(procs, log):
+    """名單計算（完整版、--brief、daily_list.py 共用；⛔ 不寫任何檔）⇒ dict。"""
     sha = subprocess.run(["git", "-C", REPO, "rev-parse", "origin/main"], capture_output=True, text=True).stdout.strip()
     DATA = os.path.expanduser(f"~/h2data/{sha}/data")
     if not os.path.isdir(DATA):
@@ -176,7 +169,7 @@ def main():
     panel, rdates, _ = LP.build_panel(cal, uni, log)
     pnl = panel.copy(); pnl["rev_hi24"] = pnl["rev_hi24"].fillna(False).astype(bool)
     _G["cal"] = cal
-    with Pool(a.procs, initializer=R._init, initargs=(cal,)) as pool:
+    with Pool(procs, initializer=R._init, initargs=(cal,)) as pool:
         FT = dict(pool.map(feat, list(zip(uni["stock_id"], uni["market"])), chunksize=8))
     log(f"[技術] {sum(v is not None for v in FT.values())} 檔")
     # 全部 5 取 3 事件 ⇒ AND
@@ -185,7 +178,8 @@ def main():
     AND = Sx[flags].copy(); AND["date"] = [str(cal[p].date()) for p in AND["pos"]]
     # 閘
     ref = pd.read_csv(os.path.join(HERE, "resultsList", "list_YL13_2026-09-24.csv"), dtype={"stock_id": str})
-    mine = AND[AND["pos"] >= n - 20]
+    j24 = int(cal.get_loc(pd.Timestamp("2026-09-24")))                   # 閘窗固定在既有名單那 20 個交易日（之後的資料日也照這窗比）
+    mine = AND[(AND["pos"] >= j24 - 19) & (AND["pos"] <= j24)]
     A_ = set(zip(ref["stock_id"], ref["signal_date"])); B_ = set(zip(mine["sid"], mine["date"]))
     S["閘（近 20 交易日 AND 訊號 ＝ list_YL13_2026-09-24）"] = {"既有": len(A_), "本程式": len(B_), "只在既有": sorted(A_ - B_), "只在本程式": sorted(B_ - A_), "過": A_ == B_}
     ext = pd.read_csv(os.path.join(HERE, "resultsList", "and_signals_ext.csv.gz"), dtype={"sid": str}, usecols=["sid", "pos"])
@@ -270,6 +264,20 @@ def main():
         B = B.sort_values(["_g", "_s", "代號"]).drop(columns=["_g", "_s"]).reset_index(drop=True)
     if len(C):
         C = C.sort_values(["距24期高", "代號"], ascending=[False, True]).reset_index(drop=True)
+    return {"A": A, "B": B, "C": C, "AND": AND, "cal": cal, "asof": asof, "nxt": nxt, "sha": sha, "S": S, "pnl": pnl, "stocks": stocks}
+
+
+def main():
+    ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2)
+    ap.add_argument("--brief", action="store_true", help="只輸出精簡版（brief_<日>.md＋短網頁）；⛔ 不動完整版的檔")
+    a = ap.parse_args()
+    os.makedirs(OUT, exist_ok=True)
+    logf = open(os.path.join(OUT, "brief_run.log" if a.brief else "run.log"), "w", encoding="utf-8"); T0 = time.time()
+
+    def log(m):
+        m = f"[{time.time() - T0:5.0f}s] {m}"; print(m, flush=True); logf.write(m + "\n"); logf.flush()
+    X = compute(a.procs, log)
+    A, B, C, cal, asof, nxt, sha, S = (X[k] for k in ("A", "B", "C", "cal", "asof", "nxt", "sha", "S"))
     if a.brief:
         brief(A, B, asof, nxt, sha, S, log)
         return
