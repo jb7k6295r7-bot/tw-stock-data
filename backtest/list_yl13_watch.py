@@ -36,6 +36,10 @@
     ⚠ 今天已成立的條件明天可能掉（例：20 根前的價位換了、c3 是單日條件）⇒ 一併寫出「明天維持所需」
     「兩天內可能」（本線讀法）：所需漲幅 ≤ 21%（約兩根漲停）且 方向合理 ＝ 近 5 日報酬 ＞ 0 且 收盤 ＞ MA20
     去重：20 根內已有 5 取 3 事件 ⇒ 明天就算湊滿也不出訊號（標「去重擋住」、排在後面）
+  c3 門檻欄（A／B／C 每檔；使用者 09-28「你要跟我講多少算3倍！」）：次一交易日的門檻 ＝ 前 20 個交易日平均成交額 × 3（不含當天）
+    ＝ research11 amt_ratio 的分母（_roll_mean(np.roll(amt, 1), 20)：前 20 根【有效 K 棒】、不含當根）套到次一交易日 ⇒ 前 20 根含最新交易日；
+    億元取 1 位；張數 ＝ 門檻 ÷（最新收盤 × 1000）（股價變動時張數會變）；中午參考（上午量約占 5～6 成）⇒ 門檻 50%；今日成交額、張數、目前倍數（今日 amt_ratio）
+    B 區排序：去重擋住者最後；其餘「只差量」（價格條件在今天收盤已夠 2 條）在前、依 目前倍數 ÷ 3 由高到低；再來依所需漲幅
   C 技術面已 ≥ 3 分（eligible）、但營收條件不成立：最新一期營收距前 24 期最高差多少 %、下期需達多少、下次公布法定期限（次月 10 日）
 輸出 backtest/resultsYLwatch/：watch_A.csv、watch_B.csv、watch_C.csv、summary.json、REPORT.md、營量v1_即將達成_<日>.html
 """
@@ -65,7 +69,19 @@ OUT = os.path.join(HERE, "resultsYLwatch")
 REPO = os.path.dirname(HERE)
 C1, C3, DD = 0.30, 3.0, 20
 TOP = ("觀察名單，不是買進建議；提早買進（早鳥）過去測過沒有比等訊號好（回測 研究十二）；營量 v1 規則是訊號成立後隔天開盤買")
+C3_RULE = "前 20 個交易日平均成交額 × 3（不含當天）"
+VOL_NOTE = "股價變動時張數會變"
+NOON = "上午量約占 5～6 成"
 _G: dict = {}
+
+
+def c3cols(L):
+    """c3 門檻（次一交易日）：前 20 根有效 K 棒（含最新交易日）成交額平均 × 3；張數按最新收盤價換算。"""
+    a3 = L["a3"]; px = L["raw_close"]
+    return {"c3 門檻成交額（億）": round(a3 / 1e8, 1), "c3 門檻成交額（元）": a3, "c3 門檻張數（按最新收盤）": int(round(a3 / (px * 1000.0))),
+            "中午前累計達門檻 50%（億）": round(0.5 * a3 / 1e8, 1), "中午前累計達門檻 50%（張）": int(round(0.5 * a3 / (px * 1000.0))),
+            "今日成交額（億）": round(L["amt"] / 1e8, 1), "今日張數": int(round(L["vol"] / 1000.0)), "目前倍數": L["amt_ratio"],
+            "門檻算法": C3_RULE, "張數備註": VOL_NOTE, "中午參考": NOON}
 
 
 def feat(args):
@@ -106,7 +122,8 @@ def feat(args):
     t5 = float(c[k - 248:k + 1].max())
     a3 = 3.0 * float(np.mean(amt[k - 19:k + 1]))
     kl = picks[-1] if picks else -10 ** 9
-    out["last"] = {"k": k, "pos": int(idx[k]), "close": float(c[k]), "raw_close": float(rc[k]), "fac": float(fac), "open": float(o[k]),
+    vol_today = float(B["df"]["volume"].to_numpy(float)[idx[k]])
+    out["last"] = {"vol": vol_today, "k": k, "pos": int(idx[k]), "close": float(c[k]), "raw_close": float(rc[k]), "fac": float(fac), "open": float(o[k]),
                    "ret20": float(ret20[k]), "nup20": float(nup20[k]), "amt": float(amt[k]), "amt_prev20": float(ap20[k]), "amt_ratio": float(ar_[k]),
                    "ma100": float(ma100[k]), "hi250": float(hi250[k]), "ma20": float(ma20[k]), "ret5": float(c[k] / c[k - 5] - 1),
                    "c_k20": float(c[k - 20]), "cond": [bool(x) for x in cs[k]], "score": int(score[k]), "elig": bool(elig[k]), "relvol": relvol,
@@ -216,7 +233,7 @@ def main():
         base = {"代號": s, "名稱": str(name.get(s, "")), "市場": str(mkt.get(s, "")), "收盤": L["raw_close"], "分數": L["score"],
                 "c1 近20日漲幅": L["ret20"], "c2 近20根漲停數": L["nup20"], "c3 成交額倍數": L["amt_ratio"], "c4 收盤÷MA100": L["close"] / L["ma100"],
                 "c5 收盤÷250日高": L["close"] / L["hi250"], "已達成": "".join(f"c{i + 1}" for i in range(5) if L["cond"][i]),
-                "relvol": L["relvol"], **rs, "_L": L}
+                "relvol": L["relvol"], **c3cols(L), **rs, "_L": L}
         if L["score"] >= 3 and rs["營收成立（今天）"] and L["picked_today"]:
             A.append(base)
         elif L["score"] == 2 and rs["營收成立（今天）"] and rs["營收成立（明天）"]:
@@ -238,7 +255,11 @@ def main():
     if len(A):
         A = A.sort_values("relvol", ascending=False).reset_index(drop=True); A.insert(0, "relvol 排名", np.arange(1, len(A) + 1))
     if len(B):
-        B = B.sort_values(["去重擋住", "所需漲幅（排序）", "代號"]).reset_index(drop=True)
+        B["只差量"] = [bool(np.isfinite(v) and v <= c_ + 1e-9 and not d_) for v, c_, d_ in zip(B["靠量所需收盤"], B["收盤"], B["去重擋住"])]
+        B["目前倍數÷3"] = B["目前倍數"] / 3.0
+        B["_g"] = B["去重擋住"].astype(int) * 2 + (~B["只差量"]).astype(int)
+        B["_s"] = np.where(B["只差量"], -B["目前倍數÷3"], B["所需漲幅（排序）"])
+        B = B.sort_values(["_g", "_s", "代號"]).drop(columns=["_g", "_s"]).reset_index(drop=True)
     if len(C):
         C = C.sort_values(["距24期高", "代號"], ascending=[False, True]).reset_index(drop=True)
     for nm, T_ in (("A", A), ("B", B), ("C", C)):
@@ -276,8 +297,29 @@ if(!isNaN(na)&&!isNaN(nc))return (na-nc)*d;return (a||'').localeCompare(c||'')*d
          f"<h1>營量 v1 即將達成觀察名單（{asof} 收盤後）</h1>", f"<p class='lead'><b>{html.escape(TOP)}</b></p>",
          f"<p class='note'>次一交易日 {nxt[0].date()}（外推）。條件：營收＝最新一期月營收 ≥ 前 24 期最高（公布後 45 個交易日內有效）；技術 5 取 3："
          "c1 近 20 日漲 ≥ 30%｜c2 近 20 根有 ≥ 3 根收漲停｜c3 當日成交額 ≥ 前 20 日均額 × 3｜c4 收盤 ＞ 100 日均線｜c5 收盤 ≥ 近 250 日最高收盤。"
-         "同一檔 20 個交易日內只算第一次。表頭可點排序、表格可左右捲；點代號看 K 線圖（虛線 ＝ 明天要到的價格）。</p>"]
+         "同一檔 20 個交易日內只算第一次。表頭可點排序、表格可左右捲；點代號看 K 線圖（虛線 ＝ 明天要到的價格；量柱上的虛線 ＝ 明天 3 倍門檻的張數）。</p>",
+         f"<p class='note'><b>c3 的 3 倍門檻（{nxt[0].date()} 當天）</b>：門檻 ＝ {C3_RULE}；以億元表示、取到小數 1 位；張數按 {asof} 收盤價換算（{VOL_NOTE}）；"
+         f"中午參考：{NOON}，所以列出「中午前累計達門檻 50%」的成交額與張數。「目前倍數」＝ {asof} 當天成交額 ÷ 它自己前 20 個交易日平均。</p>"]
     cards = []
+    C3H = "<th>c3 門檻（億）</th><th>門檻張數</th><th>中午前 50%（億）</th><th>中午前 50%（張）</th><th>今日額（億）</th><th>今日張數</th><th>目前倍數</th>"
+
+    def c3td(r):
+        return "".join(f"<td data-v='{r[k]}'>{f}</td>" for k, f in (
+            ("c3 門檻成交額（億）", f"{r['c3 門檻成交額（億）']:.1f}"), ("c3 門檻張數（按最新收盤）", f"{r['c3 門檻張數（按最新收盤）']:,}"),
+            ("中午前累計達門檻 50%（億）", f"{r['中午前累計達門檻 50%（億）']:.1f}"), ("中午前累計達門檻 50%（張）", f"{r['中午前累計達門檻 50%（張）']:,}"),
+            ("今日成交額（億）", f"{r['今日成交額（億）']:.1f}"), ("今日張數", f"{r['今日張數']:,}"), ("目前倍數", f"{r['目前倍數']:.2f}")))
+
+    def vline(svg, r, sl_vol):
+        """量柱區加 3 倍門檻張數的水平虛線（kline_svg show_title=False 的量區幾何：VT＝330、VB＝410；⛔ 不改 chart_svg）。"""
+        VT, VB = 330, 410
+        vmax = float(np.nanmax(np.nan_to_num(sl_vol, nan=0.0))) or 1.0
+        z = r["c3 門檻成交額（元）"] / (r["收盤"] * 1000.0)
+        y = VB - z / vmax * (VB - VT); over = y < VT
+        y = max(y, VT)
+        lab = f"3 倍門檻 約 {z:,.0f} 張" + ("（高於圖內最大量，畫在頂）" if over else "")
+        add = (f'<line x1="{CS.PL}" x2="{CS.W - CS.PR}" y1="{y:.1f}" y2="{y:.1f}" stroke="#c62828" stroke-width="1.6" stroke-dasharray="6 4"/>'
+               f'<text x="{CS.PL + 4}" y="{y - 4:.1f}" font-size="13" fill="#c62828" stroke="#fff" stroke-width="3" paint-order="stroke">{html.escape(lab)}</text>')
+        return svg.replace("</svg>", add + "</svg>")
 
     def card(r, zone, lines):
         L = r["_L"]; s = r["代號"]; fr = L["fac"]
@@ -288,30 +330,34 @@ if(!isNaN(na)&&!isNaN(nc))return (na-nc)*d;return (a||'').localeCompare(c||'')*d
         hl = [{"px": v * fr, "label": lab, "color": col} for v, lab, col in lines if v is not None and np.isfinite(v)]
         svg = CS.kline_svg([str(z.date()) for z in cal[sl]], df["open"].to_numpy(float)[sl], df["high"].to_numpy(float)[sl], df["low"].to_numpy(float)[sl],
                            df["close"].to_numpy(float)[sl], df["volume"].to_numpy(float)[sl] / 1000.0, ma=ma, marks=[], title=f"{s}", show_title=False, hlines=hl)
+        svg = vline(svg, r, df["volume"].to_numpy(float)[sl] / 1000.0)
         cards.append(f"<details class='card' id='k{zone}{s}'><summary><b>{zone}｜{s} {html.escape(r['名稱'])}</b> 收盤 {r['收盤']:.2f}</summary>"
-                     f"<div class='meta'>{conds(L)}<br>營收：{html.escape(str(r.get('最新可用營收期')))} "
+                     f"<div class='meta'>{conds(L)}<br>c3 門檻（次一交易日）：{r['c3 門檻成交額（億）']:.1f} 億（約 {r['c3 門檻張數（按最新收盤）']:,} 張；{VOL_NOTE}）｜"
+                     f"中午前累計達 50%：{r['中午前累計達門檻 50%（億）']:.1f} 億／{r['中午前累計達門檻 50%（張）']:,} 張（{NOON}）｜今日 {r['今日成交額（億）']:.1f} 億、{r['今日張數']:,} 張、倍數 {r['目前倍數']:.2f}<br>營收：{html.escape(str(r.get('最新可用營收期')))} "
                      f"{'成立' if r['營收成立（今天）'] else '未成立'}（距前 24 期高 {P(r.get('距24期高'))}）</div>{svg}</details>")
     # A
     H.append(f"<h2>A 今天已達成（{nxt[0].date()} 開盤可買）：{len(A)} 檔</h2>")
     if len(A):
-        H.append("<div class='wrap'><table class='s'><thead><tr><th>排名</th><th class='l'>代號 名稱</th><th>收盤</th><th>relvol</th><th class='l'>條件（✔ 達成）</th><th>營收期</th></tr></thead><tbody>")
+        H.append("<div class='wrap'><table class='s'><thead><tr><th>排名</th><th class='l'>代號 名稱</th><th>收盤</th>" + C3H + "<th>relvol</th><th class='l'>條件（✔ 達成）</th><th>營收期</th></tr></thead><tbody>")
         for r in A.to_dict("records"):
             H.append(f"<tr><td data-v='{r['relvol 排名']}'>{r['relvol 排名']}</td><td class='l' data-v='{r['代號']}'><a href='#kA{r['代號']}'>{r['代號']} {html.escape(r['名稱'])}</a></td>"
-                     f"<td data-v='{r['收盤']}'>{r['收盤']:.2f}</td><td data-v='{r['relvol']}'>{r['relvol']:.2f}</td><td class='l' data-v='{r['分數']}'>{conds(r['_L'])}</td><td data-v='{r['營收期別']}'>{r['營收期別']}</td></tr>")
+                     f"<td data-v='{r['收盤']}'>{r['收盤']:.2f}</td>{c3td(r)}<td data-v='{r['relvol']}'>{r['relvol']:.2f}</td><td class='l' data-v='{r['分數']}'>{conds(r['_L'])}</td><td data-v='{r['營收期別']}'>{r['營收期別']}</td></tr>")
             card(r, "A", [])
         H.append("</tbody></table></div>")
     # B
     H.append(f"<h2>B 差一個條件（營收已成立、技術 2 分）：{len(B)} 檔；兩天內可能 {int(B['兩天內可能'].sum()) if len(B) else 0} 檔</h2>")
     if len(B):
         H.append("<p class='note'>「所需漲幅」＝ 明天收盤要漲多少才湊滿 3 分（不靠量：價格條件湊 3；靠量：成交額也達標時價格條件湊 2）。★ ＝ 兩天內可能（所需 ≤ 21%，且近 5 日漲、收盤在 20 日線上）。"
-                 "「去重擋住」＝ 20 個交易日內已出過 5 取 3，明天就算湊滿也不會出訊號。</p>")
-        H.append("<div class='wrap'><table class='s'><thead><tr><th class='l'>代號 名稱</th><th>收盤</th><th>所需漲幅</th><th>不靠量 收盤≥</th><th>靠量 收盤≥</th><th>c3 成交額≥（億）</th>"
+                 "「去重擋住」＝ 20 個交易日內已出過 5 取 3，明天就算湊滿也不會出訊號。「只差量」＝ 價格條件在今天收盤價就已夠 2 條，明天只要成交額達 3 倍門檻；"
+                 "只差量的排在最前，依「目前倍數 ÷ 3」由高到低。</p>")
+        H.append("<div class='wrap'><table class='s'><thead><tr><th class='l'>代號 名稱</th><th>收盤</th><th>只差量</th><th>目前倍數÷3</th>" + C3H + "<th>所需漲幅</th><th>不靠量 收盤≥</th><th>靠量 收盤≥</th>"
                  "<th>c1 收≥</th><th>c4 收＞</th><th>c5 收≥</th><th class='l'>c2</th><th class='l'>已達成</th><th>★</th><th>去重</th></tr></thead><tbody>")
         for r in B.to_dict("records"):
             L = r["_L"]; star = "★" if r["兩天內可能"] else ""
             H.append(f"<tr class='{'pick' if star else ''}'><td class='l' data-v='{r['代號']}'><a href='#kB{r['代號']}'>{r['代號']} {html.escape(r['名稱'])}</a></td><td data-v='{r['收盤']}'>{r['收盤']:.2f}</td>"
+                     f"<td data-v='{1 if r['只差量'] else 0}'>{'只差量' if r['只差量'] else ''}</td><td data-v='{r['目前倍數÷3']}'>{r['目前倍數÷3']:.2f}</td>{c3td(r)}"
                      f"<td data-v='{r['所需漲幅（排序）']}'>{P(r['所需漲幅（排序）'])}</td><td data-v='{r['不靠量所需收盤']}'>{F2(r['不靠量所需收盤'])}</td><td data-v='{r['靠量所需收盤']}'>{F2(r['靠量所需收盤'])}</td>"
-                     f"<td data-v='{r['明天門檻 c3（成交額≥，元）']}'>{r['明天門檻 c3（成交額≥，元）'] / 1e8:.2f}</td><td data-v='{r['明天門檻 c1（收盤≥）']}'>{F2(r['明天門檻 c1（收盤≥）'])}</td>"
+                     f"<td data-v='{r['明天門檻 c1（收盤≥）']}'>{F2(r['明天門檻 c1（收盤≥）'])}</td>"
                      f"<td data-v='{r['明天門檻 c4（收盤＞）']}'>{F2(r['明天門檻 c4（收盤＞）'])}</td><td data-v='{r['明天門檻 c5（收盤≥）']}'>{F2(r['明天門檻 c5（收盤≥）'])}</td>"
                      f"<td class='l' data-v='{L['s19']}'>{html.escape(r['明天門檻 c2'])}</td><td class='l' data-v='{r['已達成']}'>{conds(L)}</td><td data-v='{1 if star else 0}'>{star}</td>"
                      f"<td data-v='{1 if r['去重擋住'] else 0}'>{'擋住' if r['去重擋住'] else ''}</td></tr>")
@@ -322,9 +368,9 @@ if(!isNaN(na)&&!isNaN(nc))return (na-nc)*d;return (a||'').localeCompare(c||'')*d
     # C
     H.append(f"<h2>C 技術已 ≥ 3 分、營收還沒成立：{len(C)} 檔</h2>")
     if len(C):
-        H.append("<div class='wrap'><table class='s'><thead><tr><th class='l'>代號 名稱</th><th>收盤</th><th>分數</th><th>最新營收期</th><th>距前24期高</th><th>下期需月增</th><th>下次公布期限</th><th class='l'>營收未成立原因</th><th class='l'>技術條件</th></tr></thead><tbody>")
+        H.append("<div class='wrap'><table class='s'><thead><tr><th class='l'>代號 名稱</th><th>收盤</th>" + C3H + "<th>分數</th><th>最新營收期</th><th>距前24期高</th><th>下期需月增</th><th>下次公布期限</th><th class='l'>營收未成立原因</th><th class='l'>技術條件</th></tr></thead><tbody>")
         for r in C.to_dict("records"):
-            H.append(f"<tr><td class='l' data-v='{r['代號']}'><a href='#kC{r['代號']}'>{r['代號']} {html.escape(r['名稱'])}</a></td><td data-v='{r['收盤']}'>{r['收盤']:.2f}</td><td data-v='{r['分數']}'>{r['分數']}</td>"
+            H.append(f"<tr><td class='l' data-v='{r['代號']}'><a href='#kC{r['代號']}'>{r['代號']} {html.escape(r['名稱'])}</a></td><td data-v='{r['收盤']}'>{r['收盤']:.2f}</td>{c3td(r)}<td data-v='{r['分數']}'>{r['分數']}</td>"
                      f"<td data-v='{r.get('最新可用營收期')}'>{r.get('最新可用營收期')}</td><td data-v='{r.get('距24期高')}'>{P(r.get('距24期高'))}</td><td data-v='{r.get('下期需月增')}'>{P(r.get('下期需月增'))}</td>"
                      f"<td data-v='{r['下次公布法定期限']}'>{r['下次公布法定期限']}</td><td class='l' data-v='{html.escape(r['營收未成立原因'])}'>{html.escape(r['營收未成立原因'])}</td><td class='l' data-v='{r['已達成']}'>{conds(r['_L'])}</td></tr>")
             card(r, "C", [])

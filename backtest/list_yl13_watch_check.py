@@ -70,6 +70,25 @@ for z, r in pick:
         if not (abs(v - ref) <= 1e-9 * max(1.0, abs(ref))):
             errs.append(f"{z} {s} {kk} 自算 {v} 檔 {ref}")
     info[f"{z} {s} {r['名稱']}"] = d
+# 人工驗算 c3 門檻 3 檔（B 區只差量優先）：列出前 20 個交易日（有成交）的日期與成交額
+ALL = pd.concat([W[z].assign(區=z) for z in "ABC"], ignore_index=True)
+cand = ALL[(ALL["區"] == "B") & (ALL.get("只差量", False) == True)] if "只差量" in ALL else ALL.iloc[0:0]
+man = [r for _, r in (cand.head(3) if len(cand) >= 3 else ALL.sample(3, random_state=20260928)).iterrows()]
+MAN = {}
+for r in man:
+    s = str(r["代號"])
+    x = pd.read_csv(os.path.join(D.DATA, "stocks", s + ".csv"), dtype={"date": str}).drop_duplicates("date")
+    st = D.load_stock(s, r["市場"], cal); tr = st.df["traded"].to_numpy()
+    days = [str(d.date()) for d in cal[np.flatnonzero(tr)]][-20:]
+    x = x.set_index("date").loc[days]
+    amts = pd.to_numeric(x["amount"], errors="coerce").to_numpy(float)
+    thr = 3.0 * amts.mean(); px = float(pd.to_numeric(x["close"]).iloc[-1])
+    lots = int(round(thr / (px * 1000)))
+    MAN[f"{s}"] = {"前 20 個交易日": list(zip(days, [int(a_) for a_ in amts])), "平均": float(amts.mean()), "×3 門檻（元）": thr, "億": round(thr / 1e8, 1),
+                   "收盤": px, "張": lots, "檔：億": float(r["c3 門檻成交額（億）"]), "檔：張": int(r["c3 門檻張數（按最新收盤）"]), "檔：元": float(r["c3 門檻成交額（元）"])}
+    if abs(thr - float(r["c3 門檻成交額（元）"])) > 1e-9 * thr or lots != int(r["c3 門檻張數（按最新收盤）"]) or round(thr / 1e8, 1) != float(r["c3 門檻成交額（億）"]):
+        errs.append(f"人工驗算 {s}")
+info["人工驗算 c3 門檻（3 檔）"] = MAN
 info["錯誤數"] = len(errs)
 json.dump({"info": info, "errors": errs}, open(os.path.join(OUT, "check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=float)
 print(json.dumps({k: v for k, v in info.items()}, ensure_ascii=False, default=float)[:3000]); [print("  ⛔", e) for e in errs]
