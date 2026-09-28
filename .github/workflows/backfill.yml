@@ -9,7 +9,7 @@ on:
       mode:
         description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -238,6 +238,13 @@ jobs:
         if: inputs.mode == 'treasury'
         timeout-minutes: 30
         run: python treasury.py
+
+      # ⭐ 2026-09-29（回測 20260929-0016：臺灣50 成分要放 main）：手工整理、附官方出處的表 ⇒ 原樣複製進 data/meta/
+      #   來源在程式樹 curated/<名稱>/（README 寫出處與驗算）；⛔ 這一步不連網、不改內容
+      - name: 手工整理表（curated/ ⇒ data/meta/）
+        if: inputs.mode == 'curated'
+        run: |
+          for d in curated/*/; do n=$(basename "$d"); mkdir -p "data/meta/$n"; cp "$d"*.csv "$d"README.md "data/meta/$n/"; ls -la "data/meta/$n"; done
 
       # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
       #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。

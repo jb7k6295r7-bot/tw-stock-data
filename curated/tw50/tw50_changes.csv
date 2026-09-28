@@ -1,0 +1,178 @@
+﻿review,announce_date,effective_date,action,stock_id,name,source_url,note
+2009Q1 季審,2009-01-08,2009-01-20,delete,3474,華亞科,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=555187F71DE94883A4D798223EE34F73&response=json,原文：成分股調整將自98年1月20日（星期二）起生效；總市值排名降至61名以下
+2009Q1 季審,2009-01-08,2009-01-20,add,2105,正新,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=555187F71DE94883A4D798223EE34F73&response=json,原文：成分股調整將自98年1月20日（星期二）起生效；依97年12月31日資料
+2009Q2 季審,2009-04-09,2009-04-20,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=C341C8B4AB554F9DA9A2C8950B33D744&response=json,原文：臺灣50指數 成分股納入：無／刪除：無；自98年4月20日（星期一）起生效
+臨時,2009-05-05,2009-05-13,delete,2408,南科,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=B7D85F3802C64762A188B3513162FE86&response=json,南科變更交易方法為全額交割；原文：自98年5月13日（星期三）起生效
+臨時,2009-05-05,2009-05-13,add,3474,華亞科,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=B7D85F3802C64762A188B3513162FE86&response=json,南科變更交易方法為全額交割；原文：自98年5月13日（星期三）起生效
+2009Q3 季審,2009-07-09,2009-07-20,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=CD7B716931AD45BB80D2AF6B1B094A42&response=json,原文：納入：無／刪除：無；自98年7月20日（星期一）起生效
+2009Q4 季審,2009-10-08,2009-10-19,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=6EBB189E1D3B491B8BB0821E1E78AA32&response=json,原文：納入：無／刪除：無；自98年10月19（星期一）起生效
+2010Q1 季審,2010-01-07,2010-01-18,delete,2603,長榮,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=5CC1D00618C44964BFB8734DB892D7BF&response=json,原文：自99年1月18（星期一）起生效；總市值排名降至61名以下
+2010Q1 季審,2010-01-07,2010-01-18,add,2448,晶電,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=5CC1D00618C44964BFB8734DB892D7BF&response=json,原文：自99年1月18（星期一）起生效
+臨時,2010-03-10,2010-03-18,delete,3009,奇美電子,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=0FA368E89E234269AF63B95212D4B2E1&response=json,奇美電與群創合併；原文：自99年3月18日（星期四）起生效
+臨時,2010-03-10,2010-03-18,add,6239,力成,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=0FA368E89E234269AF63B95212D4B2E1&response=json,奇美電與群創合併；候補名單遞補；原文：自99年3月18日（星期四）起生效
+2010Q2 季審,2010-04-08,2010-04-19,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=49CD0A9ACDA841FA8B92A04620C6C93C&response=json,原文：納入：無／刪除：無；自99年4月19（星期一）起生效
+臨時,2010-06-18,2010-06-24,add,4938,和碩,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=9316F8BE161F49EE89396C68DF3BED9A&response=json,華碩分割，和碩聯合上市即納入（成分股暫為51支）；原文：自本（99）年6月24日（星期四）起生效
+臨時,2010-06-24,2010-06-29,delete,6239,力成,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3B845AE3DE924BD7A8FF8B27FC06BE15&response=json,因華碩分割成分股達51支而刪除；原文：成分股變動生效日：99年6月29日
+2010Q3 季審,2010-07-08,2010-07-19,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3E0F9DAA620E4308B28F0E4D06C17DA7&response=json,原文：納入：無／刪除：無；自99年7月19日（星期一）起生效
+2010Q4 季審,2010-10-07,2010-10-18,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=04FB36AC8E844E20AD9F58914A548FF2&response=json,原文：納入：無／刪除：無；自99年10月18（星期一）起生效
+2011Q1 季審,2011-01-13,2011-01-24,delete,3474,華亞科,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3FAE038C583446589935F6A9D7D680FF&response=json,原文：自100年1月24（星期一）起生效
+2011Q1 季審,2011-01-13,2011-01-24,delete,8046,南電,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3FAE038C583446589935F6A9D7D680FF&response=json,原文：自100年1月24（星期一）起生效
+2011Q1 季審,2011-01-13,2011-01-24,add,2618,長榮航,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3FAE038C583446589935F6A9D7D680FF&response=json,原文：自100年1月24（星期一）起生效
+2011Q1 季審,2011-01-13,2011-01-24,add,3673,TPK,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3FAE038C583446589935F6A9D7D680FF&response=json,公告原文名稱 TPK（即 F-TPK 宸鴻）；原文：自100年1月24（星期一）起生效
+2011Q2 季審,2011-06-10,2011-06-20,delete,4938,和碩,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=1A7840B82F7945F5B6F1697ED0E825C8&response=json,原文：自100年6月20日（星期一）起生效
+2011Q2 季審,2011-06-10,2011-06-20,delete,9904,寶成工業,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=1A7840B82F7945F5B6F1697ED0E825C8&response=json,原文：自100年6月20日（星期一）起生效
+2011Q2 季審,2011-06-10,2011-06-20,add,2474,可成科技,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=1A7840B82F7945F5B6F1697ED0E825C8&response=json,原文：自100年6月20日（星期一）起生效
+2011Q2 季審,2011-06-10,2011-06-20,add,3008,大立光,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=1A7840B82F7945F5B6F1697ED0E825C8&response=json,審核月份自本次起由1/4/7/10改為3/6/9/12；原文：自100年6月20日（星期一）起生效
+2011Q3 季審,2011-09-09,2011-09-19,delete,2448,晶電,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=8636979CCED44D2892FD3B71089478DF&response=json,原文：自100年9月19日（星期一）起生效
+2011Q3 季審,2011-09-09,2011-09-19,delete,2618,長榮航,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=8636979CCED44D2892FD3B71089478DF&response=json,原文：自100年9月19日（星期一）起生效
+2011Q3 季審,2011-09-09,2011-09-19,add,1802,台玻,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=8636979CCED44D2892FD3B71089478DF&response=json,原文：自100年9月19日（星期一）起生效
+2011Q3 季審,2011-09-09,2011-09-19,add,2201,裕隆,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=8636979CCED44D2892FD3B71089478DF&response=json,原文：自100年9月19日（星期一）起生效
+2011Q4 季審,2011-12-09,2011-12-19,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=70EE47C614F94F3CBF3A3745DFB530BA&response=json,原文：納入：無／刪除：無；自100年12月19（星期一）起生效
+2012Q1 季審,2012-03-09,2012-03-19,delete,2888,新光金,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=681435E24D53467CAE83D48E64DDECDD&response=json,原文：自101年3月19（星期一）起生效
+2012Q1 季審,2012-03-09,2012-03-19,add,2207,和泰車,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=681435E24D53467CAE83D48E64DDECDD&response=json,原文：自101年3月19（星期一）起生效
+2012Q2 季審,2012-06-08,2012-06-18,delete,1802,台玻,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=6D71ECBF59004A799E44D0AC5B6D6759&response=json,原文：自101年6月18日（星期一）起生效
+2012Q2 季審,2012-06-08,2012-06-18,add,3697,F-晨星,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=6D71ECBF59004A799E44D0AC5B6D6759&response=json,原文：自101年6月18日（星期一）起生效
+2012Q3 季審,2012-09-14,2012-09-24,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=996C58362CC44C8FA254CF0A27942156&response=json,原文：納入：無／刪除：無；自101年9月24日（星期一）起生效
+2012Q4 季審,2012-12-14,2012-12-22,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=3CEBF68382054557A97F677CFA0F1F39&response=json,原文：納入：無／刪除：無；自101年12月22日（星期六）起生效（原文即寫星期六）
+2013Q1 季審,2013-03-08,2013-03-18,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=D9121DE939424D1082D7E90DDE08B592&response=json,原文：納入：無／刪除：無；自102年3月18日（星期一）起生效
+2013Q2 季審,2013-06-14,2013-06-24,delete,2347,聯強,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=7C173E5B42AE4E80AA0A79EFBF86347A&response=json,原文：自102年6月24日（星期一）起生效
+2013Q2 季審,2013-06-14,2013-06-24,delete,3231,緯創,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=7C173E5B42AE4E80AA0A79EFBF86347A&response=json,原文：自102年6月24日（星期一）起生效
+2013Q2 季審,2013-06-14,2013-06-24,add,2884,玉山金,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=7C173E5B42AE4E80AA0A79EFBF86347A&response=json,原文：自102年6月24日（星期一）起生效
+2013Q2 季審,2013-06-14,2013-06-24,add,4938,和碩,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=7C173E5B42AE4E80AA0A79EFBF86347A&response=json,原文：自102年6月24日（星期一）起生效
+2013Q3 季審,2013-09-11,2013-09-23,delete,2353,宏碁,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=F3DC83E82000452D87A31F23FD30A54B&response=json,原文：自102年9月23日（星期一）起生效
+2013Q3 季審,2013-09-11,2013-09-23,add,2887,台新金,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=F3DC83E82000452D87A31F23FD30A54B&response=json,原文：自102年9月23日（星期一）起生效
+2013Q4 季審,2013-12-13,2013-12-23,delete,1722,台肥,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=60C98CE19B0C4324891344AC6A02DC31&response=json,原文：自102年12月23日（星期一）起生效
+2013Q4 季審,2013-12-13,2013-12-23,delete,3673,F-TPK,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=60C98CE19B0C4324891344AC6A02DC31&response=json,原文：自102年12月23日（星期一）起生效
+2013Q4 季審,2013-12-13,2013-12-23,add,2227,裕日車,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=60C98CE19B0C4324891344AC6A02DC31&response=json,原文：自102年12月23日（星期一）起生效
+2013Q4 季審,2013-12-13,2013-12-23,add,9904,寶成,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=60C98CE19B0C4324891344AC6A02DC31&response=json,原文：自102年12月23日（星期一）起生效
+臨時,2014-01-06,2014-01-16,delete,3697,F-晨星,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=E6058BC60ECB44939C1C88F5784C0A0F&response=json,晨星與聯發科合併；原文：自103年1月16日（星期四）起生效
+臨時,2014-01-13,2014-01-16,add,3474,華亞科,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=A103B47FEE4543AFB3515A4DAEAE8208&response=json,遞補 F-晨星（1/13 收盤候補名單最高）；原文：自103年1月16日（星期四）起生效
+2014Q1 季審,2014-03-07,2014-03-24,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=067DA4EA71914041AF1AD31BFA172095&response=json,原文：納入：無／刪除：無；自103年3月24日（星期一）起生效
+2014Q2 季審,2014-06-06,2014-06-23,delete,2201,裕隆,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=E51BC258C3EB4DE89C45C8788D3077A3&response=json,原文：自103年6月23日（星期一）起生效
+2014Q2 季審,2014-06-06,2014-06-23,add,2395,研華,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=E51BC258C3EB4DE89C45C8788D3077A3&response=json,原文：自103年6月23日（星期一）起生效
+2014Q3 季審,2014-09-05,2014-09-22,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=145DEAB31BB14CDEA4F372B209216C06&response=json,原文：納入：無／刪除：無；自103年9月22日（星期一）起生效
+2014Q4 季審,2014-12-05,2014-12-22,delete,2324,仁寶,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=E6E0435456B84CA4AF1AFA8A02586A80&response=json,原文：自103年12月22日（星期一）起生效
+2014Q4 季審,2014-12-05,2014-12-22,add,2408,南亞科,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=E6E0435456B84CA4AF1AFA8A02586A80&response=json,原文：自103年12月22日（星期一）起生效
+2015Q1 季審,2015-03-06,2015-03-23,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=1B440FF15CD6451686E30D2B30EF697C&response=json,原文：納入：無／刪除：無；自104年3月23日（星期一）起生效
+2015Q2 季審,2015-06-05,2015-06-22,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=36962423038F491BBC9AF9237DC10695&response=json,原文：納入：無／刪除：無；自104年6月22日（星期一）起生效
+2015Q3 季審,2015-09-04,2015-09-21,delete,2498,宏達電,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=2D0A38FAAC154207AFF471A90828539A&response=json,原文：自104年9月21日（星期一）起生效
+2015Q3 季審,2015-09-04,2015-09-21,add,1476,儒鴻,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=2D0A38FAAC154207AFF471A90828539A&response=json,原文：自104年9月21日（星期一）起生效
+2015Q4 季審,2015-12-04,2015-12-21,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=A5D0AD24A68B4961A54CC3D91E29159F&response=json,原文：納入：無／刪除：無；自104年12月21日（星期一）起生效
+2016Q1 季審,2016-03-04,2016-03-21,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=F307F7D528D74B72A28152B3A821AE37&response=json,原文：納入：無／刪除：無；自105年3月21日（星期一）起生效
+2016Q2 季審,2016-06-03,2016-06-20,delete,2227,裕日車,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=98224FCD975E4801AA8532DAAF306219&response=json,原文：自105年6月20日（星期一）起生效
+2016Q2 季審,2016-06-03,2016-06-20,add,2324,仁寶,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=98224FCD975E4801AA8532DAAF306219&response=json,原文：自105年6月20日（星期一）起生效
+2016Q3 季審,2016-09-02,2016-09-19,none,,,https://www.twse.com.tw/rwd/zh/news/newsDetail?id=B1040B04A87E4E63A10FA0573ECF39CE&response=json,原文：納入：無／刪除：無；自105年9月19日（星期一）起生效
+臨時,2016-11-25,2016-11-30,delete,3474,華亞科,https://taiwanindex.com.tw/news/30,美光現金併購華亞科；原文：自105年11月30日（星期三）起生效
+臨時,2016-11-25,2016-11-30,add,2823,中壽,https://taiwanindex.com.tw/news/30,美光現金併購華亞科；11/25收盤候補名單最高者遞補；原文：自105年11月30日（星期三）起生效
+2016Q4 季審,2016-12-02,2016-12-19,none,,,https://taiwanindex.com.tw/news/31,納入：無／刪除：無；原文：自105年12月19日（星期一）起生效
+2017Q1 季審,2017-03-03,2017-03-20,none,,,https://taiwanindex.com.tw/news/45,納入：無／刪除：無；原文：自106年03月20日（星期一）起生效
+2017Q2 季審,2017-06-02,2017-06-19,delete,1476,儒鴻,https://taiwanindex.com.tw/news/56,原文：自106年06月19日（星期一）起生效；證交所新聞 2DCC9A70275A473494F64C8C184372E3 同文
+2017Q2 季審,2017-06-02,2017-06-19,add,2633,台灣高鐵,https://taiwanindex.com.tw/news/56,原文：自106年06月19日（星期一）起生效；證交所新聞 2DCC9A70275A473494F64C8C184372E3 同文
+2017Q3 季審,2017-09-01,2017-09-18,none,,,https://taiwanindex.com.tw/news/68,納入：無／刪除：無；原文：自2017年09月18日（星期一）起生效
+2017Q4 季審,2017-12-01,2017-12-18,none,,,https://taiwanindex.com.tw/news/72,納入：無／刪除：無；原文：自2017年12月18日（星期一）起生效
+2018Q1 季審,2018-03-02,2018-03-19,delete,2207,和泰車,https://taiwanindex.com.tw/news/77,原文：自2018年3月19日（星期一）起生效
+2018Q1 季審,2018-03-02,2018-03-19,add,5871,中租-KY,https://taiwanindex.com.tw/news/77,原文：自2018年3月19日（星期一）起生效
+臨時,2018-04-13,2018-04-18,delete,2325,矽品,https://taiwanindex.com.tw/news/85,公告原文名稱：矽品精密工業股份有限公司；原文：自107年4月18日（星期三）起生效
+臨時,2018-04-13,2018-04-18,add,2327,國巨,https://taiwanindex.com.tw/news/85,日月光與矽品合併轉投控（日月光2311維持成分股）；4/13收盤候補名單最高者遞補；原文：自107年4月18日（星期三）起生效
+2018Q2 季審,2018-06-01,2018-06-18,delete,2324,仁寶,https://taiwanindex.com.tw/news/91,原文：自2018年6月18日（星期一）起生效
+2018Q2 季審,2018-06-01,2018-06-18,add,2492,華新科,https://taiwanindex.com.tw/news/91,原文：自2018年6月18日（星期一）起生效
+2018Q3 季審,2018-09-07,2018-09-24,none,,,https://taiwanindex.com.tw/news/96,納入：無／刪除：無；原文：自2018年9月24日（星期一）起生效（9/24 中秋休市，見 id=97 註）
+2018Q4 季審,2018-12-07,2018-12-24,delete,2492,華新科,https://taiwanindex.com.tw/news/101,原文：自2018年12月21日收盤後交易結束後生效（亦即自2018年12月24日（星期一）起生效）；另註：因12/22為開市日，證交所計算之臺灣指數系列提前自2018年12月22日(星期六)起生效
+2018Q4 季審,2018-12-07,2018-12-24,add,5876,上海商銀,https://taiwanindex.com.tw/news/101,原文：自2018年12月21日收盤後交易結束後生效（亦即自2018年12月24日（星期一）起生效）；另註：因12/22為開市日，證交所計算之臺灣指數系列提前自2018年12月22日(星期六)起生效
+2019Q1 季審,2019-02-27,2019-03-18,delete,2354,鴻準,https://taiwanindex.com.tw/news/110,原文：自2019年3月15日收盤後交易結束後生效（亦即自2019年3月18日（星期一）起生效）
+2019Q1 季審,2019-02-27,2019-03-18,add,2207,和泰車,https://taiwanindex.com.tw/news/110,原文：自2019年3月15日收盤後交易結束後生效（亦即自2019年3月18日（星期一）起生效）
+2019Q2 季審,2019-06-06,2019-06-24,delete,3481,群創,https://taiwanindex.com.tw/news/120,原文：自2019年6月21日收盤後交易結束後生效（亦即自2019年6月24日（星期一）起生效）
+2019Q2 季審,2019-06-06,2019-06-24,add,9910,豐泰,https://taiwanindex.com.tw/news/120,原文：自2019年6月21日收盤後交易結束後生效（亦即自2019年6月24日（星期一）起生效）
+2019Q3 季審,2019-09-06,2019-09-23,delete,2409,友達,https://taiwanindex.com.tw/news/126,原文：自2019年9月20日收盤後交易結束後生效（亦即自2019年9月23日（星期一）起生效）
+2019Q3 季審,2019-09-06,2019-09-23,add,2888,新光金,https://taiwanindex.com.tw/news/126,原文：自2019年9月20日收盤後交易結束後生效（亦即自2019年9月23日（星期一）起生效）
+2019Q4 季審,2019-12-06,2019-12-23,none,,,https://taiwanindex.com.tw/news/132,納入：無／刪除：無；原文：自2019年12月20日（星期五）交易結束後生效（亦即自2019年12月23日（星期一）起生效）
+2020Q1 季審,2020-03-06,2020-03-23,none,,,https://taiwanindex.com.tw/news/141,納入：無／刪除：無；原文：自2020年03月20日（星期五）交易結束後生效（亦即自2020年03月23日（星期一）起生效）
+2020Q2 季審,2020-06-05,2020-06-22,delete,9904,寶成,https://taiwanindex.com.tw/news/149,原文：自2020年6月19日（星期五）交易結束後生效（亦即自2020年6月22日（星期一）起生效）
+2020Q2 季審,2020-06-05,2020-06-22,add,6669,緯穎,https://taiwanindex.com.tw/news/149,原文：自2020年6月19日（星期五）交易結束後生效（亦即自2020年6月22日（星期一）起生效）
+2020Q3 季審,2020-09-04,2020-09-21,delete,2823,中壽,https://taiwanindex.com.tw/news/169,原文：自2020年09月18日（星期五）交易結束後生效（亦即自2020年09月21日（星期一）起生效）
+2020Q3 季審,2020-09-04,2020-09-21,delete,2888,新光金,https://taiwanindex.com.tw/news/169,原文：自2020年09月18日（星期五）交易結束後生效（亦即自2020年09月21日（星期一）起生效）
+2020Q3 季審,2020-09-04,2020-09-21,add,2379,瑞昱,https://taiwanindex.com.tw/news/169,原文：自2020年09月18日（星期五）交易結束後生效（亦即自2020年09月21日（星期一）起生效）
+2020Q3 季審,2020-09-04,2020-09-21,add,6415,矽力-KY,https://taiwanindex.com.tw/news/169,原文：自2020年09月18日（星期五）交易結束後生效（亦即自2020年09月21日（星期一）起生效）
+2020Q4 季審,2020-12-04,2020-12-21,delete,2301,光寶科,https://taiwanindex.com.tw/news/171,原文：自2020年12月18日（星期五）交易結束後生效（亦即自2020年12月21日（星期一）起生效）
+2020Q4 季審,2020-12-04,2020-12-21,add,3034,聯詠,https://taiwanindex.com.tw/news/171,原文：自2020年12月18日（星期五）交易結束後生效（亦即自2020年12月21日（星期一）起生效）
+2021Q1 季審,2021-03-05,2021-03-22,delete,2883,開發金,https://taiwanindex.com.tw/news/178,原文：自2021年03月19日（星期五）交易結束後生效（亦即自2021年03月22日（星期一）起生效）
+2021Q1 季審,2021-03-05,2021-03-22,delete,2890,永豐金,https://taiwanindex.com.tw/news/178,原文：自2021年03月19日（星期五）交易結束後生效（亦即自2021年03月22日（星期一）起生效）
+2021Q1 季審,2021-03-05,2021-03-22,add,1590,亞德客-KY,https://taiwanindex.com.tw/news/178,原文：自2021年03月19日（星期五）交易結束後生效（亦即自2021年03月22日（星期一）起生效）
+2021Q1 季審,2021-03-05,2021-03-22,add,8046,南電,https://taiwanindex.com.tw/news/178,原文：自2021年03月19日（星期五）交易結束後生效（亦即自2021年03月22日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,delete,2105,正新,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,delete,2474,可成,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,delete,2633,台灣高鐵,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,delete,6669,緯穎,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,add,2409,友達,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,add,2603,長榮,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,add,2609,陽明,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q2 季審,2021-06-04,2021-06-21,add,2615,萬海,https://taiwanindex.com.tw/news/181,原文：自2021年6月18日（星期五）交易結束後生效（亦即自2021年6月21日（星期一）起生效）
+2021Q3 季審,2021-09-03,2021-09-22,delete,1102,亞泥,https://taiwanindex.com.tw/news/191,原文：自2021年09月17日（星期五）交易結束後生效（亦即自2021年09月22日（星期三）起生效）
+2021Q3 季審,2021-09-03,2021-09-22,add,8454,富邦媒,https://taiwanindex.com.tw/news/191,原文：自2021年09月17日（星期五）交易結束後生效（亦即自2021年09月22日（星期三）起生效）
+2021Q4 季審,2021-12-03,2021-12-20,delete,1402,遠東新,https://taiwanindex.com.tw/news/198,原文：自2021年12月17日（星期五）交易結束後生效（亦即自2021年12月20日（星期一）起生效）
+2021Q4 季審,2021-12-03,2021-12-20,add,3037,欣興,https://taiwanindex.com.tw/news/198,原文：自2021年12月17日（星期五）交易結束後生效（亦即自2021年12月20日（星期一）起生效）
+2022Q1 季審,2022-03-04,2022-03-21,delete,4938,和碩,https://taiwanindex.com.tw/news/203,原文：自2022年3月18日（星期五）交易結束後生效（亦即自2022年3月21日（星期一）起生效）
+2022Q1 季審,2022-03-04,2022-03-21,add,2883,開發金,https://taiwanindex.com.tw/news/203,原文：自2022年3月18日（星期五）交易結束後生效（亦即自2022年3月21日（星期一）起生效）
+2022Q2 季審,2022-06-02,2022-06-20,delete,8454,富邦媒,https://taiwanindex.com.tw/news/211,原文：自2022年6月17日（星期五）交易結束後生效（亦即自2022年6月20日（星期一）起生效）
+2022Q2 季審,2022-06-02,2022-06-20,add,6770,力積電,https://taiwanindex.com.tw/news/211,原文：自2022年6月17日（星期五）交易結束後生效（亦即自2022年6月20日（星期一）起生效）
+2022Q3 季審,2022-09-02,2022-09-19,delete,6770,力積電,https://taiwanindex.com.tw/news/221,原文：自2022年9月16日（星期五）交易結束後生效（亦即自2022年9月19日（星期一）起生效）
+2022Q3 季審,2022-09-02,2022-09-19,add,2890,永豐金,https://taiwanindex.com.tw/news/221,原文：自2022年9月16日（星期五）交易結束後生效（亦即自2022年9月19日（星期一）起生效）
+2022Q4 季審,2022-12-02,2022-12-19,delete,2409,友達,https://taiwanindex.com.tw/news/227,原文：自2022年12月16日（星期五）交易結束後生效（亦即自2022年12月19日（星期一）起生效）
+2022Q4 季審,2022-12-02,2022-12-19,add,1402,遠東新,https://taiwanindex.com.tw/news/227,原文：自2022年12月16日（星期五）交易結束後生效（亦即自2022年12月19日（星期一）起生效）
+2023Q1 季審,2023-03-03,2023-03-20,delete,8046,南電,https://taiwanindex.com.tw/news/234,原文：自2023年3月17日（星期五）交易結束後生效（亦即自2023年3月20日（星期一）起生效）
+2023Q1 季審,2023-03-03,2023-03-20,add,1605,華新,https://taiwanindex.com.tw/news/234,原文：自2023年3月17日（星期五）交易結束後生效（亦即自2023年3月20日（星期一）起生效）
+2023Q2 季審,2023-06-03,2023-06-19,delete,6415,矽力*-KY,https://taiwanindex.com.tw/news/247,原文：自2023年6月16日（星期五）交易結束後生效（亦即自2023年6月19日（星期一）起生效）；頁面時戳 2023/06/03 01:00
+2023Q2 季審,2023-06-03,2023-06-19,add,4938,和碩,https://taiwanindex.com.tw/news/247,原文：自2023年6月16日（星期五）交易結束後生效（亦即自2023年6月19日（星期一）起生效）；頁面時戳 2023/06/03 01:00
+2023Q3 季審,2023-09-01,2023-09-18,delete,1402,遠東新,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,delete,1605,華新,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,delete,2609,陽明,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,delete,2615,萬海,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,add,2301,光寶科,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,add,2345,智邦,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,add,3231,緯創,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q3 季審,2023-09-01,2023-09-18,add,6669,緯穎,https://taiwanindex.com.tw/news/263,原文：自2023年9月15日（星期五）交易結束後生效（亦即自2023年9月18日（星期一）起生效）
+2023Q4 季審,2023-12-01,2023-12-18,none,,,https://taiwanindex.com.tw/news/276,納入：無／刪除：無；原文：自2023年12月15日（星期五）交易結束後生效（亦即自2023年12月18日（星期一）起生效）
+2024Q1 季審,2024-03-01,2024-03-18,delete,9910,豐泰,https://taiwanindex.com.tw/news/294,原文：自2024年3月15日（星期五）交易結束後生效（亦即自2024年3月18日（星期一）起生效）
+2024Q1 季審,2024-03-01,2024-03-18,add,3661,世芯-KY,https://taiwanindex.com.tw/news/294,原文：自2024年3月15日（星期五）交易結束後生效（亦即自2024年3月18日（星期一）起生效）
+2024Q2 季審,2024-06-07,2024-06-24,delete,2801,彰銀,https://taiwanindex.com.tw/news/303,原文：自2024年6月21日（星期五）交易結束後生效（亦即自2024年6月24日（星期一）起生效）
+2024Q2 季審,2024-06-07,2024-06-24,add,3017,奇鋐,https://taiwanindex.com.tw/news/303,原文：自2024年6月21日（星期五）交易結束後生效（亦即自2024年6月24日（星期一）起生效）
+2024Q3 季審,2024-09-06,2024-09-23,delete,2408,南亞科,https://taiwanindex.com.tw/news/320,原文：自2024年9月20日（星期五）交易結束後生效（亦即自2024年9月23日（星期一）起生效）
+2024Q3 季審,2024-09-06,2024-09-23,add,6446,藥華藥,https://taiwanindex.com.tw/news/320,原文：自2024年9月20日（星期五）交易結束後生效（亦即自2024年9月23日（星期一）起生效）
+2024Q4 季審,2024-12-06,2024-12-23,delete,1590,亞德客-KY,https://taiwanindex.com.tw/news/337,原文：自2024年12月20日（星期五）交易結束後生效（亦即自2024年12月23日（星期一）起生效）
+2024Q4 季審,2024-12-06,2024-12-23,add,2609,陽明,https://taiwanindex.com.tw/news/337,原文：自2024年12月20日（星期五）交易結束後生效（亦即自2024年12月23日（星期一）起生效）
+2025Q1 季審,2025-03-07,2025-03-24,delete,1326,台化,https://taiwanindex.com.tw/news/350,原文：自2025年3月21日（星期五）交易結束後生效（亦即自2025年3月24日（星期一）起生效）
+2025Q1 季審,2025-03-07,2025-03-24,add,2615,萬海,https://taiwanindex.com.tw/news/350,原文：自2025年3月21日（星期五）交易結束後生效（亦即自2025年3月24日（星期一）起生效）
+2025Q2 季審,2025-06-06,2025-06-23,delete,3037,欣興,https://taiwanindex.com.tw/news/362,原文：自2025年6月20日（星期五）交易結束後生效（亦即自2025年6月23日（星期一）起生效）
+2025Q2 季審,2025-06-06,2025-06-23,add,2383,台光電,https://taiwanindex.com.tw/news/362,原文：自2025年6月20日（星期五）交易結束後生效（亦即自2025年6月23日（星期一）起生效）
+2025Q3 季審,2025-09-05,2025-09-22,delete,1101,台泥,https://taiwanindex.com.tw/news/382,原文：自2025年9月19日（星期五）交易結束後生效（亦即自2025年9月22日（星期一）起生效）
+2025Q3 季審,2025-09-05,2025-09-22,delete,6446,藥華藥,https://taiwanindex.com.tw/news/382,原文：自2025年9月19日（星期五）交易結束後生效（亦即自2025年9月22日（星期一）起生效）
+2025Q3 季審,2025-09-05,2025-09-22,add,2059,川湖,https://taiwanindex.com.tw/news/382,原文：自2025年9月19日（星期五）交易結束後生效（亦即自2025年9月22日（星期一）起生效）
+2025Q3 季審,2025-09-05,2025-09-22,add,6919,康霈*,https://taiwanindex.com.tw/news/382,原文：自2025年9月19日（星期五）交易結束後生效（亦即自2025年9月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,delete,2609,陽明,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,delete,4938,和碩,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,delete,5871,中租-KY,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,delete,5876,上海商銀,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,add,2360,致茂,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,add,2408,南亞科,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,add,3653,健策,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2025Q4 季審,2025-12-05,2025-12-22,add,3665,貿聯-KY,https://taiwanindex.com.tw/news/391,原文：自2025年12月19日（星期五）交易結束後生效（亦即自2025年12月22日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,delete,2379,瑞昱,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,delete,2615,萬海,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,delete,2912,統一超,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,delete,3034,聯詠,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,delete,3665,貿聯-KY,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,add,2344,華邦電,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,add,2368,金像電,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,add,2449,京元電子,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,add,3037,欣興,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q1 季審,2026-03-06,2026-03-23,add,7769,鴻勁,https://taiwanindex.com.tw/news/405,原文：自2026年3月20日（星期五）交易結束後生效（亦即自2026年3月23日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,delete,1301,台塑,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,delete,2002,中鋼,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,delete,2207,和泰車,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,delete,6919,康霈*,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,add,3443,創意,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,add,3665,貿聯-KY,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,add,4958,臻鼎-KY,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q2 季審,2026-06-05,2026-06-22,add,8046,南電,https://taiwanindex.com.tw/news/424,原文：自2026年6月18日（星期四）交易結束後生效（亦即自2026年6月22日（星期一）起生效）
+2026Q3 季審,2026-09-04,2026-09-21,delete,3661,世芯-KY,https://taiwanindex.com.tw/news/450,原文：自2026年9月18日（星期五）交易結束後生效（亦即自2026年9月21日（星期一）起生效）
+2026Q3 季審,2026-09-04,2026-09-21,add,6446,藥華藥,https://taiwanindex.com.tw/news/450,原文：自2026年9月18日（星期五）交易結束後生效（亦即自2026年9月21日（星期一）起生效）
