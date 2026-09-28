@@ -1,0 +1,11 @@
+{
+ "件": "PREREG合成分數 描述臂：同分舊持股優先（裁定 seq262 §三；不改判定格、N 不加）",
+ "挑中格": "L20_月換_N10",
+ "閘": {
+  "main：舊持股先關掉 ＝ researchScore.sim_book（權益逐位元）": true,
+  "A：舊持股先關掉 ＝ researchScore.sim_book（權益逐位元）": true
+ },
+ "閘過": true,
+ "停止交易強制出場": "開",
+ "秒": 77
+}
