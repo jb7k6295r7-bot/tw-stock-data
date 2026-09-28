@@ -41,6 +41,11 @@
     億元取 1 位；張數 ＝ 門檻 ÷（最新收盤 × 1000）（股價變動時張數會變）；中午參考（上午量約占 5～6 成）⇒ 門檻 50%；今日成交額、張數、目前倍數（今日 amt_ratio）
     B 區排序：去重擋住者最後；其餘「只差量」（價格條件在今天收盤已夠 2 條）在前、依 目前倍數 ÷ 3 由高到低；再來依所需漲幅
   C 技術面已 ≥ 3 分（eligible）、但營收條件不成立：最新一期營收距前 24 期最高差多少 %、下期需達多少、下次公布法定期限（次月 10 日）
+精簡版（--brief；使用者 09-28「給我預備接近的名單就好…用開盤價乘以8成的張數跟我說要幾張」）：⛔ 不動完整版的檔（log 寫 brief_run.log）
+  A 區一行一檔（代號、名稱、達成的條件）；最有可能 ＝ B 區「兩天內可能 ∧ 沒被去重擋住」照既有排序取前 5
+  3 倍量門檻張數 ＝ 門檻金額 ÷（最新收盤 ×（1＋開高幅度）× 1000），開高 0／3／5%；8 成 ＝ 未取整張數 × 0.8 再取整；
+  還差的價格條件 ＝ 靠量所需收盤（綁定的條件寫在括號）；另一條路 ＝ 不靠量所需收盤；價位一律無條件進位到寫出的位數
+  ⇒ brief_<日>.md、brief_<日>.html（一張表、沒有 K 線圖）、brief_<日>.csv
 輸出 backtest/resultsYLwatch/：watch_A.csv、watch_B.csv、watch_C.csv、summary.json、REPORT.md、營量v1_即將達成_<日>.html
 """
 from __future__ import annotations
@@ -48,6 +53,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import math
 import os
 import subprocess
 import time
@@ -149,9 +155,11 @@ def tomorrow(L):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2)
+    ap.add_argument("--brief", action="store_true", help="只輸出精簡版（brief_<日>.md＋短網頁）；⛔ 不動完整版的檔")
+    a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
-    logf = open(os.path.join(OUT, "run.log"), "w", encoding="utf-8"); T0 = time.time()
+    logf = open(os.path.join(OUT, "brief_run.log" if a.brief else "run.log"), "w", encoding="utf-8"); T0 = time.time()
 
     def log(m):
         m = f"[{time.time() - T0:5.0f}s] {m}"; print(m, flush=True); logf.write(m + "\n"); logf.flush()
@@ -262,6 +270,9 @@ def main():
         B = B.sort_values(["_g", "_s", "代號"]).drop(columns=["_g", "_s"]).reset_index(drop=True)
     if len(C):
         C = C.sort_values(["距24期高", "代號"], ascending=[False, True]).reset_index(drop=True)
+    if a.brief:
+        brief(A, B, asof, nxt, sha, S, log)
+        return
     for nm, T_ in (("A", A), ("B", B), ("C", C)):
         T_.drop(columns=[c for c in T_.columns if c.startswith("_")]).to_csv(os.path.join(OUT, f"watch_{nm}.csv"), index=False, encoding="utf-8-sig", float_format="%.12g")
     S["筆數"] = {"A 今天已達成": len(A), "B 差一個條件": len(B), "B 其中兩天內可能": int(B["兩天內可能"].sum()) if len(B) else 0,
@@ -275,6 +286,84 @@ def main():
           "讀法見程式開頭（c2 定義、明天門檻、兩天內可能、去重）。"]
     open(os.path.join(OUT, "REPORT.md"), "w", encoding="utf-8").write("\n".join(R_) + "\n")
     log(f"[完] {S['閘（近 20 交易日 AND 訊號 ＝ list_YL13_2026-09-24）']['過']}")
+
+
+BRIEF_END = "看盤參考；照規則要收盤成立、隔天開盤才買"
+CN = {"c1": "20 日漲 30%", "c2": "近 20 日 3 根漲停", "c3": "成交額 3 倍", "c4": "站上 100 日線", "c5": "一年新高"}
+
+
+def _px(p):
+    """價格字串：≥ 1000 取整、其餘 1 位小數；一律無條件進位（寫出的價位本身就夠）；去掉 .0。"""
+    if p >= 1000:
+        return f"{math.ceil(p - 1e-9):,}"
+    v = math.ceil(p * 10 - 1e-9) / 10
+    return f"{v:,.1f}".rstrip("0").rstrip(".")
+
+
+def brief_rows(A, B):
+    """A 區一行一檔；B 區「兩天內可能 ∧ 沒被去重擋住」照既有排序取前 5。"""
+    ar = [{"代號": r["代號"], "名稱": r["名稱"], "達成": "、".join(CN[f"c{i + 1}"] for i in range(5) if r["_L"]["cond"][i])} for r in A.to_dict("records")] if len(A) else []
+    top = B[B["兩天內可能"] & ~B["去重擋住"]].head(5) if len(B) else B
+    br = []
+    for r in top.to_dict("records"):
+        L = r["_L"]; fr = L["fac"]; thr = r["c3 門檻成交額（元）"]; c0 = r["收盤"]
+        lots = {g: thr / (c0 * (1 + g) * 1000.0) for g in (0.0, 0.03, 0.05)}
+        th = {"c1": L["t1"] / fr, "c4": L["t4"] / fr, "c5": L["t5"] / fr}
+        if L["s19"] == 2:
+            th["c2"] = L["lim_up"] / fr
+        pv, pn = r["靠量所需收盤"], r["不靠量所需收盤"]
+        bind = min((k for k in th if abs(th[k] - pv) <= 1e-6 * max(1.0, pv)), default=None, key=lambda k: k) if np.isfinite(pv) else None
+        if np.isfinite(pv):
+            why = (f"保住{CN[bind]}" if bind and L["cond"][int(bind[1]) - 1] and pv <= c0 + 1e-9 else
+                   (f"要漲 {(pv / c0 - 1) * 100:.1f}%" if pv > c0 + 1e-9 else f"可跌到這裡、{CN.get(bind, '')}仍成立"))
+            need = f"收盤 ≥ {_px(pv)}（{why}）"
+        else:
+            need = "—"
+        alt = f"或收盤 ≥ {_px(pn)}（不用量也湊滿 3 條）" if np.isfinite(pn) else ""
+        br.append({"代號": r["代號"], "名稱": r["名稱"], "門檻（億）": r["c3 門檻成交額（億）"],
+                   **{f"{nm} 張": int(round(lots[g])) for nm, g in (("平盤開", 0.0), ("開高 3%", 0.03), ("開高 5%", 0.05))},
+                   **{f"{nm} 8 成": int(round(0.8 * lots[g])) for nm, g in (("平盤開", 0.0), ("開高 3%", 0.03), ("開高 5%", 0.05))},
+                   "還差的價格條件": need, "另一條路": alt})
+    return ar, br
+
+
+def brief(A, B, asof, nxt, sha, S, log):
+    ar, br = brief_rows(A, B)
+    nd = str(nxt[0].date())
+    md = [f"# 營量 v1 精簡名單（{asof} 收盤後 → {nd}）", "", f"資料：tw-stock-data main {sha[:10]}；最新交易日 {asof}", "",
+          f"## 已達成（{nd} 開盤照規則買）", ""]
+    md += [f"- {r['代號']} {r['名稱']}：{r['達成']}" for r in ar] or ["- 無"]
+    md += ["", "## 最有可能的幾檔（兩天內可能、沒被去重擋住）", "",
+           "張數 ＝ 3 倍量門檻金額 ÷（最新收盤 ×（1＋開高幅度））；「8 成」＝ 該張數 × 0.8。", "",
+           "| 代號 名稱 | 門檻（億） | 平盤開 張（8 成） | 開高 3% 張（8 成） | 開高 5% 張（8 成） | 還差的價格條件 | 另一條路 |", "|---|---|---|---|---|---|---|"]
+    for r in br:
+        md.append(f"| {r['代號']} {r['名稱']} | {r['門檻（億）']:.1f} | {r['平盤開 張']:,}（{r['平盤開 8 成']:,}） | {r['開高 3% 張']:,}（{r['開高 3% 8 成']:,}） | "
+                  f"{r['開高 5% 張']:,}（{r['開高 5% 8 成']:,}） | {r['還差的價格條件']} | {r['另一條路']} |")
+    if not br:
+        md.append("| 無 | | | | | | |")
+    md += ["", BRIEF_END, ""]
+    fm = os.path.join(OUT, f"brief_{asof}.md")
+    open(fm, "w", encoding="utf-8").write("\n".join(md))
+    css = ("body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}main{max-width:760px;margin:0 auto;padding:12px 14px 32px}"
+           "h1{font-size:19px;margin:6px 0}h2{font-size:16px;margin:14px 0 6px}.wrap{overflow-x:auto}table{border-collapse:collapse;font-size:14px;white-space:nowrap}"
+           "th,td{border:1px solid #ddd;padding:5px 7px;text-align:right}th{background:#eee}td.l,th.l{text-align:left}p.n{color:#555;font-size:13px}")
+    H = ['<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">',
+         f"<title>營量 v1 精簡 {asof}</title><style>{css}</style></head><body><main>", f"<h1>營量 v1 精簡名單（{asof} 收盤後 → {nd}）</h1>",
+         "<p><b>已達成（開盤照規則買）：</b>" + ("；".join(f"{r['代號']} {html.escape(r['名稱'])}（{html.escape(r['達成'])}）" for r in ar) or "無") + "</p>",
+         "<div class='wrap'><table><tr><th class='l'>最有可能</th><th>門檻（億）</th><th>平盤開 張<br>（8 成）</th><th>開高 3% 張<br>（8 成）</th><th>開高 5% 張<br>（8 成）</th>"
+         "<th class='l'>還差的價格條件</th><th class='l'>另一條路</th></tr>"]
+    for r in br:
+        H.append(f"<tr><td class='l'>{r['代號']} {html.escape(r['名稱'])}</td><td>{r['門檻（億）']:.1f}</td><td>{r['平盤開 張']:,}<br>（{r['平盤開 8 成']:,}）</td>"
+                 f"<td>{r['開高 3% 張']:,}<br>（{r['開高 3% 8 成']:,}）</td><td>{r['開高 5% 張']:,}<br>（{r['開高 5% 8 成']:,}）</td>"
+                 f"<td class='l'>{html.escape(r['還差的價格條件'])}</td><td class='l'>{html.escape(r['另一條路'])}</td></tr>")
+    H.append("</table></div>")
+    H.append(f"<p class='n'>張數 ＝ 3 倍量門檻金額 ÷（最新收盤 ×（1＋開高幅度））；8 成 ＝ 該張數 × 0.8。資料 main {sha[:10]}。</p><p><b>{BRIEF_END}</b></p></main></body></html>")
+    fh = os.path.join(OUT, f"brief_{asof}.html")
+    open(fh, "w", encoding="utf-8").write("\n".join(H))
+    pd.DataFrame(br).to_csv(os.path.join(OUT, f"brief_{asof}.csv"), index=False, encoding="utf-8-sig")
+    log(f"[精簡] A {len(ar)} 檔、最有可能 {len(br)} 檔｜{os.path.basename(fm)}、{os.path.basename(fh)}｜閘 {S['閘（近 20 交易日 AND 訊號 ＝ list_YL13_2026-09-24）']['過']}")
+    for r in br:
+        log(f"  {r['代號']} {r['名稱']}：平盤開 {r['平盤開 張']:,}（8 成 {r['平盤開 8 成']:,}）｜{r['還差的價格條件']}｜{r['另一條路']}")
 
 
 def page(A, B, C, cal, asof, nxt, sha, S):
