@@ -9,8 +9,9 @@
   dates  字串序列（YYYY-MM-DD），長度 n
   o/h/l/c 價格（NaN ＝ 當天沒成交 ⇒ 不畫 K 棒）；v 成交量（任意單位，NaN 當 0）
   ma     {期數: 長度 n 的序列}（NaN 段不畫）
-  marks  [{"i": 位置, "px": 價格, "kind": "entry"|"exit", "label": 字串}]
+  marks  [{"i": 位置, "px": 價格, "kind": "entry"|"exit", "label": 字串[, "color": 色碼]}]（color 省略 ⇒ 進場藍、出場黑，原樣）
   shade  (i0, i1) ⇒ 持有期間淡色底
+  hlines [{"px": 價格, "label": 字串, "color": 色碼}] ⇒ 水平虛線（基準線）；None（預設）⇒ 不畫，輸出與加參數前逐字相同
 """
 from __future__ import annotations
 
@@ -42,7 +43,7 @@ def _fmt_px(p):
     return f"{p:,.2f}" if p < 100 else (f"{p:,.1f}" if p < 1000 else f"{p:,.0f}")
 
 
-def kline_svg(dates, o, h, l, c, v, ma=None, marks=None, shade=None, title="", subtitle="", show_title=True):
+def kline_svg(dates, o, h, l, c, v, ma=None, marks=None, shade=None, title="", subtitle="", show_title=True, hlines=None):
     """show_title=False ⇒ 標題只放 aria-label（呼叫端用 HTML 文字顯示，手機上字比較大）。"""
     PT = 50 if show_title else 12
     PB_PRICE = PT + 300; VT = PB_PRICE + 18; VB = VT + 80; XLAB = VB + 20; H = XLAB + 8
@@ -52,7 +53,7 @@ def kline_svg(dates, o, h, l, c, v, ma=None, marks=None, shade=None, title="", s
     ma = ma or {}
     marks = marks or []
     vals = [h[np.isfinite(h)], l[np.isfinite(l)]] + [np.asarray(m, float)[np.isfinite(m)] for m in ma.values()] + \
-           [np.array([m["px"] for m in marks if np.isfinite(m["px"])])]
+           [np.array([m["px"] for m in marks if np.isfinite(m["px"])])] +            ([np.array([z["px"] for z in hlines if np.isfinite(z["px"])])] if hlines else [])
     allv = np.concatenate([x for x in vals if len(x)])
     lo, hi = float(allv.min()), float(allv.max())
     pad = (hi - lo) * 0.08 or hi * 0.02 or 1.0
@@ -131,6 +132,11 @@ def kline_svg(dates, o, h, l, c, v, ma=None, marks=None, shade=None, title="", s
         for s in segs:
             if len(s) > 1:
                 out.append(f'<polyline points="{" ".join(s)}" fill="none" stroke="{MA_COLORS.get(k_, "#444")}" stroke-width="1.6"/>')
+    for z in (hlines or []):                            # 基準線（hlines=None 時整段不輸出）
+        if np.isfinite(z["px"]):
+            zc = z.get("color", "#e65100")
+            out.append(f'<line x1="{PL}" x2="{W - PR}" y1="{_f(Y(z["px"]))}" y2="{_f(Y(z["px"]))}" stroke="{zc}" stroke-width="1.6" stroke-dasharray="7 4"/>'
+                       f'<text x="{PL + 4}" y="{_f(Y(z["px"]) - 5)}" font-size="14" fill="{zc}" stroke="#fff" stroke-width="3" paint-order="stroke">{html.escape(z.get("label", ""))}</text>')
     # 進出場標記
     for m in marks:
         i, p = m["i"], m["px"]
@@ -138,15 +144,17 @@ def kline_svg(dates, o, h, l, c, v, ma=None, marks=None, shade=None, title="", s
             continue
         x = X(i)
         if m["kind"] == "entry":
+            mc = m.get("color", "#0b5fff")
             base = Y(l[i] if np.isfinite(l[i]) else p) + 6
-            out.append(f'<path d="M{_f(x)} {_f(base)}l-8 15h16Z" fill="#0b5fff"/>'
-                       f'<line x1="{_f(x - 18)}" x2="{_f(x + 18)}" y1="{_f(Y(p))}" y2="{_f(Y(p))}" stroke="#0b5fff" stroke-dasharray="3 2"/>'
-                       + _label(x, base + 32, m["label"], "#0b5fff"))
+            out.append(f'<path d="M{_f(x)} {_f(base)}l-8 15h16Z" fill="{mc}"/>'
+                       f'<line x1="{_f(x - 18)}" x2="{_f(x + 18)}" y1="{_f(Y(p))}" y2="{_f(Y(p))}" stroke="{mc}" stroke-dasharray="3 2"/>'
+                       + _label(x, base + 32 + 18 * m.get("row", 0), m["label"], mc))
         else:
+            mc = m.get("color", "#111")
             base = Y(h[i] if np.isfinite(h[i]) else p) - 6
-            out.append(f'<path d="M{_f(x)} {_f(base)}l-8 -15h16Z" fill="#111"/>'
-                       f'<line x1="{_f(x - 18)}" x2="{_f(x + 18)}" y1="{_f(Y(p))}" y2="{_f(Y(p))}" stroke="#111" stroke-dasharray="3 2"/>'
-                       + _label(x, base - 20, m["label"], "#111"))
+            out.append(f'<path d="M{_f(x)} {_f(base)}l-8 -15h16Z" fill="{mc}"/>'
+                       f'<line x1="{_f(x - 18)}" x2="{_f(x + 18)}" y1="{_f(Y(p))}" y2="{_f(Y(p))}" stroke="{mc}" stroke-dasharray="3 2"/>'
+                       + _label(x, base - 20 - 18 * m.get("row", 0), m["label"], mc))
     out.append("</svg>")
     return "".join(out)
 
