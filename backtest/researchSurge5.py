@@ -51,6 +51,10 @@
  S16 結束特徵：各格、各「結束套」x ∈ {10,20,30}（P 後曾回落 x% 的事件）× k ∈ {1,3,5,10,20}：陽性 ＝ P−k 那一天，對照 ＝ 同一事件漲勢中段 t＋(P−t)//2（須 P−中段 ＞ 20、中段 ＞ t）；
      y＝1 陽性、0 對照 ⇒ 提升倍數 ＝ 有特徵者陽性比例 ÷ 全部陽性比例、涵蓋率 ＝ 陽性中有特徵比例；挑與驗同 S12（每個 x×k 一族）
  S17 N_單筆 ＝ 確認段實際驗的特徵數（各族加總，照實）；Bonferroni 各族用自己的 k（另報用總 N 時結論變不變）
+ S19 結束特徵可交易（seq5 §十之六；描述＋確認段標區間）：對象 ＝ 各段所有格事件的 (股, t) 聯集（＝ 手上抱著一檔真飆股，事後挑的，只描述）；
+     t＋1 開盤買；規則 A ＝ 持有中該結束特徵（確認段站得住的級距）第一次出現於 d（t ＜ d ≤ t＋h−1）⇒ d 之後第一個有效開盤賣，否則抱到 t＋h 收盤；
+     規則 B ＝ 抱到 t＋h 收盤（＝ R_h）；報 A−B 的平均（月分群 CI；確認段 Bonferroni k ＝ 站得住的不同級距數），連續 ≥ 3 格下緣 ＞ 0 ⇒ 標「一出現就賣較好」、上緣 ＜ 0 ⇒ 標「續抱較好」
+     （⚠ S19 寫於看過「哪些結束特徵站得住」之後、看任何 A−B 數字之前）
  S18（⚠ 看過第一批「從起漲日算」天數後補，照實寫）：起漲日 ＝「H 日內會漲到的第一天」⇒ 從它算的天數天生貼近 H（構造使然）；
      另報「最短花幾天」＝ H＝250 的事件在 [t, P] 內任選起點 s、第一次收盤 ≥ s 收盤 ×（1＋g）的天數取最小；與網格累積（H 日內事件數 ÷ 250 日內）並列；只描述、不進任何判定
 輸出 backtest/resultsSurge5/
@@ -789,7 +793,7 @@ def cr0_ratio(e_m, n_m):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", choices=("build", "cross", "desc", "feat"), required=True)
+    ap.add_argument("--stage", choices=("build", "cross", "desc", "feat", "endtrade"), required=True)
     ap.add_argument("--procs", type=int, default=2); ap.add_argument("--limit", type=int, default=0)
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
@@ -805,9 +809,12 @@ def main():
     elif a.stage == "desc":
         from backtest import researchSurge5_desc as DS
         DS.run(log)
-    else:
+    elif a.stage == "feat":
         from backtest import researchSurge5_feat as FT
         FT.run(log)
+    else:
+        from backtest import researchSurge5_feat as FT
+        FT.run_endtrade(log)
     log(f"[完] {time.time() - T0:.0f}s")
 
 

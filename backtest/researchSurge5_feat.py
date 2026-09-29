@@ -431,3 +431,111 @@ def page_feat(SUM, SUMR, YR, ER):
         H.append(f"<tr><td class='l'>結束（{x}）高點前 {kk} 天</td><td>{len(g2)}</td><td>{html.escape('、'.join(okk['特徵'])) or '沒有'}</td></tr>")
     H.append("</table></div></main></body></html>")
     open(os.path.join(S5.OUT, "飆股回推seq5_第二批_20260929.html"), "w", encoding="utf-8").write("\n".join(H))
+
+
+def run_endtrade(log):
+    """S19：結束特徵「一出現就賣」對「續抱到 h」（h ＝ 5～250）。"""
+    T0 = time.time()
+    uni, cal, mon, segd, E = S5.load_all()
+    n = len(cal); mi = (mon - mon.min()).astype(np.int64); NM = int(mi.max()) + 1
+    segm = {sg: np.zeros(NM, bool) for sg in S5.SEG}
+    for sg, dm in segd.items():
+        segm[sg][np.unique(mi[dm])] = True
+    ER = pd.read_csv(os.path.join(S5.OUT, "end_summary.csv"))
+    okc = ER["站得住（確認）"].fillna(False).astype(bool) if "站得住（確認）" in ER.columns else pd.Series(False, index=ER.index)
+    LVS = sorted({(c, int(q)) for c, q in zip(ER.loc[okc, "欄"], ER.loc[okc, "碼"])})
+    kB = len(LVS); zB = NormalDist().inv_cdf(1 - 0.025 / max(kB, 1))
+    log(f"[結束可交易] 站得住的不同級距 {kB}｜Bonferroni z＝{zB:.3f}")
+    if not LVS:
+        return
+    Qm = np.load(os.path.join(S5.WORK, "Q.npy"), mmap_mode="r")
+    cols = sorted({c for c, _ in LVS}); QQ = {c: np.asarray(Qm[S5.FIX[c]]) for c in cols}
+    Rm = np.load(os.path.join(S5.WORK, "R.npy"), mmap_mode="r")
+    ed = E["d"].astype(np.int64); es = E["s"].astype(np.int64)
+    inseg = np.zeros(len(ed), bool)
+    for dm in segd.values():
+        inseg |= dm[ed]
+    key = np.unique(es[inseg] * 100000 + ed[inseg])
+    SS, TT = key // 100000, key % 100000
+    L = len(LVS); NH_ = len(S5.HOLD)
+    acc_n = np.zeros((L, NH_, NM)); acc_s = np.zeros((L, NH_, NM)); acc_hit = np.zeros((L, NH_, NM))
+    S5.D.DATA = S5.ST
+    for s in np.unique(SS):
+        T = TT[SS == s]
+        st = S5.D.load_stock(uni.loc[int(s), "stock_id"], uni.loc[int(s), "market"], cal)
+        o = st.df["open"].to_numpy(float); okop = np.isfinite(o) & (o > 0)
+        nxo = np.full(n + 2, n + 10, np.int64)
+        for p in range(n - 1, -1, -1):
+            nxo[p] = p if okop[p] else nxo[p + 1]
+        Rb = np.asarray(Rm[:, int(s), :])[:, T].astype(np.float64)                  # (50, k) ＝ B
+        ob = o[np.minimum(T + 1, n - 1)]
+        m_ = mi[T]
+        for li, (c, code) in enumerate(LVS):
+            pos = np.flatnonzero(QQ[c][int(s)] == code)
+            j = np.searchsorted(pos, T + 1)
+            dsig = np.where(j < len(pos), pos[np.minimum(j, len(pos) - 1)] if len(pos) else n + 10, n + 10)
+            ex = nxo[np.minimum(dsig + 1, n + 1)]
+            for hj, hh in enumerate(S5.HOLD):
+                B = Rb[hj]; valid = np.isfinite(B)
+                early = (dsig <= T + hh - 1) & (ex <= T + hh)
+                A = np.where(early, o[np.minimum(ex, n - 1)] / ob - 1, B)
+                Dd = A - B; v = valid & np.isfinite(Dd)
+                acc_n[li, hj] += np.bincount(m_[v], minlength=NM)
+                acc_s[li, hj] += np.bincount(m_[v], Dd[v], minlength=NM)
+                acc_hit[li, hj] += np.bincount(m_[v], early[v].astype(float), minlength=NM)
+    rows = []
+    for li, (c, code) in enumerate(LVS):
+        name = next(f"{sp[1]}｜Q{code}" if sp[3] in ("q", "qts", "x") else f"{sp[1]}｜{code}" for sp in S5.SPECS if sp[0] == c)
+        for sg in S5.SEG:
+            sm = segm[sg]; z = zB if sg == "確認" else Z95
+            nn = acc_n[li][:, sm]; ss = acc_s[li][:, sm]; N = nn.sum(1)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                mu = ss.sum(1) / N; se = np.sqrt(((ss - mu[:, None] * nn) ** 2).sum(1)) / N
+                hit = acc_hit[li][:, sm].sum(1) / N
+            for hj, hh in enumerate(S5.HOLD):
+                rows.append({"欄": c, "碼": code, "特徵": name, "段": sg, "h": hh, "n": int(N[hj]), "A−B": mu[hj], "下": mu[hj] - z * se[hj], "上": mu[hj] + z * se[hj], "訊號已出現比例": hit[hj]})
+    D_ = pd.DataFrame(rows); D_.to_csv(os.path.join(S5.OUT, "end_trade.csv"), index=False, float_format="%.5g")
+    SM = []
+
+    def rng_(ok, hs):
+        out = []; i = 0
+        while i < len(ok):
+            if ok[i]:
+                j = i
+                while j + 1 < len(ok) and ok[j + 1]:
+                    j += 1
+                if j - i + 1 >= 3:
+                    out.append(f"{hs[i]}～{hs[j]} 日")
+                i = j + 1
+            else:
+                i += 1
+        return "、".join(out) if out else "沒有"
+    for (c, code, name, sg), g in D_.groupby(["欄", "碼", "特徵", "段"]):
+        g = g.sort_values("h"); hs = g["h"].to_numpy()
+        SM.append({"欄": c, "碼": code, "特徵": name, "段": sg, "一出現就賣較好": rng_((g["下"] > 0).to_numpy(), hs), "續抱較好": rng_((g["上"] < 0).to_numpy(), hs),
+                   **{f"A−B_{h}日": float(g.loc[g["h"] == h, "A−B"].iloc[0]) for h in (20, 60, 120, 250)}, "訊號在250日內出現比例": float(g.loc[g["h"] == 250, "訊號已出現比例"].iloc[0])})
+    SM = pd.DataFrame(SM); SM.to_csv(os.path.join(S5.OUT, "end_trade_summary.csv"), index=False, float_format="%.5g")
+    c = SM[SM["段"] == "確認"]
+    NL = "\n"
+    L_ = ["", f"## 五、結束特徵的可交易（S19；確認段站得住的 {kB} 個不同級距；Bonferroni z＝{zB:.3f}）", "",
+          f"- 確認段：「一出現就賣」較好（連續 ≥ 3 格下緣 ＞ 0）的級距 {int((c['一出現就賣較好'] != '沒有').sum())} 個；「續抱」較好 {int((c['續抱較好'] != '沒有').sum())} 個；其餘分不出", "",
+          "| 特徵 | 探索：賣較好／抱較好 | 確認：賣較好／抱較好 | 確認 A−B 20／60／120／250 日 | 確認 250 日內訊號出現比例 |", "|---|---|---|---|---|"]
+    for r in c.to_dict("records"):
+        e_ = SM[(SM["欄"] == r["欄"]) & (SM["碼"] == r["碼"]) & (SM["段"] == "探索")]
+        e_ = e_.iloc[0] if len(e_) else {}
+        L_.append(f"| {r['特徵']} | {e_.get('一出現就賣較好', '—')}／{e_.get('續抱較好', '—')} | {r['一出現就賣較好']}／{r['續抱較好']} | "
+                  + "／".join(C_(r[f'A−B_{h}日']) for h in (20, 60, 120, 250)) + f" | {C_(r['訊號在250日內出現比例'])} |")
+    L_.append(""); L_.append("檔案：end_trade.csv（級距 × 段 × h）｜end_trade_summary.csv")
+    fp = os.path.join(S5.OUT, "REPORT_feat.md")
+    old = open(fp, encoding="utf-8").read().split("\n\n## 五、結束特徵的可交易")[0].rstrip("\n")
+    open(fp, "w", encoding="utf-8").write(old + NL + NL.join(L_) + NL)
+    hp = os.path.join(S5.OUT, "飆股回推seq5_第二批_20260929.html")
+    hx = open(hp, encoding="utf-8").read().split("<h2>四、結束特徵一出現就賣")[0].replace("</main></body></html>", "")
+    sec = [f"<h2>四、結束特徵一出現就賣，比抱著好嗎？（2022–26）</h2><p class='note'>對象是手上抱著一檔真飆股（事後挑的，只描述）：隔天開盤買；持有中那個特徵一出現就隔天開盤賣，對照一路抱到第 h 天。"
+           f"站得住的 {kB} 個結束特徵裡，賣較好 {int((c['一出現就賣較好'] != '沒有').sum())} 個、抱較好 {int((c['續抱較好'] != '沒有').sum())} 個。</p>",
+           "<div class='wrap'><table><tr><th class='l'>特徵</th><th>賣較好的持有天數</th><th>抱較好的持有天數</th><th>差（賣−抱）60／250 日</th></tr>"]
+    for r in c.to_dict("records"):
+        sec.append(f"<tr><td class='l'>{html.escape(r['特徵'])}</td><td>{html.escape(r['一出現就賣較好'])}</td><td>{html.escape(r['續抱較好'])}</td><td>{C_(r['A−B_60日'])}／{C_(r['A−B_250日'])}</td></tr>")
+    sec.append("</table></div></main></body></html>")
+    open(hp, "w", encoding="utf-8").write(hx + "\n".join(sec))
+    log(f"[結束可交易] 完成 {time.time() - T0:.0f}s")

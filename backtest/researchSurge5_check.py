@@ -242,6 +242,35 @@ if a.part in ("feat", "all"):
         if not np.allclose((mu, mu - 1.959963984540054 * se), (r["對基準②"], r["對基準②_下"]), rtol=1e-3):
             nc += 1; errs.append(f"⑦ {col} Q{code}：自算 {mu:.6f}/{mu - 1.96 * se:.6f} 檔 {r['對基準②']:.6f}/{r['對基準②_下']:.6f}")
     info["⑦ ③ 曲線 不同（2 個）"] = nc
+if a.part in ("endtrade", "all"):
+    # ⑧ 結束特徵可交易：取確認段第一個級距、h＝60，全部 (股, t) 自算 A−B 平均與 95%／Bonf 下緣
+    SMY = pd.read_csv(os.path.join(OUT, "end_trade_summary.csv")); DT = pd.read_csv(os.path.join(OUT, "end_trade.csv"))
+    r0 = SMY[SMY["段"] == "確認"].iloc[0]; col, code = r0["欄"], int(r0["碼"])
+    mon = np.array([d.year * 12 + d.month - 1 for d in cal]); dm = (mon >= 2022 * 12) & (mon <= 2026 * 12 + 7)
+    ed_, es_ = E["d"].astype(int), E["s"].astype(int)
+    st_ = pd.DataFrame({"s": es_, "d": ed_})[dm[ed_]].drop_duplicates()
+    q = np.asarray(Q[FX[col]]); vals = []; mons = []
+    for s, g in st_.groupby("s"):
+        df = D.load_stock(uni.loc[s, "stock_id"], uni.loc[s, "market"], cal).df
+        o = df["open"].to_numpy(float); cff = df["close"].ffill().to_numpy(float)
+        sig = np.flatnonzero(q[s] == code)
+        for t in g["d"]:
+            B = float(Rm[11, s, t])
+            if not np.isfinite(B):
+                continue
+            nxt = sig[sig > t]; A = B
+            if len(nxt) and nxt[0] <= t + 59:
+                e = nxt[0] + 1
+                while e < n and not (np.isfinite(o[e]) and o[e] > 0):
+                    e += 1
+                if e <= t + 60:
+                    A = o[e] / o[t + 1] - 1
+            vals.append(A - B); mons.append(mon[t])
+    v = np.array(vals); mu = v.mean(); se = np.sqrt((pd.Series(v - mu).groupby(np.array(mons)).sum() ** 2).sum()) / len(v)
+    ref = DT[(DT["欄"] == col) & (DT["碼"] == code) & (DT["段"] == "確認") & (DT["h"] == 60)].iloc[0]
+    info["⑧ 結束可交易（級距、h60 確認：自算平均／檔）"] = [f"{col} Q{code}", float(mu), float(ref["A−B"]), int(len(v)), int(ref["n"])]
+    if not (np.isclose(mu, ref["A−B"], rtol=1e-4, atol=1e-7) and len(v) == int(ref["n"])):
+        errs.append("⑧ 結束可交易 不同")
 info["錯誤數"] = len(errs)
 json.dump({"info": info, "errors": errs[:60]}, open(os.path.join(OUT, f"check_{a.part}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
 print(json.dumps(info, ensure_ascii=False, default=str)); [print("  ⛔", e) for e in errs[:20]]
