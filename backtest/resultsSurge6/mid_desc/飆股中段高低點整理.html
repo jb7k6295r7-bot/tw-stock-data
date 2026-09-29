@@ -1,0 +1,1411 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>飆股中段高低點</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.sel{position:sticky;top:0;background:#fff;padding:6px 0;z-index:2}.sel select{font-size:16px;margin:2px 4px;padding:4px}.pane{display:none}.pane.on{display:block}</style></head><body><main>
+<h1>飆股漲勢分段：中途高點與拉回低點（2021–2026-08）</h1>
+<p class='warn'>⚠ 中途高點（H）、拉回低點（L）跟最高點一樣，都是事後才知道的：當下沒有辦法確定那天是不是中途高點或拉回低點。只描述、沒有檢定。</p>
+<p class='lead'>182 種飆股定義各算一次取中位數；某組在某格少於 30 個點就不算那格。拉回 ＝ 從當時最高收盤回落至少 x% 之後又創新高。讀法寫死 2026-09-29 20:23（台北）。</p>
+<h2>先講結論</h2><ul>
+<li>拉回門檻 10%：1 段 5.6%、2 段 17.8%、3 段 25.4%、4 段 20.8%、5 段以上 21.9%；最常見 3 段。</li>
+<li>拉回門檻 20%：1 段 42.4%、2 段 41.4%、3 段 11.8%、4 段 1.3%、5 段以上 0.0%；最常見 1 段。</li>
+<li>拉回門檻 30%：1 段 82.8%、2 段 16.0%、3 段 0.8%、4 段 0.0%、5 段以上 0.0%；最常見 1 段。</li>
+<li>拉回門檻 50%：1 段 99.9%、2 段 0.1%、3 段 0.0%、4 段 0.0%、5 段以上 0.0%；最常見 1 段。</li>
+<li>中途高點 H 對最高點 P：全部級距涵蓋率相關係數中位 0.96（範圍 0.85～1.00），平均絕對差中位 5.1%。</li>
+<li>拉回低點 L 對起漲點 t：全部級距涵蓋率相關係數中位 0.79（範圍 0.67～0.93），平均絕對差中位 8.2%。</li>
+</ul>
+<h2>一、每個拉回門檻下，事件分成幾段</h2><div class='wrap'><table><tr><th>x</th><th>1 段</th><th>2 段</th><th>3 段</th><th>4 段</th><th>5 段以上</th></tr>
+<tr><td>10%</td><td>5.6%</td><td>17.8%</td><td>25.4%</td><td>20.8%</td><td>21.9%</td></tr>
+<tr><td>20%</td><td>42.4%</td><td>41.4%</td><td>11.8%</td><td>1.3%</td><td>0.0%</td></tr>
+<tr><td>30%</td><td>82.8%</td><td>16.0%</td><td>0.8%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>50%</td><td>99.9%</td><td>0.1%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+</table></div><p class='note'>1 段 ＝ 一路沒有回落 x% 以上就漲到頂。</p>
+<h2>二、像不像</h2><p class='note'>把幾百個特徵級距在兩個點的出現比例拿來比：相關係數越接近 1、平均差越小 ＝ 越像。</p><div class='wrap'><table><tr><th>x</th><th>段數</th><th>點</th><th>對照</th><th>相關</th><th>平均差</th><th>可用格</th></tr>
+<tr><td>10%</td><td>2</td><td>H1</td><td>P（頂）</td><td>0.92</td><td>7.2%</td><td>114</td></tr>
+<tr><td>10%</td><td>2</td><td>L2</td><td>t（起漲）</td><td>0.85</td><td>5.9%</td><td>114</td></tr>
+<tr><td>10%</td><td>3</td><td>H1</td><td>P（頂）</td><td>0.90</td><td>8.6%</td><td>130</td></tr>
+<tr><td>10%</td><td>3</td><td>L2</td><td>t（起漲）</td><td>0.89</td><td>5.0%</td><td>130</td></tr>
+<tr><td>10%</td><td>3</td><td>H2</td><td>P（頂）</td><td>0.98</td><td>3.1%</td><td>130</td></tr>
+<tr><td>10%</td><td>3</td><td>L3</td><td>t（起漲）</td><td>0.67</td><td>10.1%</td><td>130</td></tr>
+<tr><td>10%</td><td>4</td><td>H1</td><td>P（頂）</td><td>0.87</td><td>9.6%</td><td>128</td></tr>
+<tr><td>10%</td><td>4</td><td>L2</td><td>t（起漲）</td><td>0.92</td><td>4.3%</td><td>128</td></tr>
+<tr><td>10%</td><td>4</td><td>H2</td><td>P（頂）</td><td>0.96</td><td>4.8%</td><td>128</td></tr>
+<tr><td>10%</td><td>4</td><td>L3</td><td>t（起漲）</td><td>0.79</td><td>8.0%</td><td>128</td></tr>
+<tr><td>10%</td><td>4</td><td>H3</td><td>P（頂）</td><td>0.99</td><td>2.1%</td><td>128</td></tr>
+<tr><td>10%</td><td>4</td><td>L4</td><td>t（起漲）</td><td>0.68</td><td>10.7%</td><td>128</td></tr>
+<tr><td>10%</td><td>5+</td><td>H1</td><td>P（頂）</td><td>0.86</td><td>10.1%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>L2</td><td>t（起漲）</td><td>0.93</td><td>4.0%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>H2</td><td>P（頂）</td><td>0.94</td><td>6.1%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>L3</td><td>t（起漲）</td><td>0.86</td><td>6.8%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>H3</td><td>P（頂）</td><td>0.98</td><td>3.6%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>L4</td><td>t（起漲）</td><td>0.79</td><td>9.1%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>H4</td><td>P（頂）</td><td>0.99</td><td>2.0%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>L5</td><td>t（起漲）</td><td>0.73</td><td>10.8%</td><td>138</td></tr>
+<tr><td>10%</td><td>5+</td><td>H5以後</td><td>P（頂）</td><td>1.00</td><td>1.5%</td><td>117</td></tr>
+<tr><td>10%</td><td>5+</td><td>L6以後</td><td>t（起漲）</td><td>0.69</td><td>11.8%</td><td>117</td></tr>
+<tr><td>20%</td><td>2</td><td>H1</td><td>P（頂）</td><td>0.96</td><td>5.1%</td><td>156</td></tr>
+<tr><td>20%</td><td>2</td><td>L2</td><td>t（起漲）</td><td>0.80</td><td>8.2%</td><td>156</td></tr>
+<tr><td>20%</td><td>3</td><td>H1</td><td>P（頂）</td><td>0.93</td><td>7.3%</td><td>107</td></tr>
+<tr><td>20%</td><td>3</td><td>L2</td><td>t（起漲）</td><td>0.87</td><td>6.3%</td><td>107</td></tr>
+<tr><td>20%</td><td>3</td><td>H2</td><td>P（頂）</td><td>0.99</td><td>2.5%</td><td>107</td></tr>
+<tr><td>20%</td><td>3</td><td>L3</td><td>t（起漲）</td><td>0.77</td><td>9.8%</td><td>107</td></tr>
+<tr><td>20%</td><td>4</td><td>H1</td><td>P（頂）</td><td>0.85</td><td>10.6%</td><td>20</td></tr>
+<tr><td>20%</td><td>4</td><td>L2</td><td>t（起漲）</td><td>0.86</td><td>6.6%</td><td>20</td></tr>
+<tr><td>20%</td><td>4</td><td>H2</td><td>P（頂）</td><td>0.96</td><td>5.0%</td><td>20</td></tr>
+<tr><td>20%</td><td>4</td><td>L3</td><td>t（起漲）</td><td>0.79</td><td>9.2%</td><td>20</td></tr>
+<tr><td>20%</td><td>4</td><td>H3</td><td>P（頂）</td><td>0.98</td><td>3.1%</td><td>20</td></tr>
+<tr><td>20%</td><td>4</td><td>L4</td><td>t（起漲）</td><td>0.72</td><td>11.5%</td><td>20</td></tr>
+<tr><td>30%</td><td>2</td><td>H1</td><td>P（頂）</td><td>0.96</td><td>5.7%</td><td>121</td></tr>
+<tr><td>30%</td><td>2</td><td>L2</td><td>t（起漲）</td><td>0.82</td><td>7.8%</td><td>121</td></tr>
+<tr><td>30%</td><td>3</td><td>H1</td><td>P（頂）</td><td>0.86</td><td>10.5%</td><td>15</td></tr>
+<tr><td>30%</td><td>3</td><td>L2</td><td>t（起漲）</td><td>0.77</td><td>8.0%</td><td>15</td></tr>
+<tr><td>30%</td><td>3</td><td>H2</td><td>P（頂）</td><td>0.97</td><td>4.1%</td><td>15</td></tr>
+<tr><td>30%</td><td>3</td><td>L3</td><td>t（起漲）</td><td>0.72</td><td>10.8%</td><td>15</td></tr>
+<tr><td>50%</td><td>2</td><td>H1</td><td>P（頂）</td><td>0.93</td><td>7.3%</td><td>2</td></tr>
+<tr><td>50%</td><td>2</td><td>L2</td><td>t（起漲）</td><td>0.68</td><td>11.4%</td><td>2</td></tr>
+</table></div>
+<h2>三、分組細看</h2><div class='sel'>拉回門檻<select id='sx' onchange='sw()'><option value='10'>10%</option><option value='20'>20%</option><option value='30'>30%</option><option value='50'>50%</option></select>總段數<select id='sc' onchange='sw()'><option value='2'>2</option><option value='3'>3</option><option value='4'>4</option><option value='5+'>5+</option></select></div>
+<div class='pane' id='p10_2'><h3>10% 拉回、2 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>48.8%</td><td>48 天</td><td>-16.8%</td><td>14 天</td><td>114</td></tr>
+<tr><td class='l'>第 2 段</td><td>95.9%</td><td>40 天</td><td>—</td><td>—</td><td>114</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.36。</p>
+<h4>H1（可用 114 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>92.6%</td><td>20.0%</td><td>4.64</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>92.4%</td><td>20.0%</td><td>4.62</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>89.7%</td><td>19.9%</td><td>4.51</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>89.3%</td><td>19.8%</td><td>4.50</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>88.9%</td><td>20.0%</td><td>4.45</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>87.8%</td><td>20.0%</td><td>4.40</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>87.4%</td><td>19.9%</td><td>4.38</td></tr>
+<tr><td class='l'>5日報酬｜Q5<br><small>當日收盤</small></td><td>87.2%</td><td>19.9%</td><td>4.37</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.1%</td><td>99.0%</td><td>0.88</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>86.4%</td><td>20.0%</td><td>4.33</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>96.2%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>原：收盤站上MA100｜是</td><td>92.7%</td><td>100.0%</td><td>50.2%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>89.7%</td><td>99.8%</td><td>19.9%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>87.2%</td><td>98.2%</td><td>19.9%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>85.5%</td><td>94.7%</td><td>77.7%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>82.7%</td><td>92.2%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>79.4%</td><td>95.3%</td><td>19.7%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>79.3%</td><td>99.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>78.3%</td><td>95.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>KD的K值｜Q5</td><td>75.1%</td><td>92.7%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 67.6%（一般 8.0%）；只有短線急拉 20.0%（一般 13.0%）；只有之前已大漲 4.4%（一般 12.4%）；兩者皆非 8.3%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 9.4%、收跌≥5% 35.2%、收黑 88.8%、漲跌中位 -3.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 25 個（一般股票同數量以上 3.0%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 33.3%（一般 2.7%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 36.0%（一般 3.3%）；250日處置天數｜Q5→K＞80連續天數｜Q5 63.8%（一般 6.3%）；最近一季EPS｜Q1→K＞80連續天數｜Q5 53.5%（一般 5.5%）；ROE｜Q1→K＞80連續天數｜Q5 53.8%（一般 5.6%）</p>
+<h4>L2（可用 114 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>99.8%</td><td>92.3%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>98.7%</td><td>32.3%</td><td>3.06</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.6%</td><td>91.3%</td><td>1.02</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>93.3%</td><td>94.4%</td><td>0.99</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>90.4%</td><td>99.0%</td><td>0.91</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>89.9%</td><td>87.1%</td><td>1.03</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.5%</td><td>98.8%</td><td>0.89</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>87.4%</td><td>84.5%</td><td>1.03</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>87.0%</td><td>25.7%</td><td>3.39</td></tr>
+<tr><td class='l'>5日注意次數｜Q1<br><small>當日盤後公布</small></td><td>86.9%</td><td>95.9%</td><td>0.91</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>99.8%</td><td>94.6%</td><td>92.3%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>98.7%</td><td>60.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>93.6%</td><td>93.8%</td><td>91.3%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>89.9%</td><td>90.0%</td><td>87.1%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>83.9%</td><td>70.8%</td><td>77.7%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>75.0%</td><td>60.2%</td><td>48.8%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>72.9%</td><td>63.6%</td><td>60.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>71.6%</td><td>38.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>71.6%</td><td>41.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>67.2%</td><td>36.4%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 6.6%（一般 8.0%）；只有短線急拉 1.3%（一般 13.0%）；只有之前已大漲 45.3%（一般 12.4%）；兩者皆非 46.1%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 15.7%、漲跌中位 2.7%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 23 個（一般股票同數量以上 6.6%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：股價｜Q5→停止融資中｜是 1.5%（一般 0.3%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷布林上軌(20,2)−1｜Q1 74.1%（一般 13.5%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→距10日最高｜Q1 89.1%（一般 17.7%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷MA5−1｜Q1 89.6%（一般 19.8%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→5日報酬｜Q1 68.6%（一般 15.2%）</p>
+</div>
+<div class='pane' id='p10_3'><h3>10% 拉回、3 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>31.6%</td><td>30 天</td><td>-15.7%</td><td>12 天</td><td>130</td></tr>
+<tr><td class='l'>第 2 段</td><td>62.3%</td><td>32 天</td><td>-16.1%</td><td>7 天</td><td>130</td></tr>
+<tr><td class='l'>第 3 段</td><td>64.2%</td><td>22 天</td><td>—</td><td>—</td><td>130</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.20。</p>
+<h4>H1（可用 130 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>89.6%</td><td>20.0%</td><td>4.49</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>89.2%</td><td>99.1%</td><td>0.90</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>88.3%</td><td>98.8%</td><td>0.89</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>88.0%</td><td>19.8%</td><td>4.43</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>87.9%</td><td>20.0%</td><td>4.40</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>87.0%</td><td>91.3%</td><td>0.95</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>86.8%</td><td>19.9%</td><td>4.36</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>86.4%</td><td>98.2%</td><td>0.88</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>85.1%</td><td>20.0%</td><td>4.26</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>84.4%</td><td>19.9%</td><td>4.24</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>93.1%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>89.6%</td><td>99.1%</td><td>20.0%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>88.0%</td><td>98.4%</td><td>19.8%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>84.1%</td><td>98.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>81.4%</td><td>94.1%</td><td>77.5%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>77.9%</td><td>94.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>74.5%</td><td>91.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>73.0%</td><td>99.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>KD的K值｜Q5</td><td>70.8%</td><td>92.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>70.2%</td><td>97.2%</td><td>19.7%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 62.5%（一般 8.0%）；只有短線急拉 22.8%（一般 13.0%）；只有之前已大漲 5.3%（一般 12.4%）；兩者皆非 10.3%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 7.9%、收跌≥5% 32.4%、收黑 88.6%、漲跌中位 -3.2%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 24 個（一般股票同數量以上 3.5%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：250日處置天數｜Q5→K＞80連續天數｜Q5 59.4%（一般 6.3%）；投信250日淨買÷股本｜Q2→K＞80連續天數｜Q5 50.0%（一般 6.4%）；融資使用率｜Q5→K＞80連續天數｜Q5 50.8%（一般 6.6%）；原X2 區間突破後量縮｜是→K＞80連續天數｜Q5 45.3%（一般 6.2%）；最近一季EPS｜Q1→K＞80連續天數｜Q5 40.0%（一般 5.5%）</p>
+<h4>L2（可用 130 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>99.7%</td><td>92.3%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>98.9%</td><td>32.3%</td><td>3.06</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>94.7%</td><td>91.3%</td><td>1.04</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>92.5%</td><td>94.5%</td><td>0.98</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>91.1%</td><td>87.1%</td><td>1.05</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>89.1%</td><td>99.1%</td><td>0.90</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>88.5%</td><td>84.5%</td><td>1.05</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.3%</td><td>98.8%</td><td>0.88</td></tr>
+<tr><td class='l'>5日注意次數｜Q1<br><small>當日盤後公布</small></td><td>85.8%</td><td>95.9%</td><td>0.90</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>84.9%</td><td>98.2%</td><td>0.86</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>99.7%</td><td>94.3%</td><td>92.3%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>98.9%</td><td>60.0%</td><td>32.3%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>94.7%</td><td>94.5%</td><td>91.3%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>91.1%</td><td>90.3%</td><td>87.1%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>80.8%</td><td>73.4%</td><td>77.5%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>74.4%</td><td>43.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>74.4%</td><td>42.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>72.9%</td><td>64.6%</td><td>60.0%</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1</td><td>69.5%</td><td>60.8%</td><td>49.9%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>68.0%</td><td>39.4%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 5.6%（一般 8.0%）；只有短線急拉 1.9%（一般 13.0%）；只有之前已大漲 43.9%（一般 12.4%）；兩者皆非 47.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 15.9%、漲跌中位 3.1%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 22 個（一般股票同數量以上 8.2%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：股價｜Q5→停止融資中｜是 1.9%（一般 0.3%）；停止融資中｜是→股價｜Q5 3.7%（一般 0.6%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷布林上軌(20,2)−1｜Q1 77.3%（一般 13.5%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→距10日最高｜Q1 90.9%（一般 17.7%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→5日報酬｜Q1 71.5%（一般 15.1%）</p>
+<h4>H2（可用 130 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>99.1%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>98.9%</td><td>19.9%</td><td>4.97</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>98.9%</td><td>20.0%</td><td>4.95</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>98.8%</td><td>19.9%</td><td>4.96</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>98.7%</td><td>20.0%</td><td>4.94</td></tr>
+<tr><td class='l'>距60日最低｜Q5<br><small>當日收盤</small></td><td>97.4%</td><td>20.0%</td><td>4.88</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>97.4%</td><td>20.0%</td><td>4.88</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>97.1%</td><td>20.0%</td><td>4.86</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>96.8%</td><td>20.0%</td><td>4.85</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5<br><small>當日收盤</small></td><td>96.6%</td><td>20.0%</td><td>4.84</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H2</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>原：收盤站上MA100｜是</td><td>100.0%</td><td>100.0%</td><td>50.2%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>98.9%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>96.6%</td><td>99.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>20日報酬｜Q5</td><td>96.4%</td><td>99.1%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5</td><td>93.8%</td><td>97.1%</td><td>20.0%</td></tr>
+<tr><td class='l'>距120日最高｜Q5</td><td>93.1%</td><td>99.2%</td><td>19.9%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>92.3%</td><td>94.1%</td><td>77.5%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>90.8%</td><td>91.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>KD的K值｜Q5</td><td>88.1%</td><td>92.7%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 90.8%（一般 8.0%）；只有短線急拉 5.5%（一般 13.0%）；只有之前已大漲 2.9%（一般 12.4%）；兩者皆非 0.6%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 11.7%、收跌≥5% 41.5%、收黑 90.6%、漲跌中位 -4.2%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 28 個（一般股票同數量以上 1.3%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：前20日均線5/10/20糾結度｜Q5→收盤÷修正箱上箱價−1｜Q5 85.7%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 75.0%（一般 2.7%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 90.0%（一般 3.3%）；收盤÷修正箱上箱價−1｜Q5→前20日均線5/10/20糾結度｜Q5 44.4%（一般 2.0%）；收盤÷修正箱上箱價−1｜Q5→10日區間寬度｜Q5 85.4%（一般 5.3%）</p>
+<h4>L3（可用 130 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>98.2%</td><td>92.3%</td><td>1.06</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>93.4%</td><td>32.3%</td><td>2.89</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.2%</td><td>91.3%</td><td>1.02</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>89.2%</td><td>20.0%</td><td>4.46</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>87.9%</td><td>87.1%</td><td>1.01</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1<br><small>當日收盤</small></td><td>86.8%</td><td>20.0%</td><td>4.34</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>86.0%</td><td>20.1%</td><td>4.28</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5<br><small>當日收盤</small></td><td>85.4%</td><td>20.0%</td><td>4.28</td></tr>
+<tr><td class='l'>前60日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>85.0%</td><td>20.0%</td><td>4.26</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>83.9%</td><td>20.0%</td><td>4.20</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L3</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>98.2%</td><td>94.3%</td><td>92.3%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>93.4%</td><td>60.0%</td><td>32.3%</td></tr>
+<tr><td class='l'>原：投信連買天數級距｜0 天</td><td>93.2%</td><td>94.5%</td><td>91.3%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>90.9%</td><td>73.4%</td><td>77.5%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>89.2%</td><td>42.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>87.9%</td><td>90.3%</td><td>87.1%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>86.8%</td><td>43.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5</td><td>85.4%</td><td>32.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>前60日均線5/10/20糾結度｜Q5</td><td>85.0%</td><td>33.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>78.6%</td><td>64.6%</td><td>60.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 18.0%（一般 8.0%）；只有短線急拉 1.1%（一般 13.0%）；只有之前已大漲 61.6%（一般 12.4%）；兩者皆非 17.4%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 14.3%、漲跌中位 3.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 26 個（一般股票同數量以上 3.0%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：RSI14｜Q4→收盤÷布林上軌(20,2)−1｜Q1 79.0%（一般 9.0%）；RSI14｜Q4→距10日最高｜Q1 92.6%（一般 12.6%）；RSI14｜Q4→收盤÷MA5−1｜Q1 90.5%（一般 12.5%）；RSI14｜Q4→RSI6−RSI12｜Q1 75.8%（一般 12.1%）；市值｜Q5→120日漲停天數｜Q5 59.6%（一般 10.2%）</p>
+</div>
+<div class='pane' id='p10_4'><h3>10% 拉回、4 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>21.7%</td><td>21 天</td><td>-15.0%</td><td>12 天</td><td>128</td></tr>
+<tr><td class='l'>第 2 段</td><td>49.3%</td><td>28 天</td><td>-15.4%</td><td>9 天</td><td>128</td></tr>
+<tr><td class='l'>第 3 段</td><td>52.2%</td><td>18 天</td><td>-15.3%</td><td>7 天</td><td>128</td></tr>
+<tr><td class='l'>第 4 段</td><td>55.2%</td><td>18 天</td><td>—</td><td>—</td><td>128</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.12。</p>
+<h4>H1（可用 128 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>93.0%</td><td>99.1%</td><td>0.94</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>91.4%</td><td>98.8%</td><td>0.93</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>90.3%</td><td>98.2%</td><td>0.92</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>88.2%</td><td>20.0%</td><td>4.42</td></tr>
+<tr><td class='l'>60日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.2%</td><td>96.3%</td><td>0.91</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>86.6%</td><td>19.8%</td><td>4.37</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>85.9%</td><td>20.0%</td><td>4.30</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>84.8%</td><td>91.3%</td><td>0.93</td></tr>
+<tr><td class='l'>120日處置天數｜Q1<br><small>當日盤後公布</small></td><td>84.8%</td><td>93.7%</td><td>0.90</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>84.5%</td><td>19.9%</td><td>4.24</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>89.5%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>88.2%</td><td>99.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>86.6%</td><td>98.9%</td><td>19.8%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>82.4%</td><td>93.2%</td><td>77.3%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>80.6%</td><td>97.1%</td><td>19.9%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>74.7%</td><td>95.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>72.9%</td><td>87.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>70.1%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日帶寬÷自身250根中位｜Q5</td><td>66.9%</td><td>83.1%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>65.5%</td><td>78.3%</td><td>60.1%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 56.0%（一般 8.0%）；只有短線急拉 26.4%（一般 13.1%）；只有之前已大漲 5.5%（一般 12.4%）；兩者皆非 12.2%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 5.4%、收跌≥5% 26.6%、收黑 88.8%、漲跌中位 -2.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 23 個（一般股票同數量以上 4.4%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：最近一季EPS｜Q1→K＞80連續天數｜Q5 39.1%（一般 5.6%）；250日處置天數｜Q5→K＞80連續天數｜Q5 42.8%（一般 6.3%）；股本｜Q1→K＞80連續天數｜Q5 42.9%（一般 6.5%）；停止融資中｜是→K＞80連續天數｜Q5 42.5%（一般 6.5%）；250日處置天數｜Q5→距60日最高｜Q5 59.7%（一般 9.6%）</p>
+<h4>L2（可用 128 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>99.0%</td><td>92.3%</td><td>1.07</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>98.6%</td><td>32.3%</td><td>3.06</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.3%</td><td>91.3%</td><td>1.02</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>92.8%</td><td>94.5%</td><td>0.98</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>92.6%</td><td>99.1%</td><td>0.93</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>90.8%</td><td>98.8%</td><td>0.92</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>89.2%</td><td>87.0%</td><td>1.02</td></tr>
+<tr><td class='l'>5日注意次數｜Q1<br><small>當日盤後公布</small></td><td>89.0%</td><td>95.9%</td><td>0.93</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>88.7%</td><td>98.2%</td><td>0.90</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>86.0%</td><td>84.4%</td><td>1.02</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>99.0%</td><td>95.2%</td><td>92.3%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>98.6%</td><td>57.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>93.3%</td><td>93.6%</td><td>91.3%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>89.2%</td><td>89.2%</td><td>87.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>81.5%</td><td>76.4%</td><td>77.3%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>76.3%</td><td>42.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>76.0%</td><td>43.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>72.1%</td><td>58.6%</td><td>48.8%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>71.7%</td><td>40.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>69.3%</td><td>65.7%</td><td>60.1%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 5.8%（一般 8.0%）；只有短線急拉 1.6%（一般 13.1%）；只有之前已大漲 36.5%（一般 12.4%）；兩者皆非 53.1%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 16.6%、漲跌中位 2.6%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 22 個（一般股票同數量以上 7.8%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷布林上軌(20,2)−1｜Q1 82.2%（一般 13.5%）；市值｜Q1→20日均額｜Q5 2.3%（一般 0.4%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→距10日最高｜Q1 95.6%（一般 17.7%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷MA5−1｜Q1 95.1%（一般 19.7%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→5日報酬｜Q1 73.0%（一般 15.1%）</p>
+<h4>H2（可用 128 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>99.3%</td><td>20.0%</td><td>4.97</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>98.5%</td><td>20.0%</td><td>4.93</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>98.4%</td><td>19.9%</td><td>4.94</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>98.2%</td><td>19.9%</td><td>4.92</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>97.9%</td><td>20.0%</td><td>4.90</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>96.6%</td><td>20.0%</td><td>4.84</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>96.4%</td><td>19.8%</td><td>4.86</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>96.2%</td><td>20.0%</td><td>4.82</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>95.8%</td><td>20.0%</td><td>4.80</td></tr>
+<tr><td class='l'>20日報酬｜Q5<br><small>當日收盤</small></td><td>95.6%</td><td>20.0%</td><td>4.79</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H2</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5</td><td>99.3%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>98.4%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>10日報酬｜Q5</td><td>95.8%</td><td>98.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>95.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>91.4%</td><td>93.2%</td><td>77.3%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>91.3%</td><td>98.1%</td><td>19.7%</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5</td><td>90.3%</td><td>96.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>88.2%</td><td>87.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>KD的K值｜Q5</td><td>83.0%</td><td>91.0%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 83.9%（一般 8.0%）；只有短線急拉 11.3%（一般 13.1%）；只有之前已大漲 3.4%（一般 12.4%）；兩者皆非 1.1%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 6.6%、收跌≥5% 35.7%、收黑 90.8%、漲跌中位 -3.8%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 27 個（一般股票同數量以上 1.7%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 60.0%（一般 2.7%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 66.7%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→10日區間寬度｜Q5 75.0%（一般 5.3%）；收盤÷修正箱上箱價−1｜Q5→5日平均周轉率｜Q5 76.9%（一般 6.7%）；最近一季EPS｜Q1→K＞80連續天數｜Q5 62.7%（一般 5.6%）</p>
+<h4>L3（可用 128 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>99.2%</td><td>92.3%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>98.1%</td><td>32.3%</td><td>3.04</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.1%</td><td>91.3%</td><td>1.02</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>88.4%</td><td>87.0%</td><td>1.02</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>86.7%</td><td>20.0%</td><td>4.33</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1<br><small>當日收盤</small></td><td>86.6%</td><td>20.0%</td><td>4.32</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>86.5%</td><td>94.5%</td><td>0.92</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>84.9%</td><td>84.4%</td><td>1.01</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>83.9%</td><td>99.1%</td><td>0.85</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>82.5%</td><td>20.1%</td><td>4.11</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L3</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>99.2%</td><td>95.2%</td><td>92.3%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>98.1%</td><td>57.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>93.1%</td><td>93.6%</td><td>91.3%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>90.3%</td><td>76.4%</td><td>77.3%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>88.4%</td><td>89.2%</td><td>87.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>86.7%</td><td>42.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>86.6%</td><td>43.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>78.2%</td><td>65.7%</td><td>60.1%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>77.1%</td><td>40.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5</td><td>74.3%</td><td>37.2%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 12.2%（一般 8.0%）；只有短線急拉 1.9%（一般 13.1%）；只有之前已大漲 56.6%（一般 12.4%）；兩者皆非 27.1%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 17.1%、漲跌中位 3.8%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 25 個（一般股票同數量以上 3.7%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：RSI14｜Q4→收盤÷布林上軌(20,2)−1｜Q1 72.9%（一般 9.0%）；RSI14｜Q4→距10日最高｜Q1 91.8%（一般 12.6%）；RSI14｜Q4→5日報酬｜Q1 75.0%（一般 10.3%）；RSI14｜Q4→收盤÷MA5−1｜Q1 85.9%（一般 12.5%）；RSI14｜Q4→RSI6−RSI12｜Q1 75.2%（一般 12.1%）</p>
+<h4>H3（可用 128 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>99.7%</td><td>20.0%</td><td>4.99</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>99.6%</td><td>19.9%</td><td>5.00</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>99.5%</td><td>20.0%</td><td>4.98</td></tr>
+<tr><td class='l'>距60日最低｜Q5<br><small>當日收盤</small></td><td>99.5%</td><td>20.0%</td><td>4.98</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>99.2%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>99.1%</td><td>19.9%</td><td>4.97</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>99.0%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5<br><small>當日收盤</small></td><td>98.5%</td><td>20.0%</td><td>4.93</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H3</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>99.6%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>60日報酬｜Q5</td><td>97.8%</td><td>99.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>距120日最高｜Q5</td><td>97.2%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>97.1%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5</td><td>95.2%</td><td>96.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：均線多頭排列5&gt;20&gt;60&gt;100｜是</td><td>93.3%</td><td>97.3%</td><td>20.7%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>92.4%</td><td>93.2%</td><td>77.3%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 94.4%（一般 8.0%）；只有短線急拉 2.2%（一般 13.1%）；只有之前已大漲 2.9%（一般 12.4%）；兩者皆非 0.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 11.4%、收跌≥5% 41.4%、收黑 91.5%、漲跌中位 -4.1%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 28 個（一般股票同數量以上 1.2%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 80.0%（一般 2.7%）；前60日均線5/10/20糾結度｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.2%）；250日處置天數｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.7%）；收盤÷修正箱上箱價−1｜Q5→10日區間寬度｜Q5 86.7%（一般 5.3%）</p>
+<h4>L4（可用 128 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>98.1%</td><td>92.3%</td><td>1.06</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>95.6%</td><td>32.3%</td><td>2.96</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>90.5%</td><td>20.0%</td><td>4.53</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1<br><small>當日收盤</small></td><td>90.4%</td><td>20.0%</td><td>4.52</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>90.4%</td><td>20.0%</td><td>4.53</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>89.6%</td><td>20.1%</td><td>4.46</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>89.6%</td><td>91.3%</td><td>0.98</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5<br><small>當日收盤</small></td><td>88.7%</td><td>20.0%</td><td>4.44</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>88.4%</td><td>20.0%</td><td>4.41</td></tr>
+<tr><td class='l'>距250日最低｜Q5<br><small>當日收盤</small></td><td>88.3%</td><td>20.0%</td><td>4.42</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L4</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>98.1%</td><td>95.2%</td><td>92.3%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>95.6%</td><td>57.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>91.3%</td><td>76.4%</td><td>77.3%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>90.4%</td><td>43.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5</td><td>90.4%</td><td>36.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>距5日最高｜Q1</td><td>89.6%</td><td>43.8%</td><td>20.1%</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5</td><td>88.7%</td><td>37.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日報酬｜Q5</td><td>85.0%</td><td>29.2%</td><td>20.0%</td></tr>
+<tr><td class='l'>20日平均周轉率｜Q5</td><td>83.0%</td><td>37.2%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日注意次數｜Q5</td><td>80.1%</td><td>30.7%</td><td>17.3%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 17.5%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 67.5%（一般 12.4%）；兩者皆非 12.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 15.7%、漲跌中位 4.2%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 26 個（一般股票同數量以上 2.0%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：停止融資中｜是→10日均額｜Q5 30.0%（一般 2.7%）；RSI14｜Q4→收盤÷布林上軌(20,2)−1｜Q1 83.9%（一般 9.0%）；投信250日淨買÷股本｜Q2→10日均額｜Q5 42.9%（一般 5.1%）；RSI14｜Q4→收盤÷MA5−1｜Q1 89.7%（一般 12.5%）；股本｜Q1→10日均額｜Q5 39.2%（一般 6.0%）</p>
+</div>
+<div class='pane' id='p10_5p'><h3>10% 拉回、5+ 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>16.8%</td><td>14 天</td><td>-14.8%</td><td>12 天</td><td>138</td></tr>
+<tr><td class='l'>第 2 段</td><td>43.2%</td><td>21 天</td><td>-14.9%</td><td>8 天</td><td>138</td></tr>
+<tr><td class='l'>第 3 段</td><td>43.7%</td><td>16 天</td><td>-16.1%</td><td>7 天</td><td>138</td></tr>
+<tr><td class='l'>第 4 段</td><td>46.4%</td><td>14 天</td><td>-15.4%</td><td>6 天</td><td>138</td></tr>
+<tr><td class='l'>第 5 段以後</td><td>46.8%</td><td>11 天</td><td>-15.4%</td><td>5 天</td><td>154</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.07。</p>
+<h4>H1（可用 138 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>91.5%</td><td>99.1%</td><td>0.92</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>90.5%</td><td>98.8%</td><td>0.92</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>89.0%</td><td>98.2%</td><td>0.91</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>88.0%</td><td>20.0%</td><td>4.41</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>87.0%</td><td>19.8%</td><td>4.38</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>84.8%</td><td>19.9%</td><td>4.26</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>84.4%</td><td>20.0%</td><td>4.23</td></tr>
+<tr><td class='l'>60日處置天數｜Q1<br><small>當日盤後公布</small></td><td>84.1%</td><td>96.3%</td><td>0.87</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>82.5%</td><td>91.2%</td><td>0.90</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>82.1%</td><td>19.9%</td><td>4.12</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>89.2%</td><td>100.0%</td><td>48.6%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>88.0%</td><td>99.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>87.0%</td><td>99.1%</td><td>19.8%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>86.2%</td><td>93.9%</td><td>76.9%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>81.2%</td><td>98.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>77.1%</td><td>96.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>74.0%</td><td>82.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>68.8%</td><td>88.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>67.9%</td><td>98.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>67.5%</td><td>80.4%</td><td>60.2%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 54.5%（一般 8.0%）；只有短線急拉 28.6%（一般 13.1%）；只有之前已大漲 6.7%（一般 12.4%）；兩者皆非 9.6%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 5.9%、收跌≥5% 31.4%、收黑 89.1%、漲跌中位 -3.3%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 23 個（一般股票同數量以上 4.3%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：最近一季EPS｜Q1→K＞80連續天數｜Q5 40.7%（一般 5.6%）；ROE｜Q1→K＞80連續天數｜Q5 36.4%（一般 5.6%）；250日處置天數｜Q5→K＞80連續天數｜Q5 40.0%（一般 6.2%）；250日處置天數｜Q5→距60日最高｜Q5 59.7%（一般 9.5%）；停止融資中｜是→K＞80連續天數｜Q5 38.3%（一般 6.5%）</p>
+<h4>L2（可用 138 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.2%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>98.6%</td><td>32.3%</td><td>3.06</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.4%</td><td>91.2%</td><td>1.02</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>92.1%</td><td>94.5%</td><td>0.97</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>91.9%</td><td>99.1%</td><td>0.93</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>89.3%</td><td>98.8%</td><td>0.90</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.4%</td><td>98.2%</td><td>0.89</td></tr>
+<tr><td class='l'>5日注意次數｜Q1<br><small>當日盤後公布</small></td><td>86.9%</td><td>95.9%</td><td>0.91</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>86.0%</td><td>86.9%</td><td>0.99</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>84.7%</td><td>25.7%</td><td>3.30</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>100.0%</td><td>94.1%</td><td>92.2%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>98.6%</td><td>55.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>93.4%</td><td>91.9%</td><td>91.2%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>86.9%</td><td>81.3%</td><td>76.9%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>81.7%</td><td>44.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>78.9%</td><td>43.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1</td><td>72.9%</td><td>56.8%</td><td>50.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>72.3%</td><td>41.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日報酬｜Q1</td><td>70.7%</td><td>40.3%</td><td>20.1%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>70.4%</td><td>67.0%</td><td>60.2%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 5.9%（一般 8.0%）；只有短線急拉 2.5%（一般 13.1%）；只有之前已大漲 38.8%（一般 12.4%）；兩者皆非 50.5%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 15.5%、漲跌中位 2.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 22 個（一般股票同數量以上 7.1%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷布林上軌(20,2)−1｜Q1 75.8%（一般 13.5%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→距10日最高｜Q1 96.4%（一般 17.6%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→5日報酬｜Q1 75.0%（一般 15.1%）；原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷MA5−1｜Q1 94.5%（一般 19.7%）；當日額÷前250日均額｜Q5→收盤÷MA5−1｜Q1 91.8%（一般 20.8%）</p>
+<h4>H2（可用 138 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>99.0%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>98.9%</td><td>20.0%</td><td>4.95</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>98.3%</td><td>19.9%</td><td>4.93</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>98.2%</td><td>19.9%</td><td>4.93</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>97.4%</td><td>20.0%</td><td>4.88</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>96.4%</td><td>20.0%</td><td>4.83</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>96.4%</td><td>19.8%</td><td>4.86</td></tr>
+<tr><td class='l'>5日報酬｜Q5<br><small>當日收盤</small></td><td>95.6%</td><td>19.9%</td><td>4.80</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>95.4%</td><td>20.0%</td><td>4.77</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>95.3%</td><td>20.0%</td><td>4.78</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H2</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.6%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5</td><td>99.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距20日最低｜Q5</td><td>98.3%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>95.6%</td><td>98.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>91.9%</td><td>98.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>91.2%</td><td>93.9%</td><td>76.9%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>90.9%</td><td>96.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>89.7%</td><td>99.4%</td><td>19.7%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>89.4%</td><td>82.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>83.2%</td><td>88.5%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 79.9%（一般 8.0%）；只有短線急拉 16.8%（一般 13.1%）；只有之前已大漲 2.1%（一般 12.4%）；兩者皆非 1.7%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 8.4%、收跌≥5% 39.2%、收黑 90.1%、漲跌中位 -3.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 27 個（一般股票同數量以上 1.6%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 66.7%（一般 2.7%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 75.0%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→20日漲停天數｜Q5 40.0%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→5日區間寬度｜Q5 100.0%（一般 7.3%）；收盤÷修正箱上箱價−1｜Q5→前10日均線5/10/20糾結度｜Q5 33.3%（一般 2.5%）</p>
+<h4>L3（可用 138 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>99.2%</td><td>92.2%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>96.1%</td><td>32.3%</td><td>2.98</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>91.4%</td><td>91.2%</td><td>1.00</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>88.3%</td><td>20.0%</td><td>4.41</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1<br><small>當日收盤</small></td><td>86.8%</td><td>20.0%</td><td>4.34</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>85.7%</td><td>99.1%</td><td>0.87</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>85.2%</td><td>20.1%</td><td>4.24</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>84.8%</td><td>86.9%</td><td>0.98</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>84.4%</td><td>94.5%</td><td>0.89</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>83.2%</td><td>98.8%</td><td>0.84</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L3</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>99.2%</td><td>93.4%</td><td>92.2%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>96.1%</td><td>55.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>原：投信連買天數級距｜0 天</td><td>91.4%</td><td>91.9%</td><td>91.2%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>90.9%</td><td>81.3%</td><td>76.9%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>88.3%</td><td>43.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>86.8%</td><td>44.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>78.0%</td><td>41.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>75.8%</td><td>67.0%</td><td>60.2%</td></tr>
+<tr><td class='l'>20日區間寬度｜Q5</td><td>73.7%</td><td>43.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日報酬｜Q1</td><td>72.9%</td><td>40.3%</td><td>20.1%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 13.6%（一般 8.0%）；只有短線急拉 2.7%（一般 13.1%）；只有之前已大漲 47.9%（一般 12.4%）；兩者皆非 32.6%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 16.4%、漲跌中位 3.7%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 24 個（一般股票同數量以上 4.1%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：RSI14｜Q4→收盤÷布林上軌(20,2)−1｜Q1 76.0%（一般 9.0%）；RSI14｜Q4→距10日最高｜Q1 90.9%（一般 12.5%）；RSI14｜Q4→5日報酬｜Q1 75.0%（一般 10.3%）；RSI14｜Q4→收盤÷MA5−1｜Q1 90.0%（一般 12.5%）；投信250日淨買÷股本｜Q2→20日均額｜Q5 34.0%（一般 4.9%）</p>
+<h4>H3（可用 138 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>99.2%</td><td>20.0%</td><td>4.97</td></tr>
+<tr><td class='l'>距60日最低｜Q5<br><small>當日收盤</small></td><td>99.2%</td><td>20.0%</td><td>4.97</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>99.0%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>99.0%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>98.9%</td><td>20.0%</td><td>4.95</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>98.7%</td><td>19.9%</td><td>4.96</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>97.9%</td><td>19.8%</td><td>4.93</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H3</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>距20日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.6%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>20日報酬｜Q5</td><td>97.5%</td><td>98.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>97.3%</td><td>98.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>96.3%</td><td>99.4%</td><td>19.7%</td></tr>
+<tr><td class='l'>20日區間寬度｜Q5</td><td>94.1%</td><td>98.1%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>93.3%</td><td>93.9%</td><td>76.9%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>89.9%</td><td>88.5%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 91.1%（一般 8.0%）；只有短線急拉 4.2%（一般 13.1%）；只有之前已大漲 3.4%（一般 12.4%）；兩者皆非 0.3%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 10.0%、收跌≥5% 40.1%、收黑 90.9%、漲跌中位 -4.2%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 28 個（一般股票同數量以上 1.1%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 100.0%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→20日區間寬度｜Q5 100.0%（一般 3.3%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；前10日均線5/10/20糾結度｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；250日處置天數｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.7%）</p>
+<h4>L4（可用 138 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>99.0%</td><td>92.2%</td><td>1.07</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>96.5%</td><td>32.3%</td><td>2.99</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1<br><small>當日收盤</small></td><td>90.9%</td><td>20.0%</td><td>4.54</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>90.6%</td><td>91.2%</td><td>0.99</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>90.3%</td><td>20.1%</td><td>4.50</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>89.2%</td><td>20.0%</td><td>4.46</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>83.7%</td><td>20.0%</td><td>4.19</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>83.7%</td><td>94.5%</td><td>0.89</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>83.0%</td><td>86.9%</td><td>0.96</td></tr>
+<tr><td class='l'>前60日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>82.7%</td><td>20.0%</td><td>4.14</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L4</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>99.0%</td><td>94.1%</td><td>92.2%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>96.5%</td><td>55.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>92.9%</td><td>81.3%</td><td>76.9%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1</td><td>90.9%</td><td>44.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距5日最高｜Q1</td><td>90.3%</td><td>45.4%</td><td>20.1%</td></tr>
+<tr><td class='l'>前60日均線5/10/20糾結度｜Q5</td><td>82.7%</td><td>44.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5</td><td>82.7%</td><td>46.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>20日平均周轉率｜Q5</td><td>82.5%</td><td>44.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>80.6%</td><td>41.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日報酬｜Q5</td><td>79.5%</td><td>37.6%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 15.1%（一般 8.0%）；只有短線急拉 1.0%（一般 13.1%）；只有之前已大漲 63.3%（一般 12.4%）；兩者皆非 16.7%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 15.2%、漲跌中位 4.1%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 25 個（一般股票同數量以上 2.4%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：RSI14｜Q4→收盤÷布林上軌(20,2)−1｜Q1 77.9%（一般 9.0%）；投信250日淨買÷股本｜Q2→20日均額｜Q5 41.8%（一般 4.9%）；市值｜Q5→60日漲停天數｜Q5 69.9%（一般 9.2%）；RSI14｜Q4→收盤÷MA5−1｜Q1 92.6%（一般 12.5%）；收盤÷修正箱上箱價−1｜Q2→120日報酬｜Q5 76.9%（一般 11.3%）</p>
+<h4>H4（可用 138 格；納入 46 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>99.6%</td><td>19.9%</td><td>5.00</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>99.5%</td><td>20.0%</td><td>4.98</td></tr>
+<tr><td class='l'>距60日最低｜Q5<br><small>當日收盤</small></td><td>99.4%</td><td>20.0%</td><td>4.98</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>99.3%</td><td>20.0%</td><td>4.98</td></tr>
+<tr><td class='l'>距120日最高｜Q5<br><small>當日收盤</small></td><td>99.2%</td><td>19.9%</td><td>4.98</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H4</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.6%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>距120日最高｜Q5</td><td>99.2%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>98.9%</td><td>98.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日報酬｜Q5</td><td>98.6%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>20日區間寬度｜Q5</td><td>95.6%</td><td>98.1%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：均線多頭排列5&gt;20&gt;60&gt;100｜是</td><td>95.2%</td><td>98.5%</td><td>20.7%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>94.1%</td><td>93.9%</td><td>76.9%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 96.0%（一般 8.0%）；只有短線急拉 1.1%（一般 13.1%）；只有之前已大漲 2.7%（一般 12.4%）；兩者皆非 0.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 11.8%、收跌≥5% 44.3%、收黑 89.7%、漲跌中位 -4.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 46 個）：一半的點至少有 29 個（一般股票同數量以上 0.9%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 87.5%（一般 2.7%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→20日區間寬度｜Q5 75.0%（一般 3.3%）；120日漲停天數｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.5%）；前120日均線5/10/20糾結度｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.5%）</p>
+<h4>L5（可用 138 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>98.5%</td><td>92.2%</td><td>1.07</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>94.7%</td><td>20.0%</td><td>4.75</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>94.6%</td><td>32.3%</td><td>2.93</td></tr>
+<tr><td class='l'>距250日最低｜Q5<br><small>當日收盤</small></td><td>93.7%</td><td>20.0%</td><td>4.70</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5<br><small>當日收盤</small></td><td>93.2%</td><td>20.0%</td><td>4.67</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5<br><small>當日收盤</small></td><td>93.0%</td><td>20.0%</td><td>4.66</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>92.2%</td><td>20.0%</td><td>4.62</td></tr>
+<tr><td class='l'>120日報酬｜Q5<br><small>當日收盤</small></td><td>91.9%</td><td>20.0%</td><td>4.60</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>91.8%</td><td>20.0%</td><td>4.59</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5<br><small>當日收盤</small></td><td>91.0%</td><td>20.0%</td><td>4.56</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L5</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>98.5%</td><td>93.4%</td><td>92.2%</td></tr>
+<tr><td class='l'>距120日最低｜Q5</td><td>94.7%</td><td>41.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5</td><td>93.2%</td><td>35.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5</td><td>93.0%</td><td>46.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5</td><td>92.2%</td><td>45.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>92.1%</td><td>81.3%</td><td>76.9%</td></tr>
+<tr><td class='l'>120日報酬｜Q5</td><td>91.9%</td><td>37.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>91.8%</td><td>43.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日漲停天數｜Q5</td><td>89.8%</td><td>35.9%</td><td>17.0%</td></tr>
+<tr><td class='l'>120日注意次數｜Q5</td><td>85.4%</td><td>35.1%</td><td>17.3%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 20.5%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 69.5%（一般 12.4%）；兩者皆非 5.8%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 16.2%、漲跌中位 5.0%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 27 個（一般股票同數量以上 2.4%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q1→收盤÷MA250−1｜Q5 89.4%（一般 8.6%）；股本｜Q1→市值｜Q5 11.3%（一般 1.2%）；停止融資中｜是→20日均額｜Q5 22.4%（一般 2.6%）；原K3 RSI14&gt;50｜是→收盤÷布林上軌(20,2)−1｜Q1 76.1%（一般 9.2%）；收盤÷修正箱上箱價−1｜Q1→距120日最低｜Q5 100.0%（一般 12.1%）</p>
+<h4>H5以後（可用 118 格；納入 46 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距60日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>120日報酬｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距250日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距120日最高｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H5以後</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距120日最高｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>距60日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日報酬｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.7%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>98.2%</td><td>98.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5</td><td>97.1%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>96.7%</td><td>93.5%</td><td>76.7%</td></tr>
+<tr><td class='l'>原：均線多頭排列5&gt;20&gt;60&gt;100｜是</td><td>96.5%</td><td>98.1%</td><td>20.8%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 94.6%（一般 8.0%）；只有短線急拉 1.2%（一般 13.1%）；只有之前已大漲 3.8%（一般 12.4%）；兩者皆非 0.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 14.6%、收跌≥5% 46.9%、收黑 87.7%、漲跌中位 -4.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 46 個）：一半的點至少有 30 個（一般股票同數量以上 0.6%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→250日處置天數｜Q5 100.0%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 100.0%（一般 2.8%）；收盤÷修正箱上箱價−1｜Q5→120日漲停天數｜Q5 100.0%（一般 3.2%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→120日區間寬度｜Q5 100.0%（一般 3.8%）</p>
+<h4>L6以後（可用 118 格；納入 46 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>98.4%</td><td>92.2%</td><td>1.07</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5<br><small>當日收盤</small></td><td>97.8%</td><td>20.0%</td><td>4.90</td></tr>
+<tr><td class='l'>距250日最低｜Q5<br><small>當日收盤</small></td><td>97.6%</td><td>20.0%</td><td>4.89</td></tr>
+<tr><td class='l'>250日區間寬度｜Q5<br><small>當日收盤</small></td><td>96.0%</td><td>19.9%</td><td>4.81</td></tr>
+<tr><td class='l'>前250日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>96.0%</td><td>19.9%</td><td>4.81</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>95.7%</td><td>20.0%</td><td>4.80</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>95.3%</td><td>20.1%</td><td>4.74</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5<br><small>當日收盤</small></td><td>94.8%</td><td>20.0%</td><td>4.75</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5<br><small>當日收盤</small></td><td>94.4%</td><td>20.0%</td><td>4.73</td></tr>
+<tr><td class='l'>120日報酬｜Q5<br><small>當日收盤</small></td><td>94.4%</td><td>20.0%</td><td>4.73</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L6以後</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>98.4%</td><td>94.5%</td><td>92.2%</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5</td><td>97.8%</td><td>31.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距250日最低｜Q5</td><td>97.4%</td><td>35.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>250日區間寬度｜Q5</td><td>96.0%</td><td>41.1%</td><td>19.9%</td></tr>
+<tr><td class='l'>前250日均線5/10/20糾結度｜Q5</td><td>96.0%</td><td>39.4%</td><td>19.9%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>95.4%</td><td>77.4%</td><td>76.7%</td></tr>
+<tr><td class='l'>距5日最高｜Q1</td><td>95.1%</td><td>44.7%</td><td>20.1%</td></tr>
+<tr><td class='l'>120日報酬｜Q5</td><td>94.3%</td><td>32.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日漲停天數｜Q5</td><td>91.4%</td><td>34.0%</td><td>17.0%</td></tr>
+<tr><td class='l'>120日注意次數｜Q5</td><td>89.4%</td><td>32.4%</td><td>17.3%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 24.4%（一般 8.0%）；只有短線急拉 0.6%（一般 13.1%）；只有之前已大漲 67.9%（一般 12.4%）；兩者皆非 6.1%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 16.9%、漲跌中位 6.0%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 46 個）：一半的點至少有 28 個（一般股票同數量以上 1.5%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q2→收盤÷MA250−1｜Q5 100.0%（一般 9.4%）；市值｜Q5→250日處置天數｜Q5 71.6%（一般 7.6%）；投信連買天數｜Q5→250日處置天數｜Q5 62.5%（一般 6.8%）；市值｜Q5→120日漲停天數｜Q5 88.6%（一般 10.0%）；借券賣出餘額60日變化÷股本｜Q1→250日處置天數｜Q5 80.5%（一般 9.8%）</p>
+</div>
+<div class='pane' id='p20_2'><h3>20% 拉回、2 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>86.3%</td><td>60 天</td><td>-25.6%</td><td>18 天</td><td>156</td></tr>
+<tr><td class='l'>第 2 段</td><td>127.2%</td><td>49 天</td><td>—</td><td>—</td><td>156</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.38。</p>
+<h4>H1（可用 156 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>96.0%</td><td>19.9%</td><td>4.82</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>95.7%</td><td>20.0%</td><td>4.79</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>95.5%</td><td>20.0%</td><td>4.78</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>95.2%</td><td>19.9%</td><td>4.77</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>94.9%</td><td>20.0%</td><td>4.75</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>94.5%</td><td>19.8%</td><td>4.76</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>92.6%</td><td>20.0%</td><td>4.63</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>92.2%</td><td>20.0%</td><td>4.62</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>92.0%</td><td>20.0%</td><td>4.60</td></tr>
+<tr><td class='l'>20日報酬｜Q5<br><small>當日收盤</small></td><td>91.9%</td><td>20.0%</td><td>4.60</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>96.9%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>96.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>95.7%</td><td>99.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日報酬｜Q5</td><td>92.2%</td><td>98.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>90.4%</td><td>99.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>20日區間寬度｜Q5</td><td>87.9%</td><td>98.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>86.9%</td><td>93.6%</td><td>77.3%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>85.5%</td><td>97.8%</td><td>19.7%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>84.2%</td><td>88.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：均線多頭排列5&gt;20&gt;60&gt;100｜是</td><td>82.8%</td><td>97.5%</td><td>20.7%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 82.1%（一般 8.0%）；只有短線急拉 10.1%（一般 13.1%）；只有之前已大漲 3.1%（一般 12.4%）；兩者皆非 4.5%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 14.3%、收跌≥5% 40.1%、收黑 89.3%、漲跌中位 -4.0%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 27 個（一般股票同數量以上 1.5%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：ROE｜Q1→K＞80連續天數｜Q5 60.8%（一般 5.6%）；最近一季EPS｜Q1→K＞80連續天數｜Q5 57.3%（一般 5.6%）；投信250日淨買÷股本｜Q2→K＞80連續天數｜Q5 62.2%（一般 6.4%）；250日處置天數｜Q5→K＞80連續天數｜Q5 59.3%（一般 6.3%）；停止融資中｜是→K＞80連續天數｜Q5 59.2%（一般 6.5%）</p>
+<h4>L2（可用 156 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.3%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.3%</td><td>3.10</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>96.9%</td><td>25.7%</td><td>3.77</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>96.3%</td><td>94.5%</td><td>1.02</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.8%</td><td>91.3%</td><td>1.03</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>90.5%</td><td>87.0%</td><td>1.04</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.4%</td><td>99.1%</td><td>0.88</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>86.3%</td><td>84.4%</td><td>1.02</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1<br><small>當日收盤</small></td><td>85.6%</td><td>49.9%</td><td>1.71</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1<br><small>當日收盤</small></td><td>83.4%</td><td>20.0%</td><td>4.17</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>56.6%</td><td>32.3%</td></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>100.0%</td><td>94.8%</td><td>92.3%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>96.3%</td><td>91.5%</td><td>94.5%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>93.8%</td><td>93.7%</td><td>91.3%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>90.5%</td><td>89.3%</td><td>87.0%</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1</td><td>85.6%</td><td>58.4%</td><td>49.9%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>84.4%</td><td>81.2%</td><td>77.3%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>83.4%</td><td>41.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>82.1%</td><td>43.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日報酬｜Q1</td><td>80.0%</td><td>38.6%</td><td>20.1%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 3.2%（一般 8.0%）；只有短線急拉 0.4%（一般 13.1%）；只有之前已大漲 63.3%（一般 12.4%）；兩者皆非 32.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 13.6%、漲跌中位 4.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 26 個（一般股票同數量以上 3.2%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：股價｜Q5→停止融資中｜是 2.4%（一般 0.3%）；停止融資中｜是→股價｜Q5 4.5%（一般 0.6%）；當日額÷前250日均額｜Q5→收盤÷MA10−1｜Q1 89.1%（一般 15.9%）；當日額÷前250日均額｜Q5→5日報酬｜Q1 90.0%（一般 17.2%）；市值｜Q5→250日處置天數｜Q5 37.2%（一般 7.6%）</p>
+</div>
+<div class='pane' id='p20_3'><h3>20% 拉回、3 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>38.2%</td><td>37 天</td><td>-25.3%</td><td>18 天</td><td>107</td></tr>
+<tr><td class='l'>第 2 段</td><td>93.3%</td><td>45 天</td><td>-24.7%</td><td>14 天</td><td>107</td></tr>
+<tr><td class='l'>第 3 段</td><td>83.6%</td><td>31 天</td><td>—</td><td>—</td><td>107</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.19。</p>
+<h4>H1（可用 107 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>91.5%</td><td>19.8%</td><td>4.61</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>90.9%</td><td>20.0%</td><td>4.55</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>90.6%</td><td>19.9%</td><td>4.55</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>89.5%</td><td>20.0%</td><td>4.48</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>89.0%</td><td>19.9%</td><td>4.47</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>87.7%</td><td>20.0%</td><td>4.39</td></tr>
+<tr><td class='l'>5日報酬｜Q5<br><small>當日收盤</small></td><td>85.9%</td><td>19.9%</td><td>4.31</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>85.4%</td><td>20.0%</td><td>4.28</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>85.4%</td><td>91.2%</td><td>0.94</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5<br><small>當日收盤</small></td><td>85.1%</td><td>20.0%</td><td>4.26</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>92.3%</td><td>100.0%</td><td>48.6%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>91.5%</td><td>98.5%</td><td>19.8%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>90.9%</td><td>98.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>85.9%</td><td>97.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>85.1%</td><td>99.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>83.3%</td><td>95.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>83.0%</td><td>93.1%</td><td>76.9%</td></tr>
+<tr><td class='l'>當日額÷前120日均額｜Q5</td><td>77.8%</td><td>77.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>74.5%</td><td>99.3%</td><td>19.7%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>73.4%</td><td>90.4%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 69.7%（一般 8.0%）；只有短線急拉 16.3%（一般 13.1%）；只有之前已大漲 4.5%（一般 12.4%）；兩者皆非 8.9%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 11.0%、收跌≥5% 42.4%、收黑 88.2%、漲跌中位 -4.0%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 26 個（一般股票同數量以上 1.9%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：投信連買天數｜Q5→停止融資中｜是 4.2%（一般 0.4%）；停止融資中｜是→投信連買天數｜Q5 3.8%（一般 0.4%）；收盤÷布林上軌(20,2)−1｜Q5→20日注意次數｜Q5 67.9%（一般 7.4%）；250日處置天數｜Q5→K＞80連續天數｜Q5 51.2%（一般 6.2%）；ROE｜Q1→K＞80連續天數｜Q5 43.8%（一般 5.6%）</p>
+<h4>L2（可用 107 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.3%</td><td>3.10</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.2%</td><td>1.08</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>97.4%</td><td>94.5%</td><td>1.03</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>96.6%</td><td>25.7%</td><td>3.76</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>94.6%</td><td>91.2%</td><td>1.04</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>91.2%</td><td>86.9%</td><td>1.05</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>90.5%</td><td>99.1%</td><td>0.91</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>87.0%</td><td>84.4%</td><td>1.03</td></tr>
+<tr><td class='l'>5日注意次數｜Q1<br><small>當日盤後公布</small></td><td>85.8%</td><td>95.9%</td><td>0.89</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1<br><small>當日收盤</small></td><td>85.8%</td><td>50.0%</td><td>1.72</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>100.0%</td><td>91.1%</td><td>92.2%</td></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>54.3%</td><td>32.3%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>97.4%</td><td>87.9%</td><td>94.5%</td></tr>
+<tr><td class='l'>原：投信連買天數級距｜0 天</td><td>94.6%</td><td>92.9%</td><td>91.2%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>91.2%</td><td>88.1%</td><td>86.9%</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1</td><td>85.8%</td><td>53.9%</td><td>50.0%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>82.1%</td><td>40.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>80.0%</td><td>81.7%</td><td>76.9%</td></tr>
+<tr><td class='l'>距60日最高｜Q1</td><td>79.7%</td><td>37.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>78.9%</td><td>42.2%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 2.1%（一般 8.0%）；只有短線急拉 0.5%（一般 13.1%）；只有之前已大漲 48.9%（一般 12.4%）；兩者皆非 48.4%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 13.4%、漲跌中位 5.1%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 25 個（一般股票同數量以上 3.8%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：均線多頭排列段數(5/10/20/60/120/250)｜Q3→距60日最高｜Q1 88.2%（一般 15.7%）；距24月最高營收｜Q5→距60日最高｜Q1 76.3%（一般 15.4%）；營收連續年增月數｜Q4→距60日最高｜Q1 82.1%（一般 16.9%）；營收連續年增月數｜Q4→收盤÷MA10−1｜Q1 90.0%（一般 19.0%）；均線多頭排列段數(5/10/20/60/120/250)｜Q3→收盤÷MA10−1｜Q1 87.5%（一般 18.6%）</p>
+<h4>H2（可用 107 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距60日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>99.3%</td><td>20.0%</td><td>4.97</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>99.2%</td><td>20.0%</td><td>4.97</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H2</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>100.0%</td><td>98.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>48.6%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>98.9%</td><td>99.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日報酬｜Q5</td><td>98.6%</td><td>97.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>距120日最高｜Q5</td><td>97.1%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>20日區間寬度｜Q5</td><td>96.8%</td><td>97.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>91.7%</td><td>87.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>90.3%</td><td>93.1%</td><td>76.9%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 94.8%（一般 8.0%）；只有短線急拉 1.2%（一般 13.1%）；只有之前已大漲 2.5%（一般 12.4%）；兩者皆非 0.4%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 15.6%、收跌≥5% 49.0%、收黑 93.1%、漲跌中位 -4.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 29 個（一般股票同數量以上 0.7%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→60日漲停天數｜Q5 100.0%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 100.0%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→20日區間寬度｜Q5 100.0%（一般 3.3%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→前120日均線5/10/20糾結度｜Q5 100.0%（一般 4.0%）</p>
+<h4>L3（可用 107 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.2%</td><td>1.08</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.3%</td><td>3.10</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>94.0%</td><td>94.5%</td><td>0.99</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>93.7%</td><td>25.7%</td><td>3.65</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1<br><small>當日收盤</small></td><td>91.4%</td><td>20.0%</td><td>4.57</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>91.1%</td><td>91.2%</td><td>1.00</td></tr>
+<tr><td class='l'>距20日最高｜Q1<br><small>當日收盤</small></td><td>90.3%</td><td>20.0%</td><td>4.51</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>90.2%</td><td>20.0%</td><td>4.50</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>89.8%</td><td>86.9%</td><td>1.03</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q1<br><small>當日收盤</small></td><td>89.7%</td><td>20.0%</td><td>4.48</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L3</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>54.3%</td><td>32.3%</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>100.0%</td><td>91.1%</td><td>92.2%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>91.4%</td><td>40.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>距20日最高｜Q1</td><td>90.3%</td><td>42.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>89.8%</td><td>88.1%</td><td>86.9%</td></tr>
+<tr><td class='l'>前120日均線5/10/20糾結度｜Q5</td><td>88.8%</td><td>44.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5</td><td>88.2%</td><td>45.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>87.7%</td><td>81.7%</td><td>76.9%</td></tr>
+<tr><td class='l'>5日報酬｜Q1</td><td>86.3%</td><td>41.4%</td><td>20.1%</td></tr>
+<tr><td class='l'>120日注意次數｜Q5</td><td>85.3%</td><td>33.9%</td><td>17.3%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 6.4%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 72.5%（一般 12.4%）；兩者皆非 20.6%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 12.2%、漲跌中位 5.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 26 個（一般股票同數量以上 2.2%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：市值｜Q4→250日處置天數｜Q5 63.6%（一般 9.8%）；市值｜Q4→120日漲停天數｜Q5 83.3%（一般 13.0%）；ROE｜Q1→原X1 熊狗篩選｜是 15.4%（一般 2.7%）；當日額÷前250日均額｜Q5→收盤÷MA10−1｜Q1 90.2%（一般 15.9%）；最近一季EPS｜Q2→20日均額｜Q5 52.4%（一般 9.5%）</p>
+</div>
+<div class='pane' id='p20_4'><h3>20% 拉回、4 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>21.7%</td><td>22 天</td><td>-26.3%</td><td>20 天</td><td>20</td></tr>
+<tr><td class='l'>第 2 段</td><td>75.4%</td><td>47 天</td><td>-24.9%</td><td>16 天</td><td>20</td></tr>
+<tr><td class='l'>第 3 段</td><td>73.2%</td><td>32 天</td><td>-24.0%</td><td>15 天</td><td>20</td></tr>
+<tr><td class='l'>第 4 段</td><td>64.4%</td><td>22 天</td><td>—</td><td>—</td><td>20</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.11。</p>
+<h4>H1（可用 20 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>94.0%</td><td>99.1%</td><td>0.95</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>93.2%</td><td>98.8%</td><td>0.94</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>90.1%</td><td>98.3%</td><td>0.92</td></tr>
+<tr><td class='l'>60日處置天數｜Q1<br><small>當日盤後公布</small></td><td>89.1%</td><td>96.4%</td><td>0.92</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>87.2%</td><td>20.0%</td><td>4.37</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>86.2%</td><td>19.8%</td><td>4.35</td></tr>
+<tr><td class='l'>120日處置天數｜Q1<br><small>當日盤後公布</small></td><td>84.0%</td><td>93.7%</td><td>0.90</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>83.4%</td><td>91.1%</td><td>0.92</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>80.8%</td><td>19.9%</td><td>4.06</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>80.0%</td><td>20.0%</td><td>4.01</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>87.2%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>86.4%</td><td>100.0%</td><td>49.0%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>86.2%</td><td>100.0%</td><td>19.8%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>77.4%</td><td>87.7%</td><td>75.6%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>76.3%</td><td>97.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>76.1%</td><td>95.2%</td><td>19.9%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>68.8%</td><td>97.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前120日均額｜Q5</td><td>67.7%</td><td>78.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>67.4%</td><td>77.7%</td><td>60.2%</td></tr>
+<tr><td class='l'>5日抗跌｜Q5</td><td>62.3%</td><td>83.0%</td><td>19.9%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 54.0%（一般 8.0%）；只有短線急拉 27.2%（一般 13.1%）；只有之前已大漲 2.6%（一般 12.4%）；兩者皆非 19.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 7.2%、收跌≥5% 32.5%、收黑 82.5%、漲跌中位 -3.0%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 21 個（一般股票同數量以上 6.3%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：市值｜Q2→K＞80連續天數｜Q5 50.0%（一般 6.2%）；ROE｜Q1→K＞80連續天數｜Q5 40.6%（一般 5.7%）；股本｜Q1→K＞80連續天數｜Q5 46.6%（一般 6.6%）；投信250日淨買÷股本｜Q5→10日漲停天數｜Q5 59.2%（一般 8.9%）；產業120日報酬排名｜Q5→K＞80連續天數｜Q5 53.8%（一般 8.1%）</p>
+<h4>L2（可用 20 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.1%</td><td>3.11</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.1%</td><td>1.09</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>25.6%</td><td>3.90</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>97.0%</td><td>94.5%</td><td>1.03</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>95.1%</td><td>91.1%</td><td>1.04</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>95.0%</td><td>99.1%</td><td>0.96</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>93.5%</td><td>98.8%</td><td>0.95</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>91.6%</td><td>86.8%</td><td>1.05</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>91.5%</td><td>85.0%</td><td>1.08</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>91.4%</td><td>98.3%</td><td>0.93</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距10日最低｜Q1</td><td>100.0%</td><td>46.5%</td><td>25.6%</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>100.0%</td><td>90.6%</td><td>92.1%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>97.0%</td><td>85.2%</td><td>94.5%</td></tr>
+<tr><td class='l'>原：投信連買天數級距｜0 天</td><td>95.1%</td><td>94.3%</td><td>91.1%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>91.6%</td><td>90.0%</td><td>86.8%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>89.7%</td><td>54.7%</td><td>48.7%</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q1</td><td>80.0%</td><td>38.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>78.0%</td><td>39.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日報酬｜Q1</td><td>77.0%</td><td>39.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>距20日最高｜Q1</td><td>75.4%</td><td>39.0%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 2.4%（一般 8.0%）；只有短線急拉 2.0%（一般 13.1%）；只有之前已大漲 23.7%（一般 12.4%）；兩者皆非 71.7%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 11.0%、漲跌中位 5.3%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 24 個（一般股票同數量以上 4.1%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：市值｜Q1→原X1 熊狗篩選｜是 12.9%（一般 1.1%）；ROE｜Q3→停止融資中｜是 19.1%（一般 1.8%）；原X1 熊狗篩選｜是→市值｜Q1 33.3%（一般 4.9%）；股本｜Q1→原X1 熊狗篩選｜是 14.3%（一般 2.5%）；停止融資中｜是→ROE｜Q3 23.6%（一般 4.4%）</p>
+<h4>H2（可用 20 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.8%</td><td>5.04</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.03</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>99.0%</td><td>20.0%</td><td>4.96</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>97.7%</td><td>20.0%</td><td>4.89</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H2</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原：收盤站上MA100｜是</td><td>100.0%</td><td>100.0%</td><td>50.5%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.8%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>49.0%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>20日報酬｜Q5</td><td>97.7%</td><td>99.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>97.4%</td><td>99.2%</td><td>19.7%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>97.0%</td><td>97.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>94.9%</td><td>97.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前120日均額｜Q5</td><td>92.1%</td><td>78.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>88.6%</td><td>94.0%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 80.6%（一般 8.0%）；只有短線急拉 12.2%（一般 13.1%）；只有之前已大漲 4.6%（一般 12.4%）；兩者皆非 0.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 9.1%、收跌≥5% 38.7%、收黑 84.2%、漲跌中位 -3.9%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 27 個（一般股票同數量以上 1.5%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→前10日均線5/10/20糾結度｜Q5 100.0%（一般 2.6%）；收盤÷修正箱上箱價−1｜Q5→20日注意次數｜Q5 100.0%（一般 2.7%）；收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 100.0%（一般 2.8%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；前10日均線5/10/20糾結度｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.5%）</p>
+<h4>L3（可用 20 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.1%</td><td>1.09</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.1%</td><td>3.11</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>97.5%</td><td>94.5%</td><td>1.03</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>97.4%</td><td>25.6%</td><td>3.80</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>90.0%</td><td>91.1%</td><td>0.99</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>88.9%</td><td>86.8%</td><td>1.02</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1<br><small>當日收盤</small></td><td>87.6%</td><td>50.0%</td><td>1.75</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1<br><small>當日收盤</small></td><td>86.5%</td><td>20.0%</td><td>4.32</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>86.5%</td><td>99.1%</td><td>0.87</td></tr>
+<tr><td class='l'>距20日最高｜Q1<br><small>當日收盤</small></td><td>84.8%</td><td>20.0%</td><td>4.24</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L3</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>52.9%</td><td>32.1%</td></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>100.0%</td><td>90.7%</td><td>92.1%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>97.5%</td><td>85.2%</td><td>94.5%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>88.9%</td><td>90.0%</td><td>86.8%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>87.6%</td><td>54.7%</td><td>48.7%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>86.5%</td><td>42.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>距20日最高｜Q1</td><td>84.8%</td><td>39.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>84.5%</td><td>39.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>83.0%</td><td>66.7%</td><td>60.2%</td></tr>
+<tr><td class='l'>5日報酬｜Q1</td><td>82.3%</td><td>42.4%</td><td>20.1%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 2.8%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 58.8%（一般 12.4%）；兩者皆非 38.3%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 12.8%、漲跌中位 4.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 27 個（一般股票同數量以上 1.4%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：投信連買天數｜Q5→收盤÷MA10−1｜Q1 100.0%（一般 13.4%）；投信連買天數｜Q5→距20日最高｜Q1 100.0%（一般 14.2%）；投信連買天數｜Q5→5日報酬｜Q1 100.0%（一般 14.3%）；投信連買天數｜Q5→250日處置天數｜Q5 45.0%（一般 6.7%）；投信連買天數｜Q5→收盤÷布林上軌(20,2)−1｜Q1 100.0%（一般 14.9%）</p>
+<h4>H3（可用 20 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距250日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>距60日最高｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.7%</td><td>5.08</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距120日最高｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.02</td></tr>
+<tr><td class='l'>收盤÷MA250−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.03</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H3</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>20日報酬｜Q5</td><td>100.0%</td><td>99.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距120日最高｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>RSI14｜Q5</td><td>100.0%</td><td>97.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>100.0%</td><td>97.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5</td><td>97.4%</td><td>96.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>94.4%</td><td>87.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>93.7%</td><td>94.0%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 97.1%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 2.3%（一般 12.4%）；兩者皆非 0.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 17.5%、收跌≥5% 54.5%、收黑 92.3%、漲跌中位 -5.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 29 個（一般股票同數量以上 0.7%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷修正箱上箱價−1｜Q5→EMA5/10/20最大÷最小−1｜Q5 100.0%（一般 2.8%）；EMA5/10/20最大÷最小−1｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 3.4%）；收盤÷修正箱上箱價−1｜Q5→前60日均線5/10/20糾結度｜Q5 100.0%（一般 3.5%）；前60日均線5/10/20糾結度｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.1%）；250日處置天數｜Q5→收盤÷修正箱上箱價−1｜Q5 100.0%（一般 4.7%）</p>
+<h4>L4（可用 20 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.1%</td><td>1.09</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.1%</td><td>3.11</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>94.9%</td><td>94.5%</td><td>1.00</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>94.0%</td><td>91.1%</td><td>1.03</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>93.7%</td><td>25.6%</td><td>3.65</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1<br><small>當日收盤</small></td><td>93.4%</td><td>20.0%</td><td>4.67</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1<br><small>當日收盤</small></td><td>93.2%</td><td>20.0%</td><td>4.66</td></tr>
+<tr><td class='l'>距20日最高｜Q1<br><small>當日收盤</small></td><td>93.2%</td><td>20.0%</td><td>4.66</td></tr>
+<tr><td class='l'>距5日最高｜Q1<br><small>當日收盤</small></td><td>93.0%</td><td>20.1%</td><td>4.63</td></tr>
+<tr><td class='l'>距10日最高｜Q1<br><small>當日收盤</small></td><td>91.8%</td><td>20.0%</td><td>4.59</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L4</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>52.9%</td><td>32.1%</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>100.0%</td><td>90.6%</td><td>92.1%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>94.9%</td><td>85.2%</td><td>94.5%</td></tr>
+<tr><td class='l'>原：投信連買天數級距｜0 天</td><td>94.0%</td><td>94.3%</td><td>91.1%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>93.4%</td><td>42.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>距20日最高｜Q1</td><td>93.2%</td><td>39.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷布林上軌(20,2)−1｜Q1</td><td>93.2%</td><td>39.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>90.0%</td><td>90.0%</td><td>86.8%</td></tr>
+<tr><td class='l'>5日報酬｜Q1</td><td>87.4%</td><td>42.4%</td><td>20.1%</td></tr>
+<tr><td class='l'>60日平均周轉率｜Q5</td><td>86.0%</td><td>38.5%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 5.1%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 72.6%（一般 12.4%）；兩者皆非 21.9%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 11.9%、漲跌中位 5.4%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 28 個（一般股票同數量以上 1.2%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：停止融資中｜是→60日均額｜Q5 25.0%（一般 2.6%）；均線多頭排列段數(5/10/20/60/120/250)｜Q4→KD的K值｜Q1 66.7%（一般 8.4%）；均線多頭排列段數(5/10/20/60/120/250)｜Q4→收盤÷MA10−1｜Q1 100.0%（一般 13.9%）；均線多頭排列段數(5/10/20/60/120/250)｜Q4→距20日最高｜Q1 100.0%（一般 14.0%）；60日均額｜Q5→停止融資中｜是 7.3%（一般 1.1%）</p>
+</div>
+<div class='pane' id='p20_5p'><h3>20% 拉回、5+ 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 2 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 3 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 4 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 5 段以後</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 —。</p>
+<h4>H1：可用格 0，不報</h4>
+<h4>L2：可用格 0，不報</h4>
+<h4>H2：可用格 0，不報</h4>
+<h4>L3：可用格 0，不報</h4>
+<h4>H3：可用格 0，不報</h4>
+<h4>L4：可用格 0，不報</h4>
+<h4>H4：可用格 0，不報</h4>
+<h4>L5：可用格 0，不報</h4>
+<h4>H5以後：可用格 0，不報</h4>
+<h4>L6以後：可用格 0，不報</h4>
+</div>
+<div class='pane' id='p30_2'><h3>30% 拉回、2 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>79.0%</td><td>58 天</td><td>-35.1%</td><td>25 天</td><td>121</td></tr>
+<tr><td class='l'>第 2 段</td><td>147.2%</td><td>56 天</td><td>—</td><td>—</td><td>121</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.40。</p>
+<h4>H1（可用 121 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>94.9%</td><td>19.9%</td><td>4.77</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>94.9%</td><td>20.0%</td><td>4.75</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>94.3%</td><td>20.0%</td><td>4.72</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>93.8%</td><td>19.8%</td><td>4.72</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>92.5%</td><td>20.0%</td><td>4.63</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>92.0%</td><td>19.9%</td><td>4.62</td></tr>
+<tr><td class='l'>5日報酬｜Q5<br><small>當日收盤</small></td><td>90.3%</td><td>19.9%</td><td>4.53</td></tr>
+<tr><td class='l'>20日報酬｜Q5<br><small>當日收盤</small></td><td>90.2%</td><td>20.0%</td><td>4.51</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>89.8%</td><td>20.0%</td><td>4.50</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q5<br><small>當日收盤</small></td><td>88.2%</td><td>20.0%</td><td>4.42</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>96.1%</td><td>100.0%</td><td>48.5%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>94.9%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>94.9%</td><td>99.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>90.3%</td><td>98.2%</td><td>19.9%</td></tr>
+<tr><td class='l'>5日區間寬度｜Q5</td><td>87.8%</td><td>96.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>87.8%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>84.7%</td><td>91.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>84.5%</td><td>95.0%</td><td>77.1%</td></tr>
+<tr><td class='l'>前10日均線5/10/20糾結度｜Q5</td><td>81.1%</td><td>94.2%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日平均周轉率｜Q5</td><td>78.7%</td><td>88.3%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 79.4%（一般 8.0%）；只有短線急拉 10.9%（一般 13.1%）；只有之前已大漲 3.2%（一般 12.4%）；兩者皆非 5.8%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 18.0%、收跌≥5% 48.1%、收黑 88.5%、漲跌中位 -4.4%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 27 個（一般股票同數量以上 1.2%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：收盤÷布林上軌(20,2)−1｜Q5→20日注意次數｜Q5 75.0%（一般 7.4%）；最近一季EPS｜Q1→K＞80連續天數｜Q5 56.0%（一般 5.6%）；ROE｜Q1→K＞80連續天數｜Q5 55.6%（一般 5.6%）；投信120日淨買÷股本｜Q2→5日均額｜Q5 48.1%（一般 5.1%）；停止融資中｜是→5日均額｜Q5 25.0%（一般 2.7%）</p>
+<h4>L2（可用 121 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.3%</td><td>3.10</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.3%</td><td>1.08</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>25.7%</td><td>3.90</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>97.9%</td><td>94.5%</td><td>1.04</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>96.2%</td><td>91.3%</td><td>1.05</td></tr>
+<tr><td class='l'>距20日最低｜Q1<br><small>當日收盤</small></td><td>92.3%</td><td>22.8%</td><td>4.05</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>91.7%</td><td>87.0%</td><td>1.05</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>91.4%</td><td>99.1%</td><td>0.92</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1<br><small>當日收盤</small></td><td>90.1%</td><td>50.0%</td><td>1.80</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>87.9%</td><td>84.4%</td><td>1.04</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>54.5%</td><td>32.3%</td></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>100.0%</td><td>92.9%</td><td>92.3%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>97.9%</td><td>88.0%</td><td>94.5%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>96.2%</td><td>94.3%</td><td>91.3%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>91.7%</td><td>90.2%</td><td>87.0%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>90.1%</td><td>57.2%</td><td>48.8%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>80.8%</td><td>40.7%</td><td>20.0%</td></tr>
+<tr><td class='l'>距10日最高｜Q1</td><td>80.2%</td><td>44.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>80.0%</td><td>66.4%</td><td>60.2%</td></tr>
+<tr><td class='l'>0050收盤÷MA20−1（時序）｜Q1</td><td>79.9%</td><td>22.3%</td><td>21.5%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 1.4%（一般 8.0%）；只有短線急拉 0.7%（一般 13.1%）；只有之前已大漲 56.8%（一般 12.4%）；兩者皆非 39.6%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 10.0%、漲跌中位 9.5%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 26 個（一般股票同數量以上 2.5%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：股本｜Q1→原X1 熊狗篩選｜是 14.8%（一般 2.5%）；原X1 熊狗篩選｜是→EMA5/10/20最大÷最小−1｜Q5 71.9%（一般 13.2%）；原：股價級距｜＜20 元→60日平均周轉率｜Q5 42.3%（一般 8.0%）；停止融資中｜是→60日均額｜Q5 13.5%（一般 2.6%）；EMA5/10/20最大÷最小−1｜Q5→原X1 熊狗篩選｜是 15.2%（一般 2.9%）</p>
+</div>
+<div class='pane' id='p30_3'><h3>30% 拉回、3 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>23.9%</td><td>42 天</td><td>-35.3%</td><td>26 天</td><td>15</td></tr>
+<tr><td class='l'>第 2 段</td><td>134.8%</td><td>54 天</td><td>-35.1%</td><td>20 天</td><td>15</td></tr>
+<tr><td class='l'>第 3 段</td><td>95.8%</td><td>41 天</td><td>—</td><td>—</td><td>15</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.17。</p>
+<h4>H1（可用 15 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>93.6%</td><td>91.1%</td><td>1.03</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>88.9%</td><td>99.1%</td><td>0.90</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>87.1%</td><td>86.8%</td><td>1.00</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>87.1%</td><td>98.8%</td><td>0.88</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>86.1%</td><td>20.0%</td><td>4.31</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>85.3%</td><td>85.0%</td><td>1.00</td></tr>
+<tr><td class='l'>投信20日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>85.0%</td><td>83.2%</td><td>1.02</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>83.9%</td><td>19.9%</td><td>4.21</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>83.9%</td><td>19.8%</td><td>4.23</td></tr>
+<tr><td class='l'>20日處置天數｜Q1<br><small>當日盤後公布</small></td><td>83.7%</td><td>98.3%</td><td>0.85</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>93.6%</td><td>83.3%</td><td>91.1%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>92.1%</td><td>100.0%</td><td>49.0%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>87.1%</td><td>77.4%</td><td>86.8%</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>86.1%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>85.7%</td><td>95.3%</td><td>75.6%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>83.9%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>5日報酬｜Q5</td><td>80.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>20日區間寬度｜Q5</td><td>75.0%</td><td>97.9%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>72.7%</td><td>74.4%</td><td>60.2%</td></tr>
+<tr><td class='l'>當日額÷前120日均額｜Q5</td><td>71.1%</td><td>91.7%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 61.5%（一般 8.0%）；只有短線急拉 19.4%（一般 13.1%）；只有之前已大漲 3.0%（一般 12.4%）；兩者皆非 15.2%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 6.1%、收跌≥5% 43.3%、收黑 89.1%、漲跌中位 -3.6%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 26 個（一般股票同數量以上 1.9%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：原：均線多頭排列5&gt;20&gt;60&gt;100｜是→收盤÷修正箱上箱價−1｜Q2 100.0%（一般 3.1%）；營益率−去年同季｜Q1→K＞80連續天數｜Q5 66.7%（一般 6.4%）；ROE｜Q1→K＞80連續天數｜Q5 52.9%（一般 5.7%）；營收連續年增月數｜Q4→K＞80連續天數｜Q5 70.0%（一般 8.5%）；融資使用率｜Q5→K＞80連續天數｜Q5 54.5%（一般 6.7%）</p>
+<h4>L2（可用 15 格；納入 48 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.1%</td><td>3.11</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>100.0%</td><td>91.1%</td><td>1.10</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.1%</td><td>1.09</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>25.6%</td><td>3.90</td></tr>
+<tr><td class='l'>距20日最低｜Q1<br><small>當日收盤</small></td><td>98.2%</td><td>22.8%</td><td>4.30</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>97.4%</td><td>94.5%</td><td>1.03</td></tr>
+<tr><td class='l'>5日處置天數｜Q1<br><small>當日盤後公布</small></td><td>97.0%</td><td>99.1%</td><td>0.98</td></tr>
+<tr><td class='l'>10日處置天數｜Q1<br><small>當日盤後公布</small></td><td>96.8%</td><td>98.8%</td><td>0.98</td></tr>
+<tr><td class='l'>5日注意次數｜Q1<br><small>當日盤後公布</small></td><td>92.7%</td><td>95.9%</td><td>0.97</td></tr>
+<tr><td class='l'>EMA20＞SMA20連續天數｜Q1<br><small>當日收盤</small></td><td>91.9%</td><td>49.9%</td><td>1.84</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>K＞80連續天數｜Q1</td><td>100.0%</td><td>88.6%</td><td>92.1%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>100.0%</td><td>97.5%</td><td>91.1%</td></tr>
+<tr><td class='l'>距10日最低｜Q1</td><td>100.0%</td><td>41.0%</td><td>25.6%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>97.4%</td><td>81.6%</td><td>94.5%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>92.1%</td><td>58.1%</td><td>48.7%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>90.9%</td><td>92.9%</td><td>86.8%</td></tr>
+<tr><td class='l'>0050收盤÷MA20−1（時序）｜Q1</td><td>77.8%</td><td>16.7%</td><td>22.3%</td></tr>
+<tr><td class='l'>距60日最高｜Q1</td><td>76.5%</td><td>49.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>73.7%</td><td>56.1%</td><td>60.2%</td></tr>
+<tr><td class='l'>20日報酬｜Q1</td><td>67.4%</td><td>35.6%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 0.0%（一般 8.0%）；只有短線急拉 2.6%（一般 13.1%）；只有之前已大漲 37.5%（一般 12.4%）；兩者皆非 62.5%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 6.5%、漲跌中位 9.7%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 48 個）：一半的點至少有 24 個（一般股票同數量以上 4.4%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：近3月年增率平均−前3月平均｜Q1→營收連續年增月數｜Q2 55.6%（一般 6.2%）；120日均額｜Q5→營收連續年增月數｜Q2 35.7%（一般 4.5%）；外資5日淨買÷股本｜Q5→距10日最低｜Q1 100.0%（一般 12.8%）；原X1 熊狗篩選｜是→營收連續年增月數｜Q2 33.3%（一般 4.8%）；60日平均周轉率｜Q5→營收連續年增月數｜Q2 33.3%（一般 5.1%）</p>
+<h4>H2（可用 15 格；納入 46 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距250日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.01</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA120−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距120日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>19.9%</td><td>5.03</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.01</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H2</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.8%</td></tr>
+<tr><td class='l'>20日報酬｜Q5</td><td>100.0%</td><td>96.8%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5</td><td>100.0%</td><td>98.2%</td><td>20.0%</td></tr>
+<tr><td class='l'>距60日最高｜Q5</td><td>100.0%</td><td>100.0%</td><td>19.7%</td></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>100.0%</td><td>100.0%</td><td>49.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>100.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>KD的K值｜Q5</td><td>96.4%</td><td>87.2%</td><td>20.0%</td></tr>
+<tr><td class='l'>當日額÷前250日均額｜Q5</td><td>93.8%</td><td>93.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>前5日均線5/10/20糾結度｜Q5</td><td>93.6%</td><td>88.4%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 94.9%（一般 8.0%）；只有短線急拉 2.6%（一般 13.1%）；只有之前已大漲 2.3%（一般 12.4%）；兩者皆非 0.0%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 16.7%、收跌≥5% 57.5%、收黑 88.9%、漲跌中位 -6.0%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 46 個）：一半的點至少有 30 個（一般股票同數量以上 0.4%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：ROE｜Q1→K＞80連續天數｜Q5 83.3%（一般 5.7%）；最近一季EPS｜Q1→K＞80連續天數｜Q5 77.8%（一般 5.6%）；距60日最高｜Q5→250日處置天數｜Q5 69.6%（一般 5.7%）；投信250日淨買÷股本｜Q2→K＞80連續天數｜Q5 83.3%（一般 6.8%）；股本｜Q3→K＞80連續天數｜Q5 80.0%（一般 6.8%）</p>
+<h4>L3（可用 15 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>94.5%</td><td>1.06</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>25.6%</td><td>3.90</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.1%</td><td>3.11</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.1%</td><td>1.09</td></tr>
+<tr><td class='l'>距60日最高｜Q1<br><small>當日收盤</small></td><td>94.9%</td><td>20.0%</td><td>4.74</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1<br><small>當日收盤</small></td><td>94.7%</td><td>20.0%</td><td>4.73</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5<br><small>當日收盤</small></td><td>93.5%</td><td>20.0%</td><td>4.69</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>93.0%</td><td>86.8%</td><td>1.07</td></tr>
+<tr><td class='l'>120日漲停天數｜Q5<br><small>當日收盤</small></td><td>92.5%</td><td>17.1%</td><td>5.42</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>92.3%</td><td>85.0%</td><td>1.09</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L3</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1</td><td>100.0%</td><td>46.7%</td><td>32.1%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>100.0%</td><td>81.6%</td><td>94.5%</td></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>100.0%</td><td>88.9%</td><td>92.1%</td></tr>
+<tr><td class='l'>距60日最高｜Q1</td><td>94.9%</td><td>49.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q1</td><td>94.7%</td><td>43.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>60日區間寬度｜Q5</td><td>93.5%</td><td>51.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>93.0%</td><td>92.9%</td><td>86.8%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>89.5%</td><td>58.1%</td><td>48.7%</td></tr>
+<tr><td class='l'>原X2 區間突破後量縮｜是</td><td>89.3%</td><td>56.1%</td><td>60.2%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q1</td><td>88.2%</td><td>42.9%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 0.0%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 67.7%（一般 12.4%）；兩者皆非 32.3%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 22.5%、漲跌中位 4.6%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 28 個（一般股票同數量以上 0.7%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：市值｜Q2→20日均額｜Q5 36.4%（一般 2.9%）；當日額÷前250日均額｜Q5→距60日最高｜Q1 92.3%（一般 10.5%）；原X1 熊狗篩選｜是→收盤÷修正箱上箱價−1｜Q1 100.0%（一般 12.6%）；當日額÷前250日均額｜Q5→收盤÷修正箱上箱價−1｜Q1 100.0%（一般 12.9%）；營收月增率｜Q3→250日處置天數｜Q5 71.4%（一般 9.2%）</p>
+</div>
+<div class='pane' id='p30_4'><h3>30% 拉回、4 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 2 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 3 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+<tr><td class='l'>第 4 段</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 —。</p>
+<h4>H1：可用格 0，不報</h4>
+<h4>L2：可用格 0，不報</h4>
+<h4>H2：可用格 0，不報</h4>
+<h4>L3：可用格 0，不報</h4>
+<h4>H3：可用格 0，不報</h4>
+<h4>L4：可用格 0，不報</h4>
+</div>
+<div class='pane' id='p30_5p'><h3>30% 拉回、5+ 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+</table></div>
+<h4>H1：可用格 0，不報</h4>
+<h4>L2：可用格 0，不報</h4>
+<h4>H2：可用格 0，不報</h4>
+<h4>L3：可用格 0，不報</h4>
+<h4>H3：可用格 0，不報</h4>
+<h4>L4：可用格 0，不報</h4>
+<h4>H4：可用格 0，不報</h4>
+<h4>L5：可用格 0，不報</h4>
+<h4>H5以後：可用格 0，不報</h4>
+<h4>L6以後：可用格 0，不報</h4>
+</div>
+<div class='pane' id='p50_2'><h3>50% 拉回、2 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+<tr><td class='l'>第 1 段</td><td>30.9%</td><td>31 天</td><td>-51.9%</td><td>73 天</td><td>2</td></tr>
+<tr><td class='l'>第 2 段</td><td>181.1%</td><td>102 天</td><td>—</td><td>—</td><td>2</td></tr>
+</table></div><p class='note'>H1 在整段漲幅的位置（0 ＝ 起漲、1 ＝ 頂）：中位 0.42。</p>
+<h4>H1（可用 2 格；納入 47 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>收盤÷MA10−1｜Q5<br><small>當日收盤</small></td><td>94.0%</td><td>20.0%</td><td>4.71</td></tr>
+<tr><td class='l'>距10日最低｜Q5<br><small>當日收盤</small></td><td>94.0%</td><td>19.9%</td><td>4.72</td></tr>
+<tr><td class='l'>距20日最低｜Q5<br><small>當日收盤</small></td><td>94.0%</td><td>19.9%</td><td>4.72</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5<br><small>當日收盤</small></td><td>94.0%</td><td>20.0%</td><td>4.71</td></tr>
+<tr><td class='l'>10日報酬｜Q5<br><small>當日收盤</small></td><td>92.6%</td><td>20.0%</td><td>4.64</td></tr>
+<tr><td class='l'>收盤÷MA5−1｜Q5<br><small>當日收盤</small></td><td>87.8%</td><td>20.0%</td><td>4.40</td></tr>
+<tr><td class='l'>距5日最低｜Q5<br><small>當日收盤</small></td><td>87.8%</td><td>19.8%</td><td>4.43</td></tr>
+<tr><td class='l'>20日報酬｜Q5<br><small>當日收盤</small></td><td>87.7%</td><td>20.0%</td><td>4.39</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5<br><small>當日收盤</small></td><td>87.7%</td><td>20.0%</td><td>4.39</td></tr>
+<tr><td class='l'>RSI14｜Q5<br><small>當日收盤</small></td><td>86.3%</td><td>20.0%</td><td>4.32</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>H1</th><th>P（頂）</th><th>一般</th></tr>
+<tr><td class='l'>原K3 RSI14&gt;50｜是</td><td>95.6%</td><td>100.0%</td><td>49.0%</td></tr>
+<tr><td class='l'>原：0050在200日線上｜是</td><td>94.2%</td><td>95.6%</td><td>75.5%</td></tr>
+<tr><td class='l'>距10日最低｜Q5</td><td>94.0%</td><td>100.0%</td><td>19.9%</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5</td><td>94.0%</td><td>100.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日報酬｜Q5</td><td>92.6%</td><td>98.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>10日區間寬度｜Q5</td><td>87.7%</td><td>98.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>EMA5/10/20最大÷最小−1｜Q5</td><td>80.0%</td><td>98.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>60日注意次數｜Q5</td><td>77.2%</td><td>86.1%</td><td>15.3%</td></tr>
+<tr><td class='l'>10日平均周轉率｜Q5</td><td>73.3%</td><td>86.4%</td><td>20.0%</td></tr>
+<tr><td class='l'>120日漲停天數｜Q5</td><td>72.5%</td><td>81.4%</td><td>17.1%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 54.7%（一般 8.0%）；只有短線急拉 33.3%（一般 13.1%）；只有之前已大漲 7.5%（一般 12.4%）；兩者皆非 4.4%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 10.6%、收跌≥5% 37.8%、收黑 80.3%、漲跌中位 -3.7%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 47 個）：一半的點至少有 26 個（一般股票同數量以上 1.9%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：停止融資中｜是→K＞80連續天數｜Q5 100.0%（一般 6.6%）；距60日最高｜Q5→250日處置天數｜Q5 71.4%（一般 5.7%）；收盤÷修正箱上箱價−1｜Q3→收盤÷MA20−1｜Q5 75.0%（一般 6.6%）；收盤÷修正箱上箱價−1｜Q3→60日注意次數｜Q5 100.0%（一般 9.9%）；投信連買天數｜Q5→250日處置天數｜Q5 65.0%（一般 6.7%）</p>
+<h4>L2（可用 2 格；納入 46 個）</h4><div class='wrap'><table><tr><th class='l'>最常見的情況（前 10）</th><th>這個點</th><th>一般</th><th>倍數</th></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>100.0%</td><td>86.9%</td><td>1.15</td></tr>
+<tr><td class='l'>投信連買天數｜Q1<br><small>當日盤後公布</small></td><td>100.0%</td><td>91.0%</td><td>1.10</td></tr>
+<tr><td class='l'>距20日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>22.8%</td><td>4.38</td></tr>
+<tr><td class='l'>距120日最高｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>20.0%</td><td>5.00</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>92.0%</td><td>1.09</td></tr>
+<tr><td class='l'>距10日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>25.7%</td><td>3.90</td></tr>
+<tr><td class='l'>距5日最低｜Q1<br><small>當日收盤</small></td><td>100.0%</td><td>32.1%</td><td>3.11</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1<br><small>當日收盤</small></td><td>96.9%</td><td>94.5%</td><td>1.03</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5<br><small>當日收盤</small></td><td>96.8%</td><td>20.0%</td><td>4.85</td></tr>
+<tr><td class='l'>投信10日淨買÷股本｜Q1<br><small>當日盤後公布</small></td><td>95.6%</td><td>85.0%</td><td>1.12</td></tr>
+</table></div>
+<div class='wrap'><table><tr><th class='l'>同一批特徵對照（前 10）</th><th>L2</th><th>t（起漲）</th><th>一般</th></tr>
+<tr><td class='l'>原K1 K&gt;80連續天數級距｜0 天</td><td>100.0%</td><td>90.8%</td><td>92.0%</td></tr>
+<tr><td class='l'>距10日最低｜Q1</td><td>100.0%</td><td>39.9%</td><td>25.7%</td></tr>
+<tr><td class='l'>投信連買天數｜Q1</td><td>100.0%</td><td>85.0%</td><td>91.0%</td></tr>
+<tr><td class='l'>投信5日淨買÷股本｜Q1</td><td>100.0%</td><td>81.4%</td><td>86.9%</td></tr>
+<tr><td class='l'>距120日最高｜Q1</td><td>100.0%</td><td>29.3%</td><td>20.0%</td></tr>
+<tr><td class='l'>5日漲停天數｜Q1</td><td>96.9%</td><td>77.5%</td><td>94.5%</td></tr>
+<tr><td class='l'>120日區間寬度｜Q5</td><td>96.8%</td><td>48.5%</td><td>20.0%</td></tr>
+<tr><td class='l'>原V2 EMA20&gt;SMA20連續天數級距｜0 天</td><td>95.6%</td><td>55.3%</td><td>48.7%</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q1</td><td>94.3%</td><td>45.0%</td><td>20.0%</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q1</td><td>93.7%</td><td>32.6%</td><td>20.0%</td></tr>
+</table></div>
+<p class='note'>階段：短線急拉＋之前已大漲 3.1%（一般 8.0%）；只有短線急拉 0.0%（一般 13.1%）；只有之前已大漲 19.7%（一般 12.4%）；兩者皆非 77.2%（一般 66.5%）</p>
+<p class='note'>隔天：收跌停 0.0%、收跌≥5% 0.0%、收黑 13.6%、漲跌中位 9.8%（一般 0.0%）。</p>
+<p class='note'>同時有幾個（共 46 個）：一半的點至少有 27 個（一般股票同數量以上 1.3%）。完整分佈見 count_dist.csv。</p>
+<p class='note'>最特別的一起出現（倍數前 5）：外資5日淨買÷股本｜Q5→距10日最低｜Q1 100.0%（一般 12.9%）；停止融資中｜是→60日均額｜Q5 20.0%（一般 2.6%）；均線多頭排列段數(5/10/20/60/120/250)｜Q1→120日區間寬度｜Q5 94.9%（一般 14.5%）；最近一季EPS｜Q4→距120日最高｜Q1 100.0%（一般 15.3%）；最近一季EPS｜Q4→收盤÷修正箱上箱價−1｜Q1 100.0%（一般 15.3%）</p>
+</div>
+<div class='pane' id='p50_3'><h3>50% 拉回、3 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+</table></div>
+<h4>H1：可用格 0，不報</h4>
+<h4>L2：可用格 0，不報</h4>
+<h4>H2：可用格 0，不報</h4>
+<h4>L3：可用格 0，不報</h4>
+</div>
+<div class='pane' id='p50_4'><h3>50% 拉回、4 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+</table></div>
+<h4>H1：可用格 0，不報</h4>
+<h4>L2：可用格 0，不報</h4>
+<h4>H2：可用格 0，不報</h4>
+<h4>L3：可用格 0，不報</h4>
+<h4>H3：可用格 0，不報</h4>
+<h4>L4：可用格 0，不報</h4>
+</div>
+<div class='pane' id='p50_5p'><h3>50% 拉回、5+ 段：各段漲多少、拉回多深</h3>
+<div class='wrap'><table><tr><th class='l'>段</th><th>漲幅</th><th>上漲天數</th><th>之後拉回</th><th>拉回天數</th><th>可用格</th></tr>
+</table></div>
+<h4>H1：可用格 0，不報</h4>
+<h4>L2：可用格 0，不報</h4>
+<h4>H2：可用格 0，不報</h4>
+<h4>L3：可用格 0，不報</h4>
+<h4>H3：可用格 0，不報</h4>
+<h4>L4：可用格 0，不報</h4>
+<h4>H4：可用格 0，不報</h4>
+<h4>L5：可用格 0，不報</h4>
+<h4>H5以後：可用格 0，不報</h4>
+<h4>L6以後：可用格 0，不報</h4>
+</div>
+<p class='note'>全部數字（兩兩、組合、前 1／3／5／10 天、原門檻版）見 csv。</p>
+<script>function sw(){var x=document.getElementById('sx').value,c=document.getElementById('sc').value.replace('+','p');document.querySelectorAll('.pane').forEach(e=>e.classList.toggle('on',e.id=='p'+x+'_'+c))}sw()</script></main></body></html>
