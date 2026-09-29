@@ -1,0 +1,716 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>中段底再拉一段判斷</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:6px 10px;background:#eef4fb}tr.m td{background:#fdecea;font-weight:bold}.sel{position:sticky;top:0;background:#fff;padding:6px 0;z-index:2}.sel select{font-size:16px;margin:2px 4px;padding:4px}.pane{display:none}.pane.on{display:block}</style></head><body><main>
+<h1>拉回的低點：會再拉一段，還是就此結束？（2021–2026-08）</h1>
+<p class='warn'>⚠ 中段底（拉回後還會再創新高的低點）、頂後底（真頂之後第一次回落的低點）都是事後才知道的。第一、二部分用「事後已知這天是低點」的點；<b>只有第三部分「回落第一次達到 x% 那天」當下真的能用</b>。本件是看過前幾份結果之後才加的，只當描述與參考，沒有計入檢定數。</p>
+<p class='note'>中段底當天的一般特徵（Q 表各級距）已在「飆股中段高低點整理」那頁，這裡只放新的「拉回狀態」特徵與判斷。</p>
+<p class='lead'>182 種飆股定義各算一次取中位數；探索 2021–2023 選、確認 2024–2026-08 驗。讀法寫死 2026-09-29 21:53（台北）。</p>
+<h2>先講結論（以拉回 20% 為例；其他用下方選單）</h2><p class='note'>⚠ 「前面已完成段數」「從起漲累積漲幅」「前段漲幅」三項：頂後底在定義上一定跟在整段漲完之後，差距是構造使然、不可當訊號，下面結論已排除。</p><ul>
+<li><b>會再拉的底比較常見</b>：MA60下天數｜Q2（0～4）（63.8% 對 22.9%）、累計處置次數｜0（57.8% 對 19.5%）、守住MA60｜是（43.0% 對 10.9%）、回落深度｜Q5（-0.23～∞）（34.3% 對 3.4%）、MA20下天數｜Q1（−∞～5）（34.0% 對 5.6%）。</li>
+<li><b>就此結束的底比較常見</b>：回落深度｜Q1（−∞～-0.389）（52.8% 對 4.7%）、拉回天數｜Q5（62～∞）（36.4% 對 1.8%）、MA20下天數｜Q5（44～∞）（35.6% 對 1.7%）、守住MA60｜否（89.1% 對 57.0%）、MA60下天數｜Q5（38～∞）（31.5% 對 2.5%）。</li>
+<li><b>低點分數（K＝5）確認段</b>（⚠ 用事後已知的低點、含構造使然的特徵，數字偏樂觀）：全部低點裡會再拉占 59.8%；分數 ≥ 3 時 95.3%，抓到 63.7% 的會再拉、誤抓 5.3% 的頂後底。</li>
+<li class='ok'><b>當下可用版（回落第一次達到 20% 那天，K＝5）確認段</b>：全部之後 120 日內再創新高 68.2%；分數 ≥ 3（探索段定的讀法）時 74.8%，占觸發日 59.2%；60 日內再跌 20% 16.1%（全部 20.3%）。</li>
+</ul>
+<div class='sel'>拉回門檻<select id='sx' onchange='sw()'><option value='10'>10%</option><option value='20'>20%</option><option value='30'>30%</option></select></div>
+<div class='pane' id='p10'>
+<h2>零、兩類低點各有多少</h2><div class='wrap'><table><tr><th class='l'>組</th><th>點數</th><th>可用格</th><th>回落深度（中位）</th></tr>
+<tr><td class='l'>會再拉（中段底 Lk）</td><td>372,191</td><td>180</td><td>-15.4%</td></tr>
+<tr><td class='l'>沒再拉（頂後底）</td><td>63,430</td><td>153</td><td>-28.5%</td></tr>
+<tr><td class='l'>頂後底之後又越過 P</td><td>138,992</td><td>174</td><td>-18.8%</td></tr>
+<tr><td class='l'>中段底 L2</td><td>173,864</td><td>179</td><td>-15.5%</td></tr>
+<tr><td class='l'>中段底 L3</td><td>106,078</td><td>171</td><td>-15.3%</td></tr>
+<tr><td class='l'>中段底 L4 以後</td><td>92,249</td><td>163</td><td>-15.5%</td></tr>
+</table></div>
+<h2>一、拉回狀態：會再拉 vs 就此結束（兩段合併）</h2>
+<h3>拉回幅度與時間</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>回落深度｜Q5（-0.118～∞）</td><td>20.5%</td><td>1.4%</td><td>19.1%</td></tr>
+<tr><td class='l'>拉回天數｜Q1（−∞～5）</td><td>26.6%</td><td>7.5%</td><td>19.1%</td></tr>
+<tr><td class='l'>回落深度｜Q4（-0.142～-0.118）</td><td>21.5%</td><td>4.0%</td><td>17.5%</td></tr>
+<tr><td class='l'>回落深度｜Q3（-0.182～-0.142）</td><td>22.2%</td><td>11.2%</td><td>11.0%</td></tr>
+<tr><td class='l'>拉回天數｜Q2（5～9）</td><td>24.5%</td><td>13.9%</td><td>10.6%</td></tr>
+<tr><td class='l'>回落速度｜Q1（−∞～-0.034）</td><td>25.9%</td><td>20.4%</td><td>5.6%</td></tr>
+<tr><td class='l'>回落速度｜Q2（-0.034～-0.0191）</td><td>26.6%</td><td>22.1%</td><td>4.5%</td></tr>
+<tr><td class='l'>拉回天數｜Q3（9～15）</td><td>19.5%</td><td>19.5%</td><td>-0.0%</td></tr>
+<tr><td class='l'>回落速度｜Q3（-0.0191～-0.0119）</td><td>18.7%</td><td>19.8%</td><td>-1.1%</td></tr>
+<tr><td class='l'>回落速度｜Q4（-0.0119～-0.00709）</td><td>16.6%</td><td>18.3%</td><td>-1.7%</td></tr>
+<tr><td class='l'>回落深度｜Q2（-0.258～-0.182）</td><td>22.0%</td><td>25.1%</td><td>-3.1%</td></tr>
+<tr><td class='l'>拉回天數｜Q4（15～27）</td><td>16.2%</td><td>21.1%</td><td>-4.9%</td></tr>
+<tr><td class='l'>回落速度｜Q5（-0.00709～∞）</td><td>11.8%</td><td>18.7%</td><td>-6.9%</td></tr>
+<tr><td class='l'>拉回天數｜Q5（27～∞）</td><td>12.9%</td><td>37.1%</td><td>-24.3%</td></tr>
+<tr><td class='l'>回落深度｜Q1（−∞～-0.258）</td><td>13.4%</td><td>59.5%</td><td>-46.0%</td></tr>
+</table></div>
+<h3>量</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q3（0.77～1.15）</td><td>22.0%</td><td>18.5%</td><td>3.5%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q4（1.15～1.92）</td><td>20.3%</td><td>17.5%</td><td>2.7%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q5（1.92～∞）</td><td>19.5%</td><td>19.5%</td><td>0.0%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q2（0.522～0.77）</td><td>18.8%</td><td>20.0%</td><td>-1.2%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q1（−∞～0.522）</td><td>19.5%</td><td>22.9%</td><td>-3.4%</td></tr>
+</table></div>
+<h3>籌碼</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>大戶4週變化｜Q5（1～∞）</td><td>28.4%</td><td>17.6%</td><td>10.8%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q3（-0.00363～-0.00042）</td><td>22.4%</td><td>12.3%</td><td>10.1%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q2（-0.0103～-0.00363）</td><td>22.3%</td><td>16.3%</td><td>6.0%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q3（-0.00268～-7.28e-05）</td><td>17.1%</td><td>11.1%</td><td>6.0%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q4（-7.28e-05～0.00256）</td><td>17.5%</td><td>12.2%</td><td>5.4%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q3（-0.37～0.02）</td><td>16.6%</td><td>12.1%</td><td>4.5%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q2（-0.0111～-0.00268）</td><td>19.8%</td><td>16.6%</td><td>3.3%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q5（0.00029～∞）</td><td>20.4%</td><td>17.3%</td><td>3.1%</td></tr>
+<tr><td class='l'>投信淨賣｜是</td><td>22.7%</td><td>22.0%</td><td>0.7%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q4（-0.00042～0.00029）</td><td>16.4%</td><td>16.7%</td><td>-0.3%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q4（0.02～1）</td><td>16.1%</td><td>16.7%</td><td>-0.6%</td></tr>
+<tr><td class='l'>投信淨賣｜否</td><td>77.3%</td><td>78.0%</td><td>-0.7%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q2（-1.62～-0.37）</td><td>18.9%</td><td>22.0%</td><td>-3.2%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q5（0.00256～∞）</td><td>22.5%</td><td>30.2%</td><td>-7.6%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q1（−∞～-0.0111）</td><td>22.6%</td><td>30.8%</td><td>-8.3%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q1（−∞～-1.62）</td><td>20.2%</td><td>32.2%</td><td>-12.0%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q1（−∞～-0.0103）</td><td>18.1%</td><td>39.0%</td><td>-20.9%</td></tr>
+</table></div>
+<h3>均線與支撐</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>MA20下天數｜Q2（0～3）</td><td>49.5%</td><td>23.5%</td><td>26.0%</td></tr>
+<tr><td class='l'>守住MA60｜是</td><td>65.4%</td><td>40.6%</td><td>24.8%</td></tr>
+<tr><td class='l'>MA60下天數｜Q3（0～3）</td><td>75.5%</td><td>54.8%</td><td>20.7%</td></tr>
+<tr><td class='l'>守住MA20｜是</td><td>29.2%</td><td>10.0%</td><td>19.2%</td></tr>
+<tr><td class='l'>守住前段起漲價｜是</td><td>78.8%</td><td>69.3%</td><td>9.5%</td></tr>
+<tr><td class='l'>MA20下天數｜Q3（3～9）</td><td>22.8%</td><td>19.8%</td><td>3.1%</td></tr>
+<tr><td class='l'>MA60下天數｜Q2（0～0）</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td class='l'>MA20下天數｜Q1（−∞～0）</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td class='l'>MA60下天數｜Q1（−∞～0）</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td class='l'>MA60下天數｜Q4（3～11）</td><td>14.0%</td><td>17.9%</td><td>-3.9%</td></tr>
+<tr><td class='l'>MA20下天數｜Q4（9～18）</td><td>13.9%</td><td>21.5%</td><td>-7.7%</td></tr>
+<tr><td class='l'>守住前段起漲價｜否</td><td>21.2%</td><td>30.7%</td><td>-9.5%</td></tr>
+<tr><td class='l'>MA60下天數｜Q5（11～∞）</td><td>11.0%</td><td>26.3%</td><td>-15.3%</td></tr>
+<tr><td class='l'>守住MA20｜否</td><td>70.8%</td><td>90.0%</td><td>-19.2%</td></tr>
+<tr><td class='l'>MA20下天數｜Q5（18～∞）</td><td>13.2%</td><td>33.9%</td><td>-20.7%</td></tr>
+<tr><td class='l'>守住MA60｜否</td><td>34.6%</td><td>59.4%</td><td>-24.8%</td></tr>
+</table></div>
+<h3>處置</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>累計處置次數｜0</td><td>66.7%</td><td>20.1%</td><td>46.6%</td></tr>
+<tr><td class='l'>剛出關｜否</td><td>91.4%</td><td>69.7%</td><td>21.7%</td></tr>
+<tr><td class='l'>拉回時處置中｜否</td><td>86.3%</td><td>82.4%</td><td>3.9%</td></tr>
+<tr><td class='l'>拉回時處置中｜是</td><td>13.7%</td><td>17.6%</td><td>-3.9%</td></tr>
+<tr><td class='l'>累計處置次數｜1</td><td>19.3%</td><td>29.2%</td><td>-9.9%</td></tr>
+<tr><td class='l'>累計處置次數｜2</td><td>8.1%</td><td>19.7%</td><td>-11.6%</td></tr>
+<tr><td class='l'>累計處置次數｜3 以上</td><td>4.2%</td><td>22.1%</td><td>-17.9%</td></tr>
+<tr><td class='l'>剛出關｜是</td><td>8.6%</td><td>30.3%</td><td>-21.7%</td></tr>
+</table></div>
+<h3>漲勢位置</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>前面已完成段數｜0<br><small>⚠ 構造使然，不可當訊號</small></td><td>39.2%</td><td>0.0%</td><td>39.2%</td></tr>
+<tr><td class='l'>前面已完成段數｜1<br><small>⚠ 構造使然，不可當訊號</small></td><td>29.1%</td><td>5.6%</td><td>23.5%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q4（0.536～1.01）<br><small>⚠ 構造使然，不可當訊號</small></td><td>20.6%</td><td>0.0%</td><td>20.6%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q3（0.322～0.536）<br><small>⚠ 構造使然，不可當訊號</small></td><td>13.4%</td><td>0.0%</td><td>13.4%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q1（−∞～0.145）<br><small>⚠ 構造使然，不可當訊號</small></td><td>13.1%</td><td>0.0%</td><td>13.1%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q2（0.145～0.322）<br><small>⚠ 構造使然，不可當訊號</small></td><td>12.8%</td><td>0.0%</td><td>12.8%</td></tr>
+<tr><td class='l'>前段漲幅｜Q1（−∞～0.153）<br><small>⚠ 構造使然，不可當訊號</small></td><td>13.6%</td><td>1.3%</td><td>12.3%</td></tr>
+<tr><td class='l'>前段漲幅｜Q2（0.153～0.28）<br><small>⚠ 構造使然，不可當訊號</small></td><td>17.8%</td><td>12.1%</td><td>5.7%</td></tr>
+<tr><td class='l'>前段漲幅｜Q3（0.28～0.436）<br><small>⚠ 構造使然，不可當訊號</small></td><td>19.5%</td><td>18.1%</td><td>1.4%</td></tr>
+<tr><td class='l'>前面已完成段數｜2<br><small>⚠ 構造使然，不可當訊號</small></td><td>18.1%</td><td>18.9%</td><td>-0.8%</td></tr>
+<tr><td class='l'>前段漲幅｜Q4（0.436～0.679）<br><small>⚠ 構造使然，不可當訊號</small></td><td>19.8%</td><td>23.8%</td><td>-4.1%</td></tr>
+<tr><td class='l'>前段漲幅｜Q5（0.679～∞）<br><small>⚠ 構造使然，不可當訊號</small></td><td>30.1%</td><td>44.2%</td><td>-14.1%</td></tr>
+<tr><td class='l'>前面已完成段數｜3 以上<br><small>⚠ 構造使然，不可當訊號</small></td><td>11.8%</td><td>74.3%</td><td>-62.5%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q5（1.01～∞）<br><small>⚠ 構造使然，不可當訊號</small></td><td>36.6%</td><td>100.0%</td><td>-63.4%</td></tr>
+</table></div>
+<h2>二、單一特徵：有它時會再拉的機率是平常的幾倍（探索前 15、確認照報）</h2><div class='wrap'><table><tr><th class='l'>特徵</th><th>探索 倍數（下緣）</th><th>確認 倍數（下緣）</th></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>1.16（1.16）</td><td>1.14（0.93）</td></tr>
+<tr><td class='l'>5日漲停天數｜Q4</td><td>1.13（1.13）</td><td>—（—）</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q4</td><td>1.12（1.07）</td><td>1.18（1.07）</td></tr>
+<tr><td class='l'>距10日最低｜Q2</td><td>1.11（1.11）</td><td>1.12（1.11）</td></tr>
+<tr><td class='l'>距5日最高｜Q5</td><td>1.11（1.11）</td><td>1.11（1.11）</td></tr>
+<tr><td class='l'>距10日最低｜Q3</td><td>1.11（1.11）</td><td>1.11（1.03）</td></tr>
+<tr><td class='l'>距5日最低｜Q4</td><td>1.11（1.11）</td><td>1.11（1.10）</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>1.11（1.11）</td><td>1.12（1.08）</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q1（−∞～0.145）<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.11（1.11）</td><td>1.15（1.15）</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q2（0.145～0.322）<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.11（1.11）</td><td>1.15（1.15）</td></tr>
+<tr><td class='l'>前面已完成段數｜0<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.11（1.11）</td><td>1.15（1.15）</td></tr>
+<tr><td class='l'>K＞80連續天數｜Q5</td><td>1.11（1.11）</td><td>1.14（1.12）</td></tr>
+<tr><td class='l'>距20日最低｜Q2</td><td>1.11（1.11）</td><td>1.05（0.93）</td></tr>
+<tr><td class='l'>距5日最低｜Q3</td><td>1.11（1.11）</td><td>1.15（1.15）</td></tr>
+<tr><td class='l'>距250日最高｜Q5</td><td>1.11（1.11）</td><td>1.14（1.11）</td></tr>
+</table></div>
+<p class='warn'>⚠ 下面的低點分數用的是事後才知道的低點，而且選入的特徵含構造使然的項目（標 ⚠ 者），數字偏樂觀；當下真的能用的請看第三部分。</p>
+<h3>低點分數 K＝3（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、250日處置天數｜Q1）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>87.1%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>95.4%</td><td>75.3%</td><td>25.8%</td><td>67.1%</td></tr>
+<tr><td>2</td><td>95.7%</td><td>65.0%</td><td>22.4%</td><td>59.7%</td></tr>
+<tr><td>3</td><td>100.0%</td><td>25.6%</td><td>0.0%</td><td>21.9%</td></tr>
+</table></div>
+<h3>低點分數 K＝5（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、250日處置天數｜Q1、距60日最高｜Q2、250日區間寬度｜Q4）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>87.1%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>94.3%</td><td>86.4%</td><td>38.6%</td><td>79.4%</td></tr>
+<tr><td>2</td><td>95.7%</td><td>70.0%</td><td>23.7%</td><td>63.3%</td></tr>
+<tr><td>3</td><td>98.5%</td><td>46.6%</td><td>4.5%</td><td>40.6%</td></tr>
+<tr><td>4</td><td>100.0%</td><td>17.8%</td><td>0.0%</td><td>15.1%</td></tr>
+<tr><td>5</td><td>100.0%</td><td>3.2%</td><td>0.0%</td><td>2.8%</td></tr>
+</table></div>
+<h3>低點分數 K＝8（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、250日處置天數｜Q1、距60日最高｜Q2、250日區間寬度｜Q4、從t起累積漲幅｜Q4（0.536～1.01）（⚠ 構造使然）、前250日均線5/10/20糾結度｜Q4、60日注意次數｜Q1）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>87.1%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>94.0%</td><td>89.2%</td><td>42.9%</td><td>83.1%</td></tr>
+<tr><td>2</td><td>95.8%</td><td>76.2%</td><td>24.7%</td><td>67.7%</td></tr>
+<tr><td>3</td><td>98.4%</td><td>59.7%</td><td>8.0%</td><td>52.3%</td></tr>
+<tr><td>4</td><td>99.5%</td><td>39.3%</td><td>1.4%</td><td>34.1%</td></tr>
+<tr><td>5</td><td>100.0%</td><td>21.2%</td><td>0.0%</td><td>18.9%</td></tr>
+<tr><td>6</td><td>100.0%</td><td>9.6%</td><td>0.0%</td><td>8.4%</td></tr>
+<tr><td>7</td><td>100.0%</td><td>3.0%</td><td>0.0%</td><td>2.6%</td></tr>
+<tr><td>8</td><td>100.0%</td><td>0.1%</td><td>0.0%</td><td>0.1%</td></tr>
+</table></div>
+<h3>低點分數 K＝全部（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、250日處置天數｜Q1、距60日最高｜Q2、250日區間寬度｜Q4、從t起累積漲幅｜Q4（0.536～1.01）（⚠ 構造使然）、前250日均線5/10/20糾結度｜Q4、60日注意次數｜Q1…）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>87.1%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>87.3%</td><td>100.0%</td><td>97.1%</td><td>99.6%</td></tr>
+<tr><td>2</td><td>88.8%</td><td>99.3%</td><td>84.1%</td><td>97.5%</td></tr>
+<tr><td>3</td><td>90.4%</td><td>98.2%</td><td>69.2%</td><td>94.6%</td></tr>
+<tr><td>4</td><td>91.7%</td><td>96.3%</td><td>55.1%</td><td>90.7%</td></tr>
+<tr><td>5</td><td>93.4%</td><td>92.6%</td><td>40.7%</td><td>85.6%</td></tr>
+<tr><td>6</td><td>94.4%</td><td>86.8%</td><td>32.8%</td><td>79.7%</td></tr>
+<tr><td>7</td><td>95.3%</td><td>79.9%</td><td>24.8%</td><td>73.1%</td></tr>
+<tr><td>8</td><td>95.9%</td><td>71.9%</td><td>20.2%</td><td>65.5%</td></tr>
+<tr><td>9</td><td>96.6%</td><td>62.7%</td><td>15.6%</td><td>57.5%</td></tr>
+<tr><td>10</td><td>97.1%</td><td>52.4%</td><td>11.7%</td><td>48.0%</td></tr>
+<tr><td>11</td><td>97.3%</td><td>42.9%</td><td>9.4%</td><td>38.6%</td></tr>
+<tr><td>12</td><td>97.4%</td><td>33.5%</td><td>7.4%</td><td>29.8%</td></tr>
+<tr><td>13</td><td>97.5%</td><td>25.6%</td><td>5.1%</td><td>22.6%</td></tr>
+<tr><td>14</td><td>98.1%</td><td>18.8%</td><td>2.9%</td><td>16.8%</td></tr>
+<tr><td>15</td><td>98.9%</td><td>13.6%</td><td>1.3%</td><td>12.1%</td></tr>
+<tr><td>16</td><td>100.0%</td><td>9.5%</td><td>0.0%</td><td>8.4%</td></tr>
+<tr><td>17</td><td>100.0%</td><td>6.8%</td><td>0.0%</td><td>5.9%</td></tr>
+<tr><td>18</td><td>100.0%</td><td>4.7%</td><td>0.0%</td><td>4.1%</td></tr>
+<tr><td>19</td><td>100.0%</td><td>2.9%</td><td>0.0%</td><td>2.6%</td></tr>
+<tr><td>20</td><td>100.0%</td><td>1.6%</td><td>0.0%</td><td>1.4%</td></tr>
+<tr><td>21</td><td>100.0%</td><td>1.0%</td><td>0.0%</td><td>0.8%</td></tr>
+<tr><td>22</td><td>100.0%</td><td>0.5%</td><td>0.0%</td><td>0.4%</td></tr>
+<tr><td>23</td><td>100.0%</td><td>0.3%</td><td>0.0%</td><td>0.3%</td></tr>
+<tr><td>24</td><td>100.0%</td><td>0.3%</td><td>0.0%</td><td>0.2%</td></tr>
+<tr><td>25</td><td>100.0%</td><td>0.2%</td><td>0.0%</td><td>0.2%</td></tr>
+<tr><td>26</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>27</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>28</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>29</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>30</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>31</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>32</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>33</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>34</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>35</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>36</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>37</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>38</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>39</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>40</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>41</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>42</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>43</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>44</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+</table></div>
+<h2>三、當下可用版：回落第一次達到 x% 那天算分數（確認段）</h2><p class='note'>⭐ 只有這一版當下真的能用：從當時最高收盤跌到 x% 的那天就知道自己在拉回，看之後會不會再創新高。紅列 ＝ 探索段定的讀法。</p>
+<h3>K＝5</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>20日內創高</th><th>60日內</th><th>120日內</th><th>60日內再跌10%</th><th>再跌20%</th><th>占觸發日</th></tr>
+<tr class=''><td>0</td><td>53.7%</td><td>80.4%</td><td>87.4%</td><td>43.2%</td><td>20.2%</td><td>100.0%</td></tr>
+<tr class=''><td>1</td><td>53.2%</td><td>81.4%</td><td>89.4%</td><td>40.4%</td><td>17.6%</td><td>82.5%</td></tr>
+<tr class='m'><td>2</td><td>51.1%</td><td>82.9%</td><td>91.7%</td><td>35.9%</td><td>14.4%</td><td>63.6%</td></tr>
+<tr class=''><td>3</td><td>48.8%</td><td>82.7%</td><td>93.7%</td><td>33.8%</td><td>12.7%</td><td>42.1%</td></tr>
+<tr class=''><td>4</td><td>46.5%</td><td>81.1%</td><td>94.9%</td><td>32.1%</td><td>10.9%</td><td>15.7%</td></tr>
+<tr class=''><td>5</td><td>46.7%</td><td>76.2%</td><td>96.4%</td><td>33.5%</td><td>10.6%</td><td>2.8%</td></tr>
+</table></div>
+<h3>K＝全部</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>20日內創高</th><th>60日內</th><th>120日內</th><th>60日內再跌10%</th><th>再跌20%</th><th>占觸發日</th></tr>
+<tr class=''><td>0</td><td>53.7%</td><td>80.4%</td><td>87.4%</td><td>43.2%</td><td>20.2%</td><td>100.0%</td></tr>
+<tr class=''><td>1</td><td>53.6%</td><td>80.4%</td><td>87.4%</td><td>43.1%</td><td>20.2%</td><td>99.8%</td></tr>
+<tr class=''><td>2</td><td>53.7%</td><td>80.5%</td><td>87.5%</td><td>43.1%</td><td>20.2%</td><td>99.0%</td></tr>
+<tr class=''><td>3</td><td>53.8%</td><td>80.7%</td><td>87.6%</td><td>43.1%</td><td>20.1%</td><td>98.0%</td></tr>
+<tr class=''><td>4</td><td>54.0%</td><td>80.8%</td><td>87.9%</td><td>42.5%</td><td>19.9%</td><td>96.5%</td></tr>
+<tr class=''><td>5</td><td>53.9%</td><td>81.1%</td><td>88.5%</td><td>42.3%</td><td>19.7%</td><td>94.6%</td></tr>
+<tr class=''><td>6</td><td>54.3%</td><td>81.3%</td><td>88.8%</td><td>42.4%</td><td>19.6%</td><td>92.4%</td></tr>
+<tr class=''><td>7</td><td>54.6%</td><td>81.6%</td><td>89.1%</td><td>42.1%</td><td>19.2%</td><td>88.7%</td></tr>
+<tr class=''><td>8</td><td>55.0%</td><td>82.3%</td><td>89.2%</td><td>41.6%</td><td>18.9%</td><td>84.5%</td></tr>
+<tr class='m'><td>9</td><td>55.3%</td><td>82.5%</td><td>89.3%</td><td>41.3%</td><td>18.7%</td><td>78.8%</td></tr>
+<tr class=''><td>10</td><td>55.5%</td><td>82.5%</td><td>89.9%</td><td>41.8%</td><td>18.6%</td><td>71.8%</td></tr>
+<tr class=''><td>11</td><td>56.2%</td><td>83.0%</td><td>90.3%</td><td>41.5%</td><td>18.6%</td><td>63.7%</td></tr>
+<tr class=''><td>12</td><td>56.5%</td><td>84.0%</td><td>90.3%</td><td>41.3%</td><td>18.0%</td><td>54.0%</td></tr>
+<tr class=''><td>13</td><td>57.7%</td><td>83.8%</td><td>90.2%</td><td>41.0%</td><td>17.6%</td><td>44.1%</td></tr>
+<tr class=''><td>14</td><td>57.9%</td><td>83.9%</td><td>90.2%</td><td>40.3%</td><td>17.0%</td><td>34.6%</td></tr>
+<tr class=''><td>15</td><td>58.9%</td><td>85.0%</td><td>90.2%</td><td>39.3%</td><td>15.7%</td><td>26.1%</td></tr>
+<tr class=''><td>16</td><td>60.1%</td><td>85.6%</td><td>91.5%</td><td>38.6%</td><td>14.9%</td><td>19.0%</td></tr>
+<tr class=''><td>17</td><td>64.3%</td><td>86.7%</td><td>92.6%</td><td>37.5%</td><td>14.0%</td><td>13.7%</td></tr>
+<tr class=''><td>18</td><td>66.1%</td><td>88.2%</td><td>93.8%</td><td>37.9%</td><td>13.0%</td><td>9.2%</td></tr>
+<tr class=''><td>19</td><td>66.7%</td><td>88.1%</td><td>96.5%</td><td>37.8%</td><td>12.1%</td><td>6.1%</td></tr>
+<tr class=''><td>20</td><td>65.5%</td><td>84.9%</td><td>95.7%</td><td>34.6%</td><td>10.0%</td><td>3.5%</td></tr>
+<tr class=''><td>21</td><td>66.7%</td><td>88.9%</td><td>100.0%</td><td>35.3%</td><td>10.0%</td><td>2.1%</td></tr>
+<tr class=''><td>22</td><td>60.7%</td><td>83.8%</td><td>100.0%</td><td>40.0%</td><td>15.0%</td><td>1.1%</td></tr>
+<tr class=''><td>23</td><td>58.6%</td><td>83.3%</td><td>100.0%</td><td>43.8%</td><td>16.0%</td><td>0.6%</td></tr>
+<tr class=''><td>24</td><td>71.4%</td><td>80.0%</td><td>100.0%</td><td>33.3%</td><td>0.0%</td><td>0.3%</td></tr>
+<tr class=''><td>25</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.2%</td></tr>
+<tr class=''><td>26</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr class=''><td>27</td><td>100.0%</td><td>100.0%</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr class=''><td>28</td><td>100.0%</td><td>100.0%</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr class=''><td>29</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>30</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>31</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>32</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>33</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>34</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>35</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>36</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>37</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>38</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>39</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>40</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>41</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>42</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>43</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>44</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+</table></div>
+</div>
+<div class='pane' id='p20'>
+<h2>零、兩類低點各有多少</h2><div class='wrap'><table><tr><th class='l'>組</th><th>點數</th><th>可用格</th><th>回落深度（中位）</th></tr>
+<tr><td class='l'>會再拉（中段底 Lk）</td><td>105,012</td><td>168</td><td>-24.9%</td></tr>
+<tr><td class='l'>沒再拉（頂後底）</td><td>77,210</td><td>164</td><td>-39.6%</td></tr>
+<tr><td class='l'>頂後底之後又越過 P</td><td>103,250</td><td>160</td><td>-29.4%</td></tr>
+<tr><td class='l'>中段底 L2</td><td>84,102</td><td>167</td><td>-25.4%</td></tr>
+<tr><td class='l'>中段底 L3</td><td>18,168</td><td>114</td><td>-24.4%</td></tr>
+<tr><td class='l'>中段底 L4 以後</td><td>2,742</td><td>35</td><td>-24.4%</td></tr>
+</table></div>
+<h2>一、拉回狀態：會再拉 vs 就此結束（兩段合併）</h2>
+<h3>拉回幅度與時間</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>回落深度｜Q5（-0.23～∞）</td><td>34.3%</td><td>3.4%</td><td>30.9%</td></tr>
+<tr><td class='l'>拉回天數｜Q1（−∞～11）</td><td>32.3%</td><td>5.2%</td><td>27.1%</td></tr>
+<tr><td class='l'>回落速度｜Q1（−∞～-0.0259）</td><td>30.7%</td><td>10.3%</td><td>20.4%</td></tr>
+<tr><td class='l'>回落深度｜Q4（-0.267～-0.23）</td><td>24.7%</td><td>8.9%</td><td>15.8%</td></tr>
+<tr><td class='l'>拉回天數｜Q2（11～19）</td><td>24.3%</td><td>11.5%</td><td>12.8%</td></tr>
+<tr><td class='l'>回落速度｜Q2（-0.0259～-0.0154）</td><td>23.8%</td><td>13.8%</td><td>10.0%</td></tr>
+<tr><td class='l'>回落深度｜Q3（-0.317～-0.267）</td><td>20.9%</td><td>13.9%</td><td>7.0%</td></tr>
+<tr><td class='l'>拉回天數｜Q3（19～29）</td><td>18.9%</td><td>12.3%</td><td>6.6%</td></tr>
+<tr><td class='l'>回落速度｜Q3（-0.0154～-0.00972）</td><td>19.7%</td><td>16.4%</td><td>3.4%</td></tr>
+<tr><td class='l'>回落深度｜Q2（-0.389～-0.317）</td><td>15.5%</td><td>22.1%</td><td>-6.6%</td></tr>
+<tr><td class='l'>回落速度｜Q4（-0.00972～-0.00535）</td><td>18.7%</td><td>25.7%</td><td>-7.0%</td></tr>
+<tr><td class='l'>拉回天數｜Q4（29～62）</td><td>21.5%</td><td>29.3%</td><td>-7.8%</td></tr>
+<tr><td class='l'>回落速度｜Q5（-0.00535～∞）</td><td>5.1%</td><td>26.8%</td><td>-21.8%</td></tr>
+<tr><td class='l'>拉回天數｜Q5（62～∞）</td><td>1.8%</td><td>36.4%</td><td>-34.6%</td></tr>
+<tr><td class='l'>回落深度｜Q1（−∞～-0.389）</td><td>4.7%</td><td>52.8%</td><td>-48.1%</td></tr>
+</table></div>
+<h3>量</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q3（0.788～1.17）</td><td>22.7%</td><td>18.3%</td><td>4.4%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q5（2.04～∞）</td><td>22.0%</td><td>22.2%</td><td>-0.2%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q2（0.491～0.788）</td><td>18.2%</td><td>18.6%</td><td>-0.4%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q1（−∞～0.491）</td><td>15.7%</td><td>16.2%</td><td>-0.5%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q4（1.17～2.04）</td><td>22.2%</td><td>24.7%</td><td>-2.5%</td></tr>
+</table></div>
+<h3>籌碼</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>融資變化÷股本｜Q3（-0.0081～-0.00223）</td><td>22.6%</td><td>13.4%</td><td>9.2%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q5（0.6～∞）</td><td>26.0%</td><td>17.8%</td><td>8.2%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q4（0～0.00586）</td><td>21.9%</td><td>13.9%</td><td>8.1%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q3（-0.00363～0）</td><td>16.3%</td><td>10.1%</td><td>6.2%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q5（0～∞）</td><td>28.3%</td><td>24.8%</td><td>3.5%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q4（-0.00223～0）</td><td>11.9%</td><td>9.1%</td><td>2.9%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q2（-0.0178～-0.0081）</td><td>21.8%</td><td>19.3%</td><td>2.5%</td></tr>
+<tr><td class='l'>投信淨賣｜否</td><td>74.6%</td><td>73.4%</td><td>1.2%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q4（-0.02～0.6）</td><td>19.1%</td><td>19.8%</td><td>-0.7%</td></tr>
+<tr><td class='l'>投信淨賣｜是</td><td>25.4%</td><td>26.6%</td><td>-1.2%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q2（-0.0156～-0.00363）</td><td>18.4%</td><td>20.3%</td><td>-1.9%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q1（−∞～-2.2）</td><td>21.3%</td><td>23.9%</td><td>-2.6%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q2（-2.2～-0.69）</td><td>18.7%</td><td>21.5%</td><td>-2.8%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q5（0.00586～∞）</td><td>20.5%</td><td>23.3%</td><td>-2.9%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q3（-0.69～-0.02）</td><td>14.6%</td><td>17.9%</td><td>-3.3%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q1（−∞～-0.0156）</td><td>20.8%</td><td>33.6%</td><td>-12.8%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q1（−∞～-0.0178）</td><td>14.9%</td><td>33.4%</td><td>-18.5%</td></tr>
+</table></div>
+<h3>均線與支撐</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>MA60下天數｜Q2（0～4）</td><td>63.8%</td><td>22.9%</td><td>40.9%</td></tr>
+<tr><td class='l'>守住MA60｜是</td><td>43.0%</td><td>10.9%</td><td>32.2%</td></tr>
+<tr><td class='l'>MA20下天數｜Q1（−∞～5）</td><td>34.0%</td><td>5.6%</td><td>28.4%</td></tr>
+<tr><td class='l'>MA20下天數｜Q2（5～12）</td><td>22.7%</td><td>11.9%</td><td>10.8%</td></tr>
+<tr><td class='l'>守住前段起漲價｜否</td><td>21.8%</td><td>15.7%</td><td>6.1%</td></tr>
+<tr><td class='l'>守住MA20｜是</td><td>4.9%</td><td>0.7%</td><td>4.2%</td></tr>
+<tr><td class='l'>MA20下天數｜Q3（12～22）</td><td>21.3%</td><td>19.2%</td><td>2.1%</td></tr>
+<tr><td class='l'>MA60下天數｜Q3（4～12）</td><td>19.4%</td><td>17.8%</td><td>1.6%</td></tr>
+<tr><td class='l'>MA60下天數｜Q1（−∞～0）</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td class='l'>守住MA20｜否</td><td>95.1%</td><td>99.3%</td><td>-4.2%</td></tr>
+<tr><td class='l'>MA20下天數｜Q4（22～44）</td><td>18.7%</td><td>23.9%</td><td>-5.2%</td></tr>
+<tr><td class='l'>守住前段起漲價｜是</td><td>78.2%</td><td>84.3%</td><td>-6.1%</td></tr>
+<tr><td class='l'>MA60下天數｜Q4（12～38）</td><td>15.8%</td><td>24.1%</td><td>-8.3%</td></tr>
+<tr><td class='l'>MA60下天數｜Q5（38～∞）</td><td>2.5%</td><td>31.5%</td><td>-29.0%</td></tr>
+<tr><td class='l'>守住MA60｜否</td><td>57.0%</td><td>89.1%</td><td>-32.2%</td></tr>
+<tr><td class='l'>MA20下天數｜Q5（44～∞）</td><td>1.7%</td><td>35.6%</td><td>-33.9%</td></tr>
+</table></div>
+<h3>處置</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>累計處置次數｜0</td><td>57.8%</td><td>19.5%</td><td>38.3%</td></tr>
+<tr><td class='l'>剛出關｜否</td><td>81.2%</td><td>54.3%</td><td>26.9%</td></tr>
+<tr><td class='l'>拉回時處置中｜是</td><td>10.5%</td><td>8.7%</td><td>1.7%</td></tr>
+<tr><td class='l'>拉回時處置中｜否</td><td>89.5%</td><td>91.3%</td><td>-1.7%</td></tr>
+<tr><td class='l'>累計處置次數｜1</td><td>22.5%</td><td>27.4%</td><td>-4.9%</td></tr>
+<tr><td class='l'>累計處置次數｜2</td><td>11.7%</td><td>18.8%</td><td>-7.0%</td></tr>
+<tr><td class='l'>累計處置次數｜3 以上</td><td>5.1%</td><td>23.6%</td><td>-18.5%</td></tr>
+<tr><td class='l'>剛出關｜是</td><td>18.8%</td><td>45.7%</td><td>-26.9%</td></tr>
+</table></div>
+<h3>漲勢位置</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>前面已完成段數｜0<br><small>⚠ 構造使然，不可當訊號</small></td><td>79.4%</td><td>0.0%</td><td>79.4%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q4（0.795～1.42）<br><small>⚠ 構造使然，不可當訊號</small></td><td>24.1%</td><td>0.0%</td><td>24.1%</td></tr>
+<tr><td class='l'>前段漲幅｜Q1（−∞～0.258）<br><small>⚠ 構造使然，不可當訊號</small></td><td>16.8%</td><td>0.0%</td><td>16.8%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q1（−∞～0.243）<br><small>⚠ 構造使然，不可當訊號</small></td><td>15.8%</td><td>0.0%</td><td>15.8%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q2（0.243～0.506）<br><small>⚠ 構造使然，不可當訊號</small></td><td>14.5%</td><td>0.0%</td><td>14.5%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q3（0.506～0.795）<br><small>⚠ 構造使然，不可當訊號</small></td><td>12.3%</td><td>0.0%</td><td>12.3%</td></tr>
+<tr><td class='l'>前段漲幅｜Q2（0.258～0.502）<br><small>⚠ 構造使然，不可當訊號</small></td><td>15.5%</td><td>5.6%</td><td>10.0%</td></tr>
+<tr><td class='l'>前段漲幅｜Q4（0.75～1.23）<br><small>⚠ 構造使然，不可當訊號</small></td><td>22.5%</td><td>15.6%</td><td>6.9%</td></tr>
+<tr><td class='l'>前段漲幅｜Q3（0.502～0.75）<br><small>⚠ 構造使然，不可當訊號</small></td><td>14.7%</td><td>9.7%</td><td>5.0%</td></tr>
+<tr><td class='l'>前面已完成段數｜3 以上<br><small>⚠ 構造使然，不可當訊號</small></td><td>0.1%</td><td>13.5%</td><td>-13.5%</td></tr>
+<tr><td class='l'>前面已完成段數｜1<br><small>⚠ 構造使然，不可當訊號</small></td><td>18.6%</td><td>42.0%</td><td>-23.4%</td></tr>
+<tr><td class='l'>前面已完成段數｜2<br><small>⚠ 構造使然，不可當訊號</small></td><td>2.0%</td><td>41.8%</td><td>-39.8%</td></tr>
+<tr><td class='l'>前段漲幅｜Q5（1.23～∞）<br><small>⚠ 構造使然，不可當訊號</small></td><td>27.6%</td><td>67.9%</td><td>-40.3%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q5（1.42～∞）<br><small>⚠ 構造使然，不可當訊號</small></td><td>23.8%</td><td>100.0%</td><td>-76.2%</td></tr>
+</table></div>
+<h2>二、單一特徵：有它時會再拉的機率是平常的幾倍（探索前 15、確認照報）</h2><div class='wrap'><table><tr><th class='l'>特徵</th><th>探索 倍數（下緣）</th><th>確認 倍數（下緣）</th></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q5</td><td>1.44（1.44）</td><td>1.16（0.34）</td></tr>
+<tr><td class='l'>距5日最低｜Q5</td><td>1.44（1.44）</td><td>—（—）</td></tr>
+<tr><td class='l'>收盤÷修正箱上箱價−1｜Q2</td><td>1.39（1.24）</td><td>1.32（0.76）</td></tr>
+<tr><td class='l'>前段漲幅｜Q1（−∞～0.258）<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.38（1.38）</td><td>1.67（1.67）</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q1（−∞～0.243）<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.38（1.38）</td><td>1.67（1.67）</td></tr>
+<tr><td class='l'>前面已完成段數｜0<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.38（1.38）</td><td>1.67（1.67）</td></tr>
+<tr><td class='l'>距5日最高｜Q5</td><td>1.38（1.38）</td><td>0.71（0.28）</td></tr>
+<tr><td class='l'>距20日最低｜Q3</td><td>1.38（1.38）</td><td>1.64（1.57）</td></tr>
+<tr><td class='l'>距250日最高｜Q4</td><td>1.37（1.35）</td><td>1.39（1.16）</td></tr>
+<tr><td class='l'>距10日最低｜Q4</td><td>1.37（1.37）</td><td>1.67（1.67）</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q2（0.243～0.506）<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.37（1.34）</td><td>1.59（1.54）</td></tr>
+<tr><td class='l'>距120日最高｜Q4</td><td>1.36（1.30）</td><td>1.21（1.07）</td></tr>
+<tr><td class='l'>60日漲停天數｜Q3</td><td>1.36（1.35）</td><td>0.86（0.16）</td></tr>
+<tr><td class='l'>距10日最低｜Q3</td><td>1.36（1.36）</td><td>1.62（1.58）</td></tr>
+<tr><td class='l'>回落深度｜Q5（-0.23～∞）</td><td>1.36（1.33）</td><td>1.57（1.48）</td></tr>
+</table></div>
+<p class='warn'>⚠ 下面的低點分數用的是事後才知道的低點，而且選入的特徵含構造使然的項目（標 ⚠ 者），數字偏樂觀；當下真的能用的請看第三部分。</p>
+<h3>低點分數 K＝3（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、MA60下天數｜Q2（0～4））確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>59.8%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>76.5%</td><td>98.4%</td><td>40.3%</td><td>78.2%</td></tr>
+<tr><td>2</td><td>96.4%</td><td>78.5%</td><td>4.8%</td><td>46.3%</td></tr>
+<tr><td>3</td><td>100.0%</td><td>18.8%</td><td>0.0%</td><td>11.5%</td></tr>
+</table></div>
+<h3>低點分數 K＝5（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、MA60下天數｜Q2（0～4）、回落深度｜Q5（-0.23～∞）、250日處置天數｜Q1）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>59.8%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>74.5%</td><td>98.9%</td><td>45.2%</td><td>80.1%</td></tr>
+<tr><td>2</td><td>84.5%</td><td>86.2%</td><td>24.3%</td><td>60.3%</td></tr>
+<tr><td>3</td><td>95.3%</td><td>63.7%</td><td>5.3%</td><td>38.5%</td></tr>
+<tr><td>4</td><td>98.4%</td><td>28.6%</td><td>0.7%</td><td>17.4%</td></tr>
+<tr><td>5</td><td>100.0%</td><td>8.3%</td><td>0.0%</td><td>4.7%</td></tr>
+</table></div>
+<h3>低點分數 K＝8（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、MA60下天數｜Q2（0～4）、回落深度｜Q5（-0.23～∞）、250日處置天數｜Q1、從t起累積漲幅｜Q4（0.795～1.42）（⚠ 構造使然）、收盤÷修正箱上箱價−1｜Q2、距250日最高｜Q2）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>59.8%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>71.3%</td><td>99.8%</td><td>55.2%</td><td>85.0%</td></tr>
+<tr><td>2</td><td>78.8%</td><td>95.5%</td><td>35.9%</td><td>73.0%</td></tr>
+<tr><td>3</td><td>90.9%</td><td>80.0%</td><td>12.9%</td><td>52.7%</td></tr>
+<tr><td>4</td><td>95.9%</td><td>53.3%</td><td>4.3%</td><td>33.1%</td></tr>
+<tr><td>5</td><td>99.3%</td><td>23.1%</td><td>0.3%</td><td>15.1%</td></tr>
+<tr><td>6</td><td>100.0%</td><td>6.0%</td><td>0.0%</td><td>3.5%</td></tr>
+<tr><td>7</td><td>100.0%</td><td>0.3%</td><td>0.0%</td><td>0.1%</td></tr>
+<tr><td>8</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+</table></div>
+<h3>低點分數 K＝全部（前面已完成段數｜0（⚠ 構造使然）、累計處置次數｜0、MA60下天數｜Q2（0～4）、回落深度｜Q5（-0.23～∞）、250日處置天數｜Q1、從t起累積漲幅｜Q4（0.795～1.42）（⚠ 構造使然）、收盤÷修正箱上箱價−1｜Q2、距250日最高｜Q2…）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>59.8%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>61.2%</td><td>100.0%</td><td>94.5%</td><td>97.7%</td></tr>
+<tr><td>2</td><td>65.5%</td><td>99.5%</td><td>73.8%</td><td>90.8%</td></tr>
+<tr><td>3</td><td>72.2%</td><td>97.8%</td><td>50.6%</td><td>81.9%</td></tr>
+<tr><td>4</td><td>76.2%</td><td>95.2%</td><td>40.0%</td><td>75.5%</td></tr>
+<tr><td>5</td><td>81.7%</td><td>89.9%</td><td>27.8%</td><td>68.6%</td></tr>
+<tr><td>6</td><td>85.5%</td><td>81.4%</td><td>20.5%</td><td>59.9%</td></tr>
+<tr><td>7</td><td>88.1%</td><td>70.0%</td><td>14.0%</td><td>49.7%</td></tr>
+<tr><td>8</td><td>90.4%</td><td>58.6%</td><td>9.7%</td><td>40.6%</td></tr>
+<tr><td>9</td><td>91.8%</td><td>46.1%</td><td>7.5%</td><td>30.8%</td></tr>
+<tr><td>10</td><td>92.4%</td><td>34.2%</td><td>4.6%</td><td>23.5%</td></tr>
+<tr><td>11</td><td>92.9%</td><td>26.2%</td><td>3.2%</td><td>17.8%</td></tr>
+<tr><td>12</td><td>93.8%</td><td>19.0%</td><td>1.9%</td><td>12.7%</td></tr>
+<tr><td>13</td><td>93.6%</td><td>13.8%</td><td>1.5%</td><td>9.6%</td></tr>
+<tr><td>14</td><td>94.4%</td><td>10.5%</td><td>0.8%</td><td>6.8%</td></tr>
+<tr><td>15</td><td>100.0%</td><td>6.5%</td><td>0.0%</td><td>4.1%</td></tr>
+<tr><td>16</td><td>100.0%</td><td>3.9%</td><td>0.0%</td><td>2.5%</td></tr>
+<tr><td>17</td><td>100.0%</td><td>2.5%</td><td>0.0%</td><td>1.5%</td></tr>
+<tr><td>18</td><td>100.0%</td><td>1.5%</td><td>0.0%</td><td>0.9%</td></tr>
+<tr><td>19</td><td>100.0%</td><td>0.9%</td><td>0.0%</td><td>0.6%</td></tr>
+<tr><td>20</td><td>100.0%</td><td>0.8%</td><td>0.0%</td><td>0.5%</td></tr>
+<tr><td>21</td><td>100.0%</td><td>0.5%</td><td>0.0%</td><td>0.3%</td></tr>
+<tr><td>22</td><td>100.0%</td><td>0.3%</td><td>0.0%</td><td>0.2%</td></tr>
+<tr><td>23</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>24</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>25</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>26</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>27</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>28</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>29</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>30</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>31</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>32</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>33</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>34</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+</table></div>
+<h2>三、當下可用版：回落第一次達到 x% 那天算分數（確認段）</h2><p class='note'>⭐ 只有這一版當下真的能用：從當時最高收盤跌到 x% 的那天就知道自己在拉回，看之後會不會再創新高。紅列 ＝ 探索段定的讀法。</p>
+<h3>K＝5</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>20日內創高</th><th>60日內</th><th>120日內</th><th>60日內再跌10%</th><th>再跌20%</th><th>占觸發日</th></tr>
+<tr class=''><td>0</td><td>25.0%</td><td>57.2%</td><td>68.2%</td><td>43.4%</td><td>20.3%</td><td>100.0%</td></tr>
+<tr class=''><td>1</td><td>25.0%</td><td>57.6%</td><td>68.8%</td><td>43.3%</td><td>20.1%</td><td>98.2%</td></tr>
+<tr class=''><td>2</td><td>25.2%</td><td>59.2%</td><td>71.0%</td><td>42.0%</td><td>19.2%</td><td>85.7%</td></tr>
+<tr class='m'><td>3</td><td>24.9%</td><td>61.9%</td><td>74.8%</td><td>38.6%</td><td>16.1%</td><td>59.2%</td></tr>
+<tr class=''><td>4</td><td>24.3%</td><td>63.6%</td><td>78.1%</td><td>35.3%</td><td>13.2%</td><td>34.9%</td></tr>
+<tr class=''><td>5</td><td>27.0%</td><td>71.1%</td><td>80.1%</td><td>33.9%</td><td>11.3%</td><td>12.8%</td></tr>
+</table></div>
+<h3>K＝全部</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>20日內創高</th><th>60日內</th><th>120日內</th><th>60日內再跌10%</th><th>再跌20%</th><th>占觸發日</th></tr>
+<tr class=''><td>0</td><td>25.0%</td><td>57.2%</td><td>68.2%</td><td>43.4%</td><td>20.3%</td><td>100.0%</td></tr>
+<tr class=''><td>1</td><td>25.0%</td><td>57.2%</td><td>68.2%</td><td>43.4%</td><td>20.2%</td><td>99.9%</td></tr>
+<tr class=''><td>2</td><td>25.0%</td><td>57.3%</td><td>68.5%</td><td>43.2%</td><td>20.2%</td><td>97.9%</td></tr>
+<tr class=''><td>3</td><td>25.3%</td><td>58.0%</td><td>69.7%</td><td>42.9%</td><td>19.8%</td><td>94.5%</td></tr>
+<tr class=''><td>4</td><td>25.5%</td><td>59.2%</td><td>71.0%</td><td>42.6%</td><td>19.6%</td><td>90.0%</td></tr>
+<tr class=''><td>5</td><td>26.3%</td><td>60.8%</td><td>72.9%</td><td>41.8%</td><td>19.2%</td><td>84.1%</td></tr>
+<tr class=''><td>6</td><td>27.2%</td><td>61.9%</td><td>74.0%</td><td>41.2%</td><td>18.8%</td><td>77.7%</td></tr>
+<tr class=''><td>7</td><td>27.6%</td><td>63.1%</td><td>75.7%</td><td>40.7%</td><td>18.6%</td><td>70.0%</td></tr>
+<tr class='m'><td>8</td><td>29.0%</td><td>65.3%</td><td>77.0%</td><td>41.2%</td><td>19.0%</td><td>59.8%</td></tr>
+<tr class=''><td>9</td><td>30.2%</td><td>66.1%</td><td>78.3%</td><td>42.1%</td><td>19.5%</td><td>51.5%</td></tr>
+<tr class=''><td>10</td><td>32.2%</td><td>67.2%</td><td>78.4%</td><td>43.3%</td><td>20.4%</td><td>42.0%</td></tr>
+<tr class=''><td>11</td><td>34.4%</td><td>68.9%</td><td>78.2%</td><td>43.4%</td><td>20.6%</td><td>33.0%</td></tr>
+<tr class=''><td>12</td><td>34.6%</td><td>70.1%</td><td>77.5%</td><td>42.7%</td><td>20.4%</td><td>25.3%</td></tr>
+<tr class=''><td>13</td><td>37.0%</td><td>72.8%</td><td>78.0%</td><td>41.6%</td><td>21.3%</td><td>19.0%</td></tr>
+<tr class=''><td>14</td><td>39.4%</td><td>74.6%</td><td>77.6%</td><td>39.8%</td><td>20.1%</td><td>13.7%</td></tr>
+<tr class=''><td>15</td><td>41.2%</td><td>73.4%</td><td>77.8%</td><td>39.4%</td><td>19.7%</td><td>9.3%</td></tr>
+<tr class=''><td>16</td><td>41.9%</td><td>76.9%</td><td>80.0%</td><td>37.8%</td><td>19.3%</td><td>6.1%</td></tr>
+<tr class=''><td>17</td><td>47.6%</td><td>82.1%</td><td>81.0%</td><td>32.1%</td><td>12.9%</td><td>3.3%</td></tr>
+<tr class=''><td>18</td><td>41.9%</td><td>89.5%</td><td>88.9%</td><td>20.0%</td><td>5.9%</td><td>1.6%</td></tr>
+<tr class=''><td>19</td><td>40.0%</td><td>100.0%</td><td>100.0%</td><td>20.0%</td><td>0.0%</td><td>1.1%</td></tr>
+<tr class=''><td>20</td><td>41.7%</td><td>100.0%</td><td>100.0%</td><td>20.0%</td><td>0.0%</td><td>0.8%</td></tr>
+<tr class=''><td>21</td><td>63.3%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.3%</td></tr>
+<tr class=''><td>22</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.1%</td></tr>
+<tr class=''><td>23</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr class=''><td>24</td><td>100.0%</td><td>100.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr class=''><td>25</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>26</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>27</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>28</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>29</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>30</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>31</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>32</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>33</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>34</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+</table></div>
+</div>
+<div class='pane' id='p30'>
+<h2>零、兩類低點各有多少</h2><div class='wrap'><table><tr><th class='l'>組</th><th>點數</th><th>可用格</th><th>回落深度（中位）</th></tr>
+<tr><td class='l'>會再拉（中段底 Lk）</td><td>29,782</td><td>126</td><td>-35.0%</td></tr>
+<tr><td class='l'>沒再拉（頂後底）</td><td>81,325</td><td>172</td><td>-47.2%</td></tr>
+<tr><td class='l'>頂後底之後又越過 P</td><td>69,694</td><td>145</td><td>-39.2%</td></tr>
+<tr><td class='l'>中段底 L2</td><td>28,090</td><td>123</td><td>-35.0%</td></tr>
+<tr><td class='l'>中段底 L3</td><td>1,661</td><td>16</td><td>-34.8%</td></tr>
+<tr><td class='l'>中段底 L4 以後</td><td>31</td><td>0</td><td>—</td></tr>
+</table></div>
+<h2>一、拉回狀態：會再拉 vs 就此結束（兩段合併）</h2>
+<h3>拉回幅度與時間</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>拉回天數｜Q1（−∞～15）</td><td>33.2%</td><td>3.5%</td><td>29.8%</td></tr>
+<tr><td class='l'>回落深度｜Q5（-0.334～∞）</td><td>36.3%</td><td>8.1%</td><td>28.2%</td></tr>
+<tr><td class='l'>回落速度｜Q1（−∞～-0.0235）</td><td>33.2%</td><td>5.7%</td><td>27.6%</td></tr>
+<tr><td class='l'>拉回天數｜Q2（15～30）</td><td>32.6%</td><td>10.0%</td><td>22.7%</td></tr>
+<tr><td class='l'>回落深度｜Q4（-0.368～-0.334）</td><td>29.6%</td><td>9.6%</td><td>20.0%</td></tr>
+<tr><td class='l'>回落速度｜Q2（-0.0235～-0.0125）</td><td>31.5%</td><td>12.1%</td><td>19.4%</td></tr>
+<tr><td class='l'>回落深度｜Q3（-0.431～-0.368）</td><td>26.3%</td><td>20.1%</td><td>6.1%</td></tr>
+<tr><td class='l'>拉回天數｜Q3（30～68）</td><td>26.6%</td><td>23.8%</td><td>2.8%</td></tr>
+<tr><td class='l'>回落速度｜Q3（-0.0125～-0.00606）</td><td>21.9%</td><td>24.8%</td><td>-2.9%</td></tr>
+<tr><td class='l'>回落速度｜Q4（-0.00606～-0.00322）</td><td>8.8%</td><td>21.9%</td><td>-13.1%</td></tr>
+<tr><td class='l'>拉回天數｜Q4（68～150）</td><td>4.3%</td><td>24.9%</td><td>-20.6%</td></tr>
+<tr><td class='l'>回落深度｜Q2（-0.537～-0.431）</td><td>6.9%</td><td>31.4%</td><td>-24.6%</td></tr>
+<tr><td class='l'>回落深度｜Q1（−∞～-0.537）</td><td>0.0%</td><td>32.6%</td><td>-32.6%</td></tr>
+<tr><td class='l'>回落速度｜Q5（-0.00322～∞）</td><td>1.0%</td><td>34.7%</td><td>-33.7%</td></tr>
+<tr><td class='l'>拉回天數｜Q5（150～∞）</td><td>0.0%</td><td>36.0%</td><td>-36.0%</td></tr>
+</table></div>
+<h3>量</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q3（0.724～1.19）</td><td>27.5%</td><td>19.7%</td><td>7.8%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q4（1.19～2）</td><td>21.7%</td><td>21.0%</td><td>0.7%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q2（0.393～0.724）</td><td>18.5%</td><td>18.4%</td><td>0.1%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q5（2～∞）</td><td>23.7%</td><td>26.4%</td><td>-2.7%</td></tr>
+<tr><td class='l'>量縮(拉回均額÷前段均額)｜Q1（−∞～0.393）</td><td>8.4%</td><td>12.8%</td><td>-4.4%</td></tr>
+</table></div>
+<h3>籌碼</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>外資淨買÷股本｜Q4（0～0.00771）</td><td>28.9%</td><td>12.6%</td><td>16.3%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q1（−∞～-2.23）</td><td>25.3%</td><td>14.8%</td><td>10.5%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q3（-0.0148～-0.00546）</td><td>27.1%</td><td>17.4%</td><td>9.6%</td></tr>
+<tr><td class='l'>投信淨賣｜否</td><td>76.3%</td><td>70.4%</td><td>5.9%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q5（0.5～∞）</td><td>22.2%</td><td>16.8%</td><td>5.4%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q4（-0.00546～0）</td><td>18.0%</td><td>14.2%</td><td>3.8%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q3（-0.00636～0）</td><td>17.8%</td><td>14.3%</td><td>3.5%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q2（-2.23～-0.57）</td><td>24.0%</td><td>20.9%</td><td>3.1%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q5（0.00771～∞）</td><td>18.6%</td><td>17.1%</td><td>1.4%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q5（0～∞）</td><td>24.6%</td><td>23.4%</td><td>1.1%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q2（-0.0304～-0.0148）</td><td>18.0%</td><td>19.8%</td><td>-1.8%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q2（-0.0207～-0.00636）</td><td>17.4%</td><td>20.6%</td><td>-3.2%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q3（-0.57～-0.00999）</td><td>15.2%</td><td>19.9%</td><td>-4.7%</td></tr>
+<tr><td class='l'>投信淨賣｜是</td><td>23.7%</td><td>29.6%</td><td>-5.9%</td></tr>
+<tr><td class='l'>大戶4週變化｜Q4（-0.00999～0.5）</td><td>14.3%</td><td>27.0%</td><td>-12.7%</td></tr>
+<tr><td class='l'>融資變化÷股本｜Q1（−∞～-0.0304）</td><td>12.8%</td><td>26.1%</td><td>-13.3%</td></tr>
+<tr><td class='l'>外資淨買÷股本｜Q1（−∞～-0.0207）</td><td>17.2%</td><td>34.5%</td><td>-17.3%</td></tr>
+</table></div>
+<h3>均線與支撐</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>MA60下天數｜Q1（−∞～3）</td><td>35.8%</td><td>4.8%</td><td>31.0%</td></tr>
+<tr><td class='l'>MA20下天數｜Q1（−∞～10）</td><td>34.9%</td><td>3.9%</td><td>31.0%</td></tr>
+<tr><td class='l'>MA60下天數｜Q2（3～11）</td><td>30.7%</td><td>12.3%</td><td>18.4%</td></tr>
+<tr><td class='l'>MA20下天數｜Q2（10～23）</td><td>31.7%</td><td>13.3%</td><td>18.4%</td></tr>
+<tr><td class='l'>守住前段起漲價｜否</td><td>31.6%</td><td>13.4%</td><td>18.2%</td></tr>
+<tr><td class='l'>守住MA60｜是</td><td>19.3%</td><td>2.0%</td><td>17.3%</td></tr>
+<tr><td class='l'>MA20下天數｜Q3（23～50）</td><td>26.1%</td><td>22.3%</td><td>3.9%</td></tr>
+<tr><td class='l'>MA60下天數｜Q3（11～44）</td><td>27.3%</td><td>27.0%</td><td>0.2%</td></tr>
+<tr><td class='l'>守住MA20｜是</td><td>0.2%</td><td>0.0%</td><td>0.2%</td></tr>
+<tr><td class='l'>守住MA20｜否</td><td>99.8%</td><td>100.0%</td><td>-0.2%</td></tr>
+<tr><td class='l'>MA60下天數｜Q4（44～106）</td><td>5.2%</td><td>19.8%</td><td>-14.6%</td></tr>
+<tr><td class='l'>守住MA60｜否</td><td>80.7%</td><td>98.0%</td><td>-17.3%</td></tr>
+<tr><td class='l'>守住前段起漲價｜是</td><td>68.4%</td><td>86.6%</td><td>-18.2%</td></tr>
+<tr><td class='l'>MA20下天數｜Q4（50～104）</td><td>3.8%</td><td>23.9%</td><td>-20.1%</td></tr>
+<tr><td class='l'>MA20下天數｜Q5（104～∞）</td><td>0.0%</td><td>35.1%</td><td>-35.1%</td></tr>
+<tr><td class='l'>MA60下天數｜Q5（106～∞）</td><td>0.0%</td><td>35.1%</td><td>-35.1%</td></tr>
+</table></div>
+<h3>處置</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>累計處置次數｜0</td><td>59.5%</td><td>24.8%</td><td>34.7%</td></tr>
+<tr><td class='l'>剛出關｜否</td><td>79.5%</td><td>54.3%</td><td>25.2%</td></tr>
+<tr><td class='l'>拉回時處置中｜是</td><td>6.6%</td><td>3.9%</td><td>2.7%</td></tr>
+<tr><td class='l'>拉回時處置中｜否</td><td>93.4%</td><td>96.1%</td><td>-2.7%</td></tr>
+<tr><td class='l'>累計處置次數｜1</td><td>20.6%</td><td>28.0%</td><td>-7.3%</td></tr>
+<tr><td class='l'>累計處置次數｜2</td><td>11.2%</td><td>18.6%</td><td>-7.5%</td></tr>
+<tr><td class='l'>累計處置次數｜3 以上</td><td>6.0%</td><td>23.3%</td><td>-17.3%</td></tr>
+<tr><td class='l'>剛出關｜是</td><td>20.5%</td><td>45.7%</td><td>-25.2%</td></tr>
+</table></div>
+<h3>漲勢位置</h3><div class='wrap'><table><tr><th class='l'>特徵</th><th>會再拉</th><th>沒再拉</th><th>差</th></tr>
+<tr><td class='l'>前面已完成段數｜0<br><small>⚠ 構造使然，不可當訊號</small></td><td>95.0%</td><td>0.0%</td><td>95.0%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q1（−∞～0.49）<br><small>⚠ 構造使然，不可當訊號</small></td><td>31.0%</td><td>0.0%</td><td>31.0%</td></tr>
+<tr><td class='l'>前段漲幅｜Q1（−∞～0.494）<br><small>⚠ 構造使然，不可當訊號</small></td><td>30.2%</td><td>0.0%</td><td>30.2%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q4（1.09～1.75）<br><small>⚠ 構造使然，不可當訊號</small></td><td>22.0%</td><td>0.0%</td><td>22.0%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q3（0.658～1.09）<br><small>⚠ 構造使然，不可當訊號</small></td><td>21.0%</td><td>0.0%</td><td>21.0%</td></tr>
+<tr><td class='l'>前段漲幅｜Q3（0.675～1.08）<br><small>⚠ 構造使然，不可當訊號</small></td><td>20.8%</td><td>5.1%</td><td>15.8%</td></tr>
+<tr><td class='l'>前段漲幅｜Q4（1.08～1.63）<br><small>⚠ 構造使然，不可當訊號</small></td><td>19.4%</td><td>8.4%</td><td>11.0%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q2（0.49～0.658）<br><small>⚠ 構造使然，不可當訊號</small></td><td>8.6%</td><td>0.0%</td><td>8.6%</td></tr>
+<tr><td class='l'>前段漲幅｜Q2（0.494～0.675）<br><small>⚠ 構造使然，不可當訊號</small></td><td>8.5%</td><td>1.0%</td><td>7.5%</td></tr>
+<tr><td class='l'>前面已完成段數｜3 以上<br><small>⚠ 構造使然，不可當訊號</small></td><td>0.0%</td><td>1.0%</td><td>-1.0%</td></tr>
+<tr><td class='l'>前面已完成段數｜2<br><small>⚠ 構造使然，不可當訊號</small></td><td>0.0%</td><td>19.2%</td><td>-19.2%</td></tr>
+<tr><td class='l'>前段漲幅｜Q5（1.63～∞）<br><small>⚠ 構造使然，不可當訊號</small></td><td>11.8%</td><td>83.0%</td><td>-71.2%</td></tr>
+<tr><td class='l'>前面已完成段數｜1<br><small>⚠ 構造使然，不可當訊號</small></td><td>4.8%</td><td>79.8%</td><td>-75.0%</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q5（1.75～∞）<br><small>⚠ 構造使然，不可當訊號</small></td><td>8.4%</td><td>100.0%</td><td>-91.6%</td></tr>
+</table></div>
+<h2>二、單一特徵：有它時會再拉的機率是平常的幾倍（探索前 15、確認照報）</h2><div class='wrap'><table><tr><th class='l'>特徵</th><th>探索 倍數（下緣）</th><th>確認 倍數（下緣）</th></tr>
+<tr><td class='l'>守住MA20｜是</td><td>2.08（2.08）</td><td>0.00（0.00）</td></tr>
+<tr><td class='l'>收盤÷MA20−1｜Q5</td><td>2.08（2.08）</td><td>1.29（1.22）</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q1（−∞～0.49）<br><small>⚠ 構造使然，不可當訊號</small></td><td>2.06（2.06）</td><td>3.61（3.61）</td></tr>
+<tr><td class='l'>前面已完成段數｜0<br><small>⚠ 構造使然，不可當訊號</small></td><td>2.06（2.06）</td><td>3.61（3.61）</td></tr>
+<tr><td class='l'>前段漲幅｜Q1（−∞～0.494）<br><small>⚠ 構造使然，不可當訊號</small></td><td>2.05（2.04）</td><td>3.61（3.61）</td></tr>
+<tr><td class='l'>120日漲停天數｜Q2</td><td>2.02（1.96）</td><td>0.00（0.00）</td></tr>
+<tr><td class='l'>距20日最低｜Q4</td><td>1.98（1.98）</td><td>3.90（3.40）</td></tr>
+<tr><td class='l'>60日漲停天數｜Q3</td><td>1.98（1.98）</td><td>0.27（-0.10）</td></tr>
+<tr><td class='l'>20日報酬｜Q4</td><td>1.90（1.77）</td><td>0.83（0.32）</td></tr>
+<tr><td class='l'>0050收盤÷MA120−1（時序）｜Q5</td><td>1.88（1.68）</td><td>1.10（0.52）</td></tr>
+<tr><td class='l'>收盤÷MA60−1｜Q4</td><td>1.87（1.77）</td><td>2.12（1.27）</td></tr>
+<tr><td class='l'>從t起累積漲幅｜Q2（0.49～0.658）<br><small>⚠ 構造使然，不可當訊號</small></td><td>1.87（1.87）</td><td>2.93（2.93）</td></tr>
+<tr><td class='l'>前250日均線5/10/20糾結度｜Q2</td><td>1.85（1.49）</td><td>1.04（0.01）</td></tr>
+<tr><td class='l'>RSI14｜Q4</td><td>1.82（1.71）</td><td>2.28（1.83）</td></tr>
+<tr><td class='l'>距250日最高｜Q3</td><td>1.81（1.63）</td><td>1.68（0.44）</td></tr>
+</table></div>
+<p class='warn'>⚠ 下面的低點分數用的是事後才知道的低點，而且選入的特徵含構造使然的項目（標 ⚠ 者），數字偏樂觀；當下真的能用的請看第三部分。</p>
+<h3>低點分數 K＝3（前面已完成段數｜0（⚠ 構造使然）、0050收盤÷MA250−1（時序）｜Q4、距60日最低｜Q5）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>27.7%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>45.2%</td><td>99.3%</td><td>54.1%</td><td>66.2%</td></tr>
+<tr><td>2</td><td>74.4%</td><td>36.6%</td><td>5.2%</td><td>14.0%</td></tr>
+<tr><td>3</td><td>100.0%</td><td>5.4%</td><td>0.0%</td><td>1.2%</td></tr>
+</table></div>
+<h3>低點分數 K＝5（前面已完成段數｜0（⚠ 構造使然）、0050收盤÷MA250−1（時序）｜Q4、距60日最低｜Q5、60日報酬｜Q5、距250日最高｜Q2）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>27.7%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>40.4%</td><td>100.0%</td><td>59.9%</td><td>70.2%</td></tr>
+<tr><td>2</td><td>58.1%</td><td>63.2%</td><td>18.2%</td><td>30.2%</td></tr>
+<tr><td>3</td><td>68.3%</td><td>31.6%</td><td>6.5%</td><td>13.8%</td></tr>
+<tr><td>4</td><td>76.5%</td><td>13.1%</td><td>1.5%</td><td>4.5%</td></tr>
+<tr><td>5</td><td>100.0%</td><td>3.2%</td><td>0.0%</td><td>0.8%</td></tr>
+</table></div>
+<h3>低點分數 K＝8（前面已完成段數｜0（⚠ 構造使然）、0050收盤÷MA250−1（時序）｜Q4、距60日最低｜Q5、60日報酬｜Q5、距250日最高｜Q2、收盤÷MA120−1｜Q5、拉回天數｜Q1（−∞～15）、均線多頭排列段數(5/10/20/60/120/250)｜Q3）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>27.7%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>40.1%</td><td>100.0%</td><td>60.4%</td><td>70.7%</td></tr>
+<tr><td>2</td><td>58.6%</td><td>75.7%</td><td>21.0%</td><td>34.2%</td></tr>
+<tr><td>3</td><td>62.9%</td><td>41.4%</td><td>10.2%</td><td>19.0%</td></tr>
+<tr><td>4</td><td>66.7%</td><td>30.7%</td><td>6.3%</td><td>12.9%</td></tr>
+<tr><td>5</td><td>76.3%</td><td>21.8%</td><td>2.2%</td><td>7.1%</td></tr>
+<tr><td>6</td><td>90.9%</td><td>9.9%</td><td>0.2%</td><td>2.5%</td></tr>
+<tr><td>7</td><td>100.0%</td><td>2.4%</td><td>0.0%</td><td>0.6%</td></tr>
+<tr><td>8</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+</table></div>
+<h3>低點分數 K＝全部（前面已完成段數｜0（⚠ 構造使然）、0050收盤÷MA250−1（時序）｜Q4、距60日最低｜Q5、60日報酬｜Q5、距250日最高｜Q2、收盤÷MA120−1｜Q5、拉回天數｜Q1（−∞～15）、均線多頭排列段數(5/10/20/60/120/250)｜Q3…）確認段</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>會再拉</th><th>抓到會再拉</th><th>誤抓頂後底</th><th>占低點</th></tr>
+<tr><td>0</td><td>27.7%</td><td>100.0%</td><td>100.0%</td><td>100.0%</td></tr>
+<tr><td>1</td><td>30.7%</td><td>100.0%</td><td>86.0%</td><td>90.3%</td></tr>
+<tr><td>2</td><td>40.6%</td><td>98.5%</td><td>56.5%</td><td>66.8%</td></tr>
+<tr><td>3</td><td>49.4%</td><td>92.8%</td><td>35.2%</td><td>49.9%</td></tr>
+<tr><td>4</td><td>58.4%</td><td>84.7%</td><td>22.5%</td><td>38.7%</td></tr>
+<tr><td>5</td><td>64.8%</td><td>72.7%</td><td>14.8%</td><td>29.3%</td></tr>
+<tr><td>6</td><td>68.0%</td><td>57.6%</td><td>10.9%</td><td>22.5%</td></tr>
+<tr><td>7</td><td>69.7%</td><td>48.8%</td><td>7.9%</td><td>18.5%</td></tr>
+<tr><td>8</td><td>73.3%</td><td>41.5%</td><td>5.9%</td><td>14.3%</td></tr>
+<tr><td>9</td><td>75.0%</td><td>31.4%</td><td>3.8%</td><td>10.4%</td></tr>
+<tr><td>10</td><td>77.8%</td><td>27.2%</td><td>2.7%</td><td>7.9%</td></tr>
+<tr><td>11</td><td>79.1%</td><td>21.7%</td><td>2.0%</td><td>6.3%</td></tr>
+<tr><td>12</td><td>78.9%</td><td>16.3%</td><td>1.5%</td><td>4.7%</td></tr>
+<tr><td>13</td><td>78.1%</td><td>11.0%</td><td>0.9%</td><td>3.1%</td></tr>
+<tr><td>14</td><td>81.0%</td><td>7.9%</td><td>0.4%</td><td>2.0%</td></tr>
+<tr><td>15</td><td>80.0%</td><td>4.0%</td><td>0.2%</td><td>1.0%</td></tr>
+<tr><td>16</td><td>100.0%</td><td>2.1%</td><td>0.0%</td><td>0.5%</td></tr>
+<tr><td>17</td><td>100.0%</td><td>1.2%</td><td>0.0%</td><td>0.3%</td></tr>
+<tr><td>18</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>19</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>20</td><td>100.0%</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>21</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>22</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>23</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>24</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>25</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>26</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>27</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>28</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr><td>29</td><td>—</td><td>0.0%</td><td>0.0%</td><td>0.0%</td></tr>
+</table></div>
+<h2>三、當下可用版：回落第一次達到 x% 那天算分數（確認段）</h2><p class='note'>⭐ 只有這一版當下真的能用：從當時最高收盤跌到 x% 的那天就知道自己在拉回，看之後會不會再創新高。紅列 ＝ 探索段定的讀法。</p>
+<h3>K＝5</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>20日內創高</th><th>60日內</th><th>120日內</th><th>60日內再跌10%</th><th>再跌20%</th><th>占觸發日</th></tr>
+<tr class=''><td>0</td><td>7.7%</td><td>26.4%</td><td>38.6%</td><td>46.0%</td><td>22.4%</td><td>100.0%</td></tr>
+<tr class=''><td>1</td><td>7.8%</td><td>26.8%</td><td>39.0%</td><td>45.5%</td><td>21.9%</td><td>96.2%</td></tr>
+<tr class=''><td>2</td><td>9.0%</td><td>28.8%</td><td>40.4%</td><td>44.5%</td><td>21.8%</td><td>63.5%</td></tr>
+<tr class='m'><td>3</td><td>10.4%</td><td>36.6%</td><td>47.3%</td><td>46.5%</td><td>23.9%</td><td>35.3%</td></tr>
+<tr class=''><td>4</td><td>12.9%</td><td>45.1%</td><td>55.6%</td><td>45.2%</td><td>22.5%</td><td>16.4%</td></tr>
+<tr class=''><td>5</td><td>12.5%</td><td>41.7%</td><td>47.1%</td><td>46.2%</td><td>23.1%</td><td>3.4%</td></tr>
+</table></div>
+<h3>K＝全部</h3><div class='wrap'><table><tr><th>分數 ≥</th><th>20日內創高</th><th>60日內</th><th>120日內</th><th>60日內再跌10%</th><th>再跌20%</th><th>占觸發日</th></tr>
+<tr class=''><td>0</td><td>7.7%</td><td>26.4%</td><td>38.6%</td><td>46.0%</td><td>22.4%</td><td>100.0%</td></tr>
+<tr class=''><td>1</td><td>7.7%</td><td>26.4%</td><td>38.6%</td><td>46.0%</td><td>22.4%</td><td>100.0%</td></tr>
+<tr class=''><td>2</td><td>7.8%</td><td>26.0%</td><td>38.7%</td><td>45.9%</td><td>22.3%</td><td>97.8%</td></tr>
+<tr class=''><td>3</td><td>8.1%</td><td>26.2%</td><td>41.1%</td><td>45.4%</td><td>22.2%</td><td>86.4%</td></tr>
+<tr class=''><td>4</td><td>9.0%</td><td>31.2%</td><td>45.3%</td><td>43.3%</td><td>21.2%</td><td>70.3%</td></tr>
+<tr class='m'><td>5</td><td>10.0%</td><td>34.9%</td><td>50.7%</td><td>42.0%</td><td>20.4%</td><td>56.1%</td></tr>
+<tr class=''><td>6</td><td>10.8%</td><td>38.2%</td><td>52.8%</td><td>41.9%</td><td>20.8%</td><td>44.9%</td></tr>
+<tr class=''><td>7</td><td>11.7%</td><td>40.4%</td><td>54.1%</td><td>43.0%</td><td>22.0%</td><td>37.8%</td></tr>
+<tr class=''><td>8</td><td>11.7%</td><td>40.9%</td><td>54.1%</td><td>43.2%</td><td>21.2%</td><td>32.2%</td></tr>
+<tr class=''><td>9</td><td>12.5%</td><td>41.8%</td><td>54.5%</td><td>43.3%</td><td>21.4%</td><td>26.1%</td></tr>
+<tr class=''><td>10</td><td>13.8%</td><td>43.5%</td><td>56.3%</td><td>43.0%</td><td>21.4%</td><td>21.8%</td></tr>
+<tr class=''><td>11</td><td>13.8%</td><td>45.8%</td><td>59.0%</td><td>43.1%</td><td>22.2%</td><td>18.5%</td></tr>
+<tr class=''><td>12</td><td>14.5%</td><td>48.8%</td><td>62.7%</td><td>40.4%</td><td>20.7%</td><td>14.5%</td></tr>
+<tr class=''><td>13</td><td>17.1%</td><td>55.6%</td><td>66.0%</td><td>38.1%</td><td>19.4%</td><td>11.3%</td></tr>
+<tr class=''><td>14</td><td>20.0%</td><td>53.3%</td><td>63.2%</td><td>40.0%</td><td>20.0%</td><td>8.2%</td></tr>
+<tr class=''><td>15</td><td>20.0%</td><td>50.0%</td><td>62.5%</td><td>43.2%</td><td>17.4%</td><td>5.8%</td></tr>
+<tr class=''><td>16</td><td>18.8%</td><td>50.0%</td><td>62.5%</td><td>42.9%</td><td>16.7%</td><td>3.3%</td></tr>
+<tr class=''><td>17</td><td>16.7%</td><td>50.0%</td><td>71.4%</td><td>45.5%</td><td>20.0%</td><td>1.7%</td></tr>
+<tr class=''><td>18</td><td>33.3%</td><td>58.3%</td><td>77.5%</td><td>50.0%</td><td>0.0%</td><td>0.5%</td></tr>
+<tr class=''><td>19</td><td>0.0%</td><td>100.0%</td><td>100.0%</td><td>50.0%</td><td>0.0%</td><td>0.1%</td></tr>
+<tr class=''><td>20</td><td>0.0%</td><td>0.0%</td><td>0.0%</td><td>100.0%</td><td>0.0%</td><td>0.0%</td></tr>
+<tr class=''><td>21</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>22</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>23</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>24</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>25</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>26</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>27</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>28</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+<tr class=''><td>29</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>0.0%</td></tr>
+</table></div>
+</div>
+<script>function sw(){var x=document.getElementById('sx').value;document.querySelectorAll('.pane').forEach(e=>e.classList.toggle('on',e.id=='p'+x))}document.getElementById('sx').value='20';sw()</script></main></body></html>
