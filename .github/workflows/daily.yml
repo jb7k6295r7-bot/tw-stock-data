@@ -349,7 +349,7 @@ jobs:
           # ★ 同「融資融券與本益比」那一步的理由：只問當天 ⇒ 漏掉的日子永遠不重試。
           #   目前 otcinst 剛好 0 個洞，⛔ 但「現在沒有洞」不是「不會有洞」。
           #   已存在就跳過，所以沒洞時這一段是 0 個請求。
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed otcinst --start 2015-01-01 --end "$TODAY" \
                           --limit 20 --sleep 1 || RC=1
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
@@ -372,7 +372,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 15
         run: |
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           # ⛔ 用**交易日曆**回推 5 天，不是日曆天：連假時日曆天會少算好幾天。
           # ⛔ 不用 heredoc：YAML 縮排下的 `PY` 不在行首，heredoc 收不掉。
           FROM=$(python -c "import csv,io,os;p='data/meta/calendar_twse.csv';ds=sorted(r['date'] for r in csv.DictReader(io.open(p,encoding='utf-8')) if r.get('date')) if os.path.exists(p) else [];print(ds[-5] if len(ds)>=5 else '')")
@@ -446,7 +446,7 @@ jobs:
           #   ⚠ `--limit` 是**過濾掉已存在之後**才套用的（feeds.py `cmd_feed`），
           #     所以沒有洞的時候這一段是 0 個請求，不會每天多打 TWSE 幾千發。
           #   ⚠ 上限 20 天 × 4 個 feed × sleep 2 ＝ 最壞約 3 分鐘。
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           for f in margin per otcmargin otcper; do
             python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
                             --limit 20 --sleep 2 || RC=1
@@ -491,7 +491,7 @@ jobs:
             python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2 || RC=1
           done
           # 回頭補漏掉的日子（跟融資融券那一步同一個兩段式寫法）
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           for f in sbl otcsbl; do
             python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
                             --limit 20 --sleep 2 || RC=1
@@ -531,7 +531,7 @@ jobs:
           #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
           RC=0
           python feeds.py --run --feed tib --start "$DAY" --end "$DAY" --sleep 2 || RC=1
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed tib --start 2021-06-28 --end "$TODAY" \
                           --limit 40 --sleep 2 || RC=1
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
@@ -570,7 +570,7 @@ jobs:
           #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
           RC=0
           python feeds.py --run --feed fulldelivery --start "$DAY" --end "$DAY" --sleep 2 || RC=1
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed fulldelivery --start 2015-01-01 --end "$TODAY" \
                           --limit 40 --sleep 2 || RC=1
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
@@ -592,7 +592,7 @@ jobs:
         timeout-minutes: 5
         run: |
           python selftest_stophalt.py
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed stophalt --start "$TODAY" --end "$TODAY" --sleep 2
 
       # ⭐⭐ 上櫃分盤／變更交易／管理股票／停止交易（`afterTrading/chtm`）。
@@ -628,7 +628,7 @@ jobs:
           #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
           RC=0
           python feeds.py --run --feed chtm --start "$DAY" --end "$DAY" --sleep 2 || RC=1
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed chtm --start 2015-01-01 --end "$TODAY" \
                           --limit 40 --sleep 2 || RC=1
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
@@ -667,7 +667,7 @@ jobs:
           #   ⇒ 守這一步的是 `backfill_coupled_blocks()`，那一支只看 feeds.py。
           RC=0
           python feeds.py --run --feed marginratio --start "$DAY" --end "$DAY" --sleep 2 || RC=1
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed marginratio --start 2015-01-01 --end "$TODAY" \
                           --limit 40 --sleep 2 || RC=1
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
@@ -1415,7 +1415,7 @@ jobs:
           # ⭐ 本步沒有 selftest 閘門 ⇒ 掛 `RC-GUARD`，讓既有那道嚴格檢查一起守。
           RC=0
           python feeds.py --run --feed breadth --start "$DAY" --end "$DAY" --sleep 0 || RC=1
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           python feeds.py --run --feed breadth --start 2015-01-01 --end "$TODAY" \
                           --limit 200 --sleep 1 || RC=1
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
@@ -1447,7 +1447,7 @@ jobs:
           #   ⇒ ⛔ 判準壞了就不要抓，理由跟上一行一字不差。
           python selftest_instamt_audit.py
           DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
-          TODAY=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘：排程常延到隔天凌晨才跑（2026-09-29 那趟 00:44 起跑 ⇒ 停止買賣中名單少一天）
           # ⛔⛔ RC-GUARD：當日抓取掛掉不可以賠掉回補（理由同上一步，逐字見那裡）
           RC=0
           python feeds.py --run --feed instamt --start "$DAY" --end "$DAY" --sleep 0 || RC=1
