@@ -739,7 +739,7 @@ jobs:
         timeout-minutes: 330
         run: |
           git fetch origin main --depth=1
-          git checkout origin/main -- data/mops/fs_hist
+          git checkout origin/main -- data/mops/fin_hist data/universe/daily
           for P in data/meta/filing_dates.csv data/meta/_filing_dates_asked.csv; do
             git checkout origin/main -- "$P" 2>/dev/null || echo "（main 上還沒有 $P，第一趟）"
           done

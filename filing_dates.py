@@ -42,7 +42,8 @@ from filing_probe import DOC, hit, looks_blocked
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "data", "meta", "filing_dates.csv")
 ASKED = os.path.join(ROOT, "data", "meta", "_filing_dates_asked.csv")
-FS_HIST = os.path.join(ROOT, "data", "mops", "fs_hist")
+FIN_HIST = os.path.join(ROOT, "data", "mops", "fin_hist")
+DAILY = os.path.join(ROOT, "data", "universe", "daily")
 HEADER = ["stock_id", "year", "season", "doc_code", "doc_type", "file", "bytes", "uploaded_at", "corrected"]
 ASKED_HEADER = ["stock_id", "roc_year", "status", "rows", "asked_at"]
 SEASON = {"第一季": 1, "第二季": 2, "第三季": 3, "第四季": 4}
@@ -76,14 +77,26 @@ def parse(body, co_id, roc_year):
 
 
 def universe(start, end):
-    """→ {西元年: set(代號)}：該年 fs_hist 有報表的公司（含之後下市的，⛔ 不用今天的名冊＝存活者偏差）。"""
+    """→ {西元年: set(代號)}：該年【XBRL fin_hist 有財報】且【當年在上市櫃日 K 出現過】的公司。
+
+    ⛔⛔ 2026-09-29 改：原本取 data/mops/fs_hist ⇒ 那份是 MOPS 彙總表，只列【今天還在】的公司
+       （2015-06 後下市 165 家只收 1 家）⇒ 可用日也只查到存活者 ＝ 倖存者偏誤。
+       fin_hist 是當季 XBRL 快照（含之後下市的）；再和當年日 K 取交集 ⇒ 排除興櫃與公開發行未上市。
+    """
     u = {}
-    for p in glob.glob(os.path.join(FS_HIST, "*.csv")):
+    for p in glob.glob(os.path.join(FIN_HIST, "*.csv")):
         y = int(os.path.basename(p)[:4])
         if start <= y <= end:
             with io.open(p, encoding="utf-8") as f:
                 u.setdefault(y, set()).update(r["stock_id"] for r in csv.DictReader(f))
-    return u
+    traded = {}
+    for p in glob.glob(os.path.join(DAILY, "*.csv")):
+        y = int(os.path.basename(p)[:4])
+        if y in u:
+            with io.open(p, encoding="utf-8") as f:
+                traded.setdefault(y, set()).update(r["stock_id"] for r in csv.DictReader(f)
+                                                   if r.get("market") in ("twse", "tpex"))
+    return {y: u[y] & traded.get(y, set()) for y in u}
 
 
 def _read(path, header):
@@ -118,10 +131,11 @@ def main():
     rl = runlog.Run("filing_dates")
     uni = universe(a.start_year, a.end_year)
     if not uni:
-        raise SystemExit("⛔ data/mops/fs_hist 是空的 ⇒ 沒有公司清單（⛔ 不退回今天的名冊）")
+        raise SystemExit("⛔ data/mops/fin_hist 或 data/universe/daily 是空的 ⇒ 沒有公司清單（⛔ 不退回今天的名冊）")
     asked = {(r[0], r[1]): r for r in _read(ASKED, ASKED_HEADER)}
     rows = {tuple(r[:4]): r for r in _read(OUT, HEADER)}
-    todo = [(s, y) for y in sorted(uni) for s in sorted(uni[y])
+    # ⭐ 2026-09-29 使用者：先補 2025、2026，再往回 ⇒ 年份由新到舊
+    todo = [(s, y) for y in sorted(uni, reverse=True) for s in sorted(uni[y])
             if (asked.get((s, str(y - 1911)), [None, None, ""])[2] not in ("ok", "empty")
                 or y == a.refresh_year)]
     rl.info("母體", "｜".join(f"{y}:{len(uni[y])}" for y in sorted(uni)))
