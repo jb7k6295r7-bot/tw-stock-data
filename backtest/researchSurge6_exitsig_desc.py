@@ -19,6 +19,8 @@
     S7 處置（main disposal 起訖）：進入 ＝ 起日；第二次 ＝ 起日前 60 個交易日內另有一次起日；出關 ＝ 迄日的下一個交易日
     S8 利多不漲：營收年增 Q5（Q 表 yoy）的可得日當天收黑且 收 ≤ 開 ×（1 − x），x ∈ {2%, 5%}；
        可得日 ＝ 月營收：次月 10 日之後第一個交易日（同 seq5；⚠ 資料沒有逐家實際公布日）｜季報：A2 可得日（共 4 版）
+ E2b（2026-09-29 21:36（台北）補；⚠ 看過本件結果之後補，協調者轉達）：原 S6 投信 Q1 版因投信淨買多數為 0、同值同組被分進 Q1，大多其實是「投信沒買賣」
+    ⇒ 另加 4 版：外資 5／10 日、投信 5／10 日「淨買 ＜ 0（F 表原值）且 Q1」；A、B 同樣報；原版照留、不改
  E3 段頂：照 mid_desc M2／M2b 切段，x ∈ {10, 20, 30, 50}%；中段頂 ＝ H1…H(段數−1)，真頂 ＝ P；L1 ＝ t、L(k＋1) ＝ 第 k 次拉回低點；組 ＝ x × 總段數 × 第幾段（5 段以上的 H5 以後合併）
     另加「x 的所有中段頂」合併組
  E4 A 視窗出現率（逐格算、取格中位；某組在某格 ＜ 30 點不進該格，照報可用格）：各訊號在 [點−5, 點＋5]、[點, 點＋10] 至少出現一次的比例；
@@ -69,13 +71,15 @@ SIGS = ["S1 量Q5×實體Q5", "S1 量Q5×收近低", "S1 量創20日高×實體Q
         "S2 破黑K低(量Q5×實體Q5)", "S2 破黑K低(量Q5×收近低)", "S2 破黑K低(量創高×實體Q5)", "S2 破黑K低(量創高×收近低)", "S2 破黑K低(任一S1)",
         "S3 跌破MA5", "S3 跌破MA10", "S3 跌破MA20", "S4 跳空跌破未回補", "S5 資增價跌",
         "S6 外資5日賣超Q1", "S6 外資10日賣超Q1", "S6 投信5日賣超Q1", "S6 投信10日賣超Q1",
-        "S7 進入處置", "S7 第二次處置", "S7 處置出關", "S8 營收利多收黑≥2%", "S8 營收利多收黑≥5%", "S8 季報利多收黑≥2%", "S8 季報利多收黑≥5%"]
+        "S7 進入處置", "S7 第二次處置", "S7 處置出關", "S8 營收利多收黑≥2%", "S8 營收利多收黑≥5%", "S8 季報利多收黑≥2%", "S8 季報利多收黑≥5%",
+        "S6 外資5日淨賣且Q1", "S6 外資10日淨賣且Q1", "S6 投信5日淨賣且Q1", "S6 投信10日淨賣且Q1"]
 SX = {s: i for i, s in enumerate(SIGS)}; NV = len(SIGS)
 THREE = "三層出場（MA5／破黑K低／MA20 各 1/3）"
 RULES = SIGS + [THREE]; NR = len(RULES)
 TEXT = {"S1": "高檔爆量長黑", "S2": "爆量黑 K 後 3 日內跌破黑 K 低點", "S3": "跌破 5／10／20 日線", "S4": "跳空跌破不回補",
         "S5": "融資增、股價跌", "S6": "外資／投信轉賣", "S7": "處置（進入、第二次、出關）", "S8": "利多（營收／財報好）卻收長黑"}
 CLS = ["1", "2", "3", "4", "5+"]
+NOTE = "（原 Q1 版大多是「投信沒買賣」：淨買多為 0、同值同組被分進 Q1；看「淨賣且Q1」版）"
 
 
 def signals(uni, cal, n, bar, t1, log):
@@ -131,6 +135,8 @@ def signals(uni, cal, n, bar, t1, log):
     SIG[13] = (qm5 == 5) & (np.nan_to_num(r5, nan=0) < 0) & bar
     for j, q in zip((14, 15, 16, 17), (qf5, qf10, qt5, qt10)):
         SIG[j] = (q == 1) & bar
+    for j, q, col in zip((25, 26, 27, 28), (qf5, qf10, qt5, qt10), ("fnet_5", "fnet_10", "tnet_5", "tnet_10")):
+        SIG[j] = (q == 1) & (np.nan_to_num(np.asarray(Fm[FX[col]]), nan=0) < 0) & bar       # E2b
     sid2i = {sd: i for i, sd in enumerate(uni["stock_id"])}
     for sd, iv in W["DISP"].items():
         if sd not in sid2i:
@@ -426,12 +432,14 @@ def page(META, AR, AF, BP, BS, GA, CON, SAY, GR):
     ar = AR[AR["視窗"] == "±5"]
     for r in CON.to_dict("records"):
         d6 = ar[(ar["訊號"] == r["訊號"]) & (ar["點"] == "6 成點 D60")]["出現率 中位"].iloc[0]
-        H.append(f"<tr><td class='l'>{html.escape(r['訊號'])}</td><td>{P_(r['真頂±5 出現率'])}</td><td>{P_(r['中段頂(20%)±5 出現率'])}</td><td>{P_(d6)}</td><td>{P_(r['一般 11 日'])}</td><td class='l'><small>{r['分類']}</small></td></tr>")
+        nt = f"<br><small>{NOTE}</small>" if r['訊號'] in ("S6 投信5日賣超Q1", "S6 投信10日賣超Q1") else ""
+        H.append(f"<tr><td class='l'>{html.escape(r['訊號'])}{nt}</td><td>{P_(r['真頂±5 出現率'])}</td><td>{P_(r['中段頂(20%)±5 出現率'])}</td><td>{P_(d6)}</td><td>{P_(r['一般 11 日'])}</td><td class='l'><small>{r['分類']}</small></td></tr>")
     H.append("</table></div>")
     H.append("<h2>二、第一次出現就賣：離真頂多近（依吃到幾成排序）</h2><p class='note'>吃到幾成 ＝ (賣價 − 買價) ÷ (頂 − 買價)；賣早 ＝ 訊號在頂之前；沒出現 ＝ 到資料尾都沒出現。</p>"
              "<div class='wrap'><table><tr><th class='l'>規則</th><th>吃到幾成</th><th>賣價÷頂</th><th>賣出日−頂</th><th>賣早／賣晚／沒出現</th><th>賣早：之後到頂還漲</th><th>賣晚：已從頂跌</th></tr>")
     for r in BP.to_dict("records"):
-        H.append(f"<tr><td class='l'>{html.escape(r['規則'])}</td><td>{P_(r['吃到幾成'])}</td><td>{P_(r['賣價÷P'])}</td><td>{r['賣出日−P']:+.0f}</td>"
+        nt = f"<br><small>{NOTE}</small>" if r['規則'] in ("S6 投信5日賣超Q1", "S6 投信10日賣超Q1") else ""
+        H.append(f"<tr><td class='l'>{html.escape(r['規則'])}{nt}</td><td>{P_(r['吃到幾成'])}</td><td>{P_(r['賣價÷P'])}</td><td>{r['賣出日−P']:+.0f}</td>"
                  f"<td>{P_(r['賣早'])}／{P_(r['賣晚'])}／{P_(r['沒出現'])}</td><td>{P_(r['賣後到P還漲'])}</td><td>{P_(r['賣晚已從P回落'])}</td></tr>")
     H.append("</table></div>")
     H.append("<h2>三、依段數細看</h2><div class='sel'>拉回門檻<select id='sx' onchange='sw()'>" + "".join(f"<option value='{int(x * 100)}'>{int(x * 100)}%</option>" for x in XS) +
