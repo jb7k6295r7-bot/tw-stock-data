@@ -1,0 +1,107 @@
+{
+ "母體與 uni.csv 相同": true,
+ "抽樣": [
+  "2823",
+  "3272",
+  "3535",
+  "4108",
+  "4712",
+  "5211",
+  "6491"
+ ],
+ "逐檔": {
+  "2823": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 207
+  },
+  "3272": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 354
+  },
+  "3535": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 822
+  },
+  "4108": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 366
+  },
+  "4712": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 238
+  },
+  "5211": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 140
+  },
+  "6491": {
+   "F 不同格": 0,
+   "R 不同格": 0,
+   "bar 不同": 0,
+   "hdef 不同": 0,
+   "buy_ok 不同": 0,
+   "locked 不同": 0,
+   "disp 不同": 0,
+   "r20c 不同": 0,
+   "seq5 stock() 事件＝s5work events": true,
+   "本件事件函式（無起點）＝seq5 stock()": true,
+   "事件數": 187
+  }
+ },
+ "五等分 抽 36 個 特徵×日 不同": 0,
+ "可沿用": true
+}
