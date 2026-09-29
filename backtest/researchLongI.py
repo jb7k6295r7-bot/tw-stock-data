@@ -12,8 +12,11 @@
     ⇒ 下一根有效 K 棒開盤買（要是下一個交易日、可買：有成交、開盤有效、非開盤漲停）；壞根與前後 1 根不產生訊號
  I3 出場：ATR(14) Wilder（首值 ＝ 前 14 根 TR 平均）；第 j 根（進場根之後）收盤 ＜ max(收盤[進場根 … j−1]) − k × ATR[j−1] ⇒ 第 j＋1 根開盤賣；k ∈ {2, 3}
     持有中碰到壞根 ⇒ 壞根前一根收盤出；資料尾：T1（活到日曆尾 ⇒ xpos ＝ ncal、末日收盤）／停止交易 ⇒ 引擎 stop_force
- I4 母體：甲 ＝ 訊號日當時的臺灣50 成分（成分調整檔 tw50_changes：信箱附件、資料庫線 0123、sha256 ad506ee5b82f3b6e…；main 上找不到 ⇒ 用 ~/evtdata 那份，照實寫）
-         ⚠ 調整檔只有「變動」、沒有任何一天的完整名單 ⇒ 要一份基底名單（某日 50 檔）才能逐季重建；--tw50-base 給（欄 stock_id、as_of）⇒ 往前往後套調整檔；沒給 ⇒ 甲不跑（照實寫）
+ I4 母體：甲 ＝ 訊號日當時的臺灣50 成分；檔案一律 git archive 唯讀取 main d365c37f89 的 data/meta/tw50/（資料庫線 0505）⇒ ~/evtdata/tw50_d365c37f89/
+         基底 --tw50-base（tw50_base_2026-06-30.csv：FTSE Russell 2026-06-30 收盤版 50 檔）＋ 調整檔 tw50_changes.csv（sha256 ad506ee5…，與信箱附件逐位元相同）
+         ＋ 代號轉換 tw50_code_map.csv（2311→3711、5854→5880：往回推過了新代號首個交易日就換回舊代號）
+         M[t] ＝ t 日的成分：基底日往後套「生效日 ≤ t」的調整（含 2026-09-21 刪 3661、加 6446）；往前撤銷「生效日 ＞ t」的調整；沒給基底 ⇒ 甲不跑
+         ⭐ 自我驗算（寫進 summary）：每一步「納入的在、刪除的不在」；2009-01-05 起每日檔數 ＝ 50（2010-06-24～06-28 為 51：華碩分割，照實註明）；成分沒有價量檔的照實列
          乙 ＝ 訊號日 W1 eligible（researchEvt.eligibility；2015 以前只上市）
  I5 組合：最多 20 檔、等權；同日候選多時 轉換÷基準 大者先（pick="relvol"）；成本 0.585%；stop_force 開；種子 default_rng(1000＋r)
     甲 --seeds 顆；乙（描述）--seeds-yi 顆（乙母體大、訊號多，照實寫）
@@ -53,7 +56,8 @@ from backtest import chart_svg as CS
 ST = EV.ST
 OUT = "backtest/resultsLongI"
 F_HTML = "長線戰法_件I_一目三役_20260929.html"
-TW50 = os.path.expanduser("~/evtdata/tw50_changes.csv"); TW50_SHA = "ad506ee5b82f3b6e"
+TW50_DIR = os.path.expanduser("~/evtdata/tw50_d365c37f89/data/meta/tw50"); TW50_COMMIT = "d365c37f8979e68684db61124638606e0a8ef989"
+TW50 = os.path.join(TW50_DIR, "tw50_changes.csv"); TW50_SHA = "ad506ee5b82f3b6e"; TW50_MAP = os.path.join(TW50_DIR, "tw50_code_map.csv")
 COST = 0.00585
 KS = (2, 3)
 WINS = {"主": ("2009-01-05", "2026-08-24"), "早年": ("2005-01-03", "2008-12-31")}
@@ -154,29 +158,55 @@ def load_one(args):
 
 
 def tw50_membership(cal, base_csv):
-    """調整檔 ＋ 基底名單 ⇒ M[日曆位置] ＝ 成分集合（往前往後套）。"""
+    """基底名單 ＋ 調整檔 ＋ 代號轉換 ⇒ M[日曆位置] ＝ 當日成分（frozenset）＋ 自我驗算。"""
     ch = pd.read_csv(TW50, dtype=str, encoding="utf-8-sig")
     ch = ch[ch["action"].isin(["add", "delete"])].copy()
     ch["ep"] = [int(cal.searchsorted(pd.Timestamp(d))) for d in ch["effective_date"]]
-    base = pd.read_csv(base_csv, dtype=str)
-    asof = pd.Timestamp(base["as_of"].iloc[0]); b0 = int(cal.searchsorted(asof, side="right")) - 1
-    S = set(base["stock_id"])
+    cm = pd.read_csv(TW50_MAP, dtype=str, encoding="utf-8-sig")
+    swap = {int(cal.searchsorted(pd.Timestamp(r.new_first_trade))): (r.new_id, r.old_id) for r in cm.itertuples()}
+    base = pd.read_csv(base_csv, dtype=str, encoding="utf-8-sig")
+    asof = pd.Timestamp(base["asof_date"].iloc[0]); b0 = int(cal.searchsorted(asof, side="right")) - 1
+    S0 = set(base["stock_id"].str.strip())
     n = len(cal); M = [None] * n
     ev = {}
     for p, a, s in zip(ch["ep"], ch["action"], ch["stock_id"]):
-        ev.setdefault(p, []).append((a, s))
-    cur = set(S)
-    for t in range(b0, n):                                  # 往後：生效日當天起
-        if t > b0:
-            for a, s in ev.get(t, []):
-                (cur.add if a == "add" else cur.discard)(s)
-        M[t] = frozenset(cur)
-    cur = set(S)
-    for t in range(b0, -1, -1):                             # 往前：t 當天的名單 ⇒ 撤銷 t 生效的調整即得 t−1
-        M[t] = frozenset(cur) if t != b0 else M[t]
+        ev.setdefault(p, []).append((a, s.strip()))
+    bad = []
+    M[b0] = frozenset(S0)
+    cur = set(S0)
+    for t in range(b0 + 1, n):                              # 往後：生效日當天起
         for a, s in ev.get(t, []):
+            if (a == "add") == (s in cur):
+                bad.append(f"往後 {cal[t]:%Y-%m-%d} {a} {s}")
+            (cur.add if a == "add" else cur.discard)(s)
+        M[t] = frozenset(cur)
+    cur = set(S0)
+    for t in range(b0, 0, -1):                              # 往前：由 t 日名單撤銷「t 日生效」的調整 ⇒ t−1 日名單
+        for a, s in ev.get(t, []):
+            if (a == "add") != (s in cur):                  # 納入的應在、刪除的應不在
+                bad.append(f"往回 {cal[t]:%Y-%m-%d} {a} {s}")
             (cur.discard if a == "add" else cur.add)(s)
-    return M, {"基底日": str(asof.date()), "基底檔數": len(S), "調整列": int(len(ch))}
+        if t in swap:                                       # t ＝ 新代號首個交易日 ⇒ t−1 起用舊代號
+            nw, od = swap[t]
+            if nw in cur:
+                cur.discard(nw); cur.add(od)
+        M[t - 1] = frozenset(cur)
+    t09 = int(cal.searchsorted(pd.Timestamp("2009-01-05")))
+    runs = []; st = None
+    for t in range(t09, n + 1):
+        off = t < n and len(M[t]) != 50
+        if off and st is None:
+            st = t
+        if not off and st is not None:
+            runs.append(f"{cal[st]:%Y-%m-%d}～{cal[t - 1]:%Y-%m-%d}：{sorted({len(M[u]) for u in range(st, t)})} 檔"); st = None
+    per_eff = {f"{cal[p]:%Y-%m-%d}": len(M[p]) for p in sorted(ev) if p >= t09}
+    info = {"來源": f"git archive {TW50_COMMIT[:10]}（main）data/meta/tw50，唯讀", "基底日": str(asof.date()), "基底檔數": len(S0),
+            "sha256": {f: hashlib.sha256(open(os.path.join(TW50_DIR, f), "rb").read()).hexdigest()[:16] for f in sorted(os.listdir(TW50_DIR))},
+            "調整列（add／delete）": int(len(ch)), "代號轉換": [f"{r.old_id}→{r.new_id}（新代號首個交易日 {r.new_first_trade}）" for r in cm.itertuples()],
+            "驗算：納入在／刪除不在 不成立": bad, "驗算：2009-01-05 起檔數 ≠ 50 的區間": runs,
+            "驗算：生效日（2009 起）數": len(per_eff), "驗算：生效日當天檔數 ≠ 50": {k: v for k, v in per_eff.items() if v != 50},
+            "2009 起曾為成分的代號數": len(set().union(*M[t09:n]))}
+    return M, info
 
 
 def _stats(o, segs):
@@ -272,8 +302,14 @@ def main():
     MEM = None
     if a.tw50_base:
         MEM, minfo = tw50_membership(cal, a.tw50_base)
+        t09 = int(cal.searchsorted(pd.Timestamp("2009-01-05")))
+        ever = sorted(set().union(*MEM[t09:n]))
+        minfo["成分但本件母體（gate3∩有價量檔）沒有的代號"] = [s for s in ever if s not in P]
         S["臺灣50 成分重建"] = minfo
-        T["甲"] = [s in MEM[p] for s, p in zip(T["sid"], T["pos"])]
+        log(f"[臺灣50] {json.dumps({k: v for k, v in minfo.items() if k.startswith('驗算') or k.startswith('成分但')}, ensure_ascii=False)}")
+        p09 = int(cal.searchsorted(pd.Timestamp(WINS["主"][0]))) - 1        # 調整檔 2009Q1 起 ⇒ 更早的成分重建不了：甲 只認訊號日 ≥ 主窗首個進場日的前一日
+        minfo["甲 有效起日（訊號日）"] = f"{cal[p09]:%Y-%m-%d}"
+        T["甲"] = [p >= p09 and s in MEM[p] for s, p in zip(T["sid"], T["pos"])]
     else:
         T["甲"] = False
         S["臺灣50 成分重建"] = "⛔ 沒有基底名單（調整檔只有變動）⇒ 甲不跑；需要某一天完整 50 檔名單（--tw50-base）"
