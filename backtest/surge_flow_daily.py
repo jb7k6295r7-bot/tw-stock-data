@@ -2,7 +2,9 @@
 """買賣流程追蹤（使用者買進才加）——回測線，給每日名單（daily_list.py）用；每天從買進日重播、不存中間狀態。
 
 流程（使用者 2026-09-30 決定：W1 賣 3 成、留 7 成；剩 7 成出場 ＝ W2 或回落 30%（另案研究結果：現行最好，commit 075078d9ae））：
-  全部持有 ── W1 第一頂警示（收盤創 20 日新高 ∧ 過去 60 日無處置 ∧ 10 日注意次數 Q5 ∧（5 日漲停天數 Q5 或 5 日報酬 Q5））第一次出現 ⇒ 次一開盤賣 3 成
+  全部持有 ── 連 40 天沒創新高（使用者 2026-09-30 定的退場規則；逐字同 researchSurge6_restexit R4 乙群 N＝40）：新高 ＝ 收盤 ＞ 買進日以來最高收盤（買進日本身算新高日）；
+               最後一個新高日 h 之後的 K 棒數（(h, d] 內有 K 棒的日子）第一次 ≥ 40 的那天 ⇒ 次一開盤賣全部（結束）；只在 W1 還沒出現前適用（同一天 W1 也出現 ⇒ 以這條為準）
+             ── W1 第一頂警示（收盤創 20 日新高 ∧ 過去 60 日無處置 ∧ 10 日注意次數 Q5 ∧（5 日漲停天數 Q5 或 5 日報酬 Q5））第一次出現 ⇒ 次一開盤賣 3 成
   已賣 3 成 ── 剩 7 成：等 W2 第二頂警示（收盤在含當天 20 根最高收盤 10% 內 ∧（再次進入處置：當天是處置起日且前 60 個交易日內另有起日｜處置出關：當天是迄日下一交易日））
                在賣 3 成之後第一次出現（兩種取先到者）⇒ 次一開盤賣剩 7 成
   已出清／待買回 ── 只在出清後才適用：收盤「從買進以來最高收盤回落第一次達到 20%」（跨過那天）且 bottomjudge 當下版分數（x＝20%、K＝5）≥ 探索段讀法 m* ⇒ 次一開盤買回
@@ -118,6 +120,16 @@ def signals_for(R, s, X_, DISP, sid):
     return w1, w2a, w2b
 
 
+def nohigh_day(c, bar, e, last, N=40):
+    """restexit R4 乙群（run_rules，st0 ＝ e、lo_ ＝ e）逐字：[e, last] 內第一個「最後新高日之後 K 棒數 ≥ N」的日子；沒有 ⇒ None。"""
+    cbar = np.cumsum(bar)
+    sg = c[e:last + 1]; r_ = np.maximum.accumulate(sg)
+    isnh = np.r_[True, sg[1:] > r_[:-1]]; lastnh = e + np.maximum.accumulate(np.where(isnh, np.arange(len(sg)), 0))
+    nbar = cbar[e:last + 1] - cbar[lastnh]
+    hh = np.flatnonzero(nbar >= N)
+    return e + int(hh[0]) if len(hh) else None
+
+
 def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None):
     """⇒ dict（階段、今日訊號、今天收盤後該做什麼、歷程）。階段：全部持有／已賣 3 成／已出清／待買回／第二段持有／結束。"""
     cal = R["cal"]; n = len(cal); W = R["W"]; uni = R["uni"]; d0, d1 = R["d0"], R["d1"]; T = d1
@@ -164,8 +176,17 @@ def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None):
             return o_
         hist.append(f"賣{what} {cal[ex].date()}")
         return O("結束", [], f"已結束（{cal[stop].date()} 從最高回落 30%，{cal[ex].date()} 賣{what}）")
-    # ① 全部持有 ⇒ W1 賣 3 成
+    # ① 全部持有 ⇒ 連 40 天沒創新高（賣全部）或 W1 賣 3 成
     d1_ = next((d for d in range(e, lastday + 1) if w1[d - d0] and (stop is None or d < stop)), None)
+    n40 = nohigh_day(c, bar, e, lastday)
+    if n40 is not None and (d1_ is None or n40 <= d1_):
+        hist.append(f"連 40 天沒新高 {cal[n40].date()}")
+        ex = nxo(n40)
+        if ex is None:
+            o_ = O("全部持有", ["買進後連續 40 個交易日沒創新高"], "明天開盤賣全部（買進後連續 40 個交易日沒創新高，你定的退場規則）"); o_["參考"] = hint
+            return o_
+        hist.append(f"賣全部 {cal[ex].date()}")
+        return O("結束", [], f"已結束（{cal[n40].date()} 買進後連續 40 個交易日沒創新高，{cal[ex].date()} 賣全部）")
     if d1_ is None:
         if stop is not None:
             return ended_by_stop("全部持有", "全部")

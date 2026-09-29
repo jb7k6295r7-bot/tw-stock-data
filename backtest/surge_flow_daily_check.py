@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""surge_flow_daily 的閘門 G3：W1、W2（再次處置、出關）、中段底分數，抽 topwarn／bottomjudge 已算過的筆重算（每日資料形態 vs 研究版），逐筆相同。
+"""surge_flow_daily 的閘門 G3：W1、W2（再次處置、出關）、中段底分數、連 40 天沒創新高（restexit R4 乙群 N＝40），抽 topwarn／bottomjudge 已算過的筆重算（每日資料形態 vs 研究版），逐筆相同。
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.surge_flow_daily_check
 參照（研究版）：researchSurge6_topwarn.components（s5work 接合版面）的 W1 基本版、W2a、W2b；中段底分數 ＝ topwarn 完整一輪同式
@@ -107,11 +107,34 @@ def main():
         fd = {k_: float(v_[0]) for k_, v_ in BJ.pull_feats(CTXd[sid], np.array([Ad]), np.array([dd2]), np.array([Lpd]), np.array([ed_]), np.array([len(cutsd)]), np.array([np.nan])).items()}
         mine = sum(SFL.bj_has(nm_, fd, bounds, lambda nm, i=i, dd2=dd2: SFL._qv(R, i, dd2, nm)) for nm_ in bnames)
         got.append({"代號": sid, "進場": str(cal5[e5].date()), "跨越日": str(cal5[d2].date()), "研究版分數": int(ref), "每日版分數": int(mine)})
+    # ── 連 40 天沒創新高：抽 restexit R4（N＝40）乙群觸發的 50 筆
+    RT = pd.read_csv("backtest/resultsSurge6/restexit/trade_rules.csv.gz"); TT = pd.read_csv("backtest/resultsSurge6/restexit/trades.csv.gz").set_index("tid")
+    rr = RT[(RT["規則組"] == "乙") & (RT["規則"] == "R4 連40天沒創新高") & (RT["觸發"] == 1)]
+    rr = rr[TT.loc[rr["tid"], "群"].to_numpy() == "乙"].sample(frac=1, random_state=4)
+    t1d = int(cal.searchsorted(pd.Timestamp("2026-08-31"), side="right")) - 1
+    n40 = []; CX = {}
+    for x in rr.to_dict("records"):
+        if len(n40) >= 50:
+            break
+        tr = TT.loc[x["tid"]]; sid = uni5.loc[int(tr["s"]), "stock_id"]
+        if sid not in idd or cal5[int(tr["e"])] < cal[0]:
+            continue
+        if sid not in CX:
+            i = idd[sid]; disp = np.zeros(n, bool)
+            CX[sid] = SFL.stock_ctx(sid, unid.loc[i, "market"], cal, n, price, aux, Wd["DISP"], disp)
+        c_, b_ = CX[sid]["c"], CX[sid]["bar"]; e_ = int(cal.get_loc(cal5[int(tr["e"])]))
+        sg = c_[e_:t1d + 1]; w = np.flatnonzero(sg <= np.maximum.accumulate(sg) * 0.7); stop_ = e_ + int(w[0]) if len(w) else t1d
+        mine = SFL.nohigh_day(c_, b_, e_, stop_)
+        n40.append({"代號": sid, "進場": str(cal5[int(tr["e"])].date()), "研究版觸發日": str(cal5[int(x["ds"])].date()), "每日版觸發日": None if mine is None else str(cal[mine].date())})
+    N4 = pd.DataFrame(n40); nb4 = int((N4["研究版觸發日"] != N4["每日版觸發日"]).sum())
+    info["連40天沒新高 比對筆數"] = len(N4); info["連40天沒新高 不同"] = nb4
+    if nb4:
+        errs.append(f"連 40 天不同 {nb4}")
     G = pd.DataFrame(got); nbs = int((G["研究版分數"] != G["每日版分數"]).sum()) if len(G) else -1
     info["中段底分數 比對筆數"] = len(G); info["中段底分數 不同"] = nbs; info["分數分佈（研究版）"] = G["研究版分數"].value_counts().sort_index().to_dict() if len(G) else {}
     if nbs:
         errs.append(f"分數不同 {nbs}")
-    out = {"G3": info, "錯誤": errs, "分數明細": got}
+    out = {"G3": info, "錯誤": errs, "分數明細": got, "連40天明細": n40}
     json.dump(out, open(os.path.join(OUT, "G3.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     print("G3", json.dumps(info, ensure_ascii=False, default=str), "錯誤", errs)
 
