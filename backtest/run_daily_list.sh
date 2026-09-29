@@ -13,6 +13,9 @@
 #      測試用：環境變數 DAILY_FAKE_TODAY＝YYYY-MM-DD 可假造「今天」；DAILY_MB 可把輸出資料夾指到暫存處
 #   5 退出碼：產檔或略過 0、失敗 1
 #   6 ⛔ 信箱只寫 _營量觀察/ 這一個資料夾
+#   7 same_state（情報 1219；持股歷史同狀態，backtest.same_state 查表）：daily 產檔或略過之後才跑；⛔ 失敗只記 log、不改退出碼、不影響 daily；
+#      同一資料日、同一 sha（resultsYLwatch/.same_state_<資料日>.sha）且 _營量觀察/same_state_<資料日>.md 在 ⇒ 略過；--force 一起重產；
+#      --final 不寫 same_state 的 _未到（情報：缺檔就不印那行）；測試用：SAME_STATE_FAKE_FAIL=1 讓 same_state 故意失敗
 #   磁碟：archive 依【資料內容】（相關 data 子樹的 git tree id）存 ~/h2data/daily_<key>，~/h2data/<sha> 只放 symlink ⇒ 只改了別的 feed 的新 commit 不會再多一份 800MB
 set -uo pipefail
 REPO=$HOME/tw-p17
@@ -61,6 +64,23 @@ if [ -z "$FAIL" ]; then
     else
       FAIL="程式錯誤：$(tail -20 "$WLOG")"
       logline "失敗：sha ${SHA:0:10}｜資料日 $ASOF｜程式錯誤（見 $WLOG）"
+    fi
+  fi
+fi
+
+# ── same_state（規則 7）：只在 daily 產檔或略過之後；失敗只記 log
+if [ -z "$FAIL" ] && [ -n "$RESULT" ]; then
+  SOUT="$MB/same_state_$ASOF.md"; SSHA="$WD/.same_state_$ASOF.sha"
+  if [ $FORCE = 0 ] && [ -f "$SOUT" ] && [ -f "$SSHA" ] && [ "$(cat "$SSHA")" = "$SHA" ]; then
+    logline "same_state 略過：sha ${SHA:0:10}｜資料日 $ASOF｜$SOUT 已存在且 sha 相同"
+  else
+    SLOG="$REPO/backtest/resultsDaily/same_state.log"
+    if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.same_state --data "$DK/data" --sha "$SHA" > "$SLOG" 2>&1) && [ -f "$REPO/backtest/resultsDaily/same_state_$ASOF.md" ]; then
+      mkdir -p "$MB"
+      cp "$REPO/backtest/resultsDaily/same_state_$ASOF.md" "$SOUT" && echo "$SHA" > "$SSHA"
+      logline "same_state 產檔：sha ${SHA:0:10}｜資料日 $ASOF｜$SOUT"
+    else
+      logline "same_state 失敗（不影響 daily）：sha ${SHA:0:10}｜資料日 $ASOF｜$(tail -1 "$SLOG" 2>/dev/null)（見 $SLOG）"
     fi
   fi
 fi
