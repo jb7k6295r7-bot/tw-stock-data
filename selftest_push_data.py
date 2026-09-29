@@ -578,6 +578,38 @@ def main():
     finally:
         shutil.rmtree(d10, ignore_errors=True)
 
+    # ══════════════════════════════════════════════════════════════
+    # ⑪ ⛔⛔ 台帳檔在【main 上還沒有的資料夾】裡（2026-09-30 mops-news 第一趟）
+    #
+    # ⚠ 逐鍵合併那條路是 `cp /tmp/lg_out.dat <路徑>`——checkout origin/main 之後
+    #   那個資料夾不存在 ⇒ cp 失敗 ⇒ ⛔ 本來沒人接，照樣印「✓ 已推上 main」，
+    #   main 上只多了 `_last_run.md`（363,736 則一則都沒到）。
+    # ⇒ 判準是終點：main 上要有那兩個新檔，內容等於本趟的。
+    # ══════════════════════════════════════════════════════════════
+    d11 = tempfile.mkdtemp(prefix="pushnewdir_")
+    try:
+        print("\n── ⑪ 台帳檔在 main 上還沒有的資料夾 ⇒ 要搬得過去 ──")
+        origin, work = build(d11)
+        shutil.copy(os.path.join(HERE, "push_data.sh"), work)
+        for helper in ("merge_last_run.py", "merge_ledger.py"):
+            shutil.copy(os.path.join(HERE, helper), work)
+        csv_ = "date,time,stock_id,name,market,serial,subject\n2000-01-04,09:00:00,2330,台積電,sii,1,x\n"
+        write(os.path.join(work, "data", "mops", "news", "2000.csv"), csv_)
+        write(os.path.join(work, "data", "mops", "news", "_asked.json"), '{"2000-01-04": "ok:1"}')
+        r11 = subprocess.run(["bash", "push_data.sh", "測試11"], cwd=work,
+                             capture_output=True, text=True,
+                             env=dict(os.environ, GITHUB_REF_NAME="feature"))
+        o11 = r11.stdout + r11.stderr
+        ck("⑪ push_data 回 0", r11.returncode == 0, f"rc={r11.returncode}｜{o11[-400:]}")
+        g = git(work, "show", "origin/main:data/mops/news/2000.csv")
+        ck("⑪ ⭐⭐ 新資料夾裡的台帳 CSV 到了 main", g.returncode == 0 and "2330" in g.stdout,
+           f"{g.stdout[:120]!r}｜{o11[-400:]}")
+        g = git(work, "show", "origin/main:data/mops/news/_asked.json")
+        ck("⑪ ⭐ 新資料夾裡的 _asked.json 也到了", g.returncode == 0 and "2000-01-04" in g.stdout,
+           f"{g.stdout[:120]!r}")
+    finally:
+        shutil.rmtree(d11, ignore_errors=True)
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 
