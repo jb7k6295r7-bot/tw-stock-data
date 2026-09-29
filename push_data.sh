@@ -118,6 +118,8 @@ data/early/_revenue_structure.csv:period,market
 data/meta/filing_dates.csv:stock_id,year,season,doc_code
 data/meta/_filing_dates_asked.csv:stock_id,roc_year
 data/mops/_rd_status.csv:period
+data/mops/news/_asked.json:json
+data/mops/news/[0-9]*.csv:date,time,stock_id,serial
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- $TREES)
 if [ -n "$FORCE" ]; then

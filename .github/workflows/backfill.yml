@@ -9,7 +9,7 @@ on:
       mode:
         description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated, early-feed]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated, early-feed, mops-news]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -213,6 +213,7 @@ jobs:
           python selftest_parse_daily.py
           python selftest_xbrl_rd.py
           python selftest_treasury.py
+          python selftest_mops_news.py
 
       - name: 把程式同步到 main（趁 checkout 還新）
         # ⛔ 只有一份實作（CLAUDE.md 四點五）。⚠ 這一段本來八支各抄一份、
@@ -259,6 +260,16 @@ jobs:
           RC=0
           python early_backfill.py --feed "${{ inputs.markets }}" --start "${{ inputs.start }}" --end "${{ inputs.end }}" --sleep "${{ inputs.sleep }}" || RC=1
           exit $RC
+
+      # ⭐ 2026-09-29（台股 seq358／360；使用者「記錄個股報導什麼會有什麼反應」）：重大訊息全市場逐日 ⇒ data/mops/news/<年>.csv
+      #   先取 main 的 data/mops/news（續跑）；每趟 300 分鐘；start／end／sleep 照填
+      - name: 重大訊息（MOPS t05st02 ⇒ data/mops/news）
+        if: inputs.mode == 'mops-news'
+        timeout-minutes: 330
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/mops/news 2>/dev/null || echo "（main 上還沒有 data/mops/news，第一趟）"
+          python mops_news.py --start "${{ inputs.start }}" --end "${{ inputs.end }}" --sleep "${{ inputs.sleep }}" --budget-min 300
 
       # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
       #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
