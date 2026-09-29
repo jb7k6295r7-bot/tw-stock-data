@@ -1,0 +1,973 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>飆股回推 第一批</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left}small{color:#666}.hm td{font-size:12px;padding:3px 4px}.tabs button{margin:2px;padding:6px 10px;border:1px solid #ccc;border-radius:6px;background:#fff}.tabs button.on{background:#333;color:#fff}</style></head><body><main>
+<h1>飆股回推（seq5）第一批：飆股有多少、漲多少、多久、之後怎麼跌</h1>
+<p class='lead'>分析開始 2026-09-29 16:22（台北），照登錄 seq5（sha 90ecf06e7f3d906a）；漲幅網格照裁定 seq277。執行者沒看過上一版結果。這一批只描述，還沒有看特徵。</p>
+<p class='note'>飆股 ＝ 某天收盤後，之後 H 個交易日內收盤曾經比那天高 g 以上。母體是全部上市櫃普通股（含已下市、注意、處置、停牌前後），2015 以前只有上市。</p>
+<h2>一、每一萬個股-日裡，有幾個是飆股起漲日</h2><div class='tabs'><button onclick="sh('探索')" id='b探索'>探索</button><button onclick="sh('確認')" id='b確認'>確認</button><button onclick="sh('早年')" id='b早年'>早年</button></div>
+<div class='wrap seg' id='s探索'><table class='hm'><tr><th>H＼g</th><th>50%</th><th>100%</th><th>150%</th><th>200%</th><th>250%</th><th>300%</th><th>400%</th><th>500%</th><th>700%</th><th>1000%</th></tr>
+<tr><th>10</th>
+<td style='background:rgba(214,64,69,0.64)'>6.6<br><small>1352</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.4<br><small>87</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>14</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>20</th>
+<td style='background:rgba(214,64,69,0.79)'>12.0<br><small>2454</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.7<br><small>356</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>84</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>30</th>
+<td style='background:rgba(214,64,69,0.88)'>16.3<br><small>3336</small></td>
+<td style='background:rgba(214,64,69,0.47)'>2.8<br><small>564</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.9<br><small>174</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>67</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.1<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>40</th>
+<td style='background:rgba(214,64,69,0.93)'>19.0<br><small>3874</small></td>
+<td style='background:rgba(214,64,69,0.52)'>3.7<br><small>755</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>264</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>101</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>53</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>23</small></td>
+<td style='background:rgba(214,64,69,0.10)'>0.0<br><small>6</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>50</th>
+<td style='background:rgba(214,64,69,0.96)'>20.9<br><small>4270</small></td>
+<td style='background:rgba(214,64,69,0.56)'>4.4<br><small>908</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.6<br><small>324</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>139</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>73</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>36</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>4</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>60</th>
+<td style='background:rgba(214,64,69,0.98)'>22.0<br><small>4499</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.1<br><small>1041</small></td>
+<td style='background:rgba(214,64,69,0.42)'>1.9<br><small>393</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.8<br><small>170</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>97</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>50</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>4</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>70</th>
+<td style='background:rgba(214,64,69,0.98)'>22.5<br><small>4595</small></td>
+<td style='background:rgba(214,64,69,0.61)'>5.7<br><small>1171</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.2<br><small>458</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.0<br><small>208</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>116</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>67</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.2<br><small>31</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>4</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>80</th>
+<td style='background:rgba(214,64,69,0.99)'>23.1<br><small>4709</small></td>
+<td style='background:rgba(214,64,69,0.63)'>6.4<br><small>1311</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.5<br><small>519</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.2<br><small>248</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>143</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>81</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>39</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>90</th>
+<td style='background:rgba(214,64,69,1.00)'>23.4<br><small>4779</small></td>
+<td style='background:rgba(214,64,69,0.65)'>6.9<br><small>1401</small></td>
+<td style='background:rgba(214,64,69,0.47)'>2.8<br><small>565</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.3<br><small>275</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.8<br><small>155</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>93</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>48</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>26</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>100</th>
+<td style='background:rgba(214,64,69,1.00)'>23.5<br><small>4793</small></td>
+<td style='background:rgba(214,64,69,0.66)'>7.3<br><small>1489</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.0<br><small>621</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.5<br><small>315</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>180</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.5<br><small>111</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>51</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>28</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>15</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>4</small></td>
+</tr>
+<tr><th>110</th>
+<td style='background:rgba(214,64,69,1.00)'>23.5<br><small>4804</small></td>
+<td style='background:rgba(214,64,69,0.67)'>7.6<br><small>1561</small></td>
+<td style='background:rgba(214,64,69,0.50)'>3.3<br><small>672</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.7<br><small>344</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>193</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>126</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>58</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>34</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.10)'>0.0<br><small>7</small></td>
+</tr>
+<tr><th>120</th>
+<td style='background:rgba(214,64,69,1.00)'>23.6<br><small>4824</small></td>
+<td style='background:rgba(214,64,69,0.69)'>8.1<br><small>1644</small></td>
+<td style='background:rgba(214,64,69,0.51)'>3.5<br><small>718</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.8<br><small>377</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>215</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>137</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.3<br><small>68</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>38</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>8</small></td>
+</tr>
+<tr><th>130</th>
+<td style='background:rgba(214,64,69,1.00)'>23.5<br><small>4794</small></td>
+<td style='background:rgba(214,64,69,0.69)'>8.3<br><small>1698</small></td>
+<td style='background:rgba(214,64,69,0.52)'>3.7<br><small>750</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.0<br><small>412</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.2<br><small>238</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.7<br><small>148</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>80</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>41</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>8</small></td>
+</tr>
+<tr><th>140</th>
+<td style='background:rgba(214,64,69,0.99)'>23.3<br><small>4750</small></td>
+<td style='background:rgba(214,64,69,0.70)'>8.5<br><small>1744</small></td>
+<td style='background:rgba(214,64,69,0.53)'>3.9<br><small>789</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.1<br><small>427</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>256</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.8<br><small>156</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.4<br><small>87</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>44</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>26</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>8</small></td>
+</tr>
+<tr><th>150</th>
+<td style='background:rgba(214,64,69,0.99)'>22.9<br><small>4664</small></td>
+<td style='background:rgba(214,64,69,0.70)'>8.7<br><small>1775</small></td>
+<td style='background:rgba(214,64,69,0.54)'>4.0<br><small>819</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.2<br><small>454</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>269</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.8<br><small>173</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>96</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>51</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>9</small></td>
+</tr>
+<tr><th>160</th>
+<td style='background:rgba(214,64,69,0.98)'>22.4<br><small>4577</small></td>
+<td style='background:rgba(214,64,69,0.71)'>8.8<br><small>1791</small></td>
+<td style='background:rgba(214,64,69,0.54)'>4.2<br><small>849</small></td>
+<td style='background:rgba(214,64,69,0.45)'>2.4<br><small>481</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.4<br><small>289</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>182</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>102</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>56</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+</tr>
+<tr><th>170</th>
+<td style='background:rgba(214,64,69,0.98)'>22.4<br><small>4561</small></td>
+<td style='background:rgba(214,64,69,0.71)'>8.9<br><small>1825</small></td>
+<td style='background:rgba(214,64,69,0.55)'>4.3<br><small>880</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.5<br><small>510</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.5<br><small>312</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>193</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>108</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>64</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>28</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>13</small></td>
+</tr>
+<tr><th>180</th>
+<td style='background:rgba(214,64,69,0.98)'>22.1<br><small>4508</small></td>
+<td style='background:rgba(214,64,69,0.72)'>9.1<br><small>1862</small></td>
+<td style='background:rgba(214,64,69,0.56)'>4.4<br><small>906</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.6<br><small>538</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.6<br><small>336</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.0<br><small>208</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>116</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>67</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.1<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>14</small></td>
+</tr>
+<tr><th>190</th>
+<td style='background:rgba(214,64,69,0.98)'>22.0<br><small>4494</small></td>
+<td style='background:rgba(214,64,69,0.72)'>9.3<br><small>1890</small></td>
+<td style='background:rgba(214,64,69,0.56)'>4.5<br><small>924</small></td>
+<td style='background:rgba(214,64,69,0.47)'>2.8<br><small>562</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.7<br><small>354</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>226</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>121</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.3<br><small>69</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.2<br><small>32</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>14</small></td>
+</tr>
+<tr><th>200</th>
+<td style='background:rgba(214,64,69,0.97)'>21.7<br><small>4423</small></td>
+<td style='background:rgba(214,64,69,0.72)'>9.3<br><small>1907</small></td>
+<td style='background:rgba(214,64,69,0.57)'>4.7<br><small>957</small></td>
+<td style='background:rgba(214,64,69,0.48)'>2.9<br><small>587</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.8<br><small>368</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.2<br><small>239</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>127</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>72</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>34</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>17</small></td>
+</tr>
+<tr><th>210</th>
+<td style='background:rgba(214,64,69,0.96)'>21.2<br><small>4335</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.4<br><small>1925</small></td>
+<td style='background:rgba(214,64,69,0.57)'>4.8<br><small>982</small></td>
+<td style='background:rgba(214,64,69,0.48)'>3.0<br><small>603</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.9<br><small>380</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.2<br><small>248</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>127</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>78</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>37</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>17</small></td>
+</tr>
+<tr><th>220</th>
+<td style='background:rgba(214,64,69,0.96)'>20.9<br><small>4262</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.5<br><small>1936</small></td>
+<td style='background:rgba(214,64,69,0.58)'>4.9<br><small>1002</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.0<br><small>611</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.0<br><small>398</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>257</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>128</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>82</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>39</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>17</small></td>
+</tr>
+<tr><th>230</th>
+<td style='background:rgba(214,64,69,0.95)'>20.5<br><small>4185</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.5<br><small>1940</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.0<br><small>1012</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.1<br><small>626</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.1<br><small>421</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>267</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>138</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.4<br><small>90</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>42</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>18</small></td>
+</tr>
+<tr><th>240</th>
+<td style='background:rgba(214,64,69,0.95)'>20.3<br><small>4137</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.6<br><small>1949</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.1<br><small>1042</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.2<br><small>643</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.1<br><small>435</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.4<br><small>278</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>146</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>95</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>47</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>18</small></td>
+</tr>
+<tr><th>250</th>
+<td style='background:rgba(214,64,69,0.94)'>20.1<br><small>4101</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.6<br><small>1949</small></td>
+<td style='background:rgba(214,64,69,0.59)'>5.3<br><small>1073</small></td>
+<td style='background:rgba(214,64,69,0.50)'>3.3<br><small>670</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.2<br><small>457</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.5<br><small>300</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.7<br><small>152</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>104</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>54</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>18</small></td>
+</tr>
+</table></div>
+<div class='wrap seg' id='s確認'><table class='hm'><tr><th>H＼g</th><th>50%</th><th>100%</th><th>150%</th><th>200%</th><th>250%</th><th>300%</th><th>400%</th><th>500%</th><th>700%</th><th>1000%</th></tr>
+<tr><th>10</th>
+<td style='background:rgba(214,64,69,0.66)'>7.3<br><small>1492</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>57</small></td>
+<td style='background:rgba(214,64,69,0.10)'>0.0<br><small>6</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>20</th>
+<td style='background:rgba(214,64,69,0.83)'>13.9<br><small>2837</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.7<br><small>355</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>51</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>30</th>
+<td style='background:rgba(214,64,69,0.90)'>17.8<br><small>3603</small></td>
+<td style='background:rgba(214,64,69,0.50)'>3.3<br><small>661</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>182</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>46</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>14</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>4</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>40</th>
+<td style='background:rgba(214,64,69,0.94)'>20.2<br><small>4053</small></td>
+<td style='background:rgba(214,64,69,0.55)'>4.4<br><small>884</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.5<br><small>291</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.5<br><small>108</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>38</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>50</th>
+<td style='background:rgba(214,64,69,0.95)'>20.9<br><small>4140</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.1<br><small>1020</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.9<br><small>374</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.8<br><small>166</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.3<br><small>69</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>34</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>60</th>
+<td style='background:rgba(214,64,69,0.97)'>21.9<br><small>4298</small></td>
+<td style='background:rgba(214,64,69,0.61)'>5.8<br><small>1140</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.3<br><small>450</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>216</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>101</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>51</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>70</th>
+<td style='background:rgba(214,64,69,0.98)'>22.6<br><small>4393</small></td>
+<td style='background:rgba(214,64,69,0.63)'>6.4<br><small>1251</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.6<br><small>505</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>255</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>133</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>74</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>80</th>
+<td style='background:rgba(214,64,69,0.99)'>23.3<br><small>4485</small></td>
+<td style='background:rgba(214,64,69,0.65)'>6.9<br><small>1336</small></td>
+<td style='background:rgba(214,64,69,0.48)'>2.9<br><small>560</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.5<br><small>287</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.8<br><small>156</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>88</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>32</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>90</th>
+<td style='background:rgba(214,64,69,1.00)'>23.7<br><small>4511</small></td>
+<td style='background:rgba(214,64,69,0.66)'>7.4<br><small>1411</small></td>
+<td style='background:rgba(214,64,69,0.50)'>3.3<br><small>637</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.8<br><small>334</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.0<br><small>186</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>110</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>45</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>100</th>
+<td style='background:rgba(214,64,69,1.00)'>23.9<br><small>4515</small></td>
+<td style='background:rgba(214,64,69,0.68)'>7.8<br><small>1471</small></td>
+<td style='background:rgba(214,64,69,0.52)'>3.7<br><small>695</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.0<br><small>380</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>210</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>131</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>57</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>26</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>4</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>110</th>
+<td style='background:rgba(214,64,69,1.00)'>23.9<br><small>4468</small></td>
+<td style='background:rgba(214,64,69,0.69)'>8.3<br><small>1546</small></td>
+<td style='background:rgba(214,64,69,0.53)'>4.0<br><small>744</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.3<br><small>423</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.3<br><small>238</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.8<br><small>148</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.3<br><small>63</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>33</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>120</th>
+<td style='background:rgba(214,64,69,1.00)'>23.8<br><small>4407</small></td>
+<td style='background:rgba(214,64,69,0.70)'>8.6<br><small>1585</small></td>
+<td style='background:rgba(214,64,69,0.55)'>4.2<br><small>781</small></td>
+<td style='background:rgba(214,64,69,0.45)'>2.5<br><small>454</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.4<br><small>260</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>165</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>78</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>40</small></td>
+<td style='background:rgba(214,64,69,0.10)'>0.0<br><small>6</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>130</th>
+<td style='background:rgba(214,64,69,1.00)'>23.7<br><small>4337</small></td>
+<td style='background:rgba(214,64,69,0.70)'>8.8<br><small>1610</small></td>
+<td style='background:rgba(214,64,69,0.55)'>4.4<br><small>811</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.6<br><small>480</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.6<br><small>285</small></td>
+<td style='background:rgba(214,64,69,0.32)'>1.0<br><small>176</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>90</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>41</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>140</th>
+<td style='background:rgba(214,64,69,1.00)'>23.7<br><small>4291</small></td>
+<td style='background:rgba(214,64,69,0.71)'>9.1<br><small>1646</small></td>
+<td style='background:rgba(214,64,69,0.56)'>4.6<br><small>840</small></td>
+<td style='background:rgba(214,64,69,0.47)'>2.8<br><small>498</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.7<br><small>306</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>198</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>100</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>50</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>15</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>150</th>
+<td style='background:rgba(214,64,69,1.00)'>23.8<br><small>4261</small></td>
+<td style='background:rgba(214,64,69,0.72)'>9.3<br><small>1668</small></td>
+<td style='background:rgba(214,64,69,0.57)'>4.8<br><small>864</small></td>
+<td style='background:rgba(214,64,69,0.48)'>2.9<br><small>512</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.8<br><small>325</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.2<br><small>212</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>111</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>57</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>160</th>
+<td style='background:rgba(214,64,69,1.00)'>23.7<br><small>4191</small></td>
+<td style='background:rgba(214,64,69,0.72)'>9.5<br><small>1687</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.0<br><small>880</small></td>
+<td style='background:rgba(214,64,69,0.48)'>3.0<br><small>524</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.9<br><small>337</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.2<br><small>221</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>113</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>58</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>19</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>170</th>
+<td style='background:rgba(214,64,69,1.00)'>23.6<br><small>4137</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.8<br><small>1715</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.1<br><small>902</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.1<br><small>549</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.0<br><small>358</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.4<br><small>237</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>124</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>66</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>180</th>
+<td style='background:rgba(214,64,69,0.98)'>22.8<br><small>3956</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.9<br><small>1709</small></td>
+<td style='background:rgba(214,64,69,0.59)'>5.3<br><small>920</small></td>
+<td style='background:rgba(214,64,69,0.50)'>3.3<br><small>564</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.1<br><small>369</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.5<br><small>253</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.8<br><small>134</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>73</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>190</th>
+<td style='background:rgba(214,64,69,0.98)'>22.3<br><small>3820</small></td>
+<td style='background:rgba(214,64,69,0.73)'>9.8<br><small>1688</small></td>
+<td style='background:rgba(214,64,69,0.59)'>5.4<br><small>924</small></td>
+<td style='background:rgba(214,64,69,0.50)'>3.3<br><small>573</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.2<br><small>370</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.6<br><small>269</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.8<br><small>142</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>82</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>35</small></td>
+<td style='background:rgba(214,64,69,0.10)'>0.0<br><small>5</small></td>
+</tr>
+<tr><th>200</th>
+<td style='background:rgba(214,64,69,0.98)'>22.3<br><small>3779</small></td>
+<td style='background:rgba(214,64,69,0.74)'>10.0<br><small>1695</small></td>
+<td style='background:rgba(214,64,69,0.60)'>5.6<br><small>943</small></td>
+<td style='background:rgba(214,64,69,0.51)'>3.5<br><small>586</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.3<br><small>390</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.6<br><small>279</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>152</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>89</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.2<br><small>42</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>7</small></td>
+</tr>
+<tr><th>210</th>
+<td style='background:rgba(214,64,69,0.97)'>22.0<br><small>3685</small></td>
+<td style='background:rgba(214,64,69,0.74)'>10.1<br><small>1692</small></td>
+<td style='background:rgba(214,64,69,0.60)'>5.6<br><small>945</small></td>
+<td style='background:rgba(214,64,69,0.51)'>3.5<br><small>590</small></td>
+<td style='background:rgba(214,64,69,0.45)'>2.4<br><small>402</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.7<br><small>287</small></td>
+<td style='background:rgba(214,64,69,0.32)'>0.9<br><small>155</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.5<br><small>92</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>48</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>10</small></td>
+</tr>
+<tr><th>220</th>
+<td style='background:rgba(214,64,69,0.97)'>21.9<br><small>3628</small></td>
+<td style='background:rgba(214,64,69,0.74)'>10.1<br><small>1681</small></td>
+<td style='background:rgba(214,64,69,0.61)'>5.7<br><small>946</small></td>
+<td style='background:rgba(214,64,69,0.52)'>3.6<br><small>596</small></td>
+<td style='background:rgba(214,64,69,0.45)'>2.5<br><small>417</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.8<br><small>293</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.0<br><small>165</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.6<br><small>102</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>51</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>13</small></td>
+</tr>
+<tr><th>230</th>
+<td style='background:rgba(214,64,69,0.97)'>21.8<br><small>3570</small></td>
+<td style='background:rgba(214,64,69,0.74)'>10.2<br><small>1673</small></td>
+<td style='background:rgba(214,64,69,0.61)'>5.8<br><small>954</small></td>
+<td style='background:rgba(214,64,69,0.52)'>3.7<br><small>613</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.6<br><small>428</small></td>
+<td style='background:rgba(214,64,69,0.41)'>1.9<br><small>304</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>176</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>110</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>59</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>16</small></td>
+</tr>
+<tr><th>240</th>
+<td style='background:rgba(214,64,69,0.96)'>21.6<br><small>3502</small></td>
+<td style='background:rgba(214,64,69,0.75)'>10.3<br><small>1677</small></td>
+<td style='background:rgba(214,64,69,0.61)'>5.9<br><small>964</small></td>
+<td style='background:rgba(214,64,69,0.53)'>3.9<br><small>628</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.7<br><small>432</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.0<br><small>317</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.1<br><small>182</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>114</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>64</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>18</small></td>
+</tr>
+<tr><th>250</th>
+<td style='background:rgba(214,64,69,0.96)'>21.5<br><small>3443</small></td>
+<td style='background:rgba(214,64,69,0.75)'>10.5<br><small>1688</small></td>
+<td style='background:rgba(214,64,69,0.62)'>6.1<br><small>982</small></td>
+<td style='background:rgba(214,64,69,0.54)'>4.0<br><small>643</small></td>
+<td style='background:rgba(214,64,69,0.47)'>2.8<br><small>447</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.0<br><small>325</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.2<br><small>191</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.8<br><small>124</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>67</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>21</small></td>
+</tr>
+</table></div>
+<div class='wrap seg' id='s早年'><table class='hm'><tr><th>H＼g</th><th>50%</th><th>100%</th><th>150%</th><th>200%</th><th>250%</th><th>300%</th><th>400%</th><th>500%</th><th>700%</th><th>1000%</th></tr>
+<tr><th>10</th>
+<td style='background:rgba(214,64,69,0.51)'>4.0<br><small>751</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>20</th>
+<td style='background:rgba(214,64,69,0.72)'>10.3<br><small>1939</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.2<br><small>224</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>40</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.1<br><small>10</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>30</th>
+<td style='background:rgba(214,64,69,0.82)'>15.4<br><small>2882</small></td>
+<td style='background:rgba(214,64,69,0.41)'>2.1<br><small>386</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>92</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.2<br><small>33</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.1<br><small>10</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>40</th>
+<td style='background:rgba(214,64,69,0.90)'>19.5<br><small>3656</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2.9<br><small>551</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.8<br><small>142</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>62</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.06)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>50</th>
+<td style='background:rgba(214,64,69,0.94)'>22.2<br><small>4152</small></td>
+<td style='background:rgba(214,64,69,0.51)'>3.8<br><small>713</small></td>
+<td style='background:rgba(214,64,69,0.32)'>1.1<br><small>201</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.4<br><small>83</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>37</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>19</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>60</th>
+<td style='background:rgba(214,64,69,0.96)'>23.7<br><small>4440</small></td>
+<td style='background:rgba(214,64,69,0.55)'>4.7<br><small>887</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.4<br><small>271</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.6<br><small>110</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.3<br><small>53</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>6</small></td>
+<td style='background:rgba(214,64,69,0.06)'>0.0<br><small>2</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>70</th>
+<td style='background:rgba(214,64,69,0.97)'>24.8<br><small>4633</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.6<br><small>1043</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.8<br><small>331</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.8<br><small>142</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>63</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.2<br><small>32</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>6</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>80</th>
+<td style='background:rgba(214,64,69,0.99)'>25.9<br><small>4833</small></td>
+<td style='background:rgba(214,64,69,0.60)'>6.1<br><small>1141</small></td>
+<td style='background:rgba(214,64,69,0.41)'>2.1<br><small>386</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.9<br><small>172</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.5<br><small>85</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>44</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>90</th>
+<td style='background:rgba(214,64,69,1.00)'>26.5<br><small>4949</small></td>
+<td style='background:rgba(214,64,69,0.62)'>6.7<br><small>1248</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.4<br><small>444</small></td>
+<td style='background:rgba(214,64,69,0.32)'>1.1<br><small>197</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>100</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.3<br><small>49</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.08)'>0.0<br><small>4</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>100</th>
+<td style='background:rgba(214,64,69,1.00)'>26.7<br><small>4995</small></td>
+<td style='background:rgba(214,64,69,0.64)'>7.4<br><small>1374</small></td>
+<td style='background:rgba(214,64,69,0.45)'>2.7<br><small>504</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.2<br><small>231</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>117</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>60</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>110</th>
+<td style='background:rgba(214,64,69,1.00)'>26.7<br><small>4980</small></td>
+<td style='background:rgba(214,64,69,0.65)'>7.9<br><small>1468</small></td>
+<td style='background:rgba(214,64,69,0.47)'>3.0<br><small>567</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.4<br><small>255</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.8<br><small>140</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>71</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.2<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.11)'>0.0<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>120</th>
+<td style='background:rgba(214,64,69,1.00)'>26.8<br><small>4996</small></td>
+<td style='background:rgba(214,64,69,0.67)'>8.4<br><small>1573</small></td>
+<td style='background:rgba(214,64,69,0.48)'>3.3<br><small>618</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.5<br><small>287</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.9<br><small>169</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.5<br><small>88</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>37</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>130</th>
+<td style='background:rgba(214,64,69,1.00)'>26.7<br><small>4980</small></td>
+<td style='background:rgba(214,64,69,0.68)'>8.9<br><small>1660</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.6<br><small>668</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.8<br><small>327</small></td>
+<td style='background:rgba(214,64,69,0.32)'>1.0<br><small>191</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.5<br><small>102</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>42</small></td>
+<td style='background:rgba(214,64,69,0.13)'>0.1<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>140</th>
+<td style='background:rgba(214,64,69,1.00)'>26.5<br><small>4938</small></td>
+<td style='background:rgba(214,64,69,0.69)'>9.2<br><small>1716</small></td>
+<td style='background:rgba(214,64,69,0.51)'>3.8<br><small>717</small></td>
+<td style='background:rgba(214,64,69,0.40)'>1.9<br><small>353</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.1<br><small>207</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>114</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.3<br><small>48</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>150</th>
+<td style='background:rgba(214,64,69,0.99)'>26.2<br><small>4888</small></td>
+<td style='background:rgba(214,64,69,0.69)'>9.5<br><small>1764</small></td>
+<td style='background:rgba(214,64,69,0.52)'>4.1<br><small>764</small></td>
+<td style='background:rgba(214,64,69,0.40)'>2.0<br><small>372</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.2<br><small>218</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.7<br><small>127</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.3<br><small>53</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>160</th>
+<td style='background:rgba(214,64,69,0.99)'>25.8<br><small>4812</small></td>
+<td style='background:rgba(214,64,69,0.70)'>9.7<br><small>1802</small></td>
+<td style='background:rgba(214,64,69,0.53)'>4.4<br><small>815</small></td>
+<td style='background:rgba(214,64,69,0.41)'>2.1<br><small>392</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.3<br><small>243</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.8<br><small>146</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>64</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>170</th>
+<td style='background:rgba(214,64,69,0.98)'>25.6<br><small>4774</small></td>
+<td style='background:rgba(214,64,69,0.71)'>9.9<br><small>1845</small></td>
+<td style='background:rgba(214,64,69,0.54)'>4.6<br><small>864</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.3<br><small>426</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.4<br><small>263</small></td>
+<td style='background:rgba(214,64,69,0.30)'>0.9<br><small>162</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>73</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>36</small></td>
+<td style='background:rgba(214,64,69,0.09)'>0.0<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.00)'>0.0<br><small>0</small></td>
+</tr>
+<tr><th>180</th>
+<td style='background:rgba(214,64,69,0.98)'>25.3<br><small>4713</small></td>
+<td style='background:rgba(214,64,69,0.71)'>10.1<br><small>1873</small></td>
+<td style='background:rgba(214,64,69,0.55)'>4.9<br><small>907</small></td>
+<td style='background:rgba(214,64,69,0.43)'>2.4<br><small>456</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.5<br><small>286</small></td>
+<td style='background:rgba(214,64,69,0.31)'>0.9<br><small>175</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>77</small></td>
+<td style='background:rgba(214,64,69,0.18)'>0.2<br><small>40</small></td>
+<td style='background:rgba(214,64,69,0.10)'>0.0<br><small>7</small></td>
+<td style='background:rgba(214,64,69,0.05)'>0.0<br><small>1</small></td>
+</tr>
+<tr><th>190</th>
+<td style='background:rgba(214,64,69,0.97)'>24.9<br><small>4630</small></td>
+<td style='background:rgba(214,64,69,0.71)'>10.2<br><small>1900</small></td>
+<td style='background:rgba(214,64,69,0.56)'>5.1<br><small>944</small></td>
+<td style='background:rgba(214,64,69,0.44)'>2.6<br><small>481</small></td>
+<td style='background:rgba(214,64,69,0.37)'>1.6<br><small>297</small></td>
+<td style='background:rgba(214,64,69,0.32)'>1.0<br><small>187</small></td>
+<td style='background:rgba(214,64,69,0.24)'>0.5<br><small>87</small></td>
+<td style='background:rgba(214,64,69,0.19)'>0.2<br><small>43</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.06)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>200</th>
+<td style='background:rgba(214,64,69,0.97)'>24.4<br><small>4539</small></td>
+<td style='background:rgba(214,64,69,0.72)'>10.4<br><small>1930</small></td>
+<td style='background:rgba(214,64,69,0.57)'>5.3<br><small>986</small></td>
+<td style='background:rgba(214,64,69,0.45)'>2.8<br><small>520</small></td>
+<td style='background:rgba(214,64,69,0.38)'>1.7<br><small>319</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.1<br><small>206</small></td>
+<td style='background:rgba(214,64,69,0.25)'>0.5<br><small>96</small></td>
+<td style='background:rgba(214,64,69,0.20)'>0.3<br><small>48</small></td>
+<td style='background:rgba(214,64,69,0.12)'>0.1<br><small>13</small></td>
+<td style='background:rgba(214,64,69,0.06)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>210</th>
+<td style='background:rgba(214,64,69,0.96)'>24.0<br><small>4465</small></td>
+<td style='background:rgba(214,64,69,0.72)'>10.5<br><small>1953</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.5<br><small>1025</small></td>
+<td style='background:rgba(214,64,69,0.46)'>3.0<br><small>558</small></td>
+<td style='background:rgba(214,64,69,0.39)'>1.8<br><small>342</small></td>
+<td style='background:rgba(214,64,69,0.33)'>1.1<br><small>213</small></td>
+<td style='background:rgba(214,64,69,0.26)'>0.6<br><small>103</small></td>
+<td style='background:rgba(214,64,69,0.21)'>0.3<br><small>60</small></td>
+<td style='background:rgba(214,64,69,0.14)'>0.1<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.06)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>220</th>
+<td style='background:rgba(214,64,69,0.96)'>23.7<br><small>4396</small></td>
+<td style='background:rgba(214,64,69,0.72)'>10.6<br><small>1967</small></td>
+<td style='background:rgba(214,64,69,0.58)'>5.6<br><small>1048</small></td>
+<td style='background:rgba(214,64,69,0.48)'>3.2<br><small>596</small></td>
+<td style='background:rgba(214,64,69,0.40)'>2.0<br><small>364</small></td>
+<td style='background:rgba(214,64,69,0.34)'>1.2<br><small>230</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.6<br><small>113</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>63</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>23</small></td>
+<td style='background:rgba(214,64,69,0.06)'>0.0<br><small>2</small></td>
+</tr>
+<tr><th>230</th>
+<td style='background:rgba(214,64,69,0.95)'>23.3<br><small>4337</small></td>
+<td style='background:rgba(214,64,69,0.72)'>10.6<br><small>1970</small></td>
+<td style='background:rgba(214,64,69,0.59)'>5.8<br><small>1076</small></td>
+<td style='background:rgba(214,64,69,0.48)'>3.3<br><small>609</small></td>
+<td style='background:rgba(214,64,69,0.41)'>2.1<br><small>388</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.3<br><small>240</small></td>
+<td style='background:rgba(214,64,69,0.27)'>0.7<br><small>124</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.3<br><small>65</small></td>
+<td style='background:rgba(214,64,69,0.15)'>0.1<br><small>23</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+</tr>
+<tr><th>240</th>
+<td style='background:rgba(214,64,69,0.95)'>22.9<br><small>4245</small></td>
+<td style='background:rgba(214,64,69,0.72)'>10.7<br><small>1978</small></td>
+<td style='background:rgba(214,64,69,0.59)'>5.9<br><small>1103</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.4<br><small>633</small></td>
+<td style='background:rgba(214,64,69,0.41)'>2.2<br><small>402</small></td>
+<td style='background:rgba(214,64,69,0.35)'>1.3<br><small>250</small></td>
+<td style='background:rgba(214,64,69,0.28)'>0.7<br><small>131</small></td>
+<td style='background:rgba(214,64,69,0.22)'>0.4<br><small>68</small></td>
+<td style='background:rgba(214,64,69,0.16)'>0.1<br><small>25</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+</tr>
+<tr><th>250</th>
+<td style='background:rgba(214,64,69,0.94)'>22.4<br><small>4161</small></td>
+<td style='background:rgba(214,64,69,0.72)'>10.6<br><small>1970</small></td>
+<td style='background:rgba(214,64,69,0.59)'>6.0<br><small>1108</small></td>
+<td style='background:rgba(214,64,69,0.49)'>3.6<br><small>661</small></td>
+<td style='background:rgba(214,64,69,0.42)'>2.2<br><small>412</small></td>
+<td style='background:rgba(214,64,69,0.36)'>1.4<br><small>258</small></td>
+<td style='background:rgba(214,64,69,0.29)'>0.7<br><small>138</small></td>
+<td style='background:rgba(214,64,69,0.23)'>0.4<br><small>71</small></td>
+<td style='background:rgba(214,64,69,0.17)'>0.2<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.07)'>0.0<br><small>3</small></td>
+</tr>
+</table></div>
+<p class='note'>格內上：每萬個股-日的起漲事件數；下：事件數。深色＝多。同一檔同一格事件後 H 日內不重算。</p>
+<h2>二、每個起漲事件最後漲多少</h2><div class='wrap'><table><tr><th class='l'>段／口徑</th><th>事件</th><th>50～100%</th><th>100～150%</th><th>150～200%</th><th>200～250%</th><th>250～300%</th><th>300～400%</th><th>400～500%</th><th>500～700%</th><th>700～1000%</th><th>≥1000%</th></tr>
+<tr><td class='l'>探索<br><small>250日內最大漲幅</small></td><td>98598</td><td>38%</td><td>22%</td><td>12%</td><td>9%</td><td>6%</td><td>6%</td><td>3%</td><td>2%</td><td>1%</td><td>1%</td></tr>
+<tr><td class='l'>探索<br><small>不設H最大漲幅（到回落30%前）</small></td><td>98598</td><td>32%</td><td>22%</td><td>13%</td><td>9%</td><td>6%</td><td>7%</td><td>4%</td><td>3%</td><td>2%</td><td>1%</td></tr>
+<tr><td class='l'>確認<br><small>250日內最大漲幅</small></td><td>105201</td><td>33%</td><td>22%</td><td>13%</td><td>9%</td><td>6%</td><td>7%</td><td>4%</td><td>3%</td><td>2%</td><td>0%</td></tr>
+<tr><td class='l'>確認<br><small>不設H最大漲幅（到回落30%前）</small></td><td>105201</td><td>29%</td><td>21%</td><td>13%</td><td>10%</td><td>7%</td><td>8%</td><td>4%</td><td>4%</td><td>2%</td><td>1%</td></tr>
+<tr><td class='l'>早年<br><small>250日內最大漲幅</small></td><td>95775</td><td>40%</td><td>24%</td><td>14%</td><td>8%</td><td>4%</td><td>5%</td><td>2%</td><td>1%</td><td>0%</td><td>0%</td></tr>
+<tr><td class='l'>早年<br><small>不設H最大漲幅（到回落30%前）</small></td><td>95775</td><td>30%</td><td>21%</td><td>15%</td><td>10%</td><td>6%</td><td>7%</td><td>4%</td><td>3%</td><td>2%</td><td>1%</td></tr>
+</table></div>
+<h2>三、漲 50%／100%／200% 花幾個交易日</h2><div class='wrap'><table><tr><th>段</th><th>漲幅</th><th>事件</th><th>一半的人在幾天內</th><th>中間一半</th></tr>
+<tr><td>探索</td><td>50%</td><td>4101</td><td>30</td><td>12～77</td></tr>
+<tr><td>探索</td><td>100%</td><td>1949</td><td>78</td><td>37～159</td></tr>
+<tr><td>探索</td><td>200%</td><td>670</td><td>148</td><td>78～203</td></tr>
+<tr><td>確認</td><td>50%</td><td>3443</td><td>31</td><td>12～83</td></tr>
+<tr><td>確認</td><td>100%</td><td>1688</td><td>90</td><td>41～167</td></tr>
+<tr><td>確認</td><td>200%</td><td>643</td><td>143</td><td>85～204</td></tr>
+<tr><td>早年</td><td>50%</td><td>4161</td><td>36</td><td>17～79</td></tr>
+<tr><td>早年</td><td>100%</td><td>1970</td><td>101</td><td>48～170</td></tr>
+<tr><td>早年</td><td>200%</td><td>661</td><td>169</td><td>102～214</td></tr>
+</table></div><p class='note'>以 250 日內漲到的事件為準；天數 ＝ 那一段漲勢裡最快漲到的交易日數；「一半的人」＝ 中位數。</p>
+<h2>四、漲到高點之後</h2><div class='wrap'><table><tr><th class='l'>段／格</th><th>事件</th><th>回落 20%</th><th>回落 30%</th><th>回落 50%（妖股）</th><th>回落 70%</th></tr>
+<tr><td class='l'>探索<br><small>60 日內漲 100%</small></td><td>1041</td><td>90%<br><small>高點後 25 天</small></td><td>82%<br><small>高點後 77 天</small></td><td>56%<br><small>高點後 275 天</small></td><td>23%<br><small>高點後 562 天</small></td></tr>
+<tr><td class='l'>探索<br><small>120 日內漲 200%</small></td><td>377</td><td>95%<br><small>高點後 22 天</small></td><td>92%<br><small>高點後 64 天</small></td><td>69%<br><small>高點後 254 天</small></td><td>27%<br><small>高點後 614 天</small></td></tr>
+<tr><td class='l'>探索<br><small>250 日內漲 500%</small></td><td>104</td><td>97%<br><small>高點後 27 天</small></td><td>94%<br><small>高點後 52 天</small></td><td>79%<br><small>高點後 230 天</small></td><td>43%<br><small>高點後 495 天</small></td></tr>
+<tr><td class='l'>確認<br><small>60 日內漲 100%</small></td><td>1140</td><td>79%<br><small>高點後 23 天</small></td><td>65%<br><small>高點後 50 天</small></td><td>29%<br><small>高點後 180 天</small></td><td>6%<br><small>高點後 393 天</small></td></tr>
+<tr><td class='l'>確認<br><small>120 日內漲 200%</small></td><td>454</td><td>78%<br><small>高點後 22 天</small></td><td>67%<br><small>高點後 44 天</small></td><td>34%<br><small>高點後 154 天</small></td><td>8%<br><small>高點後 347 天</small></td></tr>
+<tr><td class='l'>確認<br><small>250 日內漲 500%</small></td><td>124</td><td>77%<br><small>高點後 25 天</small></td><td>69%<br><small>高點後 51 天</small></td><td>31%<br><small>高點後 77 天</small></td><td>9%<br><small>高點後 290 天</small></td></tr>
+<tr><td class='l'>早年<br><small>60 日內漲 100%</small></td><td>887</td><td>88%<br><small>高點後 41 天</small></td><td>80%<br><small>高點後 107 天</small></td><td>62%<br><small>高點後 393 天</small></td><td>34%<br><small>高點後 483 天</small></td></tr>
+<tr><td class='l'>早年<br><small>120 日內漲 200%</small></td><td>287</td><td>91%<br><small>高點後 32 天</small></td><td>86%<br><small>高點後 122 天</small></td><td>69%<br><small>高點後 369 天</small></td><td>43%<br><small>高點後 472 天</small></td></tr>
+<tr><td class='l'>早年<br><small>250 日內漲 500%</small></td><td>71</td><td>99%<br><small>高點後 41 天</small></td><td>97%<br><small>高點後 114 天</small></td><td>85%<br><small>高點後 413 天</small></td><td>63%<br><small>高點後 526 天</small></td></tr>
+</table></div><p class='note'>比例 ＝ 高點之後（到資料尾為止）曾經跌到高點 ×（1−x）的事件占比；天數是中位數。</p>
+<h2>五、買不買得到</h2><div class='wrap'><table><tr><th class='l'>段／格</th><th>隔天鎖漲停</th><th>隔天處置中</th><th>成交額最低五分之一</th></tr>
+<tr><td class='l'>探索<br><small>60 日內漲 100%</small></td><td>0.9%</td><td>5.6%</td><td>23.6%</td></tr>
+<tr><td class='l'>探索<br><small>250 日內漲 300%</small></td><td>0.7%</td><td>1.0%</td><td>29.7%</td></tr>
+<tr><td class='l'>確認<br><small>60 日內漲 100%</small></td><td>1.5%</td><td>4.7%</td><td>16.9%</td></tr>
+<tr><td class='l'>確認<br><small>250 日內漲 300%</small></td><td>1.8%</td><td>0.6%</td><td>19.7%</td></tr>
+<tr><td class='l'>早年<br><small>60 日內漲 100%</small></td><td>1.8%</td><td>—</td><td>35.5%</td></tr>
+<tr><td class='l'>早年<br><small>250 日內漲 300%</small></td><td>0.4%</td><td>—</td><td>36.8%</td></tr>
+</table></div>
+<p class='note'>第二批（特徵：起漲前長什麼樣、買了賺不賺、妖股與結束特徵）另交。</p>
+<script>function sh(k){document.querySelectorAll('.seg').forEach(e=>e.style.display=e.id=='s'+k?'block':'none');document.querySelectorAll('.tabs button').forEach(b=>b.className=b.id=='b'+k?'on':'')}sh('探索')</script></main></body></html>
