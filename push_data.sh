@@ -161,6 +161,7 @@ for i in 1 2 3; do
   # ⇒ 兩件：① 刪掉的路徑不進 KEEP（它們由下面那行 `git rm` 處理）
   #        ② ⭐ 一個一個取，並且**記下失敗**——⛔ 靜靜跳過就是這次的病根
   CKFAIL=0
+  LGFAIL=0
   for f in $(printf '%s\n' "$KEEP" | grep -v '^$'); do
     case " $(printf '%s ' $DELETED) " in *" $f "*) continue ;; esac
     git checkout "$DC" -- "$f" || { echo "[push_data] ⛔ 取不出來：$f" >&2
@@ -197,17 +198,34 @@ for i in 1 2 3; do
       RMF=""
       if git show "$DC:${LP%.csv}.remove.csv" > /tmp/lg_rm.dat 2>/dev/null; then RMF=/tmp/lg_rm.dat; fi
       if python3 merge_ledger.py /tmp/lg_mine.dat /tmp/lg_main.dat "$LK" $RMF > /tmp/lg_out.dat; then
-        cp /tmp/lg_out.dat "$LP"
-        git add -- "$LP"
+        # ⛔⛔ 2026-09-30 付過代價（mops-news 第一趟，5 小時）：main 上還沒有 `data/mops/news/` 這個資料夾
+        #   ⇒ checkout origin/main 之後目錄不存在 ⇒ `cp` 失敗、`git add` 失敗 ⇒ ⚠ 沒人接
+        #   ⇒ 照樣印「✓ 已推上 main」，main 上只多了 `_last_run.md`（363,736 則一則都沒到）。
+        #   ⇒ 先建目錄；寫不回去就記失敗（跟上面 CKFAIL 同一族）
+        mkdir -p "$(dirname "$LP")"
+        { cp /tmp/lg_out.dat "$LP" && git add -- "$LP"; } \
+          || { echo "[push_data] ⛔ 逐鍵合併完寫不回去：$LP" >&2; LGFAIL=$((LGFAIL + 1)); }
       else
         # ⛔ 合併不成就**整檔取本趟的**，⚠ 但一定要吼出來：
         #   那正是會靜靜刪掉別人剛寫的列的那條路。
         echo "[push_data] ⛔ $LP 逐鍵合併失敗，退回整檔取本趟的（⚠ main 上較新的可能被回退）" >&2
-        git checkout "$DC" -- "$LP" && git add -- "$LP"
+        { git checkout "$DC" -- "$LP" && git add -- "$LP"; } \
+          || { echo "[push_data] ⛔ 取不出來：$LP" >&2; LGFAIL=$((LGFAIL + 1)); }
       fi
     done
   done
   git add -A $TREES
+  # ⭐ 終點檢查：本趟改到（沒刪）的每一個檔，暫存區裡都要有 ⇒ 少一個就不 push
+  for f in $(printf '%s\n' "$CHANGED" | grep -v '^$'); do
+    case " $(printf '%s ' $DELETED) " in *" $f "*) continue ;; esac
+    git cat-file -e ":$f" 2>/dev/null \
+      || { echo "[push_data] ⛔ 暫存區裡沒有：$f" >&2; LGFAIL=$((LGFAIL + 1)); }
+  done
+  if [ "$LGFAIL" -gt 0 ]; then
+    echo "[push_data] ⛔⛔ 有 $LGFAIL 個檔沒搬過去 ⇒ **這一趟算失敗**（⛔ 不 push）" >&2
+    git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
+    exit 3
+  fi
   if git diff --staged --quiet; then
     echo "[push_data] 搬到 main 之後沒有差異（多半是別的 workflow 已推過同樣內容）"
     git checkout -q "${GITHUB_REF_NAME:-main}" 2>/dev/null || true
