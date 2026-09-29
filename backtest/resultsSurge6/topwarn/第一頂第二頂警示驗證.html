@@ -1,0 +1,413 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第一頂第二頂警示驗證</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:6px 10px;background:#eef4fb}.sel{position:sticky;top:0;background:#fff;padding:6px 0;z-index:2}.sel select{font-size:16px;margin:2px 4px;padding:4px}.pane{display:none}.pane.on{display:block}</style></head><body><main>
+<h1>用起漲訊號買進後，當下能不能說出「第一頂」「第二頂」在哪？（2021–2026-08）</h1>
+<p class='warn'>⚠ 只當參考，沒有計入檢定數；規則照原樣驗，不挑最好的版本。段頂、真頂都是事後才知道的，只用來對答案；進場、警示、買回的每一步都是當天收盤就能判斷的。沒有用任何「抱固定天數」當對照。</p>
+<p class='lead'>讀法寫死 2026-09-29 22:43（台北）。進場 ＝ 起漲特徵（14 個）同時有 ≥ m 個，隔天開盤買；全部上市櫃股票都算（當下不知道會不會變飆股）。一筆的結束 ＝ 從最高點回落 30%；第一頂、第二頂用拉回 20% 切。</p>
+<h2>先講結論（確認段 2024–2026-08，以 ≥7 個為例；其他用下方選單）</h2><ul>
+<li><b>買進之後</b>：共 2,615 筆；真頂漲幅中位 21.3%，48.1% 的筆漲不到 20%，14.0% 漲到一倍以上；只有 1 段 77.1%、2 段 17.5%、3 段以上 5.4%。</li>
+<li><b>第一頂警示 W1</b>：34.8% 的筆會出現；出現時落在第一頂附近 5.7%、第二頂以後附近 1.9%、真頂附近 27.5%、都不在 64.9%（誤報）。賣在第一次出現，吃到進場→第一頂的 72.5%、進場→真頂的 42.8%；之後又創新高 85.4%。</li>
+<li><b>W2a 再次進入處置</b>：出現 7.0%；落在真頂附近 24.7%、第二頂以後 5.5%、都不在 61.0%；吃到真頂 56.7%。</li>
+<li><b>W2b 處置出關</b>：出現 13.7%；落在真頂附近 27.5%、第二頂以後 3.1%、都不在 60.2%；吃到真頂 57.7%。</li>
+<li class='ok'><b>完整一輪（拉回 20% 買回、出關賣）</b>：W1 賣出後有 76.3% 買回，買回價比實際中段底高 14.7%，買錯（買回後沒再創新高）70.3%；全輪吃到進場→真頂漲幅的 33.3%（中位）。</li>
+<li><b>飆股事件上（事後已知是飆股）</b>：W1 落在 H1 附近 6.4%、H2 以後 1.9%、真頂 16.3%、都不在 74.2%。</li>
+<li><b>誠實的回答</b>：看下面各表的「都不在」與「之後又創新高」——這兩個數字就是誤報率；它們若很高，就代表警示只能說「可能接近某個頂」，不能說「這就是第一頂／第二頂」。</li></ul>
+<div class='sel'>進場版本<select id='se' onchange='sw()'><option value='0'>起漲特徵 ≥5 個</option><option value='1'>起漲特徵 ≥6 個</option><option value='2'>起漲特徵 ≥7 個</option><option value='3'>起漲特徵 ≥8 個</option><option value='4'>起漲特徵 ≥9 個</option><option value='5'>第二段起漲型（之前已大漲＋短線拉回）</option></select>段<select id='ss' onchange='sw()'><option>確認</option><option>探索</option><option>全部</option></select></div>
+<div class='pane' id='p0_確認'>
+<h2>一、買進之後（4,369 筆；未完 32.8%）</h2><p>真頂漲幅中位 19.4%（p25～p75 6.7%～50.9%、p90 116.6%）；漲不到 20% 51.0%；段數 1／2／3／4+：79.5%／15.7%／3.6%／1.3%；描述：第 60 日收盤比真頂 -20.7%、真頂在第 60 日之後 36.0%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>31.2%</td><td>5.1%</td><td>2.1%</td><td>27.6%</td><td>65.3%</td><td>76.0%</td><td>48.8%</td><td>-20 天</td><td>85.5%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>19.2%</td><td>5.1%</td><td>3.7%</td><td>29.7%</td><td>61.5%</td><td>91.4%</td><td>57.4%</td><td>-18 天</td><td>88.8%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>30.2%</td><td>5.5%</td><td>2.2%</td><td>28.2%</td><td>64.1%</td><td>78.2%</td><td>49.8%</td><td>-20 天</td><td>85.5%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>18.7%</td><td>5.3%</td><td>3.8%</td><td>30.2%</td><td>60.7%</td><td>93.0%</td><td>57.5%</td><td>-17 天</td><td>88.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>33.0%</td><td>5.3%</td><td>1.9%</td><td>27.3%</td><td>65.4%</td><td>72.8%</td><td>46.9%</td><td>-21 天</td><td>85.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>19.8%</td><td>5.6%</td><td>3.6%</td><td>30.0%</td><td>60.8%</td><td>90.8%</td><td>56.6%</td><td>-18 天</td><td>88.8%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>4.5%</td><td>8.1%</td><td>6.6%</td><td>26.8%</td><td>58.6%</td><td>90.6%</td><td>61.4%</td><td>-14 天</td><td>80.8%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>8.8%</td><td>7.3%</td><td>4.4%</td><td>25.3%</td><td>63.0%</td><td>86.8%</td><td>68.0%</td><td>-10 天</td><td>74.5%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>31.2%</td><td>81.4%</td><td>6.0%</td><td>76.0%</td><td>18.6%</td><td>-36.8%</td><td>36.0%</td><td>45.5%<br><small>-20.9%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>31.2%</td><td>81.4%</td><td>12.9%</td><td>76.0%</td><td>18.6%</td><td>-32.8%</td><td>36.6%</td><td>45.5%<br><small>-20.8%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>31.2%</td><td>78.0%</td><td>4.8%</td><td>76.0%</td><td>14.3%</td><td>-21.9%</td><td>40.2%</td><td>71.7%<br><small>-11.8%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>31.2%</td><td>78.0%</td><td>7.3%</td><td>76.0%</td><td>14.3%</td><td>-21.9%</td><td>40.4%</td><td>71.7%<br><small>-11.8%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>31.2%</td><td>0.2%</td><td>0.0%</td><td>76.0%</td><td>60.0%</td><td>-3.8%</td><td>48.8%</td><td>100.0%<br><small>-1.6%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>31.2%</td><td>0.2%</td><td>0.0%</td><td>76.0%</td><td>60.0%</td><td>-3.8%</td><td>48.8%</td><td>100.0%<br><small>-1.6%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p0_探索'>
+<h2>一、買進之後（4,928 筆；未完 4.5%）</h2><p>真頂漲幅中位 44.2%（p25～p75 18.0%～97.1%、p90 184.9%）；漲不到 20% 27.5%；段數 1／2／3／4+：64.5%／24.1%／8.6%／2.8%；描述：第 60 日收盤比真頂 -25.2%、真頂在第 60 日之後 58.6%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>49.8%</td><td>6.6%</td><td>3.1%</td><td>20.9%</td><td>69.4%</td><td>78.9%</td><td>44.8%</td><td>-36 天</td><td>89.0%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>25.8%</td><td>6.1%</td><td>5.0%</td><td>28.6%</td><td>60.3%</td><td>99.5%</td><td>58.6%</td><td>-18 天</td><td>89.6%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>48.2%</td><td>6.5%</td><td>3.3%</td><td>21.4%</td><td>68.8%</td><td>79.8%</td><td>46.0%</td><td>-35 天</td><td>89.4%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>24.7%</td><td>5.9%</td><td>4.8%</td><td>28.6%</td><td>60.6%</td><td>99.6%</td><td>58.6%</td><td>-17 天</td><td>89.8%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>51.9%</td><td>6.6%</td><td>2.9%</td><td>20.1%</td><td>70.5%</td><td>75.8%</td><td>43.4%</td><td>-37 天</td><td>88.9%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>26.7%</td><td>6.4%</td><td>4.9%</td><td>27.6%</td><td>61.0%</td><td>99.7%</td><td>58.2%</td><td>-19 天</td><td>90.1%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>4.2%</td><td>2.9%</td><td>3.9%</td><td>26.7%</td><td>66.5%</td><td>95.1%</td><td>66.1%</td><td>-11 天</td><td>78.6%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>9.2%</td><td>5.5%</td><td>4.9%</td><td>37.0%</td><td>52.5%</td><td>98.3%</td><td>69.6%</td><td>-7 天</td><td>71.2%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>49.8%</td><td>85.9%</td><td>3.1%</td><td>78.9%</td><td>19.0%</td><td>-36.1%</td><td>34.6%</td><td>38.6%<br><small>-21.5%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>49.8%</td><td>85.9%</td><td>8.7%</td><td>78.9%</td><td>19.0%</td><td>-33.0%</td><td>35.1%</td><td>38.6%<br><small>-21.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>49.8%</td><td>84.9%</td><td>2.0%</td><td>78.9%</td><td>14.6%</td><td>-23.5%</td><td>36.9%</td><td>66.9%<br><small>-12.4%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>49.8%</td><td>84.9%</td><td>4.6%</td><td>78.9%</td><td>14.6%</td><td>-23.4%</td><td>36.9%</td><td>66.9%<br><small>-12.4%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>49.8%</td><td>0.1%</td><td>0.0%</td><td>78.9%</td><td>68.8%</td><td>-0.8%</td><td>44.8%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>49.8%</td><td>0.1%</td><td>0.0%</td><td>78.9%</td><td>68.8%</td><td>-0.8%</td><td>44.8%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p0_全部'>
+<h2>一、買進之後（9,297 筆；未完 17.8%）</h2><p>真頂漲幅中位 30.2%（p25～p75 11.0%～75.6%、p90 158.4%）；漲不到 20% 38.5%；段數 1／2／3／4+：71.5%／20.1%／6.2%／2.1%；描述：第 60 日收盤比真頂 -23.2%、真頂在第 60 日之後 48.0%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>41.1%</td><td>6.0%</td><td>2.7%</td><td>23.3%</td><td>67.9%</td><td>77.7%</td><td>46.2%</td><td>-29 天</td><td>87.8%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>22.7%</td><td>5.7%</td><td>4.5%</td><td>29.0%</td><td>60.7%</td><td>97.0%</td><td>58.2%</td><td>-18 天</td><td>89.3%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>39.8%</td><td>6.1%</td><td>2.9%</td><td>23.9%</td><td>67.1%</td><td>79.2%</td><td>46.9%</td><td>-29 天</td><td>88.0%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>21.9%</td><td>5.7%</td><td>4.4%</td><td>29.2%</td><td>60.7%</td><td>97.8%</td><td>58.3%</td><td>-17 天</td><td>89.2%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>43.0%</td><td>6.1%</td><td>2.5%</td><td>22.7%</td><td>68.7%</td><td>74.7%</td><td>44.6%</td><td>-30 天</td><td>87.6%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>23.4%</td><td>6.1%</td><td>4.4%</td><td>28.6%</td><td>61.0%</td><td>96.6%</td><td>57.5%</td><td>-19 天</td><td>89.6%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>4.3%</td><td>5.4%</td><td>5.2%</td><td>26.7%</td><td>62.6%</td><td>92.3%</td><td>64.2%</td><td>-12 天</td><td>79.7%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>9.0%</td><td>6.3%</td><td>4.7%</td><td>31.6%</td><td>57.4%</td><td>93.0%</td><td>68.7%</td><td>-9 天</td><td>72.7%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>41.1%</td><td>84.3%</td><td>4.1%</td><td>77.7%</td><td>18.8%</td><td>-36.1%</td><td>35.2%</td><td>41.0%<br><small>-21.3%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>41.1%</td><td>84.3%</td><td>10.1%</td><td>77.7%</td><td>18.8%</td><td>-32.9%</td><td>35.7%</td><td>41.0%<br><small>-21.3%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>41.1%</td><td>82.4%</td><td>3.0%</td><td>77.7%</td><td>14.5%</td><td>-22.9%</td><td>37.8%</td><td>68.5%<br><small>-12.2%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>41.1%</td><td>82.4%</td><td>5.5%</td><td>77.7%</td><td>14.5%</td><td>-22.8%</td><td>37.9%</td><td>68.5%<br><small>-12.2%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>41.1%</td><td>0.1%</td><td>0.0%</td><td>77.7%</td><td>60.0%</td><td>-1.0%</td><td>46.2%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>41.1%</td><td>0.1%</td><td>0.0%</td><td>77.7%</td><td>60.0%</td><td>-1.0%</td><td>46.2%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p1_確認'>
+<h2>一、買進之後（3,479 筆；未完 29.5%）</h2><p>真頂漲幅中位 20.4%（p25～p75 6.8%～54.3%、p90 125.6%）；漲不到 20% 49.5%；段數 1／2／3／4+：78.9%／16.1%／3.7%／1.3%；描述：第 60 日收盤比真頂 -22.3%、真頂在第 60 日之後 34.7%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>32.4%</td><td>6.1%</td><td>1.6%</td><td>26.4%</td><td>65.9%</td><td>71.8%</td><td>45.1%</td><td>-21 天</td><td>86.1%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>20.2%</td><td>6.1%</td><td>2.8%</td><td>27.5%</td><td>63.5%</td><td>85.1%</td><td>53.3%</td><td>-19 天</td><td>90.6%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>31.1%</td><td>6.5%</td><td>1.7%</td><td>27.1%</td><td>64.7%</td><td>74.2%</td><td>45.8%</td><td>-22 天</td><td>86.3%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>19.4%</td><td>6.7%</td><td>3.0%</td><td>27.9%</td><td>62.5%</td><td>86.4%</td><td>53.4%</td><td>-19 天</td><td>90.1%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>34.6%</td><td>6.1%</td><td>1.5%</td><td>25.9%</td><td>66.5%</td><td>67.2%</td><td>43.8%</td><td>-22 天</td><td>85.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>20.9%</td><td>6.5%</td><td>2.7%</td><td>27.9%</td><td>62.9%</td><td>84.2%</td><td>53.3%</td><td>-19 天</td><td>90.1%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>5.7%</td><td>7.6%</td><td>6.1%</td><td>26.4%</td><td>59.9%</td><td>86.4%</td><td>60.6%</td><td>-14 天</td><td>80.7%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>11.3%</td><td>7.4%</td><td>3.3%</td><td>28.2%</td><td>61.1%</td><td>82.8%</td><td>64.5%</td><td>-9 天</td><td>74.3%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>32.4%</td><td>80.4%</td><td>7.1%</td><td>71.8%</td><td>18.8%</td><td>-32.9%</td><td>34.7%</td><td>44.3%<br><small>-21.1%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>32.4%</td><td>80.4%</td><td>15.0%</td><td>71.8%</td><td>18.8%</td><td>-29.1%</td><td>35.1%</td><td>44.3%<br><small>-21.0%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>32.4%</td><td>77.7%</td><td>5.3%</td><td>71.8%</td><td>14.5%</td><td>-22.0%</td><td>36.1%</td><td>71.1%<br><small>-12.0%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>32.4%</td><td>77.7%</td><td>8.0%</td><td>71.8%</td><td>14.5%</td><td>-22.0%</td><td>36.3%</td><td>71.1%<br><small>-12.1%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>32.4%</td><td>0.2%</td><td>0.0%</td><td>71.8%</td><td>84.7%</td><td>-2.1%</td><td>45.1%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>32.4%</td><td>0.2%</td><td>0.0%</td><td>71.8%</td><td>84.7%</td><td>-2.1%</td><td>45.1%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p1_探索'>
+<h2>一、買進之後（4,082 筆；未完 4.2%）</h2><p>真頂漲幅中位 41.4%（p25～p75 16.3%～91.1%、p90 176.1%）；漲不到 20% 29.4%；段數 1／2／3／4+：66.4%／23.3%／7.8%／2.5%；描述：第 60 日收盤比真頂 -24.8%、真頂在第 60 日之後 55.4%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>48.7%</td><td>6.2%</td><td>2.7%</td><td>21.0%</td><td>70.1%</td><td>74.8%</td><td>43.9%</td><td>-34 天</td><td>88.9%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>25.5%</td><td>6.0%</td><td>4.6%</td><td>27.5%</td><td>61.9%</td><td>95.8%</td><td>57.6%</td><td>-17 天</td><td>90.1%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>47.0%</td><td>6.0%</td><td>2.9%</td><td>21.4%</td><td>69.7%</td><td>75.3%</td><td>44.7%</td><td>-33 天</td><td>89.1%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>24.2%</td><td>5.5%</td><td>4.6%</td><td>27.6%</td><td>62.3%</td><td>96.2%</td><td>57.9%</td><td>-17 天</td><td>90.4%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>51.1%</td><td>6.5%</td><td>2.5%</td><td>20.2%</td><td>70.8%</td><td>70.4%</td><td>42.3%</td><td>-36 天</td><td>89.0%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>26.6%</td><td>6.5%</td><td>4.6%</td><td>26.5%</td><td>62.4%</td><td>94.2%</td><td>57.0%</td><td>-19 天</td><td>90.4%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>4.4%</td><td>4.4%</td><td>2.2%</td><td>25.4%</td><td>68.0%</td><td>86.1%</td><td>64.7%</td><td>-11 天</td><td>79.6%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>10.1%</td><td>6.8%</td><td>4.1%</td><td>37.2%</td><td>51.8%</td><td>90.4%</td><td>64.8%</td><td>-7 天</td><td>70.8%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>48.7%</td><td>85.7%</td><td>3.0%</td><td>74.8%</td><td>18.9%</td><td>-36.2%</td><td>32.4%</td><td>38.8%<br><small>-21.5%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>48.7%</td><td>85.7%</td><td>8.4%</td><td>74.8%</td><td>18.9%</td><td>-34.1%</td><td>32.8%</td><td>38.8%<br><small>-21.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>48.7%</td><td>85.7%</td><td>2.2%</td><td>74.8%</td><td>14.8%</td><td>-23.9%</td><td>34.9%</td><td>68.3%<br><small>-12.4%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>48.7%</td><td>85.7%</td><td>4.3%</td><td>74.8%</td><td>14.8%</td><td>-23.8%</td><td>35.0%</td><td>68.3%<br><small>-12.4%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>48.7%</td><td>0.1%</td><td>0.0%</td><td>74.8%</td><td>68.8%</td><td>-0.8%</td><td>43.9%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>48.7%</td><td>0.1%</td><td>0.0%</td><td>74.8%</td><td>68.8%</td><td>-0.8%</td><td>43.9%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p1_全部'>
+<h2>一、買進之後（7,561 筆；未完 15.8%）</h2><p>真頂漲幅中位 30.2%（p25～p75 10.7%～74.7%、p90 157.4%）；漲不到 20% 38.7%；段數 1／2／3／4+：72.2%／20.0%／5.9%／1.9%；描述：第 60 日收盤比真頂 -23.7%、真頂在第 60 日之後 45.8%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>41.2%</td><td>6.2%</td><td>2.3%</td><td>22.9%</td><td>68.6%</td><td>73.4%</td><td>44.2%</td><td>-28 天</td><td>87.9%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>23.0%</td><td>6.0%</td><td>3.9%</td><td>27.5%</td><td>62.6%</td><td>91.2%</td><td>55.8%</td><td>-18 天</td><td>90.3%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>39.7%</td><td>6.2%</td><td>2.5%</td><td>23.5%</td><td>67.9%</td><td>75.0%</td><td>45.2%</td><td>-28 天</td><td>88.1%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>22.0%</td><td>6.0%</td><td>3.9%</td><td>27.7%</td><td>62.4%</td><td>92.4%</td><td>56.3%</td><td>-18 天</td><td>90.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>43.5%</td><td>6.4%</td><td>2.2%</td><td>22.3%</td><td>69.2%</td><td>69.2%</td><td>42.9%</td><td>-29 天</td><td>87.6%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>24.0%</td><td>6.5%</td><td>3.9%</td><td>27.1%</td><td>62.6%</td><td>90.2%</td><td>55.6%</td><td>-19 天</td><td>90.3%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>5.0%</td><td>6.1%</td><td>4.2%</td><td>25.9%</td><td>63.8%</td><td>86.2%</td><td>62.5%</td><td>-12 天</td><td>80.2%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>10.6%</td><td>7.1%</td><td>3.7%</td><td>32.8%</td><td>56.3%</td><td>86.1%</td><td>64.6%</td><td>-9 天</td><td>72.5%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>41.2%</td><td>83.8%</td><td>4.4%</td><td>73.4%</td><td>18.9%</td><td>-34.9%</td><td>33.2%</td><td>40.7%<br><small>-21.4%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>41.2%</td><td>83.8%</td><td>10.7%</td><td>73.4%</td><td>18.9%</td><td>-32.3%</td><td>33.8%</td><td>40.7%<br><small>-21.3%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>41.2%</td><td>82.8%</td><td>3.2%</td><td>73.4%</td><td>14.7%</td><td>-23.4%</td><td>35.2%</td><td>69.2%<br><small>-12.3%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>41.2%</td><td>82.8%</td><td>5.6%</td><td>73.4%</td><td>14.7%</td><td>-23.3%</td><td>35.3%</td><td>69.2%<br><small>-12.3%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>41.2%</td><td>0.1%</td><td>0.0%</td><td>73.4%</td><td>84.7%</td><td>-0.8%</td><td>44.2%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>41.2%</td><td>0.1%</td><td>0.0%</td><td>73.4%</td><td>84.7%</td><td>-0.8%</td><td>44.2%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p2_確認'>
+<h2>一、買進之後（2,615 筆；未完 25.2%）</h2><p>真頂漲幅中位 21.3%（p25～p75 6.8%～55.4%、p90 132.3%）；漲不到 20% 48.1%；段數 1／2／3／4+：77.1%／17.5%／3.9%／1.5%；描述：第 60 日收盤比真頂 -23.3%、真頂在第 60 日之後 32.8%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>34.8%</td><td>5.7%</td><td>1.9%</td><td>27.5%</td><td>64.9%</td><td>72.5%</td><td>42.8%</td><td>-21 天</td><td>85.4%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>21.5%</td><td>5.5%</td><td>3.7%</td><td>26.7%</td><td>64.0%</td><td>86.0%</td><td>50.5%</td><td>-19 天</td><td>89.7%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>33.4%</td><td>5.4%</td><td>1.9%</td><td>27.9%</td><td>64.8%</td><td>73.3%</td><td>43.7%</td><td>-21 天</td><td>85.6%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>20.5%</td><td>5.2%</td><td>3.9%</td><td>26.9%</td><td>64.0%</td><td>85.7%</td><td>50.4%</td><td>-19 天</td><td>89.7%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>37.1%</td><td>6.0%</td><td>1.8%</td><td>27.1%</td><td>65.2%</td><td>68.5%</td><td>41.8%</td><td>-22 天</td><td>85.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>22.4%</td><td>6.1%</td><td>3.6%</td><td>27.8%</td><td>62.5%</td><td>85.1%</td><td>50.6%</td><td>-19 天</td><td>88.9%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>7.0%</td><td>8.8%</td><td>5.5%</td><td>24.7%</td><td>61.0%</td><td>86.7%</td><td>56.7%</td><td>-16 天</td><td>81.9%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>13.7%</td><td>9.2%</td><td>3.1%</td><td>27.5%</td><td>60.2%</td><td>81.9%</td><td>57.7%</td><td>-11 天</td><td>75.6%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>34.8%</td><td>79.8%</td><td>7.0%</td><td>72.5%</td><td>18.8%</td><td>-34.6%</td><td>30.0%</td><td>44.6%<br><small>-21.1%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>34.8%</td><td>79.8%</td><td>15.2%</td><td>72.5%</td><td>18.8%</td><td>-30.6%</td><td>30.7%</td><td>44.6%<br><small>-21.1%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>34.8%</td><td>76.3%</td><td>5.6%</td><td>72.5%</td><td>14.7%</td><td>-22.3%</td><td>33.3%</td><td>70.3%<br><small>-12.1%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>34.8%</td><td>76.3%</td><td>8.2%</td><td>72.5%</td><td>14.7%</td><td>-22.3%</td><td>33.3%</td><td>70.3%<br><small>-12.1%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>34.8%</td><td>0.2%</td><td>0.0%</td><td>72.5%</td><td>30.6%</td><td>-0.8%</td><td>42.8%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>34.8%</td><td>0.2%</td><td>0.0%</td><td>72.5%</td><td>30.6%</td><td>-0.8%</td><td>42.8%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p2_探索'>
+<h2>一、買進之後（3,027 筆；未完 2.9%）</h2><p>真頂漲幅中位 36.7%（p25～p75 14.2%～84.9%、p90 169.2%）；漲不到 20% 32.5%；段數 1／2／3／4+：69.6%／21.2%／7.1%／2.1%；描述：第 60 日收盤比真頂 -24.2%、真頂在第 60 日之後 49.2%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>47.8%</td><td>6.6%</td><td>2.0%</td><td>22.7%</td><td>68.7%</td><td>71.9%</td><td>46.0%</td><td>-31 天</td><td>87.8%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>25.0%</td><td>6.1%</td><td>4.2%</td><td>27.7%</td><td>62.0%</td><td>89.2%</td><td>57.9%</td><td>-17 天</td><td>90.4%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>46.0%</td><td>6.2%</td><td>2.2%</td><td>22.7%</td><td>68.9%</td><td>72.5%</td><td>46.8%</td><td>-30 天</td><td>88.0%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>23.7%</td><td>6.0%</td><td>3.8%</td><td>27.6%</td><td>62.7%</td><td>89.4%</td><td>58.1%</td><td>-17 天</td><td>90.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>50.6%</td><td>6.8%</td><td>1.9%</td><td>22.1%</td><td>69.2%</td><td>69.0%</td><td>43.2%</td><td>-31 天</td><td>88.4%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>26.4%</td><td>6.1%</td><td>4.4%</td><td>27.1%</td><td>62.4%</td><td>86.8%</td><td>56.0%</td><td>-19 天</td><td>90.7%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>5.0%</td><td>4.6%</td><td>2.6%</td><td>25.2%</td><td>67.5%</td><td>85.8%</td><td>60.4%</td><td>-12 天</td><td>81.5%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>11.8%</td><td>8.1%</td><td>2.8%</td><td>36.4%</td><td>52.7%</td><td>85.3%</td><td>60.3%</td><td>-8 天</td><td>71.4%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>47.8%</td><td>85.3%</td><td>3.4%</td><td>71.9%</td><td>19.6%</td><td>-42.7%</td><td>29.9%</td><td>40.9%<br><small>-21.8%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>47.8%</td><td>85.3%</td><td>8.8%</td><td>71.9%</td><td>19.6%</td><td>-41.2%</td><td>30.4%</td><td>40.9%<br><small>-21.7%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>47.8%</td><td>87.1%</td><td>2.5%</td><td>71.9%</td><td>14.9%</td><td>-25.0%</td><td>33.1%</td><td>70.4%<br><small>-12.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>47.8%</td><td>87.1%</td><td>4.9%</td><td>71.9%</td><td>14.9%</td><td>-24.7%</td><td>33.4%</td><td>70.4%<br><small>-12.5%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>47.8%</td><td>0.1%</td><td>0.0%</td><td>71.9%</td><td>68.8%</td><td>-0.8%</td><td>46.0%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>47.8%</td><td>0.1%</td><td>0.0%</td><td>71.9%</td><td>68.8%</td><td>-0.8%</td><td>46.0%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p2_全部'>
+<h2>一、買進之後（5,642 筆；未完 13.2%）</h2><p>真頂漲幅中位 29.3%（p25～p75 9.8%～71.8%、p90 154.8%）；漲不到 20% 39.7%；段數 1／2／3／4+：73.1%／19.5%／5.6%／1.8%；描述：第 60 日收盤比真頂 -23.7%、真頂在第 60 日之後 41.6%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>41.8%</td><td>6.2%</td><td>2.0%</td><td>24.6%</td><td>67.2%</td><td>72.1%</td><td>44.7%</td><td>-26 天</td><td>86.9%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>23.4%</td><td>5.8%</td><td>4.0%</td><td>27.3%</td><td>62.9%</td><td>87.8%</td><td>55.7%</td><td>-18 天</td><td>90.1%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>40.2%</td><td>5.9%</td><td>2.1%</td><td>24.7%</td><td>67.3%</td><td>72.7%</td><td>45.7%</td><td>-26 天</td><td>87.1%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>22.2%</td><td>5.7%</td><td>3.8%</td><td>27.3%</td><td>63.2%</td><td>87.3%</td><td>55.7%</td><td>-18 天</td><td>90.0%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>44.4%</td><td>6.5%</td><td>1.8%</td><td>24.1%</td><td>67.6%</td><td>68.7%</td><td>42.7%</td><td>-27 天</td><td>87.2%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>24.5%</td><td>6.1%</td><td>4.0%</td><td>27.4%</td><td>62.4%</td><td>86.1%</td><td>54.6%</td><td>-19 天</td><td>90.0%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>5.9%</td><td>6.9%</td><td>4.2%</td><td>24.9%</td><td>64.0%</td><td>86.2%</td><td>58.5%</td><td>-13 天</td><td>81.7%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>12.7%</td><td>8.7%</td><td>2.9%</td><td>31.9%</td><td>56.4%</td><td>83.6%</td><td>58.9%</td><td>-10 天</td><td>73.5%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>41.8%</td><td>83.1%</td><td>4.7%</td><td>72.1%</td><td>19.2%</td><td>-39.5%</td><td>29.9%</td><td>42.3%<br><small>-21.5%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>41.8%</td><td>83.1%</td><td>11.1%</td><td>72.1%</td><td>19.2%</td><td>-37.6%</td><td>30.5%</td><td>42.3%<br><small>-21.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>41.8%</td><td>82.9%</td><td>3.6%</td><td>72.1%</td><td>14.9%</td><td>-24.2%</td><td>33.3%</td><td>70.4%<br><small>-12.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>41.8%</td><td>82.9%</td><td>6.1%</td><td>72.1%</td><td>14.9%</td><td>-24.1%</td><td>33.4%</td><td>70.4%<br><small>-12.4%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>41.8%</td><td>0.2%</td><td>0.0%</td><td>72.1%</td><td>40.0%</td><td>-0.8%</td><td>44.7%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>41.8%</td><td>0.2%</td><td>0.0%</td><td>72.1%</td><td>40.0%</td><td>-0.8%</td><td>44.7%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p3_確認'>
+<h2>一、買進之後（1,852 筆；未完 20.2%）</h2><p>真頂漲幅中位 21.6%（p25～p75 7.0%～59.7%、p90 131.1%）；漲不到 20% 48.3%；段數 1／2／3／4+：77.0%／17.7%／3.9%／1.5%；描述：第 60 日收盤比真頂 -23.9%、真頂在第 60 日之後 29.8%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>36.0%</td><td>5.5%</td><td>1.9%</td><td>25.3%</td><td>67.2%</td><td>70.2%</td><td>41.8%</td><td>-23 天</td><td>86.1%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>22.2%</td><td>4.9%</td><td>3.6%</td><td>22.1%</td><td>69.4%</td><td>80.5%</td><td>48.3%</td><td>-20 天</td><td>91.5%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>35.0%</td><td>5.5%</td><td>2.0%</td><td>26.0%</td><td>66.4%</td><td>70.5%</td><td>43.2%</td><td>-22 天</td><td>86.1%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>21.3%</td><td>4.8%</td><td>3.8%</td><td>22.3%</td><td>69.1%</td><td>79.9%</td><td>49.0%</td><td>-20 天</td><td>91.1%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>37.9%</td><td>5.7%</td><td>1.9%</td><td>24.8%</td><td>67.6%</td><td>63.6%</td><td>40.7%</td><td>-22 天</td><td>86.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>23.3%</td><td>5.6%</td><td>3.5%</td><td>22.7%</td><td>68.2%</td><td>79.2%</td><td>47.3%</td><td>-20 天</td><td>91.2%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>8.0%</td><td>8.1%</td><td>4.1%</td><td>24.3%</td><td>63.5%</td><td>88.1%</td><td>52.4%</td><td>-14 天</td><td>80.4%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>16.6%</td><td>9.4%</td><td>3.3%</td><td>31.6%</td><td>55.7%</td><td>76.2%</td><td>57.4%</td><td>-11 天</td><td>75.9%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>36.0%</td><td>78.9%</td><td>7.0%</td><td>70.2%</td><td>17.3%</td><td>-33.6%</td><td>29.6%</td><td>42.0%<br><small>-21.4%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>36.0%</td><td>78.9%</td><td>14.8%</td><td>70.2%</td><td>17.3%</td><td>-30.3%</td><td>29.5%</td><td>42.0%<br><small>-21.4%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>36.0%</td><td>77.8%</td><td>7.1%</td><td>70.2%</td><td>15.2%</td><td>-22.4%</td><td>30.2%</td><td>70.7%<br><small>-12.6%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>36.0%</td><td>77.8%</td><td>9.2%</td><td>70.2%</td><td>15.2%</td><td>-22.4%</td><td>29.2%</td><td>70.7%<br><small>-12.6%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>36.0%</td><td>0.3%</td><td>0.0%</td><td>70.2%</td><td>30.6%</td><td>-0.8%</td><td>41.8%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>36.0%</td><td>0.3%</td><td>0.0%</td><td>70.2%</td><td>30.6%</td><td>-0.8%</td><td>41.8%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p3_探索'>
+<h2>一、買進之後（2,018 筆；未完 1.5%）</h2><p>真頂漲幅中位 31.4%（p25～p75 12.9%～77.8%、p90 151.2%）；漲不到 20% 35.7%；段數 1／2／3／4+：71.3%／20.5%／6.3%／1.9%；描述：第 60 日收盤比真頂 -23.9%、真頂在第 60 日之後 41.8%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>47.0%</td><td>5.7%</td><td>1.7%</td><td>22.8%</td><td>69.8%</td><td>70.7%</td><td>45.3%</td><td>-24 天</td><td>87.9%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>24.2%</td><td>5.7%</td><td>3.7%</td><td>27.3%</td><td>63.3%</td><td>87.6%</td><td>55.6%</td><td>-17 天</td><td>90.6%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>44.8%</td><td>5.5%</td><td>1.8%</td><td>22.1%</td><td>70.6%</td><td>71.2%</td><td>46.0%</td><td>-24 天</td><td>88.3%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>22.9%</td><td>5.8%</td><td>3.2%</td><td>26.4%</td><td>64.5%</td><td>88.2%</td><td>55.2%</td><td>-17 天</td><td>91.1%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>50.0%</td><td>6.1%</td><td>1.4%</td><td>21.9%</td><td>70.6%</td><td>66.7%</td><td>41.3%</td><td>-26 天</td><td>87.7%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>25.5%</td><td>5.6%</td><td>3.9%</td><td>26.7%</td><td>63.8%</td><td>85.5%</td><td>54.5%</td><td>-18 天</td><td>90.3%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>5.8%</td><td>5.1%</td><td>3.4%</td><td>22.2%</td><td>69.2%</td><td>83.9%</td><td>60.0%</td><td>-13 天</td><td>82.9%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>12.9%</td><td>8.8%</td><td>1.5%</td><td>38.1%</td><td>51.5%</td><td>78.4%</td><td>55.6%</td><td>-9 天</td><td>73.1%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>47.0%</td><td>84.6%</td><td>3.1%</td><td>70.7%</td><td>21.7%</td><td>-49.1%</td><td>23.8%</td><td>44.6%<br><small>-21.8%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>47.0%</td><td>84.6%</td><td>7.0%</td><td>70.7%</td><td>21.7%</td><td>-48.2%</td><td>24.0%</td><td>44.6%<br><small>-21.8%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>47.0%</td><td>87.0%</td><td>2.5%</td><td>70.7%</td><td>14.9%</td><td>-25.9%</td><td>31.5%</td><td>72.4%<br><small>-12.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>47.0%</td><td>87.0%</td><td>4.2%</td><td>70.7%</td><td>14.9%</td><td>-25.8%</td><td>31.5%</td><td>72.4%<br><small>-12.5%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>47.0%</td><td>0.1%</td><td>0.0%</td><td>70.7%</td><td>117.5%</td><td>-1.0%</td><td>45.3%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>47.0%</td><td>0.1%</td><td>0.0%</td><td>70.7%</td><td>117.5%</td><td>-1.0%</td><td>45.3%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p3_全部'>
+<h2>一、買進之後（3,870 筆；未完 10.5%）</h2><p>真頂漲幅中位 27.7%（p25～p75 9.5%～69.0%、p90 144.1%）；漲不到 20% 41.8%；段數 1／2／3／4+：74.0%／19.1%／5.1%／1.7%；描述：第 60 日收盤比真頂 -23.9%、真頂在第 60 日之後 36.0%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>41.7%</td><td>5.6%</td><td>1.8%</td><td>23.8%</td><td>68.7%</td><td>70.4%</td><td>44.1%</td><td>-23 天</td><td>87.1%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>23.3%</td><td>5.3%</td><td>3.7%</td><td>24.9%</td><td>66.1%</td><td>83.4%</td><td>53.0%</td><td>-19 天</td><td>91.0%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>40.2%</td><td>5.5%</td><td>1.9%</td><td>23.7%</td><td>68.9%</td><td>71.0%</td><td>44.9%</td><td>-23 天</td><td>87.4%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>22.1%</td><td>5.4%</td><td>3.5%</td><td>24.5%</td><td>66.6%</td><td>83.8%</td><td>53.3%</td><td>-19 天</td><td>91.1%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>44.2%</td><td>6.0%</td><td>1.6%</td><td>23.1%</td><td>69.4%</td><td>65.7%</td><td>41.1%</td><td>-24 天</td><td>87.1%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>24.4%</td><td>5.6%</td><td>3.7%</td><td>24.9%</td><td>65.8%</td><td>81.9%</td><td>51.7%</td><td>-19 天</td><td>90.7%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>6.8%</td><td>6.8%</td><td>3.8%</td><td>23.4%</td><td>66.0%</td><td>85.2%</td><td>54.7%</td><td>-14 天</td><td>81.5%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>14.7%</td><td>9.2%</td><td>2.5%</td><td>34.6%</td><td>53.8%</td><td>76.8%</td><td>56.2%</td><td>-10 天</td><td>74.6%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>41.7%</td><td>82.2%</td><td>4.7%</td><td>70.4%</td><td>20.2%</td><td>-44.2%</td><td>26.2%</td><td>43.6%<br><small>-21.7%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>41.7%</td><td>82.2%</td><td>10.1%</td><td>70.4%</td><td>20.2%</td><td>-43.2%</td><td>26.4%</td><td>43.6%<br><small>-21.6%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>41.7%</td><td>83.2%</td><td>4.3%</td><td>70.4%</td><td>15.0%</td><td>-24.8%</td><td>31.2%</td><td>71.7%<br><small>-12.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>41.7%</td><td>83.2%</td><td>6.2%</td><td>70.4%</td><td>15.0%</td><td>-24.7%</td><td>31.2%</td><td>71.7%<br><small>-12.5%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>41.7%</td><td>0.2%</td><td>0.0%</td><td>70.4%</td><td>60.0%</td><td>-1.0%</td><td>44.1%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>41.7%</td><td>0.2%</td><td>0.0%</td><td>70.4%</td><td>60.0%</td><td>-1.0%</td><td>44.1%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p4_確認'>
+<h2>一、買進之後（1,179 筆；未完 15.9%）</h2><p>真頂漲幅中位 23.6%（p25～p75 8.1%～69.4%、p90 144.9%）；漲不到 20% 46.1%；段數 1／2／3／4+：77.5%／16.5%／4.7%／1.3%；描述：第 60 日收盤比真頂 -24.4%、真頂在第 60 日之後 27.8%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>38.3%</td><td>5.8%</td><td>1.5%</td><td>25.4%</td><td>67.3%</td><td>65.1%</td><td>38.7%</td><td>-20 天</td><td>83.8%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>24.3%</td><td>3.5%</td><td>3.1%</td><td>26.8%</td><td>66.6%</td><td>75.7%</td><td>49.9%</td><td>-18 天</td><td>89.2%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>37.3%</td><td>6.1%</td><td>1.6%</td><td>26.4%</td><td>65.9%</td><td>67.3%</td><td>40.4%</td><td>-19 天</td><td>83.6%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>23.2%</td><td>3.7%</td><td>3.3%</td><td>28.2%</td><td>64.8%</td><td>75.9%</td><td>51.0%</td><td>-17 天</td><td>88.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>39.9%</td><td>5.5%</td><td>1.5%</td><td>24.9%</td><td>68.1%</td><td>58.2%</td><td>34.8%</td><td>-20 天</td><td>83.6%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>25.2%</td><td>4.0%</td><td>3.0%</td><td>26.9%</td><td>66.0%</td><td>75.2%</td><td>49.0%</td><td>-18 天</td><td>89.2%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>10.5%</td><td>8.1%</td><td>2.4%</td><td>22.6%</td><td>66.9%</td><td>75.6%</td><td>51.7%</td><td>-16 天</td><td>81.5%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>20.4%</td><td>8.8%</td><td>2.5%</td><td>31.2%</td><td>57.5%</td><td>68.1%</td><td>54.7%</td><td>-12 天</td><td>79.2%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>38.3%</td><td>78.1%</td><td>7.1%</td><td>65.1%</td><td>19.9%</td><td>-40.6%</td><td>24.8%</td><td>45.0%<br><small>-21.5%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>38.3%</td><td>78.1%</td><td>15.0%</td><td>65.1%</td><td>19.9%</td><td>-39.5%</td><td>24.3%</td><td>45.0%<br><small>-21.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>38.3%</td><td>79.4%</td><td>6.4%</td><td>65.1%</td><td>16.0%</td><td>-24.5%</td><td>24.1%</td><td>71.9%<br><small>-12.7%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>38.3%</td><td>79.4%</td><td>8.6%</td><td>65.1%</td><td>16.0%</td><td>-24.5%</td><td>23.8%</td><td>71.9%<br><small>-12.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>38.3%</td><td>0.2%</td><td>0.0%</td><td>65.1%</td><td>1.3%</td><td>5.1%</td><td>38.7%</td><td>100.0%<br><small>2.5%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>38.3%</td><td>0.2%</td><td>0.0%</td><td>65.1%</td><td>1.3%</td><td>5.1%</td><td>38.7%</td><td>100.0%<br><small>2.5%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p4_探索'>
+<h2>一、買進之後（1,246 筆；未完 0.7%）</h2><p>真頂漲幅中位 31.2%（p25～p75 10.7%～70.7%、p90 140.1%）；漲不到 20% 38.8%；段數 1／2／3／4+：73.5%／19.0%／5.7%／1.8%；描述：第 60 日收盤比真頂 -23.9%、真頂在第 60 日之後 35.7%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>44.9%</td><td>6.1%</td><td>1.4%</td><td>23.8%</td><td>68.7%</td><td>71.0%</td><td>44.2%</td><td>-24 天</td><td>88.2%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>22.6%</td><td>5.7%</td><td>3.5%</td><td>28.4%</td><td>62.4%</td><td>87.8%</td><td>56.4%</td><td>-17 天</td><td>91.8%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>43.0%</td><td>6.0%</td><td>1.7%</td><td>23.3%</td><td>69.0%</td><td>71.6%</td><td>44.7%</td><td>-23 天</td><td>88.8%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>21.6%</td><td>4.8%</td><td>3.3%</td><td>28.3%</td><td>63.6%</td><td>88.9%</td><td>56.9%</td><td>-16 天</td><td>92.2%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>47.5%</td><td>6.6%</td><td>1.0%</td><td>22.3%</td><td>70.1%</td><td>62.9%</td><td>40.1%</td><td>-26 天</td><td>88.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>24.0%</td><td>6.4%</td><td>4.0%</td><td>27.4%</td><td>62.2%</td><td>84.6%</td><td>54.8%</td><td>-17 天</td><td>92.3%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>7.4%</td><td>5.4%</td><td>1.1%</td><td>25.0%</td><td>68.5%</td><td>82.6%</td><td>60.6%</td><td>-14 天</td><td>83.7%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>15.7%</td><td>7.7%</td><td>1.5%</td><td>37.8%</td><td>53.1%</td><td>79.9%</td><td>59.2%</td><td>-11 天</td><td>72.4%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>44.9%</td><td>83.5%</td><td>4.3%</td><td>71.0%</td><td>22.5%</td><td>-50.6%</td><td>19.0%</td><td>44.5%<br><small>-21.8%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>44.9%</td><td>83.5%</td><td>8.1%</td><td>71.0%</td><td>22.5%</td><td>-50.0%</td><td>19.4%</td><td>44.5%<br><small>-21.8%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>44.9%</td><td>86.2%</td><td>2.5%</td><td>71.0%</td><td>15.1%</td><td>-26.5%</td><td>25.0%</td><td>74.1%<br><small>-12.6%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>44.9%</td><td>86.2%</td><td>3.5%</td><td>71.0%</td><td>15.1%</td><td>-25.8%</td><td>25.0%</td><td>74.1%<br><small>-12.6%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>44.9%</td><td>0.2%</td><td>0.0%</td><td>71.0%</td><td>117.5%</td><td>-1.0%</td><td>44.2%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>44.9%</td><td>0.2%</td><td>0.0%</td><td>71.0%</td><td>117.5%</td><td>-1.0%</td><td>44.2%</td><td>100.0%<br><small>-1.0%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p4_全部'>
+<h2>一、買進之後（2,425 筆；未完 8.1%）</h2><p>真頂漲幅中位 28.1%（p25～p75 9.1%～70.0%、p90 143.0%）；漲不到 20% 42.4%；段數 1／2／3／4+：75.5%／17.8%／5.2%／1.5%；描述：第 60 日收盤比真頂 -24.1%、真頂在第 60 日之後 31.9%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>41.7%</td><td>5.9%</td><td>1.5%</td><td>24.5%</td><td>68.1%</td><td>68.2%</td><td>41.6%</td><td>-21 天</td><td>86.3%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>23.5%</td><td>4.6%</td><td>3.3%</td><td>27.6%</td><td>64.5%</td><td>80.2%</td><td>54.1%</td><td>-17 天</td><td>90.5%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>40.2%</td><td>6.0%</td><td>1.6%</td><td>24.7%</td><td>67.6%</td><td>69.3%</td><td>42.6%</td><td>-21 天</td><td>86.5%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>22.4%</td><td>4.2%</td><td>3.3%</td><td>28.2%</td><td>64.2%</td><td>79.4%</td><td>55.8%</td><td>-16 天</td><td>90.2%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>43.8%</td><td>6.1%</td><td>1.2%</td><td>23.4%</td><td>69.2%</td><td>60.9%</td><td>39.1%</td><td>-23 天</td><td>86.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>24.6%</td><td>5.2%</td><td>3.5%</td><td>27.2%</td><td>64.1%</td><td>77.9%</td><td>53.0%</td><td>-18 天</td><td>90.8%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>8.9%</td><td>6.9%</td><td>1.9%</td><td>23.6%</td><td>67.6%</td><td>79.6%</td><td>54.2%</td><td>-16 天</td><td>82.4%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>18.0%</td><td>8.3%</td><td>2.1%</td><td>34.2%</td><td>55.5%</td><td>73.0%</td><td>56.7%</td><td>-11 天</td><td>76.1%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>41.7%</td><td>81.1%</td><td>5.5%</td><td>68.2%</td><td>21.3%</td><td>-46.9%</td><td>21.3%</td><td>44.8%<br><small>-21.6%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>41.7%</td><td>81.1%</td><td>11.1%</td><td>68.2%</td><td>21.3%</td><td>-46.2%</td><td>21.3%</td><td>44.8%<br><small>-21.6%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>41.7%</td><td>83.2%</td><td>4.2%</td><td>68.2%</td><td>15.4%</td><td>-25.6%</td><td>24.5%</td><td>73.1%<br><small>-12.7%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>41.7%</td><td>83.2%</td><td>5.7%</td><td>68.2%</td><td>15.4%</td><td>-25.5%</td><td>24.2%</td><td>73.1%<br><small>-12.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>41.7%</td><td>0.2%</td><td>0.0%</td><td>68.2%</td><td>59.4%</td><td>2.0%</td><td>41.6%</td><td>100.0%<br><small>0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>41.7%</td><td>0.2%</td><td>0.0%</td><td>68.2%</td><td>59.4%</td><td>2.0%</td><td>41.6%</td><td>100.0%<br><small>0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p5_確認'>
+<h2>一、買進之後（2,942 筆；未完 26.3%）</h2><p>真頂漲幅中位 18.5%（p25～p75 6.3%～54.4%、p90 126.7%）；漲不到 20% 51.8%；段數 1／2／3／4+：78.2%／16.6%／4.0%／1.2%；描述：第 60 日收盤比真頂 -22.9%、真頂在第 60 日之後 33.7%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>33.1%</td><td>6.8%</td><td>1.5%</td><td>25.7%</td><td>66.0%</td><td>66.7%</td><td>42.9%</td><td>-22 天</td><td>86.7%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>20.6%</td><td>7.1%</td><td>3.0%</td><td>26.3%</td><td>63.6%</td><td>81.9%</td><td>51.8%</td><td>-19 天</td><td>90.6%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>31.4%</td><td>6.8%</td><td>1.6%</td><td>26.4%</td><td>65.2%</td><td>70.5%</td><td>44.4%</td><td>-22 天</td><td>86.4%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>19.4%</td><td>7.0%</td><td>3.1%</td><td>26.7%</td><td>63.1%</td><td>84.8%</td><td>52.7%</td><td>-19 天</td><td>90.0%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>35.6%</td><td>6.9%</td><td>1.5%</td><td>25.8%</td><td>65.8%</td><td>62.3%</td><td>41.8%</td><td>-22 天</td><td>86.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>22.0%</td><td>8.0%</td><td>2.8%</td><td>27.1%</td><td>62.1%</td><td>79.7%</td><td>51.8%</td><td>-19 天</td><td>89.8%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>6.0%</td><td>9.7%</td><td>4.5%</td><td>25.0%</td><td>60.8%</td><td>88.1%</td><td>57.7%</td><td>-16 天</td><td>83.0%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>13.1%</td><td>11.1%</td><td>2.8%</td><td>28.0%</td><td>58.0%</td><td>80.1%</td><td>58.2%</td><td>-12 天</td><td>77.2%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>33.1%</td><td>81.5%</td><td>6.3%</td><td>66.7%</td><td>18.8%</td><td>-35.0%</td><td>29.4%</td><td>44.0%<br><small>-21.2%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>33.1%</td><td>81.5%</td><td>14.2%</td><td>66.7%</td><td>18.8%</td><td>-32.0%</td><td>29.8%</td><td>44.0%<br><small>-21.2%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>33.1%</td><td>80.1%</td><td>5.1%</td><td>66.7%</td><td>14.6%</td><td>-22.4%</td><td>32.6%</td><td>70.1%<br><small>-12.0%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>33.1%</td><td>80.1%</td><td>8.2%</td><td>66.7%</td><td>14.6%</td><td>-22.4%</td><td>32.9%</td><td>70.1%<br><small>-12.0%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>33.1%</td><td>0.2%</td><td>0.0%</td><td>66.7%</td><td>30.6%</td><td>-0.8%</td><td>42.9%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>33.1%</td><td>0.2%</td><td>0.0%</td><td>66.7%</td><td>30.6%</td><td>-0.8%</td><td>42.9%</td><td>100.0%<br><small>-1.3%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p5_探索'>
+<h2>一、買進之後（3,297 筆；未完 4.9%）</h2><p>真頂漲幅中位 40.5%（p25～p75 14.8%～93.2%、p90 178.6%）；漲不到 20% 31.3%；段數 1／2／3／4+：67.5%／22.2%／7.9%／2.4%；描述：第 60 日收盤比真頂 -26.4%、真頂在第 60 日之後 53.8%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>48.0%</td><td>5.7%</td><td>2.4%</td><td>20.9%</td><td>70.9%</td><td>69.7%</td><td>41.7%</td><td>-34 天</td><td>89.5%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>25.0%</td><td>6.8%</td><td>4.6%</td><td>27.5%</td><td>61.1%</td><td>89.9%</td><td>56.5%</td><td>-18 天</td><td>90.9%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>45.8%</td><td>5.4%</td><td>2.8%</td><td>21.2%</td><td>70.6%</td><td>73.1%</td><td>43.6%</td><td>-32 天</td><td>89.7%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>23.4%</td><td>6.5%</td><td>4.4%</td><td>26.8%</td><td>62.4%</td><td>92.7%</td><td>57.1%</td><td>-17 天</td><td>90.8%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>51.0%</td><td>6.2%</td><td>2.1%</td><td>19.9%</td><td>71.8%</td><td>65.9%</td><td>39.4%</td><td>-36 天</td><td>89.5%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>26.4%</td><td>7.4%</td><td>4.5%</td><td>26.7%</td><td>61.4%</td><td>87.8%</td><td>55.4%</td><td>-20 天</td><td>90.8%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>4.6%</td><td>5.9%</td><td>2.6%</td><td>25.5%</td><td>66.0%</td><td>92.4%</td><td>65.1%</td><td>-11 天</td><td>78.4%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>11.6%</td><td>7.3%</td><td>2.9%</td><td>39.1%</td><td>50.8%</td><td>88.2%</td><td>63.0%</td><td>-7 天</td><td>70.3%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>48.0%</td><td>85.2%</td><td>3.0%</td><td>69.7%</td><td>19.7%</td><td>-38.2%</td><td>31.1%</td><td>39.6%<br><small>-21.4%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>48.0%</td><td>85.2%</td><td>8.1%</td><td>69.7%</td><td>19.7%</td><td>-36.8%</td><td>32.0%</td><td>39.6%<br><small>-21.4%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>48.0%</td><td>85.9%</td><td>2.2%</td><td>69.7%</td><td>15.0%</td><td>-24.2%</td><td>32.8%</td><td>69.5%<br><small>-12.5%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>48.0%</td><td>85.9%</td><td>4.4%</td><td>69.7%</td><td>15.0%</td><td>-24.1%</td><td>33.1%</td><td>69.5%<br><small>-12.4%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>48.0%</td><td>0.1%</td><td>0.0%</td><td>69.7%</td><td>53.9%</td><td>-0.8%</td><td>41.7%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>48.0%</td><td>0.1%</td><td>0.0%</td><td>69.7%</td><td>53.9%</td><td>-0.8%</td><td>41.7%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<div class='pane' id='p5_全部'>
+<h2>一、買進之後（6,239 筆；未完 15.0%）</h2><p>真頂漲幅中位 28.7%（p25～p75 9.3%～75.0%、p90 159.5%）；漲不到 20% 41.0%；段數 1／2／3／4+：72.6%／19.6%／6.1%／1.8%；描述：第 60 日收盤比真頂 -24.6%、真頂在第 60 日之後 44.3%。</p>
+<h2>二、警示第一次出現在哪、賣在那天吃到幾成</h2><div class='wrap'><table><tr><th class='l'>警示</th><th>有出現</th><th>第一頂附近</th><th>第二頂以後</th><th>真頂附近</th><th>都不在</th><th>吃到第一頂</th><th>吃到真頂</th><th>賣出−真頂</th><th>之後又創新高</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5</td><td>41.0%</td><td>6.1%</td><td>2.1%</td><td>22.7%</td><td>69.1%</td><td>69.1%</td><td>42.7%</td><td>-29 天</td><td>88.4%</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3</td><td>22.9%</td><td>6.9%</td><td>3.9%</td><td>27.0%</td><td>62.2%</td><td>86.7%</td><td>55.4%</td><td>-19 天</td><td>90.8%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5</td><td>39.0%</td><td>6.0%</td><td>2.3%</td><td>23.2%</td><td>68.5%</td><td>71.9%</td><td>43.8%</td><td>-28 天</td><td>88.5%</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3</td><td>21.6%</td><td>6.7%</td><td>3.9%</td><td>26.8%</td><td>62.7%</td><td>89.8%</td><td>55.8%</td><td>-18 天</td><td>90.5%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5</td><td>43.7%</td><td>6.5%</td><td>1.9%</td><td>22.1%</td><td>69.5%</td><td>65.0%</td><td>40.2%</td><td>-30 天</td><td>88.3%</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3</td><td>24.3%</td><td>7.7%</td><td>3.8%</td><td>26.9%</td><td>61.7%</td><td>85.0%</td><td>54.6%</td><td>-19 天</td><td>90.4%</td></tr>
+<tr><td class='l'>W2a 再次進入處置</td><td>5.3%</td><td>7.9%</td><td>3.6%</td><td>25.2%</td><td>63.2%</td><td>89.0%</td><td>60.6%</td><td>-13 天</td><td>80.9%</td></tr>
+<tr><td class='l'>W2b 處置出關</td><td>12.3%</td><td>9.2%</td><td>2.9%</td><td>33.5%</td><td>54.4%</td><td>83.7%</td><td>60.4%</td><td>-10 天</td><td>73.8%</td></tr>
+</table></div>
+<h2>三、完整一輪：起漲買 → 第一頂賣（W1）→ 中段底買回 → 第二頂賣（W2）</h2><div class='wrap'><table><tr><th>買回 x</th><th class='l'>第二次賣</th><th>W1 賣</th><th>買回</th><th>W2 出現</th><th>第一段吃到第一頂</th><th>買回比中段底高</th><th>第二段吃到</th><th>全輪吃到真頂</th><th>買錯（虧損）</th></tr>
+<tr><td>10%</td><td class='l'>W2a 再次進入處置</td><td>41.0%</td><td>83.8%</td><td>4.2%</td><td>69.1%</td><td>19.4%</td><td>-36.9%</td><td>30.8%</td><td>41.2%<br><small>-21.4%</small></td></tr>
+<tr><td>10%</td><td class='l'>W2b 處置出關</td><td>41.0%</td><td>83.8%</td><td>10.4%</td><td>69.1%</td><td>19.4%</td><td>-34.9%</td><td>31.2%</td><td>41.2%<br><small>-21.4%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2a 再次進入處置</td><td>41.0%</td><td>83.7%</td><td>3.3%</td><td>69.1%</td><td>14.9%</td><td>-23.5%</td><td>32.8%</td><td>69.7%<br><small>-12.3%</small></td></tr>
+<tr><td>20%</td><td class='l'>W2b 處置出關</td><td>41.0%</td><td>83.7%</td><td>5.8%</td><td>69.1%</td><td>14.9%</td><td>-23.4%</td><td>33.0%</td><td>69.7%<br><small>-12.3%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2a 再次進入處置</td><td>41.0%</td><td>0.2%</td><td>0.0%</td><td>69.1%</td><td>40.0%</td><td>-0.8%</td><td>42.7%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+<tr><td>30%</td><td class='l'>W2b 處置出關</td><td>41.0%</td><td>0.2%</td><td>0.0%</td><td>69.1%</td><td>40.0%</td><td>-0.8%</td><td>42.7%</td><td>100.0%<br><small>-0.7%</small></td></tr>
+</table></div><p class='note'>x＝30% 的買回門檻和「一筆結束（回落 30%）」幾乎相同，跨過那天通常就結束，所以幾乎不會買回（約 0.2% 是買回門檻含 1e−9 容差造成的邊界個案）。</p></div>
+<h2>附：飆股事件上（事後已知是飆股；拉回 20% 切段）訊號日落在哪</h2><div class='wrap'><table><tr><th class='l'>訊號</th><th>H1 附近</th><th>H2 以後</th><th>真頂附近</th><th>都不在</th><th>第一次：漲到幾成</th><th>離最近段頂</th></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5（60日無處置）<br><small>19,844 天</small></td><td>6.4%</td><td>1.9%</td><td>16.3%</td><td>74.2%</td><td>19.2%</td><td>-25 天</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3（60日無處置）<br><small>7,996 天</small></td><td>7.3%</td><td>2.4%</td><td>19.7%</td><td>69.5%</td><td>28.2%</td><td>-16 天</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5（60日無處置）<br><small>17,183 天</small></td><td>6.5%</td><td>2.1%</td><td>17.1%</td><td>73.3%</td><td>19.6%</td><td>-24 天</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3（60日無處置）<br><small>7,113 天</small></td><td>7.5%</td><td>2.5%</td><td>20.5%</td><td>68.4%</td><td>28.8%</td><td>-16 天</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5（60日無處置）<br><small>22,952 天</small></td><td>6.6%</td><td>1.8%</td><td>15.5%</td><td>75.1%</td><td>18.6%</td><td>-25 天</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3（60日無處置）<br><small>8,729 天</small></td><td>7.3%</td><td>2.4%</td><td>19.1%</td><td>70.1%</td><td>27.7%</td><td>-17 天</td></tr>
+<tr><td class='l'>W1 注意10日Q5×急拉lu5或r5（從t起處置0）<br><small>23,864 天</small></td><td>7.0%</td><td>1.5%</td><td>14.3%</td><td>76.1%</td><td>18.5%</td><td>-26 天</td></tr>
+<tr><td class='l'>W1 注意10日Q5×20日漲停≥3（從t起處置0）<br><small>10,929 天</small></td><td>8.0%</td><td>1.9%</td><td>18.1%</td><td>71.5%</td><td>27.0%</td><td>-17 天</td></tr>
+<tr><td class='l'>W1 注意5日Q5×急拉lu5或r5（從t起處置0）<br><small>20,567 天</small></td><td>7.1%</td><td>1.6%</td><td>15.0%</td><td>75.3%</td><td>18.9%</td><td>-25 天</td></tr>
+<tr><td class='l'>W1 注意5日Q5×20日漲停≥3（從t起處置0）<br><small>9,541 天</small></td><td>8.2%</td><td>2.0%</td><td>18.7%</td><td>70.6%</td><td>27.6%</td><td>-16 天</td></tr>
+<tr><td class='l'>W1 注意20日Q5×急拉lu5或r5（從t起處置0）<br><small>27,543 天</small></td><td>7.3%</td><td>1.5%</td><td>13.6%</td><td>76.9%</td><td>17.9%</td><td>-26 天</td></tr>
+<tr><td class='l'>W1 注意20日Q5×20日漲停≥3（從t起處置0）<br><small>12,079 天</small></td><td>8.2%</td><td>1.9%</td><td>17.6%</td><td>72.2%</td><td>26.6%</td><td>-17 天</td></tr>
+<tr><td class='l'>W2a 再次進入處置（60日版）<br><small>647 天</small></td><td>6.8%</td><td>4.5%</td><td>34.2%</td><td>54.5%</td><td>62.4%</td><td>-6 天</td></tr>
+<tr><td class='l'>W2b 處置出關（60日版）<br><small>1,142 天</small></td><td>9.6%</td><td>4.2%</td><td>32.3%</td><td>51.6%</td><td>57.7%</td><td>-5 天</td></tr>
+<tr><td class='l'>W2a 再次進入處置（從t起版）<br><small>780 天</small></td><td>6.2%</td><td>5.1%</td><td>36.5%</td><td>52.2%</td><td>64.8%</td><td>-5 天</td></tr>
+<tr><td class='l'>W2b 處置出關（從t起版）<br><small>1,137 天</small></td><td>9.3%</td><td>4.3%</td><td>33.0%</td><td>51.5%</td><td>58.5%</td><td>-5 天</td></tr>
+</table></div>
+<script>function sw(){var e=document.getElementById('se').value,s=document.getElementById('ss').value;document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id=='p'+e+'_'+s))}document.getElementById('se').value='2';sw()</script></main></body></html>
