@@ -1,0 +1,271 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>飆股特徵重疊</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left}small{color:#666}.hm td,.hm th{font-size:11px;padding:3px 4px;text-align:center}.hm th.r{writing-mode:vertical-rl;white-space:nowrap}</style></head><body><main>
+<h1>飆股身上的特徵會一起出現嗎？（2021–2026-08）</h1>
+<p class='lead'>只描述，不判定、不計檢定數、不挑格。182 種飆股定義（10～250 天內漲 50%～10 倍以上，事件 ≥ 30 的格）各算一次，取中位數。讀法寫死 2026-09-29 19:42（台北）。</p>
+<h2>一、有 A 的飆股裡，也有 B 的比例</h2><p class='note'>格內大字 ＝ 飆股的 P(B|A)（格中位）；小字 ＝ 一般股-日同一對。底色越紅 ＝ 飆股比一般更常一起出現（比值 ＞ 1），越藍 ＝ 比一般少。列 ＝ A，欄 ＝ B。</p>
+<div class='wrap'><table class='hm'><tr><th></th><th class='r'>距5日低Q1</th><th class='r'>距10日低Q1</th><th class='r'>MA5乖離Q1</th><th class='r'>5日報酬Q1</th><th class='r'>60日周轉Q5</th><th class='r'>120日報酬Q5</th><th class='r'>融資使用Q5</th><th class='r'>股價&lt;20</th><th class='r'>多頭排列</th><th class='r'>注意≥3次</th><th class='r'>營收年增≥50%</th><th class='r'>EPS轉正</th><th class='r'>營收24月新高</th><th class='r'>20日漲停≥3</th></tr>
+<tr><th class='l'>距5日低Q1</th>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.13)'>82<br><small>69</small></td>
+<td style='background:rgba(214,64,69,0.23)'>66<br><small>48</small></td>
+<td style='background:rgba(214,64,69,0.27)'>57<br><small>39</small></td>
+<td style='background:rgba(214,64,69,0.49)'>36<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.33)'>25<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.36)'>31<br><small>19</small></td>
+<td style='background:rgba(214,64,69,0.13)'>28<br><small>23</small></td>
+<td style='background:rgba(43,108,176,0.13)'>14<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.56)'>20<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.31)'>19<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.23)'>11<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.39)'>13<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.38)'>4<br><small>2</small></td>
+</tr>
+<tr><th class='l'>距10日低Q1</th>
+<td style='background:rgba(214,64,69,0.08)'>97<br><small>87</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.27)'>66<br><small>45</small></td>
+<td style='background:rgba(214,64,69,0.24)'>62<br><small>44</small></td>
+<td style='background:rgba(214,64,69,0.57)'>36<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.39)'>23<br><small>13</small></td>
+<td style='background:rgba(214,64,69,0.42)'>31<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.14)'>29<br><small>24</small></td>
+<td style='background:rgba(43,108,176,0.19)'>8<br><small>10</small></td>
+<td style='background:rgba(214,64,69,0.62)'>19<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.37)'>19<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.21)'>10<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.41)'>12<br><small>7</small></td>
+<td style='background:rgba(214,64,69,0.46)'>2<br><small>1</small></td>
+</tr>
+<tr><th class='l'>MA5乖離Q1</th>
+<td style='background:rgba(214,64,69,0.11)'>90<br><small>78</small></td>
+<td style='background:rgba(214,64,69,0.20)'>76<br><small>58</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.10)'>75<br><small>65</small></td>
+<td style='background:rgba(214,64,69,0.25)'>44<br><small>31</small></td>
+<td style='background:rgba(214,64,69,0.21)'>34<br><small>25</small></td>
+<td style='background:rgba(214,64,69,0.18)'>37<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.19)'>27<br><small>21</small></td>
+<td style='background:rgba(43,108,176,0.08)'>18<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.29)'>25<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.18)'>20<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.27)'>13<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.37)'>16<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.12)'>6<br><small>5</small></td>
+</tr>
+<tr><th class='l'>5日報酬Q1</th>
+<td style='background:rgba(214,64,69,0.23)'>87<br><small>63</small></td>
+<td style='background:rgba(214,64,69,0.25)'>80<br><small>57</small></td>
+<td style='background:rgba(214,64,69,0.17)'>82<br><small>65</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.26)'>44<br><small>31</small></td>
+<td style='background:rgba(214,64,69,0.21)'>32<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.20)'>38<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.17)'>27<br><small>21</small></td>
+<td style='background:rgba(43,108,176,0.07)'>14<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.33)'>26<br><small>16</small></td>
+<td style='background:rgba(214,64,69,0.17)'>19<br><small>15</small></td>
+<td style='background:rgba(214,64,69,0.18)'>11<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.28)'>13<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.25)'>6<br><small>4</small></td>
+</tr>
+<tr><th class='l'>60日周轉Q5</th>
+<td style='background:rgba(214,64,69,0.51)'>60<br><small>30</small></td>
+<td style='background:rgba(214,64,69,0.62)'>50<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.39)'>53<br><small>31</small></td>
+<td style='background:rgba(214,64,69,0.32)'>48<br><small>31</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.10)'>59<br><small>51</small></td>
+<td style='background:rgba(43,108,176,0.02)'>55<br><small>57</small></td>
+<td style='background:rgba(214,64,69,0.14)'>10<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.09)'>33<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.15)'>43<br><small>35</small></td>
+<td style='background:rgba(214,64,69,0.17)'>26<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.27)'>11<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.32)'>23<br><small>15</small></td>
+<td style='background:rgba(214,64,69,0.31)'>12<br><small>8</small></td>
+</tr>
+<tr><th class='l'>120日報酬Q5</th>
+<td style='background:rgba(214,64,69,0.49)'>51<br><small>26</small></td>
+<td style='background:rgba(214,64,69,0.61)'>39<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.49)'>50<br><small>25</small></td>
+<td style='background:rgba(214,64,69,0.40)'>41<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.20)'>68<br><small>51</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.15)'>44<br><small>36</small></td>
+<td style='background:rgba(214,64,69,0.24)'>16<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.02)'>48<br><small>47</small></td>
+<td style='background:rgba(214,64,69,0.28)'>48<br><small>32</small></td>
+<td style='background:rgba(214,64,69,0.11)'>28<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.44)'>17<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.33)'>26<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.44)'>19<br><small>10</small></td>
+</tr>
+<tr><th class='l'>融資使用Q5</th>
+<td style='background:rgba(214,64,69,0.49)'>59<br><small>30</small></td>
+<td style='background:rgba(214,64,69,0.60)'>50<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.44)'>50<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.38)'>46<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.08)'>70<br><small>63</small></td>
+<td style='background:rgba(214,64,69,0.14)'>43<br><small>35</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(43,108,176,0.06)'>10<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.12)'>27<br><small>23</small></td>
+<td style='background:rgba(214,64,69,0.23)'>36<br><small>26</small></td>
+<td style='background:rgba(214,64,69,0.20)'>24<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.18)'>11<br><small>9</small></td>
+<td style='background:rgba(214,64,69,0.25)'>17<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.34)'>9<br><small>6</small></td>
+</tr>
+<tr><th class='l'>股價&lt;20</th>
+<td style='background:rgba(214,64,69,0.39)'>60<br><small>35</small></td>
+<td style='background:rgba(214,64,69,0.45)'>53<br><small>28</small></td>
+<td style='background:rgba(214,64,69,0.56)'>42<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.47)'>38<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.32)'>12<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.33)'>17<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.14)'>16<br><small>13</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.15)'>18<br><small>14</small></td>
+<td style='background:rgba(214,64,69,0.55)'>11<br><small>5</small></td>
+<td style='background:rgba(43,108,176,0.07)'>11<br><small>13</small></td>
+<td style='background:rgba(214,64,69,0.13)'>17<br><small>14</small></td>
+<td style='background:rgba(214,64,69,0.18)'>7<br><small>5</small></td>
+<td style='background:rgba(214,64,69,0.42)'>5<br><small>3</small></td>
+</tr>
+<tr><th class='l'>多頭排列</th>
+<td style='background:rgba(214,64,69,0.25)'>36<br><small>25</small></td>
+<td style='background:rgba(214,64,69,0.23)'>17<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.47)'>38<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.35)'>25<br><small>15</small></td>
+<td style='background:rgba(214,64,69,0.40)'>49<br><small>28</small></td>
+<td style='background:rgba(214,64,69,0.26)'>65<br><small>45</small></td>
+<td style='background:rgba(214,64,69,0.35)'>35<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.28)'>22<br><small>15</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.50)'>33<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.13)'>22<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.56)'>18<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.36)'>22<br><small>14</small></td>
+<td style='background:rgba(214,64,69,0.70)'>22<br><small>8</small></td>
+</tr>
+<tr><th class='l'>注意≥3次</th>
+<td style='background:rgba(214,64,69,0.47)'>59<br><small>31</small></td>
+<td style='background:rgba(214,64,69,0.56)'>47<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.35)'>57<br><small>35</small></td>
+<td style='background:rgba(214,64,69,0.29)'>51<br><small>34</small></td>
+<td style='background:rgba(214,64,69,0.05)'>79<br><small>73</small></td>
+<td style='background:rgba(214,64,69,0.06)'>73<br><small>68</small></td>
+<td style='background:rgba(214,64,69,0.02)'>58<br><small>57</small></td>
+<td style='background:rgba(214,64,69,0.23)'>15<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.10)'>41<br><small>36</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.13)'>32<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.30)'>15<br><small>10</small></td>
+<td style='background:rgba(214,64,69,0.27)'>25<br><small>17</small></td>
+<td style='background:rgba(214,64,69,0.19)'>27<br><small>21</small></td>
+</tr>
+<tr><th class='l'>營收年增≥50%</th>
+<td style='background:rgba(214,64,69,0.49)'>59<br><small>30</small></td>
+<td style='background:rgba(214,64,69,0.59)'>50<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.51)'>48<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.43)'>41<br><small>23</small></td>
+<td style='background:rgba(214,64,69,0.34)'>51<br><small>32</small></td>
+<td style='background:rgba(214,64,69,0.21)'>48<br><small>36</small></td>
+<td style='background:rgba(214,64,69,0.25)'>43<br><small>30</small></td>
+<td style='background:rgba(43,108,176,0.16)'>17<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.01)'>29<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.37)'>32<br><small>19</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.09)'>12<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.21)'>36<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.27)'>9<br><small>6</small></td>
+</tr>
+<tr><th class='l'>EPS轉正</th>
+<td style='background:rgba(214,64,69,0.31)'>50<br><small>33</small></td>
+<td style='background:rgba(214,64,69,0.35)'>41<br><small>25</small></td>
+<td style='background:rgba(214,64,69,0.48)'>43<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.36)'>36<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.42)'>35<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.45)'>42<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.22)'>31<br><small>23</small></td>
+<td style='background:rgba(43,108,176,0.01)'>36<br><small>37</small></td>
+<td style='background:rgba(214,64,69,0.35)'>35<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.53)'>23<br><small>11</small></td>
+<td style='background:rgba(214,64,69,0.09)'>19<br><small>17</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.32)'>12<br><small>8</small></td>
+<td style='background:rgba(214,64,69,0.68)'>11<br><small>4</small></td>
+</tr>
+<tr><th class='l'>營收24月新高</th>
+<td style='background:rgba(214,64,69,0.44)'>53<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.52)'>42<br><small>20</small></td>
+<td style='background:rgba(214,64,69,0.52)'>45<br><small>22</small></td>
+<td style='background:rgba(214,64,69,0.45)'>38<br><small>21</small></td>
+<td style='background:rgba(214,64,69,0.39)'>59<br><small>35</small></td>
+<td style='background:rgba(214,64,69,0.28)'>56<br><small>38</small></td>
+<td style='background:rgba(214,64,69,0.21)'>37<br><small>27</small></td>
+<td style='background:rgba(214,64,69,0.09)'>14<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.13)'>38<br><small>32</small></td>
+<td style='background:rgba(214,64,69,0.44)'>34<br><small>18</small></td>
+<td style='background:rgba(214,64,69,0.12)'>48<br><small>40</small></td>
+<td style='background:rgba(214,64,69,0.27)'>10<br><small>7</small></td>
+<td style='background:#eee'>—</td>
+<td style='background:rgba(214,64,69,0.49)'>12<br><small>6</small></td>
+</tr>
+<tr><th class='l'>20日漲停≥3</th>
+<td style='background:rgba(214,64,69,0.28)'>36<br><small>24</small></td>
+<td style='background:rgba(214,64,69,0.40)'>21<br><small>12</small></td>
+<td style='background:rgba(214,64,69,0.20)'>44<br><small>34</small></td>
+<td style='background:rgba(214,64,69,0.13)'>35<br><small>29</small></td>
+<td style='background:rgba(214,64,69,0.14)'>70<br><small>58</small></td>
+<td style='background:rgba(214,64,69,0.14)'>91<br><small>75</small></td>
+<td style='background:rgba(214,64,69,0.01)'>54<br><small>53</small></td>
+<td style='background:rgba(214,64,69,0.07)'>21<br><small>19</small></td>
+<td style='background:rgba(214,64,69,0.17)'>79<br><small>63</small></td>
+<td style='background:rgba(214,64,69,0.09)'>79<br><small>70</small></td>
+<td style='background:rgba(43,108,176,0.09)'>27<br><small>30</small></td>
+<td style='background:rgba(214,64,69,0.24)'>20<br><small>14</small></td>
+<td style='background:rgba(214,64,69,0.19)'>24<br><small>18</small></td>
+<td style='background:#eee'>—</td>
+</tr>
+</table></div><p class='note'>單位 %。兩個都有值的列才算（財報、融資類在部分股票沒有值）。Jaccard 與 p10～p90 見 pairs.csv。</p>
+<h2>二、每個飆股身上同時有幾個</h2><div class='wrap'><table><tr><th class='l'>同時有</th><th>飆股（中位；p10～p90）</th><th>一般股-日</th></tr>
+<tr><td class='l'>0 個</td><td>6.4%<br><small>4.7%～8.0%</small></td><td>18.3%</td></tr>
+<tr><td class='l'>1 個</td><td>10.9%<br><small>8.8%～14.8%</small></td><td>21.9%</td></tr>
+<tr><td class='l'>2 個</td><td>13.6%<br><small>10.3%～16.6%</small></td><td>20.2%</td></tr>
+<tr><td class='l'>3 個</td><td>14.9%<br><small>11.7%～17.5%</small></td><td>14.4%</td></tr>
+<tr><td class='l'>4 個</td><td>15.1%<br><small>10.9%～18.0%</small></td><td>10.8%</td></tr>
+<tr><td class='l'>5 個以上</td><td>38.8%<br><small>32.4%～46.5%</small></td><td>14.4%</td></tr>
+</table></div><p class='note'>沒有值算「沒有」。每列平均有值的特徵數：飆股 13.2、一般 13.4（共 14 個）。</p>
+<h2>三、最常見的組合（前 10）</h2><div class='wrap'><table><tr><th class='l'>組合（剛好就是這幾個）</th><th>飆股（中位；p10～p90）</th><th>一般股-日</th><th>飆股÷一般</th></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋收盤÷MA5−1｜Q1＋5日報酬｜Q1</td><td>4.7%<br><small>1.6%～7.0%</small></td><td>2.5%</td><td>1.91</td></tr>
+<tr><td class='l'>原：股價級距｜＜20 元</td><td>3.7%<br><small>2.6%～5.6%</small></td><td>6.0%</td><td>0.62</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1</td><td>3.7%<br><small>1.2%～6.4%</small></td><td>4.5%</td><td>0.82</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋收盤÷MA5−1｜Q1＋5日報酬｜Q1＋原：股價級距｜＜20 元</td><td>3.3%<br><small>2.0%～4.6%</small></td><td>0.9%</td><td>3.58</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋原：股價級距｜＜20 元</td><td>2.7%<br><small>1.5%～4.0%</small></td><td>1.6%</td><td>1.66</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋收盤÷MA5−1｜Q1＋5日報酬｜Q1＋60日平均周轉率｜Q5＋融資使用率｜Q5</td><td>1.3%<br><small>0.0%～2.0%</small></td><td>0.4%</td><td>3.57</td></tr>
+<tr><td class='l'>原：均線多頭排列5&gt;20&gt;60&gt;100｜是</td><td>1.2%<br><small>0.3%～2.0%</small></td><td>3.8%</td><td>0.32</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋收盤÷MA5−1｜Q1</td><td>1.2%<br><small>0.0%～1.8%</small></td><td>0.9%</td><td>1.23</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋收盤÷MA5−1｜Q1＋5日報酬｜Q1＋融資使用率｜Q5</td><td>1.1%<br><small>0.0%～1.6%</small></td><td>0.3%</td><td>3.43</td></tr>
+<tr><td class='l'>距5日最低｜Q1＋距10日最低｜Q1＋收盤÷MA5−1｜Q1＋5日報酬｜Q1＋60日平均周轉率｜Q5</td><td>1.0%<br><small>0.0%～1.6%</small></td><td>0.3%</td><td>3.26</td></tr>
+</table></div><p class='note'>前 50 名見 combos_top50.csv。</p></main></body></html>
