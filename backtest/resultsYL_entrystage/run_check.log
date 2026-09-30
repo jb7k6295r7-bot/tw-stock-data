@@ -1,0 +1,3 @@
+[    59s] [T1 AND 資料尾] {"H60": {"xpos<0": 111, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 13, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 374, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 23, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1150, "補": 143, "triggered_or_cap": 0, "not_last": 1007, "not_cal_end": 0}}
+[    59s] [AND] /home/chemtim/tw-p17/backtest/resultsN17/sig_edc6f/and_signals.csv.gz｜2,339 筆／921 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[    59s] [查核] {'營量 v1': {'抽': 50, '不同': 0}, '營飆 v1': {'抽': 50, '不同': 0}}｜[]
