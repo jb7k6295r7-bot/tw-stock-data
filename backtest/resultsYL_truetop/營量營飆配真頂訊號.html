@@ -1,0 +1,118 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>營量營飆配真頂訊號</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left;white-space:normal}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:8px 12px;background:#eef4fb}.big{font-size:1.05rem}li{margin:.35em 0}.sel{position:sticky;top:0;background:#f6f6f4;padding:6px 0;z-index:2}.sel select{font-size:16px;margin:2px 4px;padding:4px}.pane{display:none}.pane.on{display:block}td.up{color:#b0261e;font-weight:600}td.dn{color:#1f6f3d;font-weight:600}</style></head><body><main>
+<h1>營量、營飆只配合「真頂出場訊號」（2017-03～2026-08）</h1>
+<p class='warn'>⚠ 只當參考，沒有計入檢定數。挑版本只看 2021～2023；2024～2026.08 只是對照。</p>
+<div class='ok big'><b>先講結論</b><ul class='big'><li><b>營量</b>：2021～2023 最好的是 <b>E1 到期前見真頂就賣</b>，年化 +30.1%（正式 +27.0%，多 3.1 點）；拿到 2024～2026.08 對照：+35.0% vs 正式 +45.6%；全部期間 +29.3%／回落 -36.3%，正式 +35.0%／-32.1%。</li><li><b>營飆</b>：2021～2023 最好的是 <b>E2 同 E1＋利多收黑</b>，年化 +41.7%（正式 +57.0%，少 13.6 點，贏 A 的種子 4%）；拿到 2024～2026.08 對照：+39.2% vs 正式 +42.0%（贏 A 的種子 42%）；全部期間 +34.9%／回落 -45.0%，正式 +37.8%／-40.5%。</li></ul></div>
+<p class='lead'>讀法寫死 2026-09-30 22:58（台北）。真頂訊號：<b>W2</b>＝再次進入處置或處置出關，且收盤在 20 日最高收盤 9 成以上；<b>利多收黑</b>＝營收或財報利多（年增最高兩成）公布當天收黑 5% 以上（只在 E2）。訊號當天收盤看到、隔天開盤整筆賣；只看進場當天以後的訊號。組合層照正式引擎重新模擬（同槽數、排序／抽籤、成本、停止交易強制出場）。查核：抽 50 筆逐日重算，0 筆不同；A 與正式 T1 版逐位元相同。</p>
+<h2>一、組合層</h2><div class='sel'>策略 <select id='s1' onchange='sw()'><option>營量 v1</option><option>營飆 v1</option></select></div>
+<div class='pane' id='p1營量'><div class='wrap'><table><tr><th class='l'>期間</th><th class='l'>出場</th><th>年化</th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>買進筆</th><th>平均持有<br><small>交易日</small></th></tr>
+<tr><td class='l'>全部</td><td class='l'>A 正式</td><td>+35.0%</td><td>-32.1%</td><td>—</td><td>717</td><td>59</td></tr>
+<tr><td class='l'></td><td class='l'>E1 到期前見真頂就賣</td><td>+29.3%</td><td>-36.3%</td><td class='dn'>-5.7 點</td><td>800</td><td>53</td></tr>
+<tr><td class='l'></td><td class='l'>E2 同 E1＋利多收黑</td><td>+33.0%</td><td>-35.1%</td><td class='dn'>-2.0 點</td><td>855</td><td>49</td></tr>
+<tr><td class='l'></td><td class='l'>E3 到期沒見真頂就續抱</td><td>+32.9%</td><td>-29.9%</td><td class='dn'>-2.1 點</td><td>185</td><td>244</td></tr>
+<tr><td class='l'></td><td class='l'>E4 到期前後都看（E1＋E3）</td><td>+27.1%</td><td>-30.2%</td><td class='dn'>-8.0 點</td><td>203</td><td>222</td></tr>
+<tr><td class='l'>2021-2023</td><td class='l'>A 正式</td><td>+27.0%</td><td>-30.7%</td><td>—</td><td>717</td><td>59</td></tr>
+<tr><td class='l'></td><td class='l'>E1 到期前見真頂就賣</td><td>+30.1%</td><td>-23.2%</td><td class='up'>+3.1 點</td><td>800</td><td>53</td></tr>
+<tr><td class='l'></td><td class='l'>E2 同 E1＋利多收黑</td><td>+29.9%</td><td>-23.6%</td><td class='up'>+2.9 點</td><td>855</td><td>49</td></tr>
+<tr><td class='l'></td><td class='l'>E3 到期沒見真頂就續抱</td><td>+20.7%</td><td>-22.4%</td><td class='dn'>-6.3 點</td><td>185</td><td>244</td></tr>
+<tr><td class='l'></td><td class='l'>E4 到期前後都看（E1＋E3）</td><td>+22.7%</td><td>-22.5%</td><td class='dn'>-4.3 點</td><td>203</td><td>222</td></tr>
+<tr><td class='l'>2024-2026.08</td><td class='l'>A 正式</td><td>+45.6%</td><td>-30.8%</td><td>—</td><td>717</td><td>59</td></tr>
+<tr><td class='l'></td><td class='l'>E1 到期前見真頂就賣</td><td>+35.0%</td><td>-36.3%</td><td class='dn'>-10.6 點</td><td>800</td><td>53</td></tr>
+<tr><td class='l'></td><td class='l'>E2 同 E1＋利多收黑</td><td>+52.2%</td><td>-35.1%</td><td class='up'>+6.6 點</td><td>855</td><td>49</td></tr>
+<tr><td class='l'></td><td class='l'>E3 到期沒見真頂就續抱</td><td>+54.0%</td><td>-24.7%</td><td class='up'>+8.4 點</td><td>185</td><td>244</td></tr>
+<tr><td class='l'></td><td class='l'>E4 到期前後都看（E1＋E3）</td><td>+38.2%</td><td>-29.0%</td><td class='dn'>-7.4 點</td><td>203</td><td>222</td></tr>
+</table></div><p class='note'>買進筆、平均持有只算主窗。營量依 relvol 排序、不抽籤。</p></div>
+<div class='pane' id='p1營飆'><div class='wrap'><table><tr><th class='l'>期間</th><th class='l'>出場</th><th>年化<br><small>中位（p10～p90）</small></th><th>最大回落<br><small>中位（p10～p90）</small></th><th>對 A<br><small>年化差</small></th><th>年化贏 A<br><small>種子比例</small></th><th>買進筆</th><th>平均持有<br><small>交易日</small></th></tr>
+<tr><td class='l'>全部</td><td class='l'>A 正式</td><td>+37.8%<br><small>+34.4%～+41.0%</small></td><td>-40.5%<br><small>-44.5%～-37.6%</small></td><td>—</td><td>—</td><td>173</td><td>115</td></tr>
+<tr><td class='l'></td><td class='l'>E1 到期前見真頂就賣</td><td>+36.5%<br><small>+33.3%～+41.2%</small></td><td>-42.6%<br><small>-46.3%～-38.5%</small></td><td class='dn'>-1.0 點</td><td>40%</td><td>207</td><td>97</td></tr>
+<tr><td class='l'></td><td class='l'>E2 同 E1＋利多收黑</td><td>+34.9%<br><small>+30.9%～+38.6%</small></td><td>-45.0%<br><small>-49.9%～-40.9%</small></td><td class='dn'>-2.9 點</td><td>22%</td><td>232</td><td>86</td></tr>
+<tr><td class='l'></td><td class='l'>E3 到期沒見真頂就續抱</td><td>+25.9%<br><small>+20.5%～+32.3%</small></td><td>-43.1%<br><small>-46.2%～-39.6%</small></td><td class='dn'>-11.6 點</td><td>2%</td><td>92</td><td>230</td></tr>
+<tr><td class='l'></td><td class='l'>E4 到期前後都看（E1＋E3）</td><td>+27.6%<br><small>+25.3%～+30.6%</small></td><td>-36.3%<br><small>-38.4%～-33.8%</small></td><td class='dn'>-10.2 點</td><td>0%</td><td>90</td><td>240</td></tr>
+<tr><td class='l'>2021-2023</td><td class='l'>A 正式</td><td>+57.0%<br><small>+47.8%～+60.2%</small></td><td>-27.7%<br><small>-29.9%～-26.7%</small></td><td>—</td><td>—</td><td>173</td><td>115</td></tr>
+<tr><td class='l'></td><td class='l'>E1 到期前見真頂就賣</td><td>+39.6%<br><small>+34.6%～+44.3%</small></td><td>-28.6%<br><small>-31.4%～-26.1%</small></td><td class='dn'>-16.7 點</td><td>0%</td><td>207</td><td>97</td></tr>
+<tr><td class='l'></td><td class='l'>E2 同 E1＋利多收黑</td><td>+41.7%<br><small>+34.4%～+50.5%</small></td><td>-29.9%<br><small>-32.9%～-27.2%</small></td><td class='dn'>-13.6 點</td><td>4%</td><td>232</td><td>86</td></tr>
+<tr><td class='l'></td><td class='l'>E3 到期沒見真頂就續抱</td><td>+18.6%<br><small>+11.0%～+33.5%</small></td><td>-22.8%<br><small>-26.8%～-18.8%</small></td><td class='dn'>-36.4 點</td><td>0%</td><td>92</td><td>230</td></tr>
+<tr><td class='l'></td><td class='l'>E4 到期前後都看（E1＋E3）</td><td>+21.3%<br><small>+17.5%～+25.4%</small></td><td>-20.5%<br><small>-22.7%～-17.8%</small></td><td class='dn'>-35.3 點</td><td>0%</td><td>90</td><td>240</td></tr>
+<tr><td class='l'>2024-2026.08</td><td class='l'>A 正式</td><td>+42.0%<br><small>+32.4%～+49.5%</small></td><td>-40.5%<br><small>-44.5%～-37.6%</small></td><td>—</td><td>—</td><td>173</td><td>115</td></tr>
+<tr><td class='l'></td><td class='l'>E1 到期前見真頂就賣</td><td>+50.7%<br><small>+39.9%～+64.8%</small></td><td>-42.6%<br><small>-46.3%～-38.5%</small></td><td class='up'>+9.4 點</td><td>82%</td><td>207</td><td>97</td></tr>
+<tr><td class='l'></td><td class='l'>E2 同 E1＋利多收黑</td><td>+39.2%<br><small>+30.0%～+48.4%</small></td><td>-45.0%<br><small>-49.9%～-40.9%</small></td><td class='dn'>-1.9 點</td><td>42%</td><td>232</td><td>86</td></tr>
+<tr><td class='l'></td><td class='l'>E3 到期沒見真頂就續抱</td><td>+38.4%<br><small>+29.3%～+50.7%</small></td><td>-38.4%<br><small>-43.0%～-35.2%</small></td><td class='dn'>-1.6 點</td><td>44%</td><td>92</td><td>230</td></tr>
+<tr><td class='l'></td><td class='l'>E4 到期前後都看（E1＋E3）</td><td>+36.4%<br><small>+31.2%～+44.6%</small></td><td>-35.8%<br><small>-38.4%～-33.3%</small></td><td class='dn'>-4.1 點</td><td>32%</td><td>90</td><td>240</td></tr>
+</table></div><p class='note'>買進筆、平均持有只算主窗。營飆抽籤 200 顆種子；對 A 差是同一顆種子相減取中位。</p></div>
+<h2>二、逐筆（同一批進場：A 實際買進的交易）</h2><div class='sel'>策略 <select id='s2' onchange='sw()'><option>營量 v1</option><option>營飆 v1</option></select>期間 <select id='s3' onchange='sw()'><option>全部</option><option>2021-2023</option><option>2024-2026.08</option></select></div>
+<div class='pane' id='p2營量_全部'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>每持有一天</th><th>對 A 差<br><small>平均</small></th><th>比 A 好／差</th></tr>
+<tr><td class='l'>A 正式</td><td>717</td><td>+9.47%</td><td>+0.49%</td><td>51%</td><td>60</td><td>+0.16%</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>E1 到期前見真頂就賣</td><td>717</td><td>+8.27%</td><td>+1.35%</td><td>53%</td><td>55</td><td>+0.15%</td><td>-1.2 點</td><td>6%／6%</td></tr>
+<tr><td class='l'>E2 同 E1＋利多收黑</td><td>717</td><td>+8.24%</td><td>+1.65%</td><td>54%</td><td>51</td><td>+0.16%</td><td>-1.2 點</td><td>11%／10%</td></tr>
+<tr><td class='l'>E3 到期沒見真頂就續抱</td><td>717</td><td>+21.73%</td><td>-1.67%</td><td>49%</td><td>219</td><td>+0.10%</td><td>+12.3 點</td><td>30%／48%</td></tr>
+<tr><td class='l'>E4 到期前後都看（E1＋E3）</td><td>717</td><td>+20.54%</td><td>+0.98%</td><td>50%</td><td>214</td><td>+0.10%</td><td>+11.1 點</td><td>37%／54%</td></tr>
+</table></div>
+<p class='note'>觸發：到期前出現 W2 12%（加利多收黑 22%）；到期時續抱（E3）78%，其中之後見 W2 結束 5%、回落 30% 結束 68%、到資料尾還沒賣 5%（占全部筆數）；續抱的筆平均多抱 203 個交易日。</p>
+</div>
+<div class='pane' id='p2營量_2021-2023'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>每持有一天</th><th>對 A 差<br><small>平均</small></th><th>比 A 好／差</th></tr>
+<tr><td class='l'>A 正式</td><td>225</td><td>+7.03%</td><td>+0.29%</td><td>51%</td><td>60</td><td>+0.12%</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>E1 到期前見真頂就賣</td><td>225</td><td>+7.84%</td><td>+2.11%</td><td>54%</td><td>55</td><td>+0.14%</td><td>+0.8 點</td><td>8%／4%</td></tr>
+<tr><td class='l'>E2 同 E1＋利多收黑</td><td>225</td><td>+8.07%</td><td>+2.29%</td><td>55%</td><td>52</td><td>+0.16%</td><td>+1.0 點</td><td>13%／8%</td></tr>
+<tr><td class='l'>E3 到期沒見真頂就續抱</td><td>225</td><td>+18.48%</td><td>-3.19%</td><td>48%</td><td>232</td><td>+0.08%</td><td>+11.5 點</td><td>32%／45%</td></tr>
+<tr><td class='l'>E4 到期前後都看（E1＋E3）</td><td>225</td><td>+19.30%</td><td>+2.55%</td><td>52%</td><td>228</td><td>+0.08%</td><td>+12.3 點</td><td>40%／49%</td></tr>
+</table></div>
+<p class='note'>觸發：到期前出現 W2 12%（加利多收黑 22%）；到期時續抱（E3）77%，其中之後見 W2 結束 4%、回落 30% 結束 68%、到資料尾還沒賣 4%（占全部筆數）；續抱的筆平均多抱 224 個交易日。</p>
+</div>
+<div class='pane' id='p2營量_2024-2026.08'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>每持有一天</th><th>對 A 差<br><small>平均</small></th><th>比 A 好／差</th></tr>
+<tr><td class='l'>A 正式</td><td>205</td><td>+12.03%</td><td>-0.58%</td><td>49%</td><td>59</td><td>+0.21%</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>E1 到期前見真頂就賣</td><td>205</td><td>+9.45%</td><td>+0.67%</td><td>50%</td><td>53</td><td>+0.18%</td><td>-2.6 點</td><td>6%／8%</td></tr>
+<tr><td class='l'>E2 同 E1＋利多收黑</td><td>205</td><td>+9.46%</td><td>+1.65%</td><td>52%</td><td>48</td><td>+0.20%</td><td>-2.6 點</td><td>12%／15%</td></tr>
+<tr><td class='l'>E3 到期沒見真頂就續抱</td><td>205</td><td>+30.50%</td><td>-1.34%</td><td>48%</td><td>127</td><td>+0.24%</td><td>+18.5 點</td><td>27%／45%</td></tr>
+<tr><td class='l'>E4 到期前後都看（E1＋E3）</td><td>205</td><td>+27.92%</td><td>-0.53%</td><td>49%</td><td>122</td><td>+0.23%</td><td>+15.9 點</td><td>33%／53%</td></tr>
+</table></div>
+<p class='note'>觸發：到期前出現 W2 14%（加利多收黑 26%）；到期時續抱（E3）72%，其中之後見 W2 結束 8%、回落 30% 結束 53%、到資料尾還沒賣 11%（占全部筆數）；續抱的筆平均多抱 96 個交易日。</p>
+</div>
+<div class='pane' id='p2營飆_全部'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>每持有一天</th><th>對 A 差<br><small>平均</small></th><th>比 A 好／差</th></tr>
+<tr><td class='l'>A 正式</td><td>34,600</td><td>+23.13%</td><td>+4.82%</td><td>56%</td><td>116</td><td>+0.20%</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>E1 到期前見真頂就賣</td><td>34,600</td><td>+21.69%</td><td>+9.40%</td><td>62%</td><td>95</td><td>+0.23%</td><td>-1.4 點</td><td>12%／10%</td></tr>
+<tr><td class='l'>E2 同 E1＋利多收黑</td><td>34,600</td><td>+19.30%</td><td>+8.59%</td><td>63%</td><td>83</td><td>+0.23%</td><td>-3.8 點</td><td>20%／19%</td></tr>
+<tr><td class='l'>E3 到期沒見真頂就續抱</td><td>34,600</td><td>+39.58%</td><td>+5.50%</td><td>55%</td><td>247</td><td>+0.16%</td><td>+16.5 點</td><td>23%／37%</td></tr>
+<tr><td class='l'>E4 到期前後都看（E1＋E3）</td><td>34,600</td><td>+38.14%</td><td>+11.14%</td><td>61%</td><td>227</td><td>+0.17%</td><td>+15.0 點</td><td>35%／47%</td></tr>
+</table></div>
+<p class='note'>觸發：到期前出現 W2 22%（加利多收黑 39%）；到期時續抱（E3）60%，其中之後見 W2 結束 3%、回落 30% 結束 52%、到資料尾還沒賣 4%（占全部筆數）；續抱的筆平均多抱 219 個交易日。</p>
+</div>
+<div class='pane' id='p2營飆_2021-2023'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>每持有一天</th><th>對 A 差<br><small>平均</small></th><th>比 A 好／差</th></tr>
+<tr><td class='l'>A 正式</td><td>8,000</td><td>+31.45%</td><td>+17.04%</td><td>63%</td><td>120</td><td>+0.26%</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>E1 到期前見真頂就賣</td><td>8,000</td><td>+27.33%</td><td>+16.69%</td><td>67%</td><td>97</td><td>+0.28%</td><td>-4.1 點</td><td>9%／15%</td></tr>
+<tr><td class='l'>E2 同 E1＋利多收黑</td><td>8,000</td><td>+25.12%</td><td>+16.31%</td><td>70%</td><td>86</td><td>+0.29%</td><td>-6.3 點</td><td>15%／25%</td></tr>
+<tr><td class='l'>E3 到期沒見真頂就續抱</td><td>8,000</td><td>+30.34%</td><td>+17.04%</td><td>58%</td><td>195</td><td>+0.16%</td><td>-1.1 點</td><td>13%／49%</td></tr>
+<tr><td class='l'>E4 到期前後都看（E1＋E3）</td><td>8,000</td><td>+26.22%</td><td>+16.69%</td><td>62%</td><td>172</td><td>+0.15%</td><td>-5.2 點</td><td>23%／64%</td></tr>
+</table></div>
+<p class='note'>觸發：到期前出現 W2 24%（加利多收黑 40%）；到期時續抱（E3）62%，其中之後見 W2 結束 2%、回落 30% 結束 60%、到資料尾還沒賣 0%（占全部筆數）；續抱的筆平均多抱 120 個交易日。</p>
+</div>
+<div class='pane' id='p2營飆_2024-2026.08'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>每持有一天</th><th>對 A 差<br><small>平均</small></th><th>比 A 好／差</th></tr>
+<tr><td class='l'>A 正式</td><td>11,200</td><td>+23.77%</td><td>+1.64%</td><td>53%</td><td>107</td><td>+0.22%</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>E1 到期前見真頂就賣</td><td>11,200</td><td>+20.48%</td><td>+6.99%</td><td>58%</td><td>79</td><td>+0.26%</td><td>-3.3 點</td><td>16%／17%</td></tr>
+<tr><td class='l'>E2 同 E1＋利多收黑</td><td>11,200</td><td>+14.72%</td><td>+5.33%</td><td>57%</td><td>64</td><td>+0.23%</td><td>-9.0 點</td><td>29%／25%</td></tr>
+<tr><td class='l'>E3 到期沒見真頂就續抱</td><td>11,200</td><td>+41.50%</td><td>+1.06%</td><td>53%</td><td>150</td><td>+0.28%</td><td>+17.7 點</td><td>14%／26%</td></tr>
+<tr><td class='l'>E4 到期前後都看（E1＋E3）</td><td>11,200</td><td>+38.21%</td><td>+5.12%</td><td>58%</td><td>122</td><td>+0.31%</td><td>+14.4 點</td><td>30%／43%</td></tr>
+</table></div>
+<p class='note'>觸發：到期前出現 W2 33%（加利多收黑 54%）；到期時續抱（E3）40%，其中之後見 W2 結束 4%、回落 30% 結束 28%、到資料尾還沒賣 8%（占全部筆數）；續抱的筆平均多抱 107 個交易日。</p>
+</div>
+<h2>名詞與做法</h2><ul class='note'><li>A 正式：營量第 60 個交易日收盤賣（20 槽、依 relvol 挑）；營飆第 120 個交易日收盤賣（10 槽、抽籤）。</li><li>E1：到期前出現 W2 ⇒ 隔天開盤全部賣；沒出現就照正式到期賣。E2：E1 再加利多收黑。</li><li>E3：到期前不看訊號；到期當天若進場以來沒出現過 W2、而且收盤還在進場後最高收盤 7 成以上 ⇒ 續抱，直到出現 W2 或從最高回落 30%（隔天開盤賣）。E4：E1＋E3。</li><li>資料最後一天（2026-09-24）還沒賣的，以那天收盤計值。每筆扣來回成本 0.585%。</li><li>和上一份（配飆股流程）不同：這裡不分批、沒有 W1 賣 3 成，也沒有 40 天沒新高。</li></ul>
+<script>function sw(){var a=document.getElementById('s1').value.slice(0,2),b=document.getElementById('s2').value.slice(0,2),c=document.getElementById('s3').value;document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id=='p1'+a||x.id=='p2'+b+'_'+c))}sw()</script></main></body></html>

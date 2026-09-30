@@ -1,0 +1,144 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>低檔發動搭配營量營飆</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left;white-space:normal}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:8px 12px;background:#eef4fb}.big{font-size:1.05rem}li{margin:.35em 0}.sel{position:sticky;top:0;background:#f6f6f4;padding:6px 0;z-index:2}.sel select{font-size:16px;margin:2px 4px;padding:4px}.pane{display:none}.pane.on{display:block}td.up{color:#b0261e;font-weight:600}td.dn{color:#1f6f3d;font-weight:600}</style></head><body><main>
+<h1>營量、營飆搭配「低檔發動」，期望值會變高嗎？（2017-03～2026-08）</h1>
+<p class='warn'>⚠ 只當參考，沒有計入檢定數。低檔發動的 logit 分數是用 2021–2023 的結果訓練的，2021–2023 那段是樣本內（會偏好看）；要挑版本也只用 2021–2023，2024–2026 照報。</p>
+<h2>先講結論</h2><div class='ok big'><ul class='big'><li><b>營量</b>（正式全部期間 +35.0%）：只買低檔發動（≤0.4）+32.0%、低檔優先 +33.6%、logit 分數優先 +34.7%。只看 2021–2023 挑，最好的是「F1 只買低檔發動（位置 ≤0.6）」+33.2%（正式 +27.0%），到 2024–2026.08 +41.2%（正式 +45.6%）。資金混合 20%／40% 全部期間 +33.3%／+31.2%，回落 -29.7%／-28.7%（正式 -32.1%）；2021–2023 最好的比例是 0%。逐筆：起漲點在低檔的交易平均 +11.8%、勝率 53%，其他 +4.4%、48%。</li><li><b>營飆</b>（正式全部期間 +37.8%）：只買低檔發動（≤0.4）+24.2%、低檔優先 +37.7%、logit 分數優先 +36.6%。只看 2021–2023 挑，最好的是「F1 只買低檔發動（位置 ≤0.6）」+58.5%（正式 +57.0%，贏 A 的種子 75%），到 2024–2026.08 +40.8%（正式 +42.0%）。資金混合 20%／40% 全部期間 +35.6%／+33.0%，回落 -36.7%／-34.3%（正式 -40.5%）；2021–2023 最好的比例是 0%。逐筆：起漲點在低檔的交易平均 +27.9%、勝率 57%，其他 +15.0%、55%。</li></ul><p>低檔 logit 策略單獨做：全部期間年化 +23.5%、回落 -33.0%，比營量、營飆正式都低 ⇒ 混進去主要是拉低年化、換一點回落。</p></div>
+<p class='lead'>讀法寫死 2026-09-30 21:53（台北）。低檔發動 ＝ 前 60 天內的最低點位在一年區間下方 40% 以內、今天比那個低點漲了 5%～30%。搭配一「過濾／排序」：看營量、營飆每筆的本輪起漲點（進場前一天就找好）當時是不是在一年區間的低檔；出場照正式 60／120 天。搭配二「資金混合」：另開一個低檔發動 logit 分數前 5% 的策略（10 槽、飆股流程出場），和正式策略按比例每天再平衡合併（近似，不計再平衡成本）。查核：通過；A 與正式 T1 版逐位元相同。</p>
+<h2>一、過濾／排序（出場照正式）</h2><div class='sel'>策略 <select id='s1' onchange='sw()'><option>營量 v1</option><option>營飆 v1</option></select>期間 <select id='s2' onchange='sw()'><option>全部</option><option>2021-2023</option><option>2024-2026.08</option></select></div>
+<div class='pane' id='p1營量_全部'><div class='wrap'><table><tr><th class='l'>版本</th><th>年化</th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>買進筆</th></tr>
+<tr><td class='l'>A 正式</td><td>+35.0%</td><td>-32.1%</td><td>—</td><td>717</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.4）</td><td>+32.0%</td><td>-39.5%</td><td class='dn'>-3.1 點</td><td>642</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.4）</td><td>+17.3%</td><td>-32.1%</td><td class='dn'>-17.7 點</td><td>417</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.4）</td><td>+33.6%</td><td>-35.5%</td><td class='dn'>-1.4 點</td><td>718</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.2）</td><td>+23.5%</td><td>-30.2%</td><td class='dn'>-11.5 點</td><td>544</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.2）</td><td>+26.3%</td><td>-36.2%</td><td class='dn'>-8.7 點</td><td>563</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.2）</td><td>+34.3%</td><td>-33.5%</td><td class='dn'>-0.7 點</td><td>718</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.6）</td><td>+36.0%</td><td>-33.5%</td><td class='up'>+0.9 點</td><td>700</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.6）</td><td>+4.9%</td><td>-24.4%</td><td class='dn'>-30.1 點</td><td>240</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.6）</td><td>+35.3%</td><td>-32.1%</td><td class='up'>+0.3 點</td><td>717</td></tr>
+<tr><td class='l'>F4 logit 分數優先</td><td>+34.7%</td><td>-33.7%</td><td class='dn'>-0.3 點</td><td>718</td></tr>
+</table></div>
+<p class='note'>逐筆（A 的實際交易、扣成本；營飆為 200 顆合併）：起漲點在低檔（位置 ≤0.4）的占 69%，平均 +11.8%、中位 +1.2%、勝率 53%；其他 平均 +4.4%、中位 -1.0%、勝率 48%。</p>
+</div>
+<div class='pane' id='p1營量_2021-2023'><div class='wrap'><table><tr><th class='l'>版本</th><th>年化</th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>買進筆</th></tr>
+<tr><td class='l'>A 正式</td><td>+27.0%</td><td>-30.7%</td><td>—</td><td>717</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.4）</td><td>+23.7%</td><td>-27.0%</td><td class='dn'>-3.3 點</td><td>642</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.4）</td><td>+22.1%</td><td>-24.4%</td><td class='dn'>-4.8 點</td><td>417</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.4）</td><td>+25.4%</td><td>-29.7%</td><td class='dn'>-1.5 點</td><td>718</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.2）</td><td>+15.9%</td><td>-26.2%</td><td class='dn'>-11.0 點</td><td>544</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.2）</td><td>+30.4%</td><td>-26.2%</td><td class='up'>+3.4 點</td><td>563</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.2）</td><td>+27.1%</td><td>-29.8%</td><td class='up'>+0.2 點</td><td>718</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.6）</td><td>+33.2%</td><td>-26.0%</td><td class='up'>+6.2 點</td><td>700</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.6）</td><td>-1.7%</td><td>-18.6%</td><td class='dn'>-28.6 點</td><td>240</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.6）</td><td>+28.4%</td><td>-29.9%</td><td class='up'>+1.4 點</td><td>717</td></tr>
+<tr><td class='l'>F4 logit 分數優先</td><td>+25.3%</td><td>-29.7%</td><td class='dn'>-1.6 點</td><td>718</td></tr>
+</table></div>
+<p class='note'>逐筆（A 的實際交易、扣成本；營飆為 200 顆合併）：起漲點在低檔（位置 ≤0.4）的占 68%，平均 +8.3%、中位 +0.9%、勝率 52%；其他 平均 +4.3%、中位 -0.2%、勝率 49%。</p>
+</div>
+<div class='pane' id='p1營量_2024-2026.08'><div class='wrap'><table><tr><th class='l'>版本</th><th>年化</th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>買進筆</th></tr>
+<tr><td class='l'>A 正式</td><td>+45.6%</td><td>-30.8%</td><td>—</td><td>717</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.4）</td><td>+36.0%</td><td>-39.5%</td><td class='dn'>-9.5 點</td><td>642</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.4）</td><td>+17.2%</td><td>-32.1%</td><td class='dn'>-28.4 點</td><td>417</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.4）</td><td>+41.1%</td><td>-35.5%</td><td class='dn'>-4.5 點</td><td>718</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.2）</td><td>+33.1%</td><td>-30.2%</td><td class='dn'>-12.4 點</td><td>544</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.2）</td><td>+30.7%</td><td>-36.2%</td><td class='dn'>-14.9 點</td><td>563</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.2）</td><td>+42.7%</td><td>-33.5%</td><td class='dn'>-2.9 點</td><td>718</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.6）</td><td>+41.2%</td><td>-33.5%</td><td class='dn'>-4.4 點</td><td>700</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.6）</td><td>+5.8%</td><td>-24.4%</td><td class='dn'>-39.7 點</td><td>240</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.6）</td><td>+44.1%</td><td>-31.8%</td><td class='dn'>-1.4 點</td><td>717</td></tr>
+<tr><td class='l'>F4 logit 分數優先</td><td>+47.1%</td><td>-33.7%</td><td class='up'>+1.5 點</td><td>718</td></tr>
+</table></div>
+<p class='note'>逐筆（A 的實際交易、扣成本；營飆為 200 顆合併）：起漲點在低檔（位置 ≤0.4）的占 71%，平均 +14.6%、中位 -0.6%、勝率 49%；其他 平均 +5.7%、中位 -0.5%、勝率 50%。</p>
+</div>
+<div class='pane' id='p1營飆_全部'><div class='wrap'><table><tr><th class='l'>版本</th><th>年化<br><small>中位（p10～p90）</small></th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>年化贏 A<br><small>種子比例</small></th><th>買進筆</th></tr>
+<tr><td class='l'>A 正式</td><td>+37.8%<br><small>+34.4%～+41.0%</small></td><td>-40.5%</td><td>—</td><td>—</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.4）</td><td>+24.2%<br><small>+22.0%～+25.9%</small></td><td>-46.4%</td><td class='dn'>-13.4 點</td><td>0%</td><td>166</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.4）</td><td>+21.1%<br><small>+19.4%～+23.2%</small></td><td>-45.6%</td><td class='dn'>-16.8 點</td><td>0%</td><td>149</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.4）</td><td>+37.7%<br><small>+34.9%～+40.0%</small></td><td>-39.5%</td><td class='up'>+0.1 點</td><td>50%</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.2）</td><td>+23.3%<br><small>+21.4%～+24.9%</small></td><td>-47.9%</td><td class='dn'>-14.4 點</td><td>0%</td><td>164</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.2）</td><td>+26.4%<br><small>+24.0%～+28.7%</small></td><td>-42.1%</td><td class='dn'>-11.3 點</td><td>0%</td><td>165</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.2）</td><td>+37.9%<br><small>+35.1%～+39.8%</small></td><td>-40.0%</td><td class='dn'>-0.1 點</td><td>50%</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.6）</td><td>+37.0%<br><small>+34.6%～+39.9%</small></td><td>-41.9%</td><td class='dn'>-1.0 點</td><td>40%</td><td>173</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.6）</td><td>+5.9%<br><small>+5.7%～+6.2%</small></td><td>-45.4%</td><td class='dn'>-31.9 點</td><td>0%</td><td>106</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.6）</td><td>+38.7%<br><small>+35.8%～+41.8%</small></td><td>-40.8%</td><td class='up'>+0.9 點</td><td>66%</td><td>173</td></tr>
+<tr><td class='l'>F4 logit 分數優先</td><td>+36.6%<br><small>+33.9%～+36.9%</small></td><td>-37.7%</td><td class='dn'>-1.8 點</td><td>24%</td><td>173</td></tr>
+</table></div>
+<p class='note'>逐筆（A 的實際交易、扣成本；營飆為 200 顆合併）：起漲點在低檔（位置 ≤0.4）的占 63%，平均 +27.9%、中位 +5.7%、勝率 57%；其他 平均 +15.0%、中位 +4.8%、勝率 55%。</p>
+</div>
+<div class='pane' id='p1營飆_2021-2023'><div class='wrap'><table><tr><th class='l'>版本</th><th>年化<br><small>中位（p10～p90）</small></th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>年化贏 A<br><small>種子比例</small></th><th>買進筆</th></tr>
+<tr><td class='l'>A 正式</td><td>+57.0%<br><small>+47.8%～+60.2%</small></td><td>-27.7%</td><td>—</td><td>—</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.4）</td><td>+31.0%<br><small>+27.9%～+33.6%</small></td><td>-28.3%</td><td class='dn'>-25.7 點</td><td>0%</td><td>166</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.4）</td><td>+29.8%<br><small>+27.1%～+36.7%</small></td><td>-26.8%</td><td class='dn'>-22.8 點</td><td>0%</td><td>149</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.4）</td><td>+55.8%<br><small>+46.4%～+59.1%</small></td><td>-27.8%</td><td class='dn'>-0.7 點</td><td>22%</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.2）</td><td>+29.7%<br><small>+26.2%～+33.0%</small></td><td>-30.7%</td><td class='dn'>-27.0 點</td><td>0%</td><td>164</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.2）</td><td>+33.1%<br><small>+27.1%～+39.7%</small></td><td>-23.6%</td><td class='dn'>-22.9 點</td><td>0%</td><td>165</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.2）</td><td>+56.0%<br><small>+47.1%～+59.3%</small></td><td>-28.0%</td><td class='dn'>-0.8 點</td><td>16%</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.6）</td><td>+58.5%<br><small>+55.7%～+61.5%</small></td><td>-27.9%</td><td class='up'>+1.8 點</td><td>75%</td><td>173</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.6）</td><td>+8.3%<br><small>+8.3%～+8.3%</small></td><td>-21.5%</td><td class='dn'>-48.6 點</td><td>0%</td><td>106</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.6）</td><td>+56.7%<br><small>+53.5%～+59.3%</small></td><td>-27.9%</td><td class='dn'>-0.5 點</td><td>32%</td><td>173</td></tr>
+<tr><td class='l'>F4 logit 分數優先</td><td>+51.9%<br><small>+43.3%～+52.7%</small></td><td>-28.1%</td><td class='dn'>-5.7 點</td><td>0%</td><td>173</td></tr>
+</table></div>
+<p class='note'>逐筆（A 的實際交易、扣成本；營飆為 200 顆合併）：起漲點在低檔（位置 ≤0.4）的占 50%，平均 +23.8%、中位 +15.2%、勝率 58%；其他 平均 +39.1%、中位 +17.0%、勝率 67%。</p>
+</div>
+<div class='pane' id='p1營飆_2024-2026.08'><div class='wrap'><table><tr><th class='l'>版本</th><th>年化<br><small>中位（p10～p90）</small></th><th>最大回落</th><th>對 A<br><small>年化差</small></th><th>年化贏 A<br><small>種子比例</small></th><th>買進筆</th></tr>
+<tr><td class='l'>A 正式</td><td>+42.0%<br><small>+32.4%～+49.5%</small></td><td>-40.5%</td><td>—</td><td>—</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.4）</td><td>+25.6%<br><small>+20.1%～+31.1%</small></td><td>-40.3%</td><td class='dn'>-15.7 點</td><td>4%</td><td>166</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.4）</td><td>+15.4%<br><small>+11.4%～+19.2%</small></td><td>-45.6%</td><td class='dn'>-26.0 點</td><td>0%</td><td>149</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.4）</td><td>+42.3%<br><small>+35.8%～+48.4%</small></td><td>-39.5%</td><td class='up'>+0.6 點</td><td>55%</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.2）</td><td>+22.3%<br><small>+18.9%～+26.8%</small></td><td>-47.9%</td><td class='dn'>-18.6 點</td><td>0%</td><td>164</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.2）</td><td>+36.9%<br><small>+32.7%～+41.4%</small></td><td>-42.1%</td><td class='dn'>-5.0 點</td><td>27%</td><td>165</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.2）</td><td>+42.2%<br><small>+37.6%～+47.5%</small></td><td>-40.0%</td><td class='up'>+0.6 點</td><td>55%</td><td>173</td></tr>
+<tr><td class='l'>F1 只買低檔發動（位置 ≤0.6）</td><td>+40.8%<br><small>+31.8%～+48.3%</small></td><td>-40.2%</td><td class='dn'>-0.6 點</td><td>48%</td><td>173</td></tr>
+<tr><td class='l'>F2 排除低檔發動（位置 ≤0.6）</td><td>+5.8%<br><small>+5.4%～+6.4%</small></td><td>-35.7%</td><td class='dn'>-36.1 點</td><td>0%</td><td>106</td></tr>
+<tr><td class='l'>F3 低檔發動優先（位置 ≤0.6）</td><td>+41.5%<br><small>+32.7%～+50.0%</small></td><td>-40.8%</td><td class='up'>+0.2 點</td><td>52%</td><td>173</td></tr>
+<tr><td class='l'>F4 logit 分數優先</td><td>+42.6%<br><small>+41.3%～+43.1%</small></td><td>-35.8%</td><td class='up'>+0.6 點</td><td>55%</td><td>173</td></tr>
+</table></div>
+<p class='note'>逐筆（A 的實際交易、扣成本；營飆為 200 顆合併）：起漲點在低檔（位置 ≤0.4）的占 64%，平均 +38.0%、中位 +8.3%、勝率 62%；其他 平均 -1.6%、中位 -8.1%、勝率 37%。</p>
+</div>
+<h2>二、資金混合（正式 ＋ 低檔 logit 策略）</h2><div class='wrap'><table><tr><th class='l'>策略</th><th class='l'>期間</th><th>低檔比例</th><th>年化</th><th>最大回落</th><th>對只做正式<br><small>年化差</small></th></tr>
+<tr><td class='l'>營量 v1</td><td class='l'>全部</td><td>0%</td><td>+35.0%</td><td>-32.1%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>20%</td><td>+33.3%</td><td>-29.7%</td><td>-1.8 點</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>40%</td><td>+31.2%</td><td>-28.7%</td><td>-3.8 點</td></tr>
+<tr><td class='l'></td><td class='l'>2021-2023</td><td>0%</td><td>+27.0%</td><td>-30.7%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>20%</td><td>+26.8%</td><td>-25.4%</td><td>-0.1 點</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>40%</td><td>+26.4%</td><td>-20.4%</td><td>-0.6 點</td></tr>
+<tr><td class='l'></td><td class='l'>2024-2026.08</td><td>0%</td><td>+45.6%</td><td>-30.8%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>20%</td><td>+42.1%</td><td>-29.7%</td><td>-3.4 點</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>40%</td><td>+38.4%</td><td>-28.7%</td><td>-7.1 點</td></tr>
+<tr><td class='l'>營飆 v1</td><td class='l'>全部</td><td>0%</td><td>+37.8%<br><small>+34.4%～+41.0%</small></td><td>-40.5%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>20%</td><td>+35.6%<br><small>+32.8%～+38.1%</small></td><td>-36.7%</td><td>-2.2 點</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>40%</td><td>+33.0%<br><small>+31.0%～+34.8%</small></td><td>-34.3%</td><td>-4.8 點</td></tr>
+<tr><td class='l'></td><td class='l'>2021-2023</td><td>0%</td><td>+57.0%<br><small>+47.8%～+60.2%</small></td><td>-27.7%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>20%</td><td>+50.4%<br><small>+43.4%～+53.0%</small></td><td>-25.2%</td><td>-6.5 點</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>40%</td><td>+43.7%<br><small>+38.7%～+45.6%</small></td><td>-22.7%</td><td>-13.2 點</td></tr>
+<tr><td class='l'></td><td class='l'>2024-2026.08</td><td>0%</td><td>+42.0%<br><small>+32.4%～+49.5%</small></td><td>-40.5%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>20%</td><td>+39.5%<br><small>+32.0%～+45.5%</small></td><td>-36.7%</td><td>-2.4 點</td></tr>
+<tr><td class='l'></td><td class='l'></td><td>40%</td><td>+36.6%<br><small>+31.1%～+41.0%</small></td><td>-34.3%</td><td>-5.3 點</td></tr>
+<tr><td class='l'>低檔 logit 策略（單獨）</td><td class='l'>全部</td><td>100%</td><td>+23.5%</td><td>-33.0%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'>2021-2023</td><td>100%</td><td>+23.1%</td><td>-16.9%</td><td>—</td></tr>
+<tr><td class='l'></td><td class='l'>2024-2026.08</td><td>100%</td><td>+25.6%</td><td>-33.0%</td><td>—</td></tr>
+</table></div>
+<p class='note'>低檔 logit 策略單獨：主窗買進 613 筆，每筆平均 +4.0%、中位 -0.9%、勝率 41%、平均持有 29 個交易日；平均持股 10.0 檔（10 槽）。分數門檻 ＝ 2021–2023 低檔發動母體日分數的前 5%（-2.731）。</p>
+<h2>只用 2021–2023 挑，2024–2026 怎樣</h2><ul class='note'><li>營量 v1：過濾／排序在 2021–2023 最好的是「F1 只買低檔發動（位置 ≤0.6）」（+33.2%，正式 +27.0%），到 2024–2026 +41.2%（正式 +45.6%）；混合比例在 2021–2023 最好的是 0%，到 2024–2026 +45.6%。</li><li>營飆 v1：過濾／排序在 2021–2023 最好的是「F1 只買低檔發動（位置 ≤0.6）」（+58.5%，正式 +57.0%），到 2024–2026 +40.8%（正式 +42.0%）；混合比例在 2021–2023 最好的是 0%，到 2024–2026 +42.0%。</li></ul>
+<h2>名詞與做法</h2><ul class='note'><li>位置 ＝（收盤 − 一年最低）÷（一年最高 − 一年最低），一年 ＝ 最近 250 根 K 棒；≤0.4 ＝ 在一年區間下方 40%。另報 ≤0.2、≤0.6。</li><li>起漲點 ＝ 進場前 250 天內最高收盤之前的最低收盤（同買賣流程），只用進場前一天以前的資料。</li><li>F3、F4 只改「候選多於空槽時先買誰」，不改買不買；營量原本依 relvol 排、營飆原本抽籤。L 分數 ＝ 起漲點到進場前一天之間，低檔發動日的 logit 分數最大值。</li><li>資金混合是近似：兩個策略各自照自己的槽位跑，合併時每天把資金比例拉回固定值（不計這個再平衡的成本）。</li></ul>
+<script>function sw(){var a=document.getElementById('s1').value.slice(0,2),b=document.getElementById('s2').value;document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id=='p1'+a+'_'+b))}sw()</script></main></body></html>
