@@ -1061,6 +1061,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## mops_news　✓ 正常
+
+最後執行：2026-09-30T17:28:29+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36668446057
+
+- **區間**：1999-01-01 ~ 2026-09-29｜待問 7501 天（已問過 2640）
+- **本趟**：問 2603 天｜ok 2502｜empty 91｜失敗 10｜新增 346914 則｜剩 4898 天｜300 分
+- **失敗的（前 10）**：[('2008-08-02', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2008-08-11', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-06-29', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-07-13', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-07-14', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-09-07', 'TimeoutError: The read operation timed out'), ('2012-11-16', 'TimeoutError: The read operation timed out'), ('2013-04-25', 'HTTPError: HTTP Error 404: '), ('2013-04-26', 'HTTPError: HTTP Error 502: Bad Gateway'), ('2013-04-27', 'HTTPError: HTTP Error 502: Bad Gateway')]
+
+檢查：
+- ok　失敗 ≤ 本趟 2%　（10／2603）
+
 ## filing_dates　✗ 有問題
 
 最後執行：2026-09-30T12:07:42+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36642883554
@@ -1075,17 +1086,6 @@
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 1 次）
 - **✗**　失敗 ≤ 本趟 2%　（13／507）
-
-## mops_news　✓ 正常
-
-最後執行：2026-09-30T12:06:46+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36642880459
-
-- **區間**：1999-01-01 ~ 2026-09-29｜待問 10134 天（已問過 0）
-- **本趟**：問 2640 天｜ok 2467｜empty 166｜失敗 7｜新增 320125 則｜剩 7494 天｜300 分
-- **失敗的（前 10）**：[('2000-07-27', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2000-08-01', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2002-09-28', 'TimeoutError: The read operation timed out'), ('2003-06-13', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2003-06-26', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2004-04-04', 'TimeoutError: The read operation timed out'), ('2006-03-10', 'URLError: <urlopen error [Errno 104] Connection reset by peer>')]
-
-檢查：
-- ok　失敗 ≤ 本趟 2%　（7／2640）
 
 ## early:feed:otcmargin　✓ 正常
 
