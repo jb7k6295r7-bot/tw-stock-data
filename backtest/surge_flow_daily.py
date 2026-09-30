@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 """買賣流程追蹤（使用者買進才加）——回測線，給每日名單（daily_list.py）用；每天從買進日重播、不存中間狀態。
 
+⭐ 錨點（使用者 2026-09-30：「你正常不是應該用起漲點來算嗎？」）：研究裡的量都從起漲點 t 算 ⇒ 流程也從 t 算，動作只在買進日之後發生
+  t ＝ 資料日往前 250 個交易日內「最高收盤之前的最低收盤日」（同 3141／3229／6672 那幾次）；買進日早於這個 t ⇒ 改用買進日往前 250 日內同定義的點；
+  若從 t 起算的「回落 30% 結束」在買進日之前就發生 ⇒ 那段漲勢已結束，t 改用「結束日到買進日之間最低收盤日」，重複到結束日不早於買進日
+  從 t 起算：最高收盤與回落 30%、x＝20% 切段（目前第幾段）、累計處置、中段底分數（前面已完成段數、累計處置次數…）、40 天沒新高（最後新高日從 t 起找）
+  W1／W2 只看目前這一段：買進日當天，目前這一段（t 起最後一次 20% 拉回的低點之後；沒有 ⇒ t 之後）內買進日之前已出現的 W1 也算 ⇒ 次一開盤賣 3 成；
+     已出現 W1 之後、買進日之前又出現的 W2 也算 ⇒ 剩 7 成同時次一開盤賣；買進日之後照原規則逐日看
+  動作（賣 3 成、賣剩下、買回、賣全部）都在買進日之後的第一個有效開盤或更晚；−15% 參考提示仍以使用者買進價為準
+  買進日 ＝ t 時，與舊版（從買進日起算）逐字相同（閘門 G3）
 流程（使用者 2026-09-30 決定：W1 賣 3 成、留 7 成；剩 7 成出場 ＝ W2 或回落 30%（另案研究結果：現行最好，commit 075078d9ae））：
   全部持有 ── 連 40 天沒創新高（使用者 2026-09-30 定的退場規則；逐字同 researchSurge6_restexit R4 乙群 N＝40）：新高 ＝ 收盤 ＞ 買進日以來最高收盤（買進日本身算新高日）；
                最後一個新高日 h 之後的 K 棒數（(h, d] 內有 K 棒的日子）第一次 ≥ 40 的那天 ⇒ 次一開盤賣全部（結束）；只在 W1 還沒出現前適用（同一天 W1 也出現 ⇒ 以這條為準）
@@ -130,7 +138,25 @@ def nohigh_day(c, bar, e, last, N=40):
     return e + int(hh[0]) if len(hh) else None
 
 
-def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None):
+def anchor_of(c, T):
+    """資料日（或買進日）T 往前 250 個交易日內，最高收盤之前的最低收盤日。"""
+    lo = max(T - 249, 0); P0 = lo + int(np.argmax(c[lo:T + 1]))
+    return lo + int(np.argmin(c[lo:P0 + 1]))
+
+
+def cuts_rec(cs, x=X):
+    """[t..] 收盤 ⇒ [(a, trough, recover)]（相對位置；a ＞ 0 且回落 ≥ x；recover ＝ a 之後下一個新高日）；同 mid_desc M2／M2b。"""
+    rm = np.maximum.accumulate(cs)
+    nh = np.flatnonzero(cs[1:] > rm[:-1]) + 1
+    pk = np.r_[0, nh]; out = []
+    for j in np.flatnonzero(np.diff(pk) >= 2):
+        a, b = int(pk[j]), int(pk[j + 1]); seg = cs[a + 1:b]; k = int(np.argmin(seg))
+        if a > 0 and seg[k] <= cs[a] * (1 - x) * (1 + 1e-9):
+            out.append((a, a + 1 + k, b))
+    return out
+
+
+def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None, anchor=None):
     """⇒ dict（階段、今日訊號、今天收盤後該做什麼、歷程）。階段：全部持有／已賣 3 成／已出清／待買回／第二段持有／結束。"""
     cal = R["cal"]; n = len(cal); W = R["W"]; uni = R["uni"]; d0, d1 = R["d0"], R["d1"]; T = d1
     row = uni.index[uni["stock_id"] == code]
@@ -140,14 +166,29 @@ def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None):
     bd = pd.Timestamp(buy_date)
     if bd > cal[T]:
         return {"代號": code, "錯誤": f"買進日 {buy_date} 在資料日 {cal[T].date()} 之後"}
-    e = int(cal.searchsorted(bd))
-    if e < d0:
-        return {"代號": code, "錯誤": f"買進日早於計算範圍（{cal[d0].date()}）"}
+    eb_ = int(cal.searchsorted(bd))                                   # 買進日
     disp = np.zeros(n, bool)
     for a_, b_ in W["DISP"].get(code, []):
         disp[max(a_, 0):min(b_, n - 1) + 1] = True
     X_ = stock_ctx(code, mk, cal, n, price_dir, aux_dir, W["DISP"], disp)
     c, o, bar = X_["c"], X_["o"], X_["bar"]
+    note = ""
+    if anchor is None:
+        t = anchor_of(c, T)
+        if eb_ < t:
+            t = anchor_of(c, eb_); note = "（買進日早於資料日往前 250 日的起漲點 ⇒ 改用買進日往前 250 日內的點）"
+        for _ in range(50):
+            rm_ = np.maximum.accumulate(c[t:T + 1]); w_ = np.flatnonzero(c[t:T + 1] <= rm_ * 0.7)
+            st_ = t + int(w_[0]) if len(w_) else None
+            if st_ is None or st_ >= eb_:
+                break
+            note = f"（{cal[t].date()} 起的漲勢在買進前已從最高回落 30% 結束 ⇒ 起漲點改用之後、買進日以前的最低收盤日）"
+            t = st_ + int(np.argmin(c[st_:eb_ + 1]))
+    else:
+        t = int(anchor)
+    if t < d0:
+        return {"代號": code, "錯誤": f"起漲點 {cal[t].date()} 早於計算範圍（{cal[d0].date()}）"}
+    e = t                                                             # ⭐ 以下「從 t 起」
     okop = np.isfinite(o) & (o > 0) & bar
     nxo = lambda d: next((p for p in range(d + 1, T + 1) if okop[p]), None)            # 次一有效開盤（資料內）
     w1, w2a, w2b = signals_for(R, s, X_, W["DISP"], code)
@@ -156,11 +197,20 @@ def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None):
     stopw = np.flatnonzero(c[e:T + 1] <= rmx * 0.7); stop = e + int(stopw[0]) if len(stopw) else None
     lastday = stop if stop is not None else T
     hist = []
-    O = lambda st, today, act: _out(code, uni, buy_date, buy_px, st, today, act, hist, c, rmx, T)
+    CU = [(t + a, t + b, t + r) for a, b, r in cuts_rec(c[t:T + 1])]
+    segstart = lambda d: max([b for a, b, r in CU if r <= d], default=t)
+    segno = 1 + sum(1 for a, b, r in CU if r <= T)
+    ext = {"起漲點": str(cal[t].date()), "起漲點價": None, "目前第幾段": segno, "從起漲漲幅": float(c[T] / c[t] - 1), "錨點說明": note}
+
+    def O(st, today, act):
+        o_ = _out(code, uni, buy_date, buy_px, st, today, act, hist, c, rmx, T); o_.update(ext)
+        return o_
     REST = "剩 7 成：等 W2（再次處置或出關）或從最高回落 30%"
     raw = pd.read_csv(os.path.join(price_dir, "stocks", code + ".csv"), dtype={"date": str}, usecols=["date", "close"]).drop_duplicates("date")
     raw.index = pd.to_datetime(raw["date"]); rcl = pd.to_numeric(raw["close"].reindex(cal), errors="coerce").to_numpy(float)
-    fac = c[e] / rcl[e] if np.isfinite(rcl[e]) and rcl[e] > 0 else np.nan
+    ext["起漲點價"] = float(rcl[t]) if np.isfinite(rcl[t]) else None
+    fac = c[eb_] / rcl[eb_] if np.isfinite(rcl[eb_]) and rcl[eb_] > 0 else np.nan
+    who = "買進後" if t == eb_ else "起漲後"
     hint = "參考：已跌破買進價 15%（研究建議的停損線，要不要賣你決定）" if np.isfinite(fac) and c[T] <= buy_px * fac * 0.85 else ""
 
     def w2first(frm):
@@ -177,33 +227,49 @@ def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None):
         hist.append(f"賣{what} {cal[ex].date()}")
         return O("結束", [], f"已結束（{cal[stop].date()} 從最高回落 30%，{cal[ex].date()} 賣{what}）")
     # ① 全部持有 ⇒ 連 40 天沒創新高（賣全部）或 W1 賣 3 成
-    d1_ = next((d for d in range(e, lastday + 1) if w1[d - d0] and (stop is None or d < stop)), None)
-    n40 = nohigh_day(c, bar, e, lastday)
+    pre1 = [d for d in range(segstart(eb_), eb_) if w1[d - d0]] if (stop is None or stop > eb_) else []   # 本段、買進日之前已出現的 W1
+    if pre1:
+        d1_, d1date = eb_, pre1[0]
+    else:
+        d1_ = next((d for d in range(eb_, lastday + 1) if w1[d - d0] and (stop is None or d < stop)), None); d1date = d1_
+    cb_ = np.cumsum(bar); sg_ = c[t:lastday + 1]; r_ = np.maximum.accumulate(sg_)
+    isnh = np.r_[True, sg_[1:] > r_[:-1]]; lastnh = t + np.maximum.accumulate(np.where(isnh, np.arange(len(sg_)), 0))
+    nbar = cb_[t:lastday + 1] - cb_[lastnh]; hh = [t + k for k in np.flatnonzero(nbar >= 40) if t + k >= eb_]
+    n40 = hh[0] if hh else None                                                     # 同 nohigh_day（t ＝ 買進日時逐字相同）
     if n40 is not None and (d1_ is None or n40 <= d1_):
         hist.append(f"連 40 天沒新高 {cal[n40].date()}")
         ex = nxo(n40)
         if ex is None:
-            o_ = O("全部持有", ["買進後連續 40 個交易日沒創新高"], "明天開盤賣全部（買進後連續 40 個交易日沒創新高，你定的退場規則）"); o_["參考"] = hint
+            o_ = O("全部持有", [f"{who}連續 40 個交易日沒創新高"], f"明天開盤賣全部（{who}連續 40 個交易日沒創新高，你定的退場規則）"); o_["參考"] = hint
             return o_
         hist.append(f"賣全部 {cal[ex].date()}")
-        return O("結束", [], f"已結束（{cal[n40].date()} 買進後連續 40 個交易日沒創新高，{cal[ex].date()} 賣全部）")
+        return O("結束", [], f"已結束（{cal[n40].date()} {who}連續 40 個交易日沒創新高，{cal[ex].date()} 賣全部）")
     if d1_ is None:
         if stop is not None:
             return ended_by_stop("全部持有", "全部")
         o_ = O("全部持有", [], "續抱（W1 第一頂警示未出現）"); o_["參考"] = hint
         return o_
-    hist.append(f"W1 {cal[d1_].date()}")
+    hist.append(f"W1 {cal[d1date].date()}" + ("（買進前）" if d1date < eb_ else ""))
     ex1 = nxo(d1_)
+    pre2 = [(d, "再次進入處置" if w2a[d - d0] else "處置出關") for d in range(max(segstart(eb_), d1date + 1), eb_) if w2a[d - d0] or w2b[d - d0]] if d1date < eb_ else []
     if ex1 is None:
+        if pre2:
+            hist.append(f"W2（{pre2[0][1]}）{cal[pre2[0][0]].date()}（買進前）")
+            return O(f"全部持有（本段 W1 {cal[d1date].date()}、W2 {cal[pre2[0][0]].date()} 都已出現，在你買進之前）", ["本段 W1、W2 都已出現（買進前）"], "明天開盤賣全部（3 成＋剩 7 成）")
+        if d1date < eb_:
+            return O(f"全部持有（本段 W1 已出現於 {cal[d1date].date()}，在你買進之前）", ["本段 W1 第一頂警示已出現（買進前）"], f"明天開盤賣 3 成、留 7 成（{REST}）")
         return O("全部持有", ["W1 第一頂警示"], f"明天開盤賣 3 成、留 7 成（W1 第一頂警示第一次出現；{REST}）")
     hist.append(f"賣 3 成 {cal[ex1].date()}")
-    # ② 剩 7 成：W2 或回落 30%（出場規則待定，暫用）
-    w2 = w2first(ex1)
+    # ② 剩 7 成：W2 或回落 30%
+    w2 = (eb_, pre2[0][1]) if pre2 else w2first(ex1)
+    if pre2:
+        hist.append(f"W2（{pre2[0][1]}）{cal[pre2[0][0]].date()}（買進前）")
     if w2 is None or (stop is not None and w2[0] >= stop):
         if stop is not None:
             return ended_by_stop("已賣 3 成", "剩 7 成")
         return O("已賣 3 成", [], f"續抱（{REST}；W2 未出現）")
-    hist.append(f"W2（{w2[1]}）{cal[w2[0]].date()}")
+    if not pre2:
+        hist.append(f"W2（{w2[1]}）{cal[w2[0]].date()}")
     ex2 = nxo(w2[0])
     if ex2 is None:
         return O("已賣 3 成", [f"W2 第二頂警示（{w2[1]}）"], f"明天開盤賣剩 7 成（W2：{w2[1]}；{REST}）")

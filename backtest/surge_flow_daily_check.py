@@ -5,7 +5,12 @@
 參照（研究版）：researchSurge6_topwarn.components（s5work 接合版面）的 W1 基本版、W2a、W2b；中段底分數 ＝ topwarn 完整一輪同式
    （bottomjudge.stock_ctx＋pull_feats＋topwarn.bj_has，Q 用 s5work）；對象 ＝ topwarn 的「起漲特徵 ≥7 個」逐筆（check_Bp_m7.csv.gz）W1 賣出後第一個回落 20% 跨越日
 本程式：surge_feat_daily（每日 archive＋另 archive＋早年營收；main b53f5540a8）＋ surge_flow_daily.signals_for／bj_has／stock_ctx
+2026-09-30 晚加（流程改從起漲點 t 算）：買進日 ＝ t 時新舊版輸出逐字相同 —— 抽 topwarn B' ≥7 的 50 筆（check_Bp_m7.csv.gz，進場日在 R 範圍內），
+   把進場日當買進日；舊版 ＝ commit cbd4d30033 的 surge_flow_daily.py（git show 取出；環境變數 SFL_OLD 可改指檔案），新版 replay(..., anchor＝進場日)；
+   比 階段／今日訊號／今天收盤後該做什麼／歷程／距最高／參考
+   測試用：SFL_NEW 指新版檔路徑（覆蓋工作目錄前先在副本跑）；G3_OUT 指輸出資料夾
 """
+import importlib.util
 import json
 import os
 
@@ -20,7 +25,18 @@ from backtest import researchSurge6_mid_desc as MD
 from backtest import surge_feat_daily as SFD
 from backtest import surge_flow_daily as SFL
 
-OUT = "backtest/resultsDaily/surge_feat_G1"
+
+def _load(nm, path):
+    sp_ = importlib.util.spec_from_file_location(nm, path); m_ = importlib.util.module_from_spec(sp_); sp_.loader.exec_module(m_)
+    bt_ = os.path.dirname(os.path.abspath(SFD.__file__))                 # 模組在別處 ⇒ 研究結果路徑仍指 repo 的 backtest/
+    m_.HERE = bt_; m_.BJDIR = os.path.join(bt_, "resultsSurge6", "bottomjudge")
+    m_.FLOW = os.environ.get("HOLDINGS_FLOW", os.path.join(bt_, "holdings_flow.txt"))
+    return m_
+
+
+if os.environ.get("SFL_NEW"):
+    SFL = _load("sfl_new", os.environ["SFL_NEW"])
+OUT = os.environ.get("G3_OUT", "backtest/resultsDaily/surge_feat_G1")
 
 
 def main():
@@ -130,11 +146,39 @@ def main():
     info["連40天沒新高 比對筆數"] = len(N4); info["連40天沒新高 不同"] = nb4
     if nb4:
         errs.append(f"連 40 天不同 {nb4}")
+    # ── 買進日 ＝ t 時新舊版逐字相同（抽 topwarn B' ≥7 的 50 筆，進場日當買進日）
+    if os.environ.get("SFL_OLD"):
+        OLD = _load("sfl_old", os.environ["SFL_OLD"])
+    else:
+        import subprocess, tempfile
+        fo = os.path.join(tempfile.mkdtemp(), "surge_flow_daily_cbd4d30033.py")
+        open(fo, "wb").write(subprocess.run(["git", "show", "cbd4d30033:backtest/surge_flow_daily.py"], check=True, capture_output=True).stdout)
+        OLD = _load("sfl_old", fo)
+    TB = pd.read_csv("backtest/resultsSurge6/topwarn/check_Bp_m7.csv.gz").sample(frac=1, random_state=5)
+    KEYS = ["階段", "今日訊號", "今天收盤後該做什麼", "歷程", "距最高", "參考"]
+    same = []; stg = {}
+    for r in TB.to_dict("records"):
+        if len(same) >= 50:
+            break
+        sid = uni5.loc[int(r["s"]), "stock_id"]; de = cal5[int(r["e"])]
+        if sid not in idd or de < cal[d0] or de > cal[d1]:
+            continue
+        ed_ = int(cal.get_loc(de)); raw = pd.read_csv(os.path.join(price, "stocks", sid + ".csv"), dtype={"date": str}, usecols=["date", "close"])
+        bp = float(raw.loc[raw["date"] == str(de.date()), "close"].iloc[0]) if (raw["date"] == str(de.date())).any() else 100.0
+        a_ = OLD.replay(R, sid, str(de.date()), bp, price, aux, names_bj)
+        b_ = SFL.replay(R, sid, str(de.date()), bp, price, aux, names_bj, anchor=ed_)
+        diff = [k for k in KEYS if not (a_.get(k) == b_.get(k) or (isinstance(a_.get(k), float) and isinstance(b_.get(k), float) and np.isnan(a_[k]) and np.isnan(b_[k])))]
+        stg[a_.get("階段", "錯誤")] = stg.get(a_.get("階段", "錯誤"), 0) + 1
+        same.append({"代號": sid, "買進日＝t": str(de.date()), "舊版階段": a_.get("階段"), "舊版歷程": a_.get("歷程"), "不同欄": diff})
+    nbi = sum(1 for x in same if x["不同欄"])
+    info["買進日＝t 新舊比對筆數"] = len(same); info["買進日＝t 不同"] = nbi; info["買進日＝t 舊版階段分佈"] = stg
+    if nbi or len(same) < 50:
+        errs.append(f"買進日＝t 新舊不同 {nbi}／{len(same)}")
     G = pd.DataFrame(got); nbs = int((G["研究版分數"] != G["每日版分數"]).sum()) if len(G) else -1
     info["中段底分數 比對筆數"] = len(G); info["中段底分數 不同"] = nbs; info["分數分佈（研究版）"] = G["研究版分數"].value_counts().sort_index().to_dict() if len(G) else {}
     if nbs:
         errs.append(f"分數不同 {nbs}")
-    out = {"G3": info, "錯誤": errs, "分數明細": got, "連40天明細": n40}
+    out = {"G3": info, "錯誤": errs, "分數明細": got, "連40天明細": n40, "買進日＝t 明細": same}
     json.dump(out, open(os.path.join(OUT, "G3.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     print("G3", json.dumps(info, ensure_ascii=False, default=str), "錯誤", errs)
 
