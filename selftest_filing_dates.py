@@ -59,6 +59,16 @@ def main():
     rows, st, _ = FD.parse(b"", "2330", 113)
     ck("空回應 ⇒ bad", st == "bad")
 
+    print("④ 金控選子公司頁（2880～2890，2026-09-30 run 36642883554）")
+    menu = ("<form name='fm' action='/server-java/t57sb01' method='post'>"
+            "<input type='hidden' name='check2858' value='Y'><input type='hidden' name='co_id' value='2880'>"
+            "<tr><td>2880</td><td>華南金</td></tr><tr><td>28800001</td><td>華南銀行</td></tr>"
+            "本網站提供查詢金融控股公司已公開發行之子公司各季財務報告</form>").encode("big5")
+    ck("選子公司頁 ⇒ 認得出來（要帶 check2858=Y 重打）", FD.is_fhc_menu(menu))
+    ck("正常頁 ⇒ 不是選單", not FD.is_fhc_menu(page(R2330)))
+    ck("擋阻頁 ⇒ 不是選單", not FD.is_fhc_menu("因為安全性考量，您所執行的頁面無法呈現".encode("big5")))
+    ck("空回應 ⇒ 不是選單", not FD.is_fhc_menu(b""))
+
     print(f"\n[selftest] 通過 {OK}｜失敗 {FAIL}")
     return 1 if FAIL else 0
 

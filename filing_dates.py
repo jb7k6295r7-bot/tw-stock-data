@@ -76,6 +76,19 @@ def parse(body, co_id, roc_year):
     return out, ("ok" if out else "empty"), f"{len(out)} 列"
 
 
+def is_fhc_menu(body):
+    """金控（28xx）回的是「選子公司」頁 ⇒ 要多帶 check2858=Y 才回母公司本身的清單。
+
+    ⛔ 2026-09-30 run 36642883554：2880～2890 那 13 發全落在這一頁（每發還白等 60＋180 秒退避）。
+    ⭐ 那一頁上母公司那列是 <form> 送出，隱藏欄位 check2858=Y；本機實測 2880／114 帶上後回 4 列上傳日期，
+       2330 帶不帶這個參數回應相同。
+    """
+    if not body or looks_blocked(body):
+        return False
+    txt = body.decode("big5", "replace")
+    return "上傳日期" not in txt and "check2858" in txt
+
+
 def universe(start, end):
     """→ {西元年: set(代號)}：該年【XBRL fin_hist 有財報】且【當年在上市櫃日 K 出現過】的公司。
 
@@ -154,6 +167,8 @@ def main():
         #   ⇒ 退避拉長（60、180 秒）；連續失敗改成【冷卻 15 分鐘再續】，⛔ 不直接收手（最多冷卻 4 次）
         for attempt in range(3):
             st, _, body, err = hit(url)
+            if st == 200 and is_fhc_menu(body):
+                st, _, body, err = hit(url + "check2858=Y")
             got, status, note = parse(body, s, roc) if st == 200 else ([], "bad", f"HTTP {st} {err}")
             if status != "bad" or attempt == 2:
                 break
