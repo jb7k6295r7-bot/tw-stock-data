@@ -6861,8 +6861,8 @@ date,stock_id,name,market,sources,why
 2026-09-29,8183,精星,tpex,otcmargin,官方停止交易
 2026-09-30,1589,永冠-KY,twse,margin,
 2026-09-30,2601,益航,twse,margin,
-2026-09-30,4527,方土霖,tpex,otcmargin,
-2026-09-30,4804,大略-KY,tpex,otcmargin,
-2026-09-30,4806,桂田文創,tpex,otcmargin,
-2026-09-30,5301,寶得利,tpex,otcmargin,
-2026-09-30,8183,精星,tpex,otcmargin,
+2026-09-30,4527,方土霖,tpex,otcmargin,官方停止交易
+2026-09-30,4804,大略-KY,tpex,otcmargin,官方停止交易
+2026-09-30,4806,桂田文創,tpex,otcmargin,官方停止交易
+2026-09-30,5301,寶得利,tpex,otcmargin,官方停止交易
+2026-09-30,8183,精星,tpex,otcmargin,官方停止交易
