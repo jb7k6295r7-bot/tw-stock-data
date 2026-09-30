@@ -23,6 +23,8 @@
     2026-09-30 晚改（使用者：「你正常不是應該用起漲點來算嗎？」）：流程改從起漲點 t 算（t ＝ 資料日往前 250 日內最高收盤之前的最低收盤日；
      最高收盤、回落 30%、切段、中段底分數、40 天沒新高都從 t 起；W1／W2 只看目前這一段，買進前已出現也算；動作只在買進日之後）；
      每行加「起漲點 t（日期、價）｜目前第幾段｜從 t 起漲幅｜距最高收盤」；買進日 ＝ t 時與舊版逐字相同（閘 G3）
+    2026-09-30 晚改（協調者轉使用者：持股清單回測線與情報共用一份）：第五節改讀跨線信箱 _持股/持股.csv（backtest.holdings；⛔ 只讀不寫），
+     只取買進日與買進價都有的列；缺的列列一行「代號｜缺買進日／價，無法追蹤流程」；檔案不存在或讀檔失敗 ⇒ 退回 holdings_flow.txt 並記 log
 """
 from __future__ import annotations
 
@@ -37,6 +39,7 @@ from . import data as D
 from . import gate_b_status as GB
 from . import surge_feat_daily as SFD
 from . import surge_flow_daily as SFL
+from . import holdings as HD
 import numpy as np
 import pandas as pd
 
@@ -73,7 +76,7 @@ def main():
     reason = lambda r: f"營收 {r['營收期別']} 創 24 月新高、強勢 {int(r['分數'])}/5（{r['已達成']}）"
     # ── 起漲特徵（surge_feat_daily）
     DATA = os.path.expanduser(f"~/h2data/{sha}/data"); AUX = SFD.ensure_aux(sha)
-    flows = SFL.read_flow()
+    flows, hmiss, _src = HD.flow_rows(log)
     Wf, unif = SFD.world(DATA, AUX, SFD.EARLY)
     d0 = n - 1 - 20
     if flows:
@@ -130,20 +133,41 @@ def main():
     if not top:
         L.append("| 無 | | | | | | | |")
     # ── 五、買賣流程追蹤
-    if flows:
+    if flows or hmiss:
         names_bj = SFL.bj_scorer()
         L += ["", "## 五、買賣流程追蹤（你買進的；每天從起漲點 t 重播，動作只在買進日之後）", "",
               "起漲點 t ＝ 資料日往前 250 個交易日內「最高收盤之前的最低收盤日」；最高收盤、回落 30%、切段、中段底分數、40 天沒新高都從 t 起算；W1／W2 只看目前這一段（買進前已出現也算）；−15% 參考提示仍以你的買進價為準。",
               f"流程：全部持有 →（W1 還沒出現前，連續 40 個交易日沒創新高 ⇒ 隔天開盤賣全部，結束）→（W1 第一頂警示，隔天開盤賣 3 成、留 7 成）→ 已賣 3 成 →（剩 7 成：等 W2 第二頂警示〔再次處置或出關〕或從最高回落 30%，隔天開盤賣）→ 已出清／待買回 →"
               f"（從最高回落 20% 且中段底分數 ≥ {names_bj[1]}，隔天開盤買回）→ 第二段持有 →（W2，隔天開盤賣）→ 結束；任何時候從最高回落 30% ＝ 本筆結束。", ""]
+        SRC = HD.sources()
         for c_, bd_, bp_ in flows:
+            src_ = SRC.get(c_, "其他")
+            if src_ in ("營量", "營飆", "營飆營量"):                     # 2026-09-30 使用者：營量、營飆買的照正式規則出場（flowexit 研究 dca601c329）
+                def act_of(nm_, H_, part_=""):
+                    xp_ = D.exit_pos(int(cal.searchsorted(pd.Timestamp(bd_))), H_)
+                    rem_ = xp_ - (n - 1)
+                    dt_ = cal_ext[xp_].date() if xp_ < len(cal_ext) else "（超出外推範圍）"
+                    return (f"{nm_}{part_}已到期：{dt_} 收盤應已賣出" if rem_ <= 0 else f"{nm_}{part_}明天（{dt_}）收盤賣（第 {H_} 個交易日）" if rem_ == 1
+                            else f"{nm_}{part_}第 {H_} 個交易日 {dt_} 收盤賣，還剩 {rem_} 個交易日")
+                if src_ == "營飆營量":
+                    act_ = act_of("營量", 60, "那 1/3") + "；" + act_of("營飆", 120, "那 2/3") + "（金額 2:1 分兩份）"
+                else:
+                    act_ = act_of(src_, 60 if src_ == "營量" else 120, "")
+                nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
+                L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}｜來源：{src_}｜**照正式規則：{act_}**")
             o_ = SFL.replay(R, c_, bd_, bp_, DATA, AUX, names_bj)
+            if src_ in ("營量", "營飆", "營飆營量"):
+                if "錯誤" not in o_:
+                    L.append(f"  - 參考（不照做）飆股流程：階段 {o_['階段']}｜今日訊號 {o_['今日訊號']}｜{o_['今天收盤後該做什麼']}")
+                continue
             if "錯誤" in o_:
                 L.append(f"- {c_}｜買進 {bd_} {bp_:g}｜⚠ {o_['錯誤']}"); continue
             far_ = "" if not np.isfinite(o_["距最高"]) else f"｜距最高收盤 {o_['距最高'] * 100:.1f}%"
             tp_ = "" if o_.get("起漲點價") is None else f" {o_['起漲點價']:g}"
             anc_ = f"｜起漲點 t {o_['起漲點']}{tp_}{o_.get('錨點說明', '')}｜目前第 {o_['目前第幾段']} 段｜從 t 起漲幅 {o_['從起漲漲幅'] * 100:+.1f}%"
             L.append(f"- {o_['代號']} {o_['名稱']}{tag(o_['名稱'])}｜買進 {bd_} {bp_:g}{anc_}｜階段：{o_['階段']}｜今日訊號：{o_['今日訊號']}｜**今天收盤後：{o_['今天收盤後該做什麼']}**{('｜' + o_['參考']) if o_.get('參考') else ''}{far_}｜歷程：{o_['歷程']}")
+        if hmiss:
+            L.append(f"- 另 {len(hmiss)} 檔沒有買進日／價（{'、'.join(hmiss)}），不追蹤流程")
     L += ["", NOTE, ""]
     fn = os.path.join(OUT, f"daily_{asof}.md")
     open(fn, "w", encoding="utf-8").write("\n".join(L))

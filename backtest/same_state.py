@@ -11,6 +11,9 @@
  表 ＝ resultsHoldState/cell_table.csv：主窗（狀態日 2017-03-01～2026-08-31）96 格 × 20／60／120 天的統計＋「全部」對照列；
       由 researchHoldState 全量明細 rows_main.npz 一次算出（本支 --build-table），⭐ 之後每天只查表、不重掃
  每日：持股清單 ＝ backtest/holdings_same_state.txt（一行一個代號，輸出照檔內順序；清單變動由情報來信、協調者改檔；⛔ 不讀情報的資料夾）
+      2026-09-30 晚改：持股清單改讀跨線信箱 _持股/持股.csv 的代號欄（照檔內順序；backtest.holdings）——這個檔在信箱的【共用資料夾】_持股/，
+      由回測線與情報共用（誰收到使用者買賣就改它），⛔ 不是情報的資料夾，上面那條「不讀情報的資料夾」照舊；⛔ 程式只讀不寫；
+      檔案不存在或讀檔失敗 ⇒ 退回 holdings_same_state.txt 並記 log（stderr ⇒ run_daily_list.sh 的 same_state.log）
       只算持股在最新資料日 t 的狀態（價格＝archive 的 data/；法人＝`git show <sha>:data/stocks_inst/<代號>.csv`，daily 的 archive 沒收 stocks_inst）
  輸出 backtest/resultsDaily/same_state_<t>.md：與 researchHoldState 的 LINE 行逐字同格式（情報要求「維持現行行格式」）
  測試掛鉤：環境變數 SAME_STATE_FAKE_FAIL=1 ⇒ 直接失敗（給 run_daily_list.sh 驗「same_state 失敗不拖累 daily」）
@@ -33,6 +36,7 @@ REPO = os.path.dirname(HERE)
 from . import data as D
 from . import research11 as R11
 from . import p4_features as P4F
+from . import holdings as HD
 
 TABLE = os.path.join(HERE, "resultsHoldState", "cell_table.csv")
 HOLD = os.path.join(HERE, "holdings_same_state.txt")
@@ -110,7 +114,7 @@ def daily(data, sha):
     D.DATA = data
     cal = D.load_calendar(); asof = str(cal[-1].date())
     meta = pd.read_csv(os.path.join(data, "meta", "stocks.csv"), dtype=str).set_index("stock_id")
-    sids = [x.strip() for x in open(HOLD, encoding="utf-8") if x.strip() and not x.startswith("#")]
+    sids, _src = HD.codes(lambda m: print(m, file=sys.stderr, flush=True))
     fs = sorted(glob.glob(os.path.join(EARLY_REV, "*.csv"))) + sorted(glob.glob(os.path.join(data, "mops", "revenue_hist", "*.csv")))
     df = pd.concat([pd.read_csv(f, dtype=str, usecols=["stock_id", "period", "當月營收"]) for f in fs])
     df = df[df["stock_id"].isin(sids)].copy()
