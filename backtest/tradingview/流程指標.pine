@@ -1,0 +1,534 @@
+//@version=5
+// ═══════════════════════════════════════════════════════════════════════════════
+// 飆股買賣流程指標（回測線；對應 backtest/surge_flow_daily.py 的流程，研究定義見 researchSurge6_topwarn／bottomjudge／restexit）
+// 只用 TradingView 拿得到的價量「近似」研究版；⚠ 以每日名單為準，這個指標是讓你在圖上看。門檻與吻合率見 calib.json。
+//
+// 【你只要填】買進日、買進價（不填也能看訊號；不填就不會顯示「階段／該做什麼」）；注意、處置都自動近似，不用手填
+//
+// 【流程】（使用者 2026-09-30 定；起漲點照 surge_flow_daily.anchor_of 逐字，commit 07107dbd02）
+//   起漲點 t ＝ 今天往前 250 根內「最高收盤之前的最低收盤」；買進日早於 t ⇒ 改用買進日往前 250 根；
+//             從 t 起的「回落 30%」若在買進前就發生 ⇒ t 改用結束日到買進日之間的最低收盤（重複）；
+//             沒填買進日 ⇒ 當作今天買進 ⇒ 錨到最新一輪（先前漲勢已回落 30% 結束就往後移，重複到最新）
+//   切段 x＝20%；W1、W2 只看目前這一段（標籤只畫這一段；全部歷史可在「顯示」打開、淡色）；40 根沒新高從 t 起算
+//   全部持有：連 40 根沒創新高（從 t 起找最後新高）⇒ 明天開盤賣全部；W1 第一次出現（本段、含買進前本段已出現）⇒ 明天開盤賣 3 成
+//   已賣 3 成：W2 ⇒ 明天開盤賣剩 7 成；從最高回落 30% ⇒ 賣剩 7 成（本筆結束）
+//   已出清：從最高回落第一次跨過 20% 那天，中段底分數 ≥ 3 ⇒ 明天開盤買回；買回後 W2 ⇒ 賣
+//   參考：全部持有且 W1 沒出現時，收盤 ≤ 買進價 × 0.85 ⇒ 提示（不進流程）
+//
+// 【近似之處】（照實寫）
+//   ① 價格用 TradingView 預設的「未還原」K 線（研究用還原價；除權息那幾天 20 日新高、5 日報酬會略有不同）
+//   ② 漲停：台股是「前收 × 1.1 再依升降單位取整」；這裡近似成「收盤漲幅 ≥ 9.5%」
+//   ③ 橫斷面五等分（每天全市場排前 20%）改成固定門檻：2024-01～2026-08 每天 Q5 分界的中位數
+//        5 日報酬 Q5 ≈ ≥ 2.7%（每天的分界 p10～p90 約 0.3%～6.1%，這是最大的近似來源）；5 日漲停天數 Q5 ≈ ≥ 1；10 日注意次數 Q5 ≈ ≥ 1
+//   ④ 注意股：TradingView 沒有注意資料 ⇒ 依證交所「第四條異常標準之詳細數據」（115.08.03 版）的價量款自己算：
+//        第一款（6 日累積漲跌 ＞32%，或 ＞25% 且 6 日起迄價差 ≥50 元；收盤 ≥5 元）、第二款（30／60／90 日起迄漲 ＞100／130／160% 且今天收漲）、
+//        第三款（6 日 ＞25% 且量 ≥ 60 日均量 5 倍）、第四款（6 日 ＞25% 且週轉率 ≥10%）、第九款（6 日均量與今天量都 ≥ 60 日均量 5 倍）、
+//        第十款（6 日累積週轉率 ＞50% 且今天 ≥10%、成交額 ≥5 億）、第十一款（高價股 6 日價差）；
+//        上櫃門檻（櫃買中心規定沒有拿到原文）用 2024～2026 公告理由裡出現過的最小值推：第一款 30%／23% 且 40 元、第三四款 27%、週轉率 5%、第十款 80%、60 日 140%
+//        第二款除外：30 根內已有第一款且 6 日漲幅未超過 25% ⇒ 不算；6 日累積漲跌 ＝ c ÷ c[6] − 1（k＝6 用 2024 年資料選的）
+//        略過：與大盤／同類股的差幅、券商集中、本益比淨值比、券資比、借券、當沖、監視督導會報決議 ⇒ 會漏抓也會多抓
+//   ⑤ 處置：依作業要點第六條，第一款連 3 日、或第一～四款連 5 日、10 日內 6 日、30 日內 12 日 ⇒ 次一日起處置 10 根（2026-08-03 起 5 根）；
+//        觸發後計數重設（2024 年資料選的）；不模擬當沖加長與監視督導會報的處置
+//   吻合率（Python 照同一套規則，全部上市櫃普通股，2025-01～2026-08；2024 年另見 calib.json）：
+//        注意日 抓到 69%、誤報 42%（只看第一～四款：抓到 95%、誤報 31%）；處置起日 同一天抓到 48%、±2 根內 67%；
+//        W1 抓到 69%、誤報 20%（價格部分單獨：抓到 92%、誤報 15%）；W2 抓到 40%、誤報 58%；
+//        起漲訊號買進（m＝7）後第一次 W1：同一天或兩邊都沒有 81%
+//   ⑥ 週轉率 ＝ 成交量 ÷ 發行股數（TradingView 財報的總股數；拿不到就填「發行股數」覆蓋）；成交金額 ≈ 收盤 × 成交量
+//   ⑦ 近 250 根以前的處置不知道（指標只從圖上載入的第一根開始模擬）
+//
+// 【input 說明】（都有預設值，一般不用動）
+//   買進日／買進價：你的買進；0 ＝ 沒填
+//   注意處置來源：「自動（近似）」＝ 用上面 ④⑤ 算；「手填今天」＝ 用下面幾格覆蓋「今天」的值（歷史仍用近似）
+//   各門檻：研究版的固定近似值，校準數字見 calib.json
+// ═══════════════════════════════════════════════════════════════════════════════
+indicator("飆股流程指標（回測線）", shorttitle="流程", overlay=true, max_bars_back=700, max_labels_count=300, max_lines_count=60)
+
+// ───── 買進（選填）
+buyTime = input.time(0, "買進日（不填＝不追蹤階段）", group="① 買進（選填）")
+buyPx   = input.float(0.0, "買進價（元，不填＝0）", minval=0.0, group="① 買進（選填）")
+
+// ───── 流程參數（研究定義，一般不改）
+LOOK   = input.int(250, "起漲點回看根數", minval=50, maxval=500, group="② 流程參數")
+XCUT   = input.float(0.20, "切段拉回幅度 x", minval=0.05, maxval=0.5, step=0.01, group="② 流程參數")
+ENDDD  = input.float(0.30, "本筆結束回落", minval=0.1, maxval=0.6, step=0.01, group="② 流程參數")
+NOHI   = input.int(40, "連幾根沒創新高就賣全部", minval=5, group="② 流程參數")
+STOPP  = input.float(0.15, "參考停損（跌破買進價）", minval=0.01, maxval=0.5, step=0.01, group="② 流程參數")
+
+// ───── W1 近似門檻（calib.json）
+thR5   = input.float(0.0274, "5 日報酬 ≥（Q5 近似）", step=0.001, group="③ W1 近似門檻")
+thLU   = input.int(1, "5 日漲停天數 ≥（Q5 近似）", minval=1, group="③ W1 近似門檻")
+luPct  = input.float(0.095, "漲停近似：收盤漲幅 ≥", step=0.001, group="③ W1 近似門檻")
+thATT  = input.int(1, "近 10 日注意次數 ≥（Q5 近似）", minval=1, group="③ W1 近似門檻")
+
+// ───── 中段底分數（bottomjudge 當下版 x＝20%、K＝5）
+mStar  = input.int(3, "買回分數門檻 m*", minval=1, maxval=5, group="④ 中段底分數")
+bDepth = input.float(-0.22955665, "回落深度 Q5 下界", step=0.001, group="④ 中段底分數")
+bMA60  = input.int(4, "MA60 下天數 Q2 上界（不含）", minval=1, group="④ 中段底分數")
+
+// ───── 注意、處置
+src    = input.string("自動（近似）", "注意處置來源", options=["自動（近似）", "手填今天"], group="⑤ 注意處置（預設自動）")
+k6     = input.int(6, "6 日累積漲跌用 c÷c[k]−1 的 k", minval=5, maxval=6, group="⑤ 注意處置（預設自動）")
+resetC = input.bool(true, "處置計數在觸發後重設", group="⑤ 注意處置（預設自動）")
+sharesIn = input.float(0, "發行股數（股；0＝用 TradingView 財報）", minval=0, group="⑤ 注意處置（預設自動）")
+volUnit  = input.string("股", "成交量單位", options=["股", "張"], group="⑤ 注意處置（預設自動）")
+mAtt10   = input.int(0, "手填：近 10 日注意次數", minval=0, group="⑤ 注意處置（預設自動）")
+mDisp60  = input.bool(true, "手填：60 日內有處置", group="⑤ 注意處置（預設自動）")
+mDispN   = input.int(1, "手填：起漲以來處置次數", minval=0, group="⑤ 注意處置（預設自動）")
+mDisp250 = input.bool(true, "手填：250 日內有處置", group="⑤ 注意處置（預設自動）")
+mReEnter = input.bool(false, "手填：今天再次進入處置", group="⑤ 注意處置（預設自動）")
+mExit    = input.bool(false, "手填：今天出關", group="⑤ 注意處置（預設自動）")
+
+showPrice = input.bool(false, "另畫 W1 價格部分（新高×急拉，灰色）", group="⑥ 顯示")
+showSeg   = input.bool(true, "畫起漲點、段頂、段底", group="⑥ 顯示")
+showAll   = input.bool(false, "另畫全部歷史的 W1、W2（淡色；流程只看目前這一段）", group="⑥ 顯示")
+
+// ═════ 每根 K 棒的價量元件 ═════
+isTpex = syminfo.prefix == "TPEX"
+vol    = volUnit == "張" ? volume * 1000 : volume
+shFin  = request.financial(syminfo.tickerid, "TOTAL_SHARES_OUTSTANDING", "FQ", ignore_invalid_symbol=true)
+shares = sharesIn > 0 ? sharesIn : shFin
+turn   = shares > 0 ? vol / shares : na
+amt    = close * vol
+
+hh20   = ta.highest(close, 20)
+hi20   = close > hh20[1]
+near20 = close >= 0.9 * hh20
+luDay  = close / close[1] - 1 >= luPct
+lu5    = math.sum(luDay ? 1 : 0, 5)
+r5     = close / close[5] - 1
+ma60   = ta.sma(close, 60)
+bel60  = not na(ma60) and close < ma60
+
+// 注意（近似）
+r6   = close / close[k6] - 1
+d6   = math.abs(close - close[5])
+v60  = ta.sma(vol, 60)
+v6   = ta.sma(vol, 6)
+c1   = isTpex ? 0.30 : 0.32
+c1b  = isTpex ? 0.23 : 0.25
+c1d  = isTpex ? 40.0 : 50.0
+c260 = isTpex ? 1.40 : 1.30
+c34  = isTpex ? 0.27 : 0.25
+c4t  = isTpex ? 0.05 : 0.10
+c10c = isTpex ? 0.80 : 0.50
+c10t = isTpex ? 0.05 : 0.10
+c10a = isTpex ? 0.0 : 5e8
+// （內建函式一律先在全域算好，避免寫在 and／or 裡被跳過而歷史不連續）
+hi6   = ta.highest(close, 6)
+lo6   = ta.lowest(close, 6)
+turn6 = math.sum(nz(turn), 6)
+A1  = close >= 5 and (math.abs(r6) > c1 or (math.abs(r6) > c1b and d6 >= c1d))
+a1n30 = math.sum(A1 ? 1 : 0, 30)
+A2raw = (close / close[29] - 1 > 1.0 or close / close[59] - 1 > c260 or close / close[89] - 1 > 1.6) and close > close[1]
+// 第二款除外：最近 30 根（含今天）內已有第一款，且 6 日累積漲幅未超過 25% ⇒ 不算
+A2  = (A2raw ? true : false) and not (nz(a1n30) > 0 and not (r6 > 0.25))
+A3  = math.abs(r6) > c34 and vol >= 5 * v60 and vol >= 500000 and nz(turn) >= 0.001
+A4  = math.abs(r6) > c34 and nz(turn) >= c4t
+A9  = v6 >= 5 * v60 and vol >= 5 * v60 and nz(turn) > 0.001 and vol > 500000 and amt > 3e7
+A10 = turn6 > c10c and nz(turn) >= c10t and amt >= c10a
+need11 = 300 + 150 * math.max(math.ceil((close - 2000) / 1000), 0)
+A11 = close > 1000 and math.abs(close - close[5]) >= need11 and (close >= hi6 or close <= lo6)
+A1b  = A1 ? true : false
+Pb   = A1b or (A2 ? true : false) or (A3 ? true : false) or (A4 ? true : false)
+attD = Pb or (A9 ? true : false) or (A10 ? true : false) or (A11 ? true : false)
+
+// 處置（近似）：第一款連 3 日、第一～四款連 5 日／10 日 6 日／30 日 12 日 ⇒ 次一根起 10 根（2026-08-03 起 5 根）
+var float csP = 0.0
+var float csC = 0.0
+csP += Pb ? 1 : 0
+csC += A1b ? 1 : 0
+var int dStart = -1
+var int dEnd = -2
+var int base = 0
+var int prevStart = -1
+var int lastStart = -1
+// 視窗計數（只算 base 之後的根；每根都在全域算，避免函式內歷史參照不一致）
+off3  = bar_index - math.max(bar_index - 2, base) + 1
+off5  = bar_index - math.max(bar_index - 4, base) + 1
+off10 = bar_index - math.max(bar_index - 9, base) + 1
+off30 = bar_index - math.max(bar_index - 29, base) + 1
+n3C  = csC - nz(csC[off3])
+n5P  = csP - nz(csP[off5])
+n10P = csP - nz(csP[off10])
+n30P = csP - nz(csP[off30])
+hit = n3C >= 3 or n5P >= 5 or n10P >= 6 or n30P >= 12
+inDispPrev = bar_index >= dStart and bar_index <= dEnd
+if not inDispPrev and bar_index > dEnd
+    if hit
+        L_ = time >= timestamp("Asia/Taipei", 2026, 7, 31, 0, 0) ? 5 : 10
+        dStart := bar_index + 1
+        dEnd := bar_index + L_
+        if resetC
+            base := bar_index + 1
+inDisp  = bar_index >= dStart and bar_index <= dEnd
+isStart = bar_index == dStart
+if isStart
+    prevStart := lastStart
+    lastStart := bar_index
+reEnterA = isStart and prevStart >= 0 and bar_index - prevStart <= 60
+exitA    = (inDisp[1] ? true : false) and not inDisp
+att10A   = math.sum(attD ? 1 : 0, 10)
+disp60A  = math.sum(inDisp ? 1 : 0, 60) > 0
+disp250A = nz(math.sum(inDisp ? 1 : 0, 250))
+
+// 手填覆蓋（只換「今天」）
+manual   = src == "手填今天" and barstate.islast
+att10    = manual ? mAtt10 : att10A
+disp60   = manual ? mDisp60 : disp60A
+reEnter  = manual ? mReEnter : reEnterA
+exitD    = manual ? mExit : exitA
+
+pricePart = hi20 and (lu5 >= thLU or r5 >= thR5)
+w1 = pricePart and att10 >= thATT and not disp60
+w2 = near20 and (reEnter or exitD)
+
+// 歷史上所有 W1、W2（淡色，預設不畫）；「目前這一段」的 W1、W2 在最後一根用標籤畫（見下方）
+plotshape(showPrice and pricePart and not w1, "W1 價格部分", shape.triangledown, location.abovebar, color.new(color.gray, 40), size=size.tiny)
+plotshape(showAll and w1, "W1（全部歷史）", shape.triangledown, location.abovebar, color.new(color.red, 70), size=size.tiny)
+plotshape(showAll and w2, "W2（全部歷史）", shape.triangledown, location.abovebar, color.new(color.orange, 70), size=size.tiny)
+bgcolor(inDisp ? color.new(color.purple, 90) : na, title="處置中（近似）")
+plotshape(attD, "注意（近似）", shape.circle, location.belowbar, color.new(color.purple, 50), size=size.tiny)
+
+// ═════ 最後一根：起漲點、切段、流程重播 ═════
+f_argmax(arr, a, b) =>
+    k = a
+    mx = array.get(arr, a)
+    if b > a
+        for i = a + 1 to b
+            v = array.get(arr, i)
+            if v > mx
+                mx := v
+                k := i
+    k
+f_argmin(arr, a, b) =>
+    k = a
+    mn = array.get(arr, a)
+    if b > a
+        for i = a + 1 to b
+            v = array.get(arr, i)
+            if v < mn
+                mn := v
+                k := i
+    k
+f_anchor(arr, T, look) =>
+    lo = math.max(T - look + 1, 0)
+    p0 = f_argmax(arr, lo, T)
+    f_argmin(arr, lo, p0)
+f_stop(arr, t, T, dd) =>
+    rm = array.get(arr, t)
+    s = -1
+    if T > t
+        for i = t + 1 to T
+            v = array.get(arr, i)
+            rm := math.max(rm, v)
+            if v <= rm * (1 - dd) and s < 0
+                s := i
+    s
+f_date(ts) =>
+    str.tostring(year(ts, "Asia/Taipei")) + "-" + str.tostring(month(ts, "Asia/Taipei"), "00") + "-" + str.tostring(dayofmonth(ts, "Asia/Taipei"), "00")
+f_pct(v) =>
+    na(v) ? "—" : str.tostring(v * 100, "#0.0") + "%"
+
+var bool alStop = false
+var bool alN40 = false
+var table tb = table.new(position.top_right, 2, 9, bgcolor=color.new(color.white, 10), border_width=1, border_color=color.new(color.gray, 60))
+
+if barstate.islast
+    // 新 K 棒開始時把上一根畫的標籤、線清掉（避免重複）
+    for lb in label.all
+        label.delete(lb)
+    for ln in line.all
+        line.delete(ln)
+    L = math.min(bar_index, 599)
+    ac = array.new_float(L + 1, 0.0)
+    aw1 = array.new_bool(L + 1, false)
+    aw2 = array.new_bool(L + 1, false)
+    ab60 = array.new_bool(L + 1, false)
+    ast = array.new_bool(L + 1, false)
+    ad250 = array.new_float(L + 1, 0.0)
+    at = array.new_int(L + 1, 0)
+    for i = 0 to L
+        j = L - i
+        array.set(ac, i, close[j])
+        array.set(aw1, i, w1[j] ? true : false)
+        array.set(aw2, i, w2[j] ? true : false)
+        array.set(ab60, i, bel60[j] ? true : false)
+        array.set(ast, i, isStart[j] ? true : false)
+        array.set(ad250, i, nz(disp250A[j]))
+        array.set(at, i, time[j])
+    T = L
+    // 買進日位置
+    eb = -1
+    if buyTime > 0 and buyTime <= time
+        for i = 0 to L
+            if eb < 0 and array.get(at, i) >= buyTime
+                eb := i
+    note = ""
+    t = f_anchor(ac, T, LOOK)
+    // 沒填買進日 ⇒ 錨到最新一輪（當作今天買進，同 surge_flow_daily.replay 的重新錨定）
+    ebA = eb >= 0 ? eb : T
+    if eb >= 0 and eb < t
+        t := f_anchor(ac, eb, LOOK)
+        note := "（買進日早於起漲點 ⇒ 改用買進日往前的點）"
+    for k = 0 to 49
+        st0 = f_stop(ac, t, T, ENDDD)
+        if st0 < 0 or st0 >= ebA
+            break
+        t := f_argmin(ac, st0, ebA)
+        note := eb >= 0 ? "（先前漲勢在買進前已回落 30% ⇒ 起漲點改到之後的最低點）" : "（先前漲勢已回落 30% 結束 ⇒ 錨到最新一輪）"
+    // 從 t 起：最高、切段、結束、40 根
+    rmx = array.new_float(L + 1, 0.0)
+    nbar = array.new_int(L + 1, 0)
+    cutA = array.new_int(0)
+    cutB = array.new_int(0)
+    cutR = array.new_int(0)
+    rm = array.get(ac, t)
+    pk = t
+    mnv = 1e300
+    mni = -1
+    lastnh = t
+    stopI = -1
+    array.set(rmx, t, rm)
+    if T > t
+        for i = t + 1 to T
+            ci = array.get(ac, i)
+            if ci > rm
+                if pk > t and mni >= 0 and mnv <= array.get(ac, pk) * (1 - XCUT) * (1 + 1e-9)
+                    array.push(cutA, pk)
+                    array.push(cutB, mni)
+                    array.push(cutR, i)
+                rm := ci
+                pk := i
+                mnv := 1e300
+                mni := -1
+                lastnh := i
+            else if ci < mnv
+                mnv := ci
+                mni := i
+            array.set(rmx, i, rm)
+            array.set(nbar, i, i - lastnh)
+            if stopI < 0 and ci <= rm * (1 - ENDDD)
+                stopI := i
+    nCut = array.size(cutA)
+    segDoneT = 0
+    if nCut > 0
+        for q = 0 to nCut - 1
+            if array.get(cutR, q) <= T
+                segDoneT += 1
+    segno = 1 + segDoneT
+    lastday = stopI >= 0 ? stopI : T
+    ddNow = array.get(ac, T) / array.get(rmx, T) - 1
+    // 目前這一段的起點（最後一個已完成 20% 拉回的低點；沒有 ⇒ t）
+    segStartT = t
+    if nCut > 0
+        for q = 0 to nCut - 1
+            if array.get(cutR, q) <= T
+                segStartT := math.max(segStartT, array.get(cutB, q))
+    // 本段起點（買進日所在段）
+    segStartEb = t
+    if eb >= 0 and nCut > 0
+        for q = 0 to nCut - 1
+            if array.get(cutR, q) <= eb
+                segStartEb := math.max(segStartEb, array.get(cutB, q))
+    // 中段底分數：今天的分數（當作拉回低點 ＝ 今天）
+    A_ = f_argmax(ac, t, T)
+    kd = 0
+    if nCut > 0
+        for q = 0 to nCut - 1
+            if array.get(cutR, q) <= A_
+                kd += 1
+    dn = 0
+    for i = 0 to L
+        if i >= t and i <= T and array.get(ast, i)
+            dn += 1
+    b60 = 0
+    if T > A_
+        for i = A_ + 1 to T
+            if array.get(ab60, i)
+                b60 += 1
+    depth = array.get(ac, T) / array.get(ac, A_) - 1
+    useMan = src == "手填今天"
+    f1 = kd == 0
+    f2 = (useMan ? mDispN : dn) == 0
+    f3 = b60 >= 0 and b60 < bMA60
+    f4 = depth >= bDepth
+    f5 = useMan ? not mDisp250 : array.get(ad250, T) == 0
+    scoreToday = (f1 ? 1 : 0) + (f2 ? 1 : 0) + (f3 ? 1 : 0) + (f4 ? 1 : 0) + (f5 ? 1 : 0)
+    belowT = array.get(ac, T) <= array.get(rmx, T) * (1 - XCUT) * (1 + 1e-9)
+    belowY = T - 1 >= t ? array.get(ac, T - 1) <= array.get(rmx, T - 1) * (1 - XCUT) * (1 + 1e-9) : false
+    crossToday = T > t and belowT and not belowY
+    // 40 根沒新高（從 t 起；買進日之後才算）
+    n40 = -1
+    fromN = eb >= 0 ? math.max(eb, t) : t
+    if lastday >= fromN
+        for i = fromN to lastday
+            if n40 < 0 and array.get(nbar, i) >= NOHI
+                n40 := i
+    alN40 := n40 == T
+    alStop := stopI == T
+    // ── 流程重播（有買進日才做）
+    stage = "未填買進日"
+    act = "（只看訊號）"
+    if eb >= 0
+        d1date = -1
+        d1_ = -1
+        if stopI < 0 or stopI > eb
+            if eb > segStartEb
+                for d = segStartEb to eb - 1
+                    if d1date < 0 and array.get(aw1, d)
+                        d1date := d
+        if d1date >= 0
+            d1_ := eb
+        else
+            if lastday >= eb
+                for d = eb to lastday
+                    if d1_ < 0 and array.get(aw1, d) and (stopI < 0 or d < stopI)
+                        d1_ := d
+            d1date := d1_
+        if n40 >= 0 and (d1_ < 0 or n40 <= d1_)
+            stage := n40 == T ? "全部持有" : "結束"
+            act := n40 == T ? "明天開盤賣全部（連 " + str.tostring(NOHI) + " 根沒創新高）" : "已結束：" + f_date(array.get(at, n40)) + " 連 " + str.tostring(NOHI) + " 根沒新高"
+        else if d1_ < 0
+            if stopI >= 0
+                stage := stopI == T ? "全部持有" : "結束"
+                act := stopI == T ? "明天開盤賣全部（從最高回落 30%）" : "已結束：" + f_date(array.get(at, stopI)) + " 回落 30%"
+            else
+                stage := "全部持有"
+                act := "續抱（W1 未出現）"
+        else
+            pre2 = -1
+            if d1date < eb
+                s2 = math.max(segStartEb, d1date + 1)
+                if eb > s2
+                    for d = s2 to eb - 1
+                        if pre2 < 0 and array.get(aw2, d)
+                            pre2 := d
+            if d1_ == T
+                stage := "全部持有"
+                act := pre2 >= 0 ? "明天開盤賣全部（本段 W1、W2 都已出現）" : "明天開盤賣 3 成、留 7 成（W1）"
+            else
+                ex1 = d1_ + 1
+                w2d = -1
+                if pre2 >= 0
+                    w2d := eb
+                else if lastday >= ex1
+                    for d = ex1 to lastday
+                        if w2d < 0 and array.get(aw2, d)
+                            w2d := d
+                if w2d < 0 or (stopI >= 0 and w2d >= stopI)
+                    if stopI >= 0
+                        stage := stopI == T ? "已賣 3 成" : "結束"
+                        act := stopI == T ? "明天開盤賣剩 7 成（從最高回落 30%）" : "已結束：" + f_date(array.get(at, stopI)) + " 回落 30%"
+                    else
+                        stage := "已賣 3 成"
+                        act := "續抱剩 7 成（等 W2 或回落 30%）"
+                else if w2d == T
+                    stage := "已賣 3 成"
+                    act := "明天開盤賣剩 7 成（W2）"
+                else
+                    ex2 = w2d + 1
+                    ebb = -1
+                    lastD2 = -1
+                    lastSc = 0
+                    if T > ex2
+                        for d2 = ex2 + 1 to T
+                            if ebb < 0 and (stopI < 0 or d2 < stopI)
+                                bT = array.get(ac, d2) <= array.get(rmx, d2) * (1 - XCUT) * (1 + 1e-9)
+                                bY = array.get(ac, d2 - 1) <= array.get(rmx, d2 - 1) * (1 - XCUT) * (1 + 1e-9)
+                                if bT and not bY
+                                    A2_ = f_argmax(ac, t, d2)
+                                    kd2 = 0
+                                    if nCut > 0
+                                        for q = 0 to nCut - 1
+                                            if array.get(cutR, q) <= A2_
+                                                kd2 += 1
+                                    dn2 = 0
+                                    for i = t to d2
+                                        if array.get(ast, i)
+                                            dn2 += 1
+                                    b2 = 0
+                                    if d2 > A2_
+                                        for i = A2_ + 1 to d2
+                                            if array.get(ab60, i)
+                                                b2 += 1
+                                    dep2 = array.get(ac, d2) / array.get(ac, A2_) - 1
+                                    sc = (kd2 == 0 ? 1 : 0) + (dn2 == 0 ? 1 : 0) + (b2 < bMA60 ? 1 : 0) + (dep2 >= bDepth ? 1 : 0) + (array.get(ad250, d2) == 0 ? 1 : 0)
+                                    lastD2 := d2
+                                    lastSc := sc
+                                    if sc >= mStar
+                                        ebb := d2 == T ? T : d2 + 1
+                    if ebb < 0
+                        if stopI >= 0
+                            stage := "結束"
+                            act := "已結束：出清後沒有買回，" + f_date(array.get(at, stopI)) + " 回落 30%"
+                        else
+                            stage := "已出清／待買回"
+                            act := lastD2 == T ? "今天回落 20%，分數 " + str.tostring(lastSc) + "/5（未達 " + str.tostring(mStar) + "）⇒ 不買回" : "等待：從最高回落第一次達 20% 且分數 ≥ " + str.tostring(mStar)
+                    else if ebb == T and lastD2 == T
+                        stage := "已出清／待買回"
+                        act := "明天開盤買回（中段底分數 " + str.tostring(lastSc) + "/5）"
+                    else
+                        w2b = -1
+                        if lastday >= ebb
+                            for d = ebb to lastday
+                                if w2b < 0 and array.get(aw2, d)
+                                    w2b := d
+                        if w2b >= 0 and (stopI < 0 or w2b < stopI)
+                            stage := w2b == T ? "第二段持有" : "結束"
+                            act := w2b == T ? "明天開盤賣（第二段 W2）" : "已結束：第二段 W2 賣出"
+                        else if stopI >= 0
+                            stage := stopI == T ? "第二段持有" : "結束"
+                            act := stopI == T ? "明天開盤賣（從最高回落 30%）" : "已結束：" + f_date(array.get(at, stopI)) + " 回落 30%"
+                        else
+                            stage := "第二段持有"
+                            act := "續抱（等 W2 或回落 30%）"
+        if stage == "全部持有" and buyPx > 0 and close <= buyPx * (1 - STOPP) and d1_ < 0
+            act := act + "｜參考：已跌破買進價 " + str.tostring(STOPP * 100, "#") + "%（要不要賣你決定）"
+    // ── 畫圖
+    if showSeg
+        label.new((bar_index - L + t), array.get(ac, t), "起漲點", style=label.style_label_up, yloc=yloc.belowbar, color=color.new(color.green, 10), textcolor=color.white, size=size.small)
+        if nCut > 0
+            for q = 0 to nCut - 1
+                label.new((bar_index - L + array.get(cutA, q)), array.get(ac, array.get(cutA, q)), "段頂" + str.tostring(q + 1), style=label.style_label_down, yloc=yloc.abovebar, color=color.new(color.blue, 20), textcolor=color.white, size=size.tiny)
+                label.new((bar_index - L + array.get(cutB, q)), array.get(ac, array.get(cutB, q)), "段底" + str.tostring(q + 1), style=label.style_label_up, yloc=yloc.belowbar, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
+    // 目前這一段內的 W1、W2（流程只看這一段）
+    for i = segStartT to T
+        if array.get(aw1, i)
+            label.new((bar_index - L + i), array.get(ac, i), "W1", style=label.style_triangledown, yloc=yloc.abovebar, color=color.new(color.red, 0), textcolor=color.red, size=size.small)
+        if array.get(aw2, i)
+            label.new((bar_index - L + i), array.get(ac, i), "W2", style=label.style_triangledown, yloc=yloc.abovebar, color=color.new(color.orange, 0), textcolor=color.orange, size=size.small)
+    hiNow = array.get(rmx, T)
+    line.new((bar_index - L + t), hiNow * (1 - XCUT), bar_index, hiNow * (1 - XCUT), extend=extend.right, color=color.new(color.teal, 0), style=line.style_dashed)
+    line.new((bar_index - L + t), hiNow * (1 - ENDDD), bar_index, hiNow * (1 - ENDDD), extend=extend.right, color=color.new(color.red, 0), style=line.style_dashed)
+    label.new(bar_index, hiNow * (1 - XCUT), "回落 20%", style=label.style_label_left, color=color.new(color.teal, 80), textcolor=color.teal, size=size.tiny)
+    label.new(bar_index, hiNow * (1 - ENDDD), "回落 30%（結束）", style=label.style_label_left, color=color.new(color.red, 80), textcolor=color.red, size=size.tiny)
+    if eb >= 0 and buyPx > 0
+        line.new((bar_index - L + eb), buyPx, bar_index, buyPx, extend=extend.right, color=color.new(color.blue, 0))
+        line.new((bar_index - L + eb), buyPx * (1 - STOPP), bar_index, buyPx * (1 - STOPP), extend=extend.right, color=color.new(color.fuchsia, 0), style=line.style_dotted)
+        label.new(bar_index, buyPx * (1 - STOPP), "買進價 −" + str.tostring(STOPP * 100, "#") + "%", style=label.style_label_left, color=color.new(color.fuchsia, 80), textcolor=color.fuchsia, size=size.tiny)
+    // ── 右上角表格
+    table.cell(tb, 0, 0, "起漲點", text_size=size.small)
+    table.cell(tb, 1, 0, f_date(array.get(at, t)) + "　" + str.tostring(array.get(ac, t), format.mintick) + note, text_size=size.small)
+    table.cell(tb, 0, 1, "目前第幾段", text_size=size.small)
+    table.cell(tb, 1, 1, "第 " + str.tostring(segno) + " 段", text_size=size.small)
+    table.cell(tb, 0, 2, "距最高", text_size=size.small)
+    table.cell(tb, 1, 2, f_pct(ddNow) + "（最高 " + str.tostring(hiNow, format.mintick) + "）" + (stopI >= 0 ? "　已回落 30%" : ""), text_size=size.small)
+    table.cell(tb, 0, 3, "沒創新高", text_size=size.small)
+    table.cell(tb, 1, 3, str.tostring(array.get(nbar, T)) + " 根（" + str.tostring(NOHI) + " 根賣全部）", text_size=size.small)
+    table.cell(tb, 0, 4, "中段底分數", text_size=size.small)
+    table.cell(tb, 1, 4, str.tostring(scoreToday) + "/5（買回門檻 " + str.tostring(mStar) + "）" + (crossToday ? "　今天剛跨過回落 20%" : ""), text_size=size.small)
+    table.cell(tb, 0, 5, "注意／處置（" + (useMan ? "手填" : "近似") + "）", text_size=size.small)
+    table.cell(tb, 1, 5, "近10日注意 " + str.tostring(att10) + " 次；" + (disp60 ? "60日內有處置" : "60日內無處置") + (inDisp ? "；處置中" : ""), text_size=size.small)
+    table.cell(tb, 0, 6, "今天訊號", text_size=size.small)
+    table.cell(tb, 1, 6, (w1 ? "W1 " : "") + (w2 ? "W2 " : "") + (alStop ? "回落30% " : "") + (alN40 ? "40根沒新高 " : "") + (not w1 and not w2 and not alStop and not alN40 ? "無" : ""), text_size=size.small)
+    table.cell(tb, 0, 7, "階段", text_size=size.small)
+    table.cell(tb, 1, 7, stage, text_size=size.small)
+    table.cell(tb, 0, 8, "該做什麼", text_size=size.small)
+    table.cell(tb, 1, 8, act, text_size=size.small, text_color=color.red)
+
+// ═════ 警報 ═════
+alertcondition(w1, "W1 第一頂警示", "{{ticker}} W1 第一頂警示（近似）：持有者明天開盤賣 3 成")
+alertcondition(w2, "W2 第二頂警示", "{{ticker}} W2 第二頂警示（近似）：已賣 3 成者明天開盤賣剩 7 成")
+alertcondition(alStop, "回落 30%", "{{ticker}} 從起漲後最高收盤回落 30%：本筆結束，明天開盤賣")
+alertcondition(alN40, "連 40 根沒新高", "{{ticker}} 連 40 根沒創新高：全部持有者明天開盤賣全部")
+alertcondition(buyPx > 0 and close <= buyPx * (1 - STOPP), "跌破買進價 −15%", "{{ticker}} 已跌破買進價 15%（參考停損）")
