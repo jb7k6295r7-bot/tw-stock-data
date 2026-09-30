@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-09-26T00:53:36+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36162411655
+# ⏱ 這一趟：2026-10-01T03:10:42+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36762156094
 # site_inventory.py 的輸出。**只讀不寫資料。**
 # 問的是：「這個站到底有沒有我要的東西」——一次問完。
 # ⛔ 它只回答「選單上有沒有這個名字」，不回答「那條端點能不能用」。
@@ -12,7 +12,7 @@
    ✓ 36,250 bytes｜攤平出 **281 條**選單項目
 
 ── TPEx｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
-   ✓ 68,610 bytes｜攤平出 **762 條**選單項目
+   ✓ 69,672 bytes｜攤平出 **767 條**選單項目
 
 ── TWSE-OpenAPI｜https://openapi.twse.com.tw/v1/swagger.json
    ✓ 309,960 bytes｜攤平出 **143 條**選單項目
@@ -244,14 +244,14 @@
         → ${root}/zh/trading/historical/mi-stock-tib.html
       臺灣創新板(TIB)專區
         → https://www.twse.com.tw/TIB/zh/index.html
-   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
+   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 764/767 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 集保／股權分散（歷史）
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
-   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
+   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 764/767 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
@@ -441,7 +441,7 @@
         → ${root}/zh/announcement/punish.html
       公布注意累計次數可能達處置標準之有價證券
         → ${root}/zh/announcement/notetrans.html
-   TPEx：⭐ **10 條**
+   TPEx：⭐ **15 條**
       注意及處置
       注意及處置 / 注意及處置
       注意及處置 / 注意及處置 / 上櫃有價證券
@@ -458,6 +458,15 @@
         → /zh-tw/announcement/esb/esb-attention.html
       注意及處置 / 注意及處置 / 興櫃股票 / 興櫃公布注意累計次數可能達處置標準之股票
         → /zh-tw/announcement/esb/esb-warning.html
+      注意及處置 / 公告及法規
+      注意及處置 / 公告及法規 / 財團法人中華民國證券櫃檯買賣中心櫃檯買賣公布或通知注意交易資訊暨處置作業要點
+        → https://www.selaw.com.tw/Chinese/RegulatoryInformationResult/Article?sysNumber=LW10814118
+      注意及處置 / 公告及法規 / 財團法人中華民國證券櫃檯買賣中心櫃檯買賣公布或通知注意交易資訊暨處置作業要點第四條第一項各款異常標準之詳細數據及除外情形
+        → https://www.selaw.com.tw/Chinese/RegulatoryInformationResult/Article?sysNumber=LW10819047
+      注意及處置 / 公告及法規 / 興櫃股票公布或通知注意交易資訊暨處置作業要點
+        → https://www.selaw.com.tw/Chinese/RegulatoryInformationResult/Article?sysNumber=LW10856371
+      注意及處置 / 公告及法規 / 115年8月3日公告修正處置相關規定及公布注意第11款標準，並自115年8月10日起實施
+        → https://www.tpex.org.tw/zh-tw/announce/market/announce/detail.html?content_file=MTE1MDAwNTEzNTEuaHRtbA%3D%3D&docId=MTE1MDAwNTEzNTE%3D
    TWSE-OpenAPI：⭐ **3 條**
       集中市場公布處置股票
         → /announcement/punish
@@ -934,7 +943,7 @@
 
 ★ 八大行庫／官股買賣
    TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
-   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 759/762 條含中文）
+   TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 764/767 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
@@ -1380,11 +1389,11 @@
 
 ── ⭐ 掃描範圍表（⛔ 只要有一列失敗，這一趟就不可以寫出「官方沒有」）──
   ✅ TWSE｜281 條（含中文 276）｜https://www.twse.com.tw/res/data/zh/menu-mega.html
-  ✅ TPEx｜762 條（含中文 759）｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
+  ✅ TPEx｜767 條（含中文 764）｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
   ✅ TWSE-OpenAPI｜143 條（含中文 143）｜https://openapi.twse.com.tw/v1/swagger.json
   ✅ TPEx-OpenAPI｜225 條（含中文 225）｜https://www.tpex.org.tw/openapi/swagger.json
   ✅ TWSE-sitemap｜3109 條（含中文 0）｜https://www.twse.com.tw/sitemap.xml
-  ⇒ 成功 5 / 5 份目錄｜合計 4,520 條
+  ⇒ 成功 5 / 5 份目錄｜合計 4,525 條
 
 ── ⇒ 這份輸出的用法 ──
   ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用
