@@ -1061,6 +1061,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## mops_news　✓ 正常
+
+最後執行：2026-09-30T22:41:03+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36696929822
+
+- **區間**：1999-01-01 ~ 2026-09-29｜待問 4908 天（已問過 5236）
+- **本趟**：問 2793 天｜ok 2754｜empty 33｜失敗 6｜新增 463455 則｜剩 2115 天｜300 分
+- **失敗的（前 10）**：[('2013-11-20', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2013-11-21', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2013-12-01', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2016-11-26', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2016-12-02', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2016-12-08', 'URLError: <urlopen error [Errno 104] Connection reset by peer>')]
+
+檢查：
+- ok　失敗 ≤ 本趟 2%　（6／2793）
+
 ## filing_dates　✓ 正常
 
 最後執行：2026-09-30T22:40:58+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36697035753
@@ -1074,17 +1085,6 @@
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
 - ok　失敗 ≤ 本趟 2%　（0／532）
-
-## mops_news　✓ 正常
-
-最後執行：2026-09-30T17:28:29+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36668446057
-
-- **區間**：1999-01-01 ~ 2026-09-29｜待問 7501 天（已問過 2640）
-- **本趟**：問 2603 天｜ok 2502｜empty 91｜失敗 10｜新增 346914 則｜剩 4898 天｜300 分
-- **失敗的（前 10）**：[('2008-08-02', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2008-08-11', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-06-29', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-07-13', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-07-14', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2011-09-07', 'TimeoutError: The read operation timed out'), ('2012-11-16', 'TimeoutError: The read operation timed out'), ('2013-04-25', 'HTTPError: HTTP Error 404: '), ('2013-04-26', 'HTTPError: HTTP Error 502: Bad Gateway'), ('2013-04-27', 'HTTPError: HTTP Error 502: Bad Gateway')]
-
-檢查：
-- ok　失敗 ≤ 本趟 2%　（10／2603）
 
 ## early:feed:otcmargin　✓ 正常
 
