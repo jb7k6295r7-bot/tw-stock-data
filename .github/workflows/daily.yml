@@ -1456,6 +1456,21 @@ jobs:
           python feeds.py --run --feed otcinstamt --start 2017-01-03 --end "$TODAY"                           --limit 150 --sleep 1 || RC=1
           exit $RC
 
+      # ⭐ 2026-10-01：重大訊息（MOPS t05st02）1999～2026-09-30 已全補（backfill mode=mops-news）⇒ 每天接著補
+      #   end 用牆上時鐘（台北）：這一份是「公告了什麼」，不是交易日資料；最近 3 天重問（當天 17:30 後的公告要隔天查才回）
+      - name: 重大訊息（當天＋最近 3 天）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          # ⭐ 閘門：解析判準壞了就不要抓（⛔ 這一發不被 RC-GUARD 收走）
+          python selftest_mops_news.py
+          NOW=$(TZ=Asia/Taipei date '+%Y-%m-%d')
+          FROM=$(TZ=Asia/Taipei date -d '-10 day' '+%Y-%m-%d')
+          RC=0
+          python mops_news.py --start "$FROM" --end "$NOW" --recent 3 --sleep 3 --budget-min 10 || RC=1
+          exit $RC
+
       # ★ 拿大盤漲跌家數（MI_INDEX）當日檔的外部判準。離線、只讀。
       #   日曆只證明「那一天存不存在」，不證明「那天收到幾檔」；
       #   content_audit 的家數檢查是拿前後交易日比，那是同一條管線不同趟次。

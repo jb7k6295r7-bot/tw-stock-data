@@ -108,6 +108,7 @@ def main():
     ap.add_argument("--end", default=datetime.date.today().isoformat())
     ap.add_argument("--sleep", type=float, default=5)
     ap.add_argument("--budget-min", type=float, default=300)
+    ap.add_argument("--recent", type=int, default=0, help="end 往前這幾天已問過的也重問（每日排程用：當天晚上的公告要隔天查才回）")
     a = ap.parse_args()
     t0 = time.time()
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -115,10 +116,11 @@ def main():
     rl = runlog.Run("mops_news")
     d, end = datetime.date.fromisoformat(a.start), datetime.date.fromisoformat(a.end)
     today = datetime.date.today().isoformat()
+    recent = (end - datetime.timedelta(days=a.recent)).isoformat() if a.recent else "9999"
     todo = []
     while d <= end:
         k = d.isoformat()
-        if asked.get(k, "").split(":")[0] not in ("ok", "empty") or k >= today:
+        if asked.get(k, "").split(":")[0] not in ("ok", "empty") or k >= today or k >= recent:
             todo.append(k)
         d += datetime.timedelta(days=1)
     rl.info("區間", f"{a.start} ~ {a.end}｜待問 {len(todo)} 天（已問過 {len(asked)}）")
