@@ -1061,6 +1061,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## mops_news　✓ 正常
+
+最後執行：2026-09-30T12:06:46+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36642880459
+
+- **區間**：1999-01-01 ~ 2026-09-29｜待問 10134 天（已問過 0）
+- **本趟**：問 2640 天｜ok 2467｜empty 166｜失敗 7｜新增 320125 則｜剩 7494 天｜300 分
+- **失敗的（前 10）**：[('2000-07-27', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2000-08-01', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2002-09-28', 'TimeoutError: The read operation timed out'), ('2003-06-13', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2003-06-26', 'URLError: <urlopen error [Errno 104] Connection reset by peer>'), ('2004-04-04', 'TimeoutError: The read operation timed out'), ('2006-03-10', 'URLError: <urlopen error [Errno 104] Connection reset by peer>')]
+
+檢查：
+- ok　失敗 ≤ 本趟 2%　（7／2640）
+
 ## filing_dates　✗ 有問題
 
 最後執行：2026-09-30T06:42:40+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36605891805
@@ -1090,16 +1101,6 @@
 - ok　跑完整個區間，沒有提前收手　（跑完）
 - ok　沒有「連問都問不到」的日子（⛔ 只算**已經結束**的那幾天）　（0 天）
 - ok　沒有**未歸因**的驗算不符列　（0 天）
-
-## mops_news　✓ 正常
-
-最後執行：2026-09-30T03:17:23+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36580677207
-
-- **區間**：1999-01-01 ~ 2026-09-29｜待問 10134 天（已問過 0）
-- **本趟**：問 3017 天｜ok 2834｜empty 183｜失敗 0｜新增 363736 則｜剩 7117 天｜300 分
-
-檢查：
-- ok　失敗 ≤ 本趟 2%　（0／3017）
 
 ## early:feed:otcinst　✗ 有問題
 
