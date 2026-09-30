@@ -633,6 +633,7 @@ def page(log):
         H.append("<details><summary>狀態／特徵候選（逐個）</summary>" + hdr + "".join(jrow(nm) for nm in META["特徵候選"]) + "</table></div></details>")
         H.append("<details><summary>組合（同時 ≥ k 個）</summary>" + hdr + "".join(jrow(nm) for nm in j["訊號"].unique() if "同時" in nm) + "</table></div></details>")
         H.append("</div>")
+    H.append(entry10_section(P0, P1, XX))
     H.append("<h2>定義</h2><ul class='note'><li>當下訊號（近 3 個交易日內發生）：MACD 金叉（12／26／9）、KD 金叉（9 日）、RSI14 上穿 50、MA20 上穿 MA60、收盤創 20 日／55 日新高、量 ≥ 前 20 日均量 2 倍、"
              "收盤站上布林中軌／上軌（20 日、2 倍標準差）、OBV 上穿 20 日均、三大法人連買 3 日、營收近 3 月年增平均 ＞20% 且近 20 日漲幅 ＜10%、創一年新高、月營收創 24 月新高、被列注意、進入處置。</li>"
              "<li>狀態／特徵 ＝ 飆股回推的特徵表全部級距（五等分：Q1 最低、Q5 最高，每天全市場比）＋ 低檔打底四個（低檔盤整天數、距一年最低幾天、量縮程度、波動收斂）。</li>"
@@ -655,6 +656,49 @@ def page(log):
 
 
 HONEST = ""
+
+
+def entry10_section(P0, P1, XX):
+    """launch10 追加（researchSurge6_launch10.py）：漲到 1 成時抓得到嗎；檔不在 ⇒ 空"""
+    fr, ff, fp = (os.path.join(OUT, f) for f in ("entry10_recall.csv", "entry10_first.csv", "entry10_precision.csv"))
+    if not all(os.path.exists(x) for x in (fr, ff, fp)):
+        return ""
+    R = pd.read_csv(fr); F = pd.read_csv(ff); PR = pd.read_csv(fp)
+    M = json.load(open(os.path.join(OUT, "entry10_meta.json"), encoding="utf-8"))
+    CKp = os.path.join(OUT, "entry10_check.json"); CK = json.load(open(CKp, encoding="utf-8")) if os.path.exists(CKp) else None
+    rr = lambda nm, sg: R[(R["訊號"] == nm) & (R["段"] == sg)].iloc[0]["1成點以前抓到 格中位"]
+    pp = lambda nm, sg, k: PR[(PR["訊號"] == nm) & (PR["段"] == sg)].iloc[0][k]
+    H = ["<h2>六、漲到 1 成時抓得到嗎（V2 位置 ≤0.4；追加）</h2>",
+         f"<p class='note'>讀法寫死 {html.escape(M['讀法寫死'])}（researchSurge6_launch10.py）"
+         + (f"；查核{'通過' if CK['通過'] else '有錯'}（錯誤 {CK['錯誤數']}）" if CK else "") + "。五個訊號：量 ≥ 前 20 日均量 2 倍、創 20 日新高、站上布林上軌、創 55 日新高、KD 金叉；"
+         "組合 ＝ 五個裡「近 5 日內發生過」的個數 ≥ k。</p>"]
+    k3 = "五個同時 ≥3 個（近5日）"; bs = "基準（母體）"
+    H.append("<ul class='big'>"
+             f"<li><b>抓得到</b>：低檔發動的飆股，到第一頂 1 成以前，五個裡至少出現 1 個的 {P0(rr('五個同時 ≥1 個（近5日）', '全部'))}、近 5 日同時 ≥3 個的 {P0(rr(k3, '全部'))}；"
+             f"量 ≥2 倍 {P0(rr('量≥2倍', '全部'))}、20 日新高 {P0(rr('20日新高', '全部'))}。</li>"
+             f"<li><b>但抓到的大多不是</b>：剛從低檔發動（比 60 日內低點漲 5%～30%）的股票，確認段每天約 {pp(bs, '確認', '每天平均幾檔'):.0f} 檔，變飆股比例 {P1(pp(bs, '確認', '變飆股比例 格中位'))}；"
+             f"出現「同時 ≥3 個」的（去重後每天約 {pp(k3, '確認', '每天平均幾檔'):.0f} 檔）變飆股比例 {P1(pp(k3, '確認', '變飆股比例 格中位'))}"
+             f"（{XX(pp(k3, '探索', '倍數 格中位'))}→{XX(pp(k3, '確認', '倍數 格中位'))} 倍），60 日內漲 ≥30% 的 {P0(pp(k3, '確認', '60日內漲≥30%'))}、一年內先跌 15% 的 {P0(pp(k3, '確認', '一年內先跌15%'))}。"
+             f"最嚴的「五個同時都有」{XX(pp('五個同時 ≥5 個（近5日）', '探索', '倍數 格中位'))}→{XX(pp('五個同時 ≥5 個（近5日）', '確認', '倍數 格中位'))} 倍，變飆股也只有 {P1(pp('五個同時 ≥5 個（近5日）', '確認', '變飆股比例 格中位'))}。</li>"
+             "<li class='ok'><b>結論</b>：飆股漲到 1 成以前幾乎都會出現這幾個訊號（抓得到），但剛從低檔發動、出現這些訊號的股票，之後變飆股的比例和沒看訊號差不多（倍數約 0.9～1.2）——"
+             "這些訊號是「發動了」的必要跡象，不是「會飆」的預告。</li>"
+             "<li class='note'>註：「≥1 個」與「KD 金叉」幾乎天天都有，照「前 20 天都沒出現才算新的」去重後剩很少天，倍數不穩，看的時候略過。</li></ul>")
+    H.append("<h3>① 抓得到幾成（召回；事後）：低檔發動的飆股，在漲到第一頂 1 成以前就出現的比例</h3>"
+             "<div class='wrap'><table class='tl'><tr><th class='l'>訊號</th><th>全部</th><th>探索</th><th>確認</th><th>第一次出現時<br><small>漲到第一頂的幾成</small></th><th>第一次出現<br><small>離起漲幾天</small></th></tr>")
+    for nm in R["訊號"].unique():
+        a = R[R["訊號"] == nm].set_index("段"); f = F[(F["訊號"] == nm) & (F["段"] == "全部")].iloc[0]
+        H.append(f"<tr><td class='l'>{html.escape(nm)}</td>" + "".join(f"<td>{P0(a.loc[sg, '1成點以前抓到 格中位'])}</td>" for sg in ("全部", "探索", "確認"))
+                 + f"<td>{P0(f['第一次出現時漲到第一頂的幾成 格中位'])}</td><td>{f['第一次出現離t天數 格中位']:.0f}</td></tr>")
+    H.append("</table></div>")
+    H.append("<h3>② 抓到的有幾成是真的（精準度；當下可用）</h3><p class='note'>母體 ＝ 前 60 天內的最低點位在一年區間下方 40% 以內、且今天比那個低點漲了 5%～30%（剛從低檔發動）；"
+             "同一檔前 20 天內已出現過就不算新的。變飆股 ＝ 各格定義，取格中位；倍數 ＝ ÷ 母體基準。</p>"
+             "<div class='wrap'><table class='tl'><tr><th class='l'>訊號</th><th>探索 倍數</th><th>確認 倍數</th><th>確認 變飆股比例</th><th>確認 每天幾檔</th><th>確認 60 日內漲≥30%</th><th>確認 一年內先跌15%</th></tr>")
+    for nm in PR["訊號"].unique():
+        a = PR[(PR["訊號"] == nm) & (PR["段"] == "探索")].iloc[0]; b = PR[(PR["訊號"] == nm) & (PR["段"] == "確認")].iloc[0]
+        H.append(f"<tr><td class='l'>{html.escape(nm)}</td><td>{XX(a['倍數 格中位'])}</td><td>{XX(b['倍數 格中位'])}</td><td>{P1(b['變飆股比例 格中位'])}</td>"
+                 f"<td>{b['每天平均幾檔']:.1f}</td><td>{P0(b['60日內漲≥30%'])}</td><td>{P0(b['一年內先跌15%'])}</td></tr>")
+    H.append("</table></div>")
+    return "\n".join(H)
 
 
 def main():
