@@ -16,3 +16,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-09-24,6984,ACpay,emerging,,15.8,15.1,15.57,3000,46710,-0.18,,,,均價/額推算,15.1,1
 2026-09-29,6984,ACpay,emerging,,,,,0,,,,,,無成交,,0
 2026-09-30,6984,ACpay,emerging,,15.05,15.05,15.05,2001,30115,-0.52,,,,均價/額推算,15.05,1
+2026-10-01,6984,ACpay,emerging,,15.75,15.05,15.27,4064,62057,0.22,,,,均價/額推算,15.2,1
