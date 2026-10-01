@@ -1,0 +1,10 @@
+effective_date,stock_id,name,from_industry,to_industry,confidence,evidence,source_url
+2007-07-02,8926,台汽電,其他,油電燃氣業,高,存檔站 96/06/26「其他」類行情頁有此檔；今日 industry.csv＝油電燃氣業；其間無任何調整公告；官方總數「原其他類6家」恰為此6檔,http://web.archive.org/web/20070629001052id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200706/A1122007062620.php?
+2007-07-02,9908,大台北,其他,油電燃氣業,高,同上,http://web.archive.org/web/20070629001052id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200706/A1122007062620.php?
+2007-07-02,9918,欣天然,其他,油電燃氣業,高,同上,http://web.archive.org/web/20070629001052id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200706/A1122007062620.php?
+2007-07-02,9926,新海,其他,油電燃氣業,高,同上,http://web.archive.org/web/20070629001052id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200706/A1122007062620.php?
+2007-07-02,9931,欣高,其他,油電燃氣業,高,同上,http://web.archive.org/web/20070629001052id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200706/A1122007062620.php?
+2007-07-02,9937,全國,其他,油電燃氣業,高,同上,http://web.archive.org/web/20070629001052id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200706/A1122007062620.php?
+2007-07-02,2616,山隆,航運業,油電燃氣業,中,官方「航運業1家」；山隆不在存檔站 96/07/04「航運業」頁、今日＝油電燃氣業、其間無調整公告；但拆分前的航運頁存檔站沒有，屬消去法,http://web.archive.org/web/20070706225736id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200707/A1122007070415.php?
+2007-07-02,6505,台塑化,塑膠工業,油電燃氣業,中,官方「塑膠工業1家」；台塑化不在存檔站 96/07/04「塑膠工業」頁、今日＝油電燃氣業；拆分前的塑膠頁存檔站沒有，屬消去法,http://web.archive.org/web/20070706230038id_/http://www.tse.com.tw:80/ch/trading/exchange/MI_INDEX/genpage/Report200707/A1122007070403.php?
+2007-07-02,3130,一零四,其他,資訊服務業,中,存檔站 96/06/26「其他」頁有此檔；112 年證交所附件列其原產業別＝資訊服務業；其間無調整公告；官方「自其他類重分類1家至資訊服務業」,https://www.twse.com.tw/staticFiles/announcement/announcement/1121802250-1.pdf
