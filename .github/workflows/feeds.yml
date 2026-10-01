@@ -850,6 +850,16 @@ jobs:
       - name: 核對交易日曆
         if: inputs.mode == 'calendar-audit'
         run: |
+          # ⛔⛔ 2026-10-01 run 36799885108：這一步讀寫 data/history/market_index.csv，⚠ 而分支那份只有 10 列
+          #   ⇒ --write-index 在 10 列上補 2,852 天 ⇒ push_data 整檔搬上 main ⇒ main 的 9,431 列（1990 起）剩 2,861
+          #   ⇒ 先取 main 的那幾份（程式真的讀的路徑：calendar_audit.py 的 market_index／OUT／三個 _coverage 與日檔）
+          git fetch origin main || true
+          for P in data/history/market_index.csv data/meta/calendar_twse.csv \
+                   data/universe/_coverage.csv data/universe/_coverage_backfill.csv data/universe/_coverage_daily.csv \
+                   data/universe/daily; do
+            git checkout origin/main -- "$P" || { echo "⛔ 取不到 main 的 $P ⇒ 不跑（分支那份比 main 舊，寫回去會蓋掉 main）" >&2; exit 1; }
+          done
+          echo "[checkout] market_index $(wc -l < data/history/market_index.csv) 列｜日曆最後 $(tail -1 data/meta/calendar_twse.csv)"
           ARGS="--start ${{ inputs.cal_start || '2015-01' }} --sleep 5 --write-index"
           if [ -n "${{ inputs.cal_end }}" ]; then
             ARGS="$ARGS --end ${{ inputs.cal_end }}"
