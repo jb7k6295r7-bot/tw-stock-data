@@ -247,6 +247,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 3064,泰偉,tpex,2026-08-04,2026-08-26,15,15,15,0,notrade
 3064,泰偉,tpex,2026-08-26,2026-09-08,8,8,8,0,notrade
 3064,泰偉,tpex,2026-09-11,2026-09-21,5,5,5,0,notrade
+3064,泰偉,tpex,2026-09-21,2026-10-01,5,5,5,0,notrade
 3067,全域,tpex,2016-08-02,2016-08-12,7,7,7,0,notrade
 3067,全域,tpex,2016-08-18,2016-08-26,5,5,5,0,notrade
 3067,全域,tpex,2018-06-14,2018-06-25,5,5,5,0,notrade
