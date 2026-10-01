@@ -1339,8 +1339,10 @@ jobs:
         continue-on-error: true
         timeout-minutes: 5
         run: |
-          M=$(TZ=Asia/Taipei date '+%Y-%m')
-          echo "當月 $M（台北時間）"
+          # ⛔ 2026-10-01：原本用牆上時鐘取月份 ⇒ 09-30 那趟排程延到 10-01 01:02 才跑 ⇒ 問了 10 月 ⇒ 日曆少 09-30
+          #   ⇒ 回測線把最新資料日判成 09-29（91686d167f 修 TODAY 時漏了這一步）⇒ 改取 manifest 的 target_trading_day
+          M=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'][:7])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m')
+          echo "目標交易日所在月 $M"
           # ⭐ --write-index：fetch.py 排在這一步**之前**（它先寫好今天那一列）
           #   ⇒ 這裡 100% 重疊 ⇒ **一列都不會寫**，它是一道純對照：
           #   FMTQIK 月報 vs MI_INDEX type=IND 日報，兩條不同的路算同一個指數，
