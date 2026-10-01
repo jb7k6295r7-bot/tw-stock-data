@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-10-01T03:27:11+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36762156094
-# 停牌／處置／注意 端點探針 2026-10-01T03:26:36+08:00
+# ⏱ 這一趟：2026-10-01T14:44:01+08:00（台北）｜ref main｜Actions｜run 36824024324
+# 停牌／處置／注意 端點探針 2026-10-01T14:43:23+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
 # 這一趟的選集：--set longhalt
@@ -98,7 +98,7 @@
      停止買賣開始日：0 種 ｜⚠ 空的 1
      公司代號：0 種 ｜⚠ 空的 1
      公司名稱：0 種 ｜⚠ 空的 1
-     出表日期：1 種 1150929×1
+     出表日期：1 種 1150930×1
    ③ <tr> 0 個｜js 0 支
 
 ── tpex-openapi-mopsfin_t187ap26_O（選單名裡有「停止買賣」）
@@ -232,7 +232,7 @@
 
 ── tpex-openapi-cmode（選單原名含「停止交易」）
    https://www.tpex.org.tw/openapi/v1/tpex_cmode
-   ✓ 4,829 bytes｜中文 54 字　← ⚠ 太少，多半是 js 空殼
+   ✓ 4,832 bytes｜中文 55 字　← ⚠ 太少，多半是 js 空殼
    ① 靶子命中：0／6 （一檔都沒有）
    ② 日期 0 個
       「停止買賣」0 次
@@ -244,11 +244,11 @@
       FinancialAnnouncements：1 種 Ｙ×22
      AlteredTrading：1 種 Ｙ×17｜⚠ 空的 5
      CompanyName：22 種｜最小 中湛｜最大 鑫創｜例 ['中湛', '佳總', '劍湖山']
-     Date：1 種 1150930×22
+     Date：1 種 1151001×22
      ManagedStock：0 種 ｜⚠ 空的 22
      MatchingFrequency：1 種 030×6｜⚠ 空的 16
      PeriodicTrading：1 種 Ｙ×6｜⚠ 空的 16
-     SecuritiesCompanyCode：22 種｜最小 2067｜最大 8933｜例 ['2067', '3064', '3259']
+     SecuritiesCompanyCode：22 種｜最小 2067｜最大 8933｜例 ['2067', '3064', '3085']
      SuspensionOfTrading：1 種 Ｙ×5｜⚠ 空的 17
    ③ <tr> 0 個｜js 0 支
 
