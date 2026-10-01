@@ -341,20 +341,20 @@
 檢查：
 - ok　有算出分位數　（樣本只有 2839）
 
-## capital　✓ 正常
+## capital　✗ 有問題
 
-最後執行：2026-09-09T17:34:57+08:00（台北）
+最後執行：2026-10-01T09:17:05+08:00（台北）｜觸發 schedule｜股本／發行股數（每月）｜ref main｜run 36799765684
 
-- **總列數**：2473
+- **總列數**：2745
 - **emerging 股本空白**：0 / 364
-- **tpex 股本空白**：127 / 1016
-- **twse 股本空白**：0 / 1093
-- **仍缺股數**：289
+- **tpex 股本空白**：127 / 1019
+- **twse 股本空白**：268 / 1362
+- **仍缺股數**：21
 
 檢查：
-- ok　mismatch 只出現在帶 * 或 DR 的標的
+- **✗**　mismatch 只出現在帶 * 或 DR 的標的　（例外：6819 眾智）
 - ok　上櫃股本空白沒有變多　（127 → 127）
-- ok　落檔列數沒有異常縮水　（2473 vs 2473）
+- ok　落檔列數沒有異常縮水　（2745 vs 2745）
 
 ## industry_esb　✓ 正常
 
@@ -964,13 +964,13 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-10-01T04:57:12+08:00（台北）｜觸發 schedule｜每日台股資料｜ref main｜run 36773311105
+最後執行：2026-10-01T09:17:05+08:00（台北）｜觸發 schedule｜股本／發行股數（每月）｜ref main｜run 36799765684
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **跑過的自測**：20 支｜selftest_runlog.py、selftest_mops.py、selftest_probes.py、selftest_lock_dir.py、selftest_calendar.py、selftest_holiday.py、selftest_otccal.py、selftest_suspend_twse.py、selftest_longhalt.py、selftest_otcexright.py、selftest_adj_gap.py、selftest_db_status.py、selftest_mops_history.py、selftest_revenue_complete.py、selftest_shares_twse.py、selftest_num.py、selftest_parse_daily.py、selftest_phantom_day.py、selftest_transpose.py、longhalt.py
+- **跑過的自測**：1 支｜selftest_capital.py
 
 檢查：
-- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（20 支全綠）
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
 
 ## reduce_shares_check　✓ 正常
 
