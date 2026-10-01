@@ -9,7 +9,7 @@ on:
       mode:
         description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated, early-feed, mops-news]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated, early-feed, mops-news, restore-file]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -345,6 +345,23 @@ jobs:
           #   ⭐ 這裡用它是安全的：上面才剛 `git checkout origin/main -- $D`，
           #     ⇒ 搬過去的內容就是「main 的那一份 ＋ 補回來的興櫃列」。
           echo "ESB_REPAIR_FORCE=data/universe/daily/$D.csv" >> "$GITHUB_ENV"
+
+      # ⭐ 2026-10-01：把 main 上某一個檔還原成 main 歷史裡的某一版（逐鍵併回 main 現在那一份，⛔ 不刪 main 後來新增的鍵）
+      #   起因：feeds calendar-audit run 36799885108 拿分支的舊 market_index.csv（10 列）去寫 ⇒ 整檔蓋掉 main 的 9,431 列
+      #   用法：markets＝「data/路徑:鍵欄位」，start＝main 歷史裡好的那個 commit
+      - name: 還原單一檔（main 歷史版本 ∪ main 現在）
+        if: inputs.mode == 'restore-file'
+        run: |
+          P="${{ inputs.markets }}"; KEY="${P#*:}"; P="${P%%:*}"; SHA="${{ inputs.start }}"
+          case "$P" in data/*) ;; *) echo "⛔ 只准還原 data/ 底下：$P" >&2; exit 1 ;; esac
+          git fetch origin main || true      # checkout 用 fetch-depth: 0
+          git merge-base --is-ancestor "$SHA" origin/main || { echo "⛔ $SHA 不在 main 的歷史裡" >&2; exit 1; }
+          git show "$SHA:$P" > /tmp/rs_old.dat
+          git show "origin/main:$P" > /tmp/rs_now.dat
+          python3 merge_ledger.py /tmp/rs_old.dat /tmp/rs_now.dat "$KEY" > /tmp/rs_out.dat
+          cp /tmp/rs_out.dat "$P"
+          echo "[restore] $P｜$SHA 那版 $(($(wc -l < /tmp/rs_old.dat) - 1)) 列｜main 現在 $(($(wc -l < /tmp/rs_now.dat) - 1)) 列｜還原後 $(($(wc -l < "$P") - 1)) 列"
+          echo "ESB_REPAIR_FORCE=$P" >> "$GITHUB_ENV"
 
       - name: 回補
         if: inputs.mode == 'run'
