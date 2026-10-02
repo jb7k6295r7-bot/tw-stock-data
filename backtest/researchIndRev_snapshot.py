@@ -25,7 +25,14 @@
     近 250 日報酬 ＝ 還原收盤（data.load_stock，ffill）c[T] ÷ c[T−250] − 1；距 250 日低點 ＝ c[T] ÷ min(c[T−249..T]) − 1（T ＝ 價格日；日曆位置）
     本益比 ＝ main data/stocks_per 該檔價格日（或之前最後一列）的 per，附 per 那列的日期與 fs_quarter（財報期，民國年／季）；空白 ⇒「—」
  S5 查核（--check）：抽 2 個有排名的產業（random_state 20261002），直接逐檔讀 revenue_hist 原始 csv、逐公司迴圈重算 A1、A2、A3、公司數 ⇒ 差 ＞ 1e−12 才算不同
-輸出 backtest/resultsIndRev/snapshot/：rank_industry.csv、members_top5.csv、industry_monthly.csv、meta.json、check.json、產業營收加速現況快照.html
+ S6 改口徑（2026-10-02 10:07（台北）；依協調者轉資料庫線 1002-0956「月營收去年同期重編」；⚠ 改之前已看過舊版（S2）的全部數字與前 5 名）：
+    同公司年增的分母改用【同一個月檔】的「去年當月營收」欄：月 m 年增 ＝ Σ_{c∈C_m} 當月營收[c,m] ÷ Σ_{c∈C_m} 去年當月營收[c,m] − 1，
+    C_m ＝ 該月檔中「當月營收」與「去年當月營收」都 ＞ 0 的公司；多月合計仍是各月分子、分母分別加總；⛔ 不再用 m−12 檔的「當月營收」
+    理由：同一檔裡的去年數字是公告當時市場看到的（合併、重編後的可比基礎），不受日後重編影響、也不跨檔拼接
+    成員股「近 3 月營收年增」同樣改用同檔去年當月營收；「營收創 24 月新高」仍比各月當月營收（⛔ 不改）
+    來源仍是 S0 那一份（main mops/revenue_hist 2015 起；早年檔 2003～2014 本件用不到：A1～A3 只用 M−11～M）
+    舊口徑（S2）照算一份、並列在網頁「新舊口徑差異」：三種 A 的前 5 名變化、2608 嘉里大榮逐月新舊年增；查核改驗新口徑
+輸出 backtest/resultsIndRev/snapshot/：rank_industry.csv、rank_industry_old.csv、members_top5.csv、industry_monthly.csv、meta.json、check.json、產業營收加速現況快照.html
 """
 from __future__ import annotations
 
@@ -69,9 +76,11 @@ def ensure_data(log):
 
 def load_rev(DATA):
     fs = sorted(glob.glob(os.path.join(EARLY, "mops", "revenue_hist", "*.csv"))) + sorted(glob.glob(os.path.join(DATA, "mops", "revenue_hist", "*.csv")))
-    df = pd.concat([pd.read_csv(f, dtype=str, usecols=["stock_id", "period", "當月營收"]) for f in fs])
-    df["rev"] = pd.to_numeric(df["當月營收"], errors="coerce"); df = df.drop_duplicates(["stock_id", "period"], keep="last")
-    return df.pivot(index="period", columns="stock_id", values="rev").sort_index()
+    df = pd.concat([pd.read_csv(f, dtype=str, usecols=["stock_id", "period", "當月營收", "去年當月營收"]) for f in fs])
+    df["rev"] = pd.to_numeric(df["當月營收"], errors="coerce"); df["rev_ly"] = pd.to_numeric(df["去年當月營收"], errors="coerce")
+    df = df.drop_duplicates(["stock_id", "period"], keep="last")
+    return (df.pivot(index="period", columns="stock_id", values="rev").sort_index(),
+            df.pivot(index="period", columns="stock_id", values="rev_ly").sort_index())
 
 
 def per_of(m):
@@ -94,33 +103,35 @@ def universe(DATA):
     return keep.reset_index(drop=True), cnt
 
 
-def ind_yoy(rev, sids, months):
-    """⇒ (Σ本期, Σ去年同期, 各月公司數 list)，同公司基準、每月各自集合。"""
+def ind_yoy(rev, rev_ly, sids, months, mode="new"):
+    """⇒ (Σ本期, Σ去年同期, 各月公司數 list)，同公司基準、每月各自集合。mode new ＝ 同檔「去年當月營收」（S6）；old ＝ m−12 檔的當月營收（S2）。"""
     num = den = 0.0; ns = []
     cols = [s for s in sids if s in rev.columns]
     for m in months:
         ly = per_of(m)(-12)
-        if m not in rev.index or ly not in rev.index:
+        if m not in rev.index or (mode == "old" and ly not in rev.index):
             ns.append(0); continue
-        a = rev.loc[m, cols].to_numpy(float); b = rev.loc[ly, cols].to_numpy(float)
+        a = rev.loc[m, cols].to_numpy(float)
+        b = rev_ly.loc[m, cols].to_numpy(float) if mode == "new" else rev.loc[ly, cols].to_numpy(float)
         ok = np.isfinite(a) & np.isfinite(b) & (a > 0) & (b > 0)
         num += a[ok].sum(); den += b[ok].sum(); ns.append(int(ok.sum()))
     return num, den, ns
 
 
-def compute_ind(rev, members, M):
+def compute_ind(rev, rev_ly, members, M, mode="new"):
     P = per_of(M); last3 = [P(-2), P(-1), P(0)]; last12 = [P(-k) for k in range(11, -1, -1)]; prev3 = [P(-5), P(-4), P(-3)]
     rows = []; mon = []
+    iy = lambda s_, ms: ind_yoy(rev, rev_ly, s_, ms, mode)
     for name, g in members.groupby("產業"):
         sids = g["stock_id"].tolist()
-        n3, d3, c3 = ind_yoy(rev, sids, last3); n12, d12, c12 = ind_yoy(rev, sids, last12); np3, dp3, cp3 = ind_yoy(rev, sids, prev3)
+        n3, d3, c3 = iy(sids, last3); n12, d12, c12 = iy(sids, last12); np3, dp3, cp3 = iy(sids, prev3)
         y3 = n3 / d3 - 1 if d3 > 0 else np.nan; y12 = n12 / d12 - 1 if d12 > 0 else np.nan; yp3 = np3 / dp3 - 1 if dp3 > 0 else np.nan
         rows.append({"產業": name, "成員檔數": len(sids), "上市": int((g["market"] == "twse").sum()), "上櫃": int((g["market"] == "tpex").sum()),
                      "公司數": c3[-1], "近3月各月公司數": "/".join(map(str, c3)), "最新月營收（億）": np.nan, "近12月營收（億）": n12 / 1e5,
                      "近3月年增": y3, "近12月年增": y12, "三個月前的近3月年增": yp3, "A1": y3, "A2": y3 - y12, "A3": y3 - yp3})
-        nM, _, _ = ind_yoy(rev, sids, [M]); rows[-1]["最新月營收（億）"] = nM / 1e5
+        nM, _, _ = iy(sids, [M]); rows[-1]["最新月營收（億）"] = nM / 1e5
         for m in last12:
-            a, b, c = ind_yoy(rev, sids, [m]); mon.append({"產業": name, "月": m, "公司數": c[0], "營收（億）": a / 1e5, "去年同月（億）": b / 1e5, "年增": a / b - 1 if b > 0 else np.nan})
+            a, b, c = iy(sids, [m]); mon.append({"產業": name, "月": m, "公司數": c[0], "營收（億）": a / 1e5, "去年同月（億）": b / 1e5, "年增": a / b - 1 if b > 0 else np.nan})
     T = pd.DataFrame(rows); ok = T["公司數"] >= 5
     for a in AS:
         T[f"{a} 名次"] = np.nan
@@ -130,7 +141,7 @@ def compute_ind(rev, members, M):
     return T, pd.DataFrame(mon)
 
 
-def stock_rows(DATA, rev, cal, T_pos, sids, mk, M):
+def stock_rows(DATA, rev, rev_ly, cal, T_pos, sids, mk, M):
     P = per_of(M); n = len(cal)
     out = []
     for s in sids:
@@ -152,7 +163,8 @@ def stock_rows(DATA, rev, cal, T_pos, sids, mk, M):
                 r["距250日低點"] = c[T_pos] / np.nanmin(w) - 1
         if s in rev.columns:
             col = rev[s]
-            a = np.array([col.get(P(-k), np.nan) for k in (2, 1, 0)], float); b = np.array([col.get(P(-k - 12), np.nan) for k in (2, 1, 0)], float)
+            cly = rev_ly[s] if s in rev_ly.columns else pd.Series(dtype=float)
+            a = np.array([col.get(P(-k), np.nan) for k in (2, 1, 0)], float); b = np.array([cly.get(P(-k), np.nan) for k in (2, 1, 0)], float)
             if np.isfinite(a).all() and np.isfinite(b).all() and (a > 0).all() and (b > 0).all():
                 r["近3月營收年增"] = a.sum() / b.sum() - 1
             prev = np.array([col.get(P(-k), np.nan) for k in range(24, 0, -1)], float); cur = col.get(M, np.nan)
@@ -175,21 +187,30 @@ def run(log):
     T0 = time.time(); os.makedirs(OUT, exist_ok=True)
     sha, DATA = ensure_data(log)
     D.DATA = DATA; cal = D.load_calendar(); T_pos = len(cal) - 1; asof = str(cal[T_pos].date())
-    rev = load_rev(DATA)
+    rev, rev_ly = load_rev(DATA)
     rd = R34.rebalance_dates(list(rev.index), cal, 10)
     avail = [p for p in rev.index if p in rd and rd[p][1] <= T_pos]
     M = avail[-1]
     log(f"[資料] main {sha[:10]}｜價格日 {asof}｜最新可用營收月 {M}（可用日 {cal[rd[M][1]].date()}）｜營收期 {rev.index[0]}～{rev.index[-1]}")
     mem, ucnt = universe(DATA)
-    T, MON = compute_ind(rev, mem, M)
+    T, MON = compute_ind(rev, rev_ly, mem, M, "new")
+    TO, _ = compute_ind(rev, rev_ly, mem, M, "old")
     T.sort_values("A1 名次").to_csv(os.path.join(OUT, "rank_industry.csv"), index=False, float_format="%.17g")
+    TO.sort_values("A1 名次").to_csv(os.path.join(OUT, "rank_industry_old.csv"), index=False, float_format="%.17g")
+    # 2608 嘉里大榮 逐月新舊
+    P = per_of(M); cmp = []
+    for k_ in range(11, -1, -1):
+        m = P(-k_); a = rev.get("2608", pd.Series(dtype=float)).get(m, np.nan)
+        bn = rev_ly.get("2608", pd.Series(dtype=float)).get(m, np.nan); bo = rev.get("2608", pd.Series(dtype=float)).get(P(-k_ - 12), np.nan)
+        cmp.append({"月": m, "當月營收（千元）": a, "同檔去年當月營收（新分母）": bn, "去年同月檔當月營收（舊分母）": bo, "新年增": a / bn - 1, "舊年增": a / bo - 1})
+    CMP = pd.DataFrame(cmp); CMP.to_csv(os.path.join(OUT, "cmp_2608.csv"), index=False, float_format="%.8g")
     MON.to_csv(os.path.join(OUT, "industry_monthly.csv"), index=False, float_format="%.8g")
     mk = dict(zip(mem["stock_id"], mem["market"]))
     rows = []
     tops = {a: T.dropna(subset=[f"{a} 名次"]).sort_values(f"{a} 名次").head(TOPK)["產業"].tolist() for a in AS}
     for ind in sorted(set(sum(tops.values(), []))):
         g = mem[mem["產業"] == ind]
-        for r in stock_rows(DATA, rev, cal, T_pos, g["stock_id"].tolist(), mk, M):
+        for r in stock_rows(DATA, rev, rev_ly, cal, T_pos, g["stock_id"].tolist(), mk, M):
             r["產業"] = ind; r["市場"] = "上市" if mk[r["代號"]] == "twse" else "上櫃"
             r["入前5"] = "、".join(f"{a} 第{int(T.loc[T['產業'] == ind, f'{a} 名次'].iloc[0])}" for a in AS if ind in tops[a])
             rows.append(r)
@@ -197,7 +218,8 @@ def run(log):
     MB.to_csv(os.path.join(OUT, "members_top5.csv"), index=False, float_format="%.8g")
     META = {"讀法寫死": TIME, "main": sha, "價格日": asof, "價格日說明": ("已有 2026-10-01" if asof >= "2026-10-01" else f"main 最新資料日為 {asof}，尚無 2026-10-01"),
             "最新可用營收月": M, "其可用日": str(cal[rd[M][1]].date()), "母體": ucnt, "產業數": int(len(T)), "有排名產業數": int((T["公司數"] >= 5).sum()),
-            "前5": tops, "前5成員檔數": int(len(MB)), "成員缺市值": int(MB["市值（億）"].isna().sum()), "成員缺本益比": int(MB["本益比"].isna().sum()) if "本益比" in MB else None,
+            "前5": tops, "前5（舊口徑 S2）": {a: TO.dropna(subset=[f"{a} 名次"]).sort_values(f"{a} 名次").head(TOPK)["產業"].tolist() for a in AS},
+            "口徑": "S6：同檔去年當月營收（2026-10-02 10:07 改）", "前5成員檔數": int(len(MB)), "成員缺市值": int(MB["市值（億）"].isna().sum()), "成員缺本益比": int(MB["本益比"].isna().sum()) if "本益比" in MB else None,
             "耗時秒": round(time.time() - T0)}
     json.dump(META, open(os.path.join(OUT, "meta.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     log(f"[完] {json.dumps(META, ensure_ascii=False, default=str)}")
@@ -211,16 +233,18 @@ def check(log):
     pick = T[T["公司數"] >= 5].sample(2, random_state=20261002)["產業"].tolist()
     # 原始 csv 逐列讀（main 優先）
     raw = {}
-    need = {per_of(M)(-k) for k in range(0, 24)}                       # M−23～M（A1～A3 只用到 M−23）
+    need = {per_of(M)(-k) for k in range(0, 12)}                       # S6：M−11～M，各月同檔的當月與去年當月
     fs = [f for f in sorted(glob.glob(os.path.join(EARLY, "mops", "revenue_hist", "*.csv"))) + sorted(glob.glob(os.path.join(DATA, "mops", "revenue_hist", "*.csv")))
           if os.path.basename(f)[:7] in need]
+
+    def fl(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return float("nan")
     for f in fs:
-        for _, x in pd.read_csv(f, dtype=str, usecols=["stock_id", "period", "當月營收"]).iterrows():
-            try:
-                v = float(x["當月營收"])
-            except (TypeError, ValueError):
-                v = float("nan")
-            raw[(x["stock_id"], x["period"])] = v
+        for _, x in pd.read_csv(f, dtype=str, usecols=["stock_id", "period", "當月營收", "去年當月營收"]).iterrows():
+            raw[(x["stock_id"], x["period"])] = (fl(x["當月營收"]), fl(x["去年當月營收"]))
 
     def mshift(m, k):
         y, mm = int(m[:4]), int(m[5:]); t = y * 12 + mm - 1 + k
@@ -231,7 +255,7 @@ def check(log):
         for m in months:
             cnt = 0
             for s in sids:
-                a = raw.get((s, m), float("nan")); b = raw.get((s, mshift(m, -12)), float("nan"))
+                a, b = raw.get((s, m), (float("nan"), float("nan")))
                 if a == a and b == b and a > 0 and b > 0:
                     num += a; den += b; cnt += 1
         return num / den - 1, cnt
@@ -272,7 +296,7 @@ def page(log):
          "這是描述，不計檢定數、<b>不是買賣建議</b>；只給台股線挑「四段分析」的對象用。</p>"]
     top = META["前5"]
     H.append("<div class='ok big'><b>三種加速的前 5 名產業</b><ul>" + "".join(f"<li>{ANAME[a]}：{'、'.join(e(x) for x in top[a])}</li>" for a in AS) + "</ul></div>")
-    H.append(f"<p class='lead'>讀法寫死 {e(META['讀法寫死'])}。產業營收用<b>同公司基準</b>：每個月只加總「當月與去年同月都有營收」的公司再算年增；"
+    H.append(f"<p class='lead'>讀法寫死 {e(META['讀法寫死'])}。產業營收用<b>同公司基準</b>：每個月只加總該月營收檔裡「當月營收與去年當月營收都有」的公司，年增 ＝ 當月營收 ÷ 同一檔的去年當月營收（2026-10-02 改，見第三節）；"
              f"最新月有這種公司不到 5 家的產業不排名。8 月營收的可用日是 {e(META['其可用日'])}。{e(META['價格日說明'])}。"
              + (f"查核：抽 2 個產業逐公司重算，{CK['不同項數']} 項不同。" if CK else "") + "</p>")
     H.append("<h2>一、產業排名</h2><div class='sel'>依 <select id='s1' onchange='sw()'>" + "".join(f"<option value='{a}'>{ANAME[a]}</option>" for a in AS) + "</select></div>")
@@ -299,6 +323,31 @@ def page(log):
                      f"<td>{P1(r.get('近3月營收年增', np.nan))}</td><td>{e(str(r.get('營收創24月新高', '')))}</td><td>{P1(r.get('近250日報酬', np.nan))}</td>"
                      f"<td>{P1(r.get('距250日低點', np.nan))}</td><td>{pe}{sm}</td></tr>")
         H.append("</table></div></details>")
+    # 新舊口徑差異（S6）
+    TO = pd.read_csv(os.path.join(OUT, "rank_industry_old.csv")); CMP = pd.read_csv(os.path.join(OUT, "cmp_2608.csv"))
+    told = META["前5（舊口徑 S2）"]
+    H.append("<h2>三、新舊口徑差異</h2><p class='note'>2026-10-02 改口徑：年增的分母改用<b>同一個月檔裡的「去年當月營收」</b>（公告當時市場看到的數字，"
+             "合併或重編後的可比基礎），不再拿去年那個月檔的「當月營收」。改之前已看過舊版數字。</p>")
+    H.append("<div class='wrap'><table><tr><th class='l'>加速</th><th class='l'>新口徑前 5</th><th class='l'>舊口徑前 5</th><th class='l'>變化</th></tr>")
+    for a in AS:
+        nw, od = top[a], told[a]
+        ch = [f"進：{'、'.join(x for x in nw if x not in od)}" if any(x not in od for x in nw) else "",
+              f"出：{'、'.join(x for x in od if x not in nw)}" if any(x not in nw for x in od) else ""]
+        ch = "；".join(c for c in ch if c) or ("名單相同" + ("、順序不同" if nw != od else "、順序相同"))
+        H.append(f"<tr><td class='l'>{a}</td><td class='l'>{'、'.join(e(x) for x in nw)}</td><td class='l'>{'、'.join(e(x) for x in od)}</td><td class='l'>{e(ch)}</td></tr>")
+    H.append("</table></div>")
+    H.append("<div class='wrap'><table><tr><th class='l'>產業</th><th>A1 新／舊</th><th>A2 新／舊</th><th>A3 新／舊</th></tr>")
+    for ind in sorted(set(sum(top.values(), [])) | set(sum(told.values(), []))):
+        rn = T[T["產業"] == ind].iloc[0]; ro = TO[TO["產業"] == ind].iloc[0]
+        H.append(f"<tr><td class='l'>{e(ind)}</td><td>{P1(rn['A1'])}<br><small>{P1(ro['A1'])}</small></td><td>{PT(rn['A2'])}<br><small>{PT(ro['A2'])}</small></td>"
+                 f"<td>{PT(rn['A3'])}<br><small>{PT(ro['A3'])}</small></td></tr>")
+    H.append("</table></div><p class='note'>上：新口徑；下（小字）：舊口徑。</p>")
+    H.append("<h3>2608 嘉里大榮：新舊年增對照</h3><div class='wrap'><table><tr><th>月</th><th>當月營收<br><small>億</small></th><th>新分母<br><small>同檔去年當月</small></th>"
+             "<th>舊分母<br><small>去年那月的當月</small></th><th>新年增</th><th>舊年增</th></tr>")
+    for _, r in CMP.iterrows():
+        H.append(f"<tr><td>{r['月']}</td><td>{N1(r['當月營收（千元）'] / 1e5)}</td><td>{N1(r['同檔去年當月營收（新分母）'] / 1e5)}</td><td>{N1(r['去年同月檔當月營收（舊分母）'] / 1e5)}</td>"
+                 f"<td>{P1(r['新年增'])}</td><td>{P1(r['舊年增'])}</td></tr>")
+    H.append("</table></div>")
     H.append("<h2>名詞</h2><ul class='note'><li>A1 ＝ 近 3 個月合計營收年增率；A2 ＝ A1 − 近 12 個月合計年增率（正 ＝ 最近比過去一年更快）；A3 ＝ A1 − 三個月前的 A1（正 ＝ 在加速）。</li>"
              "<li>產業別：上市、上櫃官方產業別，名稱相同合併；排除金融保險、其他、存託憑證、ETF。資料裡名稱空白的上櫃類別照代碼列出、不猜名稱。</li>"
              "<li>市值 ＝ 收盤 × 股數；近 250 日報酬、距 250 日低點用還原收盤。</li></ul>")
