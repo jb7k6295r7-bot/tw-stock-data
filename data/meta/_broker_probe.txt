@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-10-01T03:12:50+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 36762156094
-broker_probe.py　2026-10-01 03:12 台北
+# ⏱ 這一趟：2026-10-02T22:11:14+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 37016548523
+broker_probe.py　2026-10-02 22:10 台北
 ⭐ 問的是：這兩條到底是**全市場 × 全部分點**，還是「熱門股排行」。
 ⛔ 判準不是「有回列」——是**它自己講不講得出它是哪一天、涵蓋誰**。
 ⭐⭐ H1 分點（券商買賣日報）：**這條路是對哪一種規模不可用**
