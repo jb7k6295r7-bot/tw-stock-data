@@ -1067,18 +1067,18 @@
 
 ## filing_dates　✓ 正常
 
-最後執行：2026-10-02T06:18:31+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36897535814
+最後執行：2026-10-02T11:27:47+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36934652107
 
 - **母體**：2019:1726｜2020:1741｜2021:1753｜2022:1787｜2023:1818｜2024:1875｜2025:1944｜2026:1982
-- **待問**：6017 發（已問過 8609）
-- **本趟**：問 579 發｜ok 577｜empty（那年沒有檔）0｜失敗 2｜剩 5438 發｜301 分
-- **累計**：上傳紀錄 62051 列｜已問 (家, 年) 10522
-- **限流跡象**：第一次失敗在第 135 發（18:59:02）｜冷卻 0 次
-- **失敗的（前 10）**：[('8213', 113, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1526', 112, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
+- **待問**：5440 發（已問過 9186）
+- **本趟**：問 505 發｜ok 501｜empty（那年沒有檔）0｜失敗 4｜剩 4935 發｜300 分
+- **累計**：上傳紀錄 65992 列｜已問 (家, 年) 11023
+- **限流跡象**：第一次失敗在第 167 發（23:48:59）｜冷卻 0 次
+- **失敗的（前 10）**：[('2608', 112, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('2642', 112, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('2838', 112, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('2881', 112, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
 
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
-- ok　失敗 ≤ 本趟 2%　（2／579）
+- ok　失敗 ≤ 本趟 2%　（4／505）
 
 ## mops_news　✓ 正常
 
