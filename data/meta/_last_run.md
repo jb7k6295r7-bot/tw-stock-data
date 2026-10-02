@@ -1065,20 +1065,19 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
-## filing_dates　✗ 有問題
+## filing_dates　✓ 正常
 
-最後執行：2026-10-02T16:39:41+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36960700290
+最後執行：2026-10-02T21:52:50+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 36985783010
 
 - **母體**：2019:1726｜2020:1741｜2021:1753｜2022:1787｜2023:1818｜2024:1875｜2025:1944｜2026:1982
-- **待問**：4939 發（已問過 9687）
-- **本趟**：問 312 發｜ok 302｜empty（那年沒有檔）0｜失敗 10｜剩 4627 發｜300 分
-- **累計**：上傳紀錄 68117 列｜已問 (家, 年) 11325
-- **限流跡象**：第一次失敗在第 128 發（05:22:15）｜冷卻 0 次
-- **失敗的（前 10）**：[('4306', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4543', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4545', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4563', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4571', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4583', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4728', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4729', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4735', 112, 'HTTP 0 URLError: <urlopen error timed out>'), ('4939', 112, 'HTTP 0 URLError: <urlopen error timed out>')]
+- **待問**：4637 發（已問過 9989）
+- **本趟**：問 598 發｜ok 598｜empty（那年沒有檔）0｜失敗 0｜剩 4039 發｜301 分
+- **累計**：上傳紀錄 72476 列｜已問 (家, 年) 11923
+- **限流跡象**：沒有失敗
 
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
-- **✗**　失敗 ≤ 本趟 2%　（10／312）
+- ok　失敗 ≤ 本趟 2%　（0／598）
 
 ## mops_news　✓ 正常
 
