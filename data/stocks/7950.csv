@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-09-30,7950,盛大資訊,emerging,,108.5,32,77.08,564242,43491773,,,,,均價/額推算,103,1
 2026-10-01,7950,盛大資訊,emerging,,98,59,71.41,558095,39853564,-5.67,,,,均價/額推算,62.7,1
+2026-10-02,7950,盛大資訊,emerging,,62.8,53.6,58.32,317003,18487615,-13.09,,,,均價/額推算,59,1
