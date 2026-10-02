@@ -42,7 +42,9 @@ jobs:
     #   而其中好幾步的成本會跟著資料庫長 ⇒ 25 的餘裕太薄。
     #   ⛔ 而餘裕不夠時的失敗方式最糟：**跑到一半被砍，Commit 那步不會執行**
     #     ⇒ 那一趟抓到的資料全部消失，外表只是「job 逾時」。
-    timeout-minutes: 45
+    # ⛔ 45 → 60（2026-10-02 run 37016346539）：整趟 46 分被砍，⚠ 剛好砍在「Commit 回 repo」完成之後（資料有到）。
+    #   慢的是 Commit 那步：0／11.5／21 分（同時有 feeds、probe 在推 main ⇒ push 重試）⇒ 其餘各步合計約 23～25 分。
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
