@@ -1,0 +1,1 @@
+逐格全表 cells.csv.gz（20MB）不進 repo，放在 ~/npwork/cells.csv.gz（researchNpattern 主程式可重產）

@@ -1,0 +1,11 @@
+[     0s] ===== researchNpattern build_early｜讀法寫死 2026-10-04 02:30（台北）｜登錄 sha 4df1f473b005da3c（台股策略線 seq1）｜裁定 seq286（N_單筆＝28） =====
+[     0s] [early] 日曆 2004-02-11～2014-12-31（2712）｜母體 gate3 1679 檔
+[    18s] [early pass0] 300/1679
+[    31s] [early pass0] 600/1679
+[    42s] [early pass0] 900/1679
+[    51s] [early pass0] 1200/1679
+[    62s] [early pass0] 1500/1679
+[    68s] [early pass0] 完成｜有資料 1648 檔｜N字底實例列 16,463,512｜N型實例列 1,689,234
+[    71s] [early] 基準② 面板完成
+[   376s] [early] pass1 完成
+[   376s] [完] 376s

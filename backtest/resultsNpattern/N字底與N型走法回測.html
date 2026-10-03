@@ -1,0 +1,239 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>N字底與N型走法回測</title><style>
+:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--bd:#ddd;--ok:#0a7a3d;--no:#b3261e;--hl:#fff6d6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#141414;--fg:#eee;--mut:#aaa;--bd:#333;--ok:#5fd18b;--no:#ff8a80;--hl:#3a3320}}
+:root[data-theme=dark]{--bg:#141414;--fg:#eee;--mut:#aaa;--bd:#333;--ok:#5fd18b;--no:#ff8a80;--hl:#3a3320}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,'Noto Sans TC',sans-serif;margin:0;padding:16px;max-width:980px}
+h1{font-size:1.35em}h2{font-size:1.12em;margin-top:1.6em;border-bottom:1px solid var(--bd)}
+.wrap{overflow-x:auto}table{border-collapse:collapse;font-size:13px;min-width:100%}td,th{border:1px solid var(--bd);padding:4px 6px;text-align:right;white-space:nowrap}
+th.l,td.l{text-align:left}.ok{color:var(--ok);font-weight:600}.no{color:var(--no)}.box{background:var(--hl);padding:10px 12px;border-radius:8px}.mut{color:var(--mut);font-size:13px}</style></head><body>
+<h1>N字底與N型走法回測（照作者原文、含量能）</h1>
+<p class='mut'>登錄 sha 4df1f473b005da3c（台股策略線 seq1）｜裁定 seq286（N_單筆＝28）｜讀法寫死 2026-10-04 02:30（台北）｜回測線計算子代理｜單筆事件研究（不是策略、不能說贏 0050）</p>
+<div class='box'><b>先講結論（兩問）</b><br>
+① 型態本身站得住嗎？<b>沒有一個（型態 × 進場 × 持有天數）站得住</b>。<br>
+② 作者的量能條件有加分嗎？<b>量能條件在任何一組都沒有測出加分</b>。<br>
+③ N型的法人代理臂（⚠ 代理，不是作者原文的籌碼品質）比主臂多：各天數都沒有。</div>
+<p class='mut'>「站得住」＝ 探索段（2017-03～2021-12）與確認段（2022-01～2026-08）都有過半的格，扣 0.585% 成本後對「同日、前 20 日漲跌同十分位的股票」CI 下緣仍 ＞ 0。「量能有加分」＝ 兩段都有過半的格，作者全套（M）減同形狀不看量（S）的 CI 下緣 ＞ 0。待定參數全格報、不挑最好的一格；事件少於 30 的格不進分母。</p>
+<h2>逐組判定</h2><div class='wrap'><table><tr><th class='l'>型態｜進場｜H</th><th class='l'>結論句</th><th>探索 過/可判</th><th>確認 過/可判</th><th>早年 過/可判</th><th>量能 探索</th><th>量能 確認</th><th>量能 早年</th><th>X2 中位（確認）</th><th>M−S 中位（確認）</th><th>事件中位（確認）</th></tr>
+<tr><td class='l'>N字底|甲1|H5</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>-0.03%</td><td>-0.08%</td><td>6642</td></tr>
+<tr><td class='l'>N字底|甲1|H10</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>100/5184</td><td>-0.08%</td><td>-0.09%</td><td>6584</td></tr>
+<tr><td class='l'>N字底|甲1|H20</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>18/5184</td><td>0/5184</td><td>-0.32%</td><td>-0.04%</td><td>6440</td></tr>
+<tr><td class='l'>N字底|甲1|H60</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>0/5184</td><td>-2.29%</td><td>-0.16%</td><td>5922</td></tr>
+<tr><td class='l'>N字底|甲2|H5</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>160/15552</td><td>1176/15552</td><td>-0.36%</td><td>-0.15%</td><td>1698</td></tr>
+<tr><td class='l'>N字底|甲2|H10</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>30/15552</td><td>177/15552</td><td>-0.44%</td><td>-0.19%</td><td>1693</td></tr>
+<tr><td class='l'>N字底|甲2|H20</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>15/15552</td><td>0/15552</td><td>-0.70%</td><td>-0.06%</td><td>1672</td></tr>
+<tr><td class='l'>N字底|甲2|H60</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>0/15552</td><td>-3.62%</td><td>-0.70%</td><td>1593</td></tr>
+<tr><td class='l'>N型|再突破|H5</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/21</td><td>0/21</td><td>0/21</td><td>0/21</td><td>0/21</td><td>0/21</td><td>-0.09%</td><td>+0.01%</td><td>23334</td></tr>
+<tr><td class='l'>N型|再突破|H10</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/21</td><td>0/21</td><td>0/21</td><td>1/21</td><td>0/21</td><td>0/21</td><td>-0.17%</td><td>-0.02%</td><td>22271</td></tr>
+<tr><td class='l'>N型|再突破|H20</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/21</td><td>0/21</td><td>0/21</td><td>4/21</td><td>0/21</td><td>0/21</td><td>-0.36%</td><td>-0.01%</td><td>20812</td></tr>
+<tr><td class='l'>N型|再突破|H60</td><td class='l no'>站不住（測不出）；量能加分測不出</td><td>0/21</td><td>0/21</td><td>0/21</td><td>5/21</td><td>0/21</td><td>0/21</td><td>-1.65%</td><td>+0.03%</td><td>17097</td></tr>
+</table></div><p class='mut'>X2 ＝ 個股報酬 − 同日同十分位平均（未扣成本；判定時再扣 0.585%）。格 ＝ 形狀 × 量能 ×（N字底）停損兩種。⚠ 主臂有停損：被停掉的那筆只算到出場為止，對照組照抱滿 H 天，所以 H 越長、停損越近，X2 越負（固定持有版見下方「其他」）。Bonferroni（N＝28）下結論變不變：N字底|甲1|H5 不變；N字底|甲1|H10 不變；N字底|甲1|H20 不變；N字底|甲1|H60 不變；N字底|甲2|H5 不變；N字底|甲2|H10 不變；N字底|甲2|H20 不變；N字底|甲2|H60 不變；N型|再突破|H5 不變；N型|再突破|H10 不變；N型|再突破|H20 不變；N型|再突破|H60 不變</p>
+<h2>早年（2005-02～2014-12，上市＋上櫃）</h2><div class='wrap'><table><tr><th class='l'>型態｜進場｜H</th><th>可判格</th><th>扣成本過</th><th>點估計 ＞ 0 的格</th><th>M−S 點估計 ＞ 0</th></tr>
+<tr><td class='l'>N字底|甲1|H5</td><td>5184</td><td>0</td><td>0</td><td>1769/5184</td></tr>
+<tr><td class='l'>N字底|甲1|H10</td><td>5184</td><td>0</td><td>35</td><td>2390/5184</td></tr>
+<tr><td class='l'>N字底|甲1|H20</td><td>5184</td><td>0</td><td>0</td><td>489/5184</td></tr>
+<tr><td class='l'>N字底|甲1|H60</td><td>5184</td><td>0</td><td>0</td><td>206/5184</td></tr>
+<tr><td class='l'>N字底|甲2|H5</td><td>15552</td><td>0</td><td>0</td><td>10146/15552</td></tr>
+<tr><td class='l'>N字底|甲2|H10</td><td>15552</td><td>0</td><td>0</td><td>5811/15552</td></tr>
+<tr><td class='l'>N字底|甲2|H20</td><td>15552</td><td>0</td><td>0</td><td>1120/15552</td></tr>
+<tr><td class='l'>N字底|甲2|H60</td><td>15552</td><td>0</td><td>0</td><td>6/15552</td></tr>
+<tr><td class='l'>N型|再突破|H5</td><td>21</td><td>0</td><td>0</td><td>2/21</td></tr>
+<tr><td class='l'>N型|再突破|H10</td><td>21</td><td>0</td><td>0</td><td>6/21</td></tr>
+<tr><td class='l'>N型|再突破|H20</td><td>21</td><td>0</td><td>0</td><td>5/21</td></tr>
+<tr><td class='l'>N型|再突破|H60</td><td>21</td><td>0</td><td>0</td><td>6/21</td></tr>
+</table></div><p class='mut'>⚠ 早年版面標註（裁定 seq283）：上櫃 2007-07～12 除權息未還原；上櫃減資 2007～2012 為偵測、非官方；2005-01～2007-06 只有上市。早年日曆到 2014-12-31，持有窗跨年底的事件該天數不定義。</p>
+<h2>放棄組（沒等到回測那批）的後續表現</h2><p class='mut'>放棄組 ＝ 前面成立、但沒出現像樣回測（直接突破）或回測破了前低（N型：跌破超過一天）。從放棄被確認那天的下一個開盤買、固定抱 H 天。A−M ＞ 0 ＝ 放棄掉的反而比較好（等回測吃虧）。M 取固定持有版、同形狀、同前兩條量能。</p><div class='wrap'><table><tr><th class='l'>型態｜進場｜H｜段</th><th>A X2 中位</th><th>A−M 中位（合併）</th><th>A−M 下緣＞0 格/可判</th><th>A−M 上緣＜0 格</th><th>沒回測那批 A−M 中位</th><th>破底那批 A−M 中位</th></tr>
+<tr><td class='l'>N字底|甲1|H5|探索</td><td>-0.16%</td><td>-0.06%</td><td>33/2592</td><td>203</td><td>-0.17%</td><td>+0.01%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|確認</td><td>-0.06%</td><td>+0.05%</td><td>137/2592</td><td>6</td><td>-0.19%</td><td>+0.18%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|早年</td><td>-0.15%</td><td>-0.18%</td><td>0/2592</td><td>1165</td><td>-0.33%</td><td>-0.08%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|探索</td><td>-0.07%</td><td>+0.15%</td><td>250/2592</td><td>7</td><td>+0.22%</td><td>+0.08%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|確認</td><td>+0.08%</td><td>+0.21%</td><td>345/2592</td><td>0</td><td>+0.12%</td><td>+0.29%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|早年</td><td>-0.08%</td><td>-0.13%</td><td>6/2592</td><td>518</td><td>-0.17%</td><td>-0.05%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|探索</td><td>+0.19%</td><td>+0.69%</td><td>1592/2592</td><td>0</td><td>+0.50%</td><td>+0.80%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|確認</td><td>+0.18%</td><td>+0.42%</td><td>798/2592</td><td>0</td><td>+0.20%</td><td>+0.53%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|早年</td><td>-0.00%</td><td>+0.12%</td><td>250/2592</td><td>9</td><td>+0.37%</td><td>+0.05%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|探索</td><td>+0.11%</td><td>+1.09%</td><td>1062/2592</td><td>0</td><td>+0.73%</td><td>+1.44%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|確認</td><td>+0.53%</td><td>+0.66%</td><td>284/2592</td><td>0</td><td>+0.19%</td><td>+0.99%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|早年</td><td>+0.19%</td><td>+0.48%</td><td>319/2592</td><td>0</td><td>+0.30%</td><td>+0.79%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|探索</td><td>-0.16%</td><td>+0.49%</td><td>4249/7776</td><td>0</td><td>+0.39%</td><td>+0.55%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|確認</td><td>-0.06%</td><td>+0.44%</td><td>4233/7776</td><td>40</td><td>+0.20%</td><td>+0.56%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|早年</td><td>-0.15%</td><td>+0.10%</td><td>1015/7776</td><td>3</td><td>-0.05%</td><td>+0.20%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|探索</td><td>-0.07%</td><td>+0.83%</td><td>6090/7776</td><td>0</td><td>+0.92%</td><td>+0.77%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|確認</td><td>+0.08%</td><td>+0.44%</td><td>2548/7776</td><td>1</td><td>+0.30%</td><td>+0.52%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|早年</td><td>-0.08%</td><td>+0.19%</td><td>1298/7776</td><td>1</td><td>+0.16%</td><td>+0.25%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|探索</td><td>+0.19%</td><td>+0.96%</td><td>3981/7776</td><td>0</td><td>+0.82%</td><td>+1.10%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|確認</td><td>+0.18%</td><td>+0.62%</td><td>1871/7776</td><td>0</td><td>+0.42%</td><td>+0.74%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|早年</td><td>-0.00%</td><td>+0.33%</td><td>1603/7776</td><td>6</td><td>+0.60%</td><td>+0.28%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|探索</td><td>+0.11%</td><td>+2.14%</td><td>5835/7776</td><td>0</td><td>+1.72%</td><td>+2.55%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|確認</td><td>+0.53%</td><td>+1.97%</td><td>4148/7776</td><td>0</td><td>+1.47%</td><td>+2.29%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|早年</td><td>+0.19%</td><td>+1.34%</td><td>4321/7776</td><td>0</td><td>+1.22%</td><td>+1.59%</td></tr>
+<tr><td class='l'>N型|再突破|H5|探索</td><td>-0.03%</td><td>-0.00%</td><td>0/21</td><td>6</td><td>-0.08%</td><td>+0.16%</td></tr>
+<tr><td class='l'>N型|再突破|H5|確認</td><td>-0.04%</td><td>+0.05%</td><td>4/21</td><td>0</td><td>-0.02%</td><td>+0.20%</td></tr>
+<tr><td class='l'>N型|再突破|H5|早年</td><td>-0.14%</td><td>+0.12%</td><td>14/21</td><td>0</td><td>-0.02%</td><td>+0.44%</td></tr>
+<tr><td class='l'>N型|再突破|H10|探索</td><td>-0.07%</td><td>-0.15%</td><td>0/21</td><td>14</td><td>-0.23%</td><td>+0.04%</td></tr>
+<tr><td class='l'>N型|再突破|H10|確認</td><td>-0.03%</td><td>-0.00%</td><td>0/21</td><td>0</td><td>-0.03%</td><td>+0.11%</td></tr>
+<tr><td class='l'>N型|再突破|H10|早年</td><td>-0.17%</td><td>+0.12%</td><td>11/21</td><td>0</td><td>-0.03%</td><td>+0.49%</td></tr>
+<tr><td class='l'>N型|再突破|H20|探索</td><td>-0.06%</td><td>-0.16%</td><td>0/21</td><td>7</td><td>-0.17%</td><td>-0.12%</td></tr>
+<tr><td class='l'>N型|再突破|H20|確認</td><td>-0.03%</td><td>-0.02%</td><td>0/21</td><td>2</td><td>-0.02%</td><td>+0.02%</td></tr>
+<tr><td class='l'>N型|再突破|H20|早年</td><td>-0.07%</td><td>+0.12%</td><td>6/21</td><td>0</td><td>+0.04%</td><td>+0.27%</td></tr>
+<tr><td class='l'>N型|再突破|H60|探索</td><td>-0.07%</td><td>-0.11%</td><td>0/21</td><td>3</td><td>-0.19%</td><td>+0.11%</td></tr>
+<tr><td class='l'>N型|再突破|H60|確認</td><td>-0.07%</td><td>+0.14%</td><td>0/21</td><td>3</td><td>-0.04%</td><td>+0.29%</td></tr>
+<tr><td class='l'>N型|再突破|H60|早年</td><td>-0.13%</td><td>+0.00%</td><td>0/21</td><td>0</td><td>-0.17%</td><td>+0.29%</td></tr>
+</table></div>
+<h2>N型 法人代理臂 P（⚠ 代理）</h2><div class='wrap'><table><tr><th class='l'>H｜段</th><th>P−M 過/可判</th><th>P−M 中位</th><th>P 扣成本過/可判</th><th>P X2 中位</th><th>P 事件中位</th></tr>
+<tr><td class='l'>H5|探索</td><td>2/21</td><td>+0.03%</td><td>0/21</td><td>-0.03%</td><td>14242</td></tr>
+<tr><td class='l'>H5|確認</td><td>0/21</td><td>+0.01%</td><td>0/21</td><td>-0.09%</td><td>15916</td></tr>
+<tr><td class='l'>H5|早年</td><td>0/18</td><td>-0.05%</td><td>0/18</td><td>-0.33%</td><td>4728</td></tr>
+<tr><td class='l'>H10|探索</td><td>0/21</td><td>+0.01%</td><td>0/21</td><td>+0.04%</td><td>13702</td></tr>
+<tr><td class='l'>H10|確認</td><td>2/21</td><td>+0.02%</td><td>0/21</td><td>-0.15%</td><td>15314</td></tr>
+<tr><td class='l'>H10|早年</td><td>0/18</td><td>-0.10%</td><td>0/18</td><td>-0.45%</td><td>4465</td></tr>
+<tr><td class='l'>H20|探索</td><td>1/21</td><td>+0.06%</td><td>0/21</td><td>+0.03%</td><td>12892</td></tr>
+<tr><td class='l'>H20|確認</td><td>0/21</td><td>+0.01%</td><td>0/21</td><td>-0.36%</td><td>14521</td></tr>
+<tr><td class='l'>H20|早年</td><td>0/18</td><td>-0.32%</td><td>0/18</td><td>-0.63%</td><td>4112</td></tr>
+<tr><td class='l'>H60|探索</td><td>0/21</td><td>-0.11%</td><td>0/21</td><td>-1.34%</td><td>11221</td></tr>
+<tr><td class='l'>H60|確認</td><td>1/21</td><td>-0.00%</td><td>0/21</td><td>-1.61%</td><td>12372</td></tr>
+<tr><td class='l'>H60|早年</td><td>0/18</td><td>-1.14%</td><td>0/18</td><td>-2.08%</td><td>3267</td></tr>
+</table></div><p class='mut'>早年上櫃沒有法人資料、上市只有 2012-05 起 ⇒ 標不可判定、不補 0：早年 M 訊號（格加總）793180 筆中，不可判定 上市 378859、上櫃 279991。</p>
+<h2>其他（描述，不判）</h2><div class='wrap'><table><tr><th class='l'>型態｜進場｜H｜段</th><th>停損版本</th><th>可判格</th><th>X2 中位</th><th>淨報酬中位</th><th>現實版淨報酬中位</th><th>對全體中位</th><th>不去重 X2 中位</th></tr>
+<tr><td class='l'>N字底|甲1|H5|探索</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.04%</td><td>-0.53%</td><td>-1.13%</td><td>-0.06%</td><td>-0.04%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|探索</td><td class='l'>前低停損</td><td>2592</td><td>-0.06%</td><td>-0.55%</td><td>-1.15%</td><td>-0.08%</td><td>-0.06%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|探索</td><td class='l'>固定持有</td><td>2592</td><td>-0.12%</td><td>-0.61%</td><td>-1.21%</td><td>-0.14%</td><td>-0.12%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|確認</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.04%</td><td>-0.53%</td><td>-1.13%</td><td>-0.01%</td><td>-0.04%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|確認</td><td class='l'>前低停損</td><td>2592</td><td>-0.03%</td><td>-0.53%</td><td>-1.13%</td><td>-0.01%</td><td>-0.03%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|確認</td><td class='l'>固定持有</td><td>2592</td><td>-0.09%</td><td>-0.59%</td><td>-1.19%</td><td>-0.08%</td><td>-0.09%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|早年</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>+0.17%</td><td>-0.52%</td><td>-1.12%</td><td>+0.15%</td><td>+0.17%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|早年</td><td class='l'>前低停損</td><td>2592</td><td>+0.12%</td><td>-0.54%</td><td>-1.14%</td><td>+0.10%</td><td>+0.12%</td></tr>
+<tr><td class='l'>N字底|甲1|H5|早年</td><td class='l'>固定持有</td><td>2592</td><td>+0.03%</td><td>-0.64%</td><td>-1.24%</td><td>+0.01%</td><td>+0.02%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|探索</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.10%</td><td>-0.31%</td><td>-0.91%</td><td>-0.16%</td><td>-0.11%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|探索</td><td class='l'>前低停損</td><td>2592</td><td>-0.10%</td><td>-0.30%</td><td>-0.90%</td><td>-0.15%</td><td>-0.11%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|探索</td><td class='l'>固定持有</td><td>2592</td><td>-0.22%</td><td>-0.39%</td><td>-0.99%</td><td>-0.27%</td><td>-0.23%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|確認</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.10%</td><td>-0.30%</td><td>-0.90%</td><td>-0.09%</td><td>-0.10%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|確認</td><td class='l'>前低停損</td><td>2592</td><td>-0.06%</td><td>-0.26%</td><td>-0.86%</td><td>-0.04%</td><td>-0.05%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|確認</td><td class='l'>固定持有</td><td>2592</td><td>-0.11%</td><td>-0.32%</td><td>-0.92%</td><td>-0.09%</td><td>-0.12%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|早年</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>+0.11%</td><td>-0.31%</td><td>-0.91%</td><td>+0.07%</td><td>+0.10%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|早年</td><td class='l'>前低停損</td><td>2592</td><td>+0.14%</td><td>-0.22%</td><td>-0.82%</td><td>+0.10%</td><td>+0.12%</td></tr>
+<tr><td class='l'>N字底|甲1|H10|早年</td><td class='l'>固定持有</td><td>2592</td><td>+0.06%</td><td>-0.29%</td><td>-0.89%</td><td>-0.01%</td><td>+0.04%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|探索</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.37%</td><td>-0.03%</td><td>-0.63%</td><td>-0.42%</td><td>-0.38%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|探索</td><td class='l'>前低停損</td><td>2592</td><td>-0.42%</td><td>-0.09%</td><td>-0.69%</td><td>-0.49%</td><td>-0.46%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|探索</td><td class='l'>固定持有</td><td>2592</td><td>-0.42%</td><td>-0.06%</td><td>-0.66%</td><td>-0.50%</td><td>-0.47%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|確認</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.38%</td><td>+0.10%</td><td>-0.50%</td><td>-0.32%</td><td>-0.39%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|確認</td><td class='l'>前低停損</td><td>2592</td><td>-0.29%</td><td>+0.20%</td><td>-0.40%</td><td>-0.23%</td><td>-0.27%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|確認</td><td class='l'>固定持有</td><td>2592</td><td>-0.22%</td><td>+0.27%</td><td>-0.33%</td><td>-0.16%</td><td>-0.18%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|早年</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-0.31%</td><td>+0.11%</td><td>-0.49%</td><td>-0.37%</td><td>-0.33%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|早年</td><td class='l'>前低停損</td><td>2592</td><td>-0.05%</td><td>+0.38%</td><td>-0.22%</td><td>-0.12%</td><td>-0.06%</td></tr>
+<tr><td class='l'>N字底|甲1|H20|早年</td><td class='l'>固定持有</td><td>2592</td><td>-0.08%</td><td>+0.33%</td><td>-0.27%</td><td>-0.16%</td><td>-0.11%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|探索</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-2.64%</td><td>+0.21%</td><td>-0.39%</td><td>-2.76%</td><td>-2.68%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|探索</td><td class='l'>前低停損</td><td>2592</td><td>-2.50%</td><td>+0.38%</td><td>-0.22%</td><td>-2.62%</td><td>-2.60%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|探索</td><td class='l'>固定持有</td><td>2592</td><td>-0.88%</td><td>+2.11%</td><td>+1.51%</td><td>-1.00%</td><td>-1.20%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|確認</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-2.62%</td><td>+0.40%</td><td>-0.20%</td><td>-2.49%</td><td>-2.67%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|確認</td><td class='l'>前低停損</td><td>2592</td><td>-2.08%</td><td>+0.84%</td><td>+0.24%</td><td>-1.94%</td><td>-2.13%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|確認</td><td class='l'>固定持有</td><td>2592</td><td>-0.14%</td><td>+2.78%</td><td>+2.18%</td><td>+0.01%</td><td>-0.12%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|早年</td><td class='l'>回測低點／長紅低點停損</td><td>2592</td><td>-2.58%</td><td>+0.50%</td><td>-0.10%</td><td>-2.71%</td><td>-2.68%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|早年</td><td class='l'>前低停損</td><td>2592</td><td>-1.71%</td><td>+1.29%</td><td>+0.69%</td><td>-1.85%</td><td>-1.89%</td></tr>
+<tr><td class='l'>N字底|甲1|H60|早年</td><td class='l'>固定持有</td><td>2592</td><td>-0.23%</td><td>+2.73%</td><td>+2.13%</td><td>-0.35%</td><td>-0.21%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|探索</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.47%</td><td>-0.84%</td><td>-1.44%</td><td>-0.49%</td><td>-0.48%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|探索</td><td class='l'>前低停損</td><td>7776</td><td>-0.49%</td><td>-0.86%</td><td>-1.46%</td><td>-0.50%</td><td>-0.49%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|探索</td><td class='l'>固定持有</td><td>7776</td><td>-0.66%</td><td>-1.02%</td><td>-1.62%</td><td>-0.67%</td><td>-0.66%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|確認</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.36%</td><td>-0.84%</td><td>-1.44%</td><td>-0.30%</td><td>-0.36%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|確認</td><td class='l'>前低停損</td><td>7776</td><td>-0.37%</td><td>-0.85%</td><td>-1.45%</td><td>-0.31%</td><td>-0.37%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|確認</td><td class='l'>固定持有</td><td>7776</td><td>-0.47%</td><td>-0.96%</td><td>-1.56%</td><td>-0.42%</td><td>-0.46%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|早年</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.20%</td><td>-0.22%</td><td>-0.82%</td><td>-0.22%</td><td>-0.20%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|早年</td><td class='l'>前低停損</td><td>7776</td><td>-0.21%</td><td>-0.23%</td><td>-0.83%</td><td>-0.22%</td><td>-0.21%</td></tr>
+<tr><td class='l'>N字底|甲2|H5|早年</td><td class='l'>固定持有</td><td>7776</td><td>-0.24%</td><td>-0.27%</td><td>-0.87%</td><td>-0.26%</td><td>-0.24%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|探索</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.74%</td><td>-0.60%</td><td>-1.20%</td><td>-0.64%</td><td>-0.74%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|探索</td><td class='l'>前低停損</td><td>7776</td><td>-0.77%</td><td>-0.62%</td><td>-1.22%</td><td>-0.67%</td><td>-0.77%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|探索</td><td class='l'>固定持有</td><td>7776</td><td>-0.90%</td><td>-0.77%</td><td>-1.37%</td><td>-0.80%</td><td>-0.91%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|確認</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.43%</td><td>-0.38%</td><td>-0.98%</td><td>-0.22%</td><td>-0.42%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|確認</td><td class='l'>前低停損</td><td>7776</td><td>-0.46%</td><td>-0.40%</td><td>-1.00%</td><td>-0.24%</td><td>-0.45%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|確認</td><td class='l'>固定持有</td><td>7776</td><td>-0.35%</td><td>-0.32%</td><td>-0.92%</td><td>-0.14%</td><td>-0.35%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|早年</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.51%</td><td>+0.30%</td><td>-0.30%</td><td>-0.48%</td><td>-0.50%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|早年</td><td class='l'>前低停損</td><td>7776</td><td>-0.48%</td><td>+0.32%</td><td>-0.28%</td><td>-0.45%</td><td>-0.48%</td></tr>
+<tr><td class='l'>N字底|甲2|H10|早年</td><td class='l'>固定持有</td><td>7776</td><td>-0.26%</td><td>+0.55%</td><td>-0.05%</td><td>-0.24%</td><td>-0.26%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|探索</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.99%</td><td>-0.32%</td><td>-0.92%</td><td>-0.82%</td><td>-1.00%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|探索</td><td class='l'>前低停損</td><td>7776</td><td>-1.03%</td><td>-0.36%</td><td>-0.96%</td><td>-0.86%</td><td>-1.04%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|探索</td><td class='l'>固定持有</td><td>7776</td><td>-0.70%</td><td>-0.01%</td><td>-0.61%</td><td>-0.53%</td><td>-0.70%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|確認</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-0.67%</td><td>+0.16%</td><td>-0.44%</td><td>-0.20%</td><td>-0.65%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|確認</td><td class='l'>前低停損</td><td>7776</td><td>-0.73%</td><td>+0.10%</td><td>-0.50%</td><td>-0.26%</td><td>-0.71%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|確認</td><td class='l'>固定持有</td><td>7776</td><td>-0.41%</td><td>+0.41%</td><td>-0.19%</td><td>+0.08%</td><td>-0.39%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|早年</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-1.27%</td><td>+1.01%</td><td>+0.41%</td><td>-1.28%</td><td>-1.28%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|早年</td><td class='l'>前低停損</td><td>7776</td><td>-1.18%</td><td>+1.08%</td><td>+0.48%</td><td>-1.18%</td><td>-1.19%</td></tr>
+<tr><td class='l'>N字底|甲2|H20|早年</td><td class='l'>固定持有</td><td>7776</td><td>-0.29%</td><td>+1.98%</td><td>+1.38%</td><td>-0.28%</td><td>-0.31%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|探索</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-3.19%</td><td>-0.09%</td><td>-0.69%</td><td>-2.74%</td><td>-3.23%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|探索</td><td class='l'>前低停損</td><td>7776</td><td>-3.01%</td><td>+0.08%</td><td>-0.52%</td><td>-2.56%</td><td>-3.05%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|探索</td><td class='l'>固定持有</td><td>7776</td><td>-1.92%</td><td>+1.18%</td><td>+0.58%</td><td>-1.46%</td><td>-1.95%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|確認</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-3.65%</td><td>+0.47%</td><td>-0.13%</td><td>-2.31%</td><td>-3.65%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|確認</td><td class='l'>前低停損</td><td>7776</td><td>-3.60%</td><td>+0.52%</td><td>-0.08%</td><td>-2.26%</td><td>-3.59%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|確認</td><td class='l'>固定持有</td><td>7776</td><td>-1.43%</td><td>+2.69%</td><td>+2.09%</td><td>-0.07%</td><td>-1.25%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|早年</td><td class='l'>回測低點／長紅低點停損</td><td>7776</td><td>-3.62%</td><td>+1.39%</td><td>+0.79%</td><td>-3.54%</td><td>-3.69%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|早年</td><td class='l'>前低停損</td><td>7776</td><td>-3.42%</td><td>+1.62%</td><td>+1.02%</td><td>-3.33%</td><td>-3.48%</td></tr>
+<tr><td class='l'>N字底|甲2|H60|早年</td><td class='l'>固定持有</td><td>7776</td><td>-1.00%</td><td>+3.96%</td><td>+3.36%</td><td>-0.94%</td><td>-1.05%</td></tr>
+<tr><td class='l'>N型|再突破|H5|探索</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.05%</td><td>-0.27%</td><td>-0.87%</td><td>-0.05%</td><td>-0.03%</td></tr>
+<tr><td class='l'>N型|再突破|H5|探索</td><td class='l'>固定持有</td><td>21</td><td>-0.05%</td><td>-0.27%</td><td>-0.87%</td><td>-0.05%</td><td>-0.04%</td></tr>
+<tr><td class='l'>N型|再突破|H5|確認</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.09%</td><td>-0.63%</td><td>-1.23%</td><td>-0.08%</td><td>-0.08%</td></tr>
+<tr><td class='l'>N型|再突破|H5|確認</td><td class='l'>固定持有</td><td>21</td><td>-0.09%</td><td>-0.63%</td><td>-1.23%</td><td>-0.08%</td><td>-0.08%</td></tr>
+<tr><td class='l'>N型|再突破|H5|早年</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.27%</td><td>-0.79%</td><td>-1.39%</td><td>-0.29%</td><td>-0.27%</td></tr>
+<tr><td class='l'>N型|再突破|H5|早年</td><td class='l'>固定持有</td><td>21</td><td>-0.26%</td><td>-0.79%</td><td>-1.39%</td><td>-0.29%</td><td>-0.27%</td></tr>
+<tr><td class='l'>N型|再突破|H10|探索</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>+0.02%</td><td>+0.36%</td><td>-0.24%</td><td>+0.07%</td><td>+0.03%</td></tr>
+<tr><td class='l'>N型|再突破|H10|探索</td><td class='l'>固定持有</td><td>21</td><td>+0.06%</td><td>+0.40%</td><td>-0.20%</td><td>+0.11%</td><td>+0.09%</td></tr>
+<tr><td class='l'>N型|再突破|H10|確認</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.17%</td><td>-0.19%</td><td>-0.79%</td><td>-0.09%</td><td>-0.15%</td></tr>
+<tr><td class='l'>N型|再突破|H10|確認</td><td class='l'>固定持有</td><td>21</td><td>-0.08%</td><td>-0.10%</td><td>-0.70%</td><td>+0.03%</td><td>-0.06%</td></tr>
+<tr><td class='l'>N型|再突破|H10|早年</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.33%</td><td>-0.58%</td><td>-1.18%</td><td>-0.31%</td><td>-0.35%</td></tr>
+<tr><td class='l'>N型|再突破|H10|早年</td><td class='l'>固定持有</td><td>21</td><td>-0.29%</td><td>-0.54%</td><td>-1.14%</td><td>-0.28%</td><td>-0.28%</td></tr>
+<tr><td class='l'>N型|再突破|H20|探索</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.00%</td><td>+1.10%</td><td>+0.50%</td><td>+0.06%</td><td>+0.04%</td></tr>
+<tr><td class='l'>N型|再突破|H20|探索</td><td class='l'>固定持有</td><td>21</td><td>+0.10%</td><td>+1.24%</td><td>+0.64%</td><td>+0.17%</td><td>+0.13%</td></tr>
+<tr><td class='l'>N型|再突破|H20|確認</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.36%</td><td>+0.30%</td><td>-0.30%</td><td>-0.17%</td><td>-0.28%</td></tr>
+<tr><td class='l'>N型|再突破|H20|確認</td><td class='l'>固定持有</td><td>21</td><td>-0.03%</td><td>+0.55%</td><td>-0.05%</td><td>+0.12%</td><td>-0.01%</td></tr>
+<tr><td class='l'>N型|再突破|H20|早年</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.29%</td><td>+0.16%</td><td>-0.44%</td><td>-0.26%</td><td>-0.35%</td></tr>
+<tr><td class='l'>N型|再突破|H20|早年</td><td class='l'>固定持有</td><td>21</td><td>-0.20%</td><td>+0.31%</td><td>-0.29%</td><td>-0.19%</td><td>-0.22%</td></tr>
+<tr><td class='l'>N型|再突破|H60|探索</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-1.23%</td><td>+3.02%</td><td>+2.42%</td><td>-1.00%</td><td>-1.24%</td></tr>
+<tr><td class='l'>N型|再突破|H60|探索</td><td class='l'>固定持有</td><td>21</td><td>-0.01%</td><td>+4.08%</td><td>+3.48%</td><td>+0.21%</td><td>+0.26%</td></tr>
+<tr><td class='l'>N型|再突破|H60|確認</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-1.65%</td><td>+1.33%</td><td>+0.73%</td><td>-1.29%</td><td>-1.61%</td></tr>
+<tr><td class='l'>N型|再突破|H60|確認</td><td class='l'>固定持有</td><td>21</td><td>-0.21%</td><td>+2.85%</td><td>+2.25%</td><td>+0.20%</td><td>+0.11%</td></tr>
+<tr><td class='l'>N型|再突破|H60|早年</td><td class='l'>回測低點／長紅低點停損</td><td>21</td><td>-0.94%</td><td>+2.07%</td><td>+1.47%</td><td>-0.80%</td><td>-1.24%</td></tr>
+<tr><td class='l'>N型|再突破|H60|早年</td><td class='l'>固定持有</td><td>21</td><td>-0.17%</td><td>+2.81%</td><td>+2.21%</td><td>-0.06%</td><td>-0.17%</td></tr>
+</table></div>
+<h3>目標價被碰到的比例 vs 隨機同距離</h3><div class='wrap'><table><tr><th class='l'>進場｜H｜段</th><th>樣本</th><th>碰到目標</th><th>隨機同距離</th><th>目標距離中位</th></tr>
+<tr><td class='l'>甲1|H5|探索</td><td>192647</td><td>4.4%</td><td>4.7%</td><td>+13.18%</td></tr>
+<tr><td class='l'>甲1|H5|確認</td><td>212586</td><td>3.8%</td><td>4.4%</td><td>+14.67%</td></tr>
+<tr><td class='l'>甲2|H5|探索</td><td>35597</td><td>26.9%</td><td>25.6%</td><td>+5.46%</td></tr>
+<tr><td class='l'>甲2|H5|確認</td><td>36512</td><td>24.8%</td><td>23.9%</td><td>+6.36%</td></tr>
+<tr><td class='l'>甲1|H10|探索</td><td>192647</td><td>10.0%</td><td>9.6%</td><td>+13.18%</td></tr>
+<tr><td class='l'>甲1|H10|確認</td><td>212580</td><td>8.9%</td><td>9.1%</td><td>+14.67%</td></tr>
+<tr><td class='l'>甲2|H10|探索</td><td>35597</td><td>35.7%</td><td>34.6%</td><td>+5.46%</td></tr>
+<tr><td class='l'>甲2|H10|確認</td><td>36512</td><td>34.0%</td><td>33.0%</td><td>+6.36%</td></tr>
+<tr><td class='l'>甲1|H20|探索</td><td>192639</td><td>19.0%</td><td>17.5%</td><td>+13.18%</td></tr>
+<tr><td class='l'>甲1|H20|確認</td><td>212566</td><td>17.6%</td><td>16.7%</td><td>+14.67%</td></tr>
+<tr><td class='l'>甲2|H20|探索</td><td>35594</td><td>46.1%</td><td>45.4%</td><td>+5.46%</td></tr>
+<tr><td class='l'>甲2|H20|確認</td><td>36505</td><td>44.9%</td><td>43.6%</td><td>+6.36%</td></tr>
+<tr><td class='l'>甲1|H60|探索</td><td>192621</td><td>38.7%</td><td>35.7%</td><td>+13.18%</td></tr>
+<tr><td class='l'>甲1|H60|確認</td><td>204912</td><td>38.0%</td><td>34.5%</td><td>+14.59%</td></tr>
+<tr><td class='l'>甲2|H60|探索</td><td>35594</td><td>62.9%</td><td>62.5%</td><td>+5.46%</td></tr>
+<tr><td class='l'>甲2|H60|確認</td><td>35525</td><td>62.3%</td><td>60.9%</td><td>+6.33%</td></tr>
+<tr><td class='l'>甲1|H5|早年</td><td>348099</td><td>4.2%</td><td>4.7%</td><td>+14.73%</td></tr>
+<tr><td class='l'>甲2|H5|早年</td><td>68665</td><td>24.5%</td><td>24.1%</td><td>+6.57%</td></tr>
+<tr><td class='l'>甲1|H10|早年</td><td>346643</td><td>10.0%</td><td>10.1%</td><td>+14.73%</td></tr>
+<tr><td class='l'>甲2|H10|早年</td><td>68309</td><td>34.5%</td><td>34.3%</td><td>+6.58%</td></tr>
+<tr><td class='l'>甲1|H20|早年</td><td>343733</td><td>19.7%</td><td>19.2%</td><td>+14.75%</td></tr>
+<tr><td class='l'>甲2|H20|早年</td><td>67841</td><td>46.9%</td><td>46.5%</td><td>+6.58%</td></tr>
+<tr><td class='l'>甲1|H60|早年</td><td>338174</td><td>40.6%</td><td>38.9%</td><td>+14.76%</td></tr>
+<tr><td class='l'>甲2|H60|早年</td><td>66865</td><td>63.9%</td><td>64.3%</td><td>+6.59%</td></tr>
+</table></div><h3>買不買得到</h3><div class='wrap'><table><tr><th class='l'>臂｜段</th><th>去重前訊號（格加總）</th><th>隔天一字漲停買不到</th><th>處置中</th></tr>
+<tr><td class='l'>N1M|探索</td><td>17575192</td><td>1.24%</td><td>1.19%</td></tr>
+<tr><td class='l'>N1M|確認</td><td>20046408</td><td>0.67%</td><td>1.93%</td></tr>
+<tr><td class='l'>N2M|探索</td><td>14805550</td><td>1.56%</td><td>0.18%</td></tr>
+<tr><td class='l'>N2M|確認</td><td>15674242</td><td>1.18%</td><td>0.09%</td></tr>
+<tr><td class='l'>TM|探索</td><td>502611</td><td>1.61%</td><td>1.52%</td></tr>
+<tr><td class='l'>TM|確認</td><td>484688</td><td>1.19%</td><td>1.96%</td></tr>
+<tr><td class='l'>N1M|早年</td><td>33746039</td><td>0.91%</td><td>0.09%</td></tr>
+<tr><td class='l'>N2M|早年</td><td>30418655</td><td>2.40%</td><td>0.02%</td></tr>
+<tr><td class='l'>TM|早年</td><td>793180</td><td>1.84%</td><td>0.15%</td></tr>
+</table></div>
+<h2>先驗逐條對答（登錄 §五）</h2><div class='wrap'><table><tr><th class='l'>先驗</th><th class='l'>押</th><th class='l'>實測</th><th>對錯</th></tr>
+<tr><td class='l'>① N字底主臂站得住</td><td class='l'>否（約七成）</td><td class='l'>站得住：沒有</td><td class='l'>對</td></tr>
+<tr><td class='l'>② N字底量能有加分</td><td class='l'>否（約六成五）</td><td class='l'>有加分：沒有</td><td class='l'>對</td></tr>
+<tr><td class='l'>③ 放棄組報酬 ≥ 主臂</td><td class='l'>是（約六成）</td><td class='l'>「等回測吃虧」（A−M 下緣 ＞ 0 過半格、探索與確認都成立；固定持有版、合併）2/12 組：N字底|甲2|H5、N字底|甲2|H60</td><td class='l'>錯（多數組測不出放棄組較好）</td></tr>
+<tr><td class='l'>④ N型主臂站得住</td><td class='l'>否（約六成五）</td><td class='l'>站得住：沒有</td><td class='l'>對</td></tr>
+<tr><td class='l'>⑤ P 比主臂多</td><td class='l'>否或測不出（約六成）</td><td class='l'>P 比主臂多：沒有</td><td class='l'>對</td></tr>
+</table></div>
+<h2>讀法（摘要）</h2><p class='mut'>N字底：下跌（20 根內高點到低點跌幅 ≥ d1）→ 反彈（低點後 W_B 根內的最高收盤或最高價 ＝ 頸線）→ 回測 W_R 根不破前低（容差 ε）→ 甲1 回測段結束隔天開盤進、甲2 之後 20 根內收盤突破頸線隔天開盤進。量能四條照作者原文、門檻全格。停損：回測低點或前低（收盤跌破隔天開盤出）；目標價：頸線＋（頸線−低點）。N型：長紅 → W 根內回檔（每天量 ＜ 長紅量、收盤跌破長紅低點只能一天）→ 收盤突破長紅最高，隔天開盤進；停損長紅低點。同一檔前一筆出場前不算新事件。完整讀法與「執行者補」清單見程式 backtest/researchNpattern.py 開頭。</p>
+<p class='mut'>查核：{&quot;①抽查（股×格）&quot;: 25, &quot;①事件數&quot;: 296, &quot;①不同&quot;: 0, &quot;②不同&quot;: 0, &quot;②&quot;: {&quot;n_本程式&quot;: 1432, &quot;n_重算&quot;: 1432, &quot;X2_本程式&quot;: -0.00738847118294, &quot;X2_重算&quot;: -0.007388471182941713, &quot;下緣_本程式&quot;: -0.0151044596976, &quot;下緣_重算&quot;: -0.015104459697647534}, &quot;過&quot;: true}</p></body></html>
