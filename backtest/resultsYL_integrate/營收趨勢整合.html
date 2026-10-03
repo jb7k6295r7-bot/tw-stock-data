@@ -1,0 +1,94 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>營收趨勢整合</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left;white-space:normal}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:8px 12px;background:#eef4fb}.big{font-size:1.05rem}li{margin:.35em 0}tr.pk td{background:#fff7d6}</style></head><body><main>
+<h1>營收趨勢整合：營量、營飆合成一條規則（36 格挑 1）</h1>
+<p class='warn'>⚠ 確認段不是全新的資料（營量、營飆在這段的表現已經看過），結論最多「暫定」。早年段用上市＋上櫃版面：上櫃 2007-07～12 除權息未還原；上櫃減資 2007～2012 為偵測、非官方；2005-01～2007-06 只有上市。</p>
+<div class='ok big'><b>先講結論</b>：探索段挑中 <b>H60·S20·無·relvol</b>（＝ 現行的營量 v1 或營飆 v1 ⇒ 合成沒有帶出新格）；確認段 +31.7%／-30.8%（合格）、早年段 +21.8%／-34.4%（合格）⇒ 兩段取嚴：<b>合格</b>。<br>對現行 67:33 合併：確認段年化差 -3.4 點（95% CI -15.8 點～+9.0 點），早年段 +3.1 點 ⇒ <b>不取代 ⇒ 只進前瞻紀錄並列</b>。</div>
+<p class='lead'>讀法寫死 2026-10-03 23:40（台北）。進場訊號、等權、固定天數出場都照正式；只動四個參數：抱幾天 H、幾格 S、大盤閘、候選多時誰先。抽籤的格報 200 顆種子中位。探索段先合格、再比年化÷回落挑一格。查核：通過。</p>
+<h2>一、36 格（主窗：探索／確認；早年）</h2><div class='wrap'><table><tr><th class='l'>格</th><th>探索</th><th>確認</th><th>早年</th><th>探索持股／現金</th></tr>
+<tr class='pk'><td class='l'>H60·S20·無·relvol（營量 v1）</td><td>+38.5%／-32.1%<br><small>合格</small></td><td>+31.7%／-30.8%<br><small>合格</small></td><td>+21.8%／-34.4%<br><small>合格</small></td><td>17.9／11%</td></tr>
+<tr><td class='l'>H120·S10·閘·relvol</td><td>+38.7%／-33.9%<br><small>合格</small></td><td>+42.8%／-36.0%<br><small>合格</small></td><td>+16.4%／-54.8%<br><small>合格</small></td><td>8.9／12%</td></tr>
+<tr><td class='l'>H120·S10·無·抽籤</td><td>+30.7%／-28.1%<br><small>合格</small></td><td>+21.8%／-43.6%<br><small>不合格</small></td><td>+25.8%／-48.6%<br><small>合格</small></td><td>9.6／6%</td></tr>
+<tr><td class='l'>H120·S10·閘·抽籤（營飆 v1）</td><td>+37.6%／-36.1%<br><small>合格</small></td><td>+38.2%／-40.5%<br><small>合格</small></td><td>+15.2%／-56.1%<br><small>合格</small></td><td>8.9／12%</td></tr>
+<tr><td class='l'>H120·S15·無·抽籤</td><td>+30.0%／-28.8%<br><small>合格</small></td><td>+32.7%／-44.7%<br><small>另列</small></td><td>+26.1%／-48.1%<br><small>合格</small></td><td>14.2／7%</td></tr>
+<tr><td class='l'>H120·S20·無·抽籤</td><td>+29.8%／-29.4%<br><small>合格</small></td><td>+32.6%／-46.3%<br><small>另列</small></td><td>+23.7%／-47.5%<br><small>合格</small></td><td>18.7／8%</td></tr>
+<tr><td class='l'>H60·S20·無·抽籤</td><td>+32.4%／-32.2%<br><small>合格</small></td><td>+31.2%／-34.4%<br><small>合格</small></td><td>+22.8%／-34.3%<br><small>合格</small></td><td>17.9／11%</td></tr>
+<tr><td class='l'>H120·S20·無·relvol</td><td>+28.9%／-29.4%<br><small>合格</small></td><td>+41.5%／-41.3%<br><small>合格</small></td><td>+24.7%／-46.6%<br><small>合格</small></td><td>18.7／8%</td></tr>
+<tr><td class='l'>H120·S15·閘·relvol</td><td>+34.3%／-35.3%<br><small>合格</small></td><td>+32.8%／-37.2%<br><small>合格</small></td><td>+11.9%／-56.6%<br><small>合格</small></td><td>12.9／15%</td></tr>
+<tr><td class='l'>H120·S10·無·relvol</td><td>+31.6%／-33.0%<br><small>合格</small></td><td>+24.7%／-39.5%<br><small>不合格</small></td><td>+25.9%／-46.9%<br><small>合格</small></td><td>9.6／5%</td></tr>
+<tr><td class='l'>H120·S15·閘·抽籤</td><td>+33.2%／-35.5%<br><small>合格</small></td><td>+29.3%／-41.9%<br><small>不合格</small></td><td>+10.2%／-57.6%<br><small>合格</small></td><td>12.9／15%</td></tr>
+<tr><td class='l'>H120·S15·無·relvol</td><td>+30.3%／-32.7%<br><small>合格</small></td><td>+36.9%／-39.1%<br><small>合格</small></td><td>+27.5%／-47.9%<br><small>合格</small></td><td>14.2／7%</td></tr>
+<tr><td class='l'>H90·S15·無·relvol</td><td>+34.1%／-40.5%<br><small>合格</small></td><td>+20.7%／-45.4%<br><small>不合格</small></td><td>+27.9%／-40.5%<br><small>合格</small></td><td>14.1／9%</td></tr>
+<tr><td class='l'>H120·S20·閘·抽籤</td><td>+31.3%／-37.2%<br><small>合格</small></td><td>+29.8%／-41.2%<br><small>另列</small></td><td>+8.6%／-59.9%<br><small>合格</small></td><td>16.9／17%</td></tr>
+<tr><td class='l'>H120·S20·閘·relvol</td><td>+30.8%／-37.4%<br><small>合格</small></td><td>+31.9%／-38.1%<br><small>另列</small></td><td>+9.8%／-59.0%<br><small>合格</small></td><td>16.9／17%</td></tr>
+<tr><td class='l'>H90·S10·閘·抽籤</td><td>+35.5%／-43.5%<br><small>合格</small></td><td>+38.0%／-41.9%<br><small>合格</small></td><td>+21.5%／-49.3%<br><small>合格</small></td><td>9.1／11%</td></tr>
+<tr><td class='l'>H60·S15·無·relvol</td><td>+26.3%／-32.5%<br><small>合格</small></td><td>+20.9%／-39.1%<br><small>不合格</small></td><td>+22.3%／-32.7%<br><small>合格</small></td><td>13.8／10%</td></tr>
+<tr><td class='l'>H90·S15·無·抽籤</td><td>+32.9%／-43.0%<br><small>合格</small></td><td>+26.4%／-44.3%<br><small>不合格</small></td><td>+30.0%／-34.6%<br><small>合格</small></td><td>14.1／9%</td></tr>
+<tr><td class='l'>H60·S20·閘·relvol</td><td>+28.0%／-37.0%<br><small>合格</small></td><td>+29.7%／-28.9%<br><small>合格</small></td><td>+14.1%／-41.9%<br><small>合格</small></td><td>15.8／22%</td></tr>
+<tr><td class='l'>H60·S10·無·relvol</td><td>+26.9%／-38.2%<br><small>合格</small></td><td>+12.4%／-43.4%<br><small>不合格</small></td><td>+20.2%／-38.4%<br><small>合格</small></td><td>9.3／8%</td></tr>
+<tr><td class='l'>H90·S20·無·relvol</td><td>+29.0%／-41.8%<br><small>合格</small></td><td>+25.4%／-45.3%<br><small>不合格</small></td><td>+26.0%／-35.7%<br><small>合格</small></td><td>18.6／9%</td></tr>
+<tr><td class='l'>H90·S20·無·抽籤</td><td>+28.9%／-42.4%<br><small>合格</small></td><td>+30.2%／-44.1%<br><small>另列</small></td><td>+26.8%／-31.0%<br><small>合格</small></td><td>18.6／9%</td></tr>
+<tr><td class='l'>H90·S10·閘·relvol</td><td>+28.5%／-42.2%<br><small>合格</small></td><td>+32.4%／-47.2%<br><small>另列</small></td><td>+20.7%／-51.3%<br><small>合格</small></td><td>9.1／12%</td></tr>
+<tr><td class='l'>H60·S20·閘·抽籤</td><td>+24.7%／-39.2%<br><small>另列</small></td><td>+32.1%／-32.9%<br><small>合格</small></td><td>+14.5%／-40.7%<br><small>合格</small></td><td>15.8／22%</td></tr>
+<tr><td class='l'>H90·S10·無·抽籤</td><td>+27.0%／-45.0%<br><small>另列</small></td><td>+16.6%／-47.4%<br><small>不合格</small></td><td>+26.6%／-43.3%<br><small>合格</small></td><td>9.4／8%</td></tr>
+<tr><td class='l'>H90·S15·閘·抽籤</td><td>+28.8%／-48.8%<br><small>另列</small></td><td>+38.0%／-39.8%<br><small>合格</small></td><td>+21.1%／-49.3%<br><small>合格</small></td><td>12.9／15%</td></tr>
+<tr><td class='l'>H90·S10·無·relvol</td><td>+24.9%／-43.4%<br><small>另列</small></td><td>+8.7%／-46.0%<br><small>不合格</small></td><td>+26.5%／-44.4%<br><small>合格</small></td><td>9.4／9%</td></tr>
+<tr><td class='l'>H60·S15·閘·relvol</td><td>+21.8%／-38.5%<br><small>另列</small></td><td>+20.2%／-33.1%<br><small>不合格</small></td><td>+16.0%／-43.9%<br><small>合格</small></td><td>12.1／21%</td></tr>
+<tr><td class='l'>H90·S15·閘·relvol</td><td>+26.1%／-47.0%<br><small>另列</small></td><td>+34.5%／-42.7%<br><small>另列</small></td><td>+20.4%／-54.0%<br><small>合格</small></td><td>12.9／16%</td></tr>
+<tr><td class='l'>H60·S15·無·抽籤</td><td>+18.8%／-34.8%<br><small>不合格</small></td><td>+23.9%／-37.2%<br><small>不合格</small></td><td>+23.6%／-32.7%<br><small>合格</small></td><td>13.8／10%</td></tr>
+<tr><td class='l'>H90·S20·閘·抽籤</td><td>+23.9%／-49.6%<br><small>另列</small></td><td>+34.8%／-37.9%<br><small>合格</small></td><td>+19.4%／-47.4%<br><small>合格</small></td><td>16.7／17%</td></tr>
+<tr><td class='l'>H60·S15·閘·抽籤</td><td>+18.6%／-41.0%<br><small>不合格</small></td><td>+23.5%／-34.4%<br><small>不合格</small></td><td>+17.2%／-42.6%<br><small>合格</small></td><td>12.1／21%</td></tr>
+<tr><td class='l'>H60·S10·無·抽籤</td><td>+17.7%／-39.1%<br><small>不合格</small></td><td>+14.3%／-43.0%<br><small>不合格</small></td><td>+23.0%／-40.4%<br><small>合格</small></td><td>9.3／8%</td></tr>
+<tr><td class='l'>H90·S20·閘·relvol</td><td>+21.9%／-48.9%<br><small>另列</small></td><td>+33.5%／-41.6%<br><small>另列</small></td><td>+19.1%／-50.6%<br><small>合格</small></td><td>16.7／18%</td></tr>
+<tr><td class='l'>H60·S10·閘·relvol</td><td>+16.4%／-39.1%<br><small>不合格</small></td><td>+17.7%／-38.9%<br><small>不合格</small></td><td>+15.8%／-47.9%<br><small>合格</small></td><td>8.3／18%</td></tr>
+<tr><td class='l'>H60·S10·閘·抽籤</td><td>+14.9%／-40.3%<br><small>不合格</small></td><td>+18.8%／-37.7%<br><small>不合格</small></td><td>+18.0%／-47.3%<br><small>合格</small></td><td>8.3／18%</td></tr>
+</table></div><p class='note'>0050：探索 +18.9%／-28.2%、確認 +29.5%／-34.0%、早年 +7.6%／-55.8%。排序依探索段比值；黃底 ＝ 挑中格。</p>
+<h2>二、對照（年化差 ＝ 挑中格 − 對照，同顆配對、月分群 95% CI）</h2><div class='wrap'><table><tr><th class='l'>對照</th><th>探索</th><th>確認</th><th>早年</th></tr>
+<tr><td class='l'>對67:33</td><td>+0.1 點<br><small>-11.0 點～+11.1 點</small></td><td>-3.4 點<br><small>-15.8 點～+9.0 點</small></td><td>+3.1 點<br><small>-3.1 點～+9.3 點</small></td></tr>
+<tr><td class='l'>對營量v1</td><td>+0.0 點<br><small>+0.0 點～+0.0 點</small></td><td>+0.0 點<br><small>+0.0 點～+0.0 點</small></td><td>+0.0 點<br><small>+0.0 點～+0.0 點</small></td></tr>
+<tr><td class='l'>對營飆v1</td><td>+0.1 點<br><small>-16.5 點～+16.7 點</small></td><td>-5.1 點<br><small>-23.7 點～+13.6 點</small></td><td>+4.6 點<br><small>-4.6 點～+13.9 點</small></td></tr>
+</table></div><p class='note'>67:33 本身：探索 +38.4%／-34.0%（合格）、確認 +36.7%／-37.1%（合格）、早年 +17.6%／-43.8%（合格）。</p>
+<p class='note'>同訊號隨機（每個訊號日換成當天隨機股，1,000 次）：探索 假比值中位 0.40、挑中格 1.20、p ＝ 0.000；確認 假比值中位 0.35、挑中格 1.03、p ＝ 0.008；早年 假比值中位 0.27、挑中格 0.63、p ＝ 0.001。</p>
+<h2>三、挑中格必報</h2><ul class='note'>
+<li>主：各年報酬 2017 +18.8%、2018 +2.6%、2019 +29.6%、2020 +98.0%、2021 +55.3%、2022 -20.9%、2023 +66.9%、2024 +10.7%、2025 +56.6%、2026 +53.4%；最大回落谷底最常見在 2020-03（100% 的種子）；與營量 v1 持股重疊 89%、與營飆 v1 14%。</li>
+<li>早年：各年報酬 2005 +25.9%、2006 +48.2%、2007 +12.3%、2008 +2.8%、2009 +98.0%、2010 +30.1%、2011 -17.8%、2012 +0.0%、2013 +50.3%、2014 +5.7%；最大回落谷底最常見在 2012-11（100% 的種子）；與營量 v1 持股重疊 73%、與營飆 v1 18%。</li>
+<li>主窗平均持股 18.0 檔、現金 11%、每年買進 76 筆、換手 3.7 倍／年（成本約 2.2%／年）。</li>
+<li>現實版（C1 0.3%＋C2 50 萬＋C3＋C4）：確認段 +31.0%／-32.1%（合格）、探索 +37.1%（合格）。</li>
+<li>現實版＋C5 低消 20 元：確認段 +30.8%／-32.2%（合格）、探索 +37.0%（合格）。</li>
+</ul>
+<h3>持有中累計處置次數（只當風險提示，不進規則）</h3><div class='wrap'><table><tr><th class='l'>世界</th><th>累計處置</th><th>筆</th><th>回落≥20%</th><th>回落≥30%</th><th>平均報酬</th></tr>
+<tr><td class='l'>主</td><td>0</td><td>643</td><td>42%</td><td>17%</td><td>+9.2%</td></tr>
+<tr><td class='l'>主</td><td>1</td><td>50</td><td>70%</td><td>30%</td><td>+4.0%</td></tr>
+<tr><td class='l'>主</td><td>2</td><td>16</td><td>56%</td><td>44%</td><td>+35.4%</td></tr>
+<tr><td class='l'>主</td><td>3+</td><td>8</td><td>88%</td><td>62%</td><td>+16.1%</td></tr>
+<tr><td class='l'>早年</td><td>0</td><td>257</td><td>33%</td><td>11%</td><td>+3.0%</td></tr>
+<tr><td class='l'>早年</td><td>1</td><td>5</td><td>60%</td><td>40%</td><td>-8.2%</td></tr>
+<tr><td class='l'>早年</td><td>2</td><td>2</td><td>100%</td><td>100%</td><td>-21.9%</td></tr>
+</table></div><p class='note'>累計處置 ＝ 起漲點到進場前一天的處置次數；回落 ＝ 持有期間從進場後最高收盤跌多少。早年只算 2011 起進場（處置資料 2010-12 起）。</p>
+<h3>早年月營收覆蓋率</h3><p class='note'>上市 2005 98%；上市 2006 98%；上市 2007 98%；上市 2008 99%；上市 2009 99%；上市 2010 97%；上市 2011 98%；上市 2012 98%；上市 2013 92%；上市 2014 92%；上櫃 2007 98%；上櫃 2008 98%；上櫃 2009 99%；上櫃 2010 97%；上櫃 2011 97%；上櫃 2012 98%；上櫃 2013 90%；上櫃 2014 90%。本規則不用法人資料。</p>
+<h2>四、早年 IFRS 換軌敏感度（描述）</h2><p class='note'>剔除「營收 24 月新高的回看期跨到 2013-01」的訊號（用到的營收期別在 2013-01～2014-12）後重算。</p><div class='wrap'><table><tr><th class='l'>窗｜策略</th><th>剔除筆／訊號</th><th>原</th><th>剔除後</th><th>0050</th><th>標籤改變</th></tr>
+<tr><td class='l'>2005-02～2014-12|營量v1</td><td>397／1394</td><td>+21.8%／-34.4%<br><small>合格</small></td><td>+17.1%／-34.4%<br><small>合格</small></td><td>+7.6%／-55.8%</td><td>否</td></tr>
+<tr><td class='l'>2005-02～2014-12|乙_T3_H40</td><td>1816／5431</td><td>+14.0%／-36.7%<br><small>合格</small></td><td>+11.0%／-36.7%<br><small>合格</small></td><td>+7.6%／-55.8%</td><td>否</td></tr>
+<tr><td class='l'>2012-06～2014-12|營量v1</td><td>397／450</td><td>+20.4%／-14.7%<br><small>另列</small></td><td>+3.5%／-12.4%<br><small>不合格</small></td><td>+17.4%／-9.7%</td><td>是</td></tr>
+<tr><td class='l'>2012-06～2014-12|乙_T3_H40</td><td>1816／2073</td><td>+14.4%／-15.5%<br><small>不合格</small></td><td>+3.2%／-12.4%<br><small>不合格</small></td><td>+17.4%／-9.7%</td><td>否</td></tr>
+</table></div>
+</main></body></html>
