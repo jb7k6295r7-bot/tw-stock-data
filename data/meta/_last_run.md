@@ -1075,18 +1075,18 @@
 
 ## filing_dates　✓ 正常
 
-最後執行：2026-10-03T03:01:58+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37016372041
+最後執行：2026-10-03T08:20:05+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37052641825
 
 - **母體**：2019:1726｜2020:1741｜2021:1753｜2022:1787｜2023:1818｜2024:1875｜2025:1944｜2026:1982
-- **待問**：4039 發（已問過 10587）
-- **本趟**：問 508 發｜ok 506｜empty（那年沒有檔）0｜失敗 2｜剩 3531 發｜301 分
-- **累計**：上傳紀錄 76300 列｜已問 (家, 年) 12429
-- **限流跡象**：第一次失敗在第 126 發（15:21:05）｜冷卻 0 次
-- **失敗的（前 10）**：[('1216', 111, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1722', 111, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
+- **待問**：3533 發（已問過 11093）
+- **本趟**：問 709 發｜ok 708｜empty（那年沒有檔）0｜失敗 1｜剩 2824 發｜302 分
+- **累計**：上傳紀錄 81390 列｜已問 (家, 年) 13137
+- **限流跡象**：第一次失敗在第 551 發（23:13:54）｜冷卻 0 次
+- **失敗的（前 10）**：[('4438', 111, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
 
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
-- ok　失敗 ≤ 本趟 2%　（2／508）
+- ok　失敗 ≤ 本趟 2%　（1／709）
 
 ## mops_news　✓ 正常
 
