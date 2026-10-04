@@ -1075,14 +1075,13 @@
 
 ## twse_xflag　✓ 正常
 
-最後執行：2026-10-05T02:27:57+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37205370033
+最後執行：2026-10-05T04:53:28+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37225483187
 
-- **待問**：5575 天（台帳已有 0）
-- **本趟**：問 4006 天｜ok 4005｜empty 0｜失敗 1｜旗標 29429 列｜剩 1569 天｜300 分
-- **失敗的（前 10）**：[('2006-11-22', 'URLError: <urlopen error [Errno 104] Connection reset by peer>')]
+- **待問**：1570 天（台帳已有 4006）
+- **本趟**：問 1570 天｜ok 1570｜empty 0｜失敗 0｜旗標 16957 列｜剩 0 天｜126 分
 
 檢查：
-- ok　失敗 ≤ 本趟 2%　（1／4006）
+- ok　失敗 ≤ 本趟 2%　（0／1570）
 
 ## crypto:funding　✓ 正常
 
