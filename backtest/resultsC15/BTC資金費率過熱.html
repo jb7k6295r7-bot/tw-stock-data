@@ -1,0 +1,85 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>BTC資金費率過熱</title><style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--mut:#6b6a66;--card:#ffffff;--line:#e4e1da;--acc:#1d4ed8;--accbg:#eef3ff;--warn:#b45309;--ok:#166534}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.4rem;margin:.2em 0 .3em}h2{font-size:1.15rem;margin:1.8em 0 .5em;border-top:1px solid var(--line);padding-top:1em}
+h3{font-size:1rem;margin:1.1em 0 .3em}.sub{color:var(--mut);font-size:.88rem}.lead{background:var(--accbg);border-left:4px solid var(--acc);padding:12px 14px;border-radius:6px;margin:14px 0}
+.lead b{color:var(--acc)}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0}table{border-collapse:collapse;font-size:.84rem;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600}.narrow{color:var(--warn);font-weight:600}.pass{color:var(--ok);font-weight:600}ul{padding-left:1.2em}li{margin:.25em 0}.small{font-size:.84rem;color:var(--mut)}
+summary{cursor:pointer;margin:8px 0}
+</style></head><body><main>
+<h1>BTC 資金費率過熱，之後報酬偏低嗎？</h1>
+<div class='sub'>PREREGC15 v1（N＝3，雙向判）｜回測線｜方向取自 BIS WP 1087｜起點 2020-01-08～結果窗到 2026-08-31｜讀法寫死 2026-10-04 22:03（台北）｜產出 2026-10-04 22:04（台北）</div>
+<div class='lead'><b>結論</b><ul><li>3 格：h7 ρ -0.066（出口①）、h14 ρ -0.075（出口①）、h30 ρ -0.109（出口①）。</li></ul><div class='small'>論文用交割期貨溢價、本件用 Binance USDT 永續資金費率（同一種「多方付空方的溢價」，不是同一工具），只取方向。⛔ 出口②也不是「費率高就放空／賣幣」；不提供任何買賣或倍數建議。</div></div>
+<div class='card'><b>怎麼測</b>：每個起點 t 算近 7 天資金費逐筆加總的年化值 F_t（只含 t 日 UTC 收盤以前的結算），看它和之後 h 天（7／14／30）BTC 現貨對數報酬的相關係數。起點每 h 天一個、不重疊；CI 用 block bootstrap 2,000 次（一個區塊至少 h 天）、信賴水準 1−0.05/3。上界 < 0 ⇒ 出口②（論文方向）；下界 > 0 ⇒ 出口③（反向）；含 0 ⇒ 出口①。</div>
+<h2>一、判定</h2><div class='tw'><table><tr><th>h</th><th>起點數</th><th>ρ［CI］</th><th>出口</th></tr>
+<tr><td>7</td><td>346</td><td>-0.066［-0.260～+0.080］</td><td class=''>出口①</td></tr>
+<tr><td>14</td><td>173</td><td>-0.075［-0.252～+0.127］</td><td class=''>出口①</td></tr>
+<tr><td>30</td><td>80</td><td>-0.109［-0.389～+0.184］</td><td class=''>出口①</td></tr>
+</table></div>
+<h2>二、描述（不判）</h2><h3>費率三分位：之後 h 天的最大跌幅</h3><div class='small'>三分位界線只用 t 以前的日訊號（擴張窗）。最大跌幅＝之後 h 天日低最低點相對起點收盤。</div>
+<div class='tw'><table><tr><th>h</th><th>分位</th><th>起點數</th><th>跌超過 10%</th><th>跌超過 20%</th><th>平均報酬</th></tr>
+<tr><td>7</td><td>前 1/3（高）</td><td>47</td><td>32%</td><td>2%</td><td>+1.00%</td></tr>
+<tr><td>7</td><td>中 1/3</td><td>138</td><td>14%</td><td>1%</td><td>+0.98%</td></tr>
+<tr><td>7</td><td>後 1/3（低）</td><td>148</td><td>13%</td><td>4%</td><td>+0.37%</td></tr>
+<tr><td>7</td><td>歷史不足</td><td>13</td><td>31%</td><td>8%</td><td>-0.69%</td></tr>
+<tr><td>14</td><td>前 1/3（高）</td><td>23</td><td>43%</td><td>9%</td><td>+2.05%</td></tr>
+<tr><td>14</td><td>中 1/3</td><td>67</td><td>27%</td><td>4%</td><td>+2.60%</td></tr>
+<tr><td>14</td><td>後 1/3（低）</td><td>76</td><td>28%</td><td>9%</td><td>+0.35%</td></tr>
+<tr><td>14</td><td>歷史不足</td><td>7</td><td>29%</td><td>14%</td><td>-2.80%</td></tr>
+<tr><td>30</td><td>前 1/3（高）</td><td>12</td><td>50%</td><td>8%</td><td>+5.50%</td></tr>
+<tr><td>30</td><td>中 1/3</td><td>31</td><td>39%</td><td>23%</td><td>+0.53%</td></tr>
+<tr><td>30</td><td>後 1/3（低）</td><td>34</td><td>41%</td><td>15%</td><td>+4.01%</td></tr>
+<tr><td>30</td><td>歷史不足</td><td>3</td><td>67%</td><td>33%</td><td>-3.76%</td></tr>
+</table></div>
+<h3>其他版本（只描述）</h3><div class='tw'><table><tr><th>版本</th><th>h</th><th>起點數</th><th>ρ</th><th>CI</th></tr>
+<tr><td>2024-08 以後（論文沒看過）</td><td>7.0</td><td>107.0</td><td>+0.031</td><td>—</td></tr>
+<tr><td>2024-08 以後（論文沒看過）</td><td>14.0</td><td>53.0</td><td>+0.039</td><td>—</td></tr>
+<tr><td>2024-08 以後（論文沒看過）</td><td>30.0</td><td>24.0</td><td>+0.015</td><td>—</td></tr>
+<tr><td>幣本位 BTCUSD_PERP 費率</td><td>7.0</td><td>315.0</td><td>-0.021</td><td>—</td></tr>
+<tr><td>幣本位 BTCUSD_PERP 費率</td><td>14.0</td><td>157.0</td><td>-0.069</td><td>—</td></tr>
+<tr><td>幣本位 BTCUSD_PERP 費率</td><td>30.0</td><td>73.0</td><td>+0.056</td><td>—</td></tr>
+<tr><td>每日起點（重疊）、區塊 ≥ h 天</td><td>7.0</td><td>2421.0</td><td>-0.060</td><td>［-0.200～+0.079］</td></tr>
+<tr><td>每日起點（重疊）、區塊 ≥ h 天</td><td>14.0</td><td>2414.0</td><td>-0.094</td><td>［-0.241～+0.049］</td></tr>
+<tr><td>每日起點（重疊）、區塊 ≥ h 天</td><td>30.0</td><td>2398.0</td><td>-0.089</td><td>［-0.435～+0.168］</td></tr>
+</table></div>
+<h3>C11 的 BTC 小合約加「費率過熱不開／關掉」（只描述、⛔ 不是建議）</h3><div class='small'>過熱日（擴張窗前 1／3）占 C11 主窗 16%。m＝1%、標記價；期末幣數相對 1 顆。</div>
+<div class='tw'><table><tr><th>E／D／X</th><th>原 C11</th><th>加濾網</th><th>進場段數（原→加）</th><th>強平</th></tr>
+<tr><td>1.1／50／30</td><td>1.084</td><td>1.040</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.1／50／15</td><td>1.113</td><td>1.047</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.1／50／0</td><td>1.125</td><td>1.047</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.1／60／30</td><td>1.036</td><td>1.008</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.1／60／15</td><td>1.049</td><td>1.008</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.1／60／0</td><td>1.052</td><td>1.008</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.1／70／30</td><td>1.054</td><td>1.035</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.1／70／15</td><td>1.063</td><td>1.035</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.1／70／0</td><td>1.066</td><td>1.035</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.2／50／30</td><td>1.173</td><td>1.078</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.2／50／15</td><td>1.233</td><td>1.092</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.2／50／0</td><td>1.259</td><td>1.092</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.2／60／30</td><td>1.073</td><td>1.014</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.2／60／15</td><td>1.098</td><td>1.014</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.2／60／0</td><td>1.104</td><td>1.014</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.2／70／30</td><td>1.109</td><td>1.070</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.2／70／15</td><td>1.126</td><td>1.070</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.2／70／0</td><td>1.131</td><td>1.070</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.3／50／30</td><td>1.266</td><td>1.112</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.3／50／15</td><td>1.362</td><td>1.134</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.3／50／0</td><td>1.403</td><td>1.134</td><td>3→6</td><td>無</td></tr>
+<tr><td>1.3／60／30</td><td>1.109</td><td>1.020</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.3／60／15</td><td>1.146</td><td>1.020</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.3／60／0</td><td>1.156</td><td>1.020</td><td>1→4</td><td>無</td></tr>
+<tr><td>1.3／70／30</td><td>1.163</td><td>1.106</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.3／70／15</td><td>1.190</td><td>1.106</td><td>1→2</td><td>無</td></tr>
+<tr><td>1.3／70／0</td><td>1.197</td><td>1.106</td><td>1→2</td><td>無</td></tr>
+</table></div>
+<h2>三、先驗對答</h2><div class='card'><ul><li>① h7、h14 出口①：h7 出口①、h14 出口① ⇒ 中</li><li>② h30 點估計為負但出口①：ρ＝-0.109、出口① ⇒ 中</li><li>③ 無出口③：出口③ 0 格 ⇒ 中</li></ul></div>
+<h2>四、驗證</h2><div class='tw'><table><tr><th>fixture</th><th>結果</th><th>反例</th><th>反例結果</th></tr>
+<tr><td>a 訊號只含 t 日收盤以前的結算</td><td>綠</td><td>多含 t＋1 日 00:00</td><td>紅（抓得到）</td></tr>
+<tr><td>b 非 8 小時間隔逐筆加</td><td>綠</td><td>假設一天 3 筆（平均×3）</td><td>紅（抓得到）</td></tr>
+</table></div><div class='small'>參考實作重算：h7 346 起點 一致；h14 173 起點 一致；h30 80 起點 一致；資金費逐月清單：2020-01～2026-08 非 ok 月：無。</div>
+<h2>五、讀的時候要注意</h2><ul><li>N＝3，可判出的最小相關約 0.13（h7）～0.27（h30）。</li><li>論文窗 2019-03～2024-07 與本件大部分重疊，只有 2024-08 以後是論文沒看過的（另報）。</li><li>先驗污染：C2、C5 用過這份費率（知道 2020～21 高、2022 後低），但從未算過與之後報酬的關係。</li><li>⛔ 不提供任何買賣、倍數建議。</li></ul>
+<h2>六、執行者補的讀法</h2><ul class='small'><li>F1 7 日內有任何一天所屬月份不在清單 ok ⇒ 該起點不算</li><li>F5 起點每 h 天一個、區塊至少 1 個起點 ⇒ 區塊至少 h 天，符合 seq299「block 長 ≥ H」</li><li>F7① 三分位界線用 t 以前全部日訊號（擴張窗），歷史不足 90 天不分</li><li>F7④ C11 濾網：過熱日訊號改成「平倉、不開倉」；資金費率資料尾之後視為不過熱</li><li>F7⑤ 另做每日起點（重疊）版、區塊 max(PW, h) 天，只描述</li></ul></main></body></html>
