@@ -37,6 +37,7 @@
 """
 import csv
 import datetime
+import glob
 import io
 import json
 import os
@@ -597,7 +598,7 @@ def main():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", required=True,
-                     choices=("universe", "backfill", "daily", "bitstamp-backfill"))
+                     choices=("universe", "backfill", "daily", "bitstamp-backfill", "drop-bitstamp"))
     ap.add_argument("--reset-months-done", action="store_true",
                      help="backfill 專用：先刪掉續跑台帳再回補全部月份。"
                      "⛔ 只在台帳被污染時用（例如 2026-09-20 那次：URL 少了"
@@ -656,9 +657,31 @@ def main():
         rl.finish()
         return 0
 
+    # ⛔⛔ 2026-10-04 使用者裁定：Bitstamp 條款明文禁止重製／散布行情資料，而本 repo 是【公開】的
+    #   ⇒ BTC 2013～2017 那段已移到私有 us-stock-data（data/crypto_private/BTC_bitstamp_2013_2017.csv）
+    #   ⇒ 這裡【不准再補回來】；drop-bitstamp 把既有的 Bitstamp 列從公開檔刪掉（一次性）
+    if a.mode == "drop-bitstamp":
+        rl = runlog.Run("crypto:drop-bitstamp")
+        dropped = {}
+        for p in sorted(glob.glob(os.path.join(CRYPTO_DIR, "*.csv"))):
+            with io.open(p, encoding="utf-8", newline="") as f:
+                rows = list(csv.reader(f))
+            if not rows:
+                continue
+            keep = [rows[0]] + [r for r in rows[1:] if (r[-1] if r else "").strip() != BITSTAMP_SOURCE]
+            if len(keep) != len(rows):
+                with io.open(p, "w", encoding="utf-8", newline="") as f:
+                    csv.writer(f, lineterminator="\n").writerows(keep)
+                dropped[os.path.basename(p)] = len(rows) - len(keep)
+        rl.info("刪掉的 Bitstamp 列（已移私有 repo）", str(dropped) or "（沒有）")
+        rl.check("公開檔裡沒有 Bitstamp 列了", True, str(dropped))
+        rl.finish()
+        return 0
+
     if a.mode == "bitstamp-backfill":
-        # ⭐ 一次性回補（過去的資料不會變），⛔ 不掛進每天排程——
-        # 跟 land_history 那種「持續有新月份」的回補性質不同。
+        print("⛔ bitstamp-backfill 已停用：Bitstamp 條款禁止散布，而本 repo 公開（使用者 2026-10-04 裁定，資料移私有 repo）")
+        return 1
+        # （以下保留原實作備查，不會執行）
         rl = runlog.Run("crypto:bitstamp-backfill")
         rl.info("這一趟", f"Bitstamp 補 2013~2017 歷史（只驗證過的幣種：{list(BITSTAMP_PAIRS)}）")
         totals = {"ok": 0, "fail": 0, "new_rows": 0}
