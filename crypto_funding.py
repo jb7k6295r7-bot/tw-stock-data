@@ -36,6 +36,12 @@ SYMS = ["BTC", "ETH", "XRP", "BNB", "DOGE", "SOL"]      # C2 的六幣
 FIRST = (2020, 1)                                        # 封存下限（資料庫線 1857 實測）
 HEADER = ["calc_time", "funding_interval_hours", "last_funding_rate"]
 BASE = "https://data.binance.vision/data/futures/um/monthly/fundingRate/%sUSDT/%sUSDT-fundingRate-%04d-%02d.zip"
+# ⭐ 2026-10-04（加密 C10 §十①）：幣本位永續 XXXUSD_PERP 的資金費率 ⇒ `--cm`
+#   封存表頭與 USDⓈ-M 逐字相同（實測 2024-06）；⚠ 幣本位資金費以【幣】結算（費率本身同義）
+CM = {"base": "https://data.binance.vision/data/futures/cm/monthly/fundingRate/%sUSD_PERP/%sUSD_PERP-fundingRate-%04d-%02d.zip",
+      "out": os.path.join(HERE, "data", "crypto_cm_funding"),
+      "man": os.path.join(HERE, "data", "meta", "crypto_cm_funding_manifest.csv"),
+      "suffix": "USD_PERP"}
 MAN_COLS = ["sym", "month", "url", "zip_sha256", "content_sha256", "rows", "interval_mix", "status"]
 
 
@@ -88,23 +94,27 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--until", help="YYYY-MM（預設：上個月）")
     ap.add_argument("--syms", nargs="*", default=SYMS)
+    ap.add_argument("--cm", action="store_true", help="幣本位永續 XXXUSD_PERP（C10）")
     a = ap.parse_args()
+    base, out, man_path, suffix = ((CM["base"], CM["out"], CM["man"], CM["suffix"]) if a.cm
+                                   else (BASE, OUT, MAN, "USDT"))
     today = datetime.datetime.now(datetime.timezone.utc).date()
     if a.until:
         until = tuple(int(x) for x in a.until.split("-"))
     else:
         until = (today.year - 1, 12) if today.month == 1 else (today.year, today.month - 1)
-    os.makedirs(OUT, exist_ok=True)
-    os.makedirs(os.path.dirname(MAN), exist_ok=True)
+    os.makedirs(out, exist_ok=True)
+    os.makedirs(os.path.dirname(man_path), exist_ok=True)
     # ⭐ 2026-09-25 補：第一版沒接 runlog ⇒ _last_run.md 沒有這一趟（三件式第③件落空，交件信自報過）
-    rl = runlog.Run("crypto:funding")
-    rl.info("這一趟", "C2 六幣永續資金費率全期（%s ~ %04d-%02d）" % ("%04d-%02d" % FIRST, until[0], until[1]))
+    rl = runlog.Run("crypto:cm_funding" if a.cm else "crypto:funding")
+    rl.info("這一趟", ("C10 六幣【幣本位】永續資金費率全期" if a.cm else "C2 六幣永續資金費率全期")
+            + "（%s ~ %04d-%02d）" % ("%04d-%02d" % FIRST, until[0], until[1]))
     man = []
     errors = []
     for sym in a.syms:
         allrows = {}
         for y, m in months(until):
-            url = BASE % (sym, sym, y, m)
+            url = base % (sym, sym, y, m)
             b, st = fetch(url)
             ym = "%04d-%02d" % (y, m)
             if st != "ok":
@@ -121,7 +131,7 @@ def main():
                         "content_sha256": hashlib.sha256(content).hexdigest(),
                         "rows": len(rows), "interval_mix": interval_mix(rows), "status": "ok"})
             time.sleep(0.2)
-        with io.open(os.path.join(OUT, sym + "USDT.csv"), "w", encoding="utf-8", newline="") as f:
+        with io.open(os.path.join(out, sym + suffix + ".csv"), "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(HEADER)
             for k in sorted(allrows, key=int):
@@ -138,7 +148,7 @@ def main():
                  sum(1 for x in ok if x["status"].startswith("error")),
                  datetime.datetime.fromtimestamp(int(first) / 1000, datetime.timezone.utc)
                  .strftime("%Y-%m-%d %H:%M UTC") if first else "—"))
-    with io.open(MAN, "w", encoding="utf-8", newline="") as f:
+    with io.open(man_path, "w", encoding="utf-8", newline="") as f:
         w = csv.DictWriter(f, fieldnames=MAN_COLS, lineterminator="\n")
         w.writeheader()
         w.writerows(man)
