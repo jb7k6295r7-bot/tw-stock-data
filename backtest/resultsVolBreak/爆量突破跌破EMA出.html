@@ -1,0 +1,88 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>爆量突破跌破EMA出</title>
+<style>body{font-family:-apple-system,'Noto Sans TC',sans-serif;margin:0 auto;max-width:780px;padding:0 16px 40px;line-height:1.6;color:#222;background:#fff}
+h1{font-size:1.3em}h2{font-size:1.1em;margin-top:1.6em;border-bottom:1px solid #ddd}.box{background:#f4f6fa;border-left:4px solid #3a6;padding:10px 12px;margin:12px 0}
+.bad{border-left-color:#c44}.wrap{overflow-x:auto}table{border-collapse:collapse;font-size:.85em;min-width:100%}td,th{border:1px solid #ddd;padding:3px 5px;text-align:right;white-space:nowrap}
+td.l,th.l{text-align:left}.note{color:#666;font-size:.85em}.g{background:#e6f4ea}.y{background:#fff6dd}
+@media(prefers-color-scheme:dark){body{background:#111;color:#ddd}.box{background:#1d2230}td,th{border-color:#444}.g{background:#1f3a26}.y{background:#3a3420}}</style>
+</head><body>
+<h1>爆量突破進場、收盤跌破 EMA 出場（Threads 作者指標；60 種設定全報）</h1>
+<div class='box bad'><b>判定（整套一判）：不合格</b>。60 種設定只有 0 種在 2022～2026 合格（2017～2021 有 3 種），不構成可用規則。<br>爆量條件加了多少（M − S，年化中位差）：確認段中位 -0.61 點（26／60 格為正）、探索段 +3.49 點。<br>EMA 出場 − 固定抱 60 天：確認段中位 -15.56 點（20 天 -6.75、120 天 -11.11）。<br>作者原參數不明，用常見值網格（B 突破天數 × k 爆量倍數 × L 均線天數 ＝ 60 格）。</div>
+<p class='note'>合格門檻：兩段各 ≥ 31 格合格。各段格數（合格／另列／不合格）：探索 3／9／48、確認 0／0／60、早年（2005～2014，只上市）14／0／46。0050：探索 +18.9%／-28.2%、確認 +29.5%／-34.0%、早年 +7.6%／-55.8%。這是全部選到的股票平均起來的結果，不是對某一檔的預測。50 顆抽籤種子取中位；成本來回 0.585%；母體閘新口徑（GATE_V2）。</p>
+<h2>確認段：60 格年化中位（綠＝合格、黃＝另列）</h2><div class='wrap'><table><tr><th class='l'>B × k</th><th>L5</th><th>L10</th><th>L20</th><th>L60</th></tr>
+<tr><td class='l'>B5 k1.5</td><td>-29.7%／-84%</td><td>-12.9%／-67%</td><td>+2.7%／-51%</td><td>+10.1%／-46%</td></tr>
+<tr><td class='l'>B5 k2.0</td><td>-26.8%／-82%</td><td>-12.3%／-64%</td><td>+2.2%／-52%</td><td>+15.6%／-49%</td></tr>
+<tr><td class='l'>B5 k3.0</td><td>-27.1%／-82%</td><td>-14.7%／-67%</td><td>-3.5%／-58%</td><td>+8.7%／-52%</td></tr>
+<tr><td class='l'>B10 k1.5</td><td>-26.6%／-82%</td><td>-10.9%／-64%</td><td>+2.3%／-53%</td><td>+13.0%／-47%</td></tr>
+<tr><td class='l'>B10 k2.0</td><td>-23.3%／-77%</td><td>-11.3%／-63%</td><td>+2.1%／-54%</td><td>+8.5%／-49%</td></tr>
+<tr><td class='l'>B10 k3.0</td><td>-24.1%／-79%</td><td>-15.2%／-66%</td><td>-0.9%／-57%</td><td>+7.4%／-50%</td></tr>
+<tr><td class='l'>B20 k1.5</td><td>-27.2%／-81%</td><td>-13.6%／-64%</td><td>+3.8%／-49%</td><td>+12.1%／-47%</td></tr>
+<tr><td class='l'>B20 k2.0</td><td>-25.7%／-79%</td><td>-13.3%／-66%</td><td>+6.6%／-50%</td><td>+12.5%／-46%</td></tr>
+<tr><td class='l'>B20 k3.0</td><td>-22.7%／-77%</td><td>-14.8%／-67%</td><td>+2.3%／-52%</td><td>+9.5%／-48%</td></tr>
+<tr><td class='l'>B60 k1.5</td><td>-18.8%／-72%</td><td>-7.4%／-54%</td><td>+10.8%／-48%</td><td>+20.5%／-44%</td></tr>
+<tr><td class='l'>B60 k2.0</td><td>-15.4%／-68%</td><td>-4.0%／-57%</td><td>+16.8%／-43%</td><td>+20.2%／-42%</td></tr>
+<tr><td class='l'>B60 k3.0</td><td>-11.6%／-61%</td><td>-5.2%／-54%</td><td>+15.1%／-44%</td><td>+15.7%／-47%</td></tr>
+<tr><td class='l'>B120 k1.5</td><td>-11.0%／-57%</td><td>-0.6%／-47%</td><td>+17.6%／-44%</td><td>+16.6%／-45%</td></tr>
+<tr><td class='l'>B120 k2.0</td><td>-10.8%／-57%</td><td>+3.3%／-46%</td><td>+21.4%／-41%</td><td>+18.6%／-44%</td></tr>
+<tr><td class='l'>B120 k3.0</td><td>-5.5%／-53%</td><td>+2.7%／-44%</td><td>+15.3%／-44%</td><td>+18.3%／-48%</td></tr>
+</table></div>
+<h2>探索段：60 格年化中位（綠＝合格、黃＝另列）</h2><div class='wrap'><table><tr><th class='l'>B × k</th><th>L5</th><th>L10</th><th>L20</th><th>L60</th></tr>
+<tr><td class='l'>B5 k1.5</td><td>-24.6%／-79%</td><td>-6.1%／-56%</td><td>+3.1%／-50%</td><td>+9.4%／-39%</td></tr>
+<tr><td class='l'>B5 k2.0</td><td>-22.7%／-77%</td><td>-2.7%／-54%</td><td>+3.8%／-49%</td><td>+13.6%／-38%</td></tr>
+<tr><td class='l'>B5 k3.0</td><td>-13.4%／-65%</td><td>+4.5%／-43%</td><td>+5.4%／-44%</td><td>+14.4%／-36%</td></tr>
+<tr><td class='l'>B10 k1.5</td><td>-22.8%／-77%</td><td>-1.5%／-56%</td><td>+5.3%／-46%</td><td>+12.4%／-37%</td></tr>
+<tr><td class='l'>B10 k2.0</td><td>-19.1%／-74%</td><td>+2.9%／-45%</td><td>+7.5%／-49%</td><td class='y'>+20.1%／-35%</td></tr>
+<tr><td class='l'>B10 k3.0</td><td>-14.3%／-67%</td><td>+1.6%／-47%</td><td>+5.7%／-43%</td><td>+18.0%／-36%</td></tr>
+<tr><td class='l'>B20 k1.5</td><td>-19.7%／-74%</td><td>+2.0%／-45%</td><td>+14.9%／-38%</td><td class='y'>+19.9%／-35%</td></tr>
+<tr><td class='l'>B20 k2.0</td><td>-16.8%／-70%</td><td>+5.9%／-39%</td><td>+12.9%／-38%</td><td>+18.4%／-35%</td></tr>
+<tr><td class='l'>B20 k3.0</td><td>-6.3%／-57%</td><td>+12.9%／-36%</td><td>+18.8%／-34%</td><td>+17.4%／-33%</td></tr>
+<tr><td class='l'>B60 k1.5</td><td>-7.7%／-64%</td><td>+11.6%／-39%</td><td>+18.3%／-40%</td><td class='g'>+25.0%／-31%</td></tr>
+<tr><td class='l'>B60 k2.0</td><td>-3.6%／-59%</td><td>+17.4%／-38%</td><td>+17.1%／-37%</td><td class='g'>+23.3%／-32%</td></tr>
+<tr><td class='l'>B60 k3.0</td><td>-0.5%／-54%</td><td class='y'>+20.5%／-34%</td><td>+17.3%／-37%</td><td class='g'>+22.1%／-29%</td></tr>
+<tr><td class='l'>B120 k1.5</td><td>-4.0%／-63%</td><td>+14.9%／-42%</td><td class='y'>+19.0%／-43%</td><td class='y'>+21.1%／-32%</td></tr>
+<tr><td class='l'>B120 k2.0</td><td>+3.6%／-56%</td><td class='y'>+24.5%／-39%</td><td>+18.4%／-38%</td><td class='y'>+20.9%／-33%</td></tr>
+<tr><td class='l'>B120 k3.0</td><td>+4.4%／-50%</td><td class='y'>+23.4%／-37%</td><td>+18.4%／-37%</td><td class='y'>+20.9%／-31%</td></tr>
+</table></div>
+<h2>早年段：60 格年化中位（綠＝合格、黃＝另列）</h2><div class='wrap'><table><tr><th class='l'>B × k</th><th>L5</th><th>L10</th><th>L20</th><th>L60</th></tr>
+<tr><td class='l'>B5 k1.5</td><td>-40.7%／-100%</td><td>-30.0%／-98%</td><td>-17.3%／-89%</td><td>+2.2%／-66%</td></tr>
+<tr><td class='l'>B5 k2.0</td><td>-35.2%／-99%</td><td>-26.0%／-96%</td><td>-12.9%／-83%</td><td class='g'>+8.4%／-57%</td></tr>
+<tr><td class='l'>B5 k3.0</td><td>-22.4%／-94%</td><td>-12.9%／-82%</td><td>-3.6%／-67%</td><td class='g'>+18.2%／-43%</td></tr>
+<tr><td class='l'>B10 k1.5</td><td>-38.4%／-99%</td><td>-27.5%／-97%</td><td>-15.3%／-86%</td><td>+3.3%／-64%</td></tr>
+<tr><td class='l'>B10 k2.0</td><td>-33.2%／-98%</td><td>-23.1%／-94%</td><td>-9.6%／-77%</td><td class='g'>+10.3%／-56%</td></tr>
+<tr><td class='l'>B10 k3.0</td><td>-19.4%／-90%</td><td>-8.6%／-74%</td><td>-0.7%／-61%</td><td class='g'>+19.6%／-39%</td></tr>
+<tr><td class='l'>B20 k1.5</td><td>-32.6%／-98%</td><td>-24.1%／-95%</td><td>-11.2%／-80%</td><td>+6.4%／-60%</td></tr>
+<tr><td class='l'>B20 k2.0</td><td>-27.6%／-97%</td><td>-19.5%／-91%</td><td>-5.7%／-71%</td><td class='g'>+11.7%／-52%</td></tr>
+<tr><td class='l'>B20 k3.0</td><td>-16.8%／-86%</td><td>-8.0%／-71%</td><td>+2.6%／-47%</td><td class='g'>+16.5%／-41%</td></tr>
+<tr><td class='l'>B60 k1.5</td><td>-22.6%／-93%</td><td>-14.3%／-84%</td><td>-0.9%／-53%</td><td class='g'>+12.6%／-48%</td></tr>
+<tr><td class='l'>B60 k2.0</td><td>-18.3%／-89%</td><td>-7.9%／-71%</td><td>+4.4%／-42%</td><td class='g'>+17.4%／-37%</td></tr>
+<tr><td class='l'>B60 k3.0</td><td>-5.7%／-65%</td><td>+2.7%／-44%</td><td class='g'>+13.3%／-29%</td><td class='g'>+20.9%／-34%</td></tr>
+<tr><td class='l'>B120 k1.5</td><td>-19.6%／-90%</td><td>-12.4%／-81%</td><td>-1.0%／-52%</td><td class='g'>+12.2%／-40%</td></tr>
+<tr><td class='l'>B120 k2.0</td><td>-13.8%／-83%</td><td>-6.9%／-73%</td><td>+3.4%／-42%</td><td class='g'>+17.2%／-36%</td></tr>
+<tr><td class='l'>B120 k3.0</td><td>-2.1%／-60%</td><td>+4.8%／-47%</td><td class='g'>+13.9%／-29%</td><td class='g'>+18.3%／-29%</td></tr>
+</table></div>
+<h2>分組合格格數（描述，⛔ 不據此挑格）</h2><div class='wrap'><table><tr><th class='l'>段</th><th>B=5</th><th>B=10</th><th>B=20</th><th>B=60</th><th>B=120</th><th>k=1.5</th><th>k=2.0</th><th>k=3.0</th><th>L=5</th><th>L=10</th><th>L=20</th><th>L=60</th></tr>
+<tr><td class='l'>探索</td><td>0</td><td>0</td><td>0</td><td>3</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>3</td></tr>
+<tr><td class='l'>確認</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td class='l'>早年</td><td>2</td><td>2</td><td>2</td><td>4</td><td>4</td><td>2</td><td>5</td><td>7</td><td>0</td><td>0</td><td>2</td><td>12</td></tr>
+</table></div>
+<h2>對照（描述）</h2><ul><li>隨機出場（確認段、同進場、持有天數抽自本格，每格 100 次）：p ＜ 0.05 的格 0／60，p 中位 0.53</li><li>現實版（確認段：每邊多 0.3%＋50 萬衝擊＋均價成交）：合格 0／60、另列 0</li><li>EMA 出場比固定抱好的格數（確認段）：20 天 24、60 天 8、120 天 17（／60）</li><li>S 臂（不看量）：M − S ＞ 0 的格數 探索 52、確認 26、早年 60（／60）</li><li>退化標記（探索段平均持有 ＜ 2 日）：0 格</li></ul>
+<p>確認段交易面（60 格平均）：每顆交易 1028 筆、勝率 30.4%、賺賠比 2.66、平均持有 16.6 天、年換手 21.1 倍、空倉比例 5.2%；逐格見 cells.csv。</p>
+<h2>單筆層（描述）：訊號後 20 天 vs 同日同前 20 日漲幅十分位的股票（確認段）</h2><div class='wrap'><table><tr><th class='l'>B × k</th><th>筆數</th><th>X 平均</th><th>95% CI（月分群）</th><th>扣成本後平均</th></tr>
+<tr><td class='l'>B5 k1.5</td><td>32,898</td><td>-0.06%</td><td>-0.36%～+0.25%</td><td>+0.63%</td></tr>
+<tr><td class='l'>B5 k2.0</td><td>23,635</td><td>-0.16%</td><td>-0.53%～+0.21%</td><td>+0.49%</td></tr>
+<tr><td class='l'>B5 k3.0</td><td>12,949</td><td>-0.50%</td><td>-0.99%～-0.01%</td><td>+0.07%</td></tr>
+<tr><td class='l'>B10 k1.5</td><td>27,592</td><td>-0.03%</td><td>-0.38%～+0.31%</td><td>+0.67%</td></tr>
+<tr><td class='l'>B10 k2.0</td><td>20,848</td><td>-0.10%</td><td>-0.50%～+0.31%</td><td>+0.58%</td></tr>
+<tr><td class='l'>B10 k3.0</td><td>12,058</td><td>-0.45%</td><td>-0.98%～+0.08%</td><td>+0.13%</td></tr>
+<tr><td class='l'>B20 k1.5</td><td>21,227</td><td>-0.11%</td><td>-0.52%～+0.30%</td><td>+0.77%</td></tr>
+<tr><td class='l'>B20 k2.0</td><td>16,694</td><td>-0.15%</td><td>-0.59%～+0.30%</td><td>+0.69%</td></tr>
+<tr><td class='l'>B20 k3.0</td><td>10,187</td><td>-0.45%</td><td>-1.05%～+0.16%</td><td>+0.26%</td></tr>
+<tr><td class='l'>B60 k1.5</td><td>13,675</td><td>+0.02%</td><td>-0.57%～+0.62%</td><td>+1.09%</td></tr>
+<tr><td class='l'>B60 k2.0</td><td>10,606</td><td>+0.02%</td><td>-0.61%～+0.64%</td><td>+1.02%</td></tr>
+<tr><td class='l'>B60 k3.0</td><td>6,397</td><td>-0.29%</td><td>-1.12%～+0.53%</td><td>+0.59%</td></tr>
+<tr><td class='l'>B120 k1.5</td><td>11,037</td><td>+0.26%</td><td>-0.48%～+1.00%</td><td>+1.42%</td></tr>
+<tr><td class='l'>B120 k2.0</td><td>8,419</td><td>+0.29%</td><td>-0.49%～+1.07%</td><td>+1.34%</td></tr>
+<tr><td class='l'>B120 k3.0</td><td>4,951</td><td>-0.12%</td><td>-1.14%～+0.90%</td><td>+0.73%</td></tr>
+</table></div><p class='note'>其他 H（5／10／60 天）、各段見 single.csv。</p>
+<h2>先驗（登錄 §六）</h2><ul><li>①整套合格：否：中</li><li>②爆量有加分（M−S＞0 過半、兩段同向）：否或測不出：中</li><li>③EMA 比固定抱 60 天好（過半）：否：中</li><li>④隨機出場 p＜0.05 過半：否：中</li></ul>
+<h2>做法與查核</h2><ul><li>規則照作者程式碼：收盤突破前 B 日最高價且收紅K、當日量 ＞ k 倍前 20 日均量 ⇒ 次日開盤買；收盤 ＜ EMA(L) ⇒ 次日開盤賣；可再進場；10 檔、每檔投入當時淨值 1/10、多選一抽籤。</li><li>執行者補：訊號日自己收在 EMA 下 ⇒ 不進（同訊號系統骨架）；早年段母體用流動性＋K 棒數（2012-06 前無個股法人）；種子數主格 50、固定持有 10、隨機出場 100、現實版 10（耗時）。</li><li>查核：✅ 全過（0 不同）</li><li>出處：backtest/researchVolBreak.py、resultsVolBreak/（summary.json、cells.csv、seeds.csv.gz、fake_p.csv、real.csv、m_minus_s.csv、ema_vs_fixed.csv、single.csv、check.json）</li></ul></body></html>
