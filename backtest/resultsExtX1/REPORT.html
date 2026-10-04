@@ -1,0 +1,31 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>X1 多因子回測</title>
+<style>body{font-family:-apple-system,'Noto Sans TC',sans-serif;margin:0 auto;max-width:760px;padding:0 16px 40px;line-height:1.6;color:#222;background:#fff}
+h1{font-size:1.3em}h2{font-size:1.1em;margin-top:1.6em;border-bottom:1px solid #ddd}.box{background:#f4f6fa;border-left:4px solid #3a6;padding:10px 12px;margin:12px 0}
+.bad{border-left-color:#c44}.wrap{overflow-x:auto}table{border-collapse:collapse;font-size:.9em;min-width:100%}td,th{border:1px solid #ddd;padding:4px 6px;text-align:right;white-space:nowrap}
+td.l,th.l{text-align:left}.note{color:#666;font-size:.85em}@media(prefers-color-scheme:dark){body{background:#111;color:#ddd}.box{background:#1d2230}td,th{border-color:#444}}</style>
+</head><body>
+<h1>外部研究 X1：FinLab 四因子選股（營收動能＋價格動能＋ROE＋低波動，40 檔）</h1>
+<div class='box'><b>判定：合格</b>。這套做法在原文沒用過的早年段贏 0050：早年段 2013-09-13～2017-12-29（約 4.0 年）年化 +20.1%、回落 -19.3%，0050 +11.7%／-19.6%。<br>原文期間 2018-01～2026-06 照跑（描述）：+26.8%／-27.8%（原文 +29.45%／−26.07%；0050 +25.7%／-34.0%）。</div>
+<p class='note'>出處為公開研究、原文數字未必可重現。原文程式（strategy.py）已取得，照它的算式自寫；含已下市股、扣來回 0.585%。⚠ 早年段沒有財報上傳時戳（資料庫只補 2019 起）⇒ ROE 可用日用「法定期限＋5 個交易日」代。這是全部選到的股票平均起來的結果，不是對某一檔的預測。</p>
+<h2>主要數字</h2><div class='wrap'><table><tr><th class='l'>段</th><th>年化</th><th>回落</th><th>比值</th><th>0050</th></tr>
+<tr><td class='l'>早年段（判定）</td><td>+20.1%</td><td>-19.3%</td><td>1.043</td><td>+11.7%／-19.6%（0.595）</td></tr>
+<tr><td class='l'>原文期間（描述）</td><td>+26.8%</td><td>-27.8%</td><td>0.962</td><td>+25.7%／-34.0%</td></tr>
+<tr><td class='l'>2026-07～08（描述）</td><td colspan='3'>區間 -2.4%</td><td>-3.1%</td></tr></table></div>
+<p>假訊號（同池隨機 40 檔、等權，1,000 次）：早年段隨機年化中位 +11.7%，本格以上的比例 0.0%，隨機也合格 16.1%；原文期間隨機中位 +15.8%，p 0.0%。</p>
+<h2>描述（不判）</h2><div class='wrap'><table><tr><th class='l'>版本</th><th>早年段</th><th>原文期間</th></tr>
+<tr><td class='l'>季換</td><td>+20.6%／-19.0% 合格</td><td>+26.2%／-31.6%</td></tr>
+<tr><td class='l'>半年換</td><td>+11.5%／-21.1% 不合格</td><td>+20.7%／-30.3%</td></tr>
+<tr><td class='l'>還原價版（月）</td><td>+19.8%／-19.3% 合格</td><td>+26.0%／-28.3%</td></tr>
+<tr><td class='l'>只含存活股（原文期間）</td><td>—</td><td>+27.2%／-27.6%（含已下市多 -0.4 點）</td></tr>
+<tr><td class='l'>現實版（C1 0.3%＋C2 50 萬＋C4）</td><td>+14.4%／-20.2% 合格</td><td>+20.9%／-30.1%</td></tr>
+</table></div>
+<p>月分群（早年段，逐月超額對 0050）：每月平均 +0.54%（95% -0.33%～+1.41%，47 個月）</p>
+<p>月分群（原文期間）：每月平均 +0.02%（95% -0.93%～+0.97%，102 個月）</p>
+<p>出場敏感度（早年段）：停損 −10% +15.9%／-20.0% 合格；停損 −20% +18.8%／-19.8% 合格；停利 +30% 賣半 +20.2%／-19.1% 合格；停利 +50% 賣半 +20.1%／-19.0% 合格；檔數 5 +23.3%／-20.7% 合格；檔數 10 +19.2%／-19.9% 合格；檔數 20 +21.1%／-19.6% 合格；2ATR、時停 R0-40：本輪未做（執行者補）</p>
+<h2>做法與查核</h2><ul>
+<li>每月底：池 ＝ 最近 3 期月營收年增都 ＞ 0 且最新一期 10%～150%；四因子在池內排百分位相加；取前 40；權重 ∝ 分數平方；月底後 14 天開盤換股。</li>
+<li>早年段：早年版面（只上市）2013-09-13～2014-12-31 ＋ 主快照 2015-05-14～2017-12-29 串接。</li>
+<li>池大小中位：{"早年甲": 181.5, "早年乙": 249.5, "原文期間": 390.5}；ROE 可用日來源（入選股，ts＝上傳時戳、a2＝期限＋5）：{"早年": {"a2": 639}, "早年乙": {"a2": 994, "ts": 286}, "原文期間": {"ts": 3402, "a2": 678}}</li>
+<li>0050 錨逐位元：True；查核：✅ 全過（0 不同）</li>
+<li>出處：backtest/researchExtX1.py、resultsExtX1/summary.json、picks.csv.gz、fake.csv.gz、eq.npz、check.json</li></ul></body></html>

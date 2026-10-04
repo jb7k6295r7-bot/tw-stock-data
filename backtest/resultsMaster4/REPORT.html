@@ -1,0 +1,103 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>仿 App 大師三套回測</title>
+<style>body{font-family:-apple-system,'Noto Sans TC',sans-serif;margin:0 auto;max-width:760px;padding:0 16px 40px;line-height:1.6;color:#222;background:#fff}
+h1{font-size:1.3em}h2{font-size:1.1em;margin-top:1.6em;border-bottom:1px solid #ddd}.box{background:#f4f6fa;border-left:4px solid #3a6;padding:10px 12px;margin:12px 0}
+.bad{border-left-color:#c44}.wrap{overflow-x:auto}table{border-collapse:collapse;font-size:.9em;min-width:100%}td,th{border:1px solid #ddd;padding:4px 6px;text-align:right;white-space:nowrap}
+td.l,th.l{text-align:left}.note{color:#666;font-size:.85em}@media(prefers-color-scheme:dark){body{background:#111;color:#ddd}.box{background:#1d2230}td,th{border-color:#444}}</style>
+</head><body>
+<h1>仿 App 大師三套（墨菲／喜偉／歐沙那希）：10 檔、抱 20／60／120 天</h1>
+<div class='box bad'><b>判定</b>：9 格（3 套 × 3 種天數）0 格合格。這三套在我們的資料裡沒有贏 0050。<ul><li><b>仿 App 麥克墨菲條件</b>：20 天不合格、60 天不合格、120 天不合格；最好是 60 天 +19.7%／-51.3%（0050 +29.9%／-34.0%）</li><li>常常湊不滿 10 檔：<b>仿 App 麥克喜偉條件</b>：20 天不合格、60 天不合格、120 天不合格；最好是 120 天 +13.3%／-44.8%（0050 +29.9%／-34.0%）</li><li><b>仿 App 詹姆士歐沙那希條件</b>：20 天不合格、60 天不合格、120 天不合格；最好是 120 天 +15.4%／-42.2%（0050 +29.9%／-34.0%）</li></ul>窗 2019-06-03～2026-08-24（約 7.2 年）；財報可用日 A0（上傳時戳）定案。</div>
+<p class='note'>這是全部選到的股票平均起來的結果，不是對某一檔的預測。條件照 App 畫面；算法照本線定義，不保證與 App 相同。200 顆抽籤種子取中位。</p>
+<h2>9 格</h2><div class='wrap'><table><tr><th class='l'>條件</th><th>天數</th><th>年化中位</th><th>回落中位</th><th>比值</th><th>判定</th><th>假訊號合格比例</th></tr>
+<tr><td class='l'>麥克墨菲</td><td>20</td><td>+2.5%</td><td>-54.6%</td><td>0.046</td><td>不合格</td><td>0.0%</td></tr>
+<tr><td class='l'>麥克墨菲</td><td>60</td><td>+19.7%</td><td>-51.3%</td><td>0.383</td><td>不合格</td><td>0.3%</td></tr>
+<tr><td class='l'>麥克墨菲</td><td>120</td><td>+18.1%</td><td>-47.3%</td><td>0.383</td><td>不合格</td><td>0.4%</td></tr>
+<tr><td class='l'>麥克喜偉</td><td>20</td><td>+1.5%</td><td>-53.4%</td><td>0.027</td><td>不合格</td><td>0.0%</td></tr>
+<tr><td class='l'>麥克喜偉</td><td>60</td><td>+12.6%</td><td>-50.9%</td><td>0.247</td><td>不合格</td><td>0.0%</td></tr>
+<tr><td class='l'>麥克喜偉</td><td>120</td><td>+13.3%</td><td>-44.8%</td><td>0.297</td><td>不合格</td><td>0.0%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希</td><td>20</td><td>-1.1%</td><td>-56.8%</td><td>-0.019</td><td>不合格</td><td>0.0%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希</td><td>60</td><td>+12.1%</td><td>-50.4%</td><td>0.239</td><td>不合格</td><td>0.5%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希</td><td>120</td><td>+15.4%</td><td>-42.2%</td><td>0.365</td><td>不合格</td><td>0.6%</td></tr>
+<tr><td class='l'>0050 同窗</td><td></td><td>+29.9%</td><td>-34.0%</td><td>0.882</td><td></td><td></td></tr></table></div>
+<p class='note'>天數：測過 20／60／120 天；麥克墨菲最好 60 天；麥克喜偉最好 120 天；詹姆士歐沙那希最好 120 天。</p>
+<h2>候選與起點</h2><ul>
+<li>麥克墨菲：每月候選中位 33 檔（p10～p90 20～50）；不到 10 檔的月份 0%</li>
+<li>麥克喜偉：每月候選中位 5 檔（p10～p90 1～17）；不到 10 檔的月份 75%</li>
+<li>詹姆士歐沙那希：每月候選中位 13 檔（p10～p90 7～40）；不到 10 檔的月份 29%</li>
+<li>起點 2019-06-03：三套可算比例 2018-04-02 就 ≥ 90%，但 2018-04～2019-05 每家的最新一季財報都沒有上傳時戳（只能用法定期限代，有前視、裁定 seq231 禁用）⇒ 改從上傳時戳覆蓋 ≥ 90% 的 2019-06-03 起算（執行者補）。</li></ul>
+<h2>描述（不判）</h2>
+<p>起點改動：</p><div class='wrap'><table><tr><th class='l'>起點</th><th class='l'>格</th><th>年化中位</th><th>回落中位</th><th>判定</th></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>0050</td><td>+25.2%</td><td>-34.0%</td><td></td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>麥克墨菲 20 天</td><td>-5.0%</td><td>-64.2%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>麥克墨菲 60 天</td><td>+10.7%</td><td>-45.6%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>麥克墨菲 120 天</td><td>+14.6%</td><td>-48.8%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>麥克喜偉 20 天</td><td>-1.5%</td><td>-53.6%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>麥克喜偉 60 天</td><td>+7.9%</td><td>-50.5%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>麥克喜偉 120 天</td><td>+7.5%</td><td>-48.9%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>詹姆士歐沙那希 20 天</td><td>-3.9%</td><td>-56.8%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>詹姆士歐沙那希 60 天</td><td>+6.3%</td><td>-48.7%</td><td>不合格</td></tr>
+<tr><td class='l'>2018-04-02</td><td class='l'>詹姆士歐沙那希 120 天</td><td>+10.7%</td><td>-45.8%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>0050</td><td>+34.3%</td><td>-34.0%</td><td></td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>麥克墨菲 20 天</td><td>+2.7%</td><td>-56.0%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>麥克墨菲 60 天</td><td>+16.2%</td><td>-51.3%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>麥克墨菲 120 天</td><td>+19.5%</td><td>-48.6%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>麥克喜偉 20 天</td><td>+0.1%</td><td>-53.6%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>麥克喜偉 60 天</td><td>+10.5%</td><td>-50.3%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>麥克喜偉 120 天</td><td>+9.2%</td><td>-48.8%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>詹姆士歐沙那希 20 天</td><td>-1.1%</td><td>-56.0%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>詹姆士歐沙那希 60 天</td><td>+9.4%</td><td>-50.6%</td><td>不合格</td></tr>
+<tr><td class='l'>2020-04-01</td><td class='l'>詹姆士歐沙那希 120 天</td><td>+13.4%</td><td>-47.1%</td><td>不合格</td></tr>
+</table></div>
+<p>拿掉一條（看哪一條在出力）：</p><div class='wrap'><table><tr><th class='l'>拿掉</th><th>20 天</th><th>60 天</th><th>120 天</th></tr>
+<tr><td class='l'>麥克墨菲：近12季營益率＞10%</td><td>+0.8%</td><td>+18.4%</td><td>+16.4%</td></tr>
+<tr><td class='l'>麥克墨菲：ROE 5年均＞8%</td><td>+1.6%</td><td>+17.1%</td><td>+16.3%</td></tr>
+<tr><td class='l'>麥克墨菲：營收成長3年均＞10%</td><td>+3.7%</td><td>+19.0%</td><td>+17.9%</td></tr>
+<tr><td class='l'>麥克墨菲：研發÷營收＞5%</td><td>+3.0%</td><td>+18.5%</td><td>+16.2%</td></tr>
+<tr><td class='l'>麥克喜偉：ROE 5年均＞8%</td><td>-1.1%</td><td>+8.9%</td><td>+13.6%</td></tr>
+<tr><td class='l'>麥克喜偉：負債比5年均＜30%</td><td>-0.2%</td><td>+12.7%</td><td>+12.1%</td></tr>
+<tr><td class='l'>麥克喜偉：本益比＜15</td><td>-1.0%</td><td>+15.3%</td><td>+13.7%</td></tr>
+<tr><td class='l'>麥克喜偉：營收成長3年均＞10%</td><td>+0.3%</td><td>+15.5%</td><td>+18.5%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希：ROA 5年均＞8%</td><td>-1.1%</td><td>+11.8%</td><td>+16.5%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希：ROE 5年均＞8%</td><td>-1.1%</td><td>+12.1%</td><td>+15.4%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希：EPS增率3年均＞30%</td><td>+0.9%</td><td>+14.4%</td><td>+16.3%</td></tr>
+<tr><td class='l'>詹姆士歐沙那希：本益比＜15</td><td>+4.3%</td><td>+19.1%</td><td>+20.6%</td></tr>
+</table></div>
+<p>其他版本：</p><div class='wrap'><table><tr><th class='l'>版本</th><th class='l'>條件</th><th>20 天</th><th>60 天</th><th>120 天</th></tr>
+<tr><td class='l'>現實版（每邊多 0.3%＋50 萬衝擊＋均價）</td><td class='l'>麥克墨菲</td><td>-3.4%／-64.7%</td><td>+17.8%／-52.3%</td><td>+16.5%／-47.7%</td></tr>
+<tr><td class='l'>現實版（每邊多 0.3%＋50 萬衝擊＋均價）</td><td class='l'>麥克喜偉</td><td>-2.6%／-55.9%</td><td>+11.4%／-50.6%</td><td>+12.7%／-44.9%</td></tr>
+<tr><td class='l'>現實版（每邊多 0.3%＋50 萬衝擊＋均價）</td><td class='l'>詹姆士歐沙那希</td><td>-7.4%／-65.5%</td><td>+10.1%／-50.7%</td><td>+13.9%／-42.9%</td></tr>
+<tr><td class='l'>不看上市年數（L2）</td><td class='l'>麥克墨菲</td><td>+3.2%／-57.4%</td><td>+20.1%／-51.6%</td><td>+17.8%／-47.2%</td></tr>
+<tr><td class='l'>不看上市年數（L2）</td><td class='l'>麥克喜偉</td><td>+0.9%／-59.8%</td><td>+15.0%／-56.0%</td><td>+16.0%／-43.3%</td></tr>
+<tr><td class='l'>不看上市年數（L2）</td><td class='l'>詹姆士歐沙那希</td><td>-0.9%／-57.9%</td><td>+13.9%／-54.5%</td><td>+18.5%／-42.0%</td></tr>
+</table></div>
+<p>與營飆 v1 各半（每年初調回）：營飆 v1 同窗 +50.9%／-38.9%</p><div class='wrap'><table><tr><th class='l'>格</th><th>混合年化</th><th>混合回落</th><th>日報酬相關</th><th>同時持有檔數</th></tr>
+<tr><td class='l'>麥克墨菲 20 天</td><td>+27.3%</td><td>-40.3%</td><td>0.60</td><td>0.14</td></tr>
+<tr><td class='l'>麥克墨菲 60 天</td><td>+36.6%</td><td>-37.1%</td><td>0.56</td><td>0.13</td></tr>
+<tr><td class='l'>麥克墨菲 120 天</td><td>+35.0%</td><td>-38.8%</td><td>0.61</td><td>0.28</td></tr>
+<tr><td class='l'>麥克喜偉 20 天</td><td>+26.8%</td><td>-24.4%</td><td>0.41</td><td>0.04</td></tr>
+<tr><td class='l'>麥克喜偉 60 天</td><td>+32.3%</td><td>-24.3%</td><td>0.45</td><td>0.06</td></tr>
+<tr><td class='l'>麥克喜偉 120 天</td><td>+32.6%</td><td>-29.0%</td><td>0.54</td><td>0.07</td></tr>
+<tr><td class='l'>詹姆士歐沙那希 20 天</td><td>+26.0%</td><td>-37.7%</td><td>0.53</td><td>0.07</td></tr>
+<tr><td class='l'>詹姆士歐沙那希 60 天</td><td>+32.4%</td><td>-35.7%</td><td>0.53</td><td>0.12</td></tr>
+<tr><td class='l'>詹姆士歐沙那希 120 天</td><td>+33.8%</td><td>-33.9%</td><td>0.59</td><td>0.12</td></tr>
+</table></div>
+<p>每年初放 100 萬、年底剩多少（萬；2019 為 6/3 起）：</p><div class='wrap'><table><tr><th class='l'>格</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th></tr>
+<tr><td class='l'>麥克墨菲 20 天</td><td>127</td><td>106</td><td>96</td><td>61</td><td>131</td><td>109</td><td>89</td><td>119</td></tr>
+<tr><td class='l'>麥克墨菲 60 天</td><td>129</td><td>153</td><td>124</td><td>57</td><td>163</td><td>130</td><td>101</td><td>123</td></tr>
+<tr><td class='l'>麥克墨菲 120 天</td><td>134</td><td>116</td><td>123</td><td>63</td><td>158</td><td>113</td><td>113</td><td>132</td></tr>
+<tr><td class='l'>麥克喜偉 20 天</td><td>118</td><td>110</td><td>87</td><td>65</td><td>132</td><td>98</td><td>99</td><td>118</td></tr>
+<tr><td class='l'>麥克喜偉 60 天</td><td>125</td><td>137</td><td>106</td><td>65</td><td>152</td><td>108</td><td>99</td><td>123</td></tr>
+<tr><td class='l'>麥克喜偉 120 天</td><td>127</td><td>138</td><td>121</td><td>69</td><td>151</td><td>107</td><td>92</td><td>112</td></tr>
+<tr><td class='l'>詹姆士歐沙那希 20 天</td><td>127</td><td>101</td><td>83</td><td>67</td><td>120</td><td>107</td><td>94</td><td>107</td></tr>
+<tr><td class='l'>詹姆士歐沙那希 60 天</td><td>130</td><td>152</td><td>102</td><td>68</td><td>140</td><td>107</td><td>100</td><td>113</td></tr>
+<tr><td class='l'>詹姆士歐沙那希 120 天</td><td>135</td><td>112</td><td>113</td><td>75</td><td>151</td><td>105</td><td>114</td><td>122</td></tr>
+<tr><td class='l'>0050</td><td>124</td><td>131</td><td>122</td><td>79</td><td>128</td><td>149</td><td>137</td><td>161</td></tr>
+</table></div>
+<p>逐月比 0050 多賺（以月為群、95% 區間）：麥克墨菲 20 天 -1.87%（-3.13%～-0.61%）；麥克墨菲 60 天 -0.62%（-1.84%～+0.59%）；麥克墨菲 120 天 -0.70%（-1.96%～+0.55%）；麥克喜偉 20 天 -2.14%（-3.40%～-0.88%）；麥克喜偉 60 天 -1.26%（-2.54%～+0.02%）；麥克喜偉 120 天 -1.19%（-2.39%～+0.01%）；詹姆士歐沙那希 20 天 -2.28%（-3.50%～-1.06%）；詹姆士歐沙那希 60 天 -1.24%（-2.50%～+0.01%）；詹姆士歐沙那希 120 天 -1.02%（-2.21%～+0.16%）</p>
+<p>三套候選重疊：麥克墨菲×麥克喜偉 9%、麥克墨菲×詹姆士歐沙那希 12%、麥克喜偉×詹姆士歐沙那希 18%</p>
+<p>出場敏感度：9 格皆不合格 ⇒ 不跟進（seq242 ② 只在合格／另列時跑）</p>
+<h2>資料與查核</h2><ul>
+<li>財報 fin_hist（含已下市）、研發 XBRL、可用日＝上傳時戳最早一筆的下一個交易日（盤中盤後不分）；本益比 上市＋上櫃官方值（取前一交易日）</li>
+<li>0050 主窗錨逐位元：True；查核：✅ 全過（0 不同）</li>
+<li>出處：backtest/researchMaster4.py、resultsMaster4/summary.json、cells.csv、seeds.csv.gz、fake.csv.gz、gate_by_month.csv、check.json</li></ul>
+</body></html>
