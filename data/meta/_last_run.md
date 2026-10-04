@@ -1073,6 +1073,21 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## crypto:funding　✓ 正常
+
+最後執行：2026-10-04T23:56:05+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37214467833
+
+- **這一趟**：C2 六幣永續資金費率全期（2020-01 ~ 2026-09）
+- **BTC**：7395 列｜ok 81 月｜absent 0 月｜error 0 月
+- **ETH**：7395 列｜ok 81 月｜absent 0 月｜error 0 月
+- **XRP**：7379 列｜ok 81 月｜absent 0 月｜error 0 月
+- **BNB**：7274 列｜ok 80 月｜absent 1 月｜error 0 月
+- **DOGE**：6821 列｜ok 75 月｜absent 6 月｜error 0 月
+- **SOL**：6700 列｜ok 73 月｜absent 8 月｜error 0 月
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+
 ## crypto:drop-bitstamp　✓ 正常
 
 最後執行：2026-10-04T17:08:10+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37191035809
