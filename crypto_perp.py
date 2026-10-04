@@ -42,6 +42,19 @@ KINDS = {
              "man": os.path.join(HERE, "data", "meta", "crypto_mark_manifest.csv"),
              "syms": ["BTC", "ETH"],
              "daily": "https://data.binance.vision/data/futures/um/daily/markPriceKlines/%sUSDT/1d/%sUSDT-1d-%s.zip"},
+    # ⭐ 2026-10-04（加密 C10 §十①、裁定 seq289 §四）：【幣本位】永續 XXXUSD_PERP 成交價／標記價日 K
+    #   ⚠ 封存表頭與 USDⓈ-M 逐字相同（實測 2024-06），⛔ 但第 8 欄 quote_volume 在幣本位裡是【以幣計】的成交量（照官方欄名，不改名）
+    #   ⚠ 幣本位每口面額：BTC 100 USD、其餘 10 USD（exchangeInfo contractSize）⇒ volume 欄單位是「張」
+    "cm_perp": {"base": "https://data.binance.vision/data/futures/cm/monthly/klines/%sUSD_PERP/1d/%sUSD_PERP-1d-%04d-%02d.zip",
+                "out": os.path.join(HERE, "data", "crypto_cm_perp"),
+                "man": os.path.join(HERE, "data", "meta", "crypto_cm_perp_manifest.csv"),
+                "syms": SYMS, "suffix": "USD_PERP",
+                "daily": "https://data.binance.vision/data/futures/cm/daily/klines/%sUSD_PERP/1d/%sUSD_PERP-1d-%s.zip"},
+    "cm_mark": {"base": "https://data.binance.vision/data/futures/cm/monthly/markPriceKlines/%sUSD_PERP/1d/%sUSD_PERP-1d-%04d-%02d.zip",
+                "out": os.path.join(HERE, "data", "crypto_cm_mark"),
+                "man": os.path.join(HERE, "data", "meta", "crypto_cm_mark_manifest.csv"),
+                "syms": SYMS, "suffix": "USD_PERP",
+                "daily": "https://data.binance.vision/data/futures/cm/daily/markPriceKlines/%sUSD_PERP/1d/%sUSD_PERP-1d-%s.zip"},
 }
 DAY_MS = 86400000
 
@@ -94,7 +107,9 @@ def main():
     os.makedirs(out, exist_ok=True)
     os.makedirs(os.path.dirname(man_path), exist_ok=True)
     rl = runlog.Run("crypto:%s" % a.kind)
-    rl.info("這一趟", ("C5 永續日 K 全期" if a.kind == "perp" else "C5 描述臂：永續【標記價】日 K 全期") + "（%04d-%02d ~ %04d-%02d）" % (FIRST[0], FIRST[1], until[0], until[1]))
+    what = {"perp": "C5 永續日 K 全期", "mark": "C5 描述臂：永續【標記價】日 K 全期",
+            "cm_perp": "C10 幣本位永續成交價日 K 全期", "cm_mark": "C10 幣本位永續【標記價】日 K 全期"}[a.kind]
+    rl.info("這一趟", what + "（%04d-%02d ~ %04d-%02d）" % (FIRST[0], FIRST[1], until[0], until[1]))
     man, errors, still_gap = [], [], []
     for sym in syms:
         allrows = {}
@@ -135,7 +150,7 @@ def main():
             time.sleep(0.2)
         left = gap_days(allrows)
         still_gap += [(sym, t) for t in left]
-        with io.open(os.path.join(out, sym + "USDT.csv"), "w", encoding="utf-8", newline="") as f:
+        with io.open(os.path.join(out, sym + K.get("suffix", "USDT") + ".csv"), "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(HEADER)
             for k in sorted(allrows, key=int):
