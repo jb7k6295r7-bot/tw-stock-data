@@ -26,7 +26,7 @@
      否則 ⇒ 次一交易日；去重 ＝ 與同股同類上一則保留事件相差 ≥ 5 個交易日才保留〔執行者補 N3〕）；更正／補充旗標則數
   ② 每類隨機 50 則主旨：numpy default_rng(20261004)，每類依 (date, time, stock_id, serial) 排序後不放回抽 50（不足全取）
   ③「其他」類最常見 200 種主旨樣式：正規化〔執行者補 N4〕＝ 去掉該則的公司簡稱與代號 → NFKC → 連續數字換成「#」→ 去空白；依次數排序（同數依字串）
-輸出 backtest/resultsNewsCat/explore_material/：README.md、counts_by_year.csv、counts_by_year_dedup.csv、flags.csv、sample50.csv、other_top200.csv、universe_log.json
+輸出 backtest/resultsNewsCat/explore_material/：README.md、counts_by_year.csv、counts_by_year_dedup.csv、flags.csv、sample50.csv、other_top200.csv、other_top1000.csv、universe_log.json
 """
 from __future__ import annotations
 
@@ -164,6 +164,11 @@ def explore():
     top["例"] = top["樣式"].map(ex); top.insert(0, "名次", range(1, len(top) + 1))
     top["占其他比"] = top["則數"] / len(O)
     top.to_csv(os.path.join(OUT, "other_top200.csv"), index=False, encoding="utf-8-sig")
+    # ③b 其他前 1,000 種（台股 1005-0321 要求：只要樣式與則數）
+    t1k = pd.DataFrame({"樣式": vc.index, "則數": vc.values}).sort_values(["則數", "樣式"], ascending=[False, True]).head(1000).reset_index(drop=True)
+    t1k.insert(0, "名次", range(1, len(t1k) + 1)); t1k["累計占其他比"] = t1k["則數"].cumsum() / len(O)
+    t1k.to_csv(os.path.join(OUT, "other_top1000.csv"), index=False, encoding="utf-8-sig")
+    LOG["前 1,000 種涵蓋其他類"] = float(t1k["則數"].sum() / len(O))
     LOG["其他類則數"] = int(len(O)); LOG["其他類樣式種數"] = int(len(vc)); LOG["前 200 種涵蓋其他類"] = float(top["則數"].sum() / len(O))
     json.dump(LOG, open(os.path.join(OUT, "universe_log.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     # README
@@ -172,7 +177,7 @@ def explore():
          f"- 資料：main {NEWS_SHA[:10]} 的 data/mops/news/2015～2020.csv（只讀這六檔）；母體 market∈{{sii, otc}} ∩ GATE_V2（edc6f8002f 名冊與逐日檔）",
          f"- 則數：原始 {LOG['原始則數']:,} → sii／otc {LOG['market∈{sii,otc}']:,} → 母體內 {LOG['母體內則數']:,} 則、{LOG['母體內家數']:,} 家"
          f"（不在靜態母體 {LOG['不在 GATE_V2 靜態母體（代號不在名冊／非普通股／-DR／整段在板）']:,}；事件日在板期／興櫃 {LOG['靜態母體內但事件日在板期或興櫃列']:,}）",
-         f"- 「其他」{LOG['其他類則數']:,} 則、{LOG['其他類樣式種數']:,} 種樣式；前 200 種涵蓋 {LOG['前 200 種涵蓋其他類']:.1%}", "",
+         f"- 「其他」{LOG['其他類則數']:,} 則、{LOG['其他類樣式種數']:,} 種樣式；前 200 種涵蓋 {LOG['前 200 種涵蓋其他類']:.1%}、前 1,000 種涵蓋 {LOG['前 1,000 種涵蓋其他類']:.1%}", "",
          "## 各類則數（全部；去重版見 counts_by_year_dedup.csv）", "",
          "| # | 類別 | " + " | ".join(str(y) for y in YEARS) + " | 合計 | 占比 | 去重後合計 | 含更正／補充 |",
          "|" + "---|" * (len(YEARS) + 6)]
@@ -186,6 +191,7 @@ def explore():
     L += ["", "## 檔案", "- counts_by_year.csv、counts_by_year_dedup.csv（同股同類 5 個交易日內只取第一則）、flags.csv",
           f"- sample50.csv：每類隨機 50 則（numpy default_rng({SEED})；每類依 date、time、stock_id、serial 排序後不放回抽）",
           "- other_top200.csv：「其他」類最常見 200 種主旨樣式（去公司簡稱與代號 → NFKC → 數字換 # → 去空白；附一則原文例）",
+          "- other_top1000.csv：同上樣式的前 1,000 種，只列樣式、則數、累計占比（無原文例）",
           "- universe_log.json：母體每一步的則數", "",
           "## 本步讀法（登錄沒寫清楚、執行者補）",
           "- N1 第 6 類讀成 得標 ∨ 訂單 ∨ 接單 ∨（簽訂 ∧（合約∨契約∨協議））",
