@@ -517,6 +517,26 @@ def main():
         rows = [r for r in rows if not (r[4] == "tpex" and (r[1], r[0]) in XFER_KEYS)]
         rl.info("⭐ 剔除既有檔裡誤收為下櫃的轉上市列",
                 f"{before - len(rows)} 列（同一份鍵寫進 delisted.remove.csv，push_data 合併時照清單移除 main 上那些列）")
+    # ⭐ 2026-10-04（台股資料體檢 ⑤）：轉板（例 6423 億而得 2026-01-22 創新板→上櫃）⛔ 不是下市
+    #   ⇒ explain_late() 早就認得出來，⚠ 但原本只拿來寫說明、照樣留在 delisted.csv
+    #   ⇒ 判準只用【資料自己的證據】：下市日前後 market 換了一個（market_around），⛔ 不靠名稱猜
+    meta0 = {}
+    if os.path.exists(STOCKS):
+        with io.open(STOCKS, encoding="utf-8") as f:
+            meta0 = {r["stock_id"]: r for r in csv.DictReader(f)}
+    _, _, expl0 = cross_check(rows, meta0)
+    board = {(c, d) for c, d, _s, why in expl0 if why and why.startswith("轉板")}
+    if board:
+        gone = [r for r in rows if (r[1], r[0]) in board]
+        rows = [r for r in rows if (r[1], r[0]) not in board]
+        new_file = not os.path.exists(RM_OUT)
+        with io.open(RM_OUT, "a", encoding="utf-8", newline="") as fh:
+            w = csv.writer(fh, lineterminator="\n")
+            if new_file:
+                w.writerow(RM_HEADER)
+            w.writerows([r[4], r[1], r[0]] for r in gone)
+        rl.info("⭐ 剔除轉板列（下市日前後 market 不同 ⇒ 同一家換板）",
+                "、".join(f"{r[1]} {r[0]} {r[4]}" for r in gone) + "（同鍵寫進 delisted.remove.csv）")
     if only_old:
         rl.info("⭐⭐ 這一趟**沒抓全**，已從既有檔補回",
                 f"本趟抓到 {n_fetched:,} 列｜⛔ 另有 **{only_old:,} 列**只有既有檔才有"
