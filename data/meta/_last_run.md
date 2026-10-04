@@ -1073,6 +1073,17 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## twse_xflag　✓ 正常
+
+最後執行：2026-10-05T02:27:57+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37205370033
+
+- **待問**：5575 天（台帳已有 0）
+- **本趟**：問 4006 天｜ok 4005｜empty 0｜失敗 1｜旗標 29429 列｜剩 1569 天｜300 分
+- **失敗的（前 10）**：[('2006-11-22', 'URLError: <urlopen error [Errno 104] Connection reset by peer>')]
+
+檢查：
+- ok　失敗 ≤ 本趟 2%　（1／4006）
+
 ## crypto:funding　✓ 正常
 
 最後執行：2026-10-04T23:56:05+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37214467833
