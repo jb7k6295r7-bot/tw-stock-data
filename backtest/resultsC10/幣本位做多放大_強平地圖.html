@@ -1,0 +1,142 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>幣本位強平地圖</title><style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--mut:#6b6a66;--card:#ffffff;--line:#e4e1da;--acc:#9a3412;--accbg:#fff1e8;--ok:#166534;--warn:#b45309}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#fb923c;--accbg:#2a1d14;--ok:#4ade80;--warn:#fbbf24}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#fb923c;--accbg:#2a1d14;--ok:#4ade80;--warn:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.45rem;margin:.2em 0 .3em}h2{font-size:1.15rem;margin:1.8em 0 .5em;border-top:1px solid var(--line);padding-top:1em}
+h3{font-size:1rem;margin:1.2em 0 .3em}.sub{color:var(--mut);font-size:.88rem}.lead{background:var(--accbg);border-left:4px solid var(--acc);padding:12px 14px;border-radius:6px;margin:14px 0}
+.lead b{color:var(--acc)}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0}table{border-collapse:collapse;font-size:.86rem;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600}.no{color:var(--warn);font-weight:600}.ok{color:var(--ok)}ul{padding-left:1.2em}li{margin:.25em 0}
+.small{font-size:.84rem;color:var(--mut)}.tag{display:inline-block;font-size:.75rem;border:1px solid var(--line);border-radius:10px;padding:0 7px;color:var(--mut)}
+</style></head><body><main>
+<h1>幣本位做多放大：強平地圖</h1>
+<div class='sub'>PREREGC10 v1（甲案：確定性描述，N＝0）｜回測線｜資料 main 1fb8815e81｜窗尾 2026-09-30｜讀法寫死 2026-10-04 11:18（台北）｜產出 2026-10-04 11:28（台北）</div>
+<div class='lead'><b>結論（主格：每月再平衡、標記價日低；維持保證金率 0.5～2% 三值）</b><ul><li><b>E＝1.5</b>（合約名目＝保證金的 0.5 倍）：從任一月初開始，<b>4%～6%</b> 的起點在窗尾前遇到強平；遇到的人，最慢 <b>404 天（約 13 個月）</b> 就遇到第一次。</li><li><b>E＝2</b>（合約名目＝保證金的 1 倍）：從任一月初開始，<b>39%～41%</b> 的起點在窗尾前遇到強平；遇到的人，最慢 <b>1562 天（約 4.3 年）～1592 天（約 4.4 年）</b> 就遇到第一次。</li><li><b>E＝3</b>（合約名目＝保證金的 2 倍）：從任一月初開始，<b>64%～66%</b> 的起點在窗尾前遇到強平；遇到的人，最慢 <b>613 天（約 20 個月）～766 天（約 2.1 年）</b> 就遇到第一次。</li></ul><div class='small'>6 幣月初起點合併。比例的範圍＝維持保證金率 0.5%～2%。⛔ 這是歷史描述，不是安全倍數；未來跌幅可以比窗內更深。</div></div>
+<div class='card'><b>這在算什麼</b><br>手上的幣全放進幣本位合約錢包當保證金，再開同一個幣的永續多單。用 <b>E</b>＝對美元的總曝險表示：合約介面上的「1 倍」加上同幣保證金，對美元其實是 <b>E＝2</b>。理想上 E＝2 跌 50% 歸零、E＝3 跌 33%；但算進維持保證金、手續費、資金費之後，<b>實際強平點會更早</b>，下面全部用實際強平價。</div>
+<h2>一、每個 E：逐幣強平地圖（主格）</h2><div class='small'>每月再平衡、標記價日低。「比例」＝月初起點中，窗尾前遇到強平的比例；三個數字＝維持保證金率 0.5%／1%／2%。天數＝從起點到第一次強平。</div>
+<h3>E＝1.5</h3><div class='tw'><table><tr><th>幣</th><th>起點</th><th>遇到比例</th><th>最快</th><th>最慢</th><th>1 年內</th><th>4 年內</th><th>最常見強平日</th></tr>
+<tr><td>BTC</td><td>73</td><td>0%／0%／0%</td><td>—</td><td>—</td><td>0%／0%／0%</td><td>0%／0%／0%</td><td>—</td></tr>
+<tr><td>ETH</td><td>73</td><td>0%／0%／0%</td><td>—</td><td>—</td><td>0%／0%／0%</td><td>0%／0%／0%</td><td>—</td></tr>
+<tr><td>BNB</td><td>73</td><td>0%／0%／12%</td><td>22 天</td><td>264 天</td><td>0%／0%／15%</td><td>0%／0%／36%</td><td>—</td></tr>
+<tr><td>SOL</td><td>60</td><td>23%／23%／23%</td><td>8 天</td><td>404 天</td><td>25%／25%／25%</td><td>100%／100%／100%</td><td>2022-11-09×14</td></tr>
+<tr><td>XRP</td><td>72</td><td>4%／4%／4%</td><td>28 天</td><td>89 天</td><td>5%／5%／5%</td><td>12%／12%／12%</td><td>2020-12-29×3</td></tr>
+<tr><td>DOGE</td><td>67</td><td>0%／0%／0%</td><td>—</td><td>—</td><td>0%／0%／0%</td><td>0%／0%／0%</td><td>—</td></tr>
+</table></div>
+<h3>E＝2</h3><div class='tw'><table><tr><th>幣</th><th>起點</th><th>遇到比例</th><th>最快</th><th>最慢</th><th>1 年內</th><th>4 年內</th><th>最常見強平日</th></tr>
+<tr><td>BTC</td><td>73</td><td>0%／12%／12%</td><td>18 天</td><td>260 天</td><td>0%／15%／15%</td><td>0%／36%／36%</td><td>2021-05-19×9</td></tr>
+<tr><td>ETH</td><td>73</td><td>30%／30%／30%</td><td>17 天</td><td>655 天</td><td>20%／20%／20%</td><td>88%／88%／88%</td><td>2022-06-18×22</td></tr>
+<tr><td>BNB</td><td>73</td><td>12%／12%／12%</td><td>18 天</td><td>260 天</td><td>15%／15%／15%</td><td>36%／36%／36%</td><td>2021-05-19×9</td></tr>
+<tr><td>SOL</td><td>60</td><td>23%／23%／23%</td><td>8 天</td><td>161 天</td><td>29%／29%／29%</td><td>100%／100%／100%</td><td>2022-11-09×6</td></tr>
+<tr><td>XRP</td><td>72</td><td>85%／85%／85%</td><td>9 天</td><td>1562 天～1592 天</td><td>32%／33%／33%</td><td>79%／83%／83%</td><td>2025-10-10×52</td></tr>
+<tr><td>DOGE</td><td>67</td><td>84%／84%／84%</td><td>8 天</td><td>1044 天</td><td>58%／58%／58%</td><td>100%／100%／100%</td><td>2025-10-10×35</td></tr>
+</table></div>
+<h3>E＝3</h3><div class='tw'><table><tr><th>幣</th><th>起點</th><th>遇到比例</th><th>最快</th><th>最慢</th><th>1 年內</th><th>4 年內</th><th>最常見強平日</th></tr>
+<tr><td>BTC</td><td>73</td><td>30%／30%／30%</td><td>11 天</td><td>345 天</td><td>36%／36%／36%</td><td>88%／88%／88%</td><td>2022-05-12×12</td></tr>
+<tr><td>ETH</td><td>73</td><td>74%／74%／86%</td><td>4 天</td><td>613 天～766 天</td><td>66%／66%／85%</td><td>100%／100%／100%</td><td>2024-08-05×26</td></tr>
+<tr><td>BNB</td><td>73</td><td>30%／30%／30%</td><td>10 天</td><td>260 天</td><td>36%／36%／36%</td><td>88%／88%／88%</td><td>2021-05-19×9</td></tr>
+<tr><td>SOL</td><td>60</td><td>88%／88%／88%</td><td>4 天</td><td>287 天</td><td>100%／100%／100%</td><td>100%／100%／100%</td><td>2024-04-13×10</td></tr>
+<tr><td>XRP</td><td>72</td><td>85%／85%／85%</td><td>2 天</td><td>521 天</td><td>85%／85%／85%</td><td>100%／100%／100%</td><td>2025-02-03×18</td></tr>
+<tr><td>DOGE</td><td>67</td><td>84%／84%／84%</td><td>2 天</td><td>468 天</td><td>93%／93%／93%</td><td>100%／100%／100%</td><td>2024-04-13×16</td></tr>
+</table></div>
+<h2>二、再平衡方式、價格口徑</h2><div class='small'>6 幣月初起點合併，遇到強平的比例（維持保證金率 1%；括號＝0.5%～2% 範圍）。</div>
+<div class='tw'><table><tr><th>E</th><th>再平衡</th><th>標記價日低</th><th>成交價日低</th><th>最慢（標記價）</th></tr>
+<tr><td>1.5</td><td>不再平衡</td><td>17%（17%～17%）</td><td>17%（17%～17%）</td><td>814 天（約 2.2 年）</td></tr>
+<tr><td>1.5</td><td>每月</td><td>4%（4%～6%）</td><td>4%（4%～20%）</td><td>404 天（約 13 個月）</td></tr>
+<tr><td>1.5</td><td>每日</td><td>0%（0%～0%）</td><td>0%（0%～13%）</td><td>—</td></tr>
+<tr><td>2</td><td>不再平衡</td><td>38%（38%～38%）</td><td>38%（38%～38%）</td><td>845 天（約 2.3 年）</td></tr>
+<tr><td>2</td><td>每月</td><td>41%（39%～41%）</td><td>41%（41%～41%）</td><td>1562 天（約 4.3 年）</td></tr>
+<tr><td>2</td><td>每日</td><td>31%（31%～31%）</td><td>36%（36%～36%）</td><td>1743 天（約 4.8 年）</td></tr>
+<tr><td>3</td><td>不再平衡</td><td>56%（56%～57%）</td><td>57%（57%～58%）</td><td>935 天（約 2.6 年）</td></tr>
+<tr><td>3</td><td>每月</td><td>64%（64%～66%）</td><td>64%（64%～66%）</td><td>766 天（約 2.1 年）</td></tr>
+<tr><td>3</td><td>每日</td><td>57%（57%～57%）</td><td>59%（59%～59%）</td><td>1592 天（約 4.4 年）</td></tr>
+</table></div><div class='small'>不再平衡＝口數固定，曝險隨價格漂移；它最依賴進場時點，單一起點的結果不能讀成一般結論。</div>
+<h2>三、窗首一條（各幣第一天建倉、抱到窗尾）</h2><div class='small'>維持保證金率 0.5%／1%／2% 下的第一次強平日（— ＝到窗尾沒有）。</div>
+<div class='tw'><table><tr><th>幣（窗首）</th><th>E</th><th>不再平衡</th><th>每月</th><th>每日</th><th>每月・成交價</th></tr>
+<tr><td>BTC（2020-08-11）</td><td>1.5</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>BTC（2020-08-11）</td><td>2</td><td>—</td><td>—／2021-05-19／2021-05-19</td><td>—</td><td>2021-05-19</td></tr>
+<tr><td>BTC（2020-08-11）</td><td>3</td><td>—</td><td>2021-05-19</td><td>—</td><td>2021-05-19</td></tr>
+<tr><td>ETH（2020-08-18）</td><td>1.5</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>ETH（2020-08-18）</td><td>2</td><td>—</td><td>2022-06-18</td><td>—</td><td>2022-06-18</td></tr>
+<tr><td>ETH（2020-08-18）</td><td>3</td><td>—</td><td>2020-09-05</td><td>2021-05-19</td><td>2020-09-05</td></tr>
+<tr><td>BNB（2020-08-21）</td><td>1.5</td><td>—</td><td>—／—／2021-05-23</td><td>—</td><td>—／—／2021-05-23</td></tr>
+<tr><td>BNB（2020-08-21）</td><td>2</td><td>—</td><td>2021-05-19</td><td>—</td><td>2021-05-19</td></tr>
+<tr><td>BNB（2020-08-21）</td><td>3</td><td>—</td><td>2021-05-19</td><td>2021-02-20</td><td>2021-05-19</td></tr>
+<tr><td>SOL（2021-09-02）</td><td>1.5</td><td>2022-05-11</td><td>2022-11-09</td><td>—</td><td>2022-11-09</td></tr>
+<tr><td>SOL（2021-09-02）</td><td>2</td><td>2022-05-09</td><td>2022-01-22</td><td>2022-11-09</td><td>2022-01-22</td></tr>
+<tr><td>SOL（2021-09-02）</td><td>3</td><td>2022-01-24／2022-01-22／2022-01-22</td><td>2021-12-13</td><td>2022-05-11</td><td>2021-12-13</td></tr>
+<tr><td>XRP（2020-09-09）</td><td>1.5</td><td>—</td><td>2020-12-29</td><td>—</td><td>2020-12-29</td></tr>
+<tr><td>XRP（2020-09-09）</td><td>2</td><td>—</td><td>2020-12-23</td><td>2020-12-23</td><td>2020-12-23</td></tr>
+<tr><td>XRP（2020-09-09）</td><td>3</td><td>—</td><td>2020-12-22</td><td>2020-12-23</td><td>2020-12-22</td></tr>
+<tr><td>DOGE（2021-02-02）</td><td>1.5</td><td>—</td><td>—</td><td>—</td><td>—／—／2025-10-10</td></tr>
+<tr><td>DOGE（2021-02-02）</td><td>2</td><td>—</td><td>2021-06-21</td><td>2021-05-19</td><td>2021-05-19</td></tr>
+<tr><td>DOGE（2021-02-02）</td><td>3</td><td>—</td><td>2021-05-19</td><td>2021-04-17</td><td>2021-05-19</td></tr>
+</table></div>
+<h2>四、實際強平點比理想值早多少（建倉當下）</h2><div class='small'>只含維持保證金與建倉手續費；之後每付一次資金費，強平點還會再往上移（正費率時）。</div>
+<div class='tw'><table><tr><th>E</th><th>理想：跌多少歸零</th><th>實際 m＝0.5%</th><th>m＝1%</th><th>m＝2%</th></tr>
+<tr><td>1.5</td><td>66.67%</td><td>66.49%</td><td>66.33%</td><td>65.99%</td></tr>
+<tr><td>2</td><td>50.00%</td><td>49.74%</td><td>49.49%</td><td>48.99%</td></tr>
+<tr><td>3</td><td>33.33%</td><td>32.98%</td><td>32.64%</td><td>31.98%</td></tr>
+</table></div>
+<h2>五、成長腿（只描述，不判）</h2><div class='small'>窗首起、每月再平衡、標記價、維持保證金率 2%、手續費 ×1。美元年化對現貨年化；期末幣數＝期初 1 顆變成幾顆。⛔ 不比較好壞；依登錄 §四，這一腿的差異遠小於可測門檻。</div>
+<div class='tw'><table><tr><th>幣</th><th>E</th><th>美元年化</th><th>現貨年化</th><th>期末幣數</th><th>最大回落</th><th>現貨回落</th><th>強平</th></tr>
+<tr><td>BTC</td><td>1.5</td><td>35.0%</td><td>38.4%</td><td>0.86</td><td>-92.1%</td><td>-76.6%</td><td>—</td></tr>
+<tr><td>BTC</td><td>2</td><td>-100.0%</td><td>38.4%</td><td>0.00</td><td>-100.0%</td><td>-76.6%</td><td>2021-05-19</td></tr>
+<tr><td>BTC</td><td>3</td><td>-100.0%</td><td>38.4%</td><td>0.00</td><td>-100.0%</td><td>-76.6%</td><td>2021-05-19</td></tr>
+<tr><td>ETH</td><td>1.5</td><td>19.6%</td><td>35.3%</td><td>0.47</td><td>-94.0%</td><td>-79.3%</td><td>—</td></tr>
+<tr><td>ETH</td><td>2</td><td>-100.0%</td><td>35.3%</td><td>0.00</td><td>-100.0%</td><td>-79.3%</td><td>2022-06-18</td></tr>
+<tr><td>ETH</td><td>3</td><td>-100.0%</td><td>35.3%</td><td>0.00</td><td>-100.0%</td><td>-79.3%</td><td>2020-09-05</td></tr>
+<tr><td>BNB</td><td>1.5</td><td>-100.0%</td><td>78.8%</td><td>0.00</td><td>-100.0%</td><td>-70.9%</td><td>2021-05-23</td></tr>
+<tr><td>BNB</td><td>2</td><td>-100.0%</td><td>78.8%</td><td>0.00</td><td>-100.0%</td><td>-70.9%</td><td>2021-05-19</td></tr>
+<tr><td>BNB</td><td>3</td><td>-100.0%</td><td>78.8%</td><td>0.00</td><td>-100.0%</td><td>-70.9%</td><td>2021-05-19</td></tr>
+<tr><td>SOL</td><td>1.5</td><td>-100.0%</td><td>-1.6%</td><td>0.00</td><td>-100.0%</td><td>-96.3%</td><td>2022-11-09</td></tr>
+<tr><td>SOL</td><td>2</td><td>-100.0%</td><td>-1.6%</td><td>0.00</td><td>-100.0%</td><td>-96.3%</td><td>2022-01-22</td></tr>
+<tr><td>SOL</td><td>3</td><td>-100.0%</td><td>-1.6%</td><td>0.00</td><td>-100.0%</td><td>-96.3%</td><td>2021-12-13</td></tr>
+<tr><td>XRP</td><td>1.5</td><td>-100.0%</td><td>35.3%</td><td>0.00</td><td>-100.0%</td><td>-83.2%</td><td>2020-12-29</td></tr>
+<tr><td>XRP</td><td>2</td><td>-100.0%</td><td>35.3%</td><td>0.00</td><td>-100.0%</td><td>-83.2%</td><td>2020-12-23</td></tr>
+<tr><td>XRP</td><td>3</td><td>-100.0%</td><td>35.3%</td><td>0.00</td><td>-100.0%</td><td>-83.2%</td><td>2020-12-22</td></tr>
+<tr><td>DOGE</td><td>1.5</td><td>-17.4%</td><td>21.6%</td><td>0.11</td><td>-99.5%</td><td>-92.3%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>2</td><td>-100.0%</td><td>21.6%</td><td>0.00</td><td>-100.0%</td><td>-92.3%</td><td>2021-06-21</td></tr>
+<tr><td>DOGE</td><td>3</td><td>-100.0%</td><td>21.6%</td><td>0.00</td><td>-100.0%</td><td>-92.3%</td><td>2021-05-19</td></tr>
+</table></div>
+<div class='small'>滾動起點（每月再平衡）：抱滿 1／2／4 年時，C10 美元權益高於現貨的起點比例（⛔ 這不是勝率）。</div>
+<div class='tw'><table><tr><th>幣</th><th>E</th><th>1 年</th><th>2 年</th><th>4 年</th><th>抱到窗尾</th></tr>
+<tr><td>BTC</td><td>1.5</td><td>52%（61）</td><td>43%（49）</td><td>12%（25）</td><td>34%（73）</td></tr>
+<tr><td>BTC</td><td>2</td><td>41%（61）</td><td>39%（49）</td><td>4%（25）</td><td>30%（73）</td></tr>
+<tr><td>BTC</td><td>3</td><td>41%（61）</td><td>35%（49）</td><td>0%（25）</td><td>11%（73）</td></tr>
+<tr><td>ETH</td><td>1.5</td><td>36%（61）</td><td>16%（49）</td><td>0%（25）</td><td>10%（73）</td></tr>
+<tr><td>ETH</td><td>2</td><td>28%（61）</td><td>8%（49）</td><td>0%（25）</td><td>8%（73）</td></tr>
+<tr><td>ETH</td><td>3</td><td>15%（61）</td><td>0%（49）</td><td>0%（25）</td><td>7%（73）</td></tr>
+<tr><td>BNB</td><td>1.5</td><td>39%（61）</td><td>45%（49）</td><td>36%（25）</td><td>40%（73）</td></tr>
+<tr><td>BNB</td><td>2</td><td>36%（61）</td><td>43%（49）</td><td>8%（25）</td><td>36%（73）</td></tr>
+<tr><td>BNB</td><td>3</td><td>28%（61）</td><td>37%（49）</td><td>0%（25）</td><td>10%（73）</td></tr>
+<tr><td>SOL</td><td>1.5</td><td>33%（48）</td><td>33%（36）</td><td>0%（12）</td><td>17%（60）</td></tr>
+<tr><td>SOL</td><td>2</td><td>27%（48）</td><td>25%（36）</td><td>0%（12）</td><td>12%（60）</td></tr>
+<tr><td>SOL</td><td>3</td><td>0%（48）</td><td>0%（36）</td><td>0%（12）</td><td>12%（60）</td></tr>
+<tr><td>XRP</td><td>1.5</td><td>27%（60）</td><td>12%（48）</td><td>0%（24）</td><td>6%（72）</td></tr>
+<tr><td>XRP</td><td>2</td><td>20%（60）</td><td>8%（48）</td><td>0%（24）</td><td>6%（72）</td></tr>
+<tr><td>XRP</td><td>3</td><td>2%（60）</td><td>0%（48）</td><td>0%（24）</td><td>4%（72）</td></tr>
+<tr><td>DOGE</td><td>1.5</td><td>9%（55）</td><td>0%（43）</td><td>0%（19）</td><td>4%（67）</td></tr>
+<tr><td>DOGE</td><td>2</td><td>4%（55）</td><td>0%（43）</td><td>0%（19）</td><td>4%（67）</td></tr>
+<tr><td>DOGE</td><td>3</td><td>2%（55）</td><td>0%（43）</td><td>0%（19）</td><td>4%（67）</td></tr>
+</table></div><div class='small'>括號＝可算的起點數。</div>
+<h2>六、窗內最深跌幅與資金費</h2><div class='tw'><table><tr><th>幣</th><th>一日內（標記／成交）</th><th>一月內（標記／成交）</th><th>資金費年化Σ</th></tr>
+<tr><td>BTC</td><td>-31.6%／-36.5%<br><span class='small'>2021-05-19／2021-05-19</span></td><td>-49.4%／-52.9%<br><span class='small'>2021-05／2021-05</span></td><td>9.49%</td></tr>
+<tr><td>ETH</td><td>-44.8%／-52.0%<br><span class='small'>2021-05-19／2021-05-19</span></td><td>-51.6%／-51.6%<br><span class='small'>2022-06／2022-06</span></td><td>9.33%</td></tr>
+<tr><td>BNB</td><td>-45.0%／-51.4%<br><span class='small'>2021-05-19／2021-05-19</span></td><td>-66.0%／-66.2%<br><span class='small'>2021-05／2021-05</span></td><td>0.49%</td></tr>
+<tr><td>SOL</td><td>-59.0%／-61.0%<br><span class='small'>2022-11-09／2022-11-09</span></td><td>-69.3%／-70.8%<br><span class='small'>2022-11／2022-11</span></td><td>-2.40%</td></tr>
+<tr><td>XRP</td><td>-60.1%／-62.0%<br><span class='small'>2025-10-10／2025-10-10</span></td><td>-71.9%／-72.2%<br><span class='small'>2020-12／2020-12</span></td><td>10.19%</td></tr>
+<tr><td>DOGE</td><td>-65.5%／-66.2%<br><span class='small'>2025-10-10／2025-10-10</span></td><td>-65.5%／-66.2%<br><span class='small'>2025-10／2025-10</span></td><td>11.58%</td></tr>
+</table></div><div class='small'>跌幅從再平衡點（前一日收盤／月初收盤）起算。資金費年化Σ＝對名目；正＝多方付。對保證金約再乘 L（E−1）。</div>
+<h2>七、先驗對答</h2><div class='card'><ul><li>① 押 E＝3 每月再平衡 ≥4 幣窗內強平：m=0.5% 6 幣（BTC、ETH、BNB、SOL、XRP、DOGE）；m=1.0% 6 幣（BTC、ETH、BNB、SOL、XRP、DOGE）；m=2.0% 6 幣（BTC、ETH、BNB、SOL、XRP、DOGE）（窗首一條、標記價）⇒ 中</li><li>② 押 E＝2 成交價 ≥2 幣強平、標記價較少：成交價 m=0.5% 6 幣（BTC、ETH、BNB、SOL、XRP、DOGE）；m=1.0% 6 幣（BTC、ETH、BNB、SOL、XRP、DOGE）；m=2.0% 6 幣（BTC、ETH、BNB、SOL、XRP、DOGE）｜標記價 m=0.5% 5 幣；m=1.0% 6 幣；m=2.0% 6 幣（窗首一條、每月再平衡）⇒ 部分中：成交價 ≥2 幣成立；「標記價較少」只在 m=0.5% 成立</li><li>③ 押 E＝1.5 不再平衡至少 1 幣（SOL 或 DOGE）強平：m=0.5% 1 幣（SOL）；m=1.0% 1 幣（SOL）；m=2.0% 1 幣（SOL）（窗首一條、標記價）⇒ 中</li><li>④ 押成長腿沒有任何一格出口②：甲案成長腿只描述、不判、不計 N ⇒ 沒有出口可對；與登錄 §四 構造算術一致（不判）</li></ul></div>
+<h2>八、驗證</h2><div class='tw'><table><tr><th>案</th><th>引擎</th><th>參考</th><th>反例</th><th>反例結果</th></tr>
+<tr><td>a</td><td>綠</td><td>綠</td><td style='white-space:normal'>保證金當成美元（不跟幣價動）</td><td>紅（測試抓得到）</td></tr>
+<tr><td>b</td><td>綠</td><td>綠</td><td style='white-space:normal'>費率符號反過來</td><td>紅（測試抓得到）</td></tr>
+<tr><td>b2</td><td>綠</td><td>綠</td><td style='white-space:normal'>假設一天 3 次（平均費率×3，不逐筆加）</td><td>紅（測試抓得到）</td></tr>
+<tr><td>c</td><td>綠</td><td>綠</td><td style='white-space:normal'>再平衡後強平價不重算</td><td>紅（測試抓得到）</td></tr>
+<tr><td>d</td><td>綠</td><td>綠</td><td style='white-space:normal'>用理想強平價 Pe×L/(1+L)（不含維持保證金、費用、資金費）</td><td>紅（測試抓得到）</td></tr>
+</table></div><div class='small'>抽樣逐日重算（另一支逐筆迴圈）：9／9 條路徑強平日與權益完全一致。</div>
+<h2>九、讀的時候要注意</h2><ul><li>維持保證金分級表還沒交（要 API 金鑰），官方最低一級＝<b>待定</b>；所以三個值全報。</li><li>強平只用日低判斷，日內先跌後漲也算；資金費用前一日標記價收盤近似；沒算強平清算費（有的話只會更早）。</li><li>口數取整忽略（BTC 一口 100 美元，小帳戶做不到精確 E）。</li><li>模型外風險：交易所倒閉、自動減倉、插針、規格或分級變動、提幣限制。</li><li>⛔ 歷史沒爆不等於未來不會；本頁不提供任何槓桿或開倉建議。</li></ul>
+<h2>十、執行者補的讀法</h2><ul class='small'><li>R1 窗尾＝三份共同最後一天＝2026-09-30（寫死時誤記 10-02，執行時依同一規則更正）</li><li>R3 資金費換幣的標記價＝前一日標記價收盤（日 K 沒有逐筆標記價）</li><li>R4 估值與再平衡用成交價收盤；價格口徑只換強平用的日低</li><li>R5 強平公式：逐倉幣本位標準式 Lp＝N(1+m)/(W+N/Pe)；不計強平清算費</li><li>R7 再平衡新名目以扣費前權益定；窗尾不平倉、不付平倉費</li><li>R8 每月再平衡＝每個 UTC 月份第一天收盤</li><li>R9 月初起點到 2026-09-01 為止；另跑窗首一條</li><li>R10「最慢多久遇到第一次強平」＝遇到強平的起點中等最久那條的天數；沒遇到的只說到窗尾為止沒有</li><li>R12 成長腿用維持保證金率 2%（三值中最保守）</li></ul>
+</main></body></html>
