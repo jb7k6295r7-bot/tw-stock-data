@@ -1072,6 +1072,16 @@
 - ok　⭐ 事件集合**雙向**都對得上（⛔ 只比一個方向不算一致，三點1）　（只有官方 []｜只有我方 []）
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
+
+## crypto:drop-bitstamp　✓ 正常
+
+最後執行：2026-10-04T17:08:10+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37191035809
+
+- **刪掉的 Bitstamp 列（已移私有 repo）**：{'BTC.csv': 1689}
+
+檢查：
+- ok　公開檔裡沒有 Bitstamp 列了　（{'BTC.csv': 1689}）
+
 ## feeds:marginmkt　✓ 正常
 
 最後執行：2026-10-04T14:41:52+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37182971693
