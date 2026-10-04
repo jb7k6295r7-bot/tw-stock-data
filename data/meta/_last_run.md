@@ -1073,6 +1073,55 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## crypto:cm_funding　✓ 正常
+
+最後執行：2026-10-04T10:27:05+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37170837782
+
+- **這一趟**：C10 六幣【幣本位】永續資金費率全期（2020-01 ~ 2026-09）
+- **BTC**：4269 列｜ok 48 月｜absent 33 月｜error 0 月
+- **ETH**：4269 列｜ok 48 月｜absent 33 月｜error 0 月
+- **XRP**：4269 列｜ok 48 月｜absent 33 月｜error 0 月
+- **BNB**：4269 列｜ok 48 月｜absent 33 月｜error 0 月
+- **DOGE**：4269 列｜ok 48 月｜absent 33 月｜error 0 月
+- **SOL**：4344 列｜ok 48 月｜absent 33 月｜error 0 月
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+
+
+## crypto:cm_perp　✓ 正常
+
+最後執行：2026-10-04T10:30:45+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37170837782
+
+- **這一趟**：C10 幣本位永續成交價日 K 全期（2020-01 ~ 2026-09）
+- **BTC**：2242 列｜ok 74 月｜日封存補 4 天｜補完仍缺 0 天｜absent 7｜error 0｜第一根 2020-08-11
+- **ETH**：2235 列｜ok 74 月｜日封存補 4 天｜補完仍缺 0 天｜absent 7｜error 0｜第一根 2020-08-18
+- **XRP**：2213 列｜ok 73 月｜日封存補 4 天｜補完仍缺 0 天｜absent 8｜error 0｜第一根 2020-09-09
+- **BNB**：2232 列｜ok 74 月｜日封存補 4 天｜補完仍缺 0 天｜absent 7｜error 0｜第一根 2020-08-21
+- **DOGE**：2067 列｜ok 68 月｜日封存補 4 天｜補完仍缺 0 天｜absent 13｜error 0｜第一根 2021-02-02
+- **SOL**：1855 列｜ok 61 月｜日封存補 4 天｜補完仍缺 0 天｜absent 20｜error 0｜第一根 2021-09-02
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+- ok　⭐ 補完之後逐日無缺（⛔ 月封存漏打包的日子要用日封存補）　（[]）
+
+
+## crypto:cm_mark　✓ 正常
+
+最後執行：2026-10-04T10:34:33+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37170837782
+
+- **這一趟**：C10 幣本位永續【標記價】日 K 全期（2020-01 ~ 2026-09）
+- **BTC**：2242 列｜ok 74 月｜日封存補 4 天｜補完仍缺 0 天｜absent 7｜error 0｜第一根 2020-08-11
+- **ETH**：2235 列｜ok 74 月｜日封存補 4 天｜補完仍缺 0 天｜absent 7｜error 0｜第一根 2020-08-18
+- **XRP**：2213 列｜ok 73 月｜日封存補 4 天｜補完仍缺 0 天｜absent 8｜error 0｜第一根 2020-09-09
+- **BNB**：2232 列｜ok 74 月｜日封存補 4 天｜補完仍缺 0 天｜absent 7｜error 0｜第一根 2020-08-21
+- **DOGE**：2067 列｜ok 68 月｜日封存補 4 天｜補完仍缺 0 天｜absent 13｜error 0｜第一根 2021-02-02
+- **SOL**：1855 列｜ok 61 月｜日封存補 4 天｜補完仍缺 0 天｜absent 20｜error 0｜第一根 2021-09-02
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+- ok　⭐ 補完之後逐日無缺（⛔ 月封存漏打包的日子要用日封存補）　（[]）
+
 ## filing_dates　✓ 正常
 
 最後執行：2026-10-04T10:06:40+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37169781109
