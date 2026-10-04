@@ -35,6 +35,13 @@
     b 起點不重疊（反例：重疊）；c T2 用 low 的最小值（反例：用 close）；d M2 只含起點以前（反例：全期分位）；
     再用逐列純迴圈的參考實作抽樣重算命中（種子 20260923），逐位比；鏡像與副本逐檔比對
 ⛔ 結果句只說「區間大小準不準」：⛔ 不寫能預測漲跌方向、⛔ 不寫某價位是底、⛔ 不用下緣推倍數。
+
+〔補檢 2026-10-04 18:40（台北，TZ=Asia/Taipei date；裁定 seq293 §一）〕
+ Q12 判過要同時符合：① bootstrap CI 在容忍帶內（Q8 原條件）② Clopper-Pearson 精確區間（信賴水準 1−0.05/108，雙尾各 0.05/216）也在容忍帶內。只降不升。
+     Clopper-Pearson：以確切命中數 x／起點數 n，用二項分配 CDF 二分法解（不裝 scipy）：下界解 P(X ≥ x; p)＝α/2、上界解 P(X ≤ x; p)＝α/2；x＝0 下界 0、x＝n 上界 1
+     被降級的格：偏窄＝bootstrap 與 CP 上界都 < 名目；偏寬＝兩者下界都 > 名目；否則測不出（同 C12b 的「兩者都」寫法，避免只靠 bootstrap 就升成偏窄／偏寬）【執行者補】
+     原本不是判過的格一律不動（只降不升）；cells.csv 加欄：命中數、CP下、CP上、原判（補檢前）、判定（補檢後）、補檢降級
+ 新增 fixture f：Clopper-Pearson（x＝n ⇒ 上界 1、下界＝(α/2)^(1/n)；x＝0 ⇒ 上界＝1−(α/2)^(1/n)；另與已知值比對），反例＝常態近似（Wald）
 """
 from __future__ import annotations
 import os, sys, json, time, math, argparse, html, hashlib
@@ -160,6 +167,55 @@ def ci_of(x):
     return c, float(np.percentile(bs, 100 * a)), float(np.percentile(bs, 100 * (1 - a))), int(L)
 
 
+def _binom_cdf(k, n, p):
+    """P(X ≤ k)，X ~ Bin(n, p)；log 空間逐項加總。"""
+    if k < 0:
+        return 0.0
+    if k >= n:
+        return 1.0
+    if p <= 0:
+        return 1.0
+    if p >= 1:
+        return 0.0
+    lp, lq = math.log(p), math.log1p(-p)
+    terms = [math.lgamma(n + 1) - math.lgamma(i + 1) - math.lgamma(n - i + 1) + i * lp + (n - i) * lq for i in range(k + 1)]
+    m = max(terms)
+    return min(1.0, math.exp(m) * sum(math.exp(t - m) for t in terms))
+
+
+def clopper_pearson(x, n, alpha, mut=None):
+    """雙尾 1−alpha 精確區間。mut＝wald ⇒ 常態近似（反例）。"""
+    if mut == "wald":
+        p = x / n; z = 3.5; s = math.sqrt(p * (1 - p) / n)
+        return max(0.0, p - z * s), min(1.0, p + z * s)
+    a = alpha / 2
+
+    def solve(f):
+        lo, hi = 0.0, 1.0
+        for _ in range(200):
+            mid = (lo + hi) / 2
+            if f(mid):
+                hi = mid
+            else:
+                lo = mid
+        return (lo + hi) / 2
+    lower = 0.0 if x == 0 else solve(lambda p: 1.0 - _binom_cdf(x - 1, n, p) >= a)     # 最小的 p 使 P(X ≥ x) ≥ α/2
+    upper = 1.0 if x == n else solve(lambda p: _binom_cdf(x, n, p) <= a)               # 最小的 p 使 P(X ≤ x) ≤ α/2
+    return lower, upper
+
+
+def verdict2(tg, lo, hi, cpl, cpu):
+    """Q12：補檢後判定。只降不升。"""
+    v = verdict(tg, lo, hi)
+    if not v.startswith("判過"):
+        return v
+    blo, bhi = BAND[tg]
+    if cpl >= blo and cpu <= bhi:
+        return v
+    nom = NOM[tg]
+    return "偏窄" if (hi < nom and cpu < nom) else ("偏寬" if (lo > nom and cpl > nom) else "測不出")
+
+
 def verdict(tg, lo, hi):
     blo, bhi = BAND[tg]; nom = NOM[tg]
     inb = lo >= blo and hi <= bhi
@@ -222,12 +278,23 @@ FIXTURES = (("a M1 常數報酬 ⇒ 區間＝P0", fx_a, "future", "用到起點�
             ("a M3 同理", fx_a3, "future", "EWMA 用到起點之後"),
             ("b 起點不重疊", fx_b, "overlap", "每天一個起點（重疊）"),
             ("c T2 用日低最小值", fx_c, "close", "用收盤"),
-            ("d M2 只含起點以前", fx_d, "full", "全期分位（看未來）"))
+            ("d M2 只含起點以前", fx_d, "full", "全期分位（看未來）"),
+            ("f Clopper-Pearson 精確區間（補檢）", None, "wald", "常態近似（Wald）"))
+
+
+def fx_f(mut=None):
+    """f. CP：x＝n ⇒ 上界 1、下界＝(α/2)^(1/n)；x＝0 ⇒ 下界 0、上界＝1−(α/2)^(1/n)；x＝5、n＝10、α＝0.05 ⇒ [0.18709, 0.81291]（教科書值）。"""
+    a = 0.05 / N_CELLS; ok = True
+    l, u = clopper_pearson(30, 30, a, mut); ok &= abs(u - 1) < 1e-12 and abs(l - (a / 2) ** (1 / 30)) < 1e-9
+    l, u = clopper_pearson(0, 30, a, mut); ok &= l == 0 and abs(u - (1 - (a / 2) ** (1 / 30))) < 1e-9
+    l, u = clopper_pearson(5, 10, 0.05, mut); ok &= abs(l - 0.18709) < 1e-4 and abs(u - 0.81291) < 1e-4
+    return bool(ok)
 
 
 def run_fixtures():
     res = []
     for name, fx, mut, why in FIXTURES:
+        fx = fx or fx_f
         g = fx(); red = not fx(mut)
         res.append({"案": name, "結果": "綠" if g else "紅", "反例": why, "反例結果": "紅（抓得到）" if red else "⛔ 仍綠"})
     return all(r["結果"] == "綠" and r["反例結果"].startswith("紅") for r in res), res
@@ -265,9 +332,14 @@ def cells(R):
                 mb = miss[miss["端點收盤"] < miss["T1下"]]
                 tail = float((mb["端點收盤"] / mb["T1下"] - 1).mean()) if len(mb) else float("nan")
             out.append({"coin": coin, "h": h, "model": model, "target": tg, "起點數": len(g), "第一個起點": g["start"].iloc[0], "最後起點": g["start"].iloc[-1],
-                        "命中率": c, "CI下": lo, "CI上": hi, "L": L, "判定": verdict(tg, lo, hi), "沒守住時平均跌破": tail,
+                        "命中數": int(g[tg].sum()), "命中率": c, "CI下": lo, "CI上": hi, "L": L,
+                        "CP下": clopper_pearson(int(g[tg].sum()), len(g), 0.05 / N_CELLS)[0], "CP上": clopper_pearson(int(g[tg].sum()), len(g), 0.05 / N_CELLS)[1],
+                        "原判（補檢前）": verdict(tg, lo, hi), "判定": None, "沒守住時平均跌破": tail,
                         "80%區間命中（描述）": float(g["T1_80"].mean()) if tg == "T1" else float("nan")})
-    return pd.DataFrame(out)
+    D = pd.DataFrame(out)
+    D["判定"] = [verdict2(r.target, r.CI下, r.CI上, r.CP下, r.CP上) for r in D.itertuples()]
+    D["補檢降級"] = [(o.startswith("判過") and not n.startswith("判過")) for o, n in zip(D["原判（補檢前）"], D["判定"])]
+    return D
 
 
 def ma_desc(R):
@@ -351,10 +423,14 @@ def build_html(meta, Cc, MA, EV, Y, fx, chk):
              "<div class='small'>⛔ 這不是漲跌方向的預測，也不表示哪個價位是底；「判過」只代表在 ±10pp 容忍帶內分不出偏差，不是區間保證準。</div></div>")
     h.append("<div class='card'><b>怎麼測</b>：每個起點只用當天收盤以前的資料畫未來 h 天的區間（漂移設 0），之後對答案。"
              "<br><b>T1</b>：第 h 天收盤落在中央 90% 區間內的比例（名目 90%）。<b>T2</b>：h 天內每天的最低價都沒跌破單邊 95% 下緣的比例（名目 95%）；M1／M3 的下緣是端點分布的下緣，用在途中最低上依構造偏窄，故意保留。"
-             "<br>CI：stationary block bootstrap 2,000 次、信賴水準 1−0.05/108。判過＝CI 整條在容忍帶（T1 80～100%、T2 85～100%）；偏窄＝CI 上界低於名目；偏寬＝CI 下界高於名目。</div>")
+             "<br>CI：stationary block bootstrap 2,000 次、信賴水準 1−0.05/108。判過＝bootstrap CI 與 Clopper-Pearson 精確區間（同信賴水準）<b>都</b>整條在容忍帶（T1 80～100%、T2 85～100%）（裁定 seq293 補檢，只降不升）；偏窄＝bootstrap CI 上界低於名目；偏寬＝bootstrap CI 下界高於名目。</div>")
+    dg = Cc[Cc["補檢降級"]]
+    h.append(f"<div class='card'><b>補檢（seq293）</b>：補檢前判過 {int(Cc['原判（補檢前）'].str.startswith('判過').sum())} 格，加上 Clopper-Pearson 條件後降級 {len(dg)} 格："
+             + ("；".join(f"{r.coin} {r.target}・{MODEL_ZH[r.model]}・h{r.h}（{int(r.命中數)}／{int(r.起點數)}，CP［{pct(r.CP下)}～{pct(r.CP上)}］）⇒ {e(r.判定)}" for r in dg.itertuples()) or "無")
+             + "。</div>")
     for tg in TARGETS:
         h.append(f"<h2>{'一' if tg == 'T1' else '二'}、{tg}：{'第 h 天收盤落在 90% 區間' if tg == 'T1' else 'h 天內最低價守住 95% 下緣'}</h2>")
-        h.append("<div class='small'>每格：命中率［CI］判定。起點數見括號。</div><div class='tw'><table><tr><th>幣（第一個起點）</th><th>h</th>" + "".join(f"<th>{MODEL_ZH[m]}</th>" for m in MODELS) + "</tr>")
+        h.append("<div class='small'>每格：命中數／起點數＝命中率；boot＝block bootstrap CI；CP＝Clopper-Pearson 精確區間；判定（補檢後）。</div><div class='tw'><table><tr><th>幣（第一個起點）</th><th>h</th>" + "".join(f"<th>{MODEL_ZH[m]}</th>" for m in MODELS) + "</tr>")
         for s in COINS:
             for hh in HS:
                 g = Cc[(Cc.coin == s) & (Cc.h == hh) & (Cc.target == tg)]
@@ -362,7 +438,8 @@ def build_html(meta, Cc, MA, EV, Y, fx, chk):
                 for m in MODELS:
                     r = g[g.model == m].iloc[0]
                     cls = "narrow" if r["判定"] == "偏窄" else ("pass" if r["判定"].startswith("判過") else "")
-                    cells_.append(f"<td>{pct(r['命中率'])}［{pct(r['CI下'])}～{pct(r['CI上'])}］<br><span class='{cls}'>{e(r['判定'])}</span></td>")
+                    dn = "（補檢降級）" if r["補檢降級"] else ""
+                    cells_.append(f"<td>{int(r['命中數'])}／{int(r['起點數'])}＝{pct(r['命中率'])}<br>boot［{pct(r['CI下'])}～{pct(r['CI上'])}］<br>CP［{pct(r['CP下'])}～{pct(r['CP上'])}］<br><span class='{cls}'>{e(r['判定'])}{dn}</span></td>")
                 r0 = g.iloc[0]
                 h.append(f"<tr><td>{s}（{r0['第一個起點']}）</td><td>{hh}（{int(r0['起點數'])}）</td>" + "".join(cells_) + "</tr>")
         h.append("</table></div>")
@@ -405,7 +482,7 @@ def build_html(meta, Cc, MA, EV, Y, fx, chk):
         h.append(f"<tr><td style='white-space:normal'>{e(r['案'])}</td><td>{r['結果']}</td><td style='white-space:normal'>{e(r['反例'])}</td><td>{e(r['反例結果'])}</td></tr>")
     h.append(f"</table></div><div class='small'>抽樣逐列重算：{chk.get('一致數', '—')}／{chk.get('抽樣數', '—')} 個起點的 T1、T2 命中一致；鏡像與副本：{e(str(chk.get('鏡像比對', '—')))}。</div>")
     h.append("<h2>七、讀的時候要注意</h2><ul><li>各幣窗起點不同（BTC 2015 起有起點，SOL 2022-08 起），起點數少的格 CI 很寬，只能判出偏窄／偏寬或測不出。</li>"
-             + "".join(f"<li>{r.coin} {r.target}・{MODEL_ZH[r.model]}・h{r.h}：命中序列全是 {'1' if r['命中率'] == 1 else '0'}（{int(r['起點數'])} 個起點）⇒ 依讀法 Q7 CI 退化成一個點，「{e(r['判定'])}」只是形式上；起點太少，不代表區間夠寬。</li>"
+             + "".join(f"<li>{r.coin} {r.target}・{MODEL_ZH[r.model]}・h{r.h}：命中序列全是 {'1' if r['命中率'] == 1 else '0'}（{int(r['起點數'])} 個起點）⇒ bootstrap CI 退化成一個點；Clopper-Pearson 為［{pct(r['CP下'])}～{pct(r['CP上'])}］，補檢後判「{e(r['判定'])}」。起點太少，不代表區間夠寬。</li>"
                        for _, r in Cc[Cc['CI下'] == Cc['CI上']].iterrows()) +
              "<li>T2 用現貨日低；永續合約插針可能更深 ⇒ 對合約強平而言 T2 偏樂觀。</li>"
              "<li>CI 信賴水準極高（1−0.05/108），2,000 次 bootstrap 下兩端近似最小／最大值。</li>"
@@ -423,6 +500,7 @@ EXEC_SUPPLIED = [
     "Q8 在容忍帶內又同時上界＜名目（或下界＞名目）時，依登錄順序判「判過」，另註略窄／略寬",
     "Q9 均線當下緣只算起點收盤在均線之上的起點；起點已在均線下的比例另報",
     "Q10 先驗①「多數」＝36 格中過半；②＝≥4 幣；④「遠高於 5%」＝每個 h 合併跌破比例 ≥15%",
+    "Q12（補檢 seq293）被降級的格：偏窄／偏寬要 bootstrap 與 Clopper-Pearson 兩者同向才給，否則測不出",
 ]
 
 
@@ -486,7 +564,10 @@ def main():
     meta = {"登錄": "PREREGC12 價格區間預測校準 v1 sha84310aa20866d282", "裁定": "seq292（N＝108）", "讀法寫死": FROZEN, "資料commit": SHA,
             "產出時間": pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M（台北）"),
             "各幣窗": {s: [data[s]["dates"][0], data[s]["dates"][-1], data[s]["dates"][WARM], {hh: int(len(starts_of(len(data[s]["close"]), hh))) for hh in HS}] for s in COINS},
-            "結論行": lines, "先驗對答": pri, "200日線合併跌破": pooled, "fixture": fx, "執行者補": EXEC_SUPPLIED, "耗時秒": round(time.time() - t0, 1)}
+            "結論行": lines, "先驗對答": pri, "200日線合併跌破": pooled, "fixture": fx, "執行者補": EXEC_SUPPLIED, "耗時秒": round(time.time() - t0, 1),
+            "補檢": {"時間": "2026-10-04 18:40（台北）", "依據": "seq293 §一", "補檢前判過": int(Cc["原判（補檢前）"].str.startswith("判過").sum()),
+                     "降級": [f"{r['coin']} {r['target']} {r['model']} h{r['h']}：{r['原判（補檢前）']} ⇒ {r['判定']}（{int(r['命中數'])}／{int(r['起點數'])}，CP {r['CP下']:.4f}～{r['CP上']:.4f}）"
+                              for _, r in Cc[Cc["補檢降級"]].iterrows()]}}
     json.dump(meta, open(os.path.join(OUT, "meta.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     cp = os.path.join(OUT, "check.json"); chk = json.load(open(cp, encoding="utf-8")) if os.path.exists(cp) else {}
     open(os.path.join(OUT, "價格區間預測校準.html"), "w", encoding="utf-8").write(build_html(meta, Cc, MA, EV, Y, fx, chk))

@@ -37,6 +37,19 @@
     新增 fixture e（跨線才開、跨回才關、關後再跌破才再開、次日開盤執行）＋反例（關後不重開／在場重複開／當日收盤執行＝回填）；
     再用逐筆參考迴圈抽樣重算真資料路徑（種子 20260923），逐位比
 ⛔ 不寫「哪組 D／X 最好」、不寫任何倍數建議（登錄 §七、seq291）；故事逐段寫。
+
+〔高點更正＋長歷史臂順延 2026-10-04 18:47（台北，TZ=Asia/Taipei date；裁定 seq293 §一、seq294 §二：資料瑕疵更正，N＝0）〕
+ S14 現貨長序列（S2 的高點與 S11 的長歷史臂都改用它）：私有 repo ~/us-stock-data（本機 clone）data/crypto_private/ 的早年檔
+     ＋ 公開 main 1fb8815e81 data/crypto/<SYM>.csv，接法照私有 README：
+     BTC＝BTC.csv（2010-07-17～2012，Mt.Gox→Bitstamp）＋BTC_bitstamp_2013_2017.csv＋公開檔 2017-08-17 起；ETH 2015-08-07、XRP 2015-02-20、DOGE 2018-08-31、SOL 2020-04-10 起各接公開檔；
+     BNB 沒有更早的美元價 ⇒ 照舊 2017-11-06；⛔ *_btcquoted、*_overlap 不用；只在接縫換來源，接縫必須是「早年最後一天＋1＝公開檔第一天」，否則停
+ S15 主臂 dd 也改用長序列（XRP 高點因此含 2018-01，收盤約 2.77）；其他幣的主窗高點理論上不變（--check／交件時比對）
+ S16 長歷史臂窗＝各幣最早美元價～2026-09-30；缺日照實不補（BTC 2011-06-20～25 Mt.Gox 停機、ETH 2015 五天）⇒ 次一可交易時點＝下一列（S11）
+     資料品質照實標：BTC 2010-07～2011 Mt.Gox（第三方鏡像）、XRP 2015 零成交 162 天（與 BTC 計價換算差 26～85%，2015-11 才收斂）、ETH 2015 缺 5 天且成交極薄；
+     逐幣報長歷史臂有幾段落在這些期間
+ S17 ⛔ 私有資料不進公開 repo：長歷史臂的結果只放彙總（日期、比例、幣數變化），故事表與 csv ⛔ 不放開倉價等原始價格【執行者補】
+ S18 換標（seq294 §三，不重判）：主格標示改「官方分級表最低一級（現值口徑）」，數值沿用 researchC10.TIER1；強平清算費在強平那一刻從剩餘保證金扣、不改觸發時點，
+     強平期本來就記全部歸零 ⇒ 不影響
 """
 from __future__ import annotations
 import os, sys, json, time, math, argparse, html
@@ -61,11 +74,36 @@ FROZEN = "2026-10-04 13:04（台北）"
 
 
 # ───────────────────────── 資料 ─────────────────────────
+PRIV = os.path.expanduser("~/us-stock-data/data/crypto_private")
+EARLY = {"BTC": ("BTC.csv", "BTC_bitstamp_2013_2017.csv"), "ETH": ("ETH.csv",), "XRP": ("XRP.csv",), "DOGE": ("DOGE.csv",), "SOL": ("SOL.csv",), "BNB": ()}
+QUALITY = {"BTC": [("2010-07-17", "2011-12-31", "Mt.Gox 段（第三方鏡像；含 2011-06-20～25 停機缺日）")],
+           "ETH": [("2015-08-07", "2015-12-31", "2015 年 Kraken 成交極薄、缺 5 天")],
+           "XRP": [("2015-02-20", "2015-10-31", "2015 年零成交 162 天、與 BTC 計價換算差 26～85%")]}
+_SPOT = {}
+
+
 def spot_full(sym):
-    sp = pd.read_csv(os.path.join(C10.ROOT, "data", "crypto", f"{sym}.csv"), dtype={"date": str}).drop_duplicates("date").sort_values("date").reset_index(drop=True)
+    """S14：早年私有檔＋公開檔（接縫處換來源），dd 用累計最高收盤。"""
+    if sym in _SPOT:
+        return _SPOT[sym].copy()
+    pub = pd.read_csv(os.path.join(C10.ROOT, "data", "crypto", f"{sym}.csv"), dtype={"date": str}).drop_duplicates("date").sort_values("date")
+    cols = ["date", "open", "high", "low", "close", "volume"]
+    parts = [pd.read_csv(os.path.join(PRIV, f), dtype={"date": str})[cols] for f in EARLY[sym]]
+    if parts:
+        early = pd.concat(parts).sort_values("date")
+        assert not early["date"].duplicated().any(), f"⛔ {sym} 早年檔日期重複"
+        last = early["date"].iloc[-1]
+        pub = pub[pub["date"] > last]
+        seam = (pd.Timestamp(pub["date"].iloc[0]) - pd.Timestamp(last)).days
+        assert seam == 1, f"⛔ {sym} 接縫不連續：{last} → {pub['date'].iloc[0]}"
+        sp = pd.concat([early, pub[cols]])
+    else:
+        sp = pub[cols]
     sp = sp[sp["date"] <= W_END].reset_index(drop=True)
+    assert sp["date"].is_monotonic_increasing and not sp["date"].duplicated().any()
     sp["hi_cum"] = sp["close"].cummax(); sp["dd"] = sp["close"] / sp["hi_cum"] - 1.0
-    return sp
+    _SPOT[sym] = sp
+    return sp.copy()
 
 
 def load_main(sym):
@@ -94,7 +132,8 @@ def load_long(sym):
     return {"sym": sym, "dates": sp["date"].to_numpy(), "close": sp["close"].to_numpy(float), "open": sp["open"].to_numpy(float),
             "tlow": sp["low"].to_numpy(float), "mlow": sp["low"].to_numpy(float), "mclose": sp["close"].to_numpy(float),
             "f0": np.zeros(n), "f1": np.zeros(n), "dd": sp["dd"].to_numpy(float),
-            "缺日": int((pd.to_datetime(sp["date"].iloc[-1]) - pd.to_datetime(sp["date"].iloc[0])).days + 1 - n)}
+            "缺日": int((pd.to_datetime(sp["date"].iloc[-1]) - pd.to_datetime(sp["date"].iloc[0])).days + 1 - n),
+            "缺日清單": sorted(set(pd.date_range(sp["date"].iloc[0], sp["date"].iloc[-1]).strftime("%Y-%m-%d")) - set(sp["date"]))}
 
 
 # ───────────────────────── 引擎（單一路徑、狀態機）─────────────────────────
@@ -317,11 +356,29 @@ def run_arm(data, arm):
                                              "窗首": d["dates"][0], "窗尾": d["dates"][-1]})
                                 if cm == 1.0:
                                     for k, x in enumerate(sg):
+                                        if arm == "long":
+                                            x = {kk: vv for kk, vv in x.items() if kk != "開倉價"}       # S17：私有資料段不放原始價格
+                                            x["開倉價"] = float("nan")
                                         stories.append({"arm": arm, "coin": s, "E": E, "D": D, "X": X, "basis": basis, "MMR": m, "段": k + 1,
                                                         **{kk: x[kk] for kk in ("訊號日", "開倉日", "開倉價", "dd", "之後最深再跌_標記", "之後最深再跌_成交", "距強平最近",
                                                                                  "強平", "平倉訊號日", "平倉日", "開倉前幣數", "期末幣數", "幣數變化", "資金費", "手續費")}})
         print(f"  [{arm}] {s} 完成", flush=True)
     return pd.DataFrame(maps), pd.DataFrame(stories)
+
+
+def quality_lines(Sl, longd):
+    out = []
+    base = Sl[(Sl.MMR == 0.01) & (Sl.basis == "mark")]
+    for s, lst in QUALITY.items():
+        for a, b, txt in lst:
+            g = base[base.coin == s]
+            end = g["平倉日"].where(g["平倉日"] != "", "9999-12-31")
+            n = int(((g["開倉日"] <= b) & (end >= a)).sum())
+            out.append(f"{s} {a}～{b} {txt}：長歷史臂 m1%・標記價的 {len(g)} 段中有 {n} 段持有期間碰到這段")
+    for s in COINS:
+        if longd[s]["缺日"]:
+            out.append(f"{s} 長序列缺日 {longd[s]['缺日']} 天（{'、'.join(longd[s]['缺日清單'])}），照實不補，次一可交易時點＝下一列")
+    return out
 
 
 def story_view(St):
@@ -386,7 +443,8 @@ def build_html(meta, Mm, Ml, SV, SVl, fx, chk):
             h.append(f"<tr><td>{s}</td><td>{E:g}</td>" + "".join(f"<td>{g[(g.D == D) & (g.X == X)]['期末幣數'].iloc[0]:.3f}</td>" for D in DS for X in XS) + "</tr>")
     h.append("</table></div>")
     # 長歷史臂
-    h.append("<h2>四、長歷史描述臂（⚠ 無永續合約、無資金費、強平為近似）</h2><div class='small'>用現貨價當合約價、現貨日低判強平，⛔ 不計資金費；窗＝各幣現貨檔起點～2026-09-30（BTC 2013 起，涵蓋 2014–15、2018–19 熊市）。⛔ 只回答更深的熊市裡會不會觸線，不是主結果。"
+    h.append("<h2>四、長歷史描述臂（⚠ 無永續合約、無資金費、強平為近似）</h2><div class='small'>用現貨價當合約價、現貨日低判強平，⛔ 不計資金費；窗＝各幣最早的美元價～2026-09-30（BTC 2010-07、ETH 2015-08、XRP 2015-02、DOGE 2018-08、SOL 2020-04；BNB 沒有更早的美元價，照舊 2017-11），涵蓋 2011、2014–15、2018–19 熊市。⛔ 只回答更深的熊市裡會不會觸線，不是主結果。"
+             + "<br>資料品質：" + "；".join(meta["資料品質"]) + ""
              "格式同上（標記價欄＝現貨日低）。</div>")
     for s in COINS:
         g = Ml[(Ml.coin == s) & (Ml.basis == "mark")]
@@ -400,17 +458,19 @@ def build_html(meta, Mm, Ml, SV, SVl, fx, chk):
                     cells.append(f"<td{' class=no' if any(int(c) for c in z['強平次數']) else ''}>{e(t)}</td>")
                 h.append(f"<tr><td>{E:g}／{int(D * 100)}%</td>" + "".join(cells) + "</tr>")
         h.append("</table></div>")
-    h.append("<details><summary>長歷史臂逐段故事（展開）</summary>" + story_tables(SVl, e) + "</details>")
+    h.append("<details><summary>長歷史臂逐段故事（展開；私有資料段不列價格）</summary>" + story_tables(SVl, e, show_px=False) + "</details>")
     h.append("<h2>五、先驗對答</h2><div class='card'><ul>" + "".join(f"<li>{e(x)}</li>" for x in meta["先驗對答"]) + "</ul></div>")
     h.append("<h2>六、驗證</h2><div class='tw'><table><tr><th>案</th><th>本支引擎</th><th>反例</th><th>結果</th></tr>")
     for r in fx:
         h.append(f"<tr><td style='white-space:normal'>{e(r['案'])}</td><td>{e(r['本支引擎'])}</td><td style='white-space:normal'>{e(r['反例'])}</td><td>{e(r['結果'])}</td></tr>")
     h.append(f"</table></div><div class='small'>抽樣重算（逐筆讀原始資金費列的另一支迴圈）：{chk.get('一致數', '—')}／{chk.get('抽樣數', '—')} 條一致。</div>")
     h.append("<h2>七、讀的時候要注意</h2><ul><li>每幣窗內只有個位數段落（0～6 段），任何比較都是挑樣本；⛔ 不寫哪組 D／X 最好、不提供倍數建議。</li>"
-             "<li>XRP、DOGE 的現貨檔起點晚於 2018 年高點 ⇒ 高點偏低、dd 偏淺（照實用）。</li>"
-             "<li>維持保證金分級表未到（官方最低一級＝待定），三值全報；沒算強平清算費；強平只看日低。</li>"
+             "<li>高點用含早年的長序列：XRP 已含 2018-01 高點；DOGE 長序列從 2018-08 起，晚於 2018-01 高點，但那個高點比主臂窗首價格低，主臂不受影響，長歷史臂 2018～2020 的 dd 偏淺。</li>"
+             "<li>" + C10.tier_note_html() + "</li>"
+             "<li>" + C10.LIQ_FEE_NOTE + " 強平只看日低。</li>"
              "<li>開、平倉都在訊號日收盤判、次日開盤執行（不回填）。</li>"
              "<li>模型外風險：交易所倒閉、自動減倉、插針、規格變動、提幣限制。</li></ul>")
+    h.append("<h2>沿革</h2><ul class='small'>" + "".join(f"<li>{e(x)}</li>" for x in meta["沿革"]) + "</ul>")
     h.append("<h2>八、執行者補的讀法</h2><ul class='small'>" + "".join(f"<li>{e(x)}</li>" for x in meta["執行者補"]) + "</ul></main></body></html>")
     return "\n".join(h)
 
@@ -424,15 +484,15 @@ def map_cell(z):
     return "；".join(f"m{m * 100:g}%: {t}" for m, t in zip(z["MMR"], txt))
 
 
-def story_tables(SV, e):
+def story_tables(SV, e, show_px=True):
     out = []
     for s in COINS:
         g = SV[SV.coin == s]
         if not len(g):
             out.append(f"<h3>{s}</h3><div class='small'>窗內沒有任何一格進場。</div>"); continue
-        out.append(f"<details open><summary><b>{s}</b>（{len(g)} 段，含各 E／D／X）</summary><div class='tw'><table><tr><th>E／D／X</th><th>開倉日</th><th>dd</th><th>開倉價</th><th>最深再跌<br>標記／成交</th><th>距強平最近</th><th>強平</th><th>平倉日</th><th>幣數變化</th><th>資金費（幣）</th></tr>")
+        out.append(f"<details open><summary><b>{s}</b>（{len(g)} 段，含各 E／D／X）</summary><div class='tw'><table><tr><th>E／D／X</th><th>開倉日</th><th>dd</th>" + ("<th>開倉價</th>" if show_px else "") + "<th>最深再跌<br>標記／成交</th><th>距強平最近</th><th>強平</th><th>平倉日</th><th>幣數變化</th><th>資金費（幣）</th></tr>")
         for _, r in g.sort_values(["D", "X", "E", "段"]).iterrows():
-            out.append(f"<tr><td>{r.E:g}／{int(r.D * 100)}／{int(r.X * 100)}</td><td>{r.開倉日}</td><td>{pct(r.dd)}</td><td>{r.開倉價:.6g}</td>"
+            out.append(f"<tr><td>{r.E:g}／{int(r.D * 100)}／{int(r.X * 100)}</td><td>{r.開倉日}</td><td>{pct(r.dd)}</td>" + (f"<td>{r.開倉價:.6g}</td>" if show_px else "") +
                        f"<td>{pct(r.之後最深再跌_標記)}／{pct(r.之後最深再跌_成交)}</td><td>{pct(r.距強平最近)}</td><td>{e(r.強平_6種)}</td>"
                        f"<td>{r.平倉日 or '未平'}</td><td>{r.幣數變化:+.4f}</td><td>{r.資金費:+.4f}</td></tr>")
         out.append("</table></div></details>")
@@ -459,6 +519,9 @@ EXEC_SUPPLIED = [
     "S6 資金費在場區間：開倉當天只扣 00:00 以後各筆，平倉當天只扣 00:00 那筆",
     "S10 故事以 m 1%、標記價為代表（沒強平時路徑與 m、口徑無關），強平與否 6 種逐一列；距強平最近用標記價日低",
     "S11 長歷史臂現貨檔若有缺日，次一可交易時點＝下一列",
+    "S15 主臂 dd 也改用含早年的長序列（只有 XRP 的主窗高點因此改變）",
+    "S17 長歷史臂的故事表與 csv 不放開倉價等原始價格（私有資料不進公開 repo）",
+    "S18 主格標示改官方分級表最低一級（現值口徑），不重判；強平清算費不改觸發時點、強平期本來就記全部歸零",
     "S12 先驗④「多數幣」：逐幣看 X＝0% 段落（E1.1、m1%、標記價），到窗尾仍未平的占過半就算該幣；6 幣都有段落時要 ≥4 幣，不足 6 幣時要過半",
     "沿用 C10 的執行者補：資金費換幣用前一日標記價收盤、強平公式 Lp＝N(1+m)/(W+N/Pe)、不計強平清算費、窗尾＝2026-09-30",
 ]
@@ -494,7 +557,16 @@ def main():
             mrow = Mm[(Mm.coin == s) & (Mm.E == E) & (Mm.D == D) & (Mm.X == X) & (Mm.basis == b) & (Mm.MMR == m) & (Mm.cost_mult == 1.0)].iloc[0]
             same = (ld == ld2 == mrow["強平日"]) and abs(coins - r["coins"]) < 1e-9 and abs(coins - mrow["期末幣數"]) < 1e-9
             rows.append({"coin": s, "E": E, "D": D, "X": X, "basis": b, "MMR": m, "參考強平日": ld, "引擎強平日": ld2, "參考期末幣數": coins, "引擎期末幣數": r["coins"], "一致": bool(same)})
-        chk = {"讀法寫死": FROZEN, "fixture全過": ok, "fixture": fx, "抽樣數": len(rows), "一致數": int(sum(x["一致"] for x in rows)), "抽樣": rows, "種子": SEED}
+        tiers = pd.read_csv(os.path.join(PRIV, "cm_specs", "cm_margin_tiers.csv"), encoding="utf-8-sig")
+        t1 = {r.symbol.replace("USD_PERP", ""): float(r.maint_margin_rate) for r in tiers[tiers.tier == 1].itertuples()}
+        tier_ok = all(abs(t1[k] - v[0]) < 1e-12 for k, v in C10.TIER1.items())
+        seam = {s: (longd[s]["dates"][0], longd[s]["缺日"]) for s in COINS}
+        bit = pd.read_csv(os.path.join(PRIV, "BTC_bitstamp_2013_2017.csv"), dtype={"date": str}).set_index("date")["close"]
+        arch = pd.read_csv(os.path.join(C10.ROOT, "data", "crypto", "BTC.csv"), dtype={"date": str}).set_index("date")["close"]
+        com = bit.index.intersection(arch.index)
+        chk = {"讀法寫死": FROZEN, "高點更正補記": "2026-10-04 18:47（台北）", "fixture全過": ok, "fixture": fx, "抽樣數": len(rows), "一致數": int(sum(x["一致"] for x in rows)), "抽樣": rows, "種子": SEED,
+               "分級表最低一級與 C10.TIER1 一致": bool(tier_ok), "長序列起點與缺日數": seam,
+               "BTC 2013～2017 私有 bitstamp 與公開舊版逐日收盤相同": f"{int((bit.loc[com] == arch.loc[com]).sum())}／{len(com)}"}
         json.dump(chk, open(os.path.join(OUT, "check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
         print(f"[check] 抽樣 {chk['一致數']}／{chk['抽樣數']} 一致")
         for x in rows:
@@ -540,10 +612,14 @@ def main():
     ll = sorted(set(ql[ql["強平次數"] > 0].coin))
     lines.append("長歷史描述臂（無永續、無資金費、強平近似）：" + (f"有格強平的幣 {'、'.join(ll)}" if ll else "沒有任何格強平") + "。")
     meta = {"登錄": "PREREGC11 小槓桿低位才開 v1 shaf68c36ed064e3408", "裁定": "seq291（N＝0）", "讀法寫死": FROZEN, "資料commit": C10.SHA,
-            "產出時間": pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M（台北）"), "E": ES, "D": DS, "X": XS, "MMR": MMRS, "官方最低一級": "待定",
+            "產出時間": pd.Timestamp.now(tz="Asia/Taipei").strftime("%Y-%m-%d %H:%M（台北）"), "E": ES, "D": DS, "X": XS, "MMR": MMRS, "官方最低一級": {k: v[0] for k, v in C10.TIER1.items()}, "主格標示": "官方分級表最低一級（現值口徑）", "強平清算費": C10.LIQ_FEE,
             "主窗": {s: [data[s]["dates"][0], data[s]["dates"][-1], float(data[s]["dd"][0])] for s in COINS},
-            "長臂窗": {s: [longd[s]["dates"][0], longd[s]["dates"][-1], longd[s]["缺日"]] for s in COINS},
-            "結論行": lines, "先驗對答": pri, "fixture": fx, "執行者補": EXEC_SUPPLIED, "耗時秒": round(time.time() - t0, 1)}
+            "長臂窗": {s: [longd[s]["dates"][0], longd[s]["dates"][-1], longd[s]["缺日"], longd[s]["缺日清單"]] for s in COINS},
+            "結論行": lines, "先驗對答": pri, "fixture": fx, "執行者補": EXEC_SUPPLIED, "耗時秒": round(time.time() - t0, 1),
+            "資料品質": quality_lines(Sl, longd),
+            "沿革": ["2026-10-04 13:04 讀法寫死、初版交件",
+                     "2026-10-04 18:47 高點更正（seq293、seq294 §二，資料瑕疵更正、N＝0）：高點改用含早年的長序列，XRP 高點因此含 2018-01（收盤約 2.77）；主臂與長歷史臂都重跑，長歷史臂順延到各幣最早美元價；本頁數字全是更正後",
+                     "2026-10-04 18:47 換標（seq294 §三）：主格標示改官方分級表最低一級（現值口徑），不重判；補強平清算費說明"]}
     json.dump(meta, open(os.path.join(OUT, "meta.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     cp = os.path.join(OUT, "check.json"); chk = json.load(open(cp, encoding="utf-8")) if os.path.exists(cp) else {}
     open(os.path.join(OUT, "小槓桿低位才開.html"), "w", encoding="utf-8").write(build_html(meta, Mm, Ml, SV, SVl, fx, chk))

@@ -1,0 +1,137 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>區間校準早年新段</title><style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--mut:#6b6a66;--card:#ffffff;--line:#e4e1da;--acc:#1d4ed8;--accbg:#eef3ff;--warn:#b45309;--ok:#166534}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.4rem;margin:.2em 0 .3em}h2{font-size:1.15rem;margin:1.8em 0 .5em;border-top:1px solid var(--line);padding-top:1em}
+h3{font-size:1rem;margin:1.1em 0 .3em}.sub{color:var(--mut);font-size:.88rem}.lead{background:var(--accbg);border-left:4px solid var(--acc);padding:12px 14px;border-radius:6px;margin:14px 0}
+.lead b{color:var(--acc)}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0}table{border-collapse:collapse;font-size:.84rem;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600}.narrow{color:var(--warn);font-weight:600}.pass{color:var(--ok);font-weight:600}ul{padding-left:1.2em}li{margin:.25em 0}.small{font-size:.84rem;color:var(--mut)}
+summary{cursor:pointer;margin:8px 0}
+</style></head><body><main>
+<h1>價格區間預測：早年新段（只判補出來的資料）</h1>
+<div class='sub'>PREREGC12b v1（N＝42，批4）｜回測線｜早年長序列（私有庫）＋公開 main 1fb8815e81｜讀法寫死 2026-10-04 18:52（台北）｜產出 2026-10-04 18:54（台北）</div>
+<div class='lead'><b>結論（只談區間大小準不準；新段 42 格）</b><ul><li><b>T1・M1 近90日波動</b>：7 格中 判過 1、偏窄 0、偏寬 0、測不出 6；命中率 75%～92%（名目 90%）。</li><li><b>T1・M3 EWMA</b>：7 格中 判過 0、偏窄 0、偏寬 0、測不出 7；命中率 69%～87%（名目 90%）。</li><li><b>T1・M2 經驗分位</b>：7 格中 判過 2、偏窄 0、偏寬 0、測不出 5；命中率 70%～100%（名目 90%）。</li><li><b>T2・M1 近90日波動</b>：7 格中 判過 0、偏窄 2、偏寬 0、測不出 5；命中率 79%～91%（名目 95%）。</li><li><b>T2・M3 EWMA</b>：7 格中 判過 0、偏窄 3、偏寬 0、測不出 4；命中率 79%～93%（名目 95%）。</li><li><b>T2・M2 經驗分位</b>：7 格中 判過 3、偏窄 1、偏寬 0、測不出 3；命中率 74%～100%（名目 95%）。</li></ul><div class='small'>⛔ 不是漲跌方向的預測、不表示哪個價位是底；「判過」只代表在 ±10pp 容忍帶內分不出偏差。⛔ 新段與 C12 原段只並列、不合併。</div></div>
+<div class='card'><b>⚠ 先講清楚</b>：新段的<b>價格</b>以前看過、<b>命中結果</b>沒算過——BTC 2013～2014 用於 C11 長歷史臂與 C12 暖機；ETH 2018 用於 C11 長歷史臂；回測線同日重跑 C11 長歷史臂時也用過各幣早年價格（只算強平）。<br>新段＝各幣早年起點＋730 天起、每 h 天一個起點，而且結果窗結束日早於 C12 原段第一個起點；起點不到 20 個的格只描述；BNB 沒有早年美元價、不納入；SOL 只描述。<br>判過＝bootstrap CI 與 Clopper-Pearson 精確區間（信賴水準 1−0.05/42）<b>都</b>在容忍帶（T1 80～100%、T2 85～100%）；偏窄／偏寬＝兩者同向。</div>
+<h2>一、T1：第 h 天收盤落在 90% 區間</h2>
+<div class='small'>每格：命中數／起點數＝命中率；boot＝bootstrap CI；CP＝精確區間；判定。灰字＝C12 原段同格（只並列）。</div>
+<div class='tw'><table><tr><th>幣（新段起點）</th><th>h</th><th>M1 近90日波動</th><th>M3 EWMA</th><th>M2 經驗分位</th></tr>
+<tr><td>BTC（2012-07-16～）</td><td>7</td><td>104／128＝81%<br>boot［57%～95%］<br>CP［68%～91%］<br><span class=''>測不出</span><br><span class='small'>原段 88%</span></td><td>106／128＝83%<br>boot［64%～94%］<br>CP［70%～92%］<br><span class=''>測不出</span><br><span class='small'>原段 87%</span></td><td>121／128＝95%<br>boot［85%～100%］<br>CP［85%～99%］<br><span class='pass'>判過</span><br><span class='small'>原段 95%</span></td></tr>
+<tr><td>BTC（2012-07-16～）</td><td>30</td><td>22／29＝76%<br>boot［48%～99%］<br>CP［44%～95%］<br><span class=''>測不出</span><br><span class='small'>原段 83%</span></td><td>20／29＝69%<br>boot［45%～92%］<br>CP［38%～91%］<br><span class=''>測不出</span><br><span class='small'>原段 82%</span></td><td>29／29＝100%<br>boot［100%～100%］<br>CP［77%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 95%</span></td></tr>
+<tr><td>BTC（2012-07-16～）</td><td>90</td><td>6／9＝67%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 77%</span></td><td>6／9＝67%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 77%</span></td><td>9／9＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 96%</span></td></tr>
+<tr><td>ETH（2017-08-06～）</td><td>7</td><td>91／105＝87%<br>boot［76%～95%］<br>CP［73%～95%］<br><span class=''>測不出</span><br><span class='small'>原段 88%</span></td><td>87／105＝83%<br>boot［71%～93%］<br>CP［68%～93%］<br><span class=''>測不出</span><br><span class='small'>原段 86%</span></td><td>93／105＝89%<br>boot［79%～97%］<br>CP［75%～96%］<br><span class=''>測不出</span><br><span class='small'>原段 95%</span></td></tr>
+<tr><td>ETH（2017-08-06～）</td><td>30</td><td>18／24＝75%<br>boot［46%～99%］<br>CP［40%～95%］<br><span class=''>測不出</span><br><span class='small'>原段 83%</span></td><td>17／24＝71%<br>boot［42%～96%］<br>CP［36%～94%］<br><span class=''>測不出</span><br><span class='small'>原段 83%</span></td><td>23／24＝96%<br>boot［79%～100%］<br>CP［66%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 94%</span></td></tr>
+<tr><td>ETH（2017-08-06～）</td><td>90</td><td>6／8＝75%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 89%</span></td><td>5／8＝62%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 89%</span></td><td>6／8＝75%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 93%</span></td></tr>
+<tr><td>XRP（2017-02-19～）</td><td>7</td><td>152／166＝92%<br>boot［84%～97%］<br>CP［82%～97%］<br><span class='pass'>判過</span><br><span class='small'>原段 90%</span></td><td>145／166＝87%<br>boot［80%～95%］<br>CP［77%～94%］<br><span class=''>測不出</span><br><span class='small'>原段 90%</span></td><td>154／166＝93%<br>boot［86%～98%］<br>CP［84%～98%］<br><span class='pass'>判過</span><br><span class='small'>原段 92%</span></td></tr>
+<tr><td>XRP（2017-02-19～）</td><td>30</td><td>33／38＝87%<br>boot［66%～100%］<br>CP［62%～98%］<br><span class=''>測不出</span><br><span class='small'>原段 82%</span></td><td>30／38＝79%<br>boot［58%～95%］<br>CP［52%～95%］<br><span class=''>測不出</span><br><span class='small'>原段 81%</span></td><td>36／38＝95%<br>boot［74%～100%］<br>CP［73%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 91%</span></td></tr>
+<tr><td>XRP（2017-02-19～）</td><td>90</td><td>10／12＝83%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 92%</span></td><td>9／12＝75%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 88%</span></td><td>9／12＝75%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 85%</span></td></tr>
+<tr><td>DOGE（2020-08-30～）</td><td>7</td><td>38／43＝88%<br>boot［72%～100%］<br>CP［65%～98%］<br><span class=''>測不出</span><br><span class='small'>原段 92%</span></td><td>37／43＝86%<br>boot［70%～98%］<br>CP［62%～98%］<br><span class=''>測不出</span><br><span class='small'>原段 89%</span></td><td>30／43＝70%<br>boot［42%～91%］<br>CP［44%～89%］<br><span class=''>測不出</span><br><span class='small'>原段 93%</span></td></tr>
+<tr><td>DOGE（2020-08-30～）</td><td>30</td><td>7／10＝70%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 92%</span></td><td>7／10＝70%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 90%</span></td><td>7／10＝70%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 97%</span></td></tr>
+<tr><td>DOGE（2020-08-30～）</td><td>90</td><td>2／3＝67%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 86%</span></td><td>2／3＝67%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 86%</span></td><td>1／3＝33%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 90%</span></td></tr>
+<tr><td>SOL（2022-04-10～）</td><td>7</td><td>16／17＝94%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 89%</span></td><td>16／17＝94%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 87%</span></td><td>16／17＝94%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 97%</span></td></tr>
+<tr><td>SOL（2022-04-10～）</td><td>30</td><td>2／4＝50%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 88%</span></td><td>3／4＝75%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 92%</span></td><td>2／4＝50%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 98%</span></td></tr>
+<tr><td>SOL（2022-04-10～）</td><td>90</td><td>0／1＝0%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 88%</span></td><td>0／1＝0%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 81%</span></td><td>0／1＝0%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 94%</span></td></tr>
+</table></div>
+<h2>二、T2：h 天內最低價守住 95% 下緣</h2>
+<div class='small'>每格：命中數／起點數＝命中率；boot＝bootstrap CI；CP＝精確區間；判定。灰字＝C12 原段同格（只並列）。</div>
+<div class='tw'><table><tr><th>幣（新段起點）</th><th>h</th><th>M1 近90日波動</th><th>M3 EWMA</th><th>M2 經驗分位</th></tr>
+<tr><td>BTC（2012-07-16～）</td><td>7</td><td>114／128＝89%<br>boot［80%～97%］<br>CP［78%～96%］<br><span class=''>測不出</span><br><span class='small'>原段 89%</span></td><td>105／128＝82%<br>boot［72%～91%］<br>CP［69%～91%］<br><span class='narrow'>偏窄</span><br><span class='small'>原段 89%</span></td><td>124／128＝97%<br>boot［91%～100%］<br>CP［88%～100%］<br><span class='pass'>判過</span><br><span class='small'>原段 98%</span></td></tr>
+<tr><td>BTC（2012-07-16～）</td><td>30</td><td>24／29＝83%<br>boot［59%～100%］<br>CP［52%～98%］<br><span class=''>測不出</span><br><span class='small'>原段 88%</span></td><td>23／29＝79%<br>boot［49%～100%］<br>CP［48%～96%］<br><span class=''>測不出</span><br><span class='small'>原段 84%</span></td><td>29／29＝100%<br>boot［100%～100%］<br>CP［77%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 97%</span></td></tr>
+<tr><td>BTC（2012-07-16～）</td><td>90</td><td>9／9＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 87%</span></td><td>8／9＝89%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 87%</span></td><td>9／9＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 96%</span></td></tr>
+<tr><td>ETH（2017-08-06～）</td><td>7</td><td>88／105＝84%<br>boot［72%～93%］<br>CP［69%～93%］<br><span class='narrow'>偏窄</span><br><span class='small'>原段 88%</span></td><td>86／105＝82%<br>boot［69%～93%］<br>CP［67%～92%］<br><span class='narrow'>偏窄</span><br><span class='small'>原段 88%</span></td><td>102／105＝97%<br>boot［91%～100%］<br>CP［88%～100%］<br><span class='pass'>判過</span><br><span class='small'>原段 98%</span></td></tr>
+<tr><td>ETH（2017-08-06～）</td><td>30</td><td>19／24＝79%<br>boot［54%～100%］<br>CP［45%～97%］<br><span class=''>測不出</span><br><span class='small'>原段 87%</span></td><td>20／24＝83%<br>boot［58%～100%］<br>CP［49%～98%］<br><span class=''>測不出</span><br><span class='small'>原段 83%</span></td><td>23／24＝96%<br>boot［79%～100%］<br>CP［66%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 97%</span></td></tr>
+<tr><td>ETH（2017-08-06～）</td><td>90</td><td>6／8＝75%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 75%</span></td><td>6／8＝75%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 79%</span></td><td>7／8＝88%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 93%</span></td></tr>
+<tr><td>XRP（2017-02-19～）</td><td>7</td><td>145／166＝87%<br>boot［79%～94%］<br>CP［77%～94%］<br><span class='narrow'>偏窄</span><br><span class='small'>原段 89%</span></td><td>145／166＝87%<br>boot［80%～94%］<br>CP［77%～94%］<br><span class='narrow'>偏窄</span><br><span class='small'>原段 89%</span></td><td>163／166＝98%<br>boot［95%～100%］<br>CP［92%～100%］<br><span class='pass'>判過</span><br><span class='small'>原段 95%</span></td></tr>
+<tr><td>XRP（2017-02-19～）</td><td>30</td><td>34／38＝89%<br>boot［74%～100%］<br>CP［65%～99%］<br><span class=''>測不出</span><br><span class='small'>原段 88%</span></td><td>33／38＝87%<br>boot［68%～100%］<br>CP［62%～98%］<br><span class=''>測不出</span><br><span class='small'>原段 88%</span></td><td>36／38＝95%<br>boot［82%～100%］<br>CP［73%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 97%</span></td></tr>
+<tr><td>XRP（2017-02-19～）</td><td>90</td><td>11／12＝92%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 88%</span></td><td>10／12＝83%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 85%</span></td><td>12／12＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 100%</span></td></tr>
+<tr><td>DOGE（2020-08-30～）</td><td>7</td><td>39／43＝91%<br>boot［77%～100%］<br>CP［68%～99%］<br><span class=''>測不出</span><br><span class='small'>原段 87%</span></td><td>40／43＝93%<br>boot［79%～100%］<br>CP［72%～100%］<br><span class=''>測不出</span><br><span class='small'>原段 87%</span></td><td>32／43＝74%<br>boot［49%～95%］<br>CP［49%～92%］<br><span class='narrow'>偏窄</span><br><span class='small'>原段 97%</span></td></tr>
+<tr><td>DOGE（2020-08-30～）</td><td>30</td><td>10／10＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 84%</span></td><td>10／10＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 83%</span></td><td>9／10＝90%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 98%</span></td></tr>
+<tr><td>DOGE（2020-08-30～）</td><td>90</td><td>3／3＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 86%</span></td><td>3／3＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 86%</span></td><td>3／3＝100%<br><span class=''>只描述（起點 &lt; 20）</span><br><span class='small'>原段 86%</span></td></tr>
+<tr><td>SOL（2022-04-10～）</td><td>7</td><td>16／17＝94%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 92%</span></td><td>15／17＝88%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 88%</span></td><td>16／17＝94%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 98%</span></td></tr>
+<tr><td>SOL（2022-04-10～）</td><td>30</td><td>2／4＝50%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 84%</span></td><td>2／4＝50%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 84%</span></td><td>4／4＝100%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 98%</span></td></tr>
+<tr><td>SOL（2022-04-10～）</td><td>90</td><td>0／1＝0%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 81%</span></td><td>0／1＝0%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 81%</span></td><td>0／1＝0%<br><span class=''>只描述（SOL）</span><br><span class='small'>原段 100%</span></td></tr>
+</table></div>
+<h2>三、判定彙總（42 格）</h2><div class='tw'><table><tr><th>目標</th><th>模型</th><th>判過</th><th>偏窄</th><th>偏寬</th><th>測不出</th></tr>
+<tr><td>T1</td><td>M1 近90日波動</td><td>1</td><td>0</td><td>0</td><td>6</td></tr>
+<tr><td>T1</td><td>M3 EWMA</td><td>0</td><td>0</td><td>0</td><td>7</td></tr>
+<tr><td>T1</td><td>M2 經驗分位</td><td>2</td><td>0</td><td>0</td><td>5</td></tr>
+<tr><td>T2</td><td>M1 近90日波動</td><td>0</td><td>2</td><td>0</td><td>5</td></tr>
+<tr><td>T2</td><td>M3 EWMA</td><td>0</td><td>3</td><td>0</td><td>4</td></tr>
+<tr><td>T2</td><td>M2 經驗分位</td><td>3</td><td>1</td><td>0</td><td>3</td></tr>
+</table></div>
+<h2>四、描述</h2><h3>80% 區間、沒守住時平均跌破</h3><div class='tw'><table><tr><th>幣</th><th>h</th><th>模型</th><th>80% 命中</th><th>T2 沒守住平均跌破</th></tr>
+<tr><td>BTC</td><td>7</td><td>M1</td><td>76%</td><td>-20.4%</td></tr>
+<tr><td>BTC</td><td>7</td><td>M3</td><td>77%</td><td>-12.9%</td></tr>
+<tr><td>BTC</td><td>7</td><td>M2</td><td>85%</td><td>-19.0%</td></tr>
+<tr><td>BTC</td><td>30</td><td>M1</td><td>76%</td><td>-10.7%</td></tr>
+<tr><td>BTC</td><td>30</td><td>M3</td><td>62%</td><td>-14.8%</td></tr>
+<tr><td>BTC</td><td>30</td><td>M2</td><td>86%</td><td>—</td></tr>
+<tr><td>BTC</td><td>90</td><td>M1</td><td>56%</td><td>—</td></tr>
+<tr><td>BTC</td><td>90</td><td>M3</td><td>67%</td><td>-19.3%</td></tr>
+<tr><td>BTC</td><td>90</td><td>M2</td><td>56%</td><td>—</td></tr>
+<tr><td>ETH</td><td>7</td><td>M1</td><td>78%</td><td>-13.2%</td></tr>
+<tr><td>ETH</td><td>7</td><td>M3</td><td>78%</td><td>-13.3%</td></tr>
+<tr><td>ETH</td><td>7</td><td>M2</td><td>85%</td><td>-14.5%</td></tr>
+<tr><td>ETH</td><td>30</td><td>M1</td><td>67%</td><td>-12.2%</td></tr>
+<tr><td>ETH</td><td>30</td><td>M3</td><td>67%</td><td>-22.5%</td></tr>
+<tr><td>ETH</td><td>30</td><td>M2</td><td>88%</td><td>-13.8%</td></tr>
+<tr><td>ETH</td><td>90</td><td>M1</td><td>75%</td><td>-13.4%</td></tr>
+<tr><td>ETH</td><td>90</td><td>M3</td><td>62%</td><td>-27.9%</td></tr>
+<tr><td>ETH</td><td>90</td><td>M2</td><td>75%</td><td>-1.9%</td></tr>
+<tr><td>XRP</td><td>7</td><td>M1</td><td>84%</td><td>-12.0%</td></tr>
+<tr><td>XRP</td><td>7</td><td>M3</td><td>81%</td><td>-13.2%</td></tr>
+<tr><td>XRP</td><td>7</td><td>M2</td><td>84%</td><td>-11.3%</td></tr>
+<tr><td>XRP</td><td>30</td><td>M1</td><td>74%</td><td>-13.4%</td></tr>
+<tr><td>XRP</td><td>30</td><td>M3</td><td>76%</td><td>-16.0%</td></tr>
+<tr><td>XRP</td><td>30</td><td>M2</td><td>76%</td><td>-7.4%</td></tr>
+<tr><td>XRP</td><td>90</td><td>M1</td><td>67%</td><td>-0.8%</td></tr>
+<tr><td>XRP</td><td>90</td><td>M3</td><td>75%</td><td>-5.4%</td></tr>
+<tr><td>XRP</td><td>90</td><td>M2</td><td>67%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>7</td><td>M1</td><td>84%</td><td>-8.0%</td></tr>
+<tr><td>DOGE</td><td>7</td><td>M3</td><td>84%</td><td>-12.2%</td></tr>
+<tr><td>DOGE</td><td>7</td><td>M2</td><td>60%</td><td>-13.7%</td></tr>
+<tr><td>DOGE</td><td>30</td><td>M1</td><td>50%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>30</td><td>M3</td><td>70%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>30</td><td>M2</td><td>40%</td><td>-7.3%</td></tr>
+<tr><td>DOGE</td><td>90</td><td>M1</td><td>67%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>90</td><td>M3</td><td>67%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>90</td><td>M2</td><td>33%</td><td>—</td></tr>
+<tr><td>SOL</td><td>7</td><td>M1</td><td>88%</td><td>-38.2%</td></tr>
+<tr><td>SOL</td><td>7</td><td>M3</td><td>88%</td><td>-19.3%</td></tr>
+<tr><td>SOL</td><td>7</td><td>M2</td><td>88%</td><td>-24.6%</td></tr>
+<tr><td>SOL</td><td>30</td><td>M1</td><td>50%</td><td>-11.5%</td></tr>
+<tr><td>SOL</td><td>30</td><td>M3</td><td>50%</td><td>-7.3%</td></tr>
+<tr><td>SOL</td><td>30</td><td>M2</td><td>50%</td><td>—</td></tr>
+<tr><td>SOL</td><td>90</td><td>M1</td><td>0%</td><td>-44.4%</td></tr>
+<tr><td>SOL</td><td>90</td><td>M3</td><td>0%</td><td>-47.2%</td></tr>
+<tr><td>SOL</td><td>90</td><td>M2</td><td>0%</td><td>-34.5%</td></tr>
+</table></div>
+<h3>200 日線、200 週線當下緣（只描述）</h3><div class='small'>只算起點在均線之上的起點：h 天內日低跌破均線的比例（括號＝起點已在均線下的比例）。均線＝近 200／1,400 個有值日子的收盤平均。</div>
+<div class='tw'><table><tr><th>幣</th><th>均線</th><th>h7</th><th>h30</th><th>h90</th></tr>
+<tr><td>BTC</td><td>200 日線</td><td>11%（27%；n＝128）</td><td>18%（24%；n＝29）</td><td>12%（11%；n＝9）</td></tr>
+<tr><td>BTC</td><td>200 週線（1,400 列）</td><td>0%（0%；n＝31）</td><td>0%（0%；n＝6）</td><td>0%（0%；n＝1）</td></tr>
+<tr><td>ETH</td><td>200 日線</td><td>9%（49%；n＝105）</td><td>17%（50%；n＝24）</td><td>40%（38%；n＝8）</td></tr>
+<tr><td>ETH</td><td>200 週線（1,400 列）</td><td>43%（12%；n＝8）</td><td>100%（0%；n＝1）</td><td>—（—；n＝0）</td></tr>
+<tr><td>XRP</td><td>200 日線</td><td>22%（60%；n＝166）</td><td>33%（61%；n＝38）</td><td>60%（58%；n＝12）</td></tr>
+<tr><td>XRP</td><td>200 週線（1,400 列）</td><td>11%（47%；n＝70）</td><td>22%（40%；n＝15）</td><td>50%（0%；n＝4）</td></tr>
+<tr><td>DOGE</td><td>200 日線</td><td>6%（16%；n＝43）</td><td>22%（10%；n＝10）</td><td>33%（0%；n＝3）</td></tr>
+<tr><td>DOGE</td><td>200 週線（1,400 列）</td><td>—（—；n＝0）</td><td>—（—；n＝0）</td><td>—（—；n＝0）</td></tr>
+<tr><td>SOL</td><td>200 日線</td><td>—（100%；n＝17）</td><td>—（100%；n＝4）</td><td>—（100%；n＝1）</td></tr>
+<tr><td>SOL</td><td>200 週線（1,400 列）</td><td>—（—；n＝0）</td><td>—（—；n＝0）</td><td>—（—；n＝0）</td></tr>
+</table></div>
+<h3>逐幣資料品質</h3><ul><li>BTC：長序列 2010-07-17 起；缺日 6 天（2011-06-20、2011-06-21、2011-06-22、2011-06-23、2011-06-24、2011-06-25）；新段結果窗含缺日的起點 0 個；M2 歷史窗含缺日（最後一個 h7 起點時）13 筆；2010-07-17～2011-12-31 Mt.Gox 段（第三方鏡像）：新段結果窗碰到 0 個起點，M2 歷史全部含這段</li><li>ETH：長序列 2015-08-07 起；缺日 5 天（2015-08-09、2015-08-10、2015-09-04、2015-09-21、2015-10-10）；新段結果窗含缺日的起點 0 個；M2 歷史窗含缺日（最後一個 h7 起點時）28 筆；2015-08-07～2015-12-31 Kraken 2015 成交極薄：新段結果窗碰到 0 個起點，M2 歷史全部含這段</li><li>XRP：長序列 2015-02-20 起；缺日 0 天；新段結果窗含缺日的起點 0 個；M2 歷史窗含缺日（最後一個 h7 起點時）0 筆；2015-02-20～2015-12-31 2015 年零成交 162 天、與 BTC 計價換算差 26～85%：新段結果窗碰到 0 個起點，M2 歷史全部含這段；零成交日（2016 年以前）162 天，全在暖機內</li><li>DOGE：長序列 2018-08-31 起；缺日 0 天；新段結果窗含缺日的起點 0 個；M2 歷史窗含缺日（最後一個 h7 起點時）0 筆</li><li>SOL：長序列 2020-04-10 起；缺日 0 天；新段結果窗含缺日的起點 0 個；M2 歷史窗含缺日（最後一個 h7 起點時）0 筆</li></ul>
+<h2>五、先驗對答</h2><div class='card'><ul><li>① M1／M3 的 T2 在 BTC、XRP h7 偏窄：3／4 格偏窄（BTC M1 測不出、BTC M3 偏窄、XRP M1 偏窄、XRP M3 偏窄）⇒ 部分中</li><li>② M2 在新段至少一格測不出或偏窄：9 格（BTC h30 T1 測不出、BTC h30 T2 測不出、ETH h7 T1 測不出、ETH h30 T1 測不出、ETH h30 T2 測不出、XRP h30 T1 測不出、XRP h30 T2 測不出、DOGE h7 T1 測不出、DOGE h7 T2 偏窄）⇒ 中</li><li>③ 沒有任何 h30 格判過：h30 判過 0 格 ⇒ 中</li></ul></div>
+<h2>六、驗證</h2><div class='tw'><table><tr><th>fixture</th><th>結果</th><th>反例</th><th>反例結果</th></tr>
+<tr><td style='white-space:normal'>C12-a M1 常數報酬 ⇒ 區間＝P0</td><td>綠</td><td style='white-space:normal'>用到起點之後 5 天的資料</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>C12-a M3 同理</td><td>綠</td><td style='white-space:normal'>EWMA 用到起點之後</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>C12-b 起點不重疊</td><td>綠</td><td style='white-space:normal'>每天一個起點（重疊）</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>C12-c T2 用日低最小值</td><td>綠</td><td style='white-space:normal'>用收盤</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>C12-d M2 只含起點以前</td><td>綠</td><td style='white-space:normal'>全期分位（看未來）</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>C12-f Clopper-Pearson 精確區間（補檢）</td><td>綠</td><td style='white-space:normal'>常態近似（Wald）</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>e 新段 t＋h ＜ 原段首起點</td><td>綠</td><td style='white-space:normal'>只要求起點早於原段（結果窗伸進原段）</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>g h 天報酬用日曆位移（缺日）</td><td>綠</td><td style='white-space:normal'>缺日時用列位移</td><td>紅（抓得到）</td></tr>
+</table></div><div class='small'>抽樣逐列重算：30／30 一致；無缺日幣回歸閘門（本支模型＝C12 函式）：SOL 27 組最大相對差 0.0e+00。</div>
+<h2>七、讀的時候要注意</h2><ul><li>h30 只有 20～40 個起點，依構造幾乎判不出「判過」。</li><li>早年交易所價差大（ETH 接縫最大 4.2%）、Mt.Gox 末期價格偏離；照實用。T2 用現貨日低；合約插針可能更深。</li><li>私有資料只放彙總：本頁與 csv 沒有任何價格列。</li><li>⛔ 不得把區間當價格預測對外講、⛔ 不得用下緣推倍數、⛔ 不構成買賣建議。</li></ul>
+<h2>八、執行者補的讀法</h2><ul class='small'><li>B2 用日曆日：缺日留空、不補；h 天＝h 個日曆日（與 C12 同義）</li><li>B5 缺日處理：M1 去掉缺值；M3 缺值那天不更新；M2 端點缺就不算、途中最低略過缺日；含缺日的 h 窗照算並另報筆數</li><li>B9 判過與偏窄／偏寬同時成立時依登錄順序判過、另註略窄／略寬（同 C12 Q8）</li><li>B10 均線用近 200／1,400 個有值日子（列）</li><li>B13 私有資料：結果檔只放 0／1 命中與區間相對寬度，不放價格、不放逐起點實現報酬</li></ul></main></body></html>
