@@ -1,0 +1,51 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>六幣強幣續強</title><style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--mut:#6b6a66;--card:#ffffff;--line:#e4e1da;--acc:#1d4ed8;--accbg:#eef3ff;--warn:#b45309;--ok:#166534}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.4rem;margin:.2em 0 .3em}h2{font-size:1.15rem;margin:1.8em 0 .5em;border-top:1px solid var(--line);padding-top:1em}
+h3{font-size:1rem;margin:1.1em 0 .3em}.sub{color:var(--mut);font-size:.88rem}.lead{background:var(--accbg);border-left:4px solid var(--acc);padding:12px 14px;border-radius:6px;margin:14px 0}
+.lead b{color:var(--acc)}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0}table{border-collapse:collapse;font-size:.84rem;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600}.narrow{color:var(--warn);font-weight:600}.pass{color:var(--ok);font-weight:600}ul{padding-left:1.2em}li{margin:.25em 0}.small{font-size:.84rem;color:var(--mut)}
+summary{cursor:pointer;margin:8px 0}
+</style></head><body><main>
+<h1>六幣之內：強幣下週還強嗎？</h1>
+<div class='sub'>PREREGC14 v1（N＝4）｜回測線｜Liu, Tsyvinski & Wu（2022, JF）參數｜持有週 2019-01-06～2026-09-27｜讀法寫死 2026-10-04 21:11（台北）｜產出 2026-10-04 21:14（台北）</div>
+<div class='lead'><b>結論</b><ul><li>4 個 L：出口② 0、出口③ 0、出口① 4；週平均價差 L1 +0.89%、L2 +0.71%、L3 +1.02%、L4 +0.63%。</li></ul><div class='small'>MDE 約 1.13%／週；論文全市場效果 4.1%／週；6 大幣內依構造，只有大效果判得出。⛔ 出口②也不是「每週換到最強幣」的建議；出口①只代表「6 幣內測不出」。</div></div>
+<div class='card'><b>怎麼測</b>：每個週日 UTC 收盤，依過去 L 週（L＝1～4）報酬把可排名的幣排序，看下一週「前 2 名平均 − 後 2 名平均」（對數週報酬、同權）。2019 年 4 幣、2019-07 加 DOGE、2020-08 加 SOL。CI：block bootstrap 2,000 次、信賴水準 1−0.05/4。</div>
+<h2>一、判定（6 幣、前 2 − 後 2）</h2><div class='tw'><table><tr><th>L</th><th>週數</th><th>週平均價差［CI］</th><th>前段勝出週比例</th><th>出口</th></tr>
+<tr><td>1</td><td>404</td><td>+0.89%［-0.01%～+1.87%］</td><td>52%</td><td class=''>出口①</td></tr>
+<tr><td>2</td><td>404</td><td>+0.71%［-0.22%～+1.77%］</td><td>53%</td><td class=''>出口①</td></tr>
+<tr><td>3</td><td>404</td><td>+1.02%［-0.07%～+2.06%］</td><td>58%</td><td class=''>出口①</td></tr>
+<tr><td>4</td><td>404</td><td>+0.63%［-0.32%～+1.57%］</td><td>53%</td><td class=''>出口①</td></tr>
+</table></div>
+<h2>二、描述（不判）</h2><h3>逐年價差（6 幣，前 2 − 後 2）</h3><div class='tw'><table><tr><th>L</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th></tr>
+<tr><td>1</td><td>+1.42%</td><td>+0.69%</td><td>+1.20%</td><td>+0.78%</td><td>+1.58%</td><td>+1.42%</td><td>+0.23%</td><td>-0.63%</td></tr>
+<tr><td>2</td><td>+1.29%</td><td>+2.01%</td><td>+0.70%</td><td>+0.39%</td><td>+0.89%</td><td>+0.77%</td><td>+0.29%</td><td>-1.13%</td></tr>
+<tr><td>3</td><td>+1.02%</td><td>+1.25%</td><td>+1.02%</td><td>+1.41%</td><td>+0.72%</td><td>+1.17%</td><td>+2.26%</td><td>-1.21%</td></tr>
+<tr><td>4</td><td>+1.41%</td><td>+0.55%</td><td>-0.42%</td><td>+1.60%</td><td>+0.55%</td><td>+1.17%</td><td>+0.87%</td><td>-1.17%</td></tr>
+</table></div>
+<h3>其他版本（只描述）</h3><div class='tw'><table><tr><th>L</th><th>4 幣（排除 SOL、DOGE）前 2 − 後 2</th><th>6 幣 前 1 − 後 1</th></tr>
+<tr><td>1</td><td>+0.87%（404 週）</td><td>+1.47%（404 週）</td></tr>
+<tr><td>2</td><td>+0.81%（404 週）</td><td>+1.41%（404 週）</td></tr>
+<tr><td>3</td><td>+0.71%（404 週）</td><td>+1.16%（404 週）</td></tr>
+<tr><td>4</td><td>+0.39%（404 週）</td><td>+1.29%（404 週）</td></tr>
+</table></div>
+<h3>BTC 對 SOL（上週誰強，下週是否仍強）</h3><div class='card'>兩幣都有資料的 318 週中，上週較強者下週仍較強的比例 53%、下週平均差 +1.10%；上週 BTC 較強 171 週（下週仍強 56%），上週 SOL 較強 147 週（下週仍強 49%）。</div>
+<h3>「多開 0.2 倍放最強幣」vs「平分給 6 幣」vs「只存幣」（只描述、⛔ 不是倍數建議）</h3><div class='small'>2020-08-16 起各幣等美元；每週日收盤排名、週一開盤調整；各幣逐倉、保證金＝該幣全部持幣；永續上市前用現貨代理、不計資金費。數字＝期末組合美元值 ÷ 起點（m＝1%）；強平欄列 0.5／1／2% 的情形。</div>
+<div class='tw'><table><tr><th>L</th><th>放最強幣</th><th>平分</th><th>只存幣</th><th>放最強幣的強平</th></tr>
+<tr><td>1</td><td>13.79</td><td>23.32</td><td>18.72</td><td style='white-space:normal'>m0.5%：SOL 2020-09-05、XRP 2021-05-19、BTC 2021-09-21；m1%：SOL 2020-09-05、XRP 2021-05-19、BTC 2021-09-21；m2%：SOL 2020-09-05、XRP 2021-05-19、BTC 2021-09-21</td></tr>
+<tr><td>2</td><td>14.46</td><td>23.32</td><td>18.72</td><td style='white-space:normal'>m0.5%：SOL 2020-09-05、BTC 2021-06-22、XRP 2021-08-18；m1%：SOL 2020-09-05、BTC 2021-06-22、XRP 2021-08-18；m2%：SOL 2020-09-05、BTC 2021-06-21、XRP 2021-08-17</td></tr>
+<tr><td>3</td><td>15.15</td><td>23.32</td><td>18.72</td><td style='white-space:normal'>m0.5%：SOL 2021-01-22；m1%：SOL 2021-01-22；m2%：SOL 2021-01-11、BTC 2021-06-08、ETH 2021-07-13</td></tr>
+<tr><td>4</td><td>10.34</td><td>23.32</td><td>18.72</td><td style='white-space:normal'>m0.5%：SOL 2021-01-22、ETH 2021-05-17、XRP 2021-09-07；m1%：SOL 2021-01-22、ETH 2021-05-17、XRP 2021-09-07；m2%：SOL 2021-01-22、ETH 2021-05-17、XRP 2021-09-07</td></tr>
+</table></div><div class='small'>平分臂每幣名目＝0.2 × 組合值 ÷ 6（不是各幣自己的 0.2 倍）；組合裡漲多的幣佔比變大後，其他幣的名目相對自己的持幣變大，所以平分臂也會強平。平分臂的強平：L1 m0.5%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L1 m1%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L1 m2%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L2 m0.5%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L2 m1%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L2 m2%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L3 m0.5%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L3 m1%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L3 m2%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L4 m0.5%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L4 m1%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12；L4 m2%：BTC 2021-05-19、XRP 2021-05-23、ETH 2022-05-12。各幣期末幣數見 extra_0p2.csv。</div>
+<h2>三、先驗對答</h2><div class='card'><ul><li>① 4 個 L 全部出口①：出口① 4／4 ⇒ 中</li><li>② 沒有出口③：出口③ 0 格 ⇒ 中</li></ul></div>
+<h2>四、驗證</h2><div class='tw'><table><tr><th>fixture</th><th>結果</th><th>反例</th><th>反例結果</th></tr>
+<tr><td>a 排名只用 t 以前</td><td>綠</td><td>分數含 t＋1 週</td><td>紅（抓得到）</td></tr>
+<tr><td>b 新幣上市前不入排名</td><td>綠</td><td>缺值補 0</td><td>紅（抓得到）</td></tr>
+<tr><td>c 5 幣時前 2／後 2 不重疊</td><td>綠</td><td>中位數重複計入</td><td>紅（抓得到）</td></tr>
+</table></div><div class='small'>參考實作重算價差：L1 404 週一致；L2 404 週一致；L3 404 週一致；L4 404 週一致；描述①引擎閘門：名目 0 時期末值 18.720671 ＝ 只存幣 18.720671：一致。</div>
+<h2>五、讀的時候要注意</h2><ul><li>只有 4～6 個幣，前 2／後 2 的價差雜訊大；判不出不代表沒有。</li><li>價格源：交易所現貨（同 C13）；週切點 W-SUN。</li><li>描述①的「放最強幣」會讓那一幣的名目相對它自己的持幣很大，逐倉下強平風險集中在那一幣。</li><li>⛔ 不提供倍數或換幣建議。</li></ul>
+<h2>六、執行者補的讀法</h2><ul class='small'><li>P4 樣本外窗以持有週（t＋1 週）落在 2019-01-06～2026-09-27 定，對上登錄的 404 週</li><li>P6① 起點 2020-08-16 各幣等美元；週一開盤用 C10 再平衡寫法調名目；各幣逐倉、保證金＝該幣全部持幣，強平＝該幣歸零後不再參與；平分臂只分給還沒強平的幣</li><li>P6① 永續上市前用現貨代理（不計資金費），上市後用永續成交價、標記價日低、資金費（00:00 歸屬同 C11 S6）</li><li>P6② BTC 對 SOL 用 L＝1（上週）</li><li>P6① 平分臂每幣名目＝0.2 × 組合值 ÷ 6（照登錄「0.2 倍平均分給 6 幣」字面），不是各幣自己 E1.2；持幣比例漂移後各幣實際槓桿不同</li></ul></main></body></html>
