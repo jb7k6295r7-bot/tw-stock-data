@@ -20,6 +20,19 @@
                          ② 單次呼叫 gate3(stocks, innov_ky=True)／exclude_innovation(uni, innov_ky=True)
    ⚠ 開關只影響【當下呼叫 gate3 的那一步】；用快取訊號／面板（例 resultsN17/sig_edc6f、resultsAFC/panel、resultsp9_engine/panel_ext）的件要重建快取才會真的剔掉這 4 檔
 
+⭐ 沿革（裁定 seq293 §二，2026-10-04；回測線自查 7b34b0e460「資料庫 1435 體檢三陷阱」⑥ 的修正）：新口徑總開關 GATE_V2，⭐ 預設關（關 ⇒ 既有路徑逐位元不變）
+   開法：程式開頭 UG.set_gate_v2(True)（只給新件；舊件重現一律不開）。開了以後一次生效三項：
+   ① 創新板改依【當日名稱】判、只剔在板期間（innov_pit）：stocks/<代號>.csv 每列的 name 欄含「-創」或「-KY創」的那些日子無效；
+      靜態母體只剔「整段都在板（沒有任何一天是板外上市櫃列）」的股票（例 6854 錼創科技-KY創）；
+      轉板股（例 6423 億而得：2024-05-15～2026-01-21 名「億而得-創」、2026-01-22 轉上櫃）留在靜態母體，板期由 pit_valid 剔
+      ⚠ 本快照沒有官方板別欄 ⇒ 用逐日檔的當時名稱（6423 已驗：轉板前後名稱不同）；資料庫 1435 說 data/universe/daily 的名稱是現名 ⇒ ⛔ 不可改讀那一份
+   ② innov_ky：GATE_V2 開時「-KY創」一律算創新板（＝ 新件預設開；舊件照 INNOV_KY 原值，預設關）
+   ③ 逐列市場：stocks/<代號>.csv 每列的 market 欄不是 twse／tpex 的日子（例 7812 上市前 2026-09-03～09-21 的 12 天興櫃列）無效
+   ⇒ 新函式：set_gate_v2、row_ok、pit_valid、pit_table、filter_pit（訊號表剔除訊號日無效的列）；gate3 在開時走 _gate3_v2
+   ⚠ 與 innov_ky 一樣：開關只影響「當下呼叫的那一步」；用快取訊號／面板的件要嘛重建快取、要嘛對訊號表套 filter_pit
+   閘門（本線 2026-10-04）：G1 不開時 營量 v1 T1（resultsT1fix c13 r0）、營飆 v1（c1 r0～4）、daily_list 產出逐位元相同；
+     G2 開時 fixture（6423、6854、7812、一般股、合成股）全過且各附會紅的反例（python -m backtest.universe_gate v2）；G3 見 resultsGateV2/REPORT.md
+
 並提供每份報告都該印的一行：
 
     snapshot_stamp()  ⇒ "data/ 快照 2026-09-18（stocks.csv blob cb01b28f…；-DR 落在 kind=='stock' 的 7 檔）"
@@ -122,7 +135,7 @@ def exclude_innovation(uni: pd.DataFrame, innov_ky: bool | None = None) -> pd.Da
     ⭐ innov_ky（裁定 seq271 §二）：None ⇒ 用全域 INNOV_KY（預設 False）；True ⇒ 名稱含「-創」或「-KY創」都剔。
     """
     assert "name" in uni.columns, "⛔ 需要 name 欄才能依名稱排除"
-    on = INNOV_KY if innov_ky is None else bool(innov_ky)
+    on = (INNOV_KY or GATE_V2) if innov_ky is None else bool(innov_ky)      # 裁定 seq293 §二 ②：GATE_V2 關 ⇒ ＝ INNOV_KY（逐位元同舊）
     n0 = len(uni)
     if not on:                                           # ⭐ 舊路徑，一字未動
         out = uni[~uni["name"].str.contains("-創", na=False, regex=False)].reset_index(drop=True)
@@ -152,8 +165,95 @@ def main_stocks() -> pd.DataFrame:
 def gate3(stocks: pd.DataFrame, innov_ky: bool | None = None) -> pd.DataFrame:
     """三道閘一起（裁定線 seq87 §二、seq90 §三）：母體條件 → 排除 -DR → 排除創新板。
     ⚠ 第一道「data/ 用 main」由呼叫方決定傳哪一份 stocks（建議 main_stocks()）。
-    ⭐ innov_ky：None ⇒ 全域 INNOV_KY（預設關）；見 exclude_innovation。"""
+    ⭐ innov_ky：None ⇒ 全域 INNOV_KY（預設關）；見 exclude_innovation。
+    ⭐ GATE_V2 開（裁定 seq293 §二）⇒ 走 _gate3_v2（創新板只剔整段在板者；板期與興櫃列由 pit_valid／filter_pit 剔）。"""
+    if GATE_V2:
+        return _gate3_v2(stocks)
     return exclude_innovation(exclude_dr(universe_from_stocks(stocks)), innov_ky=innov_ky)
+
+
+# ═════════════ 新口徑（裁定 seq293 §二；GATE_V2 預設關）═════════════
+GATE_V2 = False
+BOARD_RE = INNOV_KY_RE           # 「-創」或「-KY創」
+LISTED = ("twse", "tpex")
+_ROWS: dict = {}
+
+
+def set_gate_v2(on: bool) -> None:
+    """新口徑總開關（①當日名稱判創新板、只剔板期 ②-KY創 算創新板 ③逐列市場擋興櫃列）。⭐ 只給新件；舊件重現不開。"""
+    global GATE_V2
+    GATE_V2 = bool(on)
+
+
+def _rows(sid: str, data: str | None = None):
+    """stocks/<代號>.csv 的 date、name、market（快取）；檔不存在 ⇒ None。"""
+    data = data or D.DATA
+    k = (data, sid)
+    if k not in _ROWS:
+        p = os.path.join(data, "stocks", f"{sid}.csv")
+        if not os.path.exists(p):
+            _ROWS[k] = None
+        else:
+            df = pd.read_csv(p, dtype=str, usecols=lambda c: c in ("date", "name", "market"))
+            df = df.drop_duplicates("date", keep="last")
+            df["date"] = pd.to_datetime(df["date"])
+            _ROWS[k] = df.sort_values("date").reset_index(drop=True)
+    return _ROWS[k]
+
+
+def row_ok(sid: str, data: str | None = None):
+    """每一列是否有效（Series，index ＝ 日期）：market ∈ twse／tpex ∧ 當日名稱不含「-創」「-KY創」。檔不存在 ⇒ None。"""
+    df = _rows(sid, data)
+    if df is None:
+        return None
+    mk = df["market"].isin(LISTED) if "market" in df else pd.Series(True, index=df.index)
+    nm = ~df["name"].fillna("").str.contains(BOARD_RE, regex=True) if "name" in df else pd.Series(True, index=df.index)
+    return pd.Series((mk & nm).to_numpy(bool), index=pd.DatetimeIndex(df["date"]))
+
+
+def pit_valid(sid: str, cal, data: str | None = None):
+    """日曆長布林：該日是否在新口徑母體內。有列的日子照 row_ok；沒列的日子（停牌）沿用前一列狀態；第一列之前 ⇒ True（中性）。
+    ⭐ GATE_V2 關 ⇒ 全 True（不作用）。"""
+    import numpy as np
+    n = len(cal)
+    if not GATE_V2:
+        return np.ones(n, bool)
+    r = row_ok(sid, data)
+    if r is None or len(r) == 0:
+        return np.ones(n, bool)
+    s = r.astype(float).reindex(pd.DatetimeIndex(cal).union(r.index)).ffill().reindex(pd.DatetimeIndex(cal))
+    return np.where(s.isna(), True, s.to_numpy() > 0.5)
+
+
+def pit_table(sids, cal, data: str | None = None) -> dict:
+    return {s: pit_valid(s, cal, data) for s in sids}
+
+
+def filter_pit(sig: pd.DataFrame, cal, sid_col: str = "sid", pos_col: str = "entry_pos", lag: int = 1, data: str | None = None) -> pd.DataFrame:
+    """訊號表：剔除「訊號日（pos_col − lag，預設 ＝ 進場前一個交易日）」不在新口徑母體內的列。⭐ GATE_V2 關 ⇒ 原表照回。"""
+    if not GATE_V2 or len(sig) == 0:
+        return sig
+    tab = pit_table(sorted(set(sig[sid_col].astype(str))), cal, data)
+    keep = [bool(tab[str(s)][int(p) - lag]) if 0 <= int(p) - lag < len(cal) else True for s, p in zip(sig[sid_col], sig[pos_col])]
+    out = sig[keep].reset_index(drop=True)
+    print("[母體閘門 v2] 訊號表剔除板期／興櫃列：{:,} ⇒ {:,} 列（剔 {}）".format(len(sig), len(out), len(sig) - len(out)))
+    return out
+
+
+def _gate3_v2(stocks: pd.DataFrame, data: str | None = None) -> pd.DataFrame:
+    """新口徑靜態母體：kind＝stock ∧ market∈twse／tpex → 排除 -DR → 創新板只剔「沒有任何一列是板外上市櫃列」者
+    （逐日檔不存在 ⇒ 退回現名判「-創／-KY創」）。板期、興櫃列 ⇒ pit_valid／filter_pit。"""
+    uni = exclude_dr(universe_from_stocks(stocks))
+    n0 = len(uni); keep = []
+    for s, nm in zip(uni["stock_id"], uni["name"]):
+        r = row_ok(s, data)
+        if r is None:
+            keep.append(not pd.Series([nm]).str.contains(BOARD_RE, regex=True, na=False).iloc[0])
+        else:
+            keep.append(bool(r.any()))
+    out = uni[keep].reset_index(drop=True)
+    print("[母體閘門 v2] 創新板只剔整段在板／無上市櫃列者：{:,} ⇒ {:,} 檔（剔 {} 檔）；板期與興櫃列由 pit_valid 剔".format(n0, len(out), n0 - len(out)))
+    return out
 
 
 def _selftest_gate3():
@@ -221,6 +321,94 @@ def _selftest():
     print("⭐ 兩個選項都可機器執行；⏳ 二選一【寫進登錄】是策略線／裁定線的格子，⛔ 本線不自取。")
 
 
+def _selftest_gate_v2(snap: str | None = None):
+    """G2（裁定 seq293 §二）：開 GATE_V2 的 fixture；每條斷言另驗「關掉修正（舊口徑）或故意弄壞 ⇒ 會紅」。
+    snap ＝ 價格快照 data 目錄（預設 edc6f8002f）；另造一份合成資料夾驗「現名 -創 但以前不在板」。"""
+    import shutil
+    import tempfile
+    import numpy as np
+    global GATE_V2
+    snap = snap or os.path.expanduser("~/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data")
+    old = GATE_V2
+    res = []
+
+    def check(name, fn_pass, fn_red):
+        ok = bool(fn_pass()); red = not bool(fn_red())
+        res.append((name, ok, red))
+        print("  {} {}｜反例會紅：{}".format("✅" if ok else "⛔", name, "✅" if red else "⛔（沒有鑑別力）"))
+    try:
+        stocks = pd.read_csv(os.path.join(snap, "meta", "stocks.csv"), dtype=str)
+        cal = pd.DatetimeIndex(sorted(set(pd.to_datetime(pd.read_csv(os.path.join(snap, "stocks", "2330.csv"), usecols=["date"])["date"]))
+                                      | set(pd.to_datetime(pd.read_csv(os.path.join(snap, "stocks", "7812.csv"), usecols=["date"])["date"]))))
+        pos = lambda d: int(cal.searchsorted(pd.Timestamp(d)))
+
+        def with_v2(on, f):
+            global GATE_V2
+            b = GATE_V2; GATE_V2 = on
+            try:
+                return f()
+            finally:
+                GATE_V2 = b
+        g_new = with_v2(True, lambda: set(_gate3_v2(stocks, snap)["stock_id"]))
+        g_old = with_v2(False, lambda: set(gate3(stocks)["stock_id"]))
+        v6423 = lambda on: with_v2(on, lambda: pit_valid("6423", cal, snap))
+        print("=== G2 新口徑 fixture（快照 {}）===".format(snap))
+        check("6423 板期 2024-05-15～2026-01-21 每天無效、2026-01-22 起有效、且留在靜態母體",
+              lambda: "6423" in g_new and not v6423(True)[pos("2024-05-15"):pos("2026-01-21") + 1].any() and v6423(True)[pos("2026-01-22"):].all(),
+              lambda: not v6423(False)[pos("2024-05-15"):pos("2026-01-21") + 1].any())             # 舊口徑：板期全有效 ⇒ 會紅
+        check("6854 錼創科技-KY創 整段在板 ⇒ 靜態母體剔除",
+              lambda: "6854" not in g_new, lambda: "6854" not in g_old)                             # 舊口徑（innov_ky 關）收進來 ⇒ 會紅
+        v7812 = lambda on: with_v2(on, lambda: pit_valid("7812", cal, snap))
+        r7812 = _rows("7812", snap); em = [pos(d) for d in r7812.loc[r7812["market"] == "emerging", "date"]]
+        check("7812 上市前 12 天興櫃列（2026-09-03～09-21）每一列都無效",
+              lambda: len(em) == 12 and not v7812(True)[em].any(),
+              lambda: not v7812(False)[em].any())
+        v2330 = lambda: with_v2(True, lambda: pit_valid("2330", cal, snap))
+        check("一般股 2330 每天有效且在靜態母體",
+              lambda: "2330" in g_new and v2330().all(),
+              lambda: _broken_all_board("2330", cal, snap).all())                                     # 故意把每列都當板內 ⇒ 會紅
+        check("新口徑靜態母體 ＝ 舊口徑 − 6854、6924、7823、7827（四檔 -KY創）；6423 兩邊都在（板期改由 pit_valid 剔）",
+              lambda: g_new == g_old - {"6854", "6924", "7823", "7827"} and "6423" in g_new and "6423" in g_old,
+              lambda: g_old == g_old - {"6854", "6924", "7823", "7827"})
+        # 合成資料夾：現名 -創、但以前在上櫃（非板）
+        tmp = tempfile.mkdtemp(prefix="ugv2_")
+        os.makedirs(os.path.join(tmp, "stocks")); os.makedirs(os.path.join(tmp, "meta"))
+        pd.DataFrame([dict(stock_id="99001", name="測甲-創", market="twse", kind="stock", first_seen="2020-01-02", last_seen="2023-01-04")]).to_csv(
+            os.path.join(tmp, "meta", "stocks.csv"), index=False)
+        pd.DataFrame({"date": ["2020-01-02", "2020-01-03", "2023-01-03", "2023-01-04"], "stock_id": "99001",
+                      "name": ["測甲", "測甲", "測甲-創", "測甲-創"], "market": ["tpex", "tpex", "twse", "twse"]}).to_csv(os.path.join(tmp, "stocks", "99001.csv"), index=False)
+        st2 = pd.read_csv(os.path.join(tmp, "meta", "stocks.csv"), dtype=str)
+        c2 = pd.DatetimeIndex(["2020-01-02", "2020-01-03", "2021-06-01", "2023-01-03", "2023-01-04"])
+        check("合成：現名 -創、2020 在上櫃 ⇒ 留在靜態母體，2020 兩天（含其後停牌日）有效、2023 板期無效",
+              lambda: "99001" in set(with_v2(True, lambda: _gate3_v2(st2, tmp))["stock_id"]) and
+              list(with_v2(True, lambda: pit_valid("99001", c2, tmp))) == [True, True, True, False, False],
+              lambda: "99001" in set(with_v2(False, lambda: gate3(st2))["stock_id"]))               # 舊口徑整檔剔 ⇒ 會紅
+        sg = pd.DataFrame({"sid": ["6423", "6423", "2330"], "entry_pos": [pos("2025-03-04"), pos("2026-02-03"), pos("2025-03-04")]})
+        check("filter_pit：6423 板期訊號剔、轉板後訊號留、一般股留",
+              lambda: with_v2(True, lambda: filter_pit(sg, cal, data=snap))["entry_pos"].tolist() == [pos("2026-02-03"), pos("2025-03-04")],
+              lambda: len(with_v2(False, lambda: filter_pit(sg, cal, data=snap))) == 2)
+        shutil.rmtree(tmp, ignore_errors=True)
+        check("GATE_V2 關 ⇒ pit_valid 全 True、filter_pit 原表照回（不作用）",
+              lambda: with_v2(False, lambda: pit_valid("6423", cal, snap).all() and filter_pit(sg, cal, data=snap) is sg),
+              lambda: with_v2(True, lambda: pit_valid("6423", cal, snap).all()))
+    finally:
+        GATE_V2 = old
+    allok = all(o and r for _, o, r in res)
+    print("⇒ G2 {}（{} 條，全過且每條反例都會紅）".format("✅ 全過" if allok else "⛔ 有不過", len(res)))
+    return allok, res
+
+
+def _broken_all_board(sid, cal, data):
+    """反例用：故意把每一列都當成板內 ⇒ 一般股也全無效（驗「一般股不受影響」那條有鑑別力）。"""
+    import numpy as np
+    r = row_ok(sid, data)
+    return np.zeros(len(cal), bool) if r is not None else np.ones(len(cal), bool)
+
+
 if __name__ == "__main__":
+    import sys as _sys
+    if len(_sys.argv) > 1 and _sys.argv[1] == "v2":                # 裁定 seq293 §二 G2；不帶參數 ⇒ 舊自測照舊
+        _ok, _ = _selftest_gate_v2(_sys.argv[2] if len(_sys.argv) > 2 else None)
+        raise SystemExit(0 if _ok else 1)
     _selftest()
     _selftest_gate3()
