@@ -13,6 +13,7 @@
 #      測試用：環境變數 DAILY_FAKE_TODAY＝YYYY-MM-DD 可假造「今天」；DAILY_MB 可把輸出資料夾指到暫存處
 #   5 退出碼：產檔或略過 0、失敗 1
 #   6 ⛔ 信箱只寫 _營量觀察/ 這一個資料夾
+#   8 GATE_V2（裁定 seq296 §一）：daily_list 每次開／關各算一次；不一致 ⇒ 差異檔 gatev2_diff_<資料日>.md 複製到 _營量觀察/、一致 ⇒ 刪同資料日舊差異檔
 #   7 same_state（情報 1219；持股歷史同狀態，backtest.same_state 查表）：daily 產檔或略過之後才跑；⛔ 失敗只記 log、不改退出碼、不影響 daily；
 #      同一資料日、同一 sha（resultsYLwatch/.same_state_<資料日>.sha）且 _營量觀察/same_state_<資料日>.md 在 ⇒ 略過；--force 一起重產；
 #      --final 不寫 same_state 的 _未到（情報：缺檔就不印那行）；測試用：SAME_STATE_FAKE_FAIL=1 讓 same_state 故意失敗
@@ -60,6 +61,8 @@ if [ -z "$FAIL" ]; then
       mkdir -p "$MB"
       cp "$REPO/backtest/resultsDaily/daily_$ASOF.md" "$OUTF"
       rm -f "$MB/daily_${ASOF}_未到.md"
+      # 裁定 seq296 §一：GATE_V2 開關不一致 ⇒ daily_list 寫了差異檔 ⇒ 放進 _營量觀察/；一致 ⇒ 刪掉同資料日舊的差異檔（只動 _營量觀察/ 這一個資料夾）
+      if [ -f "$REPO/backtest/resultsDaily/gatev2_diff_$ASOF.md" ]; then cp "$REPO/backtest/resultsDaily/gatev2_diff_$ASOF.md" "$MB/gatev2_diff_$ASOF.md"; else rm -f "$MB/gatev2_diff_$ASOF.md"; fi
       RESULT="產檔"; logline "產檔：sha ${SHA:0:10}｜資料日 $ASOF｜$OUTF"
     else
       FAIL="程式錯誤：$(tail -20 "$WLOG")"

@@ -25,6 +25,15 @@
      每行加「起漲點 t（日期、價）｜目前第幾段｜從 t 起漲幅｜距最高收盤」；買進日 ＝ t 時與舊版逐字相同（閘 G3）
     2026-09-30 晚改（協調者轉使用者：持股清單回測線與情報共用一份）：第五節改讀跨線信箱 _持股/持股.csv（backtest.holdings；⛔ 只讀不寫），
      只取買進日與買進價都有的列；缺的列列一行「代號｜缺買進日／價，無法追蹤流程」；檔案不存在或讀檔失敗 ⇒ 退回 holdings_flow.txt 並記 log
+
+2026-10-04 加（裁定 seq296 §一：每日自動比對母體閘新口徑 GATE_V2 開／關，⛔ 不靠人工想起）：
+  每次產檔用 universe_gate.set_gate_v2(False)／(True) 各算一次（build 兩次；開的那版另剔「資料日那一列」不在新口徑母體內的股票，UG.pit_valid）；
+  比第一～四節的代號集合（第一節＝大盤閘開時的已達成、第二節已達成、第三節即將達成前 5、第四節起漲特徵 ≥10）：
+    一致 ⇒ 照舊用關的那版產出（檔案逐字同舊版），log 記「開關一致」；同資料日舊的 gatev2_diff 檔刪掉
+    不一致 ⇒ 當天正式產出改用開的那版、檔頭（commit 那行之後）加一行說明（GV2_HEAD），並寫 resultsDaily/gatev2_diff_<資料日>.md（列差在哪幾檔）；
+             包裝 run_daily_list.sh 把它複製到 _營量觀察/（⛔ 不碰信箱其他資料夾；寄信由協調者）
+  每次都存比對結果 resultsDaily/gatev2_cmp_<資料日>.json；閘門：G2 一致時舊段落逐字同、G4 鎖／重跑／--final 照舊、fixture 模擬不一致會切換並寫差異檔（resultsDailyGV2/）
+  ⚠ 跑兩次 ⇒ 耗時約為原來兩倍｜測試用環境變數 DAILY_GV2_FAKE＝代號[,代號…]：新口徑下把這些代號當成資料日不在母體（fixture 用；排程不帶）
 """
 from __future__ import annotations
 
@@ -40,6 +49,8 @@ from . import gate_b_status as GB
 from . import surge_feat_daily as SFD
 from . import surge_flow_daily as SFL
 from . import holdings as HD
+from . import universe_gate as UG
+import json
 import numpy as np
 import pandas as pd
 
@@ -53,16 +64,24 @@ def tag(name):
     return f"｜{INNO}" if re.search(r"-(?:KY)?創", str(name)) else ""                 # 「-創」或「-KY創」（例 6854 錼創科技-KY創）
 
 
-def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2); a = ap.parse_args()
-    os.makedirs(OUT, exist_ok=True)
-    logf = open(os.path.join(OUT, "run.log"), "w", encoding="utf-8"); T0 = time.time()
+def _pit_ok(cal, DATA):
+    """GATE_V2 開時：資料日那一列在新口徑母體內（當日名稱不在創新板、逐列市場上市櫃）。關時一律 True。"""
+    n = len(cal)
+    fake = set(filter(None, os.environ.get("DAILY_GV2_FAKE", "").split(",")))      # 測試用（同 DAILY_FAKE_TODAY）：這些代號在新口徑下當成資料日不在母體 ⇒ 模擬兩版不同
+    return lambda sid: (str(sid) not in fake) and bool(UG.pit_valid(str(sid), cal, DATA)[n - 1])
 
-    def log(m):
-        m = f"[{time.time() - T0:5.0f}s] {m}"; print(m, flush=True); logf.write(m + "\n"); logf.flush()
+
+def build(a, log, v2=False):
+    """產一版名單（第一～五節）。v2 ＝ GATE_V2 開關（裁定 seq296 §一）；回 dict（L ＝ 檔案各行、sec ＝ 第一～四節的代號集合）。
+    ⭐ v2＝False 的路徑與 2026-10-04 以前的 main 逐行相同（只是包成函式）。"""
+    UG.set_gate_v2(v2)
     X = W.compute(a.procs, log)
     A, B, cal, asof, nxt, sha, S = (X[k] for k in ("A", "B", "cal", "asof", "nxt", "sha", "S"))
     n = len(cal)
+    if v2:                                                     # 新口徑：資料日那一列不在母體內 ⇒ 不列（靜態母體已由 gate3 走 _gate3_v2）
+        ok_ = _pit_ok(cal, os.path.expanduser(f"~/h2data/{sha}/data"))
+        A = A[[ok_(s) for s in A["代號"]]] if len(A) else A
+        B = B[[ok_(s) for s in B["代號"]]] if len(B) else B
     bench, ma, reg = LP.regime_arrays(cal)
     gate_on = bool(reg[n - 1])
     fut, basis = GB.future_trading_days(cal, 2 * 120 + 10)
@@ -118,7 +137,8 @@ def main():
           "14 個起漲特徵（飆股回推 seq6 overlap 那 14 個）當天收盤同時符合 10 個以上的全部股票；⭐ ＝ 第一～三節裡符合 ≥5 個的。",
           "張數同第三節算法：3 倍量門檻金額（前 20 個交易日平均成交額 × 3，不含當天）÷（最新收盤 ×（1＋開高幅度））；「8 成」＝ 該張數 × 0.8。「連續」＝ 前 20 個交易日內也出現過 ≥10 個。", "",
           "| 代號 名稱 | 收盤 | 個數 | 缺哪幾個 | 平盤開 張（8 成） | 開高 3% 張（8 成） | 開高 5% 張（8 成） | 連續 |", "|---|---|---|---|---|---|---|---|"]
-    top = [(int(cnt[i, T]), unif.loc[i, "stock_id"], i) for i in range(len(unif)) if R["bar"][i, T] and cnt[i, T] >= 10]
+    top = [(int(cnt[i, T]), unif.loc[i, "stock_id"], i) for i in range(len(unif)) if R["bar"][i, T] and cnt[i, T] >= 10
+           and (not v2 or ok_(unif.loc[i, "stock_id"]))]
     D.DATA = DATA
     for k_, sid, i in sorted(top, key=lambda x: (-x[0], x[1])):
         st = D.load_stock(sid, unif.loc[i, "market"], cal); amt = pd.to_numeric(st.df["amount"], errors="coerce").to_numpy(float)
@@ -169,9 +189,82 @@ def main():
         if hmiss:
             L.append(f"- 另 {len(hmiss)} 檔沒有買進日／價（{'、'.join(hmiss)}），不追蹤流程")
     L += ["", NOTE, ""]
+    UG.set_gate_v2(False)
+    names = {}
+    for r in A.to_dict("records") if len(A) else []:
+        names[str(r["代號"])] = str(r["名稱"])
+    for r in br:
+        names[str(r["代號"])] = str(r["名稱"])
+    for k_, sid, i in top:
+        names[str(sid)] = str(unif.loc[i, "name"])
+    sec = {"一、營飆 v1 已達成": sorted(str(s) for s in A["代號"]) if (gate_on and len(A)) else [],
+           "二、營量 v1 已達成": sorted(str(s) for s in A["代號"]) if len(A) else [],
+           "三、營量 v1 即將達成": sorted(str(r["代號"]) for r in br),
+           "四、起漲特徵 ≥10 個": sorted(str(s) for _, s, _ in top)}
+    return {"L": L, "sec": sec, "names": names, "asof": asof, "sha": sha, "gate_on": gate_on, "A": A, "br": br, "S": S}
+
+
+GV2_HEAD = "- ⚠ 母體閘新口徑（GATE_V2：創新板依當日名稱、-KY創 算創新板、擋上市前興櫃列；裁定 seq296 §一）與舊口徑的第一～四節名單不同 ⇒ 本檔改用新口徑；差在哪幾檔見 gatev2_diff_{asof}.md"
+
+
+def compare(r0, r1):
+    """第一～四節：舊口徑（GATE_V2 關）vs 新口徑（開）的代號差。回 (有沒有差, 明細)。"""
+    det = {}
+    for k in r0["sec"]:
+        a_, b_ = set(r0["sec"][k]), set(r1["sec"][k])
+        det[k] = {"只在舊口徑": sorted(a_ - b_), "只在新口徑": sorted(b_ - a_), "舊": len(a_), "新": len(b_)}
+    return any(v["只在舊口徑"] or v["只在新口徑"] for v in det.values()), det
+
+
+def diff_md(asof, sha, det, names):
+    L = [f"# 母體閘新口徑差異 {asof}（資料日）", "",
+         f"- commit：tw-stock-data main {sha[:10]}｜資料日 {asof}",
+         "- 每日名單同時用母體閘舊口徑（GATE_V2 關）與新口徑（開）各算一次第一～四節；兩版不同 ⇒ 當天正式名單改用新口徑（裁定 seq296 §一）",
+         "- 新口徑 ＝ 創新板依當日名稱判（只剔在板期間）、名稱含「-KY創」也算創新板、逐列市場欄擋上市前的興櫃列（裁定 seq293 §二）", ""]
+    for k, v in det.items():
+        if not (v["只在舊口徑"] or v["只在新口徑"]):
+            L.append(f"## {k}：相同（{v['舊']} 檔）"); L.append("")
+            continue
+        L.append(f"## {k}：舊 {v['舊']} 檔 → 新 {v['新']} 檔"); L.append("")
+        for s in v["只在舊口徑"]:
+            L.append(f"- 新口徑剔除：{s} {names.get(s, '')}")
+        for s in v["只在新口徑"]:
+            L.append(f"- 新口徑新增：{s} {names.get(s, '')}")
+        L.append("")
+    return L
+
+
+def main():
+    ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2); a = ap.parse_args()
+    os.makedirs(OUT, exist_ok=True)
+    logf = open(os.path.join(OUT, "run.log"), "w", encoding="utf-8"); T0 = time.time()
+
+    def log(m):
+        m = f"[{time.time() - T0:5.0f}s] {m}"; print(m, flush=True); logf.write(m + "\n"); logf.flush()
+    r0 = build(a, log, v2=False)
+    log("[GATE_V2] 舊口徑（關）算完；再用新口徑（開）算一次第一～四節")
+    r1 = build(a, log, v2=True)
+    asof, sha = r0["asof"], r0["sha"]
+    has_diff, det = compare(r0, r1)
+    fdiff = os.path.join(OUT, f"gatev2_diff_{asof}.md")
+    json.dump({"資料日": asof, "main": sha, "有差別": has_diff, "明細": det, "時間": time.strftime("%F %T")},
+              open(os.path.join(OUT, f"gatev2_cmp_{asof}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    if not has_diff:
+        r = r0
+        if os.path.exists(fdiff):
+            os.remove(fdiff)                                   # 同資料日舊的差異檔（例：同日較早 sha 有差、新 sha 沒差）⇒ 刪，免得誤報
+        log("[GATE_V2] 開關一致 ⇒ 照舊用舊口徑（關）那版產出")
+    else:
+        r = r1
+        L = list(r1["L"]); L.insert(3, GV2_HEAD.format(asof=asof))
+        r = dict(r1, L=L)
+        names = {**r0["names"], **r1["names"]}
+        open(fdiff, "w", encoding="utf-8").write("\n".join(diff_md(asof, sha, det, names)) + "\n")
+        log(f"[GATE_V2] ⚠ 開關不一致 ⇒ 正式產出改用新口徑（開）；差異檔 {fdiff}｜{json.dumps(det, ensure_ascii=False)}")
     fn = os.path.join(OUT, f"daily_{asof}.md")
-    open(fn, "w", encoding="utf-8").write("\n".join(L))
-    log(f"[完] {fn}｜大盤閘 {'開' if gate_on else '關'}｜營量已達成 {list(A['代號']) if len(A) else []}｜即將達成 {[r['代號'] for r in br]}｜閘 {S['閘（近 20 交易日 AND 訊號 ＝ list_YL13_2026-09-24）']['過']}")
+    open(fn, "w", encoding="utf-8").write("\n".join(r["L"]))
+    A, br, S, gate_on = r["A"], r["br"], r["S"], r["gate_on"]
+    log(f"[完] {fn}｜大盤閘 {'開' if gate_on else '關'}｜營量已達成 {list(A['代號']) if len(A) else []}｜即將達成 {[r_['代號'] for r_ in br]}｜閘 {S['閘（近 20 交易日 AND 訊號 ＝ list_YL13_2026-09-24）']['過']}")
     print(fn)
 
 

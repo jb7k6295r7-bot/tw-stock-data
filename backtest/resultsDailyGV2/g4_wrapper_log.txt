@@ -1,0 +1,47 @@
+=== 1 首次執行（應產檔、一致 ⇒ 無差異檔）
+產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md
+same_state 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md
+rc=0
+daily_2026-10-02.md
+same_state_2026-10-02.md
+=== 2 立刻重跑（應略過）
+略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md 已存在且 sha 相同
+same_state 略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md 已存在且 sha 相同
+rc=0
+=== 3 鎖住時執行（應略過：已有一個在跑）
+略過：已有一個在跑（鎖 /home/chemtim/dlsand/backtest/resultsYLwatch/.daily.lock）
+rc=0
+=== 4 --final（假今天 2026-10-05，預期資料日 10-02 已在）
+略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md 已存在且 sha 相同
+same_state 略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md 已存在且 sha 相同
+檢查：預期資料日 2026-10-02 的檔已在
+rc=0
+=== 5 fixture：DAILY_GV2_FAKE=3707 --force（應切新口徑、檔頭加一行、寫差異檔到 MB）
+產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md
+same_state 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md
+rc=0
+daily_2026-10-02.md
+gatev2_diff_2026-10-02.md
+same_state_2026-10-02.md
+=== 6 再 --force 不帶 fixture（應一致、MB 差異檔被刪）
+產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md
+same_state 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md
+rc=0
+daily_2026-10-02.md
+same_state_2026-10-02.md
+=== 7 G2 第二個 sha：沙盒新程式（第 6 步產出）vs 舊程式
+逐位元相同
+=== daily_run.log（沙盒）
+[2026-10-04 21:25:03 台北] 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md
+[2026-10-04 21:25:03 台北] same_state 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md
+[2026-10-04 21:45:33 台北] 略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md 已存在且 sha 相同
+[2026-10-04 21:45:33 台北] same_state 略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md 已存在且 sha 相同
+[2026-10-04 21:45:35 台北] 略過：已有一個在跑（鎖 /home/chemtim/dlsand/backtest/resultsYLwatch/.daily.lock）
+[2026-10-04 21:45:53 台北] --final 略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md 已存在且 sha 相同
+[2026-10-04 21:45:53 台北] --final same_state 略過：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md 已存在且 sha 相同
+[2026-10-04 21:45:53 台北] --final 檢查：預期資料日 2026-10-02 的檔已在
+[2026-10-04 21:45:54 台北] --force 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md
+[2026-10-04 21:45:54 台北] --force same_state 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md
+[2026-10-04 21:57:50 台北] --force 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/daily_2026-10-02.md
+[2026-10-04 21:57:50 台北] --force same_state 產檔：sha c2e0bf24ae｜資料日 2026-10-02｜/home/chemtim/ugwork/mb/same_state_2026-10-02.md
+DONE
