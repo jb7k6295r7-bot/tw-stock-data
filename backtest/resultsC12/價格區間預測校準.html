@@ -1,0 +1,194 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>價格區間預測校準</title><style>
+:root{--bg:#fbfaf7;--fg:#1d1d1b;--mut:#6b6a66;--card:#ffffff;--line:#e4e1da;--acc:#1d4ed8;--accbg:#eef3ff;--warn:#b45309;--ok:#166534}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}}
+:root[data-theme="dark"]{--bg:#161615;--fg:#ecebe7;--mut:#a3a19b;--card:#1f1f1d;--line:#34332f;--acc:#93b4ff;--accbg:#18203a;--warn:#fbbf24;--ok:#4ade80}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:880px;margin:0 auto;padding:20px 16px 60px}h1{font-size:1.4rem;margin:.2em 0 .3em}h2{font-size:1.15rem;margin:1.8em 0 .5em;border-top:1px solid var(--line);padding-top:1em}
+h3{font-size:1rem;margin:1.1em 0 .3em}.sub{color:var(--mut);font-size:.88rem}.lead{background:var(--accbg);border-left:4px solid var(--acc);padding:12px 14px;border-radius:6px;margin:14px 0}
+.lead b{color:var(--acc)}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0}table{border-collapse:collapse;font-size:.84rem;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{color:var(--mut);font-weight:600}.narrow{color:var(--warn);font-weight:600}.pass{color:var(--ok);font-weight:600}ul{padding-left:1.2em}li{margin:.25em 0}.small{font-size:.84rem;color:var(--mut)}
+summary{cursor:pointer;margin:8px 0}
+</style></head><body><main>
+<h1>價格區間預測：區間大小準不準</h1>
+<div class='sub'>PREREGC12 v1（N＝108，T1、T2 都判）｜回測線｜資料 main 1fb8815e81 現貨日 K｜窗尾 2026-09-30｜讀法寫死 2026-10-04 13:11（台北）｜產出 2026-10-04 13:21（台北）</div>
+<div class='lead'><b>結論（只談區間大小準不準）</b><ul><li><b>T1・M1 近90日波動</b>：18 格中 判過 6、偏窄 0、偏寬 0、測不出 12；命中率範圍 77%～92%（名目 90%）。</li><li><b>T1・M3 EWMA</b>：18 格中 判過 4、偏窄 0、偏寬 0、測不出 14；命中率範圍 77%～92%（名目 90%）。</li><li><b>T1・M2 經驗分位</b>：18 格中 判過 13、偏窄 0、偏寬 0、測不出 5；命中率範圍 85%～98%（名目 90%）。</li><li><b>T2・M1 近90日波動</b>：18 格中 判過 1、偏窄 7、偏寬 0、測不出 10；命中率範圍 75%～93%（名目 95%）。</li><li><b>T2・M3 EWMA</b>：18 格中 判過 0、偏窄 7、偏寬 0、測不出 11；命中率範圍 79%～89%（名目 95%）。</li><li><b>T2・M2 經驗分位</b>：18 格中 判過 14、偏窄 0、偏寬 0、測不出 4；命中率範圍 86%～100%（名目 95%）。</li></ul><div class='small'>⛔ 這不是漲跌方向的預測，也不表示哪個價位是底；「判過」只代表在 ±10pp 容忍帶內分不出偏差，不是區間保證準。</div></div>
+<div class='card'><b>怎麼測</b>：每個起點只用當天收盤以前的資料畫未來 h 天的區間（漂移設 0），之後對答案。<br><b>T1</b>：第 h 天收盤落在中央 90% 區間內的比例（名目 90%）。<b>T2</b>：h 天內每天的最低價都沒跌破單邊 95% 下緣的比例（名目 95%）；M1／M3 的下緣是端點分布的下緣，用在途中最低上依構造偏窄，故意保留。<br>CI：stationary block bootstrap 2,000 次、信賴水準 1−0.05/108。判過＝CI 整條在容忍帶（T1 80～100%、T2 85～100%）；偏窄＝CI 上界低於名目；偏寬＝CI 下界高於名目。</div>
+<h2>一、T1：第 h 天收盤落在 90% 區間</h2>
+<div class='small'>每格：命中率［CI］判定。起點數見括號。</div><div class='tw'><table><tr><th>幣（第一個起點）</th><th>h</th><th>M1 近90日波動</th><th>M3 EWMA</th><th>M2 經驗分位</th></tr>
+<tr><td>BTC（2015-01-01）</td><td>7（612）</td><td>88%［83%～92%］<br><span class='pass'>判過</span></td><td>87%［83%～91%］<br><span class='pass'>判過</span></td><td>95%［92%～98%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>BTC（2015-01-01）</td><td>30（143）</td><td>83%［73%～93%］<br><span class=''>測不出</span></td><td>82%［71%～92%］<br><span class=''>測不出</span></td><td>95%［86%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>BTC（2015-01-01）</td><td>90（47）</td><td>77%［56%～91%］<br><span class=''>測不出</span></td><td>77%［54%～91%］<br><span class=''>測不出</span></td><td>96%［83%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>ETH（2019-08-17）</td><td>7（371）</td><td>88%［81%～93%］<br><span class='pass'>判過</span></td><td>86%［79%～92%］<br><span class=''>測不出</span></td><td>95%［90%～98%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>ETH（2019-08-17）</td><td>30（86）</td><td>83%［69%～95%］<br><span class=''>測不出</span></td><td>83%［69%～94%］<br><span class=''>測不出</span></td><td>94%［84%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>ETH（2019-08-17）</td><td>90（28）</td><td>89%［60%～100%］<br><span class=''>測不出</span></td><td>89%［68%～100%］<br><span class=''>測不出</span></td><td>93%［75%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>BNB（2019-11-06）</td><td>7（360）</td><td>90%［83%～95%］<br><span class='pass'>判過</span></td><td>90%［85%～95%］<br><span class='pass'>判過</span></td><td>96%［93%～99%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>BNB（2019-11-06）</td><td>30（84）</td><td>89%［79%～98%］<br><span class=''>測不出</span></td><td>86%［75%～95%］<br><span class=''>測不出</span></td><td>96%［89%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>BNB（2019-11-06）</td><td>90（28）</td><td>86%［62%～100%］<br><span class=''>測不出</span></td><td>79%［50%～100%］<br><span class=''>測不出</span></td><td>93%［71%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>SOL（2022-08-11）</td><td>7（215）</td><td>89%［81%～96%］<br><span class='pass'>判過</span></td><td>87%［80%～94%］<br><span class=''>測不出</span></td><td>97%［92%～100%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>SOL（2022-08-11）</td><td>30（50）</td><td>88%［70%～100%］<br><span class=''>測不出</span></td><td>92%［75%～100%］<br><span class=''>測不出</span></td><td>98%［90%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>SOL（2022-08-11）</td><td>90（16）</td><td>88%［53%～100%］<br><span class=''>測不出</span></td><td>81%［40%～100%］<br><span class=''>測不出</span></td><td>94%［65%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>XRP（2020-05-03）</td><td>7（334）</td><td>90%［84%～94%］<br><span class='pass'>判過</span></td><td>90%［84%～95%］<br><span class='pass'>判過</span></td><td>92%［86%～97%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>XRP（2020-05-03）</td><td>30（78）</td><td>82%［70%～96%］<br><span class=''>測不出</span></td><td>81%［69%～92%］<br><span class=''>測不出</span></td><td>91%［81%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>XRP（2020-05-03）</td><td>90（26）</td><td>92%［73%～100%］<br><span class=''>測不出</span></td><td>88%［69%～100%］<br><span class=''>測不出</span></td><td>85%［50%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>DOGE（2021-07-04）</td><td>7（273）</td><td>92%［86%～97%］<br><span class='pass'>判過</span></td><td>89%［84%～94%］<br><span class='pass'>判過</span></td><td>93%［88%～97%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>DOGE（2021-07-04）</td><td>30（63）</td><td>92%［75%～100%］<br><span class=''>測不出</span></td><td>90%［76%～100%］<br><span class=''>測不出</span></td><td>97%［87%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>DOGE（2021-07-04）</td><td>90（21）</td><td>86%［67%～100%］<br><span class=''>測不出</span></td><td>86%［67%～100%］<br><span class=''>測不出</span></td><td>90%［64%～100%］<br><span class=''>測不出</span></td></tr>
+</table></div>
+<h2>二、T2：h 天內最低價守住 95% 下緣</h2>
+<div class='small'>每格：命中率［CI］判定。起點數見括號。</div><div class='tw'><table><tr><th>幣（第一個起點）</th><th>h</th><th>M1 近90日波動</th><th>M3 EWMA</th><th>M2 經驗分位</th></tr>
+<tr><td>BTC（2015-01-01）</td><td>7（612）</td><td>89%［83%～94%］<br><span class='narrow'>偏窄</span></td><td>89%［84%～93%］<br><span class='narrow'>偏窄</span></td><td>98%［96%～100%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>BTC（2015-01-01）</td><td>30（143）</td><td>88%［78%～96%］<br><span class=''>測不出</span></td><td>84%［74%～93%］<br><span class='narrow'>偏窄</span></td><td>97%［92%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>BTC（2015-01-01）</td><td>90（47）</td><td>87%［72%～98%］<br><span class=''>測不出</span></td><td>87%［68%～100%］<br><span class=''>測不出</span></td><td>96%［84%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>ETH（2019-08-17）</td><td>7（371）</td><td>88%［83%～93%］<br><span class='narrow'>偏窄</span></td><td>88%［83%～94%］<br><span class='narrow'>偏窄</span></td><td>98%［95%～100%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>ETH（2019-08-17）</td><td>30（86）</td><td>87%［73%～98%］<br><span class=''>測不出</span></td><td>83%［67%～95%］<br><span class='narrow'>偏窄</span></td><td>97%［87%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>ETH（2019-08-17）</td><td>90（28）</td><td>75%［55%～93%］<br><span class='narrow'>偏窄</span></td><td>79%［61%～96%］<br><span class=''>測不出</span></td><td>93%［73%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>BNB（2019-11-06）</td><td>7（360）</td><td>87%［81%～93%］<br><span class='narrow'>偏窄</span></td><td>87%［81%～94%］<br><span class='narrow'>偏窄</span></td><td>98%［94%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>BNB（2019-11-06）</td><td>30（84）</td><td>83%［68%～95%］<br><span class='narrow'>偏窄</span></td><td>85%［71%～95%］<br><span class=''>測不出</span></td><td>98%［92%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>BNB（2019-11-06）</td><td>90（28）</td><td>93%［75%～100%］<br><span class=''>測不出</span></td><td>89%［64%～100%］<br><span class=''>測不出</span></td><td>93%［75%～100%］<br><span class=''>測不出</span></td></tr>
+<tr><td>SOL（2022-08-11）</td><td>7（215）</td><td>92%［86%～97%］<br><span class='pass'>判過</span></td><td>88%［81%～95%］<br><span class=''>測不出</span></td><td>98%［94%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>SOL（2022-08-11）</td><td>30（50）</td><td>84%［71%～96%］<br><span class=''>測不出</span></td><td>84%［70%～96%］<br><span class=''>測不出</span></td><td>98%［90%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>SOL（2022-08-11）</td><td>90（16）</td><td>81%［53%～100%］<br><span class=''>測不出</span></td><td>81%［53%～100%］<br><span class=''>測不出</span></td><td>100%［100%～100%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>XRP（2020-05-03）</td><td>7（334）</td><td>89%［82%～94%］<br><span class='narrow'>偏窄</span></td><td>89%［81%～94%］<br><span class='narrow'>偏窄</span></td><td>95%［89%～98%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>XRP（2020-05-03）</td><td>30（78）</td><td>88%［74%～98%］<br><span class=''>測不出</span></td><td>88%［75%～99%］<br><span class=''>測不出</span></td><td>97%［91%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>XRP（2020-05-03）</td><td>90（26）</td><td>88%［69%～100%］<br><span class=''>測不出</span></td><td>85%［58%～100%］<br><span class=''>測不出</span></td><td>100%［100%～100%］<br><span class='pass'>判過（略寬，在容忍帶內）</span></td></tr>
+<tr><td>DOGE（2021-07-04）</td><td>7（273）</td><td>87%［81%～94%］<br><span class='narrow'>偏窄</span></td><td>87%［79%～93%］<br><span class='narrow'>偏窄</span></td><td>97%［94%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>DOGE（2021-07-04）</td><td>30（63）</td><td>84%［69%～97%］<br><span class=''>測不出</span></td><td>83%［68%～96%］<br><span class=''>測不出</span></td><td>98%［90%～100%］<br><span class='pass'>判過</span></td></tr>
+<tr><td>DOGE（2021-07-04）</td><td>90（21）</td><td>86%［62%～100%］<br><span class=''>測不出</span></td><td>86%［62%～100%］<br><span class=''>測不出</span></td><td>86%［62%～100%］<br><span class=''>測不出</span></td></tr>
+</table></div>
+<h2>三、判定彙總</h2><div class='tw'><table><tr><th>目標</th><th>模型</th><th>判過</th><th>偏窄</th><th>偏寬</th><th>測不出</th></tr>
+<tr><td>T1</td><td>M1 近90日波動</td><td>6</td><td>0</td><td>0</td><td>12</td></tr>
+<tr><td>T1</td><td>M3 EWMA</td><td>4</td><td>0</td><td>0</td><td>14</td></tr>
+<tr><td>T1</td><td>M2 經驗分位</td><td>13</td><td>0</td><td>0</td><td>5</td></tr>
+<tr><td>T2</td><td>M1 近90日波動</td><td>1</td><td>7</td><td>0</td><td>10</td></tr>
+<tr><td>T2</td><td>M3 EWMA</td><td>0</td><td>7</td><td>0</td><td>11</td></tr>
+<tr><td>T2</td><td>M2 經驗分位</td><td>14</td><td>0</td><td>0</td><td>4</td></tr>
+</table></div>
+<h2>四、描述（不判）</h2><h3>80% 中央區間（T1 另一個名目）</h3><div class='tw'><table><tr><th>幣</th><th>h</th><th>M1 近90日波動</th><th>M3 EWMA</th><th>M2 經驗分位</th></tr>
+<tr><td>BTC</td><td>7</td><td>82%</td><td>81%</td><td>88%</td></tr>
+<tr><td>BTC</td><td>30</td><td>78%</td><td>70%</td><td>89%</td></tr>
+<tr><td>BTC</td><td>90</td><td>66%</td><td>70%</td><td>89%</td></tr>
+<tr><td>ETH</td><td>7</td><td>81%</td><td>79%</td><td>87%</td></tr>
+<tr><td>ETH</td><td>30</td><td>77%</td><td>69%</td><td>84%</td></tr>
+<tr><td>ETH</td><td>90</td><td>79%</td><td>71%</td><td>86%</td></tr>
+<tr><td>BNB</td><td>7</td><td>84%</td><td>83%</td><td>88%</td></tr>
+<tr><td>BNB</td><td>30</td><td>81%</td><td>77%</td><td>90%</td></tr>
+<tr><td>BNB</td><td>90</td><td>79%</td><td>75%</td><td>89%</td></tr>
+<tr><td>SOL</td><td>7</td><td>84%</td><td>81%</td><td>93%</td></tr>
+<tr><td>SOL</td><td>30</td><td>80%</td><td>74%</td><td>92%</td></tr>
+<tr><td>SOL</td><td>90</td><td>81%</td><td>75%</td><td>94%</td></tr>
+<tr><td>XRP</td><td>7</td><td>87%</td><td>86%</td><td>84%</td></tr>
+<tr><td>XRP</td><td>30</td><td>79%</td><td>77%</td><td>85%</td></tr>
+<tr><td>XRP</td><td>90</td><td>85%</td><td>69%</td><td>77%</td></tr>
+<tr><td>DOGE</td><td>7</td><td>84%</td><td>84%</td><td>82%</td></tr>
+<tr><td>DOGE</td><td>30</td><td>87%</td><td>84%</td><td>86%</td></tr>
+<tr><td>DOGE</td><td>90</td><td>71%</td><td>71%</td><td>81%</td></tr>
+</table></div>
+<h3>沒守住時平均跌破多少（T2）</h3><div class='tw'><table><tr><th>幣</th><th>h</th><th>M1 近90日波動</th><th>M3 EWMA</th><th>M2 經驗分位</th></tr>
+<tr><td>BTC</td><td>7</td><td>-8.9%</td><td>-8.1%</td><td>-9.2%</td></tr>
+<tr><td>BTC</td><td>30</td><td>-15.6%</td><td>-12.2%</td><td>-13.2%</td></tr>
+<tr><td>BTC</td><td>90</td><td>-17.7%</td><td>-17.1%</td><td>-15.5%</td></tr>
+<tr><td>ETH</td><td>7</td><td>-9.7%</td><td>-10.3%</td><td>-12.9%</td></tr>
+<tr><td>ETH</td><td>30</td><td>-21.8%</td><td>-17.5%</td><td>-15.8%</td></tr>
+<tr><td>ETH</td><td>90</td><td>-19.9%</td><td>-26.1%</td><td>-9.8%</td></tr>
+<tr><td>BNB</td><td>7</td><td>-8.5%</td><td>-8.5%</td><td>-15.5%</td></tr>
+<tr><td>BNB</td><td>30</td><td>-12.7%</td><td>-14.6%</td><td>-29.6%</td></tr>
+<tr><td>BNB</td><td>90</td><td>-31.6%</td><td>-29.9%</td><td>-8.3%</td></tr>
+<tr><td>SOL</td><td>7</td><td>-12.1%</td><td>-9.3%</td><td>-12.3%</td></tr>
+<tr><td>SOL</td><td>30</td><td>-14.3%</td><td>-15.2%</td><td>-10.6%</td></tr>
+<tr><td>SOL</td><td>90</td><td>-17.5%</td><td>-22.8%</td><td>—</td></tr>
+<tr><td>XRP</td><td>7</td><td>-10.6%</td><td>-11.1%</td><td>-14.7%</td></tr>
+<tr><td>XRP</td><td>30</td><td>-17.4%</td><td>-16.9%</td><td>-34.7%</td></tr>
+<tr><td>XRP</td><td>90</td><td>-14.8%</td><td>-22.8%</td><td>—</td></tr>
+<tr><td>DOGE</td><td>7</td><td>-9.1%</td><td>-9.9%</td><td>-13.9%</td></tr>
+<tr><td>DOGE</td><td>30</td><td>-11.2%</td><td>-12.1%</td><td>-29.4%</td></tr>
+<tr><td>DOGE</td><td>90</td><td>-25.2%</td><td>-28.0%</td><td>-14.1%</td></tr>
+</table></div><div class='small'>＝沒守住的起點中，途中最低 ÷ 下緣 − 1 的平均。</div>
+<h3>200 日線、200 週線當「下緣」（使用者提問；已知不是底，只描述）</h3><div class='small'>只算起點收盤在均線之上的起點：h 天內日低跌破均線的比例。括號＝起點已經在均線之下的比例（這些不算）。</div>
+<div class='tw'><table><tr><th>幣</th><th>均線</th><th>h7</th><th>h30</th><th>h90</th></tr>
+<tr><td>BTC</td><td>200 日線</td><td>8%（41%）</td><td>20%（41%）</td><td>32%（40%）</td></tr>
+<tr><td>BTC</td><td>200 週線（1,400 日）</td><td>4%（10%）</td><td>7%（12%）</td><td>14%（10%）</td></tr>
+<tr><td>ETH</td><td>200 日線</td><td>7%（46%）</td><td>28%（45%）</td><td>44%（36%）</td></tr>
+<tr><td>ETH</td><td>200 週線（1,400 日）</td><td>14%（23%）</td><td>28%（21%）</td><td>44%（10%）</td></tr>
+<tr><td>BNB</td><td>200 日線</td><td>21%（43%）</td><td>36%（46%）</td><td>47%（46%）</td></tr>
+<tr><td>BNB</td><td>200 週線（1,400 日）</td><td>2%（6%）</td><td>7%（7%）</td><td>5%（5%）</td></tr>
+<tr><td>SOL</td><td>200 日線</td><td>22%（55%）</td><td>42%（52%）</td><td>60%（38%）</td></tr>
+<tr><td>SOL</td><td>200 週線（1,400 日）</td><td>2%（27%）</td><td>5%（26%）</td><td>14%（12%）</td></tr>
+<tr><td>XRP</td><td>200 日線</td><td>21%（50%）</td><td>45%（58%）</td><td>80%（62%）</td></tr>
+<tr><td>XRP</td><td>200 週線（1,400 日）</td><td>15%（45%）</td><td>24%（47%）</td><td>50%（44%）</td></tr>
+<tr><td>DOGE</td><td>200 日線</td><td>26%（64%）</td><td>50%（68%）</td><td>67%（71%）</td></tr>
+<tr><td>DOGE</td><td>200 週線（1,400 日）</td><td>17%（53%）</td><td>43%（48%）</td><td>57%（46%）</td></tr>
+</table></div>
+<h3>大事件前後（h＝30，區間涵蓋事件日的起點）</h3><div class='tw'><table><tr><th>事件</th><th>幣</th><th>模型</th><th>起點</th><th>T2 下緣</th><th>途中最低</th><th>T1 區間</th><th>端點</th></tr>
+<tr><td>2020-03-12</td><td>BTC</td><td>M1</td><td>2020-03-05</td><td>7038</td><td class='narrow'>3782</td><td>7038～1.165e+04</td><td class='narrow'>6857</td></tr>
+<tr><td>2020-03-12</td><td>BTC</td><td>M3</td><td>2020-03-05</td><td>7050</td><td class='narrow'>3782</td><td>7050～1.163e+04</td><td class='narrow'>6857</td></tr>
+<tr><td>2020-03-12</td><td>BTC</td><td>M2</td><td>2020-03-05</td><td>5008</td><td class='narrow'>3782</td><td>6749～1.585e+04</td><td class=''>6857</td></tr>
+<tr><td>2020-03-12</td><td>ETH</td><td>M1</td><td>2020-02-13</td><td>190.5</td><td class='narrow'>86</td><td>190.5～377.9</td><td class='narrow'>122.5</td></tr>
+<tr><td>2020-03-12</td><td>ETH</td><td>M3</td><td>2020-02-13</td><td>179</td><td class='narrow'>86</td><td>179～402.1</td><td class='narrow'>122.5</td></tr>
+<tr><td>2020-03-12</td><td>ETH</td><td>M2</td><td>2020-02-13</td><td>133</td><td class='narrow'>86</td><td>156.6～450.6</td><td class='narrow'>122.5</td></tr>
+<tr><td>2020-03-12</td><td>BNB</td><td>M1</td><td>2020-03-05</td><td>14.62</td><td class='narrow'>6.38</td><td>14.62～29.45</td><td class='narrow'>13.76</td></tr>
+<tr><td>2020-03-12</td><td>BNB</td><td>M3</td><td>2020-03-05</td><td>14.35</td><td class='narrow'>6.38</td><td>14.35～29.99</td><td class='narrow'>13.76</td></tr>
+<tr><td>2020-03-12</td><td>BNB</td><td>M2</td><td>2020-03-05</td><td>9.917</td><td class='narrow'>6.38</td><td>13.19～42.41</td><td class=''>13.76</td></tr>
+<tr><td>2022 LUNA</td><td>BTC</td><td>M1</td><td>2022-04-24</td><td>2.922e+04</td><td class='narrow'>2.67e+04</td><td>2.922e+04～5.326e+04</td><td class=''>2.965e+04</td></tr>
+<tr><td>2022 LUNA</td><td>BTC</td><td>M3</td><td>2022-04-24</td><td>3.162e+04</td><td class='narrow'>2.67e+04</td><td>3.162e+04～4.922e+04</td><td class='narrow'>2.965e+04</td></tr>
+<tr><td>2022 LUNA</td><td>BTC</td><td>M2</td><td>2022-04-24</td><td>2.172e+04</td><td class=''>2.67e+04</td><td>2.882e+04～6.68e+04</td><td class=''>2.965e+04</td></tr>
+<tr><td>2022 LUNA</td><td>ETH</td><td>M1</td><td>2022-05-03</td><td>1993</td><td class='narrow'>1703</td><td>1993～3882</td><td class='narrow'>1834</td></tr>
+<tr><td>2022 LUNA</td><td>ETH</td><td>M3</td><td>2022-05-03</td><td>2112</td><td class='narrow'>1703</td><td>2112～3664</td><td class='narrow'>1834</td></tr>
+<tr><td>2022 LUNA</td><td>ETH</td><td>M2</td><td>2022-05-03</td><td>1378</td><td class=''>1703</td><td>1694～4783</td><td class=''>1834</td></tr>
+<tr><td>2022 LUNA</td><td>BNB</td><td>M1</td><td>2022-04-24</td><td>298.6</td><td class='narrow'>218.8</td><td>298.6～532.7</td><td class=''>328.3</td></tr>
+<tr><td>2022 LUNA</td><td>BNB</td><td>M3</td><td>2022-04-24</td><td>316.3</td><td class='narrow'>218.8</td><td>316.3～502.8</td><td class=''>328.3</td></tr>
+<tr><td>2022 LUNA</td><td>BNB</td><td>M2</td><td>2022-04-24</td><td>170.6</td><td class=''>218.8</td><td>257.3～837.5</td><td class=''>328.3</td></tr>
+<tr><td>2022 LUNA</td><td>XRP</td><td>M1</td><td>2022-04-23</td><td>0.4722</td><td class='narrow'>0.3361</td><td>0.4722～1.055</td><td class='narrow'>0.4052</td></tr>
+<tr><td>2022 LUNA</td><td>XRP</td><td>M3</td><td>2022-04-23</td><td>0.5191</td><td class='narrow'>0.3361</td><td>0.5191～0.9594</td><td class='narrow'>0.4052</td></tr>
+<tr><td>2022 LUNA</td><td>XRP</td><td>M2</td><td>2022-04-23</td><td>0.3276</td><td class=''>0.3361</td><td>0.4339～1.347</td><td class='narrow'>0.4052</td></tr>
+<tr><td>2022 LUNA</td><td>DOGE</td><td>M1</td><td>2022-04-30</td><td>0.08196</td><td class='narrow'>0.0689</td><td>0.08196～0.198</td><td class=''>0.088</td></tr>
+<tr><td>2022 LUNA</td><td>DOGE</td><td>M3</td><td>2022-04-30</td><td>0.07212</td><td class='narrow'>0.0689</td><td>0.07212～0.2251</td><td class=''>0.088</td></tr>
+<tr><td>2022 LUNA</td><td>DOGE</td><td>M2</td><td>2022-04-30</td><td>0.06158</td><td class=''>0.0689</td><td>0.08426～0.627</td><td class=''>0.088</td></tr>
+<tr><td>2022 FTX</td><td>BTC</td><td>M1</td><td>2022-10-21</td><td>1.481e+04</td><td class=''>1.559e+04</td><td>1.481e+04～2.479e+04</td><td class=''>1.628e+04</td></tr>
+<tr><td>2022 FTX</td><td>BTC</td><td>M3</td><td>2022-10-21</td><td>1.617e+04</td><td class='narrow'>1.559e+04</td><td>1.617e+04～2.271e+04</td><td class=''>1.628e+04</td></tr>
+<tr><td>2022 FTX</td><td>BTC</td><td>M2</td><td>2022-10-21</td><td>1.064e+04</td><td class=''>1.559e+04</td><td>1.377e+04～3.21e+04</td><td class=''>1.628e+04</td></tr>
+<tr><td>2022 FTX</td><td>ETH</td><td>M1</td><td>2022-10-30</td><td>1110</td><td class='narrow'>1074</td><td>1110～2278</td><td class=''>1216</td></tr>
+<tr><td>2022 FTX</td><td>ETH</td><td>M3</td><td>2022-10-30</td><td>1165</td><td class='narrow'>1074</td><td>1165～2171</td><td class=''>1216</td></tr>
+<tr><td>2022 FTX</td><td>ETH</td><td>M2</td><td>2022-10-30</td><td>778.6</td><td class=''>1074</td><td>958.5～2706</td><td class=''>1216</td></tr>
+<tr><td>2022 FTX</td><td>BNB</td><td>M1</td><td>2022-10-21</td><td>211.9</td><td class=''>260.2</td><td>211.9～344.3</td><td class=''>264.2</td></tr>
+<tr><td>2022 FTX</td><td>BNB</td><td>M3</td><td>2022-10-21</td><td>232.2</td><td class=''>260.2</td><td>232.2～314.1</td><td class=''>264.2</td></tr>
+<tr><td>2022 FTX</td><td>BNB</td><td>M2</td><td>2022-10-21</td><td>124.7</td><td class=''>260.2</td><td>178～542</td><td class=''>264.2</td></tr>
+<tr><td>2022 FTX</td><td>SOL</td><td>M1</td><td>2022-10-10</td><td>21.33</td><td class='narrow'>12.37</td><td>21.33～47.88</td><td class='narrow'>14.08</td></tr>
+<tr><td>2022 FTX</td><td>SOL</td><td>M3</td><td>2022-10-10</td><td>23.58</td><td class='narrow'>12.37</td><td>23.58～43.31</td><td class='narrow'>14.08</td></tr>
+<tr><td>2022 FTX</td><td>SOL</td><td>M2</td><td>2022-10-10</td><td>13.84</td><td class='narrow'>12.37</td><td>17.16～94.14</td><td class='narrow'>14.08</td></tr>
+<tr><td>2022 FTX</td><td>XRP</td><td>M1</td><td>2022-10-20</td><td>0.3073</td><td class=''>0.316</td><td>0.3073～0.6487</td><td class=''>0.3841</td></tr>
+<tr><td>2022 FTX</td><td>XRP</td><td>M3</td><td>2022-10-20</td><td>0.3108</td><td class=''>0.316</td><td>0.3108～0.6414</td><td class=''>0.3841</td></tr>
+<tr><td>2022 FTX</td><td>XRP</td><td>M2</td><td>2022-10-20</td><td>0.2075</td><td class=''>0.316</td><td>0.268～0.8279</td><td class=''>0.3841</td></tr>
+<tr><td>2022 FTX</td><td>DOGE</td><td>M1</td><td>2022-10-27</td><td>0.05365</td><td class=''>0.07053</td><td>0.05365～0.1102</td><td class=''>0.08893</td></tr>
+<tr><td>2022 FTX</td><td>DOGE</td><td>M3</td><td>2022-10-27</td><td>0.05152</td><td class=''>0.07053</td><td>0.05152～0.1148</td><td class=''>0.08893</td></tr>
+<tr><td>2022 FTX</td><td>DOGE</td><td>M2</td><td>2022-10-27</td><td>0.03757</td><td class=''>0.07053</td><td>0.0491～0.2457</td><td class=''>0.08893</td></tr>
+<tr><td>2025-10-10</td><td>BTC</td><td>M1</td><td>2025-10-05</td><td>1.072e+05</td><td class='narrow'>9.894e+04</td><td>1.072e+05～1.422e+05</td><td class='narrow'>1.015e+05</td></tr>
+<tr><td>2025-10-10</td><td>BTC</td><td>M3</td><td>2025-10-05</td><td>1.066e+05</td><td class='narrow'>9.894e+04</td><td>1.066e+05～1.43e+05</td><td class='narrow'>1.015e+05</td></tr>
+<tr><td>2025-10-10</td><td>BTC</td><td>M2</td><td>2025-10-05</td><td>7.176e+04</td><td class=''>9.894e+04</td><td>9.239e+04～1.954e+05</td><td class=''>1.015e+05</td></tr>
+<tr><td>2025-10-10</td><td>ETH</td><td>M1</td><td>2025-09-14</td><td>3338</td><td class=''>3435</td><td>3338～6352</td><td class=''>4125</td></tr>
+<tr><td>2025-10-10</td><td>ETH</td><td>M3</td><td>2025-09-14</td><td>3410</td><td class=''>3435</td><td>3410～6218</td><td class=''>4125</td></tr>
+<tr><td>2025-10-10</td><td>ETH</td><td>M2</td><td>2025-09-14</td><td>2433</td><td class=''>3435</td><td>2971～7437</td><td class=''>4125</td></tr>
+<tr><td>2025-10-10</td><td>BNB</td><td>M1</td><td>2025-10-05</td><td>924.4</td><td class='narrow'>860.1</td><td>924.4～1474</td><td class=''>936.8</td></tr>
+<tr><td>2025-10-10</td><td>BNB</td><td>M3</td><td>2025-10-05</td><td>844.9</td><td class=''>860.1</td><td>844.9～1613</td><td class=''>936.8</td></tr>
+<tr><td>2025-10-10</td><td>BNB</td><td>M2</td><td>2025-10-05</td><td>657.3</td><td class=''>860.1</td><td>828.7～1939</td><td class=''>936.8</td></tr>
+<tr><td>2025-10-10</td><td>SOL</td><td>M1</td><td>2025-09-24</td><td>151</td><td class=''>168.8</td><td>151～296.6</td><td class=''>193.6</td></tr>
+<tr><td>2025-10-10</td><td>SOL</td><td>M3</td><td>2025-09-24</td><td>154.6</td><td class=''>168.8</td><td>154.6～289.7</td><td class=''>193.6</td></tr>
+<tr><td>2025-10-10</td><td>SOL</td><td>M2</td><td>2025-09-24</td><td>96.46</td><td class=''>168.8</td><td>128.3～491.1</td><td class=''>193.6</td></tr>
+<tr><td>2025-10-10</td><td>XRP</td><td>M1</td><td>2025-10-04</td><td>2.142</td><td class='narrow'>1.254</td><td>2.142～4.114</td><td class=''>2.31</td></tr>
+<tr><td>2025-10-10</td><td>XRP</td><td>M3</td><td>2025-10-04</td><td>2.346</td><td class='narrow'>1.254</td><td>2.346～3.756</td><td class='narrow'>2.31</td></tr>
+<tr><td>2025-10-10</td><td>XRP</td><td>M2</td><td>2025-10-04</td><td>1.593</td><td class='narrow'>1.254</td><td>2.012～5.199</td><td class=''>2.31</td></tr>
+<tr><td>2025-10-10</td><td>DOGE</td><td>M1</td><td>2025-09-11</td><td>0.1711</td><td class='narrow'>0.095</td><td>0.1711～0.3831</td><td class=''>0.1853</td></tr>
+<tr><td>2025-10-10</td><td>DOGE</td><td>M3</td><td>2025-09-11</td><td>0.1754</td><td class='narrow'>0.095</td><td>0.1754～0.3737</td><td class=''>0.1853</td></tr>
+<tr><td>2025-10-10</td><td>DOGE</td><td>M2</td><td>2025-09-11</td><td>0.1345</td><td class='narrow'>0.095</td><td>0.1721～0.5694</td><td class=''>0.1853</td></tr>
+</table></div><div class='small'>橘字＝沒守住／落在區間外。逐年命中率見 yearly.csv。</div>
+<h2>五、先驗對答</h2><div class='card'><ul><li>① T2 用 M1／M3 端點下緣多數格偏窄：14／36 格偏窄 ⇒ 未中</li><li>② T1 h7 M3 比 M1 更接近 90%：2／6 幣（BNB、DOGE）⇒ 未中</li><li>③ 至少一幣 T1 h30 M2 偏窄：0 幣（無）⇒ 未中</li><li>④ 200 日線當下緣，途中跌破比例遠高於 5%：6 幣合併 h7 14.7%、h30 32.0%、h90 48.3% ⇒ 未中</li></ul></div>
+<h2>六、驗證</h2><div class='tw'><table><tr><th>fixture</th><th>結果</th><th>反例</th><th>反例結果</th></tr>
+<tr><td style='white-space:normal'>a M1 常數報酬 ⇒ 區間＝P0</td><td>綠</td><td style='white-space:normal'>用到起點之後 5 天的資料</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>a M3 同理</td><td>綠</td><td style='white-space:normal'>EWMA 用到起點之後</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>b 起點不重疊</td><td>綠</td><td style='white-space:normal'>每天一個起點（重疊）</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>c T2 用日低最小值</td><td>綠</td><td style='white-space:normal'>用收盤</td><td>紅（抓得到）</td></tr>
+<tr><td style='white-space:normal'>d M2 只含起點以前</td><td>綠</td><td style='white-space:normal'>全期分位（看未來）</td><td>紅（抓得到）</td></tr>
+</table></div><div class='small'>抽樣逐列重算：30／30 個起點的 T1、T2 命中一致；鏡像與副本：6 檔全相同。</div>
+<h2>七、讀的時候要注意</h2><ul><li>各幣窗起點不同（BTC 2015 起有起點，SOL 2022-08 起），起點數少的格 CI 很寬，只能判出偏窄／偏寬或測不出。</li><li>SOL T2・M2 經驗分位・h90：命中序列全是 1（16 個起點）⇒ 依讀法 Q7 CI 退化成一個點，「判過（略寬，在容忍帶內）」只是形式上；起點太少，不代表區間夠寬。</li><li>XRP T2・M2 經驗分位・h90：命中序列全是 1（26 個起點）⇒ 依讀法 Q7 CI 退化成一個點，「判過（略寬，在容忍帶內）」只是形式上；起點太少，不代表區間夠寬。</li><li>T2 用現貨日低；永續合約插針可能更深 ⇒ 對合約強平而言 T2 偏樂觀。</li><li>CI 信賴水準極高（1−0.05/108），2,000 次 bootstrap 下兩端近似最小／最大值。</li><li>⛔ 不得把區間當成「幣價會在 A～B 之間」對外講、⛔ 不得用下緣推開幾倍、⛔ 不構成買賣建議。前瞻紀錄另記（24 筆前不下結論）。</li></ul>
+<h2>八、執行者補的讀法</h2><ul class='small'><li>Q3 M1 標準差用樣本標準差（ddof＝1）</li><li>Q4 M3 EWMA 初值＝前 30 個日報酬平方的平均（730 天暖機後影響可忽略）</li><li>Q5 M2 用重疊的 h 天窗取樣（t＋h ≤ 起點）；途中最低跌幅用 t＋1～t＋h 的日低</li><li>Q6 「起點後 h 天內」＝起點隔天起的 h 根日 K（起點當天日低不算）</li><li>Q7 命中序列全 1／全 0 時 CI＝點估計；百分位用 numpy 線性內插</li><li>Q8 在容忍帶內又同時上界＜名目（或下界＞名目）時，依登錄順序判「判過」，另註略窄／略寬</li><li>Q9 均線當下緣只算起點收盤在均線之上的起點；起點已在均線下的比例另報</li><li>Q10 先驗①「多數」＝36 格中過半；②＝≥4 幣；④「遠高於 5%」＝每個 h 合併跌破比例 ≥15%</li></ul></main></body></html>
