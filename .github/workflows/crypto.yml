@@ -23,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜bitstamp-backfill 補2013~2017（一次性）｜funding 永續資金費率全期（C2 六幣）｜perp 永續日K全期（C5 複核）｜mark 永續標記價日K（C5 描述臂，BTC／ETH）｜cm 幣本位永續（C10 六幣：資金費率＋成交價日K＋標記價日K）"
+        description: "universe 重排前15大｜backfill 回補歷史月檔｜daily 補當月缺口｜drop-bitstamp 刪掉公開檔裡的 Bitstamp 列（條款禁止散布，2026-10-04 移私有 repo）｜funding 永續資金費率全期（C2 六幣）｜perp 永續日K全期（C5 複核）｜mark 永續標記價日K（C5 描述臂，BTC／ETH）｜cm 幣本位永續（C10 六幣：資金費率＋成交價日K＋標記價日K）"
         type: choice
-        options: [universe, backfill, daily, bitstamp-backfill, funding, perp, mark, cm]
+        options: [universe, backfill, daily, drop-bitstamp, funding, perp, mark, cm]
         default: daily
       reset_months_done:
         description: "backfill 專用，⛔ 平常不要勾：續跑台帳被污染時才用（例如 URL bug 讓整批誤記成官方沒有）"

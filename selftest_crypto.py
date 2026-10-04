@@ -450,19 +450,24 @@ def main():
             C.META, C.CRYPTO_DIR = old_meta, old_crypto_dir
             sys.argv, runlog.PATH, C._get = old_argv, old_rl_path, old_get
 
-        ck("⭐ main() 跑完回 0", rc == 0, str(rc))
+        # ⛔⛔ 2026-10-04 使用者裁定：Bitstamp 條款禁止散布、本 repo 公開 ⇒ bitstamp-backfill 停用
+        #   ⇒ 這一節改驗「停用真的擋住」＋「drop-bitstamp 只刪 Bitstamp 列」
+        ck("⭐ bitstamp-backfill 已停用 ⇒ main() 回非 0", rc != 0, str(rc))
         btc_days = C._load(btc_path, C.DAY_HEADER, C.day_key)
-        gap = [f"2017-08-{d:02d}" for d in range(1, 17)]
-        ck("⭐⭐⭐ 16 天洞（2017-08-01～08-16）全部補上，"
-           "⛔ 不是拿月初（08-01）當終點漏掉這幾天",
-           all((g,) in btc_days for g in gap),
-           str(sorted(btc_days)[:20]))
-        ck("⭐⭐ 既有的 2017-08-17 那一列沒有被動到（source 仍是 binance）",
-           btc_days.get(("2017-08-17",), [None] * 12)[-1] == "binance",
-           str(btc_days.get(("2017-08-17",))))
-        ck("★ 新補的那幾天 source 是 bitstamp",
-           all(btc_days[(g,)][-1] == "bitstamp" for g in gap
-               if (g,) in btc_days))
+        ck("⭐⭐ 停用時檔案一列都沒變（⛔ 沒有偷補）", len(btc_days) == 3, str(sorted(btc_days)))
+
+        C.META, C.CRYPTO_DIR = os.path.join(tmp, "meta"), os.path.join(tmp, "crypto")
+        runlog.PATH = os.path.join(tmp, "_last_run.md")
+        sys.argv = ["crypto.py", "--mode", "drop-bitstamp"]
+        try:
+            rc2 = C.main()
+        finally:
+            C.META, C.CRYPTO_DIR = old_meta, old_crypto_dir
+            sys.argv, runlog.PATH = old_argv, old_rl_path
+        btc_days = C._load(btc_path, C.DAY_HEADER, C.day_key)
+        ck("⭐ drop-bitstamp 回 0", rc2 == 0, str(rc2))
+        ck("⭐⭐ Bitstamp 列全刪、Binance 那列留著", sorted(btc_days) == [("2017-08-17",)]
+           and btc_days[("2017-08-17",)][-1] == "binance", str(btc_days))
 
     print(f"\n[selftest] 通過 {PASS}｜失敗 {FAIL}")
     return 1 if FAIL else 0
