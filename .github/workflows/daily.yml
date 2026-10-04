@@ -693,6 +693,18 @@ jobs:
                           --limit 40 --sleep 2 || RC=1
           exit $RC
 
+      # ⭐ 2026-10-04（裁定 seq297 §二）：上市官方 X（不比價）旗標，當天一發 ⇒ data/meta/twse_change_x.csv
+      #   日檔 change 欄不動；歷史由 backfill mode=xflag 補
+      - name: 上市官方 X 旗標（當天）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          RC=0
+          python twse_xflag.py --day "$DAY" --sleep 0 || RC=1
+          exit $RC
+
       # ⭐⭐ 終止上市（下市）清單。⛔ 它解的是**生存者偏誤**：
       #   下市公司會從母體消失 ⇒ 「2015 買、後來下市」那一段整段不見
       #   ⇒ 回測績效**系統性偏樂觀**，⚠ 而且不會有任何一格數字出錯。

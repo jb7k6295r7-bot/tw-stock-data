@@ -9,7 +9,7 @@ on:
       mode:
         description: "probe 驗端點｜run 逐日回補｜inst 全市場三大法人｜esb 興櫃逐檔逐月｜esb-repair 把某一天被刪掉的興櫃列補回去（日期填 start）｜audit 盤點｜purge 刪區間｜meta 重建 first/last_seen"
         type: choice
-        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated, early-feed, mops-news, restore-file]
+        options: [probe, run, inst, esb, esb-repair, audit, purge, meta, xbrl-rd, treasury, curated, early-feed, mops-news, restore-file, xflag]
         default: probe
       start:
         description: "起日（run 用，YYYY-MM-DD）"
@@ -270,6 +270,17 @@ jobs:
           git fetch origin main --depth=1
           git checkout origin/main -- data/mops/news 2>/dev/null || echo "（main 上還沒有 data/mops/news，第一趟）"
           python mops_news.py --start "${{ inputs.start }}" --end "${{ inputs.end }}" --sleep "${{ inputs.sleep }}" --budget-min 300
+
+      # ⭐ 2026-10-04（裁定 seq293 §二、seq297 §二）：上市官方 X（不比價）旗標 ⇒ data/meta/twse_change_x.csv
+      #   先取 main 的交易日曆、大盤指數（日期來源）與旗標台帳（續跑）；每趟 300 分鐘
+      - name: 上市官方 X 旗標回補（MI_INDEX 逐日）
+        if: inputs.mode == 'xflag'
+        timeout-minutes: 330
+        run: |
+          git fetch origin main --depth=1
+          git checkout origin/main -- data/meta/calendar_twse.csv data/history/market_index.csv
+          git checkout origin/main -- data/meta/twse_change_x.csv data/meta/_twse_change_x_asked.csv 2>/dev/null || echo "（main 上還沒有旗標檔，第一趟）"
+          python twse_xflag.py --start "${{ inputs.start }}" --end "${{ inputs.end }}" --sleep "${{ inputs.sleep }}" --budget-min 300
 
       # ★ 不帶 --saturdays：inst 改照 data/universe/daily 的交易日曆走，
       #   補行交易的週六本來就在日曆裡，比「記得勾選」可靠。
