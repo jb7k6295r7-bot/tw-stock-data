@@ -1075,18 +1075,18 @@
 
 ## filing_dates　✓ 正常
 
-最後執行：2026-10-04T04:59:20+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37134875639
+最後執行：2026-10-04T09:35:02+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37154400349
 
 - **母體**：2019:1726｜2020:1741｜2021:1753｜2022:1787｜2023:1818｜2024:1875｜2025:1944｜2026:1982
-- **待問**：1130 發（已問過 13496）
-- **本趟**：問 627 發｜ok 626｜empty（那年沒有檔）0｜失敗 1｜剩 503 發｜300 分
-- **累計**：上傳紀錄 96887 列｜已問 (家, 年) 15458
-- **限流跡象**：第一次失敗在第 625 發（20:58:48）｜冷卻 0 次
-- **失敗的（前 10）**：[('8358', 110, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
+- **待問**：504 發（已問過 14122）
+- **本趟**：問 504 發｜ok 502｜empty（那年沒有檔）0｜失敗 2｜剩 0 發｜255 分
+- **累計**：上傳紀錄 99905 列｜已問 (家, 年) 15960
+- **限流跡象**：第一次失敗在第 494 發（01:26:52）｜冷卻 0 次
+- **失敗的（前 10）**：[('6514', 108, 'HTTP 0 URLError: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)>'), ('6594', 108, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
 
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
-- ok　失敗 ≤ 本趟 2%　（1／627）
+- ok　失敗 ≤ 本趟 2%　（2／504）
 
 ## mops_news　✓ 正常
 
