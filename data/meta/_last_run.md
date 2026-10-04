@@ -1075,18 +1075,17 @@
 
 ## filing_dates　✓ 正常
 
-最後執行：2026-10-04T09:35:02+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37154400349
+最後執行：2026-10-04T10:06:40+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37169781109
 
 - **母體**：2019:1726｜2020:1741｜2021:1753｜2022:1787｜2023:1818｜2024:1875｜2025:1944｜2026:1982
-- **待問**：504 發（已問過 14122）
-- **本趟**：問 504 發｜ok 502｜empty（那年沒有檔）0｜失敗 2｜剩 0 發｜255 分
-- **累計**：上傳紀錄 99905 列｜已問 (家, 年) 15960
-- **限流跡象**：第一次失敗在第 494 發（01:26:52）｜冷卻 0 次
-- **失敗的（前 10）**：[('6514', 108, 'HTTP 0 URLError: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)>'), ('6594', 108, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
+- **待問**：2 發（已問過 14624）
+- **本趟**：問 2 發｜ok 2｜empty（那年沒有檔）0｜失敗 0｜剩 0 發｜1 分
+- **累計**：上傳紀錄 99914 列｜已問 (家, 年) 15962
+- **限流跡象**：沒有失敗
 
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
-- ok　失敗 ≤ 本趟 2%　（2／504）
+- ok　失敗 ≤ 本趟 2%　（0／2）
 
 ## mops_news　✓ 正常
 
