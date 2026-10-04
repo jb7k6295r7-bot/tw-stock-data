@@ -678,6 +678,21 @@ jobs:
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
           exit $RC
 
+      # ⭐ 2026-10-04（台股資料體檢 ②）：上市大盤信用交易彙總 marginmkt 停在 09-24
+      #   ⇒ 原因：daily 從來沒排這個 feed（只有 09-26 手動回補過）⇒ 接進來：當天＋分批補洞（同 marginratio 的寫法）
+      - name: 大盤信用交易彙總（marginmkt，當天＋分批回補）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')
+          RC=0
+          python feeds.py --run --feed marginmkt --start "$DAY" --end "$DAY" --sleep 2 || RC=1
+          python feeds.py --run --feed marginmkt --start 2015-01-01 --end "$TODAY" \
+                          --limit 40 --sleep 2 || RC=1
+          exit $RC
+
       # ⭐⭐ 終止上市（下市）清單。⛔ 它解的是**生存者偏誤**：
       #   下市公司會從母體消失 ⇒ 「2015 買、後來下市」那一段整段不見
       #   ⇒ 回測績效**系統性偏樂觀**，⚠ 而且不會有任何一格數字出錯。

@@ -336,7 +336,13 @@ jobs:
             echo "⚠ main 上沒有 $D 的日檔，用 checkout 帶下來的那一份"
           # ⭐ 來源優先走 `--from-git HEAD`（一個請求都不打）；
           #   ⚠ 那個 ref 上沒有的話它會自己講出來，再改用月表那條。
-          python esb_day_repair.py --date "$D" --from-git HEAD \
+          # ⭐ 2026-10-04：來源 ref 可指定（借 markets 欄：esb-repair 用不到它）⇒ 填 main 歷史裡那天還完整的 commit
+          #   （2026-09-10：分支 HEAD 也沒有興櫃列 ⇒ --from-git HEAD 讀到 0 列；b0cd65d770 有 363 列）
+          REF="${{ inputs.markets }}"
+          case "$REF" in ""|twse*|tpex*) REF=HEAD ;; esac
+          git cat-file -e "$REF^{commit}" || { echo "⛔ 找不到 ref $REF" >&2; exit 1; }
+          echo "[esb-repair] 取興櫃列的來源 ref：$REF"
+          python esb_day_repair.py --date "$D" --from-git "$REF" \
                                    --sleep "${{ inputs.sleep || '5' }}"
           # ⛔⛔ 一定要把那一天的日檔列進**強制搬**：
           #   合併結果可能與**分支上已經有的那一版逐位元組相同**
