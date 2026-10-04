@@ -59,6 +59,8 @@
       現實版（researchSlip 定義落到換股簿：C1 每邊 ＋0.3%、C2 50 萬：每筆 Q ＝ 50 萬 × 該筆金額 ÷ 前一日權益、單邊衝擊 σ20 √(Q÷ADV20)、C4 均價成交）
   K13 判定窗合格／另列 ⇒ 固定跟進出場敏感度（seq242 ②）：停損 −10／−20%（收盤 ≤ 進場價×(1−x) ⇒ 次日開盤賣、現金等下次換股）、
       停利 +30／+50% 賣半、檔數 5／10／20；⚠ 2ATR、時停 R0-40 本輪不做（執行者補）
+  K14（裁定 seq290 追加，2026-10-04 13:0x）：--sens-lag 20 ⇒ 早年段 ROE 缺時戳補位改「法定期限＋20 交易日」、其餘一字不變、只重跑早年段主格；
+      窗沿用主跑；標籤翻轉 ⇒ 對外寫「不可判定（可用日敏感）」，沒翻 ⇒「另列（弱）」；讀法時間由腳本當場 TZ=Asia/Taipei date 寫進 sens_lag20.json
 輸出 backtest/resultsExtX1/
 """
 from __future__ import annotations
@@ -87,6 +89,7 @@ EARLY = os.path.expanduser("~/earlydata/3edc0e2206/main/data")
 TAGT = "2026-10-04 11:40（台北）"
 BUY_C, SELL_C = 0.001425, 0.004425
 NPICK = 40
+A2_LAG = 5                                             # 缺時戳補位：法定期限之後第一個交易日 ＋A2_LAG 個交易日（主格 5；--sens-lag 只改這一個數）
 ORIG = ("2018-01-02", "2026-06-30")
 TAIL = ("2026-07-01", "2026-08-24")
 MAIN_END = "2026-08-24"
@@ -140,7 +143,7 @@ def roe_avail(RO, cal):
             pos[i] = int(cal.searchsorted(pd.Timestamp(ts), side="right")); src.append("ts")
         else:
             y, q0 = divmod(int(p), 4)
-            pos[i] = int(cal.searchsorted(deadline(y, q0 + 1), side="right")) + 5; src.append("a2")
+            pos[i] = int(cal.searchsorted(deadline(y, q0 + 1), side="right")) + A2_LAG; src.append("a2")
     return pos, np.array(src)
 
 
@@ -441,9 +444,11 @@ def _fake_orig(args):
 # ═════════════ 主程式 ═════════════
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=4); ap.add_argument("--reps", type=int, default=1000)
-    ap.add_argument("--check", action="store_true"); a = ap.parse_args()
+    ap.add_argument("--check", action="store_true"); ap.add_argument("--sens-lag", type=int, default=None); a = ap.parse_args()
     if a.check:
         return check()
+    if a.sens_lag is not None:
+        return sens_lag(a)
     os.makedirs(OUT, exist_ok=True)
     logf = open(os.path.join(OUT, "run.log"), "w", encoding="utf-8"); T0 = time.time()
 
@@ -560,6 +565,47 @@ def main():
     np.savez_compressed(os.path.join(OUT, "eq.npz"), A=eqA, B=eqB, early=arr)
     json.dump(S, open(os.path.join(OUT, "summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=float)
     log(f"[完] {time.time() - T0:.0f}s")
+
+
+def sens_lag(a):
+    """裁定 seq290：早年段 ROE 缺時戳補位改「法定期限＋a.sens_lag 交易日」、其餘一字不變，只重跑早年段主格（月換、40 檔、分數平方）。
+    ⭐ 窗沿用主跑 summary.json 的早年甲／乙起訖（只改可用日；起點規則在新補位下會落在哪一天另報、⛔ 不用來改窗——執行者補）。
+    輸出 resultsExtX1/sens_lag{N}.json；⛔ 不覆寫主跑的 summary／picks（--check 照舊）。"""
+    global A2_LAG
+    import subprocess
+    ts = subprocess.run(["bash", "-c", "TZ=Asia/Taipei date '+%F %H:%M'"], capture_output=True, text=True).stdout.strip()
+    A2_LAG = int(a.sens_lag)
+    S0 = json.load(open(os.path.join(OUT, "summary.json"), encoding="utf-8"))
+    log = lambda m: print(m, flush=True)
+    log(f"===== X1 敏感度：缺時戳補位 期限＋{A2_LAG}（主跑 ＋5）｜讀法時間 {ts}（台北，腳本當場 date）=====")
+    RO = load_roe()
+    WB = build_world("主快照", H2.H2D, [H2.H2D], MAIN_END, a.procs, log, RO)
+    WA = build_world("早年版面", EARLY, [EARLY], "2014-12-31", a.procs, log, RO)
+    D.DATA = H2.H2D
+    pos = lambda W, d: int(np.searchsorted(W["cal"].values, np.datetime64(pd.Timestamp(d))))
+    a0, a1 = (pos(WA, d) for d in S0["窗"]["早年甲（早年版面、只上市）"])
+    b0, b1 = (pos(WB, d) for d in S0["窗"]["早年乙（主快照）"])
+    cov = {t: float(df.loc[df["pool"], "roe"].notna().mean()) if df["pool"].any() else 0.0 for t, df in WA["XS"].items()}
+    tA = min(t for t, v in cov.items() if v >= 0.90 and t in WA["e_of"])
+    eqA, stA = book(WA, schedule(WA), a0, a1); eqB, stB = book(WB, schedule(WB), b0, WB["w1"])
+    c, m = cst(chain([(eqA, a0, a1), (eqB, b0, b1)]))
+    c0, m0 = cst(chain([(WA["bench"], a0, a1), (WB["bench"], b0, b1)]))
+    lab = label(c, m, c0, m0); J = S0["判定（早年段，月換主格）"]
+    srcs = []
+    for W, lo, hi in ((WA, a0, a1), (WB, b0, b1)):
+        for t, e in W["e_of"].items():
+            if lo <= e <= hi:
+                srcs += list(W["XS"][t].loc[list(weights_at(W["XS"][t])), "asrc"])
+    out = {"讀法時間": f"{ts}（台北）", "依據": "裁定 seq290：早年段 ROE 可用日改法定期限＋20 交易日，其餘一字不變", "補位": f"法定期限之後第一個交易日 ＋{A2_LAG}",
+           "窗（沿用主跑）": {"早年甲": S0["窗"]["早年甲（早年版面、只上市）"], "早年乙": S0["窗"]["早年乙（主快照）"]},
+           "新補位下早年甲起點規則會落在": str(WA["cal"][WA["e_of"][tA]].date()),
+           "早年段": {"年化": c, "回落": m, "比值": c / abs(m), "標籤（計算）": lab}, "0050": {"年化": c0, "回落": m0, "比值": c0 / abs(m0)},
+           "主跑（＋5）": {"年化": J["年化"], "回落": J["回落"], "標籤（計算）": J["標籤"]},
+           "標籤翻轉": lab != J["標籤"],
+           "對外標籤（seq290）": "不可判定（可用日敏感）" if lab != J["標籤"] else "另列（弱）",
+           "入選股 ROE 可用日來源": {k: int(v) for k, v in pd.Series(srcs).value_counts().items()}}
+    json.dump(out, open(os.path.join(OUT, f"sens_lag{A2_LAG}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=float)
+    print(json.dumps(out, ensure_ascii=False, indent=1, default=float))
 
 
 # ═════════════ 抽樣查核（⛔ 不呼叫 load_roe／roe_avail／build_world／score_table／weights_at／book）═════════════
