@@ -176,6 +176,7 @@ def land_history(symbol, today=None, root=None):
     done = _load(dp, MONTHS_DONE_HEADER, months_key)
     csvp = symbol_csv_path(symbol, root)
     days = _load(csvp, DAY_HEADER, day_key)
+    _migrate_blank_source(days)     # ⭐ 2026-10-05：體檢發現 14 幣舊列 source 仍是空白（只在記憶體補過、沒寫回）⇒ 每次寫檔順手寫回
     n0 = len(days)
     asof = today.isoformat()
     ok = fail = skipped = nodata = 0
@@ -212,6 +213,7 @@ def land_recent_days(symbol, today=None, root=None, lookback=35):
     today = today or datetime.datetime.now(datetime.timezone.utc).date()
     csvp = symbol_csv_path(symbol, root)
     days = _load(csvp, DAY_HEADER, day_key)
+    _migrate_blank_source(days)     # ⭐ 2026-10-05：體檢發現 14 幣舊列 source 仍是空白（只在記憶體補過、沒寫回）⇒ 每次寫檔順手寫回
     n0 = len(days)
     asof = today.isoformat()
     ok = fail = 0
