@@ -56,6 +56,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 1538,正峰,twse,2022-06-14,2022-06-23,6,6,6,0,notrade
 1538,正峰,twse,2026-07-30,2026-08-13,9,9,9,0,notrade
 1538,正峰,twse,2026-08-24,2026-09-07,9,9,9,0,notrade
+1538,正峰,twse,2026-09-11,2026-09-21,5,5,5,0,notrade
 1591,駿吉-KY,tpex,2026-06-10,2026-07-22,27,0,0,27,halted
 1603,華電,twse,2019-04-03,2019-08-19,92,0,0,0,uncovered
 1742,台蠟,tpex,2015-09-11,2015-10-07,15,0,0,15,halted
@@ -233,6 +234,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 2948,寶陞,tpex,2025-11-03,2025-11-12,6,6,6,0,notrade
 2949,欣新網,tpex,2025-04-28,2025-05-07,5,5,5,0,notrade
 2949,欣新網,tpex,2025-07-24,2025-08-01,5,5,5,0,notrade
+2949,欣新網,tpex,2026-09-16,2026-09-24,5,5,5,0,notrade
 3018,隆銘綠能,twse,2022-11-16,2023-06-30,144,0,0,0,uncovered
 3064,泰偉,tpex,2022-04-08,2022-04-19,6,6,6,0,notrade
 3064,泰偉,tpex,2022-10-24,2022-11-01,5,5,5,0,notrade
@@ -244,6 +246,8 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 3064,泰偉,tpex,2026-07-22,2026-08-04,8,8,8,0,notrade
 3064,泰偉,tpex,2026-08-04,2026-08-26,15,15,15,0,notrade
 3064,泰偉,tpex,2026-08-26,2026-09-08,8,8,8,0,notrade
+3064,泰偉,tpex,2026-09-11,2026-09-21,5,5,5,0,notrade
+3064,泰偉,tpex,2026-09-21,2026-10-01,5,5,5,0,notrade
 3067,全域,tpex,2016-08-02,2016-08-12,7,7,7,0,notrade
 3067,全域,tpex,2016-08-18,2016-08-26,5,5,5,0,notrade
 3067,全域,tpex,2018-06-14,2018-06-25,5,5,5,0,notrade
@@ -387,6 +391,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 4131,浩泰,tpex,2019-06-11,2019-06-19,5,5,5,0,notrade
 4131,浩泰,tpex,2022-12-26,2023-01-04,5,5,5,0,notrade
 4131,浩泰,tpex,2025-09-30,2025-10-09,5,5,5,0,notrade
+4154,樂威科-KY,tpex,2026-09-03,2026-09-14,6,6,6,0,notrade
 4183,福永生技,tpex,2021-09-24,2021-10-04,5,5,5,0,notrade
 4183,福永生技,tpex,2025-05-27,2025-06-05,5,5,5,0,notrade
 4198,欣大健康,tpex,2022-09-30,2022-10-11,5,5,5,0,notrade
@@ -959,6 +964,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 6222,立軒,tpex,2020-02-19,2020-02-27,5,5,5,0,notrade
 6222,立軒,tpex,2020-03-27,2020-04-09,6,6,6,0,notrade
 6225,天瀚,twse,2015-12-31,2016-01-11,5,5,5,0,notrade
+6228,全譜,tpex,2026-08-27,2026-09-16,13,13,13,0,notrade
 6236,中湛,tpex,2016-05-24,2016-06-01,5,5,5,0,notrade
 6236,中湛,tpex,2016-06-02,2016-06-16,8,8,8,0,notrade
 6236,中湛,tpex,2016-06-22,2016-06-30,5,5,5,0,notrade
@@ -1024,6 +1030,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 6236,中湛,tpex,2026-06-02,2026-06-10,5,5,5,0,notrade
 6236,中湛,tpex,2026-06-10,2026-07-01,13,13,13,0,notrade
 6236,中湛,tpex,2026-07-07,2026-08-12,24,24,24,0,notrade
+6236,中湛,tpex,2026-09-01,2026-09-18,12,12,12,0,notrade
 6240,松崗,tpex,2015-01-14,2015-02-05,15,15,15,0,notrade
 6240,松崗,tpex,2015-02-10,2015-04-13,34,34,34,0,notrade
 6240,松崗,tpex,2015-05-14,2015-05-22,5,5,5,0,notrade
