@@ -1073,6 +1073,22 @@
 - ok　⭐ 寫完重讀，列數與換股率對得回來（⛔ 不是斷言寫檔成功）　（寫 14｜讀回 14）
 
 
+## crypto:perp　✓ 正常
+
+最後執行：2026-10-05T12:56:22+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 37265195204
+
+- **這一趟**：C5 永續日 K 全期（2020-01 ~ 2026-09）
+- **BTC**：2465 列｜ok 81 月｜日封存補 0 天｜補完仍缺 0 天｜absent 0｜error 0｜第一根 2020-01-01
+- **ETH**：2465 列｜ok 81 月｜日封存補 0 天｜補完仍缺 0 天｜absent 0｜error 0｜第一根 2020-01-01
+- **XRP**：2460 列｜ok 81 月｜日封存補 5 天｜補完仍缺 0 天｜absent 0｜error 0｜第一根 2020-01-06
+- **BNB**：2425 列｜ok 80 月｜日封存補 0 天｜補完仍缺 0 天｜absent 1｜error 0｜第一根 2020-02-10
+- **DOGE**：2274 列｜ok 75 月｜日封存補 0 天｜補完仍缺 0 天｜absent 6｜error 0｜第一根 2020-07-10
+- **SOL**：2208 列｜ok 73 月｜日封存補 5 天｜補完仍缺 0 天｜absent 8｜error 0｜第一根 2020-09-14
+
+檢查：
+- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
+- ok　⭐ 補完之後逐日無缺（⛔ 月封存漏打包的日子要用日封存補）　（[]）
+
 ## twse_xflag　✓ 正常
 
 最後執行：2026-10-05T04:53:28+08:00（台北）｜觸發 workflow_dispatch｜歷史回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 37225483187
@@ -1443,21 +1459,6 @@
 
 檢查：
 - ok　日線月數 ＝ 要求的月數（⛔ 不可少一個月）　（36）
-
-## crypto:perp　✓ 正常
-
-最後執行：2026-09-25T14:07:25+08:00（台北）｜觸發 workflow_dispatch｜虛擬貨幣（前 15 大市值）日K 收集｜ref claude/financial-market-analysis-mmm5kf｜run 36100983120
-
-- **這一趟**：C5 永續日 K 全期（2020-01 ~ 2026-08）
-- **BTC**：2435 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
-- **ETH**：2435 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-01
-- **XRP**：2425 列｜ok 80 月｜absent 0｜error 0｜第一根 2020-01-06
-- **BNB**：2395 列｜ok 79 月｜absent 1｜error 0｜第一根 2020-02-10
-- **DOGE**：2244 列｜ok 74 月｜absent 6｜error 0｜第一根 2020-07-10
-- **SOL**：2173 列｜ok 72 月｜absent 8｜error 0｜第一根 2020-09-14
-
-檢查：
-- ok　抓取錯誤 0 個月（⛔ error 不是 absent）　（[]）
 
 ## feeds:otcinstamt　✓ 正常
 
