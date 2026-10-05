@@ -11,7 +11,9 @@
 ## 檔案
 
 `<SYM>USD_PERP.csv`（BTC、ETH、BNB、SOL、XRP、DOGE）：funding_time,funding_rate,rate_type（官方欄位原樣，毫秒 UTC）
-區間：各幣上市日 ～ 2026-10-04 00:00 UTC（2022-07 起與封存重疊，逐筆對帳）
+區間：各幣上市日 ～ 最近一次本機更新（2026-10-05 00:00 UTC）（2022-07 起與封存重疊，逐筆對帳）
+
+⚠ 只能本機跑 ⇒ 資料庫線每月月初本機更新一次（build.py 全期重抓，舊列逐列不得改變），再派 backfill mode=curated 上 main
 
 ## 怎麼用（給使用者）
 
