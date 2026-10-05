@@ -1,0 +1,154 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>真頂出場起漲點版</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left;white-space:normal}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:8px 12px;background:#eef4fb}.big{font-size:1.05rem}li{margin:.35em 0}.sel{position:sticky;top:0;background:#f6f6f4;padding:6px 0;z-index:2}.sel select{font-size:16px;margin:2px 4px;padding:4px}.pane{display:none}.pane.on{display:block}td.up{color:#b0261e;font-weight:600}td.dn{color:#1f6f3d;font-weight:600}tr.f td{background:#f4f4f4;color:#555}</style></head><body><main>
+<h1>營量、營飆：持有中出現「真頂訊號」就賣（真頂從起漲點算）</h1>
+<p class='warn'>⚠ 只當參考，沒有計入檢定數。看結果以 2021～2023 為主；2024～2026.08 只當對照。灰色列「假訊號」是隨機挑一天提早賣，只用來看「提早賣」本身的效果，不是候選做法。</p>
+<div class='ok big'><b>先講結論</b>：營量：T1 在主判期贏正式；營飆：沒有一版在主判期贏正式。<ul class='big'><li><b>營量</b>（正式 2021～2023 年化 +27.0%、回落 -30.7%）：T1 +32.9%（多 6.0 點；對照期 +38.3%／正式 +45.6%）；T2 +11.3%（少 15.6 點；對照期 +13.3%／正式 +45.6%）；T3 +11.4%（少 15.5 點；對照期 +14.4%／正式 +45.6%）；假訊號 +25.6%（少 1.4 點，贏正式 40%；對照期 +42.8%／正式 +45.6%）。</li><li><b>營飆</b>（正式 2021～2023 年化 +57.0%、回落 -27.7%）：T1 +33.6%（少 21.5 點，贏正式 0%；對照期 +55.7%／正式 +42.0%）；T2 +16.6%（少 40.5 點，贏正式 0%；對照期 +21.8%／正式 +42.0%）；T3 +15.0%（少 40.9 點，贏正式 0%；對照期 +22.6%／正式 +42.0%）；假訊號 +43.5%（少 11.2 點，贏正式 14%；對照期 +38.5%／正式 +42.0%）。</li><li>和上一份（真頂訊號從買進日算、處置要 60 天內）比，主判期對正式的年化差：營量 +3.1 點 → 這次 T1 +6.0 點；營飆 -16.7 點 → 這次 T1 -21.5 點。</li><li>T2（真頂分數）幾乎每筆都很快觸發（平均只抱十幾個交易日），等於很早就下車、錯過後面的大漲，年化大幅輸正式；T3 同理。</li></ul></div>
+<p class='lead'>讀法寫死 2026-10-06 04:35（台北）。<b>起漲點</b>：持有中每一天，用當天以前的資料、照每日名單同一套規則找起漲點（往前 250 天最高收盤之前的最低點；買進前那段漲勢已從最高跌 30% 結束就改用之後的低點）。<b>T1 真頂訊號</b>：處置出關、或「起漲以來已經處置過、又再一次進處置」，而且收盤還在 20 日最高收盤 9 成以上。<b>T2 真頂分數</b>：收盤創起漲以來新高那天，30 個真頂特徵同時有 15 個以上。<b>T3</b>：T1 或 T2 任一。訊號只看買進以後、正式賣出日以前；當天收盤看到、隔天開盤全部賣；沒訊號就照正式（營量第 60 天、營飆第 120 天收盤賣）。組合層照正式引擎重新模擬（同槽數、排序／抽籤、成本、停止交易強制出場）。查核：逐日直接呼叫每日名單的程式比起漲點 592 天、0 天不同；抽 50 筆從頭逐日重算，0 筆不同；正式版逐位元相同。</p>
+<h2>一、組合層（年化、最大回落）</h2><div class='sel'>策略 <select id='s1' onchange='sw()'><option>營量 v1</option><option>營飆 v1</option></select></div>
+<div class='pane' id='p1營量'><div class='wrap'><table><tr><th class='l'>期間</th><th class='l'>出場</th><th>年化<br><small>假訊號：200 抽中位</small></th><th>最大回落</th><th>對正式<br><small>年化差</small></th><th>年化贏正式<br><small>抽次比例</small></th><th>買進筆</th><th>平均持有<br><small>交易日</small></th></tr>
+<tr><td class='l'>全部</td><td class='l'>正式（不提早賣）</td><td>+35.0%</td><td>-32.1%</td><td>—</td><td>—</td><td>717</td><td>59</td></tr>
+<tr><td class='l'></td><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>+31.4%</td><td>-35.7%</td><td class='dn'>-3.6 點</td><td>—</td><td>798</td><td>53</td></tr>
+<tr><td class='l'></td><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>+9.5%</td><td>-28.1%</td><td class='dn'>-25.5 點</td><td>—</td><td>1837</td><td>14</td></tr>
+<tr><td class='l'></td><td class='l'>T3 T1＋T2 任一</td><td>+9.6%</td><td>-28.5%</td><td class='dn'>-25.4 點</td><td>—</td><td>1846</td><td>14</td></tr>
+<tr class='f'><td class='l'></td><td class='l'>假訊號（隨機挑一天提早賣）</td><td>+33.5%<br><small>+29.0%～+37.4%</small></td><td>-34.5%<br><small>-37.8%～-32.1%</small></td><td class='dn'>-1.5 點</td><td>32%</td><td>804</td><td>52</td></tr>
+<tr><td class='l'>2021-2023</td><td class='l'>正式（不提早賣）</td><td>+27.0%</td><td>-30.7%</td><td>—</td><td>—</td><td>717</td><td>59</td></tr>
+<tr><td class='l'></td><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>+32.9%</td><td>-23.3%</td><td class='up'>+6.0 點</td><td>—</td><td>798</td><td>53</td></tr>
+<tr><td class='l'></td><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>+11.3%</td><td>-24.3%</td><td class='dn'>-15.6 點</td><td>—</td><td>1837</td><td>14</td></tr>
+<tr><td class='l'></td><td class='l'>T3 T1＋T2 任一</td><td>+11.4%</td><td>-24.3%</td><td class='dn'>-15.5 點</td><td>—</td><td>1846</td><td>14</td></tr>
+<tr class='f'><td class='l'></td><td class='l'>假訊號（隨機挑一天提早賣）</td><td>+25.6%<br><small>+19.1%～+31.7%</small></td><td>-29.6%<br><small>-33.0%～-27.1%</small></td><td class='dn'>-1.4 點</td><td>40%</td><td>804</td><td>52</td></tr>
+<tr><td class='l'>2024-2026.08</td><td class='l'>正式（不提早賣）</td><td>+45.6%</td><td>-30.8%</td><td>—</td><td>—</td><td>717</td><td>59</td></tr>
+<tr><td class='l'></td><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>+38.3%</td><td>-35.7%</td><td class='dn'>-7.3 點</td><td>—</td><td>798</td><td>53</td></tr>
+<tr><td class='l'></td><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>+13.3%</td><td>-24.7%</td><td class='dn'>-32.3 點</td><td>—</td><td>1837</td><td>14</td></tr>
+<tr><td class='l'></td><td class='l'>T3 T1＋T2 任一</td><td>+14.4%</td><td>-22.9%</td><td class='dn'>-31.1 點</td><td>—</td><td>1846</td><td>14</td></tr>
+<tr class='f'><td class='l'></td><td class='l'>假訊號（隨機挑一天提早賣）</td><td>+42.8%<br><small>+32.5%～+51.7%</small></td><td>-33.7%<br><small>-37.1%～-31.3%</small></td><td class='dn'>-2.8 點</td><td>34%</td><td>804</td><td>52</td></tr>
+</table></div><p class='note'>買進筆、平均持有只算主窗。營量依 relvol 排序、不抽籤（1 顆）；假訊號抽 200 次。</p></div>
+<div class='pane' id='p1營飆'><div class='wrap'><table><tr><th class='l'>期間</th><th class='l'>出場</th><th>年化<br><small>中位（p10～p90）</small></th><th>最大回落</th><th>對正式<br><small>年化差</small></th><th>年化贏正式<br><small>種子比例</small></th><th>買進筆</th><th>平均持有<br><small>交易日</small></th></tr>
+<tr><td class='l'>全部</td><td class='l'>正式（不提早賣）</td><td>+37.8%<br><small>+34.4%～+41.0%</small></td><td>-40.5%<br><small>-44.5%～-37.6%</small></td><td>—</td><td>—</td><td>173</td><td>115</td></tr>
+<tr><td class='l'></td><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>+36.3%<br><small>+32.9%～+40.1%</small></td><td>-41.6%<br><small>-47.3%～-39.0%</small></td><td class='dn'>-1.1 點</td><td>36%</td><td>209</td><td>96</td></tr>
+<tr><td class='l'></td><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>+14.4%<br><small>+11.9%～+17.0%</small></td><td>-35.9%<br><small>-39.9%～-31.9%</small></td><td class='dn'>-23.5 點</td><td>0%</td><td>814</td><td>21</td></tr>
+<tr><td class='l'></td><td class='l'>T3 T1＋T2 任一</td><td>+13.2%<br><small>+10.9%～+16.1%</small></td><td>-36.9%<br><small>-40.6%～-32.7%</small></td><td class='dn'>-24.5 點</td><td>0%</td><td>824</td><td>21</td></tr>
+<tr class='f'><td class='l'></td><td class='l'>假訊號（隨機挑一天提早賣）</td><td>+33.7%<br><small>+26.9%～+39.8%</small></td><td>-42.6%<br><small>-48.8%～-37.8%</small></td><td class='dn'>-4.2 點</td><td>24%</td><td>203</td><td>97</td></tr>
+<tr><td class='l'>2021-2023</td><td class='l'>正式（不提早賣）</td><td>+57.0%<br><small>+47.8%～+60.2%</small></td><td>-27.7%<br><small>-29.9%～-26.7%</small></td><td>—</td><td>—</td><td>173</td><td>115</td></tr>
+<tr><td class='l'></td><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>+33.6%<br><small>+28.8%～+41.7%</small></td><td>-27.1%<br><small>-31.1%～-20.8%</small></td><td class='dn'>-21.5 點</td><td>0%</td><td>209</td><td>96</td></tr>
+<tr><td class='l'></td><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>+16.6%<br><small>+12.4%～+21.0%</small></td><td>-21.9%<br><small>-24.0%～-19.1%</small></td><td class='dn'>-40.5 點</td><td>0%</td><td>814</td><td>21</td></tr>
+<tr><td class='l'></td><td class='l'>T3 T1＋T2 任一</td><td>+15.0%<br><small>+10.9%～+19.8%</small></td><td>-21.9%<br><small>-24.0%～-18.6%</small></td><td class='dn'>-40.9 點</td><td>0%</td><td>824</td><td>21</td></tr>
+<tr class='f'><td class='l'></td><td class='l'>假訊號（隨機挑一天提早賣）</td><td>+43.5%<br><small>+32.0%～+57.0%</small></td><td>-27.9%<br><small>-31.4%～-24.7%</small></td><td class='dn'>-11.2 點</td><td>14%</td><td>203</td><td>97</td></tr>
+<tr><td class='l'>2024-2026.08</td><td class='l'>正式（不提早賣）</td><td>+42.0%<br><small>+32.4%～+49.5%</small></td><td>-40.5%<br><small>-44.5%～-37.6%</small></td><td>—</td><td>—</td><td>173</td><td>115</td></tr>
+<tr><td class='l'></td><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>+55.7%<br><small>+46.1%～+65.1%</small></td><td>-41.6%<br><small>-47.3%～-39.0%</small></td><td class='up'>+14.7 點</td><td>92%</td><td>209</td><td>96</td></tr>
+<tr><td class='l'></td><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>+21.8%<br><small>+15.8%～+28.2%</small></td><td>-29.0%<br><small>-32.1%～-25.9%</small></td><td class='dn'>-19.4 點</td><td>0%</td><td>814</td><td>21</td></tr>
+<tr><td class='l'></td><td class='l'>T3 T1＋T2 任一</td><td>+22.6%<br><small>+16.1%～+29.5%</small></td><td>-30.1%<br><small>-33.3%～-27.0%</small></td><td class='dn'>-18.7 點</td><td>2%</td><td>824</td><td>21</td></tr>
+<tr class='f'><td class='l'></td><td class='l'>假訊號（隨機挑一天提早賣）</td><td>+38.5%<br><small>+23.6%～+55.1%</small></td><td>-41.8%<br><small>-47.7%～-36.2%</small></td><td class='dn'>-2.9 點</td><td>42%</td><td>203</td><td>97</td></tr>
+</table></div><p class='note'>買進筆、平均持有只算主窗。營飆抽籤 200 顆種子；對正式差是同一顆種子相減取中位；假訊號第 r 抽配第 r 顆。</p></div>
+<h2>二、逐筆（同一批進場：正式實際買進的交易）</h2><div class='sel'>策略 <select id='s2' onchange='sw()'><option>營量 v1</option><option>營飆 v1</option></select>期間 <select id='s3' onchange='sw()'><option>全部</option><option>2021-2023</option><option>2024-2026.08</option></select></div>
+<div class='pane' id='p2營量_全部'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>提早賣<br><small>比例</small></th><th>對正式差<br><small>平均</small></th><th>比正式好／差</th></tr>
+<tr><td class='l'>正式（不提早賣）</td><td>717</td><td>+9.47%</td><td>+0.49%</td><td>51%</td><td>60</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>717</td><td>+8.45%</td><td>+1.50%</td><td>53%</td><td>55</td><td>13%</td><td>-1.0 點</td><td>7%／6%</td></tr>
+<tr><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>717</td><td>+1.40%</td><td>+2.24%</td><td>69%</td><td>15</td><td>83%</td><td>-8.1 點</td><td>41%／43%</td></tr>
+<tr><td class='l'>T3 T1＋T2 任一</td><td>717</td><td>+1.39%</td><td>+2.21%</td><td>68%</td><td>15</td><td>84%</td><td>-8.1 點</td><td>41%／43%</td></tr>
+<tr class='f'><td class='l'>假訊號（隨機挑一天提早賣）</td><td>143,400</td><td>+8.47%</td><td>+0.40%</td><td>51%</td><td>53</td><td>17%</td><td>-1.0 點</td><td>9%／9%</td></tr>
+</table></div>
+<p class='note'>賣出位置和「真頂」（事後才知道的最高收盤；只描述）比：
+正式：賣在真頂以前 49%、離真頂 5 天內 4%、賣價比真頂 -25.3%、吃到真頂 3%（中位）；
+T1 真頂訊號：賣在真頂以前 75%、離真頂 5 天內 21%、賣價比真頂 -20.6%、吃到真頂 37%（中位）；
+T2 真頂分數：賣在真頂以前 94%、離真頂 5 天內 18%、賣價比真頂 -27.8%、吃到真頂 7%（中位）；
+T3 T1＋T2 任一：賣在真頂以前 94%、離真頂 5 天內 18%、賣價比真頂 -27.9%、吃到真頂 7%（中位）；
+假訊號：賣在真頂以前 72%、離真頂 5 天內 11%、賣價比真頂 -25.3%、吃到真頂 2%（中位）；
+T1 提早賣裡由「再次處置」觸發 37%、由「出關」63%。（提早賣的筆才算；正式那列是全部筆）</p>
+</div>
+<div class='pane' id='p2營量_2021-2023'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>提早賣<br><small>比例</small></th><th>對正式差<br><small>平均</small></th><th>比正式好／差</th></tr>
+<tr><td class='l'>正式（不提早賣）</td><td>225</td><td>+7.03%</td><td>+0.29%</td><td>51%</td><td>60</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>225</td><td>+8.03%</td><td>+2.11%</td><td>54%</td><td>55</td><td>13%</td><td>+1.0 點</td><td>8%／5%</td></tr>
+<tr><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>225</td><td>+2.13%</td><td>+2.86%</td><td>73%</td><td>15</td><td>84%</td><td>-4.9 點</td><td>44%／40%</td></tr>
+<tr><td class='l'>T3 T1＋T2 任一</td><td>225</td><td>+2.13%</td><td>+2.86%</td><td>73%</td><td>15</td><td>84%</td><td>-4.9 點</td><td>44%／40%</td></tr>
+<tr class='f'><td class='l'>假訊號（隨機挑一天提早賣）</td><td>45,000</td><td>+6.46%</td><td>+0.29%</td><td>51%</td><td>53</td><td>17%</td><td>-0.6 點</td><td>9%／8%</td></tr>
+</table></div>
+<p class='note'>賣出位置和「真頂」（事後才知道的最高收盤；只描述）比：
+正式：賣在真頂以前 51%、離真頂 5 天內 2%、賣價比真頂 -28.0%、吃到真頂 3%（中位）；
+T1 真頂訊號：賣在真頂以前 62%、離真頂 5 天內 28%、賣價比真頂 -15.3%、吃到真頂 42%（中位）；
+T2 真頂分數：賣在真頂以前 93%、離真頂 5 天內 18%、賣價比真頂 -27.1%、吃到真頂 9%（中位）；
+T3 T1＋T2 任一：賣在真頂以前 93%、離真頂 5 天內 18%、賣價比真頂 -27.1%、吃到真頂 9%（中位）；
+假訊號：賣在真頂以前 71%、離真頂 5 天內 12%、賣價比真頂 -26.3%、吃到真頂 2%（中位）；
+T1 提早賣裡由「再次處置」觸發 48%、由「出關」52%。（提早賣的筆才算；正式那列是全部筆）</p>
+</div>
+<div class='pane' id='p2營量_2024-2026.08'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>提早賣<br><small>比例</small></th><th>對正式差<br><small>平均</small></th><th>比正式好／差</th></tr>
+<tr><td class='l'>正式（不提早賣）</td><td>205</td><td>+12.03%</td><td>-0.58%</td><td>49%</td><td>59</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>205</td><td>+9.76%</td><td>+0.93%</td><td>51%</td><td>53</td><td>16%</td><td>-2.3 點</td><td>8%／8%</td></tr>
+<tr><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>205</td><td>+1.05%</td><td>+1.92%</td><td>63%</td><td>15</td><td>82%</td><td>-11.0 點</td><td>38%／44%</td></tr>
+<tr><td class='l'>T3 T1＋T2 任一</td><td>205</td><td>+1.10%</td><td>+1.92%</td><td>63%</td><td>15</td><td>83%</td><td>-10.9 點</td><td>39%／44%</td></tr>
+<tr class='f'><td class='l'>假訊號（隨機挑一天提早賣）</td><td>41,000</td><td>+10.61%</td><td>-0.58%</td><td>49%</td><td>52</td><td>17%</td><td>-1.4 點</td><td>8%／9%</td></tr>
+</table></div>
+<p class='note'>賣出位置和「真頂」（事後才知道的最高收盤；只描述）比：
+正式：賣在真頂以前 41%、離真頂 5 天內 6%、賣價比真頂 -24.0%、吃到真頂 3%（中位）；
+T1 真頂訊號：賣在真頂以前 81%、離真頂 5 天內 16%、賣價比真頂 -27.3%、吃到真頂 26%（中位）；
+T2 真頂分數：賣在真頂以前 93%、離真頂 5 天內 19%、賣價比真頂 -24.1%、吃到真頂 7%（中位）；
+T3 T1＋T2 任一：賣在真頂以前 94%、離真頂 5 天內 19%、賣價比真頂 -24.5%、吃到真頂 6%（中位）；
+假訊號：賣在真頂以前 70%、離真頂 5 天內 12%、賣價比真頂 -22.5%、吃到真頂 1%（中位）；
+T1 提早賣裡由「再次處置」觸發 34%、由「出關」66%。（提早賣的筆才算；正式那列是全部筆）</p>
+</div>
+<div class='pane' id='p2營飆_全部'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>提早賣<br><small>比例</small></th><th>對正式差<br><small>平均</small></th><th>比正式好／差</th></tr>
+<tr><td class='l'>正式（不提早賣）</td><td>34,600</td><td>+23.13%</td><td>+4.82%</td><td>56%</td><td>116</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>34,600</td><td>+21.82%</td><td>+9.85%</td><td>62%</td><td>94</td><td>24%</td><td>-1.3 點</td><td>14%／10%</td></tr>
+<tr><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>34,600</td><td>+2.83%</td><td>+3.08%</td><td>77%</td><td>17</td><td>91%</td><td>-20.3 點</td><td>41%／50%</td></tr>
+<tr><td class='l'>T3 T1＋T2 任一</td><td>34,600</td><td>+2.68%</td><td>+3.12%</td><td>77%</td><td>16</td><td>92%</td><td>-20.4 點</td><td>42%／50%</td></tr>
+<tr class='f'><td class='l'>假訊號（隨機挑一天提早賣）</td><td>34,600</td><td>+19.69%</td><td>+3.26%</td><td>56%</td><td>97</td><td>21%</td><td>-3.4 點</td><td>9%／12%</td></tr>
+</table></div>
+<p class='note'>賣出位置和「真頂」（事後才知道的最高收盤；只描述）比：
+正式：賣在真頂以前 33%、離真頂 5 天內 2%、賣價比真頂 -26.8%、吃到真頂 13%（中位）；
+T1 真頂訊號：賣在真頂以前 75%、離真頂 5 天內 27%、賣價比真頂 -15.7%、吃到真頂 45%（中位）；
+T2 真頂分數：賣在真頂以前 93%、離真頂 5 天內 18%、賣價比真頂 -31.5%、吃到真頂 7%（中位）；
+T3 T1＋T2 任一：賣在真頂以前 93%、離真頂 5 天內 18%、賣價比真頂 -31.4%、吃到真頂 7%（中位）；
+假訊號：賣在真頂以前 69%、離真頂 5 天內 10%、賣價比真頂 -26.5%、吃到真頂 2%（中位）；
+T1 提早賣裡由「再次處置」觸發 38%、由「出關」62%。（提早賣的筆才算；正式那列是全部筆）</p>
+</div>
+<div class='pane' id='p2營飆_2021-2023'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>提早賣<br><small>比例</small></th><th>對正式差<br><small>平均</small></th><th>比正式好／差</th></tr>
+<tr><td class='l'>正式（不提早賣）</td><td>8,000</td><td>+31.45%</td><td>+17.04%</td><td>63%</td><td>120</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>8,000</td><td>+26.92%</td><td>+16.69%</td><td>67%</td><td>95</td><td>26%</td><td>-4.5 點</td><td>12%／15%</td></tr>
+<tr><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>8,000</td><td>+4.96%</td><td>+4.18%</td><td>81%</td><td>10</td><td>97%</td><td>-26.5 點</td><td>37%／60%</td></tr>
+<tr><td class='l'>T3 T1＋T2 任一</td><td>8,000</td><td>+4.96%</td><td>+4.18%</td><td>81%</td><td>10</td><td>97%</td><td>-26.5 點</td><td>37%／60%</td></tr>
+<tr class='f'><td class='l'>假訊號（隨機挑一天提早賣）</td><td>8,000</td><td>+26.91%</td><td>+15.15%</td><td>62%</td><td>100</td><td>21%</td><td>-4.5 點</td><td>8%／13%</td></tr>
+</table></div>
+<p class='note'>賣出位置和「真頂」（事後才知道的最高收盤；只描述）比：
+正式：賣在真頂以前 33%、離真頂 5 天內 5%、賣價比真頂 -25.5%、吃到真頂 28%（中位）；
+T1 真頂訊號：賣在真頂以前 73%、離真頂 5 天內 34%、賣價比真頂 -19.0%、吃到真頂 45%（中位）；
+T2 真頂分數：賣在真頂以前 95%、離真頂 5 天內 8%、賣價比真頂 -34.6%、吃到真頂 8%（中位）；
+T3 T1＋T2 任一：賣在真頂以前 95%、離真頂 5 天內 8%、賣價比真頂 -34.6%、吃到真頂 8%（中位）；
+假訊號：賣在真頂以前 79%、離真頂 5 天內 7%、賣價比真頂 -31.7%、吃到真頂 4%（中位）；
+T1 提早賣裡由「再次處置」觸發 45%、由「出關」55%。（提早賣的筆才算；正式那列是全部筆）</p>
+</div>
+<div class='pane' id='p2營飆_2024-2026.08'><div class='wrap'><table><tr><th class='l'>出場</th><th>筆數</th><th>平均<br><small>扣成本</small></th><th>中位</th><th>勝率</th><th>平均持有<br><small>交易日</small></th><th>提早賣<br><small>比例</small></th><th>對正式差<br><small>平均</small></th><th>比正式好／差</th></tr>
+<tr><td class='l'>正式（不提早賣）</td><td>11,200</td><td>+23.77%</td><td>+1.64%</td><td>53%</td><td>107</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td class='l'>T1 真頂訊號（處置 W2，從起漲點算）</td><td>11,200</td><td>+21.57%</td><td>+7.49%</td><td>58%</td><td>77</td><td>37%</td><td>-2.2 點</td><td>20%／17%</td></tr>
+<tr><td class='l'>T2 真頂分數（創新高日分數≥門檻）</td><td>11,200</td><td>+2.67%</td><td>+3.67%</td><td>81%</td><td>14</td><td>91%</td><td>-21.1 點</td><td>46%／44%</td></tr>
+<tr><td class='l'>T3 T1＋T2 任一</td><td>11,200</td><td>+2.09%</td><td>+3.67%</td><td>80%</td><td>14</td><td>91%</td><td>-21.7 點</td><td>46%／44%</td></tr>
+<tr class='f'><td class='l'>假訊號（隨機挑一天提早賣）</td><td>11,200</td><td>+20.14%</td><td>+1.11%</td><td>52%</td><td>90</td><td>21%</td><td>-3.6 點</td><td>10%／11%</td></tr>
+</table></div>
+<p class='note'>賣出位置和「真頂」（事後才知道的最高收盤；只描述）比：
+正式：賣在真頂以前 16%、離真頂 5 天內 2%、賣價比真頂 -24.1%、吃到真頂 10%（中位）；
+T1 真頂訊號：賣在真頂以前 69%、離真頂 5 天內 34%、賣價比真頂 -13.7%、吃到真頂 49%（中位）；
+T2 真頂分數：賣在真頂以前 85%、離真頂 5 天內 32%、賣價比真頂 -21.9%、吃到真頂 10%（中位）；
+T3 T1＋T2 任一：賣在真頂以前 87%、離真頂 5 天內 32%、賣價比真頂 -21.9%、吃到真頂 10%（中位）；
+假訊號：賣在真頂以前 54%、離真頂 5 天內 14%、賣價比真頂 -21.7%、吃到真頂 3%（中位）；
+T1 提早賣裡由「再次處置」觸發 28%、由「出關」72%。（提早賣的筆才算；正式那列是全部筆）</p>
+</div>
+<h2>名詞與做法</h2><ul class='note'><li>正式：營量第 60 個交易日收盤賣（20 槽、依 relvol 挑）；營飆第 120 個交易日收盤賣（10 槽、抽籤）。每筆扣來回成本 0.585%。</li><li>和上一份（真頂訊號從買進日算、處置要 60 天內）不同：這次「已處置過」是從起漲點算起，進場前的處置也算；只有真頂訊號、沒有分批、沒有 40 天規則、沒有延長。</li><li>假訊號：每個策略照 T1 實際提早賣的比例（營量 17%、營飆 21%）和「訊號在買進後第幾天」的分布，隨機挑一天提早賣；種子寫死。它比正式好或差多少，就是「提早賣」本身的效果。</li><li>資料最後一天（2026-09-24）還沒賣的，以那天收盤計值。母體 ＝ 正式本體母體（和正式版逐位元相同）。</li></ul>
+<script>function sw(){var a=document.getElementById('s1').value.slice(0,2),b=document.getElementById('s2').value.slice(0,2),c=document.getElementById('s3').value;document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id=='p1'+a||x.id=='p2'+b+'_'+c))}sw()</script></main></body></html>
