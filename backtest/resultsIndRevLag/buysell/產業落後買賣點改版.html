@@ -1,0 +1,129 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>產業落後買賣點改版</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left;white-space:normal}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}.ok{border-left:4px solid #2b6cb0;padding:8px 12px;background:#eef4fb}.big{font-size:1.05rem}li{margin:.35em 0}details{margin:.6em 0}summary{font-weight:600;cursor:pointer;padding:4px 0}tr.pick td{background:#fffbe6}</style></head><body><main>
+<h1>產業營收落後：買賣點改版回測</h1>
+<p class='warn'>⚠ <b>事後重切</b>：買賣點是看過上一版（營收加速但股價落後）全部結果之後才改的，所以就算兩段都過，最多也只算「暫定」、只進前瞻紀錄。這是歷史回測的描述，<b>不是買賣建議</b>。</p>
+<div class='ok big'><b>結論：判定【不合格】。</b><ul><li>挑同一種產業（營收加速、股價落後，沿用上一版挑中的那一格），8 種買賣點在 2017～2021 挑出的是：<b>照原本買＋最多抱 60 天</b>（買：選出就買；賣：抱滿天數、產業跌破年線、個股出真頂，任一先到）。</li><li>2022-01～2026-08：年化 -14.6%、最大回落 -59.1%；0050 +29.5%／-34.0% ⇒ <b>不合格</b>。早年 2012-06～2014：+5.8%／-23.5%；0050 +16.0%／-9.7% ⇒ <b>不合格</b>。</li><li>跟上一版原本的買賣點（同窗重跑）比，確認段 -14.6% vs +6.2%，早年 +5.8% vs +20.0%。</li><li>跟「假訊號」比（同樣買法，但隨機挑一天整個產業賣掉、持有天數分佈相同，1,000 次）：確認段假訊號中位 -5.5%，假訊號比挑中格好的比例 98%。營量 v1 同窗確認段 +31.7%。</li><li>賣點離頂多近（吃到起漲到頂幾成，中位）：本件挑中格 探索 1%、確認 -7%、早年 2%；上一版原買賣點 13%、8%、35%（產業指數口徑）。</li><li>8 格裡兩段都合格的有 0 格（確認段合格 0、早年段合格 0）。</li></ul></div>
+<p class='note'>查核：通過（不同 0 項；另一套寫法重算起漲點、真頂第一天、整條權益與每筆交易）。讀法寫死 2026-10-07 07:35（台北）。</p>
+<h2>一、8 種買賣點（三段）</h2><div class='wrap'><table><tr><th class='l'>買賣點</th><th>探索<br><small>2017-03～2021（挑）</small></th><th>確認<br><small>2022～2026-08</small></th><th>早年<br><small>2012-06～2014</small></th><th>平均持股／現金<br><small>探索</small></th></tr>
+<tr class='pick'><td class='l'>照原本買＋最多抱 60 天 ⭐挑中</td><td>+8.3%<br><small>回落 -43.8%・不合格</small></td><td>-14.6%<br><small>回落 -59.1%・不合格</small></td><td>+5.8%<br><small>回落 -23.5%・不合格</small></td><td>6.4／19%</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 120 天</td><td>+4.5%<br><small>回落 -42.0%・不合格</small></td><td>-15.8%<br><small>回落 -63.1%・不合格</small></td><td>+4.0%<br><small>回落 -28.8%・不合格</small></td><td>7.6／19%</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 250 天</td><td>+4.7%<br><small>回落 -32.9%・不合格</small></td><td>-14.4%<br><small>回落 -60.2%・不合格</small></td><td>+11.3%<br><small>回落 -23.1%・不合格</small></td><td>9.9／18%</td></tr>
+<tr class=''><td class='l'>照原本買＋不設天數</td><td>+4.7%<br><small>回落 -32.9%・不合格</small></td><td>-14.7%<br><small>回落 -59.1%・不合格</small></td><td>+11.3%<br><small>回落 -23.1%・不合格</small></td><td>9.9／18%</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天<br><small>退化（排除）</small></td><td>+2.9%<br><small>回落 -48.1%・不合格</small></td><td>-8.6%<br><small>回落 -51.1%・不合格</small></td><td>-0.9%<br><small>回落 -21.9%・不合格</small></td><td>5.0／34%</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天<br><small>退化（排除）</small></td><td>-11.2%<br><small>回落 -60.0%・不合格</small></td><td>-17.2%<br><small>回落 -64.2%・不合格</small></td><td>-2.5%<br><small>回落 -28.6%・不合格</small></td><td>5.1／37%</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天<br><small>退化（排除）</small></td><td>+3.6%<br><small>回落 -29.1%・不合格</small></td><td>-14.7%<br><small>回落 -65.0%・不合格</small></td><td>+5.0%<br><small>回落 -23.1%・不合格</small></td><td>9.8／32%</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數<br><small>退化（排除）</small></td><td>+3.6%<br><small>回落 -29.1%・不合格</small></td><td>-16.0%<br><small>回落 -63.4%・不合格</small></td><td>+5.0%<br><small>回落 -23.1%・不合格</small></td><td>9.8／32%</td></tr>
+<tr><td class='l'>0050</td><td>+18.9%<br><small>回落 -28.2%</small></td><td>+29.5%<br><small>回落 -34.0%</small></td><td>+16.0%<br><small>回落 -9.7%</small></td><td></td></tr>
+</table></div>
+<p class='note'>挑法：先排除平均持股不到 3 檔或現金超過 30% 的格（4 格），再看 2017～2021 有沒有過判準（年化 ＞ 0050 且 年化÷|回落| ≥ 0050；過的有 0 格），都沒過 ⇒ 全部裡面取「年化÷|回落|」最高。判定取確認段、早年段較嚴的那個。</p>
+<h2>二、跟誰比</h2><div class='wrap'><table><tr><th class='l'>項</th><th>探索</th><th>確認</th><th>早年</th></tr>
+<tr class='pick'><td class='l'><b>本件挑中格</b>（照原本買＋最多抱 60 天）</td><td>+8.3%<br><small>回落 -43.8%</small></td><td>-14.6%<br><small>回落 -59.1%</small><br><b>不合格</b></td><td>+5.8%<br><small>回落 -23.5%</small><br><b>不合格</b></td></tr>
+<tr><td class='l'>同買法、不設天數（並報）</td><td>+4.7%<br><small>回落 -32.9%</small></td><td>-14.7%<br><small>回落 -59.1%</small></td><td>+11.3%<br><small>回落 -23.1%</small></td></tr>
+<tr><td class='l'>上一版原買賣點（營收不再加速／股價不再落後才賣；同窗重跑）</td><td>+27.9%<br><small>回落 -28.2%</small></td><td>+6.2%<br><small>回落 -50.5%</small></td><td>+20.0%<br><small>回落 -22.4%</small></td></tr>
+<tr><td class='l'>0050</td><td>+18.9%<br><small>回落 -28.2%</small></td><td>+29.5%<br><small>回落 -34.0%</small></td><td>+16.0%<br><small>回落 -9.7%</small></td></tr>
+<tr><td class='l'>營量 v1（引前件）</td><td>+38.5%<br><small>回落 -32.1%</small></td><td>+31.7%<br><small>回落 -30.8%</small></td><td>+18.1%<br><small>回落 -13.7%</small><br><small>窗 2012-06-04～2014-12-31</small></td></tr>
+<tr><td class='l'>假訊號（同買法、隨機日整個產業賣，1,000 次中位）</td><td>+13.3%<br><small>p10～p90 +3.5%～+25.1%・假訊號 ≥ 挑中格 72%</small></td><td>-5.5%<br><small>p10～p90 -11.6%～+1.8%・假訊號 ≥ 挑中格 98%</small></td><td>+9.5%<br><small>p10～p90 +0.2%～+20.8%・假訊號 ≥ 挑中格 71%</small></td></tr>
+</table></div>
+<h2>三、事前猜測對答</h2><div class='wrap'><table><tr><th>#</th><th class='l'>猜測</th><th class='l'>結果</th><th>對錯</th></tr>
+<tr><td>①</td><td class='l'>兩段都合格的格 0 個</td><td class='l'>8 格兩段都合格 0 格（確認段合格 0、早年段合格 0）</td><td><b>對</b></td></tr>
+<tr><td>②</td><td class='l'>同 T 下 B1 轉強確認段年化高於 B0</td><td class='l'>T60：B1 -8.6% vs B0 -14.6%；T120：B1 -17.2% vs B0 -15.8%；T250：B1 -14.7% vs B0 -14.4%；T無上限：B1 -16.0% vs B0 -14.7%（1/4）</td><td><b>部分（1/4）</b></td></tr>
+<tr><td>③</td><td class='l'>T 越長年化越高（確認段）</td><td class='l'>B0：-14.6% → -15.8% → -14.4% → -14.7%（相鄰升 1/3）；B1：-8.6% → -17.2% → -14.7% → -16.0%（相鄰升 1/3）</td><td><b>錯</b></td></tr>
+<tr><td>④</td><td class='l'>出場原因以年線為最多</td><td class='l'>挑中格三段合計 個股層：真頂 Z 2、天數 T 212、年線 Y 131；產業層：T 32、Y 27、窗尾 2</td><td><b>錯</b></td></tr>
+</table></div>
+<h2>四、必報</h2><h3>出場原因（次數）</h3><div class='wrap'><table><tr><th class='l'>買賣點｜段</th><th>產業層<br><small>抱滿天數／跌破年線／窗尾仍持有</small></th><th>個股層賣出<br><small>真頂／天數／年線</small></th><th>持有段數</th><th>持有天數<br><small>平均／中位</small></th></tr>
+<tr class='pick'><td class='l'>照原本買＋最多抱 60 天｜探索</td><td>13／11／0</td><td>2／118／46</td><td>24</td><td>41.08／60.00</td></tr>
+<tr class='pick'><td class='l'>照原本買＋最多抱 60 天｜確認</td><td>13／9／1</td><td>0／68／64</td><td>23</td><td>40.17／60.00</td></tr>
+<tr class='pick'><td class='l'>照原本買＋最多抱 60 天｜早年</td><td>6／7／1</td><td>0／26／21</td><td>14</td><td>35.00／30.50</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 120 天｜探索</td><td>5／13／0</td><td>2／67／53</td><td>18</td><td>54.78／36.50</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 120 天｜確認</td><td>5／7／1</td><td>1／30／48</td><td>13</td><td>76.31／105.00</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 120 天｜早年</td><td>2／7／1</td><td>0／5／27</td><td>10</td><td>57.30／49.50</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 250 天｜探索</td><td>0／16／0</td><td>3／0／112</td><td>16</td><td>63.75／36.50</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 250 天｜確認</td><td>2／8／1</td><td>3／21／54</td><td>11</td><td>90.91／71.00</td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 250 天｜早年</td><td>0／6／1</td><td>0／0／18</td><td>7</td><td>80.86／69.00</td></tr>
+<tr class=''><td class='l'>照原本買＋不設天數｜探索</td><td>0／16／0</td><td>3／0／112</td><td>16</td><td>63.75／36.50</td></tr>
+<tr class=''><td class='l'>照原本買＋不設天數｜確認</td><td>0／10／1</td><td>0／0／56</td><td>11</td><td>93.27／32.00</td></tr>
+<tr class=''><td class='l'>照原本買＋不設天數｜早年</td><td>0／6／1</td><td>0／0／18</td><td>7</td><td>80.86／69.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天｜探索</td><td>11／6／0</td><td>2／93／23</td><td>17</td><td>47.35／60.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天｜確認</td><td>11／5／1</td><td>0／42／23</td><td>17</td><td>41.82／60.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天｜早年</td><td>5／5／1</td><td>0／25／7</td><td>11</td><td>38.09／54.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天｜探索</td><td>3／15／0</td><td>1／40／77</td><td>18</td><td>42.56／24.50</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天｜確認</td><td>4／7／1</td><td>0／12／26</td><td>12</td><td>72.33／83.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天｜早年</td><td>2／7／1</td><td>0／5／25</td><td>10</td><td>48.10／31.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天｜探索</td><td>0／15／0</td><td>3／0／117</td><td>15</td><td>56.67／31.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天｜確認</td><td>1／9／1</td><td>0／6／32</td><td>11</td><td>78.64／71.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天｜早年</td><td>0／6／1</td><td>0／0／18</td><td>7</td><td>74.00／54.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數｜探索</td><td>0／15／0</td><td>3／0／117</td><td>15</td><td>56.67／31.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數｜確認</td><td>0／9／1</td><td>0／0／34</td><td>10</td><td>92.10／46.00</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數｜早年</td><td>0／6／1</td><td>0／0／18</td><td>7</td><td>74.00／54.00</td></tr>
+</table></div><p class='note'>產業層 ＝ 整個產業一起賣；個股層 ＝ 每檔股票被賣的原因（真頂只賣那一檔，錢留著等整個產業出場）。</p>
+<h3>轉強才買：等多久、放棄幾次</h3><div class='wrap'><table><tr><th class='l'>買賣點｜段</th><th>選出次數</th><th>等到買進</th><th>當天已站上</th><th>等待天數中位<br><small>買進者</small></th><th>放棄① 等滿兩個月</th><th>放棄② 條件不在</th><th>窗尾仍在等</th></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天｜探索</td><td>18</td><td>16</td><td>2</td><td>11.50</td><td>1</td><td>1</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天｜確認</td><td>20</td><td>17</td><td>8</td><td>2.00</td><td>1</td><td>2</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天｜早年</td><td>11</td><td>10</td><td>4</td><td>3.00</td><td>1</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天｜探索</td><td>19</td><td>17</td><td>8</td><td>1.00</td><td>2</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天｜確認</td><td>13</td><td>12</td><td>7</td><td>0.00</td><td>1</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天｜早年</td><td>9</td><td>9</td><td>4</td><td>2.00</td><td>0</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天｜探索</td><td>16</td><td>14</td><td>6</td><td>4.00</td><td>2</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天｜確認</td><td>13</td><td>11</td><td>7</td><td>0.00</td><td>1</td><td>1</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天｜早年</td><td>6</td><td>6</td><td>3</td><td>2.00</td><td>0</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數｜探索</td><td>16</td><td>14</td><td>6</td><td>4.00</td><td>2</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數｜確認</td><td>11</td><td>10</td><td>7</td><td>0.00</td><td>1</td><td>0</td><td>0</td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數｜早年</td><td>6</td><td>6</td><td>3</td><td>2.00</td><td>0</td><td>0</td><td>0</td></tr>
+</table></div>
+<h3>賣點離頂多近：吃到起漲到頂幾成（中位）</h3><div class='wrap'><table><tr><th class='l'>買賣點</th><th>探索</th><th>確認</th><th>早年</th></tr>
+<tr class='pick'><td class='l'>照原本買＋最多抱 60 天</td><td>1%<br><small>24 段</small></td><td>-7%<br><small>23 段</small></td><td>2%<br><small>14 段</small></td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 120 天</td><td>1%<br><small>18 段</small></td><td>-9%<br><small>13 段</small></td><td>-0%<br><small>10 段</small></td></tr>
+<tr class=''><td class='l'>照原本買＋最多抱 250 天</td><td>2%<br><small>16 段</small></td><td>-4%<br><small>11 段</small></td><td>24%<br><small>7 段</small></td></tr>
+<tr class=''><td class='l'>照原本買＋不設天數</td><td>2%<br><small>16 段</small></td><td>-4%<br><small>11 段</small></td><td>24%<br><small>7 段</small></td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 60 天</td><td>3%<br><small>17 段</small></td><td>-9%<br><small>17 段</small></td><td>-8%<br><small>11 段</small></td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 120 天</td><td>-2%<br><small>18 段</small></td><td>-10%<br><small>12 段</small></td><td>-1%<br><small>10 段</small></td></tr>
+<tr class=''><td class='l'>轉強才買＋最多抱 250 天</td><td>3%<br><small>15 段</small></td><td>-9%<br><small>11 段</small></td><td>8%<br><small>7 段</small></td></tr>
+<tr class=''><td class='l'>轉強才買＋不設天數</td><td>3%<br><small>15 段</small></td><td>-10%<br><small>10 段</small></td><td>8%<br><small>7 段</small></td></tr>
+<tr class=''><td class='l'>上一版原買賣點</td><td>13%<br><small>13 段</small></td><td>8%<br><small>11 段</small></td><td>35%<br><small>6 段</small></td></tr>
+</table></div><p class='note'>吃到幾成 ＝（出場時產業指數 ÷ 進場前一天）÷（之後 500 日最高 ÷ 進場前 250 日最低），取對數比；100% ＝ 從起漲低點到之後最高點全吃到，0% ＝ 白抱、負的 ＝ 賠。用產業指數算（同上一版口徑），個股層真頂提早賣的部分不在這個數字裡。</p>
+<h3>不設天數的兩格、窗尾還抱著什麼</h3><ul class='note'>
+<li><b>照原本買＋最多抱 60 天</b>｜主段：窗尾 2026-08-24 仍持有 橡膠工業（2026-08-18 進、已 5 日、4 檔）；仍持有股票共 4 檔；仍在等的產業 無。持有天數 47 段，中位 60、p25～p75 16～60、最長 60；≤21 日 14、22～63 日 33、64～250 日 0、＞250 日 0。</li>
+<li><b>照原本買＋最多抱 60 天</b>｜早年：窗尾 2014-12-30 仍持有 生技醫療業（2014-11-12 進、已 36 日、6 檔）；仍持有股票共 6 檔；仍在等的產業 無。持有天數 14 段，中位 30、p25～p75 14～60、最長 60；≤21 日 5、22～63 日 9、64～250 日 0、＞250 日 0。</li>
+<li><b>照原本買＋不設天數</b>｜主段：窗尾 2026-08-24 仍持有 橡膠工業（2026-08-18 進、已 5 日、4 檔）；仍持有股票共 4 檔；仍在等的產業 無。持有天數 27 段，中位 32、p25～p75 9～125、最長 439；≤21 日 12、22～63 日 4、64～250 日 10、＞250 日 1。</li>
+<li><b>照原本買＋不設天數</b>｜早年：窗尾 2014-12-30 仍持有 生技醫療業（2014-11-12 進、已 36 日、6 檔）；仍持有股票共 6 檔；仍在等的產業 無。持有天數 7 段，中位 69、p25～p75 30～120、最長 172；≤21 日 0、22～63 日 3、64～250 日 4、＞250 日 0。</li>
+<li><b>轉強才買＋不設天數</b>｜主段：窗尾 2026-08-24 仍持有 橡膠工業（2026-08-18 進、已 5 日、4 檔）；仍持有股票共 4 檔；仍在等的產業 無。持有天數 25 段，中位 31、p25～p75 5～103、最長 413；≤21 日 12、22～63 日 3、64～250 日 9、＞250 日 1。</li>
+<li><b>轉強才買＋不設天數</b>｜早年：窗尾 2014-12-30 仍持有 生技醫療業（2014-12-04 進、已 20 日、3 檔）；仍持有股票共 3 檔；仍在等的產業 無。持有天數 7 段，中位 54、p25～p75 24～112、最長 172；≤21 日 1、22～63 日 3、64～250 日 3、＞250 日 0。</li>
+</ul>
+<h3>各年報酬</h3><div class='wrap'><table><tr><th>年</th><th>本件挑中格</th><th>上一版原買賣點</th><th>0050</th></tr>
+<tr><td>2017</td><td>-10.7%</td><td>+14.4%</td><td>+14.2%</td></tr>
+<tr><td>2018</td><td>+0.8%</td><td>+11.8%</td><td>-4.9%</td></tr>
+<tr><td>2019</td><td>+24.7%</td><td>+28.0%</td><td>+33.5%</td></tr>
+<tr><td>2020</td><td>+21.7%</td><td>+39.7%</td><td>+31.1%</td></tr>
+<tr><td>2021</td><td>+8.0%</td><td>+44.3%</td><td>+21.9%</td></tr>
+<tr><td>2022</td><td>-25.7%</td><td>+43.7%</td><td>-21.4%</td></tr>
+<tr><td>2023</td><td>-4.4%</td><td>+0.1%</td><td>+27.5%</td></tr>
+<tr><td>2024</td><td>-29.0%</td><td>-23.9%</td><td>+48.6%</td></tr>
+<tr><td>2025</td><td>-6.2%</td><td>-8.9%</td><td>+36.9%</td></tr>
+<tr><td>2026</td><td>+2.3%</td><td>+31.5%</td><td>+61.4%</td></tr>
+<tr><td>2012<small>（早年段）</small></td><td>+29.1%</td><td>+29.8%</td><td>+13.4%</td></tr>
+<tr><td>2013<small>（早年段）</small></td><td>+3.4%</td><td>+31.4%</td><td>+11.7%</td></tr>
+<tr><td>2014<small>（早年段）</small></td><td>-13.0%</td><td>-5.4%</td><td>+16.7%</td></tr>
+</table></div><p class='note'>首年、末年是不滿一年的窗內報酬。逐段明細見 episodes.csv、waits.csv、sells.csv.gz、eat.csv。</p>
+<h2>五、個股「真頂」怎麼認</h2><ul class='note'><li>用回測線 10/6 的 T1 定義：股票被處置後出關、或從起漲點以來已處置過又再次進處置，而且當天收盤還在近 20 根 K 棒最高收盤的九成以上 ⇒ 隔天開盤賣這一檔。</li><li><b>起漲點只用當天以前的價格認</b>：每天收盤，往前 250 個交易日找最高收盤，再找最高收盤之前的最低收盤日當起漲點；若起漲點比買進日還晚，改用買進日往前 250 日找；若那段漲勢在買進前已從最高跌掉 30%，改用跌完到買進日之間的最低點。這跟每日追蹤工具（surge_flow_daily）的規則逐字相同，查核時直接呼叫它逐日比對。</li><li>價格用還原收盤；之後才發生的除權息只會把整段價格同乘一個數，最高、最低、跌幅都不變，所以等於當時看得到的價格。</li><li>處置資料 2010-12 起；飆股資料母體沒有的股票沒有真頂訊號：主段 0 檔、早年 10 檔。</li></ul>
+<h2>六、資料與執行者補的讀法</h2><ul class='note'><li>挑產業沿用上一版挑中格（營收加速前三分之一裡、近 250 日股價漲最少的 1 個產業，買市值前 20 大），每月營收可用日收盤判、隔天開盤做；成本來回 0.585%。</li><li>★ 站上／跌破 ＝ 收盤嚴格大於／小於均線；均線要湊滿 60 或 240 天才算。</li><li>★ 轉強才買：選出當天收盤已在 60 日線上就隔天買；之後每天收盤看。放棄②（加速不在、或不在前三分之一、或股價已不落後）在檢查日先判；放棄①＝選出後第 2 個檢查日收盤仍沒站上。剛放棄的產業當天不再選，下個檢查日起可再選。</li><li>★ 抱滿 T 天 ＝ 買進那天算第 1 天，第 T 天收盤賣（專案慣例）；那天停牌或收盤跌停就延到之後第一個能開盤賣的日子。</li><li>★ 跌破年線要先「上膛」：買進前一天收盤或之後曾經站上 240 日線，之後第一次收盤跌破才賣。</li><li>★ 假訊號：同買法，不用三條賣點，改成每次進場時從挑中格同段的持有天數裡隨機抽一個，到期整個產業賣。</li><li>早年段用上市＋上櫃版面，但上櫃沒有法人資料 ⇒ 挑股實際只有上市；產業指數含上櫃（同上一版標註）。2005～2012-05 不可判定。</li><li>偏離：確認段資料尾沿用上一版 2026-08-24；營量 v1 引前件數字（舊母體口徑）。</li></ul>
+</main></body></html>
