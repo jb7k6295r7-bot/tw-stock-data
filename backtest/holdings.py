@@ -2,7 +2,7 @@
 """使用者持股清單（回測線與情報共用一份）——回測線，2026-09-30。
 
 來源：跨線信箱 `_持股/持股.csv`（信箱的共用資料夾，⛔ 不是情報的資料夾）；⛔ 程式只讀、不寫
-  格式：代號,買進日,買進價,備註[,來源]（來源：營量／營飆／營飆營量（金額 2:1 分兩份，情報 0929 口徑）／其他，空白＝其他；2026-09-30 使用者：營量、營飆買的照正式規則出場）；# 開頭是註解；買進日、買進價可以留空；全形逗號與前後空白都接受；代號一律當字串
+  格式：代號,買進日,買進價,備註[,來源[,正式進場日]]（來源：營量／營飆／營飆營量（金額 2:1 分兩份，情報 0929 口徑）／其他，空白＝其他；2026-09-30 使用者：營量、營飆買的照正式規則出場）；第 6 欄「正式進場日」可省略，只在使用者先買、之後才入選營量／營飆時填（正式出場從這天數第 60／120 個交易日；空白＝買進日；2026-10-06 6213）；# 開頭是註解；買進日、買進價可以留空；全形逗號與前後空白都接受；代號一律當字串
   首列若是欄名（代號,…）略過；編碼先試 UTF-8（含 BOM），不行再試 cp950（Excel 存檔）
 用途：
   daily_list 第五節（買賣流程）⇒ flow_rows()：只取買進日與買進價都有的列；缺的列另列「代號｜缺買進日／價，無法追蹤流程」
@@ -44,8 +44,8 @@ def read_csv(path=None):
         ln = ln.strip()
         if not ln or ln.startswith("#"):
             continue
-        a = [x.strip() for x in ln.replace("，", ",").split(",", 4)]
-        a += [""] * (5 - len(a))
+        a = [x.strip() for x in ln.replace("，", ",").split(",", 5)]
+        a += [""] * (6 - len(a))
         code = a[0]
         if not code or code == "代號":
             continue
@@ -102,5 +102,24 @@ def sources():
     """⇒ {代號: 營量／營飆／其他}；讀不到 ⇒ {}（全部當其他）。"""
     try:
         return {c: s for c, _, _, _, s in read_csv()}
+    except Exception:
+        return {}
+
+
+def entry_dates():
+    """⇒ {代號: 正式進場日 'YYYY-MM-DD'}（第 6 欄有填且是日期的列）；讀不到 ⇒ {}。"""
+    try:
+        out = {}
+        for ln in _lines(csv_path()):
+            ln = ln.strip()
+            if not ln or ln.startswith("#"):
+                continue
+            a = [x.strip() for x in ln.replace("，", ",").split(",", 5)]
+            if len(a) == 6 and a[0] and a[0] != "代號" and a[5]:
+                try:
+                    out[a[0]] = str(pd.Timestamp(a[5]).date())
+                except (ValueError, TypeError):
+                    pass
+        return out
     except Exception:
         return {}

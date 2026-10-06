@@ -159,12 +159,13 @@ def build(a, log, v2=False):
               "起漲點 t ＝ 資料日往前 250 個交易日內「最高收盤之前的最低收盤日」；最高收盤、回落 30%、切段、中段底分數、40 天沒新高都從 t 起算；W1／W2 只看目前這一段（買進前已出現也算）；−15% 參考提示仍以你的買進價為準。",
               f"流程：全部持有 →（W1 還沒出現前，連續 40 個交易日沒創新高 ⇒ 隔天開盤賣全部，結束）→（W1 第一頂警示，隔天開盤賣 3 成、留 7 成）→ 已賣 3 成 →（剩 7 成：等 W2 第二頂警示〔再次處置或出關〕或從最高回落 30%，隔天開盤賣）→ 已出清／待買回 →"
               f"（從最高回落 20% 且中段底分數 ≥ {names_bj[1]}，隔天開盤買回）→ 第二段持有 →（W2，隔天開盤賣）→ 結束；任何時候從最高回落 30% ＝ 本筆結束。", ""]
-        SRC = HD.sources()
+        SRC = HD.sources(); ED = HD.entry_dates()
         for c_, bd_, bp_ in flows:
             src_ = SRC.get(c_, "其他")
+            ed_ = ED.get(c_) or bd_                                         # 正式進場日（先買後入選 ⇒ 持股檔第 6 欄；2026-10-06 6213）
             if src_ in ("營量", "營飆", "營飆營量"):                     # 2026-09-30 使用者：營量、營飆買的照正式規則出場（flowexit 研究 dca601c329）
                 def act_of(nm_, H_, part_=""):
-                    xp_ = D.exit_pos(int(cal.searchsorted(pd.Timestamp(bd_))), H_)
+                    xp_ = D.exit_pos(int(cal.searchsorted(pd.Timestamp(ed_))), H_)
                     rem_ = xp_ - (n - 1)
                     dt_ = cal_ext[xp_].date() if xp_ < len(cal_ext) else "（超出外推範圍）"
                     return (f"{nm_}{part_}已到期：{dt_} 收盤應已賣出" if rem_ <= 0 else f"{nm_}{part_}明天（{dt_}）收盤賣（第 {H_} 個交易日）" if rem_ == 1
@@ -174,7 +175,7 @@ def build(a, log, v2=False):
                 else:
                     act_ = act_of(src_, 60 if src_ == "營量" else 120, "")
                 nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
-                L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}｜來源：{src_}｜**照正式規則：{act_}**")
+                L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}{'' if ed_ == bd_ else f'（正式進場日 {ed_}，出場從這天起算）'}｜來源：{src_}｜**照正式規則：{act_}**")
             o_ = SFL.replay(R, c_, bd_, bp_, DATA, AUX, names_bj)
             if src_ in ("營量", "營飆", "營飆營量"):
                 if "錯誤" not in o_:
