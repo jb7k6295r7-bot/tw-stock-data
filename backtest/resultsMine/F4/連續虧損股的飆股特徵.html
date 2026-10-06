@@ -1,0 +1,296 @@
+<!doctype html><html lang='zh-Hant'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>連續虧損股的飆股特徵</title>
+<style>:root{--bg:#fff;--fg:#222;--box:#f4f6fa;--line:#ddd;--g:#e6f4ea;--y:#fff6dd;--note:#666}
+@media(prefers-color-scheme:dark){:root{--bg:#111;--fg:#ddd;--box:#1d2230;--line:#444;--g:#1f3a26;--y:#3a3420;--note:#aaa}}
+body{font-family:-apple-system,'Noto Sans TC',sans-serif;margin:0 auto;max-width:900px;padding:0 16px 40px;line-height:1.65;color:var(--fg);background:var(--bg)}
+h1{font-size:1.3em}h2{font-size:1.1em;margin-top:1.8em;border-bottom:1px solid var(--line)}h3{font-size:1em;margin-bottom:.3em}
+.box{background:var(--box);border-left:4px solid #3a6;padding:10px 12px;margin:12px 0}.bad{border-left-color:#c44}
+.wrap{overflow-x:auto}table{border-collapse:collapse;font-size:.85em;min-width:100%}td,th{border:1px solid var(--line);padding:3px 6px;text-align:right;white-space:nowrap}
+td.l,th.l{text-align:left}.note{color:var(--note);font-size:.85em}.g{background:var(--g)}.y{background:var(--y)}</style><style>td small{color:var(--note)}.k{font-size:.8em;color:var(--note)}</style>
+</head><body>
+<h1>連續虧損（F4）的股票裡，後來變飆股的那些，起漲前有什麼共同情況？</h1>
+<p class='note'>使用者原話：「順著F4繼續往下」｜接續 PREREG地雷股濾網 seq3 的丙（起漲前一個判定日帶 F4 連續虧損的飆股約占 38%）｜只描述（參考、不計檢定數、不需登錄）｜回測線執行，讀法寫死 2026-10-07 06:40（台北）。這是歷史統計，不是對任何一檔的預測或買賣建議。</p>
+<div class='box'><b>結論（2017-03～2026-08，全部上市櫃）</b><ul>
+<li>起漲前一個月底帶 F4 連續虧損的飆股：899 檔股票、55,937 個起漲點（各格加總 101,000 筆）。下面每個比例都是 250 種飆股定義各算一次、取中位數。</li>
+<li><b>一半以上的 F4 飆股都有的情況</b>（依比例高到低）：近 4 季合計虧、最近一季也虧（含兩種都有） <b>87%</b>（一般 F4 股也差不多）；近 8 季有 6 季以上虧（含兩種都有） <b>78%</b>（一般 F4 股也差不多）；兩種都有 <b>64%</b>（一般 F4 股也差不多）；離 5 日最低點最近的 20% <b>63%</b>（沒變飆股的 F4 股 34%）；股價 ＜ 20 元 <b>62%</b>（一般 F4 股也差不多）；離 10 日最低點最近的 20% <b>56%</b>（沒變飆股的 F4 股 27%）；連續年增 0 個月（最新一個月沒有年增） <b>53%</b>（一般 F4 股也差不多）。</li>
+<li><b>補充：比沒變飆股的 F4 股明顯常見的</b>（倍數 ≥ 1.5；括號 ＝ 涵蓋率、倍數）：F1 長期下探（一年跌 70% 以上）（2%、3.47 倍）；F1 長期下探（一年跌 50% 以上且在年線下）（8%、2.26 倍）；14 個起漲特徵同時有 5 個以上（44%、2.24 倍）；股價低於半個面額（9%、2.18 倍）；離 10 日最低點最近的 20%（56%、2.11 倍）；收盤低於 5 日均線最多的 20%（49%、1.91 倍）；離 5 日最低點最近的 20%（63%、1.88 倍）；5 日報酬最差的 20%（45%、1.77 倍）；F3 淨值低於面額一半（11%、1.72 倍）；F5 全額交割／變更交易／管理股票（16%、1.69 倍）；20 日平均成交金額：全市場最多的 20%（12%、1.55 倍）；60 日內被列注意股 ≥ 3 次（17%、1.53 倍）。</li>
+<li><b>補充：比沒變飆股的 F4 股明顯少見的</b>（倍數 ≤ 0.67）：14 個起漲特徵同時有 0 個（3%、0.36 倍）；14 個起漲特徵同時有 1 個（11%、0.47 倍）；月營收無資料或算不出年增（4%、0.55 倍）；14 個起漲特徵同時有 2 個（11%、0.56 倍）。</li>
+<li>⚠ 起漲日落在短期低點附近（離 5／10 日最低點近、5 日報酬差）有一部分是「起漲日」的定義使然（起漲日 ＝ 之後會漲上去的第一天），所有飆股都有這個傾向，不是 F4 股特有。</li>
+<li><b>兩段差 10 個百分點以上的</b>（2017-03～2021 → 2022～2026-08）：股價低於面額 44% → 9%；股價 ＜ 20 元 75% → 45%；F4 之外至少再帶一個旗（F1／F2／F3／F5） 55% → 32%；股價低於半個面額 14% → 1%；F5 全額交割／變更交易／管理股票 21% → 9%；月營收年增 ＞ 0 37% → 51%。</li>
+<li><b>只看 W1 母體內（營量／營飆能買的，346 檔、8,028 個起漲點）</b>，一半以上有的情況：近 4 季合計虧、最近一季也虧（含兩種都有） <b>81%</b>（對照 81%）；60 日平均周轉率最高的 20% <b>72%</b>（對照 61%）；近 8 季有 6 季以上虧（含兩種都有） <b>71%</b>（對照 65%）；20 日平均成交金額：全市場最多的 20% <b>68%</b>（對照 49%）；月營收年增 ＞ 0 <b>64%</b>（對照 54%）；14 個起漲特徵同時有 5 個以上 <b>63%</b>（對照 35%）；離 5 日最低點最近的 20% <b>62%</b>（對照 31%）；離 10 日最低點最近的 20% <b>54%</b>（對照 23%）；收盤低於 5 日均線最多的 20% <b>53%</b>（對照 30%）；離 250 日最低點：全市場最遠的 20% <b>53%</b>（對照 42%）；最近一季 EPS 比前一季好 <b>51%</b>（對照 49%）；5 日報酬最差的 20% <b>50%</b>（對照 30%）；兩種都有 <b>50%</b>（對照 46%）。</li>
+<li>「倍數」只是補充：涵蓋率 ÷ 同期沒變飆股的 F4 股-月有這個情況的比例。倍數在 0.8～1.25 的項目標「一般 F4 股也差不多」——這種情況是連續虧損股本來就常有的，不是飆股才有。全部項目都列在下面的表，沒有挑。</li>
+</ul></div>
+<h2>一、全部情況（依涵蓋率高到低；全部上市櫃、2017-03～2026-08）</h2>
+<p class='note'>涵蓋率 ＝ 變飆股的 F4 股裡有這個情況的比例（250 格中位；小字 p10～p90）。對照 ＝ 同期「沒變飆股的 F4 股-月」有這個情況的比例。1～5、7 類看起漲前一個月底（F4 旗那一天，只用當時已公布的資料）；6 類看起漲日當天（對照 ＝ 那個月每個交易日的平均）。</p>
+<div class='wrap'><table><tr><th class=l>情況</th><th class=l>類</th><th>涵蓋率</th><th>沒變飆股的 F4 股-月</th><th>倍數</th><th>註</th></tr>
+<tr><td class=l>近 4 季合計虧、最近一季也虧（含兩種都有）</td><td class='l k'>F4 的種類</td><td><b>87%</b> <small>80%～91%</small></td><td>86%</td><td>1.01</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>近 8 季有 6 季以上虧（含兩種都有）</td><td class='l k'>F4 的種類</td><td><b>78%</b> <small>71%～100%</small></td><td>68%</td><td>1.15</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>兩種都有</td><td class='l k'>F4 的種類</td><td><b>64%</b> <small>58%～75%</small></td><td>54%</td><td>1.19</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>離 5 日最低點最近的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>63%</b> <small>48%～71%</small></td><td>34%</td><td>1.88</td><td class=l></td></tr>
+<tr><td class=l>股價 ＜ 20 元</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>62%</b> <small>55%～71%</small></td><td>58%</td><td>1.08</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>離 10 日最低點最近的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>56%</b> <small>36%～65%</small></td><td>27%</td><td>2.11</td><td class=l></td></tr>
+<tr><td class=l>連續年增 0 個月（最新一個月沒有年增）</td><td class='l k'>月營收</td><td><b>53%</b> <small>33%～61%</small></td><td>50%</td><td>1.05</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>最近一季 EPS 比前一季好</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>49%</b> <small>41%～72%</small></td><td>47%</td><td>1.05</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>收盤低於 5 日均線最多的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>49%</b> <small>42%～57%</small></td><td>25%</td><td>1.91</td><td class=l></td></tr>
+<tr><td class=l>F4 之外至少再帶一個旗（F1／F2／F3／F5）</td><td class='l k'>同時帶的其他旗</td><td><b>46%</b> <small>39%～56%</small></td><td>35%</td><td>1.32</td><td class=l></td></tr>
+<tr><td class=l>市值：全市場最小的 20%</td><td class='l k'>價位與規模</td><td><b>46%</b> <small>33%～51%</small></td><td>45%</td><td>1.01</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>5 日報酬最差的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>45%</b> <small>39%～53%</small></td><td>26%</td><td>1.77</td><td class=l></td></tr>
+<tr><td class=l>14 個起漲特徵同時有 5 個以上</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>44%</b> <small>33%～50%</small></td><td>20%</td><td>2.24</td><td class=l></td></tr>
+<tr><td class=l>月營收年增 ＞ 0</td><td class='l k'>月營收</td><td><b>42%</b> <small>37%～67%</small></td><td>43%</td><td>0.98</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>最近一季 EPS 比去年同季好</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>41%</b> <small>31%～50%</small></td><td>41%</td><td>0.99</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>近 4 季合計比再前 4 季好（虧損縮小）</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>38%</b> <small>34%～50%</small></td><td>37%</td><td>1.01</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場最少的 20%</td><td class='l k'>價位與規模</td><td><b>34%</b> <small>25%～41%</small></td><td>37%</td><td>0.93</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續虧損 8 季以上</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>33%</b> <small>26%～50%</small></td><td>23%</td><td>1.42</td><td class=l></td></tr>
+<tr><td class=l>股價低於面額</td><td class='l k'>價位與規模</td><td><b>29%</b> <small>0%～35%</small></td><td>21%</td><td>1.35</td><td class=l></td></tr>
+<tr><td class=l>月營收年增 ＞ 20%</td><td class='l k'>月營收</td><td><b>26%</b> <small>21%～46%</small></td><td>26%</td><td>0.98</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>F5 官方警示（任一）</td><td class='l k'>同時帶的其他旗</td><td><b>26%</b> <small>22%～40%</small></td><td>19%</td><td>1.39</td><td class=l></td></tr>
+<tr><td class=l>離 250 日最低點：全市場最遠的 20%</td><td class='l k'>價位與規模</td><td><b>22%</b> <small>13%～33%</small></td><td>19%</td><td>1.19</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>只有「近 4 季合計虧、最近一季也虧」那一種</td><td class='l k'>F4 的種類</td><td><b>22%</b> <small>0%～29%</small></td><td>32%</td><td>0.69</td><td class=l></td></tr>
+<tr><td class=l>離 250 日最低點：全市場最近的 20%</td><td class='l k'>價位與規模</td><td><b>22%</b> <small>11%～29%</small></td><td>25%</td><td>0.86</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續虧損 4～7 季</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>22%</b> <small>8%～25%</small></td><td>25%</td><td>0.88</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>120 日報酬最好的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>21%</b> <small>11%～33%</small></td><td>18%</td><td>1.18</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續年增 1～2 個月</td><td class='l k'>月營收</td><td><b>21%</b> <small>12%～33%</small></td><td>22%</td><td>0.96</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場次少的 20%</td><td class='l k'>價位與規模</td><td><b>19%</b> <small>5%～22%</small></td><td>22%</td><td>0.85</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>60 日平均周轉率最高的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>18%</b> <small>8%～23%</small></td><td>15%</td><td>1.24</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>市值：全市場次小的 20%</td><td class='l k'>價位與規模</td><td><b>17%</b> <small>0%～20%</small></td><td>22%</td><td>0.80</td><td class=l></td></tr>
+<tr><td class=l>60 日內被列注意股 ≥ 3 次</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>17%</b> <small>12%～33%</small></td><td>11%</td><td>1.53</td><td class=l></td></tr>
+<tr><td class=l>離 250 日最低點：全市場次遠的 20%</td><td class='l k'>價位與規模</td><td><b>17%</b> <small>11%～25%</small></td><td>17%</td><td>0.98</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>離 250 日最低點：全市場次近的 20%</td><td class='l k'>價位與規模</td><td><b>17%</b> <small>11%～24%</small></td><td>20%</td><td>0.85</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場中間 20%</td><td class='l k'>價位與規模</td><td><b>16%</b> <small>10%～26%</small></td><td>18%</td><td>0.90</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>均線多頭排列（5＞20＞60＞100 日）</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>16%</b> <small>7%～26%</small></td><td>16%</td><td>1.05</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>F5 全額交割／變更交易／管理股票</td><td class='l k'>同時帶的其他旗</td><td><b>16%</b> <small>13%～25%</small></td><td>9%</td><td>1.69</td><td class=l></td></tr>
+<tr><td class=l>14 個起漲特徵同時有 3 個</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>16%</b> <small>4%～22%</small></td><td>17%</td><td>0.94</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>月營收年增 ≥ 50%（起漲日當時）</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>15%</b> <small>11%～27%</small></td><td>16%</td><td>0.92</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>離 250 日最低點：全市場中間 20%</td><td class='l k'>價位與規模</td><td><b>15%</b> <small>6%～19%</small></td><td>18%</td><td>0.84</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 4 個</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>15%</b> <small>8%～20%</small></td><td>13%</td><td>1.18</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>F5 懲罰型停資停券</td><td class='l k'>同時帶的其他旗</td><td><b>14%</b> <small>11%～22%</small></td><td>11%</td><td>1.22</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>市值：全市場中間 20%</td><td class='l k'>價位與規模</td><td><b>14%</b> <small>0%～17%</small></td><td>16%</td><td>0.86</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場次多的 20%</td><td class='l k'>價位與規模</td><td><b>13%</b> <small>7%～20%</small></td><td>15%</td><td>0.93</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>融資使用率最高的 20%</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>13%</b> <small>0%～16%</small></td><td>15%</td><td>0.86</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>只有「近 8 季有 6 季以上虧」那一種</td><td class='l k'>F4 的種類</td><td><b>13%</b> <small>9%～20%</small></td><td>14%</td><td>0.93</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續年增 3～5 個月</td><td class='l k'>月營收</td><td><b>13%</b> <small>9%～22%</small></td><td>11%</td><td>1.13</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續虧損 1 季</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>12%</b> <small>0%～15%</small></td><td>16%</td><td>0.78</td><td class=l></td></tr>
+<tr><td class=l>連續虧損 2 季</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>12%</b> <small>5%～17%</small></td><td>14%</td><td>0.89</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場最多的 20%</td><td class='l k'>價位與規模</td><td><b>12%</b> <small>7%～18%</small></td><td>8%</td><td>1.55</td><td class=l></td></tr>
+<tr><td class=l>F3 淨值低於面額一半</td><td class='l k'>同時帶的其他旗</td><td><b>11%</b> <small>9%～23%</small></td><td>7%</td><td>1.72</td><td class=l></td></tr>
+<tr><td class=l>14 個起漲特徵同時有 2 個</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>11%</b> <small>5%～18%</small></td><td>20%</td><td>0.56</td><td class=l></td></tr>
+<tr><td class=l>14 個起漲特徵同時有 1 個</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>11%</b> <small>0%～17%</small></td><td>23%</td><td>0.47</td><td class=l></td></tr>
+<tr><td class=l>市值：全市場次大的 20%</td><td class='l k'>價位與規模</td><td><b>11%</b> <small>9%～22%</small></td><td>11%</td><td>0.99</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續虧損 0 季（最近一季沒虧）</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>11%</b> <small>7%～20%</small></td><td>11%</td><td>0.97</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續虧損 3 季</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>10%</b> <small>0%～14%</small></td><td>12%</td><td>0.86</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>月營收創 12 個月新高</td><td class='l k'>月營收</td><td><b>10%</b> <small>4%～20%</small></td><td>10%</td><td>1.01</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>最近一季已經轉成賺錢</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>10%</b> <small>7%～20%</small></td><td>10%</td><td>0.99</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>股價低於半個面額</td><td class='l k'>價位與規模</td><td><b>9%</b> <small>0%～15%</small></td><td>4%</td><td>2.18</td><td class=l></td></tr>
+<tr><td class=l>EPS 轉正（起漲日當時最近一季由虧轉盈）</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>8%</b> <small>5%～25%</small></td><td>7%</td><td>1.30</td><td class=l></td></tr>
+<tr><td class=l>F1 長期下探（一年跌 50% 以上且在年線下）</td><td class='l k'>同時帶的其他旗</td><td><b>8%</b> <small>6%～20%</small></td><td>4%</td><td>2.26</td><td class=l></td></tr>
+<tr><td class=l>最近一季已賺錢、但近 4 季合計仍虧</td><td class='l k'>虧損在改善嗎（最近一季財報）</td><td><b>8%</b> <small>5%～17%</small></td><td>8%</td><td>1.04</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>20 日內漲停 ≥ 3 次</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>8%</b> <small>2%～16%</small></td><td>5%</td><td>1.47</td><td class=l></td></tr>
+<tr><td class=l>市值：全市場最大的 20%</td><td class='l k'>價位與規模</td><td><b>7%</b> <small>5%～17%</small></td><td>6%</td><td>1.16</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>月營收創 24 個月新高（起漲日當時、項目原讀法）</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>7%</b> <small>0%～14%</small></td><td>6%</td><td>1.14</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>連續年增 6～11 個月</td><td class='l k'>月營收</td><td><b>6%</b> <small>0%～10%</small></td><td>8%</td><td>0.79</td><td class=l></td></tr>
+<tr><td class=l>月營收創 24 個月新高</td><td class='l k'>月營收</td><td><b>6%</b> <small>0%～12%</small></td><td>6%</td><td>1.06</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>離 250 日最低點：無資料（月底沒有交易，例如停牌中；或上市未滿 250 天）</td><td class='l k'>價位與規模</td><td><b>5%</b> <small>0%～9%</small></td><td>1%</td><td>—</td><td class=l>對照要求月底有交易 ⇒ 倍數不可比</td></tr>
+<tr><td class=l>20 日平均成交金額：無資料（月底沒有交易，例如停牌中）</td><td class='l k'>價位與規模</td><td><b>4%</b> <small>0%～8%</small></td><td>0%</td><td>—</td><td class=l>對照要求月底有交易 ⇒ 倍數不可比</td></tr>
+<tr><td class=l>市值：無資料（月底沒有交易，例如停牌中）</td><td class='l k'>價位與規模</td><td><b>4%</b> <small>0%～8%</small></td><td>0%</td><td>—</td><td class=l>對照要求月底有交易 ⇒ 倍數不可比</td></tr>
+<tr><td class=l>月營收無資料或算不出年增</td><td class='l k'>月營收</td><td><b>4%</b> <small>0%～7%</small></td><td>7%</td><td>0.55</td><td class=l></td></tr>
+<tr><td class=l>14 個起漲特徵同時有 0 個</td><td class='l k'>起漲特徵（起漲日當天）</td><td><b>3%</b> <small>0%～6%</small></td><td>8%</td><td>0.36</td><td class=l></td></tr>
+<tr><td class=l>連續年增 12 個月以上</td><td class='l k'>月營收</td><td><b>2%</b> <small>0%～3%</small></td><td>3%</td><td>0.75</td><td class=l></td></tr>
+<tr><td class=l>F1 長期下探（一年跌 70% 以上）</td><td class='l k'>同時帶的其他旗</td><td><b>2%</b> <small>0%～6%</small></td><td>1%</td><td>3.47</td><td class=l></td></tr>
+<tr><td class=l>F3 淨值為負</td><td class='l k'>同時帶的其他旗</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>—</td><td class=l></td></tr>
+</table></div>
+<p class='note'>分段的項目（例：連續虧損幾季、市值五等分）各段加起來是 100%，所以會分散在表的不同位置（逐格數字見 cells.csv.gz、彙總見 grid.csv）。五等分 ＝ 當天全市場（有交易的上市櫃普通股）排序切五份。「日均成交量」用成交金額（張數跨股不能比）。</p>
+<h2>二、兩段比較（全部上市櫃）</h2><p class='note'>同一張表、依合併段涵蓋率排序；差 ＝ 2022～2026-08 減 2017-03～2021（百分點）。</p>
+<div class='wrap'><table><tr><th class=l>情況</th><th>2017-03～2021</th><th>2022～2026-08</th><th>差</th><th>合併</th></tr>
+<tr><td class=l>近 4 季合計虧、最近一季也虧（含兩種都有）</td><td>87%</td><td>88%</td><td>+2</td><td>87%</td></tr>
+<tr><td class=l>近 8 季有 6 季以上虧（含兩種都有）</td><td>79%</td><td>74%</td><td>-5</td><td>78%</td></tr>
+<tr><td class=l>兩種都有</td><td>66%</td><td>61%</td><td>-5</td><td>64%</td></tr>
+<tr><td class=l>離 5 日最低點最近的 20%</td><td>65%</td><td>61%</td><td>-4</td><td>63%</td></tr>
+<tr><td class=l>股價 ＜ 20 元</td><td>75%</td><td>45%</td><td>-30</td><td>62%</td></tr>
+<tr><td class=l>離 10 日最低點最近的 20%</td><td>58%</td><td>52%</td><td>-6</td><td>56%</td></tr>
+<tr><td class=l>連續年增 0 個月（最新一個月沒有年增）</td><td>55%</td><td>47%</td><td>-8</td><td>53%</td></tr>
+<tr><td class=l>最近一季 EPS 比前一季好</td><td>49%</td><td>49%</td><td>-0</td><td>49%</td></tr>
+<tr><td class=l>收盤低於 5 日均線最多的 20%</td><td>50%</td><td>45%</td><td>-5</td><td>49%</td></tr>
+<tr><td class=l>F4 之外至少再帶一個旗（F1／F2／F3／F5）</td><td>55%</td><td>32%</td><td>-22</td><td>46%</td></tr>
+<tr><td class=l>市值：全市場最小的 20%</td><td>45%</td><td>45%</td><td>+1</td><td>46%</td></tr>
+<tr><td class=l>5 日報酬最差的 20%</td><td>47%</td><td>42%</td><td>-5</td><td>45%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 5 個以上</td><td>47%</td><td>39%</td><td>-7</td><td>44%</td></tr>
+<tr><td class=l>月營收年增 ＞ 0</td><td>37%</td><td>51%</td><td>+15</td><td>42%</td></tr>
+<tr><td class=l>最近一季 EPS 比去年同季好</td><td>42%</td><td>39%</td><td>-3</td><td>41%</td></tr>
+<tr><td class=l>近 4 季合計比再前 4 季好（虧損縮小）</td><td>37%</td><td>39%</td><td>+3</td><td>38%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場最少的 20%</td><td>36%</td><td>32%</td><td>-4</td><td>34%</td></tr>
+<tr><td class=l>連續虧損 8 季以上</td><td>33%</td><td>29%</td><td>-4</td><td>33%</td></tr>
+<tr><td class=l>股價低於面額</td><td>44%</td><td>9%</td><td>-35</td><td>29%</td></tr>
+<tr><td class=l>月營收年增 ＞ 20%</td><td>23%</td><td>31%</td><td>+8</td><td>26%</td></tr>
+<tr><td class=l>F5 官方警示（任一）</td><td>27%</td><td>23%</td><td>-5</td><td>26%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場最遠的 20%</td><td>20%</td><td>24%</td><td>+4</td><td>22%</td></tr>
+<tr><td class=l>只有「近 4 季合計虧、最近一季也虧」那一種</td><td>21%</td><td>26%</td><td>+5</td><td>22%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場最近的 20%</td><td>25%</td><td>15%</td><td>-10</td><td>22%</td></tr>
+<tr><td class=l>連續虧損 4～7 季</td><td>22%</td><td>22%</td><td>+0</td><td>22%</td></tr>
+<tr><td class=l>120 日報酬最好的 20%</td><td>20%</td><td>22%</td><td>+2</td><td>21%</td></tr>
+<tr><td class=l>連續年增 1～2 個月</td><td>19%</td><td>24%</td><td>+5</td><td>21%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場次少的 20%</td><td>18%</td><td>20%</td><td>+2</td><td>19%</td></tr>
+<tr><td class=l>60 日平均周轉率最高的 20%</td><td>15%</td><td>22%</td><td>+7</td><td>18%</td></tr>
+<tr><td class=l>市值：全市場次小的 20%</td><td>17%</td><td>18%</td><td>+1</td><td>17%</td></tr>
+<tr><td class=l>60 日內被列注意股 ≥ 3 次</td><td>17%</td><td>17%</td><td>+0</td><td>17%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場次遠的 20%</td><td>15%</td><td>19%</td><td>+3</td><td>17%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場次近的 20%</td><td>17%</td><td>16%</td><td>-0</td><td>17%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場中間 20%</td><td>17%</td><td>14%</td><td>-3</td><td>16%</td></tr>
+<tr><td class=l>均線多頭排列（5＞20＞60＞100 日）</td><td>15%</td><td>16%</td><td>+1</td><td>16%</td></tr>
+<tr><td class=l>F5 全額交割／變更交易／管理股票</td><td>21%</td><td>9%</td><td>-11</td><td>16%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 3 個</td><td>16%</td><td>15%</td><td>-1</td><td>16%</td></tr>
+<tr><td class=l>月營收年增 ≥ 50%（起漲日當時）</td><td>12%</td><td>20%</td><td>+8</td><td>15%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場中間 20%</td><td>15%</td><td>14%</td><td>-1</td><td>15%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 4 個</td><td>14%</td><td>15%</td><td>+1</td><td>15%</td></tr>
+<tr><td class=l>F5 懲罰型停資停券</td><td>12%</td><td>17%</td><td>+5</td><td>14%</td></tr>
+<tr><td class=l>市值：全市場中間 20%</td><td>14%</td><td>13%</td><td>-0</td><td>14%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場次多的 20%</td><td>13%</td><td>12%</td><td>-1</td><td>13%</td></tr>
+<tr><td class=l>融資使用率最高的 20%</td><td>9%</td><td>19%</td><td>+10</td><td>13%</td></tr>
+<tr><td class=l>只有「近 8 季有 6 季以上虧」那一種</td><td>13%</td><td>12%</td><td>-2</td><td>13%</td></tr>
+<tr><td class=l>連續年增 3～5 個月</td><td>11%</td><td>14%</td><td>+3</td><td>13%</td></tr>
+<tr><td class=l>連續虧損 1 季</td><td>12%</td><td>13%</td><td>+2</td><td>12%</td></tr>
+<tr><td class=l>連續虧損 2 季</td><td>11%</td><td>14%</td><td>+3</td><td>12%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場最多的 20%</td><td>8%</td><td>16%</td><td>+8</td><td>12%</td></tr>
+<tr><td class=l>F3 淨值低於面額一半</td><td>14%</td><td>8%</td><td>-6</td><td>11%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 2 個</td><td>10%</td><td>12%</td><td>+2</td><td>11%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 1 個</td><td>10%</td><td>11%</td><td>+1</td><td>11%</td></tr>
+<tr><td class=l>市值：全市場次大的 20%</td><td>11%</td><td>9%</td><td>-2</td><td>11%</td></tr>
+<tr><td class=l>連續虧損 0 季（最近一季沒虧）</td><td>11%</td><td>9%</td><td>-2</td><td>11%</td></tr>
+<tr><td class=l>連續虧損 3 季</td><td>10%</td><td>10%</td><td>-0</td><td>10%</td></tr>
+<tr><td class=l>月營收創 12 個月新高</td><td>9%</td><td>12%</td><td>+2</td><td>10%</td></tr>
+<tr><td class=l>最近一季已經轉成賺錢</td><td>11%</td><td>9%</td><td>-2</td><td>10%</td></tr>
+<tr><td class=l>股價低於半個面額</td><td>14%</td><td>1%</td><td>-13</td><td>9%</td></tr>
+<tr><td class=l>EPS 轉正（起漲日當時最近一季由虧轉盈）</td><td>10%</td><td>6%</td><td>-4</td><td>8%</td></tr>
+<tr><td class=l>F1 長期下探（一年跌 50% 以上且在年線下）</td><td>12%</td><td>3%</td><td>-8</td><td>8%</td></tr>
+<tr><td class=l>最近一季已賺錢、但近 4 季合計仍虧</td><td>9%</td><td>6%</td><td>-3</td><td>8%</td></tr>
+<tr><td class=l>20 日內漲停 ≥ 3 次</td><td>8%</td><td>7%</td><td>-1</td><td>8%</td></tr>
+<tr><td class=l>市值：全市場最大的 20%</td><td>7%</td><td>7%</td><td>+0</td><td>7%</td></tr>
+<tr><td class=l>月營收創 24 個月新高（起漲日當時、項目原讀法）</td><td>6%</td><td>8%</td><td>+2</td><td>7%</td></tr>
+<tr><td class=l>連續年增 6～11 個月</td><td>4%</td><td>8%</td><td>+4</td><td>6%</td></tr>
+<tr><td class=l>月營收創 24 個月新高</td><td>5%</td><td>7%</td><td>+2</td><td>6%</td></tr>
+<tr><td class=l>離 250 日最低點：無資料（月底沒有交易，例如停牌中；或上市未滿 250 天）</td><td>6%</td><td>5%</td><td>-0</td><td>5%</td></tr>
+<tr><td class=l>20 日平均成交金額：無資料（月底沒有交易，例如停牌中）</td><td>5%</td><td>4%</td><td>-1</td><td>4%</td></tr>
+<tr><td class=l>市值：無資料（月底沒有交易，例如停牌中）</td><td>5%</td><td>4%</td><td>-1</td><td>4%</td></tr>
+<tr><td class=l>月營收無資料或算不出年增</td><td>6%</td><td>0%</td><td>-6</td><td>4%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 0 個</td><td>2%</td><td>4%</td><td>+2</td><td>3%</td></tr>
+<tr><td class=l>連續年增 12 個月以上</td><td>0%</td><td>3%</td><td>+3</td><td>2%</td></tr>
+<tr><td class=l>F1 長期下探（一年跌 70% 以上）</td><td>3%</td><td>0%</td><td>-3</td><td>2%</td></tr>
+<tr><td class=l>F3 淨值為負</td><td>0%</td><td>0%</td><td>+0</td><td>0%</td></tr>
+</table></div>
+<p class='note'>F4 飆股：2017-03～2021 692 檔／31,271 個起漲點；2022～2026-08 644 檔／24,666 個起漲點。</p>
+<h2>三、產業（現值套回，後見）</h2>
+<div class='wrap'><table><tr><th class=l>產業</th><th>涵蓋率</th><th>沒變飆股的 F4 股-月</th><th>倍數</th><th class=l>註</th></tr>
+<tr><td class=l>光電業</td><td><b>11.9%</b> <small>0.0%～14.3%</small></td><td>9.5%</td><td>1.26</td><td class=l></td></tr>
+<tr><td class=l>生技醫療業</td><td><b>11.7%</b> <small>8.3%～38.9%</small></td><td>10.5%</td><td>1.11</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>電子零組件業</td><td><b>11.7%</b> <small>9.7%～21.2%</small></td><td>9.7%</td><td>1.21</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>半導體業</td><td><b>11.6%</b> <small>0.0%～21.2%</small></td><td>7.5%</td><td>1.54</td><td class=l></td></tr>
+<tr><td class=l>（查無產業別）</td><td><b>7.2%</b> <small>4.5%～13.0%</small></td><td>8.2%</td><td>0.86</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>通信網路業</td><td><b>6.5%</b> <small>0.0%～8.4%</small></td><td>6.4%</td><td>1.02</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>其他電子業</td><td><b>4.1%</b> <small>0.0%～5.8%</small></td><td>3.5%</td><td>1.16</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>其他</td><td><b>3.5%</b> <small>0.9%～6.0%</small></td><td>4.8%</td><td>0.73</td><td class=l></td></tr>
+<tr><td class=l>電腦及週邊設備業</td><td><b>3.0%</b> <small>0.0%～4.7%</small></td><td>4.4%</td><td>0.68</td><td class=l></td></tr>
+<tr><td class=l>觀光餐旅</td><td><b>3.0%</b> <small>0.0%～4.4%</small></td><td>4.0%</td><td>0.74</td><td class=l></td></tr>
+<tr><td class=l>電機機械</td><td><b>2.4%</b> <small>0.0%～4.2%</small></td><td>4.1%</td><td>0.60</td><td class=l></td></tr>
+<tr><td class=l>鋼鐵工業</td><td><b>2.2%</b> <small>0.0%～5.0%</small></td><td>2.1%</td><td>1.06</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>航運業</td><td><b>2.1%</b> <small>0.0%～10.2%</small></td><td>1.0%</td><td>2.11</td><td class=l></td></tr>
+<tr><td class=l>紡織纖維</td><td><b>2.1%</b> <small>0.0%～3.4%</small></td><td>3.7%</td><td>0.57</td><td class=l></td></tr>
+<tr><td class=l>數位雲端</td><td><b>1.6%</b> <small>0.0%～2.4%</small></td><td>1.2%</td><td>1.28</td><td class=l></td></tr>
+<tr><td class=l>綠能環保</td><td><b>1.3%</b> <small>0.0%～2.0%</small></td><td>1.3%</td><td>1.00</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>電子通路業</td><td><b>1.2%</b> <small>0.0%～1.9%</small></td><td>1.8%</td><td>0.71</td><td class=l></td></tr>
+<tr><td class=l>塑膠工業</td><td><b>0.9%</b> <small>0.0%～1.6%</small></td><td>1.8%</td><td>0.49</td><td class=l></td></tr>
+<tr><td class=l>化學工業</td><td><b>0.7%</b> <small>0.0%～1.6%</small></td><td>0.8%</td><td>0.89</td><td class=l>一般 F4 股也差不多</td></tr>
+<tr><td class=l>居家生活</td><td><b>0.6%</b> <small>0.0%～1.2%</small></td><td>1.0%</td><td>0.65</td><td class=l></td></tr>
+<tr><td class=l>建材營造</td><td><b>0.6%</b> <small>0.0%～4.0%</small></td><td>6.0%</td><td>0.10</td><td class=l></td></tr>
+<tr><td class=l>資訊服務業</td><td><b>0.6%</b> <small>0.0%～1.4%</small></td><td>1.2%</td><td>0.49</td><td class=l></td></tr>
+<tr><td class=l>運動休閒</td><td><b>0.4%</b> <small>0.0%～0.8%</small></td><td>0.7%</td><td>0.50</td><td class=l></td></tr>
+<tr><td class=l>橡膠工業</td><td><b>0.0%</b> <small>0.0%～0.2%</small></td><td>0.5%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>油電燃氣業</td><td><b>0.0%</b> <small>0.0%～0.0%</small></td><td>0.1%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>玻璃陶瓷</td><td><b>0.0%</b> <small>0.0%～0.8%</small></td><td>0.4%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>水泥工業</td><td><b>0.0%</b> <small>0.0%～0.0%</small></td><td>0.1%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>汽車工業</td><td><b>0.0%</b> <small>0.0%～1.0%</small></td><td>1.0%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>貿易百貨</td><td><b>0.0%</b> <small>0.0%～0.8%</small></td><td>1.4%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>金融保險</td><td><b>0.0%</b> <small>0.0%～0.4%</small></td><td>0.2%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>造紙工業</td><td><b>0.0%</b> <small>0.0%～0.4%</small></td><td>0.4%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>電器電纜</td><td><b>0.0%</b> <small>0.0%～0.8%</small></td><td>0.5%</td><td>0.00</td><td class=l></td></tr>
+<tr><td class=l>食品工業</td><td><b>0.0%</b> <small>0.0%～0.2%</small></td><td>0.3%</td><td>0.00</td><td class=l></td></tr>
+</table></div><p class='note'>產業別是今天的分類套回過去（公司可能改過產業），標「後見」。涵蓋率與對照都是 0 的產業不列（見 grid.csv）。</p>
+<h2>四、只看 W1 母體內（營量／營飆能買的股票）</h2><p class='note'>起漲前一個月底在 W1 母體內的 F4 飆股：346 檔、8,028 個起漲點；有 ≥ 1 筆的格 215 格。對照也只取 W1 母體內的 F4 股-月。</p>
+<div class='wrap'><table><tr><th class=l>情況</th><th>涵蓋率</th><th>沒變飆股的 F4 股-月</th><th>倍數</th><th>全部上市櫃版涵蓋率</th></tr>
+<tr><td class=l>近 4 季合計虧、最近一季也虧（含兩種都有）</td><td><b>81%</b> <small>60%～88%</small></td><td>81%</td><td>1.00</td><td>87%</td></tr>
+<tr><td class=l>60 日平均周轉率最高的 20%</td><td><b>72%</b> <small>58%～83%</small></td><td>61%</td><td>1.19</td><td>18%</td></tr>
+<tr><td class=l>近 8 季有 6 季以上虧（含兩種都有）</td><td><b>71%</b> <small>63%～100%</small></td><td>65%</td><td>1.09</td><td>78%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場最多的 20%</td><td><b>68%</b> <small>53%～100%</small></td><td>49%</td><td>1.38</td><td>12%</td></tr>
+<tr><td class=l>月營收年增 ＞ 0</td><td><b>64%</b> <small>50%～81%</small></td><td>54%</td><td>1.20</td><td>42%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 5 個以上</td><td><b>63%</b> <small>49%～81%</small></td><td>35%</td><td>1.78</td><td>44%</td></tr>
+<tr><td class=l>離 5 日最低點最近的 20%</td><td><b>62%</b> <small>48%～83%</small></td><td>31%</td><td>1.99</td><td>63%</td></tr>
+<tr><td class=l>離 10 日最低點最近的 20%</td><td><b>54%</b> <small>29%～75%</small></td><td>23%</td><td>2.34</td><td>56%</td></tr>
+<tr><td class=l>收盤低於 5 日均線最多的 20%</td><td><b>53%</b> <small>43%～75%</small></td><td>30%</td><td>1.77</td><td>49%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場最遠的 20%</td><td><b>53%</b> <small>40%～75%</small></td><td>42%</td><td>1.25</td><td>22%</td></tr>
+<tr><td class=l>最近一季 EPS 比前一季好</td><td><b>51%</b> <small>42%～75%</small></td><td>49%</td><td>1.04</td><td>49%</td></tr>
+<tr><td class=l>5 日報酬最差的 20%</td><td><b>50%</b> <small>33%～67%</small></td><td>30%</td><td>1.64</td><td>45%</td></tr>
+<tr><td class=l>兩種都有</td><td><b>50%</b> <small>37%～63%</small></td><td>46%</td><td>1.08</td><td>64%</td></tr>
+<tr><td class=l>120 日報酬最好的 20%</td><td><b>45%</b> <small>32%～71%</small></td><td>38%</td><td>1.20</td><td>21%</td></tr>
+<tr><td class=l>60 日內被列注意股 ≥ 3 次</td><td><b>43%</b> <small>30%～61%</small></td><td>29%</td><td>1.48</td><td>17%</td></tr>
+<tr><td class=l>最近一季 EPS 比去年同季好</td><td><b>43%</b> <small>31%～65%</small></td><td>44%</td><td>0.99</td><td>41%</td></tr>
+<tr><td class=l>融資使用率最高的 20%</td><td><b>39%</b> <small>0%～49%</small></td><td>40%</td><td>0.99</td><td>13%</td></tr>
+<tr><td class=l>市值：全市場最大的 20%</td><td><b>37%</b> <small>29%～100%</small></td><td>33%</td><td>1.12</td><td>7%</td></tr>
+<tr><td class=l>近 4 季合計比再前 4 季好（虧損縮小）</td><td><b>36%</b> <small>28%～50%</small></td><td>37%</td><td>0.99</td><td>38%</td></tr>
+<tr><td class=l>月營收年增 ＞ 20%</td><td><b>36%</b> <small>25%～50%</small></td><td>34%</td><td>1.05</td><td>26%</td></tr>
+<tr><td class=l>連續年增 0 個月（最新一個月沒有年增）</td><td><b>33%</b> <small>19%～48%</small></td><td>41%</td><td>0.81</td><td>53%</td></tr>
+<tr><td class=l>市值：全市場次大的 20%</td><td><b>32%</b> <small>0%～40%</small></td><td>30%</td><td>1.03</td><td>11%</td></tr>
+<tr><td class=l>只有「近 4 季合計虧、最近一季也虧」那一種</td><td><b>29%</b> <small>0%～37%</small></td><td>35%</td><td>0.83</td><td>22%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場次多的 20%</td><td><b>29%</b> <small>0%～42%</small></td><td>42%</td><td>0.69</td><td>13%</td></tr>
+<tr><td class=l>連續虧損 8 季以上</td><td><b>27%</b> <small>15%～44%</small></td><td>21%</td><td>1.26</td><td>33%</td></tr>
+<tr><td class=l>股價 ＜ 20 元</td><td><b>26%</b> <small>17%～44%</small></td><td>25%</td><td>1.06</td><td>62%</td></tr>
+<tr><td class=l>F4 之外至少再帶一個旗（F1／F2／F3／F5）</td><td><b>26%</b> <small>12%～40%</small></td><td>18%</td><td>1.49</td><td>46%</td></tr>
+<tr><td class=l>均線多頭排列（5＞20＞60＞100 日）</td><td><b>25%</b> <small>0%～38%</small></td><td>21%</td><td>1.17</td><td>16%</td></tr>
+<tr><td class=l>連續年增 1～2 個月</td><td><b>23%</b> <small>0%～32%</small></td><td>20%</td><td>1.15</td><td>21%</td></tr>
+<tr><td class=l>連續虧損 4～7 季</td><td><b>23%</b> <small>0%～41%</small></td><td>25%</td><td>0.92</td><td>22%</td></tr>
+<tr><td class=l>月營收創 12 個月新高</td><td><b>23%</b> <small>12%～48%</small></td><td>16%</td><td>1.46</td><td>10%</td></tr>
+<tr><td class=l>連續年增 3～5 個月</td><td><b>20%</b> <small>8%～36%</small></td><td>16%</td><td>1.23</td><td>13%</td></tr>
+<tr><td class=l>月營收年增 ≥ 50%（起漲日當時）</td><td><b>20%</b> <small>0%～29%</small></td><td>21%</td><td>0.96</td><td>15%</td></tr>
+<tr><td class=l>市值：全市場中間 20%</td><td><b>19%</b> <small>0%～25%</small></td><td>21%</td><td>0.89</td><td>14%</td></tr>
+<tr><td class=l>只有「近 8 季有 6 季以上虧」那一種</td><td><b>19%</b> <small>12%～40%</small></td><td>19%</td><td>1.01</td><td>13%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場次遠的 20%</td><td><b>18%</b> <small>0%～26%</small></td><td>22%</td><td>0.83</td><td>17%</td></tr>
+<tr><td class=l>月營收創 24 個月新高（起漲日當時、項目原讀法）</td><td><b>18%</b> <small>7%～49%</small></td><td>11%</td><td>1.64</td><td>7%</td></tr>
+<tr><td class=l>F5 官方警示（任一）</td><td><b>17%</b> <small>6%～33%</small></td><td>11%</td><td>1.55</td><td>26%</td></tr>
+<tr><td class=l>F5 懲罰型停資停券</td><td><b>16%</b> <small>0%～25%</small></td><td>11%</td><td>1.51</td><td>14%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 4 個</td><td><b>15%</b> <small>0%～27%</small></td><td>15%</td><td>1.00</td><td>15%</td></tr>
+<tr><td class=l>月營收創 24 個月新高</td><td><b>15%</b> <small>0%～33%</small></td><td>10%</td><td>1.46</td><td>6%</td></tr>
+<tr><td class=l>連續虧損 0 季（最近一季沒虧）</td><td><b>14%</b> <small>6%～30%</small></td><td>16%</td><td>0.92</td><td>11%</td></tr>
+<tr><td class=l>最近一季已經轉成賺錢</td><td><b>14%</b> <small>6%～27%</small></td><td>15%</td><td>0.95</td><td>10%</td></tr>
+<tr><td class=l>連續年增 6～11 個月</td><td><b>13%</b> <small>0%～25%</small></td><td>13%</td><td>1.00</td><td>6%</td></tr>
+<tr><td class=l>連續虧損 2 季</td><td><b>11%</b> <small>0%～23%</small></td><td>13%</td><td>0.86</td><td>12%</td></tr>
+<tr><td class=l>連續虧損 1 季</td><td><b>11%</b> <small>0%～17%</small></td><td>16%</td><td>0.71</td><td>12%</td></tr>
+<tr><td class=l>EPS 轉正（起漲日當時最近一季由虧轉盈）</td><td><b>11%</b> <small>0%～33%</small></td><td>8%</td><td>1.31</td><td>8%</td></tr>
+<tr><td class=l>20 日內漲停 ≥ 3 次</td><td><b>11%</b> <small>0%～21%</small></td><td>6%</td><td>1.87</td><td>8%</td></tr>
+<tr><td class=l>最近一季已賺錢、但近 4 季合計仍虧</td><td><b>9%</b> <small>0%～17%</small></td><td>11%</td><td>0.83</td><td>8%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場中間 20%</td><td><b>9%</b> <small>0%～14%</small></td><td>15%</td><td>0.60</td><td>15%</td></tr>
+<tr><td class=l>市值：全市場次小的 20%</td><td><b>9%</b> <small>0%～14%</small></td><td>12%</td><td>0.73</td><td>17%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場最近的 20%</td><td><b>8%</b> <small>0%～18%</small></td><td>10%</td><td>0.88</td><td>22%</td></tr>
+<tr><td class=l>連續虧損 3 季</td><td><b>8%</b> <small>0%～15%</small></td><td>10%</td><td>0.80</td><td>10%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 3 個</td><td><b>7%</b> <small>0%～17%</small></td><td>15%</td><td>0.49</td><td>16%</td></tr>
+<tr><td class=l>離 250 日最低點：全市場次近的 20%</td><td><b>7%</b> <small>0%～14%</small></td><td>11%</td><td>0.64</td><td>17%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 2 個</td><td><b>6%</b> <small>0%～14%</small></td><td>15%</td><td>0.36</td><td>11%</td></tr>
+<tr><td class=l>股價低於面額</td><td><b>4%</b> <small>0%～9%</small></td><td>4%</td><td>0.84</td><td>29%</td></tr>
+<tr><td class=l>連續年增 12 個月以上</td><td><b>3%</b> <small>0%～12%</small></td><td>4%</td><td>0.82</td><td>2%</td></tr>
+<tr><td class=l>F1 長期下探（一年跌 50% 以上且在年線下）</td><td><b>3%</b> <small>0%～8%</small></td><td>2%</td><td>1.19</td><td>8%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 1 個</td><td><b>3%</b> <small>0%～8%</small></td><td>11%</td><td>0.22</td><td>11%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場中間 20%</td><td><b>2%</b> <small>0%～7%</small></td><td>8%</td><td>0.25</td><td>16%</td></tr>
+<tr><td class=l>月營收無資料或算不出年增</td><td><b>1%</b> <small>0%～4%</small></td><td>5%</td><td>0.28</td><td>4%</td></tr>
+<tr><td class=l>市值：全市場最小的 20%</td><td><b>0%</b> <small>0%～4%</small></td><td>3%</td><td>0.13</td><td>46%</td></tr>
+<tr><td class=l>F5 全額交割／變更交易／管理股票</td><td><b>0%</b> <small>0%～5%</small></td><td>0%</td><td>0.00</td><td>16%</td></tr>
+<tr><td class=l>14 個起漲特徵同時有 0 個</td><td><b>0%</b> <small>0%～4%</small></td><td>7%</td><td>0.00</td><td>3%</td></tr>
+<tr><td class=l>F3 淨值低於面額一半</td><td><b>0%</b> <small>0%～3%</small></td><td>1%</td><td>0.00</td><td>11%</td></tr>
+<tr><td class=l>離 250 日最低點：無資料（月底沒有交易，例如停牌中；或上市未滿 250 天）</td><td><b>0%</b> <small>0%～3%</small></td><td>1%</td><td>—</td><td>5%</td></tr>
+<tr><td class=l>股價低於半個面額</td><td><b>0%</b> <small>0%～1%</small></td><td>0%</td><td>0.00</td><td>9%</td></tr>
+<tr><td class=l>市值：無資料（月底沒有交易，例如停牌中）</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>—</td><td>4%</td></tr>
+<tr><td class=l>20 日平均成交金額：無資料（月底沒有交易，例如停牌中）</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>—</td><td>4%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場最少的 20%</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>—</td><td>34%</td></tr>
+<tr><td class=l>20 日平均成交金額：全市場次少的 20%</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>0.00</td><td>19%</td></tr>
+<tr><td class=l>F1 長期下探（一年跌 70% 以上）</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>0.00</td><td>2%</td></tr>
+<tr><td class=l>F3 淨值為負</td><td><b>0%</b> <small>0%～0%</small></td><td>0%</td><td>—</td><td>0%</td></tr>
+</table></div>
+<h2>五、怎麼算的</h2><ul class='note'><li>飆股 ＝ 飆股回推 seq6 網格的 250 種定義（不同持有天數上限 × 不同漲幅門檻），s5 全日曆名單，起漲日加上持有天數上限要在 2026-08-31 以前；每個數字是 250 格各算一次的中位（只算有 F4 飆股的格），小字 p10～p90。</li><li>F4 連續虧損 ＝ 起漲日之前最後一個月底，最近 4 季 EPS 合計虧且最近一季虧，或最近 8 季有 6 季以上虧（財報用當時已公布的）。</li><li>沒變飆股的 F4 股-月 ＝ 同期其他帶 F4 的股票-月份中，接下來一個月沒有在該格起漲的（定義域同地雷股濾網丙）。</li><li>月營收公布日：2025-12 以前算次月 10 日之後第一個交易日，2026-01 期起算次月 15 日之後。季報公布日同地雷股濾網（有上傳時戳用時戳，否則法定期限＋5 個交易日）。</li><li>同一檔股票在不同飆股定義（格）下會重複出現；每格各自算比例再取中位，所以一檔不會被算成很多票。</li><li>全部項目照列，沒有挑前幾名；倍數只是補充，不是「能不能事先抓到」的檢定。結論框裡的「一半以上」「倍數 ≥ 1.5」「兩段差 10 點以上」只是摘要的取法，完整數字都在表裡。</li></ul>
+<p class='note'>抽樣查核（獨立寫法重算）：0 不同，過。</p>
+<p class='note'>閘門：事件與地雷股濾網丙逐筆相同；事件中帶 F4 的比例重現丙（全部 37.7%、W1 19.0%）；EPS 重算的 F4 與地雷股濾網逐格相同。檔案：backtest/resultsMine/F4/。</p>
+</body></html>
