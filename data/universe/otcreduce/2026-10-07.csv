@@ -1,0 +1,3 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,official_factor,source
+2026-10-07,4527,40.9,44.33,現金減資,,,1.08394458,revivt
+2026-10-07,5301,4.99,6.1,彌補虧損,,,1.22180075,revivt
