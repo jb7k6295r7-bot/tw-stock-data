@@ -14,7 +14,7 @@ import os, sys, json, math
 import numpy as np
 import pandas as pd
 
-ROOT = os.path.expanduser("~/usdata/0043f97/data")
+ROOT = os.path.expanduser("~/usdata/60d2f99/data")      # 2026-10-07 重跑改新資料（舊版 0043f97）
 WORK = os.path.expanduser("~/us_work/usw1b")
 OUT = os.path.expanduser("~/tw-p17/backtest/resultsUSW1b")
 W0, W1, ANN, COST = "2016-01-04", "2026-08-31", 252, 0.0005

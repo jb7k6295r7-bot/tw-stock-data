@@ -15,7 +15,7 @@
 ⛔⛔ 授權：權益曲線、逐月候選、逐筆交易 ＝ 美股資料衍生序列 ⇒ 只放 ~/us_work/usw1b/（repo 外）並列 sha；resultsUSW1b/ 只有彙總。
 
 ⭐ 讀法（登錄與裁定已寫 ⇒ 照寫；台股先例 ⇒ 照先例；★ 新讀法 ⇒ 兩邊都數、若改動候選集合就停下回報）：
- Z1 資料 us-stock-data 0043f97（窗到 2026-08-31 ≤ 09-22）；價格 scope＝panel（seq5 ④ 暖身可用入指數前）；NYSE 日曆；UA 無效 K 棒；成本 0.05% 來回。
+ Z1 資料 us-stock-data 0043f97（窗到 2026-08-31 ≤ 09-22）〔2026-10-07 重跑改 60d2f99，見下方 DATA_COMMIT_RERUN；窗不變〕；價格 scope＝panel（seq5 ④ 暖身可用入指數前）；NYSE 日曆；UA 無效 K 棒；成本 0.05% 來回。
  Z2 量測日 d ＝ 每月第一個交易日（台股 p4_features.measurement_days）；候選須 d 當天 in_index＝1 且有有效 K 棒（seq5 ④、adapter universe）。
  Z3 bars_ok ＝ d 以前（含）有效 K 棒數 ≥ 120（台股 MIN_BARS）；ma_stack／ma60_up ＝ 台股 p4_features 逐字（close 日曆 ffill、rolling min_periods＝w）。
  Z4 liq_ok（台股 amt20 ≥ 新台幣 5,000 萬）：美股沒有換算規定 ⇒ ★ 報「在指數 ∧ bars_ok 的股-月 amt20（美元，原始收盤 × 量）最小值」；
@@ -48,7 +48,16 @@ from backtest import researchUSM as RU
 from backtest import researchUSM_body as MB
 from backtest import tradability as TRD
 
-OUT = os.path.expanduser("~/tw-p17/backtest/resultsUSW1b")
+# ⭐ 重跑（2026-10-07 台北；裁定 seq310 §一§二、seq311 §三、seq313 §二）：⛔ 登錄與讀法 Z1～Z10 一字不改，只換資料 ⇒
+#    us-stock-data 60d2f99（含 b51327fa CIK 更正 XOM／LB／SE／TE／APC／STI、3130a2e5 季營收銀行判定改 SEC SIC＋細則
+#    「金融業 SIC 6000～6799（6798 除外）且有放款／存款利息科目視同銀行」，seq313 追認）。快照 ~/usdata/60d2f99（git archive，唯讀）。
+#    舊結果（0043f97）備份在 ~/us_work/w1b_old/，關鍵數字入 BODY_REPORT「沿革」段。
+#    ⚠ 本支只覆寫 us_data 的資料根目錄（USREG-M／X／U 仍釘 0043f97，⛔ 不動 us_data.py）。
+DATA_COMMIT_RERUN = "60d2f99"
+U.DATA_COMMIT = DATA_COMMIT_RERUN
+U.ROOT = os.environ.get("US_DATA_ROOT_W1B", os.path.expanduser("~/usdata/%s" % DATA_COMMIT_RERUN))
+
+OUT =os.path.expanduser("~/tw-p17/backtest/resultsUSW1b")
 WORK = os.path.expanduser("~/us_work/usw1b")
 COST = U.COST_ROUNDTRIP
 COST_SENS = U.COST_SENSITIVITY
@@ -368,7 +377,11 @@ def main():
            "每月訊號數（窗內）": {"月數": int(len(per_m)), "零訊號月": int((per_m == 0).sum()), "中位": float(per_m.median()),
                           "p10": float(per_m.quantile(0.1)), "p90": float(per_m.quantile(0.9)), "≥8的月比例": float((per_m >= 8).mean())},
            "每年訊號數": {str(k): int(v) for k, v in sig.groupby(sig["month"].str[:4]).size().items()} if len(sig) else {},
-           "倒閉銀行": "SIVB、FRC、SBNY 無 OHLC 且屬不適用 19 檔 ⇒ 依構造不可能被選到 ⇒ −100% 下界與最後成交價版皆不適用",
+           "倒閉銀行": "SIVB、FRC、SBNY：{}；{} ⇒ {}".format(
+               "有 OHLC（" + "、".join(b for b in U.FAILED_BANKS if b in ST) + "）" if any(b in ST for b in U.FAILED_BANKS) else "無 OHLC",
+               "三檔都屬季營收不適用" if all(b in na for b in U.FAILED_BANKS) else "⚠ 不全屬不適用",
+               "依構造不可能被選到 ⇒ −100% 下界與最後成交價版皆不適用" if all(b in na for b in U.FAILED_BANKS) else "⚠ 可能被選到"),
+           "無OHLC檔數": len(U.no_ohlc_tickers()), "無OHLC名單": U.no_ohlc_tickers(),
            "種子": "default_rng(102000＋r)，r＝0…{}".format(nseed - 1), "fixture": fx}
     p = os.path.join(WORK, "panel_monthly.csv.gz")
     P.drop(columns=[]).to_csv(p, index=False)
