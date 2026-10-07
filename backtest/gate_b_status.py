@@ -111,7 +111,7 @@ def panel_rows(sids, cal: pd.DatetimeIndex, positions, U: pd.DataFrame) -> pd.Da
     return df.sort_values(["measure_date", "stock_id"]).reset_index(drop=True)
 
 
-def future_trading_days(cal: pd.DatetimeIndex, n: int) -> tuple[pd.DatetimeIndex, list[str]]:
+def future_trading_days(cal: pd.DatetimeIndex, n: int, fixed_holidays_uncovered: bool = False) -> tuple[pd.DatetimeIndex, list[str]]:
     """cal 最後一天之後的 n 個【預計】交易日：平日 − 休市表的休市日 ＋ 休市表的交易日（名稱含「開始交易／最後交易」）。
     回 (日期, 每一天的依據字樣)。⚠ 休市表未涵蓋的年度只扣週末；颱風假不可預知。"""
     hs = pd.read_csv(os.path.join(D.DATA, "meta", "holiday_schedule.csv"), dtype=str)
@@ -122,12 +122,30 @@ def future_trading_days(cal: pd.DatetimeIndex, n: int) -> tuple[pd.DatetimeIndex
     covered = int(d.dt.year.max())
     out, basis = [], []
     x = cal[-1]
+    fixed = {}
     while len(out) < n:
         x = x + pd.Timedelta(days=1)
-        if (x.weekday() < 5 and x not in closed) or x in opened:
+        if fixed_holidays_uncovered and x.year > covered and x.year not in fixed:   # 選用（預設關＝舊行為逐字不變）：未公告年度先扣固定日期國定假日（2026-10-07 情報：營量出場日落在元旦）
+            fixed[x.year] = fixed_holidays(x.year)
+        if (x.weekday() < 5 and x not in closed and not (fixed_holidays_uncovered and x.year > covered and x in fixed[x.year])) or x in opened:
             out.append(x)
-            basis.append("休市表外推" if x.year <= covered else f"只扣週末（{x.year} 年休市表未公告）")
+            basis.append("休市表外推" if x.year <= covered else (f"只扣週末（{x.year} 年休市表未公告；已扣固定日期國定假日，農曆節日未扣）" if fixed_holidays_uncovered else f"只扣週末（{x.year} 年休市表未公告）"))
     return pd.DatetimeIndex(out), basis
+
+
+def fixed_holidays(year: int) -> set:
+    """未公告休市表年度的固定日期國定假日（紀念日及節日實施條例；2025 起恢復教師節、光復節、行憲紀念日）。
+    逢週六 ⇒ 前一個週五補假、逢週日 ⇒ 下一個週一補假（照歷年休市表的補假慣例）。⚠ 春節、端午、中秋等農曆節日與調整放假不在內 ⇒ 外推仍可能偏早、⛔ 不會偏晚。"""
+    md = [(1, 1), (2, 28), (4, 4), (5, 1), (10, 10)] + ([(9, 28), (10, 25), (12, 25)] if year >= 2025 else [])
+    out = set()
+    for m, dd in md:
+        t = pd.Timestamp(year, m, dd)
+        out.add(t)
+        if t.weekday() == 5:
+            out.add(t - pd.Timedelta(days=1))
+        elif t.weekday() == 6:
+            out.add(t + pd.Timedelta(days=1))
+    return out
 
 
 def signal_rows(rows: pd.DataFrame, cal_ext: pd.DatetimeIndex, opens: dict | None = None) -> pd.DataFrame:

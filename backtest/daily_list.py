@@ -84,14 +84,14 @@ def build(a, log, v2=False):
         B = B[[ok_(s) for s in B["代號"]]] if len(B) else B
     bench, ma, reg = LP.regime_arrays(cal)
     gate_on = bool(reg[n - 1])
-    fut, basis = GB.future_trading_days(cal, 2 * 120 + 10)
+    fut, basis = GB.future_trading_days(cal, 2 * 120 + 10, fixed_holidays_uncovered=True)
     cal_ext = cal.append(fut)
     e = n                                                      # 進場 ＝ 下一交易日
 
     def exit_str(H):
         xp = D.exit_pos(e, H)
         b = basis[xp - n]
-        return f"{cal_ext[xp].date()}" + ("（未公告休市只扣週末，實際只會更晚）" if "只扣週末" in b else "")
+        return f"{cal_ext[xp].date()}" + ("（未公告年度只扣週末與固定日期國定假日，農曆節日未扣，實際只會更晚）" if "只扣週末" in b else "")
     reason = lambda r: f"營收 {r['營收期別']} 創 24 月新高、強勢 {int(r['分數'])}/5（{r['已達成']}）"
     # ── 起漲特徵（surge_feat_daily）
     DATA = os.path.expanduser(f"~/h2data/{sha}/data"); AUX = SFD.ensure_aux(sha)
