@@ -1,0 +1,258 @@
+﻿sub-industry（正規化名稱）,industry group（2023 名稱）
+advertising,Media & Entertainment
+aerospace & defense,Capital Goods
+agricultural & farm machinery,Capital Goods
+agricultural products,"Food, Beverage & Tobacco"
+agricultural products & services,"Food, Beverage & Tobacco"
+air freight & logistics,Transportation
+airlines,Transportation
+alternative carriers,Telecommunication Services
+aluminum,Materials
+apparel retail,Consumer Discretionary Distribution & Retail
+"apparel, accessories & luxury goods",Consumer Durables & Apparel
+application software,Software & Services
+asset management & custody banks,Financial Services
+auto components,Automobiles & Components
+auto parts & equipment,Automobiles & Components
+automobile manufacturers,Automobiles & Components
+automobiles,Automobiles & Components
+automotive parts & equipment,Automobiles & Components
+automotive retail,Consumer Discretionary Distribution & Retail
+banks,Banks
+beverages,"Food, Beverage & Tobacco"
+biotechnology,"Pharmaceuticals, Biotechnology & Life Sciences"
+brewers,"Food, Beverage & Tobacco"
+broadcasting,Media & Entertainment
+broadcasting & cable tv,Media & Entertainment
+broadline retail,Consumer Discretionary Distribution & Retail
+building products,Capital Goods
+"building products, including water valves",Capital Goods
+cable & satellite,Media & Entertainment
+capital goods,Capital Goods
+capital markets,Financial Services
+cargo ground transportation,Transportation
+casinos & gaming,Consumer Services
+chemicals,Materials
+coal & consumable fuels,Energy
+commercial & residential mortgage finance,Financial Services
+commercial printing,Commercial & Professional Services
+commercial services & supplies,Commercial & Professional Services
+commodity chemicals,Materials
+communications equipment,Technology Hardware & Equipment
+computer & electronics retail,Consumer Discretionary Distribution & Retail
+computer hardware,Technology Hardware & Equipment
+computer storage & peripherals,Technology Hardware & Equipment
+construction & engineering,Capital Goods
+construction & farm equipment & heavy trucks,Capital Goods
+construction & farm machinery & heavy trucks,Capital Goods
+construction machinery & heavy transportation equipment,Capital Goods
+construction machinery & heavy trucks,Capital Goods
+construction materials,Materials
+consumer electronics,Consumer Durables & Apparel
+consumer finance,Financial Services
+consumer staples merchandise retail,Consumer Staples Distribution & Retail
+containers & packaging,Materials
+copper,Materials
+data center reits,Equity Real Estate Investment Trusts (REITs)
+data processing & outsources services,Software & Services
+department stores,Consumer Discretionary Distribution & Retail
+distillers & vintners,"Food, Beverage & Tobacco"
+distributors,Consumer Discretionary Distribution & Retail
+diversified banks,Banks
+diversified chemicals,Materials
+diversified commercial services,Commercial & Professional Services
+diversified consumer services,Consumer Services
+diversified facilities & environmental,Commercial & Professional Services
+diversified financial services,Financial Services
+diversified financials,Financial Services
+diversified metals & mining,Materials
+diversified real estate activities,Real Estate Management & Development
+diversified reits,Equity Real Estate Investment Trusts (REITs)
+diversified support services,Commercial & Professional Services
+diversified telecommunication services,Telecommunication Services
+drug retail,Consumer Staples Distribution & Retail
+education services,Consumer Services
+electric utilities,Utilities
+electrical components & equipment,Capital Goods
+electrical equipment,Capital Goods
+electronic components,Technology Hardware & Equipment
+electronic equipment & instruments,Technology Hardware & Equipment
+electronic equipment manufacturers,Technology Hardware & Equipment
+"electronic equipment, instruments & components",Technology Hardware & Equipment
+electronic manufacturing services,Technology Hardware & Equipment
+energy,Energy
+energy equipment & services,Energy
+entertainment,Media & Entertainment
+environmental & facilities services,Commercial & Professional Services
+environmental services,Commercial & Professional Services
+equity reits,Equity Real Estate Investment Trusts (REITs)
+fertilizers & agricultural chemicals,Materials
+financial exchanges & data,Financial Services
+financial services,Financial Services
+food & staples retailing,Consumer Staples Distribution & Retail
+food distributors,Consumer Staples Distribution & Retail
+food products,"Food, Beverage & Tobacco"
+food retail,Consumer Staples Distribution & Retail
+footwear,Consumer Durables & Apparel
+forest products,Materials
+gas utilities,Utilities
+general merchandise stores,Consumer Discretionary Distribution & Retail
+gold,Materials
+ground transportation,Transportation
+health care distribution & services,Health Care Equipment & Services
+health care distributors,Health Care Equipment & Services
+health care distributors & services,Health Care Equipment & Services
+health care equipment,Health Care Equipment & Services
+health care equipment & sales,Health Care Equipment & Services
+health care equipment & services,Health Care Equipment & Services
+health care equipment & supplies,Health Care Equipment & Services
+health care facilities,Health Care Equipment & Services
+health care providers & services,Health Care Equipment & Services
+health care reits,Equity Real Estate Investment Trusts (REITs)
+health care services,Health Care Equipment & Services
+health care supplies,Health Care Equipment & Services
+health care technology,Health Care Equipment & Services
+healthcare technology,Health Care Equipment & Services
+heavy electrical equipment,Capital Goods
+home entertainment software,Software & Services
+home furnishings,Consumer Durables & Apparel
+home improvement retail,Consumer Discretionary Distribution & Retail
+homebuilding,Consumer Durables & Apparel
+homefurnishing retail,Consumer Discretionary Distribution & Retail
+hotel & resort reits,Equity Real Estate Investment Trusts (REITs)
+hotel & resorts reits,Equity Real Estate Investment Trusts (REITs)
+"hotels, resorts & cruise lines",Consumer Services
+"hotels, restaurants & leisure",Consumer Services
+household appliances,Consumer Durables & Apparel
+household durables,Consumer Durables & Apparel
+household products,Household & Personal Products
+housewares & specialties,Consumer Durables & Apparel
+human resource & employment services,Commercial & Professional Services
+human resources & employment services,Commercial & Professional Services
+hypermarkets & super centers,Consumer Staples Distribution & Retail
+independent power producers & energy traders,Utilities
+industrial conglomerates,Capital Goods
+industrial gases,Materials
+industrial machinery,Capital Goods
+industrial machinery & supplies & components,Capital Goods
+industrial reits,Equity Real Estate Investment Trusts (REITs)
+insurance,Insurance
+insurance brokers,Insurance
+integrated oil & gas,Energy
+integrated telecommunication services,Telecommunication Services
+integrated telecommunications services,Telecommunication Services
+interactive home entertainment,Media & Entertainment
+interactive media & services,Media & Entertainment
+internet & direct marketing retail,Consumer Discretionary Distribution & Retail
+internet retail,Consumer Discretionary Distribution & Retail
+internet services & infrastructure,Software & Services
+internet software & services,Software & Services
+investment banking & brokerage,Financial Services
+it consulting & other services,Software & Services
+it consulting & outsourced services,Software & Services
+it consulting & services,Software & Services
+it services,Software & Services
+leisure facilities,Consumer Services
+leisure products,Consumer Durables & Apparel
+life & health insurance,Insurance
+life sciences tool & equipment,"Pharmaceuticals, Biotechnology & Life Sciences"
+life sciences tools & service,"Pharmaceuticals, Biotechnology & Life Sciences"
+life sciences tools & services,"Pharmaceuticals, Biotechnology & Life Sciences"
+machinery,Capital Goods
+managed health care,Health Care Equipment & Services
+marine,Transportation
+marine transportation,Transportation
+materials,Materials
+media,Media & Entertainment
+metal & glass containers,Materials
+"metal, glass & plastic containers",Materials
+metals & mining,Materials
+mortgage reits,Financial Services
+motorcycle manufacturers,Automobiles & Components
+movies & entertainment,Media & Entertainment
+multi-family residential reits,Equity Real Estate Investment Trusts (REITs)
+multi-line insurance,Insurance
+multi-sector holdings,Financial Services
+multi-utilities,Utilities
+multiline retail,Consumer Discretionary Distribution & Retail
+multiutilities,Utilities
+networking equipment,Technology Hardware & Equipment
+office electronics,Technology Hardware & Equipment
+office reits,Equity Real Estate Investment Trusts (REITs)
+office services & supplies,Commercial & Professional Services
+oil & gas drilling,Energy
+oil & gas equipment & services,Energy
+oil & gas exploration & production,Energy
+oil & gas refining & marketing,Energy
+oil & gas refining & marketing & transportation,Energy
+oil & gas storage & transportation,Energy
+"oil, gas & consumable fuels",Energy
+other specialized reits,Equity Real Estate Investment Trusts (REITs)
+other specialty retail,Consumer Discretionary Distribution & Retail
+packaged foods & meats,"Food, Beverage & Tobacco"
+paper & forest products,Materials
+paper & plastic packaging products & materials,Materials
+paper packaging,Materials
+paper products,Materials
+passenger airlines,Transportation
+passenger ground transportation,Transportation
+personal care products,Household & Personal Products
+personal products,Household & Personal Products
+pharmaceuticals,"Pharmaceuticals, Biotechnology & Life Sciences"
+precious metals & minerals,Materials
+professional services,Commercial & Professional Services
+property & casualty insurance,Insurance
+publishing,Media & Entertainment
+rail transportation,Transportation
+railroads,Transportation
+real estate development,Real Estate Management & Development
+real estate management & development,Real Estate Management & Development
+real estate operating companies,Real Estate Management & Development
+real estate services,Real Estate Management & Development
+regional banks,Banks
+reinsurance,Insurance
+reits,Equity Real Estate Investment Trusts (REITs)
+renewable electricity,Utilities
+research & consulting services,Commercial & Professional Services
+residential reits,Equity Real Estate Investment Trusts (REITs)
+restaurants,Consumer Services
+retail reits,Equity Real Estate Investment Trusts (REITs)
+road & rail,Transportation
+security & alarm services,Commercial & Professional Services
+self-storage reits,Equity Real Estate Investment Trusts (REITs)
+semiconductor equipment,Semiconductors & Semiconductor Equipment
+semiconductor materials & equipment,Semiconductors & Semiconductor Equipment
+semiconductors,Semiconductors & Semiconductor Equipment
+silver,Materials
+single-family residential reits,Equity Real Estate Investment Trusts (REITs)
+soft drinks,"Food, Beverage & Tobacco"
+soft drinks & non-alcoholic beverages,"Food, Beverage & Tobacco"
+software,Software & Services
+specialized consumer services,Consumer Services
+specialized finance,Financial Services
+specialized reits,Equity Real Estate Investment Trusts (REITs)
+specialty bust chemicals,Materials
+specialty chemical,Materials
+specialty chemicals,Materials
+specialty reits,Equity Real Estate Investment Trusts (REITs)
+specialty retail,Consumer Discretionary Distribution & Retail
+specialty stores,Consumer Discretionary Distribution & Retail
+steel,Materials
+systems software,Software & Services
+technology distributors,Technology Hardware & Equipment
+"technology hardware, storage & peripherals",Technology Hardware & Equipment
+telecom tower reits,Equity Real Estate Investment Trusts (REITs)
+telecommunications equipment,Technology Hardware & Equipment
+textiles,Consumer Durables & Apparel
+"textiles, apparel & luxury goods",Consumer Durables & Apparel
+thrifts & mortgage finance,Banks
+timber reits,Equity Real Estate Investment Trusts (REITs)
+tires & rubber,Automobiles & Components
+tobacco,"Food, Beverage & Tobacco"
+trading companies & distributors,Capital Goods
+transaction & payment processing services,Financial Services
+transportation infrastructure,Transportation
+trucking,Transportation
+water utilities,Utilities
+wireless telecommunication services,Telecommunication Services
+wood,Materials
