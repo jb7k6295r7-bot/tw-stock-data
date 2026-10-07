@@ -288,7 +288,7 @@ def replay(R, code, buy_date, buy_px, price_dir, aux_dir, names_bj=None, anchor=
             hist.append(f"回落 20% {cal[d2].date()} 分數 {sc}/{len(names)}")
             eb = nxo(d2)
             if eb is None:
-                return O("已出清／待買回", [f"中段底買回訊號（分數 {sc}/{len(names)} ≥ {mstar}）"], "明天開盤買回")
+                return O("已出清／待買回", [f"中段底買回訊號（分數 {sc}/{len(names)} ≥ {mstar}；最高收盤 {float(rmx):g}、今收 {float(c[d2]):g}、回落 {(1 - float(c[d2]) / float(rmx)) * 100:.1f}%）"], "明天開盤買回")   # 情報 1007-1145：附最高收盤、回落幅度、分數
             hist.append(f"買回 {cal[eb].date()}")
             break
         hist.append(f"回落 20% {cal[d2].date()} 分數 {sc}/{len(names)}（未達 {mstar}）")
