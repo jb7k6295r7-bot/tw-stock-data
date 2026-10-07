@@ -1,0 +1,166 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>連續虧損股起漲進場</title>
+<style>
+:root{color-scheme:light}
+body{margin:0;background:#f6f6f4;color:#222;font-family:sans-serif;line-height:1.5}
+main{max-width:1080px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:1.3rem;margin:.4em 0}h2{font-size:1.1rem;margin:1.2em 0 .4em}h3{font-size:1.02rem;margin:.2em 4px}
+.lead{font-size:1rem;background:#fff;border-left:4px solid #d62728;padding:8px 12px}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem}
+th,td{border-bottom:1px solid #e3e3e3;padding:4px 6px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.pos{color:#c62828}.neg{color:#2e7d32}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;font-size:.88rem;background:#fff;padding:8px}
+.toc a{color:#1a4fa0;text-decoration:none}
+.card{background:#fff;margin:14px 0;padding:6px;border:1px solid #e3e3e3}
+.card .meta{font-size:.82rem;color:#555;padding:2px 4px 6px}
+.legend{font-size:.85rem;background:#fff;padding:6px 8px;position:sticky;top:0;z-index:2;border-bottom:1px solid #ddd}
+.note{font-size:.85rem;color:#555}
+.back{font-size:.8rem;float:right}
+
+td.l,th.l{text-align:left;white-space:normal;min-width:10em}small{color:#666}.warn{border-left:4px solid #d64045;padding:6px 10px;background:#fff4f4}
+tr.hl td{background:#fff8e1}tr.sep td{border-top:2px solid #bbb}ul.k li{margin:.25em 0}.ok{color:#2e7d32}.bad{color:#c62828}</style></head><body><main>
+<h1>連續虧損股起漲進場：連續虧損＋起漲特徵＋從低點已漲 x%，隔天開盤買</h1>
+<p class='lead'><b>結論：不合格。</b> 探索段挑出的格是「k≥5、從 60 日低點已漲 20%、E1 飆股流程（不含買回）」；確認段（2022-01～2026-08）年化 0.7%、最大回落 -41.5%，同期 0050 年化 29.5%、回落 -34.0% ⇒ <b class='bad'>不合格</b>。扣掉滑價與漲跌停買賣不到的現實版（主要參考）確認段年化 -4.0%、回落 -42.7% ⇒ <b class='bad'>不合格</b>。</p>
+<p class='warn'>回測結果，⛔ 不是買賣建議。本件是「事後重切」（登錄前已看過分界描述）⇒ 就算兩段都合格也最多「暫定」。早年段（2012-06～2014-12）沒有連續虧損的季報判定 ⇒ 不可判定。用語：假訊號 ＝ 隨機挑一天買的對照。</p>
+<h2>先講結論</h2><ul class='k'>
+<li><b>16 格整套一判</b>：探索段（2017-03～2021-12）16 格中合格 3 格、沒有退化的 8 格；k≥10 的格每天訊號太少（整段只有個位數到幾十筆），持股湊不滿 ⇒ 退化、不參加挑選。挑中 k5_x20_E1（探索段 <b class='ok'>合格</b>：年化 28.8% vs 0050 18.9%）。</li>
+<li><b>主窗（2017-03～2026-08）</b>：年化 14.2%、回落 -41.8%；現實版 6.3%、-55.5%；0050 24.0%、-34.0%；營飆 v1 37.8%、營量 v1 35.0%。</li>
+<li><b>帶 F4 有沒有比較好</b>：同格不帶 F4（其他條件一樣）主窗年化 17.6%（現實版 14.8%）；帶 F4 14.2%。</li>
+<li><b>假訊號臂</b>（同一批股票、隨機挑一天買、持有天數照本件分佈）：主窗年化 14.7%（現實版 8.1%）。</li>
+<li><b>一年內先跌 15%</b>：實際成交的筆 46.5%（不帶 F4 47.2%）；<b>吃到「起漲→頂」幾成</b>中位 51.8%；持有天數中位 31.0 根 K 棒；窗尾 2026-08-24 仍持有 10.0 檔。</li>
+<li><b>只看 W1 母體（營量、營飆能買的）</b>：主窗年化 14.4%。</li></ul>
+<h2>一、16 格（主母體全部上市櫃、帶 F4、成本 0.585%；括號＝現實版）</h2><div class='wrap'><table><tr><th class='l'>格</th><th>探索 年化</th><th>探索 回落</th><th>探索 比值</th><th>探索</th><th>平均持股</th><th>現金</th><th>確認 年化</th><th>確認 回落</th><th>確認</th><th>主窗 年化</th><th>主窗 回落</th></tr>
+<tr class='sep'><td class='l'>0050 同窗</td><td>18.9%</td><td>-28.2%</td><td>0.67</td><td></td><td></td><td></td><td>29.5%</td><td>-34.0%</td><td></td><td>24.0%</td><td>-34.0%</td></tr>
+<tr><td class='l'>k≥5、已漲 10%、E1</td><td>17.7%<br><small>(12.9%)</small></td><td>-32.7%</td><td>0.54</td><td><b class='bad'>不合格</b></td><td>9.3</td><td>8.3%</td><td>-0.6%<br><small>(-5.5%)</small></td><td>-45.8%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>8.3%<br><small>(3.5%)</small></td><td>-46.0%</td></tr>
+<tr><td class='l'>k≥5、已漲 10%、E2</td><td>11.6%<br><small>(11.0%)</small></td><td>-33.7%</td><td>0.34</td><td><b class='bad'>不合格</b></td><td>9.7</td><td>4.8%</td><td>10.6%<br><small>(7.6%)</small></td><td>-41.5%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>10.9%<br><small>(9.5%)</small></td><td>-41.5%</td></tr>
+<tr class=hl><td class='l'>k≥5、已漲 20%、E1</td><td>28.8%<br><small>(17.4%)</small></td><td>-27.5%</td><td>1.05</td><td><b class='ok'>合格</b></td><td>8.5</td><td>13.6%</td><td>0.7%<br><small>(-4.0%)</small></td><td>-41.5%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>14.2%<br><small>(6.3%)</small></td><td>-41.8%</td></tr>
+<tr><td class='l'>k≥5、已漲 20%、E2</td><td>28.2%<br><small>(17.9%)</small></td><td>-41.9%</td><td>0.67</td><td><b class='ok'>合格</b></td><td>8.9</td><td>8.2%</td><td>14.0%<br><small>(9.6%)</small></td><td>-40.0%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>21.0%<br><small>(13.8%)</small></td><td>-42.5%</td></tr>
+<tr><td class='l'>k≥5、已漲 30%、E1</td><td>17.1%<br><small>(9.2%)</small></td><td>-40.6%</td><td>0.42</td><td><b class='bad'>不合格</b></td><td>8.0</td><td>20.3%</td><td>6.9%<br><small>(2.4%)</small></td><td>-40.7%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>11.7%<br><small>(5.5%)</small></td><td>-41.4%</td></tr>
+<tr><td class='l'>k≥5、已漲 30%、E2</td><td>32.6%<br><small>(31.8%)</small></td><td>-44.2%</td><td>0.74</td><td><b class='ok'>合格</b></td><td>9.1</td><td>10.4%</td><td>6.4%<br><small>(7.7%)</small></td><td>-50.2%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>19.1%<br><small>(19.3%)</small></td><td>-50.2%</td></tr>
+<tr><td class='l'>k≥5、已漲 50%、E1</td><td>9.8%<br><small>(9.4%)</small></td><td>-37.4%</td><td>0.26</td><td><b class='bad'>不合格</b></td><td>8.2</td><td>15.6%</td><td>7.0%<br><small>(9.0%)</small></td><td>-30.3%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>8.4%<br><small>(9.1%)</small></td><td>-38.8%</td></tr>
+<tr><td class='l'>k≥5、已漲 50%、E2</td><td>2.2%<br><small>(0.9%)</small></td><td>-53.6%</td><td>0.04</td><td><b class='bad'>不合格</b></td><td>8.6</td><td>12.2%</td><td>4.1%<br><small>(3.0%)</small></td><td>-45.1%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>3.0%<br><small>(1.8%)</small></td><td>-53.6%</td></tr>
+<tr><td class='l'>k≥10、已漲 10%、E1 <small>退化</small></td><td>-0.7%<br><small>(-0.8%)</small></td><td>-9.5%</td><td>-0.08</td><td><b class='bad'>不合格</b></td><td>0.6</td><td>93.4%</td><td>4.4%<br><small>(4.1%)</small></td><td>-9.9%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>1.7%<br><small>(1.6%)</small></td><td>-9.9%</td></tr>
+<tr><td class='l'>k≥10、已漲 10%、E2 <small>退化</small></td><td>4.4%<br><small>(4.2%)</small></td><td>-14.3%</td><td>0.31</td><td><b class='bad'>不合格</b></td><td>1.5</td><td>83.8%</td><td>3.3%<br><small>(3.0%)</small></td><td>-20.8%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>3.8%<br><small>(3.6%)</small></td><td>-20.8%</td></tr>
+<tr><td class='l'>k≥10、已漲 20%、E1 <small>退化</small></td><td>2.1%<br><small>(2.3%)</small></td><td>-14.1%</td><td>0.15</td><td><b class='bad'>不合格</b></td><td>0.6</td><td>92.9%</td><td>8.0%<br><small>(7.3%)</small></td><td>-10.3%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>5.0%<br><small>(4.8%)</small></td><td>-14.1%</td></tr>
+<tr><td class='l'>k≥10、已漲 20%、E2 <small>退化</small></td><td>2.3%<br><small>(2.8%)</small></td><td>-24.8%</td><td>0.09</td><td><b class='bad'>不合格</b></td><td>1.2</td><td>86.3%</td><td>2.7%<br><small>(1.9%)</small></td><td>-19.8%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>2.6%<br><small>(2.5%)</small></td><td>-24.8%</td></tr>
+<tr><td class='l'>k≥10、已漲 30%、E1 <small>退化</small></td><td>-0.3%<br><small>(-0.1%)</small></td><td>-1.8%</td><td>-0.16</td><td><b class='bad'>不合格</b></td><td>0.1</td><td>99.1%</td><td>2.6%<br><small>(2.7%)</small></td><td>-8.2%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>1.1%<br><small>(1.3%)</small></td><td>-8.2%</td></tr>
+<tr><td class='l'>k≥10、已漲 30%、E2 <small>退化</small></td><td>-1.0%<br><small>(-0.5%)</small></td><td>-13.6%</td><td>-0.07</td><td><b class='bad'>不合格</b></td><td>1.1</td><td>88.8%</td><td>0.6%<br><small>(0.6%)</small></td><td>-20.2%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>-0.2%<br><small>(0.1%)</small></td><td>-23.3%</td></tr>
+<tr><td class='l'>k≥10、已漲 50%、E1 <small>退化</small></td><td>0.2%<br><small>(-0.0%)</small></td><td>0.0%</td><td>—</td><td><b class='bad'>不合格</b></td><td>0.0</td><td>100.0%</td><td>-0.2%<br><small>(-0.1%)</small></td><td>-6.3%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>-0.0%<br><small>(-0.1%)</small></td><td>-6.3%</td></tr>
+<tr><td class='l'>k≥10、已漲 50%、E2 <small>退化</small></td><td>-0.7%<br><small>(-0.8%)</small></td><td>-4.2%</td><td>-0.17</td><td><b class='bad'>不合格</b></td><td>0.3</td><td>96.9%</td><td>0.1%<br><small>(-0.1%)</small></td><td>-13.4%</td><td><b class='bad'>不合格</b><br><small>(不合格)</small></td><td>-0.3%<br><small>(-0.4%)</small></td><td>-13.4%</td></tr>
+</table></div><p class='note'>年化、回落 ＝ 200 顆抽籤種子的中位；比值 ＝ 年化 ÷ |回落|；合格 ＝ 年化 ＞ 0050 且 比值 ≥ 0050；另列 ＝ 只贏報酬。退化 ＝ 探索段平均持股 ＜ 3 檔或現金 ＞ 30%（事前排除）。E1 ＝ W1 賣 3 成、剩 7 成等 W2 或回落 30%、W1 前 40 天沒新高全賣（每日名單現行算法，不含買回）；E2 ＝ 最高回落 30% 全賣；都不設最長天數。</p>
+<h2>二、對照（挑中格 k5_x20_E1）</h2><div class='wrap'><table><tr><th class='l'>臂</th><th>探索 年化</th><th>探索 回落</th><th>確認 年化</th><th>確認 回落</th><th>確認</th><th>主窗 年化</th><th>主窗 回落</th></tr>
+<tr><td class='l'>本件（帶 F4）</td><td>28.8%</td><td>-27.5%</td><td>0.7%</td><td>-41.5%</td><td><b class='bad'>不合格</b></td><td>14.2%</td><td>-41.8%</td></tr>
+<tr><td class='l'>本件 現實版</td><td>17.4%</td><td>-37.3%</td><td>-4.0%</td><td>-42.7%</td><td><b class='bad'>不合格</b></td><td>6.3%</td><td>-55.5%</td></tr>
+<tr><td class='l'>不帶 F4</td><td>26.8%</td><td>-24.0%</td><td>8.7%</td><td>-36.7%</td><td><b class='bad'>不合格</b></td><td>17.6%</td><td>-36.8%</td></tr>
+<tr><td class='l'>不帶 F4 現實版</td><td>22.7%</td><td>-24.9%</td><td>6.8%</td><td>-36.3%</td><td><b class='bad'>不合格</b></td><td>14.8%</td><td>-36.6%</td></tr>
+<tr><td class='l'>不看 F4（描述）</td><td>29.0%</td><td>-28.5%</td><td>8.3%</td><td>-34.7%</td><td><b class='bad'>不合格</b></td><td>18.7%</td><td>-35.2%</td></tr>
+<tr><td class='l'>假訊號臂</td><td>16.6%</td><td>-49.0%</td><td>14.3%</td><td>-37.0%</td><td><b class='bad'>不合格</b></td><td>14.7%</td><td>-49.9%</td></tr>
+<tr><td class='l'>假訊號臂 現實版</td><td>7.9%</td><td>-57.5%</td><td>8.8%</td><td>-39.9%</td><td><b class='bad'>不合格</b></td><td>8.1%</td><td>-57.7%</td></tr>
+<tr><td class='l'>W1 母體內 帶 F4</td><td>20.6%</td><td>-35.6%</td><td>8.6%</td><td>-29.0%</td><td><b class='bad'>不合格</b></td><td>14.4%</td><td>-35.6%</td></tr>
+<tr><td class='l'>W1 母體內 帶 F4 現實版</td><td>17.4%</td><td>-36.2%</td><td>5.1%</td><td>-30.1%</td><td><b class='bad'>不合格</b></td><td>11.0%</td><td>-38.5%</td></tr>
+<tr><td class='l'>W1 母體內 不帶 F4</td><td>21.3%</td><td>-30.7%</td><td>15.3%</td><td>-35.2%</td><td><b class='bad'>不合格</b></td><td>18.3%</td><td>-35.3%</td></tr>
+<tr class='sep'><td class='l'>營飆 v1（resultsT1fix）</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>37.8%</td><td>-40.5%</td></tr>
+<tr class=''><td class='l'>營飆 v1 現實版</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>36.3%</td><td>-41.2%</td></tr>
+<tr class=''><td class='l'>營量 v1（resultsT1fix）</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>35.0%</td><td>-32.1%</td></tr>
+<tr class=''><td class='l'>營量 v1 現實版</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>34.0%</td><td>-32.1%</td></tr>
+<tr><td class='l'>0050</td><td>18.9%</td><td>-28.2%</td><td>29.5%</td><td>-34.0%</td><td></td><td>24.0%</td><td>-34.0%</td></tr>
+</table></div><p class='note'>營飆、營量只有主窗數字（resultsT1fix 正式版）。不帶 F4 ＝ 同格條件、訊號日連續虧損判定為否或判不出。假訊號臂 ＝ 每筆換成同一檔、同一段內隨機一天買，持有天數從本格實際持有天數抽，到期隔天開盤賣。</p>
+<h2>三、必報（挑中格實際成交的筆，各種子合計；括號＝現實版）</h2><div class='wrap'><table><tr><th class='l'>項目</th><th>探索</th><th>確認</th><th>主窗</th></tr>
+<tr><td class='l'>每顆種子平均成交筆</td><td>188.1<br><small>(187.4)</small></td><td>202.8<br><small>(202.9)</small></td><td>390.9<br><small>(390.3)</small></td></tr>
+<tr><td class='l'>逐筆報酬（扣成本）中位</td><td>-1.7%<br><small>(-3.3%)</small></td><td>-3.1%<br><small>(-3.2%)</small></td><td>-2.4%<br><small>(-3.3%)</small></td></tr>
+<tr><td class='l'>逐筆報酬平均</td><td>6.9%<br><small>(4.2%)</small></td><td>2.4%<br><small>(0.9%)</small></td><td>4.5%<br><small>(2.5%)</small></td></tr>
+<tr><td class='l'>勝率</td><td>40.9%<br><small>(35.9%)</small></td><td>39.4%<br><small>(34.5%)</small></td><td>40.1%<br><small>(35.2%)</small></td></tr>
+<tr><td class='l'>一年內先跌 15%</td><td>44.4%<br><small>(44.7%)</small></td><td>48.9%<br><small>(48.9%)</small></td><td>46.5%<br><small>(46.6%)</small></td></tr>
+<tr><td class='l'>吃到「起漲→頂」幾成（中位）</td><td>51.2%<br><small>(50.6%)</small></td><td>52.3%<br><small>(51.4%)</small></td><td>51.8%<br><small>(51.1%)</small></td></tr>
+<tr><td class='l'>吃到幾成（買價基準，中位）</td><td>-3.1%<br><small>(-3.7%)</small></td><td>-4.6%<br><small>(-1.4%)</small></td><td>-3.8%<br><small>(-3.0%)</small></td></tr>
+<tr><td class='l'>持有天數中位（K 棒）</td><td>32.0<br><small>(32.0)</small></td><td>31.0<br><small>(31.0)</small></td><td>31.0<br><small>(31.0)</small></td></tr>
+<tr><td class='l'>持有天數 p90</td><td>143.0<br><small>(143.0)</small></td><td>98.0<br><small>(106.0)</small></td><td>123.0<br><small>(119.0)</small></td></tr>
+<tr><td class='l'>未完（到資料尾還抱著）</td><td>67<br><small>(56)</small></td><td>1,156<br><small>(1,153)</small></td><td>1,223<br><small>(1,209)</small></td></tr>
+<tr><td class='l'>停止交易（下市等）筆</td><td>23<br><small>(25)</small></td><td>0<br><small>(0)</small></td><td>23<br><small>(25)</small></td></tr>
+<tr><td class='l'>停止交易筆報酬平均</td><td>42.7%<br><small>(39.1%)</small></td><td>—<br><small>(—)</small></td><td>42.7%<br><small>(39.1%)</small></td></tr>
+</table></div>
+<p class='note'>出場原因（主窗、0.585% 版，筆數）：先賣的 3 成 W1（買進前） 39170、40天沒新高 20437、回落30% 10461、W1 6928、未完 1179；剩下 7 成 回落30% 36756、40天沒新高 20933、W2（買進前） 10867、W2 8393、未完 1223、壞根 3（E2 兩部分同一天，原因相同）。「W1（買進前）」＝ 買進時這一段已出現過第一頂警示 ⇒ 每日名單的算法在買進隔天就先賣 3 成。錨移 ＝ 每天重算起漲點時起漲點移動、回頭認定更早就該賣 ⇒ 隔天開盤補賣（496 筆）。</p>
+<p class='note'>窗尾 2026-08-24 仍持有（種子中位）：10.0 檔；漲停買不到（現實版，每顆種子中位）：3.0 筆；停牌買不到 2.0 筆；停止交易強制出場 0.0 筆。</p>
+<h3>各年報酬（種子中位）</h3><div class='wrap'><table><tr><th class='l'>臂</th><th>2017</th><th>2018</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th></tr>
+<tr><td class='l'>本件</td><td>33.8%</td><td>14.3%</td><td>19.3%</td><td>32.8%</td><td>39.8%</td><td>-26.6%</td><td>-1.3%</td><td>19.3%</td><td>4.0%</td><td>12.4%</td></tr>
+<tr><td class='l'>本件 現實版</td><td>25.2%</td><td>6.3%</td><td>11.0%</td><td>24.7%</td><td>15.8%</td><td>-30.0%</td><td>-6.8%</td><td>13.2%</td><td>1.9%</td><td>6.8%</td></tr>
+<tr><td class='l'>不帶 F4</td><td>13.5%</td><td>-0.0%</td><td>25.0%</td><td>49.8%</td><td>50.0%</td><td>-21.0%</td><td>46.6%</td><td>17.4%</td><td>-17.2%</td><td>29.2%</td></tr>
+<tr><td class='l'>假訊號臂</td><td>7.0%</td><td>-15.9%</td><td>1.5%</td><td>58.0%</td><td>37.9%</td><td>-19.5%</td><td>22.1%</td><td>27.4%</td><td>16.8%</td><td>19.3%</td></tr>
+<tr><td class='l'>0050</td><td>14.5%</td><td>-4.9%</td><td>33.5%</td><td>31.1%</td><td>21.9%</td><td>-21.4%</td><td>27.5%</td><td>48.6%</td><td>36.9%</td><td>61.4%</td></tr>
+</table></div><p class='note'>2017 年從 3 月 2 日起、2026 年到 8 月 24 日。</p>
+<h2>四、訊號層（每天訊號數、先跌 15%、吃到幾成；主母體、成本前）</h2><div class='wrap'><table><tr><th class='l'>格</th><th>群</th><th>段</th><th>訊號</th><th>每天</th><th>先跌 15%</th><th>吃到起漲→頂 中位</th><th>持有中位</th></tr>
+<tr><td class='l'>k5_x10_E1</td><td>帶 F4（本件）</td><td>探索</td><td>759</td><td>0.64</td><td>47.8%</td><td>49.5%</td><td>32.0</td></tr>
+<tr><td class='l'>k5_x10_E1</td><td>帶 F4（本件）</td><td>確認</td><td>634</td><td>0.56</td><td>53.2%</td><td>49.4%</td><td>31.0</td></tr>
+<tr><td class='l'>k5_x10_E1</td><td>不帶 F4</td><td>探索</td><td>2,086</td><td>1.75</td><td>46.3%</td><td>53.3%</td><td>39.0</td></tr>
+<tr><td class='l'>k5_x10_E1</td><td>不帶 F4</td><td>確認</td><td>2,319</td><td>2.06</td><td>48.7%</td><td>51.5%</td><td>38.0</td></tr>
+<tr><td class='l'>k5_x10_E2</td><td>帶 F4（本件）</td><td>探索</td><td>759</td><td>0.64</td><td>47.8%</td><td>44.4%</td><td>100.0</td></tr>
+<tr><td class='l'>k5_x10_E2</td><td>帶 F4（本件）</td><td>確認</td><td>634</td><td>0.56</td><td>53.2%</td><td>40.1%</td><td>92.0</td></tr>
+<tr><td class='l'>k5_x10_E2</td><td>不帶 F4</td><td>探索</td><td>2,086</td><td>1.75</td><td>46.3%</td><td>44.9%</td><td>138.0</td></tr>
+<tr><td class='l'>k5_x10_E2</td><td>不帶 F4</td><td>確認</td><td>2,319</td><td>2.06</td><td>48.7%</td><td>48.3%</td><td>103.0</td></tr>
+<tr class=hl><td class='l'>k5_x20_E1</td><td>帶 F4（本件）</td><td>探索</td><td>511</td><td>0.43</td><td>47.9%</td><td>51.9%</td><td>33.0</td></tr>
+<tr class=hl><td class='l'>k5_x20_E1</td><td>帶 F4（本件）</td><td>確認</td><td>394</td><td>0.35</td><td>51.5%</td><td>52.8%</td><td>32.5</td></tr>
+<tr class=hl><td class='l'>k5_x20_E1</td><td>不帶 F4</td><td>探索</td><td>1,380</td><td>1.16</td><td>46.3%</td><td>56.1%</td><td>48.0</td></tr>
+<tr class=hl><td class='l'>k5_x20_E1</td><td>不帶 F4</td><td>確認</td><td>1,608</td><td>1.43</td><td>50.3%</td><td>54.1%</td><td>42.0</td></tr>
+<tr><td class='l'>k5_x20_E2</td><td>帶 F4（本件）</td><td>探索</td><td>511</td><td>0.43</td><td>47.9%</td><td>46.7%</td><td>88.0</td></tr>
+<tr><td class='l'>k5_x20_E2</td><td>帶 F4（本件）</td><td>確認</td><td>394</td><td>0.35</td><td>51.5%</td><td>44.8%</td><td>67.0</td></tr>
+<tr><td class='l'>k5_x20_E2</td><td>不帶 F4</td><td>探索</td><td>1,380</td><td>1.16</td><td>46.3%</td><td>48.3%</td><td>117.0</td></tr>
+<tr><td class='l'>k5_x20_E2</td><td>不帶 F4</td><td>確認</td><td>1,608</td><td>1.43</td><td>50.3%</td><td>51.0%</td><td>93.5</td></tr>
+<tr><td class='l'>k5_x30_E1</td><td>帶 F4（本件）</td><td>探索</td><td>398</td><td>0.33</td><td>47.0%</td><td>53.2%</td><td>37.5</td></tr>
+<tr><td class='l'>k5_x30_E1</td><td>帶 F4（本件）</td><td>確認</td><td>306</td><td>0.27</td><td>59.1%</td><td>54.8%</td><td>36.0</td></tr>
+<tr><td class='l'>k5_x30_E1</td><td>不帶 F4</td><td>探索</td><td>1,076</td><td>0.90</td><td>48.9%</td><td>55.8%</td><td>51.0</td></tr>
+<tr><td class='l'>k5_x30_E1</td><td>不帶 F4</td><td>確認</td><td>1,193</td><td>1.06</td><td>49.4%</td><td>55.4%</td><td>41.0</td></tr>
+<tr><td class='l'>k5_x30_E2</td><td>帶 F4（本件）</td><td>探索</td><td>398</td><td>0.33</td><td>47.0%</td><td>48.4%</td><td>83.5</td></tr>
+<tr><td class='l'>k5_x30_E2</td><td>帶 F4（本件）</td><td>確認</td><td>306</td><td>0.27</td><td>59.1%</td><td>47.9%</td><td>72.0</td></tr>
+<tr><td class='l'>k5_x30_E2</td><td>不帶 F4</td><td>探索</td><td>1,076</td><td>0.90</td><td>48.9%</td><td>49.6%</td><td>113.0</td></tr>
+<tr><td class='l'>k5_x30_E2</td><td>不帶 F4</td><td>確認</td><td>1,193</td><td>1.06</td><td>49.4%</td><td>52.3%</td><td>86.0</td></tr>
+<tr><td class='l'>k5_x50_E1</td><td>帶 F4（本件）</td><td>探索</td><td>341</td><td>0.29</td><td>50.1%</td><td>54.3%</td><td>40.0</td></tr>
+<tr><td class='l'>k5_x50_E1</td><td>帶 F4（本件）</td><td>確認</td><td>272</td><td>0.24</td><td>56.5%</td><td>54.3%</td><td>37.0</td></tr>
+<tr><td class='l'>k5_x50_E1</td><td>不帶 F4</td><td>探索</td><td>832</td><td>0.70</td><td>51.6%</td><td>55.7%</td><td>52.0</td></tr>
+<tr><td class='l'>k5_x50_E1</td><td>不帶 F4</td><td>確認</td><td>982</td><td>0.87</td><td>53.4%</td><td>55.6%</td><td>43.0</td></tr>
+<tr><td class='l'>k5_x50_E2</td><td>帶 F4（本件）</td><td>探索</td><td>341</td><td>0.29</td><td>50.1%</td><td>47.9%</td><td>76.0</td></tr>
+<tr><td class='l'>k5_x50_E2</td><td>帶 F4（本件）</td><td>確認</td><td>272</td><td>0.24</td><td>56.5%</td><td>49.6%</td><td>61.0</td></tr>
+<tr><td class='l'>k5_x50_E2</td><td>不帶 F4</td><td>探索</td><td>832</td><td>0.70</td><td>51.6%</td><td>51.3%</td><td>85.0</td></tr>
+<tr><td class='l'>k5_x50_E2</td><td>不帶 F4</td><td>確認</td><td>982</td><td>0.87</td><td>53.4%</td><td>53.8%</td><td>70.0</td></tr>
+<tr><td class='l'>k10_x10_E1</td><td>帶 F4（本件）</td><td>探索</td><td>14</td><td>0.01</td><td>28.6%</td><td>37.3%</td><td>47.5</td></tr>
+<tr><td class='l'>k10_x10_E1</td><td>帶 F4（本件）</td><td>確認</td><td>13</td><td>0.01</td><td>55.6%</td><td>59.5%</td><td>30.0</td></tr>
+<tr><td class='l'>k10_x10_E1</td><td>不帶 F4</td><td>探索</td><td>49</td><td>0.04</td><td>57.1%</td><td>57.6%</td><td>41.0</td></tr>
+<tr><td class='l'>k10_x10_E1</td><td>不帶 F4</td><td>確認</td><td>63</td><td>0.06</td><td>44.1%</td><td>57.9%</td><td>21.0</td></tr>
+<tr><td class='l'>k10_x10_E2</td><td>帶 F4（本件）</td><td>探索</td><td>14</td><td>0.01</td><td>28.6%</td><td>53.2%</td><td>120.5</td></tr>
+<tr><td class='l'>k10_x10_E2</td><td>帶 F4（本件）</td><td>確認</td><td>13</td><td>0.01</td><td>55.6%</td><td>56.3%</td><td>72.0</td></tr>
+<tr><td class='l'>k10_x10_E2</td><td>不帶 F4</td><td>探索</td><td>49</td><td>0.04</td><td>57.1%</td><td>44.3%</td><td>92.0</td></tr>
+<tr><td class='l'>k10_x10_E2</td><td>不帶 F4</td><td>確認</td><td>63</td><td>0.06</td><td>44.1%</td><td>55.4%</td><td>54.0</td></tr>
+<tr><td class='l'>k10_x20_E1</td><td>帶 F4（本件）</td><td>探索</td><td>17</td><td>0.01</td><td>35.3%</td><td>54.2%</td><td>33.0</td></tr>
+<tr><td class='l'>k10_x20_E1</td><td>帶 F4（本件）</td><td>確認</td><td>14</td><td>0.01</td><td>66.7%</td><td>62.1%</td><td>26.5</td></tr>
+<tr><td class='l'>k10_x20_E1</td><td>不帶 F4</td><td>探索</td><td>32</td><td>0.03</td><td>46.9%</td><td>58.0%</td><td>27.5</td></tr>
+<tr><td class='l'>k10_x20_E1</td><td>不帶 F4</td><td>確認</td><td>56</td><td>0.05</td><td>34.6%</td><td>59.5%</td><td>23.0</td></tr>
+<tr><td class='l'>k10_x20_E2</td><td>帶 F4（本件）</td><td>探索</td><td>17</td><td>0.01</td><td>35.3%</td><td>41.3%</td><td>64.0</td></tr>
+<tr><td class='l'>k10_x20_E2</td><td>帶 F4（本件）</td><td>確認</td><td>14</td><td>0.01</td><td>66.7%</td><td>56.2%</td><td>58.0</td></tr>
+<tr><td class='l'>k10_x20_E2</td><td>不帶 F4</td><td>探索</td><td>32</td><td>0.03</td><td>46.9%</td><td>50.8%</td><td>83.5</td></tr>
+<tr><td class='l'>k10_x20_E2</td><td>不帶 F4</td><td>確認</td><td>56</td><td>0.05</td><td>34.6%</td><td>58.1%</td><td>82.0</td></tr>
+<tr><td class='l'>k10_x30_E1</td><td>帶 F4（本件）</td><td>探索</td><td>4</td><td>0.00</td><td>75.0%</td><td>70.8%</td><td>1.0</td></tr>
+<tr><td class='l'>k10_x30_E1</td><td>帶 F4（本件）</td><td>確認</td><td>13</td><td>0.01</td><td>63.6%</td><td>57.6%</td><td>33.0</td></tr>
+<tr><td class='l'>k10_x30_E1</td><td>不帶 F4</td><td>探索</td><td>32</td><td>0.03</td><td>65.6%</td><td>61.7%</td><td>21.5</td></tr>
+<tr><td class='l'>k10_x30_E1</td><td>不帶 F4</td><td>確認</td><td>33</td><td>0.03</td><td>53.8%</td><td>56.2%</td><td>23.0</td></tr>
+<tr><td class='l'>k10_x30_E2</td><td>帶 F4（本件）</td><td>探索</td><td>4</td><td>0.00</td><td>75.0%</td><td>45.7%</td><td>146.5</td></tr>
+<tr><td class='l'>k10_x30_E2</td><td>帶 F4（本件）</td><td>確認</td><td>13</td><td>0.01</td><td>63.6%</td><td>48.4%</td><td>56.0</td></tr>
+<tr><td class='l'>k10_x30_E2</td><td>不帶 F4</td><td>探索</td><td>32</td><td>0.03</td><td>65.6%</td><td>46.3%</td><td>61.5</td></tr>
+<tr><td class='l'>k10_x30_E2</td><td>不帶 F4</td><td>確認</td><td>33</td><td>0.03</td><td>53.8%</td><td>52.7%</td><td>53.0</td></tr>
+<tr><td class='l'>k10_x50_E1</td><td>帶 F4（本件）</td><td>探索</td><td>1</td><td>0.00</td><td>100.0%</td><td>93.3%</td><td>1.0</td></tr>
+<tr><td class='l'>k10_x50_E1</td><td>帶 F4（本件）</td><td>確認</td><td>7</td><td>0.01</td><td>20.0%</td><td>64.9%</td><td>66.0</td></tr>
+<tr><td class='l'>k10_x50_E1</td><td>不帶 F4</td><td>探索</td><td>17</td><td>0.01</td><td>47.1%</td><td>61.5%</td><td>21.0</td></tr>
+<tr><td class='l'>k10_x50_E1</td><td>不帶 F4</td><td>確認</td><td>15</td><td>0.01</td><td>50.0%</td><td>55.7%</td><td>8.0</td></tr>
+<tr><td class='l'>k10_x50_E2</td><td>帶 F4（本件）</td><td>探索</td><td>1</td><td>0.00</td><td>100.0%</td><td>40.3%</td><td>116.0</td></tr>
+<tr><td class='l'>k10_x50_E2</td><td>帶 F4（本件）</td><td>確認</td><td>7</td><td>0.01</td><td>20.0%</td><td>63.6%</td><td>76.0</td></tr>
+<tr><td class='l'>k10_x50_E2</td><td>不帶 F4</td><td>探索</td><td>17</td><td>0.01</td><td>47.1%</td><td>51.8%</td><td>48.0</td></tr>
+<tr><td class='l'>k10_x50_E2</td><td>不帶 F4</td><td>確認</td><td>15</td><td>0.01</td><td>50.0%</td><td>40.1%</td><td>43.0</td></tr>
+</table></div>
+<h2>五、先驗（登錄時寫下、不改）對照結果</h2><ul class='k'>
+<li>① 兩段都合格的格 0 個（約六成） ⇒ 兩段都合格的格 0 個（0.585% 版）。</li>
+<li>② 同格「帶 F4」年化高於「不帶 F4」（約五成五） ⇒ 16 格中帶 F4 主窗年化較高的 6 格。</li>
+<li>③ x 越大年化越高（約五成） ⇒ x＝10→20→30→50% 主窗年化：k≥5 E1：8.3%→14.2%→11.7%→8.4%；k≥5 E2：10.9%→21.0%→19.1%→3.0%；k≥10 E1：1.7%→5.0%→1.1%→-0.0%；k≥10 E2：3.8%→2.6%→-0.2%→-0.3%。</li>
+<li>④ E2 吃到「起漲→頂」幾成高於 E1（約五成五） ⇒ 8 組（k × x）訊號層「吃到起漲→頂」中位，E2 高於 E1 的 1 組。</li></ul>
+<h2>六、早年段（2012-06～2014-12）：不可判定</h2><p>連續虧損（F4）要用季報：資料庫季報從 2013Q1 起、月底判定表從 2015-01 起 ⇒ 早年 F4 可判 0.0%。起漲特徵 14 個裡，融資使用率有值 0.0%、EPS 轉正 38.3%（探索段 60.3%）。照裁定 seq320 第 3 條標「不可判定」，⛔ 不硬判 ⇒ 判定只看確認段。</p>
+<h2>七、怎麼算的（重點）</h2><ul class='k'><li><b>進場</b>：同一天收盤三條都成立 ⇒ 隔天開盤買：① 連續虧損（當天之前最後一個月底、當時已公布的季報：近 4 季合計虧且最近一季虧，或近 8 季 ≥ 6 季虧）② 14 個起漲特徵符合 ≥ k 個 ③ 收盤 ÷ 近 60 根最低收盤 − 1 ≥ x，而且是這一段第一次達到（之後 60 根內不再算）。觸發當天 ①② 不成立 ⇒ 這一段沒有訊號。</li><li><b>連續虧損只用第一次公布的數字、以公布日為準</b>：公布日 ＝ 公開資訊觀測站最早上傳時間（2016～2018 沒有時戳 ⇒ 法定期限後 5 個交易日，偏晚不偏早）；後來重編過的季（145 季）資料庫只有重編後的數字 ⇒ 當作沒有 ⇒ 判不出就當不帶 F4；因此由「帶」變「不帶」429 個股-月（原表帶 F4 的 54,695 個股-月中）。</li><li><b>E1 照每日名單現行算法逐日重播</b>：每天只用當天以前的資料重算起漲點與 W1／W2，該賣就隔天開盤賣；起漲點移動讓程式回頭認定早該賣的，也是隔天開盤補賣；不買回。</li><li><b>組合</b>：最多 10 檔、每檔 1/10、候選多於空位抽籤、已過進場日不補、同一檔不重複買；成本 0.585%／來回；停止交易的股票在最後一根收盤出。現實版 ＝ 每邊再加 0.3%、平方根衝擊（50 萬 ÷ 10 檔）、一字漲停買不到、一字跌停賣不掉、用當天均價成交（低消 20 元在每筆 2.5 萬時不加成本）。</li><li><b>2026 年月營收</b>：2026-01 期起改成次月 15 日後才可用（營收兩個特徵在 10～15 日之間改用前一期）。</li></ul>
+<p class='note'>讀法寫死 2026-10-07 15:40（台北）；獨立寫法抽樣重算：不同 0 處（① F4 40 檔 × 141 月（不遮重編比 flags_main）；觸發列 3894（遮重編比訊號表）；② 訊號 60 檔、4206 列；③ E1 30 筆、逐日呼叫 replay 3190 次；④ E2 200 筆（含壞根 1 筆）；⑤ 組合 k5_x20_E1 base／現實版 × 種子 0、1：實體陣列重跑、窗年化回落自寫、逐筆 g）。 全部數字見 grid.csv、seeds.csv.gz、trades_summary.json、signals_summary.csv、summary.json。</p></main></body></html>
