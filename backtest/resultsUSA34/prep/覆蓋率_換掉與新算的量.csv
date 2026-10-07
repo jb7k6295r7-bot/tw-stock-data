@@ -1,0 +1,57 @@
+﻿件,量,母體,可算股-月,在指數股-月,覆蓋率%,資料來源,註
+A4-3／A4-8／A4-12／A4-13／A4-9,季營收年增率（月營收年增率的同義版）,S&P 500,61426,64451,95.3,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_revenue(+_sp400),
+A4-3／A4-8／A4-12／A4-13／A4-9,季營收年增率（月營收年增率的同義版）,S&P 400,45117,50128,90.0,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_revenue(+_sp400),
+A3-11／A4-1／A4-4／A4-5／A4-6／A4-12／A3-17,創 8 季新高（創 24 月新高的同義版）,S&P 500,59754,64451,92.7,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_revenue,
+A3-11／A4-1／A4-4／A4-5／A4-6／A4-12／A3-17,創 8 季新高（創 24 月新高的同義版）,S&P 400,43429,50128,86.6,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_revenue,
+A4-13 F03,季營收季增率（月增率的同義版）,S&P 500,60926,64451,94.5,B1 SEC companyfacts（first_filed、value 第一次公布）,
+A4-13 F03,季營收季增率（月增率的同義版）,S&P 400,44659,50128,89.1,B1 SEC companyfacts（first_filed、value 第一次公布）,
+A4-1／A4-2／A4-8,TTM 淨利,S&P 500,60237,64451,93.5,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_net_income,
+A4-1／A4-2／A4-8,TTM 淨利,S&P 400,45792,50128,91.4,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_net_income,
+A4-1 Q1／A4-3 X1／A4-11,ROE（TTM 淨利÷兩期權益平均）,S&P 500,52627,64451,81.7,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋equity,
+A4-1 Q1／A4-3 X1／A4-11,ROE（TTM 淨利÷兩期權益平均）,S&P 400,41510,50128,82.8,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋equity,
+A4-1 Q2／A4-11,營業利益÷資產,S&P 500,48276,64451,74.9,B1 SEC companyfacts（first_filed、value 第一次公布） operating_income＋assets,
+A4-1 Q2／A4-11,營業利益÷資產,S&P 400,36519,50128,72.9,B1 SEC companyfacts（first_filed、value 第一次公布） operating_income＋assets,
+A4-1 Q3／A4-11,ROA,S&P 500,60212,64451,93.4,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋assets,
+A4-1 Q3／A4-11,ROA,S&P 400,45745,50128,91.3,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋assets,
+A4-1 Q4／A4-2 M4／A4-11,研發強度（TTM 研發÷TTM 營收）,S&P 500,17792,64451,27.6,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_rnd,研發不是每家都申報
+A4-1 Q4／A4-2 M4／A4-11,研發強度（TTM 研發÷TTM 營收）,S&P 400,11369,50128,22.7,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_rnd,研發不是每家都申報
+A4-2／A4-8／A4-13／A3-11 I,市值（封面股數×前一日原始收盤）,S&P 500,63927,64451,99.2,B2 shares_outstanding＋Yahoo 拆股＋原始收盤,
+A4-2／A4-8／A4-13／A3-11 I,市值（封面股數×前一日原始收盤）,S&P 400,49475,50128,98.7,B2 shares_outstanding＋Yahoo 拆股＋原始收盤,
+A4-2 X3/O4／A4-8 N5／A4-13 F16,本益比（市值÷TTM 淨利；淨利≤0 ⇒ 不符）,S&P 500,55717,64451,86.4,B1＋B2,可算＝市值與 TTM 淨利都有
+A4-2 X3/O4／A4-8 N5／A4-13 F16,本益比（市值÷TTM 淨利；淨利≤0 ⇒ 不符）,S&P 400,40428,50128,80.6,B1＋B2,可算＝市值與 TTM 淨利都有
+A4-8 N5／A4-13 F18,淨值股價比,S&P 500,58813,64451,91.3,B1 equity＋B2,
+A4-8 N5／A4-13 F18,淨值股價比,S&P 400,46103,50128,92.0,B1 equity＋B2,
+A4-7,季買回÷市值（庫藏股代理）,S&P 500,47390,64451,73.5,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_buyback＋B2,買回欄不是每家都有
+A4-7,季買回÷市值（庫藏股代理）,S&P 400,32217,50128,64.3,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_buyback＋B2,買回欄不是每家都有
+A4-4／A4-3 X2(CGO 的 V)／A3-17 K5／A4-11,周轉率 TO(20),S&P 500,63914,64451,99.2,Yahoo 量＋B2 股數,
+A4-4／A4-3 X2(CGO 的 V)／A3-17 K5／A4-11,周轉率 TO(20),S&P 400,49453,50128,98.7,Yahoo 量＋B2 股數,
+A4-4／A4-3 X2(CGO 的 V)／A3-17 K5／A4-11,周轉率 TO(60),S&P 500,62948,64451,97.7,Yahoo 量＋B2 股數,
+A4-4／A4-3 X2(CGO 的 V)／A3-17 K5／A4-11,周轉率 TO(60),S&P 400,48702,50128,97.2,Yahoo 量＋B2 股數,
+A4-4／A4-3 X2(CGO 的 V)／A3-17 K5／A4-11,周轉率 TO(120),S&P 500,61481,64451,95.4,Yahoo 量＋B2 股數,
+A4-4／A4-3 X2(CGO 的 V)／A3-17 K5／A4-11,周轉率 TO(120),S&P 400,47532,50128,94.8,Yahoo 量＋B2 股數,
+A4-2,墨菲 M1（12 季營益率平均）,S&P 500,44872,64451,69.6,B1 SEC companyfacts（first_filed、value 第一次公布） operating_income＋revenue,
+A4-2,墨菲 M1（12 季營益率平均）,S&P 400,32917,50128,65.7,B1 SEC companyfacts（first_filed、value 第一次公布） operating_income＋revenue,
+A4-2,M2／X1／O2（5 年 ROE 平均）,S&P 500,39292,64451,61.0,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋equity（年末）,
+A4-2,M2／X1／O2（5 年 ROE 平均）,S&P 400,30762,50128,61.4,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋equity（年末）,
+A4-2,M3／X4（3 年營收成長平均）,S&P 500,52122,64451,80.9,B1 SEC companyfacts（first_filed、value 第一次公布） revenue（年）,
+A4-2,M3／X4（3 年營收成長平均）,S&P 400,37414,50128,74.6,B1 SEC companyfacts（first_filed、value 第一次公布） revenue（年）,
+A4-2,X2（5 年負債比平均；負債＝資產−權益）,S&P 500,46581,64451,72.3,B1 SEC companyfacts（first_filed、value 第一次公布） assets＋equity(_incl_nci),美股 B1 沒有負債欄 ⇒ 代理
+A4-2,X2（5 年負債比平均；負債＝資產−權益）,S&P 400,34887,50128,69.6,B1 SEC companyfacts（first_filed、value 第一次公布） assets＋equity(_incl_nci),美股 B1 沒有負債欄 ⇒ 代理
+A4-2,O1（5 年 ROA 平均）,S&P 500,46582,64451,72.3,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋assets,
+A4-2,O1（5 年 ROA 平均）,S&P 400,34962,50128,69.7,B1 SEC companyfacts（first_filed、value 第一次公布） net_income＋assets,
+A4-2,O3（3 年 EPS 增率平均；EPS＝年淨利÷封面股數）,S&P 500,52727,64451,81.8,B1 SEC companyfacts（first_filed、value 第一次公布）＋B2,B1 沒有 EPS ⇒ 代理
+A4-2,O3（3 年 EPS 增率平均；EPS＝年淨利÷封面股數）,S&P 400,39600,50128,79.0,B1 SEC companyfacts（first_filed、value 第一次公布）＋B2,B1 沒有 EPS ⇒ 代理
+A4-10,營益率比去年同季升（飆股財報特徵）,S&P 500,46596,64451,72.3,B1 SEC companyfacts（first_filed、value 第一次公布）,
+A4-10,營益率比去年同季升（飆股財報特徵）,S&P 400,34851,50128,69.5,B1 SEC companyfacts（first_filed、value 第一次公布）,
+A4-10／A4-9,季淨利由負轉正（EPS 轉正的代理）,S&P 500,61600,64451,95.6,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_net_income,
+A4-10／A4-9,季淨利由負轉正（EPS 轉正的代理）,S&P 400,47104,50128,94.0,B1 SEC companyfacts（first_filed、value 第一次公布） quarterly_net_income,
+A4-5／A4-6／A4-1(剔金融),GICS sector,S&P 500,63849,64451,99.1,B3 sector_pit（Wikipedia 歷史版，非官方）,
+A4-5／A4-6／A4-1(剔金融),GICS sector,S&P 400,48167,50128,96.1,B3 sector_pit（Wikipedia 歷史版，非官方）,
+A3-11 T／D,RS（IBD 式 2r63＋r126＋r189＋r252）,S&P 500,58868,64451,91.3,價格面板,
+A3-11 T／D,RS（IBD 式 2r63＋r126＋r189＋r252）,S&P 400,45728,50128,91.2,價格面板,
+A3-11 T,趨勢樣板 ①～⑦,S&P 500,58367,64451,90.6,價格面板（需 250＋21 根）,
+A3-11 T,趨勢樣板 ①～⑦,S&P 400,45348,50128,90.5,價格面板（需 250＋21 根）,
+A3-12／A4-8 N4／A4-13 F08／A4-11,12−1 動能,S&P 500,58868,64451,91.3,價格面板,
+A3-12／A4-8 N4／A4-13 F08／A4-11,12−1 動能,S&P 400,45728,50128,91.2,價格面板,
+A4-3 X1／A4-13 F11／A4-11,60 日波動,S&P 500,63429,64451,98.4,價格面板,
+A4-3 X1／A4-13 F11／A4-11,60 日波動,S&P 400,49315,50128,98.4,價格面板,
