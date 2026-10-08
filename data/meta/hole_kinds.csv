@@ -268,6 +268,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 3067,全域,tpex,2026-02-02,2026-02-11,6,6,6,0,notrade
 3067,全域,tpex,2026-03-30,2026-04-10,6,6,6,0,notrade
 3067,全域,tpex,2026-07-23,2026-07-31,5,5,5,0,notrade
+3067,全域,tpex,2026-09-29,2026-10-08,6,6,6,0,notrade
 3073,天方能源,tpex,2020-08-18,2021-02-19,121,0,0,121,halted
 3073,天方能源,tpex,2023-02-17,2023-06-21,81,0,0,81,halted
 3085,新零售,tpex,2025-01-13,2025-01-21,5,5,5,0,notrade
