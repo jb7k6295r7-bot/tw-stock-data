@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-10-08,00992B,街口優息非投債,tpex,9.83,9.83,9.49,9.79,6361000,62145440,-0.20,,54114000,253,,,1

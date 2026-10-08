@@ -22,3 +22,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-10-05,6963,品元,emerging,,,,,0,,,,,,無成交,,0
 2026-10-06,6963,品元,emerging,,,,,0,,,,,,無成交,,0
 2026-10-07,6963,品元,emerging,,,,,0,,,,,,無成交,,0
+2026-10-08,6963,品元,emerging,,25.95,24.7,25.63,3086,79094,0.13,,,,均價/額推算,25.95,1
