@@ -265,6 +265,11 @@ jobs:
         timeout-minutes: 10
         run: python ci_step.py selftest_revenue_complete.py
 
+      - name: 驗月營收首次出現（離線）
+        continue-on-error: true
+        timeout-minutes: 5
+        run: python ci_step.py selftest_revenue_first_seen.py
+
       - name: 驗上市發行股數的補值（離線）
         timeout-minutes: 10
         run: python ci_step.py selftest_shares_twse.py
@@ -695,6 +700,14 @@ jobs:
 
       # ⭐ 2026-10-04（裁定 seq297 §二）：上市官方 X（不比價）旗標，當天一發 ⇒ data/meta/twse_change_x.csv
       #   日檔 change 欄不動；歷史由 backfill mode=xflag 補
+      # ⭐ 2026-10-09（台股 1542 §五 ⑤）：月營收【首次出現時點】⇒ data/meta/revenue_seen/<期別>/<時戳>.csv
+      #   官方沒有逐家申報日 ⇒ 每月 1～20 日每班打 t21sc03（4 發）記首次出現；⛔ 只能往後累積
+      - name: 月營收首次出現（t21sc03）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 8
+        run: python revenue_first_seen.py --sleep 3
+
       - name: 上市官方 X 旗標（當天）
         if: always()
         continue-on-error: true
