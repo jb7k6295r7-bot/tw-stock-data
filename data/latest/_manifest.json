@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-09T05:01:08+08:00",
-  "target_trading_day": "2026-10-08",
+  "generated_at": "2026-10-09T19:01:57+08:00",
+  "target_trading_day": "2026-10-09",
   "stocks": {
     "7879": {
       "extra": {
         "revenue": {
           "total": 12,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-01"
         },
@@ -56,7 +56,7 @@
         },
         "revenue": {
           "total": 34,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-01"
         },
@@ -109,7 +109,7 @@
         },
         "revenue": {
           "total": 34,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-01"
         },
@@ -526,57 +526,37 @@
   },
   "market": {
     "ok": [
-      "index",
-      "summary",
-      "t86",
-      "bfi82u"
+      "index"
     ],
-    "errors": null,
-    "csv": {
-      "index": {
-        "total": 9437,
-        "added": 0,
-        "changed": null
-      },
-      "breadth": {
-        "total": 26,
-        "added": 0,
-        "changed": null
-      },
-      "amount": {
-        "total": 26,
-        "added": 0,
-        "changed": null
-      },
-      "inst": {
-        "total": 26,
-        "added": 0,
-        "changed": null
-      }
+    "errors": {
+      "summary": "stat=很抱歉，沒有符合條件的資料!",
+      "t86": "stat=很抱歉，沒有符合條件的資料!",
+      "bfi82u": "stat=很抱歉，沒有符合條件的資料!"
     },
-    "parse_errors": null
+    "csv": null,
+    "parse_errors": {
+      "index": "找不到『發行量加權股價指數』那一列",
+      "breadth": "找不到漲跌證券數合計那張表",
+      "amount": "找不到大盤統計資訊那張表",
+      "inst": "BFI82U 未取得"
+    }
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
   "version": "v8.0 2026-09-04",
   "calendar_days": 428,
   "universe": {
     "counts": {
-      "twse": 1380,
-      "tpex": 1011,
-      "emerging": 362,
       "warrants_excluded": 0,
-      "total": 2753,
-      "by_kind": {
-        "etf": 358,
-        "other": 28,
-        "stock": 2330,
-        "special": 27,
-        "dr": 10
-      }
+      "total": 0,
+      "by_kind": {}
     },
-    "errors": null,
-    "rows_written": 2753,
-    "coverage_days": 25,
+    "errors": {
+      "twse": "stat=很抱歉，沒有符合條件的資料!",
+      "tpex": "休市或無成交",
+      "emerging": "回應是 20261008，不是 2026-10-09（不採用）"
+    },
+    "rows_written": 0,
+    "coverage_days": 26,
     "phantom_days_removed": null,
     "stocks_meta": {
       "total": 3036,
