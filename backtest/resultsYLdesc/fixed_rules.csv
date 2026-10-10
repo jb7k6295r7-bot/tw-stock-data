@@ -1,0 +1,135 @@
+﻿檔,行,類,內容
+backtest/daily_list.py,18,固定倍數,第四節「起漲特徵 ≥10 個（參考，不列入正式挑選）」：當日 ≥10 個的全部股票，依個數排序；張數同第三節算法（3 倍量門檻金額 ÷ 開盤價；8 成）；前 20 個交易日出現過 ≥10 個的標「連續」
+backtest/daily_list.py,20,固定漲幅／漲停,（使用者 2026-09-30：W1 ⇒ 賣 3 成留 7 成；剩 7 成 ＝ 等 W2 或回落 30%（研究定案，commit 075078d9ae）；中段底買回只在出清後；
+backtest/daily_list.py,21,固定漲幅／漲停,全部持有且 W1 未出現、收盤 ≤ 買進價 × 0.85 ⇒ 只加一句參考停損提示、不改流程；
+backtest/daily_list.py,24,固定漲幅／漲停,最高收盤、回落 30%、切段、中段底分數、40 天沒新高都從 t 起；W1／W2 只看目前這一段，買進前已出現也算；動作只在買進日之後）；
+backtest/daily_list.py,128,固定倍數,"""張數 ＝ 3 倍量門檻金額 ÷（最新收盤 ×（1＋開高幅度））；「8 成」＝ 該張數 × 0.8。"", """","
+backtest/daily_list.py,138,固定倍數,"""張數同第三節算法：3 倍量門檻金額（前 20 個交易日平均成交額 × 3，不含當天）÷（最新收盤 ×（1＋開高幅度））；「8 成」＝ 該張數 × 0.8。「連續」＝ 前 20 個交易日內也出現過 ≥10 個。"", """","
+backtest/daily_list.py,159,固定漲幅／漲停,"""起漲點 t ＝ 資料日往前 250 個交易日內「最高收盤之前的最低收盤日」；最高收盤、回落 30%、切段、中段底分數、40 天沒新高都從 t 起算；W1／W2 只看目前這一段（買進前已出現也算）；−15% 參考提示仍以你的買進價為準。"","
+backtest/daily_list.py,160,固定漲幅／漲停,"f""流程：全部持有 →（W1 還沒出現前，連續 40 個交易日沒創新高 ⇒ 隔天開盤賣全部，結束）→（W1 第一頂警示，隔天開盤賣 3 成、留 7 成）→ 已賣 3 成 →（剩 7 成：等 W2 第二頂警示〔再次處置或出關〕或從最高回落 30%，隔天開盤賣）→ 已出清／待買回 →"""
+backtest/daily_list.py,160,處置／注意,"f""流程：全部持有 →（W1 還沒出現前，連續 40 個交易日沒創新高 ⇒ 隔天開盤賣全部，結束）→（W1 第一頂警示，隔天開盤賣 3 成、留 7 成）→ 已賣 3 成 →（剩 7 成：等 W2 第二頂警示〔再次處置或出關〕或從最高回落 30%，隔天開盤賣）→ 已出清／待買回 →"""
+backtest/daily_list.py,161,固定漲幅／漲停,"f""（從最高回落 20% 且中段底分數 ≥ {names_bj[1]}，隔天開盤買回）→ 第二段持有 →（W2，隔天開盤賣）→ 結束；任何時候從最高回落 30% ＝ 本筆結束。"", """"]"
+backtest/list_yl13_watch.py,14,處置／注意,（rev_hi24 ＝ 當期月營收 ≥ 前 24 期最高，24 期都要有值；面板列要過 research34 的 gate：流動性、處置、斷點窗）
+backtest/list_yl13_watch.py,17,固定漲幅／漲停,"c2 nup20 ＝ 近 20 根有效 K 棒中「收盤漲停」的根數 ≥ 3（漲停 ＝ 未還原收盤 ＝ research11.limit_price(前一根未還原收盤, 漲, 10%)，"
+backtest/list_yl13_watch.py,33,固定漲幅／漲停,c2 近 19 根漲停數 ＋ 明天漲停 ≥ 3：差 1 次 ⇒ 明天收漲停（價 ＝ 漲停價）；差 ≥ 2 次 ⇒ 明天做不到
+backtest/list_yl13_watch.py,46,固定倍數,3 倍量門檻張數 ＝ 門檻金額 ÷（最新收盤 ×（1＋開高幅度）× 1000），開高 0／3／5%；8 成 ＝ 未取整張數 × 0.8 再取整；
+backtest/list_yl13_watch.py,76,固定倍數,"C1, C3, DD = 0.30, 3.0, 20"
+backtest/list_yl13_watch.py,110,固定漲幅／漲停,"cs = np.c_[ret20 >= C1, nup20 >= 3, ar_ >= C3, c > ma100, c >= hi250]"
+backtest/list_yl13_watch.py,110,固定倍數,"cs = np.c_[ret20 >= C1, nup20 >= 3, ar_ >= C3, c > ma100, c >= hi250]"
+backtest/list_yl13_watch.py,124,固定漲幅／漲停,"lim_up = R.limit_price(float(rc[k]), True, 0.10) * fac                       # 明天漲停價（還原尺度）"
+backtest/list_yl13_watch.py,126,固定漲幅／漲停,t1 = 1.30 * c[k - 19]
+backtest/list_yl13_watch.py,220,處置／注意,"why = f""最新營收 {d['最新可用營收期']} 那期的面板列被 gate 擋（處置／流動性／斷點窗），沿用 {r['period']}（未創高）"""
+backtest/list_yl13_watch.py,300,固定倍數,"CN = {""c1"": ""20 日漲 30%"", ""c2"": ""近 20 日 3 根漲停"", ""c3"": ""成交額 3 倍"", ""c4"": ""站上 100 日線"", ""c5"": ""一年新高""}"
+backtest/list_yl13_watch.py,345,固定倍數,"""張數 ＝ 3 倍量門檻金額 ÷（最新收盤 ×（1＋開高幅度））；「8 成」＝ 該張數 × 0.8。"", """","
+backtest/list_yl13_watch.py,368,固定倍數,"H.append(f""<p class='n'>張數 ＝ 3 倍量門檻金額 ÷（最新收盤 ×（1＋開高幅度））；8 成 ＝ 該張數 × 0.8。資料 main {sha[:10]}。</p><p><b>{BRIEF_END}</b></p></main></body></html>"")"
+backtest/list_yl13_watch.py,397,固定倍數,"""同一檔 20 個交易日內只算第一次。表頭可點排序、表格可左右捲；點代號看 K 線圖（虛線 ＝ 明天要到的價格；量柱上的虛線 ＝ 明天 3 倍門檻的張數）。</p>"","
+backtest/list_yl13_watch.py,398,固定倍數,"f""<p class='note'><b>c3 的 3 倍門檻（{nxt[0].date()} 當天）</b>：門檻 ＝ {C3_RULE}；以億元表示、取到小數 1 位；張數按 {asof} 收盤價換算（{VOL_NOTE}）；"""
+backtest/list_yl13_watch.py,410,固定倍數,"""""""量柱區加 3 倍門檻張數的水平虛線（kline_svg show_title=False 的量區幾何：VT＝330、VB＝410；⛔ 不改 chart_svg）。"""""""
+backtest/list_yl13_watch.py,416,固定倍數,"lab = f""3 倍門檻 約 {z:,.0f} 張"" + (""（高於圖內最大量，畫在頂）"" if over else """")"
+backtest/list_yl13_watch.py,448,固定倍數,"""「去重擋住」＝ 20 個交易日內已出過 5 取 3，明天就算湊滿也不會出訊號。「只差量」＝ 價格條件在今天收盤價就已夠 2 條，明天只要成交額達 3 倍門檻；"""
+backtest/list_prereg10.py,90,處置／注意,disp = D.load_disposal_intervals()
+backtest/list_prereg10.py,388,固定漲幅／漲停,"log(f""   c1 20 根報酬 {ret20:+.4f}（≥0.30？{ret20 >= 0.30}）｜c3 成交額 ÷ 前 20 根均額 {amt_r:.3f}（≥3？{amt_r >= 3}）｜"""
+backtest/list_prereg10.py,391,固定漲幅／漲停,hand = int(ret20 >= 0.30) + int(amt_r >= 3) + int(c[k] > ma100) + int(c[k] >= hi250) + int(nup_approx >= 3)
+backtest/surge_flow_daily.py,6,固定漲幅／漲停,若從 t 起算的「回落 30% 結束」在買進日之前就發生 ⇒ 那段漲勢已結束，t 改用「結束日到買進日之間最低收盤日」，重複到結束日不早於買進日
+backtest/surge_flow_daily.py,7,固定漲幅／漲停,從 t 起算：最高收盤與回落 30%、x＝20% 切段（目前第幾段）、累計處置、中段底分數（前面已完成段數、累計處置次數…）、40 天沒新高（最後新高日從 t 起找）
+backtest/surge_flow_daily.py,7,處置／注意,從 t 起算：最高收盤與回落 30%、x＝20% 切段（目前第幾段）、累計處置、中段底分數（前面已完成段數、累計處置次數…）、40 天沒新高（最後新高日從 t 起找）
+backtest/surge_flow_daily.py,12,固定漲幅／漲停,流程（使用者 2026-09-30 決定：W1 賣 3 成、留 7 成；剩 7 成出場 ＝ W2 或回落 30%（另案研究結果：現行最好，commit 075078d9ae））：
+backtest/surge_flow_daily.py,15,處置／注意,── W1 第一頂警示（收盤創 20 日新高 ∧ 過去 60 日無處置 ∧ 10 日注意次數 Q5 ∧（5 日漲停天數 Q5 或 5 日報酬 Q5））第一次出現 ⇒ 次一開盤賣 3 成
+backtest/surge_flow_daily.py,16,處置／注意,已賣 3 成 ── 剩 7 成：等 W2 第二頂警示（收盤在含當天 20 根最高收盤 10% 內 ∧（再次進入處置：當天是處置起日且前 60 個交易日內另有起日｜處置出關：當天是迄日下一交易日））
+backtest/surge_flow_daily.py,18,固定漲幅／漲停,已出清／待買回 ── 只在出清後才適用：收盤「從買進以來最高收盤回落第一次達到 20%」（跨過那天）且 bottomjudge 當下版分數（x＝20%、K＝5）≥ 探索段讀法 m* ⇒ 次一開盤買回
+backtest/surge_flow_daily.py,20,固定漲幅／漲停,結束 ── 任何時候收盤 ≤ 買進以來最高收盤 × 0.7（本筆結束；還有部位 ⇒ 次一開盤賣）；或第二段 W2 賣出
+backtest/surge_flow_daily.py,21,固定漲幅／漲停,參考停損（只提示、⛔ 不進流程）：階段「全部持有」且 W1 從未出現時，今天收盤 ≤ 買進價 × 0.85 ⇒ 加一句提示
+backtest/surge_flow_daily.py,22,固定漲幅／漲停,（買進價是未還原價 ⇒ 換成還原價比：買進價 ×（買進日還原收盤 ÷ 買進日未還原收盤）× 0.85）
+backtest/surge_flow_daily.py,93,固定漲幅／漲停,"""""""同 researchSurge6_topwarn.bj_has（x＝20%）。"""""""
+backtest/surge_flow_daily.py,181,固定漲幅／漲停,rm_ = np.maximum.accumulate(c[t:T + 1]); w_ = np.flatnonzero(c[t:T + 1] <= rm_ * 0.7)
+backtest/surge_flow_daily.py,185,固定漲幅／漲停,"note = f""（{cal[t].date()} 起的漲勢在買進前已從最高回落 30% 結束 ⇒ 起漲點改用之後、買進日以前的最低收盤日）"""
+backtest/surge_flow_daily.py,197,固定漲幅／漲停,stopw = np.flatnonzero(c[e:T + 1] <= rmx * 0.7); stop = e + int(stopw[0]) if len(stopw) else None
+backtest/surge_flow_daily.py,208,固定漲幅／漲停,"REST = ""剩 7 成：等 W2（再次處置或出關）或從最高回落 30%"""
+backtest/surge_flow_daily.py,208,處置／注意,"REST = ""剩 7 成：等 W2（再次處置或出關）或從最高回落 30%"""
+backtest/surge_flow_daily.py,214,固定漲幅／漲停,"hint = ""參考：已跌破買進價 15%（研究建議的停損線，要不要賣你決定）"" if np.isfinite(fac) and c[T] <= buy_px * fac * 0.85 else """""
+backtest/surge_flow_daily.py,217,處置／注意,"return next(((d, ""再次進入處置"" if w2a[d - d0] else ""處置出關"") for d in range(frm, lastday + 1) if w2a[d - d0] or w2b[d - d0]), None)"
+backtest/surge_flow_daily.py,220,固定漲幅／漲停,"hist.append(f""回落 30% {cal[stop].date()}"")"
+backtest/surge_flow_daily.py,223,固定漲幅／漲停,"o_ = O(stage_if_pending, [""回落 30%（本筆結束）""], f""明天開盤賣{what}（從最高回落 30%，本筆結束）"")"
+backtest/surge_flow_daily.py,228,固定漲幅／漲停,"return O(""結束"", [], f""已結束（{cal[stop].date()} 從最高回落 30%，{cal[ex].date()} 賣{what}）"")"
+backtest/surge_flow_daily.py,254,處置／注意,"pre2 = [(d, ""再次進入處置"" if w2a[d - d0] else ""處置出關"") for d in range(max(segstart(eb_), d1date + 1), eb_) if w2a[d - d0] or w2b[d - d0]] if d1date < eb_ else []"
+backtest/surge_flow_daily.py,263,固定漲幅／漲停,# ② 剩 7 成：W2 或回落 30%
+backtest/surge_flow_daily.py,297,固定漲幅／漲停,"hist.append(f""回落 30% {cal[stop].date()}"")"
+backtest/surge_flow_daily.py,298,固定漲幅／漲停,"return O(""結束"", [], f""已結束（{cal[stop].date()} 從最高回落 30%；出清後沒有買回）"")"
+backtest/surge_flow_daily.py,301,固定漲幅／漲停,# ④ 第二段持有 ⇒ W2 或回落 30%
+backtest/surge_feat_daily.py,4,處置／注意,⭐ 定義與 s5work 建表一字不差：逐行照抄 researchSurge5.stock() 對應的段落（壞根 S3、漲停旗標、營收可得日、財報 A2、注意處置、融資），
+backtest/surge_feat_daily.py,10,處置／注意,價量（stocks、adj、meta、mops/revenue_hist）＝ price_dir；融資、法人、財報、注意處置 ＝ aux_dir（有 stocks_margin、stocks_inst、mops/fin_hist、meta）
+backtest/surge_feat_daily.py,58,處置／注意,"""""""researchSurge5.world 的對應段落（營收、營收旗標、可得日、財報、注意處置），路徑參數化。"""""""
+backtest/surge_feat_daily.py,164,固定比率（PE／PBR／殖利率／年增）,"Fk[""d_R2a""][i] = float(yoy[kx] >= 0.5) if np.isfinite(yoy[kx]) else np.nan"
+backtest/surge_feat_daily.py,192,處置／注意,# 注意、處置
+backtest/researchSurge6_overlap.py,42,處置／注意,"(""原：股價級距｜＜20 元"", ""d_px"", 1), (""原：均線多頭排列5>20>60>100｜是"", ""d_bull"", 2), (""原：注意股60日次數級距｜≥3 次"", ""d_att60"", 3),"
+backtest/researchSurge6_overlap.py,43,固定漲幅／漲停,"(""原R2營收年增≥50%｜是"", ""d_R2a"", 2), (""原：EPS轉正｜是"", ""d_eps"", 2), (""原：營收創24月新高｜是"", ""d_revhi"", 2), (""原：20日漲停天數級距｜≥3 次"", ""d_lu20"", 4)]"
+backtest/researchSurge6_overlap.py,43,固定比率（PE／PBR／殖利率／年增）,"(""原R2營收年增≥50%｜是"", ""d_R2a"", 2), (""原：EPS轉正｜是"", ""d_eps"", 2), (""原：營收創24月新高｜是"", ""d_revhi"", 2), (""原：20日漲停天數級距｜≥3 次"", ""d_lu20"", 4)]"
+backtest/researchSurge6_overlap.py,45,處置／注意,"SHORT = [""距5日低Q1"", ""距10日低Q1"", ""MA5乖離Q1"", ""5日報酬Q1"", ""60日周轉Q5"", ""120日報酬Q5"", ""融資使用Q5"", ""股價<20"", ""多頭排列"", ""注意≥3次"","
+backtest/researchSurge6_overlap.py,46,固定漲幅／漲停,"""營收年增≥50%"", ""EPS轉正"", ""營收24月新高"", ""20日漲停≥3""]"
+backtest/researchSurge6_overlap.py,46,固定比率（PE／PBR／殖利率／年增）,"""營收年增≥50%"", ""EPS轉正"", ""營收24月新高"", ""20日漲停≥3""]"
+backtest/researchSurge5.py,11,處置／注意,⭐ 執行者未看過 seq4 結果（backtest/resultsSurge/_seq4_seen/ 與 /tmp 下舊 log 一律未開）；沿用的只有 surge_features.py 的函式（財報、借券、注意處置讀取、KD／RSI／EMA）
+backtest/researchSurge5.py,17,處置／注意,月營收：早年版面 950ad26e12 mops/revenue_hist ＋ main；財報 A2、法人、融資、借券、注意、處置、產業、集保：main b53f5540a8
+backtest/researchSurge5.py,23,處置／注意,S2 母體 ＝ 接合版面 kind＝stock、上市櫃、gate3（-DR、創新板含 -KY創 剔除；新件 innov_ky 開）＝「上市櫃普通股」，含已下市、注意、處置、停牌前後；
+backtest/researchSurge5.py,24,處置／注意,⛔ 不套 W1、流動性、處置閘；早年段（2005～2014）接合版面 2015 以前只有上市 ⇒ 自然只上市
+backtest/researchSurge5.py,33,固定漲幅／漲停,"S7 高點 P ＝ 事件 (t, t＋H] 內最高收盤那天（同價取最早）；「不設 H」版 P* ＝ 從 P 起跟著創新高、直到第一次收盤 ≤ 當時最高 × 0.7 之前的最高點（P* ≥ P；到資料尾沒回落 ⇒ 標未完）"
+backtest/researchSurge5.py,37,固定漲幅／漲停,使用者原門檻版本（§二 二元、K1～K5、R1～R2、V1～V3、X1～X3、量縮 0.7）另列「描述」⛔ 不進挑選；狀態型二元（停止融資）進挑選
+backtest/researchSurge5.py,40,處置／注意,外資／投信 L 日淨買÷股本｜融資、借券 L 日變化÷股本｜L 日注意次數、處置天數｜產業 L 日報酬排名（產業平均、產業間五等分）｜0050 收盤÷MA_L−1｜集保 400 張以上 L/5 週變化
+backtest/researchSurge5.py,45,處置／注意,早年（2005～2014）照驗（95%），報 ① ＞ 1 的格數與方向；早年無資料的類（法人、融資、借券、注意處置、集保、財報）標「無資料」
+backtest/researchSurge5.py,49,處置／注意,S14 買不買得到：t＋1 無成交、t＋1 漲停鎖死、t＋1 處置中（main disposal 起訖）⇒ 報比例與「剔除這些列後」的網格與挑選特徵；近 20 日均額五等分只報分佈
+backtest/researchSurge5.py,131,處置／注意,"(f""att_{L}"", f""{L}日注意次數"", ""注意處置"", ""q"", L, False), (f""disp_{L}"", f""{L}日處置天數"", ""注意處置"", ""q"", L, False)]"
+backtest/researchSurge5.py,151,固定比率（PE／PBR／殖利率／年增）,"(""d_R2a"", ""原R2營收年增≥50%"", ""營收"", ""dbin"", None, True), (""d_R2b"", ""原R2營收年增≥100%"", ""營收"", ""dbin"", None, True),"
+backtest/researchSurge5.py,157,處置／注意,"(""d_tstreak"", ""原：投信連買天數級距"", ""法人"", ""dlvl"", None, False), (""d_att60"", ""原：注意股60日次數級距"", ""注意處置"", ""dlvl"", None, False),"
+backtest/researchSurge5.py,158,處置／注意,"(""d_disp60"", ""原：60日內曾處置"", ""注意處置"", ""dbin"", None, False),"
+backtest/researchSurge5.py,166,固定漲幅／漲停,"(""d_shrink"", ""原：量縮狀態(20日均額≤前120日均額×0.7)"", ""量"", ""dbin"", None, True)]"
+backtest/researchSurge5.py,343,固定漲幅／漲停,"lp = R11.limit_price(rc[k - 1], True, 0.07 if dates[k] < cut else 0.10)"
+backtest/researchSurge5.py,439,固定比率（PE／PBR／殖利率／年增）,"Fk[""d_R2a""][i] = float(yoy[kx] >= 0.5) if np.isfinite(yoy[kx]) else np.nan; Fk[""d_R2b""][i] = float(yoy[kx] >= 1.0) if np.isfinite(yoy[kx]) else np.nan"
+backtest/researchSurge5.py,464,處置／注意,# 法人、融資、借券、注意、處置（日曆）
+backtest/researchSurge5.py,539,固定漲幅／漲停,"Fk[""d_K5a""] = np.where(np.isfinite(turn), (turn >= 0.10).astype(float), np.nan); Fk[""d_K5b""] = np.where(np.isfinite(turn), (turn >= 0.20).astype(float), np.nan)"
+backtest/researchSurge5.py,543,固定漲幅／漲停,"((mx60p / mn60p - 1 <= 0.25) & (_prev(amt20) <= 0.7 * a120p) & (c > mx60p) & (amt >= 2 * amt20p)).astype(float), np.nan)"
+backtest/researchSurge5.py,561,固定漲幅／漲停,"Fk[""d_shrink""] = np.where(np.isfinite(a120pre) & np.isfinite(amt20), (amt20 <= 0.7 * a120pre).astype(float), np.nan)"
+backtest/researchSurge5.py,714,固定漲幅／漲停,"X1 = np.where(np.isfinite(r60) & np.isfinite(r20) & np.isfinite(a20), ((r60 >= 0.10) & (r60 <= 0.30) & (r20 <= 0.03) & (a20 >= med[None, :])).astype(float), np.nan)"
+backtest/gate_b_status.py,15,固定金額／張數,"⭐ 門檻B 沒有任何橫斷面量：三閘（amt20 ≥ 5,000 萬的絕對值、bars ≥ 120、法人 20 日可算）與三條布林全是逐檔自己的量，"
+backtest/gate_b_status.py,272,固定金額／張數,"(""liq_ok"", ""流動性閘：近 20 日均成交額 amt20 ≥ 5,000 萬元（T/F）""),"
+backtest/research11.py,30,固定倍數,"GRID_C3 = [2.0, 3.0, 5.0]"
+backtest/research11.py,42,固定漲幅／漲停,"def limit_price(ref: float, up: bool, lim: float) -> float:"
+backtest/research11.py,55,固定漲幅／漲停,lim = 0.07 if dates[k] < cut else 0.10
+backtest/research11.py,56,固定漲幅／漲停,"up[k] = abs(rc[k] - limit_price(rc[k - 1], True, lim)) < 1e-6"
+backtest/research11.py,57,固定漲幅／漲停,"dn[k] = abs(rc[k] - limit_price(rc[k - 1], False, lim)) < 1e-6"
+backtest/research11.py,199,固定漲幅／漲停,score = ((ret20 >= c1).astype(int) + (nup20 >= 3).astype(int) + (amt_ratio >= c3).astype(int)
+backtest/research11.py,199,固定倍數,score = ((ret20 >= c1).astype(int) + (nup20 >= 3).astype(int) + (amt_ratio >= c3).astype(int)
+backtest/research11.py,246,固定漲幅／漲停,"""e"": bool(ret20[k] < 0.15), ""l"": bool(ret20[k] >= 0.30)}"
+backtest/research11.py,767,固定漲幅／漲停,"elif not (0 < trim_rule.get(""x"", 0.10) < 1 and 0 < trim_rule.get(""frac"", 0.5) < 1):"
+backtest/research11.py,901,固定漲幅／漲停,"tx = trim_rule.get(""x"", 0.10); tf = trim_rule.get(""frac"", 0.5)"
+backtest/research11.py,1249,處置／注意,if weight_fn is not None and len(take):          # PREREGP13：逐檔目標金額由呼叫端算（⛔ 現金不足的處置也在它那裡）
+backtest/research11.py,1458,固定金額／張數,"for lab, th in ((""不設"", 0), (""≥ 1,000 萬"", 1e7), (""≥ 2,000 萬"", 2e7), (""≥ 5,000 萬"", 5e7)):"
+backtest/research13.py,188,固定漲幅／漲停,"unstable = df[""cagr""].quantile(0.10) < 0"
+backtest/research34.py,100,處置／注意,"dmask = D.disposal_mask(sid, cal, disp)"
+backtest/research34.py,261,固定比率（PE／PBR／殖利率／年增）,"""G2 營收年增 ≥ 15%"": yoy >= 0.15,"
+backtest/research34.py,262,固定比率（PE／PBR／殖利率／年增）,"""G2c 連三月年增 ≥ 15%"": (yoy >= 0.15) & (panel[""yoy_1""] >= 0.15) & (panel[""yoy_2""] >= 0.15),"
+backtest/research34.py,283,固定比率（PE／PBR／殖利率／年增）,"v1 = (panel[""per""] >= 8) & (panel[""per""] <= 15) & (panel[""pbr""] <= 1.5) & (panel[""yld""] >= 4)"
+backtest/research34.py,298,固定漲幅／漲停,"(""G2 年增 ≥ 10%"", yoy >= 0.10), (""G2 年增 ≥ 25%"", yoy >= 0.25),"
+backtest/research34.py,298,固定比率（PE／PBR／殖利率／年增）,"(""G2 年增 ≥ 10%"", yoy >= 0.10), (""G2 年增 ≥ 25%"", yoy >= 0.25),"
+backtest/research34.py,300,固定比率（PE／PBR／殖利率／年增）,"(""G2 年增 ≥ 15%，排除金融生技"", (yoy >= 0.15) & ~excl),"
+backtest/research34.py,323,固定金額／張數,"ap.add_argument(""--liq"", choices=[""shares"", ""amount""], default=""shares"", help=""流動性閘門：shares＝500 張（主表）；amount＝近 20 日成交金額均值 ≥ 5,000 萬（PREREG3 更正三）"")"
+backtest/research34.py,342,處置／注意,disp = D.load_disposal_intervals()
+backtest/patterns.py,27,固定金額／張數,"""liq_min_shares"": 500_000,  # 流動性：20 日均量 ≥ 500 張"
+backtest/patterns.py,28,固定金額／張數,"""liq_mode"": ""shares"",       # ""shares""（主表）｜""amount""（並列母體：近 20 日成交金額均值 ≥ 5,000 萬，PREREG 更正五）"
+backtest/patterns.py,29,固定金額／張數,"""liq_min_amount"": 50_000_000,"
+backtest/patterns.py,95,固定金額／張數,"# 情報分析 09:55 的定義：近 20 個交易日（T−20～T−1，不含當日）成交金額算術平均 ≥ 5,000 萬元，"
+backtest/patterns.py,99,固定金額／張數,"self.liquid = self.amt_ma20 >= p[""liq_min_amount""]"
+backtest/patterns.py,101,固定金額／張數,"self.liquid = self.vol_ma20 >= p[""liq_min_shares""]"
+backtest/rerun17_build.py,67,處置／注意,disp = D.load_disposal_intervals()
+backtest/data.py,6,處置／注意,- 處置要用 start_date ~ end_date 區間判，sec_kind 過濾權證。
+backtest/data.py,94,固定金額／張數,"raw[c] = pd.to_numeric(raw[c], errors=""coerce"")   # amount ＝ 日成交金額（元），給「5,000 萬」母體用，不用 volume×close 反推"
+backtest/data.py,114,固定金額／張數,# ② 的流動性前提（K線線 2026-09-09 05:00 裁定）：只在「洞之前 60 個交易日的中位數日量 ≥ 500 張」時成立；
+backtest/data.py,116,固定金額／張數,"#   500 張是**實測分界，非推導**：全庫 2,129 檔量到 N≥5 無事件的洞 99% 在中位數日量 < 500 張的冷門股，"
+backtest/data.py,117,固定金額／張數,#   ≥ 500 張那一組 11 檔全是真停牌、零偽陽性。不要讀成「499 張就一定是無成交」。
+backtest/data.py,118,固定金額／張數,GAP_LIQ_SHARES = 500_000
+backtest/data.py,125,固定金額／張數,② 時間：p 與 t 之間連續缺 ≥ 5 個交易日，且 p 之前 60 個交易日的中位數成交量 ≥ 500 張（流動性前提）
+backtest/data.py,184,處置／注意,"def load_disposal_intervals() -> dict[str, list[tuple[pd.Timestamp, pd.Timestamp]]]:"
+backtest/data.py,185,處置／注意,"""""""處置區間（含權證以外的普通股），鍵＝代號。"""""""
+backtest/data.py,186,處置／注意,"d = pd.read_csv(os.path.join(DATA, ""meta"", ""disposal.csv""), dtype=str)"
+backtest/data.py,194,處置／注意,"def disposal_mask(stock_id: str, cal: pd.DatetimeIndex, intervals: dict, after_days: int = 5) -> np.ndarray:"
+backtest/data.py,195,處置／注意,"""""""True ＝ 該日在處置期間內，或處置結束後 after_days 個交易日內。"""""""
+backtest/data.py,204,處置／注意,"def load_attention_dates() -> dict[str, set]:"
+backtest/data.py,205,處置／注意,"a = pd.read_csv(os.path.join(DATA, ""meta"", ""attention.csv""), dtype=str, usecols=[""stock_id"", ""sec_kind"", ""date""])"
