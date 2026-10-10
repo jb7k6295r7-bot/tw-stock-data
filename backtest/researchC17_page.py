@@ -93,6 +93,7 @@ def main():
 
     body = f"""
 <h1>C17 爆量大漲開多：獨立重跑</h1>
+<div class="box"><b>⚠ 2026-10-11 更正（裁定 seq333／seq334）</b>：出場讀法已定為 max（任一條跌破就出）；早年格不可判定 ⇒ 不標暫定、只記前瞻。使用者只算 BTC、用幣本位全倉 ⇒ 本頁的 U 本位 5 倍逐倉強平與 8 幣數字<b>撤回、不當給使用者的結果</b>（8 幣只當旁證）。給使用者的重報見 <a href="C17_BTC幣本位.html">C17_BTC幣本位.html</a>。</div>
 <p class="sub">PREREGC17 v1（sha 6fd7cca8b425a8c5）｜裁定 seq330｜回測線｜讀法寫死 {html.escape(J["讀法寫死"])}｜獨立結果 v1 寫檔 {html.escape(J1["寫檔時間"])}｜v2（補 2019-09-10 起資金費）寫檔 {html.escape(J["寫檔時間"])}｜讀登錄 §五 2026-10-11 00:48（台北）｜資料 main {R.SHA[:10]}</p>
 
 <div class="box key">
@@ -179,5 +180,79 @@ th{background:transparent;color:var(--mut);font-weight:600}td:first-child,th:fir
     print("page OK", round(maxdiff * 100, 4))
 
 
+
+
+def main_cm():
+    J = json.load(open(os.path.join(OUT, "btc_coinm.json"), encoding="utf-8"))
+    CK = json.load(open(os.path.join(OUT, "check_btccm.json"), encoding="utf-8"))
+    W1, W2 = J["窗"]["2018～2023"], J["窗"]["2024～2026-10-09"]
+
+    def btc(x):
+        return f"{x:+.5f}"
+
+    def row(lab, x):
+        u, h = x["USD_囤幣加訊號"], x["USD_只囤幣"]
+        dd = x.get("最低點還要再跌才強平")
+        liq = (f'碰到（{x["強平日"]}）' if x["強平日"] else (f"沒碰到；最接近時還要再跌 {dd * 100:.0f}%" if dd is not None else "沒碰到"))
+        return [lab, btc(x["對只囤幣增減BTC"]), P(x["增減÷W0"], 1), P(u["年化"], 1), f'{u["年化÷|MDD|"]:.2f}', P(h["年化"], 1), f'{h["年化÷|MDD|"]:.2f}', f'<b>{x["使用者判準"]}</b>', liq]
+
+    head = ["", "對只囤幣增減（BTC）", "÷ 錢包 0.0715", "USD 年化", "年化÷|MDD|", "只囤幣年化", "只囤幣 年化÷|MDD|", "判準", "強平"]
+    t1 = tbl(head, [row("3 張", W1["3張"]), row("24 張", W1["24張"]), row("3 張（按今日比例）", W1["3張_按今日比例"]), row("24 張（按今日比例）", W1["24張_按今日比例"])])
+    t2 = tbl(head, [row("3 張", W2["3張"]), row("24 張", W2["24張"]), row("3 張（按今日比例）", W2["3張_按今日比例"]), row("24 張（按今日比例）", W2["24張_按今日比例"])])
+
+    def years(w):
+        ks = ["3張", "24張", "24張_按今日比例"]
+        ys = [y["年"] for y in w["3張"]["逐年"]]
+        rows = []
+        for i, y in enumerate(ys):
+            rows.append([y] + [f'{w[k]["逐年"][i]["判"]}（{btc(w[k]["逐年"][i]["增減BTC"])}）' for k in ks])
+        return tbl(["年", "3 張", "24 張", "24 張（按今日比例）"], rows)
+
+    lq = J["現況強平價_本模型"]
+    body = f"""
+<h1>C17 爆量大漲開多：只算 BTC、幣本位</h1>
+<p class="sub">裁定 seq333（出場讀法定 max）＋ seq334（照使用者實際做法重報，描述、N 不變）｜回測線｜讀法寫死 {html.escape(J["讀法寫死"])}｜寫檔 {html.escape(J["寫檔時間"])}｜資料 main {R.SHA[:10]}</p>
+<div class="box key">
+<h2>結論</h2>
+<p><b>近兩年沒有提升。</b>2024-01-01～2026-10-09，「囤幣＋訊號時開幣本位多」和「只囤幣」比，3 張只多 {btc(W2["3張"]["對只囤幣增減BTC"])} BTC（錢包的 {P(W2["3張"]["增減÷W0"], 2)}），24 張只多 {btc(W2["24張"]["對只囤幣增減BTC"])} BTC（{P(W2["24張"]["增減÷W0"], 1)}）。逐年看，2024 年扣分、2025 年加分、2026 年扣分。每天多賺 {P(W2["每天多賺_幣本位資金費(1單位名目)"])}，假訊號 p {W2["假訊號p"]:.2f}，和假訊號分不出來。</p>
+<p><b>2018～2023 有提升，但要看張數。</b>3 張：錢包從 0.0715 BTC 變成 {W1["3張"]["窗末錢包權益BTC"]:.4f} BTC（{P(W1["3張"]["增減÷W0"], 0)}），USD 年化 {P(W1["3張"]["USD_囤幣加訊號"]["年化"], 1)}，只囤幣是 {P(W1["3張"]["USD_只囤幣"]["年化"], 1)}，合格。<b>24 張在 2018-12-21 被強平，錢包歸零</b>：當年 BTC 只有 3,000～4,000 美元，24 張（2,400 美元）約等於錢包價值的 8 倍。若按今天的比例（24 張約為錢包價值的 0.41 倍）換算，就不會碰到強平，錢包 +{P(W1["24張_按今日比例"]["增減÷W0"], 0, False)}。</p>
+<p><b>強平風險</b>：以使用者錢包 0.0715 BTC、全倉、維持保證金率 0.4%（幣安第 1 級）計算。2024 年後 3 張和 24 張都沒碰到強平，最接近的一次還要再跌 {W2["3張"]["最低點還要再跌才強平"] * 100:.0f}%（3 張）、{W2["24張"]["最低點還要再跌才強平"] * 100:.0f}%（24 張）。2018～2023 的 3 張也沒碰到（最接近時還要再跌 {W1["3張"]["最低點還要再跌才強平"] * 100:.0f}%）；24 張在 2018 年碰到。</p>
+<p class="muted">⛔ 不是買賣建議，也不談「開幾張安全」。早年格不可判定 ⇒ 不標暫定，只記前瞻（2026-10-12 起，滿 20 筆再判）。⛔ 不改囤幣與 B3／B4 賣幣計畫。</p>
+</div>
+
+<h2>1. 2024-01-01～2026-10-09（8 筆）</h2>{t2}
+<h2>2. 2018～2023（17 筆）</h2>{t1}
+<p class="muted">USD 年化以「錢包權益 × BTC 收盤」計，MDD 用每日收盤。判準：合格＝年化比只囤幣高，而且年化÷|MDD| 也不比只囤幣低；另列＝只有年化比較高。
+「按今日比例」：每筆名目＝k × 0.0715 × 進場價，k＝張數×100 ÷（0.0715 × 2026-10-09 收盤 82,636）；3 張 k≈0.051，24 張 k≈0.41。這一列只是描述。</p>
+<h2>3. 逐年加分或扣分（錢包 BTC 增減）</h2>
+<h3>2018～2023</h3>{years(W1)}
+<h3>2024～</h3>{years(W2)}
+
+<h2>4. 口徑與限制</h2>
+<ul>
+<li>訊號與出場：成交量 ＞ 前 20 日平均量的 2 倍，且漲幅 ＞ 5% ⇒ 次日開盤開多；收盤 ＜ max(訊號日最低, 前 10 日最低) ⇒ 次日開盤平倉（seq333）。價格用 Binance 現貨 BTCUSDT；幣本位永續和現貨的價差沒算。</li>
+<li>部位：每次訊號開 3 張或 24 張 BTCUSD 幣本位永續（每張 100 USD），保證金是合約錢包。兩個窗都各自從 0.0715 BTC 起算。使用者現有的 3 張常駐多單沒有併進來；如果同一個錢包同時抱著常駐單，強平會更近。</li>
+<li>成本：每邊 0.1%。資金費用幣本位 BTCUSD 實際值（{J["CM資金費起訖"][0]}～{J["CM資金費起訖"][1]}；2026-06-30 少一筆是官方本來就沒有）。沒有資料的日子以年化 10% 代入：2018～2023 窗 {W1["窗內資金費代入天數"]} 天（其中持倉日 {W1["持有日資金費代入天數"]} 天）、2024～ 窗 {W2["窗內資金費代入天數"]} 天（持倉日 {W2["持有日資金費代入天數"]} 天）。</li>
+<li>強平：權益（BTC）＝錢包 ＋ 名目 ×（1/進場價 − 1/價格），權益 ≤ 0.4% × 名目 ÷ 價格 就強平。用現貨日低判斷；改用幣本位標記價日低（2020-08 起），結果一樣。分級表用的是 2026-05 的現值，早年的實際分級可能不同。
+本模型算出使用者現況的強平價：3 張 @84,500 為 {lq["3張@84,500"]:,.0f}（幣安顯示 3,591）；加滿 24 張約 {lq["24張(3@84,500+10@66,000+11@58,625)"]:,.0f}（加密線估約 22,000）。實際以幣安顯示為準。</li>
+<li>旁證（⛔ 不進結果句）：8 幣合併（max 讀法）每天多賺 {P(J["旁證_8幣合併_max_v2"]["每天多賺"])}，p {J["旁證_8幣合併_max_v2"]["假訊號p"]:.3f}。</li>
+<li>--check：另外寫一支程式重算（強平改用不等式逐日直接判斷、資金費改用 datetime 逐筆歸日、交易清單用純迴圈），比對 {CK["比對次數"]} 項，<b>不同 {CK["不同數"]} 項</b>；強平公式的 fixture 附會變紅的反例。</li>
+</ul>
+"""
+    css = """
+:root{--bg:#fbfbfa;--fg:#1d1d1f;--mut:#5f6368;--line:#dcdcdc;--keybg:#eef4fb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161618;--fg:#ececec;--mut:#a3a3a3;--line:#3a3a3c;--keybg:#1e2a38}}
+:root[data-theme="dark"]{--bg:#161618;--fg:#ececec;--mut:#a3a3a3;--line:#3a3a3c;--keybg:#1e2a38}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.65;padding:0 16px 48px;max-width:980px;margin:auto}
+h1{font-size:1.5rem;margin:24px 0 4px}h2{font-size:1.15rem;margin:28px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}h3{font-size:1rem;margin:16px 0 6px}
+.sub,.muted{color:var(--mut);font-size:.88rem}.box{border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:16px 0}.key{background:var(--keybg)}
+.tw{overflow-x:auto;margin:8px 0}table{border-collapse:collapse;font-size:.88rem;min-width:100%}th,td{border:1px solid var(--line);padding:4px 8px;text-align:right;white-space:nowrap}
+th{color:var(--mut);font-weight:600}td:first-child,th:first-child{text-align:left}
+"""
+    page = f'<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C17 BTC 幣本位</title><style>{css}</style></head><body>{body}</body></html>'
+    with open(os.path.join(OUT, "C17_BTC幣本位.html"), "w", encoding="utf-8") as f:
+        f.write(page)
+    print("page_cm OK")
 if __name__ == "__main__":
     main()
+    main_cm()
