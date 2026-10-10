@@ -1,0 +1,80 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>C17 爆量大漲開多</title><style>
+:root{--bg:#fbfbfa;--fg:#1d1d1f;--mut:#5f6368;--line:#dcdcdc;--acc:#0b5cad;--keybg:#eef4fb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161618;--fg:#ececec;--mut:#a3a3a3;--line:#3a3a3c;--acc:#7cb4ff;--keybg:#1e2a38}}
+:root[data-theme="dark"]{--bg:#161618;--fg:#ececec;--mut:#a3a3a3;--line:#3a3a3c;--acc:#7cb4ff;--keybg:#1e2a38}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.65;margin:0;padding:0 16px 48px;max-width:980px;margin:auto}
+h1{font-size:1.5rem;margin:24px 0 4px}h2{font-size:1.15rem;margin:28px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}h3{font-size:1rem;margin:16px 0 6px}
+.sub,.muted{color:var(--mut);font-size:.88rem}.box{border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:16px 0}.key{background:var(--keybg)}
+.tw{overflow-x:auto;margin:8px 0}table{border-collapse:collapse;font-size:.88rem;min-width:100%}th,td{border:1px solid var(--line);padding:4px 8px;text-align:right;white-space:nowrap}
+th{background:transparent;color:var(--mut);font-weight:600}td:first-child,th:first-child{text-align:left}code{font-size:.85em}
+</style></head><body>
+<h1>C17 爆量大漲開多：獨立重跑</h1>
+<p class="sub">PREREGC17 v1（sha 6fd7cca8b425a8c5）｜裁定 seq330｜回測線｜讀法寫死 2026-10-11 00:45（台北）｜獨立結果寫檔 2026-10-11 00:47:45（台北）｜讀登錄 §五 2026-10-11 00:48（台北）｜資料 main 69e257c882</p>
+
+<div class="box key">
+<h2>結論</h2>
+<p><b>出口 ③：先對帳。</b>照登錄字面跑出來的數字，和加密線 §五 對不上：2024 年後的 BTC 和 8 幣方向相反，差距遠超過 0.05%／天。</p>
+<p><b>差異原因幾乎可以確定是出場規則的讀法。</b>登錄寫「收盤 &lt; min(訊號日最低價, 前 10 日最低價) 才出場」。照字面取兩者中較低的那條，出場線永遠不會高過訊號日低點，一筆單常常一抱好幾年（BTC 有一筆抱了 1,777 天），持倉日佔窗內八到九成以上。
+加密線的數字對得上的是另一種讀法：<b>兩條任一條跌破就出場</b>（等於取 max）。照這個讀法重算後，BTC 兩窗加 8 幣共 10 項，每一項都在 0.05%／天以內、方向全部相同，筆數也對得上（BTC 2018～2023：16 對 17 筆，中位持有 28 對 29 天）。</p>
+<p>兩種讀法的判定結果不同，要等裁定線決定登錄要照哪一種讀：</p>
+<ul>
+<li><b>照字面（min）</b>：BTC 2018～2023 +0.014%、2024～ -0.118%、早年替代 -0.052%、8 幣合併 -0.027%（假訊號 p 0.31）。三項 ≤ 0，屬於出口 ②，測不出。</li>
+<li><b>照任一條破就出（max，只當對帳診斷）</b>：BTC 2018～2023 +0.265%（p 0.018）、2024～ +0.007%（p 0.40）、早年替代 +0.257%、8 幣合併 +0.165%（假訊號 p 0.005）。四項都 &gt; 0、合併 p &lt; 0.05，符合出口 ① 的形狀，最多只能標「暫定成立（探索後）」。但 2024 年後只多 +0.007%，幾乎是 0；早年那一格用的是替代資料。</li>
+</ul>
+<p><b>使用者判準（對同窗一直抱 BTC 現貨）</b>：兩種讀法都是 2018～2023 合格、2024～2026 <b>不合格</b>。</p>
+<p><b>強平風險</b>：用使用者現行的 5 倍槓桿、逐倉計算。照字面讀法，BTC 8 筆裡有 3 筆碰到強平，原因多半是抱得太久，資金費把保證金慢慢吃光。照 max 讀法，BTC 25 筆裡有 1 筆碰到（2020-03-14 進場，3/16 就碰到，當時最大浮虧 −20.3%）；8 幣 288 筆裡有 60 筆碰到（m＝2%）。<b>5 倍逐倉只要跌約 18～20% 就會被強平；資金費和維持保證金還會讓強平價越來越近。</b></p>
+<p><b>和使用者現行計畫的關係</b>：⛔ 不改囤幣，也不改 B3／B4 賣幣。B3、B4 要到 2029 年才生效，所以歷史上沒有重疊的日子。2024～2026 的持倉日和買點價位重疊的天數列在第 4 節。</p>
+<p class="muted">⛔ 本頁不是買賣建議，也不談「開幾倍安全」。N 加密帳 ＋82（裁定已定）。乾淨的證據只會來自 2026-10-12 起的前瞻紀錄。</p>
+</div>
+
+<h2>1. 獨立結果：照登錄字面（出場取 min）</h2>
+<p>每天多賺＝持倉日每日淨報酬的平均，減去同窗所有日子報酬的平均。主臂是 t＋1 開盤進場、每邊成本 0.1%，再扣資金費。p 值是單尾，各做 2,000 次。</p>
+<div class="tw"><table class=""><thead><tr><th>格</th><th>每天多賺</th><th>筆數</th><th>中位持有天數</th><th>假訊號 p</th><th>隨機進場 p</th></tr></thead><tbody><tr><td>BTC 2018～2023</td><td>+0.014%</td><td>4</td><td>26</td><td>0.089</td><td>0.200</td></tr><tr><td>BTC 2024～2026-10-09</td><td>-0.118%</td><td>4</td><td>186</td><td>0.995</td><td>0.816</td></tr><tr><td>早年 BTC（Bitstamp 替代版）</td><td>-0.052%</td><td>1</td><td>1646</td><td>0.910</td><td>0.161</td></tr><tr><td>8 幣合併</td><td>-0.027%</td><td>29</td><td>—</td><td>0.310</td><td>0.889</td></tr></tbody></table></div>
+<p class="muted">持倉比例：BTC 2018～2023 84%、2024～ 83%、8 幣各 93～98%。照字面幾乎等於一直抱著。窗尾仍持有的件數：BTC 兩窗各 1 筆，8 幣各 1 筆。
+t 收盤進場（敏感度）和主臂的差在 0.001%／天以內。各幣改用自己的資金費時，8 幣合併為 -0.022%；BTC 改用幣本位資金費時，兩窗分別為 +0.023%、-0.118%。</p>
+
+<h2>2. 對帳（讀 §五 之後才做；t 收盤進場，對齊 §五 的口徑）</h2>
+<div class="tw"><table class=""><thead><tr><th>項目</th><th>加密線 §五</th><th>回測 照登錄字面（min）</th><th>差（%／天）</th><th>回測 任一條破就出（max）</th><th>差（%／天）</th><th>筆數 §五／max</th></tr></thead><tbody><tr><td>BTC 2018～2023</td><td>+0.30%</td><td>+0.014%</td><td>0.286</td><td>+0.265%</td><td>0.035</td><td>16 筆／17 筆</td></tr><tr><td>BTC 2024～2026-10-09</td><td>+0.04%</td><td>-0.118%</td><td>0.158</td><td>+0.007%</td><td>0.033</td><td>8 筆／8 筆</td></tr><tr><td>SOL</td><td>+0.42%</td><td>-0.026%</td><td>0.446</td><td>+0.380%</td><td>0.040</td><td>—</td></tr><tr><td>ADA</td><td>+0.27%</td><td>-0.004%</td><td>0.274</td><td>+0.243%</td><td>0.027</td><td>—</td></tr><tr><td>XRP</td><td>+0.25%</td><td>-0.014%</td><td>0.264</td><td>+0.214%</td><td>0.036</td><td>—</td></tr><tr><td>ETH</td><td>+0.20%</td><td>-0.015%</td><td>0.215</td><td>+0.178%</td><td>0.022</td><td>—</td></tr><tr><td>LINK</td><td>+0.18%</td><td>-0.044%</td><td>0.224</td><td>+0.159%</td><td>0.021</td><td>—</td></tr><tr><td>LTC</td><td>+0.10%</td><td>+0.001%</td><td>0.099</td><td>+0.066%</td><td>0.034</td><td>—</td></tr><tr><td>DOGE</td><td>+0.07%</td><td>-0.046%</td><td>0.116</td><td>+0.033%</td><td>0.037</td><td>—</td></tr><tr><td>BNB</td><td>+0.06%</td><td>-0.068%</td><td>0.128</td><td>+0.066%</td><td>0.006</td><td>—</td></tr></tbody></table></div>
+<p class="muted">max 讀法和 §五 的最大差是 0.040%／天，回測的數字多數比 §五 稍低一點（只有 BNB 稍高）。可能原因：資金費的算法不同（回測在 2018～2019 沒有資料的期間用年化 10% 代入，2020 年後用實際值），或成本的扣法不同。
+其他候選原因都排除了：進場時點（t 收盤和 t＋1 開盤的差 ≤ 0.001%）；只看前 10 日低點（2024 年後變成負的）；只看訊號日低點（和字面讀法幾乎一樣）。
+固定 14 天（描述）：回測 BTC 兩窗 +0.230%／+0.251%，§五 為 +0.28%／+0.19%，第二窗差 0.06%，超過 0.05%。
+早年 BTC 訊號後 14 天比全部日多 +14.7%（Bitstamp，59 個訊號日），§五 為 +12.0%（Coin Metrics）；兩邊資料來源不同。</p>
+
+<h2>3. 使用者判準（主臂 1 倍，對同窗一直抱 BTC 現貨）</h2>
+<h3>照字面（min）</h3><div class="tw"><table class=""><thead><tr><th>窗</th><th>主臂年化</th><th>主臂 MDD</th><th>主臂 年化÷|MDD|</th><th>抱 BTC 年化</th><th>抱 BTC MDD</th><th>抱 BTC 年化÷|MDD|</th><th>判</th></tr></thead><tbody><tr><td>2018～2023</td><td>+24.1%</td><td>-78.9%</td><td>0.31</td><td>+20.6%</td><td>-81.2%</td><td>0.25</td><td><b>合格</b></td></tr><tr><td>2024～2026-10-09</td><td>-14.0%</td><td>-58.9%</td><td>-0.24</td><td>+27.3%</td><td>-53.0%</td><td>0.52</td><td><b>不合格</b></td></tr></tbody></table></div>
+<h3>任一條破就出（max；對帳診斷）</h3><div class="tw"><table class=""><thead><tr><th>窗</th><th>主臂年化</th><th>主臂 MDD</th><th>主臂 年化÷|MDD|</th><th>抱 BTC 年化</th><th>抱 BTC MDD</th><th>抱 BTC 年化÷|MDD|</th><th>判</th></tr></thead><tbody><tr><td>2018～2023</td><td>+46.3%</td><td>-30.0%</td><td>1.54</td><td>+20.6%</td><td>-81.2%</td><td>0.25</td><td><b>合格</b></td></tr><tr><td>2024～2026-10-09</td><td>+6.1%</td><td>-21.6%</td><td>0.28</td><td>+27.3%</td><td>-53.0%</td><td>0.52</td><td><b>不合格</b></td></tr></tbody></table></div>
+<p class="muted">合格＝年化比抱 BTC 高，而且年化÷|MDD| 也不比抱 BTC 低；另列＝只有年化比較高；不合格＝其餘。主臂以全部資金當名目，空手時現金報酬算 0%。</p>
+
+<h2>4. 合約風險：5 倍逐倉的強平</h2>
+<p>使用者現行槓桿是 5 倍（加密線現況：BTCUSD 幣本位全倉 5 倍多單；SOL 提醒也設 5 倍）。這裡每筆用 5 倍逐倉計算：保證金＝名目的 1/5，先扣 0.1% 進場費，每天再扣當天的資金費，然後算強平價 Lp＝進場價 ×（1 − 剩餘保證金）÷（1 − 維持保證金率 m），用現貨日低判斷有沒有碰到。</p>
+<h3>照字面（min）</h3><div class="tw"><table class=""><thead><tr><th>格</th><th>筆數</th><th>觸及強平筆數（m 0.5%／1%／2%）</th><th>最近一次距強平（m 2%；負＝已穿過）</th><th>單筆期間最大浮虧（價格）</th></tr></thead><tbody><tr><td>BTC 2018～2023</td><td>4</td><td>1／1／1</td><td>-32.5%</td><td>-16.2%</td></tr><tr><td>BTC 2024～</td><td>4</td><td>2／2／2</td><td>-10.8%</td><td>-18.1%</td></tr><tr><td>早年 BTC（替代）</td><td>1</td><td>0／0／0</td><td>+8.2%</td><td>-11.5%</td></tr><tr><td>SOL</td><td>2</td><td>2／2／2</td><td>-61.2%</td><td>-46.0%</td></tr><tr><td>ADA</td><td>5</td><td>4／5／5</td><td>-76.5%</td><td>-47.3%</td></tr><tr><td>XRP</td><td>4</td><td>4／4／4</td><td>-32.0%</td><td>-34.6%</td></tr><tr><td>ETH</td><td>4</td><td>3／3／4</td><td>-32.2%</td><td>-24.4%</td></tr><tr><td>LINK</td><td>2</td><td>1／1／2</td><td>-100.0%</td><td>-100.0%</td></tr><tr><td>LTC</td><td>4</td><td>4／4／4</td><td>-70.3%</td><td>-27.1%</td></tr><tr><td>DOGE</td><td>4</td><td>4／4／4</td><td>-33.4%</td><td>-40.4%</td></tr><tr><td>BNB</td><td>4</td><td>3／3／3</td><td>-39.0%</td><td>-40.5%</td></tr></tbody></table></div>
+<h3>任一條破就出（max；對帳診斷）</h3><div class="tw"><table class=""><thead><tr><th>格</th><th>筆數</th><th>觸及強平筆數（m 0.5%／1%／2%）</th><th>最近一次距強平（m 2%；負＝已穿過）</th><th>單筆期間最大浮虧（價格）</th></tr></thead><tbody><tr><td>BTC 2018～2023</td><td>17</td><td>1／1／1</td><td>-2.1%</td><td>-20.3%</td></tr><tr><td>BTC 2024～</td><td>8</td><td>0／0／0</td><td>+8.0%</td><td>-11.6%</td></tr><tr><td>早年 BTC（替代）</td><td>20</td><td>2／2／2</td><td>-6.5%</td><td>-23.3%</td></tr><tr><td>SOL</td><td>30</td><td>5／6／6</td><td>-21.0%</td><td>-35.5%</td></tr><tr><td>ADA</td><td>45</td><td>4／5／5</td><td>-30.3%</td><td>-43.0%</td></tr><tr><td>XRP</td><td>33</td><td>6／6／7</td><td>-37.7%</td><td>-48.8%</td></tr><tr><td>ETH</td><td>34</td><td>2／2／3</td><td>-11.9%</td><td>-27.8%</td></tr><tr><td>LINK</td><td>35</td><td>9／9／11</td><td>-21.4%</td><td>-36.0%</td></tr><tr><td>LTC</td><td>37</td><td>10／10／10</td><td>-48.8%</td><td>-58.1%</td></tr><tr><td>DOGE</td><td>41</td><td>7／8／10</td><td>-25.9%</td><td>-39.1%</td></tr><tr><td>BNB</td><td>33</td><td>7／7／8</td><td>-11.7%</td><td>-27.7%</td></tr></tbody></table></div>
+<p class="muted">BTC 標記價日低（2020 年起）的結果和現貨日低相近：字面讀法 W1／W2 觸及 1／3 筆，max 讀法 1／0 筆。
+使用者實際用的是全倉，帳戶裡其他餘額會撐住保證金，所以逐倉是比較嚴的算法。LINK 在 2020-03-12 有一根現貨日低 0.0001 的插針，所以 LINK 的最大浮虧接近 −100%。
+5 倍、每筆用全部資金當保證金（描述）：BTC 2018～2023 兩種讀法都會因為一筆強平而歸零；2024～ 字面讀法也會歸零，max 讀法年化 -20.5%。</p>
+
+<h2>5. 與現行計畫重疊的天數（只報、不改計畫）</h2>
+<h3>照字面（min）</h3><div class="tw"><table class=""><thead><tr><th>2024～2026-10-09 持倉日</th><th>日低 ≤ 72,000</th><th>≤ 66,000</th><th>≤ 58,625</th><th>≤ 54,000</th><th>收盤 &lt; 58,625（A1）</th><th>B3／B4（2029 起才生效）</th><th>收盤 &lt; 200 日線（B4 條件本身）</th></tr></thead><tbody><tr><td>839</td><td>284</td><td>188</td><td>19</td><td>11</td><td>14</td><td>0</td><td>329</td></tr></tbody></table></div>
+<h3>任一條破就出（max）</h3><div class="tw"><table class=""><thead><tr><th>2024～2026-10-09 持倉日</th><th>日低 ≤ 72,000</th><th>≤ 66,000</th><th>≤ 58,625</th><th>≤ 54,000</th><th>收盤 &lt; 58,625（A1）</th><th>B3／B4（2029 起才生效）</th><th>收盤 &lt; 200 日線（B4 條件本身）</th></tr></thead><tbody><tr><td>227</td><td>45</td><td>22</td><td>4</td><td>4</td><td>4</td><td>0</td><td>32</td></tr></tbody></table></div>
+<p class="muted">買點是 72,000（只買現貨）、66,000、58,625、54,000，都是 2026 年訂的價位，所以只有 2024 年後這個窗有意義。2018～2023 整段價格都在這些價位以下，重疊天數沒有意義，不列。</p>
+
+<h2>6. 資金費</h2>
+<p>BTCUSDT 永續資金費的實際值從 2020-01-01 00:00 UTC 到 2026-09-30 16:00 UTC。沒有資料的日子以年化 10% 代入：2018～2023 窗共 730 天（2018～2019 年）、2024～ 窗共 10 天（2026-09-30～10-09）、早年全部代入。有資料的日子裡，每天都剛好 3 筆，沒有例外。
+實際年化：2020～2023 為 15.0%，2024～2026-09 為 7.0%。</p>
+
+<h2>7. 鄰格（描述，不判、不計 N；照字面主格的訊號與出場）</h2>
+<div class="tw"><table class=""><thead><tr><th>量倍數</th><th>漲幅</th><th>出場</th><th>BTC 2018～2023</th><th>BTC 2024～</th><th>早年（替代）</th><th>8 幣合併</th></tr></thead><tbody><tr><td>1.5</td><td>4%</td><td>low10</td><td>-0.023%</td><td>-0.041%</td><td>-0.031%</td><td>-0.034%</td></tr><tr><td>1.5</td><td>5%</td><td>low10</td><td>-0.023%</td><td>-0.103%</td><td>-0.031%</td><td>-0.033%</td></tr><tr><td>1.5</td><td>7%</td><td>low10</td><td>-0.023%</td><td>-0.103%</td><td>-0.056%</td><td>-0.031%</td></tr><tr><td>2.0</td><td>4%</td><td>low10</td><td>+0.014%</td><td>-0.041%</td><td>-0.052%</td><td>-0.026%</td></tr><tr><td>2.0</td><td>5%</td><td>low5</td><td>+0.016%</td><td>-0.114%</td><td>-0.052%</td><td>-0.026%</td></tr><tr><td>2.0</td><td>5%</td><td>low10（主格）</td><td>+0.014%</td><td>-0.118%</td><td>-0.052%</td><td>-0.027%</td></tr><tr><td>2.0</td><td>5%</td><td>low20</td><td>+0.005%</td><td>-0.123%</td><td>-0.052%</td><td>-0.025%</td></tr><tr><td>2.0</td><td>5%</td><td>ma10</td><td>+0.219%</td><td>+0.122%</td><td>+0.659%</td><td>+0.339%</td></tr><tr><td>2.0</td><td>5%</td><td>ma20</td><td>+0.240%</td><td>+0.022%</td><td>+0.453%</td><td>+0.254%</td></tr><tr><td>2.0</td><td>5%</td><td>trail0.08</td><td>+0.134%</td><td>+0.108%</td><td>+0.344%</td><td>+0.172%</td></tr><tr><td>2.0</td><td>5%</td><td>trail0.12</td><td>+0.134%</td><td>+0.028%</td><td>+0.137%</td><td>+0.074%</td></tr><tr><td>2.0</td><td>5%</td><td>trail0.15</td><td>+0.147%</td><td>-0.035%</td><td>+0.130%</td><td>+0.064%</td></tr><tr><td>2.0</td><td>5%</td><td>fixed7</td><td>+0.142%</td><td>+0.193%</td><td>+0.317%</td><td>+0.201%</td></tr><tr><td>2.0</td><td>5%</td><td>fixed14</td><td>+0.230%</td><td>+0.251%</td><td>+0.370%</td><td>+0.203%</td></tr><tr><td>2.0</td><td>5%</td><td>fixed28</td><td>+0.143%</td><td>+0.102%</td><td>+0.288%</td><td>+0.137%</td></tr><tr><td>2.0</td><td>7%</td><td>low10</td><td>+0.014%</td><td>-0.103%</td><td>-0.056%</td><td>-0.027%</td></tr><tr><td>2.5</td><td>4%</td><td>low10</td><td>+0.029%</td><td>-0.027%</td><td>-0.052%</td><td>-0.042%</td></tr><tr><td>2.5</td><td>5%</td><td>low10</td><td>+0.029%</td><td>-0.103%</td><td>-0.052%</td><td>-0.044%</td></tr><tr><td>2.5</td><td>7%</td><td>low10</td><td>+0.030%</td><td>-0.103%</td><td>-0.056%</td><td>-0.042%</td></tr></tbody></table></div>
+<p class="muted">照字面讀法時，前 5／10／20 日低點這三格都幾乎一直抱著。均線、最高收盤回落、固定天數這幾種出場比較短，數字是正的；但這些格子在登錄裡只當描述。</p>
+
+<h2>8. 偏離、限制、補讀法</h2>
+<ul>
+<li><b>早年 BTC 格</b>：登錄指定 Coin Metrics 的 PriceUSD 加 volume_reported_spot_usd_1d，但資料庫的私有 coinmetrics 檔沒有量的欄位，也沒有日高低，所以照登錄算不出來，<b>待資料庫補</b>。這裡改用私有 Bitstamp 2013-01-21～2017-08-16 的日 K（量＝BTC 量 × 收盤）跑替代版，只當描述，不當判定。原始資料不進 repo，只放彙總。</li>
+<li>8 幣的資金費：照登錄字面一律用 BTCUSDT（敏感度改用各幣自己的資金費，見第 1 節）。各幣剔除上市後前 30 根 K 棒。8 幣合併是把所有持倉日等權平均。</li>
+<li>兩個窗各自獨立跑，窗外的訊號不帶進來；窗尾還在持有的部位以窗尾收盤估值，不扣平倉費。</li>
+<li>幣池是 2026-09 的快照，早年有倖存者偏差；Binance 現貨以 USDT 計價。</li>
+<li>--check：fixture 4 個（均量不含 t、次日開盤平倉、資金費毫秒尾數歸日、持倉中不重設），每個都附會變紅的反例。另外用一支純迴圈的參考實作重算 398 項（主格加隨機抽 6 個鄰格 × 11 個單位、21 次平移、300 天資金費歸日），<b>不同 0 項</b>，最大差 2.6e-17。</li>
+</ul>
+
+<h2>9. 前瞻</h2>
+<p>從 2026-10-12 起，每出現一次 BTC 訊號就記一筆（不交易也記），格式見 <code>resultsC17/forward_template.csv</code>。出場讀法還在對帳，所以兩種讀法的出場都記，裁定後只取其中一欄來判。累積 20 筆再判，到時 N 只計前瞻這一格。</p>
+</body></html>
