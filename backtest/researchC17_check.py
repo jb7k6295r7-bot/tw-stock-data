@@ -226,6 +226,8 @@ def main():
     # 資金費歸日：另用 datetime 逐筆歸日，抽 300 個覆蓋日比
     import datetime as dt
     raw = pd.read_csv(os.path.join(R.ROOT, "data", "crypto_funding", "BTCUSDT.csv"))
+    if R.FUND2019:
+        raw = pd.concat([pd.read_csv(R.F2019), raw])
     acc = {}
     for ms, r in zip(raw["calc_time"].astype("int64"), raw["last_funding_rate"].astype(float)):
         ts = dt.datetime(1970, 1, 1) + dt.timedelta(seconds=int(ms // 1000))

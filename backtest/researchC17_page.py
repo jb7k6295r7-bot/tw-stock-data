@@ -27,9 +27,10 @@ def tbl(head, rows, cls=""):
 
 
 def main():
-    J = json.load(open(os.path.join(OUT, "independent.json"), encoding="utf-8"))
-    D = json.load(open(os.path.join(OUT, "diag_lowmax.json"), encoding="utf-8"))
-    RC = json.load(open(os.path.join(OUT, "reconcile.json"), encoding="utf-8"))
+    J1 = json.load(open(os.path.join(OUT, "independent.json"), encoding="utf-8"))   # v1：獨立紀錄（讀 §五 前寫檔）
+    J = json.load(open(os.path.join(OUT, "independent_v2.json"), encoding="utf-8"))
+    D = json.load(open(os.path.join(OUT, "diag_lowmax_v2.json"), encoding="utf-8"))
+    RC = json.load(open(os.path.join(OUT, "reconcile_v2.json"), encoding="utf-8"))
     CK = json.load(open(os.path.join(OUT, "check.json"), encoding="utf-8"))
     NB = pd.read_csv(os.path.join(OUT, "neighbors.csv"))
     M, Dm = J["主格"], D["主格"]
@@ -92,7 +93,7 @@ def main():
 
     body = f"""
 <h1>C17 爆量大漲開多：獨立重跑</h1>
-<p class="sub">PREREGC17 v1（sha 6fd7cca8b425a8c5）｜裁定 seq330｜回測線｜讀法寫死 {html.escape(J["讀法寫死"])}｜獨立結果寫檔 {html.escape(J["寫檔時間"])}｜讀登錄 §五 2026-10-11 00:48（台北）｜資料 main {R.SHA[:10]}</p>
+<p class="sub">PREREGC17 v1（sha 6fd7cca8b425a8c5）｜裁定 seq330｜回測線｜讀法寫死 {html.escape(J["讀法寫死"])}｜獨立結果 v1 寫檔 {html.escape(J1["寫檔時間"])}｜v2（補 2019-09-10 起資金費）寫檔 {html.escape(J["寫檔時間"])}｜讀登錄 §五 2026-10-11 00:48（台北）｜資料 main {R.SHA[:10]}</p>
 
 <div class="box key">
 <h2>結論</h2>
@@ -111,6 +112,7 @@ def main():
 </div>
 
 <h2>1. 獨立結果：照登錄字面（出場取 min）</h2>
+<p class="muted">v1（讀 §五 之前寫檔）用的資金費從 2020-01-01 起；v2 把 2019-09-10～12-31 也補進來。只有資金費這一項不同，表中是 v2。v1→v2：BTC 2018～2023 {P(J1["主格"]["BTC_W1"]["每天多賺"])}→{P(M["BTC_W1"]["每天多賺"])}、8 幣合併 {P(J1["主格"]["8幣合併"]["每天多賺"])}→{P(M["8幣合併"]["每天多賺"])}，其他格不變。</p>
 <p>每天多賺＝持倉日每日淨報酬的平均，減去同窗所有日子報酬的平均。主臂是 t＋1 開盤進場、每邊成本 0.1%，再扣資金費。p 值是單尾，各做 2,000 次。</p>
 {tbl(head4, four(J))}
 <p class="muted">持倉比例：BTC 2018～2023 {P(M["BTC_W1"]["持有比例"], 0, False)}、2024～ {P(M["BTC_W2"]["持有比例"], 0, False)}、8 幣各 93～98%。照字面幾乎等於一直抱著。窗尾仍持有的件數：BTC 兩窗各 1 筆，8 幣各 1 筆。
@@ -142,8 +144,8 @@ t 收盤進場（敏感度）和主臂的差在 0.001%／天以內。各幣改�
 <p class="muted">買點是 72,000（只買現貨）、66,000、58,625、54,000，都是 2026 年訂的價位，所以只有 2024 年後這個窗有意義。2018～2023 整段價格都在這些價位以下，重疊天數沒有意義，不列。</p>
 
 <h2>6. 資金費</h2>
-<p>BTCUSDT 永續資金費的實際值從 {F["BTCUSDT首筆"]} 到 {F["BTCUSDT末筆"]}。沒有資料的日子以年化 10% 代入：2018～2023 窗共 {F["W1代入天數"]} 天（2018～2019 年）、2024～ 窗共 {F["W2代入天數"]} 天（2026-09-30～10-09）、早年全部代入。有資料的日子裡，每天都剛好 3 筆，沒有例外。
-實際年化：2020～2023 為 {P(F["W1實際年化（覆蓋日）"], 1, False)}，2024～2026-09 為 {P(F["W2實際年化（覆蓋日）"], 1, False)}。</p>
+<p>BTCUSDT 永續資金費的實際值從 {F["BTCUSDT首筆"]} 到 {F["BTCUSDT末筆"]}（主檔 2020-01-01 起，加上資料庫 1011-0044 新補的 2019-09-10～12-31，兩段接起來是連續的）。2019-09-10 以前永續合約還不存在，2026-10-01 起的月封存還沒發布，這兩段都照登錄以年化 10% 代入：2018～2023 窗共 {F["W1代入天數"]} 天（2018-01-01～2019-09-09）、2024～ 窗共 {F["W2代入天數"]} 天（2026-09-30～10-09）、早年全部代入。有資料的日子裡，每天都剛好 3 筆，沒有例外。
+實際年化：2019-09～2023 為 {P(F["W1實際年化（覆蓋日）"], 1, False)}，2024～2026-09 為 {P(F["W2實際年化（覆蓋日）"], 1, False)}。</p>
 
 <h2>7. 鄰格（描述，不判、不計 N；照字面主格的訊號與出場）</h2>
 {nb_t}
@@ -159,7 +161,7 @@ t 收盤進場（敏感度）和主臂的差在 0.001%／天以內。各幣改�
 </ul>
 
 <h2>9. 前瞻</h2>
-<p>從 2026-10-12 起，每出現一次 BTC 訊號就記一筆（不交易也記），格式見 <code>resultsC17/forward_template.csv</code>。出場讀法還在對帳，所以兩種讀法的出場都記，裁定後只取其中一欄來判。累積 20 筆再判，到時 N 只計前瞻這一格。</p>
+<p>從 2026-10-12 起，每出現一次 BTC 訊號就記一筆（不交易也記），格式見 <code>resultsC17/forward_template.csv</code>。2026-10-01 起的資金費月封存還沒發布，前瞻用到時照實寫明代入或缺。出場讀法還在對帳，所以兩種讀法的出場都記，裁定後只取其中一欄來判。累積 20 筆再判，到時 N 只計前瞻這一格。</p>
 """
     css = """
 :root{--bg:#fbfbfa;--fg:#1d1d1f;--mut:#5f6368;--line:#dcdcdc;--acc:#0b5cad;--keybg:#eef4fb}

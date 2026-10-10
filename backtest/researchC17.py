@@ -56,6 +56,9 @@
 〔執行時發現 2026-10-11 00:46 台北〕--check fixture c 抓到資金費歸日的日期秒數換算錯（pandas 日期解析度不是奈秒 ⇒ 全部被當缺段）；在跑主格之前修正，主格只跑過修正後版本。
 〔執行時發現 2026-10-11 00:48 台北〕independent.json 寫檔（00:47:45）之後才讀登錄 §五；字面讀法與 §五 差 ＞ 0.05%／天且 W2、8 幣方向相反 ⇒ 出口 ③。
    之後加的 --recon（變體對照）與 --diag-lowmax（出場讀成「收盤破訊號日低或破前 10 日低，任一條就出」＝max）只作對帳診斷，⛔ 不改主格、不改讀法、不當判定。
+〔補記 2026-10-11 00:55 台北｜資料庫 1011-0044 轉知〕BTCUSDT 永續資金費 2019-09-10～2019-12-31 已補（main 283eec12b2 data/meta/crypto_usdt_funding_early/BTCUSDT_2019.csv），
+   與主檔 2020-01-01 起連續 ⇒ v2（--fund2019）把這段併入；2019-09-10 以前永續不存在 ⇒ 照登錄年化 10% 並報天數；2026-10-01 起月封存未發布 ⇒ 照實代入並報。
+   ⛔ 規則、讀法不變；v1 independent.json（00:47:45）原樣保留為獨立紀錄，v2 另存 *_v2.json。
 〔執行時發現〕LINK 2020-03-12 現貨日低 0.0001（Binance 插針，原始資料如此、不改）⇒ LINK 最大浮虧、強平描述被這根拉低；ADA、DOGE、LINK 2025-10-10 也有長下影。
 """
 from __future__ import annotations
@@ -68,6 +71,10 @@ ROOT = os.path.expanduser(f"~/c17data/{SHA}")
 PRIV = os.path.expanduser("~/us-stock-data/data/crypto_private")
 REPO = os.path.expanduser("~/tw-p17")
 OUT = os.path.join(REPO, "backtest", "resultsC17")
+# v2（資料庫 1011-0044 轉知）：BTCUSDT 2019-09-10～2019-12-31 資金費補檔，main 283eec12b2 data/meta/crypto_usdt_funding_early/BTCUSDT_2019.csv
+SHA_F2019 = "283eec12b2bc0eb17ffa756c5a0efe3a49d16d92"
+F2019 = os.path.expanduser(f"~/c17data/{SHA_F2019}/data/meta/crypto_usdt_funding_early/BTCUSDT_2019.csv")
+FUND2019 = False      # v1（independent.json）＝False；v2 以 --fund2019 開
 FROZEN = "2026-10-11 00:45（台北）"
 COINS8 = ["SOL", "ETH", "BNB", "XRP", "ADA", "DOGE", "LINK", "LTC"]
 OWN_FUND = {"ETH", "BNB", "SOL", "XRP", "DOGE"}
@@ -147,7 +154,7 @@ def funding_arrays(dates, ev, mut=None):
     is_mid = (ev["h"].to_numpy() % DAY) == 0
     ge = pd.Series(ev["r"].to_numpy()[is_mid]).groupby(dd[is_mid]).sum()
     first, last = int(ev["h"].min()), int(ev["h"].max())
-    cov = (day0 + 1 >= first) & (day0 + DAY <= last)
+    cov = (first <= day0 + 8 * 3600) & (day0 + DAY <= last)   # 當天第一個 8 小時時點（D 08:00）起都有＝整天有【v2 修：原寫 D 00:00:01，會把首日 08:00 才開始的那天誤當缺】
     fund = np.where(cov, g.reindex(day0).fillna(0.0).to_numpy(), FILL)
     fend = np.where(cov, ge.reindex(day0).fillna(0.0).to_numpy(), FILL / 3.0)
     cnt = pd.Series(1, index=dd).groupby(level=0).sum().reindex(day0).fillna(0).to_numpy()
@@ -156,7 +163,11 @@ def funding_arrays(dates, ev, mut=None):
 
 def fund_src(kind):
     if kind == "BTCUSDT":
-        return _funding_events(os.path.join(ROOT, "data", "crypto_funding", "BTCUSDT.csv"), "calc_time", "last_funding_rate")
+        ev = _funding_events(os.path.join(ROOT, "data", "crypto_funding", "BTCUSDT.csv"), "calc_time", "last_funding_rate")
+        if FUND2019:
+            e19 = _funding_events(F2019, "calc_time", "last_funding_rate")
+            ev = pd.concat([e19, ev]).drop_duplicates("h").sort_values("h").reset_index(drop=True)
+        return ev
     if kind == "BTCUSD_CM":
         return _funding_events(os.path.join(ROOT, "data", "meta", "crypto_cm_funding_rest", "BTCUSD_PERP.csv"), "funding_time", "funding_rate")
     return _funding_events(os.path.join(ROOT, "data", "crypto_funding", f"{kind}USDT.csv"), "calc_time", "last_funding_rate")
@@ -526,7 +537,9 @@ def main_run(rule=None, tag=""):
     btc, early, coins = build_units("BTCUSDT")
     vm, up = MAIN_SIG
     res = run_cell(btc, early, coins, vm, up, MAIN_EXIT_, "open")
-    J = {"讀法寫死": FROZEN, "資料commit": SHA, "出場規則": f"{MAIN_EXIT_[0]}{MAIN_EXIT_[1]}", "主格": {}, "對照": {}}
+    J = {"讀法寫死": FROZEN, "資料commit": SHA, "出場規則": f"{MAIN_EXIT_[0]}{MAIN_EXIT_[1]}",
+         "資金費版本": ("v2：BTCUSDT 2019-09-10 起實際值（補檔 main " + SHA_F2019[:10] + "）" if FUND2019 else "v1：BTCUSDT 2020-01-01 起實際值"),
+         "主格": {}, "對照": {}}
     # 主格摘要
     for k, (s, i0, i1, r) in res.items():
         J["主格"][k] = summary(s, r, i0, i1)
@@ -725,26 +738,30 @@ if __name__ == "__main__":
     ap.add_argument("--stamp", default="")
     ap.add_argument("--recon", action="store_true")
     ap.add_argument("--diag-lowmax", action="store_true")
+    ap.add_argument("--fund2019", action="store_true")
     a = ap.parse_args()
+    FUND2019 = bool(a.fund2019)
+    V = "_v2" if FUND2019 else ""
     if a.diag_lowmax:
         J, _ = main_run(("lowmax", 10), "_lowmax")
         J["性質"] = "⛔ 對帳診斷（讀登錄 §五 之後才跑）：出場改讀成「收盤破訊號日低或破前 10 日低任一條就出」＝max；不是判定、不是獨立結果"
         J["寫檔時間"] = a.stamp
-        with open(os.path.join(OUT, "diag_lowmax.json"), "w", encoding="utf-8") as f:
+        with open(os.path.join(OUT, f"diag_lowmax{V}.json"), "w", encoding="utf-8") as f:
             json.dump(to_jsonable(J), f, ensure_ascii=False, indent=1)
         print("diag OK")
     elif a.recon:
         Rj = recon(a.stamp)
-        with open(os.path.join(OUT, "reconcile.json"), "w", encoding="utf-8") as f:
+        with open(os.path.join(OUT, f"reconcile{V}.json"), "w", encoding="utf-8") as f:
             json.dump(to_jsonable(Rj), f, ensure_ascii=False, indent=1)
         print("recon OK")
     elif a.check:
         import researchC17_check as CK
+        CK.R.FUND2019 = FUND2019
         CK.main()
     else:
         J, _ = main_run()
         write_forward_template()
         J["寫檔時間"] = a.stamp
-        with open(os.path.join(OUT, "independent.json"), "w", encoding="utf-8") as f:
+        with open(os.path.join(OUT, f"independent{V}.json"), "w", encoding="utf-8") as f:
             json.dump(to_jsonable(J), f, ensure_ascii=False, indent=1)
         print("OK", a.stamp)
