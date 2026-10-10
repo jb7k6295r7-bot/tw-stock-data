@@ -1,0 +1,22 @@
+===== researchYLmargin run procs=3 reps=200 2026-10-10 23:26（台北）｜停止交易強制出場：開｜{'research11.py': '2b294ac22f746be3', 'rerun17.py': '816df5b337e265c3', 'listexit_lines.py': 'a8d5a002f066b9f8', 'researchSlip.py': 'b7a1eec7954c86b0', 'researchT1fix.py': 'e9434e3afeba2410', 'researchYLmargin.py': '834db8d792e3243b'} =====
+[M1 登錄 sha] 052eff086de99d59 ✔
+[G0 0050 錨] 逐位元 True
+[fs_hist] {"檔數": 372, "內容sha": "ac60dac51ce3be87", "同股同期重複列": 0, "非數字值": 0, "期別": ["2015Q1", "2026Q2"], "ci 股期": 79010, "ci 單季毛利率有值": 76162}
+[營飆 v1] 窗內訊號 2036 ⇒ 加條件留 1373（剔 663）｜符 1329、不符 660、缺值・本季 0、缺值・去年同季 3、不適用・金融 39、不適用・異業 5
+[營量 v1] 窗內訊號 2309 ⇒ 加條件留 1547（剔 762）｜符 1503、不符 758、缺值・本季 1、缺值・去年同季 3、不適用・金融 39、不適用・異業 5
+[計畫] 12 批，已落檔 0、待跑 12
+  [fly|base] 200 顆｜16s
+  [fly|q1] 200 顆｜16s
+  [fly|fake] 200 顆｜21s
+  [vol|base] 1 顆｜17s
+  [vol|q1] 1 顆｜11s
+  [vol|fake] 200 顆｜238s
+  [slip_fly|base] 200 顆｜34s
+  [slip_fly|q1] 200 顆｜28s
+  [slip_vol|base] 1 顆｜4s
+  [slip_vol|q1] 1 顆｜3s
+  [slipc5_vol|base] 1 顆｜5s
+  [slipc5_vol|q1] 1 顆｜4s
+[G1／G2 不加條件 ＝ 正式版] {"fly|base": {"顆數": 200, "不同": 0, "對照": "resultsT1fix/seeds.csv.gz｜c1｜t1"}, "vol|base": {"顆數": 1, "不同": 0, "對照": "resultsT1fix/seeds.csv.gz｜c13｜t1"}, "slip_fly|base": {"顆數": 200, "不同": 0, "對照": "resultsT1fix/seeds.csv.gz｜slip1_real｜t1"}, "slip_vol|base": {"顆數": 1, "不同": 0, "對照": "resultsT1fix/seeds.csv.gz｜slip13_real｜t1"}, "slipc5_vol|base": {"顆數": 1, "不同": 0, "對照": "resultsT1fix/seeds.csv.gz｜slip13_c5｜t1"}}
+[營飆 v1] 加毛利率條件沒有改善 營飆 v1｜段標籤 {'主窗': '另列', '探索': '合格', '確認': '不合格'}｜比原策略好 False｜剔除 663/2036
+[營量 v1] 加毛利率條件沒有改善 營量 v1｜段標籤 {'主窗': '另列', '探索': '合格', '確認': '不合格'}｜比原策略好 False｜剔除 762/2309
