@@ -126,7 +126,13 @@ EVENT_DIRS = [("twse", "exright", os.path.join(UNI_DIR, "exright")),
               #   因子 ＝ 股數前 ÷ 股數後，是精確值（實測 14/14 是分母 ≤4 的整數比）。
               #   ⚠ 日後 TPEx 官方端點出現時**官方優先**，衝突要報 ✗ 不可靜默取一邊
               #     ——那道閘門寫在 `otcparvalue.py` 裡。
-              ("tpex", "parvalue", os.path.join(UNI_DIR, "otcparvalue"))]
+              ("tpex", "parvalue", os.path.join(UNI_DIR, "otcparvalue")),
+              # ⭐⭐ 2026-10-09～11（裁定 seq329 §五、情報 1011-0021）：【停牌期間做的減資】不在 TWTAUU／revivt
+              #   ⇒ 全母體掃描只找到 3 筆漏還原（8101、4415、3073）⇒ 手工補登，逐筆附官方證據（README）
+              #   來源 curated/manual_reduce_<市場>/ ⇒ backfill mode=curated 複製到 data/meta/manual_reduce_<市場>/
+              #   ⛔ 只放查得到官方前收與參考價（或可由官方漲跌欄反推）的；查不到的留在 breakpoints_unexplained.csv
+              ("twse", "reduce", os.path.join(META_DIR, "manual_reduce_twse")),
+              ("tpex", "reduce", os.path.join(META_DIR, "manual_reduce_tpex"))]
 
 # 每種事件的因子合理範圍**必須分開**，用同一組會兩頭錯：
 #   除權息：參考價幾乎一定 ≤ 前收盤，> 1 是罕見的現金增資折價案例（約 0.09%）。
