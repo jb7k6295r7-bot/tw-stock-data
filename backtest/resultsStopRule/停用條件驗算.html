@@ -1,0 +1,26 @@
+<!doctype html><html lang=zh-Hant><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>停用條件驗算</title><style>:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--ln:#ddd}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}}
+:root[data-theme=dark]{--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,'Noto Sans TC',sans-serif;margin:0 auto;max-width:900px;padding:16px;line-height:1.6}
+table{border-collapse:collapse;font-size:14px;display:block;overflow-x:auto}td,th{border:1px solid var(--ln);padding:4px 8px;text-align:right;white-space:nowrap}th{background:rgba(127,127,127,.1)}td:first-child{text-align:left}
+.note{color:var(--mut);font-size:14px}h1{font-size:22px}h2{font-size:17px;margin-top:28px}</style></head><body><h1>營量・營飆停用條件：門檻數字與歷史驗算</h1>
+<p><b>門檻算出來了。歷史上照這套規則，兩條策略平均約每 10 年停用一次，不算太敏感；但停用後的一年，策略多半反而贏 0050（營量兩次都是），而且營量在 2008、2022 兩次大空頭都沒觸發（差一點碰到警戒線）⇒ 營量「太鈍」。照規則減碼／停用，回測期年化都略降、回落沒變淺。只報、不改條件，由裁定決定。</b></p>
+<h2>① 寫死數字</h2>
+<table><tr><th></th><th>x：滾動一年落後 0050 超過</th><th>Dmax：最深回落</th><th>警戒線 0.8×Dmax</th></tr>
+<tr><td>營量 v1</td><td>−18.9%</td><td>−34.4%（2011-07～2012-11）</td><td>−27.5%</td></tr>
+<tr><td>營飆 v1</td><td>−25.6%</td><td>−56.1%（2007-07～2009-06）</td><td>−44.9%</td></tr></table>
+<p class=note>回測期＝早年 2005-02～2014-12＋主窗 2017-03～2026-08。兩條的最深回落都在早年段。營飆為 200 顆抽籤各算後取中位。</p>
+<h2>② 歷史驗算（每段各自當成一次前瞻）</h2>
+<table><tr><th></th><th>營量 v1</th><th>營飆 v1</th></tr>
+<tr><td>進級 2（停用）次數</td><td>2 次（2012-07、2024-12）</td><td>2 次（2008-12、2025-01）</td></tr>
+<tr><td>平均每年進級 2</td><td>0.10 次（不算太敏感）</td><td>0.10 次（不算太敏感）</td></tr>
+<tr><td>停用後 12 個月 策略−0050</td><td>+9.9、+19.7 點（都停錯）</td><td>中位 −21.1 點</td></tr>
+<tr><td>2008、2022 大空頭有沒有進級 1</td><td>都沒有 ⇒ 太鈍</td><td>2008 有、2022 沒有</td></tr>
+<tr><td>照規則後年化（兩段合併）</td><td>28.0% → 25.8%</td><td>約 −0.1 點</td></tr>
+<tr><td>照規則後最大回落</td><td>−34.4% → −34.6%</td><td>−56.1% → −58.1%</td></tr></table>
+<h2>要注意</h2><ul>
+<li>門檻和驗算用同一段回測期（樣本內），落後超過 x 的月份比例本來就會接近 5%。</li>
+<li>T2 停用線就是回測期最深那一次的低點，月底一次都沒碰到；所有停用都來自「減碼後 3 個月沒改善」。回測無法說明停用線在前瞻會多常觸發。</li>
+<li>營飆照規則回落反而加深：營飆本來空頭時多半拿現金，規則在空頭時改放 0050，反而加大部位。</li>
+<li>T3（照做偏離、資料失真、制度變）回測無法套。</li></ul>
+<p class=note>減碼／停用以逐筆重播近似（新買金額×0.5／0，空出錢買 0050）；級別全 0 時與原權益差 2.4e−15。獨立 check 46,632 列全同。程式 backtest/researchStopRule.py、_check.py。</p></body></html>
