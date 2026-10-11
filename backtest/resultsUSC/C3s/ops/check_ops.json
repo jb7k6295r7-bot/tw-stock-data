@@ -1,0 +1,9 @@
+{
+ "件": "USREG-C3s ops --check（獨立寫法：逐股迴圈排名、dict 換股簿；⛔ 不呼叫 mom_scores／rank_tables／book／ledger_book／order_for）",
+ "比對項數": 66,
+ "不同": 0,
+ "不同明細": [],
+ "容差": 1e-09,
+ "算於": "2026-10-11 20:08（台北）",
+ "秒": 2
+}

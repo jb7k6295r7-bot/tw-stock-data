@@ -1,0 +1,32 @@
+<!doctype html><html lang=zh-Hant><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>C3s 試單輸出</title><style>:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--ln:#ddd}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}}
+:root[data-theme=dark]{--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,'Noto Sans TC',sans-serif;margin:0 auto;max-width:900px;padding:16px;line-height:1.6}
+table{border-collapse:collapse;font-size:14px;display:block;overflow-x:auto}td,th{border:1px solid var(--ln);padding:4px 8px;text-align:right;white-space:nowrap}th{background:rgba(127,127,127,.1)}td:first-child{text-align:left}
+.note{color:var(--mut);font-size:14px}h1{font-size:22px}h2{font-size:17px;margin-top:28px}</style></head><body><h1>C3s 美股動能：試單用輸出</h1>
+<p><b>9/30 月底模擬持股是 7 檔＋1 個空槽（現金用完補不上）；9/30 這張換股單「不賣、不買」。下一張單 10/30 收盤後產。逐筆是看過段，只描述；判定程序不變（早年段＋前瞻 36 期）。</b></p>
+<h2>1. 2026-09-30 模擬持股</h2>
+<table><tr><th>代號</th><th>進場月</th><th>進場時排名</th><th>9/30 排名（/500）</th><th>持有漲幅</th><th>9/30 權重</th></tr>
+<tr><td>SNDK</td><td>2026-05</td><td>1</td><td>1</td><td>+64.3%</td><td>17.4%</td></tr>
+<tr><td>MU</td><td>2026-07</td><td>4</td><td>2</td><td>−1.5%</td><td>6.9%</td></tr>
+<tr><td>LITE</td><td>2026-05</td><td>2</td><td>3</td><td>+6.4%</td><td>10.6%</td></tr>
+<tr><td>WDC</td><td>2025-12</td><td>3</td><td>5</td><td>+184.2%</td><td>21.0%</td></tr>
+<tr><td>STX</td><td>2025-12</td><td>4</td><td>6</td><td>+241.0%</td><td>18.9%</td></tr>
+<tr><td>INTC</td><td>2026-08</td><td>5</td><td>9</td><td>+36.0%</td><td>9.9%</td></tr>
+<tr><td>GEV</td><td>2025-05</td><td>3</td><td>73（仍在前 20%）</td><td>+148.6%</td><td>15.4%</td></tr>
+<tr><td>（空槽）</td><td>自 2026-05</td><td></td><td></td><td></td><td>現金 0%</td></tr></table>
+<p class=note>空槽是原規則的寫法：新買金額＝min(總值÷8, 可用現金)，賣出回收不夠補第二檔就不買、也不再平衡。7/1、8/3、9/1 三次 CIEN 都在名單內但沒錢買；整段 2449 天中有 125 天少於 8 檔。</p>
+<h2>2. 換股單</h2><ul>
+<li>9/30 月底（10/01 開盤執行）：不賣、不買（候補第一順位 MRNA，因現金 0 未買）。</li>
+<li>每月底收盤後產下一張：賣哪幾檔、買哪幾檔，下一交易日開盤執行；與前瞻樣板同一份程式。</li>
+<li>兩種簿：<b>主臂續抱</b>（上表 7 檔、漂移後權重）；<b>前瞻 ②</b>（10/30 收盤選前 8 檔、11 月第一個交易日開盤等權買，從空倉起算）。前瞻紀錄照模擬記帳，不用實際成交價。</li></ul>
+<h2>3. 逐筆統計（看過段，描述）</h2>
+<table><tr><th>項</th><th>全窗（2017-01～2026-09 出場）</th><th>2022 起出場</th></tr>
+<tr><td>已出場筆數</td><td>97</td><td>39</td></tr>
+<tr><td>勝率</td><td>56.7%</td><td>59.0%</td></tr>
+<tr><td>平均賺／平均賠</td><td>+44.7%／−16.8%</td><td>+69.1%／−19.0%</td></tr>
+<tr><td>平均每筆</td><td>+18.1%</td><td>+33.0%</td></tr>
+<tr><td>賣出時距持有期最高收盤（中位）</td><td>−15.6%</td><td>−22.3%</td></tr>
+<tr><td>持有交易日 中位（四分位）</td><td>150（104～251）</td><td>209（125～333）</td></tr>
+<tr><td>最長／最短</td><td>562／21</td><td>562／63</td></tr></table>
+<p class=note>報酬＝賣出價÷進場開盤價−1，未扣 0.05% 成本。閘：名單、權益、逐筆與主臂完全相同；最後 3 個月底產生器買賣＝主臂成交 3/3；獨立 check 66 項不同 0。實盤當晚只有月底資料，次日開盤價用月底收盤估。程式 backtest/researchUSC3s_ops.py。</p></body></html>
