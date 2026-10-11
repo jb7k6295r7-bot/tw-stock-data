@@ -1,0 +1,74 @@
+{
+ "HEAD": "28a547ee7805be60eb6f791e168c3334b5cf0bb9",
+ "舊程式": "git show HEAD:backtest/early_data.py（28a547ee78）",
+ "新程式": "工作樹 backtest/early_data.py",
+ "old_main": {
+  "data 樹 sha256": "f538ceff2645f2c1308a311069f50db11800e5f05a1ff3b36e7eb034534fa50f",
+  "檔數": 4136,
+  "STATUS（去 data 路徑）sha256": "1ff011f6ab2e854fabde7323e78f63e9241a719c0a139b40db1eed48947f8c45",
+  "adj 事件": {
+   "twse_exright": 7138,
+   "tpex_exright": 0,
+   "twse_reduce": 0,
+   "tpex_reduce": 0,
+   "丟_範圍": 0,
+   "丟_方向": 8,
+   "去重": 0,
+   "exact": 7137
+  }
+ },
+ "old_restore": {
+  "data 樹 sha256": "007b3885d9ee351c7906dd3589a55540be8aba43b60e8cc0ea50ee3f822d5f98",
+  "檔數": 4147,
+  "STATUS（去 data 路徑）sha256": "2bf7e1bacf99ea54856e72b8b841f4250d3fa5a2914d8f89f03f732592a08e26",
+  "adj 事件": {
+   "twse_exright": 7138,
+   "tpex_exright": 0,
+   "twse_reduce": 88,
+   "tpex_reduce": 0,
+   "丟_範圍": 0,
+   "丟_方向": 8,
+   "去重": 2,
+   "exact": 7137
+  }
+ },
+ "new_main": {
+  "data 樹 sha256": "f538ceff2645f2c1308a311069f50db11800e5f05a1ff3b36e7eb034534fa50f",
+  "檔數": 4136,
+  "STATUS（去 data 路徑）sha256": "1ff011f6ab2e854fabde7323e78f63e9241a719c0a139b40db1eed48947f8c45",
+  "adj 事件": {
+   "twse_exright": 7138,
+   "tpex_exright": 0,
+   "twse_reduce": 0,
+   "tpex_reduce": 0,
+   "丟_範圍": 0,
+   "丟_方向": 8,
+   "去重": 0,
+   "exact": 7137
+  }
+ },
+ "new_restore": {
+  "data 樹 sha256": "007b3885d9ee351c7906dd3589a55540be8aba43b60e8cc0ea50ee3f822d5f98",
+  "檔數": 4147,
+  "STATUS（去 data 路徑）sha256": "2bf7e1bacf99ea54856e72b8b841f4250d3fa5a2914d8f89f03f732592a08e26",
+  "adj 事件": {
+   "twse_exright": 7138,
+   "tpex_exright": 0,
+   "twse_reduce": 88,
+   "tpex_reduce": 0,
+   "丟_範圍": 0,
+   "丟_方向": 8,
+   "去重": 2,
+   "exact": 7137
+  }
+ },
+ "正式 ~/earlydata/950ad26e12/main/data": {
+  "data 樹 sha256": "f538ceff2645f2c1308a311069f50db11800e5f05a1ff3b36e7eb034534fa50f",
+  "檔數": 4136
+ },
+ "閘": {
+  "main 舊＝新": true,
+  "restore 舊＝新": true,
+  "新 main ＝ 正式 950ad26e12/main": true
+ }
+}

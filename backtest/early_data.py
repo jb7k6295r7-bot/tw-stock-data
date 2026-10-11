@@ -392,6 +392,61 @@ BODY_READINGS = {
     "R10": "處置／注意：主庫 meta 的 ≤ 2014-12-31 列（最早 2010-12-14／2011-01-03）⇒ 描述段 2008～2010 無處置資料",
 }
 
+# ═════ opt-in 變體 reduce_v2（資料庫線 2026-10-11 20:32「早年減資因子交件」；⭐ main／restore 逐位元不變，只有 variant="reduce_v2" 走這段）═════
+# 還原鏈 ＝ restore 的全部（上市除權息＋官方 TWTAUU 2011～2014＋上櫃 otcexright／otcreduce ≤ 2014）
+#          ＋ 上市 2004～2010 偵測減資（偵測＋推估，⛔ 非官方；method L／C／M，M 誤差可到 ±5%）
+#          ＋ 上櫃早年 2007-07～2012-12 偵測（shares_down＝1 且 exright_in_gap＝0；因子＝(close−change)÷前收＝ref_price÷last_close）
+# ⛔ twse_jump_unexplained_2004_2010.csv（22 筆）不推因子：只抄一份到 reduce_ext 夾給查核分類用。
+# 來源檔從 tw-stock-data 用 git show <REDUCE_EXT_SHA>:<path> 釘 sha 讀（⛔ 不寫 ~/tw-stock-data）。
+REDUCE_EXT_SHA = "b45c9e94dc73918122b9150f7c73f67dc240e73a"   # origin/main 2026-10-11（含 88d0be6e67 起的 twse_reduce_early）
+REDUCE_EXT_FILES = {"twse_det": "data/meta/twse_reduce_early/twse_reduce_detected_2004_2010.csv",
+                    "twse_unexpl": "data/meta/twse_reduce_early/twse_jump_unexplained_2004_2010.csv",
+                    "otc_det": "data/meta/otc_reduce_early/otc_reduce_detected_2007_2012.csv"}
+REDUCE_V2_READING = ("reduce_v2：restore 的還原鏈 ＋ 上市 2004～2010 偵測減資（twse_reduce_detected_2004_2010.csv 全部列；因子＝ref_price÷pre_close）"
+                     " ＋ 上櫃早年偵測（otc_reduce_detected_2007_2012.csv 取 shares_down＝1 且 exright_in_gap＝0；date＝resume_day、pre＝last_close、ref＝ref_price；"
+                     "與其他上櫃列同規則只取事件日 ≤ 上市首日）；同 (股, 日) 已有官方減資者不再加偵測列；未解釋 22 筆不推因子")
+
+
+def reduce_ext_dir(sha: str = BODY_SHA, ext_sha: str = REDUCE_EXT_SHA) -> str:
+    return os.path.join(snap_dir(sha), f"reduce_ext_{ext_sha[:10]}")
+
+
+def reduce_ext_extract(sha: str = BODY_SHA, ext_sha: str = REDUCE_EXT_SHA, log=print) -> dict:
+    """git show <ext_sha>:<path> 取三個檔到 ~/earlydata/<sha10>/reduce_ext_<ext10>/（已取過且 sha 相同 ⇒ 直接回清單）。"""
+    d = reduce_ext_dir(sha, ext_sha)
+    man_p = os.path.join(d, "manifest.json")
+    if os.path.exists(man_p):
+        man = json.load(open(man_p, encoding="utf-8"))
+        if man.get("ext_sha") == ext_sha and sorted(man.get("files", {})) == sorted(REDUCE_EXT_FILES):
+            return man
+    full = subprocess.run(["git", "-C", DB_REPO, "rev-parse", ext_sha], capture_output=True, text=True, check=True).stdout.strip()
+    if full != ext_sha:
+        raise SystemExit(f"⛔ {ext_sha} 解析成 {full}")
+    os.makedirs(d, exist_ok=True)
+    files = {}
+    for k, p in REDUCE_EXT_FILES.items():
+        b = subprocess.run(["git", "-C", DB_REPO, "show", f"{ext_sha}:{p}"], capture_output=True, check=True).stdout
+        open(os.path.join(d, os.path.basename(p)), "wb").write(b)
+        files[k] = {"path": p, "bytes": len(b), "sha256": hashlib.sha256(b).hexdigest()}
+    man = {"ext_sha": ext_sha, "files": files}
+    json.dump(man, open(man_p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    log(f"[取出 reduce_ext] {ext_sha[:10]} ⇒ {d}｜{ {k: v['bytes'] for k, v in files.items()} }")
+    return man
+
+
+def reduce_ext_frames(sha: str = BODY_SHA, ext_sha: str = REDUCE_EXT_SHA, log=print) -> dict:
+    """→ {"twse": df, "tpex": df}，欄 ＝ date, stock_id, pre_close, ref_price, kind（adj_events 的減資來源版面）。"""
+    reduce_ext_extract(sha, ext_sha, log)
+    d = reduce_ext_dir(sha, ext_sha)
+    t = pd.read_csv(os.path.join(d, os.path.basename(REDUCE_EXT_FILES["twse_det"])), dtype=str, keep_default_na=False)
+    tw = pd.DataFrame({"date": t["date"], "stock_id": t["stock_id"], "pre_close": t["pre_close"], "ref_price": t["ref_price"],
+                       "kind": "上市偵測減資" + t["method"].astype(str)})
+    o = pd.read_csv(os.path.join(d, os.path.basename(REDUCE_EXT_FILES["otc_det"])), dtype=str, keep_default_na=False)
+    o = o[(o["shares_down"].str.strip() == "1") & (o["exright_in_gap"].str.strip() == "0")]
+    tp = pd.DataFrame({"date": o["resume_day"], "stock_id": o["stock_id"], "pre_close": o["last_close"], "ref_price": o["ref_price"],
+                       "kind": "上櫃早年偵測減資"})
+    return {"twse": tw.reset_index(drop=True), "tpex": tp.reset_index(drop=True)}
+
 
 def body_extract(sha: str = BODY_SHA, log=print) -> dict:
     """同 extract，但多取主庫 otcexright／otcreduce（只用 ≤ 2014 的檔）。"""
@@ -431,9 +486,11 @@ def _fnum(s):
         return None
 
 
-def adj_events(sha: str, twse_first: dict, with_reduce: bool) -> tuple[dict, dict]:
+def adj_events(sha: str, twse_first: dict, with_reduce: bool, ext: dict | None = None) -> tuple[dict, dict]:
     """→ ({sid: [(date, f, pre, ref, kind, src, fo)]}, 計數)。上市 early/exright（全部）＋ 上櫃 otcexright（事件日 ≤ 上市首日）；
-    with_reduce ⇒ 另加 上市 early/reduce、上櫃 otcreduce（≤ 上市首日；官方比例 official_factor 有就用）。"""
+    with_reduce ⇒ 另加 上市 early/reduce、上櫃 otcreduce（≤ 上市首日；官方比例 official_factor 有就用）。
+    ext（只 reduce_v2 傳；預設 None ⇒ 與舊版逐位元相同）＝ reduce_ext_frames()：上市偵測、上櫃早年偵測減資，接在官方之後；
+    同 (股, 日) 已有官方減資者跳過（計「ext_同日已有官方」）。"""
     rd = os.path.join(raw_dir(sha), "data")
     ev = {}; cnt = {"twse_exright": 0, "tpex_exright": 0, "twse_reduce": 0, "tpex_reduce": 0, "丟_範圍": 0, "丟_方向": 0, "去重": 0, "exact": 0}
     srcs = [("twse", "exright", _read_dir(os.path.join(rd, "early", "exright"))),
@@ -441,16 +498,22 @@ def adj_events(sha: str, twse_first: dict, with_reduce: bool) -> tuple[dict, dic
     if with_reduce:
         srcs += [("twse", "reduce", _read_dir(os.path.join(rd, "early", "reduce"))),
                  ("tpex", "reduce", _read_dir(os.path.join(rd, "universe", "otcreduce"), hi=OTC_EV_MAX))]
-    B = {"exright": (0.05, 1.5), "reduce": (0.20, 12.0)}
+    if ext is not None:
+        cnt.update({"twse_reduce_ext": 0, "tpex_reduce_ext": 0, "ext_同日已有官方": 0, "ext_非上市股或上市後": 0})
+        srcs += [("twse", "reduce_ext", ext["twse"]), ("tpex", "reduce_ext", ext["tpex"])]
+    official_red = set()
+    B = {"exright": (0.05, 1.5), "reduce": (0.20, 12.0), "reduce_ext": (0.20, 12.0)}
     for mk, src, df in srcs:
         if df.empty:
             continue
         for r in df.to_dict("records"):
             sid, d = str(r["stock_id"]).strip(), str(r["date"]).strip()
-            if sid not in twse_first:
+            if sid not in twse_first or (mk == "tpex" and d > twse_first[sid]):
+                if src == "reduce_ext":
+                    cnt["ext_非上市股或上市後"] += 1
                 continue
-            if mk == "tpex" and d > twse_first[sid]:
-                continue
+            if src == "reduce_ext" and (sid, d) in official_red:
+                cnt["ext_同日已有官方"] += 1; continue
             pre, ref = _fnum(r.get("pre_close")), _fnum(r.get("ref_price"))
             if not pre or not ref or pre <= 0 or ref <= 0:
                 continue
@@ -467,8 +530,10 @@ def adj_events(sha: str, twse_first: dict, with_reduce: bool) -> tuple[dict, dic
             if src == "exright" and f > 1.0001 and not (val is not None and val < 0):
                 cnt["丟_方向"] += 1; continue
             kind = str(r.get("kind") or r.get("reason") or "").strip()
-            ev.setdefault(sid, []).append((d, f, pre, ref, kind, src, fo))
+            ev.setdefault(sid, []).append((d, f, pre, ref, kind, "reduce" if src == "reduce_ext" else src, fo))
             cnt[f"{mk}_{src}"] += 1
+            if src == "reduce":
+                official_red.add((sid, d))
     for sid in list(ev):                                   # 同 (日, 來源) 以 (前收, 參考價) 去重（主庫 adjust.py 同法）
         seen = set(); keep = []
         for x in sorted(ev[sid], key=lambda z: (z[0], z[5])):
@@ -492,11 +557,13 @@ def adj_lines(rows):
 
 
 def body_build(sha: str = BODY_SHA, variant: str = "main", log=print) -> dict:
-    """variant ∈ {main（除權息還原；減資不入鏈、由 R8 截斷）, restore（描述版：減資因子入鏈、不剔除）}。
+    """variant ∈ {main（除權息還原；減資不入鏈、由 R8 截斷）, restore（描述版：減資因子入鏈、不剔除）,
+    reduce_v2（opt-in：restore ＋ 上市 2004～2010 偵測減資 ＋ 上櫃早年偵測減資；見 REDUCE_V2_READING）}。
     產出 ~/earlydata/<sha10>/<variant>/data（主窗版面）；STATUS.complete＝True。"""
-    if variant not in ("main", "restore"):
+    if variant not in ("main", "restore", "reduce_v2"):
         raise SystemExit(f"⛔ variant {variant}")
     body_extract(sha, log)
+    ext = reduce_ext_frames(sha, REDUCE_EXT_SHA, log) if variant == "reduce_v2" else None
     out = os.path.join(snap_dir(sha), variant, "data")
     st_p = os.path.join(snap_dir(sha), variant, "STATUS.json")
     if os.path.exists(st_p):
@@ -539,7 +606,10 @@ def body_build(sha: str = BODY_SHA, variant: str = "main", log=print) -> dict:
         x["market"] = x["market"].astype(str)
         x["valid_bar"] = np.where(x["close"].notna() & (x["close"] > 0), 1, 0)
         x[STOCK_COLS].to_csv(os.path.join(out, "stocks", f"{sid}.csv"), index=False)
-    ev, ecnt = adj_events(sha, first, with_reduce=(variant == "restore"))
+    if ext is None:
+        ev, ecnt = adj_events(sha, first, with_reduce=(variant == "restore"))
+    else:
+        ev, ecnt = adj_events(sha, first, with_reduce=True, ext=ext)
     for sid, rows in ev.items():
         adj_lines(rows).to_csv(os.path.join(out, "adj", f"{sid}.csv"), index=False)
     inst = _read_dir(os.path.join(rd, "early", "inst"))
@@ -567,6 +637,11 @@ def body_build(sha: str = BODY_SHA, variant: str = "main", log=print) -> dict:
               "轉上市（有上市前上櫃列）": {"檔數": len(transferred), "上櫃列": int(len(otc))},
               "上市末日之後的上櫃列（不收）": {"檔數": int(after["stock_id"].nunique()), "列": int(len(after)), "代號": sorted(set(after["stock_id"]))[:20]},
               "adj 事件": ecnt, "adj 檔數": len(ev), "inst 檔數": n_inst, "readings": BODY_READINGS}
+    if ext is not None:
+        status["readings"] = {**BODY_READINGS, "reduce_v2": REDUCE_V2_READING}
+        status["reduce_ext"] = {"ext_sha": REDUCE_EXT_SHA, "dir": reduce_ext_dir(sha, REDUCE_EXT_SHA),
+                                "上市偵測列": int(len(ext["twse"])), "上櫃早年偵測列（shares_down=1∧exright_in_gap=0）": int(len(ext["tpex"])),
+                                "未解釋 22 筆": "⛔ 不推因子"}
     json.dump(status, open(st_p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     json.dump(transferred, open(os.path.join(snap_dir(sha), "transferred.json"), "w"))
     log(f"[產出 {variant}] {json.dumps({k: status[k] for k in ('calendar', 'roster', '轉上市（有上市前上櫃列）', '上市末日之後的上櫃列（不收）', 'adj 事件', 'adj 檔數', 'inst 檔數')}, ensure_ascii=False)}")
