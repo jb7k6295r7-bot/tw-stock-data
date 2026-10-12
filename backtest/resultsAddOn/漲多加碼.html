@@ -1,0 +1,15 @@
+<!doctype html><html lang=zh-Hant><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>漲多加碼回測</title><style>:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--ln:#ddd}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}}
+:root[data-theme=dark]{--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,'Noto Sans TC',sans-serif;margin:0 auto;max-width:900px;padding:16px;line-height:1.6}
+table{border-collapse:collapse;font-size:14px;display:block;overflow-x:auto}td,th{border:1px solid var(--ln);padding:4px 8px;text-align:right;white-space:nowrap}th{background:rgba(127,127,127,.1)}td:first-child{text-align:left}
+.note{color:var(--mut);font-size:14px}h1{font-size:22px}h2{font-size:17px;margin-top:28px}</style></head><body><h1>營量・營飆持股漲多加碼：回測結果</h1>
+<p><b>結論：沒有變好。營量、營飆加碼後年化都比原策略低，兩段都一樣；換資金算法結論也不變。</b></p>
+<h2>年化 / 最大回落（年化÷|回落|）</h2><table><tr><th></th><th>探索 2017～2021</th><th>確認 2022～</th><th>早年 2005～2014（描述）</th></tr><tr><td>營量 原策略</td><td>+38.5% / −32.1%（1.20）</td><td>+31.7% / −30.8%（1.03）</td><td>+21.8% / −34.4%（0.63）</td></tr><tr><td>營量 加碼（挑中：漲到前 1%）</td><td>+36.6% / −32.1%（1.14）</td><td>+29.9% / −29.6%（1.01）</td><td>+20.1% / −31.4%（0.64）</td></tr><tr><td>營飆 原策略</td><td>+37.6% / −36.1%（1.04）</td><td>+38.2% / −40.5%（0.94）</td><td>+15.2% / −56.1%（0.27）</td></tr><tr><td>營飆 加碼（挑中：漲到前 5%）</td><td>+33.0% / −32.8%（1.01）</td><td>+33.2% / −38.3%（0.87）</td><td>+13.8% / −51.6%（0.27）</td></tr></table>
+<p class=note>加碼版為「加碼的錢隨撥隨進」讀法；另一讀法（全段撥入總額先預留）年化更低。營飆為 200 次抽籤中位，200 顆沒有一顆變好。</p>
+<h2>為什麼沒變好</h2><ul>
+<li>持股漲到全市場前段時，多半才買進 10～14 個交易日；之後加碼部位的中位報酬約 0（營量 −0.8%～−3.8%，營飆 +3.4%～−9.8%）。</li>
+<li>加碼部位一年內先跌 15% 的比例 42～48%。</li>
+<li>少數加碼賺很多（前 10% 賺 47～124%），但不夠補整體。</li>
+<li>營量：加在漲最多那檔比隨機加另一檔好，但兩者都輸原策略。</li></ul>
+<p class=note>必附：加碼用的是另外的錢；不代表該把原策略的錢集中到漲最多的那檔。加碼版用的錢比原策略多。營量、營飆已看過結果，本件最多暫定。早年含減資假飆股約 0.3%（剩 22 筆未解釋）。獨立 check 全過。程式 backtest/researchAddOn.py。</p></body></html>
