@@ -38,6 +38,13 @@
 2026-10-13 加（登錄 營量營飆漲多加碼大盤濾網 seq1，sha 53ec3726a0d1c393；⛔ 其他節逐字不變）：
   第六節「加碼條件（大盤濾網 seq1）」＝ backtest/addon_daily.section（定義、資料來源見該檔）；接在最後的 NOTE 之前、GATE_V2 比對之後只算一次
   （本節母體照登錄固定用 GATE_V2 開的 R1，不進第一～四節的開關比對）；本節出錯 ⇒ 只在本節寫一行失敗原因，其他節照常產出
+
+2026-10-14 加（協調者轉：使用者實際持有 15 檔營飆營量、營飆 v1 上限 10 檔，名單從沒扣已持有檔數；⛔ 其他行逐字不變、只加行）：
+  照規則簿 ＝ backtest/forward_yl.py（營量 v1／營飆 v1 用正式引擎從 2026-09-29 逐日模擬；紀錄 backtest/forward/yl_rule/）；
+  每次產檔（GATE_V2 選定正式那版之後、只一次）呼叫 forward_yl.update 把簿補到資料日（當天訊號 ＝ 正式那版的 A）；
+  第一節、第二節：節標題下加「照規則簿：營飆（營量）目前 X／10（20）檔、明天空槽 k」；已達成每檔那行下面加一行「  - 照規則簿：照規則買／
+  營飆已滿（空槽 k、抽籤落選）⇒ 這檔只買營量那份／…營量也已滿，照規則不買」（明天的挑選 ＝ 引擎多跑一個合成的明天，抽籤與真的明天同一次）；
+  簿出錯 ⇒ 兩節只加一行失敗原因，其他照常
 """
 from __future__ import annotations
 
@@ -55,6 +62,7 @@ from . import surge_flow_daily as SFL
 from . import holdings as HD
 from . import universe_gate as UG
 from . import addon_daily as AD
+from . import forward_yl as FY
 import json
 import numpy as np
 import pandas as pd
@@ -208,7 +216,8 @@ def build(a, log, v2=False):
            "二、營量 v1 已達成": sorted(str(s) for s in A["代號"]) if len(A) else [],
            "三、營量 v1 即將達成": sorted(str(r["代號"]) for r in br),
            "四、起漲特徵 ≥10 個": sorted(str(s) for _, s, _ in top)}
-    return {"L": L, "sec": sec, "names": names, "asof": asof, "sha": sha, "gate_on": gate_on, "A": A, "br": br, "S": S}
+    return {"L": L, "sec": sec, "names": names, "asof": asof, "sha": sha, "gate_on": gate_on, "A": A, "br": br, "S": S,
+            "AND": X["AND"], "cal": cal, "stocks": X["stocks"]}             # 後三個給照規則簿（2026-10-14）
 
 
 GV2_HEAD = "- ⚠ 母體閘新口徑（GATE_V2：創新板依當日名稱、-KY創 算創新板、擋上市前興櫃列；裁定 seq296 §一）與舊口徑的第一～四節名單不同 ⇒ 本檔改用新口徑；差在哪幾檔見 gatev2_diff_{asof}.md"
@@ -253,6 +262,45 @@ def addon_lines(a, sha, log):
         UG.set_gate_v2(False)
 
 
+BOOK_SEC = ("## 一、", "## 二、")
+
+
+def book_tags(r, log):
+    """照規則簿（2026-10-14）：先把簿補到資料日（forward_yl.update，用本次名單同一份訊號），再回第一、二節要加的行；出錯只影響這幾行。"""
+    try:
+        A = r["A"]
+        info = FY.update(r["cal"], r["AND"], r["stocks"], r["sha"], os.path.expanduser(f"~/h2data/{r['sha']}/data"), log,
+                         A_today=(list(A["代號"].astype(str)) if len(A) else []))
+        return FY.daily_tags(info, r["sec"]["一、營飆 v1 已達成"], r["sec"]["二、營量 v1 已達成"], r["gate_on"])
+    except Exception as ex:
+        import traceback
+        log(f"[照規則簿] ⚠ 失敗：{traceback.format_exc()}")
+        msg = f"照規則簿：今天計算失敗（{type(ex).__name__}: {ex}），空槽資訊從缺。"
+        return msg, msg, {}, {}
+
+
+def with_book(L, tags):
+    """第一、二節：節標題後的空行之後加「照規則簿：…」＋空行；已達成每檔那行之後加一行「  - 照規則簿：…」⇒ 其他行逐字不變（只加行）。"""
+    h1, h2, t1, t2 = tags
+    out = []; sec = None
+    for i, x in enumerate(L):
+        out.append(x)
+        if x.startswith("## "):
+            sec = 0 if x.startswith(BOOK_SEC[0]) else 1 if x.startswith(BOOK_SEC[1]) else None
+            if sec is not None:
+                assert L[i + 1] == "", "⛔ 節標題後不是空行"
+            continue
+        if sec is not None and x == "" and L[i - 1].startswith(BOOK_SEC[sec]):
+            out += [(h1, h2)[sec], ""]
+            continue
+        if sec is not None and x.startswith("- "):
+            code = x[2:].split(" ", 1)[0]
+            tg = (t1, t2)[sec].get(code)
+            if tg:
+                out.append(f"  - 照規則簿：{tg}")
+    return out
+
+
 def with_addon(L, L6):
     """第六節插在最後的「""、NOTE、""」之前 ⇒ 其他行逐字不變。"""
     assert L[-3:] == ["", NOTE, ""], "⛔ 名單結尾不是 NOTE"
@@ -286,6 +334,7 @@ def main():
         names = {**r0["names"], **r1["names"]}
         open(fdiff, "w", encoding="utf-8").write("\n".join(diff_md(asof, sha, det, names)) + "\n")
         log(f"[GATE_V2] ⚠ 開關不一致 ⇒ 正式產出改用新口徑（開）；差異檔 {fdiff}｜{json.dumps(det, ensure_ascii=False)}")
+    r = dict(r, L=with_book(r["L"], book_tags(r, log)))
     r = dict(r, L=with_addon(r["L"], addon_lines(a, sha, log)))
     fn = os.path.join(OUT, f"daily_{asof}.md")
     open(fn, "w", encoding="utf-8").write("\n".join(r["L"]))
