@@ -34,6 +34,10 @@
              包裝 run_daily_list.sh 把它複製到 _營量觀察/（⛔ 不碰信箱其他資料夾；寄信由協調者）
   每次都存比對結果 resultsDaily/gatev2_cmp_<資料日>.json；閘門：G2 一致時舊段落逐字同、G4 鎖／重跑／--final 照舊、fixture 模擬不一致會切換並寫差異檔（resultsDailyGV2/）
   ⚠ 跑兩次 ⇒ 耗時約為原來兩倍｜測試用環境變數 DAILY_GV2_FAKE＝代號[,代號…]：新口徑下把這些代號當成資料日不在母體（fixture 用；排程不帶）
+
+2026-10-13 加（登錄 營量營飆漲多加碼大盤濾網 seq1，sha 53ec3726a0d1c393；⛔ 其他節逐字不變）：
+  第六節「加碼條件（大盤濾網 seq1）」＝ backtest/addon_daily.section（定義、資料來源見該檔）；接在最後的 NOTE 之前、GATE_V2 比對之後只算一次
+  （本節母體照登錄固定用 GATE_V2 開的 R1，不進第一～四節的開關比對）；本節出錯 ⇒ 只在本節寫一行失敗原因，其他節照常產出
 """
 from __future__ import annotations
 
@@ -50,6 +54,7 @@ from . import surge_feat_daily as SFD
 from . import surge_flow_daily as SFL
 from . import holdings as HD
 from . import universe_gate as UG
+from . import addon_daily as AD
 import json
 import numpy as np
 import pandas as pd
@@ -236,6 +241,24 @@ def diff_md(asof, sha, det, names):
     return L
 
 
+def addon_lines(a, sha, log):
+    """第六節（2026-10-13）；出錯只影響本節。"""
+    try:
+        return AD.section(sha, os.path.expanduser(f"~/h2data/{sha}/data"), a.procs, log)
+    except Exception as ex:
+        import traceback
+        log(f"[加碼] ⚠ 第六節失敗：{traceback.format_exc()}")
+        return [AD.TITLE, "", AD.FIXED, "", f"- ⚠ 本節今天計算失敗（{type(ex).__name__}: {ex}），其他節不受影響"]
+    finally:
+        UG.set_gate_v2(False)
+
+
+def with_addon(L, L6):
+    """第六節插在最後的「""、NOTE、""」之前 ⇒ 其他行逐字不變。"""
+    assert L[-3:] == ["", NOTE, ""], "⛔ 名單結尾不是 NOTE"
+    return L[:-3] + [""] + L6 + L[-3:]
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--procs", type=int, default=2); a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
@@ -263,6 +286,7 @@ def main():
         names = {**r0["names"], **r1["names"]}
         open(fdiff, "w", encoding="utf-8").write("\n".join(diff_md(asof, sha, det, names)) + "\n")
         log(f"[GATE_V2] ⚠ 開關不一致 ⇒ 正式產出改用新口徑（開）；差異檔 {fdiff}｜{json.dumps(det, ensure_ascii=False)}")
+    r = dict(r, L=with_addon(r["L"], addon_lines(a, sha, log)))
     fn = os.path.join(OUT, f"daily_{asof}.md")
     open(fn, "w", encoding="utf-8").write("\n".join(r["L"]))
     A, br, S, gate_on = r["A"], r["br"], r["S"], r["gate_on"]
