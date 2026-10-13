@@ -125,6 +125,49 @@ def _save(rows):
             w.writerow(rows[k])
 
 
+OTC_INDEX = os.path.join(_ROOT, "history", "otc_index.csv")
+OTC_INDEX_SEED = os.path.join(_ROOT, "meta", "market_turnover", "tpex_market_turnover.csv")
+OTC_INDEX_HEADER = ["date", "close", "change"]
+
+
+def build_otc_index(acc_rows, seed_path=OTC_INDEX_SEED):
+    """櫃買指數日收盤 ⇒ `data/history/otc_index.csv`（與 `market_index.csv` 並列；2026-10-13，裁定 seq344 §三／seq345 §一）
+
+    兩段接起來：
+      ① 2007-04-02 ~ ：`data/meta/market_turnover/tpex_market_turnover.csv`（TPEx `afterTrading/tradingIndex` 逐月回補，curated）
+      ② 2026-09-01 ~ ：本支累積的 `calendar_tpex.csv`（OpenAPI 只給 7 天，每天存）
+    ⛔ 閘門：重疊日兩段的 index 與 change 必須逐字（數值）相同，否則**一列都不寫**、回 (-1, 訊息)。
+    同一天兩段都有 ⇒ 取 ②（每天會更新的那一段）。→ (列數, 訊息)
+    """
+    def f(x):
+        try:
+            return float(str(x).replace(",", ""))
+        except ValueError:
+            return None
+    seed = {}
+    if os.path.exists(seed_path):
+        with io.open(seed_path, encoding="utf-8") as fh:
+            for r in csv.DictReader(fh):
+                seed[r["date"]] = (r.get("tpex_index", ""), r.get("change", ""))
+    acc = {d: (v[4], v[5]) for d, v in acc_rows.items() if v[4] not in ("", None)}
+    diff = [(d, seed[d], acc[d]) for d in sorted(set(seed) & set(acc))
+            if f(seed[d][0]) != f(acc[d][0]) or f(seed[d][1]) != f(acc[d][1])]
+    if diff:
+        return -1, "⛔ 兩段重疊日對不上 {} 天 ⇒ 一列都不寫：{}".format(len(diff), diff[:3])
+    merged = dict(seed)
+    merged.update(acc)
+    if not merged:
+        return 0, "兩段都沒有資料"
+    os.makedirs(os.path.dirname(OTC_INDEX), exist_ok=True)
+    with io.open(OTC_INDEX, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(OTC_INDEX_HEADER)
+        for d in sorted(merged):
+            w.writerow([d, merged[d][0], merged[d][1]])
+    ds = sorted(merged)
+    return len(merged), "{} 天｜{} ~ {}｜重疊 {} 天相符".format(len(merged), ds[0], ds[-1], len(set(seed) & set(acc)))
+
+
 def _otc_totals(day):
     """我方那一天的上櫃合計，依證券種類分桶。回 dict[kind] = (列數, 金額, 股數)。"""
     p = os.path.join(DAILY_DIR, day + ".csv")
@@ -208,6 +251,11 @@ def main():
     # ⛔ 只增不減。這一支若把累積檔寫短了，失去的那幾天**補不回來**。
     rl.check("累積檔只增不減", len(rows) >= n_before,
              f"{n_before} → {len(rows)}")
+
+    # ── 櫃買指數日收盤 ⇒ data/history/otc_index.csv（0 次額外請求） ─────────
+    n_idx, msg = build_otc_index(rows)
+    rl.info("櫃買指數檔", f"history/otc_index.csv｜{msg}")
+    rl.check("櫃買指數兩段接得起來（重疊日相符）", n_idx > 0, msg)
 
     # ── 雙向比對（⛔ 只在**重疊區間**內比） ──────────────────────────
     ours = our_days()
