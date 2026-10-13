@@ -6921,10 +6921,10 @@ date,stock_id,name,market,sources,why
 2026-10-12,6167,久正,tpex,otcmargin,官方停止交易
 2026-10-12,6173,信昌電,tpex,otcmargin,官方停止交易
 2026-10-13,1589,永冠-KY,twse,margin,
-2026-10-13,2067,嘉鋼,tpex,otcmargin,
-2026-10-13,3625,西勝,tpex,otcmargin,
-2026-10-13,3632,研勤,tpex,otcmargin,
+2026-10-13,2067,嘉鋼,tpex,otcmargin,官方停止交易
+2026-10-13,3625,西勝,tpex,otcmargin,官方停止交易
+2026-10-13,3632,研勤,tpex,otcmargin,官方停止交易
 2026-10-13,4155,訊映,twse,margin,
-2026-10-13,4804,大略-KY,tpex,otcmargin,
-2026-10-13,6167,久正,tpex,otcmargin,
-2026-10-13,6173,信昌電,tpex,otcmargin,
+2026-10-13,4804,大略-KY,tpex,otcmargin,官方停止交易
+2026-10-13,6167,久正,tpex,otcmargin,官方停止交易
+2026-10-13,6173,信昌電,tpex,otcmargin,官方停止交易
