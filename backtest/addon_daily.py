@@ -22,6 +22,15 @@
  每筆持股每策略只認第一次觸發（h ≥ 10 ∧ g ≥ q）：第一次在 T ⇒ 大盤成立「明天開盤可加碼一份」／不成立「照規則不加」；
    第一次在 T 之前 ⇒「已於 … 觸發過」不再提示（登錄 §一：大盤不成立 ⇒ 這次不加、之後也不再判；⛔ 不等大盤站回再加）
    T 之前的觸發另照 researchAddOn U2：t＋1 是壞根 ⇒ 不加且不再判；t＋1 沒有有效開盤 ⇒ 當天不加、之後照常再判
+
+2026-10-14 改（裁定 seq350 §一：大盤濾網 seq2 結案不採用；「明天開盤可加碼」提醒照推、⛔ 不再加大盤條件）：
+  節名「六、加碼提醒（漲到全市場前段）」、節首固定句改 FIXED（加碼那份平均有賺但中位約 0、一半會賠；歷史上加碼沒有讓策略變好）
+  判定只剩 h ≥ 10 ∧ g ≥ q（營量第 99、營飆第 95 百分位）；每筆每策略第一次達門檻在 T ⇒「明天開盤可加碼一份（金額＝原買進金額）；與原持股同日賣（日期）」
+  大盤那行留作資訊（加權指數是否站上 20 日線；「參考，不影響加碼提醒」），⛔ 不影響判定
+  第一次達門檻在 T 之前 ⇒ 用新規則（不看大盤）重算第一次達門檻日 t：舊規則當時已提示（t ≥ PROMPT_START 且 t 日大盤站上 20 日線）⇒「已於 t 觸發過」；
+    否則（大盤不符、讀不到大盤、或第六節還沒上線）⇒「已於 t 達門檻（當時未提示）」，⛔ 不補提示
+    PROMPT_START ＝ 2026-10-12（第六節第一次出現的資料日：_營量觀察/daily_2026-10-12.md）
+  持股.csv 備註含「60 天同日賣」（H60_NOTE；使用者 10/14 定營飆超額那份第 60 個交易日跟營量同日賣）⇒ 該筆營飆那份 H＝60（判定窗 t ≤ xbar−1、出場日、「與原持股同日賣」都用 60）
 """
 from __future__ import annotations
 
@@ -48,9 +57,19 @@ HMIN, MINPOP, MA_N = 10, 20, 20
 PCT = {"營量": 99.0, "營飆": 95.0}                           # 營量 A2、營飆 A1（漲多加碼 seq2 探索段挑中格）
 HOLD = {"營量": 60, "營飆": 120}
 PORTION = {"營量": "那 1/3", "營飆": "那 2/3"}               # 營飆營量（金額 2:1 分兩份）
-TITLE = "## 六、加碼條件（大盤濾網 seq1）"
-FIXED = "尚未驗證（看過結果、2005～2014 無效、從約 50 個比較挑出），加碼金額自行控制"
+TITLE = "## 六、加碼提醒（漲到全市場前段）"
+FIXED = "加碼那一份平均有賺（營量 +10.5%、營飆 +12.5%），但中位約 0、一半會賠，平均靠少數大賺；歷史上加碼沒有讓策略變好，加碼金額自行控制"
+MK_REF = "（參考，不影響加碼提醒）"
+PROMPT_START = pd.Timestamp("2026-10-12")                     # 第六節第一次出現的資料日（之前的達門檻日當時一定沒提示）
+H60_NOTE = "60 天同日賣"                                      # 持股.csv 備註含此字樣 ⇒ 營飆那份第 60 個交易日跟營量同日賣（使用者 10/14）
 _G: dict = {}
+
+
+def hold_days(sn, note=""):
+    """策略 sn 那份的持有天數：營量 60；營飆 120，備註含 H60_NOTE ⇒ 60（使用者 10/14 定，⛔ 不改營飆規則）。"""
+    if sn == "營飆" and H60_NOTE in str(note or ""):
+        return 60
+    return HOLD[sn]
 
 
 def okcode(s):
@@ -140,8 +159,8 @@ def section(sha, DATA, procs=2, log=print, asof=None):
         log(f"[加碼] 讀持股失敗 {type(ex).__name__}: {ex}")
         rows = []
     ED = HD.entry_dates()
-    H = []                                                    # (代號, 來源, 策略, 進場日字串, e)
-    for c_, bd_, bp_, _, src in rows:
+    H = []                                                    # (代號, 來源, 策略, 進場日字串, e, 持有天數)
+    for c_, bd_, bp_, nt_, src in rows:
         if src not in ("營量", "營飆", "營飆營量") or bd_ is None:
             continue
         ed_ = ED.get(c_) or bd_
@@ -150,16 +169,16 @@ def section(sha, DATA, procs=2, log=print, asof=None):
             continue
         for sn in ("營量", "營飆"):
             if sn in src and not any(x[0] == c_ and x[2] == sn for x in H):
-                H.append((c_, src, sn, ed_, e))
+                H.append((c_, src, sn, ed_, e, hold_days(sn, nt_)))
     L = [TITLE, "", FIXED, ""]
     if not H:
         L.append("- 持股檔裡沒有營量／營飆持股")
         return L
-    lo = max(min(e for *_, e in H) - 1, 0)
+    lo = max(min(x[4] for x in H) - 1, 0)
     # 要判的日子（每筆 [e, min(xbar−1, T)]，含 h ＜ 10 的參考門檻只在 T）
     days = set()
-    for c_, src, sn, ed_, e in H:
-        xb = D.exit_pos(e, HOLD[sn])
+    for c_, src, sn, ed_, e, Hs in H:
+        xb = D.exit_pos(e, Hs)
         days.update(range(max(e + HMIN - 1, e), min(xb - 1, T) + 1))
         days.add(T)
     days = sorted(days)
@@ -217,13 +236,13 @@ def section(sha, DATA, procs=2, log=print, asof=None):
     MK, msrc, mshow = taiex(sha, cal, [T])
     mT = MK(T)
     if mT is None:
-        L.append(f"- 大盤（{asof}）：⚠ 讀不到加權指數（{msrc}），本節無法判大盤條件")
+        L.append(f"- 大盤（{asof}）{MK_REF}：讀不到加權指數（{msrc}）")
     elif mshow:
-        L.append(f"- 大盤（{asof}）：加權指數收盤 {mT[1]:,.2f}、含當天 20 日平均 {mT[2]:,.2f} ⇒ {'站上 20 日線' if mT[0] else '在 20 日線下'}（來源：{msrc}）")
+        L.append(f"- 大盤（{asof}）{MK_REF}：加權指數收盤 {mT[1]:,.2f}、含當天 20 日平均 {mT[2]:,.2f} ⇒ {'站上 20 日線' if mT[0] else '在 20 日線下'}（來源：{msrc}）")
     else:
-        L.append(f"- 大盤（{asof}）：加權指數收盤{'站上 20 日線' if mT[0] else '在 20 日線下'}（來源：{msrc}）")
+        L.append(f"- 大盤（{asof}）{MK_REF}：加權指數收盤{'站上 20 日線' if mT[0] else '在 20 日線下'}（來源：{msrc}）")
     L += ["- 判定：營量、營飆持股各自判；持有第 h 天（正式進場日算第 1 天）h ≥ 10，且持有報酬 g ＝ 收盤 ÷ 進場日開盤 − 1（還原價）≥ 當天 R1 母體同 h 天報酬的"
-          "第 99 百分位（營量）／第 95 百分位（營飆）；每筆每策略只認第一次漲到門檻，那天大盤不符 ⇒ 這次不加、之後也不再判", ""]
+          "第 99 百分位（營量）／第 95 百分位（營飆）；每筆每策略只認第一次漲到門檻那天 ⇒ 明天開盤可加碼一份；不看大盤", ""]
 
     def series(s):
         if s in ix:
@@ -238,9 +257,10 @@ def section(sha, DATA, procs=2, log=print, asof=None):
             b = basis[xb - n] if xb >= n else ""
             return f"{cal_ext[xb].date()}" + ("（未公告年度只扣週末與固定日期國定假日，實際只會更晚）" if "只扣週末" in b else "")
         return "（超出外推範圍）"
-    for c_, src, sn, ed_, e in H:
+    for c_, src, sn, ed_, e, Hs in H:
         nm = nm_of.get(c_, "")
-        xb = D.exit_pos(e, HOLD[sn]); h_T = T - e + 1
+        xb = D.exit_pos(e, Hs); h_T = T - e + 1
+        own = "（你定與營量同日賣）" if Hs != HOLD[sn] else ""
         part = PORTION[sn] if src == "營飆營量" else ""
         head = f"- {c_} {nm}｜{sn}{part}（正式進場 {cal[e].date()}，今天第 {h_T} 天）"
         sr = series(c_)
@@ -277,17 +297,15 @@ def section(sha, DATA, procs=2, log=print, asof=None):
             L.append(f"{head}｜已到出場日（{exit_txt(xb)}），不判")
         elif state == "觸發" and info[0] == T:
             t, g, q, mk = info
-            if mk is None:
-                L.append(f"{head}｜g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%｜⚠ 漲到前段，但讀不到大盤資料，無法判大盤條件")
-            elif mk[0]:
-                L.append(f"{head}｜g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%｜**三條都成立 ⇒ 明天（{nxt}）開盤可加碼一份（金額＝原買進金額{part}）；"
-                         f"與原持股同日賣（{sn}第 {HOLD[sn]} 天，{exit_txt(xb)} 收盤）**")
-            else:
-                L.append(f"{head}｜g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%｜漲到前段但大盤在 20 日線下，照規則不加（這筆之後不再判）")
+            L.append(f"{head}｜g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%｜**明天（{nxt}）開盤可加碼一份（金額＝原買進金額{part}）；"
+                     f"與原持股同日賣（{sn}第 {Hs} 天{own}，{exit_txt(xb)} 收盤）**")
         elif state == "觸發":
             t, g, q, mk = info
-            how = "當天大盤狀態讀不到" if mk is None else ("當天大盤站上 20 日線、已提示加碼" if mk[0] else "當天大盤在 20 日線下、照規則沒加")
-            L.append(f"{head}｜已於 {cal[t].date()} 觸發過（第 {t - e + 1} 天 g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%；{how}），不再提示｜今天 {gq}")
+            said = mk is not None and mk[0] and cal[t] >= PROMPT_START       # 舊規則（大盤濾網 seq1）當時已提示
+            if said:
+                L.append(f"{head}｜已於 {cal[t].date()} 觸發過（第 {t - e + 1} 天 g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%；當時已提示加碼），不再提示｜今天 {gq}")
+            else:
+                L.append(f"{head}｜已於 {cal[t].date()} 達門檻（當時未提示；第 {t - e + 1} 天 g {g * 100:+.1f}% ≥ 門檻 {q * 100:.1f}%），不補提示｜今天 {gq}")
         elif state == "壞根":
             L.append(f"{head}｜持有期間 {cal[info].date()} 有壞根（缺口 ≥ 5 日／減資等），照規則不判｜今天 {gq}")
         elif state == "加碼日壞根":

@@ -53,6 +53,12 @@
     每檔已達成那行下面：「  - 依你的持股：營飆有空位／營飆已滿／營飆今天 n 檔搶 a 個空位（照規則抽籤，不替你抽）；營量有空位／營量已滿」
       （營量依 relvol 順位排；你已持有同策略那份 ⇒「你已持有，不重複買」；大盤閘關 ⇒ 營飆照規則不進）
     持股.csv 讀不到 ⇒ 節首寫「依你的持股：讀不到持股.csv（原因）」、每檔不加行；其他照常
+
+2026-10-14 夜改（裁定 seq350 §一、§三-5／6；⛔ 其他節逐字不變）：
+  第六節改「六、加碼提醒（漲到全市場前段）」、不再看大盤（見 addon_daily 檔頭）
+  持股.csv 備註含「60 天同日賣」（AD.H60_NOTE；使用者 10/14 定：營飆超額那份第 60 個交易日跟營量同日賣，目前 6187、6152、8289、6127、4927）
+    ⇒ 第一、二節「依你的持股」份數：該筆營飆那份出場改第 60 個交易日（AD.hold_days）；第五節「照正式規則」營飆那份同樣改第 60 個交易日
+    ⛔ 不改營飆規則（照規則簿 forward_yl 照舊 120）
 """
 from __future__ import annotations
 
@@ -182,6 +188,10 @@ def build(a, log, v2=False):
               f"（從最高回落 20% 且中段底分數 ≥ {names_bj[1]}，隔天開盤買回）→ 第二段持有 →（W2，隔天開盤賣）→ 結束；任何時候從最高回落 30% ＝ 本筆結束。",
               "⚠ 舊制回測、新制實際：流程的 W2（再次處置／處置出關）與真頂訊號（多半在最高點之前）是用舊處置制度（處置 10／12 個交易日）回測的；2026-08-10 起處置改為 5／7 個交易日，出關會提早，訊號時點與回測不完全相同（台股 1009-1542 §四-2）。", ""]
         SRC = HD.sources(); ED = HD.entry_dates()
+        try:
+            NTS = {c: nt for c, _, _, nt, _ in HD.read_csv()}             # 備註（「60 天同日賣」⇒ 營飆那份第 60 天；2026-10-14）
+        except Exception:
+            NTS = {}
         for c_, bd_, bp_ in flows:
             src_ = SRC.get(c_, "其他")
             ed_ = ED.get(c_) or bd_                                         # 正式進場日（先買後入選 ⇒ 持股檔第 6 欄；2026-10-06 6213）
@@ -192,10 +202,12 @@ def build(a, log, v2=False):
                     dt_ = cal_ext[xp_].date() if xp_ < len(cal_ext) else "（超出外推範圍）"
                     return (f"{nm_}{part_}已到期：{dt_} 收盤應已賣出" if rem_ <= 0 else f"{nm_}{part_}明天（{dt_}）收盤賣（第 {H_} 個交易日）" if rem_ == 1
                             else f"{nm_}{part_}第 {H_} 個交易日 {dt_} 收盤賣，還剩 {rem_} 個交易日")
+                Hy_ = AD.hold_days("營飆", NTS.get(c_, ""))
+                own_ = "（你定與營量同日賣）" if Hy_ != 120 else ""
                 if src_ == "營飆營量":
-                    act_ = act_of("營量", 60, "那 1/3") + "；" + act_of("營飆", 120, "那 2/3") + "（金額 2:1 分兩份）"
+                    act_ = act_of("營量", 60, "那 1/3") + "；" + act_of("營飆", Hy_, "那 2/3" + own_) + "（金額 2:1 分兩份）"
                 else:
-                    act_ = act_of(src_, 60 if src_ == "營量" else 120, "")
+                    act_ = act_of(src_, 60, "") if src_ == "營量" else act_of(src_, Hy_, own_)
                 nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
                 L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}{'' if ed_ == bd_ else f'（正式進場日 {ed_}，出場從這天起算）'}｜來源：{src_}｜**照正式規則：{act_}**")
             o_ = SFL.replay(R, c_, bd_, bp_, DATA, AUX, names_bj)
@@ -316,9 +328,10 @@ def my_holdings(cal):
         if src == "其他" or (bd is not None and pd.Timestamp(bd) > asof):
             continue
         ed = ED.get(c) or bd
-        for part, H in (("營飆", 120), ("營量", 60)):
+        for part in ("營飆", "營量"):
             if part not in src:
                 continue
+            H = AD.hold_days(part, _nt)                       # 營飆 120；備註含「60 天同日賣」⇒ 60（使用者 10/14）
             xp = None if ed is None else D.exit_pos(int(cal.searchsorted(pd.Timestamp(ed))), H)
             if xp is not None and xp <= n - 1:
                 continue                                      # 資料日收盤（含）以前已到出場日
