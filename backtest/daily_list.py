@@ -45,6 +45,14 @@
   第一節、第二節：節標題下加「照規則簿：營飆（營量）目前 X／10（20）檔、明天空槽 k」；已達成每檔那行下面加一行「  - 照規則簿：照規則買／
   營飆已滿（空槽 k、抽籤落選）⇒ 這檔只買營量那份／…營量也已滿，照規則不買」（明天的挑選 ＝ 引擎多跑一個合成的明天，抽籤與真的明天同一次）；
   簿出錯 ⇒ 兩節只加一行失敗原因，其他照常
+  2026-10-14 晚改（使用者：「你滿了不代表我滿了啊」「模擬帳不用給我」）：上面「照規則簿」那幾行【移出第一、二節】，改到檔案最末（NOTE 之後）
+  另開一節「## 七、（內部）照規則簿，不推 LINE」集中列（BOOK_TITLE；book_section）；第一、二節改放【依你的持股】（my_holdings、mine_tags、with_mine）：
+    節首（節標題後空行之後）：「依你的持股（持股.csv）：營飆 X／10、營量 Y／20 ⇒ 營飆空位 a、營量空位 b。」＋空行；X＞10 ⇒「營飆 X／10（已超過 X−10 份）」、空位 0
+      份數 ＝ 持股.csv 每列：來源含「營飆」算營飆一份、含「營量」算營量一份（營飆營量兩邊都算）；只算買進日 ≤ 資料日、且還沒到各自出場日的
+      （出場 ＝ 正式進場日〔第 6 欄，空白＝買進日〕起第 60（營量）／120（營飆）個交易日收盤，D.exit_pos 口徑同第五節；出場日 ≤ 資料日 ⇒ 不算）
+    每檔已達成那行下面：「  - 依你的持股：營飆有空位／營飆已滿／營飆今天 n 檔搶 a 個空位（照規則抽籤，不替你抽）；營量有空位／營量已滿」
+      （營量依 relvol 順位排；你已持有同策略那份 ⇒「你已持有，不重複買」；大盤閘關 ⇒ 營飆照規則不進）
+    持股.csv 讀不到 ⇒ 節首寫「依你的持股：讀不到持股.csv（原因）」、每檔不加行；其他照常
 """
 from __future__ import annotations
 
@@ -279,8 +287,103 @@ def book_tags(r, log):
         return msg, msg, {}, {}
 
 
-def with_book(L, tags):
-    """第一、二節：節標題後的空行之後加「照規則簿：…」＋空行；已達成每檔那行之後加一行「  - 照規則簿：…」⇒ 其他行逐字不變（只加行）。"""
+BOOK_TITLE = "## 七、（內部）照規則簿，不推 LINE"
+BOOK_NOTE = ("模擬帳：營量 v1／營飆 v1 照規則從 2026-09-29 逐日模擬（含你沒買的訊號），給回測線與情報核對用；"
+             "⛔ 不推 LINE。你實際能不能買看第一、二節「依你的持股」。")
+
+
+def book_section(tags, names):
+    """2026-10-14 晚（使用者：模擬帳不用給我）：照規則簿的行移到檔案最末這一節（NOTE 之後），第一、二節不放。"""
+    h1, h2, t1, t2 = tags
+    L = [BOOK_TITLE, "", BOOK_NOTE, "", f"- {h1}"] + ([f"- {h2}"] if h2 != h1 else [])
+    L += [f"- 一、營飆 {s} {names.get(s, '')}：{t}" for s, t in t1.items()]
+    L += [f"- 二、營量 {s} {names.get(s, '')}：{t}" for s, t in t2.items()]
+    return L + [""]
+
+
+MINE = "依你的持股"
+
+
+def my_holdings(cal):
+    """使用者實際持股（持股.csv）在資料日（cal 最後一天）的營飆、營量份數。讀不到 ⇒ 丟例外（呼叫端寫「讀不到持股.csv」）。
+    每列：來源含「營飆」算營飆一份、含「營量」算營量一份（營飆營量兩邊都算）；買進日 > 資料日 ⇒ 不算（重產舊資料日用）；
+    出場 ＝ 正式進場日（第 6 欄，空白＝買進日）起第 120／60 個交易日收盤（D.exit_pos，同第五節）；出場位置 ≤ 資料日 ⇒ 已出場不算；
+    買進日、正式進場日都空白 ⇒ 出場日不可算，當作還持有。"""
+    n = len(cal); asof = cal[n - 1]
+    rows = HD.read_csv(); ED = HD.entry_dates()
+    M = {"營飆": {}, "營量": {}, "份": {"營飆": 0, "營量": 0}, "明天到期": {"營飆": 0, "營量": 0}}
+    for c, bd, _bp, _nt, src in rows:
+        if src == "其他" or (bd is not None and pd.Timestamp(bd) > asof):
+            continue
+        ed = ED.get(c) or bd
+        for part, H in (("營飆", 120), ("營量", 60)):
+            if part not in src:
+                continue
+            xp = None if ed is None else D.exit_pos(int(cal.searchsorted(pd.Timestamp(ed))), H)
+            if xp is not None and xp <= n - 1:
+                continue                                      # 資料日收盤（含）以前已到出場日
+            M["份"][part] += 1
+            M[part][c] = ed or "買進日不明"
+            if xp == n:
+                M["明天到期"][part] += 1
+    return M
+
+
+def mine_tags(M, sec1, sec2, gate_on):
+    """⇒ (第一節節首行, 第二節節首行, {代號: 第一節標記}, {代號: 第二節標記})；格式同 FY.daily_tags。sec2 ＝ relvol 順位排好的代號。"""
+    nf, nl = M["份"]["營飆"], M["份"]["營量"]
+    a, b = max(10 - nf, 0), max(20 - nl, 0)
+    due = "、".join(f"{k} {v} 份" for k, v in M["明天到期"].items() if v)
+    h = (f"{MINE}（持股.csv）：營飆 {nf}／10" + (f"（已超過 {nf - 10} 份）" if nf > 10 else "") + f"、營量 {nl}／20" + (f"（已超過 {nl - 20} 份）" if nl > 20 else "")
+         + f" ⇒ 營飆空位 {a}、營量空位 {b}" + (f"（其中明天收盤到期：{due}，明天開盤前還占位）" if due else "")
+         + ("；大盤閘關，營飆明天照規則不進" if not gate_on else "") + "。")
+    cf = [s for s in sec1 if s not in M["營飆"]]
+    cl = [s for s in sec2 if s not in M["營量"]]
+
+    def yf(s):
+        if not gate_on:
+            return "營飆大盤閘關、照規則不進"
+        if s in M["營飆"]:
+            return f"營飆你已持有（{M['營飆'][s]} 進），不重複買"
+        if a == 0:
+            return "營飆已滿"
+        return "營飆有空位" if len(cf) <= a else f"營飆今天 {len(cf)} 檔搶 {a} 個空位（照規則抽籤，不替你抽）"
+
+    def yl(s):
+        if s in M["營量"]:
+            return f"營量你已持有（{M['營量'][s]} 進），不重複買"
+        if b == 0:
+            return "營量已滿"
+        i = cl.index(s) + 1
+        if len(cl) <= b:
+            return "營量有空位"
+        return f"營量有空位（relvol 順位第 {i}、空位 {b}）" if i <= b else f"營量已滿（空位 {b} 給 relvol 前 {b} 檔，這檔第 {i}）"
+    t = {s: f"{yf(s)}；{yl(s)}" for s in sec2}
+    return h, h, {s: t[s] for s in sec1 if s in t}, t
+
+
+def mine_lines(r, log):
+    """第一、二節「依你的持股」；持股.csv 讀不到 ⇒ 節首一行「讀不到持股.csv」、每檔不加行。"""
+    try:
+        M = my_holdings(r["cal"])
+    except Exception as ex:
+        log(f"[依你的持股] ⚠ 讀不到持股.csv：{type(ex).__name__}: {ex}")
+        h = f"{MINE}：讀不到持股.csv（{type(ex).__name__}），空位資訊從缺。"
+        return h, h, {}, {}
+    A = r["A"]
+    sec2 = [str(s) for s in A.sort_values("relvol 排名", kind="stable")["代號"]] if len(A) else []
+    log(f"[依你的持股] 營飆 {M['份']['營飆']}／10、營量 {M['份']['營量']}／20｜營飆 {sorted(M['營飆'])}｜營量 {sorted(M['營量'])}｜明天到期 {M['明天到期']}")
+    return mine_tags(M, r["sec"]["一、營飆 v1 已達成"], sec2, r["gate_on"])
+
+
+def with_mine(L, tags):
+    """第一、二節：節標題後的空行之後加「依你的持股（持股.csv）：…」＋空行；已達成每檔那行之後加一行「  - 依你的持股：…」⇒ 其他行逐字不變（只加行）。"""
+    return with_book(L, tags, MINE)
+
+
+def with_book(L, tags, pre="照規則簿"):
+    """第一、二節：節標題後的空行之後加 tags 的節首行＋空行；已達成每檔那行之後加一行「  - {pre}：…」⇒ 其他行逐字不變（只加行）。
+    （2026-10-14 晚起照規則簿不再放第一、二節 ⇒ main 只用 with_mine；照規則簿改走 book_section）"""
     h1, h2, t1, t2 = tags
     out = []; sec = None
     for i, x in enumerate(L):
@@ -297,7 +400,7 @@ def with_book(L, tags):
             code = x[2:].split(" ", 1)[0]
             tg = (t1, t2)[sec].get(code)
             if tg:
-                out.append(f"  - 照規則簿：{tg}")
+                out.append(f"  - {pre}：{tg}")
     return out
 
 
@@ -334,8 +437,10 @@ def main():
         names = {**r0["names"], **r1["names"]}
         open(fdiff, "w", encoding="utf-8").write("\n".join(diff_md(asof, sha, det, names)) + "\n")
         log(f"[GATE_V2] ⚠ 開關不一致 ⇒ 正式產出改用新口徑（開）；差異檔 {fdiff}｜{json.dumps(det, ensure_ascii=False)}")
-    r = dict(r, L=with_book(r["L"], book_tags(r, log)))
+    btags = book_tags(r, log)                                  # 照規則簿照舊每次補到資料日；行改放最末第七節（2026-10-14 晚）
+    r = dict(r, L=with_mine(r["L"], mine_lines(r, log)))
     r = dict(r, L=with_addon(r["L"], addon_lines(a, sha, log)))
+    r = dict(r, L=r["L"] + book_section(btags, r["names"]))
     fn = os.path.join(OUT, f"daily_{asof}.md")
     open(fn, "w", encoding="utf-8").write("\n".join(r["L"]))
     A, br, S, gate_on = r["A"], r["br"], r["S"], r["gate_on"]
