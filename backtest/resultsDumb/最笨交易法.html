@@ -1,0 +1,14 @@
+<!doctype html><html lang=zh-Hant><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>最笨交易法回測</title><style>:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--ln:#ddd}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}}
+:root[data-theme=dark]{--bg:#161618;--fg:#eee;--mut:#aaa;--ln:#333}
+body{background:var(--bg);color:var(--fg);font-family:system-ui,'Noto Sans TC',sans-serif;margin:0 auto;max-width:900px;padding:16px;line-height:1.6}
+table{border-collapse:collapse;font-size:14px;display:block;overflow-x:auto}td,th{border:1px solid var(--ln);padding:4px 8px;text-align:right;white-space:nowrap}th{background:rgba(127,127,127,.1)}td:first-child{text-align:left}
+.note{color:var(--mut);font-size:14px}h1{font-size:22px}h2{font-size:17px;margin-top:28px}</style></head><body><h1>「最笨的交易法」回測</h1>
+<p><b>結論：不合格。照原文規則，三段年化都在 0 附近（−2.4%、+1.3%、−0.6%），最大跌幅 −54% 到 −63%；同期 0050 +18.9%、+31.0%、+7.3%。也沒有比隨機進場好。6 種版本每段都輸 0050。</b></p>
+<h2>年化 / 最大跌幅</h2><table><tr><th>版本</th><th>2017～2021</th><th>2022～2026-09</th><th>2005～2014</th></tr><tr><td>原文規則（主判）</td><td>−2.4% / −54.4%</td><td>+1.3% / −55.6%</td><td>−0.6% / −62.5%</td></tr><tr><td>改用個股波動的版本</td><td>+0.1% / −46.8%</td><td>+28.9% / −39.7%</td><td>−10.8% / −83.6%</td></tr><tr><td>拿掉分批賣</td><td>+5.4% / −56.3%</td><td>+2.5% / −65.3%</td><td>0.0% / −65.9%</td></tr><tr><td>拿掉月線 MACD</td><td>−7.4% / −58.5%</td><td>+2.5% / −55.1%</td><td>−5.3% / −75.8%</td></tr><tr><td>拿掉漲停名單</td><td>+4.8% / −34.4%</td><td>+5.5% / −45.6%</td><td>−4.6% / −67.3%</td></tr><tr><td>同進場、固定抱 60 天</td><td>+3.9% / −54.1%</td><td>+30.9% / −43.3%</td><td>−10.2% / −82.5%</td></tr><tr><td>0050</td><td>+18.9% / −28.2%</td><td>+31.0% / −34.0%</td><td>+7.3% / −55.8%</td></tr></table>
+<h2>為什麼不行</h2><ul>
+<li>勝率只有 28～32%：約 2 成在進場後兩天內就跌破 20 日線被洗出場。</li>
+<li>平均只抱 17～20 天，一年換手 7～12 倍，光交易成本每年吃掉 4～7%。</li>
+<li>賣掉後 60 天內，有一半以上又漲回並創新高。</li>
+<li>隨機進場 200 次對照：原文規則沒有比隨機挑時間進場好。</li></ul>
+<p class=note>原文沒給的「20 日線附近」「帶量」「MACD 參數」由台股線定（收盤在 20 日線上、最低距 20 日線 2% 內；量 ≥1.5 倍 20 日均量；12／26／9）。月線 MACD 要 35 個月資料才能算，所以 2017 年前 11 個月全是現金（照規則標「退化」，但改從可算起也一樣不合格）。與爆量突破、均線出場、分批停利等已測項重疊。母體同營量營飆（20 日均量 ≥500 張）、成本 0.585%。早年含減資假飆股約 0.3%（剩 22 筆未解釋）。獨立 check 通過。程式 backtest/researchDumb.py。</p></body></html>
