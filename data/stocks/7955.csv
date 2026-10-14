@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-13,7955,車麗屋,emerging,,201,120,159.93,107709,17225900,,,,,均價/額推算,200,1
+2026-10-14,7955,車麗屋,emerging,,190,150.5,168.16,117951,19834640,8.23,,,,均價/額推算,173.5,1

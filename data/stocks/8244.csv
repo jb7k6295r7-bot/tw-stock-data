@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-13,8244,DIGITIMES,emerging,,88,68,84.55,218570,18480094,,,,,均價/額推算,85,1
+2026-10-14,8244,DIGITIMES,emerging,,85,70.2,73.84,225636,16660962,-10.71,,,,均價/額推算,71,1
