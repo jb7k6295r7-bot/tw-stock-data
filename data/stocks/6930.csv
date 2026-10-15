@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-10-15,6930,盛新,emerging,,63.1,44,52.99,3418887,181166822,,,,,均價/額推算,56.8,1
