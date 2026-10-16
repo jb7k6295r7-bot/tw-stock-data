@@ -34,7 +34,8 @@ jobs:
           # 時段起點＝最近一次台北 17:00（daily 第一班 18:23 之前）
           NOW_TPE=$(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M')
           if [ "$(TZ=Asia/Taipei date +%H)" -ge 17 ]; then D=$(TZ=Asia/Taipei date +%Y-%m-%d); else D=$(TZ=Asia/Taipei date -d yesterday +%Y-%m-%d); fi
-          SINCE=$(TZ=Asia/Taipei date -d "$D 17:00" -u +%Y-%m-%dT%H:%M:%SZ)
+          # ⚠ 2026-10-16 修：`-u` 會連解析也當 UTC ⇒ 時區要寫進字串（+0800），否則晚 8 小時
+          SINCE=$(date -u -d "$D 17:00 +0800" +%Y-%m-%dT%H:%M:%SZ)
           echo "台北 $NOW_TPE｜時段起點 $D 17:00（UTC $SINCE）"
           RUNS=$(gh run list --workflow daily.yml -L 20 --json databaseId,createdAt,status,conclusion,headBranch,event \
                  -q "[.[] | select(.createdAt >= \"$SINCE\" and .headBranch == \"main\" and .conclusion != \"failure\" and .conclusion != \"cancelled\")]")
