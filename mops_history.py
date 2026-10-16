@@ -67,6 +67,9 @@ _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT = os.path.join(_ROOT, "mops")
 
 MARKETS = [("sii", "twse"), ("otc", "tpex")]
+# ⭐ 2026-10-17（情報 1016-1345）：興櫃月營收（mopsov `/nas/t21/rotc/`，格式同上市櫃；102 年起都有）
+#   ⛔ 只給月營收用、只在 `--esb` 時加進去；財報迴圈照舊只跑上市櫃 ⇒ 輸出 `revenue_hist/<期>_esb.csv`
+ESB = ("rotc", "esb")
 
 
 def ledger_from_disk(state):
@@ -88,7 +91,7 @@ def ledger_from_disk(state):
     ⚠ 「檔案在」只證明那一期有寫出來，**不證明內容完整**。note 記的是張數，
       這是檔案層級的證據，不是內容層級的。
     """
-    m2mkt = {m: k for k, m in MARKETS}
+    m2mkt = {m: k for k, m in MARKETS + [ESB]}
     seen = {}
     for sub, kind in (("revenue_hist", "revenue"), ("fs_hist", "fs"),
                       ("bs_hist", "bs")):
@@ -938,6 +941,8 @@ def main():
                     help="乾跑指定期別，例如 2018Q1（財報）或 2018-03（月營收）")
     ap.add_argument("--market", default="sii", choices=["sii", "otc"])
     ap.add_argument("--form", default="", help="t163sb04 或 t163sb05")
+    ap.add_argument("--esb", action="store_true",
+                    help="月營收也抓興櫃（rotc ⇒ revenue_hist/<期>_esb.csv）；財報不受影響")
     ap.add_argument("--fill", action="store_true",
                     help="只補**還沒有產出**的期別。修完失敗清單後用它，不用整批重跑")
     a = ap.parse_args()
@@ -1097,8 +1102,9 @@ def main():
         y, m = int(a.start[:4]) - 1911, int(a.start[5:7])
         ey, em = int(end[:4]) - 1911, int(end[5:7])
         ok = 0
+        rev_markets = MARKETS + ([ESB] if getattr(a, "esb", False) else [])
         while (y, m) <= (ey, em):
-            for mkt, market in MARKETS:
+            for mkt, market in rev_markets:
                 per = f"{y + 1911:04d}-{m:02d}"
                 if a.fill and has_output("revenue", per, market):
                     state[("revenue", per, mkt)] = ("ok", "已存在，--fill 跳過")

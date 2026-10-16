@@ -78,7 +78,10 @@ TPEX = "https://www.tpex.org.tw/openapi/v1/"
 #   業別標籤 ci=一般業 basi=銀行 bd=證券 ins=保險 fh=金控 oth=其他
 #   ★ 抓不到的直接略過並回報，**不要當成錯誤**——不是每個業別在兩個市場都有分表。
 SOURCES = {
-    "revenue": [("all", TWSE + "t187ap05_L", TPEX + "mopsfin_t187ap05_O")],
+    # ⭐ 2026-10-17（情報 1016-1345）：興櫃另一張表 TPEx `t187ap05_R`，寫成獨立檔 `<期>_esb.csv`
+    #   ⛔ 不併進 `<期>.csv`：那個檔的母體一直是上市＋上櫃，混進興櫃會讓下游讀到的母體默默變大
+    "revenue": [("all", TWSE + "t187ap05_L", TPEX + "mopsfin_t187ap05_O"),
+                ("esb", None, TPEX + "t187ap05_R")],
     "fs": [
         ("ci",   TWSE + "t187ap06_L_ci",   TPEX + "mopsfin_t187ap06_O_ci"),
         ("basi", TWSE + "t187ap06_L_basi", TPEX + "mopsfin_t187ap06_O_basi"),
@@ -467,6 +470,16 @@ def listed_codes():
     return tw, tp
 
 
+def esb_codes():
+    """興櫃母體 ＝ `data/meta/industry_esb.csv`（全體興櫃，約 360 檔）的代號；涵蓋率與「認得的代號」的分母。
+    ⚠ ⛔ 不用 `data/universe/esb/`：那裡只有個別追蹤的幾檔（2026-10 時 3 檔），當分母會誤報「不認得 99%」。"""
+    p = os.path.join(_ROOT, "meta", "industry_esb.csv")
+    if not os.path.exists(p):
+        return set()
+    with open(p, encoding="utf-8") as f:
+        return {r["stock_id"] for r in csv.DictReader(f) if r.get("stock_id")}
+
+
 def cmd_run(args):
     B.SLEEP = args.sleep
     # ⭐ 先自癒再抓：⛔ 抓完再搬的話，這一趟寫進去的列會先跟舊的錯列混在一起。
@@ -480,7 +493,8 @@ def cmd_run(args):
                 print(f"[mops] 期別自癒 {_k}：{_msg}",
                       file=sys.stderr if _n < 0 else sys.stdout)
     tw, tp = listed_codes()
-    print(f"[mops] 對照基準：上市 {len(tw):,} 檔、上櫃 {len(tp):,} 檔\n")
+    esb = esb_codes()
+    print(f"[mops] 對照基準：上市 {len(tw):,} 檔、上櫃 {len(tp):,} 檔、興櫃 {len(esb):,} 檔\n")
     total = {"new": 0, "changed": 0, "unchanged": 0, "skip": 0}
     # ★ 逐「表×市場」記下實際結果。**不要只留一個總數**——
     #   22 個請求裡少收一個，總數看起來還是很像正常的一天
@@ -504,7 +518,8 @@ def cmd_run(args):
             continue
         for tag, u_tw, u_tp in srcs:
             recs, market_of = [], {}
-            for mk, url, want in (("twse", u_tw, tw), ("tpex", u_tp, tp)):
+            pairs = (("esb", u_tp, esb),) if tag == "esb" else (("twse", u_tw, tw), ("tpex", u_tp, tp))
+            for mk, url, want in pairs:
                 d, note = fetch(url)
                 time.sleep(B.SLEEP)
                 if d is None:
