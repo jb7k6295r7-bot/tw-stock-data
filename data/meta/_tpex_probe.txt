@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-10-16T19:36:00+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38893931349
+# ⏱ 這一趟：2026-10-16T20:09:37+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38895123210
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -562,7 +562,7 @@
               date='2024'         stat='ok'｜回顯 code='6488'｜totalCount=12｜inner date=2024　⭐⭐ **中了**
                  fields：['年', '月', '收市最高價', '收市最低價', '收市平均價', '成交筆數', '成交金額仟元(A)', '成交仟股(B)', '成交週轉率(%)']
                  第一列：[113, 1, '603.00', '573.00', '587.27', '44,168', '17,258,302', '29,478', '6.65']
-              date='113'          stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
+              date='113'          ⛔ HTTPError: HTTP 520 <none>
               date='2024/01/01'   stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
               date='20240101'     stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
               date='113/01/01'    stat='參數輸入錯誤'｜回顯 code=None｜totalCount=None｜inner date=None
