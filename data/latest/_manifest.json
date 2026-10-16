@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-16T22:59:41+08:00",
+  "generated_at": "2026-10-17T03:11:44+08:00",
   "target_trading_day": "2026-10-16",
   "stocks": {
     "7879": {
@@ -62,7 +62,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -115,7 +115,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -168,7 +168,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -221,7 +221,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -274,7 +274,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -327,7 +327,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -380,7 +380,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -433,7 +433,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -486,7 +486,7 @@
         },
         "margin": {
           "total": 190,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-10-16"
         },
@@ -551,7 +551,7 @@
       "inst": {
         "total": 31,
         "added": 0,
-        "changed": 1
+        "changed": null
       }
     },
     "parse_errors": null
@@ -584,5 +584,5 @@
       "purged_warrants": null
     }
   },
-  "history_rows_changed": 1
+  "history_rows_changed": null
 }

@@ -1,4 +1,4 @@
-# 資料庫現況　2026-10-16T23:13:27+08:00（台北）
+# 資料庫現況　2026-10-17T03:26:42+08:00（台北）
 
 **這一頁報的是資料庫現況，不是某一趟做了什麼。**
 
@@ -190,6 +190,7 @@
 - feed_rowcount　✓ 正常
 - mops_history　✓ 正常
 - otc_parvalue_history　✓ 正常
+- filing_dates　✓ 正常
 - crypto:daily　✓ 正常
 - crypto:mark　✓ 正常
 - crypto:perp　✓ 正常
@@ -200,7 +201,6 @@
 - crypto:cm_funding　✓ 正常
 - crypto:cm_perp　✓ 正常
 - crypto:cm_mark　✓ 正常
-- filing_dates　✓ 正常
 - mops_news　✓ 正常
 - early:feed:otcmargin　✓ 正常
 - early:feed:otcinst　✗ 有問題
@@ -224,8 +224,8 @@
 - official_stats:months:tpex　✓ 正常
 - crypto:universe　✓ 正常
 - crypto:backfill　✓ 正常
-- otc_reduce_history:fetch　✗ 有問題
-- otc_exright_history:fetch　✗ 有問題
+- otc_reduce_history:fetch　✓ 正常
+- otc_exright_history:fetch　✓ 正常
 - longhalt　✓ 正常
 
 **沒過的檢查：**
@@ -233,8 +233,6 @@
   - **✗**　我方沒有編出官方沒有的上櫃減資　（5 筆）
   - **✗**　下市清單的列數（⛔ 下市是不可逆的，只會變多） **沒有變少**（歷史最高 505，2026-10-02）　（本趟 504 vs 歷史最高 505）
   - **✗**　跑完整個區間，沒有提前收手　（連續 30 天回「沒有資料」且無一有列｜⚠ 失敗 0 天 ⇒ 端點是通的、也明講了「這天沒資料」，⛔ 這**不是**日期下限（越界會大聲失敗，會算進失敗天數））
-  - **✗**　抓得到 revivt　（IncompleteRead: IncompleteRead(89826 bytes read)（重試 3 次都失敗）｜⛔ 抓不到不等於沒有歷史（本機對 tpex 一律 403））
-  - **✗**　抓得到 exDailyQ　（IncompleteRead: IncompleteRead(2373358 bytes read)（重試 3 次都失敗）｜⛔ 抓不到不等於沒有歷史（本機對 tpex 一律 403，要在 Actions 上跑））
 
 ## ④ 來源狀態（人維護的清單，不是算出來的）
 
