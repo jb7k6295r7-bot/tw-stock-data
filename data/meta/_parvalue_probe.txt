@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-10-14T00:06:51+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38426259648
+# ⏱ 這一趟：2026-10-16T19:36:39+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38893931349
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -15,11 +15,19 @@
 
   ── 20200101 ~ 20201231
      https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20200101&endDate=20201231&response=json
-     ✗ 非 JSON：JSONDecodeError｜開頭 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtm
+     [1] stat='OK'｜title='變更股票面額恢復買賣參考價格'
+     [2] 欄位（9）：['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準', '詳細資料']
+     [3] 列數：1
+         首列：['109/08/17', '8070', '長華', '190.00', '19.00', '20.90', '17.10', '19.00', '8070,20200806,20200817']
+     [4] ★ 日期欄 109/08/17 ~ 109/08/17（1 列有日期）
 
   ── 20260101 ~ 20260908
      https://www.twse.com.tw/rwd/zh/change/TWTB8U?startDate=20260101&endDate=20260908&response=json
-     ✗ 非 JSON：JSONDecodeError｜開頭 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtm
+     [1] stat='OK'｜title='變更股票面額恢復買賣參考價格'
+     [2] 欄位（9）：['恢復買賣日期', '股票代號', '名稱', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準', '詳細資料']
+     [3] 列數：2
+         首列：['115/01/19', '7780', '大研生醫', '185.00', '18.50', '20.35', '16.65', '18.50', '7780,20260109,20260119']
+     [4] ★ 日期欄 115/01/19 ~ 115/09/07（2 列有日期）
 
 ── ⭐ 清單 C4：**上櫃**面額變更，官方選單上那兩條（從來沒探過）──
 ⚠ 既有的否定句是「TPEx 沒有對應端點」，⛔ 而它的掃描範圍**只有 swagger**。
@@ -155,7 +163,7 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a49f96be1d7d06e1',t:'MTc5MTkwNzU1OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a4b6c37eec28cb93',t:'MTc5MjE1MDU2Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -165,10 +173,10 @@
       data-format = 'print'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn
-           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年10月13日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
+           [形狀] 317 bytes｜中文 66 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"115年10月16日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["�'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgAnn
-           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/10/13 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
+           [形狀] 345 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"tables":[{"title":"","subtitle":"2026/10/16 Change of Par Value Announcement","totalCount":0,"fields":["Code","Name","'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgAnn
            [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
@@ -177,9 +185,9 @@
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgAnn　[形狀] 317 bytes
            ⭐ 它回顯的 `date`：（沒有這個鍵）｜`totalCount`：['0']
            ⚠ 回應裡沒有 `date` 鍵 ⇒ ⛔ 這一格**判不出**參數有沒有生效（⚠ 不可以讀成「有生效」）
-           開頭 '{"tables":[{"title":"","subtitle":"115年10月13日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
+           開頭 '{"tables":[{"title":"","subtitle":"115年10月16日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"]'
            ── ⭐ 原始回應整份（⛔ 不是摘要）──
-             {"tables":[{"title":"","subtitle":"115年10月13日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
+             {"tables":[{"title":"","subtitle":"115年10月16日 上櫃股票變更股票面額預告表","totalCount":0,"fields":["證券代號","證券名稱","停止買賣日期","變更股票面額換股率","變更前股票面額","變更後股票面額","恢復買賣日期","恢復買賣參考價"],"data":[]}],"stat":"ok"}
 
   ── 變更股票面額恢復交易參考價
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
@@ -314,7 +322,7 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（921 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a49f96f47fe77fa4',t:'MTc5MTkwNzU2Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+         params={r:'a4b6c3af481b5f80',t:'MTc5MjE1MDU3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
          ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
          1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
          !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -326,10 +334,10 @@
       data-start = '20190909'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt
-           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261014~20261015","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
+           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261016~20261019","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgRslt
-           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261014~20261015","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
+           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261016~20261019","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
            [形狀] 10,892 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
@@ -376,10 +384,24 @@
 
 ── ★ 參數有沒有被無視 ──
 TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙過，把當天的四列寫進 2015 年的每一個日期檔。
-  （成功的區間不足兩個，無法對打——先解決上面的失敗）
+  ✓ 不同區間回不同內容，參數有生效。
+     20150101~20151231：0 列｜日期  ~ 
+     20200101~20201231：1 列｜日期 109/08/17 ~ 109/08/17
+     20260101~20260908：2 列｜日期 115/01/19 ~ 115/09/07
 
 ── ★★ 涵蓋範圍：TWTB8U 收不收上櫃 ──
-  （20260101~20260908 那一發沒成功，這一節量不了）
+  ✓ 7780 大研生醫（twse，115/01/19）
+  ✓ 6949 沛爾生醫（twse，115/09/07）
+  ✗ 8932 智通（tpex，115/03/09）  ← 沒有回來
+  ✗ 8937 合騏（tpex，115/04/13）  ← 沒有回來
+  ✗ 3086 華義（tpex，115/04/20）  ← 沒有回來
+  ✗ 5904 寶雅（tpex，115/08/10）  ← 沒有回來
+  ✗ 4747 強生（tpex，115/08/31）  ← 沒有回來
+  → 上市 2/2｜上櫃 0/5
+  ⛔ **同一發請求裡上市全中、上櫃全不中——TWTB8U 不涵蓋上櫃。**
+     上櫃那 14 筆面額變更仍然沒有來源，`data/adj/` 也就仍然沒有還原它們。
+     要找的是 **TPEx 對應的「變更股票面額恢復買賣參考價」端點**，
+     不是再確認一次 TWTB8U。
 
 ── ★ 同一族的另外兩支（順帶量欄位，三支不可混用）──
   ⚠ `reducation` 是證交所自己拼錯的，照抄不要訂正。
@@ -392,61 +414,111 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
      首列：['104/01/23', '3040', '遠見', '31.90', '41.28', '44.15', '38.40', '41.30', '--', '退還股款', '3040  ,20150204']
 
   ── ETF 分割 split/TWTCAU｜20250101~20251231
-     ✗ 非 JSON：JSONDecodeError
+     stat='OK'｜title='ETF分割(反分割)恢復買賣參考價格'
+     欄位（9）：['恢復買賣日期', 'ETF代號', '名稱', '分割(反分割)', '停止買賣前收盤價格', '恢復買賣參考價', '漲停價格', '跌停價格', '開盤競價基準']
+     列數：7
+     首列：['114/02/19', '00676R', '富邦臺灣加權反1', '反分割', '2.04', '12.23', '13.45', '11.01', '12.23']
+     ✓ 0050（掃描實測 2025-06-18）
+     ✓ 0052（掃描實測 2025-11-26）
+     ✓ 00663L（掃描實測 2025-06-11）
+     ✓ 00673R（掃描實測 2025-10-22）
+     ✓ 00706L（掃描實測 2025-10-22）
+     → 2025 這年命中 5/5（靶子取自 parvalue_scan.py，不是從回應反推）
 
   ── ⭐ change/TWTB7U（使用者提供，用途待量）｜20250101~20251231
-     ✗ 非 JSON：JSONDecodeError
+     stat='OK'｜title='變更股票面額預告表'
+     欄位（10）：['停止買賣日期', '股票代號', '名稱', '恢復買賣日期', '變更股票面額換股率', '變更前面額', '變更後面額', '詳細資料', '恢復買賣參考價', '參考價試算']
+     列數：1
+     首列：['115/08/27', '6949', '沛爾生醫-創', '115/09/07', '20.00000000', '10.00', '0.50', '6949  ,20260826', '6949  ,20260827,20260907', ',10.00,0.50']
 
 [T7] ★★ change/TWTB7U 把它問到底（使用者 2026-09-09 13:45 又給了一個形式）
   ── ① 使用者給的形式（不帶日期、response=html）
-     ✓ html 無日期：611 bytes｜<tr> 0 個｜民國日期 0 個
+     ✓ html 無日期：3,334 bytes｜<tr> 3 個｜民國日期 2 個｜115/08/27 ~ 115/09/07
   ── ② 同一個網址但要 json、仍然不帶日期
      ✓ json 無日期：stat='OK'｜title='變更股票面額預告表'｜列數 1
   ── ③ 長區間：2015-01-01 ~ 今天（**這一項是重點**）
-     ✗ 2015~今天：不是 JSON（JSONDecodeError）｜611 bytes
+     ✓ 2015~今天：stat='OK'｜title='變更股票面額預告表'｜列數 1
+     ⇒ 長區間拿到 **1 列**。⛔ **和一年那次一樣少 ⇒ 區間多半沒生效**，下一步要逐年迴圈。
+       6949｜官方換股率 20.00000000｜我方 share_mult 20.0000｜✓
+     ⇒ 對上 1 筆｜不符 0 筆
 
 [T8] ★★ TWTB8U 一次要七年（使用者 2026-09-09 13:50 提供的形式）
   ── 一次 2019-01-01 ~ 今天
-     ✗ 2019~今天：不是 JSON（JSONDecodeError）｜611 bytes
+     ✓ 2019~今天：stat='OK'｜title='變更股票面額恢復買賣參考價格'｜列數 10
+     ⇒ 一次拿到 **10 列**（比按年查的任何一次多 ⇒ **長區間有生效、沒有被截斷**）
+     ── 完整性（雙向，⛔ 只驗一邊等於沒驗）
+       我方上市 10 筆｜官方這次回 10 檔
+       ① 我方有、官方沒有：0 筆（✓ 我方沒有多編）
+       ② 官方有、我方沒有：0 檔（✓ 我方沒有漏抓）
+       ⚠ 這一輪的區間從 2019 開始，我方母體從 2015 開始 ⇒ ②＝0 只證明 **2019 之後**沒漏，⛔ 2015~2018 仍然沒驗過。
   ── 再要一次 2015-01-01 ~ 今天（把 2015~2018 那段也蓋進去）
-     ✗ 2015~今天：不是 JSON（JSONDecodeError）｜611 bytes
+     ✓ 2015~今天：stat='OK'｜title='變更股票面額恢復買賣參考價格'｜列數 10
+     ⇒ 10 列（沒有比 2019 起那次多 ⇒ 2015~2018 沒有上市面額變更）
 
 [T10] ★ 上市面額變更：2015 以前有沒有
-     ✗ 2000-01-01 ~ 2014-12-31：不是 JSON（JSONDecodeError）｜611 bytes
+     ✓ 2000-01-01 ~ 2014-12-31：stat='OK'｜title='變更股票面額恢復買賣參考價格'｜列數 0
+     ⇒ 2015 以前 **0 筆**（⇒ 我方 par_change.csv 從 2015 起是完整的）
 
 [T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆（使用者 2026-09-09 15:20 提供）
-  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20261014
-     ✗ 帶 /zh/：不是 JSON（JSONDecodeError）｜611 bytes
+  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20261016
+     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年10月16日 股票減資恢復買賣參考價格'｜列數 401
   ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西
-     ✗ 不帶 /zh/：不是 JSON（JSONDecodeError）｜611 bytes
+     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年10月16日 股票減資恢復買賣參考價格'｜列數 401
+     ⇒ 兩條列數 401 vs 401（一樣 ⇒ 同一個東西，`/zh/` 可有可無）
+     官方 401 列｜解析出 396 筆｜日期 2011-01-25 ~ 2026-10-12
+     ── 雙向對帳（只比 2013-01-16 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
+       我方 585 筆｜官方（同區間）357 筆
+       ① 官方有、我方沒有：54 筆　← ⛔ **這才是漏抓** [('1234', '2013-11-12'), ('1310', '2013-02-01'), ('1315', '2014-10-31'), ('1410', '2014-10-20'), ('1413', '2014-11-28'), ('1416', '2013-11-01'), ('1441', '2026-09-29'), ('1449', '2014-11-18'), ('1451', '2013-08-19'), ('1456', '2014-01-13')]
+       ② 我方有、官方沒有：282 筆　← ⚠ 要查是不是上櫃（TWTAUU 只收上市）[('1333', '2016-10-17'), ('1584', '2016-11-08'), ('1742', '2018-03-13'), ('1785', '2017-09-28'), ('1799', '2014-02-21'), ('1799', '2022-10-11'), ('2061', '2018-10-22'), ('2061', '2021-01-18'), ('2641', '2018-08-22'), ('2719', '2019-10-21')]
+       ⚠ ② 不為 0 **不一定是錯**：上櫃減資不在 TWTAUU 裡。⛔ 但要逐筆看過才可以這樣說，不要先假設。
+       ② 按市場拆：{'（不在 industry.csv）': 20, 'tpex': 262}
+       ✓ 沒有一筆是上市 ⇒ 「② 全是上櫃」這個解釋站得住。
+       ⚠ 「不在 industry.csv」那一類**既不是上市也不是上櫃**（多半是已下市或 ETF），⛔ 不要併進上櫃那一堆算。
 
 [T11] ★ 使用者給的 `afterTrading/TWTAWU`（⛔ 我不知道它是什麼，讓它自己說）
      https://www.twse.com.tw/rwd/zh/afterTrading/TWTAWU?response=html
      判準四項（跟這一支其他節一致）：① stat 與**標題** ② 完整欄位 ③ 列數 ④ **日期欄的最小與最大值**
   ── ① 使用者給的形式（response=html）
-     ✓ html 無參數：611 bytes｜<tr> 0 個｜民國日期 0 個
+     ✓ html 無參數：2,566 bytes｜<tr> 3 個｜民國日期 2 個｜115/08/13 ~ 115/08/14
   ── ② 同一個網址要 json
-     ✗ json 無參數：不是 JSON（JSONDecodeError）｜611 bytes
+     ✓ json 無參數：stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1
+     表 1：列數 1｜欄位逐字 ['編號', '證券代號', '證券名稱', '暫停交易日期', '暫停交易時間', '恢復交易日期', '恢復交易時間']
+       首列：[1, '1218', '泰山', '115/08/13', '8:00', '115/08/14', '8:00']
   ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）
-     ? ?date=20150701&response=json：不是 JSON｜611 bytes
-     ? ?date=20261014&response=json：不是 JSON｜611 bytes
-     ? ?startDate=20150101&endDate=20261014&response=json：不是 JSON｜611 bytes
-     ⇒ 成功的發數不足 2，**這一輪判不出參數有沒有生效**（不是判成沒生效）
+     ✓ ?date=20150701&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
+     ✓ ?date=20261016&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/08/13 到 115/08/13'｜列數 1｜459 bytes
+     ✓ ?startDate=20150101&endDate=20261016&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/10/16'｜列數 7215｜539,453 bytes
+     ⇒ ⭐ 3 發**回應不同** ⇒ 參數有生效，下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）
 
   ── ④ ⭐ 它解不解釋得掉我方的長洞（⛔ 端點可用 ≠ 對我方有用）
-     ✗ 不是 JSON：JSONDecodeError
-     ✓ 長區間 0 列｜title=None
+     ✓ 長區間 7215 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/10/16'
        ⚠ **回音要對得上我要的區間**（TWT49U 那次就是回音沒對上，把 2026 的資料寫進 2015 的每一天）
-     ✗ 欄位對不上（[]）⇒ 不硬解析
+       解析出 7,215 筆／6,656 檔｜暫停日 2015-03-30 ~ 2026-08-13
+     ★ 流動性足夠（要查的那幾檔）：7 個｜**TWTAWU 解釋得掉 1｜解釋不掉 6**
+       1225｜洞 2025-04-02 ~ 2025-06-23（缺 53 日）｜✗ TWTAWU 裡找不到對應的暫停紀錄
+         ⇒ 這檔在 TWTAWU 裡共 0 筆　← **整檔不在** ⇒ 端點不收這種事件，⛔ 不是我的比對窗開錯
+       2929｜洞 2021-04-06 ~ 2021-05-04（缺 18 日）｜✗ TWTAWU 裡找不到對應的暫停紀錄
+         ⇒ 這檔在 TWTAWU 裡共 0 筆　← **整檔不在** ⇒ 端點不收這種事件，⛔ 不是我的比對窗開錯
+       4414｜洞 2022-08-17 ~ 2023-06-26（缺 203 日）｜✗ TWTAWU 裡找不到對應的暫停紀錄
+         ⇒ 這檔在 TWTAWU 裡共 3 筆：[('2018-02-26', '2018-02-27'), ('2019-02-12', '2019-02-13'), ('2019-12-10', '2019-12-11')]
+       6131｜洞 2016-04-06 ~ 2016-07-05（缺 61 日）｜✗ TWTAWU 裡找不到對應的暫停紀錄
+         ⇒ 這檔在 TWTAWU 裡共 0 筆　← **整檔不在** ⇒ 端點不收這種事件，⛔ 不是我的比對窗開錯
+       6131｜洞 2018-05-17 ~ 2019-04-10（缺 218 日）｜✗ TWTAWU 裡找不到對應的暫停紀錄
+         ⇒ 這檔在 TWTAWU 裡共 0 筆　← **整檔不在** ⇒ 端點不收這種事件，⛔ 不是我的比對窗開錯
+       8105｜洞 2026-08-18 ~ 2026-08-27（缺 6 日）｜✗ TWTAWU 裡找不到對應的暫停紀錄
+         ⇒ 這檔在 TWTAWU 裡共 0 筆　← **整檔不在** ⇒ 端點不收這種事件，⛔ 不是我的比對窗開錯
+       9136｜洞 2026-04-22 ~ 2026-05-19（缺 17 日）｜✓ 暫停 2026-04-23 → 恢復 2026-05-19
+     ★ 全部上市長洞：137 個｜**TWTAWU 解釋得掉 5｜解釋不掉 132**
+     ★ 停牌長度（恢復日 − 暫停日）分佈，n=7,182：最短 0｜p50 1｜p90 3｜p99 3｜最長 37 天
+       其中 **≥ 30 天的有 1 筆（0.0%）**
+       ⇒ 這一行決定它是不是「長期停止買賣」的來源。⛔ 若幾乎全是 1 天，那它是**短期暫停**，我方那個缺口沒被關掉。
 
 [T12] 回測線要的 `FMNPTK`／`FMSRFK`（⛔ 區段名我不知道，逐個試）
      判準：stat=OK ＋ **title 要提到我要的標的與期間** ＋ 欄位逐字 ＋ 列數
   ── FMNPTK
-     ? afterTrading/：不是 JSON｜611 bytes
-     ? exchangeReport/：不是 JSON｜611 bytes
-     ? zh/afterTrading/：不是 JSON｜611 bytes
-     ? statistics/：不是 JSON｜611 bytes
-     ⇒ ⛔ 四個區段都沒回出資料。**這不代表端點不存在**（區段名可能是第五個），⇒ 下一步請情報分析線給**逐字網址**。
+     ✓ afterTrading/｜stat='OK'｜title=None｜列數 32
+       欄位逐字：['年度', '成交股數', '成交金額', '成交筆數', '最高價', '日期', '最低價', '日期', '收盤平均價']
+       首列：[83, '260,767,893', '43,077,714,614', '90,627', '177.00', '10/05', '96.00', '9/05', '159.04']｜末列：[114, '8,999,950,601', '10,296,188,010,790', '18,620,227', '1,550.00', '12/31', '780.00', '4/09', '1,163.06']
   ── FMSRFK
      ✓ afterTrading/｜stat='OK'｜title='114年2330 台積電           月成交資訊'｜列數 12
        欄位逐字：['年度', '月份', '最高價', '最低價', '加權(A/B)平均價', '成交筆數', '成交金額(A)', '成交股數(B)', '週轉率(%)']

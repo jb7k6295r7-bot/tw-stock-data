@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-10-14T00:07:42+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38426259648
+# ⏱ 這一趟：2026-10-16T19:37:20+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38893931349
 # otccal_probe.py 的輸出。這是探針結果，不是資料。
 # 要答的問題：**上櫃交易日曆有沒有第二來源**（目前唯一一列 C 級：只有自我一致）。
 # 判準四項見 otccal_probe.py 檔頭，⛔ 其中第 2 項（日期 min/max）是分水嶺。
@@ -17,67 +17,67 @@
 
   ── /tpex_daily_trading_index｜上櫃日成交量值指數  ★ 最像 FMTQIK 的那一個
      https://www.tpex.org.tw/openapi/v1/tpex_daily_trading_index
-     ✓ 1,175 bytes｜list[dict]｜列數 8
+     ✓ 1,614 bytes｜list[dict]｜列數 11
      欄位：['Date', 'TradeVolume', 'TradeAmount', 'NumberOfTransactions', 'TPExIndex', 'Change']
      首列：{"Date": "1151001", "TradeVolume": "1255319488", "TradeAmount": "255826802361", "NumberOfTransactions": "1322121", "TPExIndex": "418.82", "Change": "1.75"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tpex_index｜櫃買指數歷史資料  ★ 櫃買指數＝上櫃大盤，名字就寫著歷史
      https://www.tpex.org.tw/openapi/v1/tpex_index
-     ✓ 815 bytes｜list[dict]｜列數 8
+     ✓ 1,120 bytes｜list[dict]｜列數 11
      欄位：['Date', 'Open', 'High', 'Low', 'Close', 'Change']
      首列：{"Date": "20261001", "Open": "417.48", "High": "421.21", "Low": "417.09", "Close": "418.82", "Change": "1.75"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tpex_reward_index｜櫃買指數與報酬指數之收市指數
      https://www.tpex.org.tw/openapi/v1/tpex_reward_index
-     ✓ 586 bytes｜list[dict]｜列數 8
+     ✓ 805 bytes｜list[dict]｜列數 11
      欄位：['Date', 'TPExIndex', 'TPExTotalReturnIndex']
      首列：{"Date": "1151001", "TPExIndex": "418.82", "TPExTotalReturnIndex": "778.92"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tpex50_index｜富櫃50指數歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpex50_index
-     ✓ 626 bytes｜list[dict]｜列數 8
+     ✓ 860 bytes｜list[dict]｜列數 11
      欄位：['Date', 'TPEx50Index', 'TPEx50TotalReturnIndex']
      首列：{"Date": "1151001", "TPEx50Index": "618.73", "TPEx50TotalReturnIndex": "1067.12"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tpcgi_reward_index｜上櫃公司治理指數歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpcgi_reward_index
-     ✓ 850 bytes｜list[dict]｜列數 8
+     ✓ 1,168 bytes｜list[dict]｜列數 11
      欄位：['Date', 'TPExCorporateGovernanceIndex', 'TPExCorporateGovernanceReturnIndex']
      首列：{"Date": "1151001", "TPExCorporateGovernanceIndex": "438.06", "TPExCorporateGovernanceReturnIndex": "667.05"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tpci_reward_index｜櫃買「薪酬指數」歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpci_reward_index
-     ✓ 778 bytes｜list[dict]｜列數 8
+     ✓ 1,069 bytes｜list[dict]｜列數 11
      欄位：['Date', 'GTSMCompensationIndex', 'GTSMCompensationTotalReturnIndex']
      首列：{"Date": "1151001", "GTSMCompensationIndex": "241.63", "GTSMCompensationTotalReturnIndex": "355.38"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tphd_index｜高殖利率指數歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tphd_index
-     ✓ 858 bytes｜list[dict]｜列數 8
+     ✓ 1,179 bytes｜list[dict]｜列數 11
      欄位：['Date', 'TPExHighDividendYieldIndex', 'TPExHighDividendYieldTotalReturnIndex']
      首列：{"Date": "1151001", "TPExHighDividendYieldIndex": "426.25", "TPExHighDividendYieldTotalReturnIndex": "767.48"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
   ── /tpex_emp88_reward_index｜櫃買「勞工就業88指數」歷史收盤指數
      https://www.tpex.org.tw/openapi/v1/tpex_emp88_reward_index
-     ✓ 890 bytes｜list[dict]｜列數 8
+     ✓ 1,223 bytes｜list[dict]｜列數 11
      欄位：['Date', 'GretaiLaborEmployment88Index', 'GretaiLaborEmployment88TotalReturnIndex']
      首列：{"Date": "1151001", "GretaiLaborEmployment88Index": "367.99", "GretaiLaborEmployment88TotalReturnIndex": "599.92"}
-     日期欄「Date」：解得出 8/8｜唯一 8 天｜2026-10-01 ~ 2026-10-13｜最大相鄰間隔 4 天
-     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-13／我方 2015-01-05~2026-09-15）⇒ 驗不了
+     日期欄「Date」：解得出 11/11｜唯一 11 天｜2026-10-01 ~ 2026-10-16｜最大相鄰間隔 4 天
+     ⚠ 與我方日曆**沒有重疊區間**（對方 2026-10-01~2026-10-16／我方 2015-01-05~2026-09-15）⇒ 驗不了
 
 [3] 候選 B：櫃買新站「休市日」那一頁，以及它自己呼叫的端點
      ⚠ 已知（`_tpex_probe.txt` [9]）：那一頁是 **js 空殼**，HTML 裡「休市」只出現 5 次、沒有表格。這一節是去看它載入的 js。
@@ -104,7 +104,7 @@
            tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
         ── 第 3 段（921 字）
            (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-           params={r:'a49f98d39a743eac',t:'MTc5MTkwNzY0Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
+           params={r:'a4b6c50a08e6b6c9',t:'MTc5MjE1MDYyNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getEl
            ementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=
            1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'
            !==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};
@@ -165,14 +165,14 @@
 
 [5] 這一輪的結論
      ✓ 有 8 個候選端點回了帶日期序列的資料：
-       /tpex_daily_trading_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tpex_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tpex_reward_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tpex50_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tpcgi_reward_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tpci_reward_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tphd_index：8 天｜2026-10-01 ~ 2026-10-13
-       /tpex_emp88_reward_index：8 天｜2026-10-01 ~ 2026-10-13
+       /tpex_daily_trading_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tpex_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tpex_reward_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tpex50_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tpcgi_reward_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tpci_reward_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tphd_index：11 天｜2026-10-01 ~ 2026-10-16
+       /tpex_emp88_reward_index：11 天｜2026-10-01 ~ 2026-10-16
      ⇒ 下一步：把**唯一一個涵蓋期間最長、且與我方 0 差異**的接進`calendar_audit.py`，寫成有 rl.check 的比對。
      ⛔ 但先看清楚涵蓋期間：只蓋得到近一年的，就只能把那一年升級成 B，**2015~2025 仍然是 C**——⛔ 不可以整列寫成「已升 B」。
 
