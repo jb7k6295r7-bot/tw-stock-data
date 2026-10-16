@@ -1,0 +1,49 @@
+name: 每日資料看門狗（排程漏跑就補派 main）
+
+# ⭐ 2026-10-16：GitHub 排程會延遲、甚至整班不跑（2026-10-13 18:23 與 23:47 兩班都沒觸發，靠人工 00:00 補派）。
+#   ⇒ 這一支在 daily 兩班之後各看一次：「這個時段 daily 有沒有在跑或跑成功的」，沒有（漏班或失敗）就自己派一趟 daily.yml ⛔ 只派 --ref main。
+#   ⛔ 絕不派分支（daily 在分支上跑會用分支的舊 data 整檔搬上 main ⇒ 2026-10-05 事故）。
+#   不需要判斷交易日：daily 自己會處理休市日（休市日跑一趟只是沒有新資料）。
+# ⚠ 這一支本身也是排程，也可能被延遲或略過 ⇒ 排三班互為備援；有任一班 daily 已在跑或跑過就不重派。
+on:
+  schedule:
+    - cron: "41 12 * * 1-5"   # 台北週一～五 20:41（daily 18:23 班之後）
+    - cron: "13 17 * * 1-5"   # 台北週二～六 01:13（daily 23:47 班之後）
+    - cron: "19 21 * * 1-5"   # 台北週二～六 05:19（最後一道）
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: daily-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: 看這個時段 daily 有沒有開跑過
+        run: |
+          set -euo pipefail
+          # 時段起點＝最近一次台北 17:00（daily 第一班 18:23 之前）
+          NOW_TPE=$(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M')
+          if [ "$(TZ=Asia/Taipei date +%H)" -ge 17 ]; then D=$(TZ=Asia/Taipei date +%Y-%m-%d); else D=$(TZ=Asia/Taipei date -d yesterday +%Y-%m-%d); fi
+          SINCE=$(TZ=Asia/Taipei date -d "$D 17:00" -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "台北 $NOW_TPE｜時段起點 $D 17:00（UTC $SINCE）"
+          RUNS=$(gh run list --workflow daily.yml -L 20 --json databaseId,createdAt,status,conclusion,headBranch,event \
+                 -q "[.[] | select(.createdAt >= \"$SINCE\" and .headBranch == \"main\" and .conclusion != \"failure\" and .conclusion != \"cancelled\")]")
+          echo "$RUNS" | jq -r '.[] | "  \(.createdAt) \(.event) \(.status) \(.conclusion)"'
+          N=$(echo "$RUNS" | jq 'length')
+          if [ "$N" -gt 0 ]; then
+            echo "✓ 這個時段 daily（main）已有 $N 趟在跑或跑成功 ⇒ 不派"
+            exit 0
+          fi
+          echo "⚠ 這個時段 daily 沒有在跑或成功的（排程漏班或失敗）⇒ 補派 --ref main"
+          gh workflow run daily.yml --ref main
+          echo "已派出"
