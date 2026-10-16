@@ -1346,6 +1346,10 @@ def main():
     for f in files:
         short = os.path.basename(f)
         txt = io.open(f, encoding="utf-8").read()
+        # ⭐ 2026-10-16：完全不 checkout 的 workflow（例 daily_watchdog.yml 只打 GitHub API）
+        #   沒有 clone ⇒ 沒有 rebase／比較 ⇒ 這條的理由不適用 ⇒ 不要求（⛔ 有 checkout 就一定要 depth 0）
+        if "actions/checkout" not in txt:
+            continue
         m = re.search(r"uses:\s*actions/checkout@[^\n]*\n(?:[^\n]*\n){0,12}?"
                       r"\s*fetch-depth:\s*0", txt)
         ck(f"⛔ {short}：checkout 有 `fetch-depth: 0`"
