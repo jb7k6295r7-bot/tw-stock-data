@@ -1136,7 +1136,11 @@ def main():
                 if not got["0"][0] or not header:
                     _note("revenue", per, mkt, f"0 列（{note}）")
                     continue
-                if not got["1"][0]:
+                if not got["1"][0] and mkt == ESB[0]:
+                    # ⭐ 2026-10-17：興櫃早年沒有外國企業（2016～2020 多數月份 `_1` 查無資料）⇒ 只印、不進 fails
+                    #   （進 fails 會讓整趟 exit 1：38948625077 就是資料全寫好卻顯示失敗）
+                    print(f"  [月營收 {per} {mkt}] 外國企業那一段 0 列（{got['1'][2]}）——興櫃早年常態，不算失敗")
+                elif not got["1"][0]:
                     fails.append(("revenue", per, mkt,
                                   f"⚠ 外國企業那一段 0 列（{got['1'][2]}）"
                                   "　⇒ ⛔ 不算失敗，⛔ 也不算「那一期沒有 KY」"))
