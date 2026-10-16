@@ -17,6 +17,9 @@
 #   7 same_state（情報 1219；持股歷史同狀態，backtest.same_state 查表）：daily 產檔或略過之後才跑；⛔ 失敗只記 log、不改退出碼、不影響 daily；
 #      同一資料日、同一 sha（resultsYLwatch/.same_state_<資料日>.sha）且 _營量觀察/same_state_<資料日>.md 在 ⇒ 略過；--force 一起重產；
 #      --final 不寫 same_state 的 _未到（情報：缺檔就不印那行）；測試用：SAME_STATE_FAKE_FAIL=1 讓 same_state 故意失敗
+#   9 大盤大跌前瞻（PREREG大盤大跌後買什麼 seq1，2026-10-17 加）：daily_list 產檔成功之後、複製到 _營量觀察/ 之前跑 backtest.mktdrop_fwd daily
+#      （＝ researchMktDrop_v1 --judge <資料日> --write ＋ 收復檢查 ＋ 名單檔尾加「## 八、（內部）大盤大跌前瞻」）；⛔ 失敗只記 log、不改退出碼、名單照常複製；
+#      紀錄 backtest/forward/mktdrop/、輸出 backtest/resultsDaily/mktdrop.log；daily 略過（sha 相同）⇒ 本步也不跑
 #   磁碟：archive 依【資料內容】（相關 data 子樹的 git tree id）存 ~/h2data/daily_<key>，~/h2data/<sha> 只放 symlink ⇒ 只改了別的 feed 的新 commit 不會再多一份 800MB
 set -uo pipefail
 REPO=$HOME/tw-p17
@@ -58,6 +61,13 @@ if [ -z "$FAIL" ]; then
   else
     WLOG="$REPO/backtest/resultsDaily/wrapper.log"
     if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.daily_list > "$WLOG" 2>&1) && [ -f "$REPO/backtest/resultsDaily/daily_$ASOF.md" ]; then
+      # 規則 9：大盤大跌前瞻（失敗只記 log；md 只在成功時才加第八節）
+      MLOG="$REPO/backtest/resultsDaily/mktdrop.log"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.mktdrop_fwd daily --asof "$ASOF" --sha "$SHA" --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" > "$MLOG" 2>&1); then
+        logline "大盤大跌前瞻：$(tail -1 "$MLOG")"
+      else
+        logline "大盤大跌前瞻 失敗（不影響 daily）：$(tail -1 "$MLOG" 2>/dev/null)（見 $MLOG）"
+      fi
       mkdir -p "$MB"
       cp "$REPO/backtest/resultsDaily/daily_$ASOF.md" "$OUTF"
       rm -f "$MB/daily_${ASOF}_未到.md"
