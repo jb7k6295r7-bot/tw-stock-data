@@ -20,6 +20,15 @@
    F6、F7 逐檔分數 ＝ researchMktDrop_fund.forward() 同式（重用 fund 的函式；財報、法人、融資、集保讀 ~/mktdropwork 下 --fsha 的 git archive，預設 ＝ sha）
    F8 ＝ researchMktDrop_f8.add_f8／order（F6、F7 先取 6 位有效數字＝同 f8 讀 features.csv；同分 ⇒ F7 高者 ⇒ 代號）
  輸出 candidates_<事件日>.csv（欄位同 10/15 版；F8top3 三列放在 F 列之後、持股列之前）
+── 2026-10-17 改（使用者裁：檔數改 4，並採 F9；只加列、A～F／C+／持股列不動）──
+ ⭐ F9top4（使用者採用、未驗證、不入判）：C+ 內 F9 ＝ F6 名次百分位 ＋ F7 名次百分位 ＋ Q 名次百分位（等權）前 4 檔（--f9n，預設 4）
+   Q ＝ researchMktDrop_quality 的函式在事件日 PIT 算（重用 load_fin／fin_q／load_div／div_q／add_q，不另寫）：
+     財報 ＝ --fsha archive 的 fin_hist／fs_xbrl，可得日 ＝ filing_dates.csv（t57sb01）該季最早上傳日 ＜ 事件日（無時戳 ⇒ 法定期限）；
+     配息 ＝ 事件日 archive（--sha）data/adj 除息紀錄、除息日 ＜ 事件日；6 子項 C+ 內百分位等權、缺值 0 分
+   Q 先取 6 位有效數字（同 f9 讀 quality/forward_*.csv）；F9 ＝ researchMktDrop_f9.add_f9／order（F9 四捨五入 1e-6；同分 ⇒ F7 高者 ⇒ 代號）
+ ⭐ F8 檔數參數化（--f8n，預設改 4 ⇒ 候選欄「F8top4」；--f8n 3 可回 F8top3）
+ 列序：F 列之後 F9top<n> 先、F8top<n> 後，再接持股列；--nof8 ⇒ F8、F9 都不算（只 A～F）；--nof9 ⇒ 只不算 F9
+ --feat CSV ⇒ 另寫 C+ 逐檔 F6／F7／Q（含 6 子項）／三個名次百分位／F8／F9（稽核用）
 """
 from __future__ import annotations
 
@@ -46,7 +55,17 @@ from backtest import holdings as HD
 REPO = os.path.expanduser("~/tw-p17")
 IND_EXCL = {"其他", "存託憑證", "ETF"}
 SEC2 = "## 二、營量 v1 已達成"
-F8TAG = "F8top3"
+F8N = 4                            # 2026-10-17 使用者裁：檔數 4（--f8n 3 可回舊版 F8top3）
+F9N = 4
+F8TAG = "F8top3"                   # 舊名（10/15 正式紀錄用過）；新產一律 f8tag(n)
+
+
+def f8tag(n):
+    return f"F8top{int(n)}"
+
+
+def f9tag(n):
+    return f"F9top{int(n)}"
 FUND_PATHS = ["data/meta/calendar_twse.csv", "data/meta/stocks.csv", "data/meta/filing_dates.csv", "data/meta/fs_xbrl",
               "data/mops/fin_hist", "data/stocks_inst", "data/stocks_margin", "data/tdcc", "data/tdcc_hist"]
 COLS = ["候選", "代號", "名稱", "當日報酬", "營收期別", "年增", "是否跌停", "產業", "備註"]
@@ -209,10 +228,53 @@ def f8_rank(t, DATA, XD, cal, cp, procs=4, log=print):
     return o, info, d
 
 
+# ═════════════ Q、F9（重用 researchMktDrop_quality／_f9）═════════════
+def q_scores(t, DATA, XD, sids, log=print):
+    """C+ 代號 ⇒ DataFrame（sid、6 子項、p_*、Q、q_nmiss…）＝ researchMktDrop_quality.forward() 同式，只是事件日 t、資料路徑參數化。
+    財報 ＝ XD（fin_hist／fs_xbrl／filing_dates：t57sb01 上傳日 ＜ t）；配息 ＝ DATA/adj（除息日 ＜ t）、市場別 ＝ adj/_index.csv ∪ DATA/meta/stocks.csv。"""
+    from backtest import researchMktDrop_fund as FU
+    from backtest import researchMktDrop_quality as QL
+    keep = (QL.XD, QL.ADJ, FU.FDATA)
+    QL.XD = XD; QL.ADJ = os.path.join(DATA, "adj"); FU.FDATA = DATA       # quality 的模組路徑（load_fin 讀 QL.XD；load_div 讀 QL.ADJ、FU.FDATA/meta/stocks.csv）
+    try:
+        FIN, finfo = QL.load_fin()
+        DV, mk, smk = QL.load_div()
+    finally:
+        QL.XD, QL.ADJ, FU.FDATA = keep
+    W = pd.DataFrame({"sid": list(sids)}); W["事件日"] = str(t.date())
+    FQ = pd.DataFrame([QL.fin_q(FIN.get(s), t) for s in W["sid"]], index=W.index)
+    for c in FQ.columns:
+        W[c] = FQ[c]
+    dv = [QL.div_q(DV, mk, smk, s, t) for s in W["sid"]]
+    W["q_div"] = [x[0] for x in dv]; W["q_divsrc"] = [x[1] for x in dv]
+    W = QL.add_q(W, "事件日")
+    info = {"財報季列": finfo.get("季列"), "財報季": W["q_finq"].value_counts().to_dict(), "配息來源": W["q_divsrc"].value_counts().to_dict(),
+            "缺值比例": {s: round(float(W[s].isna().mean()), 3) for s in QL.SUBS}, "Q缺": int(W["Q"].isna().sum())}
+    return W, info
+
+
+def f9_rank(t, DATA, XD, o8, log=print):
+    """o8 ＝ f8_rank 的輸出（F6、F7 已取 6 位有效數字）⇒ DataFrame（F9 降冪；欄 F9名次、sid、名稱、F9、r6、r7、rQ、Q、F6、F7、Q 子項…）。
+    ＝ researchMktDrop_f9.forward()：Q 取 6 位有效數字（同讀 quality/forward_*.csv）後 add_f9／order。"""
+    from backtest import researchMktDrop_quality as QL
+    from backtest import researchMktDrop_f9 as F9
+    QW, qinfo = q_scores(t, DATA, XD, o8["sid"].tolist(), log)
+    W = o8[["sid", "名稱", "事件日", "F6", "F7"]].copy()
+    W = W.merge(QW[["sid", "Q", "q_nmiss", "q_finq", "q_divsrc"] + QL.SUBS + ["p_" + s for s in QL.SUBS]], on="sid", how="left")
+    if W["Q"].isna().any():
+        raise SystemExit(f"⛔ Q 有缺：{W.loc[W['Q'].isna(), 'sid'].tolist()}")
+    W["Q"] = [float(f"{x:.6g}") for x in W["Q"].to_numpy(float)]
+    W = F9.add_f9(W, "事件日")
+    o = F9.order(W, "F9").reset_index(drop=True)
+    o["F9名次"] = np.arange(1, len(o) + 1)
+    return o, qinfo
+
+
 # ═════════════ 候選名單 ═════════════
-def make_candidates(t_date, sha, md=None, f_codes=None, fsha=None, out=None, procs=4, f8=True, log=print):
+def make_candidates(t_date, sha, md=None, f_codes=None, fsha=None, out=None, procs=4, f8=True, log=print, f8n=F8N, f9=True, f9n=F9N, feat_out=None):
     """事件日 t_date 的候選名單 ⇒ 寫 out（預設 researchMktDrop_v1.FWD/candidates_<日>.csv）；回摘要 dict。
-    F：f_codes（代號 list）優先；否則讀 md（每日名單）第二節；兩者都沒有 ⇒ 丟例外。"""
+    F：f_codes（代號 list）優先；否則讀 md（每日名單）第二節；兩者都沒有 ⇒ 丟例外。
+    f8＝False ⇒ F8、F9 都不算；f8n／f9n ＝ 檔數（候選欄 F8top<n>／F9top<n>）；f9＝False ⇒ 只不算 F9；feat_out ⇒ 另寫 C+ 逐檔分數表。"""
     from backtest import researchMktDrop_v1 as RM
     T0 = time.time()
     T_DATE = pd.Timestamp(t_date)
@@ -305,15 +367,28 @@ def make_candidates(t_date, sha, md=None, f_codes=None, fsha=None, out=None, pro
                              "在R1": c_ in set(mem)})
     finally:
         UG.set_gate_v2(g0)
-    # ── F8 前 3（GATE_V2 照 fund 研究：關）──
-    F8sel = []; f8info = None
+    # ── F8 前 n、F9 前 n（GATE_V2 照 fund 研究：關）──
+    F8sel = []; f8info = None; F9sel = []; f9info = None
+    tag8, tag9 = f8tag(f8n), f9tag(f9n)
     if f8 and Cp:
         XD = fund_dir(fsha or sha, log)
         oF8, f8info, _feat = f8_rank(T_DATE, DATA, XD, cal, [(s, nm_of.get(s, ""), res[s]["ret"], REV[s][1]) for s in Cp], procs=procs, log=log)
-        F8sel = oF8.head(3).to_dict("records")
+        F8sel = oF8.head(int(f8n)).to_dict("records")
         f8info["財報籌碼資料"] = XD
         f8info["前10"] = [{"名次": int(r["F8名次"]), "代號": r["sid"], "名稱": r["名稱"], "F8": round(float(r["F8"]), 3), "F6名次百分位": round(float(r["r6"]), 3),
                           "F7名次百分位": round(float(r["r7"]), 3), "F6": float(r["F6"]), "F7": float(r["F7"])} for r in oF8.head(10).to_dict("records")]
+        if f9:
+            oF9, qinfo = f9_rank(T_DATE, DATA, XD, oF8, log=log)
+            F9sel = oF9.head(int(f9n)).to_dict("records")
+            f9info = {"Q": qinfo, "財報資料": XD, "配息資料": os.path.join(DATA, "adj"),
+                      "前10": [{"名次": int(r["F9名次"]), "代號": r["sid"], "名稱": r["名稱"], "F9": float(r["F9"]), "F6名次百分位": round(float(r["r6"]), 4),
+                               "F7名次百分位": round(float(r["r7"]), 4), "Q名次百分位": round(float(r["rQ"]), 4), "Q": float(r["Q"]),
+                               "F8名次": int(oF8.index[oF8["sid"] == r["sid"]][0]) + 1} for r in oF9.head(10).to_dict("records")]}
+            if feat_out:
+                r8 = dict(zip(oF8["sid"], oF8["F8名次"]))
+                FT = oF9.assign(F8名次=oF9["sid"].map(r8))
+                os.makedirs(os.path.dirname(os.path.abspath(feat_out)), exist_ok=True)
+                FT.to_csv(feat_out, index=False, encoding="utf-8", float_format="%.10g")
     # ── 輸出 CSV（欄、列序、格式同 forward/mktdrop_cands.py；F8top3 放 F 列之後）──
     rows = []
     fmt = lambda x: "" if x is None or (isinstance(x, float) and not np.isfinite(x)) else x
@@ -337,9 +412,15 @@ def make_candidates(t_date, sha, md=None, f_codes=None, fsha=None, out=None, pro
         rows.append({"候選": "F", "代號": s, "名稱": nm_of.get(s, ""), "當日報酬": (r_["ret"] if r_.get("traded") else ""), "營收期別": fmt(per), "年增": fmt(y),
                      "是否跌停": (("是" if r_["dn"] else "否") if r_.get("traded") else ""), "產業": fmt(ind.get(s)),
                      "備註": f"營量 v1 已達成（{src_f}）" + (f"；候選不足（{len(f_codes)} ＜ 5 檔，照登錄照買照算）" if len(f_codes) < 5 else "")})
+    for j, r in enumerate(F9sel):
+        s = r["sid"]; per, y = REV[s]
+        rows.append({"候選": tag9, "代號": s, "名稱": nm_of.get(s, ""), "當日報酬": res[s]["ret"], "營收期別": fmt(per), "年增": fmt(y),
+                     "是否跌停": "是" if res[s]["dn"] else "否", "產業": fmt(ind[s]),
+                     "備註": f"F9 第 {j + 1} 名（C+ {len(Cp)} 檔內 F6 名次百分位 {r['r6']:.1f} ＋ F7 名次百分位 {r['r7']:.1f} ＋ Q 名次百分位 {r['rQ']:.1f} ＝ {r['F9']:.1f}）；"
+                             f"使用者採用、未驗證、不入判"})
     for j, r in enumerate(F8sel):
         s = r["sid"]; per, y = REV[s]
-        rows.append({"候選": F8TAG, "代號": s, "名稱": nm_of.get(s, ""), "當日報酬": res[s]["ret"], "營收期別": fmt(per), "年增": fmt(y),
+        rows.append({"候選": tag8, "代號": s, "名稱": nm_of.get(s, ""), "當日報酬": res[s]["ret"], "營收期別": fmt(per), "年增": fmt(y),
                      "是否跌停": "是" if res[s]["dn"] else "否", "產業": fmt(ind[s]),
                      "備註": f"F8 第 {j + 1} 名（C+ {len(Cp)} 檔內 F6 名次百分位 {r['r6']:.1f} ＋ F7 名次百分位 {r['r7']:.1f} ＝ {r['F8']:.1f}）；研究紀錄、未驗證、不入判"})
     for h in hold:
@@ -356,7 +437,8 @@ def make_candidates(t_date, sha, md=None, f_codes=None, fsha=None, out=None, pro
          "C 最淺跌幅": float(rets[o[ns - 1]]), "E 產業": [inv[w] for w in worst], "E 檔數": len(Esel),
          "E 各產業": {inv[w]: int((dfo["ii"] == w).sum()) for w in worst}, "產業最差六": gtab[["產業", "mean", "count"]].to_dict("records"),
          "F": f_codes, "F 來源": (md or "f_codes"), "ETF": etf, "營收資訊": rinfo, "產業來源計數（母體）": pd.Series(isrc).value_counts().to_dict(),
-         "F8前3": [r["sid"] for r in F8sel], "F8": f8info, "持股列": len(hold), "耗時秒": round(time.time() - T0)}
+         "F8候選欄": tag8 if F8sel else None, "F8前n": [r["sid"] for r in F8sel], "F8": f8info,
+         "F9候選欄": tag9 if F9sel else None, "F9前n": [r["sid"] for r in F9sel], "F9": f9info, "持股列": len(hold), "耗時秒": round(time.time() - T0)}
     log(json.dumps(J, ensure_ascii=False, default=str))
     return J
 
@@ -366,10 +448,15 @@ def main():
     ap.add_argument("--date", required=True); ap.add_argument("--sha", required=True); ap.add_argument("--md", default=None)
     ap.add_argument("--f", default=None, help="F 代號（逗號分隔；給了就不讀 md；空字串＝0 檔）")
     ap.add_argument("--fsha", default=None, help="財報／法人／融資／集保的 sha（預設 ＝ --sha）")
-    ap.add_argument("--out", default=None); ap.add_argument("--procs", type=int, default=4); ap.add_argument("--nof8", action="store_true")
+    ap.add_argument("--out", default=None); ap.add_argument("--procs", type=int, default=4)
+    ap.add_argument("--nof8", action="store_true", help="F8、F9 都不算（只 A～F）"); ap.add_argument("--nof9", action="store_true", help="只不算 F9")
+    ap.add_argument("--f8n", type=int, default=F8N, help=f"F8 檔數（預設 {F8N}；3 ＝ 舊版 F8top3）")
+    ap.add_argument("--f9n", type=int, default=F9N, help=f"F9 檔數（預設 {F9N}）")
+    ap.add_argument("--feat", default=None, help="另寫 C+ 逐檔 F6／F7／Q／F8／F9 分數表（稽核用）")
     a = ap.parse_args()
     fc = None if a.f is None else [x for x in a.f.split(",") if x.strip()]
-    make_candidates(a.date, a.sha, md=a.md, f_codes=fc, fsha=a.fsha, out=a.out, procs=a.procs, f8=not a.nof8)
+    make_candidates(a.date, a.sha, md=a.md, f_codes=fc, fsha=a.fsha, out=a.out, procs=a.procs, f8=not a.nof8,
+                    f8n=a.f8n, f9=not a.nof9, f9n=a.f9n, feat_out=a.feat)
 
 
 if __name__ == "__main__":

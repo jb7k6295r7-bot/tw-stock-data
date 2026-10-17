@@ -32,6 +32,10 @@
    （A、B、C、C+、E、F 同 forward/mktdrop_cands.py；F ＝ 名單第二節營量 v1 已達成；候選檔已在 ⇒ 不重產；⛔ 失敗只記 log、第八節照出）
  F8top3（研究紀錄、未驗證、不入判）：候選檔「候選」欄 F8top3 的 3 列（C+ 內 F6 名次＋F7 名次前 3）⇒ 補買進列時一併寫 positions（候選 F8top3）；
    收復／出場同其他列；第八節既有各行只算 A～F（F8top3 不併入帳面、買不到、久未成交），另加「F8 前 3」行：事件／待買 ⇒ 名單；持有中 ⇒ 帳面；已出場 ⇒ 扣成本報酬
+── 2026-10-17 改（使用者裁：檔數改 4、採 F9）──
+ 研究列 ＝ 候選欄 F8top<n>（C+ 內 F6 名次＋F7 名次前 n；研究紀錄、未驗證、不入判）與 F9top<n>（C+ 內 F6 名次＋F7 名次＋Q 名次前 n；使用者採用、未驗證、不入判）
+   ⇒ 補買進列時一併寫 positions；收復／出場同其他列；第八節既有各行只算 A～F（研究列不併入帳面、買不到、久未成交）
+ 第八節兩行（F9 先）：「F9 前 n（使用者採用）」「F8 前 n」；n ＝ 該族（F9top*／F8top*）該事件不同代號數 ⇒ 舊 F8top3 三列 ＋ 補的 F8top4 一列 ＝「F8 前 4」
 """
 from __future__ import annotations
 
@@ -40,6 +44,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 
 import numpy as np
@@ -52,9 +57,22 @@ from backtest import researchMktDrop_v1 as RM
 
 ETFS = ("0050", "00631L")
 CANDS_IN = ("A", "B", "C", "C+", "D", "E", "F")
-F8TAG = "F8top3"                                                   # 2026-10-17 加：研究紀錄、未驗證、不入判
-BUY_IN = CANDS_IN + (F8TAG,)
+F8TAG = "F8top3"                                                   # 2026-10-17 加：研究紀錄、未驗證、不入判（舊名；新的一律 F8top<n>／F9top<n>）
 F8NOTE = "研究紀錄、未驗證"
+F9NOTE = "使用者採用、未驗證、不入判"
+RES_FAM = ("F9", "F8")                                             # 第八節列序：F9 先
+RES_DESC = {"F8": "C+ 內 F6 名次＋F7 名次", "F9": "C+ 內 F6 名次＋F7 名次＋Q 名次"}
+_RES_RE = re.compile(r"^(F[89])top(\d+)$")
+
+
+def res_fam(cd):
+    """研究列候選欄 F8top<n>／F9top<n> ⇒ "F8"／"F9"；其他 ⇒ None。"""
+    m = _RES_RE.match(str(cd))
+    return m.group(1) if m else None
+
+
+def buy_in(cd):
+    return cd in CANDS_IN or res_fam(cd) is not None
 EDITABLE = ("狀態", "備註")
 SEC_TITLE = "## 八、（內部）大盤大跌前瞻（研究紀錄、未驗證；不推 LINE）"
 SEC_NOTE = ("PREREG大盤大跌後買什麼 seq1 的前瞻紀錄（backtest/forward/mktdrop/）：看過初測才登錄、最多暫定；事件累計 ≥ 10 次才判一次；"
@@ -194,7 +212,7 @@ def fill_buys(seq, cands, sha, write=True, log=print):
         return {"狀態": "資料未到", "事件日": str(t.date()), "日曆尾": str(cal[-1].date())}
     bd = cal[e]
     C = pd.read_csv(cands, dtype=str, encoding="utf-8-sig").fillna("")
-    C = C[C["候選"].isin(BUY_IN)]
+    C = C[C["候選"].map(buy_in)]
     mk, nm = meta(DATA)
     now = RM.now_tpe(); rows = []; summ = {}
     tag0 = "第 0 筆描述、不入判" if int(seq) == 0 else ""
@@ -215,9 +233,11 @@ def fill_buys(seq, cands, sha, write=True, log=print):
             why.append("開盤漲停鎖死")
         if X["bad"][e]:
             why.append("隔天是壞根")
+        fam = res_fam(cd); rn = _RES_RE.match(cd).group(2) if fam else ""
         note = [x for x in (tag0, "C+ ＝ C 裡最近一期營收年增 > 0（描述格，v1 沒有、不入判）" if cd == "C+" else "",
                             "正2 含槓桿效果" if cd == "B" else "",
-                            "F8top3 ＝ C+ 內 F6 名次＋F7 名次前 3（研究紀錄、未驗證、不入判）" if cd == F8TAG else "") if x]
+                            f"{cd} ＝ {RES_DESC['F8']}前 {rn}（研究紀錄、未驗證、不入判）" if fam == "F8" else "",
+                            f"{cd} ＝ {RES_DESC['F9']}前 {rn}（{F9NOTE}）" if fam == "F9" else "") if x]
         if why:
             S["買不到"].append(f"{sid}（{'、'.join(why)}）")
             rows.append({**base, "狀態": "買不到", "備註": "；".join(note + [f"買不到：{'、'.join(why)}（{bd.date()}）"])})
@@ -231,7 +251,7 @@ def fill_buys(seq, cands, sha, write=True, log=print):
            "候選": {cd: {"選出": v["選出"], "買到": v["買到"], "買不到檔數": len(v["買不到"]), "買不到": v["買不到"],
                        "帳面（買進日收盤÷開盤−1，等權、未扣成本）": (float(np.mean(v["帳面"])) if v["帳面"] else None),
                        "帳面扣來回成本": ((1 + float(np.mean(v["帳面"]))) * (1 - (RM.COST_ETF if cd in ("A", "B") else RM.COST_STK)) - 1 if v["帳面"] else None),
-                       **({"代號": [r_["代號"] for r_ in rows if r_["候選"] == cd]} if cd == F8TAG else {})}
+                       **({"代號": [r_["代號"] for r_ in rows if r_["候選"] == cd]} if res_fam(cd) else {})}
                     for cd, v in summ.items()}}
     if write:
         RM.fwd_append_positions(rows)
@@ -259,8 +279,9 @@ def recovery(asof, sha, write=True, log=print):
             for p in read_rows("positions.csv"):
                 if p["序號"] == ev["序號"] and p["狀態"] == "已出場":
                     R["候選"].setdefault(p["候選"], {"報酬": []})["報酬"].append(float(p["報酬"]))
-                if p["序號"] == ev["序號"] and p["候選"] == F8TAG:
-                    R.setdefault("F8明細", []).append((p["代號"], p["名稱"], p["狀態"], float(p["報酬"]) if p["狀態"] == "已出場" else None))
+                if p["序號"] == ev["序號"] and res_fam(p["候選"]):
+                    R.setdefault("研究明細", {}).setdefault(res_fam(p["候選"]), []).append(
+                        (p["代號"], p["名稱"], p["狀態"], float(p["報酬"]) if p["狀態"] == "已出場" else None))
             res.append(R)
             continue
         if ev["狀態"] not in ("待買", "持有中"):
@@ -283,7 +304,9 @@ def recovery(asof, sha, write=True, log=print):
         for p in P:
             cd = p["候選"]
             S = R["候選"].setdefault(cd, {"持有": 0, "已出場": 0, "買不到": 0, "帳面": [], "報酬": [], "賣出日": [], "久未成交": []})
-            f8m = (lambda st_, v_: R.setdefault("F8明細", []).append((p["代號"], p["名稱"], st_, v_))) if cd == F8TAG else (lambda st_, v_: None)
+            fam_ = res_fam(cd)
+            f8m = ((lambda st_, v_: R.setdefault("研究明細", {}).setdefault(fam_, []).append((p["代號"], p["名稱"], st_, v_)))
+                   if fam_ else (lambda st_, v_: None))
             if p["狀態"] == "買不到":
                 S["買不到"] += 1; f8m("買不到", None); continue
             if p["狀態"] == "已出場":
@@ -343,35 +366,64 @@ def _cands_str(R, key, cost=False):
     return "｜".join(out)
 
 
+def _uniq(it):
+    """（代號, …）序列依代號去重、保留第一次出現的順序（舊 F8top3 ＋ 補的 F8top4 併成一族）。"""
+    seen = set(); out = []
+    for x in it:
+        if x[0] not in seen:
+            seen.add(x[0]); out.append(x)
+    return out
+
+
+def _res_head(fam, n):
+    return f"F9 前 {n}（使用者採用）" if fam == "F9" else f"F8 前 {n}"
+
+
+def _res_note(fam):
+    return f"{RES_DESC[fam]}；{'未驗證、不入判' if fam == 'F9' else F8NOTE}"
+
+
+def _res_head_note(fam, n):
+    """持有中／已出場行的開頭：F9 ⇒「F9 前 n（使用者採用；…）」、F8 ⇒「F8 前 n（…）」。"""
+    return f"F9 前 {n}（使用者採用；{_res_note(fam)}）" if fam == "F9" else f"F8 前 {n}（{_res_note(fam)}）"
+
+
 def _f8_pick_line(cf):
-    """候選檔的 F8top3 列 ⇒ 「F8 前 3：…」一行（沒有 ⇒ 空）。"""
+    """候選檔的研究列（F9top<n>、F8top<n>）⇒ 「F9 前 n（使用者採用）：…」「F8 前 n：…」兩行（F9 先；沒有 ⇒ 空）。"""
     try:
         C = pd.read_csv(cf, dtype=str, encoding="utf-8-sig").fillna("")
     except Exception:                                              # noqa: BLE001  讀不了就不列（候選檔另有檢查）
         return []
-    C = C[C["候選"] == F8TAG]
-    if not len(C):
-        return []
-    return [f"  - F8 前 3：{'、'.join(f'{s} {n}' for s, n in zip(C['代號'], C['名稱']))}（C+ 內 F6 名次＋F7 名次；{F8NOTE}）"]
+    L = []
+    for fam in RES_FAM:
+        c = C[C["候選"].map(lambda x: res_fam(x) == fam)]
+        it = _uniq(list(zip(c["代號"], c["名稱"])))
+        if it:
+            L.append(f"  - {_res_head(fam, len(it))}：{'、'.join(f'{s} {n}' for s, n in it)}（{_res_note(fam)}）")
+    return L
 
 
 def _f8_line(R):
-    """recovery 收的 F8top3 明細 ⇒ 一行：持有中帳面（未扣成本）／已出場扣成本報酬／買不到。"""
-    it = R.get("F8明細")
-    if not it:
-        return []
-    parts = []
-    for s, n, st_, v in it:
-        if st_ == "持有中":
-            parts.append(f"{s} {n} 帳面 {v:+.2%}")
-        elif st_ == "已出場":
-            parts.append(f"{s} {n} 已出場 {v:+.2%}（扣成本）")
-        else:
-            parts.append(f"{s} {n} {st_}")
-    hv = [v for _, _, st_, v in it if st_ == "持有中"]
-    xv = [v for _, _, st_, v in it if st_ == "已出場"]
-    tail = (f"｜持有中等權帳面 {np.mean(hv):+.2%}（未扣成本）" if hv else "") + (f"｜已出場等權 {np.mean(xv):+.2%}（扣成本）" if xv else "")
-    return [f"  - F8 前 3（C+ 內 F6 名次＋F7 名次；{F8NOTE}）：{'、'.join(parts)}{tail}"]
+    """recovery 收的研究列明細 ⇒ F9、F8 各一行：持有中帳面（未扣成本）／已出場扣成本報酬／買不到。"""
+    D_ = R.get("研究明細") or {}
+    L = []
+    for fam in RES_FAM:
+        it = _uniq(D_.get(fam) or [])
+        if not it:
+            continue
+        parts = []
+        for s, n, st_, v in it:
+            if st_ == "持有中":
+                parts.append(f"{s} {n} 帳面 {v:+.2%}")
+            elif st_ == "已出場":
+                parts.append(f"{s} {n} 已出場 {v:+.2%}（扣成本）")
+            else:
+                parts.append(f"{s} {n} {st_}")
+        hv = [v for _, _, st_, v in it if st_ == "持有中"]
+        xv = [v for _, _, st_, v in it if st_ == "已出場"]
+        tail = (f"｜持有中等權帳面 {np.mean(hv):+.2%}（未扣成本）" if hv else "") + (f"｜已出場等權 {np.mean(xv):+.2%}（扣成本）" if xv else "")
+        L.append(f"  - {_res_head_note(fam, len(it))}：{'、'.join(parts)}{tail}")
+    return L
 
 
 def section(J, RS, cands_dir=None):
@@ -413,10 +465,10 @@ def section(J, RS, cands_dir=None):
         if ex:
             L.append(f"  - 已出場的（扣成本）：{ex}")
         L += _f8_line(R)
-        nb = sum(S["買不到"] for c_, S in R["候選"].items() if c_ != F8TAG)
+        nb = sum(S["買不到"] for c_, S in R["候選"].items() if not res_fam(c_))
         if nb:
             L.append(f"  - 買不到已剔除：{nb} 檔（明細 positions.csv）")
-        stale = [x for c_, S in R["候選"].items() if c_ != F8TAG for x in S["久未成交"]]
+        stale = [x for c_, S in R["候選"].items() if not res_fam(c_) for x in S["久未成交"]]
         if stale:
             L.append(f"  - ⚠ 近 5 個交易日沒成交（可能停牌／下市，人工看）：{'、'.join(stale)}")
     return L + [""]
@@ -453,7 +505,8 @@ def daily(a):
             try:
                 from backtest import mktdrop_cands as MC
                 CJ = MC.make_candidates(J["日期"], a.sha, md=a.md, fsha=getattr(a, "fsha", None), out=cf, log=print)
-                cand = f"候選名單 C {CJ['C 檔數']}、C+ {CJ['C+ 檔數']}、E {CJ['E 檔數']}、F {len(CJ['F'])}、F8 前 3 {'、'.join(CJ['F8前3']) or '無'}"
+                cand = (f"候選名單 C {CJ['C 檔數']}、C+ {CJ['C+ 檔數']}、E {CJ['E 檔數']}、F {len(CJ['F'])}、"
+                        f"F9 前 {len(CJ['F9前n'])} {'、'.join(CJ['F9前n']) or '無'}、F8 前 {len(CJ['F8前n'])} {'、'.join(CJ['F8前n']) or '無'}")
             except BaseException as ex:                             # noqa: BLE001  ⛔ 失敗只記 log、第八節照出（含 SystemExit）
                 import traceback
                 traceback.print_exc()
