@@ -740,6 +740,8 @@ jobs:
         run: |
           git fetch origin main --depth=1
           git checkout origin/main -- data/mops/fin_hist data/universe/daily
+          # ⭐ 2026-10-18：2013～2014 的公司清單要 fs_xbrl ＋ 早年日 K
+          git checkout origin/main -- data/meta/fs_xbrl data/early/daily 2>/dev/null || echo "（取不到 fs_xbrl／early daily ⇒ 2015 以前沒有母體）"
           for P in data/meta/filing_dates.csv data/meta/_filing_dates_asked.csv; do
             git checkout origin/main -- "$P" 2>/dev/null || echo "（main 上還沒有 $P，第一趟）"
           done

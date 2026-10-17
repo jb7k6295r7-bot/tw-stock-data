@@ -43,6 +43,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "data", "meta", "filing_dates.csv")
 ASKED = os.path.join(ROOT, "data", "meta", "_filing_dates_asked.csv")
 FIN_HIST = os.path.join(ROOT, "data", "mops", "fin_hist")
+FS_XBRL = os.path.join(ROOT, "data", "meta", "fs_xbrl")          # 2015 以前的財報有無（2026-10-18）
+EARLY_DAILY = os.path.join(ROOT, "data", "early", "daily")       # 2015 以前的上市櫃日 K
 DAILY = os.path.join(ROOT, "data", "universe", "daily")
 HEADER = ["stock_id", "year", "season", "doc_code", "doc_type", "file", "bytes", "uploaded_at", "corrected"]
 ASKED_HEADER = ["stock_id", "roc_year", "status", "rows", "asked_at"]
@@ -102,8 +104,15 @@ def universe(start, end):
         if start <= y <= end:
             with io.open(p, encoding="utf-8") as f:
                 u.setdefault(y, set()).update(r["stock_id"] for r in csv.DictReader(f))
+    # ⭐ 2026-10-18（裁定 seq352 §四：fs_xbrl 2013 起要可用日）：2015 以前 fin_hist／主窗日 K 都沒有
+    #   ⇒ 財報有無改取 data/meta/fs_xbrl/fs_xbrl_<年>.csv（XBRL 整包，含之後下市的），上市櫃取早年日 K data/early/daily
+    for y in range(start, min(end, 2014) + 1):
+        p = os.path.join(FS_XBRL, f"fs_xbrl_{y}.csv")
+        if os.path.exists(p):
+            with io.open(p, encoding="utf-8") as f:
+                u.setdefault(y, set()).update(r["stock_id"] for r in csv.DictReader(f))
     traded = {}
-    for p in glob.glob(os.path.join(DAILY, "*.csv")):
+    for p in glob.glob(os.path.join(DAILY, "*.csv")) + glob.glob(os.path.join(EARLY_DAILY, "*.csv")):
         y = int(os.path.basename(p)[:4])
         if y in u:
             with io.open(p, encoding="utf-8") as f:
