@@ -65,6 +65,9 @@ RES_DESC = {"F8": "C+ 內 F6 名次＋F7 名次", "F9": "C+ 內 F6 名次＋F7 �
 _RES_RE = re.compile(r"^(F[89])top(\d+)$")
 
 
+ADD_DROP = 0.05                                                    # 加碼線：事件日收盤再跌 5%（使用者 10/17 採用；addon2 T2）
+
+
 def res_fam(cd):
     """研究列候選欄 F8top<n>／F9top<n> ⇒ "F8"／"F9"；其他 ⇒ None。"""
     m = _RES_RE.match(str(cd))
@@ -294,6 +297,11 @@ def recovery(asof, sha, write=True, log=print):
         Dd = hit["date"].iloc[0] if len(hit) else None
         R = {"序號": seq, "事件日": str(t.date()), "入判": ev["入判"], "收復目標": tgt, "指數資料日": str(ix["date"].iloc[-1].date()),
              "指數收盤": float(ix["close"].iloc[-1]), "收復日": (str(Dd.date()) if Dd is not None else None), "狀態": ev["狀態"], "候選": {}}
+        # 加碼提醒（使用者 10/17 採用、描述性 addon2 的 T2 乙）：持有中、收復前，加權收盤 ≤ 事件日收盤 ×(1−ADD_DROP) 第一次觸及 ⇒ 隔天開盤加碼原 F9 名單同額；每事件一次；賣點照原收復目標
+        ec = float(ev["指數收盤"]); R["加碼線"] = ec * (1 - ADD_DROP)
+        pre = aft[aft["date"] < Dd] if Dd is not None else aft
+        ah = pre[pre["close"] <= R["加碼線"]]
+        R["加碼日"] = str(ah["date"].iloc[0].date()) if len(ah) else None
         res.append(R)
         if Dd is not None and write and not ev["收復日"]:
             fwd_update("events.csv", RM.FWD_EV_COLS, {"序號": seq, "事件日": str(t.date())}, {"收復日": str(Dd.date())})
@@ -458,6 +466,15 @@ def section(J, RS, cands_dir=None):
         gap = R["收復目標"] / R["指數收盤"] - 1
         L.append(f"- 持有中：{R['事件日']} 事件（{tg}）｜收復目標 加權收盤 ≥ {R['收復目標']:,.2f}，"
                  + (f"{R['收復日']} 已收復 ⇒ 下一交易日開盤賣（研究紀錄）" if R["收復日"] else f"{R['指數資料日']} 收盤 {R['指數收盤']:,.2f}（還差 {gap:+.2%}）"))
+        if not R["收復日"]:
+            if R.get("加碼日") is None:
+                L.append(f"  - 【LINE】大跌加碼線：加權收盤 ≤ {R['加碼線']:,.2f}（事件日收盤再跌 {ADD_DROP:.0%}）⇒ 隔天開盤加碼原 F9 名單同額（每事件一次；使用者採用、未驗證）；今天 {R['指數收盤']:,.2f}，還差 {R['加碼線'] / R['指數收盤'] - 1:+.2%}")
+            elif R["加碼日"] == R["指數資料日"]:
+                L.append(f"  - 【LINE】⭐ 大跌加碼提醒：今天加權收盤 {R['指數收盤']:,.2f} ≤ 加碼線 {R['加碼線']:,.2f} ⇒ 明天開盤加碼原 F9 名單同額；賣點不變（加權收盤 ≥ {R['收復目標']:,.2f} 隔天開盤全賣）")
+            else:
+                L.append(f"  - 加碼線 {R['加碼線']:,.2f} 已於 {R['加碼日']} 觸及（每事件一次，不再提醒）")
+        elif R["收復日"] == R["指數資料日"]:
+            L.append(f"  - 【LINE】⭐ 大跌收復賣出提醒：今天加權收盤 {R['指數收盤']:,.2f} ≥ {R['收復目標']:,.2f} ⇒ 明天開盤賣出全部大跌持股（含加碼）")
         bk = _cands_str(R, "帳面")
         if bk:
             L.append(f"  - 帳面（自買進日開盤、還原價、等權、未扣成本）：{bk}")
