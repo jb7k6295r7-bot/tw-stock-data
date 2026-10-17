@@ -27,6 +27,11 @@
  帳面（第八節）：持有中每檔 還原收盤（資料日；當天沒成交用最近一根）÷ 買進根還原開盤 − 1，候選等權平均（未扣成本；另列扣來回成本）
  改既有列：只動吻合「恰好 1 列」的那一列的指定欄；非空欄只准改「狀態／備註」（其他欄非空且不同 ⇒ 拒絕）；
    以原始文字逐行改、寫暫存檔再 os.replace ⇒ 其他列逐位元不變（寫完再讀回比對）
+── 2026-10-17 加（回測線程式子代理；只加、不改既有輸出）──
+ 自動候選名單：daily 判到「事件」且要寫 ⇒ 當天呼叫 backtest.mktdrop_cands.make_candidates(資料日, sha, md＝當天名單檔) 寫 candidates_<日>.csv
+   （A、B、C、C+、E、F 同 forward/mktdrop_cands.py；F ＝ 名單第二節營量 v1 已達成；候選檔已在 ⇒ 不重產；⛔ 失敗只記 log、第八節照出）
+ F8top3（研究紀錄、未驗證、不入判）：候選檔「候選」欄 F8top3 的 3 列（C+ 內 F6 名次＋F7 名次前 3）⇒ 補買進列時一併寫 positions（候選 F8top3）；
+   收復／出場同其他列；第八節既有各行只算 A～F（F8top3 不併入帳面、買不到、久未成交），另加「F8 前 3」行：事件／待買 ⇒ 名單；持有中 ⇒ 帳面；已出場 ⇒ 扣成本報酬
 """
 from __future__ import annotations
 
@@ -47,6 +52,9 @@ from backtest import researchMktDrop_v1 as RM
 
 ETFS = ("0050", "00631L")
 CANDS_IN = ("A", "B", "C", "C+", "D", "E", "F")
+F8TAG = "F8top3"                                                   # 2026-10-17 加：研究紀錄、未驗證、不入判
+BUY_IN = CANDS_IN + (F8TAG,)
+F8NOTE = "研究紀錄、未驗證"
 EDITABLE = ("狀態", "備註")
 SEC_TITLE = "## 八、（內部）大盤大跌前瞻（研究紀錄、未驗證；不推 LINE）"
 SEC_NOTE = ("PREREG大盤大跌後買什麼 seq1 的前瞻紀錄（backtest/forward/mktdrop/）：看過初測才登錄、最多暫定；事件累計 ≥ 10 次才判一次；"
@@ -186,7 +194,7 @@ def fill_buys(seq, cands, sha, write=True, log=print):
         return {"狀態": "資料未到", "事件日": str(t.date()), "日曆尾": str(cal[-1].date())}
     bd = cal[e]
     C = pd.read_csv(cands, dtype=str, encoding="utf-8-sig").fillna("")
-    C = C[C["候選"].isin(CANDS_IN)]
+    C = C[C["候選"].isin(BUY_IN)]
     mk, nm = meta(DATA)
     now = RM.now_tpe(); rows = []; summ = {}
     tag0 = "第 0 筆描述、不入判" if int(seq) == 0 else ""
@@ -208,7 +216,8 @@ def fill_buys(seq, cands, sha, write=True, log=print):
         if X["bad"][e]:
             why.append("隔天是壞根")
         note = [x for x in (tag0, "C+ ＝ C 裡最近一期營收年增 > 0（描述格，v1 沒有、不入判）" if cd == "C+" else "",
-                            "正2 含槓桿效果" if cd == "B" else "") if x]
+                            "正2 含槓桿效果" if cd == "B" else "",
+                            "F8top3 ＝ C+ 內 F6 名次＋F7 名次前 3（研究紀錄、未驗證、不入判）" if cd == F8TAG else "") if x]
         if why:
             S["買不到"].append(f"{sid}（{'、'.join(why)}）")
             rows.append({**base, "狀態": "買不到", "備註": "；".join(note + [f"買不到：{'、'.join(why)}（{bd.date()}）"])})
@@ -221,7 +230,8 @@ def fill_buys(seq, cands, sha, write=True, log=print):
     out = {"事件日": str(t.date()), "買進日": str(bd.date()), "sha": sha,
            "候選": {cd: {"選出": v["選出"], "買到": v["買到"], "買不到檔數": len(v["買不到"]), "買不到": v["買不到"],
                        "帳面（買進日收盤÷開盤−1，等權、未扣成本）": (float(np.mean(v["帳面"])) if v["帳面"] else None),
-                       "帳面扣來回成本": ((1 + float(np.mean(v["帳面"]))) * (1 - (RM.COST_ETF if cd in ("A", "B") else RM.COST_STK)) - 1 if v["帳面"] else None)}
+                       "帳面扣來回成本": ((1 + float(np.mean(v["帳面"]))) * (1 - (RM.COST_ETF if cd in ("A", "B") else RM.COST_STK)) - 1 if v["帳面"] else None),
+                       **({"代號": [r_["代號"] for r_ in rows if r_["候選"] == cd]} if cd == F8TAG else {})}
                     for cd, v in summ.items()}}
     if write:
         RM.fwd_append_positions(rows)
@@ -249,6 +259,8 @@ def recovery(asof, sha, write=True, log=print):
             for p in read_rows("positions.csv"):
                 if p["序號"] == ev["序號"] and p["狀態"] == "已出場":
                     R["候選"].setdefault(p["候選"], {"報酬": []})["報酬"].append(float(p["報酬"]))
+                if p["序號"] == ev["序號"] and p["候選"] == F8TAG:
+                    R.setdefault("F8明細", []).append((p["代號"], p["名稱"], p["狀態"], float(p["報酬"]) if p["狀態"] == "已出場" else None))
             res.append(R)
             continue
         if ev["狀態"] not in ("待買", "持有中"):
@@ -271,10 +283,11 @@ def recovery(asof, sha, write=True, log=print):
         for p in P:
             cd = p["候選"]
             S = R["候選"].setdefault(cd, {"持有": 0, "已出場": 0, "買不到": 0, "帳面": [], "報酬": [], "賣出日": [], "久未成交": []})
+            f8m = (lambda st_, v_: R.setdefault("F8明細", []).append((p["代號"], p["名稱"], st_, v_))) if cd == F8TAG else (lambda st_, v_: None)
             if p["狀態"] == "買不到":
-                S["買不到"] += 1; continue
+                S["買不到"] += 1; f8m("買不到", None); continue
             if p["狀態"] == "已出場":
-                S["已出場"] += 1; S["報酬"].append(float(p["報酬"])); S["賣出日"].append(p["出場日"]); continue
+                S["已出場"] += 1; S["報酬"].append(float(p["報酬"])); S["賣出日"].append(p["出場日"]); f8m("已出場", float(p["報酬"])); continue
             if p["狀態"] != "持有中":
                 continue
             sid = p["代號"]; e = int(cal.searchsorted(pd.Timestamp(p["買進日"])))
@@ -296,13 +309,13 @@ def recovery(asof, sha, write=True, log=print):
                 sell = (ks, float(X["ro"][ks]), float(X["ao"][ks]), "主（收復後隔天開盤）")
             if sell is None:
                 kl = int(tr[-1])
-                S["持有"] += 1; S["帳面"].append(float(X["ac"][kl] / X["ao"][e] - 1.0))
+                S["持有"] += 1; S["帳面"].append(float(X["ac"][kl] / X["ao"][e] - 1.0)); f8m("持有中", S["帳面"][-1])
                 if na - kl >= 5:
                     S["久未成交"].append(f"{sid}（最後成交 {cal[kl].date()}）")
                 continue
             k, px, apx, kind = sell
             g = apx / float(X["ao"][e]) - 1.0; net = (1 + g) * (1 - cost_of(sid)) - 1
-            S["已出場"] += 1; S["報酬"].append(net); S["賣出日"].append(str(cal[k].date()))
+            S["已出場"] += 1; S["報酬"].append(net); S["賣出日"].append(str(cal[k].date())); f8m("已出場", net)
             if write:
                 fwd_update("positions.csv", RM.FWD_POS_COLS, {"序號": seq, "候選": cd, "代號": sid},
                            {"出場日": str(cal[k].date()), "出場價": px, "出場種類": kind, "報酬": net, "狀態": "已出場",
@@ -330,6 +343,37 @@ def _cands_str(R, key, cost=False):
     return "｜".join(out)
 
 
+def _f8_pick_line(cf):
+    """候選檔的 F8top3 列 ⇒ 「F8 前 3：…」一行（沒有 ⇒ 空）。"""
+    try:
+        C = pd.read_csv(cf, dtype=str, encoding="utf-8-sig").fillna("")
+    except Exception:                                              # noqa: BLE001  讀不了就不列（候選檔另有檢查）
+        return []
+    C = C[C["候選"] == F8TAG]
+    if not len(C):
+        return []
+    return [f"  - F8 前 3：{'、'.join(f'{s} {n}' for s, n in zip(C['代號'], C['名稱']))}（C+ 內 F6 名次＋F7 名次；{F8NOTE}）"]
+
+
+def _f8_line(R):
+    """recovery 收的 F8top3 明細 ⇒ 一行：持有中帳面（未扣成本）／已出場扣成本報酬／買不到。"""
+    it = R.get("F8明細")
+    if not it:
+        return []
+    parts = []
+    for s, n, st_, v in it:
+        if st_ == "持有中":
+            parts.append(f"{s} {n} 帳面 {v:+.2%}")
+        elif st_ == "已出場":
+            parts.append(f"{s} {n} 已出場 {v:+.2%}（扣成本）")
+        else:
+            parts.append(f"{s} {n} {st_}")
+    hv = [v for _, _, st_, v in it if st_ == "持有中"]
+    xv = [v for _, _, st_, v in it if st_ == "已出場"]
+    tail = (f"｜持有中等權帳面 {np.mean(hv):+.2%}（未扣成本）" if hv else "") + (f"｜已出場等權 {np.mean(xv):+.2%}（扣成本）" if xv else "")
+    return [f"  - F8 前 3（C+ 內 F6 名次＋F7 名次；{F8NOTE}）：{'、'.join(parts)}{tail}"]
+
+
 def section(J, RS, cands_dir=None):
     L = [SEC_TITLE, "", SEC_NOTE, ""]
     st = J.get("狀態")
@@ -350,9 +394,14 @@ def section(J, RS, cands_dir=None):
         if R["狀態"] == "待買":
             ok = cands_dir and os.path.exists(os.path.join(cands_dir, f"candidates_{R['事件日'].replace('-', '')}.csv"))
             L.append(f"- {R['事件日']} 事件（{tg}）待買：" + ("候選名單在，買進日資料到了就補" if ok else "候選名單還沒產（forward/mktdrop_cands.py 要另跑）"))
+            if ok:
+                L += _f8_pick_line(os.path.join(cands_dir, f"candidates_{R['事件日'].replace('-', '')}.csv"))
+            if J.get("候選錯誤") and R["事件日"] == J.get("日期"):
+                L.append(f"  - ⚠ 候選名單自動產生失敗（見 backtest/resultsDaily/mktdrop.log）：{J['候選錯誤']}")
             continue
         if R["狀態"] == "已出場":
             L.append(f"- {R['事件日']} 事件（{tg}）已出場（收復日 {R['收復日']}）：扣成本報酬 " + (_cands_str(R, "報酬") or "—"))
+            L += _f8_line(R)
             continue
         gap = R["收復目標"] / R["指數收盤"] - 1
         L.append(f"- 持有中：{R['事件日']} 事件（{tg}）｜收復目標 加權收盤 ≥ {R['收復目標']:,.2f}，"
@@ -363,10 +412,11 @@ def section(J, RS, cands_dir=None):
         ex = _cands_str(R, "報酬")
         if ex:
             L.append(f"  - 已出場的（扣成本）：{ex}")
-        nb = sum(S["買不到"] for S in R["候選"].values())
+        L += _f8_line(R)
+        nb = sum(S["買不到"] for c_, S in R["候選"].items() if c_ != F8TAG)
         if nb:
             L.append(f"  - 買不到已剔除：{nb} 檔（明細 positions.csv）")
-        stale = [x for S in R["候選"].values() for x in S["久未成交"]]
+        stale = [x for c_, S in R["候選"].items() if c_ != F8TAG for x in S["久未成交"]]
         if stale:
             L.append(f"  - ⚠ 近 5 個交易日沒成交（可能停牌／下市，人工看）：{'、'.join(stale)}")
     return L + [""]
@@ -394,6 +444,21 @@ def daily(a):
     write = not a.nowrite
     J = RM.fwd_judge_and_record(a.asof, write)                    # ＝ researchMktDrop_v1 --judge <資料日> [--write]
     J.pop("持有狀態", None)
+    cand = None
+    if write and J.get("狀態") == "事件" and J.get("日期") == str(pd.Timestamp(a.asof).date()):   # 2026-10-17 加：事件當天自動產候選名單
+        cf = os.path.join(RM.FWD, f"candidates_{J['日期'].replace('-', '')}.csv")
+        if os.path.exists(cf):
+            cand = "候選檔已在、不重產"
+        else:
+            try:
+                from backtest import mktdrop_cands as MC
+                CJ = MC.make_candidates(J["日期"], a.sha, md=a.md, fsha=getattr(a, "fsha", None), out=cf, log=print)
+                cand = f"候選名單 C {CJ['C 檔數']}、C+ {CJ['C+ 檔數']}、E {CJ['E 檔數']}、F {len(CJ['F'])}、F8 前 3 {'、'.join(CJ['F8前3']) or '無'}"
+            except BaseException as ex:                             # noqa: BLE001  ⛔ 失敗只記 log、第八節照出（含 SystemExit）
+                import traceback
+                traceback.print_exc()
+                J["候選錯誤"] = f"{type(ex).__name__}: {ex}"[:300]
+                cand = "候選名單產生失敗"
     bought = []
     for ev in read_rows("events.csv"):                            # 待買事件：候選檔在 ∧ 買進日資料到 ⇒ 補買進列
         cf = os.path.join(RM.FWD, f"candidates_{ev['事件日'].replace('-', '')}.csv")
@@ -406,6 +471,7 @@ def daily(a):
     print("\n".join(L))
     st = "；".join(f"序號 {R['序號']} {R['狀態']}" + (f" 收復 {R['收復日']}" if R["收復日"] else "") for R in RS) or "無持有中事件"
     print(f"判定 {a.asof}：{J.get('狀態')}{'（' + J['寫入'] + '）' if J.get('寫入') else ''}｜{st}"
+          + (f"｜{cand}" if cand else "")
           + (f"｜補買進 {len(bought)} 件" if bought else "") + ("｜第八節已加" if a.md else "") + ("｜nowrite" if a.nowrite else ""))
 
 
@@ -416,6 +482,7 @@ def main():
     b.add_argument("--sha", default=None); b.add_argument("--dry", action="store_true"); b.add_argument("--fwd", default=None)
     d = sp.add_parser("daily"); d.add_argument("--asof", required=True); d.add_argument("--sha", required=True); d.add_argument("--md", default=None)
     d.add_argument("--nowrite", action="store_true"); d.add_argument("--fwd", default=None, help="測試用：紀錄資料夾改到別處")
+    d.add_argument("--fsha", default=None, help="F8 財報／法人／融資／集保的 sha（預設 ＝ --sha；測試重現用）")
     a = ap.parse_args()
     if a.cmd == "buy":
         if a.fwd:
