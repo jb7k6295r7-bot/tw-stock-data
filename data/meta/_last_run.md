@@ -1111,18 +1111,17 @@
 
 ## filing_dates　✓ 正常
 
-最後執行：2026-10-17T16:15:38+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 38997684147
+最後執行：2026-10-17T21:41:06+08:00（台北）｜觸發 workflow_dispatch｜全市場 feed 回補（手動）｜ref claude/financial-market-analysis-mmm5kf｜run 39017927756
 
 - **母體**：2015:1591｜2016:1636｜2017:1661｜2018:1711
-- **待問**：2836 發（已問過 3763）
-- **本趟**：問 946 發｜ok 944｜empty（那年沒有檔）0｜失敗 2｜剩 1890 發｜300 分
-- **累計**：上傳紀錄 120194 列｜已問 (家, 年) 19701
-- **限流跡象**：第一次失敗在第 170 發（04:12:10）｜冷卻 0 次
-- **失敗的（前 10）**：[('6144', 106, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>'), ('1532', 105, 'HTTP 0 URLError: <urlopen error [Errno -2] Name or service not known>')]
+- **待問**：1892 發（已問過 4707）
+- **本趟**：問 930 發｜ok 930｜empty（那年沒有檔）0｜失敗 0｜剩 962 發｜300 分
+- **累計**：上傳紀錄 124980 列｜已問 (家, 年) 20631
+- **限流跡象**：沒有失敗
 
 檢查：
 - ok　沒有連續失敗而收手　（最後連續 0 發失敗｜冷卻 0 次）
-- ok　失敗 ≤ 本趟 2%　（2／946）
+- ok　失敗 ≤ 本趟 2%　（0／930）
 
 ## crypto:daily　✓ 正常
 
