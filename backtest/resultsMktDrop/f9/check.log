@@ -1,0 +1,13 @@
+[通過] C1 F9 挑檔獨立重算 vs f9/event_picks（54 格） 選中不同 0、報酬最大差 5.0e-07
+[C2] 2025-03-31 F9 N=3（代號, F9, F6名次, F7名次, Q名次, 淨報酬）: [('2468', np.float64(275.76), np.float64(93.9), np.float64(95.5), np.float64(86.4), np.float64(0.32863)), ('2059', np.float64(271.21), np.float64(98.5), np.float64(100.0), np.float64(72.7), np.float64(0.176262)), ('6781', np.float64(268.18), np.float64(87.9), np.float64(81.8), np.float64(98.5), np.float64(0.136337)), ('等權', 0.213743)]
+[通過] C2 2025-03-31 N=3 與 event_picks 一致 
+[通過] C3a 對照列 vs quality/summary.csv 列 54/54、最大相對差 1.0e-07
+[通過] C3a' 差 ＜ 1e-5 
+[通過] C3b F8 vs f8/summary、F6／F7 vs fund/summary（兩段 × 3N） 最大差 0.0e+00
+[通過] C4 quality.quintiles 用原 Q 重現 quality 五分位（組平均、CI、Q5−Q1） quintile 最大差 4.7e-07、mono 4.5e-07
+[通過] C4' Spearman 事件平均（features 存 ％.6g，原程式浮點雜訊打破的同分在存檔後恢復同分 ⇒ 容差 1e-4） 最大差 7.5e-05
+[通過] C4b F9 Q5（18 事件等權）獨立重算 0.094855 vs 0.094855
+[通過] C5 F9 N=3 18 事件平均與隨機百分位重算 平均 0.135172、百分位 0.9525
+[通過] C6 10/15 F9 前 3 獨立重算 ['3311', '3624', '2221']
+
+共 10 項，通過 10、失敗 0
