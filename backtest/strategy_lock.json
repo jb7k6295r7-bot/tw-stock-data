@@ -1,0 +1,43 @@
+{
+ "roots": [
+  "list_prereg10",
+  "list_yl13",
+  "forward_yl"
+ ],
+ "files": {
+  "chart_svg": "cc577b4d517f8ef6",
+  "data": "2aa4f8b00cc8a89b",
+  "evaluate": "88f32fa6ba8ad507",
+  "forward_yl": "550fc55f1c30160e",
+  "gate_b_status": "440eca75c6995d78",
+  "list_prereg10": "128d2d2314d7e0e4",
+  "list_yl13": "156f7782dfe0a0f8",
+  "list_yl13_watch": "2ff643e34b858bfc",
+  "p4_features": "4a062830819f925b",
+  "patterns": "1324b3375b02fd1e",
+  "rerun17": "816df5b337e265c3",
+  "rerun17_table": "8ca056bb33fec378",
+  "research11": "2b294ac22f746be3",
+  "research13": "e6fd2e7c2bf81501",
+  "research34": "f69adcc7d149f7f6",
+  "researchp1": "9109255e04ef3752",
+  "researchp11": "7123c3ec9035a84e",
+  "researchp12": "d5c6434f855e764f",
+  "researchp14": "a6844442e8db9f47",
+  "researchp17": "152b93fd5bbe1bbf",
+  "researchp3": "ca060ac896bce4c5",
+  "researchp7": "39fc3f8c7cc7c394",
+  "researchp8": "5bfa1580ebb4feb3",
+  "researchp9": "64dd64049975d5c8",
+  "universe_gate": "58efef9bc7c3b2e7"
+ },
+ "history": [
+  {
+   "時間": "2026-10-18 22:48",
+   "原因": "初次上鎖（使用者 10/18 要求防自改）：鎖定時與 9/29 前瞻起點相比只有三處經核可的改動——forward_yl 照規則簿新增（10/14）、universe_gate GATE_V2（裁定 seq293／296，名單開關並算）、gate_b_status 選用參數預設關閉",
+   "變動": [
+    "初次上鎖"
+   ]
+  }
+ ]
+}
