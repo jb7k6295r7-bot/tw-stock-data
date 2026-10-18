@@ -71,7 +71,7 @@ if [ -z "$FAIL" ]; then
       fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       if ! SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); then
-        sed -i "1a \n⚠⚠ ${SLK//\//／}（營量／營飆的選股程式和鎖定版本不同；回測線未經裁定核可不得改，請回測線說明）" "$REPO/backtest/resultsDaily/daily_$ASOF.md"
+        DMD="$REPO/backtest/resultsDaily/daily_$ASOF.md"; { head -1 "$DMD"; echo; echo "⚠⚠ $SLK（營量／營飆的選股程式和鎖定版本不同；回測線未經裁定核可不得改，請回測線說明）"; tail -n +2 "$DMD"; } > "$DMD.tmp" && mv "$DMD.tmp" "$DMD"
         logline "策略鎖不符：$SLK"
       fi
       mkdir -p "$MB"
