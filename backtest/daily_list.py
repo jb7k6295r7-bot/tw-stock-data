@@ -360,7 +360,7 @@ def mine_tags(M, sec1, sec2, gate_on):
             return f"營飆你已持有（{M['營飆'][s]} 進），不重複買"
         if a == 0:
             return "營飆已滿"
-        return "營飆有空位" if len(cf) <= a else f"營飆今天 {len(cf)} 檔搶 {a} 個空位（照規則抽籤，不替你抽）"
+        return "營飆有空位" if len(cf) <= a else f"營飆今天 {len(cf)} 檔搶 {a} 個空位（照規則抽籤，不替你抽；你 10/18 定：當天夠錢就全買、不夠就照抽籤）"
 
     def yl(s):
         if s in M["營量"]:
