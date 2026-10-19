@@ -20,6 +20,7 @@
 #   9 大盤大跌前瞻（PREREG大盤大跌後買什麼 seq1，2026-10-17 加）：daily_list 產檔成功之後、複製到 _營量觀察/ 之前跑 backtest.mktdrop_fwd daily
 #      （＝ researchMktDrop_v1 --judge <資料日> --write ＋ 收復檢查 ＋ 名單檔尾加「## 八、（內部）大盤大跌前瞻」）；⛔ 失敗只記 log、不改退出碼、名單照常複製；
 #      紀錄 backtest/forward/mktdrop/、輸出 backtest/resultsDaily/mktdrop.log；daily 略過（sha 相同）⇒ 本步也不跑
+#  11 VIX 狀態（2026-10-20 加）：backtest.vix_daily 在名單尾加「## 九、VIX 狀態」（私有庫 fred_VIXCLS；首次 ≥40 ⇒ ⭐【LINE】行）；失敗只記 log
 #  10 策略鎖（2026-10-18 加）：每次產檔都跑 backtest.strategy_lock --check；不符 ⇒ 名單標題下加 ⚠⚠ 一行、記 log；⛔ 不擋產出
 #   磁碟：archive 依【資料內容】（相關 data 子樹的 git tree id）存 ~/h2data/daily_<key>，~/h2data/<sha> 只放 symlink ⇒ 只改了別的 feed 的新 commit 不會再多一份 800MB
 set -uo pipefail
@@ -68,6 +69,13 @@ if [ -z "$FAIL" ]; then
         logline "大盤大跌前瞻：$(tail -1 "$MLOG")"
       else
         logline "大盤大跌前瞻 失敗（不影響 daily）：$(tail -1 "$MLOG" 2>/dev/null)（見 $MLOG）"
+      fi
+      # 規則 11：VIX 狀態（使用者 10/20「好」）：名單檔尾加「## 九、VIX 狀態」；⛔ 失敗只記 log、不影響名單
+      VLOG="$REPO/backtest/resultsDaily/vix.log"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.vix_daily --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" > "$VLOG" 2>&1); then
+        logline "VIX：$(grep -m1 '^- ' "$VLOG")"
+      else
+        logline "VIX 失敗（不影響 daily）：$(tail -1 "$VLOG" 2>/dev/null)"
       fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       if ! SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); then
