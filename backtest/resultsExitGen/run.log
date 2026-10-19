@@ -1,0 +1,35 @@
+[     0s] ===== researchExitGen fixture 2026-10-20 01:54（台北）procs 4 =====
+[     0s] [程式 sha256] {'researchExitGen.py': '5c43e15461f68db8', 'researchQuad.py': '9c6cda76bc8e899a', 'research11.py': '2b294ac22f746be3', 'avgdown.py': '9d82d6026d9d3059', 'researchAvg.py': '8205913a9ff4b670', 'research34.py': 'f69adcc7d149f7f6', 'exit_signal.py': 'c40b74c9f1577249'}
+[     0s]   [fixture] ✔ X1 收盤恰 = P0×0.9 觸發（≤）：得 (305, 306)、應 (305, 306)
+[     0s]   [fixture] ✔ X3 收盤恰 = P0×1.5 觸發（≥）：得 (307, 308)、應 (307, 308)
+[     0s]   [fixture] ✔ X5 第 20 根收盤 = P0 觸發：得 (319, 320)、應 (319, 320)
+[     0s]   [fixture] ✔ X5 第 20 根 ＞ P0、之後大跌也不賣（只判一次）：得 -1、應 -1
+[     0s]   [fixture] ✔ X5 數有效 K 棒（中間停一天 ⇒ 第 20 根在 e+20）：得 320、應 320
+[     0s]   [fixture] ✔ X6 進場時已在 MA50 下 ⇒ 穿越式不觸發：得 -1、應 -1
+[     0s]   [fixture] ✔ 9/27 MA50 狀態式 ⇒ 第一根就觸發（對照）：得 300、應 300
+[     0s]   [fixture] ✔ X6 先站上（e+10）再跌穿（e+15）⇒ d＝e+15：得 315、應 315
+[     0s]   [fixture] ✔ X4 0050 在 e+8 跌穿 200 日線 ⇒ d＝e+8：得 (308, 309)、應 (308, 309)
+[     0s]   [fixture] ✔ X4 進場前已在線下、持有中沒站回 ⇒ 不觸發：得 -1、應 -1
+[     0s]   [fixture] ✔ X7 轉負只在前一次 ≥0、本次 ＜0（−,+,−,+ ⇒ 只有第 3 次）：得 [325]、應 [325]
+[     0s]   [fixture] ✔ X7 持有中第一個轉負 ⇒ d＝A、s＝A＋1：得 (325, 326)、應 (325, 326)
+[     0s]   [fixture] ✔ X7 前一次年增不可算 ⇒ 不判：得 []、應 []
+[     0s]   [fixture] ✔ 最後一個判定日 x−1 觸發、成交日 x ⇒ 不做：得 (358, -1)、應 (358, -1)
+[     1s]   [fixture] 兩兩不蘊含：42／42（176 個合成世界）；沒找到 []
+[     1s] [fixture] 全過＝True
+[     0s] ===== researchExitGen dry 2026-10-20 01:54（台北）procs 4 =====
+[     0s] [程式 sha256] {'researchExitGen.py': '5c43e15461f68db8', 'researchQuad.py': '9c6cda76bc8e899a', 'research11.py': '2b294ac22f746be3', 'avgdown.py': '9d82d6026d9d3059', 'researchAvg.py': '8205913a9ff4b670', 'research34.py': 'f69adcc7d149f7f6', 'exit_signal.py': 'c40b74c9f1577249'}
+[     4s] [世界 main] {"面板": "resultsp4/panel.csv.gz（≤ 2026-03-02）＋ panel_ext（之後）", "量測日上限": "2026-08-03", "DATA": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data", "日曆": ["2015-01-05", "2026-09-24"], "候選列（e 在範圍內）": 57623, "量測日不在日曆": 0, "段（日曆位置）": {"explore": [523, 1711, "2017-03-02", "2021-12-30"], "confirm": [1712, 2858, "2022-01-03", "2026-09-24"]}, "月營收期別": ["2015-01", "2026-08"], "股數": 1624}
+[    96s] [dry main] 57,623 列｜91s
+[    97s] [世界 early] {"面板": "/home/chemtim/earlydata/3edc0e2206/sig_main/panel.csv.gz（liq_ok∧bars_ok）", "版面": "/home/chemtim/earlydata/950ad26e12/reduce_v2/data", "DATA": "/home/chemtim/earlydata/950ad26e12/reduce_v2/data", "日曆": ["2004-02-11", "2014-12-31"], "候選列（e 在範圍內）": 33047, "量測日不在日曆": 0, "段（日曆位置）": {"early": [228, 2711, "2005-01-03", "2014-12-31"]}, "月營收期別": ["2003-01", "2014-12"], "股數": 811}
+[   149s] [dry early] 33,047 列｜52s
+[   149s] [dry] 旗標 []
+[     0s] ===== researchExitGen body 2026-10-20 01:59（台北）procs 4 =====
+[     0s] [程式 sha256] {'researchExitGen.py': '8d3e80f8e252c3fa', 'researchQuad.py': '9c6cda76bc8e899a', 'research11.py': '2b294ac22f746be3', 'avgdown.py': '9d82d6026d9d3059', 'researchAvg.py': '8205913a9ff4b670', 'research34.py': 'f69adcc7d149f7f6', 'exit_signal.py': 'c40b74c9f1577249'}
+[     5s] [世界 main] {"面板": "resultsp4/panel.csv.gz（≤ 2026-03-02）＋ panel_ext（之後）", "量測日上限": "2026-08-03", "DATA": "/home/chemtim/h2data/edc6f8002fed8803795e3486ad57db513f7e9f65/data", "日曆": ["2015-01-05", "2026-09-24"], "候選列（e 在範圍內）": 57623, "量測日不在日曆": 0, "段（日曆位置）": {"explore": [523, 1711, "2017-03-02", "2021-12-30"], "confirm": [1712, 2858, "2022-01-03", "2026-09-24"]}, "月營收期別": ["2015-01", "2026-08"], "股數": 1624}
+[   226s] [body main] 57,623 列｜221s
+[   228s] [世界 early] {"面板": "/home/chemtim/earlydata/3edc0e2206/sig_main/panel.csv.gz（liq_ok∧bars_ok）", "版面": "/home/chemtim/earlydata/950ad26e12/reduce_v2/data", "DATA": "/home/chemtim/earlydata/950ad26e12/reduce_v2/data", "日曆": ["2004-02-11", "2014-12-31"], "候選列（e 在範圍內）": 33047, "量測日不在日曆": 0, "段（日曆位置）": {"early": [228, 2711, "2005-01-03", "2014-12-31"]}, "月營收期別": ["2003-01", "2014-12"], "股數": 811}
+[   332s] [body early] 33,047 列｜104s
+[     0s] ===== researchExitGen report 2026-10-20 02:05（台北）procs 4 =====
+[     0s] [程式 sha256] {'researchExitGen.py': '14c856e3ed43e4d8', 'researchQuad.py': '9c6cda76bc8e899a', 'research11.py': '2b294ac22f746be3', 'avgdown.py': '9d82d6026d9d3059', 'researchAvg.py': '8205913a9ff4b670', 'research34.py': 'f69adcc7d149f7f6', 'exit_signal.py': 'c40b74c9f1577249'}
+[     0s] ===== researchExitGen report 2026-10-20 02:09（台北）procs 4 =====
+[     0s] [程式 sha256] {'researchExitGen.py': '71fd47146c1972a3', 'researchQuad.py': '9c6cda76bc8e899a', 'research11.py': '2b294ac22f746be3', 'avgdown.py': '9d82d6026d9d3059', 'researchAvg.py': '8205913a9ff4b670', 'research34.py': 'f69adcc7d149f7f6', 'exit_signal.py': 'c40b74c9f1577249'}
