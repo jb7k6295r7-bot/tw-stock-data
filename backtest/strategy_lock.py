@@ -86,6 +86,9 @@ def main():
         for m, h in digest().items():
             print(f"{m}.py {h}")
         return
+    if not os.path.exists(LOCK):                                        # 雲端 sparse checkout 沒帶鎖檔 ⇒ 無法檢查（exit 2），⛔ 不當成「不符」（情報 1020-0159）
+        print("策略鎖：沒有鎖檔 strategy_lock.json，本次無法檢查")
+        sys.exit(2)
     d = check()
     if d:
         print("⚠ 策略鎖不符：" + "；".join(d))
