@@ -1374,6 +1374,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 8923,時報,tpex,2026-01-07,2026-01-15,5,5,5,0,notrade
 8923,時報,tpex,2026-01-27,2026-02-09,8,8,8,0,notrade
 8923,時報,tpex,2026-04-28,2026-05-08,6,6,6,0,notrade
+8923,時報,tpex,2026-10-08,2026-10-20,6,6,6,0,notrade
 8934,衡平,tpex,2015-04-02,2015-06-03,40,40,40,0,notrade
 8934,衡平,tpex,2015-06-03,2015-09-23,77,77,77,0,notrade
 8934,衡平,tpex,2015-09-23,2015-10-13,10,10,10,0,notrade
