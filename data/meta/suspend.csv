@@ -9884,7 +9884,7 @@ stock_id,name,market,sec_kind,halt_date,resume_date,source,asof
 7427,華上生醫,tpex,興櫃,2021-07-16,2021-07-19,tpex-sprcHis,2026-09-08
 7555,美萌,tpex,興櫃,2025-05-02,2025-05-05,tpex-sprcHis,2026-09-08
 7752,世紀樺欣,tpex,興櫃,2026-06-25,2026-06-26,tpex-sprcHis,2026-10-20
-7924,TLC-KY,tpex,興櫃,2026-10-19,,tpex-sprcHis,2026-10-20
+7924,TLC-KY,tpex,興櫃,2026-10-19,2026-10-20,tpex-sprcHis,2026-10-20
 8032,光菱,tpex,普通股,2021-07-21,2021-07-22,tpex-sprcHis,2026-09-08
 8041,東元精電,tpex,興櫃,2024-04-10,2024-04-11,tpex-sprcHis,2026-09-08
 8044,網家,tpex,普通股,2018-05-08,2018-05-09,tpex-sprcHis,2026-09-08
