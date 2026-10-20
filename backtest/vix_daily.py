@@ -4,7 +4,7 @@
     python3 -m backtest.vix_daily --md backtest/resultsDaily/daily_<資料日>.md     # 在名單檔尾加（或取代）第九節
     python3 -m backtest.vix_daily                                                  # 只印
 
-資料：私有庫 ~/us-stock-data（origin/main）的 data/macro/fred_VIXCLS.csv（FRED VIXCLS 收盤，公開資料；"." 缺值列丟掉）。只讀，不寫私有庫。
+資料：私有庫 ~/us-stock-data（origin/main）的 data/macro/vix_close.csv（FRED VIXCLS 收盤，FRED 未出的最新日用 Yahoo ^VIX 收盤；只讀前兩欄；"." 缺值列丟掉）。只讀，不寫私有庫。
 段定義同 researchUSC13 C13-7：不在段內時 VIX 收盤 ≥ 門檻 ⇒ 段起；之後第一個收盤 ≤ 20 ⇒ 段止。門檻 30、40 各自一條。
 輸出：
   平常：「VIX <日> 收盤 x（未達 30）」或段內狀態；
@@ -25,14 +25,14 @@ import time
 import pandas as pd
 
 REPO = os.path.expanduser(os.environ.get("US_STOCK_REPO", "~/us-stock-data"))
-PATH = "data/macro/fred_VIXCLS.csv"
-TITLE = "## 九、VIX 狀態（FRED VIXCLS 收盤；描述，不是買賣建議）"
+PATH = "data/macro/vix_close.csv"                 # 資料庫 1020-0228：FRED 有的日子用 FRED、之後用 Yahoo ^VIX（第三欄 source）；裁定 seq384
+TITLE = "## 九、VIX 狀態（VIX 收盤：FRED，最新日 FRED 未出時用 Yahoo；描述，不是買賣建議）"
 
 
 def load():
     subprocess.run(["git", "-C", REPO, "fetch", "-q", "origin", "main"], capture_output=True, timeout=120)
     t = subprocess.run(["git", "-C", REPO, "show", f"origin/main:{PATH}"], capture_output=True, text=True, check=True).stdout
-    d = pd.read_csv(io.StringIO(t), dtype=str)
+    d = pd.read_csv(io.StringIO(t), dtype=str, usecols=[0, 1])
     d.columns = ["date", "v"]
     d = d[d["v"].str.strip() != "."].copy()
     d["date"] = pd.to_datetime(d["date"]); d["v"] = d["v"].astype(float)
@@ -66,7 +66,7 @@ def lines(d, today=None):
         L.append(f"- VIX {dt} 收盤 {x:.2f}（未達 30）")
     today = pd.Timestamp(today or time.strftime("%Y-%m-%d"))
     if (today - pd.Timestamp(dt)).days > 4:
-        L.append(f"- ⚠ VIX 資料停在 {dt}（私有庫 fred_VIXCLS 未更新；提醒可能延遲）")
+        L.append(f"- ⚠ VIX 資料停在 {dt}（私有庫 vix_close 未更新；提醒可能延遲）")
     return L + [""]
 
 
