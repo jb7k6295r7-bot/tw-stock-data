@@ -1,0 +1,38 @@
+{
+ "E1 主·營量 同日最多持股": [
+  20,
+  20
+ ],
+ "E1 主·營飆 同日最多持股": [
+  10,
+  10
+ ],
+ "E1 早年·營量 同日最多持股": [
+  20,
+  20
+ ],
+ "E1 早年·營飆 同日最多持股": [
+  10,
+  10
+ ],
+ "E1 交易不符": 0,
+ "E1 明細": [],
+ "E2 事件不同（120 筆交易）": 0,
+ "E2 明細": [],
+ "E3 不前視違反": 0,
+ "E4 候選數不同（60 筆）": 0,
+ "E4 明細": [],
+ "E5 S0 箱不同（40 筆）": 0,
+ "E5 明細": [],
+ "E6 策略鎖": "策略鎖相符（25 支）",
+ "E6 策略鎖 exit": 0,
+ "E6 git 已追蹤檔被改（M）": [
+  " M backtest/forward/yl_rule/draws.csv",
+  " M backtest/forward/yl_rule/equity.csv",
+  " M backtest/forward/yl_rule/positions.csv",
+  " M backtest/forward/yl_rule/runlog.md",
+  " M backtest/forward/yl_rule/signals.csv",
+  " M backtest/forward/yl_rule/state.json"
+ ],
+ "全部通過": true
+}
