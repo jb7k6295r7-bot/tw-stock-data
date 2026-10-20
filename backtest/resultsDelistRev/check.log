@@ -1,0 +1,18 @@
+[K1] exit 0｜策略鎖相符（25 支）
+[K4] 57 列｜不符 []
+[K5] 新增 35｜成立 35｜不成立 []
+[T1 AND 資料尾] {"H60": {"xpos<0": 113, "補": 97, "delist_or_halt_end": 1, "badbar": 1, "not_end": 14, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 377, "補": 350, "delist_or_halt_end": 1, "badbar": 1, "not_end": 25, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1169, "補": 143, "triggered_or_cap": 0, "not_last": 1025, "not_cal_end": 1}}
+[AND] backtest/resultsDelistRev/sig_merged/and_signals.csv.gz｜2,374 筆／939 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[T1 AND 資料尾] {"H60": {"xpos<0": 112, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 14, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 376, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 25, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1169, "補": 143, "triggered_or_cap": 0, "not_last": 1025, "not_cal_end": 1}}
+[AND] backtest/resultsDelistRev/sig_merged/and_signals_delistexit.csv.gz｜2,374 筆／939 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[K6] 8 項｜不符 []
+[查核] {"K1 策略鎖 --check exit": 0, "K2 summary 閘非 0 項數": 0, "K3 null AND ≠ 定版": 0, "K4 可用日抽樣（列數）": 57, "K4 可用日不符": 0, "K4 15 日口徑列": 17, "K4 抽樣例": ["5305 2017-10 訊號 2017-11-10 進場 2017-11-13", "2867 2018-12 訊號 2019-01-10 進場 2019-01-11", "3682 2019-04 訊號 2019-05-10 進場 2019-05-13", "5820 2021-08 訊號 2021-09-10 進場 2021-09-13", "2809 2018-12 訊號 2019-01-10 進場 2019-01-11"], "K5 新增列數": 35, "K5 獨立重算成立": 35, "K5 不成立": 0, "K6 交易重算項數": 8, "K6 eq_sha 不符": 0, "K7 ⓑ 補出場列": 2, "K7 末根日 ≠ last_seen": 0, "結論": "全過"}
+[K1] exit 0｜策略鎖相符（25 支）
+[K4] 57 列｜不符 []
+[K5] 新增 35｜成立 35｜不成立 []
+[T1 AND 資料尾] {"H60": {"xpos<0": 113, "補": 97, "delist_or_halt_end": 1, "badbar": 1, "not_end": 14, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 377, "補": 350, "delist_or_halt_end": 1, "badbar": 1, "not_end": 25, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1169, "補": 143, "triggered_or_cap": 0, "not_last": 1025, "not_cal_end": 1}}
+[AND] backtest/resultsDelistRev/sig_merged/and_signals.csv.gz｜2,374 筆／939 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[T1 AND 資料尾] {"H60": {"xpos<0": 112, "補": 97, "delist_or_halt_end": 0, "badbar": 1, "not_end": 14, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-07-17", "2026-08-07"]}, "H120": {"xpos<0": 376, "補": 350, "delist_or_halt_end": 0, "badbar": 1, "not_end": 25, "nobars": 0, "pos_mismatch": 0, "補的進場日": ["2026-06-16", "2026-08-07"]}, "LD": {"t_LD 假": 1169, "補": 143, "triggered_or_cap": 0, "not_last": 1025, "not_cal_end": 1}}
+[AND] backtest/resultsDelistRev/sig_merged/and_signals_delistexit.csv.gz｜2,374 筆／939 檔｜relvol 缺 0｜entry_pos 511～2850（2017-02-13～2026-09-14）
+[K6] 8 項｜不符 []
+[查核] {"K1 策略鎖 --check exit": 0, "K2 summary 閘非 0 項數": 0, "K3 null AND ≠ 定版": 0, "K4 可用日抽樣（列數）": 57, "K4 可用日不符": 0, "K4 15 日口徑列": 17, "K4 抽樣例": ["5305 2017-10 訊號 2017-11-10 進場 2017-11-13", "2867 2018-12 訊號 2019-01-10 進場 2019-01-11", "3682 2019-04 訊號 2019-05-10 進場 2019-05-13", "5820 2021-08 訊號 2021-09-10 進場 2021-09-13", "2809 2018-12 訊號 2019-01-10 進場 2019-01-11"], "K5 新增列數": 35, "K5 獨立重算成立": 35, "K5 不成立": 0, "K6 交易重算項數": 8, "K6 eq_sha 不符": 0, "K7 ⓑ 補出場列": 2, "K7 末根日 ≠ last_seen": 0, "結論": "全過"}
