@@ -90,6 +90,20 @@ def _load_amt(default=20000):
 
 
 AMT = _load_amt()
+
+
+def _load_push(default=False):
+    """裁定 seq431：高10 是好運種子 ⇒ 前瞻與 LINE 交使用者決定；未決定前名單照出、LINE 不推（照規則欄照記）。
+    設定檔鍵「高10_LINE推送」＝true 才推；缺鍵或讀不到一律不推。"""
+    try:
+        with open(SETTING, encoding="utf-8") as fh:
+            return bool(json.load(fh).get("高10_LINE推送", default))
+    except (OSError, ValueError, TypeError):
+        return default
+
+
+PUSH = _load_push()
+LINE_TAG = "- 【LINE】⭐ " if PUSH else "- （LINE 暫停：高10 是否續推等使用者決定，裁定 seq431）"
 TITLE = "## 十、52 週新高 10 檔（高10）"
 def _wan(a):
     return f"{a / 10000:g} 萬" if a % 1000 == 0 else f"{a:,} 元"
@@ -442,7 +456,7 @@ def render(c):
             parts.append(b)
         keep = [(s, n) for s, n, _, _ in held if s not in tmr_sold]
         parts.append(f"續抱 {len(keep)} 檔" + ("：" + "、".join(nm_(s, n) for s, n in keep) if keep else ""))
-        L.append("- 【LINE】⭐ 52 週新高 10 檔（高10）：" + "；".join(parts) + "｜" + NOTE_TIE + "｜" + "｜".join(SENT3))
+        L.append(LINE_TAG + "52 週新高 10 檔（高10）：" + "；".join(parts) + "｜" + NOTE_TIE + "｜" + "｜".join(SENT3))
         if c.get("backup"):
             L.append("  - 備位（名單中有股票明天開盤鎖漲停或沒成交而買不到時，照規則往下遞補）：" + "、".join(nm_(s, n) for s, n in c["backup"]))
         if buys:
@@ -770,7 +784,7 @@ def run(a, log=print):
     if started and u_held != r_held and len(usr):
         note.append(f"LINE 名單持有 {u_held} ≠ 照規則持有 {r_held}（LINE 的續抱、賣照 LINE 名單；照規則紀錄另記）")
     # 名單（明天要買）
-    if j_p is not None and not a.preview_buy:
+    if j_p is not None and not a.preview_buy and PUSH:                   # seq431：LINE 暫停時不推 ⇒ 使用者不會買 ⇒ 不記 positions_user（照規則欄照記）
         plan[ds(nxt)] = {"批次": ds(MEd[j_p]), "名單日": ds(asof), "rows": [[s, n, float(p), int(k)] for s, n, p, k in buys], "main": sha[:10]}
     # ── 段落
     ctx = {"asof": ds(asof), "nxt": ds(nxt), "started": started, "e0": ds(cal[int(EP2[jF0])]) if started else ds([d for d in cal_ext if ym(d) == START_YM][0]),

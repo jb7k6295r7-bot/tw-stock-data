@@ -310,6 +310,14 @@ def NS_free(uv):
 def st_fixture(a):
     J = {"階段": "fixture", "結果": []}
     msgs = []
+    # ⑧ 裁定 seq431：LINE 推送開關（設定檔「高10_LINE推送」）。暫停時買進行不帶【LINE】、其餘內容相同；之後各項以推送開啟測
+    tag0 = H.LINE_TAG
+    H.LINE_TAG = "- （LINE 暫停：高10 是否續推等使用者決定，裁定 seq431）"
+    Lp = H.render({"asof": "2026-10-30", "nxt": "2026-11-02", "started": False, "e0": "2026-11-02", "form0": "2026-09-30", "held": [],
+                   "buys": [("S01", "名", 50.0, H.shares(50.0))], "nfree": 10, "backup": [], "sells_tmr": [], "sold_today": []})
+    assert not any("【LINE】" in x for x in Lp) and any(x.startswith("- （LINE 暫停") and "開盤買 1 檔" in x for x in Lp)
+    H.LINE_TAG = "- 【LINE】⭐ "
+    msgs.append("⑧ LINE 推送開關：暫停時買進行不帶【LINE】、內容照出（seq431）；其餘各項以推送開啟測（原設定 " + repr(tag0[:12]) + "）")
     # ⑤ 2 萬換算
     assert H.shares(2405) == 8 and H.shares(35.75) == 559 and H.shares(20000) == 1 and H.shares(20001) == 0
     assert H.shares(float("nan")) == 0 and H.shares(0) == 0 and H.shares(19.99) == 1000 and H.shares(0.5) == 40000
