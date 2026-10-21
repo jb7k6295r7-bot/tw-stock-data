@@ -75,8 +75,28 @@ L_SKIP, H_HOLD = 2, 6
 NS = 10
 K_PRE = 2 * NS
 START_YM = 2026 * 12 + 10                                   # 第一批進場月 2026-11（年×12＋月−1）
-AMT = 20000
+# 每份金額＝使用者測試金額（裁定 seq422／423：不是規則、會再改）⇒ 可改設定值：backtest/forward/設定_每份金額.json {"每份金額": 20000}；
+# 改金額只影響 LINE 股數換算與 positions_user，⛔ 不動照規則欄
+SETTING = os.path.join(REPO, "backtest", "forward", "設定_每份金額.json")
+
+
+def _load_amt(default=20000):
+    try:
+        with open(SETTING, encoding="utf-8") as fh:
+            v = int(json.load(fh)["每份金額"])
+        return v if v > 0 else default
+    except (OSError, ValueError, KeyError, TypeError):
+        return default
+
+
+AMT = _load_amt()
 TITLE = "## 十、52 週新高 10 檔（高10）"
+def _wan(a):
+    return f"{a / 10000:g} 萬" if a % 1000 == 0 else f"{a:,} 元"
+
+
+# 裁定 seq420：每月約 30 檔剛好在一年最高點（PTH＝1），「最高 10 檔」實際是在這批裡隨機抽
+NOTE_TIE = "每月約 30 檔剛好在一年最高點，「最高 10 檔」是在這批裡隨機抽（同回測做法）；前一晚名單與照規則紀錄可能差 1～2 檔"
 SENT3 = ("看完歷史結果才挑出的版本，最高暫定；2027-11 才檢查", "2005～2014 年不合格（輸在 2008、2011、2014）；單筆約一半會賠，靠少數大賺", "描述，不是買賣建議")
 POS_COLS = ["批次", "代號", "名稱", "PTH", "買進日", "買進還原開盤", "買進未還原開盤", "金額佔權益", "排程賣出日", "賣出日", "賣出未還原收盤",
             "出場種類", "R用", "淨報酬", "狀態", "main"]
@@ -415,14 +435,14 @@ def render(c):
         if sells_tmr:
             parts.append(f"明天 {nxt} 收盤賣 {len(sells_tmr)} 檔（收盤賣）：" + "、".join(nm_(s, n) for s, n in sells_tmr))
         if buys:
-            b = f"明天 {nxt} 開盤買 {len(buys)} 檔（每檔約 2 萬）：" + "、".join(
+            b = f"明天 {nxt} 開盤買 {len(buys)} 檔（每檔約 {_wan(AMT)}）：" + "、".join(
                 f"{nm_(s, n)}（參考價 {p:,.2f}｜{k} 股）" for s, n, p, k in buys)
             if c["nfree"] > len(buys):
                 b += f"；空 {c['nfree'] - len(buys)} 格放 0050"
             parts.append(b)
         keep = [(s, n) for s, n, _, _ in held if s not in tmr_sold]
         parts.append(f"續抱 {len(keep)} 檔" + ("：" + "、".join(nm_(s, n) for s, n in keep) if keep else ""))
-        L.append("- 【LINE】⭐ 52 週新高 10 檔（高10）：" + "；".join(parts) + "｜" + "｜".join(SENT3))
+        L.append("- 【LINE】⭐ 52 週新高 10 檔（高10）：" + "；".join(parts) + "｜" + NOTE_TIE + "｜" + "｜".join(SENT3))
         if c.get("backup"):
             L.append("  - 備位（名單中有股票明天開盤鎖漲停或沒成交而買不到時，照規則往下遞補）：" + "、".join(nm_(s, n) for s, n in c["backup"]))
         if buys:
