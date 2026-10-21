@@ -88,6 +88,13 @@ if [ -z "$FAIL" ]; then
       if ! (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.mktdrop_fwd sec11 --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" >> "$MLOG" 2>&1); then
         logline "第十一節搬移失敗（不影響 daily）：見 $MLOG"
       fi
+      # 規則 14：大漲觀察月報／季加報＋前瞻小部位 seq1（台股 seq538／539／544、情報 0030／0035、裁定 seq441／442）；每晚 auto（到期才產月報，每晚更新小部位前瞻、處理第十二節）；⛔ 失敗只記 log、不影響名單
+      BLOG="$REPO/backtest/resultsDaily/bigrun.log"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.bigrun_monthly --kind auto --asof "$ASOF" --sha "$SHA" --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" > "$BLOG" 2>&1); then
+        logline "大漲觀察：$(grep -E '^(產出|未到期|名單第十二節|小部位前瞻)' "$BLOG" | tr '\n' ' ')"
+      else
+        logline "大漲觀察 失敗（不影響 daily）：$(tail -1 "$BLOG" 2>/dev/null)（見 $BLOG）"
+      fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); SLRC=$?
       if [ $SLRC = 2 ]; then logline "策略鎖：$SLK（不加警示）"; fi
