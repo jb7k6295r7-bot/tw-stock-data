@@ -205,7 +205,7 @@ def build(a, log, v2=False):
                 Hy_ = AD.hold_days("營飆", NTS.get(c_, ""))
                 own_ = "（你定與營量同日賣）" if Hy_ != 120 else ""
                 if src_ == "營飆營量":
-                    act_ = act_of("營量", 60, "那 1/3") + "；" + act_of("營飆", Hy_, "那 2/3" + own_) + "（金額 2:1 分兩份）"
+                    act_ = act_of("營量", 60, "那份") + "；" + act_of("營飆", Hy_, "那份" + own_) + "（兩套各一份；金額照你當時設定）"
                 else:
                     act_ = act_of(src_, 60, "") if src_ == "營量" else act_of(src_, Hy_, own_)
                 nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
