@@ -35,7 +35,8 @@ ITEMS = [
     ("cash", "S", ["ifrs-full:CashAndCashEquivalents"]),
     ("total_assets", "S", ["ifrs-full:Assets"]),
     ("total_equity", "S", ["ifrs-full:Equity"]),
-    ("revenue_ytd", "F", ["ifrs-full:Revenue", "tifrs-bsci-ci:OperatingRevenue"]),
+    ("revenue_ytd", "F", ["ifrs-full:Revenue", "tifrs-bsci-ci:OperatingRevenue",
+                          "tifrs-bsci-bd:TotalRevenue"]),   # bd 證券 2017 以前的收益合計（2018 起 bd 改用 ifrs-full:Revenue）
     ("profit_before_tax_ytd", "F", ["ifrs-full:ProfitLossBeforeTax"]),
     ("net_income_ytd", "F", ["ifrs-full:ProfitLoss"]),
     ("operating_cash_flow_ytd", "F", ["ifrs-full:CashFlowsFromUsedInOperatingActivities"]),
