@@ -48,7 +48,8 @@ ITEMS = [
     #   ⚠ 成本只收 OperatingCosts（營業成本合計）；ifrs-full:CostOfSales 在台灣範本是子項（銷貨成本）⇒ ⛔ 不當備援。
     ("cost_of_sales_ytd", "F", ["tifrs-bsci-ci:OperatingCosts"]),
     ("gross_profit_ytd", "F", ["ifrs-full:GrossProfit", "tifrs-bsci-ci:GrossProfitLossFromOperationsNet"]),
-    ("operating_income_ytd", "F", ["ifrs-full:ProfitLossFromOperatingActivities", "tifrs-bsci-ci:NetOperatingIncomeLoss"]),
+    ("operating_income_ytd", "F", ["ifrs-full:ProfitLossFromOperatingActivities", "tifrs-bsci-ci:NetOperatingIncomeLoss",
+                                   "tifrs-bsci-bd:NetOperatingIncomeLoss"]),   # bd 證券 2017 以前（2018 起 bd 改用 ifrs-full）
 ]
 HEADER = ["period", "stock_id", "industry_template", "report", "period_end"] + [c for c, _, _ in ITEMS] + ["source_file"]
 QEND = {1: "0331", 2: "0630", 3: "0930", 4: "1231"}
