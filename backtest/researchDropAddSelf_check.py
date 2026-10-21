@@ -159,7 +159,8 @@ def fixture():
             hf = (lambda e, d, c=c: naive_hold(c["P"], c["CL"], c["OP"], e, d))
         cost = 0.00385 if etf else 0.00585
         NE = {}
-        for arm, cfg in M.ARMS.items():
+        ALL = dict(M.ARMS); ALL.update({"split " + k: v for k, v in M.ARMS_SPLIT.items()})
+        for arm, cfg in ALL.items():
             a, info = M.overlay(c["E"], c["x"], c["y"], c["evs"], cfg, fn, c["CL"], c["OP"], cost, c["O50"], c["C50"], base)
             b = naive(c["E"], c["x"], c["y"], c["evs"], cfg, hf, c["CL"], c["OP"], cost, c["O50"], c["C50"], base)
             worst = max(worst, float(np.max(np.abs(a - b)))); cnt += 1
@@ -183,12 +184,12 @@ def fixture():
         a, _ = M.overlay(c["E"], c["x"], c["y"], [], cfg, fn, c["CL"], c["OP"], 0.00585, c["O50"], c["C50"], "close")
         ctl = cfg["w"] * c["E"][c["x"]:c["y"] + 1] / c["E"][c["x"]] + ((1 - cfg["w"]) if cfg["pool"] == "cash" else (1 - cfg["w"]) / c["C50"][c["x"]] * c["C50"][c["x"]:c["y"] + 1])
         f3 = max(f3, float(np.max(np.abs(a - ctl))))
-    R = {"F1 naive vs overlay 最大逐日差（300 情境 × 8 臂）": worst, "F1 比對次數": cnt, "F3 A／D 恆等式最大差": ident, "F2 手算最大差": f2, "F3 無事件 各臂 vs 對照 最大差": f3}
+    R = {"F1 naive vs overlay 最大逐日差（300 情境 × 8 臂＋split 4 臂）": worst, "F1 比對次數": cnt, "F3 A／D 恆等式最大差": ident, "F2 手算最大差": f2, "F3 無事件 各臂 vs 對照 最大差": f3}
     ok = worst <= 1e-10 and ident <= 1e-10 and f2 <= 1e-12 and f3 <= 1e-12
     R["過"] = bool(ok)
     print(json.dumps(R, ensure_ascii=False, indent=1))
-    os.makedirs(M.OUT, exist_ok=True)
-    json.dump(R, open(os.path.join(M.OUT, "check_fixture.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    os.makedirs(M.SPLIT_OUT, exist_ok=True)                  # ⛔ 不覆寫已 commit 的 resultsDropAddSelf/check_fixture.json（10/21 split 起寫到 split/）
+    json.dump(R, open(os.path.join(M.SPLIT_OUT, "check_fixture.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     if not ok:
         raise SystemExit("⛔ fixture 不過")
 
@@ -248,5 +249,57 @@ def post():
         raise SystemExit("⛔ post 查核不過")
 
 
+def post_split():
+    """P3 split：單顆策略 × 三段 × 4 臂 ⇒ naive 重算加碼帳年化／回落 ＝ split/table.csv（%.10g）；多顆前 20 顆 naive ＝ overlay。"""
+    from backtest import benchmark_rejudge as BR
+    from backtest import researchLev2 as L2
+    T = pd.read_csv(os.path.join(M.SPLIT_OUT, "table.csv"), float_precision="round_trip")
+    _, evs = M.load_events()
+    R = {"P3 不同（格）": 0, "P3 比對格": 0, "P4 最大差": 0.0, "P4 比對": 0, "不同明細": []}
+    SX = M.six4_world()
+    for sg, (wn, a_, b_) in M.SEGS.items():
+        Wd = M.load_world(wn); cal = Wd["cal"]; n = len(cal); x, y = BR.seg_pos(cal, a_, b_)
+        m, _ = M.map_events(evs, cal, x, y)
+        names = [k for k in Wd["S"]] + (["六四 v1"] if sg in ("確認", "探索") else [])
+        for nm in names:
+            if nm == "六四 v1":
+                w0, w1 = (a_, b_) if sg == "確認" else M.SIX4_EXP
+                X = SX["X"]; i0, i1 = X["pos"][w0], X["pos"][w1]
+                eq, _ = BR.six4_eq(w0, w1); E = np.full(len(SX["cal"]), np.nan); E[i0:i1 + 1] = eq
+                mm, _ = M.map_events(evs, SX["cal"], i0, i1)
+                runs = [(E, (lambda e, d: naive_etf([0, 1], [0.6, 0.4], SX["CL"], SX["OP"], d)), None)]
+                ctx = (i0, i1, mm, SX["CL"], SX["OP"], COST_ETF, SX["OP"][0], SX["CL"][0], "open"); stat = L2.perf
+            else:
+                s = Wd["S"][nm]
+                if s["P"] is None:
+                    r_, w_ = s["etf"]
+                    runs = [(s["E"][0], (lambda e, d, s=s, r_=r_, w_=w_: naive_etf(r_, w_, s["CL"], s["OP"], d)), None)]
+                else:
+                    K = 1 if len(s["P"]) == 1 else 20
+                    runs = [(s["E"][i], (lambda e, d, s=s, i=i: naive_hold(s["P"][i], s["CL"], s["OP"], e, d)), M.make_hold_fn(s["P"][i], s["CL"], s["OP"])) for i in range(K)]
+                ctx = (x, y, m, s["CL"], s["OP"], s["cost"], Wd["O50"], Wd["C50"], "close")
+                stat = (lambda nav, x=x, y=y, n=n: M.stat_close(nav, x, y, n))
+            for arm, cfg in M.ARMS_SPLIT.items():
+                if nm == "0050" and arm == "C′":
+                    cfg = dict(cfg, mode="none")
+                if len(runs) == 1:
+                    nav = naive(runs[0][0], *ctx[:3], cfg, runs[0][1], *ctx[3:])
+                    c, md = stat(nav)
+                    q = T[(T["段"] == sg) & (T["策略"] == nm) & (T["臂"] == arm)].iloc[0]
+                    R["P3 比對格"] += 1
+                    if "%.10g" % c != "%.10g" % q["年化"] or "%.10g" % md != "%.10g" % q["回落"]:
+                        R["P3 不同（格）"] += 1; R["不同明細"].append([sg, nm, arm, c, q["年化"], md, q["回落"]])
+                else:
+                    for (E_, hf, fn) in runs:
+                        nb = naive(E_, *ctx[:3], cfg, hf, *ctx[3:])
+                        na, _ = M.overlay(E_, *ctx[:3], cfg, fn, *ctx[3:])
+                        R["P4 最大差"] = max(R["P4 最大差"], float(np.max(np.abs(na - nb)))); R["P4 比對"] += 1
+    R["過"] = R["P3 不同（格）"] == 0 and R["P4 最大差"] <= 1e-10
+    print(json.dumps(R, ensure_ascii=False, indent=1, default=str))
+    json.dump(R, open(os.path.join(M.SPLIT_OUT, "check_post.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
+    if not R["過"]:
+        raise SystemExit("⛔ post_split 查核不過")
+
+
 if __name__ == "__main__":
-    {"fixture": fixture, "post": post}[sys.argv[1] if len(sys.argv) > 1 else "fixture"]()
+    {"fixture": fixture, "post": post, "post_split": post_split}[sys.argv[1] if len(sys.argv) > 1 else "fixture"]()

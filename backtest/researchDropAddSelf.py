@@ -9,6 +9,7 @@
       build-tie  （回測線追加 10/21）高10（F9 同分排序，使用者版）＝ resultsPTH10tie/main T1：權益 raw_<世界>.npz、逐筆 trades_<世界>_T1.csv.gz（⛔ 不重跑引擎）
       dry        乾跑：每事件每策略「可加碼持股檔數」、買不到檔數、出場日對帳（⛔ 不算任何加碼報酬）
       run        全部策略 × 全部臂 × 三段（正式、一次）
+      split      兩帳分開報（使用者 10/21 更正）：策略帳 ＝ 100% 策略；加碼帳 ＝ 獨立資金 A／B′／C′／D ＋ 同時機買 0050／大盤／F9 前 4 對照 ⇒ resultsDropAddSelf/split/
     查核：PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchDropAddSelf_check [fixture|post]
 
 ═══ 讀法（寫死於 2026-10-21 21:30（台北），在算任何本件加碼報酬之前；⚠ 本線看過：排名表 rank.md 全部數字、大跌 4 檔各件、
@@ -200,7 +201,7 @@ def lot_paths(L, d, s, y, CL, OP, cost):
     return val, fconv, fsale, conv_list
 
 
-def overlay(E, x, y, evs, arm, hold_fn, CL, OP, cost, O50=None, C50=None, base="close"):
+def overlay(E, x, y, evs, arm, hold_fn, CL, OP, cost, O50=None, C50=None, base="close", out=None):
     """⇒ (NAV 陣列 [x..y], 每事件資訊 list)。E ＝ 策略權益（日曆位置）；base＝"close"：策略帳 ＝ w·E_t/E_x、0050 備用以 C50[x] 買；
     base＝"open"（六四）：E 已是以窗首開盤前 1.0 為基的權益、0050 備用以 O50[x] 買。"""
     w, mode, pool = arm["w"], arm["mode"], arm["pool"]
@@ -213,6 +214,7 @@ def overlay(E, x, y, evs, arm, hold_fn, CL, OP, cost, O50=None, C50=None, base="
     extra = np.zeros(T)                   # 加碼部位市值
     cashflow = np.zeros(T)                # 備用現金的流入（＋）／流出（−），記在當天（開盤或收盤皆計入當天收盤）
     merged = np.zeros(T)                  # B：併入策略帳的部分
+    lotsval = np.zeros(T)                 # 加碼部位（個股／ETF 加碼那份）收盤市值（split 的資金使用率用；不含 0050 備用）
     info = []
     # 0050 備用：分段（units 持有期間）
     u50_spans = []                        # (t0, t1, units) 收盤持有 units 的區間 [t0, t1]
@@ -228,13 +230,13 @@ def overlay(E, x, y, evs, arm, hold_fn, CL, OP, cost, O50=None, C50=None, base="
         for ev in evs:
             if mode == "B" and used_B:
                 break
-            e, d, s = ev["e"], ev["d"], (None if mode == "B" else ev["s"])
+            e, d, s = ev["e"], ev["d"], (None if mode in ("B", "Bp") else ev["s"])   # Bp（split B′）：不在收復賣、跟策略出場
             # 當下可用備用現金（＝ 起始現金 ＋ 至 d−1 收盤為止的流入流出）
             avail_cash = cash0 + cashflow[:d - x].sum()
             withdrawn = 0.0
             L = hold_fn(e, d)
             rec = {"k": ev["k"], "e": e, "d": d, "s": s, "持股檔": 0 if L is None else len(L["rows"]), "買不到": 0 if L is None else L.get("nbad", 0),
-                   "投入": 0.0, "回收": 0.0, "窗尾市值": 0.0, "T2加碼": False}
+                   "投入": 0.0, "回收": 0.0, "窗尾市值": 0.0, "T2加碼": False, "持有至": None}
             rec["併入窗尾市值"] = 0.0
             if L is None and not (mode == "D" and ev["ta"] is not None):
                 info.append(rec)
@@ -270,7 +272,11 @@ def overlay(E, x, y, evs, arm, hold_fn, CL, OP, cost, O50=None, C50=None, base="
                 lots = dict(LL); lots["a"] = amt * np.asarray(LL["w"], float)
                 val, fconv, fsale, conv = lot_paths(lots, dd, s, y, CL, OP, cost)
                 off = dd - x
-                extra[off:] += val
+                extra[off:] += val; lotsval[off:] += val
+                for i_ in range(len(lots["rows"])):
+                    tp_ = int(lots["tpx"][i_])
+                    end_ = tp_ if (tp_ <= y and (s is None or tp_ <= s - 1)) else (s if (s is not None and s <= y) else y)
+                    rec["持有至"] = end_ if rec["持有至"] is None else max(rec["持有至"], end_)
                 if mode == "B":
                     for (tc, proc) in conv:
                         merged[tc - x:] += proc * E[tc:y + 1] / E[tc]
@@ -297,6 +303,8 @@ def overlay(E, x, y, evs, arm, hold_fn, CL, OP, cost, O50=None, C50=None, base="
                 extra[t0 - x:t1 - x + 1] += u * C50[t0:t1 + 1]
     cash_path = cash0 + np.cumsum(cashflow)
     nav = nav + extra + cash_path + merged
+    if out is not None:
+        out["lots"] = lotsval; out["cash"] = cash_path
     return nav, info
 
 
@@ -758,6 +766,196 @@ def cmd_run(a):
         raise SystemExit(f"⛔ 100% 臂 ≠ 排名表：{bad}")
 
 
+# ═════════════ split：兩帳分開報（使用者 10/21 更正：「平常策略用策略資金，加碼是加碼資金，不要歸在一起」）═════════════
+SPLIT_OUT = os.path.join(OUT, "split")
+ARMS_SPLIT = {"A": dict(w=0.0, mode="A", pool="cash"), "B′": dict(w=0.0, mode="Bp", pool="cash"),
+              "C′": dict(w=0.0, mode="A", pool="0050"), "D": dict(w=0.0, mode="D", pool="cash")}
+SPLIT_NAME = {"A": "A 平時現金；大跌隔天全數加碼策略持股、收復隔天賣回", "B′": "B′ 不在收復賣：每檔跟策略同日同價出場、回現金等下次",
+              "C′": "C′ 平時放 0050；大跌賣 0050 買策略持股、收復賣回再買 0050", "D": "D 大跌加一半、−5% 再加另一半；收復一起賣回"}
+OLD_OF = {"A": ("A", 0.8), "C′": ("C", 0.8), "D": ("D", 0.6)}     # 加碼帳 ＝ (舊臂淨值 − w·E/E_x) ÷ (1 − w)（金額線性 ⇒ 恆等，閘）
+SPLIT_NOTES = NOTES[:4] + NOTES[4:5] + NOTES[6:] + [
+    "加碼帳大部分時間是閒置現金（A／B′／D 不計息），窗內年化會被拉低；要看每次事件報酬",
+    "策略帳 ＝ 100% 策略本身（＝ 排名表數字，不變）；加碼帳是另一筆獨立資金（窗首 ＝ 1），兩帳 ⛔ 不合併",
+    "同時機對照：同一筆加碼帳、同事件日、同收復日賣回，改買 0050（開盤進出、0.385%）／大盤報酬指數（指數無開盤 ⇒ e＋1 收盤進、D0＋1 收盤出、不含成本）／"
+    "大跌 4 檔 F9 前 4（＝ researchMktDrop_addon2 丙「平時現金、事件全額」曲線；C′ 對 乙「平時 0050、事件撥 100%」曲線；只有 2015 起）"]
+
+
+def split_runs_metrics(nav, info, out, statf, base):
+    c, m = statf(nav)
+    cum = nav[-1] / (nav[0] if base == "close" else 1.0) - 1.0
+    ev = []
+    for r in info:
+        if r["投入"] > 1e-12:
+            ev.append({"k": r["k"], "r": (r["回收"] + r["窗尾市值"] - r["投入"]) / r["投入"], "天": (r["持有至"] - r["d"] + 1) if r["持有至"] is not None else np.nan})
+    rr = np.array([z["r"] for z in ev]) if ev else np.array([])
+    use = float(np.mean(out["lots"] / nav)) if out else np.nan
+    return {"年化": c, "回落": m, "累計": cum, "事件數": len(ev), "事件報酬平均": float(rr.mean()) if len(rr) else np.nan,
+            "事件報酬中位": float(np.median(rr)) if len(rr) else np.nan, "事件報酬最差": float(rr.min()) if len(rr) else np.nan,
+            "事件勝率": float((rr > 0).mean()) if len(rr) else np.nan, "平均投入天數": float(np.nanmean([z["天"] for z in ev])) if ev else np.nan,
+            "資金使用率": use}, {z["k"]: z for z in ev}
+
+
+def split_comps(wn, cal, x, y, evs, Wd, TR):
+    """同時機對照（與策略無關）⇒ {名: (年化, 回落, 累計, {k: 報酬}, 說明)}。"""
+    n = len(cal); out = {}
+    statf = (lambda nav: stat_close(nav, x, y, n))
+    m, _ = map_events(evs, cal, x, y)
+    S50 = Wd["S"]["0050"]
+    dummy = np.ones(n)
+    for nm, (CL_, OP_, cost) in (("同時機買 0050", (S50["CL"][:1], S50["OP"][:1], COST_ETF)),
+                                ("同時機買大盤報酬指數", (BR.on_cal(TR, cal)[0][None, :], BR.on_cal(TR, cal)[0][None, :], 0.0))):
+        nav, info = overlay(dummy, x, y, m, ARMS_SPLIT["A"], make_etf_fn([0], [1.0], CL_, OP_), CL_, OP_, cost, Wd["O50"], Wd["C50"], "close")
+        c, md = statf(nav)
+        out[nm] = (c, md, nav[-1] / nav[0] - 1, {r["k"]: (r["回收"] + r["窗尾市值"] - r["投入"]) / r["投入"] for r in info if r["投入"] > 0})
+    c, md = statf(Wd["C50"][x:y + 1] / Wd["C50"][x])
+    out["一直抱 0050"] = (c, md, Wd["C50"][y] / Wd["C50"][x] - 1, {})
+    mdp = os.path.join(BR.OUT, "mktdrop_curves.npz")
+    if wn == "主":
+        Z = np.load(mdp); dts = pd.to_datetime(Z["dates"])
+        for key, nm in (("丙_平時現金事件全額", "同時機買大跌 4 檔 F9 前 4（平時現金）"), ("乙_撥100%", "平時 0050、大跌撥 100% 買 F9 前 4（C′ 對照）")):
+            e_ = pd.Series(Z[key], index=dts).reindex(cal).to_numpy(float)
+            if not np.all(np.isfinite(e_[x:y + 1])):
+                continue
+            c, md = BR.estat(e_, x, y)
+            per = {z["k"]: e_[(z["s"] if z["s"] is not None else y)] / e_[z["e"]] - 1 for z in m}
+            out[nm] = (c, md, e_[y] / e_[x] - 1, per)
+    return out
+
+
+def cmd_split(a):
+    from backtest import researchLev2 as L2
+    T0 = time.time()
+    sha, evs = load_events()
+    g = events_gate(evs)
+    if g["日期不同"] or g["收復日不同"]:
+        raise SystemExit(f"⛔ 事件閘不過 {g}")
+    TR = BR.read_series("git:origin/main:data/history/market_tri.csv")
+    RK = pd.read_csv(os.path.join(BR.OUT, "rank.csv"), dtype=str)
+    TR1 = tie_ref()
+    SX = six4_world()
+    rows, erows, crow, recon = [], [], [], []
+    ident_max = 0.0
+    worlds = {}
+    for sg, (wn, a_, b_) in SEGS.items():
+        if wn not in worlds:
+            worlds[wn] = load_world(wn)
+        Wd = worlds[wn]; cal = Wd["cal"]; n = len(cal); x, y = BR.seg_pos(cal, a_, b_)
+        m, miss = map_events(evs, cal, x, y)
+        if miss:
+            raise SystemExit(f"⛔ {sg} 事件日不在日曆 {miss}")
+        COMPS = {f"{cal[x].date()}～{cal[y].date()}": split_comps(wn, cal, x, y, evs, Wd, TR)}
+        strat = list(Wd["S"].items()) + ([("六四 v1", None)] if sg in ("確認", "探索") else [])
+        for nm, s in strat:
+            if nm == "六四 v1":
+                w0, w1 = (a_, b_) if sg == "確認" else SIX4_EXP
+                X = SX["X"]; i0, i1 = X["pos"][w0], X["pos"][w1]
+                eq, _ = BR.six4_eq(w0, w1)
+                E = np.full(len(SX["cal"]), np.nan); E[i0:i1 + 1] = eq
+                mm, _ = map_events(evs, SX["cal"], i0, i1)
+                runs = [(E, make_etf_fn([0, 1], [0.6, 0.4], SX["CL"], SX["OP"]))]
+                ctx = dict(x=i0, y=i1, evs=mm, CL=SX["CL"], OP=SX["OP"], cost=COST_ETF, O50=SX["OP"][0], C50=SX["CL"][0], base="open")
+                statf = L2.perf
+                win = f"{w0}～{w1}"
+                if win not in COMPS:
+                    xx, yy = BR.seg_pos(cal, w0, w1)
+                    COMPS[win] = split_comps(wn, cal, xx, yy, evs, Wd, TR)
+                cal_ev = SX["cal"]
+            else:
+                if s["P"] is None:
+                    r_, w_ = s["etf"]
+                    runs = [(s["E"][0], make_etf_fn(r_, w_, s["CL"], s["OP"]))]
+                else:
+                    runs = [(E_, make_hold_fn(P, s["CL"], s["OP"])) for E_, P in zip(s["E"], s["P"])]
+                ctx = dict(x=x, y=y, evs=m, CL=s["CL"], OP=s["OP"], cost=s["cost"], O50=Wd["O50"], C50=Wd["C50"], base="close")
+                statf = (lambda nav, x=x, y=y, n=n: stat_close(nav, x, y, n))
+                win = f"{cal[x].date()}～{cal[y].date()}"
+                cal_ev = cal
+            CP = COMPS[win]
+            # 策略帳（＝ 100%）
+            c100 = [statf(E_[ctx["x"]:ctx["y"] + 1] / (E_[ctx["x"]] if ctx["base"] == "close" else 1.0)) for E_, _ in runs]
+            c0, m0 = float(np.median([z[0] for z in c100])), float(np.median([z[1] for z in c100]))
+            rows.append({"段": sg, "策略": nm, "帳": "策略帳（100% 策略本身）", "臂": "策略帳", "窗": win, "顆數": len(runs), "年化": c0, "回落": m0, "比值": AS.ratio(c0, m0)})
+            q = RK[(RK["段"] == sg) & (RK["策略"] == nm)]
+            if nm == "六四 v1" and sg == "探索":
+                q = q[q["排名"] == "另表"]
+            fmt = "%.8g" if nm in ("營量 v1", "營飆 v1") else "%.10g"
+            if nm == TIE_NAME:
+                wref, cref, mref = TR1[(wn, sg)]
+                cc, mc = (c0, m0) if wref == win else BR.estat(runs[0][0], *BR.seg_pos(cal, *wref.split("～")))
+                ok = fmt % cc == fmt % float(cref) and fmt % mc == fmt % float(mref); refs = (cref, mref)
+            else:
+                ok = len(q) == 1 and fmt % c0 == fmt % float(q.iloc[0]["年化"]) and fmt % m0 == fmt % float(q.iloc[0]["回落"])
+                refs = (q.iloc[0]["年化"], q.iloc[0]["回落"]) if len(q) else (None, None)
+            recon.append({"段": sg, "策略": nm, "策略帳年化": c0, "策略帳回落": m0, "對帳值": refs, "精度": fmt, "相同": bool(ok)})
+            for arm, cfg in ARMS_SPLIT.items():
+                if nm == "0050" and arm == "C′":
+                    cfg = dict(cfg, mode="none")
+                MS, EVS = [], []
+                for E_, fn in runs:
+                    o_ = {}
+                    nav, info = overlay(E_, ctx["x"], ctx["y"], ctx["evs"], cfg, fn, ctx["CL"], ctx["OP"], ctx["cost"], ctx["O50"], ctx["C50"], ctx["base"], out=o_)
+                    if arm in OLD_OF:                                           # 恆等閘：加碼帳 ＝ (舊臂 − w·E) ÷ (1−w)
+                        oa, ow = OLD_OF[arm]
+                        ocfg = ARMS[oa] if not (nm == "0050" and oa == "C") else dict(ARMS[oa], mode="none")
+                        old, _ = overlay(E_, ctx["x"], ctx["y"], ctx["evs"], ocfg, fn, ctx["CL"], ctx["OP"], ctx["cost"], ctx["O50"], ctx["C50"], ctx["base"])
+                        Ew = E_[ctx["x"]:ctx["y"] + 1] / (E_[ctx["x"]] if ctx["base"] == "close" else 1.0)
+                        ident_max = max(ident_max, float(np.max(np.abs((old - ow * Ew) / (1 - ow) - nav))))
+                    mt, evd = split_runs_metrics(nav, info, o_ if cfg["mode"] != "none" else None, statf, ctx["base"])
+                    if cfg["mode"] == "none":
+                        mt["資金使用率"] = 0.0
+                    MS.append(mt); EVS.append(evd)
+                med = {k: float(np.nanmedian([z[k] for z in MS])) if any(np.isfinite(z[k]) for z in MS) else np.nan for k in MS[0]}
+                r = {"段": sg, "策略": nm, "帳": "加碼帳", "臂": arm, "臂說明": SPLIT_NAME[arm], "窗": win, "顆數": len(runs), **med, "比值": AS.ratio(med["年化"], med["回落"])}
+                comps = (("同時機買 0050", "同時機買大盤報酬指數", "同時機買大跌 4 檔 F9 前 4（平時現金）") if arm != "C′"
+                         else ("一直抱 0050", "平時 0050、大跌撥 100% 買 F9 前 4（C′ 對照）"))
+                for cn in comps:
+                    if cn not in CP:
+                        continue
+                    cc, cm, ccum, cper = CP[cn]
+                    r[f"差年化_對{cn}"] = med["年化"] - cc; r[f"差回落_對{cn}"] = med["回落"] - cm
+                    if cper:
+                        diffs = []
+                        for evd in EVS:
+                            dd = [evd[k]["r"] - cper[k] for k in evd if k in cper]
+                            diffs.append((np.mean(dd) if dd else np.nan, np.mean(np.array(dd) > 0) if dd else np.nan, len(dd)))
+                        r[f"逐事件差平均_對{cn}"] = float(np.nanmedian([z[0] for z in diffs]))
+                        r[f"贏的事件比例_對{cn}"] = float(np.nanmedian([z[1] for z in diffs]))
+                rows.append(r)
+                ks = sorted({k for evd in EVS for k in evd})
+                for k in ks:
+                    vals = [evd[k] for evd in EVS if k in evd]
+                    z0 = next(zz for zz in ctx["evs"] if zz["k"] == k)
+                    er = {"段": sg, "策略": nm, "臂": arm, "事件": str(cal_ev[z0["e"]].date()),
+                          "收復賣回日": str(cal_ev[z0["s"]].date()) if z0["s"] is not None else "窗內未賣回",
+                          "有投入顆數": len(vals), "報酬中位": float(np.median([v["r"] for v in vals])), "報酬平均": float(np.mean([v["r"] for v in vals])),
+                          "投入天數中位": float(np.nanmedian([v["天"] for v in vals]))}
+                    if arm == "A":
+                        for cn in ("同時機買 0050", "同時機買大盤報酬指數", "同時機買大跌 4 檔 F9 前 4（平時現金）"):
+                            if cn in CP and k in CP[cn][3]:
+                                er[cn] = CP[cn][3][k]
+                    erows.append(er)
+            log(f"[split {sg} {nm}] {len(runs)} 顆｜策略帳對帳 {'同' if ok else '⛔ 不同'}｜{time.time() - T0:.0f}s")
+        for wkey, CP in COMPS.items():
+            for cn, (cc, cm, ccum, cper) in CP.items():
+                rr = np.array(list(cper.values())) if cper else np.array([])
+                crow.append({"段": sg, "窗": wkey, "對照": cn, "年化": cc, "回落": cm, "比值": AS.ratio(cc, cm), "累計": ccum, "事件數": len(rr),
+                             "事件報酬平均": float(rr.mean()) if len(rr) else np.nan, "事件報酬中位": float(np.median(rr)) if len(rr) else np.nan,
+                             "事件報酬最差": float(rr.min()) if len(rr) else np.nan, "事件勝率": float((rr > 0).mean()) if len(rr) else np.nan})
+    os.makedirs(SPLIT_OUT, exist_ok=True)
+    T = pd.DataFrame(rows); EVR = pd.DataFrame(erows); C = pd.DataFrame(crow)
+    T.to_csv(os.path.join(SPLIT_OUT, "table.csv"), index=False, float_format="%.10g", encoding="utf-8")
+    EVR.to_csv(os.path.join(SPLIT_OUT, "event_returns.csv"), index=False, float_format="%.10g", encoding="utf-8")
+    C.to_csv(os.path.join(SPLIT_OUT, "comps.csv"), index=False, float_format="%.10g", encoding="utf-8")
+    bad = [r for r in recon if not r["相同"]]
+    S = {"讀法": "split（兩帳分開報；使用者 10/21 更正）", "指數": f"origin/main {sha}", "事件閘": g, "策略帳對帳不同": len(bad),
+         "加碼帳 vs 舊臂恆等式最大差（A／C′／D）": ident_max, "必附": SPLIT_NOTES, "秒": round(time.time() - T0)}
+    json.dump(recon, open(os.path.join(SPLIT_OUT, "recon.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
+    json.dump(S, open(os.path.join(SPLIT_OUT, "summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    log(f"[split] {len(T)} 列｜事件列 {len(EVR)}｜對照 {len(C)}｜策略帳對帳不同 {len(bad)}｜恆等式最大差 {ident_max:.2e}｜{time.time() - T0:.0f}s")
+    if bad or ident_max > 1e-9:
+        raise SystemExit(f"⛔ split 閘不過：對帳不同 {len(bad)}、恆等式 {ident_max}")
+
+
 def pct(v):
     return "—" if v is None or not np.isfinite(v) else f"{v * 100:+.2f}%"
 
@@ -784,13 +982,14 @@ def write_md(T, EVR, recon, S):
 def main():
     global LOGF
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["events", "build-yf", "build-pth", "build-tie", "dry", "run"])
+    ap.add_argument("cmd", choices=["events", "build-yf", "build-pth", "build-tie", "dry", "run", "split"])
     ap.add_argument("--part", default="主"); ap.add_argument("--procs", type=int, default=3)
     a = ap.parse_args()
-    os.makedirs(OUT, exist_ok=True)
-    LOGF = os.path.join(OUT, "run.log")
+    od = SPLIT_OUT if a.cmd == "split" else OUT              # split 的紀錄 ⛔ 不寫進已 commit 的 run.log
+    os.makedirs(od, exist_ok=True)
+    LOGF = os.path.join(od, "run.log")
     log(f"===== researchDropAddSelf {a.cmd} {a.part if a.cmd.startswith('build') else ''}｜{pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）")
-    {"events": cmd_events, "build-yf": build_yf, "build-pth": build_pth, "build-tie": build_tie, "dry": cmd_dry, "run": cmd_run}[a.cmd](a)
+    {"events": cmd_events, "build-yf": build_yf, "build-pth": build_pth, "build-tie": build_tie, "dry": cmd_dry, "run": cmd_run, "split": cmd_split}[a.cmd](a)
 
 
 if __name__ == "__main__":
