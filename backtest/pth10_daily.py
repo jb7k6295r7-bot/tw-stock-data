@@ -75,7 +75,7 @@ L_SKIP, H_HOLD = 2, 6
 NS = 10
 K_PRE = 2 * NS
 START_YM = 2026 * 12 + 10                                   # 第一批進場月 2026-11（年×12＋月−1）
-# 每份金額＝使用者測試金額（裁定 seq422／423：不是規則、會再改）⇒ 可改設定值：backtest/forward/設定_每份金額.json {"每份金額": 20000}；
+# 每份金額＝使用者測試金額（裁定 seq422／423：不是規則、會再改）⇒ 可改設定值：backtest/forward/設定_每份金額.json（各策略一個鍵：營量／營飆／高10／大跌4檔；本檔讀「高10」）；
 # 改金額只影響 LINE 股數換算與 positions_user，⛔ 不動照規則欄
 SETTING = os.path.join(REPO, "backtest", "forward", "設定_每份金額.json")
 
@@ -83,7 +83,7 @@ SETTING = os.path.join(REPO, "backtest", "forward", "設定_每份金額.json")
 def _load_amt(default=20000):
     try:
         with open(SETTING, encoding="utf-8") as fh:
-            v = int(json.load(fh)["每份金額"])
+            d_ = json.load(fh); v = int(d_.get("高10", d_.get("每份金額")))
         return v if v > 0 else default
     except (OSError, ValueError, KeyError, TypeError):
         return default
