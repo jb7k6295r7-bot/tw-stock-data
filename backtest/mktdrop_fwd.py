@@ -37,24 +37,30 @@
    ⇒ 補買進列時一併寫 positions；收復／出場同其他列；第八節既有各行只算 A～F（研究列不併入帳面、買不到、久未成交）
  第八節兩行（F9 先）：「F9 前 n（使用者採用）」「F8 前 n」；n ＝ 該族（F9top*／F8top*）該事件不同代號數 ⇒ 舊 F8top3 三列 ＋ 補的 F8top4 一列 ＝「F8 前 4」
 ── 2026-10-21 加（使用者 10/21「大跌除了4檔以外通知我加碼高10及64中的0050」；回測線開發子代理；只加、不改既有行）──
- 照回測 researchDropAddSelf split A 臂（commit a72c1d9b54）：
- 事件夜（daily 判到「事件」、日期＝資料日；與大跌 4 檔同一觸發）⇒ 第八節加兩行【LINE】⭐：
+ 進出時機照回測 researchDropAddSelf split A 臂（commit a72c1d9b54）；金額照使用者 10/21 21:30「加碼也是一份2萬」「每檔2萬」（裁定 seq440 §四）：
+ 事件夜（daily 判到「事件」、日期＝資料日；與大跌 4 檔同一觸發）⇒ 名單第十一節兩行【LINE】⭐：
    ① 加碼高10：pth10 使用者版 positions_user.csv 事件日收盤後仍持有的列（買進日 ≤ t、賣出日／排程賣出日 ＞ t；
       ＋ pth10 state.json「名單」裡買進日 ≤ t、今晚 pth10 才會登的列〔run_daily_list 先跑本檔、後跑 pth10〕，買進日開盤可買才算）
-      ★ 權重 ＝ 事件日收盤市值（股數 × 未還原收盤）等比例（＝ A 臂 Z3）；有任何一檔缺股數／收盤 ⇒ 全部改等權並註明
+      ★ 每檔各加一份、等額（使用者版與照規則紀錄都一樣）。⚠ 與回測 A 臂不同：A 臂按事件日收盤持股市值比例分配；回測句照引 A 臂數字並註「回測為按市值比例」
       明天到期（排程賣出日 ＝ 明天）的也列（A 臂：出場日 ≥ e＋1 都算目前持股），註「明天收盤到期、加碼那份同日一起賣」
-   ② 加碼 0050（六四中的 0050）：買 0050
+   ② 加碼 0050（六四中的 0050）：加一份 0050
    高10 沒有任何使用者版持股紀錄 ⇒ 只出 ② 並寫「高10 尚未開始持有」；有紀錄但 0 檔 ⇒ 寫「高10 目前沒有持股」
- 金額：設定檔可選鍵「大跌加碼_高10」「大跌加碼_0050」（總額，元）⇒ 股數 ＝ floor(總額 × 權重 ÷ 事件日未還原收盤)；缺鍵／null／非正數 ⇒ 只列代號與比例、寫「金額照你決定」
+ 金額：設定檔可選鍵「大跌加碼_高10」＝ 每檔一份（元）、「大跌加碼_0050」＝ 0050 一份（元）⇒ 股數 ＝ floor(一份 ÷ 參考價)（參考價 ＝ 事件日未還原收盤；零股取整）；
+   缺鍵／null／非正數 ⇒ 只列代號、寫「金額照你決定」
  紀錄 forward/mktdrop/addon_positions.csv（照規則、描述；與 events.csv／positions.csv 分開，⛔ 不動大跌 4 檔紀錄）：
-   事件夜寫「待買」列（之後的 LINE 一律照這幾列，不再看 positions_user 變動）；
-   e（t 的下一交易日）資料到 ⇒ 買進日／買進價（未還原開盤）；買不到（同 fill_buys：沒成交、開盤缺、開盤鎖漲停、壞根；ETF 只看成交與開盤）⇒「買不到」、其餘權重等比例放大
+   事件夜寫「待買」列（權重 ＝ 1／檔數；之後的 LINE 一律照這幾列，不再看 positions_user 變動）；
+   e（t 的下一交易日）資料到 ⇒ 買進日／買進價（未還原開盤）；買不到（同 fill_buys：沒成交、開盤缺、開盤鎖漲停、壞根；ETF 只看成交與開盤）⇒「買不到」、其餘等權
    出場（取最早；同一天開盤先於收盤）：收復賣回 ＝ 收復日 D 之後第一根可賣開盤（同 recovery，與大跌 4 檔同一收復價）；
      高10 規則賣出 ＝ positions_user 該列賣出日（沒有 ⇒ 排程賣出日 ≤ 資料日才算）收盤（當天沒成交用之前最後一根）；壞根前一根收盤強制賣（同 recovery）
-   報酬 ＝ 還原價（賣 ÷ 買進根還原開盤）− 1 再扣來回成本（個股 0.585%、ETF 0.385%）；籃子 ＝ 買到的列按權重加權
+   報酬 ＝ 還原價（賣 ÷ 買進根還原開盤）− 1 再扣來回成本（個股 0.585%、ETF 0.385%）；籃子 ＝ 買到的列等權
    ⛔ 不做 −5% 再加碼（使用者沒說）
- LINE（第八節，「  - 【LINE】⭐ 」同格式）：事件夜 ①②；高10 明天到期 ⇒ 加碼那份同日一起賣；高10 非排程出場（壞根等）記到那晚 ⇒ 加碼那份也賣；
+ 名單「## 十一、大跌加碼提醒（高10、0050）」（2026-10-21 晚改：從第八節移出；第八節回到改前逐字原樣）：
+   每行前綴「- 【LINE】⭐ 大跌加碼：」：事件夜 ①②；高10 明天到期 ⇒ 加碼那份同日一起賣；高10 非排程出場（壞根等）記到那晚 ⇒ 加碼那份也賣；
    收復夜 ⇒ 明天開盤賣回加碼那份（高10、0050 原持股不動）。每行附 ADD_BT 一句（split/table.csv 確認段 A 臂；fixture 核對）
+   加碼部位持有中 ⇒ 另一行不推的前瞻紀錄行（「- 大跌加碼前瞻紀錄…」）；★ 沒有事件夜也沒有加碼紀錄要報 ⇒ 不產第十一節（已有則拿掉）
+   寫法 ＝ put11：拿掉舊的第十一節（到下一個「## 」或檔尾）、接在檔尾（冪等；同 pth10_daily.put）。
+   ⚠ 順序：run_daily_list 先跑本檔（第八、十一節）、再 vix_daily（第九節）、pth10_daily（第十節）；兩者都只換自己那節、接檔尾 ⇒
+     第十一節不會被蓋掉，但會排在第九、十節之前；要排最後 ⇒ 在 pth10 之後再跑一次「mktdrop_fwd sec11 --md …」（只搬第十一節，不重算、不寫紀錄）
  預覽：daily --preview-addon（自動 --nowrite）⇒ 把資料日當成事件夜產 ①②（⛔ 不寫任何紀錄；--md 請給暫存檔）
  自測：PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.mktdrop_fwd_addon_check
 """
@@ -100,8 +106,10 @@ ADD_H, ADD_5 = "加碼高10", "加碼0050"
 ADD_KEYS = {ADD_H: "大跌加碼_高10", ADD_5: "大跌加碼_0050"}
 ADD_EXIT = ("加權收盤 ≥ 事件前一日收盤 ⇒ 隔天開盤賣回加碼那份；期間高10 規則賣出該檔 ⇒ 加碼那份同日收盤一起賣；"
             "個股遇壞根前一根收盤強制賣；⛔ 不設天數、不做 −5% 再加碼")
-ADD_BT = "回測（2022 起 11 次）：加碼高10（F9 版）每次平均約 +4.2%、加碼 0050 約 +3.8%；樣本少、描述，不是買賣建議"
-ADD_LINE = "  - 【LINE】⭐ "
+ADD_BT = "回測（2022 起 11 次，回測為按持股市值比例加碼）：加碼高10（F9 版）每次平均約 +4.2%、加碼 0050 約 +3.8%；樣本少、描述，不是買賣建議"
+ADD_LINE = "- 【LINE】⭐ 大跌加碼："
+SEC11_TITLE = "## 十一、大跌加碼提醒（高10、0050）"
+SEC11_RE = r"\n" + re.escape(SEC11_TITLE) + r".*?(?=\n## |\Z)"
 K_REC, K_RULE, K_BAD = "收復後隔天開盤賣回", "高10 規則賣出、加碼那份同日收盤一起賣", "壞根前一根收盤強制賣"
 
 
@@ -471,9 +479,7 @@ def _f8_line(R):
     return L
 
 
-def section(J, RS, cands_dir=None, ADD=None):
-    """ADD（2026-10-21 加）：大跌加碼高10／0050 的附加行 {"top": 判定行之後, 序號: 該事件區塊內, "tail": 節末}；None ⇒ 與舊版逐字相同。"""
-    ADD = ADD or {}
+def section(J, RS, cands_dir=None):
     L = [SEC_TITLE, "", SEC_NOTE, ""]
     st = J.get("狀態")
     if st == "事件":
@@ -488,7 +494,6 @@ def section(J, RS, cands_dir=None, ADD=None):
         L.append(f"- 今天加權 {J['指數報酬']:+.2%}（收盤 {J['收盤']:,.2f}；大跌門檻 {J['門檻']:+.2%}），未達大跌事件")
     else:
         L.append(f"- 加權指數資料未到（指數資料尾 {J.get('指數資料尾')}），今天沒判")
-    L += ADD.get("top", [])
     for R in RS:
         tg = f"序號 {R['序號']}" + ("，第 0 筆描述、不入判" if R["序號"] == "0" else "")
         if R["狀態"] == "待買":
@@ -502,7 +507,6 @@ def section(J, RS, cands_dir=None, ADD=None):
         if R["狀態"] == "已出場":
             L.append(f"- {R['事件日']} 事件（{tg}）已出場（收復日 {R['收復日']}）：扣成本報酬 " + (_cands_str(R, "報酬") or "—"))
             L += _f8_line(R)
-            L += ADD.get(R["序號"], [])
             continue
         gap = R["收復目標"] / R["指數收盤"] - 1
         L.append(f"- 持有中：{R['事件日']} 事件（{tg}）｜收復目標 加權收盤 ≥ {R['收復目標']:,.2f}，"
@@ -516,7 +520,6 @@ def section(J, RS, cands_dir=None, ADD=None):
                 L.append(f"  - 加碼線 {R['加碼線']:,.2f} 已於 {R['加碼日']} 觸及（每事件一次，不再提醒）")
         elif R["收復日"] == R["指數資料日"]:
             L.append(f"  - 【LINE】⭐ 大跌收復賣出提醒：今天加權收盤 {R['指數收盤']:,.2f} ≥ {R['收復目標']:,.2f} ⇒ 明天開盤賣出全部大跌持股（含加碼）")
-        L += ADD.get(R["序號"], [])
         bk = _cands_str(R, "帳面")
         if bk:
             L.append(f"  - 帳面（自買進日開盤、還原價、等權、未扣成本）：{bk}")
@@ -530,7 +533,6 @@ def section(J, RS, cands_dir=None, ADD=None):
         stale = [x for c_, S in R["候選"].items() if not res_fam(c_) for x in S["久未成交"]]
         if stale:
             L.append(f"  - ⚠ 近 5 個交易日沒成交（可能停牌／下市，人工看）：{'、'.join(stale)}")
-    L += ADD.get("tail", [])
     return L + [""]
 
 
@@ -643,28 +645,18 @@ def add_event_rows(seq, t, cal, DATA, mk, nm):
         raise SystemExit(f"⛔ 事件日 {t.date()} 不在個股日曆")
     e = _next_day(cal, k)
     H, ever = h10_held(t, cal, DATA, mk, nm)
-    mv = []
     for h in H:
         X = one(h["代號"], mk.get(h["代號"], "twse"), cal, DATA)
         kl = _last_k(X, k)
         h["收盤"] = float(X["rc"][kl]) if kl >= 0 else np.nan
-        try:
-            sh = float(h["股數"])
-        except ValueError:
-            sh = np.nan
-        mv.append(sh * h["收盤"])
-    mv = np.array(mv, float)
-    eqw = bool(len(H)) and not (np.isfinite(mv).all() and (mv > 0).all())
-    w = (np.full(len(H), 1.0 / len(H)) if eqw else mv / mv.sum()) if len(H) else np.array([])
     now = RM.now_tpe(); rows = []
     amt_h, amt_5 = add_amt(ADD_H), add_amt(ADD_5)
     base = {"序號": seq, "事件日": str(t.date()), "出場條件": ADD_EXIT, "狀態": "待買", "寫入時間": now}
-    for h, w_ in zip(H, w):
-        sh = _shares(amt_h, float(w_), h["收盤"])
-        note = [x for x in (h["來源"], "有檔缺股數或收盤 ⇒ 全部等權" if eqw else "",
-                            f"明天收盤到期（{h['到期']}）⇒ 加碼那份同日收盤一起賣" if h["到期"] == str(e.date()) else "",
-                            f"權重＝{t.date()} 收盤市值（股數 {h['股數']} × 收盤）比例" if not eqw else "") if x]
-        rows.append({**base, "帳": ADD_H, "代號": h["代號"], "名稱": h["名稱"], "高10批次": h["批次"], "權重": float(w_), "事件日收盤": h["收盤"],
+    for h in H:                                                    # 每檔一份、等額（使用者 10/21「每檔2萬」；⚠ A 臂是市值比例）
+        sh = _shares(amt_h, 1.0, h["收盤"])
+        note = [x for x in (h["來源"], f"明天收盤到期（{h['到期']}）⇒ 加碼那份同日收盤一起賣" if h["到期"] == str(e.date()) else "",
+                            "每檔一份等額（使用者 10/21；回測 A 臂為市值比例）") if x]
+        rows.append({**base, "帳": ADD_H, "代號": h["代號"], "名稱": h["名稱"], "高10批次": h["批次"], "權重": 1.0 / len(H), "事件日收盤": h["收盤"],
                      "參考股數": "" if sh is None else sh, "備註": "；".join(note)})
     X5 = one("0050", "twse", cal, DATA)
     k5 = _last_k(X5, k)
@@ -685,20 +677,49 @@ def add_event_lines(rows, tgt, preview=False):
     if H:
         its = []
         for r in H:
-            s = f"{r['代號']} {r['名稱']} {float(r['權重']):.0%}"
+            s = f"{r['代號']} {r['名稱']}"
             if r["參考股數"] != "":
                 s += f"（約 {r['參考股數']} 股）"
             if "明天收盤到期" in r["備註"]:
                 s += "（明天收盤到期，加碼那份同日一起賣）"
             its.append(s)
-        how = (f"共 {_wan(amt_h)}、" if amt_h else "") + "按今天收盤市值比例" + ("；有檔缺股數或收盤 ⇒ 改等權" if any("全部等權" in r["備註"] for r in H) else "")
-        L.append(ADD_LINE + f"大跌加碼高10：明天開盤加碼目前高10 持股（{how}）：{'、'.join(its)}" + ("" if amt_h else "；金額照你決定")
+        L.append(ADD_LINE + f"高10 明天開盤每檔加一份{' ' + _wan(amt_h) if amt_h else ''}：{'、'.join(its)}" + ("" if amt_h else "（金額照你決定）")
                  + f"；加權收盤 ≥ {tgt:,.2f} 後隔天開盤賣回加碼那份（高10 原持股不動）；期間高10 到期賣出該檔 ⇒ 加碼那份同日一起賣｜{ADD_BT}")
     for r in F:
-        sh = (f" 約 {r['參考股數']} 股（{_wan(amt_5)}、參考今天收盤 {float(r['事件日收盤']):,.2f}）" if r["參考股數"] != "" else "（金額照你決定）")
+        sh = (f" {_wan(amt_5)}（約 {r['參考股數']} 股，參考今天收盤 {float(r['事件日收盤']):,.2f}）" if r["參考股數"] != "" else "（金額照你決定）")
         no_h = next((f"；{x}" for x in ("高10 尚未開始持有", "高10 目前沒有持股") if x in r["備註"]), "")
-        L.append(ADD_LINE + f"大跌加碼 0050（六四中的 0050）：明天開盤買 0050{sh}；加權收盤 ≥ {tgt:,.2f} 後隔天開盤賣回這次加碼的部分（六四原持股不動）{no_h}｜{ADD_BT}")
+        L.append(ADD_LINE + f"0050 明天開盤加一份{sh}（六四中的 0050）；加權收盤 ≥ {tgt:,.2f} 後隔天開盤賣回這次加碼的部分（六四原持股不動）{no_h}｜{ADD_BT}")
     return L
+
+
+def put11(md, L):
+    """名單檔：拿掉舊的第十一節、L 非空 ⇒ 接在檔尾（冪等；同 pth10_daily.put）；暫存檔 ＋ os.replace；寫完比對其他段逐字不變。"""
+    s = open(md, encoding="utf-8").read()
+    if not L and re.search(SEC11_RE, s, flags=re.S) is None:
+        return                                                     # 沒有要寫、也沒有舊節 ⇒ 檔案逐位元不動
+    base = re.sub(SEC11_RE, "", s, flags=re.S).rstrip("\n")
+    new = base + ("\n\n" + "\n".join(L).rstrip("\n") if L else "") + "\n"
+    if new == s:
+        return
+    tmp = md + ".sec11.tmp"
+    open(tmp, "w", encoding="utf-8").write(new)
+    if re.sub(SEC11_RE, "", open(tmp, encoding="utf-8").read(), flags=re.S).rstrip("\n") != base:
+        os.remove(tmp)
+        raise SystemExit("⛔ 第十一節寫入比對不符（其他段會變），未寫")
+    os.replace(tmp, md)
+
+
+def sec11_lines(body):
+    return [SEC11_TITLE, ""] + body if body else []
+
+
+def move11(md):
+    """「sec11」子指令：名單檔已有第十一節 ⇒ 原文搬到檔尾（不重算、不寫紀錄；冪等）。⇒ True＝有第十一節。"""
+    m = re.search(SEC11_RE, open(md, encoding="utf-8").read(), flags=re.S)
+    if m is None:
+        return False
+    put11(md, m.group(0).strip("\n").split("\n"))
+    return True
 
 
 def add_append(rows):
@@ -711,11 +732,11 @@ def add_append(rows):
 
 
 def _items(rs, with_sh=True):
-    return "、".join(f"{r['代號']} {r['名稱']}" + (f" 約 {r['參考股數']} 股" if with_sh and r["參考股數"] != "" else "") for r in rs)
+    return "、".join(f"{r['代號']} {r['名稱']}" + (f"（約 {r['參考股數']} 股）" if with_sh and r["參考股數"] != "" else "") for r in rs)
 
 
 def add_daily(asof, sha, J, write=True, preview=False):
-    """⇒ (ADD 行 dict, 摘要字)。事件夜產待買列＋兩行【LINE】；之後每晚補買進、出場、提醒。write ⇒ 寫 addon_positions.csv（只追加／fwd_update）。"""
+    """⇒ (行 dict {"top": 事件夜, 序號: 該事件}, 摘要字)。事件夜產待買列＋兩行【LINE】；之後每晚補買進、出場、提醒。write ⇒ 寫 addon_positions.csv（只追加／fwd_update）。"""
     asof = pd.Timestamp(asof); d0 = str(asof.date())
     _, idx = RM.read_index(sha)
     ix = idx[idx["date"] <= asof].reset_index(drop=True)
@@ -770,7 +791,7 @@ def add_daily(asof, sha, J, write=True, preview=False):
             why.append("隔天是壞根")
         pre = r["備註"] + "；" if r["備註"] else ""
         if why:
-            apply(r, {"狀態": "買不到", "備註": pre + f"買不到：{'、'.join(why)}（{cal[e].date()}）；其餘權重等比例放大"})
+            apply(r, {"狀態": "買不到", "備註": pre + f"買不到：{'、'.join(why)}（{cal[e].date()}）；其餘等權"})
         else:
             apply(r, {"買進日": str(cal[e].date()), "買進價": float(X["ro"][e]), "狀態": "持有中", "備註": pre + f"買進價＝{cal[e].date()} 未還原開盤"})
         info.append(f"補買進 {r['帳']} {r['代號']} {r['狀態']}")
@@ -837,19 +858,19 @@ def add_daily(asof, sha, J, write=True, preview=False):
         Dd = RECD.get(G[0]["事件日"])
         if hold and Dd is not None and Dd == asof:
             hh = [r for r in hold if r["帳"] == ADD_H]; h5 = [r for r in hold if r["帳"] == ADD_5]
-            parts = ([f"高10 加碼那份 {_items(hh)}（高10 原持股不動）"] if hh else []) + \
-                    ([f"0050 加碼那份{(' 約 ' + h5[0]['參考股數'] + ' 股') if h5[0]['參考股數'] else ''}（六四原持股不動）"] if h5 else [])
-            Ls.append(ADD_LINE + f"大跌加碼賣回提醒：今天加權收盤 {float(ix['close'].iloc[-1]):,.2f} ≥ {float(ev['前一日收盤（收復目標）']):,.2f} "
+            parts = ([f"高10 {_items(hh)}（高10 原持股不動）"] if hh else []) + \
+                    ([f"0050{('（約 ' + h5[0]['參考股數'] + ' 股）') if h5[0]['參考股數'] else ''}（六四原持股不動）"] if h5 else [])
+            Ls.append(ADD_LINE + f"賣回提醒：今天加權收盤 {float(ix['close'].iloc[-1]):,.2f} ≥ {float(ev['前一日收盤（收復目標）']):,.2f} "
                       f"⇒ 明天開盤賣回這次大跌加碼的部分：{'；'.join(parts)}｜{ADD_BT}")
         elif hold:
             exp = [r for r in hold if r["帳"] == ADD_H and (r["高10批次"], r["代號"]) in UK
                    and not UK[(r["高10批次"], r["代號"])]["賣出日"] and _strip(UK[(r["高10批次"], r["代號"])]["排程賣出日"]) == nxt]
             if exp:
-                Ls.append(ADD_LINE + f"大跌加碼高10：明天（{nxt}）高10 到期賣 {_items(exp, False)} ⇒ 這次大跌加碼的那份"
-                          f"{'（' + _items(exp) + '）' if any(r['參考股數'] for r in exp) else ''}同日收盤一起賣；其餘加碼照收復賣回｜{ADD_BT}")
+                Ls.append(ADD_LINE + f"高10 明天（{nxt}）到期賣 {_items(exp, False)} ⇒ 這次大跌加碼的那份"
+                          f"{' ' + _items(exp) if any(r['參考股數'] for r in exp) else ''}同日收盤一起賣；其餘加碼照收復賣回｜{ADD_BT}")
         er = [r for r in G if tonight.get(id(r)) == "early"]
         if er:
-            Ls.append(ADD_LINE + "大跌加碼高10：" + "、".join(f"{r['代號']} {r['名稱']}（{r['出場日']}）" for r in er)
+            Ls.append(ADD_LINE + "高10 " + "、".join(f"{r['代號']} {r['名稱']}（{r['出場日']}）" for r in er)
                       + f" 高10 已非排程出場（壞根／提前出場）⇒ 這次大跌加碼的那份也一起賣（紀錄照規則記該日收盤）｜{ADD_BT}")
         parts = []
         for acct in (ADD_H, ADD_5):
@@ -864,11 +885,11 @@ def add_daily(asof, sha, J, write=True, preview=False):
             nh = sum(r["狀態"] == "持有中" for r in got)
             if nh:
                 gv = [marks.get(id(r), 0.0) if r["狀態"] == "持有中" else (1 + float(r["報酬"])) / (1 - cost_of(r["代號"])) - 1 for r in got]
-                s = f"{acct} 帳面 {float(np.dot(w, gv)):+.2%}（{len(got)} 檔按權重、未扣成本；持有中 {nh}）"
+                s = f"{acct} 帳面 {float(np.dot(w, gv)):+.2%}（{len(got)} 檔等權、未扣成本；持有中 {nh}）"
             else:
-                s = f"{acct} 已出場 {float(np.dot(w, [float(r['報酬']) for r in got])):+.2%}（扣成本、{len(got)} 檔按權重；最後賣出 {max(r['出場日'] for r in got)}）"
+                s = f"{acct} 已出場 {float(np.dot(w, [float(r['報酬']) for r in got])):+.2%}（扣成本、{len(got)} 檔等權；最後賣出 {max(r['出場日'] for r in got)}）"
             parts.append(s + (f"；買不到 {nb} 檔" if nb else ""))
-        Ls.append(f"  - 大跌加碼高10／0050（前瞻紀錄 {ADD_FN}；照規則、描述、⛔ 不是買賣建議）：" + "｜".join(parts))
+        Ls.append(f"- 大跌加碼前瞻紀錄（{G[0]['事件日']} 事件；{ADD_FN}；照規則、每檔等額、描述、不推、⛔ 不是買賣建議）：" + "｜".join(parts))
         ADD[seq] = Ls
     if write:
         for m_, u_ in ups:
@@ -876,18 +897,19 @@ def add_daily(asof, sha, J, write=True, preview=False):
     return ADD, "；".join(info)
 
 
-def add_run(asof, sha, J, RS, write, preview=False):
-    """daily 用：add_daily ＋ 沒有對應事件區塊的行移到節末；⛔ 失敗只記 log、第八節照出（加一行 ⚠）。"""
+def add_run(asof, sha, J, write, preview=False):
+    """daily 用：add_daily ⇒ 第十一節的行（事件夜兩行在前、各事件依序）；沒有要報的 ⇒ []（不產第十一節）。
+    ⛔ 失敗只記 log、第八節照出；第十一節只放一行 ⚠（不推）。"""
     try:
         ADD, info = add_daily(asof, sha, J, write, preview)
     except BaseException as ex:                                     # noqa: BLE001  ⛔ 失敗只記 log（含 SystemExit）
         import traceback
         traceback.print_exc()
-        return {"tail": [f"- ⚠ 大跌加碼高10／0050 處理失敗（見 backtest/resultsDaily/mktdrop.log）：{type(ex).__name__}: {ex}"[:300]]}, "失敗"
-    seen = {R["序號"] for R in RS if R["狀態"] in ("持有中", "已出場")}
-    for k in [k for k in ADD if k not in ("top", "tail") and k not in seen]:
-        ADD.setdefault("tail", []).extend(ADD.pop(k))
-    return ADD, info
+        return sec11_lines([f"- ⚠ 大跌加碼高10／0050 處理失敗（見 backtest/resultsDaily/mktdrop.log）：{type(ex).__name__}: {ex}"[:300]]), "失敗"
+    body = ADD.pop("top", [])
+    for k in ADD:
+        body += ADD[k]
+    return sec11_lines(body), info
 
 
 def daily(a):
@@ -920,15 +942,18 @@ def daily(a):
         if ev["狀態"] == "待買" and write and os.path.exists(cf) and pd.Timestamp(ev["事件日"]) < pd.Timestamp(a.asof):
             bought.append(fill_buys(ev["序號"], cf, a.sha, write=True, log=lambda m: None))
     RS = recovery(a.asof, a.sha, write)
-    ADD, ainfo = add_run(a.asof, a.sha, J, RS, write, preview=bool(getattr(a, "preview_addon", False)))   # 2026-10-21 加：大跌加碼高10／0050
-    L = section(J, RS, RM.FWD, ADD)
+    L11, ainfo = add_run(a.asof, a.sha, J, write, preview=bool(getattr(a, "preview_addon", False)))   # 2026-10-21 加：大跌加碼高10／0050（第十一節）
+    L = section(J, RS, RM.FWD)
     if a.md:
         put_section(a.md, L)
+        put11(a.md, L11)
     print("\n".join(L))
+    if L11:
+        print("\n".join(L11))
     st = "；".join(f"序號 {R['序號']} {R['狀態']}" + (f" 收復 {R['收復日']}" if R["收復日"] else "") for R in RS) or "無持有中事件"
     print(f"判定 {a.asof}：{J.get('狀態')}{'（' + J['寫入'] + '）' if J.get('寫入') else ''}｜{st}"
           + (f"｜{cand}" if cand else "")
-          + (f"｜補買進 {len(bought)} 件" if bought else "") + (f"｜大跌加碼 {ainfo}" if ainfo else "")
+          + (f"｜補買進 {len(bought)} 件" if bought else "") + (f"｜大跌加碼 {ainfo}" if ainfo else "") + ("｜第十一節已加" if a.md and L11 else "")
           + ("｜第八節已加" if a.md else "") + ("｜nowrite" if a.nowrite else ""))
 
 
@@ -941,8 +966,11 @@ def main():
     d.add_argument("--nowrite", action="store_true"); d.add_argument("--fwd", default=None, help="測試用：紀錄資料夾改到別處")
     d.add_argument("--preview-addon", action="store_true", help="乾跑用：把資料日當成大跌事件夜，產加碼高10／0050 兩行（自動 --nowrite）")
     d.add_argument("--fsha", default=None, help="F8 財報／法人／融資／集保的 sha（預設 ＝ --sha；測試重現用）")
+    s11 = sp.add_parser("sec11", help="把名單檔的第十一節搬到檔尾（pth10 之後跑；不重算）"); s11.add_argument("--md", required=True)
     a = ap.parse_args()
-    if a.cmd == "buy":
+    if a.cmd == "sec11":
+        print("第十一節已搬到檔尾" if move11(a.md) else "沒有第十一節（不動）")
+    elif a.cmd == "buy":
         if a.fwd:
             RM.FWD = a.fwd
         sha = a.sha or RM.read_index()[0]

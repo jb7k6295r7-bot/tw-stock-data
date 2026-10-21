@@ -84,6 +84,10 @@ if [ -z "$FAIL" ]; then
       else
         logline "高10 失敗（不影響 daily）：$(tail -1 "$HLOG" 2>/dev/null)（見 $HLOG）"
       fi
+      # 規則 13：大跌加碼提醒（第十一節，使用者 10/21「大跌除了4檔以外通知我加碼高10及64中的0050」）：mktdrop_fwd 已在規則 9 產生第十一節 ⇒ 這裡只把它搬到檔尾（排在第十節之後；不重算、不寫紀錄、冪等）；⛔ 失敗只記 log
+      if ! (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.mktdrop_fwd sec11 --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" >> "$MLOG" 2>&1); then
+        logline "第十一節搬移失敗（不影響 daily）：見 $MLOG"
+      fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); SLRC=$?
       if [ $SLRC = 2 ]; then logline "策略鎖：$SLK（不加警示）"; fi
