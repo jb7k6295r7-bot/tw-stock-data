@@ -183,429 +183,428 @@ fs,2026Q1,otc,ok,2 張表（檔案實測；只證明有寫出來，不證明內�
 fs,2026Q1,sii,ok,6 張表（檔案實測；只證明有寫出來，不證明內容完整）
 fs,2026Q2,otc,ok,2 張表（檔案實測；只證明有寫出來，不證明內容完整）
 fs,2026Q2,sii,ok,6 張表（檔案實測；只證明有寫出來，不證明內容完整）
-revenue,2015-01,otc,ok,已存在，--fill 跳過
-revenue,2015-01,rotc,ok,0／國內 52 列（編碼 big5｜34 張表｜52 列｜跳過 16 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-01,sii,ok,已存在，--fill 跳過
-revenue,2015-02,otc,ok,已存在，--fill 跳過
-revenue,2015-02,rotc,ok,0／國內 52 列（編碼 big5｜34 張表｜52 列｜跳過 16 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-02,sii,ok,已存在，--fill 跳過
-revenue,2015-03,otc,ok,已存在，--fill 跳過
-revenue,2015-03,rotc,ok,0／國內 52 列（編碼 big5｜34 張表｜52 列｜跳過 16 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-03,sii,ok,已存在，--fill 跳過
-revenue,2015-04,otc,ok,已存在，--fill 跳過
-revenue,2015-04,rotc,ok,0／國內 54 列（編碼 big5｜36 張表｜54 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-04,sii,ok,已存在，--fill 跳過
-revenue,2015-05,otc,ok,已存在，--fill 跳過
-revenue,2015-05,rotc,ok,0／國內 56 列（編碼 big5｜36 張表｜56 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-05,sii,ok,已存在，--fill 跳過
-revenue,2015-06,otc,ok,已存在，--fill 跳過
-revenue,2015-06,rotc,ok,0／國內 56 列（編碼 big5｜36 張表｜56 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-06,sii,ok,已存在，--fill 跳過
-revenue,2015-07,otc,ok,已存在，--fill 跳過
-revenue,2015-07,rotc,ok,0／國內 57 列（編碼 big5｜36 張表｜57 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-07,sii,ok,已存在，--fill 跳過
-revenue,2015-08,otc,ok,已存在，--fill 跳過
-revenue,2015-08,rotc,ok,0／國內 58 列（編碼 big5｜36 張表｜58 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-08,sii,ok,已存在，--fill 跳過
-revenue,2015-09,otc,ok,已存在，--fill 跳過
-revenue,2015-09,rotc,ok,0／國內 58 列（編碼 big5｜36 張表｜58 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-09,sii,ok,已存在，--fill 跳過
-revenue,2015-10,otc,ok,已存在，--fill 跳過
-revenue,2015-10,rotc,ok,0／國內 59 列（編碼 big5｜36 張表｜59 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-10,sii,ok,已存在，--fill 跳過
-revenue,2015-11,otc,ok,已存在，--fill 跳過
-revenue,2015-11,rotc,ok,0／國內 62 列（編碼 big5｜36 張表｜62 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-11,sii,ok,已存在，--fill 跳過
-revenue,2015-12,otc,ok,已存在，--fill 跳過
-revenue,2015-12,rotc,ok,0／國內 63 列（編碼 big5｜36 張表｜63 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2015-12,sii,ok,已存在，--fill 跳過
-revenue,2016-01,otc,ok,已存在，--fill 跳過
-revenue,2016-01,rotc,ok,0／國內 63 列（編碼 big5｜36 張表｜63 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-01,sii,ok,已存在，--fill 跳過
-revenue,2016-02,otc,ok,已存在，--fill 跳過
-revenue,2016-02,rotc,ok,0／國內 63 列（編碼 big5｜36 張表｜63 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-02,sii,ok,已存在，--fill 跳過
-revenue,2016-03,otc,ok,已存在，--fill 跳過
-revenue,2016-03,rotc,ok,0／國內 63 列（編碼 big5｜36 張表｜63 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-03,sii,ok,已存在，--fill 跳過
-revenue,2016-04,otc,ok,已存在，--fill 跳過
-revenue,2016-04,rotc,ok,0／國內 63 列（編碼 big5｜36 張表｜63 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-04,sii,ok,已存在，--fill 跳過
-revenue,2016-05,otc,ok,已存在，--fill 跳過
-revenue,2016-05,rotc,ok,0／國內 64 列（編碼 big5｜36 張表｜64 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-05,sii,ok,已存在，--fill 跳過
-revenue,2016-06,otc,ok,已存在，--fill 跳過
-revenue,2016-06,rotc,ok,0／國內 65 列（編碼 big5｜36 張表｜65 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-06,sii,ok,已存在，--fill 跳過
-revenue,2016-07,otc,ok,已存在，--fill 跳過
-revenue,2016-07,rotc,ok,0／國內 69 列（編碼 big5｜36 張表｜69 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-07,sii,ok,已存在，--fill 跳過
-revenue,2016-08,otc,ok,已存在，--fill 跳過
-revenue,2016-08,rotc,ok,0／國內 72 列（編碼 big5｜36 張表｜72 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-08,sii,ok,已存在，--fill 跳過
-revenue,2016-09,otc,ok,已存在，--fill 跳過
-revenue,2016-09,rotc,ok,0／國內 75 列（編碼 big5｜36 張表｜75 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-09,sii,ok,已存在，--fill 跳過
-revenue,2016-10,otc,ok,已存在，--fill 跳過
-revenue,2016-10,rotc,ok,0／國內 75 列（編碼 big5｜36 張表｜75 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-10,sii,ok,已存在，--fill 跳過
-revenue,2016-11,otc,ok,已存在，--fill 跳過
-revenue,2016-11,rotc,ok,0／國內 76 列（編碼 big5｜36 張表｜76 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-11,sii,ok,已存在，--fill 跳過
-revenue,2016-12,otc,ok,已存在，--fill 跳過
-revenue,2016-12,rotc,ok,0／國內 78 列（編碼 big5｜36 張表｜78 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2016-12,sii,ok,已存在，--fill 跳過
-revenue,2017-01,otc,ok,已存在，--fill 跳過
-revenue,2017-01,rotc,ok,0／國內 79 列（編碼 big5｜36 張表｜79 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-01,sii,ok,已存在，--fill 跳過
-revenue,2017-02,otc,ok,已存在，--fill 跳過
-revenue,2017-02,rotc,ok,0／國內 79 列（編碼 big5｜36 張表｜79 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-02,sii,ok,已存在，--fill 跳過
-revenue,2017-03,otc,ok,已存在，--fill 跳過
-revenue,2017-03,rotc,ok,0／國內 79 列（編碼 big5｜36 張表｜79 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-03,sii,ok,已存在，--fill 跳過
-revenue,2017-04,otc,ok,已存在，--fill 跳過
-revenue,2017-04,rotc,ok,0／國內 80 列（編碼 big5｜36 張表｜80 列｜跳過 17 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-04,sii,ok,已存在，--fill 跳過
-revenue,2017-05,otc,ok,已存在，--fill 跳過
-revenue,2017-05,rotc,ok,0／國內 82 列（編碼 big5｜38 張表｜82 列｜跳過 18 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-05,sii,ok,已存在，--fill 跳過
-revenue,2017-06,otc,ok,已存在，--fill 跳過
-revenue,2017-06,rotc,ok,0／國內 83 列（編碼 big5｜38 張表｜83 列｜跳過 18 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-06,sii,ok,已存在，--fill 跳過
-revenue,2017-07,otc,ok,已存在，--fill 跳過
-revenue,2017-07,rotc,ok,0／國內 84 列（編碼 big5｜40 張表｜84 列｜跳過 19 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-07,sii,ok,已存在，--fill 跳過
-revenue,2017-08,otc,ok,已存在，--fill 跳過
-revenue,2017-08,rotc,ok,0／國內 86 列（編碼 big5｜40 張表｜86 列｜跳過 19 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-08,sii,ok,已存在，--fill 跳過
-revenue,2017-09,otc,ok,已存在，--fill 跳過
-revenue,2017-09,rotc,ok,0／國內 87 列（編碼 big5｜40 張表｜87 列｜跳過 19 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-09,sii,ok,已存在，--fill 跳過
-revenue,2017-10,otc,ok,已存在，--fill 跳過
-revenue,2017-10,rotc,ok,0／國內 87 列（編碼 big5｜40 張表｜87 列｜跳過 19 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-10,sii,ok,已存在，--fill 跳過
-revenue,2017-11,otc,ok,已存在，--fill 跳過
-revenue,2017-11,rotc,ok,0／國內 88 列（編碼 big5｜40 張表｜88 列｜跳過 19 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-11,sii,ok,已存在，--fill 跳過
-revenue,2017-12,otc,ok,已存在，--fill 跳過
-revenue,2017-12,rotc,ok,0／國內 91 列（編碼 big5｜40 張表｜91 列｜跳過 19 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2017-12,sii,ok,已存在，--fill 跳過
-revenue,2018-01,otc,ok,已存在，--fill 跳過
-revenue,2018-01,rotc,ok,0／國內 95 列（編碼 big5｜42 張表｜95 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-01,sii,ok,已存在，--fill 跳過
-revenue,2018-02,otc,ok,已存在，--fill 跳過
-revenue,2018-02,rotc,ok,0／國內 96 列（編碼 big5｜42 張表｜96 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-02,sii,ok,已存在，--fill 跳過
-revenue,2018-03,otc,ok,已存在，--fill 跳過
-revenue,2018-03,rotc,ok,0／國內 96 列（編碼 big5｜42 張表｜96 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-03,sii,ok,已存在，--fill 跳過
-revenue,2018-04,otc,ok,已存在，--fill 跳過
-revenue,2018-04,rotc,ok,0／國內 97 列（編碼 big5｜42 張表｜97 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-04,sii,ok,已存在，--fill 跳過
-revenue,2018-05,otc,ok,已存在，--fill 跳過
-revenue,2018-05,rotc,ok,0／國內 98 列（編碼 big5｜42 張表｜98 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-05,sii,ok,已存在，--fill 跳過
-revenue,2018-06,otc,ok,已存在，--fill 跳過
-revenue,2018-06,rotc,ok,0／國內 98 列（編碼 big5｜42 張表｜98 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-06,sii,ok,已存在，--fill 跳過
-revenue,2018-07,otc,ok,已存在，--fill 跳過
-revenue,2018-07,rotc,ok,0／國內 96 列（編碼 big5｜42 張表｜96 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-07,sii,ok,已存在，--fill 跳過
-revenue,2018-08,otc,ok,已存在，--fill 跳過
-revenue,2018-08,rotc,ok,0／國內 103 列（編碼 big5｜42 張表｜103 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-08,sii,ok,已存在，--fill 跳過
-revenue,2018-09,otc,ok,已存在，--fill 跳過
-revenue,2018-09,rotc,ok,0／國內 105 列（編碼 big5｜42 張表｜105 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-09,sii,ok,已存在，--fill 跳過
-revenue,2018-10,otc,ok,已存在，--fill 跳過
-revenue,2018-10,rotc,ok,0／國內 106 列（編碼 big5｜42 張表｜106 列｜跳過 20 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-10,sii,ok,已存在，--fill 跳過
-revenue,2018-11,otc,ok,已存在，--fill 跳過
-revenue,2018-11,rotc,ok,0／國內 107 列（編碼 big5｜44 張表｜107 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-11,sii,ok,已存在，--fill 跳過
-revenue,2018-12,otc,ok,已存在，--fill 跳過
-revenue,2018-12,rotc,ok,0／國內 106 列（編碼 big5｜44 張表｜106 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2018-12,sii,ok,已存在，--fill 跳過
-revenue,2019-01,otc,ok,已存在，--fill 跳過
-revenue,2019-01,rotc,ok,0／國內 107 列（編碼 big5｜44 張表｜107 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-01,sii,ok,已存在，--fill 跳過
-revenue,2019-02,otc,ok,已存在，--fill 跳過
-revenue,2019-02,rotc,ok,0／國內 106 列（編碼 big5｜44 張表｜106 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-02,sii,ok,已存在，--fill 跳過
-revenue,2019-03,otc,ok,已存在，--fill 跳過
-revenue,2019-03,rotc,ok,0／國內 107 列（編碼 big5｜44 張表｜107 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-03,sii,ok,已存在，--fill 跳過
-revenue,2019-04,otc,ok,已存在，--fill 跳過
-revenue,2019-04,rotc,ok,0／國內 109 列（編碼 big5｜44 張表｜109 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-04,sii,ok,已存在，--fill 跳過
-revenue,2019-05,otc,ok,已存在，--fill 跳過
-revenue,2019-05,rotc,ok,0／國內 111 列（編碼 cp950｜44 張表｜111 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-05,sii,ok,已存在，--fill 跳過
-revenue,2019-06,otc,ok,已存在，--fill 跳過
-revenue,2019-06,rotc,ok,0／國內 108 列（編碼 cp950｜44 張表｜108 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-06,sii,ok,已存在，--fill 跳過
-revenue,2019-07,otc,ok,已存在，--fill 跳過
-revenue,2019-07,rotc,ok,0／國內 109 列（編碼 cp950｜44 張表｜109 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-07,sii,ok,已存在，--fill 跳過
-revenue,2019-08,otc,ok,已存在，--fill 跳過
-revenue,2019-08,rotc,ok,0／國內 116 列（編碼 cp950｜44 張表｜116 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-08,sii,ok,已存在，--fill 跳過
-revenue,2019-09,otc,ok,已存在，--fill 跳過
-revenue,2019-09,rotc,ok,0／國內 118 列（編碼 cp950｜44 張表｜118 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-09,sii,ok,已存在，--fill 跳過
-revenue,2019-10,otc,ok,已存在，--fill 跳過
-revenue,2019-10,rotc,ok,0／國內 118 列（編碼 cp950｜44 張表｜118 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-10,sii,ok,已存在，--fill 跳過
-revenue,2019-11,otc,ok,已存在，--fill 跳過
-revenue,2019-11,rotc,ok,0／國內 119 列（編碼 cp950｜44 張表｜119 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-11,sii,ok,已存在，--fill 跳過
-revenue,2019-12,otc,ok,已存在，--fill 跳過
-revenue,2019-12,rotc,ok,0／國內 119 列（編碼 cp950｜44 張表｜119 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2019-12,sii,ok,已存在，--fill 跳過
-revenue,2020-01,otc,ok,已存在，--fill 跳過
-revenue,2020-01,rotc,ok,0／國內 123 列（編碼 cp950｜44 張表｜123 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-01,sii,ok,已存在，--fill 跳過
-revenue,2020-02,otc,ok,已存在，--fill 跳過
-revenue,2020-02,rotc,ok,0／國內 123 列（編碼 cp950｜44 張表｜123 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-02,sii,ok,已存在，--fill 跳過
-revenue,2020-03,otc,ok,已存在，--fill 跳過
-revenue,2020-03,rotc,ok,0／國內 124 列（編碼 cp950｜44 張表｜124 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-03,sii,ok,已存在，--fill 跳過
-revenue,2020-04,otc,ok,已存在，--fill 跳過
-revenue,2020-04,rotc,ok,0／國內 125 列（編碼 cp950｜44 張表｜125 列｜跳過 21 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-04,sii,ok,已存在，--fill 跳過
-revenue,2020-05,otc,ok,已存在，--fill 跳過
-revenue,2020-05,rotc,ok,0／國內 126 列（編碼 cp950｜46 張表｜126 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-05,sii,ok,已存在，--fill 跳過
-revenue,2020-06,otc,ok,已存在，--fill 跳過
-revenue,2020-06,rotc,ok,0／國內 128 列（編碼 cp950｜46 張表｜128 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-06,sii,ok,已存在，--fill 跳過
-revenue,2020-07,otc,ok,已存在，--fill 跳過
-revenue,2020-07,rotc,ok,0／國內 125 列（編碼 cp950｜46 張表｜125 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-07,sii,ok,已存在，--fill 跳過
-revenue,2020-08,otc,ok,已存在，--fill 跳過
-revenue,2020-08,rotc,ok,0／國內 129 列（編碼 cp950｜46 張表｜129 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-08,sii,ok,已存在，--fill 跳過
-revenue,2020-09,otc,ok,已存在，--fill 跳過
-revenue,2020-09,rotc,ok,0／國內 131 列（編碼 cp950｜46 張表｜131 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-09,sii,ok,已存在，--fill 跳過
-revenue,2020-10,otc,ok,已存在，--fill 跳過
-revenue,2020-10,rotc,ok,0／國內 136 列（編碼 cp950｜46 張表｜136 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-10,sii,ok,已存在，--fill 跳過
-revenue,2020-11,otc,ok,已存在，--fill 跳過
-revenue,2020-11,rotc,ok,0／國內 142 列（編碼 cp950｜46 張表｜142 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-11,sii,ok,已存在，--fill 跳過
-revenue,2020-12,otc,ok,已存在，--fill 跳過
-revenue,2020-12,rotc,ok,0／國內 141 列（編碼 cp950｜46 張表｜141 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2020-12,sii,ok,已存在，--fill 跳過
-revenue,2021-01,otc,ok,已存在，--fill 跳過
-revenue,2021-01,rotc,ok,0／國內 146 列（編碼 cp950｜46 張表｜146 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-01,sii,ok,已存在，--fill 跳過
-revenue,2021-02,otc,ok,已存在，--fill 跳過
-revenue,2021-02,rotc,ok,0／國內 146 列（編碼 cp950｜46 張表｜146 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-02,sii,ok,已存在，--fill 跳過
-revenue,2021-03,otc,ok,已存在，--fill 跳過
-revenue,2021-03,rotc,ok,0／國內 148 列（編碼 cp950｜46 張表｜148 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-03,sii,ok,已存在，--fill 跳過
-revenue,2021-04,otc,ok,已存在，--fill 跳過
-revenue,2021-04,rotc,ok,0／國內 148 列（編碼 cp950｜46 張表｜148 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-04,sii,ok,已存在，--fill 跳過
-revenue,2021-05,otc,ok,已存在，--fill 跳過
-revenue,2021-05,rotc,ok,0／國內 150 列（編碼 cp950｜46 張表｜150 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-05,sii,ok,已存在，--fill 跳過
-revenue,2021-06,otc,ok,已存在，--fill 跳過
-revenue,2021-06,rotc,ok,0／國內 151 列（編碼 cp950｜46 張表｜151 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-06,sii,ok,已存在，--fill 跳過
-revenue,2021-07,otc,ok,已存在，--fill 跳過
-revenue,2021-07,rotc,ok,0／國內 154 列（編碼 cp950｜46 張表｜154 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-07,sii,ok,已存在，--fill 跳過
-revenue,2021-08,otc,ok,已存在，--fill 跳過
-revenue,2021-08,rotc,ok,0／國內 158 列（編碼 cp950｜46 張表｜158 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-08,sii,ok,已存在，--fill 跳過
-revenue,2021-09,otc,ok,已存在，--fill 跳過
-revenue,2021-09,rotc,ok,0／國內 161 列（編碼 cp950｜46 張表｜161 列｜跳過 22 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-09,sii,ok,已存在，--fill 跳過
-revenue,2021-10,otc,ok,已存在，--fill 跳過
-revenue,2021-10,rotc,ok,0／國內 166 列（編碼 cp950｜48 張表｜166 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-10,sii,ok,已存在，--fill 跳過
-revenue,2021-11,otc,ok,已存在，--fill 跳過
-revenue,2021-11,rotc,ok,0／國內 167 列（編碼 cp950｜48 張表｜167 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-11,sii,ok,已存在，--fill 跳過
-revenue,2021-12,otc,ok,已存在，--fill 跳過
-revenue,2021-12,rotc,ok,0／國內 169 列（編碼 cp950｜48 張表｜169 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2021-12,sii,ok,已存在，--fill 跳過
-revenue,2022-01,otc,ok,已存在，--fill 跳過
-revenue,2022-01,rotc,ok,0／國內 172 列（編碼 cp950｜48 張表｜172 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-01,sii,ok,已存在，--fill 跳過
-revenue,2022-02,otc,ok,已存在，--fill 跳過
-revenue,2022-02,rotc,ok,0／國內 172 列（編碼 cp950｜48 張表｜172 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-02,sii,ok,已存在，--fill 跳過
-revenue,2022-03,otc,ok,已存在，--fill 跳過
-revenue,2022-03,rotc,ok,0／國內 172 列（編碼 cp950｜48 張表｜172 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-03,sii,ok,已存在，--fill 跳過
-revenue,2022-04,otc,ok,已存在，--fill 跳過
-revenue,2022-04,rotc,ok,0／國內 175 列（編碼 cp950｜48 張表｜175 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-04,sii,ok,已存在，--fill 跳過
-revenue,2022-05,otc,ok,已存在，--fill 跳過
-revenue,2022-05,rotc,ok,0／國內 176 列（編碼 cp950｜48 張表｜176 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-05,sii,ok,已存在，--fill 跳過
-revenue,2022-06,otc,ok,已存在，--fill 跳過
-revenue,2022-06,rotc,ok,0／國內 178 列（編碼 cp950｜48 張表｜178 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-06,sii,ok,已存在，--fill 跳過
-revenue,2022-07,otc,ok,已存在，--fill 跳過
-revenue,2022-07,rotc,ok,0／國內 179 列（編碼 cp950｜48 張表｜179 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-07,sii,ok,已存在，--fill 跳過
-revenue,2022-08,otc,ok,已存在，--fill 跳過
-revenue,2022-08,rotc,ok,0／國內 182 列（編碼 cp950｜48 張表｜182 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-08,sii,ok,已存在，--fill 跳過
-revenue,2022-09,otc,ok,已存在，--fill 跳過
-revenue,2022-09,rotc,ok,0／國內 182 列（編碼 cp950｜48 張表｜182 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-09,sii,ok,已存在，--fill 跳過
-revenue,2022-10,otc,ok,已存在，--fill 跳過
-revenue,2022-10,rotc,ok,0／國內 187 列（編碼 cp950｜48 張表｜187 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-10,sii,ok,已存在，--fill 跳過
-revenue,2022-11,otc,ok,已存在，--fill 跳過
-revenue,2022-11,rotc,ok,0／國內 189 列（編碼 cp950｜48 張表｜189 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-11,sii,ok,已存在，--fill 跳過
-revenue,2022-12,otc,ok,已存在，--fill 跳過
-revenue,2022-12,rotc,ok,0／國內 191 列（編碼 cp950｜48 張表｜191 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2022-12,sii,ok,已存在，--fill 跳過
-revenue,2023-01,otc,ok,已存在，--fill 跳過
-revenue,2023-01,rotc,ok,0／國內 189 列（編碼 cp950｜48 張表｜189 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2023-01,sii,ok,已存在，--fill 跳過
-revenue,2023-02,otc,ok,已存在，--fill 跳過
-revenue,2023-02,rotc,ok,0／國內 189 列（編碼 cp950｜48 張表｜189 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2023-02,sii,ok,已存在，--fill 跳過
-revenue,2023-03,otc,ok,已存在，--fill 跳過
-revenue,2023-03,rotc,ok,0／國內 189 列（編碼 cp950｜48 張表｜189 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2023-03,sii,ok,已存在，--fill 跳過
-revenue,2023-04,otc,ok,已存在，--fill 跳過
-revenue,2023-04,rotc,ok,0／國內 190 列（編碼 cp950｜48 張表｜190 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2023-04,sii,ok,已存在，--fill 跳過
-revenue,2023-05,otc,ok,已存在，--fill 跳過
-revenue,2023-05,rotc,ok,0／國內 191 列（編碼 cp950｜48 張表｜191 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2023-05,sii,ok,已存在，--fill 跳過
-revenue,2023-06,otc,ok,已存在，--fill 跳過
-revenue,2023-06,rotc,ok,0／國內 194 列（編碼 cp950｜48 張表｜194 列｜跳過 23 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列）
-revenue,2023-06,sii,ok,已存在，--fill 跳過
-revenue,2023-07,otc,ok,已存在，--fill 跳過
-revenue,2023-07,rotc,ok,0／國內 198 列（編碼 cp950｜48 張表｜198 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2023-07,sii,ok,已存在，--fill 跳過
-revenue,2023-08,otc,ok,已存在，--fill 跳過
-revenue,2023-08,rotc,ok,0／國內 203 列（編碼 cp950｜48 張表｜203 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2023-08,sii,ok,已存在，--fill 跳過
-revenue,2023-09,otc,ok,已存在，--fill 跳過
-revenue,2023-09,rotc,ok,0／國內 208 列（編碼 cp950｜48 張表｜208 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2023-09,sii,ok,已存在，--fill 跳過
-revenue,2023-10,otc,ok,已存在，--fill 跳過
-revenue,2023-10,rotc,ok,0／國內 209 列（編碼 cp950｜48 張表｜209 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2023-10,sii,ok,已存在，--fill 跳過
-revenue,2023-11,otc,ok,已存在，--fill 跳過
-revenue,2023-11,rotc,ok,0／國內 212 列（編碼 cp950｜48 張表｜212 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2023-11,sii,ok,已存在，--fill 跳過
-revenue,2023-12,otc,ok,已存在，--fill 跳過
-revenue,2023-12,rotc,ok,0／國內 215 列（編碼 cp950｜48 張表｜215 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2023-12,sii,ok,已存在，--fill 跳過
-revenue,2024-01,otc,ok,已存在，--fill 跳過
-revenue,2024-01,rotc,ok,0／國內 215 列（編碼 cp950｜48 張表｜215 列｜跳過 23 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜48 張表｜2 列｜跳過 23 列）
-revenue,2024-01,sii,ok,已存在，--fill 跳過
-revenue,2024-02,otc,ok,已存在，--fill 跳過
-revenue,2024-02,rotc,ok,0／國內 215 列（編碼 cp950｜48 張表｜215 列｜跳過 23 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜48 張表｜2 列｜跳過 23 列）
-revenue,2024-02,sii,ok,已存在，--fill 跳過
-revenue,2024-03,otc,ok,已存在，--fill 跳過
-revenue,2024-03,rotc,ok,0／國內 216 列（編碼 cp950｜48 張表｜216 列｜跳過 23 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜48 張表｜2 列｜跳過 23 列）
-revenue,2024-03,sii,ok,已存在，--fill 跳過
-revenue,2024-04,otc,ok,已存在，--fill 跳過
-revenue,2024-04,rotc,ok,0／國內 218 列（編碼 cp950｜48 張表｜218 列｜跳過 23 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜48 張表｜2 列｜跳過 23 列）
-revenue,2024-04,sii,ok,已存在，--fill 跳過
-revenue,2024-05,otc,ok,已存在，--fill 跳過
-revenue,2024-05,rotc,ok,0／國內 220 列（編碼 cp950｜48 張表｜220 列｜跳過 23 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜48 張表｜2 列｜跳過 23 列）
-revenue,2024-05,sii,ok,已存在，--fill 跳過
-revenue,2024-06,otc,ok,已存在，--fill 跳過
-revenue,2024-06,rotc,ok,0／國內 225 列（編碼 cp950｜48 張表｜225 列｜跳過 23 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜48 張表｜2 列｜跳過 23 列）
-revenue,2024-06,sii,ok,已存在，--fill 跳過
-revenue,2024-07,otc,ok,已存在，--fill 跳過
-revenue,2024-07,rotc,ok,0／國內 228 列（編碼 cp950｜48 張表｜228 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2024-07,sii,ok,已存在，--fill 跳過
-revenue,2024-08,otc,ok,已存在，--fill 跳過
-revenue,2024-08,rotc,ok,0／國內 231 列（編碼 cp950｜48 張表｜231 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2024-08,sii,ok,已存在，--fill 跳過
-revenue,2024-09,otc,ok,已存在，--fill 跳過
-revenue,2024-09,rotc,ok,0／國內 237 列（編碼 cp950｜48 張表｜237 列｜跳過 23 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜48 張表｜1 列｜跳過 23 列）
-revenue,2024-09,sii,ok,已存在，--fill 跳過
-revenue,2024-10,otc,ok,已存在，--fill 跳過
-revenue,2024-10,rotc,ok,0／國內 243 列（編碼 cp950｜50 張表｜243 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2024-10,sii,ok,已存在，--fill 跳過
-revenue,2024-11,otc,ok,已存在，--fill 跳過
-revenue,2024-11,rotc,ok,0／國內 246 列（編碼 cp950｜50 張表｜246 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2024-11,sii,ok,已存在，--fill 跳過
-revenue,2024-12,otc,ok,已存在，--fill 跳過
-revenue,2024-12,rotc,ok,0／國內 252 列（編碼 cp950｜50 張表｜252 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2024-12,sii,ok,已存在，--fill 跳過
-revenue,2025-01,otc,ok,已存在，--fill 跳過
-revenue,2025-01,rotc,ok,0／國內 253 列（編碼 cp950｜50 張表｜253 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2025-01,sii,ok,已存在，--fill 跳過
-revenue,2025-02,otc,ok,已存在，--fill 跳過
-revenue,2025-02,rotc,ok,0／國內 253 列（編碼 cp950｜50 張表｜253 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2025-02,sii,ok,已存在，--fill 跳過
-revenue,2025-03,otc,ok,已存在，--fill 跳過
-revenue,2025-03,rotc,ok,0／國內 254 列（編碼 cp950｜50 張表｜254 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2025-03,sii,ok,已存在，--fill 跳過
-revenue,2025-04,otc,ok,已存在，--fill 跳過
-revenue,2025-04,rotc,ok,0／國內 257 列（編碼 cp950｜50 張表｜257 列｜跳過 24 列）｜1／外國企業（KY／DR） 1 列（編碼 big5｜50 張表｜1 列｜跳過 24 列）
-revenue,2025-04,sii,ok,已存在，--fill 跳過
-revenue,2025-05,otc,ok,已存在，--fill 跳過
-revenue,2025-05,rotc,ok,0／國內 262 列（編碼 cp950｜52 張表｜262 列｜跳過 25 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜52 張表｜2 列｜跳過 25 列）
-revenue,2025-05,sii,ok,已存在，--fill 跳過
-revenue,2025-06,otc,ok,已存在，--fill 跳過
-revenue,2025-06,rotc,ok,0／國內 266 列（編碼 cp950｜52 張表｜266 列｜跳過 25 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜52 張表｜2 列｜跳過 25 列）
-revenue,2025-06,sii,ok,已存在，--fill 跳過
-revenue,2025-07,otc,ok,已存在，--fill 跳過
-revenue,2025-07,rotc,ok,0／國內 272 列（編碼 cp950｜52 張表｜272 列｜跳過 25 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜52 張表｜2 列｜跳過 25 列）
-revenue,2025-07,sii,ok,已存在，--fill 跳過
-revenue,2025-08,otc,ok,已存在，--fill 跳過
-revenue,2025-08,rotc,ok,0／國內 275 列（編碼 cp950｜52 張表｜275 列｜跳過 25 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜52 張表｜2 列｜跳過 25 列）
-revenue,2025-08,sii,ok,已存在，--fill 跳過
-revenue,2025-09,otc,ok,已存在，--fill 跳過
-revenue,2025-09,rotc,ok,0／國內 282 列（編碼 cp950｜52 張表｜282 列｜跳過 25 列）｜1／外國企業（KY／DR） 2 列（編碼 big5｜52 張表｜2 列｜跳過 25 列）
-revenue,2025-09,sii,ok,已存在，--fill 跳過
-revenue,2025-10,otc,ok,已存在，--fill 跳過
-revenue,2025-10,rotc,ok,0／國內 287 列（編碼 cp950｜54 張表｜287 列｜跳過 26 列）｜1／外國企業（KY／DR） 3 列（編碼 big5｜54 張表｜3 列｜跳過 26 列）
-revenue,2025-10,sii,ok,已存在，--fill 跳過
-revenue,2025-11,otc,ok,已存在，--fill 跳過
-revenue,2025-11,rotc,ok,0／國內 297 列（編碼 cp950｜54 張表｜297 列｜跳過 26 列）｜1／外國企業（KY／DR） 3 列（編碼 big5｜54 張表｜3 列｜跳過 26 列）
-revenue,2025-11,sii,ok,已存在，--fill 跳過
-revenue,2025-12,otc,ok,已存在，--fill 跳過
-revenue,2025-12,rotc,ok,0／國內 307 列（編碼 cp950｜54 張表｜307 列｜跳過 26 列）｜1／外國企業（KY／DR） 4 列（編碼 big5｜54 張表｜4 列｜跳過 26 列）
-revenue,2025-12,sii,ok,已存在，--fill 跳過
-revenue,2026-01,otc,ok,已存在，--fill 跳過
-revenue,2026-01,rotc,ok,0／國內 315 列（編碼 cp950｜54 張表｜315 列｜跳過 26 列）｜1／外國企業（KY／DR） 4 列（編碼 big5｜54 張表｜4 列｜跳過 26 列）
-revenue,2026-01,sii,ok,已存在，--fill 跳過
-revenue,2026-02,otc,ok,已存在，--fill 跳過
-revenue,2026-02,rotc,ok,0／國內 315 列（編碼 cp950｜54 張表｜315 列｜跳過 26 列）｜1／外國企業（KY／DR） 4 列（編碼 big5｜54 張表｜4 列｜跳過 26 列）
-revenue,2026-02,sii,ok,已存在，--fill 跳過
-revenue,2026-03,otc,ok,已存在，--fill 跳過
-revenue,2026-03,rotc,ok,0／國內 317 列（編碼 cp950｜54 張表｜317 列｜跳過 26 列）｜1／外國企業（KY／DR） 4 列（編碼 big5｜54 張表｜4 列｜跳過 26 列）
-revenue,2026-03,sii,ok,已存在，--fill 跳過
-revenue,2026-04,otc,ok,已存在，--fill 跳過
-revenue,2026-04,rotc,ok,0／國內 323 列（編碼 cp950｜54 張表｜323 列｜跳過 26 列）｜1／外國企業（KY／DR） 4 列（編碼 big5｜54 張表｜4 列｜跳過 26 列）
-revenue,2026-04,sii,ok,已存在，--fill 跳過
-revenue,2026-05,otc,ok,已存在，--fill 跳過
-revenue,2026-05,rotc,ok,0／國內 332 列（編碼 cp950｜54 張表｜332 列｜跳過 26 列）｜1／外國企業（KY／DR） 4 列（編碼 big5｜54 張表｜4 列｜跳過 26 列）
-revenue,2026-05,sii,ok,已存在，--fill 跳過
-revenue,2026-06,otc,ok,已存在，--fill 跳過
-revenue,2026-06,rotc,ok,0／國內 338 列（編碼 cp950｜54 張表｜338 列｜跳過 26 列）｜1／外國企業（KY／DR） 5 列（編碼 big5｜54 張表｜5 列｜跳過 26 列）
-revenue,2026-06,sii,ok,已存在，--fill 跳過
-revenue,2026-07,otc,ok,已存在，--fill 跳過
-revenue,2026-07,rotc,ok,0／國內 348 列（編碼 cp950｜54 張表｜348 列｜跳過 26 列）｜1／外國企業（KY／DR） 5 列（編碼 big5｜54 張表｜5 列｜跳過 26 列）
-revenue,2026-07,sii,ok,已存在，--fill 跳過
-revenue,2026-08,otc,ok,已存在，--fill 跳過
-revenue,2026-08,rotc,ok,0／國內 353 列（編碼 cp950｜54 張表｜353 列｜跳過 26 列）｜1／外國企業（KY／DR） 6 列（編碼 big5｜54 張表｜6 列｜跳過 26 列）
-revenue,2026-08,sii,ok,已存在，--fill 跳過
+revenue,2015-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2015-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2016-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2017-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2018-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2019-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2020-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2021-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2022-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2023-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2024-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-07,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-07,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-08,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-08,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-09,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-09,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-10,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-10,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-10,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-11,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-11,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-11,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-12,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-12,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2025-12,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-01,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-01,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-01,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-02,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-02,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-02,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-03,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-03,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-03,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-04,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-04,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-04,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-05,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-05,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-05,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-06,otc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-06,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-06,sii,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-07,otc,ok,0／國內 862 列（編碼 cp950｜58 張表｜862 列｜跳過 28 列）｜1／外國企業（KY／DR） 30 列（編碼 big5｜58 張表｜30 列｜跳過 28 列）
+revenue,2026-07,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-07,sii,ok,0／國內 995 列（編碼 cp950｜68 張表｜995 列｜跳過 33 列）｜1／外國企業（KY／DR） 94 列（編碼 big5｜68 張表｜94 列｜跳過 33 列）
+revenue,2026-08,otc,ok,0／國內 863 列（編碼 cp950｜58 張表｜863 列｜跳過 28 列）｜1／外國企業（KY／DR） 30 列（編碼 big5｜58 張表｜30 列｜跳過 28 列）
+revenue,2026-08,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-08,sii,ok,0／國內 995 列（編碼 cp950｜68 張表｜995 列｜跳過 33 列）｜1／外國企業（KY／DR） 94 列（編碼 big5｜68 張表｜94 列｜跳過 33 列）
 revenue,2026-09,otc,ok,0／國內 863 列（編碼 cp950｜58 張表｜863 列｜跳過 28 列）｜1／外國企業（KY／DR） 30 列（編碼 big5｜58 張表｜30 列｜跳過 28 列）
-revenue,2026-09,rotc,ok,0／國內 360 列（編碼 cp950｜56 張表｜360 列｜跳過 27 列）｜1／外國企業（KY／DR） 6 列（編碼 big5｜56 張表｜6 列｜跳過 27 列）
-revenue,2026-09,sii,ok,0／國內 994 列（編碼 cp950｜68 張表｜994 列｜跳過 33 列）｜1／外國企業（KY／DR） 94 列（編碼 big5｜68 張表｜94 列｜跳過 33 列）
+revenue,2026-09,rotc,ok,1 張表（檔案實測；只證明有寫出來，不證明內容完整）
+revenue,2026-09,sii,ok,0／國內 995 列（編碼 cp950｜68 張表｜995 列｜跳過 33 列）｜1／外國企業（KY／DR） 94 列（編碼 big5｜68 張表｜94 列｜跳過 33 列）
 revenue,2026-10,otc,pending,0 列（0／國內 0 列（編碼 big5｜0 張表｜0 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列））
-revenue,2026-10,rotc,pending,0 列（0／國內 0 列（編碼 big5｜0 張表｜0 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列））
 revenue,2026-10,sii,pending,0 列（0／國內 0 列（編碼 big5｜0 張表｜0 列）｜1／外國企業（KY／DR） 0 列（編碼 big5｜0 張表｜0 列））
