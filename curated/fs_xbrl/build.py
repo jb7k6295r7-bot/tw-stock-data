@@ -4,6 +4,7 @@
     python3 curated/fs_xbrl/build.py [--from 2013Q1] [--to 2026Q2] [--cache ~/xbrl_cache] [--keep-zip]
 
 依據：情報 1013-2340（應計異常、營業現金流與淨利背離、存貨／應收增速）；裁定 seq348 §三；本線 1015-1851 探針。
+  營業成本／毛利／營業利益三欄：裁定 seq412 §四 Q-G、台股 seq533 C（2026-10-21 加）。
 來源：mopsov `server-java/FileDownLoad?step=9&fileName=tifrs-<YYYYQn>.zip&filePath=/home/html/nas/ifrs/<YYYY>/`
   一季一包、全市場（上市、上櫃、興櫃、公開發行），每家一檔。2013Q1 起（2012Q4 回 HTML ＝沒有）。
   ⚠ 兩種格式：早年是純 XBRL instance（.xml，前綴 `ifrs:`＝2010 版 taxonomy，值不帶 scale）；
@@ -41,6 +42,13 @@ ITEMS = [
     ("depreciation_ytd", "F", ["ifrs-full:AdjustmentsForDepreciationExpense", "tifrs-SCF:DepreciationExpense"]),
     ("capex_ytd", "F", ["ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
                         "tifrs-SCF:AcquisitionOfPropertyPlantAndEquipment"]),
+    # 營業成本／營業毛利（毛損）淨額／營業利益（裁定 seq412 §四 Q-G、台股 seq533 C）
+    #   ⚠ 毛利取【淨額】＝營業毛利 −未實現 ＋已實現銷貨損益（新版 ifrs-full:GrossProfit、舊版 …Net）；
+    #     tifrs-bsci-ci:GrossProfitLossFromOperations 是未扣未實現前的毛利 ⇒ ⛔ 不收，免得兩種口徑混用。
+    #   ⚠ 成本只收 OperatingCosts（營業成本合計）；ifrs-full:CostOfSales 在台灣範本是子項（銷貨成本）⇒ ⛔ 不當備援。
+    ("cost_of_sales_ytd", "F", ["tifrs-bsci-ci:OperatingCosts"]),
+    ("gross_profit_ytd", "F", ["ifrs-full:GrossProfit", "tifrs-bsci-ci:GrossProfitLossFromOperationsNet"]),
+    ("operating_income_ytd", "F", ["ifrs-full:ProfitLossFromOperatingActivities", "tifrs-bsci-ci:NetOperatingIncomeLoss"]),
 ]
 HEADER = ["period", "stock_id", "industry_template", "report", "period_end"] + [c for c, _, _ in ITEMS] + ["source_file"]
 QEND = {1: "0331", 2: "0630", 3: "0930", 4: "1231"}
@@ -150,9 +158,10 @@ def main():
         y = q[:4]
         by_year[y] = [r for r in by_year[y] if r["period"] != q] + rows
         cov = {c: sum(1 for r in rows if r[c] != "") for c, _, _ in ITEMS}
-        print("%s｜%d 家｜存貨 %d、應收 %d、合約負債 %d、營業現金流 %d、稅前 %d" % (
+        print("%s｜%d 家｜存貨 %d、應收 %d、合約負債 %d、營業現金流 %d、稅前 %d、成本 %d、毛利 %d、營業利益 %d" % (
             q, len(rows), cov["inventories"], cov["accounts_receivable"], cov["contract_liabilities_current"],
-            cov["operating_cash_flow_ytd"], cov["profit_before_tax_ytd"]))
+            cov["operating_cash_flow_ytd"], cov["profit_before_tax_ytd"], cov["cost_of_sales_ytd"],
+            cov["gross_profit_ytd"], cov["operating_income_ytd"]), flush=True)
         with io.open(os.path.join(HERE, "fs_xbrl_%s.csv" % y), "w", encoding="utf-8", newline="") as f:
             w = csv.DictWriter(f, HEADER, lineterminator="\n")
             w.writeheader()
