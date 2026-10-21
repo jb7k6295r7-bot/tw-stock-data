@@ -1,4 +1,4 @@
-name: 內部人事前申報（每月）
+name: 月度官方表：內部人事前申報＋外資持股（每月）
 
 # 裁定 seq412 §六（2026-10-21）：「准接排程：每月 5 日補前一月」。
 # 來源 mopsov ajax_t56sb21（月彙總，上市／上櫃／興櫃），程式在 curated/insider_predeclare/build.py。
@@ -51,6 +51,15 @@ jobs:
         run: |
           mkdir -p data/meta/insider_predeclare
           python curated/insider_predeclare/build.py --recent --sleep 4 --outdir data/meta/insider_predeclare
+
+      # ⭐ 2026-10-21 併進來（裁定 seq424 准補外資持股月表）：同為「每月補上個月」的官方月表，
+      #   不另開一支。`--recent` 只抓上個月最後一個交易日（上市 MI_QFIIS＋上櫃 qfii，2 發），
+      #   合併進當年檔、只准變多；失敗 exit 1、不寫檔。`if: always()`：內部人那步紅了也照跑。
+      - name: 外資持股月表（上個月底）
+        if: always()
+        run: |
+          mkdir -p data/meta/foreign_holding
+          python curated/foreign_holding/build.py --recent --outdir data/meta/foreign_holding
 
       - name: Commit 回 repo
         if: always()
