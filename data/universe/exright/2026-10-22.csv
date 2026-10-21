@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2026-10-22,0056,58.75,57.03,1.720000,息,57.05,62.70,51.35,57.03
