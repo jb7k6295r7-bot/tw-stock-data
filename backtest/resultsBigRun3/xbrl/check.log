@@ -1,0 +1,7 @@
+[面板 早年] 讀快取 /home/chemtim/b2fwork/panel_早年.pkl（1594 檔）
+[面板 主] 讀快取 /home/chemtim/b2fwork/panel_主.pkl（2010 檔）
+K1 原檔重算：毛利率 200/200、毛利率年變化 200/200、毛利率由降轉升 200/200、營業利益率 200/200、營業利益率年變化 200/200、營業利益率由降轉升 200/200、存貨天數 200/200
+K2 不前視：新值 263461 格中上傳日 ≥ 月底或缺 0；新快照 filing_dates 選季不同 0/3000（只報）
+K3 舊欄與原表相同 175/175；新欄抽格重算 305/305
+K4 並排與新舊對照重算 910/910
+K5 策略鎖 ['策略鎖相符（25 支）']；已追蹤檔改動 8；新增 ['?? backtest/researchBigRun3b.py', '?? backtest/researchBigRun3b_check.py', '?? backtest/resultsBigRun3/xbrl/']

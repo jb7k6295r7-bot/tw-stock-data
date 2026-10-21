@@ -1,0 +1,67 @@
+{
+ "K1": {
+  "毛利率": {
+   "抽": 200,
+   "相符": 200
+  },
+  "毛利率年變化": {
+   "抽": 200,
+   "相符": 200
+  },
+  "毛利率由降轉升": {
+   "抽": 200,
+   "相符": 200
+  },
+  "營業利益率": {
+   "抽": 200,
+   "相符": 200
+  },
+  "營業利益率年變化": {
+   "抽": 200,
+   "相符": 200
+  },
+  "營業利益率由降轉升": {
+   "抽": 200,
+   "相符": 200
+  },
+  "存貨天數": {
+   "抽": 200,
+   "相符": 200
+  }
+ },
+ "K1_不符例": [],
+ "K2": {
+  "新值格": 263461,
+  "上傳日≥月底或缺": 0,
+  "新快照選季不同(抽3000)": 0
+ },
+ "K3": {
+  "舊欄與原表相同(欄×時點×檔)": "175/175",
+  "新欄抽格": 305,
+  "相符": 305
+ },
+ "K4": {
+  "格": 910,
+  "相符": 910
+ },
+ "K5": {
+  "策略鎖": [
+   "策略鎖相符（25 支）"
+  ],
+  "已追蹤檔改動": [
+   " M backtest/forward/yl_rule/draws.csv",
+   " M backtest/forward/yl_rule/equity.csv",
+   " M backtest/forward/yl_rule/positions.csv",
+   " M backtest/forward/yl_rule/runlog.md",
+   " M backtest/forward/yl_rule/signals.csv",
+   " M backtest/forward/yl_rule/state.json",
+   " M backtest/resultsPTH10daily/check_dry.json",
+   " M backtest/resultsPTH10daily/check_fixture.json"
+  ],
+  "本件新增": [
+   "?? backtest/researchBigRun3b.py",
+   "?? backtest/researchBigRun3b_check.py",
+   "?? backtest/resultsBigRun3/xbrl/"
+  ]
+ }
+}

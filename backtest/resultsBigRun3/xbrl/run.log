@@ -1,0 +1,7 @@
+[18:45:18] [資料] fs_xbrl ＝ origin/main bc6cfec3813c｜面板 bgr3_panel_full.pkl｜段與對照 ＝ backtest/resultsBigRun3
+[18:45:22] [fs_xbrl] 95887 列、2050 檔｜期別 2013Q1～2026Q2｜3s
+[18:45:24] [面板] 新 7 欄完成｜6s
+[18:45:24] [面板 早年] 讀快取 /home/chemtim/b2fwork/panel_早年.pkl（1594 檔）
+[18:45:24] [面板 主] 讀快取 /home/chemtim/b2fwork/panel_主.pkl（2010 檔）
+[18:45:27] [單位] 乙 3316、B乙 1198、甲 116、B甲 210、C 81｜9s
+[18:45:34] [完] 15s ⇒ backtest/resultsBigRun3/xbrl
