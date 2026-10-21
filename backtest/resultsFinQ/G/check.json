@@ -1,0 +1,16 @@
+{
+ "全部通過": true,
+ "項": {
+  "C1 策略鎖相符": true,
+  "C2a recon_dry 全同": true,
+  "C2b 正式事件 ＝ 乾跑入選∧保留（2015～2025）": true,
+  "C2c 新快照 Q-A、Q-I 名單 ＝ 已提交 picks": true,
+  "C3a 抽 30 檔 Q-G 值由原始 csv 重算": true,
+  "C3b 每年最高十分位入選旗標重算": true,
+  "C4 抽 12 筆 R、對照、X 手算": true,
+  "C5 FY(Y−1) 年報上傳日 ≤ t ＜ e（全部事件）": true,
+  "C6a 對照名單合法": true,
+  "C6b Σd − X": true,
+  "C6c 彙總 n、X̄、假訊號 x 重算": true
+ }
+}
