@@ -36,6 +36,9 @@
     早年（參考）2005-02-01～2014-12-31（營量／營飆早年訊號起點）；同表同窗、各件原成本口徑（個股 0.585% 來回、六四 ETF 0.385%、0050／正2／大盤 不含成本＝判準慣例）；
     排序 ＝ 比值由高到低、同比值年化高者前；另附年化名次（並列）；起點不同（六四探索段 2018-01-15 起）另表、⛔ 不與全段並排比名次；算不出 ⇒「—」＋原因
     對大盤 ＝ researchAscTri.label 對大盤報酬指數同窗；⛔ 不擇優、不寫「最好用哪個」
+    （裁定 seq431）高10 主值 ＝ 200 組同分種子中位（buildextra 重算權益、切同窗），依此排名；原種子＝單一抽籤結果改註腳
+    （裁定 seq432）加描述列「營飆（使用者全買版）」＝ researchYFallin 帳 W1 逐日權益切同窗（不判、不計 N），依比值排入名次
+    （裁定 seq430）大跌 4 檔 甲／乙／丙 ＝ researchMktDrop_addon2 曲線（buildextra --part 大跌），描述、最多暫定
  B5 0050 不強的時候（weak）：各段 pts ＝ 段首 ＋ 段內完整月底（researchPTH_freq.month_ends）；滾動 12 個月窗 (pts[k−12], pts[k])；
     0050 落後 ⇔ r0050 ＜ r大盤（嚴格）；落後幅度 d ＝ r大盤 − r0050 分組 (0, 2]、(2, 5]、＞ 5 個百分點；連續落後的窗尾月份併成「期間」列出
     ⇒ 各策略在落後窗的 12 個月報酬：窗數、平均、中位、贏大盤的窗比例、窗內名次平均（依 12 個月報酬，排名組同 B4）；只描述 ⛔ 不成規則
@@ -869,6 +872,33 @@ def build_pth10seed(a, wn):
     np.savez_compressed(os.path.join(OUT, f"pth10seed_{wn}.npz"), eq=np.array(EQ), dates=np.array([str(d.date()) for d in W["cal"]]))
 
 
+YFA = "backtest/resultsYFallin"
+
+
+def _yf_w1():
+    """營飆（使用者全買版）＝ researchYFallin 帳 W1 的逐日權益（daily_W.csv.gz；t 對齊世界日曆，最後一列為引擎收尾列 ⇒ 依日期取）。"""
+    p = os.path.join(YFA, "daily_W.csv.gz")
+    if not os.path.exists(p):
+        return {}
+    d = pd.read_csv(p, encoding="utf-8-sig", float_precision="round_trip")
+    d = d[(d["帳"] == "W1") & d["日期"].notna()]
+    return {wn: pd.Series(g["權益"].to_numpy(float), index=pd.to_datetime(g["日期"])) for wn, g in d.groupby("世界")}
+
+
+def yf_w1_desc():
+    """營飆全買版的持股與資金需求描述（讀既有結果檔，⛔ 不重算）：W1 平均／最多持股（cells.csv）；
+    「每檔不縮小、超出 10 份由外部資金出」所需資金倍數 ＝ 1 ＋ 超額動用占本帳最大（W1b，cells_W1b.csv）。"""
+    C = pd.read_csv(os.path.join(YFA, "cells.csv"), encoding="utf-8-sig", float_precision="round_trip")
+    B = pd.read_csv(os.path.join(YFA, "cells_W1b.csv"), encoding="utf-8-sig", float_precision="round_trip")
+    out = {}
+    for _, r in C[C["帳"].str.startswith("W1 ")].iterrows():
+        b = B[(B["世界"] == r["世界"]) & (B["段"] == r["段"])].iloc[0]
+        out[r["段"]] = {"窗": r["窗"], "年化_檔": float(r["年化"]), "回落_檔": float(r["回落"]), "平均持股": float(r["持股"]), "最多同時持股": int(r["最大持股"]),
+                       "最多持股÷10": float(r["最大持股"]) / 10, "W1b 同時最多超額檔": int(b["同時最多超額檔"]),
+                       "W1b 所需資金倍數（1＋超額動用占本帳最大）": 1.0 + float(b["超額動用占本帳最大"])}
+    return out
+
+
 def _eq_series(arr, cal):
     """權益陣列（位置 ＝ 世界日曆）⇒ pd.Series（多出的尾端 NP 位置丟掉）。"""
     arr = np.asarray(arr, float)
@@ -938,11 +968,34 @@ def rank(a):
             if (r["a"], r["b"]) != (str(cal[x].date()), str(cal[y].date())):
                 raise SystemExit(f"⛔ {nm} {sg} 窗 {r['a']}～{r['b']} ≠ 排名窗")
             add(nm, r["年化"], r["回落"], "200 顆中位（比值 ＝ 中位÷|中位|）" if nm == "營飆 v1" else "")
+        # ── 高10（裁定 seq431：主值 ＝ 200 組同分種子中位，依此排名；原種子改註腳）──
         e10 = np.load(f"backtest/resultsPTHn/eq_{wn}.npz")["N10_eq"]
-        n10 = "PTHn N10 權益切窗（原件連續跑、窗首帶持股）"
-        if sg == "確認":
-            n10 += "；本表窗尾統一 2026-08-24（裁定），高10 正式值 +43.74%／−28.75%（至 2026-09-24）"
-        c, m = estat(e10, x, y); add("高10", c, m, n10)
+        k0c, k0m = estat(e10, x, y)
+        SEEDN = None
+        sp_ = os.path.join(OUT, f"pth10seed_{wn}.npz")
+        if os.path.exists(sp_):
+            ZS = np.load(sp_)
+            if list(ZS["dates"][[0, -1]]) != [str(cal[0].date()), str(cal[-1].date())]:
+                raise SystemExit("⛔ 高10 種子權益日曆 ≠ 世界日曆")
+            if not np.array_equal(ZS["eq"][0], e10):
+                raise SystemExit("⛔ 高10 種子檔 k＝0 ≠ PTHn N10_eq")
+            v = np.array([estat(e_, x, y) for e_ in ZS["eq"][1:]])
+            SEEDN = {"c": float(np.median(v[:, 0])), "m": float(np.median(v[:, 1])), "p5": float(np.percentile(v[:, 0], 5)),
+                     "p95": float(np.percentile(v[:, 0], 95)), "mp5": float(np.percentile(v[:, 1], 5)), "mp95": float(np.percentile(v[:, 1], 95))}
+            n10 = (f"抽籤選股，主值 ＝ 200 組同分種子中位（resultsPTH10seed k＝1…200 權益重算、切同窗；比值 ＝ 年化中位÷|回落中位|）；"
+                   f"單一抽籤結果（原種子）{pct(k0c)}／{pct(k0m)}／{f2(AS.ratio(k0c, k0m))}")
+            if sg == "確認":
+                n10 += "（原種子至 2026-09-24 為 +43.74%／−28.75%）"
+            add("高10", SEEDN["c"], SEEDN["m"], n10)
+        else:
+            add("高10", k0c, k0m, "⚠ 種子權益未建：暫列原種子單一抽籤值")
+        # ── 營飆（使用者全買版）：resultsYFallin W1（＝W2，金額式恆等）描述列 ──
+        DW = _yf_w1()
+        if wn in DW:
+            e_ = DW[wn].reindex(cal).to_numpy(float)
+            c, m = estat(e_, x, y)
+            add("營飆（使用者全買版）", c, m, "描述列（不判、不計 N）；無抽籤、決定性；使用者版 ＝ researchYFallin 帳 W1「同日全買、可超過 10 檔」"
+                                       "（開盤持股 ＜ 10 且有候選 ⇒ 候選全部買、每檔 前一日權益÷10、現金不足等比例縮小；持股 ≥ 10 不買；其餘同營飆 v1）")
         if sg == "確認":
             eq, _ = six4_eq(a_, b_); c, m = L2.perf(eq); add("六四 v1", c, m, "research64retest 窗 B 同式（ETF 0.385%）")
         elif sg == "探索":
@@ -965,15 +1018,6 @@ def rank(a):
             add("大跌 4 檔", None, None, "曲線未建（buildextra --part 大跌）")
         else:
             add("大跌 4 檔", None, None, "早年無：F9 要的財報品質分數 Q 早年沒有（f9 只做 2015 起 18 事件）")
-        SEEDN = None
-        sp_ = os.path.join(OUT, f"pth10seed_{wn}.npz")
-        if os.path.exists(sp_):
-            ZS = np.load(sp_)
-            if list(ZS["dates"][[0, -1]]) != [str(cal[0].date()), str(cal[-1].date())]:
-                raise SystemExit("⛔ 高10 種子權益日曆 ≠ 世界日曆")
-            v = np.array([estat(e_, x, y) for e_ in ZS["eq"][1:]])
-            SEEDN = {"c": float(np.median(v[:, 0])), "m": float(np.median(v[:, 1])), "p5": float(np.percentile(v[:, 0], 5)), "p95": float(np.percentile(v[:, 0], 95)),
-                     "k0": estat(ZS["eq"][0], x, y)}
         b50 = bench0050(WORLD_DATA[wn]); arr50, _ = on_cal(b50, cal); s50 = bstat(cal, arr50, x, y)
         add("0050", s50["cagr"], s50["mdd"], "還原收盤、不含成本（判準慣例）")
         if wn == "主":
@@ -995,28 +1039,36 @@ def rank(a):
         T = pd.concat([V, NA], ignore_index=True)
         sc = ""
         if SEEDN is not None:
-            if abs(SEEDN["k0"][0] - float(T.loc[T["策略"] == "高10", "年化"].iloc[0])) > 1e-12:
-                raise SystemExit("⛔ 高10 種子檔 k＝0 ≠ PTHn N10_eq 切窗")
-            sc = f"年化 {pct(SEEDN['c'])}（p5 {pct(SEEDN['p5'])}～p95 {pct(SEEDN['p95'])}）；回落中位 {pct(SEEDN['m'])}；比值 {f2(AS.ratio(SEEDN['c'], SEEDN['m']))}"
-            alt = V[["策略", "年化", "回落", "比值"]].copy()
-            alt.loc[alt["策略"] == "高10", ["年化", "回落", "比值"]] = [SEEDN["c"], SEEDN["m"], AS.ratio(SEEDN["c"], SEEDN["m"])]
-            alt = alt.sort_values(["比值", "年化"], ascending=[False, False]).reset_index(drop=True)
-            SEEDN["若用中位名次"] = int(alt.index[alt["策略"] == "高10"][0]) + 1
-        T["200 組中位（p5～p95）"] = np.where(T["策略"] == "高10", sc, "")
+            sc = (f"200 組中位；年化 p5 {pct(SEEDN['p5'])}～p95 {pct(SEEDN['p95'])}、回落 p5 {pct(SEEDN['mp5'])}～p95 {pct(SEEDN['mp95'])}；"
+                  f"單一抽籤結果 {pct(k0c)}／{pct(k0m)}／{f2(AS.ratio(k0c, k0m))}")
+        T["註腳"] = np.where(T["策略"] == "高10", sc, np.where(T["策略"] == "營飆（使用者全買版）", "描述列（不判、不計 N）；無抽籤、決定性", ""))
+        T.loc[T["策略"] == "營飆（使用者全買版）", "對大盤"] = T.loc[T["策略"] == "營飆（使用者全買版）", "對大盤"].map(lambda s: f"（描述）{s}")
         allrows += T.to_dict("records") + [dict(r, 排名="另表", 年化名次=np.nan) for r in side]
         hd = f"### {sg}｜{cal[x].date()}～{cal[y].date()}｜{RANK_NOTE[sg]}" + ("" if bt is not None else "（⚠ 大盤報酬指數未到庫：排名欄未定）")
-        md += [hd, "", "| 排名 | 策略 | 年化 | 最大回落 | 比值 | 對大盤 | 200 組中位（p5～p95） |", "|---|---|---|---|---|---|---|"]
+        md += [hd, "", "| 排名 | 策略 | 年化 | 最大回落 | 比值 | 對大盤 | 註腳 |", "|---|---|---|---|---|---|---|"]
         for _, r in T.iterrows():
-            md.append(f"| {r['排名']} | {r['策略']} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {r['對大盤']} | {r['200 組中位（p5～p95）']} |")
+            md.append(f"| {r['排名']} | {r['策略']} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {r['對大盤']} | {r['註腳']} |")
         md += ["", "年化名次（並列參考）：" + "、".join(f"{r['策略']} {int(r['年化名次'])}" for _, r in V.iterrows())]
-        if SEEDN is not None:
-            md += ["", f"高10：單一抽籤結果，換 200 種抽法中位見右欄（resultsPTH10seed 種子權益重算、同窗切到 {cal[y].date()}）；"
-                       f"若高10 改用 200 組中位（年化中位、回落中位）會排第 {SEEDN['若用中位名次']}（只描述，名次照原種子）。"]
+        md += ["", "高10 為抽籤選股（同 PTH 值隨機打破），主值為 200 組種子中位；之前高10 結論皆建立在單一抽籤（原種子）。"]
         md += ["", "註：" + "；".join(f"{r['策略']}：{r['註']}" for _, r in T.iterrows() if r["註"])]
         md += ["", "成本口徑：個股策略含 0.585% 來回、六四含 ETF 0.385%；0050、正2、大盤（基準）不含成本 ⇒ 基準不含成本，對策略略不利。"]
         for r in side:
             md += ["", f"另表（⛔ 不並排比名次）：{r['策略']} {r['窗']} 年化 {pct(r['年化'])}、回落 {pct(r['回落'])}、比值 {f2(r['比值'])}、對大盤 {r['對大盤']}｜{r['註']}"]
         md.append("")
+    try:
+        YD = yf_w1_desc()
+        md += ["### 營飆（使用者全買版）持股與資金（描述）", "",
+               "出處：researchYFallin（10/18「同日全買」描述件）帳 W1；W2 與 W1 金額式數學恆等、逐位元相同。所需資金倍數取同件 W1b「每檔不縮小、超出 10 份由外部資金出」"
+               "的同時最多超額動用 ÷ 本帳淨值 ＋ 1。", "",
+               "| 段 | 平均持股 | 最多同時持股 | 最多持股÷10 | 每檔不縮小時最多同時超額檔 | 所需資金倍數（相對 10 份） |", "|---|---|---|---|---|---|"]
+        for sg in RANK_SEG:
+            if sg in YD:
+                v = YD[sg]
+                md.append(f"| {sg} | {v['平均持股']:.2f} | {v['最多同時持股']} | {v['最多持股÷10']:.1f} | {v['W1b 同時最多超額檔']} | {v['W1b 所需資金倍數（1＋超額動用占本帳最大）']:.2f} 倍 |")
+        md.append("")
+        json.dump(YD, open(os.path.join(OUT, "yf_w1_desc.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    except FileNotFoundError:
+        pass
     pd.DataFrame(allrows).to_csv(os.path.join(OUT, "rank.csv"), index=False, float_format="%.10g", encoding="utf-8")
     open(os.path.join(OUT, "rank.md"), "w", encoding="utf-8").write("\n".join(md))
     log(f"[rank] {len(allrows)} 列 ⇒ rank.md／rank.csv｜基準 {trs or NA_TR}")

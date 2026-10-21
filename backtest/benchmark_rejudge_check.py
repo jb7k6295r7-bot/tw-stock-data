@@ -154,13 +154,36 @@ def c7(a):
     return out
 
 
+def c8():
+    """seq431／432：營飆全買版 ＝ researchYFallin W1 逐日權益切窗 ＝ cells.csv（%.10g）；排名表高10 ＝ 200 組中位。"""
+    out = {}
+    DW = BR._yf_w1()
+    C = pd.read_csv("backtest/resultsYFallin/cells.csv", encoding="utf-8-sig", float_precision="round_trip")
+    bad = 0
+    for _, r in C[C["帳"].str.startswith("W1 ")].iterrows():
+        a, b = r["窗"].split("～")
+        cal = BR.world_cal(BR.WORLD_DATA[r["世界"]]); x, y = BR.seg_pos(cal, a, b)
+        c, m = BR.estat(DW[r["世界"]].reindex(cal).to_numpy(float), x, y)
+        bad += int(abs(c - r["年化"]) > 1e-9 or abs(m - r["回落"]) > 1e-9)
+    out["營飆全買版（W1）三段 ＝ resultsYFallin/cells.csv 不符"] = bad
+    RK = pd.read_csv(os.path.join(BR.OUT, "rank.csv"), float_precision="round_trip")
+    nb = 0
+    for sg, (wn, a, b) in BR.RANK_SEG.items():
+        Z = np.load(os.path.join(BR.OUT, f"pth10seed_{wn}.npz")); cal = BR.world_cal(BR.WORLD_DATA[wn]); x, y = BR.seg_pos(cal, a, b)
+        v = np.array([BR.estat(e, x, y) for e in Z["eq"][1:]])
+        r = RK[(RK["段"] == sg) & (RK["策略"] == "高10")].iloc[0]
+        nb += int(abs(r["年化"] - np.median(v[:, 0])) > 1e-9 or abs(r["回落"] - np.median(v[:, 1])) > 1e-9)
+    out["排名表高10 ＝ 200 組中位 不符段數"] = nb
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--tr", default=None); a = ap.parse_args()
     a.procs, a.part = 1, None
     os.makedirs(BR.OUT, exist_ok=True)
     res, Cc = BR.reconcile(a)
     S = {"C1 對帳（0050 基準重現舊標籤）": res, "C1 不符列": Cc[~(Cc["標籤相同"] & Cc["0050相符"] & Cc["年化回落相符"])].to_dict("records"),
-         "C2 合成 fixture": c2(), "C3 排名表": c3(), "C4 compare": c4(), "C5 buildeq": c5(), "C6 weak 權益組": c6(), "C7 第三階段": c7(a)}
+         "C2 合成 fixture": c2(), "C3 排名表": c3(), "C4 compare": c4(), "C5 buildeq": c5(), "C6 weak 權益組": c6(), "C7 第三階段": c7(a), "C8 seq431／432": c8()}
     S["C1 0050 值不符的說明"] = {
         "趨勢樣板｜早年 2005-03-01～2014-12-31": "原件 resultsLongT 早年 0050 ＝ 0.0727091；以 rerun17.load_bench 讀三份早年版面（含原件所用 3edc0e2206）同窗皆 0.0723925"
                                           " ⇒ 原件 0050 取法與 load_bench 不同（成因未查）；策略年化／回落與標籤相同，不影響新基準重判（新基準不經 0050）",
@@ -182,6 +205,7 @@ def main():
     ok = ok and c7v.get("大跌 4 檔：攔到曲線 ＝ addon2/portfolio.csv 不符", 0) in (0, "略（未建）") \
         and all(v is True for k, v in c7v.items() if k.endswith("N10_eq")) \
         and c7v.get("「新基準重看：候選」只標在原標籤非合格的列", True) is True and c7v.get("原非合格、新合格卻沒標的列", 0) == 0
+    ok = ok and all(v == 0 for v in S["C8 seq431／432"].values())
     S["全部通過"] = bool(ok)
     json.dump(S, open(os.path.join(BR.OUT, "check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     print(json.dumps({k: v for k, v in S.items() if k != "C1 不符列"}, ensure_ascii=False, indent=1, default=str))
