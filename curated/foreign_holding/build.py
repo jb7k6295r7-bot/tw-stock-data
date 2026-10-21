@@ -183,6 +183,7 @@ def main():
     ap.add_argument("--sleep-tpex", type=float, default=3.5)
     ap.add_argument("--check", action="store_true", help="抽樣比對 FinMind")
     ap.add_argument("--check-months", default="", help="逗號分隔 YYYY-MM；預設＝本趟第一個與最後一個月")
+    ap.add_argument("--outdir", default=HERE, help="年檔讀寫位置（月排程用 data/meta/foreign_holding）")
     ap.add_argument("--recent", action="store_true", help="排程用：只抓上個月（台北時間）的月底，併入當年檔")
     a = ap.parse_args()
     if a.recent:
@@ -223,7 +224,7 @@ def main():
     # ⭐ 合併、只准變多：先全部檢查，全過才寫
     plan = []
     for y, rs in sorted(years.items()):
-        p = os.path.join(HERE, f"foreign_holding_{y}.csv")
+        p = os.path.join(a.outdir, f"foreign_holding_{y}.csv")
         old = []
         if os.path.exists(p):
             with io.open(p, encoding="utf-8") as f:
