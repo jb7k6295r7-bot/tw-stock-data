@@ -83,7 +83,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "resultsDaily")
-NOTE = "營量 v1 暫定、營飆 v1 實驗（都在實際紀錄觀察中）；看盤參考，照規則收盤成立、隔天開盤才買"          # 裁定 seq271 §一
+NOTE = "營量 v1 暫定、營飆 v1 暫定（都在實際紀錄觀察中）；看盤參考，照規則收盤成立、隔天開盤才買"          # 裁定 seq271 §一
 INNO = "創新板（限合格投資人）"
 
 
@@ -140,7 +140,7 @@ def build(a, log, v2=False):
     L = [f"# 每日名單 {asof}（資料日）", "",
          f"- commit：tw-stock-data main {sha[:10]}｜資料日 {asof}｜下一交易日 {nxt[0].date()}（外推）",
          f"- 營飆大盤閘（前一天 0050 在 200 日線上）：{'開' if gate_on else '關'}（{asof} 0050 還原收盤 {bench[n - 1]:.2f}、200 日線 {ma[n - 1]:.2f}）", "",
-         f"## 一、營飆 v1（實驗）已達成（{nxt[0].date()} 開盤照規則買；最多 10 檔、候選多於空槽時抽籤）", ""]
+         f"## 一、營飆 v1（暫定）已達成（{nxt[0].date()} 開盤照規則買；最多 10 檔、候選多於空槽時抽籤）", ""]
     if gate_on and len(A):
         L += [f"- {r['代號']} {r['名稱']}{tag(r['名稱'])}｜{reason(r)}｜出場 {exit_str(120)}（第 120 個交易日收盤）{sf(r['代號'])}" for r in A.sort_values("代號").to_dict("records")]
     else:
