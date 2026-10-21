@@ -30,3 +30,25 @@
 [15:24:50] [rejudge] 674 列｜基準 —（報酬指數未到庫）
 [15:24:50] [rank] 24 列 ⇒ rank.md／rank.csv｜基準 —（報酬指數未到庫）
 [15:24:50] [weak] —（報酬指數未到庫） ⇒ 不產出（⛔ 不以價格指數代替）
+[16:16:33] ===== benchmark_rejudge buildextra｜2026-10-21 16:16（台北）
+[16:17:03] [世界 主] 2015-01-05～2026-09-24｜股 2095｜0050 11.6724～112.4000｜下市／停止交易股 181
+[16:19:16] ===== benchmark_rejudge compare｜2026-10-21 16:19（台北）
+[16:19:17] [compare] 12 列、逐年 20 列 ⇒ backtest/resultsBenchRejudge/compare_*.csv
+[16:19:17] ===== benchmark_rejudge rejudge｜2026-10-21 16:19（台北）
+[16:19:55] [rejudge] 674 列｜基準 git:origin/main:data/history/market_tri.csv
+[16:19:58] [高10 種子 主] 201 條｜seeds 檔不符 0｜205s
+[16:19:59] ===== benchmark_rejudge buildextra｜2026-10-21 16:19（台北）
+[16:20:16] [世界 早年] 2004-02-11～2014-12-31｜股 1679｜0050 32.9195～66.8500｜下市／停止交易股 168
+[16:22:22] [高10 種子 早年] 201 條｜seeds 檔不符 0｜143s
+[16:22:23] ===== benchmark_rejudge buildextra｜2026-10-21 16:22（台北）
+[16:23:44] [大跌 4 檔] 攔 13 條｜閘不符 0｜['甲_不加碼', '甲_T2加碼同一批', '乙_撥50%', '乙_撥100%', '丙_平時現金事件全額']
+[16:23:57] ===== benchmark_rejudge all｜2026-10-21 16:23（台北）
+[16:23:57] [compare] 12 列、逐年 20 列 ⇒ backtest/resultsBenchRejudge/compare_*.csv
+[16:24:31] [rejudge] 674 列｜基準 git:origin/main:data/history/market_tri.csv
+[16:24:31] [rank] 32 列 ⇒ rank.md／rank.csv｜基準 git:origin/main:data/history/market_tri.csv
+[16:24:32] [weak] ⇒ weak.json／weak_periods.csv／weak.md
+[16:24:32] [summary] ⇒ rejudge_summary.md｜變化 89 列
+[16:25:31] ===== benchmark_rejudge rank｜2026-10-21 16:25（台北）
+[16:25:56] [rank] 32 列 ⇒ rank.md／rank.csv｜基準 git:origin/main:data/history/market_tri.csv
+[16:25:56] ===== benchmark_rejudge summary｜2026-10-21 16:25（台北）
+[16:25:56] [summary] ⇒ rejudge_summary.md｜變化 89 列

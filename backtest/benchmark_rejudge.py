@@ -684,7 +684,7 @@ def rejudge(a, bench_override=None):
             else:
                 lab = AS.label(r["年化"], r["回落"], st)
                 if bench_override is None and lab == "合格" and r["原標籤"] != "合格":
-                    lab = "合格（新基準下才變合格 ⇒ 候選、最多暫定）"
+                    lab = "合格（新基準重看：候選、最多暫定）"
                 o.update({"基準年化": st["cagr"], "基準回落": st["mdd"], "基準比值": st["ratio"], "新基準重看": lab, "基準ffill補值日": nfill})
         out.append(o)
     df = pd.DataFrame(out)
@@ -770,6 +770,105 @@ def buildeq(a):
               open(os.path.join(OUT, f"eq_{part}.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
 
 
+# ═════════════ 第三階段：排名表加列的權益（大跌 4 檔 甲／乙／丙、高10 同分種子 200 組）═════════════
+MD_DIR = os.path.join(WORK, "addon2_cap")
+
+
+def build_mktdrop(a):
+    """大跌 4 檔（裁定 seq430）：researchMktDrop_addon2.run 原樣重跑（輸出改寫到 ~/bmkwork/addon2_cap，⛔ 不動原結果夾），
+    攔 curve2_add 取 F9 曲線與輸入：甲 ＝ 平時 0050、事件撥 20%（不加碼／T2 −5% 加碼同一批〔乙法〕主出場）；
+    乙 ＝ 同式撥 50%／100%（researchMktDrop_addon2.W_SLEEVE 暫改，不加碼）；丙 ＝ 平時現金、事件全額（researchMktDrop_v1.curve1）。
+    閘：攔到的曲線以原 segp 重算 ＝ resultsMktDrop/addon2/portfolio.csv（%.6g）。"""
+    import shutil
+    import sys as _sys
+    from backtest import researchMktDrop_addon2 as AD
+    from backtest import researchMktDrop_v1 as V1
+    os.makedirs(MD_DIR, exist_ok=True)
+    out_, work_ = os.path.join(MD_DIR, "out"), os.path.join(MD_DIR, "work")
+    os.makedirs(out_, exist_ok=True); os.makedirs(work_, exist_ok=True)
+    for f in ("f9_features.pkl", "f9_features_v2.pkl"):
+        src = os.path.join(AD.WORK, f)
+        if os.path.exists(src) and not os.path.exists(os.path.join(work_, f)):
+            shutil.copy(src, work_)
+    AD.OUT, AD.WORK = out_, work_
+    CAP = {}
+    orig = AD.curve2_add
+
+    def wrap(n0, paths, addp, BO, BC, cost):
+        r = orig(n0, paths, addp, BO, BC, cost)
+        L = _sys._getframe(1).f_locals
+        if L.get("cd") == "F9":
+            pp = L.get("PP")
+            key = (L["wn"], L["k"], L["mt"], L["arm"]) if (pp is not None and pp.get("add") is addp) else (L["wn"], "不加碼", "", "")
+            CAP[key] = {"eq": r[0], "n0": n0, "paths": paths, "BO": BO, "BC": BC, "cost": cost, "cal": L["W"]["cal"], "segp": dict(L["W"]["segp"])}
+        return r
+    AD.curve2_add = wrap
+    try:
+        from backtest import researchAddOn as RA_
+        AD.run(a, RA_.log_to(os.path.join(out_, "run.log")))
+    finally:
+        AD.curve2_add = orig
+    base = CAP[("主", "不加碼", "", "")]
+    P0 = pd.read_csv("backtest/resultsMktDrop/addon2/portfolio.csv", dtype=str)
+    bad = 0
+    for (wn, k, mt, arm), c in CAP.items():
+        for sg, (x0, y0) in c["segp"].items():
+            s = V1.wstats(c["eq"], x0, y0)
+            q = P0[(P0["世界"] == wn) & (P0["段"] == sg) & (P0["候選"] == "F9") & (P0["觸發"] == k) & (P0["方式"].fillna("") == mt) & (P0["出場"].fillna("") == arm)]
+            if len(q) != 1 or "%.6g" % s["年化"] != q.iloc[0]["②年化"] or "%.6g" % s["最大回落"] != q.iloc[0]["②最大回落"]:
+                bad += 1
+    curves = {"甲_不加碼": base["eq"], "甲_T2加碼同一批": CAP[("主", "T2", "乙", "主")]["eq"]}
+    w0 = AD.W_SLEEVE
+    try:
+        for w in (0.5, 1.0):
+            AD.W_SLEEVE = w
+            curves[f"乙_撥{int(w * 100)}%"] = AD.curve2_add(base["n0"], base["paths"], {}, base["BO"], base["BC"], base["cost"])[0]
+    finally:
+        AD.W_SLEEVE = w0
+    curves["丙_平時現金事件全額"] = V1.curve1(base["n0"], base["paths"], base["cost"])[0]
+    cal = base["cal"]
+    np.savez_compressed(os.path.join(OUT, "mktdrop_curves.npz"), dates=np.array([str(pd.Timestamp(d).date()) for d in cal]), **curves)
+    nev = {sg: int(sum(1 for p in base["paths"] if x0 <= p[0] - 1 <= y0)) for sg, (x0, y0) in base["segp"].items()}
+    json.dump({"閘：攔到曲線重算 ＝ addon2/portfolio.csv（%.6g）不符": bad, "攔到 F9 曲線": len(CAP), "主世界 F9 事件數（依原段）": nev,
+               "曲線": list(curves), "註": "描述、最多暫定、事件少、事後選法（F9）；成本 個股 0.585%／0050 0.385%（撥出、換回皆扣）"},
+              open(os.path.join(OUT, "mktdrop_curves.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    log(f"[大跌 4 檔] 攔 {len(CAP)} 條｜閘不符 {bad}｜{list(curves)}")
+    if bad:
+        raise SystemExit("⛔ 攔到的曲線 ≠ addon2/portfolio.csv")
+
+
+def build_pth10seed(a, wn):
+    """高10 同分種子 200 組（commit 2d3e1d4313 resultsPTH10seed）重算權益以便切 2026-08-24 同窗：researchPTH10seed 的 events_with／seed_of 與
+    researchPTHn.run_slot 原樣；閘：k＝0 權益 ＝ resultsPTHn N10_eq 逐位元、k＝1…200 各段 年化／回落 ＝ seeds_<世界>.csv（%.10g）。"""
+    from backtest import researchPTH10seed as PS
+    T0 = time.time()
+    W = PS.M.build_world(wn, log)
+    RES = {}
+    with Pool(a.procs) as pool:
+        for sid, r in pool.imap_unordered(PS.PTH.stock_job, [(wn, s) for s in W["sids"]], chunksize=8):
+            if r is not None:
+                RES[sid] = r
+    ev0, _ = PS.events_with(W, wn, RES, PS.SEED0)
+    S0 = PS.PN.run_slot(ev0, W, PS.N, False)
+    if not np.array_equal(S0["eq"], np.load(f"backtest/resultsPTHn/eq_{wn}.npz")["N10_eq"]):
+        raise SystemExit("⛔ 原種子權益 ≠ resultsPTHn N10_eq")
+    ref = pd.read_csv(f"backtest/resultsPTH10seed/seeds_{wn}.csv", encoding="utf-8-sig", float_precision="round_trip").set_index("k")
+    EQ, bad = [S0["eq"]], 0
+    for k in range(1, PS.NSEED + 1):
+        ev, _ = PS.events_with(W, wn, RES, PS.seed_of(k))
+        S = PS.PN.run_slot(ev, W, PS.N, False)
+        EQ.append(S["eq"])
+        for sg in PS.SEGS[wn]:
+            d, _ = PS.seg_row(W, S, sg)
+            for col in ("年化", "回落"):
+                if abs(d[f"{sg}_{col}"] - ref.loc[k, f"{sg}_{col}"]) > 1e-9 * max(1.0, abs(ref.loc[k, f"{sg}_{col}"])):
+                    bad += 1
+    log(f"[高10 種子 {wn}] 201 條｜seeds 檔不符 {bad}｜{time.time() - T0:.0f}s")
+    if bad:
+        raise SystemExit("⛔ 種子權益重算 ≠ seeds 檔")
+    np.savez_compressed(os.path.join(OUT, f"pth10seed_{wn}.npz"), eq=np.array(EQ), dates=np.array([str(d.date()) for d in W["cal"]]))
+
+
 def _eq_series(arr, cal):
     """權益陣列（位置 ＝ 世界日曆）⇒ pd.Series（多出的尾端 NP 位置丟掉）。"""
     arr = np.asarray(arr, float)
@@ -811,7 +910,13 @@ def rank(a):
     trs = tr_source(a)
     TR = read_series(trs) if trs else None
     YLR = {(r["策略"], r["段"]): r for r in yl_rows()}
-    allrows, md = [], []
+    allrows = []
+    md = ["## 策略排名表（台股；大盤 ＝ 臺灣發行量加權股價報酬指數，含息）", "",
+          f"產出 {pd.Timestamp.now(tz='Asia/Taipei'):%Y-%m-%d %H:%M}（台北）｜回測線 benchmark_rejudge｜大盤序列 {trs or NA_TR}", "",
+          "- 主排名 ＝ 2022-01～2026-08-24；2017～2021、2005～2014 兩段各自排名、標「參考（市場結構與現在不同）」。",
+          "- 排名依比值（年化 ÷ |最大回落|）由高到低、同比值年化高者前；年化名次並列在表下。對大盤：合格 ＝ 年化 ＞ 大盤且比值 ≥ 大盤；另列 ＝ 只贏年化。",
+          "- 同一張表同一段期間；起點不同的另表、⛔ 不並排比名次；算不出列「—」並註原因。⛔ 不擇優、不寫「最好用哪個」。",
+          "- 新基準下才變合格的只算候選、最多暫定（seq425）。", ""]
     for sg, (wn, a_, b_) in RANK_SEG.items():
         cal = world_cal(WORLD_DATA[wn]); x, y = seg_pos(cal, a_, b_)
         bt = None
@@ -820,7 +925,12 @@ def rank(a):
         rows, side = [], []
 
         def add(name, c, m, note="", tab=rows, win=None):
-            lab = "—" if (bt is None or c is None or not np.isfinite(c)) else AS.label(c, m, bt)
+            bb = bt
+            if win is not None and TR is not None:            # 另表起點不同 ⇒ 大盤取同一個窗
+                w0_, w1_ = win.split("～"); xx, yy = seg_pos(cal, w0_, w1_)
+                bb = bstat(cal, on_cal(TR, cal)[0], xx, yy)
+                note = note + f"；大盤同窗 {pct(bb['cagr'])}／{pct(bb['mdd'])}／{f2(bb['ratio'])}"
+            lab = "—" if (bb is None or c is None or not np.isfinite(c)) else AS.label(c, m, bb)
             tab.append({"段": sg, "策略": name, "年化": c, "回落": m, "比值": AS.ratio(c, m) if c is not None else np.nan, "對大盤": lab if bt is not None else NA_TR,
                         "窗": win or f"{cal[x].date()}～{cal[y].date()}", "註": note})
         for nm in ("營量 v1", "營飆 v1"):
@@ -840,7 +950,30 @@ def rank(a):
             add("六四 v1", c, m, "起點不同：00685L 2017-03-30 上市、六四判定窗 2018-01-15 起 ⇒ 另表、⛔ 不並排比名次", tab=side, win=f"2018-01-15～{b_}")
         else:
             add("六四 v1", None, None, "早年無 00685L（2017-03-30 上市）；2008 只有用 0050×2 合成的模擬 ⇒ 不列")
-        add("大跌 4 檔", None, None, "只有往後紀錄（2026-10-15 那次起、10 次才判）；歷史只有「每次大跌平均報酬」與「平時抱 0050、事件撥 20%」口徑，⛔ 不是 4 檔組合年化")
+        MDN = "描述、最多暫定、事件少、事後選法（F9）；裁定 seq430 甲口徑：平時抱 0050（含息），大跌事件撥 20% 買 F9 前 4 等權，收復隔天開盤換回 0050；成本個股 0.585%、0050 0.385%"
+        mdp = os.path.join(OUT, "mktdrop_curves.npz")
+        if wn == "主" and os.path.exists(mdp):
+            Z = np.load(mdp); dts = pd.to_datetime(Z["dates"])
+            for key, nm in (("甲_不加碼", "大跌 4 檔（甲：撥 20%、不加碼）"), ("甲_T2加碼同一批", "大跌 4 檔（甲：撥 20%、−5% 加碼同一批）")):
+                e_ = pd.Series(Z[key], index=dts).reindex(cal).to_numpy(float)
+                c, m = estat(e_, x, y); add(nm, c, m, MDN)
+            for key in ("乙_撥50%", "乙_撥100%", "丙_平時現金事件全額"):
+                e_ = pd.Series(Z[key], index=dts).reindex(cal).to_numpy(float)
+                c, m = estat(e_, x, y)
+                add(f"大跌 4 檔（{key.replace('_', '：')}）", c, m, "只描述另表（裁定 seq430 乙／丙）；" + MDN.split("；")[0], tab=side)
+        elif wn == "主":
+            add("大跌 4 檔", None, None, "曲線未建（buildextra --part 大跌）")
+        else:
+            add("大跌 4 檔", None, None, "早年無：F9 要的財報品質分數 Q 早年沒有（f9 只做 2015 起 18 事件）")
+        SEEDN = None
+        sp_ = os.path.join(OUT, f"pth10seed_{wn}.npz")
+        if os.path.exists(sp_):
+            ZS = np.load(sp_)
+            if list(ZS["dates"][[0, -1]]) != [str(cal[0].date()), str(cal[-1].date())]:
+                raise SystemExit("⛔ 高10 種子權益日曆 ≠ 世界日曆")
+            v = np.array([estat(e_, x, y) for e_ in ZS["eq"][1:]])
+            SEEDN = {"c": float(np.median(v[:, 0])), "m": float(np.median(v[:, 1])), "p5": float(np.percentile(v[:, 0], 5)), "p95": float(np.percentile(v[:, 0], 95)),
+                     "k0": estat(ZS["eq"][0], x, y)}
         b50 = bench0050(WORLD_DATA[wn]); arr50, _ = on_cal(b50, cal); s50 = bstat(cal, arr50, x, y)
         add("0050", s50["cagr"], s50["mdd"], "還原收盤、不含成本（判準慣例）")
         if wn == "主":
@@ -860,16 +993,29 @@ def rank(a):
         V["年化名次"] = V["年化"].rank(ascending=False, method="min").astype(int)
         NA = T[~ok].assign(排名="—", 年化名次=np.nan)
         T = pd.concat([V, NA], ignore_index=True)
-        allrows += T.to_dict("records") + [dict(r, 排名="另表（起點不同）", 年化名次=np.nan) for r in side]
+        sc = ""
+        if SEEDN is not None:
+            if abs(SEEDN["k0"][0] - float(T.loc[T["策略"] == "高10", "年化"].iloc[0])) > 1e-12:
+                raise SystemExit("⛔ 高10 種子檔 k＝0 ≠ PTHn N10_eq 切窗")
+            sc = f"年化 {pct(SEEDN['c'])}（p5 {pct(SEEDN['p5'])}～p95 {pct(SEEDN['p95'])}）；回落中位 {pct(SEEDN['m'])}；比值 {f2(AS.ratio(SEEDN['c'], SEEDN['m']))}"
+            alt = V[["策略", "年化", "回落", "比值"]].copy()
+            alt.loc[alt["策略"] == "高10", ["年化", "回落", "比值"]] = [SEEDN["c"], SEEDN["m"], AS.ratio(SEEDN["c"], SEEDN["m"])]
+            alt = alt.sort_values(["比值", "年化"], ascending=[False, False]).reset_index(drop=True)
+            SEEDN["若用中位名次"] = int(alt.index[alt["策略"] == "高10"][0]) + 1
+        T["200 組中位（p5～p95）"] = np.where(T["策略"] == "高10", sc, "")
+        allrows += T.to_dict("records") + [dict(r, 排名="另表", 年化名次=np.nan) for r in side]
         hd = f"### {sg}｜{cal[x].date()}～{cal[y].date()}｜{RANK_NOTE[sg]}" + ("" if bt is not None else "（⚠ 大盤報酬指數未到庫：排名欄未定）")
-        md += [hd, "", "| 排名 | 策略 | 年化 | 最大回落 | 比值 | 對大盤 |", "|---|---|---|---|---|---|"]
+        md += [hd, "", "| 排名 | 策略 | 年化 | 最大回落 | 比值 | 對大盤 | 200 組中位（p5～p95） |", "|---|---|---|---|---|---|---|"]
         for _, r in T.iterrows():
-            md.append(f"| {r['排名']} | {r['策略']} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {r['對大盤']} |")
+            md.append(f"| {r['排名']} | {r['策略']} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {r['對大盤']} | {r['200 組中位（p5～p95）']} |")
         md += ["", "年化名次（並列參考）：" + "、".join(f"{r['策略']} {int(r['年化名次'])}" for _, r in V.iterrows())]
+        if SEEDN is not None:
+            md += ["", f"高10：單一抽籤結果，換 200 種抽法中位見右欄（resultsPTH10seed 種子權益重算、同窗切到 {cal[y].date()}）；"
+                       f"若高10 改用 200 組中位（年化中位、回落中位）會排第 {SEEDN['若用中位名次']}（只描述，名次照原種子）。"]
         md += ["", "註：" + "；".join(f"{r['策略']}：{r['註']}" for _, r in T.iterrows() if r["註"])]
         md += ["", "成本口徑：個股策略含 0.585% 來回、六四含 ETF 0.385%；0050、正2、大盤（基準）不含成本 ⇒ 基準不含成本，對策略略不利。"]
         for r in side:
-            md += ["", f"另表（起點不同，⛔ 不並排比名次）：{r['策略']} {r['窗']} 年化 {pct(r['年化'])}、回落 {pct(r['回落'])}、比值 {f2(r['比值'])}、對大盤 {r['對大盤']}｜{r['註']}"]
+            md += ["", f"另表（⛔ 不並排比名次）：{r['策略']} {r['窗']} 年化 {pct(r['年化'])}、回落 {pct(r['回落'])}、比值 {f2(r['比值'])}、對大盤 {r['對大盤']}｜{r['註']}"]
         md.append("")
     pd.DataFrame(allrows).to_csv(os.path.join(OUT, "rank.csv"), index=False, float_format="%.10g", encoding="utf-8")
     open(os.path.join(OUT, "rank.md"), "w", encoding="utf-8").write("\n".join(md))
@@ -949,6 +1095,11 @@ def weak(a):
         if sg in ("確認", "探索"):
             eq, d = six4_eq(a_ if sg == "確認" else "2018-01-15", b_)
             EQ["六四 v1"] = [on_cal(pd.Series(eq, index=d), cal)[0]]
+        mdp = os.path.join(OUT, "mktdrop_curves.npz")
+        if wn == "主" and os.path.exists(mdp):
+            Z = np.load(mdp); dts = pd.to_datetime(Z["dates"])
+            EQ["大跌 4 檔（甲、不加碼）"] = [pd.Series(Z["甲_不加碼"], index=dts).reindex(cal).to_numpy(float)]
+            EQ["大跌 4 檔（甲、−5% 加碼）"] = [pd.Series(Z["甲_T2加碼同一批"], index=dts).reindex(cal).to_numpy(float)]
         s50 = on_cal(E["0050"][0], cal)[0]; sT = on_cal(TR, cal)[0]
         R = weak_core(cal, x, y, s50, sT, EQ)
         R["缺權益"] = [k for k in ("營量 v1", "營飆 v1") if k not in E]
@@ -957,14 +1108,71 @@ def weak(a):
             prow.append({"段": sg, **p})
     json.dump(S, open(os.path.join(OUT, "weak.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=float)
     pd.DataFrame(prow).to_csv(os.path.join(OUT, "weak_periods.csv"), index=False, float_format="%.6g", encoding="utf-8")
-    log(f"[weak] ⇒ weak.json／weak_periods.csv")
+    md = ["## 0050 不強的時候（滾動 12 個月 0050 落後大盤報酬指數；只描述 ⛔ 不成規則）", "",
+          "讀法：各段 段首＋段內完整月底、滾動 12 個月窗；0050 報酬 ＜ 大盤報酬指數 ⇒ 落後窗；落後幅度分組 0～2／2～5／5 點以上；"
+          "各策略在落後窗的 12 個月報酬（營飆 200 顆中位）；名次在同一窗內依 12 個月報酬排（含 0050、大盤）。⚠ 窗彼此重疊，窗數不是獨立樣本數。", ""]
+    for sg in RANK_SEG:
+        R = S[sg]
+        md += [f"### {sg}｜{RANK_SEG[sg][1]}～{RANK_SEG[sg][2]}｜滾動窗 {R['滾動窗數']}、0050 落後 {R['落後窗數']}", ""]
+        md += ["落後期間（窗尾月份連續）：" + ("、".join(f"{p['窗尾起']}～{p['窗尾訖']}（{p['窗數']} 窗、最大落後 {p['最大落後'] * 100:.1f} 點）" for p in R["期間"]) or "無"), ""]
+        for g in ["全部"] + [nm for _, _, nm in LAG_BINS]:
+            G = R["分組"][g]
+            if not G.get("窗數"):
+                md += [f"- {g}：0 窗", ""]; continue
+            md += [f"**{g}（{G['窗數']} 窗）**", "", "| 策略 | 窗數 | 12 個月報酬平均 | 中位 | 贏大盤窗比例 | 窗內名次平均 |", "|---|---|---|---|---|---|"]
+            for k, v in sorted(G["策略"].items(), key=lambda kv: (np.nan_to_num(kv[1]["名次平均"], nan=99))):
+                wr = v["贏大盤窗比例"]
+                wrs = "—" if not np.isfinite(wr) else f"{wr * 100:.0f}%"
+                md.append(f"| {k} | {v['窗數']} | {pct(v['12 個月報酬平均'], 1)} | {pct(v['中位'], 1)} | {wrs} | {f2(v['名次平均'])} |")
+            md.append("")
+    open(os.path.join(OUT, "weak.md"), "w", encoding="utf-8").write("\n".join(md))
+    log(f"[weak] ⇒ weak.json／weak_periods.csv／weak.md")
     return S
+
+
+def summary(a):
+    """rejudge_summary.md：新基準下標籤變化交叉表、主要策略三段對大盤。"""
+    df = pd.read_csv(os.path.join(OUT, "rejudge.csv"))
+    norm = lambda s: "合格（新才合格：候選）" if str(s).startswith("合格（") else str(s)
+    df["新"] = df["新基準重看"].map(norm)
+    md = ["# 新基準重看摘要（台股基準改大盤報酬指數；裁定 seq425～428）", "",
+          f"基準：{tr_source(a)}；原標籤 ＝ 對 0050（各件原窗）；新標籤 ＝ 對大盤報酬指數（同窗、同式）。⚠ 新基準下才變合格的只算候選、最多暫定；原判定不刪、並列。", ""]
+    for title, D in (("全部段列", df), ("排除 219 表／P9／爆量突破 60 格／App 大師 9 格／候選 17 格（逐格掃描類）",
+                                    df[~df["策略"].str.match(r"^(219｜|P9 |爆量突破|App 大師|候選 17 格)")])):
+        X = pd.crosstab(D["原標籤"], D["新"], margins=True, margins_name="合計")
+        md += [f"## 標籤變化交叉表：{title}（列＝原對 0050，欄＝新對大盤；單位＝段列）", "", "| 原＼新 | " + " | ".join(X.columns) + " |",
+               "|---|" + "---|" * len(X.columns)]
+        for i, r in X.iterrows():
+            md.append(f"| {i} | " + " | ".join(str(int(v)) for v in r.values) + " |")
+        md.append("")
+    ch = df[df["原標籤"] != df["新"].str.replace("（新才合格：候選）", "", regex=False)]
+    md += [f"## 標籤有變的段列：{len(ch)} 列（{ch['策略'].nunique()} 件）", ""]
+    keep = ch[~ch["策略"].str.match(r"^(219｜|P9 |爆量突破|App 大師|候選 17 格)")]
+    md += ["| 族 | 策略 | 段 | 窗 | 年化 | 回落 | 原（對 0050） | 新（對大盤） |", "|---|---|---|---|---|---|---|---|"]
+    for _, r in keep.iterrows():
+        md.append(f"| {r['族']} | {r['策略']} | {r['段']} | {r['窗']} | {pct(r['年化'])} | {pct(r['回落'])} | {r['原標籤']} | {r['新基準重看']} |")
+    md += ["", f"（逐格掃描類變化 {len(ch) - len(keep)} 列另見 rejudge.csv）", ""]
+    RK = pd.read_csv(os.path.join(OUT, "rank.csv"))
+    md += ["## 主要策略三段對大盤（排名表同窗）", "", "| 段 | 策略 | 年化 | 回落 | 比值 | 大盤 年化／回落／比值 | 對大盤 |", "|---|---|---|---|---|---|---|"]
+    for sg in RANK_SEG:
+        g = RK[RK["段"] == sg]; b = g[g["策略"] == "大盤（報酬指數）"]
+        bs = "—" if b.empty or not np.isfinite(b["年化"].iloc[0]) else f"{pct(b['年化'].iloc[0])}／{pct(b['回落'].iloc[0])}／{f2(b['比值'].iloc[0])}"
+        for nm in ("營量 v1", "營飆 v1", "高10", "六四 v1", "正2（00631L）", "0050"):
+            r = g[g["策略"] == nm]
+            if r.empty:
+                continue
+            r = r.iloc[0]
+            side_ = str(r["排名"]).startswith("另表")
+            bsx = (str(r["註"]).split("大盤同窗 ")[-1] + f"（{r['窗']}）") if side_ and "大盤同窗" in str(r["註"]) else bs
+            md.append(f"| {sg}{'（另表）' if side_ else ''} | {nm} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {bsx} | {r['對大盤']} |")
+    open(os.path.join(OUT, "rejudge_summary.md"), "w", encoding="utf-8").write("\n".join(md))
+    log(f"[summary] ⇒ rejudge_summary.md｜變化 {len(ch)} 列")
 
 
 def main():
     global LOGF
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["compare", "rejudge", "rank", "weak", "buildeq", "all", "reconcile"])
+    ap.add_argument("cmd", choices=["compare", "rejudge", "rank", "weak", "buildeq", "buildextra", "all", "reconcile", "summary"])
     ap.add_argument("--tr", default=None)
     ap.add_argument("--procs", type=int, default=3)
     ap.add_argument("--part", default=None)
@@ -981,8 +1189,17 @@ def main():
         rank(a)
     if a.cmd in ("weak", "all"):
         weak(a)
+    if a.cmd in ("summary", "all"):
+        summary(a)
     if a.cmd == "buildeq":
         buildeq(a)
+    if a.cmd == "buildextra":
+        if a.part == "大跌":
+            build_mktdrop(a)
+        elif a.part in ("高10主", "高10早年"):
+            build_pth10seed(a, a.part[3:])
+        else:
+            raise SystemExit("⛔ buildextra 要 --part 大跌｜高10主｜高10早年")
 
 
 if __name__ == "__main__":

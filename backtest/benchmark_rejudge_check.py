@@ -128,13 +128,39 @@ def c6():
     return out
 
 
+def c7(a):
+    """第三階段：大跌 4 檔曲線閘、高10 種子權益、報酬指數重判的標記規則、報酬指數序列對齊。"""
+    out = {}
+    p = os.path.join(BR.OUT, "mktdrop_curves.json")
+    out["大跌 4 檔：攔到曲線 ＝ addon2/portfolio.csv 不符"] = json.load(open(p, encoding="utf-8"))["閘：攔到曲線重算 ＝ addon2/portfolio.csv（%.6g）不符"] if os.path.exists(p) else "略（未建）"
+    for wn in ("主", "早年"):
+        q = os.path.join(BR.OUT, f"pth10seed_{wn}.npz")
+        if os.path.exists(q):
+            Z = np.load(q)
+            out[f"高10 種子 {wn}：k＝0 ＝ PTHn N10_eq"] = bool(np.array_equal(Z["eq"][0], np.load(f"backtest/resultsPTHn/eq_{wn}.npz")["N10_eq"]))
+            out[f"高10 種子 {wn}：條數"] = int(Z["eq"].shape[0])
+    r = os.path.join(BR.OUT, "rejudge.csv")
+    if a.tr and os.path.exists(r):
+        D = pd.read_csv(r)
+        tag = D["新基準重看"].astype(str).str.startswith("合格（")
+        out["「新基準重看：候選」只標在原標籤非合格的列"] = bool((D.loc[tag, "原標籤"] != "合格").all())
+        out["原非合格、新合格卻沒標的列"] = int(((D["新基準重看"] == "合格") & (D["原標籤"] != "合格")).sum())
+        out["新標籤缺（—）列"] = int(D["新基準重看"].astype(str).str.startswith("—").sum())
+        T = BR.read_series(a.tr)
+        for wn in ("主", "早年"):
+            cal = BR.world_cal(BR.WORLD_DATA[wn]); x = cal.searchsorted(pd.Timestamp("2005-01-01" if wn == "早年" else "2015-01-01"))
+            _, nf = BR.on_cal(T[T.index >= cal[x]], cal[x:])
+            out[f"報酬指數對 {wn} 世界日曆 ffill 補值日"] = nf
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--tr", default=None); a = ap.parse_args()
     a.procs, a.part = 1, None
     os.makedirs(BR.OUT, exist_ok=True)
     res, Cc = BR.reconcile(a)
     S = {"C1 對帳（0050 基準重現舊標籤）": res, "C1 不符列": Cc[~(Cc["標籤相同"] & Cc["0050相符"] & Cc["年化回落相符"])].to_dict("records"),
-         "C2 合成 fixture": c2(), "C3 排名表": c3(), "C4 compare": c4(), "C5 buildeq": c5(), "C6 weak 權益組": c6()}
+         "C2 合成 fixture": c2(), "C3 排名表": c3(), "C4 compare": c4(), "C5 buildeq": c5(), "C6 weak 權益組": c6(), "C7 第三階段": c7(a)}
     S["C1 0050 值不符的說明"] = {
         "趨勢樣板｜早年 2005-03-01～2014-12-31": "原件 resultsLongT 早年 0050 ＝ 0.0727091；以 rerun17.load_bench 讀三份早年版面（含原件所用 3edc0e2206）同窗皆 0.0723925"
                                           " ⇒ 原件 0050 取法與 load_bench 不同（成因未查）；策略年化／回落與標籤相同，不影響新基準重判（新基準不經 0050）",
@@ -152,6 +178,10 @@ def main():
           and S["C3 排名表"].get("排序違反數", 0) == 0 and S["C4 compare"].get("價格指數逐年不符數", 0) == 0
           and all(v == "略（未 buildeq）" or v["不符"] == 0 for v in S["C5 buildeq"].values())
           and all(v is True or v == 0 for k, v in S["C2 合成 fixture"].items()))
+    c7v = S["C7 第三階段"]
+    ok = ok and c7v.get("大跌 4 檔：攔到曲線 ＝ addon2/portfolio.csv 不符", 0) in (0, "略（未建）") \
+        and all(v is True for k, v in c7v.items() if k.endswith("N10_eq")) \
+        and c7v.get("「新基準重看：候選」只標在原標籤非合格的列", True) is True and c7v.get("原非合格、新合格卻沒標的列", 0) == 0
     S["全部通過"] = bool(ok)
     json.dump(S, open(os.path.join(BR.OUT, "check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     print(json.dumps({k: v for k, v in S.items() if k != "C1 不符列"}, ensure_ascii=False, indent=1, default=str))
