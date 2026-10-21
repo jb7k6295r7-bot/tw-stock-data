@@ -1,0 +1,8 @@
+[01:34:43] [登錄] 登錄全文-大漲後頂部樣子當賣出訊號_本益比高檔ROE低大戶減_單筆層登錄_台股策略線_seq1_shae30036415fbbce81-4491B-20261022-0100.md（sha e30036415fbbce81 已驗）
+[01:34:46] [資料] origin/main eeb5af5f8fec｜面板快照比對 {'data/mops/fin_hist（dbfb96cb81a7→eeb5af5f8fec）': '相同', 'data/meta/filing_dates.csv（dbfb96cb81a7→eeb5af5f8fec）': '相同', 'data/meta/industry_hist（dbfb96cb81a7→eeb5af5f8fec）': '相同', 'data/early/per（dbfb96cb81a7→eeb5af5f8fec）': '相同', 'data/early/otcper（dbfb96cb81a7→eeb5af5f8fec）': '相同', 'data/tdcc_hist（325a1ee753cf→eeb5af5f8fec）': '相同', 'data/stocks_per（主表；_check 逐格比）': '1976 files changed, 3949 insertions(+), 1975 deletions(-)'}
+[01:34:46] [面板 早年] 讀快取 /home/chemtim/b2fwork/panel_早年.pkl（1594 檔）
+[01:34:46] [面板 主] 讀快取 /home/chemtim/b2fwork/panel_主.pkl（2010 檔）
+[01:35:17] [價格] 合併日曆 2004-02-11～2026-09-24（5571）｜股 2138｜接縫 {'兩世界都有': 1466, '接縫壞根': 7}｜月底 271（2004-02-27～2026-08-31）｜34s
+[01:35:30] [母體] 符合列 21674、入判 6440｜距一年高點重算 vs 面板 182454 格最大相對差 8.2e-08（float32 存檔）｜47s
+[01:35:32] [能否判] {'探索': {'n_eff': 18, 'S可判的月數': 48, '能判': False}, '確認': {'n_eff': 35, 'S可判的月數': 44, '能判': True}}
+[01:35:32] [完] 49s ⇒ backtest/resultsTopSell/freq
