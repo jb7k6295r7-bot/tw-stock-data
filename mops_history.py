@@ -1151,8 +1151,22 @@ def main():
                 full = (["stock_id", "name", "period", "market", "產業別"]
                         + header[2:])
                 out = [[r[0], r[1], per, market, r[2]] + r[3:] for r in rows]
-                write_csv(os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv"),
-                          full, out)
+                rp = os.path.join(OUT, "revenue_hist", f"{per}_{market}.csv")
+                # ⭐ 2026-10-21（裁定 seq412 §二、6443 9 月更正事件）：重抓會整檔覆蓋
+                #   ⇒ 公司更正月營收時舊值被靜默換掉。⇒ 覆蓋前逐列比對，差異寫進
+                #   `_changes.log`（走 mops.py 那唯一一份 `_log_changes`）；
+                #   ⛔ 新表列數掉到舊表 95% 以下 ⇒ 多半是官方一次壞回應 ⇒ 不覆蓋、記 fails。
+                old_txt = io.open(rp, encoding="utf-8").read() if os.path.exists(rp) else ""
+                old_n = max(len(old_txt.splitlines()) - 1, 0)
+                if old_n and len(out) < old_n * 0.95:
+                    fails.append(("revenue", per, mkt, f"⛔ 新表 {len(out)} 列 < 舊表 {old_n} 列的 95% ⇒ 不覆蓋"))
+                    time.sleep(a.sleep)
+                    continue
+                write_csv(rp, full, out)
+                if old_txt:
+                    import mops as _M
+                    _M._log_changes("revenue_hist", f"{per}_{market}.csv", old_txt,
+                                    io.open(rp, encoding="utf-8").read())
                 state.setdefault(("revenue", per, mkt), ("ok", note))
                 ok += 1
                 if ok % 24 == 0:
