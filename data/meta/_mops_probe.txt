@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-10-19T13:24:47+08:00（台北）｜ref main｜Actions｜run 39202455010
+# ⏱ 這一趟：2026-10-21T13:26:06+08:00（台北）｜ref main｜Actions｜run 39547654243
 # MOPS／OpenAPI 探針（丁級 11 終點驗證）
 # ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果
 
@@ -7,36 +7,36 @@
   ── [快照時戳] `出表日期` 有 1 個相異值：['1151017']
   ── [⭐ 批次日] `資料年月` 有 1 個相異值：['11509']
   ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。
-      ⏱ openapi t187ap05_L：2.1 秒（此時累計 2／690 秒）
+      ⏱ openapi t187ap05_L：1.8 秒（此時累計 2／690 秒）
 
 ── OpenAPI https://openapi.twse.com.tw/v1/opendata/t187ap05_O
   ⛔ 不是 JSON（JSONDecodeError）；前 200 bytes：b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml">\n<head>\n<meta http-equiv="Content-T'
-      ⏱ openapi t187ap05_O：1.4 秒（此時累計 3／690 秒）
+      ⏱ openapi t187ap05_O：1.2 秒（此時累計 3／690 秒）
 
 ── 清單 D2 候選：⭐ 上櫃每日重大訊息｜來源：我方 `_tpex_probe.txt` 第 67 行，⛔ 不是我拼的
 ── OpenAPI https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
-  ✓ 1 筆；第一筆的鍵 = ['CompanyName', 'Date', 'SecuritiesCompanyCode', '主旨', '事實發生日', '發言日期', '發言時間', '符合條款', '說明']
-  ── [快照時戳] `Date` 有 1 個相異值：['1151018']
-  ── [事件日｜⛔ 不回答涵蓋期間] `事實發生日` 有 1 個相異值：['1150624']
-  ── [⭐ 批次日] `發言日期` 有 1 個相異值：['1151017']
+  ✓ 59 筆；第一筆的鍵 = ['CompanyName', 'Date', 'SecuritiesCompanyCode', '主旨', '事實發生日', '發言日期', '發言時間', '符合條款', '說明']
+  ── [快照時戳] `Date` 有 1 個相異值：['1151020']
+  ── [事件日｜⛔ 不回答涵蓋期間] `事實發生日` 有 10 個相異值：['1150624', '1150908', '1151008', '1151014', '1151016', '1151019', '1151020', '1151021']…（最小 1150624｜最大 1151117）
+  ── [⭐ 批次日] `發言日期` 有 1 個相異值：['1151019']
   ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。　⚠ 而事件日 ['事實發生日'] 散在好幾期是**正常的**（一批單日的公告在講過去甚至未來的事）⇒ ⛔ 那不是歷史
-      ⏱ openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O：0.3 秒（此時累計 4／690 秒）
+      ⏱ openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O：2.2 秒（此時累計 5／690 秒）
 
 ── 清單 D2 候選：⚠ 上市的對應那條｜**這條是我依 `_O`／`_L` 慣例拼的** ⇒ 量得到才算
 ── OpenAPI https://openapi.twse.com.tw/v1/opendata/t187ap04_L
-  ✓ 4 筆；第一筆的鍵 = ['主旨 ', '事實發生日', '公司代號', '公司名稱', '出表日期', '發言日期', '發言時間', '符合條款', '說明']
-  ── [快照時戳] `出表日期` 有 1 個相異值：['1151019']
-  ── [事件日｜⛔ 不回答涵蓋期間] `事實發生日` 有 3 個相異值：['1150713', '1150824', '1151016']
-  ── [⭐ 批次日] `發言日期` 有 1 個相異值：['1151018']
+  ✓ 112 筆；第一筆的鍵 = ['主旨 ', '事實發生日', '公司代號', '公司名稱', '出表日期', '發言日期', '發言時間', '符合條款', '說明']
+  ── [快照時戳] `出表日期` 有 1 個相異值：['1151021']
+  ── [事件日｜⛔ 不回答涵蓋期間] `事實發生日` 有 12 個相異值：['1150515', '1150713', '1150824', '1151019', '1151020', '1151021', '1151023', '1151028']…（最小 1150515｜最大 1151116）
+  ── [⭐ 批次日] `發言日期` 有 1 個相異值：['1151020']
   ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。　⚠ 而事件日 ['事實發生日'] 散在好幾期是**正常的**（一批單日的公告在講過去甚至未來的事）⇒ ⛔ 那不是歷史
-      ⏱ openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L：0.6 秒（此時累計 4／690 秒）
+      ⏱ openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L：0.9 秒（此時累計 6／690 秒）
 
 ── 橋接 ajax_t21sc03（{'month': '01'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t21sc03 year=114 {'month': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:08:27
+      ── datetime：115/10/21 13:11:58
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -45,47 +45,47 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:08:47
+      ── datetime：115/10/21 13:12:11
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018…（blob 長 316）
     ⛔ 取舊站失敗：RemoteDisconnected: Remote end closed connection without response
   ⇒ **未驗**：至少一邊沒取回來 ⇒ ⛔ 不可以說這條路通了
-      ⏱ bridge ajax_t21sc03：35.2 秒（此時累計 39／690 秒）
+      ⏱ bridge ajax_t21sc03：27.2 秒（此時累計 33／690 秒）
 
 ── 橋接 ajax_t163sb04（{'season': '02'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=114 {'season': '02'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:09:02
+      ── datetime：115/10/21 13:12:27
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa8…（blob 長 317）
-    ✓ 取回 1,631,044 bytes
+    ✓ 取回 1,632,502 bytes
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=110 {'season': '02'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:11:09
+      ── datetime：115/10/21 13:13:44
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa8…（blob 長 317）
-    ✓ 取回 1,506,944 bytes
-  ⇒ year=114 取回 1,631,044 bytes；year=110 取回 1,506,944 bytes
-    [114] 中文 4,207 字｜<tr> 1100 個｜js 1 支｜（沒有查無字樣）
+    ✓ 取回 1,506,936 bytes
+  ⇒ year=114 取回 1,632,502 bytes；year=110 取回 1,506,936 bytes
+    [114] 中文 4,209 字｜<tr> 1101 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 上市公司第二季資料 註1：依證券交易法第36條及證券期貨局相關函令規定，財務報告申報期限如下： 1.一般行業申報期限：第一季為5月15日，第二季為8月14日，第三季為11月14日，年度為3月31日。 2.金控業申報期限：第一季為5月30日，第二季為8月31日，第三季為11月29日，年度為3月31日。 3
     [110] 中文 3,943 字｜<tr> 1019 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 上市公司第二季資料 註1：依證券交易法第36條及證券期貨局相關函令規定，財務報告申報期限如下： 1.一般行業申報期限：第一季為5月15日，第二季為8月14日，第三季為11月14日，年度為3月31日。 2.金控業申報期限：第一季為5月30日，第二季為8月31日，第三季為11月29日，年度為3月31日。 3
   ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
-      ⏱ bridge ajax_t163sb04：194.0 秒（此時累計 233／690 秒）
+      ⏱ bridge ajax_t163sb04：146.0 秒（此時累計 179／690 秒）
 
 ── 橋接 t05st01（{'month': '09', 'day': '01'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=t05st01 year=114 {'month': '09', 'day': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:12:16
+      ── datetime：115/10/21 13:14:54
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -94,7 +94,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:12:20
+      ── datetime：115/10/21 13:14:57
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a…（blob 長 311）
@@ -105,14 +105,14 @@
     [110] 中文 516 字｜<tr> 14 個｜js 5 支　⛔ **js 空殼**｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 --> 全站搜尋 營收 除權息 電子書 法說會 庫藏股 董監持股 獨立董事 董監酬金 ETF TDR 常用報表 基本資料 彙總報表 股東會及股利 公司治理 財務報表 重大訊息與公告 營運概況 投資專區 認購（售）權證 債券 資產證券化 西元日期+版次+程式設計師) 2026040810thomas:(T
   ⇒ ⚠⚠ **兩期都是 js 空殼**（框架回來了、資料是載入後由 js 取的）　⇒ ⛔ **不可判定**它有沒有歷史——這是「**我方取不到**」，跟 TDCC `qryStockAjax` 回 2 bytes、櫃買那三頁同一族，⛔ **不是**「官方沒有」，⛔ 也不是「期別參數被忽略」。
-      ⏱ bridge t05st01：5.3 秒（此時累計 239／690 秒）
+      ⏱ bridge t05st01：10.2 秒（此時累計 190／690 秒）
 
 ── ⭐ `t05st01` 的 js 去打誰（只挖線索，⛔ 不下結論）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=t05st01 year=114 {'month': '09', 'day': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:12:21
+      ── datetime：115/10/21 13:15:01
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -183,14 +183,14 @@
       ⑤  外部載入的 `.js`：0 支
               ⚠ 這一份裡**找不到** `getMsg`（⛔ 不是「它不存在」，是不在這一支）
               ⚠ 這一份裡**找不到** `AjaxCheck`（⛔ 不是「它不存在」，是不在這一支）
-      ⏱ xhr_hunt t05st01：33.1 秒（此時累計 272／690 秒）
+      ⏱ xhr_hunt t05st01：23.9 秒（此時累計 213／690 秒）
 
 ── 橋接 ajax_t05st01（{'month': '09', 'day': '01'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t05st01 year=114 {'month': '09', 'day': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:12:55
+      ── datetime：115/10/21 13:15:24
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -199,7 +199,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:12:58
+      ── datetime：115/10/21 13:15:27
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018…（blob 長 316）
@@ -210,14 +210,14 @@
     [110] 中文 25 字｜<tr> 0 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 未指定公司代號時，僅能查詢單日重大訊息
   ⇒ ⛔⛔ **兩期內容逐位元組完全相同，而且不是查無資料頁** ⇒ 期別參數被忽略，跟 `t164sb03` 同一種靜默失敗。**這條路不可用。**
-      ⏱ bridge ajax_t05st01（無代號）：40.7 秒（此時累計 313／690 秒）
+      ⏱ bridge ajax_t05st01（無代號）：4.7 秒（此時累計 218／690 秒）
 
 ── 橋接 ajax_t05st01（{'month': '09', 'day': '01', 'co_id': '2330'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t05st01 year=114 {'month': '09', 'day': '01', 'co_id': '2330'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:13:41
+      ── datetime：115/10/21 13:15:29
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93b88cefe844ab0e6f28e730962e78c2354a5cb05c8745ccaba27c38f21a9951a0ca051bcf3a87e1616802cd0e519685
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e…（blob 長 348）
@@ -226,7 +226,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:13:46
+      ── datetime：115/10/21 13:15:32
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13b88cefe844ab0e6f28e730962e78c2354a5cb05c8745ccaba27c38f21a9951a0ca051bcf3a87e1616802cd0e519685
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018…（blob 長 348）
@@ -237,7 +237,7 @@
     [110] 中文 396 字｜<tr> 16 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 本資料由 (上市公司) 2330 台積電 公司提供 請至財務及交易資訊重點專區參考公司相關 財務資訊 及 交易資訊 公司代號 公司名稱 發言日期 發言時間 主旨 &nbsp; &nbsp;2330 &nbsp;台積電 &nbsp;110/09/01 &nbsp;16:08:03 &nbsp;本公司將參加
   ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
-      ⏱ bridge ajax_t05st01（帶代號）：12.0 秒（此時累計 325／690 秒）
+      ⏱ bridge ajax_t05st01（帶代號）：8.7 秒（此時累計 227／690 秒）
 
       ── ⭐⭐ 只做這一發：ajax_t05st01 吃不吃 `sdate`／`edate` 區間
 ── 橋接 ajax_t05st01（{'sdate': '0901', 'edate': '0910', 'co_id': '2330'}）
@@ -245,7 +245,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:13:48
+      ── datetime：115/10/21 13:15:38
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e23d1b3e3b8ef03c71d9a039d80720cfd43bf1c65bd3c5eab7324a774f3c9db09762ada20dc068e1bca88947e765c37448b4afa81caedbae6ad2b2cc9fb052c05
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e23d1b3e3b8ef03c71d9a039d807…（blob 長 380）
@@ -254,7 +254,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/10/19 13:16:04
+      ── datetime：115/10/21 13:15:52
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e25b3cd17ae0c90a4b2c3f6667521169913bf1c65bd3c5eab7324a774f3c9db09762ada20dc068e1bca88947e765c37448b4afa81caedbae6ad2b2cc9fb052c05
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e25b3cd17ae0c90a4b2c3f666752…（blob 長 380）
@@ -265,7 +265,7 @@
     [110] 中文 5,935 字｜<tr> 235 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 本資料由 (上市公司) 2330 台積電 公司提供 請至財務及交易資訊重點專區參考公司相關 財務資訊 及 交易資訊 公司代號 公司名稱 發言日期 發言時間 主旨 &nbsp; &nbsp;2330 &nbsp;台積電 &nbsp;110/01/04 &nbsp;16:39:32 &nbsp;公告本公司1
   ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
-      ⏱ bridge ajax_t05st01（sdate/edate 區間）：150.6 秒（此時累計 475／690 秒）
+      ⏱ bridge ajax_t05st01（sdate/edate 區間）：25.5 秒（此時累計 252／690 秒）
 
 ── ⭐ 清單 D2 新入口：公開資訊觀測站**公告快易查** `ezsearch`
    https://mopsov.twse.com.tw/mops/web/ezsearch
@@ -352,16 +352,16 @@
            SUBJECT：284 種｜最小 (更正舉辦單位)受邀參加第一金證券舉辦之2026第三季投資論壇｜最大 玉山金控受邀參加Goldman Sachs舉辦Asia Leaders Conference｜例 ['(更正舉辦單位)受邀參加第一金證券舉辦之2026第三季投資論壇', '110年11月法人說明會簡報', '111年11月法人說明會簡報']
            TYPEK：1 種 上市×1000
       ── step=01｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
-         [形狀] 3,581 bytes｜中文 253 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"system_time":"13:10","data":[{"COMPANY_NAME":"東元","CDATE":"115/10/19","CTIME":"11:33:10","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=113310&SPOKE_DATE=20261019&COMPANY_ID=1504","SUBJECT":"說明媒體報導","COMPANY_ID":"1504"},{"COMPANY_NAM
+         [形狀] 3,544 bytes｜中文 261 字｜<tr> 0 個｜js 0 支
+         ⭐ 前 300 字：﻿ {"system_time":"13:10","data":[{"COMPANY_NAME":"寶碩","CDATE":"115/10/21","CTIME":"11:47:53","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=114753&SPOKE_DATE=20261021&COMPANY_ID=5210","SUBJECT":"有關媒體報導本公司綠能案件說明","COMPANY_ID":"5210"},{"CO
          ⭐ `data` **10 列**｜欄名 ['CDATE', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT']
          ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           CDATE：2 種 115/10/19×7、115/10/18×3
-           COMPANY_ID：9 種 3701×2、1504×1、4137×1、6923×1、6603×1、2072×1、4747×1、6949×1、4157×1
-           COMPANY_NAME：9 種 大眾控×2、東元×1、麗豐-KY×1、中台×1、富強鑫×1、世紀風電×1、強生*×1、沛爾生醫*-創×1、太景*-KY×1
-           CTIME：8 種 07:00:03×3、11:33:10×1、10:27:55×1、10:13:58×1、10:03:24×1、21:07:46×1、21:07:23×1、14:52:45×1
-           HYPERLINK：10 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=113310&SPOKE_DATE=20261019&COMPANY_ID=1504×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=102755&SPOKE_DATE=20261019&COMPANY_ID=4137×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=101358&SPOKE_DATE=20261019&COMPANY_ID=6923×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=100324&SPOKE_DATE=20261019&COMPANY_ID=6603×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70003&SPOKE_DATE=20261019&COMPANY_ID=2072×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70003&SPOKE_DATE=20261019&COMPANY_ID=4747×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70003&SPOKE_DATE=20261019&COMPANY_ID=6949×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=210746&SPOKE_DATE=20261018&COMPANY_ID=3701×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=210723&SPOKE_DATE=20261018&COMPANY_ID=3701×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=145245&SPOKE_DATE=20261018&COMPANY_ID=4157×1
-           SUBJECT：10 種 說明媒體報導×1、澄清媒體報導×1、中台-澄清媒體報導×1、澄清媒體之報導×1、公告本公司名稱由「世紀離岸風電設備股份有限公司」更名為「世紀能源設備股份有限公司」，公告期間：115年8月26日至115年11月25日。×1、公告本公司股票面額由「新台幣10元」變更為「新台幣5元」公告期間：115年7月22日至115年10月21日×1、公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」，公告期間：115年08月06日至115年11月05日。×1、代子公司 PRO3C (Malaysia) Sdn. Bhd.公告與Cape EMS Berhad 簽署RCPS協議×1、代子公司 PRO3C (Malaysia) Sdn. Bhd.公告與Cape EMS Berhad 簽署策略合作備忘錄（MOA）×1、公告本公司接獲越南合作夥伴Fideschem Inc.通知已遞交太捷信(奈諾沙星)口服膠囊及靜脈輸液新藥上市許可申請(NDA)，並獲越南藥品管理局（DAV）正式受理。×1
+           CDATE：2 種 115/10/21×6、115/10/20×4
+           COMPANY_ID：9 種 2236×2、5210×1、2514×1、6242×1、2072×1、4747×1、6949×1、6908×1、8277×1
+           COMPANY_NAME：9 種 百達-KY×2、寶碩×1、龍邦×1、立康×1、世紀風電×1、強生*×1、沛爾生醫*-創×1、宏碁遊戲-創×1、商丞×1
+           CTIME：8 種 07:00:04×3、11:47:53×1、09:49:43×1、09:04:22×1、23:30:15×1、21:50:13×1、21:49:59×1、21:46:08×1
+           HYPERLINK：10 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=114753&SPOKE_DATE=20261021&COMPANY_ID=5210×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=94943&SPOKE_DATE=20261021&COMPANY_ID=2514×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=90422&SPOKE_DATE=20261021&COMPANY_ID=6242×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261021&COMPANY_ID=2072×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261021&COMPANY_ID=4747×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261021&COMPANY_ID=6949×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=233015&SPOKE_DATE=20261020&COMPANY_ID=6908×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=3&SPOKE_TIME=215013&SPOKE_DATE=20261020&COMPANY_ID=2236×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=214959&SPOKE_DATE=20261020&COMPANY_ID=2236×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=214608&SPOKE_DATE=20261020&COMPANY_ID=8277×1
+           SUBJECT：10 種 有關媒體報導本公司綠能案件說明×1、本公司受邀參加元大證券舉辦之線上法人說明會×1、本公司接獲消費者反映疑似個資外洩事件×1、公告本公司名稱由「世紀離岸風電設備股份有限公司」更名為「世紀能源設備股份有限公司」，公告期間：115年8月26日至115年11月25日。×1、公告本公司股票面額由「新台幣10元」變更為「新台幣5元」公告期間：115年7月22日至115年10月21日×1、公告本公司股票面額由「新台幣10元」變更為「新台幣0.5元」，公告期間：115年08月06日至115年11月05日。×1、代子公司Winking Studios Limited公告庫藏股執行情形×1、代重要子公司 BIGL ASIA PTE. LTD. 公告發放股利決議×1、代重要子公司Broadway Industrial Group Limited公告發放股利決議×1、公告本公司董事長兼總經理配合檢調單位調查事宜×1
       ── step=02｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
          [形狀] 41,534 bytes｜中文 640 字｜<tr> 0 個｜js 0 支
          ⭐ 前 300 字：﻿ 公司現況及股權變動 E01 公開說明書 F01 公司基本資料 F02 募資計畫 F03 變更登記 F04 特別股 F07 員工認股權憑證 F08 員工認股權憑證執行情形 F09 限制員工權利新股 F10 僑外投資持股 F11 庫藏股基本資料 F12 庫藏股買回情形 F13 庫藏股執行結果 M11 發行有價證券、減資、併購或股份轉交換 M35 庫藏股 M36 減資或面額異動 M40 暫停/恢復交易 M42 終止上市 重大交易、合約及投資 F37 公開收購說明書 M10 重要契約或產品開發 M15 重大投資計畫 M20 重大取得或處分資產 M24 取得或處分私募證券 M38 公開收購 重大訊息
@@ -521,243 +521,9 @@
 
       ── ③b 真的跑一次**遞迴切分**（對象：上面那個「半個月還是撞」的窗）
       ── 遞迴第 1 發｜20260301~20260315
-         [形狀] 408,367 bytes｜中文 21,813 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/15","COMPANY_NAME":"威宏-KY","AN_NAME":"資產負債表","CODE_NAME":"其他","AN_CODE":"F26","CTIME":"23:36:37","TYPEK":"上市","SUBJECT":"114年第4季資產負債表","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t164sb03?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&check
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：12 種 E02×158、F26×95、F27×90、F28×89、F29×89、F30×89、F32×89、F33×89、F34×89、F31×70、M31×49、F35×4
-           AN_NAME：12 種 財務報告書×158、資產負債表×95、綜合損益表×90、現金流量表×89、權益變動表×89、營益分析×89、毛利率×89、存貨週轉率×89、應收帳款週轉率×89、財務比率×70、董事會決議財務報告/自結財務資訊×49、法人說明會簡報×4
-           CDATE：3 種 115/03/13×469、115/03/15×282、115/03/14×249
-           CODE_NAME：27 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：58 種｜最小 1295｜最大 9931｜例 ['1295', '1313', '1456']
-           COMPANY_NAME：58 種｜最小 中裕｜最大 鴻呈｜例 ['中裕', '五福', '亞泰']
-           CTIME：77 種｜最小 02:30:58｜最大 23:39:15｜例 ['02:30:58', '08:49:28', '09:14:10']｜⚠ 空的 4
-           HYPERLINK：191 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8477&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2745&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3303&year=114&seamon=&mtype=A&']
-           SUBJECT：18 種｜最小 (更正公告)公告本公司114年度合併財務報告業經提報
-董事會通過(更正原因：審計委員會通過日期誤植
-114/03/13，更正為115/03/13)｜最大 公告本公司董事會通過114年度自結財務資訊｜例 ['(更正公告)公告本公司114年度合併財務報告業經提報\r\n董事會通過(更正原因：審計委員會通過日期誤植\r\n114/03/13，更正為115/03/13)', '114年度存貨週轉率', '114年度應收帳款周轉率']
-           TYPEK：2 種 上櫃×610、上市×390
-      ── 遞迴第 2 發｜20260301~20260308
-         [形狀] 420,283 bytes｜中文 26,643 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/08","COMPANY_NAME":"桓鼎-KY","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"建材營造","AN_CODE":"M31","CTIME":"23:29:18","TYPEK":"上櫃","SUBJECT":"公告本公司114年度合併財務報告董事會召開日期","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=232
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：15 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：15 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：3 種 115/03/06×943、115/03/08×39、115/03/07×18
-           CODE_NAME：27 種｜最小 光電業｜最大 電腦及週邊設備業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：76 種｜最小 1323｜最大 9917｜例 ['1323', '1442', '1473']
-           COMPANY_NAME：76 種｜最小 GIS-KY｜最大 麗嬰房｜例 ['GIS-KY', '上奇', '世芯-KY']
-           CTIME：102 種｜最小 08:07:48｜最大 23:29:18｜例 ['08:07:48', '08:08:41', '08:28:15']
-           HYPERLINK：205 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2536&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8481&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2536&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3557&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6153&year=114&seamon=&mtype=A&']
-           SUBJECT：48 種｜最小 114年度存貨週轉率｜最大 通過本公司一一四年第四季財務報告｜例 ['114年度存貨週轉率', '114年度應收帳款周轉率', '114年度毛利率']
-           TYPEK：2 種 上市×702、上櫃×298
-      ── 遞迴第 3 發｜20260301~20260304
-         [形狀] 428,618 bytes｜中文 29,740 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/04","COMPANY_NAME":"雙美","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"生技醫療業","AN_CODE":"M31","CTIME":"23:06:15","TYPEK":"上櫃","SUBJECT":"公告本公司114年度財務報告董事會召開日期。","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=230615
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：14 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：14 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/04×1000
-           CODE_NAME：31 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：91 種｜最小 1219｜最大 8996｜例 ['1219', '1225', '1259']
-           COMPANY_NAME：91 種｜最小 GOGOLOOK｜最大 鼎元｜例 ['GOGOLOOK', 'IET-KY', '中湛']
-           CTIME：109 種｜最小 17:45:11｜最大 23:06:15｜例 ['17:45:11', '17:46:36', '17:46:56']
-           HYPERLINK：212 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6902&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8454&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6902&year=114&seamon=&mtype=A&', 'https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=174636&SPOKE_DATE=20260304&COMPANY_ID=2718', 'https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=174846&SPOKE_DATE=20260304&COMPANY_ID=1784']
-           SUBJECT：73 種｜最小 114年度存貨週轉率｜最大 配合會計師事務所內部人員輪調，更換會計師｜例 ['114年度存貨週轉率', '114年度應收帳款周轉率', '114年度毛利率']
-           TYPEK：2 種 上市×563、上櫃×437
-      ── 遞迴第 4 發｜20260301~20260302
-         [形狀] 436,855 bytes｜中文 36,933 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/02","COMPANY_NAME":"智捷","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"通信網路業","AN_CODE":"M31","CTIME":"22:12:34","TYPEK":"上櫃","SUBJECT":"公告本公司114年第四季合併財務報告業經董事會決議通過","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=2
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：15 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：15 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/02×1000
-           CODE_NAME：33 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：137 種｜最小 1102｜最大 9958｜例 ['1102', '1256', '1308']
-           COMPANY_NAME：137 種｜最小 LINEPAY｜最大 麗豐-KY｜例 ['LINEPAY', '一詮', '三地開發']
-           CTIME：154 種｜最小 17:08:28｜最大 22:12:34｜例 ['17:08:28', '17:08:31', '17:08:53']
-           HYPERLINK：212 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2480&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=7892&year=114&season=2｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2480&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2528&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3141&year=114&seamon=&mtype=A&']
-           SUBJECT：112 種｜最小 114年度個體暨合併財務報告董事會預計召開日期為115年03月10日｜最大 遠東商銀董事會通過114年度合併財務報告｜例 ['114年度個體暨合併財務報告董事會預計召開日期為115年03月10日', '114年度存貨週轉率', '114年度應收帳款周轉率']
-           TYPEK：2 種 上市×615、上櫃×385
-      ── 遞迴第 5 發｜20260303~20260304
-         [形狀] 428,618 bytes｜中文 29,740 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/04","COMPANY_NAME":"雙美","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"生技醫療業","AN_CODE":"M31","CTIME":"23:06:15","TYPEK":"上櫃","SUBJECT":"公告本公司114年度財務報告董事會召開日期。","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=230615
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：14 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：14 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/04×1000
-           CODE_NAME：31 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：91 種｜最小 1219｜最大 8996｜例 ['1219', '1225', '1259']
-           COMPANY_NAME：91 種｜最小 GOGOLOOK｜最大 鼎元｜例 ['GOGOLOOK', 'IET-KY', '中湛']
-           CTIME：109 種｜最小 17:45:11｜最大 23:06:15｜例 ['17:45:11', '17:46:36', '17:46:56']
-           HYPERLINK：212 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6902&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8454&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6902&year=114&seamon=&mtype=A&', 'https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=174636&SPOKE_DATE=20260304&COMPANY_ID=2718', 'https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=174846&SPOKE_DATE=20260304&COMPANY_ID=1784']
-           SUBJECT：73 種｜最小 114年度存貨週轉率｜最大 配合會計師事務所內部人員輪調，更換會計師｜例 ['114年度存貨週轉率', '114年度應收帳款周轉率', '114年度毛利率']
-           TYPEK：2 種 上市×563、上櫃×437
-      ── 遞迴第 6 發｜20260305~20260308
-         [形狀] 420,283 bytes｜中文 26,643 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/08","COMPANY_NAME":"桓鼎-KY","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"建材營造","AN_CODE":"M31","CTIME":"23:29:18","TYPEK":"上櫃","SUBJECT":"公告本公司114年度合併財務報告董事會召開日期","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=232
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：15 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：15 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：3 種 115/03/06×943、115/03/08×39、115/03/07×18
-           CODE_NAME：27 種｜最小 光電業｜最大 電腦及週邊設備業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：76 種｜最小 1323｜最大 9917｜例 ['1323', '1442', '1473']
-           COMPANY_NAME：76 種｜最小 GIS-KY｜最大 麗嬰房｜例 ['GIS-KY', '上奇', '世芯-KY']
-           CTIME：102 種｜最小 08:07:48｜最大 23:29:18｜例 ['08:07:48', '08:08:41', '08:28:15']
-           HYPERLINK：205 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2536&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8481&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2536&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3557&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6153&year=114&seamon=&mtype=A&']
-           SUBJECT：48 種｜最小 114年度存貨週轉率｜最大 通過本公司一一四年第四季財務報告｜例 ['114年度存貨週轉率', '114年度應收帳款周轉率', '114年度毛利率']
-           TYPEK：2 種 上市×702、上櫃×298
-      ── 遞迴第 7 發｜20260305~20260306
-         [形狀] 420,368 bytes｜中文 25,810 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/06","COMPANY_NAME":"光聚晶電","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"文化創意業","AN_CODE":"M31","CTIME":"23:27:14","TYPEK":"上櫃","SUBJECT":"公告本公司114年第四季自結財務報告董事會召開日期","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=2
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：15 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：15 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/06×1000
-           CODE_NAME：27 種｜最小 光電業｜最大 電腦及週邊設備業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：70 種｜最小 1323｜最大 9917｜例 ['1323', '1442', '1473']
-           COMPANY_NAME：70 種｜最小 GIS-KY｜最大 鴻海｜例 ['GIS-KY', '上奇', '世芯-KY']
-           CTIME：95 種｜最小 17:36:24｜最大 23:27:14｜例 ['17:36:24', '17:37:56', '17:39:02']
-           HYPERLINK：210 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2536&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8481&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2536&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6153&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=6263&year=114&seamon=&mtype=A&']
-           SUBJECT：44 種｜最小 114年度存貨週轉率｜最大 通過本公司一一四年第四季財務報告｜例 ['114年度存貨週轉率', '114年度應收帳款周轉率', '114年度毛利率']
-           TYPEK：2 種 上市×703、上櫃×297
-      ── 遞迴第 8 發｜20260307~20260308
-         [形狀] 23,876 bytes｜中文 2,198 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/08","COMPANY_NAME":"桓鼎-KY","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"建材營造","AN_CODE":"M31","CTIME":"23:29:18","TYPEK":"上櫃","SUBJECT":"公告本公司114年度合併財務報告董事會召開日期","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=232
-         ⭐ `data` **57 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：4 種 M31×38、F35×9、E02×6、M12×4
-           AN_NAME：4 種 董事會決議財務報告/自結財務資訊×38、法人說明會簡報×9、財務報告書×6、召開法人說明會×4
-           CDATE：2 種 115/03/08×39、115/03/07×18
-           CODE_NAME：10 種 電機機械×12、生技醫療業×8、其他電子業×8、建材營造×6、居家生活×6、半導體業×5、貿易百貨×4、電子通路業×4、其他×2、通訊網路×2
-           COMPANY_ID：10 種 2317×8、1589×7、5381×7、5543×6、3557×6、6796×5、3041×5、4169×5、2911×4、8084×4
-           COMPANY_NAME：10 種 鴻海×8、永冠-KY×7、光譜×7、桓鼎-KY×6、嘉威×6、晉弘×5、揚智×5、泰宗×5、麗嬰房×4、巨虹×4
-           CTIME：12 種 23:08:01×7、15:09:50×7、23:29:18×6、19:38:09×5、18:05:14×5、08:28:15×5、20:25:01×4、16:53:48×4、08:08:41×4、08:07:48×4、12:15:00×3、12:14:31×3
-           HYPERLINK：11 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=230801&SPOKE_DATE=20260308&COMPANY_ID=1589×7、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=150950&SPOKE_DATE=20260307&COMPANY_ID=5381×7、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=232918&SPOKE_DATE=20260308&COMPANY_ID=5543×6、https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3557&year=114&seamon=&mtype=A&×6、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=193809&SPOKE_DATE=20260308&COMPANY_ID=6796×5、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=180514&SPOKE_DATE=20260308&COMPANY_ID=3041×5、https://mopsov.twse.com.tw/mops/web/ajax_t100sb02_1?encodeURIComponent=1&step=1&firstin=1&off=1&TYPEK=all&co_id=4169&year=115&month=03×5、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=202501&SPOKE_DATE=20260308&COMPANY_ID=2911×4、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=165348&SPOKE_DATE=20260308&COMPANY_ID=8084×4、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=80841&SPOKE_DATE=20260308&COMPANY_ID=2317×4、https://mopsov.twse.com.tw/mops/web/ajax_t100sb02_1?encodeURIComponent=1&step=1&firstin=1&off=1&TYPEK=all&co_id=2317&year=115&month=03×4
-           SUBJECT：9 種 公告本公司114年第四季自結財務報告董事會召開日期×12、115年03月法人說明會簡報×9、公告本公司114年度自結合併財務資訊董事會召開日期×7、公告本公司114年度合併財務報告董事會召開日期×6、114年第4季財務報告書×6、公告本公司114年度財務報告董事會預計召開日期
-為115年3月16日×5、公告本公司114年度自結合併財務資訊董事會召開日期為
-115年3月16日×4、公告本公司114年第4季財務報告董事會預計召開日期×4、公告本公司參與投資人說明會×4
-           TYPEK：2 種 上市×40、上櫃×17
-      ── 遞迴第 9 發｜20260309~20260315
-         [形狀] 408,367 bytes｜中文 21,813 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/15","COMPANY_NAME":"威宏-KY","AN_NAME":"資產負債表","CODE_NAME":"其他","AN_CODE":"F26","CTIME":"23:36:37","TYPEK":"上市","SUBJECT":"114年第4季資產負債表","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t164sb03?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&check
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：12 種 E02×158、F26×95、F27×90、F28×89、F29×89、F30×89、F32×89、F33×89、F34×89、F31×70、M31×49、F35×4
-           AN_NAME：12 種 財務報告書×158、資產負債表×95、綜合損益表×90、現金流量表×89、權益變動表×89、營益分析×89、毛利率×89、存貨週轉率×89、應收帳款週轉率×89、財務比率×70、董事會決議財務報告/自結財務資訊×49、法人說明會簡報×4
-           CDATE：3 種 115/03/13×469、115/03/15×282、115/03/14×249
-           CODE_NAME：27 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：58 種｜最小 1295｜最大 9931｜例 ['1295', '1313', '1456']
-           COMPANY_NAME：58 種｜最小 中裕｜最大 鴻呈｜例 ['中裕', '五福', '亞泰']
-           CTIME：77 種｜最小 02:30:58｜最大 23:39:15｜例 ['02:30:58', '08:49:28', '09:14:10']｜⚠ 空的 4
-           HYPERLINK：191 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8477&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2745&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3303&year=114&seamon=&mtype=A&']
-           SUBJECT：18 種｜最小 (更正公告)公告本公司114年度合併財務報告業經提報
-董事會通過(更正原因：審計委員會通過日期誤植
-114/03/13，更正為115/03/13)｜最大 公告本公司董事會通過114年度自結財務資訊｜例 ['(更正公告)公告本公司114年度合併財務報告業經提報\r\n董事會通過(更正原因：審計委員會通過日期誤植\r\n114/03/13，更正為115/03/13)', '114年度存貨週轉率', '114年度應收帳款周轉率']
-           TYPEK：2 種 上櫃×610、上市×390
-      ── 遞迴第 10 發｜20260309~20260312
-         [形狀] 405,056 bytes｜中文 24,121 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/12","COMPANY_NAME":"矽力*-KY","AN_NAME":"財務比率","CODE_NAME":"半導體業","AN_CODE":"F31","CTIME":"23:42:03","TYPEK":"上市","SUBJECT":"114年度財務比率","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05st22?encodeURIComponent=1&run=Y&step=1&isnew=false&firstin=1&off=1&ifrs=Y&co_id=6
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：14 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：14 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/12×1000
-           CODE_NAME：24 種｜最小 光電業｜最大 電腦及週邊設備業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：78 種｜最小 1340｜最大 9944｜例 ['1340', '1504', '1536']
-           COMPANY_NAME：78 種｜最小 IET-KY｜最大 鴻準｜例 ['IET-KY', '上福', '世禾']
-           CTIME：102 種｜最小 18:36:41｜最大 23:42:03｜例 ['18:36:41', '18:36:57', '18:39:18']
-           HYPERLINK：189 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3147&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=9939&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3147&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3290&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3467&year=114&seamon=&mtype=A&']
-           SUBJECT：33 種｜最小 (更正連結)本公司受邀參加摩根士丹利舉辦之中文線上法人座談會｜最大 本公司民國114年度合併財務報告業經董事會決議通過｜例 ['(更正連結)本公司受邀參加摩根士丹利舉辦之中文線上法人座談會', '114年度存貨週轉率', '114年度應收帳款周轉率']
-           TYPEK：2 種 上市×505、上櫃×495
-      ── 遞迴第 11 發｜20260309~20260310
-         [形狀] 424,159 bytes｜中文 25,918 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/10","COMPANY_NAME":"協易機","AN_NAME":"董事會決議財務報告/自結財務資訊","CODE_NAME":"電機機械","AN_CODE":"M31","CTIME":"23:18:51","TYPEK":"上櫃","SUBJECT":"公告本公司董事會通過114年第4季合併財務報告","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=23185
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：14 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：14 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/10×1000
-           CODE_NAME：25 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：64 種｜最小 1104｜最大 9933｜例 ['1104', '1264', '1326']
-           COMPANY_NAME：64 種｜最小 中磊｜最大 邑錡｜例 ['中磊', '中鼎', '久威']
-           CTIME：87 種｜最小 18:28:17｜最大 23:18:51｜例 ['18:28:17', '18:28:53', '18:30:03']
-           HYPERLINK：225 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=1326&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=7821&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=1326&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2355&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3558&year=114&seamon=&mtype=A&']
-           SUBJECT：41 種｜最小 (更正115年02月25日公告)公告本公司114年度自結財務資訊
-董事會預計召開日期為115年03月05日｜最大 董事會決議通過一一四年度合併財務報告｜例 ['(更正115年02月25日公告)公告本公司114年度自結財務資訊\r\n董事會預計召開日期為115年03月05日', '(更正115年03月05日公告)公告本公司董事會通過\r\n114年度自結合併財務資訊', '114年度存貨週轉率']
-           TYPEK：2 種 上市×753、上櫃×247
-      ── 遞迴第 12 發｜20260311~20260312
-         [形狀] 405,056 bytes｜中文 24,121 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/12","COMPANY_NAME":"矽力*-KY","AN_NAME":"財務比率","CODE_NAME":"半導體業","AN_CODE":"F31","CTIME":"23:42:03","TYPEK":"上市","SUBJECT":"114年度財務比率","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05st22?encodeURIComponent=1&run=Y&step=1&isnew=false&firstin=1&off=1&ifrs=Y&co_id=6
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：14 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：14 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：1 種 115/03/12×1000
-           CODE_NAME：24 種｜最小 光電業｜最大 電腦及週邊設備業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：78 種｜最小 1340｜最大 9944｜例 ['1340', '1504', '1536']
-           COMPANY_NAME：78 種｜最小 IET-KY｜最大 鴻準｜例 ['IET-KY', '上福', '世禾']
-           CTIME：102 種｜最小 18:36:41｜最大 23:42:03｜例 ['18:36:41', '18:36:57', '18:39:18']
-           HYPERLINK：189 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3147&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=9939&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3147&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3290&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3467&year=114&seamon=&mtype=A&']
-           SUBJECT：33 種｜最小 (更正連結)本公司受邀參加摩根士丹利舉辦之中文線上法人座談會｜最大 本公司民國114年度合併財務報告業經董事會決議通過｜例 ['(更正連結)本公司受邀參加摩根士丹利舉辦之中文線上法人座談會', '114年度存貨週轉率', '114年度應收帳款周轉率']
-           TYPEK：2 種 上市×505、上櫃×495
-      ── 遞迴第 13 發｜20260313~20260315
-         [形狀] 408,367 bytes｜中文 21,813 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/15","COMPANY_NAME":"威宏-KY","AN_NAME":"資產負債表","CODE_NAME":"其他","AN_CODE":"F26","CTIME":"23:36:37","TYPEK":"上市","SUBJECT":"114年第4季資產負債表","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t164sb03?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&check
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：12 種 E02×158、F26×95、F27×90、F28×89、F29×89、F30×89、F32×89、F33×89、F34×89、F31×70、M31×49、F35×4
-           AN_NAME：12 種 財務報告書×158、資產負債表×95、綜合損益表×90、現金流量表×89、權益變動表×89、營益分析×89、毛利率×89、存貨週轉率×89、應收帳款週轉率×89、財務比率×70、董事會決議財務報告/自結財務資訊×49、法人說明會簡報×4
-           CDATE：3 種 115/03/13×469、115/03/15×282、115/03/14×249
-           CODE_NAME：27 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：58 種｜最小 1295｜最大 9931｜例 ['1295', '1313', '1456']
-           COMPANY_NAME：58 種｜最小 中裕｜最大 鴻呈｜例 ['中裕', '五福', '亞泰']
-           CTIME：77 種｜最小 02:30:58｜最大 23:39:15｜例 ['02:30:58', '08:49:28', '09:14:10']｜⚠ 空的 4
-           HYPERLINK：191 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8477&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2745&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3303&year=114&seamon=&mtype=A&']
-           SUBJECT：18 種｜最小 (更正公告)公告本公司114年度合併財務報告業經提報
-董事會通過(更正原因：審計委員會通過日期誤植
-114/03/13，更正為115/03/13)｜最大 公告本公司董事會通過114年度自結財務資訊｜例 ['(更正公告)公告本公司114年度合併財務報告業經提報\r\n董事會通過(更正原因：審計委員會通過日期誤植\r\n114/03/13，更正為115/03/13)', '114年度存貨週轉率', '114年度應收帳款周轉率']
-           TYPEK：2 種 上櫃×610、上市×390
-      ── 遞迴第 14 發｜20260313~20260314
-         [形狀] 416,576 bytes｜中文 22,497 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/14","COMPANY_NAME":"華經","AN_NAME":"財務比率","CODE_NAME":"資訊服務業","AN_CODE":"F31","CTIME":"18:03:32","TYPEK":"上市","SUBJECT":"114年度財務比率","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05st22?encodeURIComponent=1&run=Y&step=1&isnew=false&firstin=1&off=1&ifrs=Y&co_id=2468
-         ⭐ `data` **1,000 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：14 種｜最小 E02｜最大 M31｜例 ['E02', 'F26', 'F27']
-           AN_NAME：14 種｜最小 召開法人說明會｜最大 資產負債表｜例 ['召開法人說明會', '存貨週轉率', '應收帳款週轉率']
-           CDATE：2 種 115/03/13×751、115/03/14×249
-           CODE_NAME：26 種｜最小 光電業｜最大 食品工業｜例 ['光電業', '其他', '其他電子業']
-           COMPANY_ID：53 種｜最小 1295｜最大 8941｜例 ['1295', '1304', '1313']
-           COMPANY_NAME：53 種｜最小 中信金｜最大 鴻呈｜例 ['中信金', '中裕', '亞泰']
-           CTIME：69 種｜最小 08:49:28｜最大 23:39:15｜例 ['08:49:28', '09:14:10', '10:56:49']｜⚠ 空的 4
-           HYPERLINK：195 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=4147&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8105&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=4147&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=4432&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=4974&year=114&seamon=&mtype=A&']
-           SUBJECT：53 種｜最小 (更正公告)公告本公司114年度合併財務報告業經提報
-董事會通過(更正原因：審計委員會通過日期誤植
-114/03/13，更正為115/03/13)｜最大 公告本公司董事會通過114年度自結合併財務資訊｜例 ['(更正公告)公告本公司114年度合併財務報告業經提報\r\n董事會通過(更正原因：審計委員會通過日期誤植\r\n114/03/13，更正為115/03/13)', '112年度存貨週轉率', '112年度應收帳款周轉率']
-           TYPEK：2 種 上櫃×695、上市×305
-      ── 遞迴第 15 發｜20260315~20260315
-         [形狀] 112,108 bytes｜中文 6,078 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"data":[{"CDATE":"115/03/15","COMPANY_NAME":"威宏-KY","AN_NAME":"資產負債表","CODE_NAME":"其他","AN_CODE":"F26","CTIME":"23:36:37","TYPEK":"上市","SUBJECT":"114年第4季資產負債表","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t164sb03?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&check
-         ⭐ `data` **282 列**｜欄名 ['AN_CODE', 'AN_NAME', 'CDATE', 'CODE_NAME', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT', 'TYPEK']
-         ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           AN_CODE：10 種 E02×90、F26×23、F27×23、F28×23、F29×23、F30×23、F32×23、F33×23、F34×23、M31×8
-           AN_NAME：10 種 財務報告書×90、資產負債表×23、綜合損益表×23、現金流量表×23、權益變動表×23、營益分析×23、毛利率×23、存貨週轉率×23、應收帳款週轉率×23、董事會決議財務報告/自結財務資訊×8
-           CDATE：1 種 115/03/15×282
-           CODE_NAME：12 種 生技醫療業×64、其他×54、數位雲端×36、電子零組件業×36、通訊網路×16、觀光餐旅×12、其他電子業×12、建材營造×12、通信網路業×12、航運業×12、油電燃氣業×10、居家生活×6
-           COMPANY_ID：18 種｜最小 1795｜最大 9931｜例 ['1795', '2603', '2745']
-           COMPANY_NAME：18 種｜最小 五福｜最大 長榮｜例 ['五福', '創業家', '力泰']
-           CTIME：27 種｜最小 02:30:58｜最大 23:36:37｜例 ['02:30:58', '09:30:58', '13:26:24']
-           HYPERLINK：53 種｜最小 https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&｜最大 https://mopsov.twse.com.tw/mops/web/ajax_t164sb06?encodeURIComponent=1&step=1&firstin=1&off=1&keyword4=&code1=&TYPEK2=&checkbtn=&queryName=co_id&inpuType=co_id&TYPEK=all&isnew=false&co_id=8477&year=114&season=4｜例 ['https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2603&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=2745&year=114&seamon=&mtype=A&', 'https://doc.twse.com.tw/server-java/t57sb01?step=1&colorchg=1&co_id=3303&year=114&seamon=&mtype=A&']
-           SUBJECT：11 種 114年第4季財務報告書×90、114年第4季資產負債表×23、114年第4季綜合損益表×23、114年第4季現金流量表×23、114年第4季權益變動表×23、114年度營益分析×23、114年度毛利率×23、114年度存貨週轉率×23、114年度應收帳款周轉率×23、公告本公司董事會通過114年度自結財務資訊×4、公告本公司董事會通過114年度合併財務報告×4
-           TYPEK：2 種 上市×158、上櫃×124
-         ⇒ 共 15 發、切出 8 段、合計 **6,339 列**
-         ⛔⛔ 其中 6 段**切到底還是撞頂**（[('20260301', '20260302'), ('20260303', '20260304'), ('20260305', '20260306'), ('20260309', '20260310'), ('20260311', '20260312'), ('20260313', '20260314')]）　⇒ ⚠ 這幾段底下可能還有漏掉的列，深度或 cap 之外沒有別的辦法看到——遞迴只能保證「切得到的那幾段」乾淨
+         ⛔ 取不回來：URLError: <urlopen error timed out>（重試 2 次都失敗）　⇒ 這一發**沒量到**（⛔ 不是「它不答」）
+         ⇒ 共 1 發、切出 1 段、合計 **0 列**
+         ⭐⭐ 全部段落都**沒有再撞頂**　⇒ 遞迴切分在這個窗（半個月）上**有效**
   ── https://mopsov.twse.com.tw/mops/web/js/mop_search.js
      ⭐ `ezsearch_query` 前後：
         […2023041217steven:(T88K)增加參數搜尋 2023041243steven:(T88G)修改參數傳遞的問題 2023032542steven:(T88G)增加參數搜尋 2023032541max:(T88G)補上 2022081540max:(T88G)修改跑馬燈英文呼叫AjaxCheck_e 2022081539Max:(T88G)讓跑馬燈呼叫ezsearch_query 2022081538steven:(T88G)增加參數傳給跑馬燈程式 */ window.onload = function () { // 抓取path function GetQueryString(name) { var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i"); v…]
@@ -840,25 +606,25 @@
         ⚠ 這一份裡**找不到** `CO_MARKET`（⛔ 不是「它不存在」，是不在這一支）
      ⭐ `PRO_ITEM` 前後：
         ⚠ 這一份裡**找不到** `PRO_ITEM`（⛔ 不是「它不存在」，是不在這一支）
-      ⏱ ezsearch：509.3 秒（此時累計 984／690 秒）
+      ⏱ ezsearch：603.7 秒（此時累計 856／690 秒）
 
 
 
 
 ══ ⏱ 逐案例耗時（⭐ 這一段是為了決定「該加預算還是該拆」）══
-    509.3 秒  ezsearch
-    194.0 秒  bridge ajax_t163sb04
-    150.6 秒  bridge ajax_t05st01（sdate/edate 區間）
-     40.7 秒  bridge ajax_t05st01（無代號）
-     35.2 秒  bridge ajax_t21sc03
-     33.1 秒  xhr_hunt t05st01
-     12.0 秒  bridge ajax_t05st01（帶代號）
-      5.3 秒  bridge t05st01
-      2.1 秒  openapi t187ap05_L
-      1.4 秒  openapi t187ap05_O
-      0.6 秒  openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L
-      0.3 秒  openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
-   ── 合計 984 秒／內層預算 690 秒
+    603.7 秒  ezsearch
+    146.0 秒  bridge ajax_t163sb04
+     27.2 秒  bridge ajax_t21sc03
+     25.5 秒  bridge ajax_t05st01（sdate/edate 區間）
+     23.9 秒  xhr_hunt t05st01
+     10.2 秒  bridge t05st01
+      8.7 秒  bridge ajax_t05st01（帶代號）
+      4.7 秒  bridge ajax_t05st01（無代號）
+      2.2 秒  openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
+      1.8 秒  openapi t187ap05_L
+      1.2 秒  openapi t187ap05_O
+      0.9 秒  openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L
+   ── 合計 856 秒／內層預算 690 秒
 
 ⛔⛔ 這一趟【沒跑到】6 個案例（內層預算用完）：
    ⏳ ky_revenue
@@ -869,6 +635,3 @@
    ⏳ terms
    ⇒ ⛔ 這幾格是【沒查】，⚠ 不是「查了沒有」——⛔ 不可以讀成否定結論
    ⇒ ⭐ 而這一趟仍然把跑完的寫出來了（⛔ 不再是零資訊）
-
-✗ 2026-10-20T05:34:18Z python mops_probe.py **撞到 1500 秒的時間預算被砍掉**（⛔ 不是跑完，也不是沒發現）
-  （⭐ 已從 **origin/main** 還原成上一次成功的內容）
