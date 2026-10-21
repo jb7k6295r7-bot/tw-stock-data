@@ -1,0 +1,59 @@
+name: 加權報酬指數（含息，每日）
+
+# 裁定 seq425（2026-10-21）：台股判準基準改「大盤報酬指數（含息）」⇒ 回測重判要這條日線。
+# 每個交易日重抓上個月與本月（2 發），合併寫 data/history/market_tri.csv；回補用手動派、填 start。
+# ⚠ GitHub 排程常晚到或漏跑 ⇒ 兩班；第二班內容相同就不會 commit。
+# ⛔ 只派 --ref main（要對 main 上最新的 market_index.csv 驗交易日）。
+on:
+  schedule:
+    # UTC 08:37 = 台北 16:37；UTC 14:43 = 台北 22:43（週一～五）
+    - cron: "37 8 * * 1-5"
+    - cron: "43 14 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "起月 YYYY-MM（空＝上個月；回補全部填 2003-01，約 286 發、20 分鐘）"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tri-index
+  cancel-in-progress: false
+
+jobs:
+  tri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
+        run: python selftest_workflows.py
+
+      - name: 掃有沒有第二份實作（零相依）
+        run: python selftest_no_dup.py
+
+      - name: 掃有沒有程式會刪掉被追蹤的 data/ 檔（零相依）
+        run: python selftest_no_data_delete.py
+
+      - name: 把程式同步到 main（趁 checkout 還新）
+        run: bash sync_code.sh
+
+      - name: 抓報酬指數
+        run: |
+          S="${{ inputs.start }}"
+          if [ -n "$S" ]; then python tri_index.py --start "$S" --sleep 4; else python tri_index.py --sleep 4; fi
+
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          bash push_data.sh "tri_index: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"
