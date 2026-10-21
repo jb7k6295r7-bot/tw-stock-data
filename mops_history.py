@@ -1162,6 +1162,25 @@ def main():
                     fails.append(("revenue", per, mkt, f"⛔ 新表 {len(out)} 列 < 舊表 {old_n} 列的 95% ⇒ 不覆蓋"))
                     time.sleep(a.sleep)
                     continue
+                # ⛔⛔ 2026-10-21 第一趟就踩到：官方歷史頁是用「今天的公司名單」重新產生的
+                #   ⇒ 重抓過去期別時，之後下市的公司（例 8183 精星 2026-07／08）會從表裡消失
+                #   ＝ 重抓一次就多一份存活者偏差。⇒ 舊檔有、新表沒有的列一律留著，
+                #   除非同一期另一個市場的檔裡有它（轉市場，例 8908 上櫃→上市，避免重複）。
+                #   ⚠ 另一市場若還沒重抓，看的是它磁碟上的舊檔（上市→上櫃那一種轉法會漏判；極少見）。
+                if old_txt:
+                    orow = list(csv.reader(old_txt.splitlines()))
+                    if orow and orow[0] == [h.replace(",", "；") for h in full]:
+                        have = {r[0] for r in out}
+                        sib = os.path.join(OUT, "revenue_hist", f"{per}_{'tpex' if market == 'twse' else 'twse'}.csv")
+                        sib_codes = set()
+                        if os.path.exists(sib):
+                            sib_codes = {r[0] for r in csv.reader(io.open(sib, encoding="utf-8").read().splitlines()[1:]) if r}
+                        keep = [r for r in orow[1:] if r and r[0] not in have and r[0] not in sib_codes]
+                        if keep:
+                            print(f"  [月營收 {per} {mkt}] 官方表少了 {len(keep)} 家（多半已下市）⇒ 保留舊列：{[r[0] for r in keep][:10]}")
+                            out = out + keep
+                    elif orow:
+                        print(f"  [月營收 {per} {mkt}] ⚠ 舊檔表頭不同 ⇒ 不保留消失的列")
                 write_csv(rp, full, out)
                 if old_txt:
                     import mops as _M
