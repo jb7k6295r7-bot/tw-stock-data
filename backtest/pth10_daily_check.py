@@ -20,6 +20,15 @@
 ④ fixture：①月初前一晚出名單 ②非買賣日無【LINE】 ③第 6 個曆月最後交易日賣出（含月底遇平日休市；researchPTH.exit_positions 對照）
    ④空格放 0050 ⑤2 萬換算股數 ⑥put 只換第十節。
 ⑤ 乾跑：資料日 2026-10-20（main dbfb96cb81）⇒ 平日段落、--preview-buy（2026-11 名單用 2026-09 底排序）段落；寫到 work/dry（⛔ 不碰 resultsDaily）。
+── D10 同分排序 F9（使用者 10/21；2026-10-21 加，既有各項不動）──
+④ fixture 加 ⑨：同分群 F9 排序／F9 缺值排最後／F9 同分走抽籤／抽籤模式 ＝ batch_order／設定鍵缺省 ＝ 抽籤／LINE 行 F9 句與 NOTE_TIE／無同分群不算分數。
+⑦ f9replay（約 5 分；要先有 ① ② 的 work 快取）：pth10_daily.f9_ctx／f9_members／tie_keys（researchPTH10tie_freq 同一批函式）逐月重算主世界同分群 F9
+   ⇒ 與 resultsPTH10tie/freq/members_主.csv.gz（F9ok、F9、F6／F7／Q）及 resultsPTH10tie/main/keys_主.csv.gz（T1 算不出、T1 鍵、原 rk）逐列相同；
+   (a) 引擎：次序 ＝ researchPTH10tie_freq.order_of（rk 位置化 ＝ researchPTH10tie.ev_with_order）⇒ pth10_daily.window_sim 交易檔全文 ＝ trades_主_T1.csv.gz、
+       逐月（2016-03～最近）月初持股逐檔相同；
+   (b) 使用者版：每批 pth10_daily.user_order（F9）＋ pick_user（跳過持有中）⇒ 前 k 檔 ＝ T1 交易檔當月買進（k ＝ 當月實買數）；抽籤模式同式 ＝ trades_主_N10。
+⑧ f9dry --tie 抽籤｜F9（各約 1～6 分）：最新真快照（~/h2data/<main sha>，資料日 2026-10-20）--preview-buy --tie ⇒ 11/2 首批（2026-09-30 排序）10 檔與備位；
+   F9 那次並列抽籤；寫到 work/f9dry（⛔ 不碰 resultsDaily）；策略鎖前後 --check。
 """
 from __future__ import annotations
 
@@ -445,6 +454,7 @@ def st_fixture(a):
     H.put(md, ["## 十、52 週新高 10 檔（高10）", "", "- 新", ""])
     assert open(md, encoding="utf-8").read() == base + "\n## 十、52 週新高 10 檔（高10）\n\n- 新\n"
     msgs.append("⑥ put：只拿掉舊第十節、接在檔尾；其他段逐字不變（含第十節夾在中間的情形）")
+    msgs += f9_fixture(a)
     for m in msgs:
         log("✅ " + m)
     J["結果"] = msgs; J["通過"] = True
@@ -543,14 +553,270 @@ def st_e2e(a):
     return ok
 
 
+# ═════════════ D10 同分排序 F9 ═════════════
+def lock_check():
+    import subprocess
+    p = subprocess.run([os.path.expanduser("~/tw-p16/.venv/bin/python"), "-m", "backtest.strategy_lock", "--check"], capture_output=True, text=True,
+                       env={**os.environ, "PYTHONPATH": os.path.expanduser("~/tw-p17")}, cwd=os.path.expanduser("~/tw-p17"))
+    out = (p.stdout + p.stderr).strip().splitlines()
+    return bool(p.returncode == 0 and "相符" in "".join(out[-3:])), out[-3:]
+
+
+def f9_fixture(a):
+    """④⑨：D10 同分排序（合成資料；⛔ 不讀真實分數）。"""
+    msgs = []
+    # 同分群
+    g = H.tie_groups([1, 1, 1, .9, .9, .8])
+    assert (g[:3] == g[0]).all() and (g[3:5] == g[3]).all() and g[0] != g[3] and g[0] >= 0 and g[3] >= 0 and g[5] == -1
+    # F9 排序：同 PTH 內 F9 高→低、算不出排最後、F9 同分 ⇒ 原 rk；不跨 PTH
+    sids = ["S0", "S1", "S2", "S3", "S4", "S5", "S6"]
+    pth = np.array([1, 1, 1, 1, .95, .95, .9]); rk = np.array([.1, .2, .3, .4, .6, .5, .7])
+    grp = H.tie_groups(pth)
+    MB = pd.DataFrame({"q": [0, 1, 2, 3, 4, 5], "F9": [50.0, np.nan, 80.0, 50.0, 10.0, 20.0]})
+    fl, sc = H.tie_keys(grp, MB)
+    assert fl.tolist() == [False, True, False, False, False, False, False] and sc[6] == 0.0
+    o = [sids[k] for k in H.user_order(rk, pth, fl, sc)]
+    assert o == ["S2", "S0", "S3", "S1", "S5", "S4", "S6"], o
+    # F9 同分（S0、S3 都 50）走抽籤：rk 對調 ⇒ 次序對調
+    rk2 = rk.copy(); rk2[[0, 3]] = rk2[[3, 0]]
+    o2 = [sids[k] for k in H.user_order(rk2, pth, fl, sc)]
+    assert o2 == ["S2", "S3", "S0", "S1", "S5", "S4", "S6"], o2
+    # 全部算不出 ＝ 全 0 ＝ 抽籤次序 ＝ batch_order
+    for f_, s_ in ((np.ones(7, bool) & (grp >= 0), sc), (np.zeros(7, bool), np.zeros(7))):
+        assert H.user_order(rk, pth, f_, s_).tolist() == H.user_order(rk, pth).tolist()
+    rkb, ob = H.batch_order(sids, pth, 7)
+    assert H.user_order(rkb, pth).tolist() == ob.tolist()
+    # 跳過已持有、取空格
+    pk_, bk_ = H.pick_user(o, {"S0", "S5"}, 3)
+    assert pk_ == ["S2", "S3", "S1"] and bk_ == ["S4", "S6"]
+    msgs.append("⑨a 同分排序 F9：同 PTH 內 F9 高→低、F9 缺值排最後（不跨 PTH）、F9 同分 ⇒ 原 rk（對調 rk ⇒ 次序對調）；全算不出／全 0 ＝ 抽籤 ＝ batch_order；pick_user 跳過持有")
+    # 設定鍵
+    tdir = os.path.join(a.work, "fx"); os.makedirs(tdir, exist_ok=True)
+    cases = [({"高10": 20000}, "抽籤"), ({"高10_同分排序": "F9"}, "F9"), ({"高10_同分排序": " f9 "}, "F9"), ({"高10_同分排序": "抽籤"}, "抽籤"),
+             ({"高10_同分排序": "xyz"}, "抽籤"), ({"高10_同分排序": None}, "抽籤")]
+    for k, (d_, want) in enumerate(cases):
+        p = os.path.join(tdir, f"set{k}.json"); json.dump(d_, open(p, "w", encoding="utf-8"), ensure_ascii=False)
+        assert H._load_tie(p) == want, (d_, H._load_tie(p))
+    p = os.path.join(tdir, "bad.json"); open(p, "w").write("{壞")
+    assert H._load_tie(p) == "抽籤" and H._load_tie(os.path.join(tdir, "沒有這個檔.json")) == "抽籤"
+    cur = json.load(open(H.SETTING, encoding="utf-8"))
+    assert H.TIE == ("F9" if str(cur.get("高10_同分排序", "")).strip().upper() == "F9" else "抽籤")
+    msgs.append(f"⑨b 設定鍵「高10_同分排序」：缺鍵／讀不到／壞檔／其他值 ⇒ 抽籤；\"F9\"（不分大小寫、去空白）⇒ F9；目前設定檔 ⇒ {H.TIE}")
+    # LINE 行
+    tag0 = H.LINE_TAG; H.LINE_TAG = "- 【LINE】⭐ "
+    try:
+        base = {"asof": "2026-10-30", "nxt": "2026-11-02", "started": False, "e0": "2026-11-02", "form0": "2026-09-30", "held": [],
+                "buys": [("S01", "名", 50.0, H.shares(50.0))], "nfree": 10, "backup": [("S02", "備")], "sells_tmr": [], "sold_today": []}
+        Lr = H.render(dict(base)); Lf = H.render(dict(base, tie="F9"))
+    finally:
+        H.LINE_TAG = tag0
+    lr = [x for x in Lr if "【LINE】" in x][0]; lf = [x for x in Lf if "【LINE】" in x][0]
+    assert ("｜" + H.NOTE_TIE + "｜" + H.SENT3[0]) in lr and H.F9_SENT not in lr and H.NOTE_TIE_F9 not in lr
+    assert ("｜" + H.NOTE_TIE_F9 + "｜" + H.F9_SENT + "｜" + "｜".join(H.SENT3)) in lf and H.NOTE_TIE not in lf
+    assert H.F9_SENT == "同分時依大跌 4 檔分數挑（你 10/21 選；回測：跟抽籤分不出，最多暫定）"
+    assert all("【LINE】" not in x for x in Lf if x.startswith("  - ")) and any("依大跌 4 檔分數排序" in x for x in Lf if x.startswith("  - 名單依今晚資料"))
+    assert lr.replace(H.NOTE_TIE, "") == lf.replace(H.NOTE_TIE_F9 + "｜" + H.F9_SENT, "")
+    msgs.append("⑨c LINE 行：F9 ⇒ NOTE_TIE 換 F9 版、固定三句之前加「" + H.F9_SENT + "」，其餘逐字同；抽籤 ⇒ 原樣")
+    # 無同分群 ⇒ 不算分數、次序 ＝ 抽籤
+    ns = argparse.Namespace(procs=1, nowrite=True, xd="/不存在")
+    pl = [("A1", 1.0), ("A2", .99), ("A3", .98)]
+    rk3, o3 = H.batch_order([s for s, _ in pl], [p for _, p in pl], 5)
+    ordr, inf = H.f9_pend(ns, None, None, "x" * 10, tdir, "2026-09-30", "fx", pl, rk3, {}, {}, log)
+    assert ordr == [pl[k][0] for k in o3] and inf["同分群"] == 0 and inf["來源"] == "無同分群"
+    msgs.append("⑨d 當批沒有同分群 ⇒ 不讀分數資料、LINE 名單次序 ＝ 抽籤次序")
+    return msgs
+
+
+def _ev_world(a):
+    W = pickle.load(open(os.path.join(a.work, "h2d_world.pkl"), "rb"))
+    R = pickle.load(open(os.path.join(a.work, "h2d_rank.pkl"), "rb"))["R"]
+    H.D.DATA = W["data"]; PT._G[H.WN] = W
+    RES = H.pool_map(PTH.stock_job, [(H.WN, s) for s in W["sids"]], a.procs)
+    RES = {k: v for k, v in RES.items() if v is not None}
+    EP2 = W["EP"][2]; ME = W["ME"]; dates = W["dates"]
+    js = [j for j in range(len(ME)) if EP2[j] >= 0]
+    ev = H.assemble(W, rows_from(R, W, js), RES)
+    ev["form"] = np.array([str(dates[ME[j]]) for j in ev["jm"]], object)
+    return W, ev
+
+
+def held_months(W, T):
+    """交易檔（sid、買進日、賣出日）⇒ 各月第一個交易日（2016-03 起）月初買進後持股。"""
+    cal = W["cal"]; dates = W["dates"]
+    firsts = [t for t in range(1, len(cal)) if cal[t].month != cal[t - 1].month and dates[t] >= "2016-03-01"]
+    return {dates[t]: sorted(s for s, b, x in zip(T["sid"], T["買進日"], T["賣出日"]) if b <= dates[t] and (x == "" or x > dates[t])) for t in firsts}
+
+
+def pick_replay(ev, T, flag=None, score=None):
+    """(b) 使用者版：每批 pth10_daily.user_order ＋ pick_user（跳過 ＝ 交易檔 買進日 ＜ e ≤ 賣出日；空格 ＝ 10 − 買進日 ＜ e ＜ 賣出日 的檔數，
+    ＝ 引擎「同日先出後進」）⇒ 前 k 檔 ＝ 交易檔當日買進（k ＝ 實買數）。
+    ⚠ 前瞻的 LINE 名單在前一晚出，看不到「買進日當天壞根強制賣出」⇒ 那種月份 LINE 名單會少補 1 格（次數另報）。"""
+    bad, n, kfull, sameday = [], 0, 0, 0
+    for e in np.unique(ev["e"]):
+        idx = np.flatnonzero(ev["e"] == e)
+        o = H.user_order(ev["rk"][idx], ev["pth"][idx], None if flag is None else flag[idx], None if score is None else score[idx])
+        order = [str(ev["sid"][idx[k]]) for k in o]
+        d = T.loc[T["sid"].isin(order) & (T["_e"] == int(e)), "sid"].tolist()
+        dd = T["買進日"][T["_e"] == int(e)]
+        if not len(dd):
+            continue
+        day = dd.iloc[0]
+        blk = {s for s, b, x in zip(T["sid"], T["買進日"], T["賣出日"]) if b < day and (x == "" or x >= day)}       # 不可再買（含當天賣出者）
+        nh = sum(1 for b, x in zip(T["買進日"], T["賣出日"]) if b < day and (x == "" or x > day))                     # 引擎「同日先出後進」：當天賣出的格可補
+        sameday += int(nh < len(blk))
+        pk_, _ = H.pick_user(order, blk, H.NS - nh)
+        n += 1; kfull += int(len(d) == len(pk_))
+        if d != pk_[:len(d)]:
+            bad.append(day)
+    return {"有買進批": n, "前 k 檔 ≠ 實買 批數": len(bad), "不同批": bad[:10], "實買數 ＝ 10 − 持有（未受 0050 可撥金額限制）批數": kfull,
+            "買進日當天有持股賣出（壞根強制，引擎同日先出後進）批數": sameday}
+
+
+def st_f9replay(a):
+    J = {"階段": "f9replay", "結果": {}}
+    t0 = time.time()
+    from backtest import researchPTH10tie as TT                   # ev_with_order（rk 位置化）
+    TF = H._tf()
+    lk0 = lock_check(); J["策略鎖前"] = lk0[1]
+    W, ev = _ev_world(a)
+    nev = len(ev["e"]); dates = W["dates"]
+    log(f"[⑦] 事件 {nev}｜{time.time() - t0:.0f}s")
+    # 同分群（每批）
+    grp = np.full(nev, -1, np.int64); off = 0
+    for e in np.unique(ev["e"]):
+        idx = np.flatnonzero(ev["e"] == e)
+        g = H.tie_groups(ev["pth"][idx]); m = g >= 0
+        grp[idx[m]] = g[m] + off; off += int(g.max()) + 1 if m.any() else 0
+    forms = sorted({ev["form"][q] for q in np.flatnonzero(grp >= 0)})
+    X, FIN, QFIN, info = H.f9_ctx(W["data"], W["cal"], forms, sorted({str(ev["sid"][q]) for q in np.flatnonzero(grp >= 0)}), a.procs, log, mk=W["mk"])
+    J["資料"] = info
+    parts = []
+    for f_ in forms:
+        qs = np.flatnonzero(ev["form"] == f_)
+        d = H.f9_members(X, FIN, QFIN, f_, [str(s) for s in ev["sid"][qs]], grp[qs], qs)
+        d["形成月底"] = f_
+        parts.append(d)
+    MB = pd.concat(parts, ignore_index=True)
+    log(f"[⑦] 分數 {len(MB)} 列、同分群 {off} 組、{len(forms)} 排序日｜{time.time() - t0:.0f}s")
+    ref = pd.read_csv("backtest/resultsPTH10tie/freq/members_主.csv.gz", dtype={"sid": str}, float_precision="round_trip")
+    A = MB.set_index(["形成月底", "sid"]); B = ref.set_index(["形成月底", "sid"])
+    r0 = {"本模組成員": len(A), "members_主 成員": len(B), "成員集合相同": set(A.index) == set(B.index)}
+    if r0["成員集合相同"]:
+        B = B.loc[A.index]
+        for c in ("F9ok", "has6", "has7", "hasQ"):
+            r0[f"{c} 不同列"] = int((A[c].astype(bool).to_numpy() != B[c].astype(bool).to_numpy()).sum())
+        for c in ("F9", "F6_g6", "F7_g6", "Q_g6", "F6", "F7", "Q"):
+            fa = ["%.10g" % x for x in A[c].to_numpy(float)]; fb = ["%.10g" % x for x in B[c].to_numpy(float)]
+            r0[f"{c} 不同列（%.10g）"] = int(sum(x != y for x, y in zip(fa, fb)))
+    J["結果"]["分數 vs resultsPTH10tie/freq/members_主"] = r0
+    ok0 = r0["成員集合相同"] and all(v == 0 for k, v in r0.items() if "不同列" in k)
+    log(f"[⑦分數] {r0}｜{'✅' if ok0 else '⛔'}")
+    fl, sc = H.tie_keys(grp, MB)
+    KD = pd.read_csv("backtest/resultsPTH10tie/main/keys_主.csv.gz", dtype={"sid": str}, float_precision="round_trip")
+    km = KD.set_index(["形成月底", "sid"]).loc[list(zip(ev["form"], [str(s) for s in ev["sid"]]))]
+    r1 = {"列": int(len(km)), "keys_主 列": int(len(KD)),
+          "T1 算不出 不同": int((km["T1_算不出"].astype(str).str.lower().eq("true").to_numpy() != fl).sum()),
+          "T1 鍵 不同（%.10g）": int(sum(("%.10g" % x) != ("%.10g" % y) for x, y in zip(km["T1_鍵"].to_numpy(float), sc))),
+          "原 rk 不同（%.10g）": int(sum(("%.10g" % x) != ("%.10g" % y) for x, y in zip(km["rk原"].to_numpy(float), ev["rk"]))),
+          "同分群成員 不同": int(((km["grp"].to_numpy() >= 0) != (grp >= 0)).sum())}
+    J["結果"]["鍵 vs resultsPTH10tie/main/keys_主"] = r1
+    ok1 = len(km) == len(KD) and all(v == 0 for k, v in r1.items() if "不同" in k)
+    log(f"[⑦鍵] {r1}｜{'✅' if ok1 else '⛔'}")
+    # (a) 引擎
+    o = TF.order_of(ev, fl, sc)
+    ev2 = TT.ev_with_order(ev, o)
+    S, _, _ = H.window_sim(W, ev2, 0, False)
+    with gzip.open("backtest/resultsPTH10tie/main/trades_主_T1.csv.gz", "rt", encoding="utf-8") as fh:
+        t1 = fh.read()
+    T1 = pd.read_csv(io.StringIO(t1), dtype=str, keep_default_na=False)
+    mine = PN.trades_df(W, ev2, S)
+    Tm = pd.read_csv(io.StringIO(PN.df_text(mine, "%.17g")), dtype=str, keep_default_na=False)
+    hm, hr = held_months(W, Tm), held_months(W, T1)
+    badm = [d for d in hr if hm.get(d) != hr[d]]
+    r2 = {"交易檔全文 ＝ trades_主_T1": PN.df_text(mine, "%.17g") == t1, "筆數": len(S["buys"]), "T1 筆數": len(T1),
+          "月數": len(hr), "期間": f"{min(hr)}～{max(hr)}", "股月數": int(sum(len(v) for v in hr.values())), "持股不同月數": len(badm), "不同月": badm[:10]}
+    J["結果"]["(a) 引擎 F9 次序 vs trades_主_T1"] = r2
+    ok2 = r2["交易檔全文 ＝ trades_主_T1"] and not badm
+    log(f"[⑦引擎] {r2}｜{'✅' if ok2 else '⛔'}")
+    # (b) 使用者版：user_order ＋ pick_user
+    dpos = {d: i for i, d in enumerate(dates)}
+    T1["_e"] = T1["買進日"].map(dpos)
+    with gzip.open("backtest/resultsPTHn/trades_主_N10.csv.gz", "rt", encoding="utf-8") as fh:
+        N10 = pd.read_csv(fh, dtype=str, keep_default_na=False)
+    N10["_e"] = N10["買進日"].map(dpos)
+    r3 = {"F9 vs trades_主_T1": pick_replay(ev, T1, fl, sc), "抽籤 vs trades_主_N10": pick_replay(ev, N10)}
+    J["結果"]["(b) 使用者版 user_order＋pick_user 前 k 檔 ＝ 實買"] = r3
+    ok3 = all(v["前 k 檔 ≠ 實買 批數"] == 0 and v["有買進批"] > 0 for v in r3.values())
+    log(f"[⑦使用者版] {r3}｜{'✅' if ok3 else '⛔'}")
+    # 描述：F9 vs 抽籤 每月買進不同的批數
+    lk1 = lock_check(); J["策略鎖後"] = lk1[1]
+    okl = lk0[0] and lk1[0]
+    log(f"[⑦策略鎖] 前 {lk0[1]}／後 {lk1[1]}｜{'✅' if okl else '⛔'}")
+    J["通過"] = bool(ok0 and ok1 and ok2 and ok3 and okl)
+    log(f"[⑦f9replay] {'✅ 全過' if J['通過'] else '⛔ 有不符'}｜{time.time() - t0:.0f}s")
+    save("f9replay", J)
+    return J["通過"]
+
+
+def st_f9dry(a):
+    """⑧：最新真快照 --preview-buy，11/2 首批（2026-09-30 排序）；--tie 抽籤｜F9；⛔ 不寫 md。"""
+    tie = a.tie
+    J = {"階段": f"f9dry_{tie}"}
+    t0 = time.time()
+    lk0 = lock_check(); J["策略鎖前"] = lk0[1]
+    d = os.path.join(a.work, "f9dry"); fwd = os.path.join(d, f"fwd_{tie}")
+    if os.path.exists(fwd):
+        shutil.rmtree(fwd)
+    os.makedirs(os.path.join(fwd, "ranks"), exist_ok=True)
+    rc = os.path.join(a.work, "dry", "fwd", "ranks", "ranks_2026-09.csv")       # ⑤ 同快照（dbfb96）已算好的 2026-09 排序，省 3～5 分
+    if os.path.exists(rc):
+        shutil.copy(rc, os.path.join(fwd, "ranks", "ranks_2026-09.csv"))
+    rs = sorted(os.listdir(os.path.join(a.work, "dry", "fwd", "ranks"))) if os.path.isdir(os.path.join(a.work, "dry", "fwd", "ranks")) else []
+    ap = argparse.Namespace(asof="2026-10-20", md=None, sha=DRY_SHA, fwd=fwd, nowrite=False, preview_buy=True, procs=a.procs, tie=tie, xd=None)
+    L, X = H.run(ap, log)
+    nm = X["W"]["names"]
+    J.update({"段落": L, "同分排序(實際)": X["tie"], "F9說明": X["f9"], "名單": [[s, nm.get(s, ""), p, k] for s, nm_, p, k in X["buys"]],
+              "備位": X["backup"], "照規則明天會買": X["rule_picks"], "使用者版次序前20": X["user_order"][:20], "照規則次序前20": X["rule_order"][:20],
+              "排序快取來源": rc if os.path.exists(rc) else "重算", "dry/fwd/ranks": rs})
+    if tie == "F9":
+        cp = H.f9_path(fwd, "2026-09")
+        if os.path.exists(cp):
+            C = pd.read_csv(cp, dtype={"sid": str})
+            J["F9分數(同分群)"] = C.sort_values(["grp", "F9"], ascending=[True, False]).to_dict("records")
+    lk1 = lock_check(); J["策略鎖後"] = lk1[1]
+    ok = lk0[0] and lk1[0] and X["tie"] == tie and len(X["buys"]) == H.NS
+    assert not any(os.path.abspath(p).startswith(os.path.abspath("backtest/resultsDaily")) for p in [fwd])
+    other = os.path.join(OUT, f"check_f9dry_{'抽籤' if tie == 'F9' else 'F9'}.json")
+    if os.path.exists(other):
+        Oj = json.load(open(other, encoding="utf-8"))
+        A_ = {"抽籤": Oj if tie == "F9" else J, "F9": J if tie == "F9" else Oj}
+        rows = []
+        for k in range(max(len(A_["抽籤"]["名單"]), len(A_["F9"]["名單"]))):
+            r_ = A_["抽籤"]["名單"][k] if k < len(A_["抽籤"]["名單"]) else ["", "", "", ""]
+            f_ = A_["F9"]["名單"][k] if k < len(A_["F9"]["名單"]) else ["", "", "", ""]
+            rows.append(f"{k + 1:>2}｜抽籤 {r_[0]} {r_[1]}｜F9 {f_[0]} {f_[1]}")
+        rows.append("備位｜抽籤 " + "、".join(f"{s} {n}" for s, n in A_["抽籤"]["備位"]) + "｜F9 " + "、".join(f"{s} {n}" for s, n in A_["F9"]["備位"]))
+        s1 = {x[0] for x in A_["抽籤"]["名單"]}; s2 = {x[0] for x in A_["F9"]["名單"]}
+        rows.append(f"兩邊相同 {len(s1 & s2)} 檔；只在抽籤 {sorted(s1 - s2)}；只在 F9 {sorted(s2 - s1)}")
+        J["並列"] = rows
+        for x in rows:
+            log("[⑧並列] " + x)
+    J["通過"] = bool(ok)
+    log(f"[⑧f9dry {tie}] 名單 {[b[0] for b in X['buys']]}｜備位 {X['backup']}｜同分 {X['tie']}｜策略鎖 {lk0[1]}／{lk1[1]}｜{'✅' if ok else '⛔'}｜{time.time() - t0:.0f}s")
+    save(f"f9dry_{tie}", J)
+    return ok
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", default="fixture", choices=("world", "rank", "replay", "fixture", "dry", "e2e"))
+    ap.add_argument("--stage", default="fixture", choices=("world", "rank", "replay", "fixture", "dry", "e2e", "f9replay", "f9dry"))
     ap.add_argument("--day", default="0")
+    ap.add_argument("--tie", default="F9", choices=H.TIES)
     ap.add_argument("--work", default=os.path.expanduser("~/pth10work")); ap.add_argument("--procs", type=int, default=4)
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
-    ok = {"world": st_world, "rank": st_rank, "replay": st_replay, "fixture": st_fixture, "dry": st_dry, "e2e": st_e2e}[a.stage](a)
+    ok = {"world": st_world, "rank": st_rank, "replay": st_replay, "fixture": st_fixture, "dry": st_dry, "e2e": st_e2e,
+          "f9replay": st_f9replay, "f9dry": st_f9dry}[a.stage](a)
     sys.exit(0 if ok else 1)
 
 

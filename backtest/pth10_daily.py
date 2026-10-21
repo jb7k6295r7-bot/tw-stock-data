@@ -37,6 +37,13 @@
     positions_user 列被照規則提前出場（壞根／下市，跟同批照規則列的賣出日）⇒ 記出場那晚的 LINE 一併列出。
  D7 名單段落「## 十、52 週新高 10 檔（高10）」：平日一行持有狀態；明天月初買進（有要買的）或今天／明天有到期賣出 ⇒ 「- 【LINE】⭐」行
     （買、續抱、賣，固定附三句）；其他說明一律不帶【LINE】。先算完全部、最後才寫 md（暫存檔 ＋ os.replace，寫完比對其他段逐字不變）；失敗 ⇒ 非 0 結束、md 不動。
+ D10 同分排序（使用者 10/21「暫時高10 配大跌 4 檔的分數規則給我！」；回測線交辦 2026-10-21）：設定檔鍵「高10_同分排序」＝ "F9" ⇒ 只有【LINE 名單／positions_user】
+    的補格次序改用 researchPTH10tie T1（同 PTH 內：F9 可算者依 F9 高→低、算不出排最後、仍同分用原種子 rk）；缺鍵或其他值 ＝ "抽籤"（原樣）。
+    ⛔ 照規則欄（positions.csv、equity.csv，前瞻 seq4）不變，仍是原種子抽籤；兩邊名單不同 ⇒ 沿用 D9 的 md 說明行（不推）。
+    分數 ＝ researchPTH10tie_freq 同一批函式（date_scores、f9_cols、ai1_table／ai1_patch、order_of；⛔ 只 import）：排序日 ＝ 形成月底、只用當時可得資料；
+    同分群 ＝ 當批待定事件內 PTH（pth_keys 值）完全相同、成員 ≥ 2（researchPTH10tie.build_keys 同式）；財報可用日 AI1 覆寫（seq352 口徑，同該件）。
+    資料路徑（＝ mktdrop_cands 前瞻同讀法）：價量／月營收／配息 ＝ 唯讀快照 DATA；財報／法人／融資／集保 ＝ mktdrop_cands.fund_dir(main sha)。
+    快取 f9/f9_<形成月>.csv（同分群成員相同才沿用）。F9 算不出（例外）⇒ 這晚 LINE 名單退回抽籤並在 md 寫 ⚠ 行（不中止名單）。
 """
 from __future__ import annotations
 
@@ -48,6 +55,7 @@ import re
 import subprocess
 import sys
 import time
+from collections import Counter
 from multiprocessing import Pool
 
 import numpy as np
@@ -103,6 +111,20 @@ def _load_push(default=False):
 
 
 PUSH = _load_push()
+TIES = ("抽籤", "F9")
+
+
+def _load_tie(path=None, default="抽籤"):
+    """D10：設定檔鍵「高10_同分排序」＝ "F9" ⇒ LINE 名單同分依大跌 4 檔 F9；缺鍵、讀不到或其他值 ⇒ "抽籤"。"""
+    try:
+        with open(path or SETTING, encoding="utf-8") as fh:
+            v = json.load(fh).get("高10_同分排序", default)
+    except (OSError, ValueError, TypeError, AttributeError):
+        return default
+    return "F9" if str(v).strip().upper() == "F9" else default
+
+
+TIE = _load_tie()
 LINE_TAG = "- 【LINE】⭐ " if PUSH else "- （LINE 暫停：高10 是否續推等使用者決定，裁定 seq431）"
 TITLE = "## 十、52 週新高 10 檔（高10）"
 def _wan(a):
@@ -111,6 +133,9 @@ def _wan(a):
 
 # 裁定 seq420：每月約 30 檔剛好在一年最高點（PTH＝1），「最高 10 檔」實際是在這批裡隨機抽
 NOTE_TIE = "每月約 30 檔剛好在一年最高點，「最高 10 檔」是在這批裡隨機抽（同回測做法）；前一晚名單與照規則紀錄可能差 1～2 檔"
+# D10（同分排序 F9）：NOTE_TIE 的 F9 版、固定三句之前加的一句
+NOTE_TIE_F9 = "每月約 30 檔剛好在一年最高點，同分依大跌 4 檔分數排序；分數也同時才抽籤"
+F9_SENT = "同分時依大跌 4 檔分數挑（你 10/21 選；回測：跟抽籤分不出，最多暫定）"
 SENT3 = ("看完歷史結果才挑出的版本，最高暫定；2027-11 才檢查", "2005～2014 年不合格（輸在 2008、2011、2014）；單筆約一半會賠，靠少數大賺", "描述，不是買賣建議")
 POS_COLS = ["批次", "代號", "名稱", "PTH", "買進日", "買進還原開盤", "買進未還原開盤", "金額佔權益", "排程賣出日", "賣出日", "賣出未還原收盤",
             "出場種類", "R用", "淨報酬", "狀態", "main"]
@@ -425,6 +450,124 @@ def held_after(S, upto):
     return [(t, q, amt) for t, q, amt in S["buys"] if t <= upto and q not in sold]
 
 
+# ═════════════ D10 同分排序 F9（LINE 名單用；函式全部 import researchPTH10tie_freq）═════════════
+def _tf():
+    """researchPTH10tie_freq（import 時會 chdir 到 ~/tw-p17）⇒ 只在需要時才載入。"""
+    from backtest import researchPTH10tie_freq as TF
+    return TF
+
+
+def tie_groups(pk):
+    """同分群（researchPTH10tie.build_keys／頻率表 B2 同式）：同批內 PTH（pth_keys 值）完全相同、成員 ≥ 2 ⇒ 組號；其餘 −1。"""
+    pk = np.asarray(pk, float)
+    grp = np.full(len(pk), -1, np.int64); gid = 0
+    for v, c in Counter(pk.tolist()).items():
+        if c >= 2:
+            grp[pk == v] = gid; gid += 1
+    return grp
+
+
+def f9_ctx(DATA, cal, forms, extra, procs, log=print, mk=None, XD=None, ADJ=None, FDATA=None):
+    """researchPTH10tie.build_keys 的資料段（同一批 import 函式）：uni_job（排序日 forms）、財報（AI1 覆寫）、集保、配息、月營收。
+    XD／ADJ／FDATA ＝ None ⇒ 沿用模組預設（歷史回放用）；前瞻 ＝ mktdrop_cands 同讀法（XD ＝ fund_dir、ADJ ＝ DATA/adj、FDATA ＝ DATA）。"""
+    TF = _tf(); FU, QL, EX5 = TF.FU, TF.QL, TF.EX5
+    if XD:
+        FU.XD = XD; QL.XD = XD
+    if ADJ:
+        QL.ADJ = ADJ
+    if FDATA:
+        FU.FDATA = FDATA
+    D.DATA = DATA
+    FU._G["cal"] = {DATA: cal}
+    allu = FU.universe_sids(DATA, forms[0], forms[-1])
+    sids_all = sorted(set(allu) | set(map(str, extra)))
+    mk = mk or {}
+    mkt = {s: mk.get(s, allu.get(s, "twse")) for s in sids_all}
+    t_ = time.time()
+    BR = FU.run_jobs([(DATA, s, mkt[s], list(forms)) for s in sids_all], procs, "高10F9")
+    FIN, _ = FU.load_fin(); QFIN, _ = QL.load_fin()
+    am, _ = TF.ai1_table(FU.XD)
+    n6, m6 = TF.ai1_patch(FIN, am); nq, mq = TF.ai1_patch(QFIN, am)
+    TD, tdd = FU.load_tdcc()
+    DV, mkd, smk = QL.load_div()
+    rev, rly, _ = EX5.load_revenue(DATA)
+    AV = EX5.avail_pos(list(rev.index), cal); AVA = np.array([AV[p] for p in rev.index], np.int64)
+    X = {"W": {"cal": cal, "n0": len(cal), "data": DATA}, "BR": BR, "rev": rev, "rly": rly, "AV": AV, "AVA": AVA, "TD": TD, "DV": DV, "mkd": mkd, "smk": smk}
+    info = {"財報籌碼": FU.XD, "配息": QL.ADJ, "價量營收": DATA, "AI1覆寫季列": [n6, nq], "集保末週": str(pd.Timestamp(tdd[-1]).date()),
+            "uni_job": f"{len(sids_all)} 檔 × {len(forms)} 排序日｜{time.time() - t_:.0f}s"}
+    log(f"[F9 資料] {info}")
+    return X, FIN, QFIN, info
+
+
+def f9_members(X, FIN, QFIN, form, sids, grp, q=None):
+    """當批事件（sids、同分群 grp）⇒ 同分群成員的 F6／F7／Q／F9（researchPTH10tie_freq.date_scores ＋ f9_cols 原樣）；q ＝ 每檔列號（預設 0..n−1）。"""
+    TF = _tf()
+    q = list(range(len(sids))) if q is None else list(q)
+    mem = [(str(s), int(g), int(k)) for s, g, k in zip(sids, grp, q) if g >= 0]
+    if not mem:
+        return pd.DataFrame({"q": pd.Series([], dtype=np.int64), "sid": pd.Series([], dtype=object), "grp": pd.Series([], dtype=np.int64),
+                             "F9ok": pd.Series([], dtype=bool), "F9": pd.Series([], dtype=float)})
+    d = TF.date_scores(X, pd.Timestamp(form), [s for s, _, _ in mem], {s: g for s, g, _ in mem}, FIN, QFIN)
+    d["q"] = d["sid"].map({s: k for s, _, k in mem})
+    return TF.f9_cols(d)
+
+
+def tie_keys(grp, MB):
+    """researchPTH10tie.build_keys 的 T1 鍵（同式）：v ＝ F9（高→低）；同分群成員 F9 非有限 ⇒ 算不出（排最後）；非成員 ⇒ 旗標 False、分數 0。"""
+    grp = np.asarray(grp, np.int64); n = len(grp)
+    v = np.full(n, np.nan)
+    if len(MB):
+        v[MB["q"].to_numpy(np.int64)] = MB["F9"].to_numpy(float)
+    fl = ~np.isfinite(v); fl[grp < 0] = False; v[grp < 0] = 0.0
+    return fl, np.where(np.isfinite(v), v, 0.0)
+
+
+def user_order(rk, pth, flag=None, score=None):
+    """使用者版（LINE 名單）補格次序：researchPTH10tie_freq.order_of（lexsort(rk, −分數, 算不出, −PTH)）。flag／score ＝ None ⇒ 抽籤（＝ batch_order 的次序）。"""
+    pk = pth_keys(pth); n = len(pk)
+    if flag is None:
+        return np.lexsort((np.asarray(rk, float), -pk))
+    return _tf().order_of({"e": np.zeros(n, np.int64), "pth": pk, "rk": np.asarray(rk, float)}, np.asarray(flag, bool), np.asarray(score, float))
+
+
+def f9_path(fwd, key):
+    return os.path.join(fwd, "f9", f"f9_{key}.csv")
+
+
+def f9_pend(a, DATA, cal, sha, fwd, form, key, pend_list, rk, mk, st, log):
+    """D10：明天那批待定事件 ⇒ (使用者版次序（代號）, 說明)。快取 f9/f9_<形成月>.csv：同分群成員（代號、PTH 鍵）相同才沿用。"""
+    sids = [s for s, _ in pend_list]
+    pk = pth_keys([p for _, p in pend_list]); grp = tie_groups(pk)
+    mem = sorted((s, f"{v:.17g}") for s, v, g in zip(sids, pk, grp) if g >= 0)
+    cp = f9_path(fwd, key); MB = None; src = "新算"
+    if not mem:                                                     # 沒有同分群 ⇒ 次序 ＝ 抽籤次序（不必算分數）
+        MB = f9_members(None, None, None, form, sids, grp); src = "無同分群"
+    elif os.path.exists(cp):
+        C = pd.read_csv(cp, dtype={"sid": str}, float_precision="round_trip")
+        if sorted(zip(C["sid"], [f"{v:.17g}" for v in C["PTH"].to_numpy(float)])) == mem:
+            ix = {s: k for k, s in enumerate(sids)}
+            MB = pd.DataFrame({"q": [ix[s] for s in C["sid"]], "sid": C["sid"], "F9": C["F9"].to_numpy(float), "F9ok": C["F9ok"].astype(bool)})
+            src = f"快取 {os.path.basename(cp)}"
+    if MB is None:
+        XD = getattr(a, "xd", None)
+        if not XD:
+            from backtest import mktdrop_cands as MC                 # 財報／法人／融資／集保（每日 archive 沒有）＝ 大跌 4 檔前瞻同一支
+            XD = MC.fund_dir(sha, log)
+        X, FIN, QFIN, info = f9_ctx(DATA, cal, [form], [s for s, _ in mem], a.procs, log, mk=mk, XD=XD, ADJ=os.path.join(DATA, "adj"), FDATA=DATA)
+        MB = f9_members(X, FIN, QFIN, form, sids, grp)
+        if not a.nowrite:
+            out = MB[["sid", "grp", "F9ok", "F9", "F6_g6", "F7_g6", "Q_g6", "has6", "has7", "hasQ"]].copy()
+            out.insert(2, "PTH", [pk[k] for k in MB["q"]])
+            write_csv(out, cp)
+            st.setdefault("F9", {})[key] = {"排序日": form, "成員": len(out), "算不出": int((~out["F9ok"]).sum()), "財報籌碼": info["財報籌碼"],
+                                           "main": sha[:10], "算於": now_tpe()}
+    fl, sc = tie_keys(grp, MB)
+    o = user_order(rk, [p for _, p in pend_list], fl, sc)
+    ng = len(set(grp[grp >= 0].tolist()))
+    info = {"同分群": ng, "成員": int((grp >= 0).sum()), "算不出": int(fl.sum()), "來源": src}
+    return [sids[k] for k in o], info
+
+
 # ═════════════ 段落 ═════════════
 def nm_(sid, name):
     return f"{sid} {name}".strip()
@@ -456,10 +599,15 @@ def render(c):
             parts.append(b)
         keep = [(s, n) for s, n, _, _ in held if s not in tmr_sold]
         parts.append(f"續抱 {len(keep)} 檔" + ("：" + "、".join(nm_(s, n) for s, n in keep) if keep else ""))
-        L.append(LINE_TAG + "52 週新高 10 檔（高10）：" + "；".join(parts) + "｜" + NOTE_TIE + "｜" + "｜".join(SENT3))
+        f9 = c.get("tie", "抽籤") == "F9"                            # D10：同分排序 F9 ⇒ NOTE_TIE 換 F9 版、固定三句之前加 F9_SENT
+        L.append(LINE_TAG + "52 週新高 10 檔（高10）：" + "；".join(parts) + "｜" + (NOTE_TIE_F9 if f9 else NOTE_TIE) + "｜"
+                 + (F9_SENT + "｜" if f9 else "") + "｜".join(SENT3))
         if c.get("backup"):
-            L.append("  - 備位（名單中有股票明天開盤鎖漲停或沒成交而買不到時，照規則往下遞補）：" + "、".join(nm_(s, n) for s, n in c["backup"]))
-        if buys:
+            L.append(f"  - 備位（名單中有股票明天開盤鎖漲停或沒成交而買不到時，{'照同一排序' if f9 else '照規則'}往下遞補）：" + "、".join(nm_(s, n) for s, n in c["backup"]))
+        if buys and f9:
+            L.append("  - 名單依今晚資料；同分（都在一年最高點）依大跌 4 檔分數排序（形成月底資料）、分數也同才照規則隨機；照規則紀錄仍是原規則隨機排序，"
+                     "兩邊不同時另有說明行；明天若有候選股開盤鎖漲停或沒成交，照規則紀錄可能換成別檔（以隔天紀錄為準）")
+        elif buys:
             L.append("  - 名單依今晚資料；同分（都在一年最高點）照規則隨機排序，明天若有候選股開盤鎖漲停或沒成交，照規則紀錄可能換成別檔（以隔天紀錄為準）")
     else:
         if not c["started"]:
@@ -769,8 +917,19 @@ def run(a, log=print):
     uv = user_view(usr, ds(asof), ds(nxt))
     nfree = NS - len(uv["held"]) if buy_night else 0
     buys, backup = [], []
+    tie_mode = getattr(a, "tie", None) or TIE
+    tie_used = tie_mode if tie_mode in TIES else "抽籤"
+    user_ord, f9i = pend_order, None
+    if j_p is not None and tie_used == "F9" and pend_list:         # D10：LINE 名單同分依 F9（照規則欄不動）
+        try:
+            user_ord, f9i = f9_pend(a, DATA, cal, sha, fwd, ds(MEd[j_p]), keys[j_p], pend_list, rk_p, W["mk"], st, log)
+            note.append(f"同分排序 F9（設定「高10_同分排序」；排序日 {ds(MEd[j_p])}）：同分群 {f9i['同分群']} 組 {f9i['成員']} 檔、"
+                        f"分數算不出 {f9i['算不出']} 檔排最後（{f9i['來源']}）；照規則紀錄仍用原規則隨機")
+        except (Exception, SystemExit) as ex:                       # noqa: BLE001  F9 失敗不擋名單：退回抽籤並標 ⚠
+            tie_used = "抽籤"; user_ord = pend_order
+            warn.append(f"F9 同分排序算不出（{type(ex).__name__}: {str(ex)[:200]}）⇒ 這晚 LINE 名單同分改用抽籤")
     if j_p is not None:
-        pk, bk = pick_user(pend_order, {h[0] for h in uv["held"]}, nfree)
+        pk, bk = pick_user(user_ord, {h[0] for h in uv["held"]}, nfree)
         for s in pk:
             _, c_ = raw_px(DATA, s, cal)
             ref, _ = last_close(c_, n0 - 1)
@@ -785,11 +944,12 @@ def run(a, log=print):
         note.append(f"LINE 名單持有 {u_held} ≠ 照規則持有 {r_held}（LINE 的續抱、賣照 LINE 名單；照規則紀錄另記）")
     # 名單（明天要買）
     if j_p is not None and not a.preview_buy and PUSH:                   # seq431：LINE 暫停時不推 ⇒ 使用者不會買 ⇒ 不記 positions_user（照規則欄照記）
-        plan[ds(nxt)] = {"批次": ds(MEd[j_p]), "名單日": ds(asof), "rows": [[s, n, float(p), int(k)] for s, n, p, k in buys], "main": sha[:10]}
+        plan[ds(nxt)] = {"批次": ds(MEd[j_p]), "名單日": ds(asof), "rows": [[s, n, float(p), int(k)] for s, n, p, k in buys], "main": sha[:10],
+                         "同分排序": tie_used}
     # ── 段落
     ctx = {"asof": ds(asof), "nxt": ds(nxt), "started": started, "e0": ds(cal[int(EP2[jF0])]) if started else ds([d for d in cal_ext if ym(d) == START_YM][0]),
            "form0": form0, "held": uv["held"], "buys": buys, "nfree": nfree, "backup": backup,
-           "sells_tmr": uv["sells_tmr"], "sold_today": uv["sold_today"], "sold_other": uv["sold_other"], "warn": warn, "note": note}
+           "sells_tmr": uv["sells_tmr"], "sold_today": uv["sold_today"], "sold_other": uv["sold_other"], "warn": warn, "note": note, "tie": tie_used}
     Lsec = render(ctx)
     # ── 寫檔（先狀態、後 md）
     if not a.nowrite:
@@ -815,13 +975,14 @@ def run(a, log=print):
         json.dump(st, open(tmp, "w", encoding="utf-8"), ensure_ascii=False, indent=1); os.replace(tmp, os.path.join(fwd, "state.json"))
         with open(os.path.join(fwd, "runlog.md"), "a", encoding="utf-8") as fh:
             fh.write(f"- [{now_tpe()} 台北] 資料日 {ds(asof)}｜main {sha[:10]}｜照規則持有 {len(held)}｜新買 {len(new_rows)}｜明天月初買進 {j_p is not None}"
-                     f"（名單 {[b[0] for b in buys]}）｜LINE {'有' if any('【LINE】' in x for x in Lsec) else '無'}"
+                     f"（名單 {[b[0] for b in buys]}）｜同分 {tie_used}｜LINE {'有' if any('【LINE】' in x for x in Lsec) else '無'}"
                      + (f"｜⚠ {'；'.join(warn)}" if warn else "") + f"｜{time.time() - T0:.0f}s\n")
     if a.md:
         put(a.md, Lsec)
     print("\n".join(Lsec))
     log(f"- 高10：{Lsec[2].lstrip('- ')}｜{time.time() - T0:.0f}s")
-    return Lsec, {"S": S, "ev": ev, "W": W, "held": held, "buys": buys, "t0": t0}
+    return Lsec, {"S": S, "ev": ev, "W": W, "held": held, "buys": buys, "t0": t0, "backup": backup, "tie": tie_used, "f9": f9i,
+                  "rule_order": pend_order, "user_order": user_ord, "rule_picks": rule_picks}
 
 
 def main():
@@ -829,6 +990,8 @@ def main():
     ap.add_argument("--asof"); ap.add_argument("--md"); ap.add_argument("--sha"); ap.add_argument("--fwd")
     ap.add_argument("--nowrite", action="store_true"); ap.add_argument("--preview-buy", action="store_true"); ap.add_argument("--procs", type=int, default=3)
     ap.add_argument("--data", help="測試用：直接指定快照 data 資料夾")
+    ap.add_argument("--tie", choices=TIES, help="測試用：覆寫設定檔「高10_同分排序」")
+    ap.add_argument("--xd", help="測試用：財報／法人／融資／集保資料夾（預設 mktdrop_cands.fund_dir(main sha)）")
     a = ap.parse_args()
     run(a)
 
