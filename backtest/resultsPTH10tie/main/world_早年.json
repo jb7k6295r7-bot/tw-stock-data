@@ -1,0 +1,29 @@
+{
+ "世界": "早年",
+ "開跑": "2026-10-21 18:54",
+ "對帳": {
+  "早年|原種子 N10（直接、rk 位置化兩路）eq/hv/u/pend/nh ＋ 交易檔全文 vs resultsPTHn": "逐位元／逐字相同（204 筆）",
+  "早年|原種子 N10s（直接、rk 位置化兩路）eq/hv/u/pend/nh ＋ 交易檔全文 vs resultsPTHn": "逐位元／逐字相同（204 筆）",
+  "早年|200 組種子權益 vs backtest/resultsBenchRejudge/pth10seed_早年.npz": "200 條逐位元相同",
+  "早年|200 組 早年 年化／回落／比值 vs resultsPTH10seed/seeds_早年.csv（%.10g）": "全部相同",
+  "早年|排序鍵重建 vs resultsPTH10tie/freq/members_早年.csv.gz": "全文逐字相同（3253 列、226 組、105 排序日）"
+ },
+ "AI1覆寫": {
+  "早年": {
+   "fund 季列": 170,
+   "最大延後天": 99,
+   "quality 季列": 170,
+   "最大延後天(Q)": 99
+  }
+ },
+ "窗": {
+  "早年": "2005-01-03～2014-12-31"
+ },
+ "大盤報酬指數": {
+  "來源": "git:origin/main:data/history/market_tri.csv",
+  "origin/main": "c25d63321f6bfb6e8326eef1a37099ab2aba60c1",
+  "世界日曆 ffill 補值日": 0
+ },
+ "耗時秒": 277,
+ "完成": "2026-10-21 18:58"
+}
