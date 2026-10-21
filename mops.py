@@ -105,7 +105,7 @@ SOURCES = {
 #   讀的人用 `公司代號` 查只拿到上市那一半，**而檔案看起來是完整的**。
 #   → 一律正規化出 `stock_id`／`name`／`period` 三個欄位放最前面，
 #     原始欄位保留在後面。這也與資料庫其他地方的 `stock_id` 命名一致。
-CODE_KEYS = ("公司代號", "SecuritiesCompanyCode")
+CODE_KEYS = ("公司代號", "SecuritiesCompanyCode", "stock_id")  # stock_id：revenue_hist（mops_history.py）也走 _log_changes
 NAME_KEYS = ("公司名稱", "CompanyName")
 YM_KEYS = ("資料年月",)
 Y_KEYS = ("年度", "Year")

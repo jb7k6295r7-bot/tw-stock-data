@@ -1,0 +1,61 @@
+name: 月營收彙總表（每日重抓近 3 期）
+
+# 為什麼要有這一支（2026-10-21，裁定 seq412 §二）：
+#   `data/mops/revenue_hist` 原本只有手動派 feeds.yml mode=mops-history 才會寫，而且預設 `--fill`
+#   ⇒ 已有檔的期別永遠不重抓 ⇒ 公司更正月營收（例 6443 2026-09，10-20 重訊更正）永遠進不來；
+#   新的一期也要等有人派。
+# ⇒ 每天重抓「三個月前到本月」（上市、上櫃，各含外國企業段），不帶 --fill：
+#   - 更正後的值當天進庫；舊值逐欄寫進 data/mops/_changes.log（mops_history.py 覆蓋前比對）。
+#   - 新表列數掉到舊表 95% 以下就不覆蓋（官方一次壞回應不會洗掉好資料）。
+# 每趟約 4 期 × 2 市場 × 2 段 ≈ 16 發，間隔 3 秒，約 2 分鐘。
+# ⛔ 只派 --ref main（分支上的 data/ 是舊的，比對不到舊值）。
+on:
+  schedule:
+    # UTC 13:07 = 台北 21:07；UTC 01:29 = 台北 09:29（備援，GitHub 排程常晚到或漏跑）
+    - cron: "7 13 * * *"
+    - cron: "29 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: revenue-hist
+  cancel-in-progress: false
+
+jobs:
+  revenue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 驗 workflow 自己（每一段 shell 的語法，零相依）
+        run: python selftest_workflows.py
+
+      - name: 掃有沒有第二份實作（零相依）
+        run: python selftest_no_dup.py
+
+      - name: 掃有沒有程式會刪掉被追蹤的 data/ 檔（零相依）
+        run: python selftest_no_data_delete.py
+
+      - name: 把程式同步到 main（趁 checkout 還新）
+        run: bash sync_code.sh
+
+      - name: 重抓近 3 期月營收彙總表
+        run: |
+          START=$(date -u -d "$(date -u +%Y-%m-01) -3 month" +%Y-%m)
+          echo "[revenue_hist] python mops_history.py --run --kind revenue --start $START --sleep 3"
+          python mops_history.py --run --kind revenue --start "$START" --sleep 3
+
+      - name: Commit 回 repo
+        if: always()
+        run: |
+          bash push_data.sh "revenue_hist: $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M') 台北"

@@ -133,3 +133,8 @@ body：`step=1&TYPEK=<sii|otc|rotc>&year=<民國年>&smonth=MM&emonth=MM&sstep=1
 - 同一人同日可能多列（不同受讓人、不同方式各一列）；要算「家數／人次」請自己依 (stock_id, declare_date, holder_key) 聚合。
 - 來源 mopsov 的 robots.txt 為 disallow ⇒ 只在自有排程小量取（每發間隔 ≥ 4 秒）；⛔ 不可改成高頻爬取。
 - 新月份：目前是一次性回補，⛔ 還沒接排程；⚠ 程式會整檔覆寫涉及到的年份 ⇒ 補新月份時範圍要涵蓋該年全部月份（例 `--from 115/01 --to 115/10`）。
+
+## 更新排程
+
+- `.github/workflows/insider_monthly.yml`：每月 5 日台北 10:17（6 日 14:41 備援），跑 `build.py --recent --outdir data/meta/insider_predeclare`，抓「上個月所在那一年」1 月到上個月（裁定 seq412 §六）。
+- 年檔整檔覆寫；⛔ 既有年檔列數比這一趟多就不覆寫並報紅（只准變多）。

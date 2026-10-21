@@ -236,7 +236,15 @@ def main():
     ap.add_argument("--sleep", type=float, default=4)
     ap.add_argument("--cache", default="", help="原始回應快取資料夾（⛔ 不要放 repo 內）")
     ap.add_argument("--ref", default="origin/main")
+    ap.add_argument("--outdir", default=HERE, help="年檔寫到哪裡（月排程寫 data/meta/insider_predeclare）")
+    ap.add_argument("--recent", action="store_true",
+                    help="月排程用：自動取「上個完整月所在那一年」的 1 月到上個月（年檔整檔覆寫，所以必須從 1 月起）")
     a = ap.parse_args()
+    if a.recent:
+        import datetime
+        t = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
+        a.frm, a.to = "%d/01" % (t.year - 1911), "%d/%02d" % (t.year - 1911, t.month)
+        print(f"--recent ⇒ {a.frm}～{a.to}", flush=True)
     if a.cache:
         os.makedirs(a.cache, exist_ok=True)
     anom, unk, mismatch, outwin = [], collections.Counter(), [], collections.Counter()
@@ -284,8 +292,17 @@ def main():
     by = collections.defaultdict(list)
     for r in allrows:
         by[r[1][:4]].append(r)
+    shrink = []
     for y, rr in sorted(by.items()):
-        with io.open(os.path.join(HERE, f"insider_predeclare_{y}.csv"), "w", encoding="utf-8", newline="") as f:
+        fp = os.path.join(a.outdir, f"insider_predeclare_{y}.csv")
+        # ⛔ 只准變多：既有年檔列數比這一趟多 ⇒ 這一趟抓少了（官方暫時少回、或查詢窗沒從 1 月起）⇒ 不覆寫
+        if os.path.exists(fp):
+            old_n = sum(1 for _ in io.open(fp, encoding="utf-8")) - 1
+            if old_n > len(rr):
+                shrink.append((y, old_n, len(rr)))
+                print(f"⛔ {y} 既有 {old_n} 列 > 這一趟 {len(rr)} 列 ⇒ 不覆寫", flush=True)
+                continue
+        with io.open(fp, "w", encoding="utf-8", newline="") as f:
             w = csv.writer(f, lineterminator="\n"); w.writerow(HDR); w.writerows(rr)
     # ── 彙總
     print(f"\n實際發送 {nfetch} 發；總列數 {len(allrows)}；跨發重複去掉 {dup_x}；同發內完全相同列（保留）{dup_in}")
@@ -315,6 +332,9 @@ def main():
         print(f"代號 {len(ids)} 個；不在 {a.ref}:data/meta/stocks.csv 的 {len(gone)} 個，例 {gone[:15]}")
     except Exception as ex:  # noqa: BLE001
         print("stocks.csv 比對失敗：", ex)
+    if mismatch or shrink:
+        print(f"⛔ 總計不符 {len(mismatch)}、年檔變少 {len(shrink)} ⇒ 結束碼 1")
+        return 1
     return 0
 
 
