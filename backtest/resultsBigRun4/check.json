@@ -1,0 +1,106 @@
+{
+ "K1": {
+  "外資持股率": {
+   "抽": 200,
+   "相符": 200
+  },
+  "營業利益率": {
+   "抽": 146,
+   "相符": 146
+  },
+  "營業利益率年變化": {
+   "抽": 146,
+   "相符": 146
+  },
+  "營業利益率由降轉升": {
+   "抽": 146,
+   "相符": 146
+  }
+ },
+ "K1_不符例": [],
+ "K1_外資兩版都有格": {
+  "格": 113935,
+  "相同": 113935
+ },
+ "K2": {
+  "列": 350,
+  "相符": 350
+ },
+ "K3": {
+  "指數": [
+   [
+    "半導體業",
+    "ew",
+    true,
+    true
+   ],
+   [
+    "半導體業",
+    "vw",
+    true,
+    true
+   ],
+   [
+    "航運業",
+    "ew",
+    true,
+    true
+   ],
+   [
+    "航運業",
+    "vw",
+    true,
+    true
+   ],
+   [
+    "建材營造",
+    "ew",
+    true,
+    true
+   ],
+   [
+    "建材營造",
+    "vw",
+    true,
+    true
+   ]
+  ],
+  "近3月營收": [
+   "True",
+   "True",
+   "True"
+  ]
+ },
+ "K4": {
+  "路徑抽格": 40,
+  "路徑相符": 40,
+  "先後抽算": 640,
+  "先後相符": 640
+ },
+ "K5": {
+  "自己漲段數": 1166,
+  "彙總與每年相符項": 2,
+  "前60排序相符": true,
+  "news則數抽查": "20/20"
+ },
+ "K6": {
+  "策略鎖": [
+   "策略鎖相符（25 支）"
+  ],
+  "已追蹤檔改動": [
+   " M backtest/forward/yl_rule/draws.csv",
+   " M backtest/forward/yl_rule/equity.csv",
+   " M backtest/forward/yl_rule/positions.csv",
+   " M backtest/forward/yl_rule/runlog.md",
+   " M backtest/forward/yl_rule/signals.csv",
+   " M backtest/forward/yl_rule/state.json",
+   " M backtest/mktdrop_fwd.py",
+   " M backtest/pth10_daily.py"
+  ],
+  "本件新增": [
+   "?? backtest/researchBigRun4.py",
+   "?? backtest/researchBigRun4_check.py",
+   "?? backtest/resultsBigRun4/"
+  ]
+ }
+}
