@@ -98,8 +98,15 @@ URL = "https://www.tpex.org.tw/www/zh-tw/bulletin/exDailyQ"
 #     （現金增資認股價高於市價，上市那邊有 9 筆）。
 #   ⛔ 沒有這一欄的話，那一類會被丟掉——而 FinMind 也沒有這一欄，
 #     ⇒ ⭐ **換成官方之後才第一次拿得到**，這是換源附帶的實質好處。
+# ⭐ 2026-10-22 補 `open_base`（官方「開始交易基準價」＝上市 TWT49U 的「開盤競價基準」）：
+#   ⚠ 這一欄 exDailyQ **一直有給**（2008-01-10 起 13,235/13,235 列非空），
+#     ⛔ 只是這裡沒收 ⇒ `otcexright/` 的 `open_base` 2008～2026 全空。
+#   ⭐ 它**不等於** `ref_price`：權息同日含現增時取最接近**減除股利參考價**之檔位
+#     （例：3260 威剛 2026-09-21 參考價 373.35、開始交易基準價 378.50），
+#     純除息也會差一個檔位捨入（5278 尚凡 23.63 → 23.65）⇒ ⛔ 不要拿 ref_price 代填。
+#   ⛔ 一定要接在 `asof` **前面**：`--scan-only` 讀回時靠「最後一欄是 asof」切掉它。
 HEADER = ["date", "stock_id", "name", "pre_close", "ref_price", "kind",
-          "value", "asof"]
+          "value", "open_base", "asof"]
 
 
 # ⛔ 第九／第十份：`_post` 也收進 `twparse.py`。
@@ -144,6 +151,10 @@ def parse(payload, want_from, want_to):
     # ⚠ 逐字比對「權值+息值」，⛔ 不可以只寫「權值」——那會先命中第 5 欄「權值」。
     #   （跟 `kind` 那個坑同一族：`_pick` 是包含比對、依欄位順序取第一個命中。）
     i_v = _pick(fields, "權值+息值")
+    # ⭐ 2026-10-22：官方欄名是「開始交易基準價」（openapi 叫 OpeningReferencePrice）。
+    #   ⚠ 逐字全名，不會撞到別欄；第二個關鍵字是上市的叫法，防官方改名成同義詞。
+    #   ⛔ 找不到**不整批拒收**（它不是必要欄），但要在 note 裡講出來，⛔ 不可以靜靜留空。
+    i_o = _pick(fields, "開始交易基準價", "開盤競價基準")
     miss = [n for n, i in (("日期", i_d), ("代號", i_c), ("前收盤", i_p),
                            ("參考價", i_r)) if i is None]
     if miss:
@@ -164,7 +175,9 @@ def parse(payload, want_from, want_to):
                      str(r[i_r]).replace(",", "").strip(),
                      str(r[i_k]).strip() if i_k is not None else "",
                      (str(r[i_v]).replace(",", "").strip()
-                      if i_v is not None and len(r) > i_v else "")])
+                      if i_v is not None and len(r) > i_v else ""),
+                     (str(r[i_o]).replace(",", "").strip()
+                      if i_o is not None and len(r) > i_o else "")])
     if not rows:
         return [], f"一列都認不出來（bad={bad}）：{fields}"
     ds = sorted(r[0] for r in rows)
@@ -176,8 +189,11 @@ def parse(payload, want_from, want_to):
         return [], (f"⛔ 回的只有最近的資料（{ds[0]} ~ {ds[-1]}，{len(rows)} 筆），"
                     f"我要的是 {want_from} 起"
                     "　⚠ 這就是『GET 或日期不帶斜線 ⇒ 靜靜回今天』那個陷阱")
+    n_ob = sum(1 for r in rows if r[7])
     return rows, (f"{len(data)} 列｜認得出 {len(rows)}"
                   + (f"｜⚠ 認不出 {bad}" if bad else "")
+                  + (f"｜開始交易基準價 {n_ob}/{len(rows)}" if i_o is not None
+                     else "｜⛔ **沒有「開始交易基準價」欄** ⇒ open_base 這一趟全空")
                   + f"｜涵蓋 {ds[0]} ~ {ds[-1]}｜欄位 {fields}")
 
 
