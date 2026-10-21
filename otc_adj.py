@@ -328,7 +328,10 @@ def official_rows(codes=None):
         ex.setdefault(day, []).append(_row(
             EX_HEADER, date=day, stock_id=c, pre_close=f"{pre:g}",
             ref_price=f"{ref:g}", value=r.get("value", ""),
-            kind=r.get("kind", ""), source="exDailyQ"))
+            kind=r.get("kind", ""),
+            # ⭐ 2026-10-22：官方「開始交易基準價」（判準檔新欄）。
+            #   ⚠ 舊版判準檔沒有這一欄 ⇒ 留空，⛔ 不要拿 ref_price 代填（兩者常差一個檔位）
+            open_base=r.get("open_base", ""), source="exDailyQ"))
     for r in _csv_rows(OFF_RD):
         c, day = r.get("stock_id", ""), r.get("date", "")
         pre, ref = _f(r.get("last_close")), _f(r.get("ref_price"))

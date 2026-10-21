@@ -121,6 +121,17 @@ def main():
         m = dict(zip(O.EX_HEADER, row))
         ck("  ⭐ `value`（官方權值+息值）有帶進來", m["value"] == "0.2", str(m))
         ck("  ⭐ `source` 標的是 `exDailyQ`", m["source"] == "exDailyQ", str(m))
+        # ⭐ 2026-10-22 open_base：舊版判準檔（沒有那一欄）⇒ 留空，⛔ 不拿 ref_price 代填
+        ck("  ⛔ 舊判準檔沒有 open_base ⇒ 留空（不是 9.8）", m["open_base"] == "", str(m))
+        _keep_ex = io.open(O.OFF_EX, encoding="utf-8").read()
+        io.open(O.OFF_EX, "w", encoding="utf-8").write(
+            "date,stock_id,name,pre_close,ref_price,kind,value,open_base,asof\n"
+            "2020-02-02,1111,甲,10,9.8,息,0.2,9.80,x\n")
+        exo, _, _ = O.official_rows({"1111"})
+        mo = dict(zip(O.EX_HEADER, exo["2020-02-02"][0]))
+        ck("  ⭐ 新判準檔的 open_base（開始交易基準價）帶進 otcexright",
+           mo["open_base"] == "9.80", str(mo))
+        io.open(O.OFF_EX, "w", encoding="utf-8").write(_keep_ex)
         r2 = dict(zip(O.RD_HEADER, rd["2020-03-03"][0]))
         ck("  減資：前收取的是 `last_close`（⛔ 不是 pre_close 欄名）",
            r2["pre_close"] == "16.65" and r2["ref_price"] == "26.92", str(r2))
