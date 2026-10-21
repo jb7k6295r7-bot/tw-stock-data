@@ -1,405 +1,675 @@
-策略,段,窗,原標籤,0050 基準重現標籤,標籤相同,0050年化相對差,0050回落相對差,0050相符,年化相對差,回落相對差,年化回落相符,容差,值來源,出處
-營量 v1,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,5e-08,檔值,backtest/resultsYL_integrate/cells.csv｜H60·S20·無·relvol
-營量 v1,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,5e-08,檔值,backtest/resultsYL_integrate/cells.csv｜H60·S20·無·relvol
-營量 v1,早年,2005-02-01～2014-12-31,合格,合格,True,0,0,True,0,0,True,5e-08,檔值,backtest/resultsYL_integrate/cells.csv｜H60·S20·無·relvol
-營飆 v1,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,5e-08,檔值（200 顆中位）,backtest/resultsYL_integrate/cells.csv｜H120·S10·閘·抽籤
-營飆 v1,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,5e-08,檔值（200 顆中位）,backtest/resultsYL_integrate/cells.csv｜H120·S10·閘·抽籤
-營飆 v1,早年,2005-02-01～2014-12-31,合格,合格,True,0,0,True,0,0,True,5e-08,檔值（200 顆中位）,backtest/resultsYL_integrate/cells.csv｜H120·S10·閘·抽籤
-六四 v1,2018～2026（窗 A）,2018-01-15～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,重算 researchMix70.sim＋researchLev2.perf,backtest/results64retest/summary.json｜A 2018-01-15～2026-08-24
-六四 v1,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,重算 researchMix70.sim＋researchLev2.perf,backtest/results64retest/summary.json｜B 確認段 2022-01-03～2026-08-24
-高10（接近 52 週高 最高 10 檔）,探索,2017-03-02～2021-12-30,合格,合格,True,7.85e-07,1.71e-06,True,2.25e-07,7.6e-07,True,1e-05,權益重算 backtest/resultsPTHn/eq_主.npz[N10_eq],"backtest/resultsPTHn/PTHn_main.csv｜{'N': '10', '滑價': 'False'}"
-高10（接近 52 週高 最高 10 檔）,確認,2022-01-03～2026-09-24,合格,合格,True,8.76e-07,1.55e-07,True,5.89e-07,9.8e-07,True,1e-05,權益重算 backtest/resultsPTHn/eq_主.npz[N10_eq],"backtest/resultsPTHn/PTHn_main.csv｜{'N': '10', '滑價': 'False'}"
-高10（接近 52 週高 最高 10 檔）,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,1.66e-07,4.6e-07,True,1e-05,權益重算 backtest/resultsPTHn/eq_早年.npz[N10_eq],"backtest/resultsPTHn/PTHn_main.csv｜{'N': '10', '滑價': 'False'}"
-52 週高 前 30%（PTHpf）,探索,2017-03-02～2021-12-30,另列,另列,True,7.85e-07,1.71e-06,True,2.14e-06,3.52e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[M_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'M'}
-52 週高 前 30%（PTHpf）,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.83e-06,8.92e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[M_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'M'}
-52 週高 前 30%（PTHpf）,早年,2005-01-03～2014-12-31,合格,合格,True,4e-07,5.53e-07,True,7.28e-07,3.68e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_早年.npz[M_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'M'}
-52 週高 前 30%（PTHpf）滑價版,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,2.09e-06,6.85e-08,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[Mslip_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'Mslip'}
-52 週高 前 30%（PTHpf）滑價版,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,9.69e-07,3.07e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[Mslip_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'Mslip'}
-52 週高 前 30%（PTHpf）滑價版,早年,2005-01-03～2014-12-31,合格,合格,True,4e-07,5.53e-07,True,4.42e-07,6.23e-08,True,1e-05,權益重算 backtest/resultsPTHpf/eq_早年.npz[Mslip_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'Mslip'}
-上升三角組合,探索,2017-03-02～2021-12-30,合格,合格,True,7.85e-07,1.71e-06,True,1.57e-06,4.45e-07,True,1e-05,權益重算 backtest/resultsAscTri/eq_主.npz[M0050],backtest/resultsAscTri/AscTri_main.csv｜{'臂': 'M0050'}
-上升三角組合,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,6e-07,4.37e-07,True,1e-05,權益重算 backtest/resultsAscTri/eq_主.npz[M0050],backtest/resultsAscTri/AscTri_main.csv｜{'臂': 'M0050'}
-上升三角組合,早年,2005-01-03～2014-12-31,合格,合格,True,4e-07,5.53e-07,True,1.41e-06,6.17e-07,True,1e-05,權益重算 backtest/resultsAscTri/eq_早年.npz[M0050],backtest/resultsAscTri/AscTri_main.csv｜{'臂': 'M0050'}
-海龜 S2 組合,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,7.16e-07,2.86e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[M_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'M'}
-海龜 S2 組合,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.55e-07,1.51e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[M_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'M'}
-海龜 S2 組合,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,8.4e-07,6.54e-08,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_早年.npz[M_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'M'}
-海龜 S2 組合 滑價版,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,1.83e-07,4.32e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[Mslip_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'Mslip'}
-海龜 S2 組合 滑價版,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.48e-06,5.9e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[Mslip_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'Mslip'}
-海龜 S2 組合 滑價版,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,3.33e-06,5.41e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_早年.npz[Mslip_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'Mslip'}
-PEAD 財報意外組合,探索,2017-03-02～2021-12-30,合格,合格,True,7.85e-07,1.71e-06,True,1.26e-06,6.11e-07,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[M_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'M'}
-PEAD 財報意外組合,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.09e-06,1.21e-06,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[M_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'M'}
-PEAD 財報意外組合 滑價版,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,5.41e-09,4.36e-08,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[Mslip_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'Mslip'}
-PEAD 財報意外組合 滑價版,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,2.99e-07,5.36e-07,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[Mslip_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'Mslip'}
-最笨交易法,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,9.39e-07,2.24e-07,True,1e-05,權益重算 backtest/resultsDumb/eq_主.npz[F1],"backtest/resultsDumb/Dumb_main.csv｜{'格': 'F1', '滑價': 'False'}"
-最笨交易法,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,2.24e-06,2.01e-07,True,1e-05,權益重算 backtest/resultsDumb/eq_主.npz[F1],"backtest/resultsDumb/Dumb_main.csv｜{'格': 'F1', '滑價': 'False'}"
-最笨交易法,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,6.6e-07,7.12e-07,True,1e-05,權益重算 backtest/resultsDumb/eq_早年.npz[F1],"backtest/resultsDumb/Dumb_main.csv｜{'格': 'F1', '滑價': 'False'}"
-BARR 底,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsBARR/grid.csv｜{'格': 'E2', '版本': 'b'}"
-BARR 底,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsBARR/grid.csv｜{'格': 'E2', '版本': 'b'}"
-BARR 底,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsBARR/summary.json｜早年.格.E2|b
-急跌錯殺,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashOversold/grid.csv｜{'格': 'F1X2', '版本': 'b'}"
-急跌錯殺,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashOversold/grid.csv｜{'格': 'F1X2', '版本': 'b'}"
-急跌錯殺,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsCrashOversold/summary.json｜早年.格.F1X2|b
-急跌：等營收證實,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等營收證實/grid.csv｜{'格': 'V1X2', '版本': 'b'}"
-急跌：等營收證實,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等營收證實/grid.csv｜{'格': 'V1X2', '版本': 'b'}"
-急跌：等營收證實,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsCrashExt/急跌後等營收證實/summary.json｜早年.格.V1X2|b
-急跌：等止跌,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等止跌/grid.csv｜{'格': 'S2X2', '版本': 'b'}"
-急跌：等止跌,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等止跌/grid.csv｜{'格': 'S2X2', '版本': 'b'}"
-急跌：等止跌,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsCrashExt/急跌後等止跌/summary.json｜早年.格.S2X2|b
-急跌：法人逆勢買,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌中有人逆勢買/grid.csv｜{'格': 'I1X2', '版本': 'b'}"
-急跌：法人逆勢買,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌中有人逆勢買/grid.csv｜{'格': 'I1X2', '版本': 'b'}"
-急跌：融資大減,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/融資大減型錯殺/grid.csv｜{'格': 'M1X2', '版本': 'b'}"
-急跌：融資大減,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/融資大減型錯殺/grid.csv｜{'格': 'M1X2', '版本': 'b'}"
-好營收漲停隔天買（0.585% 版）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'b'}"
-好營收漲停隔天買（0.585% 版）,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'b'}"
-好營收漲停隔天買（0.585% 版）,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevLimitUp/summary.json｜早年.格.E2|b
-好營收漲停隔天買（現實版，主要參考）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'r'}"
-好營收漲停隔天買（現實版，主要參考）,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'r'}"
-好營收漲停隔天買（現實版，主要參考）,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevLimitUp/summary.json｜早年.格.E2|r
-好營收股價已認同,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevPriceOK/grid.csv｜{'格': 'C2S2', '版本': 'b'}"
-好營收股價已認同,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevPriceOK/grid.csv｜{'格': 'C2S2', '版本': 'b'}"
-好營收股價已認同,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevPriceOK/summary.json｜早年.格.C2S2|b
-單季 EPS 比上季高,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsEPSqoq/grid.csv｜{'格': 'G2', '版本': 'b'}"
-單季 EPS 比上季高,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsEPSqoq/grid.csv｜{'格': 'G2', '版本': 'b'}"
-個股趨勢全多,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsTrendAll/grid.csv｜{'格': 'D2', '版本': 'b'}"
-個股趨勢全多,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsTrendAll/grid.csv｜{'格': 'D2', '版本': 'b'}"
-個股趨勢全多,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsTrendAll/summary.json｜早年.格.D2|b
-財報前季營收前段（全格退化、只描述）,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsPreFinRev/grid.csv｜{'格': 'A2', '版本': 'b'}"
-財報前季營收前段（全格退化、只描述）,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsPreFinRev/grid.csv｜{'格': 'A2', '版本': 'b'}"
-財報前季營收前段（全格退化、只描述）,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsPreFinRev/summary.json｜早年.格.A2|b
-高成長加速,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevAccel/grid.csv｜{'格': 'E2', '版本': 'b'}"
-高成長加速,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevAccel/grid.csv｜{'格': 'E2', '版本': 'b'}"
-高成長加速,早年,2005-01-03～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevAccel/summary.json｜早年.格.E2|b
-連續虧損股起漲,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsF4Launch/grid.csv｜{'格': 'k5_x20_E1', '版本': 'b', '母體': 'all', '群': 'F4'}"
-連續虧損股起漲,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsF4Launch/grid.csv｜{'格': 'k5_x20_E1', '版本': 'b', '母體': 'all', '群': 'F4'}"
-低週轉 甲,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '甲_L120_半年_N10'}
-低週轉 甲,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '甲_L120_半年_N10'}
-低週轉 甲,早年,2005-01-04～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '甲_L120_半年_N10'}
-低週轉 乙,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '乙_L120_季_N20'}
-低週轉 乙,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '乙_L120_季_N20'}
-低週轉 乙,早年,2005-01-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '乙_L120_季_N20'}
-週線達華斯,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLongD/cells.csv｜{'格': '週_N20'}
-週線達華斯,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLongD/cells.csv｜{'格': '週_N20'}
-週線達華斯,早年,2005-01-03～2014-12-31,合格,合格,True,0,1.99e-16,True,0,0,True,1e-05,檔值,backtest/resultsLongD/cells.csv｜{'格': '週_N20'}
-趨勢樣板,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLongT/table.csv｜{'格': '乙_月_N20'}
-趨勢樣板,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsLongT/table.csv｜{'格': '乙_月_N20'}
-趨勢樣板,早年,2005-03-01～2014-12-31,不合格,不合格,True,0.00436,0,False,0,0,True,1e-05,檔值,backtest/resultsLongT/table.csv｜{'格': '乙_月_N20'}
-借券＋法人（營量再加濾網）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSBL/cells_combo.csv｜{'世界': '主', '格': '乙_L20'}"
-借券＋法人（營量再加濾網）,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSBL/cells_combo.csv｜{'世界': '主', '格': '乙_L20'}"
-借券＋法人（營量再加濾網）,早年,2012-08-01～2014-12-31,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,"backtest/resultsSBL/cells_combo_early.csv｜{'世界': '早年', '格': '乙_L20'}"
-品質因子 甲（A2 版）,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '甲_Q4_半年_N20'}
-品質因子 甲（A2 版）,確認,2022-01-03～2026-08-24,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '甲_Q4_半年_N20'}
-品質因子 甲（A2 版）,早年,2014-06-04～2014-12-31,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '甲_Q4_半年_N20'}
-品質因子 乙（A2 版）,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '乙_Q4_季_N10'}
-品質因子 乙（A2 版）,確認,2022-01-03～2026-08-24,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '乙_Q4_季_N10'}
-品質因子 乙（A2 版）,早年,2015-08-04～2016-12-30,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '乙_Q4_季_N10'}
-品質因子 甲（A0 版）,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '甲_Q4_季_N20'}
-品質因子 甲（A0 版）,確認,2022-01-03～2026-08-24,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '甲_Q4_季_N20'}
-品質因子 甲（A0 版）,早年,2014-06-04～2014-12-31,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '甲_Q4_季_N20'}
-品質因子 乙（A0 版）,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '乙_Q4_季_N10'}
-品質因子 乙（A0 版）,確認,2022-01-03～2026-08-24,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '乙_Q4_季_N10'}
-品質因子 乙（A0 版）,早年,2015-08-04～2016-12-30,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '乙_Q4_季_N10'}
-動能改良 M1,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M1_F6_季_N20'}
-動能改良 M1,確認,2022-01-03～2026-08-24,另列,另列,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M1_F6_季_N20'}
-動能改良 M1,早年,2006-01-03～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M1_F6_季_N20'}
-動能改良 M2,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M2_F3_季_N20'}
-動能改良 M2,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M2_F3_季_N20'}
-動能改良 M2,早年,2006-01-03～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M2_F3_季_N20'}
-動能改良 M3,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M3_F6_月_N10'}
-動能改良 M3,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M3_F6_月_N10'}
-動能改良 M3,早年,2006-01-03～2014-12-31,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M3_F6_月_N10'}
-動能改良 M4,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M4_F6_月_N10'}
-動能改良 M4,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M4_F6_月_N10'}
-動能改良 M4,早年,2006-01-03～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M4_F6_月_N10'}
-機器學習 改目標,探索,2019-01-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMLx/cells.csv｜{'格': 'A_GB_季_N20'}
-機器學習 改目標,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMLx/cells.csv｜{'格': 'A_GB_季_N20'}
-合成分數,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsScore/cells.csv｜{'格': 'L20_月換_N10'}
-合成分數,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsScore/cells.csv｜{'格': 'L20_月換_N10'}
-合成分數,早年,2012-06-01～2014-12-30,另列,另列,True,0,2.86e-16,True,0,0,True,1e-12,檔值,backtest/resultsScore/summary.json｜早年.A
-訊號進訊號出 E1（任一高檔訊號出）,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': '無', '停利': '無'}"
-訊號進訊號出 E1（任一高檔訊號出）,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': '無', '停利': '無'}"
-訊號進訊號出 E2,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E2', '出場': 'EVE', '停損': '無', '停利': '無'}"
-訊號進訊號出 E2,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E2', '出場': 'EVE', '停損': '無', '停利': '無'}"
-訊號進訊號出 E1＋停損停利,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': 'SL10', '停利': 'TP50h'}"
-訊號進訊號出 E1＋停損停利,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': 'SL10', '停利': 'TP50h'}"
-訊號進訊號出（重挑）E1,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E1', '出場': 'VSc', '停損': '無', '停利': '無'}"
-訊號進訊號出（重挑）E1,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E1', '出場': 'VSc', '停損': '無', '停利': '無'}"
-訊號進訊號出（重挑）E2,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E2', '出場': 'VSc', '停損': '無', '停利': '無'}"
-訊號進訊號出（重挑）E2,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E2', '出場': 'VSc', '停損': '無', '停利': '無'}"
-跌破均線出 E1,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E1', '出場': 'MA60'}"
-跌破均線出 E1,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E1', '出場': 'MA60'}"
-跌破均線出 E2,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E2', '出場': 'MA60'}"
-跌破均線出 E2,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E2', '出場': 'MA60'}"
-外部作者 W1,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W1', '出場／H': 'MA20'}"
-外部作者 W1,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W1', '出場／H': 'MA20'}"
-外部作者 W2,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W2', '出場／H': 'MA60'}"
-外部作者 W2,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W2', '出場／H': 'MA60'}"
-外部作者 Y1,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y1', '出場／H': 'MA60'}"
-外部作者 Y1,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y1', '出場／H': 'MA60'}"
-外部作者 Y2out,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y2out', '出場／H': 'H60'}"
-外部作者 Y2out,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y2out', '出場／H': 'H60'}"
-外部作者 Y4_MA10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y4_MA10', '出場／H': 'H120'}"
-外部作者 Y4_MA10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y4_MA10', '出場／H': 'H120'}"
-外部作者 Y5,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y5', '出場／H': 'H60'}"
-外部作者 Y5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y5', '出場／H': 'H60'}"
-外部作者 O1,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'O1', '出場／H': 'MA20'}"
-外部作者 O1,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'O1', '出場／H': 'MA20'}"
-外部作者 S1,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'S1', '出場／H': 'H120'}"
-外部作者 S1,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'S1', '出場／H': 'H120'}"
-季節性：營量 1～2 月換 0050（丙）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSeason/cells.csv｜{'策略': '營量', '格': '丙_1～2月'}"
-季節性：營量 1～2 月換 0050（丙）,確認,2022-01-03～2026-08-24,合格,合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,"backtest/resultsSeason/cells.csv｜{'策略': '營量', '格': '丙_1～2月'}"
-季節性：營量 1～2 月換 0050（丙）,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,1.43e-16,True,0,0,True,1e-05,檔值,"backtest/resultsSeason/cells.csv｜{'策略': '營量', '格': '丙_1～2月'}"
-App 大師 M H20,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 M H60,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 M H120,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 X H20,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 X H60,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 X H120,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 O H20,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 O H60,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-App 大師 O H120,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
-爆量突破 B5·k1.5·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L60,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L60,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L60,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L60,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L60,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L10,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L60,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L10,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L20,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L60,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L10,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L60,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L5,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L10,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L20,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L60,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L5,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L10,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L20,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L60,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k1.5·L60,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k2.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B5·k3.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k1.5·L60,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k2.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B10·k3.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k1.5·L60,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k2.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B20·k3.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k1.5·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k2.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L20,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B60·k3.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k1.5·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L20,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k2.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L5,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L10,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L20,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-爆量突破 B120·k3.0·L60,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
-產業營收加速（爆發產業）,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRev/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
-產業營收加速（爆發產業）,確認,2022-01-03～2026-08-24,不合格,不合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,backtest/resultsIndRev/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
-產業營收加速（爆發產業）,早年,2012-06-01～2014-12-30,不合格,不合格,True,8.26e-11,1.77e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRev/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
-產業營收加速但股價落後,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
-產業營收加速但股價落後,確認,2022-01-03～2026-08-24,不合格,不合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
-產業營收加速但股價落後,早年,2012-06-01～2014-12-30,另列,另列,True,8.26e-11,1.77e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
-產業營收落後：買賣點改版,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/buysell/cells.csv｜{'key': 'B0|T60'}
-產業營收落後：買賣點改版,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/buysell/cells.csv｜{'key': 'B0|T60'}
-產業營收落後：買賣點改版,早年,2012-06-01～2014-12-30,不合格,不合格,True,0,2.86e-16,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/buysell/cells.csv｜{'key': 'B0|T60'}
-去年漲最多（T6 前 10 名、營收年增＞0）,探索,2016-12-30～2021-12-30,不合格,不合格,True,2.29e-10,2.18e-11,True,0,0,True,1e-05,檔值,backtest/resultsTopPrevTW/cells.csv｜T6 主臂
-去年漲最多（T6 前 10 名、營收年增＞0）,確認,2021-12-30～2026-09-24,另列,另列,True,8.93e-11,1.15e-10,True,0,0,True,1e-05,檔值,backtest/resultsTopPrevTW/cells.csv｜T6 主臂
-去年漲最多（T6 前 10 名、營收年增＞0）,早年,2005-12-30～2014-12-31,不合格,不合格,True,3.6e-11,2.64e-11,True,0,0,True,1e-05,檔值,backtest/resultsTopPrevTW/cells.csv｜T6 主臂
-庫藏股買回後買（H120）,早年,2005-01-03～2011-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsEvt/port_cells.csv
-庫藏股買回後買（H120）,確認,2019-01-02～2026-08-24,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsEvt/port_cells.csv
-營量趨勢（乙_T3_H40）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLtrend/cells.csv｜{'格': '乙_T3_H40'}
-營量趨勢（乙_T3_H40）,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLtrend/cells.csv｜{'格': '乙_T3_H40'}
-營量趨勢（乙_T3_H40）,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLtrend/cells.csv｜{'格': '乙_T3_H40'}
-營量出場 seq1 營量_甲_b5_H40,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_甲_b5_H40'}
-營量出場 seq1 營量_甲_b5_H40,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_甲_b5_H40'}
-營量出場 seq1 營量_甲_b5_H40,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_甲_b5_H40'}
-營量出場 seq1 營量_乙_k60_C120,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_乙_k60_C120'}
-營量出場 seq1 營量_乙_k60_C120,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_乙_k60_C120'}
-營量出場 seq1 營量_乙_k60_C120,早年,2012-06-04～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_乙_k60_C120'}
-營量出場 seq3 營量_甲3_b5_H40,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_甲3_b5_H40'}
-營量出場 seq3 營量_甲3_b5_H40,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_甲3_b5_H40'}
-營量出場 seq3 營量_甲3_b5_H40,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_甲3_b5_H40'}
-營量出場 seq3 營量_乙3_k55_c10_C120,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_乙3_k55_c10_C120'}
-營量出場 seq3 營量_乙3_k55_c10_C120,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_乙3_k55_c10_C120'}
-營量出場 seq3 營量_乙3_k55_c10_C120,早年,2012-06-04～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_乙3_k55_c10_C120'}
-週線乙（營量看週收盤）,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsWeekly/乙_cells.csv｜{'格': 'L5_m8_C26'}
-週線乙（營量看週收盤）,確認,2022-01-03～2026-08-24,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsWeekly/乙_cells.csv｜{'格': 'L5_m8_C26'}
-週線乙（營量看週收盤）,早年,2012-06-04～2014-12-31,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsWeekly/乙_cells.csv｜{'格': 'L5_m8_C26'}
-毛利率沒退步（營量）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'vol|q1'}
-毛利率沒退步（營量）,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'vol|q1'}
-毛利率沒退步（營飆）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'fly|q1'}
-毛利率沒退步（營飆）,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'fly|q1'}
-同產業最多 3 檔（營量）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'vol|cap'}
-同產業最多 3 檔（營量）,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'vol|cap'}
-同產業最多 3 檔（營飆）,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'fly|cap'}
-同產業最多 3 檔（營飆）,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'fly|cap'}
-營飆 15 檔,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '15'}"
-營飆 15 檔,確認,2022-01-03～2026-08-24,不合格,不合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '15'}"
-營飆 15 檔,早年,2005-02-01～2014-12-31,合格,合格,True,3.13e-11,2.64e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '早年', 'N': '15'}"
-營飆 20 檔,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '20'}"
-營飆 20 檔,確認,2022-01-03～2026-08-24,另列,另列,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '20'}"
-營飆 20 檔,早年,2005-02-01～2014-12-31,合格,合格,True,3.13e-11,2.64e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '早年', 'N': '20'}"
-營量 v1 補下市營收（描述）,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營量'}"
-營量 v1 補下市營收（描述）,確認,2022-01-03～2026-08-24,合格,合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營量'}"
-營飆 v1 補下市營收（描述）,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營飆'}"
-營飆 v1 補下市營收（描述）,確認,2022-01-03～2026-08-24,合格,合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營飆'}"
-候選 17 格 #1 PREREG10｜AND｜regime=True｜N10｜H120,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #2 P3乙｜N≤8｜N8｜d=1.0｜relvol,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #3 P1｜AND｜N8｜d=1.0｜relvol,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #4 PREREG10｜AND｜regime=True｜N10｜LD,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #5 P17｜R_eq（判定格）,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #6 P1｜AND｜N8｜d=2.0｜relvol,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #7 PREREG10｜AND｜regime=True｜N10｜H60,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #8 P14｜w=0.50（＝各半混 0050）,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #9 P1｜AND｜N10｜d=inf｜relvol,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #10 P3乙｜N≤8｜N8｜d=2.0｜relvol,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #11 P1｜AND｜N8｜d=inf｜relvol,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #12 PREREG10｜AND｜regime=False｜N10｜H120,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #13 P1｜AND｜N20｜d=inf｜relvol,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #14 P1｜AND｜N20｜d=inf｜null,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #15 PREREG10｜AND｜regime=False｜N20｜H60,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #16 PREREG10｜AND｜regime=True｜N20｜H60,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
-候選 17 格 #17 PREREG10｜AND｜regime=True｜N20｜H120,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+策略,族,段,窗,原標籤,0050 基準重現標籤,標籤相同,0050年化相對差,0050回落相對差,0050相符,年化相對差,回落相對差,年化回落相符,容差,值來源,出處
+營量 v1,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,5e-08,檔值,backtest/resultsYL_integrate/cells.csv｜H60·S20·無·relvol
+營量 v1,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,5e-08,檔值,backtest/resultsYL_integrate/cells.csv｜H60·S20·無·relvol
+營量 v1,第一階段,早年,2005-02-01～2014-12-31,合格,合格,True,0,0,True,0,0,True,5e-08,檔值,backtest/resultsYL_integrate/cells.csv｜H60·S20·無·relvol
+營飆 v1,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,5e-08,檔值（200 顆中位）,backtest/resultsYL_integrate/cells.csv｜H120·S10·閘·抽籤
+營飆 v1,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,5e-08,檔值（200 顆中位）,backtest/resultsYL_integrate/cells.csv｜H120·S10·閘·抽籤
+營飆 v1,第一階段,早年,2005-02-01～2014-12-31,合格,合格,True,0,0,True,0,0,True,5e-08,檔值（200 顆中位）,backtest/resultsYL_integrate/cells.csv｜H120·S10·閘·抽籤
+六四 v1,第一階段,2018～2026（窗 A）,2018-01-15～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,重算 researchMix70.sim＋researchLev2.perf,backtest/results64retest/summary.json｜A 2018-01-15～2026-08-24
+六四 v1,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,重算 researchMix70.sim＋researchLev2.perf,backtest/results64retest/summary.json｜B 確認段 2022-01-03～2026-08-24
+高10（接近 52 週高 最高 10 檔）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,7.85e-07,1.71e-06,True,2.25e-07,7.6e-07,True,1e-05,權益重算 backtest/resultsPTHn/eq_主.npz[N10_eq],"backtest/resultsPTHn/PTHn_main.csv｜{'N': '10', '滑價': 'False'}"
+高10（接近 52 週高 最高 10 檔）,第一階段,確認,2022-01-03～2026-09-24,合格,合格,True,8.76e-07,1.55e-07,True,5.89e-07,9.8e-07,True,1e-05,權益重算 backtest/resultsPTHn/eq_主.npz[N10_eq],"backtest/resultsPTHn/PTHn_main.csv｜{'N': '10', '滑價': 'False'}"
+高10（接近 52 週高 最高 10 檔）,第一階段,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,1.66e-07,4.6e-07,True,1e-05,權益重算 backtest/resultsPTHn/eq_早年.npz[N10_eq],"backtest/resultsPTHn/PTHn_main.csv｜{'N': '10', '滑價': 'False'}"
+52 週高 前 30%（PTHpf）,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,7.85e-07,1.71e-06,True,2.14e-06,3.52e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[M_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'M'}
+52 週高 前 30%（PTHpf）,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.83e-06,8.92e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[M_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'M'}
+52 週高 前 30%（PTHpf）,第一階段,早年,2005-01-03～2014-12-31,合格,合格,True,4e-07,5.53e-07,True,7.28e-07,3.68e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_早年.npz[M_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'M'}
+52 週高 前 30%（PTHpf）滑價版,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,2.09e-06,6.85e-08,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[Mslip_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'Mslip'}
+52 週高 前 30%（PTHpf）滑價版,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,9.69e-07,3.07e-07,True,1e-05,權益重算 backtest/resultsPTHpf/eq_主.npz[Mslip_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'Mslip'}
+52 週高 前 30%（PTHpf）滑價版,第一階段,早年,2005-01-03～2014-12-31,合格,合格,True,4e-07,5.53e-07,True,4.42e-07,6.23e-08,True,1e-05,權益重算 backtest/resultsPTHpf/eq_早年.npz[Mslip_eq],backtest/resultsPTHpf/PTHpf_main.csv｜{'臂': 'Mslip'}
+上升三角組合,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,7.85e-07,1.71e-06,True,1.57e-06,4.45e-07,True,1e-05,權益重算 backtest/resultsAscTri/eq_主.npz[M0050],backtest/resultsAscTri/AscTri_main.csv｜{'臂': 'M0050'}
+上升三角組合,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,6e-07,4.37e-07,True,1e-05,權益重算 backtest/resultsAscTri/eq_主.npz[M0050],backtest/resultsAscTri/AscTri_main.csv｜{'臂': 'M0050'}
+上升三角組合,第一階段,早年,2005-01-03～2014-12-31,合格,合格,True,4e-07,5.53e-07,True,1.41e-06,6.17e-07,True,1e-05,權益重算 backtest/resultsAscTri/eq_早年.npz[M0050],backtest/resultsAscTri/AscTri_main.csv｜{'臂': 'M0050'}
+海龜 S2 組合,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,7.16e-07,2.86e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[M_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'M'}
+海龜 S2 組合,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.55e-07,1.51e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[M_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'M'}
+海龜 S2 組合,第一階段,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,8.4e-07,6.54e-08,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_早年.npz[M_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'M'}
+海龜 S2 組合 滑價版,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,1.83e-07,4.32e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[Mslip_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'Mslip'}
+海龜 S2 組合 滑價版,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.48e-06,5.9e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_主.npz[Mslip_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'Mslip'}
+海龜 S2 組合 滑價版,第一階段,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,3.33e-06,5.41e-07,True,1e-05,權益重算 backtest/resultsTurtleS2PF/eq_早年.npz[Mslip_eq],backtest/resultsTurtleS2PF/TurtleS2PF_main.csv｜{'臂': 'Mslip'}
+PEAD 財報意外組合,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,7.85e-07,1.71e-06,True,1.26e-06,6.11e-07,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[M_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'M'}
+PEAD 財報意外組合,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,1.09e-06,1.21e-06,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[M_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'M'}
+PEAD 財報意外組合 滑價版,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,5.41e-09,4.36e-08,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[Mslip_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'Mslip'}
+PEAD 財報意外組合 滑價版,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,2.99e-07,5.36e-07,True,1e-05,權益重算 backtest/resultsPEADpf/eq.npz[Mslip_eq],backtest/resultsPEADpf/PEADpf_main.csv｜{'臂': 'Mslip'}
+最笨交易法,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,7.85e-07,1.71e-06,True,9.39e-07,2.24e-07,True,1e-05,權益重算 backtest/resultsDumb/eq_主.npz[F1],"backtest/resultsDumb/Dumb_main.csv｜{'格': 'F1', '滑價': 'False'}"
+最笨交易法,第一階段,確認,2022-01-03～2026-09-24,不合格,不合格,True,8.76e-07,1.55e-07,True,2.24e-06,2.01e-07,True,1e-05,權益重算 backtest/resultsDumb/eq_主.npz[F1],"backtest/resultsDumb/Dumb_main.csv｜{'格': 'F1', '滑價': 'False'}"
+最笨交易法,第一階段,早年,2005-01-03～2014-12-31,不合格,不合格,True,4e-07,5.53e-07,True,6.6e-07,7.12e-07,True,1e-05,權益重算 backtest/resultsDumb/eq_早年.npz[F1],"backtest/resultsDumb/Dumb_main.csv｜{'格': 'F1', '滑價': 'False'}"
+BARR 底,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsBARR/grid.csv｜{'格': 'E2', '版本': 'b'}"
+BARR 底,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsBARR/grid.csv｜{'格': 'E2', '版本': 'b'}"
+BARR 底,第一階段,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsBARR/summary.json｜早年.格.E2|b
+急跌錯殺,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashOversold/grid.csv｜{'格': 'F1X2', '版本': 'b'}"
+急跌錯殺,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashOversold/grid.csv｜{'格': 'F1X2', '版本': 'b'}"
+急跌錯殺,第一階段,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsCrashOversold/summary.json｜早年.格.F1X2|b
+急跌：等營收證實,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等營收證實/grid.csv｜{'格': 'V1X2', '版本': 'b'}"
+急跌：等營收證實,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等營收證實/grid.csv｜{'格': 'V1X2', '版本': 'b'}"
+急跌：等營收證實,第一階段,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsCrashExt/急跌後等營收證實/summary.json｜早年.格.V1X2|b
+急跌：等止跌,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等止跌/grid.csv｜{'格': 'S2X2', '版本': 'b'}"
+急跌：等止跌,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌後等止跌/grid.csv｜{'格': 'S2X2', '版本': 'b'}"
+急跌：等止跌,第一階段,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsCrashExt/急跌後等止跌/summary.json｜早年.格.S2X2|b
+急跌：法人逆勢買,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌中有人逆勢買/grid.csv｜{'格': 'I1X2', '版本': 'b'}"
+急跌：法人逆勢買,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/急跌中有人逆勢買/grid.csv｜{'格': 'I1X2', '版本': 'b'}"
+急跌：融資大減,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/融資大減型錯殺/grid.csv｜{'格': 'M1X2', '版本': 'b'}"
+急跌：融資大減,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsCrashExt/融資大減型錯殺/grid.csv｜{'格': 'M1X2', '版本': 'b'}"
+好營收漲停隔天買（0.585% 版）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'b'}"
+好營收漲停隔天買（0.585% 版）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'b'}"
+好營收漲停隔天買（0.585% 版）,第一階段,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevLimitUp/summary.json｜早年.格.E2|b
+好營收漲停隔天買（現實版，主要參考）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'r'}"
+好營收漲停隔天買（現實版，主要參考）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevLimitUp/grid.csv｜{'格': 'E2', '版本': 'r'}"
+好營收漲停隔天買（現實版，主要參考）,第一階段,早年,2005-01-03～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevLimitUp/summary.json｜早年.格.E2|r
+好營收股價已認同,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevPriceOK/grid.csv｜{'格': 'C2S2', '版本': 'b'}"
+好營收股價已認同,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevPriceOK/grid.csv｜{'格': 'C2S2', '版本': 'b'}"
+好營收股價已認同,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevPriceOK/summary.json｜早年.格.C2S2|b
+單季 EPS 比上季高,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsEPSqoq/grid.csv｜{'格': 'G2', '版本': 'b'}"
+單季 EPS 比上季高,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsEPSqoq/grid.csv｜{'格': 'G2', '版本': 'b'}"
+個股趨勢全多,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsTrendAll/grid.csv｜{'格': 'D2', '版本': 'b'}"
+個股趨勢全多,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsTrendAll/grid.csv｜{'格': 'D2', '版本': 'b'}"
+個股趨勢全多,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsTrendAll/summary.json｜早年.格.D2|b
+財報前季營收前段（全格退化、只描述）,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsPreFinRev/grid.csv｜{'格': 'A2', '版本': 'b'}"
+財報前季營收前段（全格退化、只描述）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsPreFinRev/grid.csv｜{'格': 'A2', '版本': 'b'}"
+財報前季營收前段（全格退化、只描述）,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsPreFinRev/summary.json｜早年.格.A2|b
+高成長加速,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevAccel/grid.csv｜{'格': 'E2', '版本': 'b'}"
+高成長加速,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsRevAccel/grid.csv｜{'格': 'E2', '版本': 'b'}"
+高成長加速,第一階段,早年,2005-01-03～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsRevAccel/summary.json｜早年.格.E2|b
+連續虧損股起漲,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsF4Launch/grid.csv｜{'格': 'k5_x20_E1', '版本': 'b', '母體': 'all', '群': 'F4'}"
+連續虧損股起漲,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsF4Launch/grid.csv｜{'格': 'k5_x20_E1', '版本': 'b', '母體': 'all', '群': 'F4'}"
+低週轉 甲,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '甲_L120_半年_N10'}
+低週轉 甲,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '甲_L120_半年_N10'}
+低週轉 甲,第一階段,早年,2005-01-04～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '甲_L120_半年_N10'}
+低週轉 乙,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '乙_L120_季_N20'}
+低週轉 乙,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '乙_L120_季_N20'}
+低週轉 乙,第一階段,早年,2005-01-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLowTO/cells.csv｜{'格': '乙_L120_季_N20'}
+週線達華斯,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLongD/cells.csv｜{'格': '週_N20'}
+週線達華斯,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLongD/cells.csv｜{'格': '週_N20'}
+週線達華斯,第一階段,早年,2005-01-03～2014-12-31,合格,合格,True,0,1.99e-16,True,0,0,True,1e-05,檔值,backtest/resultsLongD/cells.csv｜{'格': '週_N20'}
+趨勢樣板,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsLongT/table.csv｜{'格': '乙_月_N20'}
+趨勢樣板,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsLongT/table.csv｜{'格': '乙_月_N20'}
+趨勢樣板,第一階段,早年,2005-03-01～2014-12-31,不合格,不合格,True,0.00436,0,False,0,0,True,1e-05,檔值,backtest/resultsLongT/table.csv｜{'格': '乙_月_N20'}
+借券＋法人（營量再加濾網）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSBL/cells_combo.csv｜{'世界': '主', '格': '乙_L20'}"
+借券＋法人（營量再加濾網）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSBL/cells_combo.csv｜{'世界': '主', '格': '乙_L20'}"
+借券＋法人（營量再加濾網）,第一階段,早年,2012-08-01～2014-12-31,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,"backtest/resultsSBL/cells_combo_early.csv｜{'世界': '早年', '格': '乙_L20'}"
+品質因子 甲（A2 版）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '甲_Q4_半年_N20'}
+品質因子 甲（A2 版）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '甲_Q4_半年_N20'}
+品質因子 甲（A2 版）,第一階段,早年,2014-06-04～2014-12-31,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '甲_Q4_半年_N20'}
+品質因子 乙（A2 版）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '乙_Q4_季_N10'}
+品質因子 乙（A2 版）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '乙_Q4_季_N10'}
+品質因子 乙（A2 版）,第一階段,早年,2015-08-04～2016-12-30,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQual/cells.csv｜{'格': '乙_Q4_季_N10'}
+品質因子 甲（A0 版）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '甲_Q4_季_N20'}
+品質因子 甲（A0 版）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '甲_Q4_季_N20'}
+品質因子 甲（A0 版）,第一階段,早年,2014-06-04～2014-12-31,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '甲_Q4_季_N20'}
+品質因子 乙（A0 版）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '乙_Q4_季_N10'}
+品質因子 乙（A0 版）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '乙_Q4_季_N10'}
+品質因子 乙（A0 版）,第一階段,早年,2015-08-04～2016-12-30,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsQualA0/cells.csv｜{'格': '乙_Q4_季_N10'}
+動能改良 M1,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M1_F6_季_N20'}
+動能改良 M1,第一階段,確認,2022-01-03～2026-08-24,另列,另列,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M1_F6_季_N20'}
+動能改良 M1,第一階段,早年,2006-01-03～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M1_F6_季_N20'}
+動能改良 M2,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M2_F3_季_N20'}
+動能改良 M2,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M2_F3_季_N20'}
+動能改良 M2,第一階段,早年,2006-01-03～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M2_F3_季_N20'}
+動能改良 M3,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M3_F6_月_N10'}
+動能改良 M3,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M3_F6_月_N10'}
+動能改良 M3,第一階段,早年,2006-01-03～2014-12-31,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M3_F6_月_N10'}
+動能改良 M4,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M4_F6_月_N10'}
+動能改良 M4,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M4_F6_月_N10'}
+動能改良 M4,第一階段,早年,2006-01-03～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMomX/cells.csv｜{'格': 'M4_F6_月_N10'}
+機器學習 改目標,第一階段,探索,2019-01-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsMLx/cells.csv｜{'格': 'A_GB_季_N20'}
+機器學習 改目標,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMLx/cells.csv｜{'格': 'A_GB_季_N20'}
+合成分數,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsScore/cells.csv｜{'格': 'L20_月換_N10'}
+合成分數,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsScore/cells.csv｜{'格': 'L20_月換_N10'}
+合成分數,第一階段,早年,2012-06-01～2014-12-30,另列,另列,True,0,2.86e-16,True,0,0,True,1e-12,檔值,backtest/resultsScore/summary.json｜早年.A
+訊號進訊號出 E1（任一高檔訊號出）,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': '無', '停利': '無'}"
+訊號進訊號出 E1（任一高檔訊號出）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': '無', '停利': '無'}"
+訊號進訊號出 E2,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E2', '出場': 'EVE', '停損': '無', '停利': '無'}"
+訊號進訊號出 E2,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E2', '出場': 'EVE', '停損': '無', '停利': '無'}"
+訊號進訊號出 E1＋停損停利,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': 'SL10', '停利': 'TP50h'}"
+訊號進訊號出 E1＋停損停利,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSig/cells.csv｜{'E': 'E1', '出場': 'EVE', '停損': 'SL10', '停利': 'TP50h'}"
+訊號進訊號出（重挑）E1,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E1', '出場': 'VSc', '停損': '無', '停利': '無'}"
+訊號進訊號出（重挑）E1,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E1', '出場': 'VSc', '停損': '無', '停利': '無'}"
+訊號進訊號出（重挑）E2,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E2', '出場': 'VSc', '停損': '無', '停利': '無'}"
+訊號進訊號出（重挑）E2,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigRe/cells.csv｜{'E': 'E2', '出場': 'VSc', '停損': '無', '停利': '無'}"
+跌破均線出 E1,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E1', '出場': 'MA60'}"
+跌破均線出 E1,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E1', '出場': 'MA60'}"
+跌破均線出 E2,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E2', '出場': 'MA60'}"
+跌破均線出 E2,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSigMA/cells.csv｜{'E': 'E2', '出場': 'MA60'}"
+外部作者 W1,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W1', '出場／H': 'MA20'}"
+外部作者 W1,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W1', '出場／H': 'MA20'}"
+外部作者 W2,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W2', '出場／H': 'MA60'}"
+外部作者 W2,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'W2', '出場／H': 'MA60'}"
+外部作者 Y1,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y1', '出場／H': 'MA60'}"
+外部作者 Y1,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y1', '出場／H': 'MA60'}"
+外部作者 Y2out,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y2out', '出場／H': 'H60'}"
+外部作者 Y2out,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y2out', '出場／H': 'H60'}"
+外部作者 Y4_MA10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y4_MA10', '出場／H': 'H120'}"
+外部作者 Y4_MA10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y4_MA10', '出場／H': 'H120'}"
+外部作者 Y5,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y5', '出場／H': 'H60'}"
+外部作者 Y5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth/cells.csv｜{'顆': 'Y5', '出場／H': 'H60'}"
+外部作者 O1,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'O1', '出場／H': 'MA20'}"
+外部作者 O1,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'O1', '出場／H': 'MA20'}"
+外部作者 S1,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'S1', '出場／H': 'H120'}"
+外部作者 S1,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsExtAuth2/cells.csv｜{'顆': 'S1', '出場／H': 'H120'}"
+季節性：營量 1～2 月換 0050（丙）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,"backtest/resultsSeason/cells.csv｜{'策略': '營量', '格': '丙_1～2月'}"
+季節性：營量 1～2 月換 0050（丙）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,"backtest/resultsSeason/cells.csv｜{'策略': '營量', '格': '丙_1～2月'}"
+季節性：營量 1～2 月換 0050（丙）,第一階段,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,1.43e-16,True,0,0,True,1e-05,檔值,"backtest/resultsSeason/cells.csv｜{'策略': '營量', '格': '丙_1～2月'}"
+App 大師 M H20,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 M H60,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 M H120,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 X H20,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 X H60,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 X H120,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 O H20,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 O H60,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+App 大師 O H120,第一階段,單窗,2019-06-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsMaster4/cells.csv
+爆量突破 B5·k1.5·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L60,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L60,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L60,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L60,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L60,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L10,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L60,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L10,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L20,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L60,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L10,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L60,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L5,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L10,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L20,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L60,第一階段,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L5,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L10,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L20,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L60,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k1.5·L60,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k2.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B5·k3.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k1.5·L60,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k2.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B10·k3.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k1.5·L60,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k2.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B20·k3.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k1.5·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k2.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L20,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B60·k3.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k1.5·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L20,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k2.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L5,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L10,第一階段,早年,2005-02-01～2014-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L20,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+爆量突破 B120·k3.0·L60,第一階段,早年,2005-02-01～2014-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsVolBreak/cells.csv
+產業營收加速（爆發產業）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRev/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
+產業營收加速（爆發產業）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,backtest/resultsIndRev/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
+產業營收加速（爆發產業）,第一階段,早年,2012-06-01～2014-12-30,不合格,不合格,True,8.26e-11,1.77e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRev/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
+產業營收加速但股價落後,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
+產業營收加速但股價落後,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
+產業營收加速但股價落後,第一階段,早年,2012-06-01～2014-12-30,另列,另列,True,8.26e-11,1.77e-11,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/prereg/variants.csv｜{'版本': '主表（industry_pit）'}
+產業營收落後：買賣點改版,第一階段,探索,2017-03-02～2021-12-30,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/buysell/cells.csv｜{'key': 'B0|T60'}
+產業營收落後：買賣點改版,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/buysell/cells.csv｜{'key': 'B0|T60'}
+產業營收落後：買賣點改版,第一階段,早年,2012-06-01～2014-12-30,不合格,不合格,True,0,2.86e-16,True,0,0,True,1e-05,檔值,backtest/resultsIndRevLag/buysell/cells.csv｜{'key': 'B0|T60'}
+去年漲最多（T6 前 10 名、營收年增＞0）,第一階段,探索,2016-12-30～2021-12-30,不合格,不合格,True,2.29e-10,2.18e-11,True,0,0,True,1e-05,檔值,backtest/resultsTopPrevTW/cells.csv｜T6 主臂
+去年漲最多（T6 前 10 名、營收年增＞0）,第一階段,確認,2021-12-30～2026-09-24,另列,另列,True,8.93e-11,1.15e-10,True,0,0,True,1e-05,檔值,backtest/resultsTopPrevTW/cells.csv｜T6 主臂
+去年漲最多（T6 前 10 名、營收年增＞0）,第一階段,早年,2005-12-30～2014-12-31,不合格,不合格,True,3.6e-11,2.64e-11,True,0,0,True,1e-05,檔值,backtest/resultsTopPrevTW/cells.csv｜T6 主臂
+庫藏股買回後買（H120）,第一階段,早年,2005-01-03～2011-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsEvt/port_cells.csv
+庫藏股買回後買（H120）,第一階段,確認,2019-01-02～2026-08-24,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsEvt/port_cells.csv
+營量趨勢（乙_T3_H40）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLtrend/cells.csv｜{'格': '乙_T3_H40'}
+營量趨勢（乙_T3_H40）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLtrend/cells.csv｜{'格': '乙_T3_H40'}
+營量趨勢（乙_T3_H40）,第一階段,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLtrend/cells.csv｜{'格': '乙_T3_H40'}
+營量出場 seq1 營量_甲_b5_H40,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_甲_b5_H40'}
+營量出場 seq1 營量_甲_b5_H40,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_甲_b5_H40'}
+營量出場 seq1 營量_甲_b5_H40,第一階段,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_甲_b5_H40'}
+營量出場 seq1 營量_乙_k60_C120,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_乙_k60_C120'}
+營量出場 seq1 營量_乙_k60_C120,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_乙_k60_C120'}
+營量出場 seq1 營量_乙_k60_C120,第一階段,早年,2012-06-04～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit/cells.csv｜{'格': '營量_乙_k60_C120'}
+營量出場 seq3 營量_甲3_b5_H40,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_甲3_b5_H40'}
+營量出場 seq3 營量_甲3_b5_H40,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_甲3_b5_H40'}
+營量出場 seq3 營量_甲3_b5_H40,第一階段,早年,2012-06-04～2014-12-31,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_甲3_b5_H40'}
+營量出場 seq3 營量_乙3_k55_c10_C120,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_乙3_k55_c10_C120'}
+營量出場 seq3 營量_乙3_k55_c10_C120,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_乙3_k55_c10_C120'}
+營量出場 seq3 營量_乙3_k55_c10_C120,第一階段,早年,2012-06-04～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLexit3/cells.csv｜{'格': '營量_乙3_k55_c10_C120'}
+週線乙（營量看週收盤）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsWeekly/乙_cells.csv｜{'格': 'L5_m8_C26'}
+週線乙（營量看週收盤）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsWeekly/乙_cells.csv｜{'格': 'L5_m8_C26'}
+週線乙（營量看週收盤）,第一階段,早年,2012-06-04～2014-12-31,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsWeekly/乙_cells.csv｜{'格': 'L5_m8_C26'}
+毛利率沒退步（營量）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'vol|q1'}
+毛利率沒退步（營量）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'vol|q1'}
+毛利率沒退步（營飆）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'fly|q1'}
+毛利率沒退步（營飆）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLmargin/cells.csv｜{'key': 'fly|q1'}
+同產業最多 3 檔（營量）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'vol|cap'}
+同產業最多 3 檔（營量）,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'vol|cap'}
+同產業最多 3 檔（營飆）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'fly|cap'}
+同產業最多 3 檔（營飆）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsYLindcap/cells.csv｜{'key': 'fly|cap'}
+營飆 15 檔,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '15'}"
+營飆 15 檔,第一階段,確認,2022-01-03～2026-08-24,不合格,不合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '15'}"
+營飆 15 檔,第一階段,早年,2005-02-01～2014-12-31,合格,合格,True,3.13e-11,2.64e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '早年', 'N': '15'}"
+營飆 20 檔,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '20'}"
+營飆 20 檔,第一階段,確認,2022-01-03～2026-08-24,另列,另列,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '主', 'N': '20'}"
+營飆 20 檔,第一階段,早年,2005-02-01～2014-12-31,合格,合格,True,3.13e-11,2.64e-11,True,0,0,True,1e-05,檔值,"backtest/resultsYF_N/cells.csv｜{'世界': '早年', 'N': '20'}"
+營量 v1 補下市營收（描述）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營量'}"
+營量 v1 補下市營收（描述）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營量'}"
+營飆 v1 補下市營收（描述）,第一階段,探索,2017-03-02～2021-12-30,合格,合格,True,2.21e-11,2.18e-11,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營飆'}"
+營飆 v1 補下市營收（描述）,第一階段,確認,2022-01-03～2026-08-24,合格,合格,True,9.2e-11,1.15e-10,True,0,0,True,1e-05,檔值,"backtest/resultsDelistRev/cells.csv｜{'變體': 'merged_a', '策略': '營飆'}"
+候選 17 格 #1 PREREG10｜AND｜regime=True｜N10｜H120,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #2 P3乙｜N≤8｜N8｜d=1.0｜relvol,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #3 P1｜AND｜N8｜d=1.0｜relvol,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #4 PREREG10｜AND｜regime=True｜N10｜LD,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #5 P17｜R_eq（判定格）,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #6 P1｜AND｜N8｜d=2.0｜relvol,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #7 PREREG10｜AND｜regime=True｜N10｜H60,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #8 P14｜w=0.50（＝各半混 0050）,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #9 P1｜AND｜N10｜d=inf｜relvol,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #10 P3乙｜N≤8｜N8｜d=2.0｜relvol,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #11 P1｜AND｜N8｜d=inf｜relvol,第一階段,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #12 PREREG10｜AND｜regime=False｜N10｜H120,第一階段,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #13 P1｜AND｜N20｜d=inf｜relvol,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #14 P1｜AND｜N20｜d=inf｜null,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #15 PREREG10｜AND｜regime=False｜N20｜H60,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #16 PREREG10｜AND｜regime=True｜N20｜H60,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+候選 17 格 #17 PREREG10｜AND｜regime=True｜N20｜H120,第一階段,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsN17/rerun17.csv
+大盤低頻擇時 甲（D200_a）,大盤／ETF,探索,2015-11-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '甲', '格': 'D200_a'}"
+大盤低頻擇時 甲（D200_a）,大盤／ETF,確認,2022-01-03～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '甲', '格': 'D200_a'}"
+大盤低頻擇時 甲（D200_a）,大盤／ETF,早年,2005-03-01～2014-12-31,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '甲', '格': 'D200_a'}"
+大盤低頻擇時 乙（s40_L60_a）,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '乙', '格': 's40_L60_a'}"
+大盤低頻擇時 乙（s40_L60_a）,大盤／ETF,確認,2022-01-03～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '乙', '格': 's40_L60_a'}"
+大盤低頻擇時 乙（s40_L60_a）,大盤／ETF,早年,2005-03-01～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '乙', '格': 's40_L60_a'}"
+大盤低頻擇時 丙（B_x20_R2_M）,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '丙', '格': 'B_x20_R2_M'}"
+大盤低頻擇時 丙（B_x20_R2_M）,大盤／ETF,確認,2022-01-03～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '丙', '格': 'B_x20_R2_M'}"
+大盤低頻擇時 丙（B_x20_R2_M）,大盤／ETF,早年,2005-03-01～2014-12-31,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLowFreq/cells.csv｜{'件': '丙', '格': 'B_x20_R2_M'}"
+0050／0052＋正2＋現金（挑中 0052 七成＋現金三成）,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLev2/body_q1.csv｜{'組': '挑選池', 'ETF': '0052', '正2': '00631L', 'ETF%': '70', '正2%': '0', '現金%': '30'}"
+0050／0052＋正2＋現金（挑中 0052 七成＋現金三成）,大盤／ETF,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLev2/body_q1.csv｜{'組': '挑選池', 'ETF': '0052', '正2': '00631L', 'ETF%': '70', '正2%': '0', '現金%': '30'}"
+純抱正2（00631L，引擎含建倉成本）,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLev2/body_q1.csv｜{'組': '挑選池', 'ETF': '0050', '正2': '00631L', 'ETF%': '0', '正2%': '100', '現金%': '0'}"
+純抱正2（00631L，引擎含建倉成本）,大盤／ETF,確認,2022-01-03～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLev2/body_q1.csv｜{'組': '挑選池', 'ETF': '0050', '正2': '00631L', 'ETF%': '0', '正2%': '100', '現金%': '0'}"
+0050 站上 20 日線抱 00631L、跌破換 0050,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLev2/body_q2.csv｜{'組': '挑選池', '條件': 'C3', '換法': 'X2', 'ETF': '0050', '正2': '00631L'}"
+0050 站上 20 日線抱 00631L、跌破換 0050,大盤／ETF,確認,2022-01-03～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsLev2/body_q2.csv｜{'組': '挑選池', '條件': 'C3', '換法': 'X2', 'ETF': '0050', '正2': '00631L'}"
+正2 三態輪動（9/28 重挑主版乙）,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsAudit2/1/cells.csv｜{'轉弱': 'W4', '跌深': 'P4', '反彈': 'U4', 'B態': 'Bcash'}"
+正2 三態輪動（9/28 重挑主版乙）,大盤／ETF,確認,2022-01-03～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsAudit2/1/cells.csv｜{'轉弱': 'W4', '跌深': 'P4', '反彈': 'U4', 'B態': 'Bcash'}"
+留現金、跌深分批加碼（挑法乙）,大盤／ETF,探索,2015-11-02～2021-12-30,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsDip/body_cells.csv｜{'窗組': '主窗', '跑在': '主窗', '名稱': '00631L｜留 20%｜L1｜買 00631L｜R2'}"
+留現金、跌深分批加碼（挑法乙）,大盤／ETF,確認,2022-01-03～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,"backtest/resultsDip/body_cells.csv｜{'窗組': '主窗', '跑在': '主窗', '名稱': '00631L｜留 20%｜L1｜買 00631L｜R2'}"
+219｜PREREG10／研究十三｜S｜regime=False｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=False｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=False｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=False｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=False｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=False｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=True｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=True｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=True｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=True｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=True｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜S｜regime=True｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=False｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=False｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=False｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=False｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=False｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=False｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=True｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=True｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=True｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=True｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=True｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜G｜regime=True｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=False｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=False｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=False｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=False｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=False｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=False｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=True｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=True｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=True｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=True｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=True｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜AND｜regime=True｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=False｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=False｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=False｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=False｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=False｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=False｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=True｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=True｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=True｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=True｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=True｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG10／研究十三｜OR｜regime=True｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=False｜N30｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=False｜N30｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=False｜N30｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=False｜N40｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=False｜N40｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=False｜N40｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=True｜N30｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=True｜N30｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=True｜N30｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=True｜N40｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,合格,合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=True｜N40｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜AND｜regime=True｜N40｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=False｜N30｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=False｜N30｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=False｜N30｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=False｜N40｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=False｜N40｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=False｜N40｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=True｜N30｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=True｜N30｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=True｜N30｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=True｜N40｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=True｜N40｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG11／研究十三b｜S｜regime=True｜N40｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N5｜H20,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N5｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N5｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N5｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N10｜H20,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N10｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N10｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N10｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N20｜H20,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N20｜H60,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N20｜H120,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG9／研究十一（事後補）｜N20｜LD,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00215,0.00126,False,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG15｜N5｜H20,219／P 系列,主窗,2016-01-07～2026-09-11,不合格,不合格,True,0.0016,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG15｜N5｜H60,219／P 系列,主窗,2016-01-07～2026-09-11,不合格,不合格,True,0.0016,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG15｜N10｜H20,219／P 系列,主窗,2016-01-07～2026-09-11,不合格,不合格,True,0.0016,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG15｜N10｜H60,219／P 系列,主窗,2016-01-07～2026-09-11,不合格,不合格,True,0.0016,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG15｜N20｜H20,219／P 系列,主窗,2016-01-07～2026-09-11,不合格,不合格,True,0.0016,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREG15｜N20｜H60,219／P 系列,主窗,2016-01-07～2026-09-11,不合格,不合格,True,0.0016,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 停損四族｜N8｜none（＝門檻B 本體 N=8）,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 停損四族｜N8｜fix 8%,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 停損四族｜N8｜fix 15%,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 停損四族｜N8｜fix 20%,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 停損四族｜N8｜trail 15%,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 停損四族｜N8｜trail 20%,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 敏感度｜N5｜none,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 敏感度｜N5｜fix 15%,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 敏感度｜N20｜none,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P7 敏感度｜N20｜fix 15%,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜BASELINE 門檻B｜N3｜none,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜BASELINE 門檻B｜N5｜none,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜BASELINE 門檻B｜N10｜none,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜BASELINE 門檻B｜N15｜none,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜BASELINE 門檻B｜N20｜none,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜BASELINE 門檻B｜N30｜none,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P9ⓑ｜base,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P9ⓑ｜b,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜var｜0.25,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜var｜0.35,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜var｜0.5,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜var｜0.75,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜fix｜0.25,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜fix｜0.35,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜fix｜0.5,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜B｜fix｜0.75,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜var｜0.25,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜var｜0.35,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜var｜0.5,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜var｜0.75,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜fix｜0.25,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜fix｜0.35,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜fix｜0.5,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P11｜C｜fix｜0.75,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜不排除④｜N5,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜不排除④｜N8,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜不排除④｜N10,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜不排除④｜N20,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜排除④｜N5,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜排除④｜N8,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜排除④｜N10,219／P 系列,主窗,2017-03-02～2026-09-18,另列,另列,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P6｜排除④｜N20,219／P 系列,主窗,2017-03-02～2026-09-18,不合格,不合格,True,7.75e-05,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P13｜W0｜全窗,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P13｜W1｜全窗,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P14｜w=0.00（＝0050 本身）,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P14｜w=0.25,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P14｜w=0.50（＝各半混 0050）,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P14｜w=0.75,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P14｜w=1.00,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P15｜G0,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P15｜G1,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P16｜E0,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P16｜E1,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P16｜E1a,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P16｜E1b,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P16｜E1c,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P17｜R_eq（判定格）,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P17｜W_fix（w＝0.5 各半混 0050；事後比判準）,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜D4｜S1′｜tradable off,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜D4｜S1′｜tradable on,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N2｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,不合格,不合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N2｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N3｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,不合格,不合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N3｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N5｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,不合格,不合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N5｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N10｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N10｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N20｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N20｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N30｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N30｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N40｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N40｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=1.0｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=1.0｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=2.0｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=2.0｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=3.0｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜AND｜N8｜d=3.0｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N2｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N2｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N3｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N3｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N5｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N5｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N10｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N10｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N20｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N20｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N30｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N30｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N40｜d=inf｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N40｜d=inf｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=1.0｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=1.0｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=2.0｜null,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=2.0｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=3.0｜null,219／P 系列,主窗,2016-01-12～2026-09-11,另列,另列,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P1｜S｜N8｜d=3.0｜relvol,219／P 系列,主窗,2016-01-12～2026-09-11,不合格,不合格,True,0.00188,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜主格｜N30｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜主格｜N40｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜主格｜N40｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N2｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,不合格,不合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N2｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N3｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,不合格,不合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N3｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N5｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,不合格,不合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N5｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=inf｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=inf｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=1.0｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=1.0｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=2.0｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=2.0｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,合格,合格,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=3.0｜null,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜P3 乙臂（閒置放 0050）｜N≤8｜N8｜d=3.0｜relvol,219／P 系列,主窗,2017-02-13～2026-09-11,另列,另列,True,0.00129,0.00126,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREGA｜A 單一路徑,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREGF｜F 200 顆中位,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREGC｜C 單一路徑,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+219｜PREREGD5｜D5 200 顆中位,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-05,檔值,backtest/resultsN219/table219.csv
+P9 加減碼（原件）｜base 基準臂（加減碼全關）,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜base 基準臂（加減碼全關）,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜A2 分批進場 k＝2,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜A2 分批進場 k＝2,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜A3 分批進場 k＝3,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜A3 分批進場 k＝3,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Ba ⓐ 收盤 ≥ 進場 +15% ⇒ 加 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Ba ⓐ 收盤 ≥ 進場 +15% ⇒ 加 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Bb ⓑ 貼近 120 日高點三分位 ⇒ 加 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Bb ⓑ 貼近 120 日高點三分位 ⇒ 加 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Bc ⓒ 持有滿 40 根仍為正 ⇒ 加 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Bc ⓒ 持有滿 40 根仍為正 ⇒ 加 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Ca ⓐ 個股 −10% ⇒ 賣一半,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Ca ⓐ 個股 −10% ⇒ 賣一半,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Cc ⓒ 0050＜MA60 ⇒ 新部位 1.5 slot（跌破加碼）,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Cc ⓒ 0050＜MA60 ⇒ 新部位 1.5 slot（跌破加碼）,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Cd ⓓ 0050＜MA20 ⇒ 新部位 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Cd ⓓ 0050＜MA20 ⇒ 新部位 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Ce ⓔ 0050＜MA10 ⇒ 新部位 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Ce ⓔ 0050＜MA10 ⇒ 新部位 0.5 slot,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Cf ⓕ 0050 跌破 MA60 ⇒ 手上各賣一半、站回補回,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Cf ⓕ 0050 跌破 MA60 ⇒ 手上各賣一半、站回補回,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Cg ⓖ 0050 跌破 MA20 ⇒ 手上各賣一半、站回補回,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Cg ⓖ 0050 跌破 MA20 ⇒ 手上各賣一半、站回補回,219／P 系列,主窗,2017-03-02～2026-08-24,合格,合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Ch ⓗ 0050 跌破 MA10 ⇒ 手上各賣一半、站回補回,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Ch ⓗ 0050 跌破 MA10 ⇒ 手上各賣一半、站回補回,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜Cb_ref ⓑ 0050＜MA60 ⇒ 新部位 0.5 slot（主窗參照，⛔ 不判、不計 N）,219／P 系列,主窗,2017-03-02～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜Cb_ref ⓑ 0050＜MA60 ⇒ 新部位 0.5 slot（主窗參照，⛔ 不判、不計 N）,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（原件）｜By 攤平停利 B 乙一 By（2-B ⓓ 個股收盤 ≤ 進場 −10% ⇒ 加 0.5 slot）,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+P9 加減碼（V3 補尾）｜By 攤平停利 B 乙一 By（2-B ⓓ 個股收盤 ≤ 進場 −10% ⇒ 加 0.5 slot）,219／P 系列,主窗,2017-03-02～2026-08-24,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsP9ext/flip_table.csv
+強勢類股（原挑 L60_k1_b，退化格）,強勢類股,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-12,檔值,backtest/resultsSector/body.json｜確認
+強勢類股（9/28 重挑 L60_k5_b）,強勢類股,探索,2017-03-02～2021-12-30,另列,另列,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsAudit5/4/Sector_summary.json｜新格結果
+強勢類股（9/28 重挑 L60_k5_b）,強勢類股,確認,2022-01-03～2026-08-24,不合格,不合格,True,0,1.63e-16,True,0,0,True,1e-12,檔值,backtest/resultsAudit5/4/Sector_summary.json｜新格結果
+一目三役（甲_k3 主格）,一目三役,A 2009-01～2019-03（判）,2009-01-05～2019-03-29,不合格,不合格,True,5.3e-09,3.27e-08,False,0,0,True,1e-12,檔值,backtest/resultsLongI/cells.csv｜{'格': '甲_k3'}
+一目三役（甲_k3 主格）,一目三役,B 2024-04～2026-08（判）,2024-04-01～2026-08-24,不合格,不合格,True,0,0,True,0,0,True,1e-12,檔值,backtest/resultsLongI/cells.csv｜{'格': '甲_k3'}
+庫藏股買回後買（H120）,庫藏股探索段,探索,2012-01-02～2018-12-28,不合格,不合格,True,,,檔無 0050 值,0,0,True,1e-05,檔值,backtest/resultsEvt/port_cells.csv

@@ -352,11 +352,14 @@ def _b(v):
     return None
 
 
-def _row(name, sg, w, c, m, lab, b50, src, ident="判定", verdict="", note="", prec="檔值", vsrc="檔值"):
+MERGED = ("六四", "合併")     # researchTri.load_all 合併日曆（早年＋edc6f 主快照；researchMix70.load 同一份）
+
+
+def _row(name, sg, w, c, m, lab, b50, src, ident="判定", verdict="", note="", prec="檔值", vsrc="檔值", tol50=None, fam=""):
     wn, a_, b_ = w
-    return {"策略": name, "身分": ident, "世界": wn, "段": sg, "a": a_, "b": b_, "年化": float(c), "回落": float(m), "年化_檔": float(c), "回落_檔": float(m),
-            "0050年化_檔": (b50[0] if b50 else np.nan), "0050回落_檔": (b50[1] if b50 else np.nan), "原標籤": lab, "出處": src, "值來源": vsrc,
-            "精度": prec, "整件原結論": verdict, "註": note}
+    return {"策略": name, "族": fam, "身分": ident, "世界": wn, "段": sg, "a": a_, "b": b_, "年化": float(c), "回落": float(m), "年化_檔": float(c), "回落_檔": float(m),
+            "0050年化_檔": (float(b50[0]) if b50 else np.nan), "0050回落_檔": (float(b50[1]) if b50 else np.nan), "原標籤": lab, "出處": src, "值來源": vsrc,
+            "精度": prec, "整件原結論": verdict, "註": note, "0050容差（絕對）": (np.nan if tol50 is None else float(tol50))}
 
 
 def tab_rows(name, path, filt, segs, b50=None, fmt="wide", segcol="段", cc="年化", mc="回落", lc="標籤", b50cols=None, **kw):
@@ -415,18 +418,18 @@ def json_rows(name, path, getter, segs, b50, **kw):
 
 
 REGISTRY_NOTE = {
-    "未納入自動重判（本階段）": [
-        "庫藏股事件（resultsEvt）：探索段 2012-01～2018-12 跨早年／主兩個版面（接合日曆），只納確認、早年兩段",
-        "門檻B W1／219 種組態／P7～P17／A／F／C／D4（resultsN219/table219.csv）：錨是捨入值（0.248／0.241／0.2454…）、窗各族不同 ⇒ 要逐族確認窗與捨入規則才能逐列重現，本階段列盤點不自動重判；主窗 17 格（resultsN17/rerun17.csv 主窗段）已納入",
-        "加減碼 12 種（resultsP9run、P9ext）：主窗＋A／B 窗、0050 錨為浮動窗 ⇒ 同上",
+    "未納入自動重判（第二階段後仍未納）": [
+        "微台期貨 2 倍（resultsTXF）：窗日曆＝期貨交易日 days，只存在 ~/txfwork/A_paths.npz（由 taifex_private 私有資料建）⇒ 本線規矩不讀私有資料；"
+        "且年化式為 365.25 日曆天、期初＝窗起前一交易日（seg_metrics），與判準慣例不同 ⇒ 要另寫讀法",
+        "三態輪動早年段（合成正2）、跌深加碼壓力窗、六四壓力窗：原件無標籤欄 ⇒ 無舊標籤可並列",
         "產業動能（resultsIndMom）：事件層、沒有組合年化 ⇒ 依構造無法重判",
-        "長線組合 Long3：月頻回落、與日頻判準口徑不同 ⇒ 不納",
-        "CGO＋低波動、X1 多因子：只有主窗或非標準拼接段、身分描述 ⇒ 不納",
-        "一目三役（resultsLongI）：A 2009-01～2019-03 跨版面 ⇒ 只納 B 段",
-        "強勢類股（resultsSector）：cells 無標籤、判定在 body.json／Audit5 ⇒ 下一階段補",
-        "營量／營飆變體（加碼、真頂、ListExit、YfStop、YfTime、YfRank、YfV2、YfSlots2、YfMix13、Slip、YLearly、YLnoDup、OpenBaseLock、SuspendHold）：描述或 T1 前、或比的是對原策略 ⇒ 不納",
-        "大盤／ETF 類（三態輪動 Audit2/1、20 日線切換 Lev2、0050＋正2＋現金、跌深加碼 Dip、低頻擇時 LowFreq、純抱正2、微台 2 倍 TXF）：資料世界為 researchTri.load_all 合併日曆、窗 2015-11-02 起 ⇒ 下一階段補（六四已納）",
+        "長線組合 Long3：回落用月資料算、與日頻判準口徑不同 ⇒ 要另寫讀法",
+        "CGO＋低波動（resultsExt）：只有主窗一段（未切探索／確認）、身分描述；X1 多因子：早年段為兩小段拼接（2013-09～2014-12＋2015-05～2017-12）⇒ 要另寫讀法",
+        "219 表「無從套用」4 格：原件本來就沒有標籤",
+        "營量／營飆變體（加碼、真頂、ListExit、YfStop、YfTime、YfRank、YfV2、YfSlots2、YfMix13、Slip、YLearly、YLnoDup、OpenBaseLock、SuspendHold、"
+        "T1fix 的 stop_／time_／le_ 列）：描述、T1 前、或比的是對原策略；T1fix 三族只有主窗 ⇒ 本次清單外，未納",
         "大跌類（MktDrop v1／v3／up／addon2、大跌 4 檔）：無合格標籤欄（只有方向判語）⇒ 無舊標籤可並列",
+        "results13 原表（48 格，ca／ma／cb／mb）：舊判準三條同時成立制、無新判準標籤欄（新判準標籤已在 219 表 PREREG10 族）",
     ]}
 
 
@@ -565,6 +568,94 @@ def registry():
     for _, r in T.iterrows():
         R.append(_row(f"候選 17 格 #{r['編號']} {r['族']}｜{r['格']}", "主窗", ("主", "2017-03-02", "2026-08-24"), r["主窗_年化"], r["主窗_回落"], r["主窗_標籤"],
                       (r["錨_年化"], r["錨_回落"]), "backtest/resultsN17/rerun17.csv", prec="全精度", verdict="候選（219 種裡看過才挑）", note="200 顆中位（rerun17）"))
+    for r in R:
+        if not r.get("族"):
+            r["族"] = "第一階段"
+    R += registry2()
+    return R
+
+
+# ═════════════ 第二階段（裁定：大盤／ETF 類、219／P 系列、強勢類股、一目三役、庫藏股探索段）═════════════
+def _anchor_tol(s):
+    """219 表「錨捨入」：'0.0005' 或 '(5e-05, 0.0005)' ⇒ 年化的半個捨入單位。"""
+    s = str(s).strip()
+    if s.startswith("("):
+        return float(s.strip("()").split(",")[0])
+    return float(s)
+
+
+ANCHOR_WIN = {"0.24020209886370614": ("2017-03-02", "2026-08-24"), "0.2454": ("2017-03-02", "2026-09-18"), "0.241": ("2017-02-13", "2026-09-11"),
+              "0.248": ("2016-01-12", "2026-09-11"), "0.246": ("2016-01-07", "2026-09-11"), "0.249": ("2016-01-12", "2026-09-11")}
+ANCHOR_SRC = {"0.2454": "resultsp7/BASELINE_REPORT.md 第 25 行（浮動窗尾 [523, 2855) ＝ 2017-03-02～2026-09-18）",
+              "0.241": "resultsp1/summary.md 第 14 行（2017-02-13～2026-09-11）", "0.248": "results13/summary.md 第 89 行、resultsp1/summary.md 第 162 行（2016-01-12～2026-09-11）",
+              "0.246": "results15/summary.md 第 151 行（2016-01-07～2026-09-11）", "0.249": "results11/CONCLUSIONS.md 第 116 行模擬窗 2016-01-12～2026-09-11（錨 +24.9% 見第 133 行）",
+              "0.24020209886370614": "rerun17 W0 釘死值 2017-03-02～2026-08-24"}
+
+
+def registry2():
+    R = []
+    J = lambda p: json.load(open("backtest/" + p, encoding="utf-8"))
+    ME, MC = ("合併", "2015-11-02", "2021-12-30"), ("合併", "2022-01-03", "2026-08-24")
+    # ── 大盤／ETF 類（researchTri.load_all 合併日曆；年化 ＝ researchLev2.perf，0050 ＝ window_stats ＝ bench_row 同式）──
+    S = J("resultsLowFreq/summary.json"); W = S["窗"]
+    segs = {sg: ("合併", W[sg][0], W[sg][1]) for sg in ("探索", "確認", "早年")}
+    b = {sg: S["基準"][sg]["0050"] for sg in segs}
+    for f, cell in (("甲", "D200_a"), ("乙", "s40_L60_a"), ("丙", "B_x20_R2_M")):
+        R += tab_rows(f"大盤低頻擇時 {f}（{cell}）", "resultsLowFreq/cells.csv", {"件": f, "格": cell}, segs, b50=b, fmt="long", lc="對0050判準", prec="全精度",
+                      verdict="目前沒有擇時規則穩定勝過六四 v1（主問對一直抱正2）", note="早年段正2 為 0050×2 合成", fam="大盤／ETF")
+    s = J("resultsLev2/body_summary.json")["0050同窗"]; b = {"探索": s["A_探索"], "確認": s["A_確認"]}
+    R += tab_rows("0050／0052＋正2＋現金（挑中 0052 七成＋現金三成）", "resultsLev2/body_q1.csv",
+                  {"組": "挑選池", "ETF": "0052", "正2": "00631L", "ETF%": "70", "正2%": "0", "現金%": "30"}, {"探索": ME, "確認": MC}, b50=b, fmt="long", prec="全精度",
+                  verdict="照純 0050（確認段不合格）", fam="大盤／ETF")
+    R += tab_rows("純抱正2（00631L，引擎含建倉成本）", "resultsLev2/body_q1.csv",
+                  {"組": "挑選池", "ETF": "0050", "正2": "00631L", "ETF%": "0", "正2%": "100", "現金%": "0"}, {"探索": ME, "確認": MC}, b50=b, fmt="long", prec="全精度",
+                  verdict="—（無挑選）", fam="大盤／ETF")
+    R += tab_rows("0050 站上 20 日線抱 00631L、跌破換 0050", "resultsLev2/body_q2.csv",
+                  {"組": "挑選池", "條件": "C3", "換法": "X2", "ETF": "0050", "正2": "00631L"}, {"探索": ME, "確認": MC}, b50=b, fmt="long", prec="全精度",
+                  verdict="另列", fam="大盤／ETF")
+    s = J("resultsAudit2/1/summary.json")["0050同窗"]
+    R += tab_rows("正2 三態輪動（9/28 重挑主版乙）", "resultsAudit2/1/cells.csv", {"轉弱": "W4", "跌深": "P4", "反彈": "U4", "B態": "Bcash"}, {"探索": ME, "確認": MC},
+                  b50=s, fmt="long", lc="使用者判準", prec="全精度", verdict="正式：另列", note="早年段（合成正2）原件無標籤 ⇒ 不納", fam="大盤／ETF")
+    s = J("resultsDip/body_summary.json")["0050同窗"]
+    R += tab_rows("留現金、跌深分批加碼（挑法乙）", "resultsDip/body_cells.csv", {"窗組": "主窗", "跑在": "主窗", "名稱": "00631L｜留 20%｜L1｜買 00631L｜R2"},
+                  {"探索": ME, "確認": MC}, b50={"探索": s["主探索"], "確認": s["主確認"]}, fmt="long", lc="對0050（描述）", prec="全精度",
+                  verdict="高賣低買沒有加到報酬（主問對純抱 00631L）", note="原件標籤欄名「對0050（描述）」", fam="大盤／ETF")
+    # ── 219 種組態（門檻B W1、P 系列、A／F／C／D4／D5／I…）：窗依錨對應（ANCHOR_WIN）；0050 容差 ＝ 錨捨入 ──
+    T = pd.read_csv("backtest/resultsN219/table219.csv", dtype=str, keep_default_na=False)
+    for _, r in T.iterrows():
+        if r["新判準標籤"] not in ("合格", "另列", "不合格"):
+            continue
+        a_, b_ = ANCHOR_WIN[r["錨年化"]]
+        R.append(_row(f"219｜{r['族']}｜{r['格']}", "主窗", ("主", a_, b_), r["年化"], r["回落"], r["新判準標籤"], (r["錨年化"], r["錨回落"]),
+                      "backtest/resultsN219/table219.csv", ident="判定（219 表）", verdict="合格 33／另列 58／不合格 124（看過才改判準，只當候選）",
+                      note=f"窗出處：{ANCHOR_SRC[r['錨年化']]}；錨出處 {r['錨出處']}；格捨入 {r['格捨入']}", prec="檔值", tol50=_anchor_tol(r["錨捨入"]), fam="219／P 系列"))
+    # ── P9 加減碼（主窗 W0；原件 ＝ 資料尾截斷版，V3 ＝ 補尾現行版）──
+    T = pd.read_csv("backtest/resultsP9ext/flip_table.csv", dtype=str, keep_default_na=False)
+    b0 = (RR.ANCHOR[0], RR.ANCHOR[1])
+    for _, r in T.iterrows():
+        R.append(_row(f"P9 加減碼（原件）｜{r['arm']} {r['格']}", "主窗", ("主", "2017-03-02", "2026-08-24"), r["原件_年化"], r["原件_回落"], r["原件_標籤"], b0,
+                      "backtest/resultsP9ext/flip_table.csv", prec="全精度", verdict="原件 0／6／6（T1 前）", note="200 顆中位", fam="219／P 系列"))
+        R.append(_row(f"P9 加減碼（V3 補尾）｜{r['arm']} {r['格']}", "主窗", ("主", "2017-03-02", "2026-08-24"), r["V3_年化"], r["V3_回落"], r["V3_標籤"], b0,
+                      "backtest/resultsP9ext/flip_table.csv", prec="全精度", verdict="V3 合格 6／另列 2／不合格 4（看過才補，不變成推薦）", note="200 顆中位", fam="219／P 系列"))
+    # ── 強勢類股（原挑退化格確認段、9/28 重挑 L60_k5_b 兩段）──
+    b = J("resultsSector/body.json")["0050"]; s = J("resultsAudit5/4/Sector_summary.json")
+    c = J("resultsSector/body.json")["確認"]
+    R.append(_row("強勢類股（原挑 L60_k1_b，退化格）", "確認", M_CON, c["年化"], c["回落"], c["判定"], _b(b["確認"]), "backtest/resultsSector/body.json｜確認",
+                  prec="全精度", verdict="不合格", fam="強勢類股"))
+    for sg in ("探索", "確認"):
+        g = s["新格結果"][f"{sg}_原件（強制出場關）"]
+        R.append(_row("強勢類股（9/28 重挑 L60_k5_b）", sg, M_EXP if sg == "探索" else M_CON, g["年化"], g["回落"], g["標籤"], _b(b[sg]),
+                      "backtest/resultsAudit5/4/Sector_summary.json｜新格結果", prec="全精度", verdict="確認段 +27.2%／−46.5% 仍不合格", fam="強勢類股"))
+    # ── 一目三役（A 段跨早年／主 ⇒ 合併日曆；B 段主快照）──
+    S = J("resultsLongI/summary.json")["0050"]
+    for col, w in (("A 2009-01～2019-03（判）", ("合併", "2009-01-05", "2019-03-29")), ("B 2024-04～2026-08（判）", ("主", "2024-04-01", "2026-08-24"))):
+        R += [dict(r, 段=col) for r in tab_rows("一目三役（甲_k3 主格）", "resultsLongI/cells.csv", {"格": "甲_k3"}, {col: w}, b50={col: S[col]}, prec="全精度",
+                                                 verdict="不合格", fam="一目三役")]
+    # ── 庫藏股探索段（2012-01～2018-12，跨版面 ⇒ 合併日曆）──
+    T = pd.read_csv("backtest/resultsEvt/port_cells.csv", float_precision="round_trip", dtype={"H": str})
+    r = T[(T["類型"] == "全部") & (T["H"] == "120") & (T["段"] == "探索")].iloc[0]
+    R.append(_row("庫藏股買回後買（H120）", "探索", ("合併", "2012-01-01", "2018-12-31"), r["年化中位"], r["回落中位"], r["標籤"], None,
+                  "backtest/resultsEvt/port_cells.csv", verdict="不合格", note="200 顆中位；檔無 0050 值 ⇒ 只比標籤", fam="庫藏股探索段"))
     return R
 
 
@@ -576,7 +667,7 @@ def rejudge(a, bench_override=None):
     R = registry()
     out = []
     for r in R:
-        cal = _mx()["calidx"] if r["世界"] == "六四" else world_cal(WORLD_DATA[r["世界"]])
+        cal = _mx()["calidx"] if r["世界"] in MERGED else world_cal(WORLD_DATA[r["世界"]])
         x, y = seg_pos(cal, r["a"], r["b"])
         o = dict(r); o["窗"] = f"{cal[x].date()}～{cal[y].date()}"; o["比值"] = AS.ratio(r["年化"], r["回落"])
         if bench_override is not None:
@@ -599,13 +690,15 @@ def rejudge(a, bench_override=None):
     df = pd.DataFrame(out)
     if bench_override is None:
         df.to_csv(os.path.join(OUT, "rejudge.csv"), index=False, float_format="%.10g", encoding="utf-8")
+        scope = {"族": {k: {"列": int(len(g)), "件": int(g["策略"].nunique())} for k, g in df.groupby("族")}, **REGISTRY_NOTE}
+        json.dump(scope, open(os.path.join(OUT, "rejudge_scope.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         log(f"[rejudge] {len(df)} 列｜基準 {trs or NA_TR}")
     return df
 
 
 def bench0050_worlds():
     return {"主": bench0050(WORLD_DATA["主"]), "早年": bench0050(WORLD_DATA["早年"]),
-            "六四": pd.Series(np.asarray(_mx()["C"]["0050"], float), index=_mx()["calidx"])}
+            **{w: pd.Series(np.asarray(_mx()["C"]["0050"], float), index=_mx()["calidx"]) for w in MERGED}}
 
 
 def reconcile(a):
@@ -619,9 +712,14 @@ def reconcile(a):
         d50m = abs(r["基準回落"] - r["0050回落_檔"]) / max(abs(r["0050回落_檔"]), 1e-12) if has50 else np.nan
         dc = abs(r["年化"] - r["年化_檔"]) / max(abs(r["年化_檔"]), 1e-12)
         dm = abs(r["回落"] - r["回落_檔"]) / max(abs(r["回落_檔"]), 1e-12)
-        rows.append({"策略": r["策略"], "段": r["段"], "窗": r["窗"], "原標籤": r["原標籤"], "0050 基準重現標籤": r["新基準重看"],
+        ta = r.get("0050容差（絕對）", np.nan)
+        if has50 and np.isfinite(ta):        # 舊錨是捨入值（219 表 錨捨入）⇒ 絕對差 ≤ 半個捨入單位才算窗位相符
+            ok50 = bool(abs(r["基準年化"] - r["0050年化_檔"]) <= ta + 1e-12 and abs(r["基準回落"] - r["0050回落_檔"]) <= max(ta, 0.005) + 1e-12)
+        else:
+            ok50 = bool(d50c <= t and d50m <= t) if has50 else "檔無 0050 值"
+        rows.append({"策略": r["策略"], "族": r.get("族", ""), "段": r["段"], "窗": r["窗"], "原標籤": r["原標籤"], "0050 基準重現標籤": r["新基準重看"],
                      "標籤相同": r["新基準重看"] == r["原標籤"], "0050年化相對差": d50c, "0050回落相對差": d50m,
-                     "0050相符": ("檔無 0050 值" if not has50 else bool(d50c <= t and d50m <= t)),
+                     "0050相符": ok50,
                      "年化相對差": dc, "回落相對差": dm, "年化回落相符": bool(dc <= t and dm <= t), "容差": t, "值來源": r["值來源"], "出處": r["出處"]})
     C = pd.DataFrame(rows)
     res = {"列數": len(C), "策略件數": int(C["策略"].nunique()), "標籤不符": int((~C["標籤相同"]).sum()),
@@ -731,7 +829,10 @@ def rank(a):
                 raise SystemExit(f"⛔ {nm} {sg} 窗 {r['a']}～{r['b']} ≠ 排名窗")
             add(nm, r["年化"], r["回落"], "200 顆中位（比值 ＝ 中位÷|中位|）" if nm == "營飆 v1" else "")
         e10 = np.load(f"backtest/resultsPTHn/eq_{wn}.npz")["N10_eq"]
-        c, m = estat(e10, x, y); add("高10", c, m, "PTHn N10 權益切窗（原件連續跑、窗首帶持股）")
+        n10 = "PTHn N10 權益切窗（原件連續跑、窗首帶持股）"
+        if sg == "確認":
+            n10 += "；本表窗尾統一 2026-08-24（裁定），高10 正式值 +43.74%／−28.75%（至 2026-09-24）"
+        c, m = estat(e10, x, y); add("高10", c, m, n10)
         if sg == "確認":
             eq, _ = six4_eq(a_, b_); c, m = L2.perf(eq); add("六四 v1", c, m, "research64retest 窗 B 同式（ETF 0.385%）")
         elif sg == "探索":
@@ -766,6 +867,7 @@ def rank(a):
             md.append(f"| {r['排名']} | {r['策略']} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {r['對大盤']} |")
         md += ["", "年化名次（並列參考）：" + "、".join(f"{r['策略']} {int(r['年化名次'])}" for _, r in V.iterrows())]
         md += ["", "註：" + "；".join(f"{r['策略']}：{r['註']}" for _, r in T.iterrows() if r["註"])]
+        md += ["", "成本口徑：個股策略含 0.585% 來回、六四含 ETF 0.385%；0050、正2、大盤（基準）不含成本 ⇒ 基準不含成本，對策略略不利。"]
         for r in side:
             md += ["", f"另表（起點不同，⛔ 不並排比名次）：{r['策略']} {r['窗']} 年化 {pct(r['年化'])}、回落 {pct(r['回落'])}、比值 {f2(r['比值'])}、對大盤 {r['對大盤']}｜{r['註']}"]
         md.append("")

@@ -135,9 +135,19 @@ def main():
     res, Cc = BR.reconcile(a)
     S = {"C1 對帳（0050 基準重現舊標籤）": res, "C1 不符列": Cc[~(Cc["標籤相同"] & Cc["0050相符"] & Cc["年化回落相符"])].to_dict("records"),
          "C2 合成 fixture": c2(), "C3 排名表": c3(), "C4 compare": c4(), "C5 buildeq": c5(), "C6 weak 權益組": c6()}
-    S["C1 0050 值不符的說明"] = {"趨勢樣板｜早年 2005-03-01～2014-12-31": "原件 resultsLongT 早年 0050 ＝ 0.0727091；以 rerun17.load_bench 讀三份早年版面（含原件所用 3edc0e2206）同窗皆 0.0723925"
-                                 " ⇒ 原件 0050 取法與 load_bench 不同（成因未查）；策略年化／回落與標籤相同，不影響新基準重判（新基準不經 0050）"}
-    S["C1 0050 值不符（已說明者除外）"] = int(res["0050 值不符"] - sum(1 for r in S["C1 不符列"] if r["策略"] == "趨勢樣板" and r["段"] == "早年" and r["標籤相同"]))
+    S["C1 0050 值不符的說明"] = {
+        "趨勢樣板｜早年 2005-03-01～2014-12-31": "原件 resultsLongT 早年 0050 ＝ 0.0727091；以 rerun17.load_bench 讀三份早年版面（含原件所用 3edc0e2206）同窗皆 0.0723925"
+                                          " ⇒ 原件 0050 取法與 load_bench 不同（成因未查）；策略年化／回落與標籤相同，不影響新基準重判（新基準不經 0050）",
+        "219｜PREREG9／研究十一（12 格）｜2016-01-12～2026-09-11": "錨 0.249（results11/CONCLUSIONS.md，較早資料快照）；同窗 edc6f 0050 ＝ 0.24846，與 results13 同窗錨 0.248 相符"
+                                                          " ⇒ 窗位相同、差在資料快照（0.05 點，超過錨捨入半單位 0.0005）；12 格標籤全部相同",
+        "一目三役｜A 2009-01-05～2019-03-29": "合併日曆（researchTri.load_all）0050 與原件相對差 5e−9（原件 0050 在早年／主快照接合處的取法不同）；標籤相同"}
+
+    def _explained(r):
+        return r["標籤相同"] and (r["策略"] == "趨勢樣板" and r["段"] == "早年" or str(r["策略"]).startswith("219｜PREREG9")
+                                 or (str(r["策略"]).startswith("一目三役") and str(r["段"]).startswith("A ") and r["0050年化相對差"] < 1e-7))
+    S["C1 0050 值不符（已說明者除外）"] = int(sum(1 for r in S["C1 不符列"] if r["0050相符"] is False and not _explained(r)))
+    S["C1 依族"] = Cc.assign(值不符=(Cc["0050相符"].astype(str) == "False"), 標籤不符=~Cc["標籤相同"]).groupby(Cc["族"].fillna("第一階段")).agg(
+        列=("策略", "size"), 件=("策略", "nunique"), 標籤不符=("標籤不符", "sum"), 值不符=("值不符", "sum")).astype(int).to_dict("index")
     ok = (res["標籤不符"] == 0 and S["C1 0050 值不符（已說明者除外）"] == 0 and res["年化回落不符"] == 0 and S["C2 合成 fixture"]["② 逐窗（窗、組、報酬、名次）不符數"] == 0
           and S["C3 排名表"].get("排序違反數", 0) == 0 and S["C4 compare"].get("價格指數逐年不符數", 0) == 0
           and all(v == "略（未 buildeq）" or v["不符"] == 0 for v in S["C5 buildeq"].values())
