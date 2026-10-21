@@ -1,0 +1,20 @@
+{
+ "階段": "world",
+ "結果": {
+  "名單": true,
+  "O": true,
+  "PV": true,
+  "TRD": true,
+  "UPL": true,
+  "DNL": true,
+  "C": true,
+  "壞根(與crashwork不同檔數)": 0,
+  "壞根不同例": [],
+  "crashwork沒有的檔": []
+ },
+ "通過": true,
+ "log": [
+  "[10:57:24] [世界] 2015-01-05～2026-09-24｜要 2095 檔、建成 2095 檔｜295s",
+  "[10:57:24] [①世界] {'名單': True, 'O': True, 'PV': True, 'TRD': True, 'UPL': True, 'DNL': True, 'C': True, '壞根(與crashwork不同檔數)': 0, '壞根不同例': [], 'crashwork沒有的檔': []}｜✅｜296s"
+ ]
+}

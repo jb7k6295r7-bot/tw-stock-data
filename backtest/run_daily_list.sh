@@ -77,6 +77,13 @@ if [ -z "$FAIL" ]; then
       else
         logline "VIX 失敗（不影響 daily）：$(tail -1 "$VLOG" 2>/dev/null)"
       fi
+      # 規則 12：52 週新高 10 檔（高10；前瞻 seq4、裁定 seq414～416、使用者 10/21「跟營飆一樣 LINE 給我」）：名單檔尾加「## 十、52 週新高 10 檔（高10）」；LINE 續抱／要賣照 positions_user；⛔ 失敗只記 log、不影響名單
+      HLOG="$REPO/backtest/resultsDaily/pth10.log"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.pth10_daily --asof "$ASOF" --sha "$SHA" --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" > "$HLOG" 2>&1); then
+        logline "高10：$(tail -1 "$HLOG")"
+      else
+        logline "高10 失敗（不影響 daily）：$(tail -1 "$HLOG" 2>/dev/null)（見 $HLOG）"
+      fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); SLRC=$?
       if [ $SLRC = 2 ]; then logline "策略鎖：$SLK（不加警示）"; fi
