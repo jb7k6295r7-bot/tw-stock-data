@@ -1,0 +1,80 @@
+{
+ "K1": {
+  "補充窗列": 5826,
+  "第一件窗列": 5826,
+  "交集": 5826,
+  "相符": 5826,
+  "乾跑": false
+ },
+ "K2": {
+  "抽窗": 8,
+  "相符": 8,
+  "達標旗標重判相符": 11652,
+  "達標旗標列": 11652
+ },
+ "K3": {
+  "自己併段": 49,
+  "檔內段": 49,
+  "相符": 49,
+  "抽段重算": 3,
+  "抽段相符": 3
+ },
+ "K4": {
+  "最近鄰鏈全部段": {
+   "0.6": {
+    "段數": 3316,
+    "分群相同的段": 3316
+   },
+   "0.7": {
+    "段數": 3316,
+    "分群相同的段": 3316
+   },
+   "0.8": {
+    "段數": 3316,
+    "分群相同的段": 3316
+   }
+  },
+  "相關抽對": 300,
+  "相關相符": 300,
+  "不符例": [],
+  "連通塊數": 327,
+  "≤150段塊內段數(已驗)": 0,
+  "最大塊段數": 2990,
+  "天真平均連結_成對關係": {
+   "0.6": {
+    "對數": 0,
+    "相符": 0
+   },
+   "0.7": {
+    "對數": 0,
+    "相符": 0
+   },
+   "0.8": {
+    "對數": 0,
+    "相符": 0
+   }
+  }
+ },
+ "K5": {
+  "彙總項": 315,
+  "相符": 315,
+  "策略鎖": [
+   "策略鎖相符（25 支）"
+  ],
+  "已追蹤檔改動": [
+   " M backtest/forward/yl_rule/draws.csv",
+   " M backtest/forward/yl_rule/equity.csv",
+   " M backtest/forward/yl_rule/positions.csv",
+   " M backtest/forward/yl_rule/runlog.md",
+   " M backtest/forward/yl_rule/signals.csv",
+   " M backtest/forward/yl_rule/state.json",
+   " M backtest/resultsPTH10daily/check_dry.json",
+   " M backtest/resultsPTH10daily/check_fixture.json"
+  ],
+  "本件新增": [
+   "?? backtest/researchBigRun2.py",
+   "?? backtest/researchBigRun2_check.py",
+   "?? backtest/resultsBigRun2/"
+  ]
+ }
+}
