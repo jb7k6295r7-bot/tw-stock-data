@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-19,7954,鑫詮科技,emerging,,252,84.8,173.54,199604,34639278,,,,,均價/額推算,220,1
 2026-10-20,7954,鑫詮科技,emerging,,210,130.5,152.37,222156,33849910,-21.17,,,,均價/額推算,154.5,1
+2026-10-21,7954,鑫詮科技,emerging,,154.5,140.5,145.18,31195,4528890,-7.19,,,,均價/額推算,146.5,1

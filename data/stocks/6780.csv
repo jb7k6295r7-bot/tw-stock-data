@@ -30,3 +30,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-10-16,6780,學習王,emerging,,,,,0,,,,,,無成交,,0
 2026-10-19,6780,學習王,emerging,,,,,0,,,,,,無成交,,0
 2026-10-20,6780,學習王,emerging,,,,,0,,,,,,無成交,,0
+2026-10-21,6780,學習王,emerging,,40.7,38.95,39.05,6001,234339,0.00,,,,均價/額推算,40.7,1

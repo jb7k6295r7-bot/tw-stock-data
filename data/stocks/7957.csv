@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-10-21,7957,第一傳動,emerging,,380,220,299.57,405830,121574493,,,,,均價/額推算,289,1
