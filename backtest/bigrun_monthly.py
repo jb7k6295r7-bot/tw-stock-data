@@ -11,6 +11,11 @@ LINE（台股 seq539、情報 0030 §三／0035，使用者同意）：只推檔
   每份月報判定 up（＝LINE 轉強同一條件，照字面）⇒ 月報資料日隔一交易日開盤加 2 份（每檔只加一次，買不到也算）；起點 ＋ 12 個月（2027-10-22）前未轉強
   ⇒ 期限隔一交易日開盤賣出記「未確認」（無成交／鎖跌停順延）；已確認不設停損、不設天數。backtest/forward/bigrun_monthly/smallpos.csv 只追加、已寫凍結；
   auto 每晚都跑（到不到期都看）；手動 --kind 只試算不寫。月報加一節「確認前小部位前瞻」（照規則報酬：還原價含息、每份扣 0.585%）。
+  讀法（台股 seq547）：①加碼看每期月報的轉強判定本身（欄 up），⛔ 不套 LINE「上期沒轉強才列」②起點後第一份月報（鍵 2026-11）起判，9 月樣本不算
+  ③首次創 24 月新高＝本期創、上期沒創；加速 ≥ 5 點是狀態、每期照判。
+  LINE 小部位事件行（預設關；設定檔 backtest/forward/設定_每份金額.json「小部位_LINE」＝true 才開，缺鍵＝false；⛔ 本模組不改設定檔；⛔ 不寫報酬）：
+  月報那晚「  小部位：代號 名稱 轉強 ⇒ 明天開盤加 2 份」插在 LINE 摘要續行後；到期前夕（資料日 ≤ 2027-10-22 ＜ 下一交易日）名單另加
+  「## 十二、大漲觀察小部位（到期 …）」節：「- 【LINE】⭐ 大漲觀察（小部位）：」＋「  小部位：代號 名稱 滿 12 個月未轉強 ⇒ 明天開盤賣」。
 每日名單第十二節（--md）：「## 十二、大漲觀察月報（YYYY-MM 營收）」／「## 十二、大漲觀察季加報（YYYYQn）」＝ LINE 摘要 ＋ A～F 表（組標題降成 ###）；
   整節置換、接檔尾、冪等；只出現在「產出那個資料日」的名單（同資料日名單重產 ⇒ 從 <鍵>_<種類>_daily節.md 補回）；其他資料日 ⇒ 移除舊節。
 ⛔ 名單是事後挑的，不能拿來回測過去。名單增減：台股另寄信 ⇒ 改本檔頂端常數 GROUPS／POOL169（其他不動）。
@@ -887,6 +892,73 @@ SP_FIX = "4 檔、看過新聞才挑、早期訊號先買沒有回測驗證"
 SP_COLS = ["seq", "stock_id", "name", "event", "trade_date", "price_raw", "units", "status", "report_key", "report_asof",
            "judge", "judge_detail", "note", "recorded_at", "sha"]
 BUY_EV = ("起點買進", "轉強加碼")
+SP_FIRST_KEY = "2026-11"                       # 起點後第一份月報（10 月營收）起判；9 月樣本（2026-10 鍵）不算（台股 seq547 ②）
+CFG = os.path.join(REPO, "backtest", "forward", "設定_每份金額.json")
+CFG_KEY = "小部位_LINE"                         # 缺鍵／false ⇒ LINE 不出小部位事件行（台股 seq547 ③：先備好、預設關；⛔ 本模組不改設定檔）
+
+
+def sp_line_on(path=None):
+    try:
+        return bool(json.load(open(path or CFG, encoding="utf-8")).get(CFG_KEY, False))
+    except Exception:
+        return False
+
+
+def sp_events_report(new_rows):
+    """本份月報新判定轉強 ⇒ 「  小部位：代號 名稱 轉強 ⇒ 明天開盤加 2 份」（⛔ 不寫報酬）。"""
+    return [f"  小部位：{r['stock_id']} {r['name']} 轉強 ⇒ 明天開盤加 {SP_ADD} 份"
+            for r in new_rows if r["event"] == "月報判定" and r["judge"] == "轉強"]
+
+
+def sp_events_expiry(rows, asof, next_td):
+    """到期前夕（資料日 ≤ 期限 ＜ 下一交易日）：仍未確認且有持股 ⇒ 「  小部位：代號 名稱 滿 12 個月未轉強 ⇒ 明天開盤賣」。"""
+    E = sp_expiry()
+    if not (asof <= E < next_td):
+        return []
+    conf = {r["stock_id"] for r in rows if r["event"] == "月報判定" and r["judge"] == "轉強"}
+    out = []
+    for sid in SP_CODES:
+        held = sum(int(r["units"] or 0) for r in rows if r["stock_id"] == sid and r["event"] in BUY_EV and r["status"] == "成交")
+        if sid not in conf and held and not any(r["stock_id"] == sid and r["event"] == "到期賣出" for r in rows):
+            nm_ = next((r["name"] for r in rows if r["stock_id"] == sid), "")
+            out.append(f"  小部位：{sid} {nm_} 滿 {SP_MONTHS} 個月未轉強 ⇒ 明天開盤賣")
+    return out
+
+
+def next_trading_day(H, asof):
+    """下一交易日（外推）：週一～五且不在休市表；休市表讀法同 run_daily_list（名稱含開始／最後交易且附註沒寫無交易 ⇒ 交易日）。"""
+    hol, trade = set(), set()
+    p = os.path.join(H, "meta", "holiday_schedule.csv")
+    if os.path.exists(p):
+        h = pd.read_csv(p, dtype=str)
+        h = h[h["date"].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}$", na=False)]
+        for d, n, t in zip(h["date"], h["name"].fillna(""), h["note"].fillna("")):
+            (trade if (any(k in n for k in ("開始交易", "最後交易")) and "無交易" not in t) else hol).add(d)
+    d = asof + pd.Timedelta(days=1)
+    while (d.weekday() >= 5 and d.strftime("%Y-%m-%d") not in trade) or d.strftime("%Y-%m-%d") in hol:
+        d += pd.Timedelta(days=1)
+    return d
+
+
+def expiry_secs(rows, asof, H):
+    """到期前夕的每日名單第十二節（只在設定檔「小部位_LINE」＝true 且有事件那晚出現）。"""
+    if not sp_line_on():
+        return []
+    ev = sp_events_expiry(rows, asof, next_trading_day(H, asof))
+    return [[f"{SEC_PREFIX}小部位（到期 {sp_expiry().date()}）", "", "- 【LINE】⭐ 大漲觀察（小部位）：", *ev]] if ev else []
+
+
+def insert_line_events(lines, ev):
+    """把事件行插在第一則【LINE】大漲觀察 區塊的續行之後。"""
+    if not ev:
+        return lines
+    i = next((j for j, x in enumerate(lines) if x.startswith("- 【LINE】⭐ 大漲觀察")), None)
+    if i is None:
+        return lines
+    j = i + 1
+    while j < len(lines) and lines[j].startswith("  ") and not lines[j].startswith("  - "):
+        j += 1
+    return lines[:j] + ev + lines[j:]
 
 
 def sp_expiry():
@@ -960,7 +1032,7 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha):
     # ② 月報判定（起點後、期限內；已確認者不再判）
     conf = {r["stock_id"]: pd.Timestamp(r["report_asof"]) for r in allr() if r["event"] == "月報判定" and r["judge"] == "轉強"}
     for key, ra, J in judgments:
-        if ra < SP_START or ra > E:
+        if key < SP_FIRST_KEY or ra < SP_START or ra > E:          # 起點後第一份月報（2026-11）起判；期限後不判
             continue
         for sid in SP_CODES:
             if sid in conf or has(sid, "月報判定", report_key=key) or sid not in J:
@@ -1116,13 +1188,14 @@ def run(a):
         todo = due(asof, stt0)
         if not todo:
             print(f"未到期（資料日 {asof.date()}；月報鍵 {asof.strftime('%Y-%m')}、季加報鍵 {quarter_key(asof)}；首份 月報 {FIRST['月報']}、季加報 {FIRST['季加報']}）")
-            _, new = sp_step(a, H, cal, asof, sha, nm, [], write=True)       # 前瞻小部位：每晚都看（起點補記、加碼、到期賣出）
+            allr, new = sp_step(a, H, cal, asof, sha, nm, [], write=True)    # 前瞻小部位：每晚都看（起點補記、加碼、到期賣出）
             print(f"小部位前瞻：新增 {len(new)} 列" + ("：" + "；".join(f"{r['stock_id']} {r['event']} {r['status'] or r['judge']}" for r in new) if new else ""))
             if a.md:
                 # 每日名單第十二節：只出現在「產出那個資料日」的名單（同資料日重產名單 ⇒ 從存檔補回，冪等）；其他資料日 ⇒ 移除
                 secs = [open(e["daily節"], encoding="utf-8").read().rstrip("\n").split("\n")
                         for kind in ("月報", "季加報") for e in stt0.get(kind, {}).values()
                         if e.get("資料日") == str(asof.date()) and e.get("daily節") and os.path.exists(e["daily節"])]
+                secs += expiry_secs(allr, asof, H)
                 put_daily(a.md, secs)
                 print(f"名單第十二節：{'補回 ' + str(len(secs)) + ' 節（同資料日已產）' if secs else '無（已移除舊節）'}")
             return 0
@@ -1134,7 +1207,7 @@ def run(a):
     if FUND_NOTES:
         log(f"[財報] ⚠ {FUND_NOTES}")
     produced = []
-    sp_new_all = []
+    sp_new_all = []; sp_rows = []
     adj_cache = {}
 
     def adj_df(sid):
@@ -1152,9 +1225,12 @@ def run(a):
             df, md, P, sec = month_report(asof, sha, ac, act, H, L, ldiag, corr, G, cal, key)
             # 前瞻小部位：本份月報判定 ⇒ 新增列（auto 才寫檔；手動乾跑只試算）；月報加一節（放在 G 表之前）
             allr, new = sp_step(a, H, cal, asof, sha, nm, sp_judgments(df, key, asof), write=(a.kind == "auto"))
-            sp_new_all += new
+            sp_new_all += new; sp_rows = allr
             gi = next(i for i, x in enumerate(md) if x.startswith("## G "))
             md = md[:gi] + sp_section(allr, asof, adj_df, nm, a.kind != "auto") + md[gi:]
+            if sp_line_on():                       # 設定檔「小部位_LINE」＝true 才在 LINE 摘要加事件行（預設關）
+                ev = sp_events_report(new)
+                md = insert_line_events(md, ev); sec = insert_line_events(sec, ev)
         else:
             df, md, sec = quarter_report(asof, sha, ac, act, FD, key, nm)
         if a.kind == "auto":
@@ -1182,7 +1258,7 @@ def run(a):
         produced.append((kind, key, outs, meta, sec))
         print(f"產出 {kind}：{outs[-1]}")
     if a.kind == "auto" and not any(k == "月報" for k, _ in todo):
-        _, sp_new_all = sp_step(a, H, cal, asof, sha, nm, [], write=True)
+        sp_rows, sp_new_all = sp_step(a, H, cal, asof, sha, nm, [], write=True)
     if a.kind == "auto":
         print(f"小部位前瞻：新增 {len(sp_new_all)} 列" + ("：" + "；".join(f"{r['stock_id']} {r['event']} {r['status'] or r['judge']}" for r in sp_new_all) if sp_new_all else ""))
     prune_work(keep={f"rev_{ac[:10]}", f"fund_{ac[:10]}"})
@@ -1193,7 +1269,8 @@ def run(a):
         save_state(state_p, stt)
     if a.md:                                       # 每日名單第十二節（整節置換、接檔尾、冪等）
         # auto ⇒ 整個第十二節換成今晚產的；手動 --kind ⇒ 只換同種類那節（另一種保留）
-        put_daily(a.md, [p[4] for p in produced], SEC_PREFIX if a.kind == "auto" else SEC_PREFIX + a.kind)
+        put_daily(a.md, [p[4] for p in produced] + (expiry_secs(sp_rows, asof, H) if a.kind == "auto" else []),
+                  SEC_PREFIX if a.kind == "auto" else SEC_PREFIX + a.kind)
         print(f"名單第十二節：寫入 {len(produced)} 節 ⇒ {a.md}")
     log(f"[完成] {len(produced)} 份｜{time.time() - t0:.0f}s")
     return 0

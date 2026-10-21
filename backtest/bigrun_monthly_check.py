@@ -13,6 +13,8 @@
         名單 md 第十二節（接檔尾、其他段不變、LINE 摘要格式、冪等、同資料日重產補回、別的資料日移除）；put_daily 節在中間
   sp    前瞻小部位 fixture：起點前不記、補記起點（鎖漲停／無成交買不到）、凍結不重算、轉強加 2 份只一次、期限當天不賣、
         12 個月未轉強賣出（無持股、鎖跌停順延）、期限後判定不記、累計報酬算式
+  sp2   台股 seq547 讀法核對：①加碼看每期判定本身（不套 LINE「上期沒轉強才列」）②2026-11 鍵起判（2026-10 鍵不判）
+        ③首次創 24 月新高＝本期創上期沒創、加速 ≥ 5 點是狀態；LINE 小部位事件行（設定鍵「小部位_LINE」缺＝關）格式、插入位置、到期前夕、下一交易日外推
 """
 from __future__ import annotations
 
@@ -462,6 +464,67 @@ def part_sp():
     rec("sp", "累計報酬照規則（等額份數、每份扣 0.585%）", abs(val["1503"][1] - exp) < 1e-12 and val["1503"][0] == 3, f"{val['1503']} vs {exp}")
 
 
+# ═════════════ sp2（台股 seq547 讀法核對＋LINE 事件行，預設關） ═════════════
+def part_sp2():
+    from backtest import bigrun_monthly as BM
+    T = pd.Timestamp
+    ps = list(pd.period_range("2023-01", "2026-10", freq="M").astype(str)); n = len(ps)
+    rows = []
+    for i, p in enumerate(ps):
+        # 1305：首次創 24 月新高（本期 101、上期 99、其餘 100；年增極小 ⇒ 加速 < 5 點）
+        r5 = 101.0 if i == n - 1 else (99.0 if i == n - 2 else 100.0); l5 = 100.0 if i == n - 1 else r5
+        # 1503：每月都創新高、年增固定 10% ⇒ 本期與上期都創 ⇒ 不是「首次」；加速 0
+        r3 = 100.0 + i; l3 = r3 / 1.1
+        # 1312：近 4 月年增 50%、之前 0 ⇒ 加速本期 33 點、上期 37.5 點（狀態持續）；營收持平
+        r2 = 100.0; l2 = 100.0 / 1.5 if i >= n - 4 else 100.0
+        for sid, rv, ly in (("1305", r5, l5), ("1503", r3, l3), ("1312", r2, l2)):
+            rows.append({"stock_id": sid, "period": p, "rev": rv, "ly": ly, "h_rev": rv, "d_rev": np.nan, "src": "revenue_hist"})
+    L = pd.DataFrame(rows).sort_values(["stock_id", "period"])
+    L["prev"] = L.groupby("stock_id")["rev"].shift(1)
+    RM, P = BM.rev_metrics(L, ["1305", "1503", "1312"], T("2026-11-12"), {})
+    df = pd.DataFrame([{"group": "D", "stock_id": s, "name": f"名{s}", **{k: v for k, v in RM[s].items() if k != "notes"}} for s in ("1305", "1503", "1312")])
+    J = BM.sp_judgments(df, "2026-11", T("2026-11-12"))[0][2]
+    rec("sp2", "③ 首次創 24 月新高 ＝ 本期創、上期沒創（1305 加速 < 5 點仍轉強）", P == "2026-10" and J["1305"][0] and BM.T(RM["1305"]["hi24"]) and not BM.T(RM["1305"]["hi24_prev"]),
+        f"期 {P}｜加速 {RM['1305']['accel']:.4f}｜{J['1305']}")
+    rec("sp2", "③ 本期與上期都創新高、加速 < 5 點 ⇒ 不是轉強（1503）", not J["1503"][0], str(J["1503"]))
+    rec("sp2", "③ 加速 ≥ 5 點是狀態：上期已成立、本期仍成立 ⇒ 本期照判轉強（1312）",
+        J["1312"][0] and RM["1312"]["up_prev"] and RM["1312"]["accel"] >= 0.05, f"加速 {RM['1312']['accel']:.3f}／上期 {RM['1312']['accel_prev']:.3f}")
+    ln = "\n".join(BM.line_month(df, P))
+    rec("sp2", "① 加碼看每期判定本身、不套 LINE「上期沒轉強才列」：1312 判定轉強、但 LINE 轉強行不列", J["1312"][0] and "1312" not in ln and "1305" in ln, ln.replace("\n", " ／ "))
+    cal = pd.bdate_range("2026-10-19", "2027-01-30")
+    class Px:
+        def bar(self, sid, d):
+            return {"o": 100.0, "h": 101.0, "l": 99.0, "c": 100.0, "pc": 100.0}
+    nm = {s: f"名{s}" for s in BM.SP_CODES}
+    base = BM.sp_update([], cal, T("2026-10-22"), Px(), [], nm, "now", "f" * 40)
+    j9 = [("2026-10", T("2026-10-23"), {s: (True, "x") for s in BM.SP_CODES})]
+    r9 = BM.sp_update(base, cal, T("2026-10-23"), Px(), j9, nm, "now", "f" * 40)
+    j11 = [("2026-11", T("2026-11-12"), {s: (s == "1312", "x") for s in BM.SP_CODES})]
+    r11 = BM.sp_update(base, cal, T("2026-11-12"), Px(), j11, nm, "now", "f" * 40)
+    rec("sp2", "② 從起點後第一份月報（2026-11）起判：2026-10 鍵（9 月營收樣本）即使資料日在起點後也不判",
+        r9 == [] and len([r for r in r11 if r["event"] == "月報判定"]) == 4, f"2026-10 鍵新增 {len(r9)}；2026-11 鍵新增 {len(r11)}")
+    # LINE 事件行（預設關；⛔ 不寫報酬）
+    rec("sp2", "設定檔目前沒有「小部位_LINE」鍵 ⇒ 關", BM.sp_line_on() is False, BM.CFG)
+    with tempfile.TemporaryDirectory() as td:
+        p1, p2 = os.path.join(td, "a.json"), os.path.join(td, "b.json")
+        json.dump({"營量": 20000}, open(p1, "w")); json.dump({"小部位_LINE": True}, open(p2, "w"))
+        rec("sp2", "缺鍵 ＝ false、鍵 true ＝ 開", BM.sp_line_on(p1) is False and BM.sp_line_on(p2) is True, "")
+    ev = BM.sp_events_report(r11)
+    rec("sp2", "事件行格式：轉強 ⇒ 明天開盤加 2 份（不含報酬）", ev == ["  小部位：1312 名1312 轉強 ⇒ 明天開盤加 2 份"], str(ev))
+    blk = ["x", "- 【LINE】⭐ 大漲觀察（10 月營收）：", "  轉強：…", "  重點：…", "", "y"]
+    rec("sp2", "事件行插在 LINE 區塊續行之後", BM.insert_line_events(blk, ev) == blk[:4] + ev + blk[4:], "")
+    held = base                                                     # 4 檔都有起點 1 份、都未確認
+    e0 = BM.sp_events_expiry(held, T("2027-10-21"), T("2027-10-22"))
+    e1 = BM.sp_events_expiry(held, T("2027-10-22"), T("2027-10-25"))
+    rec("sp2", "到期前夕（資料日 ≤ 2027-10-22 ＜ 下一交易日）才出「滿 12 個月未轉強 ⇒ 明天開盤賣」；前一晚不出",
+        e0 == [] and e1 == [f"  小部位：{s} 名{s} 滿 12 個月未轉強 ⇒ 明天開盤賣" for s in BM.SP_CODES], str(e1[:1]))
+    e2 = BM.sp_events_expiry(held + [r for r in r11 if r["stock_id"] == "1312"], T("2027-10-22"), T("2027-10-25"))
+    rec("sp2", "已確認者到期不出賣出行", all("1312" not in x for x in e2) and len(e2) == 3, str(len(e2)))
+    H = os.path.expanduser("~/h2data/eeb5af5f8feca83d0702fa0423a0c58cdb77900d/data")
+    rec("sp2", "下一交易日外推（休市表）：2026-10-21 ⇒ 10-22；2026-10-23（五）⇒ 10-27（10-26 光復節補假）", BM.next_trading_day(H, T("2026-10-21")) == T("2026-10-22")
+        and BM.next_trading_day(H, T("2026-10-23")) == T("2026-10-27"), str(BM.next_trading_day(H, T("2026-10-23")).date()))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv"); ap.add_argument("--qcsv"); ap.add_argument("--parts", default="due,cells,look,g")
@@ -479,6 +542,8 @@ def main():
         part_auto()
     if "sp" in parts:
         part_sp()
+    if "sp2" in parts:
+        part_sp2()
     n = len(RES); ok = sum(r[2] for r in RES)
     print(f"\n驗證 {n} 項：通過 {ok}、不符 {n - ok}")
     for r in RES:
