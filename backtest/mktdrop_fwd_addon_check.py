@@ -16,6 +16,8 @@ F7 高10 非排程出場（positions_user 賣出日 ≠ 排程）⇒ 加碼那�
 F10 第十一節 put11 冪等、沒要報且沒舊節 ⇒ 檔案不動；pth10_daily.put 不蓋掉；sec11 搬檔尾冪等；沒要報 ⇒ 拿掉舊節
 F8 第八節回到改前：section()／put_section() 原始碼 ＝ 15c29eb178；真快照 2026-10-20 daily --nowrite 名單 ＝ 現有名單（第八節逐字、無第十一節）
 F9 ADD_BT 數字 ＝ resultsDropAddSelf/split/table.csv 確認段 A 臂（高10 F9 版、0050；11 次）
+F11 升降單位／限價（範例＋隨機 12,040 例）；F12～F14 第十四節（事件夜買、加碼線夜買、漲回夜賣；股數、限價、交割戶、處置股）
+F15 ⚠⚠ 守門（缺節 ⇒ 標題下 ⚠⚠、exit 3、冪等；daily 整合）；F16 休市表缺 ⇒ 只扣週末＋⚠；F17 user-add；F18 reorder 再出；F19 sec11 搬十一、十四節
 """
 from __future__ import annotations
 
@@ -264,6 +266,163 @@ def main():
             and s4_.index("## 十、") < s4_.index(M.SEC11_TITLE), s4_)
         M.put11(md, []); s6_ = open(md, encoding="utf-8").read()
         chk("F10 沒有要報 ⇒ 舊第十一節拿掉", M.SEC11_TITLE not in s6_ and s6_.rstrip("\n") == re.sub(M.SEC11_RE, "", s4_, flags=re.S).rstrip("\n"))
+        # ── F11 升降單位與限價（買往下、賣往上；股票／ETF 級距）
+        from decimal import Decimal as Dm
+        LP = M.limit_px
+        cases = [(46.13, "買", False, "49.35"), (46.8, "買", False, "50"), (47.0, "買", True, "50.25"), (52.6, "賣", False, "50"),
+                 (105.2, "賣", False, "100"), (950.0, "買", False, "1015"), (1060.0, "賣", False, "1010"), (9.5, "買", False, "10.15"),
+                 (108.15, "買", True, "115.7"), (30.0, "賣", True, "28.5"), (46.0, "賣", True, "43.7")]
+        bad = [(c, s, e, w, M.fmt_px(LP(c, s, e))) for c, s, e, w in cases if M.fmt_px(LP(c, s, e)) != w]
+        chk("F11 限價範例（含級距交界、ETF）", not bad, bad)
+        rng = np.random.default_rng(7); bad = []
+        for x in np.r_[rng.uniform(1, 2000, 3000), [9.99, 10, 49.99, 50, 99.9, 100, 499.5, 500, 999, 1000]]:
+            for side, e in (("買", False), ("賣", False), ("買", True), ("賣", True)):
+                p = LP(float(x), side, e); q = Dm(repr(float(x))) * Dm("1.07" if side == "買" else "0.95"); t = M.tick(p, e)
+                ok = (p % t == 0) and ((p <= q and p + M.tick(p + t, e) > q) if side == "買" else (p >= q and p - M.tick(p - t, e) < q))
+                if not ok:
+                    bad.append((float(x), side, e, str(p)))
+        chk("F11 隨機 12,040 例：合法升降單位、買＝≤ 收盤×1.07 的最大合法價、賣＝≥ 收盤×0.95 的最小合法價", not bad, bad[:5])
+        # ── F12～F14 第十四節：事件夜／加碼線夜／漲回夜
+        st20 = {"說明": "x", "大跌4檔": 20000, "大跌加碼_高10": 20000, "大跌加碼_0050": 20000}
+        setup(tmp, cal, pt, idx, USR, setting=st20)
+        pd.DataFrame({"候選": ["A", "F9top4", "F9top4", "F8top4"], "代號": ["0050", "3008", "2317", "2330"], "名稱": ["元大台灣50", "大立光", "鴻海", "台積電"],
+                      "備註": ["", "", "", ""]}).to_csv(os.path.join(RM.FWD, f"candidates_{ds(0).replace('-', '')}.csv"), index=False, encoding="utf-8-sig")
+        F.set("3008", 2000.0, 0.0)
+        M.disp_set = lambda DATA, day: {"2317"}
+        ADDe, _ = M.add_daily(ds(0), a.sha, J, write=True)
+        erows = ADDe["_rows"]
+        L12 = M.orders_daily(ds(0), a.sha, J, [], erows)
+        cl = {s: F.px(s)[1][pt] for s in ("3008", "2317", "2330", "2454", "0050")}
+        exp, gross = [], 0.0
+        for s, g in (("3008", "大跌4檔"), ("2317", "大跌4檔"), ("2330", "高10 每檔加碼"), ("2454", "高10 每檔加碼"), ("0050", "0050 加碼（六四）")):
+            sh = int(np.floor(20000 / cl[s] + 1e-9)); lp = LP(cl[s], "買", s.startswith("00")); gross += sh * float(lp)
+            exp.append((s, sh, M.fmt_px(lp), g))
+        rows12 = [x for x in L12 if x.startswith("- 【下單】買｜")]
+        okrows = len(rows12) == 5 and all(f"買｜{s} " in r and f"｜{sh} 股｜限價 {lp}｜{g}" in r for (s, sh, lp, g), r in zip(exp, rows12))
+        tot = int(np.ceil(gross * 1.001425 - 1e-9))
+        chk("F12 事件夜清單：4 檔（候選 F9）＋高10 每檔＋0050，股數＝每份÷收盤、限價、順序", L12[0].startswith(f"- 【下單】⭐ {ds(1)} 開盤買") and okrows, L12)
+        chk("F12 交割戶 ＝ ceil(Σ股數×限價×1.001425)、只有買清單有", L12[-1] == f"- 【下單】交割戶要有 {tot:,} 元（股數×限價 {gross:,.0f} ＋ 手續費 0.1425%）", (tot, L12[-1]))
+        chk("F12 處置股加註", "2317 鴻海" in rows12[1] and rows12[1].endswith(M.DISP_NOTE) and not rows12[0].endswith(M.DISP_NOTE))
+        chk("F12 非事件夜不產第十四節", M.orders_daily(ds(1), a.sha, {"狀態": "非事件"}, [], []) == [] and M.sec14_lines([]) == [])
+        # 加碼線夜：positions 有 F9 持有中 2 檔（一檔已出場不列）
+        RM.fwd_append_positions([{"序號": 1, "事件日": ds(0), "候選": "F9top4", "代號": s, "名稱": n, "買進日": ds(1), "買進價": 1, "狀態": st_}
+                                 for s, n, st_ in (("3008", "大立光", "持有中"), ("2317", "鴻海", "持有中"), ("1101", "台泥", "已出場"))])
+        Radd = {"序號": "1", "事件日": ds(0), "狀態": "持有中", "加碼日": ds(2), "加碼線": 91.2, "收復日": None, "收復目標": 100.0}
+        L13 = M.orders_daily(ds(2), a.sha, {"狀態": "非事件"}, [Radd], [])
+        r13 = [x for x in L13 if x.startswith("- 【下單】買｜")]
+        cl2 = {s: F.px(s)[1][pt + 2] for s in ("3008", "2317")}
+        chk("F13 加碼線夜：F9 持有中每檔再一份（照加碼日收盤）、不列已出場", len(r13) == 2 and "1101" not in "".join(L13)
+            and f"｜{int(np.floor(20000 / cl2['3008'] + 1e-9))} 股｜限價 {M.fmt_px(LP(cl2['3008'], '買', False))}｜大跌4檔 −5% 加碼" in r13[0]
+            and L13[-1].startswith("- 【下單】交割戶要有"), L13)
+        # 漲回夜：ds(5)；4 檔股數 ＝ 事件日 ＋ 加碼日 兩份；加碼列：2454 先照高10 到期賣掉 ⇒ 不列
+        M.add_daily(ds(1), a.sha, {"狀態": "非事件"}, write=True); M.add_daily(ds(3), a.sha, {"狀態": "非事件"}, write=True)
+        Rrec = {"序號": "1", "事件日": ds(0), "狀態": "持有中", "加碼日": ds(2), "加碼線": 91.2, "收復日": ds(5), "收復目標": 100.0}
+        L14 = M.orders_daily(ds(5), a.sha, {"狀態": "非事件"}, [Rrec], [])
+        r14 = [x for x in L14 if x.startswith("- 【下單】賣｜")]
+        A14 = {r["代號"]: r for r in M.read_rows(M.ADD_FN)}
+        sh3008 = int(np.floor(20000 / F.px("3008")[1][pt] + 1e-9)) + int(np.floor(20000 / F.px("3008")[1][pt + 2] + 1e-9))
+        c5 = F.px("3008")[1][pt + 5]
+        chk("F14 漲回夜賣清單：4 檔（含 −5% 加碼股數）＋高10 加碼（2330）＋0050 加碼；已到期賣的 2454 不列；限價＝收盤×0.95 往上",
+            [x.split("｜")[1].split(" ")[0] for x in r14] == ["3008", "2317", "2330", "0050"]
+            and f"｜{sh3008} 股｜限價 {M.fmt_px(LP(c5, '賣', False))}｜大跌4檔" in r14[0]
+            and f"｜{A14['2330']['參考股數']} 股｜" in r14[2] and f"｜{A14['0050']['參考股數']} 股｜" in r14[3]
+            and A14["2454"]["狀態"] == "已出場" and "含 −5% 加碼" in L14[0], L14)
+        chk("F14 賣清單沒有交割戶列、處置股賣出註記", not any("交割戶" in x for x in L14) and r14[1].endswith(M.DISP_NOTE_SELL), L14)
+        # ── F15 ⚠⚠ 守門
+        md = os.path.join(tmp, "guard.md")
+        base_md = "# 每日名單 2026-09-15\n\n## 一、營量\n\n- a\n"
+        open(md, "w", encoding="utf-8").write(base_md)
+        M.put_section(md, [M.SEC_TITLE, "", "- x", ""])
+        fl = M.need_flags(ds(0), a.sha, J)
+        rc1 = M.guard_md(md, fl); s1_ = open(md, encoding="utf-8").read()
+        rc2 = M.guard_md(md, fl); s2_ = open(md, encoding="utf-8").read()
+        chk("F15 事件夜缺第十一、十四節 ⇒ 標題下 ⚠⚠、exit 3、冪等", fl == {"大跌事件夜": ("八", "十一", "十四")} and rc1 == 3 and rc2 == 3 and s1_ == s2_
+            and s1_.split("\n")[2].startswith("⚠⚠ 大盤大跌：今晚是大跌事件夜，但第十一、十四節沒產出") and s1_.count("⚠⚠") == 1, s1_[:400])
+        open(md, "w", encoding="utf-8").write(base_md); M.put_section(md, [M.SEC_TITLE, "", "- x", ""])
+        M.put11(md, M.sec11_lines(ADDe["top"])); M.put_sec(md, M.SEC14_TITLE, M.sec14_lines(L12))
+        chk("F15 三節都在 ⇒ exit 0、檔案不動", M.guard_md(md, fl) == 0 and "⚠⚠" not in open(md, encoding="utf-8").read())
+        M.put_sec(md, M.SEC14_TITLE, M.sec14_lines(["- ⚠ 下單清單產生失敗（見 log）：X"]))
+        chk("F15 第十四節只剩 ⚠ 行（沒有【下單】⭐）也算沒產出", M.guard_md(md, fl) == 3 and "第十四節沒產出" in open(md, encoding="utf-8").read())
+        chk("F15 平常夜（無事件／加碼線／漲回）⇒ 不需要任何節", M.need_flags(ds(1), a.sha, {"狀態": "非事件"}) == {})
+        M.fwd_update("events.csv", RM.FWD_EV_COLS, {"序號": 1, "事件日": ds(0)}, {"買進日": ds(1), "狀態": "持有中"})
+        flr = M.need_flags(ds(5), a.sha, {"狀態": "非事件"})
+        _, df0 = RM.read_index(); df2 = df0.copy(); df2.loc[df2["date"] == cal[pt + 2], "close"] = 91.0
+        RM.read_index = lambda sha=None: (sha, df2)
+        fla = M.need_flags(ds(2), a.sha, {"狀態": "非事件"})
+        RM.read_index = lambda sha=None: (sha, df0)
+        chk("F15 漲回夜（有大跌加碼持有中）要八、十一、十四；加碼線夜要八、十四", list(flr.values()) == [("八", "十一", "十四")] and "漲回" in list(flr)[0]
+            and list(fla.values()) == [("八", "十四")], (flr, fla))
+        open(md, "w", encoding="utf-8").write(base_md)
+        chk("F15 判不出（未知）⇒ ⚠⚠「判不出」", M.guard_md(md, {"未知": "X"}, crash="RuntimeError: y") == 3 and "判不出" in open(md, encoding="utf-8").read())
+        # daily 整合：事件夜第十四節產生失敗 ⇒ ⚠⚠＋非 0；正常 ⇒ 0
+        import types
+        jr = RM.fwd_judge_and_record
+        RM.fwd_judge_and_record = lambda d, w: dict(J)
+        setup(tmp, cal, pt, idx, USR, setting=st20)
+        pd.DataFrame({"候選": ["F9top4", "F9top4"], "代號": ["3008", "2317"], "名稱": ["大立光", "鴻海"], "備註": ["", ""]}).to_csv(
+            os.path.join(RM.FWD, f"candidates_{ds(0).replace('-', '')}.csv"), index=False, encoding="utf-8-sig")
+        ns = types.SimpleNamespace(fwd=RM.FWD, asof=ds(0), sha=a.sha, md=md, nowrite=False, preview_addon=False, preview_orders=None, preview_seq=None,
+                                   preview_cands=None, fsha=None)
+        open(md, "w", encoding="utf-8").write(base_md)
+        rc_ok = M.daily(ns); s_ok = open(md, encoding="utf-8").read()
+        od = M.orders_daily
+        M.orders_daily = lambda *a_, **k_: (_ for _ in ()).throw(RuntimeError("模擬失敗"))
+        setup(tmp, cal, pt, idx, USR, setting=st20)
+        pd.DataFrame({"候選": ["F9top4"], "代號": ["3008"], "名稱": ["大立光"], "備註": [""]}).to_csv(
+            os.path.join(RM.FWD, f"candidates_{ds(0).replace('-', '')}.csv"), index=False, encoding="utf-8-sig")
+        open(md, "w", encoding="utf-8").write(base_md)
+        ns.fwd = RM.FWD
+        rc_bad = M.daily(ns); s_bad = open(md, encoding="utf-8").read()
+        M.orders_daily = od; RM.fwd_judge_and_record = jr
+        chk("F15 daily 整合：事件夜正常 ⇒ 0、第八／十一／十四節都在、無 ⚠⚠", rc_ok == 0 and M.SEC_TITLE in s_ok and M.SEC11_TITLE in s_ok and M.SEC14_TITLE in s_ok
+            and "⚠⚠" not in s_ok and "- 【下單】買｜3008 大立光" in s_ok, s_ok[-800:])
+        chk("F15 daily 整合：下單清單失敗 ⇒ ⚠⚠ 在標題下、exit 3", rc_bad == 3 and s_bad.split("\n")[2].startswith("⚠⚠") and "第十四節沒產出" in s_bad, s_bad[:300])
+        # ── F16 休市表缺 ⇒ 只扣週末外推＋⚠（不中止）
+        M.HOL_WARN.clear()
+        nd_real = M._next_day(cal, len(cal) - 1, DATA)
+        from backtest import gate_b_status as GB
+        D.DATA = DATA
+        chk("F16 休市表在 ⇒ 同 gate_b_status 外推", nd_real == GB.future_trading_days(cal, 1, fixed_holidays_uncovered=True)[0][0] and not M.HOL_WARN)
+        nod = os.path.join(tmp, "nodata"); os.makedirs(os.path.join(nod, "meta"), exist_ok=True)
+        nd_fb = M._next_day(cal, len(cal) - 1, nod)
+        exp_fb = cal[-1] + pd.Timedelta(days=1)
+        while exp_fb.weekday() >= 5:
+            exp_fb += pd.Timedelta(days=1)
+        chk("F16 休市表缺 ⇒ 只扣週末、HOL_WARN 一行、第十一／十四節帶 ⚠", nd_fb == exp_fb and len(M.HOL_WARN) == 1 and "休市表不在" in M.HOL_WARN[0]
+            and M.sec14_lines(["x"])[-1].startswith("- ⚠ 休市表不在"), M.HOL_WARN)
+        M.HOL_WARN.clear(); D.DATA = DATA
+        # ── F17 user-add
+        setup(tmp, cal, pt, idx, USR, setting=st20)
+        r17 = M.user_add(1, "2330", ds(1), 1020.0, "19", "買", "大跌4檔", a.sha, note="t")
+        o17 = F.px("2330")[0][pt + 1]
+        R17 = M.read_rows(M.FILL_FN)
+        dup = False
+        try:
+            M.user_add(1, "2330", ds(1), 1020.0, "19", "買", "大跌4檔", a.sha)
+        except SystemExit:
+            dup = True
+        chk("F17 user-add：整股開盤價＝成交日未還原開盤、差＝零股÷整股開盤−1、重複拒絕",
+            len(R17) == 1 and abs(float(R17[0]["整股開盤價"]) - o17) < 1e-9 and abs(float(R17[0]["零股÷整股開盤−1"]) - (1020.0 / o17 - 1)) < 1e-12 and dup, R17)
+        # ── F18 reorder（再出）
+        open(md, "w", encoding="utf-8").write(base_md); M.put_sec(md, M.SEC14_TITLE, M.sec14_lines(L12))
+        b1 = M.reorder(ds(1), a.sha, "買", ["3008", "2317"], "大跌4檔", md=md); s18a = open(md, encoding="utf-8").read()
+        M.reorder(ds(1), a.sha, "買", ["3008", "2317"], "大跌4檔", md=md); s18b = open(md, encoding="utf-8").read()
+        cl18 = F.px("3008")[1][pt + 1]
+        nerr = False
+        try:
+            M.reorder(ds(1), a.sha, "賣", ["3008"], "大跌4檔")
+        except SystemExit:
+            nerr = True
+        chk("F18 reorder：照新收盤重算、標「再出」、併進第十四節且重跑冪等、原清單保留；賣沒給股數 ⇒ 拒絕",
+            b1[0].endswith("再出：前一天沒成交") and f"3008 大立光｜{int(np.floor(20000 / cl18 + 1e-9))} 股｜限價 {M.fmt_px(LP(cl18, '買', False))}" in b1[1]
+            and s18a == s18b and s18a.count("再出：前一天沒成交") == 1 and L12[0] in s18a and nerr, s18a[-600:])
+        # ── F19 sec11 子指令一併搬第十四節
+        open(md, "w", encoding="utf-8").write(base_md)
+        M.put11(md, M.sec11_lines(ADDe["top"])); M.put_sec(md, M.SEC14_TITLE, M.sec14_lines(L12))
+        open(md, "a", encoding="utf-8").write("\n## 十、高10\n\n- h\n")
+        M.move11(md); s19 = open(md, encoding="utf-8").read(); M.move11(md)
+        chk("F19 sec11 子指令：第十一、十四節依序搬到檔尾（冪等）", s19 == open(md, encoding="utf-8").read()
+            and s19.index("## 十、") < s19.index(M.SEC11_TITLE) < s19.index(M.SEC14_TITLE), s19[-300:])
         # ── F8 第八節回到改前逐字
         RM.FWD = os.path.join(REPO, "backtest", "forward", "mktdrop")
         RM.read_index = RM_read_index; M.one = M_one
