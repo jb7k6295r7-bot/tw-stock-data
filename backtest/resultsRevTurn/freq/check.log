@@ -1,0 +1,8 @@
+[K1] {'檔': ['登錄全文-營收轉強之後是否勝過同類未轉強_小部位加碼條件驗證拆價量_事件層登錄_台股策略線_seq2_sha03f8b072ecfcf67c-6330B-20261022-1641.md'], '相符': True, '裁定seq447': ['〔簽收 台✖ 回✔ 情✖〕件-三線←裁定線-20261022-1650-seq447缺貨型出場發號＋小部位seq3核＋轉強驗證seq2發號.md']}
+[K2a] {'期': ['2015-09', '2020-08', '2021-02', '2021-12', '2023-06', '2024-04', '2024-12', '2025-05'], '比對列': 14357, '不同': 0}
+[K2b] {'抽列': 400, '不同': 0}
+[K3] {'列': 9997, '不同': 0}
+[K4] {'自算': 9997, 'events': 9997, '只在自算': 0, '只在events': 0}
+[K5] {'對照不符': 0, '候選數不符': 0, '抽驗事件': 300, '對照檔': 512}
+[K6] {'段表不符': [], '重疊①相同': True, '自算': [6215, 8807, 5503]}
+[K7] {'報酬類欄': [], '策略鎖': ['策略鎖相符（25 支）'], 'git 新增（相對開跑前）': ['?? backtest/researchRevTurn_freq.py', '?? backtest/researchRevTurn_freq_check.py', '?? backtest/researchShortageExit_freq.py', '?? backtest/researchShortageExit_freq_check.py', '?? backtest/resultsRevTurn/', '?? backtest/resultsShortageExit/'], 'git 只多本件': True}｜全過 True

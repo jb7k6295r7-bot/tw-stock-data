@@ -1,0 +1,5 @@
+[K1] {'檔': ['登錄全文-缺貨型持股確認後怎麼賣_七種賣法各對不賣含一般股對照_單筆層登錄_台股策略線_seq1_sha2b3c853a8290be22-7660B-20261022-1641.md'], '相符': True, '裁定seq447': ['〔簽收 台✖ 回✔ 情✖〕件-三線←裁定線-20261022-1650-seq447缺貨型出場發號＋小部位seq3核＋轉強驗證seq2發號.md']}
+[K2] {'自算': 7068, 'events': 7068, '只在自算': 0, '只在events': 0, '母體別不同': 0}
+[K3] {'抽驗主格事件': 400, '不同': {'C1': 0, 'C2': 0, 'C3': 0, 'C4': 0, 'C5': 0, 'C6': 0, 'C7': 0}}
+[K4] {'不符': []}
+[K5] {'報酬類欄': [], '策略鎖': ['策略鎖相符（25 支）'], 'git 新增（相對開跑前）': ['?? backtest/researchRevTurn_freq.py', '?? backtest/researchRevTurn_freq_check.py', '?? backtest/researchShortageExit_freq.py', '?? backtest/researchShortageExit_freq_check.py', '?? backtest/resultsRevTurn/', '?? backtest/resultsShortageExit/'], 'git 只多本件': True}｜全過 True
