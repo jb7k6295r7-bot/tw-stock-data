@@ -95,6 +95,13 @@ if [ -z "$FAIL" ]; then
       else
         logline "大漲觀察 失敗（不影響 daily）：$(tail -1 "$BLOG" 2>/dev/null)（見 $BLOG）"
       fi
+      # 規則 15：頂部樣子前瞻（PREREG 頂部樣子 seq1 e30036415fbbce81、裁定 seq443 §三 轉前瞻）：每晚呼叫；判定夜（月底下一交易日）判上月底、到期填 12／6 個月報酬；名單尾第十三節只在判定或填報酬那晚寫一行（內部、⛔ 不推 LINE）；⛔ 失敗只記 log、不影響名單
+      TLOG="$REPO/backtest/resultsDaily/topsell.log"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.topsell_fwd --asof "$ASOF" --sha "$SHA" --md "$REPO/backtest/resultsDaily/daily_$ASOF.md" > "$TLOG" 2>&1); then
+        logline "頂部樣子前瞻：$(tail -1 "$TLOG")"
+      else
+        logline "頂部樣子前瞻 失敗（不影響 daily）：$(tail -1 "$TLOG" 2>/dev/null)（見 $TLOG）"
+      fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); SLRC=$?
       if [ $SLRC = 2 ]; then logline "策略鎖：$SLK（不加警示）"; fi
