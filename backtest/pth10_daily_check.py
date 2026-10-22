@@ -29,6 +29,12 @@
    (b) 使用者版：每批 pth10_daily.user_order（F9）＋ pick_user（跳過持有中）⇒ 前 k 檔 ＝ T1 交易檔當月買進（k ＝ 當月實買數）；抽籤模式同式 ＝ trades_主_N10。
 ⑧ f9dry --tie 抽籤｜F9（各約 1～6 分）：最新真快照（~/h2data/<main sha>，資料日 2026-10-20）--preview-buy --tie ⇒ 11/2 首批（2026-09-30 排序）10 檔與備位；
    F9 那次並列抽籤；寫到 work/f9dry（⛔ 不碰 resultsDaily）；策略鎖前後 --check。
+── D11 第三本「F9 照規則」、D12 LINE 行移出五句（裁定 seq440 §二、使用者 10/21；2026-10-22 加）──
+④ ① 與 ⑨c 改驗：LINE 行只留名單內容（含備位）、開頭不變；五句在下一行「  - 註：」（不帶【LINE】）。
+⑦ 加 (c)：pth10_daily.f9_rows（同批 rk ＝ F9 次序位置、前 20 名依 F9）＋ assemble ＋ window_sim ⇒ 權益／持股數 ＝ resultsPTH10tie/main/raw_主.npz
+   T1_eq／T1_nh（逐位元）、交易檔 ＝ trades_主_T1。
+⑨ book3 --day 0｜1（各約 5 分；要先有 ⑥ 的 work/e2e 快取與 ⑧ 的財報籌碼資料夾）：起點假設 2026-04，9/30、10/01 兩個真快照連跑 ⇒
+   positions.csv／positions_user.csv／positions_f9.csv 三本並存、equity_f9 與 equity 同日期、只追加（day0 列凍結）、LINE 行不含五句、註行有五句。
 """
 from __future__ import annotations
 
@@ -354,10 +360,14 @@ def st_fixture(a):
     L = H.render({"asof": "2026-10-30", "nxt": "2026-11-02", "started": False, "e0": "2026-11-02", "form0": "2026-09-30", "held": [],
                   "buys": [(s, "名", 50.0, H.shares(50.0)) for s in plan], "nfree": 10, "backup": [("S99", "備")], "sells_tmr": [], "sold_today": []})
     line = [x for x in L if "【LINE】" in x]
-    assert len(line) == 1 and line[0].startswith("- 【LINE】⭐ 52 週新高 10 檔（高10）") and all(s in line[0] for s in H.SENT3)
-    assert "明天 2026-11-02 開盤買 10 檔（每檔約 2 萬）" in line[0] and "400 股" in line[0] and "放 0050" not in line[0]
+    # D12（使用者 10/21「下面五句都不用寫」）：固定三句、同分句不在 LINE 行，改在下一行「  - 註：」；備位併入 LINE 行
+    assert len(line) == 1 and line[0].startswith("- 【LINE】⭐ 52 週新高 10 檔（高10）：") and not any(s in line[0] for s in H.SENT3) and H.NOTE_TIE not in line[0]
+    sub = L[L.index(line[0]) + 1]
+    assert sub.startswith("  - 註：") and all(s in sub for s in H.SENT3) and H.NOTE_TIE in sub and "【LINE】" not in sub
+    assert "明天 2026-11-02 開盤買 10 檔（每檔約 2 萬）" in line[0] and "400 股" in line[0] and "放 0050" not in line[0] and "S99 備" in line[0]
     assert all("【LINE】" not in x for x in L if x.startswith("  - "))
-    msgs.append("① 月初前一晚：is_buy_night（跨月且 ≥ 2026-11）；合成的明天補進名單 ＝ 真的明天（無人買不到時）；LINE 行含買進日、2 萬換算股數與固定三句、備位行不帶【LINE】")
+    msgs.append("① 月初前一晚：is_buy_night（跨月且 ≥ 2026-11）；合成的明天補進名單 ＝ 真的明天（無人買不到時）；LINE 行含買進日、2 萬換算股數與備位，"
+                "不含固定三句與同分句（改在下一行「  - 註：」、不帶【LINE】）")
     # ② 非買賣日
     hd = [("S1", "甲", "2026-11-02", "2027-04-30"), ("S2", "乙", "2026-12-01", "2027-05-31")]
     for asof, nxt in (("2026-11-03", "2026-11-04"), ("2027-04-28", "2027-04-29")):
@@ -611,12 +621,17 @@ def f9_fixture(a):
     finally:
         H.LINE_TAG = tag0
     lr = [x for x in Lr if "【LINE】" in x][0]; lf = [x for x in Lf if "【LINE】" in x][0]
-    assert ("｜" + H.NOTE_TIE + "｜" + H.SENT3[0]) in lr and H.F9_SENT not in lr and H.NOTE_TIE_F9 not in lr
-    assert ("｜" + H.NOTE_TIE_F9 + "｜" + H.F9_SENT + "｜" + "｜".join(H.SENT3)) in lf and H.NOTE_TIE not in lf
+    nr_ = Lr[Lr.index(lr) + 1]; nf_ = Lf[Lf.index(lf) + 1]
+    # D12：LINE 行不含五句（同分句、F9 句、固定三句）；下一行「  - 註：」依序列出（不帶【LINE】）；LINE 行開頭不變
+    five = [H.NOTE_TIE_F9, H.F9_SENT, *H.SENT3]
+    for x in (lr, lf):
+        assert x.startswith("- 【LINE】⭐ 52 週新高 10 檔（高10）：") and not any(s in x for s in five + [H.NOTE_TIE])
+    assert nf_ == "  - 註：" + "｜".join(five) and nr_ == "  - 註：" + "｜".join([H.NOTE_TIE, *H.SENT3])
     assert H.F9_SENT == "同分時依大跌 4 檔分數挑（你 10/21 選；回測：跟抽籤分不出，最多暫定）"
     assert all("【LINE】" not in x for x in Lf if x.startswith("  - ")) and any("依大跌 4 檔分數排序" in x for x in Lf if x.startswith("  - 名單依今晚資料"))
-    assert lr.replace(H.NOTE_TIE, "") == lf.replace(H.NOTE_TIE_F9 + "｜" + H.F9_SENT, "")
-    msgs.append("⑨c LINE 行：F9 ⇒ NOTE_TIE 換 F9 版、固定三句之前加「" + H.F9_SENT + "」，其餘逐字同；抽籤 ⇒ 原樣")
+    assert lr == lf.replace("照同一排序", "照規則")                  # LINE 行只差備位的遞補說法
+    msgs.append("⑨c LINE 行（D12）：只留名單內容（買、續抱、賣、備位）、開頭不變；五句（F9 版同分句、「" + H.F9_SENT + "」、固定三句）"
+                "移到下一行「  - 註：」（不帶【LINE】）；抽籤模式註行 ＝ 原同分句＋固定三句")
     # 無同分群 ⇒ 不算分數、次序 ＝ 抽籤
     ns = argparse.Namespace(procs=1, nowrite=True, xd="/不存在")
     pl = [("A1", 1.0), ("A2", .99), ("A3", .98)]
@@ -635,9 +650,14 @@ def _ev_world(a):
     RES = {k: v for k, v in RES.items() if v is not None}
     EP2 = W["EP"][2]; ME = W["ME"]; dates = W["dates"]
     js = [j for j in range(len(ME)) if EP2[j] >= 0]
-    ev = H.assemble(W, rows_from(R, W, js), RES)
+    rows = rows_from(R, W, js)
+    ev = H.assemble(W, rows, RES)
     ev["form"] = np.array([str(dates[ME[j]]) for j in ev["jm"]], object)
+    _EVW.update(rows=rows, RES=RES)
     return W, ev
+
+
+_EVW: dict = {}
 
 
 def held_months(W, T):
@@ -748,11 +768,30 @@ def st_f9replay(a):
     J["結果"]["(b) 使用者版 user_order＋pick_user 前 k 檔 ＝ 實買"] = r3
     ok3 = all(v["前 k 檔 ≠ 實買 批數"] == 0 and v["有買進批"] > 0 for v in r3.values())
     log(f"[⑦使用者版] {r3}｜{'✅' if ok3 else '⛔'}")
-    # 描述：F9 vs 抽籤 每月買進不同的批數
+    # (c) D11 第三本「F9 照規則」：pth10_daily.f9_rows（同批 rk ＝ F9 次序位置、前 20 名依 F9）＋ assemble ＋ window_sim
+    #     ⇒ 權益／持股數 ＝ resultsPTH10tie/main/raw_主.npz T1_eq／T1_nh（逐位元）、交易檔 ＝ trades_主_T1
+    rows, RES = _EVW["rows"], _EVW["RES"]
+    orders = {}
+    for j in sorted({int(r["j"]) for r in rows}):
+        idx = np.flatnonzero(ev["jm"] == j)
+        if [str(s) for s in ev["sid"][idx]] != [r["sid"] for r in rows if r["j"] == j]:
+            raise SystemExit("⛔ ev 與事件列順序不同")
+        orders[j] = H.user_order(ev["rk"][idx], ev["pth"][idx], fl[idx], sc[idx])
+    rows9 = H.f9_rows(rows, orders)
+    ev9 = H.assemble(W, rows9, RES)
+    ev9["form"] = ev["form"]
+    S9, _, _ = H.window_sim(W, ev9, 0, False)
+    Z = np.load("backtest/resultsPTH10tie/main/raw_主.npz")
+    r4 = {"權益 ＝ raw_主 T1_eq（逐位元）": eqa(S9["eq"], Z["T1_eq"]), "持股數 ＝ T1_nh（逐位元）": eqa(S9["nh"], Z["T1_nh"]),
+          "交易檔全文 ＝ trades_主_T1": PN.df_text(PN.trades_df(W, ev9, S9), "%.17g") == t1, "買進筆": len(S9["buys"]),
+          "每批算出場列（前 20 名）": int(sum(r["pre"] for r in rows9)), "批數": len(orders)}
+    J["結果"]["(c) F9 照規則本（f9_rows＋window_sim）vs resultsPTH10tie T1"] = r4
+    ok4 = r4["權益 ＝ raw_主 T1_eq（逐位元）"] and r4["持股數 ＝ T1_nh（逐位元）"] and r4["交易檔全文 ＝ trades_主_T1"]
+    log(f"[⑦F9照規則本] {r4}｜{'✅' if ok4 else '⛔'}")
     lk1 = lock_check(); J["策略鎖後"] = lk1[1]
     okl = lk0[0] and lk1[0]
     log(f"[⑦策略鎖] 前 {lk0[1]}／後 {lk1[1]}｜{'✅' if okl else '⛔'}")
-    J["通過"] = bool(ok0 and ok1 and ok2 and ok3 and okl)
+    J["通過"] = bool(ok0 and ok1 and ok2 and ok3 and ok4 and okl)
     log(f"[⑦f9replay] {'✅ 全過' if J['通過'] else '⛔ 有不符'}｜{time.time() - t0:.0f}s")
     save("f9replay", J)
     return J["通過"]
@@ -807,16 +846,89 @@ def st_f9dry(a):
     return ok
 
 
+# ═════════════ ⑨ 三本紀錄並存（D11）＋ LINE 行（D12）端到端：起點假設 2026-04，9/30、10/01 兩個真快照連跑；⛔ 不是前瞻紀錄 ═════════════
+B3 = [("2026-09-30", "~/h2data/indrev_5d20a7edcf07/data"), ("2026-10-01", "~/h2data/indrev_f65bb03e114a/data")]
+B3_XD = "~/mktdropwork/fwd/dbfb96cb81/data"                       # 財報籌碼（⑧ 已建；只用排序日以前的資料）
+
+
+def st_book3(a):
+    day = int(a.day)
+    asof, data = B3[day]
+    J = {"階段": f"book3_{day}"}
+    t0 = time.time()
+    lk0 = lock_check(); J["策略鎖前"] = lk0[1]
+    d = os.path.join(a.work, "book3"); fwd = os.path.join(d, "fwd")
+    if day == 0:
+        if os.path.exists(d):
+            shutil.rmtree(d)
+        for sub, keys_ in (("ranks", None), ("events", ("2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07"))):
+            src = os.path.join(a.work, "e2e", "fwd", sub); os.makedirs(os.path.join(fwd, sub), exist_ok=True)
+            for f in sorted(os.listdir(src)) if os.path.isdir(src) else []:      # ⑥ 同一組真快照算好的排序／已進場批事件快取（省時；只驗流程）
+                if keys_ is None or any(k in f for k in keys_):
+                    shutil.copy(os.path.join(src, f), os.path.join(fwd, sub, f))
+    H.START_YM = 2026 * 12 + 3                                     # 測試：第一批進場月 2026-04（形成月 2026-02）
+    tag0 = H.LINE_TAG; H.LINE_TAG = "- 【LINE】⭐ "; push0 = H.PUSH; H.PUSH = True
+    md = os.path.join(d, f"daily_{asof}.md")
+    shutil.copy(f"backtest/resultsDaily/daily_{asof}.md", md)
+    orig = open(md, encoding="utf-8").read()
+    prev = {f: open(os.path.join(fwd, f), encoding="utf-8-sig").read() for f in ("positions_f9.csv", "equity_f9.csv", "equity.csv")
+            if os.path.exists(os.path.join(fwd, f))}
+    try:
+        ap = argparse.Namespace(asof=asof, md=md, sha=None, fwd=fwd, nowrite=False, preview_buy=False, procs=a.procs, data=data, tie="F9",
+                                xd=os.path.expanduser(B3_XD))
+        L, X = H.run(ap, log)
+    finally:
+        H.LINE_TAG = tag0; H.PUSH = push0
+    chk = {}
+    rd = lambda f: pd.read_csv(os.path.join(fwd, f), dtype=str, keep_default_na=False, encoding="utf-8-sig") if os.path.exists(os.path.join(fwd, f)) else None
+    P, P9, U, E, E9 = rd("positions.csv"), rd("positions_f9.csv"), rd("positions_user.csv"), rd("equity.csv"), rd("equity_f9.csv")
+    chk["md 其他段不變"] = open(md, encoding="utf-8").read().startswith(orig.rstrip("\n"))
+    chk["positions_f9.csv、equity_f9.csv 存在且與照規則同欄"] = P9 is not None and E9 is not None and list(P9.columns) == H.POS_COLS and list(E9.columns) == H.EQ_COLS
+    chk["equity_f9 日期 ＝ equity 日期（到資料日）"] = E9 is not None and E9["日期"].tolist() == E["日期"].tolist() and E9["日期"].iloc[-1] == asof
+    chk["沒有 ⚠（F9 算得出）"] = not any("⚠" in x for x in L)
+    line = [x for x in L if "【LINE】" in x]
+    five = H.note_sents("F9")
+    if line:
+        k_ = L.index(line[0])
+        chk["LINE 行開頭不變"] = line[0].startswith("- 【LINE】⭐ 52 週新高 10 檔（高10）：")
+        chk["LINE 行不含五句"] = not any(s in line[0] for s in five)
+        chk["下一行「  - 註：」有五句、不帶【LINE】"] = L[k_ + 1] == "  - 註：" + "｜".join(five)
+    if day == 0:
+        chk["9/30 有 LINE（明天 10/01 買）"] = bool(line) and "明天 2026-10-01 開盤買" in line[0]
+        st_ = json.load(open(os.path.join(fwd, "state.json"), encoding="utf-8"))
+        chk["名單存入 state（10/01、同分 F9）"] = st_["名單"].get("2026-10-01", {}).get("同分排序") == "F9"
+        chk["F9 照規則已有紀錄（4 月批補滿 10 格起）"] = P9 is not None and int((P9["買進日"] == "2026-04-01").sum()) == H.NS and bool((P9["買進日"] >= "2026-04-01").all())
+    if day == 1:
+        chk["三本並存：positions.csv／positions_user.csv／positions_f9.csv 都有 10/01 買進"] = all(
+            x is not None and int((x["買進日"] == "2026-10-01").sum()) > 0 for x in (P, U, P9))
+        for f in ("positions_f9.csv", "equity_f9.csv", "equity.csv"):
+            if f in prev:
+                old = pd.read_csv(io.StringIO(prev[f]), dtype=str, keep_default_na=False)
+                new = rd(f)
+                cols = [c for c in old.columns if c not in ("賣出日", "賣出未還原收盤", "出場種類", "R用", "淨報酬", "狀態")]
+                chk[f"{f} 只追加（day0 的列與買進欄凍結）"] = len(new) >= len(old) and new.iloc[:len(old)][cols].equals(old[cols])
+        chk["10/01 無【LINE】"] = not line
+    J.update({"段落": L, "檢查": chk, "照規則持有": [h[0] for h in X["held"]], "F9照規則持有": [h[0] for h in X["held9"]],
+              "使用者持有（positions_user 持有中）": sorted(U.loc[U["狀態"] == "持有中", "代號"].tolist()) if U is not None else [],
+              "照規則 vs F9 照規則 買進不同筆": (len(set(zip(P["批次"], P["代號"])) ^ set(zip(P9["批次"], P9["代號"]))) if P9 is not None else None)})
+    lk1 = lock_check(); J["策略鎖後"] = lk1[1]
+    ok = all(chk.values()) and lk0[0] and lk1[0]
+    J["通過"] = bool(ok)
+    log(f"[⑨三本 day{day} {asof}] {chk}｜策略鎖 {lk0[1]}／{lk1[1]}｜{'✅' if ok else '⛔'}｜{time.time() - t0:.0f}s")
+    save(f"book3_{day}", J)
+    return ok
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--stage", default="fixture", choices=("world", "rank", "replay", "fixture", "dry", "e2e", "f9replay", "f9dry"))
+    ap.add_argument("--stage", default="fixture", choices=("world", "rank", "replay", "fixture", "dry", "e2e", "f9replay", "f9dry", "book3"))
     ap.add_argument("--day", default="0")
     ap.add_argument("--tie", default="F9", choices=H.TIES)
     ap.add_argument("--work", default=os.path.expanduser("~/pth10work")); ap.add_argument("--procs", type=int, default=4)
     a = ap.parse_args()
     os.makedirs(a.work, exist_ok=True)
     ok = {"world": st_world, "rank": st_rank, "replay": st_replay, "fixture": st_fixture, "dry": st_dry, "e2e": st_e2e,
-          "f9replay": st_f9replay, "f9dry": st_f9dry}[a.stage](a)
+          "f9replay": st_f9replay, "f9dry": st_f9dry, "book3": st_book3}[a.stage](a)
     sys.exit(0 if ok else 1)
 
 
