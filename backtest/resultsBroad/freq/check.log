@@ -1,0 +1,7 @@
+[C1] {'登錄': ['登錄全文-廣撒長抱_每月營收訊號全買抱1到3年不賣對大盤_組合層登錄_台股策略線_seq1_sha4f73227473ff654a-4760B-20261022-2333.md'], '相符': True, '裁定seq454': ['〔簽收 台✖ 回✔ 資✖〕件-三線←裁定線-20261022-2335-seq454廣撒長抱發號＋存貨下降加營收轉強發號.md']}
+[C2] {'自算批': 171, 'prep批': 171, '不同': 0}
+[C3] {'抽': 5000, '不同': 0}
+[C4] {'不符': []}
+[C5] {'批': 171, '不同': 0}
+[C6] {'不符': []}
+[C7] {'報酬類欄': [], '策略鎖': ['策略鎖相符（25 支）'], 'git 新增': ['?? backtest/researchBroad_freq.py', '?? backtest/researchBroad_freq_check.py', '?? backtest/researchInvRev_freq.py', '?? backtest/researchInvRev_freq_check.py', '?? backtest/resultsBroad/', '?? backtest/resultsInvRev/'], 'git 只多本件': False}｜全過 False
