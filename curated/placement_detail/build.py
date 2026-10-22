@@ -161,8 +161,11 @@ def parse_detail(h):
 
 
 def load_e3(ref):
-    t = subprocess.run(["git", "-C", REPO, "show", f"{ref}:curated/takeover_events/takeover_events.csv"],
-                       capture_output=True, text=True).stdout
+    if ref == "worktree":  # 用工作目錄裡剛重產、尚未入庫的 takeover_events.csv
+        t = open(os.path.join(REPO, "curated", "takeover_events", "takeover_events.csv"), encoding="utf-8").read()
+    else:
+        t = subprocess.run(["git", "-C", REPO, "show", f"{ref}:curated/takeover_events/takeover_events.csv"],
+                           capture_output=True, text=True).stdout
     return [r for r in csv.DictReader(io.StringIO(t)) if r["class"] == "E3"]
 
 
