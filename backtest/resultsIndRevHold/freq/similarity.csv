@@ -1,0 +1,13 @@
+世界,格1,格2,Jaccard（批×產業）
+main,A1|K1,A2|K1,0.231481
+main,A1|K1,A3|K1,0.166667
+main,A1|K3,A2|K3,0.332776
+main,A1|K3,A3|K3,0.225806
+main,A2|K1,A3|K1,0.33
+main,A2|K3,A3|K3,0.420677
+early,A1|K1,A2|K1,0.409091
+early,A1|K1,A3|K1,0.347826
+early,A1|K3,A2|K3,0.34058
+early,A1|K3,A3|K3,0.275862
+early,A2|K1,A3|K1,0.47619
+early,A2|K3,A3|K3,0.508197
