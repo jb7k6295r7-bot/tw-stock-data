@@ -956,9 +956,11 @@ def sp_events_report(new_rows, closes, cfg):
 def sp_events_newcand(rows, asof, next_td, closes, cfg, names):
     """新增候選（seq447 §二）：明天就是起點（資料日 ＜ 起點 ≤ 下一交易日）且還沒記起點 ⇒「  小部位：代號 名稱 新候選 ⇒ 明天開盤買 1 份（約 N 股）」。"""
     out = []
+    # 2026-10-22 修：資料日落後（當天資料未入庫）時，「資料日 ＜ 起點」會把已過的起點誤判成明天 ⇒ 另要求「台北今天 ＜ 起點」
+    today = pd.Timestamp.now(tz="Asia/Taipei").tz_localize(None).normalize()
     for sid, st in SP_CANDS.items():
         st = pd.Timestamp(st)
-        if asof < st <= next_td and not any(r["stock_id"] == sid and r["event"] == "起點買進" for r in rows):
+        if today < st and asof < st <= next_td and not any(r["stock_id"] == sid and r["event"] == "起點買進" for r in rows):
             out.append(f"  小部位：{sid} {names.get(sid, '')} 新候選 ⇒ 明天開盤買 1 份{_sh(sp_shares(1, closes.get(sid), cfg))}")
     return out
 
