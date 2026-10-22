@@ -1,0 +1,40 @@
+{
+ "R1": {
+  "檔": [
+   "登錄全文-被公開收購經營權變動私募策略投資人_宣告後股價_事件層描述登錄_台股策略線_seq2_sha41a4f93d8210932e-6437B-20261022-0458.md"
+  ],
+  "相符": true
+ },
+ "R2": {
+  "recon全同": true,
+  "頻率表欄逐字相同": true
+ },
+ "R3": {
+  "比對格": 31071,
+  "不符": {}
+ },
+ "R4": {
+  "格": 352,
+  "不符": []
+ },
+ "R5": {
+  "格": 22404,
+  "不符": {}
+ },
+ "R6": {
+  "先驗對表": true,
+  "策略鎖": [
+   "策略鎖相符（25 支）"
+  ],
+  "git 本件新增": [
+   "?? backtest/researchTakeover.py",
+   "?? backtest/researchTakeover_check.py",
+   "?? backtest/resultsTakeover/main/"
+  ],
+  "git 其他新增（同時段他件，非本件）": [
+   "?? backtest/researchTriple_freq.py"
+  ],
+  "git 只多本件": true
+ },
+ "全部通過": true
+}
