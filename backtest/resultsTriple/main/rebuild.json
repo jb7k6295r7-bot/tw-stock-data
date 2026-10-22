@@ -1,0 +1,16 @@
+{
+ "sha": "9b0e9882572c438ec25771031658ddc701ca6171",
+ "相同": {
+  "events_S1.csv.gz": true,
+  "events_V.csv.gz": true,
+  "freq_段.csv": true,
+  "v_coverage.csv": true,
+  "v_coverage_年.csv": true,
+  "recall_denom.csv": true,
+  "equiv.csv": true,
+  "desc_signals.csv": true,
+  "yearly.csv": true
+ },
+ "全同": true,
+ "時間": "2026-10-22 22:50:40.836051+08:00"
+}

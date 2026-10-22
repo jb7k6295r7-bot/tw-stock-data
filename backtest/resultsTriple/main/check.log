@@ -1,0 +1,8 @@
+[K1] {'8455d7003a62a190': True, 'c46d0d9e72c23f67': True, '裁定': {'seq449': ['〔簽收 回✔ 台✔ 情✖ 資✖〕件-四線←裁定線-20261022-2137-seq449缺貨型與轉強定版＋3倍命中率發號＋收購減資接續＋誤出LINE＋時戳.md'], 'seq450': ['〔簽收 回✔ 台✔ 情✖ 資✖〕件-四線←裁定線-20261022-2239-seq450三倍命中率S1開跑V只描述扣N＋收購報酬收下＋時戳結案.md'], 'seq451': ['〔簽收 台✔ 回✔〕件-台股回測←裁定線-20261022-2241-seq451三倍命中率seq2不核V月判只加描述欄.md']}}
+[K2] {'events_S1.csv.gz': True, 'events_V.csv.gz': True, 'freq_段.csv': True, 'v_coverage.csv': True, 'v_coverage_年.csv': True, 'recall_denom.csv': True, 'equiv.csv': True, 'desc_signals.csv': True, 'yearly.csv': True}
+[K3] {'列': 1154, '不同': 0, '例': []}
+[K4] {'不符': []}
+[K5] {'自算': 613, 'events': 613, '只在自算': 0, '只在events': 0, '對照檔': 1839, '對照不符': 0, '候選數不符': 0}
+[K6] {'抽e': 20, '不同': 0}
+[K7] {'S1無閘 自算': [734, 2913], '檔': [734, 2913], '相同': True}
+[K8] {'策略鎖': ['策略鎖相符（25 支）'], 'git 新增（相對正式跑前）': ['?? backtest/researchTriple.py', '?? backtest/researchTriple_check.py', '?? backtest/resultsTriple/main/'], 'git 只多本件': True}｜全過 True
