@@ -1,0 +1,65 @@
+{
+ "K1": {
+  "登錄": [
+   "登錄全文-存貨天數下降加營收轉強_缺貨的財報代理_事件層登錄_台股策略線_seq1_sha3b637980fe4de0c3-4512B-20261022-2333.md"
+  ],
+  "相符": true,
+  "裁定seq456": [
+   "〔簽收 回✔ 台✔ 資✖〕件-三線←裁定線-20261022-2356-seq456存貨下降加轉強頻率表核開跑＋主對照要求有存貨.md"
+  ]
+ },
+ "K2": {
+  "重建": {
+   "events.csv.gz": true,
+   "freq_段.csv": true,
+   "yearly.csv": true,
+   "coverage.csv": true,
+   "dist.csv": true,
+   "industry.csv": true,
+   "sens.csv": true,
+   "overlap.csv": true,
+   "group12.csv": true
+  },
+  "events_R": 3823,
+  "應有": 3823,
+  "差": 0
+ },
+ "K3": {
+  "抽列": 400,
+  "不同": 0,
+  "最大相對差": 4.996003610813204e-16,
+  "無存貨要求版恆等式不符": 0,
+  "無存貨要求版配到": 620
+ },
+ "K4": {
+  "不符": []
+ },
+ "K5": {
+  "不符": []
+ },
+ "K6": {
+  "策略鎖": [
+   "策略鎖相符（25 支）"
+  ],
+  "git 新增": [
+   " M backtest/mktdrop_fwd.py",
+   " M backtest/mktdrop_fwd_addon_check.py",
+   "?? backtest/mktdrop_gap_check.py",
+   "?? backtest/researchBroad.py",
+   "?? backtest/researchBroad_check.py",
+   "?? backtest/researchInvRev_check.py",
+   "?? backtest/resultsBroad/main/",
+   "?? backtest/resultsInvRev/main/"
+  ],
+  "本件以外（他處同時新增）": [
+   " M backtest/mktdrop_fwd.py",
+   " M backtest/mktdrop_fwd_addon_check.py",
+   "?? backtest/mktdrop_gap_check.py",
+   "?? backtest/researchBroad.py",
+   "?? backtest/researchBroad_check.py",
+   "?? backtest/resultsBroad/main/"
+  ],
+  "只多本件或他處新檔": false
+ },
+ "全過": false
+}
