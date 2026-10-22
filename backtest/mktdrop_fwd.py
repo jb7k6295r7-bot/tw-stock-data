@@ -75,6 +75,8 @@
    每列「- 【下單】買｜代號 名稱｜N 股｜限價 P｜群組[｜⚠ 處置股…]」；股數 ＝ floor(每份 ÷ 資料日未還原收盤)；
    買限價 ＝ 收盤×1.07 往下取到升降單位、賣限價 ＝ 收盤×0.95 往上取（股票 0.01／0.05／0.1／0.5／1／5，ETF 0.01／0.05）；
    買的最後一列「交割戶要有 X 元」＝ ceil(Σ 股數×限價 ×1.001425)；處置股 ＝ meta/disposal.csv 下單日在 start～end 內。
+   （2026-10-23 加，seq458 §五、情報 0041）買末列行尾「｜T+2 扣款 M/D」；★ 賣清單標頭行尾「｜T+2 入帳 M/D」（再出時接在「｜再出…」之前）；
+   T+2 ＝ settle_day：成交日（下單日）之後第 2 個交割日（交易日 ∪「僅辦理結算交割作業」日；休市表外推同 gate_b_status；缺檔只扣週末＋⚠）
    每份（元）＝ 設定檔「大跌4檔」「大跌加碼_高10」「大跌加碼_0050」。沒成交 ⇒ reorder 子指令再出（回測線依回報手動）。
  使用者成交回報：user-add 子指令 ⇒ forward/mktdrop/user_fills.csv（零股成交價 vs 整股開盤價；positions.csv 表頭由 researchMktDrop_v1 寫死，故另檔）
 """
@@ -1014,6 +1016,44 @@ def disp_set(DATA, day):
     return set(d.loc[ok, "stock_id"].str.strip())
 
 
+def settle_day(cal, td, n=2, DATA=None):
+    """成交日 td 之後第 n 個交割日（T+n）。交割日 ＝ 快照日曆內的交易日 ∪ 休市表「僅辦理結算交割作業」日（如春節前市場無交易但照常交割）；
+    日曆之後 ＝ 平日 − 休市表休市日 ＋ 休市表交易日（名稱含「開始交易／最後交易」）＋ 結算交割日；休市表未公告年度另扣 gate_b_status.fixed_holidays（同外推讀法）。
+    休市表缺或讀不到 ⇒ 只扣週末、記 HOL_WARN（⛔ 不中止）。"""
+    DATA = DATA or D.DATA
+    hs = os.path.join(DATA, "meta", "holiday_schedule.csv")
+    closed, opened, setl, covered, ok_file, w = set(), set(), set(), None, False, ""
+    if os.path.exists(hs):
+        try:
+            h = pd.read_csv(hs, dtype=str).fillna("")
+            h = h[h["date"].str.match(r"^\d{4}-\d{2}-\d{2}$")]
+            for d_, nm_ in zip(pd.to_datetime(h["date"]), h["name"]):
+                (setl if "結算交割" in nm_ else opened if re.search("開始交易|最後交易", nm_) else closed).add(d_)
+            covered = int(pd.to_datetime(h["date"]).dt.year.max()) if len(h) else None
+            ok_file = True
+        except Exception as ex:                                    # noqa: BLE001
+            w = f"休市表讀取失敗（{type(ex).__name__}）⇒ T+2 只扣週末，日期可能不準"
+    else:
+        w = f"休市表不在（{hs}）⇒ T+2 只扣週末，日期可能不準"
+    if not ok_file and w not in HOL_WARN:
+        HOL_WARN.append(w)
+    from backtest import gate_b_status as GB
+    calset, last, fixed = set(cal), cal[-1], {}
+    d, cnt = pd.Timestamp(td), 0
+    while cnt < n:
+        d += pd.Timedelta(days=1)
+        if not ok_file:
+            good = d.weekday() < 5 if d > last else d in calset
+        elif d <= last:
+            good = d in calset or d in setl
+        else:
+            if covered is not None and d.year > covered and d.year not in fixed:
+                fixed[d.year] = GB.fixed_holidays(d.year)
+            good = (d.weekday() < 5 and d not in closed and d not in fixed.get(d.year, set())) or d in opened or d in setl
+        cnt += bool(good)
+    return d
+
+
 def order_block(side, items, asof, nxt, why, DATA, cal, mk, disp, again=False):
     """一份清單。items：[(代號, 名稱, 股數 or None, 群組)]；股數 None ⇒ 買：每份 ÷ 資料日未還原收盤（零股取整）、賣：「股數照你帳上」。
     買的最後一列「交割戶要有 X 元」＝ ceil(Σ 股數×限價 ×(1＋0.1425%))；賣不列。"""
@@ -1040,16 +1080,19 @@ def order_block(side, items, asof, nxt, why, DATA, cal, mk, disp, again=False):
         stale = f"（{asof} 沒成交，用 {cal[kl].date()} 收盤）" if kl != k else ""
         rows.append(f"{ORD}{side}｜{sid} {nm_}｜{shs}｜限價 {fmt_px(lp)}{stale}｜{GROUP_TXT[grp]}"
                     + (f"｜{DISP_NOTE if side == '買' else DISP_NOTE_SELL}" if disp and sid in disp else ""))
+    t2 = settle_day(cal, pd.Timestamp(nxt), 2, DATA)                # 2026-10-23 加（seq458 §五、情報 0041）：成交日 nxt 的 T+2 交割日
+    t2s = f"{t2.month}/{t2.day}"
     if side == "買":
         head = f"{ORD}⭐ {nxt} 開盤買（{why}）：股數＝每份 ÷ {asof} 收盤（零股取整）；限價＝{asof} 收盤 ×1.07 往下取到升降單位"
     else:
-        head = f"{ORD}⭐ {nxt} 開盤賣（{why}）：股數照當初清單算（實際以你帳上為準）；限價＝{asof} 收盤 ×0.95 往上取到升降單位"
+        head = (f"{ORD}⭐ {nxt} 開盤賣（{why}）：股數照當初清單算（實際以你帳上為準）；限價＝{asof} 收盤 ×0.95 往上取到升降單位"
+                f"｜T+2 入帳 {t2s}")                                # ★ 賣清單：T+2 入帳日接在標頭行末（賣沒有交割戶列）
     if again:
         head += "｜再出：前一天沒成交"
     L = [head] + rows
     if side == "買" and gross > 0:
         L.append(f"{ORD}交割戶要有 {int(np.ceil(gross * (1 + FEE) - 1e-9)):,} 元（股數×限價 {gross:,.0f} ＋ 手續費 0.1425%"
-                 + ("；有檔股數未定，未計入" if unk else "") + "）")
+                 + ("；有檔股數未定，未計入" if unk else "") + f"）｜T+2 扣款 {t2s}")
     if disp is None:
         L.append("- ⚠ 處置股資料（meta/disposal.csv）不在，這份清單沒檢查處置股")
     return L

@@ -18,6 +18,7 @@ F8 第八節回到改前：section()／put_section() 原始碼 ＝ 15c29eb178；
 F9 ADD_BT 數字 ＝ resultsDropAddSelf/split/table.csv 確認段 A 臂（高10 F9 版、0050；11 次）
 F11 升降單位／限價（範例＋隨機 12,040 例）；F12～F14 第十四節（事件夜買、加碼線夜買、漲回夜賣；股數、限價、交割戶、處置股）
 F15 ⚠⚠ 守門（缺節 ⇒ 標題下 ⚠⚠、exit 3、冪等；daily 整合）；F16 休市表缺 ⇒ 只扣週末＋⚠；F17 user-add；F18 reorder 再出；F19 sec11 搬十一、十四節
+F20 T+2 交割日：買末列「｜T+2 扣款 M/D」、賣標頭「｜T+2 入帳 M/D」；跨週末、10/26 休市、春節結算交割日、跨年、休市表缺
 """
 from __future__ import annotations
 
@@ -301,7 +302,7 @@ def main():
         okrows = len(rows12) == 5 and all(f"買｜{s} " in r and f"｜{sh} 股｜限價 {lp}｜{g}" in r for (s, sh, lp, g), r in zip(exp, rows12))
         tot = int(np.ceil(gross * 1.001425 - 1e-9))
         chk("F12 事件夜清單：4 檔（候選 F9）＋高10 每檔＋0050，股數＝每份÷收盤、限價、順序", L12[0].startswith(f"- 【下單】⭐ {ds(1)} 開盤買") and okrows, L12)
-        chk("F12 交割戶 ＝ ceil(Σ股數×限價×1.001425)、只有買清單有", L12[-1] == f"- 【下單】交割戶要有 {tot:,} 元（股數×限價 {gross:,.0f} ＋ 手續費 0.1425%）", (tot, L12[-1]))
+        chk("F12 交割戶 ＝ ceil(Σ股數×限價×1.001425)、只有買清單有", L12[-1] == f"- 【下單】交割戶要有 {tot:,} 元（股數×限價 {gross:,.0f} ＋ 手續費 0.1425%）｜T+2 扣款 {cal[pt + 3].month}/{cal[pt + 3].day}", (tot, L12[-1]))
         chk("F12 處置股加註", "2317 鴻海" in rows12[1] and rows12[1].endswith(M.DISP_NOTE) and not rows12[0].endswith(M.DISP_NOTE))
         chk("F12 非事件夜不產第十四節", M.orders_daily(ds(1), a.sha, {"狀態": "非事件"}, [], []) == [] and M.sec14_lines([]) == [])
         # 加碼線夜：positions 有 F9 持有中 2 檔（一檔已出場不列）
@@ -327,6 +328,7 @@ def main():
             and f"｜{sh3008} 股｜限價 {M.fmt_px(LP(c5, '賣', False))}｜大跌4檔" in r14[0]
             and f"｜{A14['2330']['參考股數']} 股｜" in r14[2] and f"｜{A14['0050']['參考股數']} 股｜" in r14[3]
             and A14["2454"]["狀態"] == "已出場" and "含 −5% 加碼" in L14[0], L14)
+        chk("F14 賣清單標頭行尾「｜T+2 入帳 M/D」（9/23 成交跨中秋、週末、教師節 ⇒ 9/29）", L14[0].endswith("｜T+2 入帳 9/29") and str(cal[pt + 8].date()) == "2026-09-29", L14[0])
         chk("F14 賣清單沒有交割戶列、處置股賣出註記", not any("交割戶" in x for x in L14) and r14[1].endswith(M.DISP_NOTE_SELL), L14)
         # ── F15 ⚠⚠ 守門
         md = os.path.join(tmp, "guard.md")
@@ -416,6 +418,20 @@ def main():
         chk("F18 reorder：照新收盤重算、標「再出」、併進第十四節且重跑冪等、原清單保留；賣沒給股數 ⇒ 拒絕",
             b1[0].endswith("再出：前一天沒成交") and f"3008 大立光｜{int(np.floor(20000 / cl18 + 1e-9))} 股｜限價 {M.fmt_px(LP(cl18, '買', False))}" in b1[1]
             and s18a == s18b and s18a.count("再出：前一天沒成交") == 1 and L12[0] in s18a and nerr, s18a[-600:])
+        # ── F20 T+2（seq458 §五、情報 0041）：跨週末、跨 10/26 休市、春節前「僅辦理結算交割」日、休市表缺
+        SD = lambda d_, n_=2, dd_=DATA: M.settle_day(cal, pd.Timestamp(d_), n_, dd_)   # noqa: E731
+        TS = pd.Timestamp
+        chk("F20 10/23 下單 ⇒ 10/27 成交（10/26 補假休市）⇒ T+2 ＝ 10/29", SD("2026-10-23", 1) == TS("2026-10-27") and SD("2026-10-27") == TS("2026-10-29"),
+            (SD("2026-10-23", 1), SD("2026-10-27")))
+        chk("F20 跨週末：9/17（四）成交 ⇒ T+2 ＝ 9/21（一）；9/23 成交跨中秋＋週末＋教師節 ⇒ 9/29",
+            SD("2026-09-17") == TS("2026-09-21") and SD("2026-09-23") == TS("2026-09-29"))
+        chk("F20 春節前「市場無交易，僅辦理結算交割作業」照算交割日：2/10 成交 ⇒ 2/12、2/11 成交 ⇒ 2/13",
+            SD("2026-02-10") == TS("2026-02-12") and SD("2026-02-11") == TS("2026-02-13") and TS("2026-02-12") not in cal)
+        chk("F20 跨年未公告年度：12/30 成交 ⇒ T+2 跳過 1/1（固定國定假日）", SD("2026-12-30") == TS("2027-01-04"), SD("2026-12-30"))
+        M.HOL_WARN.clear()
+        fb = SD("2026-10-23", 1, os.path.join(tmp, "nodata"))
+        chk("F20 休市表缺 ⇒ 只扣週末（10/26 會算成交割日）＋ HOL_WARN（不中止）", fb == TS("2026-10-26") and any("T+2 只扣週末" in w for w in M.HOL_WARN), (fb, M.HOL_WARN))
+        M.HOL_WARN.clear(); D.DATA = DATA
         # ── F19 sec11 子指令一併搬第十四節
         open(md, "w", encoding="utf-8").write(base_md)
         M.put11(md, M.sec11_lines(ADDe["top"])); M.put_sec(md, M.SEC14_TITLE, M.sec14_lines(L12))
