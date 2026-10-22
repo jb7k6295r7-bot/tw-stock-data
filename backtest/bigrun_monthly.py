@@ -1202,7 +1202,7 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
     val, (tu, tr), mdd = sp_value(rows, asof, adj_df)
     uv = user_value(urows, asof, adj_df, px)
     md = ["## 確認前小部位前瞻（前瞻紀錄；不計 N、金額不記；LINE 只推事件行）", "", f"- {SP_FIX}",
-          f"- {SP_TAG}｜照規則（等額份數）：核後下一交易日開盤各 1 份；月報判定轉強（近 3 月營收年增 ≥ 前 12 月 ＋5 點，或首次創 24 月新高；每期照判）"
+          f"- {SP_TAG}｜照規則（等額份數）：核後下一交易日開盤各 1 份；月報判定轉強（近 3 月營收年增 ≥ 前 12 月 ＋5 點，或首次創 24 月新高；每期照判；轉強條件已驗（暫定）：營收轉強驗證 seq2 合格（暫定），中位約 0、確認段輸大盤報酬指數）"
           f"⇒ 月報隔天開盤加 2 份（只加一次）；起點後第 1 份（{SP_FIRST_KEY}）到第 {SP_N_REPORTS} 份月報都沒判轉強 ⇒ 第 {SP_N_REPORTS} 份月報隔天開盤賣出、記「未確認」；"
           f"月報當期營收未公布 ⇒ 該期不判、下一份補判（第 {SP_N_REPORTS} 份未公布 ⇒ 以補判那份為放棄判定、賣出順延到該份隔天開盤）。"
           "已確認：1503、1513 不設停損、不設天數，持有到使用者另定；1305、1312 照抱，等缺貨型出場測試結果由使用者選。",
@@ -1254,7 +1254,7 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
                 fl.append(f"{sid} ①營收月增 ≤ 0 連 2 月 {'是' if T(r.get('flag_mom2')) else '否'}、②距一年高點 ≤ −30% "
                           f"{'是' if (ph is not None and np.isfinite(ph) and ph <= F_DROP) else '否'}（{fpct(ph)}）")
         if fl:
-            md.append("- 1305、1312 缺貨型旗標（只記、不賣；seq2 F①／F② 賣法作廢）：" + "；".join(fl))
+            md.append("- 1305、1312 缺貨型旗標（只記、不賣；seq2 F①／F② 賣法作廢；缺貨型出場測試：無較佳賣法（10/22，暫定）⇒ 確認後照抱）：" + "；".join(fl))
     js = [r for r in rows if r["event"] == "月報判定"]
     if js:
         last = max(r["report_key"] for r in js)
