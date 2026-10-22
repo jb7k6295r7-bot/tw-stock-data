@@ -5,20 +5,25 @@ LINE（台股 seq539、情報 0030 §三／0035，使用者同意）：只推檔
   轉強（A～E、H；欄 up）＝ 近 3 月年增平均 ≥ 近 12 月年增平均 ＋ 5 點，或首次創 24 月新高（本期創、上一期沒創）——與前瞻小部位確認同一條件（照字面）；
     LINE「只寫有變化的」⇒ 只列本期 up 成立、上一期 up 不成立（或首次創 24 月新高）者；警訊 ＝ F 組 ①② 任一（照字面）；
   重點 ＝ 3491 單月是否 ≥ 3.9 億；季加報 ＝ 1519、1513 合約負債年增。
-前瞻紀錄「長線候選確認前先小部位」seq3（5881e96ec825324f；裁定 seq447 核、取代 seq1；前瞻、不計 N、金額不記；LINE 只推事件行，seq443／444）：
-  候選 SP_CANDS（1503、1513、1305、1312；起點 2026-10-22）。起點＝核後下一交易日開盤 1 份（未還原開盤；無成交／開盤鎖漲停 ⇒ 買不到並寫明；
-  本模組第一次 auto 補記）。1312 國喬另記「標記」列＝進場時已轉強（seq446 §四；檢查時另標、不當確認前樣本）。
+前瞻紀錄「長線候選確認前先小部位」seq5（dd9a4c50694edb43；裁定 seq458 核、取代 seq3；前瞻、不計 N、金額不記；LINE 只推事件行，seq443／444）：
+  候選 SP_CANDS：1503、1513、1305、1312（起點 2026-10-22）；2002、1101（seq5，起點 2026-10-27；10/26 補假）。起點＝核後下一交易日開盤 1 份
+  （未還原開盤；無成交／開盤鎖漲停 ⇒ 買不到並寫明；本模組第一次 auto 補記）。1312、2002、1101 另記「標記」列＝進場時已轉強（檢查時不當確認前樣本）。
   每份月報（鍵 ≥ 2026-11）每期照判 up（⛔ 不套 LINE 過濾）⇒ 月報隔天開盤加 2 份（只加一次，買不到也算）。
-  放棄：第 i 份月報 ＝ 該檔首份判定月報起算月數 ＋ 1；第 12 份（2027-10）仍未轉強 ⇒ 該份月報隔天開盤賣出、記「未確認」（無成交／鎖跌停順延）；
+  放棄：第 i 份月報 ＝ 該檔首份判定月報起算月數 ＋ 1；第 12 份仍未轉強 ⇒ 該份月報隔天開盤賣出、記「未確認」（無成交／鎖跌停順延）；
   當期營收未公布 ⇒ 記「未判」、下一份補判上一期（up_prev）；第 12 份未公布 ⇒ 第 13 份只補判上一期、以它為放棄判定、賣出順延到該份隔天（seq447 補句）。
-  已確認：1503、1513 不設停損、不設天數；1305、1312 照抱（缺貨型出場結果出來由使用者選）。
-  紀錄：backtest/forward/bigrun_monthly/smallpos.csv（照規則、只追加、已寫凍結）、smallpos_user.csv（使用者實際；種子＝情報 20261022-1000 成交；
-  之後成交由回測線 --user-add 或手填同欄位補記）。auto 每晚都跑；手動 --kind 只試算不寫。
-  月報段「確認前小部位前瞻」：照規則／使用者實際兩欄並列（份數、累計；股數、均價、累計；扣 0.585%）、最大回落、0050 還原同期、國喬標記、1305／1312 F①F② 只記。
-  LINE 事件行（設定「小部位_LINE」＝true 才出；缺鍵＝false；⛔ 本模組不改設定檔；⛔ 不寫報酬；不計入摘要 4 行，seq444）：
+  已確認：1503、1513 不設停損、不設天數；缺貨型四檔（1305、1312、2002、1101）照抱，另兩個只問不賣提醒（seq5）：
+    ① 報價代理連 3 個月月增 < 0（sp_ppi_lines；設定「小部位_報價提醒」缺＝關；資料庫 PPI 到庫後接 loader、回測線再開）
+    ② 確認那份月報資料日之後滿 625 個交易日（smallpos「提醒」列，只記一次）
+  紀錄：backtest/forward/bigrun_monthly/smallpos.csv（照規則、只追加、已寫凍結；通知列「新候選通知」「提醒」的 LINE 原文存在 judge_detail）、
+  smallpos_user.csv（使用者實際；種子＝情報 20261022-1000 成交；之後成交由回測線 --user-add 或手填同欄位補記）。auto 每晚都跑；手動 --kind 只試算不寫。
+  月報段「確認前小部位前瞻」：照規則／使用者實際兩欄並列、最大回落、0050 還原同期、進場時已轉強標記、缺貨型四檔 F①F② 只記、通知紀錄。
+  LINE 事件行（設定「小部位_LINE」＝true 才出；⛔ 本模組不改設定檔；⛔ 不寫報酬；不計入摘要 4 行，seq444）：
     「  小部位：代號 名稱 轉強 ⇒ 明天開盤加 2 份（約 N 股）」（N ＝ 設定「小部位」× 2 ÷ 月報資料日未還原收盤，零股取整）
     「  小部位：代號 名稱 第 12 份月報仍未轉強 ⇒ 明天開盤賣」（月報夜）
-    「  小部位：代號 名稱 新候選 ⇒ 明天開盤買 1 份（約 N 股）」（明天就是起點那晚；月報夜插進月報 LINE，否則名單另一節「## 十二、大漲觀察小部位（新候選）」）
+    「  小部位：代號 名稱 新候選 ⇒ 10/27（二）開盤買 1 份（約 N 股）」：以【台北今天】判（不看資料日）——起點前最後一個交易日 14:00 後、
+      或之後到起點前的第一次執行出一次並記「新候選通知」列；同資料日名單重產原樣補回；別的資料日、起點後都不再出（seq458 §二、10/22 2025 修）。
+    「  小部位：代號 名稱 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）」（到達那晚一次）
+    非月報夜 ⇒ 名單另一節「## 十二、大漲觀察小部位（通知）」；月報夜 ⇒ 插進月報 LINE 摘要。
 每日名單第十二節（--md）：「## 十二、大漲觀察月報（YYYY-MM 營收）」／「## 十二、大漲觀察季加報（YYYYQn）」＝ LINE 摘要 ＋ A～F 表（組標題降成 ###）；
   整節置換、接檔尾、冪等；只出現在「產出那個資料日」的名單（同資料日名單重產 ⇒ 從 <鍵>_<種類>_daily節.md 補回）；其他資料日 ⇒ 移除舊節。
 ⛔ 名單是事後挑的，不能拿來回測過去。名單增減：台股另寄信 ⇒ 改本檔頂端常數 GROUPS／POOL169（其他不動）。
@@ -887,12 +892,19 @@ def quarter_report(asof, sha, ac, act, FD, key, G_nm):
 
 
 # ═════════════ 前瞻紀錄：長線候選確認前先小部位 seq3 ═════════════
-SP_TAG = "前瞻紀錄「長線候選確認前先小部位」seq3（5881e96ec825324f；裁定 seq447 核，取代 seq1）"
-SP_CANDS = {"1503": "2026-10-22", "1513": "2026-10-22", "1305": "2026-10-22", "1312": "2026-10-22"}   # 代號：起點（核後下一交易日開盤）；增減照台股信改這裡
+SP_TAG = "前瞻紀錄「長線候選確認前先小部位」seq5（dd9a4c50694edb43；裁定 seq458 核，取代 seq3）"
+SP_CANDS = {"1503": "2026-10-22", "1513": "2026-10-22", "1305": "2026-10-22", "1312": "2026-10-22",   # 代號：起點（核後下一交易日開盤）；增減照台股信改這裡
+            "2002": "2026-10-27", "1101": "2026-10-27"}                                                # seq5（10/23 加；10/26 光復節補假 ⇒ 10/27）
 SP_CODES = list(SP_CANDS)
-SP_ENTRY_UP = {"1312": "進場時已轉強（起點前 2026-09 營收已轉強；裁定 seq446 §四）⇒ 檢查時另標、不當「確認前」樣本；加碼仍照 2026-11 月報起判"}
+SP_ENTRY_UP = {"1312": "進場時已轉強（起點前 2026-09 營收已轉強；裁定 seq446 §四）⇒ 檢查時另標、不當「確認前」樣本；加碼仍照 2026-11 月報起判",
+               "2002": "進場時已轉強（起點前 2026-09 營收已達轉強：近 3 月年增比前 12 月高 5 點以上；seq5）⇒ 檢查時另標、不當「確認前」樣本；11 月月報仍轉強即隔天加 2 份",
+               "1101": "進場時已轉強（起點前 2026-09 營收已達轉強：近 3 月年增比前 12 月高 5 點以上；seq5）⇒ 檢查時另標、不當「確認前」樣本；11 月月報仍轉強即隔天加 2 份"}
+SP_SHORTAGE = ["1305", "1312", "2002", "1101"]   # 缺貨型四檔（seq5 兩個只問不賣提醒）
+SP_REMIND_TD = 625                              # ② 確認後第 625 個交易日（約 2 年半）
+CFG_PPI = "小部位_報價提醒"                      # ① 報價代理連 3 月下跌提醒；缺鍵＝關（等資料庫 PPI 到庫，回測線再開）
 SP_N_REPORTS, SP_ADD, SP_COST = 12, 2, 0.00585
-SP_FIX = "4 檔、看過新聞才挑、早期訊號先買沒有回測驗證"
+SP_FIX = "6 檔（10/22 四檔、10/23 兩檔）、看過新聞才挑、只是前瞻紀錄"
+WD = "一二三四五六日"
 SP_COLS = ["seq", "stock_id", "name", "event", "trade_date", "price_raw", "units", "status", "report_key", "report_asof",
            "judge", "judge_detail", "note", "recorded_at", "sha"]
 BUY_EV = ("起點買進", "轉強加碼")
@@ -953,20 +965,7 @@ def sp_events_report(new_rows, closes, cfg):
     return out
 
 
-def sp_events_newcand(rows, asof, next_td, closes, cfg, names):
-    """新增候選（seq447 §二）：明天就是起點（資料日 ＜ 起點 ≤ 下一交易日）且還沒記起點 ⇒「  小部位：代號 名稱 新候選 ⇒ 明天開盤買 1 份（約 N 股）」。"""
-    out = []
-    # 2026-10-22 修：資料日落後（當天資料未入庫）時，「資料日 ＜ 起點」會把已過的起點誤判成明天 ⇒ 另要求「台北今天 ＜ 起點」
-    today = pd.Timestamp.now(tz="Asia/Taipei").tz_localize(None).normalize()
-    for sid, st in SP_CANDS.items():
-        st = pd.Timestamp(st)
-        if today < st and asof < st <= next_td and not any(r["stock_id"] == sid and r["event"] == "起點買進" for r in rows):
-            out.append(f"  小部位：{sid} {names.get(sid, '')} 新候選 ⇒ 明天開盤買 1 份{_sh(sp_shares(1, closes.get(sid), cfg))}")
-    return out
-
-
-def next_trading_day(H, asof):
-    """下一交易日（外推）：週一～五且不在休市表；休市表讀法同 run_daily_list（名稱含開始／最後交易且附註沒寫無交易 ⇒ 交易日）。"""
+def _hol_sets(H):
     hol, trade = set(), set()
     p = os.path.join(H, "meta", "holiday_schedule.csv")
     if os.path.exists(p):
@@ -974,15 +973,109 @@ def next_trading_day(H, asof):
         h = h[h["date"].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}$", na=False)]
         for d, n, t in zip(h["date"], h["name"].fillna(""), h["note"].fillna("")):
             (trade if (any(k in n for k in ("開始交易", "最後交易")) and "無交易" not in t) else hol).add(d)
+    return hol, trade
+
+
+def _is_td(d, hol, trade):
+    s = d.strftime("%Y-%m-%d")
+    return s not in hol and (d.weekday() < 5 or s in trade)
+
+
+def next_trading_day(H, asof):
+    """下一交易日（外推）：週一～五且不在休市表；休市表讀法同 run_daily_list（名稱含開始／最後交易且附註沒寫無交易 ⇒ 交易日）。"""
+    hol, trade = _hol_sets(H)
     d = asof + pd.Timedelta(days=1)
-    while (d.weekday() >= 5 and d.strftime("%Y-%m-%d") not in trade) or d.strftime("%Y-%m-%d") in hol:
+    while not _is_td(d, hol, trade):
         d += pd.Timedelta(days=1)
     return d
 
 
-def newcand_secs(ev):
-    """非月報夜的新候選起點行 ⇒ 每日名單另一節（月報夜則插進月報 LINE 摘要）。"""
-    return [[f"{SEC_PREFIX}小部位（新候選）", "", "- 【LINE】⭐ 大漲觀察（小部位）：", *ev]] if ev else []
+def prev_trading_day(H, d):
+    """d 之前（不含）最近一個交易日（外推，同上讀法）。"""
+    hol, trade = _hol_sets(H)
+    d = d - pd.Timedelta(days=1)
+    while not _is_td(d, hol, trade):
+        d -= pd.Timedelta(days=1)
+    return d
+
+
+NOW_OVERRIDE = None                               # 測試用：固定「台北現在」
+
+
+def taipei_now():
+    return NOW_OVERRIDE if NOW_OVERRIDE is not None else pd.Timestamp.now(tz=TZ).tz_localize(None)
+
+
+def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha):
+    """小部位通知列（寫進 smallpos.csv：只記一次、已寫凍結；LINE 行原文存在 judge_detail，同資料日名單重產時原樣補回）：
+    ・新候選（seq447 §二、seq458 §二）：起點前最後一個交易日（台北）14:00 後、或之後到起點前（資料晚到）的第一次執行 ⇒
+      「  小部位：代號 名稱 新候選 ⇒ 10/27（二）開盤買 1 份（約 N 股）」；以「台北今天」判，不看資料日（資料日落後也照出、起點後不再出）。
+    ・缺貨型四檔確認後滿 625 個交易日（seq5 ②）：確認那份月報資料日之後第 625 個交易日起第一次執行 ⇒「  小部位：代號 名稱 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）」。
+    回『要新增』的列。"""
+    new = []
+    allr = lambda: rows + new                                              # noqa: E731
+
+    def add(sid, ev, line, note):
+        r = {c: "" for c in SP_COLS}
+        r.update(seq=str(len(rows) + len(new) + 1), stock_id=sid, name=names.get(sid, ""), event=ev, report_asof=str(asof.date()),
+                 judge_detail=line, note=note, recorded_at=str(now)[:19], sha=sha[:10])
+        new.append(r)
+    today = now.normalize()
+    for sid, st in SP_CANDS.items():
+        st = pd.Timestamp(st)
+        if any(r["stock_id"] == sid and r["event"] in ("起點買進", "新候選通知") for r in allr()) or not today < st:
+            continue
+        fire = prev_trading_day(H, st)
+        if (today == fire and now.hour >= 14) or fire < today:
+            n = sp_shares(1, closes.get(sid), cfg)
+            add(sid, "新候選通知", f"  小部位：{sid} {names.get(sid, '')} 新候選 ⇒ {st.month}/{st.day}（{WD[st.weekday()]}）開盤買 1 份{_sh(n)}",
+                f"起點 {st.date()} 開盤；台北 {now:%Y-%m-%d %H:%M} 推（資料日 {asof.date()}）")
+    for sid in SP_SHORTAGE:
+        cf = next((r for r in allr() if r["stock_id"] == sid and r["event"] == "月報判定" and r["judge"] == "轉強"), None)
+        if cf is None or any(r["stock_id"] == sid and r["event"] == "提醒" and "625" in r["note"] for r in allr()):
+            continue
+        n_td = int(((cal > pd.Timestamp(cf["report_asof"])) & (cal <= asof)).sum())
+        if n_td >= SP_REMIND_TD:
+            add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} 確認後已滿 {SP_REMIND_TD} 個交易日 ⇒ 續抱或賣？（你決定）",
+                f"確認後滿 {SP_REMIND_TD} 交易日（確認＝{cf['report_key']} 月報 {cf['report_asof']}；已過 {n_td} 日）；只問不賣（seq5 ②）")
+    return new
+
+
+def sp_ppi_lines(rows, asof, names, cfg, loader=None):
+    """seq5 ①：缺貨型四檔報價代理連 3 個月月增 < 0 ⇒「  小部位：代號 名稱 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）」。
+    ⚠ 先做好、預設關：設定「小部位_報價提醒」缺鍵／false ⇒ 不出；開了但資料庫 PPI 未到庫（loader 為 None 或回 None）⇒ 不出並印一行。
+    loader(sid) ⇒ 該業報價代理月序列（pd.Series，index＝月、值＝指數；只用發布日 ≤ 資料日的月份）。"""
+    if not bool(cfg.get(CFG_PPI, False)):
+        return []
+    if loader is None:
+        print("小部位報價提醒：已開但報價代理資料未到庫（資料庫 FRED PPI 補齊後接 loader）⇒ 本晚不出")
+        return []
+    out = []
+    for sid in SP_SHORTAGE:
+        s = loader(sid)
+        if s is None or len(s.dropna()) < 4:
+            continue
+        m = s.dropna().pct_change().iloc[-3:]
+        if (m < 0).all():                                          # ⚠ 上線時再加「同一段下跌只推一次」的紀錄列
+            out.append(f"  小部位：{sid} {names.get(sid, '')} 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）")
+    return out
+
+
+def sp_event_lines(rows, asof):
+    """本資料日要推的小部位通知行（新候選、625 日提醒）：通知列 report_asof ＝ 資料日者原樣補回（名單同資料日重產也只是同一則）。"""
+    return [r["judge_detail"] for r in rows if r["event"] in ("新候選通知", "提醒") and r["report_asof"] == str(asof.date()) and r["judge_detail"]]
+
+
+def sp_night_lines(rows, asof, names):
+    """今晚要推的小部位通知行（設定「小部位_LINE」開才有）：新候選／625 日提醒（紀錄列）＋報價提醒（另一開關，預設關）。"""
+    if not sp_line_on():
+        return []
+    return sp_event_lines(rows, asof) + sp_ppi_lines(rows, asof, names, sp_cfg())
+
+
+def sp_event_secs(ev):
+    """非月報夜的小部位通知行 ⇒ 每日名單另一節（月報夜則插進月報 LINE 摘要）。"""
+    return [[f"{SEC_PREFIX}小部位（通知）", "", "- 【LINE】⭐ 大漲觀察（小部位）：", *ev]] if ev else []
 
 
 def insert_line_events(lines, ev):
@@ -1205,7 +1298,9 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
           f"- {SP_TAG}｜照規則（等額份數）：核後下一交易日開盤各 1 份；月報判定轉強（近 3 月營收年增 ≥ 前 12 月 ＋5 點，或首次創 24 月新高；每期照判；轉強條件已驗（暫定）：營收轉強驗證 seq2 合格（暫定），中位約 0、確認段輸大盤報酬指數）"
           f"⇒ 月報隔天開盤加 2 份（只加一次）；起點後第 1 份（{SP_FIRST_KEY}）到第 {SP_N_REPORTS} 份月報都沒判轉強 ⇒ 第 {SP_N_REPORTS} 份月報隔天開盤賣出、記「未確認」；"
           f"月報當期營收未公布 ⇒ 該期不判、下一份補判（第 {SP_N_REPORTS} 份未公布 ⇒ 以補判那份為放棄判定、賣出順延到該份隔天開盤）。"
-          "已確認：1503、1513 不設停損、不設天數，持有到使用者另定；1305、1312 照抱，等缺貨型出場測試結果由使用者選。",
+          "已確認：1503、1513 不設停損、不設天數，持有到使用者另定；缺貨型四檔（1305、1312、2002、1101）照抱、不設停損、不設天數，"
+          f"另兩個只問不賣的 LINE 提醒：①該業報價代理連 3 個月月增 < 0（待資料庫 PPI 到庫，預設關）②確認後滿 {SP_REMIND_TD} 個交易日。"
+          "1312、2002、1101 進場時已轉強，檢查時不當「確認前」樣本。",
           "- 報酬：照規則＝還原價（含息）、每份扣成本 0.585%；使用者實際＝成交價（換算還原）、依成交金額加權、同樣扣 0.585%。smallpos.csv／smallpos_user.csv 只追加、已寫凍結。",
           ""]
     if dry:
@@ -1247,14 +1342,17 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
         md.append(f"- {sid} {names.get(sid, '')}：{note}")
     if df is not None:
         fl = []
-        for sid in ("1305", "1312"):
+        for sid in SP_SHORTAGE:
             rr = df[df["stock_id"] == sid]
             if len(rr):
                 r = rr.iloc[0]; ph = r.get("pct_from_high")
                 fl.append(f"{sid} ①營收月增 ≤ 0 連 2 月 {'是' if T(r.get('flag_mom2')) else '否'}、②距一年高點 ≤ −30% "
                           f"{'是' if (ph is not None and np.isfinite(ph) and ph <= F_DROP) else '否'}（{fpct(ph)}）")
         if fl:
-            md.append("- 1305、1312 缺貨型旗標（只記、不賣；seq2 F①／F② 賣法作廢；缺貨型出場測試：無較佳賣法（10/22，暫定）⇒ 確認後照抱）：" + "；".join(fl))
+            md.append(f"- 缺貨型{'、'.join(SP_SHORTAGE)} 旗標（只記、不賣；seq2 F①／F② 賣法作廢；缺貨型出場測試：無較佳賣法（10/22，暫定）⇒ 確認後照抱）：" + "；".join(fl))
+    rm = [r for r in rows if r["event"] in ("新候選通知", "提醒")]
+    if rm:
+        md.append("- 小部位通知紀錄：" + "；".join(f"{r['report_asof']} {r['judge_detail'].strip()}" for r in rm))
     js = [r for r in rows if r["event"] == "月報判定"]
     if js:
         last = max(r["report_key"] for r in js)
@@ -1276,13 +1374,6 @@ def sp_judgments(df, key, asof, P):
     return [(key, asof, J)]
 
 
-def sp_newcand_lines(H, rows, asof, names):
-    if not sp_line_on():
-        return []
-    closes = {s: raw_close(H, s, asof)[0] for s in SP_CODES}
-    return sp_events_newcand(rows, asof, next_trading_day(H, asof), closes, sp_cfg(), names)
-
-
 def sp_bench(adj_df, asof, cal):
     """0050 還原（含息）自小部位起點開盤到資料日收盤（大盤報酬代理）；起點未到 ⇒ None。"""
     d0 = cal[cal >= pd.Timestamp(min(SP_CANDS.values()))]
@@ -1296,11 +1387,17 @@ def sp_paths():
     return os.path.join(FWD, "smallpos.csv"), os.path.join(FWD, "smallpos_user.csv")
 
 
-def sp_step(a, H, cal, asof, sha, names, judgments, write):
-    """前瞻小部位：算新增列（write ⇒ 追加到 smallpos.csv；使用者實際欄檔不在 ⇒ 用情報 1000 信種子建檔）；回 (全部列, 新增列, 使用者實際列)。"""
+def sp_step(a, H, cal, asof, sha, names, judgments, write, now=None):
+    """前瞻小部位：算新增列（含通知列：新候選、625 日提醒；write ⇒ 追加到 smallpos.csv；使用者實際欄檔不在 ⇒ 用情報 1000 信種子建檔）；
+    回 (全部列, 新增列, 使用者實際列)。"""
     p, pu = sp_paths()
     rows = sp_load(p)
-    new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(pd.Timestamp.now(tz=TZ))[:19], sha)
+    now = now if now is not None else taipei_now()
+    new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(now)[:19], sha)
+    closes = {s: raw_close(H, s, asof)[0] for s in SP_CODES}
+    new += sp_notify(rows + new, cal, asof, H, closes, sp_cfg(), names, now, sha)
+    for k, r in enumerate(new):                    # seq 連號
+        r["seq"] = str(len(rows) + k + 1)
     if write and new:
         os.makedirs(FWD, exist_ok=True)
         hdr = not os.path.exists(p)
@@ -1363,7 +1460,7 @@ def run(a):
                 secs = [open(e["daily節"], encoding="utf-8").read().rstrip("\n").split("\n")
                         for kind in ("月報", "季加報") for e in stt0.get(kind, {}).values()
                         if e.get("資料日") == str(asof.date()) and e.get("daily節") and os.path.exists(e["daily節"])]
-                secs += newcand_secs(sp_newcand_lines(H, allr, asof, nm))      # 新候選明天起點（設定「小部位_LINE」開才有）
+                secs += sp_event_secs(sp_night_lines(allr, asof, nm))       # 小部位通知（新候選、625 日、報價；設定「小部位_LINE」開才有）
                 put_daily(a.md, secs)
                 print(f"名單第十二節：{'寫入 ' + str(len(secs)) + ' 節（同資料日已產者補回／新候選起點）' if secs else '無（已移除舊節）'}")
             return 0
@@ -1398,7 +1495,7 @@ def run(a):
             md = md[:gi] + sp_section(allr, urows, asof, adj_df, RawPx(H), nm, a.kind != "auto", df, sp_bench(adj_df, asof, cal)) + md[gi:]
             if sp_line_on():                       # 設定檔「小部位_LINE」＝true 才在 LINE 摘要加事件行（不計入 4 行）
                 closes = {s: raw_close(H, s, asof)[0] for s in SP_CODES}
-                ev = sp_events_report(new, closes, sp_cfg()) + sp_newcand_lines(H, allr, asof, nm)
+                ev = sp_events_report(new, closes, sp_cfg()) + sp_night_lines(allr, asof, nm)
                 md = insert_line_events(md, ev); sec = insert_line_events(sec, ev)
                 newcand_done = True
         else:
@@ -1439,7 +1536,7 @@ def run(a):
         save_state(state_p, stt)
     if a.md:                                       # 每日名單第十二節（整節置換、接檔尾、冪等）
         # auto ⇒ 整個第十二節換成今晚產的；手動 --kind ⇒ 只換同種類那節（另一種保留）
-        put_daily(a.md, [p[4] for p in produced] + (newcand_secs(sp_newcand_lines(H, sp_rows, asof, nm)) if a.kind == "auto" and not newcand_done else []),
+        put_daily(a.md, [p[4] for p in produced] + (sp_event_secs(sp_night_lines(sp_rows, asof, nm)) if a.kind == "auto" and not newcand_done else []),
                   SEC_PREFIX if a.kind == "auto" else SEC_PREFIX + a.kind)
         print(f"名單第十二節：寫入 {len(produced)} 節 ⇒ {a.md}")
     log(f"[完成] {len(produced)} 份｜{time.time() - t0:.0f}s")

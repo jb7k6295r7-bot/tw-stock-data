@@ -13,12 +13,14 @@
         名單 md 第十二節（接檔尾、其他段不變、LINE 摘要格式、冪等、同資料日重產補回、別的資料日移除）；put_daily 節在中間
   sp    前瞻小部位 seq3 fixture：起點前不記、補記起點（鎖漲停／無成交買不到）、國喬標記、凍結不重算、轉強加 2 份只一次、
         第 12 份月報未轉強賣出（鎖跌停順延）、第 12 份當期未公布 ⇒ 第 13 份補判並順延、期中補判、放棄後不再判、照規則累計、使用者實際欄讀入與報酬
+  sp3   seq5：6 檔、新候選 10/27（二）只出一晚（14:00 後、資料日落後、略過補出、起點後不出）、2002／1101 標記、625 日提醒、報價提醒預設關
   sp2   台股 seq547 讀法核對：①加碼看每期判定本身（不套 LINE「上期沒轉強才列」）②2026-11 鍵起判（2026-10 鍵不判）
         ③首次創 24 月新高＝本期創上期沒創、加速 ≥ 5 點是狀態；LINE 小部位事件行（股數、賣出句、新候選起點、不計入 4 行）、設定鍵、下一交易日外推
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import io
 import json
 import os
@@ -99,7 +101,7 @@ def part_due():
         sp = os.path.join(td, "state.json")
         r = subprocess.run([sys.executable, "-m", "backtest.bigrun_monthly", "--sha", G_SHA, "--kind", "auto", "--state", sp, "--out", os.path.join(td, "x.md"),
                             "--fwd", os.path.join(td, "fwd")],
-                           cwd=REPO, capture_output=True, text=True, env={**os.environ, "PYTHONPATH": REPO})
+                           cwd=os.environ.get("BGM_PYTHONPATH", REPO), capture_output=True, text=True, env={**os.environ, "PYTHONPATH": os.environ.get("BGM_PYTHONPATH", REPO)})
         rec("due", "auto（資料日 2026-10-20）⇒ 未到期、exit 0、不寫 state、不產檔",
             r.returncode == 0 and "未到期" in r.stdout and not os.path.exists(sp) and not os.path.exists(os.path.join(td, "x.md")), r.stdout.strip()[-200:])
 
@@ -341,6 +343,7 @@ def part_auto():
     orig_daily = os.path.join(REPO, "backtest", "resultsDaily", "daily_2026-10-20.md")
     with tempfile.TemporaryDirectory() as td:
         sp = os.path.join(td, "state.json"); BM.FWD = os.path.join(td, "fwd"); BM.FIRST = {"月報": "2026-10", "季加報": "2026Q3"}
+        BM.NOW_OVERRIDE = pd.Timestamp("2026-10-20 12:00")     # 固定「台北現在」＝ 資料日當天中午（各候選的新候選通知都還沒到時點，不干擾本段）
         dmd = os.path.join(td, "daily_2026-10-20.md"); shutil.copyfile(orig_daily, dmd)
         orig = open(orig_daily, encoding="utf-8").read()
         a = ap_.Namespace(asof=None, sha=G_SHA, out=os.path.join(td, "out", "x.md"), kind="auto", procs=3, g_rev="pit", state=sp, md=dmd)
@@ -354,7 +357,8 @@ def part_auto():
         i = next((j for j, x in enumerate(sl) if x.startswith("- 【LINE】")), None)
         ln = []
         if i is not None:
-            ln = [sl[i]] + [x for x in __import__("itertools").takewhile(lambda x: x.startswith("  ") and not x.startswith("  - "), sl[i + 1:])]
+            ln = [sl[i]] + [x for x in __import__("itertools").takewhile(lambda x: x.startswith("  ") and not x.startswith("  - "), sl[i + 1:])
+                            if not x.startswith("  小部位：")]                    # 小部位事件行另計、不算摘要 4 行（seq444）
         ok = (i is not None and sl[i] == "- 【LINE】⭐ 大漲觀察（9 月營收）：" and 2 <= len(ln) <= 4
               and all(re.match(r"^  (轉強：|警訊：|重點：|本月無變化$)", x) for x in ln[1:]) and sum(x.startswith("- 【LINE】") for x in sl) == 1)
         rec("auto", "LINE 摘要格式（首行、續行兩空白縮排不以「- 」開頭、≤ 4 行、只一則）", ok, " ／ ".join(ln)[:400])
@@ -399,7 +403,7 @@ def _J(BM, key, ra, up=(), judged=None, up_prev=()):
                                      for s in BM.SP_CODES})
 
 
-def part_sp():
+def _part_sp():
     from backtest import bigrun_monthly as BM
     T = pd.Timestamp
     cal = pd.bdate_range("2026-10-19", "2028-01-31")
@@ -515,7 +519,7 @@ def part_sp():
 
 
 # ═════════════ sp2（讀法核對＋LINE 事件行） ═════════════
-def part_sp2():
+def _part_sp2():
     from backtest import bigrun_monthly as BM
     T = pd.Timestamp
     ps = list(pd.period_range("2023-01", "2026-10", freq="M").astype(str)); n = len(ps)
@@ -561,16 +565,7 @@ def part_sp2():
     rec("sp2", "缺「小部位」金額 ⇒ 不估股數", BM.sp_events_report(r11, {"1312": 15.25}, {}) == ["  小部位：1312 名1312 轉強 ⇒ 明天開盤加 2 份（股數照你決定）"], "")
     ab = [dict(r, note="第 12 份月報；放棄判定（…）", judge="未轉強") for r in r11 if r["stock_id"] == "1305"]
     rec("sp2", "賣出行：第 12 份月報仍未轉強 ⇒ 明天開盤賣", BM.sp_events_report(ab, {}, cfg) == ["  小部位：1305 名1305 第 12 份月報仍未轉強 ⇒ 明天開盤賣"], "")
-    old = dict(BM.SP_CANDS)
-    try:
-        BM.SP_CANDS["6505"] = "2027-01-05"
-        evn = BM.sp_events_newcand(base, T("2027-01-04"), T("2027-01-05"), {"6505": 106.5}, cfg, {"6505": "台塑化"})
-        ev0 = BM.sp_events_newcand(base, T("2027-01-01"), T("2027-01-04"), {"6505": 106.5}, cfg, {"6505": "台塑化"})
-    finally:
-        BM.SP_CANDS.clear(); BM.SP_CANDS.update(old)
-    rec("sp2", "新候選起點行：明天就是起點那晚才出（約 20000 ÷ 收盤 股）；早一天不出；目前 4 檔起點已過不出",
-        evn == ["  小部位：6505 台塑化 新候選 ⇒ 明天開盤買 1 份（約 187 股）"] and ev0 == []
-        and BM.sp_events_newcand(base, T("2026-10-21"), T("2026-10-22"), {}, cfg, nm) == [], str(evn))
+    evn = ["  小部位：2002 中鋼 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,015 股）"]
     blk = LN + ["", "x"]
     out = BM.insert_line_events(blk, ev + evn)
     i0 = out.index(LN[0]); cont = [x for x in out[i0 + 1:] if x.startswith("  ")]
@@ -579,6 +574,90 @@ def part_sp2():
     H = os.path.expanduser("~/h2data/eeb5af5f8feca83d0702fa0423a0c58cdb77900d/data")
     rec("sp2", "下一交易日外推（休市表）：2026-10-21 ⇒ 10-22；2026-10-23（五）⇒ 10-27（10-26 光復節補假）",
         BM.next_trading_day(H, T("2026-10-21")) == T("2026-10-22") and BM.next_trading_day(H, T("2026-10-23")) == T("2026-10-27"), "")
+
+
+@contextlib.contextmanager
+def four_cands(BM):
+    """sp／sp2 的舊 fixture 只用 10/22 那 4 檔（seq5 新增 2002、1101 另在 sp3 測）。"""
+    oc, ocodes = dict(BM.SP_CANDS), list(BM.SP_CODES)
+    BM.SP_CANDS.clear(); BM.SP_CANDS.update({k: v for k, v in oc.items() if v == "2026-10-22"}); BM.SP_CODES[:] = list(BM.SP_CANDS)
+    try:
+        yield
+    finally:
+        BM.SP_CANDS.clear(); BM.SP_CANDS.update(oc); BM.SP_CODES[:] = ocodes
+
+
+# ═════════════ sp3（seq5：新候選 2002、1101、625 日提醒、報價提醒預設關） ═════════════
+def part_sp3():
+    from backtest import bigrun_monthly as BM
+    T = pd.Timestamp
+    H = os.path.expanduser("~/h2data/eeb5af5f8feca83d0702fa0423a0c58cdb77900d/data")
+    cal = pd.bdate_range("2026-10-19", "2029-12-31")
+    cal = cal[cal != T("2026-10-26")]                          # 光復節補假
+    nm = {"1503": "士電", "1513": "中興電", "1305": "華夏", "1312": "國喬", "2002": "中鋼", "1101": "台泥"}
+    cfg = {"小部位": 20000}
+    closes = {"2002": 19.7, "1101": 26.8}
+
+    class Px:
+        def bar(self, sid, d):
+            return {"o": 100.0, "h": 101.0, "l": 99.0, "c": 100.0, "pc": 100.0}
+    base = BM.sp_update([], cal, T("2026-10-22"), Px(), [], nm, "now", "f" * 40)
+
+    def notify(rows, asof, now):
+        return BM.sp_notify(rows, cal, T(asof), H, closes, cfg, nm, T(now), "f" * 40)
+    exp = ["  小部位：2002 中鋼 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,015 股）", "  小部位：1101 台泥 新候選 ⇒ 10/27（二）開盤買 1 份（約 746 股）"]  # 2026-10-27 是週二
+    rec("sp3", "SP_CANDS：6 檔、2002／1101 起點 2026-10-27；固定句改 6 檔",
+        BM.SP_CANDS.get("2002") == "2026-10-27" and BM.SP_CANDS.get("1101") == "2026-10-27" and len(BM.SP_CODES) == 6 and BM.SP_FIX.startswith("6 檔（10/22 四檔、10/23 兩檔）"), BM.SP_FIX)
+    rec("sp3", "起點前最後一個交易日 ＝ 10/23（10/24、25 週末、10/26 補假）", BM.prev_trading_day(H, T("2026-10-27")) == T("2026-10-23"), "")
+    n0 = notify(base, "2026-10-22", "2026-10-23 06:30")
+    rec("sp3", "10/23 早上 06:30（資料日 10/22）⇒ 還不出（14:00 前）", n0 == [], str(n0))
+    n1 = notify(base, "2026-10-23", "2026-10-23 20:00")
+    rec("sp3", "10/23 晚 20:00（資料日 10/23）⇒ 出新候選 2 行（10/27（二）開盤、股數 ＝ 20000 ÷ 未還原收盤取整）",
+        [r["judge_detail"] for r in n1] == exp and all(r["event"] == "新候選通知" and r["report_asof"] == "2026-10-23" for r in n1), str([r["judge_detail"] for r in n1]))
+    n2 = notify(base, "2026-10-22", "2026-10-23 20:00")
+    rec("sp3", "資料日落後（10/23 晚資料日仍 10/22）⇒ 照出，掛在 10/22 那份名單", [r["judge_detail"] for r in n2] == exp and n2[0]["report_asof"] == "2026-10-22", "")
+    R = base + n2
+    n3 = notify(R, "2026-10-23", "2026-10-24 00:45")
+    rec("sp3", "只出一晚：已記通知 ⇒ 10/24 00:45（資料日 10/23 到庫）不再記、10/23 名單不出；10/22 名單重產原樣補回",
+        n3 == [] and BM.sp_event_lines(R, T("2026-10-23")) == [] and BM.sp_event_lines(R, T("2026-10-22")) == exp, "")
+    n4 = notify(base, "2026-10-23", "2026-10-24 00:45")
+    rec("sp3", "10/23 20:00 那班沒跑到（名單略過）⇒ 10/24 00:45 第一次執行補出（起點前）", [r["judge_detail"] for r in n4] == exp, "")
+    n5 = notify(base, "2026-10-27", "2026-10-27 20:00")
+    r27 = BM.sp_update(base, cal, T("2026-10-27"), Px(), [], nm, "now", "f" * 40)
+    rec("sp3", "10/27 起點後不出；起點那天 sp_update 補記 2002、1101 起點各 1 份＋「進場時已轉強」標記",
+        n5 == [] and sorted((r["stock_id"], r["event"]) for r in r27) == [("1101", "標記"), ("1101", "起點買進"), ("2002", "標記"), ("2002", "起點買進")]
+        and all("進場時已轉強" in r["note"] for r in r27 if r["event"] == "標記"), str([(r["stock_id"], r["event"], r["trade_date"]) for r in r27]))
+    # 625 日提醒（缺貨型四檔，確認那份月報資料日之後第 625 個交易日）
+    cf = dict({c: "" for c in BM.SP_COLS}, stock_id="1305", name="華夏", event="月報判定", judge="轉強", report_key="2026-11", report_asof="2026-11-12")
+    cf2 = dict(cf, stock_id="1503", name="士電")                 # 1503 不是缺貨型 ⇒ 不提醒
+    after = cal[cal > T("2026-11-12")]
+    d624, d625 = after[623], after[624]
+    m0 = notify(base + [cf, cf2], str(d624.date()), f"{d624.date()} 20:00")
+    m1 = notify(base + [cf, cf2], str(d625.date()), f"{d625.date()} 20:00")
+    m2 = notify(base + [cf, cf2] + m1, str(after[625].date()), f"{after[625].date()} 20:00")
+    rec("sp3", "確認後第 624 交易日不出；第 625 交易日那晚出一次「確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）」；隔天不再出；非缺貨型不出",
+        m0 == [] and [r["judge_detail"] for r in m1] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"] and m2 == []
+        and BM.sp_event_lines(base + m1, d625) == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"], f"{d625.date()}｜{[r['judge_detail'] for r in m1]}")
+    # 報價代理提醒：預設關
+    s = pd.Series([100.0, 99.0, 98.0, 97.0], index=["2027-01", "2027-02", "2027-03", "2027-04"])
+    rec("sp3", "報價提醒預設關：設定檔目前沒有「小部位_報價提醒」⇒ 不出；缺鍵 ⇒ 不出", BM.sp_cfg().get("小部位_報價提醒") is None
+        and BM.sp_ppi_lines([], T("2027-05-20"), nm, BM.sp_cfg(), loader=lambda sid: s) == [] and BM.sp_ppi_lines([], T("2027-05-20"), nm, {}, loader=lambda sid: s) == [], "")
+    on = {"小部位_報價提醒": True}
+    rec("sp3", "（機制）開了但資料未到庫 ⇒ 不出；開了且連 3 月下跌 ⇒ 缺貨型四檔各出一行",
+        BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=None) == []
+        and BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s if sid == "2002" else None) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
+
+
+def part_sp():
+    from backtest import bigrun_monthly as BM
+    with four_cands(BM):
+        _part_sp()
+
+
+def part_sp2():
+    from backtest import bigrun_monthly as BM
+    with four_cands(BM):
+        _part_sp2()
 
 
 def main():
@@ -600,6 +679,8 @@ def main():
         part_sp()
     if "sp2" in parts:
         part_sp2()
+    if "sp3" in parts:
+        part_sp3()
     n = len(RES); ok = sum(r[2] for r in RES)
     print(f"\n驗證 {n} 項：通過 {ok}、不符 {n - ok}")
     for r in RES:
