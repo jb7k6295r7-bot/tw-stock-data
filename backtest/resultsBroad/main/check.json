@@ -1,0 +1,75 @@
+{
+ "K1": {
+  "相符": true,
+  "裁定": {
+   "seq454": [
+    "〔簽收 台✔ 回✔ 資✖〕件-三線←裁定線-20261022-2335-seq454廣撒長抱發號＋存貨下降加營收轉強發號.md"
+   ],
+   "seq455": [
+    "〔簽收 回✔ 台✔ 情✖ 資✖〕件-四線←裁定線-20261022-2353-seq455產業長抱與廣撒頻率表核開跑＋情報兩條線與下單清單收下.md"
+   ]
+  }
+ },
+ "K2": {
+  "cells.csv": true,
+  "batches.csv.gz": true,
+  "overlap.csv": true,
+  "random_frame.csv": true
+ },
+ "K3": {
+  "抽": 5000,
+  "不同": 0
+ },
+ "K4_帳另路(最大相對差)": {
+  "G1 H250": 1.2212453270876722e-15,
+  "G1 H500": 1.2212453270876722e-15,
+  "G1 H750": 7.771561172376096e-16,
+  "G2 H250": 8.881784197001252e-16,
+  "G2 H500": 1.1102230246251565e-15,
+  "G2 H750": 8.881784197001252e-16,
+  "純廣撒 H250": 1.5543122344752192e-15,
+  "純廣撒 H500": 1.3322676295501878e-15,
+  "純廣撒 H750": 9.992007221626409e-16
+ },
+ "K5": {
+  "不符": [],
+  "挑中自算": [
+   "G1",
+   250
+  ],
+  "挑中檔": [
+   "G1",
+   250
+  ],
+  "同": true
+ },
+ "K6": {
+  "不符": [],
+  "數": 0
+ },
+ "K7": {
+  "不符": []
+ },
+ "K8": {
+  "策略鎖": [
+   "策略鎖相符（25 支）"
+  ],
+  "git 新增": [
+   " M backtest/mktdrop_fwd.py",
+   " M backtest/mktdrop_fwd_addon_check.py",
+   "?? backtest/mktdrop_gap_check.py",
+   "?? backtest/researchBroad.py",
+   "?? backtest/researchBroad_check.py",
+   "?? backtest/researchInvRev_check.py",
+   "?? backtest/resultsBroad/main/",
+   "?? backtest/resultsInvRev/main/"
+  ],
+  "其中本件": [
+   "?? backtest/researchBroad.py",
+   "?? backtest/researchBroad_check.py",
+   "?? backtest/resultsBroad/main/"
+  ],
+  "git 只多本件": false
+ },
+ "全過": false
+}
