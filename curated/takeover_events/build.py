@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""被公開收購（E1）／經營權變動（E2，候選、非正式）／私募（E3）事件表（重大訊息主旨分類）⇒ takeover_events.csv
+"""被公開收購（E1）／經營權變動（E2，v1c 定版）／私募（E3）事件表（重大訊息主旨分類）⇒ takeover_events.csv
 
     python3 curated/takeover_events/build.py [--ref origin/main] [--sample 50]
 
@@ -46,7 +46,7 @@ with_reduction：同代號、主事件前後 30 個日曆天內（含同主旨�
 ⭐ v3（第二輪另抽 50 則：48 則對＝96%；錯 8077「私募特別股全面強制換發為普通股」、2408「決議投資美光私募普通股」＝投資別人）：
   排除加 換發｜轉換｜投資(?!人)。⚠ 已知殘留：「私募…股數減少」這類修改案仍會收（例 6199 2014-10-01）；大型金控／聯電每年「得視營運需求辦理私募有價證券」的授權案照收（是真決議，但多半沒發）。
 
-## E2 經營權變動（⛔ 候選，不是正式產物；只輸出 e2_candidates.csv 給裁定核）
+## E2 經營權變動（⭐ 裁定 seq443 §四：採 v1 系列正式產出，併入 takeover_events.csv，class=E2；下列 B～E 只留在候選檔）
 共同排除：子公司｜孫公司｜轉投資｜被投資｜母公司｜澄清｜報導｜報載｜媒體｜傳聞｜更正｜補充｜補正｜修正｜代（後面不是 取得人／表人／理；例「富邦金控代富邦證券(香港)公告」）。
   A 股權型：369(條)?(之|-)8 且含 本公司｜接獲（⭐ v1b：原本寫 369.{0,3}8，誤配營收數字「369,834仟元」，抽核後改）；或 取得本公司.{0,30}(三分之一|二分之一|過半|股份總數)；或 本公司股東.{0,30}超過.{0,20}三分之一；
             或 經營權.{0,2}(異動|變動|移轉|易主|移交) ；或 入主本公司。
@@ -57,8 +57,14 @@ with_reduction：同代號、主事件前後 30 個日曆天內（含同主旨�
   候選版本：e2_v1＝A；e2_v2＝A∪B∪C；e2_v3＝A∪B∪C∪D∪E。⛔ 單純「董事長異動」不在任何版本（例行換人居多）。
   after_e1＝1：同代號前 180 天內有 E1 主事件（被公開收購之後的股權／董事變動）。
   去重：同代號、同版本 30 個日曆天內只留第一則。
+  ⭐ 正式 E2＝規則 A（v1b，seq443 核定），每筆 followup=0；first12m＝前 365 天同代號無 E2 主事件；overlap_e1＝同代號前後 60 個日曆天內有 E1 主事件（主表剔除、另報含重疊版用）。
+  ⭐ v1c（seq443 要求的隨機 50 則核對後修；第一輪 v1b：對 33／疑 13／錯 4）：錯的是 3432「本公司股東常會改選…超過三分之一董事變動」誤配「本公司股東…超過…三分之一」、
+    8455、3702「本公司依 369 條之 8 通知已取得〔別家〕…」＝收購方自己的通知、4729「持有股份低於三分之一」＝持股降到門檻下 ⇒
+    「本公司股東」那條改成 本公司股東「…」持股…超過…三分之一；A 另排除 通知已取得(?!本公司)｜低於｜減少｜降低。v1b 76 筆 → v1c 71 筆（只少了這 5 筆）。
+    「疑」＝只寫「依 369 條之 8 公告股權變動事宜」、沒寫取得或減少（13/50），要內文才能確認。
+  候選三版（e2_v1／v2／v3）只在給 --e2-candidates 路徑時輸出，不放 curated 目錄。
 輸出欄：date, time, stock_id, name, market, class, followup, first12m, outcome, acq_date, with_reduction, reduction_gap, reduction_type,
-        strategic_subj, instrument, subject, serial
+        strategic_subj, instrument, overlap_e1（E2 才有）, subject, serial
 """
 import argparse, csv, datetime, io, os, random, re, subprocess, sys
 
@@ -94,7 +100,8 @@ RED_EXC = re.compile(r"子公司|孫公司|轉投資|被投資|庫藏|註銷|收
 # ---- E2 ----
 E2_EXC = re.compile(r"子公司|孫公司|轉投資|被投資|母公司|澄清|報導|報載|媒體|傳聞|更正|補充|補正|修正|代(?!取得人|表人|理)")
 E2_A = [re.compile(p) for p in (r"369(條)?(之|-)8.*(本公司|接獲)|(本公司|接獲).*369(條)?(之|-)8", r"取得本公司.{0,30}(三分之一|二分之一|過半|股份總數)",
-                                 r"本公司股東.{0,30}超過.{0,20}三分之一", r"經營權.{0,2}(異動|變動|移轉|易主|移交)", r"入主本公司")]
+                                 r"本公司股東「[^」]{1,40}」持股.{0,10}超過.{0,20}三分之一", r"經營權.{0,2}(異動|變動|移轉|易主|移交)", r"入主本公司")]
+E2_A_EXC = re.compile(r"通知已取得(?!本公司)|低於|減少|降低")  # seq443 核對後（v1c）：收購方自己的通知、持股降到門檻以下
 E2_B = re.compile(r"證(券)?交(易)?法第?43條之1")
 E2_BOARD = re.compile(r"三分之一以上董事|董事變動(已)?達(1/3|三分之一)")
 E2_C_CTX = re.compile(r"臨時會|解任|辭任|辭職|改派|提前")
@@ -140,7 +147,7 @@ def e2_rules(s):
     if E2_EXC.search(s):
         return set()
     r = set()
-    if any(p.search(s) for p in E2_A):
+    if any(p.search(s) for p in E2_A) and not E2_A_EXC.search(s):
         r.add("A")
     if E2_B.search(s):
         r.add("B")
@@ -172,6 +179,7 @@ def main():
     ap.add_argument("--sample", type=int, default=50)
     ap.add_argument("--seed", type=int, default=20261022)
     ap.add_argument("--resample", action="store_true")
+    ap.add_argument("--e2-candidates", default="", help="E2 候選三版輸出路徑（不給就不寫）")
     a = ap.parse_args()
     files = subprocess.run(["git", "-C", REPO, "ls-tree", "--name-only", a.ref, "data/mops/news/"],
                            capture_output=True, text=True).stdout.split()
@@ -243,19 +251,31 @@ def main():
         else:
             r["reduction_gap"] = ""; r["with_reduction"] = 0; r["reduction_type"] = ""
 
-    out = e1 + e1fu + e3
+    # E2 正式（v1b＝規則 A；裁定 seq443）
+    e1_dates = {}
+    for r in e1:
+        e1_dates.setdefault(r["stock_id"], []).append(D(r))
+    e2m = dedup([dict(x, cls="E2", followup=0) for x in e2 if "A" in x["rules"]], lambda r: r["stock_id"])
+    last = {}
+    for r in sorted(e2m, key=lambda r: (r["date"], r.get("time", ""))):
+        d = D(r); k = r["stock_id"]
+        r["first12m"] = int(not (k in last and (d - last[k]).days <= 365))
+        last[k] = d
+        r["overlap_e1"] = int(any(abs((d - x).days) <= 60 for x in e1_dates.get(k, [])))
+
+    out = e1 + e1fu + e3 + e2m
     out.sort(key=lambda r: (r["date"], r.get("time", ""), r["stock_id"], r["cls"]))
     hdr = ["date", "time", "stock_id", "name", "market", "class", "followup", "first12m", "outcome", "acq_date",
-           "with_reduction", "reduction_gap", "reduction_type", "strategic_subj", "instrument", "subject", "serial"]
+           "with_reduction", "reduction_gap", "reduction_type", "strategic_subj", "instrument", "overlap_e1", "subject", "serial"]
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, lineterminator="\n"); w.writerow(hdr)
         for r in out:
             w.writerow([r["date"], r.get("time", ""), r["stock_id"], r.get("name", ""), r["market"], r["cls"], r["followup"],
                         r.get("first12m", ""), r.get("outcome", ""), r.get("acq_date", ""), r.get("with_reduction", ""),
                         r.get("reduction_gap", ""), r.get("reduction_type", ""), r.get("strategic_subj", ""),
-                        r.get("instrument", ""), r["subject"], r.get("serial", "")])
+                        r.get("instrument", ""), r.get("overlap_e1", ""), r["subject"], r.get("serial", "")])
 
-    # E2 candidates
+    # E2 候選三版（只在給 --e2-candidates 路徑時輸出；seq443 後不放 curated 目錄）
     e1_by = {}
     for r in e1:
         e1_by.setdefault(r["stock_id"], []).append(D(r))
@@ -265,7 +285,7 @@ def main():
         for r in dedup([x for x in e2 if set(x["rules"]) & rs], lambda r: r["stock_id"]):
             keep.setdefault(r.get("serial", "") + r["date"] + r["stock_id"], [r, set()])[1].add(v)
     e2o = sorted(keep.values(), key=lambda t: (t[0]["date"], t[0].get("time", ""), t[0]["stock_id"]))
-    with io.open(OUT_E2, "w", encoding="utf-8", newline="") as f:
+    with (io.open(a.e2_candidates, "w", encoding="utf-8", newline="") if a.e2_candidates else io.StringIO()) as f:
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["date", "time", "stock_id", "name", "market", "rules", "e2_v1", "e2_v2", "e2_v3", "after_e1", "subject", "serial"])
         for r, vs in e2o:
@@ -299,6 +319,12 @@ def main():
             pool = [dict(t[0], cls=v) for t in e2o if v in t[1]]
             e2s += random.sample(pool, min(30, len(pool)))
         write_sample(pe2, e2s, ["date", "stock_id", "cls", "rules"])
+    pe2f = os.path.join(HERE, "sample50_e2.csv")
+    if a.resample or not os.path.exists(pe2f):
+        random.seed(a.seed + 3)
+        write_sample(pe2f, random.sample(e2m, min(a.sample, len(e2m))), ["date", "stock_id", "cls", "first12m", "overlap_e1"])
+    print(f"E2 主事件（v1c）{len(e2m)}（first12m {sum(r['first12m'] for r in e2m)}；overlap_e1 {sum(r['overlap_e1'] for r in e2m)}；"
+          f"first12m 且不重疊 {sum(r['first12m'] and not r['overlap_e1'] for r in e2m)}）")
 
     # summary
     by = {}
