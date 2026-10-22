@@ -1,0 +1,5 @@
+[K1] {'登錄': ['登錄全文-缺貨型持股確認後怎麼賣_七種賣法各對不賣含一般股對照_單筆層登錄_台股策略線_seq1_sha2b3c853a8290be22-7660B-20261022-1641.md'], '相符': True, '裁定seq448': ['〔簽收 回✔ 台✖ 情✖ 資✖〕件-四線←裁定線-20261022-2011-seq448缺貨型與轉強開跑＋C6扣N＋E2v1c核＋等止跌改還沒測.md', '〔簽收 裁✖ 台✖ 情✖ 資✖〕件-四線←回測線-20261022-2045-收seq448＋兩件正式跑＋收購頻率表＋回情報延後進場既有件.md']}
+[K2] {'重建': {'events.csv.gz': True, 'counts.csv': True, 'freq_段.csv': True, 'judge.csv': True, 'equiv.csv': True, 'c1_month.csv': True}, 'events_R': 19509, '應有': 19509, '差': 0}
+[K3] {'抽列': 500, '不同': 0, '最大相對差': np.float64(6.478999555240743e-16)}
+[K4] {'不符': [], 'z': 2.638257273476751}
+[K5] {'策略鎖': ['策略鎖相符（25 支）'], 'git 新增': ['?? backtest/researchRevTurn.py', '?? backtest/researchRevTurn_check.py', '?? backtest/researchShortageExit.py', '?? backtest/researchShortageExit_check.py', '?? backtest/researchTakeover_freq.py', '?? backtest/researchTakeover_freq_check.py', '?? backtest/resultsRevTurn/main/', '?? backtest/resultsShortageExit/main/'], '本件以外（他處同時新增，本件程式不寫）': ['?? backtest/researchTakeover_freq.py', '?? backtest/researchTakeover_freq_check.py'], '只多本件或他處新檔': True}｜全過 True
