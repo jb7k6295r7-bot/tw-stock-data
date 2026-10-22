@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-21,7946,廣騰,emerging,,64,26,45.2,124573,5630700,,,,,均價/額推算,52.6,1
+2026-10-22,7946,廣騰,emerging,,50,30,36.91,179126,6611541,-8.29,,,,均價/額推算,35.15,1
