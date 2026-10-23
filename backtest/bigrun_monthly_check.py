@@ -13,7 +13,7 @@
         名單 md 第十二節（接檔尾、其他段不變、LINE 摘要格式、冪等、同資料日重產補回、別的資料日移除）；put_daily 節在中間
   sp    前瞻小部位 seq3 fixture：起點前不記、補記起點（鎖漲停／無成交買不到）、國喬標記、凍結不重算、轉強加 2 份只一次、
         第 12 份月報未轉強賣出（鎖跌停順延）、第 12 份當期未公布 ⇒ 第 13 份補判並順延、期中補判、放棄後不再判、照規則累計、使用者實際欄讀入與報酬
-  sp3   seq5：6 檔、新候選 10/27（二）只出一晚（14:00 後、資料日落後、略過補出、起點後不出）、2002／1101 標記、625 日提醒、報價提醒預設關
+  sp3   seq5：6 檔、新候選 10/27（二）只出一晚（14:00 後、資料日落後、略過補出、起點後不出）、2002／1101 標記、625 日提醒、報價提醒（10/23 開：進場後發布才推、同段一次、實資料讀得到）
   sp2   台股 seq547 讀法核對：①加碼看每期判定本身（不套 LINE「上期沒轉強才列」）②2026-11 鍵起判（2026-10 鍵不判）
         ③首次創 24 月新高＝本期創上期沒創、加速 ≥ 5 點是狀態；LINE 小部位事件行（股數、賣出句、新候選起點、不計入 4 行）、設定鍵、下一交易日外推
 """
@@ -638,14 +638,35 @@ def part_sp3():
     rec("sp3", "確認後第 624 交易日不出；第 625 交易日那晚出一次「確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）」；隔天不再出；非缺貨型不出",
         m0 == [] and [r["judge_detail"] for r in m1] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"] and m2 == []
         and BM.sp_event_lines(base + m1, d625) == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"], f"{d625.date()}｜{[r['judge_detail'] for r in m1]}")
-    # 報價代理提醒：預設關
+    # 報價代理提醒：10/23 資料庫 PPI 到庫後開（缺鍵／false 仍不出）
     s = pd.Series([100.0, 99.0, 98.0, 97.0], index=["2027-01", "2027-02", "2027-03", "2027-04"])
-    rec("sp3", "報價提醒預設關：設定檔目前沒有「小部位_報價提醒」⇒ 不出；缺鍵 ⇒ 不出", BM.sp_cfg().get("小部位_報價提醒") is None
-        and BM.sp_ppi_lines([], T("2027-05-20"), nm, BM.sp_cfg(), loader=lambda sid: s) == [] and BM.sp_ppi_lines([], T("2027-05-20"), nm, {}, loader=lambda sid: s) == [], "")
+    rec("sp3", "報價提醒：設定檔已開「小部位_報價提醒」（回測線 10/23 改）；缺鍵 ⇒ 不出", BM.sp_cfg().get("小部位_報價提醒") is True
+        and BM.sp_ppi_lines([], T("2027-05-20"), nm, {}, loader=lambda sid: s) == [], "")
     on = {"小部位_報價提醒": True}
-    rec("sp3", "（機制）開了但資料未到庫 ⇒ 不出；開了且連 3 月下跌 ⇒ 缺貨型四檔各出一行",
+    rec("sp3", "（機制）開了但資料讀不到 ⇒ 不出；開了且連 3 月下跌 ⇒ 該檔出一行",
         BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=None) == []
         and BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s if sid == "2002" else None) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
+    s2 = pd.Series([100.0, 101.0, 99.0, 98.0], index=["2027-01", "2027-02", "2027-03", "2027-04"])
+    rec("sp3", "（機制）只連跌 2 個月 ⇒ 不出", BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s2 if sid == "2002" else None) == [], "")
+    pre = s.copy(); pre.attrs["rel"] = {m: T("2026-10-15") for m in pre.index}       # 最新月在起點 10/27 前發布 ⇒ 進場前已知
+    post = s.copy(); post.attrs["rel"] = {**{m: T("2026-10-15") for m in post.index}, "2027-04": T("2026-11-13")}
+    rec("sp3", "（機制）最新月在起點前發布 ⇒ 不出（只看進場後）；在起點後發布 ⇒ 出",
+        BM.sp_ppi_lines([], T("2026-11-20"), nm, on, loader=lambda sid: pre if sid == "2002" else None) == []
+        and BM.sp_ppi_lines([], T("2026-11-20"), nm, on, loader=lambda sid: post if sid == "2002" else None) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
+    s5 = pd.Series([100.0, 99.0, 98.0, 97.0, 96.0], index=["2027-01", "2027-02", "2027-03", "2027-04", "2027-05"])
+    L4 = lambda sid: s if sid == "2002" else None                                     # noqa: E731
+    L5 = lambda sid: s5 if sid == "2002" else None                                    # noqa: E731
+    p1 = BM.sp_notify(base, cal, T("2027-05-20"), H, closes, on, nm, T("2027-05-20 20:00"), "f" * 40, ppi=L4)
+    p2 = BM.sp_notify(base + p1, cal, T("2027-06-20"), H, closes, on, nm, T("2027-06-20 20:00"), "f" * 40, ppi=L5)
+    p0 = BM.sp_notify(base, cal, T("2027-05-20"), H, closes, cfg, nm, T("2027-05-20 20:00"), "f" * 40, ppi=L4)
+    rec("sp3", "（機制）報價提醒寫成「提醒」紀錄列、隨 sp_event_lines 補回；同一段下跌（段起月同）隔月續跌不再出；設定關 ⇒ 不出",
+        [r["judge_detail"] for r in p1] == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"] and p1[0]["event"] == "提醒"
+        and "段起 2027-02" in p1[0]["note"] and p2 == [] and p0 == []
+        and BM.sp_event_lines(base + p1, T("2027-05-20")) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], p1[0]["note"] if p1 else "")
+    LR = BM.ppi_loader(T("2026-10-23"), fetch=False)
+    rec("sp3", "（實資料，只看結構不印值）私有庫 PPI 讀得到：四檔對三條代理、最新已發布月 ≥ 2026-08、10/23 晚因進場前已知不出",
+        LR is not None and all(LR(x) is not None and LR(x).index[-1] >= "2026-08" for x in BM.SP_SHORTAGE)
+        and BM.sp_ppi_lines([], T("2026-10-23"), nm, on, loader=LR) == [], "")
 
 
 def part_sp():

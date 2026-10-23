@@ -12,7 +12,7 @@ LINE（台股 seq539、情報 0030 §三／0035，使用者同意）：只推檔
   放棄：第 i 份月報 ＝ 該檔首份判定月報起算月數 ＋ 1；第 12 份仍未轉強 ⇒ 該份月報隔天開盤賣出、記「未確認」（無成交／鎖跌停順延）；
   當期營收未公布 ⇒ 記「未判」、下一份補判上一期（up_prev）；第 12 份未公布 ⇒ 第 13 份只補判上一期、以它為放棄判定、賣出順延到該份隔天（seq447 補句）。
   已確認：1503、1513 不設停損、不設天數；缺貨型四檔（1305、1312、2002、1101）照抱，另兩個只問不賣提醒（seq5）：
-    ① 報價代理連 3 個月月增 < 0（sp_ppi_lines；設定「小部位_報價提醒」缺＝關；資料庫 PPI 到庫後接 loader、回測線再開）
+    ① 報價代理連 3 個月月增 < 0（sp_ppi_hits／ppi_loader：私有庫 us-stock-data 美國 PPI；設定「小部位_報價提醒」10/23 開；最新月須在進場後發布、同段只推一次）
     ② 確認那份月報資料日之後滿 625 個交易日（smallpos「提醒」列，只記一次）
   紀錄：backtest/forward/bigrun_monthly/smallpos.csv（照規則、只追加、已寫凍結；通知列「新候選通知」「提醒」的 LINE 原文存在 judge_detail）、
   smallpos_user.csv（使用者實際；種子＝情報 20261022-1000 成交；之後成交由回測線 --user-add 或手填同欄位補記）。auto 每晚都跑；手動 --kind 只試算不寫。
@@ -901,7 +901,9 @@ SP_ENTRY_UP = {"1312": "進場時已轉強（起點前 2026-09 營收已轉強�
                "1101": "進場時已轉強（起點前 2026-09 營收已達轉強：近 3 月年增比前 12 月高 5 點以上；seq5）⇒ 檢查時另標、不當「確認前」樣本；11 月月報仍轉強即隔天加 2 份"}
 SP_SHORTAGE = ["1305", "1312", "2002", "1101"]   # 缺貨型四檔（seq5 兩個只問不賣提醒）
 SP_REMIND_TD = 625                              # ② 確認後第 625 個交易日（約 2 年半）
-CFG_PPI = "小部位_報價提醒"                      # ① 報價代理連 3 月下跌提醒；缺鍵＝關（等資料庫 PPI 到庫，回測線再開）
+CFG_PPI = "小部位_報價提醒"                      # ① 報價代理連 3 月下跌提醒；缺鍵＝關（資料庫 1023-0134 PPI 到庫 ⇒ 回測線 10/23 開）
+SP_PPI = {"1305": ("WPU066", "塑膠"), "1312": ("WPU066", "塑膠"), "2002": ("WPU1017", "鋼鐵"), "1101": ("WPU1322", "水泥")}   # 美國 PPI 代理（缺貨型二輪登錄 §三）
+US_REPO = os.path.expanduser("~/us-stock-data")  # ⛔ 私有庫：只讀判定、不把序列寫進公開輸出
 SP_N_REPORTS, SP_ADD, SP_COST = 12, 2, 0.00585
 SP_FIX = "6 檔（10/22 四檔、10/23 兩檔）、看過新聞才挑、只是前瞻紀錄"
 WD = "一二三四五六日"
@@ -1006,7 +1008,7 @@ def taipei_now():
     return NOW_OVERRIDE if NOW_OVERRIDE is not None else pd.Timestamp.now(tz=TZ).tz_localize(None)
 
 
-def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha):
+def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None):
     """小部位通知列（寫進 smallpos.csv：只記一次、已寫凍結；LINE 行原文存在 judge_detail，同資料日名單重產時原樣補回）：
     ・新候選（seq447 §二、seq458 §二）：起點前最後一個交易日（台北）14:00 後、或之後到起點前（資料晚到）的第一次執行 ⇒
       「  小部位：代號 名稱 新候選 ⇒ 10/27（二）開盤買 1 份（約 N 股）」；以「台北今天」判，不看資料日（資料日落後也照出、起點後不再出）。
@@ -1038,27 +1040,70 @@ def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha):
         if n_td >= SP_REMIND_TD:
             add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} 確認後已滿 {SP_REMIND_TD} 個交易日 ⇒ 續抱或賣？（你決定）",
                 f"確認後滿 {SP_REMIND_TD} 交易日（確認＝{cf['report_key']} 月報 {cf['report_asof']}；已過 {n_td} 日）；只問不賣（seq5 ②）")
+    for sid, line, st0, last, k in sp_ppi_hits(asof, names, cfg, ppi):        # seq5 ①：同一段下跌（段起月相同）只推一次
+        tag = f"報價代理 {SP_PPI[sid][0]}（{SP_PPI[sid][1]}）段起 {st0}"
+        if any(r["stock_id"] == sid and r["event"] == "提醒" and tag in r["note"] for r in allr()):
+            continue
+        add(sid, "提醒", line, f"{tag}；最新已發布 {last}、連 {k} 個月月增＜0（美國 PPI 代理）；只問不賣（seq5 ①）")
     return new
 
 
-def sp_ppi_lines(rows, asof, names, cfg, loader=None):
-    """seq5 ①：缺貨型四檔報價代理連 3 個月月增 < 0 ⇒「  小部位：代號 名稱 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）」。
-    ⚠ 先做好、預設關：設定「小部位_報價提醒」缺鍵／false ⇒ 不出；開了但資料庫 PPI 未到庫（loader 為 None 或回 None）⇒ 不出並印一行。
-    loader(sid) ⇒ 該業報價代理月序列（pd.Series，index＝月、值＝指數；只用發布日 ≤ 資料日的月份）。"""
-    if not bool(cfg.get(CFG_PPI, False)):
-        return []
-    if loader is None:
-        print("小部位報價提醒：已開但報價代理資料未到庫（資料庫 FRED PPI 補齊後接 loader）⇒ 本晚不出")
+def ppi_loader(asof, repo=US_REPO, fetch=True):
+    """私有庫 us-stock-data origin/main 的 FRED PPI（資料庫 1023-0134）⇒ loader(sid)：該業代理月序列（index＝'YYYY-MM'、值＝現行值），
+    只留發布日（ppi_first_release first_release_date，缺則 ppi_release_date）＜ 資料日的月份。讀不到 ⇒ 回 None（提醒不出、印一行）。"""
+    import io as _io
+    try:
+        if fetch:
+            subprocess.run(["git", "-C", repo, "fetch", "-q", "origin"], timeout=90, capture_output=True)
+        show = lambda f: subprocess.run(["git", "-C", repo, "show", f"origin/main:data/macro/{f}"], capture_output=True, check=True,  # noqa: E731
+                                        timeout=60).stdout.decode("utf-8")
+        rel = pd.read_csv(_io.StringIO(show("ppi_first_release.csv")), dtype=str)
+        rel["d"] = pd.to_datetime(rel["first_release_date"].fillna(rel["ppi_release_date"]), errors="coerce")
+        ser = {}
+        for code in sorted({c for c, _ in SP_PPI.values()}):
+            df = pd.read_csv(_io.StringIO(show(f"fred_{code}.csv")))
+            dc, vc = df.columns[0], [c for c in df.columns[1:]][0]
+            v = pd.Series(pd.to_numeric(df[vc], errors="coerce").values, index=pd.to_datetime(df[dc]).dt.strftime("%Y-%m"))
+            ok = set(rel.loc[(rel["series"] == code) & (rel["d"] < asof), "period"])
+            ser[code] = v[[m in ok for m in v.index]].sort_index()
+            r = rel[rel["series"] == code].set_index("period")["d"]
+            ser[code].attrs["rel"] = {m: r.get(m) for m in ser[code].index}
+    except Exception as e:                                                     # noqa: BLE001
+        print(f"小部位報價提醒：讀私有庫 PPI 失敗（{type(e).__name__}）⇒ 本晚不出")
+        return None
+    return lambda sid: ser.get(SP_PPI[sid][0]) if sid in SP_PPI else None
+
+
+def sp_ppi_hits(asof, names, cfg, loader):
+    """seq5 ①：缺貨型四檔該業報價代理「最新已發布月」為連續月增 < 0 的第 3 個月以上 ⇒ (代號, LINE 行, 段起月, 最新月, 連跌月數)；同一段下跌只推一次由呼叫端以段起月去重。
+    ⭐ 最新月須在起點（進場）當天或之後才發布（有發布日時；登錄 §三「只看進場後」）：進場前就已知的連跌不推，要等進場後發布的那個月仍跌才推。"""
+    if not bool(cfg.get(CFG_PPI, False)) or loader is None:
         return []
     out = []
     for sid in SP_SHORTAGE:
         s = loader(sid)
         if s is None or len(s.dropna()) < 4:
             continue
-        m = s.dropna().pct_change().iloc[-3:]
-        if (m < 0).all():                                          # ⚠ 上線時再加「同一段下跌只推一次」的紀錄列
-            out.append(f"  小部位：{sid} {names.get(sid, '')} 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）")
+        m = s.dropna().pct_change().dropna()
+        k = 0
+        while k < len(m) and m.iloc[-1 - k] < 0:
+            k += 1
+        d_last = s.attrs.get("rel", {}).get(m.index[-1])
+        if k >= 3 and not (d_last is not None and sid in SP_CANDS and d_last < pd.Timestamp(SP_CANDS[sid])):
+            out.append((sid, f"  小部位：{sid} {names.get(sid, '')} 報價代理連 {k} 個月下跌 ⇒ 續抱或賣？（你決定）", m.index[-k], m.index[-1], k))
     return out
+
+
+def sp_ppi_lines(rows, asof, names, cfg, loader=None):
+    """seq5 ①：缺貨型四檔報價代理連 3 個月月增 < 0 ⇒「  小部位：代號 名稱 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）」。
+    設定「小部位_報價提醒」缺鍵／false ⇒ 不出；loader 為 None（私有庫讀不到）⇒ 不出並印一行。檢查與紀錄列用 sp_ppi_hits（本函式只回行）。
+    loader(sid) ⇒ 該業報價代理月序列（pd.Series，index＝月、值＝指數；只用發布日 ≤ 資料日的月份）。"""
+    if not bool(cfg.get(CFG_PPI, False)):
+        return []
+    if loader is None:
+        print("小部位報價提醒：已開但報價代理資料讀不到 ⇒ 本晚不出")
+        return []
+    return [h[1] for h in sp_ppi_hits(asof, names, cfg, loader)]
 
 
 def sp_event_lines(rows, asof):
@@ -1067,10 +1112,10 @@ def sp_event_lines(rows, asof):
 
 
 def sp_night_lines(rows, asof, names):
-    """今晚要推的小部位通知行（設定「小部位_LINE」開才有）：新候選／625 日提醒（紀錄列）＋報價提醒（另一開關，預設關）。"""
+    """今晚要推的小部位通知行（設定「小部位_LINE」開才有）：新候選／625 日提醒（紀錄列）＋報價提醒（另一開關「小部位_報價提醒」，10/23 開；寫成紀錄列）。"""
     if not sp_line_on():
         return []
-    return sp_event_lines(rows, asof) + sp_ppi_lines(rows, asof, names, sp_cfg())
+    return sp_event_lines(rows, asof)              # 報價提醒 10/23 起改寫成紀錄列（sp_notify），隨 sp_event_lines 補回
 
 
 def sp_event_secs(ev):
@@ -1299,7 +1344,7 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
           f"⇒ 月報隔天開盤加 2 份（只加一次）；起點後第 1 份（{SP_FIRST_KEY}）到第 {SP_N_REPORTS} 份月報都沒判轉強 ⇒ 第 {SP_N_REPORTS} 份月報隔天開盤賣出、記「未確認」；"
           f"月報當期營收未公布 ⇒ 該期不判、下一份補判（第 {SP_N_REPORTS} 份未公布 ⇒ 以補判那份為放棄判定、賣出順延到該份隔天開盤）。"
           "已確認：1503、1513 不設停損、不設天數，持有到使用者另定；缺貨型四檔（1305、1312、2002、1101）照抱、不設停損、不設天數，"
-          f"另兩個只問不賣的 LINE 提醒：①該業報價代理連 3 個月月增 < 0（待資料庫 PPI 到庫，預設關）②確認後滿 {SP_REMIND_TD} 個交易日。"
+          f"另兩個只問不賣的 LINE 提醒：①該業報價代理連 3 個月月增 < 0（美國 PPI 代理：塑膠 WPU066、鋼鐵 WPU1017、水泥 WPU1322；最新月須在進場後發布，同一段下跌只推一次）②確認後滿 {SP_REMIND_TD} 個交易日。"
           "1312、2002、1101 進場時已轉強，檢查時不當「確認前」樣本。",
           "- 報酬：照規則＝還原價（含息）、每份扣成本 0.585%；使用者實際＝成交價（換算還原）、依成交金額加權、同樣扣 0.585%。smallpos.csv／smallpos_user.csv 只追加、已寫凍結。",
           ""]
@@ -1395,7 +1440,9 @@ def sp_step(a, H, cal, asof, sha, names, judgments, write, now=None):
     now = now if now is not None else taipei_now()
     new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(now)[:19], sha)
     closes = {s: raw_close(H, s, asof)[0] for s in SP_CODES}
-    new += sp_notify(rows + new, cal, asof, H, closes, sp_cfg(), names, now, sha)
+    cfg = sp_cfg()
+    ppi = ppi_loader(asof) if cfg.get(CFG_PPI) else None
+    new += sp_notify(rows + new, cal, asof, H, closes, cfg, names, now, sha, ppi=ppi)
     for k, r in enumerate(new):                    # seq 連號
         r["seq"] = str(len(rows) + k + 1)
     if write and new:
