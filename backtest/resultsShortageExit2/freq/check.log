@@ -1,0 +1,6 @@
+[K1] {'檔': ['登錄全文-缺貨型確認後怎麼賣第二輪_報價轉跌與滿2年半各對不賣_單筆層登錄_台股策略線_seq1_sha463e9d48aed0aa96-5427B-20261023-0041.md'], '相符': True, '裁定seq458': ['〔簽收 台✔ 回✔ 情✖ 資✔ 產✖〕件-五線←裁定線-20261023-0042-seq458三件定版＋小部位seq5核＋缺貨型二輪發號.md']}
+[K2] {'同版': True, '第一輪': 7068, '本件': 7068, '只在第一輪': 0, '只在本件': 0, '段自判不同': 0}
+[K3] {'主格事件(全部)': 599, '不同': {'D1_k': 0, 'D2_k': 0, 'D1′_k': 0, 'D2′_k': 0, 'D1_s': 0, 'D2_s': 0, 'D3_s': 0, 'D1_來源': 0, 'D2_來源': 0, 'D1_結果': 0, 'D2_結果': 0, 'D3_結果': 0}, '全同': True}
+[K4] {'項': 66, '相符': True}
+[K5] {'疑似值欄': [], '本件新增': ['?? backtest/researchShortageExit2.py', '?? backtest/researchShortageExit2_freq_check.py', '?? backtest/resultsShortageExit2/'], '別件同時段新增（非本件、不計）': ['?? backtest/researchTakeover3.py', '?? backtest/researchTakeover3_freq.py', '?? backtest/resultsTakeover/e3v4_main/', '?? backtest/resultsTakeover3/'], '本件只新增檔、未改既有檔': True}
+[全過] True
