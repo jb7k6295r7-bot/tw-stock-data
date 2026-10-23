@@ -1,0 +1,8 @@
+[K1] {'檔': ['登錄全文-被公開收購經營權變動私募策略投資人_宣告後股價_事件層描述登錄_台股策略線_seq3_shade337a91f8ae89c3-7893B-20261023-0013.md'], '相符': True}
+[K2] {'recon全同': True, '頻率表欄逐字相同': True, 'recon_v4不同格': 0, '通過': True}
+[K3] {'E3列數': 3012, '事件表2011起first12m': 1343, '母體': 1343, '配到': 1335, '未配到': 8, '配到普通股': 1321, '非普通股': 14, '分組母體': 1320, '三欄空白': 1, '互斥': {'只策略': 685, '只內部人': 235, '兩者皆是': 328, '兩者皆否': 72}, '重疊': {'甲是': 1013, '甲否': 307, '乙是': 563, '乙否': 757, '丙是': 249, '丙否': 1071}, 'freq表列數不符格': 0, '表可接不符格': 0, '減資或市值加總不符': 0, '守恆逐項': [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True], '通過': True}
+[K4] {'分組母體': 1320, '不符': 0, '同日多普通股案': 0, '通過': True}
+[K5] {'比對格': 19453, '不同': 0, '例': [], '通過': True}
+[K6] {'比對格': 5376, '不同': 0, '例': [], '通過': True}
+[K7] {'必附缺': [], '工作樹新增': ['?? backtest/researchTakeover3.py', '?? backtest/researchTakeover3_check.py', '?? backtest/researchTakeover3_freq.py', '?? backtest/researchTakeover_e3v4.py', '?? backtest/resultsTakeover/e3v4_freq/', '?? backtest/resultsTakeover/e3v4_main/', '?? backtest/resultsTakeover3/'], '非本件': [], '通過': True}
+[全部通過] True
