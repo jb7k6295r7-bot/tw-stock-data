@@ -84,16 +84,21 @@ from backtest import data as D                        # noqa: E402
 
 # ═════════════ 名單（台股來信 seq538；增減只改這裡） ═════════════
 GROUPS = [
-    ("A", "電力", [("重電", "1519 1513 1503 1514"), ("機櫃電源", "2308 2301 6282"), ("BBU", "6781 3211")]),
+    ("A", "電力", [("重電", "1519 1513 1503 1514"), ("機櫃電源", "2308 2301 6282")]),       # BBU 移到 K「已漲過」（台股 seq568 §三）
     ("B", "機器人", [("", "2049 4576 2233 4583 1536 2417")]),
     ("C", "軍工衛星", [("", "3491 2313 6271 8033 2634 3718")]),
     ("D", "塑化中游", [("", "1301 1303 1326 6505 1314 1304 1305 1312 2002")]),       # 1305、1312、2002：台股 seq544（裁定 seq442）補
     ("E", "水泥", [("", "1101 1102")]),
     ("F", "缺貨型尾段警訊", [("", "2408 2344 2327 2492 6173 8358 1802 1815")]),
     ("H", "早期候選", [("", "3481 1795 4123 6550")]),                              # 台股 seq544 新增；欄位同 A～E
+    ("I", "鋼鐵（先盯）", [("", "2014 2023")]),                                      # 台股 seq568 §三、產業 seq10：中鴻、燁輝（中鋼在 D）
+    ("J", "先盯組（只記轉強）", [("造紙", "1909 1907 1905"), ("國防造船", "2208 6753"), ("AR 眼鏡", "3504"), ("都更", "2548 2520")]),   # 台股 seq568 §三
+    ("K", "已漲過（只看警訊）", [("BBU", "6781 3211"), ("", "1710 1718")]),         # 台股 seq568 §三：BBU、東聯、中纖；欄位同 F（①②③）
 ]
 WATCH = {"3491": 390_000}          # 千元：單月是否 ≥ 3.9 億（只標）
 F_GROUP, F_DROP = "F", -0.30       # F 組另標：營收月增 ≤ 0 連 2 月、股價距一年高點 ≤ −30%（只標、不判）
+WARN_GROUPS = ("F", "K")            # 只看警訊的組（①②③ 標記欄；LINE 進「警訊」）
+PAPER_PPI = ("J", "造紙", "WPU091")  # 先盯組造紙：美國 PPI 造紙代理「報價年增轉正」一欄（描述；私有庫只出判定、不出值）
 POOL169 = ("1303 1503 1504 1513 1514 1519 1536 1590 1597 1603 1605 1608 1609 1612 1615 1618 1623 1727 1802 1815 2049 2233 2301 2308 2313 "
            "2314 2316 2317 2327 2328 2330 2337 2344 2345 2352 2359 2360 2367 2368 2375 2382 2383 2404 2408 2417 2421 2429 2449 2454 2455 "
            "2458 2464 2467 2472 2478 2492 2630 2634 2645 3006 3008 3013 3017 3019 3026 3037 3044 3081 3090 3105 3131 3138 3163 3167 3189 "
@@ -418,6 +423,10 @@ def rev_metrics(L, codes, asof, corr):
         r["up"] = bool((np.isfinite(r["accel"]) and r["accel"] >= ACC_UP) or (T(r["hi24"]) and not T(r["hi24_prev"])))
         r["up_prev"] = bool((np.isfinite(r["accel_prev"]) and r["accel_prev"] >= ACC_UP) or (T(r["hi24_prev"]) and not T(r["hi24_prev2"])))
         r["flag_mom2"] = (bool(r["mom"] <= 0 and r["mom_prev"] <= 0) if np.isfinite(r["mom"]) and np.isfinite(r["mom_prev"]) else np.nan)
+        # ③ 營收年增從高點連 3 月下降（台股 seq568 §三，警訊只描述）★ 讀法：k−3 那期年增是近 12 期（k−11～k）最高，之後 k−2、k−1、k 逐期下降；12 期須全有值
+        y12w = yoy.iloc[k - 11:k + 1]
+        r["flag_yoy3dn"] = (bool(y12w.iloc[-4] >= y12w.max() and y12w.iloc[-3] < y12w.iloc[-4] and y12w.iloc[-2] < y12w.iloc[-3] and y12w.iloc[-1] < y12w.iloc[-2])
+                            if len(y12w) == 12 and y12w.notna().all() else np.nan)
         if not np.isfinite(r["yoy12"]):
             r["notes"].append(f"近 12 月年增有缺 {int(y12.isna().sum())} 個月（加速、近 12 月空）")
         if not (len(hist) == 24 and hist.notna().all()):
@@ -682,7 +691,7 @@ def month_report(asof, sha, ac, act, H, L, ldiag, corr, G, cal, key):
                  pct_from_high=px.get("pct_from_52w_high", np.nan), ret_1y=px.get("ret_1y", np.nan), ret_1y_base_date=px.get("ret_1y_base_date", ""),
                  w52_badbar=px.get("w52_badbar", ""), ret_1y_badbar=px.get("ret_1y_badbar", ""), px_note=px.get("px_note", ""))
         notes = list(rm["notes"])
-        if g == F_GROUP:
+        if g in WARN_GROUPS:
             r["flag_drop30"] = bool(r["pct_from_high"] <= F_DROP) if np.isfinite(r["pct_from_high"]) else np.nan
         if r.get("px_note"):
             notes.append(f"價格{r['px_note']}")
@@ -704,15 +713,16 @@ def month_report(asof, sha, ac, act, H, L, ldiag, corr, G, cal, key):
           f"- 月營收來源：每日版（OpenAPI，{('、'.join(ldiag['每日版期別'][-3:]) or '無')}）有列用每日版，否則 revenue_hist；年增、月增照同一列公告的去年當月、上月營收"
           + (f"；每日版期別錯位列已丟：{ldiag['每日版錯位列（丟掉）']}" if ldiag["每日版錯位列（丟掉）"] else ""),
           "- 欄位：營收＝單月（億元）｜年增、月增＝單月｜3月年增＝近 3 月年增平均｜加速＝近 3 月年增平均 − 近 12 月年增平均（pp）｜"
-          "24高 ★＝創 24 個月新高（前 24 月須全有值，不全 ⇒ ?）｜收盤＝未還原｜距高＝還原收盤距近一年最高｜1年＝近一年還原漲幅（含息）",
+          "24高 ★＝創 24 個月新高（前 24 月須全有值，不全 ⇒ ?）｜收盤＝未還原｜距高＝還原收盤距近一年最高｜1年＝近一年還原漲幅（含息）｜"
+          "高點3降 ▼＝營收年增從近 12 月高點連 3 月下降（警訊，只描述；台股 seq568）",
           ""]
     md = head_lines("月報", key, asof, sha, ac, act, ex)
-    hdr = "| 股 | 營收億 | 年增 | 月增 | 3月年增 | 加速 | 24高 | 收盤 | 距高 | 1年 |"
-    sep = "|---|---:|---:|---:|---:|---:|:-:|---:|---:|---:|"
+    hdr = "| 股 | 營收億 | 年增 | 月增 | 3月年增 | 加速 | 24高 | 收盤 | 距高 | 1年 | 高點3降 |"
+    sep = "|---|---:|---:|---:|---:|---:|:-:|---:|---:|---:|:-:|"
     for g, gname, subs in GROUPS:
         md += [f"## {g} {gname}", ""]
         gd = df[df["group"] == g]
-        isF = g == F_GROUP
+        isF = g in WARN_GROUPS
         for sub, _ in subs:
             sd = gd[gd["subgroup"] == sub]
             if sub:
@@ -721,9 +731,10 @@ def month_report(asof, sha, ac, act, H, L, ldiag, corr, G, cal, key):
             for _, r in sd.iterrows():
                 per = "" if r["rev_period"] == P or not r["rev_period"] else f"（{r['rev_period'][2:]}）"
                 cells = [f"{r['stock_id']} {r['name']}{per}", fyi(r.get("rev_k")), fpct(r.get("yoy")), fpct(r.get("mom")), fpct(r.get("yoy3")),
-                         fpct(r.get("accel"), True), fbool(r.get("hi24")), fpx(r["close"]), fpct(r["pct_from_high"]), fpct(r["ret_1y"])]
+                         fpct(r.get("accel"), True), fbool(r.get("hi24")), fpx(r["close"]), fpct(r["pct_from_high"]), fpct(r["ret_1y"]),
+                         fbool(r.get("flag_yoy3dn"), "▼")]
                 if isF:
-                    fl = ("①" if T(r.get("flag_mom2")) else "") + ("②" if T(r.get("flag_drop30")) else "")
+                    fl = ("①" if T(r.get("flag_mom2")) else "") + ("②" if T(r.get("flag_drop30")) else "") + ("③" if T(r.get("flag_yoy3dn")) else "")
                     cells.append(fl or "")
                 md.append("| " + " | ".join(cells) + " |")
             md.append("")
@@ -737,7 +748,13 @@ def month_report(asof, sha, ac, act, H, L, ldiag, corr, G, cal, key):
         if isF:
             f1 = [f"{r['stock_id']}（{fpct(r.get('mom_prev'))}、{fpct(r.get('mom'))}）" for _, r in gd.iterrows() if T(r.get("flag_mom2"))]
             f2 = [f"{r['stock_id']}（{fpct(r['pct_from_high'])}）" for _, r in gd.iterrows() if T(r.get("flag_drop30"))]
-            md += [f"- ① 營收月增 ≤ 0 連 2 月：{'、'.join(f1) or '無'}", f"- ② 股價距一年高點 ≤ −30%：{'、'.join(f2) or '無'}", "- ①② 只標、不判。"]
+            f3 = [r["stock_id"] for _, r in gd.iterrows() if T(r.get("flag_yoy3dn"))]
+            md += [f"- ① 營收月增 ≤ 0 連 2 月：{'、'.join(f1) or '無'}", f"- ② 股價距一年高點 ≤ −30%：{'、'.join(f2) or '無'}",
+                   f"- ③ 營收年增從高點連 3 月下降：{'、'.join(f3) or '無'}", "- ①②③ 只標、不判。"]
+        if g == "K":
+            md.append("- ⚠ BBU 台股寫「三檔」，本表只有 6781、3211（原 A 組 BBU）；第三檔代號待產業補。")
+        if g == PAPER_PPI[0]:
+            md.append(f"- 造紙報價代理（美國 PPI {PAPER_PPI[2]}，私有庫只出判定）：{paper_ppi_line(asof)}（描述；美國物價代理，不是亞洲紙價）")
         nts = [f"{r['stock_id']}：{r['notes']}" for _, r in gd.iterrows() if r["notes"]]
         cs = [f"{r['stock_id']}：{r['corrections']}" for _, r in gd.iterrows() if r.get("corrections")]
         if nts or cs:
@@ -760,8 +777,8 @@ def line_month(df, P):
     L = [f"- 【LINE】⭐ 大漲觀察（{int(P[5:])} 月營收）："]
     up, warn = [], []
     for _, r in df.iterrows():
-        if r["group"] == F_GROUP:
-            if T(r.get("flag_mom2")) or T(r.get("flag_drop30")):
+        if r["group"] in WARN_GROUPS:
+            if T(r.get("flag_mom2")) or T(r.get("flag_drop30")) or T(r.get("flag_yoy3dn")):
                 warn.append(f"{r['group']}：{r['stock_id']} {r['name']}")
             continue
         first_hi = T(r.get("hi24")) and not T(r.get("hi24_prev"))
@@ -1073,7 +1090,7 @@ def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=
     return new
 
 
-def ppi_loader(asof, repo=US_REPO, fetch=True):
+def ppi_loader(asof, repo=US_REPO, fetch=True, codes=None, raw=False):
     """私有庫 us-stock-data origin/main 的 FRED PPI（資料庫 1023-0134）⇒ loader(sid)：該業代理月序列（index＝'YYYY-MM'、值＝現行值），
     只留發布日（ppi_first_release first_release_date，缺則 ppi_release_date）＜ 資料日的月份。讀不到 ⇒ 回 None（提醒不出、印一行）。"""
     import io as _io
@@ -1085,7 +1102,7 @@ def ppi_loader(asof, repo=US_REPO, fetch=True):
         rel = pd.read_csv(_io.StringIO(show("ppi_first_release.csv")), dtype=str)
         rel["d"] = pd.to_datetime(rel["first_release_date"].fillna(rel["ppi_release_date"]), errors="coerce")
         ser = {}
-        for code in sorted({c for c, _ in SP_PPI.values()}):
+        for code in sorted(codes or {c for c, _ in SP_PPI.values()}):
             df = pd.read_csv(_io.StringIO(show(f"fred_{code}.csv")))
             dc, vc = df.columns[0], [c for c in df.columns[1:]][0]
             v = pd.Series(pd.to_numeric(df[vc], errors="coerce").values, index=pd.to_datetime(df[dc]).dt.strftime("%Y-%m"))
@@ -1096,7 +1113,25 @@ def ppi_loader(asof, repo=US_REPO, fetch=True):
     except Exception as e:                                                     # noqa: BLE001
         print(f"小部位報價提醒：讀私有庫 PPI 失敗（{type(e).__name__}）⇒ 本晚不出")
         return None
+    if raw:
+        return lambda code: ser.get(code)
     return lambda sid: ser.get(SP_PPI[sid][0]) if sid in SP_PPI else None
+
+
+def paper_ppi_line(asof, loader=None):
+    """先盯組造紙「報價年增轉正」：最新已發布月年增 ≥ 0 且上一個已發布月 < 0 ⇒ 轉正；否則寫仍正／仍負（⛔ 不出值）。"""
+    try:
+        s = (loader or ppi_loader(asof, codes=(PAPER_PPI[2],), raw=True))(PAPER_PPI[2])
+    except Exception:                                                      # noqa: BLE001
+        s = None
+    if s is None or len(s.dropna()) < 14:
+        return "讀不到（本月不寫）"
+    s = s.dropna()
+    y = s / s.shift(12) - 1
+    if not (np.isfinite(y.iloc[-1]) and np.isfinite(y.iloc[-2])):
+        return "資料不足"
+    st = "**轉正**" if (y.iloc[-1] >= 0 > y.iloc[-2]) else ("仍正" if y.iloc[-1] >= 0 else "仍負")
+    return f"年增{st}（最新已發布 {s.index[-1]}）"
 
 
 def sp_ppi_hits(asof, names, cfg, loader):
