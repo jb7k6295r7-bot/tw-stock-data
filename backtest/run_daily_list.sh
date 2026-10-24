@@ -102,6 +102,16 @@ if [ -z "$FAIL" ]; then
       else
         logline "頂部樣子前瞻 失敗（不影響 daily）：$(tail -1 "$TLOG" 2>/dev/null)（見 $TLOG）"
       fi
+      # 規則 16：美股確認前小部位（ETN；美股 seq2 定版 f15b918fa43f360f、裁定 seq461 §四／seq462 §一）：每晚呼叫（冪等）；有事件行 ⇒ 名單尾「## 十五、美股小部位（通知）」＋【LINE】行；⛔ 失敗只記 log、不影響名單
+      ULOG="$REPO/backtest/resultsDaily/us_smallpos.log"; UEV="$REPO/backtest/resultsDaily/us_smallpos_events.txt"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.forward_us_smallpos --line-out "$UEV" > "$ULOG" 2>&1); then
+        logline "美股小部位前瞻：$(tail -1 "$ULOG")"
+        if [ -s "$UEV" ]; then
+          { echo; echo "## 十五、美股小部位（通知）"; echo; echo "- 【LINE】⭐ 美股小部位："; sed 's/^/  /' "$UEV"; } >> "$REPO/backtest/resultsDaily/daily_$ASOF.md"
+        fi
+      else
+        logline "美股小部位前瞻 失敗（不影響 daily）：$(tail -1 "$ULOG" 2>/dev/null)（見 $ULOG）"
+      fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); SLRC=$?
       if [ $SLRC = 2 ]; then logline "策略鎖：$SLK（不加警示）"; fi
