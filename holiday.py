@@ -89,6 +89,67 @@ def page_date(html):
     return None
 
 
+# ⭐⭐ 2026-10-23 第一個真的颱風樣本（data/holiday/2026-10-22.html、2026-10-23.html）
+#   推翻了檔頭「停班那一列長什麼樣沒有樣本」：台北市那一列寫的是
+#     10-22 晚：「臺北市 明天停止上班、停止上課。」
+#     10-23 晚：「臺北市 今天停止上班、停止上課。 明天已達停止上班及上課標準。」
+#   ⇒ ⛔ 舊判讀只找「停止上班」⇒ 10-22（照常開盤、有成交）被判成 closed，
+#     ⚠ 而真正休市的 10-23 只是剛好當天也有公告才對。
+#   ⇒ 改成分「今天」「明天」兩件事讀，並以下一個縣市名切斷那一列。
+COUNTIES = ("基隆市", "新北市", "桃園市", "新竹市", "新竹縣", "苗栗縣", "臺中市", "台中市",
+            "彰化縣", "雲林縣", "南投縣", "嘉義市", "嘉義縣", "臺南市", "台南市", "高雄市",
+            "屏東縣", "宜蘭縣", "花蓮縣", "臺東縣", "台東縣", "澎湖縣", "金門縣", "連江縣")
+TODAY_STOP = ("今天停止上班", "今日停止上班", "今天已達停止上班", "今日已達停止上班")  # 10-24 頁面：「今天已達停止上班及上課標準」
+TOMORROW_STOP = ("明天停止上班", "明日停止上班", "明天已達停止上班", "明日已達停止上班")
+# 事後確認、而行事曆端點（TWSE holidaySchedule）不會列的颱風休市日 ⇒ 每趟併進 holiday_schedule.csv
+#   2026-10-23：當天頁面「臺北市 今天停止上班」、全市場無成交（回測 1024-1232 請補）。
+KNOWN_CLOSURES = (("2026-10-23", "颱風停止交易",
+                   "市場無交易：臺北市天然災害停止上班，台股全日休市（人事行政總處公告）"),)
+TYPHOON_NAME = "颱風停止交易"
+
+
+def taipei_days(html):
+    """台北市那一列 → (今天停班, 明天停班, 命中原文)。
+
+    ⛔ 單向不變：預設照常；只有正面比對到才算停班。
+    ⚠ 那一列沒有「今天／明天」字樣（舊式寫法）才當成今天；寫「今天下午…起停止上班」
+      這種半天停班 ⇒ 兩者皆否（台股多半已開盤，⛔ 不可判全日休市）。
+    """
+    text = B.visible_text(html, " ")
+    for w in TAIPEI:
+        i = text.find(w)
+        while i >= 0:
+            seg = text[i + len(w): i + len(w) + 300]
+            cuts = [seg.find(c) for c in COUNTIES if seg.find(c) >= 0]
+            seg = seg[:min(cuts)] if cuts else seg
+            if STOP in seg or "停止上班" in seg.replace("及", ""):
+                today = any(k in seg for k in TODAY_STOP)
+                tom = any(k in seg for k in TOMORROW_STOP)
+                if not today and not tom and not re.search(r"今天|今日|明天|明日", seg):
+                    today = True
+                return today, tom, seg[:160]
+            i = text.find(w, i + 1)
+    return False, False, ""
+
+
+def _weekday(dt):
+    return datetime.strptime(dt, "%Y-%m-%d").weekday() < 5
+
+
+def _sched_drop(dt, name):
+    """撤回一列（只撤本支自己加的颱風列）。→ 有沒有撤。"""
+    rows = _sched_rows()
+    if dt not in rows or rows[dt][1] != name:
+        return False
+    del rows[dt]
+    with io.open(SCHED_CSV, "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["date", "name", "note", "asof"])
+        for k in sorted(rows):
+            w.writerow(rows[k])
+    return True
+
+
 def taipei_stopped(html):
     """台北市那一列有沒有「停止上班」。→ (是不是, 命中的原文片段)。
 
@@ -129,7 +190,7 @@ def main():
         return rl.finish()
 
     pd = page_date(html)
-    hit, seg = taipei_stopped(html)
+    hit, hit_tom, seg = taipei_days(html)
     rl.info("頁面", f"{len(html):,} bytes｜頁面自己的日期 {pd or '（抓不到）'}")
 
     if pd != today:
@@ -153,6 +214,26 @@ def main():
 
     _schedule(rl, today)
     _append(today, verdict, "1" if hit else "0", pd or "", URL, now)
+    # ⭐ 颱風休市寫進 holiday_schedule.csv（下單 T+2、外推交易日、預期資料日都讀這張）
+    try:
+        for dt, nm, note in KNOWN_CLOSURES:
+            _sched_merge([[dt, nm, note]], today)
+        tomorrow = (datetime.strptime(today, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        if pd == today:
+            note = "市場無交易：臺北市天然災害停止上班，台股全日休市（人事行政總處公告）"
+            if hit and _weekday(today):
+                _sched_merge([[today, TYPHOON_NAME, note]], today)
+                rl.info("颱風休市", f"⭐ {today} 寫進開休市行事曆")
+            elif not hit and _sched_drop(today, TYPHOON_NAME):
+                rl.info("颱風休市", f"⚠ {today} 前一晚公告停班、今天頁面沒有 ⇒ 從行事曆撤回")
+            if hit_tom:
+                _append(tomorrow, "closed", "1", pd, URL + "#明天", now)
+                if _weekday(tomorrow):
+                    _sched_merge([[tomorrow, TYPHOON_NAME, note + "；前一晚公告"]], today)
+                rl.info("颱風休市", f"⭐ 明天 {tomorrow} 已公告停止上班 ⇒ 標 closed" +
+                        ("、寫進行事曆" if _weekday(tomorrow) else "（週末，不寫行事曆）"))
+    except OSError as ex:                                        # noqa: BLE001
+        rl.info("颱風休市", f"✗ 寫行事曆失敗：{ex}")
     # ⛔ 這裡**只檢查日期對不對得上**，不檢查「今天是不是休市」——
     #   後者沒有獨立判準可以驗，硬要驗就變成拿自己的產出驗自己。
     # ⚠ 已知會紅的一種形狀：daily.yml 一天跑兩班（台北 19:0x 與 **00:1x**），
