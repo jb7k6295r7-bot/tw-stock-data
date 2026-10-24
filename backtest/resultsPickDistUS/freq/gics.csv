@@ -1,0 +1,49 @@
+﻿臂,GICS sector,主格事件,月數
+甲 A＋B,Communication Services,18,14
+甲 A＋B,Consumer Discretionary,95,24
+甲 A＋B,Consumer Staples,11,9
+甲 A＋B,Energy,32,14
+甲 A＋B,Financials,62,15
+甲 A＋B,Health Care,45,21
+甲 A＋B,Industrials,58,16
+甲 A＋B,Information Technology,81,20
+甲 A＋B,Materials,38,15
+甲 A＋B,Real Estate,19,6
+甲 A＋B,Utilities,2,2
+甲 A＋B,無GICS,4,4
+乙 A＋B＋轉強,Communication Services,10,9
+乙 A＋B＋轉強,Consumer Discretionary,64,18
+乙 A＋B＋轉強,Consumer Staples,5,5
+乙 A＋B＋轉強,Energy,10,7
+乙 A＋B＋轉強,Financials,18,12
+乙 A＋B＋轉強,Health Care,27,17
+乙 A＋B＋轉強,Industrials,31,15
+乙 A＋B＋轉強,Information Technology,46,25
+乙 A＋B＋轉強,Materials,15,8
+乙 A＋B＋轉強,Real Estate,10,6
+乙 A＋B＋轉強,Utilities,1,1
+乙 A＋B＋轉強,無GICS,2,2
+對照一 B 且非 A,Communication Services,63,22
+對照一 B 且非 A,Consumer Discretionary,202,33
+對照一 B 且非 A,Consumer Staples,82,26
+對照一 B 且非 A,Energy,58,13
+對照一 B 且非 A,Financials,233,36
+對照一 B 且非 A,Health Care,175,39
+對照一 B 且非 A,Industrials,237,39
+對照一 B 且非 A,Information Technology,210,37
+對照一 B 且非 A,Materials,94,26
+對照一 B 且非 A,Real Estate,121,25
+對照一 B 且非 A,Utilities,82,19
+對照一 B 且非 A,無GICS,16,11
+對照二 全母體,Communication Services,2008,58
+對照二 全母體,Consumer Discretionary,6821,58
+對照二 全母體,Consumer Staples,2872,58
+對照二 全母體,Energy,2168,58
+對照二 全母體,Financials,7329,58
+對照二 全母體,Health Care,5709,58
+對照二 全母體,Industrials,7751,58
+對照二 全母體,Information Technology,6911,58
+對照二 全母體,Materials,3139,58
+對照二 全母體,Real Estate,3652,58
+對照二 全母體,Utilities,2514,58
+對照二 全母體,無GICS,1001,57
