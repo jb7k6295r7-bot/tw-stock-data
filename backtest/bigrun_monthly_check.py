@@ -605,28 +605,45 @@ def part_sp3():
 
     def notify(rows, asof, now, **kw):
         return BM.sp_notify(rows, cal, T(asof), H, closes, cfg, nm, T(now), "f" * 40, **kw)
-    exp = ["  小部位：4510 高鋒 新候選 ⇒ 10/27（二）開盤買 1 份（約 500 股）", "  小部位：6609 瀧澤科 新候選 ⇒ 10/27（二）開盤買 1 份（約 400 股）",
-           "  小部位：8936 國統 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,000 股）", "  小部位：3376 新日興 新候選 ⇒ 10/27（二）開盤買 1 份（約 800 股）"]
-    rec("sp3", "SP_CANDS（seq462／466 最終版）：8 檔、＋4510 6609 8936 3376 起點 10/27；−2002 −1101 −2014；缺貨型只剩 1305、1312；新需求型 3376；固定句 8 檔",
-        list(BM.SP_CANDS) == ["1503", "1513", "1305", "1312", "4510", "6609", "8936", "3376"] and all(BM.SP_CANDS[x] == "2026-10-27" for x in ("4510", "6609", "8936", "3376"))
-        and not {"2002", "1101", "2014"} & set(BM.SP_CANDS) and BM.SP_SHORTAGE == ["1305", "1312"] and BM.SP_NEWDEMAND == ["3376"]
-        and BM.SP_FIX.startswith("台股 8 檔（10/22 四檔、10/27 四檔）") and set(BM.SP_PPI) == {"1305", "1312"}, BM.SP_FIX)
-    rec("sp3", "進場時已轉強標記：1312、4510、6609、3376（8936 國統沒有）", set(BM.SP_ENTRY_UP) == {"1312", "4510", "6609", "3376"}, "")
+    exp = ["  小部位：8936 國統 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,000 股）"]
+    rec("sp3", "SP_CANDS（10/25 使用者指示後）：5 檔、10/27 只買 8936；−2002 −1101 −2014 −4510 −6609、3376 延後；缺貨型 1305、1312；固定句 5 檔",
+        list(BM.SP_CANDS) == ["1503", "1513", "1305", "1312", "8936"] and BM.SP_CANDS["8936"] == "2026-10-27"
+        and not {"2002", "1101", "2014", "4510", "6609", "3376"} & set(BM.SP_CANDS) and BM.SP_SHORTAGE == ["1305", "1312"] and BM.SP_NEWDEMAND == ["3376"]
+        and BM.SP_FIX.startswith("台股 5 檔（10/22 四檔、10/27 一檔") and set(BM.SP_PPI) == {"1305", "1312"}, BM.SP_FIX)
+    rec("sp3", "進場時已轉強標記：只剩 1312（3376 暫存 DORMANT）", set(BM.SP_ENTRY_UP) == {"1312"} and "3376" in BM.SP_ENTRY_UP_DORMANT, "")
+    us = BM.user_sell_load()
+    rec("sp3", "user_sell.csv：1305、1312 預定 2026-10-27 開盤賣（往前看判準不過，你 10/25 同意）",
+        sorted(us) == ["1305", "1312"] and all(v[0] == T("2026-10-27") and "10/25 同意" in v[1] for v in us.values()), str(us))
     n0 = notify(base, "2026-10-22", "2026-10-24 20:00")
     n0b = notify(base, "2026-10-22", "2026-10-26 06:40")
     rec("sp3", "前一晚＝起點前一個日曆日（10/26）：10/24 晚、10/26 早上都不出", n0 == [] and n0b == [], str(n0 + n0b))
     n1 = notify(base, "2026-10-22", "2026-10-26 20:00")
-    rec("sp3", "10/26 晚 20:00（資料日仍 10/22）⇒ 出 4 行新候選（10/27（二）開盤、股數＝20000÷未還原收盤取整），掛在 10/22 那份名單",
+    rec("sp3", "10/26 晚 20:00（資料日仍 10/22）⇒ 出 1 行新候選（10/27（二）開盤、股數＝20000÷未還原收盤取整），掛在 10/22 那份名單",
         [r["judge_detail"] for r in n1] == exp and all(r["event"] == "新候選通知" and r["report_asof"] == "2026-10-22" for r in n1), str([r["judge_detail"] for r in n1]))
     R = base + n1
     n2 = notify(R, "2026-10-22", "2026-10-26 23:30")
-    rec("sp3", "只出一晚：已記 ⇒ 不再記；10/22 名單重產原樣補回 4 行", n2 == [] and BM.sp_event_lines(R, T("2026-10-22")) == exp, "")
+    rec("sp3", "只出一晚：已記 ⇒ 不再記；10/22 名單重產原樣補回", n2 == [] and BM.sp_event_lines(R, T("2026-10-22")) == exp, "")
+    # 使用者指示賣出（產業 seq17／19／20）
+    usx = {"1305": (T("2026-10-27"), "往前看判準不過，你 10/25 同意", "產業 seq17")}
+    s0 = notify(base, "2026-10-22", "2026-10-26 06:40", usell=usx)
+    s1 = notify(base, "2026-10-22", "2026-10-26 20:00", usell=usx)
+    s2 = notify(base + s1, "2026-10-22", "2026-10-26 23:00", usell=usx)
+    rec("sp3", "（指示賣出）10/26 早不出；10/26 晚出「1305 華夏 ⇒ 10/27（二）開盤賣（往前看判準不過，你 10/25 同意）」只一次（另 8936 新候選）",
+        [r["judge_detail"] for r in s0] == [] and [r["judge_detail"] for r in s1 if r["stock_id"] == "1305"] == ["  小部位：1305 華夏 ⇒ 10/27（二）開盤賣（往前看判準不過，你 10/25 同意）"]
+        and [r for r in s2 if r["stock_id"] == "1305"] == [], str([r["judge_detail"] for r in s1]))
+    v27 = BM.sp_update(base, cal, T("2026-10-27"), Px(), [], nm, "now", "f" * 40, usell=usx)
+    sl = [r for r in v27 if r["stock_id"] == "1305"]
+    jx = BM.sp_update(base + v27, cal, T("2026-11-12"), Px(), [("2026-11", T("2026-11-12"), {"1305": {"up": True, "up_prev": False, "judged": True, "det": "d", "det_prev": "dp"}})],
+                      nm, "now", "f" * 40, usell=usx)
+    rec("sp3", "（指示賣出）10/27 開盤記「使用者指示賣出」−1 份、status 指示賣出；之後月報不再判、不加碼",
+        [(r["event"], r["trade_date"], r["units"], r["status"]) for r in sl] == [("使用者指示賣出", "2026-10-27", "-1", "指示賣出")]
+        and "不算規則本身的放棄" in sl[0]["note"] and [r for r in jx if r["stock_id"] == "1305"] == [], str(sl))
     n3 = notify(base, "2026-10-22", "2026-10-26 23:30")
     n4 = notify(base, "2026-10-27", "2026-10-27 00:30")
     rec("sp3", "10/26 20:00 沒跑到 ⇒ 當晚之後第一次執行補出；10/27（起點當天）起不出", [r["judge_detail"] for r in n3] == exp and n4 == [], "")
     r27 = BM.sp_update(base, cal, T("2026-10-27"), Px(), [], nm, "now", "f" * 40)
-    rec("sp3", "10/27 sp_update 補記 4 檔起點各 1 份＋4510、6609、3376「進場時已轉強」標記",
-        sorted((r["stock_id"], r["event"]) for r in r27) == sorted([(x, "起點買進") for x in ("4510", "6609", "8936", "3376")] + [(x, "標記") for x in ("4510", "6609", "3376")]), "")
+    rec("sp3", "10/27 sp_update 補記 8936 起點 1 份（無標記）",
+        sorted((r["stock_id"], r["event"]) for r in r27) == [("8936", "起點買進")], str([(r["stock_id"], r["event"]) for r in r27]))
     # 250／625 日提醒（缺貨型；附三項描述）
     cf = dict({c: "" for c in BM.SP_COLS}, stock_id="1305", name="華夏", event="月報判定", judge="轉強", report_key="2026-11", report_asof="2026-11-12")
     cf2 = dict(cf, stock_id="1503", name="士電")                 # 1503 不是缺貨型 ⇒ 不提醒
@@ -641,7 +658,10 @@ def part_sp3():
         m249 == [] and [r["judge_detail"] for r in m250] == ["  小部位：1305 華夏 確認後已滿 250 個交易日 ⇒ 續抱或賣？（你決定）｜描述"] and m251 == []
         and [r["judge_detail"] for r in m625] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）｜描述"]
         and [r["judge_detail"] for r in mboth] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"], str([r["judge_detail"] for r in m250 + m625 + mboth]))
-    # 新需求型 3376：燈2
+    # 新需求型 3376：燈2（機制測試：暫時把 4510、3376 放回候選，測完還原）
+    oc, ocodes = dict(BM.SP_CANDS), list(BM.SP_CODES)
+    BM.SP_CANDS.update({"4510": "2026-10-27", "3376": "2026-10-27"}); BM.SP_CODES[:] = list(BM.SP_CANDS)
+    r27 = BM.sp_update(base, cal, T("2026-10-27"), Px(), [], nm, "now", "f" * 40)
     J = lambda up: {"3376": {"up": up, "up_prev": False, "judged": True, "det": "d", "det_prev": "dp"},     # noqa: E731
                     "4510": {"up": up, "up_prev": False, "judged": True, "det": "d", "det_prev": "dp"}}
     R27 = base + r27
@@ -669,6 +689,7 @@ def part_sp3():
         len(j3) == 12 and all(r["judge"] == "燈2未亮" for r in j3) and "放棄判定" in j3[-1]["note"]
         and "  小部位：3376 新日興 第 12 份月報燈2 仍未亮 ⇒ 明天開盤賣" in BM.sp_events_report(j3, closes, cfg)
         and any(r["stock_id"] == "3376" and r["event"] == BM.SELL_EV for r in sell), j3[-1]["note"] if j3 else "")
+    BM.SP_CANDS.clear(); BM.SP_CANDS.update(oc); BM.SP_CODES[:] = ocodes
     # 報價代理提醒：10/23 資料庫 PPI 到庫後開（缺鍵／false 仍不出）
     s = pd.Series([100.0, 99.0, 98.0, 97.0], index=["2027-01", "2027-02", "2027-03", "2027-04"])
     rec("sp3", "報價提醒：設定檔已開「小部位_報價提醒」（回測線 10/23 改）；缺鍵 ⇒ 不出", BM.sp_cfg().get("小部位_報價提醒") is True

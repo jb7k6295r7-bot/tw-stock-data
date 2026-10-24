@@ -63,6 +63,10 @@ COLS = ["seq", "ticker", "name", "event", "trade_date", "units", "status", "judg
         "report_n", "judge", "judge_detail", "note", "recorded_at", "data_commit"]
 BUY_EV = ("起點買進", "轉強加碼")
 SELL_EV = "放棄賣出"
+USER_SELL_EV = "使用者指示賣出"                 # 產業 seq17／19／20：往前看判準不過 ⇒ 使用者 10/25 同意賣（⛔ 不算規則本身的放棄）
+SELL_EVS = (SELL_EV, USER_SELL_EV)
+USER_SELL = {"ETN": ("2026-10-26", "往前看判準不過，你 10/25 同意",
+                     "產業 seq17／seq19／seq20（使用者 10/25 00:00「已經買了的如果沒過就跟我說賣掉」、00:23「可以但賣出要跟我說」）")}   # 代號：(預定美股開盤賣出日, 理由, 出處)
 JUDGE_EV = ("月底判定", "補判（資料晚到）")
 NOJUDGE = "不判（當月無新季報）"
 WD = "一二三四五六日"
@@ -312,7 +316,7 @@ def step(rows, D, cal, PX, REV, commit, now, fills):
             if me < S:
                 continue
             js, done, judged, n = state()
-            if done:
+            if done or mine(t, SELL_EVS):
                 break
             if any(r["judge_date"] == str(me.date()) for r in js):
                 continue
@@ -339,9 +343,21 @@ def step(rows, D, cal, PX, REV, commit, now, fills):
             if len(nd):
                 fill(t, "轉強加碼", nd[0], ADD_UNITS, judge_date=cf["judge_date"], report_q=cf["report_q"],
                      note=f"判定轉強（{cf['judge_date']}）⇒ 次一交易日開盤加 {ADD_UNITS} 份（只加一次）")
+        # ④' 使用者指示賣出：預定日（或之後第一個有 K 棒的交易日）開盤賣全部持股
+        if t in USER_SELL and not mine(t, SELL_EVS):
+            sd0, why, src = USER_SELL[t]
+            held = sum(int(r["units"] or 0) for r in mine(t, BUY_EV) if r["status"] == "成交")
+            skipped = []
+            for d in cal[cal >= pd.Timestamp(sd0)]:
+                if d not in px.index:
+                    skipped.append(str(d.date())); continue
+                r = add(t, USER_SELL_EV, trade_date=d.date(), units=-held, status="指示賣出" if held else "指示賣出（無持股）",
+                        note=f"{why}（{src}）⛔ 不算規則本身的放棄" + (f"（順延：{'、'.join(skipped)} 無 K 棒）" if skipped else ""))
+                nfill[r["seq"]] = (float(px.at[d, "open"]), str(d.date()), t, USER_SELL_EV)
+                break
         # ④ 放棄賣出
         ab = next((r for r in mine(t, JUDGE_EV) if "放棄判定" in r["note"]), None)
-        if ab and not mine(t, SELL_EV):
+        if ab and not mine(t, SELL_EVS):
             held = sum(int(r["units"] or 0) for r in mine(t, BUY_EV) if r["status"] == "成交")
             days = cal[cal > pd.Timestamp(ab["judge_date"])]
             skipped = []
@@ -366,6 +382,10 @@ def line_events(rows, D, now):
                 out.append(f"美股小部位：{r['ticker']} 轉強 ⇒ 明天開盤加 {ADD_UNITS} 份")
             elif "放棄判定" in r["note"]:
                 out.append(f"美股小部位：{r['ticker']} 第 {N_REPORTS} 份新季報仍未轉強 ⇒ 明天開盤賣")
+    for t, (sd0, why, _src) in USER_SELL.items():                             # 指示賣出：預定日當天台北 21:00 前（美股開盤前）的執行才出
+        sd = pd.Timestamp(sd0)
+        if t in CANDS and not any(r["ticker"] == t and r["event"] in SELL_EVS for r in rows) and next_td_pred(D) <= sd and now < sd + pd.Timedelta(hours=21):
+            out.append(f"美股小部位：{t} ⇒ {sd.month}/{sd.day}（{WD[sd.weekday()]}）美股開盤賣（台北當晚；{why}）")
     for t, c in CANDS.items():
         S = pd.Timestamp(c["start"])
         if any(r["ticker"] == t and r["event"] == "起點買進" for r in rows):
@@ -382,7 +402,7 @@ def value(rows, D, PX, tr):
     for t in CANDS:
         px = PX[t][PX[t].index <= D]
         lots = [r for r in rows if r["ticker"] == t and r["event"] in BUY_EV and r["status"] == "成交" and pd.Timestamp(r["trade_date"]) <= D]
-        sell = next((r for r in rows if r["ticker"] == t and r["event"] == SELL_EV and r["status"] == "未確認賣出" and pd.Timestamp(r["trade_date"]) <= D), None)
+        sell = next((r for r in rows if r["ticker"] == t and r["event"] in SELL_EVS and r["status"] in ("未確認賣出", "指示賣出") and pd.Timestamp(r["trade_date"]) <= D), None)
         u = sum(int(r["units"]) for r in lots)
         if not u:
             per[t] = {"份數": 0}; continue

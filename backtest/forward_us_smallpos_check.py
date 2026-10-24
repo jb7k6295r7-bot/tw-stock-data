@@ -115,6 +115,8 @@ def strip(rows):
 
 def main():
     T = tempfile.mkdtemp(prefix="smallpos_chk_")
+    real_us = dict(F.USER_SELL)
+    F.USER_SELL.clear()                              # 機制情境不含使用者指示賣出（最後另測）
     try:
         # ── 情境 A：穩定成長（永不轉強 ⇒ 放棄）
         rA = os.path.join(T, "A"); fA = os.path.join(T, "fwdA"); pA = os.path.join(T, "privA")
@@ -218,6 +220,26 @@ def main():
            {dt.date(2026, 11, 26), dt.date(2026, 12, 25)} <= F.nyse_holidays(2026) and {dt.date(2027, 7, 5), dt.date(2027, 12, 24)} <= F.nyse_holidays(2027))
     finally:
         shutil.rmtree(T, ignore_errors=True)
+    n = sum(1 for _, c, _ in RES if c)
+    # ── 情境 U：使用者指示賣出（產業 seq17／19／20）
+    T2 = tempfile.mkdtemp(prefix="smallpos_chkU_")
+    try:
+        F.USER_SELL.clear(); F.USER_SELL.update({"ETN": ("2026-10-26", "往前看判準不過，你 10/25 同意", "產業 seq17")})
+        rU = os.path.join(T2, "U"); fU = os.path.join(T2, "fwdU"); pU = os.path.join(T2, "privU")
+        build(rU, "flat")
+        nightly(rU, fU, pU, "2026-10-23", "2026-10-23")
+        oU = F.run(F.Src(rU), fU, pU, asof="2026-10-23", now=pd.Timestamp("2026-10-25 20:00"), quiet=True)
+        ok("TU1 指示賣出前一晚事件行「ETN ⇒ 10/26（一）美股開盤賣（台北當晚；…）」", oU["ev"] == ["美股小部位：ETN ⇒ 10/26（一）美股開盤賣（台北當晚；往前看判準不過，你 10/25 同意）"], str(oU["ev"]))
+        nightly(rU, fU, pU, "2026-10-24", "2027-09-10")
+        BU = book(fU)
+        su = [r for r in BU if r["event"] == F.USER_SELL_EV]
+        ok("TU2 10/26 開盤記「使用者指示賣出」−1 份、之後不再判定、不放棄", len(su) == 1 and su[0]["trade_date"] == "2026-10-26" and su[0]["units"] == "-1"
+           and su[0]["status"] == "指示賣出" and not [r for r in BU if r["event"] in F.JUDGE_EV and r["judge"] in ("轉強", "未轉強")]
+           and not [r for r in BU if r["event"] == F.SELL_EV], str([(r["event"], r["trade_date"]) for r in BU][-4:]))
+    finally:
+        shutil.rmtree(T2, ignore_errors=True)
+        F.USER_SELL.clear(); F.USER_SELL.update(real_us)
+    ok("TU3 實設定：ETN 2026-10-26 指示賣出", F.USER_SELL.get("ETN", ("",))[0] == "2026-10-26")
     n = sum(1 for _, c, _ in RES if c)
     print(f"自測：{n}/{len(RES)} 過")
     raise SystemExit(0 if n == len(RES) else 1)

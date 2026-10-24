@@ -93,7 +93,7 @@ GROUPS = [
     ("H", "早期候選", [("", "3481 1795 4123 6550")]),                              # 台股 seq544 新增；欄位同 A～E
     ("I", "鋼鐵（先盯）", [("", "2014 2023")]),                                      # 台股 seq568 §三、產業 seq10：中鴻、燁輝（中鋼在 D）
     ("J", "先盯組（只記轉強）", [("造紙", "1909 1907 1905"), ("國防造船", "2208 6753"), ("AR 眼鏡", "3504"), ("都更", "2548 2520")]),   # 台股 seq568 §三
-    ("K", "已漲過（只看警訊）", [("BBU", "6781 3211"), ("", "1710 1718")]),         # 台股 seq568 §三：BBU、東聯、中纖；欄位同 F（①②③）
+    ("K", "已漲過（只看警訊）", [("BBU", "6781 3211 4931"), ("", "1710 1718")]),   # 4931 新盛力：產業 seq12         # 台股 seq568 §三：BBU、東聯、中纖；欄位同 F（①②③）
 ]
 WATCH = {"3491": 390_000}          # 千元：單月是否 ≥ 3.9 億（只標）
 F_GROUP, F_DROP = "F", -0.30       # F 組另標：營收月增 ≤ 0 連 2 月、股價距一年高點 ≤ −30%（只標、不判）
@@ -751,8 +751,6 @@ def month_report(asof, sha, ac, act, H, L, ldiag, corr, G, cal, key):
             f3 = [r["stock_id"] for _, r in gd.iterrows() if T(r.get("flag_yoy3dn"))]
             md += [f"- ① 營收月增 ≤ 0 連 2 月：{'、'.join(f1) or '無'}", f"- ② 股價距一年高點 ≤ −30%：{'、'.join(f2) or '無'}",
                    f"- ③ 營收年增從高點連 3 月下降：{'、'.join(f3) or '無'}", "- ①②③ 只標、不判。"]
-        if g == "K":
-            md.append("- ⚠ BBU 台股寫「三檔」，本表只有 6781、3211（原 A 組 BBU）；第三檔代號待產業補。")
         if g == PAPER_PPI[0]:
             md.append(f"- 造紙報價代理（美國 PPI {PAPER_PPI[2]}，私有庫只出判定）：{paper_ppi_line(asof)}（描述；美國物價代理，不是亞洲紙價）")
         nts = [f"{r['stock_id']}：{r['notes']}" for _, r in gd.iterrows() if r["notes"]]
@@ -914,13 +912,11 @@ def quarter_report(asof, sha, ac, act, FD, key, G_nm):
 # ═════════════ 前瞻紀錄：長線候選確認前先小部位 seq3 ═════════════
 SP_TAG = "前瞻紀錄「長線候選確認前先小部位」seq8（446b15cd5b6be0bf；裁定 seq466 核，取代 seq5～7；候選變更依裁定 seq462、seq466 急件）"
 SP_CANDS = {"1503": "2026-10-22", "1513": "2026-10-22", "1305": "2026-10-22", "1312": "2026-10-22",   # 代號：起點（核後下一交易日開盤）；增減照台股信改這裡
-            "4510": "2026-10-27", "6609": "2026-10-27", "8936": "2026-10-27", "3376": "2026-10-27"}    # seq6／seq462／seq466（10/23 颱風休市、10/26 補假 ⇒ 10/27）；2002、1101、2014 已刪（未買）
+            "8936": "2026-10-27"}    # seq6／seq462／seq466（10/23 颱風休市、10/26 補假 ⇒ 10/27）；2002、1101、2014 已刪；4510、6609 刪（產業 seq15、使用者 10/24「取消」）；3376 延到 11/13 再判（產業 seq20、使用者 10/25）
 SP_CODES = list(SP_CANDS)
 _UP27 = "（起點前 2026-09 營收已達轉強定義：近 3 月年增比前 12 月高 5 點以上；回測線 10/24 照登錄定義判）⇒ 檢查時另標、不當「確認前」樣本"
-SP_ENTRY_UP = {"1312": "進場時已轉強（起點前 2026-09 營收已轉強；裁定 seq446 §四）⇒ 檢查時另標、不當「確認前」樣本；加碼仍照 2026-11 月報起判",
-               "4510": "進場時已轉強" + _UP27 + "；11 月月報仍轉強即隔天加 2 份",
-               "6609": "進場時已轉強" + _UP27 + "；11 月月報仍轉強即隔天加 2 份",
-               "3376": "進場時已轉強" + _UP27 + "；⚠ 新需求型加碼看燈2、不看轉強（seq8）"}
+SP_ENTRY_UP = {"1312": "進場時已轉強（起點前 2026-09 營收已轉強；裁定 seq446 §四）⇒ 檢查時另標、不當「確認前」樣本；加碼仍照 2026-11 月報起判"}
+SP_ENTRY_UP_DORMANT = {"3376": "進場時已轉強" + _UP27 + "；⚠ 新需求型加碼看燈2、不看轉強（seq8）"}   # 3376 若 11/13 重判過再加回（屆時重判進場時狀態）
 SP_SHORTAGE = ["1305", "1312"]                   # 缺貨型（seq8：中鋼、台泥、中鴻已刪）兩個只問不賣提醒
 SP_NEWDEMAND = ["3376"]                          # 新需求型（seq8）：加碼改「燈2 亮」（產業判、寄信）⇒ 收信後下一交易日開盤加 2 份；第 12 份月報前燈2 都沒亮 ⇒ 隔天開盤賣
 SP_REMIND_TDS = (250, 625)                       # seq6：缺貨型確認後第 250、625 個交易日各問一次（附三項描述）
@@ -929,12 +925,15 @@ CFG_PPI = "小部位_報價提醒"                      # ① 報價代理連 3 
 SP_PPI = {"1305": ("WPU066", "塑膠"), "1312": ("WPU066", "塑膠")}   # 美國 PPI 代理（缺貨型二輪登錄 §三）；鋼鐵 WPU1017、水泥 WPU1322 隨中鋼、台泥、中鴻刪除停用
 US_REPO = os.path.expanduser("~/us-stock-data")  # ⛔ 私有庫：只讀判定、不把序列寫進公開輸出
 SP_N_REPORTS, SP_ADD, SP_COST = 12, 2, 0.00585
-SP_FIX = "台股 8 檔（10/22 四檔、10/27 四檔）、看過新聞才挑、只是前瞻紀錄"
+SP_FIX = "台股 5 檔（10/22 四檔、10/27 一檔；華夏、國喬依使用者 10/25 指示 10/27 開盤賣）、看過新聞才挑、只是前瞻紀錄"
 WD = "一二三四五六日"
 SP_COLS = ["seq", "stock_id", "name", "event", "trade_date", "price_raw", "units", "status", "report_key", "report_asof",
            "judge", "judge_detail", "note", "recorded_at", "sha"]
 BUY_EV = ("起點買進", "轉強加碼")
 SELL_EV = "放棄賣出"
+USER_SELL_EV = "使用者指示賣出"                 # 產業 seq17／19／20：往前看判準不過 ⇒ 使用者同意賣（⛔ 不算規則本身的放棄）；照 user_sell.csv
+SELL_EVS = (SELL_EV, USER_SELL_EV)
+SELL_OK = ("未確認賣出", "指示賣出")
 SP_FIRST_KEY = "2026-11"                       # 起點後第一份月報（10 月營收）起判；9 月樣本（2026-10 鍵）不算（台股 seq547 ②）
 CFG = os.path.join(REPO, "backtest", "forward", "設定_每份金額.json")
 CFG_KEY, CFG_AMT = "小部位_LINE", "小部位"     # ⛔ 本模組不改設定檔；「小部位」＝每份金額（只換算 LINE 股數，seq447 不入登錄）
@@ -1033,7 +1032,7 @@ def taipei_now():
     return NOW_OVERRIDE if NOW_OVERRIDE is not None else pd.Timestamp.now(tz=TZ).tz_localize(None)
 
 
-def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=None, desc=None):
+def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=None, desc=None, usell=None):
     """小部位通知列（寫進 smallpos.csv：只記一次、已寫凍結；LINE 行原文存在 judge_detail，同資料日名單重產時原樣補回）：
     ・新候選（seq447 §二、seq458 §二、seq461「10/26 晚推」）：起點前一個日曆日（＝前一晚；10/23 颱風休市不在休市表，改用日曆日）台北 14:00 後、或之後到起點前的第一次執行 ⇒
       「  小部位：代號 名稱 新候選 ⇒ 10/27（二）開盤買 1 份（約 N 股）」；以「台北今天」判，不看資料日（資料日落後也照出、起點後不再出）。
@@ -1050,6 +1049,14 @@ def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=
                  judge_detail=line, note=note, recorded_at=str(now)[:19], sha=sha[:10])
         new.append(r)
     today = now.normalize()
+    sold = lambda sid: any(r["stock_id"] == sid and r["event"] in SELL_EVS for r in allr())   # noqa: E731
+    for sid, (sd, why, src) in (usell or {}).items():                   # 使用者指示賣出：預定日前一晚（日曆日）14:00 後第一次執行，只一次
+        if sid not in SP_CODES or sold(sid) or not today < sd or any(r["stock_id"] == sid and r["event"] == "提醒" and "指示賣出" in r["note"] for r in allr()):
+            continue
+        fire = sd - pd.Timedelta(days=1)
+        if (today == fire and now.hour >= 14) or fire < today:
+            add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} ⇒ {sd.month}/{sd.day}（{WD[sd.weekday()]}）開盤賣（{why}）",
+                f"指示賣出 {sd.date()} 開盤（{src}）")
     for sid, st in SP_CANDS.items():
         st = pd.Timestamp(st)
         if any(r["stock_id"] == sid and r["event"] in ("起點買進", "新候選通知") for r in allr()) or not today < st:
@@ -1061,7 +1068,7 @@ def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=
                 f"起點 {st.date()} 開盤；台北 {now:%Y-%m-%d %H:%M} 推（資料日 {asof.date()}）")
     for sid in SP_SHORTAGE:
         cf = next((r for r in allr() if r["stock_id"] == sid and r["event"] == "月報判定" and r["judge"] == "轉強"), None)
-        if cf is None:
+        if cf is None or sold(sid):
             continue
         n_td = int(((cal > pd.Timestamp(cf["report_asof"])) & (cal <= asof)).sum())
         for nn in SP_REMIND_TDS:                                           # 只出最大的已到者（兩個一起到 ⇒ 只出 625）；各只一次
@@ -1083,6 +1090,8 @@ def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=
         add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} 燈2 亮 ⇒ {nd.month}/{nd.day}（{WD[nd.weekday()]}）開盤加 {SP_ADD} 份{_sh(n)}",
             f"燈2 {d.date()} 亮（{mail}；{url}）；收信後下一交易日開盤加碼（seq8）")
     for sid, line, st0, last, k in sp_ppi_hits(asof, names, cfg, ppi):        # seq5 ①：同一段下跌（段起月相同）只推一次
+        if sold(sid):
+            continue
         tag = f"報價代理 {SP_PPI[sid][0]}（{SP_PPI[sid][1]}）段起 {st0}"
         if any(r["stock_id"] == sid and r["event"] == "提醒" and tag in r["note"] for r in allr()):
             continue
@@ -1231,7 +1240,7 @@ def _locked(b, up):
     return abs(b["o"] - lp) < 1e-6 and abs((b["l"] if up else b["h"]) - b["o"]) < 1e-6
 
 
-def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None):
+def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None, usell=None):
     """回『要新增』的列（⛔ 不改舊列＝已寫凍結）。judgments ＝ [(月報鍵, 月報資料日, {代號: {up, up_prev, judged, det, det_prev}})]。
     第 i 份月報 ＝ 該檔第一份判定月報起算的月數 ＋ 1；第 12 份仍未轉強 ⇒ 放棄判定；當期營收未公布 ⇒ 記「未判」、下一份補判上一期
     （第 12 份未判 ⇒ 第 13 份只補判上一期、以它為放棄判定）。"""
@@ -1260,6 +1269,8 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None):
         return [r for r in allr() if r["stock_id"] == sid and r["event"] == "月報判定"]
     cal = cal[cal <= asof]
     lamp2 = lamp2 if lamp2 is not None else {}
+    usell = usell if usell is not None else {}
+    sold = lambda sid: any(r["stock_id"] == sid and r["event"] in SELL_EVS for r in rows + new)   # noqa: E731
     # ① 起點：核後下一交易日（或之後第一個交易日）開盤 1 份；國喬另標「進場時已轉強」
     for sid, st in SP_CANDS.items():
         d0 = cal[cal >= pd.Timestamp(st)]
@@ -1272,7 +1283,7 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None):
         if key < SP_FIRST_KEY:
             continue
         for sid in SP_CODES:
-            if sid not in J or ra < pd.Timestamp(SP_CANDS[sid]):
+            if sid not in J or ra < pd.Timestamp(SP_CANDS[sid]) or sold(sid):
                 continue
             js = jrows(sid)
             if sid in SP_NEWDEMAND:                                        # seq8：燈2 判、營收只記；不受營收未公布影響
@@ -1327,10 +1338,23 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None):
             if len(nd):
                 buy(sid, "轉強加碼", nd[0], SP_ADD, report_key=cf["report_key"], report_asof=cf["report_asof"],
                     note="月報判定轉強 ⇒ 月報隔天開盤加碼（每檔只加一次）")
+    # ④' 使用者指示賣出（產業 seq17／19／20）：預定日（或之後第一個可賣開盤）開盤賣全部持股；無成交／開盤鎖跌停順延
+    for sid, (sd, why, src) in usell.items():
+        if sid not in SP_CODES or sold(sid):
+            continue
+        held = sum(int(r["units"] or 0) for r in allr() if r["stock_id"] == sid and r["event"] in BUY_EV and r["status"] == "成交")
+        skipped = []
+        for d in cal[cal >= sd]:
+            b = px.bar(sid, d)
+            if b is None or _locked(b, False):
+                skipped.append(f"{d.date()}{'無成交' if b is None else '開盤鎖跌停'}"); continue
+            add(sid, USER_SELL_EV, trade_date=d.date(), price_raw=b["o"], units=-held, status="指示賣出" if held else "指示賣出（無持股）",
+                note=f"{why}（{src}）⛔ 不算規則本身的放棄" + (f"（順延：{'、'.join(skipped)}）" if skipped else ""))
+            break
     # ④ 放棄 ⇒ 放棄判定那份月報隔天開盤賣出（未確認）；無成交／開盤鎖跌停 ⇒ 順延到下一個可賣的交易日
     for sid in SP_CODES:
         ab = next((r for r in jrows(sid) if "放棄判定" in r["note"]), None)
-        if ab is None or has(sid, SELL_EV):
+        if ab is None or sold(sid):
             continue
         held = sum(int(r["units"] or 0) for r in allr() if r["stock_id"] == sid and r["event"] in BUY_EV and r["status"] == "成交")
         days = cal[cal > pd.Timestamp(ab["report_asof"])]
@@ -1355,7 +1379,7 @@ def sp_value(rows, asof, adj_df):
     out = {}; tot_u = 0; tot_r = 0.0; curves = []
     for sid in SP_CODES:
         lots = [r for r in rows if r["stock_id"] == sid and r["event"] in BUY_EV and r["status"] == "成交" and pd.Timestamp(r["trade_date"]) <= asof]
-        sell = [r for r in rows if r["stock_id"] == sid and r["event"] == SELL_EV and r["status"] == "未確認賣出" and pd.Timestamp(r["trade_date"]) <= asof]
+        sell = [r for r in rows if r["stock_id"] == sid and r["event"] in SELL_EVS and r["status"] in SELL_OK and pd.Timestamp(r["trade_date"]) <= asof]
         u = sum(int(r["units"]) for r in lots)
         if not u:
             out[sid] = (0, np.nan); continue
@@ -1427,12 +1451,13 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
           f"- {SP_TAG}｜照規則（等額份數）：核後下一交易日開盤各 1 份；月報判定轉強（近 3 月營收年增 ≥ 前 12 月 ＋5 點，或首次創 24 月新高；每期照判；轉強條件已驗（暫定）：營收轉強驗證 seq2 合格（暫定），中位約 0、確認段輸大盤報酬指數）"
           f"⇒ 月報隔天開盤加 2 份（只加一次）；起點後第 1 份（{SP_FIRST_KEY}）到第 {SP_N_REPORTS} 份月報都沒判轉強 ⇒ 第 {SP_N_REPORTS} 份月報隔天開盤賣出、記「未確認」；"
           f"月報當期營收未公布 ⇒ 該期不判、下一份補判（第 {SP_N_REPORTS} 份未公布 ⇒ 以補判那份為放棄判定、賣出順延到該份隔天開盤）。"
-          "已確認：1503、1513、4510、6609、8936、3376 不設停損、不設天數，持有到使用者另定；缺貨型（1305、1312）照抱、不設停損、不設天數，"
+          "已確認：1503、1513、8936 不設停損、不設天數，持有到使用者另定；缺貨型（1305、1312）照抱、不設停損、不設天數，"
           "另兩個只問不賣的 LINE 提醒：①該業報價代理連 3 個月月增 < 0（美國 PPI 代理：塑膠 WPU066；最新月須在進場後發布，同一段下跌只推一次）"
           "②確認後第 250、625 個交易日各問一次（附：同業擴產／復產、營收年增是否從確認後高點連 3 月下降、股價距確認後最高收盤）。"
           "新需求型 3376：加碼改看燈2（台廠法說第一次上修或量產時程正式定案，產業判、寄信附網址與日期）⇒ 收信後下一交易日開盤加 2 份；第 12 份月報前燈2 都沒亮 ⇒ 隔天開盤賣（seq8；燈2 是新聞判斷、不是回測，依據的 16 段全是贏家）。"
-          "同一共同方向台美合計最多 3 檔（電力 1503、1513、ETN 已滿）。1312、4510、6609、3376 進場時已轉強，檢查時不當「確認前」樣本。"
-          "必附：新日興訂單比重是市場估計、公司未證實。",
+          "同一共同方向台美合計最多 3 檔。1312 進場時已轉強，檢查時不當「確認前」樣本。"
+          "⚠ 10/25 使用者指示（產業 seq15／17／19／20）：4510、6609 取消；3376 延到 11/13 再判；1305、1312 往前看判準不過 ⇒ 10/27 開盤賣（記「使用者指示賣出」，⛔ 不算規則本身的放棄）；"
+          "出場另加「每月重判往前看判準、不過就賣」待台股 seq9／裁定核。",
           "- 報酬：照規則＝還原價（含息）、每份扣成本 0.585%；使用者實際＝成交價（換算還原）、依成交金額加權、同樣扣 0.585%。smallpos.csv／smallpos_user.csv 只追加、已寫凍結。",
           ""]
     if dry:
@@ -1447,12 +1472,12 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
         if cf is None and sid in SP_NEWDEMAND and ad is not None:
             cf = {"report_key": f"燈2 {ad['report_asof']}"}
         ab = next((r for r in js if "放棄判定" in r["note"]), None)
-        sl = next((r for r in R if r["event"] == SELL_EV), None)
+        sl = next((r for r in R if r["event"] in SELL_EVS), None)
         nj = sum(1 for r in js if r["judge"] in ("轉強", "未轉強", "燈2已亮", "燈2未亮"))
         if st is None:
             state = f"起點 {SP_CANDS[sid]} 開盤（尚未到）"
         elif sl is not None:
-            state = "未確認・已賣出" if sl["status"] == "未確認賣出" else sl["status"]
+            state = {"未確認賣出": "未確認・已賣出", "指示賣出": "使用者指示賣出（往前看判準不過）"}.get(sl["status"], sl["status"])
         elif ab is not None:
             state = "未確認・明天開盤賣"
         elif cf is not None:
@@ -1521,7 +1546,17 @@ def sp_paths():
     return os.path.join(FWD, "smallpos.csv"), os.path.join(FWD, "smallpos_user.csv")
 
 
+USER_SELL = os.path.join(FWD, "user_sell.csv")    # 使用者指示賣出（stock_id,sell_date,reason,source）：sell_date＝預定開盤賣出日；前一晚通知、當天開盤記賣出
 LAMP2 = os.path.join(FWD, "lamp2.csv")            # seq8 新需求型燈2：產業分析線每次判燈2 都寄信（附網址、日期）⇒ 回測線照信補一列（stock_id,lit_date,mail,url,note）
+
+
+def user_sell_load(p=None):
+    """{代號: (預定賣出日, 理由, 出處)}；檔不在 ⇒ {}。"""
+    p = p or USER_SELL
+    if not os.path.exists(p):
+        return {}
+    return {r["stock_id"]: (pd.Timestamp(r["sell_date"]), r.get("reason", ""), r.get("source", ""))
+            for r in pd.read_csv(p, dtype=str, keep_default_na=False, encoding="utf-8-sig").to_dict("records")}
 
 
 def lamp2_load(p=None):
@@ -1576,12 +1611,12 @@ def sp_step(a, H, cal, asof, sha, names, judgments, write, now=None):
     p, pu = sp_paths()
     rows = sp_load(p)
     now = now if now is not None else taipei_now()
-    lp = lamp2_load()
-    new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(now)[:19], sha, lamp2=lp)
+    lp = lamp2_load(); us = user_sell_load()
+    new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(now)[:19], sha, lamp2=lp, usell=us)
     closes = {s: raw_close(H, s, asof)[0] for s in SP_CODES}
     cfg = sp_cfg()
     ppi = ppi_loader(asof) if cfg.get(CFG_PPI) else None
-    new += sp_notify(rows + new, cal, asof, H, closes, cfg, names, now, sha, ppi=ppi, lamp2=lp, desc=remind_desc_fn(H, cal, sha))
+    new += sp_notify(rows + new, cal, asof, H, closes, cfg, names, now, sha, ppi=ppi, lamp2=lp, desc=remind_desc_fn(H, cal, sha), usell=us)
     for k, r in enumerate(new):                    # seq 連號
         r["seq"] = str(len(rows) + k + 1)
     if write and new:
@@ -1744,8 +1779,8 @@ def main():
         FWD = a.fwd
     if a.user_add:
         v = [x.strip() for x in a.user_add.split(",")]
-        if len(v) != len(USER_COLS) or v[2] not in (*BUY_EV, SELL_EV) or v[0] not in SP_CANDS:
-            raise SystemExit(f"⛔ --user-add 要 {len(USER_COLS)} 欄 {USER_COLS}，事件 ∈ {(*BUY_EV, SELL_EV)}、代號 ∈ {SP_CODES}")
+        if len(v) != len(USER_COLS) or v[2] not in (*BUY_EV, *SELL_EVS) or v[0] not in SP_CANDS:
+            raise SystemExit(f"⛔ --user-add 要 {len(USER_COLS)} 欄 {USER_COLS}，事件 ∈ {(*BUY_EV, *SELL_EVS)}、代號 ∈ {SP_CODES}")
         pd.Timestamp(v[3]); int(v[4]); float(v[5])
         pu = sp_paths()[1]
         if not os.path.exists(pu):
