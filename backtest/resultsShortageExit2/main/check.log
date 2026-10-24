@@ -1,0 +1,7 @@
+[K1] {'列': 1797, 'events_R列': 1797, '找不到': 0, '結果不同': 0, '最大差': {'R': np.float64(1.7763568394002505e-15), 'd': np.float64(8.881784197001252e-16), 'H': 0, '年化': np.float64(9.974659986866641e-17), '年化差': np.float64(8.881784197001252e-16)}, '過': np.True_}
+[K2] {'自判': {'D1': 'D1 比不賣差（暫定）', 'D2': 'D2 比不賣差（暫定）', 'D3': 'D3 比不賣差（暫定）'}, '項': 15, '過': True}
+[K3] {'ann列': 45, '項': 180, '逐筆H最大差': 0, '過': np.True_}
+[K4] {'探索E1000': 298, '確認E1000': 235, '項': {'早於探索(不入段)_E750': True, '早於探索(不入段)_E1000': True, '早於探索(不入段)_E1250': True, '早於探索(不入段)_主格': True, '探索_E750': True, '探索_E1000': True, '探索_E1250': True, '探索_主格': True, '確認_E750': True, '確認_E1000': True, '確認_E1250': True, '確認_主格': True}, '過': True}
+[K5] {'PPI 非整數值個數': 3018, '疑似': [], '過': True}
+[K6] {'本件': [' M backtest/researchShortageExit2.py', '?? backtest/researchLong3_ann.py', '?? backtest/researchLong3_ann_check.py', '?? backtest/researchShortageExit2_check.py', '?? backtest/researchShortageExit_ann.py', '?? backtest/researchShortageExit_ann_check.py', '?? backtest/resultsLong3/ann/', '?? backtest/resultsShortageExit/main/ann/', '?? backtest/resultsShortageExit2/main/'], '別件同時段（非本件、不計）': [], 'md5 不同(不含本件 researchShortageExit2.py)': [], '說明': 'researchShortageExit2.py 已於 ab323ff470 提交，本件准改（改動見檔頭 2026-10-24 註）', '過': True}
+[全過] True

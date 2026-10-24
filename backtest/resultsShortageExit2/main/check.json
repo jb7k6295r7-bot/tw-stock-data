@@ -1,0 +1,73 @@
+{
+ "K1_逐筆R與d": {
+  "列": 1797,
+  "events_R列": 1797,
+  "找不到": 0,
+  "結果不同": 0,
+  "最大差": {
+   "R": 1.7763568394002505e-15,
+   "d": 8.881784197001252e-16,
+   "H": 0,
+   "年化": 9.974659986866641e-17,
+   "年化差": 8.881784197001252e-16
+  },
+  "過": "True"
+ },
+ "K2_判定3格": {
+  "自判": {
+   "D1": "D1 比不賣差（暫定）",
+   "D2": "D2 比不賣差（暫定）",
+   "D3": "D3 比不賣差（暫定）"
+  },
+  "項": 15,
+  "過": true
+ },
+ "K3_每筆年化": {
+  "ann列": 45,
+  "項": 180,
+  "逐筆H最大差": 0,
+  "過": "True"
+ },
+ "K4_件數守恆": {
+  "探索E1000": 298,
+  "確認E1000": 235,
+  "項": {
+   "早於探索(不入段)_E750": true,
+   "早於探索(不入段)_E1000": true,
+   "早於探索(不入段)_E1250": true,
+   "早於探索(不入段)_主格": true,
+   "探索_E750": true,
+   "探索_E1000": true,
+   "探索_E1250": true,
+   "探索_主格": true,
+   "確認_E750": true,
+   "確認_E1000": true,
+   "確認_E1250": true,
+   "確認_主格": true
+  },
+  "過": true
+ },
+ "K5_私有": {
+  "PPI 非整數值個數": 3018,
+  "疑似": [],
+  "過": true
+ },
+ "K6_工作樹": {
+  "本件": [
+   " M backtest/researchShortageExit2.py",
+   "?? backtest/researchLong3_ann.py",
+   "?? backtest/researchLong3_ann_check.py",
+   "?? backtest/researchShortageExit2_check.py",
+   "?? backtest/researchShortageExit_ann.py",
+   "?? backtest/researchShortageExit_ann_check.py",
+   "?? backtest/resultsLong3/ann/",
+   "?? backtest/resultsShortageExit/main/ann/",
+   "?? backtest/resultsShortageExit2/main/"
+  ],
+  "別件同時段（非本件、不計）": [],
+  "md5 不同(不含本件 researchShortageExit2.py)": [],
+  "說明": "researchShortageExit2.py 已於 ab323ff470 提交，本件准改（改動見檔頭 2026-10-24 註）",
+  "過": true
+ },
+ "全過": true
+}
