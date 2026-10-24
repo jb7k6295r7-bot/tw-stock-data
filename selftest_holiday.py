@@ -88,6 +88,23 @@ def main():
     ck("台北市停班會被抓到", hit2 is True, seg2[:60])
 
     print("[3] ★★ 只有南部放假 ⇒ 台股照開")
+    # ⭐⭐ 2026-10-24：第一批真實颱風樣本（台北市那一列逐字照抄 data/holiday/ 存檔）
+    def _page(row):
+        return ("<html><body><div>115年10月22日</div><table>"
+                "<tr><td>基隆市</td><td>明天停止上班、停止上課。</td></tr>"
+                f"<tr><td>臺北市</td><td>{row}</td></tr>"
+                "<tr><td>新北市</td><td>明天停止上班、停止上課。</td></tr></table></body></html>")
+    t, m, _ = H.taipei_days(_page("明天停止上班、停止上課。"))
+    ck("⛔ 10-22 晚「明天停止上班」⇒ 今天照常、明天停班（舊版把這天判成休市，而那天有成交）",
+       (t, m) == (False, True), str((t, m)))
+    t, m, _ = H.taipei_days(_page("今天停止上班、停止上課。 明天已達停止上班及上課標準。"))
+    ck("10-23「今天停止上班… 明天已達…」⇒ 今天、明天都停班", (t, m) == (True, True), str((t, m)))
+    t, m, _ = H.taipei_days(_page("今天已達停止上班及上課標準。"))
+    ck("10-24「今天已達停止上班…標準」⇒ 今天停班", (t, m) == (True, False), str((t, m)))
+    t, m, _ = H.taipei_days(_page("今天下午01:00起停止上班、停止上課。"))
+    ck("⛔ 半天停班（今天下午…起）⇒ 不判全日休市", (t, m) == (False, False), str((t, m)))
+    t, m, _ = H.taipei_days(_page("照常上班、照常上課。"))
+    ck("台北照常、隔壁縣市停班 ⇒ 不會被隔壁那一列帶走", (t, m) == (False, False), str((t, m)))
     hit3, _ = H.taipei_stopped(SOUTH_ONLY)
     ck("南部放假不會被判成休市", hit3 is False,
        f"整頁「停止上班」{SOUTH_ONLY.count('停止上班')} 次，但沒有台北市")
@@ -202,9 +219,12 @@ def main():
            sched.splitlines()[0] if sched else "(空的)")
         # ⚠ 逐年回補上線後這裡不再是 3 列：2026 的 3 列 ＋ 2021 的 12 列 ＝ 15 列。
         #   ⛔ 舊的 `== 4` 沒改的話會紅，而**紅得像程式壞了**，其實是測試過期。
-        ck("假資料都併進去了（2026 三列 ＋ 2021 十二列）",
-           len(sched.strip().splitlines()) == 16,
+        # ⭐ 2026-10-24：KNOWN_CLOSURES（事後確認的颱風休市日）每趟也會併進來 ⇒ 多 len() 列
+        ck("假資料都併進去了（2026 三列 ＋ 2021 十二列 ＋ 已知颱風休市日）",
+           len(sched.strip().splitlines()) == 16 + len(H.KNOWN_CLOSURES),
            f"實際 {len(sched.strip().splitlines())} 行（含表頭）")
+        ck("⭐ 已知颱風休市日 2026-10-23 寫進開休市行事曆",
+           "2026-10-23," + H.TYPHOON_NAME in sched, sched[-300:])
         ck("同一天跑兩趟不會疊列（第二趟是覆蓋）",
            sched.count("2026-01-01") == 1, f"出現 {sched.count('2026-01-01')} 次")
         # ── ⛔ 逐年回補那三條「不可以把沒查到讀成沒有」的分支，要**真的印得出來** ──
