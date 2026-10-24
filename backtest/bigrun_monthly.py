@@ -5,15 +5,18 @@ LINE（台股 seq539、情報 0030 §三／0035，使用者同意）：只推檔
   轉強（A～E、H；欄 up）＝ 近 3 月年增平均 ≥ 近 12 月年增平均 ＋ 5 點，或首次創 24 月新高（本期創、上一期沒創）——與前瞻小部位確認同一條件（照字面）；
     LINE「只寫有變化的」⇒ 只列本期 up 成立、上一期 up 不成立（或首次創 24 月新高）者；警訊 ＝ F 組 ①② 任一（照字面）；
   重點 ＝ 3491 單月是否 ≥ 3.9 億；季加報 ＝ 1519、1513 合約負債年增。
-前瞻紀錄「長線候選確認前先小部位」seq5（dd9a4c50694edb43；裁定 seq458 核、取代 seq3；前瞻、不計 N、金額不記；LINE 只推事件行，seq443／444）：
-  候選 SP_CANDS：1503、1513、1305、1312（起點 2026-10-22）；2002、1101（seq5，起點 2026-10-27；10/26 補假）。起點＝核後下一交易日開盤 1 份
-  （未還原開盤；無成交／開盤鎖漲停 ⇒ 買不到並寫明；本模組第一次 auto 補記）。1312、2002、1101 另記「標記」列＝進場時已轉強（檢查時不當確認前樣本）。
+前瞻紀錄「長線候選確認前先小部位」seq8（446b15cd5b6be0bf；裁定 seq466 核，取代 seq5～7；候選變更依 seq462、seq466 急件；前瞻、不計 N、金額不記；LINE 只推事件行）：
+  候選 SP_CANDS：1503、1513、1305、1312（起點 2026-10-22）；4510、6609、8936、3376（起點 2026-10-27；10/23 颱風休市、10/26 補假）；2002、1101、2014 已刪（未買）。
+  起點＝核後下一交易日開盤 1 份（未還原開盤；無成交／開盤鎖漲停 ⇒ 買不到並寫明；本模組第一次 auto 補記）；新候選通知在起點前一個日曆日 14:00 後（＝前一晚）。
+  1312、4510、6609、3376 另記「標記」列＝進場時已轉強（檢查時不當確認前樣本）。
   每份月報（鍵 ≥ 2026-11）每期照判 up（⛔ 不套 LINE 過濾）⇒ 月報隔天開盤加 2 份（只加一次，買不到也算）。
   放棄：第 i 份月報 ＝ 該檔首份判定月報起算月數 ＋ 1；第 12 份仍未轉強 ⇒ 該份月報隔天開盤賣出、記「未確認」（無成交／鎖跌停順延）；
   當期營收未公布 ⇒ 記「未判」、下一份補判上一期（up_prev）；第 12 份未公布 ⇒ 第 13 份只補判上一期、以它為放棄判定、賣出順延到該份隔天（seq447 補句）。
-  已確認：1503、1513 不設停損、不設天數；缺貨型四檔（1305、1312、2002、1101）照抱，另兩個只問不賣提醒（seq5）：
+  新需求型 SP_NEWDEMAND（3376，seq8）：⛔ 不看營收轉強；燈2（產業判、寄信）由回測線記進 lamp2.csv ⇒ 收信後下一交易日開盤加 2 份（前一晚 LINE 通知）；
+    月報判定列記「燈2已亮／燈2未亮」（營收只記）；第 12 份月報前燈2 都沒亮 ⇒ 隔天開盤賣。
+  已確認：1503、1513、4510、6609、8936、3376 不設停損、不設天數；缺貨型（1305、1312）照抱，另兩個只問不賣提醒：
     ① 報價代理連 3 個月月增 < 0（sp_ppi_hits／ppi_loader：私有庫 us-stock-data 美國 PPI；設定「小部位_報價提醒」10/23 開；最新月須在進場後發布、同段只推一次）
-    ② 確認那份月報資料日之後滿 625 個交易日（smallpos「提醒」列，只記一次）
+    ② 確認那份月報資料日之後滿 250、625 個交易日各一次（seq6；附三項描述：同業擴產／復產、營收年增自確認後高點連 3 月下降、股價距確認後最高收盤）
   紀錄：backtest/forward/bigrun_monthly/smallpos.csv（照規則、只追加、已寫凍結；通知列「新候選通知」「提醒」的 LINE 原文存在 judge_detail）、
   smallpos_user.csv（使用者實際；種子＝情報 20261022-1000 成交；之後成交由回測線 --user-add 或手填同欄位補記）。auto 每晚都跑；手動 --kind 只試算不寫。
   月報段「確認前小部位前瞻」：照規則／使用者實際兩欄並列、最大回落、0050 還原同期、進場時已轉強標記、缺貨型四檔 F①F② 只記、通知紀錄。
@@ -892,20 +895,24 @@ def quarter_report(asof, sha, ac, act, FD, key, G_nm):
 
 
 # ═════════════ 前瞻紀錄：長線候選確認前先小部位 seq3 ═════════════
-SP_TAG = "前瞻紀錄「長線候選確認前先小部位」seq5（dd9a4c50694edb43；裁定 seq458 核，取代 seq3）"
+SP_TAG = "前瞻紀錄「長線候選確認前先小部位」seq8（446b15cd5b6be0bf；裁定 seq466 核，取代 seq5～7；候選變更依裁定 seq462、seq466 急件）"
 SP_CANDS = {"1503": "2026-10-22", "1513": "2026-10-22", "1305": "2026-10-22", "1312": "2026-10-22",   # 代號：起點（核後下一交易日開盤）；增減照台股信改這裡
-            "2002": "2026-10-27", "1101": "2026-10-27"}                                                # seq5（10/23 加；10/26 光復節補假 ⇒ 10/27）
+            "4510": "2026-10-27", "6609": "2026-10-27", "8936": "2026-10-27", "3376": "2026-10-27"}    # seq6／seq462／seq466（10/23 颱風休市、10/26 補假 ⇒ 10/27）；2002、1101、2014 已刪（未買）
 SP_CODES = list(SP_CANDS)
+_UP27 = "（起點前 2026-09 營收已達轉強定義：近 3 月年增比前 12 月高 5 點以上；回測線 10/24 照登錄定義判）⇒ 檢查時另標、不當「確認前」樣本"
 SP_ENTRY_UP = {"1312": "進場時已轉強（起點前 2026-09 營收已轉強；裁定 seq446 §四）⇒ 檢查時另標、不當「確認前」樣本；加碼仍照 2026-11 月報起判",
-               "2002": "進場時已轉強（起點前 2026-09 營收已達轉強：近 3 月年增比前 12 月高 5 點以上；seq5）⇒ 檢查時另標、不當「確認前」樣本；11 月月報仍轉強即隔天加 2 份",
-               "1101": "進場時已轉強（起點前 2026-09 營收已達轉強：近 3 月年增比前 12 月高 5 點以上；seq5）⇒ 檢查時另標、不當「確認前」樣本；11 月月報仍轉強即隔天加 2 份"}
-SP_SHORTAGE = ["1305", "1312", "2002", "1101"]   # 缺貨型四檔（seq5 兩個只問不賣提醒）
-SP_REMIND_TD = 625                              # ② 確認後第 625 個交易日（約 2 年半）
+               "4510": "進場時已轉強" + _UP27 + "；11 月月報仍轉強即隔天加 2 份",
+               "6609": "進場時已轉強" + _UP27 + "；11 月月報仍轉強即隔天加 2 份",
+               "3376": "進場時已轉強" + _UP27 + "；⚠ 新需求型加碼看燈2、不看轉強（seq8）"}
+SP_SHORTAGE = ["1305", "1312"]                   # 缺貨型（seq8：中鋼、台泥、中鴻已刪）兩個只問不賣提醒
+SP_NEWDEMAND = ["3376"]                          # 新需求型（seq8）：加碼改「燈2 亮」（產業判、寄信）⇒ 收信後下一交易日開盤加 2 份；第 12 份月報前燈2 都沒亮 ⇒ 隔天開盤賣
+SP_REMIND_TDS = (250, 625)                       # seq6：缺貨型確認後第 250、625 個交易日各問一次（附三項描述）
+SP_REMIND_TD = 625
 CFG_PPI = "小部位_報價提醒"                      # ① 報價代理連 3 月下跌提醒；缺鍵＝關（資料庫 1023-0134 PPI 到庫 ⇒ 回測線 10/23 開）
-SP_PPI = {"1305": ("WPU066", "塑膠"), "1312": ("WPU066", "塑膠"), "2002": ("WPU1017", "鋼鐵"), "1101": ("WPU1322", "水泥")}   # 美國 PPI 代理（缺貨型二輪登錄 §三）
+SP_PPI = {"1305": ("WPU066", "塑膠"), "1312": ("WPU066", "塑膠")}   # 美國 PPI 代理（缺貨型二輪登錄 §三）；鋼鐵 WPU1017、水泥 WPU1322 隨中鋼、台泥、中鴻刪除停用
 US_REPO = os.path.expanduser("~/us-stock-data")  # ⛔ 私有庫：只讀判定、不把序列寫進公開輸出
 SP_N_REPORTS, SP_ADD, SP_COST = 12, 2, 0.00585
-SP_FIX = "6 檔（10/22 四檔、10/23 兩檔）、看過新聞才挑、只是前瞻紀錄"
+SP_FIX = "台股 8 檔（10/22 四檔、10/27 四檔）、看過新聞才挑、只是前瞻紀錄"
 WD = "一二三四五六日"
 SP_COLS = ["seq", "stock_id", "name", "event", "trade_date", "price_raw", "units", "status", "report_key", "report_asof",
            "judge", "judge_detail", "note", "recorded_at", "sha"]
@@ -963,7 +970,8 @@ def sp_events_report(new_rows, closes, cfg):
         if r["judge"] == "轉強":
             out.append(f"  小部位：{r['stock_id']} {r['name']} 轉強 ⇒ 明天開盤加 {SP_ADD} 份{_sh(sp_shares(SP_ADD, closes.get(r['stock_id']), cfg))}")
         elif "放棄判定" in r["note"]:
-            out.append(f"  小部位：{r['stock_id']} {r['name']} 第 {SP_N_REPORTS} 份月報仍未轉強 ⇒ 明天開盤賣")
+            why = "燈2 仍未亮" if r["stock_id"] in SP_NEWDEMAND else "仍未轉強"
+            out.append(f"  小部位：{r['stock_id']} {r['name']} 第 {SP_N_REPORTS} 份月報{why} ⇒ 明天開盤賣")
     return out
 
 
@@ -1008,11 +1016,13 @@ def taipei_now():
     return NOW_OVERRIDE if NOW_OVERRIDE is not None else pd.Timestamp.now(tz=TZ).tz_localize(None)
 
 
-def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None):
+def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None, lamp2=None, desc=None):
     """小部位通知列（寫進 smallpos.csv：只記一次、已寫凍結；LINE 行原文存在 judge_detail，同資料日名單重產時原樣補回）：
-    ・新候選（seq447 §二、seq458 §二）：起點前最後一個交易日（台北）14:00 後、或之後到起點前（資料晚到）的第一次執行 ⇒
+    ・新候選（seq447 §二、seq458 §二、seq461「10/26 晚推」）：起點前一個日曆日（＝前一晚；10/23 颱風休市不在休市表，改用日曆日）台北 14:00 後、或之後到起點前的第一次執行 ⇒
       「  小部位：代號 名稱 新候選 ⇒ 10/27（二）開盤買 1 份（約 N 股）」；以「台北今天」判，不看資料日（資料日落後也照出、起點後不再出）。
-    ・缺貨型四檔確認後滿 625 個交易日（seq5 ②）：確認那份月報資料日之後第 625 個交易日起第一次執行 ⇒「  小部位：代號 名稱 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）」。
+    ・缺貨型確認後滿 250、625 個交易日（seq6）：確認那份月報資料日之後第 N 個交易日起第一次執行 ⇒「  小部位：代號 名稱 確認後已滿 N 個交易日 ⇒ 續抱或賣？（你決定）｜三項描述」
+      （desc(sid, 確認列, 資料日) 回三項描述字串；None ⇒ 不附）。
+    ・新需求型燈2（seq8）：lamp2 有列、尚未加碼 ⇒「  小部位：代號 名稱 燈2 亮 ⇒ M/D（週）開盤加 2 份（約 N 股）」（只出一次）。
     回『要新增』的列。"""
     new = []
     allr = lambda: rows + new                                              # noqa: E731
@@ -1027,19 +1037,34 @@ def sp_notify(rows, cal, asof, H, closes, cfg, names, now, sha, ppi=None):
         st = pd.Timestamp(st)
         if any(r["stock_id"] == sid and r["event"] in ("起點買進", "新候選通知") for r in allr()) or not today < st:
             continue
-        fire = prev_trading_day(H, st)
+        fire = st - pd.Timedelta(days=1)
         if (today == fire and now.hour >= 14) or fire < today:
             n = sp_shares(1, closes.get(sid), cfg)
             add(sid, "新候選通知", f"  小部位：{sid} {names.get(sid, '')} 新候選 ⇒ {st.month}/{st.day}（{WD[st.weekday()]}）開盤買 1 份{_sh(n)}",
                 f"起點 {st.date()} 開盤；台北 {now:%Y-%m-%d %H:%M} 推（資料日 {asof.date()}）")
     for sid in SP_SHORTAGE:
         cf = next((r for r in allr() if r["stock_id"] == sid and r["event"] == "月報判定" and r["judge"] == "轉強"), None)
-        if cf is None or any(r["stock_id"] == sid and r["event"] == "提醒" and "625" in r["note"] for r in allr()):
+        if cf is None:
             continue
         n_td = int(((cal > pd.Timestamp(cf["report_asof"])) & (cal <= asof)).sum())
-        if n_td >= SP_REMIND_TD:
-            add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} 確認後已滿 {SP_REMIND_TD} 個交易日 ⇒ 續抱或賣？（你決定）",
-                f"確認後滿 {SP_REMIND_TD} 交易日（確認＝{cf['report_key']} 月報 {cf['report_asof']}；已過 {n_td} 日）；只問不賣（seq5 ②）")
+        for nn in SP_REMIND_TDS:                                           # 只出最大的已到者（兩個一起到 ⇒ 只出 625）；各只一次
+            tag = f"確認後滿 {nn} 交易日"
+            if n_td < nn or any(r["stock_id"] == sid and r["event"] == "提醒" and tag in r["note"] for r in allr()):
+                continue
+            if any(n_td >= m for m in SP_REMIND_TDS if m > nn):
+                continue
+            dsc = desc(sid, cf, asof) if desc is not None else ""
+            add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} 確認後已滿 {nn} 個交易日 ⇒ 續抱或賣？（你決定）" + (f"｜{dsc}" if dsc else ""),
+                f"{tag}（確認＝{cf['report_key']} 月報 {cf['report_asof']}；已過 {n_td} 日）；只問不賣（seq6）")
+    for sid, (d, mail, url) in (lamp2 or {}).items():                         # seq8 燈2 通知（只一次；已加碼或已放棄不出）
+        if sid not in SP_CODES or any(r["stock_id"] == sid and (r["event"] == "轉強加碼" or (r["event"] == "提醒" and "燈2" in r["note"])
+                                                                 or "放棄判定" in r["note"]) for r in allr()):
+            continue
+        st = pd.Timestamp(SP_CANDS[sid])
+        nd = next_trading_day(H, max(d, st - pd.Timedelta(days=1)))
+        n = sp_shares(SP_ADD, closes.get(sid), cfg)
+        add(sid, "提醒", f"  小部位：{sid} {names.get(sid, '')} 燈2 亮 ⇒ {nd.month}/{nd.day}（{WD[nd.weekday()]}）開盤加 {SP_ADD} 份{_sh(n)}",
+            f"燈2 {d.date()} 亮（{mail}；{url}）；收信後下一交易日開盤加碼（seq8）")
     for sid, line, st0, last, k in sp_ppi_hits(asof, names, cfg, ppi):        # seq5 ①：同一段下跌（段起月相同）只推一次
         tag = f"報價代理 {SP_PPI[sid][0]}（{SP_PPI[sid][1]}）段起 {st0}"
         if any(r["stock_id"] == sid and r["event"] == "提醒" and tag in r["note"] for r in allr()):
@@ -1171,7 +1196,7 @@ def _locked(b, up):
     return abs(b["o"] - lp) < 1e-6 and abs((b["l"] if up else b["h"]) - b["o"]) < 1e-6
 
 
-def sp_update(rows, cal, asof, px, judgments, names, now, sha):
+def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None):
     """回『要新增』的列（⛔ 不改舊列＝已寫凍結）。judgments ＝ [(月報鍵, 月報資料日, {代號: {up, up_prev, judged, det, det_prev}})]。
     第 i 份月報 ＝ 該檔第一份判定月報起算的月數 ＋ 1；第 12 份仍未轉強 ⇒ 放棄判定；當期營收未公布 ⇒ 記「未判」、下一份補判上一期
     （第 12 份未判 ⇒ 第 13 份只補判上一期、以它為放棄判定）。"""
@@ -1199,6 +1224,7 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha):
     def jrows(sid):
         return [r for r in allr() if r["stock_id"] == sid and r["event"] == "月報判定"]
     cal = cal[cal <= asof]
+    lamp2 = lamp2 if lamp2 is not None else {}
     # ① 起點：核後下一交易日（或之後第一個交易日）開盤 1 份；國喬另標「進場時已轉強」
     for sid, st in SP_CANDS.items():
         d0 = cal[cal >= pd.Timestamp(st)]
@@ -1214,6 +1240,20 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha):
             if sid not in J or ra < pd.Timestamp(SP_CANDS[sid]):
                 continue
             js = jrows(sid)
+            if sid in SP_NEWDEMAND:                                        # seq8：燈2 判、營收只記；不受營收未公布影響
+                if any(r["judge"] == "燈2已亮" or "放棄判定" in r["note"] for r in js) or any(r["report_key"] == key for r in js):
+                    continue
+                first = min([r["report_key"] for r in js] + [key])
+                i = months_between(first, key) + 1
+                lit = sid in lamp2 and lamp2[sid][0] <= ra
+                note = f"第 {i} 份月報；新需求型看燈2（seq8）、營收只記"
+                if lit:
+                    note += f"；燈2 {lamp2[sid][0].date()} 亮（{lamp2[sid][1]}）"
+                elif i >= SP_N_REPORTS:
+                    note += f"；放棄判定（第 {SP_N_REPORTS} 份月報前燈2 都沒亮 ⇒ 該份月報隔天開盤賣、記未確認）"
+                add(sid, "月報判定", report_key=key, report_asof=ra.date(), judge="燈2已亮" if lit else "燈2未亮",
+                    judge_detail="營收（只記）：" + J[sid]["det"], note=note)
+                continue
             if any(r["judge"] == "轉強" or "放棄判定" in r["note"] for r in js) or any(r["report_key"] == key for r in js):
                 continue                                                   # 已確認／已放棄／本份已判
             first = min([r["report_key"] for r in js] + [key])
@@ -1235,8 +1275,17 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha):
             if not up and i >= SP_N_REPORTS:
                 note += f"；放棄判定（第 {SP_N_REPORTS} 份月報仍未轉強 ⇒ 該份月報隔天開盤賣、記未確認）"
             add(sid, "月報判定", report_key=key, report_asof=ra.date(), judge="轉強" if up else "未轉強", judge_detail=det, note=note)
-    # ③ 轉強 ⇒ 月報隔一交易日開盤加 2 份（每檔一次；買不到也算這一次）
+    # ③ 轉強 ⇒ 月報隔一交易日開盤加 2 份（每檔一次；買不到也算這一次）｜新需求型：燈2 收信後下一交易日開盤加 2 份（已放棄者不加）
+    for sid in SP_NEWDEMAND:
+        if sid not in lamp2 or has(sid, "轉強加碼") or not has(sid, "起點買進") or any("放棄判定" in r["note"] for r in jrows(sid)):
+            continue
+        d, mail, url = lamp2[sid]
+        nd = cal[cal > max(d, pd.Timestamp(SP_CANDS[sid]))]
+        if len(nd):
+            buy(sid, "轉強加碼", nd[0], SP_ADD, report_asof=d.date(), note=f"燈2 亮（{mail}；{url}）⇒ 收信後下一交易日開盤加碼（seq8；每檔只加一次）")
     for sid in SP_CODES:
+        if sid in SP_NEWDEMAND:
+            continue
         cf = next((r for r in jrows(sid) if r["judge"] == "轉強"), None)
         if cf and not has(sid, "轉強加碼"):
             nd = cal[cal > pd.Timestamp(cf["report_asof"])]
@@ -1343,9 +1392,12 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
           f"- {SP_TAG}｜照規則（等額份數）：核後下一交易日開盤各 1 份；月報判定轉強（近 3 月營收年增 ≥ 前 12 月 ＋5 點，或首次創 24 月新高；每期照判；轉強條件已驗（暫定）：營收轉強驗證 seq2 合格（暫定），中位約 0、確認段輸大盤報酬指數）"
           f"⇒ 月報隔天開盤加 2 份（只加一次）；起點後第 1 份（{SP_FIRST_KEY}）到第 {SP_N_REPORTS} 份月報都沒判轉強 ⇒ 第 {SP_N_REPORTS} 份月報隔天開盤賣出、記「未確認」；"
           f"月報當期營收未公布 ⇒ 該期不判、下一份補判（第 {SP_N_REPORTS} 份未公布 ⇒ 以補判那份為放棄判定、賣出順延到該份隔天開盤）。"
-          "已確認：1503、1513 不設停損、不設天數，持有到使用者另定；缺貨型四檔（1305、1312、2002、1101）照抱、不設停損、不設天數，"
-          f"另兩個只問不賣的 LINE 提醒：①該業報價代理連 3 個月月增 < 0（美國 PPI 代理：塑膠 WPU066、鋼鐵 WPU1017、水泥 WPU1322；最新月須在進場後發布，同一段下跌只推一次）②確認後滿 {SP_REMIND_TD} 個交易日。"
-          "1312、2002、1101 進場時已轉強，檢查時不當「確認前」樣本。",
+          "已確認：1503、1513、4510、6609、8936、3376 不設停損、不設天數，持有到使用者另定；缺貨型（1305、1312）照抱、不設停損、不設天數，"
+          "另兩個只問不賣的 LINE 提醒：①該業報價代理連 3 個月月增 < 0（美國 PPI 代理：塑膠 WPU066；最新月須在進場後發布，同一段下跌只推一次）"
+          "②確認後第 250、625 個交易日各問一次（附：同業擴產／復產、營收年增是否從確認後高點連 3 月下降、股價距確認後最高收盤）。"
+          "新需求型 3376：加碼改看燈2（台廠法說第一次上修或量產時程正式定案，產業判、寄信附網址與日期）⇒ 收信後下一交易日開盤加 2 份；第 12 份月報前燈2 都沒亮 ⇒ 隔天開盤賣（seq8；燈2 是新聞判斷、不是回測，依據的 16 段全是贏家）。"
+          "同一共同方向台美合計最多 3 檔（電力 1503、1513、ETN 已滿）。1312、4510、6609、3376 進場時已轉強，檢查時不當「確認前」樣本。"
+          "必附：新日興訂單比重是市場估計、公司未證實。",
           "- 報酬：照規則＝還原價（含息）、每份扣成本 0.585%；使用者實際＝成交價（換算還原）、依成交金額加權、同樣扣 0.585%。smallpos.csv／smallpos_user.csv 只追加、已寫凍結。",
           ""]
     if dry:
@@ -1356,10 +1408,12 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
         st = next((r for r in R if r["event"] == "起點買進"), None)
         ad = next((r for r in R if r["event"] == "轉強加碼"), None)
         js = [r for r in R if r["event"] == "月報判定"]
-        cf = next((r for r in js if r["judge"] == "轉強"), None)
+        cf = next((r for r in js if r["judge"] in ("轉強", "燈2已亮")), None)
+        if cf is None and sid in SP_NEWDEMAND and ad is not None:
+            cf = {"report_key": f"燈2 {ad['report_asof']}"}
         ab = next((r for r in js if "放棄判定" in r["note"]), None)
         sl = next((r for r in R if r["event"] == SELL_EV), None)
-        nj = sum(1 for r in js if r["judge"] in ("轉強", "未轉強"))
+        nj = sum(1 for r in js if r["judge"] in ("轉強", "未轉強", "燈2已亮", "燈2未亮"))
         if st is None:
             state = f"起點 {SP_CANDS[sid]} 開盤（尚未到）"
         elif sl is not None:
@@ -1367,7 +1421,7 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
         elif ab is not None:
             state = "未確認・明天開盤賣"
         elif cf is not None:
-            state = f"已確認（{cf['report_key']} 月報）" + ("" if ad else "・明天開盤加碼")
+            state = (f"已確認（{cf['report_key']}" + ("" if cf["report_key"].startswith("燈2") else " 月報") + "）") + ("" if ad else "・明天開盤加碼")
         else:
             state = "持有・未確認" + ("（上期未判、本期補判）" if js and js[-1]["judge"].startswith("未判") else "")
         if sid in SP_ENTRY_UP:
@@ -1432,17 +1486,67 @@ def sp_paths():
     return os.path.join(FWD, "smallpos.csv"), os.path.join(FWD, "smallpos_user.csv")
 
 
+LAMP2 = os.path.join(FWD, "lamp2.csv")            # seq8 新需求型燈2：產業分析線每次判燈2 都寄信（附網址、日期）⇒ 回測線照信補一列（stock_id,lit_date,mail,url,note）
+
+
+def lamp2_load(p=None):
+    """{代號: (亮燈收信日 Timestamp, 信名, 網址)}；同檔多列取最早（只加一次）。檔不在 ⇒ {}。"""
+    p = p or LAMP2
+    if not os.path.exists(p):
+        return {}
+    out = {}
+    for r in pd.read_csv(p, dtype=str, keep_default_na=False, encoding="utf-8-sig").to_dict("records"):
+        d = pd.Timestamp(r["lit_date"])
+        if r["stock_id"] in SP_NEWDEMAND and (r["stock_id"] not in out or d < out[r["stock_id"]][0]):
+            out[r["stock_id"]] = (d, r.get("mail", ""), r.get("url", ""))
+    return out
+
+
+def remind_desc_fn(H, cal, sha):
+    """seq6 250／625 日提醒的三項描述（只在提醒到期時才讀資料，平常不花時間）：
+    ①同業擴產或復產消息：本模組無新聞資料 ⇒ 寫「見產業分析線燈號表」；②營收年增是否從確認後高點連 3 月下降；③股價距確認後最高收盤 %（還原收盤）。"""
+    cache = {}
+
+    def fn(sid, cf, asof):
+        parts = ["同業擴產／復產：見產業分析線燈號表"]
+        try:
+            if "L" not in cache:
+                cache["L"] = load_rev_pit(ensure_rev(asof_commit(sha, asof)[0]))[0]
+            L = cache["L"]
+            p0 = str(pd.Period(cf["report_key"], freq="M") - 1)             # 確認那份月報的營收期別
+            x = L[(L["stock_id"] == sid) & (L["period"] >= p0)].copy()
+            x = x[[pub10(q) < asof for q in x["period"]]].sort_values("period")
+            y = (x["rev"] / x["ly"].where(x["ly"] > 0) - 1).values
+            if len(y) >= 4 and np.isfinite(y).all():
+                k = int(np.argmax(y)); dn = all(y[-j] < y[-j - 1] for j in (1, 2, 3)) and k <= len(y) - 4
+                parts.append(f"營收年增自確認後高點連 3 月下降：{'是' if dn else '否'}（最新 {x['period'].iloc[-1]} {y[-1]:+.0%}、確認後最高 {y[k]:+.0%}）")
+            else:
+                parts.append("營收年增自確認後高點連 3 月下降：資料不足")
+        except Exception as e:                                             # noqa: BLE001
+            parts.append(f"營收年增：讀取失敗（{type(e).__name__}）")
+        try:
+            mk = pd.read_csv(os.path.join(H, "meta", "stocks.csv"), dtype=str).set_index("stock_id")["market"].to_dict()
+            c = D.load_stock(sid, mk.get(sid, "twse"), cal).df["close"]
+            c = c[(c.index >= pd.Timestamp(cf["report_asof"])) & (c.index <= asof)].dropna()
+            parts.append(f"股價距確認後最高收盤 {c.iloc[-1] / c.max() - 1:+.0%}（還原）" if len(c) else "股價：資料不足")
+        except Exception as e:                                             # noqa: BLE001
+            parts.append(f"股價：讀取失敗（{type(e).__name__}）")
+        return "；".join(parts)
+    return fn
+
+
 def sp_step(a, H, cal, asof, sha, names, judgments, write, now=None):
     """前瞻小部位：算新增列（含通知列：新候選、625 日提醒；write ⇒ 追加到 smallpos.csv；使用者實際欄檔不在 ⇒ 用情報 1000 信種子建檔）；
     回 (全部列, 新增列, 使用者實際列)。"""
     p, pu = sp_paths()
     rows = sp_load(p)
     now = now if now is not None else taipei_now()
-    new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(now)[:19], sha)
+    lp = lamp2_load()
+    new = sp_update(rows, cal, asof, RawPx(H), judgments, names, str(now)[:19], sha, lamp2=lp)
     closes = {s: raw_close(H, s, asof)[0] for s in SP_CODES}
     cfg = sp_cfg()
     ppi = ppi_loader(asof) if cfg.get(CFG_PPI) else None
-    new += sp_notify(rows + new, cal, asof, H, closes, cfg, names, now, sha, ppi=ppi)
+    new += sp_notify(rows + new, cal, asof, H, closes, cfg, names, now, sha, ppi=ppi, lamp2=lp, desc=remind_desc_fn(H, cal, sha))
     for k, r in enumerate(new):                    # seq 連號
         r["seq"] = str(len(rows) + k + 1)
     if write and new:

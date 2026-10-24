@@ -13,7 +13,7 @@
         名單 md 第十二節（接檔尾、其他段不變、LINE 摘要格式、冪等、同資料日重產補回、別的資料日移除）；put_daily 節在中間
   sp    前瞻小部位 seq3 fixture：起點前不記、補記起點（鎖漲停／無成交買不到）、國喬標記、凍結不重算、轉強加 2 份只一次、
         第 12 份月報未轉強賣出（鎖跌停順延）、第 12 份當期未公布 ⇒ 第 13 份補判並順延、期中補判、放棄後不再判、照規則累計、使用者實際欄讀入與報酬
-  sp3   seq5：6 檔、新候選 10/27（二）只出一晚（14:00 後、資料日落後、略過補出、起點後不出）、2002／1101 標記、625 日提醒、報價提醒（10/23 開：進場後發布才推、同段一次、實資料讀得到）
+  sp3   seq8：8 檔、新候選 10/26 晚（前一個日曆日）只出一晚、進場時已轉強標記、250／625 日提醒附描述、新需求型燈2 加碼與放棄、報價提醒（進場後發布才推、同段一次、實資料讀得到）
   sp2   台股 seq547 讀法核對：①加碼看每期判定本身（不套 LINE「上期沒轉強才列」）②2026-11 鍵起判（2026-10 鍵不判）
         ③首次創 24 月新高＝本期創上期沒創、加速 ≥ 5 點是狀態；LINE 小部位事件行（股數、賣出句、新候選起點、不計入 4 行）、設定鍵、下一交易日外推
 """
@@ -587,57 +587,88 @@ def four_cands(BM):
         BM.SP_CANDS.clear(); BM.SP_CANDS.update(oc); BM.SP_CODES[:] = ocodes
 
 
-# ═════════════ sp3（seq5：新候選 2002、1101、625 日提醒、報價提醒預設關） ═════════════
+# ═════════════ sp3（seq8：候選 8 檔、新候選 10/26 晚、250／625 日提醒、新需求型燈2、報價提醒） ═════════════
 def part_sp3():
     from backtest import bigrun_monthly as BM
     T = pd.Timestamp
     H = os.path.expanduser("~/h2data/eeb5af5f8feca83d0702fa0423a0c58cdb77900d/data")
     cal = pd.bdate_range("2026-10-19", "2029-12-31")
-    cal = cal[cal != T("2026-10-26")]                          # 光復節補假
-    nm = {"1503": "士電", "1513": "中興電", "1305": "華夏", "1312": "國喬", "2002": "中鋼", "1101": "台泥"}
+    cal = cal[(cal != T("2026-10-26")) & (cal != T("2026-10-23"))]        # 光復節補假、10/23 颱風休市
+    nm = {"1503": "士電", "1513": "中興電", "1305": "華夏", "1312": "國喬", "4510": "高鋒", "6609": "瀧澤科", "8936": "國統", "3376": "新日興"}
     cfg = {"小部位": 20000}
-    closes = {"2002": 19.7, "1101": 26.8}
+    closes = {"4510": 40.0, "6609": 50.0, "8936": 20.0, "3376": 25.0}
 
     class Px:
         def bar(self, sid, d):
             return {"o": 100.0, "h": 101.0, "l": 99.0, "c": 100.0, "pc": 100.0}
     base = BM.sp_update([], cal, T("2026-10-22"), Px(), [], nm, "now", "f" * 40)
 
-    def notify(rows, asof, now):
-        return BM.sp_notify(rows, cal, T(asof), H, closes, cfg, nm, T(now), "f" * 40)
-    exp = ["  小部位：2002 中鋼 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,015 股）", "  小部位：1101 台泥 新候選 ⇒ 10/27（二）開盤買 1 份（約 746 股）"]  # 2026-10-27 是週二
-    rec("sp3", "SP_CANDS：6 檔、2002／1101 起點 2026-10-27；固定句改 6 檔",
-        BM.SP_CANDS.get("2002") == "2026-10-27" and BM.SP_CANDS.get("1101") == "2026-10-27" and len(BM.SP_CODES) == 6 and BM.SP_FIX.startswith("6 檔（10/22 四檔、10/23 兩檔）"), BM.SP_FIX)
-    rec("sp3", "起點前最後一個交易日 ＝ 10/23（10/24、25 週末、10/26 補假）", BM.prev_trading_day(H, T("2026-10-27")) == T("2026-10-23"), "")
-    n0 = notify(base, "2026-10-22", "2026-10-23 06:30")
-    rec("sp3", "10/23 早上 06:30（資料日 10/22）⇒ 還不出（14:00 前）", n0 == [], str(n0))
-    n1 = notify(base, "2026-10-23", "2026-10-23 20:00")
-    rec("sp3", "10/23 晚 20:00（資料日 10/23）⇒ 出新候選 2 行（10/27（二）開盤、股數 ＝ 20000 ÷ 未還原收盤取整）",
-        [r["judge_detail"] for r in n1] == exp and all(r["event"] == "新候選通知" and r["report_asof"] == "2026-10-23" for r in n1), str([r["judge_detail"] for r in n1]))
-    n2 = notify(base, "2026-10-22", "2026-10-23 20:00")
-    rec("sp3", "資料日落後（10/23 晚資料日仍 10/22）⇒ 照出，掛在 10/22 那份名單", [r["judge_detail"] for r in n2] == exp and n2[0]["report_asof"] == "2026-10-22", "")
-    R = base + n2
-    n3 = notify(R, "2026-10-23", "2026-10-24 00:45")
-    rec("sp3", "只出一晚：已記通知 ⇒ 10/24 00:45（資料日 10/23 到庫）不再記、10/23 名單不出；10/22 名單重產原樣補回",
-        n3 == [] and BM.sp_event_lines(R, T("2026-10-23")) == [] and BM.sp_event_lines(R, T("2026-10-22")) == exp, "")
-    n4 = notify(base, "2026-10-23", "2026-10-24 00:45")
-    rec("sp3", "10/23 20:00 那班沒跑到（名單略過）⇒ 10/24 00:45 第一次執行補出（起點前）", [r["judge_detail"] for r in n4] == exp, "")
-    n5 = notify(base, "2026-10-27", "2026-10-27 20:00")
+    def notify(rows, asof, now, **kw):
+        return BM.sp_notify(rows, cal, T(asof), H, closes, cfg, nm, T(now), "f" * 40, **kw)
+    exp = ["  小部位：4510 高鋒 新候選 ⇒ 10/27（二）開盤買 1 份（約 500 股）", "  小部位：6609 瀧澤科 新候選 ⇒ 10/27（二）開盤買 1 份（約 400 股）",
+           "  小部位：8936 國統 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,000 股）", "  小部位：3376 新日興 新候選 ⇒ 10/27（二）開盤買 1 份（約 800 股）"]
+    rec("sp3", "SP_CANDS（seq462／466 最終版）：8 檔、＋4510 6609 8936 3376 起點 10/27；−2002 −1101 −2014；缺貨型只剩 1305、1312；新需求型 3376；固定句 8 檔",
+        list(BM.SP_CANDS) == ["1503", "1513", "1305", "1312", "4510", "6609", "8936", "3376"] and all(BM.SP_CANDS[x] == "2026-10-27" for x in ("4510", "6609", "8936", "3376"))
+        and not {"2002", "1101", "2014"} & set(BM.SP_CANDS) and BM.SP_SHORTAGE == ["1305", "1312"] and BM.SP_NEWDEMAND == ["3376"]
+        and BM.SP_FIX.startswith("台股 8 檔（10/22 四檔、10/27 四檔）") and set(BM.SP_PPI) == {"1305", "1312"}, BM.SP_FIX)
+    rec("sp3", "進場時已轉強標記：1312、4510、6609、3376（8936 國統沒有）", set(BM.SP_ENTRY_UP) == {"1312", "4510", "6609", "3376"}, "")
+    n0 = notify(base, "2026-10-22", "2026-10-24 20:00")
+    n0b = notify(base, "2026-10-22", "2026-10-26 06:40")
+    rec("sp3", "前一晚＝起點前一個日曆日（10/26）：10/24 晚、10/26 早上都不出", n0 == [] and n0b == [], str(n0 + n0b))
+    n1 = notify(base, "2026-10-22", "2026-10-26 20:00")
+    rec("sp3", "10/26 晚 20:00（資料日仍 10/22）⇒ 出 4 行新候選（10/27（二）開盤、股數＝20000÷未還原收盤取整），掛在 10/22 那份名單",
+        [r["judge_detail"] for r in n1] == exp and all(r["event"] == "新候選通知" and r["report_asof"] == "2026-10-22" for r in n1), str([r["judge_detail"] for r in n1]))
+    R = base + n1
+    n2 = notify(R, "2026-10-22", "2026-10-26 23:30")
+    rec("sp3", "只出一晚：已記 ⇒ 不再記；10/22 名單重產原樣補回 4 行", n2 == [] and BM.sp_event_lines(R, T("2026-10-22")) == exp, "")
+    n3 = notify(base, "2026-10-22", "2026-10-26 23:30")
+    n4 = notify(base, "2026-10-27", "2026-10-27 00:30")
+    rec("sp3", "10/26 20:00 沒跑到 ⇒ 當晚之後第一次執行補出；10/27（起點當天）起不出", [r["judge_detail"] for r in n3] == exp and n4 == [], "")
     r27 = BM.sp_update(base, cal, T("2026-10-27"), Px(), [], nm, "now", "f" * 40)
-    rec("sp3", "10/27 起點後不出；起點那天 sp_update 補記 2002、1101 起點各 1 份＋「進場時已轉強」標記",
-        n5 == [] and sorted((r["stock_id"], r["event"]) for r in r27) == [("1101", "標記"), ("1101", "起點買進"), ("2002", "標記"), ("2002", "起點買進")]
-        and all("進場時已轉強" in r["note"] for r in r27 if r["event"] == "標記"), str([(r["stock_id"], r["event"], r["trade_date"]) for r in r27]))
-    # 625 日提醒（缺貨型四檔，確認那份月報資料日之後第 625 個交易日）
+    rec("sp3", "10/27 sp_update 補記 4 檔起點各 1 份＋4510、6609、3376「進場時已轉強」標記",
+        sorted((r["stock_id"], r["event"]) for r in r27) == sorted([(x, "起點買進") for x in ("4510", "6609", "8936", "3376")] + [(x, "標記") for x in ("4510", "6609", "3376")]), "")
+    # 250／625 日提醒（缺貨型；附三項描述）
     cf = dict({c: "" for c in BM.SP_COLS}, stock_id="1305", name="華夏", event="月報判定", judge="轉強", report_key="2026-11", report_asof="2026-11-12")
     cf2 = dict(cf, stock_id="1503", name="士電")                 # 1503 不是缺貨型 ⇒ 不提醒
     after = cal[cal > T("2026-11-12")]
-    d624, d625 = after[623], after[624]
-    m0 = notify(base + [cf, cf2], str(d624.date()), f"{d624.date()} 20:00")
-    m1 = notify(base + [cf, cf2], str(d625.date()), f"{d625.date()} 20:00")
-    m2 = notify(base + [cf, cf2] + m1, str(after[625].date()), f"{after[625].date()} 20:00")
-    rec("sp3", "確認後第 624 交易日不出；第 625 交易日那晚出一次「確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）」；隔天不再出；非缺貨型不出",
-        m0 == [] and [r["judge_detail"] for r in m1] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"] and m2 == []
-        and BM.sp_event_lines(base + m1, d625) == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"], f"{d625.date()}｜{[r['judge_detail'] for r in m1]}")
+    dsc = lambda sid, c, asof: "描述"                              # noqa: E731
+    m249 = notify(base + [cf, cf2], str(after[248].date()), f"{after[248].date()} 20:00", desc=dsc)
+    m250 = notify(base + [cf, cf2], str(after[249].date()), f"{after[249].date()} 20:00", desc=dsc)
+    m251 = notify(base + [cf, cf2] + m250, str(after[250].date()), f"{after[250].date()} 20:00", desc=dsc)
+    m625 = notify(base + [cf, cf2] + m250, str(after[624].date()), f"{after[624].date()} 20:00", desc=dsc)
+    mboth = notify(base + [cf, cf2], str(after[624].date()), f"{after[624].date()} 20:00")
+    rec("sp3", "確認後第 249 日不出；第 250 日出一次（附三項描述）；隔天不再；第 625 日再出一次；兩者同時到只出 625；非缺貨型不出",
+        m249 == [] and [r["judge_detail"] for r in m250] == ["  小部位：1305 華夏 確認後已滿 250 個交易日 ⇒ 續抱或賣？（你決定）｜描述"] and m251 == []
+        and [r["judge_detail"] for r in m625] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）｜描述"]
+        and [r["judge_detail"] for r in mboth] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"], str([r["judge_detail"] for r in m250 + m625 + mboth]))
+    # 新需求型 3376：燈2
+    J = lambda up: {"3376": {"up": up, "up_prev": False, "judged": True, "det": "d", "det_prev": "dp"},     # noqa: E731
+                    "4510": {"up": up, "up_prev": False, "judged": True, "det": "d", "det_prev": "dp"}}
+    R27 = base + r27
+    j1 = BM.sp_update(R27, cal, T("2026-11-12"), Px(), [("2026-11", T("2026-11-12"), J(True))], nm, "now", "f" * 40)
+    rec("sp3", "（新需求型）月報轉強也不加碼：3376 記「燈2未亮」、4510 記「轉強」；月報 LINE 只出 4510 一行",
+        [(r["stock_id"], r["event"], r["judge"]) for r in j1 if r["stock_id"] == "3376"] == [("3376", "月報判定", "燈2未亮")]
+        and [r["judge"] for r in j1 if r["stock_id"] == "4510"] == ["轉強"]
+        and BM.sp_events_report(j1, closes, cfg) == ["  小部位：4510 高鋒 轉強 ⇒ 明天開盤加 2 份（約 1,000 股）"], str([(r["stock_id"], r["event"], r["judge"]) for r in j1]))
+    lp = {"3376": (T("2026-12-03"), "產業 seq99", "https://example/1")}
+    l1 = notify(R27 + j1, "2026-12-03", "2026-12-03 22:00", lamp2=lp)
+    l2 = notify(R27 + j1 + l1, "2026-12-04", "2026-12-04 20:00", lamp2=lp)
+    rec("sp3", "（新需求型）燈2 收信 ⇒ 當晚通知「燈2 亮 ⇒ 12/4（五）開盤加 2 份」只一次",
+        [r["judge_detail"] for r in l1] == ["  小部位：3376 新日興 燈2 亮 ⇒ 12/4（五）開盤加 2 份（約 1,600 股）"] and l2 == [], str([r["judge_detail"] for r in l1]))
+    u1 = BM.sp_update(R27 + j1 + l1, cal, T("2026-12-04"), Px(), [], nm, "now", "f" * 40, lamp2=lp)
+    rec("sp3", "（新需求型）收信後下一交易日 12/4 開盤加 2 份（事件「轉強加碼」、註燈2）",
+        [(r["stock_id"], r["event"], r["trade_date"], r["units"]) for r in u1 if r["stock_id"] == "3376"] == [("3376", "轉強加碼", "2026-12-04", "2")]
+        and "燈2" in u1[0]["note"], str([(r["stock_id"], r["event"], r["trade_date"]) for r in u1]))
+    jj = []
+    keys = [str(pd.Period("2026-11", freq="M") + k) for k in range(12)]
+    for k in keys:
+        jj += BM.sp_update(R27 + jj, cal, T(k + "-12"), Px(), [(k, T(k + "-12"), J(False))], nm, "now", "f" * 40)
+    j3 = [r for r in jj if r["stock_id"] == "3376"]
+    sell = BM.sp_update(R27 + jj, cal, T("2027-10-14"), Px(), [], nm, "now", "f" * 40)
+    rec("sp3", "（新需求型）12 份月報燈2 都沒亮 ⇒ 第 12 份放棄判定、LINE「第 12 份月報燈2 仍未亮 ⇒ 明天開盤賣」、隔天賣出",
+        len(j3) == 12 and all(r["judge"] == "燈2未亮" for r in j3) and "放棄判定" in j3[-1]["note"]
+        and "  小部位：3376 新日興 第 12 份月報燈2 仍未亮 ⇒ 明天開盤賣" in BM.sp_events_report(j3, closes, cfg)
+        and any(r["stock_id"] == "3376" and r["event"] == BM.SELL_EV for r in sell), j3[-1]["note"] if j3 else "")
     # 報價代理提醒：10/23 資料庫 PPI 到庫後開（缺鍵／false 仍不出）
     s = pd.Series([100.0, 99.0, 98.0, 97.0], index=["2027-01", "2027-02", "2027-03", "2027-04"])
     rec("sp3", "報價提醒：設定檔已開「小部位_報價提醒」（回測線 10/23 改）；缺鍵 ⇒ 不出", BM.sp_cfg().get("小部位_報價提醒") is True
@@ -645,24 +676,24 @@ def part_sp3():
     on = {"小部位_報價提醒": True}
     rec("sp3", "（機制）開了但資料讀不到 ⇒ 不出；開了且連 3 月下跌 ⇒ 該檔出一行",
         BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=None) == []
-        and BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s if sid == "2002" else None) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
+        and BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s if sid == "1305" else None) == ["  小部位：1305 華夏 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
     s2 = pd.Series([100.0, 101.0, 99.0, 98.0], index=["2027-01", "2027-02", "2027-03", "2027-04"])
-    rec("sp3", "（機制）只連跌 2 個月 ⇒ 不出", BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s2 if sid == "2002" else None) == [], "")
-    pre = s.copy(); pre.attrs["rel"] = {m: T("2026-10-15") for m in pre.index}       # 最新月在起點 10/27 前發布 ⇒ 進場前已知
+    rec("sp3", "（機制）只連跌 2 個月 ⇒ 不出", BM.sp_ppi_lines([], T("2027-05-20"), nm, on, loader=lambda sid: s2 if sid == "1305" else None) == [], "")
+    pre = s.copy(); pre.attrs["rel"] = {m: T("2026-10-15") for m in pre.index}       # 最新月在起點 10/22 前發布 ⇒ 進場前已知
     post = s.copy(); post.attrs["rel"] = {**{m: T("2026-10-15") for m in post.index}, "2027-04": T("2026-11-13")}
     rec("sp3", "（機制）最新月在起點前發布 ⇒ 不出（只看進場後）；在起點後發布 ⇒ 出",
-        BM.sp_ppi_lines([], T("2026-11-20"), nm, on, loader=lambda sid: pre if sid == "2002" else None) == []
-        and BM.sp_ppi_lines([], T("2026-11-20"), nm, on, loader=lambda sid: post if sid == "2002" else None) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
+        BM.sp_ppi_lines([], T("2026-11-20"), nm, on, loader=lambda sid: pre if sid == "1305" else None) == []
+        and BM.sp_ppi_lines([], T("2026-11-20"), nm, on, loader=lambda sid: post if sid == "1305" else None) == ["  小部位：1305 華夏 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], "")
     s5 = pd.Series([100.0, 99.0, 98.0, 97.0, 96.0], index=["2027-01", "2027-02", "2027-03", "2027-04", "2027-05"])
-    L4 = lambda sid: s if sid == "2002" else None                                     # noqa: E731
-    L5 = lambda sid: s5 if sid == "2002" else None                                    # noqa: E731
+    L4 = lambda sid: s if sid == "1305" else None                                     # noqa: E731
+    L5 = lambda sid: s5 if sid == "1305" else None                                    # noqa: E731
     p1 = BM.sp_notify(base, cal, T("2027-05-20"), H, closes, on, nm, T("2027-05-20 20:00"), "f" * 40, ppi=L4)
     p2 = BM.sp_notify(base + p1, cal, T("2027-06-20"), H, closes, on, nm, T("2027-06-20 20:00"), "f" * 40, ppi=L5)
     p0 = BM.sp_notify(base, cal, T("2027-05-20"), H, closes, cfg, nm, T("2027-05-20 20:00"), "f" * 40, ppi=L4)
     rec("sp3", "（機制）報價提醒寫成「提醒」紀錄列、隨 sp_event_lines 補回；同一段下跌（段起月同）隔月續跌不再出；設定關 ⇒ 不出",
-        [r["judge_detail"] for r in p1] == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"] and p1[0]["event"] == "提醒"
+        [r["judge_detail"] for r in p1] == ["  小部位：1305 華夏 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"] and p1[0]["event"] == "提醒"
         and "段起 2027-02" in p1[0]["note"] and p2 == [] and p0 == []
-        and BM.sp_event_lines(base + p1, T("2027-05-20")) == ["  小部位：2002 中鋼 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], p1[0]["note"] if p1 else "")
+        and BM.sp_event_lines(base + p1, T("2027-05-20")) == ["  小部位：1305 華夏 報價代理連 3 個月下跌 ⇒ 續抱或賣？（你決定）"], p1[0]["note"] if p1 else "")
     LR = BM.ppi_loader(T("2026-10-23"), fetch=False)
     rec("sp3", "（實資料，只看結構不印值）私有庫 PPI 讀得到：四檔對三條代理、最新已發布月 ≥ 2026-08、10/23 晚因進場前已知不出",
         LR is not None and all(LR(x) is not None and LR(x).index[-1] >= "2026-08" for x in BM.SP_SHORTAGE)
