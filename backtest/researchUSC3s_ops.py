@@ -13,6 +13,9 @@
 再依 MOM 遞減從前 10% 補空槽；輸出列格式 ＝ forward_template.csv 欄位（讀該檔表頭，⛔ 不改該檔）。
 ⚠ 產生器無法預知 e 當天的開盤停牌（book 會延後賣／該檔不買不遞補）與 e 當天的價格斷點強制出場；gate 會把這兩類列出。
 私有（S9）：repo resultsUSC/C3s/ops/ 只放代號、排名、漲幅%、換股代號、統計；逐筆明細寫 ~/us_work/c/c3s/ops/。
+全名（美股策略線 1025-0122 §二、裁定 seq472 §五：美股一律「代號（IB 全名）」）：換股單另加一欄「全名」，插在最後一欄「備註」之前
+（⛔ 不放最後：researchUSC3s_stop.order_with_level 以 cols[-1] 寫備註；前 25 欄位置與值不變）。名稱查 backtest/forward/us_names.csv
+（① 美股策略線對照表、② us-stock-data cik_map.csv 的 SEC 名稱「未核（名冊）」）；都沒有 ⇒「未知（請在 IB 確認）」。⛔ 只排版，不動選股。
 """
 from __future__ import annotations
 
@@ -38,6 +41,11 @@ TPL = os.path.join(C3S.OUTD, "forward_template.csv")
 FWD_START_MONTH = (2026, 10)          # S7：前瞻 ② 起點 ＝ 2026-10 最後交易日收盤選、11 月第一個交易日開盤買
 SPLIT = pd.Timestamp("2022-01-01")    # 統計第二段：出場日 ≥ 2022-01-01
 TOL = 1e-9
+NAMES_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "forward", "us_names.csv")
+FULLNAME_COL = "全名"
+NAME_UNKNOWN = "未知（請在 IB 確認）"
+IB_NOTE = "下單前在 IB 輸入代號，確認名稱一致（全名未在 IB 逐一核）"
+_NAMES: dict = {}
 
 
 def jd(obj, p):
@@ -92,6 +100,39 @@ def run_book(T, t0, t1, Wd=None):
     tr = []
     res = K.book(K.rworld()["Wd"] if Wd is None else Wd, sorted(T["KEEP"]), T["KEEP"], T["BUY"], K.N_SLOTS, t0, t1, trades_out=tr)
     return res, tr
+
+
+# ═════════════ 全名（只排版；⛔ 不動選股）═════════════
+def names():
+    """us_names.csv ⇒ {代號: (全名, verified)}。"""
+    if not _NAMES and os.path.exists(NAMES_CSV):
+        with open(NAMES_CSV, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                _NAMES[r["ticker"].strip()] = (r["full_name"].strip(), r["verified"].strip())
+    return _NAMES
+
+
+def full_name(t):
+    v = names().get(str(t))
+    return v[0] if v and v[0] else NAME_UNKNOWN
+
+
+def label(t):
+    """「代號（全名）」；名冊來源另標［未核（名冊）］。"""
+    v = names().get(str(t))
+    if not v or not v[0]:
+        return f"{t}（{NAME_UNKNOWN}）"
+    return f"{t}（{v[0]}）" + (f"［{v[1]}］" if v[1] == "未核（名冊）" else "")
+
+
+def order_tickers(o, tick):
+    """換股單提到的代號（換股後持股 → 新進 → 賣出，去重保序）。"""
+    out = []
+    for j in list(o["after"]) + list(o["buys"]) + [j for j, _ in o["sells"]]:
+        t = str(tick[j])
+        if t not in out:
+            out.append(t)
+    return out
 
 
 # ═════════════ 換股單產生器（＝ forward_template 欄位）═════════════
@@ -170,7 +211,8 @@ def order_for(M, book="main", mode="auto"):
 
 
 def order_row(o, T):
-    """forward_template.csv 欄位的一列（表頭讀該檔；⛔ 月報酬欄留空，月底後由前瞻紀錄填）。"""
+    """forward_template.csv 欄位的一列（表頭讀該檔；⛔ 月報酬欄留空，月底後由前瞻紀錄填）。
+    回傳的 cols ＝ 範本欄位、在最後一欄（備註）之前插入「全名」；⛔ 範本檔不改。"""
     R = K.rworld(); cal = R["cal"]; tick = R["Wd"]["tick"]; n = R["n"]
     cols = next(csv.reader(open(TPL, encoding="utf-8-sig")))
     M, e = o["M"], o["e"]
@@ -196,6 +238,9 @@ def order_row(o, T):
     row[cols[23]] = "us-stock-data 881c86a（~/us_work/a4/world.npz）"
     row[cols[24]] = K.now_tpe()
     row[cols[25]] = (f"{o['book']} 簿；空槽 {K.N_SLOTS - len(o['after'])}" + ("；e 在資料外，開盤可否成交未知" if o["virtual_e"] else ""))
+    assert FULLNAME_COL not in cols
+    row[FULLNAME_COL] = "；".join(label(t) for t in order_tickers(o, tick)) + f"｜⚠ {IB_NOTE}"
+    cols = cols[:-1] + [FULLNAME_COL] + cols[-1:]
     return cols, row
 
 
@@ -203,15 +248,34 @@ def order_view(o, T):
     R = K.rworld(); cal = R["cal"]; tick = R["Wd"]["tick"]; n = R["n"]; e = o["e"]
     return {"簿": o["book"], "成交價口徑": {"exact": "真實 e 開盤", "proxy": "e 開盤 ≈ 月底收盤（實盤當晚做法）"}[o["mode"]],
             "量測月底": str(cal[o["M"]].date()), "執行": (str(cal[e].date()) if e < n else "下一交易日") + " 開盤",
-            "賣": [{"代號": str(tick[j]), "原因": w, "月底排名": rank_of(T, e, j)[0]} for j, w in o["sells"]],
-            "買（依序）": [{"代號": str(tick[j]), "月底排名": rank_of(T, e, j)[0]} for j in o["buys"]],
+            "賣": [{"代號": str(tick[j]), "全名": full_name(tick[j]), "原因": w, "月底排名": rank_of(T, e, j)[0]} for j, w in o["sells"]],
+            "買（依序）": [{"代號": str(tick[j]), "全名": full_name(tick[j]), "月底排名": rank_of(T, e, j)[0]} for j in o["buys"]],
             "換股後持股": [str(tick[j]) for j in o["after"]], "空槽": K.N_SLOTS - len(o["after"]),
+            "換股後持股（代號（全名））": [label(tick[j]) for j in o["after"]],
             "空槽候補（前10% 未持有、依 MOM 序；現金不足或開盤無效所以沒買）": [str(tick[j]) for j in o["cand"]],
             "月底現金占總值（%）": pct(o["cashf_M"]),
             "e 當日強制出場（斷點／下市）": [f"{tick[j]}:{w}" for j, w in o["forced"]],
             "該賣但開盤無效延後": [str(tick[j]) for j in o["delayed"]],
             "排名分母（S&P 500 可排檔數）": o["n_rank"], "前10%檔數": o["k10"], "前20%檔數": o["k20"],
-            "每筆新買金額": "min(前一日帳戶總值 ÷ 8, 可用現金)，依 MOM 序買，現金用完即停（⛔ 不賣贏家補錢，K.book 原式）"}
+            "每筆新買金額": "min(前一日帳戶總值 ÷ 8, 可用現金)，依 MOM 序買，現金用完即停（⛔ 不賣贏家補錢，K.book 原式）",
+            "⚠ 全名": IB_NOTE}
+
+
+def order_md(o, T):
+    """換股單 md（印給人看；代號＋全名）。"""
+    R = K.rworld(); cal = R["cal"]; tick = R["Wd"]["tick"]; n = R["n"]; e = o["e"]
+    ex = (str(cal[e].date()) if e < n else "下一交易日") + " 開盤"
+    L = [f"### C3s 換股單（{o['book']} 簿）：{cal[o['M']].date()} 月底量測 → {ex}", "",
+         "| 動作 | 代號 | 全名 | 月底排名 | 原因 |", "|---|---|---|---|---|"]
+    for j, w in o["sells"]:
+        L.append(f"| 賣 | {tick[j]} | {full_name(tick[j])} | {rank_of(T, e, j)[0] or '—'} | {w} |")
+    for j in o["buys"]:
+        L.append(f"| 買 | {tick[j]} | {full_name(tick[j])} | {rank_of(T, e, j)[0]} | |")
+    for j in o["after"]:
+        if j not in o["buys"]:
+            L.append(f"| 續抱 | {tick[j]} | {full_name(tick[j])} | {rank_of(T, e, j)[0] or '—'} | |")
+    L += ["", f"空槽 {K.N_SLOTS - len(o['after'])}", "", f"⚠ {IB_NOTE}"]
+    return chr(10).join(L)
 
 
 # ═════════════ 統計（看過段、描述）═════════════
@@ -391,7 +455,7 @@ def run_month(d, book):
     os.makedirs(OPSD, exist_ok=True)
     with open(p, "w", encoding="utf-8-sig", newline="") as f:
         wr = csv.writer(f); wr.writerow(cols); wr.writerow([row[c] for c in cols])
-    print(json.dumps(v, ensure_ascii=False, indent=1, default=K._jdef)); print("→", p)
+    print(json.dumps(v, ensure_ascii=False, indent=1, default=K._jdef)); print(); print(order_md(o, T)); print("→", p)
     return v
 
 

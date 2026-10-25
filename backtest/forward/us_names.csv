@@ -1,0 +1,756 @@
+ticker,full_name,source,verified
+A,"AGILENT TECHNOLOGIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AABA,ALTABA INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AAL,American Airlines Group Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AAP,ADVANCE AUTO PARTS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AAPL,Apple Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ABBV,AbbVie Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ABC,"Cencora, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ABMD,ABIOMED INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ABNB,"Airbnb, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ABT,ABBOTT LABORATORIES,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ACGL,ARCH CAPITAL GROUP LTD.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ACN,Accenture plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADBE,ADOBE INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADI,ANALOG DEVICES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADM,Archer-Daniels-Midland Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADP,AUTOMATIC DATA PROCESSING INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADS,Alliance Data Systems,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADSK,"Autodesk, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ADT,ADT Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AEE,AMEREN CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AEP,AMERICAN ELECTRIC POWER CO INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AES,AES CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AET,AETNA INC /PA/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AFL,AFLAC INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AGN,Allergan plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AIG,"AMERICAN INTERNATIONAL GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AIV,APARTMENT INVESTMENT & MANAGEMENT CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AIZ,"ASSURANT, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AJG,Arthur J. Gallagher & Co.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AKAM,AKAMAI TECHNOLOGIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ALB,ALBEMARLE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ALGN,ALIGN TECHNOLOGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ALK,"ALASKA AIR GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ALL,ALLSTATE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ALLE,Allegion plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ALXN,"ALEXION PHARMACEUTICALS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMAT,APPLIED MATERIALS INC /DE,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMCR,Amcor plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMD,ADVANCED MICRO DEVICES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AME,AMETEK INC/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMG,"AFFILIATED MANAGERS GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMGN,AMGEN INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMP,AMERIPRISE FINANCIAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMT,AMERICAN TOWER CORP /MA/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMTM,"Amentum Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AMZN,AMAZON COM INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AN,"AUTONATION, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ANDV,ANDEAVOR LLC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ANET,"Arista Networks, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ANSS,ANSYS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ANTM,"Elevance Health, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AON,Aon plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AOS,SMITH A O CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APA,APA Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APC,ANADARKO PETROLEUM CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APD,"Air Products & Chemicals, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APH,AMPHENOL CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APO,"Apollo Global Management, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APP,AppLovin Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+APTV,Aptiv PLC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ARE,"ALEXANDRIA REAL ESTATE EQUITIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ARES,Ares Management Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ARG,AIRGAS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ARNC,Howmet Aerospace Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ATO,ATMOS ENERGY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ATVI,"Activision Blizzard, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AVB,AVALONBAY COMMUNITIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AVGO,Broadcom Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AVY,Avery Dennison Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AWK,"American Water Works Company, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AXON,"AXON ENTERPRISE, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AXP,AMERICAN EXPRESS CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AYI,ACUITY INC. (DE),us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+AZO,AUTOZONE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BA,BOEING CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BAC,BANK OF AMERICA CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BALL,BALL Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BAX,BAXTER INTERNATIONAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BBBY,"20230930-DK-Butterfly-1, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BBT,Beacon Financial Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BBWI,"Bath & Body Works, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BBY,BEST BUY CO INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BCR,BARD C R INC /NJ/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BDX,BECTON DICKINSON & CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BE,BLOOM ENERGY CORP（Class A）,美股策略線對照表 20261025-0122,未在 IB 核
+BEN,FRANKLIN TEMPLETON INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BF.B,BROWN FORMAN CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BG,Bunge Global SA,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BHF,"Brighthouse Financial, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BHGE,Baker Hughes Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BIIB,BIOGEN INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BIO,"BIO-RAD LABORATORIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BK,Bank of New York Mellon Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BKNG,Booking Holdings Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BKR,Baker Hughes Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BLDR,"Builders FirstSource, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BLK,"BlackRock, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BLL,BALL Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BMY,BRISTOL MYERS SQUIBB CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BNY,Bank of New York Mellon Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BR,"BROADRIDGE FINANCIAL SOLUTIONS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BRCM,BROADCOM CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BRK.B,BERKSHIRE HATHAWAY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BRO,"BROWN & BROWN, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BSX,BOSTON SCIENTIFIC CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BWA,BORGWARNER INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BX,Blackstone Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BXLT,Baxalta Inc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+BXP,"BXP, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+C,CITIGROUP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CA,"CA, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CAG,CONAGRA BRANDS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CAH,CARDINAL HEALTH INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CAM,CAMERON INTERNATIONAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CARR,CARRIER GLOBAL Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CASY,CASEYS GENERAL STORES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CAT,CATERPILLAR INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CB,Chubb Ltd,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CBOE,"Cboe Global Markets, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CBRE,"CBRE GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CBS,Paramount Global,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CCE,"COCA-COLA EUROPEAN PARTNERS US, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CCEP,COCA-COLA EUROPACIFIC PARTNERS plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CCI,CROWN CASTLE INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CCL,Carnival Corp Ltd.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CDAY,"Dayforce, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CDNS,CADENCE DESIGN SYSTEMS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CDW,CDW Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CE,Celanese Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CEG,Constellation Energy Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CELG,CELGENE CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CERN,CERNER Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CF,"CF Industries Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CFG,CITIZENS FINANCIAL GROUP INC/RI,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CHD,CHURCH & DWIGHT CO INC /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CHK,EXPAND ENERGY Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CHRW,"C. H. ROBINSON WORLDWIDE, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CHTR,"CHARTER COMMUNICATIONS, INC. /MO/",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CI,Cigna Group,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CIEN,CIENA CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CINF,CINCINNATI FINANCIAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CL,COLGATE PALMOLIVE CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CLX,CLOROX CO /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CMA,COMERICA INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CMCSA,COMCAST CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CME,CME GROUP INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CMG,CHIPOTLE MEXICAN GRILL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CMI,CUMMINS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CMS,CMS ENERGY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CNC,CENTENE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CNP,CENTERPOINT ENERGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CNX,CNX Resources Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COF,CAPITAL ONE FINANCIAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COG,Coterra Energy Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COHR,COHERENT CORP.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COIN,"Coinbase Global, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COL,ROCKWELL COLLINS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COO,"COOPER COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COP,CONOCOPHILLIPS,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COR,"Cencora, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COST,COSTCO WHOLESALE CORP /NEW,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+COTY,COTY INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CPAY,"CORPAY, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CPB,CAMPBELL'S Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CPGX,"Columbia Pipeline Group, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CPRI,Capri Holdings Ltd,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CPRT,COPART INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CPT,CAMDEN PROPERTY TRUST,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CRH,CRH PUBLIC LTD CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CRL,"CHARLES RIVER LABORATORIES INTERNATIONAL, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CRM,"Salesforce, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CRWD,"CrowdStrike Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CRWV,COREWEAVE INC（Class A）,美股策略線對照表 20261025-0122,未在 IB 核
+CSCO,"CISCO SYSTEMS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CSGP,"COSTAR GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CSRA,CSRA Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CSX,CSX CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTAS,CINTAS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTL,"Lumen Technologies, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTLT,"Catalent, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTRA,Coterra Energy Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTSH,COGNIZANT TECHNOLOGY SOLUTIONS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTVA,"Corteva, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CTXS,CITRIX SYSTEMS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CVC,CABLEVISION SYSTEMS CORP /NY,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CVNA,CARVANA CO.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CVS,CVS HEALTH Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CVX,CHEVRON CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CXO,CONCHO RESOURCES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+CZR,"Caesars Entertainment, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+D,"DOMINION ENERGY, INC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DAL,"DELTA AIR LINES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DASH,"DoorDash, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DAY,"Dayforce, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DD,"DuPont de Nemours, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DDOG,"Datadog, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DE,DEERE & CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DECK,DECKERS OUTDOOR CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DELL,Dell Technologies Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DFS,Discover Financial Services,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DG,DOLLAR GENERAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DGX,QUEST DIAGNOSTICS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DHI,HORTON D R INC /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DHR,DANAHER CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DIS,Walt Disney Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DISCA,"Warner Bros. Discovery, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DISCK,"Warner Bros. Discovery, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DISH,DISH Network CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DLR,"DIGITAL REALTY TRUST, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DLTR,"DOLLAR TREE, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DNB,DUN & BRADSTREET CORP/NW,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DO,"DIAMOND OFFSHORE DRILLING, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DOC,"HEALTHPEAK PROPERTIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DOV,DOVER Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DOW,DOW INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DPZ,DOMINOS PIZZA INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DRE,DUKE REALTY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DRI,DARDEN RESTAURANTS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DTE,DTE ENERGY CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DUK,Duke Energy CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DVA,DAVITA INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DVN,DEVON ENERGY CORP/DE,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DWDP,"DuPont de Nemours, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DXC,DXC Technology Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+DXCM,DEXCOM INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EA,ELECTRONIC ARTS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EBAY,EBAY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ECHO,EchoStar CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ECL,ECOLAB INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ED,CONSOLIDATED EDISON INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EFX,EQUIFAX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EG,"EVEREST GROUP, LTD.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EIX,EDISON INTERNATIONAL,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EL,ESTEE LAUDER COMPANIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ELV,"Elevance Health, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EMC,EMC CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EME,"EMCOR Group, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EMN,EASTMAN CHEMICAL CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EMR,EMERSON ELECTRIC CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ENDP,Endo International,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ENPH,"Enphase Energy, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EOG,EOG RESOURCES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EPAM,"EPAM Systems, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EQIX,EQUINIX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EQR,VIVMARK RESIDENTIAL,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EQT,EQT Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ERIE,ERIE INDEMNITY CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ES,EVERSOURCE ENERGY,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ESRX,Express Scripts Holding Co.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ESS,"ESSEX PROPERTY TRUST, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ESV,Valaris Ltd,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ETFC,E TRADE FINANCIAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ETN,EATON CORP PLC,美股策略線對照表 20261025-0122,未在 IB 核
+ETR,ENTERGY CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ETSY,ETSY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EVHC,Envision Healthcare Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EVRG,"Evergy, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EW,Edwards Lifesciences Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EXC,EXELON CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EXE,EXPAND ENERGY Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EXPD,EXPEDITORS INTERNATIONAL OF WASHINGTON INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EXPE,"Expedia Group, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+EXR,Extra Space Storage Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+F,FORD MOTOR CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FANG,"Diamondback Energy, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FAST,FASTENAL CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FB,"Meta Platforms, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FBHS,Fortune Brands Home & Security,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FCX,FREEPORT-MCMORAN INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FDS,FACTSET RESEARCH SYSTEMS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FDX,FEDEX CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FDXF,"FedEx Freight Holding Company, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FE,FIRSTENERGY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FERG,Ferguson Enterprises Inc. /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FFIV,"F5, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FI,FISERV INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FICO,FAIR ISAAC CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FIS,"Fidelity National Information Services, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FISV,FISERV INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FITB,FIFTH THIRD BANCORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FIX,COMFORT SYSTEMS USA INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FL,"FOOT LOCKER, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FLEX,FLEX LTD.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FLIR,"Teledyne FLIR, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FLR,FLUOR CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FLS,FLOWSERVE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FLT,"CORPAY, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FMC,FMC CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FOSL,"Fossil Group, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FOX,Fox Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FOXA,Fox Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FRC,First Republic Bank,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FRT,FEDERAL REALTY INVESTMENT TRUST,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FSLR,"FIRST SOLAR, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FTI,TechnipFMC plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FTNT,"Fortinet, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FTR,"Frontier Communications Parent, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+FTV,Fortive Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GD,GENERAL DYNAMICS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GDDY,GoDaddy Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GE,GENERAL ELECTRIC CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GEHC,GE HealthCare Technologies Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GEN,Gen Digital Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GEV,GE VERNOVA INC,美股策略線對照表 20261025-0122,未在 IB 核
+GGP,Brookfield Property REIT Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GILD,"GILEAD SCIENCES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GIS,GENERAL MILLS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GL,GLOBE LIFE INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GLD,SPDR GOLD SHARES,美股策略線對照表 20261025-0122,未在 IB 核
+GLW,CORNING INC /NY,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GM,General Motors Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GMCR,"KEURIG GREEN MOUNTAIN, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GME,GameStop Corp.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GNRC,GENERAC HOLDINGS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GOOG,Alphabet Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GOOGL,Alphabet Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GPC,GENUINE PARTS CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GPN,GLOBAL PAYMENTS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GPS,Gap,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GRMN,GARMIN LTD,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GS,GOLDMAN SACHS GROUP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GT,GOODYEAR TIRE & RUBBER CO /OH/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+GWW,"W.W. GRAINGER, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HAL,HALLIBURTON CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HAR,HARMAN INTERNATIONAL INDUSTRIES INC /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HAS,"HASBRO, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HBAN,HUNTINGTON BANCSHARES INC /MD/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HBI,Hanesbrands Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HCA,"HCA Healthcare, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HCP,"HEALTHPEAK PROPERTIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HD,"HOME DEPOT, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HES,HESS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HFC,HollyFrontier,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HIG,"HARTFORD INSURANCE GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HII,HUNTINGTON INGALLS INDUSTRIES INC,美股策略線對照表 20261025-0122,未在 IB 核
+HLT,Hilton Worldwide Holdings Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HOG,"HARLEY-DAVIDSON, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HOLX,HOLOGIC INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HON,HONEYWELL INTERNATIONAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HONA,Honeywell Aerospace Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HOOD,"Robinhood Markets, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HOT,"STARWOOD HOTELS & RESORTS WORLDWIDE, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HP,"Helmerich & Payne, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HPE,Hewlett Packard Enterprise Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HPQ,HP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HRB,H&R BLOCK INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HRL,HORMEL FOODS CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HRS,"L3HARRIS TECHNOLOGIES, INC. /DE/",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HSIC,HENRY SCHEIN INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HST,"HOST HOTELS & RESORTS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HSY,HERSHEY CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HUBB,HUBBELL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HUM,HUMANA INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+HWM,Howmet Aerospace Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IBKR,"Interactive Brokers Group, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IBM,INTERNATIONAL BUSINESS MACHINES CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ICE,"Intercontinental Exchange, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IDXX,IDEXX LABORATORIES INC /DE,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IEF,ISHARES 7-10 YEAR TREASURY BOND ETF,美股策略線對照表 20261025-0122,未在 IB 核
+IEX,IDEX CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IFF,INTERNATIONAL FLAVORS & FRAGRANCES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ILMN,"ILLUMINA, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+INCY,INCYTE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+INFO,IHS Markit Ltd.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+INTC,INTEL CORP,美股策略線對照表 20261025-0122,未在 IB 核
+INTU,INTUIT INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+INVH,Invitation Homes Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IP,INTERNATIONAL PAPER CO /NEW/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IPG,"INTERPUBLIC GROUP OF COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IPGP,IPG PHOTONICS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IQV,IQVIA HOLDINGS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IR,Ingersoll Rand Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IRM,IRON MOUNTAIN INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ISRG,INTUITIVE SURGICAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IT,GARTNER INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ITW,ILLINOIS TOOL WORKS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+IVZ,Invesco Ltd.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+J,JACOBS SOLUTIONS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JBHT,HUNT J B TRANSPORT SERVICES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JBL,JABIL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JCI,Johnson Controls International plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JEC,JACOBS SOLUTIONS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JEF,Jefferies Financial Group Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JKHY,JACK HENRY & ASSOCIATES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JNJ,JOHNSON & JOHNSON,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JNPR,JUNIPER NETWORKS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JPM,JPMORGAN CHASE & CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+JWN,NORDSTROM INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+K,KELLANOVA,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KDP,Keurig Dr Pepper Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KEY,KEYCORP /NEW/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KEYS,"Keysight Technologies, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KHC,Kraft Heinz Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KIM,KIMCO REALTY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KKR,KKR & Co. Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KLAC,KLA CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KMB,KIMBERLY CLARK CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KMI,"KINDER MORGAN, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KMX,CARMAX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KO,COCA COLA CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KORS,Capri Holdings Ltd,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KR,KROGER CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KSS,KOHLS Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KSU,KANSAS CITY SOUTHERN,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+KTOS,KRATOS DEFENSE & SECURITY SOLUTIONS INC,美股策略線對照表 20261025-0122,未在 IB 核
+KVUE,Kenvue Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+L,LOEWS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LB,"Bath & Body Works, Inc.（原 L Brands）",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LDOS,"Leidos Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LEG,LEGGETT & PLATT INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LEN,LENNAR CORP /NEW/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LEU,CENTRUS ENERGY CORP（Class A）,美股策略線對照表 20261025-0122,未在 IB 核
+LH,LABCORP HOLDINGS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LHX,"L3HARRIS TECHNOLOGIES, INC. /DE/",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LII,LENNOX INTERNATIONAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LIN,LINDE PLC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LITE,LUMENTUM HOLDINGS INC,美股策略線對照表 20261025-0122,未在 IB 核
+LKQ,LKQ CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LLL,"L3 TECHNOLOGIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LLTC,LINEAR TECHNOLOGY CORP /CA/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LLY,ELI LILLY & Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LM,"LEGG MASON, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LMT,LOCKHEED MARTIN CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LNC,LINCOLN NATIONAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LNT,ALLIANT ENERGY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LOW,LOWES COMPANIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LRCX,LAM RESEARCH CORP,美股策略線對照表 20261025-0122,未在 IB 核
+LULU,lululemon athletica inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LUMN,"Lumen Technologies, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LUV,SOUTHWEST AIRLINES CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LVLT,"Level 3 Parent, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LVS,LAS VEGAS SANDS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LW,"Lamb Weston Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LYB,LyondellBasell Industries N.V.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+LYV,"Live Nation Entertainment, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+M,"Macy's, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MA,Mastercard Inc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MAA,MID AMERICA APARTMENT COMMUNITIES INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MAC,MACERICH CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MAR,MARRIOTT INTERNATIONAL INC /MD/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MAS,MASCO CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MAT,MATTEL INC /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MCD,MCDONALDS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MCHP,MICROCHIP TECHNOLOGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MCK,MCKESSON CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MCO,MOODYS CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MDLZ,"Mondelez International, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MDT,Medtronic plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MET,METLIFE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+META,"Meta Platforms, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MGM,MGM Resorts International,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MHK,MOHAWK INDUSTRIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MJN,Mead Johnson Nutrition Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MKC,MCCORMICK & CO INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MKTX,MARKETAXESS HOLDINGS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MLM,MARTIN MARIETTA MATERIALS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MMC,"MARSH & MCLENNAN COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MMM,3M CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MNK,Keenova Therapeutics plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MNST,Monster Beverage Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MO,"ALTRIA GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MOH,"MOLINA HEALTHCARE, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MON,MONSANTO CO /NEW/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MOS,MOSAIC CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MP,MP MATERIALS CORP,美股策略線對照表 20261025-0122,未在 IB 核
+MPC,Marathon Petroleum Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MPWR,"MONOLITHIC POWER SYSTEMS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MRK,"Merck & Co., Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MRNA,"Moderna, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MRO,MARATHON OIL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MRSH,"MARSH & MCLENNAN COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MRVL,"Marvell Technology, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MS,MORGAN STANLEY,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MSCI,MSCI Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MSFT,MICROSOFT CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MSI,"Motorola Solutions, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MTB,M&T BANK CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MTCH,"Match Group, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MTD,METTLER TOLEDO INTERNATIONAL INC/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MU,MICRON TECHNOLOGY INC,美股策略線對照表 20261025-0122,未在 IB 核
+MUR,MURPHY OIL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MXIM,MAXIM INTEGRATED PRODUCTS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+MYL,Mylan II B.V.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NAVI,NAVIENT CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NBL,NOBLE ENERGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NCLH,Norwegian Cruise Line Holdings Ltd.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NDAQ,"NASDAQ, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NDSN,NORDSON CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NEE,NEXTERA ENERGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NEM,NEWMONT Corp /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NFLX,NETFLIX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NFX,NEWFIELD EXPLORATION CO /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NI,NISOURCE INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NKE,"NIKE, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NKTR,NEKTAR THERAPEUTICS,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NLOK,Gen Digital Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NLSN,Nielsen Holdings plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NOC,NORTHROP GRUMMAN CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NOV,NOV Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NOW,"ServiceNow, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NRG,"NRG ENERGY, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NSC,NORFOLK SOUTHERN CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NTAP,"NetApp, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NTRS,NORTHERN TRUST CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NUE,NUCOR CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NVDA,NVIDIA CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NVR,NVR INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NWL,NEWELL BRANDS INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NWS,NEWS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NWSA,NEWS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+NXPI,NXP Semiconductors N.V.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+O,REALTY INCOME CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ODFL,"OLD DOMINION FREIGHT LINE, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+OGN,Organon & Co.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+OI,"O-I Glass, Inc. /DE/",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+OKE,ONEOK INC /NEW/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+OMC,OMNICOM GROUP INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ON,ON SEMICONDUCTOR CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ORCL,ORACLE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ORLY,O REILLY AUTOMOTIVE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+OTIS,Otis Worldwide Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+OXY,OCCIDENTAL PETROLEUM CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+P,"Everpure, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PANW,Palo Alto Networks Inc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PARA,"Banzai International, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PAYC,"Paycom Software, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PAYX,PAYCHEX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PBCT,"People's United Financial, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PBI,PITNEY BOWES INC /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PCAR,PACCAR INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PCG,PG&E Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PCL,PLUM CREEK TIMBER CO INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PCP,PRECISION CASTPARTS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PDCO,"PATTERSON COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PEAK,"HEALTHPEAK PROPERTIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PEG,PUBLIC SERVICE ENTERPRISE GROUP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PENN,"PENN Entertainment, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PEP,PEPSICO INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PFE,PFIZER INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PFG,PRINCIPAL FINANCIAL GROUP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PG,PROCTER & GAMBLE Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PGR,PROGRESSIVE CORP/OH/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PH,Parker-Hannifin Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PHM,PULTEGROUP INC/MI/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PKG,PACKAGING CORP OF AMERICA,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PKI,"REVVITY, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PLD,"Prologis, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PLTR,Palantir Technologies Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PM,Philip Morris International Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PNC,"PNC FINANCIAL SERVICES GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PNR,PENTAIR plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PNW,PINNACLE WEST CAPITAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PODD,INSULET CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+POM,PEPCO HOLDINGS LLC（原 Pepco Holdings Inc）,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+POOL,POOL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PPG,PPG INDUSTRIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PPL,PPL Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PRGO,PERRIGO Co plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PRU,PRUDENTIAL FINANCIAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PSA,Public Storage,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PSKY,Paramount Skydance Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PSX,Phillips 66,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PTC,PTC INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PVH,PVH CORP. /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PWR,"QUANTA SERVICES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PX,LINDE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PXD,PIONEER NATURAL RESOURCES CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+PYPL,"PayPal Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+Q,"Qnity Electronics, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+QCOM,QUALCOMM INC/DE,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+QLD,PROSHARES ULTRA QQQ,美股策略線對照表 20261025-0122,未在 IB 核
+QRVO,"Qorvo, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+R,RYDER SYSTEM INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RAI,REYNOLDS AMERICAN INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RCL,ROYAL CARIBBEAN CRUISES LTD,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RDDT,"Reddit, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RE,"EVEREST GROUP, LTD.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+REG,REGENCY CENTERS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+REGN,"REGENERON PHARMACEUTICALS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RF,REGIONS FINANCIAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RHI,ROBERT HALF INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RHT,RED HAT INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RIG,Transocean Ltd.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RJF,RAYMOND JAMES FINANCIAL INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RKLB,ROCKET LAB CORP,美股策略線對照表 20261025-0122,未在 IB 核
+RL,RALPH LAUREN CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RMD,RESMED INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ROK,"ROCKWELL AUTOMATION, INC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ROL,ROLLINS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ROP,ROPER TECHNOLOGIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ROST,"ROSS STORES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RRC,RANGE RESOURCES CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RSG,"REPUBLIC SERVICES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RTN,RAYTHEON CO/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RTX,RTX Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+RVTY,"REVVITY, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SATS,EchoStar CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SBAC,SBA COMMUNICATIONS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SBUX,STARBUCKS CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SCG,SCANA CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SCHW,SCHWAB CHARLES CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SE,Spectra Energy Corp.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SEDG,"SOLAREDGE TECHNOLOGIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SEE,SEALED AIR CORP/DE,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SHW,SHERWIN WILLIAMS CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SIG,SIGNET JEWELERS LTD,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SIVB,SVB Financial Group,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SJM,J M SMUCKER Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SLB,SLB LIMITED/NV,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SLG,SL GREEN REALTY CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SMCI,"Super Micro Computer, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SNA,Snap-on Inc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SNDK,SANDISK CORP,美股策略線對照表 20261025-0122,未在 IB 核
+SNI,"Scripps Networks Interactive, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SNPS,SYNOPSYS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SO,SOUTHERN CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SOLS,Solstice Advanced Materials Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SOLV,Solventum Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SPG,SIMON PROPERTY GROUP INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SPGI,S&P Global Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SPLS,STAPLES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SPY,SPDR S&P 500 ETF TRUST,美股策略線對照表 20261025-0122,未在 IB 核
+SRCL,STERICYCLE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SRE,SEMPRA,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SSO,PROSHARES ULTRA S&P500,美股策略線對照表 20261025-0122,未在 IB 核
+STE,STERIS plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+STI,SUNTRUST BANKS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+STJ,"ST JUDE MEDICAL, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+STLD,STEEL DYNAMICS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+STT,STATE STREET CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+STX,SEAGATE TECHNOLOGY HOLDINGS PLC,美股策略線對照表 20261025-0122,未在 IB 核
+STZ,"CONSTELLATION BRANDS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SW,Smurfit Westrock plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SWK,"STANLEY BLACK & DECKER, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SWKS,"SKYWORKS SOLUTIONS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SWN,SOUTHWESTERN ENERGY CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SYF,Synchrony Financial,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SYK,STRYKER CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SYMC,Gen Digital Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+SYY,SYSCO CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+T,AT&T INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TAP,MOLSON COORS BEVERAGE CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TDC,TERADATA CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TDG,TransDigm Group INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TDY,TELEDYNE TECHNOLOGIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TE,TECO ENERGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TECH,BIO-TECHNE Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TEL,TE Connectivity plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TER,TERADYNE INC,美股策略線對照表 20261025-0122,未在 IB 核
+TFC,TRUIST FINANCIAL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TFX,TELEFLEX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TGNA,TEGNA INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TGT,TARGET CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+THC,TENET HEALTHCARE CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TIF,TIFFANY & CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TJX,TJX COMPANIES INC /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TKO,"TKO Group Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TMK,GLOBE LIFE INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TMO,THERMO FISHER SCIENTIFIC INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TMUS,"T-Mobile US, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TPL,Texas Pacific Land Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TPR,"TAPESTRY, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TRGP,Targa Resources Corp.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TRIP,"TripAdvisor, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TRMB,TRIMBLE INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TROW,PRICE T ROWE GROUP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TRV,"TRAVELERS COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TSCO,TRACTOR SUPPLY CO /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TSLA,"Tesla, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TSN,"TYSON FOODS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TSS,TOTAL SYSTEM SERVICES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TT,Trane Technologies plc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TTD,"Trade Desk, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TTWO,TAKE TWO INTERACTIVE SOFTWARE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TWC,"SPECTRUM MANAGEMENT HOLDING COMPANY, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TWTR,"TWITTER, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TWX,"WARNER MEDIA, LLC",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TXN,TEXAS INSTRUMENTS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TXT,TEXTRON INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+TYL,TYLER TECHNOLOGIES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UA,"Under Armour, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UAA,"Under Armour, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UAL,"United Airlines Holdings, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UBER,"Uber Technologies, Inc",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UDR,"UDR, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UHS,UNIVERSAL HEALTH SERVICES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ULTA,"Ulta Beauty, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UNH,UNITEDHEALTH GROUP INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UNM,Unum Group,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UNP,UNION PACIFIC CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UPS,UNITED PARCEL SERVICE INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+URBN,URBAN OUTFITTERS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+URI,"UNITED RENTALS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+USB,US BANCORP DE,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+UTX,RTX Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+V,VISA INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VAR,VARIAN MEDICAL SYSTEMS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VEEV,VEEVA SYSTEMS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VFC,V F CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VIAB,Viacom Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VIAC,Paramount Global,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VICI,VICI PROPERTIES INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VLO,VALERO ENERGY CORP/TX,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VLTO,Veralto Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VMC,Vulcan Materials CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VMRK,VIVMARK RESIDENTIAL,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VNO,VORNADO REALTY TRUST,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VNT,Vontier Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VRSK,"Verisk Analytics, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VRSN,VERISIGN INC/CA,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VRT,VERTIV HOLDINGS CO（Class A）,美股策略線對照表 20261025-0122,未在 IB 核
+VRTX,VERTEX PHARMACEUTICALS INC / MA,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VST,Vistra Corp.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VTR,"Ventas, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VTRS,Viatris Inc,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+VZ,VERIZON COMMUNICATIONS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WAB,WESTINGHOUSE AIR BRAKE TECHNOLOGIES CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WAT,WATERS CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WBA,"Walgreens Boots Alliance, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WBD,"Warner Bros. Discovery, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WCG,"WELLCARE HEALTH PLANS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WDAY,"Workday, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WDC,WESTERN DIGITAL CORP,美股策略線對照表 20261025-0122,未在 IB 核
+WEC,"WEC ENERGY GROUP, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WELL,WELLTOWER INC.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WFC,WELLS FARGO & COMPANY/MN,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WFM,WHOLE FOODS MARKET INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WHR,WHIRLPOOL CORP /DE/,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WLTW,WILLIS TOWERS WATSON PLC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WM,WASTE MANAGEMENT INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WMB,"WILLIAMS COMPANIES, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WMT,Walmart Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WRB,BERKLEY W R CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WRK,WestRock Co,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WSM,WILLIAMS SONOMA INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WST,WEST PHARMACEUTICAL SERVICES INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WTW,WILLIS TOWERS WATSON PLC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WU,Western Union CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WY,WEYERHAEUSER CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WYND,Travel & Leisure Co.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+WYNN,WYNN RESORTS LTD,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XEC,CIMAREX ENERGY CO,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XEL,XCEL ENERGY INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XL,XL GROUP LTD,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XLNX,XILINX INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XOM,EXXON MOBIL CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XRAY,DENTSPLY SIRONA Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XRX,Xerox Holdings Corp,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XYL,Xylem Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+XYZ,"Block, Inc.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+YUM,YUM BRANDS INC,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ZBH,"ZIMMER BIOMET HOLDINGS, INC.",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ZBRA,ZEBRA TECHNOLOGIES CORP,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ZION,"ZIONS BANCORPORATION, NATIONAL ASSOCIATION /UT/",us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
+ZTS,Zoetis Inc.,us-stock-data 4427dc30f data/fundamentals/cik_map.csv sec_name（SEC 名冊）,未核（名冊）
