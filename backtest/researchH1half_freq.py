@@ -2,7 +2,7 @@
 """H1「營收見頂確認、先賣一半」seq1 頻率表（台股策略線登錄 seq1 sha 42d64aee7df4e61b；裁定 seq474 §六核：描述、不判、不計 N）——回測線計算子代理。
 ⛔ 本檔不算任何報酬（不讀價格值，只用交易日曆、成交旗標、壞根／下市位置）；⛔ 不 commit、不改既有檔。
 檔名說明：backtest/researchH1.py、researchH1_check.py、resultsH1/ 早已存在（別件 PREREGH1，已 commit）⇒ ⛔ 不覆寫，本件改名 researchH1half*、結果夾 resultsH1half/。
-引擎＝researchLampCensus（Engine、load_signals、codes_of、q_last_month；researchV41EV.tw_cap）只 import；
+引擎＝researchLampCensus（Engine、load_signals、codes_of、q_last_month；researchV41EV.tw_cap）只 import——★ 凍結在 commit 04d50972fe 版（git show 載入，不讀工作樹）；
 月營收＝bigrun_monthly.load_rev_pit（rev_metrics 的資料來源；revpit 夾＝researchRevTurn_freq.ensure_data(PIN) 同一版）只 import。
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchH1half_freq
@@ -31,6 +31,7 @@
  F7 時距 ＝ (賣出日 − 進場日) 日曆日 ÷ 30.4375（月）；另報確認月距 m0 的月數。
  F8 營收資料缺 ＝ 可用月中 S 空的月數 ＞ 0 的件數；整段可用月 S 全空 ＝「營收全缺」。
  F9 季分群 n_eff ＝ 燈 1 季（普查）的不同季數；舊 31 段以案（燈亮月）數報。訊號層觸發比例 ＝ 訊號內各檔觸發（1／0）等權平均的平均。
+ F5′ 緊接版（描述欄，裁定 seq475 加）：確認窗只看 P 所在月之後緊接的 3 個月；主欄仍為滑動版（seq475 裁定採用）。
  F10 重疊 ＝ 同組內同一代號出現在 ≥2 個訊號（檔數）；其中持有窗（進場～E 或末日）互相重疊的代號數另報。
 """
 from __future__ import annotations
@@ -46,7 +47,19 @@ import pandas as pd
 
 sys.path.insert(0, os.path.expanduser("~/tw-p17")); sys.path.insert(0, os.path.expanduser("~/tw-p17/backtest"))
 os.chdir(os.path.expanduser("~/tw-p17"))
-from backtest import researchLampCensus as LC               # noqa: E402
+import subprocess                                           # noqa: E402
+import types                                                # noqa: E402
+LC_REV = "04d50972fe"   # ★ researchLampCensus 凍結在已交版（commit 04d50972fe）：工作樹版 2026-10-25 18:21 起被別件改寫中（load_signals 介面已變），⛔ 不跟著變
+
+
+def _frozen(name, path, rev):
+    src = subprocess.run(["git", "show", f"{rev}:{path}"], capture_output=True, text=True, check=True).stdout
+    m = types.ModuleType(name); m.__file__ = f"{rev}:{path}"; sys.modules[name] = m
+    exec(compile(src, f"{rev}:{path}", "exec"), m.__dict__)
+    return m
+
+
+LC = _frozen("researchLampCensus_at_04d50972fe", "backtest/researchLampCensus.py", LC_REV)
 from backtest import researchV41EV as V                     # noqa: E402
 from backtest import researchRevTurn_freq as RT             # noqa: E402
 from backtest import bigrun_monthly as BM                   # noqa: E402
@@ -187,6 +200,17 @@ def h1_trigger(S, C: Cal, i, e):
             continue
         if w[2] <= P / 2 or w[2] <= 0:
             conf = (k, P, int(pm[k - 3])); break
+    # 緊接版（描述欄，裁定 seq475）：確認窗須是 P 所在月之後緊接的 3 個月（pm[k−3] ＝ k−3）
+    imm = False
+    for k in range(3, len(sv)):
+        P = runmax[k - 3]
+        if not (np.isfinite(P) and P > 0) or int(pm[k - 3]) != k - 3:
+            continue
+        w = sv[k - 2:k + 1]
+        if np.isfinite(w).all() and (w < P).all() and (w[2] <= P / 2 or w[2] <= 0):
+            s2 = C.next_open(i, js[k])
+            imm = bool(s2 is not None and s2 < lim and xe is not None and s2 <= xe); break
+    out["緊接版觸發"] = imm
     if len(sv) == 0 or np.isnan(sv).all():
         out["結果"] = "營收全缺"; return out
     if conf is None:
@@ -311,6 +335,7 @@ def block(sub, sigrows=None, qcol="燈1季"):
     for k in ("P≤0未觸發", "到E未確認", "未到E、末日前未確認", "觸發但已先結算", "營收全缺"):
         rec[k] = int((sub["結果"] == k).sum())
     rec["走不到確認比例"] = (n - len(tr)) / n if n else np.nan
+    rec["緊接版觸發數"] = int(sub["緊接版觸發"].astype(bool).sum()) if n else 0
     rec["未到E件數"] = int(sub["未到"].astype(bool).sum())
     rec["營收有缺件數"] = int((sub["S空月數"].fillna(0) > 0).sum())
     if n:
@@ -362,7 +387,7 @@ def main():
     log(f"[進場驗證] {chk}")
     keep = ["樣本", "訊號", "版本", "版", "甲", "乙", "型", "產業", "主題", "燈1季", "燈亮月", "結果類", "無點名", "代號", "名稱", "下限", "市值(億)", "入選",
             "進場日", "進場順延日", "E日", "未到", "截斷", "截斷日", "營收期別", "m0", "可用月數", "S空月數", "P終", "P終月", "結果", "P", "P月", "確認月",
-            "S1", "S2", "S3", "第3月≤0", "第3月≤P/2", "J日", "確認距m0月", "賣出日", "賣出順延日", "時距月", "15日規則改日", "註"]
+            "S1", "S2", "S3", "第3月≤0", "第3月≤P/2", "J日", "確認距m0月", "賣出日", "賣出順延日", "時距月", "15日規則改日", "緊接版觸發", "註"]
     ALL = pd.concat([EV, OD], ignore_index=True)
     ALL.reindex(columns=keep).to_csv(os.path.join(OUT, "events.csv"), index=False, encoding="utf-8-sig")
     FQ = []
@@ -419,11 +444,11 @@ def write_md(FQ, EV, OD, meta):
           f"- 登錄 sha {meta['登錄sha16']}；裁定 seq474 §六：描述、不判、不計 N。面板 sha {meta['面板sha'][:12]}（尾 {meta['面板尾']}）；月營收 load_rev_pit（公告當時口徑）。",
           "- 讀法見 main.json「讀法」（F0～F10，★＝執行者定、看數字前寫死）。普查燈 1 季 15 季 ⇒ n_eff ≤ 15 < 24，依構造還沒測。", "",
           "## 普查（主）", "",
-          "| 組 | 型 | 訊號列 | 無點名 | 待定 | 規模剔除檔次 | 進統計訊號 | 可交檔次 | 燈1季 n_eff | 觸發 | 觸發比例（檔次／訊號層） | 觸發者 n_eff | 未到 E | 營收有缺 | 重疊代號（持有窗重疊） |",
+          "| 組 | 型 | 訊號列 | 無點名 | 待定 | 規模剔除檔次 | 進統計訊號 | 可交檔次 | 燈1季 n_eff | 觸發（緊接版） | 觸發比例（檔次／訊號層） | 觸發者 n_eff | 未到 E | 營收有缺 | 重疊代號（持有窗重疊） |",
           "|" + "---|" * 15]
     for _, r in FQ[FQ["樣本"] == "普查"].iterrows():
         md.append(f"| {r['組']} | {r['型']} | {int(r['訊號列'])} | {int(r['無點名'])} | {int(r['待定'])} | {int(r['規模剔除檔次'])} | {r['訊號數(進統計)']} | {r['可交檔次']} | "
-                  f"{r['n_eff(群數)']} | {r['觸發']} | {pc(r['觸發比例'])}／{pc(r['訊號層觸發比例'])} | {r['觸發者n_eff']} | {r['未到E件數']} | {r['營收有缺件數']} | "
+                  f"{r['n_eff(群數)']} | {r['觸發']}（{r['緊接版觸發數']}） | {pc(r['觸發比例'])}／{pc(r['訊號層觸發比例'])} | {r['觸發者n_eff']} | {r['未到E件數']} | {r['營收有缺件數']} | "
                   f"{r['重疊代號(≥2訊號)']}（{r['其中持有窗重疊']}） |")
     md += ["", "### 觸發時距、P、確認第 3 個月、走不到確認", "",
            "| 組 | 型 | 觸發 | 時距月 中位［P25～P75］ | ≤12／12–24／24–36／>36 月 | P 中位（觸發者） | 第3月 ≤0／≤P÷2且>0 | 走不到確認 | P≤0／到E未確認／未到E末日前未確認／已先結算／營收全缺 | 15 日規則改日 |",
@@ -433,9 +458,9 @@ def write_md(FQ, EV, OD, meta):
                   f"{r['時距≤12月']}／{r['時距12–24月']}／{r['時距24–36月']}／{r['時距>36月']} | {f1(r['P_中位'], True)} | {r['第3月≤0']}／{r['第3月≤P/2且>0']} | "
                   f"{pc(r['走不到確認比例'])} | {r['P≤0未觸發']}／{r['到E未確認']}／{r['未到E、末日前未確認']}／{r['觸發但已先結算']}／{r['營收全缺']} | {r['賣出15日規則改日件']} |")
     md += ["", "## 舊 31 段（只描述；⚠ H1 是看過其中 3 個輸家後才挑的）", "",
-           "| 版 | 結果類 | 型 | 案數 | 可交檔次 | 觸發 | 觸發比例 | 時距月 中位 | P 中位 | 第3月 ≤0／≤P÷2且>0 | P≤0／到E未確認／未到／已先結算／營收全缺 |", "|" + "---|" * 11]
+           "| 版 | 結果類 | 型 | 案數 | 可交檔次 | 觸發（緊接版） | 觸發比例 | 時距月 中位 | P 中位 | 第3月 ≤0／≤P÷2且>0 | P≤0／到E未確認／未到／已先結算／營收全缺 |", "|" + "---|" * 11]
     for _, r in FQ[FQ["樣本"] == "舊31段"].iterrows():
-        md.append(f"| {r['組']} | {r['結果類']} | {r['型']} | {r['訊號數(進統計)']} | {r['可交檔次']} | {r['觸發']} | {pc(r['觸發比例'])} | {f1(r['時距月_中位'])} | "
+        md.append(f"| {r['組']} | {r['結果類']} | {r['型']} | {r['訊號數(進統計)']} | {r['可交檔次']} | {r['觸發']}（{r['緊接版觸發數']}） | {pc(r['觸發比例'])} | {f1(r['時距月_中位'])} | "
                   f"{f1(r['P_中位'], True)} | {r['第3月≤0']}／{r['第3月≤P/2且>0']} | {r['P≤0未觸發']}／{r['到E未確認']}／{r['未到E、末日前未確認']}／{r['觸發但已先結算']}／{r['營收全缺']} |")
     ins = EV[EV["入選"] & EV["代號"].ne("")]
     md += ["", "## 名單與註記", "",

@@ -20,6 +20,7 @@
  M6 賣掉那一半後 12 個月內又漲 ≥ 1 倍 ＝ 賣出日～賣出日＋12 個日曆月（截到截斷／結算日）內最高還原收盤 ÷ 賣出價 − 1 ≥ 1；12 月窗未滿另標。
     賣在確認日的價格距之前最高收盤 ＝ 賣出價 ÷ 進場日～賣出日前一日最高還原收盤 − 1。
  M7 採用門檻描述句（產業 seq41，改寫成描述）＝「普查樣本上 d 平均 ≥ 0 且 d 中位 > 0」成立與否（訊號層、甲乙各一句；⛔ 不並列成結論、不判定）。
+ M9 主表另報 d 的 P25／P75、最好與最壞一筆（訊號）、緊接版觸發數（裁定 seq475、使用者 seq477）。
  M8 舊 31 段 ＝ 代表股版、同業等權版，同口徑只描述（案＝1 個樣本）。
 """
 from __future__ import annotations
@@ -38,7 +39,7 @@ import pandas as pd
 sys.path.insert(0, os.path.expanduser("~/tw-p17")); sys.path.insert(0, os.path.expanduser("~/tw-p17/backtest"))
 os.chdir(os.path.expanduser("~/tw-p17"))
 from backtest import researchH1half_freq as F               # noqa: E402
-from backtest import researchLampCensus as LC               # noqa: E402
+LC = F.LC                                                   # researchLampCensus 凍結版（commit 04d50972fe），與頻率表同一個模組物件
 from backtest import researchV41EV as V                     # noqa: E402
 
 BASE = "backtest/resultsH1half"
@@ -133,11 +134,20 @@ def cluster_ci(df, col, gcol):
 def group_stats(ev, sig, gcol):
     """ev＝每檔列；sig＝訊號層列（d、d份、觸發比例、gcol）。"""
     s1 = summ(sig["d"].tolist()); s2 = summ(ev["d"].tolist())
+    dv = sig.dropna(subset=["d"]) if len(sig) else sig
+    if len(dv):
+        b = dv.loc[dv["d"].idxmax()]; w = dv.loc[dv["d"].idxmin()]
+        q25, q75 = float(np.percentile(dv["d"], 25)), float(np.percentile(dv["d"], 75))
+        best, worst, bid, wid = float(b["d"]), float(w["d"]), str(b.iloc[0]), str(w.iloc[0])
+    else:
+        q25 = q75 = best = worst = np.nan; bid = wid = ""
     tr = ev[ev["觸發"]]
     lo, hi = cluster_ci(sig, "d", gcol)
-    rec = {"訊號n": s1["n"], "d平均(訊號)": s1["平均"], "d中位(訊號)": s1["中位"], "dCI低": lo, "dCI高": hi, "群數": int(sig[gcol].nunique()) if len(sig) else 0,
+    rec = {"訊號n": s1["n"], "d平均(訊號)": s1["平均"], "d中位(訊號)": s1["中位"], "dP25(訊號)": q25, "dP75(訊號)": q75, "d最好(訊號)": best, "最好訊號": bid,
+           "d最壞(訊號)": worst, "最壞訊號": wid, "dCI低": lo, "dCI高": hi, "群數": int(sig[gcol].nunique()) if len(sig) else 0,
            "檔次n": s2["n"], "d平均(每檔)": s2["平均"], "d中位(每檔)": s2["中位"],
-           "觸發率(每檔)": float(ev["觸發"].mean()) if len(ev) else np.nan, "觸發者d中位(每檔)": summ(tr["d"].tolist())["中位"],
+           "觸發率(每檔)": float(ev["觸發"].mean()) if len(ev) else np.nan,
+           "觸發數": int(ev["觸發"].sum()) if len(ev) else 0, "緊接版觸發數": int(ev["緊接版觸發"].astype(bool).sum()) if len(ev) else 0, "觸發者d中位(每檔)": summ(tr["d"].tolist())["中位"],
            "H1年化中位(訊號)": summ(sig["H1年化"].tolist())["中位"], "全抱年化中位(訊號)": summ(sig["全抱年化"].tolist())["中位"],
            "d份平均(訊號)": summ(sig["d份"].tolist())["平均"], "d份中位(訊號)": summ(sig["d份"].tolist())["中位"],
            "賣後12月又漲≥1倍": int(tr["賣後12月又漲≥1倍"].astype(bool).sum()) if len(tr) else 0,
@@ -218,9 +228,18 @@ def main():
         ok = all(v == 0 for v in nz.values()) and all(v == 0 for v in nn.values()) and nn_sell == 0
         checks["DRY"] = "PASS" if ok else "FAIL"
         log(f"[乾跑檢查] {checks}")
-    write_md(OUT, ST, a, chk, checks)
+    tri = EN.T; tail = EN.CAL[EN.CEND]
+    mk = (V.tri_at(tri, tail) / V.tri_at(tri, "2025-09-30") - 1) if not a.dry else 0.0
+    notes = ["滑動版觸發 100%（普查甲 39／39、乙 29／29）⇒ 本件比的是「先賣一半的時點」，不是「賣不賣」；緊接版觸發數另列（描述，裁定 seq475）。",
+             "兩版（H1、全抱）都沒套 v4.1 新聞出場 ①～⑤。",
+             "普查只有 6 個產業（水泥、食品、塑膠、紡織、電機機械、電器電纜），電子類還沒做。",
+             "燈 1 季 2021Q1～2024Q3 共 15 季；季分群 n_eff 甲 14、乙 12 < 24 ⇒ 依構造還沒測、只描述、不計 N。",
+             f"多數件未到 E、結算在資料末日；「到資料末日」被大盤 2025-09-30 → {tail.date()} 約 {mk * 100:+.0f}%（market_tri 含息）主導，6 個傳產業多半沒跟上。",
+             "E ＝ 進場月＋60 個月那個月的第一個交易日（本件登錄字面，裁定 seq475；V41EV 為進場＋60 月當天或之前最後一個交易日，兩邊各自標註）。",
+             "P 很小的件照字面、不另訂門檻（裁定 seq475）；壞根主欄截斷、未做接續版。"]
+    write_md(OUT, ST, a, chk, checks, notes)
     json.dump({"模式": "乾跑" if a.dry else a.ruling, "登錄sha16": s16, "面板sha": EN.sha, "面板尾": str(EN.CAL[EN.CEND].date()), "進場驗證": chk, "乾跑檢查": checks,
-               "stats": ST.to_dict("records"), "讀法": __doc__.split("═══ 讀法")[1], "秒": round(time.time() - t0)},
+               "必附": notes, "stats": ST.to_dict("records"), "讀法": __doc__.split("═══ 讀法")[1], "秒": round(time.time() - t0)},
               open(os.path.join(OUT, "main.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1,
               default=lambda o: (None if not np.isfinite(o) else float(o)) if isinstance(o, (np.floating, np.integer, float)) else str(o))
     log(f"[完成] {OUT}｜{time.time() - t0:.0f}s")
@@ -231,22 +250,29 @@ def pp(v):
     return "—" if v is None or not np.isfinite(v) else f"{v * 100:+.2f}"
 
 
-def write_md(OUT, ST, a, chk, checks):
-    head = "⚠ 乾跑：價格、大盤全為 1、成本 0 ⇒ 下列數字全為 0，只驗程式路徑。" if a.dry else f"正式（{a.ruling}）"
+def write_md(OUT, ST, a, chk, checks, notes):
+    head = "⚠ 乾跑：價格、大盤全為 1、成本 0 ⇒ 下列數字全為 0，只驗程式路徑。" if a.dry else f"正式（裁定 {a.ruling}）"
     md = [f"# H1 先賣一半 對 v4.1 全抱 seq1：全部描述欄（{head}）", "",
-          "- 描述、⛔ 不判定、不計 N；普查燈 1 季 ≤15 季 ⇒ 依構造還沒測。⛔ 兩版都沒套 v4.1 新聞出場 ①～⑤。",
-          "- d ＝ H1 整筆年化 − 全抱年化（百分點）；年化 ＝ (1＋R)^(250÷max(H,60))−1；主報訊號層中位。", "",
-          "| 樣本 | 組 | 結果類 | 型 | 訊號 n（群） | d 中位／平均（訊號） | CI（季分群） | d 中位（每檔） | 觸發率 | 觸發者 d 中位 | 份口徑 d 中位／平均 | 又漲≥1倍（窗未滿） | 賣價距前高中位 | 門檻描述句 |",
-          "|" + "---|" * 14]
+          "- 描述、⛔ 不判定、不計 N。d ＝ H1 整筆年化 − 全抱年化（百分點）；年化 ＝ (1＋R)^(250÷max(H,60))−1；主報訊號層中位（訊號＝1 個樣本，同訊號內各檔等權）。", "",
+          "## 必附", ""] + [f"- {x}" for x in notes] + ["",
+          "## 主表（每筆年化 d，百分點；訊號層）", "",
+          "| 樣本 | 組 | 結果類 | 型 | 訊號 n（群） | d 中位 | 平均 | P25／P75 | 最好（訊號） | 最壞（訊號） | CI（群集重抽，只描述） | d 中位（每檔） | 觸發（緊接版） | 觸發者 d 中位 | H1／全抱 年化中位 | 門檻描述句 |",
+          "|" + "---|" * 16]
     for _, r in ST.iterrows():
         cls = r.get("結果類", "") if isinstance(r.get("結果類", ""), str) else ""
         th = "—" if r["門檻描述句成立"] is None or (isinstance(r["門檻描述句成立"], float) and np.isnan(r["門檻描述句成立"])) else ("成立" if r["門檻描述句成立"] else "不成立")
-        trv = r['觸發率(每檔)']; trs = '—' if not np.isfinite(trv) else f'{trv * 100:.0f}%'
-        md.append(f"| {r['樣本']} | {r['組']} | {cls} | {r['型']} | {r['訊號n']}（{r['群數']}） | {pp(r['d中位(訊號)'])}／{pp(r['d平均(訊號)'])} | "
-                  f"［{pp(r['dCI低'])}，{pp(r['dCI高'])}］ | {pp(r['d中位(每檔)'])} | {trs} | "
-                  f"{pp(r['觸發者d中位(每檔)'])} | {pp(r['d份中位(訊號)'])}／{pp(r['d份平均(訊號)'])} | {r['賣後12月又漲≥1倍']}（{r['其中12月窗未滿']}） | {pp(r['賣價距前高中位'])} | {th} |")
+        md.append(f"| {r['樣本']} | {r['組']} | {cls} | {r['型']} | {r['訊號n']}（{r['群數']}） | {pp(r['d中位(訊號)'])} | {pp(r['d平均(訊號)'])} | "
+                  f"{pp(r['dP25(訊號)'])}／{pp(r['dP75(訊號)'])} | {pp(r['d最好(訊號)'])}（{r['最好訊號']}） | {pp(r['d最壞(訊號)'])}（{r['最壞訊號']}） | "
+                  f"［{pp(r['dCI低'])}，{pp(r['dCI高'])}］ | {pp(r['d中位(每檔)'])} | {r['觸發數']}／{r['檔次n']}（{r['緊接版觸發數']}） | {pp(r['觸發者d中位(每檔)'])} | "
+                  f"{pp(r['H1年化中位(訊號)'])}／{pp(r['全抱年化中位(訊號)'])} | {th} |")
+    md += ["", "## 描述欄", "", "| 樣本 | 組 | 結果類 | 型 | 份口徑 d 中位／平均（份×100） | 賣後 12 月又漲 ≥1 倍（其中窗未滿） | 12 月窗未滿件 | 賣價距前高中位 | 未到 E 件 |", "|" + "---|" * 9]
+    for _, r in ST.iterrows():
+        cls = r.get("結果類", "") if isinstance(r.get("結果類", ""), str) else ""
+        md.append(f"| {r['樣本']} | {r['組']} | {cls} | {r['型']} | {pp(r['d份中位(訊號)'])}／{pp(r['d份平均(訊號)'])} | {r['賣後12月又漲≥1倍']}（{r['其中12月窗未滿']}） | "
+                  f"{r['12月窗未滿件']} | {pp(r['賣價距前高中位'])} | {r['未到E件']} |")
     md += ["", "- 結果句範本（⛔ 不寫 H1 較好／較差）：「在普查樣本上，H1 的每筆年化差中位為 X（描述，樣本只有 15 季）」。",
            "- 份口徑（描述一句、⛔ 不並列成第二個結論）：賣掉那半之後改抱大盤（之後超額記 0）。",
+           "- 門檻描述句＝「普查樣本上 d 平均 ≥ 0 且 d 中位 > 0」（訊號層）；成立與否照寫、交使用者決定。",
            f"- 進場驗證：{chk}"]
     if checks:
         md.append(f"- 乾跑檢查：{checks}")
