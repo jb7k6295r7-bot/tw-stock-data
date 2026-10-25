@@ -594,7 +594,7 @@ def part_sp3():
     H = os.path.expanduser("~/h2data/eeb5af5f8feca83d0702fa0423a0c58cdb77900d/data")
     cal = pd.bdate_range("2026-10-19", "2029-12-31")
     cal = cal[(cal != T("2026-10-26")) & (cal != T("2026-10-23"))]        # 光復節補假、10/23 颱風休市
-    nm = {"1503": "士電", "1513": "中興電", "1305": "華夏", "1312": "國喬", "4510": "高鋒", "6609": "瀧澤科", "8936": "國統", "3376": "新日興"}
+    nm = {"1503": "士電", "1513": "中興電", "1305": "華夏", "1312": "國喬", "4510": "高鋒", "6609": "瀧澤科", "8936": "國統", "3376": "新日興", "1519": "華城"}
     cfg = {"小部位": 20000}
     closes = {"4510": 40.0, "6609": 50.0, "8936": 20.0, "3376": 25.0}
 
@@ -605,11 +605,11 @@ def part_sp3():
 
     def notify(rows, asof, now, **kw):
         return BM.sp_notify(rows, cal, T(asof), H, closes, cfg, nm, T(now), "f" * 40, **kw)
-    exp = ["  小部位：8936 國統 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,000 股）"]
+    exp = ["  小部位：8936 國統 新候選 ⇒ 10/27（二）開盤買 1 份（約 1,000 股）", "  小部位：1519 華城 新候選 ⇒ 10/27（二）開盤買 1 份（股數照你決定）"]
     rec("sp3", "SP_CANDS（10/25 使用者指示後）：5 檔、10/27 只買 8936；−2002 −1101 −2014 −4510 −6609、3376 延後；缺貨型 1305、1312；固定句 5 檔",
-        list(BM.SP_CANDS) == ["1503", "1513", "1305", "1312", "8936"] and BM.SP_CANDS["8936"] == "2026-10-27"
+        list(BM.SP_CANDS) == ["1503", "1513", "1305", "1312", "8936", "1519"] and BM.SP_CANDS["8936"] == BM.SP_CANDS["1519"] == "2026-10-27"
         and not {"2002", "1101", "2014", "4510", "6609", "3376"} & set(BM.SP_CANDS) and BM.SP_SHORTAGE == ["1305", "1312"] and BM.SP_NEWDEMAND == ["3376"]
-        and BM.SP_FIX.startswith("台股 5 檔（10/22 四檔、10/27 一檔") and set(BM.SP_PPI) == {"1305", "1312"}, BM.SP_FIX)
+        and BM.SP_FIX.startswith("台股 6 檔（10/22 四檔、10/27 國統與華城") and set(BM.SP_PPI) == {"1305", "1312"}, BM.SP_FIX)
     rec("sp3", "進場時已轉強標記：只剩 1312（3376 暫存 DORMANT）", set(BM.SP_ENTRY_UP) == {"1312"} and "3376" in BM.SP_ENTRY_UP_DORMANT, "")
     us = BM.user_sell_load()
     rec("sp3", "user_sell.csv：1305、1312 預定 2026-10-27 開盤賣（往前看判準不過，你 10/25 同意）",
@@ -642,8 +642,8 @@ def part_sp3():
     n4 = notify(base, "2026-10-27", "2026-10-27 00:30")
     rec("sp3", "10/26 20:00 沒跑到 ⇒ 當晚之後第一次執行補出；10/27（起點當天）起不出", [r["judge_detail"] for r in n3] == exp and n4 == [], "")
     r27 = BM.sp_update(base, cal, T("2026-10-27"), Px(), [], nm, "now", "f" * 40)
-    rec("sp3", "10/27 sp_update 補記 8936 起點 1 份（無標記）",
-        sorted((r["stock_id"], r["event"]) for r in r27) == [("8936", "起點買進")], str([(r["stock_id"], r["event"]) for r in r27]))
+    rec("sp3", "10/27 sp_update 補記 8936、1519 起點各 1 份（無標記）",
+        sorted((r["stock_id"], r["event"]) for r in r27) == [("1519", "起點買進"), ("8936", "起點買進")], str([(r["stock_id"], r["event"]) for r in r27]))
     # 250／625 日提醒（缺貨型；附三項描述）
     cf = dict({c: "" for c in BM.SP_COLS}, stock_id="1305", name="華夏", event="月報判定", judge="轉強", report_key="2026-11", report_asof="2026-11-12")
     cf2 = dict(cf, stock_id="1503", name="士電")                 # 1503 不是缺貨型 ⇒ 不提醒
@@ -664,7 +664,7 @@ def part_sp3():
     v2 = BM.sp_update(base + r27 + v1, cal, T("2026-11-16"), Px(), [], nm, "now", "f" * 40)
     vj = [(r["stock_id"], r["judge"]) for r in v1]
     rec("sp3", "（v4）1503、8936 月報轉強 ⇒ 記「只記（v4）」、月報 LINE 無加碼行、之後不自動加碼；SP_V4＝{1503,1513,8936}",
-        BM.SP_V4 == {"1503", "1513", "8936"} and sorted(vj) == [("1503", "只記（v4）"), ("8936", "只記（v4）")] and BM.sp_events_report(v1, closes, cfg) == []
+        BM.SP_V4 == {"1503", "1513", "8936", "1519"} and sorted(vj) == [("1503", "只記（v4）"), ("8936", "只記（v4）")] and BM.sp_events_report(v1, closes, cfg) == []
         and not [r for r in v2 if r["event"] == "轉強加碼"], str(vj))
     # 新需求型 3376：燈2（機制測試：暫時把 4510、3376 放回候選，測完還原）
     oc, ocodes = dict(BM.SP_CANDS), list(BM.SP_CODES)
