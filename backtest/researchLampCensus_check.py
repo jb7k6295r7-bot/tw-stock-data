@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """researchLampCensus 獨立重算（⛔ 不 import researchLampCensus／researchV41EV；自讀清單、自算市值、自取進場與結算日、自算統計）——回測線計算子代理。
 ① 每檔市值（自讀 data/stocks 原檔）與下限判定 → 對 caps.csv；
-② 每檔×每段（燈1 12／24／末、加碼(a) 12／24／末、加碼(b) 12／24）R、大盤、超額 → 對 rows.csv（窗內有壞根或下市者 check 不重算、照列）；
-③ 自建訊號值 → 命中率（＞0、≥+1、≥+2、平均、中位）、加碼 2 份、甲乙兩版 → 對 stats.csv。
-    cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchLampCensus_check
+② 每檔×每段（燈1 12／24／末、加碼(a) 12／24／末、加碼(b) 12／24）R、超額 → 對 rows.csv（窗內有壞根或下市者 check 不重算、照列）；
+③ 自建訊號值、自判情境（照實／寬鬆／嚴格，看「判定把握」欄）與類別（傳產／電子／合計）→
+   中位、最好、最壞、P25、P75、平均、命中率（燈 1 那 1 份、加碼 2 份 (a)(b)、甲乙兩版）→ 對 stats.csv；欄缺時確認只出照實。
+    cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchLampCensus_check [--out 目錄]
 """
+import argparse
+import glob
 import io
 import json
 import os
@@ -19,7 +22,7 @@ sys.path.insert(0, os.path.expanduser("~/tw-p17")); os.chdir(os.path.expanduser(
 from backtest import researchRevTurn_freq as RT             # noqa: E402  只取面板
 from backtest import researchShortageExit as SE             # noqa: E402  只取接縫開盤
 
-OUT = "backtest/resultsLampCensus"
+ap = argparse.ArgumentParser(); ap.add_argument("--out", default="backtest/resultsLampCensus"); OUT = ap.parse_args().out
 SHA = "9b0e9882572c"
 TOL = 1e-9
 res = []; bad = 0
@@ -32,20 +35,40 @@ def cmp(tag, a, b, tol=TOL):
     bad += (not ok); res.append(f"{'OK ' if ok else 'BAD'} {tag}: 重算 {a:.10f} ／ 主程式 {b:.10f}")
 
 
+def flag(tag, ok):
+    global bad
+    bad += (not ok); res.append(f"{'OK ' if ok else 'BAD'} {tag}")
+
+
 def tsh(path):
     return subprocess.run(["git", "show", f"{SHA}:{path}"], capture_output=True, check=True).stdout
 
 
-S = pd.read_csv(os.path.join(OUT, "signals_input.csv"), dtype=str, keep_default_na=False)
-S.columns = ["id", "ver"] + list(S.columns[2:])
-sig = {}
-for _, r in S.iterrows():
-    cs = [x.split()[0] for x in (r["公司1"], r["公司2"], r["公司3"]) if x.strip() and x.strip() != "無點名"]
-    y, q = r["燈1季"].split("Q"); m1 = f"{y}-{int(q) * 3:02d}"
-    m2 = None
-    if r["燈2季"].strip():
-        y2, q2 = r["燈2季"].split("Q"); m2 = f"{y2}-{int(q2) * 3:02d}"
-    sig[r["id"]] = {"甲": r["ver"] in ("甲", "兩版"), "乙": r["ver"] in ("乙", "兩版"), "型": r["型"], "codes": cs, "m1": m1, "m2": m2}
+files = sorted(glob.glob(os.path.join(OUT, "signals_input*.csv")), key=lambda f: (f != os.path.join(OUT, "signals_input.csv"), f))
+EL = {"半導體", "電腦及週邊", "光電", "通信網路", "電子零組件"}; TR = {"水泥", "食品", "塑膠", "紡織", "電機機械", "電器電纜"}
+sig = {}; seen = set(); has_sure = True; has_sure2 = True
+for k, f in enumerate(files, 1):
+    D = pd.read_csv(f, dtype=str, keep_default_na=False)
+    vc = [c for c in D.columns if c.startswith("版本")][0]
+    sc = [c for c in D.columns if "把握" in c and "燈2" not in c]; sc2 = [c for c in D.columns if "把握" in c and "燈2" in c]
+    cc = [c for c in D.columns if "代碼" in c]
+    has_sure &= bool(sc); has_sure2 &= bool(sc2)
+    for _, r in D.iterrows():
+        key = r["訊號編號"] if (k == 1 or r["訊號編號"] not in seen) else f"F{k}:{r['訊號編號']}"
+        cl = None
+        if cc and re.match(r"^\s*\d", r[cc[0]]):
+            n = int(re.match(r"^\s*(\d+)", r[cc[0]]).group(1)); cl = "電子" if 24 <= n <= 28 else ("傳產" if 1 <= n <= 6 else None)
+        if cl is None:
+            cl = "電子" if any(r["產業"].strip().startswith(x) for x in EL) else ("傳產" if r["產業"].strip() in TR else "其他")
+        cs = [x.split()[0] for x in (r["公司1"], r["公司2"], r["公司3"]) if x.strip() and x.strip() != "無點名"]
+        y, q = r["燈1季"].split("Q"); m1 = f"{y}-{int(q) * 3:02d}"
+        m2 = None
+        if r["燈2季"].strip():
+            y2, q2 = r["燈2季"].split("Q"); m2 = f"{y2}-{int(q2) * 3:02d}"
+        sig[key] = {"甲": r[vc] in ("甲", "兩版"), "乙": r[vc] in ("乙", "兩版"), "型": r["型"], "codes": cs, "m1": m1, "m2": m2, "類": cl,
+                    "兩可": bool(sc) and r[sc[0]].strip() == "兩可", "燈2兩可": bool(sc2) and r[sc2[0]].strip() == "兩可"}
+    seen |= {kk for kk in sig}
+res.append(f"--  清單 {len(files)} 份、訊號 {len(sig)}；判定把握欄 {'有' if has_sure else '缺'}；燈2把握欄 {'有' if has_sure2 else '缺'}")
 
 # ① 市值
 CP = pd.read_csv(os.path.join(OUT, "caps.csv"), dtype={"代號": str})
@@ -82,20 +105,20 @@ def ent(i, ym):
 
 
 def settle(i, e, tgt):
-    """tgt None ⇒ 資料尾。回 (R, M, X, 未到, skip)。"""
     if tgt is not None and tgt > CAL[-1]:
-        return None, None, None, True, False
+        return None, True, False
     lim = CAL[-1] if tgt is None else tgt
     valid = [p for p in range(e, len(CAL)) if CAL[p] <= lim and np.isfinite(C[i, p])]
     x = valid[-1]
-    if BAD[i, e + 1:x + 1].any() or (len(CAL) - 1 - x >= 5 and tgt is None):
-        return None, None, None, False, True
-    R = C[i, x] / O[i, e] - 1 - 0.00585; M = trv(CAL[x]) / trv(CAL[e - 1]) - 1
-    return R, M, R - M, False, False
+    fin = np.flatnonzero(np.isfinite(C[i])); lastv = int(fin[-1]); xcal = int(np.searchsorted(CAL, lim, "right")) - 1
+    if BAD[i, e + 1:x + 1].any() or (len(CAL) - 1 - lastv >= 5 and lastv < xcal):
+        return None, False, True
+    R = C[i, x] / O[i, e] - 1 - 0.00585
+    return (R, R - (trv(CAL[x]) / trv(CAL[e - 1]) - 1)), False, False
 
 
 RW = pd.read_csv(os.path.join(OUT, "rows.csv"), dtype={"代號": str, "H": str})
-val = {}       # (k, c, seg, H) -> 超額 或 "未到"
+val = {}
 for k, s in sig.items():
     for c in keep[k]:
         i = IX[c]; e = ent(i, s["m1"])
@@ -110,74 +133,88 @@ for k, s in sig.items():
                 if CAL[e2] < t:
                     jobs.append(("加碼(b)", H, e2, t))
         for seg, H, ee, t in jobs:
-            R, M, X, ny, skip = settle(i, ee, t)
+            out, ny, skip = settle(i, ee, t)
             rr = RW[(RW["訊號"] == k) & (RW["代號"] == c) & (RW["段"] == seg) & (RW["H"] == str(H))]
             if skip:
                 res.append(f"--  {k} {c} {seg} {H} 窗內壞根／下市，check 不重算"); val[(k, c, seg, str(H))] = float(rr["超額"].iloc[0]); continue
             if ny:
-                okk = len(rr) == 1 and str(rr["未到"].iloc[0]) == "True"; bad += (not okk)
-                res.append(f"{'OK ' if okk else 'BAD'} {k} {c} {seg} {H} 未到"); val[(k, c, seg, str(H))] = "未到"; continue
-            cmp(f"{k} {c} {seg} {H} R（進 {CAL[ee].date()}）", R, rr["R"].iloc[0]); cmp(f"{k} {c} {seg} {H} 超額", X, rr["超額"].iloc[0])
-            val[(k, c, seg, str(H))] = X
-# 主程式多出的格？
+                flag(f"{k} {c} {seg} {H} 未到", len(rr) == 1 and str(rr["未到"].iloc[0]) == "True"); val[(k, c, seg, str(H))] = "未到"; continue
+            cmp(f"{k} {c} {seg} {H} R（進 {CAL[ee].date()}）", out[0], rr["R"].iloc[0]); cmp(f"{k} {c} {seg} {H} 超額", out[1], rr["超額"].iloc[0])
+            val[(k, c, seg, str(H))] = out[1]
 extra = RW[RW["R"].notna() & RW["入選"].astype(str).eq("True")]
 miss = [f"{r.訊號} {r.代號} {r.段} {r.H}" for r in extra.itertuples() if (r.訊號, r.代號, r.段, r.H) not in val]
-okk = not miss; bad += (not okk); res.append(f"{'OK ' if okk else 'BAD'} 主程式入選格都在 check 內（多出：{miss[:10]}）")
+flag(f"主程式入選格都在 check 內（多出：{miss[:10]}）", not miss)
 
 
 # ③ 統計
 def sv(k, seg, H):
     cs = keep[k]
     if not cs:
-        return np.nan, False
+        return np.nan
     xs = [val.get((k, c, seg, H)) for c in cs]
-    if any(x == "未到" for x in xs):
-        return np.nan, True
-    xs = [x for x in xs if x is not None]
-    return (float(np.mean(xs)) if len(xs) == len(cs) else np.nan), False
+    if any(x == "未到" for x in xs) or any(x is None for x in xs):
+        return np.nan
+    return float(np.mean(xs))
 
 
-def hs(v):
+def st(v):
     v = np.array([x for x in v if np.isfinite(x)])
-    return {"n": len(v), ">0": (v > 0).mean() if len(v) else np.nan, "≥+1": (v >= 1).mean() if len(v) else np.nan,
-            "≥+2": (v >= 2).mean() if len(v) else np.nan, "平均": v.mean() if len(v) else np.nan, "中位": np.median(v) if len(v) else np.nan}
+    if not len(v):
+        return {"n": 0}
+    return {"n": len(v), "中位": np.median(v), "最好": v.max(), "最壞": v.min(), "P25": np.percentile(v, 25), "P75": np.percentile(v, 75), "平均": v.mean(),
+            ">0": (v > 0).mean(), "≥+1": (v >= 1).mean(), "≥+2": (v >= 2).mean()}
 
 
 ST = pd.read_csv(os.path.join(OUT, "stats.csv"), dtype={"H": str})
+scen_main = sorted(ST["情境"].unique())
+flag(f"情境＝{scen_main}（欄{'有' if has_sure else '缺'} ⇒ 應為 {'照實、寬鬆、嚴格' if has_sure else '只有照實'}）",
+     set(scen_main) == ({"照實", "寬鬆", "嚴格"} if has_sure else {"照實"}))
+cls = [c for c in ("傳產", "電子", "其他") if any(s["類"] == c for s in sig.values())]
+groups = cls + (["合計"] if len(cls) > 1 else [])
+flag(f"類別＝{sorted(ST['類'].unique())}（應為 {groups}）", set(ST["類"].unique()) == set(groups))
 
 
 def stget(**kw):
     d = ST
     for a, b in kw.items():
         d = d[d[a] == b]
-    return d.iloc[0]
+    return d.iloc[0] if len(d) else None
 
 
-for ver in ("甲", "乙"):
-    for ty in ("全部", "缺貨", "新需求", "政策"):
-        ks = [k for k, s in sig.items() if s[ver] and s["codes"] and keep[k] and (ty == "全部" or s["型"] == ty)]
-        for H in ("12", "24", "末"):
-            x1 = {k: sv(k, "燈1", H)[0] for k in ks}
-            h = hs(list(x1.values())); s = stget(表="命中率", 版=ver, 型=ty, H=H, 單位="訊號", 量="超額")
-            cmp(f"{ver} {ty} {H} 命中 n", h["n"], s["n"])
-            for f in (">0", "≥+1", "≥+2", "平均", "中位"):
-                cmp(f"{ver} {ty} {H} 命中 {f}", h[f], s[f])
-            # 加碼
-            for seg in (("加碼(a)", "加碼(b)") if H != "末" else ("加碼(a)",)):
-                av = [2 * sv(k, seg, H)[0] for k in ks if sig[k]["m2"]]
-                if not av:
+FIELDS = ("n", "中位", "最好", "最壞", "P25", "P75", "平均", ">0", "≥+1", "≥+2")
+for sc in scen_main:
+    for gp in groups:
+        for ver in ("甲", "乙"):
+            for ty in ("全部", "缺貨", "新需求", "政策"):
+                ks = [k for k, s in sig.items() if s[ver] and s["codes"] and keep[k] and (ty == "全部" or s["型"] == ty) and (gp == "合計" or s["類"] == gp)
+                      and not (sc == "嚴格" and s["兩可"])]
+                if not ks:
                     continue
-                h2 = hs(av); s2 = stget(表="加碼2份", 版=ver, 型=ty, H=H, 單位="訊號", 量=seg)
-                cmp(f"{ver} {ty} {H} {seg} 2份 n", h2["n"], s2["n"]); cmp(f"{ver} {ty} {H} {seg} 2份 平均", h2["平均"], s2["平均"])
-                cmp(f"{ver} {ty} {H} {seg} 2份 中位", h2["中位"], s2["中位"])
-            # 甲乙
-            A = {k: sv(k, "加碼(a)" if H == "末" else "加碼(b)", H)[0] for k in ks}
-            yi = [x1[k] + 2 * A[k] if np.isfinite(A[k]) else x1[k] for k in ks]
-            yr = [(x1[k] + 2 * A[k]) / 3 if np.isfinite(A[k]) else x1[k] for k in ks]
-            for lab, v in (("乙有加碼(總損益)", yi), ("乙有加碼(÷投入份數)", yr)):
-                h3 = hs(v); s3 = stget(表="甲乙", 版=ver, 型=ty, H=H, 量=lab)
-                cmp(f"{ver} {ty} {H} {lab} 平均", h3["平均"], s3["平均"]); cmp(f"{ver} {ty} {H} {lab} 中位", h3["中位"], s3["中位"])
-log = "\n".join(res) + f"\n\n不符 {bad} 格／共 {sum(1 for x in res if x[:3] in ('OK ', 'BAD'))} 格\n"
+                dropa = {k: (sc == "嚴格" and sig[k]["燈2兩可"]) for k in ks}
+                for H in ("12", "24", "末"):
+                    x1 = {k: sv(k, "燈1", H) for k in ks}
+                    h = st(list(x1.values())); s = stget(情境=sc, 類=gp, 表="燈1", 版=ver, 型=ty, H=H, 單位="訊號", 量="超額")
+                    for f in FIELDS:
+                        if h["n"] or f == "n":
+                            cmp(f"{sc} {gp} {ver} {ty} {H} 燈1 {f}", h.get(f, np.nan), s[f])
+                    for seg in (("加碼(a)", "加碼(b)") if H != "末" else ("加碼(a)",)):
+                        av = [2 * sv(k, seg, H) for k in ks if sig[k]["m2"] and not dropa[k]]
+                        if not av:
+                            continue
+                        h2 = st(av); s2 = stget(情境=sc, 類=gp, 表="加碼2份", 版=ver, 型=ty, H=H, 單位="訊號", 量=seg)
+                        for f in ("n", "中位", "最好", "最壞", "P25", "P75", "平均"):
+                            if h2["n"] or f == "n":
+                                cmp(f"{sc} {gp} {ver} {ty} {H} {seg} 2份 {f}", h2.get(f, np.nan), s2[f])
+                    A = {k: (np.nan if dropa[k] else sv(k, "加碼(a)" if H == "末" else "加碼(b)", H)) for k in ks}
+                    yi = [x1[k] + 2 * A[k] if np.isfinite(A[k]) else x1[k] for k in ks]
+                    yr = [(x1[k] + 2 * A[k]) / 3 if np.isfinite(A[k]) else x1[k] for k in ks]
+                    for lab, v in (("乙有加碼(總損益)", yi), ("乙有加碼(÷投入份數)", yr)):
+                        h3 = st(v); s3 = stget(情境=sc, 類=gp, 表="甲乙", 版=ver, 型=ty, H=H, 量=lab)
+                        for f in ("中位", "最好", "最壞", "P25", "P75", "平均"):
+                            if h3["n"]:
+                                cmp(f"{sc} {gp} {ver} {ty} {H} {lab} {f}", h3[f], s3[f])
+nn = sum(1 for x in res if x[:3] in ("OK ", "BAD"))
+log = "\n".join(res) + f"\n\n不符 {bad} 格／共 {nn} 格\n"
 open(os.path.join(OUT, "check.log"), "w", encoding="utf-8").write(log)
-json.dump({"不符": bad, "格數": sum(1 for x in res if x[:3] in ('OK ', 'BAD'))}, open(os.path.join(OUT, "check.json"), "w"))
-print("\n".join(x for x in res if not x.startswith("OK")) + f"\n不符 {bad} 格／共 {sum(1 for x in res if x[:3] in ('OK ', 'BAD'))} 格")
+json.dump({"不符": bad, "格數": nn}, open(os.path.join(OUT, "check.json"), "w"))
+print("\n".join(x for x in res if not x.startswith("OK")) + f"\n不符 {bad} 格／共 {nn} 格")
