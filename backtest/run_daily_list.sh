@@ -112,6 +112,13 @@ if [ -z "$FAIL" ]; then
       else
         logline "美股小部位前瞻 失敗（不影響 daily）：$(tail -1 "$ULOG" 2>/dev/null)（見 $ULOG）"
       fi
+      # 規則 17：美股 v4 小部位（BE、LRCX；美股登錄 seq3＋seq4、產業 v4.1 雜湊 f63147396ffc4ee9）：每晚呼叫（冪等）；APPROVED=None 時只乾跑；不產 LINE 行（情報照產業信推）；⛔ 失敗只記 log、不影響名單
+      W4LOG="$REPO/backtest/resultsDaily/us_v4.log"
+      if (cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.forward_us_v4 > "$W4LOG" 2>&1); then
+        logline "$(tail -1 "$W4LOG")"
+      else
+        logline "美股 v4 小部位 失敗（不影響 daily）：$(tail -1 "$W4LOG" 2>/dev/null)（見 $W4LOG）"
+      fi
       # 規則 10：策略鎖（使用者 10/18「我要怎麼確保你不會又把兩個策略條件自己改到？」）：營量／營飆選股程式與鎖定版不同 ⇒ 名單標題下加 ⚠ 一行（推 LINE）；⛔ 不擋名單產出
       SLK=$(cd "$REPO" && PYTHONPATH=$REPO "$PY" -m backtest.strategy_lock --check 2>&1); SLRC=$?
       if [ $SLRC = 2 ]; then logline "策略鎖：$SLK（不加警示）"; fi
