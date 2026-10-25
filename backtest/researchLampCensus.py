@@ -55,7 +55,8 @@ os.chdir(os.path.expanduser("~/tw-p17"))
 from backtest import researchV41EV as V                    # noqa: E402
 from backtest import researchTopSell_freq as TS             # noqa: E402
 
-SRC = "/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v4_加判定把握_產業分析線-20261025-1830.csv"   # 產業 seq45：v4 取代 v3（加判定把握、兩可理由欄）
+SRC = "/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v4_加判定把握_產業分析線-20261025-1830.csv"
+SRC_E = "/mnt/c/SynologyDrive/跨線信箱/附件-電子類燈號普查訊號清單v5_產業分析線-20261026-0130.csv"   # 產業 seq50：v5 取代 v4（E38 補回、E29 燈 2 改兩可）   # 產業 seq45：v4 取代 v3（加判定把握、兩可理由欄）
 SRC_V3 = "/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v3_產業分析線-20261025-1610.csv"
 OUT = "backtest/resultsLampCensus"
 DRY_OUT = os.path.expanduser("~/rtfwork/lampcensus_dry")
@@ -66,6 +67,8 @@ TYPES = ("缺貨", "新需求", "政策")
 ELEC = ("半導體", "電腦", "光電", "通信網路", "電子零組件")      # 前綴比對（「電腦及週邊」「電腦週邊」都算）
 TRAD = ("水泥", "食品", "塑膠", "紡織", "電機機械", "電器電纜")
 RANGE_NOTE = "範圍來自判燈寬嚴，不是統計誤差"
+FINAL = ("普查是事件點名選股，不是框架第 5 條（主題營收占比前 3 名），不能當第 5 條的驗證。",                      # 裁定 seq478 §二（產業 seq50 §三）
+         "燈號在 12、24 月沒有測出選股能力；大贏家多半在判燈者知道後來走勢的那批，無法歸因。")              # 裁定 seq478 §二 定版句
 LIMIT = ("限制（產業 seq44 §三，結果句照寫）：只有 6 個產業（水泥、食品、塑膠、紡織、電機機械、電器電纜），電子類還沒做；一般搜尋偏向近年新文章、舊報導較難搜到"
          "（電器電纜 6 季只找得到華新自己的消息、水泥政策型 8 季沒有新出處）；蒐集員讀過歷史，挑消息時可能偏向後來有漲的（已用固定產業清單、只准用當時出處、"
          "判燈不看股價壓低，但無法完全消除）；「受害者不是受益者」（產業第 27 條）：公司自己工廠出事時不買那家、改買同主題其他已點名公司，沒有可替代就記無點名。"
@@ -422,7 +425,7 @@ def run(srcs, out, dry):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--src", nargs="+", default=[SRC])
+    ap.add_argument("--src", nargs="+", default=[SRC, SRC_E])
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
@@ -454,7 +457,7 @@ HDR = "| 中位 | 最好 | 最壞 | P25 | P75 | 平均 | ＞0 | ≥+1 | ≥+2 |"
 
 def cells(s, best=True):
     if s is None or s["n"] == 0:
-        return "| — " * 9 + "|"
+        return "| 無樣本 " + "| — " * 8 + "|"
     bw = (f"| {f2(s['最好'])}（{s['最好訊號']}） | {f2(s['最壞'])}（{s['最壞訊號']}） " if best else f"| {f2(s['最好'])} | {f2(s['最壞'])} ")
     return (f"| **{f2(s['中位'])}** {bw}| {f2(s['P25'])} | {f2(s['P75'])} | {f2(s['平均'])} | {pc(s['>0'])}（{s['>0件']}） | "
             f"{pc(s['≥+1'])}（{s['≥+1件']}） | {pc(s['≥+2'])}（{s['≥+2件']}） |")
@@ -465,6 +468,7 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
     types = [t for t in ["全部"] + list(TYPES) + [t for t in SG["型"].drop_duplicates() if t not in TYPES]]
     md = [(LIMIT.replace("，電子類還沒做", "（此句指傳產部分）") + "　" + LIMIT_E if "電子" in groups else LIMIT), "",
           "# 近年燈號普查：燈亮後對大盤超額（中位、最好、最壞）＋燈 2 加碼 2 份（產業 seq41 §一§三、seq44；裁定 seq476、seq477）", "",
+          *[f"> ⭐ {x}" for x in FINAL], "",
           f"- {'⚠ dry 試跑（不是正式數）' if meta['dry'] else '正式輸出'}；情境：{'、'.join(scen)}；類別：{'、'.join(groups)}。",
           "- 報法（seq477 17:28）：每格先報 **中位**、最好（最大，括號為訊號）、最壞（最小）；另附 P25／P75；平均放後面；命中率（＞0／≥+1／≥+2 份）照附。",
           "- 單位「份」＝每檔 1 份的損益倍數；超額＝R（還原含息、扣 0.585% 來回）− 大盤（market_tri 發行量加權股價報酬指數，含息）。",
@@ -486,8 +490,10 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
                         for H in ("12", "24", "末"):
                             kw = dict(類=gp, 版=ver, 型=ty, 表=tb, H=H, 單位="訊號", 量=met)
                             a = sg(ST, 情境="寬鬆", **kw); b = sg(ST, 情境="嚴格", **kw); c_ = sg(ST, 情境="剔自評知道", **kw)
-                            if a is None or b is None or not np.isfinite(a["中位"]) or not np.isfinite(b["中位"]):
+                            if a is None or not np.isfinite(a["中位"]):
                                 cs.append("—"); continue
+                            if b is None or not np.isfinite(b["中位"]):
+                                cs.append(f"寬 {f2(a['中位'])}／嚴 無樣本" + (f"；剔自評知道 {f2(c_['中位'])}" if c_ is not None and np.isfinite(c_['中位']) else "")); continue
                             lo, hi = sorted([a["中位"], b["中位"]])
                             cs.append(f"{f2(lo)}～{f2(hi)}（寬 {f2(a['中位'])}／嚴 {f2(b['中位'])}" + (f"；剔自評知道 {f2(c_['中位'])}" if c_ is not None else "") + "）")
                         if any(c != "—" for c in cs):
