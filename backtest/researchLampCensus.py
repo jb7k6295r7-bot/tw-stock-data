@@ -29,9 +29,11 @@
     整體兩版：甲＝只買 1 份（每訊號 1 份的超額）；乙＝有加碼（每訊號 1 份＋加碼 2 份的總損益，用 (b) 同結算日；沒有燈 2 的訊號乙＝甲）；
     報酬率版 ＝ 乙總損益 ÷ 投入份數（有加碼 3、無加碼 1）。主欄用到末日，另附 12／24 月。
  L8 判燈寬嚴（seq477 17:28）：清單有欄名含「判定把握」（值 確定／兩可）⇒ 三個情境：照實＝清單照算；寬鬆＝兩可都算亮燈（＝全部列）；
-    嚴格＝兩可的訊號列不算。★ 另有欄名含「燈2」且含「把握」者 ⇒ 嚴格版燈 2 兩可的不加碼（寬鬆版照加）。欄位缺（任一份清單沒有）⇒ 只出照實、寬嚴標「待產業補欄」。
-    寬鬆、嚴格兩版的中位並列成範圍；結果句「範圍來自判燈寬嚴，不是統計誤差」。
- L9 類別（seq476）：產業代碼欄（欄名含「代碼」）24～28 或產業名屬 半導體／電腦及週邊／光電／通信網路／電子零組件 ⇒ 電子；水泥、食品、塑膠、紡織、電機機械、電器電纜 ⇒ 傳產；
+    嚴格＝燈 1 兩可的訊號列不算，且燈 2 兩可（欄名含「燈2」且含「把握」）⇒ 不加碼（產業 seq47 §二「燈 1 或燈 2 任一兩可 ⇒ 不加碼」；寬鬆版照加）。
+    逐份清單判欄：某份清單缺該欄 ⇒ 該份全當「確定」（照寫）；所有清單都沒有判定把握欄 ⇒ 只出照實、寬嚴標「待產業補欄」。
+    寬鬆、嚴格兩版的中位並列成範圍，每格標「寬／嚴」（不寫成保守～樂觀）；結果句「範圍來自判燈寬嚴，不是統計誤差」。
+    剔自評知道（seq476、產業 seq46 §二）：欄名含「判燈者自評」值為「知道」的訊號剔除（以照實為底、加碼照列）；缺此欄的清單照寫不剔。
+ L9 類別（seq476）：產業代碼欄（欄名含「代碼」）24～28 或產業名前綴屬 半導體／電腦（及）週邊／光電／通信網路／電子零組件 ⇒ 電子；水泥、食品、塑膠、紡織、電機機械、電器電纜 ⇒ 傳產；
     其他 ⇒「其他」（照列、log 警示）。有兩類以上 ⇒ 各類分開報，再報合計；只有一類 ⇒ 只報該類。
     多份清單訊號編號重複 ⇒ 第 k 份（k≥2）的編號改成「F{k}:原編號」。
 """
@@ -61,15 +63,16 @@ COST = V.COST_TW
 FLOOR = 1e10
 HS = (12, 24, "末")
 TYPES = ("缺貨", "新需求", "政策")
-ELEC = ("半導體", "電腦及週邊", "光電", "通信網路", "電子零組件")
+ELEC = ("半導體", "電腦", "光電", "通信網路", "電子零組件")      # 前綴比對（「電腦及週邊」「電腦週邊」都算）
 TRAD = ("水泥", "食品", "塑膠", "紡織", "電機機械", "電器電纜")
 RANGE_NOTE = "範圍來自判燈寬嚴，不是統計誤差"
 LIMIT = ("限制（產業 seq44 §三，結果句照寫）：只有 6 個產業（水泥、食品、塑膠、紡織、電機機械、電器電纜），電子類還沒做；一般搜尋偏向近年新文章、舊報導較難搜到"
          "（電器電纜 6 季只找得到華新自己的消息、水泥政策型 8 季沒有新出處）；蒐集員讀過歷史，挑消息時可能偏向後來有漲的（已用固定產業清單、只准用當時出處、"
          "判燈不看股價壓低，但無法完全消除）；「受害者不是受益者」（產業第 27 條）：公司自己工廠出事時不買那家、改買同主題其他已點名公司，沒有可替代就記無點名。"
          "——描述、⛔ 不判定、不計 N。")
-LIMIT_E = ("電子類限制（裁定 seq476 §二，結果句照寫）：電子類後見偏差比傳產大（AI 這波大家都知道誰漲）；已加兩道防線（每季先列當季有 A／B 級事件的全部公司再判燈、"
-           "另報判燈人事前自評是否知道後來走勢的比例），仍無法完全消除。")
+LIMIT_E = ("電子類限制（裁定 seq476 §二、產業 seq46 §二，結果句照寫）：只用當時出處，但蒐集與判燈者讀過歷史；舊文較難搜到（2021H1 偏多）；"
+           "電子類後見偏差比傳產大（AI 這波大家都知道誰漲），已加兩道防線（每季先列當季有 A／B 級事件的全部公司再判燈、判燈者自評是否知道後來走勢，另出剔除自評知道版），"
+           "仍無法完全消除；範圍來自判燈寬嚴，不是統計誤差；到末日欄被大盤 +89%（2025-09-30→2026-09-24）主導。")
 log = V.log
 LOG = V.LOG
 
@@ -108,7 +111,7 @@ def cls_of(r, code_col):
 
 def load_signals(srcs):
     """回 (S, info)。S 欄：訊號（唯一鍵）、原編號、檔、版本、甲、乙、無點名、類、兩可、燈2兩可 ＋ 原欄。"""
-    parts = []; info = {"來源": [], "有判定把握欄": True, "有燈2把握欄": True}
+    parts = []; info = {"來源": [], "有判定把握欄": False, "有燈2把握欄": False, "有自評欄": False}
     for k, f in enumerate(srcs, 1):
         D = pd.read_csv(f, dtype=str, keep_default_na=False)
         vcol = [c for c in D.columns if c.startswith("版本")][0]
@@ -119,13 +122,15 @@ def load_signals(srcs):
         D["檔"] = k; D["原編號"] = D["訊號編號"]
         D["兩可"] = D[sure[0]].str.strip().eq("兩可") if sure else False
         D["燈2兩可"] = D[sure2[0]].str.strip().eq("兩可") if sure2 else False
+        selfc = [c for c in D.columns if "判燈者自評" in c]
+        D["自評知道"] = D[selfc[0]].str.strip().eq("知道") if selfc else False
         D["類"] = [cls_of(r, code_col) for _, r in D.iterrows()]
-        info["有判定把握欄"] &= bool(sure); info["有燈2把握欄"] &= bool(sure2)
+        info["有判定把握欄"] |= bool(sure); info["有燈2把握欄"] |= bool(sure2); info["有自評欄"] |= bool(selfc)
         if sure:
             bad = D[~D[sure[0]].str.strip().isin(["確定", "兩可"])]
             if len(bad):
                 log(f"⚠ {os.path.basename(f)} 判定把握欄有非「確定／兩可」值 {len(bad)} 列：{bad['訊號編號'].tolist()[:10]}（當確定）")
-        info["來源"].append({"檔": f, "列數": len(D), "判定把握欄": sure[0] if sure else "缺", "燈2把握欄": sure2[0] if sure2 else "缺", "代碼欄": code_col or "缺"})
+        info["來源"].append({"檔": f, "列數": len(D), "判定把握欄": sure[0] if sure else "缺", "燈2把握欄": sure2[0] if sure2 else "缺", "自評欄": selfc[0] if selfc else "缺（照寫不剔）", "代碼欄": code_col or "缺"})
         parts.append(D)
     seen = set()
     for D in parts:
@@ -279,7 +284,7 @@ def run(srcs, out, dry):
     global TRI
     TRI = EN.T
     meta = {"tw_sha": sha, "面板尾": str(EN.CAL[EN.CEND].date()), "dry": dry, "來源": info["來源"],
-            "有判定把握欄": info["有判定把握欄"], "有燈2把握欄": info["有燈2把握欄"],
+            "有判定把握欄": info["有判定把握欄"], "有燈2把握欄": info["有燈2把握欄"], "有自評欄": info["有自評欄"],
             "大盤": f"data/history/market_tri.csv {EN.T.index[0].date()}～{EN.T.index[-1].date()}（{len(EN.T)} 日）"}
     cache = {}; CAPS = []; ROWS = []
     for _, r in S.iterrows():
@@ -330,7 +335,7 @@ def run(srcs, out, dry):
     SG = []
     for _, r in S.iterrows():
         rec = {"訊號": r["訊號"], "原編號": r["原編號"], "檔": r["檔"], "類": r["類"], "版本": r["版本"], "甲": r["甲"], "乙": r["乙"], "型": r["型"], "產業": r["產業"],
-               "主題": r["主題"], "燈1季": r["燈1季"], "燈2季": r["燈2季"], "無點名": r["無點名"], "兩可": bool(r["兩可"]), "燈2兩可": bool(r["燈2兩可"])}
+               "主題": r["主題"], "燈1季": r["燈1季"], "燈2季": r["燈2季"], "無點名": r["無點名"], "兩可": bool(r["兩可"]), "燈2兩可": bool(r["燈2兩可"]), "自評知道": bool(r["自評知道"])}
         allc = [c for c, _ in codes_of(r)]
         cut = CP[(CP["訊號"] == r["訊號"]) & (CP["判定"] == "市值不足、剔除")]["代號"].tolist() if len(CP) else []
         rec["點名檔"] = "／".join(c or "?" for c in allc); rec["剔除檔"] = "／".join(cut)
@@ -356,7 +361,10 @@ def run(srcs, out, dry):
     if info["有判定把握欄"]:
         scen["寬鬆"] = (SG, pd.Series(False, index=SG.index))
         strict = SG[~SG["兩可"]]
-        scen["嚴格"] = (strict, strict["燈2兩可"] if info["有燈2把握欄"] else pd.Series(False, index=strict.index))
+        scen["嚴格"] = (strict, strict["燈2兩可"])      # 燈 1 兩可整列不算；燈 2 兩可 ⇒ 不加碼（產業 seq47 §二；缺燈2把握欄的清單＝確定）
+    if info["有自評欄"]:
+        nk = SG[~SG["自評知道"]]
+        scen["剔自評知道"] = (nk, pd.Series(False, index=nk.index))   # 照實減掉判燈者自評「知道」的訊號；無此欄的清單照寫不剔
     classes = [c for c in ("傳產", "電子", "其他") if (SG["類"] == c).any()]
     groups = classes + (["合計"] if len(classes) > 1 else [])
     types = list(TYPES) + [t for t in SG["型"].drop_duplicates() if t not in TYPES]
@@ -477,18 +485,21 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
                         cs = []
                         for H in ("12", "24", "末"):
                             kw = dict(類=gp, 版=ver, 型=ty, 表=tb, H=H, 單位="訊號", 量=met)
-                            a = sg(ST, 情境="寬鬆", **kw); b = sg(ST, 情境="嚴格", **kw)
+                            a = sg(ST, 情境="寬鬆", **kw); b = sg(ST, 情境="嚴格", **kw); c_ = sg(ST, 情境="剔自評知道", **kw)
                             if a is None or b is None or not np.isfinite(a["中位"]) or not np.isfinite(b["中位"]):
                                 cs.append("—"); continue
                             lo, hi = sorted([a["中位"], b["中位"]])
-                            cs.append(f"{f2(lo)}～{f2(hi)}（寬 {f2(a['中位'])}／嚴 {f2(b['中位'])}）")
+                            cs.append(f"{f2(lo)}～{f2(hi)}（寬 {f2(a['中位'])}／嚴 {f2(b['中位'])}" + (f"；剔自評知道 {f2(c_['中位'])}" if c_ is not None else "") + "）")
                         if any(c != "—" for c in cs):
                             md.append(f"| {gp} | {ver} | {ty} | {lab} | " + " | ".join(cs) + " |")
         md.append("")
     for sc in scen:
-        md += [f"# 情境：{sc}" + ("（清單照算）" if sc == "照實" else ("（兩可都算亮燈）" if sc == "寬鬆" else "（兩可都不算）")), ""]
+        md += [f"# 情境：{sc}" + {"照實": "（清單照算）", "寬鬆": "（兩可都算亮燈）", "嚴格": "（燈 1 兩可都不算；燈 2 兩可不加碼）",
+                                  "剔自評知道": "（照實減掉判燈者自評「知道後來走勢」的訊號；無此欄的清單不剔）"}[sc], ""]
         for gp in groups:
             Gs = SG if gp == "合計" else SG[SG["類"] == gp]
+            if sc == "剔自評知道":
+                Gs = Gs[~Gs["自評知道"]]
             if sc == "嚴格":
                 Gs = Gs[~Gs["兩可"]]
             md += [f"## {sc}｜{gp}", "", "### 件數", "", "| 版 | 訊號列 | 無點名（不算） | 有公司 | 規模全剔除 | 進統計 | 各型 | 有燈 2 | 12 月未到 | 24 月未到 |",
@@ -549,6 +560,8 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
     md.append(f"- 壞根截斷／下市（燈 1、到末日）：{len(tr)} 檔次" + ("：" + "；".join(f"{r['訊號']} {r['代號']} {r['狀態']} {r['壞根日']}" for _, r in tr.iterrows()) if len(tr) else ""))
     if has:
         md.append("- 兩可訊號：" + ("、".join(SG[SG["兩可"]]["訊號"]) or "無") + "；燈 2 兩可：" + ("、".join(SG[SG["燈2兩可"]]["訊號"]) or "無"))
+    if meta.get("有自評欄"):
+        md.append("- 判燈者自評知道後來走勢（剔自評知道版剔除）：" + ("、".join(SG[SG["自評知道"]]["訊號"]) or "無"))
     md.append("")
     md += ["## 每訊號一列（照實；訊號等權超額，份；括號＝接續版有差時）", "",
            "| 訊號 | 類 | 版本 | 型 | 主題 | 燈1季 | 入選檔 | 剔除 | 12 月 | 24 月 | 到末日 | 燈2季 | 加碼 2 份（末） | 乙總損益（末） |", "|" + "---|" * 14]

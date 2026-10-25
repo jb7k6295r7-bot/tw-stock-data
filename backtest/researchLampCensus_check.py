@@ -45,14 +45,15 @@ def tsh(path):
 
 
 files = sorted(glob.glob(os.path.join(OUT, "signals_input*.csv")), key=lambda f: (f != os.path.join(OUT, "signals_input.csv"), f))
-EL = {"半導體", "電腦及週邊", "光電", "通信網路", "電子零組件"}; TR = {"水泥", "食品", "塑膠", "紡織", "電機機械", "電器電纜"}
-sig = {}; seen = set(); has_sure = True; has_sure2 = True
+EL = ("半導體", "電腦", "光電", "通信網路", "電子零組件"); TR = {"水泥", "食品", "塑膠", "紡織", "電機機械", "電器電纜"}
+sig = {}; seen = set(); has_sure = False; has_sure2 = False; has_self = False
 for k, f in enumerate(files, 1):
     D = pd.read_csv(f, dtype=str, keep_default_na=False)
     vc = [c for c in D.columns if c.startswith("版本")][0]
     sc = [c for c in D.columns if "把握" in c and "燈2" not in c]; sc2 = [c for c in D.columns if "把握" in c and "燈2" in c]
     cc = [c for c in D.columns if "代碼" in c]
-    has_sure &= bool(sc); has_sure2 &= bool(sc2)
+    sf = [c for c in D.columns if "判燈者自評" in c]
+    has_sure |= bool(sc); has_sure2 |= bool(sc2); has_self |= bool(sf)
     for _, r in D.iterrows():
         key = r["訊號編號"] if (k == 1 or r["訊號編號"] not in seen) else f"F{k}:{r['訊號編號']}"
         cl = None
@@ -66,9 +67,10 @@ for k, f in enumerate(files, 1):
         if r["燈2季"].strip():
             y2, q2 = r["燈2季"].split("Q"); m2 = f"{y2}-{int(q2) * 3:02d}"
         sig[key] = {"甲": r[vc] in ("甲", "兩版"), "乙": r[vc] in ("乙", "兩版"), "型": r["型"], "codes": cs, "m1": m1, "m2": m2, "類": cl,
-                    "兩可": bool(sc) and r[sc[0]].strip() == "兩可", "燈2兩可": bool(sc2) and r[sc2[0]].strip() == "兩可"}
+                    "兩可": bool(sc) and r[sc[0]].strip() == "兩可", "燈2兩可": bool(sc2) and r[sc2[0]].strip() == "兩可",
+                    "知道": bool(sf) and r[sf[0]].strip() == "知道"}
     seen |= {kk for kk in sig}
-res.append(f"--  清單 {len(files)} 份、訊號 {len(sig)}；判定把握欄 {'有' if has_sure else '缺'}；燈2把握欄 {'有' if has_sure2 else '缺'}")
+res.append(f"--  清單 {len(files)} 份、訊號 {len(sig)}；判定把握欄 {'有' if has_sure else '缺'}；燈2把握欄 {'有' if has_sure2 else '缺'}；自評欄 {'有' if has_self else '缺'}")
 
 # ① 市值
 CP = pd.read_csv(os.path.join(OUT, "caps.csv"), dtype={"代號": str})
@@ -167,8 +169,8 @@ def st(v):
 
 ST = pd.read_csv(os.path.join(OUT, "stats.csv"), dtype={"H": str})
 scen_main = sorted(ST["情境"].unique())
-flag(f"情境＝{scen_main}（欄{'有' if has_sure else '缺'} ⇒ 應為 {'照實、寬鬆、嚴格' if has_sure else '只有照實'}）",
-     set(scen_main) == ({"照實", "寬鬆", "嚴格"} if has_sure else {"照實"}))
+want = {"照實"} | ({"寬鬆", "嚴格"} if has_sure else set()) | ({"剔自評知道"} if has_self else set())
+flag(f"情境＝{scen_main}（應為 {sorted(want)}）", set(scen_main) == want)
 cls = [c for c in ("傳產", "電子", "其他") if any(s["類"] == c for s in sig.values())]
 groups = cls + (["合計"] if len(cls) > 1 else [])
 flag(f"類別＝{sorted(ST['類'].unique())}（應為 {groups}）", set(ST["類"].unique()) == set(groups))
@@ -187,7 +189,7 @@ for sc in scen_main:
         for ver in ("甲", "乙"):
             for ty in ("全部", "缺貨", "新需求", "政策"):
                 ks = [k for k, s in sig.items() if s[ver] and s["codes"] and keep[k] and (ty == "全部" or s["型"] == ty) and (gp == "合計" or s["類"] == gp)
-                      and not (sc == "嚴格" and s["兩可"])]
+                      and not (sc == "嚴格" and s["兩可"]) and not (sc == "剔自評知道" and s["知道"])]
                 if not ks:
                     continue
                 dropa = {k: (sc == "嚴格" and sig[k]["燈2兩可"]) for k in ks}
