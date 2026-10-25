@@ -67,6 +67,9 @@ COST_US = 0.001
 HS = (24, 36, 60, 72)
 FLOOR = {"TW": 1e10, "US": 2e9}
 US_REPO = os.path.expanduser("~/us-stock-data")
+ORSTED = ("DNNGY", "ORSTED_CO")
+ORSTED_CUT = pd.Timestamp("2025-09-05")
+SPECIAL_BEFORE = [("CHPT", "2021-03-01", "SPAC 合併前價"), ("LCID", "2021-07-26", "SPAC 合併前價"), ("CGC", "2018-05-24", "可能是 OTC 價")]
 VARS = ["代表股版", "同業等權版", "設下限版"]
 WARN = "事後挑的贏家與失敗樣本 ⇒ 只描述，⛔ 不是期望值的證據"
 QUAL = ("名單品質（產業 seq37 §二）：台股名次多半依「營收規模」而非「主題占比」排（只有 K45 照占比），排滿 3 家 6 案、只有 1 家 13 案 ⇒ "
@@ -91,6 +94,8 @@ def code_of(row):
     if row["市場"] == "TW":
         m = re.search(r"(\d{4})\s*$", s)
         return m.group(1) if m else None
+    if s.startswith("Ørsted"):
+        return "DNNGY"          # ★ K39 代表股用美元 ADR DNNGY（同業名單備援列同碼；與 ^SP500TR 同幣別），丹麥 ORSTED_CO（DKK）不用
     m = re.match(r"^([A-Z][A-Z.\-]*)（", s)
     return m.group(1) if m else None
 
@@ -316,42 +321,57 @@ class US:
         k = int(self.G.index.searchsorted(pd.Timestamp(d), "right")) - 1
         return float(self.G.iloc[k])
 
-    def load(self, tk):
-        """回 (DataFrame[date, adjopen, adjclose, rawclose], 來源) 或 (None, 原因)。"""
-        if tk in self.cache:
-            return self.cache[tk]
-        raw = gshow(f"data/prices_yahoo/{tk}.csv", US_REPO) if tk else None
-        if raw is not None:
+    def load(self, tk, need=None):
+        """回 (DataFrame[date, adjopen, adjclose, rawclose], 來源) 或 (None, 原因)。
+        來源順序 prices_yahoo → prices → extra_yahoo；need（進場日）給定時取第一個起點 ≤ need 的來源（都不夠早 ⇒ 回第一個有的來源）。"""
+        cands = [s for s in (self._load(tk, "prices_yahoo"), self._load(tk, "prices"), self._load(tk, "extra_yahoo")) if s[0] is not None]
+        if not cands:
+            return None, "私有庫查無此檔"
+        if need is not None:
+            for s in cands:
+                if s[0]["date"].iloc[0] <= need:
+                    return s
+        return cands[0]
+
+    def _load(self, tk, src):
+        key = (tk, src)
+        if key in self.cache:
+            return self.cache[key]
+        self.cache[key] = (None, "")
+        if not tk:
+            return self.cache[key]
+        if src in ("prices_yahoo", "extra_yahoo"):
+            raw = gshow(f"data/prices_yahoo/{tk}.csv" if src == "prices_yahoo" else f"data/extra_yahoo/yahoo_{tk}.csv", US_REPO)
+            if raw is None:
+                return self.cache[key]
             P = pd.read_csv(io.BytesIO(raw), dtype={"date": str}); P["date"] = pd.to_datetime(P["date"])
             for c in ("open", "close", "adjclose"):
                 P[c] = pd.to_numeric(P[c], errors="coerce")
             P = P[(P["close"] > 0) & (P["adjclose"] > 0) & (P["open"] > 0)].drop_duplicates("date").sort_values("date").reset_index(drop=True)
-            ev = gshow(f"data/events_yahoo/{tk}.csv", US_REPO)
+            ev = gshow(f"data/events_yahoo/{tk}.csv" if src == "prices_yahoo" else f"data/extra_yahoo/yahoo_events_{tk}.csv", US_REPO)
             sp = []
             if ev is not None:
-                E = pd.read_csv(io.BytesIO(ev), dtype=str)
+                E = pd.read_csv(io.BytesIO(ev), dtype=str).drop_duplicates()
                 for r in E[E["type"] == "split"].itertuples():
                     a, b = r.value.split("/"); sp.append((pd.Timestamp(r.date), float(a) / float(b)))
             fac = np.ones(len(P))
             for d, rto in sp:
                 fac[P["date"].to_numpy() < np.datetime64(d)] *= rto
             out = pd.DataFrame({"date": P["date"], "adjopen": P["open"] * P["adjclose"] / P["close"], "adjclose": P["adjclose"], "rawclose": P["close"] * fac})
-            self.cache[tk] = (out, "prices_yahoo")
-            return self.cache[tk]
-        raw = gshow(f"data/prices/{tk}.csv", US_REPO) if tk else None
+            self.cache[key] = (out, src)
+            return self.cache[key]
+        raw = gshow(f"data/prices/{tk}.csv", US_REPO)
         if raw is not None:
             P = pd.read_csv(io.BytesIO(raw), dtype={"date": str}); P["date"] = pd.to_datetime(P["date"])
             for c in ("close", "adjOpen", "adjClose"):
                 P[c] = pd.to_numeric(P[c], errors="coerce")
             P = P[(P["close"] > 0) & (P["adjClose"] > 0) & (P["adjOpen"] > 0)].drop_duplicates("date").sort_values("date").reset_index(drop=True)
             out = pd.DataFrame({"date": P["date"], "adjopen": P["adjOpen"], "adjclose": P["adjClose"], "rawclose": P["close"]})
-            self.cache[tk] = (out, "prices")
-            return self.cache[tk]
-        self.cache[tk] = (None, "私有庫查無此檔")
-        return self.cache[tk]
+            self.cache[key] = (out, "prices")
+        return self.cache[key]
 
     def cap(self, tk, ym):
-        P, src = self.load(tk)
+        P, src = self.load(tk, (pd.Period(ym, "M")).start_time)
         if P is None:
             return np.nan, "", "價格查無"
         p = pd.Period(ym, "M")
@@ -372,12 +392,16 @@ class US:
         rows = []
         for base in pairs:
             tk = base["代號"]
-            P, src = self.load(tk)
+            ent = (pd.Period(base["燈亮月"], "M") + 1).to_timestamp()
+            P, src = self.load(tk, ent)
             if P is None:
                 for H in HS:
                     rows.append({**base, "H月": H, "狀態": "資料不足(私有庫查無此檔)"})
                 continue
-            ent = (pd.Period(base["燈亮月"], "M") + 1).to_timestamp()
+            base = {**base, "價格來源": src}
+            for t_, d_, why in SPECIAL_BEFORE:
+                if tk == t_ and ent < pd.Timestamp(d_):
+                    base["註"] = (base.get("註", "") + f"⚠進場在 {d_} 前（{why}）").strip()
             if ent < P["date"].iloc[0]:
                 for H in HS:
                     rows.append({**base, "H月": H, "狀態": f"資料不足(燈亮早於資料起點 {P['date'].iloc[0].date()})"})
@@ -406,9 +430,19 @@ class US:
                 elif delist and last_d < tgt:
                     st = "下市結算"
                 xr = sub.iloc[-1] if len(sub) else e_row
+                extra = {}
+                if tk in ORSTED and xr["date"] > ORSTED_CUT:
+                    # Ørsted 2025-09 配權 Yahoo 未還原 ⇒ 主值截在 2025-09-05；未截值只當參考
+                    Rraw = float(xr["adjclose"] / P0 - 1 - COST_US); Mraw = self.tr_at(xr["date"]) / tr0 - 1
+                    extra = {"未截R(參考)": Rraw, "未截超額(參考)": Rraw - Mraw, "未截結算日": str(xr["date"].date())}
+                    sub2 = sub[sub["date"] <= ORSTED_CUT]; xr = sub2.iloc[-1] if len(sub2) else e_row
+                    st = st + "；⚠Ørsted配權未還原、截 2025-09-05"
                 R = float(xr["adjclose"] / P0 - 1 - COST_US); M = self.tr_at(xr["date"]) / tr0 - 1
-                rows.append({**base, "H月": H, "進場日": str(e_d.date()), "進場順延日": int(pos[e_d] - int(np.searchsorted(cal, ent))),
-                             "判決目標日": str(tgt.date()), "結算日": str(xr["date"].date()), "狀態": st, "壞根日": bad_d, "R": R, "大盤": M, "超額": R - M})
+                big = [f"{d.date()} {v * 100:+.0f}%" for d, v in zip(Pp["date"], Pp["adjclose"].pct_change())
+                       if e_d < d <= xr["date"] and np.isfinite(v) and abs(v) > 0.4]
+                rows.append({**base, **extra, "H月": H, "進場日": str(e_d.date()), "進場順延日": int(pos[e_d] - int(np.searchsorted(cal, ent))),
+                             "判決目標日": str(tgt.date()), "結算日": str(xr["date"].date()), "狀態": st, "壞根日": bad_d, "R": R, "大盤": M, "超額": R - M,
+                             "單日>40%": "；".join(big)})
         return rows
 
 
@@ -548,7 +582,8 @@ def main():
     MB = build_members(CS, P, caps); MB.to_csv(os.path.join(OUT, "members.csv"), index=False, encoding="utf-8-sig")
     TB = pd.DataFrame(rows)
     cols = ["id", "市場", "結果", "型", "產業", "代表股", "代號", "燈亮月", "H月", "進場日", "進場順延日", "判決目標日", "結算日", "狀態", "壞根日",
-            "R", "大盤", "超額", "接續R", "接續大盤", "接續超額", "接續結算日", "接續註", "0050", "超額0050", "接續超額0050"]
+            "R", "大盤", "超額", "接續R", "接續大盤", "接續超額", "接續結算日", "接續註", "0050", "超額0050", "接續超額0050",
+            "價格來源", "註", "單日>40%", "未截R(參考)", "未截超額(參考)", "未截結算日"]
     TB = TB.reindex(columns=cols)
     TB.to_csv(os.path.join(OUT, "table.csv"), index=False, encoding="utf-8-sig")
     TH, EA = themes(TB, MB); TH.to_csv(os.path.join(OUT, "themes.csv"), index=False, encoding="utf-8-sig")
@@ -653,6 +688,17 @@ def write_md(TB, TH, ST, MB, CR, meta):
             pa = f"{pc(s['p*_平均'])}（n {ni(s['n_平均'])}）" if np.isfinite(s["p*_平均"]) else s["註_平均"]
             pm = f"{pc(s['p*_中位'])}（n {ni(s['n_中位'])}）" if np.isfinite(s["p*_中位"]) else s["註_中位"]
             md.append(f"- {v} {H} 月：贏家 {f2(s['贏家平均'])}／{f2(s['贏家中位'])}、反例 {f2(s['反例平均'])}／{f2(s['反例中位'])}；p* 平均 {pa}、中位 {pm}；μ {f2(s['反例μ'])}、s {f2(s['反例s'])}、門檻 {f2(s['門檻μ−1.28s/√8'])}")
+    # 美股補價
+    U = TB[(TB["市場"] == "US") & (TB["價格來源"] == "extra_yahoo")]
+    md += ["", "## 美股補價（資料庫 0253：us-stock-data data/extra_yahoo/，⛔ 不放價格）", "",
+           f"- 用 extra_yahoo 的檔次：{'、'.join(sorted(set(U['id'] + ' ' + U['代號'])))}（prices_yahoo 起點晚於進場的 DDD、FSLR 改用 extra_yahoo）；LAZR 仍查無。",
+           "- K39 Ørsted：代表股與名單都用美元 ADR DNNGY（丹麥 ORSTED_CO 為 DKK，不用）。2025-09 配權 Yahoo 未還原 ⇒ 跨過的格主值**截在 2025-09-05**、標 ⚠，未截值放 table.csv「未截R(參考)」。"]
+    for _, r in TB[(TB["市場"] == "US") & (TB["H月"].isin([60, 72])) & TB["狀態"].fillna("").str.contains("Ørsted")].iterrows():
+        md.append(f"  - {r['id']} {r['代號']} {r['H月']} 月：截值 R {f2(r['R'])}、超額 {f2(r['超額'])}（{r['結算日']}）；未截參考 R {f2(r['未截R(參考)'])}、超額 {f2(r['未截超額(參考)'])}（{r['未截結算日']}）")
+    fl = TB[(TB["市場"] == "US") & TB["註"].fillna("").ne("")].drop_duplicates(["id", "代號"])
+    md.append("- SPAC／OTC 前價：" + ("；".join(f"{r.id} {r.代號} {r.註}" for r in fl.itertuples()) or "本樣本進場都在 CHPT、LCID 合併與 CGC 轉主板之後，無格受影響"))
+    bg = TB[(TB["市場"] == "US") & (TB["H月"] == 72) & TB["單日>40%"].fillna("").ne("")]
+    md.append("- 持有期間單日漲跌 >40%（72 月窗內，還原價）：" + ("；".join(f"{r['id']} {r['代號']}：{r['單日>40%']}" for _, r in bg.iterrows()) or "無"))
     # 成員與剔除
     md += ["", "## 成員、資料不足與規模剔除", ""]
     nod = TB[(TB["H月"] == 60) & TB["R"].isna()]

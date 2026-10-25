@@ -54,7 +54,7 @@ K55,TW,6285,啟碁,1,2018-12,2018-12-28,79.9,374080691.0,298.89047210900003,≥1
 K55,TW,5388,中磊,2,2018-12,2018-12-28,64.2,245653767.0,157.709718414,≥100億,data/stocks
 K55,TW,3596,智易,3,2018-12,2018-12-28,74.8,193619090.0,144.82707932,≥100億,data/stocks
 K56,TW,2498,宏達電 2498（備援：查無占比 ⇒ 燈 1 點名公司）,1,2021-10,2021-10-29,65.6,818644385.0,537.03071656,≥100億,data/stocks
-K02,US,U,Unity Software,1,2021-10,,,,,查無,價格查無
+K02,US,U,Unity Software,1,2021-10,2021-10-29,,,,查無,SEC 股數查無
 K04,US,GGB,Gerdau S.A. (ADR),1,2020-11,,,,,查無,價格查無
 K04,US,TMST,TimkenSteel Corp,2,2020-11,,,,,查無,價格查無
 K04,US,TX,Ternium S.A. (ADR),3,2020-11,,,,,查無,價格查無
@@ -68,14 +68,14 @@ K08,US,LLY,Eli Lilly & Co,2,2023-09,2023-09-29,,,,≥20億美元,prices_yahoo；
 K09,US,ANET,Arista Networks,1,2022-12,2022-12-30,,,,≥20億美元,prices_yahoo；股數 as_of 2022-10-26
 K09,US,CSCO,Cisco Systems,2,2022-12,2022-12-30,,,,≥20億美元,prices_yahoo；股數 as_of 2022-11-17
 K09,US,JNPR,Juniper Networks,3,2022-12,2022-12-30,,,,≥20億美元,prices；股數 as_of 2022-10-26
-K10,US,DDD,3D Systems,1,2013-07,,,,,查無,該月查無收盤
+K10,US,DDD,3D Systems,1,2013-07,2013-07-31,,,,≥20億美元,extra_yahoo；股數 as_of 2013-07-23
 K10,US,SSYS,Stratasys Ltd,2,2013-07,,,,,查無,價格查無
 K10,US,XONE,ExOne Co,3,2013-07,,,,,查無,價格查無
 K14,US,NVDA,NVIDIA Corp,1,2023-06,2023-06-30,,,,≥20億美元,prices_yahoo；股數 as_of 2023-05-19
 K14,US,AMD,Advanced Micro Devices,2,2023-06,2023-06-30,,,,≥20億美元,prices_yahoo；股數 as_of 2023-04-28
 K14,US,INTC,Intel Corp,3,2023-06,2023-06-30,,,,≥20億美元,prices_yahoo；股數 as_of 2023-04-21
 K15,US,MU,Micron Technology,1,2023-11,2023-11-30,,,,≥20億美元,prices_yahoo；股數 as_of 2023-09-29
-K16,US,FSLR,First Solar,1,2008-04,,,,,查無,該月查無收盤
+K16,US,FSLR,First Solar,1,2008-04,2008-04-30,,,,查無,SEC 股數查無
 K16,US,ENER,Energy Conversion Devices,2,2008-04,,,,,查無,價格查無
 K18,US,MU,Micron Technology,1,2021-01,2021-01-29,,,,≥20億美元,prices_yahoo；股數 as_of 2021-01-04
 K20,US,LTHM,Livent Corp,1,2021-11,,,,,查無,價格查無
@@ -89,20 +89,20 @@ K26,US,LAZR,Luminar Technologies（備援：查無占比 ⇒ 燈 1 點名公司�
 K27,US,MU,Micron Technology,1,2016-10,2016-10-31,,,,≥20億美元,prices_yahoo；股數 as_of 2016-10-21
 K30,US,FSLR,First Solar,1,2022-09,2022-09-30,,,,≥20億美元,prices_yahoo；股數 as_of 2022-07-22
 K33,US,URG,Ur-Energy Inc,1,2021-10,,,,,查無,價格查無
-K33,US,CCJ,Cameco Corp,2,2021-10,,,,,查無,價格查無
+K33,US,CCJ,Cameco Corp,2,2021-10,2021-10-29,,,,查無,SEC 股數查無
 K33,US,LEU,Centrus Energy,3,2021-10,,,,,查無,價格查無
 K38,US,BLNK,Blink Charging,1,2021-11,,,,,查無,價格查無
 K38,US,BEEM,Beam Global,2,2021-11,,,,,查無,價格查無
-K39,US,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,2021-01,,,,,查無,價格查無
+K39,US,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,2021-01,2021-01-29,,,,查無,SEC 股數查無
 K40,US,LI,Li Auto Inc (ADR),1,2021-10,,,,,查無,價格查無
 K40,US,XPEV,XPeng Inc (ADR),2,2021-10,,,,,查無,價格查無
 K40,US,NIO,NIO Inc (ADR),3,2021-10,,,,,查無,價格查無
 K49,US,VRT,Vertiv Holdings,1,2023-09,2023-09-29,,,,≥20億美元,prices_yahoo；股數 as_of 2023-07-31
 K49,US,MOD,Modine Manufacturing,2,2023-09,,,,,查無,價格查無
-K50,US,CGC,Canopy Growth Corp,1,2018-08,,,,,查無,價格查無
+K50,US,CGC,Canopy Growth Corp,1,2018-08,2018-08-31,,,,查無,SEC 股數查無
 K50,US,GWPH,GW Pharmaceuticals (ADR),2,2018-08,,,,,查無,價格查無
 K50,US,CRON,Cronos Group,3,2018-08,,,,,查無,價格查無
 K51,US,BE,Bloom Energy,1,2020-08,2020-08-31,,,,查無,SEC 股數查無
-K51,US,PLUG,Plug Power,2,2020-08,,,,,查無,價格查無
+K51,US,PLUG,Plug Power,2,2020-08,2020-08-31,,,,查無,SEC 股數查無
 K51,US,BLDP,Ballard Power Systems,3,2020-08,,,,,查無,價格查無
 K54,US,ENPH,Enphase Energy,1,2022-08,2022-08-31,,,,≥20億美元,prices_yahoo；股數 as_of 2022-07-21

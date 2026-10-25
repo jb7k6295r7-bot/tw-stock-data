@@ -115,21 +115,36 @@ def g(path):
 
 SP = pd.read_csv(io.BytesIO(g("data/macro/yahoo_SP500TR.csv"))); SP["date"] = pd.to_datetime(SP["date"]); SP = SP[SP["adjclose"] > 0].set_index("date")["adjclose"].sort_index()
 GS = pd.to_datetime(pd.read_csv(io.BytesIO(g("data/macro/yahoo_GSPC.csv")))["date"]).sort_values().reset_index(drop=True)
+US_PICK += [("K02", "U"), ("K07", "ZIM"), ("K33", "CCJ"), ("K10", "DDD"), ("K40", "LCID"), ("K51", "PLUG"), ("K39", "DNNGY"), ("K16", "FSLR"), ("K50", "CGC")]
+
+
+def yload(raw):
+    P = pd.read_csv(io.BytesIO(raw)); P["date"] = pd.to_datetime(P["date"])
+    P = P[(P["open"] > 0) & (P["close"] > 0) & (P["adjclose"] > 0)].sort_values("date").reset_index(drop=True)
+    P["ao"] = P["open"] / P["close"] * P["adjclose"]; P["ac"] = P["adjclose"]
+    return P
+
+
 for cid, tk in US_PICK:
+    first = (pd.Period(CS.loc[cid, "燈亮月"], "M") + 1).start_time
+    P = None
     raw = g(f"data/prices_yahoo/{tk}.csv")
     if raw is not None:
-        P = pd.read_csv(io.BytesIO(raw)); P["date"] = pd.to_datetime(P["date"])
-        P = P[(P["open"] > 0) & (P["close"] > 0) & (P["adjclose"] > 0)].sort_values("date").reset_index(drop=True)
-        P["ao"] = P["open"] / P["close"] * P["adjclose"]; P["ac"] = P["adjclose"]
-    else:
+        P = yload(raw)
+        if P["date"].iloc[0] > first:
+            P = None
+    if P is None and g(f"data/prices/{tk}.csv") is not None:
         P = pd.read_csv(io.BytesIO(g(f"data/prices/{tk}.csv"))); P["date"] = pd.to_datetime(P["date"])
         P = P[(P["adjOpen"] > 0) & (P["adjClose"] > 0) & (P["close"] > 0)].sort_values("date").reset_index(drop=True)
         P["ao"] = P["adjOpen"]; P["ac"] = P["adjClose"]
-    first = (pd.Period(CS.loc[cid, "燈亮月"], "M") + 1).start_time
+    if P is None:
+        P = yload(g(f"data/extra_yahoo/yahoo_{tk}.csv"))
     er = P[P["date"] >= first].iloc[0]; P0 = er["ao"]
     prevd = GS[GS < er["date"]].iloc[-1]
     for H in (60, 72):
         tgt = er["date"] + pd.DateOffset(months=H)
+        if tk == "DNNGY":
+            tgt = min(tgt, pd.Timestamp("2025-09-05"))     # Ørsted 配權未還原 ⇒ 截
         xr = P[P["date"] <= tgt].iloc[-1]
         R = xr["ac"] / P0 - 1 - 0.001
         Mk = SP[SP.index <= xr["date"]].iloc[-1] / SP[SP.index <= prevd].iloc[-1] - 1
@@ -164,7 +179,7 @@ capv = {(r.id, str(r.代號)): r for r in CP.itertuples()}
 mem = {"代表股版": {}, "同業等權版": {}, "設下限版": {}}
 for cid, r in CS.iterrows():
     s = r["公司"]
-    rep = s.split()[-1] if r["市場"] == "TW" else s.split("（")[0]
+    rep = s.split()[-1] if r["市場"] == "TW" else ("DNNGY" if s.startswith("Ørsted") else s.split("（")[0])   # K39 用美元 ADR（照主程式 ★）
     mem["代表股版"][cid] = [rep]
     lst = [c.strip() for c in PP[PP["id"] == cid]["代號"] if c.strip()]
     mem["同業等權版"][cid] = lst[:3]

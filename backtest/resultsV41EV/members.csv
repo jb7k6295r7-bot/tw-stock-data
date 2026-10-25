@@ -52,7 +52,7 @@
 同業等權版,K10,US,DDD,3D Systems,1,名次1,True,
 同業等權版,K10,US,SSYS,Stratasys Ltd,2,名次2,True,
 同業等權版,K10,US,XONE,ExOne Co,3,名次3,True,
-設下限版,K10,US,DDD,3D Systems,1,名次1,True,查無、未剔除
+設下限版,K10,US,DDD,3D Systems,1,名次1,True,過下限
 設下限版,K10,US,SSYS,Stratasys Ltd,2,名次2,True,查無、未剔除
 設下限版,K10,US,XONE,ExOne Co,3,名次3,True,查無、未剔除
 代表股版,K11,TW,2317,鴻海 2317,,代表股,True,
@@ -181,7 +181,7 @@
 同業等權版,K38,US,BEEM,Beam Global,2,名次2,True,
 設下限版,K38,US,BLNK,Blink Charging,1,名次1,True,查無、未剔除
 設下限版,K38,US,BEEM,Beam Global,2,名次2,True,查無、未剔除
-代表股版,K39,US,,Ørsted（ORSTED A/S，丹麥上市）,,代表股,True,
+代表股版,K39,US,DNNGY,Ørsted（ORSTED A/S，丹麥上市）,,代表股,True,
 同業等權版,K39,US,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,名次1,True,
 設下限版,K39,US,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,名次1,True,查無、未剔除
 代表股版,K40,US,LCID,LCID（LUCID GROUP INC）,,代表股,True,
