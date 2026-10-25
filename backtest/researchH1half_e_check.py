@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """H1 先賣一半 seq1 電子＋傳產普查正式跑獨立重算——回測線計算子代理。⛔ 不 commit、不改既有檔。
 ⛔ 不 import researchH1half／researchH1half_e／researchLampCensus；價格用 researchH1half_check 的原始價＋factor 自行還原函式（ratio、ann）。
-  (a) 未到 E 件全抱 R、大盤 ＝ 普查 8c4d0d9559 rows.csv（燈1、到末日）逐筆
+  (a) 未到 E 件全抱 R、大盤 ＝ 普查 948dc4dc38 rows.csv（燈1、到末日）逐筆
   (b) 每件全抱 R、賣出那半 R、大盤、d：原始價＋factor 重算逐筆
   (c) 情境（照實／嚴格／剔自評知道）× 類（電子／傳產／合計）× 甲乙 × 型：由 (b) 重算值重新彙總，對 stats.csv（中位、平均、P25／P75、最好最壞、份口徑中位、
       觸發數、緊接版觸發數、又漲 ≥1 倍、門檻描述句）
@@ -21,7 +21,7 @@ from backtest import researchH1half_check as K
 
 os.chdir(os.path.expanduser("~/tw-p17"))
 OUT = "backtest/resultsH1half/main_e"
-CREV = "8c4d0d9559"
+CREV = "948dc4dc38"
 TOL = 1e-6
 
 

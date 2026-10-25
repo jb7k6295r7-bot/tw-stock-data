@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """H1「營收見頂確認、先賣一半」對 v4.1 全抱 seq1：電子＋傳產普查（清單 v4）全部描述欄（同一登錄 sha 42d64aee7df4e61b；讀法照裁定 seq475）——回測線計算子代理。
 描述、⛔ 不判定、不計 N。⛔ 正式跑必須帶 --ruling seqNNN；--dry＝價格、大盤全為 1、成本 0 ⇒ R 恰為 0。⛔ 不 commit、不改既有檔（傳產原結果 resultsH1half/main 不覆寫）。
-事件、進場、情境＝researchH1half_e_freq（普查 8c4d0d9559 輸出、逐筆驗進場日）；結算、年化、d、份口徑、又漲 1 倍＝researchH1half.run_event／group_stats（同一套，M1～M9）。
+事件、進場、情境、月營收（含下市股併讀）＝researchH1half_e_freq（普查 948dc4dc38 輸出、逐筆驗進場日）；結算、年化、d、份口徑、又漲 1 倍＝researchH1half.run_event／group_stats（同一套，M1～M9）。
 
     乾跑：cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchH1half_e --dry
     正式：cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchH1half_e --ruling seqNNN
 輸出：正式 backtest/resultsH1half/main_e/；乾跑 backtest/resultsH1half/dry_e/
 
 ═══ 讀法 ═══
- 照 researchH1half M1～M9 與 researchH1half_e_freq E0～E3。結算引擎＝普查 8c4d0d9559 版 Engine（同面板 PIN 9b0e9882572c）。
+ 照 researchH1half M1～M9 與 researchH1half_e_freq E0～E3。結算引擎＝普查 948dc4dc38 版 Engine（同面板 PIN 9b0e9882572c）。
  情境：照實（＝寬鬆）、嚴格（燈 1 兩可剔除）、剔自評知道；類：電子、傳產、合計；甲乙；型。主報照實。
 """
 from __future__ import annotations
@@ -57,8 +57,9 @@ def main():
     EN = FE.LC8.Engine(); C = F.Cal(EN)
     if a.dry:
         H.make_dry(EN)
-        FE.LC8.COST = 0.0                 # 8c4d 版 Engine.settle 讀自己模組的 COST（只改執行期）
-    L, diag, MD = F.load_S()
+        FE.LC8.COST = 0.0                 # 普查版 Engine.settle 讀自己模組的 COST（只改執行期）
+    L, diag, MD = FE.load_S_merged()
+    log(f"[營收] {diag}")
     EV, S, info, chk = FE.build_events(EN, C, L)
     log(f"[進場驗證] {chk}")
     ALL = EV[EV["入選"].astype(bool) & EV["代號"].fillna("").ne("") & EV["_i"].notna()].copy().reset_index(drop=True)
@@ -98,16 +99,20 @@ def main():
         d = ALL[ALL[ver].astype(bool)]; d = d if cl == "合計" else d[d["類"] == cl]
         return f"{int(d['觸發'].sum())}／{len(d)}"
     self_e = S[S["類"] == "電子"]["自評知道"].mean()
+    def rate(cl):
+        d = ALL[(ALL["甲"].astype(bool) | ALL["乙"].astype(bool)) & (ALL["類"] == cl)]
+        return f"{d['觸發'].mean() * 100:.0f}%" if len(d) else "—"
     neff = {f"{cl}{ver}": int(ALL[ALL[ver].astype(bool) & ((ALL['類'] == cl) if cl != '合計' else True)]["燈1季"].nunique()) for cl in FE.CLASSES for ver in ("甲", "乙")}
-    notes = [f"滑動版觸發：電子 甲 {trig('電子', '甲')}、乙 {trig('電子', '乙')}；傳產 甲 {trig('傳產', '甲')}、乙 {trig('傳產', '乙')}（傳產 100%、電子近九成）⇒ 本件比的主要是「先賣一半的時點」，不是「賣不賣」；緊接版觸發數另列（描述，裁定 seq475）。",
+    notes = [f"滑動版觸發：電子 甲 {trig('電子', '甲')}、乙 {trig('電子', '乙')}；傳產 甲 {trig('傳產', '甲')}、乙 {trig('傳產', '乙')}（電子約 {rate('電子')}、傳產 {rate('傳產')}）⇒ 本件比的主要是「先賣一半的時點」，不是「賣不賣」；緊接版觸發數另列（描述，裁定 seq475）。",
              "兩版（H1、全抱）都沒套 v4.1 新聞出場 ①～⑤。",
-             "傳產只有 6 個產業（水泥、食品、塑膠、紡織、電機機械、電器電纜）；電子為產業代碼 24～28（產業 seq47 清單 v4）。",
+             "傳產只有 6 個產業（水泥、食品、塑膠、紡織、電機機械、電器電纜）；電子為產業代碼 24～28（產業 seq50 清單 v5：E38 富采補回、E29 燈 2 改兩可）。",
              f"燈 1 季 2021Q1～2024Q3 共 15 季；季分群 n_eff {neff} 全部 < 24 ⇒ 依構造還沒測、只描述、不計 N。",
              f"多數件未到 E、結算在資料末日；「到資料末日」被大盤 2025-09-30 → {tail.date()} 約 {mk * 100:+.0f}%（market_tri 含息）主導。",
              f"電子類判燈者自評「知道後來走勢」{self_e * 100:.0f}%（{int(S[S['類'] == '電子']['自評知道'].sum())}／{int((S['類'] == '電子').sum())} 訊號列）⇒ 後見偏差風險大；另出剔自評知道版。",
              "寬鬆＝照實（清單本來就列入兩可）；嚴格＝燈 1 兩可剔除。三版差異來自判燈寬嚴與自評，不是統計誤差。",
              "E ＝ 進場月＋60 個月那個月的第一個交易日（登錄字面，裁定 seq475）；P 很小照字面不另訂門檻；壞根主欄截斷、未做接續版。",
-             "5371 中光電三件（E23、E39、E70）本庫 2013-01～2026-07 無月營收 ⇒ 營收全缺、未觸發（H1＝全抱，d＝0 計入）。"]
+             "月營收併讀下市股（資料庫 3720ce1a06 revenue_delisted.csv）；5371 中光電 2013-01～2026-07 取自該檔、2026-08 起以 3718 中光電投控 1:1 接續（價格不接續，照面板下市結算）；下市股列與接續列的去年同月＝m−12 期自身營收。",
+             f"2013 起多數公司改報合併營收（IFRS）：S 分母跨 2012／2013 的件 {int(ALL['跨2012/2013'].astype(bool).sum())} 件（照算、標記）。"]
     write_md(OUT, ST, a, chk, checks, notes)
     json.dump({"模式": "乾跑" if a.dry else a.ruling, "登錄sha16": s16, "普查版": FE.CREV, "面板sha": EN.sha, "面板尾": str(tail.date()), "進場驗證": chk,
                "乾跑檢查": checks, "必附": notes, "stats": ST.to_dict("records"), "讀法": __doc__.split("═══ 讀法")[1], "秒": round(time.time() - t0)},

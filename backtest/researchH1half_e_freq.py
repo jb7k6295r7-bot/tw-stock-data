@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """H1「營收見頂確認、先賣一半」seq1：電子＋傳產普查（清單 v4）頻率表（同一登錄 sha 42d64aee7df4e61b；讀法照裁定 seq475：滑動窗、E 照字面）——回測線計算子代理。
 ⛔ 本檔不算任何報酬；⛔ 不 commit、不改既有檔（傳產原結果 resultsH1half/freq、main 不覆寫）。
-事件與進場 ＝ 普查 commit 8c4d0d9559 的輸出（backtest/resultsLampCensus/rows.csv、signals.csv、caps.csv，git show 讀該版，不讀工作樹）；
+事件與進場 ＝ 普查 commit 948dc4dc38 的輸出（backtest/resultsLampCensus/rows.csv、signals.csv、caps.csv，git show 讀該版，不讀工作樹）；
   主程式用同版 researchLampCensus.Engine.entry 逐筆重算進場日，⛔ 不同即停。觸發邏輯（F1～F8、F5′）import researchH1half_freq（同一套，已過 freq_check）。
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchH1half_e_freq
@@ -14,6 +14,9 @@
  E1 情境（照普查 L8）：照實＝全部；寬鬆＝兩可都算亮燈（清單本來就列入 ⇒ ＝照實，主程式驗證兩者事件集合相同）；
     嚴格＝燈 1「判定把握」＝兩可的訊號列不算（燈 2 兩可只影響加碼，H1 無加碼 ⇒ 不影響）；剔自評知道＝照實減掉「判燈者自評知道後來走勢」＝知道的訊號。
  E2 類別：電子、傳產分開，再報合計；甲乙分開；型照清單（缺貨／新需求／政策；清單另有型照列）。季分群 n_eff ＝ 燈 1 季不同季數（各格自己算）。
+ E4 ★ 月營收併讀下市股（資料庫 3720ce1a06 revenue_delisted.csv，2013-01 起；之後一律併讀）：load_rev_pit 沒有該檔該期營收 ⇒ 取下市股檔 revenue_k（千元），
+    src＝下市股；5371 另取 3718 接續（5371 沒有的期別，1:1）。下市股檔沒有「去年當月」欄 ⇒ 下市股列與接續列的去年同月（ly 缺或 ≤0 時）＝ 合併後序列 m−12 期自身 rev。
+    ⚠ 2013 起多數公司改報合併營收（IFRS）：S 的分母若跨 2012／2013（用到 ≤2012-12 的月份、且分子月份 ≥2013-01）⇒ 欄「跨2012/2013」標記、照算。價格不接續（5371 照面板下市結算）。
  E3 自評知道比例 ＝ 自評欄＝知道的訊號列 ÷ 該類全部訊號列（另報 ÷ 進統計訊號）。
 """
 from __future__ import annotations
@@ -32,11 +35,14 @@ sys.path.insert(0, os.path.expanduser("~/tw-p17")); sys.path.insert(0, os.path.e
 os.chdir(os.path.expanduser("~/tw-p17"))
 from backtest import researchH1half_freq as F               # noqa: E402
 
-CREV = "8c4d0d9559"
-LC8 = F._frozen("researchLampCensus_at_8c4d0d9559", "backtest/researchLampCensus.py", CREV)
+CREV = "948dc4dc38"     # 普查版（產業 seq50：傳產 v4＋電子 v5；上一版 8c4d0d9559 結果備份在 ~/rtfwork/H1half_e_bak_20261026-0405）
+LC8 = F._frozen("researchLampCensus_at_948dc4dc38", "backtest/researchLampCensus.py", CREV)
+DELI_REV = "3720ce1a06"  # 資料庫 main：data/meta/revenue_delisted/revenue_delisted.csv（下市股月營收 2013-01～2026-07）
+DELI_PATH = "data/meta/revenue_delisted/revenue_delisted.csv"
+SPLICE = {"5371": "3718"}  # 5371 中光電 → 3718 中光電投控（換股 1:1）：5371 沒有的期別取 3718（本線 1:1 接續）
 OUT = "backtest/resultsH1half/freq_e"
 SRCS = ["/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v4_加判定把握_產業分析線-20261025-1830.csv",
-        "/mnt/c/SynologyDrive/跨線信箱/附件-電子類燈號普查訊號清單v4_產業分析線-20261025-2150.csv"]
+        "/mnt/c/SynologyDrive/跨線信箱/附件-電子類燈號普查訊號清單v5_產業分析線-20261026-0130.csv"]
 CLASSES = ("電子", "傳產", "合計")
 SCEN = ("照實", "寬鬆", "嚴格", "剔自評知道")
 LOG = []
@@ -60,6 +66,37 @@ def census_out():
         if a != b:
             raise SystemExit(f"⛔ 清單 {os.path.basename(f)} 與普查 {CREV} 的 {k} 不同")
     return RW, SG, CP
+
+
+def load_S_merged():
+    L, diag, MD = F.load_S()
+    t = subprocess.run(["git", "show", f"{DELI_REV}:{DELI_PATH}"], capture_output=True, check=True).stdout
+    Dl = pd.read_csv(io.BytesIO(t), dtype={"stock_id": str, "period": str})
+    Dl = Dl[Dl["stock_id"].str.fullmatch(r"\d{4}")]
+    base = L[L["rev"].notna()]
+    have = set(zip(base["stock_id"], base["period"]))
+    add = Dl[[k not in have for k in zip(Dl["stock_id"], Dl["period"])]]
+    A = pd.DataFrame({"stock_id": add["stock_id"].values, "period": add["period"].values, "rev": pd.to_numeric(add["revenue_k"], errors="coerce").values,
+                      "ly": np.nan, "src": "下市股"})
+    L2 = pd.concat([L, A], ignore_index=True)
+    for a, b in SPLICE.items():
+        own = set(L2[(L2["stock_id"] == a) & L2["rev"].notna()]["period"])
+        sp = L2[(L2["stock_id"] == b) & L2["rev"].notna() & ~L2["period"].isin(own)].copy()
+        sp["stock_id"] = a; sp["src"] = sp["src"].astype(str) + f"（{b} 接續）"
+        L2 = pd.concat([L2[~((L2["stock_id"] == a) & L2["period"].isin(sp["period"]))], sp], ignore_index=True)
+    fix = L2["src"].astype(str).str.contains("下市股|接續") & ~(L2["ly"] > 0)
+    key = dict(zip(zip(L2["stock_id"], L2["period"]), L2["rev"]))
+    L2.loc[fix, "ly"] = [key.get((sid, str(pd.Period(p, "M") - 12)), np.nan) for sid, p in zip(L2.loc[fix, "stock_id"], L2.loc[fix, "period"])]
+    L2.loc[fix, "src"] = L2.loc[fix, "src"].astype(str) + "；ly＝m−12 自身"
+    diag = {**diag, "下市股併入列": int(len(A)), "下市股併入代號": int(A["stock_id"].nunique()), "接續": SPLICE, "ly 改 m−12 列": int(fix.sum())}
+    return L2, diag, MD
+
+
+def cross1213(m0, n):
+    if not m0 or not n:
+        return False
+    p0 = pd.Period(m0, "M"); pe = p0 + int(n) - 1
+    return bool(p0 - 14 <= pd.Period("2012-12", "M") and pe >= pd.Period("2013-01", "M"))
 
 
 def tf(x):
@@ -105,7 +142,11 @@ def build_events(EN, C, L):
                 Sc[sid] = F.s_series(L, sid)
             Sx, rng = Sc[sid]
             rec["營收期別"] = "" if rng is None else f"{rng[0]}～{rng[1]}"
-            rows.append({**rec, **F.h1_trigger(Sx, C, i, e)})
+            o = F.h1_trigger(Sx, C, i, e)
+            o["跨2012/2013"] = cross1213(o.get("m0"), o.get("可用月數"))
+            src = L[(L["stock_id"] == sid)]["src"].astype(str)
+            o["營收含下市股或接續"] = bool(src.str.contains("下市股|接續").any())
+            rows.append({**rec, **o})
     EV = pd.DataFrame(rows)
     n_r1 = int(R1["進場日"].notna().sum())
     if nchk != n_r1:
@@ -127,12 +168,13 @@ def main():
     if s16 != F.REG_SHA16:
         raise SystemExit(f"⛔ 登錄 sha {s16} ≠ {F.REG_SHA16}")
     EN = LC8.Engine(); C = F.Cal(EN)
-    L, diag, MD = F.load_S()
+    L, diag, MD = load_S_merged()
+    log(f"[營收] {diag}")
     EV, S, info, chk = build_events(EN, C, L)
     log(f"[進場驗證] {chk}｜清單資訊 有判定把握 {info['有判定把握欄']}、有自評 {info['有自評欄']}")
     keep = ["樣本", "訊號", "類", "版本", "甲", "乙", "型", "產業", "主題", "燈1季", "無點名", "兩可", "自評知道", "代號", "名稱", "下限", "市值(億)", "入選",
             "進場日", "進場順延日", "E日", "未到", "截斷", "截斷日", "營收期別", "m0", "可用月數", "S空月數", "P終", "P終月", "結果", "P", "P月", "確認月",
-            "S1", "S2", "S3", "第3月≤0", "第3月≤P/2", "J日", "確認距m0月", "賣出日", "賣出順延日", "時距月", "15日規則改日", "緊接版觸發", "註"]
+            "S1", "S2", "S3", "第3月≤0", "第3月≤P/2", "J日", "確認距m0月", "賣出日", "賣出順延日", "時距月", "15日規則改日", "緊接版觸發", "跨2012/2013", "營收含下市股或接續", "註"]
     EV.reindex(columns=keep).to_csv(os.path.join(OUT, "events.csv"), index=False, encoding="utf-8-sig")
     types = [t for t in ("缺貨", "新需求", "政策") if t in set(S["型"])] + sorted(set(S["型"]) - {"缺貨", "新需求", "政策"})
     inn_all = EV[EV["入選"].astype(bool) & EV["代號"].ne("") & EV["結果"].notna()]
@@ -165,7 +207,7 @@ def main():
         si = sl[sl["訊號"].isin(inn_sig)]
         self_share[cl] = {"訊號列": len(sl), "自評知道": int(sl["自評知道"].sum()), "比例(全部列)": float(sl["自評知道"].mean()) if len(sl) else np.nan,
                           "進統計訊號": len(si), "其中自評知道": int(si["自評知道"].sum()), "比例(進統計)": float(si["自評知道"].mean()) if len(si) else np.nan}
-    meta = {"登錄sha16": s16, "普查版": CREV, "面板sha": EN.sha, "面板尾": str(EN.CAL[EN.CEND].date()), "revpit": MD, "進場驗證": chk, "清單": SRCS,
+    meta = {"登錄sha16": s16, "普查版": CREV, "營收": diag, "面板sha": EN.sha, "面板尾": str(EN.CAL[EN.CEND].date()), "revpit": MD, "進場驗證": chk, "清單": SRCS,
             "自評知道比例": self_share, "型": types}
     write_md(FQ, EV, meta)
     json.dump({**meta, "freq": FQ.to_dict("records"), "讀法": __doc__.split("═══ 讀法")[1], "秒": round(time.time() - t0)},
@@ -204,7 +246,8 @@ def write_md(FQ, EV, meta):
            "- 截斷（壞根／下市）：" + ("；".join(f"{r.訊號} {r.代號}（{r.截斷}）" for r in ins.itertuples() if isinstance(r.截斷, str) and r.截斷) or "無"),
            "- 規模下限剔除（不進統計）：" + ("；".join(f"{r.訊號} {r.代號}" for r in EV[EV['下限'] == '市值不足、剔除'].itertuples()) or "無"),
            "- 進場失敗／代號讀不出：" + ("；".join(f"{r.訊號} {r.代號}（{r.結果}）" for r in EV[~EV['入選'].astype(bool) & EV['結果'].notna() & (EV['下限'] != '市值不足、剔除')].itertuples()) or "無"),
-           "- 5371 中光電三件營收全缺（PIN 版 revenue_hist：5371 只到 2012-12、3718 從 2026-08 起 ⇒ 2013-01～2026-07 本庫無此公司月營收，資料庫缺口）⇒ 照讀法記「營收全缺」、未觸發，⛔ 未自行接代號。",
+           "- 月營收併讀下市股（E4）：營收用到下市股檔或 3718 接續的件：" + ("；".join(f"{r.訊號} {r.代號}" for r in ins.itertuples() if bool(getattr(r, "營收含下市股或接續", False))) or "無"),
+           "- 跨 2012／2013（IFRS 改報合併營收）的件：" + (str(int(ins["跨2012/2013"].astype(bool).sum())) if "跨2012/2013" in ins else "0"),
            "- ⛔ 兩版（H1、全抱）都沒套 v4.1 新聞出場 ①～⑤。本表不含任何報酬。"]
     open(os.path.join(OUT, "freq.md"), "w", encoding="utf-8").write("\n".join(md) + "\n")
 
