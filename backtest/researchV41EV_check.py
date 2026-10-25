@@ -41,6 +41,40 @@ def tsh(path):
     return subprocess.run(["git", "show", f"{SHA}:{path}"], capture_output=True, check=True).stdout
 
 
+# ── 0050 報酬（獨立公式）：raw1/raw0 ÷ Π_{d0<事件≤d1}(ref/pre)；事件用 git grep 掃 early/exright＋data/adj/0050.csv
+_g = subprocess.run(["git", "grep", "-h", ",0050,", SHA, "--", "data/early/exright/"], capture_output=True, text=True).stdout.split("\n")
+EV50 = []
+for ln in _g:
+    p = ln.split(",")
+    if len(p) > 4 and p[1] == "0050":
+        EV50.append((pd.Timestamp(p[0]), float(p[3]) / float(p[2])))
+_A = pd.read_csv(io.BytesIO(tsh("data/adj/0050.csv")))
+EV50 += [(pd.Timestamp(d), float(r) / float(q)) for d, q, r in zip(_A["date"], _A["pre_close"], _A["ref_price"])]
+_S50 = pd.read_csv(io.BytesIO(tsh("data/stocks/0050.csv"))); _S50["date"] = pd.to_datetime(_S50["date"])
+_S50 = _S50[_S50["close"] > 0].set_index("date")["close"]
+
+
+def raw50(d):
+    d = pd.Timestamp(d)
+    if d >= pd.Timestamp("2015-01-01"):
+        return float(_S50[_S50.index <= d].iloc[-1])
+    for k in range(10):
+        dd = d - pd.Timedelta(days=k)
+        t = subprocess.run(["git", "show", f"{SHA}:data/early/daily/{dd.date()}.csv"], capture_output=True)
+        if t.returncode == 0:
+            E = pd.read_csv(io.BytesIO(t.stdout), dtype={"stock_id": str})
+            q = E[(E["stock_id"] == "0050") & (E["close"] > 0)]
+            if len(q):
+                return float(q["close"].iloc[0])
+    raise SystemExit(f"0050 {d} 查無")
+
+
+def r50(d0, d1):
+    f = np.prod([x for d, x in EV50 if pd.Timestamp(d0) < d <= pd.Timestamp(d1)]) if EV50 else 1.0
+    return raw50(d1) / raw50(d0) / f - 1
+
+
+res.append(f"--  0050 事件（check 自掃）{len(EV50)} 筆")
 # ── ① 台股
 sha, DN, MD = RT.ensure_data(SHA)
 PX = RT.prices(sha, DN, 3); O, _ = SE.seam_open(PX)
@@ -66,7 +100,9 @@ for cid, sid in TW_PICK:
         R = C[i, x] / P0 - 1 - 0.00585
         Mk = tri[tri.index <= CAL[x]].iloc[-1] / tri[tri.index <= CAL[e - 1]].iloc[-1] - 1
         r = TB[(TB["id"] == cid) & (TB["代號"] == sid) & (TB["H月"] == H)].iloc[0]
-        cmp(f"{cid} {sid} {H}月 R（進 {CAL[e].date()} 結 {CAL[x].date()}）", R, r["R"]); cmp(f"{cid} {sid} {H}月 超額", R - Mk, r["超額"])
+        cmp(f"{cid} {sid} {H}月 R（進 {CAL[e].date()} 結 {CAL[x].date()}）", R, r["R"]); cmp(f"{cid} {sid} {H}月 超額（大盤）", R - Mk, r["超額"])
+        cmp(f"{cid} {sid} {H}月 大盤報酬", Mk, r["大盤"])
+        z = r50(CAL[e - 1], CAL[x]); cmp(f"{cid} {sid} {H}月 超額（0050，{CAL[e - 1].date()}→{CAL[x].date()}；容差 1e-6：因子欄 8 位小數 vs ref/pre 現算）", R - z, r["超額0050"], tol=1e-6)
 
 # ── ① 美股：直接讀原始 csv（prices_yahoo 或 prices）
 REPO = os.path.expanduser("~/us-stock-data")
@@ -160,6 +196,17 @@ for v in mem:
                 if len(q):
                     vals[cid] = (q["結果"].iloc[0], q["超額"].mean())
             w = np.array([x for k_, (rs, x) in vals.items() if rs == "大漲"]); l = np.array([x for k_, (rs, x) in vals.items() if rs == "失敗"])
+            if mk == "TW":
+                v5 = {}
+                for cid in d["id"].unique():
+                    q = d[(d["id"] == cid) & d["代號"].isin(mem[v][cid])]
+                    if len(q):
+                        v5[cid] = (q["結果"].iloc[0], q["超額0050"].mean())
+                w5 = np.array([x for _, (rs, x) in v5.items() if rs == "大漲"]); l5 = np.array([x for _, (rs, x) in v5.items() if rs == "失敗"])
+                s5 = ST[(ST["版"] == v) & (ST["市場"] == mk) & (ST["H月"] == H) & (ST["樣本單位"] == "主題") & (ST["量"] == "超額0050")].iloc[0]
+                cmp(f"{v} TW {H}月 0050版 贏家平均", w5.mean(), s5["贏家平均"]); cmp(f"{v} TW {H}月 0050版 反例中位", float(np.median(l5)), s5["反例中位"])
+                if l5.mean() < 0:
+                    cmp(f"{v} TW {H}月 0050版 p*_平均", -l5.mean() / (w5.mean() - l5.mean()), s5["p*_平均"])
             s = ST[(ST["版"] == v) & (ST["市場"] == mk) & (ST["H月"] == H) & (ST["樣本單位"] == "主題") & (ST["量"] == "超額")].iloc[0]
             mu = l.mean(); sd = np.sqrt(((l - mu) ** 2).sum() / (len(l) - 1))
             tag = f"{v} {mk} {H}月"
