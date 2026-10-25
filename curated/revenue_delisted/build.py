@@ -16,8 +16,11 @@ import argparse, csv, datetime, io, json, os, subprocess, sys, time, urllib.requ
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 OUT = os.path.join(HERE, "revenue_delisted.csv")
-API = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMonthRevenue&data_id={sid}&start_date=2014-01-01&end_date={end}"
+API = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMonthRevenue&data_id={sid}&start_date=2012-01-01&end_date={end}"
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
+# ⭐ 2026-10-26（回測 1026-0058：5371 2013-01～2014-12 查無）：data/early/revenue 2013～2014 是 IFRS 版彙總頁，
+#   同樣用「產生當下的公司清單」重繪 ⇒ 之後下市的公司也缺 ⇒ 起點由 2015-01 提前到 2013-01。
+FIRST = "2013-01"
 CHECK = ["1101", "2330", "2317", "1216", "2412", "3008", "6505", "2603", "8069", "6488", "3105", "5347"]
 
 
@@ -91,7 +94,7 @@ def main():
             none.append(r["stock_id"]); continue
         for x in rows:
             p = period_of(x)
-            if p < "2015-01" or p > r["last_seen"][:7]:
+            if p < FIRST or p > r["last_seen"][:7]:
                 continue
             out.append([r["stock_id"], r["name"], r["market"], p, round(float(x["revenue"]) / 1000), x["date"], r["last_seen"]])
     out.sort(key=lambda x: (x[3], x[0]))
