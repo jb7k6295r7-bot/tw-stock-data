@@ -1,0 +1,1 @@
+v4 照實 vs v3（/home/chemtim/rtfwork/lampcensus_v3_keep/stats.csv）：統計列 368（只在一邊 0）、數值格 3680、不同 0；最好／最壞訊號不同 0 列；rows.csv 逐格相同：True

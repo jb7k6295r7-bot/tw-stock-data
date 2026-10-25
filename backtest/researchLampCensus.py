@@ -53,7 +53,8 @@ os.chdir(os.path.expanduser("~/tw-p17"))
 from backtest import researchV41EV as V                    # noqa: E402
 from backtest import researchTopSell_freq as TS             # noqa: E402
 
-SRC = "/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v3_產業分析線-20261025-1610.csv"
+SRC = "/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v4_加判定把握_產業分析線-20261025-1830.csv"   # 產業 seq45：v4 取代 v3（加判定把握、兩可理由欄）
+SRC_V3 = "/mnt/c/SynologyDrive/跨線信箱/附件-近年燈號普查訊號清單v3_產業分析線-20261025-1610.csv"
 OUT = "backtest/resultsLampCensus"
 DRY_OUT = os.path.expanduser("~/rtfwork/lampcensus_dry")
 COST = V.COST_TW
@@ -464,7 +465,7 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
           f"- 資料：台股面板 sha {meta['tw_sha'][:12]}（面板尾 {meta['面板尾']}）；大盤 {meta['大盤']}。",
           "- 清單：" + "；".join(f"{os.path.basename(x['檔'])}（{x['列數']} 列；判定把握欄 {x['判定把握欄']}；燈2把握欄 {x['燈2把握欄']}；代碼欄 {x['代碼欄']}）" for x in meta["來源"]), ""]
     # 判燈寬嚴範圍
-    md += ["## 判燈寬嚴範圍（寬鬆版中位～嚴格版中位，份）", "", f"- {RANGE_NOTE}。寬鬆＝兩可都算亮燈（偏樂觀）；嚴格＝兩可都不算（偏保守）。"]
+    md += ["## 判燈寬嚴範圍（寬鬆版中位～嚴格版中位，份）", "", f"- {RANGE_NOTE}。寬鬆＝兩可都算亮燈（偏樂觀；清單本來就把兩可列為訊號 ⇒ 寬鬆＝照實）；嚴格＝兩可的訊號列都不算（原意偏保守）。括號標明哪個是寬、哪個是嚴：⚠ 本樣本 12／24 月多數格嚴格版中位反而較高（剔掉的兩可訊號多半表現較差），到末日則嚴格版較低或相同。"]
     if not has:
         md += ["- ⚠ **待產業補欄**：清單尚無「判定把握」欄（確定／兩可）⇒ 本次只出「照實」版；寬鬆、嚴格兩版待產業補欄後自動產出。", ""]
     else:
@@ -480,7 +481,7 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
                             if a is None or b is None or not np.isfinite(a["中位"]) or not np.isfinite(b["中位"]):
                                 cs.append("—"); continue
                             lo, hi = sorted([a["中位"], b["中位"]])
-                            cs.append(f"{f2(lo)}～{f2(hi)}")
+                            cs.append(f"{f2(lo)}～{f2(hi)}（寬 {f2(a['中位'])}／嚴 {f2(b['中位'])}）")
                         if any(c != "—" for c in cs):
                             md.append(f"| {gp} | {ver} | {ty} | {lab} | " + " | ".join(cs) + " |")
         md.append("")
@@ -564,9 +565,12 @@ def write_md(out, S, SG, ST, CP, RW, meta, groups):
         md.append(f"| {r['訊號']}{'（兩可）' if r['兩可'] else ''} | {r['類']} | {r['版本']} | {r['型']} | {r['主題']} | {r['燈1季']} | {r['入選檔'] or '—'} | {r['剔除檔'] or '—'} | "
                   f"{cell('12')} | {cell('24')} | {cell('末')} | {r['燈2季'] or '—'} | {f2(2 * a2) if np.isfinite(a2) else '—'} | {f2(r['乙_末'])} |")
     md += ["", "## 異常與註記", ""]
-    if any(os.path.basename(x["檔"]) == os.path.basename(SRC) for x in meta["來源"]):
+    if any(os.path.basename(x["檔"]) == os.path.basename(SRC_V3) for x in meta["來源"]):
         md += ["- 傳產清單 V23 備註寫「乙版燈1另列V24」，但清單內沒有 V24 列；乙版件數（32 訊號、28 有公司、缺貨 8）與產業 seq44 §一表一致 ⇒ 照清單算、未補 V24。",
                "- V40 公司欄為 1503 士電、但備註寫「無點名（待裁定：05S05 士電『重電受惠台商回流』段落）」⇒ 照公司欄算（不是「無點名」），請產業確認。"]
+    if any(os.path.basename(x["檔"]) == os.path.basename(SRC) for x in meta["來源"]):
+        md += ["- 傳產清單 v4（產業 seq45）取代 v3：只加「判定把握」「兩可理由」兩欄、改 V23／V40 備註（V40 士電依第 11 條補上、V23 的乙版 V24 依第 24 條刪除），"
+               "其餘欄位逐格與 v3 相同 ⇒ 照實版數字應與 v3 相同（本次已逐格驗證，見 v3_compare.txt）。"]
     md += ["- 「兩版」列甲乙兩版數字相同（同一列）。",
            f"- ⚠ 到末日欄受 2025Q4～2026 大盤急漲主導：market_tri 2025-09-30 → 2026-09-24 約 +{(V.tri_at(TRI, '2026-09-24') / V.tri_at(TRI, '2025-09-30') - 1) * 100:.0f}%"
            f"（2025-09-30 {V.tri_at(TRI, '2025-09-30'):.0f}、2026-06-30 {V.tri_at(TRI, '2026-06-30'):.0f}、面板尾 {V.tri_at(TRI, '2026-09-24'):.0f}；逐月平順、非跳點），"
