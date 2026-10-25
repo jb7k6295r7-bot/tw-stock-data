@@ -123,7 +123,7 @@ def main():
         vA = build(rA, "flat")
         o = F.run(F.Src(rA), fA, pA, asof="2026-10-22", now=pd.Timestamp("2026-10-23 08:00"), quiet=True)
         ok("T1a 資料未到起點 ⇒ 不寫起點列", not any(r["event"] == "起點買進" for r in o["rows"]), o["summary"][:60])
-        ok("T12c 新候選前一晚事件行", o["ev"] == ["美股小部位：ETN 新增 ⇒ 明天開盤買 1 份"], str(o["ev"]))
+        ok("T12c 新候選前一晚事件行", o["ev"] == ["美股小部位：ETN（EATON CORP PLC）新增 ⇒ 明天開盤買 1 份｜下單前在 IB 輸入代號，確認名稱一致"], str(o["ev"]))
         o2 = F.run(F.Src(rA), os.path.join(T, "x"), os.path.join(T, "xp"), asof="2026-10-22", now=NOW, dry=True, quiet=True)
         ok("T12d 起點已過（台北今天 10/24）不出新候選行", o2["ev"] == [], str(o2["ev"]))
         ok("T10 --dry 不寫任何檔", not os.path.exists(os.path.join(T, "x")) and not os.path.exists(os.path.join(T, "xp")))
@@ -148,7 +148,7 @@ def main():
         ok("T5d 無季報月份都記「不判」（10、12、1、3、4、6、7 月）", nj == ["2026-10-30", "2026-12-31", "2027-01-29", "2027-03-31", "2027-04-30", "2027-06-30", "2027-07-30"], str(nj))
         ok("T5e 放棄後不再判", not [r for r in j if r["judge_date"] > "2027-08-31"])
         o = F.run(F.Src(rA), os.path.join(T, "y"), os.path.join(T, "yp"), asof="2027-08-31", now=NOW, quiet=True)
-        ok("T12b 放棄事件行（判定那晚）", o["ev"] == ["美股小部位：ETN 第 4 份新季報仍未轉強 ⇒ 明天開盤賣"], str(o["ev"]))
+        ok("T12b 放棄事件行（判定那晚）", o["ev"] == ["美股小部位：ETN（EATON CORP PLC）第 4 份新季報仍未轉強 ⇒ 明天開盤賣｜下單前在 IB 輸入代號，確認名稱一致"], str(o["ev"]))
         # T8 冪等＋逐晚＝補跑
         raw = open(os.path.join(fA, "book.csv"), "rb").read()
         o = F.run(F.Src(rA), fA, pA, asof="2027-09-10", now=NOW, quiet=True)
@@ -181,7 +181,7 @@ def main():
         o1 = F.run(F.Src(rB), os.path.join(T, "z"), os.path.join(T, "zp"), asof="2026-11-30", now=NOW, quiet=True)
         o2 = F.run(F.Src(rB), os.path.join(T, "z"), os.path.join(T, "zp"), asof="2026-12-01", now=NOW, quiet=True)
         ok("T12a 轉強事件行：判定那晚出、同資料日重跑原樣、隔晚不出",
-           o["ev"] == ["美股小部位：ETN 轉強 ⇒ 明天開盤加 2 份"] and o1["ev"] == o["ev"] and not o1["new"] and o2["ev"] == [], f"{o['ev']} {o2['ev']}")
+           o["ev"] == ["美股小部位：ETN（EATON CORP PLC）轉強 ⇒ 明天開盤加 2 份｜下單前在 IB 輸入代號，確認名稱一致"] and o1["ev"] == o["ev"] and not o1["new"] and o2["ev"] == [], f"{o['ev']} {o2['ev']}")
         # ── 情境 C：乙
         rC = os.path.join(T, "C"); fC = os.path.join(T, "fwdC"); pC = os.path.join(T, "privC")
         build(rC, "yi")
@@ -205,7 +205,7 @@ def main():
         build(rE, "jia")
         o = F.run(F.Src(rE), fE, pE, asof="2026-12-03", now=NOW, quiet=True)
         B = book(fE); lt = [r for r in B if r["event"] == "補判（資料晚到）"]
-        ok("T7b 進庫那晚補判轉強、事件行出", len(lt) == 1 and lt[0]["judge_date"] == "2026-12-03" and lt[0]["judge"] == "轉強" and o["ev"] == ["美股小部位：ETN 轉強 ⇒ 明天開盤加 2 份"])
+        ok("T7b 進庫那晚補判轉強、事件行出", len(lt) == 1 and lt[0]["judge_date"] == "2026-12-03" and lt[0]["judge"] == "轉強" and o["ev"] == ["美股小部位：ETN（EATON CORP PLC）轉強 ⇒ 明天開盤加 2 份｜下單前在 IB 輸入代號，確認名稱一致"])
         F.run(F.Src(rE), fE, pE, asof="2026-12-04", now=NOW, quiet=True)
         ok("T7c 補判後次一交易日 12/04 加 2 份", [r["trade_date"] for r in book(fE) if r["event"] == "轉強加碼"] == ["2026-12-04"])
         F.run(F.Src(rE), fE, pE, asof="2026-12-31", now=NOW, quiet=True)
@@ -224,12 +224,12 @@ def main():
     # ── 情境 U：使用者指示賣出（產業 seq17／19／20）
     T2 = tempfile.mkdtemp(prefix="smallpos_chkU_")
     try:
-        F.USER_SELL.clear(); F.USER_SELL.update({"ETN": ("2026-10-26", "往前看判準不過，你 10/25 同意", "產業 seq17")})
+        F.USER_SELL.clear(); F.USER_SELL.update({"ETN": ("2026-10-26", "往前看判準不過，你 10/25 同意", "產業 seq17")}); real_nl = set(F.NO_LINE); F.NO_LINE.clear()
         rU = os.path.join(T2, "U"); fU = os.path.join(T2, "fwdU"); pU = os.path.join(T2, "privU")
         build(rU, "flat")
         nightly(rU, fU, pU, "2026-10-23", "2026-10-23")
         oU = F.run(F.Src(rU), fU, pU, asof="2026-10-23", now=pd.Timestamp("2026-10-25 20:00"), quiet=True)
-        ok("TU1 指示賣出前一晚事件行「ETN ⇒ 10/26（一）美股開盤賣（台北當晚；…）」", oU["ev"] == ["美股小部位：ETN ⇒ 10/26（一）美股開盤賣（台北當晚；往前看判準不過，你 10/25 同意）"], str(oU["ev"]))
+        ok("TU1 指示賣出前一晚事件行「ETN ⇒ 10/26（一）美股開盤賣（台北當晚；…）」", oU["ev"] == ["美股小部位：ETN（EATON CORP PLC）⇒ 10/26（一）美股開盤賣（台北當晚；往前看判準不過，你 10/25 同意）｜下單前在 IB 輸入代號，確認名稱一致"], str(oU["ev"]))
         nightly(rU, fU, pU, "2026-10-24", "2027-09-10")
         BU = book(fU)
         su = [r for r in BU if r["event"] == F.USER_SELL_EV]
@@ -238,7 +238,9 @@ def main():
            and not [r for r in BU if r["event"] == F.SELL_EV], str([(r["event"], r["trade_date"]) for r in BU][-4:]))
     finally:
         shutil.rmtree(T2, ignore_errors=True)
-        F.USER_SELL.clear(); F.USER_SELL.update(real_us)
+        F.USER_SELL.clear(); F.USER_SELL.update(real_us); F.NO_LINE.clear(); F.NO_LINE.update(real_nl)
+    oN = F.run(F.Src(os.path.join(T2, "U")), os.path.join(T2, "n"), os.path.join(T2, "np"), asof="2026-10-23", now=pd.Timestamp("2026-10-25 20:00"), dry=True, quiet=True) if os.path.exists(os.path.join(T2, "U")) else None
+    ok("TU4 實設定：ETN 在 NO_LINE（⛔ 不推賣出行）、實際欄未成交", "ETN" in F.NO_LINE and "未成交" in F.ACTUAL.get("ETN", ""))
     ok("TU3 實設定：ETN 2026-10-26 指示賣出", F.USER_SELL.get("ETN", ("",))[0] == "2026-10-26")
     n = sum(1 for _, c, _ in RES if c)
     print(f"自測：{n}/{len(RES)} 過")

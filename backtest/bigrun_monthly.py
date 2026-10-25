@@ -925,7 +925,8 @@ CFG_PPI = "小部位_報價提醒"                      # ① 報價代理連 3 
 SP_PPI = {"1305": ("WPU066", "塑膠"), "1312": ("WPU066", "塑膠")}   # 美國 PPI 代理（缺貨型二輪登錄 §三）；鋼鐵 WPU1017、水泥 WPU1322 隨中鋼、台泥、中鴻刪除停用
 US_REPO = os.path.expanduser("~/us-stock-data")  # ⛔ 私有庫：只讀判定、不把序列寫進公開輸出
 SP_N_REPORTS, SP_ADD, SP_COST = 12, 2, 0.00585
-SP_FIX = "台股 5 檔（10/22 四檔、10/27 一檔；華夏、國喬依使用者 10/25 指示 10/27 開盤賣）、看過新聞才挑、只是前瞻紀錄"
+SP_FIX = "台股 5 檔（10/22 四檔、10/27 一檔；華夏、國喬依使用者 10/25 指示 10/27 開盤賣）、看過新聞才挑、只是前瞻紀錄；10/25 起改依產業大漲主題框架 v4 買賣（裁定 seq473）"
+SP_V4 = {"1503", "1513", "8936"}   # 裁定 seq473：這些卡（與之後新買的）改照產業 v4 出場 ①～⑤（產業寄賣信 ⇒ user_sell.csv）；月報轉強只記、⛔ 不自動加碼、⛔ 不放棄
 WD = "一二三四五六日"
 SP_COLS = ["seq", "stock_id", "name", "event", "trade_date", "price_raw", "units", "status", "report_key", "report_asof",
            "judge", "judge_detail", "note", "recorded_at", "sha"]
@@ -1286,6 +1287,14 @@ def sp_update(rows, cal, asof, px, judgments, names, now, sha, lamp2=None, usell
             if sid not in J or ra < pd.Timestamp(SP_CANDS[sid]) or sold(sid):
                 continue
             js = jrows(sid)
+            if sid in SP_V4:                                               # 裁定 seq473：v4 卡只記營收狀態
+                if any(r["report_key"] == key for r in js):
+                    continue
+                i = months_between(min([r["report_key"] for r in js] + [key]), key) + 1
+                add(sid, "月報判定", report_key=key, report_asof=ra.date(), judge="只記（v4）",
+                    judge_detail=("轉強｜" if J[sid]["up"] else "未轉強｜") + J[sid]["det"],
+                    note=f"第 {i} 份月報；10/25 起照產業大漲主題框架 v4（裁定 seq473）：轉強只記、不自動加碼、不放棄；加碼與賣出照產業信")
+                continue
             if sid in SP_NEWDEMAND:                                        # seq8：燈2 判、營收只記；不受營收未公布影響
                 if any(r["judge"] == "燈2已亮" or "放棄判定" in r["note"] for r in js) or any(r["report_key"] == key for r in js):
                     continue
@@ -1473,7 +1482,7 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
             cf = {"report_key": f"燈2 {ad['report_asof']}"}
         ab = next((r for r in js if "放棄判定" in r["note"]), None)
         sl = next((r for r in R if r["event"] in SELL_EVS), None)
-        nj = sum(1 for r in js if r["judge"] in ("轉強", "未轉強", "燈2已亮", "燈2未亮"))
+        nj = sum(1 for r in js if r["judge"] in ("轉強", "未轉強", "燈2已亮", "燈2未亮", "只記（v4）"))
         if st is None:
             state = f"起點 {SP_CANDS[sid]} 開盤（尚未到）"
         elif sl is not None:
@@ -1482,6 +1491,8 @@ def sp_section(rows, urows, asof, adj_df, px, names, dry, df=None, bench=None):
             state = "未確認・明天開盤賣"
         elif cf is not None:
             state = (f"已確認（{cf['report_key']}" + ("" if cf["report_key"].startswith("燈2") else " 月報") + "）") + ("" if ad else "・明天開盤加碼")
+        elif sid in SP_V4:
+            state = "持有（v4：出場照產業信）"
         else:
             state = "持有・未確認" + ("（上期未判、本期補判）" if js and js[-1]["judge"].startswith("未判") else "")
         if sid in SP_ENTRY_UP:

@@ -51,7 +51,7 @@ import numpy as np
 import pandas as pd
 
 TAG = "美股長線候選「確認前先小部位」前瞻紀錄 seq2 定版（sha f15b918fa43f360f；裁定 seq461 §四、seq462 §一）"
-CANDS = {"ETN": {"name": "Eaton", "start": "2026-10-23"}}     # 增減照產業分析線來信、本線記沿革後改這裡
+CANDS = {"ETN": {"name": "Eaton", "start": "2026-10-23", "ib": "EATON CORP PLC"}}   # ib＝IB 全名（美股 0122 對照表，未在 IB 逐一核；產業 seq22、裁定 seq472 §五）     # 增減照產業分析線來信、本線記沿革後改這裡
 N_REPORTS, ADD_UNITS, COST = 4, 2, 0.0005                      # 第 4 份新季報放棄；加 2 份；0.05%／邊
 UP_PP = 0.05                                                   # 甲：＋5 個百分點
 NH_Q = 8                                                       # 乙：8 季新高
@@ -65,7 +65,9 @@ BUY_EV = ("起點買進", "轉強加碼")
 SELL_EV = "放棄賣出"
 USER_SELL_EV = "使用者指示賣出"                 # 產業 seq17／19／20：往前看判準不過 ⇒ 使用者 10/25 同意賣（⛔ 不算規則本身的放棄）
 SELL_EVS = (SELL_EV, USER_SELL_EV)
-USER_SELL = {"ETN": ("2026-10-26", "往前看判準不過，你 10/25 同意",
+ACTUAL = {"ETN": "實際欄：未成交（使用者沒買，10/25 告知；裁定 seq472 §二結案，不賣不補買）"}
+NO_LINE = {"ETN"}                               # 裁定 seq472 §二：ETN 規則欄記賣出、⛔ 不推賣出行（使用者實際沒買）
+USER_SELL = {"ETN": ("2026-10-26", "往前看判準不過，規則欄（裁定 seq472 §二）",
                      "產業 seq17／seq19／seq20（使用者 10/25 00:00「已經買了的如果沒過就跟我說賣掉」、00:23「可以但賣出要跟我說」）")}   # 代號：(預定美股開盤賣出日, 理由, 出處)
 JUDGE_EV = ("月底判定", "補判（資料晚到）")
 NOJUDGE = "不判（當月無新季報）"
@@ -379,19 +381,19 @@ def line_events(rows, D, now):
     for r in rows:
         if r["event"] in JUDGE_EV and r["judge_date"] == str(D.date()):
             if r["judge"] == "轉強":
-                out.append(f"美股小部位：{r['ticker']} 轉強 ⇒ 明天開盤加 {ADD_UNITS} 份")
+                out.append(f"美股小部位：{r['ticker']}（{CANDS[r['ticker']].get('ib', '')}）轉強 ⇒ 明天開盤加 {ADD_UNITS} 份｜下單前在 IB 輸入代號，確認名稱一致")
             elif "放棄判定" in r["note"]:
-                out.append(f"美股小部位：{r['ticker']} 第 {N_REPORTS} 份新季報仍未轉強 ⇒ 明天開盤賣")
+                out.append(f"美股小部位：{r['ticker']}（{CANDS[r['ticker']].get('ib', '')}）第 {N_REPORTS} 份新季報仍未轉強 ⇒ 明天開盤賣｜下單前在 IB 輸入代號，確認名稱一致")
     for t, (sd0, why, _src) in USER_SELL.items():                             # 指示賣出：預定日當天台北 21:00 前（美股開盤前）的執行才出
         sd = pd.Timestamp(sd0)
-        if t in CANDS and not any(r["ticker"] == t and r["event"] in SELL_EVS for r in rows) and next_td_pred(D) <= sd and now < sd + pd.Timedelta(hours=21):
-            out.append(f"美股小部位：{t} ⇒ {sd.month}/{sd.day}（{WD[sd.weekday()]}）美股開盤賣（台北當晚；{why}）")
+        if t in CANDS and t not in NO_LINE and not any(r["ticker"] == t and r["event"] in SELL_EVS for r in rows) and next_td_pred(D) <= sd and now < sd + pd.Timedelta(hours=21):
+            out.append(f"美股小部位：{t}（{CANDS[t].get('ib', CANDS[t]['name'])}）⇒ {sd.month}/{sd.day}（{WD[sd.weekday()]}）美股開盤賣（台北當晚；{why}）｜下單前在 IB 輸入代號，確認名稱一致")
     for t, c in CANDS.items():
         S = pd.Timestamp(c["start"])
         if any(r["ticker"] == t and r["event"] == "起點買進" for r in rows):
             continue
         if next_td_pred(D) == S and now < S + pd.Timedelta(hours=21):     # 起點當天台北 21:00 前（美股開盤前）才出
-            out.append(f"美股小部位：{t} 新增 ⇒ 明天開盤買 1 份")
+            out.append(f"美股小部位：{t}（{c.get('ib', c['name'])}）新增 ⇒ 明天開盤買 1 份｜下單前在 IB 輸入代號，確認名稱一致")
     return out
 
 
@@ -468,7 +470,7 @@ def run(src, fwd=FWD, priv=PRIV, asof=None, dry=False, now=None, quiet=False):
         ent = next((r for r in mr if r["event"] == "進場檢查"), None)
         js = [r for r in mr if r["event"] in JUDGE_EV]
         nq = sum(1 for r in js if r["report_q"])
-        status = ("已賣（未確認）" if any(r["event"] == SELL_EV for r in mr) else "已確認（加碼）" if any(r["event"] == "轉強加碼" for r in mr)
+        status = ("已賣（使用者指示／規則欄）" if any(r["event"] == USER_SELL_EV for r in mr) else "已賣（未確認）" if any(r["event"] == SELL_EV for r in mr) else "已確認（加碼）" if any(r["event"] == "轉強加碼" for r in mr)
                   else "已判轉強、待加碼" if any(r["judge"] == "轉強" for r in js) else "已放棄、待賣" if any("放棄判定" in r["note"] for r in js)
                   else "確認前（小部位）" if b0 else f"資料未到起點（起點 {S}）")
         p = per.get(t, {})
@@ -477,7 +479,9 @@ def run(src, fwd=FWD, priv=PRIV, asof=None, dry=False, now=None, quiet=False):
                          "進場檢查": (ent["judge"] if ent else "未記"), "已判新季報數": nq,
                          "最近判定": (f"{js[-1]['judge_date']} {js[-1]['judge']}" if js else ""),
                          "累計報酬": pct(p.get("累計報酬")), "^SP500TR同期": pct(p.get("^SP500TR同期"))}
-        parts.append(f"{t} {status} {p.get('份數', 0)} 份" + (f"（{ent['judge']}）" if ent and ent["judge"] == "進場時已轉強" else ""))
+        parts.append(f"{t} {status} {p.get('份數', 0)} 份" + (f"（{ent['judge']}）" if ent and ent["judge"] == "進場時已轉強" else "") + (f"｜{ACTUAL[t]}" if t in ACTUAL else ""))
+        if t in ACTUAL:
+            st["候選"][t]["實際欄"] = ACTUAL[t]
     st["組合（照規則欄）"] = {k: (pct(v) if k in ("累計報酬", "^SP500TR同期", "最大回落") else v) for k, v in port.items() if not k.startswith("_")}
     st["今晚事件行"] = ev
     summ = (f"美股小部位前瞻：資料日 {D.date()}｜資料 {commit[:10]}｜新增 {len(new)} 列｜" + "；".join(parts)

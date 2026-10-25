@@ -658,6 +658,14 @@ def part_sp3():
         m249 == [] and [r["judge_detail"] for r in m250] == ["  小部位：1305 華夏 確認後已滿 250 個交易日 ⇒ 續抱或賣？（你決定）｜描述"] and m251 == []
         and [r["judge_detail"] for r in m625] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）｜描述"]
         and [r["judge_detail"] for r in mboth] == ["  小部位：1305 華夏 確認後已滿 625 個交易日 ⇒ 續抱或賣？（你決定）"], str([r["judge_detail"] for r in m250 + m625 + mboth]))
+    # v4 卡（裁定 seq473）：1503、1513、8936 月報轉強只記、不加碼、不放棄
+    Jv = {x: {"up": True, "up_prev": False, "judged": True, "det": "d", "det_prev": "dp"} for x in ("1503", "8936")}
+    v1 = BM.sp_update(base + r27, cal, T("2026-11-12"), Px(), [("2026-11", T("2026-11-12"), Jv)], nm, "now", "f" * 40)
+    v2 = BM.sp_update(base + r27 + v1, cal, T("2026-11-16"), Px(), [], nm, "now", "f" * 40)
+    vj = [(r["stock_id"], r["judge"]) for r in v1]
+    rec("sp3", "（v4）1503、8936 月報轉強 ⇒ 記「只記（v4）」、月報 LINE 無加碼行、之後不自動加碼；SP_V4＝{1503,1513,8936}",
+        BM.SP_V4 == {"1503", "1513", "8936"} and sorted(vj) == [("1503", "只記（v4）"), ("8936", "只記（v4）")] and BM.sp_events_report(v1, closes, cfg) == []
+        and not [r for r in v2 if r["event"] == "轉強加碼"], str(vj))
     # 新需求型 3376：燈2（機制測試：暫時把 4510、3376 放回候選，測完還原）
     oc, ocodes = dict(BM.SP_CANDS), list(BM.SP_CODES)
     BM.SP_CANDS.update({"4510": "2026-10-27", "3376": "2026-10-27"}); BM.SP_CODES[:] = list(BM.SP_CANDS)
