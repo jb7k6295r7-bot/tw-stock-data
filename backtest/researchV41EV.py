@@ -1,36 +1,45 @@
 # -*- coding: utf-8 -*-
-"""大漲主題框架 v4.1 新設定重算：期望值、兩平命中率、停用張數（產業分析線 seq30／seq34；描述、⛔ 不判定、不計 N）——回測線計算子代理。
+"""大漲主題框架 v4.1 新設定重算：期望值、兩平命中率、停用張數（產業分析線 seq30／seq34／seq37／seq38；描述、⛔ 不判定、不計 N）——回測線計算子代理。
 ⚠ 事後挑的贏家與失敗樣本 ⇒ 只描述，⛔ 不是期望值的證據。
 ⛔ 不 commit、不改既有檔；researchRevTurn_freq（ensure_data、prices、log）、researchShortageExit（seam_open）、researchTopSell_freq（raw_close）
    ⛔ 只 import；結算與接續的寫法照 researchLampTrade（Q1、Q5、Q5′、Q7）原式抄。
 
-    cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchV41EV [--market TW|US|ALL]
+    cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchV41EV
     對帳：PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchV41EV_check
-輸入：backtest/resultsV41EV/cases_input.csv（附件「進場候選K1至K4_56案與K1」原檔複本，56 列）
-      backtest/resultsV41EV/peers_input.csv（★ 選用：同主題營收占比前 3 名；欄 id,代號,名次,占比出處）——
-      ⛔ 本次在本機找不到產業線 p3_contrarian/peers 檔 ⇒ 無此檔 ⇒ 每個主題只有代表股（燈 1 事件點名的公司），主題值＝代表股值。
-輸出 backtest/resultsV41EV/：table.csv（每檔×判決月）、themes.csv（每主題一列）、summary.md、main.json、run.log
+輸入 backtest/resultsV41EV/：
+  cases_input.csv     附件「進場候選K1至K4_56案與K1」複本，56 列；★ K21 依產業 seq37 §二更正為「AI 高階銅箔（HVLP）／金居 8358」（代號不變）
+  peers_input_TW.csv  附件 peers_input_TW（產業 20261025-1328，31 案 55 列）複本
+  peers_input_US.csv  附件 peers_input_US（同上，25 案 52 列）複本
+輸出 backtest/resultsV41EV/：table.csv（每案×每檔×判決月）、members.csv（三版成員與剔除）、caps.csv（燈亮月月底市值；美股只放判定、⛔ 不放價格）、
+  themes.csv（每版×每主題×判決月）、stats.csv、summary.md、main.json、run.log
 
 ═══ 讀法（★＝執行者定）═══
+ V0 三版成員：
+    代表股版 ＝ 案例表「公司」欄（燈 1 事件點名的公司）1 檔。
+    同業等權版 ＝ peers_input 該案依名次前 3 列（實際幾家算幾家、⛔ 不硬湊；名稱標「備援」者＝燈 1 點名公司）；代表股不在名單 ⇒ 不加入。
+    設下限版 ＝ 同業名單依名次，剔除燈亮月月底市值 台股 ＜ 新台幣 100 億、美股 ＜ 20 億美元者，名單內下一名遞補、取前 3（名單內沒有就少一家）；
+               市值算不出 ⇒「查無、未剔除」。
+    名單內查不到價格的代號 ⇒ 標「資料不足」、⛔ 不換代號；主題值只用有價格的成員；整個主題都沒有價格 ⇒ 該版該主題不進統計（件數照報）。
  V1 台股價格 ＝ researchLampTrade Q1 同一面板（PIN 9b0e9882572c；還原含息收盤 C、還原開盤 O 含接縫倍數；壞根 BAD 同定義）。
- V2 進場 ＝ 燈亮月下一個月第一個交易日的還原開盤（無成交 ⇒ 順延到下一個有成交開盤，日數照報）。美股同（Yahoo 還原開盤
-    ＝ open × adjclose ÷ close）。
- V3 判決日 ＝ 進場日 ＋ H 個日曆月（H＝60 主表、72 副欄；另附 24、36 月供對照舊值與停用 (b)）當天或之前最後一個交易日的還原收盤；
-    該日超出資料尾 ⇒ 結算到資料尾最後有效收盤、標「未到判決日」（件數照報）。持有期間 ⛔ 不模擬 v4 出場 ①～⑤（新聞判斷）。
- V4 跨壞根 ⇒ 結算在第一個壞根前一根有效收盤、標「⚠壞根截斷」；接續版（減資／面額變更以原始價接起）另欄（照 LampTrade Q5′）。
-    下市（最後有效 K 棒距資料尾 ≥5 日且早於判決位置）⇒ 最後有效收盤、標「下市結算」。美股：連續 ≥5 交易日無 K 棒 ⇒ 壞根（同 us_data GAP_BREAK_DAYS）。
- V5 R ＝ 判決價 ÷ 進場價 − 1 − 成本；台股 0.585% 來回（手續費 0.1425%×2＋證交稅 0.3%），美股 0.05%／邊（0.1% 來回）。單位「份」＝每檔 1 份的損益倍數。
- V6 大盤 ＝ 台股 data/history/market_tri.csv（報酬指數）；美股 ^SP500TR（us-stock-data data/macro/yahoo_SP500TR.csv adjclose）。
-    基準 ＝ 進場日前一交易日收盤 → 判決（或截斷）日收盤；超額 ＝ R − 大盤。大盤不扣成本。
- V7 主題值 ★ ＝ 同主題各檔（最多 3 檔）R 等權平均（1 個主題＝1 個獨立樣本）；合計 ＝ 各檔 R 之和（份）。另附「每檔各算 1 張」版。
- V8 兩平 p* ＝ −L ÷ (W − L)（W＝贏家組平均或中位，L＝反例組同口徑；L ≥ 0 ⇒「反例為正、兩平不適用」）；
-    停用張數 n ＝ ⌈ln 0.1 ÷ ln(1 − p*)⌉；反例 μ、s（樣本標準差 ddof=1）與門檻 μ − 1.28·s／√8（v4.1 第七節 (b)）。
- V9 美股：us-stock-data origin/main data/prices_yahoo/<T>.csv（⛔ 不輸出價格，只輸出 R、日期、名稱）；查無檔或燈亮早於資料起點
-    （約 2015-12）⇒「資料不足」（件數照報、不進統計）。
+ V2 進場 ＝ 燈亮月下一個月第一個交易日的還原開盤（無成交 ⇒ 順延到下一個有成交開盤，日數照報）。美股同（還原開盤 ＝ open × adjclose ÷ close；
+    data/prices/ 格式直接用 adjOpen／adjClose）。
+ V3 判決日 ＝ 進場日 ＋ H 個日曆月（H＝60 主表、72 副欄；另附 24、36 月）當天或之前最後一個交易日的還原收盤；
+    超出資料尾 ⇒ 結算到資料尾、標「未到判決日」。持有期間 ⛔ 不模擬 v4 出場 ①～⑤。
+ V4 跨壞根 ⇒ 結算在第一個壞根前一根有效收盤、標「⚠壞根截斷」；接續版另欄（LampTrade Q5′）。下市 ⇒ 最後有效收盤、標「下市結算」。
+    美股：連續 ≥5 交易日無 K 棒 ⇒ 壞根；最後一根距日曆尾 >10 日 ⇒ 下市結算。
+ V5 R ＝ 判決價 ÷ 進場價 − 1 − 成本；台股 0.585% 來回、美股 0.05%／邊（0.1% 來回）。單位「份」＝每檔 1 份的損益倍數。
+ V6 大盤 ＝ 台股 data/history/market_tri.csv；美股 ^SP500TR；進場前一交易日收盤 → 結算日收盤；超額 ＝ R − 大盤；大盤不扣成本。
+ V7 主題值 ★ ＝ 同主題各檔 R（與超額）等權平均（1 個主題＝1 個獨立樣本）；合計 ＝ 各檔之和。另附「每檔各算 1 張」版。
+ V8 兩平 p* ＝ −L ÷ (W − L)（L ≥ 0 ⇒ 不適用）；停用張數 n ＝ ⌈ln 0.1 ÷ ln(1 − p*)⌉；反例 μ、s（ddof=1）、門檻 μ − 1.28·s／√8。
+ V9 市值（燈亮月月底＝該月該檔最後一個有收盤的交易日）：
+    台股 ＝ 未還原收盤 × 當日發行股數；≤2014-12 讀 data/early/daily/<日>.csv 的 close、shares，≥2015 讀 data/stocks/<代號>.csv 的 close、shares
+    （日檔 feed 的當日發行股數＝point-in-time）；shares 空 ⇒ 該月內最近一個有值的日子（註明），仍無 ⇒ 查無。
+    美股 ＝ 未還原收盤 × SEC 申報股數：收盤 ＝ prices_yahoo close（已含拆股調整）× 該日之後所有 split 事件比率之積（events_yahoo；DELL 的
+    spin-off 調整也照 Yahoo 列為 split 的倍數還原）；data/prices/ 格式用 close（未調整）。股數 ＝ fundamentals/shares_outstanding.csv
+    as_of_date ≤ 月底的最後一個日期（同日多個 share_class 加總），距月底 >400 日或查無 ⇒ 查無。⛔ 美股市值只輸出判定，不輸出數值與價格。
 """
 from __future__ import annotations
 
-import argparse
 import io
 import json
 import math
@@ -51,19 +60,29 @@ from backtest import researchTopSell_freq as TS             # noqa: E402
 
 OUT = "backtest/resultsV41EV"
 INP = os.path.join(OUT, "cases_input.csv")
-PEERS = os.path.join(OUT, "peers_input.csv")
+PEERS = {"TW": os.path.join(OUT, "peers_input_TW.csv"), "US": os.path.join(OUT, "peers_input_US.csv")}
 PIN = "9b0e9882572c"
 COST_TW = 0.00585
 COST_US = 0.001
 HS = (24, 36, 60, 72)
+FLOOR = {"TW": 1e10, "US": 2e9}
 US_REPO = os.path.expanduser("~/us-stock-data")
+VARS = ["代表股版", "同業等權版", "設下限版"]
 WARN = "事後挑的贏家與失敗樣本 ⇒ 只描述，⛔ 不是期望值的證據"
+QUAL = ("名單品質（產業 seq37 §二）：台股名次多半依「營收規模」而非「主題占比」排（只有 K45 照占比），排滿 3 家 6 案、只有 1 家 13 案 ⇒ "
+        "台股同業版只能當近似；美股排滿 3 家 10 案，占比依 10-K／20-F 部門，部分以相近部門代替。")
+K21NOTE = "K21 更正（產業 seq37 §二）：案例表誤標「T-glass／富喬 8358」，實為 AI 高階銅箔 HVLP 段、代表股 8358 金居（代號不變、R 不變）；cases_input.csv 已改產業與公司欄。"
 LOG = RT.LOG
 log = RT.log
 
 
 def gshow(path, repo, ref="origin/main"):
     t = subprocess.run(["git", "-C", repo, "show", f"{ref}:{path}"], capture_output=True)
+    return t.stdout if t.returncode == 0 else None
+
+
+def tshow(sha, path):
+    t = subprocess.run(["git", "show", f"{sha}:{path}"], capture_output=True)
     return t.stdout if t.returncode == 0 else None
 
 
@@ -76,18 +95,24 @@ def code_of(row):
     return m.group(1) if m else None
 
 
-def load_members(CS):
-    """每個案例的成員：代表股（名次 0）＋ peers_input.csv（若有）。回 {id: [(代號, 角色), ...]}。"""
-    mem = {r["id"]: [(code_of(r), "代表股")] for _, r in CS.iterrows()}
-    src = "無 peers_input.csv ⇒ 只有代表股"
-    if os.path.exists(PEERS):
-        P = pd.read_csv(PEERS, dtype=str, keep_default_na=False)
-        for _, p in P.iterrows():
-            lst = mem[p["id"]]
-            if p["代號"] not in [c for c, _ in lst] and len(lst) < 3:
-                lst.append((p["代號"], f"同業{p.get('名次', '')}"))
-        src = f"peers_input.csv {len(P)} 列"
-    return mem, src
+def load_cases():
+    CS = pd.read_csv(INP, dtype=str, keep_default_na=False)
+    if len(CS) != 56:
+        raise SystemExit(f"⛔ 附件列數 {len(CS)} ≠ 56")
+    k = CS["id"] == "K21"
+    if "富喬" in CS.loc[k, "公司"].iloc[0]:
+        raise SystemExit("⛔ cases_input.csv K21 尚未更正（應為金居 8358）")
+    return CS
+
+
+def load_peers():
+    P = {}
+    for mk, f in PEERS.items():
+        d = pd.read_csv(f, dtype=str, keep_default_na=False)
+        d["名次n"] = pd.to_numeric(d["名次"], errors="coerce")
+        d = d.sort_values(["id", "名次n"], na_position="last")
+        P[mk] = d
+    return P
 
 
 # ═════════════ 台股 ═════════════
@@ -95,8 +120,7 @@ def tw_engine():
     sha, DN, MD = RT.ensure_data(PIN)
     PX = RT.prices(sha, DN, 3)
     O, nseam = SE.seam_open(PX)
-    t = subprocess.run(["git", "show", f"{sha}:data/history/market_tri.csv"], capture_output=True, check=True).stdout
-    T = pd.read_csv(io.BytesIO(t)); T["date"] = pd.to_datetime(T["date"])
+    T = pd.read_csv(io.BytesIO(tshow(sha, "data/history/market_tri.csv"))); T["date"] = pd.to_datetime(T["date"])
     T = T.dropna().drop_duplicates("date").sort_values("date").set_index("date")["close"]
     return sha, PX, O, nseam, T
 
@@ -106,7 +130,46 @@ def tri_at(T, d):
     return float(T.iloc[k])
 
 
-def tw_rows(CS, mem, eng):
+def tw_cap(sha, sid, ym, early_days, cache):
+    """燈亮月月底未還原收盤 × 當日發行股數（見 V9）。回 (市值, 日期, 收盤, 股數, 註)。"""
+    p = pd.Period(ym, "M")
+    if p.end_time < pd.Timestamp("2015-01-01"):
+        days = [d for d in early_days if d.startswith(str(p))][::-1]
+        last = None
+        for d in days:
+            if d not in cache:
+                cache[d] = pd.read_csv(io.BytesIO(tshow(sha, f"data/early/daily/{d}.csv")), dtype=str).set_index("stock_id")
+            E = cache[d]
+            if sid in E.index:
+                r = E.loc[sid]
+                c = pd.to_numeric(r["close"], errors="coerce"); s = pd.to_numeric(r["shares"], errors="coerce")
+                if np.isfinite(c) and c > 0:
+                    if last is None:
+                        last = (d, c, s)
+                    if np.isfinite(s) and s > 0:
+                        note = "" if d == last[0] else f"股數取 {d}"
+                        return last[1] * s, last[0], last[1], s, "early/daily" + ("；" + note if note else "")
+        return (np.nan, last[0], last[1], np.nan, "early/daily 股數空") if last else (np.nan, "", np.nan, np.nan, "early/daily 該月查無收盤")
+    key = f"S{sid}"
+    if key not in cache:
+        raw = tshow(sha, f"data/stocks/{sid}.csv")
+        cache[key] = pd.read_csv(io.BytesIO(raw), dtype=str) if raw else None
+    S = cache[key]
+    if S is None:
+        return np.nan, "", np.nan, np.nan, "data/stocks 查無此檔"
+    m = S[S["date"].str.startswith(str(p))].copy()
+    m["c"] = pd.to_numeric(m["close"], errors="coerce"); m["s"] = pd.to_numeric(m["shares"], errors="coerce")
+    m = m[m["c"] > 0]
+    if not len(m):
+        return np.nan, "", np.nan, np.nan, "data/stocks 該月查無收盤"
+    r = m.iloc[-1]; ss = m[m["s"] > 0]
+    if not len(ss):
+        return np.nan, r["date"], r["c"], np.nan, "data/stocks 該月股數空"
+    s = ss.iloc[-1]
+    return r["c"] * s["s"], r["date"], r["c"], s["s"], "data/stocks" + ("" if s["date"] == r["date"] else f"；股數取 {s['date']}")
+
+
+def tw_rows(pairs, eng):
     sha, PX, O, nseam, T = eng
     CAL, ix, C, BAD, VP, LASTV, TRD = PX["CAL"], PX["ix"], PX["C"], PX["BAD"], PX["VP"], PX["LASTV"], PX["TRD"]
     CEND = len(CAL) - 1
@@ -121,13 +184,12 @@ def tw_rows(CS, mem, eng):
 
     def adj_events(sid):
         if sid not in ADJ:
-            t = subprocess.run(["git", "show", f"{sha}:data/adj/{sid}.csv"], capture_output=True)
-            ADJ[sid] = {} if t.returncode != 0 else {pd.Timestamp(r["date"]): r for _, r in pd.read_csv(io.BytesIO(t.stdout), dtype=str).iterrows()
-                                                     if r["event"] in ("reduce", "parvalue")}
+            t = tshow(sha, f"data/adj/{sid}.csv")
+            ADJ[sid] = {} if t is None else {pd.Timestamp(r["date"]): r for _, r in pd.read_csv(io.BytesIO(t), dtype=str).iterrows()
+                                             if r["event"] in ("reduce", "parvalue")}
         return ADJ[sid]
 
     def bridge(i, sid, e, xe):
-        """LampTrade Q5′ 原式：回 (接續倍數 at xe, 註) 或 (None, 原因)。"""
         k = 1.0; info = []
         for b in (e + 1 + np.flatnonzero(BAD[i, e + 1:xe + 1])):
             b = int(b); ev = adj_events(sid).get(CAL[b]); pb = lastvalid_le(i, b - 1)
@@ -143,91 +205,150 @@ def tw_rows(CS, mem, eng):
         return k, "；".join(info)
 
     rows = []
-    for _, r in CS[CS["市場"] == "TW"].iterrows():
-        for sid, role in mem[r["id"]]:
-            base = {"id": r["id"], "市場": "TW", "結果": r["結果"], "型": r["型"], "產業": r["產業"], "代表股": r["公司"], "代號": sid, "角色": role, "燈亮月": r["燈亮月"]}
-            if sid not in ix:
-                for H in HS:
-                    rows.append({**base, "H月": H, "狀態": "資料不足(面板查無)"})
-                continue
-            i = ix[sid]
-            p0 = int(CAL.searchsorted((pd.Period(r["燈亮月"], "M") + 1).to_timestamp()))
-            e = p0
-            while e <= CEND and not opened(i, e):
-                e += 1
-            if e > CEND:
-                for H in HS:
-                    rows.append({**base, "H月": H, "狀態": "資料不足(進場前無成交)"})
-                continue
-            P0 = float(O[i, e]); tri0 = tri_at(T, CAL[e - 1])
-            lastv = int(LASTV[i]); delist = (CEND - lastv) >= 5
+    for base in pairs:
+        sid = base["代號"]
+        if sid not in ix:
             for H in HS:
-                tgt = CAL[e] + pd.DateOffset(months=H)
-                notyet = tgt > CAL[CEND]
-                x = CEND if notyet else int(CAL.searchsorted(tgt, "right")) - 1
-                bb = np.flatnonzero(BAD[i, e + 1:x + 1])
-                st = "未到判決日" if notyet else "完整"; bad_d = ""
-                if len(bb):
-                    b = e + 1 + int(bb[0]); bad_d = str(CAL[b].date()); xe = lastvalid_le(i, b - 1); st = "⚠壞根截斷" + ("＋未到判決日" if notyet else "")
-                elif delist and lastv < x:
-                    xe = lastv; st = "下市結算"
-                else:
-                    xe = lastvalid_le(i, x)
-                R = float(C[i, xe] / P0 - 1 - COST_TW); M = tri_at(T, CAL[xe]) / tri0 - 1
-                row = {**base, "H月": H, "進場日": str(CAL[e].date()), "進場順延日": e - p0, "判決目標日": str(tgt.date()), "結算日": str(CAL[xe].date()),
-                       "狀態": st, "壞根日": bad_d, "R": R, "大盤": M, "超額": R - M}
-                # 接續版（只對壞根截斷格）
-                if len(bb):
-                    xq = lastv if (delist and lastv < x) else lastvalid_le(i, x)
-                    k, note = bridge(i, sid, e, xq)
-                    row["接續註"] = note
-                    if k is not None:
-                        Rb = float(C[i, xq] * k / P0 - 1 - COST_TW); Mb = tri_at(T, CAL[xq]) / tri0 - 1
-                        row.update({"接續R": Rb, "接續大盤": Mb, "接續超額": Rb - Mb, "接續結算日": str(CAL[xq].date())})
-                rows.append(row)
+                rows.append({**base, "H月": H, "狀態": "資料不足(面板查無)"})
+            continue
+        i = ix[sid]
+        p0 = int(CAL.searchsorted((pd.Period(base["燈亮月"], "M") + 1).to_timestamp()))
+        e = p0
+        while e <= CEND and not opened(i, e):
+            e += 1
+        if e > CEND:
+            for H in HS:
+                rows.append({**base, "H月": H, "狀態": "資料不足(進場後無成交)"})
+            continue
+        P0 = float(O[i, e]); tri0 = tri_at(T, CAL[e - 1])
+        lastv = int(LASTV[i]); delist = (CEND - lastv) >= 5
+        if lastv < e:
+            for H in HS:
+                rows.append({**base, "H月": H, "狀態": "資料不足(進場後無有效K棒)"})
+            continue
+        for H in HS:
+            tgt = CAL[e] + pd.DateOffset(months=H)
+            notyet = tgt > CAL[CEND]
+            x = CEND if notyet else int(CAL.searchsorted(tgt, "right")) - 1
+            bb = np.flatnonzero(BAD[i, e + 1:x + 1])
+            st = "未到判決日" if notyet else "完整"; bad_d = ""
+            if len(bb):
+                b = e + 1 + int(bb[0]); bad_d = str(CAL[b].date()); xe = lastvalid_le(i, b - 1); st = "⚠壞根截斷" + ("＋未到判決日" if notyet else "")
+            elif delist and lastv < x:
+                xe = lastv; st = "下市結算"
+            else:
+                xe = lastvalid_le(i, x)
+            R = float(C[i, xe] / P0 - 1 - COST_TW); M = tri_at(T, CAL[xe]) / tri0 - 1
+            row = {**base, "H月": H, "進場日": str(CAL[e].date()), "進場順延日": e - p0, "判決目標日": str(tgt.date()), "結算日": str(CAL[xe].date()),
+                   "狀態": st, "壞根日": bad_d, "R": R, "大盤": M, "超額": R - M}
+            if len(bb):
+                xq = lastv if (delist and lastv < x) else lastvalid_le(i, x)
+                k, note = bridge(i, sid, e, xq)
+                row["接續註"] = note
+                if k is not None:
+                    Rb = float(C[i, xq] * k / P0 - 1 - COST_TW); Mb = tri_at(T, CAL[xq]) / tri0 - 1
+                    row.update({"接續R": Rb, "接續大盤": Mb, "接續超額": Rb - Mb, "接續結算日": str(CAL[xq].date())})
+            rows.append(row)
     return rows
 
 
 # ═════════════ 美股 ═════════════
-def us_rows(CS, mem):
-    sha = subprocess.run(["git", "-C", US_REPO, "rev-parse", "origin/main"], capture_output=True, text=True, check=True).stdout.strip()
-    G = pd.read_csv(io.BytesIO(gshow("data/macro/yahoo_SP500TR.csv", US_REPO)), dtype={"date": str})
-    G["date"] = pd.to_datetime(G["date"]); G["adjclose"] = pd.to_numeric(G["adjclose"], errors="coerce")
-    G = G[G["adjclose"] > 0].drop_duplicates("date").sort_values("date").set_index("date")["adjclose"]
-    GS = pd.read_csv(io.BytesIO(gshow("data/macro/yahoo_GSPC.csv", US_REPO)), dtype={"date": str})
-    UCAL = pd.DatetimeIndex(pd.to_datetime(GS["date"])).sort_values().unique()
-    rows = []; info = {"us_sha": sha, "SP500TR": f"{G.index[0].date()}～{G.index[-1].date()}"}
+class US:
+    def __init__(self):
+        self.sha = subprocess.run(["git", "-C", US_REPO, "rev-parse", "origin/main"], capture_output=True, text=True, check=True).stdout.strip()
+        G = pd.read_csv(io.BytesIO(gshow("data/macro/yahoo_SP500TR.csv", US_REPO)), dtype={"date": str})
+        G["date"] = pd.to_datetime(G["date"]); G["adjclose"] = pd.to_numeric(G["adjclose"], errors="coerce")
+        self.G = G[G["adjclose"] > 0].drop_duplicates("date").sort_values("date").set_index("date")["adjclose"]
+        GS = pd.read_csv(io.BytesIO(gshow("data/macro/yahoo_GSPC.csv", US_REPO)), dtype={"date": str})
+        self.UCAL = pd.DatetimeIndex(pd.to_datetime(GS["date"])).sort_values().unique()
+        SO = pd.read_csv(io.BytesIO(gshow("data/fundamentals/shares_outstanding.csv", US_REPO)), dtype=str)
+        SO["as_of_date"] = pd.to_datetime(SO["as_of_date"], errors="coerce"); SO["shares"] = pd.to_numeric(SO["shares"], errors="coerce")
+        self.SO = SO.dropna(subset=["as_of_date", "shares"])
+        self.cache = {}
 
-    def tr_at(d):
-        k = int(G.index.searchsorted(pd.Timestamp(d), "right")) - 1
-        return float(G.iloc[k])
+    def tr_at(self, d):
+        k = int(self.G.index.searchsorted(pd.Timestamp(d), "right")) - 1
+        return float(self.G.iloc[k])
 
-    for _, r in CS[CS["市場"] == "US"].iterrows():
-        for tk, role in mem[r["id"]]:
-            base = {"id": r["id"], "市場": "US", "結果": r["結果"], "型": r["型"], "產業": r["產業"], "代表股": r["公司"], "代號": tk or "", "角色": role, "燈亮月": r["燈亮月"]}
-            raw = gshow(f"data/prices_yahoo/{tk}.csv", US_REPO) if tk else None
-            if raw is None:
-                for H in HS:
-                    rows.append({**base, "H月": H, "狀態": "資料不足(私有庫查無此檔)"})
-                continue
+    def load(self, tk):
+        """回 (DataFrame[date, adjopen, adjclose, rawclose], 來源) 或 (None, 原因)。"""
+        if tk in self.cache:
+            return self.cache[tk]
+        raw = gshow(f"data/prices_yahoo/{tk}.csv", US_REPO) if tk else None
+        if raw is not None:
             P = pd.read_csv(io.BytesIO(raw), dtype={"date": str}); P["date"] = pd.to_datetime(P["date"])
             for c in ("open", "close", "adjclose"):
                 P[c] = pd.to_numeric(P[c], errors="coerce")
             P = P[(P["close"] > 0) & (P["adjclose"] > 0) & (P["open"] > 0)].drop_duplicates("date").sort_values("date").reset_index(drop=True)
-            ent = (pd.Period(r["燈亮月"], "M") + 1).to_timestamp()
+            ev = gshow(f"data/events_yahoo/{tk}.csv", US_REPO)
+            sp = []
+            if ev is not None:
+                E = pd.read_csv(io.BytesIO(ev), dtype=str)
+                for r in E[E["type"] == "split"].itertuples():
+                    a, b = r.value.split("/"); sp.append((pd.Timestamp(r.date), float(a) / float(b)))
+            fac = np.ones(len(P))
+            for d, rto in sp:
+                fac[P["date"].to_numpy() < np.datetime64(d)] *= rto
+            out = pd.DataFrame({"date": P["date"], "adjopen": P["open"] * P["adjclose"] / P["close"], "adjclose": P["adjclose"], "rawclose": P["close"] * fac})
+            self.cache[tk] = (out, "prices_yahoo")
+            return self.cache[tk]
+        raw = gshow(f"data/prices/{tk}.csv", US_REPO) if tk else None
+        if raw is not None:
+            P = pd.read_csv(io.BytesIO(raw), dtype={"date": str}); P["date"] = pd.to_datetime(P["date"])
+            for c in ("close", "adjOpen", "adjClose"):
+                P[c] = pd.to_numeric(P[c], errors="coerce")
+            P = P[(P["close"] > 0) & (P["adjClose"] > 0) & (P["adjOpen"] > 0)].drop_duplicates("date").sort_values("date").reset_index(drop=True)
+            out = pd.DataFrame({"date": P["date"], "adjopen": P["adjOpen"], "adjclose": P["adjClose"], "rawclose": P["close"]})
+            self.cache[tk] = (out, "prices")
+            return self.cache[tk]
+        self.cache[tk] = (None, "私有庫查無此檔")
+        return self.cache[tk]
+
+    def cap(self, tk, ym):
+        P, src = self.load(tk)
+        if P is None:
+            return np.nan, "", "價格查無"
+        p = pd.Period(ym, "M")
+        m = P[(P["date"] >= p.start_time) & (P["date"] <= p.end_time)]
+        if not len(m):
+            return np.nan, "", "該月查無收盤"
+        r = m.iloc[-1]
+        s = self.SO[(self.SO["ticker"] == tk) & (self.SO["as_of_date"] <= r["date"])]
+        if not len(s):
+            return np.nan, str(r["date"].date()), "SEC 股數查無"
+        d = s["as_of_date"].max()
+        if (r["date"] - d).days > 400:
+            return np.nan, str(r["date"].date()), f"SEC 股數最近 {d.date()}（>400 日）"
+        sh = s[s["as_of_date"] == d].drop_duplicates(["share_class", "shares"])["shares"].sum()
+        return float(r["rawclose"] * sh), str(r["date"].date()), f"{src}；股數 as_of {d.date()}"
+
+    def rows(self, pairs):
+        rows = []
+        for base in pairs:
+            tk = base["代號"]
+            P, src = self.load(tk)
+            if P is None:
+                for H in HS:
+                    rows.append({**base, "H月": H, "狀態": "資料不足(私有庫查無此檔)"})
+                continue
+            ent = (pd.Period(base["燈亮月"], "M") + 1).to_timestamp()
             if ent < P["date"].iloc[0]:
                 for H in HS:
                     rows.append({**base, "H月": H, "狀態": f"資料不足(燈亮早於資料起點 {P['date'].iloc[0].date()})"})
                 continue
-            cal = UCAL[(UCAL >= P["date"].iloc[0])]
+            if ent > P["date"].iloc[-1]:
+                for H in HS:
+                    rows.append({**base, "H月": H, "狀態": "資料不足(進場前已無資料)"})
+                continue
+            cal = self.UCAL[(self.UCAL >= P["date"].iloc[0])]
             pos = {d: q for q, d in enumerate(cal)}
             Pp = P[P["date"].isin(pos)].copy(); Pp["q"] = Pp["date"].map(pos)
-            q = Pp["q"].to_numpy(); gapbad = set(q[1:][np.diff(q) - 1 >= 5])   # 連續 ≥5 交易日無 K 棒 ⇒ 壞根
+            q = Pp["q"].to_numpy(); gapbad = set(q[1:][np.diff(q) - 1 >= 5])
             e_i = int(Pp["date"].searchsorted(ent))
-            e_row = Pp.iloc[e_i]; P0 = float(e_row["open"] * e_row["adjclose"] / e_row["close"])
+            e_row = Pp.iloc[e_i]; P0 = float(e_row["adjopen"])
             e_d = e_row["date"]; prev = cal[pos[e_d] - 1] if pos[e_d] > 0 else e_d
-            tr0 = tr_at(prev); last_d = Pp["date"].iloc[-1]
-            delist = (UCAL[-1] - last_d).days > 10
+            tr0 = self.tr_at(prev); last_d = Pp["date"].iloc[-1]
+            delist = (self.UCAL[-1] - last_d).days > 10
             for H in HS:
                 tgt = e_d + pd.DateOffset(months=H)
                 notyet = tgt > last_d and not delist
@@ -239,30 +360,63 @@ def us_rows(CS, mem):
                 elif delist and last_d < tgt:
                     st = "下市結算"
                 xr = sub.iloc[-1] if len(sub) else e_row
-                R = float(xr["adjclose"] / P0 - 1 - COST_US); M = tr_at(xr["date"]) / tr0 - 1
+                R = float(xr["adjclose"] / P0 - 1 - COST_US); M = self.tr_at(xr["date"]) / tr0 - 1
                 rows.append({**base, "H月": H, "進場日": str(e_d.date()), "進場順延日": int(pos[e_d] - int(np.searchsorted(cal, ent))),
                              "判決目標日": str(tgt.date()), "結算日": str(xr["date"].date()), "狀態": st, "壞根日": bad_d, "R": R, "大盤": M, "超額": R - M})
-    return rows, info
+        return rows
+
+
+# ═════════════ 成員 ═════════════
+def build_members(CS, P, caps):
+    M = []
+    for _, r in CS.iterrows():
+        mk = r["市場"]; cid = r["id"]
+        M.append({"版": "代表股版", "id": cid, "市場": mk, "代號": code_of(r), "名稱": r["公司"], "名次": "", "角色": "代表股", "入選": True, "註": ""})
+        d = P[mk][P[mk]["id"] == cid]
+        d = d[d["代號"].str.strip() != ""]
+        for k, (_, p) in enumerate(d.iterrows()):
+            M.append({"版": "同業等權版", "id": cid, "市場": mk, "代號": p["代號"].strip(), "名稱": p["名稱"], "名次": p["名次"], "角色": f"名次{p['名次']}",
+                      "入選": k < 3, "註": "" if k < 3 else "名次 4 以後"})
+        n = 0
+        for _, p in d.iterrows():
+            c = caps.get((cid, p["代號"].strip()), {})
+            v = c.get("市值", np.nan)
+            if np.isfinite(v) and v < FLOOR[mk]:
+                flag, inn = "市值不足、剔除", False
+            elif np.isfinite(v):
+                flag, inn = "過下限", n < 3
+            else:
+                flag, inn = "查無、未剔除", n < 3
+            if inn:
+                n += 1
+            M.append({"版": "設下限版", "id": cid, "市場": mk, "代號": p["代號"].strip(), "名稱": p["名稱"], "名次": p["名次"], "角色": f"名次{p['名次']}",
+                      "入選": inn, "註": flag if (inn or flag != "過下限") else "名額已滿"})
+    return pd.DataFrame(M)
 
 
 # ═════════════ 統計 ═════════════
-def themes(TB):
-    ok = TB[TB["R"].notna()]
-    g = ok.groupby(["市場", "id", "H月"])
-    TH = g.agg(結果=("結果", "first"), 型=("型", "first"), 產業=("產業", "first"), 代表股=("代表股", "first"), 燈亮月=("燈亮月", "first"),
-               檔數=("代號", "size"), 各檔=("代號", lambda s: "／".join(s)), 等權R=("R", "mean"), 合計R=("R", "sum"), 等權大盤=("大盤", "mean"),
-               等權超額=("超額", "mean"), 合計超額=("超額", "sum"),
-               未到=("狀態", lambda s: int(s.str.contains("未到").any())), 截斷=("狀態", lambda s: int(s.str.contains("壞根").any()))).reset_index()
-    rep = ok[ok["角色"] == "代表股"].set_index(["市場", "id", "H月"])
-    TH["代表股R"] = TH.set_index(["市場", "id", "H月"]).index.map(rep["R"]).to_numpy()
-    TH["代表股超額"] = TH.set_index(["市場", "id", "H月"]).index.map(rep["超額"]).to_numpy()
-    # 接續版主題超額（壞根格換接續值）
-    if "接續超額" in ok:
-        xb = ok["接續超額"].where(ok["狀態"].str.contains("壞根") & ok["接續超額"].notna(), ok["超額"])
-        TH["接續等權超額"] = TH.set_index(["市場", "id", "H月"]).index.map(ok.assign(xb=xb).groupby(["市場", "id", "H月"])["xb"].mean()).to_numpy()
-    else:
-        TH["接續等權超額"] = TH["等權超額"]
-    return TH
+def themes(TB, MB):
+    ok = TB[TB["R"].notna()].copy()
+    xb = ok["接續超額"].where(ok["狀態"].fillna("").str.contains("壞根") & ok["接續超額"].notna(), ok["超額"]) if "接續超額" in ok else ok["超額"]
+    ok["xb"] = xb
+    out = []
+    for v in VARS:
+        mem = MB[(MB["版"] == v) & MB["入選"]][["id", "代號"]]
+        d = ok.merge(mem, on=["id", "代號"])
+        d["版"] = v
+        g = d.groupby(["版", "市場", "id", "H月"])
+        TH = g.agg(結果=("結果", "first"), 產業=("產業", "first"), 代表股=("代表股", "first"), 燈亮月=("燈亮月", "first"),
+                   檔數=("代號", "size"), 各檔=("代號", lambda s: "／".join(s)), 等權R=("R", "mean"), 合計R=("R", "sum"), 等權大盤=("大盤", "mean"),
+                   等權超額=("超額", "mean"), 合計超額=("超額", "sum"), 接續等權超額=("xb", "mean"),
+                   未到=("狀態", lambda s: int(s.str.contains("未到").any())), 截斷=("狀態", lambda s: int(s.str.contains("壞根").any()))).reset_index()
+        out.append(TH)
+        # 每檔
+    TH = pd.concat(out, ignore_index=True)
+    each = []
+    for v in VARS:
+        mem = MB[(MB["版"] == v) & MB["入選"]][["id", "代號"]]
+        d = ok.merge(mem, on=["id", "代號"]); d["版"] = v; each.append(d)
+    return TH, pd.concat(each, ignore_index=True)
 
 
 def be(W, L):
@@ -276,58 +430,80 @@ def be(W, L):
     return p, math.ceil(math.log(0.1) / math.log(1 - p)), ""
 
 
-def stats(TH, TB):
+def stats(TH, EA):
     out = []
-    for mk in ("TW", "US"):
-        for H in HS:
-            for unit, D, col in (("主題", TH, None), ("每檔", TB[TB["R"].notna()], None)):
-                d = D[(D["市場"] == mk) & (D["H月"] == H)]
-                for met in ("超額", "R", "接續超額"):
-                    if met == "接續超額" and unit != "主題":
-                        continue
-                    c = ({"超額": "等權超額", "R": "等權R", "接續超額": "接續等權超額"}[met] if unit == "主題" else met)
-                    w = d[d["結果"] == "大漲"][c].astype(float); l = d[d["結果"] == "失敗"][c].astype(float)
-                    rec = {"市場": mk, "H月": H, "樣本單位": unit, "量": met, "贏家n": len(w), "反例n": len(l),
-                           "贏家平均": w.mean(), "贏家中位": w.median(), "反例平均": l.mean(), "反例中位": l.median(),
-                           "反例μ": l.mean(), "反例s": l.std(ddof=1) if len(l) > 1 else np.nan}
-                    rec["門檻μ−1.28s/√8"] = rec["反例μ"] - 1.28 * rec["反例s"] / math.sqrt(8) if np.isfinite(rec["反例s"]) else np.nan
-                    for k in ("平均", "中位"):
-                        p, n, why = be(rec[f"贏家{k}"], rec[f"反例{k}"])
-                        rec[f"p*_{k}"] = p; rec[f"n_{k}"] = n; rec[f"註_{k}"] = why
-                    if unit == "主題":
-                        u = d[d["結果"] == "大漲"]; rec["贏家代表股平均"] = u["代表股R" if met == "R" else "代表股超額"].mean()
-                        rec["贏家代表股中位"] = u["代表股R" if met == "R" else "代表股超額"].median()
-                        rec["未到判決日主題數"] = int(d["未到"].sum()); rec["壞根截斷主題數"] = int(d["截斷"].sum())
-                    out.append(rec)
+    for v in VARS:
+        for mk in ("TW", "US"):
+            for H in HS:
+                for unit, D in (("主題", TH), ("每檔", EA)):
+                    d = D[(D["版"] == v) & (D["市場"] == mk) & (D["H月"] == H)]
+                    for met in ("超額", "R", "接續超額"):
+                        c = {"超額": "等權超額", "R": "等權R", "接續超額": "接續等權超額"}[met] if unit == "主題" else {"超額": "超額", "R": "R", "接續超額": "xb"}[met]
+                        w = d[d["結果"] == "大漲"][c].astype(float); l = d[d["結果"] == "失敗"][c].astype(float)
+                        rec = {"版": v, "市場": mk, "H月": H, "樣本單位": unit, "量": met, "贏家n": len(w), "反例n": len(l),
+                               "贏家平均": w.mean(), "贏家中位": w.median(), "反例平均": l.mean(), "反例中位": l.median(),
+                               "反例μ": l.mean(), "反例s": l.std(ddof=1) if len(l) > 1 else np.nan}
+                        rec["門檻μ−1.28s/√8"] = rec["反例μ"] - 1.28 * rec["反例s"] / math.sqrt(8) if np.isfinite(rec["反例s"]) else np.nan
+                        for k in ("平均", "中位"):
+                            p, n, why = be(rec[f"贏家{k}"], rec[f"反例{k}"])
+                            rec[f"p*_{k}"] = p; rec[f"n_{k}"] = n; rec[f"註_{k}"] = why
+                        if unit == "主題":
+                            rec["未到判決日主題數"] = int(d["未到"].sum()); rec["壞根截斷主題數"] = int(d["截斷"].sum())
+                        else:
+                            rec["未到判決日主題數"] = int(d["狀態"].str.contains("未到").sum()); rec["壞根截斷主題數"] = int(d["狀態"].str.contains("壞根").sum())
+                        out.append(rec)
     return pd.DataFrame(out)
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--market", default="ALL"); a = ap.parse_args()
     t0 = time.time(); os.makedirs(OUT, exist_ok=True)
-    CS = pd.read_csv(INP, dtype=str, keep_default_na=False)
-    if len(CS) != 56:
-        raise SystemExit(f"⛔ 附件列數 {len(CS)} ≠ 56")
-    mem, src = load_members(CS)
-    log(f"[成員] {src}")
-    rows = []; meta = {"成員來源": src}
-    if a.market in ("TW", "ALL"):
-        eng = tw_engine(); meta["tw_sha"] = eng[0]; meta["tw資料尾"] = str(eng[1]["CAL"][-1].date()); meta["接縫開盤倍數檔數"] = eng[3]
-        rows += tw_rows(CS, mem, eng); log(f"[台股] 完成 {time.time() - t0:.0f}s")
-    if a.market in ("US", "ALL"):
-        ur, ui = us_rows(CS, mem); rows += ur; meta.update(ui); log(f"[美股] 完成 {time.time() - t0:.0f}s")
+    CS = load_cases(); P = load_peers()
+    # 要算的 (id, 代號) 對：代表股 ∪ 名單
+    pairs = {}
+    for _, r in CS.iterrows():
+        base = {"id": r["id"], "市場": r["市場"], "結果": r["結果"], "型": r["型"], "產業": r["產業"], "代表股": r["公司"], "燈亮月": r["燈亮月"]}
+        codes = [code_of(r)] + [c.strip() for c in P[r["市場"]][P[r["市場"]]["id"] == r["id"]]["代號"] if c.strip()]
+        for c in codes:
+            pairs.setdefault((r["id"], c), {**base, "代號": c})
+    meta = {"K21": K21NOTE, "名單品質": QUAL}
+    eng = tw_engine(); sha = eng[0]
+    meta.update({"tw_sha": sha, "tw資料尾": str(eng[1]["CAL"][-1].date()), "接縫開盤倍數檔數": eng[3]})
+    us = US(); meta["us_sha"] = us.sha
+    rows = tw_rows([b for k, b in pairs.items() if b["市場"] == "TW"], eng); log(f"[台股] {time.time() - t0:.0f}s")
+    rows += us.rows([b for k, b in pairs.items() if b["市場"] == "US"]); log(f"[美股] {time.time() - t0:.0f}s")
+    # 市值（只對名單成員）
+    early_days = sorted(x.rsplit("/", 1)[1][:-4] for x in subprocess.run(["git", "ls-tree", "--name-only", sha, "data/early/daily/"],
+                                                                              capture_output=True, text=True, check=True).stdout.split())
+    cache = {}; caps = {}; CR = []
+    for mk in ("TW", "US"):
+        for _, p in P[mk].iterrows():
+            c = p["代號"].strip()
+            if not c:
+                continue
+            ym = CS.set_index("id").loc[p["id"], "燈亮月"]
+            if mk == "TW":
+                v, d, cl, sh, note = tw_cap(sha, c, ym, early_days, cache)
+                CR.append({"id": p["id"], "市場": mk, "代號": c, "名稱": p["名稱"], "名次": p["名次"], "燈亮月": ym, "月底日": d, "未還原收盤": cl, "股數": sh,
+                           "市值(億)": v / 1e8 if np.isfinite(v) else np.nan, "判定": ("查無" if not np.isfinite(v) else ("≥100億" if v >= FLOOR[mk] else "＜100億")), "來源註": note})
+            else:
+                v, d, note = us.cap(c, ym)
+                CR.append({"id": p["id"], "市場": mk, "代號": c, "名稱": p["名稱"], "名次": p["名次"], "燈亮月": ym, "月底日": d,
+                           "判定": ("查無" if not np.isfinite(v) else ("≥20億美元" if v >= FLOOR[mk] else "＜20億美元")), "來源註": note})
+            caps[(p["id"], c)] = {"市值": v}
+    CRd = pd.DataFrame(CR); CRd.to_csv(os.path.join(OUT, "caps.csv"), index=False, encoding="utf-8-sig")
+    MB = build_members(CS, P, caps); MB.to_csv(os.path.join(OUT, "members.csv"), index=False, encoding="utf-8-sig")
     TB = pd.DataFrame(rows)
-    cols = ["id", "市場", "結果", "型", "產業", "代表股", "代號", "角色", "燈亮月", "H月", "進場日", "進場順延日", "判決目標日", "結算日", "狀態", "壞根日",
+    cols = ["id", "市場", "結果", "型", "產業", "代表股", "代號", "燈亮月", "H月", "進場日", "進場順延日", "判決目標日", "結算日", "狀態", "壞根日",
             "R", "大盤", "超額", "接續R", "接續大盤", "接續超額", "接續結算日", "接續註"]
     TB = TB.reindex(columns=cols)
     TB.to_csv(os.path.join(OUT, "table.csv"), index=False, encoding="utf-8-sig")
-    TH = themes(TB); TH.to_csv(os.path.join(OUT, "themes.csv"), index=False, encoding="utf-8-sig")
-    ST = stats(TH, TB); ST.to_csv(os.path.join(OUT, "stats.csv"), index=False, encoding="utf-8-sig")
-    write_md(TB, TH, ST, meta)
-    MJ = {"性質": "v4.1 新設定重算（描述、不判定、不計 N）", "警語": WARN, "請求": "產業分析線 seq30、seq34", **meta,
-          "列數": len(TB), "可算列": int(TB["R"].notna().sum()), "狀態計數": {f"{k[0]}|{k[1]}|{k[2]}": int(v) for k, v in TB.groupby(["市場", "H月"])["狀態"].value_counts().items()},
-          "stats": ST.to_dict("records"), "讀法": __doc__.split("═══ 讀法")[1], "秒": round(time.time() - t0)}
-    json.dump(MJ, open(os.path.join(OUT, "main.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=lambda o: str(o) if not isinstance(o, (np.floating, np.integer)) else (None if not np.isfinite(o) else float(o)))
+    TH, EA = themes(TB, MB); TH.to_csv(os.path.join(OUT, "themes.csv"), index=False, encoding="utf-8-sig")
+    ST = stats(TH, EA); ST.to_csv(os.path.join(OUT, "stats.csv"), index=False, encoding="utf-8-sig")
+    write_md(TB, TH, ST, MB, CRd, meta)
+    MJ = {"性質": "v4.1 新設定重算（描述、不判定、不計 N）", "警語": WARN, "請求": "產業分析線 seq30、seq34、seq37、seq38", **meta,
+          "列數": len(TB), "可算列": int(TB["R"].notna().sum()), "stats": ST.to_dict("records"), "讀法": __doc__.split("═══ 讀法")[1], "秒": round(time.time() - t0)}
+    json.dump(MJ, open(os.path.join(OUT, "main.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1,
+              default=lambda o: (None if not np.isfinite(o) else float(o)) if isinstance(o, (np.floating, np.integer, float)) else str(o))
     open(os.path.join(OUT, "run.log"), "w", encoding="utf-8").write("\n".join(LOG) + "\n")
     log(f"[完成] {OUT}｜{time.time() - t0:.0f}s")
 
@@ -340,63 +516,102 @@ def pc(v):
     return "—" if v is None or not np.isfinite(v) else f"{v * 100:.1f}%"
 
 
-def write_md(TB, TH, ST, meta):
-    md = [f"{WARN}", "", "# 大漲主題框架 v4.1 新設定重算：期望值、兩平命中率、停用張數（產業分析線 seq30／seq34）", "",
-          "- 描述、⛔ 不判定、不計 N、不改任何規則。單位「份」＝每檔 1 份的損益倍數（R＝判決還原價÷進場還原價−1，含息、扣成本：台股 0.585% 來回、美股 0.05%／邊）。",
-          "- 進場＝燈亮月下一個月第一個交易日還原開盤；判決日＝進場日＋60 個月（主表）／72 個月（副欄）當天或之前最後一個交易日還原收盤；另附 24、36 月。"
-          "資料不夠 ⇒ 結算到資料尾、標「未到判決日」。持有期間不模擬 v4 出場 ①～⑤。",
-          "- 大盤：台股 data/history/market_tri.csv（報酬指數）、美股 ^SP500TR；進場前一交易日收盤→結算日收盤；超額＝R−大盤。",
-          f"- ⛔ 成員：{meta['成員來源']}。產業線說的同業名單「p3_contrarian/peers」在本機（Temp 各 session scratchpad、投資\\產業研究用、Obsidian、WSL、Claude app 目錄、全部對話紀錄）都找不到 ⇒ "
-          "**本版每個主題只有代表股（燈 1 事件點名的公司），主題值＝代表股值；「同主題前 3 名等權」還不能算**，待產業線轉檔（peers_input.csv）後重跑即補。",
-          "- 口徑（回測線定）：**同一主題的 3 檔算 1 個獨立樣本**（主題內等權平均＝該主題的值）；另附「每檔各算 1 張」版（本版兩者相同）。",
+def ni(v):
+    return "—" if v is None or not np.isfinite(v) else str(int(v))
+
+
+def sget(ST, v, mk, H, unit="主題", met="超額"):
+    s = ST[(ST["版"] == v) & (ST["市場"] == mk) & (ST["H月"] == H) & (ST["樣本單位"] == unit) & (ST["量"] == met)]
+    return s.iloc[0]
+
+
+def write_md(TB, TH, ST, MB, CR, meta):
+    md = [f"{WARN}", "", "# 大漲主題框架 v4.1 新設定重算：代表股版／同業等權版／設下限版（產業分析線 seq30／34／37／38）", "",
+          f"> ⚠ **{QUAL}**", "", f"- {K21NOTE}",
+          "- 描述、⛔ 不判定、不計 N、不改任何規則。單位「份」＝每檔 1 份的損益倍數（R＝判決還原價÷進場還原價−1，含息、扣成本：台股 0.585% 來回、美股 0.05%／邊）；"
+          "表內數字為**對大盤含息超額**（括號為原始 R）。",
+          "- 進場＝燈亮月下一個月第一個交易日還原開盤；判決日＝進場日＋60 個月（主表）／72 個月（副欄）；資料不夠 ⇒ 結算到資料尾、標「未到判決日」。持有期間不模擬 v4 出場 ①～⑤。",
+          "- 三版：**代表股版**＝燈 1 點名公司 1 檔；**同業等權版**＝名單前 3 名（實際幾家算幾家）等權；**設下限版**＝燈亮月月底市值 台股 ≥100 億元、美股 ≥20 億美元，"
+          "不足剔除、名單內下一名遞補（名單都 ≤3 家 ⇒ 實際上只會少一家），市值算不出照標「查無、未剔除」。",
+          "- 口徑（回測線定）：**同一主題的 3 檔算 1 個獨立樣本**（主題內等權平均＝該主題的值）；另附「每檔各算 1 張」版。名單內查不到價格的代號標「資料不足」、⛔ 不換代號，主題值只用有價格的成員。",
           "- 兩平 p*＝−L÷(W−L)；停用張數 n＝⌈ln0.1÷ln(1−p*)⌉；反例 μ、s（ddof=1）、門檻 μ−1.28·s／√8。",
-          f"- 資料：台股 sha {str(meta.get('tw_sha', ''))[:12]}（面板尾 {meta.get('tw資料尾', '')}）；美股 us-stock-data {str(meta.get('us_sha', ''))[:12]}（⛔ 本檔不放美股價格，只放 R、日期、名稱）。", ""]
-    dl = TB[TB["進場順延日"].fillna(0) > 0].drop_duplicates("id")
-    md.append("- 進場順延（燈亮次月首日無成交）：" + ("；".join(f"{r.id} {r.代號} 順延 {int(r.進場順延日)} 個交易日到 {r.進場日}" for r in dl.itertuples()) or "無"))
-    nd = TB[TB["R"].isna()].drop_duplicates("id")
-    md.append(f"- 資料不足（不進統計）：{len(nd)} 案——" + "；".join(f"{r.id} {r.代表股}（{r.結果}，{r.狀態}）" for r in nd.itertuples()))
-    md.append("")
-    for H in (60, 72, 36, 24):
-        md += [f"## 彙總：{H} 個月（主題為單位；超額＝對大盤含息，括號為原始 R）", "",
-               "| 市場 | 贏家 n | 贏家平均 | 贏家中位 | 反例 n | 反例平均 | 反例中位 | p* 平均口徑 | n 平均 | p* 中位口徑 | n 中位 | 反例 μ | s | 門檻 | 未到判決日主題 | 壞根截斷主題 |",
-               "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+          "- 市值：台股＝燈亮月最後一個有收盤日的未還原收盤 × 當日發行股數（≤2014 data/early/daily、≥2015 data/stocks 的 shares 欄＝日檔 feed 當日股數）；"
+          "美股＝未還原收盤（Yahoo 拆股調整還原）× SEC 申報股數（as_of ≤ 月底最後一筆）。⛔ 美股不放價格與市值數值，只放判定。",
+          f"- 資料：台股 sha {str(meta.get('tw_sha', ''))[:12]}（面板尾 {meta.get('tw資料尾', '')}）；美股 us-stock-data {str(meta.get('us_sha', ''))[:12]}。", ""]
+    # 三欄對照
+    md += ["## 三版對照（主題為 1 個樣本；對大盤含息超額，單位份）", ""]
+    for H in (60, 72):
+        md += [f"### {H} 個月", "", "| 市場 | 項目 | 代表股版 | 同業等權版 | 設下限版 |", "|---|---|---|---|---|"]
         for mk in ("TW", "US"):
-            s = ST[(ST["市場"] == mk) & (ST["H月"] == H) & (ST["樣本單位"] == "主題") & (ST["量"] == "超額")]
-            r_ = ST[(ST["市場"] == mk) & (ST["H月"] == H) & (ST["樣本單位"] == "主題") & (ST["量"] == "R")]
-            if not len(s):
-                continue
-            s = s.iloc[0]; r_ = r_.iloc[0]
-            pa = pc(s["p*_平均"]) if np.isfinite(s["p*_平均"]) else s["註_平均"]
-            pm = pc(s["p*_中位"]) if np.isfinite(s["p*_中位"]) else s["註_中位"]
-            md.append(f"| {mk} | {s['贏家n']} | {f2(s['贏家平均'])}（{f2(r_['贏家平均'])}） | {f2(s['贏家中位'])}（{f2(r_['贏家中位'])}） | {s['反例n']} | "
-                      f"{f2(s['反例平均'])}（{f2(r_['反例平均'])}） | {f2(s['反例中位'])}（{f2(r_['反例中位'])}） | {pa} | {s['n_平均'] if np.isfinite(s['p*_平均']) else '—'} | "
-                      f"{pm} | {s['n_中位'] if np.isfinite(s['p*_中位']) else '—'} | {f2(s['反例μ'])} | {f2(s['反例s'])} | {f2(s['門檻μ−1.28s/√8'])} | {s['未到判決日主題數']} | {s['壞根截斷主題數']} |")
+            S = [sget(ST, v, mk, H) for v in VARS]
+            def pp(s, k):
+                return pc(s[f"p*_{k}"]) + f"（n {ni(s[f'n_{k}'])}）" if np.isfinite(s[f"p*_{k}"]) else s[f"註_{k}"]
+            md += [f"| {mk} | 贏家 平均／中位（主題數） | " + " | ".join(f"{f2(s['贏家平均'])}／{f2(s['贏家中位'])}（{s['贏家n']}）" for s in S) + " |",
+                   f"| {mk} | 反例 平均／中位（主題數） | " + " | ".join(f"{f2(s['反例平均'])}／{f2(s['反例中位'])}（{s['反例n']}）" for s in S) + " |",
+                   f"| {mk} | 兩平 p* 平均口徑（停用張數） | " + " | ".join(pp(s, "平均") for s in S) + " |",
+                   f"| {mk} | 兩平 p* 中位口徑（停用張數） | " + " | ".join(pp(s, "中位") for s in S) + " |",
+                   f"| {mk} | 反例 μ／s／門檻 | " + " | ".join(f"{f2(s['反例μ'])}／{f2(s['反例s'])}／{f2(s['門檻μ−1.28s/√8'])}" for s in S) + " |",
+                   f"| {mk} | 未到判決日／壞根截斷 主題數 | " + " | ".join(f"{s['未到判決日主題數']}／{s['壞根截斷主題數']}" for s in S) + " |"]
         md.append("")
-    if "接續等權超額" in TH:
-        md += ["## 接續版（壞根截斷格改用減資／面額變更接續值；參考）", ""]
-        for H in (60, 72, 24):
-            for res in ("大漲", "失敗"):
-                d = TH[(TH["市場"] == "TW") & (TH["H月"] == H) & (TH["結果"] == res)]["接續等權超額"].astype(float)
-                md.append(f"- 台股 {H} 月 {res}：平均 {f2(d.mean())}、中位 {f2(d.median())}（n {d.notna().sum()}）")
-            s = ST[(ST["市場"] == "TW") & (ST["H月"] == H) & (ST["樣本單位"] == "主題") & (ST["量"] == "接續超額")].iloc[0]
-            md.append(f"- 台股 {H} 月接續版：p* 平均口徑 {pc(s['p*_平均'])}（n {s['n_平均']}）、中位口徑 {pc(s['p*_中位'])}（n {s['n_中位']}）；"
-                      f"反例 μ {f2(s['反例μ'])}、s {f2(s['反例s'])}、門檻 {f2(s['門檻μ−1.28s/√8'])}")
-        md.append("")
-    md += ["## 每主題一列（60 月；括號 72 月）", "",
-           "| id | 市場 | 結果 | 產業 | 代表股 | 燈亮月 | 代表股 R | 同主題各檔 R | 等權 R | 合計 R | 大盤同期 | 等權超額 | 狀態 |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
-    for (mk, cid), g in TB.groupby(["市場", "id"], sort=False):
-        a = g[g["H月"] == 60]; b = g[g["H月"] == 72]
-        t60 = TH[(TH["id"] == cid) & (TH["H月"] == 60)]; t72 = TH[(TH["id"] == cid) & (TH["H月"] == 72)]
-        if not len(t60):
-            md.append(f"| {cid} | {mk} | {a['結果'].iloc[0]} | {a['產業'].iloc[0]} | {a['代表股'].iloc[0]} | {a['燈亮月'].iloc[0]} | — | — | — | — | — | — | {a['狀態'].iloc[0]} |")
-            continue
-        t60 = t60.iloc[0]; t72 = t72.iloc[0]
-        each = "／".join(f"{r.代號} {f2(r.R)}" for r in a.itertuples())
-        stt = "；".join(sorted(set(a["狀態"]) | set("72:" + x for x in b["狀態"] if x != "完整")))
-        md.append(f"| {cid} | {mk} | {t60['結果']} | {t60['產業']} | {t60['代表股']} | {t60['燈亮月']} | {f2(t60['代表股R'])}（{f2(t72['代表股R'])}） | {each} | "
-                  f"{f2(t60['等權R'])}（{f2(t72['等權R'])}） | {f2(t60['合計R'])}（{f2(t72['合計R'])}） | {f2(t60['等權大盤'])}（{f2(t72['等權大盤'])}） | "
-                  f"{f2(t60['等權超額'])}（{f2(t72['等權超額'])}） | {stt} |")
-    md += ["", f"{WARN}"]
+    md += ["## 詳表（每版 × 市場 × 判決月；主題／每檔兩種單位；超額，括號原始 R）", "",
+           "| 版 | 市場 | 月 | 單位 | 贏家 n | 贏家平均 | 贏家中位 | 反例 n | 反例平均 | 反例中位 | p* 平均（n） | p* 中位（n） | μ | s | 門檻 | 未到 |", "|" + "---|" * 16]
+    for v in VARS:
+        for mk in ("TW", "US"):
+            for H in (60, 72, 36, 24):
+                for unit in ("主題", "每檔"):
+                    s = sget(ST, v, mk, H, unit); r_ = sget(ST, v, mk, H, unit, "R")
+                    pa = f"{pc(s['p*_平均'])}（{ni(s['n_平均'])}）" if np.isfinite(s["p*_平均"]) else s["註_平均"]
+                    pm = f"{pc(s['p*_中位'])}（{ni(s['n_中位'])}）" if np.isfinite(s["p*_中位"]) else s["註_中位"]
+                    md.append(f"| {v} | {mk} | {H} | {unit} | {s['贏家n']} | {f2(s['贏家平均'])}（{f2(r_['贏家平均'])}） | {f2(s['贏家中位'])}（{f2(r_['贏家中位'])}） | {s['反例n']} | "
+                              f"{f2(s['反例平均'])}（{f2(r_['反例平均'])}） | {f2(s['反例中位'])}（{f2(r_['反例中位'])}） | {pa} | {pm} | {f2(s['反例μ'])} | {f2(s['反例s'])} | "
+                              f"{f2(s['門檻μ−1.28s/√8'])} | {s['未到判決日主題數']} |")
+    md += ["", "## 台股接續版（壞根截斷格改用減資／面額變更接續值；參考）", ""]
+    for v in VARS:
+        for H in (60, 72):
+            s = sget(ST, v, "TW", H, "主題", "接續超額")
+            pa = f"{pc(s['p*_平均'])}（n {ni(s['n_平均'])}）" if np.isfinite(s["p*_平均"]) else s["註_平均"]
+            pm = f"{pc(s['p*_中位'])}（n {ni(s['n_中位'])}）" if np.isfinite(s["p*_中位"]) else s["註_中位"]
+            md.append(f"- {v} {H} 月：贏家 {f2(s['贏家平均'])}／{f2(s['贏家中位'])}、反例 {f2(s['反例平均'])}／{f2(s['反例中位'])}；p* 平均 {pa}、中位 {pm}；μ {f2(s['反例μ'])}、s {f2(s['反例s'])}、門檻 {f2(s['門檻μ−1.28s/√8'])}")
+    # 成員與剔除
+    md += ["", "## 成員、資料不足與規模剔除", ""]
+    nod = TB[(TB["H月"] == 60) & TB["R"].isna()]
+    md.append(f"- 查不到價格（資料不足）：{len(nod)} 檔次——" + "；".join(f"{r.id} {r.代號}（{r.狀態}）" for r in nod.itertuples()))
+    cut = MB[(MB["版"] == "設下限版") & (MB["註"] == "市值不足、剔除")]
+    md.append(f"- 設下限剔除：{len(cut)} 檔——" + "；".join(f"{r.id} {r.代號}" for r in cut.itertuples()))
+    unk = MB[(MB["版"] == "設下限版") & (MB["註"] == "查無、未剔除")]
+    md.append(f"- 市值查無、未剔除：{len(unk)} 檔——" + "；".join(f"{r.id} {r.代號}" for r in unk.itertuples()))
+    for v in VARS[1:]:
+        for mk in ("TW", "US"):
+            ids = set(TB[TB["市場"] == mk]["id"]); have = set(TH[(TH["版"] == v) & (TH["市場"] == mk) & (TH["H月"] == 60)]["id"])
+            miss = sorted(ids - have)
+            md.append(f"- {v} {mk}：可算主題 {len(have)}／{len(ids)}；不進統計：{('、'.join(miss)) or '無'}")
+    dl = TB[TB["進場順延日"].fillna(0) > 0].drop_duplicates(["id", "代號"])
+    md.append("- 進場順延：" + ("；".join(f"{r.id} {r.代號} 順延 {int(r.進場順延日)} 日到 {r.進場日}" for r in dl.itertuples()) or "無"))
+    # 每主題一列
+    md += ["", "## 每主題一列（60 月；括號 72 月；超額＝對大盤）", "",
+           "| id | 市場 | 結果 | 產業 | 燈亮月 | 代表股 R | 同業各檔 R（60 月） | 同業等權 R | 同業合計 R | 同業等權超額 | 設下限成員 | 設下限等權超額 | 大盤同期 | 狀態 |", "|" + "---|" * 14]
+    for cid in TB["id"].drop_duplicates():
+        a = TB[(TB["id"] == cid)]
+        r0 = a.iloc[0]
+
+        def th(v, H, c):
+            q = TH[(TH["版"] == v) & (TH["id"] == cid) & (TH["H月"] == H)]
+            return q.iloc[0][c] if len(q) else np.nan
+
+        def thm(v):
+            q = TH[(TH["版"] == v) & (TH["id"] == cid) & (TH["H月"] == 60)]
+            return q.iloc[0]["各檔"] if len(q) else "—"
+        rep = MB[(MB["版"] == "代表股版") & (MB["id"] == cid)].iloc[0]["代號"]
+        rr = a[(a["代號"] == rep)]
+        r60 = rr[rr["H月"] == 60]["R"]; r72 = rr[rr["H月"] == 72]["R"]
+        pm = MB[(MB["版"] == "同業等權版") & (MB["id"] == cid) & MB["入選"]]["代號"].tolist()
+        each = "／".join(f"{c} " + (f2(a[(a['代號'] == c) & (a['H月'] == 60)]['R'].iloc[0]) if len(a[(a['代號'] == c) & (a['H月'] == 60)]) and np.isfinite(a[(a['代號'] == c) & (a['H月'] == 60)]['R'].iloc[0]) else "資料不足") for c in pm)
+        stt = "；".join(sorted(set(a[(a["H月"] == 60) & a["代號"].isin(pm + [rep])]["狀態"].dropna())))
+        md.append(f"| {cid} | {r0['市場']} | {r0['結果']} | {r0['產業']} | {r0['燈亮月']} | {f2(r60.iloc[0] if len(r60) else np.nan)}（{f2(r72.iloc[0] if len(r72) else np.nan)}） | {each} | "
+                  f"{f2(th('同業等權版', 60, '等權R'))}（{f2(th('同業等權版', 72, '等權R'))}） | {f2(th('同業等權版', 60, '合計R'))}（{f2(th('同業等權版', 72, '合計R'))}） | "
+                  f"{f2(th('同業等權版', 60, '等權超額'))}（{f2(th('同業等權版', 72, '等權超額'))}） | {thm('設下限版')} | "
+                  f"{f2(th('設下限版', 60, '等權超額'))}（{f2(th('設下限版', 72, '等權超額'))}） | {f2(th('同業等權版', 60, '等權大盤'))} | {stt} |")
+    md += ["", f"> ⚠ {QUAL}", "", f"{WARN}"]
     open(os.path.join(OUT, "summary.md"), "w", encoding="utf-8").write("\n".join(md) + "\n")
 
 

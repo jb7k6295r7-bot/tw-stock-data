@@ -1,0 +1,271 @@
+﻿版,id,市場,代號,名稱,名次,角色,入選,註
+代表股版,K01,TW,3576,新日光 3576,,代表股,True,
+同業等權版,K01,TW,6244,茂迪,1,名次1,True,
+同業等權版,K01,TW,3514,昱晶,2,名次2,True,
+同業等權版,K01,TW,3576,新日光,3,名次3,True,
+設下限版,K01,TW,6244,茂迪,1,名次1,True,過下限
+設下限版,K01,TW,3514,昱晶,2,名次2,True,過下限
+設下限版,K01,TW,3576,新日光,3,名次3,True,過下限
+代表股版,K02,US,U,U（UNITY SOFTWARE INC）,,代表股,True,
+同業等權版,K02,US,U,Unity Software,1,名次1,True,
+設下限版,K02,US,U,Unity Software,1,名次1,True,查無、未剔除
+代表股版,K03,TW,2448,晶電 2448,,代表股,True,
+同業等權版,K03,TW,2448,晶電,1,名次1,True,
+設下限版,K03,TW,2448,晶電,1,名次1,True,過下限
+代表股版,K04,US,NUE,NUE（NUCOR CORP）,,代表股,True,
+同業等權版,K04,US,GGB,Gerdau S.A. (ADR),1,名次1,True,
+同業等權版,K04,US,TMST,TimkenSteel Corp,2,名次2,True,
+同業等權版,K04,US,TX,Ternium S.A. (ADR),3,名次3,True,
+設下限版,K04,US,GGB,Gerdau S.A. (ADR),1,名次1,True,查無、未剔除
+設下限版,K04,US,TMST,TimkenSteel Corp,2,名次2,True,查無、未剔除
+設下限版,K04,US,TX,Ternium S.A. (ADR),3,名次3,True,查無、未剔除
+代表股版,K05,US,ALB,ALB（ALBEMARLE CORP）,,代表股,True,
+同業等權版,K05,US,ALB,Albemarle Corp,1,名次1,True,
+同業等權版,K05,US,FMC,FMC Corp,2,名次2,True,
+設下限版,K05,US,ALB,Albemarle Corp,1,名次1,True,過下限
+設下限版,K05,US,FMC,FMC Corp,2,名次2,True,過下限
+代表股版,K06,TW,2498,宏達電 2498,,代表股,True,
+同業等權版,K06,TW,2498,宏達電,1,名次1,True,
+同業等權版,K06,TW,8078,華寶,2,名次2,True,
+設下限版,K06,TW,2498,宏達電,1,名次1,True,過下限
+設下限版,K06,TW,8078,華寶,2,名次2,True,過下限
+代表股版,K07,US,ZIM,ZIM（ZIM INTEGRATED SHIPPING）,,代表股,True,
+同業等權版,K07,US,ATCO,Atlas Corp（Seaspan）,1,名次1,True,
+同業等權版,K07,US,CMRE,Costamare Inc,2,名次2,True,
+同業等權版,K07,US,DAC,Danaos Corp,3,名次3,True,
+設下限版,K07,US,ATCO,Atlas Corp（Seaspan）,1,名次1,True,查無、未剔除
+設下限版,K07,US,CMRE,Costamare Inc,2,名次2,True,查無、未剔除
+設下限版,K07,US,DAC,Danaos Corp,3,名次3,True,查無、未剔除
+代表股版,K08,US,LLY,LLY（ELI LILLY & CO）,,代表股,True,
+同業等權版,K08,US,NVO,Novo Nordisk A/S (ADR),1,名次1,True,
+同業等權版,K08,US,LLY,Eli Lilly & Co,2,名次2,True,
+設下限版,K08,US,NVO,Novo Nordisk A/S (ADR),1,名次1,True,查無、未剔除
+設下限版,K08,US,LLY,Eli Lilly & Co,2,名次2,True,過下限
+代表股版,K09,US,ANET,ANET（ARISTA NETWORKS INC）,,代表股,True,
+同業等權版,K09,US,ANET,Arista Networks,1,名次1,True,
+同業等權版,K09,US,CSCO,Cisco Systems,2,名次2,True,
+同業等權版,K09,US,JNPR,Juniper Networks,3,名次3,True,
+設下限版,K09,US,ANET,Arista Networks,1,名次1,True,過下限
+設下限版,K09,US,CSCO,Cisco Systems,2,名次2,True,過下限
+設下限版,K09,US,JNPR,Juniper Networks,3,名次3,True,過下限
+代表股版,K10,US,DDD,DDD（3D SYSTEMS CORP）,,代表股,True,
+同業等權版,K10,US,DDD,3D Systems,1,名次1,True,
+同業等權版,K10,US,SSYS,Stratasys Ltd,2,名次2,True,
+同業等權版,K10,US,XONE,ExOne Co,3,名次3,True,
+設下限版,K10,US,DDD,3D Systems,1,名次1,True,查無、未剔除
+設下限版,K10,US,SSYS,Stratasys Ltd,2,名次2,True,查無、未剔除
+設下限版,K10,US,XONE,ExOne Co,3,名次3,True,查無、未剔除
+代表股版,K11,TW,2317,鴻海 2317,,代表股,True,
+同業等權版,K11,TW,2317,鴻海 2317（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K11,TW,2317,鴻海 2317（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K12,TW,2409,友達 2409,,代表股,True,
+同業等權版,K12,TW,3481,群創,1,名次1,True,
+同業等權版,K12,TW,2409,友達,2,名次2,True,
+設下限版,K12,TW,3481,群創,1,名次1,True,過下限
+設下限版,K12,TW,2409,友達,2,名次2,True,過下限
+代表股版,K13,TW,2408,南亞科 2408,,代表股,True,
+同業等權版,K13,TW,2408,南亞科,1,名次1,True,
+同業等權版,K13,TW,2344,華邦電,2,名次2,True,
+設下限版,K13,TW,2408,南亞科,1,名次1,True,過下限
+設下限版,K13,TW,2344,華邦電,2,名次2,True,過下限
+代表股版,K14,US,NVDA,NVDA（NVIDIA CORP）,,代表股,True,
+同業等權版,K14,US,NVDA,NVIDIA Corp,1,名次1,True,
+同業等權版,K14,US,AMD,Advanced Micro Devices,2,名次2,True,
+同業等權版,K14,US,INTC,Intel Corp,3,名次3,True,
+設下限版,K14,US,NVDA,NVIDIA Corp,1,名次1,True,過下限
+設下限版,K14,US,AMD,Advanced Micro Devices,2,名次2,True,過下限
+設下限版,K14,US,INTC,Intel Corp,3,名次3,True,過下限
+代表股版,K15,US,MU,MU（MICRON TECHNOLOGY INC）,,代表股,True,
+同業等權版,K15,US,MU,Micron Technology,1,名次1,True,
+設下限版,K15,US,MU,Micron Technology,1,名次1,True,過下限
+代表股版,K16,US,FSLR,FSLR（FIRST SOLAR INC）,,代表股,True,
+同業等權版,K16,US,FSLR,First Solar,1,名次1,True,
+同業等權版,K16,US,ENER,Energy Conversion Devices,2,名次2,True,
+設下限版,K16,US,FSLR,First Solar,1,名次1,True,查無、未剔除
+設下限版,K16,US,ENER,Energy Conversion Devices,2,名次2,True,查無、未剔除
+代表股版,K17,TW,2208,台船 2208,,代表股,True,
+同業等權版,K17,TW,2208,台船 2208（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K17,TW,2208,台船 2208（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K18,US,MU,MU（MICRON TECHNOLOGY INC）,,代表股,True,
+同業等權版,K18,US,MU,Micron Technology,1,名次1,True,
+設下限版,K18,US,MU,Micron Technology,1,名次1,True,過下限
+代表股版,K19,TW,2393,億光 2393,,代表股,True,
+同業等權版,K19,TW,2393,億光 2393（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K19,TW,2393,億光 2393（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K20,US,ALB,ALB（ALBEMARLE CORP）,,代表股,True,
+同業等權版,K20,US,LTHM,Livent Corp,1,名次1,True,
+同業等權版,K20,US,ALB,Albemarle Corp,2,名次2,True,
+設下限版,K20,US,LTHM,Livent Corp,1,名次1,True,查無、未剔除
+設下限版,K20,US,ALB,Albemarle Corp,2,名次2,True,過下限
+代表股版,K21,TW,8358,金居 8358,,代表股,True,
+同業等權版,K21,TW,8358,金居（更正：本案實為 AI 高階銅箔 HVLP 段，代表股 8358 金居；案例表誤標「T-glass／富喬」）,1,名次1,True,
+設下限版,K21,TW,8358,金居（更正：本案實為 AI 高階銅箔 HVLP 段，代表股 8358 金居；案例表誤標「T-glass／富喬」）,1,名次1,True,過下限
+代表股版,K22,TW,2330,台積電 2330,,代表股,True,
+同業等權版,K22,TW,2330,台積電,1,名次1,True,
+同業等權版,K22,TW,2303,聯電,2,名次2,True,
+同業等權版,K22,TW,6770,力積電,3,名次3,True,
+設下限版,K22,TW,2330,台積電,1,名次1,True,過下限
+設下限版,K22,TW,2303,聯電,2,名次2,True,過下限
+設下限版,K22,TW,6770,力積電,3,名次3,True,過下限
+代表股版,K23,US,OXY,OXY（OCCIDENTAL PETROLEUM CORP）,,代表股,True,
+同業等權版,K23,US,GTE,Gran Tierra Energy,1,名次1,True,
+同業等權版,K23,US,EGY,VAALCO Energy,2,名次2,True,
+設下限版,K23,US,GTE,Gran Tierra Energy,1,名次1,True,查無、未剔除
+設下限版,K23,US,EGY,VAALCO Energy,2,名次2,True,查無、未剔除
+代表股版,K24,TW,2327,國巨 2327,,代表股,True,
+同業等權版,K24,TW,2327,國巨,1,名次1,True,
+同業等權版,K24,TW,2492,華新科,2,名次2,True,
+設下限版,K24,TW,2327,國巨,1,名次1,True,過下限
+設下限版,K24,TW,2492,華新科,2,名次2,True,過下限
+代表股版,K25,US,SMCI,SMCI（SUPER MICRO COMPUTER INC）,,代表股,True,
+同業等權版,K25,US,SMCI,Super Micro Computer,1,名次1,True,
+同業等權版,K25,US,HPE,Hewlett Packard Enterprise,2,名次2,True,
+同業等權版,K25,US,DELL,Dell Technologies,3,名次3,True,
+設下限版,K25,US,SMCI,Super Micro Computer,1,名次1,True,過下限
+設下限版,K25,US,HPE,Hewlett Packard Enterprise,2,名次2,True,過下限
+設下限版,K25,US,DELL,Dell Technologies,3,名次3,True,查無、未剔除
+代表股版,K26,US,LAZR,LAZR（LUMINAR TECHNOLOGIES INC）,,代表股,True,
+同業等權版,K26,US,LAZR,Luminar Technologies（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K26,US,LAZR,Luminar Technologies（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,查無、未剔除
+代表股版,K27,US,MU,MU（MICRON TECHNOLOGY INC）,,代表股,True,
+同業等權版,K27,US,MU,Micron Technology,1,名次1,True,
+設下限版,K27,US,MU,Micron Technology,1,名次1,True,過下限
+代表股版,K28,TW,2731,雄獅 2731,,代表股,True,
+同業等權版,K28,TW,2731,雄獅,1,名次1,True,
+同業等權版,K28,TW,5706,鳳凰,2,名次2,True,
+設下限版,K28,TW,2731,雄獅,1,名次1,False,市值不足、剔除
+設下限版,K28,TW,5706,鳳凰,2,名次2,False,市值不足、剔除
+代表股版,K29,TW,1519,華城 1519,,代表股,True,
+同業等權版,K29,TW,1519,華城 1519（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K29,TW,1519,華城 1519（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K30,US,FSLR,FSLR（FIRST SOLAR INC）,,代表股,True,
+同業等權版,K30,US,FSLR,First Solar,1,名次1,True,
+設下限版,K30,US,FSLR,First Solar,1,名次1,True,過下限
+代表股版,K31,TW,6488,環球晶 6488,,代表股,True,
+同業等權版,K31,TW,6488,環球晶,1,名次1,True,
+設下限版,K31,TW,6488,環球晶,1,名次1,True,過下限
+代表股版,K32,TW,2327,國巨 2327,,代表股,True,
+同業等權版,K32,TW,2327,國巨,1,名次1,True,
+同業等權版,K32,TW,2492,華新科,2,名次2,True,
+設下限版,K32,TW,2327,國巨,1,名次1,True,過下限
+設下限版,K32,TW,2492,華新科,2,名次2,True,過下限
+代表股版,K33,US,CCJ,CCJ（CAMECO CORP）,,代表股,True,
+同業等權版,K33,US,URG,Ur-Energy Inc,1,名次1,True,
+同業等權版,K33,US,CCJ,Cameco Corp,2,名次2,True,
+同業等權版,K33,US,LEU,Centrus Energy,3,名次3,True,
+設下限版,K33,US,URG,Ur-Energy Inc,1,名次1,True,查無、未剔除
+設下限版,K33,US,CCJ,Cameco Corp,2,名次2,True,查無、未剔除
+設下限版,K33,US,LEU,Centrus Energy,3,名次3,True,查無、未剔除
+代表股版,K34,TW,2603,長榮 2603,,代表股,True,
+同業等權版,K34,TW,2603,長榮,1,名次1,True,
+設下限版,K34,TW,2603,長榮,1,名次1,True,過下限
+代表股版,K35,TW,6443,元晶 6443,,代表股,True,
+同業等權版,K35,TW,3576,聯合再生,1,名次1,True,
+同業等權版,K35,TW,6443,元晶,2,名次2,True,
+設下限版,K35,TW,3576,聯合再生,1,名次1,True,過下限
+設下限版,K35,TW,6443,元晶,2,名次2,True,過下限
+代表股版,K36,TW,2408,南亞科 2408,,代表股,True,
+同業等權版,K36,TW,2408,南亞科,1,名次1,True,
+同業等權版,K36,TW,2344,華邦電,2,名次2,True,
+同業等權版,K36,TW,6770,力積電,3,名次3,True,
+設下限版,K36,TW,2408,南亞科,1,名次1,True,過下限
+設下限版,K36,TW,2344,華邦電,2,名次2,True,過下限
+設下限版,K36,TW,6770,力積電,3,名次3,True,過下限
+代表股版,K37,TW,1101,台泥 1101,,代表股,True,
+同業等權版,K37,TW,1101,台泥,1,名次1,True,
+同業等權版,K37,TW,1102,亞泥,2,名次2,True,
+設下限版,K37,TW,1101,台泥,1,名次1,True,過下限
+設下限版,K37,TW,1102,亞泥,2,名次2,True,過下限
+代表股版,K38,US,CHPT,CHPT（CHARGEPOINT HOLDINGS INC）,,代表股,True,
+同業等權版,K38,US,BLNK,Blink Charging,1,名次1,True,
+同業等權版,K38,US,BEEM,Beam Global,2,名次2,True,
+設下限版,K38,US,BLNK,Blink Charging,1,名次1,True,查無、未剔除
+設下限版,K38,US,BEEM,Beam Global,2,名次2,True,查無、未剔除
+代表股版,K39,US,,Ørsted（ORSTED A/S，丹麥上市）,,代表股,True,
+同業等權版,K39,US,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,名次1,True,
+設下限版,K39,US,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,名次1,True,查無、未剔除
+代表股版,K40,US,LCID,LCID（LUCID GROUP INC）,,代表股,True,
+同業等權版,K40,US,LI,Li Auto Inc (ADR),1,名次1,True,
+同業等權版,K40,US,XPEV,XPeng Inc (ADR),2,名次2,True,
+同業等權版,K40,US,NIO,NIO Inc (ADR),3,名次3,True,
+設下限版,K40,US,LI,Li Auto Inc (ADR),1,名次1,True,查無、未剔除
+設下限版,K40,US,XPEV,XPeng Inc (ADR),2,名次2,True,查無、未剔除
+設下限版,K40,US,NIO,NIO Inc (ADR),3,名次3,True,查無、未剔除
+代表股版,K41,TW,2002,中鋼 2002,,代表股,True,
+同業等權版,K41,TW,2002,中鋼,1,名次1,True,
+同業等權版,K41,TW,2014,中鴻,2,名次2,True,
+設下限版,K41,TW,2002,中鋼,1,名次1,True,過下限
+設下限版,K41,TW,2014,中鴻,2,名次2,False,市值不足、剔除
+代表股版,K42,TW,2027,大成鋼 2027,,代表股,True,
+同業等權版,K42,TW,2002,中鋼,1,名次1,True,
+同業等權版,K42,TW,2027,大成鋼,2,名次2,True,
+設下限版,K42,TW,2002,中鋼,1,名次1,True,過下限
+設下限版,K42,TW,2027,大成鋼,2,名次2,True,過下限
+代表股版,K43,TW,2382,廣達 2382,,代表股,True,
+同業等權版,K43,TW,2382,廣達,1,名次1,True,
+同業等權版,K43,TW,3231,緯創,2,名次2,True,
+設下限版,K43,TW,2382,廣達,1,名次1,True,過下限
+設下限版,K43,TW,3231,緯創,2,名次2,True,過下限
+代表股版,K44,TW,3081,聯亞 3081,,代表股,True,
+同業等權版,K44,TW,3081,聯亞,1,名次1,True,
+同業等權版,K44,TW,4979,華星光,2,名次2,True,
+設下限版,K44,TW,3081,聯亞,1,名次1,True,過下限
+設下限版,K44,TW,4979,華星光,2,名次2,True,過下限
+代表股版,K45,TW,1909,榮成 1909,,代表股,True,
+同業等權版,K45,TW,1909,榮成,1,名次1,True,
+同業等權版,K45,TW,1904,正隆,2,名次2,True,
+同業等權版,K45,TW,1907,永豐餘,3,名次3,True,
+設下限版,K45,TW,1909,榮成,1,名次1,True,過下限
+設下限版,K45,TW,1904,正隆,2,名次2,True,過下限
+設下限版,K45,TW,1907,永豐餘,3,名次3,True,過下限
+代表股版,K46,TW,2498,宏達電 2498,,代表股,True,
+同業等權版,K46,TW,2498,宏達電 2498（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K46,TW,2498,宏達電 2498（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K47,TW,1802,台玻 1802,,代表股,True,
+同業等權版,K47,TW,1802,台玻 1802（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K47,TW,1802,台玻 1802（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K48,TW,9958,世紀鋼 9958,,代表股,True,
+同業等權版,K48,TW,9958,世紀鋼 9958（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K48,TW,9958,世紀鋼 9958（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限
+代表股版,K49,US,VRT,VRT（VERTIV HOLDINGS CO）,,代表股,True,
+同業等權版,K49,US,VRT,Vertiv Holdings,1,名次1,True,
+同業等權版,K49,US,MOD,Modine Manufacturing,2,名次2,True,
+設下限版,K49,US,VRT,Vertiv Holdings,1,名次1,True,過下限
+設下限版,K49,US,MOD,Modine Manufacturing,2,名次2,True,查無、未剔除
+代表股版,K50,US,CGC,CGC（CANOPY GROWTH CORP）,,代表股,True,
+同業等權版,K50,US,CGC,Canopy Growth Corp,1,名次1,True,
+同業等權版,K50,US,GWPH,GW Pharmaceuticals (ADR),2,名次2,True,
+同業等權版,K50,US,CRON,Cronos Group,3,名次3,True,
+設下限版,K50,US,CGC,Canopy Growth Corp,1,名次1,True,查無、未剔除
+設下限版,K50,US,GWPH,GW Pharmaceuticals (ADR),2,名次2,True,查無、未剔除
+設下限版,K50,US,CRON,Cronos Group,3,名次3,True,查無、未剔除
+代表股版,K51,US,PLUG,PLUG（PLUG POWER INC）,,代表股,True,
+同業等權版,K51,US,BE,Bloom Energy,1,名次1,True,
+同業等權版,K51,US,PLUG,Plug Power,2,名次2,True,
+同業等權版,K51,US,BLDP,Ballard Power Systems,3,名次3,True,
+設下限版,K51,US,BE,Bloom Energy,1,名次1,True,查無、未剔除
+設下限版,K51,US,PLUG,Plug Power,2,名次2,True,查無、未剔除
+設下限版,K51,US,BLDP,Ballard Power Systems,3,名次3,True,查無、未剔除
+代表股版,K52,TW,2049,上銀 2049,,代表股,True,
+同業等權版,K52,TW,2049,上銀 2049（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K52,TW,2049,上銀 2049（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,查無、未剔除
+代表股版,K53,TW,2548,營建股 2548,,代表股,True,
+同業等權版,K53,TW,2542,興富發,1,名次1,True,
+同業等權版,K53,TW,5522,遠雄,2,名次2,True,
+同業等權版,K53,TW,2548,華固,3,名次3,True,
+設下限版,K53,TW,2542,興富發,1,名次1,True,過下限
+設下限版,K53,TW,5522,遠雄,2,名次2,True,過下限
+設下限版,K53,TW,2548,華固,3,名次3,True,過下限
+代表股版,K54,US,ENPH,ENPH（ENPHASE ENERGY INC）,,代表股,True,
+同業等權版,K54,US,ENPH,Enphase Energy,1,名次1,True,
+設下限版,K54,US,ENPH,Enphase Energy,1,名次1,True,過下限
+代表股版,K55,TW,3596,智易 3596,,代表股,True,
+同業等權版,K55,TW,6285,啟碁,1,名次1,True,
+同業等權版,K55,TW,5388,中磊,2,名次2,True,
+同業等權版,K55,TW,3596,智易,3,名次3,True,
+設下限版,K55,TW,6285,啟碁,1,名次1,True,過下限
+設下限版,K55,TW,5388,中磊,2,名次2,True,過下限
+設下限版,K55,TW,3596,智易,3,名次3,True,過下限
+代表股版,K56,TW,2498,宏達電 2498,,代表股,True,
+同業等權版,K56,TW,2498,宏達電 2498（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,
+設下限版,K56,TW,2498,宏達電 2498（備援：查無占比 ⇒ 燈 1 點名公司）,1,名次1,True,過下限

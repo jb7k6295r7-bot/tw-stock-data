@@ -1,0 +1,53 @@
+id,代號,名稱,名次,主題占比或金額,出處網址,出處日期
+K02,U,Unity Software,1,100%（全公司為即時3D遊戲引擎平台；其中Create Solutions 29.9%、Operate Solutions 61.0%）；FY2020營收 $772.4M,https://www.sec.gov/Archives/edgar/data/1810806/000181080621000052/R52.htm,2021-03-05
+K04,GGB,Gerdau S.A. (ADR),1,"100%（四個分部皆為鋼鐵營運：Brazil/North America/South America/Special Steel；巴西分部內少量鐵礦未拆）；FY2019合併淨銷售 R$39,644M",https://www.sec.gov/Archives/edgar/data/1073404/000110465920041231/R34.htm,2020-03-31
+K04,TMST,TimkenSteel Corp,2,"100%（純特殊鋼棒/鋼管）；FY2019淨銷售 $1,208.8M",https://www.sec.gov/Archives/edgar/data/1598428/000159842820000017/R2.htm,2020-02-25
+K04,TX,Ternium S.A. (ADR),3,"Steel部門約99.9%（Steel $10,186.2M；Mining對外僅約$6.6M；合併$10,192.8M，FY2019）",https://www.sec.gov/Archives/edgar/data/1342874/000134287420000029/R81.htm,2020-04-09
+K05,ALB,Albemarle Corp,1,"鋰產品類別占13.9%（$508.8M / 總淨銷售$3,651.3M，FY2015）",https://www.sec.gov/Archives/edgar/data/915913/000091591316000041/R138.htm,2016-02-29
+K05,FMC,FMC Corp,2,"FMC Lithium部門占7.3%（$238.1M / $3,276.5M，FY2015）",https://www.sec.gov/Archives/edgar/data/0000037785/000003778516000081/fmc201510k.htm,2016-02-26
+K07,ATCO,Atlas Corp（Seaspan）,1,"100%（2019年營收全為Seaspan貨櫃船租賃；APR Energy 2020-02才併入）；FY2019營收 $1,131.5M",https://www.sec.gov/Archives/edgar/data/1794846/000095012320003292/R4.htm,2020-04-13
+K07,CMRE,Costamare Inc,2,100%（貨櫃船隊航租收入，2019年無散裝船）；FY2019 voyage revenue $478.1M,https://www.sec.gov/Archives/edgar/data/1503584/000093041320000573/R3.htm,2020-02-26
+K07,DAC,Danaos Corp,3,100%（貨櫃船租賃）；FY2019營收 $447.2M,https://www.sec.gov/Archives/edgar/data/1369241/000104746920001086/R4.htm,2020-02-27
+K08,NVO,Novo Nordisk A/S (ADR),1,"GLP-1產品（Ozempic+Rybelsus+Victoza+Wegovy+Saxenda）占56.6%（DKK 100,235M / 176,954M，FY2022）",https://www.sec.gov/Archives/edgar/data/353278/000162828023001868/R22.htm,2023-02-01
+K08,LLY,Eli Lilly & Co,2,"GLP-1產品（Trulicity+Mounjaro）占27.8%（$7,922.2M / $28,541.4M，FY2022）",https://www.sec.gov/Archives/edgar/data/59478/000005947823000082/R48.htm,2023-02-22
+K09,ANET,Arista Networks,1,"100%（單一部門，雲端/資料中心網路交換器產品＋服務）；FY2021營收 $2,948.0M",https://www.sec.gov/Archives/edgar/data/1596532/000159653222000026/R4.htm,2022-02-15
+K09,CSCO,Cisco Systems,2,"Secure, Agile Networks（交換器/無線/運算，含園區）占46.2%（$23,829M / $51,557M，FY2022/7）",https://www.sec.gov/Archives/edgar/data/858877/000085887722000013/R131.htm,2022-09-08
+K09,JNPR,Juniper Networks,3,"Cloud-Ready Data Center占15.4%（$727.1M / $4,735.4M，FY2021）",https://www.sec.gov/Archives/edgar/data/1043604/000104360422000017/R83.htm,2022-02-11
+K10,DDD,3D Systems,1,100%（純3D列印業務）；FY2012營收 $353.6M,https://www.sec.gov/Archives/edgar/data/910638/000119312513072822/R4.htm,2013-02-25
+K10,SSYS,Stratasys Ltd,2,100%（純3D列印業務）；FY2012營收 $215.2M,https://www.sec.gov/Archives/edgar/data/1517396/000120677413000975/R4.htm,2013-03-07
+K10,XONE,ExOne Co,3,100%（純3D列印業務）；FY2012營收 $28.7M,https://www.sec.gov/Archives/edgar/data/0001561627/000119312513134639/d508521d10k.htm,2013-03-29
+K14,NVDA,NVIDIA Corp,1,"Data Center市場占55.6%（$15,005M / $26,974M，FY2023/1）",https://www.sec.gov/Archives/edgar/data/1045810/000104581023000017/R88.htm,2023-02-24
+K14,AMD,Advanced Micro Devices,2,"Data Center部門（含Instinct加速器與EPYC CPU）占25.6%（$6,043M / $23,601M，FY2022）",https://www.sec.gov/Archives/edgar/data/2488/000000248823000047/R70.htm,2023-02-27
+K14,INTC,Intel Corp,3,"AXG（Accelerated Computing Systems and Graphics）部門占1.3%（$837M / $63,054M，FY2022）",https://www.sec.gov/Archives/edgar/data/50863/000005086323000006/R49.htm,2023-01-27
+K15,MU,Micron Technology,1,"DRAM 70.6%（$10,978M / $15,540M，FY2023）",https://www.sec.gov/Archives/edgar/data/723125/000072312523000054/R99.htm,2023-10-06
+K16,FSLR,First Solar,1,約100%（10-K稱幾乎全部銷售為CdTe薄膜模組；未分部門）；FY2007淨銷售 $504.0M（金額取自同期 8-K 財報新聞稿）,https://www.sec.gov/Archives/edgar/data/0001274494/000095015308000367/p75017e10vk.htm,2008-02-21
+K16,ENER,Energy Conversion Devices,2,United Solar Ovonic（薄膜非晶矽太陽能）部門占總營收87%；FY2007(6月)總營收 $113.6M,https://www.sec.gov/Archives/edgar/data/0000032878/000003287807000062/form10k_fye2007.htm,2007-08-29
+K18,MU,Micron Technology,1,"DRAM 67.7%（$14,510M / $21,435M，FY2020）",https://www.sec.gov/Archives/edgar/data/723125/000072312520000082/R91.htm,2020-10-19
+K20,LTHM,Livent Corp,1,100%（純鋰化合物業務）；FY2020營收 $288.2M,https://www.sec.gov/Archives/edgar/data/1742924/000174292421000016/R2.htm,2021-02-26
+K20,ALB,Albemarle Corp,2,"Lithium部門占36.6%（$1,144.8M / $3,128.9M，FY2020）",https://www.sec.gov/Archives/edgar/data/915913/000091591321000018/R124.htm,2021-02-19
+K23,GTE,Gran Tierra Energy,1,100%（損益表唯一營收線為Oil sales）；FY2020 $237.8M,https://www.sec.gov/Archives/edgar/data/1273441/000127344121000007/R2.htm,2021-02-25
+K23,EGY,VAALCO Energy,2,原油銷售占99.8%（客戶合約營收$67.0M全為原油／總營收淨額$67.2M，FY2020）,https://www.sec.gov/Archives/edgar/data/894627/000089462721000007/R52.htm,2021-03-09
+K25,SMCI,Super Micro Computer,1,"Server and storage systems占92.2%（$6,569.8M / $7,123.5M，FY2023/6）",https://www.sec.gov/Archives/edgar/data/1375365/000137536523000036/R52.htm,2023-08-28
+K25,HPE,Hewlett Packard Enterprise,2,"伺服器部門（Compute $12,519M＋HPC & AI $3,078M）占54.7%（總$28,496M，FY2022/10）；若只算HPC & AI則10.8%",https://www.sec.gov/Archives/edgar/data/1645590/000164559022000071/R53.htm,2022-12-08
+K25,DELL,Dell Technologies,3,"ISG Servers and networking占19.9%（$20,398M / $102,301M，FY2023/2）",https://www.sec.gov/Archives/edgar/data/1571996/000157199623000007/R128.htm,2023-03-30
+K26,LAZR,Luminar Technologies（備援：查無占比 ⇒ 燈 1 點名公司）,1,查無（燈亮月前無 10-K）,,
+K27,MU,Micron Technology,1,"DRAM 58%＋NAND 37%＝95%（FY2016，總淨銷售$12,399M）",https://www.sec.gov/Archives/edgar/data/0000723125/000072312516000269/a2016q4.htm,2016-10-28
+K30,FSLR,First Solar,1,"Modules部門占79.7%（$2,331.4M / 總淨銷售$2,923.4M，FY2021）",https://www.sec.gov/Archives/edgar/data/1274494/000127449422000009/R83.htm,2022-03-01
+K33,URG,Ur-Energy Inc,1,100%（營收全為U3O8銷售）；FY2020營收 $8.3M,https://www.sec.gov/Archives/edgar/data/1375205/000165495421002132/R3.htm,2021-02-26
+K33,CCJ,Cameco Corp,2,"Uranium部門占78.4%（C$1,411.8M / C$1,800.1M，FY2020）",https://www.sec.gov/Archives/edgar/data/1009001/000119312521087174/R121.htm,2021-03-19
+K33,LEU,Centrus Energy,3,產品營收（濃縮SWU $151.5M＋鈾 $39.0M）占77.1%（$190.5M / $247.2M，FY2020）,https://www.sec.gov/Archives/edgar/data/1065059/000106505921000009/R94.htm,2021-03-22
+K38,BLNK,Blink Charging,1,100%（營收全為充電服務/充電樁銷售/網路費等）；FY2020營收 $6.230M,https://www.sec.gov/Archives/edgar/data/1429764/000149315221007550/R4.htm,2021-03-31
+K38,BEEM,Beam Global,2,100%（EV ARC太陽能充電基礎設施，單一營收線）；FY2020營收 $6.210M,https://www.sec.gov/Archives/edgar/data/1398805/000168316821001097/R4.htm,2021-03-30
+K39,DNNGY,Ørsted ADR（備援：查無占比 ⇒ 燈 1 點名公司；OTC）,1,查無（非美國上市）,,
+K40,LI,Li Auto Inc (ADR),1,"Vehicle sales占98.2%（RMB 9,282.7M / 9,456.6M，FY2020）",https://www.sec.gov/Archives/edgar/data/1791706/000110465921034154/R4.htm,2021-03-10
+K40,XPEV,XPeng Inc (ADR),2,"Vehicle sales占94.9%（RMB 5,546.8M / 5,844.3M，FY2020）",https://www.sec.gov/Archives/edgar/data/1810997/000119312521118515/R4.htm,2021-04-16
+K40,NIO,NIO Inc (ADR),3,"Vehicle sales占93.4%（RMB 15,182.5M / 16,257.9M，FY2020）",https://www.sec.gov/Archives/edgar/data/1736541/000110465921046834/R4.htm,2021-04-06
+K49,VRT,Vertiv Holdings,1,"100%（電力/散熱關鍵基礎設施、整合機櫃、服務與備品；含電信/工業用）；FY2022淨銷售 $5,691.5M",https://www.sec.gov/Archives/edgar/data/1674101/000162828023005248/R59.htm,2023-02-27
+K49,MOD,Modine Manufacturing,2,"Data Center Cooling產品群占6.7%（$154.0M / $2,297.9M，FY2023/3）",https://www.sec.gov/Archives/edgar/data/67347/000114036123026536/R61.htm,2023-05-25
+K50,CGC,Canopy Growth Corp,1,100%（單一部門，大麻種植與銷售）；FY2018/3營收 C$77.9M,https://www.sec.gov/Archives/edgar/data/1737927/000156459018016393/cgc-ex992_176.htm,2018-06-28
+K50,GWPH,GW Pharmaceuticals (ADR),2,約100%（業務為大麻素處方藥，Sativex等；20-F未另拆）；FY2017/9營收 £8.2M（約US$11.0M）,https://www.sec.gov/Archives/edgar/data/0001351288/000114420417062057/tv480101-20f.htm,2017-12-04
+K50,CRON,Cronos Group,3,100%（大麻產品銷售）；FY2017產品銷售 C$4.1M,https://www.sec.gov/Archives/edgar/data/1656472/000119312518140678/d552281dex992.htm,2018-04-30
+K51,BE,Bloom Energy,1,100%（單一部門燃料電池 Energy Server）；FY2019營收 $785.2M,https://www.sec.gov/Archives/edgar/data/1664703/000166470320000013/R4.htm,2020-03-31
+K51,PLUG,Plug Power,2,100%（單一部門燃料電池系統與氫氣）；FY2019營收 $230.2M,https://www.sec.gov/Archives/edgar/data/1093691/000155837020002267/R4.htm,2020-03-10
+K51,BLDP,Ballard Power Systems,3,100%（單一部門 Fuel Cell Products and Services）；FY2019營收 $106.3M,https://www.sec.gov/Archives/edgar/data/1453015/000145301520000010/ballard40-f992123119mda.htm,2020-03-05
+K54,ENPH,Enphase Energy,1,"單一部門（微逆變器為核心的太陽能系統），10-K未拆微逆變器占比；FY2021營收 $1,382.0M",https://www.sec.gov/Archives/edgar/data/1463101/000146310122000016/R5.htm,2022-02-11
