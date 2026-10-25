@@ -43,7 +43,7 @@ from backtest.forward_us_smallpos import (Src, load_cal, load_px, load_tr, month
                                           US_REPO, REPO, nyse_holidays, next_td_pred)
 
 # ═════════════ 設定（主 session 依裁定／產業來信改這裡；每改一次記 runlog 沿革）═════════════
-APPROVED = None          # ⭐ 裁定核准 seq3／seq4 後改成裁定號字串（例 "seq474"）；None ⇒ 只乾跑、⛔ 不寫
+APPROVED = "seq474"   # 裁定 seq474（2026-10-25 16:01）核美股 seq3＋seq4；成本每邊 0.05%
 
 TAG = "美股小部位 v4 前瞻紀錄（登錄 seq3 sha b7d6948dc451af71＋seq4 sha 21561951bb6fc473；規則＝產業 v4.1 逐字字串 雜湊 f63147396ffc4ee9）"
 CARDS = {   # 代號: IB 全名、起點日（美股）、燈亮月、燈亮事件、主題與型別（卡片內容產業記、回測只讀，⛔ 不抄）

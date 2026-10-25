@@ -38,3 +38,7 @@
 ## 四、私有
 
 repo（book.csv／state.json／runlog.md）只放日期、份數、事件、狀態、報酬 %、K1 比值。價格與細項只寫 `~/us_work/forward_us/v4_fills.csv`（規則欄原始開盤價）、`v4_daily.csv`（逐日）、`v4_k1.csv`（K1 用的收盤、最低、^SP500TR 值）。
+
+## 沿革
+
+- 2026-10-25：裁定 seq474 核美股 seq3＋seq4（APPROVED＝seq474）；成本口徑裁定為**每邊 0.05%**（與 C11、ETN 簿一致；seq3 §二.8「0.05%」照此讀）。

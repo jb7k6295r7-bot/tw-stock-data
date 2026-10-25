@@ -128,15 +128,17 @@ def files(*ds):
 def main():
     T = tempfile.mkdtemp(prefix="v4_chk_")
     R = os.path.join(T, "root"); build(R)
-    ok("T0 常數 APPROVED 預設 None（未核）", F.APPROVED is None, repr(F.APPROVED))
+    ok("T0 常數 APPROVED＝seq474（裁定 2026-10-25 核）", F.APPROVED == "seq474", repr(F.APPROVED))
     # T1 未核
     fw, pv = os.path.join(T, "f1"), os.path.join(T, "p1")
     o = run(R, fw, pv, "2026-11-05", approved=None)
     ok("T1a 未核：任何檔都不寫（紀錄夾、私有夾都不存在）", not files(fw, pv) and o["dry"], str(files(fw, pv)))
     ok("T1b 未核：彙總標「未核…只乾跑」、最後行首「美股 v4 小部位：」", o["summary"].startswith("美股 v4 小部位：") and "未核（APPROVED=None）⇒ 只乾跑、不寫" in o["summary"])
     ok("T1c 未核：乾跑仍算得出起點列與 K1★（記憶體）", {r["event"] for r in o["new"]} >= {"起點買進", F.K1P, F.K1M}, str(sorted({r["event"] for r in o["new"]})))
-    o = F.run(F.Src(R), fw, pv, asof="2026-11-05", now=NOW, quiet=True)          # 用模組常數（None）
-    ok("T1d 不傳 approved ⇒ 用常數 None ⇒ 不寫", not files(fw, pv) and o["dry"])
+    _real = F.APPROVED; F.APPROVED = None
+    o = F.run(F.Src(R), fw, pv, asof="2026-11-05", now=NOW, quiet=True)          # 用模組常數（暫設 None）
+    F.APPROVED = _real
+    ok("T1d 不傳 approved ⇒ 用常數（暫設 None）⇒ 不寫", not files(fw, pv) and o["dry"])
 
     # T2 核後：逐晚跑 10/22～2027-01-29
     fA, pA = os.path.join(T, "fA"), os.path.join(T, "pA")
