@@ -43,6 +43,7 @@ from backtest.forward_us_smallpos import (Src, load_cal, load_px, load_tr, month
                                           US_REPO, REPO, nyse_holidays, next_td_pred)
 
 # ═════════════ 設定（主 session 依裁定／產業來信改這裡；每改一次記 runlog 沿革）═════════════
+VIRTUAL_NOTE = "⚠ 虛擬卡（使用者 10/26 01:0x 暫停新買，產業 seq48、裁定 seq478）：只追蹤、不計實際部位"
 APPROVED = "seq474"   # 裁定 seq474（2026-10-25 16:01）核美股 seq3＋seq4；成本每邊 0.05%
 
 TAG = "美股小部位 v4 前瞻紀錄（登錄 seq3 sha b7d6948dc451af71＋seq4 sha 21561951bb6fc473；規則＝產業 v4.1 逐字字串 雜湊 f63147396ffc4ee9）"
@@ -342,7 +343,7 @@ def run(src, fwd=FWD, priv=PRIV, asof=None, dry=False, now=None, quiet=False, ap
                      + (f" 規則 {pct(p.get('累計報酬'))}（^SP500TR {pct(p.get('^SP500TR同期'))}）" if p.get("_u") else "")
                      + (f" 實際 {pct(p.get('實際報酬'))}" if "實際報酬" in p else "") + f"｜{ktxt}")
     st["全部（規則欄）"] = {k: (pct(v) if k in ("累計報酬", "^SP500TR同期", "最大回落") else v) for k, v in port.items() if not k.startswith("_")}
-    summ = (f"美股 v4 小部位：資料日 {D.date()}｜資料 {commit[:10]}｜"
+    summ = (f"美股 v4 小部位：資料日 {D.date()}｜資料 {commit[:10]}｜{VIRTUAL_NOTE}｜"
             + (f"核准 {approved}" if not gate else "未核（APPROVED=None）⇒ 只乾跑、不寫")
             + f"｜新增 {len(new)} 列｜" + "；".join(parts)
             + (f"｜全部照規則 {pct(port.get('累計報酬'))}、^SP500TR {pct(port.get('^SP500TR同期'))}" if port.get("_u") else "")
