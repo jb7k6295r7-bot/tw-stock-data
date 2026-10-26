@@ -1,11 +1,11 @@
-# 端點偵察 2026-10-24T23:40:36+08:00 目標日 2026-10-23
-twse OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20261023&type=ALLBUT0999&response=json
+# 端點偵察 2026-10-27T00:56:57+08:00 目標日 2026-10-26
+twse OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20261026&type=ALLBUT0999&response=json
     bytes=71
     stat=很抱歉，沒有符合條件的資料!（休市或查無）
-tpex OK   https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/10/23&type=EW&id=&response=json
+tpex OK   https://www.tpex.org.tw/www/zh-tw/afterTrading/otc?date=2026/10/26&type=EW&id=&response=json
     bytes=665
     no_rows:空表（休市或無成交）
 emerging OK   https://www.tpex.org.tw/openapi/v1/tpex_esb_latest_statistics
     bytes=143385
-    ✗ 回應說它是 20261022，不是 2026-10-23 ⇒ 不採用（休市日端點回最近一個交易日）
+    ✗ 回應說它是 20261022，不是 2026-10-26 ⇒ 不採用（休市日端點回最近一個交易日）
   發行股數（上市，MI_QFIIS）：上市列的 shares 都已經有值（或今天沒有上市列）
