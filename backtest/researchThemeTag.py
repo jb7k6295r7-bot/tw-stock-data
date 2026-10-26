@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """主題標籤能否替營量、營飆加分 seq1（台股策略線 0328，sha b2e6be286b41a9ad；裁定 seq478 §五 核）——【②普查標籤】正式描述程式。
-回測線計算子代理，2026-10-26 03:45（台北）起草。前瞻＋描述、⛔ 不判、⛔ 不計 N；三種標籤分開報、⛔ 不合併（本檔只做②普查；①前瞻 2027-11-30、③盲判 seq2 另寫）。
+回測線計算子代理，2026-10-26 03:45（台北）起草。前瞻＋描述、⛔ 不判、⛔ 不計 N；標籤分開報、⛔ 不合併。
+⭐ 裁定 seq480 §三（2026-10-27 00:41）：③盲判標籤撤掉；正式跑範圍 ＝ ②普查標籤（描述，筆數不足照標）＋①前瞻標籤（主，2026-11 起每月記筆數）。
+   本檔：②普查 正式描述（--ruling seq480）＋①前瞻 每月筆數骨架（⛔ 不讀報酬）。
 ⛔ 不 commit、不改既有檔（策略鎖內營量／營飆程式一字不動；resultsYFallin、resultsThemeTag/freq 只讀）。
 
     乾跑（R 全 0，seq459 §一；⛔ seq366 不准含報酬的試跑或子樣本）：
@@ -23,10 +25,16 @@
     算 主題 − 非主題 的 中位差 與 去最大 1 筆平均差；取 2.5／97.5 百分位；某次主題或非主題為空（或去最大 1 筆後為空）⇒ 該次跳過、照報跳過次數。
  F6 描述句（登錄 §四）：「主題組筆數 ≥ 30，且主題組超額中位、平均（去掉最大 1 筆後）都高於非主題組與隨機組」——以大盤欄判
     ★ 「平均（去掉最大 1 筆後）」只修飾平均；中位用全部筆數；隨機組用 F4 的 1,000 次中位〔另一讀法：中位也去掉最大 1 筆〕。
-    主題組 ＜ 30 ⇒ 寫「筆數不足」；否則「成立」／「不成立」。⛔ 不寫「有效」。
+    主題組 ＜ 30 ⇒ 寫「筆數不足、不下描述結論」（數字照列）；否則「成立」／「不成立」。⛔ 不寫「有效」。
  F7 乾跑：⛔ 不讀 amt_out／cost、⛔ 不算任何價格比；R、大盤、0050 全設 0；只驗：配對鍵存在（buy 列＝(帳,代號,進場t)、sell 列＝(帳,代號,出場t)）、
     大盤與 0050 序列涵蓋所有需要的日期、抽樣與自助法流程跑通、F3 函式用合成數字 fixture 驗算。輸出到 resultsThemeTag/dry/（標「乾跑 R 全 0」）。
-輸出（正式）backtest/resultsThemeTag/census/：rows.csv（每筆 R、大盤、0050、超額）、stats.csv、ci.csv、summary.md、run.json、run.log
+ F8 ①前瞻標籤骨架（seq480 §三；只記筆數、⛔ 不讀任何價格或報酬欄）：
+    名單 ＝ backtest/forward/frontier/period01_main.md（第 1 期，sha16 30e87e3eb701136f，§二表「公司」欄 4 碼、括號內不計分者不算，＝ 42 家）
+         ＋ period01_supp.md（增補，sha16 db0aab7b8a76ef1f，§一表最後一欄 4 碼，＝ 7 家；6664 群翊兩期都有 ⇒ 聯集 48 家）；sha 不符即停。
+    ★ 凍結日：第 1 期 2026-10-26（裁定 seq478 §四存證）、增補 2026-10-27（裁定 seq480 §四存證）；某期只用於 進場日 ＞ 凍結日 的進場〔另一讀法：用 README 起點 10/27 開盤〕。
+    ★ 前瞻進場來源 ＝ backtest/forward/yl_rule/positions.csv（營量 v1／營飆 v1「照規則」欄，forward_yl.py；只讀 策略、代號、進場日 三欄）、進場日 ≥ 2026-11-01
+       〔另一讀法：每日名單 resultsDaily 的 A 名單〕。每月一行：月、策略、可用期別、主題組筆數、全部筆數。目前 0 個月（照寫）。
+輸出（正式）backtest/resultsThemeTag/main/：rows.csv（每筆 R、大盤、0050、超額）、stats.csv、ci.csv、forward.csv、summary.md、run.json、run.log
 """
 from __future__ import annotations
 
@@ -186,6 +194,137 @@ def boot(Es, col, ycol):
     return {"中位差CI": q(dm), "去最大1筆平均差CI": q(dt), "有效次數": len(dm), "跳過": skip}
 
 
+FRONT = os.path.join(B, "forward", "frontier")
+PERIODS = [  # (期別, 檔, sha16, 家數, 凍結日)
+    ("第1期", "period01_main.md", "30e87e3eb701136f", 42, "2026-10-26"),
+    ("第1期增補", "period01_supp.md", "db0aab7b8a76ef1f", 7, "2026-10-27"),
+]
+FWD_SRC = os.path.join(B, "forward", "yl_rule", "positions.csv")
+FWD_FROM = "2026-11-01"
+FWD_STRAT = {"營量v1": "營量", "營飆v1": "營飆"}
+
+
+def _codes_main(txt):
+    sec = txt.split("## 二、", 1)[1].split("## 三、", 1)[0]
+    c = set()
+    for ln in sec.splitlines():
+        if ln.startswith("|") and not ln.startswith("|---") and "| 組 |" not in ln:
+            cells = [x.strip() for x in ln.strip().strip("|").split("|")]
+            c |= set(re.findall(r"(?<!\d)(\d{4})(?!\d)", re.sub(r"（[^）]*）", "", cells[2])))
+    return c
+
+
+def _codes_supp(txt):
+    sec = txt.split("## 一、", 1)[1].split("## 二、", 1)[0]
+    c = set()
+    for ln in sec.splitlines():
+        if ln.startswith("|") and not ln.startswith("|---") and "| 名次 |" not in ln:
+            cells = [x.strip() for x in ln.strip().strip("|").split("|")]
+            c |= set(re.findall(r"(?<!\d)(\d{4})(?!\d)", cells[-1]))
+    return c
+
+
+def frontier_lists():
+    import hashlib
+    L = []
+    for name, f, h16, n, fz in PERIODS:
+        raw = open(os.path.join(FRONT, f), "rb").read()
+        h = hashlib.sha256(raw).hexdigest()[:16]
+        txt = raw.decode("utf-8")
+        c = _codes_main(txt) if f.endswith("main.md") else _codes_supp(txt)
+        log(f"[前瞻名單] {name} {f} sha16 {h}（應 {h16}）、{len(c)} 家（應 {n}）、凍結日 {fz}")
+        assert h == h16 and len(c) == n, (name, h, len(c))
+        L.append((name, fz, c))
+    log(f"[前瞻名單] 聯集 {len(set().union(*[c for _, _, c in L]))} 家")
+    return L
+
+
+def forward_count(P, L, upto=None):
+    """P：DataFrame(策略, 代號, 進場日)；回每月一行。只數筆數。"""
+    P = P[P["進場日"] >= FWD_FROM]
+    if upto:
+        P = P[P["進場日"] <= upto]
+    rows = []
+    for (m, st), g in P.groupby([P["進場日"].str[:7], "策略"]):
+        tagged, used = 0, set()
+        for sid, d in zip(g["代號"], g["進場日"]):
+            ok = [(nm, c) for nm, fz, c in L if fz < d]
+            used |= {nm for nm, _ in ok}
+            tagged += any(sid in c for _, c in ok)
+        rows.append({"月": m, "策略": st, "可用期別": "＋".join(sorted(used)), "主題組": tagged, "全部": len(g)})
+    return pd.DataFrame(rows, columns=["月", "策略", "可用期別", "主題組", "全部"])
+
+
+def forward_fixture(L):
+    fake = pd.DataFrame({"策略": ["營量", "營量", "營飆", "營量", "營量"], "代號": ["2330", "4722", "4722", "9999", "2330"],
+                         "進場日": ["2026-11-03", "2026-11-04", "2026-12-01", "2026-11-05", "2026-10-28"]})
+    F = forward_count(fake, L)
+    a = F[(F["月"] == "2026-11") & (F["策略"] == "營量")].iloc[0]
+    b = F[(F["月"] == "2026-12") & (F["策略"] == "營飆")].iloc[0]
+    assert (a["主題組"], a["全部"], b["主題組"], b["全部"]) == (2, 3, 1, 1) and len(F) == 2
+    L2 = [("X", "2026-11-04", {"4722"})]
+    assert forward_count(fake.iloc[[1]], L2)["主題組"].tolist() == [0]          # 凍結日當天進場 ⇒ 不可用
+    log("[fixture] 前瞻計數 合成資料驗算 過（10/28 進場不入；凍結日當天不可用）")
+
+
+def forward_part(out):
+    L = frontier_lists()
+    forward_fixture(L)
+    P = pd.read_csv(FWD_SRC, usecols=["策略", "代號", "進場日"], dtype=str, encoding="utf-8-sig")
+    P["策略"] = P["策略"].map(FWD_STRAT)
+    assert P["策略"].notna().all()
+    F = forward_count(P, L)
+    F.to_csv(os.path.join(out, "forward.csv"), index=False)
+    log(f"[前瞻] 來源 {FWD_SRC}：{len(P)} 筆、進場日 {P['進場日'].min()}～{P['進場日'].max()}；≥{FWD_FROM} 的月數 {F['月'].nunique()}")
+    return F, L
+
+
+def _p(x):
+    return "—" if x is None or (isinstance(x, float) and np.isnan(x)) else f"{x * 100:+.1f}%"
+
+
+def summary(mode, dry, sent, S, C, FW, FL, nmiss, nE):
+    V = {"寬": "寬鬆", "嚴": "嚴格"}
+    L = [f"# 主題標籤能否替營量、營飆加分 seq1｜②普查標籤 描述＋①前瞻骨架｜{mode}", f"<p align=\"right\">{TIME} 起草・回測線計算子代理</p>", ""]
+    if dry:
+        L += ["> ⚠ 乾跑：R、大盤、0050 全設 0，下表數字全部無意義，只驗流程。", ""]
+    else:
+        L += ["> 前瞻＋描述、⛔ 不判、⛔ 不計 N（裁定 seq478 §五、seq480 §三）。③盲判標籤已撤（seq480）。",
+              "> ⚠ 普查只涵蓋 11 個產業、蒐集有事後偏差；營量、營飆這段歷史本線看過 ⇒ 只描述。寬嚴照標，⛔ 不寫成「保守～樂觀」。", ""]
+    L += ["## 一、描述句（登錄 §四；大盤欄）", "", "| 策略 | 版 | 結果 |", "|---|---|---|"]
+    for k, x in sent.items():
+        st, v = k.split("_")
+        L.append(f"| {st} | {V[v]} | {x} |")
+    L += ["", f"- 母體 2021-01～2026-09 進場、持有完整或停止交易強制出場 {nE} 筆；未滿（未到、不入分母）{nmiss} 筆。超額 ＝ 還原含息 R（扣 0.585%）− 同期基準。", ""]
+    for bn, title in (("大盤", "二、超額對大盤報酬指數（主）"), ("0050", "三、超額對 0050（副欄）")):
+        L += [f"## {title}", "", "| 策略 | 版 | 組 | 筆數 | 中位 | 平均 | 去最大 1 筆平均 | 勝率 |", "|---|---|---|---|---|---|---|---|"]
+        for _, r in S[S["基準"] == bn].iterrows():
+            n = "" if pd.isna(r["筆數"]) else f"{int(r['筆數'])}"
+            w = "—" if pd.isna(r["勝率"]) else (f"{r['勝率'] * 100:.0f}%" if not r["組"].startswith("差") else f"{r['勝率'] * 100:+.0f} pp")
+            L.append(f"| {r['策略']} | {V[r['版']]} | {r['組']} | {n} | {_p(r['中位'])} | {_p(r['平均'])} | {_p(r['去最大1筆平均'])} | {w} |")
+        L.append("")
+    L += ["## 四、主題 − 非主題 月群自助法區間（2,000 次，只描述）", "",
+          "| 策略 | 版 | 基準 | 中位差 2.5～97.5% | 去最大 1 筆平均差 2.5～97.5% | 有效次數／跳過 | 主題組月群／全部月群 |", "|---|---|---|---|---|---|---|"]
+    for _, r in C.iterrows():
+        L.append(f"| {r['策略']} | {V[r['版']]} | {r['基準']} | {_p(r['中位差CI_下'])}～{_p(r['中位差CI_上'])} | "
+                 f"{_p(r['去最大1筆平均差CI_下'])}～{_p(r['去最大1筆平均差CI_上'])} | {r['有效次數']}／{r['跳過']} | {r['主題組月群']}／{r['月群']} |")
+    L += ["", "- 主題組月群遠小於 24（〈四十九〉）⇒ 區間只描述、⛔ 不當推論。", "", "## 五、①前瞻標籤（主）每月筆數", ""]
+    L += [f"- 名單：{nm}（凍結日 {fz}，{len(c)} 家）" for nm, fz, c in FL]
+    L += [f"- 聯集 {len(set().union(*[c for _, _, c in FL]))} 家；只用進場日前已凍結的期別；來源 backtest/forward/yl_rule/positions.csv（照規則欄），2026-11 起。"]
+    if len(FW):
+        L += ["", "| 月 | 策略 | 可用期別 | 主題組 | 全部 |", "|---|---|---|---|---|"] + [
+            f"| {r['月']} | {r['策略']} | {r['可用期別']} | {r['主題組']} | {r['全部']} |" for _, r in FW.iterrows()]
+    else:
+        L += ["- **目前 0 個月**（照寫）。⛔ 不附報酬，2027-11-30 滿 12 個月才描述。"]
+    L += ["", "## 六、必附", "",
+          "- 營飆 ＝ 正式回測抽籤 r0 那一顆；營飆 2022 年 0 筆進場（大盤閘）。",
+          "- 0050 在 2025-06-11、06-16 無收盤（分割停牌）⇒ 用 06-10 收盤（★F2）。",
+          "- 普查燈 1 最晚 2024-09；8 季回看 ⇒ 2025 起進場被標到的機會逐年縮小。",
+          "- ★ 讀法 Q1～Q8（researchThemeTag_freq.py）、F0～F8（researchThemeTag.py）寫於看任何報酬之前。",
+          "- stats.csv、ci.csv、rows.csv（每筆）、forward.csv。"]
+    return L
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true")
@@ -195,7 +334,7 @@ def main():
     if not a.dry and not re.fullmatch(r"seq\d+", a.ruling or ""):
         print("⛔ 正式跑須帶 --ruling seqNNN（裁定號）；只准 --dry 乾跑。拒跑。", file=sys.stderr)
         return 2
-    out = a.out or os.path.join(B, "resultsThemeTag", "dry" if a.dry else "census")
+    out = a.out or os.path.join(B, "resultsThemeTag", "dry" if a.dry else "main")
     os.makedirs(out, exist_ok=True)
     t0 = time.time()
     mode = "乾跑（R 全 0）" if a.dry else f"正式（{a.ruling}）"
@@ -239,13 +378,14 @@ def main():
                               "有效次數": ci["有效次數"], "跳過": ci["跳過"], "月群": int(Es["月"].nunique()), "主題組月群": int(Es.loc[g, "月"].nunique())})
                 if bn == "大盤":
                     if th["筆數"] < 30:
-                        sent[f"{st}_{v}"] = f"筆數不足（主題組 {th['筆數']} 筆 ＜ 30）"
+                        sent[f"{st}_{v}"] = f"筆數不足、不下描述結論（主題組 {th['筆數']} 筆 ＜ 30）"
                     else:
                         okk = (th["中位"] > no["中位"] and th["中位"] > rm["中位"] and th["去最大1筆平均"] > no["去最大1筆平均"]
                                and th["去最大1筆平均"] > rm["去最大1筆平均"])
                         sent[f"{st}_{v}"] = "成立" if okk else "不成立"
             log(f"[{st}·{v}] 主題 {int(Es[col].sum())}／全部 {len(Es)}；隨機抽樣月 {len(groups)}（k＝n {deg}）；描述句 {sent[f'{st}_{v}']}")
     S = pd.DataFrame(srows); C = pd.DataFrame(crows)
+    FW, FL = forward_part(out)
     S.to_csv(os.path.join(out, "stats.csv"), index=False); C.to_csv(os.path.join(out, "ci.csv"), index=False)
     if a.dry:
         num = S[list(KEYS)].to_numpy(float)
@@ -256,13 +396,7 @@ def main():
     meta = {"模式": mode, "時間": TIME, "母體": len(E), "未到": nmiss, "描述句": sent, "種子": SEED, "抽樣次數": NDRAW, "自助次數": NBOOT,
             "大盤": f"data/history/market_tri.csv @ {PIN}", "0050": "researchV41EV.z50 @ " + PIN}
     json.dump(meta, open(os.path.join(out, "run.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    L = [f"# 主題標籤 seq1 ②普查標籤｜{mode}", "", ("> ⚠ 乾跑：R、大盤、0050 全設 0，下表數字全部無意義，只驗流程。" if a.dry else
-         "> 前瞻＋描述、⛔ 不判、⛔ 不計 N。普查有事後偏差、樣本本線看過 ⇒ 只描述。寬嚴照標、⛔ 不寫成保守～樂觀。"), "",
-         "| 策略 | 版 | 描述句（大盤欄） |", "|---|---|---|"]
-    for k, s in sent.items():
-        st, v = k.split("_")
-        L.append(f"| {st} | {'寬鬆' if v == '寬' else '嚴格'} | {s} |")
-    L += ["", "stats.csv（主題／非主題／同月隨機／差 × 大盤、0050）、ci.csv（月群自助法，只描述）、rows.csv（每筆）。"]
+    L = summary(mode, a.dry, sent, S, C, FW, FL, nmiss, len(E))
     open(os.path.join(out, "summary.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
     log(f"[完成] {time.time() - t0:.1f}s ⇒ {out}")
     open(os.path.join(out, "run.log"), "w", encoding="utf-8").write("\n".join(LOG) + "\n")
