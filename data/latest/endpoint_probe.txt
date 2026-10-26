@@ -1,4 +1,4 @@
-# 端點偵察 2026-10-27T00:56:57+08:00 目標日 2026-10-26
+# 端點偵察 2026-10-27T04:53:24+08:00 目標日 2026-10-26
 twse OK   https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date=20261026&type=ALLBUT0999&response=json
     bytes=71
     stat=很抱歉，沒有符合條件的資料!（休市或查無）
