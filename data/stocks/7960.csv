@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-10-27,7960,亞昕科技,emerging,,225,150,191.24,439728,84093583,,,,,均價/額推算,172.5,1

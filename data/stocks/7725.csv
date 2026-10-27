@@ -32,3 +32,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-10-20,7725,列特博,emerging,,,,,0,,,,,,無成交,,0
 2026-10-21,7725,列特博,emerging,,,,,0,,,,,,無成交,,0
 2026-10-22,7725,列特博,emerging,,,,,0,,,,,,無成交,,0
+2026-10-27,7725,列特博,emerging,,23,23,23,13,299,0.00,,,,均價/額推算,23,1
