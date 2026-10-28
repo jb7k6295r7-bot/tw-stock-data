@@ -14,8 +14,13 @@
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville --dry [--procs 3] [--limit N（煙霧測：隨機 N 檔，輸出 ~/grvwork/dry）]
         ⇒ 頻率表＋全部描述欄乾跑 → backtest/resultsGranville/freq/
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville --formal --ruling seq485
-        ⇒ 正式跑（⛔ 兩個旗標都要給、ruling 必須是 seq485，否則拒跑；⛔ 本次只准 --dry）→ backtest/resultsGranville/formal/
+        ⇒ 正式跑（⛔ 兩個旗標都要給、ruling 必須是 seq485，否則拒跑）→ backtest/resultsGranville/formal/
     自測：PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville_check
+
+沿革：2026-10-29 裁定 seq486 §三 核可正式跑（--formal --ruling seq485；★4、★8、★9、★11 主讀法核）；附註三項只加描述、⛔ 不改判定：
+   ① 超跌回歸結果句必寫各段配對率，另報配到／配不到兩群的市值十分位、產業分布（match_bias_*.csv）；
+   ② 買 3 結果句必寫「買 3 實際是極短線」（停損先到比例、持有中位），扣成本前後的影響照描述欄報（買點三格都報）；
+   ③ ★9 主格要走得完 ⇒ 結果句寫明各格截止的訊號日（＝ 資料尾往前 H＋1 根合併日曆）與截止後不進主格的件數。
 
 ══════════ 登錄寫死的（照抄，不改）══════════
  母體：上市＋上櫃普通股（排除 DR、ETF、權證、創新板）；含已下市。流動性：20 日均量 ≥ 500 張（訊號日前一交易日）。
@@ -147,7 +152,10 @@ NOTES = ["乾跑：未讀、未算、未存任何報酬、超額、勝率（seq3
          "乖離兩格要自己過去 ≥ 750 個 D 值才判 ⇒ 實際最早事件較晚（裁定 seq485 §二），各段可判比例照報",
          "買3 停損放在當天最低價（影片原版，裁定 seq485 §二 不改），停損先到比例照報",
          "早年上櫃日 K 2007-07 起；價格面板資料尾 2026-09-24（rerun17 H2D edc6f）",
-         "上市／上櫃以 meta 名冊 market（last_seen 值）分，轉市場者歸最後市場（陷阱 15）"]
+         "上市／上櫃以 meta 名冊 market（last_seen 值）分，轉市場者歸最後市場（陷阱 15）",
+         "沿革 seq486 §三：附註三項（超跌回歸配對率＋配到／配不到偏差、買 3 極短線＋扣成本影響、★9 截止訊號日）只加描述，不改判定"]
+RULING_NOTE = "seq486"
+BANNED = ("反向顯著", "顯著為負", "反向測到", "顯著反向")
 LOG: list = []
 
 
@@ -502,6 +510,125 @@ def dry_status(D):
     return pd.DataFrame(rows)
 
 
+# ═════════════ seq486 附註（只描述；自測直接呼叫）═════════════
+def _pct(x, signed=True, d=2):
+    if x is None or not np.isfinite(x):
+        return "—"
+    return f"{x * 100:+.{d}f}%" if signed else f"{x * 100:.1f}%"
+
+
+def cutoff_info(E, cell, CAL, CEND):
+    """★9：主格要 e＋H ≤ 資料尾（e ＝ t＋1）⇒ 截止訊號日 ＝ 合併日曆位置 CEND−H−1。"""
+    H = CAP if cell in BUY else HJ
+    tcut = CEND - H - 1
+    after = E[E["t"] > tcut] if len(E) else E
+    main = E[E["主格"]] if len(E) else E
+    return {"H": H, "截止訊號日": str(pd.Timestamp(CAL[tcut]).date()), "截止後不進主格事件": int(len(after)),
+            "主格最後訊號日": (str(main["date"].max()) if len(main) else "")}
+
+
+def match_bias(E):
+    """配到 vs 配不到（分母 ＝ 可進場且走得完）的市值十分位、產業分布（訊號日資訊，⛔ 無報酬）。回 (十分位列, 產業列, 摘要)。"""
+    dec_rows, ind_rows = [], []
+    summ = {"配對率": {}, "段": {}}
+    if not len(E) or "市值十分位" not in E.columns:
+        return dec_rows, ind_rows, summ
+    base = E[(E["進場"] == "保留") & E["走得完"]]
+    for nm, _, _ in SEGS:
+        b = base[base["段"] == nm]
+        mk = (b["配對"] == "配到").to_numpy(bool)
+        summ["配對率"][nm] = {"分母": int(len(b)), "配到": int(mk.sum()), "率": (float(mk.mean()) if len(b) else None)}
+        sd = {}
+        shares = {}
+        for gk, z in (("配到", b[mk]), ("配不到", b[~mk])):
+            d = pd.to_numeric(z["市值十分位"], errors="coerce").fillna(-1).astype(int).to_numpy()
+            cnt = Counter(d.tolist()); n = len(z); ok_ = d[d >= 1]
+            for k in list(range(1, 11)) + [-1]:
+                dec_rows.append({"段": nm, "群": gk, "市值十分位": ("不可算" if k == -1 else k), "件數": int(cnt.get(k, 0)),
+                                 "比例": (cnt.get(k, 0) / n) if n else None})
+            ind = z["產業"].fillna("").replace("", "無產業")
+            ic = Counter(ind.tolist())
+            shares[gk] = {k: v / n for k, v in ic.items()} if n else {}
+            for k, v in sorted(ic.items(), key=lambda kv: -kv[1]):
+                ind_rows.append({"段": nm, "群": gk, "產業": k, "件數": int(v), "比例": v / n if n else None})
+            sd[gk] = {"n": int(n), "十分位平均": (float(ok_.mean()) if len(ok_) else np.nan),
+                      "十分位中位": (float(np.median(ok_)) if len(ok_) else np.nan),
+                      "小市值(1～3)比例": (float((ok_ <= 3).sum() / n) if n else np.nan),
+                      "大市值(8～10)比例": (float((ok_ >= 8).sum() / n) if n else np.nan),
+                      "十分位不可算比例": (float((d < 1).sum() / n) if n else np.nan)}
+        keys = set(shares["配到"]) | set(shares["配不到"])
+        tv = 0.5 * sum(abs(shares["配到"].get(k, 0.0) - shares["配不到"].get(k, 0.0)) for k in keys) if (shares["配到"] and shares["配不到"]) else np.nan
+        allind = b["產業"].fillna("").replace("", "無產業")
+        top = sorted(keys, key=lambda k: -(shares["配不到"].get(k, 0.0) - shares["配到"].get(k, 0.0)))[:3]
+        sd["產業總變異距離"] = float(tv) if np.isfinite(tv) else np.nan
+        sd["配不到偏多產業"] = [{"產業": k, "配不到中比例": shares["配不到"].get(k, 0.0), "配到中比例": shares["配到"].get(k, 0.0),
+                           "該產業配對率": float(mk[(allind == k).to_numpy()].mean()) if (allind == k).any() else None} for k in top]
+        summ["段"][nm] = sd
+    return dec_rows, ind_rows, summ
+
+
+def short_info(M, cost):
+    """買點格：停損先到（含同日）比例、持有中位、訊號筆扣成本前後平均（各段與全部）。"""
+    out = {}
+    if M is None or not len(M):
+        return out
+    for nm in [s[0] for s in SEGS] + ["全部"]:
+        q = M if nm == "全部" else M[M["段"] == nm]
+        if not len(q):
+            continue
+        net = q["訊號淨"].to_numpy(float)
+        out[nm] = {"n": int(len(q)), "停損先到(含同日)": float(q["出場原因"].str.startswith(("停損先到", "同日兩者")).mean()),
+                   "持有中位": float(np.median(q["持有天數"].to_numpy(float))), "扣成本前平均": float(np.nanmean(net + cost)),
+                   "扣成本後平均": float(np.nanmean(net)), "超額平均": float(np.nanmean(q["X"].to_numpy(float)))}
+    return out
+
+
+def result_sentence(cell, ss, vd, info):
+    """結果句（seq486 §三 附註必寫句都在這裡）。ss：{段: {n, months, mean, lo, hi}}（超漲已取負）。"""
+    P = []
+    P.append(f"{cell}：{vd}" + ("（買點格最多暫定）" if cell in BUY else ""))
+    P.append("差＝對照−訊號（以回落為正，持有 20 日）" if cell == "超漲回落" else
+             ("差＝訊號超額平均（持有 20 日，訊號−對照，兩邊各扣 0.585%）" if cell in DEV else "差＝訊號超額平均（條件出場主臂，訊號−對照，兩邊各扣 0.585%）"))
+    for nm, _, _ in SEGS:
+        v = ss.get(nm, {})
+        P.append(f"{nm}段 主格 {v.get('n', 0)} 件、n_eff {v.get('months', 0)} 月、差 {_pct(v.get('mean'))}"
+                 f"（月分群 99% CI [{_pct(v.get('lo'))}, {_pct(v.get('hi'))}]{'，Bonferroni 5 格' if nm == '確認' else ''}）")
+    if vd == "測不出" and any(np.isfinite(ss.get(nm, {}).get("mean", np.nan)) and ss[nm]["mean"] < 0 for nm in ("探索", "確認")):
+        P.append("差為負的段依登錄也只寫測不出，不解讀成相反方向有效")
+    P.append("先驗（測不出）：" + ("一致" if vd == "測不出" else ("不同" if vd.startswith("通過") else "樣本不足、無從比對")))
+    ci = info.get("截止", {})
+    P.append(f"★9 截止：主格要走得完 {ci.get('H')} 日 ⇒ 只收訊號日 ≤ {ci.get('截止訊號日')} 的事件，之後 {ci.get('截止後不進主格事件')} 件不進主格"
+             f"（主格最後訊號日 {ci.get('主格最後訊號日')}）")
+    if cell == "超跌回歸":
+        mr = info.get("配對率", {}); bz = info.get("偏差", {}).get("段", {})
+        P.append("配對率 " + "、".join(f"{nm} {_pct(mr.get(nm, {}).get('率'), False)}（{mr.get(nm, {}).get('配到', 0)}／{mr.get(nm, {}).get('分母', 0)}）"
+                                    for nm, _, _ in SEGS) + "（分母＝可進場且走得完）")
+        for nm, _, _ in SEGS:
+            b = bz.get(nm)
+            if not b:
+                continue
+            tops = "、".join(f"{x['產業']} {_pct(x['配不到中比例'], False)} vs {_pct(x['配到中比例'], False)}" for x in b["配不到偏多產業"])
+            P.append(f"{nm}段 配到／配不到：市值十分位平均 {b['配到']['十分位平均']:.2f}／{b['配不到']['十分位平均']:.2f}、"
+                     f"小市值（1～3）比例 {_pct(b['配到']['小市值(1～3)比例'], False)}／{_pct(b['配不到']['小市值(1～3)比例'], False)}、"
+                     f"產業分布總變異距離 {b['產業總變異距離']:.2f}；配不到偏多的產業（配不到 vs 配到）：{tops}")
+    if cell in BUY:
+        si = info.get("極短線", {})
+        a = si.get("全部", {})
+        segtxt = "、".join(f"{nm} {_pct(si[nm]['停損先到(含同日)'], False)}／中位 {si[nm]['持有中位']:.0f} 日" for nm, _, _ in SEGS if nm in si)
+        cost_txt = (f"訊號筆平均扣成本前 {_pct(a.get('扣成本前平均'))}、扣成本後 {_pct(a.get('扣成本後平均'))}"
+                    f"（超額兩邊同扣，不受成本影響）")
+        if cell == "買3":
+            P.append(f"買 3 實際是極短線：停損先到（含同日）{_pct(a.get('停損先到(含同日)'), False)}、持有中位 {a.get('持有中位', float('nan')):.0f} 日"
+                     f"（{segtxt}）；{cost_txt}")
+        else:
+            P.append(f"停損先到（含同日）{_pct(a.get('停損先到(含同日)'), False)}、持有中位 {a.get('持有中位', float('nan')):.0f} 日（{segtxt}）；{cost_txt}")
+    s = "；".join(P) + "。"
+    for w in BANNED:
+        if w in s:
+            raise ValueError(f"結果句含禁用措辭 {w}")
+    return s
+
+
 # ═════════════ 主程式 ═════════════
 def run(dry, procs, limit=None):
     t0 = time.time()
@@ -629,7 +756,7 @@ def run(dry, procs, limit=None):
     MT = {}; MREASON = {}
     for cell in CELLS:
         E = EV[cell]; rng = np.random.default_rng(SEED)
-        res = {}
+        res = {}; binfo = {}                                          # seq486 附註①：事件本身的市值十分位、產業（訊號日資訊，⛔ 無報酬）
         if len(E):
             need = E[(E["進場"] == "保留") & E["走得完"]]
             for t, g in need.groupby("t", sort=True):
@@ -645,7 +772,14 @@ def run(dry, procs, limit=None):
                                 lambda j, t=t: ind_at(j, t), lambda j, t=t: eflag(j, t) == "保留")
                 for i, v in out.items():
                     res[(i, t)] = v
+                posU = {int(j): k for k, j in enumerate(U)}
+                for i in g["i"].astype(int).tolist():
+                    k = posU.get(int(i))
+                    binfo[(int(i), t)] = (int(dec[k]) if k is not None else -1, ind_at(int(i), t))
         MT[cell] = res
+        if len(E):
+            E["市值十分位"] = [binfo.get((int(i), int(t)), (np.nan, ""))[0] for i, t in zip(E["i"], E["t"])]
+            E["產業"] = [binfo.get((int(i), int(t)), (np.nan, ""))[1] for i, t in zip(E["i"], E["t"])]
         E["配對"] = [res.get((int(i), int(t)), ("未配(剔除或走不完)", []))[0] for i, t in zip(E["i"], E["t"])] if len(E) else []
         E["對照"] = [";".join(SIDS[j] for j in res.get((int(i), int(t)), ("", []))[1]) for i, t in zip(E["i"], E["t"])] if len(E) else []
         E["對照數"] = [len(res.get((int(i), int(t)), ("", []))[1]) for i, t in zip(E["i"], E["t"])] if len(E) else []
@@ -711,25 +845,44 @@ def run(dry, procs, limit=None):
         cv = np.array(vals[1:], float)
         return vals[0], (float(np.nanmean(cv)) if np.isfinite(cv).any() else np.nan), vals[1:]
 
-    DESC = {}; JSTAT = {}
+    DESC = {}; JSTAT = {}; MAIN = {}
     for cell in CELLS:
         E = EV[cell]
         if not len(E):
             continue
         M = E[E["主格"]]
         if cell in BUY:
-            XS = []; XF = []; XT = []
+            XS = []; XF = []; XT = []; RN = []; CN = []
             for r in M.itertuples(index=False):
                 a, b, _ = ret_pair(cell, r, x=int(r.出場位), kind=r.出場方式); XS.append(a - b if np.isfinite(a) and np.isfinite(b) else np.nan)
+                RN.append(a); CN.append(b)
                 if getattr(r, f"走得完{HFIX}"):
                     a2, b2, _ = ret_pair(cell, r, H=HFIX); XF.append(a2 - b2 if np.isfinite(a2) and np.isfinite(b2) else np.nan)
                 else:
                     XF.append(np.nan)
                 XT.append(0.0 if dry else (a - (TRI[int(r.出場位)] / TRI[int(r.t)] - 1.0)))
-            M = M.assign(X=XS, XF=XF, XT=XT)
+            M = M.assign(X=XS, XF=XF, XT=XT, 訊號淨=RN, 對照淨=CN)
             for nm, _, _ in SEGS:
                 q = M[M["段"] == nm]
                 JSTAT[(cell, nm)] = cluster_boot(q["X"].to_numpy(float), q["月"].to_numpy())
+            MAIN[cell] = M
+            # seq486 附註②：扣成本前後（超額兩邊同扣 0.585% ⇒ 超額不受成本影響；這裡報訊號筆本身）
+            net = M["訊號淨"].to_numpy(float); gross = net + COST
+            hd = M["持有天數"].to_numpy(float)
+            stp = M["出場原因"].str.startswith(("停損先到", "同日兩者")).to_numpy(bool) if len(M) else np.zeros(0, bool)
+            DESC[("判定外描述", cell, "訊號筆報酬｜扣成本前")] = desc_stats(gross, M["年"], M["市場"])
+            DESC[("判定外描述", cell, "訊號筆報酬｜扣成本後")] = desc_stats(net, M["年"], M["市場"])
+            DESC[("判定外描述", cell, "對照平均報酬｜扣成本後")] = desc_stats(M["對照淨"])
+            fin_ = np.isfinite(gross)
+            DESC[("判定外描述", cell, "扣成本前>0但扣成本後≤0比例")] = {"n": int(fin_.sum()), "share": float(((gross > 0) & (net <= 0))[fin_].mean()) if fin_.any() else np.nan}
+            DESC[("判定外描述", cell, "成本÷(扣成本前平均報酬絕對值)")] = {"n": int(fin_.sum()), "value": float(COST / abs(np.nanmean(gross))) if fin_.any() and np.nanmean(gross) != 0 else np.nan}
+            DESC[("判定外描述", cell, "每持有日成本(0.585%÷max(持有天數,1))")] = desc_stats(COST / np.maximum(hd, 1.0))
+            DESC[("判定外描述", cell, "持有天數中位")] = {"n": int(len(hd)), "value": float(np.median(hd)) if len(hd) else np.nan}
+            for lab, msk in (("停損先到(含同日)筆", stp), ("其餘筆", ~stp)):
+                DESC[("判定外描述", cell, f"{lab}｜扣成本前")] = desc_stats(gross[msk])
+                DESC[("判定外描述", cell, f"{lab}｜扣成本後")] = desc_stats(net[msk])
+                DESC[("判定外描述", cell, f"{lab}｜超額")] = desc_stats(M["X"].to_numpy(float)[msk])
+                DESC[("判定外描述", cell, f"{lab}｜持有天數中位")] = {"n": int(msk.sum()), "value": float(np.median(hd[msk])) if msk.any() else np.nan}
             DESC[("判定外描述", cell, "主臂超額(訊號−對照)")] = desc_stats(M["X"], M["年"], M["市場"])
             DESC[("判定外描述", cell, "固定抱60日無停損超額")] = desc_stats(M["XF"], M["年"], M["市場"])
             DESC[("判定外描述", cell, "對大盤報酬指數(訊號−指數)")] = desc_stats(M["XT"], M["年"], M["市場"])
@@ -747,6 +900,7 @@ def run(dry, procs, limit=None):
                     RET.append(rs_); RETC.append(rc_); MXS.append(ms_); MXC.append(mc_)
                 q = q.assign(X=XS)
                 if H == HJ:
+                    MAIN[cell] = q.assign(回到MA200=RET)
                     for nm, _, _ in SEGS:
                         z = q[q["段"] == nm]
                         JSTAT[(cell, nm)] = cluster_boot(sgn * z["X"].to_numpy(float), z["月"].to_numpy())
@@ -769,8 +923,25 @@ def run(dry, procs, limit=None):
     OVL = overlaps(EV, CAL, PX)
     for o_ in OVL:
         DESC[("等價自查", o_["本格"], f"vs {o_['對方']}｜{o_['讀法']}")] = {"n": o_["本格事件(涵蓋內)"], "share": o_["本格中重疊比例"] if o_["本格中重疊比例"] is not None else np.nan}
+    # ── seq486 附註（只描述）
+    INFO = {}; BIAS = {}
+    for cell in JCELLS:
+        E = EV[cell]
+        BIAS[cell] = match_bias(E)
+        INFO[cell] = {"截止": cutoff_info(E, cell, CAL, CEND), "配對率": BIAS[cell][2]["配對率"], "偏差": BIAS[cell][2]}
+        if cell in BUY:
+            INFO[cell]["極短線"] = short_info(MAIN.get(cell), COST)
+        ci = INFO[cell]["截止"]
+        DESC[("附註seq486", cell, "★9截止訊號日(yyyymmdd)")] = {"n": ci["截止後不進主格事件"], "value": float(ci["截止訊號日"].replace("-", ""))}
+        for nm, v in INFO[cell]["配對率"].items():
+            DESC[("附註seq486", cell, f"{nm}｜配對率")] = {"n": v["分母"], "share": v["率"] if v["率"] is not None else np.nan}
+        for nm, v in BIAS[cell][2]["段"].items():
+            for gk in ("配到", "配不到"):
+                DESC[("附註seq486", cell, f"{nm}｜{gk}｜市值十分位平均")] = {"n": v[gk]["n"], "value": v[gk]["十分位平均"]}
+            DESC[("附註seq486", cell, f"{nm}｜產業分布總變異距離")] = {"n": v["配到"]["n"] + v["配不到"]["n"], "value": v["產業總變異距離"]}
     # ── 彙整
     return dict(od=od, REG=REG, sha=sha, PX=PX, EV=EV, EVR=EVR, JUDG=JUDG, MREASON=MREASON, JSTAT=JSTAT, DESC=DESC, OVL=OVL,
+                INFO=INFO, BIAS=BIAS, MAIN=MAIN,
                 hlinfo=hlinfo, chk=chk, CAL=CAL, CEND=CEND, t0=t0, TRIcov=(int(np.isfinite(TRI).sum()), NC))
 
 
@@ -893,7 +1064,19 @@ def overlaps(EV, CAL, PX):
 
 
 # ═════════════ 輸出 ═════════════
-def write_dry(A):
+def write_seq486(A, od):
+    """seq486 §三 附註：配到／配不到偏差表（市值十分位、產業）與 ★9 截止（⛔ 無報酬）。"""
+    dr, ir, cr = [], [], []
+    for cell in JCELLS:
+        d_, i_, _ = A["BIAS"][cell]
+        dr += [{"格": cell, **x} for x in d_]; ir += [{"格": cell, **x} for x in i_]
+        cr.append({"格": cell, **A["INFO"][cell]["截止"]})
+    pd.DataFrame(dr).to_csv(os.path.join(od, "match_bias_decile.csv"), index=False, encoding="utf-8-sig")
+    pd.DataFrame(ir).to_csv(os.path.join(od, "match_bias_industry.csv"), index=False, encoding="utf-8-sig")
+    pd.DataFrame(cr).to_csv(os.path.join(od, "cutoff_star9.csv"), index=False, encoding="utf-8-sig")
+
+
+def write_dry(A, formal=False):
     od = A["od"]; EV = A["EV"]; CAL = A["CAL"]
     rows = []; reas = []; holds = []
     for cell in CELLS:
@@ -956,8 +1139,8 @@ def write_dry(A):
     pd.DataFrame(yr).to_csv(os.path.join(od, "yearly.csv"), index=False, encoding="utf-8-sig")
     pd.DataFrame(A["JUDG"]).to_csv(os.path.join(od, "judgeable.csv"), index=False, encoding="utf-8-sig")
     pd.DataFrame(A["OVL"]).to_csv(os.path.join(od, "overlap.csv"), index=False, encoding="utf-8-sig")
-    ds = dry_status(A["DESC"]); ds.to_csv(os.path.join(od, "desc_dryrun_status.csv"), index=False, encoding="utf-8-sig")
-    keep = ["sid", "date", "段", "市場", "進場", "走得完", "配對", "對照數", "對照", "主格"]
+    write_seq486(A, od)
+    keep = ["sid", "date", "段", "市場", "進場", "走得完", "配對", "對照數", "對照", "主格", "市值十分位", "產業"]
     for cell in CELLS:
         E = EV[cell]
         if not len(E):
@@ -967,7 +1150,10 @@ def write_dry(A):
             cols += ["出場日", "出場方式", "出場原因", "旗標", "持有天數", "對照出場狀態"]
         else:
             cols += [c for c in E.columns if c.startswith("H") and "狀態" in c]
-        E[cols].to_csv(os.path.join(od, f"events_{cell}.csv.gz"), index=False, encoding="utf-8-sig", compression="gzip")
+        E[[c for c in cols if c in E.columns]].to_csv(os.path.join(od, f"events_{cell}.csv.gz"), index=False, encoding="utf-8-sig", compression="gzip")
+    if formal:
+        return
+    ds = dry_status(A["DESC"]); ds.to_csv(os.path.join(od, "desc_dryrun_status.csv"), index=False, encoding="utf-8-sig")
     neff = {}
     for cell in JCELLS:
         E = EV[cell]
@@ -979,6 +1165,7 @@ def write_dry(A):
          "事件剔除": A["EVR"], "配對原因": A["MREASON"], "n_eff": neff,
          "重疊旗標(≥80%)": [o for o in A["OVL"] if o["旗標≥80%"]],
          "描述欄乾跑": {"欄數": int(len(ds)), "EMPTY": int((ds["status"] == "EMPTY").sum()) if len(ds) else 0},
+         "seq486附註(無報酬)": {c: {k: v for k, v in A["INFO"][c].items() if k != "極短線"} for c in JCELLS},
          "NOTES": NOTES, "完成": str(pd.Timestamp.now(tz="Asia/Taipei")), "耗時秒": int(time.time() - A["t0"])}
     json.dump(J, open(os.path.join(od, "freq.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=_js)
     open(os.path.join(od, "run.log"), "w", encoding="utf-8").write("\n".join(LOG) + "\n")
@@ -993,17 +1180,37 @@ def _js(o):
 
 def write_formal(A):
     od = A["od"]
-    res = {}
+    write_dry(A, formal=True)                                         # 頻率表同表（事件檔不含報酬）＋ seq486 附註表
+    res = {}; sent = {}; rows = []
     for cell in JCELLS:
         ss = {}
         for nm, _, _ in SEGS:
             v = A["JSTAT"].get((cell, nm), {"n": 0, "months": 0, "mean": np.nan, "lo": np.nan, "hi": np.nan})
             ss[nm] = v
-        res[cell] = {"段": ss, "判定": verdict(ss), "上限": "最多暫定" if cell in BUY else ""}
-    J = {"登錄": A["REG"], "裁定": RULING, "資料": A["sha"], "判定": res, "描述": {"|".join(k): v for k, v in A["DESC"].items()},
-         "重疊": A["OVL"], "NOTES": NOTES, "完成": str(pd.Timestamp.now(tz="Asia/Taipei"))}
+        vd = verdict(ss)
+        res[cell] = {"段": ss, "判定": vd, "上限": "最多暫定" if cell in BUY else ""}
+        sent[cell] = result_sentence(cell, ss, vd, A["INFO"][cell])
+        for nm, _, _ in SEGS:
+            rows.append({"格": cell, "段": nm, "主格n": ss[nm]["n"], "n_eff(訊號月)": ss[nm]["months"], "差": ss[nm]["mean"],
+                         "99%CI下": ss[nm]["lo"], "99%CI上": ss[nm]["hi"], "判定": vd})
+    pd.DataFrame(rows).to_csv(os.path.join(od, "verdict.csv"), index=False, encoding="utf-8-sig")
+    drows = []
+    for (sec, cell, stat), v in A["DESC"].items():
+        if not isinstance(v, dict):
+            continue
+        drows.append({"section": sec, "cell": cell, "stat": stat, **{k: v[k] for k in ("n", "mean", "median", "mean_ex_max1", "win", "lo", "hi", "share", "value") if k in v},
+                      **({"by_market": json.dumps(v["by_market"], ensure_ascii=False, default=_js)} if "by_market" in v else {})})
+    pd.DataFrame(drows).to_csv(os.path.join(od, "desc.csv"), index=False, encoding="utf-8-sig")
+    for cell, M in A["MAIN"].items():
+        cols = [c for c in ["sid", "date", "段", "月", "市場", "對照", "出場日", "出場原因", "持有天數", "X", "XF", "XT", "訊號淨", "對照淨", "回到MA200"] if c in M.columns]
+        M[cols].to_csv(os.path.join(od, f"main_{cell}.csv.gz"), index=False, encoding="utf-8-sig", compression="gzip")
+    J = {"登錄": A["REG"], "裁定": RULING, "沿革": "裁定 seq486 §三 核可正式跑；附註三項只描述、不改判定", "資料": A["sha"],
+         "判定": res, "結果句": sent, "seq486附註": A["INFO"], "描述": {"|".join(k): v for k, v in A["DESC"].items()},
+         "重疊": A["OVL"], "NOTES": NOTES[1:], "完成": str(pd.Timestamp.now(tz="Asia/Taipei")), "耗時秒": int(time.time() - A["t0"])}
     json.dump(J, open(os.path.join(od, "formal.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=_js)
+    open(os.path.join(od, "result_sentences.txt"), "w", encoding="utf-8").write("\n\n".join(sent[c] for c in JCELLS) + "\n")
     open(os.path.join(od, "run.log"), "w", encoding="utf-8").write("\n".join(LOG) + "\n")
+    log(f"[完成 正式] ⇒ {od}｜判定 { {c: res[c]['判定'] for c in JCELLS} }")
 
 
 def gate(argv):

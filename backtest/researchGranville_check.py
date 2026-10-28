@@ -277,8 +277,73 @@ def t_outputs():
     ok("產出 描述欄乾跑檔只有 filled／EMPTY（不寫值）", set(ds.columns) == {"section", "cell", "stat", "n", "status"} and set(ds["status"]) <= {"filled", "EMPTY"})
 
 
+# ── seq486 §三 附註（只描述）：固定句存在、截止日、配到／配不到偏差 ──────────────────
+def _fake_E(rows):
+    E = pd.DataFrame(rows, columns=["i", "sid", "t", "date", "段", "進場", "走得完", "配對", "主格", "市值十分位", "產業"])
+    return E
+
+
+def t_seq486():
+    CAL = pd.DatetimeIndex(pd.bdate_range("2020-01-01", periods=400))
+    CEND = 399
+    rows = [(0, "1101", 100, "2020-05-20", "確認", "保留", True, "配到", True, 2, "水泥"),
+            (1, "1102", 130, "2020-07-01", "確認", "保留", True, "無候選", False, 1, "電子"),
+            (2, "1103", 378, "x", "確認", "保留", False, "未配(剔除或走不完)", False, np.nan, ""),
+            (3, "1104", 379, "y", "確認", "保留", False, "未配(剔除或走不完)", False, np.nan, ""),
+            (4, "1105", 110, "2020-06-01", "確認", "保留", True, "無候選", False, -1, "電子")]
+    E = _fake_E(rows)
+    ci = G.cutoff_info(E, "超跌回歸", CAL, CEND)
+    ok("★9 截止 ＝ CEND−H−1（乖離 H＝20 ⇒ 位置 378）", ci["截止訊號日"] == str(CAL[378].date()) and ci["截止後不進主格事件"] == 1 and ci["主格最後訊號日"] == "2020-05-20")
+    ci2 = G.cutoff_info(E, "買3", CAL, CEND)
+    ok("★9 截止 買點 H＝250 ⇒ 位置 148、之後 2 件", ci2["截止訊號日"] == str(CAL[148].date()) and ci2["截止後不進主格事件"] == 2)
+    dr, ir, sm = G.match_bias(E)
+    r = sm["配對率"]["確認"]
+    ok("配對率 分母 ＝ 可進場且走得完（3）、配到 1", r["分母"] == 3 and r["配到"] == 1 and abs(r["率"] - 1 / 3) < 1e-12)
+    b = sm["段"]["確認"]
+    ok("偏差 十分位平均（不可算不入平均）", b["配到"]["十分位平均"] == 2.0 and b["配不到"]["十分位平均"] == 1.0 and b["配不到"]["十分位不可算比例"] == 0.5)
+    ok("偏差 產業總變異距離（水泥 vs 電子 ⇒ 1）", abs(b["產業總變異距離"] - 1.0) < 1e-12 and b["配不到偏多產業"][0]["產業"] == "電子")
+    ok("偏差表 不含報酬欄", not any(k in c for c in pd.DataFrame(dr + ir).columns for k in ("報酬", "超額", "勝率")))
+    ss_pos = {"探索": {"n": 100, "months": 30, "mean": 0.01, "lo": -0.01, "hi": 0.03}, "確認": {"n": 120, "months": 40, "mean": 0.02, "lo": 0.005, "hi": 0.04}}
+    ss_neg = {"探索": {"n": 100, "months": 30, "mean": -0.01, "lo": -0.03, "hi": -0.002}, "確認": {"n": 120, "months": 40, "mean": -0.02, "lo": -0.04, "hi": -0.01}}
+    si = {nm: {"n": 10, "停損先到(含同日)": 0.88, "持有中位": 5.0, "扣成本前平均": 0.0, "扣成本後平均": -0.00585, "超額平均": 0.0} for nm in ("探索", "確認", "全部")}
+    info_b = {"截止": ci2, "配對率": sm["配對率"], "偏差": sm, "極短線": si}
+    info_d = {"截止": ci, "配對率": sm["配對率"], "偏差": sm}
+    s3 = G.result_sentence("買3", ss_neg, G.verdict(ss_neg), info_b)
+    ok("結果句 買3 含「買 3 實際是極短線」與停損先到、持有中位、扣成本前後", "買 3 實際是極短線" in s3 and "88.0%" in s3 and "持有中位 5 日" in s3 and "扣成本前" in s3 and "扣成本後" in s3)
+    ok("結果句 負方向 ⇒ 測不出、不含反向顯著等禁語", s3.startswith("買3：測不出") and not any(w in s3 for w in G.BANNED))
+    s1 = G.result_sentence("買1", ss_pos, G.verdict(ss_pos), info_b)
+    ok("結果句 買點通過只到暫定、買1 不寫極短線", "通過（暫定）（買點格最多暫定）" in s1 and "極短線" not in s1)
+    so = G.result_sentence("超跌回歸", ss_pos, G.verdict(ss_pos), info_d)
+    ok("結果句 超跌回歸 含各段配對率與配到／配不到十分位、產業", "配對率 探索" in so and "確認 33.3%" in so and "市值十分位平均" in so and "產業分布總變異距離" in so)
+    allok = all(f"截止：主格要走得完" in G.result_sentence(c, ss_pos, "通過（暫定）", info_b if c in G.BUY else info_d) for c in G.JCELLS)
+    ok("結果句 5 格都寫 ★9 截止訊號日", allok and str(CAL[378].date()) in so and str(CAL[148].date()) in s3)
+    sx = G.result_sentence("超漲回落", ss_pos, G.verdict(ss_pos), info_d)
+    ok("結果句 超漲回落 註明差＝對照−訊號", "對照−訊號" in sx and "配對率" not in sx)
+    try:
+        G.result_sentence("買3", ss_neg, "反向顯著", info_b); raised = False
+    except ValueError:
+        raised = True
+    ok("結果句 若含禁語 ⇒ 擋下（突變）", raised)
+
+
+def t_formal_outputs():
+    od = os.path.join(G.OUT, "formal")
+    f = os.path.join(od, "formal.json")
+    if not os.path.exists(f):
+        ok("正式產出（尚未產出，略）", True); return
+    import json
+    J = json.load(open(f, encoding="utf-8"))
+    S = J.get("結果句", {})
+    ok("正式產出 5 格都有結果句且含 ★9 截止", set(S) == set(G.JCELLS) and all("★9 截止" in S[c] for c in G.JCELLS))
+    ok("正式產出 買3 結果句含「買 3 實際是極短線」", "買 3 實際是極短線" in S.get("買3", ""))
+    ok("正式產出 超跌回歸 結果句含配對率", "配對率 探索" in S.get("超跌回歸", "") and "確認" in S.get("超跌回歸", ""))
+    ok("正式產出 結果句無禁語、判定與 verdict 一致", not any(w in s for s in S.values() for w in G.BANNED)
+       and all(S[c].startswith(f"{c}：{J['判定'][c]['判定']}") for c in G.JCELLS))
+    ok("正式產出 沿革指到 seq486", "seq486" in J.get("沿革", ""))
+
+
 def main():
-    for f in (t_buy1, t_buy2, t_buy3, t_exit, t_dev, t_seg_dedup, t_match, t_stats_gate, t_mutation, t_outputs):
+    for f in (t_buy1, t_buy2, t_buy3, t_exit, t_dev, t_seg_dedup, t_match, t_stats_gate, t_mutation, t_outputs, t_seq486, t_formal_outputs):
         f()
     n = len(RES); p = sum(1 for _, x in RES if x)
     print(f"\n自測 {p}/{n} 通過")
