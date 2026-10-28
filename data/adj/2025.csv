@@ -1,2 +1,3 @@
 date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
-2025-02-12,1.62761905,,1.62761905,10.5,17.09,彌補虧損,reduce
+2025-02-12,1.62761905,,1.54014929,10.5,17.09,彌補虧損,reduce
+2026-10-28,0.94625907,,0.94625907,14,13.24,權,exright
