@@ -3,7 +3,8 @@
   "登錄": "便宜＋趨勢轉強 台股 seq1（pw1 sha ef2f1c05fbcbf841；整檔 5541 B）；發號 裁定 seq482 §一",
   "合理價程式": "backtest/twfv_recheck/orig/bt.py＋value.py（產業附件原樣）；sha256 bt.py 9ca7ecb53ee02d33（相符）、value.py cec20bf80c79bb35（相符）",
   "回測核對結果": "回測核對相符（commit 77aafeb9bd；twfv_recheck/結論.md：產業程式原樣＋tw-stock-data 8e5d22e，五檔逐位元相同；主格 −20.27pp 與 seq63 一致）⇒ 本件「便宜」即此版（抄錄函式見 researchTWCheapTrend_fv.py）",
-  "資料快照": "8e5d22eb306895d15bd93643284330983c57a823（~/twdata/8e5d22e…，git archive 唯讀；最後交易日 2026-10-22）"
+  "資料快照": "8e5d22eb306895d15bd93643284330983c57a823（~/twdata/8e5d22e…，git archive 唯讀；最後交易日 2026-10-22）",
+  "沿革": "裁定 seq483 §2／seq484 §三：選 (a) 照原文跑、主格不改；准正式跑（閘門 seq482 → seq484），判語事先固定「還沒測（依構造）」，報酬只當描述"
  },
  "n_judgment_dates": 100,
  "first_J": "2018-04-02",

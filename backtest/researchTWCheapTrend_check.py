@@ -9,7 +9,8 @@ B 壞根：缺 ≥5 日、跳空無事件、跳空有事件（不算）、回看
 C PIT：評估日合理價只用評估日前可得資料（真實資料截斷到評估日重算＝全量；評估日後資料竄改不影響）；
   趨勢在判日只用判日（含）前資料（截斷重算＝全量）。
 D 與回測核對版輸出一致：2020～2025 評估日、核對版 detail.csv 裡市值 ≥300 億者，pass_q／fair／分組逐筆相同（只讀非報酬欄）。
-E 正式跑閘門：缺 --ruling seq482、錯號、與 --dry 併用 ⇒ 拒跑。
+E 正式跑閘門：缺 --ruling、錯號（含舊號 seq482）、與 --dry 併用、多餘參數 ⇒ 拒跑；只有 --formal --ruling seq484 過閘
+  （沿革：裁定 seq483／seq484 准正式跑，閘門 seq482 → seq484）；正式判語固定「還沒測（依構造）」與數字無關。
 """
 import os, sys, subprocess
 import numpy as np, pandas as pd
@@ -191,12 +192,28 @@ def runc(args):
     p = subprocess.run([py, '-m', 'backtest.researchTWCheapTrend'] + args, cwd=os.path.dirname(HERE), env=env,
                        capture_output=True, text=True, timeout=60)
     return p.returncode, p.stdout + p.stderr
+existed = os.path.exists(os.path.join(M.OUT, 'formal'))
 rc1, o1 = runc(['--formal'])
 rc2, o2 = runc(['--formal', '--ruling', 'seq481'])
-rc3, o3 = runc(['--formal', '--ruling', 'seq482', '--dry'])
+rc3, o3 = runc(['--formal', '--ruling', 'seq484', '--dry'])
 rc4, o4 = runc([])
-ok(rc1 != 0 and '拒跑' in o1 and rc2 != 0 and '拒跑' in o2 and rc3 != 0 and rc4 != 0,
+rc5, o5 = runc(['--formal', '--ruling', 'seq482'])
+rc6, o6 = runc(['--formal', '--ruling', 'seq484', '--x'])
+ok(all(rc != 0 and '拒跑' in o for rc, o in ((rc1, o1), (rc2, o2), (rc3, o3), (rc4, o4), (rc5, o5), (rc6, o6))),
    'E1 正式跑閘門：缺 --ruling、錯號、與 --dry 併用、無旗標 ⇒ 全部拒跑')
+ok(rc5 != 0 and 'seq484' in o5, 'E2 舊號 --ruling seq482 拒跑（閘門已改 seq484）')
+ok(os.path.exists(os.path.join(M.OUT, 'formal')) == existed, 'E3 拒跑 ×6 未建 formal/')
+ok(M.gate(['--formal', '--ruling', 'seq484']) == 'formal' and M.gate(['--dry']) == 'dry'
+   and isinstance(M.gate(['--formal', '--ruling', 'seq482']), tuple) and isinstance(M.gate(['--ruling', 'seq484']), tuple),
+   'E4 gate()：只有 --formal --ruling seq484 與 --dry 過閘；seq482、只 --ruling 拒跑')
+ok(M.RULING == 'seq484' and M.FIXED_VERDICT == '還沒測（依構造）'
+   and all(M.formal_verdict(g, lo, hi, f, b) == '還沒測（依構造）'
+           for g, lo, hi, f, b in ((0.05, 0.01, 0.09, 0.02, 0.03), (-0.05, -0.09, -0.01, -0.02, -0.03), (np.nan,) * 5)),
+   'E5 正式判語固定「還沒測（依構造）」，不隨數字（正、負、NaN）變')
+ok(len(M.RESULT_SENTENCES) == 3 and any('收盤 > MA60' in s for s in M.RESULT_SENTENCES)
+   and any('2015Q1' in s and '< 24' in s for s in M.RESULT_SENTENCES) and any('台美主格口徑不同' in s for s in M.RESULT_SENTENCES)
+   and len(M.REG_ERRORS) == 2 and any('seq308' in s for s in M.REG_ERRORS) and any('2013' in s for s in M.REG_ERRORS),
+   'E6 結果句三句＋登錄錯兩處都在')
 
 print(f'\n合計 PASS {len(PASSES)}／{len(PASSES) + len(FAILS)}' + ('' if not FAILS else '；FAIL：' + '、'.join(FAILS)))
 sys.exit(1 if FAILS else 0)

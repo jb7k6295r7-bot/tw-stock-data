@@ -4,6 +4,10 @@
 登錄：登錄全文-便宜加趨勢轉強_機械版合理價可買裡轉強對沒轉強_60日_單筆層登錄_台股策略線_seq1_shaef2f1c05fbcbf841-5541B-20261028-1452.md
       （pw1 sha ef2f1c05fbcbf841＝去掉末行 pw1 戳記後全文 sha256 前 16 碼；整檔 5541 B；兩者回測線 2026-10-28 已驗）
 發號：裁定 seq482 §一（判定 1 格 ⇒ N_單筆 +1；最多暫定）。
+沿革：裁定 seq483 §2-1／§2-2／§2-3／§2-4＋seq484 §三（2026-10-28）：台股選 (a) 照原文跑、主格不改；准正式跑，
+      判語事先固定「還沒測（依構造）」，報酬只當描述（⛔ 不得寫成測不出或測到了）；正式跑閘門 seq482 → seq484。
+      ★4、★5、★10 照主讀法，另一讀法只描述。登錄錯兩處照記：① 登錄寫「財報 2013 起」，實際 fs_hist 2015Q1 起；
+      ② 主格只有固定 60 日出場、沒有條件出場主臂，偏離 seq308（裁定 seq483 §2-3）。看報酬前只看過頻率表。
 便宜：台股合理價機械版【回測核對版】＝ backtest/twfv_recheck/orig/bt.py＋value.py（回測核對相符，commit 77aafeb9bd），
       抄錄／import 見 researchTWCheapTrend_fv.py 檔頭。
 資料：tw-stock-data 8e5d22eb306895d15bd93643284330983c57a823 唯讀快照 ~/twdata/8e5d22eb…（＝合理價核對用的同一份；
@@ -13,7 +17,7 @@
 用法（cd ~/tw-p17）：
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchTWCheapTrend --dry
         ⇒ 頻率表＋全部描述欄乾跑（R 全寫 0；⛔ 不讀出、不印任何報酬）→ backtest/resultsTWCheapTrend/freq/
-    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchTWCheapTrend --formal --ruling seq482
+    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchTWCheapTrend --formal --ruling seq484
         ⇒ 正式跑（⛔ 必須兩個旗標都給，否則拒跑）→ backtest/resultsTWCheapTrend/formal/
 
 ══════════ 登錄寫死的（照抄，不改）══════════
@@ -90,6 +94,17 @@ WARM = 270
 J_START = '2018-04'
 FRONT_END = '2022-03'      # 前段 ≤ 2022-03；後段 ≥ 2022-04
 MIN_CLUSTERS, MIN_ARM = 24, 3
+RULING = 'seq484'          # 正式跑閘門（沿革：seq482 → seq484）
+FIXED_VERDICT = '還沒測（依構造）'   # 裁定 seq483 §2-2、seq484 §三：事先固定，不看數字
+RESULT_SENTENCES = [
+    '主格的『轉強』恆等於收盤 > MA60（seq377 等價，回測 1548）',
+    '依構造還沒測：財報 2015Q1 起、最早 2020-04，兩段群數 < 24',
+    '台美主格口徑不同（台股 T1∪T2、60 日；美股 T2、1 年）',
+]
+REG_ERRORS = [
+    '登錄錯①：登錄寫「財報 2013 起」，實際 fs_hist 2015Q1 起（最早能過品質門檻的評估日 2020-04-01）',
+    '登錄錯②：主格只有固定 60 日出場、沒有條件出場主臂，偏離 seq308（裁定 seq483 §2-3）',
+]
 NAMES = {1: 'T1', 2: 'T2', 3: 'T3', 4: 'T4', 0: 'T0', -1: '不可判'}
 
 
@@ -262,11 +277,11 @@ def attach_returns(P, bars, dry, horizon_tag):
     """正式：60 日／1 年報酬（扣成本）。乾跑：R 全寫 0（seq366），⛔ 不讀價格算報酬。"""
     if dry:
         P['R'] = np.where(P.ret_ok == 1, 0.0, np.nan); return P
-    R = []
-    for r in P.itertuples():
-        if not r.ret_ok: R.append(np.nan); continue
-        b = bars.B[r.stock_id]
-        R.append(b['adj'][r._kx] / b['adj_open'][r._ke] - 1 - COST)
+    R = []   # 註：itertuples 會把底線開頭欄（_ke、_kx）改名，故用 zip 逐欄取（2026-10-28 正式跑首跑 AttributeError 後修，邏輯不變）
+    for ok_, sid, ke, kx in zip(P.ret_ok.values, P.stock_id.values, P['_ke'].values, P['_kx'].values):
+        if not ok_: R.append(np.nan); continue
+        b = bars.B[sid]
+        R.append(b['adj'][int(kx)] / b['adj_open'][int(ke)] - 1 - COST)
     P['R'] = R; return P
 
 
@@ -508,6 +523,8 @@ def header(A):
         '回測核對結果': '回測核對相符（commit 77aafeb9bd；twfv_recheck/結論.md：產業程式原樣＋tw-stock-data 8e5d22e，五檔逐位元相同；'
                   '主格 −20.27pp 與 seq63 一致）⇒ 本件「便宜」即此版（抄錄函式見 researchTWCheapTrend_fv.py）',
         '資料快照': SNAP_COMMIT + '（~/twdata/8e5d22e…，git archive 唯讀；最後交易日 ' + A['fv'].cal[-1] + '）',
+        '沿革': '裁定 seq483 §2／seq484 §三：選 (a) 照原文跑、主格不改；准正式跑（閘門 seq482 → seq484），'
+              '判語事先固定「' + FIXED_VERDICT + '」，報酬只當描述',
     }
 
 
@@ -556,31 +573,56 @@ def main_formal():
     A, S = run(dry=False)
     od = os.path.join(OUT, 'formal'); os.makedirs(od, exist_ok=True)
     pt, lo, hi, ncl = S['main']
-    if S['trig']['還沒測']: verdict = '還沒測'
-    elif pt > 0 and lo > 0 and S['front'].mean() > 0 and S['back'].mean() > 0: verdict = '通過（暫定）'
-    else: verdict = '測不出'
-    out = dict(header=header(A), G=pt, ci=[lo, hi], n_clusters=ncl, front=float(S['front'].mean()), n_front=len(S['front']),
-               back=float(S['back'].mean()), n_back=len(S['back']), triggers=S['trig'], verdict=verdict,
+    verdict = formal_verdict()                      # ⛔ 不看數字：裁定 seq483 §2-2、seq484 §三
+    out = dict(header=header(A), verdict=verdict,
+               verdict_basis='裁定 seq483 §2-2、seq484 §三：依構造還沒測（〈四十九〉），判語事先固定；以下報酬全部只當描述，'
+                             '⛔ 不得寫成測不出或測到了',
+               result_sentences=RESULT_SENTENCES, registration_errors=REG_ERRORS,
+               readings='★4、★5、★10 照主讀法；另一讀法只描述',
+               desc_main_cell=dict(G=pt, ci=[lo, hi], n_clusters_bootstrap=ncl,
+                                   front=float(S['front'].mean()), n_front_dates=len(S['front']),
+                                   back=float(S['back'].mean()), n_back_dates=len(S['back'])),
+               triggers=S['trig'], triggers_alt14_member=S['trig_member'], triggers_alt1_from_2020_04=S['trig_alt1'],
                desc=S['D'], nonreturn=S['NR'], nonreturn_1y=S['NR1y'])
     S['G'].to_csv(f'{od}/main_cell_by_date.csv', index=False, encoding='utf-8-sig')
     S['F60'].to_csv(f'{od}/freq_by_date_60d.csv', index=False, encoding='utf-8-sig')
     json.dump(out, open(f'{od}/summary.json', 'w'), ensure_ascii=False, indent=1, default=_js)
-    print(json.dumps(dict(G=pt, ci=[lo, hi], verdict=verdict), ensure_ascii=False, default=float))
+    print(json.dumps(dict(verdict=verdict, desc_G=pt, desc_ci=[lo, hi]), ensure_ascii=False, default=float))
+
+
+def formal_verdict(*_ignored, **__ignored):
+    """正式跑判語：事先固定，與任何數字無關（裁定 seq483 §2-2、seq484 §三）。"""
+    return FIXED_VERDICT
+
+
+def gate(argv):
+    """→ 'dry' | 'formal' | ('refuse', 訊息)。正式跑只認 --formal --ruling seq484。"""
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument('--dry', action='store_true')
+    ap.add_argument('--formal', action='store_true')
+    ap.add_argument('--ruling', default=None)
+    try:
+        a, rest = ap.parse_known_args(argv)
+    except SystemExit:
+        return ('refuse', '⛔ 參數錯；拒跑')
+    if rest:
+        return ('refuse', '⛔ 不認得的參數 %s；拒跑' % rest)
+    if a.formal and a.dry:
+        return ('refuse', '⛔ --formal 與 --dry 不可同時給；拒跑')
+    if a.formal:
+        if a.ruling != RULING:
+            return ('refuse', '⛔ 正式跑須 --formal --ruling %s（裁定 seq483／seq484 准正式跑、判語固定）；拒跑' % RULING)
+        return 'formal'
+    if a.dry:
+        return 'dry'
+    return ('refuse', '用法：--dry ｜ --formal --ruling %s；拒跑' % RULING)
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser()
-    ap.add_argument('--dry', action='store_true', help='頻率表＋全部描述欄乾跑（R 全寫 0，不輸出報酬）')
-    ap.add_argument('--formal', action='store_true', help='正式跑（須同時 --ruling seq482）')
-    ap.add_argument('--ruling', default=None)
-    a = ap.parse_args()
-    if a.formal and a.dry:
-        sys.exit('⛔ --formal 與 --dry 不可同時給')
-    if a.formal:
-        if a.ruling != 'seq482':
-            sys.exit('⛔ 正式跑須 --formal --ruling seq482（裁定 seq482 §一發號）；拒跑')
+    m = gate(sys.argv[1:])
+    if isinstance(m, tuple):
+        sys.exit(m[1])
+    if m == 'formal':
         main_formal()
-    elif a.dry:
-        main_dry()
     else:
-        sys.exit('用法：--dry ｜ --formal --ruling seq482')
+        main_dry()

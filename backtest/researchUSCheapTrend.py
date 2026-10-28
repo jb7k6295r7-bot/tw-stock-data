@@ -4,6 +4,10 @@
 登錄：登錄全文-美股便宜加趨勢轉強_合理價可買再切趨勢四態_美股策略線_seq1_sha68b7253a5f696d15-3718B-20261028-1452.md
       （整檔 3718 B、整檔 sha256 前 16 碼＝68b7253a5f696d15；回測線 2026-10-28 已驗，開跑再驗一次）
 發號：裁定 seq482 §二（主格 N_單筆 +1；組合 N_組合 +1；3 年只描述）。
+沿革：裁定 seq484 §一（2026-10-28）：★T8 群數下限適用全線〈四十九〉③（不算替登錄加規則）⇒ 主格 7 群 < 24 ⇒ 依構造還沒測；
+      准正式跑（閘門 seq482 → seq484），判語事先固定「還沒測（依構造，7 群 < 24）」，報酬（含組合、對大盤）只當描述，
+      ⛔ 不得寫成測不出或測到了。主格口徑＝可買∩T2 單獨、1 年；台股主格＝T1∪T2、60 日 ⇒ 台美主格口徑不同（結果必寫）。
+      看報酬前只看過頻率表。
 便宜：美股合理價機械版【原樣】（產業 seq63；★15、★16 照裁定 seq481）＝ backtest/researchUSFairValue_freq.py 的逐檔分類，
       經 backtest/researchUSFairValue.py 的 load_groups() 讀 ~/us_work/fairvalue/classify_by_eval_ticker.csv（⛔ 不改那兩支程式）。
 資料：私有庫 us-stock-data 89d9f8550（唯讀快照 ~/usdata/89d9f8550；.commit 開跑先驗）。
@@ -12,7 +16,7 @@
 用法（cd ~/tw-p17）：
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchUSCheapTrend --dry
         ⇒ 頻率表＋全部描述欄乾跑（持有報酬與大盤全寫 0；⛔ 不讀出、不印任何報酬）→ backtest/resultsUSCheapTrend/freq/
-    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchUSCheapTrend --formal --ruling seq482
+    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchUSCheapTrend --formal --ruling seq484
         ⇒ 正式跑（⛔ 兩個旗標都要，否則拒跑）→ backtest/resultsUSCheapTrend/formal/
 
 ══════════ 登錄寫死的（照抄，不改）══════════
@@ -45,6 +49,7 @@
      檔數＝該組 1 年窗走得完的筆數（27 個評估日 1 年窗都完整 ⇒ 等於集合大小）。
  ★T8 分群＝進場年（評估日的年），預期 7 群（前段 3、後段 4）；登錄沒寫群數下限 ⇒ 不設群數閘、照報群數。
      〔另一讀法：比照台股版「每段群數 ≥ 24」⇒ 依構造還沒測；這是改規則，⛔ 不採，交裁定〕
+     〔沿革：裁定 seq484 §一 裁〈四十九〉適用 ⇒ 7 群 < 24 ⇒ 依構造還沒測；判語固定，見檔頭沿革〕
  ★T9 bootstrap：登錄沒寫次數與種子 ⇒ 照 seq63 正式程式 10,000 次、百分位法；種子 20261028（本登錄日）。
  ★T10 組合：空袖＝現金 0%；年化＝NAV^(252/日數)−1；最大回落 0 ⇒ 比值記 None（不除 0，判「不可比」）；
       區間＝第一個評估日次日到最後一袖結束；^SP500TR＝data/macro/yahoo_SP500TR.csv adjclose（同 seq63 ★R6～R8）。
@@ -80,7 +85,13 @@ from backtest import researchUSFairValue as FV         # noqa: E402
 REG_NAME = ("登錄全文-美股便宜加趨勢轉強_合理價可買再切趨勢四態_美股策略線_seq1_sha68b7253a5f696d15-3718B-20261028-1452.md")
 REG_DIR = os.environ.get("US_CT_REG_DIR", "/mnt/c/SynologyDrive/跨線信箱")
 REG_SHA16, REG_BYTES = "68b7253a5f696d15", 3718
-RULING = "seq482"
+RULING = "seq484"                      # 正式跑閘門（沿革：seq482 → seq484）
+FIXED_VERDICT = "還沒測（依構造，7 群 < 24）"   # 裁定 seq484 §一：事先固定，不看數字
+RESULT_SENTENCES = [
+    "台美主格口徑不同（台股 T1∪T2、60 日；美股 T2、1 年）",
+    "依構造還沒測：進場年分群 7 群 < 24（〈四十九〉，裁定 seq484 §一）；報酬只當描述",
+    "對齊台股描述格的『轉強』T1∪T2 恆等於收盤 > MA60（seq377 等價）；只描述、不判",
+]
 DATA_PIN = "89d9f8550f6ea39b392087c22998cd298164a26c"
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUTD = os.path.join(HERE, "resultsUSCheapTrend", "freq")
@@ -464,11 +475,16 @@ def compute(mode, S, G):
         verdict = "趨勢轉強有加分"
     else:
         verdict = "測不出"
+    if mode == "formal":
+        verdict = final_verdict()           # ⛔ 不看數字：裁定 seq484 §一
     res["主格_1年"] = {"diff平均": avg, "CI95": [lo, hi], "前段2019-2021": front, "後段2022-2025": back,
                      "有diff的評估日": int(len(T1y)), "兩組有空的評估日": int(len(per["1y"]) - len(T1y)),
                      "分群數": len(by_year), "前段群數": int(sum(1 for y in by_year if FRONT[0] <= y <= FRONT[1])),
                      "後段群數": int(sum(1 for y in by_year if BACK[0] <= y <= BACK[1])),
                      "樣本不足": ins, "判定": verdict}
+    if mode == "formal":
+        res["主格_1年"]["判定依據"] = ("裁定 seq484 §一：〈四十九〉適用，%d 群 < 24 ⇒ 依構造還沒測；判語事先固定，"
+                                    "以上數字只當描述，⛔ 不得寫成測不出或測到了" % len(by_year))
     T3y = per["3y"].dropna(subset=["diff"])
     res["3年_只描述"] = {"diff平均": float(T3y["diff"].mean()) if len(T3y) else None, "評估日數": int(len(T3y))}
 
@@ -571,10 +587,16 @@ def compute(mode, S, G):
     res["組合_可買∩T2袖"] = {"袖": {"年化": a1, "最大回落": m1, "年化÷|回落|": r1},
                         "大盤SP500TR": {"年化": a2, "最大回落": m2, "年化÷|回落|": r2},
                         "格1_年化勝": c1, "格2_比值不輸": c2 if c2 is not None else "不可比（回落為 0）",
-                        "判定": ("通過" if (c1 and c2) else ("另列（只過年化）" if c1 else "不通過")),
+                        "判定": (("只描述（主格依構造還沒測，裁定 seq484 §一；不判通過與否）") if mode == "formal" else
+                               ("通過" if (c1 and c2) else ("另列（只過年化）" if c1 else "不通過"))),
                         "空袖數": empty, "區間": [str(days[0].date()), str(days[-1].date())],
                         "交易日數": int(len(days))}
     return res, per, pd.DataFrame(desc_by_eval), T60
+
+
+def final_verdict(*_ignored, **__ignored):
+    """正式跑判語：事先固定，與任何數字無關（裁定 seq484 §一）。"""
+    return FIXED_VERDICT
 
 
 def leaves(o, pre=""):
@@ -684,6 +706,10 @@ def main(argv=None):
     else:
         os.makedirs(FORMALD, exist_ok=True)
         res["登錄"] = reg
+        res["判語"] = FIXED_VERDICT
+        res["結果句"] = RESULT_SENTENCES
+        res["沿革"] = ("裁定 seq484 §一：〈四十九〉適用 ⇒ 依構造還沒測；准正式跑（閘門 seq482 → seq484），"
+                     "判語事先固定，報酬（主格、組合、對大盤、描述各組）只當描述")
         FQ.jdump(res, os.path.join(FORMALD, "result.json"))
         per["1y"].to_csv(os.path.join(FORMALD, "main_by_eval_1y.csv"), index=False, encoding="utf-8-sig")
         D.to_csv(os.path.join(FORMALD, "desc_by_eval.csv"), index=False, encoding="utf-8-sig")

@@ -9,7 +9,8 @@ A 趨勢四態（合成序列）：T1～T4、T0 各一個 fixture；16 種布林
 B PIT：真實 panel，趨勢在評估日只用評估日（含）前的列——截斷重算＝全量；評估日後竄改不影響；
   另以獨立讀檔（csv 直接連乘）逐筆重算可買名單的態。
 C 資料：登錄檔 sha／大小；分組集合與 seq63 freq 表逐日相符；panel ret 空白記 0 後無 NaN。
-D 正式跑閘門：無旗標、只 --formal、錯號、與 --dry 併用、多餘參數 ⇒ 拒跑（子程序 exit 2、不建 formal/）；只有 --formal --ruling seq482 過閘。
+D 正式跑閘門：無旗標、只 --formal、錯號、與 --dry 併用、多餘參數 ⇒ 拒跑（子程序 exit 2、不建 formal/）；只有 --formal --ruling seq484 過閘
+  （沿革：裁定 seq484 §一 准正式跑，閘門 seq482 → seq484；舊號 seq482 拒跑）；正式判語固定「還沒測（依構造，7 群 < 24）」與數字無關。
 """
 import os
 import subprocess
@@ -179,18 +180,25 @@ ok(reg["bytes"] == 3718 and reg["相符"] in ("整檔", "去末行（pw1）"), "
 ok(isinstance(M.gate([]), tuple), "D1 無旗標拒跑")
 ok(isinstance(M.gate(["--formal"]), tuple), "D2 只 --formal 拒跑")
 ok(isinstance(M.gate(["--formal", "--ruling", "seq481"]), tuple), "D3 錯號拒跑")
-ok(isinstance(M.gate(["--dry", "--formal", "--ruling", "seq482"]), tuple), "D4 --dry 與 --formal 併用拒跑")
-ok(isinstance(M.gate(["--ruling", "seq482"]), tuple), "D5 只 --ruling 拒跑")
-ok(isinstance(M.gate(["--formal", "--ruling", "seq482", "--x"]), tuple), "D6 多餘參數拒跑")
-ok(M.gate(["--dry"]) == "dry" and M.gate(["--formal", "--ruling", "seq482"]) == "formal", "D7 --dry、--formal --ruling seq482 過閘")
+ok(isinstance(M.gate(["--dry", "--formal", "--ruling", "seq484"]), tuple), "D4 --dry 與 --formal 併用拒跑")
+ok(isinstance(M.gate(["--ruling", "seq484"]), tuple), "D5 只 --ruling 拒跑")
+ok(isinstance(M.gate(["--formal", "--ruling", "seq484", "--x"]), tuple), "D6 多餘參數拒跑")
+ok(M.gate(["--dry"]) == "dry" and M.gate(["--formal", "--ruling", "seq484"]) == "formal", "D7 --dry、--formal --ruling seq484 過閘")
+ok(isinstance(M.gate(["--formal", "--ruling", "seq482"]), tuple), "D7b 舊號 seq482 拒跑（閘門已改 seq484）")
+ok(M.RULING == "seq484" and M.FIXED_VERDICT == "還沒測（依構造，7 群 < 24）"
+   and all(M.final_verdict(a, b, c, d) == "還沒測（依構造，7 群 < 24）"
+           for a, b, c, d in ((0.05, 0.01, 0.02, 0.03), (-0.05, -0.09, -0.02, -0.03), (None,) * 4)),
+   "D9 正式判語固定「還沒測（依構造，7 群 < 24）」，不隨數字（正、負、None）變")
+ok(any("台美主格口徑不同" in s for s in M.RESULT_SENTENCES), "D10 結果句含「台美主格口徑不同」")
 existed = os.path.exists(M.FORMALD)
 env = dict(os.environ, PYTHONPATH=os.path.expanduser("~/tw-p17"))
 codes = []
-for args in ([], ["--formal"], ["--formal", "--ruling", "seq481"], ["--dry", "--formal", "--ruling", "seq482"]):
+for args in ([], ["--formal"], ["--formal", "--ruling", "seq481"], ["--dry", "--formal", "--ruling", "seq484"],
+             ["--formal", "--ruling", "seq482"]):
     p = subprocess.run([sys.executable, "-m", "backtest.researchUSCheapTrend"] + args, cwd=os.path.expanduser("~/tw-p17"),
                        env=env, capture_output=True, text=True, timeout=120)
     codes.append(p.returncode)
-ok(all(c == 2 for c in codes) and os.path.exists(M.FORMALD) == existed, "D8 子程序拒跑 exit 2 ×4，未建 formal/（%s）" % codes)
+ok(all(c == 2 for c in codes) and os.path.exists(M.FORMALD) == existed, "D8 子程序拒跑 exit 2 ×5（含舊號 seq482），未建 formal/（%s）" % codes)
 
 print("\n%d PASS / %d FAIL" % (len(PASSES), len(FAILS)))
 if FAILS:
