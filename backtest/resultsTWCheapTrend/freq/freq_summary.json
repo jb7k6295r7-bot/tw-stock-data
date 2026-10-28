@@ -1,0 +1,441 @@
+{
+ "header": {
+  "登錄": "便宜＋趨勢轉強 台股 seq1（pw1 sha ef2f1c05fbcbf841；整檔 5541 B）；發號 裁定 seq482 §一",
+  "合理價程式": "backtest/twfv_recheck/orig/bt.py＋value.py（產業附件原樣）；sha256 bt.py 9ca7ecb53ee02d33（相符）、value.py cec20bf80c79bb35（相符）",
+  "回測核對結果": "回測核對相符（commit 77aafeb9bd；twfv_recheck/結論.md：產業程式原樣＋tw-stock-data 8e5d22e，五檔逐位元相同；主格 −20.27pp 與 seq63 一致）⇒ 本件「便宜」即此版（抄錄函式見 researchTWCheapTrend_fv.py）",
+  "資料快照": "8e5d22eb306895d15bd93643284330983c57a823（~/twdata/8e5d22e…，git archive 唯讀；最後交易日 2026-10-22）"
+ },
+ "n_judgment_dates": 100,
+ "first_J": "2018-04-02",
+ "last_J": "2026-07-01",
+ "n_dates_U0": 24,
+ "first_J_with_U": "2020-04-01",
+ "eval_dates": [
+  "2018-04-02",
+  "2018-05-16",
+  "2018-08-15",
+  "2018-11-15",
+  "2019-04-01",
+  "2019-05-16",
+  "2019-08-15",
+  "2019-11-15",
+  "2020-04-01",
+  "2020-05-18",
+  "2020-08-17",
+  "2020-11-16",
+  "2021-04-01",
+  "2021-05-17",
+  "2021-08-16",
+  "2021-11-15",
+  "2022-04-01",
+  "2022-05-16",
+  "2022-08-15",
+  "2022-11-15",
+  "2023-04-06",
+  "2023-05-16",
+  "2023-08-15",
+  "2023-11-15",
+  "2024-04-01",
+  "2024-05-16",
+  "2024-08-15",
+  "2024-11-15",
+  "2025-04-01",
+  "2025-05-16",
+  "2025-08-15",
+  "2025-11-17",
+  "2026-04-01",
+  "2026-05-18"
+ ],
+ "n_eval_1y": 31,
+ "arms_60d": {
+  "n_U": {
+   "median": 26.0,
+   "min": 0,
+   "max": 43,
+   "median_Ugt0": 27.5,
+   "min_Ugt0": 9
+  },
+  "n_C": {
+   "median": 12.0,
+   "min": 0,
+   "max": 30,
+   "median_Ugt0": 17.5,
+   "min_Ugt0": 7
+  },
+  "n_C∧轉強": {
+   "median": 6.0,
+   "min": 0,
+   "max": 22,
+   "median_Ugt0": 8.0,
+   "min_Ugt0": 1
+  },
+  "n_C∧沒轉強": {
+   "median": 4.5,
+   "min": 0,
+   "max": 23,
+   "median_Ugt0": 7.0,
+   "min_Ugt0": 0
+  },
+  "nret_C∧轉強": {
+   "median": 6.0,
+   "min": 0,
+   "max": 22,
+   "median_Ugt0": 8.0,
+   "min_Ugt0": 1
+  },
+  "nret_C∧沒轉強": {
+   "median": 4.5,
+   "min": 0,
+   "max": 22,
+   "median_Ugt0": 7.0,
+   "min_Ugt0": 0
+  },
+  "n_C∧T2": {
+   "median": 1.5,
+   "min": 0,
+   "max": 13,
+   "median_Ugt0": 2.0,
+   "min_Ugt0": 0
+  },
+  "n_C∧非T2": {
+   "median": 10.5,
+   "min": 0,
+   "max": 28,
+   "median_Ugt0": 14.5,
+   "min_Ugt0": 4
+  },
+  "n_C∧T4": {
+   "median": 0.5,
+   "min": 0,
+   "max": 13,
+   "median_Ugt0": 2.0,
+   "min_Ugt0": 0
+  },
+  "n_非C∧轉強": {
+   "median": 4.0,
+   "min": 0,
+   "max": 26,
+   "median_Ugt0": 6.0,
+   "min_Ugt0": 0
+  },
+  "n_U_unjudg_short": {
+   "median": 0.0,
+   "min": 0,
+   "max": 0,
+   "median_Ugt0": 0.0,
+   "min_Ugt0": 0
+  },
+  "n_U_unjudg_lbbad": {
+   "median": 0.0,
+   "min": 0,
+   "max": 2,
+   "median_Ugt0": 0.0,
+   "min_Ugt0": 0
+  }
+ },
+ "arms_1y": {
+  "n_U": {
+   "median": 20.0,
+   "min": 0,
+   "max": 42,
+   "median_Ugt0": 27.0,
+   "min_Ugt0": 9
+  },
+  "n_C": {
+   "median": 13.0,
+   "min": 0,
+   "max": 30,
+   "median_Ugt0": 18.0,
+   "min_Ugt0": 7
+  },
+  "n_C∧轉強": {
+   "median": 7.0,
+   "min": 0,
+   "max": 21,
+   "median_Ugt0": 8.0,
+   "min_Ugt0": 3
+  },
+  "n_C∧沒轉強": {
+   "median": 5.0,
+   "min": 0,
+   "max": 23,
+   "median_Ugt0": 8.0,
+   "min_Ugt0": 0
+  },
+  "nret_C∧轉強": {
+   "median": 7.0,
+   "min": 0,
+   "max": 20,
+   "median_Ugt0": 8.0,
+   "min_Ugt0": 3
+  },
+  "nret_C∧沒轉強": {
+   "median": 5.0,
+   "min": 0,
+   "max": 22,
+   "median_Ugt0": 8.0,
+   "min_Ugt0": 0
+  },
+  "n_C∧T2": {
+   "median": 1.0,
+   "min": 0,
+   "max": 15,
+   "median_Ugt0": 2.0,
+   "min_Ugt0": 0
+  },
+  "n_C∧非T2": {
+   "median": 10.0,
+   "min": 0,
+   "max": 28,
+   "median_Ugt0": 14.0,
+   "min_Ugt0": 3
+  },
+  "n_C∧T4": {
+   "median": 1.0,
+   "min": 0,
+   "max": 14,
+   "median_Ugt0": 1.0,
+   "min_Ugt0": 0
+  },
+  "n_非C∧轉強": {
+   "median": 3.0,
+   "min": 0,
+   "max": 16,
+   "median_Ugt0": 3.0,
+   "min_Ugt0": 0
+  },
+  "nret_U全部": {
+   "median": 19.0,
+   "min": 0,
+   "max": 42,
+   "median_Ugt0": 27.0,
+   "min_Ugt0": 9
+  }
+ },
+ "totals_60d": {
+  "n_mcap300": 21054,
+  "n_pass_q": 2057,
+  "n_U": 2053,
+  "n_U_E0le0": 4,
+  "n_C": 1302,
+  "n_U_unjudg_short": 0,
+  "n_U_unjudg_lbbad": 22,
+  "n_C_unjudg": 22,
+  "n_C∧轉強": 694,
+  "n_C∧沒轉強": 586,
+  "n_C∧T4": 214,
+  "n_非C∧轉強": 554,
+  "n_U全部": 2053,
+  "n_C∧T2": 212,
+  "n_C∧非T2": 1068,
+  "n_C∧T0": 188,
+  "n_C∧T1": 482,
+  "n_C∧T3": 184,
+  "n_U∧T0": 230,
+  "n_U∧T1": 973,
+  "n_U∧T2": 275,
+  "n_U∧T3": 310,
+  "n_U∧T4": 243,
+  "nret_C∧轉強": 694,
+  "nret_C∧沒轉強": 581,
+  "nret_U全部": 2045,
+  "nret_C∧T2": 212,
+  "nret_C∧非T2": 1063,
+  "nret_C∧T4": 212,
+  "nret_非C∧轉強": 553,
+  "n_U_no_entry": 0,
+  "n_U_hold_bad": 8,
+  "n_U_delisted_before_exit": 0,
+  "n_U_share_ev_E_J": 31,
+  "n_C_flip_alt5": 4,
+  "n_U_bad_E_J": 4
+ },
+ "totals_1y": {
+  "n_mcap300": 6149,
+  "n_pass_q": 586,
+  "n_U": 585,
+  "n_U_E0le0": 1,
+  "n_C": 414,
+  "n_U_unjudg_short": 0,
+  "n_U_unjudg_lbbad": 4,
+  "n_C_unjudg": 4,
+  "n_C∧轉強": 218,
+  "n_C∧沒轉強": 192,
+  "n_C∧T4": 59,
+  "n_非C∧轉強": 114,
+  "n_U全部": 585,
+  "n_C∧T2": 81,
+  "n_C∧非T2": 329,
+  "n_C∧T0": 68,
+  "n_C∧T1": 137,
+  "n_C∧T3": 65,
+  "n_U∧T0": 82,
+  "n_U∧T1": 224,
+  "n_U∧T2": 108,
+  "n_U∧T3": 101,
+  "n_U∧T4": 66,
+  "nret_C∧轉強": 216,
+  "nret_C∧沒轉強": 184,
+  "nret_U全部": 571,
+  "nret_C∧T2": 80,
+  "nret_C∧非T2": 320,
+  "nret_C∧T4": 56,
+  "nret_非C∧轉強": 113,
+  "n_U_no_entry": 0,
+  "n_U_hold_bad": 14,
+  "n_U_delisted_before_exit": 0,
+  "n_U_share_ev_E_J": 0,
+  "n_C_flip_alt5": 0,
+  "n_U_bad_E_J": 0
+ },
+ "main_cell_dates_with_diff": 72,
+ "main_cell_bootstrap_clusters": 26,
+ "triggers_main": {
+  "front": {
+   "n_dates": 48,
+   "n_clusters_calendar": 16,
+   "n_clusters_with_diff": 8,
+   "n_dates_arm_lt3": 37,
+   "half": 24.0,
+   "trig_clusters": true,
+   "trig_clusters_cal": true,
+   "trig_clusters_data": true,
+   "trig_lt3": true
+  },
+  "back": {
+   "n_dates": 52,
+   "n_clusters_calendar": 18,
+   "n_clusters_with_diff": 18,
+   "n_dates_arm_lt3": 5,
+   "half": 26.0,
+   "trig_clusters": true,
+   "trig_clusters_cal": true,
+   "trig_clusters_data": true,
+   "trig_lt3": false
+  },
+  "還沒測": true
+ },
+ "triggers_alt14_member": {
+  "front": {
+   "n_dates": 48,
+   "n_clusters_calendar": 16,
+   "n_clusters_with_diff": 8,
+   "n_dates_arm_lt3": 37,
+   "half": 24.0,
+   "trig_clusters": true,
+   "trig_clusters_cal": true,
+   "trig_clusters_data": true,
+   "trig_lt3": true
+  },
+  "back": {
+   "n_dates": 52,
+   "n_clusters_calendar": 18,
+   "n_clusters_with_diff": 18,
+   "n_dates_arm_lt3": 5,
+   "half": 26.0,
+   "trig_clusters": true,
+   "trig_clusters_cal": true,
+   "trig_clusters_data": true,
+   "trig_lt3": false
+  },
+  "還沒測": true
+ },
+ "triggers_alt1_from_2020_04": {
+  "front": {
+   "n_dates": 24,
+   "n_clusters_calendar": 8,
+   "n_clusters_with_diff": 8,
+   "n_dates_arm_lt3": 13,
+   "half": 12.0,
+   "trig_clusters": true,
+   "trig_clusters_cal": true,
+   "trig_clusters_data": true,
+   "trig_lt3": true
+  },
+  "back": {
+   "n_dates": 52,
+   "n_clusters_calendar": 18,
+   "n_clusters_with_diff": 18,
+   "n_dates_arm_lt3": 5,
+   "half": 26.0,
+   "trig_clusters": true,
+   "trig_clusters_cal": true,
+   "trig_clusters_data": true,
+   "trig_lt3": false
+  },
+  "還沒測": true
+ },
+ "nonreturn_desc_60d": {
+  "n_U_judg": 2031,
+  "overlap_bull_given_turn": 0.6514423076923077,
+  "overlap_turn_given_bull": 1.0,
+  "jaccard_turn_bull": 0.6514423076923077,
+  "equiv_turn_eq_above60": 1.0,
+  "share_T_in_U": {
+   "T1": 0.4790743476120138,
+   "T2": 0.13540128015755784,
+   "T3": 0.15263417035942886,
+   "T4": 0.11964549483013294,
+   "T0": 0.11324470704086657
+  },
+  "n_T_in_U": {
+   "T1": 973,
+   "T2": 275,
+   "T3": 310,
+   "T4": 243,
+   "T0": 230
+  },
+  "share_T_in_C": {
+   "T1": 0.3765625,
+   "T2": 0.165625,
+   "T3": 0.14375,
+   "T4": 0.1671875,
+   "T0": 0.146875
+  },
+  "n_T_in_C": {
+   "T1": 482,
+   "T2": 212,
+   "T3": 184,
+   "T4": 214,
+   "T0": 188
+  }
+ },
+ "nonreturn_desc_1y": {
+  "n_U_judg": 581,
+  "overlap_bull_given_turn": 0.5632530120481928,
+  "overlap_turn_given_bull": 1.0,
+  "jaccard_turn_bull": 0.5632530120481928,
+  "equiv_turn_eq_above60": 1.0,
+  "share_T_in_U": {
+   "T1": 0.3855421686746988,
+   "T2": 0.18588640275387264,
+   "T3": 0.1738382099827883,
+   "T4": 0.11359724612736662,
+   "T0": 0.14113597246127366
+  },
+  "n_T_in_U": {
+   "T1": 224,
+   "T2": 108,
+   "T3": 101,
+   "T4": 66,
+   "T0": 82
+  },
+  "share_T_in_C": {
+   "T1": 0.33414634146341465,
+   "T2": 0.1975609756097561,
+   "T3": 0.15853658536585366,
+   "T4": 0.14390243902439023,
+   "T0": 0.16585365853658537
+  },
+  "n_T_in_C": {
+   "T1": 137,
+   "T2": 81,
+   "T3": 65,
+   "T4": 59,
+   "T0": 68
+  }
+ },
+ "desc_columns": 350,
+ "desc_columns_empty": 0,
+ "desc_empty_list": []
+}
