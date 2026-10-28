@@ -578,13 +578,15 @@ def _part_sp2():
 
 @contextlib.contextmanager
 def four_cands(BM):
-    """sp／sp2 的舊 fixture 只用 10/22 那 4 檔（seq5 新增 2002、1101 另在 sp3 測）。"""
-    oc, ocodes = dict(BM.SP_CANDS), list(BM.SP_CODES)
+    """sp／sp2 的舊 fixture 只用 10/22 那 4 檔（seq5 新增 2002、1101 另在 sp3 測）；測的是原規則機制 ⇒ 暫時清空 SP_V4（v4 只記另在 sp3 測）。"""
+    oc, ocodes, ov4 = dict(BM.SP_CANDS), list(BM.SP_CODES), set(BM.SP_V4)
     BM.SP_CANDS.clear(); BM.SP_CANDS.update({k: v for k, v in oc.items() if v == "2026-10-22"}); BM.SP_CODES[:] = list(BM.SP_CANDS)
+    BM.SP_V4.clear()
     try:
         yield
     finally:
         BM.SP_CANDS.clear(); BM.SP_CANDS.update(oc); BM.SP_CODES[:] = ocodes
+        BM.SP_V4.clear(); BM.SP_V4.update(ov4)
 
 
 # ═════════════ sp3（seq8：候選 8 檔、新候選 10/26 晚、250／625 日提醒、新需求型燈2、報價提醒） ═════════════
