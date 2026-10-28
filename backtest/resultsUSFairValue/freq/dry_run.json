@@ -1,6 +1,6 @@
 {
  "dry": true,
- "資料commit": "b7572463cd253596b1e64c419053c48cb4cda9fe",
+ "資料commit": "89d9f8550f6ea39b392087c22998cd298164a26c",
  "評估日數": 27,
  "筆數（可買／接近／偏貴 的 (評估日,檔)）": {
   "1y": {
@@ -10,16 +10,16 @@
    "post_removal_days": 732,
    "panel_end_cash": 22,
    "incomplete_window": 0,
-   "entries": 1767
+   "entries": 1900
   },
   "3y": {
    "minus100": 0,
    "switch_blank_days": 0,
    "gap_days": 3,
    "post_removal_days": 5574,
-   "panel_end_cash": 41,
-   "incomplete_window": 519,
-   "entries": 1767
+   "panel_end_cash": 43,
+   "incomplete_window": 545,
+   "entries": 1900
   }
  },
  "主格_1年": {

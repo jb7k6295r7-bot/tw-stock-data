@@ -4,8 +4,10 @@
 登錄：產業 seq63（pw1 sha ab44c6850399ff57）「長期投資追蹤看板合理價算法」美股機械版，規則照第二節寫死。
 發號：裁定 seq480 §一（N_單筆 +1：可買−偏貴 1 年；N_組合 +1：對大盤兩格；3 年只描述）。
        ⇒ 先交【頻率表＋全部描述欄乾跑】、⛔ 不附報酬；核後正式跑。
-資料：私有庫 us-stock-data commit b7572463c（資料庫交件 seq62 四欄＋延伸到 2008，2026-10-27 01:04）。
-       讀 ~/usdata/b7572463c（`git archive b7572463c` 出來的唯讀快照，.commit 記完整 sha；開跑先驗）。
+資料：私有庫 us-stock-data commit 89d9f8550（資料庫 fundamentals 第二輪缺口修補，2026-10-27 19:02；裁定 seq481 §二換版）。
+       讀 ~/usdata/89d9f8550（`git archive 89d9f8550` 出來的唯讀快照，.commit 記完整 sha；開跑先驗）。
+       〔沿革：seq480 頻率表原用 b7572463c（2026-10-27 01:04）；舊版輸出留在 resultsUSFairValue/freq_b7572463/（可重現：
+         US_FV_DATA_ROOT=~/usdata/b7572463c 並把 DATA_COMMIT 改回）；兩版差異見 resultsUSFairValue/freq/freq_diff_b7572463.json〕
 私有：repo 的 resultsUSFairValue/freq/ 只放判定、彙總、筆數；逐檔明細只寫 ~/us_work/fairvalue/（repo 外）。
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchUSFairValue_freq
@@ -63,9 +65,37 @@
  ★11 單位明顯錯的加權股數（< 1,000,000 股）當缺值（例 A 2008-11 季報 352）；照報筆數。
  ★12 IR 2020-03-02 前在指數的是 Ingersoll-Rand plc（今 TT），但 IR 的財報是新 Ingersoll Rand（原 Gardner Denver）的 CIK
      ⇒ 那段財報對不上公司 ⇒ 不可算（照報）。一般化：renames_manual 有 until 的 old 代號在 until 之前一律如此。
+     〔沿革 2026-10-28 裁定 seq481：資料 89d9f8550 的 cik_map 加了分段（seg_from／seg_to）⇒ 有分段的代號改走 ★19（依評估日挑 CIK），
+       ★12 只剩「renames_manual 有 until、但 cik_map 沒有分段」的代號才適用（89d9f8550 上 0 檔；IR 改由 ★19 處理）〕
  ★13 母體「in_index=1」＝ panel 那天有列且 in_index=1；名冊在指數但 panel 那天沒有列（整段缺價 35 檔、部分缺段）⇒
      沒有收盤、市值與倍數都不可算 ⇒ 進不了任何組；照報每評估日筆數（⇒ −100% 規則實際觸發 0 筆，照報）。
  ★14 「過門檻全部」＝ 四條全過且合理價可算（含 E0 ≤ 0 歸偏貴者）；全過但合理價不可算（E0 或 pe_T 不可算）另報。
+
+══════════ 裁定 seq481（2026-10-28）換資料 89d9f8550 後新增（看任何報酬前寫死）══════════
+ ★15、★16 照寫採用（裁定 seq481 §一）；兩讀法差異筆數照報不變。
+ ★19 依評估日挑 CIK：cik_map.csv 同代號多列（seg_from／seg_to，迄＝第一個不適用的日子）的代號（IR、DD、BHGE、FTI），
+     評估日 d 落在哪一段（seg_from ≤ d < seg_to，空白＝不設限）就只用該段 CIK（＋cik_predecessor.csv 中 cik_now＝該 CIK、
+     verdict＝ok 的前身 CIK）的列：季財報（全部欄位）、封面股數（★9）、★10 分割偵測都照這個 CIK 篩；
+     本益比歷史點也用評估日那一段的 CIK（＝評估日那家公司的財報，配評估日 panel src 那個價格檔）。
+     例：IR 評估日 < 2020-03-02 ⇒ 0001466258（Ingersoll-Rand plc，今 TT；panel src＝yahoo:TT）；≥ 2020-03-02 ⇒ 0001699150。
+     DD（< 2017-09-01 舊杜邦 0000030554）、BHGE（< 2017-07-03 Baker Hughes Inc 0000808362）、FTI（< 2017-01-17 FMC Technologies
+     0001135152）的評估日全在切換日之後 ⇒ 只用新 CIK（舊版是兩個 CIK 的列混在一起讀）。
+     評估日不落在任何一段 ⇒ 財報對不上公司 ⇒ 不可算（保守；89d9f8550 上 0 筆）。沒有分段的代號照舊（不篩 CIK）。
+ ★20 多類股 EPS／加權稀釋股數（quarterly_eps_diluted_class.csv／quarterly_diluted_shares_class.csv）：只用裁定 seq481 指定類別的 6 檔：
+     V、STZ、GOOGL ⇒ CommonClassAMember；GOOG ⇒ CapitalClassCMember；
+     HSY ⇒ CommonStockMember 與 HersheyCommonStockMember（2014–2019 的名稱；兩者同列一級；⛔ 永不用 Class B）；
+     BRK.B ⇒ period_end ≥ 2017-01-01 用 EquivalentClassBMember；之前只有 Class A ⇒ 用 CommonClassAMember：EPS ÷ 1500、股數 × 1500
+     （BRK 只申報基本 EPS〔tag＝EarningsPerShareBasic〕⇒ 照用、照報筆數）。
+     讀法：同一季（±5 日）優先用指定類別的列；指定類別沒有該季 ⇒ 用主檔（沒有類別維度）的列；PIT 照舊（first_filed < 評估日，
+     同級多列取最早申報）。⛔ 別的類別（GOOG 的 CommonClassCMember、V 的 Class B／C 等）一律不用。
+     同一級兩個標籤同季都有值且相差 > 2%（HSY 2015-10-04 一季）⇒ 兩列都不用（當作沒有 EPS 列，照 ① 走淨利÷股數或不可算；照報）。
+     類別檔裡其他檔（ADT、KKR、TSS、XOM、CVNA、BKR／BHGE、ERIE、GDDY 及 S&P 400 的）沒有裁定類別 ⇒ ⛔ 不讀類別檔（照舊用主檔）。
+     ★10 分割偵測對這 6 檔改用同一套合併後的加權稀釋股數（指定類別優先，主檔只補指定類別沒有的季）。
+ ★21 多類股的「淨利÷加權稀釋股數」補值（裁定①）：只有該檔「淨利 ÷ 指定類別股數」與公司自報指定類別 derived=0 EPS 同季比值的中位數
+     與 1 相差 ≤ 2% 才做（＝該類股數就是 EPS 的分母）；否則該檔不做淨利÷股數補值（直接走 ★15：有 derived=2 列用之，否則不可算）。
+     （89d9f8550：GOOGL、GOOG 比值中位 ≈ 2（A＋B 與 C 分開算股數）⇒ 不補；V、STZ、HSY、BRK.B 過）。只用財報、⛔ 不看報酬。
+ ★22 淨利新備援標籤 NetIncomeLossAvailableToCommonStockholdersBasic、EPS 主檔的繼續營業部門備援標籤：照資料庫主序列直接用（★6 不另篩），
+     用到的季數照報。A（Agilent）2017–2019 第四季 3 季留白 ⇒ 照既有不可算規則。DE 重複季已由資料庫去除，★18 照舊。
 """
 from __future__ import annotations
 
@@ -82,10 +112,11 @@ import numpy as np
 import pandas as pd
 
 # ── 版本與路徑 ──────────────────────────────────────────────
-DATA_COMMIT = "b7572463c"
-DATA_COMMIT_FULL = "b7572463cd253596b1e64c419053c48cb4cda9fe"
+DATA_COMMIT = "89d9f8550"             # 裁定 seq481 §二（舊：b7572463c／b7572463cd253596b1e64c419053c48cb4cda9fe）
+DATA_COMMIT_FULL = "89d9f8550f6ea39b392087c22998cd298164a26c"
 REG_SHA = "ab44c6850399ff57"        # 產業 seq63 pw1
 RULING = "seq480"
+RULING_DATA = "seq481"
 ROOT = os.environ.get("US_FV_DATA_ROOT", os.path.expanduser("~/usdata/%s" % DATA_COMMIT))
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUTD = os.path.join(HERE, "resultsUSFairValue", "freq")
@@ -109,6 +140,21 @@ ALT = {"eps_literal": False, "equity_strict": False}   # ★15／★16 另一讀
 STALE_FY_DAYS = 456                  # ★17
 STALE_Q_DAYS = 200                   # ★17
 _TTM = {}
+# ★20 指定類別：ticker ⇒ [(share_class, period_end 起, period_end 迄（不含）, EPS 乘數)]；同一 list 內無日期限的列為同一級
+CLASS_PICK = {
+    "V": [("CommonClassAMember", None, None, 1.0)],
+    "STZ": [("CommonClassAMember", None, None, 1.0)],
+    "GOOGL": [("CommonClassAMember", None, None, 1.0)],
+    "GOOG": [("CapitalClassCMember", None, None, 1.0)],
+    "HSY": [("CommonStockMember", None, None, 1.0), ("HersheyCommonStockMember", None, None, 1.0)],
+    "BRK.B": [("EquivalentClassBMember", pd.Timestamp("2017-01-01"), None, 1.0),
+              ("CommonClassAMember", None, pd.Timestamp("2017-01-01"), 1.0 / 1500)],
+}
+CLASS_CONFLICT_TOL = 0.02            # ★20 同級兩標籤同季相差 > 2% ⇒ 兩列都不用
+CLASS_FILL_TOL = 0.02                # ★21
+PRIO_MAIN = 9                        # 主檔列在類別檔 6 檔裡的優先序（數字小者優先）
+CLASS_FIELDS = {"eps_diluted": "quarterly_eps_diluted_class.csv", "diluted_shares": "quarterly_diluted_shares_class.csv"}
+_CLASS_LOG = Counter()
 
 
 def _p(*a):
@@ -207,6 +253,51 @@ def renames_until():
 
 
 @functools.lru_cache(maxsize=None)
+def cik_segments():
+    """★19：cik_map.csv 同代號多列且有 seg_from／seg_to 的代號 ⇒ {ticker: [(cik, from|None, to|None)]}。"""
+    c = pd.read_csv(_p("fundamentals", "cik_map.csv"), dtype=str, keep_default_na=False)
+    if "seg_from" not in c.columns:
+        return {}
+    out = {}
+    for t, g in c.groupby("ticker"):
+        if len(g) < 2 or not ((g["seg_from"] != "") | (g["seg_to"] != "")).any():
+            continue
+        out[t] = [(ck, pd.Timestamp(a) if a else None, pd.Timestamp(b) if b else None)
+                  for ck, a, b in zip(g["cik"], g["seg_from"], g["seg_to"])]
+    return out
+
+
+@functools.lru_cache(maxsize=None)
+def cik_predecessors():
+    """cik_now ⇒ set(pred_cik)（verdict＝ok）。"""
+    p = _p("fundamentals", "cik_predecessor.csv")
+    if not os.path.exists(p):
+        return {}
+    c = pd.read_csv(p, dtype=str, keep_default_na=False)
+    c = c[(c["verdict"] == "ok") & (c["pred_cik"] != "")]
+    out = defaultdict(set)
+    for a, b in zip(c["cik_now"], c["pred_cik"]):
+        out[a].add(b)
+    return dict(out)
+
+
+def cik_for(t, d):
+    """★19：→ (cik 或 None［不分段＝不篩］, ok)。分段代號但 d 不落在任何一段 ⇒ (None, False)。"""
+    segs = cik_segments().get(t)
+    if not segs:
+        return None, True
+    d = pd.Timestamp(d)
+    for ck, a, b in segs:
+        if (a is None or a <= d) and (b is None or d < b):
+            return ck, True
+    return None, False
+
+
+def cik_allowed(cik):
+    return None if cik is None else frozenset({cik} | cik_predecessors().get(cik, set()))
+
+
+@functools.lru_cache(maxsize=None)
 def price_file(src):
     """src＝'yahoo:F'／'tiingo:F' ⇒ (close Series［同基礎＝檔尾股數］, 分割事件 list[(date, k)])。
     Yahoo：close 已調分割 ⇒ 直接用；事件 ＝ events_yahoo/F.csv 的 split（'a/b' ⇒ a/b）。
@@ -242,32 +333,134 @@ def price_file(src):
 
 # ═════════════ 財報 ═════════════
 FIELDS = ("net_income", "eps_diluted", "diluted_shares", "dps", "equity", "equity_incl_nci", "operating_income", "cfo")
-BASE_COLS = ["ticker", "period_start", "period_end", "value", "first_filed", "first_form", "tag", "derived", "index"]
+BASE_COLS = ["ticker", "cik", "period_start", "period_end", "value", "first_filed", "first_form", "tag", "derived", "index"]
+
+
+def _class_rows(name, extra_cols=()):
+    """★20：類別檔中指定類別的列（已乘 EPS 乘數／股數除以乘數），加 prio 欄；同級衝突季兩列都丟。→ DataFrame。"""
+    fn = CLASS_FIELDS[name]
+    c = pd.read_csv(_p("fundamentals", fn), dtype={"ticker": str, "cik": str, "first_form": str, "tag": str,
+                                                   "index": str, "share_class": str}, keep_default_na=False)
+    keep = []
+    for t, rules in CLASS_PICK.items():
+        g = c[c["ticker"] == t]
+        for prio, (cl, a, b, mult) in enumerate(rules):
+            x = g[g["share_class"] == cl].copy()
+            pe = pd.to_datetime(x["period_end"])
+            m = pd.Series(True, index=x.index)
+            if a is not None:
+                m &= pe >= a
+            if b is not None:
+                m &= pe < b
+            x = x[m]
+            k = mult if name == "eps_diluted" else 1.0 / mult
+            for col in ("value", "latest_value"):
+                if col in x.columns:
+                    x[col] = pd.to_numeric(x[col], errors="coerce") * k
+            x["prio"] = 0 if (a is None and b is None) else prio     # 無日期限的同級（HSY 兩名稱）同 prio
+            x["cls"] = cl if mult == 1.0 else cl + "/1500"
+            keep.append(x)
+    x = pd.concat(keep, ignore_index=True)
+    for col in ("period_start", "period_end", "first_filed") + tuple(extra_cols):
+        if col in x.columns:
+            x[col] = pd.to_datetime(x[col], errors="coerce")
+    x["derived"] = x["derived"].astype(int)
+    # 同級衝突：同一檔、同 prio、不同 share_class、period_end ±5 日、值相差 > 2% ⇒ 兩邊該季的列都丟
+    drop = set()
+    for (t, pr), g in x.groupby(["ticker", "prio"]):
+        if g["share_class"].nunique() < 2:
+            continue
+        cls = g["share_class"].unique()
+        for i, ca in enumerate(cls):
+            for cb in cls[i + 1:]:
+                A, B = g[g["share_class"] == ca], g[g["share_class"] == cb]
+                for ia, ra in A.iterrows():
+                    nb = B[(B["period_end"] - ra["period_end"]).abs() <= pd.Timedelta(days=5)]
+                    for ib, rb in nb.iterrows():
+                        if rb["value"] != 0:
+                            bad = abs(ra["value"] / rb["value"] - 1) > CLASS_CONFLICT_TOL
+                        else:
+                            bad = ra["value"] != 0
+                        if bad:
+                            drop |= {ia, ib}
+                            _CLASS_LOG["conflict_%s_%s_%s" % (name, t, ra["period_end"].date())] = 1
+    return x.drop(index=sorted(drop)).reset_index(drop=True)
+
+
+def _merge_class(q, name, cols):
+    """主檔 q（已篩 sp500）＋ ★20 指定類別列：6 檔的主檔列 prio＝PRIO_MAIN，類別列 prio 0/1；其餘檔 prio 0。"""
+    q = q.copy()
+    q["prio"] = np.where(q["ticker"].isin(list(CLASS_PICK)), PRIO_MAIN, 0)
+    q["cls"] = ""
+    if name not in CLASS_FIELDS:
+        return q
+    c = _class_rows(name, extra_cols=tuple(x for x in ("latest_filed",) if x in cols))
+    c = c[[x for x in q.columns if x in c.columns]]
+    return pd.concat([q, c], ignore_index=True)
 
 
 @functools.lru_cache(maxsize=None)
 def field(name):
-    """→ {ticker: DataFrame（依 period_end 排序）}；只讀 value／first_filed（⛔ 不讀 latest_*）；只取 S&P 500（index≠sp400）。"""
+    """→ {ticker: DataFrame（依 period_end 排序）}；只讀 value／first_filed（⛔ 不讀 latest_*）；只取 S&P 500（index≠sp400）。
+    含 cik（★19 篩）、prio（★20：數字小者優先）、cls（用到的類別）欄。"""
     q = pd.read_csv(_p("fundamentals", "quarterly_%s.csv" % name), usecols=BASE_COLS,
-                    dtype={"ticker": str, "first_form": str, "tag": str, "index": str})
+                    dtype={"ticker": str, "cik": str, "first_form": str, "tag": str, "index": str})
     q = q[q["index"] != "sp400"].copy()
     for c in ("period_start", "period_end", "first_filed"):
         q[c] = pd.to_datetime(q[c])
     q["value"] = q["value"].astype(float)
     q["derived"] = q["derived"].astype(int)
-    return {t: g.sort_values("period_end").reset_index(drop=True) for t, g in q.groupby("ticker")}
+    q = _merge_class(q, name, BASE_COLS)
+    return {t: g.sort_values(["period_end", "prio"], kind="stable").reset_index(drop=True) for t, g in q.groupby("ticker")}
 
 
 @functools.lru_cache(maxsize=None)
 def split_detect_rows():
-    """★10 專用：加權稀釋股數含 latest_value／latest_filed（只拿來偵測分割，⛔ 不當數值用）。"""
-    q = pd.read_csv(_p("fundamentals", "quarterly_diluted_shares.csv"),
-                    usecols=["ticker", "period_end", "value", "first_filed", "latest_value", "latest_filed", "derived", "index"],
-                    dtype={"ticker": str, "index": str})
+    """★10 專用：加權稀釋股數含 latest_value／latest_filed（只拿來偵測分割，⛔ 不當數值用）。
+    ★20 的 6 檔：指定類別列＋主檔只補指定類別沒有的季（±5 日）。"""
+    cols = ["ticker", "cik", "period_end", "value", "first_filed", "latest_value", "latest_filed", "derived", "index"]
+    q = pd.read_csv(_p("fundamentals", "quarterly_diluted_shares.csv"), usecols=cols,
+                    dtype={"ticker": str, "cik": str, "index": str})
     q = q[q["index"] != "sp400"].copy()
     for c in ("period_end", "first_filed", "latest_filed"):
         q[c] = pd.to_datetime(q[c])
-    return {t: g.sort_values(["first_filed", "period_end"]).reset_index(drop=True) for t, g in q.groupby("ticker")}
+    q = _merge_class(q, "diluted_shares", cols)
+    out = {}
+    for t, g in q.groupby("ticker"):
+        if t in CLASS_PICK:
+            cl = g[g["prio"] < PRIO_MAIN]
+            mn = g[g["prio"] == PRIO_MAIN]
+            if len(cl):
+                pes = cl["period_end"].values.astype("datetime64[ns]").astype("int64")
+                ok = [not (np.abs(pes - p.value) <= 5 * 86400 * 10 ** 9).any() for p in mn["period_end"]]
+                mn = mn[np.array(ok, dtype=bool)]
+            g = pd.concat([cl, mn])
+        out[t] = g.sort_values(["first_filed", "period_end"]).reset_index(drop=True)
+    return out
+
+
+@functools.lru_cache(maxsize=None)
+def class_fill_ok(t):
+    """★21：→ (ok, 中位比值, 對數)。非 6 檔 ⇒ (True, None, 0)。比值 ＝ 淨利 ÷ 指定類別股數 ÷ 指定類別 derived=0 EPS（同季，各取 prio 最優、最早申報）。"""
+    if t not in CLASS_PICK:
+        return True, None, 0
+    E, S, N = field("eps_diluted").get(t), field("diluted_shares").get(t), field("net_income").get(t)
+    if E is None or S is None or N is None:
+        return False, None, 0
+    E = E[(E["prio"] < PRIO_MAIN)].sort_values(["prio", "first_filed"]).drop_duplicates("period_end")
+    E = E[E["derived"] == 0]
+    S = S[(S["prio"] < PRIO_MAIN)].sort_values(["prio", "first_filed"]).drop_duplicates("period_end")
+    N = N.sort_values("first_filed").drop_duplicates("period_end")
+    r = []
+    for pe, ev in zip(E["period_end"], E["value"]):
+        s = S[(S["period_end"] - pe).abs() <= pd.Timedelta(days=5)]
+        n = N[(N["period_end"] - pe).abs() <= pd.Timedelta(days=5)]
+        if len(s) and len(n) and ev and s["value"].iloc[0] > 0:
+            r.append(n["value"].iloc[0] / s["value"].iloc[0] / ev)
+    if not r:
+        return False, None, 0
+    med = float(np.median(r))
+    return bool(abs(med - 1) <= CLASS_FILL_TOL), med, len(r)
 
 
 @functools.lru_cache(maxsize=1)
@@ -288,9 +481,12 @@ def snap_ratio(k):
     return float(c[i]) if abs(math.log(c[i] / k)) <= 0.02 else None
 
 
-def detect_splits(ticker):
-    """★10：→ list[(date＝新基礎第一份申報日, k, prev_filed)]（全期；呼叫端再依價格檔起點篩）。"""
+@functools.lru_cache(maxsize=None)
+def detect_splits(ticker, cik=None):
+    """★10：→ list[(date＝新基礎第一份申報日, k, prev_filed)]（全期；呼叫端再依價格檔起點篩）。★19：cik≠None ⇒ 只用該 CIK（＋前身）的列。"""
     G = split_detect_rows().get(ticker)
+    if G is not None and cik is not None:
+        G = G[G["cik"].isin(cik_allowed(cik))].reset_index(drop=True)
     if G is None or len(G) < 2:
         return []
     # 跳點只看公司自報單季股數（derived=0）；derived=2 是推算值（例 NOW 2025Q4）會假跳
@@ -334,11 +530,11 @@ def detect_splits(ticker):
 
 
 @functools.lru_cache(maxsize=None)
-def split_list(ticker, src):
+def split_list(ticker, src, cik=None):
     """→ (每股值用的分割 list［事件檔＋★10 推得、早於價格檔起點的］, 推得的那幾筆)。"""
     s, ev = price_file(src)
     p0 = s.index[0] if len(s) else PRICE_START
-    inf = [(d, k) for d, k, prev in detect_splits(ticker) if prev < p0]
+    inf = [(d, k) for d, k, prev in detect_splits(ticker, cik) if prev < p0]
     # 與事件檔重複（±200 日內同比值）的不加
     inf2 = []
     for d, k in inf:
@@ -361,9 +557,18 @@ def factor_after(splits, basis_date):
 class Fund:
     """一檔的財報（全部 PIT 讀取都經 asof 過濾 first_filed < asof）。"""
 
-    def __init__(self, t):
+    def __init__(self, t, cik=None):
         self.t = t
-        self.F = {f: field(f).get(t) for f in FIELDS}
+        self.cik = cik
+        self.fill_ok = class_fill_ok(t)[0]          # ★21
+        self.F = {}
+        for f in FIELDS:
+            g = field(f).get(t)
+            if g is not None and cik is not None:   # ★19
+                g = g[g["cik"].isin(cik_allowed(cik))].reset_index(drop=True)
+                if not len(g):
+                    g = None
+            self.F[f] = g
         ni = self.F["net_income"]
         eps = self.F["eps_diluted"]
         pes = []
@@ -379,10 +584,12 @@ class Fund:
         self.grid = grid
         self._pe = {f: (None if g is None else g["period_end"].values.astype("datetime64[ns]").astype("int64")) for f, g in self.F.items()}
         self._ff = {f: (None if g is None else g["first_filed"].values.astype("datetime64[ns]").astype("int64")) for f, g in self.F.items()}
+        self._pr = {f: (None if g is None else g["prio"].values.astype(int)) for f, g in self.F.items()}
 
     def row(self, f, pe, asof, tol=5):
         """field f 在 period_end≈pe（±tol 日）、first_filed < asof 的列（Series）或 None。
-        ★18 同一季有兩列（period_end 差幾天，例 DE 2016-10-30／10-31，較晚那份是重申報）⇒ 取 asof 前最早申報的那列。"""
+        ★18 同一季有兩列（period_end 差幾天，例 DE 2016-10-30／10-31，較晚那份是重申報）⇒ 取 asof 前最早申報的那列。
+        ★20 先比 prio（指定類別 0/1 ＜ 主檔 9），同 prio 再取最早申報；非 6 檔全是 0 ⇒ 與舊版相同。"""
         g = self.F[f]
         if g is None:
             return None
@@ -390,7 +597,8 @@ class Fund:
         k = np.flatnonzero(m)
         if len(k) == 0:
             return None
-        i = int(k[np.argmin(self._ff[f][k])])
+        o = np.lexsort((self._ff[f][k], self._pr[f][k]))
+        i = int(k[o[0]])
         return g.iloc[i]
 
     # ── 單季 EPS（裁定①）──
@@ -401,16 +609,17 @@ class Fund:
         literal=True（裁定①字面另一讀法）：沒有 d2_keep 這一步（補不出即不可算；只拿來報差異筆數）。
         單位錯的股數（< 1,000,000）當缺（★11）。"""
         r = self.row("eps_diluted", pe, asof)
+        sfx = "" if r is None or not r["cls"] else ("_clsA1500" if r["cls"].endswith("/1500") else "_cls")   # ★20 用到類別列
         if r is not None and r["derived"] in (0, 1):
-            return r["value"] / factor_after(splits, r["first_filed"]), "direct"
+            return r["value"] / factor_after(splits, r["first_filed"]), "direct" + sfx
         ni = self.row("net_income", pe, asof)
-        sh = self.row("diluted_shares", pe, asof)
+        sh = self.row("diluted_shares", pe, asof) if self.fill_ok else None        # ★21
         if ni is not None and sh is not None and sh["value"] >= SHARES_MIN_SANE:
             basis = max(ni["first_filed"], sh["first_filed"])
             v = ni["value"] / sh["value"] / factor_after(splits, basis)
-            return v, ("d2_fill" if r is not None else "miss_fill")
+            return v, ("d2_fill" if r is not None else "miss_fill") + ("_cls" if sh["cls"] else "")
         if r is not None and not (literal or ALT["eps_literal"]):
-            return r["value"] / factor_after(splits, r["first_filed"]), "d2_keep"
+            return r["value"] / factor_after(splits, r["first_filed"]), "d2_keep" + sfx
         return None, ("na_d2" if r is not None else "na")
 
     def latest_q(self, asof):
@@ -453,7 +662,7 @@ class Fund:
 
     def ttm_eps(self, asof, splits, kinds=None):
         if kinds is None:
-            key = (self.t, asof, splits, ALT["eps_literal"])
+            key = (self.t, self.cik, asof, splits, ALT["eps_literal"])
             if key not in _TTM:
                 _TTM[key] = self._ttm_eps(asof, splits, None)
             return _TTM[key]
@@ -549,8 +758,8 @@ class Fund:
 
 
 @functools.lru_cache(maxsize=None)
-def fund(t):
-    return Fund(t)
+def fund(t, cik=None):
+    return Fund(t, cik)
 
 
 # ═════════════ 封面股數（③、★9）═════════════
@@ -568,11 +777,13 @@ def shares_table():
     return {t: g.sort_values(["filed", "as_of_date"]) for t, g in s.groupby("ticker")}
 
 
-def shares_asof(t, asof):
-    """→ (股數, as_of_date, kind) 或 (None, None, 'na')。kind：plain／class_sum。"""
+def shares_asof(t, asof, cik=None):
+    """→ (股數, as_of_date, kind) 或 (None, None, 'na')。kind：plain／class_sum。★19：cik≠None ⇒ 只用該 CIK（＋前身）的申報。"""
     g = shares_table().get(t)
     if g is None:
         return None, None, "na"
+    if cik is not None:
+        g = g[g["cik"].isin(cik_allowed(cik))]
     g = g[g["filed"] < asof]
     if not len(g):
         return None, None, "na"
@@ -629,6 +840,8 @@ def gates(F, d, splits, stat):
             r = F.row("net_income", pe, d)
             if r is not None and r["tag"] == "ProfitLoss":
                 stat["ni_profitloss_q"] += 1
+            if r is not None and "AvailableToCommonStockholders" in str(r["tag"]):     # ★22
+                stat["ni_availcommon_q"] += 1
     # ① ROE
     hit = miss = 0
     for (e, qs), n in zip(W, ni):
@@ -669,6 +882,12 @@ def gates(F, d, splits, stat):
         for pe in qs:
             v, k = F.eps_q(pe, d, splits)
             stat["eps_kind_annual_" + k] += 1
+            if k.startswith(("direct", "d2_keep")):
+                tg = str(F.row("eps_diluted", pe, d)["tag"])
+                if "ContinuingOperations" in tg:                                 # ★22
+                    stat["eps_contops_annual_q"] += 1
+                if tg == "EarningsPerShareBasic":                                  # ★20 BRK 基本 EPS
+                    stat["eps_basic_annual_q"] += 1
             if v is None:
                 return None
             tot += v
@@ -725,16 +944,27 @@ def classify(t, d, stat):
         return rec
     src = row["src"]
     rec["src"] = src
-    if t in renames_until() and d <= renames_until()[t]:
-        rec["stage"] = "fund_mismatch"          # ★12
+    cik, cik_ok = cik_for(t, d)                 # ★19
+    if not cik_ok:
+        rec["stage"] = "fund_mismatch"
+        rec["why"] = "no_cik_segment"
+        return rec
+    if cik is not None:
+        rec["cik"] = cik
+        stat["cik_segment_used"] += 1
+        stat["cikseg_%s_%s" % (t, cik)] += 1
+        if any(ck == cik and b is not None for ck, _, b in cik_segments()[t]):    # 用到「有迄日」的舊段
+            stat["cik_segment_old"] += 1
+    elif t in renames_until() and d <= renames_until()[t]:
+        rec["stage"] = "fund_mismatch"          # ★12（沿革：只剩沒有 cik 分段的代號）
         return rec
     close, _ = price_file(src)
     if d not in close.index:
         rec["stage"] = "no_close"
         return rec
-    splits, inferred = split_list(t, src)
+    splits, inferred = split_list(t, src, cik)
     c = float(close.loc[d])
-    sh, asof_sh, skind = shares_asof(t, d)
+    sh, asof_sh, skind = shares_asof(t, d, cik)
     if sh is None:
         rec["stage"] = "mcap_na"
         return rec
@@ -749,7 +979,9 @@ def classify(t, d, stat):
         rec["stage"] = "mcap_small"
         return rec
     rec["stage"] = "pop"
-    F = fund(t)
+    F = fund(t, cik)
+    if t in CLASS_PICK:
+        stat["class_ticker_pop"] += 1
     G = gates(F, d, splits, stat)
     rec.update({k: G.get(k) for k in ("r1", "r2", "r3", "r4", "g_hist", "fy_end", "why")})
     allp = all(G[k] == "pass" for k in ("r1", "r2", "r3", "r4"))
@@ -763,6 +995,12 @@ def classify(t, d, stat):
     E0, qs = F.ttm_eps(d, splits, kinds)
     for pe, k in kinds:
         stat["eps_kind_E0_" + k] += 1
+        if k.startswith(("direct", "d2_keep")):
+            tg = str(F.row("eps_diluted", pe, d)["tag"])
+            if "ContinuingOperations" in tg:                                     # ★22
+                stat["eps_contops_E0_q"] += 1
+            if tg == "EarningsPerShareBasic":
+                stat["eps_basic_E0_q"] += 1
     rec["E0_kinds"] = ",".join(k for _, k in kinds)
     if E0 is None:
         rec["val"] = "E0_na"
@@ -912,8 +1150,10 @@ def summarize(R, T):
     # 分割調整：用到的推得分割（★10）與事件檔分割
     inf_used = set()
     ev_used = set()
-    for t, src in R.loc[R.get("stage") == "pop", ["ticker", "src"]].drop_duplicates().itertuples(index=False):
-        sp, inf = split_list(t, src)
+    pop = R.loc[R.get("stage") == "pop"].copy()
+    pop["cik"] = pop["cik"].where(pop["cik"].notna(), None) if "cik" in pop else None
+    for t, src, ck in pop[["ticker", "src", "cik"]].drop_duplicates().itertuples(index=False):
+        sp, inf = split_list(t, src, ck if isinstance(ck, str) else None)
         for x in inf:
             inf_used.add((t,) + tuple(map(str, x)))
         for x in sp:
@@ -956,6 +1196,36 @@ def summarize(R, T):
         "門檻不可算最多的檔": {k: R.loc[(R.get("stage") == "pop") & (R[k] == "na"), "ticker"].value_counts().head(15).to_dict()
                        for k in ("r1", "r2", "r3", "r4")},
     }
+    # ── 裁定 seq481 新增（★19～★22）──
+    ncol = lambda c: int(T[c].sum()) if c in T else 0     # noqa: E731
+    S["★19_依評估日挑CIK"] = {
+        "分段代號": {t: [[ck, str(a.date()) if a is not None else "", str(b.date()) if b is not None else ""] for ck, a, b in v]
+                 for t, v in cik_segments().items()},
+        "用到分段的(評估日,檔)": ncol("n_cik_segment_used"), "其中用舊段CIK": ncol("n_cik_segment_old"),
+        "逐代號CIK_(評估日,檔)": {c[len("n_cikseg_"):]: int(T[c].sum()) for c in T.columns if c.startswith("n_cikseg_")},
+        "評估日不落在任何段_(評估日,檔)": int((R.get("why") == "no_cik_segment").sum()) if "why" in R else 0,
+        "★12殘留(renames_until且無分段)_(評估日,檔)": int(((R.get("stage") == "fund_mismatch") & (R.get("why") != "no_cik_segment")).sum()),
+    }
+    six = R[(R.get("stage") == "pop") & R["ticker"].isin(list(CLASS_PICK))]
+    S["★20★21_多類股"] = {
+        "指定類別": {t: [r[0] + ("" if r[3] == 1.0 else "÷1500") + ("" if r[1] is None else " pe≥" + str(r[1].date()))
+                     + ("" if r[2] is None else " pe<" + str(r[2].date())) for r in v] for t, v in CLASS_PICK.items()},
+        "淨利÷股數補值_可用": {t: {"ok": class_fill_ok(t)[0], "比值中位": None if class_fill_ok(t)[1] is None else round(class_fill_ok(t)[1], 4),
+                           "對數": class_fill_ok(t)[2]} for t in CLASS_PICK},
+        "同級衝突丟列": {k: v for k, v in _CLASS_LOG.items()},
+        "6檔在母體_(評估日,檔)": int(len(six)),
+        "6檔四條_各狀態": {k: six[k].value_counts().to_dict() for k in ("r1", "r2", "r3", "r4")} if len(six) else {},
+        "6檔進組_(評估日,檔)": six.loc[six.get("val") == "ok", "group"].value_counts().to_dict() if len(six) and "val" in six else {},
+        "6檔進組_逐代號評估日數": six.loc[six.get("val") == "ok"].groupby("ticker").size().to_dict() if len(six) and "val" in six else {},
+        "EPS單季用到類別列_筆": {k: v for k, v in kinds.items() if "_cls" in k},
+        "BRK基本EPS_季筆(年度/E0)": [ncol("n_eps_basic_annual_q"), ncol("n_eps_basic_E0_q")],
+    }
+    S["★22_新備援標籤"] = {"淨利AvailableToCommon季_筆": ncol("n_ni_availcommon_q"),
+                       "EPS繼續營業部門標籤季_筆(年度/E0)": [ncol("n_eps_contops_annual_q"), ncol("n_eps_contops_E0_q")]}
+    S["★15★16_筆數"] = {"權益用equity_incl_nci補_年": ncol("n_equity_incl_nci_year"),
+                      "derived2改用淨利÷股數(d2_fill)_季筆": sum(v for k, v in kinds.items() if "d2_fill" in k),
+                      "derived2照用(d2_keep)_季筆": sum(v for k, v in kinds.items() if "d2_keep" in k),
+                      "沒有列用淨利÷股數(miss_fill)_季筆": sum(v for k, v in kinds.items() if "miss_fill" in k)}
     return S
 
 

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""美股合理價機械版——描述欄與判定（正式跑程式）。⛔ 目前只准 --dry（裁定 seq480：先交頻率表＋全部描述欄乾跑，核後正式跑）。
+"""美股合理價機械版——描述欄與判定（正式跑程式）。
+〔沿革：裁定 seq480 先只准 --dry；裁定 seq481（2026-10-28）核准正式跑：資料換 89d9f8550（DATA_PIN），頻率表重出＋自檢過、
+  --dry 描述欄全有之後跑 --ruling seq480（判準與 N 照 seq480：N_單筆 +1、N_組合 +1）〕
 
     cd ~/tw-p17 && PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchUSFairValue --dry
     （正式：... --ruling seq480 ；⛔ 沒帶 --ruling seq480 一律拒跑正式；seq366：⛔ 不准任何含報酬的試跑或子樣本）
@@ -40,6 +42,7 @@ import pandas as pd
 sys.path.insert(0, os.path.expanduser("~/tw-p17"))
 from backtest import researchUSFairValue_freq as FQ   # noqa: E402
 
+DATA_PIN = "89d9f8550f6ea39b392087c22998cd298164a26c"   # 裁定 seq481 §二（舊 b7572463c）；與 freq 的 DATA_COMMIT_FULL 必須相同
 H1, H3 = 250, 750
 SEED, NBOOT = 20261027, 10000
 FRONT = (2019, 2021)
@@ -156,6 +159,8 @@ def nav_stats(daily):
 
 
 def run(dry):
+    if FQ.DATA_COMMIT_FULL != DATA_PIN:
+        raise RuntimeError("freq 的資料 commit %s ≠ 正式跑寫死的 %s" % (FQ.DATA_COMMIT_FULL, DATA_PIN))
     FQ.assert_pinned()
     G = load_groups()
     S0 = json.load(open(os.path.join(FQ.OUTD, "freq_summary.json"), encoding="utf-8"))
