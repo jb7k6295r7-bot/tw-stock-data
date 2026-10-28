@@ -1,0 +1,5 @@
+snapshot=/home/chemtim/twdata/8e5d22eb306895d15bd93643284330983c57a823
+commit=8e5d22eb306895d15bd93643284330983c57a823
+paths=data/meta data/stocks data/adj data/mops/fs_hist data/mops/bs_hist data/stocks_per data/history/market_tri.csv (git archive, chmod a-w)
+python=~/tw-p16/.venv/bin/python
+cmd=cd orig && python bt.py <snapshot>
