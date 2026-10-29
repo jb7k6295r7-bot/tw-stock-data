@@ -1,0 +1,433 @@
+﻿section,cell,stat,n,status
+拆件描述,買1A0,探索｜超額(訊號−對照):mean,649,filled
+拆件描述,買1A0,探索｜超額(訊號−對照):median,649,filled
+拆件描述,買1A0,探索｜超額(訊號−對照):mean_ex_max1,649,filled
+拆件描述,買1A0,探索｜超額 月分群99%CI:mean,649,filled
+拆件描述,買1A0,探索｜超額 月分群99%CI:lo,649,filled
+拆件描述,買1A0,探索｜超額 月分群99%CI:hi,649,filled
+拆件描述,買1A0,探索｜停損先到(含同日)比例:share,649,filled
+拆件描述,買1A0,探索｜賣5先到比例:share,649,filled
+拆件描述,買1A0,探索｜持有中位:value,649,filled
+拆件描述,買1A0,確認｜超額(訊號−對照):mean,853,filled
+拆件描述,買1A0,確認｜超額(訊號−對照):median,853,filled
+拆件描述,買1A0,確認｜超額(訊號−對照):mean_ex_max1,853,filled
+拆件描述,買1A0,確認｜超額 月分群99%CI:mean,853,filled
+拆件描述,買1A0,確認｜超額 月分群99%CI:lo,853,filled
+拆件描述,買1A0,確認｜超額 月分群99%CI:hi,853,filled
+拆件描述,買1A0,確認｜停損先到(含同日)比例:share,853,filled
+拆件描述,買1A0,確認｜賣5先到比例:share,853,filled
+拆件描述,買1A0,確認｜持有中位:value,853,filled
+拆件描述,買1A1,探索｜超額(訊號−對照):mean,2967,filled
+拆件描述,買1A1,探索｜超額(訊號−對照):median,2967,filled
+拆件描述,買1A1,探索｜超額(訊號−對照):mean_ex_max1,2967,filled
+拆件描述,買1A1,探索｜超額 月分群99%CI:mean,2967,filled
+拆件描述,買1A1,探索｜超額 月分群99%CI:lo,2967,filled
+拆件描述,買1A1,探索｜超額 月分群99%CI:hi,2967,filled
+拆件描述,買1A1,探索｜停損先到(含同日)比例:share,2967,filled
+拆件描述,買1A1,探索｜賣5先到比例:share,2967,filled
+拆件描述,買1A1,探索｜持有中位:value,2967,filled
+拆件描述,買1A1,確認｜超額(訊號−對照):mean,3192,filled
+拆件描述,買1A1,確認｜超額(訊號−對照):median,3192,filled
+拆件描述,買1A1,確認｜超額(訊號−對照):mean_ex_max1,3192,filled
+拆件描述,買1A1,確認｜超額 月分群99%CI:mean,3192,filled
+拆件描述,買1A1,確認｜超額 月分群99%CI:lo,3192,filled
+拆件描述,買1A1,確認｜超額 月分群99%CI:hi,3192,filled
+拆件描述,買1A1,確認｜停損先到(含同日)比例:share,3192,filled
+拆件描述,買1A1,確認｜賣5先到比例:share,3192,filled
+拆件描述,買1A1,確認｜持有中位:value,3192,filled
+拆件描述,買1A2,探索｜超額(訊號−對照):mean,3068,filled
+拆件描述,買1A2,探索｜超額(訊號−對照):median,3068,filled
+拆件描述,買1A2,探索｜超額(訊號−對照):mean_ex_max1,3068,filled
+拆件描述,買1A2,探索｜超額 月分群99%CI:mean,3068,filled
+拆件描述,買1A2,探索｜超額 月分群99%CI:lo,3068,filled
+拆件描述,買1A2,探索｜超額 月分群99%CI:hi,3068,filled
+拆件描述,買1A2,探索｜停損先到(含同日)比例:share,3068,filled
+拆件描述,買1A2,探索｜賣5先到比例:share,3068,filled
+拆件描述,買1A2,探索｜持有中位:value,3068,filled
+拆件描述,買1A2,確認｜超額(訊號−對照):mean,4110,filled
+拆件描述,買1A2,確認｜超額(訊號−對照):median,4110,filled
+拆件描述,買1A2,確認｜超額(訊號−對照):mean_ex_max1,4110,filled
+拆件描述,買1A2,確認｜超額 月分群99%CI:mean,4110,filled
+拆件描述,買1A2,確認｜超額 月分群99%CI:lo,4110,filled
+拆件描述,買1A2,確認｜超額 月分群99%CI:hi,4110,filled
+拆件描述,買1A2,確認｜停損先到(含同日)比例:share,4110,filled
+拆件描述,買1A2,確認｜賣5先到比例:share,4110,filled
+拆件描述,買1A2,確認｜持有中位:value,4110,filled
+拆件描述,買1A3,探索｜超額(訊號−對照):mean,5603,filled
+拆件描述,買1A3,探索｜超額(訊號−對照):median,5603,filled
+拆件描述,買1A3,探索｜超額(訊號−對照):mean_ex_max1,5603,filled
+拆件描述,買1A3,探索｜超額 月分群99%CI:mean,5603,filled
+拆件描述,買1A3,探索｜超額 月分群99%CI:lo,5603,filled
+拆件描述,買1A3,探索｜超額 月分群99%CI:hi,5603,filled
+拆件描述,買1A3,探索｜停損先到(含同日)比例:share,5603,filled
+拆件描述,買1A3,探索｜賣5先到比例:share,5603,filled
+拆件描述,買1A3,探索｜持有中位:value,5603,filled
+拆件描述,買1A3,確認｜超額(訊號−對照):mean,6747,filled
+拆件描述,買1A3,確認｜超額(訊號−對照):median,6747,filled
+拆件描述,買1A3,確認｜超額(訊號−對照):mean_ex_max1,6747,filled
+拆件描述,買1A3,確認｜超額 月分群99%CI:mean,6747,filled
+拆件描述,買1A3,確認｜超額 月分群99%CI:lo,6747,filled
+拆件描述,買1A3,確認｜超額 月分群99%CI:hi,6747,filled
+拆件描述,買1A3,確認｜停損先到(含同日)比例:share,6747,filled
+拆件描述,買1A3,確認｜賣5先到比例:share,6747,filled
+拆件描述,買1A3,確認｜持有中位:value,6747,filled
+拆件描述,買1B0,探索｜超額(訊號−對照):mean,649,filled
+拆件描述,買1B0,探索｜超額(訊號−對照):median,649,filled
+拆件描述,買1B0,探索｜超額(訊號−對照):mean_ex_max1,649,filled
+拆件描述,買1B0,探索｜超額 月分群99%CI:mean,649,filled
+拆件描述,買1B0,探索｜超額 月分群99%CI:lo,649,filled
+拆件描述,買1B0,探索｜超額 月分群99%CI:hi,649,filled
+拆件描述,買1B0,探索｜停損先到(含同日)比例:share,649,filled
+拆件描述,買1B0,探索｜賣5先到比例:share,649,filled
+拆件描述,買1B0,探索｜持有中位:value,649,filled
+拆件描述,買1B0,確認｜超額(訊號−對照):mean,853,filled
+拆件描述,買1B0,確認｜超額(訊號−對照):median,853,filled
+拆件描述,買1B0,確認｜超額(訊號−對照):mean_ex_max1,853,filled
+拆件描述,買1B0,確認｜超額 月分群99%CI:mean,853,filled
+拆件描述,買1B0,確認｜超額 月分群99%CI:lo,853,filled
+拆件描述,買1B0,確認｜超額 月分群99%CI:hi,853,filled
+拆件描述,買1B0,確認｜停損先到(含同日)比例:share,853,filled
+拆件描述,買1B0,確認｜賣5先到比例:share,853,filled
+拆件描述,買1B0,確認｜持有中位:value,853,filled
+拆件描述,買1B1,探索｜超額(訊號−對照):mean,649,filled
+拆件描述,買1B1,探索｜超額(訊號−對照):median,649,filled
+拆件描述,買1B1,探索｜超額(訊號−對照):mean_ex_max1,649,filled
+拆件描述,買1B1,探索｜超額 月分群99%CI:mean,649,filled
+拆件描述,買1B1,探索｜超額 月分群99%CI:lo,649,filled
+拆件描述,買1B1,探索｜超額 月分群99%CI:hi,649,filled
+拆件描述,買1B1,探索｜停損先到(含同日)比例:share,649,filled
+拆件描述,買1B1,探索｜賣5先到比例:share,649,filled
+拆件描述,買1B1,探索｜持有中位:value,649,filled
+拆件描述,買1B1,確認｜超額(訊號−對照):mean,853,filled
+拆件描述,買1B1,確認｜超額(訊號−對照):median,853,filled
+拆件描述,買1B1,確認｜超額(訊號−對照):mean_ex_max1,853,filled
+拆件描述,買1B1,確認｜超額 月分群99%CI:mean,853,filled
+拆件描述,買1B1,確認｜超額 月分群99%CI:lo,853,filled
+拆件描述,買1B1,確認｜超額 月分群99%CI:hi,853,filled
+拆件描述,買1B1,確認｜停損先到(含同日)比例:share,853,filled
+拆件描述,買1B1,確認｜賣5先到比例:share,853,filled
+拆件描述,買1B1,確認｜持有中位:value,853,filled
+拆件描述,買1B2,探索｜超額(訊號−對照):mean,649,filled
+拆件描述,買1B2,探索｜超額(訊號−對照):median,649,filled
+拆件描述,買1B2,探索｜超額(訊號−對照):mean_ex_max1,649,filled
+拆件描述,買1B2,探索｜超額 月分群99%CI:mean,649,filled
+拆件描述,買1B2,探索｜超額 月分群99%CI:lo,649,filled
+拆件描述,買1B2,探索｜超額 月分群99%CI:hi,649,filled
+拆件描述,買1B2,探索｜停損先到(含同日)比例:share,649,filled
+拆件描述,買1B2,探索｜賣5先到比例:share,649,filled
+拆件描述,買1B2,探索｜持有中位:value,649,filled
+拆件描述,買1B2,確認｜超額(訊號−對照):mean,853,filled
+拆件描述,買1B2,確認｜超額(訊號−對照):median,853,filled
+拆件描述,買1B2,確認｜超額(訊號−對照):mean_ex_max1,853,filled
+拆件描述,買1B2,確認｜超額 月分群99%CI:mean,853,filled
+拆件描述,買1B2,確認｜超額 月分群99%CI:lo,853,filled
+拆件描述,買1B2,確認｜超額 月分群99%CI:hi,853,filled
+拆件描述,買1B2,確認｜停損先到(含同日)比例:share,853,filled
+拆件描述,買1B2,確認｜賣5先到比例:share,853,filled
+拆件描述,買1B2,確認｜持有中位:value,853,filled
+拆件描述,買1B3,探索｜超額(訊號−對照):mean,649,filled
+拆件描述,買1B3,探索｜超額(訊號−對照):median,649,filled
+拆件描述,買1B3,探索｜超額(訊號−對照):mean_ex_max1,649,filled
+拆件描述,買1B3,探索｜超額 月分群99%CI:mean,649,filled
+拆件描述,買1B3,探索｜超額 月分群99%CI:lo,649,filled
+拆件描述,買1B3,探索｜超額 月分群99%CI:hi,649,filled
+拆件描述,買1B3,探索｜停損先到(含同日)比例:share,649,filled
+拆件描述,買1B3,探索｜賣5先到比例:share,649,filled
+拆件描述,買1B3,探索｜持有中位:value,649,filled
+拆件描述,買1B3,確認｜超額(訊號−對照):mean,853,filled
+拆件描述,買1B3,確認｜超額(訊號−對照):median,853,filled
+拆件描述,買1B3,確認｜超額(訊號−對照):mean_ex_max1,853,filled
+拆件描述,買1B3,確認｜超額 月分群99%CI:mean,853,filled
+拆件描述,買1B3,確認｜超額 月分群99%CI:lo,853,filled
+拆件描述,買1B3,確認｜超額 月分群99%CI:hi,853,filled
+拆件描述,買1B3,確認｜停損先到(含同日)比例:share,853,filled
+拆件描述,買1B3,確認｜賣5先到比例:share,853,filled
+拆件描述,買1B3,確認｜持有中位:value,853,filled
+拆件描述,買2A0,探索｜超額(訊號−對照):mean,2106,filled
+拆件描述,買2A0,探索｜超額(訊號−對照):median,2106,filled
+拆件描述,買2A0,探索｜超額(訊號−對照):mean_ex_max1,2106,filled
+拆件描述,買2A0,探索｜超額 月分群99%CI:mean,2106,filled
+拆件描述,買2A0,探索｜超額 月分群99%CI:lo,2106,filled
+拆件描述,買2A0,探索｜超額 月分群99%CI:hi,2106,filled
+拆件描述,買2A0,探索｜停損先到(含同日)比例:share,2106,filled
+拆件描述,買2A0,探索｜賣5先到比例:share,2106,filled
+拆件描述,買2A0,探索｜持有中位:value,2106,filled
+拆件描述,買2A0,確認｜超額(訊號−對照):mean,2706,filled
+拆件描述,買2A0,確認｜超額(訊號−對照):median,2706,filled
+拆件描述,買2A0,確認｜超額(訊號−對照):mean_ex_max1,2706,filled
+拆件描述,買2A0,確認｜超額 月分群99%CI:mean,2706,filled
+拆件描述,買2A0,確認｜超額 月分群99%CI:lo,2706,filled
+拆件描述,買2A0,確認｜超額 月分群99%CI:hi,2706,filled
+拆件描述,買2A0,確認｜停損先到(含同日)比例:share,2706,filled
+拆件描述,買2A0,確認｜賣5先到比例:share,2706,filled
+拆件描述,買2A0,確認｜持有中位:value,2706,filled
+拆件描述,買2A1,探索｜超額(訊號−對照):mean,2504,filled
+拆件描述,買2A1,探索｜超額(訊號−對照):median,2504,filled
+拆件描述,買2A1,探索｜超額(訊號−對照):mean_ex_max1,2504,filled
+拆件描述,買2A1,探索｜超額 月分群99%CI:mean,2504,filled
+拆件描述,買2A1,探索｜超額 月分群99%CI:lo,2504,filled
+拆件描述,買2A1,探索｜超額 月分群99%CI:hi,2504,filled
+拆件描述,買2A1,探索｜停損先到(含同日)比例:share,2504,filled
+拆件描述,買2A1,探索｜賣5先到比例:share,2504,filled
+拆件描述,買2A1,探索｜持有中位:value,2504,filled
+拆件描述,買2A1,確認｜超額(訊號−對照):mean,3107,filled
+拆件描述,買2A1,確認｜超額(訊號−對照):median,3107,filled
+拆件描述,買2A1,確認｜超額(訊號−對照):mean_ex_max1,3107,filled
+拆件描述,買2A1,確認｜超額 月分群99%CI:mean,3107,filled
+拆件描述,買2A1,確認｜超額 月分群99%CI:lo,3107,filled
+拆件描述,買2A1,確認｜超額 月分群99%CI:hi,3107,filled
+拆件描述,買2A1,確認｜停損先到(含同日)比例:share,3107,filled
+拆件描述,買2A1,確認｜賣5先到比例:share,3107,filled
+拆件描述,買2A1,確認｜持有中位:value,3107,filled
+拆件描述,買2A2,探索｜超額(訊號−對照):mean,3092,filled
+拆件描述,買2A2,探索｜超額(訊號−對照):median,3092,filled
+拆件描述,買2A2,探索｜超額(訊號−對照):mean_ex_max1,3092,filled
+拆件描述,買2A2,探索｜超額 月分群99%CI:mean,3092,filled
+拆件描述,買2A2,探索｜超額 月分群99%CI:lo,3092,filled
+拆件描述,買2A2,探索｜超額 月分群99%CI:hi,3092,filled
+拆件描述,買2A2,探索｜停損先到(含同日)比例:share,3092,filled
+拆件描述,買2A2,探索｜賣5先到比例:share,3092,filled
+拆件描述,買2A2,探索｜持有中位:value,3092,filled
+拆件描述,買2A2,確認｜超額(訊號−對照):mean,4133,filled
+拆件描述,買2A2,確認｜超額(訊號−對照):median,4133,filled
+拆件描述,買2A2,確認｜超額(訊號−對照):mean_ex_max1,4133,filled
+拆件描述,買2A2,確認｜超額 月分群99%CI:mean,4133,filled
+拆件描述,買2A2,確認｜超額 月分群99%CI:lo,4133,filled
+拆件描述,買2A2,確認｜超額 月分群99%CI:hi,4133,filled
+拆件描述,買2A2,確認｜停損先到(含同日)比例:share,4133,filled
+拆件描述,買2A2,確認｜賣5先到比例:share,4133,filled
+拆件描述,買2A2,確認｜持有中位:value,4133,filled
+拆件描述,買2A3,探索｜超額(訊號−對照):mean,5594,filled
+拆件描述,買2A3,探索｜超額(訊號−對照):median,5594,filled
+拆件描述,買2A3,探索｜超額(訊號−對照):mean_ex_max1,5594,filled
+拆件描述,買2A3,探索｜超額 月分群99%CI:mean,5594,filled
+拆件描述,買2A3,探索｜超額 月分群99%CI:lo,5594,filled
+拆件描述,買2A3,探索｜超額 月分群99%CI:hi,5594,filled
+拆件描述,買2A3,探索｜停損先到(含同日)比例:share,5594,filled
+拆件描述,買2A3,探索｜賣5先到比例:share,5594,filled
+拆件描述,買2A3,探索｜持有中位:value,5594,filled
+拆件描述,買2A3,確認｜超額(訊號−對照):mean,6767,filled
+拆件描述,買2A3,確認｜超額(訊號−對照):median,6767,filled
+拆件描述,買2A3,確認｜超額(訊號−對照):mean_ex_max1,6767,filled
+拆件描述,買2A3,確認｜超額 月分群99%CI:mean,6767,filled
+拆件描述,買2A3,確認｜超額 月分群99%CI:lo,6767,filled
+拆件描述,買2A3,確認｜超額 月分群99%CI:hi,6767,filled
+拆件描述,買2A3,確認｜停損先到(含同日)比例:share,6767,filled
+拆件描述,買2A3,確認｜賣5先到比例:share,6767,filled
+拆件描述,買2A3,確認｜持有中位:value,6767,filled
+拆件描述,買2B0,探索｜超額(訊號−對照):mean,2106,filled
+拆件描述,買2B0,探索｜超額(訊號−對照):median,2106,filled
+拆件描述,買2B0,探索｜超額(訊號−對照):mean_ex_max1,2106,filled
+拆件描述,買2B0,探索｜超額 月分群99%CI:mean,2106,filled
+拆件描述,買2B0,探索｜超額 月分群99%CI:lo,2106,filled
+拆件描述,買2B0,探索｜超額 月分群99%CI:hi,2106,filled
+拆件描述,買2B0,探索｜停損先到(含同日)比例:share,2106,filled
+拆件描述,買2B0,探索｜賣5先到比例:share,2106,filled
+拆件描述,買2B0,探索｜持有中位:value,2106,filled
+拆件描述,買2B0,確認｜超額(訊號−對照):mean,2706,filled
+拆件描述,買2B0,確認｜超額(訊號−對照):median,2706,filled
+拆件描述,買2B0,確認｜超額(訊號−對照):mean_ex_max1,2706,filled
+拆件描述,買2B0,確認｜超額 月分群99%CI:mean,2706,filled
+拆件描述,買2B0,確認｜超額 月分群99%CI:lo,2706,filled
+拆件描述,買2B0,確認｜超額 月分群99%CI:hi,2706,filled
+拆件描述,買2B0,確認｜停損先到(含同日)比例:share,2706,filled
+拆件描述,買2B0,確認｜賣5先到比例:share,2706,filled
+拆件描述,買2B0,確認｜持有中位:value,2706,filled
+拆件描述,買2B1,探索｜超額(訊號−對照):mean,2106,filled
+拆件描述,買2B1,探索｜超額(訊號−對照):median,2106,filled
+拆件描述,買2B1,探索｜超額(訊號−對照):mean_ex_max1,2106,filled
+拆件描述,買2B1,探索｜超額 月分群99%CI:mean,2106,filled
+拆件描述,買2B1,探索｜超額 月分群99%CI:lo,2106,filled
+拆件描述,買2B1,探索｜超額 月分群99%CI:hi,2106,filled
+拆件描述,買2B1,探索｜停損先到(含同日)比例:share,2106,filled
+拆件描述,買2B1,探索｜賣5先到比例:share,2106,filled
+拆件描述,買2B1,探索｜持有中位:value,2106,filled
+拆件描述,買2B1,確認｜超額(訊號−對照):mean,2706,filled
+拆件描述,買2B1,確認｜超額(訊號−對照):median,2706,filled
+拆件描述,買2B1,確認｜超額(訊號−對照):mean_ex_max1,2706,filled
+拆件描述,買2B1,確認｜超額 月分群99%CI:mean,2706,filled
+拆件描述,買2B1,確認｜超額 月分群99%CI:lo,2706,filled
+拆件描述,買2B1,確認｜超額 月分群99%CI:hi,2706,filled
+拆件描述,買2B1,確認｜停損先到(含同日)比例:share,2706,filled
+拆件描述,買2B1,確認｜賣5先到比例:share,2706,filled
+拆件描述,買2B1,確認｜持有中位:value,2706,filled
+拆件描述,買2B2,探索｜超額(訊號−對照):mean,2106,filled
+拆件描述,買2B2,探索｜超額(訊號−對照):median,2106,filled
+拆件描述,買2B2,探索｜超額(訊號−對照):mean_ex_max1,2106,filled
+拆件描述,買2B2,探索｜超額 月分群99%CI:mean,2106,filled
+拆件描述,買2B2,探索｜超額 月分群99%CI:lo,2106,filled
+拆件描述,買2B2,探索｜超額 月分群99%CI:hi,2106,filled
+拆件描述,買2B2,探索｜停損先到(含同日)比例:share,2106,filled
+拆件描述,買2B2,探索｜賣5先到比例:share,2106,filled
+拆件描述,買2B2,探索｜持有中位:value,2106,filled
+拆件描述,買2B2,確認｜超額(訊號−對照):mean,2706,filled
+拆件描述,買2B2,確認｜超額(訊號−對照):median,2706,filled
+拆件描述,買2B2,確認｜超額(訊號−對照):mean_ex_max1,2706,filled
+拆件描述,買2B2,確認｜超額 月分群99%CI:mean,2706,filled
+拆件描述,買2B2,確認｜超額 月分群99%CI:lo,2706,filled
+拆件描述,買2B2,確認｜超額 月分群99%CI:hi,2706,filled
+拆件描述,買2B2,確認｜停損先到(含同日)比例:share,2706,filled
+拆件描述,買2B2,確認｜賣5先到比例:share,2706,filled
+拆件描述,買2B2,確認｜持有中位:value,2706,filled
+拆件描述,買2B3,探索｜超額(訊號−對照):mean,2106,filled
+拆件描述,買2B3,探索｜超額(訊號−對照):median,2106,filled
+拆件描述,買2B3,探索｜超額(訊號−對照):mean_ex_max1,2106,filled
+拆件描述,買2B3,探索｜超額 月分群99%CI:mean,2106,filled
+拆件描述,買2B3,探索｜超額 月分群99%CI:lo,2106,filled
+拆件描述,買2B3,探索｜超額 月分群99%CI:hi,2106,filled
+拆件描述,買2B3,探索｜停損先到(含同日)比例:share,2106,filled
+拆件描述,買2B3,探索｜賣5先到比例:share,2106,filled
+拆件描述,買2B3,探索｜持有中位:value,2106,filled
+拆件描述,買2B3,確認｜超額(訊號−對照):mean,2706,filled
+拆件描述,買2B3,確認｜超額(訊號−對照):median,2706,filled
+拆件描述,買2B3,確認｜超額(訊號−對照):mean_ex_max1,2706,filled
+拆件描述,買2B3,確認｜超額 月分群99%CI:mean,2706,filled
+拆件描述,買2B3,確認｜超額 月分群99%CI:lo,2706,filled
+拆件描述,買2B3,確認｜超額 月分群99%CI:hi,2706,filled
+拆件描述,買2B3,確認｜停損先到(含同日)比例:share,2706,filled
+拆件描述,買2B3,確認｜賣5先到比例:share,2706,filled
+拆件描述,買2B3,確認｜持有中位:value,2706,filled
+拆件描述,買3A0,探索｜超額(訊號−對照):mean,3526,filled
+拆件描述,買3A0,探索｜超額(訊號−對照):median,3526,filled
+拆件描述,買3A0,探索｜超額(訊號−對照):mean_ex_max1,3526,filled
+拆件描述,買3A0,探索｜超額 月分群99%CI:mean,3526,filled
+拆件描述,買3A0,探索｜超額 月分群99%CI:lo,3526,filled
+拆件描述,買3A0,探索｜超額 月分群99%CI:hi,3526,filled
+拆件描述,買3A0,探索｜停損先到(含同日)比例:share,3526,filled
+拆件描述,買3A0,探索｜賣5先到比例:share,3526,filled
+拆件描述,買3A0,探索｜持有中位:value,3526,filled
+拆件描述,買3A0,確認｜超額(訊號−對照):mean,4858,filled
+拆件描述,買3A0,確認｜超額(訊號−對照):median,4858,filled
+拆件描述,買3A0,確認｜超額(訊號−對照):mean_ex_max1,4858,filled
+拆件描述,買3A0,確認｜超額 月分群99%CI:mean,4858,filled
+拆件描述,買3A0,確認｜超額 月分群99%CI:lo,4858,filled
+拆件描述,買3A0,確認｜超額 月分群99%CI:hi,4858,filled
+拆件描述,買3A0,確認｜停損先到(含同日)比例:share,4858,filled
+拆件描述,買3A0,確認｜賣5先到比例:share,4858,filled
+拆件描述,買3A0,確認｜持有中位:value,4858,filled
+拆件描述,買3A1,探索｜超額(訊號−對照):mean,4031,filled
+拆件描述,買3A1,探索｜超額(訊號−對照):median,4031,filled
+拆件描述,買3A1,探索｜超額(訊號−對照):mean_ex_max1,4031,filled
+拆件描述,買3A1,探索｜超額 月分群99%CI:mean,4031,filled
+拆件描述,買3A1,探索｜超額 月分群99%CI:lo,4031,filled
+拆件描述,買3A1,探索｜超額 月分群99%CI:hi,4031,filled
+拆件描述,買3A1,探索｜停損先到(含同日)比例:share,4031,filled
+拆件描述,買3A1,探索｜賣5先到比例:share,4031,filled
+拆件描述,買3A1,探索｜持有中位:value,4031,filled
+拆件描述,買3A1,確認｜超額(訊號−對照):mean,5354,filled
+拆件描述,買3A1,確認｜超額(訊號−對照):median,5354,filled
+拆件描述,買3A1,確認｜超額(訊號−對照):mean_ex_max1,5354,filled
+拆件描述,買3A1,確認｜超額 月分群99%CI:mean,5354,filled
+拆件描述,買3A1,確認｜超額 月分群99%CI:lo,5354,filled
+拆件描述,買3A1,確認｜超額 月分群99%CI:hi,5354,filled
+拆件描述,買3A1,確認｜停損先到(含同日)比例:share,5354,filled
+拆件描述,買3A1,確認｜賣5先到比例:share,5354,filled
+拆件描述,買3A1,確認｜持有中位:value,5354,filled
+拆件描述,買3A2,探索｜超額(訊號−對照):mean,4959,filled
+拆件描述,買3A2,探索｜超額(訊號−對照):median,4959,filled
+拆件描述,買3A2,探索｜超額(訊號−對照):mean_ex_max1,4959,filled
+拆件描述,買3A2,探索｜超額 月分群99%CI:mean,4959,filled
+拆件描述,買3A2,探索｜超額 月分群99%CI:lo,4959,filled
+拆件描述,買3A2,探索｜超額 月分群99%CI:hi,4959,filled
+拆件描述,買3A2,探索｜停損先到(含同日)比例:share,4959,filled
+拆件描述,買3A2,探索｜賣5先到比例:share,4959,filled
+拆件描述,買3A2,探索｜持有中位:value,4959,filled
+拆件描述,買3A2,確認｜超額(訊號−對照):mean,6755,filled
+拆件描述,買3A2,確認｜超額(訊號−對照):median,6755,filled
+拆件描述,買3A2,確認｜超額(訊號−對照):mean_ex_max1,6755,filled
+拆件描述,買3A2,確認｜超額 月分群99%CI:mean,6755,filled
+拆件描述,買3A2,確認｜超額 月分群99%CI:lo,6755,filled
+拆件描述,買3A2,確認｜超額 月分群99%CI:hi,6755,filled
+拆件描述,買3A2,確認｜停損先到(含同日)比例:share,6755,filled
+拆件描述,買3A2,確認｜賣5先到比例:share,6755,filled
+拆件描述,買3A2,確認｜持有中位:value,6755,filled
+拆件描述,買3A3,探索｜超額(訊號−對照):mean,7401,filled
+拆件描述,買3A3,探索｜超額(訊號−對照):median,7401,filled
+拆件描述,買3A3,探索｜超額(訊號−對照):mean_ex_max1,7401,filled
+拆件描述,買3A3,探索｜超額 月分群99%CI:mean,7401,filled
+拆件描述,買3A3,探索｜超額 月分群99%CI:lo,7401,filled
+拆件描述,買3A3,探索｜超額 月分群99%CI:hi,7401,filled
+拆件描述,買3A3,探索｜停損先到(含同日)比例:share,7401,filled
+拆件描述,買3A3,探索｜賣5先到比例:share,7401,filled
+拆件描述,買3A3,探索｜持有中位:value,7401,filled
+拆件描述,買3A3,確認｜超額(訊號−對照):mean,9282,filled
+拆件描述,買3A3,確認｜超額(訊號−對照):median,9282,filled
+拆件描述,買3A3,確認｜超額(訊號−對照):mean_ex_max1,9282,filled
+拆件描述,買3A3,確認｜超額 月分群99%CI:mean,9282,filled
+拆件描述,買3A3,確認｜超額 月分群99%CI:lo,9282,filled
+拆件描述,買3A3,確認｜超額 月分群99%CI:hi,9282,filled
+拆件描述,買3A3,確認｜停損先到(含同日)比例:share,9282,filled
+拆件描述,買3A3,確認｜賣5先到比例:share,9282,filled
+拆件描述,買3A3,確認｜持有中位:value,9282,filled
+拆件描述,買3B0,探索｜超額(訊號−對照):mean,3526,filled
+拆件描述,買3B0,探索｜超額(訊號−對照):median,3526,filled
+拆件描述,買3B0,探索｜超額(訊號−對照):mean_ex_max1,3526,filled
+拆件描述,買3B0,探索｜超額 月分群99%CI:mean,3526,filled
+拆件描述,買3B0,探索｜超額 月分群99%CI:lo,3526,filled
+拆件描述,買3B0,探索｜超額 月分群99%CI:hi,3526,filled
+拆件描述,買3B0,探索｜停損先到(含同日)比例:share,3526,filled
+拆件描述,買3B0,探索｜賣5先到比例:share,3526,filled
+拆件描述,買3B0,探索｜持有中位:value,3526,filled
+拆件描述,買3B0,確認｜超額(訊號−對照):mean,4858,filled
+拆件描述,買3B0,確認｜超額(訊號−對照):median,4858,filled
+拆件描述,買3B0,確認｜超額(訊號−對照):mean_ex_max1,4858,filled
+拆件描述,買3B0,確認｜超額 月分群99%CI:mean,4858,filled
+拆件描述,買3B0,確認｜超額 月分群99%CI:lo,4858,filled
+拆件描述,買3B0,確認｜超額 月分群99%CI:hi,4858,filled
+拆件描述,買3B0,確認｜停損先到(含同日)比例:share,4858,filled
+拆件描述,買3B0,確認｜賣5先到比例:share,4858,filled
+拆件描述,買3B0,確認｜持有中位:value,4858,filled
+拆件描述,買3B1,探索｜超額(訊號−對照):mean,3526,filled
+拆件描述,買3B1,探索｜超額(訊號−對照):median,3526,filled
+拆件描述,買3B1,探索｜超額(訊號−對照):mean_ex_max1,3526,filled
+拆件描述,買3B1,探索｜超額 月分群99%CI:mean,3526,filled
+拆件描述,買3B1,探索｜超額 月分群99%CI:lo,3526,filled
+拆件描述,買3B1,探索｜超額 月分群99%CI:hi,3526,filled
+拆件描述,買3B1,探索｜停損先到(含同日)比例:share,3526,filled
+拆件描述,買3B1,探索｜賣5先到比例:share,3526,filled
+拆件描述,買3B1,探索｜持有中位:value,3526,filled
+拆件描述,買3B1,確認｜超額(訊號−對照):mean,4858,filled
+拆件描述,買3B1,確認｜超額(訊號−對照):median,4858,filled
+拆件描述,買3B1,確認｜超額(訊號−對照):mean_ex_max1,4858,filled
+拆件描述,買3B1,確認｜超額 月分群99%CI:mean,4858,filled
+拆件描述,買3B1,確認｜超額 月分群99%CI:lo,4858,filled
+拆件描述,買3B1,確認｜超額 月分群99%CI:hi,4858,filled
+拆件描述,買3B1,確認｜停損先到(含同日)比例:share,4858,filled
+拆件描述,買3B1,確認｜賣5先到比例:share,4858,filled
+拆件描述,買3B1,確認｜持有中位:value,4858,filled
+拆件描述,買3B2,探索｜超額(訊號−對照):mean,3526,filled
+拆件描述,買3B2,探索｜超額(訊號−對照):median,3526,filled
+拆件描述,買3B2,探索｜超額(訊號−對照):mean_ex_max1,3526,filled
+拆件描述,買3B2,探索｜超額 月分群99%CI:mean,3526,filled
+拆件描述,買3B2,探索｜超額 月分群99%CI:lo,3526,filled
+拆件描述,買3B2,探索｜超額 月分群99%CI:hi,3526,filled
+拆件描述,買3B2,探索｜停損先到(含同日)比例:share,3526,filled
+拆件描述,買3B2,探索｜賣5先到比例:share,3526,filled
+拆件描述,買3B2,探索｜持有中位:value,3526,filled
+拆件描述,買3B2,確認｜超額(訊號−對照):mean,4858,filled
+拆件描述,買3B2,確認｜超額(訊號−對照):median,4858,filled
+拆件描述,買3B2,確認｜超額(訊號−對照):mean_ex_max1,4858,filled
+拆件描述,買3B2,確認｜超額 月分群99%CI:mean,4858,filled
+拆件描述,買3B2,確認｜超額 月分群99%CI:lo,4858,filled
+拆件描述,買3B2,確認｜超額 月分群99%CI:hi,4858,filled
+拆件描述,買3B2,確認｜停損先到(含同日)比例:share,4858,filled
+拆件描述,買3B2,確認｜賣5先到比例:share,4858,filled
+拆件描述,買3B2,確認｜持有中位:value,4858,filled
+拆件描述,買3B3,探索｜超額(訊號−對照):mean,3526,filled
+拆件描述,買3B3,探索｜超額(訊號−對照):median,3526,filled
+拆件描述,買3B3,探索｜超額(訊號−對照):mean_ex_max1,3526,filled
+拆件描述,買3B3,探索｜超額 月分群99%CI:mean,3526,filled
+拆件描述,買3B3,探索｜超額 月分群99%CI:lo,3526,filled
+拆件描述,買3B3,探索｜超額 月分群99%CI:hi,3526,filled
+拆件描述,買3B3,探索｜停損先到(含同日)比例:share,3526,filled
+拆件描述,買3B3,探索｜賣5先到比例:share,3526,filled
+拆件描述,買3B3,探索｜持有中位:value,3526,filled
+拆件描述,買3B3,確認｜超額(訊號−對照):mean,4858,filled
+拆件描述,買3B3,確認｜超額(訊號−對照):median,4858,filled
+拆件描述,買3B3,確認｜超額(訊號−對照):mean_ex_max1,4858,filled
+拆件描述,買3B3,確認｜超額 月分群99%CI:mean,4858,filled
+拆件描述,買3B3,確認｜超額 月分群99%CI:lo,4858,filled
+拆件描述,買3B3,確認｜超額 月分群99%CI:hi,4858,filled
+拆件描述,買3B3,確認｜停損先到(含同日)比例:share,4858,filled
+拆件描述,買3B3,確認｜賣5先到比例:share,4858,filled
+拆件描述,買3B3,確認｜持有中位:value,4858,filled
