@@ -79,6 +79,7 @@ key,date,type,value
 2026-06-30_PreTaxIncome,2026-06-30,PreTaxIncome,1755972000.0
 2026-06-30_Revenue,2026-06-30,Revenue,13896557000.0
 2026-06-30_TotalNonoperatingIncomeAndExpense,2026-06-30,TotalNonoperatingIncomeAndExpense,79626000.0
+2026-09-30_EPS,2026-09-30,EPS,16.95
 2026-09-30_GrossProfit,2026-09-30,GrossProfit,3860335000.0
 2026-09-30_IncomeAfterTaxes,2026-09-30,IncomeAfterTaxes,2271948000.0
 2026-09-30_OperatingExpenses,2026-09-30,OperatingExpenses,1309172000.0
