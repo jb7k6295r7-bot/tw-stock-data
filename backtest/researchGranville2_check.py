@@ -6,6 +6,8 @@
       A0 ⊆ A1、A2 ⊆ A3；買2「跌破」須有前一根線上（★S4）；停損價各版同定義；B1／B2／B3 出場邏輯；同根取較低（seq373）於 B1、B2；
       壞根、下市於 B3；ret_one（正式用）合成價對帳；結果句固定語與禁語；閘門（正式跑只認 seq487）；seq1 程式未改；
       已產出檔：A0、B0 重現 seq1 事件檔（逐字）、無報酬欄、描述欄乾跑只寫 filled／EMPTY。
+沿革：裁定 seq490／seq492（登錄 seq3）⇒ 固定句換新（舊句不可再出現）、Bonferroni 18 格 99.72% CI 與 99% CI 並列、★ 註一行、--relabel 閘門；
+      正式輸出對 b5bc39f2cd：舊數字逐位元相同、結果句去新片段後逐字相同、99.72% CI 由原 main_excess 獨立重算相符。
 """
 from __future__ import annotations
 
@@ -222,16 +224,46 @@ def t_ret_one():
 
 
 # ── 結果句、閘門、seq1 程式未改 ──────────────────────────────────────────────
+NEW_PHRASE = "拆法在看任何報酬前、照使用者要求定好（10/29 04:24）。用途是看效果來自哪一部分。"   # 裁定 seq490 逐字
+OLD_PHRASE = "拆件是看過 seq1 結果後追加的，只描述"                                                  # seq487（已更正）
+
+
 def t_sentence_gate():
-    rows = {nm: {"n": 100, "months": 30, "mean": 0.0, "median": 0.0, "mean_ex_max1": 0.0, "lo": 0.0, "hi": 0.0, "停損先到": 0.5, "賣5先到": 0.2, "持有中位": 7.0}
+    rows = {nm: {"n": 100, "months": 30, "mean": 0.0, "median": 0.0, "mean_ex_max1": 0.0, "lo": -0.01, "hi": 0.02, "lo95": -0.005, "hi95": 0.015,
+                 "loB": -0.02, "hiB": 0.03, "停損先到": 0.5, "賣5先到": 0.2, "持有中位": 7.0}
             for nm in ("探索", "確認")}
     s = G2.result_sentence("買2", "B3", rows, dry=True)
-    ok("結果句 必附「拆件是看過 seq1 結果後追加的，只描述」", G2.PHRASE in s and "拆件是看過 seq1 結果後追加的，只描述" in s)
+    ok("固定句 ＝ 裁定 seq490 逐字", G2.PHRASE == NEW_PHRASE and G2.PHRASE_SEQ487 == OLD_PHRASE)
+    ok("結果句 必附 seq490 新固定句、⛔ 不含 seq487 舊句", s.endswith(NEW_PHRASE) and OLD_PHRASE not in s)
     ok("結果句 乾跑不填報酬（不出現 % 的超額值）", "乾跑不填" in s and "平均 +" not in s)
     rows["確認"]["months"] = 20
     s2 = G2.result_sentence("買1", "A1", rows, dry=False)
     ok("結果句 n_eff < 24 加註、正式版填平均／中位／去掉最大 1 筆／CI", "（< 24，只描述、樣本不足）" in s2 and "去掉最大 1 筆" in s2 and "99% CI" in s2)
-    ok("結果句 不含判定措辭（通過／測不出／還沒測）", not any(w in s + s2 for w in ("通過", "測不出", "還沒測")))
+    ok("結果句 99% CI 與 Bonferroni 18 格 99.72% CI 並列（確認段 18 格本體不加範圍註）",
+       "月分群 99% CI [-1.00%, +2.00%]、Bonferroni 18 格 99.72% CI [-2.00%, +3.00%]；另一讀法 95% CI" in s2
+       and "Bonferroni 18 格 99.72% CI（探索段只描述） [-2.00%, +3.00%]" in s2 and s2.count("99.72% CI") == s2.count("月分群 99% CI") == 2)
+    s3 = G2.result_sentence("買2", "B0", rows, dry=False)
+    ok("結果句 A0／B0 的 99.72% CI 標「不在 18 格內，只參考」", "99.72% CI（A0／B0 不在 18 格內，只參考） [" in s3)
+    ok("Bonferroni 18 格：alpha ＝ 0.05/18、18 格 ＝ 3 買點 × A1～A3、B1～B3", abs(G2.BONF_ALPHA - 0.05 / 18) < 1e-15 and len(G2.BONF_CELLS) == 18
+       and set(G2.BONF_CELLS) == {(c, v) for c in ("買1", "買2", "買3") for v in ("A1", "A2", "A3", "B1", "B2", "B3")})
+    xx = np.random.default_rng(3).normal(0.01, 0.1, 600); mm = np.repeat(np.arange(120), 5)
+    b = G2.bonf_ci(xx, mm); c99 = G.cluster_boot(xx, mm); ref = G.cluster_boot(xx, mm, alpha=0.05 / 18)
+    ok("bonf_ci ＝ seq1 cluster_boot（同 nboot、seed），只換 alpha；區間包住 99%", b == ref and b["lo"] < c99["lo"] and b["hi"] > c99["hi"])
+    hl = G2.head_lines()
+    ok("開頭照記：★S4、★S6、★S8、★S9 一行、不判定不加 N 一行、多重比較一行，每行附新固定句",
+       sum("★S4、★S6、★S8、★S9" in x for x in hl) == 1 and any("不加 N" in x for x in hl) and any("99.72%" in x for x in hl)
+       and all(x.endswith(NEW_PHRASE) for x in hl))
+    ok("結果句 不含判定措辭（通過／測不出／還沒測）", not any(w in s + s2 + s3 + "".join(hl) for w in ("通過", "測不出", "還沒測")))
+    try:
+        G2.guard("買2｜B2；" + OLD_PHRASE + "。"); raised_old = False
+    except ValueError:
+        raised_old = True
+    ok("擋門：舊固定句再出現 ⇒ 擋下（突變）", raised_old)
+    try:
+        G2.guard("買2｜B2 通過"); raised_v = False
+    except ValueError:
+        raised_v = True
+    ok("擋門：「通過」⇒ 擋下（突變）", raised_v)
     old = G2.VNAME["A1"]
     try:
         G2.VNAME["A1"] = "反向顯著"
@@ -251,6 +283,15 @@ def t_sentence_gate():
     ok("閘門 --formal --limit ⇒ 拒跑", g(["--formal", "--ruling", "seq487", "--limit", "5"])[0] == "refuse")
     ok("閘門 --dry ⇒ 乾跑", g(["--dry"])[0] == "dry")
     ok("閘門 未知參數 ⇒ 拒跑", g(["--dry", "--xyz"])[0] == "refuse")
+    ok("閘門 --relabel --ruling seq490 ⇒ 標籤更正", g(["--relabel", "--ruling", "seq490"])[0] == "relabel")
+    ok("閘門 --relabel 無 ruling／seq487／seq492 ⇒ 拒跑", all(g(x)[0] == "refuse" for x in
+       (["--relabel"], ["--relabel", "--ruling", "seq487"], ["--relabel", "--ruling", "seq492"])))
+    ok("閘門 --relabel 夾 --formal／--dry／--procs ⇒ 拒跑", all(g(x)[0] == "refuse" for x in
+       (["--relabel", "--formal", "--ruling", "seq490"], ["--relabel", "--dry", "--ruling", "seq490"], ["--relabel", "--ruling", "seq490", "--procs", "2"])))
+    ok("閘門 --formal --ruling seq487 預設 procs 3", g(["--formal", "--ruling", "seq487"]) == ("formal", 3, None))
+    src = open(os.path.join(os.path.expanduser("~/tw-p17"), "backtest/researchGranville2.py"), encoding="utf-8").read()
+    hdr = src.split('"""')[1]
+    ok("程式開頭有沿革行（引 seq490、seq492、登錄 seq3 sha）", "沿革：" in hdr and "seq490" in hdr and "seq492" in hdr and "1fc4dda730b513ac" in hdr)
     d = subprocess.run(["git", "diff", "--quiet", "48c8bcb982", "--", "backtest/researchGranville.py", "backtest/researchGranville_check.py"],
                        cwd=os.path.expanduser("~/tw-p17")).returncode
     ok("seq1 程式與自測與 48c8bcb982 相同（未改）", d == 0)
@@ -296,11 +337,103 @@ def t_outputs():
     ok("產出 B1～B3 事件與對照 ＝ A0；B1 無賣5、B2 無停損、B3 只有固定／壞根／下市", same_entry)
     ov = pd.read_csv(os.path.join(od, "overlap_vs_A0.csv"))
     ok("產出 A0 原始訊號 ⊆ 各版原始訊號（A0原始不在本版 ＝ 0）", (ov["A0原始不在本版(應為0)"] == 0).all())
-    ok("產出 結果句樣板每版都附固定語", all(G2.PHRASE in s for s in open(os.path.join(od, "result_sentence_template.txt"), encoding="utf-8").read().strip().split("\n\n")))
+    # freq/ 是 seq490 之前的乾跑歷史檔（無報酬），不改：樣板仍是當時的 seq487 句
+    ok("產出（乾跑歷史檔）結果句樣板每版都附當時固定語（seq487，未改寫）",
+       all(G2.PHRASE_SEQ487 in s for s in open(os.path.join(od, "result_sentence_template.txt"), encoding="utf-8").read().strip().split("\n\n")))
+
+
+# ── 正式輸出：標籤更正（seq490／seq492）後 ──────────────────────────────────────────────
+def _show(path):
+    return subprocess.run(["git", "show", f"{G2.BASE_COMMIT}:{path}"], cwd=os.path.expanduser("~/tw-p17"), capture_output=True, check=True).stdout
+
+
+def _leaves(o, p=()):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            yield from _leaves(v, p + (k,))
+    elif isinstance(o, list):
+        for k, v in enumerate(o):
+            yield from _leaves(v, p + (k,))
+    else:
+        yield p, o
+
+
+def t_formal():
+    import json, re
+    od = os.path.join(G2.OUT, "formal")
+    root = os.path.expanduser("~/tw-p17")
+    if not os.path.exists(os.path.join(root, od, "formal.json")):
+        ok("正式輸出（尚未產出，略）", True); return
+    J = json.load(open(os.path.join(root, od, "formal.json"), encoding="utf-8"))
+    J0 = json.loads(_show(f"{od}/formal.json").decode("utf-8"))
+    # 1. 既有鍵值：數字、布林逐位元相同；字串只有 NOTES 的舊固定句那條與結果句改
+    L0 = dict(_leaves(J0)); L1 = dict(_leaves(J))
+    miss = [p for p in L0 if p not in L1]
+    numdiff = [p for p, v in L0.items() if p in L1 and not isinstance(v, str) and (type(v) is not type(L1[p]) or v != L1[p])]
+    strdiff = [p for p, v in L0.items() if p in L1 and isinstance(v, str) and v != L1[p]]
+    ok("formal.json 舊有鍵全在、數字／布林全同（對 b5bc39f2cd）", not miss and not numdiff and sum(1 for v in L0.values() if not isinstance(v, str)) > 100,
+       f"miss={miss[:3]} numdiff={numdiff[:3]}")
+    ok("formal.json 改動的舊字串只限 NOTES 舊句那條與 24 句結果句", all(p[0] in ("NOTES", "結果句") for p in strdiff) and len(strdiff) == 1 + 24, str(strdiff[:4]))
+    strip = re.compile("、" + re.escape(G2.BONF_LAB) + r"(（[^）]*）)? \[[^\]]*\]")
+    back = {k: strip.sub("", s).replace("；" + NEW_PHRASE, "；" + OLD_PHRASE + "。") for k, s in J["結果句"].items()}
+    ok("formal.json 結果句：去掉 99.72% CI、換回舊句 ⇒ 與 b5bc39f2cd 逐字相同（數字未變）", back == J0["結果句"])
+    ok("formal.json NOTES 新句、無舊句；沿革引 seq490、seq492；登錄 seq3 9973 B", any(NEW_PHRASE in x for x in J["NOTES"])
+       and not any(OLD_PHRASE in x for x in J["NOTES"]) and "seq490" in J["沿革"] and "seq492" in J["沿革"]
+       and J["標籤裁定"] == ["seq490", "seq492"] and J["登錄seq3"]["bytes"] == 9973)
+    # 2. desc.csv：舊 11 欄原字串相同；新欄只在 99%CI 列
+    D0 = pd.read_csv(io.BytesIO(_show(f"{od}/desc.csv")), dtype=str, keep_default_na=False, encoding="utf-8-sig")
+    D = pd.read_csv(os.path.join(root, od, "desc.csv"), dtype=str, keep_default_na=False, encoding="utf-8-sig")
+    ok("desc.csv 舊 11 欄逐字相同、新欄 lo_bonf18／hi_bonf18／bonf18_scope 接在後面",
+       list(D.columns) == list(D0.columns) + ["lo_bonf18", "hi_bonf18", "bonf18_scope"] and D[list(D0.columns)].equals(D0))
+    is99 = D["stat"].str.endswith("｜超額 月分群99%CI")
+    ok("desc.csv 每個 99%CI 列都有 Bonferroni 18 格 CI（48 列）、其他列空", int(is99.sum()) == 48 and (D.loc[is99, "lo_bonf18"] != "").all()
+       and (D.loc[is99, "hi_bonf18"] != "").all() and (D.loc[~is99, ["lo_bonf18", "hi_bonf18", "bonf18_scope"]] == "").all().all())
+    q = D[is99]
+    ok("desc.csv 99.72% CI 包住 99% CI", (q["lo_bonf18"].astype(float) <= q["lo"].astype(float)).all()
+       and (q["hi_bonf18"].astype(float) >= q["hi"].astype(float)).all())
+    core = q[q["bonf18_scope"] == "確認段 18 格之一"]
+    ok("desc.csv 18 格範圍標記：確認段 A1～A3、B1～B3 共 18 列",
+       len(core) == 18 and set(zip(core["cell"], core["stat"].str[:2])) == {(c + v, "確認") for c, v in G2.BONF_CELLS})
+    # 3. 從 b5bc39f2cd 的 main_excess 獨立重算 99.72% CI
+    MX = pd.read_csv(io.BytesIO(_show(f"{od}/main_excess.csv.gz")), compression="gzip", dtype={"sid": str, "月": "int64"}, encoding="utf-8-sig",
+                     keep_default_na=False, na_values=[""], float_precision="round_trip")
+    bad = []
+    for r in q.itertuples(index=False):
+        c, v, nm = r.cell[:2], r.cell[2:], r.stat.split("｜")[0]
+        m = MX[(MX["格"] == c) & (MX["版"] == v) & (MX["段"] == nm)]
+        cb = G.cluster_boot(m["超額"].to_numpy(float), m["月"].to_numpy(), alpha=0.05 / 18)
+        c99 = G.cluster_boot(m["超額"].to_numpy(float), m["月"].to_numpy())
+        if not (cb["lo"] == float(r.lo_bonf18) and cb["hi"] == float(r.hi_bonf18) and c99["lo"] == float(r.lo) and c99["hi"] == float(r.hi)):
+            bad.append(r.cell + r.stat)
+    ok("由 b5bc39f2cd main_excess 獨立重算：99% CI ＝ 原值、99.72% CI ＝ 新欄（48 列）", not bad, str(bad[:3]))
+    T = J["Bonferroni18格CI"]
+    ok("formal.json Bonferroni 表：alpha 0.05/18、nboot／seed 同 99% CI、18 格清單、與 desc.csv 同值",
+       abs(T["alpha"] - 0.05 / 18) < 1e-15 and T["nboot"] == G.NBOOT and T["seed"] == G.SEED and len(T["18格(確認段)"]) == 18
+       and all(T["表"][f"{r.cell[:2]}|{r.cell[2:]}"][r.stat.split("｜")[0]]["Bonferroni18格99.72%CI"] == [float(r.lo_bonf18), float(r.hi_bonf18)]
+               and T["表"][f"{r.cell[:2]}|{r.cell[2:]}"][r.stat.split("｜")[0]]["99%CI"] == [float(r.lo), float(r.hi)] for r in q.itertuples(index=False)))
+    # 4. result_sentences.txt
+    P = open(os.path.join(root, od, "result_sentences.txt"), encoding="utf-8").read().strip().split("\n\n")
+    ok("result_sentences 每段都附新固定句、無舊句", len(P) == 5 + 24 and all(p.endswith(NEW_PHRASE) for p in P) and OLD_PHRASE not in "".join(P))
+    ok("result_sentences ★S4、★S6、★S8、★S9 註恰一行、不判定不加 N 一行",
+       sum("★S4、★S6、★S8、★S9" in p for p in P) == 1 and sum(G2.NO_VERDICT_LINE in p for p in P) == 1)
+    ok("result_sentences 每句兩段的 99% CI 旁都有 99.72% CI（不只列 99%）",
+       all(p.count("月分群 99% CI") == 2 and p.count(G2.BONF_LAB) == 2 for p in P[5:]))
+    raised = []
+    for p in P:
+        try:
+            G2.guard(p)
+        except ValueError as e:
+            raised.append(str(e))
+    ok("result_sentences 全部過擋門（無判定措辭）", not raised, str(raised[:2]))
+    ok("result_sentences 句子與 formal.json 結果句一致", P[5:] == list(J["結果句"].values()))
+    # 5. 其他正式輸出未動
+    others = [f for f in os.listdir(os.path.join(root, od)) if f not in ("formal.json", "desc.csv", "result_sentences.txt")]
+    d = subprocess.run(["git", "diff", "--quiet", G2.BASE_COMMIT, "--"] + [f"{od}/{f}" for f in others], cwd=root).returncode
+    ok(f"正式輸出其餘 {len(others)} 檔（events、main_excess、run.log…）與 b5bc39f2cd 相同", d == 0 and len(others) >= 30)
 
 
 def main():
-    for f in (t_a0_equiv, t_buy1, t_buy2, t_buy3, t_exit, t_ret_one, t_sentence_gate, t_outputs):
+    for f in (t_a0_equiv, t_buy1, t_buy2, t_buy3, t_exit, t_ret_one, t_sentence_gate, t_outputs, t_formal):
         f()
     n = len(RES); p = sum(1 for _, x in RES if x)
     print(f"\n自測 {p}/{n} 通過")

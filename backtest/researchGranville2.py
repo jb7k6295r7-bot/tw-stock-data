@@ -3,7 +3,13 @@
 
 登錄：登錄全文-葛蘭碧原版200日線加前低停損與乖離太遠會不會回來_單筆層登錄_台股策略線_seq2_sha194c5d8d0cdcd663-8715B-20261029-1941.md
       （整檔 8715 B；整檔 sha256 eb0ea825… ≠ ⇒ 照 pw1 慣例去末行戳記重算 ＝ 194c5d8d0cdcd663…，相符；回測線計算子代理 2026-10-29 19:48 已驗）
-核可：裁定 seq487 §二（拆件全部只描述、⛔ 不計 N、⛔ 不改 seq1 判語；結果句必附「拆件是看過 seq1 結果後追加的，只描述」；先交頻率表（⛔ 不附報酬），核後再跑；買 2 的 B 組優先）。
+核可：裁定 seq487 §二（拆件全部只描述、⛔ 不計 N、⛔ 不改 seq1 判語；先交頻率表（⛔ 不附報酬），核後再跑；買 2 的 B 組優先）；
+      seq487 當時的固定句「拆件是看過 seq1 結果後追加的，只描述」已由裁定 seq490 更正（見沿革）。
+沿革：2026-10-30 02:35（台北）照裁定 seq490（更正 seq487 §二、seq488：拆件改認「事前定好的拆法」）、seq492（核台股登錄 seq3
+      sha 1fc4dda730b513ac、9973 B，只改 §九 標籤）改標籤：固定句換成 PHRASE；不產生新判定、不加 N 的理由改為「04:24 只定了拆什麼、
+      沒定怎樣算通過」（⛔ 不是因為看過結果）；補確認段 Bonferroni 18 格 CI（3 買點 × A1～A3、B1～B3，雙尾 1−0.05/18 ＝ 99.72%），
+      與 99% CI 並列；★S4、★S6、★S8、★S9 註一行。⛔ 數字不變、不重跑：--relabel 只讀 formal/ 既有輸出（main_excess.csv.gz、
+      desc.csv、formal.json）改標籤、加 CI 欄，並自驗既有數字逐位元相同（commit b5bc39f2cd）。
 §一～§八 與 seq1 一字不改 ⇒ 母體、成本、對照、段、去重、硬斷點、CI 方法全照 seq1 程式 backtest/researchGranville.py（commit 48c8bcb982）。
 ⛔ 本檔只 import researchGranville（seg_features、shift、runlen、dedup、segof、mkey、exit_sim、exit_price、match_day、deciles、cluster_boot、
    merged_hl、dry_status），⛔ 不改它（seq1 輸出逐位元不變）；拆件版本的進場條件在本檔另算，A0 每檔每根都與 G.seg_features 逐位比對，不符即停。
@@ -16,6 +22,8 @@
         ⇒ backtest/resultsGranville2/freq/
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville2 --formal --ruling seq487
         ⇒ 正式跑（⛔ 兩個旗標都要給、ruling 必須是 seq487，否則拒跑；裁定 seq488 §二 已核可正式跑）→ backtest/resultsGranville2/formal/
+    PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville2 --relabel --ruling seq490
+        ⇒ 只改標籤＋補 Bonferroni 18 格 CI（裁定 seq490／seq492；⛔ 不重跑、數字不變；讀寫 backtest/resultsGranville2/formal/）
     自測：PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville2_check
 
 ══════════ 登錄 §九（照抄）══════════
@@ -23,7 +31,8 @@
    A0 原版｜A1 拿掉 MA200 方向條件｜A2 拿掉前置位置條件（買 1：前 60 日至少 40 日在線下；買 2：跌破前 20 日都在線上、k ≤ 10；
    買 3：前 20 日都在線上）｜A3 只剩觸發
  B 組（只拆出場；進場一律 seq1 原版）：B0 原版｜B1 只停損（不用賣 5，上限 250 日）｜B2 只賣 5（不用停損，上限 250 日）｜B3 都不用，固定抱 250 日
- 每版必報：事件數、n_eff、停損與賣 5 先到比例、持有中位、超額平均與中位、去掉最大 1 筆；結果句必附「拆件是看過 seq1 結果後追加的，只描述」。
+ 每版必報：事件數、n_eff、停損與賣 5 先到比例、持有中位、超額平均與中位、去掉最大 1 筆；結果句必附固定句（seq3 §九 ＝ PHRASE）。
+ seq3 §九 增：多重比較 確認段 3 買點 × 6 新版（A1～A3、B1～B3）＝ 18 格 ⇒ 另報 Bonferroni 18 格 CI（99.72%），與 99% CI 並列，⛔ 不只列 99%。
 
 ══════════ ★ 執行者讀法（⛔ 在跑任何本檔程式之前寫死於 2026-10-29 19:52（台北，WSL TZ=Asia/Taipei date）；〔 〕內為另一讀法；皆取保守）══════════
  寫死前看過：登錄 seq2 全文、裁定 seq487、seq1 程式與自測（researchGranville.py／_check.py）、seq1 頻率表事件檔欄名；
@@ -48,6 +57,8 @@
  ★S11 描述欄（§九 每版必報；乾跑 0 佔位）：每格 × 版 × 段：超額（訊號−對照，兩邊各扣 0.585%）平均、中位、去掉最大 1 筆；月分群 bootstrap 99% CI
      （「CI 方法全照 seq1」⇒ 99%、10,000 次、種子 20261028）〔另一讀法：只描述用 95%〕；停損先到（含同日）比例、賣 5 先到比例、持有中位（次數，非報酬）。
      ⛔ 不報勝率（§九 沒列）。
+     〔seq490 增〕Bonferroni 18 格 CI：同一 G.cluster_boot（10,000 次、種子 20261028、月分群），alpha ＝ 0.05/18（雙尾 99.72%）；
+     確認段 A1～A3、B1～B3 為 18 格本體；A0／B0 與探索段也照算，只當參考／描述。
  ★S12 與 A0 的重疊（每格、A1～A3）：原始訊號數與「A0 原始 ⊆ 本版原始」驗證；事件集（同檔同訊號日）交集、本版新增、A0 有本版沒有；主格同。
  ★S13 seq1 重現：A0 與 B0 的事件檔（代號、日期、段、市場、進場、走得完、配對、對照、主格、市值十分位、產業、出場日、出場方式、出場原因、旗標、持有天數、
      對照出場狀態）必須與 backtest/resultsGranville/freq/events_買k.csv.gz 逐字相同，不符即停（--limit 煙霧測不比）。
@@ -89,13 +100,31 @@ ENTRY = {**{v: v for v in AV}, **{v: "A0" for v in BV}}
 ARM = {"A0": "SX", "A1": "SX", "A2": "SX", "A3": "SX", "B0": "SX", "B1": "S", "B2": "X", "B3": ""}
 VNAME = {"A0": "原版", "A1": "拿掉 MA200 方向條件", "A2": "拿掉前置位置條件", "A3": "只剩觸發",
          "B0": "原版出場（停損或賣5，上限250日）", "B1": "只停損（上限250日）", "B2": "只賣5（上限250日）", "B3": "都不用，固定抱250日"}
-PHRASE = "拆件是看過 seq1 結果後追加的，只描述"
+PHRASE_SEQ487 = "拆件是看過 seq1 結果後追加的，只描述"            # ⛔ 已由裁定 seq490 更正；只留給自測確認「不再出現」與歷史乾跑檔（freq/）
+PHRASE = "拆法在看任何報酬前、照使用者要求定好（10/29 04:24）。用途是看效果來自哪一部分。"   # 裁定 seq490 §一、登錄 seq3 §九
+# 裁定 seq490／seq492：標籤更正（登錄 seq3）
+REG3_SHA = "1fc4dda730b513ac"
+REG3_BYTES = 9973
+RELABEL_RULING = "seq490"
+RELABEL_RULINGS = ("seq490", "seq492")
+BASE_COMMIT = "b5bc39f2cd"
+BONF_K = 18
+BONF_ALPHA = 0.05 / BONF_K
+BONF_LAB = "Bonferroni 18 格 99.72% CI"
+BONF_CELLS = [(c, v) for c in ("買1", "買2", "買3") for v in ("A1", "A2", "A3", "B1", "B2", "B3")]
+NO_VERDICT_LINE = ("拆件不產生新的判定、不加 N：04:24 的拆法只定了拆什麼、沒定怎樣算數（⛔ 理由不是看過結果；裁定 seq490）；"
+                   "某版要變成可照做的規則，照 seq363 另開登錄驗證")
+STAR_LINE = "★S4、★S6、★S8、★S9 於 10/29 19:52 寫進程式：只是怎麼數的細節，拆法沒動；不重跑（裁定 seq490）"
+BONF_LINE = ("多重比較：確認段 3 買點 × 6 個新版本（A1～A3、B1～B3）＝ 18 格 ⇒ 另報 Bonferroni 18 格 CI（雙尾 1−0.05/18 ＝ 99.72%，"
+             "與 99% CI 同一月分群 bootstrap、10,000 次、種子 20261028），和 99% CI 並列；A0／B0、探索段照算只當參考／描述")
+RELABEL_NOTE = ("沿革：裁定 seq490（更正 seq487 §二、seq488：拆件改認事前定好的拆法）、seq492（核登錄 seq3 sha 1fc4dda730b513ac）"
+                "⇒ 只改標籤、補 Bonferroni 18 格 CI；數字與 commit b5bc39f2cd 逐位元相同、未重跑")
 # 裁定 seq487／seq488 §二 要求結果句照記（正式輸出才用）
 SEEN_LINE = "子代理讀 seq487 時看到 seq1 買 2 的兩個報酬數字；拆法 10/29 04:24 已定，本件只描述"
 A3_LINE = "買 1 A3 與買 2 A3 幾乎是同一觸發（都是前一根收盤在 MA200 之下、當根站回），兩者不要當成兩個獨立證據"
 FORMAL_RULING_NOTE = "正式跑核可：裁定 seq488 §二（帶 --formal --ruling seq487；★S4、★S6、★S8、★S9 核）"
 NOTES = ["乾跑：未讀、未算、未存任何報酬、超額、勝率（seq366／458／459）；描述欄報酬以 0 佔位，只報 filled／EMPTY",
-         "拆件是看過 seq1 結果後追加的，只描述：不新增判定格、不計 N、不改 seq1 判語（登錄 §九、裁定 seq487 §二）",
+         PHRASE + "不新增判定格、不計 N（理由：04:24 只定了拆什麼、沒定怎樣算數；⛔ 不是因為看過結果）、不改 seq1 判語（登錄 seq3 §九、裁定 seq490）",
          "B 組進場 ＝ A0 ＝ seq1 原版（事件、對照逐字相同，見 repro_seq1.csv），只換出場",
          "A 組各版的去重、閘、對照排除都以本版自己的原始訊號做（★S7、★S8）",
          "n_eff < 24 的版×段照〈四十九〉加註：只描述、樣本不足"]
@@ -114,7 +143,8 @@ RT.log = log
 
 # ═════════════ 登錄與裁定 ═════════════
 def reg_verify():
-    fs = [f for f in glob.glob(os.path.join(IMF.MAILBOX, "*.md")) if f"sha{REG_SHA}" in os.path.basename(f)]
+    dirs = [IMF.MAILBOX] + sorted(glob.glob(os.path.join(IMF.MAILBOX, "_封存-*")))      # seq2 登錄全文 10/30 已移入 _封存-*（同 IMF.reg_check）
+    fs = [f for d in dirs for f in glob.glob(os.path.join(d, "*.md")) if f"sha{REG_SHA}" in os.path.basename(f)]
     if not fs:
         raise SystemExit("⛔ 信箱找不到 seq2 登錄全文")
     b = open(fs[0], "rb").read()
@@ -236,6 +266,27 @@ def desc3(x):
             "mean_ex_max1": float(np.sort(xs)[:-1].mean()) if len(xs) >= 2 else np.nan}
 
 
+def bonf_ci(x, months):
+    """裁定 seq490：Bonferroni 18 格 CI ＝ seq1 G.cluster_boot（同 NBOOT、SEED、月分群），只換 alpha ＝ 0.05/18（雙尾 99.72%）。"""
+    return G.cluster_boot(x, months, alpha=BONF_ALPHA)
+
+
+def bonf_scope(cell, ver, seg):
+    """Bonferroni 18 格的範圍標記：確認段 A1～A3、B1～B3 ＝ 18 格本體；其餘只當參考／描述。"""
+    if seg != "確認":
+        return "探索段只描述"
+    if ver in ("A0", "B0"):
+        return "A0／B0 不在 18 格內，只參考"
+    return "確認段 18 格之一"
+
+
+def _ci_text(v, seg, ver):
+    sc = bonf_scope("", ver, seg)
+    tag = "" if sc == "確認段 18 格之一" else f"（{sc}）"
+    return (f"月分群 99% CI [{_p(v.get('lo'))}, {_p(v.get('hi'))}]、{BONF_LAB}{tag} [{_p(v.get('loB'))}, {_p(v.get('hiB'))}]；"
+            f"另一讀法 95% CI [{_p(v.get('lo95'))}, {_p(v.get('hi95'))}]")
+
+
 def _p(x, signed=True):
     if x is None or not np.isfinite(x):
         return "—"
@@ -249,18 +300,27 @@ def result_sentence(cell, ver, rows, dry):
         v = rows.get(nm, {})
         ret = ("超額（訊號−對照，兩邊各扣 0.585%）（乾跑不填）" if dry else
                f"超額（訊號−對照，兩邊各扣 0.585%）平均 {_p(v.get('mean'))}、中位 {_p(v.get('median'))}、去掉最大 1 筆 {_p(v.get('mean_ex_max1'))}"
-               f"（月分群 99% CI [{_p(v.get('lo'))}, {_p(v.get('hi'))}]；另一讀法 95% CI [{_p(v.get('lo95'))}, {_p(v.get('hi95'))}]）")
+               f"（{_ci_text(v, nm, ver)}）")
         neff = v.get("months", 0)
         P.append(f"{nm}段 主格 {v.get('n', 0)} 件、n_eff {neff} 月{'（< 24，只描述、樣本不足）' if neff < G.NEFF_MIN else ''}、{ret}、"
                  f"停損先到（含同日）{_p(v.get('停損先到'), False)}、賣 5 先到 {_p(v.get('賣5先到'), False)}、持有中位 {v.get('持有中位', float('nan')):.0f} 日")
     if not dry and ver == "A3" and cell in ("買1", "買2"):
         P.append(A3_LINE)
-    P.append(PHRASE)
-    s = "；".join(P) + "。"
-    for w in G.BANNED + ("通過", "測不出", "還沒測"):
+    s = "；".join(P) + "；" + PHRASE
+    guard(s)
+    return s
+
+
+VERDICT_WORDS = ("通過", "測不出", "還沒測", "測到", "顯著", "有效", "成立")
+
+
+def guard(s):
+    """結果句判定措辭擋門（seq1 BANNED＋通過／測不出／還沒測…）；PHRASE_SEQ487 也不可再出現（seq490）。"""
+    for w in G.BANNED + VERDICT_WORDS:
         if w in s:
             raise ValueError(f"結果句含不該出現的判定措辭 {w}")
-    return s
+    if PHRASE_SEQ487 in s:
+        raise ValueError("結果句仍含 seq487 舊固定句（已由 seq490 更正）")
 
 
 # ═════════════ 主程式 ═════════════
@@ -446,18 +506,21 @@ def run(dry, procs, limit=None):
                 q = M[M["段"] == nm]
                 d3 = desc3(q["X"]); cb = G.cluster_boot(q["X"].to_numpy(float), q["月"].to_numpy())
                 cb95 = G.cluster_boot(q["X"].to_numpy(float), q["月"].to_numpy(), alpha=0.05)   # ★S11 另一讀法（只描述用 95%）
+                cbB = bonf_ci(q["X"].to_numpy(float), q["月"].to_numpy())                       # seq490：Bonferroni 18 格
                 stp = float(q["出場原因"].str.startswith(("停損先到", "同日兩者")).mean()) if len(q) else np.nan
                 s5 = float(q["出場原因"].str.startswith("賣5先到").mean()) if len(q) else np.nan
                 hm = float(np.median(q["持有天數"].to_numpy(float))) if len(q) else np.nan
                 key = f"{cell}{v}"
                 DESC[("拆件描述", key, f"{nm}｜超額(訊號−對照)")] = d3
-                DESC[("拆件描述", key, f"{nm}｜超額 月分群99%CI")] = {"n": cb["n"], "mean": cb["mean"], "lo": cb["lo"], "hi": cb["hi"]}
+                DESC[("拆件描述", key, f"{nm}｜超額 月分群99%CI")] = {"n": cb["n"], "mean": cb["mean"], "lo": cb["lo"], "hi": cb["hi"],
+                                                                 "lo_bonf18": cbB["lo"], "hi_bonf18": cbB["hi"], "bonf18_scope": bonf_scope(cell, v, nm)}
                 DESC[("拆件描述", key, f"{nm}｜超額 月分群95%CI(另一讀法)")] = {"n": cb95["n"], "mean": cb95["mean"], "lo": cb95["lo"], "hi": cb95["hi"]}
                 DESC[("拆件描述", key, f"{nm}｜停損先到(含同日)比例")] = {"n": int(len(q)), "share": stp}
                 DESC[("拆件描述", key, f"{nm}｜賣5先到比例")] = {"n": int(len(q)), "share": s5}
                 DESC[("拆件描述", key, f"{nm}｜持有中位")] = {"n": int(len(q)), "value": hm}
                 rows[nm] = {"n": int(len(q)), "months": int(q["月"].nunique()), **{k: d3[k] for k in ("mean", "median", "mean_ex_max1")},
-                            "lo": cb["lo"], "hi": cb["hi"], "lo95": cb95["lo"], "hi95": cb95["hi"], "停損先到": stp, "賣5先到": s5, "持有中位": hm}
+                            "lo": cb["lo"], "hi": cb["hi"], "lo95": cb95["lo"], "hi95": cb95["hi"], "loB": cbB["lo"], "hiB": cbB["hi"],
+                            "停損先到": stp, "賣5先到": s5, "持有中位": hm}
             SENT_ROWS[(cell, v)] = rows
     return dict(od=od, REG=REG, sha=sha, PX=PX, RAW=RAW, EV=EV, EVX=EVX, EVR=EVR, MREASON=MREASON, DESC=DESC, SENT_ROWS=SENT_ROWS,
                 hlinfo=hlinfo, CAL=CAL, CEND=CEND, t0=t0, SUB=SUB, limit=limit)
@@ -581,13 +644,7 @@ def write_out(A, formal=False):
             raise SystemExit(f"⛔ A0／B0 未重現 seq1 事件檔：{RP}")
         log(f"[seq1 重現] A0、B0 × 3 格 逐字相同")
     sents = {f"{c}|{v}": result_sentence(c, v, A["SENT_ROWS"][(c, v)], dry=not formal) for c in BUY for v in VERS}
-    head = []
-    if formal:   # 裁定 seq488 §二：照記一行（每句都附固定語）
-        head = [f"{SEEN_LINE}；{PHRASE}。", f"{A3_LINE}；{PHRASE}。"]
-        for s in head:
-            for w in G.BANNED + ("通過", "測不出", "還沒測"):
-                if w in s:
-                    raise ValueError(f"結果句含不該出現的判定措辭 {w}")
+    head = head_lines() if formal else []
     open(os.path.join(od, "result_sentences.txt" if formal else "result_sentence_template.txt"), "w", encoding="utf-8").write(
         "\n\n".join(head + list(sents.values())) + "\n")
     neff = {f"{c}|{v}": {nm: int(EVX[(c, v)][(EVX[(c, v)]["段"] == nm) & EVX[(c, v)]["主格"]]["月"].nunique()) for nm, _, _ in SEGS}
@@ -597,9 +654,9 @@ def write_out(A, formal=False):
          "seq1重現": RP, "與A0重疊": OV, "NOTES": NOTES if not formal else NOTES[1:], "完成": str(pd.Timestamp.now(tz="Asia/Taipei")),
          "耗時秒": int(time.time() - A["t0"])}
     if formal:
-        drows = [{"section": s, "cell": c, "stat": st, **{k: v[k] for k in ("n", "mean", "median", "mean_ex_max1", "lo", "hi", "share", "value") if k in v}}
+        drows = [{"section": s, "cell": c, "stat": st, **{k: v[k] for k in DESC_COLS[3:] if k in v}}
                  for (s, c, st), v in A["DESC"].items()]
-        pd.DataFrame(drows).to_csv(os.path.join(od, "desc.csv"), index=False, encoding="utf-8-sig")
+        pd.DataFrame(drows, columns=DESC_COLS).to_csv(os.path.join(od, "desc.csv"), index=False, encoding="utf-8-sig")
         mx = []
         for c in BUY:
             for v in VERS:
@@ -619,6 +676,7 @@ def write_out(A, formal=False):
         J["核可正式跑"] = FORMAL_RULING_NOTE
         J["照記"] = [SEEN_LINE, A3_LINE]
         J["結果句"] = sents
+        J.update(relabel_fields(bonf_table(A["SENT_ROWS"])))
         json.dump(J, open(os.path.join(od, "formal.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=_js)
     else:
         ds = G.dry_status(A["DESC"]); ds.to_csv(os.path.join(od, "desc_dryrun_status.csv"), index=False, encoding="utf-8-sig")
@@ -629,17 +687,167 @@ def write_out(A, formal=False):
     log(f"[完成] ⇒ {od}｜{J.get('描述欄乾跑', {}).get('欄數')} 欄、EMPTY {J.get('描述欄乾跑', {}).get('EMPTY')}")
 
 
+# ═════════════ 裁定 seq490／seq492：標籤更正＋Bonferroni 18 格 CI（⛔ 不重跑、數字不變）═════════════
+DESC_COLS = ["section", "cell", "stat", "n", "mean", "median", "mean_ex_max1", "lo", "hi", "share", "value",
+             "lo_bonf18", "hi_bonf18", "bonf18_scope"]          # 前 11 欄 ＝ b5bc39f2cd 版 desc.csv，新欄只接在後面
+FORMAL_FILES = ("formal.json", "desc.csv", "result_sentences.txt", "main_excess.csv.gz")
+
+
+def head_lines():
+    """result_sentences.txt 開頭照記（每行都附固定句）；★ 註一行（seq490）。"""
+    out = [f"{x}；{PHRASE}" for x in (SEEN_LINE, A3_LINE, STAR_LINE, NO_VERDICT_LINE, BONF_LINE)]
+    for s in out:
+        guard(s)
+    return out
+
+
+def reg3_verify():
+    """登錄 seq3（9973 B；pw1 去戳記 sha256 前 16 ＝ 1fc4dda730b513ac）＋裁定 seq490、seq492 在信箱。"""
+    name = IMF.reg_check(REG3_SHA)
+    b = open(os.path.join(IMF.MAILBOX, name), "rb").read()
+    if len(b) != REG3_BYTES:
+        raise SystemExit(f"⛔ 登錄 seq3 大小 {len(b)} ≠ {REG3_BYTES}")
+    rul = {}
+    for r in RELABEL_RULINGS:
+        fs = [os.path.basename(f) for f in glob.glob(os.path.join(IMF.MAILBOX, "*.md")) if r in os.path.basename(f) and "裁定線" in os.path.basename(f)]
+        if not fs:
+            raise SystemExit(f"⛔ 信箱找不到裁定 {r}")
+        rul[r] = fs[0]
+    return {"登錄seq3": name, "bytes": len(b), "pw1去戳記sha前16": REG3_SHA, "相符": True, "裁定": rul}
+
+
+def bonf_table(SENT_ROWS):
+    """每格 × 版 × 段：99% 與 Bonferroni 18 格 CI 並列（⛔ 不只列 99%）。"""
+    T = {}
+    for (c, v), rows in SENT_ROWS.items():
+        T[f"{c}|{v}"] = {}
+        for nm, _, _ in SEGS:
+            r = rows[nm]
+            T[f"{c}|{v}"][nm] = {"範圍": bonf_scope(c, v, nm), "主格": r["n"], "n_eff": r["months"], "超額平均": r["mean"],
+                                 "99%CI": [r["lo"], r["hi"]], "Bonferroni18格99.72%CI": [r["loB"], r["hiB"]],
+                                 "99%下緣>0": bool(r["lo"] > 0), "99.72%下緣>0": bool(r["loB"] > 0),
+                                 "99%上緣<0": bool(r["hi"] < 0), "99.72%上緣<0": bool(r["hiB"] < 0)}
+    return T
+
+
+def relabel_fields(bt, reg3=None):
+    return {"沿革": RELABEL_NOTE, "標籤裁定": list(RELABEL_RULINGS), "登錄seq3": reg3 if reg3 is not None else reg3_verify(),
+            "固定句": PHRASE, "固定句(seq487舊，已更正)": PHRASE_SEQ487, "判定與N": NO_VERDICT_LINE, "★註": STAR_LINE, "多重比較": BONF_LINE,
+            "Bonferroni18格CI": {"方法": "seq1 G.cluster_boot 月分群 bootstrap（同 99% CI），只換 alpha", "alpha": BONF_ALPHA,
+                                 "信賴水準": 1 - BONF_ALPHA, "nboot": G.NBOOT, "seed": G.SEED,
+                                 "18格(確認段)": [f"{c}|{v}" for c, v in BONF_CELLS], "表": bt}}
+
+
+def _git_show(path):
+    import subprocess
+    return subprocess.run(["git", "show", f"{BASE_COMMIT}:{path}"], cwd=os.path.expanduser("~/tw-p17"), capture_output=True, check=True).stdout
+
+
+def _fx(s):
+    return float(s) if s != "" else np.nan
+
+
+def _same(a, b):
+    return (np.isnan(a) and np.isnan(b)) or a == b
+
+
+def _r(x):
+    return repr(float(x)) if np.isfinite(x) else ""
+
+
+def relabel():
+    """⛔ 不重跑：以 b5bc39f2cd 的 formal/ 輸出為準（git show），只改標籤、補 Bonferroni 18 格 CI；既有數字逐位元自驗，不符即停。"""
+    import re
+    od = os.path.join(OUT, "formal")
+    reg3 = reg3_verify(); log(f"[登錄 seq3] {reg3}")
+    base = {f: _git_show(f"{od}/{f}") for f in FORMAL_FILES}
+    J = json.loads(base["formal.json"].decode("utf-8"))
+    D = pd.read_csv(io.BytesIO(base["desc.csv"]), dtype=str, keep_default_na=False, encoding="utf-8-sig")
+    MX = pd.read_csv(io.BytesIO(base["main_excess.csv.gz"]), compression="gzip", dtype={"sid": str, "月": "int64"}, encoding="utf-8-sig",
+                     keep_default_na=False, na_values=[""], float_precision="round_trip")
+    if list(D.columns) != DESC_COLS[:11]:
+        raise SystemExit(f"⛔ 基準 desc.csv 欄位不符 {list(D.columns)}")
+    Dk = {(r.cell, r.stat): r for r in D.itertuples(index=False)}
+    SENT_ROWS = {}; nchk = 0
+    for c in BUY:
+        for v in VERS:
+            M = MX[(MX["格"] == c) & (MX["版"] == v)]
+            rows = {}
+            for nm, _, _ in SEGS:
+                q = M[M["段"] == nm]
+                x = q["超額"].to_numpy(float); mo = q["月"].to_numpy()
+                d3 = desc3(x); cb = G.cluster_boot(x, mo); cb95 = G.cluster_boot(x, mo, alpha=0.05); cbB = bonf_ci(x, mo)
+                key = f"{c}{v}"
+                r0 = Dk[(key, f"{nm}｜超額(訊號−對照)")]; r1 = Dk[(key, f"{nm}｜超額 月分群99%CI")]
+                r2 = Dk[(key, f"{nm}｜超額 月分群95%CI(另一讀法)")]
+                rs = Dk[(key, f"{nm}｜停損先到(含同日)比例")]; r5 = Dk[(key, f"{nm}｜賣5先到比例")]; rh = Dk[(key, f"{nm}｜持有中位")]
+                pairs = [(d3["n"], int(r0.n)), (d3["mean"], _fx(r0.mean)), (d3["median"], _fx(r0.median)), (d3["mean_ex_max1"], _fx(r0.mean_ex_max1)),
+                         (cb["n"], int(r1.n)), (cb["mean"], _fx(r1.mean)), (cb["lo"], _fx(r1.lo)), (cb["hi"], _fx(r1.hi)),
+                         (cb95["lo"], _fx(r2.lo)), (cb95["hi"], _fx(r2.hi)), (len(q), int(rs.n)),
+                         (int(q["月"].nunique()), int(J["n_eff"][f"{c}|{v}"][nm]))]
+                bad = [k for k, (a, b) in enumerate(pairs) if not _same(float(a), float(b))]
+                if bad:
+                    raise SystemExit(f"⛔ {c} {v} {nm} 由 main_excess 重算 ≠ 基準 desc.csv（第 {bad} 項）：數字不能變，停")
+                nchk += len(pairs)
+                rows[nm] = {"n": len(q), "months": int(q["月"].nunique()), **{k: d3[k] for k in ("mean", "median", "mean_ex_max1")},
+                            "lo": cb["lo"], "hi": cb["hi"], "lo95": cb95["lo"], "hi95": cb95["hi"], "loB": cbB["lo"], "hiB": cbB["hi"],
+                            "停損先到": _fx(rs.share), "賣5先到": _fx(r5.share), "持有中位": _fx(rh.value)}
+            SENT_ROWS[(c, v)] = rows
+    log(f"[自驗] main_excess 重算 平均／中位／去最大／99% CI／95% CI／件數／n_eff ＝ 基準 desc.csv、formal.json：{nchk} 項逐位元相同")
+    # 結果句：去掉新 CI 片段、換回舊固定句 ⇒ 必須逐字等於基準結果句
+    sents = {f"{c}|{v}": result_sentence(c, v, SENT_ROWS[(c, v)], dry=False) for c in BUY for v in VERS}
+    strip = re.compile("、" + re.escape(BONF_LAB) + r"(（[^）]*）)? \[[^\]]*\]")
+    for k, s in sents.items():
+        back = strip.sub("", s).replace("；" + PHRASE, "；" + PHRASE_SEQ487 + "。")
+        if back != J["結果句"][k]:
+            raise SystemExit(f"⛔ {k} 結果句除標籤與新 CI 外與基準不同，停")
+    log("[自驗] 24 句結果句：去掉 Bonferroni 片段、換回舊固定句 ⇒ 與基準逐字相同")
+    # desc.csv：舊 11 欄原字串不動，新 3 欄只填在 99%CI 列
+    D2 = D.copy()
+    lo, hi, sc = [], [], []
+    for r in D.itertuples(index=False):
+        if r.stat.endswith("｜超額 月分群99%CI"):
+            c, v, nm = r.cell[:2], r.cell[2:], r.stat.split("｜")[0]
+            rr = SENT_ROWS[(c, v)][nm]
+            lo.append(_r(rr["loB"])); hi.append(_r(rr["hiB"])); sc.append(bonf_scope(c, v, nm))
+        else:
+            lo.append(""); hi.append(""); sc.append("")
+    D2["lo_bonf18"] = lo; D2["hi_bonf18"] = hi; D2["bonf18_scope"] = sc
+    D2.to_csv(os.path.join(od, "desc.csv"), index=False, encoding="utf-8-sig")
+    # formal.json：NOTES 舊固定句那條換新、結果句換新，其餘鍵值原樣；加沿革與 CI 表
+    J["NOTES"] = [NOTES[1] if PHRASE_SEQ487 in x else x for x in J["NOTES"]]
+    J["結果句"] = sents
+    J.update(relabel_fields(bonf_table(SENT_ROWS), reg3))
+    J["標籤更正完成"] = str(pd.Timestamp.now(tz="Asia/Taipei"))
+    json.dump(J, open(os.path.join(od, "formal.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=_js)
+    open(os.path.join(od, "result_sentences.txt"), "w", encoding="utf-8").write("\n\n".join(head_lines() + list(sents.values())) + "\n")
+    for c, v in BONF_CELLS + [(c, v) for c in BUY for v in ("A0", "B0")]:
+        r = SENT_ROWS[(c, v)]["確認"]
+        log(f"[確認段 {c} {v}] 平均 {_p(r['mean'])}｜99% [{_p(r['lo'])}, {_p(r['hi'])}]｜99.72% [{_p(r['loB'])}, {_p(r['hiB'])}]"
+            f"｜{bonf_scope(c, v, '確認')}")
+    log(f"[完成] 標籤更正 ⇒ {od}（events、main_excess、run.log 等未動）")
+
+
 def gate(argv):
-    """→ ('dry', procs, limit) | ('formal', procs, None) | ('refuse', 訊息)。正式跑只認 --formal --ruling seq487。"""
+    """→ ('dry', procs, limit) | ('formal', procs, None) | ('relabel',) | ('refuse', 訊息)。
+    正式跑只認 --formal --ruling seq487；標籤更正只認 --relabel --ruling seq490（不帶其他旗標）。"""
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--dry", action="store_true"); ap.add_argument("--formal", action="store_true")
-    ap.add_argument("--ruling", default=None); ap.add_argument("--procs", type=int, default=3); ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--relabel", action="store_true")
+    ap.add_argument("--ruling", default=None); ap.add_argument("--procs", type=int, default=None); ap.add_argument("--limit", type=int, default=None)
     try:
         a, rest = ap.parse_known_args(argv)
     except SystemExit:
         return ("refuse", "⛔ 參數錯；拒跑")
     if rest:
         return ("refuse", f"⛔ 不認得的參數 {rest}；拒跑")
+    if a.relabel:
+        if a.formal or a.dry or a.limit or a.procs is not None:
+            return ("refuse", "⛔ --relabel 不可與 --formal／--dry／--limit／--procs 同給；拒跑")
+        if a.ruling != RELABEL_RULING:
+            return ("refuse", f"⛔ 標籤更正須 --relabel --ruling {RELABEL_RULING}；拒跑")
+        return ("relabel",)
+    a.procs = 3 if a.procs is None else a.procs
     if a.formal and a.dry:
         return ("refuse", "⛔ --formal 與 --dry 不可同時給；拒跑")
     if a.formal:
@@ -652,13 +860,15 @@ def gate(argv):
         if a.ruling:
             return ("refuse", "⛔ --dry 不收 --ruling；拒跑")
         return ("dry", a.procs, a.limit)
-    return ("refuse", f"用法：--dry ｜ --formal --ruling {RULING}；拒跑")
+    return ("refuse", f"用法：--dry ｜ --formal --ruling {RULING} ｜ --relabel --ruling {RELABEL_RULING}；拒跑")
 
 
 def main():
     m = gate(sys.argv[1:])
     if m[0] == "refuse":
         sys.exit(m[1])
+    if m[0] == "relabel":
+        relabel(); return
     A = run(dry=(m[0] == "dry"), procs=m[1], limit=m[2])
     write_out(A, formal=(m[0] == "formal"))
 
