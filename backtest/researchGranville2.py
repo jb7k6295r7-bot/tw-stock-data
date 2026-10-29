@@ -15,7 +15,7 @@
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville2 --dry [--procs 3] [--limit N（煙霧測，輸出 ~/grvwork/dry2）]
         ⇒ backtest/resultsGranville2/freq/
     PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville2 --formal --ruling seq487
-        ⇒ 正式跑（⛔ 兩個旗標都要給、ruling 必須是 seq487，否則拒跑；本件目前只准 --dry）→ backtest/resultsGranville2/formal/
+        ⇒ 正式跑（⛔ 兩個旗標都要給、ruling 必須是 seq487，否則拒跑；裁定 seq488 §二 已核可正式跑）→ backtest/resultsGranville2/formal/
     自測：PYTHONPATH=~/tw-p17 ~/tw-p16/.venv/bin/python -m backtest.researchGranville2_check
 
 ══════════ 登錄 §九（照抄）══════════
@@ -90,6 +90,10 @@ ARM = {"A0": "SX", "A1": "SX", "A2": "SX", "A3": "SX", "B0": "SX", "B1": "S", "B
 VNAME = {"A0": "原版", "A1": "拿掉 MA200 方向條件", "A2": "拿掉前置位置條件", "A3": "只剩觸發",
          "B0": "原版出場（停損或賣5，上限250日）", "B1": "只停損（上限250日）", "B2": "只賣5（上限250日）", "B3": "都不用，固定抱250日"}
 PHRASE = "拆件是看過 seq1 結果後追加的，只描述"
+# 裁定 seq487／seq488 §二 要求結果句照記（正式輸出才用）
+SEEN_LINE = "子代理讀 seq487 時看到 seq1 買 2 的兩個報酬數字；拆法 10/29 04:24 已定，本件只描述"
+A3_LINE = "買 1 A3 與買 2 A3 幾乎是同一觸發（都是前一根收盤在 MA200 之下、當根站回），兩者不要當成兩個獨立證據"
+FORMAL_RULING_NOTE = "正式跑核可：裁定 seq488 §二（帶 --formal --ruling seq487；★S4、★S6、★S8、★S9 核）"
 NOTES = ["乾跑：未讀、未算、未存任何報酬、超額、勝率（seq366／458／459）；描述欄報酬以 0 佔位，只報 filled／EMPTY",
          "拆件是看過 seq1 結果後追加的，只描述：不新增判定格、不計 N、不改 seq1 判語（登錄 §九、裁定 seq487 §二）",
          "B 組進場 ＝ A0 ＝ seq1 原版（事件、對照逐字相同，見 repro_seq1.csv），只換出場",
@@ -245,10 +249,12 @@ def result_sentence(cell, ver, rows, dry):
         v = rows.get(nm, {})
         ret = ("超額（訊號−對照，兩邊各扣 0.585%）（乾跑不填）" if dry else
                f"超額（訊號−對照，兩邊各扣 0.585%）平均 {_p(v.get('mean'))}、中位 {_p(v.get('median'))}、去掉最大 1 筆 {_p(v.get('mean_ex_max1'))}"
-               f"（月分群 99% CI [{_p(v.get('lo'))}, {_p(v.get('hi'))}]）")
+               f"（月分群 99% CI [{_p(v.get('lo'))}, {_p(v.get('hi'))}]；另一讀法 95% CI [{_p(v.get('lo95'))}, {_p(v.get('hi95'))}]）")
         neff = v.get("months", 0)
         P.append(f"{nm}段 主格 {v.get('n', 0)} 件、n_eff {neff} 月{'（< 24，只描述、樣本不足）' if neff < G.NEFF_MIN else ''}、{ret}、"
                  f"停損先到（含同日）{_p(v.get('停損先到'), False)}、賣 5 先到 {_p(v.get('賣5先到'), False)}、持有中位 {v.get('持有中位', float('nan')):.0f} 日")
+    if not dry and ver == "A3" and cell in ("買1", "買2"):
+        P.append(A3_LINE)
     P.append(PHRASE)
     s = "；".join(P) + "。"
     for w in G.BANNED + ("通過", "測不出", "還沒測"):
@@ -439,17 +445,19 @@ def run(dry, procs, limit=None):
             for nm, _, _ in SEGS:
                 q = M[M["段"] == nm]
                 d3 = desc3(q["X"]); cb = G.cluster_boot(q["X"].to_numpy(float), q["月"].to_numpy())
+                cb95 = G.cluster_boot(q["X"].to_numpy(float), q["月"].to_numpy(), alpha=0.05)   # ★S11 另一讀法（只描述用 95%）
                 stp = float(q["出場原因"].str.startswith(("停損先到", "同日兩者")).mean()) if len(q) else np.nan
                 s5 = float(q["出場原因"].str.startswith("賣5先到").mean()) if len(q) else np.nan
                 hm = float(np.median(q["持有天數"].to_numpy(float))) if len(q) else np.nan
                 key = f"{cell}{v}"
                 DESC[("拆件描述", key, f"{nm}｜超額(訊號−對照)")] = d3
                 DESC[("拆件描述", key, f"{nm}｜超額 月分群99%CI")] = {"n": cb["n"], "mean": cb["mean"], "lo": cb["lo"], "hi": cb["hi"]}
+                DESC[("拆件描述", key, f"{nm}｜超額 月分群95%CI(另一讀法)")] = {"n": cb95["n"], "mean": cb95["mean"], "lo": cb95["lo"], "hi": cb95["hi"]}
                 DESC[("拆件描述", key, f"{nm}｜停損先到(含同日)比例")] = {"n": int(len(q)), "share": stp}
                 DESC[("拆件描述", key, f"{nm}｜賣5先到比例")] = {"n": int(len(q)), "share": s5}
                 DESC[("拆件描述", key, f"{nm}｜持有中位")] = {"n": int(len(q)), "value": hm}
                 rows[nm] = {"n": int(len(q)), "months": int(q["月"].nunique()), **{k: d3[k] for k in ("mean", "median", "mean_ex_max1")},
-                            "lo": cb["lo"], "hi": cb["hi"], "停損先到": stp, "賣5先到": s5, "持有中位": hm}
+                            "lo": cb["lo"], "hi": cb["hi"], "lo95": cb95["lo"], "hi95": cb95["hi"], "停損先到": stp, "賣5先到": s5, "持有中位": hm}
             SENT_ROWS[(cell, v)] = rows
     return dict(od=od, REG=REG, sha=sha, PX=PX, RAW=RAW, EV=EV, EVX=EVX, EVR=EVR, MREASON=MREASON, DESC=DESC, SENT_ROWS=SENT_ROWS,
                 hlinfo=hlinfo, CAL=CAL, CEND=CEND, t0=t0, SUB=SUB, limit=limit)
@@ -573,8 +581,15 @@ def write_out(A, formal=False):
             raise SystemExit(f"⛔ A0／B0 未重現 seq1 事件檔：{RP}")
         log(f"[seq1 重現] A0、B0 × 3 格 逐字相同")
     sents = {f"{c}|{v}": result_sentence(c, v, A["SENT_ROWS"][(c, v)], dry=not formal) for c in BUY for v in VERS}
+    head = []
+    if formal:   # 裁定 seq488 §二：照記一行（每句都附固定語）
+        head = [f"{SEEN_LINE}；{PHRASE}。", f"{A3_LINE}；{PHRASE}。"]
+        for s in head:
+            for w in G.BANNED + ("通過", "測不出", "還沒測"):
+                if w in s:
+                    raise ValueError(f"結果句含不該出現的判定措辭 {w}")
     open(os.path.join(od, "result_sentences.txt" if formal else "result_sentence_template.txt"), "w", encoding="utf-8").write(
-        "\n\n".join(sents.values()) + "\n")
+        "\n\n".join(head + list(sents.values())) + "\n")
     neff = {f"{c}|{v}": {nm: int(EVX[(c, v)][(EVX[(c, v)]["段"] == nm) & EVX[(c, v)]["主格"]]["月"].nunique()) for nm, _, _ in SEGS}
             for c in BUY for v in VERS}
     J = {"登錄": A["REG"], "核可": RULING, "資料": A["sha"], "高低價": A["hlinfo"], "日曆": f"{A['CAL'][0].date()}～{A['CAL'][-1].date()}（{len(A['CAL'])}）",
@@ -585,6 +600,24 @@ def write_out(A, formal=False):
         drows = [{"section": s, "cell": c, "stat": st, **{k: v[k] for k in ("n", "mean", "median", "mean_ex_max1", "lo", "hi", "share", "value") if k in v}}
                  for (s, c, st), v in A["DESC"].items()]
         pd.DataFrame(drows).to_csv(os.path.join(od, "desc.csv"), index=False, encoding="utf-8-sig")
+        mx = []
+        for c in BUY:
+            for v in VERS:
+                M = EVX[(c, v, "M")]
+                mx.append(pd.DataFrame({"格": c, "版": v, "sid": M["sid"], "date": M["date"], "段": M["段"], "月": M["月"],
+                                        "出場原因": M["出場原因"], "持有天數": M["持有天數"], "超額": M["X"]}))
+        import gzip
+        with open(os.path.join(od, "main_excess.csv.gz"), "wb") as fh:
+            fh.write(gzip.compress(("﻿" + pd.concat(mx).to_csv(index=False)).encode("utf-8"), mtime=0))
+        # 買1 A3 vs 買2 A3 重疊（原始訊號、主格；只件數）
+        SUB = A["SUB"]
+        r1 = A["RAW"][("買1", "A3")] & SUB[:, None]; r2 = A["RAW"][("買2", "A3")] & SUB[:, None]
+        m1 = EVX[("買1", "A3", "M")]; m2 = EVX[("買2", "A3", "M")]
+        k1 = set(zip(m1["sid"], m1["date"])); k2 = set(zip(m2["sid"], m2["date"]))
+        J["買1A3與買2A3重疊"] = {"買1A3原始": int(r1.sum()), "買2A3原始": int(r2.sum()), "原始交集": int((r1 & r2).sum()),
+                            "買1A3主格": len(k1), "買2A3主格": len(k2), "主格交集(同檔同日)": len(k1 & k2), "說明": A3_LINE}
+        J["核可正式跑"] = FORMAL_RULING_NOTE
+        J["照記"] = [SEEN_LINE, A3_LINE]
         J["結果句"] = sents
         json.dump(J, open(os.path.join(od, "formal.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=_js)
     else:
