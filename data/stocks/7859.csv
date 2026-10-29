@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-27,7859,翰可能源,emerging,,45.25,31.5,37.66,303560,11432070,,,,,均價/額推算,39.45,1
 2026-10-28,7859,翰可能源,emerging,,38,29.6,32.99,221862,7319227,-4.67,,,,均價/額推算,35,1
+2026-10-29,7859,翰可能源,emerging,,35.5,32.3,34.31,69825,2395696,1.32,,,,均價/額推算,34.35,1

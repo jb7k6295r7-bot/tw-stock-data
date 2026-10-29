@@ -34,3 +34,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-10-22,7443,凡事康,emerging,,,,,0,,,,,,無成交,,0
 2026-10-27,7443,凡事康,emerging,,,,,0,,,,,,無成交,,0
 2026-10-28,7443,凡事康,emerging,,,,,0,,,,,,無成交,,0
+2026-10-29,7443,凡事康,emerging,,8.53,8.13,8.22,12000,98640,-0.28,,,,均價/額推算,8.18,1
