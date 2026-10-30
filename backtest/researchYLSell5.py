@@ -802,6 +802,7 @@ def run(mode, procs, log):
         A["描述欄乾跑"] = DST
     else:
         A["正式"] = DESC
+        A["結果句（正式必附）"] = result_sentences(FJ, PJ, DESC, gates)
     A["策略鎖"].append(lock_check("跑完", log))
     A["耗時秒"] = round(time.time() - T0)
     FS.to_csv(os.path.join(od, "freq_single.csv"), index=False, float_format="%.6g", encoding="utf-8-sig")
@@ -849,19 +850,35 @@ def describe_all(WS, ROWS, SINGLE, OFF, DT, dry, procs, log):
     else:
         with Pool(procs) as pool:
             rr = pool.map(job_dry, jobs, chunksize=4)
+    TLR = {}
     for wn, sn, arm, r, tl, eq, f_, e_ in rr:
         W = WS[wn]
         MET.setdefault((wn, sn, arm), []).append(port_metrics(W, eq, f_, e_, TRI[wn], dry))
+        TLR[(wn, sn, arm, r)] = tl
         if not dry and arm == "o":
             if tl != OFF[(wn, sn, r)]:
                 raise SystemExit("⛔ 正式原出場成交清單 ≠ 原版")
+    # ★9（裁定 seq493）：組合層「補位多出／少掉」正式一律用真實價格引擎重報（改版 vs 原版正式）
+    RB = {}
+    for wn in ("主", "早年"):
+        W = WS[wn]
+        for sn in STR:
+            for sg, (x, y) in W["segp"].items():
+                v = {"原_買進筆": [], "改_買進筆": [], "補位多出": [], "補位少掉": [], "兩版都有": []}
+                for r in seeds_of(sn):
+                    bo = set((s_, t) for t, s_ in TLR[(wn, sn, "o", r)][0] if x <= t <= y)
+                    bn = set((s_, t) for t, s_ in TLR[(wn, sn, "n", r)][0] if x <= t <= y)
+                    v["原_買進筆"].append(len(bo)); v["改_買進筆"].append(len(bn))
+                    v["補位多出"].append(len(bn - bo)); v["補位少掉"].append(len(bo - bn)); v["兩版都有"].append(len(bn & bo))
+                RB[f"{sn}·{wn}·{sg}"] = {k + "（中位）": float(np.median(a)) for k, a in v.items()}
+    DESC["組合層成交（真實價格引擎；★9 正式重報）"] = RB
     PD = {}
     for wn in ("主", "早年"):
         for sn in STR:
             PD[f"{sn}·{wn}"] = port_desc(WS[wn], {"o": MET[(wn, sn, "o")], "n": MET[(wn, sn, "n")]}, sn, TRI[wn], dry)
     VER_P = {sn: {"探索": PD[f"{sn}·主"]["探索"]["變好"], "確認": PD[f"{sn}·主"]["確認"]["變好"],
                   "結論": ("變好" if (PD[f"{sn}·主"]["探索"]["變好"] and PD[f"{sn}·主"]["確認"]["變好"]) else
-                         ("沒有變好（探索段就沒變好）" if not PD[f"{sn}·主"]["探索"]["變好"] else "沒有變好（確認段沒變好）"))} for sn in STR}
+                         ("不變好（探索段就沒變好）" if not PD[f"{sn}·主"]["探索"]["變好"] else "不變好（確認段沒變好）"))} for sn in STR}
     DESC["組合層"] = PD; DESC["組合層判定"] = VER_P
     # 單筆層
     SD = {}; VER_S = {}
@@ -892,6 +909,31 @@ def describe_all(WS, ROWS, SINGLE, OFF, DT, dry, procs, log):
     DESC["現實版（主世界）"] = RC
     log(f"[描述欄] {'乾跑佔位' if dry else '正式'} 完成")
     return DESC, fill_status(DESC)
+
+
+def result_sentences(FJ, PJ, DESC, gates):
+    """裁定 seq493 必寫句＋★4／★9 註＋登錄聲明＋先驗證據（數字由本次頻率表／正式成交算出，非手填）。"""
+    hy, hf = FJ["營量·主·主窗"]["判定樣本"], FJ["營飆·主·主窗"]["判定樣本"]
+    my, mf = hy["持有天數 改版（賣5）"]["中位"], hf["持有天數 改版（賣5）"]["中位"]
+    cy, cf = hy["到250上限比例"], hf["到250上限比例"]
+    py, pf = PJ["營量·主·主窗"], PJ["營飆·主·主窗"]
+    rb = DESC["組合層成交（真實價格引擎；★9 正式重報）"]
+    ry, rf = rb["營量·主·主窗"], rb["營飆·主·主窗"]
+    fx = FJ["營飆·主·確認"]
+    nd, nt = gates["★9 原出場乾跑 vs 正式 買進對稱差（筆）／正式買進（筆）"]
+    return [
+        f"改版持有中位約 {min(my, mf):.0f}～{max(my, mf):.0f} 日（營量 {my:.0f}、營飆 {mf:.0f}），原版 60／120 日；約四成抱到 250 日上限（營量 {cy:.1%}、營飆 {cf:.1%}；主窗、判定樣本）",
+        f"名額常被占住：營量改版買進 {py['原_買進筆（中位）']:.0f} → {py['改_買進筆（中位）']:.0f} 筆（真實價格引擎 {ry['原_買進筆（中位）']:.0f} → {ry['改_買進筆（中位）']:.0f}；"
+        f"營飆 200 顆中位 {rf['原_買進筆（中位）']:.0f} → {rf['改_買進筆（中位）']:.0f}），組合層實際買到的股票和原版差很多"
+        f"（營量兩版都有 {ry['兩版都有（中位）']:.0f} 筆、改版多出 {ry['補位多出（中位）']:.0f}、少掉 {ry['補位少掉（中位）']:.0f}）",
+        f"★9：組合層數字一律用真實價格引擎（含「現金不足」一步）；無價格乾跑只用於頻率表，原出場乾跑與正式只差 {nd}／{nt:,} 筆（現金不足一步對調）",
+        f"★4：營飆單筆層確認段照主讀法（只收走得完 250 日的筆）n_eff {fx['n_eff（訊號月，判定樣本）']} ＜ 24 ⇒ 依〈四十九〉判「還沒測」；"
+        f"另一讀法（全收、資料尾收盤計）n_eff {fx['n_eff（訊號月，全部）']}，數字只當描述並列，不改讀法（裁定 seq493）",
+        *SENT,
+        "⭐ 讀法在看任何本件報酬前寫死（★ 02:51）；回測線乾跑時只看過頻率表（不含報酬），台股策略線起草時沒看過本件任何數字",
+        "先驗證據（登錄 §四）：訊號進、跌破 50／60 日線出：輸 0050（2022～2026 +12.0%、+4.1%）；停損、停利、減碼 21 種都沒贏買了就抱",
+        "方向為負只寫測不出／不變好，不寫反向",
+    ]
 
 
 def job_real(a):
