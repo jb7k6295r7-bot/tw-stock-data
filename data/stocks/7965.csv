@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-29,7965,昆桐,emerging,,799,546,707.61,353128,249876904,,,,,均價/額推算,711,1
+2026-10-30,7965,昆桐,emerging,,703,580,622.17,152327,94773290,-85.44,,,,均價/額推算,630,1

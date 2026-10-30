@@ -1,2 +1,3 @@
 date,stock_id,m_buy,m_sell,m_balance,m_limit,s_buy,s_sell,s_balance,m_prev,m_ret,s_prev,s_ret,note
 2026-10-29,009832,48,0,48,26916,0,0,0,0,0,0,0,
+2026-10-30,009832,104,12,140,27291,0,0,0,48,0,0,0,

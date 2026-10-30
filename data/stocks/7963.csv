@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-10-29,7963,安達康,emerging,,223,168,202.19,114402,23130940,,,,,均價/額推算,215,1
+2026-10-30,7963,安達康,emerging,,213,183,193.89,56311,10918140,-8.30,,,,均價/額推算,195,1
