@@ -1,4 +1,4 @@
-# 2026-10-01 仍缺股數 21 檔（下一步：capital.py --finmind）
+# 2026-11-01 仍缺股數 21 檔（下一步：capital.py --finmind）
 01001T,土銀富邦R1,twse
 01002T,土銀國泰R1,twse
 01004T,土銀富邦R2,twse
