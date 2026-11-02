@@ -966,13 +966,13 @@
 
 ## ci_steps　✓ 正常
 
-最後執行：2026-11-01T15:10:53+08:00（台北）｜觸發 schedule｜股本／發行股數（每月）｜ref main｜run 41283361598
+最後執行：2026-11-02T14:57:52+08:00（台北）｜觸發 schedule｜端點探針（只跑探針，約 1 分鐘）｜ref main｜run 41400710709
 
 - **⭐ 這一支在驗什麼**：`continue-on-error: true` 的自測步驟紅了，run 的 conclusion 仍然是 **success** ⇒ ⛔ 沒有任何地方會說。這一塊就是那個「說」。
-- **跑過的自測**：1 支｜selftest_capital.py
+- **跑過的自測**：7 支｜selftest_probes.py、selftest_filing_probe.py、selftest_us_probe.py、selftest_funding_probe.py、selftest_mops_probe.py、selftest_feed_hosts.py、selftest_probe_step.py
 
 檢查：
-- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（1 支全綠）
+- ok　⭐⭐ 所有 `continue-on-error` 的自測都是綠的　（7 支全綠）
 
 ## reduce_shares_check　✓ 正常
 
