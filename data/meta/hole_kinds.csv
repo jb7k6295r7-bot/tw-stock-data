@@ -727,6 +727,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 5487,通泰,tpex,2023-01-03,2023-01-11,5,5,5,0,notrade
 5506,長鴻,tpex,2015-04-02,2015-09-23,118,0,0,118,halted
 5514,三豐,tpex,2025-05-23,2025-06-04,6,6,6,0,notrade
+5520,力泰,tpex,2026-10-21,2026-11-02,5,5,5,0,notrade
 5538,東明-KY,twse,2020-06-19,2020-07-01,5,5,5,0,notrade
 5543,桓鼎-KY,tpex,2022-11-03,2022-11-11,5,5,5,0,notrade
 5543,桓鼎-KY,tpex,2025-05-02,2025-05-15,8,8,8,0,notrade
