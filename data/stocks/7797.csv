@@ -37,3 +37,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-10-29,7797,Q Burger,emerging,,58,51,54.54,40834,2227086,3.20,,,,均價/額推算,58,1
 2026-10-30,7797,Q Burger,emerging,,56.7,54.1,55.3,11182,618365,0.76,,,,均價/額推算,54.8,1
 2026-11-02,7797,Q Burger,emerging,,58,53,54.97,43606,2397022,-0.33,,,,均價/額推算,58,1
+2026-11-03,7797,Q Burger,emerging,,56,55.1,55.4,6002,332511,0.43,,,,均價/額推算,55.5,1
