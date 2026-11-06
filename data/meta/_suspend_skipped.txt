@@ -266,4 +266,4 @@ twse-halt	2026-10-07~2026-11-06	JSON 失敗 Expecting value: line 1 column 1 (ch
 twse-disposal	2026-10-07~2026-11-06	JSON 失敗 Expecting value: line 1 column 1 (char 0)
 twse-attention	2026-10-07~2026-11-06	JSON 失敗 Expecting value: line 1 column 1 (char 0)
 
-# ── 2026-11-07T01:49:13+08:00　2026-10-08~2026-11-07　擋下 0 筆
+# ── 2026-11-07T02:24:02+08:00　2026-10-08~2026-11-07　擋下 0 筆
