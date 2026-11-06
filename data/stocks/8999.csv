@@ -40,3 +40,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-11-03,8999,台灣積層,emerging,,,,,0,,,,,,無成交,,0
 2026-11-04,8999,台灣積層,emerging,,,,,0,,,,,,無成交,,0
 2026-11-05,8999,台灣積層,emerging,,,,,0,,,,,,無成交,,0
+2026-11-06,8999,台灣積層,emerging,,34.7,34.55,34.65,8192,283853,-1.05,,,,均價/額推算,34.7,1
