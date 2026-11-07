@@ -12,6 +12,12 @@ F 放行（★9）：站回均線當根即放行；途中壞根 ⇒ 截尾。
 G 財報 ★1：無上傳紀錄的期別在法定評估日前不可用、當天起可用；有紀錄 ⇒ 上傳日 < 評估日才可用。
 H 財報 PIT：真實資料截斷到評估日（FairValue asof）重算＝全量（主讀法，數個月份）。
 I 原版一致：原版 24 個評估日上，主讀法分組＝核對版 orig/detail.csv（市值 ≥300 億者；只讀非報酬欄）。
+（2026-11-08 正式跑加）
+J 正式跑閘門：--formal --ruling seq499 兩個都要，否則拒跑（含實際執行兩支正式檔不帶旗標）。
+K 持有報酬 hold_ret：壞根不計、下市用最後一根、日曆不夠不算。
+L bootstrap：97.5%、種子固定、群集抽樣。
+M 判語只有「通過（暫定）」與「測不出」；兩版都過採半年線。
+N 每月表：不判留在全部可買、主量只取剔除組 ≥3 檔的月份、中位數差。
 """
 import os, sys
 import numpy as np, pandas as pd
@@ -127,6 +133,94 @@ ri = M.release_info(FS_(px, b), k, N)
 ok(ri['rel_main'] == 'censored', 'F2 放行前遇壞根 ⇒ 截尾')
 t, why = M.delayed_entry(FS_(1000 - np.arange(300.0), np.zeros(300, bool)), 250)
 ok(t is None and why == 'never', 'F3 一路創新低 ⇒ 延後版找不到進場根')
+
+# ═════════ J 正式跑閘門（裁定 seq499：--formal --ruling seq499 兩個都要）═════════
+import researchTWLongDownFilter as FM     # noqa: E402
+ok(isinstance(FM.gate([]), tuple), 'J1 無參數 ⇒ 拒跑')
+ok(isinstance(FM.gate(['--formal']), tuple), 'J2 只給 --formal ⇒ 拒跑')
+ok(isinstance(FM.gate(['--ruling', 'seq499']), tuple), 'J3 只給 --ruling seq499 ⇒ 拒跑')
+ok(isinstance(FM.gate(['--formal', '--ruling', 'seq498']), tuple), 'J4 --ruling seq498（舊號）⇒ 拒跑')
+ok(isinstance(FM.gate(['--formal', '--ruling', 'seq499', '--x']), tuple), 'J5 多餘參數 ⇒ 拒跑')
+ok(FM.gate(['--formal', '--ruling', 'seq499']) == 'formal', 'J6 --formal --ruling seq499 ⇒ 准跑')
+import subprocess  # noqa: E402
+for fn in ('researchTWLongDownFilter.py', 'researchUSLongDownFilter.py'):
+    pr = subprocess.run([sys.executable, os.path.join(HERE, fn)], capture_output=True, text=True,
+                        env=dict(os.environ, PYTHONPATH=os.path.dirname(HERE)), timeout=120)
+    ok(pr.returncode != 0 and '拒跑' in (pr.stderr + pr.stdout), f'J7 {fn} 不帶旗標實際執行 ⇒ 非零結束且拒跑')
+import importlib  # noqa: E402
+US = importlib.import_module('researchUSLongDownFilter')
+ok(US.gate is FM.gate, 'J8 美股正式檔用同一個閘門函式')
+
+
+# ═════════ K 持有報酬（hold_ret：壞根不計、下市用最後一根、日曆不夠不算）═════════
+class KS_:
+    def __init__(self, px, pos, bad):
+        self.px = np.asarray(px, float); self.pos = np.asarray(pos); self.cb = M.cumbad(bad)
+
+
+ks = KS_([10, 11, 12, 13, 14, 15], [0, 1, 2, 3, 4, 5], np.zeros(6, bool))
+r, s_ = FM.hold_ret(ks, 1, 3, 100)
+ok(abs(r - (14 / 11 - 1)) < 1e-12 and s_ == 'ok', 'K1 第 1 根進、+3 出 ⇒ 14/11−1')
+ok(np.isnan(FM.hold_ret(ks, 1, 3, 4)[0]) and FM.hold_ret(ks, 1, 3, 4)[1] == 'cal', 'K2 出場日超出日曆 ⇒ 不算')
+b = np.zeros(6, bool); b[3] = True
+ok(FM.hold_ret(KS_(ks.px, ks.pos, b), 1, 3, 100)[1] == 'holdbad', 'K3 持有窗內壞根 ⇒ 不計')
+b = np.zeros(6, bool); b[1] = True
+ok(FM.hold_ret(KS_(ks.px, ks.pos, b), 1, 3, 100)[1] == 'ok', 'K4 壞根恰在進場根（窗外）⇒ 照算')
+r, s_ = FM.hold_ret(ks, 3, 10, 100)
+ok(abs(r - (15 / 13 - 1)) < 1e-12 and s_ == 'delisted', 'K5 出場前已下市 ⇒ 用最後一根')
+ks2 = KS_([10, 20, 30], [0, 1, 5], np.zeros(3, bool))
+ok(abs(FM.hold_ret(ks2, 0, 3, 100)[0] - 1.0) < 1e-12, 'K6 出場日無成交 ⇒ 用之前最後一根')
+
+# ═════════ L bootstrap（97.5%、種子固定、群集）═════════
+v = np.full(10, 0.02)
+pt, lo, hi, nc = FM.boot_ci(v, range(10))
+ok(abs(pt - 0.02) < 1e-15 and abs(lo - 0.02) < 1e-15 and abs(hi - 0.02) < 1e-15 and nc == 10, 'L1 常數 ⇒ CI 退化為該常數')
+rng = np.random.default_rng(5); v = rng.normal(0.01, 0.05, 40)
+a1 = FM.boot_ci(v, range(40)); a2 = FM.boot_ci(v, range(40))
+ok(a1 == a2, 'L2 同種子重跑結果相同')
+a95 = FM.boot_ci(v, range(40), level=0.95)
+ok(a1[1] < a95[1] and a1[2] > a95[2], 'L3 97.5% CI 比 95% 寬')
+ok(FM.CI_LEVEL == 0.975 and FM.NBOOT == 10000 and isinstance(FM.SEED, int), 'L4 97.5%、10,000 次、種子寫死')
+yr = FM.boot_ci([1, 1, 3, 3], ['a', 'a', 'b', 'b'])
+ok(yr[3] == 2 and abs(yr[0] - 2) < 1e-12, 'L5 群集：同群值一起抽')
+
+# ═════════ M 判語（只有「通過（暫定）」與「測不出」；兩版都過採半年線）═════════
+ok(FM.verdict(0.03, 0.01, 0.02, 0.04, 0.01) == '通過（暫定）', 'M1 全部條件成立 ⇒ 通過（暫定）')
+ok(FM.verdict(0.03, -0.001, 0.02, 0.04, 0.01) == '測不出', 'M2 CI 下緣 ≤ 0 ⇒ 測不出')
+ok(FM.verdict(0.03, 0.01, -0.02, 0.04, 0.01) == '測不出', 'M3 前段 ≤ 0 ⇒ 測不出')
+ok(FM.verdict(0.03, 0.01, 0.02, -0.04, 0.01) == '測不出', 'M4 後段 ≤ 0 ⇒ 測不出')
+ok(FM.verdict(0.03, 0.01, 0.02, 0.04, -0.01) == '測不出', 'M5 中位數差方向相反 ⇒ 測不出')
+ok(FM.verdict(-0.05, -0.08, -0.02, -0.04, -0.01) == '測不出', 'M6 全負 ⇒ 仍寫測不出（不寫劣於）')
+ok(FM.verdict(0.03, 0.01, np.nan, 0.04, 0.01) == '測不出', 'M7 有 NaN ⇒ 測不出')
+P_, F_ = FM.VERDICT_PASS, FM.VERDICT_FAIL
+ok(FM.adopt({'年線': P_, '半年線': P_}) == '半年線' and FM.adopt({'年線': P_, '半年線': F_}) == '年線'
+   and FM.adopt({'年線': F_, '半年線': P_}) == '半年線' and FM.adopt({'年線': F_, '半年線': F_}) is None, 'M8 採用規則')
+
+# ═════════ N 每月表與主量（不判留在全部可買、只取剔除組 ≥3 檔月份）═════════
+rows = []
+
+
+def addm(E, codes, rets):
+    for i, (c_, r_) in enumerate(zip(codes, rets)):
+        rows.append(dict(E=E, stock_id=f'S{i}', year=int(E[:4]), segment=FM.seg_of(E), ld=c_, R=r_))
+
+
+addm('2021-03-01', [0, 0, 1, 1, 1, M.BRK], [0.10, 0.20, -0.1, -0.2, 0.0, 0.5])   # 剔除 3 檔
+addm('2024-03-01', [0, 0, 1, 1], [0.10, 0.30, 0.0, 0.0])                          # 剔除 2 檔
+addm('2024-04-01', [0, 1, 1, 1, 0], [0.10, -0.1, np.nan, 0.0, 0.3])               # 剔除 3 檔（一筆不可算）
+NB = pd.DataFrame(rows)
+NT = FM.month_table(NB, 'ld', 'R')
+r0 = NT.set_index('E').loc['2021-03-01']
+ok(abs(r0['diff'] - (0.15 - np.mean([0.10, 0.20, -0.1, -0.2, 0.0, 0.5]))) < 1e-12 and r0.n_skip == 1 and r0.n_all == 6,
+   'N1 不判留在全部可買、不進濾網組')
+ok(FM.main_months(NT) == {'2021-03-01', '2024-04-01'}, 'N2 主量只取剔除組 ≥3 檔的月份（檔數不看報酬可不可算）')
+r2 = NT.set_index('E').loc['2024-04-01']
+ok(abs(r2['diff'] - (0.2 - np.mean([0.10, -0.1, 0.0, 0.3]))) < 1e-12 and abs(r2['diff_med'] - (0.2 - 0.05)) < 1e-12,
+   'N3 不可算筆不進平均；中位數差＝濾網中位 − 全部中位')
+cc = FM.cell(NT, FM.main_months(NT))
+ok(cc['n_front'] == 1 and cc['n_back'] == 1 and abs(cc['main'] - NT[NT.E.isin(FM.main_months(NT))]['diff'].mean()) < 1e-12,
+   'N4 主量＝主量月份每月差平均；前後段分開')
+
 
 # ═════════ G／H／I 真實資料 ═════════
 from researchTWCheapTrend_fv import FairValue  # noqa: E402

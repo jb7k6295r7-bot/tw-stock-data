@@ -263,11 +263,17 @@ def delayed_entry(st, k):
 
 
 # ═════════════ 主程式 ═════════════
-def main():
+def preflight():
+    """快照 .commit、登錄 sha、原版 sha 三項先驗 → (vreg, vo)。"""
     assert open(os.path.join(SNAP, '.commit')).read().strip() == SNAP_COMMIT, 'snapshot .commit mismatch'
     vreg = verify_registration()
     vo = verify_orig(); assert all(v[1] for v in vo.values()), vo
-    fv = FairValueMonthly(SNAP)
+    return vreg, vo
+
+
+def build(fv):
+    """主迴圈（頻率表與正式跑共用同一份；正式跑 researchTWLongDownFilter.py 直接呼叫）→ R, months, n_univ, STK。
+    〔2026-11-08 正式跑前把 main() 的迴圈原樣抽成本函式，邏輯一字未改；重跑頻率表輸出逐位元相同。〕"""
     cal, ci = fv.cal, fv.cal_idx
     months = month_dates(cal)
     assert len(months) == 67, len(months)
@@ -338,6 +344,14 @@ def main():
         n_univ[E] = nu
         print(E, nu, sum(1 for x in recs if x['E'] == E and x['buy'] == 1), flush=True)
     R = pd.DataFrame(recs)
+    return R, months, n_univ, STK
+
+
+def main():
+    vreg, vo = preflight()
+    fv = FairValueMonthly(SNAP)
+    cal, ci = fv.cal, fv.cal_idx
+    R, months, n_univ, STK = build(fv)
     os.makedirs(OUT, exist_ok=True)
 
     # ── 每月 × 兩版 ──

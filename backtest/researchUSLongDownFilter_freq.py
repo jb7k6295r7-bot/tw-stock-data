@@ -90,16 +90,18 @@ class USStock:
         return self._nl
 
 
-def main():
-    import time
-    t0 = time.time()
+def preflight():
     if FQ.DATA_COMMIT_FULL != DATA_PIN:
         raise RuntimeError("合理價程式的資料 commit 與本件寫死的不同")
     FQ.assert_pinned()
-    vreg = TWL.verify_registration()
-    cal = FQ.calendar()
-    months = month_dates(cal)
-    assert len(months) == 67, len(months)
+    return TWL.verify_registration()
+
+
+def build(cal, months):
+    """主迴圈（頻率表與正式跑共用同一份；正式跑 researchUSLongDownFilter.py 直接呼叫）→ P, STK。
+    〔2026-11-08 正式跑前把 main() 的迴圈原樣抽成本函式，邏輯一字未改。〕"""
+    import time
+    t0 = time.time()
     R, _ = FQ.run(eval_list=months, write=False)
     print("classify 完成", round(time.time() - t0), "秒", flush=True)
     R = R[R["stage"] == "pop"].copy()
@@ -139,7 +141,17 @@ def main():
             r["cal_1y"] = int(i + H1 < len(cal))
             r["cal_3y"] = int(i + H3 < len(cal))
         rows.append(r)
-    P = pd.DataFrame(rows)
+    return pd.DataFrame(rows), STK
+
+
+def main():
+    import time
+    t0 = time.time()
+    vreg = preflight()
+    cal = FQ.calendar()
+    months = month_dates(cal)
+    assert len(months) == 67, len(months)
+    P, STK = build(cal, months)
     os.makedirs(PRIV, exist_ok=True)
     os.makedirs(OUT, exist_ok=True)
     P[P.buy == 1].to_csv(os.path.join(PRIV, "us_buy_rows_noreturn.csv"), index=False)
