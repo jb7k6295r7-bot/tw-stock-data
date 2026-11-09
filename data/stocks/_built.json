@@ -1,1 +1,1 @@
-{"kind": "price", "rows": 5726096, "src": {"bytes": 615396816, "files": 2885, "last": "2026-11-06"}, "valid_bar": {"from": {"bytes": 615396816, "files": 2885, "last": "2026-11-06"}, "rule": "有列 且 price_basis != 無成交 且 close 非空", "version": "v1"}}
+{"kind": "price", "rows": 5728872, "src": {"bytes": 615701378, "files": 2886, "last": "2026-11-09"}, "valid_bar": {"from": {"bytes": 615701378, "files": 2886, "last": "2026-11-09"}, "rule": "有列 且 price_basis != 無成交 且 close 非空", "version": "v1"}}
