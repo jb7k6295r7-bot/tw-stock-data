@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-11-09T15:16:42+08:00（台北）｜ref main｜Actions｜run 42576364246
-# 停牌／處置／注意 端點探針 2026-11-09T15:16:26+08:00
+# ⏱ 這一趟：2026-11-10T16:06:29+08:00（台北）｜ref main｜Actions｜run 42776351470
+# 停牌／處置／注意 端點探針 2026-11-10T16:05:42+08:00
 # 指紋比對用的兩個區間：20150101~20151231 與 20200101~20201231
 # 欄位名一律照抄，**不可照猜的寫死**
 # 這一趟的選集：--set longhalt
@@ -10,11 +10,79 @@
 
 ── twse-violations-stop
    https://www.twse.com.tw/zh/listed/violations/stop.html
-   ✗ HTTP 307
+   ✓ 12,077 bytes｜中文 722 字
+   ① 靶子命中：0／6 （一檔都沒有）
+   ② 日期 0 個
+      「停止買賣」3 次
+      「終止上市」0 次
+      「恢復買賣」0 次
+      「財務業務」2 次
+   ③ <tr> 0 個｜js 4 支　⛔ **js 空殼**
+     ⓪  `<form action=…>` 的對象：0 種
+     ①  `/…/api/…` 出現過哪些：0 種
+     ②  `fetch(` 的對象：0 種
+     ③  `$.ajax` / `url:` 的對象：0 種
+     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+     ⑤  外部載入的 `.js`：5 支
+         https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
+         https://www.twse.com.tw/res/js/main.js?cRmf
+         https://www.twse.com.tw/res/js/web-report.js?-0I2
+         https://www.twse.com.tw/res/js/web.js?nB27
+         https://www.twse.com.tw/res/lib/ie-hints.min.js?eeID
+     ⑥ 外部 `.js` 逐支挖：共 5 支｜本站 4 支（其中通用函式庫 0 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
+         ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
+         ── https://www.twse.com.tw/res/js/main.js?cRmf（128,855 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：2 種
+             /api
+             /rwd-api-sample
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：6 種
+             e.jsonp
+             e.jsonpCallback
+             f.fn.jsonTable
+             f.fn.jsonTableUpdate
+             r.json
+             t.jsonpCallback
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/js/web-report.js?-0I2（19,650 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/js/web.js?nB27（16,563 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/lib/ie-hints.min.js?eeID（1,099 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
 
 ── twse-rwd-stop（⚠ 我拼的）
    https://www.twse.com.tw/rwd/zh/listed/violations/stop?response=json
-   ✗ HTTP 307
+   ✓ 752 bytes｜中文 23 字　← ⚠ 太少，多半是 js 空殼
+   ① 靶子命中：0／6 （一檔都沒有）
+   ② 日期 0 個
+      「停止買賣」0 次
+      「終止上市」0 次
+      「恢復買賣」0 次
+      「財務業務」0 次
+   ③ <tr> 0 個｜js 0 支
 
 ── twse-openapi-t187ap26_L（選單名裡有「停止買賣」）
    https://openapi.twse.com.tw/v1/opendata/t187ap26_L
@@ -30,7 +98,7 @@
      停止買賣開始日：0 種 ｜⚠ 空的 1
      公司代號：0 種 ｜⚠ 空的 1
      公司名稱：0 種 ｜⚠ 空的 1
-     出表日期：1 種 1151108×1
+     出表日期：1 種 1151109×1
    ③ <tr> 0 個｜js 0 支
 
 ── tpex-openapi-mopsfin_t187ap26_O（選單名裡有「停止買賣」）
@@ -45,7 +113,7 @@
    ④ 頂層是**陣列**、1 列
    ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
      CompanyName：1 種 大略-KY×1
-     Date：1 種 1151109×1
+     Date：1 種 1151110×1
      SecuritiesCompanyCode：1 種 4804×1
      停止買賣開始日：1 種 1150903×1
    ③ <tr> 0 個｜js 0 支
@@ -72,7 +140,79 @@
 
 ── twse-twtawu-historical（選單原名「暫停交易證券」）
    https://www.twse.com.tw/zh/trading/historical/twtawu.html
-   ✗ HTTP 307
+   ✓ 15,067 bytes｜中文 934 字
+   ① 靶子命中：0／6 （一檔都沒有）
+   ② 日期 0 個
+      「停止買賣」0 次
+      「終止上市」0 次
+      「恢復買賣」0 次
+      「財務業務」0 次
+   ③ <tr> 0 個｜js 5 支　⛔ **js 空殼**
+     ⓪  `<form action=…>` 的對象：0 種
+     ①  `/…/api/…` 出現過哪些：0 種
+     ②  `fetch(` 的對象：0 種
+     ③  `$.ajax` / `url:` 的對象：0 種
+     ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+     ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+     ⑤  外部載入的 `.js`：6 支
+         https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
+         https://www.twse.com.tw/res/js/main.js?cRmf
+         https://www.twse.com.tw/res/js/stock-code.js?7x0k
+         https://www.twse.com.tw/res/js/web-report.js?-0I2
+         https://www.twse.com.tw/res/js/web.js?nB27
+         https://www.twse.com.tw/res/lib/ie-hints.min.js?eeID
+     ⑥ 外部 `.js` 逐支挖：共 6 支｜本站 5 支（其中通用函式庫 0 支，⭐ **排到最後**）｜第三方 1 支（⛔ 不抓）
+         ⛔ 跳過（第三方）：https://www.googletagmanager.com/gtag/js?id=G-J2HVMN6FVP
+         ── https://www.twse.com.tw/res/js/main.js?cRmf（128,855 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：2 種
+             /api
+             /rwd-api-sample
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：6 種
+             e.jsonp
+             e.jsonpCallback
+             f.fn.jsonTable
+             f.fn.jsonTableUpdate
+             r.json
+             t.jsonpCallback
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/js/stock-code.js?7x0k（22,338 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：1 種
+             /api/
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：1 種
+             /api/
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/js/web-report.js?-0I2（19,650 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/js/web.js?nB27（16,563 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
+         ── https://www.twse.com.tw/res/lib/ie-hints.min.js?eeID（1,099 bytes）
+         ⓪  `<form action=…>` 的對象：0 種
+         ①  `/…/api/…` 出現過哪些：0 種
+         ②  `fetch(` 的對象：0 種
+         ③  `$.ajax` / `url:` 的對象：0 種
+         ④  其他 `.ashx`／`.json`／`/api/` 字串：0 種
+         ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
+         ⑤  外部載入的 `.js`：0 支
 
 ── twse-openapi-suspendListing（選單原名「終止上市公司」）
    https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml
@@ -92,7 +232,7 @@
 
 ── tpex-openapi-cmode（選單原名含「停止交易」）
    https://www.tpex.org.tw/openapi/v1/tpex_cmode
-   ✓ 4,607 bytes｜中文 49 字　← ⚠ 太少，多半是 js 空殼
+   ✓ 4,604 bytes｜中文 49 字　← ⚠ 太少，多半是 js 空殼
    ① 靶子命中：0／6 （一檔都沒有）
    ② 日期 0 個
       「停止買賣」0 次
@@ -104,9 +244,9 @@
       FinancialAnnouncements：1 種 Ｙ×21
      AlteredTrading：1 種 Ｙ×19｜⚠ 空的 2
      CompanyName：21 種｜最小 中湛｜最大 鑫創｜例 ['中湛', '佳總', '劍湖山']
-     Date：1 種 1151109×21
+     Date：1 種 1151110×21
      ManagedStock：0 種 ｜⚠ 空的 21
-     MatchingFrequency：2 種 030×6、010×1｜⚠ 空的 14
+     MatchingFrequency：1 種 030×6｜⚠ 空的 15
      PeriodicTrading：1 種 Ｙ×6｜⚠ 空的 15
      SecuritiesCompanyCode：21 種｜最小 2067｜最大 8933｜例 ['2067', '3064', '3259']
      SuspensionOfTrading：1 種 Ｙ×2｜⚠ 空的 19
