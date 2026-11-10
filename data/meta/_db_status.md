@@ -1,4 +1,4 @@
-# 資料庫現況　2026-11-10T08:56:34+08:00（台北）
+# 資料庫現況　2026-11-10T11:54:44+08:00（台北）
 
 **這一頁報的是資料庫現況，不是某一趟做了什麼。**
 
@@ -230,7 +230,6 @@
 - industry　✗ 有問題
 
 **沒過的檢查：**
-  - **✗**　每一個表×市場都有回應　（沒回應（**隔久再試一次也不行**）：bs/ci/twse ⇒ 第一次：非 JSON（947B）JSONDecodeError：<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"> <script type="application/javascript">｜重試：非 JSON（947B）JSONDecodeError：<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"> <script type="application/javascript">）
   - **✗**　沒有表因為取不到期別而不寫檔　（略過 4 張）
   - **✗**　上櫃股本空白沒有變多　（127 → 128）
   - **✗**　我方沒有編出官方沒有的上櫃減資　（14 筆）
