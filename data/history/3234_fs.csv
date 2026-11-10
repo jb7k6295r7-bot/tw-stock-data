@@ -79,3 +79,10 @@ key,date,type,value
 2026-06-30_PreTaxIncome,2026-06-30,PreTaxIncome,-17770000.0
 2026-06-30_Revenue,2026-06-30,Revenue,196311000.0
 2026-06-30_TotalNonoperatingIncomeAndExpense,2026-06-30,TotalNonoperatingIncomeAndExpense,-688000.0
+2026-09-30_GrossProfit,2026-09-30,GrossProfit,97081000.0
+2026-09-30_IncomeAfterTaxes,2026-09-30,IncomeAfterTaxes,35926000.0
+2026-09-30_OperatingExpenses,2026-09-30,OperatingExpenses,61080000.0
+2026-09-30_OperatingIncome,2026-09-30,OperatingIncome,35565000.0
+2026-09-30_PreTaxIncome,2026-09-30,PreTaxIncome,35926000.0
+2026-09-30_Revenue,2026-09-30,Revenue,325835000.0
+2026-09-30_TotalNonoperatingIncomeAndExpense,2026-09-30,TotalNonoperatingIncomeAndExpense,361000.0
