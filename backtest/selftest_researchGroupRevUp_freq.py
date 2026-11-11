@@ -106,5 +106,69 @@ sg = pd.DataFrame({"sid": ["a", "x", "y"], "entry_pos": [13, 13, 13], "grp": [Tr
 sh = M.shortage(sg, iv, 3, 40)
 ok(sh[13] == (2, 1, 1), "T5 shortage：a 已持有不算、空槽 3−2")
 
+# ── 增補 2026-11-11（--groups industry）──
+# T6 產業檔讀入驗證（真實交件檔；只讀分群／旗標／名單，三份都不含報酬）
+if os.path.isdir(M.IND_DIR):
+    cl, gm, sg = M.load_industry()
+    got, okk = M.check_industry(cl, gm, sg)
+    ok(okk and got == {"clusters 列": 8824, "in_seq111": 4930, "族群轉強": 1030, "營收月": 113}, f"T6 產業檔讀入 {got}")
+    ok(all(M.cyear(m) == int(y) for m, y in zip(gm["revenue_month"], gm["cluster_year"])), "T6 group_month_flags 分群年 ＝ m＋1 月的年")
+    memi, upi = M.ind_tables(cl, gm)
+    ok(sum(len(v) for v in memi.values()) == 8824 and len(upi) == len(gm), "T6 ind_tables 列數")
+else:
+    ok(False, f"T6 找不到產業交件夾 {M.IND_DIR}")
+
+# T7 小 fixture：cyear、apply_flags（sig／pos 兩讀法、used＝0、查無）、readme_up 邊界、pair_stats、set_agree
+ok(M.cyear("2016-12") == 2017 and M.cyear("2017-11") == 2017, "T7 cyear")
+Sx = pd.DataFrame({"sid": ["a", "b", "c", "d", "a"], "period": ["2017-11", "2017-11", "2017-11", None, "2016-12"], "year": [2018, 2017, 2017, 2017, 2017]})
+mem = {2017: {"a": (1, True), "b": (2, False), "c": (1, True)}, 2018: {"a": (5, True)}}
+upx = {("2017-11", 2017, 1): True, ("2016-12", 2017, 1): False}
+f, inu, cy, miss = M.apply_flags(Sx, mem, upx, "sig")
+ok(f.tolist() == [True, False, True, False, False] and inu.tolist() == [True, False, True, False, True] and miss == 0, "T7 apply_flags sig")
+f2, _, _, miss2 = M.apply_flags(Sx, mem, upx, "pos")
+ok(f2.tolist() == [False, False, True, False, False] and miss2 == 1, "T7 apply_flags pos（a 在 2018 群 5 查無 ⇒ 0、計 1）")
+idx = pd.period_range("2015-01", "2017-12", freq="M").strftime("%Y-%m")
+rv = pd.DataFrame(1.0, index=idx, columns=list("pqrstuvwxy"))
+rv.loc["2017-06", :] = 0.5
+rv.loc["2017-06", ["p", "q", "r"]] = 9.0; rv.loc["2017-06", "s"] = np.nan
+_, hb = M.hi24_tables(rv)
+memA = {2017: {**{k: (0, True) for k in "pqrstu"}, "z": (1, False)}}
+up_, st_ = M.readme_up(memA, rv, hb)
+ok(st_[("2017-06", 2017, 0)] == (5, 3) and up_[("2017-06", 2017, 0)], "T7 readme_up：分母 ＝ 當月有營收 5（s 缺）、創高 3 ⇒ 真")
+ok(("2017-06", 2017, 1) not in up_, "T7 readme_up：used＝0 群不算")
+memB = {2017: {k: (0, True) for k in "pqrstuvwxy"}}
+upB, stB = M.readme_up(memB, rv, hb)
+ok(stB[("2017-06", 2017, 0)] == (9, 3) and upB[("2017-06", 2017, 0)], "T7 readme_up：9 家 3 家（＝1/3 邊界）⇒ 真")
+rv.loc["2017-06", "s"] = 0.5
+_, hb = M.hi24_tables(rv)
+upC, stC = M.readme_up(memB, rv, hb)
+ok(stC[("2017-06", 2017, 0)] == (10, 3) and not upC[("2017-06", 2017, 0)], "T7 readme_up：10 家 3 家 ⇒ 假（＜1/3）")
+ps = M.pair_stats([0, 0, 1, 1, 2], [5, 5, 7, 7, 9])
+ok(abs(ps["ARI"] - 1.0) < 1e-12 and ps["同群配對_兩邊都同群"] == 2, "T7 pair_stats 換號同分割 ARI＝1")
+ps2 = M.pair_stats([0, 0, 0, 1, 1, 1], [0, 1, 2, 0, 1, 2])
+ok(ps2["ARI"] < 0 and ps2["同群配對_兩邊都同群"] == 0, "T7 pair_stats 正交分割 ARI＜0")
+sa = M.set_agree([(1, "a"), (1, "b")], [(1, "b"), (1, "c"), (2, "d")])
+ok(sa["交集"] == 1 and abs(sa["交集÷聯集"] - 0.25) < 1e-12 and abs(sa["交集÷產業"] - 1 / 3) < 1e-12, "T7 set_agree")
+
+# T8 --groups 預設 ⇒ 舊輸出逐位元相同（另起行程跑 --step report，GRU_OUT 指到暫存夾，對 git HEAD 的 freq/ 八檔）
+import subprocess
+import tempfile
+need = [os.path.join(M.WORK, f"{k}_{w}.pkl") for k in ("world", "groups", "sim") for w in ("main", "early")]
+if all(os.path.exists(x) for x in need):
+    td = tempfile.mkdtemp(prefix="gru_selftest_")
+    env = {**os.environ, "GRU_OUT": td, "PYTHONPATH": os.path.expanduser("~/tw-p17")}
+    pr = subprocess.run([sys.executable, "-m", "backtest.researchGroupRevUp_freq", "--step", "report"], env=env, capture_output=True, text=True,
+                        cwd=os.path.expanduser("~/tw-p17"))
+    ok(pr.returncode == 0, "T8 預設 report 跑完")
+    fs = subprocess.run(["git", "-c", "core.quotepath=off", "ls-files", "backtest/resultsGroupRevUp/freq/"], capture_output=True, text=True,
+                        cwd=os.path.expanduser("~/tw-p17")).stdout.split()
+    ok(len(fs) == 8, f"T8 HEAD freq/ 檔數 {len(fs)}")
+    for f_ in fs:
+        head = subprocess.run(["git", "show", f"HEAD:{f_}"], capture_output=True, cwd=os.path.expanduser("~/tw-p17")).stdout
+        p_ = os.path.join(td, os.path.basename(f_))
+        ok(os.path.exists(p_) and open(p_, "rb").read() == head, f"T8 逐位元相同 {os.path.basename(f_)}")
+else:
+    ok(False, "T8 ~/grpwork 中間檔不在（先照舊流程跑 world／groups／sim）")
+
 print("全部通過" if not FAIL else f"⛔ 失敗 {len(FAIL)}：{FAIL}")
 sys.exit(1 if FAIL else 0)

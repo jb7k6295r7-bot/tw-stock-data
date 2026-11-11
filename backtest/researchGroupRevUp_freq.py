@@ -64,6 +64,37 @@
        早年附 reduce_v2 約 0.3% 註與上櫃早年註（researchYL_integrate.NOTE3）
 輸出 backtest/resultsGroupRevUp/freq/：monthly.csv、cand_yearly.csv、cells.csv、overlap_yearly.csv、holddist.csv、groups_yearly.csv、summary.json、結果.md
 （中間檔 ~/grpwork/，不進 repo）
+
+═══ 增補 --groups industry（2026-11-11（台北）寫死，在算任何一致率與頻率數字之前；裁定 seq502 §二、產業 seq112 交件）═══
+    … --step groups --world main|early --groups industry ｜ --step sim … --groups industry ｜ --step report --groups industry
+    （--groups 預設 self ＝ 上面原版，輸出、中間檔名都不變；industry ⇒ 中間檔 *_industry.pkl、輸出 backtest/resultsGroupRevUp/freq_industry/）
+ I0 產業檔 ＝ 信箱 _交付-族群分群檔與seq111逐筆名單_產業分析線-20261111-0024/（clusters_by_year、group_month_flags、signals_no_returns；
+    讀入驗 clusters 8,824 列、in_seq111＝1 共 4,930 筆、其中族群轉強 1,030、營收月 113；不符即停）
+ I1 主段（main 世界）候選旗標 ＝ 產業版：候選營收期別 m（同 F3 ★）→ 分群年 Y → 產業 clusters_by_year 該年該股群號（used＝1 才算）
+    → group_month_flags (m, Y, 群) 的 group_revenue_up
+    ★ 分群年 Y ＝ README 第 4 點「看訊號日」：m 的 seq111 訊號日（m＋1 月 11 日起第一個交易日）所在年 ＝ m＋1 月的年
+      〔另一讀法：候選自己的訊號日 pos 所在年（舊自建口徑）；報兩讀法不同筆數與旗標一致率〕
+    ★ 2016 無分群（README：年初前不滿 250 日）：README 沒說候選怎麼處理 ⇒ 分群年 2016 的候選旗標 ＝ 0、記「不在產業母體」，報受影響筆數（候選、段內買進）
+    ★ 該股在 Y 年 used＝1 群、但 group_month_flags 查無 (m, Y, 群) 列 ⇒ 旗標 0，報筆數
+ I2 早年（early 世界 2005～2014，產業無檔）＝ 自建 v2，照 README 口徑 10 條（只描述、標「自建」）：
+    1 價格：stocks/ 只取 valid_bar＝1、close 非空（★ 且 ＞0）、market twse／tpex；代號四碼數字、meta kind＝stock（含下市）；還原 ＝ data.cum_factor_series 同式
+    2 母體：Y 年第一個交易日 t0；[t0−250, t0−1] 有效 K 棒 ≥ 200；[t0−60, t0−1] amount 平均（只對有效日、無成交日不計）≥ 1e7
+    3 分群：補值（ffill）後還原價取 ★ [t0−251, t0−1] 共 250 個日對數報酬，缺值補 0，★ 先補 0 再逐檔減平均除標準差（ddof 0；sd＝0 ⇒ 1），
+      Ward（ward_cut，自測已對窮舉驗）切 K ＝ max(2, 檔數 // 10) 群；群 ＜ 4 檔整群不用
+      ★ t0 前不滿 251 日：主世界照 README 不分群（2016）；早年 2005 沿用 F3b（裁定 seq502 §二「核」）：用可得回看、門檻按比例
+    4 分群年看訊號日（同 I1 ★）；5 創新高 ＝ 含當月 24 個月都有值且當月 ≥ 其最大（＝ F3 另一讀法 hib）
+    8 族群轉強 ＝ 群內（年初名單）當月有營收者 n_wr、其中創新高 n_nh；n_nh ≥ 3 且 n_nh ≥ n_wr ÷ 3
+    ★ v2 的價格、營收 ＝ 該世界資料夾（主世界 edc6f 快照；產業用 tw-stock-data 11/10 main）⇒ 殘差列入差異來源
+ I3 逐檔一致率（只在 main 世界算；⛔ 不改舊頻率表結果）：
+    a 分群：自建（舊）／v2 對產業，逐年：共同成員數、ARI、Rand、同群配對（產業同群者自建也同群 ÷ 產業同群配對；反向同）
+    b 族群旗標：營量、營飆候選（引擎看得到的列、進場日在主段 2017-03-02～2026-08-24）逐筆旗標，自建（舊）對產業：相同 ÷ 候選（對 95%），整體＋逐年；
+      另報旗標真的 Jaccard（底率約兩成，相同率會被「兩邊都假」墊高）
+    c 個股訊號：舊自建 seq111 近似重建（seq111_recon 同式逐列）對 signals_no_returns in_seq111＝1，同股同營收月：交集 ÷ 聯集（對 95%），另報 ÷ 產業、÷ 自建；
+      比對範圍 ＝ in_seq111＝1 出現的營收月（兩邊都限）
+      v2 的 c：強勢第 7 點加權指數 ＝ tw-stock-data origin/main data/history/market_index.csv（git show 只讀，快取到 ~/grpwork）
+    d 差異來源（同一批候選，逐版對產業的 b）：S0 舊自建；S1 舊分群＋README 旗標規則（4、5、8＋＜4 不用）；S2 v2（分群也照 README）；
+      S3 產業分群＋本機營收照 README 旗標規則（驗本機營收與規則實作）
+ I4 頻率表 ＝ 上面 F4～F6 全部照舊，只換旗標（主段＝產業版、早年＝自建 v2）；cand_yearly 另一讀法欄 ＝ I1 分群年另一讀法
 """
 from __future__ import annotations
 
@@ -107,6 +138,19 @@ LOOK, MINBARS, AMTWIN, AMTMIN = 250, 200, 60, 1.0e7
 JUMP = 0.5
 BIGP, NANRV = 1.0e15, -1.0e14
 LOGF = None
+GROUPS = "self"                                             # --groups；industry ⇒ 主段產業分群檔、早年自建 v2
+OUT_IND = "backtest/resultsGroupRevUp/freq_industry"
+IND_DIR = os.path.join(MAILBOX, "_交付-族群分群檔與seq111逐筆名單_產業分析線-20261111-0024")
+IND_CHECK = {"clusters 列": 8824, "in_seq111": 4930, "族群轉強": 1030, "營收月": 113}
+MAIN_SEG0 = "2017-03-02"
+
+
+def sfx():
+    return "" if GROUPS == "self" else "_industry"
+
+
+def out_dir():
+    return os.environ.get("GRU_OUT") or (OUT if GROUPS == "self" else OUT_IND)
 
 
 def log(x):
@@ -380,6 +424,444 @@ def seq111_recon(cal, CL, G, GU, hi, hib):
             "seq111 件內": {"個股訊號": 4930, "族群轉強": 1030, "族群轉強占比": 1030 / 4930, "訊號月": 113, "兩邊都有的月": 80}}
 
 
+# ═════════════ --groups industry：產業檔、自建 v2、逐檔一致率（I0～I4）═════════════
+TIME_IND = "2026-11-11（台北）"
+
+
+def load_industry(d=None):
+    d = d or IND_DIR
+    cl = pd.read_csv(os.path.join(d, "clusters_by_year.csv"), dtype={"stock_id": str})
+    gm = pd.read_csv(os.path.join(d, "group_month_flags.csv"), dtype={"revenue_month": str})
+    sg = pd.read_csv(os.path.join(d, "signals_no_returns.csv"), dtype={"stock_id": str, "revenue_month": str})
+    return cl, gm, sg
+
+
+def check_industry(cl, gm, sg):
+    s1 = sg[sg["in_seq111"] == 1]
+    got = {"clusters 列": int(len(cl)), "in_seq111": int(len(s1)), "族群轉強": int(s1["group_revenue_up"].sum()),
+           "營收月": int(s1["revenue_month"].nunique())}
+    return got, got == IND_CHECK
+
+
+def ind_tables(cl, gm):
+    memb = defaultdict(dict)
+    for Y, sid, g, u in zip(cl["year"], cl["stock_id"], cl["group"], cl["used"]):
+        memb[int(Y)][sid] = (int(g), bool(int(u) == 1))
+    up = {(m, int(Y), int(g)): bool(int(f) == 1) for m, Y, g, f in zip(gm["revenue_month"], gm["cluster_year"], gm["group"], gm["group_revenue_up"])}
+    return dict(memb), up
+
+
+def next_month(m):
+    y, mo = int(m[:4]), int(m[5:7])
+    return (y + 1, 1) if mo == 12 else (y, mo + 1)
+
+
+def cyear(m):
+    """README 第 4 點：營收月 m 的 seq111 訊號日（m＋1 月 11 日起第一個交易日）所在年 ＝ m＋1 月的年。"""
+    return next_month(m)[0]
+
+
+def apply_flags(S, memb, up, mode="sig"):
+    """候選逐列族群旗標。memb {Y: {sid: (群, used)}}；up {(m, Y, 群): bool}。
+    mode：sig ＝ 分群年看 m 的訊號日（★ I1）；pos ＝ 候選自己訊號日 pos 所在年（舊自建口徑）。回 (旗標, 在母體且群 used, 分群年, 查無數)。"""
+    fl, inu, cys = [], [], []
+    miss = 0
+    for sid, p, ypos in zip(S["sid"], S["period"], S["year"]):
+        if not isinstance(p, str):
+            fl.append(False); inu.append(False); cys.append(-1); continue
+        Y = cyear(p) if mode == "sig" else int(ypos)
+        cys.append(Y)
+        c = memb.get(Y, {}).get(sid)
+        if c is None or not c[1]:
+            fl.append(False); inu.append(False); continue
+        inu.append(True)
+        k = (p, Y, c[0])
+        miss += int(k not in up)
+        fl.append(bool(up.get(k, False)))
+    return np.array(fl, bool), np.array(inu, bool), np.array(cys, int), miss
+
+
+def readme_up(memb, rev, hib):
+    """README 第 8 點：只算 used 群；分母 ＝ 年初名單中當月有營收者。回 up、stat {(m, Y, 群): (n_wr, n_nh)}。"""
+    up, stat = {}, {}
+    for Y, mm in memb.items():
+        grp = defaultdict(list)
+        for sid, (g, u) in mm.items():
+            if u:
+                grp[g].append(sid)
+        months = [p for p in rev.index if cyear(p) == Y]
+        if not months:
+            continue
+        for g, sids in grp.items():
+            cols = [s for s in sids if s in rev.columns]
+            nwr = rev.loc[months, cols].notna().sum(axis=1).to_numpy() if cols else np.zeros(len(months), int)
+            nnh = hib.loc[months, cols].sum(axis=1).to_numpy() if cols else np.zeros(len(months), int)
+            for p, a, b in zip(months, nwr, nnh):
+                up[(p, Y, g)] = bool(b >= 3 and 3 * b >= a)
+                stat[(p, Y, g)] = (int(a), int(b))
+    return up, stat
+
+
+def old_gu(G, hi):
+    """舊自建 step_groups 同式重算 GU（主讀法）⇒ {(m, Y, 群): bool}。"""
+    up = {}
+    for Y, g in G.items():
+        lab = np.asarray(g["lab"]); sizes = np.bincount(lab)
+        periods = [p for p in hi.index if f"{Y - 1}-01" <= p <= f"{Y}-12"]
+        M = hi.reindex(index=periods, columns=list(g["sids"])).fillna(False).to_numpy(bool)
+        for c in range(len(sizes)):
+            cnt = M[:, np.flatnonzero(lab == c)].sum(1)
+            for pi, p in enumerate(periods):
+                up[(p, Y, c)] = group_up(int(cnt[pi]), int(sizes[c]))
+    return up
+
+
+def _load_px_v2(sid):
+    """README 第 1 點價格面板：valid_bar＝1、close 非空（★ ＞0）、market twse／tpex；還原 ＝ data.cum_factor_series 同式。"""
+    p = os.path.join(D.DATA, "stocks", f"{sid}.csv")
+    if not os.path.exists(p):
+        return sid, None, None
+    raw = pd.read_csv(p, dtype={"date": str, "market": str}, usecols=lambda c: c in ("date", "close", "amount", "market", "valid_bar"))
+    raw["close"] = pd.to_numeric(raw["close"], errors="coerce"); raw["amount"] = pd.to_numeric(raw["amount"], errors="coerce")
+    ok = raw["close"].notna() & (raw["close"] > 0) & raw["market"].isin(["twse", "tpex"])
+    if "valid_bar" in raw.columns:
+        ok &= pd.to_numeric(raw["valid_bar"], errors="coerce") == 1
+    raw = raw[ok].copy()
+    if raw.empty:
+        return sid, None, None
+    raw["date"] = pd.to_datetime(raw["date"])
+    raw = raw.drop_duplicates("date").set_index("date").sort_index()
+    F = D.cum_factor_series(raw.index, D.load_adj(sid))
+    cal = _G["cal"]
+    return sid, (raw["close"] * F).reindex(cal).to_numpy(np.float64), raw["amount"].reindex(cal).to_numpy(np.float64)
+
+
+def v2_universe():
+    mk = pd.read_csv(os.path.join(D.DATA, "meta", "stocks.csv"), dtype=str)
+    mk = mk[(mk["kind"] == "stock") & mk["stock_id"].str.fullmatch(r"\d{4}")]
+    return sorted(set(mk["stock_id"]))
+
+
+def build_v2(cal, PX, AM, years, f3b):
+    """README 第 2、3 點：回 memb {Y: {sid: (群, used)}}、GY 列、註。"""
+    FF = {}
+    memb, GY, notes = {}, [], []
+    for Y in years:
+        ref = int(cal.searchsorted(pd.Timestamp(year=Y, month=1, day=1)))
+        if ref >= len(cal):
+            continue
+        lo = ref - LOOK; minb = MINBARS
+        if lo - 1 < 0:
+            if not f3b:
+                notes.append(f"{Y}：t0 前只有 {ref} 日（不滿 251）⇒ 不分群（README）"); continue
+            lo = 1; minb = int(np.ceil(MINBARS * (ref - lo) / LOOK))
+            notes.append(f"{Y}：回看只有 {ref - lo} 日 ⇒ F3b 用可得回看、門檻 {minb} 根（★ I2）")
+        a0 = max(ref - AMTWIN, 0)
+        elig = []
+        for sid in sorted(PX):
+            c = PX[sid]
+            if int(np.isfinite(c[lo:ref]).sum()) < minb:
+                continue
+            a = AM[sid][a0:ref]; a = a[np.isfinite(a) & np.isfinite(c[a0:ref])]
+            if not len(a) or a.mean() < AMTMIN:
+                continue
+            elig.append(sid)
+        X = []
+        for s in elig:
+            if s not in FF:
+                FF[s] = pd.Series(PX[s]).ffill().to_numpy()
+            w = FF[s][lo - 1:ref]
+            with np.errstate(invalid="ignore", divide="ignore"):
+                r = np.diff(np.log(w))
+            r[~np.isfinite(r)] = 0.0
+            sd = r.std()
+            X.append((r - r.mean()) / (sd if sd > 0 else 1.0))
+        n = len(elig); K = max(2, n // 10)
+        lab = ward_cut(np.vstack(X), K); sizes = np.bincount(lab)
+        memb[Y] = {s: (int(l), bool(sizes[l] >= 4)) for s, l in zip(elig, lab)}
+        GY.append({"年": Y, "參考日": str(cal[ref].date()), "母體": n, "群數": K, "用到的群（≥4）": int((sizes >= 4).sum()),
+                   "用到的檔數": int(sizes[sizes >= 4].sum()), "最大群": int(sizes.max()), "群大小中位": float(np.median(sizes))})
+    return memb, GY, notes, FF
+
+
+def seq111_rows_self(cal, CL, G, GU, hi):
+    """seq111_recon 同式，逐列回傳（period, sid, grp）。"""
+    b = D.load_benchmark(cal)["close"].to_numpy(float)
+    rows = []
+    for Y, g in G.items():
+        lab = dict(zip(g["sids"], g["lab"]))
+        for p in hi.index:
+            y2, m2 = next_month(p)
+            if y2 != Y:
+                continue
+            e = int(cal.searchsorted(pd.Timestamp(year=y2, month=m2, day=10), side="right"))
+            if e >= len(cal) or e < 60:
+                continue
+            for sid in g["sids"]:
+                if not bool(hi.at[p, sid]) if sid in hi.columns else True:
+                    continue
+                c = CL[sid]
+                w = c[e - 59:e + 1]
+                if not (np.isfinite(w).all() and np.isfinite(c[e - 20])):
+                    continue
+                if not (c[e] > w.mean()):
+                    continue
+                if not (c[e] / c[e - 20] - 1.0 > b[e] / b[e - 20] - 1.0):
+                    continue
+                rows.append((p, sid, bool(GU.get((p, Y, int(lab[sid])), False))))
+    X = pd.DataFrame(rows, columns=["period", "sid", "grp"])
+    return X[X["period"] >= "2016-12"].reset_index(drop=True)
+
+
+def market_index(cal):
+    f = os.path.join(WORK, "market_index_origin_main.csv")
+    if not os.path.exists(f):
+        txt = subprocess.run(["git", "-C", os.path.expanduser("~/tw-stock-data"), "show", "origin/main:data/history/market_index.csv"],
+                             capture_output=True, text=True, check=True).stdout
+        open(f, "w", encoding="utf-8").write(txt)
+    m = pd.read_csv(f, dtype={"date": str})
+    s = pd.Series(pd.to_numeric(m["close"], errors="coerce").to_numpy(), index=pd.to_datetime(m["date"])).sort_index()
+    s = s[~s.index.duplicated(keep="last")]
+    return s.reindex(cal).ffill().to_numpy(float), int(s.reindex(cal).isna().sum())
+
+
+def seq111_rows_v2(cal, PX, FF, memb, up, hib, idx):
+    """README 第 4～8 點：個股訊號逐列（period, sid, grp）。"""
+    rows = []
+    MA = {}
+    for Y, mm in memb.items():
+        for p in [q for q in hib.index if cyear(q) == Y]:
+            y2, m2 = next_month(p)
+            t = int(cal.searchsorted(pd.Timestamp(year=y2, month=m2, day=11)))
+            if t >= len(cal) or t < 20:
+                continue
+            hrow = hib.loc[p]
+            for sid, (g, u) in mm.items():
+                if not u or sid not in hib.columns or not bool(hrow[sid]):
+                    continue
+                c = PX[sid]
+                if not (np.isfinite(c[t]) and np.isfinite(c[t - 20])):
+                    continue
+                if sid not in FF:
+                    FF[sid] = pd.Series(c).ffill().to_numpy()
+                if sid not in MA:
+                    MA[sid] = pd.Series(FF[sid]).rolling(60, min_periods=50).mean().to_numpy()
+                f = FF[sid]
+                if not (f[t] > MA[sid][t]):
+                    continue
+                if not (f[t] / f[t - 20] - 1.0 > idx[t] / idx[t - 20] - 1.0):
+                    continue
+                rows.append((p, sid, bool(up.get((p, Y, g), False))))
+    return pd.DataFrame(rows, columns=["period", "sid", "grp"])
+
+
+def pair_stats(la, lb):
+    """兩組標籤（同一批成員）：ARI、Rand、同群配對。"""
+    def c2(x):
+        return x * (x - 1) / 2.0
+    n = len(la)
+    ct = Counter(zip(la, lb)); sa = Counter(la); sb = Counter(lb)
+    sij = sum(c2(v) for v in ct.values()); si = sum(c2(v) for v in sa.values()); sj = sum(c2(v) for v in sb.values()); tot = c2(n)
+    exp = si * sj / tot if tot else 0.0; mx = (si + sj) / 2.0
+    return {"ARI": (sij - exp) / (mx - exp) if mx != exp else 1.0, "Rand": (tot + 2 * sij - si - sj) / tot if tot else None,
+            "同群配對_兩邊都同群": sij, "同群配對_A": si, "同群配對_B": sj}
+
+
+def flag_agree(a, b):
+    a = np.asarray(a, bool); b = np.asarray(b, bool)
+    n = len(a)
+    return {"分母": int(n), "相同": int((a == b).sum()), "一致率": float((a == b).mean()) if n else None,
+            "都真": int((a & b).sum()), "A真B假": int((a & ~b).sum()), "A假B真": int((~a & b).sum()),
+            "真集合Jaccard": float((a & b).sum() / (a | b).sum()) if (a | b).any() else None,
+            "A轉強比例": float(a.mean()) if n else None, "B轉強比例": float(b.mean()) if n else None}
+
+
+def set_agree(A, B):
+    A, B = set(A), set(B)
+    i = len(A & B); u = len(A | B)
+    return {"自建": len(A), "產業": len(B), "交集": i, "只自建": len(A - B), "只產業": len(B - A),
+            "交集÷聯集": i / u if u else None, "交集÷產業": i / len(B) if B else None, "交集÷自建": i / len(A) if A else None}
+
+
+def step_groups_industry(wn, procs):
+    P = pickle.load(open(os.path.join(WORK, f"world_{wn}.pkl"), "rb"))
+    Gs = pickle.load(open(os.path.join(WORK, f"groups_{wn}.pkl"), "rb"))      # 舊自建（只讀，不改）
+    D.DATA = P["data"]
+    cal = D.load_calendar()
+    if not (len(cal) == len(P["cal"]) and (cal == P["cal"]).all()):
+        raise SystemExit("⛔ 日曆與世界不同")
+    _G["cal"] = cal
+    sids2 = v2_universe()
+    PX, AM = {}, {}
+    with Pool(procs, initializer=_G.update, initargs=({"cal": cal},)) as pool:
+        for sid, c, a in pool.imap_unordered(_load_px_v2, sids2, chunksize=16):
+            if c is not None and np.isfinite(c).any():
+                PX[sid] = c; AM[sid] = a
+    log(f"[groups-ind {wn}] v2 價格 {len(PX)} 檔／四碼普通股 {len(sids2)}")
+    rev = load_revenue()
+    hi, hib = hi24_tables(rev)
+    memb2, GY2, notes2, FF = build_v2(cal, PX, AM, YEARS[wn] if wn == "early" else range(2016, 2027), f3b=(wn == "early"))
+    for x in notes2:
+        log("  " + x)
+    up2, stat2 = readme_up(memb2, rev, hib)
+    S = Gs["S"].copy()
+    f2, inu2, cy2, miss2 = apply_flags(S, memb2, up2, "sig")
+    f2p, _, _, _ = apply_flags(S, memb2, up2, "pos")
+    S["grp_self"] = S["grp"].to_numpy(bool)
+    S["grp_v2"] = f2
+    out = {"G4": Gs["G4"], "seq111": None}
+    if wn == "early":
+        S["grp"] = f2; S["grp_alt"] = f2p; S["in_univ"] = inu2; S["cy"] = cy2
+        out["來源"] = "自建 v2（README 口徑 10 條；2005 沿用 F3b）、只描述"
+        out["star"] = {"查無 (m,Y,群) 列": miss2, "註": notes2}
+        out["GY"] = [{"世界": wn, "來源": "自建 v2", **r} for r in GY2]
+    else:
+        cl, gm, sg = load_industry()
+        got, okk = check_industry(cl, gm, sg)
+        log(f"[I0 產業檔讀入] {got} {'相符' if okk else '⛔ 不符'}")
+        if not okk:
+            raise SystemExit("⛔ 產業檔筆數不符")
+        badcy = int(sum(cyear(m) != int(y) for m, y in zip(gm["revenue_month"], gm["cluster_year"])))
+        memi, upi = ind_tables(cl, gm)
+        fi, inui, cyi, missi = apply_flags(S, memi, upi, "sig")
+        fip, _, _, _ = apply_flags(S, memi, upi, "pos")
+        S["grp"] = fi; S["grp_alt"] = fip; S["in_univ"] = inui; S["cy"] = cyi
+        out["來源"] = "產業 seq112 分群檔（clusters_by_year＋group_month_flags）"
+        # 舊自建分群
+        memo = {int(Y): {s: (int(l), True) for s, l in zip(g["sids"], g["lab"])} for Y, g in Gs["G"].items()}
+        memo4 = {}
+        for Y, g in Gs["G"].items():
+            sz = np.bincount(np.asarray(g["lab"]))
+            memo4[int(Y)] = {s: (int(l), bool(sz[l] >= 4)) for s, l in zip(g["sids"], g["lab"])}
+        Gold = {int(Y): {"sids": list(g["sids"]), "lab": list(g["lab"])} for Y, g in Gs["G"].items()}
+        GU = old_gu(Gold, hi)
+        f0, _, _, _ = apply_flags(S, memo, GU, "pos")
+        g0chk = int((f0 != S["grp_self"].to_numpy(bool)).sum())
+        up1, _ = readme_up(memo4, rev, hib)
+        f1, _, _, _ = apply_flags(S, memo4, up1, "sig")
+        up3, stat3 = readme_up(memi, rev, hib)
+        f3, _, _, _ = apply_flags(S, memi, up3, "sig")
+        # S3 對產業 group_month_flags 逐列
+        gmk = list(zip(gm["revenue_month"], gm["cluster_year"].astype(int), gm["group"].astype(int)))
+        gs3 = {"列": len(gmk), "本機有": sum(k in stat3 for k in gmk),
+               "n_with_revenue 相同": int(sum(stat3.get(k, (-1, -1))[0] == int(a) for k, a in zip(gmk, gm["n_with_revenue"]))),
+               "n_new_high 相同": int(sum(stat3.get(k, (-1, -1))[1] == int(a) for k, a in zip(gmk, gm["n_new_high"]))),
+               "group_revenue_up 相同": int(sum(up3.get(k, None) == bool(int(a)) for k, a in zip(gmk, gm["group_revenue_up"])))}
+        # 候選範圍：主段進場、引擎看得到的列
+        w0, w1 = P["w0"], P["w1"]
+        ep = S["entry_pos"].to_numpy(int)
+        tab_b, tab_d, tab_a, tab_c = [], [], [], []
+        summ_b = {}
+        VERF = {"S0 舊自建": f0, "S1 舊分群＋README 旗標規則": f1, "S2 自建 v2": f2, "S3 產業分群＋本機營收 README 規則": f3}
+        dsum = {k: {} for k in VERF}
+        for st in STRATS:
+            H = STRATS[st]["H"]
+            m = ((S["gated"].to_numpy(bool) if STRATS[st]["gate"] else np.ones(len(S), bool)) & S[f"xpos_H{H}"].notna().to_numpy()
+                 & (S[f"xpos_H{H}"].fillna(-1).to_numpy() >= 0) & (ep >= w0) & (ep <= w1))
+            yy = np.array([cal[e].year for e in ep])
+            r = flag_agree(S["grp_self"].to_numpy(bool)[m], fi[m])
+            summ_b[st] = r
+            tab_b.append({"策略": st, "年": "全段", **r})
+            for Y in sorted(set(yy[m])):
+                mm = m & (yy == Y)
+                tab_b.append({"策略": st, "年": int(Y), **flag_agree(S["grp_self"].to_numpy(bool)[mm], fi[mm])})
+            for k, f in VERF.items():
+                rr = flag_agree(f[m], fi[m])
+                dsum[k][st] = rr["一致率"]
+                tab_d.append({"版": k, "策略": st, **rr})
+            alt = flag_agree(fip[m], fi[m])
+            tab_d.append({"版": "產業分群年另一讀法（候選 pos 年）", "策略": st, **alt})
+            dsum.setdefault("產業分群年另一讀法（候選 pos 年）", {})[st] = alt["一致率"]
+        # a 分群
+        pool_a = {"舊自建": [0.0, 0.0, 0.0], "自建 v2": [0.0, 0.0, 0.0]}
+        for Y in sorted(memi):
+            for nm, mem in (("舊自建", memo), ("自建 v2", memb2)):
+                A = mem.get(Y, {}); B = memi[Y]
+                com = sorted(set(A) & set(B))
+                row = {"版": nm, "年": Y, "自建母體": len(A), "產業母體": len(B), "共同成員": len(com)}
+                if com:
+                    ps = pair_stats([A[s][0] for s in com], [B[s][0] for s in com])
+                    row.update({"ARI": ps["ARI"], "Rand": ps["Rand"],
+                                "產業同群中自建也同群": ps["同群配對_兩邊都同群"] / ps["同群配對_B"] if ps["同群配對_B"] else None,
+                                "自建同群中產業也同群": ps["同群配對_兩邊都同群"] / ps["同群配對_A"] if ps["同群配對_A"] else None,
+                                "同群配對Jaccard": ps["同群配對_兩邊都同群"] / (ps["同群配對_A"] + ps["同群配對_B"] - ps["同群配對_兩邊都同群"])})
+                    pool_a[nm][0] += ps["同群配對_兩邊都同群"]; pool_a[nm][1] += ps["同群配對_A"]; pool_a[nm][2] += ps["同群配對_B"]
+                tab_a.append(row)
+        pa = {nm: {"同群配對Jaccard（逐年合計）": v[0] / (v[1] + v[2] - v[0]), "產業同群中自建也同群": v[0] / v[2],
+                   "ARI 逐年中位": float(np.median([r["ARI"] for r in tab_a if r["版"] == nm and "ARI" in r])),
+                   "共同成員合計": int(sum(r["共同成員"] for r in tab_a if r["版"] == nm)),
+                   "產業母體合計": int(sum(r["產業母體"] for r in tab_a if r["版"] == nm))} for nm, v in pool_a.items()}
+        # c 個股訊號
+        uni = D.load_universe()                                                     # 舊自建 c 用 data.load_stock 版價格（同 step_groups）
+        CLs = {}
+        with Pool(procs, initializer=_G.update, initargs=({"cal": cal},)) as pool:
+            for sid, c, a in pool.imap_unordered(_load_px, list(zip(uni["stock_id"], uni["market"])), chunksize=16):
+                if c is not None:
+                    CLs[sid] = c
+        Xs = seq111_rows_self(cal, CLs, Gold, GU, hi)
+        agg = {"個股訊號": int(len(Xs)), "族群轉強": int(Xs["grp"].sum()), "訊號月": int(Xs["period"].nunique())}
+        aggok = all(agg[k] == Gs["seq111"][k] for k in agg)
+        log(f"[c] 舊自建逐列重建 {agg}；對舊彙總 {'相同' if aggok else '⛔ 不同'}")
+        idx, idxna = market_index(cal)
+        Xv = seq111_rows_v2(cal, PX, FF, memb2, up2, hib, idx)
+        s1 = sg[sg["in_seq111"] == 1]
+        months1 = set(s1["revenue_month"])
+        Iset = set(zip(s1["revenue_month"], s1["stock_id"]))
+        Iall = set(zip(sg["revenue_month"], sg["stock_id"]))
+        for nm, X in (("舊自建", Xs), ("自建 v2", Xv)):
+            Xm = X[X["period"].isin(months1)]
+            r = set_agree(zip(Xm["period"], Xm["sid"]), Iset)
+            mm_ = sorted(months1 & set(X["period"]))
+            r2 = set_agree(zip(X["period"], X["sid"]), {k for k in Iall if k[0] in set(X["period"])})
+            # 交集上的族群旗標
+            ig = dict(zip(zip(s1["revenue_month"], s1["stock_id"]), s1["group_revenue_up"].astype(int) == 1))
+            both = [(g, ig[(p, s)]) for p, s, g in zip(Xm["period"], Xm["sid"], Xm["grp"]) if (p, s) in ig]
+            tab_c.append({"版": nm, "範圍": f"in_seq111＝1 的營收月（{len(mm_)}／{len(months1)} 月兩邊都有）", **r,
+                          "交集上族群旗標一致率": float(np.mean([a == b for a, b in both])) if both else None,
+                          "自建族群轉強占比": float(Xm["grp"].mean()) if len(Xm) else None})
+            tab_c.append({"版": nm, "範圍": "全部 5,428 筆（in_seq111 0／1，限自建有的營收月）", **r2})
+        ca = {r["版"]: r for r in tab_c if r["範圍"].startswith("in_seq111")}
+        nbad = int(((cyi == 2016)).sum())
+        star = {"分群年 2016 候選列（旗標 0）": nbad, "查無 group_month_flags 列（旗標 0）": missi,
+                "產業 cluster_year ≠ m＋1 年（應 0）": badcy, "S0 重算對舊旗標不符（應 0）": g0chk,
+                "舊自建逐列重建對舊彙總": "相同" if aggok else "不同", "加權指數在日曆上缺（補前值）": idxna, "v2 註": notes2}
+        rows3 = [
+            {"項": "a 分群（同群配對 Jaccard，2017～2026 逐年合計）", "分母": f"共同成員 {pa['舊自建']['共同成員合計']} 檔·年（產業母體 {pa['舊自建']['產業母體合計']}）",
+             "一致率": pa["舊自建"]["同群配對Jaccard（逐年合計）"]},
+            {"項": "a′ 分群（產業同群配對中自建也同群）", "分母": "產業同群配對（逐年合計）", "一致率": pa["舊自建"]["產業同群中自建也同群"]},
+            {"項": "b 族群旗標｜營量候選（主段）", "分母": f"候選 {summ_b['營量']['分母']} 列", "一致率": summ_b["營量"]["一致率"]},
+            {"項": "b 族群旗標｜營飆候選（主段）", "分母": f"候選 {summ_b['營飆']['分母']} 列", "一致率": summ_b["營飆"]["一致率"]},
+            {"項": "c 個股訊號（同股同營收月，交集÷聯集）", "分母": f"聯集 {ca['舊自建']['自建'] + ca['舊自建']['產業'] - ca['舊自建']['交集']} 筆（產業 {ca['舊自建']['產業']}）",
+             "一致率": ca["舊自建"]["交集÷聯集"]},
+            {"項": "c′ 個股訊號（交集÷產業 4,930）", "分母": f"產業 {ca['舊自建']['產業']} 筆", "一致率": ca["舊自建"]["交集÷產業"]},
+            {"項": "d：v2 的 b｜營量", "分母": f"候選 {summ_b['營量']['分母']} 列", "一致率": dsum["S2 自建 v2"]["營量"]},
+            {"項": "d：v2 的 b｜營飆", "分母": f"候選 {summ_b['營飆']['分母']} 列", "一致率": dsum["S2 自建 v2"]["營飆"]},
+            {"項": "d：v2 的 a（同群配對 Jaccard）", "分母": f"共同成員 {pa['自建 v2']['共同成員合計']}", "一致率": pa["自建 v2"]["同群配對Jaccard（逐年合計）"]},
+            {"項": "d：v2 的 c（交集÷聯集）", "分母": f"產業 {ca['自建 v2']['產業']} 筆", "一致率": ca["自建 v2"]["交集÷聯集"]}]
+        DESC = {"S0 舊自建": "原頻率表口徑", "S1 舊分群＋README 旗標規則": "只換 4、5、8 點＋＜4 檔不用",
+                "S2 自建 v2": "分群也照 README（1～3 點）", "S3 產業分群＋本機營收 README 規則": "分群用產業的、旗標本機算（驗資料與實作）",
+                "產業分群年另一讀法（候選 pos 年）": "★ I1 另一讀法"}
+        out["agree"] = {"summary": {"產業檔讀入": {**got, "相符": okk}, "一致率三項": rows3,
+                                    "差異來源": [{"版": k, "營量": v.get("營量"), "營飆": v.get("營飆"), "說明": DESC[k]} for k, v in dsum.items()],
+                                    "a": pa, "b": summ_b, "c": ca, "S3 對 group_month_flags 逐列": gs3, "star": star},
+                        "tables": {"agree_a_clusters": pd.DataFrame(tab_a), "agree_b_flags": pd.DataFrame(tab_b),
+                                   "agree_c_signals": pd.DataFrame(tab_c), "agree_d_sources": pd.DataFrame(tab_d)}}
+        out["star"] = star
+        out["seq111"] = None
+        gyi = []
+        for Y, g in cl.groupby("year"):
+            sz = g.groupby("group").size()
+            gyi.append({"世界": wn, "來源": "產業", "年": int(Y), "參考日": str(g["first_trading_day"].iloc[0]), "母體": int(len(g)), "群數": int(len(sz)),
+                        "用到的群（≥4）": int((sz >= 4).sum()), "用到的檔數": int(sz[sz >= 4].sum()), "最大群": int(sz.max()), "群大小中位": float(sz.median())})
+        out["GY"] = gyi + [{"世界": wn, "來源": "自建 v2（對照）", **r} for r in GY2]
+        log(f"[一致率] {json.dumps(rows3, ensure_ascii=False, default=str)}")
+        log(f"[差異來源] {json.dumps(dsum, ensure_ascii=False)}")
+        log(f"[S3 對 gm] {gs3}｜★ {star}")
+    out["S"] = S
+    pickle.dump(out, open(os.path.join(WORK, f"groups_{wn}_industry.pkl"), "wb"), protocol=5)
+    log(f"[groups-ind {wn}] 完成｜族群轉強比例（全候選）{S['grp'].mean():.4f}")
+
+
 # ═════════════ step sim（乾跑）═════════════
 _W: dict = {}
 
@@ -500,7 +982,7 @@ def job(args):
 
 def step_sim(wn, procs):
     P = pickle.load(open(os.path.join(WORK, f"world_{wn}.pkl"), "rb"))
-    Gp = pickle.load(open(os.path.join(WORK, f"groups_{wn}.pkl"), "rb"))
+    Gp = pickle.load(open(os.path.join(WORK, f"groups_{wn}{sfx()}.pkl"), "rb"))
     _W["P"] = P; _W["S"] = Gp["S"]
     _W["ones"] = {s: np.ones(P["NP"]) for s in P["sids"]}
     jobs = [(wn, "營量", 0)] + [(wn, "營飆", r) for r in range(NSEED)]
@@ -511,8 +993,8 @@ def step_sim(wn, procs):
             if (i + 1) % 20 == 0:
                 log(f"  sim {wn} {i + 1}/{len(jobs)} {time.time() - t0:.0f}s")
     out.sort(key=lambda x: (x["st"], x["r"]))
-    pickle.dump(out, open(os.path.join(WORK, f"sim_{wn}.pkl"), "wb"), protocol=5)
-    log(f"[sim {wn}] {len(out)} 件｜{time.time() - t0:.0f}s")
+    pickle.dump(out, open(os.path.join(WORK, f"sim_{wn}{sfx()}.pkl"), "wb"), protocol=5)
+    log(f"[sim {wn}{sfx()}] {len(out)} 件｜{time.time() - t0:.0f}s")
 
 
 # ═════════════ step report ═════════════
@@ -563,18 +1045,29 @@ def per_seed_cell(res, P, x, y, N):
 
 
 def step_report():
-    os.makedirs(OUT, exist_ok=True)
+    OUTD = out_dir()
+    os.makedirs(OUTD, exist_ok=True)
     reg = check_reg()
     summ = {"時間": TIME, "登錄": reg, "發號": "裁定線 seq501 §三", "乾跑": "價格全 1、毛報酬 0；⛔ 無任何報酬數字", "世界": {}}
+    if GROUPS == "industry":
+        summ["時間"] = TIME_IND
+        summ["分群"] = "主段 ＝ 產業 seq112 分群檔（clusters_by_year＋group_month_flags）；早年 ＝ 自建 v2（README 10 條、只描述）；裁定 seq502 §二"
     cells, monthly, candy, ovy, hdist, gyear = [], [], [], [], [], []
     md = []
     for wn in ("main", "early"):
         P = pickle.load(open(os.path.join(WORK, f"world_{wn}.pkl"), "rb"))
-        Gp = pickle.load(open(os.path.join(WORK, f"groups_{wn}.pkl"), "rb"))
-        SIM = pickle.load(open(os.path.join(WORK, f"sim_{wn}.pkl"), "rb"))
+        Gp = pickle.load(open(os.path.join(WORK, f"groups_{wn}{sfx()}.pkl"), "rb"))
+        SIM = pickle.load(open(os.path.join(WORK, f"sim_{wn}{sfx()}.pkl"), "rb"))
         S = Gp["S"]; cal = P["cal"]
         gyear += Gp["GY"]
         W = {"G4": Gp["G4"], "IG閘": P["gate"], "seq111": Gp.get("seq111")}
+        if GROUPS == "industry":
+            W["旗標來源"] = Gp["來源"]
+            W["★"] = Gp.get("star")
+            if wn == "main":
+                summ["一致率"] = Gp["agree"]["summary"]
+                for nm, df in Gp["agree"]["tables"].items():
+                    df.to_csv(os.path.join(OUTD, f"{nm}.csv"), index=False, encoding="utf-8-sig", float_format="%.6g")
         # 候選逐年
         for st in STRATS:
             s = S[S["gated"]] if STRATS[st]["gate"] else S
@@ -584,9 +1077,13 @@ def step_report():
             for Y, g in s.groupby(yy):
                 candy.append({"世界": wn, "策略": st, "年": Y, "候選": len(g), "族群轉強": int(g["grp"].sum()), "族群轉強比例": float(g["grp"].mean()),
                               "另一讀法族群轉強比例": float(g["grp_alt"].mean()), "不在產業母體比例": float((~g["in_univ"]).mean())})
+                if GROUPS == "industry":
+                    candy[-1].update({"舊自建族群轉強比例": float(g["grp_self"].mean()), "舊自建對本版旗標一致率": float((g["grp_self"] == g["grp"]).mean())})
             W[f"{st}_候選"] = {"候選": int(len(s)), "族群轉強比例": float(s["grp"].mean()), "不在產業母體比例": float((~s["in_univ"]).mean()),
                              "兩讀法旗標一致率": float((s["grp"] == s["grp_alt"]).mean()),
                              "seq377 恆真恆假": ("恆真" if s["grp"].mean() >= 0.95 else ("恆假" if s["grp"].mean() <= 0.05 else "否"))}
+            if GROUPS == "industry":
+                W[f"{st}_候選"].update({"舊自建族群轉強比例": float(s["grp_self"].mean()), "兩讀法旗標不同筆數": int((s["grp"] != s["grp_alt"]).sum())})
             # 每月表
             rs = [x for x in SIM if x["st"] == st]
             mo = pd.Series([cal[int(e)].strftime("%Y-%m") for e in s["entry_pos"]])
@@ -645,6 +1142,12 @@ def step_report():
                 ovy.append(row)
             W[f"{st}_閘"] = {"G2 prio全0＝原版": [x.get("G2") for x in rs if "G2" in x],
                             "G3 逐日買進數不符（全部版本×種子合計）": int(sum(x["ver"][v]["g3"] for x in rs for v in VERS))}
+            if GROUPS == "industry":
+                m16 = (s["cy"] == 2016).to_numpy()
+                key = set(zip(s["entry_pos"].to_numpy(int)[m16], s["sid"].to_numpy(str)[m16]))
+                nb = [sum(1 for t, s_ in r_["ver"]["原版"]["buys"] if (t, s_) in key and P["w0"] <= t <= P["w1"]) for r_ in rs]
+                W[f"{st}_分群年2016（★無分群⇒旗標0）"] = {"候選列": int(m16.sum()), "段內進場候選": int((m16 & (s["entry_pos"].to_numpy(int) >= P["w0"])).sum()),
+                                                  "原版段內買進_中位": float(np.median(nb)), "原版段內買進_r0": int(nb[0])}
         # G0：乾跑原版營量 vs 正式 audit_seed0
         if wn == "main":
             F0 = pd.read_csv("backtest/resultsYLlist/audit_seed0.csv.gz", dtype={"sid": str}, usecols=["t", "sid", "side"])
@@ -661,9 +1164,9 @@ def step_report():
     summ["日報酬相關"] = "算得出（兩版權益逐日皆有、段內可配對；本階段乾跑不算，正式跑報）"
     summ["持股重疊口徑"] = "等權槽（每檔 1/N）；金額權重需價格，留正式跑"
     for nm, rows in (("cells", cells), ("monthly", monthly), ("cand_yearly", candy), ("overlap_yearly", ovy), ("holddist", hdist), ("groups_yearly", gyear)):
-        pd.DataFrame(rows).to_csv(os.path.join(OUT, f"{nm}.csv"), index=False, encoding="utf-8-sig", float_format="%.6g")
-    json.dump(summ, open(os.path.join(OUT, "summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
-    write_md(summ, cells, candy, gyear, hdist)
+        pd.DataFrame(rows).to_csv(os.path.join(OUTD, f"{nm}.csv"), index=False, encoding="utf-8-sig", float_format="%.6g")
+    json.dump(summ, open(os.path.join(OUTD, "summary.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
+    write_md(summ, cells, candy, gyear, hdist, OUTD)
     log("[report] 完成")
 
 
@@ -673,11 +1176,32 @@ def _f(x, pct=True, d=1):
     return f"{100 * x:.{d}f}%" if pct else (f"{x:.{d}f}" if isinstance(x, float) else str(x))
 
 
-def write_md(summ, cells, candy, gyear, hdist):
+def md_industry_head(summ):
+    A = summ["一致率"]
+    L = ["主段旗標 ＝ 產業 seq112 分群檔（clusters_by_year＋group_month_flags）；早年 ＝ 自建 v2（README 口徑 10 條、只描述、標「自建」）；"
+         "裁定 seq502：優先版兩格撤判（只描述、標「等同原版」、N_組合 ＋2）；只買版兩格照 seq2 判定", "",
+         "## 逐檔一致率（自建舊版 對 產業；門檻 95%）", "",
+         "| 項 | 分母 | 一致率 | 過 95%？ |", "|---|---|---|---|"]
+    for r in A["一致率三項"]:
+        L.append(f"| {r['項']} | {r['分母']} | {_f(r['一致率'])} | {'是' if r['一致率'] >= 0.95 else '否'} |")
+    L += ["", "裁定 seq502：< 95% ⇒ 以產業版為準、自建版只描述（本表即產業版）。", "",
+          "## 差異來源（同一批候選旗標，各版對產業的相同率；主段）", "", "| 版 | 營量 | 營飆 | 說明 |", "|---|---|---|---|"]
+    for r in A["差異來源"]:
+        L.append(f"| {r['版']} | {_f(r['營量'])} | {_f(r['營飆'])} | {r['說明']} |")
+    L += ["", f"讀入驗證：{A['產業檔讀入']}", f"★ 條目：{A['star']}", ""]
+    return L
+
+
+def write_md(summ, cells, candy, gyear, hdist, OUTD=None):
+    OUTD = OUTD or OUT
     L = ["# 營量／營飆加族群營收也轉強（只買版、優先版）頻率表（乾跑、⛔ 無報酬）", "",
          f"登錄 台股 seq2 sha {summ['登錄']['sha16']}（{summ['登錄']['bytes']} B，相符）｜發號 裁定 seq501 §三｜回測線計算子代理 {TIME}", "",
          "額外策略、與正式營量營飆分開；正式規則不動｜想法來自產業 seq111，看過同期結果才提｜營量、營飆本身已看過結果", "",
          "營飆數字 ＝ 200 顆種子中位〔p10～p90〕；營量 ＝ r0 一條。持股重疊 ＝ 等權槽（金額權重留正式跑）；日報酬相關：算得出、本階段不算。", ""]
+    if GROUPS == "industry":
+        L[0] = "# 營量／營飆加族群營收也轉強（只買版、優先版）頻率表【產業分群版】（乾跑、⛔ 無報酬）"
+        L[2] = L[2].replace(TIME, TIME_IND) + "｜分群 裁定 seq502 §二、產業 seq112"
+        L += md_industry_head(summ)
     for c in cells:
         st = c["策略"]; sp = st == "營飆"
 
@@ -687,7 +1211,10 @@ def write_md(summ, cells, candy, gyear, hdist):
             if sp and c.get(k + "_p10") is not None:
                 s += f"〔{_f(c[k + '_p10'])}～{_f(c[k + '_p90'])}〕"
             return s
-        L += [f"## {c['世界']}｜{st}｜{c['段']}（{c['段起']}～{c['段尾']}）", "",
+        tag = ""
+        if GROUPS == "industry":
+            tag = "【產業分群】" if c["世界"] == "main" else "【自建 v2、只描述】"
+        L += [f"## {c['世界']}｜{st}｜{c['段']}（{c['段起']}～{c['段尾']}）{tag}", "",
               "| 項 | 原版 | 只買版 | 優先版 |", "|---|---|---|---|",
               f"| 買進筆數 | {_f(c['原版_買進'], False)} | {_f(c['只買版_買進'], False)} | {_f(c['優先版_買進'], False)} |",
               f"| 平均持股 | {_f(c['原版_平均持股'], False)} | {_f(c['只買版_平均持股'], False)} | {_f(c['優先版_平均持股'], False)} |",
@@ -708,14 +1235,19 @@ def write_md(summ, cells, candy, gyear, hdist):
             L.append(f"- {wn}｜{st}：候選 {cd['候選']}、族群轉強 {_f(cd['族群轉強比例'])}、不在產業母體 {_f(cd['不在產業母體比例'])}、"
                      f"兩讀法一致 {_f(cd['兩讀法旗標一致率'])}、恆真恆假：{cd['seq377 恆真恆假']}；閘 {W[f'{st}_閘']}")
         L.append(f"- {wn} G4（自算 24 月新高 vs 面板）：{W['G4']}")
-        if W.get("seq111"):
+        if GROUPS == "industry":
+            L.append(f"- {wn} 旗標來源：{W['旗標來源']}；★ 筆數：{W.get('★')}")
+            for st in STRATS:
+                L.append(f"- {wn}｜{st}：舊自建族群轉強 {_f(W[f'{st}_候選']['舊自建族群轉強比例'])}；分群年兩讀法旗標不同 {W[f'{st}_候選']['兩讀法旗標不同筆數']} 筆；"
+                         f"分群年 2016：{W[f'{st}_分群年2016（★無分群⇒旗標0）']}")
+        elif W.get("seq111"):
             L.append(f"- seq111 彙總一致（近似重建，⛔ 非逐檔）：{W['seq111']}")
         if W.get("G0 乾跑原版營量 vs 正式 audit_seed0"):
             L.append(f"- G0：{W['G0 乾跑原版營量 vs 正式 audit_seed0']}")
     L += ["", f"G5 策略鎖：{summ['G5 策略鎖']}", "",
           "早年：只描述；含減資假飆股約 0.3%（reduce_v2；剩 22 筆未解釋）；上櫃 2007-07～12 除權息未還原；上櫃減資 2007～2012 為偵測、非官方；2005-01～2007-06 只有上市", "",
           "描述，不是買賣建議"]
-    open(os.path.join(OUT, "結果.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
+    open(os.path.join(OUTD, "結果.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
 
 
 def main():
@@ -724,14 +1256,20 @@ def main():
     ap.add_argument("--step", required=True, choices=["world", "groups", "sim", "report", "reg"])
     ap.add_argument("--world", choices=["main", "early"])
     ap.add_argument("--procs", type=int, default=3)
+    ap.add_argument("--groups", choices=["self", "industry"], default="self")
     a = ap.parse_args()
+    global GROUPS
+    GROUPS = a.groups
     os.makedirs(WORK, exist_ok=True)
     LOGF = os.path.join(WORK, "run.log")
-    log(f"===== {a.step} {a.world or ''}｜登錄 {check_reg()}")
+    log(f"===== {a.step} {a.world or ''}{'' if GROUPS == 'self' else ' --groups ' + GROUPS}｜登錄 {check_reg()}")
     if a.step == "world":
         step_world(a.world, a.procs)
     elif a.step == "groups":
-        step_groups(a.world, a.procs)
+        if GROUPS == "industry":
+            step_groups_industry(a.world, a.procs)
+        else:
+            step_groups(a.world, a.procs)
     elif a.step == "sim":
         step_sim(a.world, a.procs)
     elif a.step == "report":
