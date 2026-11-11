@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T02:01:32+08:00",
+  "generated_at": "2026-11-12T03:57:30+08:00",
   "target_trading_day": "2026-11-11",
   "stocks": {
     "7879": {
@@ -18,7 +18,7 @@
         },
         "bs": {
           "total": 5,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-06-30"
         }
@@ -30,12 +30,12 @@
       "history": {
         "price": {
           "total": 191,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 88,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 1
@@ -50,7 +50,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -62,19 +62,19 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
         "fs": {
           "total": 88,
-          "added": 8,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         },
         "bs": {
           "total": 11,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         }
@@ -86,12 +86,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -103,7 +103,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -115,19 +115,19 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
         "fs": {
           "total": 88,
-          "added": 8,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         },
         "bs": {
           "total": 11,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         }
@@ -139,12 +139,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -156,7 +156,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -168,7 +168,7 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -192,12 +192,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 1
@@ -209,7 +209,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -221,7 +221,7 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -245,12 +245,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -262,7 +262,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -274,7 +274,7 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -298,12 +298,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -315,7 +315,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -327,19 +327,19 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
         "fs": {
           "total": 88,
-          "added": 8,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         },
         "bs": {
           "total": 11,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         }
@@ -351,12 +351,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -368,7 +368,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -380,7 +380,7 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -404,12 +404,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 1
@@ -421,7 +421,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -433,7 +433,7 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -457,12 +457,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 4
@@ -474,7 +474,7 @@
       "extra": {
         "per": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -486,7 +486,7 @@
         },
         "margin": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-11"
         },
@@ -510,12 +510,12 @@
       "history": {
         "price": {
           "total": 449,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "inst": {
           "total": 206,
-          "added": 1,
+          "added": 0,
           "changed": null
         },
         "dividend_rows": 2
@@ -535,22 +535,22 @@
     "csv": {
       "index": {
         "total": 9458,
-        "added": 1,
+        "added": 0,
         "changed": null
       },
       "breadth": {
         "total": 47,
-        "added": 1,
+        "added": 0,
         "changed": null
       },
       "amount": {
         "total": 47,
-        "added": 1,
+        "added": 0,
         "changed": null
       },
       "inst": {
         "total": 47,
-        "added": 1,
+        "added": 0,
         "changed": null
       }
     },
@@ -580,7 +580,7 @@
     "phantom_days_removed": null,
     "stocks_meta": {
       "total": 3059,
-      "added_today": 2,
+      "added_today": 0,
       "purged_warrants": null
     }
   },
