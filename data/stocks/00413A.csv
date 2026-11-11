@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-11-11,00413A,主動玉山關鍵科技,twse,10.52,10.84,10.50,10.84,48181973,511386449,0.37,,159150000,4359,,,1

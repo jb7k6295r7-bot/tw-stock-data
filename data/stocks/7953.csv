@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-10,7953,峻佳裝修,emerging,,160,108,131.54,48212,6341806,,,,,均價/額推算,142,1
+2026-11-11,7953,峻佳裝修,emerging,,133.5,97.4,112.6,48989,5516161,-18.94,,,,均價/額推算,116,1
