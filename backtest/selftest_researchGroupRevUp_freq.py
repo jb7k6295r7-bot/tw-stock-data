@@ -9,6 +9,8 @@ T3 族群轉強規則：≥3 家、≥1/3（含邊界 1/3、群 2 家恆假）
 T4 引擎三版（價格全 1、毛 0）：1 槽、同日 3 候選 ⇒ 只買版只買旗標列；營量優先版旗標列先進（即使 relvol 較小）；
    prio 全 0 ⇒ 與原版逐筆相同（營量 relvol、營飆抽籤＋pick_tie＝rng 各驗）
 T5 intervals／held_count／overlap_count／shortage：手算
+（增補 2026-11-11，正式 researchGroupRevUp）T9 閘門（缺號、錯號、缺 --formal、信箱缺裁定 ⇒ 拒跑）；T10 逐筆配對、市值、金額重疊、段點、月超額 CI；
+T11 make_sig／cell_sig 乾跑預設不變、正式保留毛報酬；判語規則
 """
 from __future__ import annotations
 
@@ -169,6 +171,65 @@ if all(os.path.exists(x) for x in need):
         ok(os.path.exists(p_) and open(p_, "rb").read() == head, f"T8 逐位元相同 {os.path.basename(f_)}")
 else:
     ok(False, "T8 ~/grpwork 中間檔不在（先照舊流程跑 world／groups／sim）")
+
+# ── 增補 2026-11-11（正式 researchGroupRevUp，裁定 seq503）──
+from backtest import researchGroupRevUp as F   # noqa: E402
+
+# T9 閘門：缺 --formal、缺號、錯號 ⇒ 拒跑；對號 ⇒ 過；信箱缺裁定 ⇒ 拒跑
+def refused(argv):
+    try:
+        F.gate_args(argv)
+    except SystemExit as e:
+        return str(e).startswith("⛔")
+    return False
+
+
+ok(refused([]), "T9 無旗標 ⇒ 拒跑")
+ok(refused(["--formal"]), "T9 缺裁定號 ⇒ 拒跑")
+ok(refused(["--formal", "--ruling", "seq502"]), "T9 錯號 seq502 ⇒ 拒跑")
+ok(refused(["--formal", "--ruling", "seq5031"]), "T9 錯號 seq5031 ⇒ 拒跑")
+ok(refused(["--ruling", "seq503"]), "T9 只給號、缺 --formal ⇒ 拒跑")
+ok(F.gate_args(["--formal", "--ruling", "seq503"]).ruling == "seq503", "T9 --formal --ruling seq503 ⇒ 過")
+_td = tempfile.mkdtemp(prefix="grf_mb_")
+for _n in ("x-裁定線-seq501.md", "x-裁定線-seq502.md"):
+    open(os.path.join(_td, _n), "w").close()
+try:
+    F.ruling_verify(_td); ok(False, "T9 信箱缺 seq503 ⇒ 拒跑")
+except SystemExit:
+    ok(True, "T9 信箱缺 seq503 ⇒ 拒跑")
+open(os.path.join(_td, "x-裁定線-seq503.md"), "w").close()
+ok(set(F.ruling_verify(_td)) == {"seq501", "seq502", "seq503"}, "T9 三件裁定都在 ⇒ 過")
+
+# T10 逐筆配對、市值、金額重疊、段點
+au = [{"t": 2, "sid": "a", "side": "buy", "amt": 100.0, "px": 10.0}, {"t": 3, "sid": "b", "side": "buy", "amt": 50.0, "px": 5.0},
+      {"t": 5, "sid": "a", "side": "sell", "amt": 120.0, "px": 12.0}, {"t": 6, "sid": "a", "side": "buy", "amt": 80.0, "px": 8.0}]
+pb = F.pos_book(au)
+ok(pb == [("a", 2, 5, 100.0, 10.0, 120.0), ("b", 3, None, 50.0, 5.0, None), ("a", 6, None, 80.0, 8.0, None)], "T10 pos_book FIFO 配對")
+cls = {"a": np.arange(10, dtype=float) + 10.0, "b": np.full(10, 5.0)}
+V = F.pos_values(pb, cls, 10)
+ok(np.allclose(V["a"][[1, 2, 4, 5, 6, 9]], [0, 100 * 12 / 10, 100 * 14 / 10, 0, 80 * 16 / 8, 80 * 19 / 8]) and V["b"][3] == 50.0 and V["b"][2] == 0,
+   "T10 pos_values [買, 賣)、市值 ＝ 金額×收盤÷進場價")
+eA = np.full(4, 100.0); eB = np.full(4, 200.0)
+ov = F.amt_overlap({"a": np.array([50, 50, 0, 0.0]), "c": np.array([50, 0, 0, 0.0])}, eA, {"a": np.array([20, 150, 0, 0.0]), "b": np.array([100, 0, 0, 0.0])}, eB, 4)
+ok(np.allclose(ov, [0.1, 0.5, 0, 0]), "T10 amt_overlap Σmin(權重)")
+ok(F.seg_points(np.array([3, 7, 12]), 2, 10).tolist() == [2, 3, 7, 10] and F.seg_points(np.array([3, 10]), 2, 10).tolist() == [2, 3, 10], "T10 段點")
+_d = np.array([0.01, -0.02, 0.03, 0.0])
+_c = F.mci(_d)
+ok(abs(_c["平均"] - 0.005) < 1e-12 and _c["CI95"][0] < 0.005 < _c["CI95"][1], "T10 月超額 CI")
+
+# T11 make_sig／cell_sig：乾跑預設毛報酬 0（頻率表路徑不變）、正式保留；cell_sig ＝ 舊兩行篩選
+S2 = S.copy(); S2["g_H60"] = 0.3; S2["g_H120"] = 0.4; S2.loc[1, "xpos_H60"] = -1; S2.loc[2, "xpos_H60"] = np.nan
+a0 = M.make_sig(S2, "營量", "原版"); a1 = M.make_sig(S2, "營量", "原版", dry=False)
+ok((a0["g_H60"] == 0).all() and (a1["g_H60"] == 0.3).all(), "T11 make_sig dry 預設 g＝0、dry=False 保留")
+old = a0[a0["xpos_H60"].notna() & (a0["xpos_H60"] >= 0)]
+ok(M.cell_sig(S2, "營量", "原版").equals(old), "T11 cell_sig ＝ 舊兩行篩選")
+F2 = F.verdict
+cz = {"探索": {"有效月數": 40, "對大盤": "合格"}, "確認": {"有效月數": 35, "對大盤": "合格"}}
+ok(F2("營量", "只買版", cz) == "合格（暫定）", "T11 判語：兩段合格 ⇒ 合格（暫定）")
+ok(F2("營量", "只買版", {**cz, "確認": {"有效月數": 35, "對大盤": "另列"}}) == "另列", "T11 判語：合格＋另列 ⇒ 另列")
+ok(F2("營量", "只買版", {**cz, "確認": {"有效月數": 35, "對大盤": "不合格"}}) == "不合格", "T11 判語：確認不合格 ⇒ 不合格")
+ok(F2("營量", "只買版", {**cz, "確認": {"有效月數": 21, "對大盤": "合格"}}) == "還沒測", "T11 判語：有效月數 ＜ 24 ⇒ 還沒測")
+ok(F2("營飆", "只買版", cz) == "還沒測（依構造）" and F2("營量", "優先版", cz) == "等同原版（只描述）", "T11 判語：營飆只買版、優先版固定")
 
 print("全部通過" if not FAIL else f"⛔ 失敗 {len(FAIL)}：{FAIL}")
 sys.exit(1 if FAIL else 0)

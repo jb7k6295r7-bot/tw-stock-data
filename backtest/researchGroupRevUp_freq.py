@@ -95,6 +95,9 @@
     d 差異來源（同一批候選，逐版對產業的 b）：S0 舊自建；S1 舊分群＋README 旗標規則（4、5、8＋＜4 不用）；S2 v2（分群也照 README）；
       S3 產業分群＋本機營收照 README 旗標規則（驗本機營收與規則實作）
  I4 頻率表 ＝ 上面 F4～F6 全部照舊，只換旗標（主段＝產業版、早年＝自建 v2）；cand_yearly 另一讀法欄 ＝ I1 分群年另一讀法
+
+═══ 增補（2026-11-11，裁定 seq503 正式跑）：正式程式 researchGroupRevUp.py 重用本檔 cell_sig／make_sig（dry=False 保留真實毛報酬）、run_engine（真價格、full）、
+    intervals；乾跑路徑預設值不變（make_sig dry=True、run_engine 收盤＝開盤＝ones）⇒ 頻率表逐位元不變（自測 T6 驗）
 """
 from __future__ import annotations
 
@@ -866,10 +869,12 @@ def step_groups_industry(wn, procs):
 _W: dict = {}
 
 
-def make_sig(S, st, ver, flag="grp", zero_prio=False):
+def make_sig(S, st, ver, flag="grp", zero_prio=False, dry=True):
+    """dry（預設，頻率表乾跑）⇒ 毛報酬全 0；dry=False（正式 researchGroupRevUp）⇒ 保留 S 的真實 g_H60／g_H120。"""
     s = S[S["gated"]] if STRATS[st]["gate"] else S
     s = s.copy()
-    s["g_H60"] = 0.0; s["g_H120"] = 0.0
+    if dry:
+        s["g_H60"] = 0.0; s["g_H120"] = 0.0
     if ver == "只買版":
         s = s[s[flag].to_numpy(bool)]
     elif ver == "優先版":
@@ -882,19 +887,30 @@ def make_sig(S, st, ver, flag="grp", zero_prio=False):
     return s
 
 
-def run_engine(sig, st, ver, r, ones, NP, SF):
+def cell_sig(S, st, ver, zero_prio=False, dry=True):
+    """引擎看得到的列：make_sig ＋ xpos_H 有值且 ≥ 0（job、正式 researchGroupRevUp 共用）。"""
+    sig = make_sig(S, st, ver, zero_prio=zero_prio, dry=dry)
+    xc = f"xpos_H{STRATS[st]['H']}"
+    return sig[sig[xc].notna() & (sig[xc] >= 0)]
+
+
+def run_engine(sig, st, ver, r, ones, NP, SF, opens=None, full=False):
+    """ones ＝ 收盤字典（乾跑全 1）；opens 預設同 ones。full ⇒ 另回引擎輸出 o 與 audit（正式 researchGroupRevUp 用）。"""
     H, N, seed0 = STRATS[st]["H"], STRATS[st]["N"], STRATS[st]["seed0"]
     au = []
+    op = ones if opens is None else opens
     rng = np.random.default_rng(seed0 + r)
     if st == "營量":
         pk = "prio_rv" if ver == "優先版" else "relvol"
-        R.simulate_mtm(sig, f"H{H}", N, rng, ones, ones, NP, return_equity=True, log=[], d_max=None, pick=pk, queue_days=0,
-                       stop_force=SF, audit=au)
+        o = R.simulate_mtm(sig, f"H{H}", N, rng, ones, op, NP, return_equity=True, log=[], d_max=None, pick=pk, queue_days=0,
+                           stop_force=SF, audit=au)
     else:
         kw = dict(pick="prio", pick_tie="rng") if ver == "優先版" else {}
-        R.simulate_mtm(sig, f"H{H}", N, rng, ones, ones, NP, return_equity=True, stop_force=SF, audit=au, **kw)
+        o = R.simulate_mtm(sig, f"H{H}", N, rng, ones, op, NP, return_equity=True, stop_force=SF, audit=au, **kw)
     buys = [(int(a["t"]), str(a["sid"])) for a in au if a["side"] == "buy"]
     sells = [(int(a["t"]), str(a["sid"])) for a in au if a["side"] != "buy"]
+    if full:
+        return buys, sells, o, au
     return buys, sells
 
 
@@ -957,8 +973,7 @@ def job(args):
     res = {"st": st, "r": r, "ver": {}}
     IV = {}; B = {}
     for v in VERS:
-        sig = make_sig(S, st, v)
-        sig = sig[sig[f"xpos_H{STRATS[st]['H']}"].notna() & (sig[f"xpos_H{STRATS[st]['H']}"] >= 0)]
+        sig = cell_sig(S, st, v)
         buys, sells = run_engine(sig, st, v, r, ones, NP, SF)
         iv = intervals(buys, sells, NP)
         IV[v] = iv; B[v] = buys
@@ -973,8 +988,7 @@ def job(args):
         res[f"ov_{a}_{b}"] = overlap_count(IV[a], IV[b], NP).astype(np.int16)
     # G2：prio 全 0 ＝ 原版
     if (st == "營量" and r == 0) or (st == "營飆" and r < 3):
-        sig = make_sig(S, st, "優先版", zero_prio=True)
-        sig = sig[sig[f"xpos_H{STRATS[st]['H']}"].notna() & (sig[f"xpos_H{STRATS[st]['H']}"] >= 0)]
+        sig = cell_sig(S, st, "優先版", zero_prio=True)
         bz, sz = run_engine(sig, st, "優先版", r, ones, NP, SF)
         res["G2"] = bool(bz == B["原版"])
     return res
