@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-13T04:28:34+08:00",
+  "generated_at": "2026-11-13T06:00:33+08:00",
   "target_trading_day": "2026-11-12",
   "stocks": {
     "7879": {
@@ -280,7 +280,7 @@
         },
         "fs": {
           "total": 88,
-          "added": 7,
+          "added": 0,
           "changed": null,
           "date_max": "2026-09-30"
         },
