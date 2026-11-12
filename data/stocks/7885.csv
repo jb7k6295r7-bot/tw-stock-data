@@ -44,3 +44,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-11-09,7885,宏羚,emerging,,23,23,23,5000,115000,0.68,,,,均價/額推算,23,1
 2026-11-10,7885,宏羚,emerging,,,,,0,,,,,,無成交,,0
 2026-11-11,7885,宏羚,emerging,,23,23,23,1,23,0.00,,,,均價/額推算,23,1
+2026-11-12,7885,宏羚,emerging,,,,,0,,,,,,無成交,,0

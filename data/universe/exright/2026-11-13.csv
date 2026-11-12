@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,value,kind,open_base,limit_up,limit_down,ex_div_ref
+2026-11-13,00401A,12.42,12.28,0.138000,息,12.28,13.50,11.06,12.28
