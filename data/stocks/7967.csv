@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-11-13,7967,旭電馳*,emerging,,10,8.95,9.08,2211179,20077505,,,,,均價/額推算,8.99,1
