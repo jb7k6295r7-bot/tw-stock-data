@@ -1,3 +1,4 @@
+ComprehensiveIncomeAttributableToOwnersOfParent
 ComprehensiveIncomeConsolidatedNetIncomeAttributedNonControllingInterest
 CostOfGoodsSold
 EPS

@@ -1,3 +1,4 @@
+ComprehensiveIncomeAttributableToOwnersOfParent
 CostOfGoodsSold
 EPS
 EquityAttributableToOwnersOfParent
