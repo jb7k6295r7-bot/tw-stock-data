@@ -187,6 +187,12 @@ def _newest(path, how):
 #   ⇒ 沒有把握的一律用最寬的那個（月頻 40 天），⚠ 而**寬到失去意義**要標出來。
 SCHED_TOL_DAYS = 3          # 日／週頻排程：容忍 3 天（週末 ＋ 一次失敗）
 SCHED_TOL_MONTHLY = 40      # 月頻排程：容忍 40 天（週期 31 ＋ 緩衝）
+# ⭐ 2026-11-15：掛在天天跑的 workflow 裡、但【區塊自己】另有年齡閘門的 ⇒ 用區塊的真週期，⛔ 不用 workflow 的 cron。
+#   industry：daily.yml 那一步「TS=0 或 AGE≥28 才重建」⇒ 正常就是 28 天寫一次；
+#   用 daily 的 3 天去量 ⇒ 11-07 起天天紅（11-03 重建後第 4 天），整條 daily 被誤報淹了 9 天（回測 1115-1435）。
+BLOCK_TOL = {
+    "industry": (35, "區塊自訂：industry.py 每 28 天重建一次（daily.yml 年齡閘門 AGE≥28）⇒ 容忍 28＋7"),
+}
 
 
 def _wf_crons(root=None):
@@ -285,7 +291,7 @@ def stale_scheduled(rl, path=None):
         elif "觸發 schedule" in rest:
             # ⭐ 容忍度從**那一支的 cron** 推，⛔ 不是從名字猜（見 `_wf_crons`）
             wf = rest.split("｜")[2].strip() if rest.count("｜") >= 2 else ""
-            tol, why_tol = _tol_for(crons.get(wf, []))
+            tol, why_tol = BLOCK_TOL.get(name) or _tol_for(crons.get(wf, []))
             if tol is None:
                 # ⛔ 講不出週期就**不判**（⚠ 亂判會變成一塊天天紅的閘門）
                 mute.append(f"{name}（排程，但 {why_tol}）")

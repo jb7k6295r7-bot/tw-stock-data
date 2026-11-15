@@ -679,6 +679,37 @@ _BFI_DEALER_TOTAL = "自營商"
 _BFI_SKIP = ("合計", "總計")
 
 
+def _fix_index_sign(path):
+    """market_index.csv：change 與 change_pct 正負號不一致的列 ⇒ change_pct 跟著 change 的號。→ 修了幾列。
+
+    ⭐ 冪等、每趟跑：修 2026-09-02 起被負負得正寫錯的舊列（情報 1112-0120），之後正常就是 0 列。
+    ⛔ 只動 change_pct 的正負號，不動數值與其他欄；change 為 0 或空的列不動。
+    """
+    if not os.path.exists(path):
+        return 0
+    with open(path, encoding="utf-8", newline="") as f:
+        rows = list(csv.reader(f))
+    if not rows or rows[0][:4] != ["date", "close", "change", "change_pct"]:
+        return 0
+    n = 0
+    for r in rows[1:]:
+        if len(r) < 4 or not r[2] or not r[3]:
+            continue
+        try:
+            c, p = float(r[2]), float(r[3])
+        except ValueError:
+            continue
+        if c != 0 and p != 0 and (c < 0) != (p < 0):
+            r[3] = str(-p)
+            n += 1
+    if n:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="") as f:
+            csv.writer(f, lineterminator="\n").writerows(rows)
+        os.replace(tmp, path)
+    return n
+
+
 def market_lines(market, day):
     """回傳 ({名稱: CSV 欄位 list}, errors)。抽不到的那一項就不放進 dict。
 
@@ -698,9 +729,11 @@ def market_lines(market, day):
     if r and len(r) >= 5:
         sign = -1 if "-" in r[2] else 1
         chg, pct = _num(r[3]), _num(r[4])
+        # ⛔ 2026-11-15（情報 1112-0120）：證交所約 9 月起「漲跌百分比」自己就帶負號 ⇒ 再乘 sign 變成負負得正
+        #   （09-02 起 24 個下跌日 change_pct 全是正的）⇒ 兩欄都先取絕對值，正負號只由「漲跌(+/-)」決定
         out["index"] = [day, _num(r[1]),
-                        (str(sign * float(chg)) if chg else ""),
-                        (str(sign * float(pct)) if pct else "")]
+                        (str(sign * abs(float(chg))) if chg else ""),
+                        (str(sign * abs(float(pct))) if pct else "")]
     else:
         errs["index"] = "找不到『發行量加權股價指數』那一列"
 
@@ -2043,6 +2076,10 @@ def main():
             hpath = os.path.join(HIST_DIR, f"market_{kind}.csv")
             total, added, changed = merge_history(
                 hpath, hdrs[kind], [line], f"market_{kind}")
+            if kind == "index":
+                fixed = _fix_index_sign(hpath)
+                if fixed:
+                    mstat["index_sign_fixed"] = fixed
             write_window(hpath, os.path.join(OUT_DIR, f"market_{kind}.csv"))
             mstat[kind] = {"total": total, "added": added,
                            "changed": len(changed) or None}
