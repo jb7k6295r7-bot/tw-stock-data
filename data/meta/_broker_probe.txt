@@ -1,5 +1,5 @@
-# ⏱ 這一趟：2026-10-16T20:16:41+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38895123210
-broker_probe.py　2026-10-16 20:16 台北
+# ⏱ 這一趟：2026-11-15T15:17:30+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43687943841
+broker_probe.py　2026-11-15 15:17 台北
 ⭐ 問的是：這兩條到底是**全市場 × 全部分點**，還是「熱門股排行」。
 ⛔ 判準不是「有回列」——是**它自己講不講得出它是哪一天、涵蓋誰**。
 ⭐⭐ H1 分點（券商買賣日報）：**這條路是對哪一種規模不可用**
@@ -78,21 +78,19 @@ broker_probe.py　2026-10-16 20:16 台北
            /api/codeQuery
        ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
        ⑤  外部載入的 `.js`：0 支
-       ── https://www.tpex.org.tw/rsrc/js/tables.js（168,139 bytes）
+       ── https://www.tpex.org.tw/rsrc/js/tables.js（124,969 bytes）
        ⓪  `<form action=…>` 的對象：0 種
-       ①  `/…/api/…` 出現過哪些：2 種
+       ①  `/…/api/…` 出現過哪些：1 種
            /api
-           /api/codeQuery
        ②  `fetch(` 的對象：0 種
        ③  `$.ajax` / `url:` 的對象：0 種
-       ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：2 種
            .json
-           /test-proxy/tpex_www/zh-tw/api/codeQuery
            1.json
        ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
        ⑤  外部載入的 `.js`：2 支
            https://www.google.com/recaptcha/api.js?render=explicit
-           https://www.tpex.org.tw/rsrc/js/${base + $(
+           https://www.tpex.org.tw/rsrc/js/${o+$(
        ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
        ⓪  `<form action=…>` 的對象：0 種
        ①  `/…/api/…` 出現過哪些：0 種
@@ -188,21 +186,19 @@ broker_probe.py　2026-10-16 20:16 台北
            /api/codeQuery
        ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
        ⑤  外部載入的 `.js`：0 支
-       ── https://www.tpex.org.tw/rsrc/js/tables.js（168,139 bytes）
+       ── https://www.tpex.org.tw/rsrc/js/tables.js（124,969 bytes）
        ⓪  `<form action=…>` 的對象：0 種
-       ①  `/…/api/…` 出現過哪些：2 種
+       ①  `/…/api/…` 出現過哪些：1 種
            /api
-           /api/codeQuery
        ②  `fetch(` 的對象：0 種
        ③  `$.ajax` / `url:` 的對象：0 種
-       ④  其他 `.ashx`／`.json`／`/api/` 字串：3 種
+       ④  其他 `.ashx`／`.json`／`/api/` 字串：2 種
            .json
-           /test-proxy/tpex_www/zh-tw/api/codeQuery
            1.json
        ⚠ 找不到 `getMsg`／`query`／`search`／`doQuery` 的本體（⇒ 它可能在**外部 .js** 裡，那就要照 ⑤ 的清單再抓一層）
        ⑤  外部載入的 `.js`：2 支
            https://www.google.com/recaptcha/api.js?render=explicit
-           https://www.tpex.org.tw/rsrc/js/${base + $(
+           https://www.tpex.org.tw/rsrc/js/${o+$(
        ── https://www.tpex.org.tw/rsrc/asset/js/gsap.min.js（72,214 bytes）
        ⓪  `<form action=…>` 的對象：0 種
        ①  `/…/api/…` 出現過哪些：0 種

@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-10-16T20:15:08+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38895123210
+# ⏱ 這一趟：2026-11-15T15:15:16+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43687943841
 # site_inventory.py 的輸出。**只讀不寫資料。**
 # 問的是：「這個站到底有沒有我要的東西」——一次問完。
 # ⛔ 它只回答「選單上有沒有這個名字」，不回答「那條端點能不能用」。
@@ -9,13 +9,13 @@
   ⇒ 命中之後仍然要照 `docs/NEW_ENDPOINT.md` 走一次（第 0 步：先印 notes／hints／title／params／total）。
 
 ── TWSE｜https://www.twse.com.tw/res/data/zh/menu-mega.html
-   ✓ 36,250 bytes｜攤平出 **281 條**選單項目
+   ✓ 36,153 bytes｜攤平出 **280 條**選單項目
 
 ── TPEx｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
-   ✓ 69,717 bytes｜攤平出 **767 條**選單項目
+   ✓ 69,730 bytes｜攤平出 **767 條**選單項目
 
 ── TWSE-OpenAPI｜https://openapi.twse.com.tw/v1/swagger.json
-   ✓ 309,960 bytes｜攤平出 **143 條**選單項目
+   ✓ 309,984 bytes｜攤平出 **143 條**選單項目
 
 ── TPEx-OpenAPI｜https://www.tpex.org.tw/openapi/swagger.json
    ✓ 476,923 bytes｜攤平出 **225 條**選單項目
@@ -26,7 +26,7 @@
 ── 逐條比對「我方還缺什麼」──
 
 ★ 月營收（歷史，逐月）
-   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 275/280 條含中文）
    TPEx：⭐ **3 條**
       上櫃 / 上櫃公司資訊 / 上櫃財務統計報表 / 上櫃公司月報 / 營業額及背書保證金額彙總表
         → /zh-tw/mainboard/listed/month/revenue.html
@@ -51,7 +51,7 @@
    TWSE-sitemap：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 0/3109 條含中文）
 
 ★ 財報（歷史，逐季）
-   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 275/280 條含中文）
    TPEx：⭐ **12 條**
       上櫃 / 上櫃公司資訊 / 上櫃財務統計報表 / 上櫃公司季報
         → /zh-tw/mainboard/listed/financial/summary.html
@@ -250,7 +250,7 @@
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 集保／股權分散（歷史）
-   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 275/280 條含中文）
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 764/767 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
@@ -527,7 +527,7 @@
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ★ 發行股數／股本
-   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 275/280 條含中文）
    TPEx：⭐ **3 條**
       上櫃 / 交易資訊 / 盤後資訊 / 個股本益比、殖利率及股價淨值比(依日期查詢)
         → /zh-tw/mainboard/trading/info/daily-pe.html
@@ -733,7 +733,7 @@
       服務 / 資訊購買 / 商品說明 / 盤後資訊( 收市後交易 )
         → /zh-tw/service/data/product/post.html
    TWSE-OpenAPI：⭐ **5 條**
-      集中市場零股交易行情單
+      集中市場盤後零股交易行情單
         → /exchangeReport/TWT53U
       集中市場盤後定價交易
         → /exchangeReport/BFT41U
@@ -781,7 +781,7 @@
       證券商機動提撥機制
         → ${root}/zh/clearing/securities/mechanism.html
       市場會測公告
-        → ${root}/staticFiles/product/broker/Market Testing Schedule20260804(zh).doc
+        → ${root}/staticFiles/product/broker/Market Testing Schedule20261021(zh).doc
    TPEx：⭐ **34 條**
       上櫃 / 交易資訊 / 盤中指數及熱門資料 / 熱門股證券商進出排行(依成交量)
         → /zh-tw/mainboard/trading/realtime/broker-vol.html
@@ -942,7 +942,7 @@
         → https://www.twse.com.tw/zh/brokerService/downloads/T30/T30/
 
 ★ 八大行庫／官股買賣
-   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 276/281 條含中文）
+   TWSE：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 275/280 條含中文）
    TPEx：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 764/767 條含中文）
    TWSE-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 143/143 條含中文）
    TPEx-OpenAPI：⛔ 選單上**沒有**這個名字（⚠ 這不代表站上沒有，只代表選單沒列｜這份目錄 225/225 條含中文）
@@ -1388,12 +1388,12 @@
    TWSE-sitemap：⛔⛔ 這份目錄 3109 條**一條中文都沒有**，而這一列沒有路徑詞 ⇒ 這個 0 是結構造成的，**不是「站上沒有」**
 
 ── ⭐ 掃描範圍表（⛔ 只要有一列失敗，這一趟就不可以寫出「官方沒有」）──
-  ✅ TWSE｜281 條（含中文 276）｜https://www.twse.com.tw/res/data/zh/menu-mega.html
+  ✅ TWSE｜280 條（含中文 275）｜https://www.twse.com.tw/res/data/zh/menu-mega.html
   ✅ TPEx｜767 條（含中文 764）｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
   ✅ TWSE-OpenAPI｜143 條（含中文 143）｜https://openapi.twse.com.tw/v1/swagger.json
   ✅ TPEx-OpenAPI｜225 條（含中文 225）｜https://www.tpex.org.tw/openapi/swagger.json
   ✅ TWSE-sitemap｜3109 條（含中文 0）｜https://www.twse.com.tw/sitemap.xml
-  ⇒ 成功 5 / 5 份目錄｜合計 4,525 條
+  ⇒ 成功 5 / 5 份目錄｜合計 4,524 條
 
 ── ⇒ 這份輸出的用法 ──
   ① 有命中的：拿連結照 `docs/NEW_ENDPOINT.md` 走一次，⛔ 不要直接當成可用

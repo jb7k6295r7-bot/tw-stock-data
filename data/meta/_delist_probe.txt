@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-10-16T20:15:35+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38895123210
+# ⏱ 這一趟：2026-11-15T15:15:50+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43687943841
 # 下市清單／變更交易 端點探針
 # ⛔ 只測不寫資料。開發容器對交易所一律 403（我方閘道）——看 Actions 的結果
 # ⚠ 這兩支的頂層形狀可能是**第三種**（`status`+頂層 `data`，沒有 `fields`）
@@ -139,7 +139,7 @@
    https://www.twse.com.tw/rwd/zh/violation/change?response=json
    頂層鍵 ['data', 'fields', 'groups', 'stat', 'title', 'total']
    ⭐ 平常被丟掉的鍵：['groups', 'stat', 'total']
-     ── title：115年10月16日 變更交易及併採行分盤集合競價交易
+     ── title：115年11月15日 變更交易及併採行分盤集合競價交易
      ── groups：[{"span": 2, "title": ""}, {"span": 3, "title": "變更交易"}, {"span": 3, "title": "併採行分盤"}]
      ── stat：ok
      ── total：15
@@ -185,24 +185,24 @@
 ── ⭐ 上櫃歷史暫停/恢復交易 openapi tpex_spendi_history
    https://www.tpex.org.tw/openapi/v1/tpex_spendi_history
    ⚠ 頂層不是 dict，是 list
-   ⭐ 頂層就是**陣列**：362 列（第一列型別 dict）
+   ⭐ 頂層就是**陣列**：365 列（第一列型別 dict）
    ⭐ 鍵名（照真回應，⛔ 不是轉述）：['CompanyName', 'Date', 'DateOfResumedTrading', 'DateOfSuspendedTrading', 'SecuritiesCompanyCode', 'Serial', 'TimeOfResumedTrading', 'TimeOfSuspendedTrading']
    ⚠ 不同鍵組合的種類：1
    ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-     CompanyName：181 種｜最小 世紀*｜最大 龍鋒｜例 ['世紀*', '世紀*元大57購01', '世紀*元大57購02']
-     Date：1 種 115×362
-     DateOfResumedTrading：11 種 1150803×64、1150514×43、1150429×31、1150716×27、1150122×6、1150313×4、1150210×2、1150622×1、1150813×1、1150112×1、1150616×1｜⚠ 空的 181
-     DateOfSuspendedTrading：11 種 1150731×64、1150513×43、1150428×31、1150715×27、1150121×6、1150312×4、1150209×2、1150618×1、1150812×1、1150109×1、1150615×1｜⚠ 空的 181
-     SecuritiesCompanyCode：181 種｜最小 1788｜最大 9960｜例 ['1788', '1799', '19094']
-     Serial：362 種｜最小 1｜最大 99｜例 ['1', '10', '100']
-     TimeOfResumedTrading：1 種 080000×181｜⚠ 空的 181
-     TimeOfSuspendedTrading：1 種 080000×181｜⚠ 空的 181
+     CompanyName：183 種｜最小 世紀*｜最大 龍鋒｜例 ['世紀*', '世紀*元大57購01', '世紀*元大57購02']
+     Date：1 種 115×365
+     DateOfResumedTrading：12 種 1150803×64、1150514×43、1150429×31、1150716×27、1150122×6、1150313×4、1150210×2、1150622×1、1150813×1、1150112×1、1150616×1、1151113×1｜⚠ 空的 183
+     DateOfSuspendedTrading：13 種｜最小 1150109｜最大 1151113｜例 ['1150109', '1150121', '1150209']｜⚠ 空的 182
+     SecuritiesCompanyCode：183 種｜最小 1788｜最大 9960｜例 ['1788', '1799', '19094']
+     Serial：365 種｜最小 1｜最大 99｜例 ['1', '10', '100']
+     TimeOfResumedTrading：1 種 080000×182｜⚠ 空的 183
+     TimeOfSuspendedTrading：1 種 080000×183｜⚠ 空的 182
      樣本：{"Date": "115", "Serial": "1", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "1150618", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
      樣本：{"Date": "115", "Serial": "2", "SecuritiesCompanyCode": "1788", "CompanyName": "杏昌", "DateOfSuspendedTrading": "", "TimeOfSuspendedTrading": "", "DateOfResumedTrading": "1150622", "TimeOfResumedTrading": "080000"}
      樣本：{"Date": "115", "Serial": "3", "SecuritiesCompanyCode": "1799", "CompanyName": "易威", "DateOfSuspendedTrading": "1150312", "TimeOfSuspendedTrading": "080000", "DateOfResumedTrading": "", "TimeOfResumedTrading": ""}
 
    ══ 與我方 data/meta/delisted.csv 雙向比對 ══
-   鍵的形狀：⛔ 認不出（日期候選 []、代號候選 ['SecuritiesCompanyCode']）｜CompanyName: 像日期 0/362、像代號 0/362｜Date: 像日期 0/362、像代號 0/362｜DateOfResumedTrading: 像日期 0/362、像代號 0/362｜DateOfSuspendedTrading: 像日期 0/362、像代號 0/362｜SecuritiesCompanyCode: 像日期 0/362、像代號 362/362｜Serial: 像日期 0/362、像代號 0/362｜TimeOfResumedTrading: 像日期 0/362、像代號 181/362｜TimeOfSuspendedTrading: 像日期 0/362、像代號 181/362
+   鍵的形狀：⛔ 認不出（日期候選 []、代號候選 ['SecuritiesCompanyCode']）｜CompanyName: 像日期 0/365、像代號 0/365｜Date: 像日期 0/365、像代號 0/365｜DateOfResumedTrading: 像日期 0/365、像代號 0/365｜DateOfSuspendedTrading: 像日期 0/365、像代號 0/365｜SecuritiesCompanyCode: 像日期 0/365、像代號 365/365｜Serial: 像日期 0/365、像代號 0/365｜TimeOfResumedTrading: 像日期 0/365、像代號 182/365｜TimeOfSuspendedTrading: 像日期 0/365、像代號 183/365
    ⛔ 認不出日期／代號欄 ⇒ **不比**（⚠ 硬挑一欄會整批錯位）
 
 ── 上櫃當日暫停/恢復交易 openapi tpex_spendi_today
@@ -213,11 +213,11 @@
    ⚠ 不同鍵組合的種類：1
    ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
      CompanyName：0 種 ｜⚠ 空的 1
-     Date：1 種 20261016×1
+     Date：1 種 20261115×1
      SecuritiesCompanyCode：0 種 ｜⚠ 空的 1
      恢復交易：0 種 ｜⚠ 空的 1
      暫停交易：0 種 ｜⚠ 空的 1
-     樣本：{"Date": "20261016", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
+     樣本：{"Date": "20261115", "SecuritiesCompanyCode": "", "CompanyName": "", "暫停交易": "", "恢復交易": ""}
 
    ══ 與我方 data/meta/delisted.csv 雙向比對 ══
    鍵的形狀：⛔ 認不出（日期候選 []、代號候選 []）｜CompanyName: 像日期 0/1、像代號 0/1｜Date: 像日期 0/1、像代號 0/1｜SecuritiesCompanyCode: 像日期 0/1、像代號 0/1｜恢復交易: 像日期 0/1、像代號 0/1｜暫停交易: 像日期 0/1、像代號 0/1

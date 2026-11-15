@@ -1,10 +1,10 @@
-# ⏱ 這一趟：2026-10-16T20:17:25+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 38895123210
+# ⏱ 這一趟：2026-11-15T15:18:23+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43687943841
 ==============================================================================
 我方哪一支程式打哪一個主機（母體＝真的被 workflow 跑到的 .py）
 ⛔ 這一支不判合不合條款，也不判『開放資料型主機』是不是但書涵蓋的那批
 ==============================================================================
 
-母體：137 支被 workflow 跑到，其中 **41 支**會連外
+母體：140 支被 workflow 跑到，其中 **44 支**會連外
 
   backfill.py
       workflow：backfill.yml／daily.yml
@@ -37,6 +37,15 @@
       workflow：crypto_probe.yml
       B 網站型:api.coingecko.com／api.kraken.com／data.binance.vision／www.bitstamp.net
       寫（線索）：spot
+  curated/foreign_holding/build.py
+      workflow：insider_monthly.yml
+      B 網站型:api.finmindtrade.com／www.twse.com.tw
+      ⚠ 要逐條看路徑:www.tpex.org.tw
+      寫（線索）：early／meta
+  curated/insider_predeclare/build.py
+      workflow：insider_monthly.yml
+      B 網站型:mopsov.twse.com.tw
+      寫（線索）：meta
   db_status.py
       workflow：daily.yml
       B 網站型:mopsov.twse.com.tw
@@ -87,7 +96,7 @@
       A 開放資料型:openapi.twse.com.tw
       ⚠ 要逐條看路徑:www.tpex.org.tw
   mops_history.py
-      workflow：feeds.yml
+      workflow：feeds.yml／revenue_hist.yml
       B 網站型:mopsov.twse.com.tw
       寫（線索）：mops
   mops_history_probe.py
@@ -165,6 +174,9 @@
   treasury.py
       workflow：backfill.yml
       B 網站型:mopsov.twse.com.tw
+  tri_index.py
+      workflow：tri_index.yml
+      B 網站型:www.twse.com.tw
   twse_xflag.py
       workflow：backfill.yml／daily.yml
       B 網站型:www.twse.com.tw
@@ -175,13 +187,13 @@
       workflow：backfill.yml
       B 網站型:mopsov.twse.com.tw
 
-⇒ 會連外的 41 支裡：
+⇒ 會連外的 44 支裡：
      打到 **A 開放資料型**主機的：6 支
-     打到 **B 網站型**主機的：　　33 支
-     打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：19 支
+     打到 **B 網站型**主機的：　　36 支
+     打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：20 支
   ⛔ 三個數字會相加超過總數——**一支可以同時打兩族**，那不是錯。
 
 ── ⭐⭐ 端點層（主機 ＋ 前兩層路徑）：`www.tpex.org.tw` 那一格拆開之後 ──
    ⚠ 母體**只收在條款網域底下**的（twse.com.tw／tpex.org.tw／gretai.org.tw）——⛔ FinMind／GitHub 那些不在這份條款的管轄裡，算進去會把暴露面話大
-     A 開放資料型端點：**8** 支｜B 網站型端點：**30** 支｜❗ 讀不出來的：**1** 支
+     A 開放資料型端點：**8** 支｜B 網站型端點：**33** 支｜❗ 讀不出來的：**1** 支
      ❗ mops_probe.py：www.tpex.org.tw/（⛔ 只有主機、沒有路徑 ⇒ **不猜**）
