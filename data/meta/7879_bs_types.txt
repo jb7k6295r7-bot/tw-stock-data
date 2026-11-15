@@ -36,6 +36,8 @@ Liabilities
 Liabilities_per
 LongtermBorrowings
 LongtermBorrowings_per
+LongtermLiabilitiesCurrentPortion
+LongtermLiabilitiesCurrentPortion_per
 NoncurrentAssets
 NoncurrentAssets_per
 NoncurrentLiabilities
