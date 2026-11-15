@@ -2077,9 +2077,10 @@ def main():
             total, added, changed = merge_history(
                 hpath, hdrs[kind], [line], f"market_{kind}")
             if kind == "index":
+                # ⛔ 不可放進 mstat：main() 會把 mstat 每一格當 dict 讀（11-15 放 int ⇒ AttributeError）
                 fixed = _fix_index_sign(hpath)
                 if fixed:
-                    mstat["index_sign_fixed"] = fixed
+                    manifest["market"]["index_sign_fixed"] = fixed
             write_window(hpath, os.path.join(OUT_DIR, f"market_{kind}.csv"))
             mstat[kind] = {"total": total, "added": added,
                            "changed": len(changed) or None}
