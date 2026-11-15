@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-15T15:29:01+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43687943841
+# ⏱ 這一趟：2026-11-16T01:07:21+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43736594530
 # MOPS／OpenAPI 探針（丁級 11 終點驗證）
 # ⛔ 在開發容器裡跑一定失敗（我方閘道對交易所 403）——要看 Actions 上的結果
 
@@ -7,11 +7,11 @@
   ── [快照時戳] `出表日期` 有 1 個相異值：['1151114']
   ── [⭐ 批次日] `資料年月` 有 1 個相異值：['11510']
   ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。
-      ⏱ openapi t187ap05_L：2.1 秒（此時累計 2／690 秒）
+      ⏱ openapi t187ap05_L：1.7 秒（此時累計 2／690 秒）
 
 ── OpenAPI https://openapi.twse.com.tw/v1/opendata/t187ap05_O
   ⛔ 不是 JSON（JSONDecodeError）；前 200 bytes：b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml">\n<head>\n<meta http-equiv="Content-T'
-      ⏱ openapi t187ap05_O：2.0 秒（此時累計 4／690 秒）
+      ⏱ openapi t187ap05_O：1.5 秒（此時累計 3／690 秒）
 
 ── 清單 D2 候選：⭐ 上櫃每日重大訊息｜來源：我方 `_tpex_probe.txt` 第 67 行，⛔ 不是我拼的
 ── OpenAPI https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
@@ -20,7 +20,7 @@
   ── [事件日｜⛔ 不回答涵蓋期間] `事實發生日` 有 4 個相異值：['1151103', '1151113', '1151114', '1151116']
   ── [⭐ 批次日] `發言日期` 有 1 個相異值：['1151114']
   ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。　⚠ 而事件日 ['事實發生日'] 散在好幾期是**正常的**（一批單日的公告在講過去甚至未來的事）⇒ ⛔ 那不是歷史
-      ⏱ openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O：6.1 秒（此時累計 10／690 秒）
+      ⏱ openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O：5.3 秒（此時累計 8／690 秒）
 
 ── 清單 D2 候選：⚠ 上市的對應那條｜**這條是我依 `_O`／`_L` 慣例拼的** ⇒ 量得到才算
 ── OpenAPI https://openapi.twse.com.tw/v1/opendata/t187ap04_L
@@ -29,14 +29,14 @@
   ── [事件日｜⛔ 不回答涵蓋期間] `事實發生日` 有 2 個相異值：['1150824', '1151114']
   ── [⭐ 批次日] `發言日期` 有 1 個相異值：['1151114']
   ⇒ ⛔ **批次日**只有一個值 ⇒ 只給最新一期，沒有歷史。　⚠ 而事件日 ['事實發生日'] 散在好幾期是**正常的**（一批單日的公告在講過去甚至未來的事）⇒ ⛔ 那不是歷史
-      ⏱ openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L：0.8 秒（此時累計 11／690 秒）
+      ⏱ openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L：0.7 秒（此時累計 9／690 秒）
 
 ── 橋接 ajax_t21sc03（{'month': '01'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t21sc03 year=114 {'month': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:18:34
+      ── datetime：115/11/16 00:57:52
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a3373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -45,47 +45,47 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:18:47
+      ── datetime：115/11/16 00:58:03
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t21sc03?parameters=0eb65210d5bdc34ea16e295ccdbad1090e5f404b29521e58d27f3ed76f7b764a1c51c127866818b0542dd91018…（blob 長 316）
     ⛔ 取舊站失敗：RemoteDisconnected: Remote end closed connection without response
   ⇒ **未驗**：至少一邊沒取回來 ⇒ ⛔ 不可以說這條路通了
-      ⏱ bridge ajax_t21sc03：26.0 秒（此時累計 37／690 秒）
+      ⏱ bridge ajax_t21sc03：22.9 秒（此時累計 32／690 秒）
 
 ── 橋接 ajax_t163sb04（{'season': '02'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=114 {'season': '02'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:19:01
+      ── datetime：115/11/16 00:58:15
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad1094fa31aee87661611d3f8c22bea3fb50dc5ecd9de464819424529fbfa8…（blob 長 317）
-    ✓ 取回 1,635,464 bytes
+    ✓ 取回 1,635,476 bytes
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t163sb04 year=110 {'season': '02'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:19:04
+      ── datetime：115/11/16 00:58:18
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa893af75430219621a778d1a642cb69e1b4ab9ce3350a8f66cbaec2e131847643b25a9d3aac227a1154318f40f7d39b245c6669
     → https://mopsov.twse.com.tw/mops/web/ajax_t163sb04?parameters=0eb65210d5bdc34ea16e295ccdbad109bd5646784ebab48efcde3be81b33a016c5ecd9de464819424529fbfa8…（blob 長 317）
     ✓ 取回 1,506,940 bytes
-  ⇒ year=114 取回 1,635,464 bytes；year=110 取回 1,506,940 bytes
+  ⇒ year=114 取回 1,635,476 bytes；year=110 取回 1,506,940 bytes
     [114] 中文 4,216 字｜<tr> 1103 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 上市公司第二季資料 註1：依證券交易法第36條及證券期貨局相關函令規定，財務報告申報期限如下： 1.一般行業申報期限：第一季為5月15日，第二季為8月14日，第三季為11月14日，年度為3月31日。 2.金控業申報期限：第一季為5月30日，第二季為8月31日，第三季為11月29日，年度為3月31日。 3
     [110] 中文 3,943 字｜<tr> 1019 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 上市公司第二季資料 註1：依證券交易法第36條及證券期貨局相關函令規定，財務報告申報期限如下： 1.一般行業申報期限：第一季為5月15日，第二季為8月14日，第三季為11月14日，年度為3月31日。 2.金控業申報期限：第一季為5月30日，第二季為8月31日，第三季為11月29日，年度為3月31日。 3
   ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
-      ⏱ bridge ajax_t163sb04：8.1 秒（此時累計 45／690 秒）
+      ⏱ bridge ajax_t163sb04：5.6 秒（此時累計 38／690 秒）
 
 ── 橋接 t05st01（{'month': '09', 'day': '01'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=t05st01 year=114 {'month': '09', 'day': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:19:08
+      ── datetime：115/11/16 00:58:20
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -94,7 +94,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:19:10
+      ── datetime：115/11/16 00:58:23
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a…（blob 長 311）
@@ -105,14 +105,14 @@
     [110] 中文 516 字｜<tr> 14 個｜js 5 支　⛔ **js 空殼**｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 --> 全站搜尋 營收 除權息 電子書 法說會 庫藏股 董監持股 獨立董事 董監酬金 ETF TDR 常用報表 基本資料 彙總報表 股東會及股利 公司治理 財務報表 重大訊息與公告 營運概況 投資專區 認購（售）權證 債券 資產證券化 西元日期+版次+程式設計師) 2026040810thomas:(T
   ⇒ ⚠⚠ **兩期都是 js 空殼**（框架回來了、資料是載入後由 js 取的）　⇒ ⛔ **不可判定**它有沒有歷史——這是「**我方取不到**」，跟 TDCC `qryStockAjax` 回 2 bytes、櫃買那三頁同一族，⛔ **不是**「官方沒有」，⛔ 也不是「期別參數被忽略」。
-      ⏱ bridge t05st01：3.6 秒（此時累計 49／690 秒）
+      ⏱ bridge t05st01：3.8 秒（此時累計 41／690 秒）
 
 ── ⭐ `t05st01` 的 js 去打誰（只挖線索，⛔ 不下結論）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=t05st01 year=114 {'month': '09', 'day': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:19:12
+      ── datetime：115/11/16 00:58:24
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a9fc4c
     → https://mopsov.twse.com.tw/mops/web/t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c…（blob 長 311）
@@ -183,14 +183,14 @@
       ⑤  外部載入的 `.js`：0 支
               ⚠ 這一份裡**找不到** `getMsg`（⛔ 不是「它不存在」，是不在這一支）
               ⚠ 這一份裡**找不到** `AjaxCheck`（⛔ 不是「它不存在」，是不在這一支）
-      ⏱ xhr_hunt t05st01：86.5 秒（此時累計 135／690 秒）
+      ⏱ xhr_hunt t05st01：46.9 秒（此時累計 88／690 秒）
 
 ── 橋接 ajax_t05st01（{'month': '09', 'day': '01'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t05st01 year=114 {'month': '09', 'day': '01'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:20:38
+      ── datetime：115/11/16 00:59:11
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e…（blob 長 316）
@@ -199,7 +199,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:21:16
+      ── datetime：115/11/16 00:59:12
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13648ba42fc54058ca80acc1e084cb8bcadb1ccdb6fe13b3b07be3c419ae861cda1e02b4a2d667960a8a80c67e52016a
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018…（blob 長 316）
@@ -210,14 +210,14 @@
     [110] 中文 25 字｜<tr> 0 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 未指定公司代號時，僅能查詢單日重大訊息
   ⇒ ⛔⛔ **兩期內容逐位元組完全相同，而且不是查無資料頁** ⇒ 期別參數被忽略，跟 `t164sb03` 同一種靜默失敗。**這條路不可用。**
-      ⏱ bridge ajax_t05st01（無代號）：38.9 秒（此時累計 174／690 秒）
+      ⏱ bridge ajax_t05st01（無代號）：2.4 秒（此時累計 91／690 秒）
 
 ── 橋接 ajax_t05st01（{'month': '09', 'day': '01', 'co_id': '2330'}）
   POST https://mops.twse.com.tw/mops/api/redirectToOld  apiName=ajax_t05st01 year=114 {'month': '09', 'day': '01', 'co_id': '2330'}
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:21:17
+      ── datetime：115/11/16 00:59:13
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e1212c93b88cefe844ab0e6f28e730962e78c2354a5cb05c8745ccaba27c38f21a9951a0ca051bcf3a87e1616802cd0e519685
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d63373d7f8b74deb633a11ffb35e…（blob 長 348）
@@ -226,7 +226,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:21:19
+      ── datetime：115/11/16 00:59:15
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018aff6a13b88cefe844ab0e6f28e730962e78c2354a5cb05c8745ccaba27c38f21a9951a0ca051bcf3a87e1616802cd0e519685
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad1093db75173a4b6ce95063ebecfc01cd4d61c51c127866818b0542dd91018…（blob 長 348）
@@ -237,7 +237,7 @@
     [110] 中文 396 字｜<tr> 16 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 本資料由 (上市公司) 2330 台積電 公司提供 請至財務及交易資訊重點專區參考公司相關 財務資訊 及 交易資訊 公司代號 公司名稱 發言日期 發言時間 主旨 &nbsp; &nbsp;2330 &nbsp;台積電 &nbsp;110/09/01 &nbsp;16:08:03 &nbsp;本公司將參加
   ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
-      ⏱ bridge ajax_t05st01（帶代號）：3.6 秒（此時累計 178／690 秒）
+      ⏱ bridge ajax_t05st01（帶代號）：2.5 秒（此時累計 93／690 秒）
 
       ── ⭐⭐ 只做這一發：ajax_t05st01 吃不吃 `sdate`／`edate` 區間
 ── 橋接 ajax_t05st01（{'sdate': '0901', 'edate': '0910', 'co_id': '2330'}）
@@ -245,7 +245,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:21:21
+      ── datetime：115/11/16 00:59:16
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e23d1b3e3b8ef03c71d9a039d80720cfd43bf1c65bd3c5eab7324a774f3c9db09762ada20dc068e1bca88947e765c37448b4afa81caedbae6ad2b2cc9fb052c05
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e23d1b3e3b8ef03c71d9a039d807…（blob 長 380）
@@ -254,7 +254,7 @@
     頂層鍵 ['code', 'datetime', 'message', 'result']
     ⭐ 平常被丟掉的鍵：['code', 'datetime', 'message', 'result']
       ── code：200
-      ── datetime：115/11/15 15:21:25
+      ── datetime：115/11/16 00:59:18
       ── message：查詢成功
       ── result：{"url": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e25b3cd17ae0c90a4b2c3f6667521169913bf1c65bd3c5eab7324a774f3c9db09762ada20dc068e1bca88947e765c37448b4afa81caedbae6ad2b2cc9fb052c05
     → https://mopsov.twse.com.tw/mops/web/ajax_t05st01?parameters=0eb65210d5bdc34ea16e295ccdbad10964e4a3a1bc3a58f79e8bbbc9ee1db4e25b3cd17ae0c90a4b2c3f666752…（blob 長 380）
@@ -265,7 +265,7 @@
     [110] 中文 5,935 字｜<tr> 235 個｜js 1 支｜（沒有查無字樣）
       ⭐ 前 160 字：公開資訊觀測站 本資料由 (上市公司) 2330 台積電 公司提供 請至財務及交易資訊重點專區參考公司相關 財務資訊 及 交易資訊 公司代號 公司名稱 發言日期 發言時間 主旨 &nbsp; &nbsp;2330 &nbsp;台積電 &nbsp;110/01/04 &nbsp;16:39:32 &nbsp;公告本公司1
   ⇒ ⭐ 兩期內容不同 ⇒ 期別參數**真的生效**。⚠ 範圍：只驗了這兩個期別、這一個 TYPEK。
-      ⏱ bridge ajax_t05st01（sdate/edate 區間）：7.8 秒（此時累計 185／690 秒）
+      ⏱ bridge ajax_t05st01（sdate/edate 區間）：4.5 秒（此時累計 98／690 秒）
 
 ── ⭐ 清單 D2 新入口：公開資訊觀測站**公告快易查** `ezsearch`
    https://mopsov.twse.com.tw/mops/web/ezsearch
@@ -352,16 +352,16 @@
            SUBJECT：283 種｜最小 (更正舉辦單位)受邀參加第一金證券舉辦之2026第三季投資論壇｜最大 玉山金控受邀參加Goldman Sachs舉辦Asia Leaders Conference｜例 ['(更正舉辦單位)受邀參加第一金證券舉辦之2026第三季投資論壇', '110年11月法人說明會簡報', '111年11月法人說明會簡報']
            TYPEK：1 種 上市×1000
       ── step=01｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
-         [形狀] 3,889 bytes｜中文 363 字｜<tr> 0 個｜js 0 支
-         ⭐ 前 300 字：﻿ {"system_time":"15:20","data":[{"COMPANY_NAME":"世紀能源","CDATE":"115/11/15","CTIME":"07:00:04","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261115&COMPANY_ID=2072","SUBJECT":"公告本公司名稱由「世紀離岸風電設備股份有限公司」更名為「世紀能源設備股份有限公司」
+         [形狀] 3,647 bytes｜中文 295 字｜<tr> 0 個｜js 0 支
+         ⭐ 前 300 字：﻿ {"system_time":"00:50","data":[{"COMPANY_NAME":"富威電力","CDATE":"115/11/15","CTIME":"17:47:49","HYPERLINK":"https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=3&SPOKE_TIME=174749&SPOKE_DATE=20261115&COMPANY_ID=6994","SUBJECT":"公告本公司永續發展委員會成員異動","COMPANY_ID":"6994"},{
          ⭐ `data` **10 列**｜欄名 ['CDATE', 'COMPANY_ID', 'COMPANY_NAME', 'CTIME', 'HYPERLINK', 'SUBJECT']
          ⭐ 每個鍵的相異值（⇒ 它自己講不講得出涵蓋期間；第二點）：
-           CDATE：3 種 115/11/14×6、115/11/15×2、115/11/13×2
-           COMPANY_ID：8 種 2072×2、3489×2、3324×1、2754×1、4174×1、3432×1、3349×1、6182×1
-           COMPANY_NAME：8 種 世紀能源×2、長耀地產×2、雙鴻×1、亞洲藏壽司×1、浩鼎×1、台端×1、寶德×1、合晶×1
-           CTIME：8 種 07:00:04×2、07:00:03×2、21:31:26×1、19:36:23×1、09:37:29×1、08:11:04×1、21:55:29×1、21:50:33×1
-           HYPERLINK：10 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261115&COMPANY_ID=2072×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261115&COMPANY_ID=3489×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=213126&SPOKE_DATE=20261114&COMPANY_ID=3324×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=193623&SPOKE_DATE=20261114&COMPANY_ID=2754×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=4&SPOKE_TIME=93729&SPOKE_DATE=20261114&COMPANY_ID=4174×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=81104&SPOKE_DATE=20261114&COMPANY_ID=3432×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70003&SPOKE_DATE=20261114&COMPANY_ID=2072×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70003&SPOKE_DATE=20261114&COMPANY_ID=3489×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=3&SPOKE_TIME=215529&SPOKE_DATE=20261113&COMPANY_ID=3349×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=4&SPOKE_TIME=215033&SPOKE_DATE=20261113&COMPANY_ID=6182×1
-           SUBJECT：8 種 公告本公司名稱由「世紀離岸風電設備股份有限公司」更名為「世紀能源設備股份有限公司」，公告期間：115年8月26日至115年11月25日。×2、公告本公司名稱由「森寶開發股份有限公司」更名為 「長耀地產投資股份有限公司」，公告期間：115年11月4日至116年2月3日×2、公告本公司受邀參加 JP Morgan APAC Technology, Innovation and Growth Conference×1、更正公告本公司民國115年第3季合併財務報告經董事會決議通過×1、公告本公司與Novartis Pharma AG簽訂ADC平台技術合作暨授權合約×1、依臺灣證券交易所股份有限公司臺證上一字第1121801204號函辦理×1、更正公告本公司董事會決議召開115年第1次股東臨時會相關事宜(新增召開事由四:討論事項)×1、本公司董事會決議限制員工權利新股增資基準日案(更正增資基準日)×1
+           CDATE：2 種 115/11/15×5、115/11/14×5
+           COMPANY_ID：7 種 6994×3、2072×2、3489×1、3324×1、2754×1、4174×1、3432×1
+           COMPANY_NAME：7 種 富威電力×3、世紀能源×2、長耀地產×1、雙鴻×1、亞洲藏壽司×1、浩鼎×1、台端×1
+           CTIME：9 種 07:00:04×2、17:47:49×1、17:47:36×1、17:47:06×1、21:31:26×1、19:36:23×1、09:37:29×1、08:11:04×1、07:00:03×1
+           HYPERLINK：10 種 https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=3&SPOKE_TIME=174749&SPOKE_DATE=20261115&COMPANY_ID=6994×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=174736&SPOKE_DATE=20261115&COMPANY_ID=6994×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=174706&SPOKE_DATE=20261115&COMPANY_ID=6994×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261115&COMPANY_ID=2072×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70004&SPOKE_DATE=20261115&COMPANY_ID=3489×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=213126&SPOKE_DATE=20261114&COMPANY_ID=3324×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=2&SPOKE_TIME=193623&SPOKE_DATE=20261114&COMPANY_ID=2754×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=4&SPOKE_TIME=93729&SPOKE_DATE=20261114&COMPANY_ID=4174×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=81104&SPOKE_DATE=20261114&COMPANY_ID=3432×1、https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&stp=1&step=1&SEQ_NO=1&SPOKE_TIME=70003&SPOKE_DATE=20261114&COMPANY_ID=2072×1
+           SUBJECT：9 種 公告本公司名稱由「世紀離岸風電設備股份有限公司」更名為「世紀能源設備股份有限公司」，公告期間：115年8月26日至115年11月25日。×2、公告本公司永續發展委員會成員異動×1、公告本公司自然人董事異動×1、公告本公司董事長異動×1、公告本公司名稱由「森寶開發股份有限公司」更名為 「長耀地產投資股份有限公司」，公告期間：115年11月4日至116年2月3日×1、公告本公司受邀參加 JP Morgan APAC Technology, Innovation and Growth Conference×1、更正公告本公司民國115年第3季合併財務報告經董事會決議通過×1、公告本公司與Novartis Pharma AG簽訂ADC平台技術合作暨授權合約×1、依臺灣證券交易所股份有限公司臺證上一字第1121801204號函辦理×1
       ── step=02｜CO_ID=2330｜PRO_ITEM=C00｜SDATE=20260101 EDATE=20260915
          [形狀] 41,534 bytes｜中文 640 字｜<tr> 0 個｜js 0 支
          ⭐ 前 300 字：﻿ 公司現況及股權變動 E01 公開說明書 F01 公司基本資料 F02 募資計畫 F03 變更登記 F04 特別股 F07 員工認股權憑證 F08 員工認股權憑證執行情形 F09 限制員工權利新股 F10 僑外投資持股 F11 庫藏股基本資料 F12 庫藏股買回情形 F13 庫藏股執行結果 M11 發行有價證券、減資、併購或股份轉交換 M35 庫藏股 M36 減資或面額異動 M40 暫停/恢復交易 M42 終止上市 重大交易、合約及投資 F37 公開收購說明書 M10 重要契約或產品開發 M15 重大投資計畫 M20 重大取得或處分資產 M24 取得或處分私募證券 M38 公開收購 重大訊息
@@ -840,7 +840,7 @@
         ⚠ 這一份裡**找不到** `CO_MARKET`（⛔ 不是「它不存在」，是不在這一支）
      ⭐ `PRO_ITEM` 前後：
         ⚠ 這一份裡**找不到** `PRO_ITEM`（⛔ 不是「它不存在」，是不在這一支）
-      ⏱ ezsearch：304.2 秒（此時累計 490／690 秒）
+      ⏱ ezsearch：191.1 秒（此時累計 289／690 秒）
 ── ⭐⭐ 策略線 2155：`revenue_hist` 一檔 KY 都沒有，`_0` 尾碼是什麼
    ⛔ 離線已排除 (丙)（當期 feed 有 122 檔 KY）與 (乙)（解析 987 列 ＝ 我方存 987 列）⇒ 這一節只驗 (甲) 的**補法**
 
@@ -883,7 +883,7 @@
      ⚠ ⛔ **取不回來不等於那一頁不存在**（第二點）——這一格仍然是【未驗】
 
   ⇒ ⛔ 這一節**不下結論**：哪一個尾碼是外國企業，由上面「含 KY 幾檔」當場講出來；⚠ 而三個尾碼**都沒有 KY** 也是一種答案（⇒ 那就要去找別的路，⛔ 不是把 `_1` 硬接上去）
-      ⏱ ky_revenue：10.8 秒（此時累計 500／690 秒）
+      ⏱ ky_revenue：10.4 秒（此時累計 299／690 秒）
 ── ⭐⭐⭐ 策略線 2225：月營收歷史面板是不是**事後重繪**（倖存者偏誤）
    離線已量到：真的停止交易的 140 檔 ⇒ 面板 **0 檔**；仍在市 2,333 檔 ⇒ 1,844 檔（79.0%）
    ⇒ 這一節只問一件事：**那一期的頁裡有沒有它**
@@ -910,7 +910,7 @@
 
   ⇒ ⛔ 這一節**不下結論**：四發裡「否」幾發、「是」幾發，由上面那幾行當場講出來。
   ⚠ 而**全部取不回來**也是一種結果（⇒ 這一格未驗），⛔ 不可以讀成「證實了」。
-      ⏱ survivor：13.6 秒（此時累計 514／690 秒）
+      ⏱ survivor：12.9 秒（此時累計 312／690 秒）
 ── ⭐⭐ 財報三表的歷史頁有沒有同一個倖存者偏誤（⛔ 另一條路，要自己量）
    ⚠ 月營收那條已證實是事後重繪（四發全否）⇒ ⛔ 不可以套過來（三點②：每支端點都要自己實測）
 
@@ -923,7 +923,7 @@
 
   ── t163sb04（fs）｜otc｜民國 110 年第 1 季
      POST https://mopsov.twse.com.tw/mops/web/ajax_t163sb04
-     [形狀] 1,120,002 bytes｜編碼 utf-8｜2 張表｜⭐ 相異代號 754 個
+     [形狀] 1,120,000 bytes｜編碼 utf-8｜2 張表｜⭐ 相異代號 754 個
      ⭐ 代號整份（754 個，供母體級差集用）：1240,1259,1264,1268,1336,1565,1569,1570,1580,1584,1586,1591,1593,1595,1599,1742,1777,1781,1784,1785,1788,1796,1799,1813,1815,2035,2061,2063,2064,2065,2066,2067,2070,2221,2230,2235,2596,2640,2641,2643,2718,2719,2724,2726,2729,2732,2734,2736,2740,2743,2745,2752,2754,2755,2756,2916,2924,2926,2937,2947,3064,3066,3067,3071,3073,3078,3081,3083,3085,3086,3088,3093,3095,3105,3114,3115,3118,3122,3128,3131,3141,3147,3152,3162,3163,3169,3171,3176,3178,3188,3191,3205,3206,3207,3211,3213,3217,3218,3219,3221,3224,3226,3227,3228,3230,3232,3234,3236,3252,3259,3260,3264,3265,3268,3272,3276,3284,3285,3287,3288,3289,3290,3293,3294,3297,3303,3306,3310,3313,3317,3322,3323,3324,3325,3332,3339,3354,3357,3360,3362,3363,3372,3373,3374,3379,3388,3390,3402,3434,3438,3441,3444,3455,3465,3466,3479,3483,3484,3489,3490,3491,3492,3498,3499,3508,3511,3512,3516,3520,3521,3522,3523,3526,3527,3529,3531,3537,3540,3541,3546,3548,3551,3552,3555,3556,3558,3564,3567,3570,3577,3580,3581,3587,3594,3597,3609,3611,3615,3623,3624,3625,3628,3629,3630,3631,3632,3646,3663,3664,3666,3672,3675,3680,3684,3685,3687,3689,3691,3693,3707,3709,3710,3713,4102,4105,4107,4109,4111,4113,4114,4116,4120,4121,4123,4126,4127,4128,4129,4131,4138,4139,4147,4153,4154,4157,4160,4161,4162,4163,4167,4168,4171,4173,4174,4175,4183,4188,4192,4198,4205,4207,4303,4304,4305,4401,4402,4406,4413,4416,4417,4419,4420,4430,4432,4433,4502,4503,4506,4510,4513,4523,4527,4528,4529,4530,4533,4534,4535,4538,4541,4542,4543,4549,4550,4554,4556,4561,4563,4568,4580,4609,4702,4706,4707,4711,4714,4716,4721,4726,4728,4729,4735,4741,4743,4744,4745,4747,4754,4760,4767,4804,4806,4903,4905,4907,4908,4909,4911,4924,4931,4933,4939,4946,4950,4953,4966,4971,4972,4973,4974,4979,4991,4995,5009,5011,5013,5014,5015,5016,5201,5202,5205,5206,5209,5210,5211,5212,5213,5220,5223,5227,5230,5245,5251,5263,5272,5274,5276,5278,5287,5289,5291,5299,5301,5302,5309,5310,5312,5314,5315,5321,5324,5328,5340,5344,5345,5347,5348,5351,5353,5355,5356,5364,5381,5386,5392,5398,5403,5410,5425,5426,5432,5438,5439,5443,5450,5452,5455,5457,5460,5464,5465,5468,5474,5475,5478,5481,5483,5487,5488,5489,5490,5493,5498,5508,5511,5512,5514,5516,5520,5523,5529,5530,5536,5543,5601,5603,5604,5609,5701,5703,5704,5864,5878,5902,5903,5904,5905,6015,6016,6020,6021,6023,6026,6101,6103,6104,6109,6111,6113,6114,6118,6121,6122,6123,6124,6125,6126,6127,6129,6130,6134,6138,6140,6143,6144,6146,6147,6148,6150,6151,6154,6156,6158,6160,6161,6163,6167,6169,6170,6171,6173,6174,6175,6179,6180,6182,6185,6186,6187,6188,6190,6194,6195,6198,6199,6203,6204,6207,6208,6210,6212,6217,6218,6219,6220,6221,6222,6223,6227,6228,6229,6231,6233,6234,6236,6237,6240,6241,6242,6244,6245,6246,6248,6259,6261,6263,6264,6265,6266,6270,6274,6275,6276,6279,6284,6290,6291,6292,6294,6411,6417,6418,6419,6425,6432,6435,6441,6461,6462,6465,6469,6470,6482,6485,6486,6488,6492,6494,6496,6499,6506,6508,6509,6510,6512,6516,6523,6527,6530,6532,6535,6538,6542,6546,6547,6548,6556,6560,6561,6568,6569,6570,6574,6576,6577,6578,6588,6590,6593,6596,6603,6609,6612,6613,6615,6616,6624,6629,6640,6642,6643,6649,6651,6654,6661,6662,6664,6667,6679,6680,6683,6684,6690,6697,6703,6712,6716,6727,6728,6732,6733,6741,6751,6752,6761,6762,6763,6767,6788,6803,7402,7556,8024,8027,8032,8034,8038,8040,8042,8043,8044,8047,8048,8049,8050,8054,8059,8064,8066,8067,8068,8069,8071,8074,8076,8077,8080,8083,8084,8085,8086,8087,8088,8089,8091,8092,8093,8096,8097,8099,8107,8109,8111,8121,8147,8155,8171,8176,8182,8234,8240,8255,8277,8279,8284,8289,8291,8299,8342,8349,8354,8358,8383,8390,8401,8403,8409,8410,8415,8416,8421,8423,8424,8426,8431,8432,8433,8435,8436,8437,8440,8444,8446,8450,8455,8472,8477,8489,8905,8906,8916,8917,8921,8923,8924,8927,8928,8929,8930,8931,8932,8933,8935,8936,8937,8938,8941,8942,9949,9950,9951,9960,9962
      ⭐ 那幾檔在裡面：（一檔都不在）
      ⛔ 不在裡面的：[('5371', '中光電')]
@@ -936,13 +936,13 @@
 
   ── t163sb05（bs）｜otc｜民國 110 年第 1 季
      POST https://mopsov.twse.com.tw/mops/web/ajax_t163sb05
-     [形狀] 896,375 bytes｜編碼 utf-8｜2 張表｜⭐ 相異代號 754 個
+     [形狀] 896,377 bytes｜編碼 utf-8｜2 張表｜⭐ 相異代號 754 個
      ⭐ 那幾檔在裡面：（一檔都不在）
      ⛔ 不在裡面的：[('5371', '中光電')]
 
   ⇒ ⛔ 這一節**不下結論**：在／不在由上面那幾行當場講出來。
   ⚠ 而**全部取不回來**也是一種結果（這一格未驗），⛔ 不可以讀成「跟月營收一樣」，也不可以讀成「不一樣」。
-      ⏱ survivor_fs：25.3 秒（此時累計 539／690 秒）
+      ⏱ survivor_fs：51.5 秒（此時累計 364／690 秒）
 
 ── ⭐ `t21sc03`（revenue_hist 的來源）的欄名：有沒有公告日
    https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_1_0.html
@@ -959,11 +959,11 @@
       [ 9] 前期比較增減(%)
    ⛔ **一個像日期的欄都沒有** ⇒ 來源本身就沒有公告日　⇒ 前視只能靠規則擋（次月 10 日），⚠ 而規則擋不住提前／延後公告的
    （解析：編碼 cp950｜68 張表｜991 列｜跳過 33 列；⛔ 這裡只看欄名，不寫任何資料檔）
-      ⏱ revenue_hist_columns：2.4 秒（此時累計 542／690 秒）
+      ⏱ revenue_hist_columns：14.9 秒（此時累計 378／690 秒）
 
 ── ⭐ D2 第四條路：data.gov.tw dataset **18415**（⚠ 這個 id 是我自己筆記裡的，⛔ **我沒有驗過它存在**）
    ── 網頁：https://data.gov.tw/dataset/18415
-      ✓ 520,956 bytes
+      ✓ 525,550 bytes
       ⭐ 回應裡有沒有回音 `18415`：True　⇒ ⛔ False 的話，這個 id **多半是我編的**
       ⭐ 可讀文字前 400 字（逐字，⛔ 不是我的摘要）：
          上市公司每日重大訊息 ｜ 政府資料開放平臺 小幫手查詢服務(Beta版) 介接TAIDE服務 English （ Open AI ） No data 全部資料集瀏覽 預計下架資料集 歷史資料專區 資料集清單下載區 應用展示專區 教育資源專區 活化應用專區 獎勵活動專區 我想要更多 我有話要說 最新消息 專欄文章 關於平臺 網站導覽 常見問答 應用工具專區 指引文件 您的瀏覽器不支援 JavaScr
@@ -976,7 +976,7 @@
          {"help":"","success":true,"result":{"categoryService":"800","categoryDataset":"A","datasetId":18415,"identifier":"A45020000D-000351","title":"上市公司每日重大訊息","description":"本國及第一上市公司每日重大訊息彙總報表 (證交所)","typ
          e":"rawData","license":"1","cost":"free","dataProvider":"N121467221","publisherOID":"2.16.886.101.20003.20052.20004","publisherContactName":"開放資料管理者","publisherContactPhone":"0227928188","publisherCon
       ⭐ 含這幾個詞的：['發言日', '重大訊息']　⇒ ⛔ 一個都沒有 ⇒ 這個資料集**不是** D2 要的東西
-      ⏱ datagov_d2：2.3 秒（此時累計 544／690 秒）
+      ⏱ datagov_d2：2.3 秒（此時累計 381／690 秒）
 
 ── ⭐⭐ MOPS 條款原文（市場情報分析線 1508（乙）；⛔ 範圍＝整個 `mopsov`）
    ① 首頁 https://mopsov.twse.com.tw/mops/web/index
@@ -987,7 +987,7 @@
       ✓ https://mopsov.twse.com.tw/mops/web/ezsearch　母體 2 個 <a>　⇒ 新增 **0** 條
       ✓ https://mopsov.twse.com.tw/mops/web/t132sb26　母體 235 個 <a>　⇒ 新增 **0** 條
       ✓ https://cam.twse.com.tw/antifraud　母體 23 個 <a>　⇒ 新增 **0** 條
-      ✓ https://mopsov.twse.com.tw/mops/web/t05st10_ifrs　母體 86 個 <a>　⇒ 新增 **0** 條
+      ✗ https://mopsov.twse.com.tw/mops/web/t05st10_ifrs　URLError: <urlopen error timed out>　⇒ 這一頁是【未驗】
       ✓ https://mopsov.twse.com.tw/mops/web/t203sb01　母體 234 個 <a>　⇒ 新增 **0** 條
       ✓ https://mopsov.twse.com.tw/mops/web/t132sb02　母體 241 個 <a>　⇒ 新增 **4** 條
       ✓ https://mopsov.twse.com.tw/mops/web/t05st01　母體 36 個 <a>　⇒ 新增 **0** 條
@@ -1007,7 +1007,7 @@
       ✓ https://www.twse.com.tw/zh/products/vendors　母體 53 個 <a>　⇒ 新增 **0** 條
       ✓ https://www.twse.com.tw/　母體 134 個 <a>　⇒ 新增 **0** 條
       ✓ https://www.tpex.org.tw/　母體 91 個 <a>　⇒ 新增 **5** 條
-   ⇒ ⭐ 兩層合計 **19** 條候選（②真的走到 24／24 頁）
+   ⇒ ⭐ 兩層合計 **19** 條候選（②真的走到 23／24 頁）
       ── ●自民國101年起，開放外國企業來臺第一上市上櫃及登錄興櫃股票得為無面額或面額不限新臺幣十元，相關規範差異及簡稱辨別方式，請投資人詳加閱讀。　https://mopsov.twse.com.tw/denominations_2012.pdf　（命中：文字:規範）
       ── ●註冊地國(日本)股東權益保護重要事項和我國相關規範差異。　https://mopsov.twse.com.tw/nas/protect/t132/ShareholderRightsDifference.pdf　（命中：文字:規範）
       ── ●註冊地國(日本)股務作業和我國相關規範差異。　https://mopsov.twse.com.tw/nas/protect/t132/ShareholderServiceDifference.pdf　（命中：文字:規範）
@@ -1198,27 +1198,27 @@
    ══ 原文：營運持續政策　（命中：文字:政策）
       ⛔ **這是二進位檔**（網址尾巴是二進位檔）⇒ 本節**不解析**，⚠ 要看內容請直接開上面那個網址。
       （⭐ 這一行存在的理由：probe 136 把 4 份 PDF 的二進位當成「條款原文」寫進輸出檔）
-      ⏱ terms：94.3 秒（此時累計 638／690 秒）
+      ⏱ terms：198.0 秒（此時累計 579／690 秒）
 
 ══ ⏱ 逐案例耗時（⭐ 這一段是為了決定「該加預算還是該拆」）══
-    304.2 秒  ezsearch
-     94.3 秒  terms
-     86.5 秒  xhr_hunt t05st01
-     38.9 秒  bridge ajax_t05st01（無代號）
-     26.0 秒  bridge ajax_t21sc03
-     25.3 秒  survivor_fs
-     13.6 秒  survivor
-     10.8 秒  ky_revenue
-      8.1 秒  bridge ajax_t163sb04
-      7.8 秒  bridge ajax_t05st01（sdate/edate 區間）
-      6.1 秒  openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
-      3.6 秒  bridge ajax_t05st01（帶代號）
-      3.6 秒  bridge t05st01
-      2.4 秒  revenue_hist_columns
+    198.0 秒  terms
+    191.1 秒  ezsearch
+     51.5 秒  survivor_fs
+     46.9 秒  xhr_hunt t05st01
+     22.9 秒  bridge ajax_t21sc03
+     14.9 秒  revenue_hist_columns
+     12.9 秒  survivor
+     10.4 秒  ky_revenue
+      5.6 秒  bridge ajax_t163sb04
+      5.3 秒  openapi D2 https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O
+      4.5 秒  bridge ajax_t05st01（sdate/edate 區間）
+      3.8 秒  bridge t05st01
+      2.5 秒  bridge ajax_t05st01（帶代號）
+      2.4 秒  bridge ajax_t05st01（無代號）
       2.3 秒  datagov_d2
-      2.1 秒  openapi t187ap05_L
-      2.0 秒  openapi t187ap05_O
-      0.8 秒  openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L
-   ── 合計 638 秒／內層預算 690 秒
+      1.7 秒  openapi t187ap05_L
+      1.5 秒  openapi t187ap05_O
+      0.7 秒  openapi D2 https://openapi.twse.com.tw/v1/opendata/t187ap04_L
+   ── 合計 579 秒／內層預算 690 秒
 
 ✅ 所有案例都在內層預算內跑完（⇒ 預算目前夠用）
