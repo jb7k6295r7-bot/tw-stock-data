@@ -1,0 +1,2 @@
+date,stock_id,pre_close,ref_price,reason,open_base,ex_ref_price,limit_up,limit_down,halt_date
+2026-11-17,00662,117.80,23.56,分割,23.56,,9999.95,0.01,

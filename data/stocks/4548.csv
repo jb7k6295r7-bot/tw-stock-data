@@ -1,0 +1,2 @@
+date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
+2026-11-16,4548,名超,emerging,,114.5,100,106.32,109301,11620882,,,,,均價/額推算,101,1
