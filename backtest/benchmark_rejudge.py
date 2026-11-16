@@ -934,6 +934,76 @@ def six4_eq(a_, b_):
     return eq, X["calidx"][i0:i1 + 1]
 
 
+SW_DIR = "backtest/resultsSwapWorst/formal"
+SW_NOTE = "額外策略（裁定 seq506）；另列欄、不進主排名；正式營量營飆照舊"
+
+
+def swap_worst_rows(sg, wn, cal, x, y):
+    """裁定 seq506：「換掉最差那檔」（researchSwapWorst 正式跑，裁定 seq505）在排名窗 [x, y] 的年化／回落（只讀檔＋estat，不另寫回測）。
+    營量 ＝ r0 一條；營飆 ＝ seeds.csv.gz 200 顆中位（比值 ＝ 中位÷|中位|）、r0 另註。主世界 r0 由 curves_r0.csv 權益切排名窗重算（estat），
+    並與 seeds.csv.gz r0 互驗（⇒ 正式跑段窗 ＝ 排名窗、同 RR.win_metrics）；早年無曲線檔 ⇒ 用 seeds.csv.gz（段起／段尾須 ＝ 排名窗）。
+    真實成本版 ＝ real.csv 種子中位（正式跑只做主世界）。回 list[dict]。"""
+    a_, b_ = str(cal[x].date()), str(cal[y].date())
+    fw = {"主": "main", "早年": "early"}[wn]
+    C = pd.read_csv(os.path.join(SW_DIR, "cells.csv"), encoding="utf-8-sig", float_precision="round_trip")
+    C = C[(C["世界"] == fw) & (C["版"] == "換股版") & (C["段"] == sg)]
+    if len(C) != 2 or set(zip(C["段起"], C["段尾"])) != {(a_, b_)}:
+        raise SystemExit(f"⛔ 換最差那檔 {sg} 正式跑段窗 {sorted(set(zip(C['段起'], C['段尾'])))} ≠ 排名窗 {a_}～{b_}")
+    SD = pd.read_csv(os.path.join(SW_DIR, "seeds.csv.gz"), encoding="utf-8-sig", float_precision="round_trip")
+    SD = SD[(SD["世界"] == fw) & (SD["版"] == "換股版") & (SD["段"] == sg)]
+    J = json.load(open(os.path.join(SW_DIR, "result.json"), encoding="utf-8"))
+    CV = pd.read_csv(os.path.join(SW_DIR, "curves_r0.csv"), encoding="utf-8-sig", index_col=0, parse_dates=True) if wn == "主" else None
+    RL = pd.read_csv(os.path.join(SW_DIR, "real.csv"), encoding="utf-8-sig", float_precision="round_trip") if wn == "主" else None
+    out = []
+    for st, col in (("營量", "營量_換股版"), ("營飆", "營飆_換股版(r0)")):
+        s = SD[SD["策略"] == st].sort_values("r")
+        n = 1 if st == "營量" else 200
+        if len(s) != n or list(s["r"]) != list(range(n)):
+            raise SystemExit(f"⛔ 換最差那檔 {st} {sg} 種子數 {len(s)} ≠ {n}")
+        f0 = (float(s["年化"].iloc[0]), float(s["回落"].iloc[0]))
+        if CV is not None:
+            e_ = CV[col].reindex(cal).to_numpy(float)
+            if not np.all(np.isfinite(e_[x:y + 1])):
+                raise SystemExit(f"⛔ 換最差那檔 {col} 權益在排名窗內有缺")
+            r0 = estat(e_, x, y)
+            if max(abs(r0[0] - f0[0]), abs(r0[1] - f0[1])) > 1e-6:
+                raise SystemExit(f"⛔ 換最差那檔 {st} {sg} 曲線重算 r0 {r0} ≠ seeds.csv.gz r0 {f0}")
+            src = "權益 resultsSwapWorst/formal/curves_r0.csv 切同窗重算（＝ seeds.csv.gz r0）"
+        else:
+            r0 = f0
+            src = "resultsSwapWorst/formal/seeds.csv.gz（正式跑同窗、同 RR.win_metrics；無曲線檔）"
+        cv = C[C["策略"] == st].iloc[0]
+        if st == "營量":
+            c, m = r0
+            note = f"researchSwapWorst 正式跑（裁定 seq505）換股版 r0 一條；成本 0.585% 來回；{src}"
+            foot = SW_NOTE
+        else:
+            c, m = float(np.median(s["年化"])), float(np.median(s["回落"]))
+            note = (f"researchSwapWorst 正式跑（裁定 seq505）換股版；主值 ＝ 200 顆種子中位（比值 ＝ 年化中位÷|回落中位|），"
+                    f"年化 p10 {pct(np.percentile(s['年化'], 10))}～p90 {pct(np.percentile(s['年化'], 90))}；"
+                    f"r0 {pct(r0[0])}／{pct(r0[1])}／{f2(AS.ratio(*r0))}；成本 0.585% 來回；r0 {src}")
+            foot = SW_NOTE + "；主值種子中位、r0 另註"
+        if wn == "早年":
+            note += "；早年正式跑只描述（族群轉強旗標＝自建 v2；含減資假飆股約 0.3%）"
+        note += f"；正式跑判語 {J['判語'][st]['判語']}"
+        out.append({"策略": f"{st} 換最差那檔", "年化": c, "回落": m, "註": note, "註腳": foot, "檔標籤": cv["對大盤"]})
+    for st in ("營量", "營飆"):
+        nm = f"{st} 換最差那檔（真實成本版）"
+        foot = SW_NOTE + ("；主值種子中位、r0 另註" if st == "營飆" else "")
+        if RL is None:
+            out.append({"策略": nm, "年化": None, "回落": None, "註腳": foot, "檔標籤": None,
+                        "註": "正式跑真實成本版只做主世界（2017～2026）⇒ 早年無"})
+            continue
+        r = RL[(RL["策略"] == st) & (RL["版"] == "換股版") & (RL["段"] == sg)]
+        if len(r) != 1:
+            raise SystemExit(f"⛔ real.csv 缺 {st} {sg}")
+        r = r.iloc[0]; rj = J["現實版"]["判"][st]
+        note = (f"{J['現實版']['臂']}；real.csv（正式跑同窗 W['segp']）" + ("200 顆種子中位、r0 正式跑未存檔" if st == "營飆" else "r0 一條")
+                + f"；真實成本版判語 {rj['判語']}（{'改判' if rj['改判'] else '不改判'}；確認段 {rj['標籤']['確認']}）")
+        out.append({"策略": nm, "年化": float(r["年化"]), "回落": float(r["回落"]), "註": note, "註腳": foot, "檔標籤": r["對大盤"]})
+    return out
+
+
 def rank(a):
     """第 3 項（B4）。"""
     from backtest import researchLev2 as L2
@@ -1054,6 +1124,19 @@ def rank(a):
         md += ["", "成本口徑：個股策略含 0.585% 來回、六四含 ETF 0.385%；0050、正2、大盤（基準）不含成本 ⇒ 基準不含成本，對策略略不利。"]
         for r in side:
             md += ["", f"另表（⛔ 不並排比名次）：{r['策略']} {r['窗']} 年化 {pct(r['年化'])}、回落 {pct(r['回落'])}、比值 {f2(r['比值'])}、對大盤 {r['對大盤']}｜{r['註']}"]
+        # ── 裁定 seq506：換掉最差那檔 ⇒ 另列欄（⛔ 不進主排名名次、不並排比名次；正式營量營飆照舊）──
+        extra = []
+        for z in swap_worst_rows(sg, wn, cal, x, y):
+            add(z["策略"], z["年化"], z["回落"], z["註"], tab=extra)
+            extra[-1]["註腳"] = z["註腳"]
+            if z["檔標籤"] is not None and extra[-1]["對大盤"] != z["檔標籤"]:
+                raise SystemExit(f"⛔ {z['策略']} {sg} 對大盤 {extra[-1]['對大盤']} ≠ 正式跑檔 {z['檔標籤']}")
+        allrows += [dict(r, 排名="另列欄", 年化名次=np.nan) for r in extra]
+        md += ["", f"#### 額外策略另列欄｜{cal[x].date()}～{cal[y].date()}（裁定 seq506；⛔ 不進主排名名次、不並排比名次；正式營量營飆照舊）", "",
+               "| 另列欄 | 策略 | 年化 | 最大回落 | 比值 | 對大盤 | 註腳 |", "|---|---|---|---|---|---|---|"]
+        for r in extra:
+            md.append(f"| 另列欄 | {r['策略']} | {pct(r['年化'])} | {pct(r['回落'])} | {f2(r['比值'])} | {r['對大盤']} | {r['註腳']} |")
+        md += ["", "另列欄註：" + "；".join(f"{r['策略']}：{r['註']}" for r in extra)]
         md.append("")
     try:
         YD = yf_w1_desc()
