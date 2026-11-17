@@ -526,9 +526,11 @@ def main():
             meta0 = {r["stock_id"]: r for r in csv.DictReader(f)}
     _, _, expl0 = cross_check(rows, meta0)
     board = {(c, d) for c, d, _s, why in expl0 if why and why.startswith("轉板")}
+    n_board = 0
     if board:
         gone = [r for r in rows if (r[1], r[0]) in board]
         rows = [r for r in rows if (r[1], r[0]) not in board]
+        n_board = len(gone)
         new_file = not os.path.exists(RM_OUT)
         with io.open(RM_OUT, "a", encoding="utf-8", newline="") as fh:
             w = csv.writer(fh, lineterminator="\n")
@@ -546,8 +548,11 @@ def main():
     # ⛔ 只進不出：這是一份**累積**清單，列數不可以變少
     #   ⚠ 方向是 `UP`——⛔ 跟 `_missing_rows_low` 那幾個**相反**，
     #     而它們的檔名長得一模一樣（`_*_low.txt`）。別照抄語意（lowwater.py 檔頭）。
-    lowwater.gate(rl, LOW, len(rows), lowwater.UP,
-                  "下市清單的列數（⛔ 下市是不可逆的，只會變多）")
+    # ⭐ 2026-11-17（回測 1115-1435 第 1 條）：轉板剔除列（同一家換板、記在 delisted.remove.csv）要算回去，
+    #   否則剔除一筆就踩「變少」——10/16 剔除 6423 億而得-創（2026-01-22 創新板→一般板）後一直 504 vs 505
+    lowwater.gate(rl, LOW, len(rows) + n_board, lowwater.UP,
+                  "下市清單的列數＋本趟轉板剔除列數（⛔ 下市是不可逆的，只會變多）",
+                  f"清單 {len(rows):,}＋轉板剔除 {n_board}")
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with io.open(OUT, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
