@@ -416,6 +416,7 @@ stock_id,name,market,prev_date,date,missing_trading_days,rows_in_hole,notrade_in
 4402,郡都開發,tpex,2018-08-16,2018-11-19,64,0,0,64,halted
 4406,新昕纖,tpex,2016-12-22,2016-12-30,5,5,5,0,notrade
 4406,新昕纖,tpex,2018-12-24,2019-01-03,5,5,5,0,notrade
+4406,新昕纖,tpex,2026-11-05,2026-11-16,6,6,6,0,notrade
 4413,飛寶企業,tpex,2015-02-11,2015-03-06,9,9,9,0,notrade
 4413,飛寶企業,tpex,2015-05-26,2015-06-04,6,6,6,0,notrade
 4413,飛寶企業,tpex,2015-07-22,2015-08-27,25,25,25,0,notrade
