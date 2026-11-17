@@ -1,0 +1,8 @@
+﻿類,來源,起,迄,筆數,2018-11起筆數
+現金增資決議（一般，非私募非承銷）,data/meta/seo_cb_events/seo_cb_events.csv（news 主旨分類；決議日）,1999-01-22,2026-10-20,2878,1005
+私募決議（現增＋可轉債）,data/meta/seo_cb_events/seo_cb_events.csv（news 主旨分類；決議日）,2002-03-29,2026-10-15,1510,765
+可轉債發行決議（非私募）,data/meta/seo_cb_events/seo_cb_events.csv（news 主旨分類；決議日）,1999-02-11,2026-10-12,2398,905
+私募明細（僅 E3 名單公司）,data/meta/placement_detail/placement_detail.csv,2003-06-26,2026-10-15,3414,1791
+可轉債轉換（無專表；news 主旨關鍵字代理）,data/mops/news/<年>.csv 主旨含 轉換＋公司債＋(普通股|發行新股|換發|轉換股數|股本),1999-01-12,2026-11-16,2088,1148
+ETF 申贖成分調整,資料庫沒有 ETF 申購買回清單（PCF）；只有 data/meta/tw50（0050 成分異動）、data/universe/etfsplit（ETF 分割）,,,0,0
+（旁證）0050 成分異動,data/meta/tw50/tw50_changes.csv,2009-01-08,2026-09-04,177,99
