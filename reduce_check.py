@@ -181,13 +181,35 @@ def main():
     # ⚠ 而另一邊要擋的是**官方表自己的起點**：早於官方表第一天的我方事件
     #   不算編造（官方那份從 2013-09 起）。
     _ref_from = min((k[1] for k in ref), default="")
-    extra = sorted(k for k in mine
-                   if mkt.get(k[0]) == "tpex" and k not in ref
-                   and (not _ref_from or k[1] >= _ref_from))
+    # ⭐ 2026-11-17（回測 1115-1435 第 4 條）：兩種「官方表沒有」不是編造，分出來
+    #   ⓐ 晚於對照表最後一筆事件日（人工匯出檔，新事件不會自己進來）⇒ ⛔ 比不到，不算編造；
+    #      改驗它們每一筆都有官方參考價算的因子（factor_official），沒有才 ✗
+    #   ⓑ 手工補登的停牌期間減資（data/meta/manual_reduce_tpex/manual_reduce.csv，逐筆附官方證據）
+    #      ⇒ 官方恢復參考價表本來就不收，⛔ 不算編造
+    _ref_to = max((k[1] for k in ref), default="")
+    manual = set()
+    _mp = os.path.join(_ROOT, "meta", "manual_reduce_tpex", "manual_reduce.csv")
+    if os.path.exists(_mp):
+        with io.open(_mp, encoding="utf-8") as fh:
+            manual = {(r["stock_id"], r["date"]) for r in csv.DictReader(fh)}
+    cand = sorted(k for k in mine
+                  if mkt.get(k[0]) == "tpex" and k not in ref
+                  and (not _ref_from or k[1] >= _ref_from))
+    later = [k for k in cand if _ref_to and k[1] > _ref_to]
+    man = [k for k in cand if k in manual and k not in later]
+    extra = [k for k in cand if k not in later and k not in manual]
     rl.info("我方上櫃有、官方沒有", f"{len(extra)} 筆"
-                                  + (f"：{extra[:6]}" if extra else "（沒有）"))
+                                  + (f"：{extra}" if extra else "（沒有）")
+                                  + f"｜另 對照表最後一筆（{_ref_to}）之後 {len(later)} 筆、手工補登 {len(man)} 筆（兩者都不算）")
+    if later:
+        rl.info("⚠ 對照表是人工匯出、停在 " + _ref_to,
+                f"之後的 {len(later)} 筆比不到 ⇒ 要使用者重新匯出「減資恢復交易參考價」才比得到："
+                + "、".join(f"{k[0]} {k[1]}" for k in later))
     rl.check("我方沒有編出官方沒有的上櫃減資", not extra,
              f"{len(extra)} 筆")
+    no_off = [k for k in later if not (mine[k].get("factor_official") or "").strip()]
+    rl.check("對照表之後的上櫃減資都有官方參考價因子", not no_off,
+             f"{len(later) - len(no_off)}/{len(later)}" + (f"｜缺：{no_off}" if no_off else ""))
 
     # ── ④ 減資原因字串
     rs = [k for k in same if mine[k].get("kind") == ref[k][2]]

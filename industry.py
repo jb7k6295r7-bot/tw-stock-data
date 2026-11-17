@@ -323,7 +323,17 @@ def cmd_run(args):
     if os.path.exists(sp):
         import csv as _csv
         with open(sp, encoding="utf-8") as f:
-            uni = [r for r in _csv.DictReader(f) if r.get("kind") == "stock"]
+            uni_all = [r for r in _csv.DictReader(f) if r.get("kind") == "stock"]
+        # ⭐ 2026-11-17（回測 1115-1435 第 7 條）：分母只算【目前在交易的上市櫃】
+        #   stocks.csv 的 kind=stock 也含興櫃（9/3 起 374 檔，產業別在 industry_esb 另一張表）
+        #   與已下市（last_seen 停在過去）⇒ 混進分母，覆蓋率從 >80% 慢慢滑到 79.3%，⛔ 但上市櫃其實是 100%／99.9%
+        _mx = max((r.get("last_seen") or "" for r in uni_all), default="")
+        try:
+            import datetime as _dt
+            _cut = (_dt.date.fromisoformat(_mx) - _dt.timedelta(days=30)).isoformat()
+        except ValueError:
+            _cut = ""
+        uni = [r for r in uni_all if r.get("market") in ("twse", "tpex") and (r.get("last_seen") or "") >= _cut]
         have = sum(1 for r in uni if rows.get(r["stock_id"], {}).get("industry"))
         print(f"[industry] 覆蓋率：universe 的 {len(uni)} 檔 stock 中，"
               f"{have} 檔有產業別（{have/len(uni)*100:.1f}%）")
@@ -338,8 +348,12 @@ def cmd_run(args):
     rl.info("對照表", f"{len(rows)} 檔（{n_named} 檔查得到類股名稱）")
     rl.info("類股", f"{len(names)} 個，其中 {len(parents)} 個是母類股")
     if cover is not None:
-        rl.info("覆蓋率", f"universe 的 {len(uni)} 檔 stock 中 {have} 檔有產業別"
-                          f"（{cover:.1f}%）")
+        rl.info("覆蓋率", f"目前在交易的上市櫃 {len(uni)} 檔中 {have} 檔有產業別"
+                          f"（{cover:.1f}%）｜分母不含興櫃（另見 industry_esb）與 30 天內沒交易的"
+                          f"（stocks.csv kind=stock 共 {len(uni_all)} 檔）")
+        _miss = [r["stock_id"] for r in uni if not rows.get(r["stock_id"], {}).get("industry")]
+        if _miss:
+            rl.info("查不到產業別的上市櫃", f"{len(_miss)} 檔：{_miss[:20]}（多半是剛上市、對照表還沒更新）")
     # ⛔ 對不上不是零就要看過——兩條來源對同一檔給了不同的類股，不可挑一個用。
     rl.check("兩條來源的產業別沒有互相矛盾", bad == 0, f"對不上 {bad} 檔")
     # ⚠ 只驗「有沒有整批掉光」，不設高門檻：DR、興櫃與名稱表沒涵蓋的代碼

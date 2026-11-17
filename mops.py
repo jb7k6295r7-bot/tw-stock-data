@@ -495,7 +495,8 @@ def cmd_run(args):
     tw, tp = listed_codes()
     esb = esb_codes()
     print(f"[mops] 對照基準：上市 {len(tw):,} 檔、上櫃 {len(tp):,} 檔、興櫃 {len(esb):,} 檔\n")
-    total = {"new": 0, "changed": 0, "unchanged": 0, "skip": 0}
+    total = {"new": 0, "changed": 0, "unchanged": 0, "skip": 0, "empty": 0}
+    empty_tabs = []
     # ★ 逐「表×市場」記下實際結果。**不要只留一個總數**——
     #   22 個請求裡少收一個，總數看起來還是很像正常的一天
     #   （限流回 307、端點改名，兩種都不會讓程式失敗）。
@@ -602,9 +603,15 @@ def cmd_run(args):
                 print(f"  [{kind}/{tag}/{mk}] {note}｜涵蓋 {cov:.1f}%")
                 for r in d:
                     market_of[id(r)] = mk
-                recs += d
+                # ⭐ 2026-11-17（回測 1115-1435 第 5 條）：只收帶得出代號的列
+                #   ⛔ 原本收 `d`（含佔位列）⇒ 金控（fh）兩市場都只回 1 列佔位列時，
+                #     佔位列沒有期別 ⇒ 「取不到期別」⇒ 整張表算略過 ⇒ 天天 ✗（11/06 起「略過 2 張」）
+                recs += real
             if not recs:
-                total["skip"] += 1
+                # 兩個市場都沒有任何帶代號的列 ＝ 該業別這一期官方還沒有資料（例：季報截止前的金控）
+                # ⛔ 這不是「取不到期別」，改記資訊列
+                total["empty"] += 1
+                empty_tabs.append(f"{kind}/{tag}")
                 continue
             groups, noperiod = group_by_period(kind, recs)
             if noperiod:
@@ -680,6 +687,9 @@ def cmd_run(args):
         rl.note("涵蓋 0% 的原始證據（未整理）：\n```\n"
                 + json.dumps(zero_raw, ensure_ascii=False, indent=1)[:2500]
                 + "\n```")
+    if empty_tabs:
+        rl.info("兩個市場都沒有帶代號的列（官方這一期還沒資料，不寫檔）",
+                f"{len(empty_tabs)} 張：{'、'.join(empty_tabs)}")
     rl.check("沒有表因為取不到期別而不寫檔", total["skip"] == 0,
              f"略過 {total['skip']} 張")
     # ⭐⭐ 兩個市場的申報進度不同步時，同一批資料會含兩期。
