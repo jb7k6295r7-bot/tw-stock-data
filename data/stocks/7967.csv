@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-13,7967,旭電馳*,emerging,,10,8.95,9.08,2211179,20077505,,,,,均價/額推算,8.99,1
 2026-11-16,7967,旭電馳*,emerging,,9.08,7.85,8.27,772961,6392387,-0.81,,,,均價/額推算,8.25,1
+2026-11-17,7967,旭電馳*,emerging,,8.89,7.96,8.29,242828,2013044,0.02,,,,均價/額推算,8.89,1

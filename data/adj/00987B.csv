@@ -1,2 +1,3 @@
 date,factor,factor_official,cum_factor,pre_close,ref_price,kind,event
-2026-08-18,0.98759305,,0.98759305,16.12,15.92,除息,exright
+2026-08-18,0.98759305,,0.97499620,16.12,15.92,除息,exright
+2026-11-17,0.98724490,,0.98724490,15.68,15.48,除息,exright
