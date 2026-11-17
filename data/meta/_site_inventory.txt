@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-16T00:54:02+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 43736594530
+# ⏱ 這一趟：2026-11-17T17:20:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 44050947256
 # site_inventory.py 的輸出。**只讀不寫資料。**
 # 問的是：「這個站到底有沒有我要的東西」——一次問完。
 # ⛔ 它只回答「選單上有沒有這個名字」，不回答「那條端點能不能用」。
@@ -12,7 +12,7 @@
    ✓ 36,153 bytes｜攤平出 **280 條**選單項目
 
 ── TPEx｜https://www.tpex.org.tw/data/menu/zh-tw/menu.json
-   ✓ 69,730 bytes｜攤平出 **767 條**選單項目
+   ✓ 69,735 bytes｜攤平出 **767 條**選單項目
 
 ── TWSE-OpenAPI｜https://openapi.twse.com.tw/v1/swagger.json
    ✓ 309,984 bytes｜攤平出 **143 條**選單項目
