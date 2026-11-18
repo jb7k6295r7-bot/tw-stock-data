@@ -210,6 +210,16 @@ def build(a, log, v2=False):
                     act_ = act_of(src_, 60, "") if src_ == "營量" else act_of(src_, Hy_, own_)
                 nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
                 L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}{'' if ed_ == bd_ else f'（正式進場日 {ed_}，出場從這天起算）'}｜來源：{src_}｜**照正式規則：{act_}**")
+            if src_ == "高10":                                               # 2026-11-18 情報 1116-1548：高10 照高10 規則（排程賣出日見前瞻帳），⛔ 不走飆股流程
+                nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
+                try:
+                    PU_ = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "forward", "pth10", "positions_user.csv"), dtype=str, encoding="utf-8-sig")
+                    sx_ = PU_.loc[(PU_["代號"] == c_) & (PU_["狀態"] == "持有中"), "排程賣出日"]
+                    sx_ = f"排程賣出日 {sx_.iloc[0]}" if len(sx_) else "排程賣出日見高10 帳"
+                except Exception:
+                    sx_ = "排程賣出日見高10 帳"
+                L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}｜來源：高10｜**照高10 規則：{sx_}（不走飆股流程）**")
+                continue
             if src_ == "大跌4檔":                                            # 2026-10-19 情報：大跌 4 檔照大跌規則（收復隔天開盤賣，見第八節），⛔ 不走飆股流程
                 nm0_ = unif.loc[unif["stock_id"] == c_, "name"]
                 L.append(f"- {c_} {nm0_.iloc[0] if len(nm0_) else ''}｜買進 {bd_} {bp_:g}｜來源：大跌4檔｜**照大跌規則：加權收盤回到大跌前一日收盤以上的隔天開盤賣（提醒見第八節）**")
