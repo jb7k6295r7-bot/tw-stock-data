@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-16,4548,名超,emerging,,114.5,100,106.32,109301,11620882,,,,,均價/額推算,101,1
 2026-11-17,4548,名超,emerging,,98.4,89,93.13,88982,8286894,-13.19,,,,均價/額推算,95.4,1
+2026-11-18,4548,名超,emerging,,95.6,84.4,91.06,142407,12967581,-2.07,,,,均價/額推算,84.5,1
