@@ -189,11 +189,14 @@ def build(a, log, v2=False):
               "⚠ 舊制回測、新制實際：流程的 W2（再次處置／處置出關）與真頂訊號（多半在最高點之前）是用舊處置制度（處置 10／12 個交易日）回測的；2026-08-10 起處置改為 5／7 個交易日，出關會提早，訊號時點與回測不完全相同（台股 1009-1542 §四-2）。", ""]
         SRC = HD.sources(); ED = HD.entry_dates()
         try:
-            NTS = {c: nt for c, _, _, nt, _ in HD.read_csv()}             # 備註（「60 天同日賣」⇒ 營飆那份第 60 天；2026-10-14）
+            RW_ = HD.read_csv()
+            NTS = {c: nt for c, _, _, nt, _ in RW_}                     # 備註（「60 天同日賣」⇒ 營飆那份第 60 天；2026-10-14）
+            SRC2 = {(c, d): s for c, d, _, _, s in RW_}                 # 2026-11-20 修：同一代號有兩筆（例 6213 營量＋高10）⇒ 來源與備註按「代號＋買進日」對，⛔ 不再只按代號（後一筆會蓋掉前一筆）
+            NTS2 = {(c, d): nt for c, d, _, nt, _ in RW_}
         except Exception:
-            NTS = {}
+            NTS, SRC2, NTS2 = {}, {}, {}
         for c_, bd_, bp_ in flows:
-            src_ = SRC.get(c_, "其他")
+            src_ = SRC2.get((c_, bd_), SRC.get(c_, "其他"))
             ed_ = ED.get(c_) or bd_                                         # 正式進場日（先買後入選 ⇒ 持股檔第 6 欄；2026-10-06 6213）
             if src_ in ("營量", "營飆", "營飆營量"):                     # 2026-09-30 使用者：營量、營飆買的照正式規則出場（flowexit 研究 dca601c329）
                 def act_of(nm_, H_, part_=""):
@@ -202,7 +205,7 @@ def build(a, log, v2=False):
                     dt_ = cal_ext[xp_].date() if xp_ < len(cal_ext) else "（超出外推範圍）"
                     return (f"{nm_}{part_}已到期：{dt_} 收盤應已賣出" if rem_ <= 0 else f"{nm_}{part_}明天（{dt_}）收盤賣（第 {H_} 個交易日）" if rem_ == 1
                             else f"{nm_}{part_}第 {H_} 個交易日 {dt_} 收盤賣，還剩 {rem_} 個交易日")
-                Hy_ = AD.hold_days("營飆", NTS.get(c_, ""))
+                Hy_ = AD.hold_days("營飆", NTS2.get((c_, bd_), NTS.get(c_, "")))
                 own_ = "（你定與營量同日賣）" if Hy_ != 120 else ""
                 if src_ == "營飆營量":
                     act_ = act_of("營量", 60, "那份") + "；" + act_of("營飆", Hy_, "那份" + own_) + "（兩套各一份；金額照你當時設定）"
@@ -470,6 +473,11 @@ def main():
     r = dict(r, L=r["L"] + book_section(btags, r["names"]))
     fn = os.path.join(OUT, f"daily_{asof}.md")
     open(fn, "w", encoding="utf-8").write("\n".join(r["L"]))
+    try:                                                       # 出場日固定檔（情報 1116-1650、使用者 11/16「好」）；⛔ 失敗只記 log、不影響名單
+        from . import exit_dates as XD
+        log(XD.write(r0["cal"], os.path.join(OUT, "出場日.csv"), AD.hold_days))
+    except Exception as ex_:
+        log(f"[出場日] 失敗（不影響名單）：{type(ex_).__name__}: {ex_}")
     A, br, S, gate_on = r["A"], r["br"], r["S"], r["gate_on"]
     log(f"[完] {fn}｜大盤閘 {'開' if gate_on else '關'}｜營量已達成 {list(A['代號']) if len(A) else []}｜即將達成 {[r_['代號'] for r_ in br]}｜閘 {S['閘（近 20 交易日 AND 訊號 ＝ list_YL13_2026-09-24）']['過']}")
     print(fn)

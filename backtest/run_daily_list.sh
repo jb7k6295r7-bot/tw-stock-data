@@ -128,6 +128,8 @@ if [ -z "$FAIL" ]; then
       fi
       mkdir -p "$MB"
       cp "$REPO/backtest/resultsDaily/daily_$ASOF.md" "$OUTF"
+      # 規則 18：出場日固定檔（情報 1116-1650、使用者 11/16「好」）：daily_list 寫 resultsDaily/出場日.csv ⇒ 複製到 _營量觀察/出場日.csv（規則 6 只寫這個資料夾；情報只讀）；⛔ 沒有檔只記 log
+      if [ -f "$REPO/backtest/resultsDaily/出場日.csv" ]; then cp "$REPO/backtest/resultsDaily/出場日.csv" "$MB/出場日.csv"; else logline "出場日.csv 沒產出（不影響 daily）"; fi
       rm -f "$MB/daily_${ASOF}_未到.md"
       # 裁定 seq296 §一：GATE_V2 開關不一致 ⇒ daily_list 寫了差異檔 ⇒ 放進 _營量觀察/；一致 ⇒ 刪掉同資料日舊的差異檔（只動 _營量觀察/ 這一個資料夾）
       if [ -f "$REPO/backtest/resultsDaily/gatev2_diff_$ASOF.md" ]; then cp "$REPO/backtest/resultsDaily/gatev2_diff_$ASOF.md" "$MB/gatev2_diff_$ASOF.md"; else rm -f "$MB/gatev2_diff_$ASOF.md"; fi
