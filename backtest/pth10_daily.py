@@ -89,6 +89,7 @@ L_SKIP, H_HOLD = 2, 6
 NS = 10
 K_PRE = 2 * NS
 START_YM = 2026 * 12 + 10                                   # 第一批進場月 2026-11（年×12＋月−1）
+USER_LAST_YM = 2026 * 12 + 10                               # 裁定 seq517／518（使用者 11/20「到這批結束為止後就停掉」「不補」）：LINE 名單（positions_user）最後一批＝2026-11；之後不新買、不補位；照規則欄照記
 # 每份金額＝使用者測試金額（裁定 seq422／423：不是規則、會再改）⇒ 可改設定值：backtest/forward/設定_每份金額.json（各策略一個鍵：營量／營飆／高10／大跌4檔；本檔讀「高10」）；
 # 改金額只影響 LINE 股數換算與 positions_user，⛔ 不動照規則欄
 SETTING = os.path.join(REPO, "backtest", "forward", "設定_每份金額.json")
@@ -732,7 +733,7 @@ def render(c):
                 k = sum(1 for _, _, _, x in held if x == nxt_sell)
                 s += f"｜下次到期 {nxt_sell} 收盤賣 {k} 檔"
             if nh < NS:
-                s += f"｜空 {NS - nh} 格下個月初補"
+                s += (f"｜空 {NS - nh} 格不補（使用者 11/20 這批後停止，裁定 seq517／518）" if ym(pd.Timestamp(c["nxt"])) >= USER_LAST_YM else f"｜空 {NS - nh} 格下個月初補")
             L.append(s)
     for w in c.get("note") or []:
         L.append(f"  - {w}")
@@ -1023,7 +1024,10 @@ def run(a, log=print):
                 usr.at[i, "備註"] = (r["備註"] + "；" if r["備註"] else "") + f"賣出日無成交，用 {ds(cal[kk])} 收盤"
     # ── LINE 的續抱、賣、空格一律照 positions_user（回測線裁定）；選股照規則順序由高往下、跳過使用者已持有
     uv = user_view(usr, ds(asof), ds(nxt))
-    nfree = NS - len(uv["held"]) if buy_night else 0
+    user_stop = ym(pd.Timestamp(nxt)) > USER_LAST_YM                 # seq517／518：這批後停止
+    nfree = NS - len(uv["held"]) if buy_night and not user_stop else 0
+    if buy_night and user_stop:
+        note.append("使用者 11/20 決定這批後停止（裁定 seq517／518）：LINE 名單不再新買、不補位；這批照排程賣出")
     buys, backup = [], []
     user_ord, f9i = pend_order, None
     if j_p is not None and tie_used == "F9" and ("p", j_p) in F9O:  # D10：LINE 名單同分依 F9（照規則欄不動；次序在世界之前已算）
@@ -1031,7 +1035,7 @@ def run(a, log=print):
         user_ord = [pend_list[k][0] for k in o9]
         note.append(f"同分排序 F9（設定「高10_同分排序」；排序日 {ds(MEd[j_p])}）：同分群 {f9i['同分群']} 組 {f9i['成員']} 檔、"
                     f"分數算不出 {f9i['算不出']} 檔排最後（{f9i['來源']}）；照規則紀錄仍用原規則隨機")
-    if j_p is not None:
+    if j_p is not None and not user_stop:
         pk, bk = pick_user(user_ord, {h[0] for h in uv["held"]}, nfree)
         for s in pk:
             _, c_ = raw_px(DATA, s, cal)
@@ -1049,7 +1053,7 @@ def run(a, log=print):
     if S9 is not None and f_held != u_held and len(usr):
         note.append(f"F9 照規則持有 {f_held} ≠ LINE 名單持有 {u_held}（F9 照規則紀錄另記）")
     # 名單（明天要買）
-    if j_p is not None and not a.preview_buy and PUSH:                   # seq431：LINE 暫停時不推 ⇒ 使用者不會買 ⇒ 不記 positions_user（照規則欄照記）
+    if j_p is not None and not a.preview_buy and PUSH and not user_stop:                   # seq431：LINE 暫停時不推 ⇒ 使用者不會買 ⇒ 不記 positions_user（照規則欄照記）
         plan[ds(nxt)] = {"批次": ds(MEd[j_p]), "名單日": ds(asof), "rows": [[s, n, float(p), int(k)] for s, n, p, k in buys], "main": sha[:10],
                          "同分排序": tie_used}
     # ── 段落
