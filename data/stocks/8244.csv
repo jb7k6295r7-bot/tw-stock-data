@@ -24,3 +24,4 @@ date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,
 2026-11-16,8244,DIGITIMES,emerging,,46.1,44,44.92,28956,1300704,-2.07,,,,均價/額推算,44,1
 2026-11-17,8244,DIGITIMES,emerging,,44,41.5,43.27,38719,1675371,-1.65,,,,均價/額推算,41.5,1
 2026-11-18,8244,DIGITIMES,emerging,,44.2,41.5,43.25,10602,458536,-0.02,,,,均價/額推算,43,1
+2026-11-19,8244,DIGITIMES,emerging,,43.5,39.65,41.54,47425,1970034,-1.71,,,,均價/額推算,39.65,1
