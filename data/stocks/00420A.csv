@@ -1,2 +1,3 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-19,00420A,主動野村亞洲科技,twse,9.80,9.83,9.51,9.54,23264648,224657356,-0.24,,100436000,1762,,,1
+2026-11-20,00420A,主動野村亞洲科技,twse,9.01,9.13,8.93,8.94,8309897,74758112,-0.6,,87436000,714,,,1
