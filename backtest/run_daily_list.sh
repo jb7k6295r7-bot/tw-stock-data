@@ -159,6 +159,11 @@ if [ -z "$FAIL" ] && [ -n "$RESULT" ]; then
   fi
 fi
 
+# 規則 19（使用者 2026-11-24「好」）：h2data 每晚快照只留最新 3 份（daily_*、surgeaux_*）＋清懸空連結；⛔ 失敗只記 log、不影響名單；正在用的 $DK 不刪
+if [ -z "$FAIL" ] && [ -n "${DK:-}" ]; then
+  logline "快照清理：$(bash "$REPO/backtest/prune_h2data.sh" "$DK" 2>&1 | tail -1)"
+fi
+
 if [ $FINAL = 1 ]; then
   TODAY=${DAILY_FAKE_TODAY:-$(TZ=Asia/Taipei date '+%Y-%m-%d')}
   HS="$HOME/h2data/${SHA:-none}/data/meta/holiday_schedule.csv"
