@@ -39,8 +39,9 @@ logline() { echo "[$NOW 台北]$([ $FINAL = 1 ] && echo ' --final')$([ $FORCE = 
 exec 9>"$LOCK"
 if ! flock -n 9; then logline "略過：已有一個在跑（鎖 $LOCK）"; exit 0; fi
 
-if ! git -C "$REPO" fetch -q origin main 2>/tmp/daily_fetch.err; then
-  logline "失敗：git fetch：$(tail -1 /tmp/daily_fetch.err)"; FAIL="git fetch 失敗：$(tail -3 /tmp/daily_fetch.err)"; SHA=""; ASOF=""
+FERR="$WD/.daily_fetch.err"   # 2026-11-24 修：原寫 /tmp/daily_fetch.err，被 WSL 本機執行帳號 ghrunner 建了同名檔 ⇒ 本帳號寫不進去、整班誤判「git fetch 失敗」（11/23 名單未到）；⛔ 不再用 /tmp 共用檔名
+if ! git -C "$REPO" fetch -q origin main 2>"$FERR"; then
+  logline "失敗：git fetch：$(tail -1 "$FERR")"; FAIL="git fetch 失敗：$(tail -3 "$FERR")"; SHA=""; ASOF=""
 else
   SHA=$(git -C "$REPO" rev-parse origin/main)
   KEY=$(for p in data/adj data/meta data/mops/revenue_hist data/stocks data/stocks_per; do git -C "$REPO" rev-parse "$SHA:$p"; done | sha1sum | cut -c1-16)
