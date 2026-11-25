@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-23,6623,施吉生技,emerging,,104.5,55,70.43,1172045,82547129,,,,,均價/額推算,75.1,1
 2026-11-24,6623,施吉生技,emerging,,80,72,78.38,195675,15337006,7.95,,,,均價/額推算,80,1
+2026-11-25,6623,施吉生技,emerging,,77.5,65.1,67.68,299194,20249450,-10.70,,,,均價/額推算,68.2,1
