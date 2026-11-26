@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-17T17:08:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 44050947256
+# ⏱ 這一趟：2026-11-26T18:22:15+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45799106786
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -294,14 +294,14 @@
      類股相關欄的值（前 12）：['產業別=光電業', '產業別=其他', '產業別=其他電子業', '產業別=化學工業', '產業別=半導體業', '產業別=居家生活', '產業別=建材營造', '產業別=數位雲端', '產業別=文化創意業', '產業別=生技醫療業', '產業別=綠能環保', '產業別=航運業']
 
   ── /tpex_trading_volume_ratio｜上櫃歷史類股成交價量比重
-     ✓ 3,533 bytes｜28 筆
+     ✓ 3,526 bytes｜28 筆
      欄位：['Date', 'Sector', 'TradeAmount', 'TradeWeight', ' NumberOfSharesTraded']
-     首列：{'Date': '1151117', 'Sector': '光電業', 'TradeAmount': '5785382303', 'TradeWeight': '8.85', ' NumberOfSharesTraded': '82650048'}
+     首列：{'Date': '1151126', 'Sector': '光電業', 'TradeAmount': '2316673808', 'TradeWeight': '5.22', ' NumberOfSharesTraded': '31888107'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,184 bytes｜28 筆
+     ✓ 5,187 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1151116', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5232053494', 'CurrentlySharesOC/FIHeld': '903267335', 'PercentageOfSharesOC/FMIHeld': '17.26%'}
+     首列：{'Date': '1151126', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5232021494', 'CurrentlySharesOC/FIHeld': '910312622', 'PercentageOfSharesOC/FMIHeld': '17.4%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
 
 [7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
@@ -340,7 +340,7 @@
        data-start='20190909'
      像「路徑＋查詢字串」的（2 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
-       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5bd9561fcbb81ed
+       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6082aac0b71e774
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「恢復買賣」5 次
@@ -358,7 +358,7 @@
        data-format='print'
      像「路徑＋查詢字串」的（2 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
-       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5bd956a3dc6eb57
+       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6082aaddee7b040
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「面額」8 次
@@ -371,7 +371,7 @@
      `data-*` 屬性 0 種：
      像「路徑＋查詢字串」的（2 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
-       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5bd9570d8000a52
+       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6082aba9ebeadc6
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「面額」12 次
@@ -380,7 +380,7 @@
 
   ── 櫃買中心 休市日／交易日曆
      https://www.tpex.org.tw/zh-tw/announce/market/holiday.html
-     ✓ 12,183 bytes｜出現「休市」5 次｜「開市」0 次
+     ✓ 12,185 bytes｜出現「休市」5 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
   ── 櫃買中心 公告專區（找得到休市日的入口就好）
@@ -391,7 +391,7 @@
 [10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
 
   ── https://www.tpex.org.tw/rsrc/asset/js/global.js
-     ✓ 103,202 bytes｜`ajax(` 1 處｜命中的參數名：（一個都沒有）
+     ✓ 103,932 bytes｜`ajax(` 1 處｜命中的參數名：（一個都沒有）
      js 裡像參數名的鍵（6 個）：['dataType', 'grid', 'hideEmptySeries', 'name', 'type', 'width']
 
   ── https://www.tpex.org.tw/rsrc/asset/js/jquery.simplePagination.js
@@ -448,33 +448,33 @@
 [12] ⭐⭐ 上櫃除權息計算結果／漲跌停（F2 剩下那 6 筆未證實要用）
 
   ── tpex_exright_daily｜⭐ 上櫃除權除息計算結果表（上櫃版 TWT49U）
-     ✓ 34 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
+     ✓ 1 列｜欄位（21）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosePriceBeforeExRightsDiviend', 'ExRightsDiviendQuote', 'StockDividend', 'CashDividend', 'StockDividendPlusCashDividend', 'ExRightsDiviend', 'LimitUp', 'LimitDown', 'OpeningReferencePrice', 'DividendDeductedQuote', 'CashDivdend', 'StockDivdendThousandShares', 'CashCapitalIncreaseShares', 'SubscriptionPricePerShare', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataThousandShares']
      ⭐ ①有沒有漲跌停欄：['LimitUp', 'LimitDown', 'OpeningReferencePrice']
-     首列：{'Date': '1151117', 'SecuritiesCompanyCode': '00740B', 'CompanyName': '富邦全球投等債', 'ClosePriceBeforeExRightsDiviend': '37.19', 'ExRightsDiviendQuote': '37.01', 'StockDividend': '0.000000', 'CashDividend': '0.185000', 'StockDividendPlusCashDividend': '0.185000', 'ExRightsDiviend': '除息', 'LimitUp': '9999.95', 'LimitDown': '0.01', 'OpeningReferencePrice': '37.01', 'DividendDeductedQuote': '37.01', 'CashDivdend': '0.18500000', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
-     ③`Date` 相異值 2 種｜最小 1151117｜最大 1151118
+     首列：{'Date': '1151126', 'SecuritiesCompanyCode': '6523', 'CompanyName': '達爾膚', 'ClosePriceBeforeExRightsDiviend': '90.70', 'ExRightsDiviendQuote': '86.70', 'StockDividend': '0.000000', 'CashDividend': '4.000000', 'StockDividendPlusCashDividend': '4.000000', 'ExRightsDiviend': '除息', 'LimitUp': '95.30', 'LimitDown': '78.10', 'OpeningReferencePrice': '86.70', 'DividendDeductedQuote': '86.70', 'CashDivdend': '4.00000000', 'StockDivdendThousandShares': '0.00000000', 'CashCapitalIncreaseShares': '0', 'SubscriptionPricePerShare': '0.00', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataThousandShares': '0.00000000'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1151126 × 1　⇒ **它只有這一期，沒有歷史**
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_exright_prepost｜上櫃除權除息預告表
-     ✓ 59 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
+     ✓ 57 列｜欄位（12）：['ExRrightsExDividendDate', 'SecuritiesCompanyCode', 'CompanyName', 'ExRrightsExDividend', 'StockDividendRatio', 'SubscriptionRatioToNewSharesIssued', 'SubscriptionPricePerShare', 'CashDividend', 'AllocatedForPublicUnderwriting', 'SubscribedByEmployees', 'SubscribedByExistingShareholders', 'SubscribedProRataInThousandShares']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
-     首列：{'ExRrightsExDividendDate': '1151111', 'SecuritiesCompanyCode': '8390', 'CompanyName': '金益鼎', 'ExRrightsExDividend': '除權', 'StockDividendRatio': '0.00000000', 'SubscriptionRatioToNewSharesIssued': '0.08323265', 'SubscriptionPricePerShare': '62.00', 'CashDividend': '0.00000000', 'AllocatedForPublicUnderwriting': '800000', 'SubscribedByEmployees': '1200000', 'SubscribedByExistingShareholders': '6000000', 'SubscribedProRataInThousandShares': '62.42448718'}
-     ③`ExRrightsExDividendDate` 相異值 12 種｜最小 1151111｜最大 1160105
+     首列：{'ExRrightsExDividendDate': '1151117', 'SecuritiesCompanyCode': '00740B', 'CompanyName': '富邦全球投等債', 'ExRrightsExDividend': '除息', 'StockDividendRatio': '0.00000000', 'SubscriptionRatioToNewSharesIssued': '0.00000000', 'SubscriptionPricePerShare': '0.00', 'CashDividend': '0.18500000', 'AllocatedForPublicUnderwriting': '0', 'SubscribedByEmployees': '0', 'SubscribedByExistingShareholders': '0', 'SubscribedProRataInThousandShares': '0.00000000'}
+     ③`ExRrightsExDividendDate` 相異值 13 種｜最小 1151117｜最大 1160105
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ceil_non_trading｜上櫃漲跌停未成交資訊
-     ✓ 48 列｜欄位（9）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosingPrice', 'Change', 'Tot.Trans.Vol.', 'Trans.Vol.AtUp-limitPr.', 'OrderVol.AtUp-limitPr.', 'Difference']
+     ✓ 39 列｜欄位（9）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'ClosingPrice', 'Change', 'Tot.Trans.Vol.', 'Trans.Vol.AtUp-limitPr.', 'OrderVol.AtUp-limitPr.', 'Difference']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
-     首列：{'Date': '1151117', 'SecuritiesCompanyCode': '8415', 'CompanyName': '大國鋼', 'ClosingPrice': '41.35', 'Change': '3.75', 'Tot.Trans.Vol.': '9107', 'Trans.Vol.AtUp-limitPr.': '4087', 'OrderVol.AtUp-limitPr.': '5608', 'Difference': '1521'}
-     ⛔ ③`Date` 相異值只有 **1 種**：1151117 × 48　⇒ **它只有這一期，沒有歷史**
+     首列：{'Date': '1151126', 'SecuritiesCompanyCode': '8358', 'CompanyName': '金居', 'ClosingPrice': '268.50', 'Change': '24.00', 'Tot.Trans.Vol.': '8410', 'Trans.Vol.AtUp-limitPr.': '888', 'OrderVol.AtUp-limitPr.': '2120', 'Difference': '1232'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1151126 × 39　⇒ **它只有這一期，沒有歷史**
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
   ── tpex_ipo_no_limit｜上櫃首五日無漲跌幅資訊
-     ✓ 1 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
+     ✓ 8 列｜欄位（13）：['Date', 'SecuritiesCompanyCode', 'CompanyName', 'StartDateForStabilizationOperation', 'EndDateForStabilizationOperation', 'UnderwritingPrice', 'OverAllotmentShares', 'TransactionType', 'Underwriter', 'TradingType', 'TradingPrice', 'TradingVolume', 'CurrentDayCumulativeTradingVolume']
      ⭐ ①有沒有漲跌停欄：⛔ 一個都沒有
-     首列：{'Date': '1151116', 'SecuritiesCompanyCode': '7848', 'CompanyName': '騏億鑫', 'StartDateForStabilizationOperation': '1151116', 'EndDateForStabilizationOperation': '1151120', 'UnderwritingPrice': '249.65', 'OverAllotmentShares': '100,000', 'TransactionType': '主辦承銷商執行穩定價格操作專戶', 'Underwriter': '9A00 永豐金', 'TradingType': '買', 'TradingPrice': '248.50', 'TradingVolume': '100,000', 'CurrentDayCumulativeTradingVolume': '100,000'}
-     ⛔ ③`Date` 相異值只有 **1 種**：1151116 × 1　⇒ **它只有這一期，沒有歷史**
-     ⛔ ③`StartDateForStabilizationOperation` 相異值只有 **1 種**：1151116 × 1　⇒ **它只有這一期，沒有歷史**
-     ⛔ ③`EndDateForStabilizationOperation` 相異值只有 **1 種**：1151120 × 1　⇒ **它只有這一期，沒有歷史**
+     首列：{'Date': '1151126', 'SecuritiesCompanyCode': '7869', 'CompanyName': '宏于電機', 'StartDateForStabilizationOperation': '1151126', 'EndDateForStabilizationOperation': '20261126', 'UnderwritingPrice': '20261202', 'OverAllotmentShares': '225000', 'TransactionType': '主辦承銷商執行穩定價格操作專戶', 'Underwriter': '9800 元大', 'TradingType': '買', 'TradingPrice': '176.00', 'TradingVolume': '5000', 'CurrentDayCumulativeTradingVolume': '5000'}
+     ⛔ ③`Date` 相異值只有 **1 種**：1151126 × 8　⇒ **它只有這一期，沒有歷史**
+     ⛔ ③`StartDateForStabilizationOperation` 相異值只有 **1 種**：1151126 × 8　⇒ **它只有這一期，沒有歷史**
+     ⛔ ③`EndDateForStabilizationOperation` 相異值只有 **1 種**：20261126 × 8　⇒ **它只有這一期，沒有歷史**
      ②帶 `date=20200101` 回的內容跟不帶時**完全相同** ⇒ ⛔ 參數被無視
 
 [13] ⭐⭐ 上櫃融資融券的「備註」欄，歷史日期回不回
@@ -546,20 +546,20 @@
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20261117
+                ── date：20261126
                 ── flagField：張數
                 ── stat：ok
            [POST stkno+year] ✓ JSON 506 bytes
               ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20261117
+                ── date：20261126
                 ── flagField：張數
                 ── stat：ok
            ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
               {"stat":"參數輸入錯誤"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
-              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20261117","stat":"ok","flagField":"張數"}
+              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20261126","stat":"ok","flagField":"張數"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
            ── ⭐ `date` 的**格式**掃描（⛔ 名字已經從頁面讀到了）──
               date='2024'         stat='ok'｜回顯 code='6488'｜totalCount=12｜inner date=2024　⭐⭐ **中了**
@@ -602,9 +602,9 @@
                 ── flagField：張數
                 ── stat：ok
            ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
-              {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,875,830","1,553,805,840","3,645","828.33","1,600.00","7/15","403.00","1/02","771.32"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1151117,"subtitle":"近年個股成交資訊(當年度統計至 1151117 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
+              {"flagField":"張數","tables":[{"title":"6488 環球晶          ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[[115,"1,932,124","1,581,139,296","3,745","818.34","1,600.00","7/15","403.00","1/02","762.28"],[114,"788,658","312,330,604","1,195","396.03","558.00","10/27","255.50","4/09","366.43"],[113,"476,328","243,356,105","673","510.90","638.00","3/08","358.00","12/23","504.69"],[112,"375,520","192,992,917","569","513.93","639.00","12/15","425.50","1/03","505.48"],[111,"685,780","370,453,226","924","540.19","906.00","1/03","331.50","10/13","534.43"],[110,"771,196","602,386,578","853","781.11","972.00","7/13","606.00","2/01","797.79"],[109,"1,133,012","480,747,815","923","424.31","742.00","12/30","290.00","3/19","422.83"],[108,"1,640,120","528,459,347","1,248","322.21","394.00","12/25","238.50","1/04","323.91"],[107,"2,001,639","758,232,389","1,565","378.81","642.00","5/31","200.50","10/26","415.51"],[106,"1,647,724","422,383,393","1,204","256.34","448.00","11/22","106.00","1/11","259.99"],[105,"356,792","32,393,268","228","90.79","122.50","12/21","63.20","5/05","77.37"],[104,"108,477","8,096,783","77","74.64","84.40","12/02","64.80","9/30","75.36"]],"totalCount":12,"notes":[],"code":"6488","name":"環球晶          ","curDate":1151126,"subtitle":"近年個股成交資訊(當年度統計至 1151126 止)"},{"title":"","data":[[1600.0000,"115/7/15",63.2000,"105/5/05"]],"fields":["近年最高價","日期","近年最低價","日期"],"notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"stat":"ok"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
-              {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1151117,"subtitle":"近年個股成交資訊(當年度統計至 1151117 止)"},{}],"stat":"ok"}
+              {"flagField":"張數","tables":[{"title":"null ","fields":["年度","成交張數(A)","金額(仟元)(B)","筆數(仟)","加權平均價(B/A)","盤中最高價","日期","盤中最低價","日期","收盤平均價"],"data":[],"totalCount":0,"notes":[],"code":null,"name":"","curDate":1151126,"subtitle":"近年個股成交資訊(當年度統計至 1151126 止)"},{}],"stat":"ok"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
 
 [15] ⭐⭐ 上櫃**零股**：先讀那幾頁自己寫的 `action:`（⛔ 這一趟不打，讀到了才打）

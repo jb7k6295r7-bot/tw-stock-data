@@ -1,11 +1,10 @@
-# ⏱ 這一趟：2026-09-16T23:08:21+08:00（台北）｜ref ?｜本機／開發容器
-# ⚠ **不是 Actions 跑的** ⇒ ⛔ 若內容含抓取結果一律不可信（這裡對交易所是我方閘道 403）
+# ⏱ 這一趟：2026-11-26T18:40:19+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45799106786
 ==============================================================================
 我方哪一支程式打哪一個主機（母體＝真的被 workflow 跑到的 .py）
 ⛔ 這一支不判合不合條款，也不判『開放資料型主機』是不是但書涵蓋的那批
 ==============================================================================
 
-母體：110 支被 workflow 跑到，其中 **28 支**會連外
+母體：140 支被 workflow 跑到，其中 **44 支**會連外
 
   backfill.py
       workflow：backfill.yml／daily.yml
@@ -22,6 +21,31 @@
       B 網站型:api.finmindtrade.com／github.com／www.twse.com.tw
       ⚠ 要逐條看路徑:www.tpex.org.tw
       寫（線索）：t187ap03_L／universe
+  crypto.py
+      workflow：crypto.yml
+      B 網站型:api.coingecko.com／data.binance.vision／www.bitstamp.net
+      寫（線索）：spot
+  crypto_funding.py
+      workflow：crypto.yml
+      B 網站型:data.binance.vision
+      寫（線索）：futures
+  crypto_perp.py
+      workflow：crypto.yml
+      B 網站型:data.binance.vision
+      寫（線索）：futures
+  crypto_probe.py
+      workflow：crypto_probe.yml
+      B 網站型:api.coingecko.com／api.kraken.com／data.binance.vision／www.bitstamp.net
+      寫（線索）：spot
+  curated/foreign_holding/build.py
+      workflow：insider_monthly.yml
+      B 網站型:api.finmindtrade.com／www.twse.com.tw
+      ⚠ 要逐條看路徑:www.tpex.org.tw
+      寫（線索）：early／meta
+  curated/insider_predeclare/build.py
+      workflow：insider_monthly.yml
+      B 網站型:mopsov.twse.com.tw
+      寫（線索）：meta
   db_status.py
       workflow：daily.yml
       B 網站型:mopsov.twse.com.tw
@@ -31,6 +55,15 @@
       B 網站型:www.twse.com.tw
       ⚠ 要逐條看路徑:www.tpex.org.tw
       寫（線索）：meta
+  early_backfill.py
+      workflow：backfill.yml／feeds.yml
+      B 網站型:www.twse.com.tw
+      ⚠ 要逐條看路徑:www.tpex.org.tw
+      寫（線索）：early
+  etf_pre2015.py
+      workflow：feeds.yml
+      B 網站型:www.twse.com.tw
+      寫（線索）：adj
   feeds.py
       workflow：daily.yml／feeds.yml
       B 網站型:www.／www.twse.com.tw
@@ -41,6 +74,13 @@
       B 網站型:api.finmindtrade.com／github.com／www.twse.com.tw
       ⚠ 要逐條看路徑:www.tpex.org.tw
       寫（線索）：1／_changes／latest
+  filing_probe.py
+      workflow：probe.yml
+      B 網站型:doc.twse.com.tw／mops.twse.com.tw
+  funding_probe.py
+      workflow：probe.yml
+      B 網站型:data.binance.vision
+      寫（線索）：futures
   holiday.py
       workflow：daily.yml
       B 網站型:www.dgpa.gov.tw／www.twse.com.tw
@@ -56,12 +96,15 @@
       A 開放資料型:openapi.twse.com.tw
       ⚠ 要逐條看路徑:www.tpex.org.tw
   mops_history.py
-      workflow：feeds.yml
+      workflow：feeds.yml／revenue_hist.yml
       B 網站型:mopsov.twse.com.tw
       寫（線索）：mops
   mops_history_probe.py
       workflow：feeds.yml
       B 網站型:api.finmindtrade.com／mopsov.twse.com.tw
+  mops_news.py
+      workflow：backfill.yml／daily.yml
+      B 網站型:mops.twse.com.tw
   mops_probe.py
       workflow：feeds.yml／probe.yml
       A 開放資料型:data.gov.tw／openapi.twse.com.tw
@@ -78,7 +121,7 @@
       ⚠ 要逐條看路徑:www.tpex.org.tw
       寫（線索）：meta
   otc_adj.py
-      workflow：feeds.yml
+      workflow：daily.yml／feeds.yml
       B 網站型:api.finmindtrade.com
       寫（線索）：adj／meta
   otc_adj_probe.py
@@ -98,7 +141,7 @@
       ⚠ 要逐條看路徑:www.tpex.org.tw
       寫（線索）：adj／meta／universe
   otc_parvalue_history.py
-      workflow：feeds.yml
+      workflow：capital.yml／feeds.yml
       ⚠ 要逐條看路徑:www.tpex.org.tw
   otc_reduce_history.py
       workflow：daily.yml／feeds.yml
@@ -128,18 +171,29 @@
       workflow：daily.yml
       A 開放資料型:opendata.tdcc.com.tw
       寫（線索）：meta／tdcc／universe
+  treasury.py
+      workflow：backfill.yml
+      B 網站型:mopsov.twse.com.tw
+  tri_index.py
+      workflow：tri_index.yml
+      B 網站型:www.twse.com.tw
+  twse_xflag.py
+      workflow：backfill.yml／daily.yml
+      B 網站型:www.twse.com.tw
+  us_probe.py
+      workflow：probe.yml
+      B 網站型:api.polygon.io／query1.finance.yahoo.com／stooq.com／www.alphavantage.co
+  xbrl_rd.py
+      workflow：backfill.yml
+      B 網站型:mopsov.twse.com.tw
 
-⇒ 會連外的 28 支裡：
+⇒ 會連外的 44 支裡：
      打到 **A 開放資料型**主機的：6 支
-     打到 **B 網站型**主機的：　　20 支
-     打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：18 支
+     打到 **B 網站型**主機的：　　36 支
+     打到 `www.tpex.org.tw`（⚠ 兩族都有，要逐條看路徑）：20 支
   ⛔ 三個數字會相加超過總數——**一支可以同時打兩族**，那不是錯。
 
 ── ⭐⭐ 端點層（主機 ＋ 前兩層路徑）：`www.tpex.org.tw` 那一格拆開之後 ──
    ⚠ 母體**只收在條款網域底下**的（twse.com.tw／tpex.org.tw／gretai.org.tw）——⛔ FinMind／GitHub 那些不在這份條款的管轄裡，算進去會把暴露面話大
-     A 開放資料型端點：**8** 支｜B 網站型端點：**23** 支｜❗ 讀不出來的：**1** 支
+     A 開放資料型端點：**8** 支｜B 網站型端點：**33** 支｜❗ 讀不出來的：**1** 支
      ❗ mops_probe.py：www.tpex.org.tw/（⛔ 只有主機、沒有路徑 ⇒ **不猜**）
-
-✗ 2026-11-17T09:27:14Z **這一趟沒有跑到 feed_hosts.py**
-  （迴圈的時間預算 1440 秒用完了）
-  ⛔ 這一份是上一趟的內容 ⇒ ⚠ 不要當成「這一趟結果沒變」。
