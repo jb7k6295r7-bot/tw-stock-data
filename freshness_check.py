@@ -154,6 +154,23 @@ def _newest(path, how):
         if how == "filename_roc" and re.fullmatch(r"1[0-9]{6}", s):
             return f"{int(s[:3]) + 1911}-{s[3:5]}-{s[5:7]}", f"{len(fs)} 份"
         if re.fullmatch(r"20[0-9]{2}-[0-9]{2}-[0-9]{2}", s):
+            # ⭐ 2026-11-26：只認檔名會把「官方真的是空的」誤報成過期。
+            #   stophalt：唯一一檔 1589 永冠-KY 11-18 終止上市 ⇒ 名單起就是空的，
+            #   feeds.py 也把 11-18 起每天記進 `_asked.json` 為 "empty"（問到了、官方 0 列），
+            #   ⛔ 而這裡只看檔案 ⇒ 11-24 起 daily 天天紅（回報：資料庫線自查）。
+            #   ⇒ 台帳裡【明確標 empty】的日子也算「有在累積」；⛔ 失敗、沒問過的不算。
+            ap = os.path.join(path, "_asked.json")
+            if os.path.exists(ap):
+                try:
+                    import json
+                    led = json.load(io.open(ap, encoding="utf-8"))
+                    emp = sorted(k for k, v in (led.items() if isinstance(led, dict) else [])
+                                 if v == "empty" and re.fullmatch(r"20[0-9]{2}-[0-9]{2}-[0-9]{2}", k))
+                except Exception as e:
+                    return s, f"{len(fs)} 份（⚠ _asked.json 讀不了：{e}）"
+                if emp and emp[-1] > s:
+                    return emp[-1], (f"{len(fs)} 份｜最新檔 {s}｜⭐ 之後 {sum(1 for k in emp if k > s)} 天"
+                                     f"台帳記為「問到了、官方 0 列」（到 {emp[-1]}）")
             return s, f"{len(fs)} 份"
         return None, f"檔名認不出日期：{s!r}"
     # ⭐ `asof_column` 是 `column:asof` 的別名（⛔ 既有那幾項不動）
