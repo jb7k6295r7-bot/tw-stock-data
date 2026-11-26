@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-26T11:42:45+08:00",
-  "target_trading_day": "2026-11-25",
+  "generated_at": "2026-11-26T15:02:16+08:00",
+  "target_trading_day": "2026-11-26",
   "stocks": {
     "7879": {
       "extra": {
@@ -134,12 +134,12 @@
       },
       "fs_types_seen": 18,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -187,12 +187,12 @@
       },
       "fs_types_seen": 17,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -240,12 +240,12 @@
       },
       "fs_types_seen": 17,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -293,12 +293,12 @@
       },
       "fs_types_seen": 17,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -346,12 +346,12 @@
       },
       "fs_types_seen": 17,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -452,12 +452,12 @@
       },
       "fs_types_seen": 19,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -505,12 +505,12 @@
       },
       "fs_types_seen": 15,
       "capital_source": "OrdinaryShare",
-      "price_date_max": "2026-11-25",
+      "price_date_max": "2026-11-26",
       "inst_date_max": "2026-11-25",
       "history": {
         "price": {
-          "total": 459,
-          "added": 0,
+          "total": 460,
+          "added": 1,
           "changed": null
         },
         "inst": {
@@ -528,29 +528,30 @@
     "ok": [
       "index",
       "summary",
-      "t86",
       "bfi82u"
     ],
-    "errors": null,
+    "errors": {
+      "t86": "stat=很抱歉，沒有符合條件的資料!"
+    },
     "csv": {
       "index": {
-        "total": 9468,
-        "added": 0,
+        "total": 9469,
+        "added": 1,
         "changed": null
       },
       "breadth": {
-        "total": 57,
-        "added": 0,
+        "total": 58,
+        "added": 1,
         "changed": null
       },
       "amount": {
-        "total": 57,
-        "added": 0,
+        "total": 58,
+        "added": 1,
         "changed": null
       },
       "inst": {
-        "total": 57,
-        "added": 0,
+        "total": 58,
+        "added": 1,
         "changed": null
       }
     },
@@ -558,16 +559,16 @@
   },
   "note": "date_max 才是真正的資料基準日；target_trading_day 只是查詢用的猜測值。下游一律讀 data/latest 底下的 CSV，不要讀 JSON——JSON 檔太大，經 WebFetch 會被截斷並被憑空補齊。可讀的檔：<代號>_price／_inst／_per／_revenue／_margin／_capital，以及 market_index／market_breadth／market_amount。",
   "version": "v8.0 2026-09-04",
-  "calendar_days": 459,
+  "calendar_days": 460,
   "universe": {
     "counts": {
-      "twse": 1394,
-      "tpex": 1020,
-      "emerging": 378,
+      "twse": 1395,
+      "tpex": 1021,
+      "emerging": 377,
       "warrants_excluded": 0,
-      "total": 2792,
+      "total": 2793,
       "by_kind": {
-        "etf": 367,
+        "etf": 368,
         "other": 27,
         "stock": 2361,
         "special": 27,
@@ -575,12 +576,12 @@
       }
     },
     "errors": null,
-    "rows_written": 2792,
-    "coverage_days": 59,
+    "rows_written": 2793,
+    "coverage_days": 60,
     "phantom_days_removed": null,
     "stocks_meta": {
-      "total": 3071,
-      "added_today": 0,
+      "total": 3072,
+      "added_today": 1,
       "purged_warrants": null
     }
   },
