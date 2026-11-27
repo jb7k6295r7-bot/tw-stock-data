@@ -11,10 +11,10 @@ from backtest import research34 as R34
 from backtest import researchLongPool as RLP
 import snap; D = snap.fix()   # ⚠ import researchLongPool 會換 D.DATA；改指 scan64 快照（origin/main 9e1316ff3c）
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = snap.BASE   # 沒設 SCAN_BASE 時＝本檔所在資料夾（同 64 格）
 CACHE = os.path.join(HERE, "cache")
 FAC = os.path.join(HERE, "factors"); os.makedirs(FAC, exist_ok=True)
-FD = os.path.join(HERE, "dbmain", "data")          # origin/main 9e1316ff3c 抽出（全部資料同一快照）
+FD = snap.SNAP          # 預設 origin/main 9e1316ff3c 抽出（全部資料同一快照）；補格用 SCAN_SNAP
 TAIEX = os.path.expanduser("~/msdata/us_macro/c10a1d00c358760fb8780b79863068eca9341dfc/twse_taiex.csv")
 FIRST_ME, LAST_ME = "2016-06", "2026-08"           # 快取的形成月範圍（計數另依段落裁）
 

@@ -3,8 +3,10 @@
 程式碼沿用 ~/tw-p17 backtest/（D、research11、research34、researchLongPool）；⚠ import researchLongPool／addon_daily 會換 D.DATA ⇒ import 完一律呼叫 fix()。"""
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
-SNAP = os.path.join(HERE, "dbmain", "data")
-SHA = open(os.path.join(HERE, "dbmain", "SHA.txt")).read().split()[0]
+# 補格（add/）用環境變數改快照與輸出根目錄；沒設時與 64 格原樣相同。
+BASE = os.path.expanduser(os.environ.get("SCAN_BASE", HERE))
+SNAP = os.path.expanduser(os.environ.get("SCAN_SNAP", os.path.join(HERE, "dbmain", "data")))
+SHA = open(os.path.expanduser(os.environ.get("SCAN_SHA", os.path.join(HERE, "dbmain", "SHA.txt")))).read().split()[0]
 
 
 def fix():

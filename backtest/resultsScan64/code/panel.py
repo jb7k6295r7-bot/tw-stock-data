@@ -10,7 +10,7 @@ from backtest import data as D
 from backtest import research11 as R11
 import snap; D = snap.fix()
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = snap.BASE   # 沒設 SCAN_BASE 時＝本檔所在資料夾（同 64 格）
 CACHE = os.path.join(HERE, "cache"); os.makedirs(CACHE, exist_ok=True)
 KEYS = ["C", "O", "H", "L", "V", "A", "RC", "SH", "LIM1", "UP", "BAD", "VALID"]
 
