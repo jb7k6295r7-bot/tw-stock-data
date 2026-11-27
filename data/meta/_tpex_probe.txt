@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-27T19:16:00+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45987884668
+# ⏱ 這一趟：2026-11-27T19:42:26+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45990243006
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -275,13 +275,13 @@
 
   ── 日成交量值指數（上櫃大盤層級統計，交易日曆的候選）
      https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_index/st41.php?l=zh-tw
-     ✓ 11,405 bytes
+     ✓ 10,291 bytes
        （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
 
   ── 上櫃股價指數收盤行情（類股指數，類股名稱的候選）
      https://www.tpex.org.tw/web/stock/aftertrading/index_summary/summary.php?l=zh-tw
-     ✓ 11,650 bytes
+     ✓ 10,536 bytes
        （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
 
@@ -330,17 +330,16 @@
 
   ── ⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
-     ✓ 11,952 bytes
-     inline script 3 段
+     ✓ 10,838 bytes
+     inline script 2 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 4 種：
        data-format='D'
        data-format='csv'
        data-format='print'
        data-start='20190909'
-     像「路徑＋查詢字串」的（2 個，逐字）：
+     像「路徑＋查詢字串」的（1 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
-       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610b7413fd1314d
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「恢復買賣」5 次
@@ -350,28 +349,26 @@
 
   ── 變更股票面額**預告表**
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
-     ✓ 11,452 bytes
-     inline script 3 段
+     ✓ 10,338 bytes
+     inline script 2 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 2 種：
        data-format='csv'
        data-format='print'
-     像「路徑＋查詢字串」的（2 個，逐字）：
+     像「路徑＋查詢字串」的（1 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
-       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610b743db2f68e8
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「面額」8 次
 
   ── 採**彈性面額**之上（興）櫃公司名冊
      https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html
-     ✓ 20,122 bytes
-     inline script 2 段
+     ✓ 19,008 bytes
+     inline script 1 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 0 種：
-     像「路徑＋查詢字串」的（2 個，逐字）：
+     像「路徑＋查詢字串」的（1 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
-       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610b7465cb86a41
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「面額」12 次
@@ -380,12 +377,12 @@
 
   ── 櫃買中心 休市日／交易日曆
      https://www.tpex.org.tw/zh-tw/announce/market/holiday.html
-     ✓ 12,185 bytes｜出現「休市」5 次｜「開市」0 次
+     ✓ 11,071 bytes｜出現「休市」5 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
   ── 櫃買中心 公告專區（找得到休市日的入口就好）
      https://www.tpex.org.tw/zh-tw/announce/market.html
-     ✓ 11,068 bytes｜出現「休市」1 次｜「開市」0 次
+     ✓ 9,954 bytes｜出現「休市」1 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
 [10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）

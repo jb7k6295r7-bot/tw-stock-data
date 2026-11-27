@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-27T19:17:19+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45987884668
+# ⏱ 這一趟：2026-11-27T19:43:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45990243006
 # otccal_probe.py 的輸出。這是探針結果，不是資料。
 # 要答的問題：**上櫃交易日曆有沒有第二來源**（目前唯一一列 C 級：只有自我一致）。
 # 判準四項見 otccal_probe.py 檔頭，⛔ 其中第 2 項（日期 min/max）是分水嶺。
@@ -104,8 +104,8 @@
            e tbody").addColRowIndex()},tables:[{align:"F0",class:"grid"}]});
         ── 第 3 段（1,097 字）
            (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-           params={r:'a610b9afce134cbd',t:'MTc5NTc3ODIzNA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
-           origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610b9afce134cbd',a=document.createElement('script');a.src=o?new URL(u,o).href:
+           params={r:'a610e048cc93ca32',t:'MTc5NTc3OTgxNQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
+           origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610e048cc93ca32',a=document.createElement('script');a.src=o?new URL(u,o).href:
            u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('if
            rame');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild
            (a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechang
@@ -145,12 +145,8 @@
        ⛔ 只有「回了真的資料」才算數；404／空殼一律當不存在，⛔ 而且不論結果如何，猜的網址**不會**被寫成結論。
      ? announce/holiday?response=json：11,068 bytes｜不是 JSON（JSONDecodeError）｜列數 0
      ? announce/market/holiday?response=json：11,068 bytes｜不是 JSON（JSONDecodeError）｜列數 0
-     ✗ bulletin/holiday?response=json：HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.
-     ✗ market/holiday?response=json：HTTP 404 Not Found | 
-<html>
-<head><meta http-equiv="refresh" content="0; url=https://www.
+     ? bulletin/holiday?response=json：11,068 bytes｜不是 JSON（JSONDecodeError）｜列數 0
+     ? market/holiday?response=json：11,068 bytes｜不是 JSON（JSONDecodeError）｜列數 0
 
 [4] 候選 C：TWSE 開休市行事曆——**它說的「市場」包不包含上櫃？**
      ⛔ 這一節不是去拿日曆（那支已經通了），是去問一句話：
