@@ -14,9 +14,9 @@ on:
         options: [diag, probe, run, adjust, purge, etf-pre2015, early-twse, early-tpex, early-revenue, early-feed, industry-probe, industry, mops-probe, mops, otc-adj-probe, otc-adj, otc-adj-codes, otc-adj-official, otc-exright-history, otc-reduce-history, otc-parvalue-history, mops-history-probe, mops-history-dry, mops-history, calendar-audit, content-audit, official-stats, official-stats-tpex, official-months, official-months-probe, filing-dates, early-inst, early-shares, mops-history-esb]
         default: probe
       feed:
-        description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓。⭐ instamt／otcinstamt＝三大法人買賣【金額】（大盤層級，長格式）：上市回溯下限民國93-03-03、上櫃 2017-01-03，⛔ 上櫃比這更早一律 0 列"
+        description: "要跑哪一種。probe 可選 all。★ reduce＝減資恢復買賣參考價（上市），區間型，逐月抓。⭐ instamt／otcinstamt＝三大法人買賣【金額】（大盤層級，長格式）：上市回溯下限民國93-03-03、上櫃 2017-01-03，⛔ 上櫃比這更早一律 0 列。⭐ pricelimit＝上市官方漲跌停（TWT84U，d 當天適用）／otcpricelimit＝上櫃官方次日漲跌停（d 的下一交易日適用）"
         type: choice
-        options: [all, per, exright, reduce, margin, marginmkt, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio, stophalt, instamt, otcinstamt]
+        options: [all, per, exright, reduce, margin, marginmkt, otcinst, otcper, otcmargin, otcexright, tib, sbl, otcsbl, fulldelivery, chtm, marginratio, stophalt, instamt, otcinstamt, pricelimit, otcpricelimit]
         default: all
       start:
         description: "起日（run 用）。照交易日曆走，整段 2015~2026 約 2,845 天／4.4 小時，一趟跑得完"
@@ -297,6 +297,7 @@ jobs:
           python selftest_feed_months.py
           python selftest_feed_days.py
           python selftest_inst_dealer.py
+          python selftest_limitfeed.py
           python selftest_syntax_warnings.py
 
       - name: 把程式同步到 main（趁 checkout 還新）

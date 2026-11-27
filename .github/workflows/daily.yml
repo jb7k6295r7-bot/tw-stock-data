@@ -469,6 +469,35 @@ jobs:
           # ⭐ 記下來之後仍然 exit：⛔ 吞掉失敗比連坐更糟。
           exit $RC
 
+      # ⭐⭐ 官方漲跌停價（2026-11-28 新增；回測線 S83「漲停天數」；裁定 seq520／526：只用官方數字）。
+      #   pricelimit    ＝ 上市 TWT84U，第 d 天那一張 ⇒ **d 當天**的漲跌停
+      #   otcpricelimit ＝ 上櫃日收盤行情的「次日漲停價／次日跌停價」⇒ **d 的下一個交易日**
+      #   ⚠ 兩支日期語意相反，欄名也刻意不同（見 feeds.py 兩個 parser 的說明）。
+      # 兩段式跟融資融券那一步一樣：先當天，再 `--limit 20` 回頭補洞（沒有洞時 0 個請求）。
+      #   ⚠ 2015 起的整段歷史由 feeds.yml 手動派工補（一年約 245 天 × 2 支）；
+      #     在那之前這裡的 `--limit 20` 會每天從 2015 往後補 20 天，⛔ 那不是錯，只是慢。
+      - name: 官方漲跌停價（上市 TWT84U＋上櫃次日漲跌停）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 12
+        run: |
+          # ⛔ 自測擋在抓取前面：TWT84U 欄名重複（`開盤競價基準` 兩次），
+          #   ⚠ 本日／前日取反的話存進去的是**另一天**的基準，而數字看起來完全正常。
+          python selftest_limitfeed.py
+          DAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])")
+          echo "目標交易日：$DAY"
+          # ⛔ 當日抓取掛掉不可以賠掉後面的回補（理由同融資融券那一步）⇒ 記下來、繼續跑、最後 exit $RC。
+          RC=0
+          for f in pricelimit otcpricelimit; do
+            python feeds.py --run --feed "$f" --start "$DAY" --end "$DAY" --sleep 2 || RC=1
+          done
+          TODAY=$(python -c "import json;print(json.load(open('data/latest/_manifest.json'))['target_trading_day'])" 2>/dev/null || TZ=Asia/Taipei date '+%Y-%m-%d')  # ⛔ 不用牆上時鐘（同上）
+          for f in pricelimit otcpricelimit; do
+            python feeds.py --run --feed "$f" --start 2015-01-01 --end "$TODAY" \
+                            --limit 20 --sleep 2 || RC=1
+          done
+          exit $RC
+
       # ⭐⭐ 借券賣出（SBL）。K線線 2026-09-10 15:45 列**第一優先**：
       #   借券賣出是融券的 **77.5 倍**，而融券只佔空方的 **1.4%**
       #   ⇒ 「券資比低 ＝ 空方壓力小」是拿那 1.4% 對整體下結論，
