@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-28T01:51:17+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46043804424
+# ⏱ 這一趟：2026-11-28T06:08:07+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46073885187
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -161,8 +161,8 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（1,097 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a612f9c9caa5dea8',t:'MTc5NTgwMTgzMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
-         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a612f9c9caa5dea8',a=document.createElement('script');a.src=o?new URL(u,o).href:
+         params={r:'a614724b7ba319ca',t:'MTc5NTgxNzI1Mw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
+         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a614724b7ba319ca',a=document.createElement('script');a.src=o?new URL(u,o).href:
          u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('if
          rame');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild
          (a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechang
@@ -319,8 +319,8 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（1,097 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a612fa00add082a2',t:'MTc5NTgwMTg0MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
-         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a612fa00add082a2',a=document.createElement('script');a.src=o?new URL(u,o).href:
+         params={r:'a614726b7d4aad06',t:'MTc5NTgxNzI1OA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
+         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a614726b7d4aad06',a=document.createElement('script');a.src=o?new URL(u,o).href:
          u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('if
          rame');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild
          (a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechang
