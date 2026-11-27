@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-26T18:21:10+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45799106786
+# ⏱ 這一趟：2026-11-27T19:15:17+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45987884668
 # tdcc_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://opendata.tdcc.com.tw/getOD.ashx?id=1-5
 
@@ -48,7 +48,7 @@
      ✓ 69,544 bytes
      ★ 資料日期選項 51 個：['20261120', '20261113', '20261106', '20261030', '20261022'] … ['20251212', '20251205', '20251128']
        → **歷史查得到**，不是只有最新一週
-     ★ 疑似級距文字：['8-4311', '02-2719']
+     ★ 疑似級距文字：['733-1676', '02-2719']
      ★ dataset id：['1-5']
      疑似 API 路徑：['/portal/smWeb/qryStockAjax', '/portal/zh/about/capital', '/portal/zh/investor/smWeb/psi', '/portal/zh/investor/smWeb/qryEvoteR', '/portal/zh/investor/smWeb/qryEvoteStatistics', '/portal/zh/investor/smWeb/qryStock', '/portal/zh/investor/smWeb/qryss08', '/portal/zh/investor/smWeb/qryss09', '/portal/zh/investor/smWeb/rBound', '/portal/zh/smWeb/QryPS']
 
@@ -119,9 +119,9 @@
     → 股數全過、只有人數不符：**這是來源自己的性質，不是欄位錯位**（錯位會兩欄一起壞）。要不要放寬，看上面 17 列的實際數字再決定。
 
 [13] ★★★ 查詢頁 ajax，這次帶 Cookie（第 7 節那四發都沒帶）
-  ✓ 查詢頁 69,544 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
+  ✓ 查詢頁 69,540 bytes｜**拿到 1 個 Cookie**：['JSESSIONID']
   form 欄位 7 個（**逐字連值**）：
-    SYNCHRONIZER_TOKEN = '05f3bb06-f3d0-4a45-b78f-83b7392aa1d6'
+    SYNCHRONIZER_TOKEN = 'b57a959a-42c9-4f72-834b-d40f908ded7f'
     SYNCHRONIZER_URI = '/portal/zh/smWeb/qryStock'
     firDate = '20261120'
     method = 'submit'
@@ -154,17 +154,17 @@
        ⛔ 仍然**不可以**下「沒有歷史」的結論：查詢頁確實列了 51 個週別，只是我方取不到。
 
 [8] 開放資料專區其他 dataset id 的形狀（只量，不猜用途）
-    id=1-1: 14,219,050 bytes｜CSV 145,105 列｜相異資料日期 0 個 []
+    id=1-1: 14,219,500 bytes｜CSV 145,108 列｜相異資料日期 0 個 []
              欄位：['證券代號', '證券名稱', '市場別', '股務單位', '停止過戶領回', '證券狀態', '無面無實體', '歸戶領回']
-    id=1-2: 22,486,092 bytes｜CSV 142,854 列｜相異資料日期 1 個 ['20261126']
+    id=1-2: 22,487,169 bytes｜CSV 142,856 列｜相異資料日期 1 個 ['20261127']
              欄位：['資料日期', '證券代號', '證券名稱', '市場別', '股務單位', '股務單位地址', '電話', '備 註(終止日期)']
-    id=1-3: 1,056,966 bytes｜CSV 5,160 列｜相異資料日期 1 個 ['20261126']
+    id=1-3: 1,057,906 bytes｜CSV 5,163 列｜相異資料日期 1 個 ['20261127']
              欄位：['資料日期', '發行機構名稱', '發行機構名稱(英文)', '發行辦法名稱', '發行辦法檔案網址(http://www.tdcc.com.tw/tcdata/tc11/)', '債券代號', '債券簡稱']
-    id=1-4: 4,448 bytes｜CSV 82 列｜相異資料日期 1 個 ['20261125']
+    id=1-4: 4,448 bytes｜CSV 82 列｜相異資料日期 1 個 ['20261126']
              欄位：['資料日期', '證券代號', '證券名稱', '分戶保管股數', '特定保管股數', '強制集保總股數', '發行仟股數']
     id=1-6: 405,656 bytes｜CSV 2,976 列｜相異資料日期 0 個 []
              欄位：['資料年月', '債券代號', '債券名稱', '債券類別', '債券餘額', '個人戶持有比率', '法人戶持有比率', '自營商持有比率']
-    id=1-7: 42,395 bytes｜CSV 973 列｜相異資料日期 0 個 []
+    id=1-7: 42,481 bytes｜CSV 975 列｜相異資料日期 0 個 []
              欄位：['證券代號', '證券名稱', '交付日期', '交付原因']
 
 [8.5] ⭐ `getOD.ashx?id=1-5` 吃不吃日期參數（K線 1712 §1-2 指名）
@@ -179,10 +179,10 @@
 [9] ★★ 政府資料開放平臺 dataset 11452（使用者 2026-09-09 提供）
 
   ── 網頁：https://data.gov.tw/dataset/11452
-     ✓ 542,314 bytes
-     更新頻率：['data-v-1c6602f4><strong data-v-1c6602f4>更新頻率</strong></div><div class="table-cell" data-v-', 'value":659,"code_name":660},"9","資料資源內容與更新頻率不符",["Reactive",662],{"$slocale":663},"zhTW",[']
+     ✓ 535,378 bytes
+     更新頻率：['data-v-1c6602f4><strong data-v-1c6602f4>更新頻率</strong></div><div class="table-cell" data-v-', 'value":325,"code_name":326},"9","資料資源內容與更新頻率不符",{"success":5,"code":6,"message":7,"payload']
      提供機關：['data-v-1c6602f4><strong data-v-1c6602f4>提供機關</strong></div><div class="table-cell" data-v-', 'data-v-1c6602f4><strong data-v-1c6602f4>提供機關聯絡人姓名</strong></div><div class="table-cell" da']
-     檔案格式：['_value":650,"code_name":651},"6","建議提供其他檔案格式",{"code_type":628,"code_value":653,"code_name']
+     檔案格式：['_value":316,"code_name":317},"6","建議提供其他檔案格式",{"code_type":293,"code_value":319,"code_name']
      授權：['><a href="/licenses" class="" title="前往 授權條款" data-v-b1cd8f40>授權條款</a></li><li class="menu', 'data-v-1c6602f4><strong data-v-1c6602f4>授權方式</strong></div><div class="table-cell" data-v-']
 
   ── 公開 API：https://data.gov.tw/api/v2/rest/dataset/11452
@@ -201,13 +201,13 @@
 [11] ★ 級距文字（1-999、1,000-5,000…）在哪一頁
 
   ── 查詢頁（本體）：https://www.tdcc.com.tw/portal/zh/smWeb/qryStock
-     ✓ 69,532 bytes｜CSV 560 列｜**相異資料日期 0 個** []
+     ✓ 69,540 bytes｜CSV 560 列｜**相異資料日期 0 個** []
        「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 查詢頁 /investor/ 變體：https://www.tdcc.com.tw/portal/zh/investor/smWeb/qryStock
      ✓ 69,544 bytes｜CSV 560 列｜**相異資料日期 0 個** []
-       「小-大」數字對 2 個｜**最長連續鏈 1 段**｜「N 以上」0 個
+       「小-大」數字對 4 個｜**最長連續鏈 1 段**｜「N 以上」0 個
        （接不成鏈，最長只有 1 段——這些多半是電話或代碼，不是級距）
 
   ── 另一台主機的開放資料：https://smart.tdcc.com.tw/opendata/getOD.ashx?id=1-5
