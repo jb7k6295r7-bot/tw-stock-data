@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-27T19:42:26+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45990243006
+# ⏱ 這一趟：2026-11-28T00:26:14+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46032092061
 # tpex_probe.py 的輸出。這是端點目錄，不是資料。
 # 來源：https://www.tpex.org.tw/openapi/swagger.json
 
@@ -275,13 +275,13 @@
 
   ── 日成交量值指數（上櫃大盤層級統計，交易日曆的候選）
      https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_index/st41.php?l=zh-tw
-     ✓ 10,291 bytes
+     ✓ 11,405 bytes
        （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
 
   ── 上櫃股價指數收盤行情（類股指數，類股名稱的候選）
      https://www.tpex.org.tw/web/stock/aftertrading/index_summary/summary.php?l=zh-tw
-     ✓ 10,536 bytes
+     ✓ 11,650 bytes
        （抓不到 API 路徑——頁面可能是 JS 動態組的，那就要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
 
@@ -299,9 +299,9 @@
      首列：{'Date': '1151127', 'Sector': '光電業', 'TradeAmount': '1736667772', 'TradeWeight': '4.62', ' NumberOfSharesTraded': '26850609'}
 
   ── /tpex_3insti_qfii_industry｜上櫃各類股僑外資及陸資持股比例表
-     ✓ 5,186 bytes｜28 筆
+     ✓ 5,188 bytes｜28 筆
      欄位：['Date', 'Industry', 'NumberOfCompanies', 'NumberOfSharesIssued', 'CurrentlySharesOC/FIHeld', 'PercentageOfSharesOC/FMIHeld']
-     首列：{'Date': '1151127', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5232021494', 'CurrentlySharesOC/FIHeld': '910623586', 'PercentageOfSharesOC/FMIHeld': '17.4%'}
+     首列：{'Date': '1151127', 'Industry': '光電業', 'NumberOfCompanies': '48', 'NumberOfSharesIssued': '5232021494', 'CurrentlySharesOC/FIHeld': '910732908', 'PercentageOfSharesOC/FMIHeld': '17.41%'}
      類股相關欄的值（前 12）：['Industry=光電業', 'Industry=其他', 'Industry=其他電子業', 'Industry=化學工業', 'Industry=半導體業', 'Industry=塑膠工業', 'Industry=居家生活', 'Industry=建材營造', 'Industry=數位雲端', 'Industry=文化創意業', 'Industry=油電燃氣業', 'Industry=生技醫療']
 
 [7] ★ 沒有中文名的上櫃類股代碼：拿官方產業別欄對對看（只量不寫）
@@ -330,16 +330,17 @@
 
   ── ⭐ 變更面額**恢復買賣參考價**（上櫃那 14 筆缺的就是這個）
      https://www.tpex.org.tw/zh-tw/announce/market/change/reference.html
-     ✓ 10,838 bytes
-     inline script 2 段
+     ✓ 11,952 bytes
+     inline script 3 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 4 種：
        data-format='D'
        data-format='csv'
        data-format='print'
        data-start='20190909'
-     像「路徑＋查詢字串」的（1 個，逐字）：
+     像「路徑＋查詢字串」的（2 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
+       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6127d8ebf7196ba
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「恢復買賣」5 次
@@ -349,26 +350,28 @@
 
   ── 變更股票面額**預告表**
      https://www.tpex.org.tw/zh-tw/announce/market/change.html
-     ✓ 10,338 bytes
-     inline script 2 段
+     ✓ 11,452 bytes
+     inline script 3 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 2 種：
        data-format='csv'
        data-format='print'
-     像「路徑＋查詢字串」的（1 個，逐字）：
+     像「路徑＋查詢字串」的（2 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
+       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6127d905be03295
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「面額」8 次
 
   ── 採**彈性面額**之上（興）櫃公司名冊
      https://www.tpex.org.tw/zh-tw/mainboard/listed/flexible-face-value.html
-     ✓ 19,008 bytes
-     inline script 1 段
+     ✓ 20,122 bytes
+     inline script 2 段
      （inline script 裡沒有像在組請求的片段）
      `data-*` 屬性 0 種：
-     像「路徑＋查詢字串」的（1 個，逐字）：
+     像「路徑＋查詢字串」的（2 個，逐字）：
        //fonts.googleapis.com/css2?family=Noto
+       /cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6127d919a28da2a
      （抓不到 API 路徑——頁面可能是 JS 動態組的，下一輪要看它載入的 .js）
      載入的 js（下一輪要看的）：['/rsrc/asset/js/global.js', '/rsrc/asset/js/gsap.min.js', '/rsrc/asset/js/jquery-3.7.1.min.js', '/rsrc/asset/js/jquery.cookie.min.js', '/rsrc/asset/js/jquery.mousewheel.min.js', '/rsrc/asset/js/jquery.session.js', '/rsrc/asset/js/jquery.simplePagination.js', '/rsrc/js/ie.js']
        出現「面額」12 次
@@ -377,12 +380,12 @@
 
   ── 櫃買中心 休市日／交易日曆
      https://www.tpex.org.tw/zh-tw/announce/market/holiday.html
-     ✓ 11,071 bytes｜出現「休市」5 次｜「開市」0 次
+     ✓ 12,185 bytes｜出現「休市」5 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
   ── 櫃買中心 公告專區（找得到休市日的入口就好）
      https://www.tpex.org.tw/zh-tw/announce/market.html
-     ✓ 9,954 bytes｜出現「休市」1 次｜「開市」0 次
+     ✓ 11,068 bytes｜出現「休市」1 次｜「開市」0 次
        /zh-tw/announce/market/holiday.html
 
 [10] ★★★ 誰在讀 `data-format`／`data-start`（那一支就知道端點）
@@ -543,20 +546,20 @@
            [GET stkno+year] ✓ JSON 506 bytes
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20261127
+                ── date：20261128
                 ── flagField：張數
                 ── stat：ok
            [POST stkno+year] ✓ JSON 506 bytes
               ⇒ ⭐ 跟前面某一發**逐位元相同**（⛔ 那代表這兩套參數裡至少有一套沒生效）
               頂層鍵 ['date', 'flagField', 'stat', 'tables']
               ⭐ 平常被丟掉的鍵：['date', 'flagField', 'stat']
-                ── date：20261127
+                ── date：20261128
                 ── flagField：張數
                 ── stat：ok
            ── ⭐ **原始回應整份**（GET code+date）（⛔ 不是開頭 160 字）──
               {"stat":"參數輸入錯誤"}
            ── ⭐ **原始回應整份**（GET stkno+year）（⛔ 不是開頭 160 字）──
-              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20261127","stat":"ok","flagField":"張數"}
+              {"tables":[{"title":"null ","fields":["年","月","收市最高價","收市最低價","收市平均價","成交筆數","成交金額仟元(A)","成交張數(B)","成交週轉率(%)"],"data":[],"date":2026,"totalCount":0,"code":null,"name":"","subtitle":"每月個股交易情形查詢","notes":["ETF證券代號第六碼為K、C者，表示該ETF以外幣交易，其一交易單位(張)應為100受益權或其整倍數，請詳其公開說明書。"]}],"date":"20261128","stat":"ok","flagField":"張數"}
            ⇒ ⭐ 相異回應 **2** 種／四種打法（⚠ 只有 1 種 ⇒ 參數根本沒被讀，第二點①）
            ── ⭐ `date` 的**格式**掃描（⛔ 名字已經從頁面讀到了）──
               date='2024'         stat='ok'｜回顯 code='6488'｜totalCount=12｜inner date=2024　⭐⭐ **中了**

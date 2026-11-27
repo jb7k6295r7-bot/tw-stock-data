@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-27T19:43:13+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 45990243006
+# ⏱ 這一趟：2026-11-28T00:26:47+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46032092061
 # parvalue_probe.py 的輸出。這是探針結果，不是資料。
 # 端點：https://www.twse.com.tw/rwd/zh/change/TWTB8U
 
@@ -161,8 +161,8 @@
          toLoad:!0,autoChange:!1,beforeInit:e=>{},beforeRender:modifyJson,afterRender:()=>{},tables:[{align:"auto C8",sortable:!0,pagin:10}]});
       ── 第 3 段（1,097 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a610dea50f4efe29',t:'MTc5NTc3OTc0OA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
-         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610dea50f4efe29',a=document.createElement('script');a.src=o?new URL(u,o).href:
+         params={r:'a6127e694e90ef18',t:'MTc5NTc5Njc3OA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
+         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6127e694e90ef18',a=document.createElement('script');a.src=o?new URL(u,o).href:
          u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('if
          rame');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild
          (a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechang
@@ -319,8 +319,8 @@
          t>.hide");popupWindow.open(e.html())}));
       ── 第 3 段（1,097 字）
          (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$
-         params={r:'a610dedcea5921ca',t:'MTc5NTc3OTc1Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
-         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a610dedcea5921ca',a=document.createElement('script');a.src=o?new URL(u,o).href:
+         params={r:'a6127e8c892c683a',t:'MTc5NTc5Njc4NA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).
+         origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a6127e8c892c683a',a=document.createElement('script');a.src=o?new URL(u,o).href:
          u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('if
          rame');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild
          (a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechang
@@ -332,10 +332,10 @@
       data-start = '20190909'
      ── ⭐ 照它自己寫的形狀打一發（`API_PATTERN="/www/{LANG}/{ACTION}"` ⇒ `/www/<lang>/<action>`）
         https://www.tpex.org.tw/www/zh-tw/bulletin/pvChgRslt
-           [形狀] 296 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261127~20261130","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券�'
+           [形狀] 292 bytes｜中文 52 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261128~null","tables":[{"title":"","totalCount":0,"fields":["恢復買賣日期","證券代號","證券名稱'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/en-us/bulletin/pvChgRslt
-           [形狀] 320 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261127~20261130","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing '
+           [形狀] 316 bytes｜中文 0 字｜<tr> 0 個｜js 0 支｜開頭 '{"date":"20261128~null","tables":[{"title":"","totalCount":0,"fields":["Resume Trading Date","Code","Name","Closing Pric'
            ⚠ 沒有列 ⇒ ⛔ 不可以讀成「這條路不通」（可能要 POST／要參數／是 js 空殼）
         https://www.tpex.org.tw/www/zh_hant/bulletin/pvChgRslt
            [形狀] 11,068 bytes｜中文 694 字｜<tr> 0 個｜js 10 支　⛔ **js 空殼**｜開頭 '<!DOCTYPE html><html lang="zh-Hant-tw"><head><title>404 - 證券櫃檯買賣中心</title><meta charset="utf-8"><meta na'
@@ -458,10 +458,10 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
      ⇒ 2015 以前 **0 筆**（⇒ 我方 par_change.csv 從 2015 起是完整的）
 
 [T9] ★★ 減資 TWTAUU 一次要十五年＋**雙向**對我方的 535 筆（使用者 2026-09-09 15:20 提供）
-  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20261127
-     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年11月27日 股票減資恢復買賣參考價格'｜列數 406
+  ── ① 我方在用的（帶 /zh/）：2011-01-01 ~ 20261128
+     ✓ 帶 /zh/：stat='OK'｜title='100年01月01日 至 115年11月28日 股票減資恢復買賣參考價格'｜列數 406
   ── ② 使用者給的（不帶 /zh/），⛔ 只是要看兩條是不是同一個東西
-     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年11月27日 股票減資恢復買賣參考價格'｜列數 406
+     ✓ 不帶 /zh/：stat='OK'｜title='100年01月01日 至 115年11月28日 股票減資恢復買賣參考價格'｜列數 406
      ⇒ 兩條列數 406 vs 406（一樣 ⇒ 同一個東西，`/zh/` 可有可無）
      官方 406 列｜解析出 401 筆｜日期 2011-01-25 ~ 2026-11-23
      ── 雙向對帳（只比 2013-01-16 之後，⛔ 我方價格從 2015 起，拿更早的官方事件說我方漏抓是錯的比法）
@@ -484,12 +484,12 @@ TWSE 踩過：`TWT49U` 不吃 `date` 卻把它原樣回傳，日期核對被騙�
        首列：[1, '2314', '台揚', '115/11/10', '8:00', '115/11/11', '8:00']
   ── ③ 帶日期（⛔ TWSE 會把 `date` 原樣抄回來，**只能看 title**）
      ✓ ?date=20150701&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/11/10 到 115/11/10'｜列數 1｜459 bytes
-     ✓ ?date=20261127&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/11/10 到 115/11/10'｜列數 1｜459 bytes
-     ✓ ?startDate=20150101&endDate=20261127&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/11/27'｜列數 7216｜539,514 bytes
+     ✓ ?date=20261128&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：115/11/10 到 115/11/10'｜列數 1｜459 bytes
+     ✓ ?startDate=20150101&endDate=20261128&response=json｜stat='OK'｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/11/28'｜列數 7216｜539,514 bytes
      ⇒ ⭐ 3 發**回應不同** ⇒ 參數有生效，下一步是確認它回的是不是**被要求的那一個日期**（⛔ 看 title，不看回音的 date）
 
   ── ④ ⭐ 它解不解釋得掉我方的長洞（⛔ 端點可用 ≠ 對我方有用）
-     ✓ 長區間 7216 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/11/27'
+     ✓ 長區間 7216 列｜title='暫停交易證券 查詢範圍：全部上市證券 期間：104/01/01 到 115/11/28'
        ⚠ **回音要對得上我要的區間**（TWT49U 那次就是回音沒對上，把 2026 的資料寫進 2015 的每一天）
        解析出 7,216 筆／6,657 檔｜暫停日 2015-03-30 ~ 2026-11-10
      ★ 流動性足夠（要查的那幾檔）：7 個｜**TWTAWU 解釋得掉 1｜解釋不掉 6**
