@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T23:56:56+08:00",
+  "generated_at": "2026-11-28T03:38:04+08:00",
   "target_trading_day": "2026-11-27",
   "stocks": {
     "7879": {
@@ -62,7 +62,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -115,7 +115,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -168,7 +168,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -221,7 +221,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -274,7 +274,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -327,7 +327,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -380,7 +380,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -433,7 +433,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -486,7 +486,7 @@
         },
         "margin": {
           "total": 218,
-          "added": 1,
+          "added": 0,
           "changed": null,
           "date_max": "2026-11-27"
         },
@@ -516,7 +516,7 @@
         "inst": {
           "total": 218,
           "added": 0,
-          "changed": 1
+          "changed": null
         },
         "dividend_rows": 2
       },
@@ -551,7 +551,7 @@
       "inst": {
         "total": 59,
         "added": 0,
-        "changed": 1
+        "changed": null
       }
     },
     "parse_errors": null
@@ -584,5 +584,5 @@
       "purged_warrants": null
     }
   },
-  "history_rows_changed": 2
+  "history_rows_changed": null
 }
