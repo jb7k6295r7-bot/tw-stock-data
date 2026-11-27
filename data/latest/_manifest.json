@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27T08:09:55+08:00",
+  "generated_at": "2026-11-27T14:54:40+08:00",
   "target_trading_day": "2026-11-26",
   "stocks": {
     "7879": {
@@ -563,19 +563,20 @@
     "counts": {
       "twse": 1395,
       "tpex": 1021,
-      "emerging": 377,
       "warrants_excluded": 0,
-      "total": 2793,
+      "total": 2416,
       "by_kind": {
         "etf": 368,
         "other": 27,
-        "stock": 2361,
+        "stock": 1984,
         "special": 27,
         "dr": 10
       }
     },
-    "errors": null,
-    "rows_written": 2793,
+    "errors": {
+      "emerging": "回應是 20261127，不是 2026-11-26（不採用）"
+    },
+    "rows_written": 2416,
     "coverage_days": 60,
     "phantom_days_removed": null,
     "stocks_meta": {

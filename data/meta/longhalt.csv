@@ -4,6 +4,7 @@ tpex-cmode,tpex,2067,嘉鋼,state,,SuspensionOfTrading=Ｙ,2026-10-08,2026-10-17
 tpex-cmode,tpex,3064,泰偉,state,,AlteredTrading=Ｙ,2026-09-21,2026-11-27,52
 tpex-cmode,tpex,3085,新零售,state,,SuspensionOfTrading=Ｙ,2026-10-02,2026-10-10,7
 tpex-cmode,tpex,3259,鑫創,state,,AlteredTrading=Ｙ,2026-09-21,2026-11-27,52
+tpex-cmode,tpex,3259,鑫創,state,,AlteredTrading=Ｙ|MatchingFrequency=010,2026-11-27,2026-11-27,1
 tpex-cmode,tpex,3625,西勝,state,,AlteredTrading=Ｙ,2026-09-21,2026-11-27,45
 tpex-cmode,tpex,3625,西勝,state,,SuspensionOfTrading=Ｙ,2026-10-09,2026-10-17,7
 tpex-cmode,tpex,3629,地心引力,state,,AlteredTrading=Ｙ|PeriodicTrading=Ｙ|MatchingFrequency=030,2026-09-21,2026-11-27,52
