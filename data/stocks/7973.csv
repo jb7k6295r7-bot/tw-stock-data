@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-25,7973,數位至匯,emerging,,155,117,123.71,226621,28035284,,,,,均價/額推算,121,1
 2026-11-26,7973,數位至匯,emerging,,120,102.5,110.36,123961,13680336,-13.35,,,,均價/額推算,107.5,1
+2026-11-27,7973,數位至匯,emerging,,108,102.5,104.48,28261,2952709,-5.88,,,,均價/額推算,107.5,1

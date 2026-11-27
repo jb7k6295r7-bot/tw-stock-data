@@ -1,3 +1,4 @@
 date,stock_id,name,market,open,high,low,close,volume,amount,change,limit,shares,transactions,price_basis,last_price,valid_bar
 2026-11-25,7972,三福生醫,emerging,,31.8,24.75,27.4,152446,4177020,,,,,均價/額推算,28.4,1
 2026-11-26,7972,三福生醫,emerging,,27.85,25.3,26.43,70063,1851765,-0.97,,,,均價/額推算,27,1
+2026-11-27,7972,三福生醫,emerging,,33.55,25.75,29.74,342406,10183154,3.31,,,,均價/額推算,30.9,1
