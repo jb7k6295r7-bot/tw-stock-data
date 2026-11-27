@@ -2,6 +2,7 @@
 """董監大股東質權設定／解除、轉讓持股（各 ≥100 萬股）月報 ⇒ insider_<種類>.csv
 
     python3 curated/insider_monthly/build.py [--from 95/01] [--to 115/09]
+    python3 curated/insider_monthly/build.py --recent --outdir data/meta/insider_monthly   # 排程（daily.yml）
 
 依據：情報 1013-2340（內部人轉讓、設質異常 ⇒ 之後 20 天）；裁定 seq348 §三；本線 1015 探針。
 來源：MOPS 舊版 ajax_IRB190／IRB200／IRB140 回的是導向 ⇒ 證交所靜態月報
@@ -74,10 +75,24 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="a", default="95/01")
     ap.add_argument("--to", dest="b", default="115/09")
+    # ⭐ 2026-11-27（資料庫 1127-1531 已知限制：停在 2026-08、沒接排程）：daily.yml 用
+    #   --recent --outdir data/meta/insider_monthly ⇒ 只看近 3 個月（台北），已有的月份略過；還沒發布的 404 只記 _log、下次再試
+    ap.add_argument("--recent", action="store_true")
+    ap.add_argument("--outdir", default=HERE)
     a = ap.parse_args()
-    log = io.open(os.path.join(HERE, "_log.txt"), "a", encoding="utf-8")
+    if a.recent:
+        t = time.gmtime(time.time() + 8 * 3600)
+
+        def back(n):
+            y, m = t.tm_year, t.tm_mon - n
+            while m < 1:
+                y, m = y - 1, m + 12
+            return "%d/%02d" % (y - 1911, m)
+        a.a, a.b = back(3), back(1)
+    os.makedirs(a.outdir, exist_ok=True)
+    log = io.open(os.path.join(HERE, "_log.txt"), "a", encoding="utf-8")   # ⛔ 不寫進 outdir（data/ 會每天多一行 404）
     for k, (name, hdr, cols) in KINDS.items():
-        out = os.path.join(HERE, "insider_%s.csv" % name)
+        out = os.path.join(a.outdir, "insider_%s.csv" % name)
         have = {}
         if os.path.exists(out):
             for r in csv.DictReader(io.open(out, encoding="utf-8")):

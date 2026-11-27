@@ -244,8 +244,10 @@ jobs:
       #   來源在程式樹 curated/<名稱>/（README 寫出處與驗算）；⛔ 這一步不連網、不改內容
       - name: 手工整理表（curated/ ⇒ data/meta/）
         if: inputs.mode == 'curated'
+        # ⛔ 2026-11-27：insider_holding／insider_monthly 之後由 daily.yml 每月往 data/meta 加新月份 ⇒ curated 那份會比較舊；
+        #   目的檔列數比來源多 ⇒ 不蓋（只准變多），免得重跑 curated 把新月份洗掉
         run: |
-          for d in curated/*/; do n=$(basename "$d"); mkdir -p "data/meta/$n"; cp "$d"*.csv "$d"README.md "data/meta/$n/"; ls -la "data/meta/$n"; done
+          for d in curated/*/; do n=$(basename "$d"); mkdir -p "data/meta/$n"; cp "$d"README.md "data/meta/$n/"; for f in "$d"*.csv; do t="data/meta/$n/$(basename "$f")"; if [ -f "$t" ] && [ "$(wc -l < "$t")" -gt "$(wc -l < "$f")" ]; then echo "略過 $t（比 curated 多列，不蓋）"; else cp "$f" "$t"; fi; done; ls -la "data/meta/$n"; done
 
       # ⭐ 2026-09-29（裁定 seq275 §二：上櫃早年版面核准建）：早年段 feed 也能在 backfill 這一組跑
       #   ⇐ feeds 那一組被 t57sb01（doc.twse，限流中）長期佔住；早年 feed 打的是 TWSE／TPEx，平行跑不增加 doc.twse 負載
