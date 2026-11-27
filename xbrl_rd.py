@@ -87,14 +87,21 @@ KINDS = {"rd": RD, "rev": REV,
          # ⭐ 2026-09-27（台股 seq305／309 ④d：F-score、毛利÷資產）：毛利取【淨額】（扣未實現銷貨損益後，同 fs_hist「營業毛利（毛損）淨額」）
          #   XML 世代 GrossProfitLossFromOperationsNet；inline 世代 ifrs-full:GrossProfit｜營業現金流兩代同名（累計）
          "gp": {"GrossProfitLossFromOperationsNet", "GrossProfit"},
-         "ocf": {"CashFlowsFromUsedInOperatingActivities"}}
-INSTANT = {"assets", "liab", "eqp", "eq"}          # 時點（AsOf<季底>）；其餘是期間（From..To..）
+         "ocf": {"CashFlowsFromUsedInOperatingActivities"},
+         # ⭐ 2026-11-27（情報 1127-1700 ③：現金可撐幾季＝現金÷（營業現金流−資本支出））
+         #   現金及約當現金：時點（季底）｜資本支出＝取得不動產、廠房及設備（累計；⚠ 照申報【負數＝流出】）
+         #   inline 世代 ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities（2026Q3 抽 2330／6469／2801）
+         #   XML 世代用 AcquisitionOfPropertyPlantAndEquipment（逐季覆蓋率看 _rd_status note）
+         "cash": {"CashAndCashEquivalents"},
+         "capex": {"PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities",
+                   "AcquisitionOfPropertyPlantAndEquipment"}}
+INSTANT = {"assets", "liab", "eqp", "eq", "cash"}        # 時點（AsOf<季底>）；其餘是期間（From..To..）
 KIND_OF = {n: k for k, ns in KINDS.items() for n in ns}
 FIN_DIR = os.path.join(ROOT, "data", "mops", "fin_hist")
 FIN_HEADER = ["stock_id", "period", "industry", "report", "alt", "taxonomy",
               "rev_q", "rev_ytd", "opi_q", "opi_ytd", "ni_q", "ni_ytd", "nip_q", "nip_ytd", "eps_q", "eps_ytd",
               "assets", "liabilities", "equity_parent", "equity_total", "rd_q", "rd_ytd",
-              "gp_q", "gp_ytd", "ocf_q", "ocf_ytd"]
+              "gp_q", "gp_ytd", "ocf_q", "ocf_ytd", "cash", "capex_q", "capex_ytd"]
 
 
 def facts(text, y, q):
@@ -189,12 +196,15 @@ def parse_zip(zf, y, q):
                    + [_fmt(k, f.get(k)) for k in ("rev_q", "rev_ytd", "opi_q", "opi_ytd", "ni_q", "ni_ytd",
                                                   "nip_q", "nip_ytd", "eps_q", "eps_ytd", "assets", "liab",
                                                   "eqp", "eq", "rd_q", "rd_ytd",
-                                                  "gp_q", "gp_ytd", "ocf_q", "ocf_ytd")])
+                                                  "gp_q", "gp_ytd", "ocf_q", "ocf_ytd",
+                                                  "cash", "capex_q", "capex_ytd")])
     st = {"files": files, "ci_files": ci, "companies": len(rows),
           "with_rd": sum(1 for r in rows if r[6] or r[5]), "with_rev": sum(1 for r in rows if r[8] or r[7])}
     st["fin_companies"] = len(fin)
     st["fin_with_ni"] = sum(1 for r in fin if r[11] or r[10])
     st["fin_with_assets"] = sum(1 for r in fin if r[16])
+    st["fin_with_cash"] = sum(1 for r in fin if r[26])
+    st["fin_with_capex"] = sum(1 for r in fin if r[27] or r[28])
     return rows, st, fin
 
 
@@ -236,7 +246,7 @@ def _status():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--start", default="2013Q1")
-    ap.add_argument("--end", default="2026Q2")
+    ap.add_argument("--end", default="2026Q3")
     ap.add_argument("--sleep", type=float, default=20)
     ap.add_argument("--zip-dir", default="", help="本機已下載的 zip（測試用，⛔ Actions 不用）")
     ap.add_argument("--redo", action="store_true", help="已完成的季也重做")
@@ -280,7 +290,8 @@ def main():
                     w.writerow(h_)
                     w.writerows(r_)
             done += 1
-            finote = f"全產業 {st['fin_companies']} 家｜淨利 {st['fin_with_ni']}｜資產 {st['fin_with_assets']}"
+            finote = (f"全產業 {st['fin_companies']} 家｜淨利 {st['fin_with_ni']}｜資產 {st['fin_with_assets']}"
+                      f"｜現金 {st['fin_with_cash']}｜資本支出 {st['fin_with_capex']}")
             row.update(status="ok", zip_bytes=str(os.path.getsize(src)), note=f"{note}｜{finote}",
                        **{k: str(v) for k, v in st.items()})
             summary.append(f"{per} 公司 {st['companies']}｜研發 {st['with_rd']}｜營收 {st['with_rev']}｜{finote}")
