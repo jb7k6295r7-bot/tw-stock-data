@@ -723,6 +723,19 @@ jobs:
           python twse_xflag.py --day "$DAY" --sleep 0 || RC=1
           exit $RC
 
+      # ⭐ 2026-11-27（情報 1127-1700 ④）：除權除息【預告表】上市 TWT48U＋上櫃 tpex_exright_prepost
+      #   ⇒ data/meta/exright_pre.csv（鍵 market,stock_id,ex_date；first_seen／last_seen）
+      #   ⛔ 官方只有當下那份、沒有歷史 ⇒ 只能從今天起累積；每班一發各一市場
+      - name: 除權除息預告表（上市＋上櫃）
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          RC=0
+          python selftest_exright_pre.py || RC=1
+          python exright_pre.py || RC=1
+          exit $RC
+
       # ⭐⭐ 終止上市（下市）清單。⛔ 它解的是**生存者偏誤**：
       #   下市公司會從母體消失 ⇒ 「2015 買、後來下市」那一段整段不見
       #   ⇒ 回測績效**系統性偏樂觀**，⚠ 而且不會有任何一格數字出錯。
