@@ -1454,6 +1454,229 @@ def parse_otcinstamt(d, day, known=None):
     return _instamt_rows(d, day, "tpex")
 
 
+# ────────────────────────────────────────────────────────────
+# ⭐⭐ 官方漲跌停價（2026-11-28 新增；回測線 S83「漲停天數」要用）
+#
+# ⛔ 裁定 seq520／526：**只用官方公布的漲跌停價，不自己算**。
+#   ⚠ 我方 `price_limit.py` 是「參考價 × (1±幅度) 捨去到升降單位」的**自算**版本，
+#     ⇒ 現增除權、ETF 升降單位、復牌參考價這些邊角它都要猜；
+#     ⭐ 官方兩張表把答案直接給了 ⇒ 存原值，⛔ 這裡一個數字都不算。
+#
+# ⚠ 兩邊的**日期語意相反**，所以欄名刻意不同（⛔ 讀的人不可以把兩份接在一起當同一種）：
+#   上市 `pricelimit`   ＝ TWT84U 第 d 天那一列 ⇒ 漲跌停**適用於 d 當天**（欄名 `limit_up`）
+#   上櫃 `otcpricelimit` ＝ 日收盤行情第 d 天那一列的「次日漲停價」
+#                         ⇒ 適用於 **d 的下一個交易日**（欄名 `next_limit_up`）
+# ────────────────────────────────────────────────────────────
+
+def _roc_dot(v):
+    """`115.11.26`（TWT84U「最近成交日」）→ `2026-11-26`；認不出來回空字串。
+
+    ⛔ 不併進 `_roc_date`：那一支吃的是「年月日」與斜線兩種，
+      ⚠ 加一個「點」的寫法會讓它在**別的表**多認出一種東西（例如某個價格欄長得像），
+      ⇒ 只在這一欄用、只認三段都齊的。
+    """
+    m = re.fullmatch(r"\s*(\d{2,3})\.(\d{1,2})\.(\d{1,2})\s*", str(v))
+    if not m:
+        return ""
+    return f"{int(m.group(1)) + 1911:04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+
+
+def _lt(a, b):
+    """兩個數字字串，a < b？任一邊不是數字就回 False（⛔ 只用來**講出來**，不拿來丟列）。"""
+    try:
+        return bool(a) and bool(b) and float(a) < float(b)
+    except ValueError:
+        return False
+
+
+def _grouped(fields, groups, title, name):
+    """在官方 `groups` 標的那一段（`本日`／`前日`）裡找欄名 `name`。→ 位置或 None。
+
+    ⭐ TWT84U 的欄名**重複**：`開盤競價基準` 出現兩次（本日一次、前日一次）。
+      ⛔ `_exact` 會回第一個 ⇒ 前日那一欄永遠取不到，⚠ 而且不報錯。
+      ⇒ 用官方自己給的分段（`groups`：start／span／title）定位，⛔ 不靠「第幾個」。
+    ⚠ 沒有 `groups` ⇒ 回 None（⛔ 不猜），呼叫端留空並講出來。
+    """
+    for g in (groups or []):
+        try:
+            if str(g.get("title", "")).strip() != title:
+                continue
+            a, n = int(g.get("start")), int(g.get("span"))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        for i in range(a, min(a + n, len(fields))):
+            if fields[i] == name:
+                return i
+    return None
+
+
+def parse_pricelimit(d, day, known=None):
+    """TWSE TWT84U「股價升降幅度」→ **d 當天**適用的官方漲跌停價（上市）。
+
+    ## 日期語意（本線 2026-11-28 實測，⛔ 不是推論）
+
+    第 d 天那一張的「本日」三欄 ＝ d 當天的漲停價／開盤競價基準／跌停價，
+    「前日」那幾欄 ＝ d 前一個交易日的收盤價等。實測：
+      ① 2026-11-26、11-27 兩天：「前日收盤價」與我方 d−1 日檔收盤 **1,229／1,230 檔全同**；
+         d 當天最高價 > 漲停價、最低價 < 跌停價 **0 檔**（各 1,395 檔上市）。
+      ② 除權息日：跟 TWT49U 官方的除權息漲跌停逐檔比，
+         2026-07-16／10-19／11-17 三天 **114／114 全同**（⇒ 已含除權息參考價）。
+      ③ 減資復牌日：3714（11-16）、1808（11-23）、1516／6142（10-27）
+         跟 TWTAUU 官方漲跌停 **4／4 全同**。
+
+    ## 欄位
+
+    `limit_up`／`limit_down`：官方原值。⚠ 境外成分 ETF 等**無漲跌幅限制**的標的
+      官方寫 `9999.95`／`0.01`（2026-11-27 上市母體內 154 檔）⇒ **照存原值**，
+      判讀用 `price_limit.is_unlimited()`，⛔ 不可以拿來當「漲停」。
+    `open_base`：本日開盤競價基準；`prev_close`／`prev_open_base`：前日那一段。
+    `last_trade_date`：官方「最近成交日」（民國 `115.11.26` 轉西元）。
+
+    ## 年代差異（實測）
+
+    2005-12-19 那一版只有 7 欄：`本日漲停價`／`前日收盤價`／`本日跌停價`，
+    ⛔ 沒有開盤競價基準 ⇒ `open_base`／`prev_open_base` 留空。2015-01-05 實測已是 11 欄＋`groups`
+    （⚠ 中間何時改版未查；兩版都用欄名取，不靠位置）。
+    ⭐ 歷史下限 **2005-12-19**，越界官方明說
+      （`stat:"查詢日期小於94年12月19日，請重新查詢!"`）⇒ 大聲失敗。
+
+    ⚠ 一天約 4.3 萬列，**九成七是權證** ⇒ `known=True`（母體白名單，同 `per`）。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = tabs[0]
+    f = _fieldmap(t)
+    # ⚠ `_tables()` 攤平舊形狀時**不帶 `groups`** ⇒ 兩處都要找
+    groups = t.get("groups") or (d.get("groups") if isinstance(d, dict) else None)
+    i_code = _exact(f, "證券代號")
+    i_up = _exact(f, "漲停價", "本日漲停價")
+    i_down = _exact(f, "跌停價", "本日跌停價")
+    i_base = _grouped(f, groups, "本日", "開盤競價基準")
+    i_pbase = _grouped(f, groups, "前日", "開盤競價基準")
+    i_pclose = _exact(f, "前日收盤價")
+    if i_pclose is None:
+        i_pclose = _grouped(f, groups, "前日", "收盤價")
+    i_last = _exact(f, "最近成交日")
+    if i_code is None or i_up is None or i_down is None:
+        return [], f"欄位對不上：{f}"
+    rows = t.get("data") or []
+    # ⭐ 官方自己報了總列數 ⇒ 對不上就是截斷（⛔ 一個「少了一截」的檔外表完全正常）
+    tot = d.get("total") if isinstance(d, dict) else None
+    if tot not in (None, "") and str(tot).strip().isdigit() and int(tot) != len(rows):
+        return [], f"⛔ 官方 total={tot} 但 data 只有 {len(rows)} 列（截斷？）"
+    warn = []
+    if f.count("開盤競價基準") > 1 and (i_base is None or i_pbase is None):
+        warn.append("⚠ `開盤競價基準` 重複而沒有 `groups` 可分 ⇒ open_base／prev_open_base 留空（⛔ 不猜）")
+    out, outside, blank, inverted = [], 0, 0, 0
+    for r in rows:
+        if not r or len(r) <= max(i_code, i_up, i_down):
+            continue
+        code = str(r[i_code]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            outside += 1
+            continue
+        g = lambda i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
+        up, down = g(i_up), g(i_down)
+        if not up and not down:
+            blank += 1          # 兩個都沒有 ⇒ 沒有東西可存（⛔ 不寫一列空的）
+            continue
+        if _lt(up, down):
+            inverted += 1       # ⛔ 照存原值，只講出來
+        last =(_roc_dot(r[i_last]) if (i_last is not None and i_last < len(r)) else "")
+        out.append([day, code, up, down, g(i_base), g(i_pclose), g(i_pbase), last])
+    note = f"{len(out)} 列（母體外略過 {outside} 列，多為權證）"
+    if blank:
+        note += f"｜漲跌停兩欄皆空 {blank} 列未寫"
+    if inverted:
+        note += f"｜⚠ 漲停<跌停 {inverted} 列（照存原值）"
+    if warn:
+        note += "｜" + "；".join(warn)
+    return out, note
+
+
+def parse_otcpricelimit(d, day, known=None):
+    """TPEx 上櫃股票每日收盤行情 → 第 d 天收盤後公布的**「次日」**漲跌停價。
+
+    ## ⛔⛔ 日期語意：這一列適用的是 **d 的下一個交易日**，不是 d
+
+    檔名／`date` 欄是**行情日 d**（官方回應的日期，原樣存）。
+    ⇒ 讀的人要用交易日曆（`data/universe/daily/` 的檔名）把它對到**下一個交易日**。
+    ⛔ 不在這裡存 `valid_date`：寫檔的那一晚，「下一個交易日」還沒發生
+      （颱風假等臨時休市事前不知道）⇒ 那一欄只能用**猜的**，⚠ 而猜錯不會報錯。
+    ⇒ 讀端用已實現的日曆對，那個才是資料自己講的。
+
+    實測（本線 2026-11-28）：
+      ① 2026-11-25、11-26 兩列對到次一交易日：當天最高價 > 次日漲停價、
+         最低價 < 次日跌停價 **0 檔**（各約 1,020 檔）。
+      ② ⭐ 除權息（裁定 seq526 要求落地前先驗）：d−1 那一列的「次日漲停／跌停價」
+         跟官方 `bulletin/exDailyQ` 的除權息「漲停價／跌停價」逐檔比，
+         2016-07-14／08-25、2025-07-03／07-24、2026-09（6 天）共 **105／105 全同、0 不符**
+         （含 5213、8064、3260 三筆**現金增資**：參考價≠開始交易基準價，照樣全同）
+         ⇒ ⭐ 次日漲停價**已經反映除權息參考價**。
+      ③ 減資／面額變更**停止買賣中**的個股：d−1 那一張**沒有這一列**
+         （4534、5355、8176、4207、8937 實測）⇒ 復牌第一天**查無**，⛔ 不是錯值。
+
+    ⚠ 欄名帶**尾隨空白**（`次日漲停價 `）⇒ `_fieldmap` 已 strip。
+    ⚠ 無漲跌幅限制的（多為債券／境外 ETF）官方寫 `9,999.95`／`0.01` ⇒ **照存原值**
+      （逗號由 `_blank_num` 清掉），判讀用 `price_limit.is_unlimited()`。
+    ⚠ 沒成交的那幾檔 `收盤` 是 `----` ⇒ `close` 留空，⭐ 次日漲跌停價**仍然有給**（照存）。
+    ⭐ 歷史下限 **2007-07-02**（這張表本身的下限，那天起就有這兩欄）；
+      ⛔ 更早（2007-06-29 實測）回 `stat=ok`、**0 列**、date 照樣回顯 ⇒ **靜默**。
+    """
+    tabs = B._tables(d)
+    if not tabs:
+        return [], "沒有 tables"
+    t = None
+    for x in tabs:
+        if _exact(_fieldmap(x), "次日漲停價") is not None:
+            t = x
+            break
+    if t is None:
+        return [], f"找不到含「次日漲停價」欄的表（共 {len(tabs)} 張：{[_fieldmap(x)[-3:] for x in tabs]}）"
+    f = _fieldmap(t)
+    i_code = _exact(f, "代號", "證券代號")
+    i_close = _exact(f, "收盤")
+    i_up = _exact(f, "次日漲停價")
+    i_down = _exact(f, "次日跌停價")
+    if i_code is None or i_up is None or i_down is None:
+        return [], f"欄位對不上：{f}"
+    # ⭐ 表自己也帶日期（民國 `115/11/26`）⇒ 第二道日期核對（第一道是 `_same_day` 看頂層）
+    tday = _roc_date(t.get("date", "")) if t.get("date") else ""
+    if tday and tday != day:
+        return [], f"⛔ 表內日期 {t.get('date')} ≠ 要的 {day}"
+    rows = t.get("data") or []
+    tot = t.get("totalCount")
+    if tot not in (None, "") and str(tot).strip().isdigit() and int(tot) != len(rows):
+        return [], f"⛔ 官方 totalCount={tot} 但 data 只有 {len(rows)} 列（截斷？）"
+    out, outside, blank, inverted = [], 0, 0, 0
+    for r in rows:
+        if not r or len(r) <= max(i_code, i_up, i_down):
+            continue
+        code = str(r[i_code]).strip()
+        if not code or not code[0].isdigit():
+            continue
+        if known and code not in known:
+            outside += 1
+            continue
+        g = lambda i: _blank_num(r[i]) if (i is not None and i < len(r)) else ""
+        up, down = g(i_up), g(i_down)
+        if not up and not down:
+            blank += 1
+            continue
+        if _lt(up, down):
+            inverted += 1
+        out.append([day, code, g(i_close), up, down])
+    note = f"{len(out)} 列（母體外略過 {outside} 列）"
+    if blank:
+        note += f"｜次日漲跌停兩欄皆空 {blank} 列未寫"
+    if inverted:
+        note += f"｜⚠ 漲停<跌停 {inverted} 列（照存原值）"
+    return out, note
+
+
 def _twse(path, day, extra=""):
     return f"https://www.twse.com.tw/rwd/zh/{path}?date={day.replace('-', '')}{extra}&response=json"
 
@@ -1910,6 +2133,51 @@ FEEDS = {
                    "只有 bulletin/revivt 有回應但那是減資表且為前瞻式。"
                    "第三批集中在 bulletin/*"),
     },
+
+    # ⭐⭐ 2026-11-28 官方漲跌停價（回測線 S83；裁定 seq520／526：只用官方數字、不自算）。
+    #   ⚠ 兩支的日期語意**相反**（理由與實測見兩個 parser 的說明）⇒ 欄名也刻意不同。
+    #   ⭐ `empty_is_fail`：這兩張表**每個交易日都列出全部掛牌證券**，
+    #     ⇒ 交易日曆上的一天解析出 0 列 ⛔ 不可能是「那天沒資料」，只會是欄位改版／被截斷。
+    #     ⚠ 而不設這一旗，0 列會被 `cmd_feed` 記成「問到了、那天沒資料」寫進台帳
+    #       ⇒ **那一天永遠不會再被問**，而外表跟休市一模一樣。
+    "pricelimit": {
+        "dir": "pricelimit",
+        "header": ["date", "stock_id", "limit_up", "limit_down", "open_base",
+                   "prev_close", "prev_open_base", "last_trade_date"],
+        "parse": parse_pricelimit,
+        "known": True,           # ⚠ 一天 4.3 萬列裡九成七是權證
+        "empty_is_fail": True,
+        # ⭐ 第一順位是 rwd 的 `variation/TWT84U`（官網頁面 /zh/trading/delivery/twt84u.html 用的）；
+        #   ⛔ `rwd/zh/afterTrading/TWT84U` 實測 302 → page-not-found（⛔ 不是限流，有 Location）。
+        #   舊路 `exchangeReport/TWT84U` 2026-11-28 仍回同一份 ⇒ 留作第二順位。
+        "urls": lambda day: [
+            _twse("variation/TWT84U", day, "&selectType=ALL"),
+            "https://www.twse.com.tw/exchangeReport/TWT84U?response=json&date="
+            + day.replace("-", "") + "&selectType=ALL"],
+        "status": ("本線 2026-11-28 實測：20261127 stat=OK、total 42,627＝data 列數、11 欄＋groups"
+                   "（本日：漲停價／開盤競價基準／跌停價；前日：開盤競價基準／收盤價／…）"
+                   "｜⭐ 第 d 天的漲跌停**適用於 d 當天**（前日收盤 1,230／1,230 同我方 d−1 日檔；"
+                   "除權息日對 TWT49U 114／114 全同；減資復牌對 TWTAUU 4／4 全同）"
+                   "｜2015-01-05 已是 11 欄；2005-12-19 為 7 欄舊版（本日漲停價／前日收盤價／本日跌停價），"
+                   "⚠ 中間何時改版未查（我方交易日曆 2015 起，用不到）"
+                   "｜⛔ 歷史下限 2005-12-19，越界 stat「查詢日期小於94年12月19日」＝大聲失敗"
+                   "｜⚠ 無漲跌幅限制者官方寫 9999.95／0.01，照存"),
+    },
+    "otcpricelimit": {
+        "dir": "otcpricelimit",
+        "header": ["date", "stock_id", "close", "next_limit_up", "next_limit_down"],
+        "parse": parse_otcpricelimit,
+        "known": True,
+        "empty_is_fail": True,
+        # ⭐ 跟上櫃日檔（`backfill.py`）**同一支端點、同一組參數** ⇒ 同一張表的另兩欄
+        "urls": lambda day: [_tpex("afterTrading/otc", day, "&type=EW&id=")],
+        "status": ("本線 2026-11-28 實測：20261126 stat=ok、totalCount 1,021＝列數、17 欄（欄名帶尾隨空白）"
+                   "｜⛔⛔ 第 d 天那一列的「次日漲停價／次日跌停價」適用於 **d 的下一個交易日**"
+                   "（`date` 存的是行情日 d；讀端用交易日曆對到下一日）"
+                   "｜⭐ 除權息：d−1 那一列對官方 exDailyQ 除權息漲跌停 105／105 全同（含現增 3 筆）"
+                   "｜停止買賣中的個股 d−1 沒有那一列 ⇒ 復牌首日查無（⛔ 不是錯值）"
+                   "｜⭐ 歷史下限 2007-07-02（2007-06-29 回 stat=ok、0 列＝**靜默**）"),
+    },
 }
 
 
@@ -1971,6 +2239,13 @@ def fetch_one(name, day, known):
             continue
         _watch_formula(name, d)
         lines, nt = spec["parse"](d, day, known if spec["known"] else None)
+        # ⭐ `empty_is_fail`（2026-11-28，官方漲跌停兩支）：交易日上 0 列 ⇒ 算**沒問到**，
+        #   ⛔ 不回 url。回了 url 就會被 `cmd_feed` 當成「那天沒資料」記進台帳 ⇒ 永遠不再問。
+        #   ⚠ 只對「每個交易日一定有全市場列」的表開；事件型（除權息、減資）0 列是常態，⛔ 不可開。
+        #   ⭐ 用 `continue` 不用 return：還有下一個候選（例如舊路）就讓它試。
+        if not lines and spec.get("empty_is_fail"):
+            last = f"⛔ 0 列（這張表每個交易日都該有列）：{nt}｜URL={u_}"
+            continue
         return lines, nt, url
     # NODATA 代表「端點答了、只是那天沒有資料」——回傳 url 讓呼叫端歸到「休市」。
     if last.startswith("NODATA"):
