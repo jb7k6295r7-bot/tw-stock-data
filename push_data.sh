@@ -122,6 +122,7 @@ data/mops/news/_asked.json:json
 data/mops/news/[0-9]*.csv:date,time,stock_id,serial
 data/meta/twse_change_x.csv:date,stock_id
 data/meta/_twse_change_x_asked.csv:date
+data/meta/exright_pre.csv:market,stock_id,ex_date
 "
 CHANGED=$(git diff --name-only "$BASE" "$DC" -- $TREES)
 if [ -n "$FORCE" ]; then

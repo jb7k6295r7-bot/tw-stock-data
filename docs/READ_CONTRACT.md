@@ -3099,3 +3099,33 @@ BTCUSDT 永續的公開上市日在 2019-09 ⇒ 2020-01-01 只是**封存從那�
 每期都驗：頁面自述期別 ＝ 請求、表頭十欄逐字、列數 > 0
 ```
 
+
+---
+
+## ⭐⭐ `data/mops/fin_hist/<期別>.csv`：單季 EPS 是官方的、現金與資本支出（2026-11-27）
+
+```
+eps_q      ＝ 綜合損益表【本期 3 個月】那一欄的基本 EPS（XBRL context From<季初>To<季底>）
+             ⛔ 不是「累計 − 上一季累計」：配股追溯調整股數的季別兩者會不同
+             實例 2026Q3：6469 eps_q 0.63（累計相減 0.54）、3661 37.68（相減 38.37）＝公司公布單季
+             ⚠ Q4 只有全年 ⇒ eps_q 空白，要單季 Q4 由讀的人用全年 − Q3 累計（⚠ 同上，股數有變會偏）
+cash       ＝ 現金及約當現金（季底時點，元）
+capex_ytd  ＝ 取得不動產、廠房及設備（累計，元）⚠ 照申報【負數＝流出】；現金流量表只有累計 ⇒ capex_q 多半空白
+             inline 世代 ifrs-full:PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities
+             XML 世代 AcquisitionOfPropertyPlantAndEquipment｜逐季家數看 data/mops/_rd_status.csv 的 note
+ocf_ytd    ＝ 營業活動淨現金流（累計）
+```
+⇒ 「現金可撐幾季」這類算式：自由現金流＝ocf_ytd ＋ capex_ytd（capex 已是負數，⛔ 不要再減一次）。
+⇒ 新欄一律接在尾端（舊欄位順序不動）。每季財報截止後重派 backfill mode=xbrl-rd（end 設最新已公布季）。
+
+## ⭐ `data/meta/exright_pre.csv`：除權除息【預告表】（已公告、還沒到；2026-11-27 起）
+
+```
+來源    上市 exRight/TWT48U｜上櫃 openapi tpex_exright_prepost（daily.yml 每班各一發）
+鍵      market, stock_id, ex_date      其餘：name, kind（權／息／權息）, stock_div_ratio,
+        capinc_ratio, capinc_price, cash_div, note, first_seen, last_seen
+```
+- ⛔ 官方只有當下那份、沒有歷史 ⇒ 2026-11-27 以前沒有；first_seen＝本庫第一次看到（⛔ 不是公告日）。
+- cash_div 空白＋note「待公告實際收益分配金額／尚未公告」＝ETF 還沒公告金額（⛔ 不是 0）。
+- 除權息日過了官方就拿掉 ⇒ 本檔保留（last_seen 停在最後看到那天）；已發生的權息值以 `data/universe/exright`、`otc_exright_*` 為準。
+- 公告後改期或改金額：同鍵值取最新；改期＝新鍵、舊鍵 last_seen 停住 ⇒ 讀「未來 N 天」請只取 last_seen＝最新那天的列。
