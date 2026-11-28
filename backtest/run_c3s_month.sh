@@ -18,7 +18,7 @@
 #   5 產出（M 之後的列全部截掉）：rebuild_usdata.sh 抽唯讀快照 ⇒ c3s_month/cut_root.py 截到 M ⇒ build_world.py 建本期世界 ⇒
 #     produce.py（程式 f56133f55a：researchUSC3s_ops --month M、新版 e71b5bc77e 全名欄、forward_us_c3sf --month M、forward_us_c11 --month M、
 #     researchUSC3s_stop --month M ＋主臂續抱簿級別）⇒ inject.py ones／rand ⇒ finalize.py（驗算判定、加註、sha）
-#   6 驗算不過或程式錯誤 ⇒ 不出單，寫「未出」信；通過 ⇒ deliver()：md ＋ _交付-C3s換股單_<M>/order_<YYYYMMDD>.csv（新版、含全名欄）放信箱
+#   6 驗算不過或程式錯誤 ⇒ 不出單，寫「未出」信；通過 ⇒ deliver()：_營量觀察/c3s_<M>.md ＋ c3s_<M>_order.csv（新版、含全名欄）；⛔ 信箱只寫 _營量觀察/（同 run_daily_list.sh 規則 6）
 #   7 repo（只正式模式）：產出檔複製到 ~/tw-p17 對應路徑，git add 指定檔、commit（只含那幾個檔）、push 到 claude/stock-analysis-backtest-iv9xji
 #     共用世界檔 ~/us_work/a4/world.npz 換成本期版，舊檔備份成 world_<舊檔月底>.npz
 #   8 退出碼：成功、略過、資料未到 0；失敗 1
@@ -48,7 +48,7 @@ done
 if [ -n "${C3S_OUT:-}" ]; then
   TEST=1; MB="$C3S_OUT/mailbox"; LOG="$C3S_OUT/us_c3s_month.log"; WROOT="$C3S_OUT/work"; RDST="$C3S_OUT/repo"
 else
-  TEST=0; MB="/mnt/c/SynologyDrive/跨線信箱"; LOG="$REPO/backtest/forward/us_c3s_month.log"; WROOT="$HOME/us_work/c3s_month"; RDST="$REPO"
+  TEST=0; MB="/mnt/c/SynologyDrive/跨線信箱/_營量觀察"; LOG="$REPO/backtest/forward/us_c3s_month.log"; WROOT="$HOME/us_work/c3s_month"; RDST="$REPO"
 fi
 tpe() { TZ=Asia/Taipei date "$@"; }
 logline() { echo "[$(tpe '+%Y-%m-%d %H:%M:%S') 台北]$([ $TEST = 1 ] && echo ' [測試]')${M:+ M=$M} $*" >> "$LOG"; echo "$*"; }
@@ -88,7 +88,7 @@ notice() {
   if [ -f "$key" ]; then logline "（未出信「$why」已寫過：$(cat "$key")，不再寫）"; return 0; fi
   ts=$(tpe '+%Y%m%d-%H%M')
   mkdir -p "$MB" || return 1
-  f="$MB/件-美股情報←回測線-$ts-C3s換股單_${M}_未出_$why.md"
+  f="$MB/c3s_${M}_未出_$why.md"
   {
     echo "尚未驗證（看過段、集中度高），試單金額自行控制"; echo
     echo "# 件｜美股情報 ← 回測線：C3s 換股單 $M 月底【未出】——$why"; echo
@@ -106,9 +106,9 @@ notice() {
 deliver() {
   local ts="$1" f d
   mkdir -p "$MB" || return 1
-  d="$MB/_交付-C3s換股單_$M"; mkdir -p "$d" || return 1
-  cp "$WD/stage/final/order_$MD.csv" "$d/order_$MD.csv.tmp" && mv "$d/order_$MD.csv.tmp" "$d/order_$MD.csv" || return 1
-  f="$MB/件-美股情報←回測線-$ts-C3s換股單_$M.md"
+  d="$MB"
+  cp "$WD/stage/final/order_$MD.csv" "$d/c3s_${M}_order.csv.tmp" && mv "$d/c3s_${M}_order.csv.tmp" "$d/c3s_${M}_order.csv" || return 1
+  f="$MB/c3s_$M.md"
   cp "$WD/stage/final/mail.md" "$f.tmp" && mv "$f.tmp" "$f" || return 1
   DELIVERED="$f"
 }

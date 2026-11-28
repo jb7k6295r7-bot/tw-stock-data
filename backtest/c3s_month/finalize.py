@@ -144,7 +144,7 @@ L = ["尚未驗證（看過段、集中度高），試單金額自行控制", ""
      "## C3sF 濾網",
      f"- **{fzr['濾網']}**：SPY 還原收盤 {sp(fzr['SPY還原收盤'])}、200 日線 {sp(fzr['SPY200日線'])}（{'被擋 ⇒ 下一換股日不新買' if fzr['濾網'] == '擋' else '不擋'}；C3sF 是前瞻紙上紀錄，不影響換股單）", "",
      "## 檔案與 sha256",
-     f"- 換股單（含全名欄、已加註）：`_交付-C3s換股單_{M}/order_{MD}.csv`　{man[f'backtest/resultsUSC/C3s/ops/order_{MD}_names.csv'][:16]}…",
+     f"- 換股單（含全名欄、已加註）：`_營量觀察/c3s_{M}_order.csv`　{man[f'backtest/resultsUSC/C3s/ops/order_{MD}_names.csv'][:16]}…",
      f"- 換股單舊版（repo `order_{MD}.csv`）：加註後 {man[f'backtest/resultsUSC/C3s/ops/order_{MD}.csv'][:16]}…（加註前 {man['換股單 舊版 raw'][:16]}…）",
      f"- 停用條件級別 `level_{MD}.json`：{man[f'backtest/resultsUSC/C3s/stop/level_{MD}.json'][:16]}…",
      f"- C3sF filter.csv：{man.get('backtest/forward/us_c3sf/filter.csv', '')[:16]}…",
