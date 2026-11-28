@@ -164,6 +164,14 @@ if [ -z "$FAIL" ] && [ -n "${DK:-}" ]; then
   logline "快照清理：$(bash "$REPO/backtest/prune_h2data.sh" "$DK" 2>&1 | tail -1)"
 fi
 
+# 規則 20（使用者 2026-11-28「跟原本的一起，不再建新的」）：美股 C3s 月底換股單掛在每日名單之後；不在換股窗的日子幾秒內退出
+#   ⛔ 失敗只記 log、不影響每日名單的退出碼；不管台股名單成不成功都叫；細節見 run_c3s_month.sh 檔頭
+if bash "$REPO/backtest/run_c3s_month.sh" > "$REPO/backtest/resultsDaily/c3s_month.log" 2>&1; then
+  logline "C3s 月底：$(tail -1 "$REPO/backtest/resultsDaily/c3s_month.log")"
+else
+  logline "C3s 月底 失敗（不影響 daily）：見 backtest/forward/us_c3s_month.log"
+fi
+
 if [ $FINAL = 1 ]; then
   TODAY=${DAILY_FAKE_TODAY:-$(TZ=Asia/Taipei date '+%Y-%m-%d')}
   HS="$HOME/h2data/${SHA:-none}/data/meta/holiday_schedule.csv"
