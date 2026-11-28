@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-28T06:11:52+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46073885187
+# ⏱ 這一趟：2026-11-28T14:23:38+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46115209691
 # keys_probe.py 的輸出。**只讀不寫資料。**
 # 問的是：官方回應裡那些我方一路丟掉的鍵，到底寫了什麼。
 # ⛔ 我方 `_tables()` 只取 title/fields/data，其餘全丟，而且丟的時候沒有紀錄。

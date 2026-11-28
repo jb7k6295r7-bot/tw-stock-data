@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-28T06:08:08+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46073885187
+# ⏱ 這一趟：2026-11-28T14:19:07+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46115209691
 # twsthr_probe.py 的輸出。這是探針結果，不是資料。
 # 網址（使用者提供）：https://norway.twsthr.info/StockHolders.aspx
 # ⛔ 第三方彙整站，不是官方——級距文字只是線索，歷史要跟官方交叉核對過才算數。
@@ -9,7 +9,7 @@
 
 ── 大戶持股查詢頁
    https://norway.twsthr.info/StockHolders.aspx
-   ✓ 35,933 bytes
+   ✓ 35,934 bytes
    [1] 抓不到級距文字（可能在 JS 或另一頁）
    [2] ★ 八碼日期 1 個：['20170103'] … ['20170103']
    [3] form input（6）：{'__EVENTTARGET': '', '__EVENTARGUMENT': '', '__VIEWSTATE': '/wEPDwUJNDg4NDI0NjIwZGQ082dhNjJtKHCMOCKI…', '__VIEWSTATEGENERATOR': 'B22D0476', '__EVENTVALIDATION': '/wEdAARcm5d18CQYQ07sV/YOf9OVprT8jKN33hsB…', 'txtStock': ''}

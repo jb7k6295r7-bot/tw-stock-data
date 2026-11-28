@@ -1,4 +1,4 @@
-# ⏱ 這一趟：2026-11-28T06:11:14+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46073885187
+# ⏱ 這一趟：2026-11-28T14:22:53+08:00（台北）｜ref claude/financial-market-analysis-mmm5kf｜Actions｜run 46115209691
 # hist_probe.py 的輸出。這是探針結果，不是資料。
 # 主機：hist.tpex.org.tw（使用者 2026-09-09 提供）
 # ⛔ 要答的：這個站有沒有**上櫃／興櫃的歷史**——而我今晚說過三次「上櫃沒有歷史來源」。
@@ -20,8 +20,8 @@
    ★ 這一頁只有 1,357 bytes 且沒有表格，**原始碼全印**：
      '<HTML>\r\n<HEAD>\r\n<TITLE>歷史資料查詢> 興櫃股票歷史行情</TITLE>\r\n</HEAD>\r\n\r\n<FRAMESET rows=104px,* border="0">\r\n  <FRAME SRC="NSHISTORYQRY.HTML"  NAME="TOP" noresize>\r\n  <FRAME SRC="DAILY/AA951229.TXT"  NAME="BOT" no'
      'resize>\r\n</FRAMESET>\r\n</HTML><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$par'
-     "ams={r:'a61473f7986b8569',t:'MTc5NTgxNzMyMg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/chall"
-     'enge-platform/scripts/jsd/main.js?ray=a61473f7986b8569\',a=document.createElement(\'script\');a.src=o?new URL(u,o).href:u;document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName('
+     "ams={r:'a617434768dfe87d',t:'MTc5NTg0Njc4NQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/chall"
+     'enge-platform/scripts/jsd/main.js?ray=a617434768dfe87d\',a=document.createElement(\'script\');a.src=o?new URL(u,o).href:u;document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName('
      "'head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibili"
      "ty='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||"
      "function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -36,9 +36,9 @@
    連結／frame／路徑字串 1 個：['http://hist.gretai.org.tw/en/index.php']
    ★ 這一頁只有 1,317 bytes 且沒有表格，**原始碼全印**：
      '<script language="javascript">window.location.replace(\'http://hist.gretai.org.tw/en/index.php\');</script><noscript><A href="http://hist.gretai.org.tw/en/index.php">GreTai Securities Market</A></noscri'
-     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a61473fea838fd0d\','
-     "t:'MTc5NTgxNzMyMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/"
-     'main.js?ray=a61473fea838fd0d\',a=document.createElement(\'script\');a.src=o?new URL(u,o).href:u;document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'head\')[0].appendChild(d)}'
+     'pt><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement(\'script\');d.innerHTML="window.__CF$cv$params={r:\'a617434e5fd67116\','
+     "t:'MTc5NTg0Njc4Ng=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/"
+     'main.js?ray=a617434e5fd67116\',a=document.createElement(\'script\');a.src=o?new URL(u,o).href:u;document.getElementsByTagName(\'head\')[0].appendChild(a);";b.getElementsByTagName(\'head\')[0].appendChild(d)}'
      "}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body."
      "appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onre"
      "adystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>"
@@ -73,9 +73,9 @@
          rt.Ddr.options[document.report.Ddr.selectedIndex].value StrUrl="DAILY/"+ dType + dQDATE + ".txt"; } else { var wType = document.report.Dwr.options[document.report.Dwr.selectedIndex
          ].value StrUrl="WEEKLY/"+ wType + wQDATE + ".txt"; } if(!fileExists(StrUrl)){ window.open("../../nodata.htm","BOT"); }else{ window.open(StrUrl,"BOT"); } return false; }
        ── 第 4 段（1097 字）
-         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a61474072
-         b0aa1c4',t:'MTc5NTgxNzMyNA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/ch
-         allenge-platform/scripts/jsd/main.js?ray=a61474072b0aa1c4',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";
+         (function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a61743644
+         865e72b',t:'MTc5NTg0Njc4OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/ch
+         allenge-platform/scripts/jsd/main.js?ray=a61743644865e72b',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";
          b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.le
          ft=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener
      ★ <form> 標籤原文：<form name="report" onSubmit="ChkInput();return false;">
